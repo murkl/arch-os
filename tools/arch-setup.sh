@@ -65,7 +65,7 @@ set_config_array() {
 }
 
 # /////////////////////////////////////////////////////
-# CHECK CONFIG STATE
+# LOAD CONFIG & CHECK STATE
 # /////////////////////////////////////////////////////
 
 load_config_and_check_state() {
@@ -83,11 +83,10 @@ load_config_and_check_state() {
     unset ARCH_FSTRIM_ENABLED
     unset ARCH_SWAP_SIZE
     unset ARCH_MICROCODE
-    unset ARCH_SCRIPTS_ENABLED
     unset ARCH_LANGUAGE
     unset ARCH_TIMEZONE
     unset ARCH_LOCALE_LANG
-    unset ARCH_LOCALE_GEN_ARRAY
+    unset ARCH_LOCALE_GEN_LIST
     unset ARCH_VCONSOLE_KEYMAP
     unset ARCH_VCONSOLE_FONT
     unset ARCH_MULTILIB_ENABLED
@@ -101,9 +100,9 @@ load_config_and_check_state() {
     [ -f "$ARCH_INSTALL_CONFIG" ] && source "$ARCH_INSTALL_CONFIG"
 
     # Check multiple language config
-    if [ -z "$ARCH_LANGUAGE" ] || [ -z "$ARCH_TIMEZONE" ] || [ -z "$ARCH_LOCALE_LANG" ] || [ -z "${ARCH_LOCALE_GEN_ARRAY[*]}" ] || [ -z "$ARCH_VCONSOLE_KEYMAP" ] || [ -z "$ARCH_VCONSOLE_FONT" ] || [ -z "$ENVIRONMENT_X11_KEYBOARD_LAYOUT" ] || [ -z "$ENVIRONMENT_X11_KEYBOARD_VARIANT" ]; then
+    if [ -z "$ARCH_LANGUAGE" ] || [ -z "$ARCH_TIMEZONE" ] || [ -z "$ARCH_LOCALE_LANG" ] || [ -z "${ARCH_LOCALE_GEN_LIST[*]}" ] || [ -z "$ARCH_VCONSOLE_KEYMAP" ] || [ -z "$ARCH_VCONSOLE_FONT" ] || [ -z "$ENVIRONMENT_X11_KEYBOARD_LAYOUT" ] || [ -z "$ENVIRONMENT_X11_KEYBOARD_VARIANT" ]; then
         [ "$show_promt" = "true" ] && whiptail --title "$TUI_TITLE" --msgbox "Language config is missing" "$TUI_HEIGHT" "$TUI_WIDTH"
-        set_config_entry "ARCH_LANGUAGE" && set_config_entry "ARCH_TIMEZONE" && set_config_entry "ARCH_LOCALE_LANG" && set_config_array "ARCH_LOCALE_GEN_ARRAY" && set_config_entry "ARCH_VCONSOLE_KEYMAP" && set_config_entry "ARCH_VCONSOLE_FONT" && set_config_entry "ENVIRONMENT_X11_KEYBOARD_LAYOUT" && set_config_entry "ENVIRONMENT_X11_KEYBOARD_VARIANT"
+        set_config_entry "ARCH_LANGUAGE" && set_config_entry "ARCH_TIMEZONE" && set_config_entry "ARCH_LOCALE_LANG" && set_config_array "ARCH_LOCALE_GEN_LIST" && set_config_entry "ARCH_VCONSOLE_KEYMAP" && set_config_entry "ARCH_VCONSOLE_FONT" && set_config_entry "ENVIRONMENT_X11_KEYBOARD_LAYOUT" && set_config_entry "ENVIRONMENT_X11_KEYBOARD_VARIANT"
         TUI_POSITION="language"
         return 1
     fi
@@ -185,10 +184,10 @@ load_config_and_check_state() {
 }
 
 # /////////////////////////////////////////////////////
-# SET CONFIG
+# OPEN CONFIG MENU & SET PROPERTY
 # /////////////////////////////////////////////////////
 
-set_config() {
+open_config_menu_and_set_property() {
 
     case "${1}" in
 
@@ -198,7 +197,7 @@ set_config() {
             set_config_entry "ARCH_LANGUAGE" "english"
             set_config_entry "ARCH_TIMEZONE" "Europe/Berlin"
             set_config_entry "ARCH_LOCALE_LANG" "en_US.UTF-8"
-            set_config_array "ARCH_LOCALE_GEN_ARRAY" "en_US.UTF-8" "UTF-8"
+            set_config_array "ARCH_LOCALE_GEN_LIST" "en_US.UTF-8" "UTF-8"
             set_config_entry "ARCH_VCONSOLE_KEYMAP" "en-latin1-nodeadkeys"
             set_config_entry "ARCH_VCONSOLE_FONT" "eurlatgr"
             set_config_entry "ENVIRONMENT_X11_KEYBOARD_LAYOUT" "en"
@@ -208,7 +207,7 @@ set_config() {
             set_config_entry "ARCH_LANGUAGE" "german"
             set_config_entry "ARCH_TIMEZONE" "Europe/Berlin"
             set_config_entry "ARCH_LOCALE_LANG" "de_DE.UTF-8"
-            set_config_array "ARCH_LOCALE_GEN_ARRAY" "de_DE.UTF-8 UTF-8" "de_DE ISO-8859-1" "de_DE@euro ISO-8859-15" "en_US.UTF-8 UTF-8"
+            set_config_array "ARCH_LOCALE_GEN_LIST" "de_DE.UTF-8 UTF-8" "de_DE ISO-8859-1" "de_DE@euro ISO-8859-15" "en_US.UTF-8 UTF-8"
             set_config_entry "ARCH_VCONSOLE_KEYMAP" "de-latin1-nodeadkeys"
             set_config_entry "ARCH_VCONSOLE_FONT" "eurlatgr"
             set_config_entry "ENVIRONMENT_X11_KEYBOARD_LAYOUT" "de"
@@ -217,7 +216,7 @@ set_config() {
         ;;
 
     "hostname")
-        hostname=$(whiptail --title "$TUI_TITLE" --inputbox --nocancel "\nEnter Hostname" "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_HOSTNAME" 3>&1 1>&2 2>&3)
+        hostname=$(whiptail --title "$TUI_TITLE" --inputbox "\nEnter Hostname" "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_HOSTNAME" 3>&1 1>&2 2>&3) || return 1
         if [ -z "$hostname" ]; then
             set_config_entry "ARCH_HOSTNAME"
             whiptail --title "$TUI_TITLE" --msgbox "Error: Hostname is null" "$TUI_HEIGHT" "$TUI_WIDTH"
@@ -227,7 +226,7 @@ set_config() {
         ;;
 
     "user")
-        username=$(whiptail --title "$TUI_TITLE" --inputbox --nocancel "\nEnter Username" "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_USERNAME" 3>&1 1>&2 2>&3)
+        username=$(whiptail --title "$TUI_TITLE" --inputbox "\nEnter Username" "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_USERNAME" 3>&1 1>&2 2>&3) || return 1
         if [ -z "$username" ]; then
             set_config_entry "ARCH_USERNAME"
             whiptail --title "$TUI_TITLE" --msgbox "Error: Username is null" "$TUI_HEIGHT" "$TUI_WIDTH"
@@ -237,13 +236,13 @@ set_config() {
         ;;
 
     "password")
-        password=$(whiptail --title "$TUI_TITLE" --passwordbox --nocancel "\nEnter Password" "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
+        password=$(whiptail --title "$TUI_TITLE" --passwordbox "\nEnter Password" "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3) || return 1
         if [ -z "$password" ]; then
             set_config_entry "ARCH_PASSWORD"
             whiptail --title "$TUI_TITLE" --msgbox "Error: Password is null" "$TUI_HEIGHT" "$TUI_WIDTH"
             return 1
         fi
-        password_check=$(whiptail --title "$TUI_TITLE" --passwordbox --nocancel "\nEnter Password (again)" "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
+        password_check=$(whiptail --title "$TUI_TITLE" --passwordbox "\nEnter Password (again)" "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3) || return 1
         if [ "$password" != "$password_check" ]; then
             set_config_entry "ARCH_PASSWORD"
             whiptail --title "$TUI_TITLE" --msgbox "Error: Password not identical" "$TUI_HEIGHT" "$TUI_WIDTH"
@@ -266,7 +265,7 @@ set_config() {
         fi
 
         # Select Disk
-        disk=$(whiptail --title "$TUI_TITLE" --menu "\nChoose Installation Disk" "$TUI_HEIGHT" "$TUI_WIDTH" "${#disk_array[@]}" "${disk_array[@]}" 3>&1 1>&2 2>&3)
+        disk=$(whiptail --title "$TUI_TITLE" --menu "\nChoose Installation Disk" "$TUI_HEIGHT" "$TUI_WIDTH" "${#disk_array[@]}" "${disk_array[@]}" 3>&1 1>&2 2>&3) || return 1
         [[ "$disk" = "/dev/nvm"* ]] && boot_partition="${disk}p1" || boot_partition="${disk}1"
         [[ "$disk" = "/dev/nvm"* ]] && root_partition="${disk}p2" || root_partition="${disk}2"
 
@@ -285,8 +284,12 @@ set_config() {
 
     "swap")
         swap_size="$(($(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 / 1024 + 1))"
-        swap_size=$(whiptail --title "$TUI_TITLE" --inputbox "\nEnter Swap Size in GB" "$TUI_HEIGHT" "$TUI_WIDTH" "$swap_size" 3>&1 1>&2 2>&3)
-        [ -z "$swap_size" ] && swap_size="0"
+        swap_size=$(whiptail --title "$TUI_TITLE" --inputbox "\nEnter Swap Size in GB (0 = disable)" "$TUI_HEIGHT" "$TUI_WIDTH" "$swap_size" 3>&1 1>&2 2>&3) || return 1
+        if [ -z "$swap_size" ]; then
+            set_config_entry "ARCH_SWAP_SIZE"
+            whiptail --title "$TUI_TITLE" --msgbox "Error: Swap is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+            return 1
+        fi
         set_config_entry "ARCH_SWAP_SIZE" "$swap_size"
         ;;
 
@@ -296,12 +299,12 @@ set_config() {
         ;;
 
     "multilib")
-        multilib_enabled=$(whiptail --title "$TUI_TITLE" --menu "\nEnable MultiLib (32 Bit Support)?" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" 2 "true" "Enable" "false" "Disable" 3>&1 1>&2 2>&3)
+        multilib_enabled="false" && whiptail --title "$TUI_TITLE" --yesno "Enable MultiLib (32 Bit Support)?" "$TUI_HEIGHT" "$TUI_WIDTH" && multilib_enabled="true"
         set_config_entry "ARCH_MULTILIB_ENABLED" "$multilib_enabled"
         ;;
 
     "aur")
-        aur_enabled=$(whiptail --title "$TUI_TITLE" --menu "\nEnable Paru AUR Helper?" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" 2 "true" "Enable" "false" "Disable" 3>&1 1>&2 2>&3)
+        aur_enabled="false" && whiptail --title "$TUI_TITLE" --yesno "Enable Paru AUR Helper?" "$TUI_HEIGHT" "$TUI_WIDTH" && aur_enabled="true"
         set_config_entry "ARCH_AUR_ENABLED" "$aur_enabled"
         ;;
 
@@ -311,7 +314,7 @@ set_config() {
             set_config_entry "ENVIRONMENT_DESKTOP" "none"
             set_config_entry "ENVIRONMENT_DRIVER" "none"
         else
-            [ ! -f "${ENVIRONMENT_DIR}/${environment}.sh" ] && echo -e "ERROR: '${ENVIRONMENT_DIR}/${environment}.sh' not found" && exit 1
+            [ ! -f "${ENVIRONMENT_DIR}/${environment}.sh" ] && echo "ERROR: '${ENVIRONMENT_DIR}/${environment}.sh' not found" && exit 1
             mapfile -t desktop_graphics_driver_list <<<"$(bash -c "${ENVIRONMENT_DIR}/${environment}.sh --list-driver")" || exit 1
             driver=$(whiptail --title "$TUI_TITLE" --menu "\nSelect Driver" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#desktop_graphics_driver_list[@]} / 2 + 1) + (${#desktop_graphics_driver_list[@]} % 2)))" "none" "None" "${desktop_graphics_driver_list[@]}" 3>&1 1>&2 2>&3)
             set_config_entry "ENVIRONMENT_DESKTOP" "$environment"
@@ -320,7 +323,7 @@ set_config() {
         ;;
 
     *)
-        echo -e "ERROR: Meny config entry ${1} not found" && exit 1
+        echo "ERROR: Menu config entry ${1} not found" && exit 1
         ;;
 
     esac
@@ -331,11 +334,11 @@ set_config() {
 # /////////////////////////////////////////////////////
 
 # Check UEFI support
-[ ! -d /sys/firmware/efi ] && echo -e "ERROR: BIOS not supported" && exit 1
+[ ! -d /sys/firmware/efi ] && echo "ERROR: BIOS not supported" && exit 1
 
 # Download arch-install.sh
 if ! curl -Lfs "${ARCH_INSTALL_SCRIPT_URL}" -o "$ARCH_INSTALL_SCRIPT"; then
-    echo -e "ERROR: Downloading '${ARCH_INSTALL_SCRIPT_URL}'" && exit 1
+    echo "ERROR: Downloading '${ARCH_INSTALL_SCRIPT_URL}'" && exit 1
 else
     # Make executable
     chmod +x "$ARCH_INSTALL_SCRIPT" || exit 1
@@ -397,7 +400,8 @@ while (true); do
         ;;
 
     *)
-        set_config "$menu_selection" || continue
+        # Open config menu and set property
+        open_config_menu_and_set_property "$menu_selection" || continue
         ;;
 
     esac

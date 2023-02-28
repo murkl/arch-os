@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
 REPO_BASE_URL="https://raw.githubusercontent.com/murkl/arch-distro/main/"
-WORKING_DIR="/tmp/arch-distro-wrapper"
+WORKING_DIR=$(mktemp -d "/tmp/arch-distro-wrapper.XXXXXXXXXX")
 
 download_file() {
     if ! mkdir -p "$(dirname "${WORKING_DIR}/${1}")"; then
-        echo -e "ERROR: Create '$(dirname "${WORKING_DIR}/${1}")'"
+        echo "ERROR: Create '$(dirname "${WORKING_DIR}/${1}")'"
         exit 1
     fi
     if ! curl -Lfs "${REPO_BASE_URL}/${1}" -o "${WORKING_DIR}/${1}"; then
-        echo -e "ERROR: Downloading '${REPO_BASE_URL}/${1}'"
+        echo "ERROR: Downloading '${REPO_BASE_URL}/${1}'"
         exit 1
     fi
     # Make executable
