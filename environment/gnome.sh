@@ -37,6 +37,10 @@ packages+=("gnome-software-packagekit-plugin")
 packages+=("xdg-desktop-portal")
 packages+=("xdg-desktop-portal-gtk")
 packages+=("xdg-desktop-portal-gnome")
+packages+=("libappindicator-gtk3")
+packages+=("libappindicator-gtk2")
+packages+=("lib32-libindicator-gtk3")
+packages+=("lib32-libindicator-gtk2")
 packages+=("power-profiles-daemon")
 packages+=("fwupd")
 packages+=("cups")
@@ -55,19 +59,10 @@ packages+=("xdotool")
 packages+=("wmctrl")
 packages+=("sshpass")
 packages+=("man-db")
-packages+=("libappindicator-gtk3")
-packages+=("libappindicator-gtk2")
-packages+=("lib32-libindicator-gtk3")
-packages+=("lib32-libindicator-gtk2")
-packages+=("seahorse")
-packages+=("ntfs-3g")
-packages+=("exfat-utils")
 packages+=("nano-syntax-highlighting")
 
 # Networking
 packages+=("samba")
-packages+=("nfs-utils")
-packages+=("inetutils")
 packages+=("gvfs")
 packages+=("gvfs-mtp")
 packages+=("gvfs-smb")
@@ -76,6 +71,16 @@ packages+=("gvfs-afc")
 packages+=("gvfs-goa")
 packages+=("gvfs-gphoto2")
 packages+=("gvfs-google")
+packages+=("inetutils")
+
+# File Access & Archives
+packages+=("nfs-utils")
+packages+=("ntfs-3g")
+packages+=("exfat-utils")
+packages+=("p7zip")
+packages+=("zip")
+packages+=("unrar")
+packages+=("tar")
 
 # Audio
 packages+=("pipewire")
@@ -93,12 +98,6 @@ packages+=("gstreamer-vaapi")
 packages+=("rygel")
 packages+=("grilo-plugins")
 
-# Archives
-packages+=("p7zip")
-packages+=("zip")
-packages+=("unrar")
-packages+=("tar")
-
 # Libraries
 packages+=("sdl_image")
 packages+=("lib32-sdl_image")
@@ -112,6 +111,7 @@ packages+=("ttf-font-awesome")
 packages+=("lib32-fontconfig")
 
 # Apps
+packages+=("seahorse")
 packages+=("firefox")
 packages+=("geary")
 packages+=("rhythmbox")
@@ -149,6 +149,7 @@ replace_spinner_conf_value() {
     sudo sed -i "s#$1=.*#$1=$2#g" "/usr/share/plymouth/themes/spinner/spinner.plymouth" || exit 1
 }
 
+# Configure plymouth
 replace_spinner_conf_value "DialogVerticalAlignment" ".680"
 replace_spinner_conf_value "TitleVerticalAlignment" ".680"
 replace_spinner_conf_value "BackgroundStartColor" "0x2E3440"
@@ -168,6 +169,11 @@ sudo pacman -Rns --noconfirm epiphany || exit 1
 
 # /////////////////////////////////////////////////////
 
+# Enable GNOME Auto Login
+grep -qrnw /etc/gdm/custom.conf -e "AutomaticLoginEnable" || sudo sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${USER}\n\n\[security\]/g" /etc/gdm/custom.conf || exit 1
+
+# /////////////////////////////////////////////////////
+
 # Reduce shutdown timeout
 sudo sed -i 's/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=5s/' /etc/systemd/system.conf || exit 1
 
@@ -175,11 +181,6 @@ sudo sed -i 's/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=5s/' /etc/system
 
 # Enable Bluetooth Experimental D-Bus (fixing issues in systemd journal)
 sudo sed -i 's/^#Experimental = .*/Experimental = true/' /etc/bluetooth/main.conf || exit 1
-
-# /////////////////////////////////////////////////////
-
-# Enable GNOME Auto Login
-grep -qrnw /etc/gdm/custom.conf -e "AutomaticLoginEnable" || sudo sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${USER}\n\n\[security\]/g" /etc/gdm/custom.conf || exit 1
 
 # /////////////////////////////////////////////////////
 
@@ -204,8 +205,7 @@ mkdir -p "/etc/samba/"
 
 # /////////////////////////////////////////////////////
 
-# Set X11 Layouts
-
+# Set X11 keyboard layout
 {
     echo 'Section "InputClass"'
     echo '    Identifier "keyboard"'
@@ -216,6 +216,7 @@ mkdir -p "/etc/samba/"
     echo 'EndSection'
 } | sudo tee /etc/X11/xorg.conf.d/00-keyboard.conf &>/dev/null || exit 1
 
+# Set X11 mouse layout
 {
     echo 'Section "InputClass"'
     echo '    Identifier "mouse"'
@@ -226,6 +227,7 @@ mkdir -p "/etc/samba/"
     echo 'EndSection'
 } | sudo tee /etc/X11/xorg.conf.d/50-mouse.conf &>/dev/null || exit 1
 
+# Set X11 touchpad layout
 {
     echo 'Section "InputClass"'
     echo '    Identifier "touchpad"'
@@ -266,6 +268,10 @@ if [ "$ENVIRONMENT_DRIVER" = "intel-hd" ]; then
     packages+=("intel-media-driver")
     packages+=("libva-intel-driver")
     packages+=("libva-utils")
+    packages+=("virtualgl")
+    packages+=("lib32-virtualgl")
+    packages+=("gamemode")
+    packages+=("lib32-gamemode")
 
     # Install packages
     sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
