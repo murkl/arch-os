@@ -262,7 +262,7 @@ if [ "$ENVIRONMENT_DRIVER" = "intel-hd" ]; then
 
     # Intel Driver
     packages=()
-    packages+=("xf86-video-intel")
+    #packages+=("xf86-video-intel") # Not recommended
     packages+=("vulkan-intel")
     packages+=("lib32-vulkan-intel")
     packages+=("intel-media-driver")
@@ -327,7 +327,7 @@ if [ "$ENVIRONMENT_DRIVER" = "nvidia-optimus" ]; then
     packages=()
 
     # Intel Driver
-    packages+=("xf86-video-intel")
+    #packages+=("xf86-video-intel") # Not recommended
     packages+=("vulkan-intel")
     packages+=("lib32-vulkan-intel")
     packages+=("intel-media-driver")
