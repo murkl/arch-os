@@ -387,3 +387,8 @@ if [ "$ENVIRONMENT_DRIVER" = "nvidia-optimus" ]; then
     # GNOME: Enable X11 instead of Wayland
     sudo sed -i "s/^#WaylandEnable=false/WaylandEnable=false/g" /etc/gdm/custom.conf || exit 1
 fi
+
+# /////////////////////////////////////////////////////
+
+# Set correct permissions
+sudo chown -R "$USER":"$USER" "/home/${USER}" || exit 1
