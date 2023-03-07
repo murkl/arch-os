@@ -51,7 +51,6 @@ packages+=("lib32-mesa")
 packages+=("vulkan-tools")
 packages+=("vulkan-icd-loader")
 packages+=("lib32-vulkan-icd-loader")
-packages+=("xf86-input-synaptics")
 
 # System
 packages+=("pacman-contrib")
