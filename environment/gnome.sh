@@ -72,7 +72,7 @@ packages+=("gvfs-gphoto2")
 packages+=("gvfs-google")
 packages+=("inetutils")
 
-# File Access & Archives
+# File Access & Archives (https://wiki.archlinux.org/title/File_systems)
 packages+=("nfs-utils")
 packages+=("ntfs-3g")
 packages+=("exfat-utils")
@@ -110,10 +110,8 @@ packages+=("ttf-font-awesome")
 packages+=("lib32-fontconfig")
 
 # Apps
-packages+=("seahorse")
-packages+=("firefox")
 packages+=("geary")
-packages+=("rhythmbox")
+packages+=("seahorse")
 
 sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
 
@@ -159,12 +157,6 @@ sudo sed -i "s/base systemd autodetect/base systemd sd-plymouth autodetect/g" /e
 
 # Rebuild
 sudo mkinitcpio -P || exit 1
-
-# /////////////////////////////////////////////////////
-
-# Remove packages
-sudo pacman -Rns --noconfirm gnome-music || exit 1
-sudo pacman -Rns --noconfirm epiphany || exit 1
 
 # /////////////////////////////////////////////////////
 
