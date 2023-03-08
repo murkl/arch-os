@@ -1,9 +1,7 @@
 <h1 align="center">Arch Linux Distro</h1>
 
 <div align="center">
-  <p>
-    <img src="screenshots/arch-setup.png" />
-  </p>
+  <p><img src="screenshots/arch-setup.png" /></p>
   <p>
     <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
     <img src="https://img.shields.io/badge/LICENSE-MIT-blue?style=for-the-badge">
@@ -47,7 +45,7 @@ This script installs an encrypted and minimal version of Arch Linux with optiona
 
 # Additional Customization
 
-<img  src="screenshots/desktop.jpg" />
+<p><img  src="screenshots/desktop.jpg" /></p>
 
 If you prefer, you can make these customizations manually. This is not part of the installation.
 
@@ -72,6 +70,8 @@ If you prefer, you can make these customizations manually. This is not part of t
 - Libadwaita Customization Tool: https://github.com/GradienceTeam/Gradience
 
 # Manual Usage
+
+<p><img  src="screenshots/arch-install.png" /></p>
 
 The script `arch-install.sh` must be executed after booting from latest [Arch ISO](https://www.archlinux.de/download).
 
@@ -164,7 +164,7 @@ exit 0
 
 ## Technical Info
 
-<img src="screenshots/neofetch.png" />
+<p><img src="screenshots/neofetch.png" /></p>
 
 ### Packages
 
