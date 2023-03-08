@@ -24,7 +24,7 @@
 
 # Usage
 
-This script must be executed after booting from latest [Arch ISO](https://www.archlinux.de/download). For total automation including TUI setup configuration, have a look at: [Arch Distro](https://github.com/murkl/arch-distro)
+This script must be executed after booting from latest [Arch ISO](https://www.archlinux.de/download). For total automation including TUI setup configuration, have a look at: [Arch Distro](../../docs/README.md)
 
 If the given config or script in arguments starts with `http://` or `https://`, the regarding file will automatically downloaded by the script. You can optionally use multiple user scripts which will invoked in the last installation step. Add the `-f` argument to prevent the script from asking to continue the installation (useful when used by an auto installer script).
 
