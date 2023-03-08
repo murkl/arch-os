@@ -10,7 +10,7 @@
   </p>
 </div>
 
-This script installs an encrypted and minimal version of Arch Linux with optionally paru preinstalled as AUR Helper and Multilib enabled. In addition, you can select GNOME as Desktop Environment. For installing Arch Linux, this script is used: [Arch Install](https://github.com/murkl/arch-install)
+This script installs an encrypted and minimal version of Arch Linux with optionally paru preinstalled as AUR Helper and Multilib enabled. In addition, you can select GNOME as Desktop Environment. For installing Arch Linux, this script is used: [Arch Install](../arch-install/docs/README.md)
 
 # Features
 
@@ -25,7 +25,7 @@ This script installs an encrypted and minimal version of Arch Linux with optiona
 - Disk Encryption (optional)
 - Multilib & Paru AUR Helper (optional)
 - Only UEFI Support
-- More information: [Arch Install](https://github.com/murkl/arch-install)
+- More information: [Arch Install](../arch-install/docs/README.md)
 
 # Step by Step Installation
 
