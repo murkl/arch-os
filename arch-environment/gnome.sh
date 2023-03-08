@@ -21,7 +21,7 @@ fi
 # /////////////////////////////////////////////////////
 
 # Assets
-PLYMOUTH_LOGO_URL="https://raw.githubusercontent.com/murkl/arch-distro/main/environment/assets/plymouth.png"
+PLYMOUTH_LOGO_URL="https://raw.githubusercontent.com/murkl/arch-distro/main/arch-environment/assets/plymouth.png"
 
 # /////////////////////////////////////////////////////
 
