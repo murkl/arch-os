@@ -91,14 +91,14 @@ load_config_and_check_state() {
     unset ARCH_VCONSOLE_FONT
     unset ARCH_MULTILIB_ENABLED
     unset ARCH_AUR_ENABLED
-    unset ENVIRONMENT_X11_KEYBOARD_LAYOUT
-    unset ENVIRONMENT_X11_KEYBOARD_VARIANT
-    unset ENVIRONMENT_DESKTOP
-    unset ENVIRONMENT_DRIVER
     unset ARCH_DOCKER_ENABLED
     unset ARCH_PKGFILE_ENABLED
     unset ARCH_WATCHDOG_ENABLED
     unset ARCH_SHUTDOWN_TIMEOUT_SEC
+    unset ENVIRONMENT_X11_KEYBOARD_LAYOUT
+    unset ENVIRONMENT_X11_KEYBOARD_VARIANT
+    unset ENVIRONMENT_DESKTOP
+    unset ENVIRONMENT_DRIVER
 
     # Load config if exists
     [ -f "$ARCH_INSTALL_CONFIG" ] && source "$ARCH_INSTALL_CONFIG"
@@ -175,6 +175,14 @@ load_config_and_check_state() {
         return 1
     fi
 
+    # Check Docker
+    if [ -z "$ARCH_DOCKER_ENABLED" ]; then
+        [ "$show_promt" = "true" ] && whiptail --title "$TUI_TITLE" --msgbox "Docker config is missing" "$TUI_HEIGHT" "$TUI_WIDTH"
+        set_config_entry "ARCH_DOCKER_ENABLED"
+        TUI_POSITION="docker"
+        return 1
+    fi
+
     # Check Environment
     if [ -z "$ENVIRONMENT_DESKTOP" ] || [ -z "$ENVIRONMENT_DRIVER" ]; then
         [ "$show_promt" = "true" ] && whiptail --title "$TUI_TITLE" --msgbox "Environment config is missing" "$TUI_HEIGHT" "$TUI_WIDTH"
@@ -184,8 +192,7 @@ load_config_and_check_state() {
     fi
 
     # Check & set defaults
-    if [ -z "$ARCH_DOCKER_ENABLED" ] || [ -z "$ARCH_PKGFILE_ENABLED" ] || [ -z "$ARCH_WATCHDOG_ENABLED" ] || [ -z "$ARCH_SHUTDOWN_TIMEOUT_SEC" ]; then
-        set_config_entry "ARCH_DOCKER_ENABLED" "false"
+    if [ -z "$ARCH_PKGFILE_ENABLED" ] || [ -z "$ARCH_WATCHDOG_ENABLED" ] || [ -z "$ARCH_SHUTDOWN_TIMEOUT_SEC" ]; then
         set_config_entry "ARCH_PKGFILE_ENABLED" "true"
         set_config_entry "ARCH_WATCHDOG_ENABLED" "false"
         set_config_entry "ARCH_SHUTDOWN_TIMEOUT_SEC" "5s"
@@ -320,6 +327,11 @@ open_config_menu_and_set_property() {
         set_config_entry "ARCH_AUR_ENABLED" "$aur_enabled"
         ;;
 
+    "docker")
+        docker_enabled="false" && whiptail --title "$TUI_TITLE" --yesno "Enable Docker?" "$TUI_HEIGHT" "$TUI_WIDTH" && docker_enabled="true"
+        set_config_entry "ARCH_DOCKER_ENABLED" "$docker_enabled"
+        ;;
+
     "environment")
         environment=$(whiptail --title "$TUI_TITLE" --menu "\nSelect Environment" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#ENVIRONMENT_LIST[@]} / 2 + 1) + (${#ENVIRONMENT_LIST[@]} % 2)))" "none" "None" "${ENVIRONMENT_LIST[@]}" 3>&1 1>&2 2>&3)
         if [ "$environment" = "none" ]; then
@@ -373,6 +385,7 @@ while (true); do
     menu_entry_array+=("microcode") && menu_entry_array+=("$(print_config_menu_entry "Microcode" "${ARCH_MICROCODE}")")
     menu_entry_array+=("multilib") && menu_entry_array+=("$(print_config_menu_entry "MultiLib" "${ARCH_MULTILIB_ENABLED}")")
     menu_entry_array+=("aur") && menu_entry_array+=("$(print_config_menu_entry "AUR" "${ARCH_AUR_ENABLED}")")
+    menu_entry_array+=("docker") && menu_entry_array+=("$(print_config_menu_entry "Docker" "${ARCH_DOCKER_ENABLED}")")
     menu_entry_array+=("environment") && menu_entry_array+=("$(print_config_menu_entry "Environment" "${ENVIRONMENT_DESKTOP}$([ -n "${ENVIRONMENT_DRIVER}" ] && [ "${ENVIRONMENT_DRIVER}" != 'none' ] && echo ", ${ENVIRONMENT_DRIVER}")")")
     menu_entry_array+=("space") && menu_entry_array+=("")
     menu_entry_array+=("install") && menu_entry_array+=("> Start Installation")
