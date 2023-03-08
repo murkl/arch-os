@@ -465,9 +465,6 @@ echo -e "\n## Enable sudo password feedback\nDefaults pwfeedback" >>/mnt/etc/sud
 printf "%s\n%s" "${ARCH_PASSWORD}" "${ARCH_PASSWORD}" | arch-chroot /mnt passwd &>/dev/null || exit 1
 printf "%s\n%s" "${ARCH_PASSWORD}" "${ARCH_PASSWORD}" | arch-chroot /mnt passwd "$ARCH_USERNAME" &>/dev/null || exit 1
 
-# Add docker group
-[ "$ARCH_DOCKER_ENABLED" = 'true' ] && { arch-chroot /mnt groupadd docker || exit 1; }
-
 # Add user to docker group
 [ "$ARCH_DOCKER_ENABLED" = 'true' ] && { arch-chroot /mnt usermod -aG docker "$ARCH_USERNAME" || exit 1; }
 
