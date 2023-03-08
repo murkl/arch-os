@@ -410,7 +410,7 @@ while (true); do
         script_args="" && [ "$ENVIRONMENT_DESKTOP" != "none" ] && script_args="${script_args} -s ${ENVIRONMENT_DIR}/${ENVIRONMENT_DESKTOP}.sh"
 
         # Execute arch-install.sh
-        bash -c "../arch-install/arch-install.sh -f -c ${ARCH_INSTALL_CONFIG} ${script_args}" || exit 1
+        bash -c "${WORKING_DIR}../arch-install/arch-install.sh -f -c ${ARCH_INSTALL_CONFIG} ${script_args}" || exit 1
         exit $?
         ;;
 
