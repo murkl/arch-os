@@ -17,7 +17,7 @@ WORKING_DIR="$(cd "$(dirname "$0")" &>/dev/null && pwd)"
 # DESKTOP ENVIRONMENTS
 # /////////////////////////////////////////////////////
 
-ENVIRONMENT_DIR="${WORKING_DIR}/../arch-environment"
+ENVIRONMENT_DIR="${WORKING_DIR}/../environment"
 ENVIRONMENT_LIST=()
 ENVIRONMENT_LIST+=("gnome") && ENVIRONMENT_LIST+=("GNOME Desktop")
 
@@ -410,7 +410,7 @@ while (true); do
         script_args="" && [ "$ENVIRONMENT_DESKTOP" != "none" ] && script_args="${script_args} -s ${ENVIRONMENT_DIR}/${ENVIRONMENT_DESKTOP}.sh"
 
         # Execute arch-install.sh
-        bash -c "${WORKING_DIR}/../arch-install/arch-install.sh -f -c ${ARCH_INSTALL_CONFIG} ${script_args}" || exit 1
+        bash -c "${WORKING_DIR}/../arch-install.sh -f -c ${ARCH_INSTALL_CONFIG} ${script_args}" || exit 1
         exit $?
         ;;
 
