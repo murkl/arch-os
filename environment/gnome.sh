@@ -10,55 +10,55 @@ fi
 
 # /////////////////////////////////////////////////////
 
+# Check required variables
+[ -z "$ARCH_USERNAME" ] && echo "env ARCH_USERNAME is missing" && exit 1
+[ -z "$ARCH_WATCHDOG_ENABLED" ] && echo "env ARCH_WATCHDOG_ENABLED is missing" && exit 1
+[ -z "$ARCH_MULTILIB_ENABLED" ] && echo "env ARCH_MULTILIB_ENABLED is missing" && exit 1
+[ -z "$ENVIRONMENT_X11_KEYBOARD_LAYOUT" ] && echo "env ENVIRONMENT_X11_KEYBOARD_LAYOUT is missing" && exit 1
+[ -z "$ENVIRONMENT_X11_KEYBOARD_VARIANT" ] && echo "env ENVIRONMENT_X11_KEYBOARD_VARIANT is missing" && exit 1
+[ -z "$ENVIRONMENT_DRIVER" ] && echo "env ENVIRONMENT_DRIVER is missing" && exit 1
+
+# /////////////////////////////////////////////////////
+
 # Assets
 PLYMOUTH_LOGO_URL="https://raw.githubusercontent.com/murkl/arch-distro/main/environment/assets/plymouth.png"
 
 # /////////////////////////////////////////////////////
 
-# Check required variables
-[ -z "$ENVIRONMENT_X11_KEYBOARD_LAYOUT" ] && echo "env ENVIRONMENT_X11_KEYBOARD_LAYOUT is missing" && exit 1
-[ -z "$ENVIRONMENT_X11_KEYBOARD_VARIANT" ] && echo "env ENVIRONMENT_X11_KEYBOARD_VARIANT is missing" && exit 1
-
-# /////////////////////////////////////////////////////
-
-# Enable Multilib
-sudo sed -i "/\[multilib\]/,/Include/"'s/^#//' /etc/pacman.conf || exit 1
-
-# /////////////////////////////////////////////////////
-
-# Install Packages
+# Install packages
 packages=()
 
-# GNOME
-packages+=("gnome")
-packages+=("gnome-tweaks")
-packages+=("gnome-themes-extra")
-packages+=("gnome-software-packagekit-plugin")
+# GNOME base
+packages+=("gnome")                            # GNOME core
+packages+=("gnome-tweaks")                     # GNOME tweaks
+packages+=("gnome-themes-extra")               # GNOME themes
+packages+=("gnome-software-packagekit-plugin") # GNOME software center support
+packages+=("power-profiles-daemon")            # GNOME power profile support
+packages+=("fwupd")                            # GNOME security settings
+packages+=("rygel")                            # GNOME media sharing support
+packages+=("cups")                             # GNOME printer support
+
+# GNOME screensharing, flatpak & pipewire support
 packages+=("xdg-desktop-portal")
 packages+=("xdg-desktop-portal-gtk")
 packages+=("xdg-desktop-portal-gnome")
-packages+=("libappindicator-gtk3")
-packages+=("libappindicator-gtk2")
-packages+=("lib32-libindicator-gtk3")
-packages+=("lib32-libindicator-gtk2")
-packages+=("power-profiles-daemon")
-packages+=("fwupd")
-packages+=("cups")
+
+# GNOME Indicator support
+packages+=("libappindicator-gtk2") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-libindicator-gtk2")
+packages+=("libappindicator-gtk3") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-libindicator-gtk3")
 
 # Driver
-packages+=("mesa")
-packages+=("lib32-mesa")
+packages+=("mesa") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-mesa")
+packages+=("vulkan-icd-loader") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vulkan-icd-loader")
+packages+=("virtualgl") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-virtualgl")
+packages+=("gamemode") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-gamemode")
 packages+=("vulkan-tools")
-packages+=("vulkan-icd-loader")
-packages+=("lib32-vulkan-icd-loader")
 
-# System
-packages+=("pacman-contrib")
-packages+=("xdotool")
-packages+=("wmctrl")
-packages+=("sshpass")
-packages+=("man-db")
-packages+=("nano-syntax-highlighting")
+# Audio
+packages+=("pipewire")       # Pipewire
+packages+=("pipewire-pulse") # Replacement for pulse
+packages+=("pipewire-jack")  # Replacement for jack
+packages+=("wireplumber")    # Pipewire session manager
 
 # Networking
 packages+=("samba")
@@ -70,9 +70,13 @@ packages+=("gvfs-afc")
 packages+=("gvfs-goa")
 packages+=("gvfs-gphoto2")
 packages+=("gvfs-google")
-packages+=("inetutils")
 
-# File Access & Archives (https://wiki.archlinux.org/title/File_systems)
+# System
+packages+=("pacman-contrib") # Pacman tools
+packages+=("man-db")         # Manual page
+packages+=("inetutils")      # Internet tools
+
+# Access Tools & Archives (https://wiki.archlinux.org/title/File_systems)
 packages+=("nfs-utils")
 packages+=("ntfs-3g")
 packages+=("exfat-utils")
@@ -81,12 +85,6 @@ packages+=("zip")
 packages+=("unrar")
 packages+=("tar")
 
-# Audio
-packages+=("pipewire")
-packages+=("wireplumber")
-packages+=("pipewire-pulse")
-packages+=("pipewire-jack")
-
 # Codecs
 packages+=("gst-libav")
 packages+=("gst-plugin-pipewire")
@@ -94,53 +92,52 @@ packages+=("gst-plugins-good")
 packages+=("gst-plugins-bad")
 packages+=("gst-plugins-ugly")
 packages+=("gstreamer-vaapi")
-packages+=("rygel")
-packages+=("grilo-plugins")
 
 # Libraries
-packages+=("sdl_image")
-packages+=("lib32-sdl_image")
+packages+=("sdl_image") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-sdl_image")
 
 # Fonts
+packages+=("fontconfig") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-fontconfig")
 packages+=("ttf-dejavu")
 packages+=("ttf-liberation")
+packages+=("ttf-font-awesome")
 packages+=("noto-fonts")
 packages+=("noto-fonts-emoji")
-packages+=("ttf-font-awesome")
-packages+=("lib32-fontconfig")
 
 # Apps
-packages+=("geary")
-packages+=("seahorse")
+packages+=("seahorse") # Keyring
+packages+=("geary")    # E-Mail
 
 sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
 
 # /////////////////////////////////////////////////////
 
 # Install GNOME browser connector
-git clone https://aur.archlinux.org/gnome-browser-connector.git /tmp/gnome-browser-connector || exit 1
-cd /tmp/gnome-browser-connector || exit 1
+repo_tmp=$(mktemp -d "/tmp/gnome-browser-connector.XXXXXXXXXX")
+git clone https://aur.archlinux.org/gnome-browser-connector.git "$repo_tmp" || exit 1
+cd "$repo_tmp" || exit 1
 yes | LC_ALL=en_US.UTF-8 makepkg -sif || exit 1
-cd && rm -rf /tmp/gnome-browser-connector || exit 1
+cd && rm -rf "$repo_tmp" || exit 1
 
 # /////////////////////////////////////////////////////
 
 # Install Plymouth
-git clone https://aur.archlinux.org/plymouth.git /tmp/plymouth || exit 1
-cd /tmp/plymouth || exit 1
+repo_tmp=$(mktemp -d "/tmp/plymouth.XXXXXXXXXX")
+git clone https://aur.archlinux.org/plymouth.git "$repo_tmp" || exit 1
+cd "$repo_tmp" || exit 1
 yes | LC_ALL=en_US.UTF-8 makepkg -sif || exit 1
-cd && rm -rf /tmp/plymouth || exit 1
+cd && rm -rf "$repo_tmp" || exit 1
 
 # Install Plymouth (GDM)
-git clone https://aur.archlinux.org/gdm-plymouth.git /tmp/gdm-plymouth || exit 1
-cd /tmp/gdm-plymouth || exit 1
+repo_tmp=$(mktemp -d "/tmp/gdm-plymouth.XXXXXXXXXX")
+git clone https://aur.archlinux.org/gdm-plymouth.git "$repo_tmp" || exit 1
+cd "$repo_tmp" || exit 1
 sed -i 's/^options=(debug)/options=(!debug)/' PKGBUILD || exit 1
 yes | LC_ALL=en_US.UTF-8 makepkg -sif || exit 1
-cd && rm -rf /tmp/gdm-plymouth || exit 1
+cd && rm -rf "$repo_tmp" || exit 1
 
-# Download plymouth watermark
-curl -Lfs "$PLYMOUTH_LOGO_URL" >"/tmp/plymouth-watermark.png" || exit 1
-sudo cp -f "/tmp/plymouth-watermark.png" "/usr/share/plymouth/themes/spinner/watermark.png" || exit 1
+# Download Plymouth watermark
+sudo curl -Lfs "$PLYMOUTH_LOGO_URL" -o "/usr/share/plymouth/themes/spinner/watermark.png" || exit 1
 
 replace_spinner_conf_value() {
     sudo sed -i "s#$1=.*#$1=$2#g" "/usr/share/plymouth/themes/spinner/spinner.plymouth" || exit 1
@@ -160,29 +157,24 @@ sudo mkinitcpio -P || exit 1
 
 # /////////////////////////////////////////////////////
 
-# Enable GNOME Auto Login
-grep -qrnw /etc/gdm/custom.conf -e "AutomaticLoginEnable" || sudo sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${USER}\n\n\[security\]/g" /etc/gdm/custom.conf || exit 1
+# Enable GNOME auto login
+grep -qrnw /etc/gdm/custom.conf -e "AutomaticLoginEnable" || sudo sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_USERNAME}\n\n\[security\]/g" /etc/gdm/custom.conf || exit 1
 
 # /////////////////////////////////////////////////////
 
-# Reduce shutdown timeout
-sudo sed -i 's/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=5s/' /etc/systemd/system.conf || exit 1
-
-# /////////////////////////////////////////////////////
-
-# Enable Bluetooth Experimental D-Bus (fixing issues in systemd journal)
+# Enable Bluetooth experimental D-Bus (fixing issues in systemd journal)
 sudo sed -i 's/^#Experimental = .*/Experimental = true/' /etc/bluetooth/main.conf || exit 1
 
 # /////////////////////////////////////////////////////
 
-# Nano Colors
-grep -qrnw /etc/nanorc -e 'include "/usr/share/nano-syntax-highlighting/\*.nanorc"' || echo -e '\ninclude "/usr/share/nano-syntax-highlighting/*.nanorc"' | sudo tee -a /etc/nanorc &>/dev/null || exit 1
+# Git credentials
+mkdir -p "/home/${ARCH_USERNAME}/.config/git" && touch "/home/${ARCH_USERNAME}/.config/git/config" || exit 1
+git config --global credential.helper /usr/lib/git-core/git-credential-libsecret || exit 1
 
 # /////////////////////////////////////////////////////
 
-# Git Credentials
-mkdir -p "/home/$USER/.config/git" && touch "/home/$USER/.config/git/config" || exit 1
-git config --global credential.helper /usr/lib/git-core/git-credential-libsecret || exit 1
+# Set correct permissions
+sudo chown -R "$ARCH_USERNAME":"$ARCH_USERNAME" "/home/${ARCH_USERNAME}" || exit 1
 
 # /////////////////////////////////////////////////////
 
@@ -253,16 +245,12 @@ if [ "$ENVIRONMENT_DRIVER" = "intel-hd" ]; then
 
     # Intel Driver
     packages=()
-    #packages+=("xf86-video-intel") # Not recommended
-    packages+=("vulkan-intel")
-    packages+=("lib32-vulkan-intel")
+
+    # packages+=("xf86-video-intel") # Not recommended
+    packages+=("vulkan-intel") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vulkan-intel")
     packages+=("intel-media-driver")
     packages+=("libva-intel-driver")
     packages+=("libva-utils")
-    packages+=("virtualgl")
-    packages+=("lib32-virtualgl")
-    packages+=("gamemode")
-    packages+=("lib32-gamemode")
 
     # Install packages
     sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
@@ -284,14 +272,9 @@ if [ "$ENVIRONMENT_DRIVER" = "nvidia" ]; then
     packages=()
     packages+=("xorg-xrandr")
     packages+=("nvidia")
-    packages+=("lib32-nvidia-utils")
     packages+=("nvidia-settings")
-    packages+=("opencl-nvidia")
-    packages+=("lib32-opencl-nvidia")
-    packages+=("virtualgl")
-    packages+=("lib32-virtualgl")
-    packages+=("gamemode")
-    packages+=("lib32-gamemode")
+    packages+=("nvidia-utils") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-nvidia-utils")
+    packages+=("opencl-nvidia") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-opencl-nvidia")
 
     # Install packages
     sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
@@ -303,7 +286,8 @@ if [ "$ENVIRONMENT_DRIVER" = "nvidia" ]; then
     sudo sed -i "s/MODULES=()/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /etc/mkinitcpio.conf || exit 1
 
     # DRM kernel mode setting
-    sudo sed -i "s/nowatchdog quiet/nowatchdog nvidia_drm.modeset=1 quiet/g" /boot/loader/entries/arch.conf || exit 1
+    [ "$ARCH_WATCHDOG_ENABLED" = "true" ] && { sudo sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 quiet/g" /boot/loader/entries/arch.conf || exit 1; }
+    [ "$ARCH_WATCHDOG_ENABLED" = "false" ] && { sudo sed -i "s/nowatchdog quiet/nowatchdog nvidia_drm.modeset=1 quiet/g" /boot/loader/entries/arch.conf || exit 1; }
 
     # Rebuild
     sudo mkinitcpio -P || exit 1
@@ -318,9 +302,8 @@ if [ "$ENVIRONMENT_DRIVER" = "nvidia-optimus" ]; then
     packages=()
 
     # Intel Driver
-    #packages+=("xf86-video-intel") # Not recommended
-    packages+=("vulkan-intel")
-    packages+=("lib32-vulkan-intel")
+    # packages+=("xf86-video-intel") # Not recommended
+    packages+=("vulkan-intel") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vulkan-intel")
     packages+=("intel-media-driver")
     packages+=("libva-intel-driver")
     packages+=("libva-utils")
@@ -328,14 +311,9 @@ if [ "$ENVIRONMENT_DRIVER" = "nvidia-optimus" ]; then
     # NVIDIA Driver
     packages+=("xorg-xrandr")
     packages+=("nvidia")
-    packages+=("lib32-nvidia-utils")
     packages+=("nvidia-settings")
-    packages+=("opencl-nvidia")
-    packages+=("lib32-opencl-nvidia")
-    packages+=("virtualgl")
-    packages+=("lib32-virtualgl")
-    packages+=("gamemode")
-    packages+=("lib32-gamemode")
+    packages+=("nvidia-utils") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-nvidia-utils")
+    packages+=("opencl-nvidia") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-opencl-nvidia")
 
     # Install packages
     sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
@@ -344,7 +322,8 @@ if [ "$ENVIRONMENT_DRIVER" = "nvidia-optimus" ]; then
     sudo sed -i "s/MODULES=()/MODULES=(i915 nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /etc/mkinitcpio.conf || exit 1
 
     # DRM kernel mode setting (enable prime sync and fix screen-tearing issues)
-    sudo sed -i "s/nowatchdog quiet/nowatchdog nvidia_drm.modeset=1 quiet/g" /boot/loader/entries/arch.conf || exit 1
+    [ "$ARCH_WATCHDOG_ENABLED" = "true" ] && { sudo sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 quiet/g" /boot/loader/entries/arch.conf || exit 1; }
+    [ "$ARCH_WATCHDOG_ENABLED" = "false" ] && { sudo sed -i "s/nowatchdog quiet/nowatchdog nvidia_drm.modeset=1 quiet/g" /boot/loader/entries/arch.conf || exit 1; }
 
     # Rebuild
     sudo mkinitcpio -P || exit 1
@@ -384,8 +363,3 @@ if [ "$ENVIRONMENT_DRIVER" = "nvidia-optimus" ]; then
     # GNOME: Enable X11 instead of Wayland
     sudo sed -i "s/^#WaylandEnable=false/WaylandEnable=false/g" /etc/gdm/custom.conf || exit 1
 fi
-
-# /////////////////////////////////////////////////////
-
-# Set correct permissions
-sudo chown -R "$USER":"$USER" "/home/${USER}" || exit 1

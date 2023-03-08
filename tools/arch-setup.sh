@@ -95,6 +95,9 @@ load_config_and_check_state() {
     unset ENVIRONMENT_X11_KEYBOARD_VARIANT
     unset ENVIRONMENT_DESKTOP
     unset ENVIRONMENT_DRIVER
+    unset ARCH_WATCHDOG_ENABLED
+    unset ARCH_SHUTDOWN_TIMEOUT_SEC
+    unset ARCH_PKGFILE_ENABLED
 
     # Load config if exists
     [ -f "$ARCH_INSTALL_CONFIG" ] && source "$ARCH_INSTALL_CONFIG"
@@ -177,6 +180,13 @@ load_config_and_check_state() {
         set_config_entry "ENVIRONMENT_DESKTOP" && set_config_entry "ENVIRONMENT_DRIVER"
         TUI_POSITION="environment"
         return 1
+    fi
+
+    # Check & set defaults
+    if [ -z "$ARCH_WATCHDOG_ENABLED" ] || [ -z "$ARCH_SHUTDOWN_TIMEOUT_SEC" ] || [ -z "$ARCH_PKGFILE_ENABLED" ]; then
+        set_config_entry "ARCH_WATCHDOG_ENABLED" "false"
+        set_config_entry "ARCH_SHUTDOWN_TIMEOUT_SEC" "5s"
+        set_config_entry "ARCH_PKGFILE_ENABLED" "true"
     fi
 
     # Jump to install
