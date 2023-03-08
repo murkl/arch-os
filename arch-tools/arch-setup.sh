@@ -2,11 +2,9 @@
 # shellcheck disable=SC1090
 
 # /////////////////////////////////////////////////////
-# ARCH INSTALL
+# ARCH INSTALL CONFIG
 # /////////////////////////////////////////////////////
 
-ARCH_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/murkl/arch-install/main/arch-install.sh"
-ARCH_INSTALL_SCRIPT="/tmp/arch-install.sh"
 ARCH_INSTALL_CONFIG="/tmp/arch-install.conf"
 
 # /////////////////////////////////////////////////////
@@ -19,7 +17,7 @@ WORKING_DIR="$(cd "$(dirname "$0")" &>/dev/null && pwd)"
 # DESKTOP ENVIRONMENTS
 # /////////////////////////////////////////////////////
 
-ENVIRONMENT_DIR="${WORKING_DIR}/../environment"
+ENVIRONMENT_DIR="${WORKING_DIR}/../arch-environment"
 ENVIRONMENT_LIST=()
 ENVIRONMENT_LIST+=("gnome") && ENVIRONMENT_LIST+=("GNOME Desktop")
 
@@ -360,14 +358,6 @@ open_config_menu_and_set_property() {
 # Check UEFI support
 [ ! -d /sys/firmware/efi ] && echo "ERROR: BIOS not supported" && exit 1
 
-# Download arch-install.sh
-if ! curl -Lfs "${ARCH_INSTALL_SCRIPT_URL}" -o "$ARCH_INSTALL_SCRIPT"; then
-    echo "ERROR: Downloading '${ARCH_INSTALL_SCRIPT_URL}'" && exit 1
-else
-    # Make executable
-    chmod +x "$ARCH_INSTALL_SCRIPT" || exit 1
-fi
-
 # Open TUI menu
 while (true); do
 
@@ -420,7 +410,7 @@ while (true); do
         script_args="" && [ "$ENVIRONMENT_DESKTOP" != "none" ] && script_args="${script_args} -s ${ENVIRONMENT_DIR}/${ENVIRONMENT_DESKTOP}.sh"
 
         # Execute arch-install.sh
-        bash -c "${ARCH_INSTALL_SCRIPT} -f -c ${ARCH_INSTALL_CONFIG} ${script_args}" || exit 1
+        bash -c "../arch-install/arch-install.sh -f -c ${ARCH_INSTALL_CONFIG} ${script_args}" || exit 1
         exit $?
         ;;
 

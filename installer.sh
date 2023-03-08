@@ -18,17 +18,18 @@ download_file() {
 
 # When executed outside from Arch Live ISO
 if [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ]; then
-    download_file "tools/arch-creator.sh"
-    bash -c "${WORKING_DIR}/tools/arch-creator.sh"
+    download_file "arch-tools/arch-creator.sh"
+    bash -c "${WORKING_DIR}/arch-tools/arch-creator.sh"
     exit $?
 fi
 
 # Print welcome and choose between Arch Install & Recovery
 if whiptail --title "Arch Linux Installer" --yesno "Welcome to Arch Linux Installer!\n\nPlease choose whether you want to install Arch Linux or open Recovery to rescue your existing Arch Linux Installation." --yes-button "Install Arch" --no-button "Open Recovery" 20 80; then
-    download_file "tools/arch-setup.sh"
-    download_file "environment/gnome.sh"
-    bash -c "${WORKING_DIR}/tools/arch-setup.sh"
+    download_file "arch-install/arch-install.sh"
+    download_file "arch-environment/gnome.sh"
+    download_file "arch-tools/arch-setup.sh"
+    bash -c "${WORKING_DIR}/arch-tools/arch-setup.sh"
 else
-    download_file "tools/arch-recovery.sh"
-    bash -c "${WORKING_DIR}/tools/arch-recovery.sh"
+    download_file "arch-tools/arch-recovery.sh"
+    bash -c "${WORKING_DIR}/arch-tools/arch-recovery.sh"
 fi
