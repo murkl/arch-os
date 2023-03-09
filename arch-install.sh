@@ -536,7 +536,7 @@ print_green "> Done\n"
 # /////////////////////////////////////////////////////
 
 print_title "Remove orphaned packages"
-arch-chroot /mnt pacman -Qtdq &>/dev/null && pacman -Qtdq | pacman -Rns --noconfirm - || echo "=> No orphaned packages found"
+arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Qtdq | pacman -Rns --noconfirm - || echo "=> No orphaned packages found"' || exit 1
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
