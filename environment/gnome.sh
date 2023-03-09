@@ -21,7 +21,7 @@ fi
 # /////////////////////////////////////////////////////
 
 # Assets
-PLYMOUTH_LOGO_URL="https://raw.githubusercontent.com/murkl/arch-distro/main/arch-environment/assets/plymouth.png"
+PLYMOUTH_LOGO_URL="https://raw.githubusercontent.com/murkl/arch-distro/main/environment/assets/plymouth.png"
 
 # /////////////////////////////////////////////////////
 
@@ -137,7 +137,7 @@ yes | LC_ALL=en_US.UTF-8 makepkg -sif || exit 1
 cd && rm -rf "$repo_tmp" || exit 1
 
 # Download Plymouth watermark
-sudo curl -Lfs "$PLYMOUTH_LOGO_URL" -o "/usr/share/plymouth/themes/spinner/watermark.png" || exit 1
+sudo curl -Lf "$PLYMOUTH_LOGO_URL" -o "/usr/share/plymouth/themes/spinner/watermark.png" || exit 1
 
 replace_spinner_conf_value() {
     sudo sed -i "s#$1=.*#$1=$2#g" "/usr/share/plymouth/themes/spinner/spinner.plymouth" || exit 1
@@ -163,7 +163,7 @@ grep -qrnw /etc/gdm/custom.conf -e "AutomaticLoginEnable" || sudo sed -i "s/^\[s
 # /////////////////////////////////////////////////////
 
 # Enable Bluetooth experimental D-Bus (fixing issues in systemd journal)
-sudo sed -i 's/^#Experimental = .*/Experimental = true/' /etc/bluetooth/main.conf || exit 1
+#sudo sed -i 's/^#Experimental = .*/Experimental = true/' /etc/bluetooth/main.conf || exit 1
 
 # /////////////////////////////////////////////////////
 
