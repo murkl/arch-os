@@ -530,8 +530,13 @@ fi
 
 # /////////////////////////////////////////////////////
 
-print_title "Set User Permissions"
 arch-chroot /mnt chown -R "$ARCH_USERNAME":"$ARCH_USERNAME" "/home/${ARCH_USERNAME}" || exit 1
+print_green "> Done\n"
+
+# /////////////////////////////////////////////////////
+
+print_title "Remove orphaned packages"
+arch-chroot /mnt pacman -Qtdq &>/dev/null && pacman -Qtdq | pacman -Rns --noconfirm - || echo "=> No orphaned packages found"
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
