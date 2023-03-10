@@ -60,6 +60,7 @@ If you prefer, you can make these customizations manually. This is not part of t
 - https://extensions.gnome.org/extension/5612/focus-indicator/
 - https://extensions.gnome.org/extension/3733/tiling-assistant/
 - https://extensions.gnome.org/extension/3193/blur-my-shell/
+- https://extensions.gnome.org/extension/1873/disable-unredirect-fullscreen-windows/
 
 ## Theming
 

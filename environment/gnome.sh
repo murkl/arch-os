@@ -98,10 +98,9 @@ packages+=("sdl_image") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("
 
 # Fonts
 packages+=("fontconfig") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-fontconfig")
-packages+=("ttf-dejavu")
+packages+=("inter-font")
 packages+=("ttf-liberation")
-packages+=("ttf-font-awesome")
-packages+=("noto-fonts")
+packages+=("ttf-fira-code")
 packages+=("noto-fonts-emoji")
 
 # Apps
