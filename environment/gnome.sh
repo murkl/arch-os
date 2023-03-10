@@ -98,10 +98,10 @@ packages+=("sdl_image") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("
 
 # Fonts
 packages+=("fontconfig") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-fontconfig")
-packages+=("inter-font")
-packages+=("ttf-liberation")
-packages+=("ttf-fira-code")
+packages+=("noto-fonts")
 packages+=("noto-fonts-emoji")
+packages+=("ttf-liberation")
+packages+=("ttf-dejavu")
 
 # Apps
 packages+=("seahorse") # Keyring
