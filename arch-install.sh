@@ -289,6 +289,7 @@ packages+=("base-devel")
 packages+=("linux")
 packages+=("linux-firmware")
 packages+=("networkmanager")
+packages+=("pacman-contrib")
 packages+=("reflector")
 packages+=("git")
 packages+=("nano")
@@ -476,6 +477,7 @@ print_title "Enable Essential Services"
 arch-chroot /mnt systemctl enable NetworkManager || exit 1                                                    # Network Manager
 arch-chroot /mnt systemctl enable systemd-timesyncd.service || exit 1                                         # Sync time from internet after boot
 arch-chroot /mnt systemctl enable reflector.service || exit 1                                                 # Rank mirrors after boot
+arch-chroot /mnt systemctl enable paccache.timer || exit 1                                                    # Discard cached/unused packages weekly
 [ "$ARCH_FSTRIM_ENABLED" = 'true' ] && { arch-chroot /mnt systemctl enable fstrim.timer || exit 1; }          # SSD support
 [ "$ARCH_PKGFILE_ENABLED" = 'true' ] && { arch-chroot /mnt systemctl enable pkgfile-update.timer || exit 1; } # Pkgfile update timer
 [ "$ARCH_DOCKER_ENABLED" = 'true' ] && { arch-chroot /mnt systemctl enable docker.service || exit 1; }        # Docker

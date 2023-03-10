@@ -172,7 +172,7 @@ exit 0
 This packages will be installed during Arch installation:
 
 ```
-base base-devel linux linux-firmware networkmanager reflector git nano bash-completion [docker docker-compose] [pkgfile] [microcode_pkg]
+base base-devel linux linux-firmware networkmanager pacman-contrib reflector git nano bash-completion [docker docker-compose] [pkgfile] [microcode_pkg]
 ```
 
 ### Services
@@ -180,5 +180,5 @@ base base-devel linux linux-firmware networkmanager reflector git nano bash-comp
 This services will be enabled during Arch installation:
 
 ```
-NetworkManager systemd-timesyncd.service reflector.service [docker.service] [fstrim.timer] [pkgfile-update.timer]
+NetworkManager systemd-timesyncd.service reflector.service paccache.timer [docker.service] [fstrim.timer] [pkgfile-update.timer]
 ```
