@@ -47,13 +47,6 @@ packages+=("xdg-desktop-portal-gnome")
 packages+=("libappindicator-gtk2") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-libindicator-gtk2")
 packages+=("libappindicator-gtk3") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-libindicator-gtk3")
 
-# Driver
-packages+=("mesa") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-mesa")
-packages+=("vulkan-icd-loader") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vulkan-icd-loader")
-packages+=("virtualgl") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-virtualgl")
-packages+=("gamemode") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-gamemode")
-packages+=("vulkan-tools")
-
 # Audio
 packages+=("pipewire")       # Pipewire
 packages+=("pipewire-pulse") # Replacement for pulse
@@ -71,13 +64,10 @@ packages+=("gvfs-goa")
 packages+=("gvfs-gphoto2")
 packages+=("gvfs-google")
 
-# System
-packages+=("pacman-contrib") # Pacman tools
-packages+=("man-db")         # Manual page
-packages+=("inetutils")      # Internet tools
-
-# Access Tools & Archives (https://wiki.archlinux.org/title/File_systems)
+# Utils (https://wiki.archlinux.org/title/File_systems)
 packages+=("nfs-utils")
+packages+=("f2fs-tools")
+packages+=("udftools")
 packages+=("ntfs-3g")
 packages+=("exfat-utils")
 packages+=("p7zip")
@@ -88,24 +78,16 @@ packages+=("tar")
 # Codecs
 packages+=("gst-libav")
 packages+=("gst-plugin-pipewire")
-packages+=("gst-plugins-good")
-packages+=("gst-plugins-bad")
-packages+=("gst-plugins-ugly")
-packages+=("gstreamer-vaapi")
-
-# Libraries
-packages+=("sdl_image") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-sdl_image")
+packages+=("libdvdcss")
 
 # Fonts
-packages+=("fontconfig") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-fontconfig")
 packages+=("noto-fonts")
 packages+=("noto-fonts-emoji")
 packages+=("ttf-liberation")
 packages+=("ttf-dejavu")
 
-# Apps
-packages+=("seahorse") # Keyring
-packages+=("geary")    # E-Mail
+# E-Mail
+packages+=("geary")
 
 sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
 
@@ -244,12 +226,10 @@ if [ "$ENVIRONMENT_DRIVER" = "intel-hd" ]; then
 
     # Intel Driver
     packages=()
-
-    # packages+=("xf86-video-intel") # Not recommended
     packages+=("vulkan-intel") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vulkan-intel")
+    packages+=("gamemode") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-gamemode")
     packages+=("intel-media-driver")
     packages+=("libva-intel-driver")
-    packages+=("libva-utils")
 
     # Install packages
     sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
@@ -274,12 +254,10 @@ if [ "$ENVIRONMENT_DRIVER" = "nvidia" ]; then
     packages+=("nvidia-settings")
     packages+=("nvidia-utils") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-nvidia-utils")
     packages+=("opencl-nvidia") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-opencl-nvidia")
+    packages+=("gamemode") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-gamemode")
 
     # Install packages
     sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
-
-    # Enable Wayland Support (https://wiki.archlinux.org/title/GDM#Wayland_and_the_proprietary_NVIDIA_driver)
-    sudo ln -s /dev/null /etc/udev/rules.d/61-gdm.rules || exit 1
 
     # Early Loading
     sudo sed -i "s/MODULES=()/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /etc/mkinitcpio.conf || exit 1
@@ -290,6 +268,9 @@ if [ "$ENVIRONMENT_DRIVER" = "nvidia" ]; then
 
     # Rebuild
     sudo mkinitcpio -P || exit 1
+
+    # Enable Wayland Support (https://wiki.archlinux.org/title/GDM#Wayland_and_the_proprietary_NVIDIA_driver)
+    sudo ln -s /dev/null /etc/udev/rules.d/61-gdm.rules || exit 1
 fi
 
 # /////////////////////////////////////////////////////
@@ -300,19 +281,13 @@ if [ "$ENVIRONMENT_DRIVER" = "nvidia-optimus" ]; then
 
     packages=()
 
-    # Intel Driver
-    # packages+=("xf86-video-intel") # Not recommended
-    packages+=("vulkan-intel") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vulkan-intel")
-    packages+=("intel-media-driver")
-    packages+=("libva-intel-driver")
-    packages+=("libva-utils")
-
     # NVIDIA Driver
     packages+=("xorg-xrandr")
     packages+=("nvidia")
     packages+=("nvidia-settings")
     packages+=("nvidia-utils") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-nvidia-utils")
     packages+=("opencl-nvidia") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-opencl-nvidia")
+    packages+=("gamemode") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-gamemode")
 
     # Install packages
     sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
