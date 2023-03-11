@@ -89,6 +89,9 @@ packages+=("ttf-dejavu")
 # E-Mail
 packages+=("geary")
 
+# Guest support (only VM)
+[ "$(systemd-detect-virt)" != 'none' ] && packages+=("spice-vdagent")
+
 sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
 
 # /////////////////////////////////////////////////////

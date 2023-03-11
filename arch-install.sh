@@ -298,7 +298,6 @@ packages+=("bash-completion")
 [ "$ARCH_DOCKER_ENABLED" = 'true' ] && packages+=("docker")
 [ "$ARCH_DOCKER_ENABLED" = 'true' ] && packages+=("docker-compose")
 [ "$ARCH_MICROCODE" != 'none' ] && packages+=("$ARCH_MICROCODE")
-[ "$(systemd-detect-virt)" != 'none' ] && packages+=("spice-vdagent") # Only VM
 pacstrap /mnt "${packages[@]}" "${ARCH_OPT_PACKAGE_LIST[@]}" || exit 1
 print_green "> Done\n"
 
