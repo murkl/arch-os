@@ -231,8 +231,8 @@ if [ "$ENVIRONMENT_DRIVER" = "intel-hd" ]; then
     packages=()
     packages+=("vulkan-intel") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vulkan-intel")
     packages+=("gamemode") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-gamemode")
-    packages+=("intel-media-driver")
     packages+=("libva-intel-driver")
+    packages+=("intel-media-driver")
 
     # Install packages
     sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
@@ -291,6 +291,8 @@ if [ "$ENVIRONMENT_DRIVER" = "nvidia-optimus" ]; then
     packages+=("nvidia-utils") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-nvidia-utils")
     packages+=("opencl-nvidia") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-opencl-nvidia")
     packages+=("gamemode") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-gamemode")
+    packages+=("libva-intel-driver") # (fixed errors on loading NVIDIA)
+    packages+=("intel-media-driver")
 
     # Install packages
     sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
