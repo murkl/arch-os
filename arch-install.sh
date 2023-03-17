@@ -217,7 +217,7 @@ pgrep reflector &>/dev/null && print_red "ERROR: Reflector timeout after 180 sec
 unmount
 
 # Temporarily disable ECN (prevent traffic problems with some old routers)
-sysctl net.ipv4.tcp_ecn=0
+sysctl net.ipv4.tcp_ecn=0 &>/dev/null
 
 # Update keyring
 pacman -Sy --noconfirm archlinux-keyring
