@@ -19,7 +19,7 @@ INSTALL_CACHE_DIR=$(mktemp -d "/tmp/arch-install-cache.XXXXXXXXXX")
 # PROGRESS INFO (WHIPTAIL)
 # /////////////////////////////////////////////////////
 
-PROGRESS_COUNTER=0
+PROGRESS_COUNT=0
 PROGRESS_TOTAL=28
 
 # /////////////////////////////////////////////////////
@@ -35,7 +35,7 @@ print_title() {
     if [ "$ARCH_FORCE_INSTALL" = "true" ]; then
         # Print whiptail info
         echo ">>> $1" >&2 # Print title to stderr in case of failure
-        ((PROGRESS_COUNTER++)) && echo -e "XXX\n$((PROGRESS_COUNTER * 100 / PROGRESS_TOTAL))\n${1}...\nXXX"
+        ((PROGRESS_COUNT += 1)) && echo -e "XXX\n$((PROGRESS_COUNT * 100 / PROGRESS_TOTAL))\n${1}...\nXXX"
     else
         # Print default info
         for ((i = ${#1}; i < 67; i++)); do local spaces="${spaces} "; done
