@@ -2,29 +2,18 @@
 # shellcheck disable=SC1090
 
 # /////////////////////////////////////////////////////
-# ARCH INSTALL CONFIG
-# /////////////////////////////////////////////////////
-
-ARCH_INSTALL_CONFIG="/tmp/arch-install.conf"
-
-# /////////////////////////////////////////////////////
 # VARIABLES
 # /////////////////////////////////////////////////////
 
+# WORKING DIR
 WORKING_DIR="$(cd "$(dirname "$0")" &>/dev/null && pwd)"
+ARCH_INSTALL_SCRIPT="${WORKING_DIR}/../arch-install.sh"
+ARCH_ENVIRONMENT_DIR="${WORKING_DIR}/../environment"
 
-# /////////////////////////////////////////////////////
-# DESKTOP ENVIRONMENTS
-# /////////////////////////////////////////////////////
+# ARCH INSTALL CONFIG
+ARCH_INSTALL_CONFIG="/tmp/arch-install.conf"
 
-ENVIRONMENT_DIR="${WORKING_DIR}/../environment"
-ENVIRONMENT_LIST=()
-ENVIRONMENT_LIST+=("gnome") && ENVIRONMENT_LIST+=("GNOME Desktop")
-
-# /////////////////////////////////////////////////////
 # TUI
-# /////////////////////////////////////////////////////
-
 TUI_TITLE="Arch Linux Setup"
 TUI_WIDTH="80"
 TUI_HEIGHT="20"
@@ -34,7 +23,7 @@ TUI_POSITION=""
 # PRINT FUNCTIONS
 # /////////////////////////////////////////////////////
 
-print_config_menu_entry() {
+print_menu_entry() {
     local key="$1"
     local val="$2" && val=$(echo "$val" | xargs)
     for ((i = ${#key}; i < 12; i++)); do local spaces="${spaces} "; done
@@ -80,7 +69,6 @@ load_config_and_check_state() {
     unset ARCH_ENCRYPTION_ENABLED
     unset ARCH_FSTRIM_ENABLED
     unset ARCH_SWAP_SIZE
-    unset ARCH_MICROCODE
     unset ARCH_LANGUAGE
     unset ARCH_TIMEZONE
     unset ARCH_LOCALE_LANG
@@ -89,9 +77,7 @@ load_config_and_check_state() {
     unset ARCH_VCONSOLE_FONT
     unset ARCH_MULTILIB_ENABLED
     unset ARCH_AUR_ENABLED
-    unset ARCH_DOCKER_ENABLED
     unset ARCH_PKGFILE_ENABLED
-    unset ARCH_WATCHDOG_ENABLED
     unset ARCH_SHUTDOWN_TIMEOUT_SEC
     unset ENVIRONMENT_X11_KEYBOARD_LAYOUT
     unset ENVIRONMENT_X11_KEYBOARD_VARIANT
@@ -149,14 +135,6 @@ load_config_and_check_state() {
         return 1
     fi
 
-    # Check Microcode
-    if [ -z "$ARCH_MICROCODE" ]; then
-        [ "$show_promt" = "true" ] && whiptail --title "$TUI_TITLE" --msgbox "Microcode config is missing" "$TUI_HEIGHT" "$TUI_WIDTH"
-        set_config_entry "ARCH_MICROCODE"
-        TUI_POSITION="microcode"
-        return 1
-    fi
-
     # Check MultiLib
     if [ -z "$ARCH_MULTILIB_ENABLED" ]; then
         [ "$show_promt" = "true" ] && whiptail --title "$TUI_TITLE" --msgbox "MultiLib config is missing" "$TUI_HEIGHT" "$TUI_WIDTH"
@@ -173,14 +151,6 @@ load_config_and_check_state() {
         return 1
     fi
 
-    # Check Docker
-    if [ -z "$ARCH_DOCKER_ENABLED" ]; then
-        [ "$show_promt" = "true" ] && whiptail --title "$TUI_TITLE" --msgbox "Docker config is missing" "$TUI_HEIGHT" "$TUI_WIDTH"
-        set_config_entry "ARCH_DOCKER_ENABLED"
-        TUI_POSITION="docker"
-        return 1
-    fi
-
     # Check Environment
     if [ -z "$ENVIRONMENT_DESKTOP" ] || [ -z "$ENVIRONMENT_DRIVER" ]; then
         [ "$show_promt" = "true" ] && whiptail --title "$TUI_TITLE" --msgbox "Environment config is missing" "$TUI_HEIGHT" "$TUI_WIDTH"
@@ -190,9 +160,8 @@ load_config_and_check_state() {
     fi
 
     # Check & set defaults
-    if [ -z "$ARCH_PKGFILE_ENABLED" ] || [ -z "$ARCH_WATCHDOG_ENABLED" ] || [ -z "$ARCH_SHUTDOWN_TIMEOUT_SEC" ]; then
+    if [ -z "$ARCH_PKGFILE_ENABLED" ] || [ -z "$ARCH_SHUTDOWN_TIMEOUT_SEC" ]; then
         set_config_entry "ARCH_PKGFILE_ENABLED" "true"
-        set_config_entry "ARCH_WATCHDOG_ENABLED" "false"
         set_config_entry "ARCH_SHUTDOWN_TIMEOUT_SEC" "5s"
     fi
 
@@ -310,11 +279,6 @@ open_config_menu_and_set_property() {
         set_config_entry "ARCH_SWAP_SIZE" "$swap_size"
         ;;
 
-    "microcode")
-        microcode=$(whiptail --title "$TUI_TITLE" --menu "\nSelect Microcode" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" 3 "none" "None" "intel-ucode" "Intel" "amd-ucode" "AMD" 3>&1 1>&2 2>&3)
-        set_config_entry "ARCH_MICROCODE" "$microcode"
-        ;;
-
     "multilib")
         multilib_enabled="false" && whiptail --title "$TUI_TITLE" --yesno "Enable MultiLib (32 Bit Support)?" "$TUI_HEIGHT" "$TUI_WIDTH" && multilib_enabled="true"
         set_config_entry "ARCH_MULTILIB_ENABLED" "$multilib_enabled"
@@ -325,23 +289,38 @@ open_config_menu_and_set_property() {
         set_config_entry "ARCH_AUR_ENABLED" "$aur_enabled"
         ;;
 
-    "docker")
-        docker_enabled="false" && whiptail --title "$TUI_TITLE" --yesno "Enable Docker?" "$TUI_HEIGHT" "$TUI_WIDTH" && docker_enabled="true"
-        set_config_entry "ARCH_DOCKER_ENABLED" "$docker_enabled"
-        ;;
-
     "environment")
-        environment=$(whiptail --title "$TUI_TITLE" --menu "\nSelect Environment" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#ENVIRONMENT_LIST[@]} / 2 + 1) + (${#ENVIRONMENT_LIST[@]} % 2)))" "none" "None" "${ENVIRONMENT_LIST[@]}" 3>&1 1>&2 2>&3)
+
+        # Fetch environment list
+        environment_list=()
+        for file in "${ARCH_ENVIRONMENT_DIR}"/*.sh; do
+            env_file="${file##*/}"  # env.sh
+            env_id="${env_file%.*}" # env
+            [ ! -f "${ARCH_ENVIRONMENT_DIR}/${env_id}.meta" ] && echo "${ARCH_ENVIRONMENT_DIR}/${env_id}.meta is missing" && exit 1
+            env_title=$(sed -n '/^ENVIRONMENT_TITLE=/s///p' "${ARCH_ENVIRONMENT_DIR}/${env_id}.meta" | tr -d '"') && [ -z "$env_title" ] && echo "ENVIRONMENT_TITLE for ${env_id} is missing" && exit 1
+            environment_list+=("$env_id")
+            environment_list+=("$env_title")
+        done
+
+        # Select environment
+        environment=$(whiptail --title "$TUI_TITLE" --menu "\nSelect Desktop Environment" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#environment_list[@]} / 2 + 1) + (${#environment_list[@]} % 2)))" "none" "None" "${environment_list[@]}" 3>&1 1>&2 2>&3)
+
         if [ "$environment" = "none" ]; then
             set_config_entry "ENVIRONMENT_DESKTOP" "none"
             set_config_entry "ENVIRONMENT_DRIVER" "none"
-        else
-            [ ! -f "${ENVIRONMENT_DIR}/${environment}.sh" ] && echo "ERROR: '${ENVIRONMENT_DIR}/${environment}.sh' not found" && exit 1
-            mapfile -t desktop_graphics_driver_list <<<"$(bash -c "${ENVIRONMENT_DIR}/${environment}.sh --list-driver")" || exit 1
-            driver=$(whiptail --title "$TUI_TITLE" --menu "\nSelect Driver" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#desktop_graphics_driver_list[@]} / 2 + 1) + (${#desktop_graphics_driver_list[@]} % 2)))" "none" "None" "${desktop_graphics_driver_list[@]}" 3>&1 1>&2 2>&3)
-            set_config_entry "ENVIRONMENT_DESKTOP" "$environment"
-            set_config_entry "ENVIRONMENT_DRIVER" "$driver"
+            return 0
         fi
+
+        # Fetch driver
+        declare -A ENVIRONMENT_DRIVER_LIST=()
+        source "${ARCH_ENVIRONMENT_DIR}/${environment}.meta" && driver_list=() && for elem in "${!ENVIRONMENT_DRIVER_LIST[@]}"; do driver_list+=("${elem}" "${ENVIRONMENT_DRIVER_LIST[${elem}]}"); done
+
+        # Select driver
+        driver=$(whiptail --title "$TUI_TITLE" --menu "\nSelect Desktop Driver" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#driver_list[@]} / 2 + 1) + (${#driver_list[@]} % 2)))" "none" "None" "${driver_list[@]}" 3>&1 1>&2 2>&3)
+
+        # Set properties
+        set_config_entry "ENVIRONMENT_DESKTOP" "$environment"
+        set_config_entry "ENVIRONMENT_DRIVER" "$driver"
         ;;
 
     *)
@@ -366,17 +345,15 @@ while (true); do
 
     # Create TUI menu entries
     menu_entry_array=()
-    menu_entry_array+=("language") && menu_entry_array+=("$(print_config_menu_entry "Language" "${ARCH_LANGUAGE}")")
-    menu_entry_array+=("hostname") && menu_entry_array+=("$(print_config_menu_entry "Hostname" "${ARCH_HOSTNAME}")")
-    menu_entry_array+=("user") && menu_entry_array+=("$(print_config_menu_entry "User" "${ARCH_USERNAME}")")
-    menu_entry_array+=("password") && menu_entry_array+=("$(print_config_menu_entry "Password" "$([ -n "$ARCH_PASSWORD" ] && echo "******")")")
-    menu_entry_array+=("disk") && menu_entry_array+=("$(print_config_menu_entry "Disk" "${ARCH_DISK}$([ "$ARCH_FSTRIM_ENABLED" = "true" ] && echo ", ssd")$([ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && echo ", encrypted")")")
-    menu_entry_array+=("swap") && menu_entry_array+=("$(print_config_menu_entry "Swap" "$([ -n "$ARCH_SWAP_SIZE" ] && { [ "$ARCH_SWAP_SIZE" != "0" ] && echo "${ARCH_SWAP_SIZE} GB" || echo "disabled"; })")")
-    menu_entry_array+=("microcode") && menu_entry_array+=("$(print_config_menu_entry "Microcode" "${ARCH_MICROCODE}")")
-    menu_entry_array+=("multilib") && menu_entry_array+=("$(print_config_menu_entry "MultiLib" "${ARCH_MULTILIB_ENABLED}")")
-    menu_entry_array+=("aur") && menu_entry_array+=("$(print_config_menu_entry "AUR" "${ARCH_AUR_ENABLED}")")
-    menu_entry_array+=("docker") && menu_entry_array+=("$(print_config_menu_entry "Docker" "${ARCH_DOCKER_ENABLED}")")
-    menu_entry_array+=("environment") && menu_entry_array+=("$(print_config_menu_entry "Environment" "${ENVIRONMENT_DESKTOP}$([ -n "${ENVIRONMENT_DRIVER}" ] && [ "${ENVIRONMENT_DRIVER}" != 'none' ] && echo ", ${ENVIRONMENT_DRIVER}")")")
+    menu_entry_array+=("language") && menu_entry_array+=("$(print_menu_entry "Language" "${ARCH_LANGUAGE}")")
+    menu_entry_array+=("hostname") && menu_entry_array+=("$(print_menu_entry "Hostname" "${ARCH_HOSTNAME}")")
+    menu_entry_array+=("user") && menu_entry_array+=("$(print_menu_entry "User" "${ARCH_USERNAME}")")
+    menu_entry_array+=("password") && menu_entry_array+=("$(print_menu_entry "Password" "$([ -n "$ARCH_PASSWORD" ] && echo "******")")")
+    menu_entry_array+=("disk") && menu_entry_array+=("$(print_menu_entry "Disk" "${ARCH_DISK}$([ "$ARCH_FSTRIM_ENABLED" = "true" ] && echo ", ssd")$([ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && echo ", encrypted")")")
+    menu_entry_array+=("swap") && menu_entry_array+=("$(print_menu_entry "Swap" "$([ -n "$ARCH_SWAP_SIZE" ] && { [ "$ARCH_SWAP_SIZE" != "0" ] && echo "${ARCH_SWAP_SIZE} GB" || echo "disabled"; })")")
+    menu_entry_array+=("multilib") && menu_entry_array+=("$(print_menu_entry "MultiLib" "${ARCH_MULTILIB_ENABLED}")")
+    menu_entry_array+=("aur") && menu_entry_array+=("$(print_menu_entry "AUR" "${ARCH_AUR_ENABLED}")")
+    menu_entry_array+=("environment") && menu_entry_array+=("$(print_menu_entry "Environment" "${ENVIRONMENT_DESKTOP}$([ -n "${ENVIRONMENT_DRIVER}" ] && [ "${ENVIRONMENT_DRIVER}" != 'none' ] && echo ", ${ENVIRONMENT_DRIVER}")")")
     menu_entry_array+=("space") && menu_entry_array+=("")
     menu_entry_array+=("install") && menu_entry_array+=("> Start Installation")
 
@@ -401,16 +378,16 @@ while (true); do
         fi
 
         # Start installation
-        whiptail --title "$TUI_TITLE" --yesno "Start Arch Linux Installation?\n\nAll data on ${ARCH_DISK} will be DELETED. This cannot be UNDONE!" "$TUI_HEIGHT" "$TUI_WIDTH" || continue
+        whiptail --title "$TUI_TITLE" --yesno "Start Arch Linux Installation?\n\nAll data on ${ARCH_DISK} will be DELETED!" "$TUI_HEIGHT" "$TUI_WIDTH" || continue
 
         # Clear TUI screen
         clear
 
         # Add scripts in the right order to script args
-        script_args="" && [ "$ENVIRONMENT_DESKTOP" != "none" ] && script_args="${script_args} -s ${ENVIRONMENT_DIR}/${ENVIRONMENT_DESKTOP}.sh"
+        script_args="" && [ "$ENVIRONMENT_DESKTOP" != "none" ] && script_args="${script_args} -s ${ARCH_ENVIRONMENT_DIR}/${ENVIRONMENT_DESKTOP}.sh"
 
         # Execute arch-install.sh
-        bash -c "${WORKING_DIR}/../arch-install.sh -f -c ${ARCH_INSTALL_CONFIG} ${script_args}" || exit 1
+        bash -c "${ARCH_INSTALL_SCRIPT} -f -c ${ARCH_INSTALL_CONFIG} ${script_args}"
         exit $?
         ;;
 

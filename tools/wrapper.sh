@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-REPO_BASE_URL="https://raw.githubusercontent.com/murkl/arch-distro/main/"
+REPO_BASE_URL="${1:-https://raw.githubusercontent.com/murkl/arch-distro/main/}"
 WORKING_DIR=$(mktemp -d "/tmp/arch-distro-wrapper.XXXXXXXXXX")
 
 download_file() {
@@ -27,6 +27,7 @@ fi
 if whiptail --title "Arch Linux Installer" --yesno "Welcome to Arch Linux Installer!\n\nPlease choose whether you want to install Arch Linux or open Recovery to rescue your existing Arch Linux Installation." --yes-button "Install Arch" --no-button "Open Recovery" 20 80; then
     download_file "arch-install.sh"
     download_file "environment/gnome.sh"
+    download_file "environment/gnome.meta"
     download_file "tools/arch-setup.sh"
     bash -c "${WORKING_DIR}/tools/arch-setup.sh"
 else

@@ -174,7 +174,6 @@ set +a # Disable auto export
 [ -z "${ARCH_ENCRYPTION_ENABLED}" ] && print_red "ERROR: ARCH_ENCRYPTION_ENABLED is missing" && exit 1
 [ -z "${ARCH_FSTRIM_ENABLED}" ] && print_red "ERROR: ARCH_FSTRIM_ENABLED is missing" && exit 1
 [ -z "${ARCH_SWAP_SIZE}" ] && print_red "ERROR: ARCH_SWAP_SIZE is missing" && exit 1
-[ -z "${ARCH_MICROCODE}" ] && print_red "ERROR: ARCH_MICROCODE is missing" && exit 1
 [ -z "${ARCH_TIMEZONE}" ] && print_red "ERROR: ARCH_TIMEZONE is missing" && exit 1
 [ -z "${ARCH_LOCALE_LANG}" ] && print_red "ERROR: ARCH_LOCALE_LANG is missing" && exit 1
 [ -z "${ARCH_LOCALE_GEN_LIST[*]}" ] && print_red "ERROR: ARCH_LOCALE_GEN_LIST is missing" && exit 1
@@ -182,9 +181,7 @@ set +a # Disable auto export
 [ -z "${ARCH_VCONSOLE_FONT}" ] && print_red "ERROR: ARCH_VCONSOLE_FONT is missing" && exit 1
 [ -z "${ARCH_MULTILIB_ENABLED}" ] && print_red "ERROR: ARCH_MULTILIB_ENABLED is missing" && exit 1
 [ -z "${ARCH_AUR_ENABLED}" ] && print_red "ERROR: ARCH_AUR_ENABLED is missing" && exit 1
-[ -z "${ARCH_DOCKER_ENABLED}" ] && print_red "ERROR: ARCH_DOCKER_ENABLED is missing" && exit 1
 [ -z "${ARCH_PKGFILE_ENABLED}" ] && print_red "ERROR: ARCH_PKGFILE_ENABLED is missing" && exit 1
-[ -z "${ARCH_WATCHDOG_ENABLED}" ] && print_red "ERROR: ARCH_WATCHDOG_ENABLED is missing" && exit 1
 [ -z "${ARCH_SHUTDOWN_TIMEOUT_SEC}" ] && print_red "ERROR: ARCH_SHUTDOWN_TIMEOUT_SEC is missing" && exit 1
 
 # /////////////////////////////////////////////////////
@@ -219,8 +216,16 @@ pgrep reflector &>/dev/null && print_red "ERROR: Reflector timeout after 180 sec
 # Make sure everything is unmounted before start install
 unmount
 
+# Temporarily disable ECN (prevent traffic problems with some old routers)
+sysctl net.ipv4.tcp_ecn=0
+
 # Update keyring
 pacman -Sy --noconfirm archlinux-keyring
+
+# Detect microcode
+unset ARCH_MICROCODE
+grep -E "GenuineIntel" <<<"$(lscpu)" &>/dev/null && ARCH_MICROCODE="intel-ucode"
+grep -E "AuthenticAMD" <<<"$(lscpu)" &>/dev/null && ARCH_MICROCODE="amd-ucode"
 
 print_green "> Done\n"
 
@@ -295,9 +300,7 @@ packages+=("git")
 packages+=("nano")
 packages+=("bash-completion")
 [ "$ARCH_PKGFILE_ENABLED" = 'true' ] && packages+=("pkgfile")
-[ "$ARCH_DOCKER_ENABLED" = 'true' ] && packages+=("docker")
-[ "$ARCH_DOCKER_ENABLED" = 'true' ] && packages+=("docker-compose")
-[ "$ARCH_MICROCODE" != 'none' ] && packages+=("$ARCH_MICROCODE")
+[ -n "$ARCH_MICROCODE" ] && packages+=("$ARCH_MICROCODE")
 pacstrap /mnt "${packages[@]}" "${ARCH_OPT_PACKAGE_LIST[@]}" || exit 1
 print_green "> Done\n"
 
@@ -408,10 +411,13 @@ print_title "Install Bootloader (systemd-boot)"
 arch-chroot /mnt bootctl --esp-path=/boot install || exit 1
 
 # Kernel args
-[ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot"
-[ "$ARCH_ENCRYPTION_ENABLED" = "false" ] && kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_ROOT_PARTITION}")"
-[ "$ARCH_WATCHDOG_ENABLED" = "true" ] && kernel_post_args='rw init=/usr/lib/systemd/systemd quiet splash vt.global_cursor_default=0'
-[ "$ARCH_WATCHDOG_ENABLED" = "false" ] && kernel_post_args='rw init=/usr/lib/systemd/systemd nowatchdog quiet splash vt.global_cursor_default=0'
+swap_device_uuid="$(findmnt -no UUID -T /mnt/swapfile)"
+swap_file_offset="$(filefrag -v /mnt/swapfile | awk '$1=="0:" {print substr($4, 1, length($4)-2)}')"
+if [ "$ARCH_ENCRYPTION_ENABLED" = "true" ]; then
+    kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot rw init=/usr/lib/systemd/systemd quiet splash vt.global_cursor_default=0 resume=/dev/mapper/cryptroot resume_offset=${swap_file_offset}"
+else
+    kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_ROOT_PARTITION}") rw init=/usr/lib/systemd/systemd quiet splash vt.global_cursor_default=0 resume=UUID=${swap_device_uuid} resume_offset=${swap_file_offset}"
+fi
 
 # Create Bootloader config
 {
@@ -425,18 +431,18 @@ arch-chroot /mnt bootctl --esp-path=/boot install || exit 1
 {
     echo 'title   Arch Linux'
     echo 'linux   /vmlinuz-linux'
-    [ "$ARCH_MICROCODE" != 'none' ] && echo "initrd  /${ARCH_MICROCODE}.img"
+    [ -n "$ARCH_MICROCODE" ] && echo "initrd  /${ARCH_MICROCODE}.img"
     echo 'initrd  /initramfs-linux.img'
-    echo "options ${kernel_args} ${kernel_post_args}"
+    echo "options ${kernel_args}"
 } >/mnt/boot/loader/entries/arch.conf || exit 1
 
 # Create arch fallback entry
 {
     echo 'title   Arch Linux (Fallback)'
     echo 'linux   /vmlinuz-linux'
-    [ "$ARCH_MICROCODE" != 'none' ] && echo "initrd  /${ARCH_MICROCODE}.img"
+    [ -n "$ARCH_MICROCODE" ] && echo "initrd  /${ARCH_MICROCODE}.img"
     echo 'initrd  /initramfs-linux-fallback.img'
-    echo "options ${kernel_args} ${kernel_post_args}"
+    echo "options ${kernel_args}"
 } >/mnt/boot/loader/entries/arch-fallback.conf || exit 1
 
 print_green "> Done\n"
@@ -466,9 +472,6 @@ echo -e "\n## Enable sudo password feedback\nDefaults pwfeedback" >>/mnt/etc/sud
 printf "%s\n%s" "${ARCH_PASSWORD}" "${ARCH_PASSWORD}" | arch-chroot /mnt passwd &>/dev/null || exit 1
 printf "%s\n%s" "${ARCH_PASSWORD}" "${ARCH_PASSWORD}" | arch-chroot /mnt passwd "$ARCH_USERNAME" &>/dev/null || exit 1
 
-# Add user to docker group
-[ "$ARCH_DOCKER_ENABLED" = 'true' ] && { arch-chroot /mnt usermod -aG docker "$ARCH_USERNAME" || exit 1; }
-
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
@@ -480,7 +483,6 @@ arch-chroot /mnt systemctl enable reflector.service || exit 1                   
 arch-chroot /mnt systemctl enable paccache.timer || exit 1                                                    # Discard cached/unused packages weekly
 [ "$ARCH_FSTRIM_ENABLED" = 'true' ] && { arch-chroot /mnt systemctl enable fstrim.timer || exit 1; }          # SSD support
 [ "$ARCH_PKGFILE_ENABLED" = 'true' ] && { arch-chroot /mnt systemctl enable pkgfile-update.timer || exit 1; } # Pkgfile update timer
-[ "$ARCH_DOCKER_ENABLED" = 'true' ] && { arch-chroot /mnt systemctl enable docker.service || exit 1; }        # Docker
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////

@@ -1,18 +1,7 @@
 #!/usr/bin/env bash
 
-# List available drivers (key & value)
-if [ "$1" = "--list-driver" ]; then
-    echo "intel-hd" && echo "Intel HD"
-    echo "nvidia" && echo "NVIDIA"
-    echo "nvidia-optimus" && echo "NVIDIA Optimus"
-    exit 0
-fi
-
-# /////////////////////////////////////////////////////
-
 # Check required variables
 [ -z "$ARCH_USERNAME" ] && echo "env ARCH_USERNAME is missing" && exit 1
-[ -z "$ARCH_WATCHDOG_ENABLED" ] && echo "env ARCH_WATCHDOG_ENABLED is missing" && exit 1
 [ -z "$ARCH_MULTILIB_ENABLED" ] && echo "env ARCH_MULTILIB_ENABLED is missing" && exit 1
 [ -z "$ENVIRONMENT_X11_KEYBOARD_LAYOUT" ] && echo "env ENVIRONMENT_X11_KEYBOARD_LAYOUT is missing" && exit 1
 [ -z "$ENVIRONMENT_X11_KEYBOARD_VARIANT" ] && echo "env ENVIRONMENT_X11_KEYBOARD_VARIANT is missing" && exit 1
@@ -21,7 +10,8 @@ fi
 # /////////////////////////////////////////////////////
 
 # Assets
-PLYMOUTH_LOGO_URL="https://raw.githubusercontent.com/murkl/arch-distro/main/environment/assets/plymouth.png"
+PLYMOUTH_CONFIG_URL="https://raw.githubusercontent.com/murkl/arch-distro/main/assets/spinner.plymouth"
+PLYMOUTH_WATERMARK_URL="https://raw.githubusercontent.com/murkl/arch-distro/main/assets/watermark.png"
 
 # /////////////////////////////////////////////////////
 
@@ -89,9 +79,15 @@ packages+=("ttf-dejavu")
 # E-Mail
 packages+=("geary")
 
-# Guest support (only VM)
-[ "$(systemd-detect-virt)" != 'none' ] && packages+=("spice-vdagent")
+# VM Guest support (if VM detected)
+if [ "$(systemd-detect-virt)" != 'none' ]; then
+    packages+=("spice")
+    packages+=("spice-vdagent")
+    packages+=("spice-protocol")
+    packages+=("spice-gtk")
+fi
 
+# Install packages
 sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
 
 # /////////////////////////////////////////////////////
@@ -120,18 +116,9 @@ sed -i 's/^options=(debug)/options=(!debug)/' PKGBUILD || exit 1
 yes | LC_ALL=en_US.UTF-8 makepkg -sif || exit 1
 cd && rm -rf "$repo_tmp" || exit 1
 
-# Download Plymouth watermark
-sudo curl -Lf "$PLYMOUTH_LOGO_URL" -o "/usr/share/plymouth/themes/spinner/watermark.png" || exit 1
-
-replace_spinner_conf_value() {
-    sudo sed -i "s#$1=.*#$1=$2#g" "/usr/share/plymouth/themes/spinner/spinner.plymouth" || exit 1
-}
-
-# Configure plymouth
-replace_spinner_conf_value "DialogVerticalAlignment" ".680"
-replace_spinner_conf_value "TitleVerticalAlignment" ".680"
-replace_spinner_conf_value "BackgroundStartColor" "0x2E3440"
-replace_spinner_conf_value "BackgroundEndColor" "0x2E3440"
+# Download Plymouth config & watermark
+sudo curl -Lf "$PLYMOUTH_CONFIG_URL" -o "/usr/share/plymouth/themes/spinner/spinner.plymouth" || exit 1
+sudo curl -Lf "$PLYMOUTH_WATERMARK_URL" -o "/usr/share/plymouth/themes/spinner/watermark.png" || exit 1
 
 # Configure mkinitcpio
 sudo sed -i "s/base systemd autodetect/base systemd sd-plymouth autodetect/g" /etc/mkinitcpio.conf || exit 1
@@ -266,8 +253,7 @@ if [ "$ENVIRONMENT_DRIVER" = "nvidia" ]; then
     sudo sed -i "s/MODULES=()/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /etc/mkinitcpio.conf || exit 1
 
     # DRM kernel mode setting
-    [ "$ARCH_WATCHDOG_ENABLED" = "true" ] && { sudo sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 quiet/g" /boot/loader/entries/arch.conf || exit 1; }
-    [ "$ARCH_WATCHDOG_ENABLED" = "false" ] && { sudo sed -i "s/nowatchdog quiet/nowatchdog nvidia_drm.modeset=1 quiet/g" /boot/loader/entries/arch.conf || exit 1; }
+    sudo sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 quiet/g" /boot/loader/entries/arch.conf || exit 1
 
     # Rebuild
     sudo mkinitcpio -P || exit 1
@@ -301,8 +287,7 @@ if [ "$ENVIRONMENT_DRIVER" = "nvidia-optimus" ]; then
     sudo sed -i "s/MODULES=()/MODULES=(i915 nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /etc/mkinitcpio.conf || exit 1
 
     # DRM kernel mode setting (enable prime sync and fix screen-tearing issues)
-    [ "$ARCH_WATCHDOG_ENABLED" = "true" ] && { sudo sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 quiet/g" /boot/loader/entries/arch.conf || exit 1; }
-    [ "$ARCH_WATCHDOG_ENABLED" = "false" ] && { sudo sed -i "s/nowatchdog quiet/nowatchdog nvidia_drm.modeset=1 quiet/g" /boot/loader/entries/arch.conf || exit 1; }
+    sudo sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 quiet/g" /boot/loader/entries/arch.conf || exit 1
 
     # Rebuild
     sudo mkinitcpio -P || exit 1

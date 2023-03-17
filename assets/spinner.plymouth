@@ -1,0 +1,56 @@
+[Plymouth Theme]
+Name=Spinner
+Description=A theme designed by jimmac that features a simple spinner.
+ModuleName=two-step
+
+[two-step]
+Font=Cantarell 12
+TitleFont=Cantarell Light 30
+ImageDir=/usr/share/plymouth/themes/spinner
+WatermarkHorizontalAlignment=.5
+WatermarkVerticalAlignment=.4
+HorizontalAlignment=.5
+VerticalAlignment=.6
+DialogHorizontalAlignment=.5
+DialogVerticalAlignment=.6
+TitleHorizontalAlignment=.5
+TitleVerticalAlignment=.6
+ProgressBarHorizontalAlignment=.5
+ProgressBarVerticalAlignment=.7
+Transition=none
+TransitionDuration=0.0
+BackgroundStartColor=0x2E3440
+BackgroundEndColor=0x2E3440
+ProgressBarBackgroundColor=0x4C566A
+ProgressBarForegroundColor=0xE5E9F0
+MessageBelowAnimation=true
+
+[boot-up]
+UseEndAnimation=false
+
+[shutdown]
+UseEndAnimation=false
+
+[reboot]
+UseEndAnimation=false
+
+[updates]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Installing Updates...
+SubTitle=Do not turn off your computer
+
+[system-upgrade]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Upgrading System...
+SubTitle=Do not turn off your computer
+
+[firmware-upgrade]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Upgrading Firmware...
+SubTitle=Do not turn off your computer

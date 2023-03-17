@@ -109,7 +109,6 @@ ARCH_ROOT_PARTITION="/dev/vda2" # Root partition
 ARCH_FSTRIM_ENABLED="false" # SSD support
 ARCH_ENCRYPTION_ENABLED="true" # Encrypt
 ARCH_SWAP_SIZE="8" # Swap (0 = disabled)
-ARCH_MICROCODE="none" # intel-ucode | amd-ucode
 ARCH_MULTILIB_ENABLED="true" # 32 Bit support
 ARCH_AUR_ENABLED="true" # Install paru
 ARCH_TIMEZONE="Europe/Berlin" # Timezone
@@ -117,9 +116,7 @@ ARCH_LOCALE_LANG="de_DE.UTF-8" # Language
 ARCH_LOCALE_GEN_LIST=("de_DE.UTF-8 UTF-8" "de_DE ISO-8859-1" "de_DE@euro ISO-8859-15" "en_US.UTF-8 UTF-8") # Language
 ARCH_VCONSOLE_KEYMAP="de-latin1-nodeadkeys" # Console keymap
 ARCH_VCONSOLE_FONT="eurlatgr" # Console font
-ARCH_DOCKER_ENABLED="true" # Enable docker
 ARCH_PKGFILE_ENABLED="true" # Enable package suggestion
-ARCH_WATCHDOG_ENABLED="false" # Disable watchdog
 ARCH_SHUTDOWN_TIMEOUT_SEC="5s" # Shutdown timeout
 ```
 
