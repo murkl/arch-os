@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 # /////////////////////////////////////////////////////
 # VARIABLES
@@ -28,9 +29,11 @@ print_yellow() { echo -e "\e[33m${1}\e[0m"; }
 # ///////////////////////////////////////////////////////////////////
 
 unmount() {
+    set +e
     swapoff -a &>/dev/null
     umount -A -R "$MOUNT_RECOVERY" &>/dev/null
     cryptsetup close "$CRYPT_RECOVERY" &>/dev/null
+    set -e
 }
 
 trap unmount EXIT

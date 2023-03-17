@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 # /////////////////////////////////////////////////////
 # VARIABLES
@@ -24,7 +25,7 @@ print_red() { echo -e "\e[31m${1}\e[0m"; }
 print_purple() { echo -e "\e[35m${1}\e[0m"; }
 
 print_title() {
-    for ((i = ${#1}; i < 62; i++)); do local spaces="${spaces} "; done
+    for ((i = ${#1}; i < 62; i++)); do local spaces="${spaces:-} "; done
     echo -e ""
     print_purple "┌───────────────────────────────────────────────────────────────────┐"
     print_purple "│ > ${1} ${spaces} │"

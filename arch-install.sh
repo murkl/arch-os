@@ -5,8 +5,8 @@
 # ARG VARIABLES
 # /////////////////////////////////////////////////////
 
-ARCH_CONFIG_FILE=""
 ARCH_FORCE_INSTALL=""
+ARCH_CONFIG_FILE=""
 ARCH_USER_SCRIPTS=()
 
 # /////////////////////////////////////////////////////
@@ -14,6 +14,13 @@ ARCH_USER_SCRIPTS=()
 # /////////////////////////////////////////////////////
 
 INSTALL_CACHE_DIR=$(mktemp -d "/tmp/arch-install-cache.XXXXXXXXXX")
+
+# /////////////////////////////////////////////////////
+# PROGRESS INFO (WHIPTAIL)
+# /////////////////////////////////////////////////////
+
+PROGRESS_COUNTER=0
+PROGRESS_TOTAL=28
 
 # /////////////////////////////////////////////////////
 # PRINT FUNCTIONS
@@ -25,17 +32,24 @@ print_yellow() { echo -e "\e[33m${1}\e[0m"; }
 print_purple() { echo -e "\e[35m${1}\e[0m"; }
 
 print_title() {
-    for ((i = ${#1}; i < 67; i++)); do local spaces="${spaces} "; done
-    print_purple "┌──────────────────────────────────────────────────────────────────────┐"
-    print_purple "│ ${1} ${spaces} │"
-    print_purple "└──────────────────────────────────────────────────────────────────────┘"
+    if [ "$ARCH_FORCE_INSTALL" = "true" ]; then
+        # Print whiptail info
+        echo ">>> $1" >&2 # Print title to stderr in case of failure
+        ((PROGRESS_COUNTER++)) && echo -e "XXX\n$((PROGRESS_COUNTER * 100 / PROGRESS_TOTAL))\n${1}...\nXXX"
+    else
+        # Print default info
+        for ((i = ${#1}; i < 67; i++)); do local spaces="${spaces} "; done
+        print_purple "┌──────────────────────────────────────────────────────────────────────┐"
+        print_purple "│ ${1} ${spaces} │"
+        print_purple "└──────────────────────────────────────────────────────────────────────┘"
+    fi
 }
 
 print_help() {
     print_purple "Description:"
     print_yellow "\t This scipt installs Arch Linux depending on your config."
     print_yellow "\t Your passed scripts will be invoked as last installation step."
-    print_yellow "\t More information: https://github.com/murkl/arch-install"
+    print_yellow "\t More information: https://github.com/murkl/arch-distro"
     echo -e ""
     print_purple "Usage:"
     print_yellow "\t $0 -c <config> [-f] [-s <script>...]"
@@ -203,44 +217,48 @@ fi
 trap unmount EXIT
 
 # /////////////////////////////////////////////////////
+# WAITING FOR REFLECTOR
+# /////////////////////////////////////////////////////
+
+print_title "Waiting for Reflector from Arch ISO"
+while timeout 180 tail --pid=$(pgrep reflector) -f /dev/null &>/dev/null; do sleep 1; done
+pgrep reflector &>/dev/null && print_red "ERROR: Reflector timeout after 180 seconds" && exit 1
+print_green "> Done\n"
+
+# /////////////////////////////////////////////////////
 # PREPARE INSTALLATION
 # /////////////////////////////////////////////////////
 
 print_title "Prepare Installation"
 
-# Waiting for reflector
-print_yellow "> Waiting for Reflector from Arch ISO..."
-while timeout 180 tail --pid=$(pgrep reflector) -f /dev/null &>/dev/null; do sleep 1; done
-pgrep reflector &>/dev/null && print_red "ERROR: Reflector timeout after 180 seconds" && exit 1
-
 # Make sure everything is unmounted before start install
 unmount
 
 # Temporarily disable ECN (prevent traffic problems with some old routers)
-sysctl net.ipv4.tcp_ecn=0 &>/dev/null
+#sysctl net.ipv4.tcp_ecn=0 1>/dev/null
 
 # Update keyring
-pacman -Sy --noconfirm archlinux-keyring
+pacman -Sy --noconfirm archlinux-keyring 1>/dev/null
 
 # Detect microcode
 unset ARCH_MICROCODE
-grep -E "GenuineIntel" <<<"$(lscpu)" &>/dev/null && ARCH_MICROCODE="intel-ucode"
-grep -E "AuthenticAMD" <<<"$(lscpu)" &>/dev/null && ARCH_MICROCODE="amd-ucode"
+grep -E "GenuineIntel" <<<"$(lscpu)" 1>/dev/null && ARCH_MICROCODE="intel-ucode"
+grep -E "AuthenticAMD" <<<"$(lscpu)" 1>/dev/null && ARCH_MICROCODE="amd-ucode"
 
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////  START ARCH LINUX INSTALLATION /////////////////////////////////////////////////////
 
-print_title "Wipe Partition Table"
+print_title "Wipe Partitions"
 
 # Wipe all partitions
-wipefs -af "$ARCH_DISK" || exit 1
+wipefs -af "$ARCH_DISK" 1>/dev/null || exit 1
 
 # Create new GPT partition table
-sgdisk -Z -o "$ARCH_DISK" || exit 1
+sgdisk -Z -o "$ARCH_DISK" 1>/dev/null || exit 1
 
 # Reload partition table
-partprobe "$ARCH_DISK" || exit 1
+partprobe "$ARCH_DISK" 1>/dev/null || exit 1
 
 print_green "> Done\n"
 
@@ -249,45 +267,45 @@ print_green "> Done\n"
 print_title "Create Partitions"
 
 # Create partition /boot efi partition: 1 GiB
-sgdisk -n 1:0:+1G -t 1:ef00 -c 1:boot "$ARCH_DISK" || exit 1
+sgdisk -n 1:0:+1G -t 1:ef00 -c 1:boot "$ARCH_DISK" 1>/dev/null || exit 1
 
 # Create partition / partition: Rest of space
-sgdisk -n 2:0:0 -t 2:8300 -c 2:root "$ARCH_DISK" || exit 1
+sgdisk -n 2:0:0 -t 2:8300 -c 2:root "$ARCH_DISK" 1>/dev/null || exit 1
 
 # Reload partition table
-partprobe "$ARCH_DISK" || exit 1
+partprobe "$ARCH_DISK" 1>/dev/null || exit 1
 
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
 
 if [ "$ARCH_ENCRYPTION_ENABLED" = "true" ]; then
-    print_title "Disk Encryption"
-    echo -n "$ARCH_PASSWORD" | cryptsetup luksFormat "$ARCH_ROOT_PARTITION" || exit 1
-    echo -n "$ARCH_PASSWORD" | cryptsetup open "$ARCH_ROOT_PARTITION" cryptroot || exit 1
+    print_title "Enable Disk Encryption"
+    echo -n "$ARCH_PASSWORD" | cryptsetup luksFormat "$ARCH_ROOT_PARTITION" 1>/dev/null || exit 1
+    echo -n "$ARCH_PASSWORD" | cryptsetup open "$ARCH_ROOT_PARTITION" cryptroot 1>/dev/null || exit 1
     print_green "> Done\n"
 fi
 
 # /////////////////////////////////////////////////////
 
 print_title "Format Disk"
-yes | LC_ALL=en_US.UTF-8 mkfs.fat -F 32 -n BOOT "$ARCH_BOOT_PARTITION" || exit 1
-[ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && { yes | LC_ALL=en_US.UTF-8 mkfs.ext4 -L ROOT /dev/mapper/cryptroot || exit 1; }
-[ "$ARCH_ENCRYPTION_ENABLED" = "false" ] && { yes | LC_ALL=en_US.UTF-8 mkfs.ext4 -L ROOT "$ARCH_ROOT_PARTITION" || exit 1; }
+yes | LC_ALL=en_US.UTF-8 mkfs.fat -F 32 -n BOOT "$ARCH_BOOT_PARTITION" 1>/dev/null || exit 1
+[ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && { yes | LC_ALL=en_US.UTF-8 mkfs.ext4 -L ROOT /dev/mapper/cryptroot 1>/dev/null || exit 1; }
+[ "$ARCH_ENCRYPTION_ENABLED" = "false" ] && { yes | LC_ALL=en_US.UTF-8 mkfs.ext4 -L ROOT "$ARCH_ROOT_PARTITION" 1>/dev/null || exit 1; }
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
 
 print_title "Mount Disk"
-[ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && { mount -v /dev/mapper/cryptroot /mnt || exit 1; }
-[ "$ARCH_ENCRYPTION_ENABLED" = "false" ] && { mount -v "$ARCH_ROOT_PARTITION" /mnt || exit 1; }
-mkdir -p /mnt/boot || exit 1
-mount -v "$ARCH_BOOT_PARTITION" /mnt/boot || exit 1
+[ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && { mount -v /dev/mapper/cryptroot /mnt 1>/dev/null || exit 1; }
+[ "$ARCH_ENCRYPTION_ENABLED" = "false" ] && { mount -v "$ARCH_ROOT_PARTITION" /mnt 1>/dev/null || exit 1; }
+mkdir -p /mnt/boot 1>/dev/null || exit 1
+mount -v "$ARCH_BOOT_PARTITION" /mnt/boot 1>/dev/null || exit 1
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
 
-print_title "Pacstrap"
+print_title "Installing Packages"
 packages=()
 packages+=("base")
 packages+=("base-devel")
@@ -301,16 +319,16 @@ packages+=("nano")
 packages+=("bash-completion")
 [ "$ARCH_PKGFILE_ENABLED" = 'true' ] && packages+=("pkgfile")
 [ -n "$ARCH_MICROCODE" ] && packages+=("$ARCH_MICROCODE")
-pacstrap /mnt "${packages[@]}" "${ARCH_OPT_PACKAGE_LIST[@]}" || exit 1
+pacstrap /mnt "${packages[@]}" "${ARCH_OPT_PACKAGE_LIST[@]}" 1>/dev/null || exit 1
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
 
 print_title "Configure Pacman"
-sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf || exit 1
-sed -i 's/^#Color/Color/' /mnt/etc/pacman.conf || exit 1
-[ "$ARCH_MULTILIB_ENABLED" = 'true' ] && { sed -i "/\[multilib\]/,/Include/"'s/^#//' /mnt/etc/pacman.conf || exit 1; }
-arch-chroot /mnt pacman -Syy --noconfirm || exit 1
+sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf 1>/dev/null || exit 1
+sed -i 's/^#Color/Color/' /mnt/etc/pacman.conf 1>/dev/null || exit 1
+[ "$ARCH_MULTILIB_ENABLED" = 'true' ] && { sed -i "/\[multilib\]/,/Include/"'s/^#//' /mnt/etc/pacman.conf 1>/dev/null || exit 1; }
+arch-chroot /mnt pacman -Syy --noconfirm 1>/dev/null || exit 1
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
@@ -327,7 +345,7 @@ print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
 
-print_title "Generate Fstab"
+print_title "Generate /etc/fstab"
 genfstab -U /mnt >>/mnt/etc/fstab || exit 1
 print_green "> Done\n"
 
@@ -335,10 +353,10 @@ print_green "> Done\n"
 
 if [ "$ARCH_SWAP_SIZE" != "0" ] && [ -n "$ARCH_SWAP_SIZE" ]; then
     print_title "Create Swap"
-    dd if=/dev/zero of=/mnt/swapfile bs=1G count="$ARCH_SWAP_SIZE" status=progress || exit 1
-    chmod 600 /mnt/swapfile || exit 1
-    mkswap /mnt/swapfile || exit 1
-    swapon /mnt/swapfile || exit 1
+    dd if=/dev/zero of=/mnt/swapfile bs=1G count="$ARCH_SWAP_SIZE" status=progress 1>/dev/null || exit 1
+    chmod 600 /mnt/swapfile 1>/dev/null || exit 1
+    mkswap /mnt/swapfile 1>/dev/null || exit 1
+    swapon /mnt/swapfile 1>/dev/null || exit 1
     echo "# Swapfile" >>/mnt/etc/fstab || exit 1
     echo "/swapfile none swap defaults 0 0" >>/mnt/etc/fstab || exit 1
     print_green "> Done\n"
@@ -346,29 +364,24 @@ fi
 
 # /////////////////////////////////////////////////////
 
-print_title "Timezone and Localization"
-arch-chroot /mnt ln -sf "/usr/share/zoneinfo/$ARCH_TIMEZONE" /etc/localtime || exit 1
-arch-chroot /mnt hwclock --systohc || exit 1 # Set hardware clock from system clock
+print_title "Timezone & System Clock"
+arch-chroot /mnt ln -sf "/usr/share/zoneinfo/$ARCH_TIMEZONE" /etc/localtime 1>/dev/null || exit 1
+arch-chroot /mnt hwclock --systohc 1>/dev/null || exit 1 # Set hardware clock from system clock
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
 
-print_title "Keymap"
+print_title "Set Console Keymap"
 echo "KEYMAP=$ARCH_VCONSOLE_KEYMAP" >/mnt/etc/vconsole.conf || exit 1
 echo "FONT=$ARCH_VCONSOLE_FONT" >>/mnt/etc/vconsole.conf || exit 1
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
 
-print_title "Locale"
+print_title "Generate Locale"
 echo "LANG=$ARCH_LOCALE_LANG" >/mnt/etc/locale.conf || exit 1
-print_green "> Done\n"
-
-# /////////////////////////////////////////////////////
-
-print_title "Set locale.gen"
-for ((i = 0; i < ${#ARCH_LOCALE_GEN_LIST[@]}; i++)); do sed -i "s/^#${ARCH_LOCALE_GEN_LIST[$i]}/${ARCH_LOCALE_GEN_LIST[$i]}/g" "/mnt/etc/locale.gen" || exit 1; done
-arch-chroot /mnt locale-gen || exit 1
+for ((i = 0; i < ${#ARCH_LOCALE_GEN_LIST[@]}; i++)); do sed -i "s/^#${ARCH_LOCALE_GEN_LIST[$i]}/${ARCH_LOCALE_GEN_LIST[$i]}/g" "/mnt/etc/locale.gen" 1>/dev/null || exit 1; done
+arch-chroot /mnt locale-gen 1>/dev/null || exit 1
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
@@ -397,18 +410,18 @@ print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
 
-print_title "Mkinitcpio"
-[ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && { sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd autodetect modconf keyboard sd-vconsole block sd-encrypt filesystems resume fsck)/" /mnt/etc/mkinitcpio.conf || exit 1; }
-[ "$ARCH_ENCRYPTION_ENABLED" = "false" ] && { sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd autodetect modconf keyboard sd-vconsole block filesystems resume fsck)/" /mnt/etc/mkinitcpio.conf || exit 1; }
-arch-chroot /mnt mkinitcpio -P || exit 1
+print_title "Create Initial Ramdisk"
+[ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && { sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd autodetect modconf keyboard sd-vconsole block sd-encrypt filesystems resume fsck)/" /mnt/etc/mkinitcpio.conf 1>/dev/null || exit 1; }
+[ "$ARCH_ENCRYPTION_ENABLED" = "false" ] && { sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd autodetect modconf keyboard sd-vconsole block filesystems resume fsck)/" /mnt/etc/mkinitcpio.conf 1>/dev/null || exit 1; }
+arch-chroot /mnt mkinitcpio -P 1>/dev/null || exit 1
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
 
-print_title "Install Bootloader (systemd-boot)"
+print_title "Install Bootloader"
 
 # Install systemdboot to /boot
-arch-chroot /mnt bootctl --esp-path=/boot install || exit 1
+arch-chroot /mnt bootctl --esp-path=/boot install 1>/dev/null || exit 1
 
 # Kernel args
 swap_device_uuid="$(findmnt -no UUID -T /mnt/swapfile)"
@@ -449,40 +462,42 @@ print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
 
-# Reduce shutdown timeout
-sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=${ARCH_SHUTDOWN_TIMEOUT_SEC}/" /mnt/etc/systemd/system.conf || exit 1
-
-# /////////////////////////////////////////////////////
-
-# Set Nano colors
-sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc || exit 1
-
-# /////////////////////////////////////////////////////
-
-print_title "Create User & Groups"
+print_title "Create User"
 
 # Create new user
-arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$ARCH_USERNAME" || exit 1
+arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$ARCH_USERNAME" 1>/dev/null || exit 1
 
 # Allow users in group wheel to use sudo
-sed -i 's^# %wheel ALL=(ALL:ALL) ALL^%wheel ALL=(ALL:ALL) ALL^g' /mnt/etc/sudoers || exit 1
+sed -i 's^# %wheel ALL=(ALL:ALL) ALL^%wheel ALL=(ALL:ALL) ALL^g' /mnt/etc/sudoers 1>/dev/null || exit 1
 echo -e "\n## Enable sudo password feedback\nDefaults pwfeedback" >>/mnt/etc/sudoers || exit 1
 
 # Change passwords
-printf "%s\n%s" "${ARCH_PASSWORD}" "${ARCH_PASSWORD}" | arch-chroot /mnt passwd &>/dev/null || exit 1
-printf "%s\n%s" "${ARCH_PASSWORD}" "${ARCH_PASSWORD}" | arch-chroot /mnt passwd "$ARCH_USERNAME" &>/dev/null || exit 1
+printf "%s\n%s" "${ARCH_PASSWORD}" "${ARCH_PASSWORD}" | arch-chroot /mnt passwd 1>/dev/null || exit 1
+printf "%s\n%s" "${ARCH_PASSWORD}" "${ARCH_PASSWORD}" | arch-chroot /mnt passwd "$ARCH_USERNAME" 1>/dev/null || exit 1
 
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
 
-print_title "Enable Essential Services"
-arch-chroot /mnt systemctl enable NetworkManager || exit 1                                                    # Network Manager
-arch-chroot /mnt systemctl enable systemd-timesyncd.service || exit 1                                         # Sync time from internet after boot
-arch-chroot /mnt systemctl enable reflector.service || exit 1                                                 # Rank mirrors after boot
-arch-chroot /mnt systemctl enable paccache.timer || exit 1                                                    # Discard cached/unused packages weekly
-[ "$ARCH_FSTRIM_ENABLED" = 'true' ] && { arch-chroot /mnt systemctl enable fstrim.timer || exit 1; }          # SSD support
-[ "$ARCH_PKGFILE_ENABLED" = 'true' ] && { arch-chroot /mnt systemctl enable pkgfile-update.timer || exit 1; } # Pkgfile update timer
+print_title "Enable Services"
+arch-chroot /mnt systemctl enable NetworkManager 1>/dev/null || exit 1                                                    # Network Manager
+arch-chroot /mnt systemctl enable systemd-timesyncd.service 1>/dev/null || exit 1                                         # Sync time from internet after boot
+arch-chroot /mnt systemctl enable reflector.service 1>/dev/null || exit 1                                                 # Rank mirrors after boot
+arch-chroot /mnt systemctl enable paccache.timer 1>/dev/null || exit 1                                                    # Discard cached/unused packages weekly
+[ "$ARCH_FSTRIM_ENABLED" = 'true' ] && { arch-chroot /mnt systemctl enable fstrim.timer 1>/dev/null || exit 1; }          # SSD support
+[ "$ARCH_PKGFILE_ENABLED" = 'true' ] && { arch-chroot /mnt systemctl enable pkgfile-update.timer 1>/dev/null || exit 1; } # Pkgfile update timer
+print_green "> Done\n"
+
+# /////////////////////////////////////////////////////
+
+print_title "Configure System"
+
+# Reduce shutdown timeout
+sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=${ARCH_SHUTDOWN_TIMEOUT_SEC}/" /mnt/etc/systemd/system.conf 1>/dev/null || exit 1
+
+# Set Nano colors
+sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc 1>/dev/null || exit 1
+
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
@@ -492,17 +507,17 @@ if [ "$ARCH_AUR_ENABLED" = "true" ]; then
     print_title "Install AUR Helper"
 
     # Add sudo needs no password rights
-    arch-chroot /mnt sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers || exit 1
+    arch-chroot /mnt sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers 1>/dev/null || exit 1
 
     # Install paru as user
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "git clone https://aur.archlinux.org/paru-bin.git /tmp/paru && cd /tmp/paru && makepkg -si --noconfirm && rm -rf /tmp/paru" || exit 1
+    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "git clone https://aur.archlinux.org/paru-bin.git /tmp/paru && cd /tmp/paru && makepkg -si --noconfirm && rm -rf /tmp/paru" 1>/dev/null || exit 1
 
     # Remove sudo needs no password rights
-    arch-chroot /mnt sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers || exit 1
+    arch-chroot /mnt sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers 1>/dev/null || exit 1
 
     # Paru config
-    sed -i 's/^#BottomUp/BottomUp/g' /mnt/etc/paru.conf || exit 1
-    sed -i 's/^#SudoLoop/SudoLoop/g' /mnt/etc/paru.conf || exit 1
+    sed -i 's/^#BottomUp/BottomUp/g' /mnt/etc/paru.conf 1>/dev/null || exit 1
+    sed -i 's/^#SudoLoop/SudoLoop/g' /mnt/etc/paru.conf 1>/dev/null || exit 1
 
     print_green "> Done\n"
 fi
@@ -511,7 +526,7 @@ fi
 
 if [ -n "${ARCH_USER_SCRIPTS[*]}" ]; then
 
-    print_title "Execute User Scripts..."
+    print_title "Execute Scripts (Count: ${#ARCH_USER_SCRIPTS[@]})"
 
     # Run all user scripts iteratively
     for user_script in "${ARCH_USER_SCRIPTS[@]}"; do
@@ -520,13 +535,13 @@ if [ -n "${ARCH_USER_SCRIPTS[*]}" ]; then
         script_content=$(printf '%s\n%s' "$(<"${user_script}")" 'wait')
 
         # Add sudo needs no password rights
-        arch-chroot /mnt sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers || exit 1
+        arch-chroot /mnt sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers 1>/dev/null || exit 1
 
         # Run script as user (sudo needs no password)
-        { arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "$script_content" && wait; } || exit 1
+        { arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "$script_content" && wait; } 1>/dev/null || exit 1
 
         # Remove sudo needs no password rights
-        arch-chroot /mnt sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers || exit 1
+        arch-chroot /mnt sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers 1>/dev/null || exit 1
     done
 
     print_green "> Done\n"
@@ -534,13 +549,15 @@ fi
 
 # /////////////////////////////////////////////////////
 
-arch-chroot /mnt chown -R "$ARCH_USERNAME":"$ARCH_USERNAME" "/home/${ARCH_USERNAME}" || exit 1
+print_title "Set Permissions"
+arch-chroot /mnt chown -R "$ARCH_USERNAME":"$ARCH_USERNAME" "/home/${ARCH_USERNAME}" 1>/dev/null || exit 1
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
 
-print_title "Remove orphaned packages"
-arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Qtdq | pacman -Rns --noconfirm - || echo "=> No orphaned packages found"' || exit 1
+print_title "Remove Orphans"
+arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Qtdq | pacman -Rns --noconfirm - || echo "Skipped"' 1>/dev/null || exit 1
+
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////

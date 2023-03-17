@@ -144,11 +144,6 @@ git config --global credential.helper /usr/lib/git-core/git-credential-libsecret
 
 # /////////////////////////////////////////////////////
 
-# Set correct permissions
-sudo chown -R "$ARCH_USERNAME":"$ARCH_USERNAME" "/home/${ARCH_USERNAME}" || exit 1
-
-# /////////////////////////////////////////////////////
-
 # Create Samba config
 mkdir -p "/etc/samba/"
 {
@@ -207,6 +202,16 @@ sudo systemctl enable nmb.service || exit 1       # Samba
 systemctl enable --user pipewire.service || exit 1       # Pipewire
 systemctl enable --user pipewire-pulse.service || exit 1 # Pipewire
 systemctl enable --user wireplumber.service || exit 1    # Pipewire
+
+# /////////////////////////////////////////////////////
+
+# Hide desktop files
+mkdir -p "/home/$ARCH_USERNAME/.local/share/applications" || exit 1
+echo -e "[Desktop Entry]\nHidden=true" >"/home/$ARCH_USERNAME/.local/share/applications/avahi-discover.desktop" || exit 1
+echo -e "[Desktop Entry]\nHidden=true" >"/home/$ARCH_USERNAME/.local/share/applications/bssh.desktop" || exit 1
+echo -e "[Desktop Entry]\nHidden=true" >"/home/$ARCH_USERNAME/.local/share/applications/bvnc.desktop" || exit 1
+echo -e "[Desktop Entry]\nHidden=true" >"/home/$ARCH_USERNAME/.local/share/applications/qv4l2.desktop" || exit 1
+echo -e "[Desktop Entry]\nHidden=true" >"/home/$ARCH_USERNAME/.local/share/applications/qvidcap.desktop" || exit 1
 
 # /////////////////////////////////////////////////////
 

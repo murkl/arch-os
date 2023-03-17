@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 REPO_BASE_URL="${1:-https://raw.githubusercontent.com/murkl/arch-distro/main/}"
 WORKING_DIR=$(mktemp -d "/tmp/arch-distro-wrapper.XXXXXXXXXX")

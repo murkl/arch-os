@@ -10,8 +10,9 @@ WORKING_DIR="$(cd "$(dirname "$0")" &>/dev/null && pwd)"
 ARCH_INSTALL_SCRIPT="${WORKING_DIR}/../arch-install.sh"
 ARCH_ENVIRONMENT_DIR="${WORKING_DIR}/../environment"
 
-# ARCH INSTALL CONFIG
+# ARCH INSTALL CONFIG & LOG
 ARCH_INSTALL_CONFIG="/tmp/arch-install.conf"
+ARCH_INSTALL_LOG="/tmp/arch-install.log"
 
 # TUI
 TUI_TITLE="Arch Linux Setup"
@@ -386,9 +387,24 @@ while (true); do
         # Add scripts in the right order to script args
         script_args="" && [ "$ENVIRONMENT_DESKTOP" != "none" ] && script_args="${script_args} -s ${ARCH_ENVIRONMENT_DIR}/${ENVIRONMENT_DESKTOP}.sh"
 
-        # Execute arch-install.sh
-        bash -c "${ARCH_INSTALL_SCRIPT} -f -c ${ARCH_INSTALL_CONFIG} ${script_args}"
-        exit $?
+        (
+            # Execute install script and write stderr to file
+            bash -c "${ARCH_INSTALL_SCRIPT} -f -c ${ARCH_INSTALL_CONFIG} ${script_args}" 2>"$ARCH_INSTALL_LOG"
+
+            # Save result from install script
+            echo $? >/tmp/arch-install.result
+        ) | whiptail --title "Arch Linux Installation" --gauge "Start Arch Installation..." 7 "$TUI_WIDTH" 0
+
+        result=$(<"/tmp/arch-install.result")
+        rm -rf "/tmp/arch-install.result"
+
+        if [ "$result" = "0" ]; then
+            whiptail --title "$TUI_TITLE" --yesno "Arch Installation successful.\n\nReboot now?" --yes-button "Reboot" --no-button "Exit" "$TUI_HEIGHT" "$TUI_WIDTH" && reboot
+            exit 0
+        fi
+
+        whiptail --title "Arch Installation failed" --msgbox "$(cat $ARCH_INSTALL_LOG)" --scrolltext 30 90
+        exit 1
         ;;
 
     *)

@@ -76,7 +76,7 @@ If you prefer, you can make these customizations manually. This is not part of t
 
 The script `arch-install.sh` must be executed after booting from latest [Arch ISO](https://www.archlinux.de/download).
 
-If the given config or script in arguments starts with `http://` or `https://`, the regarding file will automatically downloaded by the script. You can optionally use multiple user scripts which will invoked in the last installation step. Add the `-f` argument to prevent the script from asking to continue the installation (useful when used by an auto installer script).
+If the given config or script in arguments starts with `http://` or `https://`, the regarding file will automatically downloaded by the script. You can optionally use multiple user scripts which will invoked in the last installation step. Add the `-f` argument to use this script by an auto installer script. The argument prevents the script from asking to continue the installation and will print percent and title for whiptail gauge.
 
 ```
 ./arch-install.sh -c <config> [-f] [ -s <script1> -s <script2> ...]
