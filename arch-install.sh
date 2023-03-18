@@ -305,7 +305,7 @@ print_green "> Done\n"
 
 # /////////////////////////////////////////////////////
 
-print_title "Installing Packages"
+print_title "Installing Packages (This may take a while)"
 packages=()
 packages+=("base")
 packages+=("base-devel")
@@ -526,7 +526,7 @@ fi
 
 if [ -n "${ARCH_USER_SCRIPTS[*]}" ]; then
 
-    print_title "Execute Scripts (Count: ${#ARCH_USER_SCRIPTS[@]})"
+    print_title "Execute Scripts (This may take a while)"
 
     # Run all user scripts iteratively
     for user_script in "${ARCH_USER_SCRIPTS[@]}"; do
@@ -538,7 +538,7 @@ if [ -n "${ARCH_USER_SCRIPTS[*]}" ]; then
         arch-chroot /mnt sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers 1>/dev/null || exit 1
 
         # Run script as user (sudo needs no password)
-        { arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "$script_content" && wait; } 1>/dev/null || exit 1
+        { arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "$script_content" 1>/dev/null && wait; } || exit 1
 
         # Remove sudo needs no password rights
         arch-chroot /mnt sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers 1>/dev/null || exit 1
