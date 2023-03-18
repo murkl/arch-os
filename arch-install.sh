@@ -319,7 +319,7 @@ packages+=("nano")
 packages+=("bash-completion")
 [ "$ARCH_PKGFILE_ENABLED" = 'true' ] && packages+=("pkgfile")
 [ -n "$ARCH_MICROCODE" ] && packages+=("$ARCH_MICROCODE")
-pacstrap /mnt "${packages[@]}" "${ARCH_OPT_PACKAGE_LIST[@]}" 1>/dev/null || exit 1
+pacstrap /mnt "${packages[@]}" "${ARCH_OPT_PACKAGE_LIST[@]}" --disable-download-timeout 1>/dev/null || exit 1
 print_green "> Done\n"
 
 # /////////////////////////////////////////////////////

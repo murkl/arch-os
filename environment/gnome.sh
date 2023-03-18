@@ -88,7 +88,7 @@ if [ "$(systemd-detect-virt)" != 'none' ]; then
 fi
 
 # Install packages
-sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
+sudo pacman -Sy --noconfirm --needed --disable-download-timeout "${packages[@]}" || exit 1
 
 # /////////////////////////////////////////////////////
 
@@ -227,7 +227,7 @@ if [ "$ENVIRONMENT_DRIVER" = "intel-hd" ]; then
     packages+=("intel-media-driver")
 
     # Install packages
-    sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
+    sudo pacman -Sy --noconfirm --needed --disable-download-timeout "${packages[@]}" || exit 1
 
     # Configure mkinitcpio
     sudo sed -i "s/MODULES=()/MODULES=(i915)/g" /etc/mkinitcpio.conf || exit 1
@@ -252,7 +252,7 @@ if [ "$ENVIRONMENT_DRIVER" = "nvidia" ]; then
     packages+=("gamemode") && [ "$ARCH_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-gamemode")
 
     # Install packages
-    sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
+    sudo pacman -Sy --noconfirm --needed --disable-download-timeout "${packages[@]}" || exit 1
 
     # Early Loading
     sudo sed -i "s/MODULES=()/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /etc/mkinitcpio.conf || exit 1
@@ -286,7 +286,7 @@ if [ "$ENVIRONMENT_DRIVER" = "nvidia-optimus" ]; then
     packages+=("intel-media-driver")
 
     # Install packages
-    sudo pacman -Sy --noconfirm --needed "${packages[@]}" || exit 1
+    sudo pacman -Sy --noconfirm --needed --disable-download-timeout "${packages[@]}" || exit 1
 
     # Early Loading
     sudo sed -i "s/MODULES=()/MODULES=(i915 nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /etc/mkinitcpio.conf || exit 1
