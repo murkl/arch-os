@@ -235,7 +235,7 @@ print_title "Prepare Installation"
 unmount
 
 # Temporarily disable ECN (prevent traffic problems with some old routers)
-#sysctl net.ipv4.tcp_ecn=0 1>/dev/null
+sysctl net.ipv4.tcp_ecn=0 1>/dev/null
 
 # Update keyring
 pacman -Sy --noconfirm archlinux-keyring 1>/dev/null
