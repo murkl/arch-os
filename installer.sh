@@ -114,7 +114,7 @@ check_config() {
 # ----------------------------------------------------------------------------------------------------
 
 # shellcheck disable=SC1091
-[ -f ./arch-installer.conf ] && source ./arch-installer.conf
+[ -f ./installer.conf ] && source ./installer.conf
 
 # ----------------------------------------------------------------------------------------------------
 # SHOW MENU

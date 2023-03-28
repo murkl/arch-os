@@ -1,6 +1,6 @@
 <div align="center">
    <h1>Arch Linux Distro</h1>
-   <p><img src="screenshots/installer.png" /></p>
+   <p><img src="assets/screenshots/installer.png" /></p>
    <p>
       <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
       <img src="https://img.shields.io/badge/LICENSE-MIT-blue?style=for-the-badge">
@@ -52,24 +52,18 @@ gsettings set org.gnome.software download-updates false
 
 ## Desktop Customization
 
-<p><img src="screenshots/desktop.jpg" /></p>
+<p><img src="assets/screenshots/desktop.jpg" /></p>
 
 ### GNOME Shell Extensions
-
-#### Recommendation
 
 - https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/
 - https://extensions.gnome.org/extension/1160/dash-to-panel/
 - https://extensions.gnome.org/extension/3193/blur-my-shell/
 - https://extensions.gnome.org/extension/3843/just-perfection/
 - https://extensions.gnome.org/extension/3733/tiling-assistant/
-
-#### Additional
-
 - https://extensions.gnome.org/extension/19/user-themes/
 - https://extensions.gnome.org/extension/615/appindicator-support/
 - https://extensions.gnome.org/extension/5237/rounded-window-corners/
-- https://extensions.gnome.org/extension/5612/focus-indicator/
 
 ### Theming
 
