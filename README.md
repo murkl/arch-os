@@ -72,3 +72,33 @@ gsettings set org.gnome.software download-updates false
 - Libadwaita GTK Theme: https://github.com/lassekongo83/adw-gtk3
 - Libadwaita GTK Colors: https://github.com/lassekongo83/adw-colors
 - Libadwaita Customization Tool: https://github.com/GradienceTeam/Gradience
+
+## Recovery
+
+Boot from Arch ISO and type
+
+Show disk info: `lsblk`
+
+Disk: /dev/vda
+Boot: /dev/vda1
+Root: /dev/vda2
+
+### 1. Create mount dir
+
+- `mkdir -p /mnt/boot`
+
+### 2. Mount root
+
+- With disk encryption
+  - `cryptsetup open /dev/vda2 cryptroot`
+  - `mount /dev/mapper/cryptroot /mnt`
+- Without disk encryption
+  - `mount /dev/vda2 /mnt/boot`
+
+### 3. Mount boot
+
+- `mount /dev/vda1 /mnt/boot`
+
+### 4. Enter chroot
+
+- `arch-chroot /mnt`

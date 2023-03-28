@@ -49,7 +49,7 @@ TUI_POSITION=""
 # ----------------------------------------------------------------------------------------------------
 
 PROGRESS_COUNT=0
-PROGRESS_TOTAL=35
+PROGRESS_TOTAL=36
 
 # ----------------------------------------------------------------------------------------------------
 # PRINT FUNCTIONS
@@ -940,7 +940,7 @@ trap trap_result EXIT
     # Unmount
     swapoff -a
     umount -A -R /mnt
-    cryptsetup close cryptroot
+    [ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Arch Installation finished"
