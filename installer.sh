@@ -69,10 +69,9 @@ print_whiptail_info() {
     local info="$1"
 
     # Print title for logging (only stderr will be logged)
-    echo >&2 # Newline
-    echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" >&2
+    echo "#########################################################" >&2
     echo ">>> ${info}" >&2
-    echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" >&2
+    echo "#########################################################" >&2
 
     # Print percent & info for whiptail (uses descriptor 3 as stdin)
     ((PROGRESS_COUNT += 1)) && echo -e "XXX\n$((PROGRESS_COUNT * 100 / PROGRESS_TOTAL))\n${info}...\nXXX" >&3
@@ -102,12 +101,6 @@ check_config() {
     [ -z "${ARCH_DRIVER}" ] && TUI_POSITION="driver" && return 1
     TUI_POSITION="install"
 }
-
-# ----------------------------------------------------------------------------------------------------
-# CHECK UEFI
-# ----------------------------------------------------------------------------------------------------
-
-[ ! -d /sys/firmware/efi ] && echo "ERROR: BIOS not supported" >&2 && exit 1
 
 # ----------------------------------------------------------------------------------------------------
 # SOURCE CONFIG
@@ -231,11 +224,12 @@ while (true); do
 done
 
 # ----------------------------------------------------------------------------------------------------
-# RESULT TRAP
+# SET RESULT TRAP
 # ----------------------------------------------------------------------------------------------------
 
 trap_result() {
     if [ -f /tmp/arch-install.success ]; then
+        rm -f /tmp/arch-install.success
         whiptail --title "$TUI_TITLE" --yesno "Arch Installation successful.\n\nReboot now?" --yes-button "Reboot" --no-button "Exit" "$TUI_HEIGHT" "$TUI_WIDTH" && reboot
     else
         whiptail --title "Arch Installation failed" --msgbox "$(cat $LOG_FILE)" --scrolltext 30 90
@@ -250,6 +244,13 @@ trap trap_result EXIT
     exec 3>&1 4>&2     # Saves file descriptors (new stdin: &3 new stderr: &4)
     exec 1>/dev/null   # Log stdin to /dev/null
     exec 2>"$LOG_FILE" # Log stderr to logfile
+
+    # ----------------------------------------------------------------------------------------------------
+    print_whiptail_info "Checkup"
+    # ----------------------------------------------------------------------------------------------------
+
+    [ ! -d /sys/firmware/efi ] && echo "ERROR: BIOS not supported! Please set your boot mode to UEFI." >&2 && exit 1
+    [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && echo "ERROR: You must execute the Installer from Arch ISO!" >&2 && exit 1
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Waiting for Reflector from Arch ISO"
