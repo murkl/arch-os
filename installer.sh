@@ -279,7 +279,7 @@ trap trap_result EXIT
     pacman -Sy --noconfirm archlinux-keyring
 
     # Detect microcode
-    unset ARCH_MICROCODE
+    ARCH_MICROCODE=""
     grep -E "GenuineIntel" <<<"$(lscpu)" && ARCH_MICROCODE="intel-ucode"
     grep -E "AuthenticAMD" <<<"$(lscpu)" && ARCH_MICROCODE="amd-ucode"
 
@@ -527,9 +527,6 @@ trap trap_result EXIT
 
     # Set Nano colors
     sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
-
-    # Create tmp dir
-    mkdir -p /mnt/tmp
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Install AUR Helper"

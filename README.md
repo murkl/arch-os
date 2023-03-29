@@ -73,32 +73,32 @@ gsettings set org.gnome.software download-updates false
 - Libadwaita GTK Colors: https://github.com/lassekongo83/adw-colors
 - Libadwaita Customization Tool: https://github.com/GradienceTeam/Gradience
 
-## Recovery
+## Rescue & Recovery
 
-Boot from Arch ISO and type
+If you need to rescue your Arch Linux in case of a crash, boot from a USB device and follow these instructions.
 
-Show disk info: `lsblk`
+### 1. Disk Information
 
-Disk: /dev/vda
-Boot: /dev/vda1
-Root: /dev/vda2
+- Show disk info: `lsblk`
+  - Example Disk: `/dev/sda`
+  - Example Boot: `/dev/sda1`
+  - Example Root: `/dev/sda2`
 
-### 1. Create mount dir
+**Note:** _You may have to replace `/dev/sda` with your own disk_
 
-- `mkdir -p /mnt/boot`
+### 2. Mount
 
-### 2. Mount root
+- Create mount dir: `mkdir -p /mnt/boot`
+- Mount root partition
+  - a) Encryption enabled
+    - `cryptsetup open /dev/sda2 cryptroot`
+    - `mount /dev/mapper/cryptroot /mnt`
+  - b) Encryption disabled
+    - `mount /dev/sda2 /mnt`
+- Mount boot partition: `mount /dev/sda1 /mnt/boot`
 
-- With disk encryption
-  - `cryptsetup open /dev/vda2 cryptroot`
-  - `mount /dev/mapper/cryptroot /mnt`
-- Without disk encryption
-  - `mount /dev/vda2 /mnt/boot`
+### 3. Chroot
 
-### 3. Mount boot
-
-- `mount /dev/vda1 /mnt/boot`
-
-### 4. Enter chroot
-
-- `arch-chroot /mnt`
+- Enter chroot: `arch-chroot /mnt`
+- _Fix your Arch Linux..._
+- Exit: `exit`
