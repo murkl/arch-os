@@ -1,6 +1,6 @@
 <div align="center">
    <h1>Arch Linux Distro</h1>
-   <p><img src="assets/screenshots/installer.png" /></p>
+   <p><img src="./screenshots/desktop.jpg" /></p>
    <p>
       <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
       <img src="https://img.shields.io/badge/LICENSE-MIT-blue?style=for-the-badge">
@@ -42,6 +42,8 @@
 - Connect to WLAN, run `iwctl` and type into console: `station wlan0 connect "SSID"`
 - Run Installer: `curl -Ls http://arch.webhop.me | bash`
 
+<p><img src="./screenshots/installer.png" /></p>
+
 ## Recommendation
 
 By default gnome-software will download updated packages from the Arch Linux repositories. This forces GNOME Software to refresh the package lists for pacman automatically. This is the equivalent to `pacman -Sy`. If the user ignores the GNOME software update prompt, but does install a new package, that will result in partial upgrades, which are unsupported. To prevent GNOME Software from refreshing the package lists set the following dconf setting after Arch Linux installation:
@@ -52,7 +54,11 @@ gsettings set org.gnome.software download-updates false
 
 ## Desktop Customization
 
-<p><img src="assets/screenshots/desktop.jpg" /></p>
+- Icon Theme: https://github.com/vinceliuice/Tela-icon-theme
+- Firefox Theme: https://github.com/rafaelmardojai/firefox-gnome-theme
+- Libadwaita GTK Theme: https://github.com/lassekongo83/adw-gtk3
+- Libadwaita GTK Colors: https://github.com/lassekongo83/adw-colors
+- Libadwaita Customization Tool: https://github.com/GradienceTeam/Gradience
 
 ### GNOME Shell Extensions
 
@@ -64,14 +70,6 @@ gsettings set org.gnome.software download-updates false
 - https://extensions.gnome.org/extension/19/user-themes/
 - https://extensions.gnome.org/extension/615/appindicator-support/
 - https://extensions.gnome.org/extension/5237/rounded-window-corners/
-
-### Theming
-
-- Icon Theme: https://github.com/vinceliuice/Tela-icon-theme
-- Firefox Theme: https://github.com/rafaelmardojai/firefox-gnome-theme
-- Libadwaita GTK Theme: https://github.com/lassekongo83/adw-gtk3
-- Libadwaita GTK Colors: https://github.com/lassekongo83/adw-colors
-- Libadwaita Customization Tool: https://github.com/GradienceTeam/Gradience
 
 ## Rescue & Recovery
 

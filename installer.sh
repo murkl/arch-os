@@ -2,12 +2,6 @@
 set -Eeuo pipefail
 
 # ----------------------------------------------------------------------------------------------------
-# ASSET BASE URL
-# ----------------------------------------------------------------------------------------------------
-
-ASSET_BASE_URL="${1:-https://raw.githubusercontent.com/murkl/arch-distro/main/assets}"
-
-# ----------------------------------------------------------------------------------------------------
 # LOGGING
 # ----------------------------------------------------------------------------------------------------
 
@@ -654,12 +648,8 @@ trap trap_result EXIT
     arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "cd $tmp_name && yes | LC_ALL=en_US.UTF-8 makepkg -sif"
     arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- rm -rf "$tmp_name"
 
-    # Download Plymouth config & watermark
-    curl -Lf "${ASSET_BASE_URL}/plymouth/spinner.plymouth" -o "/mnt/usr/share/plymouth/themes/spinner/spinner.plymouth"
-    curl -Lf "${ASSET_BASE_URL}/plymouth/watermark.png" -o "/mnt/usr/share/plymouth/themes/spinner/watermark.png"
-
     # Configure mkinitcpio
-    sed -i "s/base systemd autodetect/base systemd sd-plymouth autodetect/g" /mnt/etc/mkinitcpio.conf
+    sed -i "s/base systemd autodetect/base systemd plymouth autodetect/g" /mnt/etc/mkinitcpio.conf
 
     # Rebuild
     arch-chroot /mnt mkinitcpio -P
