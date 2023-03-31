@@ -59,16 +59,11 @@ print_menu_entry() {
 }
 
 print_whiptail_info() {
-
-    local info="$1"
-
-    # Print title for logging (only stderr will be logged)
-    echo "#########################################################" >&2
-    echo ">>> ${info}" >&2
-    echo "#########################################################" >&2
-
+    # Print info to stderr in case of failure (only stderr will be logged)
+    echo "###!CMD" >&2  # Print marker for logging
+    echo ">>> ${1}" >&2 # Print title for logging
     # Print percent & info for whiptail (uses descriptor 3 as stdin)
-    ((PROGRESS_COUNT += 1)) && echo -e "XXX\n$((PROGRESS_COUNT * 100 / PROGRESS_TOTAL))\n${info}...\nXXX" >&3
+    ((PROGRESS_COUNT += 1)) && echo -e "XXX\n$((PROGRESS_COUNT * 100 / PROGRESS_TOTAL))\n${1}...\nXXX" >&3
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -222,15 +217,20 @@ done
 # ----------------------------------------------------------------------------------------------------
 
 trap_result() {
-    if [ -f /tmp/arch-install.success ]; then
-        rm -f /tmp/arch-install.success
-        whiptail --title "$TUI_TITLE" --yesno "Arch Installation successful.\n\nReboot now?" --yes-button "Reboot" --no-button "Exit" "$TUI_HEIGHT" "$TUI_WIDTH" && reboot
+    if [ $? -gt 0 ]; then
+        logs=""
+        while read -r line; do
+            [ "$line" = "###!CMD" ] && break # If first marker (from bottom) found, break loop
+            [ -z "$line" ] && continue       # Skip newline
+            logs="${logs}\n${line}"          # Append log
+        done <<<"$(tac $LOG_FILE)"           # Read logfile inverted (from bottom)
+        whiptail --title "$TUI_TITLE" --msgbox "FAILED $(echo -e "$logs" | tac)" --scrolltext 30 90
     else
-        whiptail --title "Arch Installation failed" --msgbox "$(cat $LOG_FILE)" --scrolltext 30 90
+        whiptail --title "$TUI_TITLE" --yesno "Arch Installation successful.\n\nReboot now?" --yes-button "Reboot" --no-button "Exit" "$TUI_HEIGHT" "$TUI_WIDTH" && reboot
     fi
 }
 
-trap trap_result EXIT
+trap 'trap_result $?' EXIT
 
 # //////////////////////////////////  START ARCH LINUX INSTALLATION //////////////////////////////////
 (
@@ -600,6 +600,9 @@ trap trap_result EXIT
     # Driver
     packages+=("xf86-input-synaptics")
 
+    # Plymouth
+    packages+=("plymouth")
+
     # Fonts
     packages+=("noto-fonts")
     packages+=("noto-fonts-emoji")
@@ -631,22 +634,8 @@ trap trap_result EXIT
     arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- rm -rf "$tmp_name"
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Install Plymouth"
+    print_whiptail_info "Enable Plymouth"
     # ----------------------------------------------------------------------------------------------------
-
-    repo_url="https://aur.archlinux.org/plymouth.git"
-    tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/plymouth.XXXXXXXXXX")
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git clone "$repo_url" "$tmp_name"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "cd $tmp_name && yes | LC_ALL=en_US.UTF-8 makepkg -sif"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- rm -rf "$tmp_name"
-
-    # Install Plymouth (GDM)
-    repo_url="https://aur.archlinux.org/gdm-plymouth.git"
-    tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/gdm-plymouth.XXXXXXXXXX")
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git clone "$repo_url" "$tmp_name"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- sed -i 's/^options=(debug)/options=(!debug)/' "${tmp_name}/PKGBUILD"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "cd $tmp_name && yes | LC_ALL=en_US.UTF-8 makepkg -sif"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- rm -rf "$tmp_name"
 
     # Configure mkinitcpio
     sed -i "s/base systemd autodetect/base systemd plymouth autodetect/g" /mnt/etc/mkinitcpio.conf
@@ -932,8 +921,5 @@ trap trap_result EXIT
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Arch Installation finished"
     # ----------------------------------------------------------------------------------------------------
-
-    # Save success result
-    touch /tmp/arch-install.success
 
 ) | whiptail --title "Arch Linux Installation" --gauge "Start Arch Installation..." 7 "$TUI_WIDTH" 0
