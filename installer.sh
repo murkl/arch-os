@@ -2,6 +2,12 @@
 set -Eeuo pipefail
 
 # ----------------------------------------------------------------------------------------------------
+# ASSET BASE URL
+# ----------------------------------------------------------------------------------------------------
+
+ASSET_BASE_URL="${1:-https://raw.githubusercontent.com/murkl/arch-distro/main/assets}"
+
+# ----------------------------------------------------------------------------------------------------
 # LOGGING
 # ----------------------------------------------------------------------------------------------------
 
@@ -95,8 +101,13 @@ check_config() {
 # SOURCE CONFIG
 # ----------------------------------------------------------------------------------------------------
 
+CUSTOM_CONFIG_TXT=""
+
 # shellcheck disable=SC1091
-[ -f ./installer.conf ] && source ./installer.conf
+if [ -f ./default.conf ]; then
+    CUSTOM_CONFIG_TXT="(Custom Config)"
+    source ./default.conf
+fi
 
 # ----------------------------------------------------------------------------------------------------
 # SHOW MENU
@@ -121,7 +132,7 @@ while (true); do
     check_config || true
 
     # Open TUI menu
-    menu_selection=$(whiptail --title "$TUI_TITLE" --menu "\n" --ok-button "Ok" --cancel-button "Exit" --notags --default-item "$TUI_POSITION" "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#menu_entry_array[@]} / 2) + (${#menu_entry_array[@]} % 2)))" "${menu_entry_array[@]}" 3>&1 1>&2 2>&3) || exit
+    menu_selection=$(whiptail --title "$TUI_TITLE" --menu "\n$CUSTOM_CONFIG_TXT" --ok-button "Ok" --cancel-button "Exit" --notags --default-item "$TUI_POSITION" "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#menu_entry_array[@]} / 2) + (${#menu_entry_array[@]} % 2)))" "${menu_entry_array[@]}" 3>&1 1>&2 2>&3) || exit
 
     case "${menu_selection}" in
 
@@ -269,7 +280,7 @@ trap 'trap_result $?' EXIT
     # Temporarily disable ECN (prevent traffic problems with some old routers)
     sysctl net.ipv4.tcp_ecn=0
 
-    # Update & reinit keyring
+    # Update keyring
     pacman -Sy --noconfirm archlinux-keyring
 
     # Detect microcode
@@ -640,8 +651,14 @@ trap 'trap_result $?' EXIT
     # Configure mkinitcpio
     sed -i "s/base systemd autodetect/base systemd plymouth autodetect/g" /mnt/etc/mkinitcpio.conf
 
-    # Rebuild
-    arch-chroot /mnt mkinitcpio -P
+    # Download theme
+    curl -Lf "${ASSET_BASE_URL}/plymouth-theme-arch-elegant.tar.gz" -o plymouth-theme-arch-elegant.tar.gz
+
+    # Extract Theme
+    tar -xzf plymouth-theme-arch-elegant.tar.gz -C /mnt/usr/share/plymouth/themes/
+
+    # Set Theme & rebuild
+    arch-chroot /mnt plymouth-set-default-theme -R arch-elegant
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Enable GNOME Auto Login"

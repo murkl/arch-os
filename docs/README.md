@@ -44,6 +44,30 @@
 
 <p><img src="./screenshots/installer.png" /></p>
 
+#### Custom Properties
+
+If the file `default.conf` exists, it will be sourced automatically by the `installer.sh` script and the values for Arch Linux installation will be overridden.
+
+```
+ARCH_HOSTNAME="virt"
+ARCH_USERNAME="moritz"
+ARCH_PASSWORD="secret"
+ARCH_DISK="/dev/vda"
+ARCH_BOOT_PARTITION="/dev/vda1"
+ARCH_ROOT_PARTITION="/dev/vda2"
+ARCH_ENCRYPTION_ENABLED="true"
+ARCH_SWAP_SIZE="8"
+ARCH_LANGUAGE="german"
+ARCH_TIMEZONE="Europe/Berlin"
+ARCH_LOCALE_LANG="de_DE.UTF-8"
+ARCH_LOCALE_GEN_LIST=("de_DE.UTF-8 UTF-8" "de_DE ISO-8859-1")
+ARCH_VCONSOLE_KEYMAP="de-latin1-nodeadkeys"
+ARCH_VCONSOLE_FONT="eurlatgr"
+ARCH_KEYBOARD_LAYOUT="de"
+ARCH_KEYBOARD_VARIANT="nodeadkeys"
+ARCH_DRIVER="none"
+```
+
 ## Recommendation
 
 By default gnome-software will download updated packages from the Arch Linux repositories. This forces GNOME Software to refresh the package lists for pacman automatically. This is the equivalent to `pacman -Sy`. If the user ignores the GNOME software update prompt, but does install a new package, that will result in partial upgrades, which are unsupported. To prevent GNOME Software from refreshing the package lists set the following dconf setting after Arch Linux installation:
