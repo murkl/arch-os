@@ -652,10 +652,10 @@ trap 'trap_result $?' EXIT
     sed -i "s/base systemd autodetect/base systemd plymouth autodetect/g" /mnt/etc/mkinitcpio.conf
 
     # Download theme
-    curl -Lf "${ASSET_BASE_URL}/plymouth-theme-arch-elegant.tar.gz" -o plymouth-theme-arch-elegant.tar.gz
+    curl -Lf "${ASSET_BASE_URL}/plymouth-theme.tar.gz" -o plymouth-theme.tar.gz
 
     # Extract Theme
-    tar -xzf plymouth-theme-arch-elegant.tar.gz -C /mnt/usr/share/plymouth/themes/
+    tar -xzf plymouth-theme.tar.gz -C /mnt/usr/share/plymouth/themes/
 
     # Set Theme & rebuild
     arch-chroot /mnt plymouth-set-default-theme -R arch-elegant
