@@ -17,7 +17,7 @@
 - Network Manager
 - Reflector Service
 - Pacman Parallel Downloads
-- Silent Boot & Bootsplash
+- Silent Boot & Themed Bootsplash
 - AUR Helper & Multilib
 - Graphics Driver
 - Works in GNOME Boxes
@@ -90,10 +90,13 @@ gsettings set org.gnome.software download-updates false
 - https://extensions.gnome.org/extension/1160/dash-to-panel/
 - https://extensions.gnome.org/extension/3193/blur-my-shell/
 - https://extensions.gnome.org/extension/3843/just-perfection/
-- https://extensions.gnome.org/extension/3733/tiling-assistant/
+
+#### Additional Extensions
+
 - https://extensions.gnome.org/extension/19/user-themes/
 - https://extensions.gnome.org/extension/615/appindicator-support/
 - https://extensions.gnome.org/extension/5237/rounded-window-corners/
+- https://extensions.gnome.org/extension/3733/tiling-assistant/
 
 ## Rescue & Recovery
 
