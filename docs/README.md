@@ -23,7 +23,7 @@
 - Network Manager
 - Reflector Service
 - Pacman Parallel Downloads
-- Silent Boot & Themed Bootsplash
+- Silent Boot & [Themed Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant)
 - AUR Helper & Multilib
 - Graphics Driver
 
