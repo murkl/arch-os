@@ -1,5 +1,6 @@
 <div align="center">
    <h1>Arch Linux Distro</h1>
+
    <p><img src="./screenshots/desktop.jpg" /></p>
    <p>
       <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
@@ -7,6 +8,11 @@
    </p>
    <p>Minimal Arch Linux Distribution with GNOME, preinstalled Paru as AUR Helper and enabled MultiLib.</p>
 </div>
+
+## Test
+
+- GNOME Boxes: `43.4-stable`
+- Arch ISO: `archlinux-2023.04.01-x86_64.iso`
 
 ## Features
 
@@ -20,7 +26,6 @@
 - Silent Boot & Themed Bootsplash
 - AUR Helper & Multilib
 - Graphics Driver
-- Works in GNOME Boxes
 
 ## Step by Step Installation
 

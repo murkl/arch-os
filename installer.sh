@@ -2,12 +2,6 @@
 set -Eeuo pipefail
 
 # ----------------------------------------------------------------------------------------------------
-# ASSET BASE URL
-# ----------------------------------------------------------------------------------------------------
-
-ASSET_BASE_URL="${1:-https://raw.githubusercontent.com/murkl/arch-distro/main/assets}"
-
-# ----------------------------------------------------------------------------------------------------
 # LOGGING
 # ----------------------------------------------------------------------------------------------------
 
@@ -651,11 +645,12 @@ trap 'trap_result $?' EXIT
     # Configure mkinitcpio
     sed -i "s/base systemd autodetect/base systemd plymouth autodetect/g" /mnt/etc/mkinitcpio.conf
 
-    # Download theme
-    curl -Lf "${ASSET_BASE_URL}/plymouth-theme.tar.gz" -o plymouth-theme.tar.gz
-
-    # Extract Theme
-    tar -xzf plymouth-theme.tar.gz -C /mnt/usr/share/plymouth/themes/
+    # Install plymouth theme
+    repo_url="https://github.com/murkl/plymouth-theme-arch-elegant.git"
+    tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/plymouth-theme-arch-elegant.XXXXXXXXXX")
+    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git clone "$repo_url" "$tmp_name"
+    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "cd ${tmp_name}/aur && makepkg -si --noconfirm"
+    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- rm -rf "$tmp_name"
 
     # Set Theme & rebuild
     arch-chroot /mnt plymouth-set-default-theme -R arch-elegant
