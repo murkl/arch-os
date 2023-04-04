@@ -275,7 +275,7 @@ trap 'trap_result $?' EXIT
     sysctl net.ipv4.tcp_ecn=0
 
     # Update keyring
-    pacman -Sy --noconfirm archlinux-keyring
+    pacman -Sy --noconfirm --disable-download-timeout archlinux-keyring
 
     # Detect microcode
     ARCH_MICROCODE=""
