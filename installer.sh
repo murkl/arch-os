@@ -602,9 +602,6 @@ trap 'trap_result $?' EXIT
     packages+=("gst-plugins-ugly")
     packages+=("libdvdcss")
 
-    # Driver
-    packages+=("xf86-input-synaptics")
-
     # Plymouth
     packages+=("plymouth")
 
