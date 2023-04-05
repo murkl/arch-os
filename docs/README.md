@@ -9,11 +9,6 @@
    <p>Minimal Arch Linux Distribution with GNOME, preinstalled Paru as AUR Helper and enabled MultiLib.</p>
 </div>
 
-## Test
-
-- GNOME Boxes: `43.4-stable`
-- Arch ISO: `archlinux-2023.04.01-x86_64.iso`
-
 ## Features
 
 - 100% TUI Installation
@@ -88,6 +83,7 @@ gsettings set org.gnome.software download-updates false
 - Libadwaita GTK Theme: https://github.com/lassekongo83/adw-gtk3
 - Libadwaita GTK Colors: https://github.com/lassekongo83/adw-colors
 - Libadwaita Customization Tool: https://github.com/GradienceTeam/Gradience
+- Cursor Theme: https://github.com/alvatip/Nordzy-icon
 
 ### GNOME Shell Extensions
 
