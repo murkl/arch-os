@@ -2,6 +2,18 @@
 set -Eeuo pipefail
 
 # ----------------------------------------------------------------------------------------------------
+# VERSION
+# ----------------------------------------------------------------------------------------------------
+
+VERSION=1.0.0
+
+# ----------------------------------------------------------------------------------------------------
+# DEFAULT CONFIG FILE (SOURCED IF EXISTS)
+# ----------------------------------------------------------------------------------------------------
+
+DEFAULT_CONFIG="./default.conf"
+
+# ----------------------------------------------------------------------------------------------------
 # LOGGING
 # ----------------------------------------------------------------------------------------------------
 
@@ -27,13 +39,13 @@ ARCH_VCONSOLE_KEYMAP=""
 ARCH_VCONSOLE_FONT=""
 ARCH_KEYBOARD_LAYOUT=""
 ARCH_KEYBOARD_VARIANT=""
-ARCH_DRIVER=""
+ARCH_GNOME=""
 
 # ----------------------------------------------------------------------------------------------------
 # TUI VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
-TUI_TITLE="Arch Linux Installation"
+TUI_TITLE="Arch Linux Installation │ ${VERSION}"
 TUI_WIDTH="80"
 TUI_HEIGHT="20"
 TUI_POSITION=""
@@ -43,7 +55,7 @@ TUI_POSITION=""
 # ----------------------------------------------------------------------------------------------------
 
 PROGRESS_COUNT=0
-PROGRESS_TOTAL=36
+PROGRESS_TOTAL=35
 
 # ----------------------------------------------------------------------------------------------------
 # PRINT FUNCTIONS
@@ -87,7 +99,7 @@ check_config() {
     [ -z "${ARCH_ROOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_ENCRYPTION_ENABLED}" ] && TUI_POSITION="encrypt" && return 1
     [ -z "${ARCH_SWAP_SIZE}" ] && TUI_POSITION="swap" && return 1
-    [ -z "${ARCH_DRIVER}" ] && TUI_POSITION="driver" && return 1
+    [ -z "${ARCH_GNOME}" ] && TUI_POSITION="gnome" && return 1
     TUI_POSITION="install"
 }
 
@@ -95,12 +107,9 @@ check_config() {
 # SOURCE CONFIG
 # ----------------------------------------------------------------------------------------------------
 
-CUSTOM_CONFIG_TXT=""
-
-# shellcheck disable=SC1091
-if [ -f ./default.conf ]; then
-    CUSTOM_CONFIG_TXT="(Custom Config)"
-    source ./default.conf
+# shellcheck disable=SC1090
+if [ -f "$DEFAULT_CONFIG" ]; then
+    source "$DEFAULT_CONFIG"
 fi
 
 # ----------------------------------------------------------------------------------------------------
@@ -118,7 +127,7 @@ while (true); do
     menu_entry_array+=("disk") && menu_entry_array+=("$(print_menu_entry "Disk" "${ARCH_DISK}")")
     menu_entry_array+=("encrypt") && menu_entry_array+=("$(print_menu_entry "Encryption" "${ARCH_ENCRYPTION_ENABLED}")")
     menu_entry_array+=("swap") && menu_entry_array+=("$(print_menu_entry "Swap" "$([ -n "$ARCH_SWAP_SIZE" ] && { [ "$ARCH_SWAP_SIZE" != "0" ] && echo "${ARCH_SWAP_SIZE} GB" || echo "disabled"; })")")
-    menu_entry_array+=("driver") && menu_entry_array+=("$(print_menu_entry "Driver" "${ARCH_DRIVER}")")
+    menu_entry_array+=("gnome") && menu_entry_array+=("$(print_menu_entry "GNOME" "${ARCH_GNOME}")")
     menu_entry_array+=("") && menu_entry_array+=("") # Empty entry
     menu_entry_array+=("install") && menu_entry_array+=("> Start Installation")
 
@@ -126,7 +135,7 @@ while (true); do
     check_config || true
 
     # Open TUI menu
-    menu_selection=$(whiptail --title "$TUI_TITLE" --menu "\n$CUSTOM_CONFIG_TXT" --ok-button "Ok" --cancel-button "Exit" --notags --default-item "$TUI_POSITION" "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#menu_entry_array[@]} / 2) + (${#menu_entry_array[@]} % 2)))" "${menu_entry_array[@]}" 3>&1 1>&2 2>&3) || exit
+    menu_selection=$(whiptail --title "$TUI_TITLE" --menu "\n" --ok-button "Ok" --cancel-button "Exit" --notags --default-item "$TUI_POSITION" "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#menu_entry_array[@]} / 2) + (${#menu_entry_array[@]} % 2)))" "${menu_entry_array[@]}" 3>&1 1>&2 2>&3) || exit
 
     case "${menu_selection}" in
 
@@ -195,15 +204,8 @@ while (true); do
         [ -z "$ARCH_SWAP_SIZE" ] && ARCH_SWAP_SIZE="0"
         ;;
 
-    "driver")
-        driver_list=()
-        driver_list+=("none" "None")
-        driver_list+=("intel-hd" "Intel HD")
-        driver_list+=("nvidia" "NVIDIA")
-        driver_list+=("nvidia-optimus" "NVIDIA Optimus")
-        driver_list+=("amd" "AMD")
-        driver_list+=("amd-legacy" "AMD Legacy")
-        ARCH_DRIVER=$(whiptail --title "$TUI_TITLE" --menu "\nSelect Graphics Driver (experimental)" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#driver_list[@]} / 2) + (${#driver_list[@]} % 2)))" "${driver_list[@]}" 3>&1 1>&2 2>&3)
+    "gnome")
+        ARCH_GNOME="false" && whiptail --title "$TUI_TITLE" --yesno "Install GNOME Desktop?" --yes-button "GNOME Desktop" --no-button "Minimal Arch" "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_GNOME="true"
         ;;
 
     "install")
@@ -218,24 +220,61 @@ while (true); do
 done
 
 # ----------------------------------------------------------------------------------------------------
-# SET RESULT TRAP
+# TRAP
 # ----------------------------------------------------------------------------------------------------
 
-trap_result() {
-    if [ $? -gt 0 ]; then
-        logs=""
+# shellcheck disable=SC2317
+trap_exit() {
+
+    # Result code
+    local result_code="$?"
+
+    # Duration
+    duration=$SECONDS
+    duration_min="$((duration / 60))"
+    duration_sec="$((duration % 60))"
+
+    if [ "$result_code" -gt 0 ]; then
+
+        # Read Logs
+        local logs=""
+        local line=""
         while read -r line; do
             [ "$line" = "###!CMD" ] && break # If first marker (from bottom) found, break loop
             [ -z "$line" ] && continue       # Skip newline
             logs="${logs}\n${line}"          # Append log
-        done <<<"$(tac $LOG_FILE)"           # Read logfile inverted (from bottom)
-        whiptail --title "$TUI_TITLE" --msgbox "FAILED $(echo -e "$logs" | tac)" --scrolltext 30 90
+        done <<<"$(tac "$LOG_FILE")"         # Read logfile inverted (from bottom)
+
+        # TUI (duration & log)
+        whiptail --title "$TUI_TITLE" --msgbox "Arch Installation failed.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds\n\n$(echo -e "$logs" | tac)" --scrolltext 30 90
+
     else
-        whiptail --title "$TUI_TITLE" --yesno "Arch Installation successful.\n\nReboot now?" --yes-button "Reboot" --no-button "Exit" "$TUI_HEIGHT" "$TUI_WIDTH" && reboot
+        # TUI (duration)
+        whiptail --title "$TUI_TITLE" --msgbox "Arch Installation successful.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds" "$TUI_HEIGHT" "$TUI_WIDTH"
     fi
+
+    # Wait for sub processes
+    wait
+
+    # Unmount
+    if whiptail --title "$TUI_TITLE" --yesno "Unmount ${ARCH_DISK}?" --yes-button "Unmount" --no-button "Skip" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+        swapoff -a
+        umount -A -R /mnt
+        [ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
+        clear && echo -e "\n!!! Please reboot now... !!!\n"
+    else
+        clear && echo -e "\n!!! Chroot with: 'arch-chroot /mnt' !!!\n"
+    fi
+
+    # Exit
+    exit "$result_code"
 }
 
-trap 'trap_result $?' EXIT
+# Set traps
+trap 'trap_exit $?' EXIT
+
+# Messure execution time
+SECONDS=0
 
 # //////////////////////////////////  START ARCH LINUX INSTALLATION //////////////////////////////////
 (
@@ -272,7 +311,7 @@ trap 'trap_result $?' EXIT
     vgchange -an || true
 
     # Temporarily disable ECN (prevent traffic problems with some old routers)
-    sysctl net.ipv4.tcp_ecn=0
+    #sysctl net.ipv4.tcp_ecn=0
 
     # Update keyring
     pacman -Sy --noconfirm --disable-download-timeout archlinux-keyring
@@ -522,7 +561,7 @@ trap 'trap_result $?' EXIT
     # ----------------------------------------------------------------------------------------------------
 
     # Reduce shutdown timeout
-    sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=5s/" /mnt/etc/systemd/system.conf
+    sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
 
     # Set Nano colors
     sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
@@ -543,371 +582,220 @@ trap 'trap_result $?' EXIT
     sed -i 's/^#SudoLoop/SudoLoop/g' /mnt/etc/paru.conf
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Install GNOME Packages (This may take a while)"
+    # START INSTALL GNOME
     # ----------------------------------------------------------------------------------------------------
 
-    # Install packages
-    packages=()
+    if [ "$ARCH_GNOME" = "true" ]; then
 
-    # GNOME base
-    packages+=("gnome")                            # GNOME core
-    packages+=("gnome-tweaks")                     # GNOME tweaks
-    packages+=("gnome-themes-extra")               # GNOME themes
-    packages+=("gnome-software-packagekit-plugin") # GNOME software center support
-    packages+=("power-profiles-daemon")            # GNOME power profile support
-    packages+=("fwupd")                            # GNOME security settings
-    packages+=("rygel")                            # GNOME media sharing support
-    packages+=("cups")                             # GNOME printer support
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Install GNOME Packages (This may take a while)"
+        # ----------------------------------------------------------------------------------------------------
 
-    # GNOME screensharing, flatpak & pipewire support
-    packages+=("xdg-desktop-portal")
-    packages+=("xdg-desktop-portal-gtk")
-    packages+=("xdg-desktop-portal-gnome")
-
-    # GNOME Indicator support
-    packages+=("libappindicator-gtk2") && packages+=("lib32-libappindicator-gtk2")
-    packages+=("libappindicator-gtk3") && packages+=("lib32-libappindicator-gtk3")
-
-    # Audio
-    packages+=("pipewire")       # Pipewire
-    packages+=("pipewire-pulse") # Replacement for pulse
-    packages+=("pipewire-jack")  # Replacement for jack
-    packages+=("wireplumber")    # Pipewire session manager
-
-    # Networking
-    packages+=("samba")
-    packages+=("gvfs")
-    packages+=("gvfs-mtp")
-    packages+=("gvfs-smb")
-    packages+=("gvfs-nfs")
-    packages+=("gvfs-afc")
-    packages+=("gvfs-goa")
-    packages+=("gvfs-gphoto2")
-    packages+=("gvfs-google")
-
-    # Utils (https://wiki.archlinux.org/title/File_systems)
-    packages+=("nfs-utils")
-    packages+=("f2fs-tools")
-    packages+=("udftools")
-    packages+=("ntfs-3g")
-    packages+=("exfat-utils")
-    packages+=("p7zip")
-    packages+=("zip")
-    packages+=("unrar")
-    packages+=("tar")
-
-    # Codecs
-    packages+=("gst-libav")
-    packages+=("gst-plugin-pipewire")
-    packages+=("gst-plugins-ugly")
-    packages+=("libdvdcss")
-
-    # Plymouth
-    packages+=("plymouth")
-
-    # Fonts
-    packages+=("noto-fonts")
-    packages+=("noto-fonts-emoji")
-    packages+=("ttf-liberation")
-    packages+=("ttf-dejavu")
-
-    # E-Mail
-    packages+=("geary")
-
-    # VM Guest support (if VM detected)
-    if [ "$(systemd-detect-virt)" != 'none' ]; then
-        packages+=("spice")
-        packages+=("spice-vdagent")
-        packages+=("spice-protocol")
-        packages+=("spice-gtk")
-    fi
-
-    # Install packages
-    arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"
-
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Install GNOME Browser Connector"
-    # ----------------------------------------------------------------------------------------------------
-
-    repo_url="https://aur.archlinux.org/gnome-browser-connector.git"
-    tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/gnome-browser-connector.XXXXXXXXXX")
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git clone "$repo_url" "$tmp_name"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "cd $tmp_name && makepkg -si --noconfirm"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- rm -rf "$tmp_name"
-
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Enable Plymouth"
-    # ----------------------------------------------------------------------------------------------------
-
-    # Configure mkinitcpio
-    sed -i "s/base systemd autodetect/base systemd plymouth autodetect/g" /mnt/etc/mkinitcpio.conf
-
-    # Install plymouth theme
-    repo_url="https://github.com/murkl/plymouth-theme-arch-elegant.git"
-    tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/plymouth-theme-arch-elegant.XXXXXXXXXX")
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git clone "$repo_url" "$tmp_name"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "cd ${tmp_name}/aur && makepkg -si --noconfirm"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- rm -rf "$tmp_name"
-
-    # Set Theme & rebuild
-    arch-chroot /mnt plymouth-set-default-theme -R arch-elegant
-
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Enable GNOME Auto Login"
-    # ----------------------------------------------------------------------------------------------------
-
-    grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
-
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Configure Git"
-    # ----------------------------------------------------------------------------------------------------
-
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- mkdir -p "/home/${ARCH_USERNAME}/.config/git"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- touch "/home/${ARCH_USERNAME}/.config/git/config"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git config --global credential.helper /usr/lib/git-core/git-credential-libsecret
-
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Configure Samba"
-    # ----------------------------------------------------------------------------------------------------
-
-    mkdir -p "/mnt/etc/samba/"
-    {
-        echo "[global]"
-        echo "   workgroup = WORKGROUP"
-        echo "   log file = /var/log/samba/%m"
-    } >/mnt/etc/samba/smb.conf
-
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Create X11 Layouts"
-    # ----------------------------------------------------------------------------------------------------
-
-    # Keyboard layout
-    {
-        echo 'Section "InputClass"'
-        echo '    Identifier "keyboard"'
-        echo '    MatchIsKeyboard "yes"'
-        echo '    Option "XkbLayout" "'"${ARCH_KEYBOARD_LAYOUT}"'"'
-        echo '    Option "XkbModel" "pc105"'
-        echo '    Option "XkbVariant" "'"${ARCH_KEYBOARD_VARIANT}"'"'
-        echo 'EndSection'
-    } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
-
-    # Mouse layout
-    {
-        echo 'Section "InputClass"'
-        echo '    Identifier "mouse"'
-        echo '    Driver "libinput"'
-        echo '    MatchIsPointer "yes"'
-        echo '    Option "AccelProfile" "flat"'
-        echo '    Option "AccelSpeed" "0"'
-        echo 'EndSection'
-    } >/mnt/etc/X11/xorg.conf.d/50-mouse.conf
-
-    # Touchpad layout
-    {
-        echo 'Section "InputClass"'
-        echo '    Identifier "touchpad"'
-        echo '    Driver "libinput"'
-        echo '    MatchIsTouchpad "on"'
-        echo '    Option "ClickMethod" "clickfinger"'
-        echo '    Option "Tapping" "off"'
-        echo '    Option "NaturalScrolling" "true"'
-        echo 'EndSection'
-    } >/mnt/etc/X11/xorg.conf.d/70-touchpad.conf
-
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Enable Desktop Services"
-    # ----------------------------------------------------------------------------------------------------
-
-    arch-chroot /mnt systemctl enable gdm.service                                                           # GNOME
-    arch-chroot /mnt systemctl enable bluetooth.service                                                     # Bluetooth
-    arch-chroot /mnt systemctl enable avahi-daemon                                                          # Network browsing service
-    arch-chroot /mnt systemctl enable cups.service                                                          # Printer
-    arch-chroot /mnt systemctl enable smb.service                                                           # Samba
-    arch-chroot /mnt systemctl enable nmb.service                                                           # Samba
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
-
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Hide Applications"
-    # ----------------------------------------------------------------------------------------------------
-
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- mkdir -p "/home/$ARCH_USERNAME/.local/share/applications"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/avahi-discover.desktop"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/bssh.desktop"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/bvnc.desktop"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/qv4l2.desktop"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/qvidcap.desktop"
-
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Install Graphics Driver (${ARCH_DRIVER})"
-    # ----------------------------------------------------------------------------------------------------
-
-    if [ "$ARCH_DRIVER" = "intel-hd" ]; then
-
-        # https://wiki.archlinux.org/title/Intel_graphics#Installation
-
-        # Intel Driver
+        # Install packages
         packages=()
-        packages+=("vulkan-intel") && packages+=("lib32-vulkan-intel")
+
+        # GNOME base
+        packages+=("gnome")                            # GNOME core
+        packages+=("gnome-tweaks")                     # GNOME tweaks
+        packages+=("gnome-themes-extra")               # GNOME themes
+        packages+=("gnome-software-packagekit-plugin") # GNOME software center support
+        packages+=("power-profiles-daemon")            # GNOME power profile support
+        packages+=("fwupd")                            # GNOME security settings
+        packages+=("rygel")                            # GNOME media sharing support
+        packages+=("cups")                             # GNOME printer support
+
+        # GNOME screensharing, flatpak & pipewire support
+        packages+=("xdg-desktop-portal")
+        packages+=("xdg-desktop-portal-gtk")
+        packages+=("xdg-desktop-portal-gnome")
+
+        # GNOME Indicator support
+        packages+=("libappindicator-gtk2") && packages+=("lib32-libappindicator-gtk2")
+        packages+=("libappindicator-gtk3") && packages+=("lib32-libappindicator-gtk3")
+
+        # Optimization
         packages+=("gamemode") && packages+=("lib32-gamemode")
-        packages+=("libva-intel-driver")
-        packages+=("intel-media-driver")
+
+        # Audio
+        packages+=("pipewire")       # Pipewire
+        packages+=("pipewire-pulse") # Replacement for pulse
+        packages+=("pipewire-jack")  # Replacement for jack
+        packages+=("wireplumber")    # Pipewire session manager
+
+        # Networking
+        packages+=("samba")
+        packages+=("gvfs")
+        packages+=("gvfs-mtp")
+        packages+=("gvfs-smb")
+        packages+=("gvfs-nfs")
+        packages+=("gvfs-afc")
+        packages+=("gvfs-goa")
+        packages+=("gvfs-gphoto2")
+        packages+=("gvfs-google")
+
+        # Utils (https://wiki.archlinux.org/title/File_systems)
+        packages+=("nfs-utils")
+        packages+=("f2fs-tools")
+        packages+=("udftools")
+        packages+=("ntfs-3g")
+        packages+=("exfat-utils")
+        packages+=("p7zip")
+        packages+=("zip")
+        packages+=("unrar")
+        packages+=("tar")
+
+        # Codecs
+        packages+=("gst-libav")
+        packages+=("gst-plugin-pipewire")
+        packages+=("gst-plugins-ugly")
+        packages+=("libdvdcss")
+
+        # Plymouth
+        packages+=("plymouth")
+
+        # Fonts
+        packages+=("noto-fonts")
+        packages+=("noto-fonts-emoji")
+        packages+=("ttf-liberation")
+        packages+=("ttf-dejavu")
+
+        # E-Mail
+        packages+=("geary")
+
+        # VM Guest support (if VM detected)
+        if [ "$(systemd-detect-virt)" != 'none' ]; then
+            packages+=("spice")
+            packages+=("spice-vdagent")
+            packages+=("spice-protocol")
+            packages+=("spice-gtk")
+        fi
 
         # Install packages
         arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"
+
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Install GNOME Browser Connector"
+        # ----------------------------------------------------------------------------------------------------
+
+        repo_url="https://aur.archlinux.org/gnome-browser-connector.git"
+        tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/gnome-browser-connector.XXXXXXXXXX")
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git clone "$repo_url" "$tmp_name"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "cd $tmp_name && makepkg -si --noconfirm"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- rm -rf "$tmp_name"
+
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Enable Plymouth"
+        # ----------------------------------------------------------------------------------------------------
 
         # Configure mkinitcpio
-        sed -i "s/MODULES=()/MODULES=(i915)/g" /mnt/etc/mkinitcpio.conf
+        sed -i "s/base systemd autodetect/base systemd plymouth autodetect/g" /mnt/etc/mkinitcpio.conf
 
-        # Rebuild initramfs
-        arch-chroot /mnt mkinitcpio -P
-    fi
+        # Install plymouth theme
+        repo_url="https://github.com/murkl/plymouth-theme-arch-elegant.git"
+        tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/plymouth-theme-arch-elegant.XXXXXXXXXX")
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git clone "$repo_url" "$tmp_name"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "cd ${tmp_name}/aur && makepkg -si --noconfirm"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- rm -rf "$tmp_name"
 
-    # ////////////////////////////////////////////////////////////////////////////////////////////////////
+        # Set Theme & rebuild
+        arch-chroot /mnt plymouth-set-default-theme -R arch-elegant
 
-    if [ "$ARCH_DRIVER" = "nvidia" ]; then
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Enable GNOME Auto Login"
+        # ----------------------------------------------------------------------------------------------------
 
-        # https://wiki.archlinux.org/title/NVIDIA#Installation
+        grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
 
-        # NVIDIA Driver
-        packages=()
-        packages+=("xorg-xrandr")
-        packages+=("nvidia-lts")
-        packages+=("nvidia-settings")
-        packages+=("nvidia-utils") && packages+=("lib32-nvidia-utils")
-        packages+=("opencl-nvidia") && packages+=("lib32-opencl-nvidia")
-        packages+=("gamemode") && packages+=("lib32-gamemode")
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Configure Git"
+        # ----------------------------------------------------------------------------------------------------
 
-        # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- mkdir -p "/home/${ARCH_USERNAME}/.config/git"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- touch "/home/${ARCH_USERNAME}/.config/git/config"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git config --global credential.helper /usr/lib/git-core/git-credential-libsecret
 
-        # Early Loading
-        sed -i "s/MODULES=()/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Configure Samba"
+        # ----------------------------------------------------------------------------------------------------
 
-        # DRM kernel mode setting
-        sed -i "s/nowatchdog quiet/nowatchdog nvidia_drm.modeset=1 quiet/g" /mnt/boot/loader/entries/arch.conf
-
-        # Rebuild
-        arch-chroot /mnt mkinitcpio -P
-
-        # Enable Wayland Support (https://wiki.archlinux.org/title/GDM#Wayland_and_the_proprietary_NVIDIA_driver)
-        arch-chroot /mnt ln -s /dev/null /etc/udev/rules.d/61-gdm.rules
-    fi
-
-    # ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    if [ "$ARCH_DRIVER" = "nvidia-optimus" ]; then
-
-        # https://wiki.archlinux.org/title/NVIDIA_Optimus#Use_NVIDIA_graphics_only
-
-        packages=()
-
-        # NVIDIA Driver
-        packages+=("xorg-xrandr")
-        packages+=("nvidia-lts")
-        packages+=("nvidia-settings")
-        packages+=("nvidia-utils") && packages+=("lib32-nvidia-utils")
-        packages+=("opencl-nvidia") && packages+=("lib32-opencl-nvidia")
-        packages+=("gamemode") && packages+=("lib32-gamemode")
-        packages+=("libva-intel-driver") # (fixed errors on loading NVIDIA)
-        packages+=("intel-media-driver")
-
-        # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"
-
-        # Early Loading
-        sed -i "s/MODULES=()/MODULES=(i915 nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
-
-        # DRM kernel mode setting (enable prime sync and fix screen-tearing issues)
-        sed -i "s/nowatchdog quiet/nowatchdog nvidia_drm.modeset=1 quiet/g" /mnt/boot/loader/entries/arch.conf
-
-        # Rebuild
-        arch-chroot /mnt mkinitcpio -P
-
-        # Configure Xorg
+        mkdir -p "/mnt/etc/samba/"
         {
-            echo 'Section "OutputClass"'
-            echo '    Identifier "intel"'
-            echo '    MatchDriver "i915"'
-            echo '    Driver "modesetting"'
-            echo 'EndSection'
-            echo ''
-            echo 'Section "OutputClass"'
-            echo '    Identifier "nvidia"'
-            echo '    MatchDriver "nvidia-drm"'
-            echo '    Driver "nvidia"'
-            echo '    Option "AllowEmptyInitialConfiguration"'
-            echo '    Option "PrimaryGPU" "yes"'
-            echo '    ModulePath "/usr/lib/nvidia/xorg"'
-            echo '    ModulePath "/usr/lib/xorg/modules"'
-            echo 'EndSection'
-        } | tee /mnt/etc/X11/xorg.conf.d/10-nvidia-drm-outputclass.conf
+            echo "[global]"
+            echo "   workgroup = WORKGROUP"
+            echo "   log file = /var/log/samba/%m"
+        } >/mnt/etc/samba/smb.conf
 
-        # Configure GDM
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Create X11 Layouts"
+        # ----------------------------------------------------------------------------------------------------
+
+        # Keyboard layout
         {
-            echo '[Desktop Entry]'
-            echo 'Type=Application'
-            echo 'Name=Optimus'
-            echo 'Exec=sh -c "xrandr --setprovideroutputsource modesetting NVIDIA-0; xrandr --auto"'
-            echo 'NoDisplay=true'
-            echo 'X-GNOME-Autostart-Phase=DisplayServer'
-        } | tee /mnt/usr/share/gdm/greeter/autostart/optimus.desktop /mnt/etc/xdg/autostart/optimus.desktop
+            echo 'Section "InputClass"'
+            echo '    Identifier "keyboard"'
+            echo '    MatchIsKeyboard "yes"'
+            echo '    Option "XkbLayout" "'"${ARCH_KEYBOARD_LAYOUT}"'"'
+            echo '    Option "XkbModel" "pc105"'
+            echo '    Option "XkbVariant" "'"${ARCH_KEYBOARD_VARIANT}"'"'
+            echo 'EndSection'
+        } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
 
-        # Disable Wayland Support (https://wiki.archlinux.org/title/GDM#Wayland_and_the_proprietary_NVIDIA_driver)
-        [ -f /mnt/etc/udev/rules.d/61-gdm.rules ] && rm -f /mnt/etc/udev/rules.d/61-gdm.rules
+        # Mouse layout
+        {
+            echo 'Section "InputClass"'
+            echo '    Identifier "mouse"'
+            echo '    Driver "libinput"'
+            echo '    MatchIsPointer "yes"'
+            echo '    Option "AccelProfile" "flat"'
+            echo '    Option "AccelSpeed" "0"'
+            echo 'EndSection'
+        } >/mnt/etc/X11/xorg.conf.d/50-mouse.conf
 
-        # GNOME: Enable X11 instead of Wayland
-        sed -i "s/^#WaylandEnable=false/WaylandEnable=false/g" /mnt/etc/gdm/custom.conf
+        # Touchpad layout
+        {
+            echo 'Section "InputClass"'
+            echo '    Identifier "touchpad"'
+            echo '    Driver "libinput"'
+            echo '    MatchIsTouchpad "on"'
+            echo '    Option "ClickMethod" "clickfinger"'
+            echo '    Option "Tapping" "off"'
+            echo '    Option "NaturalScrolling" "true"'
+            echo 'EndSection'
+        } >/mnt/etc/X11/xorg.conf.d/70-touchpad.conf
+
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Enable GNOME Services"
+        # ----------------------------------------------------------------------------------------------------
+
+        arch-chroot /mnt systemctl enable gdm.service                                                           # GNOME
+        arch-chroot /mnt systemctl enable bluetooth.service                                                     # Bluetooth
+        arch-chroot /mnt systemctl enable avahi-daemon                                                          # Network browsing service
+        arch-chroot /mnt systemctl enable cups.service                                                          # Printer
+        arch-chroot /mnt systemctl enable smb.service                                                           # Samba
+        arch-chroot /mnt systemctl enable nmb.service                                                           # Samba
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
+
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Hide GNOME Applications"
+        # ----------------------------------------------------------------------------------------------------
+
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- mkdir -p "/home/$ARCH_USERNAME/.local/share/applications"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/avahi-discover.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/bssh.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/bvnc.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/qv4l2.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/qvidcap.desktop"
+
+    else
+        # Skip Gnome progresses
+        PROGRESS_COUNT=32
     fi
 
-    # ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    if [ "$ARCH_DRIVER" = "amd" ]; then
-
-        # https://wiki.archlinux.org/title/AMDGPU#Installation
-
-        # AMDGPU Driver
-        packages=()
-        packages+=("xf86-video-amdgpu")
-        packages+=("libva-mesa-driver") && packages+=("lib32-libva-mesa-driver")
-        packages+=("vulkan-radeon") && packages+=("lib32-vulkan-radeon")
-        packages+=("mesa-vdpau") && packages+=("lib32-mesa-vdpau")
-        packages+=("gamemode") && packages+=("lib32-gamemode")
-
-        # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"
-
-        # Early Loading
-        sed -i "s/MODULES=()/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
-
-        # Rebuild
-        arch-chroot /mnt mkinitcpio -P
-    fi
-
-    # ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    if [ "$ARCH_DRIVER" = "amd-legacy" ]; then
-
-        # https://wiki.archlinux.org/title/ATI#Installation
-
-        # ATI Driver
-        packages=()
-        packages+=("xf86-video-ati")
-        packages+=("libva-mesa-driver") && packages+=("lib32-libva-mesa-driver")
-        packages+=("mesa-vdpau") && packages+=("lib32-mesa-vdpau")
-        packages+=("gamemode") && packages+=("lib32-gamemode")
-
-        # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"
-
-        # Early Loading
-        sed -i "s/MODULES=()/MODULES=(amdgpu radeon)/g" /mnt/etc/mkinitcpio.conf
-
-        # Rebuild
-        arch-chroot /mnt mkinitcpio -P
-    fi
+    # ----------------------------------------------------------------------------------------------------
+    # END INSTALL GNOME
+    # ----------------------------------------------------------------------------------------------------
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Cleanup Installation"
@@ -919,16 +807,18 @@ trap 'trap_result $?' EXIT
     # Set home permission
     arch-chroot /mnt chown -R "$ARCH_USERNAME":"$ARCH_USERNAME" "/home/${ARCH_USERNAME}"
 
-    # Remove orphans
-    arch-chroot /mnt bash -c "pacman -Qtd &>/dev/null && pacman -Qtdq | pacman -Rns --noconfirm -"
-
-    # Unmount
-    swapoff -a
-    umount -A -R /mnt
-    [ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
+    # Remove orphans and force return true
+    arch-chroot /mnt bash -c "pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true"
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Arch Installation finished"
     # ----------------------------------------------------------------------------------------------------
 
-) | whiptail --title "Arch Linux Installation" --gauge "Start Arch Installation..." 7 "$TUI_WIDTH" 0
+) | whiptail --title "$TUI_TITLE" --gauge "Start Arch Installation..." 7 "$TUI_WIDTH" 0
+
+# ----------------------------------------------------------------------------------------------------
+# FINISHED
+# ----------------------------------------------------------------------------------------------------
+
+# Exit
+exit 0

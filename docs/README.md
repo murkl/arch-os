@@ -12,15 +12,15 @@
 ## Features
 
 - 100% TUI Installation
-- LTS Kernel & GNOME Desktop
+- LTS Kernel
 - Systemd Bootloader
-- Disk Encryption
+- GNOME Desktop (optional)
+- Disk Encryption (optional)
 - Network Manager
+- AUR Helper & Multilib
 - Reflector Service
 - Pacman Parallel Downloads
-- Silent Boot & [Themed Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant)
-- AUR Helper & Multilib
-- Graphics Driver
+- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant)
 
 ## Step by Step Installation
 
@@ -39,14 +39,20 @@
 ### 3. Boot from USB Device
 
 - Load Keyboard Layout: `loadkeys de-latin1` (use prefered language)
-- Connect to WLAN, run `iwctl` and type into console: `station wlan0 connect "SSID"`
-- Run Installer: `curl -Ls http://arch.webhop.me | bash`
+- Connect to WLAN (optional), run `iwctl` and type into console: `station wlan0 connect "SSID"` and `exit`
+- Run Installer:
+
+```
+curl -Ls http://arch.webhop.me | bash
+```
 
 <p><img src="./screenshots/installer.png" /></p>
 
-#### Custom Properties
+## Default Properties
 
 If the file `default.conf` exists, it will be sourced automatically by the `installer.sh` script and the values for Arch Linux installation will be overridden.
+
+### Example default.conf
 
 ```
 ARCH_HOSTNAME="virt"
@@ -65,7 +71,7 @@ ARCH_VCONSOLE_KEYMAP="de-latin1-nodeadkeys"
 ARCH_VCONSOLE_FONT="eurlatgr"
 ARCH_KEYBOARD_LAYOUT="de"
 ARCH_KEYBOARD_VARIANT="nodeadkeys"
-ARCH_DRIVER="none"
+ARCH_GNOME="true"
 ```
 
 ## Recommendation
@@ -75,6 +81,14 @@ By default gnome-software will download updated packages from the Arch Linux rep
 ```
 gsettings set org.gnome.software download-updates false
 ```
+
+### Install Graphics Driver
+
+- Intel HD: https://wiki.archlinux.org/title/Intel_graphics#Installation
+- NVIDIA: https://wiki.archlinux.org/title/NVIDIA#Installation
+- NVIDIA Optimus: https://wiki.archlinux.org/title/NVIDIA_Optimus#Use_NVIDIA_graphics_only
+- AMD: https://wiki.archlinux.org/title/AMDGPU#Installation
+- ATI Legacy: https://wiki.archlinux.org/title/ATI#Installation
 
 ## Desktop Customization
 
@@ -89,13 +103,13 @@ gsettings set org.gnome.software download-updates false
 
 - https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/
 - https://extensions.gnome.org/extension/1160/dash-to-panel/
-- https://extensions.gnome.org/extension/3193/blur-my-shell/
 - https://extensions.gnome.org/extension/3843/just-perfection/
 
 #### Additional Extensions
 
-- https://extensions.gnome.org/extension/19/user-themes/
 - https://extensions.gnome.org/extension/615/appindicator-support/
+- https://extensions.gnome.org/extension/19/user-themes/
+- https://extensions.gnome.org/extension/3193/blur-my-shell/
 - https://extensions.gnome.org/extension/5237/rounded-window-corners/
 - https://extensions.gnome.org/extension/3733/tiling-assistant/
 
@@ -128,3 +142,23 @@ If you need to rescue your Arch Linux in case of a crash, boot from a USB device
 - Enter chroot: `arch-chroot /mnt`
 - _Fix your Arch Linux..._
 - Exit: `exit`
+
+## Technical Info
+
+<p><img src="screenshots/neofetch.png" /></p>
+
+### Packages
+
+This packages will be installed during minimal Arch installation:
+
+```
+base base-devel linux-lts linux-firmware networkmanager pacman-contrib reflector git nano bash-completion pkgfile [microcode_pkg]
+```
+
+### Services
+
+This services will be enabled during minimal Arch installation:
+
+```
+NetworkManager systemd-timesyncd.service reflector.service paccache.timer fstrim.timer pkgfile-update.timer
+```
