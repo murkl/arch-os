@@ -94,10 +94,10 @@ gsettings set org.gnome.software download-updates false
 
 - Icon Theme: https://github.com/vinceliuice/Tela-icon-theme
 - Firefox Theme: https://github.com/rafaelmardojai/firefox-gnome-theme
+- Cursor Theme: https://github.com/alvatip/Nordzy-icon
 - Libadwaita GTK Theme: https://github.com/lassekongo83/adw-gtk3
 - Libadwaita GTK Colors: https://github.com/lassekongo83/adw-colors
 - Libadwaita Customization Tool: https://github.com/GradienceTeam/Gradience
-- Cursor Theme: https://github.com/alvatip/Nordzy-icon
 
 ### GNOME Shell Extensions
 
