@@ -20,7 +20,7 @@
 - AUR Helper & Multilib
 - Reflector Service
 - Pacman Parallel Downloads
-- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant)
+- **[Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant)**
 
 ## Step by Step Installation
 
@@ -40,7 +40,7 @@
 
 - Load Keyboard Layout: `loadkeys de-latin1` (use prefered language)
 - Connect to WLAN (optional), run `iwctl` and type into console: `station wlan0 connect "SSID"` and `exit`
-- Run Installer:
+- **Run Installer with**
 
 ```
 curl -Ls http://arch.webhop.me | bash
