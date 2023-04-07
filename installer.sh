@@ -808,7 +808,8 @@ SECONDS=0
     arch-chroot /mnt chown -R "$ARCH_USERNAME":"$ARCH_USERNAME" "/home/${ARCH_USERNAME}"
 
     # Remove orphans and force return true
-    arch-chroot /mnt bash -c "pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true"
+    # shellcheck disable=SC2016
+    arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true'
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Arch Installation finished"
