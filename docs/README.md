@@ -149,7 +149,7 @@ If you need to rescue your Arch Linux in case of a crash, boot from a USB device
 
 ### Packages
 
-This packages will be installed during minimal Arch installation:
+This packages will be installed during minimal Arch installation (178 packages in total):
 
 ```
 base base-devel linux-lts linux-firmware networkmanager pacman-contrib reflector git nano bash-completion pkgfile [microcode_pkg]
