@@ -1,12 +1,11 @@
 <div align="center">
    <h1>Arch Linux Distro</h1>
-
    <p><img src="./screenshots/desktop.jpg" /></p>
+   <p>Minimal Arch Linux Distribution with GNOME, preinstalled Paru as AUR Helper and enabled MultiLib.</p>
    <p>
       <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
       <img src="https://img.shields.io/badge/LICENSE-MIT-blue?style=for-the-badge">
    </p>
-   <p>Minimal Arch Linux Distribution with GNOME, preinstalled Paru as AUR Helper and enabled MultiLib.</p>
 </div>
 
 ## Features
@@ -89,6 +88,16 @@ gsettings set org.gnome.software download-updates false
 - NVIDIA Optimus: https://wiki.archlinux.org/title/NVIDIA_Optimus#Use_NVIDIA_graphics_only
 - AMD: https://wiki.archlinux.org/title/AMDGPU#Installation
 - ATI Legacy: https://wiki.archlinux.org/title/ATI#Installation
+
+#### Experimental Script
+
+**Use this driver script only after a fresh installation of Arch Linux!**
+
+```
+git clone https://github.com/murkl/arch-distro
+cd arch-distro/experimental
+./driver.sh
+```
 
 ## Desktop Customization
 
