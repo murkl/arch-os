@@ -91,13 +91,13 @@ gsettings set org.gnome.software download-updates false
 
 #### Experimental Script
 
-**Use this driver script only after a fresh installation of Arch Linux!**
-
 ```
 git clone https://github.com/murkl/arch-distro
-cd arch-distro/experimental
-./driver.sh
+cd arch-distro/driver
+./graphics-driver.sh
 ```
+
+**Note:** _Use this driver script only after a fresh installation of Arch Linux!_
 
 ## Desktop Customization
 
