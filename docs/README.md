@@ -83,21 +83,21 @@ gsettings set org.gnome.software download-updates false
 
 ### Install Graphics Driver
 
+```
+git clone https://github.com/murkl/arch-distro
+cd arch-distro/scripts
+./graphics-driver.sh
+```
+
+**Note:** _Use this driver script only after a fresh installation of Arch Linux!_
+
+#### Manual
+
 - Intel HD: https://wiki.archlinux.org/title/Intel_graphics#Installation
 - NVIDIA: https://wiki.archlinux.org/title/NVIDIA#Installation
 - NVIDIA Optimus: https://wiki.archlinux.org/title/NVIDIA_Optimus#Use_NVIDIA_graphics_only
 - AMD: https://wiki.archlinux.org/title/AMDGPU#Installation
 - ATI Legacy: https://wiki.archlinux.org/title/ATI#Installation
-
-#### Experimental Script
-
-```
-git clone https://github.com/murkl/arch-distro
-cd arch-distro/driver
-./graphics-driver.sh
-```
-
-**Note:** _Use this driver script only after a fresh installation of Arch Linux!_
 
 ## Desktop Customization
 
