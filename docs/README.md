@@ -60,22 +60,7 @@ curl -Ls http://arch.webhop.me | bash
 
 If the file `default.conf` exists, it will sourced automatically by the `installer.sh` script and the values will set as defaults for Arch Linux installation setup menu.
 
-#### Add Language
-
-Add this properties to `default.conf` (modify with prefered values):
-
-```
-ARCH_LANGUAGE="my-custom-lang"
-ARCH_TIMEZONE="Europe/Berlin"
-ARCH_LOCALE_LANG="de_DE.UTF-8"
-ARCH_LOCALE_GEN_LIST=("de_DE.UTF-8 UTF-8" "de_DE ISO-8859-1")
-ARCH_VCONSOLE_KEYMAP="de-latin1-nodeadkeys"
-ARCH_VCONSOLE_FONT="eurlatgr"
-ARCH_KEYBOARD_LAYOUT="de"
-ARCH_KEYBOARD_VARIANT="nodeadkeys"
-```
-
-#### Other properties (Example)
+#### Examples of `default.conf`
 
 ```
 ARCH_HOSTNAME="virt"
@@ -87,6 +72,21 @@ ARCH_ROOT_PARTITION="/dev/vda2"
 ARCH_ENCRYPTION_ENABLED="true"
 ARCH_SWAP_SIZE="8"
 ARCH_GNOME="true"
+```
+
+#### Add Language
+
+Add this properties to `language.conf` (modify with prefered values):
+
+```
+ARCH_LANGUAGE="my-custom-lang"
+ARCH_TIMEZONE="Europe/Berlin"
+ARCH_LOCALE_LANG="de_DE.UTF-8"
+ARCH_LOCALE_GEN_LIST=("de_DE.UTF-8 UTF-8" "de_DE ISO-8859-1")
+ARCH_VCONSOLE_KEYMAP="de-latin1-nodeadkeys"
+ARCH_VCONSOLE_FONT="eurlatgr"
+ARCH_KEYBOARD_LAYOUT="de"
+ARCH_KEYBOARD_VARIANT="nodeadkeys"
 ```
 
 ## Recommendation

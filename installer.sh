@@ -8,10 +8,11 @@ set -Eeuo pipefail
 VERSION=1.0.0
 
 # ----------------------------------------------------------------------------------------------------
-# DEFAULT CONFIG FILE (SOURCED IF EXISTS)
+# CONFIG FILES (SOURCED IF EXISTS)
 # ----------------------------------------------------------------------------------------------------
 
 DEFAULT_CONFIG="./default.conf"
+LANGUAGE_CONFIG="./language.conf"
 
 # ----------------------------------------------------------------------------------------------------
 # LOGGING
@@ -119,6 +120,10 @@ check_config() {
 # shellcheck disable=SC1090
 [ -f "$DEFAULT_CONFIG" ] && source "$DEFAULT_CONFIG"
 
+# Load language config
+# shellcheck disable=SC1090
+[ -f "$LANGUAGE_CONFIG" ] && source "$LANGUAGE_CONFIG"
+
 # ----------------------------------------------------------------------------------------------------
 # SHOW MENU
 # ----------------------------------------------------------------------------------------------------
@@ -158,10 +163,11 @@ while (true); do
             if [ "$key" = "ARCH_LANGUAGE" ] && [ "${value//\"/}" != "german" ] && [ "${value//\"/}" != "english" ]; then
                 language_array+=("${value//\"/}") && language_array+=("${value//\"/}")
             fi
-        done <"$DEFAULT_CONFIG"
+        done <"$LANGUAGE_CONFIG"
 
         ARCH_LANGUAGE=$(whiptail --title "$TUI_TITLE" --menu "\nChoose Setup Language" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#language_array[@]} / 2) + (${#language_array[@]} % 2)))" "${language_array[@]}" 3>&1 1>&2 2>&3)
-        if [ "$ARCH_LANGUAGE" = "english" ]; then
+        case "${ARCH_LANGUAGE}" in
+        "english")
             ARCH_TIMEZONE="Europe/Berlin"
             ARCH_LOCALE_LANG="en_US.UTF-8"
             ARCH_LOCALE_GEN_LIST=("en_US.UTF-8" "UTF-8")
@@ -169,8 +175,8 @@ while (true); do
             ARCH_VCONSOLE_FONT="eurlatgr"
             ARCH_KEYBOARD_LAYOUT="en"
             ARCH_KEYBOARD_VARIANT="nodeadkeys"
-        fi
-        if [ "$ARCH_LANGUAGE" = "german" ]; then
+            ;;
+        "german")
             ARCH_TIMEZONE="Europe/Berlin"
             ARCH_LOCALE_LANG="de_DE.UTF-8"
             ARCH_LOCALE_GEN_LIST=("de_DE.UTF-8 UTF-8" "de_DE ISO-8859-1" "de_DE@euro ISO-8859-15" "en_US.UTF-8 UTF-8")
@@ -178,7 +184,13 @@ while (true); do
             ARCH_VCONSOLE_FONT="eurlatgr"
             ARCH_KEYBOARD_LAYOUT="de"
             ARCH_KEYBOARD_VARIANT="nodeadkeys"
-        fi
+            ;;
+        *)
+            # Load language config
+            # shellcheck disable=SC1090
+            [ -f "$LANGUAGE_CONFIG" ] && source "$LANGUAGE_CONFIG"
+            ;;
+        esac
         ;;
 
     "hostname")
