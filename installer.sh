@@ -113,13 +113,11 @@ check_config() {
 }
 
 # ----------------------------------------------------------------------------------------------------
-# SOURCE CONFIG
+# SOURCE DEFAULTS
 # ----------------------------------------------------------------------------------------------------
 
 # shellcheck disable=SC1090
-if [ -f "$DEFAULT_CONFIG" ]; then
-    source "$DEFAULT_CONFIG"
-fi
+[ -f "$DEFAULT_CONFIG" ] && source "$DEFAULT_CONFIG"
 
 # ----------------------------------------------------------------------------------------------------
 # SHOW MENU
@@ -149,7 +147,20 @@ while (true); do
     case "${menu_selection}" in
 
     "language")
-        ARCH_LANGUAGE=$(whiptail --title "$TUI_TITLE" --menu "\nChoose Setup Language" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" 2 "english" "English" "german" "German" 3>&1 1>&2 2>&3)
+
+        # List of language menu entries
+        language_array=()
+        language_array+=("german") && language_array+=("German")
+        language_array+=("english") && language_array+=("English")
+
+        # Add custom language entry
+        while IFS="=" read -r key value; do
+            if [ "$key" = "ARCH_LANGUAGE" ] && [ "${value//\"/}" != "german" ] && [ "${value//\"/}" != "english" ]; then
+                language_array+=("${value//\"/}") && language_array+=("${value//\"/}")
+            fi
+        done <"$DEFAULT_CONFIG"
+
+        ARCH_LANGUAGE=$(whiptail --title "$TUI_TITLE" --menu "\nChoose Setup Language" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#language_array[@]} / 2) + (${#language_array[@]} % 2)))" "${language_array[@]}" 3>&1 1>&2 2>&3)
         if [ "$ARCH_LANGUAGE" = "english" ]; then
             ARCH_TIMEZONE="Europe/Berlin"
             ARCH_LOCALE_LANG="en_US.UTF-8"
