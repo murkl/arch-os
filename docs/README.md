@@ -11,9 +11,10 @@
 # Contents
 
 1. [Features](#features)
-2. [Arch Linux Installation](#step-by-step-installation)
-3. [Rescue & Recovery](#rescue--recovery)
-4. [Information](#technical-info)
+2. [Installation](#step-by-step-installation)
+3. [Recommendation](#recommendation)
+4. [Rescue & Recovery](#rescue--recovery)
+5. [Information](#technical-info)
 
 ## Features
 
@@ -54,11 +55,11 @@ curl -Ls http://arch.webhop.me | bash
 
 <p><img src="./screenshots/installer.png" /></p>
 
-#### Default Properties
+### Default Properties
 
 If the file `default.conf` exists, it will sourced automatically by the `installer.sh` script and the values will set as defaults for Arch Linux installation setup menu.
 
-##### Example default.conf
+#### Example default.conf
 
 ```
 ARCH_HOSTNAME="virt"
@@ -80,7 +81,7 @@ ARCH_KEYBOARD_VARIANT="nodeadkeys"
 ARCH_GNOME="true"
 ```
 
-### Recommendation
+## Recommendation
 
 By default gnome-software will download updated packages from the Arch Linux repositories. This forces GNOME Software to refresh the package lists for pacman automatically. This is the equivalent to `pacman -Sy`. If the user ignores the GNOME software update prompt, but does install a new package, that will result in partial upgrades, which are unsupported. To prevent GNOME Software from refreshing the package lists set the following dconf setting after Arch Linux installation:
 
@@ -88,7 +89,7 @@ By default gnome-software will download updated packages from the Arch Linux rep
 gsettings set org.gnome.software download-updates false
 ```
 
-#### Install Graphics Driver
+### Graphics Driver
 
 _Use this driver script only after a fresh installation of Arch Linux!_
 
@@ -102,32 +103,32 @@ cd arch-distro/scripts
 ./graphics-driver.sh
 ```
 
-##### Manual Installation
+#### Manual Installation
 
-- Intel HD: https://wiki.archlinux.org/title/Intel_graphics#Installation
-- NVIDIA: https://wiki.archlinux.org/title/NVIDIA#Installation
-- NVIDIA Optimus: https://wiki.archlinux.org/title/NVIDIA_Optimus#Use_NVIDIA_graphics_only
-- AMD: https://wiki.archlinux.org/title/AMDGPU#Installation
-- ATI Legacy: https://wiki.archlinux.org/title/ATI#Installation
+- [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
+- [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
+- [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Use_NVIDIA_graphics_only)
+- [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
+- [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
 
 ### Desktop Customization
 
 These customizations are not included in `installer.sh` and can be installed optionally after Arch Linux installation.
 
 - Icon Theme: https://github.com/vinceliuice/Tela-icon-theme
-- Firefox Theme: https://github.com/rafaelmardojai/firefox-gnome-theme
 - Cursor Theme: https://github.com/alvatip/Nordzy-icon
+- Firefox Theme: https://github.com/rafaelmardojai/firefox-gnome-theme
 - Libadwaita GTK Theme: https://github.com/lassekongo83/adw-gtk3
 - Libadwaita GTK Colors: https://github.com/lassekongo83/adw-colors
 - Libadwaita Customization Tool: https://github.com/GradienceTeam/Gradience
 
-#### GNOME Shell Extensions
+### GNOME Shell Extensions
 
 - https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/
 - https://extensions.gnome.org/extension/1160/dash-to-panel/
 - https://extensions.gnome.org/extension/3843/just-perfection/
 
-##### Additional Extensions
+#### Additional Extensions
 
 - https://extensions.gnome.org/extension/615/appindicator-support/
 - https://extensions.gnome.org/extension/19/user-themes/
