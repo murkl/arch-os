@@ -124,7 +124,7 @@ cd arch-distro/scripts
 
 ## Rescue & Recovery
 
-If you need to rescue your Arch Linux in case of a crash, boot from a USB device and follow these instructions.
+If you need to rescue your Arch Linux in case of a crash, **boot from a USB device** and follow these instructions.
 
 ### 1. Disk Information
 
