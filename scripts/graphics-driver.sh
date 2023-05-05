@@ -24,8 +24,9 @@ print_yellow '┌─────────────────────
 print_yellow '│   1:  Intel HD                                                    │'
 print_yellow '│   2:  NVIDIA                                                      │'
 print_yellow '│   3:  NVIDIA Optimus                                              │'
-print_yellow '│   4:  AMD                                                         │'
-print_yellow '│   5:  AMD Legacy                                                  │'
+print_yellow '│   4:  NVIDIA Optimus (390xx)                                      │'
+print_yellow '│   5:  AMD                                                         │'
+print_yellow '│   6:  AMD Legacy                                                  │'
 print_yellow '│                                                                   │'
 print_yellow '│   q:  Quit                                                        │'
 print_yellow '└───────────────────────────────────────────────────────────────────┘'
@@ -88,24 +89,37 @@ case "${ARCH_DRIVER}" in
     ;;
 
 # ///////////////////////////////////////////////////////////////////
-# NVIDIA Optimus
+# NVIDIA Optimus + 390xx
 # ///////////////////////////////////////////////////////////////////
 
-3) # https://wiki.archlinux.org/title/NVIDIA_Optimus#Use_NVIDIA_graphics_only
+3 | 4) # https://wiki.archlinux.org/title/NVIDIA_Optimus#Use_NVIDIA_graphics_only
 
     # Packages
     packages=()
     packages+=("xorg-xrandr")
-    packages+=("nvidia-lts")
-    packages+=("nvidia-settings")
-    packages+=("nvidia-utils") && packages+=("lib32-nvidia-utils")
-    packages+=("opencl-nvidia") && packages+=("lib32-opencl-nvidia")
     packages+=("gamemode") && packages+=("lib32-gamemode")
     packages+=("libva-intel-driver") # (fixed errors on loading NVIDIA)
     packages+=("intel-media-driver")
 
+    # nvidia
+    if [ "$ARCH_DRIVER" = "3" ]; then
+        packages+=("nvidia-lts")
+        packages+=("nvidia-settings")
+        packages+=("nvidia-utils") && packages+=("lib32-nvidia-utils")
+        packages+=("opencl-nvidia") && packages+=("lib32-opencl-nvidia")
+    fi
+
+    # nvidia-390xx
+    if [ "$ARCH_DRIVER" = "4" ]; then
+        packages+=("linux-lts-headers")
+        packages+=("nvidia-390xx-dkms")
+        packages+=("nvidia-390xx-settings")
+        packages+=("nvidia-390xx-utils") && packages+=("lib32-nvidia-390xx-utils")
+        packages+=("opencl-nvidia-390xx") && packages+=("lib32-opencl-nvidia-390xx")
+    fi
+
     # Install packages
-    sudo pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"
+    paru -S --noconfirm --needed --disable-download-timeout "${packages[@]}"
 
     # Early Loading
     sudo sed -i "s/MODULES=()/MODULES=(i915 nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /etc/mkinitcpio.conf
@@ -156,7 +170,7 @@ case "${ARCH_DRIVER}" in
 # AMD
 # ///////////////////////////////////////////////////////////////////
 
-4) # https://wiki.archlinux.org/title/AMDGPU#Installation
+5) # https://wiki.archlinux.org/title/AMDGPU#Installation
 
     # Packages
     packages=()
@@ -180,7 +194,7 @@ case "${ARCH_DRIVER}" in
 # AMD Legacy
 # ///////////////////////////////////////////////////////////////////
 
-5) # https://wiki.archlinux.org/title/ATI#Installation
+6) # https://wiki.archlinux.org/title/ATI#Installation
 
     # Packages
     packages=()
