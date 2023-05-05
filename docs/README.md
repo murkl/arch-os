@@ -135,6 +135,7 @@ These customizations are not included in `installer.sh` and can be installed opt
 - https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/
 - https://extensions.gnome.org/extension/1160/dash-to-panel/
 - https://extensions.gnome.org/extension/3843/just-perfection/
+- https://extensions.gnome.org/extension/4245/gesture-improvements/
 
 #### Additional Extensions
 
