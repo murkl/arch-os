@@ -159,11 +159,13 @@ while (true); do
         language_array+=("english") && language_array+=("English")
 
         # Add custom language entry
-        while IFS="=" read -r key value; do
-            if [ "$key" = "ARCH_LANGUAGE" ] && [ "${value//\"/}" != "german" ] && [ "${value//\"/}" != "english" ]; then
-                language_array+=("${value//\"/}") && language_array+=("${value//\"/}")
-            fi
-        done <"$LANGUAGE_CONFIG"
+        if [ -f "$LANGUAGE_CONFIG" ]; then
+            while IFS="=" read -r key value; do
+                if [ "$key" = "ARCH_LANGUAGE" ] && [ "${value//\"/}" != "german" ] && [ "${value//\"/}" != "english" ]; then
+                    language_array+=("${value//\"/}") && language_array+=("${value//\"/}")
+                fi
+            done <"$LANGUAGE_CONFIG"
+        fi
 
         ARCH_LANGUAGE=$(whiptail --title "$TUI_TITLE" --menu "\nChoose Setup Language" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#language_array[@]} / 2) + (${#language_array[@]} % 2)))" "${language_array[@]}" 3>&1 1>&2 2>&3)
         case "${ARCH_LANGUAGE}" in
