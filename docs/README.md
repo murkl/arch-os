@@ -83,15 +83,19 @@ gsettings set org.gnome.software download-updates false
 
 ### Install Graphics Driver
 
+_Use this driver script only after a fresh installation of Arch Linux!_
+
+1. Install Arch Linux
+2. Reboot
+3. Execute this commands from fresh installed Arch Linux:
+
 ```
 git clone https://github.com/murkl/arch-distro
 cd arch-distro/scripts
 ./graphics-driver.sh
 ```
 
-**Note:** _Use this driver script only after a fresh installation of Arch Linux!_
-
-#### Manual
+#### Manual Installation
 
 - Intel HD: https://wiki.archlinux.org/title/Intel_graphics#Installation
 - NVIDIA: https://wiki.archlinux.org/title/NVIDIA#Installation
