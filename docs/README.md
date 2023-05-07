@@ -12,9 +12,10 @@
 
 1. [Features](#features)
 2. [Installation](#step-by-step-installation)
-3. [Recommendation](#recommendation)
-4. [Rescue & Recovery](#rescue--recovery)
-5. [Information](#technical-info)
+3. [Graphics Driver](#graphics-driver)
+4. [Desktop Customization](#desktop-customization)
+5. [Rescue & Recovery](#rescue--recovery)
+6. [Information](#technical-info)
 
 ## Features
 
@@ -89,15 +90,7 @@ ARCH_KEYBOARD_LAYOUT="de"
 ARCH_KEYBOARD_VARIANT="nodeadkeys"
 ```
 
-## Recommendation
-
-By default gnome-software will download updated packages from the Arch Linux repositories. This forces GNOME Software to refresh the package lists for pacman automatically. This is the equivalent to `pacman -Sy`. If the user ignores the GNOME software update prompt, but does install a new package, that will result in partial upgrades, which are unsupported. To prevent GNOME Software from refreshing the package lists set the following dconf setting after Arch Linux installation:
-
-```
-gsettings set org.gnome.software download-updates false
-```
-
-### Graphics Driver
+## Graphics Driver
 
 _Use this driver script only after a fresh installation of Arch Linux!_
 
@@ -111,7 +104,7 @@ cd arch-distro/scripts
 ./graphics-driver.sh
 ```
 
-#### Manual Installation
+### Manual Installation
 
 - [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
 - [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
@@ -119,7 +112,7 @@ cd arch-distro/scripts
 - [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
 - [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
 
-### Desktop Customization
+## Desktop Customization
 
 These customizations are not included in `installer.sh` and can be installed optionally after Arch Linux installation.
 
@@ -130,14 +123,14 @@ These customizations are not included in `installer.sh` and can be installed opt
 - Libadwaita GTK Colors: https://github.com/lassekongo83/adw-colors
 - Libadwaita Customization Tool: https://github.com/GradienceTeam/Gradience
 
-### GNOME Shell Extensions
+## GNOME Shell Extensions
 
 - https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/
 - https://extensions.gnome.org/extension/1160/dash-to-panel/
 - https://extensions.gnome.org/extension/3843/just-perfection/
 - https://extensions.gnome.org/extension/4245/gesture-improvements/
 
-#### Additional Extensions
+### Additional Extensions
 
 - https://extensions.gnome.org/extension/615/appindicator-support/
 - https://extensions.gnome.org/extension/19/user-themes/

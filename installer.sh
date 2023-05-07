@@ -632,7 +632,6 @@ SECONDS=0
         packages+=("gnome")                            # GNOME core
         packages+=("gnome-tweaks")                     # GNOME tweaks
         packages+=("gnome-themes-extra")               # GNOME themes
-        packages+=("gnome-software-packagekit-plugin") # GNOME software center support
         packages+=("power-profiles-daemon")            # GNOME power profile support
         packages+=("fwupd")                            # GNOME security settings
         packages+=("rygel")                            # GNOME media sharing support
@@ -711,8 +710,8 @@ SECONDS=0
         print_whiptail_info "Install GNOME Browser Connector"
         # ----------------------------------------------------------------------------------------------------
 
-        repo_url="https://aur.archlinux.org/gnome-browser-connector.git"
-        tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/gnome-browser-connector.XXXXXXXXXX")
+        repo_url="https://aur.archlinux.org/gnome-browser-connector-git.git"
+        tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/gnome-browser-connector-git.XXXXXXXXXX")
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git clone "$repo_url" "$tmp_name"
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "cd $tmp_name && makepkg -si --noconfirm"
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- rm -rf "$tmp_name"
