@@ -130,14 +130,14 @@ These customizations are not included in `installer.sh` and can be installed opt
 - Libadwaita GTK Colors: https://github.com/lassekongo83/adw-colors
 - Libadwaita Customization Tool: https://github.com/GradienceTeam/Gradience
 
-## GNOME Shell Extensions
+### GNOME Shell Extensions
 
 - https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/
 - https://extensions.gnome.org/extension/1160/dash-to-panel/
 - https://extensions.gnome.org/extension/3843/just-perfection/
 - https://extensions.gnome.org/extension/4245/gesture-improvements/
 
-### Additional Extensions
+#### Additional Extensions
 
 - https://extensions.gnome.org/extension/615/appindicator-support/
 - https://extensions.gnome.org/extension/19/user-themes/
@@ -145,16 +145,18 @@ These customizations are not included in `installer.sh` and can be installed opt
 - https://extensions.gnome.org/extension/5237/rounded-window-corners/
 - https://extensions.gnome.org/extension/3733/tiling-assistant/
 
-## Import predefined Configurations
+### Import Configurations
 
-### 1. Clone Git project
+If you want to configure your new Arch Linux system like the screenshot, import the predefined configurations and install the regarding GNOME extension.
+
+#### 1. Clone Git project
 
 ```
 git clone https://github.com/murkl/arch-distro
 cd arch-distro/conf
 ```
 
-### 2. Import config
+#### 2. Import config
 
 ```
 # Dash to panel
