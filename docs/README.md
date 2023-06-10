@@ -1,6 +1,6 @@
 <div align="center">
    <h1>Arch Linux Distribution</h1>
-   <h2>TUI Installer</h2>
+   <p><b style="font-size: 14pt">TUI Installer</b></p>
    <p><img src="./screenshots/desktop.jpg" /></p>
    <p>Minimal Arch Linux Distribution with GNOME, preinstalled Paru as AUR Helper and enabled MultiLib.</p>
    <p>
@@ -180,7 +180,7 @@ If you need to rescue your Arch Linux in case of a crash, **boot from a USB devi
 
 ### Packages
 
-This packages will be installed during minimal Arch without GNOME installation (178 packages in total):
+This packages will be installed during minimal Arch without GNOME installation (179 packages in total):
 
 ```
 base base-devel linux-lts linux-firmware networkmanager pacman-contrib reflector git nano bash-completion pkgfile [microcode_pkg]
