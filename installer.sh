@@ -335,6 +335,9 @@ SECONDS=0
     print_whiptail_info "Prepare Installation"
     # ----------------------------------------------------------------------------------------------------
 
+    # Reflector (this mirrorlist will copied to new Arch system during installation)
+    reflector --country Germany,France --protocol https --latest 5 --sort rate --save /etc/pacman.d/mirrorlist
+
     # Sync clock
     timedatectl set-ntp true
 
@@ -345,7 +348,7 @@ SECONDS=0
     vgchange -an || true
 
     # Temporarily disable ECN (prevent traffic problems with some old routers)
-    #sysctl net.ipv4.tcp_ecn=0
+    sysctl net.ipv4.tcp_ecn=0
 
     # Update keyring
     pacman -Sy --noconfirm --disable-download-timeout archlinux-keyring
@@ -437,8 +440,9 @@ SECONDS=0
     {
         echo "# Reflector config for the systemd service"
         echo "--save /etc/pacman.d/mirrorlist"
+        echo "--country Germany,France"
         echo "--protocol https"
-        echo "--latest 10"
+        echo "--latest 5"
         echo "--sort rate"
     } >/mnt/etc/xdg/reflector/reflector.conf
 
