@@ -35,6 +35,7 @@
 - Pacman parallel downloads
 - Pacman automatic cache optimization
 - Tested in GNOME Boxes
+- Shellcheck approved
 - **[Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant)**
 
 ## Step by Step Installation
