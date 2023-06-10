@@ -134,7 +134,6 @@ These customizations are not included in `installer.sh` and can be installed opt
 
 - https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/
 - https://extensions.gnome.org/extension/1160/dash-to-panel/
-  - Import Config from [here](conf/dash-to-panel.conf)
 - https://extensions.gnome.org/extension/3843/just-perfection/
 - https://extensions.gnome.org/extension/4245/gesture-improvements/
 
@@ -145,6 +144,27 @@ These customizations are not included in `installer.sh` and can be installed opt
 - https://extensions.gnome.org/extension/3193/blur-my-shell/
 - https://extensions.gnome.org/extension/5237/rounded-window-corners/
 - https://extensions.gnome.org/extension/3733/tiling-assistant/
+
+## Import predefined Configurations
+
+### 1. Clone Git project
+
+```
+git clone https://github.com/murkl/arch-distro
+cd arch-distro/conf
+```
+
+### 2. Import config
+
+```
+# Dash to panel
+dconf reset -f /org/gnome/shell/extensions/dash-to-panel/
+dconf load /org/gnome/shell/extensions/dash-to-panel/ <dash-to-panel.conf
+
+# Just Perfection
+dconf reset -f /org/gnome/shell/extensions/just-perfection/
+dconf load /org/gnome/shell/extensions/just-perfection/ <just-perfection.conf
+```
 
 ## Rescue & Recovery
 
