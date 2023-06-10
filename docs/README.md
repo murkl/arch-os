@@ -1,5 +1,6 @@
 <div align="center">
-   <h1>Arch Linux Distro</h1>
+   <h1>Arch Linux Distribution</h1>
+   <h2>TUI Installer</h2>
    <p><img src="./screenshots/desktop.jpg" /></p>
    <p>Minimal Arch Linux Distribution with GNOME, preinstalled Paru as AUR Helper and enabled MultiLib.</p>
    <p>
@@ -20,14 +21,19 @@
 ## Features
 
 - 100% TUI Installation
+- VM Support
 - LTS Kernel
 - Systemd Bootloader
 - GNOME Desktop (optional)
 - Disk Encryption (optional)
 - Network Manager
 - AUR Helper & Multilib
-- Reflector Service
-- Pacman Parallel Downloads
+- Microcode Support
+- SSD Support
+- Automatic mirrorlist update
+- Missing package suggestion
+- Pacman parallel downloads
+- Pacman automatic cache optimization
 - Tested in GNOME Boxes
 - **[Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant)**
 
@@ -77,7 +83,7 @@ ARCH_GNOME="true"
 
 #### Add Language
 
-Add this properties to `language.conf` (modify with prefered values):
+Create `language.conf` and add this properties (modify with prefered values):
 
 ```
 ARCH_LANGUAGE="my-custom-lang"
@@ -94,7 +100,7 @@ ARCH_KEYBOARD_VARIANT="nodeadkeys"
 
 _Use this driver script only after a fresh installation of Arch Linux!_
 
-1. Install Arch Linux
+1. [Install Arch Linux](#step-by-step-installation)
 2. Reboot
 3. Execute this commands from fresh installed Arch Linux:
 
@@ -117,7 +123,7 @@ cd arch-distro/scripts
 These customizations are not included in `installer.sh` and can be installed optionally after Arch Linux installation.
 
 - Icon Theme: https://github.com/vinceliuice/Tela-icon-theme
-- Cursor Theme: https://github.com/alvatip/Nordzy-icon
+- Cursor Theme: https://github.com/alvatip/Nordzy-cursors
 - Firefox Theme: https://github.com/rafaelmardojai/firefox-gnome-theme
 - Libadwaita GTK Theme: https://github.com/lassekongo83/adw-gtk3
 - Libadwaita GTK Colors: https://github.com/lassekongo83/adw-colors
@@ -149,16 +155,16 @@ If you need to rescue your Arch Linux in case of a crash, **boot from a USB devi
   - Example Boot: `/dev/sda1`
   - Example Root: `/dev/sda2`
 
-**Note:** _You may have to replace `/dev/sda` with your own disk_
-
 ### 2. Mount
+
+**Note:** _You may have to replace `/dev/sda` with your own disk_
 
 - Create mount dir: `mkdir -p /mnt/boot`
 - Mount root partition
-  - a) Encryption enabled
+  - a) If disk encryption enabled
     - `cryptsetup open /dev/sda2 cryptroot`
     - `mount /dev/mapper/cryptroot /mnt`
-  - b) Encryption disabled
+  - b) If disk encryption disabled
     - `mount /dev/sda2 /mnt`
 - Mount boot partition: `mount /dev/sda1 /mnt/boot`
 

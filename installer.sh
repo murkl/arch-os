@@ -629,13 +629,13 @@ SECONDS=0
         packages=()
 
         # GNOME base
-        packages+=("gnome")                            # GNOME core
-        packages+=("gnome-tweaks")                     # GNOME tweaks
-        packages+=("gnome-themes-extra")               # GNOME themes
-        packages+=("power-profiles-daemon")            # GNOME power profile support
-        packages+=("fwupd")                            # GNOME security settings
-        packages+=("rygel")                            # GNOME media sharing support
-        packages+=("cups")                             # GNOME printer support
+        packages+=("gnome")                 # GNOME core
+        packages+=("gnome-tweaks")          # GNOME tweaks
+        packages+=("gnome-themes-extra")    # GNOME themes
+        packages+=("power-profiles-daemon") # GNOME power profile support
+        packages+=("fwupd")                 # GNOME security settings
+        packages+=("rygel")                 # GNOME media sharing support
+        packages+=("cups")                  # GNOME printer support
 
         # GNOME screensharing, flatpak & pipewire support
         packages+=("xdg-desktop-portal")
@@ -811,7 +811,7 @@ SECONDS=0
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
 
         # ----------------------------------------------------------------------------------------------------
-        print_whiptail_info "Hide GNOME Applications"
+        print_whiptail_info "Hide Applications Icons"
         # ----------------------------------------------------------------------------------------------------
 
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- mkdir -p "/home/$ARCH_USERNAME/.local/share/applications"
@@ -820,6 +820,7 @@ SECONDS=0
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/bvnc.desktop"
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/qv4l2.desktop"
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/qvidcap.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/lstopo.desktop"
 
     else
         # Skip Gnome progresses
