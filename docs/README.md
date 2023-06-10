@@ -43,7 +43,8 @@
 ### 1. Prepare bootable USB Device
 
 - Download latest Arch Linux ISO from **[here](https://www.archlinux.de/download)**
-- Write to device: `dd bs=4M if=archlinux-*.iso of=/dev/sdX status=progress`
+- Show disk info with `lsblk`
+- Write to device: `sudo dd bs=4M if=archlinux-*.iso of=/dev/sdX status=progress`
 - Alternatively use **[Etcher](https://www.balena.io/etcher)**
 
 ### 2. Configure BIOS Settings
