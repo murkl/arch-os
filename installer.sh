@@ -114,13 +114,14 @@ check_config() {
 }
 
 # ----------------------------------------------------------------------------------------------------
-# SOURCE DEFAULTS
+# SOURCE USER PROPERTIES
 # ----------------------------------------------------------------------------------------------------
 
+# Load default values
 # shellcheck disable=SC1090
 [ -f "$DEFAULT_CONFIG" ] && source "$DEFAULT_CONFIG"
 
-# Load language config
+# Load custom language
 # shellcheck disable=SC1090
 [ -f "$LANGUAGE_CONFIG" ] && source "$LANGUAGE_CONFIG"
 
@@ -143,12 +144,13 @@ while (true); do
     menu_entry_array+=("") && menu_entry_array+=("") # Empty entry
     menu_entry_array+=("install") && menu_entry_array+=("> Start Installation")
 
-    # Set menu position
+    # Check config entries and set menu position
     check_config || true
 
     # Open TUI menu
     menu_selection=$(whiptail --title "$TUI_TITLE" --menu "\n" --ok-button "Ok" --cancel-button "Exit" --notags --default-item "$TUI_POSITION" "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#menu_entry_array[@]} / 2) + (${#menu_entry_array[@]} % 2)))" "${menu_entry_array[@]}" 3>&1 1>&2 2>&3) || exit
 
+    # Handle result
     case "${menu_selection}" in
 
     "language")
@@ -167,7 +169,10 @@ while (true); do
             done <"$LANGUAGE_CONFIG"
         fi
 
+        # Show TUI
         ARCH_LANGUAGE=$(whiptail --title "$TUI_TITLE" --menu "\nChoose Setup Language" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#language_array[@]} / 2) + (${#language_array[@]} % 2)))" "${language_array[@]}" 3>&1 1>&2 2>&3)
+
+        # Handle result
         case "${ARCH_LANGUAGE}" in
         "english")
             ARCH_TIMEZONE="Europe/Berlin"
@@ -178,6 +183,7 @@ while (true); do
             ARCH_KEYBOARD_LAYOUT="en"
             ARCH_KEYBOARD_VARIANT="nodeadkeys"
             ;;
+
         "german")
             ARCH_TIMEZONE="Europe/Berlin"
             ARCH_LOCALE_LANG="de_DE.UTF-8"
@@ -187,11 +193,13 @@ while (true); do
             ARCH_KEYBOARD_LAYOUT="de"
             ARCH_KEYBOARD_VARIANT="nodeadkeys"
             ;;
+
         *)
             # Load language config
             # shellcheck disable=SC1090
             [ -f "$LANGUAGE_CONFIG" ] && source "$LANGUAGE_CONFIG"
             ;;
+
         esac
         ;;
 
@@ -213,6 +221,8 @@ while (true); do
         ;;
 
     "disk")
+
+        # List available disks
         disk_array=()
         while read -r disk_line; do
             disk_array+=("/dev/$disk_line")
@@ -222,8 +232,10 @@ while (true); do
         # If no disk found
         [ "${#disk_array[@]}" = "0" ] && whiptail --title "$TUI_TITLE" --msgbox "No Disk found" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
 
-        # Select Disk
+        # Show TUI (select disk)
         ARCH_DISK=$(whiptail --title "$TUI_TITLE" --menu "\nChoose Installation Disk" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "${#disk_array[@]}" "${disk_array[@]}" 3>&1 1>&2 2>&3)
+
+        # Handle result
         [[ "$ARCH_DISK" = "/dev/nvm"* ]] && ARCH_BOOT_PARTITION="${ARCH_DISK}p1" || ARCH_BOOT_PARTITION="${ARCH_DISK}1"
         [[ "$ARCH_DISK" = "/dev/nvm"* ]] && ARCH_ROOT_PARTITION="${ARCH_DISK}p2" || ARCH_ROOT_PARTITION="${ARCH_DISK}2"
         ;;
@@ -254,7 +266,7 @@ while (true); do
 done
 
 # ----------------------------------------------------------------------------------------------------
-# TRAP
+# TRAP / LOGGING
 # ----------------------------------------------------------------------------------------------------
 
 # shellcheck disable=SC2317
@@ -264,11 +276,12 @@ trap_exit() {
     local result_code="$?"
 
     # Duration
-    duration=$SECONDS
-    duration_min="$((duration / 60))"
-    duration_sec="$((duration % 60))"
+    local duration=$SECONDS
+    local duration_min="$((duration / 60))"
+    local duration_sec="$((duration % 60))"
 
-    if [ "$result_code" -gt 0 ]; then
+    # Check exit return code
+    if [ "$result_code" -gt 0 ]; then # Error >= 1
 
         # Read Logs
         local logs=""
@@ -279,18 +292,18 @@ trap_exit() {
             logs="${logs}\n${line}"          # Append log
         done <<<"$(tac "$LOG_FILE")"         # Read logfile inverted (from bottom)
 
-        # TUI (duration & log)
+        # Show TUI (duration & log)
         whiptail --title "$TUI_TITLE" --msgbox "Arch Installation failed.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds\n\n$(echo -e "$logs" | tac)" --scrolltext 30 90
 
-    else
-        # TUI (duration)
+    else # Success = 0
+        # Show TUI (duration time)
         whiptail --title "$TUI_TITLE" --msgbox "Arch Installation successful.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds" "$TUI_HEIGHT" "$TUI_WIDTH"
     fi
 
     # Wait for sub processes
     wait
 
-    # Unmount
+    # Show TUI (ask for unmount disk)
     if whiptail --title "$TUI_TITLE" --yesno "Unmount ${ARCH_DISK}?" --yes-button "Unmount" --no-button "Skip" "$TUI_HEIGHT" "$TUI_WIDTH"; then
         swapoff -a
         umount -A -R /mnt
@@ -304,7 +317,11 @@ trap_exit() {
     exit "$result_code"
 }
 
-# Set traps
+# ----------------------------------------------------------------------------------------------------
+# INSTALLATION
+# ----------------------------------------------------------------------------------------------------
+
+# Set trap for logging on exit
 trap 'trap_exit $?' EXIT
 
 # Messure execution time
