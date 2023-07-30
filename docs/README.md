@@ -22,7 +22,6 @@
 
 - 100% TUI Installation
 - VM Support
-- LTS Kernel
 - Systemd Bootloader
 - GNOME Desktop (optional)
 - Disk Encryption (optional)

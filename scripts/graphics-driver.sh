@@ -79,7 +79,7 @@ case "${ARCH_DRIVER}" in
     sudo sed -i "s/MODULES=()/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /etc/mkinitcpio.conf
 
     # DRM kernel mode setting
-    sudo sed -i "s/nowatchdog quiet/nowatchdog nvidia_drm.modeset=1 quiet/g" /boot/loader/entries/arch.conf
+    sudo sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 quiet/g" /boot/loader/entries/arch.conf
 
     # Rebuild
     sudo mkinitcpio -P
@@ -125,7 +125,7 @@ case "${ARCH_DRIVER}" in
     sudo sed -i "s/MODULES=()/MODULES=(i915 nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /etc/mkinitcpio.conf
 
     # DRM kernel mode setting (enable prime sync and fix screen-tearing issues)
-    sudo sed -i "s/nowatchdog quiet/nowatchdog nvidia_drm.modeset=1 quiet/g" /boot/loader/entries/arch.conf
+    sudo sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 quiet/g" /boot/loader/entries/arch.conf
 
     # Rebuild
     sudo mkinitcpio -P

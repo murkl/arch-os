@@ -434,7 +434,7 @@ SECONDS=0
     packages=()
     packages+=("base")
     packages+=("base-devel")
-    packages+=("linux-lts")
+    packages+=("linux")
     packages+=("linux-firmware")
     packages+=("networkmanager")
     packages+=("pacman-contrib")
@@ -554,9 +554,9 @@ SECONDS=0
     swap_device_uuid="$(findmnt -no UUID -T /mnt/swapfile)"
     swap_file_offset="$(filefrag -v /mnt/swapfile | awk '$1=="0:" {print substr($4, 1, length($4)-2)}')"
     if [ "$ARCH_ENCRYPTION_ENABLED" = "true" ]; then
-        kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot rw init=/usr/lib/systemd/systemd nowatchdog quiet splash vt.global_cursor_default=0 resume=/dev/mapper/cryptroot resume_offset=${swap_file_offset}"
+        kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot rw init=/usr/lib/systemd/systemd quiet splash vt.global_cursor_default=0 resume=/dev/mapper/cryptroot resume_offset=${swap_file_offset}"
     else
-        kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_ROOT_PARTITION}") rw init=/usr/lib/systemd/systemd nowatchdog quiet splash vt.global_cursor_default=0 resume=UUID=${swap_device_uuid} resume_offset=${swap_file_offset}"
+        kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_ROOT_PARTITION}") rw init=/usr/lib/systemd/systemd quiet splash vt.global_cursor_default=0 resume=UUID=${swap_device_uuid} resume_offset=${swap_file_offset}"
     fi
 
     # Create Bootloader config
@@ -570,18 +570,18 @@ SECONDS=0
     # Create arch default entry
     {
         echo 'title   Arch Linux'
-        echo 'linux   /vmlinuz-linux-lts'
+        echo 'linux   /vmlinuz-linux'
         [ -n "$ARCH_MICROCODE" ] && echo "initrd  /${ARCH_MICROCODE}.img"
-        echo 'initrd  /initramfs-linux-lts.img'
+        echo 'initrd  /initramfs-linux.img'
         echo "options ${kernel_args}"
     } >/mnt/boot/loader/entries/arch.conf
 
     # Create arch fallback entry
     {
         echo 'title   Arch Linux (Fallback)'
-        echo 'linux   /vmlinuz-linux-lts'
+        echo 'linux   /vmlinuz-linux'
         [ -n "$ARCH_MICROCODE" ] && echo "initrd  /${ARCH_MICROCODE}.img"
-        echo 'initrd  /initramfs-linux-lts-fallback.img'
+        echo 'initrd  /initramfs-linux-fallback.img'
         echo "options ${kernel_args}"
     } >/mnt/boot/loader/entries/arch-fallback.conf
 
