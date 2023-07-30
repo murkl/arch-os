@@ -66,7 +66,7 @@ case "${ARCH_DRIVER}" in
     # Packages
     packages=()
     packages+=("xorg-xrandr")
-    packages+=("nvidia-lts")
+    packages+=("nvidia")
     packages+=("nvidia-settings")
     packages+=("nvidia-utils") && packages+=("lib32-nvidia-utils")
     packages+=("opencl-nvidia") && packages+=("lib32-opencl-nvidia")
@@ -103,7 +103,7 @@ case "${ARCH_DRIVER}" in
 
     # nvidia
     if [ "$ARCH_DRIVER" = "3" ]; then
-        packages+=("nvidia-lts")
+        packages+=("nvidia")
         packages+=("nvidia-settings")
         packages+=("nvidia-utils") && packages+=("lib32-nvidia-utils")
         packages+=("opencl-nvidia") && packages+=("lib32-opencl-nvidia")
@@ -111,7 +111,7 @@ case "${ARCH_DRIVER}" in
 
     # nvidia-390xx
     if [ "$ARCH_DRIVER" = "4" ]; then
-        packages+=("linux-lts-headers")
+        packages+=("linux-headers")
         packages+=("nvidia-390xx-dkms")
         packages+=("nvidia-390xx-settings")
         packages+=("nvidia-390xx-utils") && packages+=("lib32-nvidia-390xx-utils")
