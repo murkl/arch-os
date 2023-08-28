@@ -56,7 +56,7 @@ TUI_POSITION=""
 # ----------------------------------------------------------------------------------------------------
 
 PROGRESS_COUNT=0
-PROGRESS_TOTAL=35
+PROGRESS_TOTAL=36
 
 # ----------------------------------------------------------------------------------------------------
 # DEPENDENCIES
@@ -609,12 +609,13 @@ SECONDS=0
     print_whiptail_info "Enable Essential Services"
     # ----------------------------------------------------------------------------------------------------
 
-    arch-chroot /mnt systemctl enable NetworkManager            # Network Manager
-    arch-chroot /mnt systemctl enable systemd-timesyncd.service # Sync time from internet after boot
-    arch-chroot /mnt systemctl enable reflector.service         # Rank mirrors after boot
-    arch-chroot /mnt systemctl enable paccache.timer            # Discard cached/unused packages weekly
-    arch-chroot /mnt systemctl enable pkgfile-update.timer      # Pkgfile update timer
-    arch-chroot /mnt systemctl enable fstrim.timer              # SSD support
+    arch-chroot /mnt systemctl enable NetworkManager              # Network Manager
+    arch-chroot /mnt systemctl enable systemd-timesyncd.service   # Sync time from internet after boot
+    arch-chroot /mnt systemctl enable reflector.service           # Rank mirrors after boot
+    arch-chroot /mnt systemctl enable paccache.timer              # Discard cached/unused packages weekly
+    arch-chroot /mnt systemctl enable pkgfile-update.timer        # Pkgfile update timer
+    arch-chroot /mnt systemctl enable fstrim.timer                # SSD support
+    arch-chroot /mnt systemctl enable systemd-boot-update.service # Auto bootloader update
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Configure System"
@@ -669,11 +670,11 @@ SECONDS=0
         packages+=("xdg-desktop-portal-gnome")
 
         # GNOME Indicator support
-        packages+=("libappindicator-gtk2") && packages+=("lib32-libappindicator-gtk2")
-        packages+=("libappindicator-gtk3") && packages+=("lib32-libappindicator-gtk3")
+        #packages+=("libappindicator-gtk2") && packages+=("lib32-libappindicator-gtk2")
+        #packages+=("libappindicator-gtk3") && packages+=("lib32-libappindicator-gtk3")
 
         # Optimization
-        packages+=("gamemode") && packages+=("lib32-gamemode")
+        #packages+=("gamemode") && packages+=("lib32-gamemode")
 
         # Audio
         packages+=("pipewire")       # Pipewire
@@ -719,7 +720,7 @@ SECONDS=0
         packages+=("ttf-dejavu")
 
         # E-Mail
-        packages+=("geary")
+        #packages+=("geary")
 
         # VM Guest support (if VM detected)
         if [ "$(systemd-detect-virt)" != 'none' ]; then
@@ -731,6 +732,12 @@ SECONDS=0
 
         # Install packages
         arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"
+
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Remove packages"
+        # ----------------------------------------------------------------------------------------------------
+
+        arch-chroot /mnt pacman -Rsn --noconfirm gnome-music gnome-characters gnome-contacts gnome-maps gnome-photos gnome-font-viewer cheese
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Install GNOME Browser Connector"
@@ -841,16 +848,16 @@ SECONDS=0
         # ----------------------------------------------------------------------------------------------------
 
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- mkdir -p "/home/$ARCH_USERNAME/.local/share/applications"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/avahi-discover.desktop"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/bssh.desktop"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/bvnc.desktop"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/qv4l2.desktop"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/qvidcap.desktop"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/lstopo.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/avahi-discover.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/bssh.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/bvnc.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/qv4l2.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/qvidcap.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/lstopo.desktop"
 
     else
         # Skip Gnome progresses
-        PROGRESS_COUNT=32
+        PROGRESS_COUNT=33
     fi
 
     # ----------------------------------------------------------------------------------------------------

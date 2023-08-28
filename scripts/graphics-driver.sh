@@ -44,8 +44,9 @@ case "${ARCH_DRIVER}" in
     packages=()
     packages+=("vulkan-intel") && packages+=("lib32-vulkan-intel")
     packages+=("gamemode") && packages+=("lib32-gamemode")
-    packages+=("libva-intel-driver")
+    packages+=("libva-intel-driver") && packages+=("lib32-libva-intel-driver")
     packages+=("intel-media-driver")
+    
 
     # Install packages
     sudo pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"

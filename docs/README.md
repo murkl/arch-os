@@ -14,18 +14,20 @@
 1. [Features](#features)
 2. [Installation](#step-by-step-installation)
 3. [Graphics Driver](#graphics-driver)
-4. [Desktop Customization](#desktop-customization)
-5. [Rescue & Recovery](#rescue--recovery)
-6. [Information](#technical-info)
+4. [Recommendations](#recommendations)
+5. [Desktop Customization](#desktop-customization)
+6. [Rescue & Recovery](#rescue--recovery)
+7. [Information](#technical-info)
 
 ## Features
 
 - 100% TUI Installation
 - VM Support
-- Systemd Bootloader
-- GNOME Desktop (optional)
+- Systemd Bootloader (auto updated)
+- Minimal GNOME Desktop (optional)
 - Disk Encryption (optional)
 - Network Manager
+- Pipewire Audio
 - AUR Helper & Multilib
 - Microcode Support
 - SSD Support
@@ -33,6 +35,10 @@
 - Missing package suggestion
 - Pacman parallel downloads
 - Pacman automatic cache optimization
+- Printer Support
+- Pacman & nano colors
+- Networking, Utils & Codecs included
+- Wayland & Xorg Support
 - Tested in GNOME Boxes
 - Shellcheck approved
 - **[Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant)**
@@ -44,7 +50,7 @@
 - Download latest Arch Linux ISO from **[here](https://www.archlinux.de/download)**
 - Show disk info with `lsblk`
 - Write to device: `sudo dd bs=4M if=archlinux-*.iso of=/dev/sdX status=progress`
-- Alternatively use **[Etcher](https://www.balena.io/etcher)**
+- Alternatively use **[Ventoy](https://www.ventoy.net/en/download.html)**
 
 ### 2. Configure BIOS Settings
 
@@ -99,7 +105,7 @@ ARCH_KEYBOARD_VARIANT="nodeadkeys"
 
 ## Graphics Driver
 
-_Use this driver script only after a fresh installation of Arch Linux!_
+_Use this driver install script only **after** a fresh installation of Arch Linux!_
 
 1. [Install Arch Linux](#step-by-step-installation)
 2. Reboot
@@ -119,31 +125,49 @@ cd arch-distro/scripts
 - [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
 - [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
 
+## Recommendations
+
+For a stable Arch Linux experience, install as few additional packages from the main repository or AUR as possible. Instead, use Flatpak or Distrobox/Toolbox (Podman/Docker). Furthermore change system files only if absolutely necessary. And perform regular updates with `paru -Syu`
+
+### Additional Optimization
+
+- Install [preload](https://wiki.archlinux.org/title/Preload) (start the service after installation: `sudo systemctl enable preload`)
+- Install [mutter-performance](https://aur.archlinux.org/packages/mutter-performance) (great on Intel Graphics with Wayland)
+- Use [downgrade](https://aur.archlinux.org/packages/downgrade) when you need to downgrade a package
+- Use [starship](https://starship.rs/) for fancy Bash promt
+- Use [exa](https://archlinux.org/packages/extra/x86_64/exa/) as colorful `ls` replacement
+- Use [bat](https://archlinux.org/packages/extra/x86_64/bat/) as colorful `man` replacement
+- Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games
+
 ## Desktop Customization
 
 These customizations are not included in `installer.sh` and can be installed optionally after Arch Linux installation.
 
 - Icon Theme: https://github.com/vinceliuice/Tela-icon-theme
 - Cursor Theme: https://github.com/alvatip/Nordzy-cursors
+- Desktop Font: https://archlinux.org/packages/extra/any/inter-font/
 - Firefox Theme: https://github.com/rafaelmardojai/firefox-gnome-theme
 - Libadwaita GTK Theme: https://github.com/lassekongo83/adw-gtk3
 - Libadwaita GTK Colors: https://github.com/lassekongo83/adw-colors
 - Libadwaita Customization Tool: https://github.com/GradienceTeam/Gradience
+- Nautilus Folder Color: https://aur.archlinux.org/packages/folder-color-nautilus
 
 ### GNOME Shell Extensions
 
 - https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/
 - https://extensions.gnome.org/extension/1160/dash-to-panel/
 - https://extensions.gnome.org/extension/3843/just-perfection/
-- https://extensions.gnome.org/extension/4245/gesture-improvements/
+- https://extensions.gnome.org/extension/5237/rounded-window-corners/
+- https://extensions.gnome.org/extension/3193/blur-my-shell/
+- https://extensions.gnome.org/extension/277/impatience/
 
 #### Additional Extensions
 
 - https://extensions.gnome.org/extension/615/appindicator-support/
 - https://extensions.gnome.org/extension/19/user-themes/
-- https://extensions.gnome.org/extension/3193/blur-my-shell/
-- https://extensions.gnome.org/extension/5237/rounded-window-corners/
 - https://extensions.gnome.org/extension/3733/tiling-assistant/
+- https://extensions.gnome.org/extension/4245/gesture-improvements/
+- https://extensions.gnome.org/extension/1873/disable-unredirect-fullscreen-windows/
 
 ### Import Configurations
 
@@ -202,7 +226,7 @@ If you need to rescue your Arch Linux in case of a crash, **boot from a USB devi
 
 <p><img src="screenshots/neofetch.png" /></p>
 
-### Packages
+### Packages (core)
 
 This packages will be installed during minimal Arch without GNOME installation (179 packages in total):
 
@@ -210,10 +234,10 @@ This packages will be installed during minimal Arch without GNOME installation (
 base base-devel linux linux-firmware networkmanager pacman-contrib reflector git nano bash-completion pkgfile [microcode_pkg]
 ```
 
-### Services
+### Services (core)
 
 This services will be enabled during minimal Arch without GNOME installation:
 
 ```
-NetworkManager systemd-timesyncd.service reflector.service paccache.timer fstrim.timer pkgfile-update.timer
+NetworkManager systemd-timesyncd.service reflector.service paccache.timer fstrim.timer pkgfile-update.timer systemd-boot-update.service
 ```
