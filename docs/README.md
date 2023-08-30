@@ -72,6 +72,13 @@ curl -Ls http://arch.webhop.me | bash
 
 ### Default Properties
 
+```
+├─ installer.sh
+├─ default.conf
+├─ language.conf
+│
+```
+
 If the file `default.conf` exists, it will sourced automatically by the `installer.sh` script and the values will set as defaults for Arch Linux installation setup menu.
 
 #### Examples of `default.conf`
