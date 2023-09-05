@@ -1,12 +1,17 @@
 <div align="center">
-   <h1>Arch Linux Distribution</h1>
-   <p><b style="font-size: 14pt">TUI Installer</b></p>
-   <p><img src="./screenshots/desktop.jpg" /></p>
-   <p>Minimal Arch Linux Distribution with GNOME, preinstalled Paru as AUR Helper and enabled MultiLib.</p>
-   <p>
-      <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
-      <img src="https://img.shields.io/badge/LICENSE-MIT-blue?style=for-the-badge">
-   </p>
+  <h1>Arch Linux Distribution</h1>
+  <p><b style="font-size: 14pt">Run TUI Installer within the booted Arch ISO:</b></p>
+
+```
+curl -Ls http://arch.webhop.me | bash
+```
+
+  <p><img src="./screenshots/desktop.jpg" /></p>
+  <p>Minimal Arch Linux Distribution with GNOME, preinstalled Paru as AUR Helper and enabled MultiLib.</p>
+  <p>
+    <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
+    <img src="https://img.shields.io/badge/LICENSE-MIT-blue?style=for-the-badge">
+  </p>
 </div>
 
 # Contents
@@ -38,7 +43,7 @@
 - Printer Support
 - Pacman & nano colors
 - Networking, Utils & Codecs included
-- Wayland & Xorg Support
+- Wayland optimized
 - Tested in GNOME Boxes
 - Shellcheck approved
 - **[Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant)**
@@ -70,16 +75,15 @@ curl -Ls http://arch.webhop.me | bash
 
 <p><img src="./screenshots/installer.png" /></p>
 
-### Default Properties
+### Installation Properties
 
 ```
 ├─ installer.sh
-├─ default.conf
-├─ language.conf
-│
+├─ default.conf (optional)
+├─ language.conf (optional)
 ```
 
-If the file `default.conf` exists, it will sourced automatically by the `installer.sh` script and the values will set as defaults for Arch Linux installation setup menu.
+If the file `default.conf` exists in the same dir as `installer.sh`, it will sourced automatically by the `installer.sh` script and the values will set as defaults for Arch Linux installation setup menu.
 
 #### Examples of `default.conf`
 
@@ -95,9 +99,9 @@ ARCH_SWAP_SIZE="8"
 ARCH_GNOME="true"
 ```
 
-#### Add Language
+#### Add Custom Language
 
-Create `language.conf` and add this properties (modify with prefered values):
+If you want to install Arch with a custom language, create `language.conf` in the same dir as `installer.sh` and add this properties (modify with prefered values):
 
 ```
 ARCH_LANGUAGE="my-custom-lang"
@@ -121,7 +125,7 @@ _Use this driver install script only **after** a fresh installation of Arch Linu
 ```
 git clone https://github.com/murkl/arch-distro
 cd arch-distro/scripts
-./graphics-driver.sh
+./driver.sh
 ```
 
 ### Manual Installation
@@ -184,7 +188,7 @@ If you want to configure your new Arch Linux system like the screenshot, import 
 
 ```
 git clone https://github.com/murkl/arch-distro
-cd arch-distro/conf
+cd arch-distro/scripts/conf
 ```
 
 #### 2. Import config
@@ -192,11 +196,11 @@ cd arch-distro/conf
 ```
 # Dash to panel
 dconf reset -f /org/gnome/shell/extensions/dash-to-panel/
-dconf load /org/gnome/shell/extensions/dash-to-panel/ <dash-to-panel.conf
+dconf load /org/gnome/shell/extensions/dash-to-panel/ < dash-to-panel.conf
 
 # Just Perfection
 dconf reset -f /org/gnome/shell/extensions/just-perfection/
-dconf load /org/gnome/shell/extensions/just-perfection/ <just-perfection.conf
+dconf load /org/gnome/shell/extensions/just-perfection/ < just-perfection.conf
 ```
 
 ## Rescue & Recovery
