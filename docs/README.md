@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>Arch Linux Distribution</h1>
+  <h1>Arch Vanilla Linux Distribution</h1>
   <p><b style="font-size: 14pt">Run TUI Installer within the booted Arch ISO:</b></p>
 
 ```
@@ -7,7 +7,7 @@ curl -Ls http://arch.webhop.me | bash
 ```
 
   <p><img src="./screenshots/desktop.jpg" /></p>
-  <p>Minimal Arch Linux Distribution with GNOME, preinstalled Paru as AUR Helper and enabled MultiLib.</p>
+  <p>Minimal Arch Linux Distribution with GNOME Vanilla, preinstalled Paru as AUR Helper, enabled MultiLib and some more features.</p>
   <p>
     <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
     <img src="https://img.shields.io/badge/LICENSE-MIT-blue?style=for-the-badge">
@@ -158,23 +158,23 @@ These customizations are not included in `installer.sh` and can be installed opt
 - Cursor Theme: https://github.com/alvatip/Nordzy-cursors
 - Desktop Font: https://archlinux.org/packages/extra/any/inter-font/
 - Firefox Theme: https://github.com/rafaelmardojai/firefox-gnome-theme
-- Libadwaita GTK Theme: https://github.com/lassekongo83/adw-gtk3
-- Libadwaita GTK Colors: https://github.com/lassekongo83/adw-colors
-- Libadwaita Customization Tool: https://github.com/GradienceTeam/Gradience
 - Nautilus Folder Color: https://aur.archlinux.org/packages/folder-color-nautilus
+- Libadwaita GTK Theme: https://github.com/lassekongo83/adw-gtk3
+- Libadwaita GTK Colors (optional): https://github.com/lassekongo83/adw-colors
+- Libadwaita Customization Tool (optional): https://github.com/GradienceTeam/Gradience
 
-### GNOME Shell Extensions
+### GNOME Shell Extensions (recommended)
 
-- https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/
-- https://extensions.gnome.org/extension/1160/dash-to-panel/
 - https://extensions.gnome.org/extension/3843/just-perfection/
 - https://extensions.gnome.org/extension/5237/rounded-window-corners/
 - https://extensions.gnome.org/extension/3193/blur-my-shell/
-- https://extensions.gnome.org/extension/277/impatience/
 
-#### Additional Extensions
+### GNOME Shell Extensions (optional)
 
+- https://extensions.gnome.org/extension/1160/dash-to-panel/
+- https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/
 - https://extensions.gnome.org/extension/615/appindicator-support/
+- https://extensions.gnome.org/extension/277/impatience/
 - https://extensions.gnome.org/extension/19/user-themes/
 - https://extensions.gnome.org/extension/3733/tiling-assistant/
 - https://extensions.gnome.org/extension/4245/gesture-improvements/
@@ -194,13 +194,13 @@ cd arch-distro/scripts/conf
 #### 2. Import config
 
 ```
-# Dash to panel
-dconf reset -f /org/gnome/shell/extensions/dash-to-panel/
-dconf load /org/gnome/shell/extensions/dash-to-panel/ < dash-to-panel.conf
-
 # Just Perfection
 dconf reset -f /org/gnome/shell/extensions/just-perfection/
 dconf load /org/gnome/shell/extensions/just-perfection/ < just-perfection.conf
+
+# Dash to panel (optional)
+dconf reset -f /org/gnome/shell/extensions/dash-to-panel/
+dconf load /org/gnome/shell/extensions/dash-to-panel/ < dash-to-panel.conf
 ```
 
 ## Rescue & Recovery
