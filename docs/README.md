@@ -180,25 +180,27 @@ These customizations are not included in `installer.sh` and can be installed opt
 - https://extensions.gnome.org/extension/4245/gesture-improvements/
 - https://extensions.gnome.org/extension/1873/disable-unredirect-fullscreen-windows/
 
-### Import Configurations
+### Import GNOME Shell Extention Configurations (optional)
 
-If you want to configure your new Arch Linux system like the screenshot, import the predefined configurations and install the regarding GNOME extension.
+If you want to configure your new Arch Linux system like the screenshot, import the predefined configurations and **install the regarding GNOME Shell Extension**.
 
-#### 1. Clone Git project
+#### Clone Git project
 
 ```
 git clone https://github.com/murkl/arch-distro
 cd arch-distro/scripts/conf
 ```
 
-#### 2. Import config
+#### Import Just Perfection Config
 
 ```
-# Just Perfection
 dconf reset -f /org/gnome/shell/extensions/just-perfection/
 dconf load /org/gnome/shell/extensions/just-perfection/ < just-perfection.conf
+```
 
-# Dash to panel (optional)
+#### Dash to Panel Config
+
+```
 dconf reset -f /org/gnome/shell/extensions/dash-to-panel/
 dconf load /org/gnome/shell/extensions/dash-to-panel/ < dash-to-panel.conf
 ```
