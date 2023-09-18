@@ -191,14 +191,14 @@ git clone https://github.com/murkl/arch-distro
 cd arch-distro/scripts/conf
 ```
 
-#### Import Just Perfection Config
+#### Import Config: Just Perfection
 
 ```
 dconf reset -f /org/gnome/shell/extensions/just-perfection/
 dconf load /org/gnome/shell/extensions/just-perfection/ < just-perfection.conf
 ```
 
-#### Dash to Panel Config
+#### Import Config: Dash to Panel
 
 ```
 dconf reset -f /org/gnome/shell/extensions/dash-to-panel/
