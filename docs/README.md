@@ -44,6 +44,7 @@ curl -Ls http://arch.webhop.me | bash
 - Pacman & nano colors
 - Networking, Utils & Codecs included
 - Wayland optimized
+- Installer Error Handling
 - Tested in GNOME Boxes
 - Shellcheck approved
 - **[Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant)**
@@ -75,12 +76,12 @@ curl -Ls http://arch.webhop.me | bash
 
 <p><img src="./screenshots/installer.png" /></p>
 
-### Installation Properties
+### Installation Properties (optional)
 
 ```
-├─ installer.sh
-├─ default.conf (optional)
-├─ language.conf (optional)
+├─ ./installer.sh (path where installer.sh is executed)
+├─ ./default.conf (create this file manually)
+├─ ./language.conf (create this file manually)
 ```
 
 If the file `default.conf` exists in the same dir as `installer.sh`, it will sourced automatically by the `installer.sh` script and the values will set as defaults for Arch Linux installation setup menu.
