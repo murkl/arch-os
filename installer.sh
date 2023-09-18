@@ -2,12 +2,6 @@
 set -Eeuo pipefail
 
 # ----------------------------------------------------------------------------------------------------
-# VERSION
-# ----------------------------------------------------------------------------------------------------
-
-VERSION=1.0.0
-
-# ----------------------------------------------------------------------------------------------------
 # CONFIG FILES (SOURCED IF EXISTS)
 # ----------------------------------------------------------------------------------------------------
 
@@ -46,7 +40,7 @@ ARCH_GNOME=""
 # TUI VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
-TUI_TITLE="Arch Linux Installation │ ${VERSION}"
+TUI_TITLE="Arch Vanilla Installer"
 TUI_WIDTH="80"
 TUI_HEIGHT="20"
 TUI_POSITION=""
@@ -258,7 +252,7 @@ while (true); do
 
     "install")
         check_config || continue
-        whiptail --title "$TUI_TITLE" --yesno "Start Arch Linux Installation?\n\nAll data on ${ARCH_DISK} will be DELETED!" "$TUI_HEIGHT" "$TUI_WIDTH" || continue
+        whiptail --title "$TUI_TITLE" --yesno "Start Arch Vanilla Linux Installation?\n\nAll data on ${ARCH_DISK} will be DELETED!" "$TUI_HEIGHT" "$TUI_WIDTH" || continue
         break # Break loop and continue installation
         ;;
 
@@ -295,11 +289,11 @@ trap_exit() {
         done <<<"$(tac "$LOG_FILE")"         # Read logfile inverted (from bottom)
 
         # Show TUI (duration & log)
-        whiptail --title "$TUI_TITLE" --msgbox "Arch Installation failed.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds\n\n$(echo -e "$logs" | tac)" --scrolltext 30 90
+        whiptail --title "$TUI_TITLE" --msgbox "Arch Vanilla Installation failed.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds\n\n$(echo -e "$logs" | tac)" --scrolltext 30 90
 
     else # Success = 0
         # Show TUI (duration time)
-        whiptail --title "$TUI_TITLE" --msgbox "Arch Installation successful.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds" "$TUI_HEIGHT" "$TUI_WIDTH"
+        whiptail --title "$TUI_TITLE" --msgbox "Arch Vanilla Installation successful.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds" "$TUI_HEIGHT" "$TUI_WIDTH"
     fi
 
     # Wait for sub processes
