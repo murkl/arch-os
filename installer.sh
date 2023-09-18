@@ -364,7 +364,7 @@ SECONDS=0
     vgchange -an || true
 
     # Temporarily disable ECN (prevent traffic problems with some old routers)
-    sysctl net.ipv4.tcp_ecn=0
+    #sysctl net.ipv4.tcp_ecn=0
 
     # Update keyring
     pacman -Sy --noconfirm --disable-download-timeout archlinux-keyring
