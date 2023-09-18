@@ -238,7 +238,10 @@ If you need to rescue your Arch Linux in case of a crash, **boot from a USB devi
 
 ## Technical Info
 
+<div align="center">
 <p><img src="screenshots/neofetch.png" /></p>
+<p><img src="screenshots/apps.png" /></p>
+</div>
 
 ### Packages (core)
 
