@@ -68,11 +68,14 @@ curl -Ls http://arch.webhop.me | bash
 
 - Load Keyboard Layout: `loadkeys de-latin1` (use prefered language)
 - Connect to WLAN (optional), run `iwctl` and type into console: `station wlan0 connect "SSID"` and `exit`
-- **Run Installer with**
+- Run **Arch Vanilla Installer** with
 
 ```
 curl -Ls http://arch.webhop.me | bash
 ```
+
+- Boot new Arch Linux with `reboot`
+- Arch Vanilla Installation finished
 
 <p><img src="./screenshots/installer.png" /></p>
 
