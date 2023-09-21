@@ -1,6 +1,6 @@
 <div align="center">
-  <h1>Arch Vanilla Linux Distribution</h1>
-  <p><b style="font-size: 14pt">Run TUI Installer within the booted Arch ISO:</b></p>
+  <h1>Arch Vanilla</h1>
+  <p><b style="font-size: 14pt">Run TUI Installer from booted Arch ISO:</b></p>
 
 ```
 curl -Ls http://arch.webhop.me | bash
