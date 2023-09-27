@@ -533,8 +533,8 @@ SECONDS=0
     print_whiptail_info "Create Initial Ramdisk"
     # ----------------------------------------------------------------------------------------------------
 
-    [ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd autodetect modconf keyboard sd-vconsole block sd-encrypt filesystems resume fsck)/" /mnt/etc/mkinitcpio.conf
-    [ "$ARCH_ENCRYPTION_ENABLED" = "false" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd autodetect modconf keyboard sd-vconsole block filesystems resume fsck)/" /mnt/etc/mkinitcpio.conf
+    [ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect modconf block sd-encrypt filesystems sd-vconsole fsck)/" /mnt/etc/mkinitcpio.conf
+    [ "$ARCH_ENCRYPTION_ENABLED" = "false" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect modconf block filesystems sd-vconsole fsck)/" /mnt/etc/mkinitcpio.conf
     arch-chroot /mnt mkinitcpio -P
 
     # ----------------------------------------------------------------------------------------------------
