@@ -731,7 +731,18 @@ SECONDS=0
         print_whiptail_info "Remove packages"
         # ----------------------------------------------------------------------------------------------------
 
-        arch-chroot /mnt pacman -Rsn --noconfirm gnome-music gnome-characters gnome-contacts gnome-maps gnome-photos gnome-font-viewer cheese
+        # Init package list
+        packages=()
+
+        # Check & add to package list
+        arch-chroot /mnt pacman -Q --info gnome-maps &>/dev/null && packages+=("gnome-maps")
+        arch-chroot /mnt pacman -Q --info gnome-music &>/dev/null && packages+=("gnome-music")
+        arch-chroot /mnt pacman -Q --info gnome-photos &>/dev/null && packages+=("gnome-photos")
+        arch-chroot /mnt pacman -Q --info gnome-characters &>/dev/null && packages+=("gnome-characters")
+        arch-chroot /mnt pacman -Q --info gnome-font-viewer &>/dev/null && packages+=("gnome-font-viewer")
+
+        # Remove packages from list
+        arch-chroot /mnt pacman -Rsn --noconfirm "${packages[@]}"
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Install GNOME Browser Connector"

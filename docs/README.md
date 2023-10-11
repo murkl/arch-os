@@ -18,11 +18,9 @@ curl -Ls http://arch.webhop.me | bash
 
 1. [Features](#features)
 2. [Installation](#step-by-step-installation)
-3. [Graphics Driver](#graphics-driver)
-4. [Recommendations](#recommendations)
-5. [Desktop Customization](#desktop-customization)
-6. [Rescue & Recovery](#rescue--recovery)
-7. [Information](#technical-info)
+3. [Recommendation](#recommendation)
+4. [Rescue & Recovery](#rescue--recovery)
+5. [Information](#technical-info)
 
 ## Features
 
@@ -118,31 +116,17 @@ ARCH_KEYBOARD_LAYOUT="de"
 ARCH_KEYBOARD_VARIANT="nodeadkeys"
 ```
 
-## Graphics Driver
+## Recommendation
 
-_Use this driver install script only **after** a fresh installation of Arch Linux!_
+For a stable Arch Linux experience, install as few additional packages from the main repository or AUR as possible. Instead, use Flatpak or Distrobox/Toolbox (Podman/Docker). Furthermore change system files only if absolutely necessary. And perform regular updates with `paru -Syu`
 
-1. [Install Arch Linux](#step-by-step-installation)
-2. Reboot
-3. Execute this commands from fresh installed Arch Linux:
-
-```
-git clone https://github.com/murkl/arch-distro
-cd arch-distro/scripts
-./driver.sh
-```
-
-### Manual Installation
+### Install Graphics Driver
 
 - [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
 - [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
 - [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Use_NVIDIA_graphics_only)
 - [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
 - [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
-
-## Recommendations
-
-For a stable Arch Linux experience, install as few additional packages from the main repository or AUR as possible. Instead, use Flatpak or Distrobox/Toolbox (Podman/Docker). Furthermore change system files only if absolutely necessary. And perform regular updates with `paru -Syu`
 
 ### Additional Optimization
 
@@ -154,7 +138,13 @@ For a stable Arch Linux experience, install as few additional packages from the 
 - Use [bat](https://archlinux.org/packages/extra/x86_64/bat/) as colorful `man` replacement
 - Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games
 
-## Desktop Customization
+### GNOME Shell Extensions
+
+- https://extensions.gnome.org/extension/3843/just-perfection/
+- https://extensions.gnome.org/extension/3193/blur-my-shell/
+- (not GNOME 45 supported) https://extensions.gnome.org/extension/5237/rounded-window-corners/
+
+### Desktop Customization
 
 These customizations are not included in `installer.sh` and can be installed optionally after Arch Linux installation.
 
@@ -164,50 +154,6 @@ These customizations are not included in `installer.sh` and can be installed opt
 - Firefox Theme: https://github.com/rafaelmardojai/firefox-gnome-theme
 - Nautilus Folder Color: https://aur.archlinux.org/packages/folder-color-nautilus
 - Libadwaita GTK Theme: https://github.com/lassekongo83/adw-gtk3
-- Libadwaita GTK Colors (optional): https://github.com/lassekongo83/adw-colors
-- Libadwaita Customization Tool (optional): https://github.com/GradienceTeam/Gradience
-
-### GNOME Shell Extensions (recommended)
-
-- https://extensions.gnome.org/extension/3843/just-perfection/
-- https://extensions.gnome.org/extension/5237/rounded-window-corners/
-- https://extensions.gnome.org/extension/3193/blur-my-shell/
-
-### GNOME Shell Extensions (optional)
-
-- https://extensions.gnome.org/extension/1160/dash-to-panel/
-- https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/
-- https://extensions.gnome.org/extension/615/appindicator-support/
-- https://extensions.gnome.org/extension/277/impatience/
-- https://extensions.gnome.org/extension/19/user-themes/
-- https://extensions.gnome.org/extension/3733/tiling-assistant/
-- https://extensions.gnome.org/extension/4245/gesture-improvements/
-- https://extensions.gnome.org/extension/1873/disable-unredirect-fullscreen-windows/
-
-### Import GNOME Shell Extention Configurations (optional)
-
-If you want to configure your new Arch Linux system like the screenshot, import the predefined configurations and **install the regarding GNOME Shell Extension**.
-
-#### Clone Git project
-
-```
-git clone https://github.com/murkl/arch-distro
-cd arch-distro/scripts/conf
-```
-
-#### Import Config: Just Perfection
-
-```
-dconf reset -f /org/gnome/shell/extensions/just-perfection/
-dconf load /org/gnome/shell/extensions/just-perfection/ < just-perfection.conf
-```
-
-#### Import Config: Dash to Panel
-
-```
-dconf reset -f /org/gnome/shell/extensions/dash-to-panel/
-dconf load /org/gnome/shell/extensions/dash-to-panel/ < dash-to-panel.conf
-```
 
 ## Rescue & Recovery
 
