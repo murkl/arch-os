@@ -17,7 +17,7 @@ curl -Ls http://arch.webhop.me | bash
 # Contents
 
 1. [Features](#features)
-2. [Installation](#step-by-step-installation)
+2. [Installation](#installation)
 3. [Recommendation](#recommendation)
 4. [Rescue & Recovery](#rescue--recovery)
 5. [Information](#technical-info)
