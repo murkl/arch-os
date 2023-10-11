@@ -47,7 +47,7 @@ curl -Ls http://arch.webhop.me | bash
 - Shellcheck approved
 - **[Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant)**
 
-## Step by Step Installation
+## Installation
 
 ### 1. Prepare bootable USB Device
 
@@ -131,7 +131,7 @@ For a stable Arch Linux experience, install as few additional packages from the 
 ### Additional Optimization
 
 - Install [preload](https://wiki.archlinux.org/title/Preload) (start the service after installation: `sudo systemctl enable preload`)
-- Install [mutter-performance](https://aur.archlinux.org/packages/mutter-performance) (great on Intel Graphics with Wayland)
+- Install [mutter-performance](https://aur.archlinux.org/packages/mutter-performance) (great on Intel Graphics with Wayland - only < GNOME 45)
 - Use [downgrade](https://aur.archlinux.org/packages/downgrade) when you need to downgrade a package
 - Use [starship](https://starship.rs/) for fancy Bash promt
 - Use [exa](https://archlinux.org/packages/extra/x86_64/exa/) as colorful `ls` replacement
@@ -142,7 +142,7 @@ For a stable Arch Linux experience, install as few additional packages from the 
 
 - https://extensions.gnome.org/extension/3843/just-perfection/
 - https://extensions.gnome.org/extension/3193/blur-my-shell/
-- (not GNOME 45 supported) https://extensions.gnome.org/extension/5237/rounded-window-corners/
+- https://extensions.gnome.org/extension/5237/rounded-window-corners/ (only < GNOME 45)
 
 ### Desktop Customization
 
