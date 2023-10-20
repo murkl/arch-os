@@ -672,9 +672,13 @@ SECONDS=0
 
         # Audio
         packages+=("pipewire")       # Pipewire
+        packages+=("pipewire-alsa")  # Replacement for alsa
         packages+=("pipewire-pulse") # Replacement for pulse
         packages+=("pipewire-jack")  # Replacement for jack
         packages+=("wireplumber")    # Pipewire session manager
+
+        #packages+=("lib32-pipewire")     # Pipewire 32 bit
+        #packages+=("lib32-pipewire-jack") # Replacement for jack 32 bit
 
         # Networking
         packages+=("samba")
@@ -738,8 +742,9 @@ SECONDS=0
         arch-chroot /mnt pacman -Q --info gnome-maps &>/dev/null && packages+=("gnome-maps")
         arch-chroot /mnt pacman -Q --info gnome-music &>/dev/null && packages+=("gnome-music")
         arch-chroot /mnt pacman -Q --info gnome-photos &>/dev/null && packages+=("gnome-photos")
-        arch-chroot /mnt pacman -Q --info gnome-characters &>/dev/null && packages+=("gnome-characters")
-        arch-chroot /mnt pacman -Q --info gnome-font-viewer &>/dev/null && packages+=("gnome-font-viewer")
+        arch-chroot /mnt pacman -Q --info gnome-connections &>/dev/null && packages+=("gnome-connections")
+        arch-chroot /mnt pacman -Q --info cheese &>/dev/null && packages+=("cheese")
+        arch-chroot /mnt pacman -Q --info snapshot &>/dev/null && packages+=("snapshot")
 
         # Remove packages from list
         arch-chroot /mnt pacman -Rsn --noconfirm "${packages[@]}"

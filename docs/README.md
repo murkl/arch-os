@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>Arch Vanilla</h1>
+  <h1>Arch Vanilla OS</h1>
   <p><b style="font-size: 14pt">Run TUI Installer from booted Arch ISO:</b></p>
 
 ```
