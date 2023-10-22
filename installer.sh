@@ -230,7 +230,7 @@ while (true); do
         ;;
 
     "encrypt")
-        ARCH_ENCRYPTION_ENABLED="false" && whiptail --title "$TUI_TITLE" --yesno "Enable Disk Encryption?" "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_ENCRYPTION_ENABLED="true"
+        ARCH_ENCRYPTION_ENABLED="false" && whiptail --title "$TUI_TITLE" --yesno "Enable Disk Encryption?" --defaultno "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_ENCRYPTION_ENABLED="true"
         ;;
 
     "swap")
