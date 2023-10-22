@@ -245,7 +245,6 @@ while (true); do
 
     "install")
         check_config || continue
-        whiptail --title "$TUI_TITLE" --yesno "Start Arch Vanilla Linux Installation?\n\nAll data on ${ARCH_DISK} will be DELETED!" "$TUI_HEIGHT" "$TUI_WIDTH" || continue
         break # Break loop and continue installation
         ;;
 
@@ -279,6 +278,14 @@ done
     echo "ARCH_KEYBOARD_LAYOUT='${ARCH_KEYBOARD_LAYOUT}'"
     echo "ARCH_KEYBOARD_VARIANT='${ARCH_KEYBOARD_VARIANT}'"
 } >"$INSTALLER_CONFIG"
+
+# ----------------------------------------------------------------------------------------------------
+# ASK FOR INSTALLATION
+# ----------------------------------------------------------------------------------------------------
+
+if ! whiptail --title "$TUI_TITLE" --yesno "Start Arch Vanilla Linux Installation?\n\nAll data on ${ARCH_DISK} will be DELETED!" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+    exit 1
+fi
 
 # ----------------------------------------------------------------------------------------------------
 # TRAP / LOGGING
@@ -572,7 +579,7 @@ SECONDS=0
     # Create Bootloader config
     {
         echo 'default arch.conf'
-        echo 'console-mode max'
+        echo 'console-mode auto'
         echo 'timeout 0'
         echo 'editor yes'
     } >/mnt/boot/loader/loader.conf
