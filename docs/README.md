@@ -79,41 +79,30 @@ curl -Ls http://arch.webhop.me | bash
 
 ### Installation Properties (optional)
 
-```
-├─ ./installer.sh (path where installer.sh is executed)
-├─ ./default.conf (create this file manually)
-├─ ./language.conf (create this file manually)
-```
+If the file `installer.conf` exists in the same dir as `installer.sh`, it will sourced automatically by the `installer.sh` script and the values will set as defaults for Arch Linux installation setup menu. The installation will (over) write the `installer.conf` without `ARCH_PASSWORD` for better security.
 
-If the file `default.conf` exists in the same dir as `installer.sh`, it will sourced automatically by the `installer.sh` script and the values will set as defaults for Arch Linux installation setup menu.
-
-#### Examples of `default.conf`
+#### Example of `installer.conf`
 
 ```
-ARCH_HOSTNAME="virt"
-ARCH_USERNAME="moritz"
-ARCH_PASSWORD="secret"
-ARCH_DISK="/dev/vda"
-ARCH_BOOT_PARTITION="/dev/vda1"
-ARCH_ROOT_PARTITION="/dev/vda2"
-ARCH_ENCRYPTION_ENABLED="true"
-ARCH_SWAP_SIZE="8"
-ARCH_GNOME="true"
-```
+# Setup
+ARCH_HOSTNAME='arch-desktop'
+ARCH_USERNAME='my_user'
+ARCH_DISK='/dev/sda'
+ARCH_BOOT_PARTITION='/dev/sda1'
+ARCH_ROOT_PARTITION='/dev/sda2'
+ARCH_ENCRYPTION_ENABLED='false'
+ARCH_SWAP_SIZE='8'
+ARCH_GNOME='true'
 
-#### Add Custom Language
-
-If you want to install Arch with a custom language, create `language.conf` in the same dir as `installer.sh` and add this properties (modify with prefered values):
-
-```
-ARCH_LANGUAGE="my-custom-lang"
-ARCH_TIMEZONE="Europe/Berlin"
-ARCH_LOCALE_LANG="de_DE.UTF-8"
-ARCH_LOCALE_GEN_LIST=("de_DE.UTF-8 UTF-8" "de_DE ISO-8859-1")
-ARCH_VCONSOLE_KEYMAP="de-latin1-nodeadkeys"
-ARCH_VCONSOLE_FONT="eurlatgr"
-ARCH_KEYBOARD_LAYOUT="de"
-ARCH_KEYBOARD_VARIANT="nodeadkeys"
+# Language
+ARCH_LANGUAGE='custom'
+ARCH_TIMEZONE='Europe/Berlin'
+ARCH_LOCALE_LANG='en_US.UTF-8'
+ARCH_LOCALE_GEN_LIST=('en_US.UTF-8' 'UTF-8')
+ARCH_VCONSOLE_KEYMAP='en-latin1-nodeadkeys'
+ARCH_VCONSOLE_FONT='eurlatgr'
+ARCH_KEYBOARD_LAYOUT='en'
+ARCH_KEYBOARD_VARIANT='nodeadkeys'
 ```
 
 ## Recommendation
@@ -131,7 +120,7 @@ For a stable Arch Linux experience, install as few additional packages from the 
 ### Additional Optimization
 
 - Install [preload](https://wiki.archlinux.org/title/Preload) (start the service after installation: `sudo systemctl enable preload`)
-- Install [mutter-performance](https://aur.archlinux.org/packages/mutter-performance) (great on Intel Graphics with Wayland - only < GNOME 45)
+- Install [mutter-performance](https://aur.archlinux.org/packages/mutter-performance) (great on Intel Graphics with Wayland)
 - Use [downgrade](https://aur.archlinux.org/packages/downgrade) when you need to downgrade a package
 - Use [starship](https://starship.rs/) for fancy Bash promt
 - Use [exa](https://archlinux.org/packages/extra/x86_64/exa/) as colorful `ls` replacement

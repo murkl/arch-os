@@ -2,11 +2,10 @@
 set -Eeuo pipefail
 
 # ----------------------------------------------------------------------------------------------------
-# CONFIG FILES (SOURCED IF EXISTS)
+# CONFIG FILE (SOURCED IF EXISTS)
 # ----------------------------------------------------------------------------------------------------
 
-DEFAULT_CONFIG="./default.conf"
-LANGUAGE_CONFIG="./language.conf"
+INSTALLER_CONFIG="./installer.conf"
 
 # ----------------------------------------------------------------------------------------------------
 # LOG FILE
@@ -115,11 +114,7 @@ check_config() {
 
 # Load default values
 # shellcheck disable=SC1090
-[ -f "$DEFAULT_CONFIG" ] && source "$DEFAULT_CONFIG"
-
-# Load custom language
-# shellcheck disable=SC1090
-[ -f "$LANGUAGE_CONFIG" ] && source "$LANGUAGE_CONFIG"
+[ -f "$INSTALLER_CONFIG" ] && source "$INSTALLER_CONFIG"
 
 # ----------------------------------------------------------------------------------------------------
 # SHOW MENU
@@ -153,16 +148,11 @@ while (true); do
 
         # List of language menu entries
         language_array=()
-        language_array+=("german") && language_array+=("German")
-        language_array+=("english") && language_array+=("English")
-
-        # Add custom language entry
-        if [ -f "$LANGUAGE_CONFIG" ]; then
-            while IFS="=" read -r key value; do
-                if [ "$key" = "ARCH_LANGUAGE" ] && [ "${value//\"/}" != "german" ] && [ "${value//\"/}" != "english" ]; then
-                    language_array+=("${value//\"/}") && language_array+=("${value//\"/}")
-                fi
-            done <"$LANGUAGE_CONFIG"
+        if [ "$ARCH_LANGUAGE" = "custom" ]; then
+            language_array+=("custom") && language_array+=("Custom")
+        else
+            language_array+=("german") && language_array+=("German")
+            language_array+=("english") && language_array+=("English")
         fi
 
         # Show TUI
@@ -190,13 +180,16 @@ while (true); do
             ARCH_KEYBOARD_VARIANT="nodeadkeys"
             ;;
 
-        *)
-            # Load language config
+        "custom")
+            # Load values from installer.conf
             # shellcheck disable=SC1090
-            [ -f "$LANGUAGE_CONFIG" ] && source "$LANGUAGE_CONFIG"
+            [ -f "$INSTALLER_CONFIG" ] && source "$INSTALLER_CONFIG"
             ;;
 
+        *) ;; # Do nothing
+
         esac
+
         ;;
 
     "hostname")
@@ -260,6 +253,32 @@ while (true); do
 
     esac
 done
+
+# ----------------------------------------------------------------------------------------------------
+# (OVER) WRITE INSTALLER CONF
+# ----------------------------------------------------------------------------------------------------
+{
+    echo "# Setup"
+    echo "ARCH_HOSTNAME='${ARCH_HOSTNAME}'"
+    echo "ARCH_USERNAME='${ARCH_USERNAME}'"
+    # echo "ARCH_PASSWORD='${ARCH_PASSWORD}'" # disabled for security
+    echo "ARCH_DISK='${ARCH_DISK}'"
+    echo "ARCH_BOOT_PARTITION='${ARCH_BOOT_PARTITION}'"
+    echo "ARCH_ROOT_PARTITION='${ARCH_ROOT_PARTITION}'"
+    echo "ARCH_ENCRYPTION_ENABLED='${ARCH_ENCRYPTION_ENABLED}'"
+    echo "ARCH_SWAP_SIZE='${ARCH_SWAP_SIZE}'"
+    echo "ARCH_GNOME='${ARCH_GNOME}'"
+    echo ""
+    echo "# Language"
+    echo "ARCH_LANGUAGE='${ARCH_LANGUAGE}'"
+    echo "ARCH_TIMEZONE='${ARCH_TIMEZONE}'"
+    echo "ARCH_LOCALE_LANG='${ARCH_LOCALE_LANG}'"
+    echo "ARCH_LOCALE_GEN_LIST=(${ARCH_LOCALE_GEN_LIST[*]@Q})"
+    echo "ARCH_VCONSOLE_KEYMAP='${ARCH_VCONSOLE_KEYMAP}'"
+    echo "ARCH_VCONSOLE_FONT='${ARCH_VCONSOLE_FONT}'"
+    echo "ARCH_KEYBOARD_LAYOUT='${ARCH_KEYBOARD_LAYOUT}'"
+    echo "ARCH_KEYBOARD_VARIANT='${ARCH_KEYBOARD_VARIANT}'"
+} >"$INSTALLER_CONFIG"
 
 # ----------------------------------------------------------------------------------------------------
 # TRAP / LOGGING
