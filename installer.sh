@@ -761,6 +761,7 @@ SECONDS=0
         arch-chroot /mnt pacman -Q --info gnome-maps &>/dev/null && packages+=("gnome-maps")
         arch-chroot /mnt pacman -Q --info gnome-music &>/dev/null && packages+=("gnome-music")
         arch-chroot /mnt pacman -Q --info gnome-photos &>/dev/null && packages+=("gnome-photos")
+        arch-chroot /mnt pacman -Q --info gnome-contacts &>/dev/null && packages+=("gnome-contacts")
         arch-chroot /mnt pacman -Q --info gnome-connections &>/dev/null && packages+=("gnome-connections")
         arch-chroot /mnt pacman -Q --info cheese &>/dev/null && packages+=("cheese")
         arch-chroot /mnt pacman -Q --info snapshot &>/dev/null && packages+=("snapshot")
