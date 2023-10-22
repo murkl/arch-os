@@ -313,19 +313,16 @@ trap_exit() {
     else # Success = 0
         # Show TUI (duration time)
         whiptail --title "$TUI_TITLE" --msgbox "Arch Vanilla Installation successful.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds" "$TUI_HEIGHT" "$TUI_WIDTH"
-    fi
 
-    # Wait for sub processes
-    wait
-
-    # Show TUI (ask for unmount disk)
-    if whiptail --title "$TUI_TITLE" --yesno "Unmount ${ARCH_DISK}?" --yes-button "Unmount" --no-button "Skip" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+        # Unmount
+        wait # Wait for sub processes
         swapoff -a
         umount -A -R /mnt
         [ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
-        clear && echo -e "\n!!! Please reboot now... !!!\n"
-    else
-        clear && echo -e "\n!!! Chroot with: 'arch-chroot /mnt' !!!\n"
+
+        if whiptail --title "$TUI_TITLE" --yesno "Reboot now?" --defaultno --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+            wait && reboot
+        fi
     fi
 
     # Exit
