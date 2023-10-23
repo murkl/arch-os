@@ -49,6 +49,8 @@ curl -Ls http://arch.webhop.me | bash
 
 ## Installation
 
+<p><img src="./screenshots/installer.png" /></p>
+
 ### 1. Prepare bootable USB Device
 
 - Download latest Arch Linux ISO from **[here](https://www.archlinux.de/download)**
@@ -73,8 +75,6 @@ curl -Ls http://arch.webhop.me | bash
 ```
 
 - **Arch Vanilla Installation finished**
-
-<p><img src="./screenshots/installer.png" /></p>
 
 ### Installation Properties (optional)
 

@@ -154,44 +154,36 @@ while (true); do
         if [ "$ARCH_LANGUAGE" = "custom" ]; then
             whiptail --title "$TUI_TITLE" --msgbox "> Custom Language Mode\n\nNote: Your language settings from 'installer.conf' are taken." "$TUI_HEIGHT" "$TUI_WIDTH"
         else
-            # List of language menu entries
+            # List available language menu entries
             language_array=()
             language_array+=("german") && language_array+=("German")
             language_array+=("english") && language_array+=("English")
-            # Show TUI
+
+            # Show language TUI
             ARCH_LANGUAGE=$(whiptail --title "$TUI_TITLE" --menu "\nChoose Setup Language" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#language_array[@]} / 2) + (${#language_array[@]} % 2)))" "${language_array[@]}" 3>&1 1>&2 2>&3)
+
+            # Handle language result
+            case "${ARCH_LANGUAGE}" in
+            "english")
+                ARCH_TIMEZONE="Europe/Berlin"
+                ARCH_LOCALE_LANG="en_US.UTF-8"
+                ARCH_LOCALE_GEN_LIST=("en_US.UTF-8" "UTF-8")
+                ARCH_VCONSOLE_KEYMAP="en-latin1-nodeadkeys"
+                ARCH_VCONSOLE_FONT="eurlatgr"
+                ARCH_KEYBOARD_LAYOUT="en"
+                ARCH_KEYBOARD_VARIANT="nodeadkeys"
+                ;;
+            "german")
+                ARCH_TIMEZONE="Europe/Berlin"
+                ARCH_LOCALE_LANG="de_DE.UTF-8"
+                ARCH_LOCALE_GEN_LIST=("de_DE.UTF-8 UTF-8" "de_DE ISO-8859-1" "de_DE@euro ISO-8859-15" "en_US.UTF-8 UTF-8")
+                ARCH_VCONSOLE_KEYMAP="de-latin1-nodeadkeys"
+                ARCH_VCONSOLE_FONT="eurlatgr"
+                ARCH_KEYBOARD_LAYOUT="de"
+                ARCH_KEYBOARD_VARIANT="nodeadkeys"
+                ;;
+            esac
         fi
-
-        # Handle result
-        case "${ARCH_LANGUAGE}" in
-        "english")
-            ARCH_TIMEZONE="Europe/Berlin"
-            ARCH_LOCALE_LANG="en_US.UTF-8"
-            ARCH_LOCALE_GEN_LIST=("en_US.UTF-8" "UTF-8")
-            ARCH_VCONSOLE_KEYMAP="en-latin1-nodeadkeys"
-            ARCH_VCONSOLE_FONT="eurlatgr"
-            ARCH_KEYBOARD_LAYOUT="en"
-            ARCH_KEYBOARD_VARIANT="nodeadkeys"
-            ;;
-
-        "german")
-            ARCH_TIMEZONE="Europe/Berlin"
-            ARCH_LOCALE_LANG="de_DE.UTF-8"
-            ARCH_LOCALE_GEN_LIST=("de_DE.UTF-8 UTF-8" "de_DE ISO-8859-1" "de_DE@euro ISO-8859-15" "en_US.UTF-8 UTF-8")
-            ARCH_VCONSOLE_KEYMAP="de-latin1-nodeadkeys"
-            ARCH_VCONSOLE_FONT="eurlatgr"
-            ARCH_KEYBOARD_LAYOUT="de"
-            ARCH_KEYBOARD_VARIANT="nodeadkeys"
-            ;;
-
-        "custom")
-            # Doo nothing & keep values from installer.conf
-            ;;
-
-        *) ;; # Do nothing
-
-        esac
-
         ;;
 
     "hostname")
