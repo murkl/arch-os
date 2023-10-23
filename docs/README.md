@@ -110,7 +110,7 @@ ARCH_KEYBOARD_VARIANT='nodeadkeys'
 
 ## Recommendation
 
-For a stable Arch Linux experience, install as few additional packages from the main repository or AUR as possible. Instead, use Flatpak or Distrobox/Toolbox (Podman/Docker). Furthermore change system files only if absolutely necessary. And perform regular updates with `paru -Syu`
+For a robust & stable Arch Linux experience, install as few additional packages from the main repository or AUR as possible. Instead, use Flatpak or Distrobox/Toolbox (Podman/Docker). Furthermore change system files only if absolutely necessary. And perform regular updates with `paru -Syu`
 
 ### Install Graphics Driver
 
@@ -183,7 +183,7 @@ If you need to rescue your Arch Linux in case of a crash, **boot from a USB devi
 <p><img src="screenshots/apps.png" /></p>
 </div>
 
-### Packages (core)
+### Core Packages
 
 This packages will be installed during minimal Arch without GNOME installation (180 packages in total):
 
@@ -191,7 +191,7 @@ This packages will be installed during minimal Arch without GNOME installation (
 base base-devel linux linux-firmware networkmanager pacman-contrib reflector git nano bash-completion pkgfile [microcode_pkg]
 ```
 
-### Services (core)
+### Core Services
 
 This services will be enabled during minimal Arch without GNOME installation:
 
