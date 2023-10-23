@@ -122,6 +122,9 @@ check_config() {
 
 while (true); do
 
+    # Check config entries and set menu position
+    check_config || true
+
     # Create TUI menu entries
     menu_entry_array=()
     menu_entry_array+=("language") && menu_entry_array+=("$(print_menu_entry "Language" "${ARCH_LANGUAGE}")")
@@ -133,10 +136,11 @@ while (true); do
     menu_entry_array+=("swap") && menu_entry_array+=("$(print_menu_entry "Swap" "$([ -n "$ARCH_SWAP_SIZE" ] && { [ "$ARCH_SWAP_SIZE" != "0" ] && echo "${ARCH_SWAP_SIZE} GB" || echo "disabled"; })")")
     menu_entry_array+=("gnome") && menu_entry_array+=("$(print_menu_entry "GNOME" "${ARCH_GNOME}")")
     menu_entry_array+=("") && menu_entry_array+=("") # Empty entry
-    menu_entry_array+=("install") && menu_entry_array+=("> Start Installation")
-
-    # Check config entries and set menu position
-    check_config || true
+    if [ "$TUI_POSITION" = "install" ]; then
+        menu_entry_array+=("install") && menu_entry_array+=("> Generate Config")
+    else
+        menu_entry_array+=("install") && menu_entry_array+=("x Config incomplete")
+    fi
 
     # Open TUI menu
     menu_selection=$(whiptail --title "$TUI_TITLE" --menu "\n" --ok-button "Ok" --cancel-button "Exit" --notags --default-item "$TUI_POSITION" "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#menu_entry_array[@]} / 2) + (${#menu_entry_array[@]} % 2)))" "${menu_entry_array[@]}" 3>&1 1>&2 2>&3) || exit
@@ -283,7 +287,7 @@ done
 # ASK FOR INSTALLATION
 # ----------------------------------------------------------------------------------------------------
 
-if ! whiptail --title "$TUI_TITLE" --yesno "Start Arch Vanilla Linux Installation?\n\nAll data on ${ARCH_DISK} will be DELETED!" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+if ! whiptail --title "$TUI_TITLE" --yesno "Start Arch Vanilla Linux Installation?\n\nAll data on ${ARCH_DISK} will be DELETED!" --defaultno --yes-button "Start Installation" --no-button "Exit" "$TUI_HEIGHT" "$TUI_WIDTH"; then
     exit 1
 fi
 
