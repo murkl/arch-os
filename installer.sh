@@ -150,17 +150,17 @@ while (true); do
 
     "language")
 
-        # List of language menu entries
-        language_array=()
+        # Check if language is set to custom from installer.conf
         if [ "$ARCH_LANGUAGE" = "custom" ]; then
-            language_array+=("custom") && language_array+=("Custom")
+            whiptail --title "$TUI_TITLE" --msgbox "> Custom Language Mode\n\nNote: Your language settings from 'installer.conf' are taken." "$TUI_HEIGHT" "$TUI_WIDTH"
         else
+            # List of language menu entries
+            language_array=()
             language_array+=("german") && language_array+=("German")
             language_array+=("english") && language_array+=("English")
+            # Show TUI
+            ARCH_LANGUAGE=$(whiptail --title "$TUI_TITLE" --menu "\nChoose Setup Language" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#language_array[@]} / 2) + (${#language_array[@]} % 2)))" "${language_array[@]}" 3>&1 1>&2 2>&3)
         fi
-
-        # Show TUI
-        ARCH_LANGUAGE=$(whiptail --title "$TUI_TITLE" --menu "\nChoose Setup Language" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#language_array[@]} / 2) + (${#language_array[@]} % 2)))" "${language_array[@]}" 3>&1 1>&2 2>&3)
 
         # Handle result
         case "${ARCH_LANGUAGE}" in
@@ -185,9 +185,7 @@ while (true); do
             ;;
 
         "custom")
-            # Load values from installer.conf
-            # shellcheck disable=SC1090
-            [ -f "$INSTALLER_CONFIG" ] && source "$INSTALLER_CONFIG"
+            # Doo nothing & keep values from installer.conf
             ;;
 
         *) ;; # Do nothing
