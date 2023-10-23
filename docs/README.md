@@ -72,7 +72,6 @@ curl -Ls http://arch.webhop.me | bash
 curl -Ls http://arch.webhop.me | bash
 ```
 
-- Boot new Arch Linux with `reboot`
 - **Arch Vanilla Installation finished**
 
 <p><img src="./screenshots/installer.png" /></p>
