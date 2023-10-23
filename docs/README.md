@@ -7,7 +7,7 @@ curl -Ls http://arch.webhop.me | bash
 ```
 
   <p><img src="./screenshots/desktop.jpg" /></p>
-  <p>Minimal Arch Linux Distribution with GNOME Vanilla, preinstalled Paru as AUR Helper, enabled MultiLib and some more features.</p>
+  <p>Minimal Arch Linux Distribution with GNOME, preinstalled Paru as AUR Helper, enabled MultiLib and some more features. This project aims to provide a solid Arch Linux base for desktop computers and an easy & fast to use installer.</p>
   <p>
     <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
     <img src="https://img.shields.io/badge/LICENSE-MIT-blue?style=for-the-badge">
