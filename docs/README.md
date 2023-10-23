@@ -68,17 +68,12 @@ curl -Ls http://arch.webhop.me | bash
 
 - Load Keyboard Layout: `loadkeys de-latin1` (use prefered language)
 - Connect to WLAN (optional), run `iwctl` and type into console: `station wlan0 connect "SSID"` and `exit`
-- Run **Arch Vanilla Installer** with
-
-```
-curl -Ls http://arch.webhop.me | bash
-```
-
-- **Arch Vanilla Installation finished**
+- Run **Arch Vanilla Installer** with:`curl -Ls http://arch.webhop.me | bash`
+- Installation finished
 
 ### Installation Properties (optional)
 
-If the file `installer.conf` exists in the same dir as `installer.sh`, it will sourced automatically on startup and the values will set as defaults for Arch Linux installation setup menu. After pressing `> Generate Config`, the `installer.conf` will be generated (without `ARCH_PASSWORD` for better security).
+If the file `installer.conf` exists in the same dir as the script, it will sourced automatically on startup and the values will set as defaults for Arch Linux installation setup menu. After pressing `> Generate Config`, the `installer.conf` will be generated from the setup menu properties (except `ARCH_PASSWORD` for better security).
 
 #### Add another Language
 
@@ -148,7 +143,7 @@ For a robust & stable Arch Linux experience, install as few additional packages 
 
 ## Rescue & Recovery
 
-If you need to rescue your Arch Linux in case of a crash, **boot from a USB device** and follow these instructions.
+If you need to rescue your Arch Linux in case of a crash, **boot from an Arch ISO device** and follow these instructions.
 
 ### 1. Disk Information
 
