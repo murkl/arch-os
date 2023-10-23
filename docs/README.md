@@ -78,7 +78,11 @@ curl -Ls http://arch.webhop.me | bash
 
 ### Installation Properties (optional)
 
-If the file `installer.conf` exists in the same dir as `installer.sh`, it will sourced automatically by the `installer.sh` script and the values will set as defaults for Arch Linux installation setup menu. The installation will (over) write the `installer.conf` without `ARCH_PASSWORD` for better security.
+If the file `installer.conf` exists in the same dir as `installer.sh`, it will sourced automatically on startup and the values will set as defaults for Arch Linux installation setup menu. After pressing `> Generate Config`, the `installer.conf` will be generated (without `ARCH_PASSWORD` for better security).
+
+#### Add another Language
+
+If you want to add another language, set `ARCH_LANGUAGE='custom'` and modify the desired properties. (see example of [installer.conf](#example-of-installerconf))
 
 #### Example of `installer.conf`
 
@@ -112,11 +116,11 @@ For a stable Arch Linux experience, install as few additional packages from the 
 
 - [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
 - [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
-- [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Use_NVIDIA_graphics_only)
+- [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Available_methods)
 - [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
 - [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
 
-### Additional Optimization
+### Additional Optimization (optional)
 
 - Install [preload](https://wiki.archlinux.org/title/Preload) (start the service after installation: `sudo systemctl enable preload`)
 - Install [mutter-performance](https://aur.archlinux.org/packages/mutter-performance) (great on Intel Graphics with Wayland)
@@ -126,15 +130,14 @@ For a stable Arch Linux experience, install as few additional packages from the 
 - Use [bat](https://archlinux.org/packages/extra/x86_64/bat/) as colorful `man` replacement
 - Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games
 
-### GNOME Shell Extensions
+### GNOME Shell Extensions (optional)
 
 - https://extensions.gnome.org/extension/3843/just-perfection/
 - https://extensions.gnome.org/extension/3193/blur-my-shell/
-- https://extensions.gnome.org/extension/5237/rounded-window-corners/ (only < GNOME 45)
+- https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/
+- https://extensions.gnome.org/extension/1873/disable-unredirect-fullscreen-windows/
 
-### Desktop Customization
-
-These customizations are not included in `installer.sh` and can be installed optionally after Arch Linux installation.
+### Desktop Customization (optional)
 
 - Icon Theme: https://github.com/vinceliuice/Tela-icon-theme
 - Cursor Theme: https://github.com/alvatip/Nordzy-cursors
@@ -182,7 +185,7 @@ If you need to rescue your Arch Linux in case of a crash, **boot from a USB devi
 
 ### Packages (core)
 
-This packages will be installed during minimal Arch without GNOME installation (179 packages in total):
+This packages will be installed during minimal Arch without GNOME installation (180 packages in total):
 
 ```
 base base-devel linux linux-firmware networkmanager pacman-contrib reflector git nano bash-completion pkgfile [microcode_pkg]
