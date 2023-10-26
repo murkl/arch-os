@@ -1,13 +1,13 @@
 <div align="center">
   <h1>Arch Vanilla OS</h1>
-  <p><b style="font-size: 14pt">Run TUI Installer from booted Arch ISO:</b></p>
+  <p><b>Run TUI Installer from booted Arch ISO</b></p>
 
 ```
 curl -Ls http://arch.webhop.me | bash
 ```
 
   <p><img src="./screenshots/desktop.jpg" /></p>
-  <p>Minimal Arch Linux Distribution with GNOME, preinstalled Paru as AUR Helper, enabled MultiLib and some more features. This project aims to provide a solid Arch Linux base for desktop computers and an easy & fast to use installer.</p>
+  <p>Minimal Arch Linux Distribution with GNOME, preinstalled Paru as AUR Helper, enabled MultiLib and some more features. This project aims to provide a solid Arch Linux base for desktop users and an easy & fast to use installer.<br><br><b>Sole OS on a single disk</b></p>
   <p>
     <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
     <img src="https://img.shields.io/badge/LICENSE-MIT-blue?style=for-the-badge">
@@ -26,7 +26,6 @@ curl -Ls http://arch.webhop.me | bash
 
 - 100% TUI Installation
 - VM Support
-- Sole OS on a single disk
 - Minimal GNOME Desktop + Autologin (optional)
 - Disk Encryption (optional)
 - Systemd Bootloader (auto updated)
@@ -46,7 +45,7 @@ curl -Ls http://arch.webhop.me | bash
 - Installer Error Handling
 - Tested in GNOME Boxes
 - Shellcheck approved
-- **[Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant)**
+- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant)
 
 ## Installation
 
