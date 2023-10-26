@@ -698,8 +698,8 @@ SECONDS=0
         packages+=("pipewire-pulse")      # Replacement for pulse
         packages+=("pipewire-jack")       # Replacement for jack
         packages+=("wireplumber")         # Pipewire session manager
-        packages+=("lib32-pipewire")      # Pipewire 32 bit
-        packages+=("lib32-pipewire-jack") # Replacement for jack 32 bit
+        #packages+=("lib32-pipewire")      # Pipewire 32 bit
+        #packages+=("lib32-pipewire-jack") # Replacement for jack 32 bit
 
         # Networking & Access
         packages+=("samba") # Windows Network Share
@@ -733,8 +733,8 @@ SECONDS=0
         packages+=("plymouth")
 
         # Optimization
-        packages+=("gamemode")
-        packages+=("lib32-gamemode")
+        #packages+=("gamemode")
+        #packages+=("lib32-gamemode")
 
         # Driver
         #packages+=("xf86-input-synaptics") # For some touchpads
