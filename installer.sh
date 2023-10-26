@@ -26,6 +26,7 @@ ARCH_ROOT_PARTITION=""
 ARCH_ENCRYPTION_ENABLED=""
 ARCH_SWAP_SIZE=""
 ARCH_LANGUAGE=""
+ARCH_REFLECTOR_COUNTRY=""
 ARCH_TIMEZONE=""
 ARCH_LOCALE_LANG=""
 ARCH_LOCALE_GEN_LIST=()
@@ -88,6 +89,7 @@ print_whiptail_info() {
 # ----------------------------------------------------------------------------------------------------
 
 check_config() {
+    # $ARCH_REFLECTOR_COUNTRY ignored, will handle on access
     [ -z "${ARCH_LANGUAGE}" ] && TUI_POSITION="language" && return 1
     [ -z "${ARCH_TIMEZONE}" ] && TUI_POSITION="language" && return 1
     [ -z "${ARCH_LOCALE_LANG}" ] && TUI_POSITION="language" && return 1
@@ -172,6 +174,7 @@ while (true); do
                 ARCH_VCONSOLE_FONT="eurlatgr"
                 ARCH_KEYBOARD_LAYOUT="en"
                 ARCH_KEYBOARD_VARIANT="nodeadkeys"
+                ARCH_REFLECTOR_COUNTRY="Germany,France"
                 ;;
             "german")
                 ARCH_TIMEZONE="Europe/Berlin"
@@ -181,6 +184,7 @@ while (true); do
                 ARCH_VCONSOLE_FONT="eurlatgr"
                 ARCH_KEYBOARD_LAYOUT="de"
                 ARCH_KEYBOARD_VARIANT="nodeadkeys"
+                ARCH_REFLECTOR_COUNTRY="Germany,France"
                 ;;
             esac
         fi
@@ -251,7 +255,7 @@ done
 # (OVER) WRITE INSTALLER CONF
 # ----------------------------------------------------------------------------------------------------
 {
-    echo "# Setup"
+    echo "# System Setup"
     echo "ARCH_HOSTNAME='${ARCH_HOSTNAME}'"
     echo "ARCH_USERNAME='${ARCH_USERNAME}'"
     # echo "ARCH_PASSWORD='${ARCH_PASSWORD}'" # disabled for security
@@ -262,9 +266,10 @@ done
     echo "ARCH_SWAP_SIZE='${ARCH_SWAP_SIZE}'"
     echo "ARCH_GNOME='${ARCH_GNOME}'"
     echo ""
-    echo "# Language"
+    echo "# Language & Location"
     echo "ARCH_LANGUAGE='${ARCH_LANGUAGE}'"
     echo "ARCH_TIMEZONE='${ARCH_TIMEZONE}'"
+    echo "ARCH_REFLECTOR_COUNTRY='${ARCH_REFLECTOR_COUNTRY}'"
     echo "ARCH_LOCALE_LANG='${ARCH_LOCALE_LANG}'"
     echo "ARCH_LOCALE_GEN_LIST=(${ARCH_LOCALE_GEN_LIST[*]@Q})"
     echo "ARCH_VCONSOLE_KEYMAP='${ARCH_VCONSOLE_KEYMAP}'"
@@ -361,15 +366,13 @@ SECONDS=0
     print_whiptail_info "Waiting for Reflector from Arch ISO"
     # ----------------------------------------------------------------------------------------------------
 
+    # This mirrorlist will copied to new Arch system during installation
     while timeout 180 tail --pid=$(pgrep reflector) -f /dev/null &>/dev/null; do sleep 1; done
     pgrep reflector &>/dev/null && echo "ERROR: Reflector timeout after 180 seconds" >&2 && exit 1
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Prepare Installation"
     # ----------------------------------------------------------------------------------------------------
-
-    # Reflector (this mirrorlist will copied to new Arch system during installation)
-    reflector --country Germany,France --protocol https --latest 5 --sort rate --save /etc/pacman.d/mirrorlist
 
     # Sync clock
     timedatectl set-ntp true
@@ -473,7 +476,7 @@ SECONDS=0
     {
         echo "# Reflector config for the systemd service"
         echo "--save /etc/pacman.d/mirrorlist"
-        echo "--country Germany,France"
+        [ -n "$ARCH_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_REFLECTOR_COUNTRY}"
         echo "--protocol https"
         echo "--latest 5"
         echo "--sort rate"
@@ -565,8 +568,10 @@ SECONDS=0
     swap_device_uuid="$(findmnt -no UUID -T /mnt/swapfile)"
     swap_file_offset="$(filefrag -v /mnt/swapfile | awk '$1=="0:" {print substr($4, 1, length($4)-2)}')"
     if [ "$ARCH_ENCRYPTION_ENABLED" = "true" ]; then
+        # Encryption enabled
         kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot rw init=/usr/lib/systemd/systemd quiet splash vt.global_cursor_default=0 resume=/dev/mapper/cryptroot resume_offset=${swap_file_offset}"
     else
+        # Encryption disabled
         kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_ROOT_PARTITION}") rw init=/usr/lib/systemd/systemd quiet splash vt.global_cursor_default=0 resume=UUID=${swap_device_uuid} resume_offset=${swap_file_offset}"
     fi
 
@@ -578,7 +583,7 @@ SECONDS=0
         echo 'editor yes'
     } >/mnt/boot/loader/loader.conf
 
-    # Create arch default entry
+    # Create default boot entry
     {
         echo 'title   Arch Linux'
         echo 'linux   /vmlinuz-linux'
@@ -587,7 +592,7 @@ SECONDS=0
         echo "options ${kernel_args}"
     } >/mnt/boot/loader/entries/arch.conf
 
-    # Create arch fallback entry
+    # Create fallback boot entry
     {
         echo 'title   Arch Linux (Fallback)'
         echo 'linux   /vmlinuz-linux'
@@ -667,37 +672,36 @@ SECONDS=0
         packages=()
 
         # GNOME base
-        packages+=("gnome")                 # GNOME core
-        packages+=("gnome-tweaks")          # GNOME tweaks
-        packages+=("gnome-themes-extra")    # GNOME themes
-        packages+=("power-profiles-daemon") # GNOME power profile support
-        packages+=("fwupd")                 # GNOME security settings
-        packages+=("rygel")                 # GNOME media sharing support
-        packages+=("cups")                  # GNOME printer support
+        packages+=("gnome")                   # GNOME core
+        packages+=("gnome-tweaks")            # GNOME tweaks
+        packages+=("gnome-browser-connector") # GNOME Extensions browser connector
+        packages+=("gnome-themes-extra")      # GNOME themes
+        packages+=("power-profiles-daemon")   # GNOME power profiles support
+        packages+=("fwupd")                   # GNOME security settings
+        packages+=("rygel")                   # GNOME media sharing support
+        packages+=("cups")                    # GNOME printer support
 
-        # GNOME screensharing, flatpak & pipewire support
+        # GNOME wayland screensharing, flatpak & pipewire support
         packages+=("xdg-desktop-portal")
         packages+=("xdg-desktop-portal-gtk")
         packages+=("xdg-desktop-portal-gnome")
 
         # GNOME Indicator support
-        #packages+=("libappindicator-gtk2") && packages+=("lib32-libappindicator-gtk2")
-        #packages+=("libappindicator-gtk3") && packages+=("lib32-libappindicator-gtk3")
-
-        # Optimization
-        #packages+=("gamemode") && packages+=("lib32-gamemode")
+        packages+=("libappindicator-gtk2")
+        packages+=("libappindicator-gtk3")
+        packages+=("lib32-libappindicator-gtk2")
+        packages+=("lib32-libappindicator-gtk3")
 
         # Audio
-        packages+=("pipewire")       # Pipewire
-        packages+=("pipewire-alsa")  # Replacement for alsa
-        packages+=("pipewire-pulse") # Replacement for pulse
-        packages+=("pipewire-jack")  # Replacement for jack
-        packages+=("wireplumber")    # Pipewire session manager
+        packages+=("pipewire")            # Pipewire
+        packages+=("pipewire-alsa")       # Replacement for alsa
+        packages+=("pipewire-pulse")      # Replacement for pulse
+        packages+=("pipewire-jack")       # Replacement for jack
+        packages+=("wireplumber")         # Pipewire session manager
+        packages+=("lib32-pipewire")      # Pipewire 32 bit
+        packages+=("lib32-pipewire-jack") # Replacement for jack 32 bit
 
-        #packages+=("lib32-pipewire")     # Pipewire 32 bit
-        #packages+=("lib32-pipewire-jack") # Replacement for jack 32 bit
-
-        # Networking
+        # Networking & Access
         packages+=("samba")
         packages+=("gvfs")
         packages+=("gvfs-mtp")
@@ -728,14 +732,15 @@ SECONDS=0
         # Plymouth
         packages+=("plymouth")
 
+        # Optimization
+        packages+=("gamemode")
+        packages+=("lib32-gamemode")
+
         # Fonts
         packages+=("noto-fonts")
         packages+=("noto-fonts-emoji")
         packages+=("ttf-liberation")
         packages+=("ttf-dejavu")
-
-        # E-Mail
-        #packages+=("geary")
 
         # VM Guest support (if VM detected)
         if [ "$(systemd-detect-virt)" != 'none' ]; then
@@ -766,16 +771,6 @@ SECONDS=0
 
         # Remove packages from list
         arch-chroot /mnt pacman -Rsn --noconfirm "${packages[@]}"
-
-        # ----------------------------------------------------------------------------------------------------
-        print_whiptail_info "Install GNOME Browser Connector"
-        # ----------------------------------------------------------------------------------------------------
-
-        repo_url="https://aur.archlinux.org/gnome-browser-connector-git.git"
-        tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/gnome-browser-connector-git.XXXXXXXXXX")
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git clone "$repo_url" "$tmp_name"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "cd $tmp_name && makepkg -si --noconfirm"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- rm -rf "$tmp_name"
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Enable Plymouth"
@@ -820,42 +815,10 @@ SECONDS=0
         } >/mnt/etc/samba/smb.conf
 
         # ----------------------------------------------------------------------------------------------------
-        print_whiptail_info "Create X11 Layouts"
+        print_whiptail_info "Set X11 Keyboard Layout"
         # ----------------------------------------------------------------------------------------------------
 
-        # Keyboard layout
-        {
-            echo 'Section "InputClass"'
-            echo '    Identifier "keyboard"'
-            echo '    MatchIsKeyboard "yes"'
-            echo '    Option "XkbLayout" "'"${ARCH_KEYBOARD_LAYOUT}"'"'
-            echo '    Option "XkbModel" "pc105"'
-            echo '    Option "XkbVariant" "'"${ARCH_KEYBOARD_VARIANT}"'"'
-            echo 'EndSection'
-        } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
-
-        # Mouse layout
-        {
-            echo 'Section "InputClass"'
-            echo '    Identifier "mouse"'
-            echo '    Driver "libinput"'
-            echo '    MatchIsPointer "yes"'
-            echo '    Option "AccelProfile" "flat"'
-            echo '    Option "AccelSpeed" "0"'
-            echo 'EndSection'
-        } >/mnt/etc/X11/xorg.conf.d/50-mouse.conf
-
-        # Touchpad layout
-        {
-            echo 'Section "InputClass"'
-            echo '    Identifier "touchpad"'
-            echo '    Driver "libinput"'
-            echo '    MatchIsTouchpad "on"'
-            echo '    Option "ClickMethod" "clickfinger"'
-            echo '    Option "Tapping" "off"'
-            echo '    Option "NaturalScrolling" "true"'
-            echo 'EndSection'
-        } >/mnt/etc/X11/xorg.conf.d/70-touchpad.conf
+        arch-chroot /mnt localectl set-x11-keymap $ARCH_KEYBOARD_LAYOUT pc105 $ARCH_KEYBOARD_VARIANT
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Enable GNOME Services"

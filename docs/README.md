@@ -26,22 +26,23 @@ curl -Ls http://arch.webhop.me | bash
 
 - 100% TUI Installation
 - VM Support
-- Systemd Bootloader (auto updated)
-- Minimal GNOME Desktop (optional)
+- Sole OS on a single disk
+- Minimal GNOME Desktop + Autologin (optional)
 - Disk Encryption (optional)
+- Systemd Bootloader (auto updated)
+- Wayland optimized
 - Network Manager
 - Pipewire Audio
 - AUR Helper & Multilib
 - Microcode Support
 - SSD Support
-- Automatic mirrorlist update
+- Automatic mirrorlist update (on every startup)
 - Missing package suggestion
 - Pacman parallel downloads
-- Pacman automatic cache optimization
+- Pacman automatic cache optimization (weekly)
 - Printer Support
 - Pacman & nano colors
 - Networking, Utils & Codecs included
-- Wayland optimized
 - Installer Error Handling
 - Tested in GNOME Boxes
 - Shellcheck approved
@@ -82,7 +83,7 @@ If you want to add another language, set `ARCH_LANGUAGE='custom'` and modify the
 #### Example of `installer.conf`
 
 ```
-# Setup
+# System Setup
 ARCH_HOSTNAME='arch-desktop'
 ARCH_USERNAME='my_user'
 ARCH_DISK='/dev/sda'
@@ -92,8 +93,9 @@ ARCH_ENCRYPTION_ENABLED='false'
 ARCH_SWAP_SIZE='8'
 ARCH_GNOME='true'
 
-# Language
+# Language & Location
 ARCH_LANGUAGE='custom'
+ARCH_REFLECTOR_COUNTRY='Germany,France'
 ARCH_TIMEZONE='Europe/Berlin'
 ARCH_LOCALE_LANG='en_US.UTF-8'
 ARCH_LOCALE_GEN_LIST=('en_US.UTF-8' 'UTF-8')
@@ -109,6 +111,7 @@ For a robust & stable Arch Linux experience, install as few additional packages 
 
 ### Install Graphics Driver
 
+- [OpenGL](https://wiki.archlinux.org/title/OpenGL)
 - [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
 - [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
 - [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Available_methods)
@@ -130,7 +133,7 @@ For a robust & stable Arch Linux experience, install as few additional packages 
 - https://extensions.gnome.org/extension/3843/just-perfection/
 - https://extensions.gnome.org/extension/3193/blur-my-shell/
 - https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/
-- https://extensions.gnome.org/extension/1873/disable-unredirect-fullscreen-windows/
+- https://extensions.gnome.org/extension/1873/disable-unredirect-fullscreen-windows/ (may fix some issues)
 
 ### Desktop Customization (optional)
 
