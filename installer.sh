@@ -821,7 +821,15 @@ SECONDS=0
         print_whiptail_info "Set X11 Keyboard Layout"
         # ----------------------------------------------------------------------------------------------------
 
-        arch-chroot /mnt localectl set-x11-keymap $ARCH_KEYBOARD_LAYOUT pc105 $ARCH_KEYBOARD_VARIANT
+        {
+            echo 'Section "InputClass"'
+            echo '    Identifier "keyboard"'
+            echo '    MatchIsKeyboard "yes"'
+            echo '    Option "XkbLayout" "'"${ARCH_KEYBOARD_LAYOUT}"'"'
+            echo '    Option "XkbModel" "pc105"'
+            echo '    Option "XkbVariant" "'"${ARCH_KEYBOARD_VARIANT}"'"'
+            echo 'EndSection'
+        } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Enable GNOME Services"
