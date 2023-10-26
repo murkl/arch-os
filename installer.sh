@@ -702,8 +702,8 @@ SECONDS=0
         packages+=("lib32-pipewire-jack") # Replacement for jack 32 bit
 
         # Networking & Access
-        packages+=("samba")
-        packages+=("gvfs")
+        packages+=("samba") # Windows Network Share
+        packages+=("gvfs")  # Need for Nautilus
         packages+=("gvfs-mtp")
         packages+=("gvfs-smb")
         packages+=("gvfs-nfs")
@@ -735,6 +735,9 @@ SECONDS=0
         # Optimization
         packages+=("gamemode")
         packages+=("lib32-gamemode")
+
+        # Driver
+        packages+=("xf86-input-synaptics") # For some touchpads
 
         # Fonts
         packages+=("noto-fonts")
