@@ -686,11 +686,11 @@ SECONDS=0
         packages+=("xdg-desktop-portal-gtk")
         packages+=("xdg-desktop-portal-gnome")
 
-        # GNOME Indicator support
-        packages+=("libappindicator-gtk2")
-        packages+=("libappindicator-gtk3")
-        packages+=("lib32-libappindicator-gtk2")
-        packages+=("lib32-libappindicator-gtk3")
+        # GNOME legacy Indicator support (need for gnome extension) (51 packages)
+        #packages+=("libappindicator-gtk2")
+        #packages+=("libappindicator-gtk3")
+        #packages+=("lib32-libappindicator-gtk2")
+        #packages+=("lib32-libappindicator-gtk3")
 
         # Audio
         packages+=("pipewire")            # Pipewire
