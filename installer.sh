@@ -737,7 +737,7 @@ SECONDS=0
         packages+=("lib32-gamemode")
 
         # Driver
-        packages+=("xf86-input-synaptics") # For some touchpads
+        #packages+=("xf86-input-synaptics") # For some touchpads
 
         # Fonts
         packages+=("noto-fonts")
