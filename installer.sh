@@ -2,6 +2,12 @@
 set -Eeuo pipefail
 
 # ----------------------------------------------------------------------------------------------------
+# VERSION
+# ----------------------------------------------------------------------------------------------------
+
+VERSION=1.0.1
+
+# ----------------------------------------------------------------------------------------------------
 # CONFIG FILE (SOURCED IF EXISTS)
 # ----------------------------------------------------------------------------------------------------
 
@@ -40,7 +46,7 @@ ARCH_GNOME=""
 # TUI VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
-TUI_TITLE="Arch Vanilla Installer"
+TUI_TITLE="Arch Vanilla Installer ${VERSION}"
 TUI_WIDTH="80"
 TUI_HEIGHT="20"
 TUI_POSITION=""
@@ -693,11 +699,11 @@ SECONDS=0
         #packages+=("lib32-libappindicator-gtk3")
 
         # Audio
-        packages+=("pipewire")            # Pipewire
-        packages+=("pipewire-alsa")       # Replacement for alsa
-        packages+=("pipewire-pulse")      # Replacement for pulse
-        packages+=("pipewire-jack")       # Replacement for jack
-        packages+=("wireplumber")         # Pipewire session manager
+        packages+=("pipewire")       # Pipewire
+        packages+=("pipewire-alsa")  # Replacement for alsa
+        packages+=("pipewire-pulse") # Replacement for pulse
+        packages+=("pipewire-jack")  # Replacement for jack
+        packages+=("wireplumber")    # Pipewire session manager
         #packages+=("lib32-pipewire")      # Pipewire 32 bit
         #packages+=("lib32-pipewire-jack") # Replacement for jack 32 bit
 
