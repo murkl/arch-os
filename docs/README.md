@@ -1,7 +1,7 @@
 <h1 align="center">
   <img src="./logo.svg" width="150" height="150"/>
   <br>
-  Arch Vanilla OS
+  Arch OS
 </h1>
 
 <p align="center">
@@ -90,7 +90,7 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 
 - Load Keyboard Layout: `loadkeys de-latin1` (use prefered language)
 - Connect to WLAN (optional), run `iwctl` and type into console: `station wlan0 connect "SSID"` and `exit`
-- Run **Arch Vanilla Installer** with: `curl -Ls http://arch.webhop.me | bash`
+- Run **Arch OS Installer** with: `curl -Ls http://arch.webhop.me | bash`
 - Installation finished
 
 ### Installation Properties (optional)
