@@ -1,18 +1,33 @@
+<h1 align="center">
+  <img src="./logo.svg" alt="Arch Vanilla OS icon" width="150" height="150"/>
+  <br>
+  Arch Vanilla OS
+</h1>
+
+<p align="center">
+  <strong>Run TUI Installer from booted Arch ISO</strong>
+</p>
+
 <div align="center">
-  <h1>Arch Vanilla OS</h1>
-  <p><b>Run TUI Installer from booted Arch ISO</b></p>
 
 ```
 curl -Ls http://arch.webhop.me | bash
 ```
 
-  <p><img src="./screenshots/desktop.jpg" /></p>
-  <p>Minimal Arch Linux Distribution with GNOME, preinstalled Paru as AUR Helper, enabled MultiLib and some more features. This project aims to provide a solid Arch Linux base for desktop users and an easy & fast to use installer.<br><br><b>Sole OS on a single disk</b></p>
-  <p>
-    <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
-    <img src="https://img.shields.io/badge/LICENSE-MIT-blue?style=for-the-badge">
-  </p>
 </div>
+
+<p align="center"><img src="./screenshots/desktop.jpg" /></p>
+
+<p align="center">
+This project aims to provide a minimal and solid Arch Linux base for desktop users and an easy and fast to use installer for that.
+Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Helper, enabled MultiLib and some more features. 
+</p>
+
+<p align="center"><strong>Sole OS on a single disk</strong></p>
+<p align="center">
+  <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
+  <img src="https://img.shields.io/badge/LICENSE-MIT-blue?style=for-the-badge">
+</p>
 
 # Contents
 
@@ -68,7 +83,7 @@ curl -Ls http://arch.webhop.me | bash
 
 - Load Keyboard Layout: `loadkeys de-latin1` (use prefered language)
 - Connect to WLAN (optional), run `iwctl` and type into console: `station wlan0 connect "SSID"` and `exit`
-- Run **Arch Vanilla Installer** with:`curl -Ls http://arch.webhop.me | bash`
+- Run **Arch Vanilla Installer** with: `curl -Ls http://arch.webhop.me | bash`
 - Installation finished
 
 ### Installation Properties (optional)
@@ -150,21 +165,23 @@ If you need to rescue your Arch Linux in case of a crash, **boot from an Arch IS
 ### 1. Disk Information
 
 - Show disk info: `lsblk`
-  - Example Disk: `/dev/sda`
-  - Example Boot: `/dev/sda1`
-  - Example Root: `/dev/sda2`
+
+_**Example**_
+
+- _Example Disk: `/dev/sda`_
+- _Example Boot: `/dev/sda1`_
+- _Example Root: `/dev/sda2`_
 
 ### 2. Mount
 
-**Note:** _You may have to replace `/dev/sda` with your own disk_
+**Note:** _You may have to replace the example `/dev/sda` with your own disk_
 
 - Create mount dir: `mkdir -p /mnt/boot`
-- Mount root partition
-  - a) If disk encryption enabled
-    - `cryptsetup open /dev/sda2 cryptroot`
-    - `mount /dev/mapper/cryptroot /mnt`
-  - b) If disk encryption disabled
-    - `mount /dev/sda2 /mnt`
+- a) Mount root partition (disk encryption enabled):
+  - `cryptsetup open /dev/sda2 cryptroot`
+  - `mount /dev/mapper/cryptroot /mnt`
+- b) Mount root partition (disk encryption disabled):
+  - `mount /dev/sda2 /mnt`
 - Mount boot partition: `mount /dev/sda1 /mnt/boot`
 
 ### 3. Chroot
