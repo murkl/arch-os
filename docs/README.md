@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="./logo.svg" alt="Arch Vanilla OS icon" width="150" height="150"/>
+  <img src="./logo.svg" width="150" height="150"/>
   <br>
   Arch Vanilla OS
 </h1>
