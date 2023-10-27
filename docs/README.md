@@ -24,9 +24,16 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 </p>
 
 <p align="center"><strong>Sole OS on a single disk</strong></p>
+
 <p align="center">
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
   <img src="https://img.shields.io/badge/LICENSE-MIT-blue?style=for-the-badge">
+</p>
+
+<p align="center">
+  <strong>Test successful</strong>
+  <br>
+  <a href="https://www.archlinux.de/releases/2023.10.14">archlinux-2023.10.14-x86_64.iso</a>
 </p>
 
 # Contents
