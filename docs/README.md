@@ -33,7 +33,7 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 <p align="center">
   <strong>Test successful</strong>
   <br>
-  <a href="https://www.archlinux.de/releases/2023.10.14">archlinux-2023.10.14-x86_64.iso</a>
+  <a target="_blank" href="https://www.archlinux.de/releases/2023.10.14">archlinux-2023.10.14-x86_64.iso</a>
 </p>
 
 # Contents
