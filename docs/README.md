@@ -108,15 +108,29 @@ If you want to add another language, set `ARCH_LANGUAGE='custom'` and modify the
 #### Example of `installer.conf`
 
 ```
-# System Setup
+# Hostname
 ARCH_HOSTNAME='arch-desktop'
+
+# User
 ARCH_USERNAME='my_user'
+
+# Disk
 ARCH_DISK='/dev/sda'
+
+# Boot partition
 ARCH_BOOT_PARTITION='/dev/sda1'
+
+# Root partition
 ARCH_ROOT_PARTITION='/dev/sda2'
+
+# Disk encryption
 ARCH_ENCRYPTION_ENABLED='false'
-ARCH_SWAP_SIZE='8' # 0 or null = disable
-ARCH_GNOME='true' # false = minimal arch
+
+# 0 or null = disable
+ARCH_SWAP_SIZE='8'
+
+# false = minimal arch
+ARCH_GNOME='true'
 
 # Change to 'custom' to use custom language properties
 ARCH_LANGUAGE='german'
