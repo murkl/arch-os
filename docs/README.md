@@ -126,13 +126,13 @@ ARCH_ROOT_PARTITION='/dev/sda2'
 # Disk encryption
 ARCH_ENCRYPTION_ENABLED='false'
 
-# 0 or null = disable
+# Swap: 0 or null = disable
 ARCH_SWAP_SIZE='8'
 
-# false = minimal arch
+# GNOME Desktop: false = minimal arch
 ARCH_GNOME='true'
 
-# Change to 'custom' to use custom language properties
+# Language: change to 'custom' to use custom language properties
 ARCH_LANGUAGE='german'
 
 # ls /usr/share/zoneinfo/
