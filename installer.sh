@@ -261,10 +261,11 @@ done
 # (OVER) WRITE INSTALLER CONF
 # ----------------------------------------------------------------------------------------------------
 {
+    echo "# ${TUI_TITLE} ($(date '+%Y-%m-%d %H:%M'))"
+    echo ""
     echo "# System Setup"
     echo "ARCH_HOSTNAME='${ARCH_HOSTNAME}'"
     echo "ARCH_USERNAME='${ARCH_USERNAME}'"
-    # echo "ARCH_PASSWORD='${ARCH_PASSWORD}'" # disabled for security
     echo "ARCH_DISK='${ARCH_DISK}'"
     echo "ARCH_BOOT_PARTITION='${ARCH_BOOT_PARTITION}'"
     echo "ARCH_ROOT_PARTITION='${ARCH_ROOT_PARTITION}'"
@@ -273,15 +274,15 @@ done
     echo "ARCH_GNOME='${ARCH_GNOME}'"
     echo ""
     echo "# Language & Location"
-    echo "ARCH_LANGUAGE='${ARCH_LANGUAGE}'"
-    echo "ARCH_TIMEZONE='${ARCH_TIMEZONE}'"
-    echo "ARCH_REFLECTOR_COUNTRY='${ARCH_REFLECTOR_COUNTRY}'"
-    echo "ARCH_LOCALE_LANG='${ARCH_LOCALE_LANG}'"
-    echo "ARCH_LOCALE_GEN_LIST=(${ARCH_LOCALE_GEN_LIST[*]@Q})"
-    echo "ARCH_VCONSOLE_KEYMAP='${ARCH_VCONSOLE_KEYMAP}'"
-    echo "ARCH_VCONSOLE_FONT='${ARCH_VCONSOLE_FONT}'"
-    echo "ARCH_KEYBOARD_LAYOUT='${ARCH_KEYBOARD_LAYOUT}'"
-    echo "ARCH_KEYBOARD_VARIANT='${ARCH_KEYBOARD_VARIANT}'"
+    echo "ARCH_LANGUAGE='${ARCH_LANGUAGE}' # Change to 'custom' to use custom properties"
+    echo "ARCH_TIMEZONE='${ARCH_TIMEZONE}' # ls /usr/share/zoneinfo/"
+    echo "ARCH_REFLECTOR_COUNTRY='${ARCH_REFLECTOR_COUNTRY}' # Country used by reflector"
+    echo "ARCH_LOCALE_LANG='${ARCH_LOCALE_LANG}' # ls /usr/share/i18n/locales"
+    echo "ARCH_LOCALE_GEN_LIST=(${ARCH_LOCALE_GEN_LIST[*]@Q}) # cat /etc/locale.gen"
+    echo "ARCH_VCONSOLE_KEYMAP='${ARCH_VCONSOLE_KEYMAP}' # localectl list-keymaps"
+    echo "ARCH_VCONSOLE_FONT='${ARCH_VCONSOLE_FONT}' # find /usr/share/kbd/consolefonts/*.psfu.gz"
+    echo "ARCH_KEYBOARD_LAYOUT='${ARCH_KEYBOARD_LAYOUT}' # localectl list-x11-keymap-layouts"
+    echo "ARCH_KEYBOARD_VARIANT='${ARCH_KEYBOARD_VARIANT}' # localectl list-x11-keymap-variants"
 } >"$INSTALLER_CONFIG"
 
 # ----------------------------------------------------------------------------------------------------
@@ -875,6 +876,9 @@ SECONDS=0
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Cleanup Installation"
     # ----------------------------------------------------------------------------------------------------
+
+    # Copy installer.conf in users home dir
+    cp "$INSTALLER_CONFIG" "/mnt/home/${ARCH_USERNAME}/archos-installer.conf"
 
     # Remove sudo needs no password rights
     sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
