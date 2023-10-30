@@ -145,7 +145,7 @@ ARCH_TIMEZONE='Europe/Berlin'
 ARCH_REFLECTOR_COUNTRY='Germany,France'
 
 # ls /usr/share/i18n/locales
-ARCH_LOCALE_LANG='de_DE.UTF-8'
+ARCH_LOCALE_LANG='de_DE'
 
 # cat /etc/locale.gen
 ARCH_LOCALE_GEN_LIST=('de_DE.UTF-8 UTF-8' 'de_DE ISO-8859-1' 'de_DE@euro ISO-8859-15' 'en_US.UTF-8 UTF-8')
