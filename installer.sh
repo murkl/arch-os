@@ -279,7 +279,7 @@ done
     echo "# ls /usr/share/zoneinfo/"
     echo "ARCH_TIMEZONE='${ARCH_TIMEZONE}'"
     echo ""
-    echo "# Country used by reflector"
+    echo "# Country used by reflector. Leave empty to disable"
     echo "ARCH_REFLECTOR_COUNTRY='${ARCH_REFLECTOR_COUNTRY}'"
     echo ""
     echo "# ls /usr/share/i18n/locales"
@@ -893,8 +893,8 @@ SECONDS=0
     print_whiptail_info "Cleanup Installation"
     # ----------------------------------------------------------------------------------------------------
 
-    # Copy installer.conf in users home dir
-    cp "$INSTALLER_CONFIG" "/mnt/home/${ARCH_USERNAME}/archos-installer.conf"
+    # Copy installer.conf to users home dir
+    cp "$INSTALLER_CONFIG" "/mnt/home/${ARCH_USERNAME}/installer.conf"
 
     # Remove sudo needs no password rights
     sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
