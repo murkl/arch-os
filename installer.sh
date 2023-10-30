@@ -699,6 +699,7 @@ SECONDS=0
         packages+=("gnome-tweaks")            # GNOME tweaks
         packages+=("gnome-browser-connector") # GNOME Extensions browser connector
         packages+=("gnome-themes-extra")      # GNOME themes
+        packages+=("gnome-firmware")          # GNOME firmware manager
         packages+=("power-profiles-daemon")   # GNOME power profiles support
         packages+=("fwupd")                   # GNOME security settings
         packages+=("rygel")                   # GNOME media sharing support
