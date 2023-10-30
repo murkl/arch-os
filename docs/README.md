@@ -102,6 +102,8 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 
 If the file `installer.conf` exists in the same dir as the script, it will sourced automatically on startup and the values will set as defaults for Arch Linux installation setup menu. After pressing `> Generate Config`, the `installer.conf` will be generated from the setup menu properties (except `ARCH_PASSWORD` for better security).
 
+**Note:** The `installer.conf` will copied to the new user's home directory.
+
 #### Add another Language
 
 If you want to add another language, set `ARCH_LANGUAGE='custom'` and modify the desired properties. (see example of [installer.conf](#example-of-installerconf))
