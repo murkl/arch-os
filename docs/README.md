@@ -114,15 +114,31 @@ ARCH_ENCRYPTION_ENABLED='false'
 ARCH_SWAP_SIZE='8'
 ARCH_GNOME='true'
 
-# Language & Location
-ARCH_LANGUAGE='custom'
-ARCH_REFLECTOR_COUNTRY='Germany,France'
+# Change to 'custom' to use custom language properties
+ARCH_LANGUAGE='german'
+
+# ls /usr/share/zoneinfo/
 ARCH_TIMEZONE='Europe/Berlin'
-ARCH_LOCALE_LANG='en_US.UTF-8'
-ARCH_LOCALE_GEN_LIST=('en_US.UTF-8' 'UTF-8')
-ARCH_VCONSOLE_KEYMAP='en-latin1-nodeadkeys'
+
+# Country used by reflector. Leave empty to disable
+ARCH_REFLECTOR_COUNTRY=''
+
+# ls /usr/share/i18n/locales
+ARCH_LOCALE_LANG='de_DE.UTF-8'
+
+# cat /etc/locale.gen
+ARCH_LOCALE_GEN_LIST=('de_DE.UTF-8 UTF-8' 'de_DE ISO-8859-1' 'de_DE@euro ISO-8859-15' 'en_US.UTF-8 UTF-8')
+
+# localectl list-keymaps
+ARCH_VCONSOLE_KEYMAP='de-latin1-nodeadkeys'
+
+# find /usr/share/kbd/consolefonts/*.psfu.gz
 ARCH_VCONSOLE_FONT='eurlatgr'
-ARCH_KEYBOARD_LAYOUT='en'
+
+# localectl list-x11-keymap-layouts
+ARCH_KEYBOARD_LAYOUT='de'
+
+# localectl list-x11-keymap-variants
 ARCH_KEYBOARD_VARIANT='nodeadkeys'
 ```
 

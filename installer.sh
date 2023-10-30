@@ -261,7 +261,7 @@ done
 # (OVER) WRITE INSTALLER CONF
 # ----------------------------------------------------------------------------------------------------
 {
-    echo "# ${TUI_TITLE} ($(date '+%Y-%m-%d %H:%M'))"
+    echo "# ${TUI_TITLE} ($(date '+%Y-%m-%d %H:%M') UTC)"
     echo ""
     echo "# System Setup"
     echo "ARCH_HOSTNAME='${ARCH_HOSTNAME}'"
