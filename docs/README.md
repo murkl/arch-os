@@ -138,7 +138,7 @@ ARCH_GNOME='true'
 # Language: change to 'custom' to use custom language properties
 ARCH_LANGUAGE='german'
 
-# ls /usr/share/zoneinfo/
+# ls /usr/share/zoneinfo/**
 ARCH_TIMEZONE='Europe/Berlin'
 
 # Country used by reflector. Leave empty to disable

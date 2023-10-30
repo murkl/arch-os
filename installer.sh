@@ -174,7 +174,7 @@ while (true); do
             case "${ARCH_LANGUAGE}" in
             "english")
                 ARCH_TIMEZONE="Europe/Berlin"
-                ARCH_LOCALE_LANG="en_US.UTF-8"
+                ARCH_LOCALE_LANG="en_US"
                 ARCH_LOCALE_GEN_LIST=("en_US.UTF-8" "UTF-8")
                 ARCH_VCONSOLE_KEYMAP="en-latin1-nodeadkeys"
                 ARCH_VCONSOLE_FONT="eurlatgr"
@@ -184,7 +184,7 @@ while (true); do
                 ;;
             "german")
                 ARCH_TIMEZONE="Europe/Berlin"
-                ARCH_LOCALE_LANG="de_DE.UTF-8"
+                ARCH_LOCALE_LANG="de_DE"
                 ARCH_LOCALE_GEN_LIST=("de_DE.UTF-8 UTF-8" "de_DE ISO-8859-1" "de_DE@euro ISO-8859-15" "en_US.UTF-8 UTF-8")
                 ARCH_VCONSOLE_KEYMAP="de-latin1-nodeadkeys"
                 ARCH_VCONSOLE_FONT="eurlatgr"
@@ -291,7 +291,7 @@ done
     echo "# Language: change to 'custom' to use custom language properties"
     echo "ARCH_LANGUAGE='${ARCH_LANGUAGE}'"
     echo ""
-    echo "# ls /usr/share/zoneinfo/"
+    echo "# ls /usr/share/zoneinfo/**"
     echo "ARCH_TIMEZONE='${ARCH_TIMEZONE}'"
     echo ""
     echo "# Country used by reflector. Leave empty to disable"
@@ -559,7 +559,7 @@ SECONDS=0
     print_whiptail_info "Generate Locale"
     # ----------------------------------------------------------------------------------------------------
 
-    echo "LANG=$ARCH_LOCALE_LANG" >/mnt/etc/locale.conf
+    echo "LANG=${ARCH_LOCALE_LANG}.UTF-8" >/mnt/etc/locale.conf
     for ((i = 0; i < ${#ARCH_LOCALE_GEN_LIST[@]}; i++)); do sed -i "s/^#${ARCH_LOCALE_GEN_LIST[$i]}/${ARCH_LOCALE_GEN_LIST[$i]}/g" "/mnt/etc/locale.gen"; done
     arch-chroot /mnt locale-gen
 
