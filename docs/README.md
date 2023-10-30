@@ -89,7 +89,9 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 ### 3. Boot from USB Device
 
 - Load Keyboard Layout: `loadkeys de-latin1` (use prefered language)
-- Connect to WLAN (optional), run `iwctl` and type into console: `station wlan0 connect "SSID"` and `exit`
+- Connect to WLAN (optional), run `iwctl` and type into console:
+  - `station wlan0 connect "SSID"`
+  - `exit`
 - Run **Arch OS Installer** with: `curl -Ls http://arch.webhop.me | bash`
 - Installation finished
 
@@ -111,8 +113,8 @@ ARCH_DISK='/dev/sda'
 ARCH_BOOT_PARTITION='/dev/sda1'
 ARCH_ROOT_PARTITION='/dev/sda2'
 ARCH_ENCRYPTION_ENABLED='false'
-ARCH_SWAP_SIZE='8'
-ARCH_GNOME='true'
+ARCH_SWAP_SIZE='8' # 0 or null = disable
+ARCH_GNOME='true' # false = minimal arch
 
 # Change to 'custom' to use custom language properties
 ARCH_LANGUAGE='german'
@@ -121,7 +123,7 @@ ARCH_LANGUAGE='german'
 ARCH_TIMEZONE='Europe/Berlin'
 
 # Country used by reflector. Leave empty to disable
-ARCH_REFLECTOR_COUNTRY=''
+ARCH_REFLECTOR_COUNTRY='Germany,France'
 
 # ls /usr/share/i18n/locales
 ARCH_LOCALE_LANG='de_DE.UTF-8'
