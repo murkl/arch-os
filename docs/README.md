@@ -138,28 +138,28 @@ ARCH_GNOME='true'
 # Language: change to 'custom' to use custom language properties
 ARCH_LANGUAGE='german'
 
-# ls /usr/share/zoneinfo/**
+# Timezone: ls /usr/share/zoneinfo/**
 ARCH_TIMEZONE='Europe/Berlin'
 
 # Country used by reflector. Leave empty to disable
 ARCH_REFLECTOR_COUNTRY='Germany,France'
 
-# ls /usr/share/i18n/locales
+# Locale: ls /usr/share/i18n/locales
 ARCH_LOCALE_LANG='de_DE'
 
-# cat /etc/locale.gen
+# Locale List: cat /etc/locale.gen
 ARCH_LOCALE_GEN_LIST=('de_DE.UTF-8 UTF-8' 'de_DE ISO-8859-1' 'de_DE@euro ISO-8859-15' 'en_US.UTF-8 UTF-8')
 
-# localectl list-keymaps
+# Console keymap: localectl list-keymaps
 ARCH_VCONSOLE_KEYMAP='de-latin1-nodeadkeys'
 
-# find /usr/share/kbd/consolefonts/*.psfu.gz
+# Console font: find /usr/share/kbd/consolefonts/*.psfu.gz
 ARCH_VCONSOLE_FONT='eurlatgr'
 
-# localectl list-x11-keymap-layouts
+# X11 keyboard layout: localectl list-x11-keymap-layouts
 ARCH_KEYBOARD_LAYOUT='de'
 
-# localectl list-x11-keymap-variants
+# X11 keyboard variant: localectl list-x11-keymap-variants
 ARCH_KEYBOARD_VARIANT='nodeadkeys'
 ```
 
