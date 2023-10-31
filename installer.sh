@@ -2,21 +2,16 @@
 set -Eeuo pipefail
 
 # ----------------------------------------------------------------------------------------------------
-# VERSION
+# SCRIPT VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
 VERSION='1.0.1'
+TITLE="Arch OS Installer ${VERSION}"
 
-# ----------------------------------------------------------------------------------------------------
-# CONFIG FILE (SOURCED IF EXISTS)
-# ----------------------------------------------------------------------------------------------------
-
+# Config file (sourced if exists)
 INSTALLER_CONFIG="./installer.conf"
 
-# ----------------------------------------------------------------------------------------------------
-# LOG FILE
-# ----------------------------------------------------------------------------------------------------
-
+# Logfile
 LOG_FILE="./installer.log"
 
 # ----------------------------------------------------------------------------------------------------
@@ -42,11 +37,13 @@ ARCH_KEYBOARD_LAYOUT=""
 ARCH_KEYBOARD_VARIANT=""
 ARCH_GNOME=""
 
+# Advanced
+ARCH_PLYMOUTH_ENABLED='true'
+
 # ----------------------------------------------------------------------------------------------------
 # TUI VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
-TUI_TITLE="Arch OS Installer ${VERSION}"
 TUI_WIDTH="80"
 TUI_HEIGHT="20"
 TUI_POSITION=""
@@ -151,7 +148,7 @@ while (true); do
     fi
 
     # Open TUI menu
-    menu_selection=$(whiptail --title "$TUI_TITLE" --menu "\n" --ok-button "Ok" --cancel-button "Exit" --notags --default-item "$TUI_POSITION" "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#menu_entry_array[@]} / 2) + (${#menu_entry_array[@]} % 2)))" "${menu_entry_array[@]}" 3>&1 1>&2 2>&3) || exit
+    menu_selection=$(whiptail --title "$TITLE" --menu "\n" --ok-button "Ok" --cancel-button "Exit" --notags --default-item "$TUI_POSITION" "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#menu_entry_array[@]} / 2) + (${#menu_entry_array[@]} % 2)))" "${menu_entry_array[@]}" 3>&1 1>&2 2>&3) || exit
 
     # Handle result
     case "${menu_selection}" in
@@ -160,7 +157,7 @@ while (true); do
 
         # Check if language is set to custom from installer.conf
         if [ "$ARCH_LANGUAGE" = "custom" ]; then
-            whiptail --title "$TUI_TITLE" --msgbox "> Custom Language Mode\n\nNote: Your language settings from 'installer.conf' are taken." "$TUI_HEIGHT" "$TUI_WIDTH"
+            whiptail --title "$TITLE" --msgbox "> Custom Language Mode\n\nNote: Your language settings from 'installer.conf' are taken." "$TUI_HEIGHT" "$TUI_WIDTH"
         else
             # List available language menu entries
             language_array=()
@@ -168,7 +165,7 @@ while (true); do
             language_array+=("english") && language_array+=("English")
 
             # Show language TUI
-            ARCH_LANGUAGE=$(whiptail --title "$TUI_TITLE" --menu "\nChoose Setup Language" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#language_array[@]} / 2) + (${#language_array[@]} % 2)))" "${language_array[@]}" 3>&1 1>&2 2>&3)
+            ARCH_LANGUAGE=$(whiptail --title "$TITLE" --menu "\nChoose Setup Language" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#language_array[@]} / 2) + (${#language_array[@]} % 2)))" "${language_array[@]}" 3>&1 1>&2 2>&3)
 
             # Handle language result
             case "${ARCH_LANGUAGE}" in
@@ -197,20 +194,20 @@ while (true); do
         ;;
 
     "hostname")
-        ARCH_HOSTNAME=$(whiptail --title "$TUI_TITLE" --inputbox "\nEnter Hostname" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_HOSTNAME" 3>&1 1>&2 2>&3)
-        [ -z "$ARCH_HOSTNAME" ] && whiptail --title "$TUI_TITLE" --msgbox "Error: Hostname is null" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
+        ARCH_HOSTNAME=$(whiptail --title "$TITLE" --inputbox "\nEnter Hostname" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_HOSTNAME" 3>&1 1>&2 2>&3)
+        [ -z "$ARCH_HOSTNAME" ] && whiptail --title "$TITLE" --msgbox "Error: Hostname is null" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
         ;;
 
     "user")
-        ARCH_USERNAME=$(whiptail --title "$TUI_TITLE" --inputbox "\nEnter Username" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_USERNAME" 3>&1 1>&2 2>&3)
-        [ -z "$ARCH_USERNAME" ] && whiptail --title "$TUI_TITLE" --msgbox "Error: Username is null" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
+        ARCH_USERNAME=$(whiptail --title "$TITLE" --inputbox "\nEnter Username" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_USERNAME" 3>&1 1>&2 2>&3)
+        [ -z "$ARCH_USERNAME" ] && whiptail --title "$TITLE" --msgbox "Error: Username is null" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
         ;;
 
     "password")
-        ARCH_PASSWORD=$(whiptail --title "$TUI_TITLE" --passwordbox "\nEnter Password" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
-        [ -z "$ARCH_PASSWORD" ] && whiptail --title "$TUI_TITLE" --msgbox "Error: Password is null" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
-        password_check=$(whiptail --title "$TUI_TITLE" --passwordbox "\nEnter Password (again)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
-        [ "$ARCH_PASSWORD" != "$password_check" ] && ARCH_PASSWORD="" && whiptail --title "$TUI_TITLE" --msgbox "Error: Password not identical" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
+        ARCH_PASSWORD=$(whiptail --title "$TITLE" --passwordbox "\nEnter Password" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
+        [ -z "$ARCH_PASSWORD" ] && whiptail --title "$TITLE" --msgbox "Error: Password is null" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
+        password_check=$(whiptail --title "$TITLE" --passwordbox "\nEnter Password (again)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
+        [ "$ARCH_PASSWORD" != "$password_check" ] && ARCH_PASSWORD="" && whiptail --title "$TITLE" --msgbox "Error: Password not identical" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
         ;;
 
     "disk")
@@ -223,10 +220,10 @@ while (true); do
         done < <(lsblk -I 8,259,254 -d -o KNAME -n)
 
         # If no disk found
-        [ "${#disk_array[@]}" = "0" ] && whiptail --title "$TUI_TITLE" --msgbox "No Disk found" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
+        [ "${#disk_array[@]}" = "0" ] && whiptail --title "$TITLE" --msgbox "No Disk found" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
 
         # Show TUI (select disk)
-        ARCH_DISK=$(whiptail --title "$TUI_TITLE" --menu "\nChoose Installation Disk" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "${#disk_array[@]}" "${disk_array[@]}" 3>&1 1>&2 2>&3)
+        ARCH_DISK=$(whiptail --title "$TITLE" --menu "\nChoose Installation Disk" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "${#disk_array[@]}" "${disk_array[@]}" 3>&1 1>&2 2>&3)
 
         # Handle result
         [[ "$ARCH_DISK" = "/dev/nvm"* ]] && ARCH_BOOT_PARTITION="${ARCH_DISK}p1" || ARCH_BOOT_PARTITION="${ARCH_DISK}1"
@@ -234,17 +231,17 @@ while (true); do
         ;;
 
     "encrypt")
-        ARCH_ENCRYPTION_ENABLED="false" && whiptail --title "$TUI_TITLE" --yesno "Enable Disk Encryption?" --defaultno "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_ENCRYPTION_ENABLED="true"
+        ARCH_ENCRYPTION_ENABLED="false" && whiptail --title "$TITLE" --yesno "Enable Disk Encryption?" --defaultno "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_ENCRYPTION_ENABLED="true"
         ;;
 
     "swap")
         ARCH_SWAP_SIZE="$(($(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 / 1024 + 1))"
-        ARCH_SWAP_SIZE=$(whiptail --title "$TUI_TITLE" --inputbox "\nEnter Swap Size in GB (0 = disable)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_SWAP_SIZE" 3>&1 1>&2 2>&3) || continue
+        ARCH_SWAP_SIZE=$(whiptail --title "$TITLE" --inputbox "\nEnter Swap Size in GB (0 = disable)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_SWAP_SIZE" 3>&1 1>&2 2>&3) || continue
         [ -z "$ARCH_SWAP_SIZE" ] && ARCH_SWAP_SIZE="0"
         ;;
 
     "gnome")
-        ARCH_GNOME="false" && whiptail --title "$TUI_TITLE" --yesno "Install GNOME Desktop?" --yes-button "GNOME Desktop" --no-button "Minimal Arch" "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_GNOME="true"
+        ARCH_GNOME="false" && whiptail --title "$TITLE" --yesno "Install GNOME Desktop?" --yes-button "GNOME Desktop" --no-button "Minimal Arch" "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_GNOME="true"
         ;;
 
     "install")
@@ -261,7 +258,7 @@ done
 # (OVER) WRITE INSTALLER CONF
 # ----------------------------------------------------------------------------------------------------
 {
-    echo "# ${TUI_TITLE} (generated: $(date --utc '+%Y-%m-%d %H:%M') UTC)"
+    echo "# ${TITLE} (generated: $(date --utc '+%Y-%m-%d %H:%M') UTC)"
     echo "# This file can be saved for reuse or simply deleted."
     echo ""
     echo "# Hostname"
@@ -287,6 +284,9 @@ done
     echo ""
     echo "# GNOME Desktop: false = minimal arch"
     echo "ARCH_GNOME='${ARCH_GNOME}'"
+    echo ""
+    echo "# Plymouth enabled"
+    echo "ARCH_PLYMOUTH_ENABLED='${ARCH_PLYMOUTH_ENABLED}'"
     echo ""
     echo "# Language: change to 'custom' to use custom language properties"
     echo "ARCH_LANGUAGE='${ARCH_LANGUAGE}'"
@@ -320,7 +320,7 @@ done
 # ASK FOR INSTALLATION
 # ----------------------------------------------------------------------------------------------------
 
-if ! whiptail --title "$TUI_TITLE" --yesno "Start Arch OS Linux Installation?\n\nAll data on ${ARCH_DISK} will be DELETED!" --defaultno --yes-button "Start Installation" --no-button "Exit" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+if ! whiptail --title "$TITLE" --yesno "Start Arch OS Linux Installation?\n\nAll data on ${ARCH_DISK} will be DELETED!" --defaultno --yes-button "Start Installation" --no-button "Exit" "$TUI_HEIGHT" "$TUI_WIDTH"; then
     exit 1
 fi
 
@@ -352,11 +352,11 @@ trap_exit() {
         done <<<"$(tac "$LOG_FILE")"         # Read logfile inverted (from bottom)
 
         # Show TUI (duration & log)
-        whiptail --title "$TUI_TITLE" --msgbox "Arch OS Installation failed.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds\n\n$(echo -e "$logs" | tac)" --scrolltext 30 90
+        whiptail --title "$TITLE" --msgbox "Arch OS Installation failed.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds\n\n$(echo -e "$logs" | tac)" --scrolltext 30 90
 
     else # Success = 0
         # Show TUI (duration time)
-        whiptail --title "$TUI_TITLE" --msgbox "Arch OS Installation successful.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds" "$TUI_HEIGHT" "$TUI_WIDTH"
+        whiptail --title "$TITLE" --msgbox "Arch OS Installation successful.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds" "$TUI_HEIGHT" "$TUI_WIDTH"
 
         # Unmount
         wait # Wait for sub processes
@@ -364,7 +364,7 @@ trap_exit() {
         umount -A -R /mnt
         [ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
 
-        if whiptail --title "$TUI_TITLE" --yesno "Reboot now?" --defaultno --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+        if whiptail --title "$TITLE" --yesno "Reboot now?" --defaultno --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
             wait && reboot
         fi
     fi
@@ -697,6 +697,31 @@ SECONDS=0
     sed -i 's/^#SudoLoop/SudoLoop/g' /mnt/etc/paru.conf
 
     # ----------------------------------------------------------------------------------------------------
+    print_whiptail_info "Install Plymouth"
+    # ----------------------------------------------------------------------------------------------------
+
+    if [ "$ARCH_PLYMOUTH_ENABLED" = "true" ]; then
+
+        # Install packages
+        arch-chroot /mnt pacman -S --noconfirm --needed plymouth
+
+        # Configure mkinitcpio
+        sed -i "s/base systemd autodetect/base systemd plymouth autodetect/g" /mnt/etc/mkinitcpio.conf
+
+        # Install plymouth theme
+        repo_url="https://github.com/murkl/plymouth-theme-arch-elegant.git"
+        tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/plymouth-theme-arch-elegant.XXXXXXXXXX")
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git clone "$repo_url" "$tmp_name"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "cd ${tmp_name}/aur && makepkg -si --noconfirm"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- rm -rf "$tmp_name"
+
+        # Set Theme & rebuild initram disk
+        arch-chroot /mnt plymouth-set-default-theme -R arch-elegant
+    else
+        echo "> Skipped"
+    fi
+
+    # ----------------------------------------------------------------------------------------------------
     # START INSTALL GNOME
     # ----------------------------------------------------------------------------------------------------
 
@@ -816,23 +841,6 @@ SECONDS=0
         arch-chroot /mnt pacman -Rsn --noconfirm "${packages[@]}"
 
         # ----------------------------------------------------------------------------------------------------
-        print_whiptail_info "Enable Plymouth"
-        # ----------------------------------------------------------------------------------------------------
-
-        # Configure mkinitcpio
-        sed -i "s/base systemd autodetect/base systemd plymouth autodetect/g" /mnt/etc/mkinitcpio.conf
-
-        # Install plymouth theme
-        repo_url="https://github.com/murkl/plymouth-theme-arch-elegant.git"
-        tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/plymouth-theme-arch-elegant.XXXXXXXXXX")
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git clone "$repo_url" "$tmp_name"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "cd ${tmp_name}/aur && makepkg -si --noconfirm"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- rm -rf "$tmp_name"
-
-        # Set Theme & rebuild
-        arch-chroot /mnt plymouth-set-default-theme -R arch-elegant
-
-        # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Enable GNOME Auto Login"
         # ----------------------------------------------------------------------------------------------------
 
@@ -927,7 +935,7 @@ SECONDS=0
     print_whiptail_info "Arch Installation finished"
     # ----------------------------------------------------------------------------------------------------
 
-) | whiptail --title "$TUI_TITLE" --gauge "Start Arch Installation..." 7 "$TUI_WIDTH" 0
+) | whiptail --title "$TITLE" --gauge "Start Arch Installation..." 7 "$TUI_WIDTH" 0
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # ////////////////////////////////////// INSTALLATION FINISHED ///////////////////////////////////////

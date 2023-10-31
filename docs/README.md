@@ -135,6 +135,9 @@ ARCH_SWAP_SIZE='8'
 # GNOME Desktop: false = minimal arch
 ARCH_GNOME='true'
 
+# Plymouth enabled
+ARCH_PLYMOUTH_ENABLED='false'
+
 # Language: change to 'custom' to use custom language properties
 ARCH_LANGUAGE='german'
 
