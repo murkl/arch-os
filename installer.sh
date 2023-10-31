@@ -35,10 +35,8 @@ ARCH_VCONSOLE_KEYMAP=""
 ARCH_VCONSOLE_FONT=""
 ARCH_KEYBOARD_LAYOUT=""
 ARCH_KEYBOARD_VARIANT=""
-ARCH_GNOME=""
-
-# Advanced
-ARCH_PLYMOUTH_ENABLED='true'
+ARCH_PLYMOUTH_ENABLED=""
+ARCH_GNOME_ENABLED=""
 
 # ----------------------------------------------------------------------------------------------------
 # TUI VARIABLES
@@ -109,7 +107,8 @@ check_config() {
     [ -z "${ARCH_ROOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_ENCRYPTION_ENABLED}" ] && TUI_POSITION="encrypt" && return 1
     [ -z "${ARCH_SWAP_SIZE}" ] && TUI_POSITION="swap" && return 1
-    [ -z "${ARCH_GNOME}" ] && TUI_POSITION="gnome" && return 1
+    [ -z "${ARCH_PLYMOUTH_ENABLED}" ] && TUI_POSITION="plymouth" && return 1
+    [ -z "${ARCH_GNOME_ENABLED}" ] && TUI_POSITION="gnome" && return 1
     TUI_POSITION="install"
 }
 
@@ -139,7 +138,8 @@ while (true); do
     menu_entry_array+=("disk") && menu_entry_array+=("$(print_menu_entry "Disk" "${ARCH_DISK}")")
     menu_entry_array+=("encrypt") && menu_entry_array+=("$(print_menu_entry "Encryption" "${ARCH_ENCRYPTION_ENABLED}")")
     menu_entry_array+=("swap") && menu_entry_array+=("$(print_menu_entry "Swap" "$([ -n "$ARCH_SWAP_SIZE" ] && { [ "$ARCH_SWAP_SIZE" != "0" ] && echo "${ARCH_SWAP_SIZE} GB" || echo "disabled"; })")")
-    menu_entry_array+=("gnome") && menu_entry_array+=("$(print_menu_entry "GNOME" "${ARCH_GNOME}")")
+    menu_entry_array+=("plymouth") && menu_entry_array+=("$(print_menu_entry "Plymouth" "${ARCH_PLYMOUTH_ENABLED}")")
+    menu_entry_array+=("gnome") && menu_entry_array+=("$(print_menu_entry "GNOME" "${ARCH_GNOME_ENABLED}")")
     menu_entry_array+=("") && menu_entry_array+=("") # Empty entry
     if [ "$TUI_POSITION" = "install" ]; then
         menu_entry_array+=("install") && menu_entry_array+=("> Generate Config")
@@ -240,8 +240,12 @@ while (true); do
         [ -z "$ARCH_SWAP_SIZE" ] && ARCH_SWAP_SIZE="0"
         ;;
 
+    "plymouth")
+        ARCH_PLYMOUTH_ENABLED="false" && whiptail --title "$TITLE" --yesno "Install Plymouth?" --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_PLYMOUTH_ENABLED="true"
+        ;;
+
     "gnome")
-        ARCH_GNOME="false" && whiptail --title "$TITLE" --yesno "Install GNOME Desktop?" --yes-button "GNOME Desktop" --no-button "Minimal Arch" "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_GNOME="true"
+        ARCH_GNOME_ENABLED="false" && whiptail --title "$TITLE" --yesno "Install GNOME Desktop?" --yes-button "GNOME Desktop" --no-button "Minimal Arch" "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_GNOME_ENABLED="true"
         ;;
 
     "install")
@@ -282,11 +286,11 @@ done
     echo "# Swap: 0 or null = disable"
     echo "ARCH_SWAP_SIZE='${ARCH_SWAP_SIZE}'"
     echo ""
-    echo "# GNOME Desktop: false = minimal arch"
-    echo "ARCH_GNOME='${ARCH_GNOME}'"
-    echo ""
     echo "# Plymouth enabled"
     echo "ARCH_PLYMOUTH_ENABLED='${ARCH_PLYMOUTH_ENABLED}'"
+    echo ""
+    echo "# GNOME Desktop: false = minimal arch"
+    echo "ARCH_GNOME_ENABLED='${ARCH_GNOME_ENABLED}'"
     echo ""
     echo "# Language: change to 'custom' to use custom language properties"
     echo "ARCH_LANGUAGE='${ARCH_LANGUAGE}'"
@@ -725,7 +729,7 @@ SECONDS=0
     # START INSTALL GNOME
     # ----------------------------------------------------------------------------------------------------
 
-    if [ "$ARCH_GNOME" = "true" ]; then
+    if [ "$ARCH_GNOME_ENABLED" = "true" ]; then
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Install GNOME Packages (This may take a while)"
@@ -793,9 +797,6 @@ SECONDS=0
         packages+=("gst-plugin-pipewire")
         packages+=("gst-plugins-ugly")
         packages+=("libdvdcss")
-
-        # Plymouth
-        packages+=("plymouth")
 
         # Optimization
         #packages+=("gamemode")
