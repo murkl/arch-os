@@ -755,6 +755,7 @@ SECONDS=0
         packages+=("nfs-utils")
         packages+=("f2fs-tools")
         packages+=("udftools")
+        packages+=("dosfstools")
         packages+=("ntfs-3g")
         packages+=("exfat-utils")
         packages+=("p7zip")
