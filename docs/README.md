@@ -67,7 +67,7 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 - Installer Error Handling
 - Tested in GNOME Boxes
 - Shellcheck approved
-- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant)
+- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant) (optional)
 
 ## Installation
 
@@ -88,14 +88,16 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 
 ### 3. Boot from USB Device
 
-- Load Keyboard Layout: `loadkeys de-latin1` (use prefered language)
-- Connect to WLAN (optional), run `iwctl` and type into console: `station wlan0 connect "SSID"` and `exit`
-- Run **Arch OS Installer** with: `curl -Ls http://arch.webhop.me | bash`
+- Load prefered keyboard layout (optional): `loadkeys de-latin1`
+- Connect to WLAN (optional): `iwctl station wlan0 connect "SSID"`
+- Run **Arch OS Installer**: `curl -Ls http://arch.webhop.me | bash`
 - Installation finished
 
 ### Installation Properties (optional)
 
-If the file `installer.conf` exists in the same dir as the script, it will sourced automatically on startup and the values will set as defaults for Arch Linux installation setup menu. After pressing `> Generate Config`, the `installer.conf` will be generated from the setup menu properties (except `ARCH_PASSWORD` for better security).
+If the file `installer.conf` exists in the same dir as the script, it will sourced automatically on startup and the values will set as defaults for Arch Linux installation setup menu. After pressing `> Continue Installation`, the `installer.conf` will be generated from the setup menu properties (except `ARCH_PASSWORD` for better security).
+
+**Note:** The `installer.conf` will copied to the new user's home directory during installation.
 
 #### Add another Language
 
@@ -104,25 +106,58 @@ If you want to add another language, set `ARCH_LANGUAGE='custom'` and modify the
 #### Example of `installer.conf`
 
 ```
-# System Setup
+# Hostname
 ARCH_HOSTNAME='arch-desktop'
-ARCH_USERNAME='my_user'
-ARCH_DISK='/dev/sda'
-ARCH_BOOT_PARTITION='/dev/sda1'
-ARCH_ROOT_PARTITION='/dev/sda2'
-ARCH_ENCRYPTION_ENABLED='false'
-ARCH_SWAP_SIZE='8'
-ARCH_GNOME='true'
 
-# Language & Location
+# User
+ARCH_USERNAME='my_user'
+
+# Disk
+ARCH_DISK='/dev/sda'
+
+# Boot partition
+ARCH_BOOT_PARTITION='/dev/sda1'
+
+# Root partition
+ARCH_ROOT_PARTITION='/dev/sda2'
+
+# Disk encryption
+ARCH_ENCRYPTION_ENABLED='false'
+
+# Swap: 0 or null = disable
+ARCH_SWAP_SIZE='8'
+
+# Plymouth enabled
+ARCH_PLYMOUTH_ENABLED='true'
+
+# GNOME Desktop: false = minimal arch
+ARCH_GNOME_ENABLED='true'
+
+# Language: change to 'custom' to use custom language properties
 ARCH_LANGUAGE='custom'
-ARCH_REFLECTOR_COUNTRY='Germany,France'
+
+# Timezone: ls /usr/share/zoneinfo/**
 ARCH_TIMEZONE='Europe/Berlin'
-ARCH_LOCALE_LANG='en_US.UTF-8'
-ARCH_LOCALE_GEN_LIST=('en_US.UTF-8' 'UTF-8')
-ARCH_VCONSOLE_KEYMAP='en-latin1-nodeadkeys'
+
+# Country used by reflector. Leave empty to disable
+ARCH_REFLECTOR_COUNTRY='Germany,France'
+
+# Locale: ls /usr/share/i18n/locales
+ARCH_LOCALE_LANG='de_DE'
+
+# Locale List: cat /etc/locale.gen
+ARCH_LOCALE_GEN_LIST=('de_DE.UTF-8 UTF-8' 'de_DE ISO-8859-1' 'de_DE@euro ISO-8859-15' 'en_US.UTF-8 UTF-8')
+
+# Console keymap: localectl list-keymaps
+ARCH_VCONSOLE_KEYMAP='de-latin1-nodeadkeys'
+
+# Console font: find /usr/share/kbd/consolefonts/*.psfu.gz
 ARCH_VCONSOLE_FONT='eurlatgr'
-ARCH_KEYBOARD_LAYOUT='en'
+
+# X11 keyboard layout: localectl list-x11-keymap-layouts
+ARCH_KEYBOARD_LAYOUT='de'
+
+# X11 keyboard variant: localectl list-x11-keymap-variants
 ARCH_KEYBOARD_VARIANT='nodeadkeys'
 ```
 
@@ -148,22 +183,14 @@ For a robust & stable Arch Linux experience, install as few additional packages 
 - Use [exa](https://archlinux.org/packages/extra/x86_64/exa/) as colorful `ls` replacement
 - Use [bat](https://archlinux.org/packages/extra/x86_64/bat/) as colorful `man` replacement
 - Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games
-
-### GNOME Shell Extensions (optional)
-
-- https://extensions.gnome.org/extension/3843/just-perfection/
-- https://extensions.gnome.org/extension/3193/blur-my-shell/
-- https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/
-- https://extensions.gnome.org/extension/1873/disable-unredirect-fullscreen-windows/ (may fix some issues)
-
-### Desktop Customization (optional)
-
-- Icon Theme: https://github.com/vinceliuice/Tela-icon-theme
-- Cursor Theme: https://github.com/alvatip/Nordzy-cursors
-- Desktop Font: https://archlinux.org/packages/extra/any/inter-font/
-- Firefox Theme: https://github.com/rafaelmardojai/firefox-gnome-theme
-- Nautilus Folder Color: https://aur.archlinux.org/packages/folder-color-nautilus
-- Libadwaita GTK Theme: https://github.com/lassekongo83/adw-gtk3
+- Wallpaper: [link](./wallpaper.png)
+- Desktop Font: [inter-font](https://archlinux.org/packages/extra/any/inter-font/)
+- Desktop Theme: [adw-gtk3](https://github.com/lassekongo83/adw-gtk3)
+- Icon Theme: [tela-icon-theme](https://github.com/vinceliuice/Tela-icon-theme)
+- Cursor Theme: [nordzy-cursors](https://github.com/alvatip/Nordzy-cursors)
+- Firefox Theme: [firefox-gnome-theme](https://github.com/rafaelmardojai/firefox-gnome-theme)
+- Nautilus Extensions: [folder-color-nautilus](https://aur.archlinux.org/packages/folder-color-nautilus)
+- GNOME Extensions: [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/), [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/), [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
 
 ## Rescue & Recovery
 
@@ -200,8 +227,8 @@ _**Example**_
 ## Technical Info
 
 <div align="center">
-<p><img src="screenshots/neofetch.png" /></p>
-<p><img src="screenshots/apps.png" /></p>
+<p><img src="screenshots/neofetch.png" width="90%" /></p>
+<p><img src="screenshots/apps.png" width="90%" /></p>
 </div>
 
 ### Core Packages
