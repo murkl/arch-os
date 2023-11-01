@@ -188,22 +188,14 @@ For a robust & stable Arch Linux experience, install as few additional packages 
 - Use [exa](https://archlinux.org/packages/extra/x86_64/exa/) as colorful `ls` replacement
 - Use [bat](https://archlinux.org/packages/extra/x86_64/bat/) as colorful `man` replacement
 - Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games
-
-### GNOME Shell Extensions (optional)
-
-- https://extensions.gnome.org/extension/3843/just-perfection/
-- https://extensions.gnome.org/extension/3193/blur-my-shell/
-- https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/
-- https://extensions.gnome.org/extension/1873/disable-unredirect-fullscreen-windows/ (may fix some issues)
-
-### Desktop Customization (optional)
-
-- Icon Theme: https://github.com/vinceliuice/Tela-icon-theme
-- Cursor Theme: https://github.com/alvatip/Nordzy-cursors
-- Desktop Font: https://archlinux.org/packages/extra/any/inter-font/
-- Firefox Theme: https://github.com/rafaelmardojai/firefox-gnome-theme
-- Nautilus Folder Color: https://aur.archlinux.org/packages/folder-color-nautilus
-- Libadwaita GTK Theme: https://github.com/lassekongo83/adw-gtk3
+- Wallpaper: [link](./wallpaper.png)
+- Desktop Font: [inter-font](https://archlinux.org/packages/extra/any/inter-font/)
+- Desktop Theme: [adw-gtk3](https://github.com/lassekongo83/adw-gtk3)
+- Icon Theme: [tela-icon-theme](https://github.com/vinceliuice/Tela-icon-theme)
+- Cursor Theme: [nordzy-cursors](https://github.com/alvatip/Nordzy-cursors)
+- Firefox Theme: [firefox-gnome-theme](https://github.com/rafaelmardojai/firefox-gnome-theme)
+- Nautilus Extensions: [folder-color-nautilus](https://aur.archlinux.org/packages/folder-color-nautilus)
+- GNOME Extensions: [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/), [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/), [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
 
 ## Rescue & Recovery
 
