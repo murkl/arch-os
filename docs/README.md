@@ -67,7 +67,7 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 - Installer Error Handling
 - Tested in GNOME Boxes
 - Shellcheck approved
-- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant)
+- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant) (optional)
 
 ## Installation
 
@@ -132,14 +132,14 @@ ARCH_ENCRYPTION_ENABLED='false'
 # Swap: 0 or null = disable
 ARCH_SWAP_SIZE='8'
 
-# GNOME Desktop: false = minimal arch
-ARCH_GNOME='true'
-
 # Plymouth enabled
-ARCH_PLYMOUTH_ENABLED='false'
+ARCH_PLYMOUTH_ENABLED='true'
+
+# GNOME Desktop: false = minimal arch
+ARCH_GNOME_ENABLED='true'
 
 # Language: change to 'custom' to use custom language properties
-ARCH_LANGUAGE='german'
+ARCH_LANGUAGE='custom'
 
 # Timezone: ls /usr/share/zoneinfo/**
 ARCH_TIMEZONE='Europe/Berlin'
