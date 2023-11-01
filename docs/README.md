@@ -88,11 +88,8 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 
 ### 3. Boot from USB Device
 
-- Load prefered keyboard layout: `loadkeys de-latin1`
-- Connect to WLAN (optional), run `iwctl` and type into console:
-  - `station wlan0 connect "SSID"`
-  - _Enter WLAN passphrase..._
-  - `exit`
+- Load prefered keyboard layout (optional): `loadkeys de-latin1`
+- Connect to WLAN (optional): `iwctl station wlan0 connect "SSID"`
 - Run **Arch OS Installer**: `curl -Ls http://arch.webhop.me | bash`
 - Installation finished
 
