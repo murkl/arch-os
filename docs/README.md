@@ -240,8 +240,8 @@ _**Example**_
 ## Technical Info
 
 <div align="center">
-<p><img src="screenshots/neofetch.png" /></p>
-<p><img src="screenshots/apps.png" /></p>
+<p><img src="screenshots/neofetch.png" width="90%" /></p>
+<p><img src="screenshots/apps.png" width="90%" /></p>
 </div>
 
 ### Core Packages
