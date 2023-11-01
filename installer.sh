@@ -142,7 +142,7 @@ while (true); do
     menu_entry_array+=("gnome") && menu_entry_array+=("$(print_menu_entry "GNOME" "${ARCH_GNOME_ENABLED}")")
     menu_entry_array+=("") && menu_entry_array+=("") # Empty entry
     if [ "$TUI_POSITION" = "install" ]; then
-        menu_entry_array+=("install") && menu_entry_array+=("> Generate Config")
+        menu_entry_array+=("install") && menu_entry_array+=("> Continue Installation")
     else
         menu_entry_array+=("install") && menu_entry_array+=("x Config incomplete")
     fi
