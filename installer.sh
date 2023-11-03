@@ -5,7 +5,7 @@ set -Eeuo pipefail
 # SCRIPT VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
-VERSION='1.0.1'
+VERSION='1.0.2'
 TITLE="Arch OS Installer ${VERSION}"
 
 # Config file (sourced if exists)
