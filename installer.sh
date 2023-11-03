@@ -5,17 +5,35 @@ set -Eeuo pipefail
 # SCRIPT VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
+# Version
 VERSION='1.0.2'
+
+# Title
 TITLE="Arch OS Installer ${VERSION}"
 
 # Config file (sourced if exists)
 INSTALLER_CONFIG="./installer.conf"
 
-# Logfile
+# Logfile (created during install)
 LOG_FILE="./installer.log"
 
+# TUI width
+TUI_WIDTH="80"
+
+# TUI height
+TUI_HEIGHT="20"
+
+# TUI state
+TUI_POSITION=""
+
+# Whiptail progress count
+PROGRESS_COUNT=0
+
+# Whiptail total processes (number of occurrences of print_whiptail_info - 3)
+PROGRESS_TOTAL=33
+
 # ----------------------------------------------------------------------------------------------------
-# SETUP VARIABLES
+# INSTALLATION VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
 ARCH_USERNAME=""
@@ -37,21 +55,6 @@ ARCH_KEYBOARD_LAYOUT=""
 ARCH_KEYBOARD_VARIANT=""
 ARCH_PLYMOUTH_ENABLED=""
 ARCH_GNOME_ENABLED=""
-
-# ----------------------------------------------------------------------------------------------------
-# TUI VARIABLES
-# ----------------------------------------------------------------------------------------------------
-
-TUI_WIDTH="80"
-TUI_HEIGHT="20"
-TUI_POSITION=""
-
-# ----------------------------------------------------------------------------------------------------
-# WHIPTAIL VARIABLES
-# ----------------------------------------------------------------------------------------------------
-
-PROGRESS_COUNT=0
-PROGRESS_TOTAL=36
 
 # ----------------------------------------------------------------------------------------------------
 # DEPENDENCIES
@@ -116,7 +119,6 @@ check_config() {
 # SOURCE USER PROPERTIES
 # ----------------------------------------------------------------------------------------------------
 
-# Load default values
 # shellcheck disable=SC1090
 [ -f "$INSTALLER_CONFIG" ] && source "$INSTALLER_CONFIG"
 
@@ -253,7 +255,7 @@ while (true); do
         break # Break loop and continue installation
         ;;
 
-    *) continue ;; # Do nothing
+    *) continue ;; # Do nothing and continue loop
 
     esac
 done

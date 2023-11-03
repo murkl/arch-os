@@ -33,7 +33,7 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 <p align="center">
   <strong>Test successful</strong>
   <br>
-  <a target="_blank" href="https://www.archlinux.de/releases/2023.10.14">archlinux-2023.10.14-x86_64.iso</a>
+  <a target="_blank" href="https://www.archlinux.de/releases/2023.11.01">archlinux-2023.11.01-x86_64.iso</a>
 </p>
 
 # Contents
@@ -97,7 +97,7 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 
 If the file `installer.conf` exists in the same dir as the script, it will sourced automatically on startup and the values will set as defaults for Arch Linux installation setup menu. After pressing `> Continue Installation`, the `installer.conf` will be generated from the setup menu properties (except `ARCH_PASSWORD` for better security).
 
-**Note:** The `installer.conf` will copied to the new user's home directory during installation.
+**Note:** The `installer.conf` will copied to the new user's home directory during installation. This file can be saved for reuse or simply deleted.
 
 #### Add another Language
 
