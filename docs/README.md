@@ -53,7 +53,7 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 - Systemd Bootloader (auto updated)
 - Wayland optimized
 - Network Manager
-- Pipewire Audio
+- Pipewire Audio (Dolby Atmos supported)
 - AUR Helper & Multilib
 - Microcode Support
 - SSD Support
@@ -183,6 +183,7 @@ For a robust & stable Arch Linux experience, install as few additional packages 
 - Use [exa](https://archlinux.org/packages/extra/x86_64/exa/) as colorful `ls` replacement
 - Use [bat](https://archlinux.org/packages/extra/x86_64/bat/) as colorful `man` replacement
 - Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games
+- Install [EasyEffects](https://flathub.org/de/apps/com.github.wwmm.easyeffects) for Dolby Atmos
 - Wallpaper: [link](./wallpaper.png)
 - Desktop Font: [inter-font](https://archlinux.org/packages/extra/any/inter-font/)
 - Desktop Theme: [adw-gtk3](https://github.com/lassekongo83/adw-gtk3)
