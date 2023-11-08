@@ -57,6 +57,8 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 - AUR Helper & Multilib
 - Microcode Support
 - SSD Support
+- GNOME Power Profiles Support
+- Firmware Update Tool
 - Automatic mirrorlist update (on every startup)
 - Missing package suggestion
 - Pacman parallel downloads
