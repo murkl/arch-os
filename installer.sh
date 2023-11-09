@@ -222,19 +222,18 @@ tui_set_language() {
 
 tui_set_hostname() {
     ARCH_HOSTNAME=$(whiptail --title "$TITLE" --inputbox "\nEnter Hostname" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_HOSTNAME" 3>&1 1>&2 2>&3)
-    [ -z "$ARCH_HOSTNAME" ] && whiptail --title "$TITLE" --msgbox "Error: Hostname is null" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
+    [ -z "$ARCH_HOSTNAME" ] && whiptail --title "$TITLE" --msgbox "Error: Hostname is null" "$TUI_HEIGHT" "$TUI_WIDTH" && return 1
 }
 
 tui_set_user() {
     ARCH_USERNAME=$(whiptail --title "$TITLE" --inputbox "\nEnter Username" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_USERNAME" 3>&1 1>&2 2>&3)
-    [ -z "$ARCH_USERNAME" ] && whiptail --title "$TITLE" --msgbox "Error: Username is null" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
+    [ -z "$ARCH_USERNAME" ] && whiptail --title "$TITLE" --msgbox "Error: Username is null" "$TUI_HEIGHT" "$TUI_WIDTH" && return 1
 }
-
 tui_set_password() {
     ARCH_PASSWORD=$(whiptail --title "$TITLE" --passwordbox "\nEnter Password" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
-    [ -z "$ARCH_PASSWORD" ] && whiptail --title "$TITLE" --msgbox "Error: Password is null" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
+    [ -z "$ARCH_PASSWORD" ] && whiptail --title "$TITLE" --msgbox "Error: Password is null" "$TUI_HEIGHT" "$TUI_WIDTH" && return 1
     password_check=$(whiptail --title "$TITLE" --passwordbox "\nEnter Password (again)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
-    [ "$ARCH_PASSWORD" != "$password_check" ] && ARCH_PASSWORD="" && whiptail --title "$TITLE" --msgbox "Error: Password not identical" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
+    [ "$ARCH_PASSWORD" != "$password_check" ] && ARCH_PASSWORD="" && whiptail --title "$TITLE" --msgbox "Error: Password not identical" "$TUI_HEIGHT" "$TUI_WIDTH" && return 1
 }
 
 tui_set_disk() {
@@ -247,7 +246,7 @@ tui_set_disk() {
     done < <(lsblk -I 8,259,254 -d -o KNAME -n)
 
     # If no disk found
-    [ "${#disk_array[@]}" = "0" ] && whiptail --title "$TITLE" --msgbox "No Disk found" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
+    [ "${#disk_array[@]}" = "0" ] && whiptail --title "$TITLE" --msgbox "No Disk found" "$TUI_HEIGHT" "$TUI_WIDTH" && return 1
 
     # Show TUI (select disk)
     ARCH_DISK=$(whiptail --title "$TITLE" --menu "\nChoose Installation Disk" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "${#disk_array[@]}" "${disk_array[@]}" 3>&1 1>&2 2>&3)
@@ -263,7 +262,7 @@ tui_set_encryption() {
 
 tui_set_swap() {
     ARCH_SWAP_SIZE="$(($(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 / 1024 + 1))"
-    ARCH_SWAP_SIZE=$(whiptail --title "$TITLE" --inputbox "\nEnter Swap Size in GB (0 = disable)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_SWAP_SIZE" 3>&1 1>&2 2>&3) || continue
+    ARCH_SWAP_SIZE=$(whiptail --title "$TITLE" --inputbox "\nEnter Swap Size in GB (0 = disable)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_SWAP_SIZE" 3>&1 1>&2 2>&3) || return 1
     [ -z "$ARCH_SWAP_SIZE" ] && ARCH_SWAP_SIZE="0"
 }
 
@@ -314,15 +313,15 @@ while (true); do
 
     # Handle result
     case "${menu_selection}" in
-    "language") tui_set_language ;;
-    "hostname") tui_set_hostname ;;
-    "user") tui_set_user ;;
-    "password") tui_set_password ;;
-    "disk") tui_set_disk ;;
-    "encrypt") tui_set_encryption ;;
-    "swap") tui_set_swap ;;
-    "plymouth") tui_set_plymouth ;;
-    "gnome") tui_set_gnome ;;
+    "language") tui_set_language || continue ;;
+    "hostname") tui_set_hostname || continue ;;
+    "user") tui_set_user || continue ;;
+    "password") tui_set_password || continue ;;
+    "disk") tui_set_disk || continue ;;
+    "encrypt") tui_set_encryption || continue ;;
+    "swap") tui_set_swap || continue ;;
+    "plymouth") tui_set_plymouth || continue ;;
+    "gnome") tui_set_gnome || continue ;;
     "install")
         check_config || continue
         break # Break loop and continue installation
