@@ -5,17 +5,35 @@ set -Eeuo pipefail
 # SCRIPT VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
-VERSION='1.0.1'
+# Version
+VERSION='1.0.2'
+
+# Title
 TITLE="Arch OS Installer ${VERSION}"
 
 # Config file (sourced if exists)
 INSTALLER_CONFIG="./installer.conf"
 
-# Logfile
+# Logfile (created during install)
 LOG_FILE="./installer.log"
 
+# TUI width
+TUI_WIDTH="80"
+
+# TUI height
+TUI_HEIGHT="20"
+
+# TUI state
+TUI_POSITION=""
+
+# Whiptail progress count
+PROGRESS_COUNT=0
+
+# Whiptail total processes (number of occurrences of print_whiptail_info - 3)
+PROGRESS_TOTAL=33
+
 # ----------------------------------------------------------------------------------------------------
-# SETUP VARIABLES
+# INSTALLATION VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
 ARCH_USERNAME=""
@@ -37,21 +55,6 @@ ARCH_KEYBOARD_LAYOUT=""
 ARCH_KEYBOARD_VARIANT=""
 ARCH_PLYMOUTH_ENABLED=""
 ARCH_GNOME_ENABLED=""
-
-# ----------------------------------------------------------------------------------------------------
-# TUI VARIABLES
-# ----------------------------------------------------------------------------------------------------
-
-TUI_WIDTH="80"
-TUI_HEIGHT="20"
-TUI_POSITION=""
-
-# ----------------------------------------------------------------------------------------------------
-# WHIPTAIL VARIABLES
-# ----------------------------------------------------------------------------------------------------
-
-PROGRESS_COUNT=0
-PROGRESS_TOTAL=36
 
 # ----------------------------------------------------------------------------------------------------
 # DEPENDENCIES
@@ -86,7 +89,7 @@ print_whiptail_info() {
 }
 
 # ----------------------------------------------------------------------------------------------------
-# CHECK CONFIG
+# CONFIG FUNCTIONS
 # ----------------------------------------------------------------------------------------------------
 
 check_config() {
@@ -112,11 +115,169 @@ check_config() {
     TUI_POSITION="install"
 }
 
+create_config() {
+    {
+        echo "# ${TITLE} (generated: $(date --utc '+%Y-%m-%d %H:%M') UTC)"
+        echo "# This file can be saved for reuse or simply deleted."
+        echo ""
+        echo "# Hostname"
+        echo "ARCH_HOSTNAME='${ARCH_HOSTNAME}'"
+        echo ""
+        echo "# User"
+        echo "ARCH_USERNAME='${ARCH_USERNAME}'"
+        echo ""
+        echo "# Disk"
+        echo "ARCH_DISK='${ARCH_DISK}'"
+        echo ""
+        echo "# Boot partition"
+        echo "ARCH_BOOT_PARTITION='${ARCH_BOOT_PARTITION}'"
+        echo ""
+        echo "# Root partition"
+        echo "ARCH_ROOT_PARTITION='${ARCH_ROOT_PARTITION}'"
+        echo ""
+        echo "# Disk encryption"
+        echo "ARCH_ENCRYPTION_ENABLED='${ARCH_ENCRYPTION_ENABLED}'"
+        echo ""
+        echo "# Swap: 0 or null = disable"
+        echo "ARCH_SWAP_SIZE='${ARCH_SWAP_SIZE}'"
+        echo ""
+        echo "# Plymouth enabled"
+        echo "ARCH_PLYMOUTH_ENABLED='${ARCH_PLYMOUTH_ENABLED}'"
+        echo ""
+        echo "# GNOME Desktop: false = minimal arch"
+        echo "ARCH_GNOME_ENABLED='${ARCH_GNOME_ENABLED}'"
+        echo ""
+        echo "# Language: change to 'custom' to use custom language properties"
+        echo "ARCH_LANGUAGE='${ARCH_LANGUAGE}'"
+        echo ""
+        echo "# Timezone: ls /usr/share/zoneinfo/**"
+        echo "ARCH_TIMEZONE='${ARCH_TIMEZONE}'"
+        echo ""
+        echo "# Country used by reflector. Leave empty to disable"
+        echo "ARCH_REFLECTOR_COUNTRY='${ARCH_REFLECTOR_COUNTRY}'"
+        echo ""
+        echo "# Locale: ls /usr/share/i18n/locales"
+        echo "ARCH_LOCALE_LANG='${ARCH_LOCALE_LANG}'"
+        echo ""
+        echo "# Locale List: cat /etc/locale.gen"
+        echo "ARCH_LOCALE_GEN_LIST=(${ARCH_LOCALE_GEN_LIST[*]@Q})"
+        echo ""
+        echo "# Console keymap: localectl list-keymaps"
+        echo "ARCH_VCONSOLE_KEYMAP='${ARCH_VCONSOLE_KEYMAP}'"
+        echo ""
+        echo "# Console font: find /usr/share/kbd/consolefonts/*.psfu.gz"
+        echo "ARCH_VCONSOLE_FONT='${ARCH_VCONSOLE_FONT}'"
+        echo ""
+        echo "# X11 keyboard layout: localectl list-x11-keymap-layouts"
+        echo "ARCH_KEYBOARD_LAYOUT='${ARCH_KEYBOARD_LAYOUT}'"
+        echo ""
+        echo "# X11 keyboard variant: localectl list-x11-keymap-variants"
+        echo "ARCH_KEYBOARD_VARIANT='${ARCH_KEYBOARD_VARIANT}'"
+    } >"$INSTALLER_CONFIG"
+}
+
+# ----------------------------------------------------------------------------------------------------
+# SETUP FUNCTIONS
+# ----------------------------------------------------------------------------------------------------
+
+tui_set_language() {
+
+    # Check if language is set to custom from installer.conf
+    if [ "$ARCH_LANGUAGE" = "custom" ]; then
+        whiptail --title "$TITLE" --msgbox "> Custom Language Mode\n\nNote: Your language settings from 'installer.conf' are taken." "$TUI_HEIGHT" "$TUI_WIDTH"
+    else
+        # List available language menu entries
+        language_array=()
+        language_array+=("german") && language_array+=("German")
+        language_array+=("english") && language_array+=("English")
+
+        # Show language TUI
+        ARCH_LANGUAGE=$(whiptail --title "$TITLE" --menu "\nChoose Setup Language" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#language_array[@]} / 2) + (${#language_array[@]} % 2)))" "${language_array[@]}" 3>&1 1>&2 2>&3)
+
+        # Handle language result
+        case "${ARCH_LANGUAGE}" in
+        "english")
+            ARCH_TIMEZONE="Europe/Berlin"
+            ARCH_LOCALE_LANG="en_US"
+            ARCH_LOCALE_GEN_LIST=("en_US.UTF-8" "UTF-8")
+            ARCH_VCONSOLE_KEYMAP="en-latin1-nodeadkeys"
+            ARCH_VCONSOLE_FONT="eurlatgr"
+            ARCH_KEYBOARD_LAYOUT="en"
+            ARCH_KEYBOARD_VARIANT="nodeadkeys"
+            ARCH_REFLECTOR_COUNTRY="Germany,France"
+            ;;
+        "german")
+            ARCH_TIMEZONE="Europe/Berlin"
+            ARCH_LOCALE_LANG="de_DE"
+            ARCH_LOCALE_GEN_LIST=("de_DE.UTF-8 UTF-8" "de_DE ISO-8859-1" "de_DE@euro ISO-8859-15" "en_US.UTF-8 UTF-8")
+            ARCH_VCONSOLE_KEYMAP="de-latin1-nodeadkeys"
+            ARCH_VCONSOLE_FONT="eurlatgr"
+            ARCH_KEYBOARD_LAYOUT="de"
+            ARCH_KEYBOARD_VARIANT="nodeadkeys"
+            ARCH_REFLECTOR_COUNTRY="Germany,France"
+            ;;
+        esac
+    fi
+}
+
+tui_set_hostname() {
+    ARCH_HOSTNAME=$(whiptail --title "$TITLE" --inputbox "\nEnter Hostname" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_HOSTNAME" 3>&1 1>&2 2>&3)
+    [ -z "$ARCH_HOSTNAME" ] && whiptail --title "$TITLE" --msgbox "Error: Hostname is null" "$TUI_HEIGHT" "$TUI_WIDTH" && return 1
+}
+
+tui_set_user() {
+    ARCH_USERNAME=$(whiptail --title "$TITLE" --inputbox "\nEnter Username" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_USERNAME" 3>&1 1>&2 2>&3)
+    [ -z "$ARCH_USERNAME" ] && whiptail --title "$TITLE" --msgbox "Error: Username is null" "$TUI_HEIGHT" "$TUI_WIDTH" && return 1
+}
+tui_set_password() {
+    ARCH_PASSWORD=$(whiptail --title "$TITLE" --passwordbox "\nEnter Password" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
+    [ -z "$ARCH_PASSWORD" ] && whiptail --title "$TITLE" --msgbox "Error: Password is null" "$TUI_HEIGHT" "$TUI_WIDTH" && return 1
+    password_check=$(whiptail --title "$TITLE" --passwordbox "\nEnter Password (again)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
+    [ "$ARCH_PASSWORD" != "$password_check" ] && ARCH_PASSWORD="" && whiptail --title "$TITLE" --msgbox "Error: Password not identical" "$TUI_HEIGHT" "$TUI_WIDTH" && return 1
+}
+
+tui_set_disk() {
+
+    # List available disks
+    disk_array=()
+    while read -r disk_line; do
+        disk_array+=("/dev/$disk_line")
+        disk_array+=(" ($(lsblk -d -n -o SIZE /dev/"$disk_line"))")
+    done < <(lsblk -I 8,259,254 -d -o KNAME -n)
+
+    # If no disk found
+    [ "${#disk_array[@]}" = "0" ] && whiptail --title "$TITLE" --msgbox "No Disk found" "$TUI_HEIGHT" "$TUI_WIDTH" && return 1
+
+    # Show TUI (select disk)
+    ARCH_DISK=$(whiptail --title "$TITLE" --menu "\nChoose Installation Disk" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "${#disk_array[@]}" "${disk_array[@]}" 3>&1 1>&2 2>&3)
+
+    # Handle result
+    [[ "$ARCH_DISK" = "/dev/nvm"* ]] && ARCH_BOOT_PARTITION="${ARCH_DISK}p1" || ARCH_BOOT_PARTITION="${ARCH_DISK}1"
+    [[ "$ARCH_DISK" = "/dev/nvm"* ]] && ARCH_ROOT_PARTITION="${ARCH_DISK}p2" || ARCH_ROOT_PARTITION="${ARCH_DISK}2"
+}
+
+tui_set_encryption() {
+    ARCH_ENCRYPTION_ENABLED="false" && whiptail --title "$TITLE" --yesno "Enable Disk Encryption?" --defaultno "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_ENCRYPTION_ENABLED="true"
+}
+
+tui_set_swap() {
+    ARCH_SWAP_SIZE="$(($(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 / 1024 + 1))"
+    ARCH_SWAP_SIZE=$(whiptail --title "$TITLE" --inputbox "\nEnter Swap Size in GB (0 = disable)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_SWAP_SIZE" 3>&1 1>&2 2>&3) || return 1
+    [ -z "$ARCH_SWAP_SIZE" ] && ARCH_SWAP_SIZE="0"
+}
+
+tui_set_plymouth() {
+    ARCH_PLYMOUTH_ENABLED="false" && whiptail --title "$TITLE" --yesno "Install Plymouth (boot animation)?" --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_PLYMOUTH_ENABLED="true"
+}
+
+tui_set_gnome() {
+    ARCH_GNOME_ENABLED="false" && whiptail --title "$TITLE" --yesno "Install GNOME Desktop?" --yes-button "GNOME Desktop" --no-button "Minimal Arch" "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_GNOME_ENABLED="true"
+}
+
 # ----------------------------------------------------------------------------------------------------
 # SOURCE USER PROPERTIES
 # ----------------------------------------------------------------------------------------------------
 
-# Load default values
 # shellcheck disable=SC1090
 [ -f "$INSTALLER_CONFIG" ] && source "$INSTALLER_CONFIG"
 
@@ -152,108 +313,20 @@ while (true); do
 
     # Handle result
     case "${menu_selection}" in
-
-    "language")
-
-        # Check if language is set to custom from installer.conf
-        if [ "$ARCH_LANGUAGE" = "custom" ]; then
-            whiptail --title "$TITLE" --msgbox "> Custom Language Mode\n\nNote: Your language settings from 'installer.conf' are taken." "$TUI_HEIGHT" "$TUI_WIDTH"
-        else
-            # List available language menu entries
-            language_array=()
-            language_array+=("german") && language_array+=("German")
-            language_array+=("english") && language_array+=("English")
-
-            # Show language TUI
-            ARCH_LANGUAGE=$(whiptail --title "$TITLE" --menu "\nChoose Setup Language" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#language_array[@]} / 2) + (${#language_array[@]} % 2)))" "${language_array[@]}" 3>&1 1>&2 2>&3)
-
-            # Handle language result
-            case "${ARCH_LANGUAGE}" in
-            "english")
-                ARCH_TIMEZONE="Europe/Berlin"
-                ARCH_LOCALE_LANG="en_US"
-                ARCH_LOCALE_GEN_LIST=("en_US.UTF-8" "UTF-8")
-                ARCH_VCONSOLE_KEYMAP="en-latin1-nodeadkeys"
-                ARCH_VCONSOLE_FONT="eurlatgr"
-                ARCH_KEYBOARD_LAYOUT="en"
-                ARCH_KEYBOARD_VARIANT="nodeadkeys"
-                ARCH_REFLECTOR_COUNTRY="Germany,France"
-                ;;
-            "german")
-                ARCH_TIMEZONE="Europe/Berlin"
-                ARCH_LOCALE_LANG="de_DE"
-                ARCH_LOCALE_GEN_LIST=("de_DE.UTF-8 UTF-8" "de_DE ISO-8859-1" "de_DE@euro ISO-8859-15" "en_US.UTF-8 UTF-8")
-                ARCH_VCONSOLE_KEYMAP="de-latin1-nodeadkeys"
-                ARCH_VCONSOLE_FONT="eurlatgr"
-                ARCH_KEYBOARD_LAYOUT="de"
-                ARCH_KEYBOARD_VARIANT="nodeadkeys"
-                ARCH_REFLECTOR_COUNTRY="Germany,France"
-                ;;
-            esac
-        fi
-        ;;
-
-    "hostname")
-        ARCH_HOSTNAME=$(whiptail --title "$TITLE" --inputbox "\nEnter Hostname" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_HOSTNAME" 3>&1 1>&2 2>&3)
-        [ -z "$ARCH_HOSTNAME" ] && whiptail --title "$TITLE" --msgbox "Error: Hostname is null" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
-        ;;
-
-    "user")
-        ARCH_USERNAME=$(whiptail --title "$TITLE" --inputbox "\nEnter Username" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_USERNAME" 3>&1 1>&2 2>&3)
-        [ -z "$ARCH_USERNAME" ] && whiptail --title "$TITLE" --msgbox "Error: Username is null" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
-        ;;
-
-    "password")
-        ARCH_PASSWORD=$(whiptail --title "$TITLE" --passwordbox "\nEnter Password" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
-        [ -z "$ARCH_PASSWORD" ] && whiptail --title "$TITLE" --msgbox "Error: Password is null" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
-        password_check=$(whiptail --title "$TITLE" --passwordbox "\nEnter Password (again)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
-        [ "$ARCH_PASSWORD" != "$password_check" ] && ARCH_PASSWORD="" && whiptail --title "$TITLE" --msgbox "Error: Password not identical" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
-        ;;
-
-    "disk")
-
-        # List available disks
-        disk_array=()
-        while read -r disk_line; do
-            disk_array+=("/dev/$disk_line")
-            disk_array+=(" ($(lsblk -d -n -o SIZE /dev/"$disk_line"))")
-        done < <(lsblk -I 8,259,254 -d -o KNAME -n)
-
-        # If no disk found
-        [ "${#disk_array[@]}" = "0" ] && whiptail --title "$TITLE" --msgbox "No Disk found" "$TUI_HEIGHT" "$TUI_WIDTH" && continue
-
-        # Show TUI (select disk)
-        ARCH_DISK=$(whiptail --title "$TITLE" --menu "\nChoose Installation Disk" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "${#disk_array[@]}" "${disk_array[@]}" 3>&1 1>&2 2>&3)
-
-        # Handle result
-        [[ "$ARCH_DISK" = "/dev/nvm"* ]] && ARCH_BOOT_PARTITION="${ARCH_DISK}p1" || ARCH_BOOT_PARTITION="${ARCH_DISK}1"
-        [[ "$ARCH_DISK" = "/dev/nvm"* ]] && ARCH_ROOT_PARTITION="${ARCH_DISK}p2" || ARCH_ROOT_PARTITION="${ARCH_DISK}2"
-        ;;
-
-    "encrypt")
-        ARCH_ENCRYPTION_ENABLED="false" && whiptail --title "$TITLE" --yesno "Enable Disk Encryption?" --defaultno "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_ENCRYPTION_ENABLED="true"
-        ;;
-
-    "swap")
-        ARCH_SWAP_SIZE="$(($(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 / 1024 + 1))"
-        ARCH_SWAP_SIZE=$(whiptail --title "$TITLE" --inputbox "\nEnter Swap Size in GB (0 = disable)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_SWAP_SIZE" 3>&1 1>&2 2>&3) || continue
-        [ -z "$ARCH_SWAP_SIZE" ] && ARCH_SWAP_SIZE="0"
-        ;;
-
-    "plymouth")
-        ARCH_PLYMOUTH_ENABLED="false" && whiptail --title "$TITLE" --yesno "Install Plymouth (boot animation)?" --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_PLYMOUTH_ENABLED="true"
-        ;;
-
-    "gnome")
-        ARCH_GNOME_ENABLED="false" && whiptail --title "$TITLE" --yesno "Install GNOME Desktop?" --yes-button "GNOME Desktop" --no-button "Minimal Arch" "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_GNOME_ENABLED="true"
-        ;;
-
+    "language") tui_set_language || continue ;;
+    "hostname") tui_set_hostname || continue ;;
+    "user") tui_set_user || continue ;;
+    "password") tui_set_password || continue ;;
+    "disk") tui_set_disk || continue ;;
+    "encrypt") tui_set_encryption || continue ;;
+    "swap") tui_set_swap || continue ;;
+    "plymouth") tui_set_plymouth || continue ;;
+    "gnome") tui_set_gnome || continue ;;
     "install")
         check_config || continue
         break # Break loop and continue installation
         ;;
-
-    *) continue ;; # Do nothing
+    *) continue ;; # Do nothing and continue loop
 
     esac
 done
@@ -261,64 +334,7 @@ done
 # ----------------------------------------------------------------------------------------------------
 # (OVER) WRITE INSTALLER CONF
 # ----------------------------------------------------------------------------------------------------
-{
-    echo "# ${TITLE} (generated: $(date --utc '+%Y-%m-%d %H:%M') UTC)"
-    echo "# This file can be saved for reuse or simply deleted."
-    echo ""
-    echo "# Hostname"
-    echo "ARCH_HOSTNAME='${ARCH_HOSTNAME}'"
-    echo ""
-    echo "# User"
-    echo "ARCH_USERNAME='${ARCH_USERNAME}'"
-    echo ""
-    echo "# Disk"
-    echo "ARCH_DISK='${ARCH_DISK}'"
-    echo ""
-    echo "# Boot partition"
-    echo "ARCH_BOOT_PARTITION='${ARCH_BOOT_PARTITION}'"
-    echo ""
-    echo "# Root partition"
-    echo "ARCH_ROOT_PARTITION='${ARCH_ROOT_PARTITION}'"
-    echo ""
-    echo "# Disk encryption"
-    echo "ARCH_ENCRYPTION_ENABLED='${ARCH_ENCRYPTION_ENABLED}'"
-    echo ""
-    echo "# Swap: 0 or null = disable"
-    echo "ARCH_SWAP_SIZE='${ARCH_SWAP_SIZE}'"
-    echo ""
-    echo "# Plymouth enabled"
-    echo "ARCH_PLYMOUTH_ENABLED='${ARCH_PLYMOUTH_ENABLED}'"
-    echo ""
-    echo "# GNOME Desktop: false = minimal arch"
-    echo "ARCH_GNOME_ENABLED='${ARCH_GNOME_ENABLED}'"
-    echo ""
-    echo "# Language: change to 'custom' to use custom language properties"
-    echo "ARCH_LANGUAGE='${ARCH_LANGUAGE}'"
-    echo ""
-    echo "# Timezone: ls /usr/share/zoneinfo/**"
-    echo "ARCH_TIMEZONE='${ARCH_TIMEZONE}'"
-    echo ""
-    echo "# Country used by reflector. Leave empty to disable"
-    echo "ARCH_REFLECTOR_COUNTRY='${ARCH_REFLECTOR_COUNTRY}'"
-    echo ""
-    echo "# Locale: ls /usr/share/i18n/locales"
-    echo "ARCH_LOCALE_LANG='${ARCH_LOCALE_LANG}'"
-    echo ""
-    echo "# Locale List: cat /etc/locale.gen"
-    echo "ARCH_LOCALE_GEN_LIST=(${ARCH_LOCALE_GEN_LIST[*]@Q})"
-    echo ""
-    echo "# Console keymap: localectl list-keymaps"
-    echo "ARCH_VCONSOLE_KEYMAP='${ARCH_VCONSOLE_KEYMAP}'"
-    echo ""
-    echo "# Console font: find /usr/share/kbd/consolefonts/*.psfu.gz"
-    echo "ARCH_VCONSOLE_FONT='${ARCH_VCONSOLE_FONT}'"
-    echo ""
-    echo "# X11 keyboard layout: localectl list-x11-keymap-layouts"
-    echo "ARCH_KEYBOARD_LAYOUT='${ARCH_KEYBOARD_LAYOUT}'"
-    echo ""
-    echo "# X11 keyboard variant: localectl list-x11-keymap-variants"
-    echo "ARCH_KEYBOARD_VARIANT='${ARCH_KEYBOARD_VARIANT}'"
-} >"$INSTALLER_CONFIG"
+create_config
 
 # ----------------------------------------------------------------------------------------------------
 # ASK FOR INSTALLATION
@@ -713,14 +729,14 @@ SECONDS=0
         sed -i "s/base systemd autodetect/base systemd plymouth autodetect/g" /mnt/etc/mkinitcpio.conf
 
         # Install plymouth theme
-        repo_url="https://github.com/murkl/plymouth-theme-arch-elegant.git"
-        tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/plymouth-theme-arch-elegant.XXXXXXXXXX")
+        repo_url="https://github.com/murkl/plymouth-theme-arch-os.git"
+        tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/plymouth-theme-arch-os.XXXXXXXXXX")
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git clone "$repo_url" "$tmp_name"
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "cd ${tmp_name}/aur && makepkg -si --noconfirm"
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- rm -rf "$tmp_name"
 
         # Set Theme & rebuild initram disk
-        arch-chroot /mnt plymouth-set-default-theme -R arch-elegant
+        arch-chroot /mnt plymouth-set-default-theme -R arch-os
     else
         echo "> Skipped"
     fi

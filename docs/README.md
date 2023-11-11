@@ -33,7 +33,7 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 <p align="center">
   <strong>Test successful</strong>
   <br>
-  <a target="_blank" href="https://www.archlinux.de/releases/2023.10.14">archlinux-2023.10.14-x86_64.iso</a>
+  <a target="_blank" href="https://www.archlinux.de/releases/2023.11.01">archlinux-2023.11.01-x86_64.iso</a>
 </p>
 
 # Contents
@@ -53,10 +53,12 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 - Systemd Bootloader (auto updated)
 - Wayland optimized
 - Network Manager
-- Pipewire Audio
+- Pipewire Audio (Dolby Atmos supported)
 - AUR Helper & Multilib
 - Microcode Support
 - SSD Support
+- GNOME Power Profiles Support
+- Firmware Update Tool
 - Automatic mirrorlist update (on every startup)
 - Missing package suggestion
 - Pacman parallel downloads
@@ -97,7 +99,7 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 
 If the file `installer.conf` exists in the same dir as the script, it will sourced automatically on startup and the values will set as defaults for Arch Linux installation setup menu. After pressing `> Continue Installation`, the `installer.conf` will be generated from the setup menu properties (except `ARCH_PASSWORD` for better security).
 
-**Note:** The `installer.conf` will copied to the new user's home directory during installation.
+**Note:** The `installer.conf` will copied to the new user's home directory during installation. This file can be saved for reuse or simply deleted.
 
 #### Add another Language
 
@@ -183,6 +185,7 @@ For a robust & stable Arch Linux experience, install as few additional packages 
 - Use [exa](https://archlinux.org/packages/extra/x86_64/exa/) as colorful `ls` replacement
 - Use [bat](https://archlinux.org/packages/extra/x86_64/bat/) as colorful `man` replacement
 - Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games
+- Install [EasyEffects](https://flathub.org/de/apps/com.github.wwmm.easyeffects) for Dolby Atmos
 - Wallpaper: [link](./wallpaper.png)
 - Desktop Font: [inter-font](https://archlinux.org/packages/extra/any/inter-font/)
 - Desktop Theme: [adw-gtk3](https://github.com/lassekongo83/adw-gtk3)
