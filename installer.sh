@@ -729,14 +729,14 @@ SECONDS=0
         sed -i "s/base systemd autodetect/base systemd plymouth autodetect/g" /mnt/etc/mkinitcpio.conf
 
         # Install plymouth theme
-        repo_url="https://github.com/murkl/plymouth-theme-arch-elegant.git"
-        tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/plymouth-theme-arch-elegant.XXXXXXXXXX")
+        repo_url="https://github.com/murkl/plymouth-theme-arch-os.git"
+        tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/plymouth-theme-arch-os.XXXXXXXXXX")
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git clone "$repo_url" "$tmp_name"
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "cd ${tmp_name}/aur && makepkg -si --noconfirm"
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- rm -rf "$tmp_name"
 
         # Set Theme & rebuild initram disk
-        arch-chroot /mnt plymouth-set-default-theme -R arch-elegant
+        arch-chroot /mnt plymouth-set-default-theme -R arch-os
     else
         echo "> Skipped"
     fi
