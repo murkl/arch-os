@@ -190,6 +190,7 @@ tui_set_language() {
         language_array=()
         language_array+=("german") && language_array+=("German")
         language_array+=("english") && language_array+=("English")
+        language_array+=("custom") && language_array+=("Custom")
 
         # Show language TUI
         ARCH_LANGUAGE=$(whiptail --title "$TITLE" --menu "\nChoose Setup Language" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#language_array[@]} / 2) + (${#language_array[@]} % 2)))" "${language_array[@]}" 3>&1 1>&2 2>&3)
@@ -222,18 +223,33 @@ tui_set_language() {
 
 tui_set_hostname() {
     ARCH_HOSTNAME=$(whiptail --title "$TITLE" --inputbox "\nEnter Hostname" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_HOSTNAME" 3>&1 1>&2 2>&3)
-    [ -z "$ARCH_HOSTNAME" ] && whiptail --title "$TITLE" --msgbox "Error: Hostname is null" "$TUI_HEIGHT" "$TUI_WIDTH" && return 1
+    if [ -z "$ARCH_HOSTNAME" ]; then
+        whiptail --title "$TITLE" --msgbox "Error: Hostname is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+        return 1
+    fi
 }
 
 tui_set_user() {
     ARCH_USERNAME=$(whiptail --title "$TITLE" --inputbox "\nEnter Username" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_USERNAME" 3>&1 1>&2 2>&3)
-    [ -z "$ARCH_USERNAME" ] && whiptail --title "$TITLE" --msgbox "Error: Username is null" "$TUI_HEIGHT" "$TUI_WIDTH" && return 1
+    if [ -z "$ARCH_USERNAME" ]; then
+        whiptail --title "$TITLE" --msgbox "Error: Username is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+        return 1
+    fi
 }
 tui_set_password() {
     ARCH_PASSWORD=$(whiptail --title "$TITLE" --passwordbox "\nEnter Password" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
-    [ -z "$ARCH_PASSWORD" ] && whiptail --title "$TITLE" --msgbox "Error: Password is null" "$TUI_HEIGHT" "$TUI_WIDTH" && return 1
+    if [ -z "$ARCH_PASSWORD" ]; then
+        whiptail --title "$TITLE" --msgbox "Error: Password is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+        return 1
+    fi
+
+    local password_check
     password_check=$(whiptail --title "$TITLE" --passwordbox "\nEnter Password (again)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
-    [ "$ARCH_PASSWORD" != "$password_check" ] && ARCH_PASSWORD="" && whiptail --title "$TITLE" --msgbox "Error: Password not identical" "$TUI_HEIGHT" "$TUI_WIDTH" && return 1
+    if [ "$ARCH_PASSWORD" != "$password_check" ]; then
+        ARCH_PASSWORD=""
+        whiptail --title "$TITLE" --msgbox "Error: Password not identical" "$TUI_HEIGHT" "$TUI_WIDTH"
+        return 1
+    fi
 }
 
 tui_set_disk() {
@@ -257,35 +273,44 @@ tui_set_disk() {
 }
 
 tui_set_encryption() {
-    ARCH_ENCRYPTION_ENABLED="false" && whiptail --title "$TITLE" --yesno "Enable Disk Encryption?" --defaultno "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_ENCRYPTION_ENABLED="true"
+    ARCH_ENCRYPTION_ENABLED="false"
+    if whiptail --title "$TITLE" --yesno "Enable Disk Encryption?" --defaultno "$TUI_HEIGHT" "$TUI_WIDTH"; then
+        ARCH_ENCRYPTION_ENABLED="true"
+    fi
 }
 
 tui_set_swap() {
     ARCH_SWAP_SIZE="$(($(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 / 1024 + 1))"
-    ARCH_SWAP_SIZE=$(whiptail --title "$TITLE" --inputbox "\nEnter Swap Size in GB (0 = disable)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_SWAP_SIZE" 3>&1 1>&2 2>&3) || return 1
-    [ -z "$ARCH_SWAP_SIZE" ] && ARCH_SWAP_SIZE="0"
+    ARCH_SWAP_SIZE=$(whiptail --title "$TITLE" --inputbox "\nEnter Swap Size in GB (0 = disable)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_SWAP_SIZE" 3>&1 1>&2 2>&3)
+    if [ -z "$ARCH_SWAP_SIZE" ]; then
+        whiptail --title "$TITLE" --msgbox "Error: Swap is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+        return 1
+    fi
 }
 
 tui_set_plymouth() {
-    ARCH_PLYMOUTH_ENABLED="false" && whiptail --title "$TITLE" --yesno "Install Plymouth (boot animation)?" --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_PLYMOUTH_ENABLED="true"
+    ARCH_PLYMOUTH_ENABLED="false"
+    if whiptail --title "$TITLE" --yesno "Install Plymouth (boot animation)?" --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+        ARCH_PLYMOUTH_ENABLED="true"
+    fi
 }
 
 tui_set_gnome() {
-    ARCH_GNOME_ENABLED="false" && whiptail --title "$TITLE" --yesno "Install GNOME Desktop?" --yes-button "GNOME Desktop" --no-button "Minimal Arch" "$TUI_HEIGHT" "$TUI_WIDTH" && ARCH_GNOME_ENABLED="true"
+    ARCH_GNOME_ENABLED="false"
+    if whiptail --title "$TITLE" --yesno "Install GNOME Desktop?" --yes-button "GNOME Desktop" --no-button "Minimal Arch" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+        ARCH_GNOME_ENABLED="true"
+    fi
 }
-
-# ----------------------------------------------------------------------------------------------------
-# SOURCE USER PROPERTIES
-# ----------------------------------------------------------------------------------------------------
-
-# shellcheck disable=SC1090
-[ -f "$INSTALLER_CONFIG" ] && source "$INSTALLER_CONFIG"
 
 # ----------------------------------------------------------------------------------------------------
 # SHOW MENU
 # ----------------------------------------------------------------------------------------------------
 
 while (true); do
+
+    # Source user properties
+    # shellcheck disable=SC1090
+    [ -f "$INSTALLER_CONFIG" ] && source "$INSTALLER_CONFIG"
 
     # Check config entries and set menu position
     check_config || true
@@ -313,15 +338,42 @@ while (true); do
 
     # Handle result
     case "${menu_selection}" in
-    "language") tui_set_language || continue ;;
-    "hostname") tui_set_hostname || continue ;;
-    "user") tui_set_user || continue ;;
-    "password") tui_set_password || continue ;;
-    "disk") tui_set_disk || continue ;;
-    "encrypt") tui_set_encryption || continue ;;
-    "swap") tui_set_swap || continue ;;
-    "plymouth") tui_set_plymouth || continue ;;
-    "gnome") tui_set_gnome || continue ;;
+    "language")
+        tui_set_language || continue
+        create_config
+        ;;
+    "hostname")
+        tui_set_hostname || continue
+        create_config
+        ;;
+    "user")
+        tui_set_user || continue
+        create_config
+        ;;
+    "password")
+        tui_set_password || continue
+        create_config
+        ;;
+    "disk")
+        tui_set_disk || continue
+        create_config
+        ;;
+    "encrypt")
+        tui_set_encryption || continue
+        create_config
+        ;;
+    "swap")
+        tui_set_swap || continue
+        create_config
+        ;;
+    "plymouth")
+        tui_set_plymouth || continue
+        create_config
+        ;;
+    "gnome")
+        tui_set_gnome || continue
+        create_config
+        ;;
     "install")
         check_config || continue
         break # Break loop and continue installation
@@ -329,12 +381,8 @@ while (true); do
     *) continue ;; # Do nothing and continue loop
 
     esac
-done
 
-# ----------------------------------------------------------------------------------------------------
-# (OVER) WRITE INSTALLER CONF
-# ----------------------------------------------------------------------------------------------------
-create_config
+done
 
 # ----------------------------------------------------------------------------------------------------
 # ASK FOR INSTALLATION
