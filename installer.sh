@@ -195,7 +195,7 @@ tui_set_language() {
     [ -z "$user_input" ] && user_input='en_US'
     user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert locale (for example 'en_US' or 'de_DE')" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
     # shellcheck disable=SC2001
-    if ! grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<<"$user_input") " /etc/locale.gen; then
+    if [ -z "$user_input" ] || ! grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<<"$user_input") " /etc/locale.gen; then
         whiptail --title "$TITLE" --msgbox "Error: Locale '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
     else
@@ -217,26 +217,18 @@ tui_set_language() {
 tui_set_keyboard() {
 
     # Set keyboard layout
-    local user_input_layout="$ARCH_KEYBOARD_LAYOUT"
-    [ -z "$user_input_layout" ] && user_input_layout='us'
-    user_input_layout=$(whiptail --title "$TITLE" --inputbox "\nPlease insert keyboard layout (for example 'de' or 'us')" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input_layout" 3>&1 1>&2 2>&3)
-
-    local user_input_variant="$ARCH_KEYBOARD_VARIANT"
-    user_input_variant=$(whiptail --title "$TITLE" --inputbox "\nPlease insert keyboard variant (for example 'nodeadkeys' or leave empty):" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input_variant" 3>&1 1>&2 2>&3)
-
-    local keymap="$user_input_layout"
-    if [ -n "$user_input_variant" ]; then
-        keymap="${user_input_layout}-${user_input_variant}"
-    fi
+    local user_input="$ARCH_KEYBOARD_LAYOUT"
+    [ -z "$user_input" ] && user_input='us'
+    user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert keyboard layout (for example 'de' or 'us')" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
 
     # Check keymap
-    if ! localectl list-keymaps | grep -Fxq "$keymap"; then
-        whiptail --title "$TITLE" --msgbox "Error: Keyboard layout '${keymap}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
+    if ! localectl list-keymaps | grep -Fxq "$user_input"; then
+        whiptail --title "$TITLE" --msgbox "Error: Keyboard layout '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
     else
-        ARCH_KEYBOARD_LAYOUT="$user_input_layout"
-        ARCH_KEYBOARD_VARIANT="$user_input_variant"
-        ARCH_VCONSOLE_KEYMAP="$keymap"
+        ARCH_VCONSOLE_KEYMAP="$user_input"
+        ARCH_KEYBOARD_LAYOUT="$user_input"
+        #ARCH_KEYBOARD_VARIANT=""
     fi
 
     # Success
