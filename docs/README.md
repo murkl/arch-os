@@ -47,6 +47,7 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 ## Features
 
 - 100% TUI Installation
+- Installation Properties
 - VM Support
 - Minimal GNOME Desktop + Autologin (optional)
 - Disk Encryption (optional)
@@ -69,7 +70,7 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 - Installer Error Handling
 - Tested in GNOME Boxes
 - Shellcheck approved
-- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-elegant) (optional)
+- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os) (optional)
 
 ## Installation
 
