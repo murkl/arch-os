@@ -135,25 +135,25 @@ ARCH_GNOME_ENABLED='true'
 ARCH_TIMEZONE='Europe/Berlin'
 
 # Country used by reflector (optional)
-ARCH_REFLECTOR_COUNTRY=''
+ARCH_REFLECTOR_COUNTRY='Germany'
 
 # Locale (mandatory): ls /usr/share/i18n/locales
-ARCH_LOCALE_LANG='en_US'
+ARCH_LOCALE_LANG='de_DE'
 
 # Locale List (auto): cat /etc/locale.gen
-ARCH_LOCALE_GEN_LIST=('en_US.UTF-8 UTF-8' 'en_US ISO-8859-1')
+ARCH_LOCALE_GEN_LIST=('de_DE.UTF-8 UTF-8' 'de_DE ISO-8859-1' 'de_DE@euro ISO-8859-15' 'en_US.UTF-8 UTF-8')
 
 # Console keymap (mandatory): localectl list-keymaps
-ARCH_VCONSOLE_KEYMAP='us'
+ARCH_VCONSOLE_KEYMAP='de-latin1-nodeadkeys'
 
 # Console font (optional): find /usr/share/kbd/consolefonts/*.psfu.gz
-ARCH_VCONSOLE_FONT=''
+ARCH_VCONSOLE_FONT='eurlatgr'
 
 # X11 keyboard layout (auto): localectl list-x11-keymap-layouts
-ARCH_KEYBOARD_LAYOUT='us'
+ARCH_KEYBOARD_LAYOUT='de'
 
 # X11 keyboard variant (optional): localectl list-x11-keymap-variants
-ARCH_KEYBOARD_VARIANT=''
+ARCH_KEYBOARD_VARIANT='nodeadkeys'
 ```
 
 ## Recommendation
