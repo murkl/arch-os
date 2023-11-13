@@ -19,7 +19,7 @@ curl -Ls http://arch.webhop.me | bash
 <p align="center"><img src="./screenshots/desktop.jpg" /></p>
 
 <p align="center">
-This project aims to provide a minimal and solid Arch Linux base for desktop users and an easy and fast to use installer for that.
+This project aims to provide a minimal and solid Arch Linux base for desktop usage and an easy and fast to use installer for that.
 Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Helper, enabled MultiLib and some more features. 
 </p>
 
@@ -97,7 +97,7 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 
 ### Installation Properties (optional)
 
-The `installer.conf` with all properties (except `ARCH_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as defaults for Arch Linux installation setup menu. This file provides some addional peroperties to modify your Arch Linux installation.
+The `installer.conf` with all properties (except `ARCH_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as defaults for Arch OS setup menu. This file provides some addional peroperties to modify your Arch OS installation.
 
 **Note:** The `installer.conf` will copied to the new user's home directory during installation. This file can be saved for reuse or simply deleted.
 
@@ -158,7 +158,7 @@ ARCH_KEYBOARD_VARIANT='nodeadkeys'
 
 ## Recommendation
 
-For a robust & stable Arch Linux experience, install as few additional packages from the main repository or AUR as possible. Instead, use Flatpak or Distrobox/Toolbox (Podman/Docker). Furthermore change system files only if absolutely necessary. And perform regular updates with `paru -Syu`
+For a robust & stable Arch OS experience, install as few additional packages from the main repository or AUR as possible. Instead, use Flatpak or Distrobox/Toolbox (Podman/Docker). Furthermore change system files only if absolutely necessary. And perform regular updates with `paru -Syu`
 
 ### Install Graphics Driver
 
@@ -190,7 +190,7 @@ For a robust & stable Arch Linux experience, install as few additional packages 
 
 ## Rescue & Recovery
 
-If you need to rescue your Arch Linux in case of a crash, **boot from an Arch ISO device** and follow these instructions.
+If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and follow these instructions.
 
 ### 1. Disk Information
 
@@ -217,7 +217,7 @@ _**Example**_
 ### 3. Chroot
 
 - Enter chroot: `arch-chroot /mnt`
-- _Fix your Arch Linux..._
+- _Fix your Arch OS..._
 - Exit: `exit`
 
 ## Technical Info
