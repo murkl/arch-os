@@ -329,7 +329,8 @@ tui_set_gnome() {
 
 # shellcheck disable=SC1090
 [ -f "$INSTALLER_CONFIG" ] && source "$INSTALLER_CONFIG"
-create_config
+check_config || true # Check and init properties
+create_config        # Generate properties
 
 # ----------------------------------------------------------------------------------------------------
 # SHOW MENU
