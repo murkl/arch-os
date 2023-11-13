@@ -90,76 +90,69 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 
 ### 3. Boot from USB Device
 
-- Load prefered keyboard layout (optional): `loadkeys de-latin1`
+- Load prefered keyboard layout (optional): `loadkeys de`
 - Connect to WLAN (optional): `iwctl station wlan0 connect "SSID"`
 - Run **Arch OS Installer**: `curl -Ls http://arch.webhop.me | bash`
 - Installation finished
 
 ### Installation Properties (optional)
 
-If the file `installer.conf` exists in the same dir as the script, it will sourced automatically on startup and the values will set as defaults for Arch Linux installation setup menu. After pressing `> Continue Installation`, the `installer.conf` will be generated from the setup menu properties (except `ARCH_PASSWORD` for better security).
+The `installer.conf` with all properties (except `ARCH_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as defaults for Arch Linux installation setup menu. This file provides some addional peroperties to modify your Arch Linux installation.
 
 **Note:** The `installer.conf` will copied to the new user's home directory during installation. This file can be saved for reuse or simply deleted.
-
-#### Add another Language
-
-If you want to add another language, set `ARCH_LANGUAGE='custom'` and modify the desired properties. (see example of [installer.conf](#example-of-installerconf))
 
 #### Example of `installer.conf`
 
 ```
-# Hostname
-ARCH_HOSTNAME='arch-desktop'
+# Hostname (auto)
+ARCH_HOSTNAME='arch-os'
 
-# User
-ARCH_USERNAME='my_user'
+# User (mandatory)
+ARCH_USERNAME='mortiz'
 
-# Disk
+# Disk (mandatory)
 ARCH_DISK='/dev/sda'
 
-# Boot partition
+# Boot partition (auto)
 ARCH_BOOT_PARTITION='/dev/sda1'
 
-# Root partition
+# Root partition (auto)
 ARCH_ROOT_PARTITION='/dev/sda2'
 
-# Disk encryption
+# Disk encryption (mandatory)
 ARCH_ENCRYPTION_ENABLED='false'
 
-# Swap: 0 or null = disable
+# Swap (mandatory): 0 or null = disable
 ARCH_SWAP_SIZE='8'
 
-# Plymouth enabled
+# Plymouth (mandatory)
 ARCH_PLYMOUTH_ENABLED='true'
 
-# GNOME Desktop: false = minimal arch
+# GNOME Desktop (mandatory): false = minimal arch
 ARCH_GNOME_ENABLED='true'
 
-# Language: change to 'custom' to use custom language properties
-ARCH_LANGUAGE='custom'
-
-# Timezone: ls /usr/share/zoneinfo/**
+# Timezone (auto): ls /usr/share/zoneinfo/**
 ARCH_TIMEZONE='Europe/Berlin'
 
-# Country used by reflector. Leave empty to disable
-ARCH_REFLECTOR_COUNTRY='Germany,France'
+# Country used by reflector (optional)
+ARCH_REFLECTOR_COUNTRY='Germany'
 
-# Locale: ls /usr/share/i18n/locales
+# Locale (mandatory): ls /usr/share/i18n/locales
 ARCH_LOCALE_LANG='de_DE'
 
-# Locale List: cat /etc/locale.gen
+# Locale List (auto): cat /etc/locale.gen
 ARCH_LOCALE_GEN_LIST=('de_DE.UTF-8 UTF-8' 'de_DE ISO-8859-1' 'de_DE@euro ISO-8859-15' 'en_US.UTF-8 UTF-8')
 
-# Console keymap: localectl list-keymaps
+# Console keymap (mandatory): localectl list-keymaps
 ARCH_VCONSOLE_KEYMAP='de-latin1-nodeadkeys'
 
-# Console font: find /usr/share/kbd/consolefonts/*.psfu.gz
+# Console font (optional): find /usr/share/kbd/consolefonts/*.psfu.gz
 ARCH_VCONSOLE_FONT='eurlatgr'
 
-# X11 keyboard layout: localectl list-x11-keymap-layouts
+# X11 keyboard layout (auto): localectl list-x11-keymap-layouts
 ARCH_KEYBOARD_LAYOUT='de'
 
-# X11 keyboard variant: localectl list-x11-keymap-variants
+# X11 keyboard variant (optional): localectl list-x11-keymap-variants
 ARCH_KEYBOARD_VARIANT='nodeadkeys'
 ```
 
