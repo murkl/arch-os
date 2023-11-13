@@ -92,8 +92,11 @@ print_whiptail_info() {
 # ----------------------------------------------------------------------------------------------------
 
 check_config() {
-    # $ARCH_REFLECTOR_COUNTRY ignored, will handle on access
-    #[ -z "${ARCH_HOSTNAME}" ] && TUI_POSITION="hostname" && return 1
+
+    # Set default values (if not already set)
+    [ -z "$ARCH_HOSTNAME" ] && ARCH_HOSTNAME="arch-os"
+    #[ -z "$ARCH_VCONSOLE_FONT" ] && ARCH_VCONSOLE_FONT="eurlatgr"
+    #[ -z "$ARCH_REFLECTOR_COUNTRY" ] && ARCH_REFLECTOR_COUNTRY="Germany,France"
 
     [ -z "${ARCH_USERNAME}" ] && TUI_POSITION="user" && return 1
     [ -z "${ARCH_PASSWORD}" ] && TUI_POSITION="password" && return 1
@@ -103,8 +106,6 @@ check_config() {
     [ -z "${ARCH_LOCALE_GEN_LIST[*]}" ] && TUI_POSITION="language" && return 1
     [ -z "${ARCH_VCONSOLE_KEYMAP}" ] && TUI_POSITION="language" && return 1
     [ -z "${ARCH_KEYBOARD_LAYOUT}" ] && TUI_POSITION="language" && return 1
-    #[ -z "${ARCH_VCONSOLE_FONT}" ] && TUI_POSITION="language" && return 1
-    #[ -z "${ARCH_KEYBOARD_VARIANT}" ] && TUI_POSITION="language" && return 1
 
     [ -z "${ARCH_DISK}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_BOOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
@@ -117,13 +118,6 @@ check_config() {
 }
 
 create_config() {
-
-    # Set default values (if not already set)
-    [ -z "$ARCH_HOSTNAME" ] && ARCH_HOSTNAME="arch-os"
-    #[ -z "$ARCH_VCONSOLE_FONT" ] && ARCH_VCONSOLE_FONT="eurlatgr"
-    #[ -z "$ARCH_REFLECTOR_COUNTRY" ] && ARCH_REFLECTOR_COUNTRY="Germany,France"
-
-    # Generate config
     {
         echo "# ${TITLE} (generated: $(date --utc '+%Y-%m-%d %H:%M') UTC)"
         echo "# This file can be saved for reuse or simply deleted."
@@ -238,7 +232,6 @@ tui_set_language() {
         ARCH_KEYBOARD_LAYOUT="$user_input_layout"
         ARCH_KEYBOARD_VARIANT="$user_input_variant"
     fi
-
 }
 
 tui_set_user() {
@@ -248,6 +241,7 @@ tui_set_user() {
         return 1
     fi
 }
+
 tui_set_password() {
     ARCH_PASSWORD=$(whiptail --title "$TITLE" --passwordbox "\nEnter Password" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
     if [ -z "$ARCH_PASSWORD" ]; then
@@ -338,6 +332,7 @@ while (true); do
     menu_entry_array+=("plymouth") && menu_entry_array+=("$(print_menu_entry "Plymouth" "${ARCH_PLYMOUTH_ENABLED}")")
     menu_entry_array+=("gnome") && menu_entry_array+=("$(print_menu_entry "GNOME" "${ARCH_GNOME_ENABLED}")")
     menu_entry_array+=("") && menu_entry_array+=("") # Empty entry
+    menu_entry_array+=("edit") && menu_entry_array+=("> Edit manually")
     if [ "$TUI_POSITION" = "install" ]; then
         menu_entry_array+=("install") && menu_entry_array+=("> Continue Installation")
     else
@@ -381,8 +376,16 @@ while (true); do
         tui_set_gnome || continue
         create_config
         ;;
+    "edit")
+        nano "$INSTALLER_CONFIG"
+        continue
+        ;;
     "install")
         check_config || continue
+        if whiptail --title "$TITLE" --yesno "> Installation Properties\n$(head -100 "$INSTALLER_CONFIG" | tail +3)" --defaultno --yes-button "Edit" --no-button "Continue" --scrolltext "$TUI_HEIGHT" "$TUI_WIDTH"; then
+            nano "$INSTALLER_CONFIG"
+            continue # Open main menu for check again
+        fi
         break # Break loop and continue installation
         ;;
     *) continue ;; # Do nothing and continue loop
