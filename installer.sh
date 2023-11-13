@@ -100,13 +100,11 @@ check_config() {
 
     [ -z "${ARCH_USERNAME}" ] && TUI_POSITION="user" && return 1
     [ -z "${ARCH_PASSWORD}" ] && TUI_POSITION="password" && return 1
-
-    [ -z "${ARCH_LOCALE_LANG}" ] && TUI_POSITION="language" && return 1
     [ -z "${ARCH_TIMEZONE}" ] && TUI_POSITION="language" && return 1
+    [ -z "${ARCH_LOCALE_LANG}" ] && TUI_POSITION="language" && return 1
     [ -z "${ARCH_LOCALE_GEN_LIST[*]}" ] && TUI_POSITION="language" && return 1
-    [ -z "${ARCH_VCONSOLE_KEYMAP}" ] && TUI_POSITION="language" && return 1
-    [ -z "${ARCH_KEYBOARD_LAYOUT}" ] && TUI_POSITION="language" && return 1
-
+    [ -z "${ARCH_VCONSOLE_KEYMAP}" ] && TUI_POSITION="keyboard" && return 1
+    [ -z "${ARCH_KEYBOARD_LAYOUT}" ] && TUI_POSITION="keyboard" && return 1
     [ -z "${ARCH_DISK}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_BOOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_ROOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
@@ -184,7 +182,7 @@ tui_set_language() {
     # Set timezone
     [ -z "$ARCH_TIMEZONE" ] && ARCH_TIMEZONE="$(curl -s http://ip-api.com/line?fields=timezone)"
     local user_input="$ARCH_TIMEZONE"
-    user_input=$(whiptail --title "$TITLE" --inputbox "\nSet Timezone (auto):" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+    user_input=$(whiptail --title "$TITLE" --inputbox "\nSet Timezone (auto)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
     if [ ! -f "/usr/share/zoneinfo/${user_input}" ]; then
         whiptail --title "$TITLE" --msgbox "Error: Timezone '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
@@ -195,7 +193,7 @@ tui_set_language() {
     # Set locale
     local user_input="$ARCH_LOCALE_LANG"
     [ -z "$user_input" ] && user_input='en_US'
-    user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert locale (for example 'en_US' or 'de_DE'):" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+    user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert locale (for example 'en_US' or 'de_DE')" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
     # shellcheck disable=SC2001
     if ! grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<<"$user_input") " /etc/locale.gen; then
         whiptail --title "$TITLE" --msgbox "Error: Locale '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
@@ -212,10 +210,16 @@ tui_set_language() {
     # Add fallback
     [[ "${ARCH_LOCALE_GEN_LIST[*]}" != *'en_US.UTF-8 UTF-8'* ]] && ARCH_LOCALE_GEN_LIST+=('en_US.UTF-8 UTF-8')
 
+    # Success
+    return 0
+}
+
+tui_set_keyboard() {
+
     # Set keyboard layout
     local user_input_layout="$ARCH_KEYBOARD_LAYOUT"
     [ -z "$user_input_layout" ] && user_input_layout='us'
-    user_input_layout=$(whiptail --title "$TITLE" --inputbox "\nPlease insert keyboard layout (for example 'de' or 'us'):" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input_layout" 3>&1 1>&2 2>&3)
+    user_input_layout=$(whiptail --title "$TITLE" --inputbox "\nPlease insert keyboard layout (for example 'de' or 'us')" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input_layout" 3>&1 1>&2 2>&3)
 
     local user_input_variant="$ARCH_KEYBOARD_VARIANT"
     user_input_variant=$(whiptail --title "$TITLE" --inputbox "\nPlease insert keyboard variant (for example 'nodeadkeys' or leave empty):" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input_variant" 3>&1 1>&2 2>&3)
@@ -234,6 +238,9 @@ tui_set_language() {
         ARCH_KEYBOARD_VARIANT="$user_input_variant"
         ARCH_VCONSOLE_KEYMAP="$keymap"
     fi
+
+    # Success
+    return 0
 }
 
 tui_set_user() {
@@ -242,6 +249,8 @@ tui_set_user() {
         whiptail --title "$TITLE" --msgbox "Error: Username is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
     fi
+    # Success
+    return 0
 }
 
 tui_set_password() {
@@ -258,10 +267,11 @@ tui_set_password() {
         whiptail --title "$TITLE" --msgbox "Error: Password not identical" "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
     fi
+    # Success
+    return 0
 }
 
 tui_set_disk() {
-
     # List available disks
     disk_array=()
     while read -r disk_line; do
@@ -278,6 +288,9 @@ tui_set_disk() {
     # Handle result
     [[ "$ARCH_DISK" = "/dev/nvm"* ]] && ARCH_BOOT_PARTITION="${ARCH_DISK}p1" || ARCH_BOOT_PARTITION="${ARCH_DISK}1"
     [[ "$ARCH_DISK" = "/dev/nvm"* ]] && ARCH_ROOT_PARTITION="${ARCH_DISK}p2" || ARCH_ROOT_PARTITION="${ARCH_DISK}2"
+
+    # Success
+    return 0
 }
 
 tui_set_encryption() {
@@ -285,6 +298,8 @@ tui_set_encryption() {
     if whiptail --title "$TITLE" --yesno "Enable Disk Encryption?" --defaultno "$TUI_HEIGHT" "$TUI_WIDTH"; then
         ARCH_ENCRYPTION_ENABLED="true"
     fi
+    # Success
+    return 0
 }
 
 tui_set_swap() {
@@ -294,6 +309,8 @@ tui_set_swap() {
         whiptail --title "$TITLE" --msgbox "Error: Swap is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
     fi
+    # Success
+    return 0
 }
 
 tui_set_plymouth() {
@@ -301,6 +318,8 @@ tui_set_plymouth() {
     if whiptail --title "$TITLE" --yesno "Install Plymouth (boot animation)?" --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
         ARCH_PLYMOUTH_ENABLED="true"
     fi
+    # Success
+    return 0
 }
 
 tui_set_gnome() {
@@ -308,6 +327,8 @@ tui_set_gnome() {
     if whiptail --title "$TITLE" --yesno "Install GNOME Desktop?" --yes-button "GNOME Desktop" --no-button "Minimal Arch" "$TUI_HEIGHT" "$TUI_WIDTH"; then
         ARCH_GNOME_ENABLED="true"
     fi
+    # Success
+    return 0
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -328,6 +349,7 @@ while (true); do
     menu_entry_array+=("user") && menu_entry_array+=("$(print_menu_entry "User" "${ARCH_USERNAME}")")
     menu_entry_array+=("password") && menu_entry_array+=("$(print_menu_entry "Password" "$([ -n "$ARCH_PASSWORD" ] && echo "******")")")
     menu_entry_array+=("language") && menu_entry_array+=("$(print_menu_entry "Language" "  ${ARCH_LOCALE_LANG}")")
+    menu_entry_array+=("keyboard") && menu_entry_array+=("$(print_menu_entry "Keyboard" "  ${ARCH_VCONSOLE_KEYMAP}")")
     menu_entry_array+=("disk") && menu_entry_array+=("$(print_menu_entry "Disk" "${ARCH_DISK}")")
     menu_entry_array+=("encrypt") && menu_entry_array+=("$(print_menu_entry "Encryption" "${ARCH_ENCRYPTION_ENABLED}")")
     menu_entry_array+=("swap") && menu_entry_array+=("$(print_menu_entry "Swap" "$([ -n "$ARCH_SWAP_SIZE" ] && { [ "$ARCH_SWAP_SIZE" != "0" ] && echo "${ARCH_SWAP_SIZE} GB" || echo "disabled"; })")")
@@ -346,16 +368,21 @@ while (true); do
 
     # Handle result
     case "${menu_selection}" in
-    "language")
-        tui_set_language || continue
-        create_config
-        ;;
+
     "user")
         tui_set_user || continue
         create_config
         ;;
     "password")
         tui_set_password || continue
+        create_config
+        ;;
+    "language")
+        tui_set_language || continue
+        create_config
+        ;;
+    "keyboard")
+        tui_set_keyboard || continue
         create_config
         ;;
     "disk")
