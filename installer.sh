@@ -814,7 +814,7 @@ SECONDS=0
         arch-chroot /mnt pacman -S --noconfirm --needed plymouth
 
         # Configure mkinitcpio
-        sed -i "s/base systemd autodetect/base systemd plymouth autodetect/g" /mnt/etc/mkinitcpio.conf
+        sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf
 
         # Install plymouth theme
         repo_url="https://github.com/murkl/plymouth-theme-arch-os.git"
