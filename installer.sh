@@ -183,8 +183,8 @@ tui_set_language() {
 
     # Set timezone
     [ -z "$ARCH_TIMEZONE" ] && ARCH_TIMEZONE="$(curl -s http://ip-api.com/line?fields=timezone)"
-    local user_input
-    user_input=$(whiptail --title "$TITLE" --inputbox "\nSet Timezone (auto):" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_TIMEZONE" 3>&1 1>&2 2>&3)
+    local user_input="$ARCH_TIMEZONE"
+    user_input=$(whiptail --title "$TITLE" --inputbox "\nSet Timezone (auto):" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
     if [ ! -f "/usr/share/zoneinfo/${user_input}" ]; then
         whiptail --title "$TITLE" --msgbox "Error: Timezone '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
@@ -193,7 +193,8 @@ tui_set_language() {
     fi
 
     # Set locale
-    local user_input='en_US'
+    local user_input="$ARCH_LOCALE_LANG"
+    [ -z "$user_input" ] && user_input='en_US'
     user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert locale (for example 'en_US' or 'de_DE'):" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
     # shellcheck disable=SC2001
     if ! grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<<"$user_input") " /etc/locale.gen; then
@@ -212,10 +213,11 @@ tui_set_language() {
     [[ "${ARCH_LOCALE_GEN_LIST[*]}" != *'en_US.UTF-8 UTF-8'* ]] && ARCH_LOCALE_GEN_LIST+=('en_US.UTF-8 UTF-8')
 
     # Set keyboard layout
-    local user_input_layout='us'
+    local user_input_layout="$ARCH_KEYBOARD_LAYOUT"
+    [ -z "$user_input_layout" ] && user_input_layout='us'
     user_input_layout=$(whiptail --title "$TITLE" --inputbox "\nPlease insert keyboard layout (for example 'de' or 'us'):" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input_layout" 3>&1 1>&2 2>&3)
 
-    local user_input_variant=''
+    local user_input_variant="$ARCH_KEYBOARD_VARIANT"
     user_input_variant=$(whiptail --title "$TITLE" --inputbox "\nPlease insert keyboard variant (for example 'nodeadkeys' or leave empty):" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input_variant" 3>&1 1>&2 2>&3)
 
     local keymap="$user_input_layout"
@@ -228,9 +230,9 @@ tui_set_language() {
         whiptail --title "$TITLE" --msgbox "Error: Keyboard layout '${keymap}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
     else
-        ARCH_VCONSOLE_KEYMAP="$keymap"
         ARCH_KEYBOARD_LAYOUT="$user_input_layout"
         ARCH_KEYBOARD_VARIANT="$user_input_variant"
+        ARCH_VCONSOLE_KEYMAP="$keymap"
     fi
 }
 
