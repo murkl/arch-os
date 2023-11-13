@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.0.3'
+VERSION='1.0.4'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -148,28 +148,28 @@ create_config() {
         echo "ARCH_GNOME_ENABLED='${ARCH_GNOME_ENABLED}'"
         echo ""
         echo "# Timezone (auto): ls /usr/share/zoneinfo/**"
-        echo "ARCH_TIMEZONE='${ARCH_TIMEZONE}'"
+        echo "ARCH_TIMEZONE='${ARCH_TIMEZONE}' # example: Europe/Berlin"
         echo ""
         echo "# Country used by reflector (optional)"
-        echo "ARCH_REFLECTOR_COUNTRY='${ARCH_REFLECTOR_COUNTRY}'"
+        echo "ARCH_REFLECTOR_COUNTRY='${ARCH_REFLECTOR_COUNTRY}' # example: Germany,France"
         echo ""
         echo "# Locale (mandatory): ls /usr/share/i18n/locales"
-        echo "ARCH_LOCALE_LANG='${ARCH_LOCALE_LANG}'"
+        echo "ARCH_LOCALE_LANG='${ARCH_LOCALE_LANG}' # example: de_DE"
         echo ""
         echo "# Locale List (auto): cat /etc/locale.gen"
         echo "ARCH_LOCALE_GEN_LIST=(${ARCH_LOCALE_GEN_LIST[*]@Q})"
         echo ""
         echo "# Console keymap (mandatory): localectl list-keymaps"
-        echo "ARCH_VCONSOLE_KEYMAP='${ARCH_VCONSOLE_KEYMAP}'"
+        echo "ARCH_VCONSOLE_KEYMAP='${ARCH_VCONSOLE_KEYMAP}' # example de-latin1-nodeadkeys"
         echo ""
         echo "# Console font (optional): find /usr/share/kbd/consolefonts/*.psfu.gz"
-        echo "ARCH_VCONSOLE_FONT='${ARCH_VCONSOLE_FONT}'"
+        echo "ARCH_VCONSOLE_FONT='${ARCH_VCONSOLE_FONT}' # example: eurlatgr"
         echo ""
         echo "# X11 keyboard layout (auto): localectl list-x11-keymap-layouts"
-        echo "ARCH_KEYBOARD_LAYOUT='${ARCH_KEYBOARD_LAYOUT}'"
+        echo "ARCH_KEYBOARD_LAYOUT='${ARCH_KEYBOARD_LAYOUT}' # example: de"
         echo ""
         echo "# X11 keyboard variant (optional): localectl list-x11-keymap-variants"
-        echo "ARCH_KEYBOARD_VARIANT='${ARCH_KEYBOARD_VARIANT}'"
+        echo "ARCH_KEYBOARD_VARIANT='${ARCH_KEYBOARD_VARIANT}' # example: nodeadkeys"
     } >"$INSTALLER_CONFIG"
 }
 
@@ -329,7 +329,8 @@ tui_set_gnome() {
 
 # shellcheck disable=SC1090
 [ -f "$INSTALLER_CONFIG" ] && source "$INSTALLER_CONFIG"
-create_config
+check_config || true # Check and init properties
+create_config        # Generate properties
 
 # ----------------------------------------------------------------------------------------------------
 # SHOW MENU
@@ -813,7 +814,7 @@ SECONDS=0
         arch-chroot /mnt pacman -S --noconfirm --needed plymouth
 
         # Configure mkinitcpio
-        sed -i "s/base systemd autodetect/base systemd plymouth autodetect/g" /mnt/etc/mkinitcpio.conf
+        sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf
 
         # Install plymouth theme
         repo_url="https://github.com/murkl/plymouth-theme-arch-os.git"
