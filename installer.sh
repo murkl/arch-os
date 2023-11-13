@@ -44,7 +44,6 @@ ARCH_BOOT_PARTITION=""
 ARCH_ROOT_PARTITION=""
 ARCH_ENCRYPTION_ENABLED=""
 ARCH_SWAP_SIZE=""
-ARCH_LANGUAGE=""
 ARCH_REFLECTOR_COUNTRY=""
 ARCH_TIMEZONE=""
 ARCH_LOCALE_LANG=""
@@ -94,17 +93,19 @@ print_whiptail_info() {
 
 check_config() {
     # $ARCH_REFLECTOR_COUNTRY ignored, will handle on access
-    [ -z "${ARCH_LANGUAGE}" ] && TUI_POSITION="language" && return 1
-    [ -z "${ARCH_TIMEZONE}" ] && TUI_POSITION="language" && return 1
-    [ -z "${ARCH_LOCALE_LANG}" ] && TUI_POSITION="language" && return 1
-    [ -z "${ARCH_LOCALE_GEN_LIST[*]}" ] && TUI_POSITION="language" && return 1
-    [ -z "${ARCH_VCONSOLE_KEYMAP}" ] && TUI_POSITION="language" && return 1
-    [ -z "${ARCH_VCONSOLE_FONT}" ] && TUI_POSITION="language" && return 1
-    [ -z "${ARCH_KEYBOARD_LAYOUT}" ] && TUI_POSITION="language" && return 1
-    [ -z "${ARCH_KEYBOARD_VARIANT}" ] && TUI_POSITION="language" && return 1
-    [ -z "${ARCH_HOSTNAME}" ] && TUI_POSITION="hostname" && return 1
+    #[ -z "${ARCH_HOSTNAME}" ] && TUI_POSITION="hostname" && return 1
+
     [ -z "${ARCH_USERNAME}" ] && TUI_POSITION="user" && return 1
     [ -z "${ARCH_PASSWORD}" ] && TUI_POSITION="password" && return 1
+
+    [ -z "${ARCH_LOCALE_LANG}" ] && TUI_POSITION="language" && return 1
+    [ -z "${ARCH_TIMEZONE}" ] && TUI_POSITION="language" && return 1
+    [ -z "${ARCH_LOCALE_GEN_LIST[*]}" ] && TUI_POSITION="language" && return 1
+    [ -z "${ARCH_VCONSOLE_KEYMAP}" ] && TUI_POSITION="language" && return 1
+    [ -z "${ARCH_KEYBOARD_LAYOUT}" ] && TUI_POSITION="language" && return 1
+    #[ -z "${ARCH_VCONSOLE_FONT}" ] && TUI_POSITION="language" && return 1
+    #[ -z "${ARCH_KEYBOARD_VARIANT}" ] && TUI_POSITION="language" && return 1
+
     [ -z "${ARCH_DISK}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_BOOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_ROOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
@@ -116,62 +117,66 @@ check_config() {
 }
 
 create_config() {
+
+    # Set default values (if not already set)
+    [ -z "$ARCH_HOSTNAME" ] && ARCH_HOSTNAME="arch-os"
+    #[ -z "$ARCH_VCONSOLE_FONT" ] && ARCH_VCONSOLE_FONT="eurlatgr"
+    #[ -z "$ARCH_REFLECTOR_COUNTRY" ] && ARCH_REFLECTOR_COUNTRY="Germany,France"
+
+    # Generate config
     {
         echo "# ${TITLE} (generated: $(date --utc '+%Y-%m-%d %H:%M') UTC)"
         echo "# This file can be saved for reuse or simply deleted."
         echo ""
-        echo "# Hostname"
+        echo "# Hostname (auto)"
         echo "ARCH_HOSTNAME='${ARCH_HOSTNAME}'"
         echo ""
-        echo "# User"
+        echo "# User (mandatory)"
         echo "ARCH_USERNAME='${ARCH_USERNAME}'"
         echo ""
-        echo "# Disk"
+        echo "# Disk (mandatory)"
         echo "ARCH_DISK='${ARCH_DISK}'"
         echo ""
-        echo "# Boot partition"
+        echo "# Boot partition (auto)"
         echo "ARCH_BOOT_PARTITION='${ARCH_BOOT_PARTITION}'"
         echo ""
-        echo "# Root partition"
+        echo "# Root partition (auto)"
         echo "ARCH_ROOT_PARTITION='${ARCH_ROOT_PARTITION}'"
         echo ""
-        echo "# Disk encryption"
+        echo "# Disk encryption (mandatory)"
         echo "ARCH_ENCRYPTION_ENABLED='${ARCH_ENCRYPTION_ENABLED}'"
         echo ""
-        echo "# Swap: 0 or null = disable"
+        echo "# Swap (mandatory): 0 or null = disable"
         echo "ARCH_SWAP_SIZE='${ARCH_SWAP_SIZE}'"
         echo ""
-        echo "# Plymouth enabled"
+        echo "# Plymouth (mandatory)"
         echo "ARCH_PLYMOUTH_ENABLED='${ARCH_PLYMOUTH_ENABLED}'"
         echo ""
-        echo "# GNOME Desktop: false = minimal arch"
+        echo "# GNOME Desktop (mandatory): false = minimal arch"
         echo "ARCH_GNOME_ENABLED='${ARCH_GNOME_ENABLED}'"
         echo ""
-        echo "# Language: change to 'custom' to use custom language properties"
-        echo "ARCH_LANGUAGE='${ARCH_LANGUAGE}'"
-        echo ""
-        echo "# Timezone: ls /usr/share/zoneinfo/**"
+        echo "# Timezone (auto): ls /usr/share/zoneinfo/**"
         echo "ARCH_TIMEZONE='${ARCH_TIMEZONE}'"
         echo ""
-        echo "# Country used by reflector. Leave empty to disable"
+        echo "# Country used by reflector (optional)"
         echo "ARCH_REFLECTOR_COUNTRY='${ARCH_REFLECTOR_COUNTRY}'"
         echo ""
-        echo "# Locale: ls /usr/share/i18n/locales"
+        echo "# Locale (mandatory): ls /usr/share/i18n/locales"
         echo "ARCH_LOCALE_LANG='${ARCH_LOCALE_LANG}'"
         echo ""
-        echo "# Locale List: cat /etc/locale.gen"
+        echo "# Locale List (auto): cat /etc/locale.gen"
         echo "ARCH_LOCALE_GEN_LIST=(${ARCH_LOCALE_GEN_LIST[*]@Q})"
         echo ""
-        echo "# Console keymap: localectl list-keymaps"
+        echo "# Console keymap (mandatory): localectl list-keymaps"
         echo "ARCH_VCONSOLE_KEYMAP='${ARCH_VCONSOLE_KEYMAP}'"
         echo ""
-        echo "# Console font: find /usr/share/kbd/consolefonts/*.psfu.gz"
+        echo "# Console font (optional): find /usr/share/kbd/consolefonts/*.psfu.gz"
         echo "ARCH_VCONSOLE_FONT='${ARCH_VCONSOLE_FONT}'"
         echo ""
-        echo "# X11 keyboard layout: localectl list-x11-keymap-layouts"
+        echo "# X11 keyboard layout (auto): localectl list-x11-keymap-layouts"
         echo "ARCH_KEYBOARD_LAYOUT='${ARCH_KEYBOARD_LAYOUT}'"
         echo ""
-        echo "# X11 keyboard variant: localectl list-x11-keymap-variants"
+        echo "# X11 keyboard variant (optional): localectl list-x11-keymap-variants"
         echo "ARCH_KEYBOARD_VARIANT='${ARCH_KEYBOARD_VARIANT}'"
     } >"$INSTALLER_CONFIG"
 }
@@ -182,51 +187,58 @@ create_config() {
 
 tui_set_language() {
 
-    # Check if language is set to custom from installer.conf
-    if [ "$ARCH_LANGUAGE" = "custom" ]; then
-        whiptail --title "$TITLE" --msgbox "> Custom Language Mode\n\nNote: Your language settings from 'installer.conf' are taken." "$TUI_HEIGHT" "$TUI_WIDTH"
-    else
-        # List available language menu entries
-        language_array=()
-        language_array+=("german") && language_array+=("German")
-        language_array+=("english") && language_array+=("English")
-        language_array+=("custom") && language_array+=("Custom")
-
-        # Show language TUI
-        ARCH_LANGUAGE=$(whiptail --title "$TITLE" --menu "\nChoose Setup Language" --nocancel --notags "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#language_array[@]} / 2) + (${#language_array[@]} % 2)))" "${language_array[@]}" 3>&1 1>&2 2>&3)
-
-        # Handle language result
-        case "${ARCH_LANGUAGE}" in
-        "english")
-            ARCH_TIMEZONE="Europe/Berlin"
-            ARCH_LOCALE_LANG="en_US"
-            ARCH_LOCALE_GEN_LIST=("en_US.UTF-8" "UTF-8")
-            ARCH_VCONSOLE_KEYMAP="en-latin1-nodeadkeys"
-            ARCH_VCONSOLE_FONT="eurlatgr"
-            ARCH_KEYBOARD_LAYOUT="en"
-            ARCH_KEYBOARD_VARIANT="nodeadkeys"
-            ARCH_REFLECTOR_COUNTRY="Germany,France"
-            ;;
-        "german")
-            ARCH_TIMEZONE="Europe/Berlin"
-            ARCH_LOCALE_LANG="de_DE"
-            ARCH_LOCALE_GEN_LIST=("de_DE.UTF-8 UTF-8" "de_DE ISO-8859-1" "de_DE@euro ISO-8859-15" "en_US.UTF-8 UTF-8")
-            ARCH_VCONSOLE_KEYMAP="de-latin1-nodeadkeys"
-            ARCH_VCONSOLE_FONT="eurlatgr"
-            ARCH_KEYBOARD_LAYOUT="de"
-            ARCH_KEYBOARD_VARIANT="nodeadkeys"
-            ARCH_REFLECTOR_COUNTRY="Germany,France"
-            ;;
-        esac
-    fi
-}
-
-tui_set_hostname() {
-    ARCH_HOSTNAME=$(whiptail --title "$TITLE" --inputbox "\nEnter Hostname" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_HOSTNAME" 3>&1 1>&2 2>&3)
-    if [ -z "$ARCH_HOSTNAME" ]; then
-        whiptail --title "$TITLE" --msgbox "Error: Hostname is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+    # Set timezone
+    [ -z "$ARCH_TIMEZONE" ] && ARCH_TIMEZONE="$(curl -s http://ip-api.com/line?fields=timezone)"
+    local user_input
+    user_input=$(whiptail --title "$TITLE" --inputbox "\nSet Timezone (auto):" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_TIMEZONE" 3>&1 1>&2 2>&3)
+    if [ ! -f "/usr/share/zoneinfo/${user_input}" ]; then
+        whiptail --title "$TITLE" --msgbox "Error: Timezone '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
+    else
+        ARCH_TIMEZONE="$user_input"
     fi
+
+    # Set locale
+    local user_input='en_US'
+    user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert locale (for example 'en_US' or 'de_DE'):" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+    # shellcheck disable=SC2001
+    if ! grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<<"$user_input") " /etc/locale.gen; then
+        whiptail --title "$TITLE" --msgbox "Error: Locale '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
+        return 1
+    else
+        ARCH_LOCALE_LANG="$user_input"
+    fi
+
+    # Set locale.gen properties
+    ARCH_LOCALE_GEN_LIST=()
+    while read -r locale_entry; do
+        ARCH_LOCALE_GEN_LIST+=("$locale_entry")
+    done < <(sed "/^#${ARCH_LOCALE_LANG}/s/^#//" /etc/locale.gen | grep "${ARCH_LOCALE_LANG}")
+    # Add fallback
+    [[ "${ARCH_LOCALE_GEN_LIST[*]}" != *'en_US.UTF-8 UTF-8'* ]] && ARCH_LOCALE_GEN_LIST+=('en_US.UTF-8 UTF-8')
+
+    # Set keyboard layout
+    local user_input_layout='us'
+    user_input_layout=$(whiptail --title "$TITLE" --inputbox "\nPlease insert keyboard layout (for example 'de' or 'us'):" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input_layout" 3>&1 1>&2 2>&3)
+
+    local user_input_variant=''
+    user_input_variant=$(whiptail --title "$TITLE" --inputbox "\nPlease insert keyboard variant (for example 'nodeadkeys' or leave empty):" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input_variant" 3>&1 1>&2 2>&3)
+
+    local keymap="$user_input_layout"
+    if [ -n "$user_input_variant" ]; then
+        keymap="${user_input_layout}-${user_input_variant}"
+    fi
+
+    # Check keymap
+    if ! localectl list-keymaps | grep -Fxq "$keymap"; then
+        whiptail --title "$TITLE" --msgbox "Error: Keyboard layout '${keymap}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
+        return 1
+    else
+        ARCH_VCONSOLE_KEYMAP="$keymap"
+        ARCH_KEYBOARD_LAYOUT="$user_input_layout"
+        ARCH_KEYBOARD_VARIANT="$user_input_variant"
+    fi
+
 }
 
 tui_set_user() {
@@ -317,10 +329,9 @@ while (true); do
 
     # Create TUI menu entries
     menu_entry_array=()
-    menu_entry_array+=("language") && menu_entry_array+=("$(print_menu_entry "Language" "${ARCH_LANGUAGE}")")
-    menu_entry_array+=("hostname") && menu_entry_array+=("$(print_menu_entry "Hostname" "${ARCH_HOSTNAME}")")
     menu_entry_array+=("user") && menu_entry_array+=("$(print_menu_entry "User" "${ARCH_USERNAME}")")
     menu_entry_array+=("password") && menu_entry_array+=("$(print_menu_entry "Password" "$([ -n "$ARCH_PASSWORD" ] && echo "******")")")
+    menu_entry_array+=("language") && menu_entry_array+=("$(print_menu_entry "Language" "  ${ARCH_LOCALE_LANG}")")
     menu_entry_array+=("disk") && menu_entry_array+=("$(print_menu_entry "Disk" "${ARCH_DISK}")")
     menu_entry_array+=("encrypt") && menu_entry_array+=("$(print_menu_entry "Encryption" "${ARCH_ENCRYPTION_ENABLED}")")
     menu_entry_array+=("swap") && menu_entry_array+=("$(print_menu_entry "Swap" "$([ -n "$ARCH_SWAP_SIZE" ] && { [ "$ARCH_SWAP_SIZE" != "0" ] && echo "${ARCH_SWAP_SIZE} GB" || echo "disabled"; })")")
@@ -340,10 +351,6 @@ while (true); do
     case "${menu_selection}" in
     "language")
         tui_set_language || continue
-        create_config
-        ;;
-    "hostname")
-        tui_set_hostname || continue
         create_config
         ;;
     "user")
@@ -621,7 +628,7 @@ SECONDS=0
     # ----------------------------------------------------------------------------------------------------
 
     echo "KEYMAP=$ARCH_VCONSOLE_KEYMAP" >/mnt/etc/vconsole.conf
-    echo "FONT=$ARCH_VCONSOLE_FONT" >>/mnt/etc/vconsole.conf
+    [ -n "$ARCH_VCONSOLE_FONT" ] && echo "FONT=$ARCH_VCONSOLE_FONT" >>/mnt/etc/vconsole.conf
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Generate Locale"
