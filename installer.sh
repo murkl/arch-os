@@ -118,7 +118,6 @@ check_config() {
 create_config() {
     {
         echo "# ${TITLE} (generated: $(date --utc '+%Y-%m-%d %H:%M') UTC)"
-        echo "# This file can be saved for reuse or simply deleted."
         echo ""
         echo "# Hostname (auto)"
         echo "ARCH_HOSTNAME='${ARCH_HOSTNAME}'"
@@ -779,6 +778,9 @@ SECONDS=0
     arch-chroot /mnt systemctl enable fstrim.timer                # SSD support
     arch-chroot /mnt systemctl enable systemd-boot-update.service # Auto bootloader update
 
+    # Out of memory killer (swap is required)
+    [ "$ARCH_SWAP_SIZE" != "0" ] && [ -n "$ARCH_SWAP_SIZE" ] && arch-chroot /mnt systemctl enable systemd-oomd.service
+
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Configure System"
     # ----------------------------------------------------------------------------------------------------
@@ -811,7 +813,7 @@ SECONDS=0
     if [ "$ARCH_PLYMOUTH_ENABLED" = "true" ]; then
 
         # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed plymouth
+        arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout plymouth
 
         # Configure mkinitcpio
         sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf
