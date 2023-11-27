@@ -36,7 +36,7 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
   <a target="_blank" href="https://www.archlinux.de/releases/2023.11.01">archlinux-2023.11.01-x86_64.iso</a>
 </p>
 
-# Features
+## Features
 
 - 100% TUI Installation
 - Installation Properties
@@ -66,30 +66,30 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 - Shellcheck approved
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os) (optional)
 
-# Installation
+## Installation
 
 <p><img src="./screenshots/installer.png" /></p>
 
-## 1. Prepare bootable USB Device
+### 1. Prepare bootable USB Device
 
 - Download latest Arch Linux ISO from **[here](https://www.archlinux.de/download)**
 - Show disk info with `lsblk`
 - Write to device: `sudo dd bs=4M if=archlinux-*.iso of=/dev/sdX status=progress`
 - Alternatively use **[Ventoy](https://www.ventoy.net/en/download.html)**
 
-## 2. Configure BIOS Settings
+### 2. Configure BIOS Settings
 
 - Disable Secure Boot
 - Set Boot Mode to UEFI
 - Set Real Time Clock to **[UTC](https://time.is/de/UTC)**
 
-## 3. Boot from USB Device
+### 3. Boot from USB Device
 
 - Load prefered keyboard layout (optional): `loadkeys de`
 - Connect to WLAN (optional): `iwctl station wlan0 connect "SSID"`
 - Run **Arch OS Installer**: `curl -Ls http://arch.webhop.me | bash`
 - Installation finished
 
-# Documentation
+## Documentation
 
 Open **[DOCS.md](DOCS.md)**
