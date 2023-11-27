@@ -52,7 +52,7 @@ ARCH_VCONSOLE_KEYMAP=""
 ARCH_VCONSOLE_FONT=""
 ARCH_KEYBOARD_LAYOUT=""
 ARCH_KEYBOARD_VARIANT=""
-ARCH_PLYMOUTH_ENABLED=""
+ARCH_BOOTSPLASH_ENABLED=""
 ARCH_GNOME_ENABLED=""
 
 # ----------------------------------------------------------------------------------------------------
@@ -110,7 +110,7 @@ check_config() {
     [ -z "${ARCH_ROOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_ENCRYPTION_ENABLED}" ] && TUI_POSITION="encrypt" && return 1
     [ -z "${ARCH_SWAP_SIZE}" ] && TUI_POSITION="swap" && return 1
-    [ -z "${ARCH_PLYMOUTH_ENABLED}" ] && TUI_POSITION="plymouth" && return 1
+    [ -z "${ARCH_BOOTSPLASH_ENABLED}" ] && TUI_POSITION="plymouth" && return 1
     [ -z "${ARCH_GNOME_ENABLED}" ] && TUI_POSITION="gnome" && return 1
     TUI_POSITION="install"
 }
@@ -140,8 +140,8 @@ create_config() {
         echo "# Swap (mandatory): 0 or null = disable"
         echo "ARCH_SWAP_SIZE='${ARCH_SWAP_SIZE}'"
         echo ""
-        echo "# Plymouth (mandatory)"
-        echo "ARCH_PLYMOUTH_ENABLED='${ARCH_PLYMOUTH_ENABLED}'"
+        echo "# Bootsplash (mandatory)"
+        echo "ARCH_BOOTSPLASH_ENABLED='${ARCH_BOOTSPLASH_ENABLED}'"
         echo ""
         echo "# GNOME Desktop (mandatory): false = minimal arch"
         echo "ARCH_GNOME_ENABLED='${ARCH_GNOME_ENABLED}'"
@@ -305,9 +305,9 @@ tui_set_swap() {
 }
 
 tui_set_plymouth() {
-    ARCH_PLYMOUTH_ENABLED="false"
-    if whiptail --title "$TITLE" --yesno "Install Plymouth (boot animation)?" --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
-        ARCH_PLYMOUTH_ENABLED="true"
+    ARCH_BOOTSPLASH_ENABLED="false"
+    if whiptail --title "$TITLE" --yesno "Install Bootsplash Animation (plymouth)?" --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+        ARCH_BOOTSPLASH_ENABLED="true"
     fi
     # Success
     return 0
@@ -353,7 +353,7 @@ while (true); do
     menu_entry_array+=("disk") && menu_entry_array+=("$(print_menu_entry "Disk" "${ARCH_DISK}")")
     menu_entry_array+=("encrypt") && menu_entry_array+=("$(print_menu_entry "Encryption" "${ARCH_ENCRYPTION_ENABLED}")")
     menu_entry_array+=("swap") && menu_entry_array+=("$(print_menu_entry "Swap" "$([ -n "$ARCH_SWAP_SIZE" ] && { [ "$ARCH_SWAP_SIZE" != "0" ] && echo "${ARCH_SWAP_SIZE} GB" || echo "disabled"; })")")
-    menu_entry_array+=("plymouth") && menu_entry_array+=("$(print_menu_entry "Plymouth" "${ARCH_PLYMOUTH_ENABLED}")")
+    menu_entry_array+=("plymouth") && menu_entry_array+=("$(print_menu_entry "Bootsplash" "${ARCH_BOOTSPLASH_ENABLED}")")
     menu_entry_array+=("gnome") && menu_entry_array+=("$(print_menu_entry "GNOME" "${ARCH_GNOME_ENABLED}")")
     menu_entry_array+=("") && menu_entry_array+=("") # Empty entry
     menu_entry_array+=("edit") && menu_entry_array+=("> Edit manually")
@@ -807,10 +807,10 @@ SECONDS=0
     sed -i 's/^#SudoLoop/SudoLoop/g' /mnt/etc/paru.conf
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Install Plymouth"
+    print_whiptail_info "Install Bootsplash"
     # ----------------------------------------------------------------------------------------------------
 
-    if [ "$ARCH_PLYMOUTH_ENABLED" = "true" ]; then
+    if [ "$ARCH_BOOTSPLASH_ENABLED" = "true" ]; then
 
         # Install packages
         arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout plymouth

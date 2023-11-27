@@ -73,8 +73,8 @@ ARCH_ENCRYPTION_ENABLED='false'
 # Swap (mandatory): 0 or null = disable
 ARCH_SWAP_SIZE='8'
 
-# Plymouth (mandatory)
-ARCH_PLYMOUTH_ENABLED='true'
+# Bootsplash (mandatory)
+ARCH_BOOTSPLASH_ENABLED='true'
 
 # GNOME Desktop (mandatory): false = minimal arch
 ARCH_GNOME_ENABLED='true'
