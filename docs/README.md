@@ -92,4 +92,4 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 
 # Documentation
 
-Open Documentation: **[DOCS.md](DOCS.md)**
+Open **[DOCS.md](DOCS.md)**
