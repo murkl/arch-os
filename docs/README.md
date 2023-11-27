@@ -36,13 +36,7 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
   <a target="_blank" href="https://www.archlinux.de/releases/2023.11.01">archlinux-2023.11.01-x86_64.iso</a>
 </p>
 
-# Contents
-
-1. [Features](#features)
-2. [Installation](#installation)
-3. [Documentation](#documentation)
-
-## Features
+# Features
 
 - 100% TUI Installation
 - Installation Properties
@@ -72,7 +66,7 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 - Shellcheck approved
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os) (optional)
 
-## Installation
+# Installation
 
 <p><img src="./screenshots/installer.png" /></p>
 
@@ -96,6 +90,6 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 - Run **Arch OS Installer**: `curl -Ls http://arch.webhop.me | bash`
 - Installation finished
 
-## Documentation
+# Documentation
 
 Open Documentation: **[DOCS.md](DOCS.md)**
