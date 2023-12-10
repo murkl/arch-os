@@ -1,7 +1,7 @@
 <h1 align="center">
   <img src="./logo.svg" width="150" height="150"/>
   <p style="margin-top: 4pt">
-    Arch OS <strong align="center" style="font-size: 10pt;">for audiophiles</strong>
+    Arch OS | <strong align="center" style="font-size: 10pt;">for audiophiles</strong>
   </p>
 </h1>
 
