@@ -2,11 +2,10 @@
   <img src="./logo.svg" width="150" height="150"/>
   <br>
   Arch OS
+  <p style="font-size: 11pt; margin-top: 4pt;">for audiophiles</p>
 </h1>
 
-<p align="center"><strong>for audiophiles</strong></p>
-
-<p align="center" style="margin-top:24pt"><strong>Run TUI Installer from booted Arch ISO</strong></p>
+<p align="center" style="margin-top:4pt"><strong>Run TUI Installer from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a></strong></p>
 
 <div align="center">
 
@@ -33,17 +32,17 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 <p align="center">
   <strong>Test successful</strong>
   <br>
-  <a target="_blank" href="https://www.archlinux.de/releases/2023.11.01">archlinux-2023.11.01-x86_64.iso</a>
+  <a target="_blank" href="https://www.archlinux.de/releases/2023.12.01">archlinux-2023.12.01-x86_64.iso</a>
 </p>
 
 ## Features
 
-- For Audiophiles (optional)
+- VM Support
 - 100% TUI Installation
 - Installation Properties
-- VM Support
 - Minimal GNOME Desktop + Autologin (optional)
 - Linux Zen Kernel
+- For Audiophiles (optional)
 - Disk Encryption (optional)
 - Systemd Bootloader (auto updated)
 - Wayland optimized
