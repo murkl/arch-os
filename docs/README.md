@@ -1,12 +1,12 @@
-<h1 align="center">
+<h1 align="center" style="margin-bottom: 0pt">
   <img src="./logo.svg" width="150" height="150"/>
   <br>
   Arch OS
 </h1>
 
-<p align="center">
-  <strong>Run TUI Installer from booted Arch ISO</strong>
-</p>
+<p align="center"><strong>for audiophiles</strong></p>
+
+<p align="center" style="margin-top:24pt"><strong>Run TUI Installer from booted Arch ISO</strong></p>
 
 <div align="center">
 
@@ -19,7 +19,7 @@ curl -Ls http://arch.webhop.me | bash
 <p align="center"><img src="./screenshots/desktop.jpg" /></p>
 
 <p align="center">
-This project aims to provide a minimal and solid Arch Linux base for desktop usage and an easy and fast to use installer for that.
+This project aims to provide a minimal and solid audiophile Arch Linux base for desktop usage and an easy and fast to use installer for that.
 Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Helper, enabled MultiLib and some more features. 
 </p>
 
@@ -38,6 +38,7 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 
 ## Features
 
+- For Audiophiles (optional)
 - 100% TUI Installation
 - Installation Properties
 - VM Support
@@ -92,4 +93,38 @@ Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Hel
 
 ## Documentation
 
-Open **[DOCS.md](DOCS.md)**
+These are the general commands to maintain your Arch OS.
+
+### Update system
+
+```
+paru -Syu
+```
+
+### Search package
+
+```
+paru -Ss <my search string>
+```
+
+### Install package
+
+```
+paru -S <my package>
+```
+
+### List installed packages
+
+```
+paru -Qe
+```
+
+### Remove package
+
+```
+paru -Rsn <my package>
+```
+
+### More Information
+
+Open Documentation: **[DOCS.md](DOCS.md)**
