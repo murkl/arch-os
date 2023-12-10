@@ -2,10 +2,10 @@
   <img src="./logo.svg" width="150" height="150"/>
   <br>
   Arch OS
-  <p style="font-size: 11pt; margin-top: 4pt;">for audiophiles</p>
+  <h4 align="center" style="margin-top: 0pt;">for audiophiles</h4>
 </h1>
 
-<p align="center" style="margin-top:4pt"><strong>Run TUI Installer from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a></strong></p>
+<p align="center" style="margin-top: 24pt"><strong>Run TUI Installer from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a></strong></p>
 
 <div align="center">
 
