@@ -36,6 +36,7 @@ Installs a Arch Linux Distribution including GNOME as Desktop, preinstalled Paru
 ## Features
 
 - VM Support
+- UEFI only
 - 100% TUI Installation
 - Installation Properties
 - Minimal GNOME Desktop + Autologin (optional)
