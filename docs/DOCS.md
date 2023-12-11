@@ -43,6 +43,11 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Nautilus Extensions: [folder-color-nautilus](https://aur.archlinux.org/packages/folder-color-nautilus)
 - GNOME Extensions: [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/), [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/), [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
 
+### For Audiophiles
+
+Further functions will be tested & added to Arch OS step by step.
+For custom audio configuration, check out the official [Arch Wiki...](https://wiki.archlinux.org/title/PipeWire)
+
 ## Installation Properties
 
 The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as defaults for Arch OS setup menu. This file provides some additional properties to modify your Arch OS installation.
