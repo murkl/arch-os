@@ -1,7 +1,7 @@
 <h1 align="center">
   <img src="./logo.svg" width="150" height="150"/>
   <p style="margin-top: 4pt">
-    Arch OS | <strong align="center" style="font-size: 10pt;">for audiophiles</strong>
+    Arch OS | <strong align="center" style="font-size: 11.5pt;">for audiophiles</strong>
   </p>
 </h1>
 
@@ -18,8 +18,8 @@ curl -Ls http://arch.webhop.me | bash
 <p align="center"><img src="./screenshots/desktop.jpg" /></p>
 
 <p align="center">
-This project aims to provide a minimal and solid audiophile Arch Linux base for desktop usage and an easy and fast to use installer for that.
-Installs a Arch Linux Distribution including GNOME, preinstalled Paru as AUR Helper, enabled MultiLib and some more features. 
+This project aims to provide a minimal and solid Arch Linux base for desktop usage and an easy and fast to use installer for that.
+Installs a Arch Linux Distribution including GNOME as Desktop, preinstalled Paru as AUR Helper, enabled MultiLib, presettings for audiophiles and some more features. 
 </p>
 
 <p align="center"><strong>Sole OS on a single disk</strong></p>
