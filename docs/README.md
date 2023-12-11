@@ -90,7 +90,7 @@ Installs a Arch Linux Distribution including GNOME as Desktop, preinstalled Paru
 - Run **Arch OS Installer**: `curl -Ls http://arch.webhop.me | bash`
 - Installation finished
 
-## Documentation
+## Usage
 
 These are the general commands to maintain your Arch OS.
 
@@ -124,6 +124,6 @@ paru -Qe
 paru -Rsn <my package>
 ```
 
-### More Information
+## More Information
 
 Open Documentation: **[DOCS.md](DOCS.md)**
