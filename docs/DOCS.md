@@ -45,7 +45,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 
 ## Installation Properties
 
-The `installer.conf` with all properties (except `ARCH_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as defaults for Arch OS setup menu. This file provides some additional properties to modify your Arch OS installation.
+The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as defaults for Arch OS setup menu. This file provides some additional properties to modify your Arch OS installation.
 
 **Note:** The `installer.conf` will copied to the new user's home directory during installation. This file can be saved for reuse or simply deleted.
 
@@ -53,55 +53,58 @@ The `installer.conf` with all properties (except `ARCH_PASSWORD` for better secu
 
 ```
 # Hostname (auto)
-ARCH_HOSTNAME='arch-os'
+ARCH_OS_HOSTNAME='arch-os'
 
 # User (mandatory)
-ARCH_USERNAME='mortiz'
+ARCH_OS_USERNAME='mortiz'
 
 # Disk (mandatory)
-ARCH_DISK='/dev/sda'
+ARCH_OS_DISK='/dev/sda'
 
 # Boot partition (auto)
-ARCH_BOOT_PARTITION='/dev/sda1'
+ARCH_OS_BOOT_PARTITION='/dev/sda1'
 
 # Root partition (auto)
-ARCH_ROOT_PARTITION='/dev/sda2'
+ARCH_OS_ROOT_PARTITION='/dev/sda2'
 
 # Disk encryption (mandatory)
-ARCH_ENCRYPTION_ENABLED='false'
+ARCH_OS_ENCRYPTION_ENABLED='false'
 
 # Swap (mandatory): 0 or null = disable
-ARCH_SWAP_SIZE='8'
+ARCH_OS_SWAP_SIZE='8'
 
 # Bootsplash (mandatory)
-ARCH_BOOTSPLASH_ENABLED='true'
+ARCH_OS_BOOTSPLASH_ENABLED='true'
 
 # GNOME Desktop (mandatory): false = minimal arch
-ARCH_GNOME_ENABLED='true'
+ARCH_OS_GNOME_ENABLED='true'
 
 # Timezone (auto): ls /usr/share/zoneinfo/**
-ARCH_TIMEZONE='Europe/Berlin'
+ARCH_OS_TIMEZONE='Europe/Berlin'
 
 # Country used by reflector (optional)
-ARCH_REFLECTOR_COUNTRY='Germany'
+ARCH_OS_REFLECTOR_COUNTRY='Germany'
 
 # Locale (mandatory): ls /usr/share/i18n/locales
-ARCH_LOCALE_LANG='de_DE'
+ARCH_OS_LOCALE_LANG='de_DE'
 
 # Locale List (auto): cat /etc/locale.gen
-ARCH_LOCALE_GEN_LIST=('de_DE.UTF-8 UTF-8' 'de_DE ISO-8859-1' 'de_DE@euro ISO-8859-15' 'en_US.UTF-8 UTF-8')
+ARCH_OS_LOCALE_GEN_LIST=('de_DE.UTF-8 UTF-8' 'de_DE ISO-8859-1' 'de_DE@euro ISO-8859-15' 'en_US.UTF-8 UTF-8')
 
 # Console keymap (mandatory): localectl list-keymaps
-ARCH_VCONSOLE_KEYMAP='de-latin1-nodeadkeys'
+ARCH_OS_VCONSOLE_KEYMAP='de-latin1-nodeadkeys'
 
 # Console font (optional): find /usr/share/kbd/consolefonts/*.psfu.gz
-ARCH_VCONSOLE_FONT='eurlatgr'
+ARCH_OS_VCONSOLE_FONT='eurlatgr'
 
 # X11 keyboard layout (auto): localectl list-x11-keymap-layouts
-ARCH_KEYBOARD_LAYOUT='de'
+ARCH_OS_KEYBOARD_LAYOUT='de'
 
 # X11 keyboard variant (optional): localectl list-x11-keymap-variants
-ARCH_KEYBOARD_VARIANT='nodeadkeys'
+ARCH_OS_KEYBOARD_VARIANT='nodeadkeys'
+
+# Kernel
+ARCH_OS_KERNEL='linux-zen'
 ```
 
 ## Rescue & Recovery
@@ -148,7 +151,7 @@ _**Example**_
 This packages will be installed during minimal Arch without GNOME installation (180 packages in total):
 
 ```
-base base-devel linux linux-firmware networkmanager pacman-contrib reflector git nano bash-completion pkgfile [microcode_pkg]
+base base-devel linux-zen linux-firmware networkmanager pacman-contrib reflector git nano bash-completion pkgfile [microcode_pkg]
 ```
 
 ### Core Services

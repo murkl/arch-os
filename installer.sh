@@ -36,24 +36,25 @@ PROGRESS_TOTAL=33
 # INSTALLATION VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
-ARCH_USERNAME=""
-ARCH_HOSTNAME=""
-ARCH_PASSWORD=""
-ARCH_DISK=""
-ARCH_BOOT_PARTITION=""
-ARCH_ROOT_PARTITION=""
-ARCH_ENCRYPTION_ENABLED=""
-ARCH_SWAP_SIZE=""
-ARCH_REFLECTOR_COUNTRY=""
-ARCH_TIMEZONE=""
-ARCH_LOCALE_LANG=""
-ARCH_LOCALE_GEN_LIST=()
-ARCH_VCONSOLE_KEYMAP=""
-ARCH_VCONSOLE_FONT=""
-ARCH_KEYBOARD_LAYOUT=""
-ARCH_KEYBOARD_VARIANT=""
-ARCH_BOOTSPLASH_ENABLED=""
-ARCH_GNOME_ENABLED=""
+ARCH_OS_KERNEL=""
+ARCH_OS_USERNAME=""
+ARCH_OS_HOSTNAME=""
+ARCH_OS_PASSWORD=""
+ARCH_OS_DISK=""
+ARCH_OS_BOOT_PARTITION=""
+ARCH_OS_ROOT_PARTITION=""
+ARCH_OS_ENCRYPTION_ENABLED=""
+ARCH_OS_SWAP_SIZE=""
+ARCH_OS_REFLECTOR_COUNTRY=""
+ARCH_OS_TIMEZONE=""
+ARCH_OS_LOCALE_LANG=""
+ARCH_OS_LOCALE_GEN_LIST=()
+ARCH_OS_VCONSOLE_KEYMAP=""
+ARCH_OS_VCONSOLE_FONT=""
+ARCH_OS_KEYBOARD_LAYOUT=""
+ARCH_OS_KEYBOARD_VARIANT=""
+ARCH_OS_BOOTSPLASH_ENABLED=""
+ARCH_OS_GNOME_ENABLED=""
 
 # ----------------------------------------------------------------------------------------------------
 # DEPENDENCIES
@@ -94,24 +95,25 @@ print_whiptail_info() {
 check_config() {
 
     # Set default values (if not already set)
-    [ -z "$ARCH_HOSTNAME" ] && ARCH_HOSTNAME="arch-os"
-    #[ -z "$ARCH_VCONSOLE_FONT" ] && ARCH_VCONSOLE_FONT="eurlatgr"
-    #[ -z "$ARCH_REFLECTOR_COUNTRY" ] && ARCH_REFLECTOR_COUNTRY="Germany,France"
+    [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
+    [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
+    #[ -z "$ARCH_OS_VCONSOLE_FONT" ] && ARCH_OS_VCONSOLE_FONT="eurlatgr"
+    #[ -z "$ARCH_OS_REFLECTOR_COUNTRY" ] && ARCH_OS_REFLECTOR_COUNTRY="Germany,France"
 
-    [ -z "${ARCH_USERNAME}" ] && TUI_POSITION="user" && return 1
-    [ -z "${ARCH_PASSWORD}" ] && TUI_POSITION="password" && return 1
-    [ -z "${ARCH_TIMEZONE}" ] && TUI_POSITION="language" && return 1
-    [ -z "${ARCH_LOCALE_LANG}" ] && TUI_POSITION="language" && return 1
-    [ -z "${ARCH_LOCALE_GEN_LIST[*]}" ] && TUI_POSITION="language" && return 1
-    [ -z "${ARCH_VCONSOLE_KEYMAP}" ] && TUI_POSITION="keyboard" && return 1
-    [ -z "${ARCH_KEYBOARD_LAYOUT}" ] && TUI_POSITION="keyboard" && return 1
-    [ -z "${ARCH_DISK}" ] && TUI_POSITION="disk" && return 1
-    [ -z "${ARCH_BOOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
-    [ -z "${ARCH_ROOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
-    [ -z "${ARCH_ENCRYPTION_ENABLED}" ] && TUI_POSITION="encrypt" && return 1
-    [ -z "${ARCH_SWAP_SIZE}" ] && TUI_POSITION="swap" && return 1
-    [ -z "${ARCH_BOOTSPLASH_ENABLED}" ] && TUI_POSITION="plymouth" && return 1
-    [ -z "${ARCH_GNOME_ENABLED}" ] && TUI_POSITION="gnome" && return 1
+    [ -z "${ARCH_OS_USERNAME}" ] && TUI_POSITION="user" && return 1
+    [ -z "${ARCH_OS_PASSWORD}" ] && TUI_POSITION="password" && return 1
+    [ -z "${ARCH_OS_TIMEZONE}" ] && TUI_POSITION="language" && return 1
+    [ -z "${ARCH_OS_LOCALE_LANG}" ] && TUI_POSITION="language" && return 1
+    [ -z "${ARCH_OS_LOCALE_GEN_LIST[*]}" ] && TUI_POSITION="language" && return 1
+    [ -z "${ARCH_OS_VCONSOLE_KEYMAP}" ] && TUI_POSITION="keyboard" && return 1
+    [ -z "${ARCH_OS_KEYBOARD_LAYOUT}" ] && TUI_POSITION="keyboard" && return 1
+    [ -z "${ARCH_OS_DISK}" ] && TUI_POSITION="disk" && return 1
+    [ -z "${ARCH_OS_BOOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
+    [ -z "${ARCH_OS_ROOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
+    [ -z "${ARCH_OS_ENCRYPTION_ENABLED}" ] && TUI_POSITION="encrypt" && return 1
+    [ -z "${ARCH_OS_SWAP_SIZE}" ] && TUI_POSITION="swap" && return 1
+    [ -z "${ARCH_OS_BOOTSPLASH_ENABLED}" ] && TUI_POSITION="plymouth" && return 1
+    [ -z "${ARCH_OS_GNOME_ENABLED}" ] && TUI_POSITION="gnome" && return 1
     TUI_POSITION="install"
 }
 
@@ -120,55 +122,58 @@ create_config() {
         echo "# ${TITLE} (generated: $(date --utc '+%Y-%m-%d %H:%M') UTC)"
         echo ""
         echo "# Hostname (auto)"
-        echo "ARCH_HOSTNAME='${ARCH_HOSTNAME}'"
+        echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}'"
         echo ""
         echo "# User (mandatory)"
-        echo "ARCH_USERNAME='${ARCH_USERNAME}'"
+        echo "ARCH_OS_USERNAME='${ARCH_OS_USERNAME}'"
         echo ""
         echo "# Disk (mandatory)"
-        echo "ARCH_DISK='${ARCH_DISK}'"
+        echo "ARCH_OS_DISK='${ARCH_OS_DISK}'"
         echo ""
         echo "# Boot partition (auto)"
-        echo "ARCH_BOOT_PARTITION='${ARCH_BOOT_PARTITION}'"
+        echo "ARCH_OS_BOOT_PARTITION='${ARCH_OS_BOOT_PARTITION}'"
         echo ""
         echo "# Root partition (auto)"
-        echo "ARCH_ROOT_PARTITION='${ARCH_ROOT_PARTITION}'"
+        echo "ARCH_OS_ROOT_PARTITION='${ARCH_OS_ROOT_PARTITION}'"
         echo ""
         echo "# Disk encryption (mandatory)"
-        echo "ARCH_ENCRYPTION_ENABLED='${ARCH_ENCRYPTION_ENABLED}'"
+        echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}'"
         echo ""
         echo "# Swap (mandatory): 0 or null = disable"
-        echo "ARCH_SWAP_SIZE='${ARCH_SWAP_SIZE}'"
+        echo "ARCH_OS_SWAP_SIZE='${ARCH_OS_SWAP_SIZE}'"
         echo ""
         echo "# Bootsplash (mandatory)"
-        echo "ARCH_BOOTSPLASH_ENABLED='${ARCH_BOOTSPLASH_ENABLED}'"
+        echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
         echo ""
         echo "# GNOME Desktop (mandatory): false = minimal arch"
-        echo "ARCH_GNOME_ENABLED='${ARCH_GNOME_ENABLED}'"
+        echo "ARCH_OS_GNOME_ENABLED='${ARCH_OS_GNOME_ENABLED}'"
         echo ""
         echo "# Timezone (auto): ls /usr/share/zoneinfo/**"
-        echo "ARCH_TIMEZONE='${ARCH_TIMEZONE}' # example: Europe/Berlin"
+        echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}' # example: Europe/Berlin"
         echo ""
         echo "# Country used by reflector (optional)"
-        echo "ARCH_REFLECTOR_COUNTRY='${ARCH_REFLECTOR_COUNTRY}' # example: Germany,France"
+        echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}' # example: Germany,France"
         echo ""
         echo "# Locale (mandatory): ls /usr/share/i18n/locales"
-        echo "ARCH_LOCALE_LANG='${ARCH_LOCALE_LANG}' # example: de_DE"
+        echo "ARCH_OS_LOCALE_LANG='${ARCH_OS_LOCALE_LANG}' # example: de_DE"
         echo ""
         echo "# Locale List (auto): cat /etc/locale.gen"
-        echo "ARCH_LOCALE_GEN_LIST=(${ARCH_LOCALE_GEN_LIST[*]@Q})"
+        echo "ARCH_OS_LOCALE_GEN_LIST=(${ARCH_OS_LOCALE_GEN_LIST[*]@Q})"
         echo ""
         echo "# Console keymap (mandatory): localectl list-keymaps"
-        echo "ARCH_VCONSOLE_KEYMAP='${ARCH_VCONSOLE_KEYMAP}' # example de-latin1-nodeadkeys"
+        echo "ARCH_OS_VCONSOLE_KEYMAP='${ARCH_OS_VCONSOLE_KEYMAP}' # example de-latin1-nodeadkeys"
         echo ""
         echo "# Console font (optional): find /usr/share/kbd/consolefonts/*.psfu.gz"
-        echo "ARCH_VCONSOLE_FONT='${ARCH_VCONSOLE_FONT}' # example: eurlatgr"
+        echo "ARCH_OS_VCONSOLE_FONT='${ARCH_OS_VCONSOLE_FONT}' # example: eurlatgr"
         echo ""
         echo "# X11 keyboard layout (auto): localectl list-x11-keymap-layouts"
-        echo "ARCH_KEYBOARD_LAYOUT='${ARCH_KEYBOARD_LAYOUT}' # example: de"
+        echo "ARCH_OS_KEYBOARD_LAYOUT='${ARCH_OS_KEYBOARD_LAYOUT}' # example: de"
         echo ""
         echo "# X11 keyboard variant (optional): localectl list-x11-keymap-variants"
-        echo "ARCH_KEYBOARD_VARIANT='${ARCH_KEYBOARD_VARIANT}' # example: nodeadkeys"
+        echo "ARCH_OS_KEYBOARD_VARIANT='${ARCH_OS_KEYBOARD_VARIANT}' # example: nodeadkeys"
+        echo ""
+        echo "# Kernel"
+        echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}' # linux, linux-lts linux-zen, linux-hardened"
     } >"$INSTALLER_CONFIG"
 }
 
@@ -179,18 +184,18 @@ create_config() {
 tui_set_language() {
 
     # Set timezone
-    [ -z "$ARCH_TIMEZONE" ] && ARCH_TIMEZONE="$(curl -s http://ip-api.com/line?fields=timezone)"
-    local user_input="$ARCH_TIMEZONE"
+    [ -z "$ARCH_OS_TIMEZONE" ] && ARCH_OS_TIMEZONE="$(curl -s http://ip-api.com/line?fields=timezone)"
+    local user_input="$ARCH_OS_TIMEZONE"
     user_input=$(whiptail --title "$TITLE" --inputbox "\nSet Timezone (auto)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
     if [ ! -f "/usr/share/zoneinfo/${user_input}" ]; then
         whiptail --title "$TITLE" --msgbox "Error: Timezone '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
     else
-        ARCH_TIMEZONE="$user_input"
+        ARCH_OS_TIMEZONE="$user_input"
     fi
 
     # Set locale
-    local user_input="$ARCH_LOCALE_LANG"
+    local user_input="$ARCH_OS_LOCALE_LANG"
     [ -z "$user_input" ] && user_input='en_US'
     user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert locale (for example 'en_US' or 'de_DE')" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
     # shellcheck disable=SC2001
@@ -198,16 +203,16 @@ tui_set_language() {
         whiptail --title "$TITLE" --msgbox "Error: Locale '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
     else
-        ARCH_LOCALE_LANG="$user_input"
+        ARCH_OS_LOCALE_LANG="$user_input"
     fi
 
     # Set locale.gen properties
-    ARCH_LOCALE_GEN_LIST=()
+    ARCH_OS_LOCALE_GEN_LIST=()
     while read -r locale_entry; do
-        ARCH_LOCALE_GEN_LIST+=("$locale_entry")
-    done < <(sed "/^#${ARCH_LOCALE_LANG}/s/^#//" /etc/locale.gen | grep "${ARCH_LOCALE_LANG}")
+        ARCH_OS_LOCALE_GEN_LIST+=("$locale_entry")
+    done < <(sed "/^#${ARCH_OS_LOCALE_LANG}/s/^#//" /etc/locale.gen | grep "${ARCH_OS_LOCALE_LANG}")
     # Add fallback
-    [[ "${ARCH_LOCALE_GEN_LIST[*]}" != *'en_US.UTF-8 UTF-8'* ]] && ARCH_LOCALE_GEN_LIST+=('en_US.UTF-8 UTF-8')
+    [[ "${ARCH_OS_LOCALE_GEN_LIST[*]}" != *'en_US.UTF-8 UTF-8'* ]] && ARCH_OS_LOCALE_GEN_LIST+=('en_US.UTF-8 UTF-8')
 
     # Success
     return 0
@@ -216,7 +221,7 @@ tui_set_language() {
 tui_set_keyboard() {
 
     # Set keyboard layout
-    local user_input="$ARCH_KEYBOARD_LAYOUT"
+    local user_input="$ARCH_OS_KEYBOARD_LAYOUT"
     [ -z "$user_input" ] && user_input='us'
     user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert keyboard layout (for example 'de' or 'us')" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
 
@@ -225,9 +230,9 @@ tui_set_keyboard() {
         whiptail --title "$TITLE" --msgbox "Error: Keyboard layout '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
     else
-        ARCH_VCONSOLE_KEYMAP="$user_input"
-        ARCH_KEYBOARD_LAYOUT="$user_input"
-        #ARCH_KEYBOARD_VARIANT=""
+        ARCH_OS_VCONSOLE_KEYMAP="$user_input"
+        ARCH_OS_KEYBOARD_LAYOUT="$user_input"
+        #ARCH_OS_KEYBOARD_VARIANT=""
     fi
 
     # Success
@@ -235,8 +240,8 @@ tui_set_keyboard() {
 }
 
 tui_set_user() {
-    ARCH_USERNAME=$(whiptail --title "$TITLE" --inputbox "\nEnter Username" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_USERNAME" 3>&1 1>&2 2>&3)
-    if [ -z "$ARCH_USERNAME" ]; then
+    ARCH_OS_USERNAME=$(whiptail --title "$TITLE" --inputbox "\nEnter Username" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_OS_USERNAME" 3>&1 1>&2 2>&3)
+    if [ -z "$ARCH_OS_USERNAME" ]; then
         whiptail --title "$TITLE" --msgbox "Error: Username is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
     fi
@@ -245,16 +250,16 @@ tui_set_user() {
 }
 
 tui_set_password() {
-    ARCH_PASSWORD=$(whiptail --title "$TITLE" --passwordbox "\nEnter Password" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
-    if [ -z "$ARCH_PASSWORD" ]; then
+    ARCH_OS_PASSWORD=$(whiptail --title "$TITLE" --passwordbox "\nEnter Password" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
+    if [ -z "$ARCH_OS_PASSWORD" ]; then
         whiptail --title "$TITLE" --msgbox "Error: Password is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
     fi
 
     local password_check
     password_check=$(whiptail --title "$TITLE" --passwordbox "\nEnter Password (again)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
-    if [ "$ARCH_PASSWORD" != "$password_check" ]; then
-        ARCH_PASSWORD=""
+    if [ "$ARCH_OS_PASSWORD" != "$password_check" ]; then
+        ARCH_OS_PASSWORD=""
         whiptail --title "$TITLE" --msgbox "Error: Password not identical" "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
     fi
@@ -274,29 +279,29 @@ tui_set_disk() {
     [ "${#disk_array[@]}" = "0" ] && whiptail --title "$TITLE" --msgbox "No Disk found" "$TUI_HEIGHT" "$TUI_WIDTH" && return 1
 
     # Show TUI (select disk)
-    ARCH_DISK=$(whiptail --title "$TITLE" --menu "\nChoose Installation Disk" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "${#disk_array[@]}" "${disk_array[@]}" 3>&1 1>&2 2>&3)
+    ARCH_OS_DISK=$(whiptail --title "$TITLE" --menu "\nChoose Installation Disk" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "${#disk_array[@]}" "${disk_array[@]}" 3>&1 1>&2 2>&3)
 
     # Handle result
-    [[ "$ARCH_DISK" = "/dev/nvm"* ]] && ARCH_BOOT_PARTITION="${ARCH_DISK}p1" || ARCH_BOOT_PARTITION="${ARCH_DISK}1"
-    [[ "$ARCH_DISK" = "/dev/nvm"* ]] && ARCH_ROOT_PARTITION="${ARCH_DISK}p2" || ARCH_ROOT_PARTITION="${ARCH_DISK}2"
+    [[ "$ARCH_OS_DISK" = "/dev/nvm"* ]] && ARCH_OS_BOOT_PARTITION="${ARCH_OS_DISK}p1" || ARCH_OS_BOOT_PARTITION="${ARCH_OS_DISK}1"
+    [[ "$ARCH_OS_DISK" = "/dev/nvm"* ]] && ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}p2" || ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}2"
 
     # Success
     return 0
 }
 
 tui_set_encryption() {
-    ARCH_ENCRYPTION_ENABLED="false"
+    ARCH_OS_ENCRYPTION_ENABLED="false"
     if whiptail --title "$TITLE" --yesno "Enable Disk Encryption?" --defaultno "$TUI_HEIGHT" "$TUI_WIDTH"; then
-        ARCH_ENCRYPTION_ENABLED="true"
+        ARCH_OS_ENCRYPTION_ENABLED="true"
     fi
     # Success
     return 0
 }
 
 tui_set_swap() {
-    ARCH_SWAP_SIZE="$(($(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 / 1024 + 1))"
-    ARCH_SWAP_SIZE=$(whiptail --title "$TITLE" --inputbox "\nEnter Swap Size in GB (0 = disable)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_SWAP_SIZE" 3>&1 1>&2 2>&3)
-    if [ -z "$ARCH_SWAP_SIZE" ]; then
+    ARCH_OS_SWAP_SIZE="$(($(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 / 1024 + 1))"
+    ARCH_OS_SWAP_SIZE=$(whiptail --title "$TITLE" --inputbox "\nEnter Swap Size in GB (0 = disable)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_OS_SWAP_SIZE" 3>&1 1>&2 2>&3)
+    if [ -z "$ARCH_OS_SWAP_SIZE" ]; then
         whiptail --title "$TITLE" --msgbox "Error: Swap is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
     fi
@@ -305,18 +310,18 @@ tui_set_swap() {
 }
 
 tui_set_plymouth() {
-    ARCH_BOOTSPLASH_ENABLED="false"
+    ARCH_OS_BOOTSPLASH_ENABLED="false"
     if whiptail --title "$TITLE" --yesno "Install Bootsplash Animation (plymouth)?" --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
-        ARCH_BOOTSPLASH_ENABLED="true"
+        ARCH_OS_BOOTSPLASH_ENABLED="true"
     fi
     # Success
     return 0
 }
 
 tui_set_gnome() {
-    ARCH_GNOME_ENABLED="false"
+    ARCH_OS_GNOME_ENABLED="false"
     if whiptail --title "$TITLE" --yesno "Install GNOME Desktop?" --yes-button "GNOME Desktop" --no-button "Minimal Arch" "$TUI_HEIGHT" "$TUI_WIDTH"; then
-        ARCH_GNOME_ENABLED="true"
+        ARCH_OS_GNOME_ENABLED="true"
     fi
     # Success
     return 0
@@ -346,15 +351,15 @@ while (true); do
 
     # Create TUI menu entries
     menu_entry_array=()
-    menu_entry_array+=("user") && menu_entry_array+=("$(print_menu_entry "User" "${ARCH_USERNAME}")")
-    menu_entry_array+=("password") && menu_entry_array+=("$(print_menu_entry "Password" "$([ -n "$ARCH_PASSWORD" ] && echo "******")")")
-    menu_entry_array+=("language") && menu_entry_array+=("$(print_menu_entry "Language" "  ${ARCH_LOCALE_LANG}")")
-    menu_entry_array+=("keyboard") && menu_entry_array+=("$(print_menu_entry "Keyboard" "  ${ARCH_VCONSOLE_KEYMAP}")")
-    menu_entry_array+=("disk") && menu_entry_array+=("$(print_menu_entry "Disk" "${ARCH_DISK}")")
-    menu_entry_array+=("encrypt") && menu_entry_array+=("$(print_menu_entry "Encryption" "${ARCH_ENCRYPTION_ENABLED}")")
-    menu_entry_array+=("swap") && menu_entry_array+=("$(print_menu_entry "Swap" "$([ -n "$ARCH_SWAP_SIZE" ] && { [ "$ARCH_SWAP_SIZE" != "0" ] && echo "${ARCH_SWAP_SIZE} GB" || echo "disabled"; })")")
-    menu_entry_array+=("plymouth") && menu_entry_array+=("$(print_menu_entry "Bootsplash" "${ARCH_BOOTSPLASH_ENABLED}")")
-    menu_entry_array+=("gnome") && menu_entry_array+=("$(print_menu_entry "GNOME" "${ARCH_GNOME_ENABLED}")")
+    menu_entry_array+=("user") && menu_entry_array+=("$(print_menu_entry "User" "${ARCH_OS_USERNAME}")")
+    menu_entry_array+=("password") && menu_entry_array+=("$(print_menu_entry "Password" "$([ -n "$ARCH_OS_PASSWORD" ] && echo "******")")")
+    menu_entry_array+=("language") && menu_entry_array+=("$(print_menu_entry "Language" "  ${ARCH_OS_LOCALE_LANG}")")
+    menu_entry_array+=("keyboard") && menu_entry_array+=("$(print_menu_entry "Keyboard" "  ${ARCH_OS_VCONSOLE_KEYMAP}")")
+    menu_entry_array+=("disk") && menu_entry_array+=("$(print_menu_entry "Disk" "${ARCH_OS_DISK}")")
+    menu_entry_array+=("encrypt") && menu_entry_array+=("$(print_menu_entry "Encryption" "${ARCH_OS_ENCRYPTION_ENABLED}")")
+    menu_entry_array+=("swap") && menu_entry_array+=("$(print_menu_entry "Swap" "$([ -n "$ARCH_OS_SWAP_SIZE" ] && { [ "$ARCH_OS_SWAP_SIZE" != "0" ] && echo "${ARCH_OS_SWAP_SIZE} GB" || echo "disabled"; })")")
+    menu_entry_array+=("plymouth") && menu_entry_array+=("$(print_menu_entry "Bootsplash" "${ARCH_OS_BOOTSPLASH_ENABLED}")")
+    menu_entry_array+=("gnome") && menu_entry_array+=("$(print_menu_entry "GNOME" "${ARCH_OS_GNOME_ENABLED}")")
     menu_entry_array+=("") && menu_entry_array+=("") # Empty entry
     menu_entry_array+=("edit") && menu_entry_array+=("> Edit manually")
     if [ "$TUI_POSITION" = "install" ]; then
@@ -427,7 +432,7 @@ done
 # ASK FOR INSTALLATION
 # ----------------------------------------------------------------------------------------------------
 
-if ! whiptail --title "$TITLE" --yesno "Start Arch OS Linux Installation?\n\nAll data on ${ARCH_DISK} will be DELETED!" --defaultno --yes-button "Start Installation" --no-button "Exit" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+if ! whiptail --title "$TITLE" --yesno "Start Arch OS Linux Installation?\n\nAll data on ${ARCH_OS_DISK} will be DELETED!" --defaultno --yes-button "Start Installation" --no-button "Exit" "$TUI_HEIGHT" "$TUI_WIDTH"; then
     exit 1
 fi
 
@@ -469,7 +474,7 @@ trap_exit() {
         wait # Wait for sub processes
         swapoff -a
         umount -A -R /mnt
-        [ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
 
         if whiptail --title "$TITLE" --yesno "Reboot now?" --defaultno --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
             wait && reboot
@@ -535,36 +540,36 @@ SECONDS=0
     pacman -Sy --noconfirm --disable-download-timeout archlinux-keyring
 
     # Detect microcode
-    ARCH_MICROCODE=""
-    grep -E "GenuineIntel" <<<"$(lscpu)" && ARCH_MICROCODE="intel-ucode"
-    grep -E "AuthenticAMD" <<<"$(lscpu)" && ARCH_MICROCODE="amd-ucode"
+    ARCH_OS_MICROCODE=""
+    grep -E "GenuineIntel" <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
+    grep -E "AuthenticAMD" <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Wipe & Create Partitions (${ARCH_DISK})"
+    print_whiptail_info "Wipe & Create Partitions (${ARCH_OS_DISK})"
     # ----------------------------------------------------------------------------------------------------
 
     # Wipe all partitions
-    wipefs -af "$ARCH_DISK"
+    wipefs -af "$ARCH_OS_DISK"
 
     # Create new GPT partition table
-    sgdisk -o "$ARCH_DISK"
+    sgdisk -o "$ARCH_OS_DISK"
 
     # Create partition /boot efi partition: 1 GiB
-    sgdisk -n 1:0:+1G -t 1:ef00 -c 1:boot "$ARCH_DISK"
+    sgdisk -n 1:0:+1G -t 1:ef00 -c 1:boot "$ARCH_OS_DISK"
 
     # Create partition / partition: Rest of space
-    sgdisk -n 2:0:0 -t 2:8300 -c 2:root "$ARCH_DISK"
+    sgdisk -n 2:0:0 -t 2:8300 -c 2:root "$ARCH_OS_DISK"
 
     # Reload partition table
-    partprobe "$ARCH_DISK"
+    partprobe "$ARCH_OS_DISK"
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Enable Disk Encryption"
     # ----------------------------------------------------------------------------------------------------
 
-    if [ "$ARCH_ENCRYPTION_ENABLED" = "true" ]; then
-        echo -n "$ARCH_PASSWORD" | cryptsetup luksFormat "$ARCH_ROOT_PARTITION"
-        echo -n "$ARCH_PASSWORD" | cryptsetup open "$ARCH_ROOT_PARTITION" cryptroot
+    if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
+        echo -n "$ARCH_OS_PASSWORD" | cryptsetup luksFormat "$ARCH_OS_ROOT_PARTITION"
+        echo -n "$ARCH_OS_PASSWORD" | cryptsetup open "$ARCH_OS_ROOT_PARTITION" cryptroot
     else
         echo "> Skipped"
     fi
@@ -573,18 +578,18 @@ SECONDS=0
     print_whiptail_info "Format Disk"
     # ----------------------------------------------------------------------------------------------------
 
-    mkfs.fat -F 32 -n BOOT "$ARCH_BOOT_PARTITION"
-    [ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && mkfs.ext4 -F -L ROOT /dev/mapper/cryptroot
-    [ "$ARCH_ENCRYPTION_ENABLED" = "false" ] && mkfs.ext4 -F -L ROOT "$ARCH_ROOT_PARTITION"
+    mkfs.fat -F 32 -n BOOT "$ARCH_OS_BOOT_PARTITION"
+    [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.ext4 -F -L ROOT /dev/mapper/cryptroot
+    [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.ext4 -F -L ROOT "$ARCH_OS_ROOT_PARTITION"
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Mount Disk"
     # ----------------------------------------------------------------------------------------------------
 
-    [ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && mount -v /dev/mapper/cryptroot /mnt
-    [ "$ARCH_ENCRYPTION_ENABLED" = "false" ] && mount -v "$ARCH_ROOT_PARTITION" /mnt
+    [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mount -v /dev/mapper/cryptroot /mnt
+    [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount -v "$ARCH_OS_ROOT_PARTITION" /mnt
     mkdir -p /mnt/boot
-    mount -v "$ARCH_BOOT_PARTITION" /mnt/boot
+    mount -v "$ARCH_OS_BOOT_PARTITION" /mnt/boot
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Pacstrap System Packages (This may take a while)"
@@ -593,7 +598,7 @@ SECONDS=0
     packages=()
     packages+=("base")
     packages+=("base-devel")
-    packages+=("linux")
+    packages+=("${ARCH_OS_KERNEL}")
     packages+=("linux-firmware")
     packages+=("networkmanager")
     packages+=("pacman-contrib")
@@ -602,10 +607,10 @@ SECONDS=0
     packages+=("nano")
     packages+=("bash-completion")
     packages+=("pkgfile")
-    [ -n "$ARCH_MICROCODE" ] && packages+=("$ARCH_MICROCODE")
+    [ -n "$ARCH_OS_MICROCODE" ] && packages+=("$ARCH_OS_MICROCODE")
 
     # Install core and initialize an empty pacman keyring in the target
-    pacstrap -K /mnt "${packages[@]}" "${ARCH_OPT_PACKAGE_LIST[@]}" --disable-download-timeout
+    pacstrap -K /mnt "${packages[@]}" "${ARCH_OS_OPT_PACKAGE_LIST[@]}" --disable-download-timeout
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Configure Pacman & Reflector"
@@ -621,7 +626,7 @@ SECONDS=0
     {
         echo "# Reflector config for the systemd service"
         echo "--save /etc/pacman.d/mirrorlist"
-        [ -n "$ARCH_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_REFLECTOR_COUNTRY}"
+        [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
         echo "--protocol https"
         echo "--latest 5"
         echo "--sort rate"
@@ -637,8 +642,8 @@ SECONDS=0
     print_whiptail_info "Create Swap"
     # ----------------------------------------------------------------------------------------------------
 
-    if [ "$ARCH_SWAP_SIZE" != "0" ] && [ -n "$ARCH_SWAP_SIZE" ]; then
-        dd if=/dev/zero of=/mnt/swapfile bs=1G count="$ARCH_SWAP_SIZE" status=progress
+    if [ "$ARCH_OS_SWAP_SIZE" != "0" ] && [ -n "$ARCH_OS_SWAP_SIZE" ]; then
+        dd if=/dev/zero of=/mnt/swapfile bs=1G count="$ARCH_OS_SWAP_SIZE" status=progress
         chmod 600 /mnt/swapfile
         mkswap /mnt/swapfile
         swapon /mnt/swapfile
@@ -652,29 +657,29 @@ SECONDS=0
     print_whiptail_info "Timezone & System Clock"
     # ----------------------------------------------------------------------------------------------------
 
-    arch-chroot /mnt ln -sf "/usr/share/zoneinfo/$ARCH_TIMEZONE" /etc/localtime
+    arch-chroot /mnt ln -sf "/usr/share/zoneinfo/$ARCH_OS_TIMEZONE" /etc/localtime
     arch-chroot /mnt hwclock --systohc # Set hardware clock from system clock
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Set Console Keymap"
     # ----------------------------------------------------------------------------------------------------
 
-    echo "KEYMAP=$ARCH_VCONSOLE_KEYMAP" >/mnt/etc/vconsole.conf
-    [ -n "$ARCH_VCONSOLE_FONT" ] && echo "FONT=$ARCH_VCONSOLE_FONT" >>/mnt/etc/vconsole.conf
+    echo "KEYMAP=$ARCH_OS_VCONSOLE_KEYMAP" >/mnt/etc/vconsole.conf
+    [ -n "$ARCH_OS_VCONSOLE_FONT" ] && echo "FONT=$ARCH_OS_VCONSOLE_FONT" >>/mnt/etc/vconsole.conf
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Generate Locale"
     # ----------------------------------------------------------------------------------------------------
 
-    echo "LANG=${ARCH_LOCALE_LANG}.UTF-8" >/mnt/etc/locale.conf
-    for ((i = 0; i < ${#ARCH_LOCALE_GEN_LIST[@]}; i++)); do sed -i "s/^#${ARCH_LOCALE_GEN_LIST[$i]}/${ARCH_LOCALE_GEN_LIST[$i]}/g" "/mnt/etc/locale.gen"; done
+    echo "LANG=${ARCH_OS_LOCALE_LANG}.UTF-8" >/mnt/etc/locale.conf
+    for ((i = 0; i < ${#ARCH_OS_LOCALE_GEN_LIST[@]}; i++)); do sed -i "s/^#${ARCH_OS_LOCALE_GEN_LIST[$i]}/${ARCH_OS_LOCALE_GEN_LIST[$i]}/g" "/mnt/etc/locale.gen"; done
     arch-chroot /mnt locale-gen
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Set Hostname (${ARCH_HOSTNAME})"
+    print_whiptail_info "Set Hostname (${ARCH_OS_HOSTNAME})"
     # ----------------------------------------------------------------------------------------------------
 
-    echo "$ARCH_HOSTNAME" >/mnt/etc/hostname
+    echo "$ARCH_OS_HOSTNAME" >/mnt/etc/hostname
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Set /etc/hosts"
@@ -698,8 +703,8 @@ SECONDS=0
     print_whiptail_info "Create Initial Ramdisk"
     # ----------------------------------------------------------------------------------------------------
 
-    [ "$ARCH_ENCRYPTION_ENABLED" = "true" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect modconf block sd-encrypt filesystems sd-vconsole fsck)/" /mnt/etc/mkinitcpio.conf
-    [ "$ARCH_ENCRYPTION_ENABLED" = "false" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect modconf block filesystems sd-vconsole fsck)/" /mnt/etc/mkinitcpio.conf
+    [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect modconf block sd-encrypt filesystems sd-vconsole fsck)/" /mnt/etc/mkinitcpio.conf
+    [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect modconf block filesystems sd-vconsole fsck)/" /mnt/etc/mkinitcpio.conf
     arch-chroot /mnt mkinitcpio -P
 
     # ----------------------------------------------------------------------------------------------------
@@ -712,12 +717,12 @@ SECONDS=0
     # Kernel args
     swap_device_uuid="$(findmnt -no UUID -T /mnt/swapfile)"
     swap_file_offset="$(filefrag -v /mnt/swapfile | awk '$1=="0:" {print substr($4, 1, length($4)-2)}')"
-    if [ "$ARCH_ENCRYPTION_ENABLED" = "true" ]; then
+    if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
         # Encryption enabled
-        kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot rw init=/usr/lib/systemd/systemd quiet splash vt.global_cursor_default=0 resume=/dev/mapper/cryptroot resume_offset=${swap_file_offset}"
+        kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot rw init=/usr/lib/systemd/systemd quiet splash vt.global_cursor_default=0 resume=/dev/mapper/cryptroot resume_offset=${swap_file_offset}"
     else
         # Encryption disabled
-        kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_ROOT_PARTITION}") rw init=/usr/lib/systemd/systemd quiet splash vt.global_cursor_default=0 resume=UUID=${swap_device_uuid} resume_offset=${swap_file_offset}"
+        kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}") rw init=/usr/lib/systemd/systemd quiet splash vt.global_cursor_default=0 resume=UUID=${swap_device_uuid} resume_offset=${swap_file_offset}"
     fi
 
     # Create Bootloader config
@@ -731,27 +736,27 @@ SECONDS=0
     # Create default boot entry
     {
         echo 'title   Arch Linux'
-        echo 'linux   /vmlinuz-linux'
-        [ -n "$ARCH_MICROCODE" ] && echo "initrd  /${ARCH_MICROCODE}.img"
-        echo 'initrd  /initramfs-linux.img'
+        echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
+        [ -n "$ARCH_OS_MICROCODE" ] && echo "initrd  /${ARCH_OS_MICROCODE}.img"
+        echo "initrd  /initramfs-${ARCH_OS_KERNEL}.img"
         echo "options ${kernel_args}"
     } >/mnt/boot/loader/entries/arch.conf
 
     # Create fallback boot entry
     {
         echo 'title   Arch Linux (Fallback)'
-        echo 'linux   /vmlinuz-linux'
-        [ -n "$ARCH_MICROCODE" ] && echo "initrd  /${ARCH_MICROCODE}.img"
-        echo 'initrd  /initramfs-linux-fallback.img'
+        echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
+        [ -n "$ARCH_OS_MICROCODE" ] && echo "initrd  /${ARCH_OS_MICROCODE}.img"
+        echo "initrd  /initramfs-${ARCH_OS_KERNEL}-fallback.img"
         echo "options ${kernel_args}"
     } >/mnt/boot/loader/entries/arch-fallback.conf
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Create User (${ARCH_USERNAME})"
+    print_whiptail_info "Create User (${ARCH_OS_USERNAME})"
     # ----------------------------------------------------------------------------------------------------
 
     # Create new user
-    arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$ARCH_USERNAME"
+    arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$ARCH_OS_USERNAME"
 
     # Allow users in group wheel to use sudo
     sed -i 's^# %wheel ALL=(ALL:ALL) ALL^%wheel ALL=(ALL:ALL) ALL^g' /mnt/etc/sudoers
@@ -760,8 +765,8 @@ SECONDS=0
     echo -e "\n## Enable sudo password feedback\nDefaults pwfeedback" >>/mnt/etc/sudoers
 
     # Change passwords
-    printf "%s\n%s" "${ARCH_PASSWORD}" "${ARCH_PASSWORD}" | arch-chroot /mnt passwd
-    printf "%s\n%s" "${ARCH_PASSWORD}" "${ARCH_PASSWORD}" | arch-chroot /mnt passwd "$ARCH_USERNAME"
+    printf "%s\n%s" "${ARCH_OS_PASSWORD}" "${ARCH_OS_PASSWORD}" | arch-chroot /mnt passwd
+    printf "%s\n%s" "${ARCH_OS_PASSWORD}" "${ARCH_OS_PASSWORD}" | arch-chroot /mnt passwd "$ARCH_OS_USERNAME"
 
     # Add sudo needs no password rights (only for installation)
     sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
@@ -779,7 +784,7 @@ SECONDS=0
     arch-chroot /mnt systemctl enable systemd-boot-update.service # Auto bootloader update
 
     # Out of memory killer (swap is required)
-    [ "$ARCH_SWAP_SIZE" != "0" ] && [ -n "$ARCH_SWAP_SIZE" ] && arch-chroot /mnt systemctl enable systemd-oomd.service
+    [ "$ARCH_OS_SWAP_SIZE" != "0" ] && [ -n "$ARCH_OS_SWAP_SIZE" ] && arch-chroot /mnt systemctl enable systemd-oomd.service
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Configure System"
@@ -797,10 +802,10 @@ SECONDS=0
 
     # Install paru as user
     repo_url="https://aur.archlinux.org/paru-bin.git"
-    tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/paru-bin.XXXXXXXXXX")
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git clone "$repo_url" "$tmp_name"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "cd $tmp_name && makepkg -si --noconfirm"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- rm -rf "$tmp_name"
+    tmp_name=$(mktemp -u "/home/${ARCH_OS_USERNAME}/paru-bin.XXXXXXXXXX")
+    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$tmp_name"
+    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $tmp_name && makepkg -si --noconfirm"
+    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$tmp_name"
 
     # Paru config
     sed -i 's/^#BottomUp/BottomUp/g' /mnt/etc/paru.conf
@@ -810,7 +815,7 @@ SECONDS=0
     print_whiptail_info "Install Bootsplash"
     # ----------------------------------------------------------------------------------------------------
 
-    if [ "$ARCH_BOOTSPLASH_ENABLED" = "true" ]; then
+    if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
 
         # Install packages
         arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout plymouth
@@ -820,10 +825,10 @@ SECONDS=0
 
         # Install plymouth theme
         repo_url="https://github.com/murkl/plymouth-theme-arch-os.git"
-        tmp_name=$(mktemp -u "/home/${ARCH_USERNAME}/plymouth-theme-arch-os.XXXXXXXXXX")
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git clone "$repo_url" "$tmp_name"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- bash -c "cd ${tmp_name}/aur && makepkg -si --noconfirm"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- rm -rf "$tmp_name"
+        tmp_name=$(mktemp -u "/home/${ARCH_OS_USERNAME}/plymouth-theme-arch-os.XXXXXXXXXX")
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$tmp_name"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd ${tmp_name}/aur && makepkg -si --noconfirm"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$tmp_name"
 
         # Set Theme & rebuild initram disk
         arch-chroot /mnt plymouth-set-default-theme -R arch-os
@@ -835,7 +840,7 @@ SECONDS=0
     # START INSTALL GNOME
     # ----------------------------------------------------------------------------------------------------
 
-    if [ "$ARCH_GNOME_ENABLED" = "true" ]; then
+    if [ "$ARCH_OS_GNOME_ENABLED" = "true" ]; then
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Install GNOME Packages (This may take a while)"
@@ -951,15 +956,15 @@ SECONDS=0
         print_whiptail_info "Enable GNOME Auto Login"
         # ----------------------------------------------------------------------------------------------------
 
-        grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
+        grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Configure Git"
         # ----------------------------------------------------------------------------------------------------
 
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- mkdir -p "/home/${ARCH_USERNAME}/.config/git"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- touch "/home/${ARCH_USERNAME}/.config/git/config"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- git config --global credential.helper /usr/lib/git-core/git-credential-libsecret
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- mkdir -p "/home/${ARCH_OS_USERNAME}/.config/git"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- touch "/home/${ARCH_OS_USERNAME}/.config/git/config"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git config --global credential.helper /usr/lib/git-core/git-credential-libsecret
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Configure Samba"
@@ -980,9 +985,9 @@ SECONDS=0
             echo 'Section "InputClass"'
             echo '    Identifier "keyboard"'
             echo '    MatchIsKeyboard "yes"'
-            echo '    Option "XkbLayout" "'"${ARCH_KEYBOARD_LAYOUT}"'"'
+            echo '    Option "XkbLayout" "'"${ARCH_OS_KEYBOARD_LAYOUT}"'"'
             echo '    Option "XkbModel" "pc105"'
-            echo '    Option "XkbVariant" "'"${ARCH_KEYBOARD_VARIANT}"'"'
+            echo '    Option "XkbVariant" "'"${ARCH_OS_KEYBOARD_VARIANT}"'"'
             echo 'EndSection'
         } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
 
@@ -990,27 +995,27 @@ SECONDS=0
         print_whiptail_info "Enable GNOME Services"
         # ----------------------------------------------------------------------------------------------------
 
-        arch-chroot /mnt systemctl enable gdm.service                                                           # GNOME
-        arch-chroot /mnt systemctl enable bluetooth.service                                                     # Bluetooth
-        arch-chroot /mnt systemctl enable avahi-daemon                                                          # Network browsing service
-        arch-chroot /mnt systemctl enable cups.service                                                          # Printer
-        arch-chroot /mnt systemctl enable smb.service                                                           # Samba
-        arch-chroot /mnt systemctl enable nmb.service                                                           # Samba
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
+        arch-chroot /mnt systemctl enable gdm.service                                                              # GNOME
+        arch-chroot /mnt systemctl enable bluetooth.service                                                        # Bluetooth
+        arch-chroot /mnt systemctl enable avahi-daemon                                                             # Network browsing service
+        arch-chroot /mnt systemctl enable cups.service                                                             # Printer
+        arch-chroot /mnt systemctl enable smb.service                                                              # Samba
+        arch-chroot /mnt systemctl enable nmb.service                                                              # Samba
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Hide Applications Icons"
         # ----------------------------------------------------------------------------------------------------
 
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- mkdir -p "/home/$ARCH_USERNAME/.local/share/applications"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/avahi-discover.desktop"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/bssh.desktop"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/bvnc.desktop"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/qv4l2.desktop"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/qvidcap.desktop"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_USERNAME/.local/share/applications/lstopo.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- mkdir -p "/home/$ARCH_OS_USERNAME/.local/share/applications"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/avahi-discover.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/bssh.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/bvnc.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/qv4l2.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/qvidcap.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/lstopo.desktop"
 
     else
         # Skip Gnome progresses
@@ -1026,13 +1031,13 @@ SECONDS=0
     # ----------------------------------------------------------------------------------------------------
 
     # Copy installer.conf to users home dir
-    cp "$INSTALLER_CONFIG" "/mnt/home/${ARCH_USERNAME}/installer.conf"
+    cp "$INSTALLER_CONFIG" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
 
     # Remove sudo needs no password rights
     sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
 
     # Set home permission
-    arch-chroot /mnt chown -R "$ARCH_USERNAME":"$ARCH_USERNAME" "/home/${ARCH_USERNAME}"
+    arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
 
     # Remove orphans and force return true
     # shellcheck disable=SC2016
