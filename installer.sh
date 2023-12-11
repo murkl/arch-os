@@ -300,7 +300,7 @@ tui_set_encryption() {
 
 tui_set_swap() {
     ARCH_OS_SWAP_SIZE="$(($(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 / 1024 + 1))"
-    ARCH_OS_SWAP_SIZE=$(whiptail --title "$TITLE" --inputbox "\nEnter Swap Size in GB (0 = disable)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_OS_SWAP_SIZE" 3>&1 1>&2 2>&3)
+    ARCH_OS_SWAP_SIZE=$(whiptail --title "$TITLE" --inputbox "\nEnter Swap Size in GB (0 = disable, recommend = ${ARCH_OS_SWAP_SIZE} GB)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_OS_SWAP_SIZE" 3>&1 1>&2 2>&3)
     if [ -z "$ARCH_OS_SWAP_SIZE" ]; then
         whiptail --title "$TITLE" --msgbox "Error: Swap is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
