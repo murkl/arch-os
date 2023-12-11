@@ -1,8 +1,6 @@
 <h1 align="center">
   <img src="./logo.svg" width="150" height="150"/>
-  <p style="margin-top: 4pt">
-    Arch OS | <strong align="center" style="font-size: 11.5pt;">for audiophiles</strong>
-  </p>
+  <p>Arch OS</p>
 </h1>
 
 <p align="center"><strong>Run TUI Installer from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a></strong></p>
