@@ -92,7 +92,9 @@ Installs a Arch Linux Distribution including GNOME as Desktop, preinstalled Paru
 
 ## Usage
 
-These are the general commands to maintain your Arch OS.
+For a robust & stable Arch OS experience, install as few additional packages from the main repository or AUR as possible. Instead, use Flatpak (GNOME Software) or Distrobox/Toolbox (Podman/Docker). Furthermore change system files only if absolutely necessary. And perform regular updates.
+
+These are the general commands to maintain your Arch OS:
 
 ### Update system
 
