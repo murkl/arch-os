@@ -416,7 +416,7 @@ while (true); do
         ;;
     "install")
         check_config || continue
-        if whiptail --title "$TITLE" --yesno "> Installation Properties\n$(head -100 "$INSTALLER_CONFIG" | tail +3)" --defaultno --yes-button "Edit" --no-button "Continue" --scrolltext "$TUI_HEIGHT" "$TUI_WIDTH"; then
+        if whiptail --title "$TITLE" --yesno "> Installation Properties\n\n$(head -100 "$INSTALLER_CONFIG" | tail +3)" --defaultno --yes-button "Edit" --no-button "Continue" --scrolltext "$TUI_HEIGHT" "$TUI_WIDTH"; then
             nano "$INSTALLER_CONFIG" </dev/tty
             continue # Open main menu for check again
         fi
