@@ -106,7 +106,6 @@ check_config() {
     [ -z "${ARCH_OS_LOCALE_LANG}" ] && TUI_POSITION="language" && return 1
     [ -z "${ARCH_OS_LOCALE_GEN_LIST[*]}" ] && TUI_POSITION="language" && return 1
     [ -z "${ARCH_OS_VCONSOLE_KEYMAP}" ] && TUI_POSITION="keyboard" && return 1
-    [ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && TUI_POSITION="keyboard" && return 1
     [ -z "${ARCH_OS_DISK}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_OS_BOOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_OS_ROOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
