@@ -148,10 +148,17 @@ _**Example**_
 
 ## Technical Info
 
-<div align="center">
-<p><img src="screenshots/neofetch.png" width="90%" /></p>
-<p><img src="screenshots/apps.png" width="90%" /></p>
-</div>
+### Partitions layout
+
+The **partitions layout** is seperated in two partitions:
+
+1. A **FAT32** partition (1 GiB), mounted at `/boot/` as ESP.
+2. A **LUKS2 encrypted container** (optional), which takes the rest of the disk space, mounted at `/` as root.
+
+| Partition Number | Label            | Size             | Mountpoint | Filesystem                |
+| ---------------- | ---------------- | ---------------- | ---------- | ------------------------- |
+| 1                | BOOT             | 1 GiB            | /boot/     | FAT32                     |
+| 2                | ROOT / cryptroot | Rest of the disk | /          | EXT4 + Encryption (LUKS2) |
 
 ### Core Packages
 
@@ -168,6 +175,13 @@ This services will be enabled during minimal Arch without GNOME installation:
 ```
 NetworkManager systemd-timesyncd.service reflector.service paccache.timer fstrim.timer pkgfile-update.timer systemd-boot-update.service systemd-oomd.service
 ```
+
+### Screenshots
+
+<div align="center">
+<p><img src="screenshots/neofetch.png" width="90%" /></p>
+<p><img src="screenshots/apps.png" width="90%" /></p>
+</div>
 
 ## Development
 
