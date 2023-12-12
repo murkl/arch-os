@@ -171,6 +171,8 @@ NetworkManager systemd-timesyncd.service reflector.service paccache.timer fstrim
 
 ## Development
 
+Create new pull request branches only from main branch! The dev branch will be deleted after each merge into main.
+
 The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broken, use only for testing!
 
 ```
