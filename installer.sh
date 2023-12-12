@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.0.5'
+VERSION='1.0.6'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -36,7 +36,6 @@ PROGRESS_TOTAL=33
 # INSTALLATION VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
-ARCH_OS_KERNEL=""
 ARCH_OS_USERNAME=""
 ARCH_OS_HOSTNAME=""
 ARCH_OS_PASSWORD=""
@@ -51,10 +50,12 @@ ARCH_OS_LOCALE_LANG=""
 ARCH_OS_LOCALE_GEN_LIST=()
 ARCH_OS_VCONSOLE_KEYMAP=""
 ARCH_OS_VCONSOLE_FONT=""
-ARCH_OS_KEYBOARD_LAYOUT=""
-ARCH_OS_KEYBOARD_VARIANT=""
+ARCH_OS_X11_KEYBOARD_LAYOUT=""
+ARCH_OS_X11_KEYBOARD_VARIANT=""
 ARCH_OS_BOOTSPLASH_ENABLED=""
 ARCH_OS_GNOME_ENABLED=""
+ARCH_OS_KERNEL=""
+ARCH_OS_MICROCODE=""
 
 # ----------------------------------------------------------------------------------------------------
 # DEPENDENCIES
@@ -106,7 +107,6 @@ check_config() {
     [ -z "${ARCH_OS_LOCALE_LANG}" ] && TUI_POSITION="language" && return 1
     [ -z "${ARCH_OS_LOCALE_GEN_LIST[*]}" ] && TUI_POSITION="language" && return 1
     [ -z "${ARCH_OS_VCONSOLE_KEYMAP}" ] && TUI_POSITION="keyboard" && return 1
-    [ -z "${ARCH_OS_KEYBOARD_LAYOUT}" ] && TUI_POSITION="keyboard" && return 1
     [ -z "${ARCH_OS_DISK}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_OS_BOOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_OS_ROOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
@@ -166,13 +166,13 @@ create_config() {
         echo "# Console font (optional): find /usr/share/kbd/consolefonts/*.psfu.gz"
         echo "ARCH_OS_VCONSOLE_FONT='${ARCH_OS_VCONSOLE_FONT}' # example: eurlatgr"
         echo ""
-        echo "# X11 keyboard layout (auto): localectl list-x11-keymap-layouts"
-        echo "ARCH_OS_KEYBOARD_LAYOUT='${ARCH_OS_KEYBOARD_LAYOUT}' # example: de"
+        echo "# X11 keyboard layout (mandatory): localectl list-x11-keymap-layouts"
+        echo "ARCH_OS_X11_KEYBOARD_LAYOUT='${ARCH_OS_X11_KEYBOARD_LAYOUT}' # example: de"
         echo ""
         echo "# X11 keyboard variant (optional): localectl list-x11-keymap-variants"
-        echo "ARCH_OS_KEYBOARD_VARIANT='${ARCH_OS_KEYBOARD_VARIANT}' # example: nodeadkeys"
+        echo "ARCH_OS_X11_KEYBOARD_VARIANT='${ARCH_OS_X11_KEYBOARD_VARIANT}' # example: nodeadkeys"
         echo ""
-        echo "# Kernel"
+        echo "# Kernel (mandatory)"
         echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}' # linux, linux-lts linux-zen, linux-hardened"
     } >"$INSTALLER_CONFIG"
 }
@@ -197,7 +197,7 @@ tui_set_language() {
     # Set locale
     local user_input="$ARCH_OS_LOCALE_LANG"
     [ -z "$user_input" ] && user_input='en_US'
-    user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert locale (for example 'en_US' or 'de_DE')" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+    user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert locale\n\nExample: 'en_US' or 'de_DE'" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
     # shellcheck disable=SC2001
     if [ -z "$user_input" ] || ! grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<<"$user_input") " /etc/locale.gen; then
         whiptail --title "$TITLE" --msgbox "Error: Locale '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
@@ -206,7 +206,7 @@ tui_set_language() {
         ARCH_OS_LOCALE_LANG="$user_input"
     fi
 
-    # Set locale.gen properties
+    # Set locale.gen properties (auto generate ARCH_OS_LOCALE_GEN_LIST)
     ARCH_OS_LOCALE_GEN_LIST=()
     while read -r locale_entry; do
         ARCH_OS_LOCALE_GEN_LIST+=("$locale_entry")
@@ -220,19 +220,17 @@ tui_set_language() {
 
 tui_set_keyboard() {
 
-    # Set keyboard layout
-    local user_input="$ARCH_OS_KEYBOARD_LAYOUT"
+    # Input console keyboard keymap
+    local user_input="$ARCH_OS_VCONSOLE_KEYMAP"
     [ -z "$user_input" ] && user_input='us'
-    user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert keyboard layout (for example 'de' or 'us')" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+    user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert console keyboard keymap\n\nExample: 'de-latin1-nodeadkeys' or 'us'" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
 
-    # Check keymap
+    # Check & set console keymap
     if ! localectl list-keymaps | grep -Fxq "$user_input"; then
         whiptail --title "$TITLE" --msgbox "Error: Keyboard layout '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
     else
         ARCH_OS_VCONSOLE_KEYMAP="$user_input"
-        ARCH_OS_KEYBOARD_LAYOUT="$user_input"
-        #ARCH_OS_KEYBOARD_VARIANT=""
     fi
 
     # Success
@@ -321,8 +319,23 @@ tui_set_plymouth() {
 tui_set_gnome() {
     ARCH_OS_GNOME_ENABLED="false"
     if whiptail --title "$TITLE" --yesno "Install GNOME Desktop?" --yes-button "GNOME Desktop" --no-button "Minimal Arch" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+
+        # Set X11 keyboard layout
+        local user_input="$ARCH_OS_X11_KEYBOARD_LAYOUT"
+        [ -z "$user_input" ] && user_input='us'
+        user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert X11 (Xorg) keyboard layout\n\nExample: 'de' or 'us'" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+        ARCH_OS_X11_KEYBOARD_LAYOUT="$user_input"
+
+        # Set X11 keyboard variant
+        local user_input="$ARCH_OS_X11_KEYBOARD_VARIANT"
+        [ -z "$user_input" ] && user_input='nodeadkeys'
+        user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert X11 (Xorg) keyboard variant\n\nExample: 'nodeadkeys' or leave empty for default" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+        ARCH_OS_X11_KEYBOARD_VARIANT="$user_input"
+
+        # Set GNOME
         ARCH_OS_GNOME_ENABLED="true"
     fi
+
     # Success
     return 0
 }
@@ -335,6 +348,28 @@ tui_set_gnome() {
 [ -f "$INSTALLER_CONFIG" ] && source "$INSTALLER_CONFIG"
 check_config || true # Check and init properties
 create_config        # Generate properties
+
+# ----------------------------------------------------------------------------------------------------
+# WAIT & SLEEP
+# ----------------------------------------------------------------------------------------------------
+
+wait && sleep 0.8
+
+# ----------------------------------------------------------------------------------------------------
+# WELCOME SCREEN
+# ----------------------------------------------------------------------------------------------------
+
+welcome_txt="
+           █████  ██████   ██████ ██   ██      ██████  ███████ 
+          ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
+          ███████ ██████  ██      ███████     ██    ██ ███████ 
+          ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
+          ██   ██ ██   ██  ██████ ██   ██      ██████  ███████ 
+                                 
+
+      Welcome to Arch OS Installer. Please hit <ENTER> to continue...
+"
+whiptail --title "$TITLE" --msgbox "$welcome_txt" "$TUI_HEIGHT" "$TUI_WIDTH"
 
 # ----------------------------------------------------------------------------------------------------
 # SHOW MENU
@@ -539,10 +574,11 @@ SECONDS=0
     # Update keyring
     pacman -Sy --noconfirm --disable-download-timeout archlinux-keyring
 
-    # Detect microcode
-    ARCH_OS_MICROCODE=""
-    grep -E "GenuineIntel" <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
-    grep -E "AuthenticAMD" <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
+    # Detect microcode if empty
+    if [ -z "$ARCH_OS_MICROCODE" ]; then
+        grep -E "GenuineIntel" <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
+        grep -E "AuthenticAMD" <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
+    fi
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Wipe & Create Partitions (${ARCH_OS_DISK})"
@@ -922,16 +958,43 @@ SECONDS=0
         packages+=("ttf-liberation")
         packages+=("ttf-dejavu")
 
-        # VM Guest support (if VM detected)
-        if [ "$(systemd-detect-virt)" != 'none' ]; then
-            packages+=("spice")
-            packages+=("spice-vdagent")
-            packages+=("spice-protocol")
-            packages+=("spice-gtk")
-        fi
-
         # Install packages
         arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"
+
+        # ----------------------------------------------------------------------------------------------------
+
+        # VM Guest support (if VM detected)
+        hypervisor=$(systemd-detect-virt)
+        case $hypervisor in
+        kvm)
+            print_whiptail_info "KVM has been detected, setting up guest tools."
+            arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout spice spice-vdagent spice-protocol spice-gtk
+            arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout qemu-guest-agent
+            arch-chroot /mnt systemctl enable qemu-guest-agent
+            ;;
+        vmware)
+            print_whiptail_info "VMWare Workstation/ESXi has been detected, setting up guest tools."
+            arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout open-vm-tools
+            arch-chroot /mnt systemctl enable vmtoolsd
+            arch-chroot /mnt systemctl enable vmware-vmblock-fuse
+            ;;
+        oracle)
+            print_whiptail_info "VirtualBox has been detected, setting up guest tools."
+            arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout virtualbox-guest-utils
+            arch-chroot /mnt systemctl enable vboxservice
+            ;;
+        microsoft)
+            arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeouts hyperv
+            print_whiptail_info "Hyper-V has been detected, setting up guest tools."
+            arch-chroot /mnt systemctl enable hv_fcopy_daemon
+            arch-chroot /mnt systemctl enable hv_kvp_daemon
+            arch-chroot /mnt systemctl enable hv_vss_daemon
+            ;;
+        none)
+            print_whiptail_info "No VM detected"
+            # Do nothing
+            ;;
+        esac
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Remove packages"
@@ -985,9 +1048,9 @@ SECONDS=0
             echo 'Section "InputClass"'
             echo '    Identifier "keyboard"'
             echo '    MatchIsKeyboard "yes"'
-            echo '    Option "XkbLayout" "'"${ARCH_OS_KEYBOARD_LAYOUT}"'"'
+            echo '    Option "XkbLayout" "'"${ARCH_OS_X11_KEYBOARD_LAYOUT}"'"'
             echo '    Option "XkbModel" "pc105"'
-            echo '    Option "XkbVariant" "'"${ARCH_OS_KEYBOARD_VARIANT}"'"'
+            echo '    Option "XkbVariant" "'"${ARCH_OS_X11_KEYBOARD_VARIANT}"'"'
             echo 'EndSection'
         } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
 

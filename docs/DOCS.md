@@ -10,6 +10,7 @@
 2. [Installation Properties](#installation-properties)
 3. [Rescue & Recovery](#rescue--recovery)
 4. [Technical Information](#technical-info)
+5. [Development](#development)
 
 ## Recommendation
 
@@ -28,6 +29,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 
 - Install [preload](https://wiki.archlinux.org/title/Preload) (start the service after installation: `sudo systemctl enable preload`)
 - Install [mutter-performance](https://aur.archlinux.org/packages/mutter-performance) (great on Intel Graphics with Wayland)
+- Use [neofetch](https://archlinux.org/packages/extra/x86_64/neofetch/) to show system info
 - Use [downgrade](https://aur.archlinux.org/packages/downgrade) when you need to downgrade a package
 - Use [starship](https://starship.rs/) for fancy Bash promt
 - Use [exa](https://archlinux.org/packages/extra/x86_64/exa/) as colorful `ls` replacement
@@ -103,12 +105,12 @@ ARCH_OS_VCONSOLE_KEYMAP='de-latin1-nodeadkeys'
 ARCH_OS_VCONSOLE_FONT='eurlatgr'
 
 # X11 keyboard layout (auto): localectl list-x11-keymap-layouts
-ARCH_OS_KEYBOARD_LAYOUT='de'
+ARCH_OS_X11_KEYBOARD_LAYOUT='de'
 
 # X11 keyboard variant (optional): localectl list-x11-keymap-variants
-ARCH_OS_KEYBOARD_VARIANT='nodeadkeys'
+ARCH_OS_X11_KEYBOARD_VARIANT='nodeadkeys'
 
-# Kernel
+# Kernel (mandatory)
 ARCH_OS_KERNEL='linux-zen'
 ```
 
@@ -165,4 +167,12 @@ This services will be enabled during minimal Arch without GNOME installation:
 
 ```
 NetworkManager systemd-timesyncd.service reflector.service paccache.timer fstrim.timer pkgfile-update.timer systemd-boot-update.service systemd-oomd.service
+```
+
+## Development
+
+The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broken, use only for testing!
+
+```
+curl -Ls http://arch-dev.webhop.me | bash
 ```
