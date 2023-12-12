@@ -948,11 +948,8 @@ SECONDS=0
         hypervisor=$(systemd-detect-virt)
         case $hypervisor in
         kvm)
-            #packages+=("spice")
-            #packages+=("spice-vdagent")
-            #packages+=("spice-protocol")
-            #packages+=("spice-gtk")
             print_whiptail_info "KVM has been detected, setting up guest tools."
+            arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout spice spice-vdagent spice-protocol spice-gtk
             arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout qemu-guest-agent
             arch-chroot /mnt systemctl enable qemu-guest-agent
             ;;
@@ -968,8 +965,8 @@ SECONDS=0
             arch-chroot /mnt systemctl enable vboxservice
             ;;
         microsoft)
-            print_whiptail_info "Hyper-V has been detected, setting up guest tools."
             arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeouts hyperv
+            print_whiptail_info "Hyper-V has been detected, setting up guest tools."
             arch-chroot /mnt systemctl enable hv_fcopy_daemon
             arch-chroot /mnt systemctl enable hv_kvp_daemon
             arch-chroot /mnt systemctl enable hv_vss_daemon
