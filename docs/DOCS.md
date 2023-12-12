@@ -10,6 +10,7 @@
 2. [Installation Properties](#installation-properties)
 3. [Rescue & Recovery](#rescue--recovery)
 4. [Technical Information](#technical-info)
+5. [Development](#development)
 
 ## Recommendation
 
@@ -165,4 +166,12 @@ This services will be enabled during minimal Arch without GNOME installation:
 
 ```
 NetworkManager systemd-timesyncd.service reflector.service paccache.timer fstrim.timer pkgfile-update.timer systemd-boot-update.service systemd-oomd.service
+```
+
+## Development
+
+The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broken, use only for testing!
+
+```
+curl -Ls http://arch-dev.webhop.me | bash
 ```
