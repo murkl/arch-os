@@ -150,9 +150,9 @@ _**Example**_
 
 ### Partitions layout
 
-The **partitions layout** is seperated in two partitions:
+The partitions layout is seperated in two partitions:
 
-1. A **FAT32** partition (1 GiB), mounted at `/boot/` as ESP.
+1. A **FAT32** partition (1 GiB), mounted at `/boot` as ESP.
 2. A **LUKS2 encrypted container** (optional), which takes the rest of the disk space, mounted at `/` as root.
 
 | Partition Number | Label            | Size             | Mountpoint | Filesystem                |
