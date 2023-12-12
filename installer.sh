@@ -54,8 +54,8 @@ ARCH_OS_X11_KEYBOARD_LAYOUT=""
 ARCH_OS_X11_KEYBOARD_VARIANT=""
 ARCH_OS_BOOTSPLASH_ENABLED=""
 ARCH_OS_GNOME_ENABLED=""
-ARCH_OS_MICROCODE=""
 ARCH_OS_KERNEL=""
+ARCH_OS_MICROCODE=""
 
 # ----------------------------------------------------------------------------------------------------
 # DEPENDENCIES
@@ -171,9 +171,6 @@ create_config() {
         echo ""
         echo "# X11 keyboard variant (optional): localectl list-x11-keymap-variants"
         echo "ARCH_OS_X11_KEYBOARD_VARIANT='${ARCH_OS_X11_KEYBOARD_VARIANT}' # example: nodeadkeys"
-        echo ""
-        echo "# Microcode (auto)"
-        echo "ARCH_OS_MICROCODE='${ARCH_OS_MICROCODE}' # leave emty for autodetection. Disabled with 'false'"
         echo ""
         echo "# Kernel (mandatory)"
         echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}' # linux, linux-lts linux-zen, linux-hardened"
@@ -640,7 +637,7 @@ SECONDS=0
     packages+=("nano")
     packages+=("bash-completion")
     packages+=("pkgfile")
-    [ -n "$ARCH_OS_MICROCODE" ] && [ "$ARCH_OS_MICROCODE" != "false" ] && packages+=("$ARCH_OS_MICROCODE")
+    [ -n "$ARCH_OS_MICROCODE" ] && packages+=("$ARCH_OS_MICROCODE")
 
     # Install core and initialize an empty pacman keyring in the target
     pacstrap -K /mnt "${packages[@]}" "${ARCH_OS_OPT_PACKAGE_LIST[@]}" --disable-download-timeout
