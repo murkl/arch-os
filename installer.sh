@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.0.6'
+VERSION='1.0.6-fix'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -552,10 +552,9 @@ SECONDS=0
     pacman -Sy --noconfirm --disable-download-timeout archlinux-keyring
 
     # Detect microcode
-    if [ -z "$ARCH_OS_MICROCODE" ]; then
-        grep -E "GenuineIntel" <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
-        grep -E "AuthenticAMD" <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
-    fi
+    ARCH_OS_MICROCODE=""
+    grep -E "GenuineIntel" <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
+    grep -E "AuthenticAMD" <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Wipe & Create Partitions (${ARCH_OS_DISK})"
