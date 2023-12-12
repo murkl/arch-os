@@ -654,7 +654,7 @@ SECONDS=0
 
     # Configure parrallel downloads, colors & multilib
     sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
-    sed -i 's/^#Color/Color/' /mnt/etc/pacman.conf
+    sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
     sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
     arch-chroot /mnt pacman -Syy --noconfirm
 
