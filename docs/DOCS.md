@@ -112,6 +112,9 @@ ARCH_OS_X11_KEYBOARD_VARIANT='nodeadkeys'
 
 # Kernel (mandatory)
 ARCH_OS_KERNEL='linux-zen'
+
+# VM Support (auto)
+ARCH_OS_VM_SUPPORT_ENABLED='true'
 ```
 
 ## Rescue & Recovery

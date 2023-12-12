@@ -56,6 +56,7 @@ ARCH_OS_BOOTSPLASH_ENABLED=""
 ARCH_OS_GNOME_ENABLED=""
 ARCH_OS_KERNEL=""
 ARCH_OS_MICROCODE=""
+ARCH_OS_VM_SUPPORT_ENABLED=""
 
 # ----------------------------------------------------------------------------------------------------
 # DEPENDENCIES
@@ -98,6 +99,7 @@ check_config() {
     # Set default values (if not already set)
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
+    [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
     #[ -z "$ARCH_OS_VCONSOLE_FONT" ] && ARCH_OS_VCONSOLE_FONT="eurlatgr"
     #[ -z "$ARCH_OS_REFLECTOR_COUNTRY" ] && ARCH_OS_REFLECTOR_COUNTRY="Germany,France"
 
@@ -174,6 +176,9 @@ create_config() {
         echo ""
         echo "# Kernel (mandatory)"
         echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}' # linux, linux-lts linux-zen, linux-hardened"
+        echo ""
+        echo "# VM Support (auto)"
+        echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
     } >"$INSTALLER_CONFIG"
 }
 
@@ -964,37 +969,39 @@ SECONDS=0
         # ----------------------------------------------------------------------------------------------------
 
         # VM Guest support (if VM detected)
-        hypervisor=$(systemd-detect-virt)
-        case $hypervisor in
-        kvm)
-            print_whiptail_info "KVM has been detected, setting up guest tools."
-            arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout spice spice-vdagent spice-protocol spice-gtk
-            arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout qemu-guest-agent
-            arch-chroot /mnt systemctl enable qemu-guest-agent
-            ;;
-        vmware)
-            print_whiptail_info "VMWare Workstation/ESXi has been detected, setting up guest tools."
-            arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout open-vm-tools
-            arch-chroot /mnt systemctl enable vmtoolsd
-            arch-chroot /mnt systemctl enable vmware-vmblock-fuse
-            ;;
-        oracle)
-            print_whiptail_info "VirtualBox has been detected, setting up guest tools."
-            arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout virtualbox-guest-utils
-            arch-chroot /mnt systemctl enable vboxservice
-            ;;
-        microsoft)
-            arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeouts hyperv
-            print_whiptail_info "Hyper-V has been detected, setting up guest tools."
-            arch-chroot /mnt systemctl enable hv_fcopy_daemon
-            arch-chroot /mnt systemctl enable hv_kvp_daemon
-            arch-chroot /mnt systemctl enable hv_vss_daemon
-            ;;
-        none)
-            print_whiptail_info "No VM detected"
-            # Do nothing
-            ;;
-        esac
+        if [ "$ARCH_OS_VM_SUPPORT_ENABLED" = "true" ]; then
+            hypervisor=$(systemd-detect-virt)
+            case $hypervisor in
+            kvm)
+                print_whiptail_info "KVM has been detected, setting up guest tools."
+                arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout spice spice-vdagent spice-protocol spice-gtk
+                arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout qemu-guest-agent
+                arch-chroot /mnt systemctl enable qemu-guest-agent
+                ;;
+            vmware)
+                print_whiptail_info "VMWare Workstation/ESXi has been detected, setting up guest tools."
+                arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout open-vm-tools
+                arch-chroot /mnt systemctl enable vmtoolsd
+                arch-chroot /mnt systemctl enable vmware-vmblock-fuse
+                ;;
+            oracle)
+                print_whiptail_info "VirtualBox has been detected, setting up guest tools."
+                arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout virtualbox-guest-utils
+                arch-chroot /mnt systemctl enable vboxservice
+                ;;
+            microsoft)
+                arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeouts hyperv
+                print_whiptail_info "Hyper-V has been detected, setting up guest tools."
+                arch-chroot /mnt systemctl enable hv_fcopy_daemon
+                arch-chroot /mnt systemctl enable hv_kvp_daemon
+                arch-chroot /mnt systemctl enable hv_vss_daemon
+                ;;
+            none)
+                print_whiptail_info "No VM detected"
+                # Do nothing
+                ;;
+            esac
+        fi
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Remove packages"
