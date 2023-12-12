@@ -628,7 +628,7 @@ SECONDS=0
     mount -v "$ARCH_OS_BOOT_PARTITION" /mnt/boot
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Pacstrap System Packages (This may take a while)"
+    print_whiptail_info "Pacstrap System Packages (This may take a while ~ 10 min)"
     # ----------------------------------------------------------------------------------------------------
 
     packages=()
@@ -879,7 +879,7 @@ SECONDS=0
     if [ "$ARCH_OS_GNOME_ENABLED" = "true" ]; then
 
         # ----------------------------------------------------------------------------------------------------
-        print_whiptail_info "Install GNOME Packages (This may take a while)"
+        print_whiptail_info "Install GNOME Packages (This may take a while ~ 15 min)"
         # ----------------------------------------------------------------------------------------------------
 
         # Install packages
