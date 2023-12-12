@@ -553,9 +553,10 @@ SECONDS=0
     pacman -Sy --noconfirm --disable-download-timeout archlinux-keyring
 
     # Detect microcode
-    ARCH_OS_MICROCODE=""
-    grep -E "GenuineIntel" <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
-    grep -E "AuthenticAMD" <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
+    if [ -z "$ARCH_OS_MICROCODE" ]; then
+        grep -E "GenuineIntel" <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
+        grep -E "AuthenticAMD" <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
+    fi
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Wipe & Create Partitions (${ARCH_OS_DISK})"
@@ -935,16 +936,46 @@ SECONDS=0
         packages+=("ttf-liberation")
         packages+=("ttf-dejavu")
 
-        # VM Guest support (if VM detected)
-        if [ "$(systemd-detect-virt)" != 'none' ]; then
-            packages+=("spice")
-            packages+=("spice-vdagent")
-            packages+=("spice-protocol")
-            packages+=("spice-gtk")
-        fi
-
         # Install packages
         arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"
+
+        # ----------------------------------------------------------------------------------------------------
+
+        # VM Guest support (if VM detected)
+        hypervisor=$(systemd-detect-virt)
+        case $hypervisor in
+        kvm)
+            #packages+=("spice")
+            #packages+=("spice-vdagent")
+            #packages+=("spice-protocol")
+            #packages+=("spice-gtk")
+            print_whiptail_info "KVM has been detected, setting up guest tools."
+            arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout qemu-guest-agent
+            arch-chroot /mnt systemctl enable qemu-guest-agent
+            ;;
+        vmware)
+            print_whiptail_info "VMWare Workstation/ESXi has been detected, setting up guest tools."
+            arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout open-vm-tools
+            arch-chroot /mnt systemctl enable vmtoolsd
+            arch-chroot /mnt systemctl enable vmware-vmblock-fuse
+            ;;
+        oracle)
+            print_whiptail_info "VirtualBox has been detected, setting up guest tools."
+            arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout virtualbox-guest-utils
+            arch-chroot /mnt systemctl enable vboxservice
+            ;;
+        microsoft)
+            print_whiptail_info "Hyper-V has been detected, setting up guest tools."
+            arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeouts hyperv
+            arch-chroot /mnt systemctl enable hv_fcopy_daemon
+            arch-chroot /mnt systemctl enable hv_kvp_daemon
+            arch-chroot /mnt systemctl enable hv_vss_daemon
+            ;;
+        none)
+            print_whiptail_info "No VM detected"
+            # Do nothing
+            ;;
+        esac
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Remove packages"
