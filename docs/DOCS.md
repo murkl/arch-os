@@ -178,6 +178,8 @@ NetworkManager systemd-timesyncd.service reflector.service paccache.timer fstrim
 
 ### Screenshots
 
+Note: This screenshots may outdated.
+
 <div align="center">
 <p><img src="screenshots/neofetch.png" width="90%" /></p>
 <p><img src="screenshots/apps.png" width="90%" /></p>
