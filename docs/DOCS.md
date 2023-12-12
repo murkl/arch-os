@@ -104,12 +104,12 @@ ARCH_OS_VCONSOLE_KEYMAP='de-latin1-nodeadkeys'
 ARCH_OS_VCONSOLE_FONT='eurlatgr'
 
 # X11 keyboard layout (auto): localectl list-x11-keymap-layouts
-ARCH_OS_KEYBOARD_LAYOUT='de'
+ARCH_OS_X11_KEYBOARD_LAYOUT='de'
 
 # X11 keyboard variant (optional): localectl list-x11-keymap-variants
-ARCH_OS_KEYBOARD_VARIANT='nodeadkeys'
+ARCH_OS_X11_KEYBOARD_VARIANT='nodeadkeys'
 
-# Kernel
+# Kernel (mandatory)
 ARCH_OS_KERNEL='linux-zen'
 ```
 
