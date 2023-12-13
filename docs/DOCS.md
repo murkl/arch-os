@@ -112,6 +112,9 @@ ARCH_OS_X11_KEYBOARD_VARIANT='nodeadkeys'
 
 # Kernel (mandatory)
 ARCH_OS_KERNEL='linux-zen'
+
+# VM Support (auto)
+ARCH_OS_VM_SUPPORT_ENABLED='true'
 ```
 
 ## Rescue & Recovery
@@ -148,10 +151,17 @@ _**Example**_
 
 ## Technical Info
 
-<div align="center">
-<p><img src="screenshots/neofetch.png" width="90%" /></p>
-<p><img src="screenshots/apps.png" width="90%" /></p>
-</div>
+### Partitions layout
+
+The partitions layout is seperated in two partitions:
+
+1. A **FAT32** partition (1 GiB), mounted at `/boot` as ESP.
+2. A **LUKS2 encrypted container** (optional), which takes the rest of the disk space, mounted at `/` as root.
+
+| Partition Number | Label            | Size             | Mountpoint | Filesystem                |
+| ---------------- | ---------------- | ---------------- | ---------- | ------------------------- |
+| 1                | BOOT             | 1 GiB            | /boot/     | FAT32                     |
+| 2                | ROOT / cryptroot | Rest of the disk | /          | EXT4 + Encryption (LUKS2) |
 
 ### Core Packages
 
@@ -169,7 +179,18 @@ This services will be enabled during minimal Arch without GNOME installation:
 NetworkManager systemd-timesyncd.service reflector.service paccache.timer fstrim.timer pkgfile-update.timer systemd-boot-update.service systemd-oomd.service
 ```
 
+### Screenshots
+
+Note: This screenshots may outdated.
+
+<div align="center">
+<p><img src="screenshots/neofetch.png" width="90%" /></p>
+<p><img src="screenshots/apps.png" width="90%" /></p>
+</div>
+
 ## Development
+
+Create new pull request branches only from main branch! The [dev branch](https://github.com/murkl/arch-os/tree/dev) will be deleted after each merge into main.
 
 The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broken, use only for testing!
 
