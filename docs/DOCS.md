@@ -11,6 +11,7 @@
 3. [Rescue & Recovery](#rescue--recovery)
 4. [Technical Information](#technical-info)
 5. [Development](#development)
+6. [Issues](#issues)
 
 ## Recommendation
 
@@ -65,7 +66,7 @@ The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better s
 ARCH_OS_HOSTNAME='arch-os'
 
 # User (mandatory)
-ARCH_OS_USERNAME='mortiz'
+ARCH_OS_USERNAME='moritz'
 
 # Disk (mandatory)
 ARCH_OS_DISK='/dev/sda'
@@ -77,45 +78,45 @@ ARCH_OS_BOOT_PARTITION='/dev/sda1'
 ARCH_OS_ROOT_PARTITION='/dev/sda2'
 
 # Disk encryption (mandatory)
-ARCH_OS_ENCRYPTION_ENABLED='false'
+ARCH_OS_ENCRYPTION_ENABLED='true'
 
-# Swap (mandatory): 0 or null = disable
-ARCH_OS_SWAP_SIZE='8'
+# Swap (mandatory) | Disable: 0 or empty string
+ARCH_OS_SWAP_SIZE='16'
 
 # Bootsplash (mandatory)
 ARCH_OS_BOOTSPLASH_ENABLED='true'
 
-# GNOME Desktop (mandatory): false = minimal arch
+# GNOME Desktop (mandatory) | Minimal Arch OS: false
 ARCH_OS_GNOME_ENABLED='true'
 
-# Timezone (auto): ls /usr/share/zoneinfo/**
+# Timezone (auto) | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin
 ARCH_OS_TIMEZONE='Europe/Berlin'
 
-# Country used by reflector (optional)
-ARCH_OS_REFLECTOR_COUNTRY='Germany'
+# Country used by reflector (optional) | Default: empty | Example: Germany,France
+ARCH_OS_REFLECTOR_COUNTRY=''
 
-# Locale (mandatory): ls /usr/share/i18n/locales
+# Locale (mandatory) | Show available: ls /usr/share/i18n/locales | Example: de_DE
 ARCH_OS_LOCALE_LANG='de_DE'
 
-# Locale List (auto): cat /etc/locale.gen
+# Locale List (auto) | Show available: cat /etc/locale.gen
 ARCH_OS_LOCALE_GEN_LIST=('de_DE.UTF-8 UTF-8' 'de_DE ISO-8859-1' 'de_DE@euro ISO-8859-15' 'en_US.UTF-8 UTF-8')
 
-# Console keymap (mandatory): localectl list-keymaps
+# Console keymap (mandatory) | Show available: localectl list-keymaps | Example: de-latin1-nodeadkeys
 ARCH_OS_VCONSOLE_KEYMAP='de-latin1-nodeadkeys'
 
-# Console font (optional): find /usr/share/kbd/consolefonts/*.psfu.gz
-ARCH_OS_VCONSOLE_FONT='eurlatgr'
+# Console font (optional) | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Default: empty | Example: eurlatgr
+ARCH_OS_VCONSOLE_FONT=''
 
-# X11 keyboard layout (auto): localectl list-x11-keymap-layouts
+# X11 keyboard layout (mandatory) | Show available: localectl list-x11-keymap-layouts | Example: de
 ARCH_OS_X11_KEYBOARD_LAYOUT='de'
 
-# X11 keyboard variant (optional): localectl list-x11-keymap-variants
+# X11 keyboard variant (optional) | Show available: localectl list-x11-keymap-variants | Default: empty | Example: nodeadkeys
 ARCH_OS_X11_KEYBOARD_VARIANT='nodeadkeys'
 
-# Kernel (mandatory)
+# Kernel (auto) | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened
 ARCH_OS_KERNEL='linux-zen'
 
-# VM Support (auto)
+# VM Support (auto) | Default: true | Disable: false
 ARCH_OS_VM_SUPPORT_ENABLED='true'
 ```
 
@@ -199,3 +200,7 @@ The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broke
 ```
 curl -Ls http://arch-dev.webhop.me | bash
 ```
+
+## Issues
+
+If you encounter problems with a server during installation, remove this server from `/etc/pacman.d/mirrorlist` and run Arch OS Installer again.
