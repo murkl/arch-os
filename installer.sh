@@ -686,7 +686,7 @@ SECONDS=0
     if [ "$ARCH_OS_SWAP_SIZE" != "0" ] && [ -n "$ARCH_OS_SWAP_SIZE" ]; then
         dd if=/dev/zero of=/mnt/swapfile bs=1G count="$ARCH_OS_SWAP_SIZE" status=progress
         chmod 600 /mnt/swapfile
-        mkswap /mnt/swapfile
+        mkswap -U clear /mnt/swapfile
         swapon /mnt/swapfile
         echo "# Swapfile" >>/mnt/etc/fstab
         echo "/swapfile none swap defaults 0 0" >>/mnt/etc/fstab
