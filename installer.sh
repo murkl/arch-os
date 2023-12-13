@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.0.7'
+VERSION='1.0.8'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -141,43 +141,43 @@ create_config() {
         echo "# Disk encryption (mandatory)"
         echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}'"
         echo ""
-        echo "# Swap (mandatory): 0 or null = disable"
+        echo "# Swap (mandatory) | Disable: 0 or empty string"
         echo "ARCH_OS_SWAP_SIZE='${ARCH_OS_SWAP_SIZE}'"
         echo ""
         echo "# Bootsplash (mandatory)"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
         echo ""
-        echo "# GNOME Desktop (mandatory): false = minimal arch"
+        echo "# GNOME Desktop (mandatory) | Minimal Arch OS: false"
         echo "ARCH_OS_GNOME_ENABLED='${ARCH_OS_GNOME_ENABLED}'"
         echo ""
-        echo "# Timezone (auto): ls /usr/share/zoneinfo/**"
-        echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}' # example: Europe/Berlin"
+        echo "# Timezone (auto) | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin"
+        echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}'"
         echo ""
-        echo "# Country used by reflector (optional)"
-        echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}' # example: Germany,France"
+        echo "# Country used by reflector (optional) | Default: empty | Example: Germany,France"
+        echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}'"
         echo ""
-        echo "# Locale (mandatory): ls /usr/share/i18n/locales"
-        echo "ARCH_OS_LOCALE_LANG='${ARCH_OS_LOCALE_LANG}' # example: de_DE"
+        echo "# Locale (mandatory) | Show available: ls /usr/share/i18n/locales | Example: de_DE"
+        echo "ARCH_OS_LOCALE_LANG='${ARCH_OS_LOCALE_LANG}'"
         echo ""
-        echo "# Locale List (auto): cat /etc/locale.gen"
+        echo "# Locale List (auto) | Show available: cat /etc/locale.gen"
         echo "ARCH_OS_LOCALE_GEN_LIST=(${ARCH_OS_LOCALE_GEN_LIST[*]@Q})"
         echo ""
-        echo "# Console keymap (mandatory): localectl list-keymaps"
-        echo "ARCH_OS_VCONSOLE_KEYMAP='${ARCH_OS_VCONSOLE_KEYMAP}' # example de-latin1-nodeadkeys"
+        echo "# Console keymap (mandatory) | Show available: localectl list-keymaps | Example: de-latin1-nodeadkeys"
+        echo "ARCH_OS_VCONSOLE_KEYMAP='${ARCH_OS_VCONSOLE_KEYMAP}'"
         echo ""
-        echo "# Console font (optional): find /usr/share/kbd/consolefonts/*.psfu.gz"
-        echo "ARCH_OS_VCONSOLE_FONT='${ARCH_OS_VCONSOLE_FONT}' # example: eurlatgr"
+        echo "# Console font (optional) | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Default: empty | Example: eurlatgr"
+        echo "ARCH_OS_VCONSOLE_FONT='${ARCH_OS_VCONSOLE_FONT}'"
         echo ""
-        echo "# X11 keyboard layout (mandatory): localectl list-x11-keymap-layouts"
-        echo "ARCH_OS_X11_KEYBOARD_LAYOUT='${ARCH_OS_X11_KEYBOARD_LAYOUT}' # example: de"
+        echo "# X11 keyboard layout (mandatory) | Show available: localectl list-x11-keymap-layouts | Example: de"
+        echo "ARCH_OS_X11_KEYBOARD_LAYOUT='${ARCH_OS_X11_KEYBOARD_LAYOUT}'"
         echo ""
-        echo "# X11 keyboard variant (optional): localectl list-x11-keymap-variants"
-        echo "ARCH_OS_X11_KEYBOARD_VARIANT='${ARCH_OS_X11_KEYBOARD_VARIANT}' # example: nodeadkeys"
+        echo "# X11 keyboard variant (optional) | Show available: localectl list-x11-keymap-variants | Default: empty | Example: nodeadkeys"
+        echo "ARCH_OS_X11_KEYBOARD_VARIANT='${ARCH_OS_X11_KEYBOARD_VARIANT}'"
         echo ""
-        echo "# Kernel (mandatory)"
-        echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}' # linux, linux-lts linux-zen, linux-hardened"
+        echo "# Kernel (auto) | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened"
+        echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}'"
         echo ""
-        echo "# VM Support (auto)"
+        echo "# VM Support (auto) | Default: true | Disable: false"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
     } >"$INSTALLER_CONFIG"
 }
@@ -577,7 +577,7 @@ SECONDS=0
     #sysctl net.ipv4.tcp_ecn=0
 
     # Update keyring
-    pacman -Sy --noconfirm --disable-download-timeout archlinux-keyring
+    pacman -Sy --noconfirm archlinux-keyring
 
     # Detect microcode if empty
     if [ -z "$ARCH_OS_MICROCODE" ]; then
@@ -651,7 +651,7 @@ SECONDS=0
     [ -n "$ARCH_OS_MICROCODE" ] && packages+=("$ARCH_OS_MICROCODE")
 
     # Install core and initialize an empty pacman keyring in the target
-    pacstrap -K /mnt "${packages[@]}" "${ARCH_OS_OPT_PACKAGE_LIST[@]}" --disable-download-timeout
+    pacstrap -K /mnt "${packages[@]}" "${ARCH_OS_OPT_PACKAGE_LIST[@]}"
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Configure Pacman & Reflector"
@@ -686,7 +686,7 @@ SECONDS=0
     if [ "$ARCH_OS_SWAP_SIZE" != "0" ] && [ -n "$ARCH_OS_SWAP_SIZE" ]; then
         dd if=/dev/zero of=/mnt/swapfile bs=1G count="$ARCH_OS_SWAP_SIZE" status=progress
         chmod 600 /mnt/swapfile
-        mkswap /mnt/swapfile
+        mkswap -U clear /mnt/swapfile
         swapon /mnt/swapfile
         echo "# Swapfile" >>/mnt/etc/fstab
         echo "/swapfile none swap defaults 0 0" >>/mnt/etc/fstab
@@ -859,7 +859,7 @@ SECONDS=0
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
 
         # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout plymouth
+        arch-chroot /mnt pacman -S --noconfirm --needed plymouth
 
         # Configure mkinitcpio
         sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf
@@ -964,7 +964,7 @@ SECONDS=0
         packages+=("ttf-dejavu")
 
         # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"
+        arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
 
         # ----------------------------------------------------------------------------------------------------
 
@@ -974,19 +974,19 @@ SECONDS=0
             case $hypervisor in
             kvm)
                 print_whiptail_info "KVM has been detected, setting up guest tools."
-                arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout spice spice-vdagent spice-protocol spice-gtk
-                arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout qemu-guest-agent
+                arch-chroot /mnt pacman -S --noconfirm --needed spice spice-vdagent spice-protocol spice-gtk
+                arch-chroot /mnt pacman -S --noconfirm --needed qemu-guest-agent
                 arch-chroot /mnt systemctl enable qemu-guest-agent
                 ;;
             vmware)
                 print_whiptail_info "VMWare Workstation/ESXi has been detected, setting up guest tools."
-                arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout open-vm-tools
+                arch-chroot /mnt pacman -S --noconfirm --needed open-vm-tools
                 arch-chroot /mnt systemctl enable vmtoolsd
                 arch-chroot /mnt systemctl enable vmware-vmblock-fuse
                 ;;
             oracle)
                 print_whiptail_info "VirtualBox has been detected, setting up guest tools."
-                arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout virtualbox-guest-utils
+                arch-chroot /mnt pacman -S --noconfirm --needed virtualbox-guest-utils
                 arch-chroot /mnt systemctl enable vboxservice
                 ;;
             microsoft)
