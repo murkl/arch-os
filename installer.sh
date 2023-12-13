@@ -577,7 +577,7 @@ SECONDS=0
     #sysctl net.ipv4.tcp_ecn=0
 
     # Update keyring
-    pacman -Sy --noconfirm --disable-download-timeout archlinux-keyring
+    pacman -Sy --noconfirm archlinux-keyring
 
     # Detect microcode if empty
     if [ -z "$ARCH_OS_MICROCODE" ]; then
@@ -651,7 +651,7 @@ SECONDS=0
     [ -n "$ARCH_OS_MICROCODE" ] && packages+=("$ARCH_OS_MICROCODE")
 
     # Install core and initialize an empty pacman keyring in the target
-    pacstrap -K /mnt "${packages[@]}" "${ARCH_OS_OPT_PACKAGE_LIST[@]}" --disable-download-timeout
+    pacstrap -K /mnt "${packages[@]}" "${ARCH_OS_OPT_PACKAGE_LIST[@]}"
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Configure Pacman & Reflector"
@@ -859,7 +859,7 @@ SECONDS=0
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
 
         # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout plymouth
+        arch-chroot /mnt pacman -S --noconfirm --needed plymouth
 
         # Configure mkinitcpio
         sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf
@@ -964,7 +964,7 @@ SECONDS=0
         packages+=("ttf-dejavu")
 
         # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"
+        arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
 
         # ----------------------------------------------------------------------------------------------------
 
@@ -974,19 +974,19 @@ SECONDS=0
             case $hypervisor in
             kvm)
                 print_whiptail_info "KVM has been detected, setting up guest tools."
-                arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout spice spice-vdagent spice-protocol spice-gtk
-                arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout qemu-guest-agent
+                arch-chroot /mnt pacman -S --noconfirm --needed spice spice-vdagent spice-protocol spice-gtk
+                arch-chroot /mnt pacman -S --noconfirm --needed qemu-guest-agent
                 arch-chroot /mnt systemctl enable qemu-guest-agent
                 ;;
             vmware)
                 print_whiptail_info "VMWare Workstation/ESXi has been detected, setting up guest tools."
-                arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout open-vm-tools
+                arch-chroot /mnt pacman -S --noconfirm --needed open-vm-tools
                 arch-chroot /mnt systemctl enable vmtoolsd
                 arch-chroot /mnt systemctl enable vmware-vmblock-fuse
                 ;;
             oracle)
                 print_whiptail_info "VirtualBox has been detected, setting up guest tools."
-                arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout virtualbox-guest-utils
+                arch-chroot /mnt pacman -S --noconfirm --needed virtualbox-guest-utils
                 arch-chroot /mnt systemctl enable vboxservice
                 ;;
             microsoft)
