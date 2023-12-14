@@ -9,9 +9,10 @@
 1. [Recommendation](#recommendation)
 2. [Installation Properties](#installation-properties)
 3. [Rescue & Recovery](#rescue--recovery)
-4. [Technical Information](#technical-info)
-5. [Development](#development)
-6. [Issues](#issues)
+4. [Fish Shell](#fish-shell)
+5. [Technical Information](#technical-info)
+6. [Development](#development)
+7. [Issues](#issues)
 
 ## Recommendation
 
@@ -151,6 +152,19 @@ _**Example**_
 - Enter chroot: `arch-chroot /mnt`
 - _Fix your Arch OS..._
 - Exit: `exit`
+
+## Fish Shell
+
+### Config
+
+```
+~/.config/fish/config.fish
+~/.config/fish/aliases.fish
+```
+
+```
+fish_config
+```
 
 ## Technical Info
 
