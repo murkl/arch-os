@@ -646,6 +646,7 @@ SECONDS=0
     packages+=("reflector")
     packages+=("pkgfile")
     packages+=("fish")
+    packages+=("starship")
     packages+=("git")
     packages+=("nano")
     #packages+=("bash-completion")
@@ -879,6 +880,40 @@ SECONDS=0
     fi
 
     # ----------------------------------------------------------------------------------------------------
+    print_whiptail_info "Configure Fish Shell"
+    # ----------------------------------------------------------------------------------------------------
+
+    fish_home="/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
+    fish_config="${fish_home}/config.fish"
+    fish_aliases="${fish_home}/aliases.fish"
+
+    # Init config
+    mkdir -p "$fish_home"
+    touch "$fish_config"
+    touch "$fish_aliases"
+
+    # shellcheck disable=SC2016
+    { # Create config.fish
+        echo '# https://wiki.archlinux.de/title/Fish#Troubleshooting'
+        echo 'if status --is-login'
+        echo '    set PATH $PATH /usr/bin /sbin'
+        echo 'end'
+        echo ''
+        echo '# Disable welcome message'
+        echo 'set fish_greeting'
+        echo ''
+        echo '# Source aliases'
+        echo 'source "$HOME/.config/fish/aliases.fish"'
+        echo ''
+        echo '# Source starship'
+        echo 'starship init fish | source'
+    } >>"$fish_config"
+
+    { # Create aliases.fish
+        echo 'alias q="exit"'
+    } >>"$fish_aliases"
+
+    # ----------------------------------------------------------------------------------------------------
     # START INSTALL GNOME
     # ----------------------------------------------------------------------------------------------------
 
@@ -1087,6 +1122,7 @@ SECONDS=0
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/qv4l2.desktop"
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/qvidcap.desktop"
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/lstopo.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/fish.desktop"
 
     else
         # Skip Gnome progresses
