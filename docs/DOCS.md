@@ -171,7 +171,7 @@ The partitions layout is seperated in two partitions:
 This packages will be installed during minimal Arch without GNOME installation (180 packages in total):
 
 ```
-base base-devel linux-zen linux-firmware networkmanager pacman-contrib reflector git nano bash-completion pkgfile [microcode_pkg]
+base base-devel linux-zen linux-firmware networkmanager pacman-contrib reflector pkgfile fish git nano [microcode_pkg]
 ```
 
 ### Core Services

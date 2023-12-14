@@ -644,10 +644,11 @@ SECONDS=0
     packages+=("networkmanager")
     packages+=("pacman-contrib")
     packages+=("reflector")
+    packages+=("pkgfile")
+    packages+=("fish")
     packages+=("git")
     packages+=("nano")
-    packages+=("bash-completion")
-    packages+=("pkgfile")
+    #packages+=("bash-completion")
     [ -n "$ARCH_OS_MICROCODE" ] && packages+=("$ARCH_OS_MICROCODE")
 
     # Install core and initialize an empty pacman keyring in the target
@@ -797,7 +798,7 @@ SECONDS=0
     # ----------------------------------------------------------------------------------------------------
 
     # Create new user
-    arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$ARCH_OS_USERNAME"
+    arch-chroot /mnt useradd -m -G wheel -s /bin/fish "$ARCH_OS_USERNAME"
 
     # Allow users in group wheel to use sudo
     sed -i 's^# %wheel ALL=(ALL:ALL) ALL^%wheel ALL=(ALL:ALL) ALL^g' /mnt/etc/sudoers
