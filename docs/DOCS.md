@@ -46,7 +46,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Cursor Theme: [nordzy-cursors](https://github.com/alvatip/Nordzy-cursors)
 - Firefox Theme: [firefox-gnome-theme](https://github.com/rafaelmardojai/firefox-gnome-theme)
 - Nautilus Extensions: [folder-color-nautilus](https://aur.archlinux.org/packages/folder-color-nautilus)
-- GNOME Extensions: [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/), [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/), [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
+- GNOME Extensions: [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/), [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/), [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/), [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
 
 ### For Audiophiles
 
