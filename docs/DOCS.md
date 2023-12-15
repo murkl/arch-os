@@ -32,10 +32,10 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [webapp-manager](https://aur.archlinux.org/packages/webapp-manager) for easy creation of web-apps for any website
 - Install [preload](https://wiki.archlinux.org/title/Preload) (start the service after installation: `sudo systemctl enable preload`)
 - Install [mutter-performance](https://aur.archlinux.org/packages/mutter-performance) (great on Intel Graphics with Wayland)
-- Use [neofetch](https://archlinux.org/packages/extra/x86_64/neofetch/) to show system info
+- Use [neofetch](https://archlinux.org/packages/extra/x86_64/neofetch/) (Shell Enhancement included) to show system info
 - Use [downgrade](https://aur.archlinux.org/packages/downgrade) when you need to downgrade a package
-- Use [starship](https://starship.rs/) for fancy Bash promt
-- Use [exa](https://archlinux.org/packages/extra/x86_64/exa/) as colorful `ls` replacement
+- Use [starship](https://starship.rs/) (Shell Enhancement included) for fancy Shell promt
+- Use [exa](https://archlinux.org/packages/extra/x86_64/exa/) (Shell Enhancement included) as colorful `ls` replacement
 - Use [bat](https://archlinux.org/packages/extra/x86_64/bat/) as colorful `man` replacement
 - Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games
 - Install [EasyEffects](https://flathub.org/de/apps/com.github.wwmm.easyeffects) for Dolby Atmos

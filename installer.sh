@@ -338,7 +338,7 @@ tui_set_gnome() {
 
         # Set X11 keyboard variant
         local user_input="$ARCH_OS_X11_KEYBOARD_VARIANT"
-        [ -z "$user_input" ] && user_input='nodeadkeys'
+        [ -z "$user_input" ] && user_input=''
         user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert X11 (Xorg) keyboard variant\n\nExample: 'nodeadkeys' or leave empty for default" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
         ARCH_OS_X11_KEYBOARD_VARIANT="$user_input"
 

@@ -41,7 +41,7 @@ Installs a Arch Linux Distribution including GNOME as Desktop, preinstalled Paru
 - Installation Properties
 - Minimal GNOME Desktop + Autologin (optional)
 - Linux Zen Kernel
-- Fancy Shell Enhancement (optional)
+- Shell Enhancement (optional)
 - Disk Encryption (optional)
 - Systemd Bootloader (auto updated)
 - Wayland optimized
