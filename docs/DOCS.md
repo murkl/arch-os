@@ -176,6 +176,12 @@ fish_config
 ~/.config/starship.toml
 ```
 
+### Neofetch config
+
+```
+~/.config/neofetch/config.conf
+```
+
 ## Technical Info
 
 ### Partitions layout
@@ -203,7 +209,7 @@ base base-devel linux-zen linux-firmware networkmanager pacman-contrib reflector
 If the property `ARCH_OS_SHELL_ENHANCED_ENABLED` is set to `false`, the package `bash-completion` is installed by default. Otherwise:
 
 ```
-fish starship exa
+fish starship exa neofetch
 ```
 
 ### Core Services

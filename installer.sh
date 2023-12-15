@@ -890,7 +890,7 @@ SECONDS=0
     if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
 
         # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed fish starship exa
+        arch-chroot /mnt pacman -S --noconfirm --needed fish starship exa neofetch
 
         fish_home="/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
         fish_config="${fish_home}/config.fish"
