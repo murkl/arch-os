@@ -57,6 +57,7 @@ ARCH_OS_GNOME_ENABLED=""
 ARCH_OS_KERNEL=""
 ARCH_OS_MICROCODE=""
 ARCH_OS_VM_SUPPORT_ENABLED=""
+ARCH_OS_SHELL_ENHANCED_ENABLED=""
 
 # ----------------------------------------------------------------------------------------------------
 # DEPENDENCIES
@@ -100,6 +101,7 @@ check_config() {
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
     [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
+    [ -z "$ARCH_OS_SHELL_ENHANCED_ENABLED" ] && ARCH_OS_SHELL_ENHANCED_ENABLED="true"
     #[ -z "$ARCH_OS_VCONSOLE_FONT" ] && ARCH_OS_VCONSOLE_FONT="eurlatgr"
     #[ -z "$ARCH_OS_REFLECTOR_COUNTRY" ] && ARCH_OS_REFLECTOR_COUNTRY="Germany,France"
 
@@ -179,6 +181,9 @@ create_config() {
         echo ""
         echo "# VM Support (auto) | Default: true | Disable: false"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
+        echo ""
+        echo "# Shell Enhancement (auto) | Default: true | Disable: false"
+        echo "ARCH_OS_SHELL_ENHANCED_ENABLED='${ARCH_OS_SHELL_ENHANCED_ENABLED}'"
     } >"$INSTALLER_CONFIG"
 }
 
@@ -645,13 +650,10 @@ SECONDS=0
     packages+=("pacman-contrib")
     packages+=("reflector")
     packages+=("pkgfile")
-    packages+=("fish")
-    packages+=("starship")
-    packages+=("neofetch")
-    packages+=("exa")
     packages+=("git")
     packages+=("nano")
-    #packages+=("bash-completion")
+
+    # Add microcode package
     [ -n "$ARCH_OS_MICROCODE" ] && packages+=("$ARCH_OS_MICROCODE")
 
     # Install core and initialize an empty pacman keyring in the target
@@ -882,149 +884,73 @@ SECONDS=0
     fi
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Configure Fish Shell"
+    print_whiptail_info "Install Shell Enhancement"
     # ----------------------------------------------------------------------------------------------------
 
-    fish_home="/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
-    fish_config="${fish_home}/config.fish"
-    fish_aliases="${fish_home}/aliases.fish"
+    if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
 
-    # Create config dir
-    mkdir -p "$fish_home"
+        # Install packages
+        arch-chroot /mnt pacman -S --noconfirm --needed fish starship exa
 
-    # shellcheck disable=SC2016
-    { # Create config.fish
+        fish_home="/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
+        fish_config="${fish_home}/config.fish"
+        fish_aliases="${fish_home}/aliases.fish"
 
-        echo 'if status is-interactive'
-        echo '    # Commands to run in interactive sessions can go here'
-        echo 'end'
-        echo ''
-        echo '# https://wiki.archlinux.de/title/Fish#Troubleshooting'
-        echo 'if status --is-login'
-        echo '    set PATH $PATH /usr/bin /sbin'
-        echo 'end'
-        echo ''
-        echo '# Disable welcome message'
-        echo 'set fish_greeting'
-        echo ''
-        echo '# Source starship'
-        echo 'starship init fish | source'
-        echo ''
-        echo '# Source aliases'
-        echo 'source "$HOME/.config/fish/aliases.fish"'
-    } >"$fish_config"
+        # Create config dir
+        mkdir -p "$fish_home"
 
-    { # Create aliases.fish
-        echo 'alias q="exit"'
-        echo 'alias ls="exa --color=always --group-directories-first"'
-    } >"$fish_aliases"
+        # shellcheck disable=SC2016
+        { # Create config.fish
+            echo 'if status is-interactive'
+            echo '    # Commands to run in interactive sessions can go here'
+            echo 'end'
+            echo ''
+            echo '# https://wiki.archlinux.de/title/Fish#Troubleshooting'
+            echo 'if status --is-login'
+            echo '    set PATH $PATH /usr/bin /sbin'
+            echo 'end'
+            echo ''
+            echo '# Disable welcome message'
+            echo 'set fish_greeting'
+            echo ''
+            echo '# Source user aliases'
+            echo 'source "$HOME/.config/fish/aliases.fish"'
+            echo ''
+            echo '# Source starship promt'
+            echo 'starship init fish | source'
+        } >"$fish_config"
 
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Configure Starship Promt"
-    # ----------------------------------------------------------------------------------------------------
+        { # Create aliases.fish
+            echo 'alias q="exit"'
+            echo 'alias ls="exa --color=always --group-directories-first"'
+        } >"$fish_aliases"
 
-    starship_config=$(
-        cat <<'END'
-format = """
-[░▒▓](#9841bb)\
-$os\
-$user\
-$directory\
-[](fg:#9841bb bg:#1e78e4)\
-$git_branch\
-$git_status\
-[](fg:#1e78e4 bg:#FFFFFF)\
-$time\
-[ ](fg:#FFFFFF)\
-"""
- 
-add_newline = true
+        # Starship config
+        starship_config="/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
 
-[os]
-disabled = false
-style = "fg:#FFFFFF bg:#9841bb"
+        # shellcheck disable=SC2016
+        { # Create starship.toml
+            echo "# Get editor completions based on the config schema"
+            echo '"$schema" = 'https://starship.rs/config-schema.json''
+            echo ""
+            echo "# Inserts a blank line between shell prompts"
+            echo "add_newline = true"
+            echo ""
+            echo "# Replace the '❯' symbol in the prompt with '➜'"
+            echo "[character] # The name of the module we are configuring is 'character'"
+            echo "success_symbol = '[➜](bold green)' # The 'success_symbol' segment is being set to '➜' with the color 'bold green'"
+            echo ""
+            echo "# Disable the package module, hiding it from the prompt completely"
+            echo "[package]"
+            echo "disabled = true"
+        } >"$starship_config"
 
-[os.symbols]
-Arch = "  "
- 
-[directory]
-disabled = false
-style = "fg:#FFFFFF bg:#9841bb"
-format = "[ $path ]($style)"
-truncation_length = 3
-truncation_symbol = "…/"
- 
-[git_branch]
-disabled = false
-symbol = ""
-style = "bg:#FFFFFF"
-format = '[[ $symbol $branch ](fg:#FFFFFF bg:#1e78e4)]($style)'
- 
-[git_status]
-disabled = false
-style = "bg:#FFFFFF"
-format = '[[($all_status$ahead_behind )](fg:#FFFFFF bg:#1e78e4)]($style)'
-
-[time]
-disabled = false
-time_format = "%R" # Hour:Minute Format
-style = "bg:#FFFFFF"
-format = '[[  $time ](fg:#241f31 bg:#FFFFFF)]($style)'
-END
-    )
-    echo "$starship_config" >"/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Configure Neofetch"
-    # ----------------------------------------------------------------------------------------------------
-
-    neofetch_config=$(
-        cat <<'END'
-# https://github.com/dylanaraps/neofetch/wiki/Customizing-Info
-print_info() {
-    prin
-    prin "Distro\t" "Arch OS"
-    info "Kernel\t" kernel
-    info "CPU\t" cpu
-    info "GPU\t" gpu
-    prin
-    info "Desktop\t" de
-    prin "Window\t" "$([ $XDG_SESSION_TYPE = 'x11' ] && echo X11 || echo Wayland)"
-    info "Manager\t" wm
-    info "Shell\t" shell
-    info "Terminal\t" term
-    prin
-    info "Memory\t" memory
-    info "Uptime\t" uptime
-    info "IP\t" local_ip
-    info "Packages\t" packages
-    prin
-    prin "$(color 1) ● \n $(color 2) ● \n $(color 3) ● \n $(color 4) ● \n $(color 5) ● \n $(color 6) ● \n $(color 7) ● \n $(color 8) ●"
-}
-
-separator=" → "
-ascii_distro="auto"
-ascii_bold="on"
-ascii_colors=(5 5 5 5 5 5)
-bold="on"
-colors=(7 7 7 7 7 7)
-gap=8
-os_arch="off"
-shell_version="off"
-#gpu_type="dedicated"
-cpu_speed="off"
-cpu_brand="on"
-cpu_cores="off"
-cpu_temp="off"
-memory_percent="on"
-memory_unit="gib"
-#package_managers="off"
-END
-    )
-
-    neofetch_home="/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch"
-    mkdir -p "$neofetch_home"
-    echo "$neofetch_config" >"${neofetch_home}/config.conf"
+        # Set Shell
+        arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
+    else
+        # Install bash completion as default
+        arch-chroot /mnt pacman -S --noconfirm --needed bash-completion
+    fi
 
     # ----------------------------------------------------------------------------------------------------
     # START INSTALL GNOME

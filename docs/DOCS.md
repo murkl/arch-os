@@ -118,6 +118,9 @@ ARCH_OS_KERNEL='linux-zen'
 
 # VM Support (auto) | Default: true | Disable: false
 ARCH_OS_VM_SUPPORT_ENABLED='true'
+
+# Shell Enhancement (auto) | Default: true | Disable: false
+ARCH_OS_SHELL_ENHANCED_ENABLED='true'
 ```
 
 ## Rescue & Recovery
@@ -184,7 +187,15 @@ The partitions layout is seperated in two partitions:
 This packages will be installed during minimal Arch without GNOME installation (180 packages in total):
 
 ```
-base base-devel linux-zen linux-firmware networkmanager pacman-contrib reflector pkgfile fish git nano [microcode_pkg]
+base base-devel linux-zen linux-firmware networkmanager pacman-contrib reflector pkgfile git nano [microcode_pkg]
+```
+
+#### Shell Enhancement Packages
+
+If the property `ARCH_OS_SHELL_ENHANCED_ENABLED` is set to `false`, the package `bash-completion` is installed by default. Otherwise:
+
+```
+fish starship exa
 ```
 
 ### Core Services
