@@ -923,7 +923,8 @@ SECONDS=0
     print_whiptail_info "Configure Starship Promt"
     # ----------------------------------------------------------------------------------------------------
 
-    read -r -d '' starship_config <<'EOF'
+    starship_config=$(
+        cat <<'END'
 format = """
 [░▒▓](#9841bb)\
 $os\
@@ -969,14 +970,16 @@ disabled = false
 time_format = "%R" # Hour:Minute Format
 style = "bg:#FFFFFF"
 format = '[[  $time ](fg:#241f31 bg:#FFFFFF)]($style)'
-EOF
+END
+    )
     echo "$starship_config" >"/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Configure Neofetch"
     # ----------------------------------------------------------------------------------------------------
 
-    read -r -d '' neofetch_config <<'EOF'
+    neofetch_config=$(
+        cat <<'END'
 # https://github.com/dylanaraps/neofetch/wiki/Customizing-Info
 print_info() {
     prin
@@ -1016,7 +1019,8 @@ cpu_temp="off"
 memory_percent="on"
 memory_unit="gib"
 #package_managers="off"
-EOF
+END
+    )
 
     neofetch_home="/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch"
     mkdir -p "$neofetch_home"
