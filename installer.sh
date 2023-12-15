@@ -928,17 +928,16 @@ SECONDS=0
         # Starship config
         starship_config="/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
 
-        # shellcheck disable=SC2016
         { # Create starship.toml
             echo "# Get editor completions based on the config schema"
-            echo '"$schema" = 'https://starship.rs/config-schema.json''
+            echo "\"\$schema\" = 'https://starship.rs/config-schema.json'"
             echo ""
             echo "# Inserts a blank line between shell prompts"
             echo "add_newline = true"
             echo ""
-            echo "# Replace the '❯' symbol in the prompt with '➜'"
-            echo "[character] # The name of the module we are configuring is 'character'"
-            echo "success_symbol = '[➜](bold green)' # The 'success_symbol' segment is being set to '➜' with the color 'bold green'"
+            echo "# Replace the promt symbol"
+            echo "[character]"
+            echo "success_symbol = '[>](bold purple)'"
             echo ""
             echo "# Disable the package module, hiding it from the prompt completely"
             echo "[package]"

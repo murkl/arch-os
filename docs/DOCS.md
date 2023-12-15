@@ -9,7 +9,7 @@
 1. [Recommendation](#recommendation)
 2. [Installation Properties](#installation-properties)
 3. [Rescue & Recovery](#rescue--recovery)
-4. [Fish Shell](#fish-shell)
+4. [Shell Enhancement](#shell-enhancement)
 5. [Technical Information](#technical-info)
 6. [Development](#development)
 7. [Issues](#issues)
@@ -155,9 +155,11 @@ _**Example**_
 - _Fix your Arch OS..._
 - Exit: `exit`
 
-## Fish Shell
+## Shell Enhancement
 
-### Config
+By default, `ls` is replaced with `exa` (see `~/.config/fish/aliases.fish`).
+
+### Fish config
 
 ```
 ~/.config/fish/config.fish
@@ -166,6 +168,12 @@ _**Example**_
 
 ```
 fish_config
+```
+
+### Starship config
+
+```
+~/.config/starship.toml
 ```
 
 ## Technical Info
