@@ -647,6 +647,8 @@ SECONDS=0
     packages+=("pkgfile")
     packages+=("fish")
     packages+=("starship")
+    packages+=("neofetch")
+    packages+=("exa")
     packages+=("git")
     packages+=("nano")
     #packages+=("bash-completion")
@@ -887,13 +889,16 @@ SECONDS=0
     fish_config="${fish_home}/config.fish"
     fish_aliases="${fish_home}/aliases.fish"
 
-    # Init config
+    # Create config dir
     mkdir -p "$fish_home"
-    touch "$fish_config"
-    touch "$fish_aliases"
 
     # shellcheck disable=SC2016
     { # Create config.fish
+
+        echo 'if status is-interactive'
+        echo '    # Commands to run in interactive sessions can go here'
+        echo 'end'
+        echo ''
         echo '# https://wiki.archlinux.de/title/Fish#Troubleshooting'
         echo 'if status --is-login'
         echo '    set PATH $PATH /usr/bin /sbin'
@@ -902,16 +907,119 @@ SECONDS=0
         echo '# Disable welcome message'
         echo 'set fish_greeting'
         echo ''
-        echo '# Source aliases'
-        echo 'source "$HOME/.config/fish/aliases.fish"'
-        echo ''
         echo '# Source starship'
         echo 'starship init fish | source'
-    } >>"$fish_config"
+        echo ''
+        echo '# Source aliases'
+        echo 'source "$HOME/.config/fish/aliases.fish"'
+    } >"$fish_config"
 
     { # Create aliases.fish
         echo 'alias q="exit"'
-    } >>"$fish_aliases"
+        echo 'alias ls="exa --color=always --group-directories-first"'
+    } >"$fish_aliases"
+
+    # ----------------------------------------------------------------------------------------------------
+    print_whiptail_info "Configure Starship Promt"
+    # ----------------------------------------------------------------------------------------------------
+
+    read -r -d '' starship_config <<'EOF'
+format = """
+[░▒▓](#9841bb)\
+$os\
+$user\
+$directory\
+[](fg:#9841bb bg:#1e78e4)\
+$git_branch\
+$git_status\
+[](fg:#1e78e4 bg:#FFFFFF)\
+$time\
+[ ](fg:#FFFFFF)\
+"""
+ 
+add_newline = true
+
+[os]
+disabled = false
+style = "fg:#FFFFFF bg:#9841bb"
+
+[os.symbols]
+Arch = "  "
+ 
+[directory]
+disabled = false
+style = "fg:#FFFFFF bg:#9841bb"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+ 
+[git_branch]
+disabled = false
+symbol = ""
+style = "bg:#FFFFFF"
+format = '[[ $symbol $branch ](fg:#FFFFFF bg:#1e78e4)]($style)'
+ 
+[git_status]
+disabled = false
+style = "bg:#FFFFFF"
+format = '[[($all_status$ahead_behind )](fg:#FFFFFF bg:#1e78e4)]($style)'
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bg:#FFFFFF"
+format = '[[  $time ](fg:#241f31 bg:#FFFFFF)]($style)'
+EOF
+    echo -e "$starship_config" >"/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+
+    # ----------------------------------------------------------------------------------------------------
+    print_whiptail_info "Configure Neofetch"
+    # ----------------------------------------------------------------------------------------------------
+
+    read -r -d '' neofetch_config <<'EOF'
+# https://github.com/dylanaraps/neofetch/wiki/Customizing-Info
+print_info() {
+    prin
+    prin "Distro\t" "Arch OS"
+    info "Kernel\t" kernel
+    info "CPU\t" cpu
+    info "GPU\t" gpu
+    prin
+    info "Desktop\t" de
+    prin "Window\t" "$([ $XDG_SESSION_TYPE = 'x11' ] && echo X11 || echo Wayland)"
+    info "Manager\t" wm
+    info "Shell\t" shell
+    info "Terminal\t" term
+    prin
+    info "Memory\t" memory
+    info "Uptime\t" uptime
+    info "IP\t" local_ip
+    info "Packages\t" packages
+    prin
+    prin "$(color 1) ● \n $(color 2) ● \n $(color 3) ● \n $(color 4) ● \n $(color 5) ● \n $(color 6) ● \n $(color 7) ● \n $(color 8) ●"
+}
+
+separator=" → "
+ascii_distro="auto"
+ascii_bold="on"
+ascii_colors=(5 5 5 5 5 5)
+bold="on"
+colors=(7 7 7 7 7 7)
+gap=8
+os_arch="off"
+shell_version="off"
+#gpu_type="dedicated"
+cpu_speed="off"
+cpu_brand="on"
+cpu_cores="off"
+cpu_temp="off"
+memory_percent="on"
+memory_unit="gib"
+#package_managers="off"
+EOF
+    neofetch_home="/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch"
+    mkdir -p "$neofetch_home"
+    echo -e "$neofetch_config" >"${neofetch_home}/config.conf"
 
     # ----------------------------------------------------------------------------------------------------
     # START INSTALL GNOME
