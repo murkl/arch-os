@@ -970,7 +970,7 @@ time_format = "%R" # Hour:Minute Format
 style = "bg:#FFFFFF"
 format = '[[  $time ](fg:#241f31 bg:#FFFFFF)]($style)'
 EOF
-    echo -e "$starship_config" >"/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+    echo "$starship_config" >"/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Configure Neofetch"
@@ -1017,9 +1017,10 @@ memory_percent="on"
 memory_unit="gib"
 #package_managers="off"
 EOF
+
     neofetch_home="/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch"
     mkdir -p "$neofetch_home"
-    echo -e "$neofetch_config" >"${neofetch_home}/config.conf"
+    echo "$neofetch_config" >"${neofetch_home}/config.conf"
 
     # ----------------------------------------------------------------------------------------------------
     # START INSTALL GNOME
