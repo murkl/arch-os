@@ -892,12 +892,8 @@ SECONDS=0
         # Install packages
         arch-chroot /mnt pacman -S --noconfirm --needed fish starship exa neofetch
 
-        fish_home="/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
-        fish_config="${fish_home}/config.fish"
-        fish_aliases="${fish_home}/aliases.fish"
-
         # Create config dir
-        mkdir -p "$fish_home"
+        mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
 
         # shellcheck disable=SC2016
         { # Create config.fish
@@ -918,15 +914,12 @@ SECONDS=0
             echo ''
             echo '# Source starship promt'
             echo 'starship init fish | source'
-        } >"$fish_config"
+        } >"/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish"
 
         { # Create aliases.fish
             echo 'alias q="exit"'
             echo 'alias ls="exa --color=always --group-directories-first"'
-        } >"$fish_aliases"
-
-        # Starship config
-        starship_config="/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+        } >"/mnt/home/${ARCH_OS_USERNAME}/.config/fish/aliases.fish"
 
         { # Create starship.toml
             echo "# Get editor completions based on the config schema"
@@ -942,7 +935,10 @@ SECONDS=0
             echo "# Disable the package module, hiding it from the prompt completely"
             echo "[package]"
             echo "disabled = true"
-        } >"$starship_config"
+        } >"/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+
+        # Set correct permissions
+        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/"
 
         # Set Shell
         arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
