@@ -127,4 +127,4 @@ paru -Rsn <my package>
 
 ## More Information
 
-Open Documentation: **[DOCS.md](DOCS.md)**
+Open Documentation: **[DOCS.md...](DOCS.md)**
