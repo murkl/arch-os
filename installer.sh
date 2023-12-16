@@ -919,6 +919,10 @@ SECONDS=0
 
         { # Create fish aliases for root & user
             echo 'alias ls="exa --color=always --group-directories-first"'
+            echo 'alias diff="diff --color=auto"'
+            echo 'alias grep="grep --color=auto"'
+            echo 'alias ip="ip -color=auto"'
+            echo 'alias lt="ls -Ta"'
             echo 'alias open="xdg-open"'
             echo 'alias fetch="neofetch"'
             echo 'alias q="exit"'
