@@ -241,4 +241,4 @@ curl -Ls http://arch-dev.webhop.me | bash
 
 ## Issues
 
-If you encounter problems with a server during installation, remove this server from `/etc/pacman.d/mirrorlist` and run Arch OS Installer again.
+If you encounter problems with a server during installation (`error: failed retrieving file`), remove this server from `/etc/pacman.d/mirrorlist` and run Arch OS Installer again.
