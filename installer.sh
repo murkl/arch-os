@@ -922,7 +922,7 @@ SECONDS=0
             echo 'alias diff="diff --color=auto"'
             echo 'alias grep="grep --color=auto"'
             echo 'alias ip="ip -color=auto"'
-            echo 'alias lt="ls -Ta"'
+            echo 'alias lt="ls -Tal"'
             echo 'alias open="xdg-open"'
             echo 'alias fetch="neofetch"'
             echo 'alias q="exit"'
