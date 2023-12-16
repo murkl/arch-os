@@ -201,12 +201,12 @@ The partitions layout is seperated in two partitions:
 This packages will be installed during minimal Arch without GNOME installation (180 packages in total):
 
 ```
-base base-devel linux-zen linux-firmware networkmanager pacman-contrib reflector pkgfile git nano [microcode_pkg]
+base base-devel linux-zen linux-firmware networkmanager pacman-contrib bash-completion reflector pkgfile git nano [microcode_pkg]
 ```
 
 #### Shell Enhancement Packages
 
-If the property `ARCH_OS_SHELL_ENHANCED_ENABLED` is set to `false`, the package `bash-completion` is installed by default. Otherwise:
+If the property `ARCH_OS_SHELL_ENHANCED_ENABLED` is set to `true` (default), these packages are installed and preconfigured (for root & user):
 
 ```
 fish starship exa neofetch

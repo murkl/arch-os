@@ -648,11 +648,11 @@ SECONDS=0
     packages+=("linux-firmware")
     packages+=("networkmanager")
     packages+=("pacman-contrib")
+    packages+=("bash-completion")
     packages+=("reflector")
     packages+=("pkgfile")
     packages+=("git")
     packages+=("nano")
-
     # Add microcode package
     [ -n "$ARCH_OS_MICROCODE" ] && packages+=("$ARCH_OS_MICROCODE")
 
@@ -892,11 +892,11 @@ SECONDS=0
         # Install packages
         arch-chroot /mnt pacman -S --noconfirm --needed fish starship exa neofetch
 
-        # Create config dir
-        mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
+        # Create config dir for root & user
+        mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
 
         # shellcheck disable=SC2016
-        { # Create config.fish
+        { # Create config.fish for root & user
             echo 'if status is-interactive'
             echo '    # Commands to run in interactive sessions can go here'
             echo 'end'
@@ -914,14 +914,14 @@ SECONDS=0
             echo ''
             echo '# Source starship promt'
             echo 'starship init fish | source'
-        } >"/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish"
+        } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
 
-        { # Create aliases.fish
+        { # Create aliases.fish for root & user
             echo 'alias q="exit"'
             echo 'alias ls="exa --color=always --group-directories-first"'
-        } >"/mnt/home/${ARCH_OS_USERNAME}/.config/fish/aliases.fish"
+        } | tee "/mnt/root/.config/fish/aliases.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/aliases.fish" >/dev/null
 
-        { # Create starship.toml
+        { # Create starship.toml for root & user
             echo "# Get editor completions based on the config schema"
             echo "\"\$schema\" = 'https://starship.rs/config-schema.json'"
             echo ""
@@ -935,16 +935,16 @@ SECONDS=0
             echo "# Disable the package module, hiding it from the prompt completely"
             echo "[package]"
             echo "disabled = true"
-        } >"/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+        } | tee "/mnt/root/.config/starship.toml" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
 
-        # Set correct permissions
+        # Set correct user permissions
         arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/"
 
-        # Set Shell
+        # Set Shell for root & user
+        arch-chroot /mnt chsh -s /usr/bin/fish
         arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
     else
-        # Install bash completion as default
-        arch-chroot /mnt pacman -S --noconfirm --needed bash-completion
+        echo "> Skipped"
     fi
 
     # ----------------------------------------------------------------------------------------------------
