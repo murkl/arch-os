@@ -920,6 +920,7 @@ SECONDS=0
         { # Create fish aliases for root & user
             echo 'alias ls="exa --color=always --group-directories-first"'
             echo 'alias open="xdg-open"'
+            echo 'alias fetch="neofetch"'
             echo 'alias q="exit"'
         } | tee "/mnt/root/.config/fish/aliases.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/aliases.fish" >/dev/null
 

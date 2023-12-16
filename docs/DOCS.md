@@ -161,10 +161,11 @@ By default, `ls` is replaced with `exa` (see `~/.config/fish/aliases.fish`).
 
 ### Useful commands
 
-- `q` exit
+- `fetch` show system info
 - `ll` list in dir
 - `la` list all (+ hidden files) in dir
 - `open <file>` open file in GNOME app
+- `q` exit
 
 ### Fish config
 
