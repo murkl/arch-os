@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.0.8'
+VERSION='1.0.9'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -57,6 +57,7 @@ ARCH_OS_GNOME_ENABLED=""
 ARCH_OS_KERNEL=""
 ARCH_OS_MICROCODE=""
 ARCH_OS_VM_SUPPORT_ENABLED=""
+ARCH_OS_SHELL_ENHANCED_ENABLED=""
 
 # ----------------------------------------------------------------------------------------------------
 # DEPENDENCIES
@@ -100,6 +101,7 @@ check_config() {
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
     [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
+    [ -z "$ARCH_OS_SHELL_ENHANCED_ENABLED" ] && ARCH_OS_SHELL_ENHANCED_ENABLED="true"
     #[ -z "$ARCH_OS_VCONSOLE_FONT" ] && ARCH_OS_VCONSOLE_FONT="eurlatgr"
     #[ -z "$ARCH_OS_REFLECTOR_COUNTRY" ] && ARCH_OS_REFLECTOR_COUNTRY="Germany,France"
 
@@ -179,6 +181,9 @@ create_config() {
         echo ""
         echo "# VM Support (auto) | Default: true | Disable: false"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
+        echo ""
+        echo "# Shell Enhancement (auto) | Default: true | Disable: false"
+        echo "ARCH_OS_SHELL_ENHANCED_ENABLED='${ARCH_OS_SHELL_ENHANCED_ENABLED}'"
     } >"$INSTALLER_CONFIG"
 }
 
@@ -333,7 +338,7 @@ tui_set_gnome() {
 
         # Set X11 keyboard variant
         local user_input="$ARCH_OS_X11_KEYBOARD_VARIANT"
-        [ -z "$user_input" ] && user_input='nodeadkeys'
+        [ -z "$user_input" ] && user_input=''
         user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert X11 (Xorg) keyboard variant\n\nExample: 'nodeadkeys' or leave empty for default" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
         ARCH_OS_X11_KEYBOARD_VARIANT="$user_input"
 
@@ -643,11 +648,12 @@ SECONDS=0
     packages+=("linux-firmware")
     packages+=("networkmanager")
     packages+=("pacman-contrib")
+    packages+=("bash-completion")
     packages+=("reflector")
+    packages+=("pkgfile")
     packages+=("git")
     packages+=("nano")
-    packages+=("bash-completion")
-    packages+=("pkgfile")
+    # Add microcode package
     [ -n "$ARCH_OS_MICROCODE" ] && packages+=("$ARCH_OS_MICROCODE")
 
     # Install core and initialize an empty pacman keyring in the target
@@ -797,7 +803,7 @@ SECONDS=0
     # ----------------------------------------------------------------------------------------------------
 
     # Create new user
-    arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$ARCH_OS_USERNAME"
+    arch-chroot /mnt useradd -m -G wheel -s /bin/fish "$ARCH_OS_USERNAME"
 
     # Allow users in group wheel to use sudo
     sed -i 's^# %wheel ALL=(ALL:ALL) ALL^%wheel ALL=(ALL:ALL) ALL^g' /mnt/etc/sudoers
@@ -873,6 +879,117 @@ SECONDS=0
 
         # Set Theme & rebuild initram disk
         arch-chroot /mnt plymouth-set-default-theme -R arch-os
+    else
+        echo "> Skipped"
+    fi
+
+    # ----------------------------------------------------------------------------------------------------
+    print_whiptail_info "Install Shell Enhancement"
+    # ----------------------------------------------------------------------------------------------------
+
+    if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
+
+        # Install packages
+        arch-chroot /mnt pacman -S --noconfirm --needed fish starship exa neofetch
+
+        # Create config dirs for root & user
+        mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
+        mkdir -p "/mnt/root/.config/neofetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch"
+
+        # shellcheck disable=SC2016
+        { # Create fish config for root & user
+            echo 'if status is-interactive'
+            echo '    # Commands to run in interactive sessions can go here'
+            echo 'end'
+            echo ''
+            echo '# https://wiki.archlinux.de/title/Fish#Troubleshooting'
+            echo 'if status --is-login'
+            echo '    set PATH $PATH /usr/bin /sbin'
+            echo 'end'
+            echo ''
+            echo '# Disable welcome message'
+            echo 'set fish_greeting'
+            echo ''
+            echo '# Source user aliases'
+            echo 'source "$HOME/.config/fish/aliases.fish"'
+            echo ''
+            echo '# Source starship promt'
+            echo 'starship init fish | source'
+        } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
+
+        { # Create fish aliases for root & user
+            echo 'alias ls="exa --color=always --group-directories-first"'
+            echo 'alias open="xdg-open"'
+            echo 'alias fetch="neofetch"'
+            echo 'alias q="exit"'
+        } | tee "/mnt/root/.config/fish/aliases.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/aliases.fish" >/dev/null
+
+        { # Create starship config for root & user
+            echo "# Get editor completions based on the config schema"
+            echo "\"\$schema\" = 'https://starship.rs/config-schema.json'"
+            echo ""
+            echo "# Inserts a blank line between shell prompts"
+            echo "add_newline = true"
+            echo ""
+            echo "# Replace the promt symbol"
+            echo "[character]"
+            echo "success_symbol = '[>](bold purple)'"
+            echo ""
+            echo "# Disable the package module, hiding it from the prompt completely"
+            echo "[package]"
+            echo "disabled = true"
+        } | tee "/mnt/root/.config/starship.toml" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
+
+        # shellcheck disable=SC2028,SC2016
+        { # Create neofetch config for root & user
+            echo '# https://github.com/dylanaraps/neofetch/wiki/Customizing-Info'
+            echo ''
+            echo 'print_info() {'
+            echo '    prin'
+            echo '    prin "Distro\t" "Arch OS"'
+            echo '    info "Kernel\t" kernel'
+            echo '    info "CPU\t" cpu'
+            echo '    info "GPU\t" gpu'
+            echo '    prin'
+            echo '    info "Desktop\t" de'
+            echo '    prin "Window\t" "$([ $XDG_SESSION_TYPE = "x11" ] && echo X11 || echo Wayland)"'
+            echo '    info "Manager\t" wm'
+            echo '    info "Shell\t" shell'
+            echo '    info "Terminal\t" term'
+            echo '    prin'
+            echo '    info "Memory\t" memory'
+            echo '    info "Uptime\t" uptime'
+            echo '    info "IP\t" local_ip'
+            echo '    info "Packages\t" packages'
+            echo '    prin'
+            echo '    prin "$(color 1) ● \n $(color 2) ● \n $(color 3) ● \n $(color 4) ● \n $(color 5) ● \n $(color 6) ● \n $(color 7) ● \n $(color 8) ●"'
+            echo '}'
+            echo ''
+            echo '# Config'
+            echo 'separator=" → "'
+            echo 'ascii_distro="auto"'
+            echo 'ascii_bold="on"'
+            echo 'ascii_colors=(5 5 5 5 5 5)'
+            echo 'bold="on"'
+            echo 'colors=(7 7 7 7 7 7)'
+            echo 'gap=8'
+            echo 'os_arch="off"'
+            echo 'shell_version="off"'
+            echo 'cpu_speed="off"'
+            echo 'cpu_brand="on"'
+            echo 'cpu_cores="off"'
+            echo 'cpu_temp="off"'
+            echo 'memory_percent="on"'
+            echo 'memory_unit="gib"'
+            echo ''
+        } | tee "/mnt/root/.config/neofetch/config.conf" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch/config.conf" >/dev/null
+
+        # Set correct user permissions
+        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/"
+
+        # Set Shell for root & user
+        arch-chroot /mnt chsh -s /usr/bin/fish
+        arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
     else
         echo "> Skipped"
     fi
@@ -1086,6 +1203,7 @@ SECONDS=0
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/qv4l2.desktop"
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/qvidcap.desktop"
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/lstopo.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/fish.desktop"
 
     else
         # Skip Gnome progresses

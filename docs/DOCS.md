@@ -9,9 +9,10 @@
 1. [Recommendation](#recommendation)
 2. [Installation Properties](#installation-properties)
 3. [Rescue & Recovery](#rescue--recovery)
-4. [Technical Information](#technical-info)
-5. [Development](#development)
-6. [Issues](#issues)
+4. [Shell Enhancement](#shell-enhancement)
+5. [Technical Information](#technical-info)
+6. [Development](#development)
+7. [Issues](#issues)
 
 ## Recommendation
 
@@ -31,11 +32,10 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [webapp-manager](https://aur.archlinux.org/packages/webapp-manager) for easy creation of web-apps for any website
 - Install [preload](https://wiki.archlinux.org/title/Preload) (start the service after installation: `sudo systemctl enable preload`)
 - Install [mutter-performance](https://aur.archlinux.org/packages/mutter-performance) (great on Intel Graphics with Wayland)
-- Use [neofetch](https://archlinux.org/packages/extra/x86_64/neofetch/) to show system info
-- Use [neofetch](https://archlinux.org/packages/extra/x86_64/neofetch/) to show system info
+- Use [neofetch](https://archlinux.org/packages/extra/x86_64/neofetch/) (Shell Enhancement included) to show system info
 - Use [downgrade](https://aur.archlinux.org/packages/downgrade) when you need to downgrade a package
-- Use [starship](https://starship.rs/) for fancy Bash promt
-- Use [exa](https://archlinux.org/packages/extra/x86_64/exa/) as colorful `ls` replacement
+- Use [starship](https://starship.rs/) (Shell Enhancement included) for fancy Shell promt
+- Use [exa](https://archlinux.org/packages/extra/x86_64/exa/) (Shell Enhancement included) as colorful `ls` replacement
 - Use [bat](https://archlinux.org/packages/extra/x86_64/bat/) as colorful `man` replacement
 - Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games
 - Install [EasyEffects](https://flathub.org/de/apps/com.github.wwmm.easyeffects) for Dolby Atmos
@@ -46,7 +46,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Cursor Theme: [nordzy-cursors](https://github.com/alvatip/Nordzy-cursors)
 - Firefox Theme: [firefox-gnome-theme](https://github.com/rafaelmardojai/firefox-gnome-theme)
 - Nautilus Extensions: [folder-color-nautilus](https://aur.archlinux.org/packages/folder-color-nautilus)
-- GNOME Extensions: [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/), [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/), [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
+- GNOME Extensions: [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/), [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/), [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/), [toggler](https://extensions.gnome.org/extension/6063/toggler/), [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
 
 ### For Audiophiles
 
@@ -118,6 +118,9 @@ ARCH_OS_KERNEL='linux-zen'
 
 # VM Support (auto) | Default: true | Disable: false
 ARCH_OS_VM_SUPPORT_ENABLED='true'
+
+# Shell Enhancement (auto) | Default: true | Disable: false
+ARCH_OS_SHELL_ENHANCED_ENABLED='true'
 ```
 
 ## Rescue & Recovery
@@ -152,6 +155,41 @@ _**Example**_
 - _Fix your Arch OS..._
 - Exit: `exit`
 
+## Shell Enhancement
+
+By default, `ls` is replaced with `exa` (see `~/.config/fish/aliases.fish`).
+
+### Useful commands
+
+- `fetch` show system info
+- `ll` list in dir
+- `la` list all (+ hidden files) in dir
+- `open <file>` open file in GNOME app
+- `q` exit
+
+### Fish config
+
+```
+fish_config
+```
+
+```
+~/.config/fish/config.fish
+~/.config/fish/aliases.fish
+```
+
+### Starship config
+
+```
+~/.config/starship.toml
+```
+
+### Neofetch config
+
+```
+~/.config/neofetch/config.conf
+```
+
 ## Technical Info
 
 ### Partitions layout
@@ -171,7 +209,15 @@ The partitions layout is seperated in two partitions:
 This packages will be installed during minimal Arch without GNOME installation (180 packages in total):
 
 ```
-base base-devel linux-zen linux-firmware networkmanager pacman-contrib reflector git nano bash-completion pkgfile [microcode_pkg]
+base base-devel linux-zen linux-firmware networkmanager pacman-contrib bash-completion reflector pkgfile git nano [microcode_pkg]
+```
+
+#### Shell Enhancement Packages
+
+If the property `ARCH_OS_SHELL_ENHANCED_ENABLED` is set to `true` (default), these packages are installed and preconfigured (for root & user):
+
+```
+fish starship exa neofetch
 ```
 
 ### Core Services
@@ -203,4 +249,4 @@ curl -Ls http://arch-dev.webhop.me | bash
 
 ## Issues
 
-If you encounter problems with a server during installation, remove this server from `/etc/pacman.d/mirrorlist` and run Arch OS Installer again.
+If you encounter problems with a server during installation (`error: failed retrieving file`), remove this server from `/etc/pacman.d/mirrorlist` and run Arch OS Installer again.
