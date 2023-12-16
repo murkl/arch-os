@@ -892,11 +892,12 @@ SECONDS=0
         # Install packages
         arch-chroot /mnt pacman -S --noconfirm --needed fish starship exa neofetch
 
-        # Create config dir for root & user
+        # Create config dirs for root & user
         mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
+        mkdir -p "/mnt/root/.config/neofetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch"
 
         # shellcheck disable=SC2016
-        { # Create config.fish for root & user
+        { # Create fish config for root & user
             echo 'if status is-interactive'
             echo '    # Commands to run in interactive sessions can go here'
             echo 'end'
@@ -916,12 +917,12 @@ SECONDS=0
             echo 'starship init fish | source'
         } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
 
-        { # Create aliases.fish for root & user
+        { # Create fish aliases for root & user
             echo 'alias q="exit"'
             echo 'alias ls="exa --color=always --group-directories-first"'
         } | tee "/mnt/root/.config/fish/aliases.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/aliases.fish" >/dev/null
 
-        { # Create starship.toml for root & user
+        { # Create starship config for root & user
             echo "# Get editor completions based on the config schema"
             echo "\"\$schema\" = 'https://starship.rs/config-schema.json'"
             echo ""
@@ -936,6 +937,50 @@ SECONDS=0
             echo "[package]"
             echo "disabled = true"
         } | tee "/mnt/root/.config/starship.toml" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
+
+        # shellcheck disable=SC2028,SC2016
+        { # Create neofetch config for root & user
+            echo '# https://github.com/dylanaraps/neofetch/wiki/Customizing-Info'
+            echo ''
+            echo 'print_info() {'
+            echo '    prin'
+            echo '    prin "Distro\t" "Arch OS"'
+            echo '    info "Kernel\t" kernel'
+            echo '    info "CPU\t" cpu'
+            echo '    info "GPU\t" gpu'
+            echo '    prin'
+            echo '    info "Desktop\t" de'
+            echo '    prin "Window\t" "$([ $XDG_SESSION_TYPE = "x11" ] && echo X11 || echo Wayland)"'
+            echo '    info "Manager\t" wm'
+            echo '    info "Shell\t" shell'
+            echo '    info "Terminal\t" term'
+            echo '    prin'
+            echo '    info "Memory\t" memory'
+            echo '    info "Uptime\t" uptime'
+            echo '    info "IP\t" local_ip'
+            echo '    info "Packages\t" packages'
+            echo '    prin'
+            echo '    prin "$(color 1) ● \n $(color 2) ● \n $(color 3) ● \n $(color 4) ● \n $(color 5) ● \n $(color 6) ● \n $(color 7) ● \n $(color 8) ●"'
+            echo '}'
+            echo ''
+            echo '# Config'
+            echo 'separator=" → "'
+            echo 'ascii_distro="auto"'
+            echo 'ascii_bold="on"'
+            echo 'ascii_colors=(5 5 5 5 5 5)'
+            echo 'bold="on"'
+            echo 'colors=(7 7 7 7 7 7)'
+            echo 'gap=8'
+            echo 'os_arch="off"'
+            echo 'shell_version="off"'
+            echo 'cpu_speed="off"'
+            echo 'cpu_brand="on"'
+            echo 'cpu_cores="off"'
+            echo 'cpu_temp="off"'
+            echo 'memory_percent="on"'
+            echo 'memory_unit="gib"'
+            echo ''
+        } | tee "/mnt/root/.config/neofetch/config.conf" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch/config.conf" >/dev/null
 
         # Set correct user permissions
         arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/"
