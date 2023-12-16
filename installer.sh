@@ -918,8 +918,9 @@ SECONDS=0
         } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
 
         { # Create fish aliases for root & user
-            echo 'alias q="exit"'
             echo 'alias ls="exa --color=always --group-directories-first"'
+            echo 'alias open="xdg-open"'
+            echo 'alias q="exit"'
         } | tee "/mnt/root/.config/fish/aliases.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/aliases.fish" >/dev/null
 
         { # Create starship config for root & user

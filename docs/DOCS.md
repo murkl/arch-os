@@ -159,15 +159,22 @@ _**Example**_
 
 By default, `ls` is replaced with `exa` (see `~/.config/fish/aliases.fish`).
 
+### Useful commands
+
+- `q` exit
+- `ll` list in dir
+- `la` list all (+ hidden files) in dir
+- `open <file>` open file in GNOME app
+
 ### Fish config
+
+```
+fish_config
+```
 
 ```
 ~/.config/fish/config.fish
 ~/.config/fish/aliases.fish
-```
-
-```
-fish_config
 ```
 
 ### Starship config
