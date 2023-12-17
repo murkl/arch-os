@@ -13,13 +13,13 @@ curl -Ls http://arch.webhop.me | bash
 
 </div>
 
+<p align="center"><img src="./screenshots/desktop.jpg" /></p>
+
 <div align="center">
 
 **[➜ Open Arch OS Docs](DOCS.md)**
 
 </div>
-
-<p align="center"><img src="./screenshots/desktop.jpg" /></p>
 
 <p align="center">
 This project aims to provide a minimal and solid Arch Linux base for desktop usage and an easy and fast to use installer for that.
