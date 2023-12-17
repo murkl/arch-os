@@ -13,6 +13,12 @@ curl -Ls http://arch.webhop.me | bash
 
 </div>
 
+<div align="center">
+
+**[➜ Open Arch OS Docs](DOCS.md)**
+
+</div>
+
 <p align="center"><img src="./screenshots/desktop.jpg" /></p>
 
 <p align="center">
@@ -95,6 +101,14 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 
 These are the general commands to maintain your Arch OS:
 
+### Show system info
+
+```
+fetch
+```
+
+<img src="screenshots/neofetch.png" />
+
 ### Update system
 
 ```
@@ -127,4 +141,4 @@ paru -Rsn <my package>
 
 ## More Information
 
-Open Documentation: **[DOCS.md...](DOCS.md)**
+**[➜ Open Arch OS Docs](DOCS.md)**

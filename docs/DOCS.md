@@ -7,9 +7,9 @@
 # Contents
 
 1. [Recommendation](#recommendation)
-2. [Installation Properties](#installation-properties)
-3. [Rescue & Recovery](#rescue--recovery)
-4. [Shell Enhancement](#shell-enhancement)
+2. [Shell Enhancement](#shell-enhancement)
+3. [Installation Properties](#installation-properties)
+4. [Rescue & Recovery](#rescue--recovery)
 5. [Technical Information](#technical-info)
 6. [Development](#development)
 7. [Issues](#issues)
@@ -52,6 +52,41 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 
 Further functions will be tested & added to Arch OS step by step.
 For custom audio configuration, check out the official [Arch Wiki...](https://wiki.archlinux.org/title/PipeWire)
+
+## Shell Enhancement
+
+By default, `ls` is replaced with `exa` (see `~/.config/fish/aliases.fish`).
+
+### Useful commands
+
+- `fetch` show system info
+- `ll` list in dir
+- `la` list all (+ hidden files) in dir
+- `open <file>` open file in GNOME app
+- `q` exit
+
+### Fish config
+
+```
+fish_config
+```
+
+```
+~/.config/fish/config.fish
+~/.config/fish/aliases.fish
+```
+
+### Starship config
+
+```
+~/.config/starship.toml
+```
+
+### Neofetch config
+
+```
+~/.config/neofetch/config.conf
+```
 
 ## Installation Properties
 
@@ -154,43 +189,6 @@ _**Example**_
 - Enter chroot: `arch-chroot /mnt`
 - _Fix your Arch OS..._
 - Exit: `exit`
-
-## Shell Enhancement
-
-By default, `ls` is replaced with `exa` (see `~/.config/fish/aliases.fish`).
-
-### Useful commands
-
-- `fetch` show system info
-- `logs` show system logs
-- `ll` list files in dir
-- `la` list all files (+ hidden files) in dir
-- `lt` tree files in dir
-- `open <file>` open file in GNOME app
-- `q` exit
-
-### Fish config
-
-```
-fish_config
-```
-
-```
-~/.config/fish/config.fish
-~/.config/fish/aliases.fish
-```
-
-### Starship config
-
-```
-~/.config/starship.toml
-```
-
-### Neofetch config
-
-```
-~/.config/neofetch/config.conf
-```
 
 ## Technical Info
 
