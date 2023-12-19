@@ -50,10 +50,11 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 
 ### For Audiophiles
 
-Further functions will be tested & added to Arch OS step by step.
-For custom audio configuration, check out the official [Arch Wiki...](https://wiki.archlinux.org/title/PipeWire)
+For custom Pipewire audio configuration, check out the official [Arch Wiki...](https://wiki.archlinux.org/title/PipeWire)
 
 ## Shell Enhancement
+
+Will install and preconfigure (for root & user) `fish`, `starship`, `exa` and `neofetch`.
 
 By default, `ls` is replaced with `exa` (see `~/.config/fish/aliases.fish`).
 
