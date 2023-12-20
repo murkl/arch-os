@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.1.0'
+VERSION='1.1.1'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
