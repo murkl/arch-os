@@ -242,7 +242,7 @@ Note: This screenshots may outdated.
 
 ## Development
 
-Create new pull request branches only from main branch! The [dev branch](https://github.com/murkl/arch-os/tree/dev) will be deleted after each merge into main.
+Create new pull request branches only from [main branch](https://github.com/murkl/arch-os/tree/main)! The [dev branch](https://github.com/murkl/arch-os/tree/dev) will be deleted after each merge into main.
 
 The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broken, use only for testing!
 
