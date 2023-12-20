@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.0.9'
+VERSION='1.1.0'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -919,8 +919,13 @@ SECONDS=0
 
         { # Create fish aliases for root & user
             echo 'alias ls="exa --color=always --group-directories-first"'
+            echo 'alias diff="diff --color=auto"'
+            echo 'alias grep="grep --color=auto"'
+            echo 'alias ip="ip -color=auto"'
+            echo 'alias lt="ls -Tal"'
             echo 'alias open="xdg-open"'
             echo 'alias fetch="neofetch"'
+            echo 'alias logs="systemctl --failed; echo; journalctl -p 3 -b"'
             echo 'alias q="exit"'
         } | tee "/mnt/root/.config/fish/aliases.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/aliases.fish" >/dev/null
 
