@@ -41,12 +41,12 @@ Installs a Arch Linux Distribution including GNOME as Desktop, preinstalled Paru
 
 ## Features
 
-- VM Support
-- UEFI only
+- Arch Linux Vanilla (Zen Kernel)
 - 100% TUI Installation
+- UEFI only
+- VM Support
 - Installation Properties
 - Minimal GNOME Desktop + Autologin (optional)
-- Linux Zen Kernel
 - Shell Enhancement (optional)
 - Disk Encryption (optional)
 - Systemd Bootloader (auto updated)
