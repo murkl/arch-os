@@ -23,7 +23,7 @@ curl -Ls http://arch.webhop.me | bash
 
 <p align="center">
 This project aims to provide a minimal and solid Arch Linux base for desktop usage and an easy and fast to use installer for that.
-Installs a Arch Linux Distribution including GNOME as Desktop, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more features. 
+Installs a Arch Linux Distribution including GNOME as Desktop, preinstalled Paru as AUR Helper, enabled MultiLib, Flatpak, Pipewire Audio and some more features.
 </p>
 
 <p align="center"><strong>Sole OS on a single disk</strong></p>
@@ -41,33 +41,34 @@ Installs a Arch Linux Distribution including GNOME as Desktop, preinstalled Paru
 
 ## Features
 
-- Arch Linux Vanilla (Zen Kernel)
-- 100% TUI Installation
-- UEFI only
-- VM Support
-- Installation Properties
+- Minimal Arch Linux Base (Zen Kernel)
 - Minimal GNOME Desktop + Autologin (optional)
-- Shell Enhancement (optional)
 - Disk Encryption (optional)
-- Systemd Bootloader (auto updated)
+- 100% TUI Installation
 - Wayland optimized
-- Network Manager
+- Designed as the only OS on the disk
+- UEFI only
 - Pipewire Audio (Dolby Atmos supported)
+- Shell Enhancement (preconfigured fish, starship, exa, neofetch)
 - AUR Helper & Multilib
-- Microcode Support
-- SSD Support
-- GNOME Power Profiles Support
-- Firmware Update Tool
+- Flatpak Support + Auto Update (GNOME Software)
 - Automatic mirrorlist update (on every startup)
 - Missing package suggestion
 - Pacman parallel downloads
 - Pacman automatic cache optimization (weekly)
-- Printer Support
 - Pacman & nano colors
+- Systemd Bootloader (auto updated)
+- Network Manager
+- Microcode Support
+- SSD Support
 - Systemd OOM (out-of-memory killer)
-- Networking, Utils & Codecs included
+- Firmware Update Tool
+- GNOME Power Profiles Support
+- Networking, Protocol Libs, Utils & Codecs included
+- Printer Support
+- VM Support (tested in GNOME Boxes)
 - Installer Error Handling
-- Tested in GNOME Boxes
+- Advanced Installer Properties (see Arch OS Docs)
 - Shellcheck approved
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os) (optional)
 
