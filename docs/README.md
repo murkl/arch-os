@@ -43,26 +43,27 @@ Installs a Arch Linux Distribution including GNOME as Desktop, preinstalled Paru
 
 - Minimal Arch Linux Base (Zen Kernel)
 - Minimal GNOME Desktop + Autologin (optional)
+- Automatic Arch Linux Housekeeping (except updates)
+- For Desktop Usage (Wayland optimized)
 - Disk Encryption (optional)
 - 100% TUI Installation
-- Wayland optimized
 - Designed as the only OS on the disk
-- UEFI only
-- Pipewire Audio (Dolby Atmos supported)
+- UEFI only supported
+- Systemd Bootloader (auto updated)
+- Systemd OOM (out-of-memory killer)
 - Shell Enhancement (preconfigured fish, starship, exa, neofetch)
-- AUR Helper & Multilib
+- Pipewire Audio (Dolby Atmos supported)
+- AUR Helper & Multilib included
 - Flatpak Support + Auto Update (GNOME Software)
 - Automatic mirrorlist update (on every startup)
-- Missing package suggestion
+- Missing package suggestion for commands
 - Pacman parallel downloads
 - Pacman automatic cache optimization (weekly)
 - Pacman & nano colors
-- Systemd Bootloader (auto updated)
 - Network Manager
 - Microcode Support
 - SSD Support
-- Systemd OOM (out-of-memory killer)
-- Firmware Update Tool
+- Firmware Update Tool preinstalled
 - GNOME Power Profiles Support
 - Networking, Protocol Libs, Utils & Codecs included
 - Printer Support
