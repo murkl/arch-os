@@ -23,7 +23,7 @@ curl -Ls http://arch.webhop.me | bash
 
 <p align="center">
 This project aims to provide a minimal and solid Arch Linux base for desktop usage and an easy and fast to use installer for that.
-Installs a Arch Linux Distribution including GNOME as Desktop, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more features. 
+Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, optional GNOME as desktop, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more features.
 </p>
 
 <p align="center"><strong>Sole OS on a single disk</strong></p>
@@ -41,33 +41,35 @@ Installs a Arch Linux Distribution including GNOME as Desktop, preinstalled Paru
 
 ## Features
 
-- VM Support
-- UEFI only
-- 100% TUI Installation
-- Installation Properties
+- Minimal Arch Linux Base (Zen Kernel)
 - Minimal GNOME Desktop + Autologin (optional)
-- Linux Zen Kernel
-- Shell Enhancement (optional)
+- Automatic Arch Linux Housekeeping (except updates)
+- For Desktop Usage (Wayland optimized)
 - Disk Encryption (optional)
+- 100% TUI Installation
+- Designed as the only OS on the disk
+- UEFI only supported
 - Systemd Bootloader (auto updated)
-- Wayland optimized
-- Network Manager
+- Systemd OOM (out-of-memory killer)
+- Shell Enhancement (preconfigured fish, starship, exa, neofetch)
 - Pipewire Audio (Dolby Atmos supported)
-- AUR Helper & Multilib
-- Microcode Support
-- SSD Support
-- GNOME Power Profiles Support
-- Firmware Update Tool
+- AUR Helper & Multilib included
+- Flatpak Support + Auto Update (GNOME Software)
 - Automatic mirrorlist update (on every startup)
-- Missing package suggestion
+- Missing package suggestion for commands
 - Pacman parallel downloads
 - Pacman automatic cache optimization (weekly)
-- Printer Support
 - Pacman & nano colors
-- Systemd OOM (out-of-memory killer)
-- Networking, Utils & Codecs included
+- Network Manager
+- Microcode Support
+- SSD Support
+- Firmware Update Tool preinstalled
+- GNOME Power Profiles Support
+- Networking, Protocol Libs, Utils & Codecs included
+- Printer Support
+- VM Support (tested in GNOME Boxes)
 - Installer Error Handling
-- Tested in GNOME Boxes
+- Advanced Installer Properties (see Arch OS Docs)
 - Shellcheck approved
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os) (optional)
 
@@ -77,10 +79,10 @@ Installs a Arch Linux Distribution including GNOME as Desktop, preinstalled Paru
 
 ### 1. Prepare bootable USB Device
 
-- Download latest Arch Linux ISO from **[here](https://www.archlinux.de/download)**
+- Download latest Arch Linux ISO from **[mirror 1](https://www.archlinux.org/download)** or **[mirror 2](https://www.archlinux.de/download)**
 - Show disk info with `lsblk`
 - Write to device: `sudo dd bs=4M if=archlinux-*.iso of=/dev/sdX status=progress`
-- Alternatively use **[Ventoy](https://www.ventoy.net/en/download.html)**
+- Alternatively use **[Ventoy](https://www.ventoy.net/en/download.html)** or your prefered iso writer tool
 
 ### 2. Configure BIOS Settings
 
