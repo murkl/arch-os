@@ -12,7 +12,7 @@
 4. [Rescue & Recovery](#rescue--recovery)
 5. [Technical Information](#technical-info)
 6. [Development](#development)
-7. [Issues](#issues)
+7. [Troubleshooting](#troubleshooting)
 
 ## Recommendation
 
@@ -250,6 +250,32 @@ The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broke
 curl -Ls http://arch-dev.webhop.me | bash
 ```
 
-## Issues
+## Troubleshooting
 
-If you encounter problems with a server during installation (`error: failed retrieving file`), remove this server from `/etc/pacman.d/mirrorlist` and run Arch OS Installer again.
+### Installation failed
+
+If you encounter problems with a server during Arch OS installation (`error: failed retrieving file`), remove this server from `/etc/pacman.d/mirrorlist` and run Arch OS Installer again.
+
+### Arch OS: Downgrade a package
+
+```
+paru -S downgrade
+sudo downgrade my_package_name
+```
+
+### Arch OS: Reset Pacman Keyring & Update
+
+```
+sudo rm -rf /etc/pacman.d/gnupg
+sudo pacman-key --init
+sudo pacman-key --populate
+
+# Do update
+sudo pacman -Sy archlinux-keyring && paru -Su
+```
+
+### Arch OS: Reset Pacman/AUR cache
+
+```
+paru -Scc
+```
