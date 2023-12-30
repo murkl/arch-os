@@ -36,7 +36,7 @@ The graphics driver can be installed independently of the Arch OS installation.
 - Install [mutter-performance](https://aur.archlinux.org/packages/mutter-performance) (great on Intel Graphics with Wayland)
 - Install [downgrade](https://aur.archlinux.org/packages/downgrade) when you need to downgrade a package
 - Install [EasyEffects](https://flathub.org/de/apps/com.github.wwmm.easyeffects) for Dolby Atmos
-- Install [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games
+- Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games with `gamemoderun <file>`
 
 ### Theming (optional)
 
@@ -47,7 +47,14 @@ The graphics driver can be installed independently of the Arch OS installation.
 - Cursor Theme: [nordzy-cursors](https://github.com/alvatip/Nordzy-cursors)
 - Firefox Theme: [firefox-gnome-theme](https://github.com/rafaelmardojai/firefox-gnome-theme)
 - Nautilus Extensions: [folder-color-nautilus](https://aur.archlinux.org/packages/folder-color-nautilus)
-- GNOME Extensions: [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/), [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/), [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/), [toggler](https://extensions.gnome.org/extension/6063/toggler/), [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
+
+### GNOME Extensions (optional)
+
+- [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/)
+- [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/)
+- [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
+- [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
+- [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (useful in wayland app toggler script)
 
 ### For Audiophiles (optional)
 
@@ -55,18 +62,25 @@ For custom Pipewire audio configuration, check out the official [Arch Wiki...](h
 
 ## Shell Enhancement
 
-Will install and preconfigure (for root & user) `fish`, `starship`, `exa`, `bat` and `neofetch`.
+If the property `ARCH_OS_SHELL_ENHANCED_ENABLED` is set to `true` (default), these packages are installed and preconfigured (for root & user):
+
+```
+fish starship exa bat neofetch mc btop man-db
+```
 
 By default, `ls` is replaced with `exa` (see `~/.config/fish/aliases.fish`).
 
 ### Useful commands
 
 - `fetch` show system info
+- `btop` show system manager
 - `logs` show system logs
 - `ll` list files in dir
 - `la` list all files (+ hidden files) in dir
 - `lt` tree files in dir
+- `mc` open file manager
 - `open <file>` open file in GNOME app
+- `man <command>` open manual page of command
 - `q` exit
 
 ### Useful keyboard shortcuts
@@ -74,27 +88,27 @@ By default, `ls` is replaced with `exa` (see `~/.config/fish/aliases.fish`).
 - Use `Alt + s` to run previous command as `sudo`
 - Use `Alt + .` to paste the last parameter from previous command
 
-### Fish Config
+### Configuration
 
 ```
+# Fish web config
 fish_config
-```
 
-```
+# Fish config
 ~/.config/fish/config.fish
 ~/.config/fish/aliases.fish
-```
 
-### Starship config
-
-```
+# Starship config
 ~/.config/starship.toml
-```
 
-### Neofetch config
-
-```
+# Neofetch config
 ~/.config/neofetch/config.conf
+
+# Midnight Commander config
+~/.config/mc/ini
+
+# Btop config
+~/.config/btop/btop.conf
 ```
 
 ## Installation Properties
@@ -222,14 +236,6 @@ This packages will be installed during minimal Arch without GNOME installation (
 
 ```
 base base-devel linux-zen linux-firmware networkmanager pacman-contrib bash-completion reflector pkgfile git nano [microcode_pkg]
-```
-
-#### Shell Enhancement Packages
-
-If the property `ARCH_OS_SHELL_ENHANCED_ENABLED` is set to `true` (default), these packages are installed and preconfigured (for root & user):
-
-```
-fish starship exa bat neofetch
 ```
 
 ### Core Services
