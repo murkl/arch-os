@@ -20,6 +20,8 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 
 ### Install Graphics Driver
 
+The graphics driver can be installed independently of the Arch OS installation.
+
 - [OpenGL](https://wiki.archlinux.org/title/OpenGL)
 - [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
 - [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
@@ -47,7 +49,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Nautilus Extensions: [folder-color-nautilus](https://aur.archlinux.org/packages/folder-color-nautilus)
 - GNOME Extensions: [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/), [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/), [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/), [toggler](https://extensions.gnome.org/extension/6063/toggler/), [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
 
-### For Audiophiles
+### For Audiophiles (optional)
 
 For custom Pipewire audio configuration, check out the official [Arch Wiki...](https://wiki.archlinux.org/title/PipeWire)
 
