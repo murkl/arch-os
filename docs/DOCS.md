@@ -129,7 +129,7 @@ ARCH_OS_SWAP_SIZE='16'
 ARCH_OS_BOOTSPLASH_ENABLED='true'
 
 # GNOME Desktop (mandatory) | Minimal Arch OS: false
-ARCH_OS_GNOME_ENABLED='true'
+ARCH_OS_DESKTOP_ENABLED='true'
 
 # Timezone (auto) | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin
 ARCH_OS_TIMEZONE='Europe/Berlin'

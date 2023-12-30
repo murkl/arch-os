@@ -23,7 +23,7 @@ curl -Ls http://arch.webhop.me | bash
 
 <p align="center">
 This project aims to provide a minimal and solid Arch Linux base for desktop usage and an easy and fast to use installer for that.
-Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, optional GNOME as desktop, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more features.
+Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, optional GNOME as desktop with graphics driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more features.
 </p>
 
 <p align="center"><strong>Sole OS on a single disk</strong></p>
@@ -41,14 +41,16 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 
 ## Features
 
+- 100% TUI Installation
+- Advanced Installer Properties (see Arch OS Docs)
 - Minimal Arch Linux Base (Zen Kernel)
 - Minimal Vanilla GNOME Desktop + Autologin (optional)
 - Automatic Arch Linux Housekeeping (except updates)
-- For Desktop Usage (Wayland optimized)
-- Disk Encryption (optional)
-- 100% TUI Installation
+- Graphics Driver included (Intel, NVIDIA, AMD/ATI)
+- For Desktop usage (Wayland optimized)
 - Designed as the only OS on the disk
 - UEFI only supported
+- Disk Encryption (optional)
 - Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
 - Preconfigured fish shell (optional)
@@ -65,7 +67,7 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 - Pacman automatic cache optimization (weekly)
 - Pacman & nano colors
 - Network Manager
-- Microcode Support
+- Microcode Support (Intel/AMD)
 - SSD Support
 - Firmware Update Tool preinstalled
 - GNOME Power Profiles Support
@@ -73,7 +75,6 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 - Printer Support
 - VM Support (tested in GNOME Boxes)
 - Installer Error Handling
-- Advanced Installer Properties (see Arch OS Docs)
 - Shellcheck approved
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os) (optional)
 
@@ -83,7 +84,7 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 
 ### 1. Prepare bootable USB Device
 
-- Download latest Arch Linux ISO from **[mirror 1](https://www.archlinux.org/download)** or **[mirror 2](https://www.archlinux.de/download)**
+- Download latest Arch Linux ISO from **[archlinux.org](https://www.archlinux.org/download)** or **[archlinux.de](https://www.archlinux.de/download)**
 - Show disk info with `lsblk`
 - Write to device: `sudo dd bs=4M if=archlinux-*.iso of=/dev/sdX status=progress`
 - Alternatively use **[Ventoy](https://www.ventoy.net/en/download.html)** or your prefered iso writer tool

@@ -53,7 +53,8 @@ ARCH_OS_VCONSOLE_FONT=""
 ARCH_OS_X11_KEYBOARD_LAYOUT=""
 ARCH_OS_X11_KEYBOARD_VARIANT=""
 ARCH_OS_BOOTSPLASH_ENABLED=""
-ARCH_OS_GNOME_ENABLED=""
+ARCH_OS_DESKTOP_ENABLED=""
+ARCH_OS_DRIVER=""
 ARCH_OS_KERNEL=""
 ARCH_OS_MICROCODE=""
 ARCH_OS_VM_SUPPORT_ENABLED=""
@@ -116,8 +117,8 @@ check_config() {
     [ -z "${ARCH_OS_ROOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_OS_ENCRYPTION_ENABLED}" ] && TUI_POSITION="encrypt" && return 1
     [ -z "${ARCH_OS_SWAP_SIZE}" ] && TUI_POSITION="swap" && return 1
-    [ -z "${ARCH_OS_BOOTSPLASH_ENABLED}" ] && TUI_POSITION="plymouth" && return 1
-    [ -z "${ARCH_OS_GNOME_ENABLED}" ] && TUI_POSITION="gnome" && return 1
+    [ -z "${ARCH_OS_BOOTSPLASH_ENABLED}" ] && TUI_POSITION="bootsplash" && return 1
+    [ -z "${ARCH_OS_DESKTOP_ENABLED}" ] && TUI_POSITION="desktop" && return 1
     TUI_POSITION="install"
 }
 
@@ -150,7 +151,10 @@ create_config() {
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
         echo ""
         echo "# GNOME Desktop (mandatory) | Minimal Arch OS: false"
-        echo "ARCH_OS_GNOME_ENABLED='${ARCH_OS_GNOME_ENABLED}'"
+        echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
+        echo ""
+        echo "# Driver (mandatory) | Available: mesa, nvidia, amd, ati, intel_i915"
+        echo "ARCH_OS_DRIVER='${ARCH_OS_DRIVER}'"
         echo ""
         echo "# Timezone (auto) | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin"
         echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}'"
@@ -277,7 +281,7 @@ tui_set_password() {
 
 tui_set_disk() {
     # List available disks
-    disk_array=()
+    local disk_array=()
     while read -r disk_line; do
         disk_array+=("/dev/$disk_line")
         disk_array+=(" ($(lsblk -d -n -o SIZE /dev/"$disk_line"))")
@@ -326,9 +330,15 @@ tui_set_plymouth() {
     return 0
 }
 
-tui_set_gnome() {
-    ARCH_OS_GNOME_ENABLED="false"
+tui_set_desktop() {
+    ARCH_OS_DESKTOP_ENABLED="false"
     if whiptail --title "$TITLE" --yesno "Install GNOME Desktop?" --yes-button "GNOME Desktop" --no-button "Minimal Arch" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+
+        # Set driver
+        local driver_array=()
+        driver_array+=("mesa") && driver_array+=("Mesa (Default)")
+        driver_array+=("nvidia") && driver_array+=("NVIDIA")
+        ARCH_OS_DRIVER=$(whiptail --title "$TITLE" --menu "\nChoose Driver" --nocancel --notags --default-item "$ARCH_OS_DRIVER" "$TUI_HEIGHT" "$TUI_WIDTH" "${#driver_array[@]}" "${driver_array[@]}" 3>&1 1>&2 2>&3)
 
         # Set X11 keyboard layout
         local user_input="$ARCH_OS_X11_KEYBOARD_LAYOUT"
@@ -343,7 +353,7 @@ tui_set_gnome() {
         ARCH_OS_X11_KEYBOARD_VARIANT="$user_input"
 
         # Set GNOME
-        ARCH_OS_GNOME_ENABLED="true"
+        ARCH_OS_DESKTOP_ENABLED="true"
     fi
 
     # Success
@@ -403,8 +413,8 @@ while (true); do
     menu_entry_array+=("disk") && menu_entry_array+=("$(print_menu_entry "Disk" "${ARCH_OS_DISK}")")
     menu_entry_array+=("encrypt") && menu_entry_array+=("$(print_menu_entry "Encryption" "${ARCH_OS_ENCRYPTION_ENABLED}")")
     menu_entry_array+=("swap") && menu_entry_array+=("$(print_menu_entry "Swap" "$([ -n "$ARCH_OS_SWAP_SIZE" ] && { [ "$ARCH_OS_SWAP_SIZE" != "0" ] && echo "${ARCH_OS_SWAP_SIZE} GB" || echo "disabled"; })")")
-    menu_entry_array+=("plymouth") && menu_entry_array+=("$(print_menu_entry "Bootsplash" "${ARCH_OS_BOOTSPLASH_ENABLED}")")
-    menu_entry_array+=("gnome") && menu_entry_array+=("$(print_menu_entry "GNOME" "${ARCH_OS_GNOME_ENABLED}")")
+    menu_entry_array+=("bootsplash") && menu_entry_array+=("$(print_menu_entry "Bootsplash" "${ARCH_OS_BOOTSPLASH_ENABLED}")")
+    menu_entry_array+=("desktop") && menu_entry_array+=("$(print_menu_entry "Desktop" "${ARCH_OS_DESKTOP_ENABLED}")")
     menu_entry_array+=("") && menu_entry_array+=("") # Empty entry
     menu_entry_array+=("edit") && menu_entry_array+=("> Edit manually")
     if [ "$TUI_POSITION" = "install" ]; then
@@ -447,12 +457,12 @@ while (true); do
         tui_set_swap || continue
         create_config
         ;;
-    "plymouth")
+    "bootsplash")
         tui_set_plymouth || continue
         create_config
         ;;
-    "gnome")
-        tui_set_gnome || continue
+    "desktop")
+        tui_set_desktop || continue
         create_config
         ;;
     "edit")
@@ -1007,7 +1017,7 @@ SECONDS=0
     # START INSTALL GNOME
     # ----------------------------------------------------------------------------------------------------
 
-    if [ "$ARCH_OS_GNOME_ENABLED" = "true" ]; then
+    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Install GNOME Packages (This takes about 15 minutes)"
