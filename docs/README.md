@@ -85,9 +85,8 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 ### 1. Prepare bootable USB Device
 
 - Download latest Arch Linux ISO from **[archlinux.org](https://www.archlinux.org/download)** or **[archlinux.de](https://www.archlinux.de/download)**
-- Show disk info with `lsblk`
-- Write to device: `sudo dd bs=4M if=archlinux-*.iso of=/dev/sdX status=progress`
-- Alternatively use **[Ventoy](https://www.ventoy.net/en/download.html)** or your prefered iso writer tool
+- Use **[Ventoy](https://www.ventoy.net/en/download.html)** or your prefered iso writer tool to create bootable Device
+- Alternatively (Linux only): `sudo dd bs=4M if=archlinux-*.iso of=/dev/sdX status=progress`
 
 ### 2. Configure BIOS Settings
 
