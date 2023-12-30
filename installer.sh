@@ -389,8 +389,11 @@ welcome_txt="
           ██   ██ ██   ██  ██████ ██   ██      ██████  ███████ 
                                  
 
-      Welcome to Arch OS Installer. Please hit <ENTER> to continue...
-"
+                    Welcome to the Arch OS Installer,
+
+    On the next screen you can select the properties of your Arch OS setup
+      or your can edit the properties manually in 'installer.conf' file.
+    "
 whiptail --title "$TITLE" --msgbox "$welcome_txt" "$TUI_HEIGHT" "$TUI_WIDTH"
 
 # ----------------------------------------------------------------------------------------------------
@@ -418,7 +421,7 @@ while (true); do
     menu_entry_array+=("bootsplash") && menu_entry_array+=("$(print_menu_entry "Bootsplash" "${ARCH_OS_BOOTSPLASH_ENABLED}")")
     menu_entry_array+=("desktop") && menu_entry_array+=("$(print_menu_entry "Desktop" "${ARCH_OS_DESKTOP_ENABLED}")")
     menu_entry_array+=("") && menu_entry_array+=("") # Empty entry
-    menu_entry_array+=("edit") && menu_entry_array+=("> Edit manually")
+    menu_entry_array+=("edit") && menu_entry_array+=("> Edit installer.conf")
     if [ "$TUI_POSITION" = "install" ]; then
         menu_entry_array+=("install") && menu_entry_array+=("> Continue Installation")
     else
@@ -468,11 +471,15 @@ while (true); do
         create_config
         ;;
     "edit")
-        nano "$INSTALLER_CONFIG" </dev/tty
-        continue
+        nano "$INSTALLER_CONFIG" </dev/tty || continue
+        # Create config if something is missing after edit
+        # shellcheck disable=SC1090
+        source "$INSTALLER_CONFIG" && create_config
         ;;
     "install")
         check_config || continue
+        # shellcheck disable=SC1090
+        create_config && source "$INSTALLER_CONFIG"
         if whiptail --title "$TITLE" --yesno "> Installation Properties\n\n$(head -100 "$INSTALLER_CONFIG" | tail +3)" --defaultno --yes-button "Edit" --no-button "Continue" --scrolltext "$TUI_HEIGHT" "$TUI_WIDTH"; then
             nano "$INSTALLER_CONFIG" </dev/tty
             continue # Open main menu for check again
