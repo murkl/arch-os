@@ -30,7 +30,7 @@ TUI_POSITION=""
 PROGRESS_COUNT=0
 
 # Whiptail total processes (number of occurrences of print_whiptail_info - 3)
-PROGRESS_TOTAL=33
+PROGRESS_TOTAL=40
 
 # ----------------------------------------------------------------------------------------------------
 # INSTALLATION VARIABLES
