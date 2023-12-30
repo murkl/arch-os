@@ -68,7 +68,10 @@ If the property `ARCH_OS_SHELL_ENHANCED_ENABLED` is set to `true` (default), the
 fish starship exa bat neofetch mc btop man-db
 ```
 
-By default, `ls` is replaced with `exa` (see `~/.config/fish/aliases.fish`).
+- `fish` is set as default shell
+- `starship` is set as default promt see `~/.config/fish/config.fish`
+- `ls` is replaced with `exa` see `~/.config/fish/aliases.fish`
+- `man` is replaced with `bat` see `~/.config/fish/config.fish`
 
 ### Useful commands
 
@@ -85,8 +88,11 @@ By default, `ls` is replaced with `exa` (see `~/.config/fish/aliases.fish`).
 
 ### Useful keyboard shortcuts
 
-- Use `Alt + s` to run previous command as `sudo`
-- Use `Alt + .` to paste the last parameter from previous command
+- Use `Tab` to autocomplete command
+- Use `Arrows` to navigate
+- Use `Ctrl + r` to search in command history
+- Use `Alt + s` to run previous command as `sudo` (Bash: `sudo !!`)
+- Use `Alt + .` to paste the last parameter from previous command (Bash: `ESC .`)
 
 ### Configuration
 

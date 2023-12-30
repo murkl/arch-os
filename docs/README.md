@@ -47,10 +47,13 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 - Automatic Arch Linux Housekeeping (except updates)
 - Minimal Vanilla GNOME Desktop + Autologin (optional)
 - Graphics Driver & Gamemode (Mesa, Intel i915, NVIDIA, AMD)
-- For Desktop usage (Wayland optimized)
+- Pipewire Audio (Dolby Atmos supported)
+- Wayland optimized
+- AUR Helper & Multilib included
+- Flatpak Support + Auto Update (GNOME Software)
+- Disk Encryption (optional)
 - Designed as the only OS on the disk
 - UEFI only supported
-- Disk Encryption (optional)
 - Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
 - Preconfigured fish shell (optional)
@@ -58,11 +61,8 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 - Preconfigured starship for fancy Shell promt (optional)
 - Preconfigured exa as colorful ls replacement (optional)
 - Preconfigured bat as colorful man replacement (optional)
-- Pipewire Audio (Dolby Atmos supported)
-- AUR Helper & Multilib included
-- Flatpak Support + Auto Update (GNOME Software)
-- Automatic mirrorlist update (on every startup)
 - Missing package suggestion for commands
+- Automatic Pacman mirrorlist update (on every startup)
 - Pacman parallel downloads
 - Pacman automatic cache optimization (weekly)
 - Pacman & nano colors
