@@ -46,7 +46,7 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 - Minimal Arch Linux Base (Zen Kernel)
 - Automatic Arch Linux Housekeeping (except updates)
 - Minimal Vanilla GNOME Desktop + Autologin (optional)
-- Graphics Driver (Mesa, Intel i915, NVIDIA, AMD)
+- Graphics Driver & Gamemode (Mesa, Intel i915, NVIDIA, AMD)
 - For Desktop usage (Wayland optimized)
 - Designed as the only OS on the disk
 - UEFI only supported
