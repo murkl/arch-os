@@ -390,7 +390,7 @@ welcome_txt="
           ██   ██ ██   ██  ██████ ██   ██      ██████  ███████ 
                                  
 
-                    Welcome to the Arch OS Installer,
+                    Welcome to the Arch OS Installer!
 
     On the next screen you can select the properties of your Arch OS setup
       or your can edit the properties manually in 'installer.conf' file.
