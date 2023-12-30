@@ -153,7 +153,7 @@ create_config() {
         echo "# GNOME Desktop (mandatory) | Minimal Arch OS: false"
         echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
         echo ""
-        echo "# Driver (mandatory) | Available: mesa, intel_i915, nvidia, amd"
+        echo "# Driver (mandatory) | Available: mesa, intel_i915, nvidia, amd, ati"
         echo "ARCH_OS_GRAPHICS_DRIVER='${ARCH_OS_GRAPHICS_DRIVER}'"
         echo ""
         echo "# Timezone (auto) | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin"
@@ -340,6 +340,7 @@ tui_set_desktop() {
         driver_array+=("intel_i915") && driver_array+=("Intel i915")
         driver_array+=("nvidia") && driver_array+=("NVIDIA")
         driver_array+=("amd") && driver_array+=("AMD")
+        driver_array+=("ati") && driver_array+=("ATI legacy")
         ARCH_OS_GRAPHICS_DRIVER=$(whiptail --title "$TITLE" --menu "\nChoose Graphics Driver" --nocancel --notags --default-item "$ARCH_OS_GRAPHICS_DRIVER" "$TUI_HEIGHT" "$TUI_WIDTH" "${#driver_array[@]}" "${driver_array[@]}" 3>&1 1>&2 2>&3)
 
         # Set X11 keyboard layout
@@ -1232,6 +1233,76 @@ SECONDS=0
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/qvidcap.desktop"
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/lstopo.desktop"
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/fish.desktop"
+
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Install Graphics Driver"
+        # ----------------------------------------------------------------------------------------------------
+
+        case "${ARCH_OS_GRAPHICS_DRIVER}" in
+
+        "mesa") # https://wiki.archlinux.org/title/OpenGL#Installation
+            packages+=("mesa-utils") && packages+=("lib32-mesa-utils")
+            packages+=("gamemode") && packages+=("lib32-gamemode")
+            arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+            ;;
+
+        "intel_i915") # https://wiki.archlinux.org/title/Intel_graphics#Installation
+            packages=()
+            packages+=("vulkan-intel") && packages+=("lib32-vulkan-intel")
+            packages+=("vkd3d") && packages+=("lib32-vkd3d")
+            packages+=("gamemode") && packages+=("lib32-gamemode")
+            packages+=("libva-intel-driver") && packages+=("lib32-libva-intel-driver")
+            packages+=("intel-media-driver")
+            arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+            sed -i "s/MODULES=()/MODULES=(i915)/g" /mnt/etc/mkinitcpio.conf
+            arch-chroot /mnt mkinitcpio -P
+            ;;
+
+        "nvidia") # https://wiki.archlinux.org/title/NVIDIA#Installation
+            packages=()
+            packages+=("xorg-xrandr")
+            packages+=("nvidia-dkms")
+            #packages+=("linux-headers")
+            packages+=("linux-zen-headers")
+            packages+=("nvidia-settings")
+            packages+=("nvidia-utils") && packages+=("lib32-nvidia-utils")
+            packages+=("opencl-nvidia") && packages+=("lib32-opencl-nvidia")
+            packages+=("gamemode") && packages+=("lib32-gamemode")
+            packages+=("vkd3d") && packages+=("lib32-vkd3d")
+            arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+            sed -i "s/MODULES=(*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
+            sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
+            arch-chroot /mnt mkinitcpio -P
+            # Enable Wayland Support (https://wiki.archlinux.org/title/GDM#Wayland_and_the_proprietary_NVIDIA_driver)
+            [ ! -f /mnt/etc/udev/rules.d/61-gdm.rules ] && mkdir -p /mnt/etc/udev/rules.d/ && ln -s /dev/null /mnt/etc/udev/rules.d/61-gdm.rules
+            ;;
+
+        "amd") # https://wiki.archlinux.org/title/AMDGPU#Installation
+            packages=()
+            packages+=("xf86-video-amdgpu")
+            packages+=("libva-mesa-driver") && packages+=("lib32-libva-mesa-driver")
+            packages+=("vulkan-radeon") && packages+=("lib32-vulkan-radeon")
+            packages+=("mesa-vdpau") && packages+=("lib32-mesa-vdpau")
+            packages+=("gamemode") && packages+=("lib32-gamemode")
+            packages+=("vkd3d") && packages+=("lib32-vkd3d")
+            arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+            sed -i "s/MODULES=()/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
+            arch-chroot /mnt mkinitcpio -P
+            ;;
+
+        "ati") # https://wiki.archlinux.org/title/ATI#Installation
+            packages=()
+            packages+=("xf86-video-ati")
+            packages+=("libva-mesa-driver") && packages+=("lib32-libva-mesa-driver")
+            packages+=("mesa-vdpau") && packages+=("lib32-mesa-vdpau")
+            packages+=("gamemode") && packages+=("lib32-gamemode")
+            packages+=("vkd3d") && packages+=("lib32-vkd3d")
+            arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+            sed -i "s/MODULES=()/MODULES=(amdgpu radeon)/g" /mnt/etc/mkinitcpio.conf
+            arch-chroot /mnt mkinitcpio -P
+            ;;
+
+        esac
 
     else
         # Skip Gnome progresses

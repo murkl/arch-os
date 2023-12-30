@@ -133,7 +133,7 @@ ARCH_OS_BOOTSPLASH_ENABLED='true'
 # GNOME Desktop (mandatory) | Minimal Arch OS: false
 ARCH_OS_DESKTOP_ENABLED='true'
 
-# Driver (mandatory) | Available: mesa, intel_i915, nvidia, amd
+# Driver (mandatory) | Available: mesa, intel_i915, nvidia, amd, ati
 ARCH_OS_GRAPHICS_DRIVER='mesa'
 
 # Timezone (auto) | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin
