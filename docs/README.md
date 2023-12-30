@@ -42,7 +42,7 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 ## Features
 
 - Minimal Arch Linux Base (Zen Kernel)
-- Minimal GNOME Desktop + Autologin (optional)
+- Minimal Vanilla GNOME Desktop + Autologin (optional)
 - Automatic Arch Linux Housekeeping (except updates)
 - For Desktop Usage (Wayland optimized)
 - Disk Encryption (optional)
@@ -51,7 +51,11 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 - UEFI only supported
 - Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
-- Shell Enhancement (preconfigured fish, starship, exa, neofetch)
+- Preconfigured fish shell (optional)
+- Preconfigured neofetch to show system info (optional)
+- Preconfigured starship for fancy Shell promt (optional)
+- Preconfigured exa as colorful ls replacement (optional)
+- Preconfigured bat as colorful man replacement (optional)
 - Pipewire Audio (Dolby Atmos supported)
 - AUR Helper & Multilib included
 - Flatpak Support + Auto Update (GNOME Software)

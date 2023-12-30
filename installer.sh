@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.1.0'
+VERSION='1.1.1'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -890,7 +890,7 @@ SECONDS=0
     if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
 
         # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed fish starship exa neofetch
+        arch-chroot /mnt pacman -S --noconfirm --needed fish starship exa bat neofetch
 
         # Create config dirs for root & user
         mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
@@ -909,6 +909,10 @@ SECONDS=0
             echo ''
             echo '# Disable welcome message'
             echo 'set fish_greeting'
+            echo ''
+            echo '# Colorize man pages (bat)'
+            echo -n 'export MANPAGER="sh -c ' && echo -n "'col -bx | bat -l man -p'" && echo '"'
+            echo 'export MANROFFOPT="-c"'
             echo ''
             echo '# Source user aliases'
             echo 'source "$HOME/.config/fish/aliases.fish"'

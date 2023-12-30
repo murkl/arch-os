@@ -27,18 +27,17 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
 - [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
 
-### Additional Optimization (optional)
+### Additional Packages (optional)
 
 - Install [webapp-manager](https://aur.archlinux.org/packages/webapp-manager) for easy creation of web-apps for any website
 - Install [preload](https://wiki.archlinux.org/title/Preload) (start the service after installation: `sudo systemctl enable preload`)
 - Install [mutter-performance](https://aur.archlinux.org/packages/mutter-performance) (great on Intel Graphics with Wayland)
-- Use [neofetch](https://archlinux.org/packages/extra/x86_64/neofetch/) (Shell Enhancement included) to show system info
-- Use [downgrade](https://aur.archlinux.org/packages/downgrade) when you need to downgrade a package
-- Use [starship](https://starship.rs/) (Shell Enhancement included) for fancy Shell promt
-- Use [exa](https://archlinux.org/packages/extra/x86_64/exa/) (Shell Enhancement included) as colorful `ls` replacement
-- Use [bat](https://archlinux.org/packages/extra/x86_64/bat/) as colorful `man` replacement
-- Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games
+- Install [downgrade](https://aur.archlinux.org/packages/downgrade) when you need to downgrade a package
 - Install [EasyEffects](https://flathub.org/de/apps/com.github.wwmm.easyeffects) for Dolby Atmos
+- Install [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games
+
+### Theming (optional)
+
 - Wallpaper: [link](./wallpaper.png)
 - Desktop Font: [inter-font](https://archlinux.org/packages/extra/any/inter-font/)
 - Desktop Theme: [adw-gtk3](https://github.com/lassekongo83/adw-gtk3)
@@ -54,7 +53,7 @@ For custom Pipewire audio configuration, check out the official [Arch Wiki...](h
 
 ## Shell Enhancement
 
-Will install and preconfigure (for root & user) `fish`, `starship`, `exa` and `neofetch`.
+Will install and preconfigure (for root & user) `fish`, `starship`, `exa`, `bat` and `neofetch`.
 
 By default, `ls` is replaced with `exa` (see `~/.config/fish/aliases.fish`).
 
@@ -68,7 +67,12 @@ By default, `ls` is replaced with `exa` (see `~/.config/fish/aliases.fish`).
 - `open <file>` open file in GNOME app
 - `q` exit
 
-### Fish config
+### Useful keyboard shortcuts
+
+- Use `Alt + s` to run previous command as `sudo`
+- Use `Alt + .` to paste the last parameter from previous command
+
+### Fish Config
 
 ```
 fish_config
@@ -220,7 +224,7 @@ base base-devel linux-zen linux-firmware networkmanager pacman-contrib bash-comp
 If the property `ARCH_OS_SHELL_ENHANCED_ENABLED` is set to `true` (default), these packages are installed and preconfigured (for root & user):
 
 ```
-fish starship exa neofetch
+fish starship exa bat neofetch
 ```
 
 ### Core Services
