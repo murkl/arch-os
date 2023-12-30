@@ -29,6 +29,8 @@ The graphics driver can be installed independently of the Arch OS installation.
 - [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
 - [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
 
+**Note:** Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games with `gamemoderun <file>`
+
 ### Additional Packages (optional)
 
 - Install [webapp-manager](https://aur.archlinux.org/packages/webapp-manager) for easy creation of web-apps for any website
@@ -36,7 +38,6 @@ The graphics driver can be installed independently of the Arch OS installation.
 - Install [mutter-performance](https://aur.archlinux.org/packages/mutter-performance) (great on Intel Graphics with Wayland)
 - Install [downgrade](https://aur.archlinux.org/packages/downgrade) when you need to downgrade a package
 - Install [EasyEffects](https://flathub.org/de/apps/com.github.wwmm.easyeffects) for Dolby Atmos
-- Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games with `gamemoderun <file>`
 
 ### Theming (optional)
 
