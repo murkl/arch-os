@@ -44,9 +44,9 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 - 100% TUI Installation
 - Advanced Installer Properties (see Arch OS Docs)
 - Minimal Arch Linux Base (Zen Kernel)
-- Minimal Vanilla GNOME Desktop + Autologin (optional)
 - Automatic Arch Linux Housekeeping (except updates)
-- Graphics Driver included (Intel, NVIDIA, AMD/ATI)
+- Minimal Vanilla GNOME Desktop + Autologin (optional)
+- Graphics Driver (Mesa, Intel i915, NVIDIA, AMD)
 - For Desktop usage (Wayland optimized)
 - Designed as the only OS on the disk
 - UEFI only supported

@@ -54,7 +54,7 @@ ARCH_OS_X11_KEYBOARD_LAYOUT=""
 ARCH_OS_X11_KEYBOARD_VARIANT=""
 ARCH_OS_BOOTSPLASH_ENABLED=""
 ARCH_OS_DESKTOP_ENABLED=""
-ARCH_OS_DRIVER=""
+ARCH_OS_GRAPHICS_DRIVER=""
 ARCH_OS_KERNEL=""
 ARCH_OS_MICROCODE=""
 ARCH_OS_VM_SUPPORT_ENABLED=""
@@ -153,8 +153,8 @@ create_config() {
         echo "# GNOME Desktop (mandatory) | Minimal Arch OS: false"
         echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
         echo ""
-        echo "# Driver (mandatory) | Available: mesa, nvidia, amd, ati, intel_i915"
-        echo "ARCH_OS_DRIVER='${ARCH_OS_DRIVER}'"
+        echo "# Driver (mandatory) | Available: mesa, intel_i915, nvidia, amd"
+        echo "ARCH_OS_GRAPHICS_DRIVER='${ARCH_OS_GRAPHICS_DRIVER}'"
         echo ""
         echo "# Timezone (auto) | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin"
         echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}'"
@@ -337,8 +337,10 @@ tui_set_desktop() {
         # Set driver
         local driver_array=()
         driver_array+=("mesa") && driver_array+=("Mesa (Default)")
+        driver_array+=("intel_i915") && driver_array+=("Intel i915")
         driver_array+=("nvidia") && driver_array+=("NVIDIA")
-        ARCH_OS_DRIVER=$(whiptail --title "$TITLE" --menu "\nChoose Driver" --nocancel --notags --default-item "$ARCH_OS_DRIVER" "$TUI_HEIGHT" "$TUI_WIDTH" "${#driver_array[@]}" "${driver_array[@]}" 3>&1 1>&2 2>&3)
+        driver_array+=("amd") && driver_array+=("AMD")
+        ARCH_OS_GRAPHICS_DRIVER=$(whiptail --title "$TITLE" --menu "\nChoose Graphics Driver" --nocancel --notags --default-item "$ARCH_OS_GRAPHICS_DRIVER" "$TUI_HEIGHT" "$TUI_WIDTH" "${#driver_array[@]}" "${driver_array[@]}" 3>&1 1>&2 2>&3)
 
         # Set X11 keyboard layout
         local user_input="$ARCH_OS_X11_KEYBOARD_LAYOUT"
