@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.1.0'
+VERSION='1.1.1'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -30,7 +30,7 @@ TUI_POSITION=""
 PROGRESS_COUNT=0
 
 # Whiptail total processes (number of occurrences of print_whiptail_info - 3)
-PROGRESS_TOTAL=33
+PROGRESS_TOTAL=40
 
 # ----------------------------------------------------------------------------------------------------
 # INSTALLATION VARIABLES
@@ -53,7 +53,8 @@ ARCH_OS_VCONSOLE_FONT=""
 ARCH_OS_X11_KEYBOARD_LAYOUT=""
 ARCH_OS_X11_KEYBOARD_VARIANT=""
 ARCH_OS_BOOTSPLASH_ENABLED=""
-ARCH_OS_GNOME_ENABLED=""
+ARCH_OS_DESKTOP_ENABLED=""
+ARCH_OS_GRAPHICS_DRIVER=""
 ARCH_OS_KERNEL=""
 ARCH_OS_MICROCODE=""
 ARCH_OS_VM_SUPPORT_ENABLED=""
@@ -116,8 +117,8 @@ check_config() {
     [ -z "${ARCH_OS_ROOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_OS_ENCRYPTION_ENABLED}" ] && TUI_POSITION="encrypt" && return 1
     [ -z "${ARCH_OS_SWAP_SIZE}" ] && TUI_POSITION="swap" && return 1
-    [ -z "${ARCH_OS_BOOTSPLASH_ENABLED}" ] && TUI_POSITION="plymouth" && return 1
-    [ -z "${ARCH_OS_GNOME_ENABLED}" ] && TUI_POSITION="gnome" && return 1
+    [ -z "${ARCH_OS_BOOTSPLASH_ENABLED}" ] && TUI_POSITION="bootsplash" && return 1
+    [ -z "${ARCH_OS_DESKTOP_ENABLED}" ] && TUI_POSITION="desktop" && return 1
     TUI_POSITION="install"
 }
 
@@ -150,7 +151,10 @@ create_config() {
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
         echo ""
         echo "# GNOME Desktop (mandatory) | Minimal Arch OS: false"
-        echo "ARCH_OS_GNOME_ENABLED='${ARCH_OS_GNOME_ENABLED}'"
+        echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
+        echo ""
+        echo "# Driver (mandatory) | Available: mesa, intel_i915, nvidia, amd, ati"
+        echo "ARCH_OS_GRAPHICS_DRIVER='${ARCH_OS_GRAPHICS_DRIVER}'"
         echo ""
         echo "# Timezone (auto) | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin"
         echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}'"
@@ -277,7 +281,7 @@ tui_set_password() {
 
 tui_set_disk() {
     # List available disks
-    disk_array=()
+    local disk_array=()
     while read -r disk_line; do
         disk_array+=("/dev/$disk_line")
         disk_array+=(" ($(lsblk -d -n -o SIZE /dev/"$disk_line"))")
@@ -326,9 +330,18 @@ tui_set_plymouth() {
     return 0
 }
 
-tui_set_gnome() {
-    ARCH_OS_GNOME_ENABLED="false"
+tui_set_desktop() {
+    ARCH_OS_DESKTOP_ENABLED="false"
     if whiptail --title "$TITLE" --yesno "Install GNOME Desktop?" --yes-button "GNOME Desktop" --no-button "Minimal Arch" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+
+        # Set driver
+        local driver_array=()
+        driver_array+=("mesa") && driver_array+=("Mesa (Default)")
+        driver_array+=("intel_i915") && driver_array+=("Intel i915")
+        driver_array+=("nvidia") && driver_array+=("NVIDIA")
+        driver_array+=("amd") && driver_array+=("AMD")
+        driver_array+=("ati") && driver_array+=("ATI legacy")
+        ARCH_OS_GRAPHICS_DRIVER=$(whiptail --title "$TITLE" --menu "\nChoose Graphics Driver" --nocancel --notags --default-item "$ARCH_OS_GRAPHICS_DRIVER" "$TUI_HEIGHT" "$TUI_WIDTH" "${#driver_array[@]}" "${driver_array[@]}" 3>&1 1>&2 2>&3)
 
         # Set X11 keyboard layout
         local user_input="$ARCH_OS_X11_KEYBOARD_LAYOUT"
@@ -343,7 +356,7 @@ tui_set_gnome() {
         ARCH_OS_X11_KEYBOARD_VARIANT="$user_input"
 
         # Set GNOME
-        ARCH_OS_GNOME_ENABLED="true"
+        ARCH_OS_DESKTOP_ENABLED="true"
     fi
 
     # Success
@@ -377,8 +390,11 @@ welcome_txt="
           ██   ██ ██   ██  ██████ ██   ██      ██████  ███████ 
                                  
 
-      Welcome to Arch OS Installer. Please hit <ENTER> to continue...
-"
+                    Welcome to the Arch OS Installer!
+
+    On the next screen you can select the properties of your Arch OS setup
+      or your can edit the properties manually in 'installer.conf' file.
+    "
 whiptail --title "$TITLE" --msgbox "$welcome_txt" "$TUI_HEIGHT" "$TUI_WIDTH"
 
 # ----------------------------------------------------------------------------------------------------
@@ -403,10 +419,10 @@ while (true); do
     menu_entry_array+=("disk") && menu_entry_array+=("$(print_menu_entry "Disk" "${ARCH_OS_DISK}")")
     menu_entry_array+=("encrypt") && menu_entry_array+=("$(print_menu_entry "Encryption" "${ARCH_OS_ENCRYPTION_ENABLED}")")
     menu_entry_array+=("swap") && menu_entry_array+=("$(print_menu_entry "Swap" "$([ -n "$ARCH_OS_SWAP_SIZE" ] && { [ "$ARCH_OS_SWAP_SIZE" != "0" ] && echo "${ARCH_OS_SWAP_SIZE} GB" || echo "disabled"; })")")
-    menu_entry_array+=("plymouth") && menu_entry_array+=("$(print_menu_entry "Bootsplash" "${ARCH_OS_BOOTSPLASH_ENABLED}")")
-    menu_entry_array+=("gnome") && menu_entry_array+=("$(print_menu_entry "GNOME" "${ARCH_OS_GNOME_ENABLED}")")
+    menu_entry_array+=("bootsplash") && menu_entry_array+=("$(print_menu_entry "Bootsplash" "${ARCH_OS_BOOTSPLASH_ENABLED}")")
+    menu_entry_array+=("desktop") && menu_entry_array+=("$(print_menu_entry "Desktop" "${ARCH_OS_DESKTOP_ENABLED}")")
     menu_entry_array+=("") && menu_entry_array+=("") # Empty entry
-    menu_entry_array+=("edit") && menu_entry_array+=("> Edit manually")
+    menu_entry_array+=("edit") && menu_entry_array+=("> Edit installer.conf")
     if [ "$TUI_POSITION" = "install" ]; then
         menu_entry_array+=("install") && menu_entry_array+=("> Continue Installation")
     else
@@ -447,20 +463,24 @@ while (true); do
         tui_set_swap || continue
         create_config
         ;;
-    "plymouth")
+    "bootsplash")
         tui_set_plymouth || continue
         create_config
         ;;
-    "gnome")
-        tui_set_gnome || continue
+    "desktop")
+        tui_set_desktop || continue
         create_config
         ;;
     "edit")
-        nano "$INSTALLER_CONFIG" </dev/tty
-        continue
+        nano "$INSTALLER_CONFIG" </dev/tty || continue
+        # Create config if something is missing after edit
+        # shellcheck disable=SC1090
+        source "$INSTALLER_CONFIG" && create_config
         ;;
     "install")
         check_config || continue
+        # shellcheck disable=SC1090
+        create_config && source "$INSTALLER_CONFIG"
         if whiptail --title "$TITLE" --yesno "> Installation Properties\n\n$(head -100 "$INSTALLER_CONFIG" | tail +3)" --defaultno --yes-button "Edit" --no-button "Continue" --scrolltext "$TUI_HEIGHT" "$TUI_WIDTH"; then
             nano "$INSTALLER_CONFIG" </dev/tty
             continue # Open main menu for check again
@@ -890,7 +910,7 @@ SECONDS=0
     if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
 
         # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed fish starship exa neofetch
+        arch-chroot /mnt pacman -S --noconfirm --needed fish starship exa bat neofetch mc btop man-db
 
         # Create config dirs for root & user
         mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
@@ -909,6 +929,10 @@ SECONDS=0
             echo ''
             echo '# Disable welcome message'
             echo 'set fish_greeting'
+            echo ''
+            echo '# Colorize man pages (bat)'
+            echo -n 'export MANPAGER="sh -c ' && echo -n "'col -bx | bat -l man -p'" && echo '"'
+            echo 'export MANROFFOPT="-c"'
             echo ''
             echo '# Source user aliases'
             echo 'source "$HOME/.config/fish/aliases.fish"'
@@ -1003,7 +1027,7 @@ SECONDS=0
     # START INSTALL GNOME
     # ----------------------------------------------------------------------------------------------------
 
-    if [ "$ARCH_OS_GNOME_ENABLED" = "true" ]; then
+    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Install GNOME Packages (This takes about 15 minutes)"
@@ -1208,7 +1232,79 @@ SECONDS=0
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/qv4l2.desktop"
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/qvidcap.desktop"
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/lstopo.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/cups.desktop"
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/fish.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/btop.desktop"
+
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Install Graphics Driver"
+        # ----------------------------------------------------------------------------------------------------
+
+        case "${ARCH_OS_GRAPHICS_DRIVER}" in
+
+        "mesa") # https://wiki.archlinux.org/title/OpenGL#Installation
+            packages+=("mesa-utils") && packages+=("lib32-mesa-utils")
+            packages+=("gamemode") && packages+=("lib32-gamemode")
+            arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+            ;;
+
+        "intel_i915") # https://wiki.archlinux.org/title/Intel_graphics#Installation
+            packages=()
+            packages+=("vulkan-intel") && packages+=("lib32-vulkan-intel")
+            packages+=("vkd3d") && packages+=("lib32-vkd3d")
+            packages+=("gamemode") && packages+=("lib32-gamemode")
+            packages+=("libva-intel-driver") && packages+=("lib32-libva-intel-driver")
+            packages+=("intel-media-driver")
+            arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+            sed -i "s/MODULES=()/MODULES=(i915)/g" /mnt/etc/mkinitcpio.conf
+            arch-chroot /mnt mkinitcpio -P
+            ;;
+
+        "nvidia") # https://wiki.archlinux.org/title/NVIDIA#Installation
+            packages=()
+            packages+=("xorg-xrandr")
+            packages+=("nvidia-dkms")
+            #packages+=("linux-headers")
+            packages+=("linux-zen-headers")
+            packages+=("nvidia-settings")
+            packages+=("nvidia-utils") && packages+=("lib32-nvidia-utils")
+            packages+=("opencl-nvidia") && packages+=("lib32-opencl-nvidia")
+            packages+=("gamemode") && packages+=("lib32-gamemode")
+            packages+=("vkd3d") && packages+=("lib32-vkd3d")
+            arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+            sed -i "s/MODULES=(*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
+            sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
+            arch-chroot /mnt mkinitcpio -P
+            # Enable Wayland Support (https://wiki.archlinux.org/title/GDM#Wayland_and_the_proprietary_NVIDIA_driver)
+            [ ! -f /mnt/etc/udev/rules.d/61-gdm.rules ] && mkdir -p /mnt/etc/udev/rules.d/ && ln -s /dev/null /mnt/etc/udev/rules.d/61-gdm.rules
+            ;;
+
+        "amd") # https://wiki.archlinux.org/title/AMDGPU#Installation
+            packages=()
+            packages+=("xf86-video-amdgpu")
+            packages+=("libva-mesa-driver") && packages+=("lib32-libva-mesa-driver")
+            packages+=("vulkan-radeon") && packages+=("lib32-vulkan-radeon")
+            packages+=("mesa-vdpau") && packages+=("lib32-mesa-vdpau")
+            packages+=("gamemode") && packages+=("lib32-gamemode")
+            packages+=("vkd3d") && packages+=("lib32-vkd3d")
+            arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+            sed -i "s/MODULES=()/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
+            arch-chroot /mnt mkinitcpio -P
+            ;;
+
+        "ati") # https://wiki.archlinux.org/title/ATI#Installation
+            packages=()
+            packages+=("xf86-video-ati")
+            packages+=("libva-mesa-driver") && packages+=("lib32-libva-mesa-driver")
+            packages+=("mesa-vdpau") && packages+=("lib32-mesa-vdpau")
+            packages+=("gamemode") && packages+=("lib32-gamemode")
+            packages+=("vkd3d") && packages+=("lib32-vkd3d")
+            arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+            sed -i "s/MODULES=()/MODULES=(amdgpu radeon)/g" /mnt/etc/mkinitcpio.conf
+            arch-chroot /mnt mkinitcpio -P
+            ;;
+
+        esac
 
     else
         # Skip Gnome progresses
