@@ -109,7 +109,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 
 For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.org/title/QEMU) and enable GPU Passthrough. Then you can use an emulated Microsoft Windows with native GPU access. For quick installation, have a look to this project: [quickpassthrough](https://github.com/HikariKnight/quickpassthrough)
 
-### General Commands to maintain your Arch OS
+### General Commands
 
 ```
 fetch
@@ -139,6 +139,12 @@ paru -S <my package>
 
 ```
 paru -Qe
+```
+
+#### Show package info
+
+```
+paru -Qi <my package>
 ```
 
 #### Remove package
