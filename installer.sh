@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.1.1'
+VERSION='1.1.2'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -1243,7 +1243,9 @@ SECONDS=0
         case "${ARCH_OS_GRAPHICS_DRIVER}" in
 
         "mesa") # https://wiki.archlinux.org/title/OpenGL#Installation
+            packages+=("mesa") && packages+=("lib32-mesa")
             packages+=("mesa-utils") && packages+=("lib32-mesa-utils")
+            packages+=("vkd3d") && packages+=("lib32-vkd3d")
             packages+=("gamemode") && packages+=("lib32-gamemode")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             ;;
@@ -1262,9 +1264,9 @@ SECONDS=0
 
         "nvidia") # https://wiki.archlinux.org/title/NVIDIA#Installation
             packages=()
+            #packages+=("linux-headers")
             packages+=("xorg-xrandr")
             packages+=("nvidia-dkms")
-            #packages+=("linux-headers")
             packages+=("linux-zen-headers")
             packages+=("nvidia-settings")
             packages+=("nvidia-utils") && packages+=("lib32-nvidia-utils")
