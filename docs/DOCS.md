@@ -16,9 +16,23 @@
 
 ## Recommendation
 
-For a robust & stable Arch OS experience, install as few additional packages from the main repository or AUR as possible. Instead, use Flatpak or Distrobox/Toolbox (Podman/Docker). Furthermore change system files only if absolutely necessary. And perform regular updates with `paru -Syu`
+For a robust & stable Arch OS experience, install as few additional packages from the official [Arch Repository](https://archlinux.org/packages) or [AUR](https://aur.archlinux.org) as possible. Instead, use [Flatpak](https://flathub.org) or [GNOME Software](https://apps.gnome.org). Furthermore change system files only if absolutely necessary and perform regular package upgrades with `paru -Syu`.
 
-### Install Graphics Driver
+### For Developer
+
+For CLI tools you can try [Distrobox](https://distrobox.it/) or [Toolbox](https://containertoolbx.org) and as Container Runtime use [Podman](https://podman.io) or [Docker](https://www.docker.com).
+
+### For Gamer
+
+For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.org/title/QEMU) and enable GPU Passthrough. Then you can use an emulated Microsoft Windows with native GPU access. For quick installation, have a look to this project: [quickpassthrough](https://github.com/HikariKnight/quickpassthrough)
+
+**Note:** Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games from Linux with: `gamemoderun <file>`
+
+### For Audiophiles
+
+For custom Pipewire audio configuration, check out the official [Arch Wiki](https://wiki.archlinux.org/title/PipeWire).
+
+### Install Graphics Driver (manually)
 
 The graphics driver can be installed independently of the Arch OS installation.
 
@@ -28,8 +42,6 @@ The graphics driver can be installed independently of the Arch OS installation.
 - [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Available_methods)
 - [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
 - [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
-
-**Note:** Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games with `gamemoderun <file>`
 
 ### Additional Packages (optional)
 
@@ -56,10 +68,6 @@ The graphics driver can be installed independently of the Arch OS installation.
 - [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
 - [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
 - [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (useful in wayland app toggler script)
-
-### For Audiophiles (optional)
-
-For custom Pipewire audio configuration, check out the official [Arch Wiki...](https://wiki.archlinux.org/title/PipeWire)
 
 ## Shell Enhancement
 
@@ -124,7 +132,7 @@ The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better s
 
 **Note:** The `installer.conf` will copied to the new user's home directory during installation. This file can be saved for reuse or simply deleted.
 
-### Example of `installer.conf`
+### Example: `installer.conf`
 
 ```
 # Hostname (auto)
