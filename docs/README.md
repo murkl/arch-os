@@ -103,7 +103,7 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 
 ## Usage
 
-For a robust & stable Arch OS experience, install as few additional packages from the official [Arch Repository](https://archlinux.org/packages) or [AUR](https://aur.archlinux.org) as possible. Instead, use [Flatpak](https://flathub.org) or [GNOME Software](https://apps.gnome.org). For CLI tools you can try [Distrobox](https://distrobox.it/) or [Toolbox](https://containertoolbx.org) and as [Container Runtime](https://hub.docker.com) use [Podman](https://podman.io) or [Docker](https://www.docker.com). Furthermore change system files only if absolutely necessary and perform regular package upgrades.
+For a robust & stable Arch OS experience, install as few additional packages from the official [Arch Repository](https://archlinux.org/packages) or [AUR](https://aur.archlinux.org) as possible. Instead, use [Flatpak](https://flathub.org) or [GNOME Software](https://apps.gnome.org). For CLI tools you can try [Distrobox](https://distrobox.it/) or [Toolbox](https://containertoolbx.org) and as Container Runtime use [Podman](https://podman.io) or [Docker](https://www.docker.com). Furthermore change system files only if absolutely necessary and perform regular package upgrades.
 
 ### For Gamer
 
