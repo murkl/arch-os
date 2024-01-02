@@ -1264,18 +1264,37 @@ SECONDS=0
 
         "nvidia") # https://wiki.archlinux.org/title/NVIDIA#Installation
             packages=()
-            #packages+=("linux-headers")
             packages+=("xorg-xrandr")
             packages+=("nvidia-dkms")
-            packages+=("linux-zen-headers")
+            packages+=("${ARCH_OS_KERNEL}-headers")
             packages+=("nvidia-settings")
             packages+=("nvidia-utils") && packages+=("lib32-nvidia-utils")
             packages+=("opencl-nvidia") && packages+=("lib32-opencl-nvidia")
             packages+=("gamemode") && packages+=("lib32-gamemode")
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
-            sed -i "s/MODULES=(*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
+            # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
             sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
+            sed -i "s/MODULES=(*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
+            # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
+            mkdir -p /mnt/etc/pacman.d/hooks/
+            {
+                echo "[Trigger]"
+                echo "Operation=Install"
+                echo "Operation=Upgrade"
+                echo "Operation=Remove"
+                echo "Type=Package"
+                echo "Target=nvidia"
+                echo "Target=${ARCH_OS_KERNEL}"
+                echo "# Change the linux part above if a different kernel is used"
+                echo ""
+                echo "[Action]"
+                echo "Description=Update NVIDIA module in initcpio"
+                echo "Depends=mkinitcpio"
+                echo "When=PostTransaction"
+                echo "NeedsTargets"
+                echo "Exec=/bin/sh -c 'while read -r trg; do case \$trg in linux*) exit 0; esac; done; /usr/bin/mkinitcpio -P'"
+            } >/mnt/etc/pacman.d/hooks/nvidia.hook
             arch-chroot /mnt mkinitcpio -P
             # Enable Wayland Support (https://wiki.archlinux.org/title/GDM#Wayland_and_the_proprietary_NVIDIA_driver)
             [ ! -f /mnt/etc/udev/rules.d/61-gdm.rules ] && mkdir -p /mnt/etc/udev/rules.d/ && ln -s /dev/null /mnt/etc/udev/rules.d/61-gdm.rules
