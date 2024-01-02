@@ -1274,6 +1274,8 @@ SECONDS=0
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
+            # Alternative (no working resolution in plymouth):
+            #mkdir -p /mnt/etc/modprobe.d/ && echo -e 'blacklist nouveau\noptions nvidia_drm modeset=1 fbdev=1' >/mnt/etc/modprobe.d/nvidia.conf
             sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
             sed -i "s/MODULES=(*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
             # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
@@ -1295,9 +1297,10 @@ SECONDS=0
                 echo "NeedsTargets"
                 echo "Exec=/bin/sh -c 'while read -r trg; do case \$trg in linux*) exit 0; esac; done; /usr/bin/mkinitcpio -P'"
             } >/mnt/etc/pacman.d/hooks/nvidia.hook
-            arch-chroot /mnt mkinitcpio -P
             # Enable Wayland Support (https://wiki.archlinux.org/title/GDM#Wayland_and_the_proprietary_NVIDIA_driver)
             [ ! -f /mnt/etc/udev/rules.d/61-gdm.rules ] && mkdir -p /mnt/etc/udev/rules.d/ && ln -s /dev/null /mnt/etc/udev/rules.d/61-gdm.rules
+            # Rebuild initial ram disk
+            arch-chroot /mnt mkinitcpio -P
             ;;
 
         "amd") # https://wiki.archlinux.org/title/AMDGPU#Installation
