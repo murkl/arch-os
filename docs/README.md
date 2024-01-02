@@ -36,7 +36,7 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 <p align="center">
   <strong>Test successful</strong>
   <br>
-  <a target="_blank" href="https://www.archlinux.de/releases/2023.12.01">archlinux-2023.12.01-x86_64.iso</a>
+  <a target="_blank" href="https://www.archlinux.de/releases/2024.01.01">archlinux-2024.01.01-x86_64.iso</a>
 </p>
 
 ## Features
