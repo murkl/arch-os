@@ -71,7 +71,7 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 - SSD Support
 - Firmware Update Tool preinstalled
 - GNOME Power Profiles Support
-- Networking, Protocol Libs, Utils & Codecs included
+- Samba, Networking Protocol Libs, Git, Utils & Codecs included
 - Printer Support
 - VM Support (tested in GNOME Boxes)
 - Installer Error Handling
@@ -103,7 +103,11 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 
 ## Usage
 
-For a robust & stable Arch OS experience, install as few additional packages from the main repository or AUR as possible. Instead, use Flatpak (GNOME Software) or Distrobox/Toolbox (Podman/Docker). Furthermore change system files only if absolutely necessary. And perform regular updates.
+For a robust & stable Arch OS experience, install as few additional packages from the official [Arch Repository](https://archlinux.org/packages) or [AUR](https://aur.archlinux.org) as possible. Instead, use [Flatpak](https://flathub.org) or [GNOME Software](https://apps.gnome.org). For CLI tools you can try [Distrobox](https://distrobox.it/) or [Toolbox](https://containertoolbx.org) and as [Container Runtime](https://hub.docker.com) use [Podman](https://podman.io) or [Docker](https://www.docker.com). Furthermore change system files only if absolutely necessary and perform regular package upgrades.
+
+### For Gamer
+
+For native **Windows Gaming** install [Qemu](https://wiki.archlinux.org/title/QEMU) and enable GPU Passthrough. Then you can use an emulated [Microsoft Windows](https://www.microsoft.com/windows) with native GPU access. For quick installation, have a look to this project: [quickpassthrough](https://github.com/HikariKnight/quickpassthrough)
 
 These are the general commands to maintain your Arch OS:
 
