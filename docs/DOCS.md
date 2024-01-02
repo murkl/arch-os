@@ -16,11 +16,11 @@
 
 ## Recommendation
 
-For a robust & stable Arch OS experience, install as few additional packages from the official [Arch Repository](https://archlinux.org/packages) or [AUR](https://aur.archlinux.org) as possible. Instead, use [Flatpak](https://flathub.org) or [GNOME Software](https://apps.gnome.org). Furthermore change system files only if absolutely necessary and perform regular package upgrades with `paru -Syu`.
+For a robust & stable Arch OS experience, install as few additional packages from the official [Arch Repository](https://archlinux.org/packages) or [AUR](https://aur.archlinux.org) as possible. Instead, use [Flatpak](https://flathub.org) or [GNOME Software](https://apps.gnome.org). Furthermore change system files only if absolutely necessary and perform regular package upgrades.
 
 ### For Developer
 
-For CLI tools you can try [Distrobox](https://distrobox.it/) or [Toolbox](https://containertoolbx.org) and as Container Runtime use [Podman](https://podman.io) or [Docker](https://www.docker.com).
+For sandboxed CLI tools or test environment you can try [Distrobox](https://distrobox.it/) or [Toolbox](https://containertoolbx.org) and as container runtime use [Podman](https://podman.io) or [Docker](https://www.docker.com).
 
 ### For Gamer
 
@@ -30,7 +30,7 @@ For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.or
 
 ### For Audiophiles
 
-For custom Pipewire audio configuration, check out the official [Arch Wiki](https://wiki.archlinux.org/title/PipeWire).
+For advanced Pipewire audio configuration, check out the official [Arch Wiki](https://wiki.archlinux.org/title/PipeWire).
 
 ### Install Graphics Driver (manually)
 

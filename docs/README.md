@@ -107,11 +107,13 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 
 ### For Developer
 
-For CLI tools you can try [Distrobox](https://distrobox.it/) or [Toolbox](https://containertoolbx.org) and as Container Runtime use [Podman](https://podman.io) or [Docker](https://www.docker.com).
+For sandboxed CLI tools or test environment you can try [Distrobox](https://distrobox.it/) or [Toolbox](https://containertoolbx.org) and as container runtime use [Podman](https://podman.io) or [Docker](https://www.docker.com).
 
 ### For Gamer
 
 For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.org/title/QEMU) and enable GPU Passthrough. Then you can use an emulated Microsoft Windows with native GPU access. For quick installation, have a look to this project: [quickpassthrough](https://github.com/HikariKnight/quickpassthrough)
+
+**Note:** Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games from Linux with: `gamemoderun <file>`
 
 ### General Commands
 
