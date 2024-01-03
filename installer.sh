@@ -892,11 +892,11 @@ SECONDS=0
 
         # Install plymouth theme
         repo_url="https://github.com/murkl/plymouth-theme-arch-os.git"
-        tmp_name=$(mktemp -u "plymouth-theme-arch-os.XXXXX")
+        tmp_name=$(mktemp -u "plymouth-theme-arch-os.XXXXXXXXXX")
         mkdir -p /mnt/tmp /mnt/usr/share/plymouth/themes/
-        arch-chroot /mnt git clone "$repo_url" "/tmp/${tmp_name}"
-        cp -rf "/mnt/tmp/${tmp_name}/src" /mnt/usr/share/plymouth/themes/arch-os
-        rm -rf "/mnt/tmp/${tmp_name}"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "/home/${ARCH_OS_USERNAME}/${tmp_name}"
+        cp -rf "/mnt/home/${ARCH_OS_USERNAME}/${tmp_name}/src" /mnt/usr/share/plymouth/themes/arch-os
+        rm -rf "/mnt/home/${ARCH_OS_USERNAME}/${tmp_name}"
 
         # Set Theme & rebuild initram disk
         arch-chroot /mnt plymouth-set-default-theme -R arch-os
