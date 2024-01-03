@@ -885,17 +885,18 @@ SECONDS=0
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
 
         # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed plymouth
+        arch-chroot /mnt pacman -S --noconfirm --needed plymouth cantarell-fonts
 
         # Configure mkinitcpio
         sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf
 
         # Install plymouth theme
         repo_url="https://github.com/murkl/plymouth-theme-arch-os.git"
-        tmp_name=$(mktemp -u "/home/${ARCH_OS_USERNAME}/plymouth-theme-arch-os.XXXXXXXXXX")
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$tmp_name"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd ${tmp_name}/aur && makepkg -si --noconfirm"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$tmp_name"
+        tmp_name=$(mktemp -u "plymouth-theme-arch-os.XXXXX")
+        mkdir -p /mnt/tmp /mnt/usr/share/plymouth/themes/
+        arch-chroot /mnt git clone "$repo_url" "/tmp/${tmp_name}"
+        cp -rf "/mnt/tmp/${tmp_name}/src" /mnt/usr/share/plymouth/themes/arch-os
+        rm -rf "/mnt/tmp/${tmp_name}"
 
         # Set Theme & rebuild initram disk
         arch-chroot /mnt plymouth-set-default-theme -R arch-os
