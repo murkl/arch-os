@@ -23,7 +23,7 @@ curl -Ls http://arch.webhop.me | bash
 
 <p align="center">
 This project aims to provide a minimal and solid Arch Linux base for desktop usage and an easy and fast to use installer for that.
-Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, optional GNOME as desktop with graphics driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more features.
+Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, optional GNOME as desktop with graphics driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more features...
 </p>
 
 <p align="center"><strong>Sole OS on a single disk</strong></p>
@@ -36,7 +36,7 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 <p align="center">
   <strong>Test successful</strong>
   <br>
-  <a target="_blank" href="https://www.archlinux.de/releases/2023.12.01">archlinux-2023.12.01-x86_64.iso</a>
+  <a target="_blank" href="https://www.archlinux.de/releases/2024.01.01">archlinux-2024.01.01-x86_64.iso</a>
 </p>
 
 ## Features
@@ -45,13 +45,13 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 - Advanced Installer Properties (see Arch OS Docs)
 - Minimal Arch Linux Base (Zen Kernel)
 - Automatic Arch Linux Housekeeping (except updates)
-- Minimal Vanilla GNOME Desktop + Autologin (optional)
+- Minimal Vanilla GNOME Desktop (optional)
+- Disk Encryption + Auto Login (optional)
 - Graphics Driver & Gamemode (Mesa, Intel i915, NVIDIA, AMD)
 - Pipewire Audio (Dolby Atmos supported)
 - Wayland optimized
 - AUR Helper & Multilib included
 - Flatpak Support + Auto Update (GNOME Software)
-- Disk Encryption (optional)
 - Designed as the only OS on the disk
 - UEFI only supported
 - Systemd Bootloader (auto updated)
@@ -71,7 +71,7 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 - SSD Support
 - Firmware Update Tool preinstalled
 - GNOME Power Profiles Support
-- Networking, Protocol Libs, Utils & Codecs included
+- Samba, Networking Protocol Libs, Git, Utils & Codecs included
 - Printer Support
 - VM Support (tested in GNOME Boxes)
 - Installer Error Handling
@@ -103,11 +103,19 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 
 ## Usage
 
-For a robust & stable Arch OS experience, install as few additional packages from the main repository or AUR as possible. Instead, use Flatpak (GNOME Software) or Distrobox/Toolbox (Podman/Docker). Furthermore change system files only if absolutely necessary. And perform regular updates.
+For a robust & stable Arch OS experience, install as few additional packages from the official [Arch Repository](https://archlinux.org/packages) or [AUR](https://aur.archlinux.org) as possible. Instead, use [Flatpak](https://flathub.org) or [GNOME Software](https://apps.gnome.org). Furthermore change system files only if absolutely necessary and perform regular package upgrades.
 
-These are the general commands to maintain your Arch OS:
+### For Developer
 
-### Show system info
+For sandboxed CLI tools or test environment you can try [Distrobox](https://distrobox.it/) or [Toolbox](https://containertoolbx.org) and as container runtime use [Podman](https://podman.io) or [Docker](https://www.docker.com).
+
+### For Gamer
+
+For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.org/title/QEMU) and enable GPU Passthrough. Then you can use an emulated Microsoft Windows with native GPU access. For quick installation, have a look to this project: [quickpassthrough](https://github.com/HikariKnight/quickpassthrough)
+
+**Note:** Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games from Linux with: `gamemoderun <file>`
+
+### General Commands
 
 ```
 fetch
@@ -115,31 +123,37 @@ fetch
 
 <img src="screenshots/neofetch.png" />
 
-### Update system
+#### Update system
 
 ```
 paru -Syu
 ```
 
-### Search package
+#### Search package
 
 ```
 paru -Ss <my search string>
 ```
 
-### Install package
+#### Install package
 
 ```
 paru -S <my package>
 ```
 
-### List installed packages
+#### List installed packages
 
 ```
 paru -Qe
 ```
 
-### Remove package
+#### Show package info
+
+```
+paru -Qi <my package>
+```
+
+#### Remove package
 
 ```
 paru -Rsn <my package>

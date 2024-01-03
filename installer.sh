@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.1.1'
+VERSION='1.1.2'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -885,17 +885,18 @@ SECONDS=0
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
 
         # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed plymouth
+        arch-chroot /mnt pacman -S --noconfirm --needed plymouth cantarell-fonts
 
         # Configure mkinitcpio
         sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf
 
         # Install plymouth theme
         repo_url="https://github.com/murkl/plymouth-theme-arch-os.git"
-        tmp_name=$(mktemp -u "/home/${ARCH_OS_USERNAME}/plymouth-theme-arch-os.XXXXXXXXXX")
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$tmp_name"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd ${tmp_name}/aur && makepkg -si --noconfirm"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$tmp_name"
+        tmp_name=$(mktemp -u "plymouth-theme-arch-os.XXXXXXXXXX")
+        mkdir -p /mnt/tmp /mnt/usr/share/plymouth/themes/
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "/home/${ARCH_OS_USERNAME}/${tmp_name}"
+        cp -rf "/mnt/home/${ARCH_OS_USERNAME}/${tmp_name}/src" /mnt/usr/share/plymouth/themes/arch-os
+        rm -rf "/mnt/home/${ARCH_OS_USERNAME}/${tmp_name}"
 
         # Set Theme & rebuild initram disk
         arch-chroot /mnt plymouth-set-default-theme -R arch-os
@@ -1243,7 +1244,9 @@ SECONDS=0
         case "${ARCH_OS_GRAPHICS_DRIVER}" in
 
         "mesa") # https://wiki.archlinux.org/title/OpenGL#Installation
+            packages+=("mesa") && packages+=("lib32-mesa")
             packages+=("mesa-utils") && packages+=("lib32-mesa-utils")
+            packages+=("vkd3d") && packages+=("lib32-vkd3d")
             packages+=("gamemode") && packages+=("lib32-gamemode")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             ;;
@@ -1264,19 +1267,41 @@ SECONDS=0
             packages=()
             packages+=("xorg-xrandr")
             packages+=("nvidia-dkms")
-            #packages+=("linux-headers")
-            packages+=("linux-zen-headers")
+            packages+=("${ARCH_OS_KERNEL}-headers")
             packages+=("nvidia-settings")
             packages+=("nvidia-utils") && packages+=("lib32-nvidia-utils")
             packages+=("opencl-nvidia") && packages+=("lib32-opencl-nvidia")
             packages+=("gamemode") && packages+=("lib32-gamemode")
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+            # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
+            # Alternative (slow boot, bios logo twice, but correct plymouth resolution):
+            #sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
+            mkdir -p /mnt/etc/modprobe.d/ && echo -e 'blacklist nouveau\noptions nvidia_drm modeset=1 fbdev=1' >/mnt/etc/modprobe.d/nvidia.conf
             sed -i "s/MODULES=(*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
-            sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
-            arch-chroot /mnt mkinitcpio -P
+            # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
+            mkdir -p /mnt/etc/pacman.d/hooks/
+            {
+                echo "[Trigger]"
+                echo "Operation=Install"
+                echo "Operation=Upgrade"
+                echo "Operation=Remove"
+                echo "Type=Package"
+                echo "Target=nvidia"
+                echo "Target=${ARCH_OS_KERNEL}"
+                echo "# Change the linux part above if a different kernel is used"
+                echo ""
+                echo "[Action]"
+                echo "Description=Update NVIDIA module in initcpio"
+                echo "Depends=mkinitcpio"
+                echo "When=PostTransaction"
+                echo "NeedsTargets"
+                echo "Exec=/bin/sh -c 'while read -r trg; do case \$trg in linux*) exit 0; esac; done; /usr/bin/mkinitcpio -P'"
+            } >/mnt/etc/pacman.d/hooks/nvidia.hook
             # Enable Wayland Support (https://wiki.archlinux.org/title/GDM#Wayland_and_the_proprietary_NVIDIA_driver)
             [ ! -f /mnt/etc/udev/rules.d/61-gdm.rules ] && mkdir -p /mnt/etc/udev/rules.d/ && ln -s /dev/null /mnt/etc/udev/rules.d/61-gdm.rules
+            # Rebuild initial ram disk
+            arch-chroot /mnt mkinitcpio -P
             ;;
 
         "amd") # https://wiki.archlinux.org/title/AMDGPU#Installation
