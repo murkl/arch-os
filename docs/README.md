@@ -45,13 +45,13 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 - Advanced Installer Properties (see Arch OS Docs)
 - Minimal Arch Linux Base (Zen Kernel)
 - Automatic Arch Linux Housekeeping (except updates)
-- Minimal Vanilla GNOME Desktop + Autologin (optional)
+- Minimal Vanilla GNOME Desktop (optional)
+- Disk Encryption + Auto Login (optional)
 - Graphics Driver & Gamemode (Mesa, Intel i915, NVIDIA, AMD)
 - Pipewire Audio (Dolby Atmos supported)
 - Wayland optimized
 - AUR Helper & Multilib included
 - Flatpak Support + Auto Update (GNOME Software)
-- Disk Encryption (optional)
 - Designed as the only OS on the disk
 - UEFI only supported
 - Systemd Bootloader (auto updated)
