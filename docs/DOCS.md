@@ -30,7 +30,12 @@ For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.or
 
 ### For Audiophiles
 
-For advanced Pipewire audio configuration, check out the official [Arch Wiki](https://wiki.archlinux.org/title/PipeWire).
+For advanced Pipewire audio configuration, check out the official [Pipewire Arch Wiki](https://wiki.archlinux.org/title/PipeWire).
+
+May check out these projects:
+
+- [AutoEq](https://github.com/jaakkopasanen/AutoEq)
+- [EasyEffects Presents](https://github.com/wwmm/easyeffects/wiki/Community-presets)
 
 ### Install Graphics Driver (manually)
 
