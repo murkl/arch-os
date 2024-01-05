@@ -1259,7 +1259,7 @@ SECONDS=0
             packages+=("libva-intel-driver") && packages+=("lib32-libva-intel-driver")
             packages+=("intel-media-driver")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
-            sed -i "s/MODULES=()/MODULES=(i915)/g" /mnt/etc/mkinitcpio.conf
+            sed -i "s/^MODULES=(.*)/MODULES=(i915)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
             ;;
 
@@ -1278,7 +1278,7 @@ SECONDS=0
             # Alternative (slow boot, bios logo twice, but correct plymouth resolution):
             #sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
             mkdir -p /mnt/etc/modprobe.d/ && echo -e 'blacklist nouveau\noptions nvidia_drm modeset=1 fbdev=1' >/mnt/etc/modprobe.d/nvidia.conf
-            sed -i "s/MODULES=(*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
+            sed -i "s/^MODULES=(.*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
             # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
             mkdir -p /mnt/etc/pacman.d/hooks/
             {
@@ -1313,7 +1313,7 @@ SECONDS=0
             packages+=("gamemode") && packages+=("lib32-gamemode")
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
-            sed -i "s/MODULES=()/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
+            sed -i "s/^MODULES=(.*)/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
             ;;
 
@@ -1325,7 +1325,7 @@ SECONDS=0
             packages+=("gamemode") && packages+=("lib32-gamemode")
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
-            sed -i "s/MODULES=()/MODULES=(amdgpu radeon)/g" /mnt/etc/mkinitcpio.conf
+            sed -i "s/^MODULES=(.*)/MODULES=(amdgpu radeon)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
             ;;
 
