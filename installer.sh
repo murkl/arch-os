@@ -1060,13 +1060,13 @@ SECONDS=0
         #packages+=("lib32-libappindicator-gtk3")
 
         # Audio
-        packages+=("pipewire")       # Pipewire
-        packages+=("pipewire-alsa")  # Replacement for alsa
-        packages+=("pipewire-pulse") # Replacement for pulse
-        packages+=("pipewire-jack")  # Replacement for jack
-        packages+=("wireplumber")    # Pipewire session manager
-        #packages+=("lib32-pipewire")      # Pipewire 32 bit
-        #packages+=("lib32-pipewire-jack") # Replacement for jack 32 bit
+        packages+=("pipewire")            # Pipewire
+        packages+=("pipewire-alsa")       # Replacement for alsa
+        packages+=("pipewire-pulse")      # Replacement for pulse
+        packages+=("pipewire-jack")       # Replacement for jack
+        packages+=("wireplumber")         # Pipewire session manager
+        packages+=("lib32-pipewire")      # Pipewire 32 bit
+        packages+=("lib32-pipewire-jack") # Replacement for jack 32 bit
 
         # Networking & Access
         packages+=("samba") # Windows Network Share
@@ -1098,8 +1098,8 @@ SECONDS=0
         packages+=("libdvdcss")
 
         # Optimization
-        #packages+=("gamemode")
-        #packages+=("lib32-gamemode")
+        packages+=("gamemode")
+        packages+=("lib32-gamemode")
 
         # Driver
         #packages+=("xf86-input-synaptics") # For some touchpads
@@ -1112,6 +1112,9 @@ SECONDS=0
 
         # Install packages
         arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+
+        # Add user to gamemode group
+        arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
         # ----------------------------------------------------------------------------------------------------
 
@@ -1247,7 +1250,6 @@ SECONDS=0
             packages+=("mesa") && packages+=("lib32-mesa")
             packages+=("mesa-utils") && packages+=("lib32-mesa-utils")
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
-            packages+=("gamemode") && packages+=("lib32-gamemode")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             ;;
 
@@ -1255,7 +1257,6 @@ SECONDS=0
             packages=()
             packages+=("vulkan-intel") && packages+=("lib32-vulkan-intel")
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
-            packages+=("gamemode") && packages+=("lib32-gamemode")
             packages+=("libva-intel-driver") && packages+=("lib32-libva-intel-driver")
             packages+=("intel-media-driver")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
@@ -1271,7 +1272,6 @@ SECONDS=0
             packages+=("nvidia-settings")
             packages+=("nvidia-utils") && packages+=("lib32-nvidia-utils")
             packages+=("opencl-nvidia") && packages+=("lib32-opencl-nvidia")
-            packages+=("gamemode") && packages+=("lib32-gamemode")
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
@@ -1310,7 +1310,6 @@ SECONDS=0
             packages+=("libva-mesa-driver") && packages+=("lib32-libva-mesa-driver")
             packages+=("vulkan-radeon") && packages+=("lib32-vulkan-radeon")
             packages+=("mesa-vdpau") && packages+=("lib32-mesa-vdpau")
-            packages+=("gamemode") && packages+=("lib32-gamemode")
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             sed -i "s/^MODULES=(.*)/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
@@ -1322,7 +1321,6 @@ SECONDS=0
             packages+=("xf86-video-ati")
             packages+=("libva-mesa-driver") && packages+=("lib32-libva-mesa-driver")
             packages+=("mesa-vdpau") && packages+=("lib32-mesa-vdpau")
-            packages+=("gamemode") && packages+=("lib32-gamemode")
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             sed -i "s/^MODULES=(.*)/MODULES=(amdgpu radeon)/g" /mnt/etc/mkinitcpio.conf
@@ -1331,14 +1329,14 @@ SECONDS=0
 
         esac
 
+    # ----------------------------------------------------------------------------------------------------
+    # END INSTALL GNOME
+    # ----------------------------------------------------------------------------------------------------
+
     else
         # Skip Gnome progresses
         PROGRESS_COUNT=33
     fi
-
-    # ----------------------------------------------------------------------------------------------------
-    # END INSTALL GNOME
-    # ----------------------------------------------------------------------------------------------------
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Cleanup Installation"
