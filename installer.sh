@@ -1161,13 +1161,13 @@ SECONDS=0
         packages=()
 
         # Check & add to package list
-        arch-chroot /mnt pacman -Q --info gnome-maps &>/dev/null && packages+=("gnome-maps")
-        arch-chroot /mnt pacman -Q --info gnome-music &>/dev/null && packages+=("gnome-music")
-        arch-chroot /mnt pacman -Q --info gnome-photos &>/dev/null && packages+=("gnome-photos")
-        arch-chroot /mnt pacman -Q --info gnome-contacts &>/dev/null && packages+=("gnome-contacts")
-        arch-chroot /mnt pacman -Q --info gnome-connections &>/dev/null && packages+=("gnome-connections")
-        arch-chroot /mnt pacman -Q --info cheese &>/dev/null && packages+=("cheese")
-        arch-chroot /mnt pacman -Q --info snapshot &>/dev/null && packages+=("snapshot")
+        arch-chroot /mnt pacman -Qi gnome-maps &>/dev/null && packages+=("gnome-maps")
+        arch-chroot /mnt pacman -Qi gnome-music &>/dev/null && packages+=("gnome-music")
+        arch-chroot /mnt pacman -Qi gnome-contacts &>/dev/null && packages+=("gnome-contacts")
+        arch-chroot /mnt pacman -Qi gnome-connections &>/dev/null && packages+=("gnome-connections")
+        arch-chroot /mnt pacman -Qi gnome-photos &>/dev/null && packages+=("gnome-photos")
+        arch-chroot /mnt pacman -Qi cheese &>/dev/null && packages+=("cheese")
+        arch-chroot /mnt pacman -Qi snapshot &>/dev/null && packages+=("snapshot")
 
         # Remove packages from list
         arch-chroot /mnt pacman -Rsn --noconfirm "${packages[@]}"
