@@ -1158,12 +1158,12 @@ SECONDS=0
         # ----------------------------------------------------------------------------------------------------
 
         # Check & add remove package
-        arch-chroot /mnt bash -c "pacman -Qe gnome-maps &>/dev/null && pacman -Rsn --noconfirm gnome-maps"
-        arch-chroot /mnt bash -c "pacman -Qe gnome-connections &>/dev/null && pacman -Rsn --noconfirm gnome-connections"
-        arch-chroot /mnt bash -c "pacman -Qe snapshot &>/dev/null && pacman -Rsn --noconfirm snapshot"
-        #arch-chroot /mnt bash -c "pacman -Qe gnome-contacts &>/dev/null && pacman -Rsn --noconfirm gnome-contacts"
-        #arch-chroot /mnt bash -c "pacman -Qe gnome-photos &>/dev/null && pacman -Rsn --noconfirm gnome-photos"
-        #arch-chroot /mnt bash -c "pacman -Qe gnome-music &>/dev/null && pacman -Rsn --noconfirm gnome-music"
+        arch-chroot /mnt bash -c "pacman -Qi gnome-maps && pacman -Rns --noconfirm gnome-maps"
+        arch-chroot /mnt bash -c "pacman -Qi gnome-connections && pacman -Rns --noconfirm gnome-connections"
+        arch-chroot /mnt bash -c "pacman -Qi snapshot && pacman -Rns --noconfirm snapshot"
+        #arch-chroot /mnt bash -c "pacman -Qi gnome-contacts && pacman -Rns --noconfirm gnome-contacts"
+        #arch-chroot /mnt bash -c "pacman -Qi gnome-photos && pacman -Rns --noconfirm gnome-photos"
+        #arch-chroot /mnt bash -c "pacman -Qi gnome-music && pacman -Rns --noconfirm gnome-music"
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Enable GNOME Auto Login"
