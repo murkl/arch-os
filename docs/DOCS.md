@@ -204,39 +204,7 @@ ARCH_OS_VM_SUPPORT_ENABLED='true'
 ARCH_OS_SHELL_ENHANCED_ENABLED='true'
 ```
 
-## Rescue & Recovery
-
-If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and follow these instructions.
-
-### 1. Disk Information
-
-- Show disk info: `lsblk`
-
-_**Example**_
-
-- _Example Disk: `/dev/sda`_
-- _Example Boot: `/dev/sda1`_
-- _Example Root: `/dev/sda2`_
-
-### 2. Mount
-
-**Note:** _You may have to replace the example `/dev/sda` with your own disk_
-
-- Create mount dir: `mkdir -p /mnt/boot`
-- a) Mount root partition (disk encryption enabled):
-  - `cryptsetup open /dev/sda2 cryptroot`
-  - `mount /dev/mapper/cryptroot /mnt`
-- b) Mount root partition (disk encryption disabled):
-  - `mount /dev/sda2 /mnt`
-- Mount boot partition: `mount /dev/sda1 /mnt/boot`
-
-### 3. Chroot
-
-- Enter chroot: `arch-chroot /mnt`
-- _Fix your Arch OS..._
-- Exit: `exit`
-
-## Technical Info
+## Technical Information
 
 ### Partitions layout
 
@@ -268,22 +236,11 @@ NetworkManager systemd-timesyncd.service reflector.service paccache.timer fstrim
 
 ### Screenshots
 
-Note: This screenshots may outdated.
-
 <div align="center">
 <p><img src="screenshots/neofetch.png" width="90%" /></p>
 <p><img src="screenshots/apps.png" width="90%" /></p>
+<p><b>This screenshots may outdated.</b></p>
 </div>
-
-## Development
-
-Create new pull request branches only from [main branch](https://github.com/murkl/arch-os/tree/main)! The [dev branch](https://github.com/murkl/arch-os/tree/dev) will be deleted after each merge into main.
-
-The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broken, use only for testing!
-
-```
-curl -Ls http://arch-dev.webhop.me | bash
-```
 
 ## Troubleshooting
 
@@ -313,4 +270,46 @@ sudo pacman -Sy archlinux-keyring && paru -Su
 
 ```
 paru -Scc
+```
+
+### Rescue & Recovery
+
+If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and follow these instructions.
+
+#### 1. Disk Information
+
+- Show disk info: `lsblk`
+
+_**Example**_
+
+- _Example Disk: `/dev/sda`_
+- _Example Boot: `/dev/sda1`_
+- _Example Root: `/dev/sda2`_
+
+#### 2. Mount
+
+**Note:** _You may have to replace the example `/dev/sda` with your own disk_
+
+- Create mount dir: `mkdir -p /mnt/boot`
+- a) Mount root partition (disk encryption enabled):
+  - `cryptsetup open /dev/sda2 cryptroot`
+  - `mount /dev/mapper/cryptroot /mnt`
+- b) Mount root partition (disk encryption disabled):
+  - `mount /dev/sda2 /mnt`
+- Mount boot partition: `mount /dev/sda1 /mnt/boot`
+
+#### 3. Chroot
+
+- Enter chroot: `arch-chroot /mnt`
+- _Fix your Arch OS..._
+- Exit: `exit`
+
+## Development
+
+Create new pull request branches only from [main branch](https://github.com/murkl/arch-os/tree/main)! The [dev branch](https://github.com/murkl/arch-os/tree/dev) will be deleted after each merge into main.
+
+The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broken, use only for testing!
+
+```
+curl -Ls http://arch-dev.webhop.me | bash
 ```

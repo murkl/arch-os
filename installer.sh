@@ -1170,7 +1170,7 @@ SECONDS=0
         arch-chroot /mnt pacman -Qi snapshot &>/dev/null && packages+=("snapshot")
 
         # Remove packages from list
-        arch-chroot /mnt pacman -Rsn --noconfirm "${packages[@]}"
+        arch-chroot /mnt pacman -R --noconfirm "${packages[@]}"
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Enable GNOME Auto Login"
