@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.1.2'
+VERSION='1.1.3'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -1157,20 +1157,14 @@ SECONDS=0
         print_whiptail_info "Remove packages"
         # ----------------------------------------------------------------------------------------------------
 
-        # Init package list
-        packages=()
-
-        # Check & add to package list
-        arch-chroot /mnt pacman -Qi gnome-maps &>/dev/null && packages+=("gnome-maps")
-        arch-chroot /mnt pacman -Qi gnome-music &>/dev/null && packages+=("gnome-music")
-        arch-chroot /mnt pacman -Qi gnome-contacts &>/dev/null && packages+=("gnome-contacts")
-        arch-chroot /mnt pacman -Qi gnome-connections &>/dev/null && packages+=("gnome-connections")
-        arch-chroot /mnt pacman -Qi gnome-photos &>/dev/null && packages+=("gnome-photos")
-        arch-chroot /mnt pacman -Qi snapshot &>/dev/null && packages+=("snapshot")
-        #arch-chroot /mnt pacman -Qi cheese &>/dev/null && packages+=("cheese")
-
-        # Remove packages from list
-        arch-chroot /mnt pacman -R --noconfirm "${packages[@]}"
+        # Check & add remove package
+        arch-chroot /mnt pacman -Qe gnome-maps &>/dev/null && pacman -R --noconfirm gnome-maps
+        arch-chroot /mnt pacman -Qe gnome-music &>/dev/null && pacman -R --noconfirm gnome-music
+        arch-chroot /mnt pacman -Qe gnome-contacts &>/dev/null && pacman -R --noconfirm gnome-contacts
+        arch-chroot /mnt pacman -Qe gnome-connections &>/dev/null && pacman -R --noconfirm gnome-connections
+        arch-chroot /mnt pacman -Qe gnome-photos &>/dev/null && pacman -R --noconfirm gnome-photos
+        arch-chroot /mnt pacman -Qe snapshot &>/dev/null && pacman -R --noconfirm snapshot
+        #arch-chroot /mnt pacman -Qe cheese &>/dev/null && pacman -R --noconfirm cheese
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Enable GNOME Auto Login"
