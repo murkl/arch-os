@@ -1166,8 +1166,8 @@ SECONDS=0
         arch-chroot /mnt pacman -Qi gnome-contacts &>/dev/null && packages+=("gnome-contacts")
         arch-chroot /mnt pacman -Qi gnome-connections &>/dev/null && packages+=("gnome-connections")
         arch-chroot /mnt pacman -Qi gnome-photos &>/dev/null && packages+=("gnome-photos")
-        arch-chroot /mnt pacman -Qi cheese &>/dev/null && packages+=("cheese")
         arch-chroot /mnt pacman -Qi snapshot &>/dev/null && packages+=("snapshot")
+        #arch-chroot /mnt pacman -Qi cheese &>/dev/null && packages+=("cheese")
 
         # Remove packages from list
         arch-chroot /mnt pacman -R --noconfirm "${packages[@]}"
