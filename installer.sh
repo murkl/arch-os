@@ -336,11 +336,11 @@ tui_set_desktop() {
 
         # Set driver
         local driver_array=()
-        driver_array+=("mesa") && driver_array+=("Mesa (Default)")
-        driver_array+=("intel_i915") && driver_array+=("Intel i915")
-        driver_array+=("nvidia") && driver_array+=("NVIDIA")
-        driver_array+=("amd") && driver_array+=("AMD")
-        driver_array+=("ati") && driver_array+=("ATI legacy")
+        driver_array+=("mesa") && driver_array+=("Mesa Universal Graphics (Default)")
+        driver_array+=("intel_i915") && driver_array+=("Intel HD Graphics (i915)")
+        driver_array+=("nvidia") && driver_array+=("NVIDIA Graphics (latest)")
+        driver_array+=("amd") && driver_array+=("AMD Graphics (xf86-video-amdgpu)")
+        driver_array+=("ati") && driver_array+=("ATI Graphics (xf86-video-ati)")
         ARCH_OS_GRAPHICS_DRIVER=$(whiptail --title "$TITLE" --menu "\nChoose Graphics Driver" --nocancel --notags --default-item "$ARCH_OS_GRAPHICS_DRIVER" "$TUI_HEIGHT" "$TUI_WIDTH" "${#driver_array[@]}" "${driver_array[@]}" 3>&1 1>&2 2>&3)
 
         # Set X11 keyboard layout
@@ -1258,7 +1258,6 @@ SECONDS=0
             packages+=("vulkan-intel") && packages+=("lib32-vulkan-intel")
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
             packages+=("libva-intel-driver") && packages+=("lib32-libva-intel-driver")
-            packages+=("intel-media-driver")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             sed -i "s/^MODULES=(.*)/MODULES=(i915)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
@@ -1266,9 +1265,8 @@ SECONDS=0
 
         "nvidia") # https://wiki.archlinux.org/title/NVIDIA#Installation
             packages=()
-            packages+=("xorg-xrandr")
-            packages+=("nvidia-dkms")
             packages+=("${ARCH_OS_KERNEL}-headers")
+            packages+=("nvidia-dkms")
             packages+=("nvidia-settings")
             packages+=("nvidia-utils") && packages+=("lib32-nvidia-utils")
             packages+=("opencl-nvidia") && packages+=("lib32-opencl-nvidia")
@@ -1277,7 +1275,7 @@ SECONDS=0
             # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
             # Alternative (slow boot, bios logo twice, but correct plymouth resolution):
             #sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
-            mkdir -p /mnt/etc/modprobe.d/ && echo -e 'blacklist nouveau\noptions nvidia_drm modeset=1 fbdev=1' >/mnt/etc/modprobe.d/nvidia.conf
+            mkdir -p /mnt/etc/modprobe.d/ && echo -e 'options nvidia_drm modeset=1 fbdev=1' >/mnt/etc/modprobe.d/nvidia.conf
             sed -i "s/^MODULES=(.*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
             # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
             mkdir -p /mnt/etc/pacman.d/hooks/
