@@ -9,10 +9,9 @@
 1. [Recommendation](#recommendation)
 2. [Shell Enhancement](#shell-enhancement)
 3. [Installation Properties](#installation-properties)
-4. [Rescue & Recovery](#rescue--recovery)
-5. [Technical Information](#technical-info)
+4. [Technical Information](#technical-information)
+5. [Troubleshooting](#troubleshooting)
 6. [Development](#development)
-7. [Troubleshooting](#troubleshooting)
 
 ## Recommendation
 
