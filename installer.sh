@@ -338,7 +338,7 @@ tui_set_desktop() {
         local driver_array=()
         driver_array+=("mesa") && driver_array+=("Mesa Universal Graphics (Default)")
         driver_array+=("intel_i915") && driver_array+=("Intel HD Graphics (i915)")
-        driver_array+=("nvidia") && driver_array+=("NVIDIA Graphics (latest)")
+        driver_array+=("nvidia") && driver_array+=("NVIDIA Graphics (nvidia-dkms)")
         driver_array+=("amd") && driver_array+=("AMD Graphics (xf86-video-amdgpu)")
         driver_array+=("ati") && driver_array+=("ATI Graphics (xf86-video-ati)")
         ARCH_OS_GRAPHICS_DRIVER=$(whiptail --title "$TITLE" --menu "\nChoose Graphics Driver" --nocancel --notags --default-item "$ARCH_OS_GRAPHICS_DRIVER" "$TUI_HEIGHT" "$TUI_WIDTH" "${#driver_array[@]}" "${driver_array[@]}" 3>&1 1>&2 2>&3)
@@ -1158,13 +1158,13 @@ SECONDS=0
         # ----------------------------------------------------------------------------------------------------
 
         # Check & add remove package
-        arch-chroot /mnt pacman -Qe gnome-maps &>/dev/null && pacman -R --noconfirm gnome-maps
-        arch-chroot /mnt pacman -Qe gnome-music &>/dev/null && pacman -R --noconfirm gnome-music
-        arch-chroot /mnt pacman -Qe gnome-contacts &>/dev/null && pacman -R --noconfirm gnome-contacts
-        arch-chroot /mnt pacman -Qe gnome-connections &>/dev/null && pacman -R --noconfirm gnome-connections
-        arch-chroot /mnt pacman -Qe gnome-photos &>/dev/null && pacman -R --noconfirm gnome-photos
-        arch-chroot /mnt pacman -Qe snapshot &>/dev/null && pacman -R --noconfirm snapshot
-        #arch-chroot /mnt pacman -Qe cheese &>/dev/null && pacman -R --noconfirm cheese
+        arch-chroot /mnt pacman -Qe gnome-maps &>/dev/null && pacman -Rsn --noconfirm gnome-maps
+        arch-chroot /mnt pacman -Qe gnome-contacts &>/dev/null && pacman -Rsn --noconfirm gnome-contacts
+        arch-chroot /mnt pacman -Qe gnome-connections &>/dev/null && pacman -Rsn --noconfirm gnome-connections
+        arch-chroot /mnt pacman -Qe gnome-photos &>/dev/null && pacman -Rsn --noconfirm gnome-photos
+        arch-chroot /mnt pacman -Qe snapshot &>/dev/null && pacman -Rsn --noconfirm snapshot
+        #arch-chroot /mnt pacman -Qe gnome-music &>/dev/null && pacman -Rsn --noconfirm gnome-music
+        #arch-chroot /mnt pacman -Qe cheese &>/dev/null && pacman -Rsn --noconfirm cheese
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Enable GNOME Auto Login"
@@ -1252,6 +1252,7 @@ SECONDS=0
             packages+=("vulkan-intel") && packages+=("lib32-vulkan-intel")
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
             packages+=("libva-intel-driver") && packages+=("lib32-libva-intel-driver")
+            packages+=("intel-media-driver")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             sed -i "s/^MODULES=(.*)/MODULES=(i915)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
