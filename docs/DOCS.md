@@ -18,36 +18,6 @@
 
 For a robust & stable Arch OS experience, install as few additional packages from the official [Arch Repository](https://archlinux.org/packages) or [AUR](https://aur.archlinux.org) as possible. Instead, use [Flatpak](https://flathub.org) or [GNOME Software](https://apps.gnome.org). Furthermore change system files only if absolutely necessary and perform regular package upgrades.
 
-### For Developer
-
-For sandboxed CLI tools or test environment you can try [Distrobox](https://distrobox.it/) or [Toolbox](https://containertoolbx.org) and as container runtime use [Podman](https://podman.io) or [Docker](https://www.docker.com).
-
-### For Gamer
-
-For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.org/title/QEMU) and enable GPU Passthrough. Then you can use an emulated Microsoft Windows with native GPU access. For quick installation, have a look to this project: [quickpassthrough](https://github.com/HikariKnight/quickpassthrough)
-
-**Note:** Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games from Linux with: `gamemoderun <file>`
-
-### For Audiophiles
-
-For advanced Pipewire audio configuration, check out the official [Pipewire Arch Wiki](https://wiki.archlinux.org/title/PipeWire).
-
-May check out these projects:
-
-- [AutoEq](https://github.com/jaakkopasanen/AutoEq)
-- [EasyEffects Presents](https://github.com/wwmm/easyeffects/wiki/Community-presets)
-
-### Install Graphics Driver (manually)
-
-The graphics driver can be installed independently of the Arch OS installation.
-
-- [OpenGL](https://wiki.archlinux.org/title/OpenGL)
-- [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
-- [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
-- [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Available_methods)
-- [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
-- [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
-
 ### Additional Packages (optional)
 
 - Install [webapp-manager](https://aur.archlinux.org/packages/webapp-manager) for easy creation of web-apps for any website
@@ -73,6 +43,36 @@ The graphics driver can be installed independently of the Arch OS installation.
 - [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
 - [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
 - [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (useful in wayland app toggler script)
+
+### Install Graphics Driver (manually)
+
+The graphics driver can be installed independently of the Arch OS installation.
+
+- [OpenGL](https://wiki.archlinux.org/title/OpenGL)
+- [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
+- [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
+- [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Available_methods)
+- [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
+- [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
+
+### For Developer
+
+For sandboxed CLI tools or test environment you can try [Distrobox](https://distrobox.it/) or [Toolbox](https://containertoolbx.org) and as container runtime use [Podman](https://podman.io) or [Docker](https://www.docker.com).
+
+### For Gamer
+
+For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.org/title/QEMU) and enable GPU Passthrough. Then you can use an emulated Microsoft Windows with native GPU access. For quick installation, have a look to this project: [quickpassthrough](https://github.com/HikariKnight/quickpassthrough)
+
+**Note:** Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games from Linux with: `gamemoderun <file>`
+
+### For Audiophiles
+
+For advanced Pipewire audio configuration, check out the official [Pipewire Arch Wiki](https://wiki.archlinux.org/title/PipeWire).
+
+May check out these projects:
+
+- [AutoEq](https://github.com/jaakkopasanen/AutoEq)
+- [EasyEffects Presents](https://github.com/wwmm/easyeffects/wiki/Community-presets)
 
 ## Shell Enhancement
 
