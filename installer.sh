@@ -1158,13 +1158,12 @@ SECONDS=0
         # ----------------------------------------------------------------------------------------------------
 
         # Check & add remove package
-        arch-chroot /mnt pacman -Qe gnome-maps &>/dev/null && pacman -Rsn --noconfirm gnome-maps
-        arch-chroot /mnt pacman -Qe gnome-contacts &>/dev/null && pacman -Rsn --noconfirm gnome-contacts
-        arch-chroot /mnt pacman -Qe gnome-connections &>/dev/null && pacman -Rsn --noconfirm gnome-connections
-        arch-chroot /mnt pacman -Qe gnome-photos &>/dev/null && pacman -Rsn --noconfirm gnome-photos
-        arch-chroot /mnt pacman -Qe snapshot &>/dev/null && pacman -Rsn --noconfirm snapshot
-        #arch-chroot /mnt pacman -Qe gnome-music &>/dev/null && pacman -Rsn --noconfirm gnome-music
-        #arch-chroot /mnt pacman -Qe cheese &>/dev/null && pacman -Rsn --noconfirm cheese
+        arch-chroot /mnt bash -c "pacman -Qe gnome-maps &>/dev/null && pacman -Rsn --noconfirm gnome-maps"
+        arch-chroot /mnt bash -c "pacman -Qe gnome-connections &>/dev/null && pacman -Rsn --noconfirm gnome-connections"
+        arch-chroot /mnt bash -c "pacman -Qe snapshot &>/dev/null && pacman -Rsn --noconfirm snapshot"
+        #arch-chroot /mnt bash -c "pacman -Qe gnome-contacts &>/dev/null && pacman -Rsn --noconfirm gnome-contacts"
+        #arch-chroot /mnt bash -c "pacman -Qe gnome-photos &>/dev/null && pacman -Rsn --noconfirm gnome-photos"
+        #arch-chroot /mnt bash -c "pacman -Qe gnome-music &>/dev/null && pacman -Rsn --noconfirm gnome-music"
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Enable GNOME Auto Login"
