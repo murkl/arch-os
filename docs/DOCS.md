@@ -219,7 +219,7 @@ The partitions layout is seperated in two partitions:
 
 ### Core Packages
 
-This packages will be installed during minimal Arch without GNOME installation (180 packages in total):
+This packages will be installed during minimal Arch without GNOME installation (182 packages in total):
 
 ```
 base base-devel linux-zen linux-firmware networkmanager pacman-contrib bash-completion reflector pkgfile git nano [microcode_pkg]
