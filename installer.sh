@@ -823,7 +823,7 @@ SECONDS=0
     # ----------------------------------------------------------------------------------------------------
 
     # Create new user
-    arch-chroot /mnt useradd -m -G wheel -s /bin/fish "$ARCH_OS_USERNAME"
+    arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$ARCH_OS_USERNAME"
 
     # Allow users in group wheel to use sudo
     sed -i 's^# %wheel ALL=(ALL:ALL) ALL^%wheel ALL=(ALL:ALL) ALL^g' /mnt/etc/sudoers
