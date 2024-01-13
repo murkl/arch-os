@@ -136,6 +136,17 @@ The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better s
 
 **Note:** The `installer.conf` will copied to the new user's home directory during installation. This file can be saved for reuse or simply deleted.
 
+### Minimal Installation
+
+Set these properties to `false` to install Arch OS with minimal packages (without preinstalled Desktop).
+
+```
+ARCH_OS_DESKTOP_ENABLED='false'
+ARCH_OS_BOOTSPLASH_ENABLED='false'
+ARCH_OS_VM_SUPPORT_ENABLED='false'
+ARCH_OS_SHELL_ENHANCED_ENABLED='false'
+```
+
 ### Example: `installer.conf`
 
 ```
@@ -219,7 +230,7 @@ The partitions layout is seperated in two partitions:
 
 ### Core Packages
 
-This packages will be installed during minimal Arch without GNOME installation (180 packages in total):
+This packages will be installed during [Minimal Arch OS Installation](#minimal-installation) (182 packages in total):
 
 ```
 base base-devel linux-zen linux-firmware networkmanager pacman-contrib bash-completion reflector pkgfile git nano [microcode_pkg]
@@ -227,7 +238,7 @@ base base-devel linux-zen linux-firmware networkmanager pacman-contrib bash-comp
 
 ### Core Services
 
-This services will be enabled during minimal Arch without GNOME installation:
+This services will be enabled during [Minimal Arch OS Installation](#minimal-installation):
 
 ```
 NetworkManager systemd-timesyncd.service reflector.service paccache.timer fstrim.timer pkgfile-update.timer systemd-boot-update.service systemd-oomd.service
