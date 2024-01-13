@@ -230,7 +230,7 @@ The partitions layout is seperated in two partitions:
 
 ### Core Packages
 
-This packages will be installed during minimal Arch without GNOME installation (182 packages in total):
+This packages will be installed during [Minimal Arch OS Installation](#minimal-installation) (182 packages in total):
 
 ```
 base base-devel linux-zen linux-firmware networkmanager pacman-contrib bash-completion reflector pkgfile git nano [microcode_pkg]
@@ -238,7 +238,7 @@ base base-devel linux-zen linux-firmware networkmanager pacman-contrib bash-comp
 
 ### Core Services
 
-This services will be enabled during minimal Arch without GNOME installation:
+This services will be enabled during [Minimal Arch OS Installation](#minimal-installation):
 
 ```
 NetworkManager systemd-timesyncd.service reflector.service paccache.timer fstrim.timer pkgfile-update.timer systemd-boot-update.service systemd-oomd.service
