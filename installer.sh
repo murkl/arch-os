@@ -1251,7 +1251,7 @@ SECONDS=0
             packages+=("vulkan-intel") && packages+=("lib32-vulkan-intel")
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
             packages+=("libva-intel-driver") && packages+=("lib32-libva-intel-driver")
-            packages+=("intel-media-driver")
+            packages+=("intel-media-driver") # do we need this?
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             sed -i "s/^MODULES=(.*)/MODULES=(i915)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
