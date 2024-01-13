@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.1.2'
+VERSION='1.1.3'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -336,11 +336,11 @@ tui_set_desktop() {
 
         # Set driver
         local driver_array=()
-        driver_array+=("mesa") && driver_array+=("Mesa (Default)")
-        driver_array+=("intel_i915") && driver_array+=("Intel i915")
-        driver_array+=("nvidia") && driver_array+=("NVIDIA")
-        driver_array+=("amd") && driver_array+=("AMD")
-        driver_array+=("ati") && driver_array+=("ATI legacy")
+        driver_array+=("mesa") && driver_array+=("Mesa Universal Graphics (Default)")
+        driver_array+=("intel_i915") && driver_array+=("Intel HD Graphics (i915)")
+        driver_array+=("nvidia") && driver_array+=("NVIDIA Graphics (nvidia-dkms)")
+        driver_array+=("amd") && driver_array+=("AMD Graphics (xf86-video-amdgpu)")
+        driver_array+=("ati") && driver_array+=("ATI Graphics (xf86-video-ati)")
         ARCH_OS_GRAPHICS_DRIVER=$(whiptail --title "$TITLE" --menu "\nChoose Graphics Driver" --nocancel --notags --default-item "$ARCH_OS_GRAPHICS_DRIVER" "$TUI_HEIGHT" "$TUI_WIDTH" "${#driver_array[@]}" "${driver_array[@]}" 3>&1 1>&2 2>&3)
 
         # Set X11 keyboard layout
@@ -1060,13 +1060,13 @@ SECONDS=0
         #packages+=("lib32-libappindicator-gtk3")
 
         # Audio
-        packages+=("pipewire")       # Pipewire
-        packages+=("pipewire-alsa")  # Replacement for alsa
-        packages+=("pipewire-pulse") # Replacement for pulse
-        packages+=("pipewire-jack")  # Replacement for jack
-        packages+=("wireplumber")    # Pipewire session manager
-        #packages+=("lib32-pipewire")      # Pipewire 32 bit
-        #packages+=("lib32-pipewire-jack") # Replacement for jack 32 bit
+        packages+=("pipewire")            # Pipewire
+        packages+=("pipewire-alsa")       # Replacement for alsa
+        packages+=("pipewire-pulse")      # Replacement for pulse
+        packages+=("pipewire-jack")       # Replacement for jack
+        packages+=("wireplumber")         # Pipewire session manager
+        packages+=("lib32-pipewire")      # Pipewire 32 bit
+        packages+=("lib32-pipewire-jack") # Replacement for jack 32 bit
 
         # Networking & Access
         packages+=("samba") # Windows Network Share
@@ -1098,8 +1098,8 @@ SECONDS=0
         packages+=("libdvdcss")
 
         # Optimization
-        #packages+=("gamemode")
-        #packages+=("lib32-gamemode")
+        packages+=("gamemode")
+        packages+=("lib32-gamemode")
 
         # Driver
         #packages+=("xf86-input-synaptics") # For some touchpads
@@ -1112,6 +1112,9 @@ SECONDS=0
 
         # Install packages
         arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+
+        # Add user to gamemode group
+        arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
         # ----------------------------------------------------------------------------------------------------
 
@@ -1151,23 +1154,16 @@ SECONDS=0
         fi
 
         # ----------------------------------------------------------------------------------------------------
-        print_whiptail_info "Remove packages"
+        #print_whiptail_info "Remove packages"
         # ----------------------------------------------------------------------------------------------------
-
-        # Init package list
-        packages=()
-
-        # Check & add to package list
-        arch-chroot /mnt pacman -Q --info gnome-maps &>/dev/null && packages+=("gnome-maps")
-        arch-chroot /mnt pacman -Q --info gnome-music &>/dev/null && packages+=("gnome-music")
-        arch-chroot /mnt pacman -Q --info gnome-photos &>/dev/null && packages+=("gnome-photos")
-        arch-chroot /mnt pacman -Q --info gnome-contacts &>/dev/null && packages+=("gnome-contacts")
-        arch-chroot /mnt pacman -Q --info gnome-connections &>/dev/null && packages+=("gnome-connections")
-        arch-chroot /mnt pacman -Q --info cheese &>/dev/null && packages+=("cheese")
-        arch-chroot /mnt pacman -Q --info snapshot &>/dev/null && packages+=("snapshot")
-
-        # Remove packages from list
-        arch-chroot /mnt pacman -Rsn --noconfirm "${packages[@]}"
+        # Need to check first if pkg is installed (in case of GNOME removed some pkgs from default). These commands does NOT work:
+        # Check & remove package
+        #arch-chroot /mnt bash -c 'pacman -Qe gnome-maps &>/dev/null && pacman -Rsn --noconfirm gnome-maps || true'
+        #arch-chroot /mnt bash -c 'pacman -Qe gnome-connections &>/dev/null && pacman -Rsn --noconfirm gnome-connections || true'
+        #arch-chroot /mnt bash -c 'pacman -Qe snapshot &>/dev/null && pacman -Rsn --noconfirm snapshot || true'
+        #arch-chroot /mnt bash -c 'pacman -Qe gnome-contacts &>/dev/null && pacman -Rsn --noconfirm gnome-contacts || true'
+        #arch-chroot /mnt bash -c 'pacman -Qe gnome-photos &>/dev/null && pacman -Rsn --noconfirm gnome-photos || true'
+        #arch-chroot /mnt bash -c 'pacman -Qe gnome-music &>/dev/null && pacman -Rsn --noconfirm gnome-music || true'
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Enable GNOME Auto Login"
@@ -1247,7 +1243,6 @@ SECONDS=0
             packages+=("mesa") && packages+=("lib32-mesa")
             packages+=("mesa-utils") && packages+=("lib32-mesa-utils")
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
-            packages+=("gamemode") && packages+=("lib32-gamemode")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             ;;
 
@@ -1255,30 +1250,27 @@ SECONDS=0
             packages=()
             packages+=("vulkan-intel") && packages+=("lib32-vulkan-intel")
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
-            packages+=("gamemode") && packages+=("lib32-gamemode")
             packages+=("libva-intel-driver") && packages+=("lib32-libva-intel-driver")
-            packages+=("intel-media-driver")
+            packages+=("intel-media-driver") # do we need this?
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
-            sed -i "s/MODULES=()/MODULES=(i915)/g" /mnt/etc/mkinitcpio.conf
+            sed -i "s/^MODULES=(.*)/MODULES=(i915)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
             ;;
 
         "nvidia") # https://wiki.archlinux.org/title/NVIDIA#Installation
             packages=()
-            packages+=("xorg-xrandr")
-            packages+=("nvidia-dkms")
             packages+=("${ARCH_OS_KERNEL}-headers")
+            packages+=("nvidia-dkms")
             packages+=("nvidia-settings")
             packages+=("nvidia-utils") && packages+=("lib32-nvidia-utils")
             packages+=("opencl-nvidia") && packages+=("lib32-opencl-nvidia")
-            packages+=("gamemode") && packages+=("lib32-gamemode")
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
             # Alternative (slow boot, bios logo twice, but correct plymouth resolution):
             #sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
-            mkdir -p /mnt/etc/modprobe.d/ && echo -e 'blacklist nouveau\noptions nvidia_drm modeset=1 fbdev=1' >/mnt/etc/modprobe.d/nvidia.conf
-            sed -i "s/MODULES=(*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
+            mkdir -p /mnt/etc/modprobe.d/ && echo -e 'options nvidia_drm modeset=1 fbdev=1' >/mnt/etc/modprobe.d/nvidia.conf
+            sed -i "s/^MODULES=(.*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
             # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
             mkdir -p /mnt/etc/pacman.d/hooks/
             {
@@ -1310,10 +1302,9 @@ SECONDS=0
             packages+=("libva-mesa-driver") && packages+=("lib32-libva-mesa-driver")
             packages+=("vulkan-radeon") && packages+=("lib32-vulkan-radeon")
             packages+=("mesa-vdpau") && packages+=("lib32-mesa-vdpau")
-            packages+=("gamemode") && packages+=("lib32-gamemode")
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
-            sed -i "s/MODULES=()/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
+            sed -i "s/^MODULES=(.*)/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
             ;;
 
@@ -1322,23 +1313,22 @@ SECONDS=0
             packages+=("xf86-video-ati")
             packages+=("libva-mesa-driver") && packages+=("lib32-libva-mesa-driver")
             packages+=("mesa-vdpau") && packages+=("lib32-mesa-vdpau")
-            packages+=("gamemode") && packages+=("lib32-gamemode")
             packages+=("vkd3d") && packages+=("lib32-vkd3d")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
-            sed -i "s/MODULES=()/MODULES=(amdgpu radeon)/g" /mnt/etc/mkinitcpio.conf
+            sed -i "s/^MODULES=(.*)/MODULES=(amdgpu radeon)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
             ;;
 
         esac
 
+    # ----------------------------------------------------------------------------------------------------
+    # END INSTALL GNOME
+    # ----------------------------------------------------------------------------------------------------
+
     else
         # Skip Gnome progresses
         PROGRESS_COUNT=33
     fi
-
-    # ----------------------------------------------------------------------------------------------------
-    # END INSTALL GNOME
-    # ----------------------------------------------------------------------------------------------------
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Cleanup Installation"

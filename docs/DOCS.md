@@ -9,39 +9,13 @@
 1. [Recommendation](#recommendation)
 2. [Shell Enhancement](#shell-enhancement)
 3. [Installation Properties](#installation-properties)
-4. [Rescue & Recovery](#rescue--recovery)
-5. [Technical Information](#technical-info)
+4. [Technical Information](#technical-information)
+5. [Troubleshooting](#troubleshooting)
 6. [Development](#development)
-7. [Troubleshooting](#troubleshooting)
 
 ## Recommendation
 
 For a robust & stable Arch OS experience, install as few additional packages from the official [Arch Repository](https://archlinux.org/packages) or [AUR](https://aur.archlinux.org) as possible. Instead, use [Flatpak](https://flathub.org) or [GNOME Software](https://apps.gnome.org). Furthermore change system files only if absolutely necessary and perform regular package upgrades.
-
-### For Developer
-
-For sandboxed CLI tools or test environment you can try [Distrobox](https://distrobox.it/) or [Toolbox](https://containertoolbx.org) and as container runtime use [Podman](https://podman.io) or [Docker](https://www.docker.com).
-
-### For Gamer
-
-For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.org/title/QEMU) and enable GPU Passthrough. Then you can use an emulated Microsoft Windows with native GPU access. For quick installation, have a look to this project: [quickpassthrough](https://github.com/HikariKnight/quickpassthrough)
-
-**Note:** Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games from Linux with: `gamemoderun <file>`
-
-### For Audiophiles
-
-For advanced Pipewire audio configuration, check out the official [Arch Wiki](https://wiki.archlinux.org/title/PipeWire).
-
-### Install Graphics Driver (manually)
-
-The graphics driver can be installed independently of the Arch OS installation.
-
-- [OpenGL](https://wiki.archlinux.org/title/OpenGL)
-- [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
-- [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
-- [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Available_methods)
-- [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
-- [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
 
 ### Additional Packages (optional)
 
@@ -68,6 +42,36 @@ The graphics driver can be installed independently of the Arch OS installation.
 - [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
 - [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
 - [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (useful in wayland app toggler script)
+
+### Install Graphics Driver (manually)
+
+The graphics driver can be installed independently of the Arch OS installation.
+
+- [OpenGL](https://wiki.archlinux.org/title/OpenGL)
+- [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
+- [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
+- [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Available_methods)
+- [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
+- [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
+
+### For Developer
+
+For sandboxed CLI tools or test environment you can try [Distrobox](https://distrobox.it/) or [Toolbox](https://containertoolbx.org) and as container runtime use [Podman](https://podman.io) or [Docker](https://www.docker.com).
+
+### For Gamer
+
+For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.org/title/QEMU) and enable GPU Passthrough. Then you can use an emulated Microsoft Windows with native GPU access. For quick installation, have a look to this project: [quickpassthrough](https://github.com/HikariKnight/quickpassthrough)
+
+**Note:** Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games from Linux with: `gamemoderun <file>`
+
+### For Audiophiles
+
+For advanced Pipewire audio configuration, check out the official [Pipewire Arch Wiki](https://wiki.archlinux.org/title/PipeWire).
+
+May check out these projects:
+
+- [AutoEq](https://github.com/jaakkopasanen/AutoEq)
+- [EasyEffects Presents](https://github.com/wwmm/easyeffects/wiki/Community-presets)
 
 ## Shell Enhancement
 
@@ -199,39 +203,7 @@ ARCH_OS_VM_SUPPORT_ENABLED='true'
 ARCH_OS_SHELL_ENHANCED_ENABLED='true'
 ```
 
-## Rescue & Recovery
-
-If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and follow these instructions.
-
-### 1. Disk Information
-
-- Show disk info: `lsblk`
-
-_**Example**_
-
-- _Example Disk: `/dev/sda`_
-- _Example Boot: `/dev/sda1`_
-- _Example Root: `/dev/sda2`_
-
-### 2. Mount
-
-**Note:** _You may have to replace the example `/dev/sda` with your own disk_
-
-- Create mount dir: `mkdir -p /mnt/boot`
-- a) Mount root partition (disk encryption enabled):
-  - `cryptsetup open /dev/sda2 cryptroot`
-  - `mount /dev/mapper/cryptroot /mnt`
-- b) Mount root partition (disk encryption disabled):
-  - `mount /dev/sda2 /mnt`
-- Mount boot partition: `mount /dev/sda1 /mnt/boot`
-
-### 3. Chroot
-
-- Enter chroot: `arch-chroot /mnt`
-- _Fix your Arch OS..._
-- Exit: `exit`
-
-## Technical Info
+## Technical Information
 
 ### Partitions layout
 
@@ -263,22 +235,11 @@ NetworkManager systemd-timesyncd.service reflector.service paccache.timer fstrim
 
 ### Screenshots
 
-Note: This screenshots may outdated.
-
 <div align="center">
 <p><img src="screenshots/neofetch.png" width="90%" /></p>
 <p><img src="screenshots/apps.png" width="90%" /></p>
+<p><b>This screenshots may outdated.</b></p>
 </div>
-
-## Development
-
-Create new pull request branches only from [main branch](https://github.com/murkl/arch-os/tree/main)! The [dev branch](https://github.com/murkl/arch-os/tree/dev) will be deleted after each merge into main.
-
-The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broken, use only for testing!
-
-```
-curl -Ls http://arch-dev.webhop.me | bash
-```
 
 ## Troubleshooting
 
@@ -308,4 +269,46 @@ sudo pacman -Sy archlinux-keyring && paru -Su
 
 ```
 paru -Scc
+```
+
+### Rescue & Recovery
+
+If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and follow these instructions.
+
+#### 1. Disk Information
+
+- Show disk info: `lsblk`
+
+_**Example**_
+
+- _Example Disk: `/dev/sda`_
+- _Example Boot: `/dev/sda1`_
+- _Example Root: `/dev/sda2`_
+
+#### 2. Mount
+
+**Note:** _You may have to replace the example `/dev/sda` with your own disk_
+
+- Create mount dir: `mkdir -p /mnt/boot`
+- a) Mount root partition (disk encryption enabled):
+  - `cryptsetup open /dev/sda2 cryptroot`
+  - `mount /dev/mapper/cryptroot /mnt`
+- b) Mount root partition (disk encryption disabled):
+  - `mount /dev/sda2 /mnt`
+- Mount boot partition: `mount /dev/sda1 /mnt/boot`
+
+#### 3. Chroot
+
+- Enter chroot: `arch-chroot /mnt`
+- _Fix your Arch OS..._
+- Exit: `exit`
+
+## Development
+
+Create new pull request branches only from [main branch](https://github.com/murkl/arch-os/tree/main)! The [dev branch](https://github.com/murkl/arch-os/tree/dev) will be deleted after each merge into main.
+
+The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broken, use only for testing!
+
+```
+curl -Ls http://arch-dev.webhop.me | bash
 ```
