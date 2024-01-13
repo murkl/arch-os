@@ -136,6 +136,17 @@ The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better s
 
 **Note:** The `installer.conf` will copied to the new user's home directory during installation. This file can be saved for reuse or simply deleted.
 
+### Minimal Installation
+
+Set these properties to `false` to install Arch OS with minimal packages (without preinstalled Desktop).
+
+```
+ARCH_OS_DESKTOP_ENABLED='false'
+ARCH_OS_BOOTSPLASH_ENABLED='false'
+ARCH_OS_VM_SUPPORT_ENABLED='false'
+ARCH_OS_SHELL_ENHANCED_ENABLED='false'
+```
+
 ### Example: `installer.conf`
 
 ```
