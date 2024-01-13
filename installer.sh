@@ -1154,13 +1154,13 @@ SECONDS=0
         fi
 
         # ----------------------------------------------------------------------------------------------------
-        print_whiptail_info "Remove packages"
+        #print_whiptail_info "Remove packages"
         # ----------------------------------------------------------------------------------------------------
-
-        # Check & add remove package
-        arch-chroot /mnt bash -c 'pacman -Qe gnome-maps &>/dev/null && pacman -Rsn --noconfirm gnome-maps || true'
-        arch-chroot /mnt bash -c 'pacman -Qe gnome-connections &>/dev/null && pacman -Rsn --noconfirm gnome-connections || true'
-        arch-chroot /mnt bash -c 'pacman -Qe snapshot &>/dev/null && pacman -Rsn --noconfirm snapshot || true'
+        # Need to check first if pkg is installed (in case of GNOME removed some pkgs from default). These commands does NOT work:
+        # Check & remove package
+        #arch-chroot /mnt bash -c 'pacman -Qe gnome-maps &>/dev/null && pacman -Rsn --noconfirm gnome-maps || true'
+        #arch-chroot /mnt bash -c 'pacman -Qe gnome-connections &>/dev/null && pacman -Rsn --noconfirm gnome-connections || true'
+        #arch-chroot /mnt bash -c 'pacman -Qe snapshot &>/dev/null && pacman -Rsn --noconfirm snapshot || true'
         #arch-chroot /mnt bash -c 'pacman -Qe gnome-contacts &>/dev/null && pacman -Rsn --noconfirm gnome-contacts || true'
         #arch-chroot /mnt bash -c 'pacman -Qe gnome-photos &>/dev/null && pacman -Rsn --noconfirm gnome-photos || true'
         #arch-chroot /mnt bash -c 'pacman -Qe gnome-music &>/dev/null && pacman -Rsn --noconfirm gnome-music || true'
