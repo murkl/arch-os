@@ -59,7 +59,7 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 - Preconfigured fish shell (optional)
 - Preconfigured neofetch to show system info (optional)
 - Preconfigured starship for fancy Shell promt (optional)
-- Preconfigured exa as colorful ls replacement (optional)
+- Preconfigured eza as colorful ls replacement (optional)
 - Preconfigured bat as colorful man replacement (optional)
 - Missing package suggestion for commands
 - Automatic Pacman mirrorlist update (on every startup)

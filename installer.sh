@@ -943,7 +943,7 @@ SECONDS=0
         } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
 
         { # Create fish aliases for root & user
-            echo 'alias ls="exa --color=always --group-directories-first"'
+            echo 'alias ls="eza --color=always --group-directories-first"'
             echo 'alias diff="diff --color=auto"'
             echo 'alias grep="grep --color=auto"'
             echo 'alias ip="ip -color=auto"'
