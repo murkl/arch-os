@@ -911,7 +911,7 @@ SECONDS=0
     if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
 
         # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed fish starship exa bat neofetch mc btop man-db
+        arch-chroot /mnt pacman -S --noconfirm --needed fish starship eza bat neofetch mc btop man-db
 
         # Create config dirs for root & user
         mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
