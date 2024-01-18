@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.1.4'
+VERSION='1.1.5'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -911,7 +911,7 @@ SECONDS=0
     if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
 
         # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed fish starship exa bat neofetch mc btop man-db
+        arch-chroot /mnt pacman -S --noconfirm --needed fish starship eza bat neofetch mc btop man-db
 
         # Create config dirs for root & user
         mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
@@ -943,7 +943,7 @@ SECONDS=0
         } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
 
         { # Create fish aliases for root & user
-            echo 'alias ls="exa --color=always --group-directories-first"'
+            echo 'alias ls="eza --color=always --group-directories-first"'
             echo 'alias diff="diff --color=auto"'
             echo 'alias grep="grep --color=auto"'
             echo 'alias ip="ip -color=auto"'
@@ -957,6 +957,12 @@ SECONDS=0
         { # Create starship config for root & user
             echo "# Get editor completions based on the config schema"
             echo "\"\$schema\" = 'https://starship.rs/config-schema.json'"
+            echo ""
+            echo "# Wait 10 milliseconds for starship to check files under the current directory"
+            echo "scan_timeout = 10"
+            echo ""
+            echo "# Set command timeout"
+            echo "command_timeout = 10000"
             echo ""
             echo "# Inserts a blank line between shell prompts"
             echo "add_newline = true"
@@ -1109,6 +1115,7 @@ SECONDS=0
         packages+=("noto-fonts-emoji")
         packages+=("ttf-liberation")
         packages+=("ttf-dejavu")
+        packages+=("ttf-firacode-nerd")
 
         # Install packages
         arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"

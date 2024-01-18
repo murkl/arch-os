@@ -78,12 +78,12 @@ May check out these projects:
 If the property `ARCH_OS_SHELL_ENHANCED_ENABLED` is set to `true` (default), these packages are installed and preconfigured (for root & user):
 
 ```
-fish starship exa bat neofetch mc btop man-db
+fish starship eza bat neofetch mc btop man-db
 ```
 
 - `fish` is set as default shell
 - `starship` is set as default promt see `~/.config/fish/config.fish`
-- `ls` is replaced with `exa` see `~/.config/fish/aliases.fish`
+- `ls` is replaced with `eza` see `~/.config/fish/aliases.fish`
 - `man` is replaced with `bat` see `~/.config/fish/config.fish`
 
 ### Useful commands
