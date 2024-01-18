@@ -958,6 +958,12 @@ SECONDS=0
             echo "# Get editor completions based on the config schema"
             echo "\"\$schema\" = 'https://starship.rs/config-schema.json'"
             echo ""
+            echo "# Wait 10 milliseconds for starship to check files under the current directory"
+            echo "scan_timeout = 10"
+            echo ""
+            echo "# Set command timeout"
+            echo "command_timeout = 10000"
+            echo ""
             echo "# Inserts a blank line between shell prompts"
             echo "add_newline = true"
             echo ""
@@ -1109,6 +1115,7 @@ SECONDS=0
         packages+=("noto-fonts-emoji")
         packages+=("ttf-liberation")
         packages+=("ttf-dejavu")
+        packages+=("ttf-firacode-nerd")
 
         # Install packages
         arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
