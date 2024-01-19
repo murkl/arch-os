@@ -64,6 +64,14 @@ For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.or
 
 **Note:** Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games from Linux with: `gamemoderun <file>`
 
+#### Steam
+
+Install prefered Steam version:
+
+- Average between performance and compatibility: `paru -S steam`
+- Best performance: `paru -S steam-native`
+- Best compatibility: `flatpak install com.valvesoftware.Steam`
+
 ### For Audiophiles
 
 For advanced Pipewire audio configuration, check out the official [Pipewire Arch Wiki](https://wiki.archlinux.org/title/PipeWire).
@@ -86,7 +94,7 @@ fish starship eza bat neofetch mc btop man-db
 - `ls` is replaced with `eza` see `~/.config/fish/aliases.fish`
 - `man` is replaced with `bat` see `~/.config/fish/config.fish`
 
-### Useful commands
+### Useful Terminal commands
 
 - `fetch` show system info
 - `btop` show system manager
@@ -99,7 +107,7 @@ fish starship eza bat neofetch mc btop man-db
 - `man <command>` open manual page of command
 - `q` exit
 
-### Useful keyboard shortcuts
+### Useful Terminal keyboard shortcuts
 
 - Use `Tab` to autocomplete command
 - Use `Arrows` to navigate
@@ -145,7 +153,10 @@ ARCH_OS_DESKTOP_ENABLED='false'
 ARCH_OS_BOOTSPLASH_ENABLED='false'
 ARCH_OS_VM_SUPPORT_ENABLED='false'
 ARCH_OS_SHELL_ENHANCED_ENABLED='false'
+ARCH_OS_MULTILIB_ENABLED='false'
 ```
+
+If you don't need AUR Helper set `ARCH_OS_AUR_HELPER='none'`
 
 ### Example: `installer.conf`
 
@@ -154,7 +165,7 @@ ARCH_OS_SHELL_ENHANCED_ENABLED='false'
 ARCH_OS_HOSTNAME='arch-os'
 
 # User (mandatory)
-ARCH_OS_USERNAME='moritz'
+ARCH_OS_USERNAME='tux'
 
 # Disk (mandatory)
 ARCH_OS_DISK='/dev/sda'
@@ -165,25 +176,25 @@ ARCH_OS_BOOT_PARTITION='/dev/sda1'
 # Root partition (auto)
 ARCH_OS_ROOT_PARTITION='/dev/sda2'
 
-# Disk encryption (mandatory)
+# Disk encryption (mandatory) | Disable: false
 ARCH_OS_ENCRYPTION_ENABLED='true'
 
-# Swap (mandatory) | Disable: 0 or empty string
+# Swap (mandatory) | Disable: 0 or null
 ARCH_OS_SWAP_SIZE='16'
 
-# Bootsplash (mandatory)
+# Bootsplash (mandatory) | Disable: false
 ARCH_OS_BOOTSPLASH_ENABLED='true'
 
-# GNOME Desktop (mandatory) | Minimal Arch OS: false
+# GNOME Desktop (mandatory) | Disable: false
 ARCH_OS_DESKTOP_ENABLED='true'
 
-# Driver (mandatory) | Available: mesa, intel_i915, nvidia, amd, ati
-ARCH_OS_GRAPHICS_DRIVER='mesa'
+# Driver (mandatory) | Default: mesa | Available: mesa, intel_i915, nvidia, amd, ati
+ARCH_OS_GRAPHICS_DRIVER='nvidia'
 
 # Timezone (auto) | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin
 ARCH_OS_TIMEZONE='Europe/Berlin'
 
-# Country used by reflector (optional) | Default: empty | Example: Germany,France
+# Country used by reflector (optional) | Default: null | Example: Germany,France
 ARCH_OS_REFLECTOR_COUNTRY=''
 
 # Locale (mandatory) | Show available: ls /usr/share/i18n/locales | Example: de_DE
@@ -195,13 +206,13 @@ ARCH_OS_LOCALE_GEN_LIST=('de_DE.UTF-8 UTF-8' 'de_DE ISO-8859-1' 'de_DE@euro ISO-
 # Console keymap (mandatory) | Show available: localectl list-keymaps | Example: de-latin1-nodeadkeys
 ARCH_OS_VCONSOLE_KEYMAP='de-latin1-nodeadkeys'
 
-# Console font (optional) | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Default: empty | Example: eurlatgr
+# Console font (optional) | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Default: null | Example: eurlatgr
 ARCH_OS_VCONSOLE_FONT=''
 
 # X11 keyboard layout (mandatory) | Show available: localectl list-x11-keymap-layouts | Example: de
 ARCH_OS_X11_KEYBOARD_LAYOUT='de'
 
-# X11 keyboard variant (optional) | Show available: localectl list-x11-keymap-variants | Default: empty | Example: nodeadkeys
+# X11 keyboard variant (optional) | Show available: localectl list-x11-keymap-variants | Default: null | Example: nodeadkeys
 ARCH_OS_X11_KEYBOARD_VARIANT='nodeadkeys'
 
 # Kernel (auto) | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened
@@ -212,6 +223,15 @@ ARCH_OS_VM_SUPPORT_ENABLED='true'
 
 # Shell Enhancement (auto) | Default: true | Disable: false
 ARCH_OS_SHELL_ENHANCED_ENABLED='true'
+
+# AUR Helper (auto) | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur
+ARCH_OS_AUR_HELPER='paru'
+
+# MultiLib 32 Bit Support (auto) | Default: true | Disable: false
+ARCH_OS_MULTILIB_ENABLED='true'
+
+# Disable ECN support for legacy routers (auto) | Default: true | Disable: false
+ARCH_OS_ECN_ENABLED='true'
 ```
 
 ## Technical Information
@@ -257,6 +277,10 @@ NetworkManager systemd-timesyncd.service reflector.service paccache.timer fstrim
 ### Installation failed
 
 If you encounter problems with a server during Arch OS installation (`error: failed retrieving file`), remove this server from `/etc/pacman.d/mirrorlist` and run Arch OS Installer again.
+
+### Legacy Routers (ECN disabled)
+
+Set `ARCH_OS_ECN_ENABLED="false"` in Arch OS Installation.
 
 ### Arch OS: Downgrade a package
 

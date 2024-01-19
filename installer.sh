@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.1.5'
+VERSION='1.1.6'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -59,6 +59,9 @@ ARCH_OS_KERNEL=""
 ARCH_OS_MICROCODE=""
 ARCH_OS_VM_SUPPORT_ENABLED=""
 ARCH_OS_SHELL_ENHANCED_ENABLED=""
+ARCH_OS_AUR_HELPER=""
+ARCH_OS_MULTILIB_ENABLED=""
+ARCH_OS_ECN_ENABLED=""
 
 # ----------------------------------------------------------------------------------------------------
 # DEPENDENCIES
@@ -96,16 +99,21 @@ print_whiptail_info() {
 # CONFIG FUNCTIONS
 # ----------------------------------------------------------------------------------------------------
 
-check_config() {
-
+default_config() {
     # Set default values (if not already set)
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
     [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
     [ -z "$ARCH_OS_SHELL_ENHANCED_ENABLED" ] && ARCH_OS_SHELL_ENHANCED_ENABLED="true"
+    [ -z "$ARCH_OS_AUR_HELPER" ] && ARCH_OS_AUR_HELPER="paru"
+    [ -z "$ARCH_OS_MULTILIB_ENABLED" ] && ARCH_OS_MULTILIB_ENABLED="true"
+    [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
     #[ -z "$ARCH_OS_VCONSOLE_FONT" ] && ARCH_OS_VCONSOLE_FONT="eurlatgr"
     #[ -z "$ARCH_OS_REFLECTOR_COUNTRY" ] && ARCH_OS_REFLECTOR_COUNTRY="Germany,France"
+}
 
+check_config() {
+    default_config
     [ -z "${ARCH_OS_USERNAME}" ] && TUI_POSITION="user" && return 1
     [ -z "${ARCH_OS_PASSWORD}" ] && TUI_POSITION="password" && return 1
     [ -z "${ARCH_OS_TIMEZONE}" ] && TUI_POSITION="language" && return 1
@@ -141,25 +149,25 @@ create_config() {
         echo "# Root partition (auto)"
         echo "ARCH_OS_ROOT_PARTITION='${ARCH_OS_ROOT_PARTITION}'"
         echo ""
-        echo "# Disk encryption (mandatory)"
+        echo "# Disk encryption (mandatory) | Disable: false"
         echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}'"
         echo ""
-        echo "# Swap (mandatory) | Disable: 0 or empty string"
+        echo "# Swap (mandatory) | Disable: 0 or null"
         echo "ARCH_OS_SWAP_SIZE='${ARCH_OS_SWAP_SIZE}'"
         echo ""
-        echo "# Bootsplash (mandatory)"
+        echo "# Bootsplash (mandatory) | Disable: false"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
         echo ""
-        echo "# GNOME Desktop (mandatory) | Minimal Arch OS: false"
+        echo "# GNOME Desktop (mandatory) | Disable: false"
         echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
         echo ""
-        echo "# Driver (mandatory) | Available: mesa, intel_i915, nvidia, amd, ati"
+        echo "# Driver (mandatory) | Default: mesa | Available: mesa, intel_i915, nvidia, amd, ati"
         echo "ARCH_OS_GRAPHICS_DRIVER='${ARCH_OS_GRAPHICS_DRIVER}'"
         echo ""
         echo "# Timezone (auto) | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin"
         echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}'"
         echo ""
-        echo "# Country used by reflector (optional) | Default: empty | Example: Germany,France"
+        echo "# Country used by reflector (optional) | Default: null | Example: Germany,France"
         echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}'"
         echo ""
         echo "# Locale (mandatory) | Show available: ls /usr/share/i18n/locales | Example: de_DE"
@@ -171,13 +179,13 @@ create_config() {
         echo "# Console keymap (mandatory) | Show available: localectl list-keymaps | Example: de-latin1-nodeadkeys"
         echo "ARCH_OS_VCONSOLE_KEYMAP='${ARCH_OS_VCONSOLE_KEYMAP}'"
         echo ""
-        echo "# Console font (optional) | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Default: empty | Example: eurlatgr"
+        echo "# Console font (optional) | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Default: null | Example: eurlatgr"
         echo "ARCH_OS_VCONSOLE_FONT='${ARCH_OS_VCONSOLE_FONT}'"
         echo ""
         echo "# X11 keyboard layout (mandatory) | Show available: localectl list-x11-keymap-layouts | Example: de"
         echo "ARCH_OS_X11_KEYBOARD_LAYOUT='${ARCH_OS_X11_KEYBOARD_LAYOUT}'"
         echo ""
-        echo "# X11 keyboard variant (optional) | Show available: localectl list-x11-keymap-variants | Default: empty | Example: nodeadkeys"
+        echo "# X11 keyboard variant (optional) | Show available: localectl list-x11-keymap-variants | Default: null | Example: nodeadkeys"
         echo "ARCH_OS_X11_KEYBOARD_VARIANT='${ARCH_OS_X11_KEYBOARD_VARIANT}'"
         echo ""
         echo "# Kernel (auto) | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened"
@@ -188,6 +196,15 @@ create_config() {
         echo ""
         echo "# Shell Enhancement (auto) | Default: true | Disable: false"
         echo "ARCH_OS_SHELL_ENHANCED_ENABLED='${ARCH_OS_SHELL_ENHANCED_ENABLED}'"
+        echo ""
+        echo "# AUR Helper (auto) | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur"
+        echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}'"
+        echo ""
+        echo "# MultiLib 32 Bit Support (auto) | Default: true | Disable: false"
+        echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}'"
+        echo ""
+        echo "# Disable ECN support for legacy routers (auto) | Default: true | Disable: false"
+        echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
     } >"$INSTALLER_CONFIG"
 }
 
@@ -599,7 +616,7 @@ SECONDS=0
     vgchange -an || true
 
     # Temporarily disable ECN (prevent traffic problems with some old routers)
-    #sysctl net.ipv4.tcp_ecn=0
+    [ "$ARCH_OS_ECN_ENABLED" = "false" ] && sysctl net.ipv4.tcp_ecn=0
 
     # Update keyring
     pacman -Sy --noconfirm archlinux-keyring
@@ -686,14 +703,17 @@ SECONDS=0
     # Configure parrallel downloads, colors & multilib
     sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
     sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
-    sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
-    arch-chroot /mnt pacman -Syy --noconfirm
+    if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
+        sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
+        arch-chroot /mnt pacman -Syy --noconfirm
+    fi
 
     # Configure reflector service
     {
         echo "# Reflector config for the systemd service"
         echo "--save /etc/pacman.d/mirrorlist"
         [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
+        echo "--completion-percent 95"
         echo "--protocol https"
         echo "--latest 5"
         echo "--sort rate"
@@ -861,22 +881,31 @@ SECONDS=0
     sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
 
     # Set Nano colors
+    sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
+    sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
     sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Install AUR Helper"
     # ----------------------------------------------------------------------------------------------------
 
-    # Install paru as user
-    repo_url="https://aur.archlinux.org/paru-bin.git"
-    tmp_name=$(mktemp -u "/home/${ARCH_OS_USERNAME}/paru-bin.XXXXXXXXXX")
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$tmp_name"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $tmp_name && makepkg -si --noconfirm"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$tmp_name"
+    if [ "$ARCH_OS_AUR_HELPER" != "none" ] && [ -n "$ARCH_OS_AUR_HELPER" ]; then
 
-    # Paru config
-    sed -i 's/^#BottomUp/BottomUp/g' /mnt/etc/paru.conf
-    sed -i 's/^#SudoLoop/SudoLoop/g' /mnt/etc/paru.conf
+        # Install AUR Helper as user
+        repo_url="https://aur.archlinux.org/${ARCH_OS_AUR_HELPER}.git"
+        tmp_name=$(mktemp -u "/home/${ARCH_OS_USERNAME}/${ARCH_OS_AUR_HELPER}.XXXXXXXXXX")
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$tmp_name"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $tmp_name && makepkg -si --noconfirm"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$tmp_name"
+
+        # Paru config
+        if [ "$ARCH_OS_AUR_HELPER" = "paru" ] || [ "$ARCH_OS_AUR_HELPER" = "paru-bin" ] || [ "$ARCH_OS_AUR_HELPER" = "paru-git" ]; then
+            sed -i 's/^#BottomUp/BottomUp/g' /mnt/etc/paru.conf
+            sed -i 's/^#SudoLoop/SudoLoop/g' /mnt/etc/paru.conf
+        fi
+    else
+        echo "> Skipped"
+    fi
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Install Bootsplash"
@@ -984,6 +1013,7 @@ SECONDS=0
             echo '    prin'
             echo '    prin "Distro\t" "Arch OS"'
             echo '    info "Kernel\t" kernel'
+            #echo '    info "Host\t" model'
             echo '    info "CPU\t" cpu'
             echo '    info "GPU\t" gpu'
             echo '    prin'
@@ -993,9 +1023,10 @@ SECONDS=0
             echo '    info "Shell\t" shell'
             echo '    info "Terminal\t" term'
             echo '    prin'
+            echo '    info "Disk\t" disk'
             echo '    info "Memory\t" memory'
-            echo '    info "Uptime\t" uptime'
             echo '    info "IP\t" local_ip'
+            echo '    info "Uptime\t" uptime'
             echo '    info "Packages\t" packages'
             echo '    prin'
             echo '    prin "$(color 1) ● \n $(color 2) ● \n $(color 3) ● \n $(color 4) ● \n $(color 5) ● \n $(color 6) ● \n $(color 7) ● \n $(color 8) ●"'
@@ -1015,9 +1046,11 @@ SECONDS=0
             echo 'cpu_brand="on"'
             echo 'cpu_cores="off"'
             echo 'cpu_temp="off"'
+            echo 'memory_display="info"'
             echo 'memory_percent="on"'
             echo 'memory_unit="gib"'
-            echo ''
+            echo 'disk_display="info"'
+            echo 'disk_subtitle="none"'
         } | tee "/mnt/root/.config/neofetch/config.conf" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch/config.conf" >/dev/null
 
         # Set correct user permissions
@@ -1059,20 +1092,20 @@ SECONDS=0
         packages+=("xdg-desktop-portal-gtk")
         packages+=("xdg-desktop-portal-gnome")
 
-        # GNOME legacy Indicator support (need for gnome extension) (51 packages)
-        #packages+=("libappindicator-gtk2")
-        #packages+=("libappindicator-gtk3")
-        #packages+=("lib32-libappindicator-gtk2")
-        #packages+=("lib32-libappindicator-gtk3")
+        # GNOME legacy Indicator support (need for systray) (51 packages)
+        packages+=("libappindicator-gtk2")
+        packages+=("libappindicator-gtk3")
+        [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-libappindicator-gtk2")
+        [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-libappindicator-gtk3")
 
         # Audio
-        packages+=("pipewire")            # Pipewire
-        packages+=("pipewire-alsa")       # Replacement for alsa
-        packages+=("pipewire-pulse")      # Replacement for pulse
-        packages+=("pipewire-jack")       # Replacement for jack
-        packages+=("wireplumber")         # Pipewire session manager
-        packages+=("lib32-pipewire")      # Pipewire 32 bit
-        packages+=("lib32-pipewire-jack") # Replacement for jack 32 bit
+        packages+=("pipewire")                                                        # Pipewire
+        packages+=("pipewire-alsa")                                                   # Replacement for alsa
+        packages+=("pipewire-pulse")                                                  # Replacement for pulse
+        packages+=("pipewire-jack")                                                   # Replacement for jack
+        packages+=("wireplumber")                                                     # Pipewire session manager
+        [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-pipewire")      # Pipewire 32 bit
+        [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-pipewire-jack") # Replacement for jack 32 bit
 
         # Networking & Access
         packages+=("samba") # Windows Network Share
@@ -1094,6 +1127,7 @@ SECONDS=0
         packages+=("exfat-utils")
         packages+=("p7zip")
         packages+=("zip")
+        packages+=("unzip")
         packages+=("unrar")
         packages+=("tar")
 
@@ -1105,17 +1139,17 @@ SECONDS=0
 
         # Optimization
         packages+=("gamemode")
-        packages+=("lib32-gamemode")
-
-        # Driver
-        #packages+=("xf86-input-synaptics") # For some touchpads
+        [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-gamemode")
 
         # Fonts
         packages+=("noto-fonts")
         packages+=("noto-fonts-emoji")
+        packages+=("ttf-firacode-nerd")
         packages+=("ttf-liberation")
         packages+=("ttf-dejavu")
-        packages+=("ttf-firacode-nerd")
+
+        # Driver
+        #packages+=("xf86-input-synaptics") # For some legacy touchpads
 
         # Install packages
         arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
@@ -1131,8 +1165,7 @@ SECONDS=0
             case $hypervisor in
             kvm)
                 print_whiptail_info "KVM has been detected, setting up guest tools."
-                arch-chroot /mnt pacman -S --noconfirm --needed spice spice-vdagent spice-protocol spice-gtk
-                arch-chroot /mnt pacman -S --noconfirm --needed qemu-guest-agent
+                arch-chroot /mnt pacman -S --noconfirm --needed spice spice-vdagent spice-protocol spice-gtk qemu-guest-agent
                 arch-chroot /mnt systemctl enable qemu-guest-agent
                 ;;
             vmware)
@@ -1147,8 +1180,8 @@ SECONDS=0
                 arch-chroot /mnt systemctl enable vboxservice
                 ;;
             microsoft)
-                arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeouts hyperv
                 print_whiptail_info "Hyper-V has been detected, setting up guest tools."
+                arch-chroot /mnt pacman -S --noconfirm --needed hyperv
                 arch-chroot /mnt systemctl enable hv_fcopy_daemon
                 arch-chroot /mnt systemctl enable hv_kvp_daemon
                 arch-chroot /mnt systemctl enable hv_vss_daemon
@@ -1159,18 +1192,6 @@ SECONDS=0
                 ;;
             esac
         fi
-
-        # ----------------------------------------------------------------------------------------------------
-        #print_whiptail_info "Remove packages"
-        # ----------------------------------------------------------------------------------------------------
-        # Need to check first if pkg is installed (in case of GNOME removed some pkgs from default). These commands does NOT work:
-        # Check & remove package
-        #arch-chroot /mnt bash -c 'pacman -Qe gnome-maps &>/dev/null && pacman -Rsn --noconfirm gnome-maps || true'
-        #arch-chroot /mnt bash -c 'pacman -Qe gnome-connections &>/dev/null && pacman -Rsn --noconfirm gnome-connections || true'
-        #arch-chroot /mnt bash -c 'pacman -Qe snapshot &>/dev/null && pacman -Rsn --noconfirm snapshot || true'
-        #arch-chroot /mnt bash -c 'pacman -Qe gnome-contacts &>/dev/null && pacman -Rsn --noconfirm gnome-contacts || true'
-        #arch-chroot /mnt bash -c 'pacman -Qe gnome-photos &>/dev/null && pacman -Rsn --noconfirm gnome-photos || true'
-        #arch-chroot /mnt bash -c 'pacman -Qe gnome-music &>/dev/null && pacman -Rsn --noconfirm gnome-music || true'
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Enable GNOME Auto Login"
@@ -1247,18 +1268,25 @@ SECONDS=0
         case "${ARCH_OS_GRAPHICS_DRIVER}" in
 
         "mesa") # https://wiki.archlinux.org/title/OpenGL#Installation
-            packages+=("mesa") && packages+=("lib32-mesa")
-            packages+=("mesa-utils") && packages+=("lib32-mesa-utils")
-            packages+=("vkd3d") && packages+=("lib32-vkd3d")
+            packages=()
+            packages+=("mesa")
+            packages+=("mesa-utils")
+            packages+=("vkd3d")
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-mesa")
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-mesa-utils")
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vkd3d")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             ;;
 
         "intel_i915") # https://wiki.archlinux.org/title/Intel_graphics#Installation
             packages=()
-            packages+=("vulkan-intel") && packages+=("lib32-vulkan-intel")
-            packages+=("vkd3d") && packages+=("lib32-vkd3d")
-            packages+=("libva-intel-driver") && packages+=("lib32-libva-intel-driver")
+            packages+=("vulkan-intel")
+            packages+=("vkd3d")
+            packages+=("libva-intel-driver")
             packages+=("intel-media-driver") # do we need this?
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vulkan-intel")
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vkd3d")
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-libva-intel-driver")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             sed -i "s/^MODULES=(.*)/MODULES=(i915)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
@@ -1269,9 +1297,12 @@ SECONDS=0
             packages+=("${ARCH_OS_KERNEL}-headers")
             packages+=("nvidia-dkms")
             packages+=("nvidia-settings")
-            packages+=("nvidia-utils") && packages+=("lib32-nvidia-utils")
-            packages+=("opencl-nvidia") && packages+=("lib32-opencl-nvidia")
-            packages+=("vkd3d") && packages+=("lib32-vkd3d")
+            packages+=("nvidia-utils")
+            packages+=("opencl-nvidia")
+            packages+=("vkd3d")
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-nvidia-utils")
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-opencl-nvidia")
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vkd3d")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
             # Alternative (slow boot, bios logo twice, but correct plymouth resolution):
@@ -1306,10 +1337,14 @@ SECONDS=0
         "amd") # https://wiki.archlinux.org/title/AMDGPU#Installation
             packages=()
             packages+=("xf86-video-amdgpu")
-            packages+=("libva-mesa-driver") && packages+=("lib32-libva-mesa-driver")
-            packages+=("vulkan-radeon") && packages+=("lib32-vulkan-radeon")
-            packages+=("mesa-vdpau") && packages+=("lib32-mesa-vdpau")
-            packages+=("vkd3d") && packages+=("lib32-vkd3d")
+            packages+=("libva-mesa-driver")
+            packages+=("vulkan-radeon")
+            packages+=("mesa-vdpau")
+            packages+=("vkd3d")
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-libva-mesa-driver")
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vulkan-radeon")
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-mesa-vdpau")
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vkd3d")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             sed -i "s/^MODULES=(.*)/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
@@ -1318,9 +1353,12 @@ SECONDS=0
         "ati") # https://wiki.archlinux.org/title/ATI#Installation
             packages=()
             packages+=("xf86-video-ati")
-            packages+=("libva-mesa-driver") && packages+=("lib32-libva-mesa-driver")
-            packages+=("mesa-vdpau") && packages+=("lib32-mesa-vdpau")
-            packages+=("vkd3d") && packages+=("lib32-vkd3d")
+            packages+=("libva-mesa-driver")
+            packages+=("mesa-vdpau")
+            packages+=("vkd3d")
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-libva-mesa-driver")
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-mesa-vdpau")
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vkd3d")
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             sed -i "s/^MODULES=(.*)/MODULES=(amdgpu radeon)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
