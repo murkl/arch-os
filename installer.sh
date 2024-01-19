@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.1.5'
+VERSION='1.1.6'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -59,6 +59,8 @@ ARCH_OS_KERNEL=""
 ARCH_OS_MICROCODE=""
 ARCH_OS_VM_SUPPORT_ENABLED=""
 ARCH_OS_SHELL_ENHANCED_ENABLED=""
+ARCH_OS_AUR_HELPER=""
+ARCH_OS_MULTILIB_ENABLED=""
 
 # ----------------------------------------------------------------------------------------------------
 # DEPENDENCIES
@@ -96,8 +98,7 @@ print_whiptail_info() {
 # CONFIG FUNCTIONS
 # ----------------------------------------------------------------------------------------------------
 
-check_config() {
-
+default_config() {
     # Set default values (if not already set)
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
@@ -105,7 +106,10 @@ check_config() {
     [ -z "$ARCH_OS_SHELL_ENHANCED_ENABLED" ] && ARCH_OS_SHELL_ENHANCED_ENABLED="true"
     #[ -z "$ARCH_OS_VCONSOLE_FONT" ] && ARCH_OS_VCONSOLE_FONT="eurlatgr"
     #[ -z "$ARCH_OS_REFLECTOR_COUNTRY" ] && ARCH_OS_REFLECTOR_COUNTRY="Germany,France"
+}
 
+check_config() {
+    default_config
     [ -z "${ARCH_OS_USERNAME}" ] && TUI_POSITION="user" && return 1
     [ -z "${ARCH_OS_PASSWORD}" ] && TUI_POSITION="password" && return 1
     [ -z "${ARCH_OS_TIMEZONE}" ] && TUI_POSITION="language" && return 1
@@ -694,6 +698,7 @@ SECONDS=0
         echo "# Reflector config for the systemd service"
         echo "--save /etc/pacman.d/mirrorlist"
         [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
+        echo "--completion-percent 95"
         echo "--protocol https"
         echo "--latest 5"
         echo "--sort rate"
@@ -984,6 +989,7 @@ SECONDS=0
             echo '    prin'
             echo '    prin "Distro\t" "Arch OS"'
             echo '    info "Kernel\t" kernel'
+            echo '    info "Host\t" model'
             echo '    info "CPU\t" cpu'
             echo '    info "GPU\t" gpu'
             echo '    prin'
@@ -993,9 +999,10 @@ SECONDS=0
             echo '    info "Shell\t" shell'
             echo '    info "Terminal\t" term'
             echo '    prin'
-            echo '    info "Memory\t" memory'
-            echo '    info "Uptime\t" uptime'
             echo '    info "IP\t" local_ip'
+            echo '    info "Uptime\t" uptime'
+            echo '    info "Disk\t" disk'
+            echo '    info "Memory\t" memory'
             echo '    info "Packages\t" packages'
             echo '    prin'
             echo '    prin "$(color 1) ● \n $(color 2) ● \n $(color 3) ● \n $(color 4) ● \n $(color 5) ● \n $(color 6) ● \n $(color 7) ● \n $(color 8) ●"'
@@ -1015,9 +1022,11 @@ SECONDS=0
             echo 'cpu_brand="on"'
             echo 'cpu_cores="off"'
             echo 'cpu_temp="off"'
+            echo 'memory_display="info"'
             echo 'memory_percent="on"'
             echo 'memory_unit="gib"'
-            echo ''
+            echo 'disk_display="info"'
+            echo 'disk_subtitle="none"'
         } | tee "/mnt/root/.config/neofetch/config.conf" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch/config.conf" >/dev/null
 
         # Set correct user permissions
@@ -1131,8 +1140,7 @@ SECONDS=0
             case $hypervisor in
             kvm)
                 print_whiptail_info "KVM has been detected, setting up guest tools."
-                arch-chroot /mnt pacman -S --noconfirm --needed spice spice-vdagent spice-protocol spice-gtk
-                arch-chroot /mnt pacman -S --noconfirm --needed qemu-guest-agent
+                arch-chroot /mnt pacman -S --noconfirm --needed spice spice-vdagent spice-protocol spice-gtk qemu-guest-agent
                 arch-chroot /mnt systemctl enable qemu-guest-agent
                 ;;
             vmware)
@@ -1147,8 +1155,8 @@ SECONDS=0
                 arch-chroot /mnt systemctl enable vboxservice
                 ;;
             microsoft)
-                arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeouts hyperv
                 print_whiptail_info "Hyper-V has been detected, setting up guest tools."
+                arch-chroot /mnt pacman -S --noconfirm --needed hyperv
                 arch-chroot /mnt systemctl enable hv_fcopy_daemon
                 arch-chroot /mnt systemctl enable hv_kvp_daemon
                 arch-chroot /mnt systemctl enable hv_vss_daemon
@@ -1159,18 +1167,6 @@ SECONDS=0
                 ;;
             esac
         fi
-
-        # ----------------------------------------------------------------------------------------------------
-        #print_whiptail_info "Remove packages"
-        # ----------------------------------------------------------------------------------------------------
-        # Need to check first if pkg is installed (in case of GNOME removed some pkgs from default). These commands does NOT work:
-        # Check & remove package
-        #arch-chroot /mnt bash -c 'pacman -Qe gnome-maps &>/dev/null && pacman -Rsn --noconfirm gnome-maps || true'
-        #arch-chroot /mnt bash -c 'pacman -Qe gnome-connections &>/dev/null && pacman -Rsn --noconfirm gnome-connections || true'
-        #arch-chroot /mnt bash -c 'pacman -Qe snapshot &>/dev/null && pacman -Rsn --noconfirm snapshot || true'
-        #arch-chroot /mnt bash -c 'pacman -Qe gnome-contacts &>/dev/null && pacman -Rsn --noconfirm gnome-contacts || true'
-        #arch-chroot /mnt bash -c 'pacman -Qe gnome-photos &>/dev/null && pacman -Rsn --noconfirm gnome-photos || true'
-        #arch-chroot /mnt bash -c 'pacman -Qe gnome-music &>/dev/null && pacman -Rsn --noconfirm gnome-music || true'
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Enable GNOME Auto Login"

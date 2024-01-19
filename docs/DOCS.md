@@ -64,6 +64,14 @@ For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.or
 
 **Note:** Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games from Linux with: `gamemoderun <file>`
 
+#### Steam
+
+Install prefered Steam version:
+
+- Average between performance and compatibility: `paru -S steam`
+- Best performance: `paru -S steam-native`
+- Best compatibility: `flatpak install com.valvesoftware.Steam`
+
 ### For Audiophiles
 
 For advanced Pipewire audio configuration, check out the official [Pipewire Arch Wiki](https://wiki.archlinux.org/title/PipeWire).
