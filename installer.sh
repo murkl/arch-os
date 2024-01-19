@@ -61,6 +61,7 @@ ARCH_OS_VM_SUPPORT_ENABLED=""
 ARCH_OS_SHELL_ENHANCED_ENABLED=""
 ARCH_OS_AUR_HELPER=""
 ARCH_OS_MULTILIB_ENABLED=""
+ARCH_OS_ECN_ENABLED=""
 
 # ----------------------------------------------------------------------------------------------------
 # DEPENDENCIES
@@ -989,7 +990,7 @@ SECONDS=0
             echo '    prin'
             echo '    prin "Distro\t" "Arch OS"'
             echo '    info "Kernel\t" kernel'
-            echo '    info "Host\t" model'
+            #echo '    info "Host\t" model'
             echo '    info "CPU\t" cpu'
             echo '    info "GPU\t" gpu'
             echo '    prin'
@@ -999,10 +1000,10 @@ SECONDS=0
             echo '    info "Shell\t" shell'
             echo '    info "Terminal\t" term'
             echo '    prin'
-            echo '    info "IP\t" local_ip'
-            echo '    info "Uptime\t" uptime'
             echo '    info "Disk\t" disk'
             echo '    info "Memory\t" memory'
+            echo '    info "IP\t" local_ip'
+            echo '    info "Uptime\t" uptime'
             echo '    info "Packages\t" packages'
             echo '    prin'
             echo '    prin "$(color 1) ● \n $(color 2) ● \n $(color 3) ● \n $(color 4) ● \n $(color 5) ● \n $(color 6) ● \n $(color 7) ● \n $(color 8) ●"'
