@@ -146,15 +146,15 @@ The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better s
 
 ### Minimal Installation
 
-Set these properties to `false` or `none` to install Arch OS with minimal packages (without preinstalled Desktop, AUR Helper, Bootsplash, VM support, MultiLib and Shell Enhancement).
+Set these properties to install Arch OS with minimal packages (without preinstalled Desktop, AUR Helper, Bootsplash, VM support, MultiLib and Shell Enhancement).
 
 ```
-ARCH_OS_DESKTOP_ENABLED='false'
-ARCH_OS_BOOTSPLASH_ENABLED='false'
-ARCH_OS_VM_SUPPORT_ENABLED='false'
-ARCH_OS_SHELL_ENHANCED_ENABLED='false'
-ARCH_OS_MULTILIB_ENABLED='false'
+ARCH_OS_VARIANT='core'
 ARCH_OS_AUR_HELPER='none'
+ARCH_OS_MULTILIB_ENABLED='false'
+ARCH_OS_BOOTSPLASH_ENABLED='false'
+ARCH_OS_SHELL_ENHANCED_ENABLED='false'
+ARCH_OS_VM_SUPPORT_ENABLED='false'
 ```
 
 ### VM Support
@@ -194,8 +194,8 @@ ARCH_OS_ENCRYPTION_ENABLED='true'
 # Bootsplash (mandatory) | Disable: false
 ARCH_OS_BOOTSPLASH_ENABLED='true'
 
-# GNOME Desktop (mandatory) | Disable: false
-ARCH_OS_DESKTOP_ENABLED='true'
+# Variant (mandatory) | Available: minimal, desktop
+ARCH_OS_VARIANT='desktop'
 
 # Driver (mandatory) | Default: mesa | Available: mesa, intel_i915, nvidia, amd, ati
 ARCH_OS_GRAPHICS_DRIVER='nvidia'

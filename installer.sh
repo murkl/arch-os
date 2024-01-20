@@ -52,7 +52,7 @@ ARCH_OS_VCONSOLE_FONT=""
 ARCH_OS_X11_KEYBOARD_LAYOUT=""
 ARCH_OS_X11_KEYBOARD_VARIANT=""
 ARCH_OS_BOOTSPLASH_ENABLED=""
-ARCH_OS_DESKTOP_ENABLED=""
+ARCH_OS_VARIANT=""
 ARCH_OS_GRAPHICS_DRIVER=""
 ARCH_OS_KERNEL=""
 ARCH_OS_MICROCODE=""
@@ -124,7 +124,7 @@ check_config() {
     [ -z "${ARCH_OS_ROOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_OS_ENCRYPTION_ENABLED}" ] && TUI_POSITION="encrypt" && return 1
     [ -z "${ARCH_OS_BOOTSPLASH_ENABLED}" ] && TUI_POSITION="bootsplash" && return 1
-    [ -z "${ARCH_OS_DESKTOP_ENABLED}" ] && TUI_POSITION="desktop" && return 1
+    [ -z "${ARCH_OS_VARIANT}" ] && TUI_POSITION="variant" && return 1
     TUI_POSITION="install"
 }
 
@@ -153,8 +153,8 @@ create_config() {
         echo "# Bootsplash (mandatory) | Disable: false"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
         echo ""
-        echo "# GNOME Desktop (mandatory) | Disable: false"
-        echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
+        echo "# Variant (mandatory) | Available: minimal, desktop"
+        echo "ARCH_OS_VARIANT='${ARCH_OS_VARIANT}'"
         echo ""
         echo "# Driver (mandatory) | Default: mesa | Available: mesa, intel_i915, nvidia, amd, ati"
         echo "ARCH_OS_GRAPHICS_DRIVER='${ARCH_OS_GRAPHICS_DRIVER}'"
@@ -322,7 +322,7 @@ tui_set_encryption() {
     return 0
 }
 
-tui_set_plymouth() {
+tui_set_bootsplash() {
     ARCH_OS_BOOTSPLASH_ENABLED="false"
     if whiptail --title "$TITLE" --yesno "Install Bootsplash Animation (plymouth)?" --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
         ARCH_OS_BOOTSPLASH_ENABLED="true"
@@ -331,10 +331,15 @@ tui_set_plymouth() {
     return 0
 }
 
-tui_set_desktop() {
-    ARCH_OS_DESKTOP_ENABLED="false"
-    if whiptail --title "$TITLE" --yesno "Install GNOME Desktop?" --yes-button "GNOME Desktop" --no-button "Minimal Arch" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+tui_set_variant() {
 
+    # Set driver
+    local variant_array=()
+    variant_array+=("desktop") && variant_array+=("Arch OS Desktop (Default)")
+    variant_array+=("base") && variant_array+=("Arch OS Base (without Desktop)")
+    variant_array+=("core") && variant_array+=("Arch OS Core (minimal Arch Linux)")
+    ARCH_OS_VARIANT=$(whiptail --title "$TITLE" --menu "\nChoose Arch OS Variant" --nocancel --notags --default-item "$ARCH_OS_VARIANT" "$TUI_HEIGHT" "$TUI_WIDTH" "${#variant_array[@]}" "${variant_array[@]}" 3>&1 1>&2 2>&3)
+    if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
         # Set driver
         local driver_array=()
         driver_array+=("mesa") && driver_array+=("Mesa Universal Graphics (Default)")
@@ -355,9 +360,6 @@ tui_set_desktop() {
         [ -z "$user_input" ] && user_input=''
         user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert X11 (Xorg) keyboard variant\n\nExample: 'nodeadkeys' or leave empty for default" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
         ARCH_OS_X11_KEYBOARD_VARIANT="$user_input"
-
-        # Set GNOME
-        ARCH_OS_DESKTOP_ENABLED="true"
     fi
 
     # Success
@@ -420,7 +422,7 @@ while (true); do
     menu_entry_array+=("disk") && menu_entry_array+=("$(print_menu_entry "Disk" "${ARCH_OS_DISK}")")
     menu_entry_array+=("encrypt") && menu_entry_array+=("$(print_menu_entry "Encryption" "${ARCH_OS_ENCRYPTION_ENABLED}")")
     menu_entry_array+=("bootsplash") && menu_entry_array+=("$(print_menu_entry "Bootsplash" "${ARCH_OS_BOOTSPLASH_ENABLED}")")
-    menu_entry_array+=("desktop") && menu_entry_array+=("$(print_menu_entry "Desktop" "${ARCH_OS_DESKTOP_ENABLED}")")
+    menu_entry_array+=("variant") && menu_entry_array+=("$(print_menu_entry "Variant" "${ARCH_OS_VARIANT}")")
     menu_entry_array+=("") && menu_entry_array+=("") # Empty entry
     menu_entry_array+=("edit") && menu_entry_array+=("> Edit installer.conf")
     if [ "$TUI_POSITION" = "install" ]; then
@@ -460,11 +462,11 @@ while (true); do
         create_config
         ;;
     "bootsplash")
-        tui_set_plymouth || continue
+        tui_set_bootsplash || continue
         create_config
         ;;
-    "desktop")
-        tui_set_desktop || continue
+    "variant")
+        tui_set_variant || continue
         create_config
         ;;
     "edit")
@@ -780,15 +782,9 @@ SECONDS=0
     # Kernel args
     # Zswap should be disabled when using zram.
     # https://github.com/archlinux/archinstall/issues/881
-    swap_device_uuid="$(findmnt -no UUID -T /mnt/swapfile)"
-    swap_file_offset="$(filefrag -v /mnt/swapfile | awk '$1=="0:" {print substr($4, 1, length($4)-2)}')"
-    if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
-        # Encryption enabled
-        kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot rw init=/usr/lib/systemd/systemd zswap.enabled=0 quiet splash vt.global_cursor_default=0 resume=/dev/mapper/cryptroot resume_offset=${swap_file_offset}"
-    else
-        # Encryption disabled
-        kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}") rw init=/usr/lib/systemd/systemd zswap.enabled=0 quiet splash vt.global_cursor_default=0 resume=UUID=${swap_device_uuid} resume_offset=${swap_file_offset}"
-    fi
+    kernel_args_default="rw init=/usr/lib/systemd/systemd zswap.enabled=0 quiet splash vt.global_cursor_default=0"
+    [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot ${kernel_args_default}"
+    [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}") ${kernel_args_default}"
 
     # Create Bootloader config
     {
@@ -1041,10 +1037,10 @@ SECONDS=0
     fi
 
     # ----------------------------------------------------------------------------------------------------
-    # START INSTALL GNOME
+    # START INSTALL DESKTOP
     # ----------------------------------------------------------------------------------------------------
 
-    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
+    if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Install GNOME Packages (This takes about 15 minutes)"
