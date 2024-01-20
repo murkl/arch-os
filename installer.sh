@@ -43,7 +43,6 @@ ARCH_OS_DISK=""
 ARCH_OS_BOOT_PARTITION=""
 ARCH_OS_ROOT_PARTITION=""
 ARCH_OS_ENCRYPTION_ENABLED=""
-ARCH_OS_SWAP_SIZE=""
 ARCH_OS_REFLECTOR_COUNTRY=""
 ARCH_OS_TIMEZONE=""
 ARCH_OS_LOCALE_LANG=""
@@ -124,7 +123,6 @@ check_config() {
     [ -z "${ARCH_OS_BOOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_OS_ROOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_OS_ENCRYPTION_ENABLED}" ] && TUI_POSITION="encrypt" && return 1
-    [ -z "${ARCH_OS_SWAP_SIZE}" ] && TUI_POSITION="swap" && return 1
     [ -z "${ARCH_OS_BOOTSPLASH_ENABLED}" ] && TUI_POSITION="bootsplash" && return 1
     [ -z "${ARCH_OS_DESKTOP_ENABLED}" ] && TUI_POSITION="desktop" && return 1
     TUI_POSITION="install"
@@ -151,9 +149,6 @@ create_config() {
         echo ""
         echo "# Disk encryption (mandatory) | Disable: false"
         echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}'"
-        echo ""
-        echo "# Swap (mandatory) | Disable: 0 or null"
-        echo "ARCH_OS_SWAP_SIZE='${ARCH_OS_SWAP_SIZE}'"
         echo ""
         echo "# Bootsplash (mandatory) | Disable: false"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
@@ -327,17 +322,6 @@ tui_set_encryption() {
     return 0
 }
 
-tui_set_swap() {
-    ARCH_OS_SWAP_SIZE="$(($(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 / 1024 + 1))"
-    ARCH_OS_SWAP_SIZE=$(whiptail --title "$TITLE" --inputbox "\nEnter Swap Size in GB (0 = disable, ${ARCH_OS_SWAP_SIZE} = recommended)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_OS_SWAP_SIZE" 3>&1 1>&2 2>&3)
-    if [ -z "$ARCH_OS_SWAP_SIZE" ]; then
-        whiptail --title "$TITLE" --msgbox "Error: Swap is null" "$TUI_HEIGHT" "$TUI_WIDTH"
-        return 1
-    fi
-    # Success
-    return 0
-}
-
 tui_set_plymouth() {
     ARCH_OS_BOOTSPLASH_ENABLED="false"
     if whiptail --title "$TITLE" --yesno "Install Bootsplash Animation (plymouth)?" --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
@@ -435,7 +419,6 @@ while (true); do
     menu_entry_array+=("keyboard") && menu_entry_array+=("$(print_menu_entry "Keyboard" "  ${ARCH_OS_VCONSOLE_KEYMAP}")")
     menu_entry_array+=("disk") && menu_entry_array+=("$(print_menu_entry "Disk" "${ARCH_OS_DISK}")")
     menu_entry_array+=("encrypt") && menu_entry_array+=("$(print_menu_entry "Encryption" "${ARCH_OS_ENCRYPTION_ENABLED}")")
-    menu_entry_array+=("swap") && menu_entry_array+=("$(print_menu_entry "Swap" "$([ -n "$ARCH_OS_SWAP_SIZE" ] && { [ "$ARCH_OS_SWAP_SIZE" != "0" ] && echo "${ARCH_OS_SWAP_SIZE} GB" || echo "disabled"; })")")
     menu_entry_array+=("bootsplash") && menu_entry_array+=("$(print_menu_entry "Bootsplash" "${ARCH_OS_BOOTSPLASH_ENABLED}")")
     menu_entry_array+=("desktop") && menu_entry_array+=("$(print_menu_entry "Desktop" "${ARCH_OS_DESKTOP_ENABLED}")")
     menu_entry_array+=("") && menu_entry_array+=("") # Empty entry
@@ -474,10 +457,6 @@ while (true); do
         ;;
     "encrypt")
         tui_set_encryption || continue
-        create_config
-        ;;
-    "swap")
-        tui_set_swap || continue
         create_config
         ;;
     "bootsplash")
@@ -680,10 +659,11 @@ SECONDS=0
 
     packages=()
     packages+=("base")
-    packages+=("base-devel")
+    packages+=("base-devel") # only sudo instead
     packages+=("${ARCH_OS_KERNEL}")
     packages+=("linux-firmware")
     packages+=("networkmanager")
+    packages+=("zram-generator")
     packages+=("pacman-contrib")
     packages+=("bash-completion")
     packages+=("reflector")
@@ -726,19 +706,15 @@ SECONDS=0
     genfstab -U /mnt >>/mnt/etc/fstab
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Create Swap"
+    print_whiptail_info "Create Swap (zram)"
     # ----------------------------------------------------------------------------------------------------
-
-    if [ "$ARCH_OS_SWAP_SIZE" != "0" ] && [ -n "$ARCH_OS_SWAP_SIZE" ]; then
-        dd if=/dev/zero of=/mnt/swapfile bs=1G count="$ARCH_OS_SWAP_SIZE" status=progress
-        chmod 600 /mnt/swapfile
-        mkswap -U clear /mnt/swapfile
-        swapon /mnt/swapfile
-        echo "# Swapfile" >>/mnt/etc/fstab
-        echo "/swapfile none swap defaults 0 0" >>/mnt/etc/fstab
-    else
-        echo "> Skipped"
-    fi
+    {
+        echo '[zram0]'
+        echo 'zram-size = ram / 2'
+        echo 'compression-algorithm = zstd'
+        echo 'swap-priority = 100'
+        echo 'fs-type = swap'
+    } >/mnt/etc/systemd/zram-generator.conf
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Timezone & System Clock"
@@ -802,14 +778,16 @@ SECONDS=0
     arch-chroot /mnt bootctl --esp-path=/boot install
 
     # Kernel args
+    # Zswap should be disabled when using zram.
+    # https://github.com/archlinux/archinstall/issues/881
     swap_device_uuid="$(findmnt -no UUID -T /mnt/swapfile)"
     swap_file_offset="$(filefrag -v /mnt/swapfile | awk '$1=="0:" {print substr($4, 1, length($4)-2)}')"
     if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
         # Encryption enabled
-        kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot rw init=/usr/lib/systemd/systemd quiet splash vt.global_cursor_default=0 resume=/dev/mapper/cryptroot resume_offset=${swap_file_offset}"
+        kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot rw init=/usr/lib/systemd/systemd zswap.enabled=0 quiet splash vt.global_cursor_default=0 resume=/dev/mapper/cryptroot resume_offset=${swap_file_offset}"
     else
         # Encryption disabled
-        kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}") rw init=/usr/lib/systemd/systemd quiet splash vt.global_cursor_default=0 resume=UUID=${swap_device_uuid} resume_offset=${swap_file_offset}"
+        kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}") rw init=/usr/lib/systemd/systemd zswap.enabled=0 quiet splash vt.global_cursor_default=0 resume=UUID=${swap_device_uuid} resume_offset=${swap_file_offset}"
     fi
 
     # Create Bootloader config
@@ -862,16 +840,15 @@ SECONDS=0
     print_whiptail_info "Enable Essential Services"
     # ----------------------------------------------------------------------------------------------------
 
-    arch-chroot /mnt systemctl enable NetworkManager              # Network Manager
-    arch-chroot /mnt systemctl enable systemd-timesyncd.service   # Sync time from internet after boot
-    arch-chroot /mnt systemctl enable reflector.service           # Rank mirrors after boot
-    arch-chroot /mnt systemctl enable paccache.timer              # Discard cached/unused packages weekly
-    arch-chroot /mnt systemctl enable pkgfile-update.timer        # Pkgfile update timer
-    arch-chroot /mnt systemctl enable fstrim.timer                # SSD support
-    arch-chroot /mnt systemctl enable systemd-boot-update.service # Auto bootloader update
-
-    # Out of memory killer (swap is required)
-    [ "$ARCH_OS_SWAP_SIZE" != "0" ] && [ -n "$ARCH_OS_SWAP_SIZE" ] && arch-chroot /mnt systemctl enable systemd-oomd.service
+    arch-chroot /mnt systemctl enable NetworkManager                   # Network Manager
+    arch-chroot /mnt systemctl enable systemd-zram-setup@zram0.service # Swap (zram)
+    arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
+    arch-chroot /mnt systemctl enable reflector.service                # Rank mirrors after boot
+    arch-chroot /mnt systemctl enable paccache.timer                   # Discard cached/unused packages weekly
+    arch-chroot /mnt systemctl enable pkgfile-update.timer             # Pkgfile update timer
+    arch-chroot /mnt systemctl enable fstrim.timer                     # SSD support
+    arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootloader update
+    arch-chroot /mnt systemctl enable systemd-oomd.service             # Out of memory killer (swap is required)
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Configure System"
@@ -1306,7 +1283,7 @@ SECONDS=0
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
             # Alternative (slow boot, bios logo twice, but correct plymouth resolution):
-            #sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
+            #sed -i "s/zswap.enabled=0 quiet/zswap.enabled=0 nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
             mkdir -p /mnt/etc/modprobe.d/ && echo -e 'options nvidia_drm modeset=1 fbdev=1' >/mnt/etc/modprobe.d/nvidia.conf
             sed -i "s/^MODULES=(.*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
             # https://wiki.archlinux.org/title/NVIDIA#pacman_hook

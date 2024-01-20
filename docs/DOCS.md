@@ -191,9 +191,6 @@ ARCH_OS_ROOT_PARTITION='/dev/sda2'
 # Disk encryption (mandatory) | Disable: false
 ARCH_OS_ENCRYPTION_ENABLED='true'
 
-# Swap (mandatory) | Disable: 0 or null
-ARCH_OS_SWAP_SIZE='16'
-
 # Bootsplash (mandatory) | Disable: false
 ARCH_OS_BOOTSPLASH_ENABLED='true'
 
@@ -262,7 +259,7 @@ The partitions layout is seperated in two partitions:
 
 ### Core Packages
 
-This packages will be installed during [Minimal Arch OS Installation](#minimal-installation) (182 packages in total):
+This packages will be installed during [Minimal Arch OS Installation](#minimal-installation) (181 packages in total):
 
 ```
 base base-devel linux-zen linux-firmware networkmanager pacman-contrib bash-completion reflector pkgfile git nano [microcode_pkg]

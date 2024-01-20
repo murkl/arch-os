@@ -53,6 +53,7 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 - AUR Helper & Multilib included
 - Flatpak Support + Auto Update (GNOME Software)
 - Designed as the only OS on the disk
+- Swap (zram)
 - UEFI only supported
 - Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
