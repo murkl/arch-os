@@ -24,6 +24,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [mutter-performance](https://aur.archlinux.org/packages/mutter-performance) (great on Intel Graphics with Wayland)
 - Install [downgrade](https://aur.archlinux.org/packages/downgrade) when you need to downgrade a package
 - Install [EasyEffects](https://flathub.org/de/apps/com.github.wwmm.easyeffects) for Dolby Atmos
+- Install [folder-color-nautilus](https://aur.archlinux.org/packages/folder-color-nautilus) for setting colorful folders
 
 ### Theming (optional)
 
@@ -33,7 +34,6 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Icon Theme: [tela-icon-theme](https://github.com/vinceliuice/Tela-icon-theme)
 - Cursor Theme: [nordzy-cursors](https://github.com/alvatip/Nordzy-cursors)
 - Firefox Theme: [firefox-gnome-theme](https://github.com/rafaelmardojai/firefox-gnome-theme)
-- Nautilus Extensions: [folder-color-nautilus](https://aur.archlinux.org/packages/folder-color-nautilus)
 
 ### GNOME Extensions (optional)
 
@@ -146,7 +146,7 @@ The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better s
 
 ### Minimal Installation
 
-Set these properties to `false` to install Arch OS with minimal packages (without preinstalled Desktop).
+Set these properties to `false` or `none` to install Arch OS with minimal packages (without preinstalled Desktop, AUR Helper, Bootsplash, VM support, MultiLib and Shell Enhancement).
 
 ```
 ARCH_OS_DESKTOP_ENABLED='false'
@@ -154,9 +154,21 @@ ARCH_OS_BOOTSPLASH_ENABLED='false'
 ARCH_OS_VM_SUPPORT_ENABLED='false'
 ARCH_OS_SHELL_ENHANCED_ENABLED='false'
 ARCH_OS_MULTILIB_ENABLED='false'
+ARCH_OS_AUR_HELPER='none'
 ```
 
-If you don't need AUR Helper set `ARCH_OS_AUR_HELPER='none'`
+### VM Support
+
+If the installation is executed in a VM (autodetected), the corresponding packages are installed.
+
+Supported VMs:
+
+- kvm
+- vmware
+- oracle
+- microsoft
+
+Disable this feature with `ARCH_OS_VM_SUPPORT_ENABLED='false'`
 
 ### Example: `installer.conf`
 
