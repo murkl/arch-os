@@ -282,6 +282,11 @@ As default, `zram-generator` is used to create swap with enhanced config.
 
 You can edit the zram-generator default configuration in `/etc/systemd/zram-generator.conf` and to modify the enhanced kernel parameter in `/etc/sysctl.d/99-vm-zram-parameters.conf`
 
+### System Configurations
+
+- `vm.max_map_count` is set to `16777216` for compatibility of some apps/games
+- `DefaultTimeoutStopSec` is set to `10s` for faster shutdown
+
 ### Screenshots
 
 <div align="center">
