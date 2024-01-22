@@ -156,7 +156,7 @@ ARCH_OS_BOOTSPLASH_ENABLED='false'
 
 #### Arch OS Core Packages
 
-This packages will be installed during `core` Installation (182 packages in total):
+This packages will be installed during `core` Installation (148 packages in total):
 
 ```
 base linux-zen linux-firmware zram-generator networkmanager sudo [microcode_pkg]
