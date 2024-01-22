@@ -242,11 +242,11 @@ ARCH_OS_ECN_ENABLED='true'
 
 ## Technical Information
 
-Arch OS comes with 3 Variants:
+Arch OS comes with 3 installation variants:
 
-- **core**: Minimal Arch
-- **base**: Arch OS without desktop
-- **desktop**: Arch OS with desktop
+- **core**: Minimal Arch (need to run Arch Linux)
+- **base**: Arch OS without desktop (core included + additional packages & configurations)
+- **desktop**: Arch OS with desktop (base included + GNOME Desktop + Graphics Driver)
 
 ### Partitions layout
 
