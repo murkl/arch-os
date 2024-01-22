@@ -38,8 +38,9 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 ### GNOME Extensions (optional)
 
 - [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/)
-- [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/)
+- [dash-to-dock](https://extensions.gnome.org/extension/307/dash-to-dock/)
 - [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
+- [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/)
 - [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
 - [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (useful in wayland app toggler script)
 
