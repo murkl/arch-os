@@ -154,6 +154,22 @@ ARCH_OS_VARIANT='core'
 ARCH_OS_BOOTSPLASH_ENABLED='false'
 ```
 
+#### Arch OS Core Packages
+
+This packages will be installed during `core` Installation (182 packages in total):
+
+```
+base linux-zen linux-firmware zram-generator networkmanager sudo [microcode_pkg]
+```
+
+#### Arch OS Core Services
+
+This services will be enabled during `core` Installation:
+
+```
+NetworkManager fstrim.timer systemd-zram-setup@zram0.service systemd-oomd.service systemd-boot-update.service systemd-timesyncd.service
+```
+
 ### VM Support
 
 If the installation is executed in a VM (autodetected), the corresponding packages are installed.
@@ -260,21 +276,11 @@ The partitions layout is seperated in two partitions:
 | 1                | BOOT             | 1 GiB            | /boot/     | FAT32                     |
 | 2                | ROOT / cryptroot | Rest of the disk | /          | EXT4 + Encryption (LUKS2) |
 
-### Arch OS Core Packages
+### Swap
 
-This packages will be installed during [Arch OS Core Installation](#minimal-installation) (182 packages in total):
+As default, `zram-generator` is used to create swap with enhanced config.
 
-```
-base linux-zen linux-firmware zram-generator networkmanager sudo [microcode_pkg]
-```
-
-### Arch OS Core Services
-
-This services will be enabled during [Arch OS Core Installation](#minimal-installation):
-
-```
-NetworkManager fstrim.timer systemd-zram-setup@zram0.service systemd-oomd.service systemd-boot-update.service systemd-timesyncd.service
-```
+You can edit the zram-generator default configuration in `/etc/systemd/zram-generator.conf` and to modify the enhanced kernel parameter edit `/etc/sysctl.d/99-vm-zram-parameters.conf`
 
 ### Screenshots
 
