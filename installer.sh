@@ -1409,7 +1409,7 @@ SECONDS=0
     print_whiptail_info "Arch Installation finished"
     # ----------------------------------------------------------------------------------------------------
 
-) | whiptail --title "$TITLE" --gauge "Start Arch Installation..." 1 "$TUI_WIDTH" 0
+) | whiptail --title "$TITLE" --gauge "Start Arch Installation..." 7 "$TUI_WIDTH" 0
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # ////////////////////////////////////// INSTALLATION FINISHED ///////////////////////////////////////
