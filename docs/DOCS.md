@@ -280,7 +280,7 @@ The partitions layout is seperated in two partitions:
 
 As default, `zram-generator` is used to create swap with enhanced config.
 
-You can edit the zram-generator default configuration in `/etc/systemd/zram-generator.conf` and to modify the enhanced kernel parameter edit `/etc/sysctl.d/99-vm-zram-parameters.conf`
+You can edit the zram-generator default configuration in `/etc/systemd/zram-generator.conf` and to modify the enhanced kernel parameter in `/etc/sysctl.d/99-vm-zram-parameters.conf`
 
 ### Screenshots
 
