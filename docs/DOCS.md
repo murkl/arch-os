@@ -156,11 +156,13 @@ ARCH_OS_BOOTSPLASH_ENABLED='false'
 
 #### Arch OS Core Packages
 
-This packages will be installed during `core` Installation (148 packages in total):
+This packages will be installed during `core` Installation (171 packages in total):
 
 ```
 base base-devel linux-zen linux-firmware zram-generator networkmanager [microcode_pkg]
 ```
+
+**Note:** Can be reduced by removing `base-devel` afterwards and install `sudo` instead. You may need more packages from [base-devel](https://archlinux.org/packages/core/any/base-devel/) group.
 
 #### Arch OS Core Services
 
