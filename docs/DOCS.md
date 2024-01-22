@@ -24,6 +24,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [mutter-performance](https://aur.archlinux.org/packages/mutter-performance) (great on Intel Graphics with Wayland)
 - Install [downgrade](https://aur.archlinux.org/packages/downgrade) when you need to downgrade a package
 - Install [EasyEffects](https://flathub.org/de/apps/com.github.wwmm.easyeffects) for Dolby Atmos
+- Install [folder-color-nautilus](https://aur.archlinux.org/packages/folder-color-nautilus) for setting colorful folders
 
 ### Theming (optional)
 
@@ -33,13 +34,13 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Icon Theme: [tela-icon-theme](https://github.com/vinceliuice/Tela-icon-theme)
 - Cursor Theme: [nordzy-cursors](https://github.com/alvatip/Nordzy-cursors)
 - Firefox Theme: [firefox-gnome-theme](https://github.com/rafaelmardojai/firefox-gnome-theme)
-- Nautilus Extensions: [folder-color-nautilus](https://aur.archlinux.org/packages/folder-color-nautilus)
 
 ### GNOME Extensions (optional)
 
 - [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/)
-- [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/)
+- [dash-to-dock](https://extensions.gnome.org/extension/307/dash-to-dock/)
 - [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
+- [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/)
 - [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
 - [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (useful in wayland app toggler script)
 
@@ -146,17 +147,41 @@ The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better s
 
 ### Minimal Installation
 
-Set these properties to `false` to install Arch OS with minimal packages (without preinstalled Desktop).
+Set these properties to install Arch OS (core) with minimal packages & configurations:
 
 ```
-ARCH_OS_DESKTOP_ENABLED='false'
+ARCH_OS_VARIANT='core'
 ARCH_OS_BOOTSPLASH_ENABLED='false'
-ARCH_OS_VM_SUPPORT_ENABLED='false'
-ARCH_OS_SHELL_ENHANCED_ENABLED='false'
-ARCH_OS_MULTILIB_ENABLED='false'
 ```
 
-If you don't need AUR Helper set `ARCH_OS_AUR_HELPER='none'`
+#### Arch OS Core Packages
+
+This packages will be installed during `core` Installation (148 packages in total):
+
+```
+base linux-zen linux-firmware zram-generator networkmanager sudo [microcode_pkg]
+```
+
+#### Arch OS Core Services
+
+This services will be enabled during `core` Installation:
+
+```
+NetworkManager fstrim.timer systemd-zram-setup@zram0.service systemd-oomd.service systemd-boot-update.service systemd-timesyncd.service
+```
+
+### VM Support
+
+If the installation is executed in a VM (autodetected), the corresponding packages are installed.
+
+Supported VMs:
+
+- kvm
+- vmware
+- oracle
+- microsoft
+
+Disable this feature with `ARCH_OS_VM_SUPPORT_ENABLED='false'` (only relevant if `ARCH_OS_VARIANT` is set to `desktop`)
 
 ### Example: `installer.conf`
 
@@ -179,14 +204,11 @@ ARCH_OS_ROOT_PARTITION='/dev/sda2'
 # Disk encryption (mandatory) | Disable: false
 ARCH_OS_ENCRYPTION_ENABLED='true'
 
-# Swap (mandatory) | Disable: 0 or null
-ARCH_OS_SWAP_SIZE='16'
-
 # Bootsplash (mandatory) | Disable: false
 ARCH_OS_BOOTSPLASH_ENABLED='true'
 
-# GNOME Desktop (mandatory) | Disable: false
-ARCH_OS_DESKTOP_ENABLED='true'
+# Arch OS Variant (mandatory) | Available: core, base, desktop
+ARCH_OS_VARIANT='desktop'
 
 # Driver (mandatory) | Default: mesa | Available: mesa, intel_i915, nvidia, amd, ati
 ARCH_OS_GRAPHICS_DRIVER='nvidia'
@@ -236,6 +258,12 @@ ARCH_OS_ECN_ENABLED='true'
 
 ## Technical Information
 
+Arch OS comes with 3 installation variants:
+
+- **core**: Minimal Arch (need to run Arch Linux)
+- **base**: Arch OS without desktop (core included + additional packages & configurations)
+- **desktop**: Arch OS with desktop (base included + GNOME Desktop + Graphics Driver)
+
 ### Partitions layout
 
 The partitions layout is seperated in two partitions:
@@ -248,21 +276,11 @@ The partitions layout is seperated in two partitions:
 | 1                | BOOT             | 1 GiB            | /boot/     | FAT32                     |
 | 2                | ROOT / cryptroot | Rest of the disk | /          | EXT4 + Encryption (LUKS2) |
 
-### Core Packages
+### Swap
 
-This packages will be installed during [Minimal Arch OS Installation](#minimal-installation) (182 packages in total):
+As default, `zram-generator` is used to create swap with enhanced config.
 
-```
-base base-devel linux-zen linux-firmware networkmanager pacman-contrib bash-completion reflector pkgfile git nano [microcode_pkg]
-```
-
-### Core Services
-
-This services will be enabled during [Minimal Arch OS Installation](#minimal-installation):
-
-```
-NetworkManager systemd-timesyncd.service reflector.service paccache.timer fstrim.timer pkgfile-update.timer systemd-boot-update.service systemd-oomd.service
-```
+You can edit the zram-generator default configuration in `/etc/systemd/zram-generator.conf` and to modify the enhanced kernel parameter edit `/etc/sysctl.d/99-vm-zram-parameters.conf`
 
 ### Screenshots
 

@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.1.6'
+VERSION='1.1.7'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -43,7 +43,6 @@ ARCH_OS_DISK=""
 ARCH_OS_BOOT_PARTITION=""
 ARCH_OS_ROOT_PARTITION=""
 ARCH_OS_ENCRYPTION_ENABLED=""
-ARCH_OS_SWAP_SIZE=""
 ARCH_OS_REFLECTOR_COUNTRY=""
 ARCH_OS_TIMEZONE=""
 ARCH_OS_LOCALE_LANG=""
@@ -53,7 +52,7 @@ ARCH_OS_VCONSOLE_FONT=""
 ARCH_OS_X11_KEYBOARD_LAYOUT=""
 ARCH_OS_X11_KEYBOARD_VARIANT=""
 ARCH_OS_BOOTSPLASH_ENABLED=""
-ARCH_OS_DESKTOP_ENABLED=""
+ARCH_OS_VARIANT=""
 ARCH_OS_GRAPHICS_DRIVER=""
 ARCH_OS_KERNEL=""
 ARCH_OS_MICROCODE=""
@@ -124,9 +123,8 @@ check_config() {
     [ -z "${ARCH_OS_BOOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_OS_ROOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
     [ -z "${ARCH_OS_ENCRYPTION_ENABLED}" ] && TUI_POSITION="encrypt" && return 1
-    [ -z "${ARCH_OS_SWAP_SIZE}" ] && TUI_POSITION="swap" && return 1
     [ -z "${ARCH_OS_BOOTSPLASH_ENABLED}" ] && TUI_POSITION="bootsplash" && return 1
-    [ -z "${ARCH_OS_DESKTOP_ENABLED}" ] && TUI_POSITION="desktop" && return 1
+    [ -z "${ARCH_OS_VARIANT}" ] && TUI_POSITION="variant" && return 1
     TUI_POSITION="install"
 }
 
@@ -152,14 +150,11 @@ create_config() {
         echo "# Disk encryption (mandatory) | Disable: false"
         echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}'"
         echo ""
-        echo "# Swap (mandatory) | Disable: 0 or null"
-        echo "ARCH_OS_SWAP_SIZE='${ARCH_OS_SWAP_SIZE}'"
-        echo ""
         echo "# Bootsplash (mandatory) | Disable: false"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
         echo ""
-        echo "# GNOME Desktop (mandatory) | Disable: false"
-        echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
+        echo "# Arch OS Variant (mandatory) | Available: core, base, desktop"
+        echo "ARCH_OS_VARIANT='${ARCH_OS_VARIANT}'"
         echo ""
         echo "# Driver (mandatory) | Default: mesa | Available: mesa, intel_i915, nvidia, amd, ati"
         echo "ARCH_OS_GRAPHICS_DRIVER='${ARCH_OS_GRAPHICS_DRIVER}'"
@@ -327,18 +322,7 @@ tui_set_encryption() {
     return 0
 }
 
-tui_set_swap() {
-    ARCH_OS_SWAP_SIZE="$(($(grep MemTotal /proc/meminfo | awk '{print $2}') / 1024 / 1024 + 1))"
-    ARCH_OS_SWAP_SIZE=$(whiptail --title "$TITLE" --inputbox "\nEnter Swap Size in GB (0 = disable, ${ARCH_OS_SWAP_SIZE} = recommended)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_OS_SWAP_SIZE" 3>&1 1>&2 2>&3)
-    if [ -z "$ARCH_OS_SWAP_SIZE" ]; then
-        whiptail --title "$TITLE" --msgbox "Error: Swap is null" "$TUI_HEIGHT" "$TUI_WIDTH"
-        return 1
-    fi
-    # Success
-    return 0
-}
-
-tui_set_plymouth() {
+tui_set_bootsplash() {
     ARCH_OS_BOOTSPLASH_ENABLED="false"
     if whiptail --title "$TITLE" --yesno "Install Bootsplash Animation (plymouth)?" --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
         ARCH_OS_BOOTSPLASH_ENABLED="true"
@@ -347,10 +331,15 @@ tui_set_plymouth() {
     return 0
 }
 
-tui_set_desktop() {
-    ARCH_OS_DESKTOP_ENABLED="false"
-    if whiptail --title "$TITLE" --yesno "Install GNOME Desktop?" --yes-button "GNOME Desktop" --no-button "Minimal Arch" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+tui_set_variant() {
 
+    # Set driver
+    local variant_array=()
+    variant_array+=("desktop") && variant_array+=("Arch OS Desktop (Default)")
+    variant_array+=("base") && variant_array+=("Arch OS Base (without Desktop)")
+    variant_array+=("core") && variant_array+=("Arch OS Core (minimal Arch Linux)")
+    ARCH_OS_VARIANT=$(whiptail --title "$TITLE" --menu "\nChoose Arch OS Variant" --nocancel --notags --default-item "$ARCH_OS_VARIANT" "$TUI_HEIGHT" "$TUI_WIDTH" "${#variant_array[@]}" "${variant_array[@]}" 3>&1 1>&2 2>&3)
+    if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
         # Set driver
         local driver_array=()
         driver_array+=("mesa") && driver_array+=("Mesa Universal Graphics (Default)")
@@ -371,9 +360,6 @@ tui_set_desktop() {
         [ -z "$user_input" ] && user_input=''
         user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert X11 (Xorg) keyboard variant\n\nExample: 'nodeadkeys' or leave empty for default" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
         ARCH_OS_X11_KEYBOARD_VARIANT="$user_input"
-
-        # Set GNOME
-        ARCH_OS_DESKTOP_ENABLED="true"
     fi
 
     # Success
@@ -435,9 +421,8 @@ while (true); do
     menu_entry_array+=("keyboard") && menu_entry_array+=("$(print_menu_entry "Keyboard" "  ${ARCH_OS_VCONSOLE_KEYMAP}")")
     menu_entry_array+=("disk") && menu_entry_array+=("$(print_menu_entry "Disk" "${ARCH_OS_DISK}")")
     menu_entry_array+=("encrypt") && menu_entry_array+=("$(print_menu_entry "Encryption" "${ARCH_OS_ENCRYPTION_ENABLED}")")
-    menu_entry_array+=("swap") && menu_entry_array+=("$(print_menu_entry "Swap" "$([ -n "$ARCH_OS_SWAP_SIZE" ] && { [ "$ARCH_OS_SWAP_SIZE" != "0" ] && echo "${ARCH_OS_SWAP_SIZE} GB" || echo "disabled"; })")")
     menu_entry_array+=("bootsplash") && menu_entry_array+=("$(print_menu_entry "Bootsplash" "${ARCH_OS_BOOTSPLASH_ENABLED}")")
-    menu_entry_array+=("desktop") && menu_entry_array+=("$(print_menu_entry "Desktop" "${ARCH_OS_DESKTOP_ENABLED}")")
+    menu_entry_array+=("variant") && menu_entry_array+=("$(print_menu_entry "Variant" "${ARCH_OS_VARIANT}")")
     menu_entry_array+=("") && menu_entry_array+=("") # Empty entry
     menu_entry_array+=("edit") && menu_entry_array+=("> Edit installer.conf")
     if [ "$TUI_POSITION" = "install" ]; then
@@ -476,16 +461,12 @@ while (true); do
         tui_set_encryption || continue
         create_config
         ;;
-    "swap")
-        tui_set_swap || continue
-        create_config
-        ;;
     "bootsplash")
-        tui_set_plymouth || continue
+        tui_set_bootsplash || continue
         create_config
         ;;
-    "desktop")
-        tui_set_desktop || continue
+    "variant")
+        tui_set_variant || continue
         create_config
         ;;
     "edit")
@@ -679,46 +660,58 @@ SECONDS=0
     # ----------------------------------------------------------------------------------------------------
 
     packages=()
+
+    # Core packages
     packages+=("base")
-    packages+=("base-devel")
     packages+=("${ARCH_OS_KERNEL}")
     packages+=("linux-firmware")
+    packages+=("zram-generator")
     packages+=("networkmanager")
-    packages+=("pacman-contrib")
-    packages+=("bash-completion")
-    packages+=("reflector")
-    packages+=("pkgfile")
-    packages+=("git")
-    packages+=("nano")
+    packages+=("sudo") # base-devel
+
     # Add microcode package
     [ -n "$ARCH_OS_MICROCODE" ] && packages+=("$ARCH_OS_MICROCODE")
 
-    # Install core and initialize an empty pacman keyring in the target
+    # Base packages
+    if [ "$ARCH_OS_VARIANT" != "core" ]; then
+        packages+=("pacman-contrib")
+        packages+=("reflector")
+        packages+=("pkgfile")
+        packages+=("git")
+        packages+=("nano")
+        packages+=("bash-completion")
+    fi
+
+    # Install core and addional packages and initialize an empty pacman keyring in the target
     pacstrap -K /mnt "${packages[@]}" "${ARCH_OS_OPT_PACKAGE_LIST[@]}"
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Configure Pacman & Reflector"
     # ----------------------------------------------------------------------------------------------------
 
-    # Configure parrallel downloads, colors & multilib
-    sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
-    sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
-    if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
-        sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
-        arch-chroot /mnt pacman -Syy --noconfirm
+    if [ "$ARCH_OS_VARIANT" != "core" ]; then
+
+        # Configure parrallel downloads, colors & multilib
+        sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
+        sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
+        if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
+            sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
+            arch-chroot /mnt pacman -Syy --noconfirm
+        fi
+
+        # Configure reflector service
+        {
+            echo "# Reflector config for the systemd service"
+            echo "--save /etc/pacman.d/mirrorlist"
+            [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
+            echo "--completion-percent 95"
+            echo "--protocol https"
+            echo "--latest 5"
+            echo "--sort rate"
+        } >/mnt/etc/xdg/reflector/reflector.conf
+    else
+        echo "> Skipped"
     fi
-
-    # Configure reflector service
-    {
-        echo "# Reflector config for the systemd service"
-        echo "--save /etc/pacman.d/mirrorlist"
-        [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
-        echo "--completion-percent 95"
-        echo "--protocol https"
-        echo "--latest 5"
-        echo "--sort rate"
-    } >/mnt/etc/xdg/reflector/reflector.conf
-
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Generate /etc/fstab"
     # ----------------------------------------------------------------------------------------------------
@@ -726,19 +719,24 @@ SECONDS=0
     genfstab -U /mnt >>/mnt/etc/fstab
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Create Swap"
+    print_whiptail_info "Create Swap (zram)"
     # ----------------------------------------------------------------------------------------------------
+    {
+        echo '[zram0]'
+        # https://wiki.archlinux.org/title/Zram#Using_zram-generator
+        #echo 'zram-size = ram / 2'
+        #echo 'compression-algorithm = zstd'
+        #echo 'swap-priority = 100'
+        #echo 'fs-type = swap'
+    } >/mnt/etc/systemd/zram-generator.conf
 
-    if [ "$ARCH_OS_SWAP_SIZE" != "0" ] && [ -n "$ARCH_OS_SWAP_SIZE" ]; then
-        dd if=/dev/zero of=/mnt/swapfile bs=1G count="$ARCH_OS_SWAP_SIZE" status=progress
-        chmod 600 /mnt/swapfile
-        mkswap -U clear /mnt/swapfile
-        swapon /mnt/swapfile
-        echo "# Swapfile" >>/mnt/etc/fstab
-        echo "/swapfile none swap defaults 0 0" >>/mnt/etc/fstab
-    else
-        echo "> Skipped"
-    fi
+    # Optimize swap on zram (https://wiki.archlinux.org/title/Zram#Optimizing_swap_on_zram)
+    {
+        echo 'vm.swappiness = 180'
+        echo 'vm.watermark_boost_factor = 0'
+        echo 'vm.watermark_scale_factor = 125'
+        echo 'vm.page-cluster = 0'
+    } >/mnt/etc/sysctl.d/99-vm-zram-parameters.conf
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Timezone & System Clock"
@@ -781,10 +779,14 @@ SECONDS=0
     print_whiptail_info "Set /etc/environment"
     # ----------------------------------------------------------------------------------------------------
 
-    {
-        echo 'EDITOR=nano'
-        echo 'VISUAL=nano'
-    } >/mnt/etc/environment
+    if [ "$ARCH_OS_VARIANT" != "core" ]; then
+        {
+            echo 'EDITOR=nano'
+            echo 'VISUAL=nano'
+        } >/mnt/etc/environment
+    else
+        echo "> Skipped"
+    fi
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Create Initial Ramdisk"
@@ -802,15 +804,10 @@ SECONDS=0
     arch-chroot /mnt bootctl --esp-path=/boot install
 
     # Kernel args
-    swap_device_uuid="$(findmnt -no UUID -T /mnt/swapfile)"
-    swap_file_offset="$(filefrag -v /mnt/swapfile | awk '$1=="0:" {print substr($4, 1, length($4)-2)}')"
-    if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
-        # Encryption enabled
-        kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot rw init=/usr/lib/systemd/systemd quiet splash vt.global_cursor_default=0 resume=/dev/mapper/cryptroot resume_offset=${swap_file_offset}"
-    else
-        # Encryption disabled
-        kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}") rw init=/usr/lib/systemd/systemd quiet splash vt.global_cursor_default=0 resume=UUID=${swap_device_uuid} resume_offset=${swap_file_offset}"
-    fi
+    # Zswap should be disabled when using zram (https://github.com/archlinux/archinstall/issues/881)
+    kernel_args_default="rw init=/usr/lib/systemd/systemd zswap.enabled=0 quiet splash vt.global_cursor_default=0"
+    [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot ${kernel_args_default}"
+    [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}") ${kernel_args_default}"
 
     # Create Bootloader config
     {
@@ -822,7 +819,7 @@ SECONDS=0
 
     # Create default boot entry
     {
-        echo 'title   Arch Linux'
+        echo 'title   Arch OS'
         echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
         [ -n "$ARCH_OS_MICROCODE" ] && echo "initrd  /${ARCH_OS_MICROCODE}.img"
         echo "initrd  /initramfs-${ARCH_OS_KERNEL}.img"
@@ -831,7 +828,7 @@ SECONDS=0
 
     # Create fallback boot entry
     {
-        echo 'title   Arch Linux (Fallback)'
+        echo 'title   Arch OS (Fallback)'
         echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
         [ -n "$ARCH_OS_MICROCODE" ] && echo "initrd  /${ARCH_OS_MICROCODE}.img"
         echo "initrd  /initramfs-${ARCH_OS_KERNEL}-fallback.img"
@@ -862,34 +859,43 @@ SECONDS=0
     print_whiptail_info "Enable Essential Services"
     # ----------------------------------------------------------------------------------------------------
 
-    arch-chroot /mnt systemctl enable NetworkManager              # Network Manager
-    arch-chroot /mnt systemctl enable systemd-timesyncd.service   # Sync time from internet after boot
-    arch-chroot /mnt systemctl enable reflector.service           # Rank mirrors after boot
-    arch-chroot /mnt systemctl enable paccache.timer              # Discard cached/unused packages weekly
-    arch-chroot /mnt systemctl enable pkgfile-update.timer        # Pkgfile update timer
-    arch-chroot /mnt systemctl enable fstrim.timer                # SSD support
-    arch-chroot /mnt systemctl enable systemd-boot-update.service # Auto bootloader update
+    arch-chroot /mnt systemctl enable NetworkManager                   # Network Manager
+    arch-chroot /mnt systemctl enable fstrim.timer                     # SSD support
+    arch-chroot /mnt systemctl enable systemd-zram-setup@zram0.service # Swap (zram-generator)
+    arch-chroot /mnt systemctl enable systemd-oomd.service             # Out of memory killer (swap is required)
+    arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootloader update
+    arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
-    # Out of memory killer (swap is required)
-    [ "$ARCH_OS_SWAP_SIZE" != "0" ] && [ -n "$ARCH_OS_SWAP_SIZE" ] && arch-chroot /mnt systemctl enable systemd-oomd.service
+    # Base
+    [ "$ARCH_OS_VARIANT" != "core" ] && arch-chroot /mnt systemctl enable reflector.service    # Rank mirrors after boot (reflector)
+    [ "$ARCH_OS_VARIANT" != "core" ] && arch-chroot /mnt systemctl enable paccache.timer       # Discard cached/unused packages weekly (pacman-contrib)
+    [ "$ARCH_OS_VARIANT" != "core" ] && arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer (pkgfile)
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Configure System"
     # ----------------------------------------------------------------------------------------------------
 
-    # Reduce shutdown timeout
-    sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
+    if [ "$ARCH_OS_VARIANT" != "core" ]; then
 
-    # Set Nano colors
-    sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
-    sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
-    sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
+        # Reduce shutdown timeout
+        sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
+
+        # Set max VMAs (need for some apps/games)
+        echo vm.max_map_count=16777216 >/mnt/etc/sysctl.d/vm.max_map_count.conf
+
+        # Set Nano colors
+        sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
+        sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
+        sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
+    else
+        echo "> Skipped"
+    fi
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Install AUR Helper"
     # ----------------------------------------------------------------------------------------------------
 
-    if [ "$ARCH_OS_AUR_HELPER" != "none" ] && [ -n "$ARCH_OS_AUR_HELPER" ]; then
+    if [ "$ARCH_OS_VARIANT" != "core" ] && [ "$ARCH_OS_AUR_HELPER" != "none" ] && [ -n "$ARCH_OS_AUR_HELPER" ]; then
 
         # Install AUR Helper as user
         repo_url="https://aur.archlinux.org/${ARCH_OS_AUR_HELPER}.git"
@@ -937,7 +943,7 @@ SECONDS=0
     print_whiptail_info "Install Shell Enhancement"
     # ----------------------------------------------------------------------------------------------------
 
-    if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
+    if [ "$ARCH_OS_VARIANT" != "core" ] && [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
 
         # Install packages
         arch-chroot /mnt pacman -S --noconfirm --needed fish starship eza bat neofetch mc btop man-db
@@ -1064,10 +1070,10 @@ SECONDS=0
     fi
 
     # ----------------------------------------------------------------------------------------------------
-    # START INSTALL GNOME
+    # START INSTALL DESKTOP
     # ----------------------------------------------------------------------------------------------------
 
-    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
+    if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Install GNOME Packages (This takes about 15 minutes)"
@@ -1306,7 +1312,7 @@ SECONDS=0
             arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
             # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
             # Alternative (slow boot, bios logo twice, but correct plymouth resolution):
-            #sed -i "s/systemd quiet/systemd nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
+            #sed -i "s/zswap.enabled=0 quiet/zswap.enabled=0 nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
             mkdir -p /mnt/etc/modprobe.d/ && echo -e 'options nvidia_drm modeset=1 fbdev=1' >/mnt/etc/modprobe.d/nvidia.conf
             sed -i "s/^MODULES=(.*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
             # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
