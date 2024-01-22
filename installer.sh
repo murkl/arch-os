@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.1.8'
+VERSION='1.1.9'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -822,18 +822,17 @@ SECONDS=0
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
 
         # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed plymouth cantarell-fonts git # git when core variant is used
+        arch-chroot /mnt pacman -S --noconfirm --needed plymouth git # git when core variant is used
 
         # Configure mkinitcpio
         sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf
 
-        # Install plymouth theme
-        repo_url="https://github.com/murkl/plymouth-theme-arch-os.git"
-        tmp_name=$(mktemp -u "plymouth-theme-arch-os.XXXXXXXXXX")
-        mkdir -p /mnt/tmp /mnt/usr/share/plymouth/themes/
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "/home/${ARCH_OS_USERNAME}/${tmp_name}"
-        cp -rf "/mnt/home/${ARCH_OS_USERNAME}/${tmp_name}/src" /mnt/usr/share/plymouth/themes/arch-os
-        rm -rf "/mnt/home/${ARCH_OS_USERNAME}/${tmp_name}"
+        # Install Arch OS plymouth theme
+        repo_url="https://aur.archlinux.org/plymouth-theme-arch-os.git"
+        tmp_name=$(mktemp -u "/home/${ARCH_OS_USERNAME}/plymouth-theme-arch-os.XXXXXXXXXX")
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$tmp_name"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $tmp_name && makepkg -si --noconfirm"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$tmp_name"
 
         # Set Theme & rebuild initram disk
         arch-chroot /mnt plymouth-set-default-theme -R arch-os
