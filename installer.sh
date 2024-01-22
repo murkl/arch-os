@@ -892,6 +892,32 @@ SECONDS=0
     fi
 
     # ----------------------------------------------------------------------------------------------------
+    print_whiptail_info "Install Bootsplash"
+    # ----------------------------------------------------------------------------------------------------
+
+    if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
+
+        # Install packages
+        arch-chroot /mnt pacman -S --noconfirm --needed plymouth cantarell-fonts git # git when core variant is used
+
+        # Configure mkinitcpio
+        sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf
+
+        # Install plymouth theme
+        repo_url="https://github.com/murkl/plymouth-theme-arch-os.git"
+        tmp_name=$(mktemp -u "plymouth-theme-arch-os.XXXXXXXXXX")
+        mkdir -p /mnt/tmp /mnt/usr/share/plymouth/themes/
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "/home/${ARCH_OS_USERNAME}/${tmp_name}"
+        cp -rf "/mnt/home/${ARCH_OS_USERNAME}/${tmp_name}/src" /mnt/usr/share/plymouth/themes/arch-os
+        rm -rf "/mnt/home/${ARCH_OS_USERNAME}/${tmp_name}"
+
+        # Set Theme & rebuild initram disk
+        arch-chroot /mnt plymouth-set-default-theme -R arch-os
+    else
+        echo "> Skipped"
+    fi
+
+    # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Install AUR Helper"
     # ----------------------------------------------------------------------------------------------------
 
@@ -909,32 +935,6 @@ SECONDS=0
             sed -i 's/^#BottomUp/BottomUp/g' /mnt/etc/paru.conf
             sed -i 's/^#SudoLoop/SudoLoop/g' /mnt/etc/paru.conf
         fi
-    else
-        echo "> Skipped"
-    fi
-
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Install Bootsplash"
-    # ----------------------------------------------------------------------------------------------------
-
-    if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
-
-        # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed plymouth cantarell-fonts
-
-        # Configure mkinitcpio
-        sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf
-
-        # Install plymouth theme
-        repo_url="https://github.com/murkl/plymouth-theme-arch-os.git"
-        tmp_name=$(mktemp -u "plymouth-theme-arch-os.XXXXXXXXXX")
-        mkdir -p /mnt/tmp /mnt/usr/share/plymouth/themes/
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "/home/${ARCH_OS_USERNAME}/${tmp_name}"
-        cp -rf "/mnt/home/${ARCH_OS_USERNAME}/${tmp_name}/src" /mnt/usr/share/plymouth/themes/arch-os
-        rm -rf "/mnt/home/${ARCH_OS_USERNAME}/${tmp_name}"
-
-        # Set Theme & rebuild initram disk
-        arch-chroot /mnt plymouth-set-default-theme -R arch-os
     else
         echo "> Skipped"
     fi
