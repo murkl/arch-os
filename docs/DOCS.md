@@ -159,7 +159,7 @@ ARCH_OS_BOOTSPLASH_ENABLED='false'
 This packages will be installed during `core` Installation (148 packages in total):
 
 ```
-base linux-zen linux-firmware zram-generator networkmanager sudo [microcode_pkg]
+base base-devel linux-zen linux-firmware zram-generator networkmanager [microcode_pkg]
 ```
 
 #### Arch OS Core Services

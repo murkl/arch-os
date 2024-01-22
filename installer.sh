@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.1.7'
+VERSION='1.1.8'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -663,11 +663,11 @@ SECONDS=0
 
     # Core packages
     packages+=("base")
+    packages+=("base-devel")
     packages+=("${ARCH_OS_KERNEL}")
     packages+=("linux-firmware")
     packages+=("zram-generator")
     packages+=("networkmanager")
-    packages+=("sudo") # base-devel
 
     # Add microcode package
     [ -n "$ARCH_OS_MICROCODE" ] && packages+=("$ARCH_OS_MICROCODE")
