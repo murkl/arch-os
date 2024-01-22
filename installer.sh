@@ -663,24 +663,24 @@ SECONDS=0
 
     # Core packages
     packages+=("base")
-    packages+=("sudo") # base-devel
     packages+=("${ARCH_OS_KERNEL}")
     packages+=("linux-firmware")
     packages+=("zram-generator")
     packages+=("networkmanager")
+    packages+=("sudo") # base-devel
+
+    # Add microcode package
+    [ -n "$ARCH_OS_MICROCODE" ] && packages+=("$ARCH_OS_MICROCODE")
 
     # Base packages
     if [ "$ARCH_OS_VARIANT" != "core" ]; then
-        packages+=("nano")
-        packages+=("bash-completion")
         packages+=("pacman-contrib")
         packages+=("reflector")
         packages+=("pkgfile")
         packages+=("git")
+        packages+=("nano")
+        packages+=("bash-completion")
     fi
-
-    # Add microcode package
-    [ -n "$ARCH_OS_MICROCODE" ] && packages+=("$ARCH_OS_MICROCODE")
 
     # Install core and addional packages and initialize an empty pacman keyring in the target
     pacstrap -K /mnt "${packages[@]}" "${ARCH_OS_OPT_PACKAGE_LIST[@]}"
@@ -861,15 +861,15 @@ SECONDS=0
 
     arch-chroot /mnt systemctl enable NetworkManager                   # Network Manager
     arch-chroot /mnt systemctl enable fstrim.timer                     # SSD support
-    arch-chroot /mnt systemctl enable systemd-zram-setup@zram0.service # Swap (zram)
+    arch-chroot /mnt systemctl enable systemd-zram-setup@zram0.service # Swap (zram-generator)
     arch-chroot /mnt systemctl enable systemd-oomd.service             # Out of memory killer (swap is required)
     arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootloader update
-    arch-chroot /mnt systemctl enable paccache.timer                   # Discard cached/unused packages weekly
     arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
     # Base
-    [ "$ARCH_OS_VARIANT" != "core" ] && arch-chroot /mnt systemctl enable reflector.service    # Rank mirrors after boot
-    [ "$ARCH_OS_VARIANT" != "core" ] && arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer
+    [ "$ARCH_OS_VARIANT" != "core" ] && arch-chroot /mnt systemctl enable reflector.service    # Rank mirrors after boot (reflector)
+    [ "$ARCH_OS_VARIANT" != "core" ] && arch-chroot /mnt systemctl enable paccache.timer       # Discard cached/unused packages weekly (pacman-contrib)
+    [ "$ARCH_OS_VARIANT" != "core" ] && arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer (pkgfile)
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Configure System"

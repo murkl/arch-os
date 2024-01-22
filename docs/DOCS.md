@@ -273,7 +273,7 @@ base linux-zen linux-firmware zram-generator networkmanager sudo [microcode_pkg]
 This services will be enabled during [Arch OS Core Installation](#minimal-installation):
 
 ```
-NetworkManager systemd-zram-setup@zram0.service systemd-oomd.service systemd-boot-update.service fstrim.timer systemd-timesyncd.service paccache.timer
+NetworkManager fstrim.timer systemd-zram-setup@zram0.service systemd-oomd.service systemd-boot-update.service systemd-timesyncd.service
 ```
 
 ### Screenshots
