@@ -146,15 +146,11 @@ The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better s
 
 ### Minimal Installation
 
-Set these properties to install Arch OS with minimal packages (without preinstalled Desktop, AUR Helper, Bootsplash, VM support, MultiLib and Shell Enhancement).
+Set these properties to install Arch OS with minimal packages & configurations:
 
 ```
 ARCH_OS_VARIANT='core'
-ARCH_OS_AUR_HELPER='none'
-ARCH_OS_MULTILIB_ENABLED='false'
 ARCH_OS_BOOTSPLASH_ENABLED='false'
-ARCH_OS_SHELL_ENHANCED_ENABLED='false'
-ARCH_OS_VM_SUPPORT_ENABLED='false'
 ```
 
 ### VM Support
@@ -168,7 +164,7 @@ Supported VMs:
 - oracle
 - microsoft
 
-Disable this feature with `ARCH_OS_VM_SUPPORT_ENABLED='false'`
+Disable this feature with `ARCH_OS_VM_SUPPORT_ENABLED='false'` (only relevant if `ARCH_OS_VARIANT` is set to `desktop`)
 
 ### Example: `installer.conf`
 
@@ -194,7 +190,7 @@ ARCH_OS_ENCRYPTION_ENABLED='true'
 # Bootsplash (mandatory) | Disable: false
 ARCH_OS_BOOTSPLASH_ENABLED='true'
 
-# Variant (mandatory) | Available: minimal, desktop
+# Arch OS Variant (mandatory) | Available: core, base, desktop
 ARCH_OS_VARIANT='desktop'
 
 # Driver (mandatory) | Default: mesa | Available: mesa, intel_i915, nvidia, amd, ati
@@ -245,6 +241,12 @@ ARCH_OS_ECN_ENABLED='true'
 
 ## Technical Information
 
+Arch OS comes with 3 Variants:
+
+- **core**: Minimal Arch
+- **base**: Arch OS without desktop
+- **desktop**: Arch OS with desktop
+
 ### Partitions layout
 
 The partitions layout is seperated in two partitions:
@@ -257,20 +259,20 @@ The partitions layout is seperated in two partitions:
 | 1                | BOOT             | 1 GiB            | /boot/     | FAT32                     |
 | 2                | ROOT / cryptroot | Rest of the disk | /          | EXT4 + Encryption (LUKS2) |
 
-### Core Packages
+### Arch OS Core Packages
 
-This packages will be installed during [Minimal Arch OS Installation](#minimal-installation) (181 packages in total):
-
-```
-base base-devel linux-zen linux-firmware networkmanager pacman-contrib bash-completion reflector pkgfile git nano [microcode_pkg]
-```
-
-### Core Services
-
-This services will be enabled during [Minimal Arch OS Installation](#minimal-installation):
+This packages will be installed during [Arch OS Core Installation](#minimal-installation) (182 packages in total):
 
 ```
-NetworkManager systemd-timesyncd.service reflector.service paccache.timer fstrim.timer pkgfile-update.timer systemd-boot-update.service systemd-oomd.service
+base linux-zen linux-firmware zram-generator networkmanager sudo [microcode_pkg]
+```
+
+### Arch OS Core Services
+
+This services will be enabled during [Arch OS Core Installation](#minimal-installation):
+
+```
+NetworkManager systemd-zram-setup@zram0.service systemd-oomd.service systemd-boot-update.service fstrim.timer systemd-timesyncd.service paccache.timer
 ```
 
 ### Screenshots

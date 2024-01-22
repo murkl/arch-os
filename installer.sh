@@ -153,7 +153,7 @@ create_config() {
         echo "# Bootsplash (mandatory) | Disable: false"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
         echo ""
-        echo "# Variant (mandatory) | Available: minimal, desktop"
+        echo "# Arch OS Variant (mandatory) | Available: core, base, desktop"
         echo "ARCH_OS_VARIANT='${ARCH_OS_VARIANT}'"
         echo ""
         echo "# Driver (mandatory) | Default: mesa | Available: mesa, intel_i915, nvidia, amd, ati"
@@ -660,47 +660,58 @@ SECONDS=0
     # ----------------------------------------------------------------------------------------------------
 
     packages=()
+
+    # Core packages
     packages+=("base")
-    packages+=("base-devel") # only sudo instead
+    packages+=("sudo") # base-devel
     packages+=("${ARCH_OS_KERNEL}")
     packages+=("linux-firmware")
-    packages+=("networkmanager")
     packages+=("zram-generator")
-    packages+=("pacman-contrib")
-    packages+=("bash-completion")
-    packages+=("reflector")
-    packages+=("pkgfile")
-    packages+=("git")
-    packages+=("nano")
+    packages+=("networkmanager")
+
+    # Base packages
+    if [ "$ARCH_OS_VARIANT" != "core" ]; then
+        packages+=("nano")
+        packages+=("bash-completion")
+        packages+=("pacman-contrib")
+        packages+=("reflector")
+        packages+=("pkgfile")
+        packages+=("git")
+    fi
+
     # Add microcode package
     [ -n "$ARCH_OS_MICROCODE" ] && packages+=("$ARCH_OS_MICROCODE")
 
-    # Install core and initialize an empty pacman keyring in the target
+    # Install core and addional packages and initialize an empty pacman keyring in the target
     pacstrap -K /mnt "${packages[@]}" "${ARCH_OS_OPT_PACKAGE_LIST[@]}"
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Configure Pacman & Reflector"
     # ----------------------------------------------------------------------------------------------------
 
-    # Configure parrallel downloads, colors & multilib
-    sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
-    sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
-    if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
-        sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
-        arch-chroot /mnt pacman -Syy --noconfirm
+    if [ "$ARCH_OS_VARIANT" != "core" ]; then
+
+        # Configure parrallel downloads, colors & multilib
+        sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
+        sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
+        if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
+            sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
+            arch-chroot /mnt pacman -Syy --noconfirm
+        fi
+
+        # Configure reflector service
+        {
+            echo "# Reflector config for the systemd service"
+            echo "--save /etc/pacman.d/mirrorlist"
+            [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
+            echo "--completion-percent 95"
+            echo "--protocol https"
+            echo "--latest 5"
+            echo "--sort rate"
+        } >/mnt/etc/xdg/reflector/reflector.conf
+    else
+        echo "> Skipped"
     fi
-
-    # Configure reflector service
-    {
-        echo "# Reflector config for the systemd service"
-        echo "--save /etc/pacman.d/mirrorlist"
-        [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
-        echo "--completion-percent 95"
-        echo "--protocol https"
-        echo "--latest 5"
-        echo "--sort rate"
-    } >/mnt/etc/xdg/reflector/reflector.conf
-
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Generate /etc/fstab"
     # ----------------------------------------------------------------------------------------------------
@@ -717,6 +728,14 @@ SECONDS=0
         echo 'swap-priority = 100'
         echo 'fs-type = swap'
     } >/mnt/etc/systemd/zram-generator.conf
+
+    # Optimize swap on zram (https://wiki.archlinux.org/title/Zram#Optimizing_swap_on_zram)
+    {
+        echo 'vm.swappiness = 180'
+        echo 'vm.watermark_boost_factor = 0'
+        echo 'vm.watermark_scale_factor = 125'
+        echo 'vm.page-cluster = 0'
+    } >/mnt/etc/sysctl.d/99-vm-zram-parameters.conf
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Timezone & System Clock"
@@ -759,10 +778,14 @@ SECONDS=0
     print_whiptail_info "Set /etc/environment"
     # ----------------------------------------------------------------------------------------------------
 
-    {
-        echo 'EDITOR=nano'
-        echo 'VISUAL=nano'
-    } >/mnt/etc/environment
+    if [ "$ARCH_OS_VARIANT" != "core" ]; then
+        {
+            echo 'EDITOR=nano'
+            echo 'VISUAL=nano'
+        } >/mnt/etc/environment
+    else
+        echo "> Skipped"
+    fi
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Create Initial Ramdisk"
@@ -780,8 +803,7 @@ SECONDS=0
     arch-chroot /mnt bootctl --esp-path=/boot install
 
     # Kernel args
-    # Zswap should be disabled when using zram.
-    # https://github.com/archlinux/archinstall/issues/881
+    # Zswap should be disabled when using zram (https://github.com/archlinux/archinstall/issues/881)
     kernel_args_default="rw init=/usr/lib/systemd/systemd zswap.enabled=0 quiet splash vt.global_cursor_default=0"
     [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot ${kernel_args_default}"
     [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}") ${kernel_args_default}"
@@ -796,7 +818,7 @@ SECONDS=0
 
     # Create default boot entry
     {
-        echo 'title   Arch Linux'
+        echo 'title   Arch OS'
         echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
         [ -n "$ARCH_OS_MICROCODE" ] && echo "initrd  /${ARCH_OS_MICROCODE}.img"
         echo "initrd  /initramfs-${ARCH_OS_KERNEL}.img"
@@ -805,7 +827,7 @@ SECONDS=0
 
     # Create fallback boot entry
     {
-        echo 'title   Arch Linux (Fallback)'
+        echo 'title   Arch OS (Fallback)'
         echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
         [ -n "$ARCH_OS_MICROCODE" ] && echo "initrd  /${ARCH_OS_MICROCODE}.img"
         echo "initrd  /initramfs-${ARCH_OS_KERNEL}-fallback.img"
@@ -837,32 +859,42 @@ SECONDS=0
     # ----------------------------------------------------------------------------------------------------
 
     arch-chroot /mnt systemctl enable NetworkManager                   # Network Manager
-    arch-chroot /mnt systemctl enable systemd-zram-setup@zram0.service # Swap (zram)
-    arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
-    arch-chroot /mnt systemctl enable reflector.service                # Rank mirrors after boot
-    arch-chroot /mnt systemctl enable paccache.timer                   # Discard cached/unused packages weekly
-    arch-chroot /mnt systemctl enable pkgfile-update.timer             # Pkgfile update timer
     arch-chroot /mnt systemctl enable fstrim.timer                     # SSD support
-    arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootloader update
+    arch-chroot /mnt systemctl enable systemd-zram-setup@zram0.service # Swap (zram)
     arch-chroot /mnt systemctl enable systemd-oomd.service             # Out of memory killer (swap is required)
+    arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootloader update
+    arch-chroot /mnt systemctl enable paccache.timer                   # Discard cached/unused packages weekly
+    arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
+
+    # Base
+    [ "$ARCH_OS_VARIANT" != "core" ] && arch-chroot /mnt systemctl enable reflector.service    # Rank mirrors after boot
+    [ "$ARCH_OS_VARIANT" != "core" ] && arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Configure System"
     # ----------------------------------------------------------------------------------------------------
 
-    # Reduce shutdown timeout
-    sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
+    if [ "$ARCH_OS_VARIANT" != "core" ]; then
 
-    # Set Nano colors
-    sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
-    sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
-    sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
+        # Reduce shutdown timeout
+        sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
+
+        # Set max VMAs (need for some apps/games)
+        echo vm.max_map_count=16777216 >/mnt/etc/sysctl.d/vm.max_map_count.conf
+
+        # Set Nano colors
+        sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
+        sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
+        sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
+    else
+        echo "> Skipped"
+    fi
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Install AUR Helper"
     # ----------------------------------------------------------------------------------------------------
 
-    if [ "$ARCH_OS_AUR_HELPER" != "none" ] && [ -n "$ARCH_OS_AUR_HELPER" ]; then
+    if [ "$ARCH_OS_VARIANT" != "core" ] && [ "$ARCH_OS_AUR_HELPER" != "none" ] && [ -n "$ARCH_OS_AUR_HELPER" ]; then
 
         # Install AUR Helper as user
         repo_url="https://aur.archlinux.org/${ARCH_OS_AUR_HELPER}.git"
@@ -910,7 +942,7 @@ SECONDS=0
     print_whiptail_info "Install Shell Enhancement"
     # ----------------------------------------------------------------------------------------------------
 
-    if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
+    if [ "$ARCH_OS_VARIANT" != "core" ] && [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
 
         # Install packages
         arch-chroot /mnt pacman -S --noconfirm --needed fish starship eza bat neofetch mc btop man-db
