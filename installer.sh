@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.1.7'
+VERSION='1.1.8'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -29,7 +29,7 @@ TUI_POSITION=""
 # Whiptail progress count
 PROGRESS_COUNT=0
 
-# Whiptail total processes (number of occurrences of print_whiptail_info - 3)
+# Whiptail total processes begins by 0 (number of occurrences of print_whiptail_info - 3)
 PROGRESS_TOTAL=40
 
 # ----------------------------------------------------------------------------------------------------
@@ -132,74 +132,74 @@ create_config() {
     {
         echo "# ${TITLE} (generated: $(date --utc '+%Y-%m-%d %H:%M') UTC)"
         echo ""
-        echo "# Hostname (auto)"
+        echo "# Hostname (core)"
         echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}'"
         echo ""
-        echo "# User (mandatory)"
+        echo "# User (core)"
         echo "ARCH_OS_USERNAME='${ARCH_OS_USERNAME}'"
         echo ""
-        echo "# Disk (mandatory)"
+        echo "# Disk (core)"
         echo "ARCH_OS_DISK='${ARCH_OS_DISK}'"
         echo ""
-        echo "# Boot partition (auto)"
+        echo "# Boot partition (core)"
         echo "ARCH_OS_BOOT_PARTITION='${ARCH_OS_BOOT_PARTITION}'"
         echo ""
-        echo "# Root partition (auto)"
+        echo "# Root partition (core)"
         echo "ARCH_OS_ROOT_PARTITION='${ARCH_OS_ROOT_PARTITION}'"
         echo ""
-        echo "# Disk encryption (mandatory) | Disable: false"
+        echo "# Disk encryption (core) | Disable: false"
         echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}'"
         echo ""
-        echo "# Bootsplash (mandatory) | Disable: false"
+        echo "# Timezone (core) | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin"
+        echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}'"
+        echo ""
+        echo "# Locale (core) | Show available: ls /usr/share/i18n/locales | Example: de_DE"
+        echo "ARCH_OS_LOCALE_LANG='${ARCH_OS_LOCALE_LANG}'"
+        echo ""
+        echo "# Locale List (core) | Show available: cat /etc/locale.gen"
+        echo "ARCH_OS_LOCALE_GEN_LIST=(${ARCH_OS_LOCALE_GEN_LIST[*]@Q})"
+        echo ""
+        echo "# Console keymap (core) | Show available: localectl list-keymaps | Example: de-latin1-nodeadkeys"
+        echo "ARCH_OS_VCONSOLE_KEYMAP='${ARCH_OS_VCONSOLE_KEYMAP}'"
+        echo ""
+        echo "# Console font (core) | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Default: null | Example: eurlatgr"
+        echo "ARCH_OS_VCONSOLE_FONT='${ARCH_OS_VCONSOLE_FONT}'"
+        echo ""
+        echo "# Kernel (core) | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened"
+        echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}'"
+        echo ""
+        echo "# Disable ECN support for legacy routers (core) | Default: true | Disable: false"
+        echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
+        echo ""
+        echo "# Bootsplash (optional) | Disable: false"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
         echo ""
         echo "# Arch OS Variant (mandatory) | Available: core, base, desktop"
         echo "ARCH_OS_VARIANT='${ARCH_OS_VARIANT}'"
         echo ""
-        echo "# Driver (mandatory) | Default: mesa | Available: mesa, intel_i915, nvidia, amd, ati"
-        echo "ARCH_OS_GRAPHICS_DRIVER='${ARCH_OS_GRAPHICS_DRIVER}'"
-        echo ""
-        echo "# Timezone (auto) | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin"
-        echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}'"
-        echo ""
-        echo "# Country used by reflector (optional) | Default: null | Example: Germany,France"
-        echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}'"
-        echo ""
-        echo "# Locale (mandatory) | Show available: ls /usr/share/i18n/locales | Example: de_DE"
-        echo "ARCH_OS_LOCALE_LANG='${ARCH_OS_LOCALE_LANG}'"
-        echo ""
-        echo "# Locale List (auto) | Show available: cat /etc/locale.gen"
-        echo "ARCH_OS_LOCALE_GEN_LIST=(${ARCH_OS_LOCALE_GEN_LIST[*]@Q})"
-        echo ""
-        echo "# Console keymap (mandatory) | Show available: localectl list-keymaps | Example: de-latin1-nodeadkeys"
-        echo "ARCH_OS_VCONSOLE_KEYMAP='${ARCH_OS_VCONSOLE_KEYMAP}'"
-        echo ""
-        echo "# Console font (optional) | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Default: null | Example: eurlatgr"
-        echo "ARCH_OS_VCONSOLE_FONT='${ARCH_OS_VCONSOLE_FONT}'"
-        echo ""
-        echo "# X11 keyboard layout (mandatory) | Show available: localectl list-x11-keymap-layouts | Example: de"
-        echo "ARCH_OS_X11_KEYBOARD_LAYOUT='${ARCH_OS_X11_KEYBOARD_LAYOUT}'"
-        echo ""
-        echo "# X11 keyboard variant (optional) | Show available: localectl list-x11-keymap-variants | Default: null | Example: nodeadkeys"
-        echo "ARCH_OS_X11_KEYBOARD_VARIANT='${ARCH_OS_X11_KEYBOARD_VARIANT}'"
-        echo ""
-        echo "# Kernel (auto) | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened"
-        echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}'"
-        echo ""
-        echo "# VM Support (auto) | Default: true | Disable: false"
-        echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
-        echo ""
-        echo "# Shell Enhancement (auto) | Default: true | Disable: false"
+        echo "# Shell Enhancement (base) | Default: true | Disable: false"
         echo "ARCH_OS_SHELL_ENHANCED_ENABLED='${ARCH_OS_SHELL_ENHANCED_ENABLED}'"
         echo ""
-        echo "# AUR Helper (auto) | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur"
+        echo "# AUR Helper (base) | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur"
         echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}'"
         echo ""
-        echo "# MultiLib 32 Bit Support (auto) | Default: true | Disable: false"
+        echo "# MultiLib 32 Bit Support (base) | Default: true | Disable: false"
         echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}'"
         echo ""
-        echo "# Disable ECN support for legacy routers (auto) | Default: true | Disable: false"
-        echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
+        echo "# Country used by reflector (base) | Default: null | Example: Germany,France"
+        echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}'"
+        echo ""
+        echo "# Driver (desktop) | Default: mesa | Available: mesa, intel_i915, nvidia, amd, ati"
+        echo "ARCH_OS_GRAPHICS_DRIVER='${ARCH_OS_GRAPHICS_DRIVER}'"
+        echo ""
+        echo "# X11 keyboard layout (desktop) | Show available: localectl list-x11-keymap-layouts | Example: de"
+        echo "ARCH_OS_X11_KEYBOARD_LAYOUT='${ARCH_OS_X11_KEYBOARD_LAYOUT}'"
+        echo ""
+        echo "# X11 keyboard variant (desktop) | Show available: localectl list-x11-keymap-variants | Default: null | Example: nodeadkeys"
+        echo "ARCH_OS_X11_KEYBOARD_VARIANT='${ARCH_OS_X11_KEYBOARD_VARIANT}'"
+        echo ""
+        echo "# VM Support (desktop) | Default: true | Disable: false"
+        echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
     } >"$INSTALLER_CONFIG"
 }
 
@@ -549,7 +549,7 @@ trap_exit() {
 }
 
 # ----------------------------------------------------------------------------------------------------
-# INSTALLATION
+# SET TRAP & TIME
 # ----------------------------------------------------------------------------------------------------
 
 # Set trap for logging on exit
@@ -559,7 +559,7 @@ trap 'trap_exit $?' EXIT
 SECONDS=0
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# //////////////////////////////////  START ARCH LINUX INSTALLATION //////////////////////////////////
+# //////////////////////////////////////  ARCH OS INSTALLATION  //////////////////////////////////////
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 (
@@ -659,59 +659,21 @@ SECONDS=0
     print_whiptail_info "Pacstrap System Packages (This takes about 10 minutes)"
     # ----------------------------------------------------------------------------------------------------
 
-    packages=()
-
     # Core packages
+    packages=()
     packages+=("base")
-    packages+=("${ARCH_OS_KERNEL}")
+    packages+=("base-devel")
     packages+=("linux-firmware")
     packages+=("zram-generator")
     packages+=("networkmanager")
-    packages+=("sudo") # base-devel
+    packages+=("${ARCH_OS_KERNEL}")
 
     # Add microcode package
     [ -n "$ARCH_OS_MICROCODE" ] && packages+=("$ARCH_OS_MICROCODE")
 
-    # Base packages
-    if [ "$ARCH_OS_VARIANT" != "core" ]; then
-        packages+=("pacman-contrib")
-        packages+=("reflector")
-        packages+=("pkgfile")
-        packages+=("git")
-        packages+=("nano")
-        packages+=("bash-completion")
-    fi
+    # Install core packages and initialize an empty pacman keyring in the target
+    pacstrap -K /mnt "${packages[@]}"
 
-    # Install core and addional packages and initialize an empty pacman keyring in the target
-    pacstrap -K /mnt "${packages[@]}" "${ARCH_OS_OPT_PACKAGE_LIST[@]}"
-
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Configure Pacman & Reflector"
-    # ----------------------------------------------------------------------------------------------------
-
-    if [ "$ARCH_OS_VARIANT" != "core" ]; then
-
-        # Configure parrallel downloads, colors & multilib
-        sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
-        sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
-        if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
-            sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
-            arch-chroot /mnt pacman -Syy --noconfirm
-        fi
-
-        # Configure reflector service
-        {
-            echo "# Reflector config for the systemd service"
-            echo "--save /etc/pacman.d/mirrorlist"
-            [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
-            echo "--completion-percent 95"
-            echo "--protocol https"
-            echo "--latest 5"
-            echo "--sort rate"
-        } >/mnt/etc/xdg/reflector/reflector.conf
-    else
-        echo "> Skipped"
-    fi
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Generate /etc/fstab"
     # ----------------------------------------------------------------------------------------------------
@@ -774,19 +736,6 @@ SECONDS=0
         echo '127.0.0.1    localhost'
         echo '::1          localhost'
     } >/mnt/etc/hosts
-
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Set /etc/environment"
-    # ----------------------------------------------------------------------------------------------------
-
-    if [ "$ARCH_OS_VARIANT" != "core" ]; then
-        {
-            echo 'EDITOR=nano'
-            echo 'VISUAL=nano'
-        } >/mnt/etc/environment
-    else
-        echo "> Skipped"
-    fi
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Create Initial Ramdisk"
@@ -866,53 +815,6 @@ SECONDS=0
     arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootloader update
     arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
-    # Base
-    [ "$ARCH_OS_VARIANT" != "core" ] && arch-chroot /mnt systemctl enable reflector.service    # Rank mirrors after boot (reflector)
-    [ "$ARCH_OS_VARIANT" != "core" ] && arch-chroot /mnt systemctl enable paccache.timer       # Discard cached/unused packages weekly (pacman-contrib)
-    [ "$ARCH_OS_VARIANT" != "core" ] && arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer (pkgfile)
-
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Configure System"
-    # ----------------------------------------------------------------------------------------------------
-
-    if [ "$ARCH_OS_VARIANT" != "core" ]; then
-
-        # Reduce shutdown timeout
-        sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
-
-        # Set max VMAs (need for some apps/games)
-        echo vm.max_map_count=16777216 >/mnt/etc/sysctl.d/vm.max_map_count.conf
-
-        # Set Nano colors
-        sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
-        sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
-        sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
-    else
-        echo "> Skipped"
-    fi
-
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Install AUR Helper"
-    # ----------------------------------------------------------------------------------------------------
-
-    if [ "$ARCH_OS_VARIANT" != "core" ] && [ "$ARCH_OS_AUR_HELPER" != "none" ] && [ -n "$ARCH_OS_AUR_HELPER" ]; then
-
-        # Install AUR Helper as user
-        repo_url="https://aur.archlinux.org/${ARCH_OS_AUR_HELPER}.git"
-        tmp_name=$(mktemp -u "/home/${ARCH_OS_USERNAME}/${ARCH_OS_AUR_HELPER}.XXXXXXXXXX")
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$tmp_name"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $tmp_name && makepkg -si --noconfirm"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$tmp_name"
-
-        # Paru config
-        if [ "$ARCH_OS_AUR_HELPER" = "paru" ] || [ "$ARCH_OS_AUR_HELPER" = "paru-bin" ] || [ "$ARCH_OS_AUR_HELPER" = "paru-git" ]; then
-            sed -i 's/^#BottomUp/BottomUp/g' /mnt/etc/paru.conf
-            sed -i 's/^#SudoLoop/SudoLoop/g' /mnt/etc/paru.conf
-        fi
-    else
-        echo "> Skipped"
-    fi
-
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Install Bootsplash"
     # ----------------------------------------------------------------------------------------------------
@@ -920,7 +822,7 @@ SECONDS=0
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
 
         # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed plymouth cantarell-fonts
+        arch-chroot /mnt pacman -S --noconfirm --needed plymouth cantarell-fonts git # git when core variant is used
 
         # Configure mkinitcpio
         sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf
@@ -939,139 +841,244 @@ SECONDS=0
         echo "> Skipped"
     fi
 
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Install Shell Enhancement"
-    # ----------------------------------------------------------------------------------------------------
+    # ////////////////////////////////////////////////////////////////////////////////////////////////////
+    # //////////////////////////////////////////  ARCH OS BASE  //////////////////////////////////////////
+    # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    if [ "$ARCH_OS_VARIANT" != "core" ] && [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
+    if [ "$ARCH_OS_VARIANT" != "core" ]; then
 
-        # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed fish starship eza bat neofetch mc btop man-db
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Install Arch OS Base Packages"
+        # ----------------------------------------------------------------------------------------------------
 
-        # Create config dirs for root & user
-        mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
-        mkdir -p "/mnt/root/.config/neofetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch"
+        # Base packages
+        packages=()
+        packages+=("pacman-contrib")
+        packages+=("reflector")
+        packages+=("pkgfile")
+        packages+=("git")
+        packages+=("nano")
 
-        # shellcheck disable=SC2016
-        { # Create fish config for root & user
-            echo 'if status is-interactive'
-            echo '    # Commands to run in interactive sessions can go here'
-            echo 'end'
-            echo ''
-            echo '# https://wiki.archlinux.de/title/Fish#Troubleshooting'
-            echo 'if status --is-login'
-            echo '    set PATH $PATH /usr/bin /sbin'
-            echo 'end'
-            echo ''
-            echo '# Disable welcome message'
-            echo 'set fish_greeting'
-            echo ''
-            echo '# Colorize man pages (bat)'
-            echo -n 'export MANPAGER="sh -c ' && echo -n "'col -bx | bat -l man -p'" && echo '"'
-            echo 'export MANROFFOPT="-c"'
-            echo ''
-            echo '# Source user aliases'
-            echo 'source "$HOME/.config/fish/aliases.fish"'
-            echo ''
-            echo '# Source starship promt'
-            echo 'starship init fish | source'
-        } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
+        # Install base packages
+        arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
 
-        { # Create fish aliases for root & user
-            echo 'alias ls="eza --color=always --group-directories-first"'
-            echo 'alias diff="diff --color=auto"'
-            echo 'alias grep="grep --color=auto"'
-            echo 'alias ip="ip -color=auto"'
-            echo 'alias lt="ls -Tal"'
-            echo 'alias open="xdg-open"'
-            echo 'alias fetch="neofetch"'
-            echo 'alias logs="systemctl --failed; echo; journalctl -p 3 -b"'
-            echo 'alias q="exit"'
-        } | tee "/mnt/root/.config/fish/aliases.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/aliases.fish" >/dev/null
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Enable Arch OS Base Services"
+        # ----------------------------------------------------------------------------------------------------
 
-        { # Create starship config for root & user
-            echo "# Get editor completions based on the config schema"
-            echo "\"\$schema\" = 'https://starship.rs/config-schema.json'"
-            echo ""
-            echo "# Wait 10 milliseconds for starship to check files under the current directory"
-            echo "scan_timeout = 10"
-            echo ""
-            echo "# Set command timeout"
-            echo "command_timeout = 10000"
-            echo ""
-            echo "# Inserts a blank line between shell prompts"
-            echo "add_newline = true"
-            echo ""
-            echo "# Replace the promt symbol"
-            echo "[character]"
-            echo "success_symbol = '[>](bold purple)'"
-            echo ""
-            echo "# Disable the package module, hiding it from the prompt completely"
-            echo "[package]"
-            echo "disabled = true"
-        } | tee "/mnt/root/.config/starship.toml" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
+        # Base Services
+        arch-chroot /mnt systemctl enable reflector.service    # Rank mirrors after boot (reflector)
+        arch-chroot /mnt systemctl enable paccache.timer       # Discard cached/unused packages weekly (pacman-contrib)
+        arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer (pkgfile)
 
-        # shellcheck disable=SC2028,SC2016
-        { # Create neofetch config for root & user
-            echo '# https://github.com/dylanaraps/neofetch/wiki/Customizing-Info'
-            echo ''
-            echo 'print_info() {'
-            echo '    prin'
-            echo '    prin "Distro\t" "Arch OS"'
-            echo '    info "Kernel\t" kernel'
-            #echo '    info "Host\t" model'
-            echo '    info "CPU\t" cpu'
-            echo '    info "GPU\t" gpu'
-            echo '    prin'
-            echo '    info "Desktop\t" de'
-            echo '    prin "Window\t" "$([ $XDG_SESSION_TYPE = "x11" ] && echo X11 || echo Wayland)"'
-            echo '    info "Manager\t" wm'
-            echo '    info "Shell\t" shell'
-            echo '    info "Terminal\t" term'
-            echo '    prin'
-            echo '    info "Disk\t" disk'
-            echo '    info "Memory\t" memory'
-            echo '    info "IP\t" local_ip'
-            echo '    info "Uptime\t" uptime'
-            echo '    info "Packages\t" packages'
-            echo '    prin'
-            echo '    prin "$(color 1) ● \n $(color 2) ● \n $(color 3) ● \n $(color 4) ● \n $(color 5) ● \n $(color 6) ● \n $(color 7) ● \n $(color 8) ●"'
-            echo '}'
-            echo ''
-            echo '# Config'
-            echo 'separator=" → "'
-            echo 'ascii_distro="auto"'
-            echo 'ascii_bold="on"'
-            echo 'ascii_colors=(5 5 5 5 5 5)'
-            echo 'bold="on"'
-            echo 'colors=(7 7 7 7 7 7)'
-            echo 'gap=8'
-            echo 'os_arch="off"'
-            echo 'shell_version="off"'
-            echo 'cpu_speed="off"'
-            echo 'cpu_brand="on"'
-            echo 'cpu_cores="off"'
-            echo 'cpu_temp="off"'
-            echo 'memory_display="info"'
-            echo 'memory_percent="on"'
-            echo 'memory_unit="gib"'
-            echo 'disk_display="info"'
-            echo 'disk_subtitle="none"'
-        } | tee "/mnt/root/.config/neofetch/config.conf" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch/config.conf" >/dev/null
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Configure Pacman & Reflector"
+        # ----------------------------------------------------------------------------------------------------
 
-        # Set correct user permissions
-        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/"
+        # Configure parrallel downloads, colors & multilib
+        sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
+        sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
+        if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
+            sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
+            arch-chroot /mnt pacman -Syy --noconfirm
+        fi
 
-        # Set Shell for root & user
-        arch-chroot /mnt chsh -s /usr/bin/fish
-        arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
+        # Configure reflector service
+        {
+            echo "# Reflector config for the systemd service"
+            echo "--save /etc/pacman.d/mirrorlist"
+            [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
+            echo "--completion-percent 95"
+            echo "--protocol https"
+            echo "--latest 5"
+            echo "--sort rate"
+        } >/mnt/etc/xdg/reflector/reflector.conf
+
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Configure System"
+        # ----------------------------------------------------------------------------------------------------
+
+        # Set nano environment
+        {
+            echo 'EDITOR=nano'
+            echo 'VISUAL=nano'
+        } >/mnt/etc/environment
+
+        # Set Nano colors
+        sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
+        sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
+        sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
+
+        # Reduce shutdown timeout
+        sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
+
+        # Set max VMAs (need for some apps/games)
+        echo vm.max_map_count=16777216 >/mnt/etc/sysctl.d/vm.max_map_count.conf
+
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Install AUR Helper"
+        # ----------------------------------------------------------------------------------------------------
+
+        if [ "$ARCH_OS_AUR_HELPER" != "none" ] && [ -n "$ARCH_OS_AUR_HELPER" ]; then
+
+            # Install AUR Helper as user
+            repo_url="https://aur.archlinux.org/${ARCH_OS_AUR_HELPER}.git"
+            tmp_name=$(mktemp -u "/home/${ARCH_OS_USERNAME}/${ARCH_OS_AUR_HELPER}.XXXXXXXXXX")
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$tmp_name"
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $tmp_name && makepkg -si --noconfirm"
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$tmp_name"
+
+            # Paru config
+            if [ "$ARCH_OS_AUR_HELPER" = "paru" ] || [ "$ARCH_OS_AUR_HELPER" = "paru-bin" ] || [ "$ARCH_OS_AUR_HELPER" = "paru-git" ]; then
+                sed -i 's/^#BottomUp/BottomUp/g' /mnt/etc/paru.conf
+                sed -i 's/^#SudoLoop/SudoLoop/g' /mnt/etc/paru.conf
+            fi
+        else
+            echo "> Skipped"
+        fi
+
+        # ----------------------------------------------------------------------------------------------------
+        print_whiptail_info "Install Shell Enhancement"
+        # ----------------------------------------------------------------------------------------------------
+
+        if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
+
+            # Install packages
+            arch-chroot /mnt pacman -S --noconfirm --needed fish starship eza bat neofetch mc btop man-db
+
+            # Create config dirs for root & user
+            mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
+            mkdir -p "/mnt/root/.config/neofetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch"
+
+            # shellcheck disable=SC2016
+            { # Create fish config for root & user
+                echo 'if status is-interactive'
+                echo '    # Commands to run in interactive sessions can go here'
+                echo 'end'
+                echo ''
+                echo '# https://wiki.archlinux.de/title/Fish#Troubleshooting'
+                echo 'if status --is-login'
+                echo '    set PATH $PATH /usr/bin /sbin'
+                echo 'end'
+                echo ''
+                echo '# Disable welcome message'
+                echo 'set fish_greeting'
+                echo ''
+                echo '# Colorize man pages (bat)'
+                echo -n 'export MANPAGER="sh -c ' && echo -n "'col -bx | bat -l man -p'" && echo '"'
+                echo 'export MANROFFOPT="-c"'
+                echo ''
+                echo '# Source user aliases'
+                echo 'source "$HOME/.config/fish/aliases.fish"'
+                echo ''
+                echo '# Source starship promt'
+                echo 'starship init fish | source'
+            } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
+
+            { # Create fish aliases for root & user
+                echo 'alias ls="eza --color=always --group-directories-first"'
+                echo 'alias diff="diff --color=auto"'
+                echo 'alias grep="grep --color=auto"'
+                echo 'alias ip="ip -color=auto"'
+                echo 'alias lt="ls -Tal"'
+                echo 'alias open="xdg-open"'
+                echo 'alias fetch="neofetch"'
+                echo 'alias logs="systemctl --failed; echo; journalctl -p 3 -b"'
+                echo 'alias q="exit"'
+            } | tee "/mnt/root/.config/fish/aliases.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/aliases.fish" >/dev/null
+
+            { # Create starship config for root & user
+                echo "# Get editor completions based on the config schema"
+                echo "\"\$schema\" = 'https://starship.rs/config-schema.json'"
+                echo ""
+                echo "# Wait 10 milliseconds for starship to check files under the current directory"
+                echo "scan_timeout = 10"
+                echo ""
+                echo "# Set command timeout"
+                echo "command_timeout = 10000"
+                echo ""
+                echo "# Inserts a blank line between shell prompts"
+                echo "add_newline = true"
+                echo ""
+                echo "# Replace the promt symbol"
+                echo "[character]"
+                echo "success_symbol = '[>](bold purple)'"
+                echo ""
+                echo "# Disable the package module, hiding it from the prompt completely"
+                echo "[package]"
+                echo "disabled = true"
+            } | tee "/mnt/root/.config/starship.toml" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
+
+            # shellcheck disable=SC2028,SC2016
+            { # Create neofetch config for root & user
+                echo '# https://github.com/dylanaraps/neofetch/wiki/Customizing-Info'
+                echo ''
+                echo 'print_info() {'
+                echo '    prin'
+                echo '    prin "Distro\t" "Arch OS"'
+                echo '    info "Kernel\t" kernel'
+                #echo '    info "Host\t" model'
+                echo '    info "CPU\t" cpu'
+                echo '    info "GPU\t" gpu'
+                echo '    prin'
+                echo '    info "Desktop\t" de'
+                echo '    prin "Window\t" "$([ $XDG_SESSION_TYPE = "x11" ] && echo X11 || echo Wayland)"'
+                echo '    info "Manager\t" wm'
+                echo '    info "Shell\t" shell'
+                echo '    info "Terminal\t" term'
+                echo '    prin'
+                echo '    info "Disk\t" disk'
+                echo '    info "Memory\t" memory'
+                echo '    info "IP\t" local_ip'
+                echo '    info "Uptime\t" uptime'
+                echo '    info "Packages\t" packages'
+                echo '    prin'
+                echo '    prin "$(color 1) ● \n $(color 2) ● \n $(color 3) ● \n $(color 4) ● \n $(color 5) ● \n $(color 6) ● \n $(color 7) ● \n $(color 8) ●"'
+                echo '}'
+                echo ''
+                echo '# Config'
+                echo 'separator=" → "'
+                echo 'ascii_distro="auto"'
+                echo 'ascii_bold="on"'
+                echo 'ascii_colors=(5 5 5 5 5 5)'
+                echo 'bold="on"'
+                echo 'colors=(7 7 7 7 7 7)'
+                echo 'gap=8'
+                echo 'os_arch="off"'
+                echo 'shell_version="off"'
+                echo 'cpu_speed="off"'
+                echo 'cpu_brand="on"'
+                echo 'cpu_cores="off"'
+                echo 'cpu_temp="off"'
+                echo 'memory_display="info"'
+                echo 'memory_percent="on"'
+                echo 'memory_unit="gib"'
+                echo 'disk_display="info"'
+                echo 'disk_subtitle="none"'
+            } | tee "/mnt/root/.config/neofetch/config.conf" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch/config.conf" >/dev/null
+
+            # Set correct user permissions
+            arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/"
+
+            # Set Shell for root & user
+            arch-chroot /mnt chsh -s /usr/bin/fish
+            arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
+        else
+            # Install bash-completion
+            arch-chroot /mnt pacman -S --noconfirm --needed bash-completion
+        fi
+
+        # ----------------------------------------------------------------------------------------------------
+        # END ARCH OS BASE
+        # ----------------------------------------------------------------------------------------------------
+
     else
-        echo "> Skipped"
+        PROGRESS_COUNT=27 # Skip progress
     fi
 
-    # ----------------------------------------------------------------------------------------------------
-    # START INSTALL DESKTOP
-    # ----------------------------------------------------------------------------------------------------
+    # ////////////////////////////////////////////////////////////////////////////////////////////////////
+    # /////////////////////////////////////////  ARCH OS DESKTOP  ////////////////////////////////////////
+    # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
     if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
 
@@ -1373,12 +1380,12 @@ SECONDS=0
         esac
 
     # ----------------------------------------------------------------------------------------------------
-    # END INSTALL GNOME
+    # END ARCH OS DESKTOP
     # ----------------------------------------------------------------------------------------------------
 
     else
-        # Skip Gnome progresses
-        PROGRESS_COUNT=33
+        # Skip desktop progresses
+        PROGRESS_COUNT=39
     fi
 
     # ----------------------------------------------------------------------------------------------------
