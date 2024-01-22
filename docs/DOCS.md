@@ -147,7 +147,7 @@ The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better s
 
 ### Minimal Installation
 
-Set these properties to install Arch OS with minimal packages & configurations:
+Set these properties to install Arch OS (core) with minimal packages & configurations:
 
 ```
 ARCH_OS_VARIANT='core'
