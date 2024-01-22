@@ -44,6 +44,7 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 - 100% Intuitive TUI Installation
 - Advanced Installer Properties (see Arch OS Docs)
 - Minimal Arch Linux Base (Zen Kernel)
+- 3 Installation Variants: core, base, desktop
 - Automatic Arch Linux Housekeeping (except updates)
 - Minimal Vanilla GNOME Desktop (optional)
 - Disk Encryption + Auto Login (optional)
