@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-set -Eeuo pipefail
-clear
+set -o pipefail # A pipeline error results in the error status of the entire pipeline
+set -u          # Uninitialized variables trigger errors
+set -E          # Script terminates immediately upon a pipeline error
+clear           # Clear
 
 # ----------------------------------------------------------------------------------------------------
 # SCRIPT VARIABLES
