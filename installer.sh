@@ -220,7 +220,7 @@ create_config() {
 tui_set_language() {
 
     # Loading
-    echo "Loading..."
+    clear && echo "Loading..."
 
     # Set timezone
     local user_input="$ARCH_OS_TIMEZONE"
