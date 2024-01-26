@@ -219,13 +219,16 @@ create_config() {
 
 tui_set_language() {
 
+    # Loading
+    echo "Loading..."
+
     # Set timezone
     local user_input="$ARCH_OS_TIMEZONE"
     [ -z "$user_input" ] && user_input="$(curl -s http://ip-api.com/line?fields=timezone)"
     local desc='Enter "?" to select from menu'
-    user_input=$(whiptail --title "$TITLE" --inputbox "\nSet Timezone (auto detected)\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+    clear && user_input=$(whiptail --title "$TITLE" --inputbox "\nSet Timezone (auto detected)\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
 
-    # If null
+    # If user timezone input is null
     if [ -z "$user_input" ]; then
         whiptail --title "$TITLE" --msgbox "Timezone is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         ARCH_OS_TIMEZONE=""
@@ -233,22 +236,22 @@ tui_set_language() {
         return 1
     fi
 
-    # Check if user want select from menu
+    # Check if user want select timezone from menu
     if [ "$user_input" = "?" ]; then
         items=$(/usr/bin/ls -l /usr/share/zoneinfo/ | grep '^d' | grep -v "right" | grep -v "posix" | gawk -F':[0-9]* ' '/:/{print $2}')
         options=() && for item in ${items}; do options+=("${item}" ""); done
         timezone=$(whiptail --title "$TITLE" --menu "\nSelect Timezone:" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
-
+        # Timezone country
         items=$(ls "/usr/share/zoneinfo/${timezone}/")
         options=() && for item in ${items}; do options+=("${item}" ""); done
         timezone_country=$(whiptail --title "$TITLE" --menu "\nSelect Timezone:" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
-
         # Set timezone
         user_input="${timezone}/${timezone_country}"
     fi
 
+    # Check timezone finally
     if [ ! -f "/usr/share/zoneinfo/${user_input}" ]; then
-        whiptail --title "$TITLE" --msgbox "Error: Timezone '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
+        whiptail --title "$TITLE" --msgbox "Timezone '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
     else
         ARCH_OS_TIMEZONE="$user_input"
@@ -260,7 +263,7 @@ tui_set_language() {
     local desc='Enter "?" to select from menu\n\nExample: "en_US" or "de_DE"'
     user_input=$(whiptail --title "$TITLE" --inputbox "\nSet locale\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
 
-    # If null
+    # If locale is null
     if [ -z "$user_input" ]; then
         whiptail --title "$TITLE" --msgbox "Locale is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         ARCH_OS_LOCALE_LANG=""
@@ -269,18 +272,27 @@ tui_set_language() {
         return 1
     fi
 
-    # Check if user want select from menu
+    # Check if user want select locale from menu
     if [ "$user_input" = "?" ]; then
+        echo "Loading..."
         items=$(/usr/bin/ls /usr/share/i18n/locales | grep -v "@")
-        options=() && for item in ${items}; do options+=("${item}" ""); done
-        locales=$(whiptail --title "$TITLE" --menu "\nSelect Locale:" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
+        options=()
+        for item in ${items}; do
+            # Add only available locales (intense command)
+            # shellcheck disable=SC2001
+            if grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<<"$item") " /etc/locale.gen; then
+                options+=("${item}" "")
+            fi
+        done
+        clear && locales=$(whiptail --title "$TITLE" --menu "\nSelect Locale (type char to search):" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
         # Set locale
         user_input="$locales"
     fi
 
+    # Check locale finally
     # shellcheck disable=SC2001
     if ! grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<<"$user_input") " /etc/locale.gen; then
-        whiptail --title "$TITLE" --msgbox "Error: Locale '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
+        whiptail --title "$TITLE" --msgbox "Locale '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
     else
         ARCH_OS_LOCALE_LANG="$user_input"
@@ -308,7 +320,7 @@ tui_set_keyboard() {
     local desc='Enter "?" to select from menu\n\nExample: "de-latin1-nodeadkeys" or "us"'
     user_input=$(whiptail --title "$TITLE" --inputbox "\nSet console keyboard keymap\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
 
-    # If null
+    # If keymap null
     if [ -z "$user_input" ]; then
         whiptail --title "$TITLE" --msgbox "Console Keymap is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         ARCH_OS_VCONSOLE_KEYMAP=""
@@ -316,16 +328,23 @@ tui_set_keyboard() {
         return 1
     fi
 
-    # Check if user want select from menu
+    # Check if user want select keymap from menu
     if [ "$user_input" = "?" ]; then
+        echo "Loading..."
         items=$(find /usr/share/kbd/keymaps/ -type f -printf "%f\n" | sort -V | grep -v "README")
-        options=() && for item in ${items}; do options+=("${item%%.*}" ""); done
-        keymap=$(whiptail --title "$TITLE" --menu "\nSelect Keymap:" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
+        options=()
+        for item in ${items}; do
+            # Add only available keymap (intense command)
+            if localectl list-keymaps | grep -Fxq "${item%%.*}"; then
+                options+=("${item%%.*}" "")
+            fi
+        done
+        clear && keymap=$(whiptail --title "$TITLE" --menu "\nSelect Keymap (type char to search):" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
         # Set keymap
         user_input="$keymap"
     fi
 
-    # Check & set console keymap
+    # Finally check & set console keymap
     if ! localectl list-keymaps | grep -Fxq "$user_input"; then
         whiptail --title "$TITLE" --msgbox "Error: Keyboard layout '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
