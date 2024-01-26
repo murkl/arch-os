@@ -7,11 +7,12 @@
 # Contents
 
 1. [Recommendation](#recommendation)
-2. [Shell Enhancement](#shell-enhancement)
-3. [Installation Properties](#installation-properties)
+2. [Installation Properties](#installation-properties)
+3. [Shell Enhancement](#shell-enhancement)
 4. [Technical Information](#technical-information)
-5. [Troubleshooting](#troubleshooting)
-6. [Development](#development)
+5. [Screenshots](#screenshots)
+6. [Troubleshooting](#troubleshooting)
+7. [Development](#development)
 
 ## Recommendation
 
@@ -82,70 +83,21 @@ May check out these projects:
 - [AutoEq](https://github.com/jaakkopasanen/AutoEq)
 - [EasyEffects Presents](https://github.com/wwmm/easyeffects/wiki/Community-presets)
 
-## Shell Enhancement
-
-If the property `ARCH_OS_SHELL_ENHANCED_ENABLED` is set to `true` (default), these packages are installed and preconfigured (for root & user):
-
-```
-fish starship eza bat neofetch mc btop man-db
-```
-
-- `fish` is set as default shell
-- `starship` is set as default promt see `~/.config/fish/config.fish`
-- `ls` is replaced with `eza` see `~/.config/fish/aliases.fish`
-- `man` is replaced with `bat` see `~/.config/fish/config.fish`
-
-### Useful Terminal commands
-
-- `fetch` show system info
-- `btop` show system manager
-- `logs` show system logs
-- `ll` list files in dir
-- `la` list all files (+ hidden files) in dir
-- `lt` tree files in dir
-- `mc` open file manager
-- `open <file>` open file in GNOME app
-- `man <command>` open manual page of command
-- `q` exit
-
-### Useful Terminal keyboard shortcuts
-
-- Use `Tab` to autocomplete command
-- Use `Arrows` to navigate
-- Use `Ctrl + r` to search in command history
-- Use `Alt + s` to run previous command as `sudo` (Bash: `sudo !!`)
-- Use `Alt + .` to paste the last parameter from previous command (Bash: `ESC .`)
-
-### Configuration
-
-```
-# Fish web config
-fish_config
-
-# Fish config
-~/.config/fish/config.fish
-~/.config/fish/aliases.fish
-
-# Starship config
-~/.config/starship.toml
-
-# Neofetch config
-~/.config/neofetch/config.conf
-
-# Midnight Commander config
-~/.config/mc/ini
-
-# Btop config
-~/.config/btop/btop.conf
-```
-
 ## Installation Properties
 
 The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as defaults for Arch OS setup menu. This file provides some additional properties to modify your Arch OS installation.
 
 **Note:** The `installer.conf` will copied to the new user's home directory during installation. This file can be saved for reuse or simply deleted.
 
-### Minimal Installation
+### Installation Variants
+
+Arch OS comes with 3 installation variants:
+
+- **core**: Minimal Arch Linux with essential [Packages](#arch-os-core-packages) & [Services](#arch-os-core-services)
+- **base**: Arch OS without desktop (core included + additional packages & configurations)
+- **desktop**: Arch OS with desktop (base included + GNOME Desktop + Graphics Driver)
+
+#### Minimal Installation
 
 Set these properties to install Arch OS (core) with minimal packages & configurations:
 
@@ -153,6 +105,8 @@ Set these properties to install Arch OS (core) with minimal packages & configura
 ARCH_OS_VARIANT='core'
 ARCH_OS_BOOTSPLASH_ENABLED='false'
 ```
+
+**Note:** You will only be provided with a minimal tty after installation.
 
 #### Arch OS Core Packages
 
@@ -258,13 +212,64 @@ ARCH_OS_X11_KEYBOARD_VARIANT='nodeadkeys'
 ARCH_OS_VM_SUPPORT_ENABLED='true'
 ```
 
+## Shell Enhancement
+
+If the property `ARCH_OS_SHELL_ENHANCED_ENABLED` is set to `true` (default), these packages are installed and preconfigured (for root & user):
+
+```
+fish starship eza bat neofetch mc btop man-db
+```
+
+- `fish` is set as default shell
+- `starship` is set as default promt see `~/.config/fish/config.fish`
+- `ls` is replaced with `eza` see `~/.config/fish/aliases.fish`
+- `man` is replaced with `bat` see `~/.config/fish/config.fish`
+
+### Useful Terminal commands
+
+- `fetch` show system info
+- `btop` show system manager
+- `logs` show system logs
+- `ll` list files in dir
+- `la` list all files (+ hidden files) in dir
+- `lt` tree files in dir
+- `mc` open file manager
+- `open <file>` open file in GNOME app
+- `man <command>` open manual page of command
+- `q` exit
+
+### Useful Terminal keyboard shortcuts
+
+- Use `Tab` to autocomplete command
+- Use `Arrows` to navigate
+- Use `Ctrl + r` to search in command history
+- Use `Alt + s` to run previous command as `sudo` (Bash: `sudo !!`)
+- Use `Alt + .` to paste the last parameter from previous command (Bash: `ESC .`)
+
+### Configuration
+
+```
+# Fish web config
+fish_config
+
+# Fish config
+~/.config/fish/config.fish
+~/.config/fish/aliases.fish
+
+# Starship config
+~/.config/starship.toml
+
+# Neofetch config
+~/.config/neofetch/config.conf
+
+# Midnight Commander config
+~/.config/mc/ini
+
+# Btop config
+~/.config/btop/btop.conf
+```
+
 ## Technical Information
-
-Arch OS comes with 3 installation variants:
-
-- **core**: Minimal Arch (need to run Arch Linux)
-- **base**: Arch OS without desktop (core included + additional packages & configurations)
-- **desktop**: Arch OS with desktop (base included + GNOME Desktop + Graphics Driver)
 
 ### Partitions layout
 
@@ -289,11 +294,19 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 - `vm.max_map_count` is set to `16777216` for compatibility of some apps/games
 - `DefaultTimeoutStopSec` is set to `10s` for faster shutdown
 
-### Screenshots
+## Screenshots
 
 <div align="center">
-<p><img src="screenshots/neofetch.png" width="90%" /></p>
-<p><img src="screenshots/apps.png" width="90%" /></p>
+
+<p><img src="./screenshots/installer_00.png" /></p>
+<p><img src="./screenshots/installer_01.png" /></p>
+<p><img src="./screenshots/installer_02.png" /></p>
+<p><img src="./screenshots/installer_03.png" /></p>
+<p><img src="./screenshots/installer_04.png" /></p>
+<p><img src="./screenshots/installer_05.png" /></p>
+<p><img src="./screenshots/installer_06.png" /></p>
+<p><img src="screenshots/neofetch.png" /></p>
+<p><img src="screenshots/apps.png" /></p>
 <p><b>This screenshots may outdated.</b></p>
 </div>
 
