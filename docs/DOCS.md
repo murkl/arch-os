@@ -10,8 +10,9 @@
 2. [Installation Properties](#installation-properties)
 3. [Shell Enhancement](#shell-enhancement)
 4. [Technical Information](#technical-information)
-5. [Troubleshooting](#troubleshooting)
-6. [Development](#development)
+5. [Screenshots](#screenshots)
+6. [Troubleshooting](#troubleshooting)
+7. [Development](#development)
 
 ## Recommendation
 
@@ -293,7 +294,7 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 - `vm.max_map_count` is set to `16777216` for compatibility of some apps/games
 - `DefaultTimeoutStopSec` is set to `10s` for faster shutdown
 
-### Screenshots
+## Screenshots
 
 <div align="center">
 
