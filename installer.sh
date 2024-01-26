@@ -274,7 +274,7 @@ tui_set_language() {
 
     # Check if user want select locale from menu
     if [ "$user_input" = "?" ]; then
-        echo "Loading..."
+        clear && echo "Loading..."
         items=$(/usr/bin/ls /usr/share/i18n/locales | grep -v "@")
         options=()
         for item in ${items}; do
@@ -330,7 +330,7 @@ tui_set_keyboard() {
 
     # Check if user want select keymap from menu
     if [ "$user_input" = "?" ]; then
-        echo "Loading..."
+        clear && echo "Loading..."
         items=$(find /usr/share/kbd/keymaps/ -type f -printf "%f\n" | sort -V | grep -v "README")
         options=()
         for item in ${items}; do
