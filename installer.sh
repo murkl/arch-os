@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+clear
 
 # ----------------------------------------------------------------------------------------------------
 # SCRIPT VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.1.9'
+VERSION='1.2.0'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -76,8 +77,13 @@ fi
 # ----------------------------------------------------------------------------------------------------
 
 print_menu_entry() {
-    local key="$1"
-    local val="$2" && val=$(echo "$val" | xargs) # Trim spaces
+    local key="$1" && shift
+    local val="$1" && shift
+    val=$(echo "$val" | xargs) # Trim spaces
+
+    # If another arg is null, set val=null
+    for arg in "${@}"; do [ -z "$arg" ] && val=""; done
+
     local spaces=""
     # Locate spaces
     for ((i = ${#key}; i < 12; i++)); do spaces="${spaces} "; done
@@ -125,7 +131,11 @@ check_config() {
     [ -z "${ARCH_OS_ENCRYPTION_ENABLED}" ] && TUI_POSITION="encrypt" && return 1
     [ -z "${ARCH_OS_BOOTSPLASH_ENABLED}" ] && TUI_POSITION="bootsplash" && return 1
     [ -z "${ARCH_OS_VARIANT}" ] && TUI_POSITION="variant" && return 1
+    [ "${ARCH_OS_VARIANT}" = "desktop" ] && [ -z "${ARCH_OS_GRAPHICS_DRIVER}" ] && TUI_POSITION="variant" && return 1
+    [ "${ARCH_OS_VARIANT}" = "desktop" ] && [ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && TUI_POSITION="variant" && return 1
+    # Success
     TUI_POSITION="install"
+    return 0
 }
 
 create_config() {
@@ -210,9 +220,33 @@ create_config() {
 tui_set_language() {
 
     # Set timezone
-    [ -z "$ARCH_OS_TIMEZONE" ] && ARCH_OS_TIMEZONE="$(curl -s http://ip-api.com/line?fields=timezone)"
     local user_input="$ARCH_OS_TIMEZONE"
-    user_input=$(whiptail --title "$TITLE" --inputbox "\nSet Timezone (auto)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+    [ -z "$user_input" ] && user_input="$(curl -s http://ip-api.com/line?fields=timezone)"
+    local desc='Enter "?" to select from menu'
+    user_input=$(whiptail --title "$TITLE" --inputbox "\nSet Timezone (auto detected)\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+
+    # If null
+    if [ -z "$user_input" ]; then
+        whiptail --title "$TITLE" --msgbox "Timezone is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+        ARCH_OS_TIMEZONE=""
+        create_config
+        return 1
+    fi
+
+    # Check if user want select from menu
+    if [ "$user_input" = "?" ]; then
+        items=$(/usr/bin/ls -l /usr/share/zoneinfo/ | grep '^d' | grep -v "right" | grep -v "posix" | gawk -F':[0-9]* ' '/:/{print $2}')
+        options=() && for item in ${items}; do options+=("${item}" ""); done
+        timezone=$(whiptail --title "$TITLE" --menu "\nSelect Timezone:" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
+
+        items=$(ls "/usr/share/zoneinfo/${timezone}/")
+        options=() && for item in ${items}; do options+=("${item}" ""); done
+        timezone_country=$(whiptail --title "$TITLE" --menu "\nSelect Timezone:" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
+
+        # Set timezone
+        user_input="${timezone}/${timezone_country}"
+    fi
+
     if [ ! -f "/usr/share/zoneinfo/${user_input}" ]; then
         whiptail --title "$TITLE" --msgbox "Error: Timezone '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
@@ -223,9 +257,29 @@ tui_set_language() {
     # Set locale
     local user_input="$ARCH_OS_LOCALE_LANG"
     [ -z "$user_input" ] && user_input='en_US'
-    user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert locale\n\nExample: 'en_US' or 'de_DE'" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+    local desc='Enter "?" to select from menu\n\nExample: "en_US" or "de_DE"'
+    user_input=$(whiptail --title "$TITLE" --inputbox "\nSet locale\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+
+    # If null
+    if [ -z "$user_input" ]; then
+        whiptail --title "$TITLE" --msgbox "Locale is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+        ARCH_OS_LOCALE_LANG=""
+        ARCH_OS_LOCALE_GEN_LIST=""
+        create_config
+        return 1
+    fi
+
+    # Check if user want select from menu
+    if [ "$user_input" = "?" ]; then
+        items=$(/usr/bin/ls /usr/share/i18n/locales | grep -v "@")
+        options=() && for item in ${items}; do options+=("${item}" ""); done
+        locales=$(whiptail --title "$TITLE" --menu "\nSelect Locale:" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
+        # Set locale
+        user_input="$locales"
+    fi
+
     # shellcheck disable=SC2001
-    if [ -z "$user_input" ] || ! grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<<"$user_input") " /etc/locale.gen; then
+    if ! grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<<"$user_input") " /etc/locale.gen; then
         whiptail --title "$TITLE" --msgbox "Error: Locale '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 1
     else
@@ -237,10 +291,12 @@ tui_set_language() {
     while read -r locale_entry; do
         ARCH_OS_LOCALE_GEN_LIST+=("$locale_entry")
     done < <(sed "/^#${ARCH_OS_LOCALE_LANG}/s/^#//" /etc/locale.gen | grep "${ARCH_OS_LOCALE_LANG}")
+
     # Add fallback
     [[ "${ARCH_OS_LOCALE_GEN_LIST[*]}" != *'en_US.UTF-8 UTF-8'* ]] && ARCH_OS_LOCALE_GEN_LIST+=('en_US.UTF-8 UTF-8')
 
     # Success
+    create_config
     return 0
 }
 
@@ -249,7 +305,25 @@ tui_set_keyboard() {
     # Input console keyboard keymap
     local user_input="$ARCH_OS_VCONSOLE_KEYMAP"
     [ -z "$user_input" ] && user_input='us'
-    user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert console keyboard keymap\n\nExample: 'de-latin1-nodeadkeys' or 'us'" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+    local desc='Enter "?" to select from menu\n\nExample: "de-latin1-nodeadkeys" or "us"'
+    user_input=$(whiptail --title "$TITLE" --inputbox "\nSet console keyboard keymap\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+
+    # If null
+    if [ -z "$user_input" ]; then
+        whiptail --title "$TITLE" --msgbox "Console Keymap is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+        ARCH_OS_VCONSOLE_KEYMAP=""
+        create_config
+        return 1
+    fi
+
+    # Check if user want select from menu
+    if [ "$user_input" = "?" ]; then
+        items=$(find /usr/share/kbd/keymaps/ -type f -printf "%f\n" | sort -V | grep -v "README")
+        options=() && for item in ${items}; do options+=("${item%%.*}" ""); done
+        keymap=$(whiptail --title "$TITLE" --menu "\nSelect Keymap:" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
+        # Set keymap
+        user_input="$keymap"
+    fi
 
     # Check & set console keymap
     if ! localectl list-keymaps | grep -Fxq "$user_input"; then
@@ -260,34 +334,41 @@ tui_set_keyboard() {
     fi
 
     # Success
+    create_config
     return 0
 }
 
 tui_set_user() {
-    ARCH_OS_USERNAME=$(whiptail --title "$TITLE" --inputbox "\nEnter Username" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_OS_USERNAME" 3>&1 1>&2 2>&3)
+    ARCH_OS_USERNAME=$(whiptail --title "$TITLE" --inputbox "\nEnter Arch OS Username" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_OS_USERNAME" 3>&1 1>&2 2>&3)
     if [ -z "$ARCH_OS_USERNAME" ]; then
-        whiptail --title "$TITLE" --msgbox "Error: Username is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+        whiptail --title "$TITLE" --msgbox "Arch OS Username is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+        create_config # Remove username
         return 1
     fi
     # Success
+    create_config
     return 0
 }
 
 tui_set_password() {
-    ARCH_OS_PASSWORD=$(whiptail --title "$TITLE" --passwordbox "\nEnter Password" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
+    local desc='Note: This password is also used for encryption (if enabled)'
+    ARCH_OS_PASSWORD=$(whiptail --title "$TITLE" --passwordbox "\nEnter Password\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
     if [ -z "$ARCH_OS_PASSWORD" ]; then
-        whiptail --title "$TITLE" --msgbox "Error: Password is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+        whiptail --title "$TITLE" --msgbox "Password is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+        create_config # Remove password
         return 1
     fi
 
     local password_check
     password_check=$(whiptail --title "$TITLE" --passwordbox "\nEnter Password (again)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
     if [ "$ARCH_OS_PASSWORD" != "$password_check" ]; then
+        whiptail --title "$TITLE" --msgbox "Password not identical" "$TUI_HEIGHT" "$TUI_WIDTH"
         ARCH_OS_PASSWORD=""
-        whiptail --title "$TITLE" --msgbox "Error: Password not identical" "$TUI_HEIGHT" "$TUI_WIDTH"
+        create_config # Remove password
         return 1
     fi
     # Success
+    create_config
     return 0
 }
 
@@ -310,6 +391,7 @@ tui_set_disk() {
     [[ "$ARCH_OS_DISK" = "/dev/nvm"* ]] && ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}p2" || ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}2"
 
     # Success
+    create_config
     return 0
 }
 
@@ -319,6 +401,7 @@ tui_set_encryption() {
         ARCH_OS_ENCRYPTION_ENABLED="true"
     fi
     # Success
+    create_config
     return 0
 }
 
@@ -328,6 +411,7 @@ tui_set_bootsplash() {
         ARCH_OS_BOOTSPLASH_ENABLED="true"
     fi
     # Success
+    create_config
     return 0
 }
 
@@ -352,17 +436,25 @@ tui_set_variant() {
         # Set X11 keyboard layout
         local user_input="$ARCH_OS_X11_KEYBOARD_LAYOUT"
         [ -z "$user_input" ] && user_input='us'
-        user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert X11 (Xorg) keyboard layout\n\nExample: 'de' or 'us'" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+        user_input=$(whiptail --title "$TITLE" --inputbox "\nEnter X11 (Xorg) keyboard layout\n\nExample: 'de' or 'us'" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+        # If null
+        if [ -z "$user_input" ]; then
+            whiptail --title "$TITLE" --msgbox "X11 keyboard layout is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+            ARCH_OS_X11_KEYBOARD_LAYOUT=""
+            create_config
+            return 1
+        fi
         ARCH_OS_X11_KEYBOARD_LAYOUT="$user_input"
 
         # Set X11 keyboard variant
         local user_input="$ARCH_OS_X11_KEYBOARD_VARIANT"
         [ -z "$user_input" ] && user_input=''
-        user_input=$(whiptail --title "$TITLE" --inputbox "\nPlease insert X11 (Xorg) keyboard variant\n\nExample: 'nodeadkeys' or leave empty for default" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+        user_input=$(whiptail --title "$TITLE" --inputbox "\nEnter X11 (Xorg) keyboard variant\n\nExample: 'nodeadkeys' or leave empty for default" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
         ARCH_OS_X11_KEYBOARD_VARIANT="$user_input"
     fi
 
     # Success
+    create_config
     return 0
 }
 
@@ -379,7 +471,7 @@ create_config        # Generate properties
 # WAIT & SLEEP
 # ----------------------------------------------------------------------------------------------------
 
-wait && sleep 0.8
+wait && sleep 0.2
 
 # ----------------------------------------------------------------------------------------------------
 # WELCOME SCREEN
@@ -417,12 +509,15 @@ while (true); do
     menu_entry_array=()
     menu_entry_array+=("user") && menu_entry_array+=("$(print_menu_entry "User" "${ARCH_OS_USERNAME}")")
     menu_entry_array+=("password") && menu_entry_array+=("$(print_menu_entry "Password" "$([ -n "$ARCH_OS_PASSWORD" ] && echo "******")")")
-    menu_entry_array+=("language") && menu_entry_array+=("$(print_menu_entry "Language" "  ${ARCH_OS_LOCALE_LANG}")")
-    menu_entry_array+=("keyboard") && menu_entry_array+=("$(print_menu_entry "Keyboard" "  ${ARCH_OS_VCONSOLE_KEYMAP}")")
+    menu_entry_array+=("language") && menu_entry_array+=("$(print_menu_entry "Language" "${ARCH_OS_LOCALE_LANG}" "${ARCH_OS_TIMEZONE}")")
+    menu_entry_array+=("keyboard") && menu_entry_array+=("$(print_menu_entry "Keyboard" "${ARCH_OS_VCONSOLE_KEYMAP}")")
     menu_entry_array+=("disk") && menu_entry_array+=("$(print_menu_entry "Disk" "${ARCH_OS_DISK}")")
     menu_entry_array+=("encrypt") && menu_entry_array+=("$(print_menu_entry "Encryption" "${ARCH_OS_ENCRYPTION_ENABLED}")")
     menu_entry_array+=("bootsplash") && menu_entry_array+=("$(print_menu_entry "Bootsplash" "${ARCH_OS_BOOTSPLASH_ENABLED}")")
-    menu_entry_array+=("variant") && menu_entry_array+=("$(print_menu_entry "Variant" "${ARCH_OS_VARIANT}")")
+    menu_variant="$ARCH_OS_VARIANT"
+    [ "$menu_variant" = "desktop" ] && [ -z "${ARCH_OS_GRAPHICS_DRIVER}" ] && menu_variant=""
+    [ "$menu_variant" = "desktop" ] && [ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && menu_variant=""
+    menu_entry_array+=("variant") && menu_entry_array+=("$(print_menu_entry "Variant" "${menu_variant}")")
     menu_entry_array+=("") && menu_entry_array+=("") # Empty entry
     menu_entry_array+=("edit") && menu_entry_array+=("> Edit installer.conf")
     if [ "$TUI_POSITION" = "install" ]; then
@@ -439,35 +534,27 @@ while (true); do
 
     "user")
         tui_set_user || continue
-        create_config
         ;;
     "password")
         tui_set_password || continue
-        create_config
         ;;
     "language")
         tui_set_language || continue
-        create_config
         ;;
     "keyboard")
         tui_set_keyboard || continue
-        create_config
         ;;
     "disk")
         tui_set_disk || continue
-        create_config
         ;;
     "encrypt")
         tui_set_encryption || continue
-        create_config
         ;;
     "bootsplash")
         tui_set_bootsplash || continue
-        create_config
         ;;
     "variant")
         tui_set_variant || continue
-        create_config
         ;;
     "edit")
         nano "$INSTALLER_CONFIG" </dev/tty || continue
@@ -564,9 +651,12 @@ SECONDS=0
 
 (
     # Print nothing from stdin & stderr to console
-    exec 3>&1 4>&2     # Saves file descriptors (new stdin: &3 new stderr: &4)
-    exec 1>/dev/null   # Log stdin to /dev/null
-    exec 2>"$LOG_FILE" # Log stderr to logfile
+    exec 3>&1 4>&2 # Saves file descriptors (new stdin: &3 new stderr: &4)
+
+    # Log stdin & stderr to logfile
+    exec &>"$LOG_FILE"
+    #exec 1>/dev/null   # Log stdin to /dev/null
+    #exec 2>"$LOG_FILE" # Log stderr to logfile
 
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Checkup"

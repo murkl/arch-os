@@ -80,9 +80,7 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 - Shellcheck approved
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os) (optional)
 
-## Installation
-
-<p><img src="./screenshots/installer.png" /></p>
+## Arch OS Installation
 
 ### 1. Prepare bootable USB Device
 
@@ -100,8 +98,23 @@ Installs a Arch Linux Distribution with automatic housekeeping, Zen Kernel, opti
 
 - Load prefered keyboard layout (optional): `loadkeys de`
 - Connect to WLAN (optional): `iwctl station wlan0 connect "SSID"`
-- Run **Arch OS Installer**: `curl -Ls http://arch.webhop.me | bash`
-- Installation finished
+- **Run Arch OS Installer:**
+
+<div align="center">
+
+```
+curl -Ls http://arch.webhop.me | bash
+```
+
+<p><img src="./screenshots/installer_01.png" /></p>
+
+<p><b>
+
+[➜ More Screenshots](DOCS.md#screenshots)
+
+</b></p>
+
+</div>
 
 ## Usage
 
