@@ -256,7 +256,7 @@ tui_set_language() {
 
     # Set locale
     local user_input="$ARCH_OS_LOCALE_LANG"
-    [ -z "$user_input" ] && user_input='en_US'
+    [ -z "$user_input" ] && user_input='?'
     local desc='Enter "?" to select from menu\n\nExample: "en_US" or "de_DE"'
     user_input=$(whiptail --title "$TITLE" --inputbox "\nSet locale\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
 
@@ -304,7 +304,7 @@ tui_set_keyboard() {
 
     # Input console keyboard keymap
     local user_input="$ARCH_OS_VCONSOLE_KEYMAP"
-    [ -z "$user_input" ] && user_input='us'
+    [ -z "$user_input" ] && user_input='?'
     local desc='Enter "?" to select from menu\n\nExample: "de-latin1-nodeadkeys" or "us"'
     user_input=$(whiptail --title "$TITLE" --inputbox "\nSet console keyboard keymap\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
 
@@ -519,11 +519,11 @@ while (true); do
     [ "$menu_variant" = "desktop" ] && [ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && menu_variant=""
     menu_entry_array+=("variant") && menu_entry_array+=("$(print_menu_entry "Variant" "${menu_variant}")")
     menu_entry_array+=("") && menu_entry_array+=("") # Empty entry
-    menu_entry_array+=("edit") && menu_entry_array+=("> Edit installer.conf")
+    menu_entry_array+=("edit") && menu_entry_array+=("> Advanced Config")
     if [ "$TUI_POSITION" = "install" ]; then
         menu_entry_array+=("install") && menu_entry_array+=("> Continue Installation")
     else
-        menu_entry_array+=("install") && menu_entry_array+=("x Config incomplete")
+        menu_entry_array+=("install") && menu_entry_array+=("x Continue Installation")
     fi
 
     # Open TUI menu
