@@ -1023,7 +1023,7 @@ SECONDS=0
         sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
 
         # Set max VMAs (need for some apps/games)
-        echo vm.max_map_count=16777216 >/mnt/etc/sysctl.d/vm.max_map_count.conf
+        echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Install AUR Helper"
