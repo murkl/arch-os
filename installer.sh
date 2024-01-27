@@ -795,12 +795,12 @@ SECONDS=0
     print_whiptail_info "Create Swap (zram)"
     # ----------------------------------------------------------------------------------------------------
     {
-        echo '[zram0]'
         # https://wiki.archlinux.org/title/Zram#Using_zram-generator
-        #echo 'zram-size = ram / 2'
-        #echo 'compression-algorithm = zstd'
-        #echo 'swap-priority = 100'
-        #echo 'fs-type = swap'
+        echo '[zram0]'
+        echo 'zram-size = ram / 2'
+        echo 'compression-algorithm = zstd'
+        echo 'swap-priority = 100'
+        echo 'fs-type = swap'
     } >/mnt/etc/systemd/zram-generator.conf
 
     # Optimize swap on zram (https://wiki.archlinux.org/title/Zram#Optimizing_swap_on_zram)
