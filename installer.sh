@@ -1259,6 +1259,7 @@ SECONDS=0
         packages+=("gst-plugin-pipewire")
         packages+=("gst-plugins-ugly")
         packages+=("libdvdcss")
+        packages+=("libheif")
 
         # Optimization
         packages+=("gamemode")
