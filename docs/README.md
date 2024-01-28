@@ -83,6 +83,18 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 
 ## Arch OS Installation
 
+<div align="center">
+
+<p><img src="./screenshots/installer_01.png" /></p>
+
+<p><b>
+
+[➜ More Screenshots](DOCS.md#screenshots)
+
+</b></p>
+
+</div>
+
 ### 1. Prepare bootable USB Device
 
 - Download latest Arch Linux ISO from **[archlinux.org](https://www.archlinux.org/download)** or **[archlinux.de](https://www.archlinux.de/download)**
@@ -106,14 +118,6 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 ```
 curl -Ls http://arch.webhop.me | bash
 ```
-
-<p><img src="./screenshots/installer_01.png" /></p>
-
-<p><b>
-
-[➜ More Screenshots](DOCS.md#screenshots)
-
-</b></p>
 
 </div>
 

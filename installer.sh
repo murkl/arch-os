@@ -773,7 +773,7 @@ SECONDS=0
     mount -v "$ARCH_OS_BOOT_PARTITION" /mnt/boot
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Pacstrap Arch OS Core Packages (May take 8 minutes)"
+    print_whiptail_info "Pacstrap Arch OS Core Packages (May take about 8 minutes)"
     # ----------------------------------------------------------------------------------------------------
 
     # Core packages
@@ -1209,7 +1209,7 @@ SECONDS=0
     if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
 
         # ----------------------------------------------------------------------------------------------------
-        print_whiptail_info "Install GNOME Packages (May take 12 minutes)"
+        print_whiptail_info "Install GNOME Packages (May take about 12 minutes)"
         # ----------------------------------------------------------------------------------------------------
 
         # Install packages
