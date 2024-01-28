@@ -40,9 +40,12 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 
 ## Core Features
 
+- Minimal Arch Linux (171 packages)
 - Zen Kernel (configurable)
-- Swap (zram-generator)
+- Swap with zram-generator (zstd)
 - Disk Encryption (optional)
+- Filesystem ext4
+- Silent Boot
 - Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
 - Network Manager
@@ -62,7 +65,7 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 - Pacman automatic cache optimization (weekly)
 - Pacman parallel downloads
 - Pacman & nano colors
-- Shell Enhancement (see Arch OS Docs)
+- Shell Enhancement (see [Arch OS Docs](DOCS.md#shell-enhancement))
 
 ## Desktop Features
 

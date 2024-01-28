@@ -221,7 +221,6 @@ fish starship eza bat neofetch mc btop man-db
 ```
 
 - `fish` is set as default shell
-- `fetch` is alias for preconfigured `neofetch`
 - `starship` is set as fancy default promt see `~/.config/fish/config.fish`
 - `ls` is replaced with colorful `eza` see `~/.config/fish/aliases.fish`
 - `man` is replaced with colorful `bat` see `~/.config/fish/config.fish`
