@@ -291,7 +291,7 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 
 ### System Configurations
 
-- `vm.max_map_count` is set to `16777216` for compatibility of some apps/games
+- `vm.max_map_count` is set to `1048576` for compatibility of some apps/games
 - `DefaultTimeoutStopSec` is set to `10s` for faster shutdown
 
 ## Screenshots
