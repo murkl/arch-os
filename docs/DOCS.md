@@ -312,6 +312,8 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 
 ## Troubleshooting
 
+If an error occurs, see created `installer.log` for more details.
+
 ### Installation failed
 
 If you encounter problems with a server during Arch OS installation (`error: failed retrieving file`), remove this server from `/etc/pacman.d/mirrorlist` and run Arch OS Installer again.

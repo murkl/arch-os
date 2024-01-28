@@ -15,9 +15,6 @@ VERSION='1.2.1'
 # Title
 TITLE="Arch OS Installer ${VERSION}"
 
-# Config file (sourced if exists)
-INSTALLER_CONFIG="./installer.conf"
-
 # Logfile (created during install)
 LOG_FILE="./installer.log"
 
@@ -40,6 +37,10 @@ PROGRESS_TOTAL=40
 # INSTALLATION VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
+# Config file (sourced if exists)
+INSTALLER_CONFIG="./installer.conf"
+
+# Arch OS Installation
 ARCH_OS_USERNAME=""
 ARCH_OS_HOSTNAME=""
 ARCH_OS_PASSWORD=""
@@ -592,9 +593,13 @@ while (true); do
             nano "$INSTALLER_CONFIG" </dev/tty
             continue # Open main menu for check again
         fi
+
+        ############################################
         break # Break loop and continue installation
+        ############################################
         ;;
-    *) continue ;; # Do nothing and continue loop
+
+    *) continue ;; # Do nothing and continue loop (Default)
 
     esac
 
