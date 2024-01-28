@@ -191,4 +191,6 @@ paru -Rsn <my package>
 
 ## More Information
 
+Further information can be found in the documentation.
+
 **[➜ Open Arch OS Docs](DOCS.md)**
