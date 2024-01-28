@@ -76,7 +76,7 @@ Install prefered Steam version:
 
 ### For Audiophiles
 
-For advanced Pipewire audio configuration, check out the official [Pipewire Arch Wiki](https://wiki.archlinux.org/title/PipeWire).
+For advanced Pipewire audio configuration, check out the official [Arch Wiki](https://wiki.archlinux.org/title/PipeWire).
 
 May check out these projects:
 
@@ -85,7 +85,7 @@ May check out these projects:
 
 ## Installation Properties
 
-The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as defaults for Arch OS setup menu. This file provides some additional properties to modify your Arch OS installation.
+The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as defaults for Arch OS setup menu. This file provides some additional properties (see [Example](#example-installerconf)) to modify your Arch OS installation.
 
 **Note:** The `installer.conf` will copied to the new user's home directory during installation. This file can be saved for reuse or simply deleted.
 
@@ -312,15 +312,32 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 
 ## Troubleshooting
 
-If an error occurs, see created `installer.log` for more details.
+If an error occurs, see created `installer.log` for more details. Each step in `installer.sh` is seperated in the log file with `###!CMD` so you can identify the regarding script part.
 
 ### Installation failed
 
-If you encounter problems with a server during Arch OS installation (`error: failed retrieving file`), remove this server from `/etc/pacman.d/mirrorlist` and run Arch OS Installer again.
+If you encounter problems with a server during Arch OS installation (`error: failed retrieving file` or related errors), remove this server from `/etc/pacman.d/mirrorlist` (Arch ISO) and run Arch OS Installer again.
+
+#### Example
+
+```
+# From booted Arch ISO:
+nano /etc/pacman.d/mirrorlist
+```
+
+```
+....
+# Disable this server
+# Server = https://archlinux.thaller.ws/$repo/os/$arch
+Server = https://london.mirror.pkgbuild.com/$repo/os/$arch
+Server = https://mirror.ubrco.de/archlinux/$repo/os/$arch
+Server = https://mirror.f4st.host/archlinux/$repo/os/$arch
+....
+```
 
 ### Legacy Routers (ECN disabled)
 
-Set `ARCH_OS_ECN_ENABLED="false"` in Arch OS Installation.
+Set `ARCH_OS_ECN_ENABLED="false"` in Arch OS `installer.conf`.
 
 ### Arch OS: Downgrade a package
 

@@ -10,7 +10,7 @@ clear           # Clear
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.2.1'
+VERSION='1.2.2'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -773,7 +773,7 @@ SECONDS=0
     mount -v "$ARCH_OS_BOOT_PARTITION" /mnt/boot
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Pacstrap System Packages (This takes about 10 minutes)"
+    print_whiptail_info "Pacstrap Arch OS Core Packages (May take about 8 minutes)"
     # ----------------------------------------------------------------------------------------------------
 
     # Core packages
@@ -798,7 +798,7 @@ SECONDS=0
     genfstab -U /mnt >>/mnt/etc/fstab
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Create Swap (zram)"
+    print_whiptail_info "Create Swap (zram-generator)"
     # ----------------------------------------------------------------------------------------------------
     {
         # https://wiki.archlinux.org/title/Zram#Using_zram-generator
@@ -922,7 +922,7 @@ SECONDS=0
     sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Enable Essential Services"
+    print_whiptail_info "Enable Core Services"
     # ----------------------------------------------------------------------------------------------------
 
     arch-chroot /mnt systemctl enable NetworkManager                   # Network Manager
@@ -939,7 +939,10 @@ SECONDS=0
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
 
         # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed plymouth git # git when core variant is used
+        packages=()
+        packages+=("plymouth")
+        packages+=("git") # need when core variant is used
+        arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
 
         # Configure mkinitcpio
         sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf
@@ -967,15 +970,13 @@ SECONDS=0
         print_whiptail_info "Install Arch OS Base Packages"
         # ----------------------------------------------------------------------------------------------------
 
-        # Base packages
+        # Install Base packages
         packages=()
         packages+=("pacman-contrib")
         packages+=("reflector")
         packages+=("pkgfile")
         packages+=("git")
         packages+=("nano")
-
-        # Install base packages
         arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
 
         # ----------------------------------------------------------------------------------------------------
@@ -1035,7 +1036,7 @@ SECONDS=0
         print_whiptail_info "Install AUR Helper"
         # ----------------------------------------------------------------------------------------------------
 
-        if [ "$ARCH_OS_AUR_HELPER" != "none" ] && [ -n "$ARCH_OS_AUR_HELPER" ]; then
+        if [ -n "$ARCH_OS_AUR_HELPER" ] && [ "$ARCH_OS_AUR_HELPER" != "none" ]; then
 
             # Install AUR Helper as user
             repo_url="https://aur.archlinux.org/${ARCH_OS_AUR_HELPER}.git"
@@ -1060,7 +1061,16 @@ SECONDS=0
         if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
 
             # Install packages
-            arch-chroot /mnt pacman -S --noconfirm --needed fish starship eza bat neofetch mc btop man-db
+            packages=()
+            packages+=("fish")
+            packages+=("starship")
+            packages+=("eza")
+            packages+=("bat")
+            packages+=("neofetch")
+            packages+=("mc")
+            packages+=("btop")
+            packages+=("man-db")
+            arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
 
             # Create config dirs for root & user
             mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
@@ -1199,7 +1209,7 @@ SECONDS=0
     if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
 
         # ----------------------------------------------------------------------------------------------------
-        print_whiptail_info "Install GNOME Packages (This takes about 15 minutes)"
+        print_whiptail_info "Install GNOME Packages (May take about 12 minutes)"
         # ----------------------------------------------------------------------------------------------------
 
         # Install packages
@@ -1363,7 +1373,7 @@ SECONDS=0
         } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
 
         # ----------------------------------------------------------------------------------------------------
-        print_whiptail_info "Enable GNOME Services"
+        print_whiptail_info "Enable Arch OS Desktop Services"
         # ----------------------------------------------------------------------------------------------------
 
         arch-chroot /mnt systemctl enable gdm.service                                                              # GNOME
