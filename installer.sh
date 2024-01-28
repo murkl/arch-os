@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -o pipefail # A pipeline error results in the error status of the entire pipeline
 set -u          # Uninitialized variables trigger errors
-set -E          # Script terminates immediately upon a pipeline error
+set -e          # Terminate if any command exits with a non-zero
+set -E          # ERR trap inherited by shell functions (errtrace)
 clear           # Clear
 
 # ----------------------------------------------------------------------------------------------------
