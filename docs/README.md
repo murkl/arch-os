@@ -123,57 +123,55 @@ curl -Ls http://arch.webhop.me | bash
 
 ## Usage
 
-For a robust & stable Arch OS experience, install as few additional packages from the official [Arch Repository](https://archlinux.org/packages) or [AUR](https://aur.archlinux.org) as possible. Instead, use [Flatpak](https://flathub.org) or [GNOME Software](https://apps.gnome.org). Furthermore change system files only if absolutely necessary and perform regular package upgrades.
+<div align="center">
 
-### For Developer
+<p><img src="screenshots/neofetch.png" /></p>
 
-For sandboxed CLI tools or test environment you can try [Distrobox](https://distrobox.it/) or [Toolbox](https://containertoolbx.org) and as container runtime use [Podman](https://podman.io) or [Docker](https://www.docker.com).
+<p><b>
 
-### For Gamer
+[➜ See Recommendation](DOCS.md#recommendation)
 
-For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.org/title/QEMU) and enable GPU Passthrough. Then you can use an emulated Microsoft Windows with native GPU access. For quick installation, have a look to this project: [quickpassthrough](https://github.com/HikariKnight/quickpassthrough)
+</b></p>
 
-**Note:** Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games from Linux with: `gamemoderun <file>`
+</div>
 
-### General Commands
+### Show system information
 
 ```
 fetch
 ```
 
-<img src="screenshots/neofetch.png" />
-
-#### Update system
+### Update system
 
 ```
 paru -Syu
 ```
 
-#### Search package
+### Search package
 
 ```
 paru -Ss <my search string>
 ```
 
-#### Install package
+### Install package
 
 ```
 paru -S <my package>
 ```
 
-#### List installed packages
+### List installed packages
 
 ```
 paru -Qe
 ```
 
-#### Show package info
+### Show package info
 
 ```
 paru -Qi <my package>
 ```
 
-#### Remove package
+### Remove package
 
 ```
 paru -Rsn <my package>
