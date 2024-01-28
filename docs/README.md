@@ -62,16 +62,12 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 - Pacman automatic cache optimization (weekly)
 - Pacman parallel downloads
 - Pacman & nano colors
-- Preconfigured fish shell (optional)
-- Preconfigured neofetch to show system info (optional)
-- Preconfigured starship for fancy Shell promt (optional)
-- Preconfigured eza as colorful ls replacement (optional)
-- Preconfigured bat as colorful man replacement (optional)
+- Shell Enhancement (see Arch OS Docs)
 
 ## Desktop Features
 
 - **+ Base Features**
-- Minimal Vanilla GNOME Desktop + Auto Login
+- Vanilla GNOME Desktop + Auto Login
 - Graphics Driver & Gamemode (Mesa, Intel i915, NVIDIA, AMD)
 - Pipewire Audio (Dolby Atmos supported)
 - Flatpak Support + Auto Update (GNOME Software)
