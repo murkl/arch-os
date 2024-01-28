@@ -798,7 +798,7 @@ SECONDS=0
     genfstab -U /mnt >>/mnt/etc/fstab
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Create Swap (zram)"
+    print_whiptail_info "Create Swap (zram-generator)"
     # ----------------------------------------------------------------------------------------------------
     {
         # https://wiki.archlinux.org/title/Zram#Using_zram-generator
@@ -1209,7 +1209,7 @@ SECONDS=0
     if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
 
         # ----------------------------------------------------------------------------------------------------
-        print_whiptail_info "Install GNOME Packages (This takes about 15 minutes)"
+        print_whiptail_info "Install GNOME Packages (May take 12 minutes)"
         # ----------------------------------------------------------------------------------------------------
 
         # Install packages
@@ -1373,7 +1373,7 @@ SECONDS=0
         } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
 
         # ----------------------------------------------------------------------------------------------------
-        print_whiptail_info "Enable GNOME Services"
+        print_whiptail_info "Enable Arch OS Desktop Services"
         # ----------------------------------------------------------------------------------------------------
 
         arch-chroot /mnt systemctl enable gdm.service                                                              # GNOME
