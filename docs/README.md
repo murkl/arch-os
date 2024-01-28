@@ -147,7 +147,7 @@ curl -Ls http://arch.webhop.me | bash
 
 </div>
 
-### Show system information
+### System information
 
 ```
 fetch
