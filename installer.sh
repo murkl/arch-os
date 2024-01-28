@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-set -Eeuo pipefail
-clear
+set -o pipefail # A pipeline error results in the error status of the entire pipeline
+set -u          # Uninitialized variables trigger errors
+set -e          # Terminate if any command exits with a non-zero
+set -E          # ERR trap inherited by shell functions (errtrace)
+clear           # Clear
 
 # ----------------------------------------------------------------------------------------------------
 # SCRIPT VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.2.0'
+VERSION='1.2.1'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
-
-# Config file (sourced if exists)
-INSTALLER_CONFIG="./installer.conf"
 
 # Logfile (created during install)
 LOG_FILE="./installer.log"
@@ -37,6 +37,10 @@ PROGRESS_TOTAL=40
 # INSTALLATION VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
+# Config file (sourced if exists)
+INSTALLER_CONFIG="./installer.conf"
+
+# Arch OS Installation
 ARCH_OS_USERNAME=""
 ARCH_OS_HOSTNAME=""
 ARCH_OS_PASSWORD=""
@@ -220,7 +224,7 @@ create_config() {
 tui_set_language() {
 
     # Loading
-    echo "Loading..."
+    clear && echo "Loading..."
 
     # Set timezone
     local user_input="$ARCH_OS_TIMEZONE"
@@ -589,9 +593,13 @@ while (true); do
             nano "$INSTALLER_CONFIG" </dev/tty
             continue # Open main menu for check again
         fi
+
+        ############################################
         break # Break loop and continue installation
+        ############################################
         ;;
-    *) continue ;; # Do nothing and continue loop
+
+    *) continue ;; # Do nothing and continue loop (Default)
 
     esac
 
@@ -793,12 +801,12 @@ SECONDS=0
     print_whiptail_info "Create Swap (zram)"
     # ----------------------------------------------------------------------------------------------------
     {
-        echo '[zram0]'
         # https://wiki.archlinux.org/title/Zram#Using_zram-generator
-        #echo 'zram-size = ram / 2'
-        #echo 'compression-algorithm = zstd'
-        #echo 'swap-priority = 100'
-        #echo 'fs-type = swap'
+        echo '[zram0]'
+        echo 'zram-size = ram / 2'
+        echo 'compression-algorithm = zstd'
+        echo 'swap-priority = 100'
+        echo 'fs-type = swap'
     } >/mnt/etc/systemd/zram-generator.conf
 
     # Optimize swap on zram (https://wiki.archlinux.org/title/Zram#Optimizing_swap_on_zram)
@@ -1021,7 +1029,7 @@ SECONDS=0
         sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
 
         # Set max VMAs (need for some apps/games)
-        echo vm.max_map_count=16777216 >/mnt/etc/sysctl.d/vm.max_map_count.conf
+        echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Install AUR Helper"
@@ -1257,6 +1265,7 @@ SECONDS=0
         packages+=("gst-plugin-pipewire")
         packages+=("gst-plugins-ugly")
         packages+=("libdvdcss")
+        packages+=("libheif")
 
         # Optimization
         packages+=("gamemode")

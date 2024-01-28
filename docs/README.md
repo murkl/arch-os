@@ -38,46 +38,48 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
   <a target="_blank" href="https://www.archlinux.de/releases/2024.01.01">archlinux-2024.01.01-x86_64.iso</a>
 </p>
 
-## Features
+## Core Features
 
-- 100% Intuitive TUI Installation
-- Advanced Installer Properties (see Arch OS Docs)
-- Minimal Arch Linux Base (Zen Kernel)
-- 3 Installation Variants: core, base, desktop
-- Automatic Arch Linux Housekeeping (except updates)
-- Minimal Vanilla GNOME Desktop (optional)
-- Disk Encryption + Auto Login (optional)
-- Graphics Driver & Gamemode (Mesa, Intel i915, NVIDIA, AMD)
-- Pipewire Audio (Dolby Atmos supported)
-- Wayland optimized
-- AUR Helper & Multilib included
-- Flatpak Support + Auto Update (GNOME Software)
-- Designed as the only OS on the disk
-- Swap (zram-generator)
-- UEFI only supported
+- Minimal Arch Linux (171 packages)
+- Zen Kernel (configurable)
+- Swap with zram-generator (zstd)
+- Disk Encryption (optional)
+- Filesystem ext4
+- Silent Boot
 - Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
-- Preconfigured fish shell (optional)
-- Preconfigured neofetch to show system info (optional)
-- Preconfigured starship for fancy Shell promt (optional)
-- Preconfigured eza as colorful ls replacement (optional)
-- Preconfigured bat as colorful man replacement (optional)
+- Network Manager
+- SSD Support
+- Microcode Support (Intel/AMD)
+- Designed as the only OS on the disk
+- UEFI only supported
+- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os) (optional)
+
+## Base Features
+
+- **+ Core Features**
+- AUR Helper (configurable)
+- Multilib (optional)
 - Missing package suggestion for commands
 - Automatic Pacman mirrorlist update (on every startup)
-- Pacman parallel downloads
 - Pacman automatic cache optimization (weekly)
+- Pacman parallel downloads
 - Pacman & nano colors
-- Network Manager
-- Microcode Support (Intel/AMD)
-- SSD Support
+- Shell Enhancement (see [Arch OS Docs](DOCS.md#shell-enhancement))
+
+## Desktop Features
+
+- **+ Base Features**
+- Vanilla GNOME Desktop + Auto Login
+- Graphics Driver & Gamemode (Mesa, Intel i915, NVIDIA, AMD)
+- Pipewire Audio (Dolby Atmos supported)
+- Flatpak Support + Auto Update (GNOME Software)
 - Firmware Update Tool preinstalled
 - GNOME Power Profiles Support
 - Samba, Networking Protocol Libs, Git, Utils & Codecs included
 - Printer Support
-- VM Support (tested in GNOME Boxes)
-- Installer Error Handling
-- Shellcheck approved
-- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os) (optional)
+- Wayland optimized
+- VM Support
 
 ## Arch OS Installation
 

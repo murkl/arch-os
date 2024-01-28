@@ -221,9 +221,9 @@ fish starship eza bat neofetch mc btop man-db
 ```
 
 - `fish` is set as default shell
-- `starship` is set as default promt see `~/.config/fish/config.fish`
-- `ls` is replaced with `eza` see `~/.config/fish/aliases.fish`
-- `man` is replaced with `bat` see `~/.config/fish/config.fish`
+- `starship` is set as fancy default promt see `~/.config/fish/config.fish`
+- `ls` is replaced with colorful `eza` see `~/.config/fish/aliases.fish`
+- `man` is replaced with colorful `bat` see `~/.config/fish/config.fish`
 
 ### Useful Terminal commands
 
@@ -291,7 +291,7 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 
 ### System Configurations
 
-- `vm.max_map_count` is set to `16777216` for compatibility of some apps/games
+- `vm.max_map_count` is set to `1048576` for compatibility of some apps/games
 - `DefaultTimeoutStopSec` is set to `10s` for faster shutdown
 
 ## Screenshots
@@ -311,6 +311,8 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 </div>
 
 ## Troubleshooting
+
+If an error occurs, see created `installer.log` for more details.
 
 ### Installation failed
 
