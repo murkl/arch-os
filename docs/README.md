@@ -22,7 +22,9 @@ curl -Ls http://arch.webhop.me | bash
 </div>
 
 <p align="center">
-This project aims to provide a solid Arch Linux base for desktop usage and an easy and fast to use installer for that. Choose between three variants and install a minimal Arch Linux Distribution optional with automatic housekeeping, Zen Kernel, GNOME as desktop with graphics driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more features...
+
+This project aims to provide a solid Arch Linux base for desktop usage and an easy and fast to use installer for that. Choose between [Arch OS Variants](DOCS.md#installation-variants) and install a minimal Arch Linux Distribution optional with automatic housekeeping, Zen Kernel, GNOME as desktop with graphics driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more features...
+
 </p>
 
 <p align="center"><strong>Sole OS on a single disk</strong></p>
@@ -40,46 +42,46 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 
 ## Core Features
 
-- Minimal Arch Linux (171 packages)
-- Zen Kernel (configurable)
-- Swap with zram-generator (zstd)
+- [Minimal Arch Linux](DOCS.md#minimal-installation) (171 packages)
+- Zen Kernel ([configurable](DOCS.md#installation-properties))
+- [Swap](DOCS.md#swap) with zram-generator (zstd)
 - Disk Encryption (optional)
 - Filesystem ext4
 - Silent Boot
+- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os) (optional)
 - Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
 - Network Manager
-- SSD Support
+- SSD Support (fstrim)
 - Microcode Support (Intel/AMD)
-- Designed as the only OS on the disk
+- Sole OS on a single disk (see [Arch OS Docs](DOCS.md#partitions-layout))
 - UEFI only supported
-- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os) (optional)
 
 ## Base Features
 
 - **+ Core Features**
-- AUR Helper (configurable)
+- AUR Helper ([configurable](DOCS.md#installation-properties))
 - Multilib (optional)
+- [Shell Enhancement](DOCS.md#shell-enhancement)
 - Missing package suggestion for commands
 - Automatic Pacman mirrorlist update (on every startup)
 - Pacman automatic cache optimization (weekly)
 - Pacman parallel downloads
 - Pacman & nano colors
-- Shell Enhancement (see [Arch OS Docs](DOCS.md#shell-enhancement))
 
 ## Desktop Features
 
 - **+ Base Features**
 - Vanilla GNOME Desktop + Auto Login
-- Graphics Driver & Gamemode (Mesa, Intel i915, NVIDIA, AMD)
-- Pipewire Audio (Dolby Atmos supported)
+- [Graphics Driver](DOCS.md#install-graphics-driver-manually) & Gamemode (Mesa, Intel i915, NVIDIA, AMD, ATI)
+- [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
 - Flatpak Support + Auto Update (GNOME Software)
 - Firmware Update Tool preinstalled
 - GNOME Power Profiles Support
 - Samba, Networking Protocol Libs, Git, Utils & Codecs included
-- Printer Support
+- Printer Support (cups)
 - Wayland optimized
-- VM Support
+- [VM Support](DOCS.md#vm-support)
 
 ## Arch OS Installation
 
@@ -98,7 +100,7 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 ### 1. Prepare bootable USB Device
 
 - Download latest Arch Linux ISO from **[archlinux.org](https://www.archlinux.org/download)** or **[archlinux.de](https://www.archlinux.de/download)**
-- Use **[Ventoy](https://www.ventoy.net/en/download.html)** or your prefered iso writer tool to create bootable Device
+- Use **[Ventoy](https://www.ventoy.net/en/download.html)** or your prefered iso writer tool to create a bootable USB device
 - Alternatively (Linux only): `sudo dd bs=4M if=archlinux-*.iso of=/dev/sdX status=progress`
 
 ### 2. Configure BIOS Settings
@@ -118,6 +120,16 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 ```
 curl -Ls http://arch.webhop.me | bash
 ```
+
+</div>
+
+<div align="center">
+
+<p><b>
+
+[➜ See Advanced Installation](DOCS.md#installation-properties)
+
+</b></p>
 
 </div>
 
