@@ -1364,10 +1364,10 @@ SECONDS=0
 
         {
             echo 'Section "InputClass"'
-            echo '    Identifier "keyboard"'
+            echo '    Identifier "system-keyboard"'
             echo '    MatchIsKeyboard "yes"'
             echo '    Option "XkbLayout" "'"${ARCH_OS_X11_KEYBOARD_LAYOUT}"'"'
-            echo '    Option "XkbModel" "pc105"'
+            echo '    Option "XkbModel" "pc105"' # TODO: Do we need this?
             echo '    Option "XkbVariant" "'"${ARCH_OS_X11_KEYBOARD_VARIANT}"'"'
             echo 'EndSection'
         } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
