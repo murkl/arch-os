@@ -316,7 +316,7 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 
 ## Troubleshooting
 
-If an error occurs, see created `installer.log` for more details. Each step in `installer.sh` is seperated in the log file with `###!CMD` so you can identify the regarding script part.
+If an error occurs, see created `installer.log` for more details. Each step in `installer.sh` is seperated in the log file with `>>> Progress Title` so you can identify the regarding script part.
 
 ### Installation failed
 
