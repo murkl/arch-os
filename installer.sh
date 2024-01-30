@@ -115,18 +115,21 @@ print_whiptail_info() {
 
 pacman_install() {
     local packages=("$@")
-    local pacman_error="true"
+    local pacman_failed="true"
     # Retry installing packages 5 times (in case of connection issues)
     for ((i = 1; i < 6; i++)); do
+        # Print updated whiptail info
         [ $i -gt 1 ] && print_whiptail_info "${PROGRESS_TITLE} (${i}. retry)"
+        # Try installing packages
         if arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
-            pacman_error="false"
-            break
-        else
-            sleep 10
+            pacman_failed="false"
+            break # Success: break loop
         fi
+        # Wait 10 seconds & try again
+        sleep 10
     done
-    [ "$pacman_error" = "true" ] && return 1
+    [ "$pacman_failed" = "true" ] && return 1  # Failed after 5 retries
+    [ "$pacman_failed" = "false" ] && return 0 # Success
 }
 
 # ----------------------------------------------------------------------------------------------------
