@@ -49,6 +49,7 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os) (optional)
 - Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
+- Watchdog disabled
 - Network Manager
 - SSD Support (fstrim)
 - Microcode Support (Intel/AMD)
