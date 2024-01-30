@@ -172,7 +172,7 @@ ARCH_OS_LOCALE_GEN_LIST=('de_DE.UTF-8 UTF-8' 'de_DE ISO-8859-1' 'de_DE@euro ISO-
 # Console keymap (core) | Show available: localectl list-keymaps | Example: de-latin1-nodeadkeys
 ARCH_OS_VCONSOLE_KEYMAP='de-latin1-nodeadkeys'
 
-# Console font (core) | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Default: null | Example: eurlatgr
+# Console font (core) | Default: null | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Example: eurlatgr
 ARCH_OS_VCONSOLE_FONT=''
 
 # Kernel (core) | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened
@@ -205,7 +205,10 @@ ARCH_OS_GRAPHICS_DRIVER='nvidia'
 # X11 keyboard layout (desktop) | Show available: localectl list-x11-keymap-layouts | Example: de
 ARCH_OS_X11_KEYBOARD_LAYOUT='de'
 
-# X11 keyboard variant (desktop) | Show available: localectl list-x11-keymap-variants | Default: null | Example: nodeadkeys
+# X11 keyboard model (desktop) | Default: pc105 | Show available: localectl list-x11-keymap-models
+ARCH_OS_X11_KEYBOARD_MODEL='pc105'
+
+# X11 keyboard variant (desktop) | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys
 ARCH_OS_X11_KEYBOARD_VARIANT='nodeadkeys'
 
 # VM Support (desktop) | Default: true | Disable: false
