@@ -121,12 +121,11 @@ pacman_install() {
         # Print updated whiptail info
         [ $i -gt 1 ] && print_whiptail_info "${PROGRESS_TITLE} (${i}. retry)"
         # Try installing packages
-        if arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
-            pacman_failed="false"
-            break # Success: break loop
+        if ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
+            sleep 10 && continue # Wait 10 seconds & try again
+        else
+            pacman_failed="false" && break # Success: break loop
         fi
-        # Wait 10 seconds & try again
-        sleep 10
     done
     [ "$pacman_failed" = "true" ] && return 1  # Failed after 5 retries
     [ "$pacman_failed" = "false" ] && return 0 # Success
