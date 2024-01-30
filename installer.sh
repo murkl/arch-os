@@ -5,6 +5,9 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 clear           # Clear
 
+# Set error trap for setup (and another for installation)
+trap 'echo "ERROR: \"$BASH_COMMAND\" failed with exit code \"$?\" in line \"${LINENO}\""' ERR
+
 # ----------------------------------------------------------------------------------------------------
 # SCRIPT VARIABLES
 # ----------------------------------------------------------------------------------------------------
@@ -101,10 +104,8 @@ print_menu_entry() {
 }
 
 print_whiptail_info() {
-    PROGRESS_TITLE="$1" # Set current progress title
-    # Print info to stderr in case of failure (only stderr will be logged)
-    echo "###!CMD" >&2               # Print marker for logging
-    echo ">>> ${PROGRESS_TITLE}" >&2 # Print title for logging
+    PROGRESS_TITLE="$1"              # Set current progress title
+    echo ">>> ${PROGRESS_TITLE}" >&1 # Print title for logging
     # Print percent & title for whiptail (uses descriptor 3 as stdin)
     ((PROGRESS_COUNT += 1)) && echo -e "XXX\n$((PROGRESS_COUNT * 100 / PROGRESS_TOTAL))\n${PROGRESS_TITLE}...\nXXX" >&3
 }
@@ -649,6 +650,14 @@ fi
 # ----------------------------------------------------------------------------------------------------
 
 # shellcheck disable=SC2317
+trap_error() {
+    local result_code="$?"
+    echo "###ERR" >&2 # Print marker for exit logging
+    echo "Progress:  '${PROGRESS_TITLE}' failed with exit code '${result_code}'" >&2
+    echo "Command:   '${BASH_COMMAND}' in line '${LINENO}'" >&2
+}
+
+# shellcheck disable=SC2317
 trap_exit() {
 
     # Result code
@@ -663,16 +672,16 @@ trap_exit() {
     if [ "$result_code" -gt 0 ]; then # Error >= 1
 
         # Read Logs
-        local logs=""
+        local log_whiptail=""
         local line=""
         while read -r line; do
-            [ "$line" = "###!CMD" ] && break # If first marker (from bottom) found, break loop
-            [ -z "$line" ] && continue       # Skip newline
-            logs="${logs}\n${line}"          # Append log
-        done <<<"$(tac "$LOG_FILE")"         # Read logfile inverted (from bottom)
+            [ "$line" = "###ERR" ] && break         # If first marker (from bottom) found, break loop
+            [ -z "$line" ] && continue              # Skip newline
+            log_whiptail="${log_whiptail}\n${line}" # Append log
+        done <<<"$(tac "$LOG_FILE")"                # Read logfile inverted (from bottom)
 
         # Show TUI (duration & log)
-        whiptail --clear --title "$TITLE" --msgbox "Arch OS Installation failed.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds\n\n$(echo -e "$logs" | tac)" --scrolltext 30 90
+        whiptail --clear --title "$TITLE" --msgbox "Arch OS Installation failed.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds\n\n$(echo -e "$log_whiptail" | tac)" --scrolltext 30 90
 
     else # Success = 0
         # Show TUI (duration time)
@@ -697,11 +706,14 @@ trap_exit() {
 # SET TRAP & TIME
 # ----------------------------------------------------------------------------------------------------
 
-# Set trap for logging on exit
-trap 'trap_exit $?' EXIT
-
 # Messure execution time
 SECONDS=0
+
+# Set installation trap for error
+trap 'trap_error' ERR
+
+# Set installation trap for logging on exit
+trap 'trap_exit' EXIT
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # //////////////////////////////////////  ARCH OS INSTALLATION  //////////////////////////////////////
