@@ -22,9 +22,7 @@ curl -Ls http://arch.webhop.me | bash
 </div>
 
 <p align="center">
-
-This project aims to provide a solid Arch Linux base for desktop usage and an easy and fast to use installer for that. Choose between [Arch OS Variants](DOCS.md#installation-variants) and install a minimal Arch Linux Distribution optional with automatic housekeeping, Zen Kernel, GNOME as desktop with graphics driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more features...
-
+This project aims to provide a solid Arch Linux base for desktop usage and an easy and fast to use installer for that. Choose between 3 Arch OS Variants and install a minimal Arch Linux Distribution optional with automatic housekeeping, Zen Kernel, GNOME as desktop with graphics driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more features...
 </p>
 
 <p align="center"><strong>Sole OS on a single disk</strong></p>
@@ -51,6 +49,7 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os) (optional)
 - Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
+- Watchdog disabled
 - Network Manager
 - SSD Support (fstrim)
 - Microcode Support (Intel/AMD)

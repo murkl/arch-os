@@ -5,12 +5,15 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 clear           # Clear
 
+# Set error trap for setup (and another for installation)
+trap 'echo "ERROR: \"$BASH_COMMAND\" failed with exit code \"$?\" in line \"${LINENO}\""' ERR
+
 # ----------------------------------------------------------------------------------------------------
 # SCRIPT VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
 # Version
-VERSION='1.2.2'
+VERSION='1.2.3'
 
 # Title
 TITLE="Arch OS Installer ${VERSION}"
@@ -26,6 +29,9 @@ TUI_HEIGHT="20"
 
 # TUI state
 TUI_POSITION=""
+
+# Whiptail progress title
+PROGRESS_TITLE=""
 
 # Whiptail progress count
 PROGRESS_COUNT=0
@@ -55,6 +61,7 @@ ARCH_OS_LOCALE_GEN_LIST=()
 ARCH_OS_VCONSOLE_KEYMAP=""
 ARCH_OS_VCONSOLE_FONT=""
 ARCH_OS_X11_KEYBOARD_LAYOUT=""
+ARCH_OS_X11_KEYBOARD_MODEL=""
 ARCH_OS_X11_KEYBOARD_VARIANT=""
 ARCH_OS_BOOTSPLASH_ENABLED=""
 ARCH_OS_VARIANT=""
@@ -97,11 +104,32 @@ print_menu_entry() {
 }
 
 print_whiptail_info() {
-    # Print info to stderr in case of failure (only stderr will be logged)
-    echo "###!CMD" >&2  # Print marker for logging
-    echo ">>> ${1}" >&2 # Print title for logging
-    # Print percent & info for whiptail (uses descriptor 3 as stdin)
-    ((PROGRESS_COUNT += 1)) && echo -e "XXX\n$((PROGRESS_COUNT * 100 / PROGRESS_TOTAL))\n${1}...\nXXX" >&3
+    PROGRESS_TITLE="$1"              # Set current progress title
+    echo ">>> ${PROGRESS_TITLE}" >&1 # Print title for logging
+    # Print percent & title for whiptail (uses descriptor 3 as stdin)
+    ((PROGRESS_COUNT += 1)) && echo -e "XXX\n$((PROGRESS_COUNT * 100 / PROGRESS_TOTAL))\n${PROGRESS_TITLE}...\nXXX" >&3
+}
+
+# ----------------------------------------------------------------------------------------------------
+# HELPER FUNCTIONS
+# ----------------------------------------------------------------------------------------------------
+
+pacman_install() {
+    local packages=("$@")
+    local pacman_failed="true"
+    # Retry installing packages 5 times (in case of connection issues)
+    for ((i = 1; i < 6; i++)); do
+        # Print updated whiptail info
+        [ $i -gt 1 ] && print_whiptail_info "${PROGRESS_TITLE} (${i}. retry)"
+        # Try installing packages
+        if ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
+            sleep 10 && continue # Wait 10 seconds & try again
+        else
+            pacman_failed="false" && break # Success: break loop
+        fi
+    done
+    [ "$pacman_failed" = "true" ] && return 1  # Failed after 5 retries
+    [ "$pacman_failed" = "false" ] && return 0 # Success
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -117,6 +145,7 @@ default_config() {
     [ -z "$ARCH_OS_AUR_HELPER" ] && ARCH_OS_AUR_HELPER="paru"
     [ -z "$ARCH_OS_MULTILIB_ENABLED" ] && ARCH_OS_MULTILIB_ENABLED="true"
     [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
+    [ -z "$ARCH_OS_X11_KEYBOARD_MODEL" ] && ARCH_OS_X11_KEYBOARD_MODEL="pc105"
     #[ -z "$ARCH_OS_VCONSOLE_FONT" ] && ARCH_OS_VCONSOLE_FONT="eurlatgr"
     #[ -z "$ARCH_OS_REFLECTOR_COUNTRY" ] && ARCH_OS_REFLECTOR_COUNTRY="Germany,France"
 }
@@ -176,7 +205,7 @@ create_config() {
         echo "# Console keymap (core) | Show available: localectl list-keymaps | Example: de-latin1-nodeadkeys"
         echo "ARCH_OS_VCONSOLE_KEYMAP='${ARCH_OS_VCONSOLE_KEYMAP}'"
         echo ""
-        echo "# Console font (core) | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Default: null | Example: eurlatgr"
+        echo "# Console font (core) | Default: null | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Example: eurlatgr"
         echo "ARCH_OS_VCONSOLE_FONT='${ARCH_OS_VCONSOLE_FONT}'"
         echo ""
         echo "# Kernel (core) | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened"
@@ -209,7 +238,10 @@ create_config() {
         echo "# X11 keyboard layout (desktop) | Show available: localectl list-x11-keymap-layouts | Example: de"
         echo "ARCH_OS_X11_KEYBOARD_LAYOUT='${ARCH_OS_X11_KEYBOARD_LAYOUT}'"
         echo ""
-        echo "# X11 keyboard variant (desktop) | Show available: localectl list-x11-keymap-variants | Default: null | Example: nodeadkeys"
+        echo "# X11 keyboard model (desktop) | Default: pc105 | Show available: localectl list-x11-keymap-models"
+        echo "ARCH_OS_X11_KEYBOARD_MODEL='${ARCH_OS_X11_KEYBOARD_MODEL}'"
+        echo ""
+        echo "# X11 keyboard variant (desktop) | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys"
         echo "ARCH_OS_X11_KEYBOARD_VARIANT='${ARCH_OS_X11_KEYBOARD_VARIANT}'"
         echo ""
         echo "# VM Support (desktop) | Default: true | Disable: false"
@@ -618,6 +650,14 @@ fi
 # ----------------------------------------------------------------------------------------------------
 
 # shellcheck disable=SC2317
+trap_error() {
+    local result_code="$?"
+    echo "###ERR" >&2 # Print marker for exit logging
+    echo "Progress:  '${PROGRESS_TITLE}' failed with exit code '${result_code}'" >&2
+    echo "Command:   '${BASH_COMMAND}' in line '${LINENO}'" >&2
+}
+
+# shellcheck disable=SC2317
 trap_exit() {
 
     # Result code
@@ -632,16 +672,16 @@ trap_exit() {
     if [ "$result_code" -gt 0 ]; then # Error >= 1
 
         # Read Logs
-        local logs=""
+        local log_whiptail=""
         local line=""
         while read -r line; do
-            [ "$line" = "###!CMD" ] && break # If first marker (from bottom) found, break loop
-            [ -z "$line" ] && continue       # Skip newline
-            logs="${logs}\n${line}"          # Append log
-        done <<<"$(tac "$LOG_FILE")"         # Read logfile inverted (from bottom)
+            [ "$line" = "###ERR" ] && break         # If first marker (from bottom) found, break loop
+            [ -z "$line" ] && continue              # Skip newline
+            log_whiptail="${log_whiptail}\n${line}" # Append log
+        done <<<"$(tac "$LOG_FILE")"                # Read logfile inverted (from bottom)
 
         # Show TUI (duration & log)
-        whiptail --clear --title "$TITLE" --msgbox "Arch OS Installation failed.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds\n\n$(echo -e "$logs" | tac)" --scrolltext 30 90
+        whiptail --clear --title "$TITLE" --msgbox "Arch OS Installation failed.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds\n\n$(echo -e "$log_whiptail" | tac)" --scrolltext 30 90
 
     else # Success = 0
         # Show TUI (duration time)
@@ -666,11 +706,14 @@ trap_exit() {
 # SET TRAP & TIME
 # ----------------------------------------------------------------------------------------------------
 
-# Set trap for logging on exit
-trap 'trap_exit $?' EXIT
-
 # Messure execution time
 SECONDS=0
+
+# Set installation trap for error
+trap 'trap_error' ERR
+
+# Set installation trap for logging on exit
+trap 'trap_exit' EXIT
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # //////////////////////////////////////  ARCH OS INSTALLATION  //////////////////////////////////////
@@ -871,7 +914,7 @@ SECONDS=0
 
     # Kernel args
     # Zswap should be disabled when using zram (https://github.com/archlinux/archinstall/issues/881)
-    kernel_args_default="rw init=/usr/lib/systemd/systemd zswap.enabled=0 quiet splash vt.global_cursor_default=0"
+    kernel_args_default="rw init=/usr/lib/systemd/systemd zswap.enabled=0 nowatchdog quiet splash vt.global_cursor_default=0"
     [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot ${kernel_args_default}"
     [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}") ${kernel_args_default}"
 
@@ -942,7 +985,7 @@ SECONDS=0
         packages=()
         packages+=("plymouth")
         packages+=("git") # need when core variant is used
-        arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+        pacman_install "${packages[@]}"
 
         # Configure mkinitcpio
         sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf
@@ -977,7 +1020,7 @@ SECONDS=0
         packages+=("pkgfile")
         packages+=("git")
         packages+=("nano")
-        arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+        pacman_install "${packages[@]}"
 
         # ----------------------------------------------------------------------------------------------------
         print_whiptail_info "Enable Arch OS Base Services"
@@ -1070,7 +1113,7 @@ SECONDS=0
             packages+=("mc")
             packages+=("btop")
             packages+=("man-db")
-            arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+            pacman_install "${packages[@]}"
 
             # Create config dirs for root & user
             mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
@@ -1191,7 +1234,7 @@ SECONDS=0
             arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
         else
             # Install bash-completion
-            arch-chroot /mnt pacman -S --noconfirm --needed bash-completion
+            pacman_install bash-completion
         fi
 
         # ----------------------------------------------------------------------------------------------------
@@ -1292,7 +1335,7 @@ SECONDS=0
         #packages+=("xf86-input-synaptics") # For some legacy touchpads
 
         # Install packages
-        arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+        pacman_install "${packages[@]}"
 
         # Add user to gamemode group
         arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
@@ -1305,23 +1348,23 @@ SECONDS=0
             case $hypervisor in
             kvm)
                 print_whiptail_info "KVM has been detected, setting up guest tools."
-                arch-chroot /mnt pacman -S --noconfirm --needed spice spice-vdagent spice-protocol spice-gtk qemu-guest-agent
+                pacman_install spice spice-vdagent spice-protocol spice-gtk qemu-guest-agent
                 arch-chroot /mnt systemctl enable qemu-guest-agent
                 ;;
             vmware)
                 print_whiptail_info "VMWare Workstation/ESXi has been detected, setting up guest tools."
-                arch-chroot /mnt pacman -S --noconfirm --needed open-vm-tools
+                pacman_install open-vm-tools
                 arch-chroot /mnt systemctl enable vmtoolsd
                 arch-chroot /mnt systemctl enable vmware-vmblock-fuse
                 ;;
             oracle)
                 print_whiptail_info "VirtualBox has been detected, setting up guest tools."
-                arch-chroot /mnt pacman -S --noconfirm --needed virtualbox-guest-utils
+                pacman_install virtualbox-guest-utils
                 arch-chroot /mnt systemctl enable vboxservice
                 ;;
             microsoft)
                 print_whiptail_info "Hyper-V has been detected, setting up guest tools."
-                arch-chroot /mnt pacman -S --noconfirm --needed hyperv
+                pacman_install hyperv
                 arch-chroot /mnt systemctl enable hv_fcopy_daemon
                 arch-chroot /mnt systemctl enable hv_kvp_daemon
                 arch-chroot /mnt systemctl enable hv_vss_daemon
@@ -1364,10 +1407,10 @@ SECONDS=0
 
         {
             echo 'Section "InputClass"'
-            echo '    Identifier "keyboard"'
+            echo '    Identifier "system-keyboard"'
             echo '    MatchIsKeyboard "yes"'
             echo '    Option "XkbLayout" "'"${ARCH_OS_X11_KEYBOARD_LAYOUT}"'"'
-            echo '    Option "XkbModel" "pc105"'
+            echo '    Option "XkbModel" "'"${ARCH_OS_X11_KEYBOARD_MODEL}"'"'
             echo '    Option "XkbVariant" "'"${ARCH_OS_X11_KEYBOARD_VARIANT}"'"'
             echo 'EndSection'
         } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
@@ -1379,7 +1422,7 @@ SECONDS=0
         arch-chroot /mnt systemctl enable gdm.service                                                              # GNOME
         arch-chroot /mnt systemctl enable bluetooth.service                                                        # Bluetooth
         arch-chroot /mnt systemctl enable avahi-daemon                                                             # Network browsing service
-        arch-chroot /mnt systemctl enable cups.service                                                             # Printer
+        arch-chroot /mnt systemctl enable cups.socket                                                              # Printer
         arch-chroot /mnt systemctl enable smb.service                                                              # Samba
         arch-chroot /mnt systemctl enable nmb.service                                                              # Samba
         arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
@@ -1415,7 +1458,7 @@ SECONDS=0
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-mesa")
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-mesa-utils")
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vkd3d")
-            arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+            pacman_install "${packages[@]}"
             ;;
 
         "intel_i915") # https://wiki.archlinux.org/title/Intel_graphics#Installation
@@ -1423,11 +1466,10 @@ SECONDS=0
             packages+=("vulkan-intel")
             packages+=("vkd3d")
             packages+=("libva-intel-driver")
-            packages+=("intel-media-driver") # do we need this?
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vulkan-intel")
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vkd3d")
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-libva-intel-driver")
-            arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+            pacman_install "${packages[@]}"
             sed -i "s/^MODULES=(.*)/MODULES=(i915)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
             ;;
@@ -1443,10 +1485,10 @@ SECONDS=0
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-nvidia-utils")
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-opencl-nvidia")
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vkd3d")
-            arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+            pacman_install "${packages[@]}"
             # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
             # Alternative (slow boot, bios logo twice, but correct plymouth resolution):
-            #sed -i "s/zswap.enabled=0 quiet/zswap.enabled=0 nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
+            #sed -i "s/nowatchdog quiet/nowatchdog nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
             mkdir -p /mnt/etc/modprobe.d/ && echo -e 'options nvidia_drm modeset=1 fbdev=1' >/mnt/etc/modprobe.d/nvidia.conf
             sed -i "s/^MODULES=(.*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
             # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
@@ -1485,7 +1527,7 @@ SECONDS=0
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vulkan-radeon")
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-mesa-vdpau")
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vkd3d")
-            arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+            pacman_install "${packages[@]}"
             sed -i "s/^MODULES=(.*)/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
             ;;
@@ -1499,7 +1541,7 @@ SECONDS=0
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-libva-mesa-driver")
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-mesa-vdpau")
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vkd3d")
-            arch-chroot /mnt pacman -S --noconfirm --needed "${packages[@]}"
+            pacman_install "${packages[@]}"
             sed -i "s/^MODULES=(.*)/MODULES=(amdgpu radeon)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
             ;;
