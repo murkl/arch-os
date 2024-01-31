@@ -58,15 +58,19 @@ ARCH_OS_ECN_ENABLED=""
 # shellcheck disable=SC2317
 trap_error_setup() {
     local result_code="$?"
-    echo "ERROR: '${BASH_COMMAND}' failed with exit code '${result_code}' in line '${LINENO}'"
+    local line_no="$1"
+    local func_name="$2"
+    echo "ERROR: Command '${BASH_COMMAND}' failed with exit code ${result_code} in function '${func_name}' (line ${line_no})" >&2
 }
 
 # shellcheck disable=SC2317
 trap_error_install() {
     local result_code="$?"
+    local line_no="$1"
+    local func_name="$2"
     echo "###ERR" >&2 # Print marker for exit logging
-    echo "Progress:  '${PROGRESS_TITLE}' failed with exit code '${result_code}'" >&2
-    echo "Command:   '${BASH_COMMAND}' in line '${LINENO}'" >&2
+    echo "Progress:  '${PROGRESS_TITLE}' failed with exit code ${result_code}" >&2
+    echo "Command:   '${BASH_COMMAND}' in function '${func_name}' (line ${line_no})" >&2
 }
 
 # shellcheck disable=SC2317
@@ -296,7 +300,7 @@ tui_set_language() {
         whiptail --clear --title "$TITLE" --msgbox "Timezone is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         ARCH_OS_TIMEZONE=""
         create_config
-        return 1
+        return 0
     fi
 
     # Check if user want select timezone from menu
@@ -315,7 +319,7 @@ tui_set_language() {
     # Check timezone finally
     if [ ! -f "/usr/share/zoneinfo/${user_input}" ]; then
         whiptail --clear --title "$TITLE" --msgbox "Timezone '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
-        return 1
+        return 0
     else
         ARCH_OS_TIMEZONE="$user_input"
     fi
@@ -332,7 +336,7 @@ tui_set_language() {
         ARCH_OS_LOCALE_LANG=""
         ARCH_OS_LOCALE_GEN_LIST=""
         create_config
-        return 1
+        return 0
     fi
 
     # Check if user want select locale from menu
@@ -356,7 +360,7 @@ tui_set_language() {
     # shellcheck disable=SC2001
     if ! grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<<"$user_input") " /etc/locale.gen; then
         whiptail --clear --title "$TITLE" --msgbox "Locale '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
-        return 1
+        return 0
     else
         ARCH_OS_LOCALE_LANG="$user_input"
     fi
@@ -390,7 +394,7 @@ tui_set_keyboard() {
         whiptail --clear --title "$TITLE" --msgbox "Console Keymap is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         ARCH_OS_VCONSOLE_KEYMAP=""
         create_config
-        return 1
+        return 0
     fi
 
     # Check if user want select keymap from menu
@@ -412,7 +416,7 @@ tui_set_keyboard() {
     # Finally check & set console keymap
     if ! localectl list-keymaps | grep -Fxq "$user_input"; then
         whiptail --clear --title "$TITLE" --msgbox "Error: Keyboard layout '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
-        return 1
+        return 0
     else
         ARCH_OS_VCONSOLE_KEYMAP="$user_input"
     fi
@@ -429,7 +433,7 @@ tui_set_user() {
     if [ -z "$ARCH_OS_USERNAME" ]; then
         whiptail --clear --title "$TITLE" --msgbox "Arch OS Username is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         create_config # Remove username
-        return 1
+        return 0
     fi
     # Success
     create_config
@@ -444,7 +448,7 @@ tui_set_password() {
     if [ -z "$ARCH_OS_PASSWORD" ]; then
         whiptail --clear --title "$TITLE" --msgbox "Password is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         create_config # Remove password
-        return 1
+        return 0
     fi
 
     local password_check
@@ -453,7 +457,7 @@ tui_set_password() {
         whiptail --clear --title "$TITLE" --msgbox "Password not identical" "$TUI_HEIGHT" "$TUI_WIDTH"
         ARCH_OS_PASSWORD=""
         create_config # Remove password
-        return 1
+        return 0
     fi
     # Success
     create_config
@@ -538,7 +542,7 @@ tui_set_variant() {
             whiptail --clear --title "$TITLE" --msgbox "X11 keyboard layout is null" "$TUI_HEIGHT" "$TUI_WIDTH"
             ARCH_OS_X11_KEYBOARD_LAYOUT=""
             create_config
-            return 1
+            return 0
         fi
         ARCH_OS_X11_KEYBOARD_LAYOUT="$user_input"
 
@@ -567,7 +571,7 @@ wait && sleep 0.2
 ! command -v lsblk &>/dev/null && echo "ERROR: lsblk not installed" >&2 && exit 1
 
 # Set error trap for setup
-trap 'trap_error_setup' ERR
+trap 'trap_error_setup ${LINENO} ${FUNCNAME-main}' ERR
 
 # Init installer config
 # shellcheck disable=SC1090
@@ -632,37 +636,38 @@ while (true); do
     case "${menu_selection}" in
 
     "user")
-        tui_set_user || continue
+        tui_set_user
         ;;
     "password")
-        tui_set_password || continue
+        tui_set_password
         ;;
     "language")
-        tui_set_language || continue
+        tui_set_language
         ;;
     "keyboard")
-        tui_set_keyboard || continue
+        tui_set_keyboard
         ;;
     "disk")
-        tui_set_disk || continue
+        tui_set_disk
         ;;
     "encrypt")
-        tui_set_encryption || continue
+        tui_set_encryption
         ;;
     "bootsplash")
-        tui_set_bootsplash || continue
+        tui_set_bootsplash
         ;;
     "variant")
-        tui_set_variant || continue
+        tui_set_variant
         ;;
     "edit")
-        nano "$CONFIG_FILE" </dev/tty || continue
         # Create config if something is missing after edit
         # shellcheck disable=SC1090
-        source "$CONFIG_FILE" && create_config
+        nano "$CONFIG_FILE" </dev/tty && source "$CONFIG_FILE" && create_config
         ;;
     "install")
+        # If install is pressed, but config is incomplete
         check_config || continue
+
         # shellcheck disable=SC1090
         create_config && source "$CONFIG_FILE"
 
@@ -687,7 +692,7 @@ done
 SECONDS=0
 
 # Set installation trap for error
-trap 'trap_error_install' ERR
+trap 'trap_error_install ${LINENO} ${FUNCNAME-main}' ERR
 
 # Set installation trap for logging on exit
 trap 'trap_exit_install' EXIT
