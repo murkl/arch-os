@@ -5,48 +5,25 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 clear           # Clear
 
-# Set error trap for setup (and another for installation)
-trap 'echo "ERROR: \"$BASH_COMMAND\" failed with exit code \"$?\" in line \"${LINENO}\""' ERR
-
 # ----------------------------------------------------------------------------------------------------
 # SCRIPT VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
-# Version
-VERSION='1.2.3'
-
-# Title
+VERSION='1.2.4'
 TITLE="Arch OS Installer ${VERSION}"
-
-# Logfile (created during install)
 LOG_FILE="./installer.log"
-
-# TUI width
+CONFIG_FILE="./installer.conf"
 TUI_WIDTH="80"
-
-# TUI height
 TUI_HEIGHT="20"
-
-# TUI state
 TUI_POSITION=""
-
-# Whiptail progress title
 PROGRESS_TITLE=""
-
-# Whiptail progress count
 PROGRESS_COUNT=0
-
-# Whiptail total processes begins by 0 (number of occurrences of print_whiptail_info - 3)
 PROGRESS_TOTAL=40
 
 # ----------------------------------------------------------------------------------------------------
 # INSTALLATION VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
-# Config file (sourced if exists)
-INSTALLER_CONFIG="./installer.conf"
-
-# Arch OS Installation
 ARCH_OS_USERNAME=""
 ARCH_OS_HOSTNAME=""
 ARCH_OS_PASSWORD=""
@@ -75,16 +52,70 @@ ARCH_OS_MULTILIB_ENABLED=""
 ARCH_OS_ECN_ENABLED=""
 
 # ----------------------------------------------------------------------------------------------------
-# DEPENDENCIES
+# TRAP FUNCTIONS
 # ----------------------------------------------------------------------------------------------------
 
-if ! command -v whiptail &>/dev/null; then
-    echo "ERROR: whiptail not found" >&2
-    exit 1
-fi
+# shellcheck disable=SC2317
+trap_error_setup() {
+    local result_code="$?"
+    echo "ERROR: '${BASH_COMMAND}' failed with exit code '${result_code}' in line '${LINENO}'"
+}
+
+# shellcheck disable=SC2317
+trap_error_install() {
+    local result_code="$?"
+    echo "###ERR" >&2 # Print marker for exit logging
+    echo "Progress:  '${PROGRESS_TITLE}' failed with exit code '${result_code}'" >&2
+    echo "Command:   '${BASH_COMMAND}' in line '${LINENO}'" >&2
+}
+
+# shellcheck disable=SC2317
+trap_exit_install() {
+
+    # Result code
+    local result_code="$?"
+
+    # Duration
+    local duration=$SECONDS
+    local duration_min="$((duration / 60))"
+    local duration_sec="$((duration % 60))"
+
+    # Check exit return code
+    if [ "$result_code" -gt 0 ]; then # Error >= 1
+
+        # Read Logs
+        local log_whiptail=""
+        local line=""
+        while read -r line; do
+            [ "$line" = "###ERR" ] && break         # If first marker (from bottom) found, break loop
+            [ -z "$line" ] && continue              # Skip newline
+            log_whiptail="${log_whiptail}\n${line}" # Append log
+        done <<<"$(tac "$LOG_FILE")"                # Read logfile inverted (from bottom)
+
+        # Show TUI (duration & log)
+        whiptail --clear --title "$TITLE" --msgbox "Arch OS Installation failed.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds\n\n$(echo -e "$log_whiptail" | tac)" --scrolltext "$TUI_HEIGHT" "$TUI_WIDTH"
+
+    else # Success = 0
+        # Show TUI (duration time)
+        whiptail --clear --title "$TITLE" --msgbox "Arch OS Installation successful.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds" "$TUI_HEIGHT" "$TUI_WIDTH"
+
+        # Unmount
+        wait # Wait for sub processes
+        swapoff -a
+        umount -A -R /mnt
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
+
+        if whiptail --clear --title "$TITLE" --yesno "Reboot now?" --defaultno --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+            wait && reboot
+        fi
+    fi
+
+    # Exit
+    clear && exit "$result_code"
+}
 
 # ----------------------------------------------------------------------------------------------------
-# PRINT FUNCTIONS
+# HELPER FUNCTIONS
 # ----------------------------------------------------------------------------------------------------
 
 print_menu_entry() {
@@ -109,10 +140,6 @@ print_whiptail_info() {
     # Print percent & title for whiptail (uses descriptor 3 as stdin)
     ((PROGRESS_COUNT += 1)) && echo -e "XXX\n$((PROGRESS_COUNT * 100 / PROGRESS_TOTAL))\n${PROGRESS_TITLE}...\nXXX" >&3
 }
-
-# ----------------------------------------------------------------------------------------------------
-# HELPER FUNCTIONS
-# ----------------------------------------------------------------------------------------------------
 
 pacman_install() {
     local packages=("$@")
@@ -246,7 +273,7 @@ create_config() {
         echo ""
         echo "# VM Support (desktop) | Default: true | Disable: false"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
-    } >"$INSTALLER_CONFIG"
+    } >"$CONFIG_FILE"
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -348,6 +375,8 @@ tui_set_language() {
     return 0
 }
 
+# ----------------------------------------------------------------------------------------------------
+
 tui_set_keyboard() {
 
     # Input console keyboard keymap
@@ -393,6 +422,8 @@ tui_set_keyboard() {
     return 0
 }
 
+# ----------------------------------------------------------------------------------------------------
+
 tui_set_user() {
     ARCH_OS_USERNAME=$(whiptail --clear --title "$TITLE" --inputbox "\nEnter Arch OS Username" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_OS_USERNAME" 3>&1 1>&2 2>&3)
     if [ -z "$ARCH_OS_USERNAME" ]; then
@@ -404,6 +435,8 @@ tui_set_user() {
     create_config
     return 0
 }
+
+# ----------------------------------------------------------------------------------------------------
 
 tui_set_password() {
     local desc='Note: This password is also used for encryption (if enabled)'
@@ -426,6 +459,8 @@ tui_set_password() {
     create_config
     return 0
 }
+
+# ----------------------------------------------------------------------------------------------------
 
 tui_set_disk() {
     # List available disks
@@ -450,6 +485,8 @@ tui_set_disk() {
     return 0
 }
 
+# ----------------------------------------------------------------------------------------------------
+
 tui_set_encryption() {
     ARCH_OS_ENCRYPTION_ENABLED="false"
     if whiptail --clear --title "$TITLE" --yesno "Enable Disk Encryption?" --defaultno "$TUI_HEIGHT" "$TUI_WIDTH"; then
@@ -460,6 +497,8 @@ tui_set_encryption() {
     return 0
 }
 
+# ----------------------------------------------------------------------------------------------------
+
 tui_set_bootsplash() {
     ARCH_OS_BOOTSPLASH_ENABLED="false"
     if whiptail --clear --title "$TITLE" --yesno "Install Bootsplash Animation (plymouth)?" --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
@@ -469,6 +508,8 @@ tui_set_bootsplash() {
     create_config
     return 0
 }
+
+# ----------------------------------------------------------------------------------------------------
 
 tui_set_variant() {
 
@@ -513,25 +554,28 @@ tui_set_variant() {
     return 0
 }
 
-# ----------------------------------------------------------------------------------------------------
-# INIT CONFIG
-# ----------------------------------------------------------------------------------------------------
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////  SCRIPT START  ////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+# Wait & sleep
+wait && sleep 0.2
+
+# Check dependencies
+! command -v whiptail &>/dev/null && echo "ERROR: whiptail not installed" >&2 && exit 1
+! command -v nano &>/dev/null && echo "ERROR: nano not installed" >&2 && exit 1
+! command -v lsblk &>/dev/null && echo "ERROR: lsblk not installed" >&2 && exit 1
+
+# Set error trap for setup
+trap 'trap_error_setup' ERR
+
+# Init installer config
 # shellcheck disable=SC1090
-[ -f "$INSTALLER_CONFIG" ] && source "$INSTALLER_CONFIG"
+[ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
 check_config || true # Check and init properties
 create_config        # Generate properties
 
-# ----------------------------------------------------------------------------------------------------
-# WAIT & SLEEP
-# ----------------------------------------------------------------------------------------------------
-
-wait && sleep 0.2
-
-# ----------------------------------------------------------------------------------------------------
-# WELCOME SCREEN
-# ----------------------------------------------------------------------------------------------------
-
+# Print welcome screen
 welcome_txt="
            █████  ██████   ██████ ██   ██      ██████  ███████ 
           ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
@@ -548,14 +592,14 @@ welcome_txt="
 whiptail --clear --title "$TITLE" --msgbox "$welcome_txt" "$TUI_HEIGHT" "$TUI_WIDTH"
 
 # ----------------------------------------------------------------------------------------------------
-# SHOW MENU
+# SHOW SETUP MENU
 # ----------------------------------------------------------------------------------------------------
 
 while (true); do
 
     # Source user properties
     # shellcheck disable=SC1090
-    [ -f "$INSTALLER_CONFIG" ] && source "$INSTALLER_CONFIG"
+    [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
 
     # Check config entries and set menu position
     check_config || true
@@ -612,18 +656,19 @@ while (true); do
         tui_set_variant || continue
         ;;
     "edit")
-        nano "$INSTALLER_CONFIG" </dev/tty || continue
+        nano "$CONFIG_FILE" </dev/tty || continue
         # Create config if something is missing after edit
         # shellcheck disable=SC1090
-        source "$INSTALLER_CONFIG" && create_config
+        source "$CONFIG_FILE" && create_config
         ;;
     "install")
         check_config || continue
         # shellcheck disable=SC1090
-        create_config && source "$INSTALLER_CONFIG"
-        if whiptail --clear --title "$TITLE" --yesno "> Installation Properties\n\n$(head -100 "$INSTALLER_CONFIG" | tail +3)" --defaultno --yes-button "Edit" --no-button "Continue" --scrolltext "$TUI_HEIGHT" "$TUI_WIDTH"; then
-            nano "$INSTALLER_CONFIG" </dev/tty
-            continue # Open main menu for check again
+        create_config && source "$CONFIG_FILE"
+
+        # Ask for installation
+        if ! whiptail --clear --title "$TITLE" --yesno "Start Arch OS Linux Installation?\n\nAll data on ${ARCH_OS_DISK} will be DELETED!" --defaultno --yes-button "Start Installation" --no-button "Exit" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+            exit 1
         fi
 
         ############################################
@@ -631,94 +676,23 @@ while (true); do
         ############################################
         ;;
 
-    *) continue ;; # Do nothing and continue loop (Default)
-
     esac
-
 done
-
-# ----------------------------------------------------------------------------------------------------
-# ASK FOR INSTALLATION
-# ----------------------------------------------------------------------------------------------------
-
-if ! whiptail --clear --title "$TITLE" --yesno "Start Arch OS Linux Installation?\n\nAll data on ${ARCH_OS_DISK} will be DELETED!" --defaultno --yes-button "Start Installation" --no-button "Exit" "$TUI_HEIGHT" "$TUI_WIDTH"; then
-    exit 1
-fi
-
-# ----------------------------------------------------------------------------------------------------
-# TRAP / LOGGING
-# ----------------------------------------------------------------------------------------------------
-
-# shellcheck disable=SC2317
-trap_error() {
-    local result_code="$?"
-    echo "###ERR" >&2 # Print marker for exit logging
-    echo "Progress:  '${PROGRESS_TITLE}' failed with exit code '${result_code}'" >&2
-    echo "Command:   '${BASH_COMMAND}' in line '${LINENO}'" >&2
-}
-
-# shellcheck disable=SC2317
-trap_exit() {
-
-    # Result code
-    local result_code="$?"
-
-    # Duration
-    local duration=$SECONDS
-    local duration_min="$((duration / 60))"
-    local duration_sec="$((duration % 60))"
-
-    # Check exit return code
-    if [ "$result_code" -gt 0 ]; then # Error >= 1
-
-        # Read Logs
-        local log_whiptail=""
-        local line=""
-        while read -r line; do
-            [ "$line" = "###ERR" ] && break         # If first marker (from bottom) found, break loop
-            [ -z "$line" ] && continue              # Skip newline
-            log_whiptail="${log_whiptail}\n${line}" # Append log
-        done <<<"$(tac "$LOG_FILE")"                # Read logfile inverted (from bottom)
-
-        # Show TUI (duration & log)
-        whiptail --clear --title "$TITLE" --msgbox "Arch OS Installation failed.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds\n\n$(echo -e "$log_whiptail" | tac)" --scrolltext 30 90
-
-    else # Success = 0
-        # Show TUI (duration time)
-        whiptail --clear --title "$TITLE" --msgbox "Arch OS Installation successful.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds" "$TUI_HEIGHT" "$TUI_WIDTH"
-
-        # Unmount
-        wait # Wait for sub processes
-        swapoff -a
-        umount -A -R /mnt
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
-
-        if whiptail --clear --title "$TITLE" --yesno "Reboot now?" --defaultno --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
-            wait && reboot
-        fi
-    fi
-
-    # Exit
-    clear && exit "$result_code"
-}
-
-# ----------------------------------------------------------------------------------------------------
-# SET TRAP & TIME
-# ----------------------------------------------------------------------------------------------------
-
-# Messure execution time
-SECONDS=0
-
-# Set installation trap for error
-trap 'trap_error' ERR
-
-# Set installation trap for logging on exit
-trap 'trap_exit' EXIT
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # //////////////////////////////////////  ARCH OS INSTALLATION  //////////////////////////////////////
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+# Messure execution time
+SECONDS=0
+
+# Set installation trap for error
+trap 'trap_error_install' ERR
+
+# Set installation trap for logging on exit
+trap 'trap_exit_install' EXIT
+
+# Begin sub installation process (show whiptail gauge)
 (
     # Print nothing from stdin & stderr to console
     exec 3>&1 4>&2 # Saves file descriptors (new stdin: &3 new stderr: &4)
@@ -1562,7 +1536,7 @@ trap 'trap_exit' EXIT
     # ----------------------------------------------------------------------------------------------------
 
     # Copy installer.conf to users home dir
-    cp "$INSTALLER_CONFIG" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
+    cp "$CONFIG_FILE" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
 
     # Remove sudo needs no password rights
     sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
@@ -1575,10 +1549,10 @@ trap 'trap_exit' EXIT
     arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true'
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Arch Installation finished"
+    print_whiptail_info "Arch OS Installation finished"
     # ----------------------------------------------------------------------------------------------------
 
-) | whiptail --clear --title "$TITLE" --gauge "Start Arch Installation..." 7 "$TUI_WIDTH" 0
+) | whiptail --clear --title "$TITLE" --gauge "Start Arch OS Installation..." 7 "$TUI_WIDTH" 0
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # ////////////////////////////////////// INSTALLATION FINISHED ///////////////////////////////////////
