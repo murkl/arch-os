@@ -36,6 +36,8 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
   <strong>Test successful</strong>
   <br>
   <a target="_blank" href="https://www.archlinux.de/releases/2024.01.01">archlinux-2024.01.01-x86_64.iso</a>
+  <br>
+  <sub>100% shellcheck approved</sub>
 </p>
 
 ## Core Features

@@ -130,8 +130,8 @@ print_menu_entry() {
     # If another arg is null, set val=null
     for arg in "${@}"; do [ -z "$arg" ] && val=""; done
 
-    local spaces=""
     # Locate spaces
+    local spaces=""
     for ((i = ${#key}; i < 12; i++)); do spaces="${spaces} "; done
     [ -z "$val" ] && val='?' # Set default value
     # Print menu entry text
@@ -167,7 +167,7 @@ pacman_install() {
 # CONFIG FUNCTIONS
 # ----------------------------------------------------------------------------------------------------
 
-default_config() {
+set_default_properties() {
     # Set default values (if not already set)
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
@@ -179,10 +179,10 @@ default_config() {
     [ -z "$ARCH_OS_X11_KEYBOARD_MODEL" ] && ARCH_OS_X11_KEYBOARD_MODEL="pc105"
     #[ -z "$ARCH_OS_VCONSOLE_FONT" ] && ARCH_OS_VCONSOLE_FONT="eurlatgr"
     #[ -z "$ARCH_OS_REFLECTOR_COUNTRY" ] && ARCH_OS_REFLECTOR_COUNTRY="Germany,France"
+    return 0
 }
 
-check_config() {
-    default_config
+check_properties() {
     [ -z "${ARCH_OS_USERNAME}" ] && TUI_POSITION="user" && return 1
     [ -z "${ARCH_OS_PASSWORD}" ] && TUI_POSITION="password" && return 1
     [ -z "${ARCH_OS_TIMEZONE}" ] && TUI_POSITION="language" && return 1
@@ -202,7 +202,7 @@ check_config() {
     return 0
 }
 
-create_config() {
+generate_properties_file() {
     {
         echo "# ${TITLE} (generated: $(date --utc '+%Y-%m-%d %H:%M') UTC)"
         echo ""
@@ -299,12 +299,12 @@ tui_set_language() {
     if [ -z "$user_input" ]; then
         whiptail --clear --title "$TITLE" --msgbox "Timezone is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         ARCH_OS_TIMEZONE=""
-        create_config
         return 0
     fi
 
     # Check if user want select timezone from menu
     if [ "$user_input" = "?" ]; then
+        local user_input items options timezone timezone_country
         items=$(/usr/bin/ls -l /usr/share/zoneinfo/ | grep '^d' | grep -v "right" | grep -v "posix" | gawk -F':[0-9]* ' '/:/{print $2}')
         options=() && for item in ${items}; do options+=("${item}" ""); done
         timezone=$(whiptail --clear --title "$TITLE" --menu "\nSelect Timezone:" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
@@ -335,13 +335,13 @@ tui_set_language() {
         whiptail --clear --title "$TITLE" --msgbox "Locale is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         ARCH_OS_LOCALE_LANG=""
         ARCH_OS_LOCALE_GEN_LIST=""
-        create_config
         return 0
     fi
 
     # Check if user want select locale from menu
     if [ "$user_input" = "?" ]; then
         clear && echo "Loading..."
+        local user_input items options locales
         items=$(/usr/bin/ls /usr/share/i18n/locales | grep -v "@")
         options=()
         for item in ${items}; do
@@ -375,7 +375,6 @@ tui_set_language() {
     [[ "${ARCH_OS_LOCALE_GEN_LIST[*]}" != *'en_US.UTF-8 UTF-8'* ]] && ARCH_OS_LOCALE_GEN_LIST+=('en_US.UTF-8 UTF-8')
 
     # Success
-    create_config
     return 0
 }
 
@@ -393,13 +392,13 @@ tui_set_keyboard() {
     if [ -z "$user_input" ]; then
         whiptail --clear --title "$TITLE" --msgbox "Console Keymap is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         ARCH_OS_VCONSOLE_KEYMAP=""
-        create_config
         return 0
     fi
 
     # Check if user want select keymap from menu
     if [ "$user_input" = "?" ]; then
         clear && echo "Loading..."
+        local user_input items options keymap
         items=$(find /usr/share/kbd/keymaps/ -type f -printf "%f\n" | sort -V | grep -v "README")
         options=()
         for item in ${items}; do
@@ -422,7 +421,6 @@ tui_set_keyboard() {
     fi
 
     # Success
-    create_config
     return 0
 }
 
@@ -432,11 +430,9 @@ tui_set_user() {
     ARCH_OS_USERNAME=$(whiptail --clear --title "$TITLE" --inputbox "\nEnter Arch OS Username" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_OS_USERNAME" 3>&1 1>&2 2>&3)
     if [ -z "$ARCH_OS_USERNAME" ]; then
         whiptail --clear --title "$TITLE" --msgbox "Arch OS Username is null" "$TUI_HEIGHT" "$TUI_WIDTH"
-        create_config # Remove username
         return 0
     fi
     # Success
-    create_config
     return 0
 }
 
@@ -447,7 +443,6 @@ tui_set_password() {
     ARCH_OS_PASSWORD=$(whiptail --clear --title "$TITLE" --passwordbox "\nEnter Password\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
     if [ -z "$ARCH_OS_PASSWORD" ]; then
         whiptail --clear --title "$TITLE" --msgbox "Password is null" "$TUI_HEIGHT" "$TUI_WIDTH"
-        create_config # Remove password
         return 0
     fi
 
@@ -456,11 +451,9 @@ tui_set_password() {
     if [ "$ARCH_OS_PASSWORD" != "$password_check" ]; then
         whiptail --clear --title "$TITLE" --msgbox "Password not identical" "$TUI_HEIGHT" "$TUI_WIDTH"
         ARCH_OS_PASSWORD=""
-        create_config # Remove password
         return 0
     fi
     # Success
-    create_config
     return 0
 }
 
@@ -475,7 +468,7 @@ tui_set_disk() {
     done < <(lsblk -I 8,259,254 -d -o KNAME -n)
 
     # If no disk found
-    [ "${#disk_array[@]}" = "0" ] && whiptail --clear --title "$TITLE" --msgbox "No Disk found" "$TUI_HEIGHT" "$TUI_WIDTH" && return 1
+    [ "${#disk_array[@]}" = "0" ] && whiptail --clear --title "$TITLE" --msgbox "No Disk found" "$TUI_HEIGHT" "$TUI_WIDTH" && return 0
 
     # Show TUI (select disk)
     ARCH_OS_DISK=$(whiptail --clear --title "$TITLE" --menu "\nChoose Installation Disk" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "${#disk_array[@]}" "${disk_array[@]}" 3>&1 1>&2 2>&3)
@@ -485,7 +478,6 @@ tui_set_disk() {
     [[ "$ARCH_OS_DISK" = "/dev/nvm"* ]] && ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}p2" || ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}2"
 
     # Success
-    create_config
     return 0
 }
 
@@ -497,7 +489,6 @@ tui_set_encryption() {
         ARCH_OS_ENCRYPTION_ENABLED="true"
     fi
     # Success
-    create_config
     return 0
 }
 
@@ -509,7 +500,6 @@ tui_set_bootsplash() {
         ARCH_OS_BOOTSPLASH_ENABLED="true"
     fi
     # Success
-    create_config
     return 0
 }
 
@@ -541,7 +531,6 @@ tui_set_variant() {
         if [ -z "$user_input" ]; then
             whiptail --clear --title "$TITLE" --msgbox "X11 keyboard layout is null" "$TUI_HEIGHT" "$TUI_WIDTH"
             ARCH_OS_X11_KEYBOARD_LAYOUT=""
-            create_config
             return 0
         fi
         ARCH_OS_X11_KEYBOARD_LAYOUT="$user_input"
@@ -554,7 +543,6 @@ tui_set_variant() {
     fi
 
     # Success
-    create_config
     return 0
 }
 
@@ -572,12 +560,6 @@ wait && sleep 0.2
 
 # Set error trap for setup
 trap 'trap_error_setup ${LINENO} ${FUNCNAME-main}' ERR
-
-# Init installer config
-# shellcheck disable=SC1090
-[ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
-check_config || true # Check and init properties
-create_config        # Generate properties
 
 # Print welcome screen
 welcome_txt="
@@ -601,12 +583,18 @@ whiptail --clear --title "$TITLE" --msgbox "$welcome_txt" "$TUI_HEIGHT" "$TUI_WI
 
 while (true); do
 
-    # Source user properties
-    # shellcheck disable=SC1090
-    [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
+    # Set default properties
+    set_default_properties
 
-    # Check config entries and set menu position
-    check_config || true
+    # Generate properties file if not exists (first start)
+    [ ! -f "$CONFIG_FILE" ] && generate_properties_file
+
+    # Source properties
+    # shellcheck disable=SC1090
+    source "$CONFIG_FILE"
+
+    # Check properties and set menu position
+    check_properties || true
 
     # Create TUI menu entries
     menu_entry_array=()
@@ -637,45 +625,50 @@ while (true); do
 
     "user")
         tui_set_user
+        generate_properties_file
         ;;
     "password")
         tui_set_password
+        generate_properties_file
         ;;
     "language")
         tui_set_language
+        generate_properties_file
         ;;
     "keyboard")
         tui_set_keyboard
+        generate_properties_file
         ;;
     "disk")
         tui_set_disk
+        generate_properties_file
         ;;
     "encrypt")
         tui_set_encryption
+        generate_properties_file
         ;;
     "bootsplash")
         tui_set_bootsplash
+        generate_properties_file
         ;;
     "variant")
         tui_set_variant
+        generate_properties_file
         ;;
     "edit")
-        # Create config if something is missing after edit
+        nano "$CONFIG_FILE" </dev/tty
         # shellcheck disable=SC1090
-        nano "$CONFIG_FILE" </dev/tty && source "$CONFIG_FILE" && create_config
+        source "$CONFIG_FILE"
+        # Create config if something is missing after edit
+        generate_properties_file
         ;;
     "install")
         # If install is pressed, but config is incomplete
-        check_config || continue
-
-        # shellcheck disable=SC1090
-        create_config && source "$CONFIG_FILE"
-
+        check_properties || continue
         # Ask for installation
         if ! whiptail --clear --title "$TITLE" --yesno "Start Arch OS Linux Installation?\n\nAll data on ${ARCH_OS_DISK} will be DELETED!" --defaultno --yes-button "Start Installation" --no-button "Exit" "$TUI_HEIGHT" "$TUI_WIDTH"; then
             exit 1
         fi
-
         ############################################
         break # Break loop and continue installation
         ############################################
