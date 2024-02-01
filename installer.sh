@@ -309,7 +309,7 @@ tui_set_language() {
         options=() && for item in ${items}; do options+=("${item}" ""); done
         timezone=$(whiptail --clear --title "$TITLE" --menu "\nSelect Timezone:" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
         # Timezone country
-        items=$(ls "/usr/share/zoneinfo/${timezone}/")
+        items=$(/usr/bin/ls "/usr/share/zoneinfo/${timezone}/")
         options=() && for item in ${items}; do options+=("${item}" ""); done
         timezone_country=$(whiptail --clear --title "$TITLE" --menu "\nSelect Timezone:" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
         # Set timezone
