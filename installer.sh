@@ -5,7 +5,7 @@ clear
 # //////////////////////////////////////// ARCH OS INSTALLER /////////////////////////////////////////
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-VERSION='1.2.5'
+VERSION='1.2.6'
 
 # ----------------------------------------------------------------------------------------------------
 # SOURCE:   https://github.com/murkl/arch-os
@@ -1460,8 +1460,8 @@ trap 'trap_exit_install' EXIT
         # VM Guest support (if VM detected)
         if [ "$ARCH_OS_VM_SUPPORT_ENABLED" = "true" ]; then
 
-            # Set detected VM
-            hypervisor=$(systemd-detect-virt)
+            # Set detected VM (need return true in case of native machine)
+            hypervisor=$(systemd-detect-virt) || true
 
             case $hypervisor in
 
@@ -1492,7 +1492,7 @@ trap 'trap_exit_install' EXIT
                 arch-chroot /mnt systemctl enable hv_vss_daemon
                 ;;
 
-            none)
+            *)
                 print_whiptail_info "No VM detected"
                 # Do nothing
                 ;;
