@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+clear
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # //////////////////////////////////////// ARCH OS INSTALLER /////////////////////////////////////////
@@ -19,7 +20,6 @@ set -o pipefail # A pipeline error results in the error status of the entire pip
 set -u          # Uninitialized variables trigger errors
 set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
-clear           # Clear
 
 # ----------------------------------------------------------------------------------------------------
 # SCRIPT VARIABLES
