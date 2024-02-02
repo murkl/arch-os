@@ -1656,6 +1656,7 @@ trap 'trap_exit_install' EXIT
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-mesa-vdpau")
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vkd3d")
             pacman_install "${packages[@]}"
+            # Must be discussed: https://wiki.archlinux.org/title/AMDGPU#Disable_loading_radeon_completely_at_boot
             sed -i "s/^MODULES=(.*)/MODULES=(amdgpu radeon)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
             ;;
