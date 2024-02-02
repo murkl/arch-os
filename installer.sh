@@ -5,7 +5,7 @@ clear
 # //////////////////////////////////////// ARCH OS INSTALLER /////////////////////////////////////////
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-VERSION='1.2.4'
+VERSION='1.2.5'
 
 # ----------------------------------------------------------------------------------------------------
 # SOURCE:   https://github.com/murkl/arch-os
@@ -714,7 +714,7 @@ while (true); do
     menu_entry_array+=("encrypt") && menu_entry_array+=("$(print_menu_entry "Encryption" "${ARCH_OS_ENCRYPTION_ENABLED}")")
     menu_entry_array+=("bootsplash") && menu_entry_array+=("$(print_menu_entry "Bootsplash" "${ARCH_OS_BOOTSPLASH_ENABLED}")")
 
-    # Check if varianbt is set to desktop
+    # Check if variant is set to desktop
     menu_variant="$ARCH_OS_VARIANT"
     [ "$menu_variant" = "desktop" ] && [ -z "${ARCH_OS_GRAPHICS_DRIVER}" ] && menu_variant=""
     [ "$menu_variant" = "desktop" ] && [ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && menu_variant=""
@@ -1656,7 +1656,7 @@ trap 'trap_exit_install' EXIT
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-mesa-vdpau")
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vkd3d")
             pacman_install "${packages[@]}"
-            sed -i "s/^MODULES=(.*)/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
+            sed -i "s/^MODULES=(.*)/MODULES=(amdgpu radeon)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
             ;;
 
@@ -1670,7 +1670,7 @@ trap 'trap_exit_install' EXIT
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-mesa-vdpau")
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vkd3d")
             pacman_install "${packages[@]}"
-            sed -i "s/^MODULES=(.*)/MODULES=(amdgpu radeon)/g" /mnt/etc/mkinitcpio.conf
+            sed -i "s/^MODULES=(.*)/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
             ;;
 
