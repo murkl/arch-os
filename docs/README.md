@@ -25,17 +25,19 @@ curl -Ls http://arch.webhop.me | bash
 This project aims to provide a solid Arch Linux base for desktop usage and an easy and fast to use installer for that. Choose between 3 Arch OS Variants and install a minimal Arch Linux Distribution optional with automatic housekeeping, Zen Kernel, GNOME as desktop with graphics driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more features...
 </p>
 
-<p align="center"><strong>Sole OS on a single disk</strong></p>
+<p align="center"><sub><strong>Sole OS on a single disk</strong></sub></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
-  <img src="https://img.shields.io/badge/LICENSE-MIT-blue?style=for-the-badge">
+  <img src="https://img.shields.io/badge/License-GPL_v2-blue?style=for-the-badge">
 </p>
 
 <p align="center">
   <strong>Test successful</strong>
   <br>
-  <a target="_blank" href="https://www.archlinux.de/releases/2024.01.01">archlinux-2024.01.01-x86_64.iso</a>
+  <a target="_blank" href="https://www.archlinux.de/releases/2024.02.01">archlinux-2024.02.01-x86_64.iso</a>
+  <br>
+  <sub>100% shellcheck approved</sub>
 </p>
 
 ## Core Features
@@ -61,7 +63,7 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 - **+ Core Features**
 - AUR Helper ([configurable](DOCS.md#installation-properties))
 - Multilib (optional)
-- [Shell Enhancement](DOCS.md#shell-enhancement)
+- [Shell Enhancement](DOCS.md#shell-enhancement) (optional)
 - Missing package suggestion for commands
 - Automatic Pacman mirrorlist update (on every startup)
 - Pacman automatic cache optimization (weekly)
@@ -72,14 +74,15 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 
 - **+ Base Features**
 - Vanilla GNOME Desktop + Auto Login
-- [Graphics Driver](DOCS.md#install-graphics-driver-manually) & Gamemode (Mesa, Intel i915, NVIDIA, AMD, ATI)
+- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
 - [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
 - Flatpak Support + Auto Update (GNOME Software)
+- Wayland optimized
+- Gamemode preinstalled
 - Firmware Update Tool preinstalled
-- GNOME Power Profiles Support
 - Samba, Networking Protocol Libs, Git, Utils & Codecs included
 - Printer Support (cups)
-- Wayland optimized
+- GNOME Power Profiles Support
 - [VM Support](DOCS.md#vm-support)
 
 ## Arch OS Installation
