@@ -25,7 +25,7 @@ curl -Ls http://arch.webhop.me | bash
 This project aims to provide a solid Arch Linux base for desktop usage and an easy and fast to use installer for that. Choose between 3 Arch OS Variants and install a minimal Arch Linux Distribution optional with automatic housekeeping, Zen Kernel, GNOME as desktop with graphics driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more features...
 </p>
 
-<p align="center"><strong>Sole OS on a single disk</strong></p>
+<p align="center"><sub><strong>Sole OS on a single disk</strong></sub></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
