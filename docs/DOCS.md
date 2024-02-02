@@ -178,6 +178,9 @@ ARCH_OS_VCONSOLE_FONT=''
 # Kernel (core) | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened
 ARCH_OS_KERNEL='linux-zen'
 
+# Microcode (core) | Disable: none | Available: intel-ucode, amd-ucode
+ARCH_OS_MICROCODE='intel-ucode'
+
 # Disable ECN support for legacy routers (core) | Default: true | Disable: false
 ARCH_OS_ECN_ENABLED='true'
 

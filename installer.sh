@@ -228,6 +228,10 @@ set_default_properties() {
     #[ -z "$ARCH_OS_VCONSOLE_FONT" ] && ARCH_OS_VCONSOLE_FONT="eurlatgr"
     #[ -z "$ARCH_OS_REFLECTOR_COUNTRY" ] && ARCH_OS_REFLECTOR_COUNTRY="Germany,France"
 
+    # Detect microcode if empty
+    [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
+    [ -z "$ARCH_OS_MICROCODE" ] && grep -E "AuthenticAMD" <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
+
     return 0
 }
 
@@ -296,6 +300,9 @@ generate_properties_file() {
         echo ""
         echo "# Kernel (core) | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened"
         echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}'"
+        echo ""
+        echo "# Microcode (core) | Disable: none | Available: intel-ucode, amd-ucode"
+        echo "ARCH_OS_MICROCODE='${ARCH_OS_MICROCODE}'"
         echo ""
         echo "# Disable ECN support for legacy routers (core) | Default: true | Disable: false"
         echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
@@ -866,12 +873,6 @@ trap 'trap_exit_install' EXIT
     # Update keyring
     pacman -Sy --noconfirm archlinux-keyring
 
-    # Detect microcode if empty
-    if [ -z "$ARCH_OS_MICROCODE" ]; then
-        grep -E "GenuineIntel" <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
-        grep -E "AuthenticAMD" <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
-    fi
-
     # ----------------------------------------------------------------------------------------------------
     print_whiptail_info "Wipe & Create Partitions (${ARCH_OS_DISK})"
     # ----------------------------------------------------------------------------------------------------
@@ -933,7 +934,7 @@ trap 'trap_exit_install' EXIT
     packages+=("${ARCH_OS_KERNEL}")
 
     # Add microcode package
-    [ -n "$ARCH_OS_MICROCODE" ] && packages+=("$ARCH_OS_MICROCODE")
+    [ -n "$ARCH_OS_MICROCODE" ] && [ "$ARCH_OS_MICROCODE" != "none" ] && packages+=("$ARCH_OS_MICROCODE")
 
     # Install core packages and initialize an empty pacman keyring in the target
     pacstrap -K /mnt "${packages[@]}"
@@ -1034,7 +1035,7 @@ trap 'trap_exit_install' EXIT
     {
         echo 'title   Arch OS'
         echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
-        [ -n "$ARCH_OS_MICROCODE" ] && echo "initrd  /${ARCH_OS_MICROCODE}.img"
+        [ -n "$ARCH_OS_MICROCODE" ] && [ "$ARCH_OS_MICROCODE" != "none" ] && echo "initrd  /${ARCH_OS_MICROCODE}.img"
         echo "initrd  /initramfs-${ARCH_OS_KERNEL}.img"
         echo "options ${kernel_args}"
     } >/mnt/boot/loader/entries/arch.conf
@@ -1043,7 +1044,7 @@ trap 'trap_exit_install' EXIT
     {
         echo 'title   Arch OS (Fallback)'
         echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
-        [ -n "$ARCH_OS_MICROCODE" ] && echo "initrd  /${ARCH_OS_MICROCODE}.img"
+        [ -n "$ARCH_OS_MICROCODE" ] && [ "$ARCH_OS_MICROCODE" != "none" ] && echo "initrd  /${ARCH_OS_MICROCODE}.img"
         echo "initrd  /initramfs-${ARCH_OS_KERNEL}-fallback.img"
         echo "options ${kernel_args}"
     } >/mnt/boot/loader/entries/arch-fallback.conf
