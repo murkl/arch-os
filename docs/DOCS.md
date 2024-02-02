@@ -238,7 +238,7 @@ fish starship eza bat neofetch mc btop man-db
 - `lt` tree files in dir
 - `mc` open file manager
 - `open <file>` open file in GNOME app
-- `man <command>` open manual page of command
+- `history` open command history
 - `q` exit
 
 ### Useful Terminal keyboard shortcuts
