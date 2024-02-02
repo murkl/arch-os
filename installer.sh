@@ -5,7 +5,7 @@ clear
 # //////////////////////////////////////// ARCH OS INSTALLER /////////////////////////////////////////
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-VERSION='1.2.5'
+VERSION='1.2.6'
 
 # ----------------------------------------------------------------------------------------------------
 # SOURCE:   https://github.com/murkl/arch-os
@@ -1460,8 +1460,8 @@ trap 'trap_exit_install' EXIT
         # VM Guest support (if VM detected)
         if [ "$ARCH_OS_VM_SUPPORT_ENABLED" = "true" ]; then
 
-            # Set detected VM
-            hypervisor=$(systemd-detect-virt)
+            # Set detected VM (need return true in case of native machine)
+            hypervisor=$(systemd-detect-virt) || true
 
             case $hypervisor in
 
@@ -1492,7 +1492,7 @@ trap 'trap_exit_install' EXIT
                 arch-chroot /mnt systemctl enable hv_vss_daemon
                 ;;
 
-            none)
+            *)
                 print_whiptail_info "No VM detected"
                 # Do nothing
                 ;;
@@ -1656,6 +1656,7 @@ trap 'trap_exit_install' EXIT
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-mesa-vdpau")
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-vkd3d")
             pacman_install "${packages[@]}"
+            # Must be discussed: https://wiki.archlinux.org/title/AMDGPU#Disable_loading_radeon_completely_at_boot
             sed -i "s/^MODULES=(.*)/MODULES=(amdgpu radeon)/g" /mnt/etc/mkinitcpio.conf
             arch-chroot /mnt mkinitcpio -P
             ;;
