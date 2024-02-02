@@ -29,7 +29,7 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 
 <p align="center">
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
-  <img src="https://img.shields.io/badge/LICENSE-MIT-blue?style=for-the-badge">
+  <img src="https://img.shields.io/badge/License-GPL_v2-blue?style=for-the-badge">
 </p>
 
 <p align="center">

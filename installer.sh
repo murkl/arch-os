@@ -9,7 +9,7 @@ VERSION='1.2.4'
 # SOURCE:   https://github.com/murkl/arch-os
 # AUTOR:    murkl
 # ORIGIN:   Germany
-# LICENCE:  MIT
+# LICENCE:  GPL-V2
 
 # CONFIGURATION
 # ----------------------------------------------------------------------------------------------------
