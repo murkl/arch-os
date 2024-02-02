@@ -63,7 +63,7 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 - **+ Core Features**
 - AUR Helper ([configurable](DOCS.md#installation-properties))
 - Multilib (optional)
-- [Shell Enhancement](DOCS.md#shell-enhancement)
+- [Shell Enhancement](DOCS.md#shell-enhancement) (optional)
 - Missing package suggestion for commands
 - Automatic Pacman mirrorlist update (on every startup)
 - Pacman automatic cache optimization (weekly)
@@ -74,14 +74,15 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 
 - **+ Base Features**
 - Vanilla GNOME Desktop + Auto Login
-- [Graphics Driver](DOCS.md#install-graphics-driver-manually) & Gamemode (Mesa, Intel i915, NVIDIA, AMD, ATI)
+- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
 - [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
 - Flatpak Support + Auto Update (GNOME Software)
+- Wayland optimized
+- Gamemode preinstalled
 - Firmware Update Tool preinstalled
-- GNOME Power Profiles Support
 - Samba, Networking Protocol Libs, Git, Utils & Codecs included
 - Printer Support (cups)
-- Wayland optimized
+- GNOME Power Profiles Support
 - [VM Support](DOCS.md#vm-support)
 
 ## Arch OS Installation
