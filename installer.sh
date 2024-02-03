@@ -5,7 +5,7 @@ clear
 # //////////////////////////////////////// ARCH OS INSTALLER /////////////////////////////////////////
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-VERSION='1.2.6'
+VERSION='1.2.7'
 
 # ----------------------------------------------------------------------------------------------------
 # SOURCE:   https://github.com/murkl/arch-os
@@ -105,14 +105,14 @@ trap_exit_install() {
     local result_code="$?"
 
     # Duration
-    local duration=$SECONDS
+    local duration=$SECONDS # This is set before install starts
     local duration_min="$((duration / 60))"
     local duration_sec="$((duration % 60))"
 
     # Check exit return code
     if [ "$result_code" -gt 0 ]; then # Error >= 1
 
-        # Read Logs
+        # Read in installer.log (inverted)
         local log_whiptail=""
         local line=""
         while read -r line; do
@@ -121,13 +121,14 @@ trap_exit_install() {
             log_whiptail="${log_whiptail}\n${line}" # Append log
         done <<<"$(tac "$LOG_FILE")"                # Read logfile inverted (from bottom)
 
-        # Show TUI (duration & log)
-        whiptail --clear --title "$TITLE" --msgbox "Arch OS Installation failed.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds\n\n$(echo -e "$log_whiptail" | tac)" --scrolltext "$TUI_HEIGHT" "$TUI_WIDTH"
+        # Invert whiptail log
+        log_whiptail="$(echo -e "$log_whiptail" | tac)"
+
+        # Show TUI Failed (duration & log)
+        local tui_txt="Arch OS Installation failed after ${duration_min} minutes and ${duration_sec} seconds.\n\n${log_whiptail}"
+        whiptail --clear --title "$TITLE" --msgbox "$tui_txt" --scrolltext "$TUI_HEIGHT" "$TUI_WIDTH"
 
     else # Success = 0
-
-        # Show TUI (duration time)
-        whiptail --clear --title "$TITLE" --msgbox "Arch OS Installation successful.\n\nDuration: ${duration_min} minutes and ${duration_sec} seconds" "$TUI_HEIGHT" "$TUI_WIDTH"
 
         # Unmount
         wait # Wait for sub processes
@@ -135,7 +136,9 @@ trap_exit_install() {
         umount -A -R /mnt
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
 
-        if whiptail --clear --title "$TITLE" --yesno "Reboot now?" --defaultno --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+        # Show TUI Sucess
+        local tui_txt="Arch OS successfully installed after ${duration_min} minutes and ${duration_sec} seconds.\n\nReboot now?"
+        if whiptail --clear --title "$TITLE" --yesno "$tui_txt" --defaultno --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
             wait && reboot
         fi
     fi
