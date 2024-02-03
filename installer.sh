@@ -33,7 +33,7 @@ TUI_HEIGHT="20"
 TUI_POSITION=""
 PROGRESS_TITLE=""
 PROGRESS_COUNT=0
-PROGRESS_TOTAL=40
+PROGRESS_TOTAL=45
 
 # ----------------------------------------------------------------------------------------------------
 # INSTALLATION VARIABLES
@@ -70,6 +70,7 @@ ARCH_OS_ECN_ENABLED=""
 # TRAP FUNCTIONS
 # ----------------------------------------------------------------------------------------------------
 
+# This trap is called on error in setup menu: ERR
 # shellcheck disable=SC2317
 trap_error_setup() {
 
@@ -83,6 +84,7 @@ trap_error_setup() {
 
 # ----------------------------------------------------------------------------------------------------
 
+# This trap is called on error in installation: ERR
 # shellcheck disable=SC2317
 trap_error_install() {
 
@@ -90,21 +92,22 @@ trap_error_install() {
     local line_no="$1"
     local func_name="$2"
 
-    # Print
-    echo "###ERR" >&2 # Print marker for exit logging
+    # Print to stderr (will be logged in installer.log)
+    echo "###ERR" >&2 # Print marker for exit logging trap
     echo "Progress:  '${PROGRESS_TITLE}' failed with exit code ${result_code}" >&2
     echo "Command:   '${BASH_COMMAND}' in function '${func_name}' (line ${line_no})" >&2
 }
 
 # ----------------------------------------------------------------------------------------------------
 
+# This trap is called after installation: EXIT (sucess & failed)
 # shellcheck disable=SC2317
 trap_exit_install() {
 
     # Result code
     local result_code="$?"
 
-    # Duration
+    # Calc duration
     local duration=$SECONDS # This is set before install starts
     local duration_min="$((duration / 60))"
     local duration_sec="$((duration % 60))"
@@ -183,8 +186,16 @@ print_whiptail_info() {
     # Print title for logging
     echo ">>> ${PROGRESS_TITLE}" >&1
 
+    # Increment progress counter
+    ((PROGRESS_COUNT += 1))
+
+    # Check if max and increase
+    if [ "$PROGRESS_COUNT" -ge "$PROGRESS_TOTAL" ]; then
+        PROGRESS_TOTAL=$((PROGRESS_COUNT + 1))
+    fi
+
     # Print percent & title for whiptail (uses descriptor 3 as stdin)
-    ((PROGRESS_COUNT += 1)) && echo -e "XXX\n$((PROGRESS_COUNT * 100 / PROGRESS_TOTAL))\n${PROGRESS_TITLE}...\nXXX" >&3
+    echo -e "XXX\n$((PROGRESS_COUNT * 100 / PROGRESS_TOTAL))\n${PROGRESS_TITLE}...\nXXX" >&3
 }
 
 # ----------------------------------------------------------------------------------------------------
