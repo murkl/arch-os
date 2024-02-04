@@ -1443,11 +1443,13 @@ trap 'trap_exit_install' EXIT
         packages+=("tar")
 
         # Codecs
+        packages+=("gstreamer")
         packages+=("gst-libav")
         packages+=("gst-plugin-pipewire")
         packages+=("gst-plugins-ugly")
         packages+=("libdvdcss")
         packages+=("libheif")
+        [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("lib32-gstreamer")
 
         # Optimization
         packages+=("gamemode")
