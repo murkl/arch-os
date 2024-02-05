@@ -153,18 +153,18 @@ print_input "Check Properties? [y/N]:" && read -r input_check </dev/tty
 if [ "$input_check" = "y" ] || [ "$input_check" = "Y" ]; then
 
     # Print properties to stdout
-    echo -e "------------------------------------------------------" >&3
+    echo -e "${COLOR_BOLD} • • • • • • • • • • • • • • • • • • • • • • • • • • • ${COLOR_RESET}" >&3
     cat "$SCRIPT_CONF" >&3 # Print properties file to stdout
-    echo -e "------------------------------------------------------" >&3
+    echo -e "${COLOR_BOLD} • • • • • • • • • • • • • • • • • • • • • • • • • • • ${COLOR_RESET}" >&3
 
     # Check password property?
     print_input "Check Password Property? [y/N]:" && read -r input_check </dev/tty
 
     # Print password property to stdout
     if [ "$input_check" = "y" ] || [ "$input_check" = "Y" ]; then
-        echo -e "------------------------------------------------------" >&3
+        echo -e "${COLOR_BOLD} • • • • • • • • • • • • • • • • • • • • • • • • • • • ${COLOR_RESET}" >&3
         echo -en "ARCH_OS_PASSWORD='${ARCH_OS_PASSWORD}'\n" >&3
-        echo -e "------------------------------------------------------" >&3
+        echo -e "${COLOR_BOLD} • • • • • • • • • • • • • • • • • • • • • • • • • • • ${COLOR_RESET}" >&3
     fi
 fi
 
