@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2317
 
-VERSION='1.2.7'
+VERSION='1.3.0'
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # //////////////////////////////////////// ARCH OS INSTALLER /////////////////////////////////////////
@@ -43,40 +44,47 @@ exec 2>"$SCRIPT_LOG" # Log stderr to logfile
 # PRINT FUNCTIONS
 # ----------------------------------------------------------------------------------------------------
 
-print_info() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S')  INFO: ${*}" >&2        # Log to file
-    echo -e "${COLOR_BOLD}${COLOR_GREEN}• ${*}${COLOR_RESET}" >&3 # Green to stdout
+print_error() {
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ERROR: ${*}" >&2
+    echo -e "${COLOR_BOLD}${COLOR_RED} • ${*} ${COLOR_RESET}" >&4
 }
 
-print_error() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S') ERROR: ${*}" >&2        # Log to file
-    echo -e "${COLOR_BOLD}${COLOR_RED} • ${*} ${COLOR_RESET}" >&4 # Red to stderr
+print_warn() {
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | WARN: ${*}" >&2
+    echo -e "${COLOR_BOLD}${COLOR_YELLOW} • ${*}${COLOR_RESET}" >&3
+}
+
+print_info() {
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | INFO: ${*}" >&2
+    echo -e "${COLOR_BOLD}${COLOR_GREEN} • ${*}${COLOR_RESET}" >&3
 }
 
 print_progress() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S')  EXEC: ${*}" >&2               # Log to file
-    echo -e "${COLOR_BOLD}${COLOR_PURPLE} • ${*} ... ${COLOR_RESET}" >&3 # Yellow to stdout
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | EXEC: ${*}" >&2
+    echo -e "${COLOR_BOLD}${COLOR_PURPLE} + ${*} ... ${COLOR_RESET}" >&3
 }
 
 print_input() {
-    echo -ne "${COLOR_BOLD}${COLOR_YELLOW} • ${1} ${COLOR_RESET}" >&3
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | USER: ${*}" >&2
+    echo -ne "${COLOR_BOLD}${COLOR_YELLOW} + ${1} ${COLOR_RESET}" >&3
 }
 
 # ----------------------------------------------------------------------------------------------------
 # TRAPS
 # ----------------------------------------------------------------------------------------------------
 
-# shellcheck disable=SC2317
 trap_error() {
     local result_code="$?"
     echo -e "###!ERR" >&2 # Print marker to logfile
     print_error "Command '${BASH_COMMAND}' failed with exit code ${result_code} in function '${1}' (line ${2})"
 }
 
-# shellcheck disable=SC2317
 trap_exit() {
     local result_code="$?"
-    [ "$result_code" -gt "0" ] && print_error "Arch OS Installation failed (${result_code})"
+    if [ "$result_code" -gt "0" ]; then
+        print_error "Arch OS Installation failed (${result_code})"
+        print_warn "For more information see ./installer.log"
+    fi
     exit "$result_code"
 }
 
@@ -202,7 +210,7 @@ SECONDS=0
 # ----------------------------------------------------------------------------------------------------
 print_progress "Installation Checkup"
 # ----------------------------------------------------------------------------------------------------
-
+exit 0
 [ ! -d /sys/firmware/efi ] && print_error "BIOS not supported! Please set your boot mode to UEFI." && exit 1
 [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && print_error "You must execute the Installer from Arch ISO!" && exit 1
 
@@ -1028,7 +1036,7 @@ print_progress "Cleanup Arch OS Installation"
 
 # Copy installer files to users home dir
 cp "$SCRIPT_CONF" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
-cp "installer.sh" "/mnt/home/${ARCH_OS_USERNAME}/installer.sh"
+cp "$0" "/mnt/home/${ARCH_OS_USERNAME}/installer.sh"
 
 # Remove sudo needs no password rights
 sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
@@ -1042,6 +1050,11 @@ arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(p
 
 # Wait for subprocesses
 wait
+
+# Unmount
+swapoff -a
+umount -A -R /mnt
+[ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
 
 # Calc duration
 duration=$SECONDS # This is set before install starts

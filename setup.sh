@@ -1,38 +1,28 @@
 #!/usr/bin/env bash
-clear
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # ////////////////////////////////////////// ARCH OS SETUP ///////////////////////////////////////////
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-VERSION='1.2.7'
-
-# ----------------------------------------------------------------------------------------------------
-# SOURCE:   https://github.com/murkl/arch-os
-# AUTOR:    murkl
-# ORIGIN:   Germany
-# LICENCE:  GPL-V2
-#
-# CONFIGURATION
-# ----------------------------------------------------------------------------------------------------
-
 set -o pipefail # A pipeline error results in the error status of the entire pipeline
-set -u          # Uninitialized variables trigger errors
-#set -e          # Terminate if any command exits with a non-zero
-#set -E          # ERR trap inherited by shell functions (errtrace)
+set -Ee         # Terminate if any command exits with a non-zero (incl. functions)
 
 # ----------------------------------------------------------------------------------------------------
 # SCRIPT VARIABLES
 # ----------------------------------------------------------------------------------------------------
 
-TITLE="Arch OS Setup ${VERSION}"
-CONFIG_FILE="./installer.conf"
+SCRIPT_TITLE="Arch OS Setup"
+SCRIPT_CONF="./installer.conf"
+INSTALLER_HOME="${HOME}/.cache/arch-os-installer"
+INSTALLER_URL="https://raw.githubusercontent.com/murkl/arch-os/dev/installer.sh"
+
+# ----------------------------------------------------------------------------------------------------
+# TUI VARIABLES
+# ----------------------------------------------------------------------------------------------------
+
 TUI_WIDTH="80"
 TUI_HEIGHT="20"
 TUI_POSITION=""
-PROGRESS_TITLE=""
-PROGRESS_COUNT=0
-PROGRESS_TOTAL=45
 
 # ----------------------------------------------------------------------------------------------------
 # INSTALLATION VARIABLES
@@ -66,88 +56,21 @@ ARCH_OS_MULTILIB_ENABLED=""
 ARCH_OS_ECN_ENABLED=""
 
 # ----------------------------------------------------------------------------------------------------
-# TRAP FUNCTIONS
+# TRAP
 # ----------------------------------------------------------------------------------------------------
 
-# This trap is called on error in setup menu: ERR
 # shellcheck disable=SC2317
-trap_error_setup() {
-
+trap_error() {
     local result_code="$?"
-    local line_no="$1"
-    local func_name="$2"
-
-    # Print
-    echo "ERROR: Command '${BASH_COMMAND}' failed with exit code ${result_code} in function '${func_name}' (line ${line_no})" >&2
+    echo "ERROR: Command '${BASH_COMMAND}' failed with exit code ${result_code} in function '${1}' (line ${2})" >&2
 }
 
-# ----------------------------------------------------------------------------------------------------
+# Set error trap
+trap 'trap_error ${FUNCNAME-main} ${LINENO}' ERR
 
-# This trap is called on error in installation: ERR
-# shellcheck disable=SC2317
-trap_error_install() {
-
-    local result_code="$?"
-    local line_no="$1"
-    local func_name="$2"
-
-    # Print to stderr (will be logged in installer.log)
-    echo "###ERR" >&2 # Print marker for exit logging trap
-    echo "Progress:  '${PROGRESS_TITLE}' failed with exit code ${result_code}" >&2
-    echo "Command:   '${BASH_COMMAND}' in function '${func_name}' (line ${line_no})" >&2
-}
-
-# ----------------------------------------------------------------------------------------------------
-
-# This trap is called after installation: EXIT (sucess & failed)
-# shellcheck disable=SC2317
-trap_exit_install() {
-
-    # Result code
-    local result_code="$?"
-
-    # Calc duration
-    local duration=$SECONDS # This is set before install starts
-    local duration_min="$((duration / 60))"
-    local duration_sec="$((duration % 60))"
-
-    # Check exit return code
-    if [ "$result_code" -gt 0 ]; then # Error >= 1
-
-        # Read in installer.log (inverted)
-        local log_whiptail=""
-        local line=""
-        while read -r line; do
-            [ "$line" = "###!ERR" ] && break        # If first marker (from bottom) found, break loop
-            [ -z "$line" ] && continue              # Skip newline
-            log_whiptail="${log_whiptail}\n${line}" # Append log
-        done <<<"$(tac "$LOG_FILE")"                # Read logfile inverted (from bottom)
-
-        # Invert whiptail log
-        log_whiptail="$(echo -e "$log_whiptail" | tac)"
-
-        # Show TUI Failed (duration & log)
-        local tui_txt="Arch OS Installation failed after ${duration_min} minutes and ${duration_sec} seconds.\n\n${log_whiptail}"
-        whiptail --clear --title "$TITLE" --msgbox "$tui_txt" --scrolltext "$TUI_HEIGHT" "$TUI_WIDTH"
-
-    else # Success = 0
-
-        # Unmount
-        wait # Wait for sub processes
-        swapoff -a
-        umount -A -R /mnt
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
-
-        # Show TUI Sucess
-        local tui_txt="Arch OS successfully installed after ${duration_min} minutes and ${duration_sec} seconds.\n\nReboot now?"
-        if whiptail --clear --title "$TITLE" --yesno "$tui_txt" --defaultno --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
-            wait && reboot
-        fi
-    fi
-
-    # Exit
-    clear && exit "$result_code"
-}
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# //////////////////////////////////////////// FUNCTIONS /////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 # ----------------------------------------------------------------------------------------------------
 # HELPER FUNCTIONS
@@ -173,28 +96,6 @@ print_menu_entry() {
 
     # Print menu entry text
     echo "${key} ${spaces} ->  $val"
-}
-
-# ----------------------------------------------------------------------------------------------------
-
-print_whiptail_info() {
-
-    # Set current progress title
-    PROGRESS_TITLE="$1"
-
-    # Print title for logging
-    echo ">>> ${PROGRESS_TITLE}" >&1
-
-    # Increment progress counter
-    ((PROGRESS_COUNT += 1))
-
-    # Check if max and increase
-    if [ "$PROGRESS_COUNT" -ge "$PROGRESS_TOTAL" ]; then
-        PROGRESS_TOTAL=$((PROGRESS_COUNT + 1))
-    fi
-
-    # Print percent & title for whiptail (uses descriptor 3 as stdin)
-    echo -e "XXX\n$((PROGRESS_COUNT * 100 / PROGRESS_TOTAL))\n${PROGRESS_TITLE}...\nXXX" >&3
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -250,7 +151,7 @@ check_properties() {
 
 generate_properties_file() {
     {
-        echo "# ${TITLE} (generated: $(date --utc '+%Y-%m-%d %H:%M') UTC)"
+        echo "# ${SCRIPT_TITLE} (generated: $(date --utc '+%Y-%m-%d %H:%M') UTC)"
         echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}'"
         echo "ARCH_OS_USERNAME='${ARCH_OS_USERNAME}'"
         echo "ARCH_OS_DISK='${ARCH_OS_DISK}'"
@@ -276,7 +177,7 @@ generate_properties_file() {
         echo "ARCH_OS_X11_KEYBOARD_MODEL='${ARCH_OS_X11_KEYBOARD_MODEL}'"
         echo "ARCH_OS_X11_KEYBOARD_VARIANT='${ARCH_OS_X11_KEYBOARD_VARIANT}'"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
-    } >"$CONFIG_FILE"
+    } >"$SCRIPT_CONF"
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -294,13 +195,13 @@ tui_set_language() {
     local desc='Enter "?" to select from menu'
 
     # Whiptail
-    clear && user_input=$(whiptail --clear --title "$TITLE" --inputbox "\nSet Timezone (auto detected)\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+    clear && user_input=$(whiptail --clear --title "$SCRIPT_TITLE" --inputbox "\nSet Timezone (auto detected)\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
 
     # If user timezone input is null
     if [ -z "$user_input" ]; then
 
         # Whiptail
-        whiptail --clear --title "$TITLE" --msgbox "Timezone is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+        whiptail --clear --title "$SCRIPT_TITLE" --msgbox "Timezone is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         ARCH_OS_TIMEZONE=""
         return 0
     fi
@@ -312,12 +213,12 @@ tui_set_language() {
         options=() && for item in ${items}; do options+=("${item}" ""); done
 
         # Whiptail
-        timezone=$(whiptail --clear --title "$TITLE" --menu "\nSelect Timezone:" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
+        timezone=$(whiptail --clear --title "$SCRIPT_TITLE" --menu "\nSelect Timezone:" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
 
         # Timezone country
         items=$(/usr/bin/ls "/usr/share/zoneinfo/${timezone}/")
         options=() && for item in ${items}; do options+=("${item}" ""); done
-        timezone_country=$(whiptail --clear --title "$TITLE" --menu "\nSelect Timezone:" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
+        timezone_country=$(whiptail --clear --title "$SCRIPT_TITLE" --menu "\nSelect Timezone:" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
 
         # Set timezone
         user_input="${timezone}/${timezone_country}"
@@ -327,7 +228,7 @@ tui_set_language() {
     if [ ! -f "/usr/share/zoneinfo/${user_input}" ]; then
 
         # Whiptail
-        whiptail --clear --title "$TITLE" --msgbox "Timezone '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
+        whiptail --clear --title "$SCRIPT_TITLE" --msgbox "Timezone '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 0
     else
         ARCH_OS_TIMEZONE="$user_input"
@@ -339,13 +240,13 @@ tui_set_language() {
     local desc='Enter "?" to select from menu\n\nExample: "en_US" or "de_DE"'
 
     # Whiptail
-    user_input=$(whiptail --clear --title "$TITLE" --inputbox "\nSet locale\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+    user_input=$(whiptail --clear --title "$SCRIPT_TITLE" --inputbox "\nSet locale\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
 
     # If locale is null
     if [ -z "$user_input" ]; then
 
         # Whiptail
-        whiptail --clear --title "$TITLE" --msgbox "Locale is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+        whiptail --clear --title "$SCRIPT_TITLE" --msgbox "Locale is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         ARCH_OS_LOCALE_LANG=""
         ARCH_OS_LOCALE_GEN_LIST=""
         return 0
@@ -366,7 +267,7 @@ tui_set_language() {
         done
 
         # Whiptail
-        clear && locales=$(whiptail --clear --title "$TITLE" --menu "\nSelect Locale (type char to search):" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
+        clear && locales=$(whiptail --clear --title "$SCRIPT_TITLE" --menu "\nSelect Locale (type char to search):" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
 
         # Set locale
         user_input="$locales"
@@ -377,7 +278,7 @@ tui_set_language() {
     if ! grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<<"$user_input") " /etc/locale.gen; then
 
         # Whiptail
-        whiptail --clear --title "$TITLE" --msgbox "Locale '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
+        whiptail --clear --title "$SCRIPT_TITLE" --msgbox "Locale '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 0
     else
         ARCH_OS_LOCALE_LANG="$user_input"
@@ -406,13 +307,13 @@ tui_set_keyboard() {
     local desc='Enter "?" to select from menu\n\nExample: "de-latin1-nodeadkeys" or "us"'
 
     # Whiptail
-    user_input=$(whiptail --clear --title "$TITLE" --inputbox "\nSet console keyboard keymap\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+    user_input=$(whiptail --clear --title "$SCRIPT_TITLE" --inputbox "\nSet console keyboard keymap\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
 
     # If keymap null
     if [ -z "$user_input" ]; then
 
         # Whiptail
-        whiptail --clear --title "$TITLE" --msgbox "Console Keymap is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+        whiptail --clear --title "$SCRIPT_TITLE" --msgbox "Console Keymap is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         ARCH_OS_VCONSOLE_KEYMAP=""
         return 0
     fi
@@ -432,7 +333,7 @@ tui_set_keyboard() {
         done
 
         # Whiptail
-        clear && keymap=$(whiptail --clear --title "$TITLE" --menu "\nSelect Keymap (type char to search):" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
+        clear && keymap=$(whiptail --clear --title "$SCRIPT_TITLE" --menu "\nSelect Keymap (type char to search):" $TUI_HEIGHT $TUI_WIDTH 10 "${options[@]}" 3>&1 1>&2 2>&3)
 
         # Set keymap
         user_input="$keymap"
@@ -440,7 +341,7 @@ tui_set_keyboard() {
 
     # Finally check & set console keymap
     if ! localectl list-keymaps | grep -Fxq "$user_input"; then
-        whiptail --clear --title "$TITLE" --msgbox "Error: Keyboard layout '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
+        whiptail --clear --title "$SCRIPT_TITLE" --msgbox "Error: Keyboard layout '${user_input}' is not supported." "$TUI_HEIGHT" "$TUI_WIDTH"
         return 0
     else
         ARCH_OS_VCONSOLE_KEYMAP="$user_input"
@@ -454,9 +355,9 @@ tui_set_keyboard() {
 
 tui_set_user() {
 
-    ARCH_OS_USERNAME=$(whiptail --clear --title "$TITLE" --inputbox "\nEnter Arch OS Username" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_OS_USERNAME" 3>&1 1>&2 2>&3)
+    ARCH_OS_USERNAME=$(whiptail --clear --title "$SCRIPT_TITLE" --inputbox "\nEnter Arch OS Username" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$ARCH_OS_USERNAME" 3>&1 1>&2 2>&3)
     if [ -z "$ARCH_OS_USERNAME" ]; then
-        whiptail --clear --title "$TITLE" --msgbox "Arch OS Username is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+        whiptail --clear --title "$SCRIPT_TITLE" --msgbox "Arch OS Username is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         return 0
     fi
 
@@ -469,16 +370,16 @@ tui_set_user() {
 tui_set_password() {
 
     local desc='Note: This password is also used for encryption (if enabled)'
-    ARCH_OS_PASSWORD=$(whiptail --clear --title "$TITLE" --passwordbox "\nEnter Password\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
+    ARCH_OS_PASSWORD=$(whiptail --clear --title "$SCRIPT_TITLE" --passwordbox "\nEnter Password\n\n${desc}" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
     if [ -z "$ARCH_OS_PASSWORD" ]; then
-        whiptail --clear --title "$TITLE" --msgbox "Password is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+        whiptail --clear --title "$SCRIPT_TITLE" --msgbox "Password is null" "$TUI_HEIGHT" "$TUI_WIDTH"
         return 0
     fi
 
     local password_check
-    password_check=$(whiptail --clear --title "$TITLE" --passwordbox "\nEnter Password (again)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
+    password_check=$(whiptail --clear --title "$SCRIPT_TITLE" --passwordbox "\nEnter Password (again)" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" 3>&1 1>&2 2>&3)
     if [ "$ARCH_OS_PASSWORD" != "$password_check" ]; then
-        whiptail --clear --title "$TITLE" --msgbox "Password not identical" "$TUI_HEIGHT" "$TUI_WIDTH"
+        whiptail --clear --title "$SCRIPT_TITLE" --msgbox "Password not identical" "$TUI_HEIGHT" "$TUI_WIDTH"
         ARCH_OS_PASSWORD=""
         return 0
     fi
@@ -499,10 +400,10 @@ tui_set_disk() {
     done < <(lsblk -I 8,259,254 -d -o KNAME -n)
 
     # If no disk found
-    [ "${#disk_array[@]}" = "0" ] && whiptail --clear --title "$TITLE" --msgbox "No Disk found" "$TUI_HEIGHT" "$TUI_WIDTH" && return 0
+    [ "${#disk_array[@]}" = "0" ] && whiptail --clear --title "$SCRIPT_TITLE" --msgbox "No Disk found" "$TUI_HEIGHT" "$TUI_WIDTH" && return 0
 
     # Show TUI (select disk)
-    ARCH_OS_DISK=$(whiptail --clear --title "$TITLE" --menu "\nChoose Installation Disk" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "${#disk_array[@]}" "${disk_array[@]}" 3>&1 1>&2 2>&3)
+    ARCH_OS_DISK=$(whiptail --clear --title "$SCRIPT_TITLE" --menu "\nChoose Installation Disk" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "${#disk_array[@]}" "${disk_array[@]}" 3>&1 1>&2 2>&3)
 
     # Handle result
     [[ "$ARCH_OS_DISK" = "/dev/nvm"* ]] && ARCH_OS_BOOT_PARTITION="${ARCH_OS_DISK}p1" || ARCH_OS_BOOT_PARTITION="${ARCH_OS_DISK}1"
@@ -517,7 +418,7 @@ tui_set_disk() {
 tui_set_encryption() {
 
     ARCH_OS_ENCRYPTION_ENABLED="false"
-    if whiptail --clear --title "$TITLE" --yesno "Enable Disk Encryption?" --defaultno "$TUI_HEIGHT" "$TUI_WIDTH"; then
+    if whiptail --clear --title "$SCRIPT_TITLE" --yesno "Enable Disk Encryption?" --defaultno "$TUI_HEIGHT" "$TUI_WIDTH"; then
         ARCH_OS_ENCRYPTION_ENABLED="true"
     fi
 
@@ -530,7 +431,7 @@ tui_set_encryption() {
 tui_set_bootsplash() {
 
     ARCH_OS_BOOTSPLASH_ENABLED="false"
-    if whiptail --clear --title "$TITLE" --yesno "Install Bootsplash Animation (plymouth)?" --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+    if whiptail --clear --title "$SCRIPT_TITLE" --yesno "Install Bootsplash Animation (plymouth)?" --yes-button "Yes" --no-button "No" "$TUI_HEIGHT" "$TUI_WIDTH"; then
         ARCH_OS_BOOTSPLASH_ENABLED="true"
     fi
 
@@ -549,7 +450,7 @@ tui_set_variant() {
     variant_array+=("core") && variant_array+=("Arch OS Core (minimal Arch Linux)")
 
     # Whiptail
-    ARCH_OS_VARIANT=$(whiptail --clear --title "$TITLE" --menu "\nChoose Arch OS Variant" --nocancel --notags --default-item "$ARCH_OS_VARIANT" "$TUI_HEIGHT" "$TUI_WIDTH" "${#variant_array[@]}" "${variant_array[@]}" 3>&1 1>&2 2>&3)
+    ARCH_OS_VARIANT=$(whiptail --clear --title "$SCRIPT_TITLE" --menu "\nChoose Arch OS Variant" --nocancel --notags --default-item "$ARCH_OS_VARIANT" "$TUI_HEIGHT" "$TUI_WIDTH" "${#variant_array[@]}" "${variant_array[@]}" 3>&1 1>&2 2>&3)
     if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
 
         # Create driver array
@@ -561,19 +462,19 @@ tui_set_variant() {
         driver_array+=("ati") && driver_array+=("ATI Graphics (xf86-video-ati)")
 
         # Whiptail
-        ARCH_OS_GRAPHICS_DRIVER=$(whiptail --clear --title "$TITLE" --menu "\nChoose Graphics Driver" --nocancel --notags --default-item "$ARCH_OS_GRAPHICS_DRIVER" "$TUI_HEIGHT" "$TUI_WIDTH" "${#driver_array[@]}" "${driver_array[@]}" 3>&1 1>&2 2>&3)
+        ARCH_OS_GRAPHICS_DRIVER=$(whiptail --clear --title "$SCRIPT_TITLE" --menu "\nChoose Graphics Driver" --nocancel --notags --default-item "$ARCH_OS_GRAPHICS_DRIVER" "$TUI_HEIGHT" "$TUI_WIDTH" "${#driver_array[@]}" "${driver_array[@]}" 3>&1 1>&2 2>&3)
 
         # Set X11 keyboard layout
         local user_input="$ARCH_OS_X11_KEYBOARD_LAYOUT"
         [ -z "$user_input" ] && user_input='us'
 
         # Whiptail
-        user_input=$(whiptail --clear --title "$TITLE" --inputbox "\nEnter X11 (Xorg) keyboard layout\n\nExample: 'de' or 'us'" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+        user_input=$(whiptail --clear --title "$SCRIPT_TITLE" --inputbox "\nEnter X11 (Xorg) keyboard layout\n\nExample: 'de' or 'us'" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
 
         # If keyboard layout is null
         if [ -z "$user_input" ]; then
             # Whiptail
-            whiptail --clear --title "$TITLE" --msgbox "X11 keyboard layout is null" "$TUI_HEIGHT" "$TUI_WIDTH"
+            whiptail --clear --title "$SCRIPT_TITLE" --msgbox "X11 keyboard layout is null" "$TUI_HEIGHT" "$TUI_WIDTH"
             ARCH_OS_X11_KEYBOARD_LAYOUT=""
             return 0
         fi
@@ -582,7 +483,7 @@ tui_set_variant() {
         # Set X11 keyboard variant
         local user_input="$ARCH_OS_X11_KEYBOARD_VARIANT"
         [ -z "$user_input" ] && user_input=''
-        user_input=$(whiptail --clear --title "$TITLE" --inputbox "\nEnter X11 (Xorg) keyboard variant\n\nExample: 'nodeadkeys' or leave empty for default" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
+        user_input=$(whiptail --clear --title "$SCRIPT_TITLE" --inputbox "\nEnter X11 (Xorg) keyboard variant\n\nExample: 'nodeadkeys' or leave empty for default" --nocancel "$TUI_HEIGHT" "$TUI_WIDTH" "$user_input" 3>&1 1>&2 2>&3)
         ARCH_OS_X11_KEYBOARD_VARIANT="$user_input"
     fi
 
@@ -593,18 +494,14 @@ tui_set_variant() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # ////////////////////////////////////////////  MAIN  ////////////////////////////////////////////////
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# 1. START SETUP (TUI)
 
-# Wait & sleep
-wait && sleep 0.2
+# Wait & sleep & clear
+wait && sleep 0.2 && clear
 
 # Check dependencies
 ! command -v whiptail &>/dev/null && echo "ERROR: whiptail not installed" >&2 && exit 1
 ! command -v nano &>/dev/null && echo "ERROR: nano not installed" >&2 && exit 1
 ! command -v lsblk &>/dev/null && echo "ERROR: lsblk not installed" >&2 && exit 1
-
-# Set error trap for setup
-trap 'trap_error_setup ${LINENO} ${FUNCNAME-main}' ERR
 
 # Print welcome screen
 welcome_txt="
@@ -615,12 +512,12 @@ welcome_txt="
           ██   ██ ██   ██  ██████ ██   ██      ██████  ███████ 
                                  
 
-                    Welcome to the Arch OS Installer!
+                    Welcome to the ${SCRIPT_TITLE}!
 
     On the next screen you can select the properties of your Arch OS setup
       or your can edit the properties manually in 'installer.conf' file.
     "
-whiptail --clear --title "$TITLE" --msgbox "$welcome_txt" "$TUI_HEIGHT" "$TUI_WIDTH"
+whiptail --clear --title "$SCRIPT_TITLE" --msgbox "$welcome_txt" "$TUI_HEIGHT" "$TUI_WIDTH"
 
 # ----------------------------------------------------------------------------------------------------
 # SHOW SETUP MENU
@@ -632,11 +529,11 @@ while (true); do
     set_default_properties
 
     # Generate properties file if not exists (first start)
-    [ ! -f "$CONFIG_FILE" ] && generate_properties_file
+    [ ! -f "$SCRIPT_CONF" ] && generate_properties_file
 
     # Source properties
     # shellcheck disable=SC1090
-    source "$CONFIG_FILE"
+    source "$SCRIPT_CONF"
 
     # Check properties and set menu position
     check_properties || true
@@ -671,8 +568,7 @@ while (true); do
     fi
 
     # Open TUI menu
-    #menu_selection=$(whiptail --clear --title "$TITLE" --menu "\n" --ok-button "Ok" --cancel-button "Exit" --notags --default-item "$TUI_POSITION" "$TUI_HEIGHT" "$TUI_WIDTH" "$(((${#menu_entry_array[@]} / 2) + (${#menu_entry_array[@]} % 2)))" "${menu_entry_array[@]}" 3>&1 1>&2 2>&3) || exit
-    menu_selection=$(whiptail --clear --title "$TITLE" --menu "\n" --ok-button "Ok" --cancel-button "Exit" --notags --default-item "$TUI_POSITION" "$TUI_HEIGHT" "$TUI_WIDTH" "$((${#menu_entry_array[@]} / 2))" "${menu_entry_array[@]}" 3>&1 1>&2 2>&3) || exit
+    menu_selection=$(whiptail --clear --title "$SCRIPT_TITLE" --menu "\n" --ok-button "Ok" --cancel-button "Exit" --notags --default-item "$TUI_POSITION" "$TUI_HEIGHT" "$TUI_WIDTH" "$((${#menu_entry_array[@]} / 2))" "${menu_entry_array[@]}" 3>&1 1>&2 2>&3) || exit
 
     # Handle result
     case "${menu_selection}" in
@@ -718,28 +614,15 @@ while (true); do
         ;;
 
     "edit")
-
-        # Open config file in nano
-        nano "$CONFIG_FILE" </dev/tty
-
-        # Source may edited config
+        nano "$SCRIPT_CONF" </dev/tty # Open config file in nano
         # shellcheck disable=SC1090
-        source "$CONFIG_FILE"
-
-        # Create config if something is missing after edit
-        generate_properties_file
+        source "$SCRIPT_CONF"    # Source may edited config
+        generate_properties_file # Create config if something is missing after edit
         ;;
 
     "install")
-
         # If install is pressed, but config is incomplete
         check_properties || continue
-
-        # Ask for installation
-        #if ! whiptail --clear --title "$TITLE" --yesno "Start Arch OS Linux Installation?\n\nAll data on ${ARCH_OS_DISK} will be DELETED!" --defaultno --yes-button "Start Installation" --no-button "Exit" "$TUI_HEIGHT" "$TUI_WIDTH"; then
-        #    exit 1
-        #fi
-
         ##########################################
         break # Break loop and start installation
         ##########################################
@@ -748,42 +631,27 @@ while (true); do
     esac
 done
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# ////////////////////////////////////////////  TUI END  /////////////////////////////////////////////
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ----------------------------------------------------------------------------------------------------
+# START ARCH OS INSTALLER
+# ----------------------------------------------------------------------------------------------------
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# ///////////////////////////////////  ARCH OS CORE INSTALLATION  ////////////////////////////////////
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# 2. START INSTALLATION
+# Print loading
+clear && echo "Loading..."
 
-#./installer.sh "$ARCH_OS_PASSWORD" </dev/tty
-source ./installer.sh
+# Init installer home
+rm -rf "$INSTALLER_HOME"
+mkdir -p "$INSTALLER_HOME"
 
-exit
+# Download installer.sh
+curl -Lsf "$INSTALLER_URL" >"${INSTALLER_HOME}/installer.sh"
+chmod +x "${INSTALLER_HOME}/installer.sh"
 
-# Messure execution time
-SECONDS=0
+# Prepare installation
+cp "$SCRIPT_CONF" "${INSTALLER_HOME}/installer.conf"
+cd "$INSTALLER_HOME"
+export ARCH_OS_PASSWORD
 
-# Set installation trap for error
-trap 'trap_error_install ${LINENO} ${FUNCNAME-main}' ERR
-
-# Set installation trap for logging on exit
-trap 'trap_exit_install' EXIT
-
-# Begin sub installation process (show whiptail gauge)
-(
-    # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Arch OS Installation finished"
-    # ----------------------------------------------------------------------------------------------------
-
-    bash -c ./installer.sh "$ARCH_OS_PASSWORD"
-
-) | whiptail --clear --title "$TITLE" --gauge "Start Arch OS Installation..." 7 "$TUI_WIDTH" 0
-
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# ////////////////////////////////// ARCH OS INSTALLATION FINISHED ///////////////////////////////////
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-# Goto exit trap (see above)
-exit 0
+# Start installer.sh
+if ! ./installer.sh; then
+    exit 1
+fi
