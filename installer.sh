@@ -210,7 +210,7 @@ SECONDS=0
 # ----------------------------------------------------------------------------------------------------
 print_progress "Installation Checkup"
 # ----------------------------------------------------------------------------------------------------
-exit 0
+
 [ ! -d /sys/firmware/efi ] && print_error "BIOS not supported! Please set your boot mode to UEFI." && exit 1
 [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && print_error "You must execute the Installer from Arch ISO!" && exit 1
 
