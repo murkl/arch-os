@@ -44,8 +44,8 @@ exec 2>"$SCRIPT_LOG" # Log stderr to logfile
 # ----------------------------------------------------------------------------------------------------
 
 print_info() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S')  INFO: ${*}" >&2          # Log to file
-    echo -e "${COLOR_BOLD}${COLOR_GREEN} • ${*} ${COLOR_RESET}" >&3 # Green to stdout
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S')  INFO: ${*}" >&2        # Log to file
+    echo -e "${COLOR_BOLD}${COLOR_GREEN}• ${*}${COLOR_RESET}" >&3 # Green to stdout
 }
 
 print_error() {
@@ -54,8 +54,8 @@ print_error() {
 }
 
 print_progress() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S')  EXEC: ${*}" >&2           # Log to file
-    echo -e "${COLOR_BOLD}${COLOR_PURPLE} • ${*} ${COLOR_RESET}" >&3 # Yellow to stdout
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S')  EXEC: ${*}" >&2               # Log to file
+    echo -e "${COLOR_BOLD}${COLOR_PURPLE} • ${*} ... ${COLOR_RESET}" >&3 # Yellow to stdout
 }
 
 print_input() {
@@ -440,10 +440,11 @@ arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootlo
 arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
 # ----------------------------------------------------------------------------------------------------
-print_progress "Install Bootsplash"
+# Bootsplash
 # ----------------------------------------------------------------------------------------------------
 
 if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
+    print_progress "Install Bootsplash (this may take a while)"
 
     # Install packages
     packages=()
@@ -1026,8 +1027,8 @@ print_progress "Cleanup Arch OS Installation"
 # ----------------------------------------------------------------------------------------------------
 
 # Copy installer files to users home dir
-cp "$0" "/mnt/home/${ARCH_OS_USERNAME}/installer.sh"
 cp "$SCRIPT_CONF" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
+cp "installer.sh" "/mnt/home/${ARCH_OS_USERNAME}/installer.sh"
 
 # Remove sudo needs no password rights
 sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
@@ -1038,6 +1039,9 @@ arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_
 # Remove orphans and force return true
 # shellcheck disable=SC2016
 arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true'
+
+# Wait for subprocesses
+wait
 
 # Calc duration
 duration=$SECONDS # This is set before install starts
