@@ -9,7 +9,7 @@ VERSION='1.2.7'
 # SOURCE:   https://github.com/murkl/arch-os
 # AUTOR:    murkl
 # ORIGIN:   Germany
-# LICENCE:  GPL-V2
+# LICENCE:  GPL 2.0
 
 # CONFIGURATION
 set -o pipefail # A pipeline error results in the error status of the entire pipeline
@@ -21,9 +21,19 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 SCRIPT_CONF="./installer.conf"
 SCRIPT_LOG="./installer.log"
 
+# COLORS
+COLOR_RESET='\e[0m'
+COLOR_BOLD='\e[1m'
+COLOR_RED='\e[31m'
+COLOR_GREEN='\e[32m'
+COLOR_PURPLE='\e[35m'
+COLOR_YELLOW='\e[33m'
+
 # ----------------------------------------------------------------------------------------------------
-# DESCRIPTORS
+# FILE DESCRIPTORS
 # ----------------------------------------------------------------------------------------------------
+
+clear # Clear screen
 
 # Print nothing from stdin & stderr to console
 exec 3>&1 4>&2       # Saves file descriptors (new stdin: &3 new stderr: &4)
@@ -35,82 +45,148 @@ exec 2>"$SCRIPT_LOG" # Log stderr to logfile
 # ----------------------------------------------------------------------------------------------------
 
 print_info() {
-    echo -e "INFO:  ${*}" >&3
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S')  INFO: ${*}" >&2                         # Log to file
+    echo -e "${COLOR_GREEN} $(date '+%Y-%m-%d %H:%M:%S'): ${*} ${COLOR_RESET}" >&3 # Green to stdout
 }
 
 print_warn() {
-    echo -e "WARN:  ${*}" >&3
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S')  WARN: ${*}" >&2                          # Log to file
+    echo -e "${COLOR_YELLOW} $(date '+%Y-%m-%d %H:%M:%S'): ${*} ${COLOR_RESET}" >&3 # Yellow to stdout
 }
 
 print_error() {
-    echo -e "ERROR: ${*}" >&4
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S') ERROR: ${*}" >&2                       # Log to file
+    echo -e "${COLOR_RED} $(date '+%Y-%m-%d %H:%M:%S'): ${*} ${COLOR_RESET}" >&4 # Red to stderr
 }
 
-print_header() {
-    echo -e '
-           █████  ██████   ██████ ██   ██      ██████  ███████ 
-          ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
-          ███████ ██████  ██      ███████     ██    ██ ███████ 
-          ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
-          ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
-    ' >&3
+print_progress() {
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S')  EXEC: ${*}" >&2                         # Log to file
+    echo -e "${COLOR_GREEN} $(date '+%Y-%m-%d %H:%M:%S'): ${*} ${COLOR_RESET}" >&3 # Yellow to stdout
+}
+
+print_input() {
+    echo -ne "${COLOR_BOLD} • ${1} ${COLOR_RESET}" >&3
 }
 
 # ----------------------------------------------------------------------------------------------------
 # TRAP
 # ----------------------------------------------------------------------------------------------------
 
-# This trap is called on error in installation: ERR
 # shellcheck disable=SC2317
 trap_error() {
-
     local result_code="$?"
-    local line_no="$1"
-    local func_name="$2"
-
-    # Print to stderr (will be logged in installer.log)
-    echo "###ERR" >&2 # Print marker for exit logging trap
-    echo "'${BASH_COMMAND}' failed with exit code ${result_code} in function '${func_name}' (line ${line_no})" >&4
-    echo "RESULT: $result_code" >&4
+    echo -e "###!ERR" >&2 # Print marker to logfile
+    print_error "Command '${BASH_COMMAND}' failed with exit code ${result_code} in function '${1}' (line ${2})"
 }
 
-# Set error trap for setup
-trap 'trap_error ${LINENO} ${FUNCNAME-main}' EXIT
+# shellcheck disable=SC2317
+trap_exit() {
+    local result_code="$?"
+    if [ "$result_code" -gt "0" ]; then
+        print_error "Arch OS Installation failed (${result_code})"
+        exit 1
+    else # Success
+        print_info "Arch OS successfully installed"
+        print_input "Reboot now? [y/N]:" && read -r reboot_now </dev/tty
+        if [ "$reboot_now" = "y" ] || [ "$reboot_now" = "Y" ]; then
+            reboot
+        fi
+        exit 0
+    fi
+}
+
+# Set traps
+trap 'trap_error ${FUNCNAME-main} ${LINENO}' ERR
+trap 'trap_exit' EXIT
 
 # ----------------------------------------------------------------------------------------------------
-# CHECK PROPERTIES
+# PRINT HEADER
 # ----------------------------------------------------------------------------------------------------
-[ -z "${ARCH_OS_USERNAME}" ] && TUI_POSITION="user" && return 1
-[ -z "${ARCH_OS_PASSWORD}" ] && TUI_POSITION="password" && return 1
-[ -z "${ARCH_OS_TIMEZONE}" ] && TUI_POSITION="language" && return 1
-[ -z "${ARCH_OS_LOCALE_LANG}" ] && TUI_POSITION="language" && return 1
-[ -z "${ARCH_OS_LOCALE_GEN_LIST[*]}" ] && TUI_POSITION="language" && return 1
-[ -z "${ARCH_OS_VCONSOLE_KEYMAP}" ] && TUI_POSITION="keyboard" && return 1
-[ -z "${ARCH_OS_DISK}" ] && TUI_POSITION="disk" && return 1
-[ -z "${ARCH_OS_BOOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
-[ -z "${ARCH_OS_ROOT_PARTITION}" ] && TUI_POSITION="disk" && return 1
-[ -z "${ARCH_OS_ENCRYPTION_ENABLED}" ] && TUI_POSITION="encrypt" && return 1
-[ -z "${ARCH_OS_BOOTSPLASH_ENABLED}" ] && TUI_POSITION="bootsplash" && return 1
-[ -z "${ARCH_OS_VARIANT}" ] && TUI_POSITION="variant" && return 1
-[ "${ARCH_OS_VARIANT}" = "desktop" ] && [ -z "${ARCH_OS_GRAPHICS_DRIVER}" ] && TUI_POSITION="variant" && return 1
-[ "${ARCH_OS_VARIANT}" = "desktop" ] && [ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && TUI_POSITION="variant" && return 1
 
-# Source properties file
+echo -e "Arch OS Installer v.${VERSION}" >&1 # Print to logfile
+echo -e "${COLOR_PURPLE}
+  █████  ██████   ██████ ██   ██      ██████  ███████ 
+ ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
+ ███████ ██████  ██      ███████     ██    ██ ███████ 
+ ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
+ ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
+ v.${VERSION} ${COLOR_RESET}" >&3 # Purple to stdout
+print_info "Welcome to the Arch OS Installer (${VERSION})"
+
+# ----------------------------------------------------------------------------------------------------
+# LOAD & CHECK PROPERTIES FILE
+# ----------------------------------------------------------------------------------------------------
+
+# Check if properties file exists
+if [ ! -f "$SCRIPT_CONF" ]; then
+    print_error "Properties file '${SCRIPT_CONF}' not found"
+    exit 1
+fi
+
+set +u # Disable uninitialized access errors
+
+# Set password from arg (can be overriden in properties file)
+[ -z "${ARCH_OS_PASSWORD}" ] && ARCH_OS_PASSWORD="$*"
+[ -z "${ARCH_OS_PASSWORD}" ] && print_warn "No Password found as argument"
+
+set -a # Enable auto export of variables
+
+# Load properties file
 # shellcheck disable=SC1090
-[ -f "$SCRIPT_CONF" ] && source "$SCRIPT_CONF"
+source "$SCRIPT_CONF" # Source properties and auto export variables
+
+set +a # Disable auto export of variables
+
+# Check properties
+[ -z "${ARCH_OS_PASSWORD}" ] && print_error "Property: 'ARCH_OS_PASSWORD' is missing" && exit 1
+[ -z "${ARCH_OS_USERNAME}" ] && print_error "Property: 'ARCH_OS_USERNAME' is missing" && exit 1
+[ -z "${ARCH_OS_TIMEZONE}" ] && print_error "Property: 'ARCH_OS_TIMEZONE' is missing" && exit 1
+[ -z "${ARCH_OS_LOCALE_LANG}" ] && print_error "Property: 'ARCH_OS_LOCALE_LANG' is missing" && exit 1
+[ -z "${ARCH_OS_LOCALE_GEN_LIST[*]}" ] && print_error "Property: 'ARCH_OS_LOCALE_GEN_LIST' is missing" && exit 1
+[ -z "${ARCH_OS_VCONSOLE_KEYMAP}" ] && print_error "Property: 'ARCH_OS_VCONSOLE_KEYMAP' is missing" && exit 1
+[ -z "${ARCH_OS_DISK}" ] && print_error "Property: 'ARCH_OS_DISK' is missing" && exit 1
+[ -z "${ARCH_OS_BOOT_PARTITION}" ] && print_error "Property: 'ARCH_OS_BOOT_PARTITION' is missing" && exit 1
+[ -z "${ARCH_OS_ROOT_PARTITION}" ] && print_error "Property: 'ARCH_OS_ROOT_PARTITION' is missing" && exit 1
+[ -z "${ARCH_OS_ENCRYPTION_ENABLED}" ] && print_error "Property: 'ARCH_OS_ENCRYPTION_ENABLED' is missing" && exit 1
+[ -z "${ARCH_OS_BOOTSPLASH_ENABLED}" ] && print_error "Property: 'ARCH_OS_BOOTSPLASH_ENABLED' is missing" && exit 1
+[ -z "${ARCH_OS_VARIANT}" ] && print_error "Property: 'ARCH_OS_VARIANT' is missing" && exit 1
+
+# Check depending properties
+[ "${ARCH_OS_VARIANT}" = "desktop" ] && [ -z "${ARCH_OS_GRAPHICS_DRIVER}" ] && print_error "Property: 'ARCH_OS_GRAPHICS_DRIVER' is missing" && exit 1
+[ "${ARCH_OS_VARIANT}" = "desktop" ] && [ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && print_error "Property: 'ARCH_OS_X11_KEYBOARD_LAYOUT' is missing" && exit 1
+
+set -u # Enable uninitialized access errors
+
+# Check successfully
+print_info "Properties successfully initialized"
 
 # ----------------------------------------------------------------------------------------------------
-# MAIN
+# START INSTALLATION?
 # ----------------------------------------------------------------------------------------------------
 
-# Print header
-print_header
-echo 'Welcome to the Arch OS Installer!'
-echo 'Your Arch OS Installation Configuration:' >&3
-cat installer.conf >&3
+print_input "Check Properties? [y/N]:" && read -r input_check </dev/tty
+if [ "$input_check" = "y" ] || [ "$input_check" = "Y" ]; then
+    # Print properties to stdout
+    echo -e "-------------------------------------------------------" >&3
+    cat "$SCRIPT_CONF" >&3 # Print properties file to stdout
+    echo -e "-------------------------------------------------------" >&3
+    # Check password property?
+    print_input "Check Password Property? [y/N]:" && read -r input_check </dev/tty
+    # Print password property to stdout
+    if [ "$input_check" = "y" ] || [ "$input_check" = "Y" ]; then
+        echo -e "-------------------------------------------------------" >&3
+        echo -en "ARCH_OS_PASSWORD='${ARCH_OS_PASSWORD}'\n" >&3
+        echo -e "-------------------------------------------------------" >&3
+    fi
+fi
 
-echo "Start Installation? [y/N]"
+print_input "Start Arch OS Installation? [y/N]:" && read -r input_install </dev/tty
+if [ "$input_install" != "y" ] && [ "$input_install" != "Y" ]; then
+    exit 1
+fi
 
+# ----------------------------------------------------------------------------------------------------
+# PACMAN HELPER
 # ----------------------------------------------------------------------------------------------------
 
 pacman_install() {
@@ -122,7 +198,7 @@ pacman_install() {
     for ((i = 1; i < 6; i++)); do
 
         # Print updated whiptail info
-        [ $i -gt 1 ] && print_whiptail_info "${PROGRESS_TITLE} (${i}. retry)"
+        [ $i -gt 1 ] && print_progress "${i}. retry..."
 
         # Try installing packages
         if ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
@@ -138,37 +214,30 @@ pacman_install() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# ////////////////////////////////////////////  MAIN  ////////////////////////////////////////////////
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# 1. START SETUP (TUI)
-
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
 # ///////////////////////////////////  ARCH OS CORE INSTALLATION  ////////////////////////////////////
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# 2. START INSTALLATION
+# 1. START INSTALLATION
 
 # Messure execution time
 SECONDS=0
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Checkup"
+print_progress "Installation Checkup"
 # ----------------------------------------------------------------------------------------------------
 
-[ ! -d /sys/firmware/efi ] && echo "ERROR: BIOS not supported! Please set your boot mode to UEFI." >&2 && exit 1
-[ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && echo "ERROR: You must execute the Installer from Arch ISO!" >&2 && exit 1
-
-exit
+[ ! -d /sys/firmware/efi ] && print_error "BIOS not supported! Please set your boot mode to UEFI." && exit 1
+[ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && print_error "You must execute the Installer from Arch ISO!" && exit 1
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Waiting for Reflector from Arch ISO"
+print_progress "Waiting for Reflector from Arch ISO"
 # ----------------------------------------------------------------------------------------------------
 
 # This mirrorlist will copied to new Arch system during installation
 while timeout 180 tail --pid=$(pgrep reflector) -f /dev/null &>/dev/null; do sleep 1; done
-pgrep reflector &>/dev/null && echo "ERROR: Reflector timeout after 180 seconds" >&2 && exit 1
+pgrep reflector &>/dev/null && print_error "Reflector timeout after 180 seconds" && exit 1
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Prepare Installation"
+print_progress "Prepare Installation"
 # ----------------------------------------------------------------------------------------------------
 
 # Sync clock
@@ -187,7 +256,7 @@ vgchange -an || true
 pacman -Sy --noconfirm archlinux-keyring
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Wipe & Create Partitions (${ARCH_OS_DISK})"
+print_progress "Wipe & Create Partitions (${ARCH_OS_DISK})"
 # ----------------------------------------------------------------------------------------------------
 
 # Wipe all partitions
@@ -206,18 +275,17 @@ sgdisk -n 2:0:0 -t 2:8300 -c 2:root "$ARCH_OS_DISK"
 partprobe "$ARCH_OS_DISK"
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Enable Disk Encryption"
+# Disk Encryption
 # ----------------------------------------------------------------------------------------------------
 
 if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
+    print_progress "Enable Disk Encryption"
     echo -n "$ARCH_OS_PASSWORD" | cryptsetup luksFormat "$ARCH_OS_ROOT_PARTITION"
     echo -n "$ARCH_OS_PASSWORD" | cryptsetup open "$ARCH_OS_ROOT_PARTITION" cryptroot
-else
-    echo "> Skipped"
 fi
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Format Disk"
+print_progress "Format Disk"
 # ----------------------------------------------------------------------------------------------------
 
 mkfs.fat -F 32 -n BOOT "$ARCH_OS_BOOT_PARTITION"
@@ -225,7 +293,7 @@ mkfs.fat -F 32 -n BOOT "$ARCH_OS_BOOT_PARTITION"
 [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.ext4 -F -L ROOT "$ARCH_OS_ROOT_PARTITION"
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Mount Disk"
+print_progress "Mount Disk"
 # ----------------------------------------------------------------------------------------------------
 
 [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mount -v /dev/mapper/cryptroot /mnt
@@ -234,7 +302,7 @@ mkdir -p /mnt/boot
 mount -v "$ARCH_OS_BOOT_PARTITION" /mnt/boot
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Pacstrap Arch OS Core Packages (May take about 8 minutes)"
+print_progress "Pacstrap Arch OS Core Packages (this may take a while)"
 # ----------------------------------------------------------------------------------------------------
 
 # Core packages
@@ -253,13 +321,13 @@ packages+=("${ARCH_OS_KERNEL}")
 pacstrap -K /mnt "${packages[@]}"
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Generate /etc/fstab"
+print_progress "Generate /etc/fstab"
 # ----------------------------------------------------------------------------------------------------
 
 genfstab -U /mnt >>/mnt/etc/fstab
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Create Swap (zram-generator)"
+print_progress "Create Swap (zram-generator)"
 # ----------------------------------------------------------------------------------------------------
 {
     # https://wiki.archlinux.org/title/Zram#Using_zram-generator
@@ -279,21 +347,21 @@ print_whiptail_info "Create Swap (zram-generator)"
 } >/mnt/etc/sysctl.d/99-vm-zram-parameters.conf
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Timezone & System Clock"
+print_progress "Timezone & System Clock"
 # ----------------------------------------------------------------------------------------------------
 
 arch-chroot /mnt ln -sf "/usr/share/zoneinfo/$ARCH_OS_TIMEZONE" /etc/localtime
 arch-chroot /mnt hwclock --systohc # Set hardware clock from system clock
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Set Console Keymap"
+print_progress "Set Console Keymap"
 # ----------------------------------------------------------------------------------------------------
 
 echo "KEYMAP=$ARCH_OS_VCONSOLE_KEYMAP" >/mnt/etc/vconsole.conf
 [ -n "$ARCH_OS_VCONSOLE_FONT" ] && echo "FONT=$ARCH_OS_VCONSOLE_FONT" >>/mnt/etc/vconsole.conf
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Generate Locale"
+print_progress "Generate Locale"
 # ----------------------------------------------------------------------------------------------------
 
 echo "LANG=${ARCH_OS_LOCALE_LANG}.UTF-8" >/mnt/etc/locale.conf
@@ -301,13 +369,13 @@ for ((i = 0; i < ${#ARCH_OS_LOCALE_GEN_LIST[@]}; i++)); do sed -i "s/^#${ARCH_OS
 arch-chroot /mnt locale-gen
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Set Hostname (${ARCH_OS_HOSTNAME})"
+print_progress "Set Hostname (${ARCH_OS_HOSTNAME})"
 # ----------------------------------------------------------------------------------------------------
 
 echo "$ARCH_OS_HOSTNAME" >/mnt/etc/hostname
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Set /etc/hosts"
+print_progress "Set /etc/hosts"
 # ----------------------------------------------------------------------------------------------------
 
 {
@@ -316,7 +384,7 @@ print_whiptail_info "Set /etc/hosts"
 } >/mnt/etc/hosts
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Create Initial Ramdisk"
+print_progress "Create Initial Ramdisk"
 # ----------------------------------------------------------------------------------------------------
 
 [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect modconf block sd-encrypt filesystems sd-vconsole fsck)/" /mnt/etc/mkinitcpio.conf
@@ -324,7 +392,7 @@ print_whiptail_info "Create Initial Ramdisk"
 arch-chroot /mnt mkinitcpio -P
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Install Bootloader (systemdboot)"
+print_progress "Install Bootloader (systemdboot)"
 # ----------------------------------------------------------------------------------------------------
 
 # Install systemdboot to /boot
@@ -363,7 +431,7 @@ kernel_args_default="rw init=/usr/lib/systemd/systemd zswap.enabled=0 nowatchdog
 } >/mnt/boot/loader/entries/arch-fallback.conf
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Create User (${ARCH_OS_USERNAME})"
+print_progress "Create User (${ARCH_OS_USERNAME})"
 # ----------------------------------------------------------------------------------------------------
 
 # Create new user
@@ -383,7 +451,7 @@ printf "%s\n%s" "${ARCH_OS_PASSWORD}" "${ARCH_OS_PASSWORD}" | arch-chroot /mnt p
 sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Enable Core Services"
+print_progress "Enable Core Services"
 # ----------------------------------------------------------------------------------------------------
 
 arch-chroot /mnt systemctl enable NetworkManager                   # Network Manager
@@ -394,11 +462,7 @@ arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootlo
 arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
 # ----------------------------------------------------------------------------------------------------
-# END ARCH OS CORE
-# ----------------------------------------------------------------------------------------------------
-
-# ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Install Bootsplash"
+print_progress "Install Bootsplash"
 # ----------------------------------------------------------------------------------------------------
 
 if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
@@ -423,19 +487,15 @@ if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
     arch-chroot /mnt plymouth-set-default-theme -R arch-os
 fi
 
-# ----------------------------------------------------------------------------------------------------
-# END BOOTSPLASH
-# ----------------------------------------------------------------------------------------------------
-
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # ////////////////////////////////////  ARCH OS BASE INSTALLATION ////////////////////////////////////
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# 3. BASE INSTALLATION
+# 2. BASE INSTALLATION
 
 if [ "$ARCH_OS_VARIANT" != "core" ]; then
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Install Arch OS Base Packages"
+    print_progress "Install Arch OS Base Packages (this may take a while)"
     # ----------------------------------------------------------------------------------------------------
 
     # Install Base packages
@@ -448,7 +508,7 @@ if [ "$ARCH_OS_VARIANT" != "core" ]; then
     pacman_install "${packages[@]}"
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Enable Arch OS Base Services"
+    print_progress "Enable Arch OS Base Services"
     # ----------------------------------------------------------------------------------------------------
 
     # Base Services
@@ -457,7 +517,7 @@ if [ "$ARCH_OS_VARIANT" != "core" ]; then
     arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer (pkgfile)
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Configure Pacman & Reflector"
+    print_progress "Configure Pacman & Reflector"
     # ----------------------------------------------------------------------------------------------------
 
     # Configure parrallel downloads, colors & multilib
@@ -480,7 +540,7 @@ if [ "$ARCH_OS_VARIANT" != "core" ]; then
     } >/mnt/etc/xdg/reflector/reflector.conf
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Configure System"
+    print_progress "Configure System"
     # ----------------------------------------------------------------------------------------------------
 
     # Set nano environment
@@ -501,10 +561,11 @@ if [ "$ARCH_OS_VARIANT" != "core" ]; then
     echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Install AUR Helper"
+    # AUR Helper
     # ----------------------------------------------------------------------------------------------------
 
     if [ -n "$ARCH_OS_AUR_HELPER" ] && [ "$ARCH_OS_AUR_HELPER" != "none" ]; then
+        print_progress "Install AUR Helper (this may take a while)"
 
         # Install AUR Helper as user
         repo_url="https://aur.archlinux.org/${ARCH_OS_AUR_HELPER}.git"
@@ -518,12 +579,10 @@ if [ "$ARCH_OS_VARIANT" != "core" ]; then
             sed -i 's/^#BottomUp/BottomUp/g' /mnt/etc/paru.conf
             sed -i 's/^#SudoLoop/SudoLoop/g' /mnt/etc/paru.conf
         fi
-    else
-        echo "> Skipped"
     fi
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Install Shell Enhancement"
+    print_progress "Install Shell Enhancement"
     # ----------------------------------------------------------------------------------------------------
 
     if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
@@ -607,7 +666,7 @@ if [ "$ARCH_OS_VARIANT" != "core" ]; then
         { # Create neofetch config for root & user
             echo '# https://github.com/dylanaraps/neofetch/wiki/Customizing-Info'
             echo ''
-            echo 'print_info() {'
+            echo 'print_progress() {'
             echo '    prin'
             echo '    prin "Distro\t" "Arch OS"'
             echo '    info "Kernel\t" kernel'
@@ -661,22 +720,17 @@ if [ "$ARCH_OS_VARIANT" != "core" ]; then
         # Install bash-completion
         pacman_install bash-completion
     fi
-
-    # ----------------------------------------------------------------------------------------------------
-    # END ARCH OS BASE
-    # ----------------------------------------------------------------------------------------------------
-
 fi
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # ///////////////////////////////////  ARCH OS DESKTOP INSTALLATION //////////////////////////////////
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# 4. DESKTOP INSTALLATION
+# 3. DESKTOP INSTALLATION
 
 if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Install GNOME Packages (May take about 12 minutes)"
+    print_progress "Install Arch OS Desktop Packages (this may take a while)"
     # ----------------------------------------------------------------------------------------------------
 
     # Install packages
@@ -777,26 +831,26 @@ if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
         case $hypervisor in
 
         kvm)
-            print_whiptail_info "KVM has been detected, setting up guest tools."
+            print_progress "KVM has been detected, setting up guest tools."
             pacman_install spice spice-vdagent spice-protocol spice-gtk qemu-guest-agent
             arch-chroot /mnt systemctl enable qemu-guest-agent
             ;;
 
         vmware)
-            print_whiptail_info "VMWare Workstation/ESXi has been detected, setting up guest tools."
+            print_progress "VMWare Workstation/ESXi has been detected, setting up guest tools."
             pacman_install open-vm-tools
             arch-chroot /mnt systemctl enable vmtoolsd
             arch-chroot /mnt systemctl enable vmware-vmblock-fuse
             ;;
 
         oracle)
-            print_whiptail_info "VirtualBox has been detected, setting up guest tools."
+            print_progress "VirtualBox has been detected, setting up guest tools."
             pacman_install virtualbox-guest-utils
             arch-chroot /mnt systemctl enable vboxservice
             ;;
 
         microsoft)
-            print_whiptail_info "Hyper-V has been detected, setting up guest tools."
+            print_progress "Hyper-V has been detected, setting up guest tools."
             pacman_install hyperv
             arch-chroot /mnt systemctl enable hv_fcopy_daemon
             arch-chroot /mnt systemctl enable hv_kvp_daemon
@@ -804,7 +858,7 @@ if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
             ;;
 
         *)
-            print_whiptail_info "No VM detected"
+            print_progress "No VM detected"
             # Do nothing
             ;;
 
@@ -812,13 +866,13 @@ if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
     fi
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Enable GNOME Auto Login"
+    print_progress "Enable GNOME Auto Login"
     # ----------------------------------------------------------------------------------------------------
 
     grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Configure Git"
+    print_progress "Configure Git"
     # ----------------------------------------------------------------------------------------------------
 
     arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- mkdir -p "/home/${ARCH_OS_USERNAME}/.config/git"
@@ -826,7 +880,7 @@ if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
     arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git config --global credential.helper /usr/lib/git-core/git-credential-libsecret
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Configure Samba"
+    print_progress "Configure Samba"
     # ----------------------------------------------------------------------------------------------------
 
     mkdir -p "/mnt/etc/samba/"
@@ -837,7 +891,7 @@ if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
     } >/mnt/etc/samba/smb.conf
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Set X11 Keyboard Layout"
+    print_progress "Set X11 Keyboard Layout"
     # ----------------------------------------------------------------------------------------------------
 
     {
@@ -851,7 +905,7 @@ if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
     } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Enable Arch OS Desktop Services"
+    print_progress "Enable Arch OS Desktop Services"
     # ----------------------------------------------------------------------------------------------------
 
     arch-chroot /mnt systemctl enable gdm.service                                                              # GNOME
@@ -865,7 +919,7 @@ if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
     arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Hide Applications Icons"
+    print_progress "Hide Applications Icons"
     # ----------------------------------------------------------------------------------------------------
 
     arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- mkdir -p "/home/$ARCH_OS_USERNAME/.local/share/applications"
@@ -884,7 +938,7 @@ if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
     fi
 
     # ----------------------------------------------------------------------------------------------------
-    print_whiptail_info "Install Graphics Driver"
+    print_progress "Install Graphics Driver"
     # ----------------------------------------------------------------------------------------------------
 
     case "${ARCH_OS_GRAPHICS_DRIVER}" in
@@ -987,18 +1041,14 @@ if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
         ;;
 
     esac
-
-# ----------------------------------------------------------------------------------------------------
-# END ARCH OS DESKTOP
-# ----------------------------------------------------------------------------------------------------
-
 fi
 
 # ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Cleanup Arch OS Installation"
+print_progress "Cleanup Arch OS Installation"
 # ----------------------------------------------------------------------------------------------------
 
-# Copy installer.conf to users home dir
+# Copy installer files to users home dir
+cp "$0" "/mnt/home/${ARCH_OS_USERNAME}/installer.sh"
 cp "$SCRIPT_CONF" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
 
 # Remove sudo needs no password rights
@@ -1011,6 +1061,5 @@ arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_
 # shellcheck disable=SC2016
 arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true'
 
-# ----------------------------------------------------------------------------------------------------
-print_whiptail_info "Arch OS Installation finished"
-# ----------------------------------------------------------------------------------------------------
+# Finish
+exit 0
