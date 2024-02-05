@@ -122,11 +122,20 @@ fi
 set -a # Enable auto export of variables
 # shellcheck disable=SC1090
 source "$SCRIPT_CONF"
+
 set +a # Disable auto export of variables
+set +u # (Re)Disable uninitialized access errors
+
+# Ask for password
+if [ -z "${ARCH_OS_PASSWORD}" ]; then
+    print_input "Enter User Password and hit enter:" && read -r -s input_password </dev/tty && echo >&3
+    [ -z "$input_password" ] && print_error "Password is null" && exit 1
+    print_input "Enter User Password again and hit enter:" && read -r -s input_password_check </dev/tty && echo >&3
+    [ "$input_password" != "$input_password_check" ] && print_error "Passwords not identical" && exit 1
+    ARCH_OS_PASSWORD="$input_password"
+fi
 
 # Check properties
-set +u # Disable uninitialized access errors
-[ -z "${ARCH_OS_PASSWORD}" ] && print_error "Property: 'ARCH_OS_PASSWORD' is missing" && exit 1
 [ -z "${ARCH_OS_USERNAME}" ] && print_error "Property: 'ARCH_OS_USERNAME' is missing" && exit 1
 [ -z "${ARCH_OS_TIMEZONE}" ] && print_error "Property: 'ARCH_OS_TIMEZONE' is missing" && exit 1
 [ -z "${ARCH_OS_LOCALE_LANG}" ] && print_error "Property: 'ARCH_OS_LOCALE_LANG' is missing" && exit 1
@@ -140,7 +149,8 @@ set +u # Disable uninitialized access errors
 [ -z "${ARCH_OS_VARIANT}" ] && print_error "Property: 'ARCH_OS_VARIANT' is missing" && exit 1
 [ -z "${ARCH_OS_GRAPHICS_DRIVER}" ] && print_error "Property: 'ARCH_OS_GRAPHICS_DRIVER' is missing" && exit 1
 [ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && print_error "Property: 'ARCH_OS_X11_KEYBOARD_LAYOUT' is missing" && exit 1
-set -u # Enable uninitialized access errors
+
+set -u # (Re)Enable uninitialized access errors
 
 # Check successfully
 print_info "Properties successfully initialized"
@@ -153,18 +163,18 @@ print_input "Check Properties? [y/N]:" && read -r input_check </dev/tty
 if [ "$input_check" = "y" ] || [ "$input_check" = "Y" ]; then
 
     # Print properties to stdout
-    echo -e "${COLOR_BOLD} • • • • • • • • • • • • • • • • • • • • • • • • • • • ${COLOR_RESET}" >&3
+    echo -e " • • • • • • • • • • • • • • • • • • • • • • • • • • • " >&3
     cat "$SCRIPT_CONF" >&3 # Print properties file to stdout
-    echo -e "${COLOR_BOLD} • • • • • • • • • • • • • • • • • • • • • • • • • • • ${COLOR_RESET}" >&3
+    echo -e " • • • • • • • • • • • • • • • • • • • • • • • • • • • " >&3
 
     # Check password property?
     print_input "Check Password Property? [y/N]:" && read -r input_check </dev/tty
 
     # Print password property to stdout
     if [ "$input_check" = "y" ] || [ "$input_check" = "Y" ]; then
-        echo -e "${COLOR_BOLD} • • • • • • • • • • • • • • • • • • • • • • • • • • • ${COLOR_RESET}" >&3
+        echo -e " • • • • • • • • • • • • • • • • • • • • • • • • • • • " >&3
         echo -en "ARCH_OS_PASSWORD='${ARCH_OS_PASSWORD}'\n" >&3
-        echo -e "${COLOR_BOLD} • • • • • • • • • • • • • • • • • • • • • • • • • • • ${COLOR_RESET}" >&3
+        echo -e " • • • • • • • • • • • • • • • • • • • • • • • • • • • " >&3
     fi
 fi
 
