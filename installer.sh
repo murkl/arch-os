@@ -48,9 +48,9 @@ exec 2>"$SCRIPT_LOG" # Log stderr to logfile
 # PRINT FUNCTIONS
 # ----------------------------------------------------------------------------------------------------
 
-print_error() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ERROR: ${*}" >&2
-    echo -e "${COLOR_BOLD}${COLOR_RED} • ${*} ${COLOR_RESET}" >&4
+print_info() {
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | INFO: ${*}" >&2
+    echo -e "${COLOR_BOLD}${COLOR_GREEN} • ${*}${COLOR_RESET}" >&3
 }
 
 print_warn() {
@@ -58,9 +58,9 @@ print_warn() {
     echo -e "${COLOR_BOLD}${COLOR_YELLOW} • ${*}${COLOR_RESET}" >&3
 }
 
-print_info() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | INFO: ${*}" >&2
-    echo -e "${COLOR_BOLD}${COLOR_GREEN} • ${*}${COLOR_RESET}" >&3
+print_error() {
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ERROR: ${*}" >&2
+    echo -e "${COLOR_BOLD}${COLOR_RED} • ${*} ${COLOR_RESET}" >&4
 }
 
 print_progress() {
