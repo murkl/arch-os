@@ -89,7 +89,7 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 
 <div align="center">
 
-<p><img src="./screenshots/installer_01.png" /></p>
+<p><img src="./screenshots/setup_01.png" /></p>
 
 <p><b>
 
@@ -115,17 +115,17 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 
 - Load prefered keyboard layout (optional): `loadkeys de`
 - Connect to WLAN (optional): `iwctl station wlan0 connect "SSID"`
-- **Run Arch OS Installer:**
+- **Run Arch OS Setup:**
 
 <div align="center">
 
 ```
+# Stable
 curl -Ls http://arch.webhop.me | bash
+
+# Testing
+curl -Ls http://arch-dev.webhop.me | bash
 ```
-
-</div>
-
-<div align="center">
 
 <p><b>
 
@@ -133,13 +133,7 @@ curl -Ls http://arch.webhop.me | bash
 
 </b></p>
 
-</div>
-
-## Usage
-
-<div align="center">
-
-<p><img src="screenshots/neofetch.png" /></p>
+<p><img src="./screenshots/installer.png" /></p>
 
 <p><b>
 
@@ -148,6 +142,12 @@ curl -Ls http://arch.webhop.me | bash
 </b></p>
 
 </div>
+
+## Usage
+
+- **`setup.sh`** → TUI Helper for creating Properties file (executes the Installer)
+- **`installer.sh`** → Arch OS Install Script (needs Properties file)
+- **`installer.conf`** → Properties file of Arch OS Installation
 
 ### System information
 
