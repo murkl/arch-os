@@ -117,8 +117,6 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 - Connect to WLAN (optional): `iwctl station wlan0 connect "SSID"`
 - **Run Arch OS Setup:**
 
-<div align="center">
-
 ```
 # Stable
 curl -Ls http://arch.webhop.me | bash
@@ -126,6 +124,8 @@ curl -Ls http://arch.webhop.me | bash
 # Testing
 curl -Ls http://arch-dev.webhop.me | bash
 ```
+
+<div align="center">
 
 <p><b>
 
