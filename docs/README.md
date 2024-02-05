@@ -133,7 +133,7 @@ curl -Ls http://arch-dev.webhop.me | bash
 
 </b></p>
 
-<p><img src="./screenshots/installer.png" /></p>
+<p><img src="./screenshots/installer_01.png" /></p>
 
 <p><b>
 

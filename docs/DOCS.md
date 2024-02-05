@@ -312,6 +312,8 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 <p><img src="./screenshots/setup_04.png" /></p>
 <p><img src="./screenshots/setup_05.png" /></p>
 <p><img src="./screenshots/setup_06.png" /></p>
+<p><img src="./screenshots/installer_01.png" /></p>
+<p><img src="./screenshots/installer_02.png" /></p>
 <p><img src="screenshots/neofetch.png" /></p>
 <p><img src="screenshots/apps.png" /></p>
 <p><b>This screenshots may outdated.</b></p>

@@ -270,7 +270,7 @@ vgchange -an || true
 pacman -Sy --noconfirm archlinux-keyring
 
 # ----------------------------------------------------------------------------------------------------
-print_progress "Wipe & Create Partitions (${ARCH_OS_DISK})"
+print_progress "Wipe & Create Partitions to ${ARCH_OS_DISK}"
 # ----------------------------------------------------------------------------------------------------
 
 # Wipe all partitions
@@ -293,7 +293,7 @@ partprobe "$ARCH_OS_DISK"
 # ----------------------------------------------------------------------------------------------------
 
 if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
-    print_progress "Enable Disk Encryption"
+    print_progress "Enable Disk Encryption for ${ARCH_OS_ROOT_PARTITION}"
     echo -n "$ARCH_OS_PASSWORD" | cryptsetup luksFormat "$ARCH_OS_ROOT_PARTITION"
     echo -n "$ARCH_OS_PASSWORD" | cryptsetup open "$ARCH_OS_ROOT_PARTITION" cryptroot
 fi
@@ -307,7 +307,7 @@ mkfs.fat -F 32 -n BOOT "$ARCH_OS_BOOT_PARTITION"
 [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.ext4 -F -L ROOT "$ARCH_OS_ROOT_PARTITION"
 
 # ----------------------------------------------------------------------------------------------------
-print_progress "Mount Disk"
+print_progress "Mount Disk to /mnt"
 # ----------------------------------------------------------------------------------------------------
 
 [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mount -v /dev/mapper/cryptroot /mnt
@@ -316,7 +316,7 @@ mkdir -p /mnt/boot
 mount -v "$ARCH_OS_BOOT_PARTITION" /mnt/boot
 
 # ----------------------------------------------------------------------------------------------------
-print_progress "Pacstrap Arch OS Core Packages (this may take a while)"
+print_progress "Pacstrap Arch OS Core Packages to /mnt (this may take a while)"
 # ----------------------------------------------------------------------------------------------------
 
 # Core packages
@@ -361,21 +361,21 @@ print_progress "Create Swap (zram-generator)"
 } >/mnt/etc/sysctl.d/99-vm-zram-parameters.conf
 
 # ----------------------------------------------------------------------------------------------------
-print_progress "Timezone & System Clock"
+print_progress "Set Timezone & System Clock"
 # ----------------------------------------------------------------------------------------------------
 
 arch-chroot /mnt ln -sf "/usr/share/zoneinfo/$ARCH_OS_TIMEZONE" /etc/localtime
 arch-chroot /mnt hwclock --systohc # Set hardware clock from system clock
 
 # ----------------------------------------------------------------------------------------------------
-print_progress "Set Console Keymap"
+print_progress "Set Console Keymap in /etc/vconsole.conf"
 # ----------------------------------------------------------------------------------------------------
 
 echo "KEYMAP=$ARCH_OS_VCONSOLE_KEYMAP" >/mnt/etc/vconsole.conf
 [ -n "$ARCH_OS_VCONSOLE_FONT" ] && echo "FONT=$ARCH_OS_VCONSOLE_FONT" >>/mnt/etc/vconsole.conf
 
 # ----------------------------------------------------------------------------------------------------
-print_progress "Generate Locale"
+print_progress "Set & Generate Locale"
 # ----------------------------------------------------------------------------------------------------
 
 echo "LANG=${ARCH_OS_LOCALE_LANG}.UTF-8" >/mnt/etc/locale.conf
@@ -383,7 +383,7 @@ for ((i = 0; i < ${#ARCH_OS_LOCALE_GEN_LIST[@]}; i++)); do sed -i "s/^#${ARCH_OS
 arch-chroot /mnt locale-gen
 
 # ----------------------------------------------------------------------------------------------------
-print_progress "Set Hostname (${ARCH_OS_HOSTNAME})"
+print_progress "Set Hostname to ${ARCH_OS_HOSTNAME}"
 # ----------------------------------------------------------------------------------------------------
 
 echo "$ARCH_OS_HOSTNAME" >/mnt/etc/hostname
@@ -398,7 +398,7 @@ print_progress "Set /etc/hosts"
 } >/mnt/etc/hosts
 
 # ----------------------------------------------------------------------------------------------------
-print_progress "Create Initial Ramdisk"
+print_progress "Create Initial Ramdisk from /etc/mkinitcpio.conf"
 # ----------------------------------------------------------------------------------------------------
 
 [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect modconf block sd-encrypt filesystems sd-vconsole fsck)/" /mnt/etc/mkinitcpio.conf
@@ -445,7 +445,7 @@ kernel_args_default="rw init=/usr/lib/systemd/systemd zswap.enabled=0 modprobe.b
 } >/mnt/boot/loader/entries/arch-fallback.conf
 
 # ----------------------------------------------------------------------------------------------------
-print_progress "Create User (${ARCH_OS_USERNAME})"
+print_progress "Create User ${ARCH_OS_USERNAME}"
 # ----------------------------------------------------------------------------------------------------
 
 # Create new user
@@ -465,7 +465,7 @@ printf "%s\n%s" "${ARCH_OS_PASSWORD}" "${ARCH_OS_PASSWORD}" | arch-chroot /mnt p
 sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
 
 # ----------------------------------------------------------------------------------------------------
-print_progress "Enable Core Services"
+print_progress "Enable Arch OS Core Services"
 # ----------------------------------------------------------------------------------------------------
 
 arch-chroot /mnt systemctl enable NetworkManager                   # Network Manager
@@ -555,7 +555,7 @@ if [ "$ARCH_OS_VARIANT" != "core" ]; then
     } >/mnt/etc/xdg/reflector/reflector.conf
 
     # ----------------------------------------------------------------------------------------------------
-    print_progress "Configure System"
+    print_progress "Configure Arch Linux System"
     # ----------------------------------------------------------------------------------------------------
 
     # Set nano environment
@@ -580,7 +580,7 @@ if [ "$ARCH_OS_VARIANT" != "core" ]; then
     # ----------------------------------------------------------------------------------------------------
 
     if [ -n "$ARCH_OS_AUR_HELPER" ] && [ "$ARCH_OS_AUR_HELPER" != "none" ]; then
-        print_progress "Install AUR Helper (this may take a while)"
+        print_progress "Install AUR Helper '${ARCH_OS_AUR_HELPER}' (this may take a while)"
 
         # Install AUR Helper as user
         repo_url="https://aur.archlinux.org/${ARCH_OS_AUR_HELPER}.git"
@@ -887,7 +887,7 @@ if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
     grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
 
     # ----------------------------------------------------------------------------------------------------
-    print_progress "Configure Git"
+    print_progress "Configure Git in /home/${ARCH_OS_USERNAME}/.config/git/config"
     # ----------------------------------------------------------------------------------------------------
 
     arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- mkdir -p "/home/${ARCH_OS_USERNAME}/.config/git"
@@ -895,7 +895,7 @@ if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
     arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git config --global credential.helper /usr/lib/git-core/git-credential-libsecret
 
     # ----------------------------------------------------------------------------------------------------
-    print_progress "Configure Samba"
+    print_progress "Configure Samba in /etc/samba/smb.conf"
     # ----------------------------------------------------------------------------------------------------
 
     mkdir -p "/mnt/etc/samba/"
@@ -906,7 +906,7 @@ if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
     } >/mnt/etc/samba/smb.conf
 
     # ----------------------------------------------------------------------------------------------------
-    print_progress "Set X11 Keyboard Layout"
+    print_progress "Set X11 Keyboard Layout in /etc/X11/xorg.conf.d/00-keyboard.conf"
     # ----------------------------------------------------------------------------------------------------
 
     {
@@ -934,7 +934,7 @@ if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
     arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
 
     # ----------------------------------------------------------------------------------------------------
-    print_progress "Hide Applications Icons"
+    print_progress "Hide Desktop Applications Icons"
     # ----------------------------------------------------------------------------------------------------
 
     arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- mkdir -p "/home/$ARCH_OS_USERNAME/.local/share/applications"
@@ -953,7 +953,7 @@ if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
     fi
 
     # ----------------------------------------------------------------------------------------------------
-    print_progress "Install Graphics Driver"
+    print_progress "Install Graphics Driver (${ARCH_OS_GRAPHICS_DRIVER})"
     # ----------------------------------------------------------------------------------------------------
 
     case "${ARCH_OS_GRAPHICS_DRIVER}" in
