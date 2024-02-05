@@ -299,7 +299,7 @@ if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
 fi
 
 # ----------------------------------------------------------------------------------------------------
-print_progress "Format Disk"
+print_progress "Format Disk ${ARCH_OS_DISK}"
 # ----------------------------------------------------------------------------------------------------
 
 mkfs.fat -F 32 -n BOOT "$ARCH_OS_BOOT_PARTITION"
@@ -307,7 +307,7 @@ mkfs.fat -F 32 -n BOOT "$ARCH_OS_BOOT_PARTITION"
 [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.ext4 -F -L ROOT "$ARCH_OS_ROOT_PARTITION"
 
 # ----------------------------------------------------------------------------------------------------
-print_progress "Mount Disk to /mnt"
+print_progress "Mount Disk ${ARCH_OS_DISK} to /mnt"
 # ----------------------------------------------------------------------------------------------------
 
 [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mount -v /dev/mapper/cryptroot /mnt
@@ -341,7 +341,7 @@ print_progress "Generate /etc/fstab"
 genfstab -U /mnt >>/mnt/etc/fstab
 
 # ----------------------------------------------------------------------------------------------------
-print_progress "Create Swap (zram-generator)"
+print_progress "Create Swap (zram-generator with zstd compression)"
 # ----------------------------------------------------------------------------------------------------
 {
     # https://wiki.archlinux.org/title/Zram#Using_zram-generator
@@ -361,7 +361,7 @@ print_progress "Create Swap (zram-generator)"
 } >/mnt/etc/sysctl.d/99-vm-zram-parameters.conf
 
 # ----------------------------------------------------------------------------------------------------
-print_progress "Set Timezone & System Clock"
+print_progress "Set Timezone & System Clock to ${ARCH_OS_TIMEZONE}"
 # ----------------------------------------------------------------------------------------------------
 
 arch-chroot /mnt ln -sf "/usr/share/zoneinfo/$ARCH_OS_TIMEZONE" /etc/localtime
@@ -406,7 +406,7 @@ print_progress "Create Initial Ramdisk from /etc/mkinitcpio.conf"
 arch-chroot /mnt mkinitcpio -P
 
 # ----------------------------------------------------------------------------------------------------
-print_progress "Install Bootloader (systemdboot)"
+print_progress "Install Bootloader to /boot (systemdboot)"
 # ----------------------------------------------------------------------------------------------------
 
 # Install systemdboot to /boot
@@ -480,7 +480,7 @@ arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time f
 # ----------------------------------------------------------------------------------------------------
 
 if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
-    print_progress "Install Bootsplash (this may take a while)"
+    print_progress "Install Plymouth Bootsplash & Theme (this may take a while)"
 
     # Install packages
     packages=()
@@ -597,7 +597,7 @@ if [ "$ARCH_OS_VARIANT" != "core" ]; then
     fi
 
     # ----------------------------------------------------------------------------------------------------
-    print_progress "Install Shell Enhancement"
+    print_progress "Install Shell Enhancement (${ARCH_OS_SHELL_ENHANCED_ENABLED})"
     # ----------------------------------------------------------------------------------------------------
 
     if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
