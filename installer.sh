@@ -229,6 +229,9 @@ pacman_install() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # 1. START INSTALLATION
 
+print_info "Installation starts in 5 seconds (press 'ctrl + c' to cancel)..."
+sleep 5
+
 # Messure execution time
 SECONDS=0
 
