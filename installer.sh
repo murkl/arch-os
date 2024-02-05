@@ -16,6 +16,7 @@ set -o pipefail # A pipeline error results in the error status of the entire pip
 set -u          # Uninitialized variables trigger errors
 set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
+clear           # Clear screen
 
 # ENVIRONMENT
 SCRIPT_CONF="./installer.conf"
@@ -33,8 +34,6 @@ COLOR_YELLOW='\e[33m'
 # FILE DESCRIPTORS
 # ----------------------------------------------------------------------------------------------------
 
-clear # Clear screen
-
 # Print nothing from stdin & stderr to console
 exec 3>&1 4>&2       # Saves file descriptors (new stdin: &3 new stderr: &4)
 exec 1>"$SCRIPT_LOG" # Log stdin to logfile
@@ -45,31 +44,26 @@ exec 2>"$SCRIPT_LOG" # Log stderr to logfile
 # ----------------------------------------------------------------------------------------------------
 
 print_info() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S')  INFO: ${*}" >&2                         # Log to file
-    echo -e "${COLOR_GREEN} $(date '+%Y-%m-%d %H:%M:%S'): ${*} ${COLOR_RESET}" >&3 # Green to stdout
-}
-
-print_warn() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S')  WARN: ${*}" >&2                          # Log to file
-    echo -e "${COLOR_YELLOW} $(date '+%Y-%m-%d %H:%M:%S'): ${*} ${COLOR_RESET}" >&3 # Yellow to stdout
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S')  INFO: ${*}" >&2          # Log to file
+    echo -e "${COLOR_BOLD}${COLOR_GREEN} • ${*} ${COLOR_RESET}" >&3 # Green to stdout
 }
 
 print_error() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S') ERROR: ${*}" >&2                       # Log to file
-    echo -e "${COLOR_RED} $(date '+%Y-%m-%d %H:%M:%S'): ${*} ${COLOR_RESET}" >&4 # Red to stderr
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S') ERROR: ${*}" >&2        # Log to file
+    echo -e "${COLOR_BOLD}${COLOR_RED} • ${*} ${COLOR_RESET}" >&4 # Red to stderr
 }
 
 print_progress() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S')  EXEC: ${*}" >&2                         # Log to file
-    echo -e "${COLOR_GREEN} $(date '+%Y-%m-%d %H:%M:%S'): ${*} ${COLOR_RESET}" >&3 # Yellow to stdout
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S')  EXEC: ${*}" >&2           # Log to file
+    echo -e "${COLOR_BOLD}${COLOR_PURPLE} • ${*} ${COLOR_RESET}" >&3 # Yellow to stdout
 }
 
 print_input() {
-    echo -ne "${COLOR_BOLD} • ${1} ${COLOR_RESET}" >&3
+    echo -ne "${COLOR_BOLD}${COLOR_YELLOW} • ${1} ${COLOR_RESET}" >&3
 }
 
 # ----------------------------------------------------------------------------------------------------
-# TRAP
+# TRAPS
 # ----------------------------------------------------------------------------------------------------
 
 # shellcheck disable=SC2317
@@ -82,17 +76,8 @@ trap_error() {
 # shellcheck disable=SC2317
 trap_exit() {
     local result_code="$?"
-    if [ "$result_code" -gt "0" ]; then
-        print_error "Arch OS Installation failed (${result_code})"
-        exit 1
-    else # Success
-        print_info "Arch OS successfully installed"
-        print_input "Reboot now? [y/N]:" && read -r reboot_now </dev/tty
-        if [ "$reboot_now" = "y" ] || [ "$reboot_now" = "Y" ]; then
-            reboot
-        fi
-        exit 0
-    fi
+    [ "$result_code" -gt "0" ] && print_error "Arch OS Installation failed (${result_code})"
+    exit "$result_code"
 }
 
 # Set traps
@@ -110,7 +95,7 @@ echo -e "${COLOR_PURPLE}
  ███████ ██████  ██      ███████     ██    ██ ███████ 
  ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
  ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
- v.${VERSION} ${COLOR_RESET}" >&3 # Purple to stdout
+ ${COLOR_RESET}" >&3 # Purple to stdout
 print_info "Welcome to the Arch OS Installer (${VERSION})"
 
 # ----------------------------------------------------------------------------------------------------
@@ -123,21 +108,14 @@ if [ ! -f "$SCRIPT_CONF" ]; then
     exit 1
 fi
 
-set +u # Disable uninitialized access errors
-
-# Set password from arg (can be overriden in properties file)
-[ -z "${ARCH_OS_PASSWORD}" ] && ARCH_OS_PASSWORD="$*"
-[ -z "${ARCH_OS_PASSWORD}" ] && print_warn "No Password found as argument"
-
+# Load properties file and auto export variables
 set -a # Enable auto export of variables
-
-# Load properties file
 # shellcheck disable=SC1090
-source "$SCRIPT_CONF" # Source properties and auto export variables
-
+source "$SCRIPT_CONF"
 set +a # Disable auto export of variables
 
 # Check properties
+set +u # Disable uninitialized access errors
 [ -z "${ARCH_OS_PASSWORD}" ] && print_error "Property: 'ARCH_OS_PASSWORD' is missing" && exit 1
 [ -z "${ARCH_OS_USERNAME}" ] && print_error "Property: 'ARCH_OS_USERNAME' is missing" && exit 1
 [ -z "${ARCH_OS_TIMEZONE}" ] && print_error "Property: 'ARCH_OS_TIMEZONE' is missing" && exit 1
@@ -150,11 +128,8 @@ set +a # Disable auto export of variables
 [ -z "${ARCH_OS_ENCRYPTION_ENABLED}" ] && print_error "Property: 'ARCH_OS_ENCRYPTION_ENABLED' is missing" && exit 1
 [ -z "${ARCH_OS_BOOTSPLASH_ENABLED}" ] && print_error "Property: 'ARCH_OS_BOOTSPLASH_ENABLED' is missing" && exit 1
 [ -z "${ARCH_OS_VARIANT}" ] && print_error "Property: 'ARCH_OS_VARIANT' is missing" && exit 1
-
-# Check depending properties
-[ "${ARCH_OS_VARIANT}" = "desktop" ] && [ -z "${ARCH_OS_GRAPHICS_DRIVER}" ] && print_error "Property: 'ARCH_OS_GRAPHICS_DRIVER' is missing" && exit 1
-[ "${ARCH_OS_VARIANT}" = "desktop" ] && [ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && print_error "Property: 'ARCH_OS_X11_KEYBOARD_LAYOUT' is missing" && exit 1
-
+[ -z "${ARCH_OS_GRAPHICS_DRIVER}" ] && print_error "Property: 'ARCH_OS_GRAPHICS_DRIVER' is missing" && exit 1
+[ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && print_error "Property: 'ARCH_OS_X11_KEYBOARD_LAYOUT' is missing" && exit 1
 set -u # Enable uninitialized access errors
 
 # Check successfully
@@ -166,12 +141,15 @@ print_info "Properties successfully initialized"
 
 print_input "Check Properties? [y/N]:" && read -r input_check </dev/tty
 if [ "$input_check" = "y" ] || [ "$input_check" = "Y" ]; then
+
     # Print properties to stdout
     echo -e "-------------------------------------------------------" >&3
     cat "$SCRIPT_CONF" >&3 # Print properties file to stdout
     echo -e "-------------------------------------------------------" >&3
+
     # Check password property?
     print_input "Check Password Property? [y/N]:" && read -r input_check </dev/tty
+
     # Print password property to stdout
     if [ "$input_check" = "y" ] || [ "$input_check" = "Y" ]; then
         echo -e "-------------------------------------------------------" >&3
@@ -1060,6 +1038,18 @@ arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_
 # Remove orphans and force return true
 # shellcheck disable=SC2016
 arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true'
+
+# Calc duration
+duration=$SECONDS # This is set before install starts
+duration_min="$((duration / 60))"
+duration_sec="$((duration % 60))"
+
+# Print finish
+print_info "Arch OS successfully installed after ${duration_min} minutes and ${duration_sec} seconds"
+print_input "Reboot now? [y/N]:" && read -r reboot_now </dev/tty
+if [ "$reboot_now" = "y" ] || [ "$reboot_now" = "Y" ]; then
+    reboot
+fi
 
 # Finish
 exit 0

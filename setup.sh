@@ -2,7 +2,7 @@
 clear
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# //////////////////////////////////////// ARCH OS INSTALLER /////////////////////////////////////////
+# ////////////////////////////////////////// ARCH OS SETUP ///////////////////////////////////////////
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 VERSION='1.2.7'
@@ -736,9 +736,9 @@ while (true); do
         check_properties || continue
 
         # Ask for installation
-        if ! whiptail --clear --title "$TITLE" --yesno "Start Arch OS Linux Installation?\n\nAll data on ${ARCH_OS_DISK} will be DELETED!" --defaultno --yes-button "Start Installation" --no-button "Exit" "$TUI_HEIGHT" "$TUI_WIDTH"; then
-            exit 1
-        fi
+        #if ! whiptail --clear --title "$TITLE" --yesno "Start Arch OS Linux Installation?\n\nAll data on ${ARCH_OS_DISK} will be DELETED!" --defaultno --yes-button "Start Installation" --no-button "Exit" "$TUI_HEIGHT" "$TUI_WIDTH"; then
+        #    exit 1
+        #fi
 
         ##########################################
         break # Break loop and start installation
