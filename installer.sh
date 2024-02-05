@@ -65,7 +65,7 @@ print_error() {
 
 print_progress() {
     echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | EXEC: ${*}" >&2
-    echo -e "${COLOR_BOLD}${COLOR_PURPLE} + ${*} ... ${COLOR_RESET}" >&3
+    echo -e "${COLOR_BOLD}${COLOR_PURPLE} + ${*}... ${COLOR_RESET}" >&3
 }
 
 print_input() {
@@ -209,7 +209,7 @@ pacman_install() {
     for ((i = 1; i < 6; i++)); do
 
         # Print updated whiptail info
-        [ "$i" -gt 1 ] && print_progress "${i}. retry..."
+        [ "$i" -gt 1 ] && print_progress "${i}. retry"
 
         # Try installing packages
         if ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
