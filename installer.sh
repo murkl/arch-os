@@ -12,6 +12,10 @@ VERSION='1.3.0'
 # ORIGIN:   Germany
 # LICENCE:  GPL 2.0
 
+# 1. CORE INSTALLATION
+# 2. BASE INSTALLATION
+# 3. DESKTOP INSTALLATION
+
 # CONFIGURATION
 set -o pipefail # A pipeline error results in the error status of the entire pipeline
 set -u          # Uninitialized variables trigger errors
@@ -128,14 +132,15 @@ set +u # (Re)Disable uninitialized access errors
 
 # Ask for password
 if [ -z "${ARCH_OS_PASSWORD}" ]; then
-    print_input "Enter User Password and hit enter:" && read -r -s input_password </dev/tty && echo >&3
+    print_input "Enter Arch OS Password and hit enter (may not visible):" && read -r -s input_password </dev/tty && echo >&3
     [ -z "$input_password" ] && print_error "Password is null" && exit 1
-    print_input "Enter User Password again and hit enter:" && read -r -s input_password_check </dev/tty && echo >&3
+    print_input "Enter Arch OS Password again and hit enter (may not visible):" && read -r -s input_password_check </dev/tty && echo >&3
     [ "$input_password" != "$input_password_check" ] && print_error "Passwords not identical" && exit 1
     ARCH_OS_PASSWORD="$input_password"
 fi
 
 # Check properties
+[ -z "${ARCH_OS_HOSTNAME}" ] && print_error "Property: 'ARCH_OS_HOSTNAME' is missing" && exit 1
 [ -z "${ARCH_OS_USERNAME}" ] && print_error "Property: 'ARCH_OS_USERNAME' is missing" && exit 1
 [ -z "${ARCH_OS_TIMEZONE}" ] && print_error "Property: 'ARCH_OS_TIMEZONE' is missing" && exit 1
 [ -z "${ARCH_OS_LOCALE_LANG}" ] && print_error "Property: 'ARCH_OS_LOCALE_LANG' is missing" && exit 1
@@ -146,9 +151,17 @@ fi
 [ -z "${ARCH_OS_ROOT_PARTITION}" ] && print_error "Property: 'ARCH_OS_ROOT_PARTITION' is missing" && exit 1
 [ -z "${ARCH_OS_ENCRYPTION_ENABLED}" ] && print_error "Property: 'ARCH_OS_ENCRYPTION_ENABLED' is missing" && exit 1
 [ -z "${ARCH_OS_BOOTSPLASH_ENABLED}" ] && print_error "Property: 'ARCH_OS_BOOTSPLASH_ENABLED' is missing" && exit 1
+[ -z "${ARCH_OS_KERNEL}" ] && print_error "Property: 'ARCH_OS_KERNEL' is missing" && exit 1
+[ -z "${ARCH_OS_MICROCODE}" ] && print_error "Property: 'ARCH_OS_MICROCODE' is missing" && exit 1
 [ -z "${ARCH_OS_VARIANT}" ] && print_error "Property: 'ARCH_OS_VARIANT' is missing" && exit 1
+[ -z "${ARCH_OS_SHELL_ENHANCED_ENABLED}" ] && print_error "Property: 'ARCH_OS_SHELL_ENHANCED_ENABLED' is missing" && exit 1
+[ -z "${ARCH_OS_AUR_HELPER}" ] && print_error "Property: 'ARCH_OS_AUR_HELPER' is missing" && exit 1
+[ -z "${ARCH_OS_MULTILIB_ENABLED}" ] && print_error "Property: 'ARCH_OS_MULTILIB_ENABLED' is missing" && exit 1
 [ -z "${ARCH_OS_GRAPHICS_DRIVER}" ] && print_error "Property: 'ARCH_OS_GRAPHICS_DRIVER' is missing" && exit 1
 [ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && print_error "Property: 'ARCH_OS_X11_KEYBOARD_LAYOUT' is missing" && exit 1
+[ -z "${ARCH_OS_X11_KEYBOARD_MODEL}" ] && print_error "Property: 'ARCH_OS_X11_KEYBOARD_MODEL' is missing" && exit 1
+[ -z "${ARCH_OS_VM_SUPPORT_ENABLED}" ] && print_error "Property: 'ARCH_OS_VM_SUPPORT_ENABLED' is missing" && exit 1
+[ -z "${ARCH_OS_ECN_ENABLED}" ] && print_error "Property: 'ARCH_OS_ECN_ENABLED' is missing" && exit 1
 
 set -u # (Re)Enable uninitialized access errors
 
@@ -398,7 +411,7 @@ arch-chroot /mnt bootctl --esp-path=/boot install
 
 # Kernel args
 # Zswap should be disabled when using zram (https://github.com/archlinux/archinstall/issues/881)
-kernel_args_default="rw init=/usr/lib/systemd/systemd zswap.enabled=0 nowatchdog quiet splash vt.global_cursor_default=0"
+kernel_args_default="rw init=/usr/lib/systemd/systemd zswap.enabled=0 modprobe.blacklist=iTCO_wdt nowatchdog quiet splash vt.global_cursor_default=0"
 [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot ${kernel_args_default}"
 [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}") ${kernel_args_default}"
 

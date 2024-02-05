@@ -13,7 +13,7 @@ set -Ee         # Terminate if any command exits with a non-zero (incl. function
 
 SCRIPT_TITLE="Arch OS Setup"
 SCRIPT_CONF="./installer.conf"
-INSTALLER_HOME="${HOME}/.cache/arch-os-installer"
+INSTALLER_SH="./installer.sh"
 INSTALLER_URL="https://raw.githubusercontent.com/murkl/arch-os/dev/installer.sh"
 
 # ----------------------------------------------------------------------------------------------------
@@ -637,20 +637,19 @@ done
 # Print loading
 clear && echo "Loading..."
 
-# Init installer home
-rm -rf "$INSTALLER_HOME"
-mkdir -p "$INSTALLER_HOME"
+# Use local installer.sh instead (if exists)
+if [ ! -f "$INSTALLER_SH" ]; then
+    # Download installer.sh if not exists
+    curl -Lsf "$INSTALLER_URL" >"$INSTALLER_SH"
+fi
 
-# Download installer.sh
-curl -Lsf "$INSTALLER_URL" >"${INSTALLER_HOME}/installer.sh"
-chmod +x "${INSTALLER_HOME}/installer.sh"
+# Set permission
+chmod +x "$INSTALLER_SH"
 
 # Prepare installation
-cp "$SCRIPT_CONF" "${INSTALLER_HOME}/installer.conf"
-cd "$INSTALLER_HOME"
 export ARCH_OS_PASSWORD
 
 # Start installer.sh
-if ! ./installer.sh; then
+if ! "$INSTALLER_SH"; then
     exit 1
 fi

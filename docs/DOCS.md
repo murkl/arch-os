@@ -299,7 +299,7 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 
 - `vm.max_map_count` is set to `1048576` for compatibility of some apps/games
 - `DefaultTimeoutStopSec` is set to `10s` for faster shutdown
-- `nowatchdog` is set to kernel parameters
+- `modprobe.blacklist=iTCO_wdt nowatchdog` is set to kernel parameters
 
 ## Screenshots
 
