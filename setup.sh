@@ -25,7 +25,7 @@ TUI_HEIGHT="20"
 TUI_POSITION=""
 
 # ----------------------------------------------------------------------------------------------------
-# INSTALLATION VARIABLES
+# INSTALLATION PROPERTIES
 # ----------------------------------------------------------------------------------------------------
 
 ARCH_OS_USERNAME=""
@@ -99,7 +99,7 @@ print_menu_entry() {
 }
 
 # ----------------------------------------------------------------------------------------------------
-# CONFIG FUNCTIONS
+# PROPERTIES FUNCTIONS
 # ----------------------------------------------------------------------------------------------------
 
 set_default_properties() {
@@ -121,8 +121,9 @@ set_default_properties() {
     # Detect microcode if empty
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" <<<"$(lscpu) " && ARCH_OS_MICROCODE="intel-ucode"
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "AuthenticAMD" <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
+    clear # Clear screen
 
-    clear && return 0
+    return 0
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -141,8 +142,8 @@ check_properties() {
     [ -z "${ARCH_OS_ENCRYPTION_ENABLED}" ] && TUI_POSITION="encrypt" && return 1
     [ -z "${ARCH_OS_BOOTSPLASH_ENABLED}" ] && TUI_POSITION="bootsplash" && return 1
     [ -z "${ARCH_OS_VARIANT}" ] && TUI_POSITION="variant" && return 1
-    [ "${ARCH_OS_VARIANT}" = "desktop" ] && [ -z "${ARCH_OS_GRAPHICS_DRIVER}" ] && TUI_POSITION="variant" && return 1
-    [ "${ARCH_OS_VARIANT}" = "desktop" ] && [ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && TUI_POSITION="variant" && return 1
+    [ -z "${ARCH_OS_GRAPHICS_DRIVER}" ] && TUI_POSITION="variant" && return 1
+    [ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && TUI_POSITION="variant" && return 1
 
     # Success
     TUI_POSITION="install"
@@ -548,8 +549,8 @@ while (true); do
 
     # Check if variant is set to desktop
     menu_variant="$ARCH_OS_VARIANT"
-    [ "$menu_variant" = "desktop" ] && [ -z "${ARCH_OS_GRAPHICS_DRIVER}" ] && menu_variant=""
-    [ "$menu_variant" = "desktop" ] && [ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && menu_variant=""
+    [ -z "${ARCH_OS_GRAPHICS_DRIVER}" ] && menu_variant=""
+    [ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && menu_variant=""
     menu_entry_array+=("variant") && menu_entry_array+=("$(print_menu_entry "Variant" "${menu_variant}")")
 
     # Empty entry

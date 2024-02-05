@@ -196,7 +196,7 @@ pacman_install() {
     for ((i = 1; i < 6; i++)); do
 
         # Print updated whiptail info
-        [ $i -gt 1 ] && print_progress "${i}. retry..."
+        [ "$i" -gt 1 ] && print_progress "${i}. retry..."
 
         # Try installing packages
         if ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
