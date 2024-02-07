@@ -23,11 +23,7 @@ SCRIPT_CONF="./installer.conf"
 SCRIPT_LOG="./installer.log"
 
 # PROCESS
-PROCESS_NAME=""
 PROCESS_PID=""
-
-# ERROR
-ERROR_MSG=""
 
 # COLORS
 COLOR_RESET='\e[0m'
@@ -48,23 +44,7 @@ main() {
     trap 'trap_exit' EXIT
 
     # Check gum binary or download
-    if [ ! -x ./gum ] && ! command -v /usr/bin/gum &>/dev/null; then
-        # Loading
-        wait && clear && echo "Loading Arch OS Installer..."
-
-        # Clean cache dir
-        local gum_cache="${HOME}/.cache/arch-os-gum"
-        rm -rf "$gum_cache"
-        mkdir -p "$gum_cache"
-
-        # Download gum
-        local gum_url="https://github.com/charmbracelet/gum/releases/download/v0.13.0/gum_0.13.0_Linux_x86_64.tar.gz"
-        curl -Ls "$gum_url" >"${gum_cache}/gum.tar.gz"
-        tar -xf "${gum_cache}/gum.tar.gz" --directory "$gum_cache"
-        mv "${gum_cache}/gum" ./gum
-        chmod +x ./gum
-        rm -rf "$gum_cache"
-    fi
+    gum_init
 
     # Print header
     clear && echo -e "${COLOR_PURPLE}
@@ -164,6 +144,125 @@ main() {
     fi
 
     exit 0
+}
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# LOG & PRINT
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+log() {
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >>"$SCRIPT_LOG"
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+log_process() {
+    log "EXEC: ${*}"
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+print_info() {
+    log "INFO: ${*}"
+    echo -e "${COLOR_BOLD}${COLOR_GREEN} • ${*}${COLOR_RESET}"
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+print_warn() {
+    log "WARN: ${*}"
+    echo -e "${COLOR_BOLD}${COLOR_YELLOW} • ${*}${COLOR_RESET}"
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+print_error() {
+    log "ERROR: ${*}"
+    echo -e "${COLOR_BOLD}${COLOR_RED} • ${*} ${COLOR_RESET}"
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+print_input() {
+    log "USER: ${*}"
+    echo -ne "${COLOR_BOLD}${COLOR_YELLOW} + ${1} ${COLOR_RESET}"
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+print_process() {
+    echo -e "${COLOR_BOLD}${COLOR_GREEN} + ${*} ${COLOR_RESET}"
+}
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# TRAPS
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+trap_error() {
+    # Check if pid is already running (only on SIGINT with ctrl + c)
+    if kill -0 "$PROCESS_PID" 2>/dev/null; then
+        kill "$PROCESS_PID"
+        print_warn "Process with PID ${PROCESS_PID} was killed"
+    else
+        # When user not canceled print error
+        print_error "Command '${BASH_COMMAND}' failed with exit code $? in function '${1}' (line ${2})"
+    fi
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+trap_exit() {
+    local result_code="$?"
+
+    # Check if failed
+    if [ "$result_code" -gt "0" ]; then
+        print_error "Arch OS Installation failed"
+        print_warn "For more information see ./installer.log"
+    fi
+
+    # Exit installer.sh
+    exit "$result_code"
+}
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# GUM
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+gum() {
+    if [ -x ./gum ]; then ./gum "$@"; else /usr/bin/gum "$@"; fi # Force open ./gum if exists
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+gum_spinner() {
+    #gum spin --title.foreground="212" --spinner.foreground="212" --spinner dot --title "${2}..." -- bash -c "while kill -0 $1 2> /dev/null; do sleep 1; done"
+    gum spin --title.foreground="212" --spinner.foreground="212" --spinner dot --title "${2}..." -- tail -f /dev/null --pid "$1" || (
+        # kill -9 "$(list_all_children_pid "$1")"
+        echo -e "Cancel"
+        return 1
+    )
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+gum_init() {
+    if [ ! -x ./gum ] && ! command -v /usr/bin/gum &>/dev/null; then
+        # Loading
+        wait && clear && echo "Loading Arch OS Installer..."
+
+        # Clean cache dir
+        local gum_cache="${HOME}/.cache/arch-os-gum"
+        rm -rf "$gum_cache"
+        mkdir -p "$gum_cache"
+
+        # Download gum
+        local gum_url="https://github.com/charmbracelet/gum/releases/download/v0.13.0/gum_0.13.0_Linux_x86_64.tar.gz"
+        curl -Ls "$gum_url" >"${gum_cache}/gum.tar.gz"
+        tar -xf "${gum_cache}/gum.tar.gz" --directory "$gum_cache"
+        mv "${gum_cache}/gum" ./gum
+        chmod +x ./gum
+        rm -rf "$gum_cache"
+    fi
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -284,113 +383,15 @@ select_password() {
 
 exec_init() {
     # ----------------------------------------------------------------------------------------------------
-    PROCESS_NAME="Prepare Installation"
+    local process_name="Prepare Installation"
     # ----------------------------------------------------------------------------------------------------
-    if [ -n "${HOME}" ]; then
-        log_process "$PROCESS_NAME" # Print process to log
-        # Start subprocess async and print stdin & sterr to logfile
-        {
-            sleep 3
-        } &>>"$SCRIPT_LOG" &
-        # Save pid of subprocess, open spinner and print process to stdout
-        PROCESS_PID="$!" && gum_spinner "$PROCESS_PID" "$PROCESS_NAME" && print_process "$PROCESS_NAME"
-    fi
-}
-
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# LOG & PRINT
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-log() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >>"$SCRIPT_LOG"
-}
-
-# ----------------------------------------------------------------------------------------------------
-
-log_process() {
-    log "EXEC: ${*}"
-}
-
-# ----------------------------------------------------------------------------------------------------
-
-print_info() {
-    log "INFO: ${*}"
-    echo -e "${COLOR_BOLD}${COLOR_GREEN} • ${*}${COLOR_RESET}"
-}
-
-# ----------------------------------------------------------------------------------------------------
-
-print_warn() {
-    log "WARN: ${*}"
-    echo -e "${COLOR_BOLD}${COLOR_YELLOW} • ${*}${COLOR_RESET}"
-}
-
-# ----------------------------------------------------------------------------------------------------
-
-print_error() {
-    log "ERROR: ${*}"
-    echo -e "${COLOR_BOLD}${COLOR_RED} • ${*} ${COLOR_RESET}"
-}
-
-# ----------------------------------------------------------------------------------------------------
-
-print_input() {
-    log "USER: ${*}"
-    echo -ne "${COLOR_BOLD}${COLOR_YELLOW} + ${1} ${COLOR_RESET}"
-}
-
-# ----------------------------------------------------------------------------------------------------
-
-print_process() {
-    echo -e "${COLOR_BOLD}${COLOR_GREEN} + ${*} ${COLOR_RESET}"
-}
-
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# GUM
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-gum() {
-    if [ -x ./gum ]; then ./gum "$@"; else /usr/bin/gum "$@"; fi # Force open ./gum if exists
-}
-
-# ----------------------------------------------------------------------------------------------------
-
-gum_spinner() {
-    gum spin --title.foreground="212" --spinner.foreground="212" --spinner dot --title "${2}..." -- bash -c "while kill -0 $1 2> /dev/null; do sleep 1; done"
-}
-
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# TRAPS
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-trap_error() {
-    ERROR_MSG="Command '${BASH_COMMAND}' failed with exit code $? in function '${1}' (line ${2})"
-}
-
-# ----------------------------------------------------------------------------------------------------
-
-trap_exit() {
-    local result_code="$?"
-
-    # Check if failed
-    if [ "$result_code" -gt "0" ]; then
-
-        # Check if pid is already running (only on SIGINT with ctrl + c)
-        if kill -0 "$PROCESS_PID" 2>/dev/null; then
-            kill "$PROCESS_PID"
-            print_warn "Process with PID ${PROCESS_PID} was killed"
-        else
-            # When not canceled check if error is set and print
-            [ -n "$ERROR_MSG" ] && print_error "$ERROR_MSG"
-        fi
-
-        # Default prints if failed
-        print_error "Arch OS Installation failed"
-        print_warn "For more information see ./installer.log"
-    fi
-
-    # Exit installer.sh
-    exit "$result_code"
+    log_process "$process_name" # Print process to log
+    # Start subprocess async and print stdin & sterr to logfile
+    (
+        sleep 3
+    ) &>>"$SCRIPT_LOG" &
+    # Save pid of subprocess, open spinner and print process to stdout
+    PROCESS_PID="$!" && gum_spinner "$PROCESS_PID" "$process_name" && print_process "$process_name"
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
