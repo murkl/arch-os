@@ -147,6 +147,36 @@ main() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
+# TRAPS
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+trap_error() {
+    # Check if pid is already running (only on SIGINT with ctrl + c)
+    if kill -0 "$PROCESS_PID" 2>/dev/null; then
+        kill "$PROCESS_PID"
+        print_warn "Process with PID ${PROCESS_PID} was killed"
+    else
+        # When user not canceled print error
+        print_error "Command '${BASH_COMMAND}' failed with exit code $? in function '${1}' (line ${2})"
+    fi
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+trap_exit() {
+    local result_code="$?"
+
+    # Check if failed
+    if [ "$result_code" -gt "0" ]; then
+        print_error "Arch OS Installation failed"
+        print_warn "For more information see ./installer.log"
+    fi
+
+    # Exit installer.sh
+    exit "$result_code"
+}
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 # LOG & PRINT
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -192,36 +222,6 @@ print_input() {
 
 print_process() {
     echo -e "${COLOR_BOLD}${COLOR_GREEN} + ${*} ${COLOR_RESET}"
-}
-
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# TRAPS
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-trap_error() {
-    # Check if pid is already running (only on SIGINT with ctrl + c)
-    if kill -0 "$PROCESS_PID" 2>/dev/null; then
-        kill "$PROCESS_PID"
-        print_warn "Process with PID ${PROCESS_PID} was killed"
-    else
-        # When user not canceled print error
-        print_error "Command '${BASH_COMMAND}' failed with exit code $? in function '${1}' (line ${2})"
-    fi
-}
-
-# ----------------------------------------------------------------------------------------------------
-
-trap_exit() {
-    local result_code="$?"
-
-    # Check if failed
-    if [ "$result_code" -gt "0" ]; then
-        print_error "Arch OS Installation failed"
-        print_warn "For more information see ./installer.log"
-    fi
-
-    # Exit installer.sh
-    exit "$result_code"
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -387,9 +387,9 @@ exec_init() {
     # ----------------------------------------------------------------------------------------------------
     log_process "$process_name" # Print process to log
     # Start subprocess async and print stdin & sterr to logfile
-    (
+    {
         sleep 3
-    ) &>>"$SCRIPT_LOG" &
+    } &>>"$SCRIPT_LOG" &
     # Save pid of subprocess, open spinner and print process to stdout
     PROCESS_PID="$!" && gum_spinner "$PROCESS_PID" "$process_name" && print_process "$process_name"
 }
