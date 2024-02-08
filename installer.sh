@@ -13,17 +13,14 @@
 # VERSION
 VERSION='1.3.0'
 
-# CONFIGURATION
-set -o pipefail # A pipeline error results in the error status of the entire pipeline
-set -e          # Terminate if any command exits with a non-zero
-set -E          # ERR trap inherited by shell functions (errtrace)
-
 # ENVIRONMENT
 SCRIPT_CONF="./installer.conf"
 SCRIPT_LOG="./installer.log"
 
 # PROCESS
 PROCESS_PID=""
+PROCESS_NAME=""
+PROCESS_LOCK="./process.lock"
 
 # COLORS
 COLOR_RESET='\e[0m'
@@ -33,41 +30,34 @@ COLOR_GREEN='\e[32m'
 COLOR_PURPLE='\e[35m'
 COLOR_YELLOW='\e[33m'
 
+# CONFIGURATION
+wait && clear        # Clear screen
+exec 3>&1 4>&2       # Saves file descriptors (new stdout: 3 new stderr: 4)
+exec 1>/dev/null     # Write stdout to /dev/null
+exec 2>"$SCRIPT_LOG" # Write stderr to logfile
+set -o pipefail      # A pipeline error results in the error status of the entire pipeline
+set -e               # Terminate if any command exits with a non-zero
+set -E               # ERR trap inherited by shell functions (errtrace)
+
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # MAIN
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 main() {
 
-    # Set traps
+    # Set traps (error & exit)
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
     trap 'trap_exit' EXIT
 
-    # Check gum binary or download
-    gum_init
-
-    # Print header
-    clear && echo -e "${COLOR_PURPLE}
-  █████  ██████   ██████ ██   ██      ██████  ███████ 
- ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
- ███████ ██████  ██      ███████     ██    ██ ███████ 
- ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
- ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
- ${COLOR_RESET}"
-
-    # Move installer.log if exists
-    [ -f "$SCRIPT_LOG" ] && mv "$SCRIPT_LOG" "${SCRIPT_LOG}.bak" && echo "Moved installer.log to installer.log.bak" >>"$SCRIPT_LOG"
-
-    # Print welcome
+    # Init gum & print welcome
+    gum_init     # Check gum binary or download
+    print_header # Print header
     print_info "Welcome to the Arch OS Installer (${VERSION})"
-
-    # Check if properties file exists
-    [ ! -f "$SCRIPT_CONF" ] && print_error "Properties file '${SCRIPT_CONF}' not found" && exit 1
 
     # Prepare properties
     properties_default  # Set default properties
-    properties_source   # Load properties file and auto export variables
-    properties_generate # Generate & source properties
+    properties_source   # Load properties file (if exists) and auto export variables
+    properties_generate # Generate properties file
     properties_source   # Source generated properties
 
     # Selectors
@@ -81,41 +71,33 @@ main() {
     #select_bootsplash
     #select_variant (+ driver as seperated print_info)
 
-    # Show properties?
-    if gum confirm "Show all Properties?"; then
-        gum pager <"$SCRIPT_CONF"
-        if gum confirm "Edit Properties?"; then
-            if gum write --char-limit=5000 --height=20 --width=100 --header="Exit with CTRL + C and save with CTRL + D or ESC" --value="$(cat $SCRIPT_CONF)" >installer.conf.new; then
-                mv installer.conf.new installer.conf
-                properties_source
-            else
-                rm -f installer.conf.new
-            fi
+    # Edit properties?
+    if gum confirm "Edit Properties?"; then
+        local gum_header="Exit with CTRL + C and save with CTRL + D or ESC"
+        if gum write --show-cursor-line --prompt=" • " --char-limit=0 --height=12 --width=100 --header=" • ${gum_header}" --value="$(cat "$SCRIPT_CONF")" >installer.conf.new; then
+            mv installer.conf.new installer.conf
+            properties_source
+        else
+            rm -f installer.conf.new
         fi
     fi
 
-    # Check properties
+    # Check properties again
     properties_check && print_info "Properties successfully initialized"
 
-    # Start Arch OS Installation?
-    if ! gum confirm "Start Arch OS Installation?"; then
-        print_warn "Exit..."
-        exit 0
-    fi
+    # Ask for start install and wait 5 seconds
+    ! gum confirm "Start Arch OS Installation?" && print_warn "Exit..." && exit 0
+    process_init "Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel"
+    (sleep 5 && echo 0 >"$PROCESS_LOCK") &
+    process_run $!
 
-    # Wait 5 seconds ...
-    sleep 5 &
-    PROCESS_PID="$!" && gum_spinner "$PROCESS_PID" "Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel"
-
-    # Start installation
+    # Start installation...
     print_info "Start Arch OS Installation..."
-
-    # Messure execution time of installation
-    SECONDS=0
+    SECONDS=0 # Messure execution time of installation
 
     # Executors
-    exec_init
-    exec_init
+    exec_test2
+    exec_test3
     exec_init
     #exec_disk
     #exec_bootloader
@@ -134,15 +116,9 @@ main() {
     duration_min="$((duration / 60))"
     duration_sec="$((duration % 60))"
 
-    # Print finish
+    # Finish & reboot
     print_info "Arch OS successfully installed after ${duration_min} minutes and ${duration_sec} seconds"
-
-    # Reboot
-    if gum confirm "Reboot to Arch OS now?"; then
-        print_warn "Rebooting..."
-        #reboot
-    fi
-
+    gum confirm "Reboot to Arch OS now?" && print_warn "Rebooting..." && echo "reboot"
     exit 0
 }
 
@@ -151,110 +127,97 @@ main() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 trap_error() {
-    # Check if pid is already running (only on SIGINT with ctrl + c)
-    if kill -0 "$PROCESS_PID" 2>/dev/null; then
-        kill "$PROCESS_PID"
-        print_warn "Process with PID ${PROCESS_PID} was killed"
-    else
-        # When user not canceled print error
+    if kill -0 "$PROCESS_PID" 2>/dev/null; then # Check if pid is already running (only on SIGINT with ctrl + c)
+        kill "$PROCESS_PID" && log_warn "Process with PID ${PROCESS_PID} was killed"
+    else # When user not canceled print error
         print_error "Command '${BASH_COMMAND}' failed with exit code $? in function '${1}' (line ${2})"
     fi
 }
 
-# ----------------------------------------------------------------------------------------------------
-
 trap_exit() {
     local result_code="$?"
-
-    # Check if failed
-    if [ "$result_code" -gt "0" ]; then
+    # When ctrl + c pressed exit without other stuff
+    [ "$result_code" = "130" ] && print_warn "Exit..." && exit 1
+    if [ "$result_code" -gt "0" ]; then # Check if failed
         print_error "Arch OS Installation failed"
-        print_warn "For more information see ./installer.log"
+        exec 1>&3 2>&4 # Reset redirect (needed for access to logfile)
+        gum confirm "Show Logs?" && gum pager --show-line-numbers "$@" <"$SCRIPT_LOG"
     fi
-
-    # Exit installer.sh
-    exit "$result_code"
+    rm -f "$PROCESS_LOCK" # Remove process lock
+    exit "$result_code"   # Exit installer.sh
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # LOG & PRINT
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-log() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >>"$SCRIPT_LOG"
+print_header() {
+    echo -e "${COLOR_PURPLE}
+  █████  ██████   ██████ ██   ██      ██████  ███████ 
+ ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
+ ███████ ██████  ██      ███████     ██    ██ ███████ 
+ ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
+ ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
+ ${COLOR_RESET}" | tee /dev/fd/3 >&2 # Print to new stdout (3) and logfile
+
 }
 
-# ----------------------------------------------------------------------------------------------------
+log_write() {
+    echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >&2 # To stderr (logfile)
+}
+
+log_info() {
+    log_write "INFO | ${*}"
+}
+
+log_warn() {
+    log_write "WARN | ${*}"
+}
+
+log_error() {
+    log_write "FAIL | ${*}"
+}
+
+log_input() {
+    log_write "USER | ${*}"
+}
 
 log_process() {
-    log "EXEC: ${*}"
+    log_write "PROC | ${*}"
 }
-
-# ----------------------------------------------------------------------------------------------------
 
 print_info() {
-    log "INFO: ${*}"
-    echo -e "${COLOR_BOLD}${COLOR_GREEN} • ${*}${COLOR_RESET}"
+    log_info "$*" && echo -e "${COLOR_BOLD}${COLOR_GREEN} • ${*}${COLOR_RESET}" >&3 # To new stdout (3)
 }
-
-# ----------------------------------------------------------------------------------------------------
 
 print_warn() {
-    log "WARN: ${*}"
-    echo -e "${COLOR_BOLD}${COLOR_YELLOW} • ${*}${COLOR_RESET}"
+    log_warn "$*" && echo -e "${COLOR_BOLD}${COLOR_YELLOW} • ${*}${COLOR_RESET}" >&3 # To new stdout (3)
 }
-
-# ----------------------------------------------------------------------------------------------------
 
 print_error() {
-    log "ERROR: ${*}"
-    echo -e "${COLOR_BOLD}${COLOR_RED} • ${*} ${COLOR_RESET}"
+    log_error "$*" && echo -e "${COLOR_BOLD}${COLOR_RED} • ${*} ${COLOR_RESET}" >&4 # To new stderr (4)
 }
-
-# ----------------------------------------------------------------------------------------------------
 
 print_input() {
-    log "USER: ${*}"
-    echo -ne "${COLOR_BOLD}${COLOR_YELLOW} + ${1} ${COLOR_RESET}"
+    log_input "$*" && echo -ne "${COLOR_BOLD}${COLOR_YELLOW} + ${1} ${COLOR_RESET}" >&3 # To new stdout (3)
 }
 
-# ----------------------------------------------------------------------------------------------------
-
 print_process() {
-    echo -e "${COLOR_BOLD}${COLOR_GREEN} + ${*} ${COLOR_RESET}"
+    echo -e "${COLOR_BOLD}${COLOR_GREEN} + ${*} ${COLOR_RESET}" >&3 # To new stdout (3)
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # GUM
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-gum() {
-    if [ -x ./gum ]; then ./gum "$@"; else /usr/bin/gum "$@"; fi # Force open ./gum if exists
-}
-
-# ----------------------------------------------------------------------------------------------------
-
-gum_spinner() {
-    #gum spin --title.foreground="212" --spinner.foreground="212" --spinner dot --title "${2}..." -- bash -c "while kill -0 $1 2> /dev/null; do sleep 1; done"
-    gum spin --title.foreground="212" --spinner.foreground="212" --spinner dot --title "${2}..." -- tail -f /dev/null --pid "$1" || (
-        # kill -9 "$(list_all_children_pid "$1")"
-        echo -e "Cancel"
-        return 1
-    )
-}
-
-# ----------------------------------------------------------------------------------------------------
-
 gum_init() {
     if [ ! -x ./gum ] && ! command -v /usr/bin/gum &>/dev/null; then
         # Loading
-        wait && clear && echo "Loading Arch OS Installer..."
-
+        echo "Loading Arch OS Installer..."
         # Clean cache dir
         local gum_cache="${HOME}/.cache/arch-os-gum"
         rm -rf "$gum_cache"
         mkdir -p "$gum_cache"
-
         # Download gum
         local gum_url="https://github.com/charmbracelet/gum/releases/download/v0.13.0/gum_0.13.0_Linux_x86_64.tar.gz"
         curl -Ls "$gum_url" >"${gum_cache}/gum.tar.gz"
@@ -265,17 +228,68 @@ gum_init() {
     fi
 }
 
+gum() {
+    local gum="./gum" && [ ! -x "$gum" ] && gum="/usr/bin/gum" # Force open ./gum if exists
+    case $2 in                                                 # Redirect to correct descriptors
+    pager) $gum "$@" 1>&3 2>&4 ;;                              # Print stdout & stderr to new descriptors
+    *) $gum "$@" 2>&4 ;;                                       # Print stderr (gum default) to new stderr
+    esac
+}
+
+gum_input() {
+    local desc="$1" && shift
+    local key="$1" && shift
+    local value && value="$(eval "echo \"\$$key\"")" # Set current value
+    if [ -z "$value" ]; then
+        value=$(gum input --prompt=" • " --placeholder="Please enter ${desc}" "$@" 2>&4) || gum_exit
+        [ -z "${value}" ] && return 1 # Check if new value is null
+        eval "$key=\"$value\""        # Set new value
+        properties_generate           # Generate properties file
+    fi
+    print_info "${desc} is set to ${value}"
+}
+
+gum_exit() {
+    gum confirm "Exit Installation?" && exit 130 || return 0
+}
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# PROCESS
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+process_init() {
+    [ -f "$PROCESS_LOCK" ] && print_error "${PROCESS_LOCK} already exists" && exit 1
+    PROCESS_NAME="$1"
+    echo 1 >"$PROCESS_LOCK" # Initialize with 1
+    log_process "Start process '${PROCESS_NAME}'..."
+    return 0
+}
+
+process_run() {
+    PROCESS_PID="$1"
+    gum spin --title.foreground="212" --spinner.foreground="212" --spinner dot --title "${PROCESS_NAME}..." -- tail -f /dev/null --pid "$PROCESS_PID" 2>&4 || (
+        print_error "Process was canceled by user"
+        exit 1
+    )
+    wait && [ ! -f "$PROCESS_LOCK" ] && print_error "${PROCESS_LOCK} not found" && exit 1
+    local gum_result && gum_result="$(<$PROCESS_LOCK)"
+    rm -f "$PROCESS_LOCK"
+    [ "$gum_result" != "0" ] && exit 1
+    print_process "$PROCESS_NAME"
+    return 0
+}
+
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # PROPERTIES
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 properties_source() {
-    set -a # Enable auto export of variables
-    source "$SCRIPT_CONF"
-    set +a # Disable auto export of variables
+    if [ -f "$SCRIPT_CONF" ]; then
+        set -a # Enable auto export of variables
+        source "$SCRIPT_CONF"
+        set +a # Disable auto export of variables
+    fi
 }
-
-# ----------------------------------------------------------------------------------------------------
 
 properties_default() {
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
@@ -292,8 +306,6 @@ properties_default() {
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
     return 0
 }
-
-# ----------------------------------------------------------------------------------------------------
 
 properties_check() {
     [ -z "${ARCH_OS_USERNAME}" ] && print_error "Property: 'ARCH_OS_USERNAME' is missing" && exit 1
@@ -322,11 +334,9 @@ properties_check() {
     return 0
 }
 
-# ----------------------------------------------------------------------------------------------------
-
 properties_generate() {
     {
-        echo "# Arch OS ${VERSION} ($(date --utc '+%Y-%m-%d %H:%M:%S') UTC)"
+        #echo "# Arch OS ${VERSION} ($(date --utc '+%Y-%m-%d %H:%M:%S') UTC)"
         echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}'"
         echo "ARCH_OS_USERNAME='${ARCH_OS_USERNAME}'"
         echo "ARCH_OS_DISK='${ARCH_OS_DISK}'"
@@ -360,21 +370,13 @@ properties_generate() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 select_username() {
-    if [ -z "${ARCH_OS_USERNAME}" ]; then
-        ! ARCH_OS_USERNAME=$(gum input --prompt=" • " --placeholder="Please enter Username") && exit 1
-        [ -z "${ARCH_OS_USERNAME}" ] && return 1
-    fi
-    properties_generate && print_info "Username is set to ${ARCH_OS_USERNAME}"
+    gum_input "Username" "ARCH_OS_USERNAME"
 }
 
 # ----------------------------------------------------------------------------------------------------
 
 select_password() {
-    if [ -z "${ARCH_OS_PASSWORD}" ]; then
-        ! ARCH_OS_PASSWORD=$(gum input --prompt=" • " --password --placeholder="Please enter Password") && exit 1
-        [ -z "${ARCH_OS_PASSWORD}" ] && return 1
-    fi
-    properties_generate && print_info "Password is set to *********"
+    gum_input "Password" "ARCH_OS_PASSWORD" --password
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -382,16 +384,41 @@ select_password() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 exec_init() {
-    # ----------------------------------------------------------------------------------------------------
-    local process_name="Prepare Installation"
-    # ----------------------------------------------------------------------------------------------------
-    log_process "$process_name" # Print process to log
-    # Start subprocess async and print stdin & sterr to logfile
+    process_init "Prepare Installation"
     {
+        #false || exit 1
         sleep 3
-    } &>>"$SCRIPT_LOG" &
-    # Save pid of subprocess, open spinner and print process to stdout
-    PROCESS_PID="$!" && gum_spinner "$PROCESS_PID" "$process_name" && print_process "$process_name"
+        echo 0 >"$PROCESS_LOCK"
+    } &
+    process_run $!
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+exec_test2() {
+    process_init "Test2"
+    (
+        echo "$ARCH_OS_AUR_HELPER"
+        sleep 1
+        echo "$ARCH_OS_AUR_HELPER"
+        #kjsdkj
+        echo 0 >"$PROCESS_LOCK"
+    ) &
+    process_run $!
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+exec_test3() {
+    process_init "Test3"
+    (
+        echo "asdklsjadlkaljdsadjlk"
+        sleep 1
+        false
+        echo test2
+        echo 0 >"$PROCESS_LOCK"
+    ) &
+    process_run $!
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
