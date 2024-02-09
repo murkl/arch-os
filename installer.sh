@@ -18,32 +18,24 @@ SCRIPT_CONF="./installer.conf"
 SCRIPT_LOG="./installer.log"
 
 # PROCESS
+PROCESS_LOCK="./process.lock"
 PROCESS_PID=""
 PROCESS_NAME=""
-PROCESS_LOCK="./process.lock"
-
-# COLORS
-COLOR_RESET='\e[0m'
-COLOR_BOLD='\e[1m'
-COLOR_RED='\e[31m'
-COLOR_GREEN='\e[32m'
-COLOR_PURPLE='\e[35m'
-COLOR_YELLOW='\e[33m'
-
-# CONFIGURATION
-wait && clear        # Clear screen
-exec 3>&1 4>&2       # Saves file descriptors (new stdout: 3 new stderr: 4)
-exec 1>/dev/null     # Write stdout to /dev/null
-exec 2>"$SCRIPT_LOG" # Write stderr to logfile
-set -o pipefail      # A pipeline error results in the error status of the entire pipeline
-set -e               # Terminate if any command exits with a non-zero
-set -E               # ERR trap inherited by shell functions (errtrace)
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # MAIN
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 main() {
+
+    # Configuration
+    wait && clear        # Clear screen
+    set -o pipefail      # A pipeline error results in the error status of the entire pipeline
+    set -e               # Terminate if any command exits with a non-zero
+    set -E               # ERR trap inherited by shell functions (errtrace)
+    exec 3>&1 4>&2       # Saves file descriptors (new stdout: 3 new stderr: 4)
+    exec 1>/dev/null     # Write stdout to /dev/null
+    exec 2>"$SCRIPT_LOG" # Write stderr to logfile
 
     # Set traps (error & exit)
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
@@ -52,7 +44,6 @@ main() {
     # Init gum & print welcome
     gum_init     # Check gum binary or download
     print_header # Print header
-    print_info "Welcome to the Arch OS Installer (${VERSION})"
 
     # Prepare properties
     properties_default  # Set default properties
@@ -61,15 +52,16 @@ main() {
     properties_source   # Source generated properties
 
     # Selectors
+
     until select_username; do :; done
     until select_password; do :; done
-    #select_timezone
-    #select_language
-    #select_keyboard
-    #select_disk
-    #select_encryption
-    #select_bootsplash
-    #select_variant (+ driver as seperated print_info)
+    until select_timezone; do :; done
+    until select_language; do :; done
+    until select_keyboard; do :; done
+    until select_disk; do :; done
+    until select_encryption; do :; done
+    until select_bootsplash; do :; done
+    until select_variant; do :; done
 
     # Edit properties?
     if gum confirm "Edit Properties?"; then
@@ -82,34 +74,28 @@ main() {
         fi
     fi
 
-    # Check properties again
+    # Check properties
     properties_check && print_info "Properties successfully initialized"
 
-    # Ask for start install and wait 5 seconds
-    ! gum confirm "Start Arch OS Installation?" && print_warn "Exit..." && exit 0
-    process_init "Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel"
-    (sleep 5 && echo 0 >"$PROCESS_LOCK") &
-    process_run $!
-
-    # Start installation...
+    # Start installation in 5 seconds?
+    ! gum confirm "Start Arch OS Installation?" && exit 130
+    local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel"
+    ! gum spin --title.foreground="212" --spinner.foreground="212" --spinner line --title=" $spin_title" -- sleep 5 && exit 130
     print_info "Start Arch OS Installation..."
     SECONDS=0 # Messure execution time of installation
 
     # Executors
-    exec_test2
-    exec_test3
     exec_init
-    #exec_disk
-    #exec_bootloader
-    #exec_bootsplash
-    #exec_aur_helper
-    #exec_multilib
-    #exec_desktop
-    #exec_shell_enhancement
-    #exec_graphics_driver
-    #exec_vm_support
-    #exec_cleanup
-    # ...
+    exec_disk
+    exec_bootloader
+    exec_bootsplash
+    exec_aur_helper
+    exec_multilib
+    exec_desktop
+    exec_shell_enhancement
+    exec_graphics_driver
+    exec_vm_support
+    exec_cleanup
 
     # Calc installation duration
     duration=$SECONDS # This is set before install starts
@@ -117,7 +103,7 @@ main() {
     duration_sec="$((duration % 60))"
 
     # Finish & reboot
-    print_info "Arch OS successfully installed after ${duration_min} minutes and ${duration_sec} seconds"
+    print_info "Successfully installed after ${duration_min} minutes and ${duration_sec} seconds"
     gum confirm "Reboot to Arch OS now?" && print_warn "Rebooting..." && echo "reboot"
     exit 0
 }
@@ -130,7 +116,7 @@ trap_error() {
     if kill -0 "$PROCESS_PID" 2>/dev/null; then # Check if pid is already running (only on SIGINT with ctrl + c)
         kill "$PROCESS_PID" && log_warn "Process with PID ${PROCESS_PID} was killed"
     else # When user not canceled print error
-        print_error "Command '${BASH_COMMAND}' failed with exit code $? in function '${1}' (line ${2})"
+        print_fail "Command '${BASH_COMMAND}' failed with exit code $? in function '${1}' (line ${2})"
     fi
 }
 
@@ -139,7 +125,7 @@ trap_exit() {
     # When ctrl + c pressed exit without other stuff
     [ "$result_code" = "130" ] && print_warn "Exit..." && exit 1
     if [ "$result_code" -gt "0" ]; then # Check if failed
-        print_error "Arch OS Installation failed"
+        print_fail "Arch OS Installation failed"
         exec 1>&3 2>&4 # Reset redirect (needed for access to logfile)
         gum confirm "Show Logs?" && gum pager --show-line-numbers "$@" <"$SCRIPT_LOG"
     fi
@@ -147,64 +133,52 @@ trap_exit() {
     exit "$result_code"   # Exit installer.sh
 }
 
+trap_gum() {
+    gum confirm "Exit Installation?" && exit 130
+}
+
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # LOG & PRINT
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 print_header() {
-    echo -e "${COLOR_PURPLE}
+    local logo='
   █████  ██████   ██████ ██   ██      ██████  ███████ 
  ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
  ███████ ██████  ██      ███████     ██    ██ ███████ 
  ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
  ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
- ${COLOR_RESET}" | tee /dev/fd/3 >&2 # Print to new stdout (3) and logfile
-
+ 
+ '
+    #| tee /dev/fd/3 >&2 # Print to new stdout (3) and logfile
+    local welcome_gum && welcome_gum=$(gum style --foreground 212 "Welcome to Arch OS Installer ${VERSION}")
+    gum style --border normal --align center --margin "0 1" --padding "0 2" --foreground 255 --border-foreground 212 "${logo} ${welcome_gum}" >&3
+    #gum style --border normal --align center --margin "0 1" --padding "0 2" --foreground 255 --border-foreground 212 "${logo} ${welcome_txt}" >&3
+    #gum join "$logo_gum" "$welcome_gum" >&3
+    #echo "$logo_gum" >&3
 }
 
-log_write() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >&2 # To stderr (logfile)
-}
+# Log
+log_write() { echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >&2; } # To stderr (logfile)
+log_info() { log_write "INFO | ${*}"; }
+log_warn() { log_write "WARN | ${*}"; }
+log_fail() { log_write "FAIL | ${*}"; }
+log_user() { log_write "USER | ${*}"; }
+log_proc() { log_write "PROC | ${*}"; }
 
-log_info() {
-    log_write "INFO | ${*}"
-}
+# Colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
+print_blue() { gum style --foreground 39 "${*}" >&3; }    # To new stdout (3)
+print_purple() { gum style --foreground 212 "${*}" >&3; } # To new stdout (3)
+print_green() { gum style --foreground 42 "${*}" >&3; }   # To new stdout (3)
+print_yellow() { gum style --foreground 220 "${*}" >&3; } # To new stdout (3)
+print_red() { gum style --foreground 197 "${*}" >&3; }    # To new stdout (3)
 
-log_warn() {
-    log_write "WARN | ${*}"
-}
-
-log_error() {
-    log_write "FAIL | ${*}"
-}
-
-log_input() {
-    log_write "USER | ${*}"
-}
-
-log_process() {
-    log_write "PROC | ${*}"
-}
-
-print_info() {
-    log_info "$*" && echo -e "${COLOR_BOLD}${COLOR_GREEN} • ${*}${COLOR_RESET}" >&3 # To new stdout (3)
-}
-
-print_warn() {
-    log_warn "$*" && echo -e "${COLOR_BOLD}${COLOR_YELLOW} • ${*}${COLOR_RESET}" >&3 # To new stdout (3)
-}
-
-print_error() {
-    log_error "$*" && echo -e "${COLOR_BOLD}${COLOR_RED} • ${*} ${COLOR_RESET}" >&4 # To new stderr (4)
-}
-
-print_input() {
-    log_input "$*" && echo -ne "${COLOR_BOLD}${COLOR_YELLOW} + ${1} ${COLOR_RESET}" >&3 # To new stdout (3)
-}
-
-print_process() {
-    echo -e "${COLOR_BOLD}${COLOR_GREEN} + ${*} ${COLOR_RESET}" >&3 # To new stdout (3)
-}
+# Print
+print_info() { log_info "$*" && print_green " • ${*}"; }
+print_warn() { log_warn "$*" && print_yellow " • ${*}"; }
+print_fail() { log_fail "$*" && print_red " • ${*}"; }
+print_user() { log_user "$*" && print_blue " + ${*}"; }
+print_proc() { print_purple " + ${*} "; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # GUM
@@ -232,7 +206,8 @@ gum() {
     local gum="./gum" && [ ! -x "$gum" ] && gum="/usr/bin/gum" # Force open ./gum if exists
     case $2 in                                                 # Redirect to correct descriptors
     pager) $gum "$@" 1>&3 2>&4 ;;                              # Print stdout & stderr to new descriptors
-    *) $gum "$@" 2>&4 ;;                                       # Print stderr (gum default) to new stderr
+    #style) $gum "$@" >&3 ;;                                   # Print to new stdout (3)
+    *) $gum "$@" 2>&4 ;; # Print stderr (gum default) to new stderr
     esac
 }
 
@@ -241,16 +216,12 @@ gum_input() {
     local key="$1" && shift
     local value && value="$(eval "echo \"\$$key\"")" # Set current value
     if [ -z "$value" ]; then
-        value=$(gum input --prompt=" • " --placeholder="Please enter ${desc}" "$@" 2>&4) || gum_exit
+        value=$(gum input --prompt=" • " --placeholder="Please enter ${desc}" "$@") || trap_gum
         [ -z "${value}" ] && return 1 # Check if new value is null
         eval "$key=\"$value\""        # Set new value
         properties_generate           # Generate properties file
     fi
-    print_info "${desc} is set to ${value}"
-}
-
-gum_exit() {
-    gum confirm "Exit Installation?" && exit 130 || return 0
+    print_user "${desc} is set to ${value}"
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -258,24 +229,24 @@ gum_exit() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 process_init() {
-    [ -f "$PROCESS_LOCK" ] && print_error "${PROCESS_LOCK} already exists" && exit 1
+    [ -f "$PROCESS_LOCK" ] && print_fail "${PROCESS_LOCK} already exists" && exit 1
     PROCESS_NAME="$1"
     echo 1 >"$PROCESS_LOCK" # Initialize with 1
-    log_process "Start process '${PROCESS_NAME}'..."
+    log_proc "Start process '${PROCESS_NAME}'..."
     return 0
 }
 
 process_run() {
     PROCESS_PID="$1"
-    gum spin --title.foreground="212" --spinner.foreground="212" --spinner dot --title "${PROCESS_NAME}..." -- tail -f /dev/null --pid "$PROCESS_PID" 2>&4 || (
-        print_error "Process was canceled by user"
-        exit 1
+    # Show gum spinner until pid is not exists anymore
+    gum spin --title.foreground="212" --spinner.foreground="212" --spinner line --title " ${PROCESS_NAME}..." -- tail -f /dev/null --pid "$PROCESS_PID" || (
+        print_fail "Process was canceled by user" && exit 1 # When user press ctrl + c while process is running
     )
-    wait && [ ! -f "$PROCESS_LOCK" ] && print_error "${PROCESS_LOCK} not found" && exit 1
-    local gum_result && gum_result="$(<$PROCESS_LOCK)"
-    rm -f "$PROCESS_LOCK"
-    [ "$gum_result" != "0" ] && exit 1
-    print_process "$PROCESS_NAME"
+    wait && [ ! -f "$PROCESS_LOCK" ] && print_fail "${PROCESS_LOCK} not found (do not init process?)" && exit 1
+    local gum_result && gum_result="$(<$PROCESS_LOCK)" # Read result from process lock
+    rm -f "$PROCESS_LOCK"                              # Remove process lock file
+    [ "$gum_result" != "0" ] && exit 1                 # If process result code is err (higher 0) exit script
+    print_proc "$PROCESS_NAME"                         # Print process
     return 0
 }
 
@@ -308,29 +279,29 @@ properties_default() {
 }
 
 properties_check() {
-    [ -z "${ARCH_OS_USERNAME}" ] && print_error "Property: 'ARCH_OS_USERNAME' is missing" && exit 1
-    [ -z "${ARCH_OS_PASSWORD}" ] && print_error "Property: 'ARCH_OS_PASSWORD' is missing" && exit 1
-    [ -z "${ARCH_OS_HOSTNAME}" ] && print_error "Property: 'ARCH_OS_HOSTNAME' is missing" && exit 1
-    [ -z "${ARCH_OS_TIMEZONE}" ] && print_error "Property: 'ARCH_OS_TIMEZONE' is missing" && exit 1
-    [ -z "${ARCH_OS_LOCALE_LANG}" ] && print_error "Property: 'ARCH_OS_LOCALE_LANG' is missing" && exit 1
-    [ -z "${ARCH_OS_LOCALE_GEN_LIST[*]}" ] && print_error "Property: 'ARCH_OS_LOCALE_GEN_LIST' is missing" && exit 1
-    [ -z "${ARCH_OS_VCONSOLE_KEYMAP}" ] && print_error "Property: 'ARCH_OS_VCONSOLE_KEYMAP' is missing" && exit 1
-    [ -z "${ARCH_OS_DISK}" ] && print_error "Property: 'ARCH_OS_DISK' is missing" && exit 1
-    [ -z "${ARCH_OS_BOOT_PARTITION}" ] && print_error "Property: 'ARCH_OS_BOOT_PARTITION' is missing" && exit 1
-    [ -z "${ARCH_OS_ROOT_PARTITION}" ] && print_error "Property: 'ARCH_OS_ROOT_PARTITION' is missing" && exit 1
-    [ -z "${ARCH_OS_ENCRYPTION_ENABLED}" ] && print_error "Property: 'ARCH_OS_ENCRYPTION_ENABLED' is missing" && exit 1
-    [ -z "${ARCH_OS_BOOTSPLASH_ENABLED}" ] && print_error "Property: 'ARCH_OS_BOOTSPLASH_ENABLED' is missing" && exit 1
-    [ -z "${ARCH_OS_KERNEL}" ] && print_error "Property: 'ARCH_OS_KERNEL' is missing" && exit 1
-    [ -z "${ARCH_OS_MICROCODE}" ] && print_error "Property: 'ARCH_OS_MICROCODE' is missing" && exit 1
-    [ -z "${ARCH_OS_VARIANT}" ] && print_error "Property: 'ARCH_OS_VARIANT' is missing" && exit 1
-    [ -z "${ARCH_OS_SHELL_ENHANCED_ENABLED}" ] && print_error "Property: 'ARCH_OS_SHELL_ENHANCED_ENABLED' is missing" && exit 1
-    [ -z "${ARCH_OS_AUR_HELPER}" ] && print_error "Property: 'ARCH_OS_AUR_HELPER' is missing" && exit 1
-    [ -z "${ARCH_OS_MULTILIB_ENABLED}" ] && print_error "Property: 'ARCH_OS_MULTILIB_ENABLED' is missing" && exit 1
-    [ -z "${ARCH_OS_GRAPHICS_DRIVER}" ] && print_error "Property: 'ARCH_OS_GRAPHICS_DRIVER' is missing" && exit 1
-    [ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && print_error "Property: 'ARCH_OS_X11_KEYBOARD_LAYOUT' is missing" && exit 1
-    [ -z "${ARCH_OS_X11_KEYBOARD_MODEL}" ] && print_error "Property: 'ARCH_OS_X11_KEYBOARD_MODEL' is missing" && exit 1
-    [ -z "${ARCH_OS_VM_SUPPORT_ENABLED}" ] && print_error "Property: 'ARCH_OS_VM_SUPPORT_ENABLED' is missing" && exit 1
-    [ -z "${ARCH_OS_ECN_ENABLED}" ] && print_error "Property: 'ARCH_OS_ECN_ENABLED' is missing" && exit 1
+    [ -z "${ARCH_OS_USERNAME}" ] && print_fail "Property: 'ARCH_OS_USERNAME' is missing" && exit 1
+    [ -z "${ARCH_OS_PASSWORD}" ] && print_fail "Property: 'ARCH_OS_PASSWORD' is missing" && exit 1
+    [ -z "${ARCH_OS_HOSTNAME}" ] && print_fail "Property: 'ARCH_OS_HOSTNAME' is missing" && exit 1
+    [ -z "${ARCH_OS_TIMEZONE}" ] && print_fail "Property: 'ARCH_OS_TIMEZONE' is missing" && exit 1
+    [ -z "${ARCH_OS_LOCALE_LANG}" ] && print_fail "Property: 'ARCH_OS_LOCALE_LANG' is missing" && exit 1
+    [ -z "${ARCH_OS_LOCALE_GEN_LIST[*]}" ] && print_fail "Property: 'ARCH_OS_LOCALE_GEN_LIST' is missing" && exit 1
+    [ -z "${ARCH_OS_VCONSOLE_KEYMAP}" ] && print_fail "Property: 'ARCH_OS_VCONSOLE_KEYMAP' is missing" && exit 1
+    [ -z "${ARCH_OS_DISK}" ] && print_fail "Property: 'ARCH_OS_DISK' is missing" && exit 1
+    [ -z "${ARCH_OS_BOOT_PARTITION}" ] && print_fail "Property: 'ARCH_OS_BOOT_PARTITION' is missing" && exit 1
+    [ -z "${ARCH_OS_ROOT_PARTITION}" ] && print_fail "Property: 'ARCH_OS_ROOT_PARTITION' is missing" && exit 1
+    [ -z "${ARCH_OS_ENCRYPTION_ENABLED}" ] && print_fail "Property: 'ARCH_OS_ENCRYPTION_ENABLED' is missing" && exit 1
+    [ -z "${ARCH_OS_BOOTSPLASH_ENABLED}" ] && print_fail "Property: 'ARCH_OS_BOOTSPLASH_ENABLED' is missing" && exit 1
+    [ -z "${ARCH_OS_KERNEL}" ] && print_fail "Property: 'ARCH_OS_KERNEL' is missing" && exit 1
+    [ -z "${ARCH_OS_MICROCODE}" ] && print_fail "Property: 'ARCH_OS_MICROCODE' is missing" && exit 1
+    [ -z "${ARCH_OS_VARIANT}" ] && print_fail "Property: 'ARCH_OS_VARIANT' is missing" && exit 1
+    [ -z "${ARCH_OS_SHELL_ENHANCED_ENABLED}" ] && print_fail "Property: 'ARCH_OS_SHELL_ENHANCED_ENABLED' is missing" && exit 1
+    [ -z "${ARCH_OS_AUR_HELPER}" ] && print_fail "Property: 'ARCH_OS_AUR_HELPER' is missing" && exit 1
+    [ -z "${ARCH_OS_MULTILIB_ENABLED}" ] && print_fail "Property: 'ARCH_OS_MULTILIB_ENABLED' is missing" && exit 1
+    [ -z "${ARCH_OS_GRAPHICS_DRIVER}" ] && print_fail "Property: 'ARCH_OS_GRAPHICS_DRIVER' is missing" && exit 1
+    [ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && print_fail "Property: 'ARCH_OS_X11_KEYBOARD_LAYOUT' is missing" && exit 1
+    [ -z "${ARCH_OS_X11_KEYBOARD_MODEL}" ] && print_fail "Property: 'ARCH_OS_X11_KEYBOARD_MODEL' is missing" && exit 1
+    [ -z "${ARCH_OS_VM_SUPPORT_ENABLED}" ] && print_fail "Property: 'ARCH_OS_VM_SUPPORT_ENABLED' is missing" && exit 1
+    [ -z "${ARCH_OS_ECN_ENABLED}" ] && print_fail "Property: 'ARCH_OS_ECN_ENABLED' is missing" && exit 1
     return 0
 }
 
@@ -379,12 +350,54 @@ select_password() {
     gum_input "Password" "ARCH_OS_PASSWORD" --password
 }
 
+# ----------------------------------------------------------------------------------------------------
+
+select_timezone() {
+    true
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+select_language() {
+    true
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+select_keyboard() {
+    true
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+select_disk() {
+    true
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+select_encryption() {
+    true
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+select_bootsplash() {
+    true
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+select_variant() {
+    true # Driver as seperated print_info
+}
+
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # EXECUTORS
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 exec_init() {
-    process_init "Prepare Installation"
+    process_init "Initialize Installation"
     {
         #false || exit 1
         sleep 3
@@ -395,13 +408,10 @@ exec_init() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_test2() {
-    process_init "Test2"
+exec_disk() {
+    process_init "Prepare Disk"
     (
-        echo "$ARCH_OS_AUR_HELPER"
         sleep 1
-        echo "$ARCH_OS_AUR_HELPER"
-        #kjsdkj
         echo 0 >"$PROCESS_LOCK"
     ) &
     process_run $!
@@ -409,13 +419,98 @@ exec_test2() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_test3() {
-    process_init "Test3"
+exec_bootloader() {
+    process_init "Install Bootloader"
     (
-        echo "asdklsjadlkaljdsadjlk"
         sleep 1
-        false
-        echo test2
+        echo 0 >"$PROCESS_LOCK"
+    ) &
+    process_run $!
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+exec_bootsplash() {
+    process_init "Install Bootsplash"
+    (
+        sleep 1
+        echo 0 >"$PROCESS_LOCK"
+    ) &
+    process_run $!
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+exec_aur_helper() {
+    process_init "Install AUR Helper"
+    (
+        sleep 1
+        echo 0 >"$PROCESS_LOCK"
+    ) &
+    process_run $!
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+exec_multilib() {
+    process_init "Enable Multilib"
+    (
+        sleep 1
+        echo 0 >"$PROCESS_LOCK"
+    ) &
+    process_run $!
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+exec_desktop() {
+    process_init "Install Desktop"
+    (
+        sleep 1
+        echo 0 >"$PROCESS_LOCK"
+    ) &
+    process_run $!
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+exec_shell_enhancement() {
+    process_init "Install Shell Enhancement"
+    (
+        sleep 1
+        echo 0 >"$PROCESS_LOCK"
+    ) &
+    process_run $!
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+exec_graphics_driver() {
+    process_init "Install Graphics Driver"
+    (
+        sleep 1
+        echo 0 >"$PROCESS_LOCK"
+    ) &
+    process_run $!
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+exec_vm_support() {
+    process_init "Install VM Support"
+    (
+        sleep 1
+        echo 0 >"$PROCESS_LOCK"
+    ) &
+    process_run $!
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+exec_cleanup() {
+    process_init "Cleanup Installation"
+    (
+        sleep 1
         echo 0 >"$PROCESS_LOCK"
     ) &
     process_run $!
