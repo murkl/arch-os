@@ -13,7 +13,7 @@ curl -Ls http://arch.webhop.me | bash
 
 </div>
 
-<p align="center"><img src="./screenshots/desktop.jpg" /></p>
+<p align="center"><img src="./screenshots/installer_01.png" /></p>
 
 <div align="center">
 
@@ -133,7 +133,7 @@ curl -Ls http://arch-dev.webhop.me | bash
 
 </b></p>
 
-<p><img src="./screenshots/installer_01.png" /></p>
+<p><img src="./screenshots/installer_02.png" /></p>
 
 <p><b>
 
