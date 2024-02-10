@@ -52,10 +52,9 @@ main() {
         properties_default  # Set default properties
         properties_source   # Load properties file (if exists) and auto export variables
         properties_generate # Generate properties file (needed on first start of installer)
-        properties_source   # Source generated properties (needed on first start of installer)
 
         # Print Welcome
-        print_header && print_title "Welcome to Arch OS Installation"
+        print_header && print_title "Welcome to Arch OS Installation!"
 
         # Selectors
         until select_username; do :; done
@@ -71,8 +70,11 @@ main() {
         # Edit properties?
         if gum confirm "Edit Properties?"; then
             print_header && print_title "Edit Properties"
+            log_info "Edit properties..."
             local gum_header="Exit with CTRL + C and save with CTRL + D or ESC"
-            gum write --show-cursor-line --prompt=" • " --char-limit=0 --height=25 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONF")" >"${SCRIPT_CONF}.new" && mv "${SCRIPT_CONF}.new" "${SCRIPT_CONF}"
+            if gum write --show-cursor-line --prompt=" • " --char-limit=0 --height=25 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONF")" >"${SCRIPT_CONF}.new"; then
+                mv "${SCRIPT_CONF}.new" "${SCRIPT_CONF}" && properties_source
+            fi
             rm -f "${SCRIPT_CONF}.new" # Remove tmp properties
             gum confirm "Change Password?" && until select_password --force; do :; done
             continue # Restart properties step
@@ -152,9 +154,9 @@ trap_gum_exit_confirm() {
 
 process_init() {
     [ -f "$PROCESS_LOCK" ] && print_fail "${PROCESS_LOCK} already exists" && exit 1
-    PROCESS_NAME="$1"                    # Set process name
-    echo 1 >"$PROCESS_LOCK"              # Init lock with 1
-    log_proc "Start: ${PROCESS_NAME}..." # Log starting
+    PROCESS_NAME="$1"             # Set process name
+    echo 1 >"$PROCESS_LOCK"       # Init lock with 1
+    log_proc "${PROCESS_NAME}..." # Log starting
 }
 
 process_run() {
@@ -177,8 +179,7 @@ process_run() {
 
     # Finish
     rm -f "$PROCESS_LOCK"                             # Remove process lock file
-    log_proc "Sucessful: ${PROCESS_NAME}"             # Log process sucess
-    print_proc "${PROCESS_NAME} sucessfully deployed" # Print process success
+    print_proc "${PROCESS_NAME} sucessfully finished" # Print process success
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -192,10 +193,9 @@ print_header() {
  ███████ ██████  ██      ███████     ██    ██ ███████ 
  ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
  ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
- 
  '
-    local title_gum && title_gum=$(gum style --foreground 255 "Arch OS Installer ${VERSION}")
-    clear && gum style --border normal --align center --margin "1 1" --padding "0 2" --foreground 212 --border-foreground 255 "${logo} ${title_gum}"
+    local title_gum && title_gum=$(gum style --bold --margin="1" --foreground="255" "Arch OS Installer ${VERSION}")
+    clear && gum style --border normal --align center --margin "1 1" --padding "0 2" --foreground 212 --border-foreground 240 "${logo}${title_gum}"
 }
 
 # Log
@@ -207,19 +207,19 @@ log_user() { log_write "USER | ${*}"; }
 log_proc() { log_write "PROC | ${*}"; }
 
 # Colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
-print_blue() { gum style --foreground 39 "${*}"; }    # To new stdout (3)
-print_purple() { gum style --foreground 212 "${*}"; } # To new stdout (3)
-print_green() { gum style --foreground 42 "${*}"; }   # To new stdout (3)
-print_yellow() { gum style --foreground 220 "${*}"; } # To new stdout (3)
-print_red() { gum style --foreground 197 "${*}"; }    # To new stdout (3)
+print_blue() { gum style --bold --foreground 39 "${*}"; }    # To new stdout (3)
+print_purple() { gum style --bold --foreground 212 "${*}"; } # To new stdout (3)
+print_green() { gum style --bold --foreground 85 "${*}"; }   # To new stdout (3)
+print_yellow() { gum style --bold --foreground 220 "${*}"; } # To new stdout (3)
+print_red() { gum style --bold --foreground 197 "${*}"; }    # To new stdout (3)
 
 # Print
-print_title() { gum style --foreground 212 " ${*}"; }
+print_title() { gum style --bold --foreground 212 " ${*}" && echo; }
 print_info() { log_info "$*" && print_green " • ${*}"; }
 print_warn() { log_warn "$*" && print_yellow " • ${*}"; }
 print_fail() { log_fail "$*" && print_red " • ${*}"; }
 print_user() { log_user "$*" && print_green " + ${*}"; }
-print_proc() { print_purple " + ${*} "; }
+print_proc() { print_green " + ${*}"; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # GUM
@@ -326,7 +326,7 @@ properties_generate() {
         echo "ARCH_OS_X11_KEYBOARD_MODEL='${ARCH_OS_X11_KEYBOARD_MODEL}'"
         echo "ARCH_OS_X11_KEYBOARD_VARIANT='${ARCH_OS_X11_KEYBOARD_VARIANT}'"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
-    } >"$SCRIPT_CONF"
+    } >"$SCRIPT_CONF" # Write properties to file
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -335,7 +335,7 @@ properties_generate() {
 
 select_username() {
     if [ -z "$ARCH_OS_USERNAME" ]; then
-        ARCH_OS_USERNAME=$(gum input --prompt=" + " --prompt.foreground="212" --placeholder="Please enter Username") || trap_gum_exit_confirm
+        ARCH_OS_USERNAME=$(gum input --placeholder="Please enter Username" --prompt=" + " --prompt.foreground="212") || trap_gum_exit_confirm
         [ -z "${ARCH_OS_USERNAME}" ] && return 1 # Check if new value is null
         properties_generate                      # Generate properties file
     fi
@@ -346,7 +346,7 @@ select_username() {
 
 select_password() {
     if [ "$1" = "--force" ] || [ -z "$ARCH_OS_PASSWORD" ]; then
-        ARCH_OS_PASSWORD=$(gum input --password --prompt=" + " --prompt.foreground="212" --placeholder="Please enter Password") || trap_gum_exit_confirm
+        ARCH_OS_PASSWORD=$(gum input --password --placeholder="Please enter Password" --prompt=" + " --prompt.foreground="212") || trap_gum_exit_confirm
         [ -z "${ARCH_OS_PASSWORD}" ] && return 1 # Check if new value is null
         properties_generate                      # Generate properties file
     fi
