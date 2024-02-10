@@ -17,6 +17,9 @@ VERSION='1.3.0'
 SCRIPT_CONF="./installer.conf"
 SCRIPT_LOG="./installer.log"
 
+# ERROR
+ERROR_MSG="./installer.err"
+
 # PROCESS
 PROCESS_LOCK="./process.lock"
 PROCESS_LOG="./process.log"
@@ -124,7 +127,7 @@ main() {
 
 trap_error() {
     # If process calls this trap, write error to file to use in exit trap
-    echo "Command '${BASH_COMMAND}' failed with exit code $? in function '${1}' (line ${2})" >installer.err
+    echo "Command '${BASH_COMMAND}' failed with exit code $? in function '${1}' (line ${2})" >"$ERROR_MSG"
 }
 
 trap_exit() {
@@ -132,11 +135,14 @@ trap_exit() {
     # Check if failed
     if [ "$result_code" -gt "0" ]; then
         [ "$result_code" = "130" ] && print_warn "Exit..." && exit 1             # When ctrl + c pressed exit without other stuff
-        [ -f installer.err ] && local error && error="$(<installer.err)"         # Read error msg from file (written in error trap)
+        [ -f "$ERROR_MSG" ] && local error && error="$(<"$ERROR_MSG")"           # Read error msg from file (written in error trap)
         [ -n "$error" ] && print_fail "$error"                                   # Print error message (if exists)
         [ -z "$error" ] && print_fail "Arch OS Installation failed"              # Otherwise pint default error message
         gum confirm "Show Logs?" && gum pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
     fi
+    rm -f "$ERROR_MSG"
+    rm -f "$PROCESS_LOCK"
+    rm -f "$PROCESS_LOG"
     exit "$result_code" # Exit installer.sh
 }
 
@@ -207,14 +213,14 @@ log_user() { log_write "USER | ${*}"; }
 log_proc() { log_write "PROC | ${*}"; }
 
 # Colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
-print_blue() { gum style --bold --foreground 39 "${*}"; }    # To new stdout (3)
-print_purple() { gum style --bold --foreground 212 "${*}"; } # To new stdout (3)
-print_green() { gum style --bold --foreground 85 "${*}"; }   # To new stdout (3)
-print_yellow() { gum style --bold --foreground 220 "${*}"; } # To new stdout (3)
-print_red() { gum style --bold --foreground 197 "${*}"; }    # To new stdout (3)
+print_blue() { gum style --bold --foreground 39 "${*}"; }
+print_purple() { gum style --bold --foreground 212 "${*}"; }
+print_green() { gum style --bold --foreground 85 "${*}"; }
+print_yellow() { gum style --bold --foreground 220 "${*}"; }
+print_red() { gum style --bold --foreground 197 "${*}"; }
 
 # Print
-print_title() { gum style --bold --foreground 212 " ${*}" && echo; }
+print_title() { gum style --bold --foreground 212 --margin="1" " ${*}"; }
 print_info() { log_info "$*" && print_green " • ${*}"; }
 print_warn() { log_warn "$*" && print_yellow " • ${*}"; }
 print_fail() { log_fail "$*" && print_red " • ${*}"; }
@@ -405,7 +411,7 @@ exec_init() {
         echo "stdou"
         echo "stderr" >&2
         sleep 1.2
-        #false
+
     ) &>"$PROCESS_LOG" && echo 0 >"$PROCESS_LOCK" &
     process_run $!
 }
@@ -415,7 +421,7 @@ exec_init() {
 exec_disk() {
     process_init "Prepare Disk"
     (
-        sleep 2
+        sleep 1
     ) &>"$PROCESS_LOG" && echo 0 >"$PROCESS_LOCK" &
     process_run $!
 }
@@ -445,7 +451,10 @@ exec_bootsplash() {
 exec_aur_helper() {
     process_init "Install AUR Helper"
     (
-        sleep 1
+        echo "stdou"
+        echo "stderr" >&2
+        sleep 1.2
+        sdfsf
     ) &>"$PROCESS_LOG" && echo 0 >"$PROCESS_LOCK" &
     process_run $!
 }
