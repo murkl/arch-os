@@ -88,7 +88,7 @@ main() {
     # Start installation in 5 seconds?
     gum_confirm "Start Arch OS Installation?" || trap_gum_exit
     local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel"
-    gum_spin --title=" $spin_title" -- sleep 1 || trap_gum_exit # CTRL + C pressed
+    gum_spin --title=" $spin_title" -- sleep 5 || trap_gum_exit # CTRL + C pressed
     print_info "Start Arch OS Installation..."
 
     SECONDS=0 # Messure execution time of installation
@@ -129,6 +129,7 @@ gum_init() {
         if ! mkdir -p "$gum_cache"; then echo "Error creating ${gum_cache}" && exit 1; fi
         local gum_url # Prepare URL with version os and arch
         # https://github.com/charmbracelet/gum/releases
+        local pc_arch
         gum_url="https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_$(uname -s)_$(uname -m).tar.gz"
         if ! curl -Lsf "$gum_url" >"${gum_cache}/gum.tar.gz"; then echo "Error downloading ${gum_url}" && exit 1; fi
         if ! tar -xf "${gum_cache}/gum.tar.gz" --directory "$gum_cache"; then echo "Error extracting ${gum_cache}/gum.tar.gz" && exit 1; fi
@@ -198,7 +199,7 @@ process_run() {
 
     # When user press ctrl + c while process is running
     if [ "$user_canceled" = "true" ]; then
-        ps -p "$pid" >/dev/null && kill "$pid"                                   # Kill process if running
+        ps -p "$pid" &>/dev/null && kill "$pid"                                  # Kill process if running
         print_fail "Process with PID ${pid} was killed by user" && trap_gum_exit # Exit with 130
     fi
 
