@@ -164,10 +164,10 @@ trap_exit() {
         [ -z "$error" ] && print_fail "Arch OS Installation failed"              # Otherwise pint default error message
         gum_confirm "Show Logs?" && gum_pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
     fi
-    rm -f "$ERROR_MSG"
-    rm -f "$PROCESS_RETURN"
-    rm -f "$PROCESS_LOG"
-    exit "$result_code" # Exit installer.sh
+    rm -f "$ERROR_MSG"      # Remove error message
+    rm -f "$PROCESS_RETURN" # Remove process return info
+    rm -f "$PROCESS_LOG"    # Remove prcoess log
+    exit "$result_code"     # Exit installer.sh
 }
 
 trap_gum_exit() {
