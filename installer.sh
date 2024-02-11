@@ -53,7 +53,7 @@ main() {
         properties_generate # Generate properties file (needed on first start of installer)
 
         # Print Welcome
-        print_header && print_title "Welcome to Arch OS Installation!"
+        print_header && print_title "Welcome to Arch OS Installation"
 
         # Selectors
         until select_username; do :; done
@@ -75,7 +75,7 @@ main() {
                 mv "${SCRIPT_CONF}.new" "${SCRIPT_CONF}" && properties_source
             fi
             rm -f "${SCRIPT_CONF}.new" # Remove tmp properties
-            gum_confirm "Change Password?" && until select_password --force; do :; done
+            clear && print_header && gum_confirm "Change Password?" && until select_password --force; do :; done
             continue # Restart properties step
         fi
 
@@ -224,17 +224,19 @@ process_return() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 print_header() {
-    local logo_gum && logo_gum='
-
+    local header_logo='
   █████  ██████   ██████ ██   ██      ██████  ███████ 
  ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
  ███████ ██████  ██      ███████     ██    ██ ███████ 
  ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
  ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
-
  '
-    local title_gum && title_gum=$(gum_white --margin "1 0" --bold "Arch OS Installer ${VERSION}")
-    clear && gum_purple --border normal --align "center" --padding "0 4" --border-foreground 247 "${logo_gum} ${title_gum}"
+    header_logo=$(gum_purple --bold "$header_logo")
+    local header_title="Arch OS Installer ${VERSION}"
+    header_title=$(gum_white --bold "$header_title")
+    local header_container
+    header_container=$(gum join --vertical --align center "$header_logo" "${header_title}")
+    clear && gum_style --align center --border none --border-foreground 247 --margin 0 --padding "0 1" "$header_container"
 }
 
 # Log
@@ -245,21 +247,22 @@ log_fail() { write_log "FAIL | ${*}"; }
 log_proc() { write_log "PROC | ${*}"; }
 
 # Colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
-gum_white() { gum style --foreground 255 "${@}"; }
-gum_purple() { gum style --foreground 212 "${@}"; }
-gum_green() { gum style --foreground 35 "${@}"; }
-gum_yellow() { gum style --foreground 220 "${@}"; }
-gum_red() { gum style --foreground 160 "${@}"; }
-#gum_blue() { gum style --foreground 32 "${@}"; }
+gum_white() { gum_style --foreground 255 "${@}"; }
+gum_purple() { gum_style --foreground 212 "${@}"; }
+gum_green() { gum_style --foreground 35 "${@}"; }
+gum_yellow() { gum_style --foreground 220 "${@}"; }
+gum_red() { gum_style --foreground 160 "${@}"; }
+#gum_blue() { gum_style --foreground 32 "${@}"; }
 
 # Print
-print_title() { gum_purple --bold --padding "1 1" "${*}"; }
+print_title() { gum_purple --margin "1 1" --bold "${*}"; }
 print_info() { log_info "$*" && gum_green --bold " • ${*}"; }
 print_warn() { log_warn "$*" && gum_yellow --bold " • ${*}"; }
 print_fail() { log_fail "$*" && gum_red --bold " • ${*}"; }
 print_add() { log_info "$*" && gum_green --bold " + ${*}"; }
 
 # Gum
+gum_style() { gum style "${@}"; } # Set default width
 gum_confirm() { gum confirm --prompt.foreground 212 "${@}"; }
 gum_input() { gum input --prompt " + " --prompt.foreground 212 "${@}"; }
 gum_write() { gum write --prompt " • " --show-cursor-line --char-limit 0 "${@}"; }
@@ -426,18 +429,22 @@ select_variant() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 exec_init() {
-    local process_name="Initialize Installation"
+    local process_name="Initialize Arch OS Installation"
     process_init "$process_name"
     (
-        [ "$MODE" = "debug" ] && sleep 1 && process_return 0
+        [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+
         # Check installation prerequisites
         [ ! -d /sys/firmware/efi ] && log_fail "BIOS not supported! Please set your boot mode to UEFI." && exit 1
+        log_info "UEFI detected"
         [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && log_fail "You must execute the Installer from Arch ISO!" && exit 1
+        log_info "Executed from archiso"
 
         log_info "Waiting for Reflector from Arch ISO"
         # This mirrorlist will copied to new Arch system during installation
         while timeout 180 tail --pid=$(pgrep reflector) -f /dev/null &>/dev/null; do sleep 1; done
         pgrep reflector &>/dev/null && log_fail "Reflector timeout after 180 seconds" && exit 1
+
         process_return 0
     ) &>"$PROCESS_LOG" &
     process_run $! "$process_name"
