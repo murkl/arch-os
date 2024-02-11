@@ -71,11 +71,12 @@ main() {
             print_header && print_title "Edit Properties"
             log_info "Edit properties..."
             local gum_header="Exit with CTRL + C and save with CTRL + D or ESC"
-            if gum_write --height=25 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONF")" >"${SCRIPT_CONF}.new"; then
+            if gum_write --height=12 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONF")" >"${SCRIPT_CONF}.new"; then
                 mv "${SCRIPT_CONF}.new" "${SCRIPT_CONF}" && properties_source
             fi
             rm -f "${SCRIPT_CONF}.new" # Remove tmp properties
-            clear && print_header && gum_confirm "Change Password?" && until select_password --force; do :; done
+            clear && print_header
+            gum_confirm "Change Password?" && print_title "Change Password" && until select_password --force; do :; done
             continue # Restart properties step
         fi
 
@@ -230,12 +231,10 @@ print_header() {
  ███████ ██████  ██      ███████     ██    ██ ███████ 
  ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
  ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
- '
-    header_logo=$(gum_purple --bold "$header_logo")
-    local header_title="Arch OS Installer ${VERSION}"
-    header_title=$(gum_white --bold "$header_title")
-    local header_container
-    header_container=$(gum join --vertical --align center "$header_logo" "${header_title}")
+ ' && header_logo=$(gum_purple --bold "$header_logo")
+    local header_title="Arch OS Installer ${VERSION}" && header_title=$(gum_white --bold "$header_title")
+    local header_container && header_container=$(gum join --vertical --align center "$header_logo" "${header_title}")
+    # Print header
     clear && gum_style --align center --border none --border-foreground 247 --margin 0 --padding "0 1" "$header_container"
 }
 
@@ -265,7 +264,7 @@ print_add() { log_info "$*" && gum_green --bold " + ${*}"; }
 gum_style() { gum style "${@}"; } # Set default width
 gum_confirm() { gum confirm --prompt.foreground 212 "${@}"; }
 gum_input() { gum input --prompt " + " --prompt.foreground 212 "${@}"; }
-gum_write() { gum write --prompt " • " --show-cursor-line --char-limit 0 "${@}"; }
+gum_write() { gum write --prompt " • " --prompt.foreground 212 --show-cursor-line --char-limit 0 "${@}"; }
 gum_spin() { gum spin --spinner line --title.foreground 212 --spinner.foreground 212 "${@}"; }
 
 # shellcheck disable=SC2317
