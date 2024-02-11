@@ -3,7 +3,7 @@
   <p>Arch OS</p>
 </h1>
 
-<p align="center"><strong>Run TUI Installer from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a></strong></p>
+<p align="center"><strong>Boot from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a> and simply enter:</strong></p>
 
 <div align="center">
 
@@ -11,21 +11,25 @@
 curl -Ls http://arch.webhop.me | bash
 ```
 
-</div>
-
-<p align="center"><img src="./screenshots/installer_01.png" /></p>
-
-<div align="center">
-
-**[➜ Open Arch OS Docs](DOCS.md)**
-
-</div>
-
 <p align="center">
 This project aims to provide a solid Arch Linux base for desktop usage and an easy and fast to use installer for that. Choose between 3 Arch OS Variants and install a minimal Arch Linux Distribution optional with automatic housekeeping, Zen Kernel, GNOME as desktop with graphics driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more features...
 </p>
 
-<p align="center"><sub><strong>Sole OS on a single disk</strong></sub></p>
+<p><b>
+
+[➜ Open Arch OS Docs](DOCS.md)
+
+</b></p>
+
+</div>
+
+<p align="center"><img src="./screenshots/installer_01.png" /></p>
+
+<div align="center"><p><b>
+
+[➜ More Screenshots](DOCS.md#screenshots)
+
+</b></p></div>
 
 <p align="center">
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
@@ -87,18 +91,6 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 
 ## Arch OS Installation
 
-<div align="center">
-
-<p><img src="./screenshots/setup_01.png" /></p>
-
-<p><b>
-
-[➜ More Screenshots](DOCS.md#screenshots)
-
-</b></p>
-
-</div>
-
 ### 1. Prepare bootable USB Device
 
 - Download latest Arch Linux ISO from **[archlinux.org](https://www.archlinux.org/download)** or **[archlinux.de](https://www.archlinux.de/download)**
@@ -127,27 +119,19 @@ curl -Ls http://arch-dev.webhop.me | bash
 
 <div align="center">
 
-<p><b>
-
-[➜ See Advanced Installation](DOCS.md#installation-properties)
-
-</b></p>
-
-<p><img src="./screenshots/installer_02.png" /></p>
-
-<p><b>
-
-[➜ See Recommendation](DOCS.md#recommendation)
-
-</b></p>
+**[➜ See Advanced Installation](DOCS.md#installation-properties)**
 
 </div>
 
 ## Usage
 
-- **`setup.sh`** → TUI Helper for creating Properties file (executes the Installer)
-- **`installer.sh`** → Arch OS Install Script (needs Properties file)
-- **`installer.conf`** → Properties file of Arch OS Installation
+<div align="center">
+
+<p><img src="./screenshots/neofetch.png" /></p>
+
+**[➜ See Recommendation](DOCS.md#recommendation)**
+
+</div>
 
 ### System information
 
