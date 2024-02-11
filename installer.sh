@@ -12,7 +12,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 
 # VERSION
 VERSION='1.3.0'
-GUM_VERSION="0.212.0"
+GUM_VERSION="0.13.0"
 
 # ENVIRONMENT
 SCRIPT_CONF="./installer.conf"
@@ -24,8 +24,6 @@ ERROR_MSG="./installer.err"
 # PROCESS
 PROCESS_LOG="./process.log"
 PROCESS_RETURN="./process.rt"
-
-# GUM
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # MAIN
