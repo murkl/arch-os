@@ -492,25 +492,22 @@ select_variant() {
         user_input=$(gum_choose --header " + Choose Arch OS Variant" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
         ARCH_OS_VARIANT="$user_input"    # Set property
-        properties_generate              # Generate properties file
-    fi
-    if [ "$ARCH_OS_VARIANT" = "desktop" ] && [ -z "$ARCH_OS_GRAPHICS_DRIVER" ]; then
-        local user_input options && options=()
-        options+=("mesa")
-        options+=("intel_i915")
-        options+=("nvidia")
-        options+=("amd")
-        options+=("ati")
-        user_input=$(gum_choose --header " + Choose Graphics Driver" "${options[@]}") || trap_gum_exit_confirm
-        [ -z "$user_input" ] && return 1      # Check if new value is null
-        ARCH_OS_GRAPHICS_DRIVER="$user_input" # Set properties
-        properties_generate                   # Generate properties file
-    else
-        ARCH_OS_GRAPHICS_DRIVER="none" # Set driver to none
-        properties_generate            # Generate properties file
+        if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
+            local user_input options && options=()
+            options+=("mesa")
+            options+=("intel_i915")
+            options+=("nvidia")
+            options+=("amd")
+            options+=("ati")
+            user_input=$(gum_choose --header " + Choose Graphics Driver" "${options[@]}") || trap_gum_exit_confirm
+            [ -z "$user_input" ] && return 1      # Check if new value is null
+            ARCH_OS_GRAPHICS_DRIVER="$user_input" # Set properties
+        fi
+        properties_generate # Generate properties file
     fi
     print_add "Variant is set to ${ARCH_OS_VARIANT}"
-    print_add "Graphics Driver is set to ${ARCH_OS_GRAPHICS_DRIVER}"
+    [ "$ARCH_OS_VARIANT" = "desktop" ] && print_add "Graphics Driver is set to ${ARCH_OS_GRAPHICS_DRIVER}"
+    return 0
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -518,7 +515,7 @@ select_variant() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 exec_init() {
-    local process_name="Initialize Arch OS Installation"
+    local process_name="Initialize Installation"
     process_init "$process_name"
     (
         [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return

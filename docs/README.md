@@ -89,7 +89,7 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 - GNOME Power Profiles Support
 - [VM Support](DOCS.md#vm-support)
 
-## Arch OS Installation
+## Installing Arch OS
 
 ### 1. Prepare bootable USB Device
 
@@ -123,7 +123,7 @@ curl -Ls http://arch-dev.webhop.me | bash
 
 </div>
 
-## Usage
+## Using Arch OS
 
 <div align="center">
 
