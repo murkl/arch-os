@@ -52,7 +52,6 @@ main() {
     while (true); do # Loop properties step to update screen if user edit properties
 
         # Prepare properties
-        properties_default  # Set default properties
         properties_source   # Load properties file (if exists) and auto export variables
         properties_generate # Generate properties file (needed on first start of installer)
 
@@ -82,8 +81,6 @@ main() {
             skip_edit="true" && continue # Restart properties step to refresh log above if changed
         fi
 
-        # Check properties
-        ! properties_check && continue # Continue if failed
         print_info "Properties successfully initialized"
         break # Exit properties step and continue installation
     done
@@ -283,7 +280,9 @@ properties_source() {
     fi
 }
 
-properties_default() {
+properties_generate() {
+
+    # Set defaults
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
     [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
@@ -293,40 +292,11 @@ properties_default() {
     [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
     [ -z "$ARCH_OS_X11_KEYBOARD_MODEL" ] && ARCH_OS_X11_KEYBOARD_MODEL="pc105"
     [ -z "$ARCH_OS_X11_KEYBOARD_LAYOUT" ] && ARCH_OS_X11_KEYBOARD_LAYOUT="us"
+    [ -z "$ARCH_OS_GRAPHICS_DRIVER" ] && ARCH_OS_GRAPHICS_DRIVER="mesa"
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu) " && ARCH_OS_MICROCODE="intel-ucode"
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
-    return 0
-}
 
-properties_check() {
-    [ -z "${ARCH_OS_USERNAME}" ] && print_fail "Property: 'ARCH_OS_USERNAME' is missing" && exit 1
-    [ -z "${ARCH_OS_PASSWORD}" ] && print_fail "Property: 'ARCH_OS_PASSWORD' is missing" && exit 1
-    [ -z "${ARCH_OS_HOSTNAME}" ] && print_fail "Property: 'ARCH_OS_HOSTNAME' is missing" && exit 1
-    [ -z "${ARCH_OS_TIMEZONE}" ] && print_fail "Property: 'ARCH_OS_TIMEZONE' is missing" && exit 1
-    [ -z "${ARCH_OS_LOCALE_LANG}" ] && print_fail "Property: 'ARCH_OS_LOCALE_LANG' is missing" && exit 1
-    [ -z "${ARCH_OS_LOCALE_GEN_LIST[*]}" ] && print_fail "Property: 'ARCH_OS_LOCALE_GEN_LIST' is missing" && exit 1
-    [ -z "${ARCH_OS_VCONSOLE_KEYMAP}" ] && print_fail "Property: 'ARCH_OS_VCONSOLE_KEYMAP' is missing" && exit 1
-    [ -z "${ARCH_OS_DISK}" ] && print_fail "Property: 'ARCH_OS_DISK' is missing" && exit 1
-    [ -z "${ARCH_OS_BOOT_PARTITION}" ] && print_fail "Property: 'ARCH_OS_BOOT_PARTITION' is missing" && exit 1
-    [ -z "${ARCH_OS_ROOT_PARTITION}" ] && print_fail "Property: 'ARCH_OS_ROOT_PARTITION' is missing" && exit 1
-    [ -z "${ARCH_OS_ENCRYPTION_ENABLED}" ] && print_fail "Property: 'ARCH_OS_ENCRYPTION_ENABLED' is missing" && exit 1
-    [ -z "${ARCH_OS_BOOTSPLASH_ENABLED}" ] && print_fail "Property: 'ARCH_OS_BOOTSPLASH_ENABLED' is missing" && exit 1
-    [ -z "${ARCH_OS_KERNEL}" ] && print_fail "Property: 'ARCH_OS_KERNEL' is missing" && exit 1
-    [ -z "${ARCH_OS_MICROCODE}" ] && print_fail "Property: 'ARCH_OS_MICROCODE' is missing" && exit 1
-    [ -z "${ARCH_OS_VARIANT}" ] && print_fail "Property: 'ARCH_OS_VARIANT' is missing" && exit 1
-    [ -z "${ARCH_OS_SHELL_ENHANCED_ENABLED}" ] && print_fail "Property: 'ARCH_OS_SHELL_ENHANCED_ENABLED' is missing" && exit 1
-    [ -z "${ARCH_OS_AUR_HELPER}" ] && print_fail "Property: 'ARCH_OS_AUR_HELPER' is missing" && exit 1
-    [ -z "${ARCH_OS_MULTILIB_ENABLED}" ] && print_fail "Property: 'ARCH_OS_MULTILIB_ENABLED' is missing" && exit 1
-    [ -z "${ARCH_OS_GRAPHICS_DRIVER}" ] && print_fail "Property: 'ARCH_OS_GRAPHICS_DRIVER' is missing" && exit 1
-    [ -z "${ARCH_OS_X11_KEYBOARD_LAYOUT}" ] && print_fail "Property: 'ARCH_OS_X11_KEYBOARD_LAYOUT' is missing" && exit 1
-    [ -z "${ARCH_OS_X11_KEYBOARD_MODEL}" ] && print_fail "Property: 'ARCH_OS_X11_KEYBOARD_MODEL' is missing" && exit 1
-    [ -z "${ARCH_OS_VM_SUPPORT_ENABLED}" ] && print_fail "Property: 'ARCH_OS_VM_SUPPORT_ENABLED' is missing" && exit 1
-    [ -z "${ARCH_OS_ECN_ENABLED}" ] && print_fail "Property: 'ARCH_OS_ECN_ENABLED' is missing" && exit 1
-    return 0
-}
-
-properties_generate() {
-    {
+    { # Write properties to installer.conf
         #echo "# Arch OS ${VERSION} ($(date --utc '+%Y-%m-%d %H:%M:%S') UTC)"
         echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}'"
         echo "ARCH_OS_USERNAME='${ARCH_OS_USERNAME}'"
@@ -410,7 +380,7 @@ select_language() {
         mapfile -t items < <(command /usr/bin/ls /usr/share/i18n/locales | grep -v "@")
         # Add only available locales (!!! intense command !!!)
         options=() && for item in "${items[@]}"; do
-            if grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<<"$item") " /etc/locale.gen; then options+=("$item"); fi
+            grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<<"$item") " /etc/locale.gen && options+=("$item")
         done
         # Select locale
         user_input=$(gum_filter --header " + Choose Language" "${options[@]}") || trap_gum_exit_confirm
@@ -484,7 +454,7 @@ select_bootsplash() {
 # ----------------------------------------------------------------------------------------------------
 
 select_variant() {
-    if [ -z "$ARCH_OS_VARIANT" ]; then
+    if [ -z "$ARCH_OS_VARIANT" ] || [ -z "$ARCH_OS_GRAPHICS_DRIVER" ]; then
         local user_input options && options=()
         options+=("desktop")
         options+=("base")
@@ -506,7 +476,7 @@ select_variant() {
         properties_generate # Generate properties file
     fi
     print_add "Variant is set to ${ARCH_OS_VARIANT}"
-    [ "$ARCH_OS_VARIANT" = "desktop" ] && print_add "Graphics Driver is set to ${ARCH_OS_GRAPHICS_DRIVER}"
+    print_add "Graphics Driver is set to ${ARCH_OS_GRAPHICS_DRIVER}"
     return 0
 }
 
