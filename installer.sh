@@ -37,10 +37,9 @@ main() {
     set -E          # ERR trap inherited by shell functions (errtrace)
 
     # Init
-    timedatectl set-ntp true # Set time
-    rm -f "$SCRIPT_LOG"      # Clear logfile
-    rm -f "$PROCESS_RETURN"  # Clear process lock
-    gum_init                 # Check gum binary or download
+    rm -f "$SCRIPT_LOG"     # Clear logfile
+    rm -f "$PROCESS_RETURN" # Clear process lock
+    gum_init                # Check gum binary or download
 
     # Traps (error & exit)
     trap 'trap_exit' EXIT
@@ -497,6 +496,7 @@ exec_init() {
         # This mirrorlist will copied to new Arch system during installation
         while timeout 180 tail --pid=$(pgrep reflector) -f /dev/null &>/dev/null; do sleep 1; done
         pgrep reflector &>/dev/null && log_fail "Reflector timeout after 180 seconds" && exit 1
+        timedatectl set-ntp true # Set time
         # Make sure everything is unmounted before start install
         swapoff -a &>/dev/null || true
         umount -A -R /mnt &>/dev/null || true
