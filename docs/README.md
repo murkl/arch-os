@@ -127,7 +127,7 @@ curl -Ls http://arch-dev.webhop.me | bash
 
 <div align="center">
 
-<p><img src="./screenshots/neofetch.png" /></p>
+<p><img src="./screenshots/desktop.jpg" /></p>
 
 **[➜ See Recommendation](DOCS.md#recommendation)**
 
