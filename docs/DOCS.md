@@ -85,7 +85,7 @@ May check out these projects:
 
 ## Installation Properties
 
-The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as defaults for Arch OS setup menu. This file provides some additional properties (see [Example](#example-installerconf)) to modify your Arch OS installation.
+The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as defaults for Arch OS setup menu. This file provides some additional properties to modify your Arch OS installation (see [Example](#example-installerconf)).
 
 **Note:** The `installer.conf` will copied to the new user's home directory during installation. This file can be saved for reuse or simply deleted.
 
@@ -321,7 +321,7 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 
 ## Troubleshooting
 
-If an error occurs, see created `installer.log` for more details. Each step in `installer.sh` is seperated in the log file with `>>> Progress Title` so you can identify the regarding script part.
+If an error occurs, see created `installer.log` for more details.
 
 ### Installation failed
 

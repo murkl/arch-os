@@ -37,13 +37,17 @@ main() {
     set -E          # ERR trap inherited by shell functions (errtrace)
 
     # Init
-    gum_init                # Check gum binary or download
-    rm -f "$SCRIPT_LOG"     # Clear logfile
-    rm -f "$PROCESS_RETURN" # Clear process lock
+    timedatectl set-ntp true # Set time
+    rm -f "$SCRIPT_LOG"      # Clear logfile
+    rm -f "$PROCESS_RETURN"  # Clear process lock
+    gum_init                 # Check gum binary or download
 
     # Traps (error & exit)
     trap 'trap_exit' EXIT
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
+
+    # Skip edit
+    local skip_edit="false"
 
     while (true); do # Loop properties step to update screen if user edit properties
 
@@ -67,23 +71,21 @@ main() {
         until select_variant; do :; done
 
         # Edit properties?
-        if gum_confirm "Edit Properties?"; then
-            print_header && print_title "Edit Properties"
+        if [ "$skip_edit" != "true" ] && gum_confirm "Edit Properties?"; then
             log_info "Edit properties..."
             local gum_header="Exit with CTRL + C and save with CTRL + D or ESC"
-            if gum_write --height=12 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONF")" >"${SCRIPT_CONF}.new"; then
+            if gum_write --height=10 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONF")" >"${SCRIPT_CONF}.new"; then
                 mv "${SCRIPT_CONF}.new" "${SCRIPT_CONF}" && properties_source
             fi
             rm -f "${SCRIPT_CONF}.new" # Remove tmp properties
-            clear && print_header
-            gum_confirm "Change Password?" && print_title "Change Password" && until select_password --force; do :; done
-            continue # Restart properties step
+            gum_confirm "Change Password?" && until select_password --force; do :; done
+            skip_edit="true" && continue # Restart properties step to refresh log above if changed
         fi
 
         # Check properties
-        properties_check && print_info "Properties successfully initialized"
-        break # Exit properties step
-
+        ! properties_check && continue # Continue if failed
+        print_info "Properties successfully initialized"
+        break # Exit properties step and continue installation
     done
 
     # Start installation in 5 seconds?
@@ -130,7 +132,6 @@ gum_init() {
         if ! mkdir -p "$gum_cache"; then echo "Error creating ${gum_cache}" && exit 1; fi
         local gum_url # Prepare URL with version os and arch
         # https://github.com/charmbracelet/gum/releases
-        local pc_arch
         gum_url="https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_$(uname -s)_$(uname -m).tar.gz"
         if ! curl -Lsf "$gum_url" >"${gum_cache}/gum.tar.gz"; then echo "Error downloading ${gum_url}" && exit 1; fi
         if ! tar -xf "${gum_cache}/gum.tar.gz" --directory "$gum_cache"; then echo "Error extracting ${gum_cache}/gum.tar.gz" && exit 1; fi
@@ -171,13 +172,11 @@ trap_exit() {
     exit "$result_code"     # Exit installer.sh
 }
 
-trap_gum_exit() {
-    exit 130
-}
-
 trap_gum_exit_confirm() {
     gum_confirm "Exit Installation?" && trap_gum_exit
 }
+
+trap_gum_exit() { exit 130; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # PROCESS
@@ -234,7 +233,6 @@ print_header() {
  ' && header_logo=$(gum_purple --bold "$header_logo")
     local header_title="Arch OS Installer ${VERSION}" && header_title=$(gum_white --bold "$header_title")
     local header_container && header_container=$(gum join --vertical --align center "$header_logo" "${header_title}")
-    # Print header
     clear && gum_style --align center --border none --border-foreground 247 --margin 0 --padding "0 1" "$header_container"
 }
 
@@ -263,8 +261,10 @@ print_add() { log_info "$*" && gum_green --bold " + ${*}"; }
 # Gum
 gum_style() { gum style "${@}"; } # Set default width
 gum_confirm() { gum confirm --prompt.foreground 212 "${@}"; }
-gum_input() { gum input --prompt " + " --prompt.foreground 212 "${@}"; }
-gum_write() { gum write --prompt " • " --prompt.foreground 212 --show-cursor-line --char-limit 0 "${@}"; }
+gum_input() { gum input --placeholder "..." --prompt " + " --prompt.foreground 212 --header.foreground 212 "${@}"; }
+gum_write() { gum write --prompt " • " --prompt.foreground 212 --header.foreground 212 --show-cursor-line --char-limit 0 "${@}"; }
+gum_choose() { gum choose --cursor " > " --height 8 --header.foreground 212 --cursor.foreground 212 "${@}"; }
+gum_filter() { gum filter --prompt " > " --indicator " • " --placeholder "Type to filter ..." --height 8 --header.foreground 212 "${@}"; }
 gum_spin() { gum spin --spinner line --title.foreground 212 --spinner.foreground 212 "${@}"; }
 
 # shellcheck disable=SC2317
@@ -292,7 +292,6 @@ properties_default() {
     [ -z "$ARCH_OS_MULTILIB_ENABLED" ] && ARCH_OS_MULTILIB_ENABLED="true"
     [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
     [ -z "$ARCH_OS_X11_KEYBOARD_MODEL" ] && ARCH_OS_X11_KEYBOARD_MODEL="pc105"
-    [ -z "$ARCH_OS_GRAPHICS_DRIVER" ] && ARCH_OS_GRAPHICS_DRIVER="mesa"
     [ -z "$ARCH_OS_X11_KEYBOARD_LAYOUT" ] && ARCH_OS_X11_KEYBOARD_LAYOUT="us"
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu) " && ARCH_OS_MICROCODE="intel-ucode"
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
@@ -363,20 +362,25 @@ properties_generate() {
 
 select_username() {
     if [ -z "$ARCH_OS_USERNAME" ]; then
-        ARCH_OS_USERNAME=$(gum_input --placeholder="Please enter Username") || trap_gum_exit_confirm
-        [ -z "${ARCH_OS_USERNAME}" ] && return 1 # Check if new value is null
-        properties_generate                      # Generate properties file
+        local user_input
+        user_input=$(gum_input --header " + Enter Username") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1                      # Check if new value is null
+        ARCH_OS_USERNAME="$user_input" && properties_generate # Set value and generate properties file
     fi
     print_add "Username is set to ${ARCH_OS_USERNAME}"
 }
 
 # ----------------------------------------------------------------------------------------------------
 
-select_password() {
+select_password() { # --force
     if [ "$1" = "--force" ] || [ -z "$ARCH_OS_PASSWORD" ]; then
-        ARCH_OS_PASSWORD=$(gum_input --password --placeholder="Please enter Password") || trap_gum_exit_confirm
-        [ -z "${ARCH_OS_PASSWORD}" ] && return 1 # Check if new value is null
-        properties_generate                      # Generate properties file
+        local user_password user_password_check
+        user_password=$(gum_input --password --header " + Enter Password") || trap_gum_exit_confirm
+        [ -z "$user_password" ] && return 1 # Check if new value is null
+        user_password_check=$(gum_input --password --header " + Enter Password again") || trap_gum_exit_confirm
+        [ -z "$user_password_check" ] && return 1 # Check if new value is null
+        [ "$user_password" != "$user_password_check" ] && print_fail "Passwords not identical" && return 1
+        ARCH_OS_PASSWORD="$user_password" && properties_generate # Set value and generate properties file
     fi
     print_add "Password is set to *******"
 }
@@ -384,43 +388,129 @@ select_password() {
 # ----------------------------------------------------------------------------------------------------
 
 select_timezone() {
-    true
+    if [ -z "$ARCH_OS_TIMEZONE" ]; then
+        local tz_auto user_input
+        tz_auto="$(curl -s http://ip-api.com/line?fields=timezone)"
+        user_input=$(gum_input --header " + Enter Timezone (auto)" --value "$tz_auto") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1 # Check if new value is null
+        [ ! -f "/usr/share/zoneinfo/${user_input}" ] && print_fail "Timezone '${user_input}' is not supported" && return 1
+        ARCH_OS_TIMEZONE="$user_input" && properties_generate # Set property and generate properties file
+    fi
+    print_add "Timezone is set to ${ARCH_OS_TIMEZONE}"
 }
 
 # ----------------------------------------------------------------------------------------------------
 
+# shellcheck disable=SC2001
 select_language() {
-    true
+    if [ -z "$ARCH_OS_LOCALE_LANG" ] || [ -z "${ARCH_OS_LOCALE_GEN_LIST[*]}" ]; then
+        local user_input items options
+        # Fetch available options
+        #items=($(/usr/bin/ls /usr/share/i18n/locales | grep -v "@"))
+        mapfile -t items < <(command /usr/bin/ls /usr/share/i18n/locales | grep -v "@")
+        # Add only available locales (!!! intense command !!!)
+        options=() && for item in "${items[@]}"; do
+            if grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<<"$item") " /etc/locale.gen; then options+=("$item"); fi
+        done
+        # Select locale
+        user_input=$(gum_filter --header " + Choose Language" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1  # Check if new value is null
+        ARCH_OS_LOCALE_LANG="$user_input" # Set property
+        # Set locale.gen properties (auto generate ARCH_OS_LOCALE_GEN_LIST)
+        ARCH_OS_LOCALE_GEN_LIST=() && while read -r locale_entry; do
+            ARCH_OS_LOCALE_GEN_LIST+=("$locale_entry")
+        done < <(sed "/^#${ARCH_OS_LOCALE_LANG}/s/^#//" /etc/locale.gen | grep "$ARCH_OS_LOCALE_LANG")
+        # Add en_US fallback (every language)
+        [[ "${ARCH_OS_LOCALE_GEN_LIST[*]}" != *'en_US.UTF-8 UTF-8'* ]] && ARCH_OS_LOCALE_GEN_LIST+=('en_US.UTF-8 UTF-8')
+        properties_generate # Generate properties file (for ARCH_OS_LOCALE_LANG & ARCH_OS_LOCALE_GEN_LIST)
+    fi
+    print_add "Language is set to ${ARCH_OS_LOCALE_LANG}"
 }
 
 # ----------------------------------------------------------------------------------------------------
 
 select_keyboard() {
-    true
+    if [ -z "$ARCH_OS_VCONSOLE_KEYMAP" ]; then
+        local user_input items options
+        mapfile -t items < <(command localectl list-keymaps)
+        options=() && for item in "${items[@]}"; do options+=("$item"); done
+        user_input=$(gum_filter --header " + Choose Keyboard" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1      # Check if new value is null
+        ARCH_OS_VCONSOLE_KEYMAP="$user_input" # Set property
+        properties_generate                   # Generate properties file
+    fi
+    print_add "Keyboard is set to ${ARCH_OS_VCONSOLE_KEYMAP}"
 }
 
 # ----------------------------------------------------------------------------------------------------
 
 select_disk() {
-    true
+    if [ -z "$ARCH_OS_DISK" ] || [ -z "$ARCH_OS_BOOT_PARTITION" ] || [ -z "$ARCH_OS_ROOT_PARTITION" ]; then
+        local user_input items options
+        items=$(lsblk -I 8,259,254 -d -o KNAME -n) || exit 1
+        # size: $(lsblk -d -n -o SIZE "/dev/${item}")
+        options=() && for item in "${items[@]}"; do options+=("/dev/${item}"); done
+        user_input=$(gum_choose --header " + Choose Disk" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1 # Check if new value is null
+        [ ! -e "$user_input" ] && log_fail "Disk does not exists" && return 1
+        ARCH_OS_DISK="$user_input" # Set property
+        [[ "$ARCH_OS_DISK" = "/dev/nvm"* ]] && ARCH_OS_BOOT_PARTITION="${ARCH_OS_DISK}p1" || ARCH_OS_BOOT_PARTITION="${ARCH_OS_DISK}1"
+        [[ "$ARCH_OS_DISK" = "/dev/nvm"* ]] && ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}p2" || ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}2"
+        properties_generate # Generate properties file
+    fi
+    print_add "Disk is set to ${ARCH_OS_DISK}"
 }
 
 # ----------------------------------------------------------------------------------------------------
 
 select_encryption() {
-    true
+    if [ -z "$ARCH_OS_ENCRYPTION_ENABLED" ]; then
+        local user_input="false" && gum_confirm "Enable Encryption?" && user_input="true"
+        ARCH_OS_ENCRYPTION_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    print_add "Encryption is set to ${ARCH_OS_ENCRYPTION_ENABLED}"
 }
 
 # ----------------------------------------------------------------------------------------------------
 
 select_bootsplash() {
-    true
+    if [ -z "$ARCH_OS_BOOTSPLASH_ENABLED" ]; then
+        local user_input="false" && gum_confirm "Enable Bootsplash?" && user_input="true"
+        ARCH_OS_BOOTSPLASH_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    print_add "Bootsplash is set to ${ARCH_OS_BOOTSPLASH_ENABLED}"
 }
 
 # ----------------------------------------------------------------------------------------------------
 
 select_variant() {
-    true # Driver as seperated print_info
+    if [ -z "$ARCH_OS_VARIANT" ]; then
+        local user_input options && options=()
+        options+=("desktop")
+        options+=("base")
+        options+=("core")
+        user_input=$(gum_choose --header " + Choose Arch OS Variant" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1 # Check if new value is null
+        ARCH_OS_VARIANT="$user_input"    # Set property
+        properties_generate              # Generate properties file
+    fi
+    if [ "$ARCH_OS_VARIANT" = "desktop" ] && [ -z "$ARCH_OS_GRAPHICS_DRIVER" ]; then
+        local user_input options && options=()
+        options+=("mesa")
+        options+=("intel_i915")
+        options+=("nvidia")
+        options+=("amd")
+        options+=("ati")
+        user_input=$(gum_choose --header " + Choose Graphics Driver" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1      # Check if new value is null
+        ARCH_OS_GRAPHICS_DRIVER="$user_input" # Set properties
+        properties_generate                   # Generate properties file
+    else
+        ARCH_OS_GRAPHICS_DRIVER="none" # Set driver to none
+        properties_generate            # Generate properties file
+    fi
+    print_add "Variant is set to ${ARCH_OS_VARIANT}"
+    print_add "Graphics Driver is set to ${ARCH_OS_GRAPHICS_DRIVER}"
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -432,18 +522,22 @@ exec_init() {
     process_init "$process_name"
     (
         [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
-
         # Check installation prerequisites
         [ ! -d /sys/firmware/efi ] && log_fail "BIOS not supported! Please set your boot mode to UEFI." && exit 1
         log_info "UEFI detected"
         [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && log_fail "You must execute the Installer from Arch ISO!" && exit 1
-        log_info "Executed from archiso"
-
         log_info "Waiting for Reflector from Arch ISO"
         # This mirrorlist will copied to new Arch system during installation
         while timeout 180 tail --pid=$(pgrep reflector) -f /dev/null &>/dev/null; do sleep 1; done
         pgrep reflector &>/dev/null && log_fail "Reflector timeout after 180 seconds" && exit 1
-
+        # Make sure everything is unmounted before start install
+        swapoff -a &>/dev/null || true
+        umount -A -R /mnt &>/dev/null || true
+        cryptsetup close cryptroot &>/dev/null || true
+        vgchange -an || true
+        # Temporarily disable ECN (prevent traffic problems with some old routers)
+        [ "$ARCH_OS_ECN_ENABLED" = "false" ] && sysctl net.ipv4.tcp_ecn=0
+        pacman -Sy --noconfirm archlinux-keyring # Update keyring
         process_return 0
     ) &>"$PROCESS_LOG" &
     process_run $! "$process_name"

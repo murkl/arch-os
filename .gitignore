@@ -1,10 +1,6 @@
 # Created by scripts
 installer.conf
 installer.log
-installer.log.bak
-
-# Development
-test.sh
 
 # Gum
 gum
