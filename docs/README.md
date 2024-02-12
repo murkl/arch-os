@@ -3,7 +3,7 @@
   <p>Arch OS</p>
 </h1>
 
-<p align="center"><strong>Boot from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a> and simply enter:</strong></p>
+<p align="center"><strong>Boot from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a> and simply run</strong></p>
 
 <div align="center">
 

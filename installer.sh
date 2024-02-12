@@ -58,7 +58,7 @@ main() {
         rm -f "$SCRIPT_CONF"
     fi
 
-    # Print properties step
+    # Properties step begin...
     local first_run="true" # Set first run (skip edit on refresh)
     while (true); do       # Loop properties step to update screen if user edit properties
 
@@ -385,7 +385,6 @@ select_language() {
     if [ -z "$ARCH_OS_LOCALE_LANG" ] || [ -z "${ARCH_OS_LOCALE_GEN_LIST[*]}" ]; then
         local user_input items options
         # Fetch available options
-        #items=($(/usr/bin/ls /usr/share/i18n/locales | grep -v "@"))
         mapfile -t items < <(command /usr/bin/ls /usr/share/i18n/locales | grep -v "@")
         # Add only available locales (!!! intense command !!!)
         options=() && for item in "${items[@]}"; do
