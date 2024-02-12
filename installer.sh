@@ -25,6 +25,13 @@ ERROR_MSG="./installer.err"
 PROCESS_LOG="./process.log"
 PROCESS_RETURN="./process.rt"
 
+# COLORS
+COLOR_WHITE=251
+COLOR_GREEN=42
+COLOR_PURPLE=212
+COLOR_YELLOW=221
+COLOR_RED=9
+
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # MAIN
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,17 +52,22 @@ main() {
     trap 'trap_exit' EXIT
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
 
-    # Skip edit
-    local skip_edit="false"
+    # Load existing config or remove
+    if [ -f "$SCRIPT_CONF" ] && print_header && ! gum_confirm "Continue Installation?"; then
+        gum_confirm "Remove existing properties?" || trap_gum_exit # If not want remove config, exit script
+        rm -f "$SCRIPT_CONF"
+    fi
 
-    while (true); do # Loop properties step to update screen if user edit properties
+    # Print properties step
+    local first_run="true" # Set first run (skip edit on refresh)
+    while (true); do       # Loop properties step to update screen if user edit properties
+
+        # Print Welcome
+        print_header && print_title "Welcome to Arch OS Installation"
 
         # Prepare properties
         properties_source   # Load properties file (if exists) and auto export variables
         properties_generate # Generate properties file (needed on first start of installer)
-
-        # Print Welcome
-        print_header && print_title "Welcome to Arch OS Installation"
 
         # Selectors
         until select_username; do :; done
@@ -69,7 +81,7 @@ main() {
         until select_variant; do :; done
 
         # Edit properties?
-        if [ "$skip_edit" != "true" ] && gum_confirm "Edit Properties?"; then
+        if [ "$first_run" = "true" ] && gum_confirm "Edit Properties?"; then
             log_info "Edit properties..."
             local gum_header="Exit with CTRL + C and save with CTRL + D or ESC"
             if gum_write --height=10 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONF")" >"${SCRIPT_CONF}.new"; then
@@ -77,7 +89,7 @@ main() {
             fi
             rm -f "${SCRIPT_CONF}.new" # Remove tmp properties
             gum_confirm "Change Password?" && until select_password --force; do :; done
-            skip_edit="true" && continue # Restart properties step to refresh log above if changed
+            first_run="false" && continue # Restart properties step to refresh log above if changed
         fi
 
         print_info "Properties successfully initialized"
@@ -221,15 +233,15 @@ process_return() {
 
 print_header() {
     local header_logo='
-  █████  ██████   ██████ ██   ██      ██████  ███████ 
- ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
- ███████ ██████  ██      ███████     ██    ██ ███████ 
- ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
- ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
- ' && header_logo=$(gum_purple --bold "$header_logo")
+ █████  ██████   ██████ ██   ██      ██████  ███████ 
+██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
+███████ ██████  ██      ███████     ██    ██ ███████ 
+██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
+██   ██ ██   ██  ██████ ██   ██      ██████  ███████
+    ' && header_logo=$(gum_purple --bold "$header_logo")
     local header_title="Arch OS Installer ${VERSION}" && header_title=$(gum_white --bold "$header_title")
-    local header_container && header_container=$(gum join --vertical --align center "$header_logo" "${header_title}")
-    clear && gum_style --align center --border none --border-foreground 247 --margin 0 --padding "0 1" "$header_container"
+    local header_container && header_container=$(gum join --vertical --align center "$header_logo" "$header_title")
+    clear && gum_style --align center --border none --border-foreground "$COLOR_WHITE" --margin 0 --padding "0 1" "$header_container"
 }
 
 # Log
@@ -240,12 +252,11 @@ log_fail() { write_log "FAIL | ${*}"; }
 log_proc() { write_log "PROC | ${*}"; }
 
 # Colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
-gum_white() { gum_style --foreground 255 "${@}"; }
-gum_purple() { gum_style --foreground 212 "${@}"; }
-gum_green() { gum_style --foreground 35 "${@}"; }
-gum_yellow() { gum_style --foreground 220 "${@}"; }
-gum_red() { gum_style --foreground 160 "${@}"; }
-#gum_blue() { gum_style --foreground 32 "${@}"; }
+gum_white() { gum_style --foreground "$COLOR_WHITE" "${@}"; }
+gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
+gum_purple() { gum_style --foreground "$COLOR_PURPLE" "${@}"; }
+gum_yellow() { gum_style --foreground "$COLOR_YELLOW" "${@}"; }
+gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
 
 # Print
 print_title() { gum_purple --margin "1 1" --bold "${*}"; }
@@ -256,13 +267,12 @@ print_add() { log_info "$*" && gum_green --bold " + ${*}"; }
 
 # Gum
 gum_style() { gum style "${@}"; } # Set default width
-gum_confirm() { gum confirm --prompt.foreground 212 "${@}"; }
-gum_input() { gum input --placeholder "..." --prompt " + " --prompt.foreground 212 --header.foreground 212 "${@}"; }
-gum_write() { gum write --prompt " • " --prompt.foreground 212 --header.foreground 212 --show-cursor-line --char-limit 0 "${@}"; }
-gum_choose() { gum choose --cursor " > " --height 8 --header.foreground 212 --cursor.foreground 212 "${@}"; }
-gum_filter() { gum filter --prompt " > " --indicator " • " --placeholder "Type to filter ..." --height 8 --header.foreground 212 "${@}"; }
-gum_spin() { gum spin --spinner line --title.foreground 212 --spinner.foreground 212 "${@}"; }
-
+gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
+gum_input() { gum input --placeholder "..." --prompt " + " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
+gum_write() { gum write --prompt " • " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
+gum_choose() { gum choose --cursor " > " --height 8 --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
+gum_filter() { gum filter --prompt " > " --indicator " • " --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
+gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
 # shellcheck disable=SC2317
 gum_pager() { gum pager "${@}"; } # Only used in exit trap
 
@@ -416,7 +426,7 @@ select_keyboard() {
 select_disk() {
     if [ -z "$ARCH_OS_DISK" ] || [ -z "$ARCH_OS_BOOT_PARTITION" ] || [ -z "$ARCH_OS_ROOT_PARTITION" ]; then
         local user_input items options
-        items=$(lsblk -I 8,259,254 -d -o KNAME -n) || exit 1
+        mapfile -t items < <(lsblk -I 8,259,254 -d -o KNAME -n)
         # size: $(lsblk -d -n -o SIZE "/dev/${item}")
         options=() && for item in "${items[@]}"; do options+=("/dev/${item}"); done
         user_input=$(gum_choose --header " + Choose Disk" "${options[@]}") || trap_gum_exit_confirm
@@ -454,20 +464,13 @@ select_bootsplash() {
 
 select_variant() {
     if [ -z "$ARCH_OS_VARIANT" ] || [ -z "$ARCH_OS_GRAPHICS_DRIVER" ]; then
-        local user_input options && options=()
-        options+=("desktop")
-        options+=("base")
-        options+=("core")
+        local user_input options
+        options=("desktop" "base" "core")
         user_input=$(gum_choose --header " + Choose Arch OS Variant" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
         ARCH_OS_VARIANT="$user_input"    # Set property
         if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
-            local user_input options && options=()
-            options+=("mesa")
-            options+=("intel_i915")
-            options+=("nvidia")
-            options+=("amd")
-            options+=("ati")
+            options=("mesa" "intel_i915" "nvidia" "amd" "ati")
             user_input=$(gum_choose --header " + Choose Graphics Driver" "${options[@]}") || trap_gum_exit_confirm
             [ -z "$user_input" ] && return 1      # Check if new value is null
             ARCH_OS_GRAPHICS_DRIVER="$user_input" # Set properties
@@ -475,7 +478,7 @@ select_variant() {
         properties_generate # Generate properties file
     fi
     print_add "Variant is set to ${ARCH_OS_VARIANT}"
-    print_add "Graphics Driver is set to ${ARCH_OS_GRAPHICS_DRIVER}"
+    [ "$ARCH_OS_VARIANT" = "desktop" ] && print_add "Graphics Driver is set to ${ARCH_OS_GRAPHICS_DRIVER}"
     return 0
 }
 
