@@ -107,7 +107,7 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 
 - Load prefered keyboard layout (optional): `loadkeys de`
 - Connect to WLAN (optional): `iwctl station wlan0 connect "SSID"`
-- **Run Arch OS Setup:**
+- **Run Arch OS Installer:**
 
 ```
 # Stable

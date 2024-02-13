@@ -45,7 +45,7 @@ main() {
 
     # Init
     rm -f "$SCRIPT_LOG"     # Clear logfile
-    rm -f "$PROCESS_RETURN" # Clear process lock
+    rm -f "$PROCESS_RETURN" # Clear process result file
     gum_init                # Check gum binary or download
 
     # Traps (error & exit)
@@ -166,18 +166,25 @@ trap_error() {
 # shellcheck disable=SC2317
 trap_exit() {
     local result_code="$?"
-    # Check if failed
+
+    # Read error msg from file (written in error trap)
+    local error && [ -f "$ERROR_MSG" ] && error="$(<"$ERROR_MSG")" && rm -f "$ERROR_MSG"
+
+    # Remove files
+    rm -f "$PROCESS_RETURN" # Remove process return info
+    rm -f "$PROCESS_LOG"    # Remove prcoess log
+
+    # When ctrl + c pressed exit without other stuff below
+    [ "$result_code" = "130" ] && print_warn "Exit..." && exit 1
+
+    # Check if failed and print error
     if [ "$result_code" -gt "0" ]; then
-        [ "$result_code" = "130" ] && print_warn "Exit..." && exit 1             # When ctrl + c pressed exit without other stuff
-        [ -f "$ERROR_MSG" ] && local error && error="$(<"$ERROR_MSG")"           # Read error msg from file (written in error trap)
         [ -n "$error" ] && print_fail "$error"                                   # Print error message (if exists)
         [ -z "$error" ] && print_fail "Arch OS Installation failed"              # Otherwise pint default error message
         gum_confirm "Show Logs?" && gum_pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
     fi
-    rm -f "$ERROR_MSG"      # Remove error message
-    rm -f "$PROCESS_RETURN" # Remove process return info
-    rm -f "$PROCESS_LOG"    # Remove prcoess log
-    exit "$result_code"     # Exit installer.sh
+
+    exit "$result_code" # Exit installer.sh
 }
 
 trap_gum_exit_confirm() {
@@ -192,7 +199,7 @@ trap_gum_exit() { exit 130; }
 
 process_init() {
     [ -f "$PROCESS_RETURN" ] && print_fail "${PROCESS_RETURN} already exists" && exit 1
-    echo 1 >"$PROCESS_RETURN" # Init lock with 1
+    echo 1 >"$PROCESS_RETURN" # Init result with 1
     log_proc "${1}..."        # Log starting
 }
 
@@ -202,12 +209,12 @@ process_run() {
     local user_canceled="false" # Will set to true if user press ctrl + c
 
     # Show gum spinner until pid is not exists anymore and set user_canceled to true on failure
-    gum_spin --title " ${process_name}..." -- bash -c "while ps -p $pid &> /dev/null; do sleep 1; done" || user_canceled="true"
+    gum_spin --title " ${process_name}..." -- bash -c "while kill -0 $pid &> /dev/null; do sleep 1; done" || user_canceled="true"
     cat "$PROCESS_LOG" >>"$SCRIPT_LOG" # Write process log to logfile
 
     # When user press ctrl + c while process is running
     if [ "$user_canceled" = "true" ]; then
-        ps -p "$pid" &>/dev/null && kill "$pid"                                  # Kill process if running
+        kill -0 "$pid" &>/dev/null && pkill -P "$pid"                            # Kill process if running
         print_fail "Process with PID ${pid} was killed by user" && trap_gum_exit # Exit with 130
     fi
 
@@ -216,7 +223,7 @@ process_run() {
     [ "$(<"$PROCESS_RETURN")" != "0" ] && print_fail "${process_name} failed" && exit 1 # If process failed (result code 0 was not write in the end)
 
     # Finish
-    rm -f "$PROCESS_RETURN"                          # Remove process lock file
+    rm -f "$PROCESS_RETURN"                          # Remove process result file
     print_add "${process_name} sucessfully finished" # Print process success
 }
 
@@ -384,12 +391,10 @@ select_timezone() {
 select_language() {
     if [ -z "$ARCH_OS_LOCALE_LANG" ] || [ -z "${ARCH_OS_LOCALE_GEN_LIST[*]}" ]; then
         local user_input items options
-        # Fetch available options
-        mapfile -t items < <(command /usr/bin/ls /usr/share/i18n/locales | grep -v "@")
+        # Fetch available options (list all from /usr/share/i18n/locales and check if entry exists in /etc/locale.gen)
+        mapfile -t items < <(basename -a /usr/share/i18n/locales/* | grep -v "@") # Create array without @ files
         # Add only available locales (!!! intense command !!!)
-        options=() && for item in "${items[@]}"; do
-            grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<<"$item") " /etc/locale.gen && options+=("$item")
-        done
+        options=() && for item in "${items[@]}"; do grep -q -e "$item" -e "^#$item" /etc/locale.gen && options+=("$item"); done
         # Select locale
         user_input=$(gum_filter --header " + Choose Language" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1  # Check if new value is null
