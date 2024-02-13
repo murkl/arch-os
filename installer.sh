@@ -124,7 +124,7 @@ main() {
 
     # Finish & reboot
     print_info "Successfully installed after ${duration_min} minutes and ${duration_sec} seconds"
-    gum_confirm "Reboot to Arch OS now?" && print_warn "Rebooting..." && echo "reboot"
+    gum_confirm "Reboot to Arch OS now?" && print_warn "Rebooting..." && [ "$MODE" != "debug" ] && reboot
     exit 0
 }
 
