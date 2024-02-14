@@ -107,13 +107,14 @@ main() {
     # Executors
     exec_init
     exec_disk
-    exec_bootloader
+    exec_arch_os_core
+    exec_arch_os_base
+    exec_arch_os_desktop
+    exec_graphics_driver
     exec_bootsplash
     exec_aur_helper
     exec_multilib
-    exec_desktop
     exec_shell_enhancement
-    exec_graphics_driver
     exec_vm_support
     exec_cleanup
 
@@ -490,6 +491,30 @@ select_variant() {
 # EXECUTORS (SUB PROCESSES)
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+# Helper
+pacman_install_chroot() {
+    local packages=("$@")
+    local pacman_failed="true"
+
+    # Retry installing packages 5 times (in case of connection issues)
+    for ((i = 1; i < 6; i++)); do
+        # Print updated whiptail info
+        [ "$i" -gt 1 ] && log_warn "Pacman installation ${i}. retry..."
+        # Try installing packages
+        if ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
+            sleep 10 && continue # Wait 10 seconds & try again
+        else
+            pacman_failed="false" && break # Success: break loop
+        fi
+    done
+
+    # Result
+    [ "$pacman_failed" = "true" ] && return 1  # Failed after 5 retries
+    [ "$pacman_failed" = "false" ] && return 0 # Success
+}
+
+# ----------------------------------------------------------------------------------------------------
+
 exec_init() {
     local process_name="Initialize Installation"
     process_init "$process_name"
@@ -523,7 +548,34 @@ exec_disk() {
     local process_name="Prepare Disk"
     process_init "$process_name"
     (
-        sleep 1
+        [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+
+        # Wipe and create partitions
+        wipefs -af "$ARCH_OS_DISK"                            # Wipe all partitions
+        sgdisk -o "$ARCH_OS_DISK"                             # Create new GPT partition table
+        sgdisk -n 1:0:+1G -t 1:ef00 -c 1:boot "$ARCH_OS_DISK" # Create partition /boot efi partition: 1 GiB
+        sgdisk -n 2:0:0 -t 2:8300 -c 2:root "$ARCH_OS_DISK"   # Create partition / partition: Rest of space
+        partprobe "$ARCH_OS_DISK"                             # Reload partition table
+
+        # Disk encryption
+        if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
+            log_info "Enable Disk Encryption for ${ARCH_OS_ROOT_PARTITION}"
+            echo -n "$ARCH_OS_PASSWORD" | cryptsetup luksFormat "$ARCH_OS_ROOT_PARTITION"
+            echo -n "$ARCH_OS_PASSWORD" | cryptsetup open "$ARCH_OS_ROOT_PARTITION" cryptroot
+        fi
+
+        # Format disk
+        mkfs.fat -F 32 -n BOOT "$ARCH_OS_BOOT_PARTITION"
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.ext4 -F -L ROOT /dev/mapper/cryptroot
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.ext4 -F -L ROOT "$ARCH_OS_ROOT_PARTITION"
+
+        # Mount disk to /mnt
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mount -v /dev/mapper/cryptroot /mnt
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount -v "$ARCH_OS_ROOT_PARTITION" /mnt
+        mkdir -p /mnt/boot
+        mount -v "$ARCH_OS_BOOT_PARTITION" /mnt/boot
+
+        # Return
         process_return 0
     ) &>"$PROCESS_LOG" &
     process_run $! "$process_name"
@@ -531,11 +583,126 @@ exec_disk() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_bootloader() {
-    local process_name="Install Bootloader"
+exec_arch_os_core() {
+    local process_name="Install Arch OS Core System"
     process_init "$process_name"
     (
-        sleep 1
+        [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+
+        local packages=("$ARCH_OS_KERNEL" base base-devel linux-firmware zram-generator networkmanager)
+
+        # Add microcode package
+        [ -n "$ARCH_OS_MICROCODE" ] && [ "$ARCH_OS_MICROCODE" != "none" ] && packages+=("$ARCH_OS_MICROCODE")
+
+        # Install core packages and initialize an empty pacman keyring in the target
+        pacstrap -K /mnt "${packages[@]}"
+
+        # Generate /etc/fstab
+        genfstab -U /mnt >>/mnt/etc/fstab
+
+        # Set timezone & system clock
+        arch-chroot /mnt ln -sf "/usr/share/zoneinfo/${ARCH_OS_TIMEZONE}" /etc/localtime
+        arch-chroot /mnt hwclock --systohc # Set hardware clock from system clock
+
+        # Create swap (zram-generator with zstd compression)
+        {
+            # https://wiki.archlinux.org/title/Zram#Using_zram-generator
+            echo '[zram0]'
+            echo 'zram-size = ram / 2'
+            echo 'compression-algorithm = zstd'
+            echo 'swap-priority = 100'
+            echo 'fs-type = swap'
+        } >/mnt/etc/systemd/zram-generator.conf
+
+        # Optimize swap on zram (https://wiki.archlinux.org/title/Zram#Optimizing_swap_on_zram)
+        {
+            echo 'vm.swappiness = 180'
+            echo 'vm.watermark_boost_factor = 0'
+            echo 'vm.watermark_scale_factor = 125'
+            echo 'vm.page-cluster = 0'
+        } >/mnt/etc/sysctl.d/99-vm-zram-parameters.conf
+
+        # Set console keymap in /etc/vconsole.conf
+        echo "KEYMAP=$ARCH_OS_VCONSOLE_KEYMAP" >/mnt/etc/vconsole.conf
+        [ -n "$ARCH_OS_VCONSOLE_FONT" ] && echo "FONT=$ARCH_OS_VCONSOLE_FONT" >>/mnt/etc/vconsole.conf
+
+        # Set & Generate Locale
+        echo "LANG=${ARCH_OS_LOCALE_LANG}.UTF-8" >/mnt/etc/locale.conf
+        for ((i = 0; i < ${#ARCH_OS_LOCALE_GEN_LIST[@]}; i++)); do sed -i "s/^#${ARCH_OS_LOCALE_GEN_LIST[$i]}/${ARCH_OS_LOCALE_GEN_LIST[$i]}/g" "/mnt/etc/locale.gen"; done
+        arch-chroot /mnt locale-gen
+
+        # Set hostname & hosts
+        echo "$ARCH_OS_HOSTNAME" >/mnt/etc/hostname
+        {
+            echo '127.0.0.1    localhost'
+            echo '::1          localhost'
+        } >/mnt/etc/hosts
+
+        # Create initial ramdisk from /etc/mkinitcpio.conf
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect modconf block sd-encrypt filesystems sd-vconsole fsck)/" /mnt/etc/mkinitcpio.conf
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect modconf block filesystems sd-vconsole fsck)/" /mnt/etc/mkinitcpio.conf
+        arch-chroot /mnt mkinitcpio -P
+
+        # Install Bootloader to /boot (systemdboot)
+        arch-chroot /mnt bootctl --esp-path=/boot install # Install systemdboot to /boot
+
+        # Kernel args
+        # Zswap should be disabled when using zram (https://github.com/archlinux/archinstall/issues/881)
+        kernel_args_default="rw init=/usr/lib/systemd/systemd zswap.enabled=0 modprobe.blacklist=iTCO_wdt nowatchdog quiet splash vt.global_cursor_default=0"
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot ${kernel_args_default}"
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}") ${kernel_args_default}"
+
+        # Create Bootloader config
+        {
+            echo 'default arch.conf'
+            echo 'console-mode auto'
+            echo 'timeout 0'
+            echo 'editor yes'
+        } >/mnt/boot/loader/loader.conf
+
+        # Create default boot entry
+        {
+            echo 'title   Arch OS'
+            echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
+            [ -n "$ARCH_OS_MICROCODE" ] && [ "$ARCH_OS_MICROCODE" != "none" ] && echo "initrd  /${ARCH_OS_MICROCODE}.img"
+            echo "initrd  /initramfs-${ARCH_OS_KERNEL}.img"
+            echo "options ${kernel_args}"
+        } >/mnt/boot/loader/entries/arch.conf
+
+        # Create fallback boot entry
+        {
+            echo 'title   Arch OS (Fallback)'
+            echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
+            [ -n "$ARCH_OS_MICROCODE" ] && [ "$ARCH_OS_MICROCODE" != "none" ] && echo "initrd  /${ARCH_OS_MICROCODE}.img"
+            echo "initrd  /initramfs-${ARCH_OS_KERNEL}-fallback.img"
+            echo "options ${kernel_args}"
+        } >/mnt/boot/loader/entries/arch-fallback.conf
+
+        # Create new user
+        arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$ARCH_OS_USERNAME"
+
+        # Allow users in group wheel to use sudo
+        sed -i 's^# %wheel ALL=(ALL:ALL) ALL^%wheel ALL=(ALL:ALL) ALL^g' /mnt/etc/sudoers
+
+        # Add password feedback
+        echo -e "\n## Enable sudo password feedback\nDefaults pwfeedback" >>/mnt/etc/sudoers
+
+        # Change passwords
+        printf "%s\n%s" "${ARCH_OS_PASSWORD}" "${ARCH_OS_PASSWORD}" | arch-chroot /mnt passwd
+        printf "%s\n%s" "${ARCH_OS_PASSWORD}" "${ARCH_OS_PASSWORD}" | arch-chroot /mnt passwd "$ARCH_OS_USERNAME"
+
+        # Add sudo needs no password rights (only for installation)
+        sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
+
+        # Enable services
+        arch-chroot /mnt systemctl enable NetworkManager                   # Network Manager
+        arch-chroot /mnt systemctl enable fstrim.timer                     # SSD support
+        arch-chroot /mnt systemctl enable systemd-zram-setup@zram0.service # Swap (zram-generator)
+        arch-chroot /mnt systemctl enable systemd-oomd.service             # Out of memory killer (swap is required)
+        arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootloader update
+        arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
+
+        # Return
         process_return 0
     ) &>"$PROCESS_LOG" &
     process_run $! "$process_name"
@@ -543,11 +710,56 @@ exec_bootloader() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_bootsplash() {
-    local process_name="Install Bootsplash"
+exec_arch_os_base() {
+    local process_name="Install Arch OS Base System"
     process_init "$process_name"
     (
-        sleep 1
+        [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+
+        # Install Base packages
+        pacman_install_chroot pacman-contrib reflector pkgfile git nano
+
+        # Enable services
+        arch-chroot /mnt systemctl enable reflector.service    # Rank mirrors after boot (reflector)
+        arch-chroot /mnt systemctl enable paccache.timer       # Discard cached/unused packages weekly (pacman-contrib)
+        arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer (pkgfile)
+
+        # Configure parrallel downloads, colors & multilib
+        sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
+        sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
+        if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
+            sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
+            arch-chroot /mnt pacman -Syy --noconfirm
+        fi
+
+        # Configure reflector service
+        {
+            echo "# Reflector config for the systemd service"
+            echo "--save /etc/pacman.d/mirrorlist"
+            [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
+            echo "--completion-percent 95"
+            echo "--protocol https"
+            echo "--latest 5"
+            echo "--sort rate"
+        } >/mnt/etc/xdg/reflector/reflector.conf
+
+        # Set nano environment
+        {
+            echo 'EDITOR=nano'
+            echo 'VISUAL=nano'
+        } >/mnt/etc/environment
+
+        # Set Nano colors
+        sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
+        sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
+        sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
+
+        # Reduce shutdown timeout
+        sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
+
+        # Set max VMAs (need for some apps/games)
+        echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
+
         process_return 0
     ) &>"$PROCESS_LOG" &
     process_run $! "$process_name"
@@ -555,48 +767,104 @@ exec_bootsplash() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_aur_helper() {
-    local process_name="Install AUR Helper"
+exec_arch_os_desktop() {
+    local process_name="Install Arch OS Desktop System"
     process_init "$process_name"
     (
-        sleep 1
-        process_return 0
-    ) &>"$PROCESS_LOG" &
+        [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
-    process_run $! "$process_name"
-}
+        # GNOME base packages
+        local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra gnome-firmware power-profiles-daemon fwupd rygel cups)
 
-# ----------------------------------------------------------------------------------------------------
+        # GNOME wayland screensharing, flatpak & pipewire support
+        packages+=(xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome)
 
-exec_multilib() {
-    local process_name="Enable Multilib"
-    process_init "$process_name"
-    (
-        sleep 1
-        process_return 0
-    ) &>"$PROCESS_LOG" &
-    process_run $! "$process_name"
-}
+        # GNOME legacy Indicator support (need for systray) (51 packages)
+        packages+=(libappindicator-gtk2 libappindicator-gtk3)
+        [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-libappindicator-gtk2 lib32-libappindicator-gtk3)
 
-# ----------------------------------------------------------------------------------------------------
+        # Audio (Pipewire replacements + session manager)
+        packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
+        [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
 
-exec_desktop() {
-    local process_name="Install Desktop"
-    process_init "$process_name"
-    (
-        sleep 1
-        process_return 0
-    ) &>"$PROCESS_LOG" &
-    process_run $! "$process_name"
-}
+        # Networking & Access
+        packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google)
 
-# ----------------------------------------------------------------------------------------------------
+        # Utils (https://wiki.archlinux.org/title/File_systems)
+        packages+=(nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
 
-exec_shell_enhancement() {
-    local process_name="Install Shell Enhancement"
-    process_init "$process_name"
-    (
-        sleep 1
+        # Codecs
+        packages+=(gstreamer gst-libav gst-plugin-pipewire gst-plugins-ugly libdvdcss libheif)
+        [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer)
+
+        # Optimization
+        packages+=(gamemode)
+        [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
+
+        # Fonts
+        packages+=(noto-fonts noto-fonts-emoji ttf-firacode-nerd ttf-liberation ttf-dejavu)
+
+        # Install packages
+        pacman_install_chroot "${packages[@]}"
+
+        # Add user to gamemode group
+        arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
+
+        # Enable GNOME auto login
+        grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
+
+        # Configure Git in ~/.config/git/config
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- mkdir -p "/home/${ARCH_OS_USERNAME}/.config/git"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- touch "/home/${ARCH_OS_USERNAME}/.config/git/config"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git config --global credential.helper /usr/lib/git-core/git-credential-libsecret
+
+        # Samba
+        mkdir -p "/mnt/etc/samba/"
+        {
+            echo "[global]"
+            echo "   workgroup = WORKGROUP"
+            echo "   log file = /var/log/samba/%m"
+        } >/mnt/etc/samba/smb.conf
+
+        # Set X11 keyboard layout in /etc/X11/xorg.conf.d/00-keyboard.conf
+        {
+            echo 'Section "InputClass"'
+            echo '    Identifier "system-keyboard"'
+            echo '    MatchIsKeyboard "yes"'
+            echo '    Option "XkbLayout" "'"${ARCH_OS_X11_KEYBOARD_LAYOUT}"'"'
+            echo '    Option "XkbModel" "'"${ARCH_OS_X11_KEYBOARD_MODEL}"'"'
+            echo '    Option "XkbVariant" "'"${ARCH_OS_X11_KEYBOARD_VARIANT}"'"'
+            echo 'EndSection'
+        } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
+
+        # Enable Arch OS Desktop services
+        arch-chroot /mnt systemctl enable gdm.service                                                              # GNOME
+        arch-chroot /mnt systemctl enable bluetooth.service                                                        # Bluetooth
+        arch-chroot /mnt systemctl enable avahi-daemon                                                             # Network browsing service
+        arch-chroot /mnt systemctl enable cups.socket                                                              # Printer
+        arch-chroot /mnt systemctl enable smb.service                                                              # Samba
+        arch-chroot /mnt systemctl enable nmb.service                                                              # Samba
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
+
+        # Hide desktop Aaplications icons
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- mkdir -p "/home/$ARCH_OS_USERNAME/.local/share/applications"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/avahi-discover.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/bssh.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/bvnc.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/qv4l2.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/qvidcap.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/lstopo.desktop"
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/cups.desktop"
+
+        # Hide Shell Enhancement apps
+        if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/fish.desktop"
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/btop.desktop"
+        fi
+
+        # Return
         process_return 0
     ) &>"$PROCESS_LOG" &
     process_run $! "$process_name"
@@ -606,24 +874,316 @@ exec_shell_enhancement() {
 
 exec_graphics_driver() {
     local process_name="Install Graphics Driver"
-    process_init "$process_name"
-    (
-        sleep 1
-        process_return 0
-    ) &>"$PROCESS_LOG" &
-    process_run $! "$process_name"
+    if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
+        process_init "$process_name"
+        (
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            case "${ARCH_OS_GRAPHICS_DRIVER}" in
+            "mesa") # https://wiki.archlinux.org/title/OpenGL#Installation
+                packages=(mesa mesa-utils vkd3d)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-mesa lib32-mesa-utils lib32-vkd3d)
+                pacman_install_chroot "${packages[@]}"
+                ;;
+            "intel_i915") # https://wiki.archlinux.org/title/Intel_graphics#Installation
+                local packages=(vulkan-intel vkd3d libva-intel-driver)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-vulkan-intel lib32-vkd3d lib32-libva-intel-driver)
+                pacman_install_chroot "${packages[@]}"
+                sed -i "s/^MODULES=(.*)/MODULES=(i915)/g" /mnt/etc/mkinitcpio.conf
+                arch-chroot /mnt mkinitcpio -P
+                ;;
+            "nvidia") # https://wiki.archlinux.org/title/NVIDIA#Installation
+                local packages=("${ARCH_OS_KERNEL}-headers" nvidia-dkms nvidia-settings nvidia-utils opencl-nvidia vkd3d)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-nvidia-utils lib32-opencl-nvidia lib32-vkd3d)
+                pacman_install_chroot "${packages[@]}"
+                # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
+                # Alternative (slow boot, bios logo twice, but correct plymouth resolution):
+                #sed -i "s/nowatchdog quiet/nowatchdog nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
+                mkdir -p /mnt/etc/modprobe.d/ && echo -e 'options nvidia_drm modeset=1 fbdev=1' >/mnt/etc/modprobe.d/nvidia.conf
+                sed -i "s/^MODULES=(.*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
+                # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
+                mkdir -p /mnt/etc/pacman.d/hooks/
+                {
+                    echo "[Trigger]"
+                    echo "Operation=Install"
+                    echo "Operation=Upgrade"
+                    echo "Operation=Remove"
+                    echo "Type=Package"
+                    echo "Target=nvidia"
+                    echo "Target=${ARCH_OS_KERNEL}"
+                    echo "# Change the linux part above if a different kernel is used"
+                    echo ""
+                    echo "[Action]"
+                    echo "Description=Update NVIDIA module in initcpio"
+                    echo "Depends=mkinitcpio"
+                    echo "When=PostTransaction"
+                    echo "NeedsTargets"
+                    echo "Exec=/bin/sh -c 'while read -r trg; do case \$trg in linux*) exit 0; esac; done; /usr/bin/mkinitcpio -P'"
+                } >/mnt/etc/pacman.d/hooks/nvidia.hook
+                # Enable Wayland Support (https://wiki.archlinux.org/title/GDM#Wayland_and_the_proprietary_NVIDIA_driver)
+                [ ! -f /mnt/etc/udev/rules.d/61-gdm.rules ] && mkdir -p /mnt/etc/udev/rules.d/ && ln -s /dev/null /mnt/etc/udev/rules.d/61-gdm.rules
+                # Rebuild initial ram disk
+                arch-chroot /mnt mkinitcpio -P
+                ;;
+            "amd") # https://wiki.archlinux.org/title/AMDGPU#Installation
+                local packages=(xf86-video-amdgpu libva-mesa-driver vulkan-radeon mesa-vdpau vkd3d)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-libva-mesa-driver lib32-vulkan-radeon lib32-mesa-vdpau lib32-vkd3d)
+                pacman_install_chroot "${packages[@]}"
+                # Must be discussed: https://wiki.archlinux.org/title/AMDGPU#Disable_loading_radeon_completely_at_boot
+                sed -i "s/^MODULES=(.*)/MODULES=(amdgpu radeon)/g" /mnt/etc/mkinitcpio.conf
+                arch-chroot /mnt mkinitcpio -P
+                ;;
+            "ati") # https://wiki.archlinux.org/title/ATI#Installation
+                local packages=(xf86-video-ati libva-mesa-driver mesa-vdpau vkd3d)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-libva-mesa-driver lib32-mesa-vdpau lib32-vkd3d)
+                pacman_install_chroot "${packages[@]}"
+                sed -i "s/^MODULES=(.*)/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
+                arch-chroot /mnt mkinitcpio -P
+                ;;
+            esac
+            process_return 0
+        ) &>"$PROCESS_LOG" &
+        process_run $! "$process_name"
+    fi
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+exec_bootsplash() {
+    local process_name="Install Bootsplash"
+    if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
+
+        process_init "$process_name"
+        (
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            pacman_install_chroot plymouth git
+            # Configure mkinitcpio
+            sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf
+            # Install Arch OS plymouth theme
+            repo_url="https://aur.archlinux.org/plymouth-theme-arch-os.git"
+            tmp_name=$(mktemp -u "/home/${ARCH_OS_USERNAME}/plymouth-theme-arch-os.XXXXXXXXXX")
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$tmp_name"
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $tmp_name && makepkg -si --noconfirm"
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$tmp_name"
+            # Set Theme & rebuild initram disk
+            arch-chroot /mnt plymouth-set-default-theme -R arch-os
+            process_return 0
+        ) &>"$PROCESS_LOG" &
+        process_run $! "$process_name"
+    fi
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+exec_aur_helper() {
+    local process_name="Install AUR Helper"
+    if [ -n "$ARCH_OS_AUR_HELPER" ] && [ "$ARCH_OS_AUR_HELPER" != "none" ]; then
+        process_init "$process_name"
+        (
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            pacman_install_chroot git
+            # Install AUR Helper as user
+            repo_url="https://aur.archlinux.org/${ARCH_OS_AUR_HELPER}.git"
+            tmp_name=$(mktemp -u "/home/${ARCH_OS_USERNAME}/${ARCH_OS_AUR_HELPER}.XXXXXXXXXX")
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$tmp_name"
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $tmp_name && makepkg -si --noconfirm"
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$tmp_name"
+            # Paru config
+            if [ "$ARCH_OS_AUR_HELPER" = "paru" ] || [ "$ARCH_OS_AUR_HELPER" = "paru-bin" ] || [ "$ARCH_OS_AUR_HELPER" = "paru-git" ]; then
+                sed -i 's/^#BottomUp/BottomUp/g' /mnt/etc/paru.conf
+                sed -i 's/^#SudoLoop/SudoLoop/g' /mnt/etc/paru.conf
+            fi
+            process_return 0
+        ) &>"$PROCESS_LOG" &
+        process_run $! "$process_name"
+    fi
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+exec_multilib() {
+    local process_name="Enable Multilib"
+    if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
+        process_init "$process_name"
+        (
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
+            arch-chroot /mnt pacman -Syy --noconfirm
+            process_return 0
+        ) &>"$PROCESS_LOG" &
+        process_run $! "$process_name"
+    fi
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+exec_shell_enhancement() {
+    local process_name="Install Shell Enhancement"
+    if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
+        process_init "$process_name"
+        (
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            # Install packages
+            pacman_install_chroot fish starship eza bat neofetch mc btop man-db
+            # Create config dirs for root & user
+            mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
+            mkdir -p "/mnt/root/.config/neofetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch"
+
+            # shellcheck disable=SC2016
+            { # Create fish config for root & user
+                echo 'if status is-interactive'
+                echo '    # Commands to run in interactive sessions can go here'
+                echo 'end'
+                echo ''
+                echo '# https://wiki.archlinux.de/title/Fish#Troubleshooting'
+                echo 'if status --is-login'
+                echo '    set PATH $PATH /usr/bin /sbin'
+                echo 'end'
+                echo ''
+                echo '# Disable welcome message'
+                echo 'set fish_greeting'
+                echo ''
+                echo '# Colorize man pages (bat)'
+                echo -n 'export MANPAGER="sh -c ' && echo -n "'col -bx | bat -l man -p'" && echo '"'
+                echo 'export MANROFFOPT="-c"'
+                echo ''
+                echo '# Source user aliases'
+                echo 'source "$HOME/.config/fish/aliases.fish"'
+                echo ''
+                echo '# Source starship promt'
+                echo 'starship init fish | source'
+            } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
+
+            { # Create fish aliases for root & user
+                echo 'alias ls="eza --color=always --group-directories-first"'
+                echo 'alias diff="diff --color=auto"'
+                echo 'alias grep="grep --color=auto"'
+                echo 'alias ip="ip -color=auto"'
+                echo 'alias lt="ls -Tal"'
+                echo 'alias open="xdg-open"'
+                echo 'alias fetch="neofetch"'
+                echo 'alias logs="systemctl --failed; echo; journalctl -p 3 -b"'
+                echo 'alias q="exit"'
+            } | tee "/mnt/root/.config/fish/aliases.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/aliases.fish" >/dev/null
+
+            { # Create starship config for root & user
+                echo "# Get editor completions based on the config schema"
+                echo "\"\$schema\" = 'https://starship.rs/config-schema.json'"
+                echo ""
+                echo "# Wait 10 milliseconds for starship to check files under the current directory"
+                echo "scan_timeout = 10"
+                echo ""
+                echo "# Set command timeout"
+                echo "command_timeout = 10000"
+                echo ""
+                echo "# Inserts a blank line between shell prompts"
+                echo "add_newline = true"
+                echo ""
+                echo "# Replace the promt symbol"
+                echo "[character]"
+                echo "success_symbol = '[>](bold purple)'"
+                echo ""
+                echo "# Disable the package module, hiding it from the prompt completely"
+                echo "[package]"
+                echo "disabled = true"
+            } | tee "/mnt/root/.config/starship.toml" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
+
+            # shellcheck disable=SC2028,SC2016
+            { # Create neofetch config for root & user
+                echo '# https://github.com/dylanaraps/neofetch/wiki/Customizing-Info'
+                echo ''
+                echo 'print_progress() {'
+                echo '    prin'
+                echo '    prin "Distro\t" "Arch OS"'
+                echo '    info "Kernel\t" kernel'
+                #echo '    info "Host\t" model'
+                echo '    info "CPU\t" cpu'
+                echo '    info "GPU\t" gpu'
+                echo '    prin'
+                echo '    info "Desktop\t" de'
+                echo '    prin "Window\t" "$([ $XDG_SESSION_TYPE = "x11" ] && echo X11 || echo Wayland)"'
+                echo '    info "Manager\t" wm'
+                echo '    info "Shell\t" shell'
+                echo '    info "Terminal\t" term'
+                echo '    prin'
+                echo '    info "Disk\t" disk'
+                echo '    info "Memory\t" memory'
+                echo '    info "IP\t" local_ip'
+                echo '    info "Uptime\t" uptime'
+                echo '    info "Packages\t" packages'
+                echo '    prin'
+                echo '    prin "$(color 1) ● \n $(color 2) ● \n $(color 3) ● \n $(color 4) ● \n $(color 5) ● \n $(color 6) ● \n $(color 7) ● \n $(color 8) ●"'
+                echo '}'
+                echo ''
+                echo '# Config'
+                echo 'separator=" → "'
+                echo 'ascii_distro="auto"'
+                echo 'ascii_bold="on"'
+                echo 'ascii_colors=(5 5 5 5 5 5)'
+                echo 'bold="on"'
+                echo 'colors=(7 7 7 7 7 7)'
+                echo 'gap=8'
+                echo 'os_arch="off"'
+                echo 'shell_version="off"'
+                echo 'cpu_speed="off"'
+                echo 'cpu_brand="on"'
+                echo 'cpu_cores="off"'
+                echo 'cpu_temp="off"'
+                echo 'memory_display="info"'
+                echo 'memory_percent="on"'
+                echo 'memory_unit="gib"'
+                echo 'disk_display="info"'
+                echo 'disk_subtitle="none"'
+            } | tee "/mnt/root/.config/neofetch/config.conf" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch/config.conf" >/dev/null
+
+            # Set correct user permissions
+            arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/"
+            # Set Shell for root & user
+            arch-chroot /mnt chsh -s /usr/bin/fish
+            arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
+            process_return 0
+        ) &>"$PROCESS_LOG" &
+        process_run $! "$process_name"
+    fi
 }
 
 # ----------------------------------------------------------------------------------------------------
 
 exec_vm_support() {
     local process_name="Install VM Support"
-    process_init "$process_name"
-    (
-        sleep 1
-        process_return 0
-    ) &>"$PROCESS_LOG" &
-    process_run $! "$process_name"
+    if [ "$ARCH_OS_VM_SUPPORT_ENABLED" = "true" ]; then
+        process_init "$process_name"
+        (
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            case $(systemd-detect-virt || true) in
+            kvm)
+                log_info "KVM detected"
+                pacman_install_chroot spice spice-vdagent spice-protocol spice-gtk qemu-guest-agent
+                arch-chroot /mnt systemctl enable qemu-guest-agent
+                ;;
+            vmware)
+                log_info "VMWare Workstation/ESXi detected"
+                pacman_install_chroot open-vm-tools
+                arch-chroot /mnt systemctl enable vmtoolsd
+                arch-chroot /mnt systemctl enable vmware-vmblock-fuse
+                ;;
+            oracle)
+                log_info "VirtualBox detected"
+                pacman_install_chroot virtualbox-guest-utils
+                arch-chroot /mnt systemctl enable vboxservice
+                ;;
+            microsoft)
+                log_info "Hyper-V detected"
+                pacman_install_chroot hyperv
+                arch-chroot /mnt systemctl enable hv_fcopy_daemon
+                arch-chroot /mnt systemctl enable hv_kvp_daemon
+                arch-chroot /mnt systemctl enable hv_vss_daemon
+                ;;
+            *) log_info "No VM detected" ;; # Do nothing
+            esac
+            process_return 0 # Return
+        ) &>"$PROCESS_LOG" &
+        process_run $! "$process_name"
+    fi
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -632,8 +1192,19 @@ exec_cleanup() {
     local process_name="Cleanup Installation"
     process_init "$process_name"
     (
-        sleep 1
-        process_return 0
+        [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+        # Copy installer files to users home dir
+        cp "$SCRIPT_CONF" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
+        cp "$0" "/mnt/home/${ARCH_OS_USERNAME}/installer.sh"
+        # Remove sudo needs no password rights
+        sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
+        # Set home permission
+        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
+        # Remove orphans and force return true
+        # shellcheck disable=SC2016
+        arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true'
+
+        process_return 0 # Return
     ) &>"$PROCESS_LOG" &
     process_run $! "$process_name"
 }
