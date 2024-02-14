@@ -108,12 +108,12 @@ main() {
     exec_init
     exec_disk
     exec_arch_os_core
-    exec_arch_os_base
     exec_arch_os_desktop
     exec_graphics_driver
     exec_bootsplash
     exec_aur_helper
     exec_multilib
+    exec_pacman_extra
     exec_shell_enhancement
     exec_vm_support
     exec_cleanup
@@ -124,7 +124,7 @@ main() {
     duration_sec="$((duration % 60))"
 
     # Finish & reboot
-    print_info "Successfully installed after ${duration_min} minutes and ${duration_sec} seconds"
+    print_info "Installation successful in ${duration_min} minutes and ${duration_sec} seconds"
     gum_confirm "Reboot to Arch OS now?" && print_warn "Rebooting..." && [ "$MODE" != "debug" ] && reboot
     exit 0
 }
@@ -305,6 +305,7 @@ properties_generate() {
     [ -z "$ARCH_OS_SHELL_ENHANCED_ENABLED" ] && ARCH_OS_SHELL_ENHANCED_ENABLED="true"
     [ -z "$ARCH_OS_AUR_HELPER" ] && ARCH_OS_AUR_HELPER="paru"
     [ -z "$ARCH_OS_MULTILIB_ENABLED" ] && ARCH_OS_MULTILIB_ENABLED="true"
+    [ -z "$ARCH_OS_PACMAN_EXTRA_ENABLED" ] && ARCH_OS_PACMAN_EXTRA_ENABLED="true"
     [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
     [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
     [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ] && ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="us"
@@ -332,6 +333,7 @@ properties_generate() {
         echo "ARCH_OS_SHELL_ENHANCED_ENABLED='${ARCH_OS_SHELL_ENHANCED_ENABLED}'"
         echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}'"
         echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}'"
+        echo "ARCH_OS_PACMAN_EXTRA_ENABLED='${ARCH_OS_PACMAN_EXTRA_ENABLED}'"
         echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}'"
         echo "ARCH_OS_GRAPHICS_DRIVER='${ARCH_OS_GRAPHICS_DRIVER}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}'"
@@ -472,14 +474,30 @@ select_variant() {
         user_input=$(gum_choose --header " + Choose Arch OS Variant" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
         ARCH_OS_VARIANT="$user_input"    # Set property
+        if [ "$ARCH_OS_VARIANT" = "core" ]; then
+            ARCH_OS_GRAPHICS_DRIVER="none"
+            ARCH_OS_AUR_HELPER="none"
+            ARCH_OS_MULTILIB_ENABLED="false"
+            ARCH_OS_PACMAN_EXTRA_ENABLED="false"
+            ARCH_OS_SHELL_ENHANCED_ENABLED="false"
+            ARCH_OS_VM_SUPPORT_ENABLED="false"
+        fi
+        if [ "$ARCH_OS_VARIANT" = "base" ] || [ "$ARCH_OS_VARIANT" = "desktop" ]; then
+            ARCH_OS_GRAPHICS_DRIVER="mesa"
+            ARCH_OS_AUR_HELPER="paru"
+            ARCH_OS_MULTILIB_ENABLED="true"
+            ARCH_OS_PACMAN_EXTRA_ENABLED="true"
+            ARCH_OS_SHELL_ENHANCED_ENABLED="true"
+            ARCH_OS_VM_SUPPORT_ENABLED="true"
+        fi
         if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
             options=("mesa" "intel_i915" "nvidia" "amd" "ati")
             user_input=$(gum_choose --header " + Choose Graphics Driver" "${options[@]}") || trap_gum_exit_confirm
             [ -z "$user_input" ] && return 1      # Check if new value is null
-            ARCH_OS_GRAPHICS_DRIVER="$user_input" # Set properties
-            user_input=$(gum_input --header " + Enter X11 Keyboard Layout" --value "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT") || trap_gum_exit_confirm
-            [ -z "$user_input" ] && return 1                                     # Check if new value is null
-            ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input" && properties_generate # Set value and generate properties file
+            ARCH_OS_GRAPHICS_DRIVER="$user_input" # Set property
+            user_input=$(gum_input --header " + Enter Desktop Keyboard Layout" --value "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT") || trap_gum_exit_confirm
+            [ -z "$user_input" ] && return 1              # Check if new value is null
+            ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input" # Set property
         fi
         properties_generate # Generate properties file
     fi
@@ -702,69 +720,16 @@ exec_arch_os_core() {
         arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootloader update
         arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
+        # Reduce shutdown timeout
+        sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
+
+        # Set max VMAs (need for some apps/games)
+        echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
+
         # Return
         process_return 0
     ) &>"$PROCESS_LOG" &
     process_run $! "$process_name"
-}
-
-# ----------------------------------------------------------------------------------------------------
-
-exec_arch_os_base() {
-    local process_name="Install Arch OS Base System"
-    if [ "$ARCH_OS_VARIANT" = "base" ] || [ "$ARCH_OS_VARIANT" = "desktop" ]; then
-        process_init "$process_name"
-        (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
-
-            # Install Base packages
-            pacman_install_chroot pacman-contrib reflector pkgfile git nano
-
-            # Enable services
-            arch-chroot /mnt systemctl enable reflector.service    # Rank mirrors after boot (reflector)
-            arch-chroot /mnt systemctl enable paccache.timer       # Discard cached/unused packages weekly (pacman-contrib)
-            arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer (pkgfile)
-
-            # Configure parrallel downloads, colors & multilib
-            sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
-            sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
-            if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
-                sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
-                arch-chroot /mnt pacman -Syy --noconfirm
-            fi
-
-            # Configure reflector service
-            {
-                echo "# Reflector config for the systemd service"
-                echo "--save /etc/pacman.d/mirrorlist"
-                [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
-                echo "--completion-percent 95"
-                echo "--protocol https"
-                echo "--latest 5"
-                echo "--sort rate"
-            } >/mnt/etc/xdg/reflector/reflector.conf
-
-            # Set nano environment
-            {
-                echo 'EDITOR=nano'
-                echo 'VISUAL=nano'
-            } >/mnt/etc/environment
-
-            # Set Nano colors
-            sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
-            sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
-            sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
-
-            # Reduce shutdown timeout
-            sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
-
-            # Set max VMAs (need for some apps/games)
-            echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
-
-            process_return 0
-        ) &>"$PROCESS_LOG" &
-        process_run $! "$process_name"
-    fi
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -877,8 +842,8 @@ exec_arch_os_desktop() {
 # ----------------------------------------------------------------------------------------------------
 
 exec_graphics_driver() {
-    local process_name="Install Desktop Graphics Driver"
-    if [ -n "$ARCH_OS_GRAPHICS_DRIVER" ] && [ "$ARCH_OS_VARIANT" = "desktop" ]; then
+    local process_name="Install Graphics Driver"
+    if [ -n "$ARCH_OS_GRAPHICS_DRIVER" ] && [ "$ARCH_OS_GRAPHICS_DRIVER" != "none" ]; then
         process_init "$process_name"
         (
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
@@ -953,8 +918,8 @@ exec_graphics_driver() {
 # ----------------------------------------------------------------------------------------------------
 
 exec_vm_support() {
-    local process_name="Install Desktop VM Support"
-    if [ "$ARCH_OS_VM_SUPPORT_ENABLED" = "true" ] && [ "$ARCH_OS_VARIANT" = "desktop" ]; then
+    local process_name="Install VM Support"
+    if [ "$ARCH_OS_VM_SUPPORT_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
@@ -995,7 +960,6 @@ exec_vm_support() {
 exec_bootsplash() {
     local process_name="Install Bootsplash"
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
-
         process_init "$process_name"
         (
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
@@ -1060,6 +1024,48 @@ exec_multilib() {
 
 # ----------------------------------------------------------------------------------------------------
 
+exec_pacman_extra() {
+    local process_name="Install Pacman Extra"
+    if [ "$ARCH_OS_PACMAN_EXTRA_ENABLED" = "true" ]; then
+        process_init "$process_name"
+        (
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+
+            # Install Base packages
+            pacman_install_chroot pacman-contrib reflector pkgfile git nano
+
+            # Enable services
+            arch-chroot /mnt systemctl enable reflector.service    # Rank mirrors after boot (reflector)
+            arch-chroot /mnt systemctl enable paccache.timer       # Discard cached/unused packages weekly (pacman-contrib)
+            arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer (pkgfile)
+
+            # Configure parrallel downloads, colors & multilib
+            sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
+            sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
+            if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
+                sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
+                arch-chroot /mnt pacman -Syy --noconfirm
+            fi
+
+            # Configure reflector service
+            {
+                echo "# Reflector config for the systemd service"
+                echo "--save /etc/pacman.d/mirrorlist"
+                [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
+                echo "--completion-percent 95"
+                echo "--protocol https"
+                echo "--latest 5"
+                echo "--sort rate"
+            } >/mnt/etc/xdg/reflector/reflector.conf
+
+            process_return 0
+        ) &>"$PROCESS_LOG" &
+        process_run $! "$process_name"
+    fi
+}
+
+# ----------------------------------------------------------------------------------------------------
+
 exec_shell_enhancement() {
     local process_name="Install Shell Enhancement"
     if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
@@ -1067,7 +1073,7 @@ exec_shell_enhancement() {
         (
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
             # Install packages
-            pacman_install_chroot fish starship eza bat neofetch mc btop man-db
+            pacman_install_chroot fish starship eza bat neofetch mc btop nano man-db
             # Create config dirs for root & user
             mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
             mkdir -p "/mnt/root/.config/neofetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch"
@@ -1178,7 +1184,15 @@ exec_shell_enhancement() {
                 echo 'disk_display="info"'
                 echo 'disk_subtitle="none"'
             } | tee "/mnt/root/.config/neofetch/config.conf" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch/config.conf" >/dev/null
-
+            # Set nano environment
+            {
+                echo 'EDITOR=nano'
+                echo 'VISUAL=nano'
+            } >/mnt/etc/environment
+            # Set Nano colors
+            sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
+            sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
+            sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
             # Set correct user permissions
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/"
             # Set Shell for root & user

@@ -199,6 +199,9 @@ ARCH_OS_AUR_HELPER='paru'
 # MultiLib 32 Bit Support (base) | Default: true | Disable: false
 ARCH_OS_MULTILIB_ENABLED='true'
 
+# Pacman Extra | Default: true | Disable: false
+ARCH_OS_PACMAN_EXTRA_ENABLED='true'
+
 # Country used by reflector (base) | Default: null | Example: Germany,France
 ARCH_OS_REFLECTOR_COUNTRY=''
 
