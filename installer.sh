@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.3.1'
+VERSION='1.3.2'
 GUM_VERSION="0.13.0"
 
 # ENVIRONMENT
@@ -395,7 +395,7 @@ select_language() {
         # Fetch available options (list all from /usr/share/i18n/locales and check if entry exists in /etc/locale.gen)
         mapfile -t items < <(basename -a /usr/share/i18n/locales/* | grep -v "@") # Create array without @ files
         # Add only available locales (!!! intense command !!!)
-        options=() && for item in "${items[@]}"; do grep -q -e "$item" -e "^#$item" /etc/locale.gen && options+=("$item"); done
+        options=() && for item in "${items[@]}"; do grep -q -e "^$item" -e "^#$item" /etc/locale.gen && options+=("$item"); done
         # Select locale
         user_input=$(gum_filter --header " + Choose Language" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1  # Check if new value is null
