@@ -99,7 +99,7 @@ main() {
     # Start installation in 5 seconds?
     gum_confirm "Start Arch OS Installation?" || trap_gum_exit
     local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel"
-    gum_spin --title=" $spin_title" -- sleep 5 || trap_gum_exit # CTRL + C pressed
+    gum_spin --title="$spin_title" -- sleep 5 || trap_gum_exit # CTRL + C pressed
     print_info "Start Arch OS Installation..."
 
     SECONDS=0 # Messure execution time of installation
@@ -210,7 +210,7 @@ process_run() {
     local user_canceled="false" # Will set to true if user press ctrl + c
 
     # Show gum spinner until pid is not exists anymore and set user_canceled to true on failure
-    gum_spin --title " ${process_name}..." -- bash -c "while kill -0 $pid &> /dev/null; do sleep 1; done" || user_canceled="true"
+    gum_spin --title "${process_name}..." -- bash -c "while kill -0 $pid &> /dev/null; do sleep 1; done" || user_canceled="true"
     cat "$PROCESS_LOG" >>"$SCRIPT_LOG" # Write process log to logfile
 
     # When user press ctrl + c while process is running
@@ -259,19 +259,19 @@ log_warn() { write_log "WARN | ${*}"; }
 log_fail() { write_log "FAIL | ${*}"; }
 log_proc() { write_log "PROC | ${*}"; }
 
-# Colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
-gum_white() { gum_style --foreground "$COLOR_WHITE" "${@}"; }
-gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
-gum_purple() { gum_style --foreground "$COLOR_PURPLE" "${@}"; }
-gum_yellow() { gum_style --foreground "$COLOR_YELLOW" "${@}"; }
-gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
-
 # Print
 print_title() { gum_purple --margin "1 1" --bold "${*}"; }
 print_info() { log_info "$*" && gum_green --bold " • ${*}"; }
 print_warn() { log_warn "$*" && gum_yellow --bold " • ${*}"; }
 print_fail() { log_fail "$*" && gum_red --bold " • ${*}"; }
 print_add() { log_info "$*" && gum_green --bold " + ${*}"; }
+
+# Colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
+gum_white() { gum_style --foreground "$COLOR_WHITE" "${@}"; }
+gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
+gum_purple() { gum_style --foreground "$COLOR_PURPLE" "${@}"; }
+gum_yellow() { gum_style --foreground "$COLOR_YELLOW" "${@}"; }
+gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
 
 # Gum
 gum_style() { gum style "${@}"; } # Set default width
@@ -280,7 +280,7 @@ gum_input() { gum input --placeholder "..." --prompt " + " --prompt.foreground "
 gum_write() { gum write --prompt " • " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
 gum_choose() { gum choose --cursor " > " --height 8 --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
 gum_filter() { gum filter --prompt " > " --indicator " • " --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
-gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
+gum_spin() { gum spin --spinner dot --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
 # shellcheck disable=SC2317
 gum_pager() { gum pager "${@}"; } # Only used in exit trap
 
@@ -298,7 +298,6 @@ properties_source() {
 }
 
 properties_generate() {
-
     # Set defaults
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
@@ -312,7 +311,6 @@ properties_generate() {
     [ -z "$ARCH_OS_GRAPHICS_DRIVER" ] && ARCH_OS_GRAPHICS_DRIVER="mesa"
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu) " && ARCH_OS_MICROCODE="intel-ucode"
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
-
     { # Write properties to installer.conf
         #echo "# Arch OS ${VERSION} ($(date --utc '+%Y-%m-%d %H:%M:%S') UTC)"
         echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}'"
@@ -495,7 +493,6 @@ select_variant() {
 pacman_install_chroot() {
     local packages=("$@")
     local pacman_failed="true"
-
     # Retry installing packages 5 times (in case of connection issues)
     for ((i = 1; i < 6; i++)); do
         # Print updated whiptail info
@@ -507,7 +504,6 @@ pacman_install_chroot() {
             pacman_failed="false" && break # Success: break loop
         fi
     done
-
     # Result
     [ "$pacman_failed" = "true" ] && return 1  # Failed after 5 retries
     [ "$pacman_failed" = "false" ] && return 0 # Success
