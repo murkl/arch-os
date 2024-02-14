@@ -45,7 +45,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 ## Arch OS Core Features
 
 - [Minimal Arch Linux](DOCS.md#minimal-installation) (149 packages)
-- Zen Kernel ([configurable](DOCS.md#installation-properties))
+- Zen Kernel ([configurable](DOCS.md#advanced-installation))
 - [Swap](DOCS.md#swap) with zram-generator (zstd)
 - Filesystem ext4
 - Silent Boot
@@ -66,7 +66,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - Wayland optimized
 - [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
-- AUR Helper ([configurable](DOCS.md#installation-properties))
+- AUR Helper ([configurable](DOCS.md#advanced-installation))
 - 32 Bit Support (Multilib)
 - Disk Encryption
 - [Shell Enhancement](DOCS.md#shell-enhancement)
