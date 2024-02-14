@@ -10,6 +10,10 @@
 curl -Ls http://arch.webhop.me | bash
 ```
 
+<p>
+This project aims to provide a robust Arch Linux base for desktop usage, along with an easy-to-use and fast installer with error handling. Install a minimal Arch Linux core with optional features such as Automatic Housekeeping, Zen Kernel, GNOME Desktop with Graphics Drivers, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....
+</p>
+
 <p><b>
 
 [➜ Open Arch OS Docs](DOCS.md)
@@ -23,10 +27,6 @@ curl -Ls http://arch.webhop.me | bash
 [➜ More Screenshots](DOCS.md#screenshots)
 
 </b></p>
-
-<p>
-This project aims to provide a robust Arch Linux base for desktop usage, along with an easy-to-use and fast installer with error handling. Install a minimal Arch Linux core with optional features such as Automatic Housekeeping, Zen Kernel, GNOME Desktop with Graphics Drivers, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....
-</p>
 
 <p>
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
@@ -84,6 +84,8 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 ## Installing Arch OS
 
+**[➜ See Advanced Installation](DOCS.md#installation-properties)**
+
 ### 1. Prepare bootable USB Device
 
 - Download latest Arch Linux ISO from **[archlinux.org](https://www.archlinux.org/download)** or **[archlinux.de](https://www.archlinux.de/download)**
@@ -110,9 +112,9 @@ curl -Ls http://arch.webhop.me | bash
 curl -Ls http://arch-dev.webhop.me | bash
 ```
 
-**[➜ See Advanced Installation](DOCS.md#installation-properties)**
-
 ## Using Arch OS
+
+**[➜ See Recommendation](DOCS.md#recommendation)**
 
 ### System information
 
@@ -155,8 +157,6 @@ paru -Qi <my package>
 ```
 paru -Rsn <my package>
 ```
-
-**[➜ See Recommendation](DOCS.md#recommendation)**
 
 ## More Information
 
