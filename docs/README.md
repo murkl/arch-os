@@ -176,4 +176,4 @@ Further information can be found in the documentation.
 
 **[➜ Open Arch OS Docs](DOCS.md)**
 
-<br><div align="center"><sub>Developed with ❤ in Germany</sub></div>
+<br><br><div align="center"><sub>Developed with ❤ in Germany</sub></div>
