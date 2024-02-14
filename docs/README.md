@@ -3,17 +3,12 @@
   <p>Arch OS</p>
 </h1>
 
-<p align="center"><strong>Boot from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a> and simply run</strong></p>
-
 <div align="center">
+<p><strong>Boot from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a> and simply run</strong></p>
 
 ```
 curl -Ls http://arch.webhop.me | bash
 ```
-
-<p align="center">
-This project aims to provide a robust Arch Linux base for desktop usage, along with an easy-to-use and fast installer with error handling. Install a minimal Arch Linux core with optional features such as Automatic Housekeeping, Zen Kernel, GNOME Desktop with Graphics Drivers, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....
-</p>
 
 <p><b>
 
@@ -21,28 +16,32 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 </b></p>
 
-</div>
+<p><img src="./screenshots/installer.png" /></p>
 
-<p align="center"><img src="./screenshots/installer.png" /></p>
-
-<div align="center"><p><b>
+<p><b>
 
 [➜ More Screenshots](DOCS.md#screenshots)
 
-</b></p></div>
+</b></p>
 
-<p align="center">
+<p>
+This project aims to provide a robust Arch Linux base for desktop usage, along with an easy-to-use and fast installer with error handling. Install a minimal Arch Linux core with optional features such as Automatic Housekeeping, Zen Kernel, GNOME Desktop with Graphics Drivers, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....
+</p>
+
+<p>
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
   <img src="https://img.shields.io/badge/License-GPL_v2-blue?style=for-the-badge">
 </p>
 
-<p align="center">
+<p>
   <strong>Test successful</strong>
   <br>
   <a target="_blank" href="https://www.archlinux.de/releases/2024.02.01">archlinux-2024.02.01-x86_64.iso</a>
   <br>
   <sub>100% shellcheck approved</sub>
 </p>
+
+</div>
 
 ## Arch OS Core Features
 
@@ -111,11 +110,7 @@ curl -Ls http://arch.webhop.me | bash
 curl -Ls http://arch-dev.webhop.me | bash
 ```
 
-<div align="center">
-
 **[➜ See Advanced Installation](DOCS.md#installation-properties)**
-
-</div>
 
 ## Using Arch OS
 
@@ -161,11 +156,7 @@ paru -Qi <my package>
 paru -Rsn <my package>
 ```
 
-<div align="center">
-
 **[➜ See Recommendation](DOCS.md#recommendation)**
-
-</div>
 
 ## More Information
 
