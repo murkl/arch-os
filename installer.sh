@@ -307,6 +307,7 @@ properties_generate() {
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
     [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
     [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
+    [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] && ARCH_OS_DESKTOP_GRAPHICS_DRIVER="mesa"
     [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
     [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ] && ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="us"
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu) " && ARCH_OS_MICROCODE="intel-ucode"
@@ -418,9 +419,8 @@ select_keyboard() {
         mapfile -t items < <(command localectl list-keymaps)
         options=() && for item in "${items[@]}"; do options+=("$item"); done
         user_input=$(gum_filter --header " + Choose Keyboard" "${options[@]}") || trap_gum_exit_confirm
-        [ -z "$user_input" ] && return 1      # Check if new value is null
-        ARCH_OS_VCONSOLE_KEYMAP="$user_input" # Set property
-        properties_generate                   # Generate properties file
+        [ -z "$user_input" ] && return 1                             # Check if new value is null
+        ARCH_OS_VCONSOLE_KEYMAP="$user_input" && properties_generate # Set value and generate properties file
     fi
     print_add "Keyboard is set to ${ARCH_OS_VCONSOLE_KEYMAP}"
 }
