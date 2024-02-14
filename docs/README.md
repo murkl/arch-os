@@ -53,6 +53,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - Silent Boot
 - Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
+- Pacman parallel downloads & eyecandy
 - Watchdog disabled
 - Network Manager
 - SSD Support (fstrim)
@@ -74,14 +75,12 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - Missing package suggestion for commands
 - Automatic Pacman mirrorlist update (on every startup)
 - Pacman automatic cache optimization (weekly)
-- Pacman parallel downloads
-- Pacman & nano colors
 - Flatpak Support + Auto Update (GNOME Software)
 - Samba, Networking Protocol Libs, Git, Utils & Codecs included
 - GNOME Power Profiles Support
 - Printer Support (cups)
-- Gamemode preinstalled
-- Firmware Update Tool preinstalled
+- Gamemode preinstalled (desktop)
+- Firmware Update Tool preinstalled (desktop)
 - [VM Support](DOCS.md#vm-support)
 
 ## Installing Arch OS
