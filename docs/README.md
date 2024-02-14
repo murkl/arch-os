@@ -101,15 +101,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 - Load prefered keyboard layout (optional): `loadkeys de`
 - Connect to WLAN (optional): `iwctl station wlan0 connect "SSID"`
-- **Run Arch OS Installer:**
-
-```
-# Stable
-curl -Ls http://arch.webhop.me | bash
-
-# Development
-curl -Ls http://arch-dev.webhop.me | bash
-```
+- **Run Arch OS Installer:** `curl -Ls http://arch.webhop.me | bash`
 
 ## Using Arch OS
 
@@ -163,4 +155,4 @@ Further information can be found in the documentation.
 
 **[➜ Open Arch OS Docs](DOCS.md)**
 
-<br><div align="center"><sub>Developed with ❤ in Germany</sub></div>
+<div align="center"><sub>Developed with ❤ in Germany</sub></div>
