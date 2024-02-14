@@ -23,7 +23,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 </div>
 
-<p align="center"><img src="./screenshots/installer_01.png" /></p>
+<p align="center"><img src="./screenshots/installer.png" /></p>
 
 <div align="center"><p><b>
 
@@ -44,7 +44,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
   <sub>100% shellcheck approved</sub>
 </p>
 
-## Core Features
+## Arch OS Core Features
 
 - [Minimal Arch Linux](DOCS.md#minimal-installation) (149 packages)
 - Zen Kernel ([configurable](DOCS.md#installation-properties))
