@@ -12,7 +12,7 @@ curl -Ls http://arch.webhop.me | bash
 ```
 
 <p align="center">
-This project aims to provide a robust Arch Linux base for desktop usage, along with an easy-to-use and fast installer. Install a minimal Arch Linux core with optional features such as automatic housekeeping, Zen Kernel, GNOME Desktop environment with graphics drivers, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....
+This project aims to provide a robust Arch Linux base for desktop usage, along with an easy-to-use and fast installer. Install a minimal Arch Linux core with optional features such as Automatic Housekeeping, Zen Kernel, GNOME Desktop with Graphics Drivers, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....
 </p>
 
 <p><b>
