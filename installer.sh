@@ -78,7 +78,11 @@ main() {
         until select_disk; do :; done
         until select_encryption; do :; done
         until select_bootsplash; do :; done
-        until select_variant; do :; done
+        until select_desktop; do :; done
+        until select_aur_helper; do :; done
+        until select_multilib; do :; done
+        until select_housekeeping; do :; done
+        until select_shell_enhancement; do :; done
 
         # Edit properties?
         if [ "$first_run" = "true" ] && gum_confirm "Edit Properties?"; then
@@ -98,23 +102,23 @@ main() {
 
     # Start installation in 5 seconds?
     gum_confirm "Start Arch OS Installation?" || trap_gum_exit
-    local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel"
-    gum_spin --title="$spin_title" -- sleep 5 || trap_gum_exit # CTRL + C pressed
-    print_info "Start Arch OS Installation..."
+    local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel..."
+    gum_spin --title=" $spin_title" -- sleep 5 || trap_gum_exit # CTRL + C pressed
+    print_info "Arch OS Installation starts..."
 
     SECONDS=0 # Messure execution time of installation
 
     # Executors
     exec_init
     exec_disk
-    exec_arch_os_core
-    exec_arch_os_desktop
-    exec_graphics_driver
+    exec_core
+    exec_multilib
     exec_bootsplash
     exec_aur_helper
-    exec_multilib
-    exec_pacman_extra
+    exec_housekeeping
     exec_shell_enhancement
+    exec_desktop
+    exec_graphics_driver
     exec_vm_support
     exec_cleanup
 
@@ -210,7 +214,7 @@ process_run() {
     local user_canceled="false" # Will set to true if user press ctrl + c
 
     # Show gum spinner until pid is not exists anymore and set user_canceled to true on failure
-    gum_spin --title "${process_name}..." -- bash -c "while kill -0 $pid &> /dev/null; do sleep 1; done" || user_canceled="true"
+    gum_spin --title " ${process_name}..." -- bash -c "while kill -0 $pid &> /dev/null; do sleep 1; done" || user_canceled="true"
     cat "$PROCESS_LOG" >>"$SCRIPT_LOG" # Write process log to logfile
 
     # When user press ctrl + c while process is running
@@ -280,7 +284,7 @@ gum_input() { gum input --placeholder "..." --prompt " + " --prompt.foreground "
 gum_write() { gum write --prompt " • " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
 gum_choose() { gum choose --cursor " > " --height 8 --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
 gum_filter() { gum filter --prompt " > " --indicator " • " --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
-gum_spin() { gum spin --spinner dot --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
+gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
 # shellcheck disable=SC2317
 gum_pager() { gum pager "${@}"; } # Only used in exit trap
 
@@ -302,14 +306,9 @@ properties_generate() {
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
     [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
-    [ -z "$ARCH_OS_SHELL_ENHANCED_ENABLED" ] && ARCH_OS_SHELL_ENHANCED_ENABLED="true"
-    [ -z "$ARCH_OS_AUR_HELPER" ] && ARCH_OS_AUR_HELPER="paru"
-    [ -z "$ARCH_OS_MULTILIB_ENABLED" ] && ARCH_OS_MULTILIB_ENABLED="true"
-    [ -z "$ARCH_OS_PACMAN_EXTRA_ENABLED" ] && ARCH_OS_PACMAN_EXTRA_ENABLED="true"
     [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
     [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
     [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ] && ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="us"
-    [ -z "$ARCH_OS_GRAPHICS_DRIVER" ] && ARCH_OS_GRAPHICS_DRIVER="mesa"
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu) " && ARCH_OS_MICROCODE="intel-ucode"
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
     { # Write properties to installer.conf
@@ -329,13 +328,13 @@ properties_generate() {
         echo "ARCH_OS_MICROCODE='${ARCH_OS_MICROCODE}'"
         echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
-        echo "ARCH_OS_VARIANT='${ARCH_OS_VARIANT}'"
+        echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
         echo "ARCH_OS_SHELL_ENHANCED_ENABLED='${ARCH_OS_SHELL_ENHANCED_ENABLED}'"
         echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}'"
         echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}'"
-        echo "ARCH_OS_PACMAN_EXTRA_ENABLED='${ARCH_OS_PACMAN_EXTRA_ENABLED}'"
+        echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}'"
         echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}'"
-        echo "ARCH_OS_GRAPHICS_DRIVER='${ARCH_OS_GRAPHICS_DRIVER}'"
+        echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}'"
@@ -449,10 +448,10 @@ select_disk() {
 
 select_encryption() {
     if [ -z "$ARCH_OS_ENCRYPTION_ENABLED" ]; then
-        local user_input="false" && gum_confirm "Enable Encryption?" && user_input="true"
+        local user_input="false" && gum_confirm "Enable Disk Encryption?" && user_input="true"
         ARCH_OS_ENCRYPTION_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_add "Encryption is set to ${ARCH_OS_ENCRYPTION_ENABLED}"
+    print_add "Disk Encryption is set to ${ARCH_OS_ENCRYPTION_ENABLED}"
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -467,44 +466,66 @@ select_bootsplash() {
 
 # ----------------------------------------------------------------------------------------------------
 
-select_variant() {
-    if [ -z "$ARCH_OS_VARIANT" ] || [ -z "$ARCH_OS_GRAPHICS_DRIVER" ] || [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
+select_desktop() {
+    if [ -z "$ARCH_OS_DESKTOP_ENABLED" ] || [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] || [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
         local user_input options
-        options=("desktop" "base" "core")
-        user_input=$(gum_choose --header " + Choose Arch OS Variant" "${options[@]}") || trap_gum_exit_confirm
-        [ -z "$user_input" ] && return 1 # Check if new value is null
-        ARCH_OS_VARIANT="$user_input"    # Set property
-        if [ "$ARCH_OS_VARIANT" = "core" ]; then
-            ARCH_OS_GRAPHICS_DRIVER="none"
-            ARCH_OS_AUR_HELPER="none"
-            ARCH_OS_MULTILIB_ENABLED="false"
-            ARCH_OS_PACMAN_EXTRA_ENABLED="false"
-            ARCH_OS_SHELL_ENHANCED_ENABLED="false"
-            ARCH_OS_VM_SUPPORT_ENABLED="false"
-        fi
-        if [ "$ARCH_OS_VARIANT" = "base" ] || [ "$ARCH_OS_VARIANT" = "desktop" ]; then
-            ARCH_OS_GRAPHICS_DRIVER="mesa"
-            ARCH_OS_AUR_HELPER="paru"
-            ARCH_OS_MULTILIB_ENABLED="true"
-            ARCH_OS_PACMAN_EXTRA_ENABLED="true"
-            ARCH_OS_SHELL_ENHANCED_ENABLED="true"
-            ARCH_OS_VM_SUPPORT_ENABLED="true"
-        fi
-        if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
+        user_input="false" && gum_confirm "Install Arch OS Desktop?" && user_input="true"
+        ARCH_OS_DESKTOP_ENABLED="$user_input"            # Set property
+        if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then # If desktop is true set graphics driver and keyboard layout
             options=("mesa" "intel_i915" "nvidia" "amd" "ati")
-            user_input=$(gum_choose --header " + Choose Graphics Driver" "${options[@]}") || trap_gum_exit_confirm
-            [ -z "$user_input" ] && return 1      # Check if new value is null
-            ARCH_OS_GRAPHICS_DRIVER="$user_input" # Set property
+            user_input=$(gum_choose --header " + Choose Desktop Graphics Driver" "${options[@]}") || trap_gum_exit_confirm
+            [ -z "$user_input" ] && return 1              # Check if new value is null
+            ARCH_OS_DESKTOP_GRAPHICS_DRIVER="$user_input" # Set property
             user_input=$(gum_input --header " + Enter Desktop Keyboard Layout" --value "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT") || trap_gum_exit_confirm
             [ -z "$user_input" ] && return 1              # Check if new value is null
             ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input" # Set property
         fi
         properties_generate # Generate properties file
     fi
-    print_add "Variant is set to ${ARCH_OS_VARIANT}"
-    [ "$ARCH_OS_VARIANT" = "desktop" ] && print_add "Desktop Keyboard Layout is set to ${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}"
-    [ "$ARCH_OS_VARIANT" = "desktop" ] && print_add "Graphics Driver is set to ${ARCH_OS_GRAPHICS_DRIVER}"
+    print_add "Arch OS Desktop is set to ${ARCH_OS_DESKTOP_ENABLED}"
+    [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && print_add "Desktop Keyboard Layout is set to ${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}"
+    [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && print_add "Desktop Graphics Driver is set to ${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}"
     return 0
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+select_aur_helper() {
+    if [ -z "$ARCH_OS_AUR_HELPER" ]; then
+        local user_input="none" && gum_confirm "Install AUR Helper?" && user_input="paru"
+        ARCH_OS_AUR_HELPER="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    print_add "AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+select_multilib() {
+    if [ -z "$ARCH_OS_MULTILIB_ENABLED" ]; then
+        local user_input="false" && gum_confirm "Enable 32 Bit Support?" && user_input="true"
+        ARCH_OS_MULTILIB_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    print_add "32 Bit Support is set to ${ARCH_OS_MULTILIB_ENABLED}"
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+select_housekeeping() {
+    if [ -z "$ARCH_OS_HOUSEKEEPING_ENABLED" ]; then
+        local user_input="false" && gum_confirm "Enable Housekeeping?" && user_input="true"
+        ARCH_OS_HOUSEKEEPING_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    print_add "Housekeeping is set to ${ARCH_OS_HOUSEKEEPING_ENABLED}"
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+select_shell_enhancement() {
+    if [ -z "$ARCH_OS_SHELL_ENHANCED_ENABLED" ]; then
+        local user_input="false" && gum_confirm "Install Shell Enhancement?" && user_input="true"
+        ARCH_OS_SHELL_ENHANCED_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    print_add "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCED_ENABLED}"
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -601,7 +622,7 @@ exec_disk() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_arch_os_core() {
+exec_core() {
     local process_name="Install Arch OS Core System"
     process_init "$process_name"
     (
@@ -734,9 +755,9 @@ exec_arch_os_core() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_arch_os_desktop() {
+exec_desktop() {
     local process_name="Install Arch OS Desktop System"
-    if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
+    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
@@ -843,11 +864,11 @@ exec_arch_os_desktop() {
 
 exec_graphics_driver() {
     local process_name="Install Graphics Driver"
-    if [ -n "$ARCH_OS_GRAPHICS_DRIVER" ] && [ "$ARCH_OS_GRAPHICS_DRIVER" != "none" ]; then
+    if [ -n "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] && [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" != "none" ]; then
         process_init "$process_name"
         (
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
-            case "${ARCH_OS_GRAPHICS_DRIVER}" in
+            case "${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}" in
             "mesa") # https://wiki.archlinux.org/title/OpenGL#Installation
                 packages=(mesa mesa-utils vkd3d)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-mesa lib32-mesa-utils lib32-vkd3d)
@@ -1024,9 +1045,9 @@ exec_multilib() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_pacman_extra() {
-    local process_name="Install Pacman Extra"
-    if [ "$ARCH_OS_PACMAN_EXTRA_ENABLED" = "true" ]; then
+exec_housekeeping() {
+    local process_name="Install Housekeeping"
+    if [ "$ARCH_OS_HOUSEKEEPING_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return

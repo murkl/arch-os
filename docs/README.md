@@ -12,7 +12,7 @@ curl -Ls http://arch.webhop.me | bash
 ```
 
 <p align="center">
-This project aims to provide a solid Arch Linux base for desktop usage and an easy and fast to use installer for that. Choose between three feature sets (core, base, desktop) and install a minimal Arch Linux optional with automatic housekeeping, Zen Kernel, GNOME as desktop with graphics driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more features...
+This project aims to provide a robust Arch Linux base for desktop usage, along with an easy-to-use and fast installer. Install a minimal Arch Linux core with optional features such as automatic maintenance, Zen Kernel, GNOME desktop environment with graphics drivers, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....
 </p>
 
 <p><b>
@@ -49,10 +49,8 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 - [Minimal Arch Linux](DOCS.md#minimal-installation) (171 packages)
 - Zen Kernel ([configurable](DOCS.md#installation-properties))
 - [Swap](DOCS.md#swap) with zram-generator (zstd)
-- Disk Encryption (optional)
 - Filesystem ext4
 - Silent Boot
-- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os) (optional)
 - Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
 - Watchdog disabled
@@ -62,31 +60,28 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 - Sole OS on a single disk (see [Arch OS Docs](DOCS.md#partitions-layout))
 - UEFI only supported
 
-## Base Features
+## Optional Features
 
-- **+ Core Features**
+- Vanilla GNOME Desktop + Auto Login
+- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
+- Wayland optimized
+- [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
+- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
 - AUR Helper ([configurable](DOCS.md#installation-properties))
-- Multilib (optional)
-- [Shell Enhancement](DOCS.md#shell-enhancement) (optional)
+- 32 Bit Support (Multilib)
+- Disk Encryption
+- [Shell Enhancement](DOCS.md#shell-enhancement)
 - Missing package suggestion for commands
 - Automatic Pacman mirrorlist update (on every startup)
 - Pacman automatic cache optimization (weekly)
 - Pacman parallel downloads
 - Pacman & nano colors
-
-## Desktop Features
-
-- **+ Base Features**
-- Vanilla GNOME Desktop + Auto Login
-- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
-- [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
 - Flatpak Support + Auto Update (GNOME Software)
-- Wayland optimized
+- Samba, Networking Protocol Libs, Git, Utils & Codecs included
+- GNOME Power Profiles Support
+- Printer Support (cups)
 - Gamemode preinstalled
 - Firmware Update Tool preinstalled
-- Samba, Networking Protocol Libs, Git, Utils & Codecs included
-- Printer Support (cups)
-- GNOME Power Profiles Support
 - [VM Support](DOCS.md#vm-support)
 
 ## Installing Arch OS
@@ -113,7 +108,7 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 # Stable
 curl -Ls http://arch.webhop.me | bash
 
-# Testing
+# Development
 curl -Ls http://arch-dev.webhop.me | bash
 ```
 
