@@ -395,7 +395,7 @@ select_language() {
         # Fetch available options (list all from /usr/share/i18n/locales and check if entry exists in /etc/locale.gen)
         mapfile -t items < <(basename -a /usr/share/i18n/locales/* | grep -v "@") # Create array without @ files
         # Add only available locales (!!! intense command !!!)
-        options=() && for item in "${items[@]}"; do grep -q -e "$item" -e "^#$item" /etc/locale.gen && options+=("$item"); done
+        options=() && for item in "${items[@]}"; do grep -q -e "^$item" -e "^#$item" /etc/locale.gen && options+=("$item"); done
         # Select locale
         user_input=$(gum_filter --header " + Choose Language" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1  # Check if new value is null
