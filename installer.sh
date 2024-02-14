@@ -628,7 +628,7 @@ exec_core() {
     (
         [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
-        local packages=("$ARCH_OS_KERNEL" base base-devel linux-firmware zram-generator networkmanager)
+        local packages=("$ARCH_OS_KERNEL" base sudo linux-firmware zram-generator networkmanager)
 
         # Add microcode package
         [ -n "$ARCH_OS_MICROCODE" ] && [ "$ARCH_OS_MICROCODE" != "none" ] && packages+=("$ARCH_OS_MICROCODE")
@@ -747,6 +747,10 @@ exec_core() {
         # Set max VMAs (need for some apps/games)
         echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
 
+        # Configure pacman parrallel downloads, colors, eyecandy
+        sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
+        sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
+
         # Return
         process_return 0
     ) &>"$PROCESS_LOG" &
@@ -780,7 +784,7 @@ exec_desktop() {
             packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google)
 
             # Utils (https://wiki.archlinux.org/title/File_systems)
-            packages+=(nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
+            packages+=(git nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
 
             # Codecs
             packages+=(gstreamer gst-libav gst-plugin-pipewire gst-plugins-ugly libdvdcss libheif)
@@ -870,7 +874,7 @@ exec_graphics_driver() {
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
             case "${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}" in
             "mesa") # https://wiki.archlinux.org/title/OpenGL#Installation
-                packages=(mesa mesa-utils vkd3d)
+                local packages=(mesa mesa-utils vkd3d)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-mesa lib32-mesa-utils lib32-vkd3d)
                 pacman_install_chroot "${packages[@]}"
                 ;;
@@ -1053,20 +1057,7 @@ exec_housekeeping() {
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
             # Install Base packages
-            pacman_install_chroot pacman-contrib reflector pkgfile git nano
-
-            # Enable services
-            arch-chroot /mnt systemctl enable reflector.service    # Rank mirrors after boot (reflector)
-            arch-chroot /mnt systemctl enable paccache.timer       # Discard cached/unused packages weekly (pacman-contrib)
-            arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer (pkgfile)
-
-            # Configure parrallel downloads, colors & multilib
-            sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
-            sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
-            if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
-                sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
-                arch-chroot /mnt pacman -Syy --noconfirm
-            fi
+            pacman_install_chroot pacman-contrib reflector pkgfile
 
             # Configure reflector service
             {
@@ -1078,6 +1069,11 @@ exec_housekeeping() {
                 echo "--latest 5"
                 echo "--sort rate"
             } >/mnt/etc/xdg/reflector/reflector.conf
+
+            # Enable services
+            arch-chroot /mnt systemctl enable reflector.service    # Rank mirrors after boot (reflector)
+            arch-chroot /mnt systemctl enable paccache.timer       # Discard cached/unused packages weekly (pacman-contrib)
+            arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer (pkgfile)
 
             process_return 0
         ) &>"$PROCESS_LOG" &
