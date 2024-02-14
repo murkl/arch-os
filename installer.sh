@@ -638,7 +638,7 @@ exec_disk() {
 # ----------------------------------------------------------------------------------------------------
 
 exec_core() {
-    local process_name="Install Arch OS Core System"
+    local process_name="Pacstrap Arch OS Core System"
     process_init "$process_name"
     (
         [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
@@ -820,8 +820,8 @@ exec_desktop() {
             grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
 
             # Configure Git in ~/.config/git/config
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- mkdir -p "/home/${ARCH_OS_USERNAME}/.config/git"
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- touch "/home/${ARCH_OS_USERNAME}/.config/git/config"
+            #arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- mkdir -p "/home/${ARCH_OS_USERNAME}/.config/git"
+            #arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- touch "/home/${ARCH_OS_USERNAME}/.config/git/config"
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git config --global credential.helper /usr/lib/git-core/git-credential-libsecret
 
             # Samba
