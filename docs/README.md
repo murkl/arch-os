@@ -119,14 +119,6 @@ curl -Ls http://arch-dev.webhop.me | bash
 
 ## Using Arch OS
 
-<div align="center">
-
-<p><img src="./screenshots/desktop.jpg" /></p>
-
-**[➜ See Recommendation](DOCS.md#recommendation)**
-
-</div>
-
 ### System information
 
 ```
@@ -168,6 +160,12 @@ paru -Qi <my package>
 ```
 paru -Rsn <my package>
 ```
+
+<div align="center">
+
+**[➜ See Recommendation](DOCS.md#recommendation)**
+
+</div>
 
 ## More Information
 

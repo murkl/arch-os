@@ -303,8 +303,8 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 
 <div align="center">
 <p><img src="screenshots/desktop.jpg" /></p>
-<p><img src="screenshots/neofetch.png" /></p>
 <p><img src="screenshots/apps.png" /></p>
+<p><img src="screenshots/neofetch.png" /></p>
 <p><b>This screenshots may outdated.</b></p>
 </div>
 
