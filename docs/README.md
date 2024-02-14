@@ -3,93 +3,23 @@
   <p>Arch OS</p>
 </h1>
 
-<p align="center"><strong>Run TUI Installer from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a></strong></p>
-
 <div align="center">
 
-```
-curl -Ls http://arch.webhop.me | bash
-```
+<p><strong>Boot from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a> and simply run</strong></p>
 
-</div>
+`curl -Ls http://arch.webhop.me | bash`
 
-<p align="center"><img src="./screenshots/desktop.jpg" /></p>
+<p><b>
 
-<div align="center">
+[➜ Open Arch OS Docs](DOCS.md)
 
-**[➜ Open Arch OS Docs](DOCS.md)**
+</b></p>
 
-</div>
-
-<p align="center">
-This project aims to provide a solid Arch Linux base for desktop usage and an easy and fast to use installer for that. Choose between 3 Arch OS Variants and install a minimal Arch Linux Distribution optional with automatic housekeeping, Zen Kernel, GNOME as desktop with graphics driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more features...
+<p>
+This project aims to provide a robust Arch Linux base for desktop usage, along with an easy-to-use and fast installer with error handling. Install a minimal Arch Linux core with optional features such as Automatic Housekeeping, Zen Kernel, GNOME Desktop with Graphics Drivers, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....
 </p>
 
-<p align="center"><sub><strong>Sole OS on a single disk</strong></sub></p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
-  <img src="https://img.shields.io/badge/License-GPL_v2-blue?style=for-the-badge">
-</p>
-
-<p align="center">
-  <strong>Test successful</strong>
-  <br>
-  <a target="_blank" href="https://www.archlinux.de/releases/2024.02.01">archlinux-2024.02.01-x86_64.iso</a>
-  <br>
-  <sub>100% shellcheck approved</sub>
-</p>
-
-## Core Features
-
-- [Minimal Arch Linux](DOCS.md#minimal-installation) (171 packages)
-- Zen Kernel ([configurable](DOCS.md#installation-properties))
-- [Swap](DOCS.md#swap) with zram-generator (zstd)
-- Disk Encryption (optional)
-- Filesystem ext4
-- Silent Boot
-- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os) (optional)
-- Systemd Bootloader (auto updated)
-- Systemd OOM (out-of-memory killer)
-- Watchdog disabled
-- Network Manager
-- SSD Support (fstrim)
-- Microcode Support (Intel/AMD)
-- Sole OS on a single disk (see [Arch OS Docs](DOCS.md#partitions-layout))
-- UEFI only supported
-
-## Base Features
-
-- **+ Core Features**
-- AUR Helper ([configurable](DOCS.md#installation-properties))
-- Multilib (optional)
-- [Shell Enhancement](DOCS.md#shell-enhancement) (optional)
-- Missing package suggestion for commands
-- Automatic Pacman mirrorlist update (on every startup)
-- Pacman automatic cache optimization (weekly)
-- Pacman parallel downloads
-- Pacman & nano colors
-
-## Desktop Features
-
-- **+ Base Features**
-- Vanilla GNOME Desktop + Auto Login
-- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
-- [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
-- Flatpak Support + Auto Update (GNOME Software)
-- Wayland optimized
-- Gamemode preinstalled
-- Firmware Update Tool preinstalled
-- Samba, Networking Protocol Libs, Git, Utils & Codecs included
-- Printer Support (cups)
-- GNOME Power Profiles Support
-- [VM Support](DOCS.md#vm-support)
-
-## Arch OS Installation
-
-<div align="center">
-
-<p><img src="./screenshots/installer_01.png" /></p>
+<p><img src="./screenshots/installer.png" /></p>
 
 <p><b>
 
@@ -97,7 +27,63 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 
 </b></p>
 
+<p>
+  <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
+  <img src="https://img.shields.io/badge/License-GPL_v2-blue?style=for-the-badge">
+</p>
+
+<p>
+  <strong>Test successful</strong>
+  <br>
+  <a target="_blank" href="https://www.archlinux.de/releases/2024.02.01">archlinux-2024.02.01-x86_64.iso</a>
+  <br>
+  <sub>100% shellcheck approved</sub>
+</p>
+
 </div>
+
+## Arch OS Core Features
+
+- [Minimal Arch Linux](DOCS.md#minimal-installation) (149 packages)
+- Zen Kernel ([configurable](DOCS.md#installation-properties))
+- [Swap](DOCS.md#swap) with zram-generator (zstd)
+- Filesystem ext4
+- Silent Boot
+- Systemd Bootloader (auto updated)
+- Systemd OOM (out-of-memory killer)
+- Pacman parallel downloads & eyecandy
+- Watchdog disabled
+- Network Manager
+- SSD Support (fstrim)
+- Microcode Support (Intel/AMD)
+- Sole OS on a single disk (see [Arch OS Docs](DOCS.md#partitions-layout))
+- UEFI only supported
+
+## Optional Features
+
+- Vanilla GNOME Desktop + Auto Login
+- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
+- Wayland optimized
+- [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
+- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
+- AUR Helper ([configurable](DOCS.md#installation-properties))
+- 32 Bit Support (Multilib)
+- Disk Encryption
+- [Shell Enhancement](DOCS.md#shell-enhancement)
+- Missing package suggestion for commands
+- Automatic Pacman mirrorlist update (on every startup)
+- Pacman automatic cache optimization (weekly)
+- Flatpak Support + Auto Update (GNOME Software)
+- Samba, Networking Protocol Libs, Git, Utils & Codecs included
+- GNOME Power Profiles Support
+- Printer Support (cups)
+- Gamemode preinstalled (desktop)
+- Firmware Update Tool preinstalled (desktop)
+- [VM Support](DOCS.md#vm-support)
+
+## Installing Arch OS
+
+**[➜ See Advanced Installation](DOCS.md#advanced-installation)**
 
 ### 1. Prepare bootable USB Device
 
@@ -115,39 +101,11 @@ This project aims to provide a solid Arch Linux base for desktop usage and an ea
 
 - Load prefered keyboard layout (optional): `loadkeys de`
 - Connect to WLAN (optional): `iwctl station wlan0 connect "SSID"`
-- **Run Arch OS Installer:**
+- **Run Arch OS Installer:** `curl -Ls http://arch.webhop.me | bash`
 
-<div align="center">
+## Using Arch OS
 
-```
-curl -Ls http://arch.webhop.me | bash
-```
-
-</div>
-
-<div align="center">
-
-<p><b>
-
-[➜ See Advanced Installation](DOCS.md#installation-properties)
-
-</b></p>
-
-</div>
-
-## Usage
-
-<div align="center">
-
-<p><img src="screenshots/neofetch.png" /></p>
-
-<p><b>
-
-[➜ See Recommendation](DOCS.md#recommendation)
-
-</b></p>
-
-</div>
+**[➜ See Recommendation](DOCS.md#recommendation)**
 
 ### System information
 
@@ -196,3 +154,5 @@ paru -Rsn <my package>
 Further information can be found in the documentation.
 
 **[➜ Open Arch OS Docs](DOCS.md)**
+
+<div align="center"><sub>Developed with ❤ in Germany</sub></div>

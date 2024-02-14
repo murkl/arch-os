@@ -7,7 +7,7 @@
 # Contents
 
 1. [Recommendation](#recommendation)
-2. [Installation Properties](#installation-properties)
+2. [Advanced Installation](#advanced-installation)
 3. [Shell Enhancement](#shell-enhancement)
 4. [Technical Information](#technical-information)
 5. [Screenshots](#screenshots)
@@ -83,42 +83,36 @@ May check out these projects:
 - [AutoEq](https://github.com/jaakkopasanen/AutoEq)
 - [EasyEffects Presents](https://github.com/wwmm/easyeffects/wiki/Community-presets)
 
-## Installation Properties
+## Advanced Installation
 
-The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as defaults for Arch OS setup menu. This file provides some additional properties (see [Example](#example-installerconf)) to modify your Arch OS installation.
+The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as defaults for Arch OS setup menu. This file provides some additional properties to modify your Arch OS installation (see [Example](#example-installerconf)).
 
 **Note:** The `installer.conf` will copied to the new user's home directory during installation. This file can be saved for reuse or simply deleted.
 
-### Installation Variants
+### Minimal Installation
 
-Arch OS comes with 3 installation variants:
-
-- **core**: Minimal Arch Linux with essential [Packages](#arch-os-core-packages) & [Services](#arch-os-core-services)
-- **base**: Arch OS without desktop (core included + additional packages & configurations)
-- **desktop**: Arch OS with desktop (base included + GNOME Desktop + Graphics Driver)
-
-#### Minimal Installation
-
-Set these properties to install Arch OS (core) with minimal packages & configurations:
+Set these properties to install Arch OS Core with minimal packages & configurations:
 
 ```
-ARCH_OS_VARIANT='core'
 ARCH_OS_BOOTSPLASH_ENABLED='false'
+ARCH_OS_DESKTOP_ENABLED='false'
+ARCH_OS_MULTILIB_ENABLED='false'
+ARCH_OS_HOUSEKEEPING_ENABLED='false'
+ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
+ARCH_OS_AUR_HELPER='none'
 ```
 
 **Note:** You will only be provided with a minimal tty after installation.
 
-#### Arch OS Core Packages
+### Arch OS Core Packages
 
-This packages will be installed during `core` Installation (171 packages in total):
+This packages will be installed during `core` Installation (149 packages in total):
 
 ```
-base base-devel linux-zen linux-firmware zram-generator networkmanager [microcode_pkg]
+base sudo linux-zen linux-firmware zram-generator networkmanager [microcode_pkg]
 ```
 
-**Note:** Can be reduced by removing `base-devel` afterwards and install `sudo` instead. You may need more packages from [base-devel](https://archlinux.org/packages/core/any/base-devel/) group.
-
-#### Arch OS Core Services
+### Arch OS Core Services
 
 This services will be enabled during `core` Installation:
 
@@ -137,7 +131,7 @@ Supported VMs:
 - oracle
 - microsoft
 
-Disable this feature with `ARCH_OS_VM_SUPPORT_ENABLED='false'` (only relevant if `ARCH_OS_VARIANT` is set to `desktop`)
+Disable this feature with `ARCH_OS_VM_SUPPORT_ENABLED='false'`
 
 ### Example: `installer.conf`
 
@@ -157,79 +151,83 @@ ARCH_OS_BOOT_PARTITION='/dev/sda1'
 # Root partition (core)
 ARCH_OS_ROOT_PARTITION='/dev/sda2'
 
-# Disk encryption (core) | Disable: false
+# Disk encryption | Disable: false
 ARCH_OS_ENCRYPTION_ENABLED='true'
 
-# Timezone (core) | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin
+# Timezone | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin
 ARCH_OS_TIMEZONE='Europe/Berlin'
 
-# Locale (core) | Show available: ls /usr/share/i18n/locales | Example: de_DE
+# Locale | Show available: ls /usr/share/i18n/locales | Example: de_DE
 ARCH_OS_LOCALE_LANG='de_DE'
 
-# Locale List (core) | Show available: cat /etc/locale.gen
+# Locale List | Show available: cat /etc/locale.gen
 ARCH_OS_LOCALE_GEN_LIST=('de_DE.UTF-8 UTF-8' 'de_DE ISO-8859-1' 'de_DE@euro ISO-8859-15' 'en_US.UTF-8 UTF-8')
 
-# Console keymap (core) | Show available: localectl list-keymaps | Example: de-latin1-nodeadkeys
+# Console keymap | Show available: localectl list-keymaps | Example: de-latin1-nodeadkeys
 ARCH_OS_VCONSOLE_KEYMAP='de-latin1-nodeadkeys'
 
-# Console font (core) | Default: null | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Example: eurlatgr
+# Console font | Default: null | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Example: eurlatgr
 ARCH_OS_VCONSOLE_FONT=''
 
-# Kernel (core) | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened
+# Kernel | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened
 ARCH_OS_KERNEL='linux-zen'
 
-# Microcode (core) | Disable: none | Available: intel-ucode, amd-ucode
+# Microcode | Disable: none | Available: intel-ucode, amd-ucode
 ARCH_OS_MICROCODE='intel-ucode'
 
-# Disable ECN support for legacy routers (core) | Default: true | Disable: false
+# Disable ECN support for legacy routers | Default: true | Disable: false
 ARCH_OS_ECN_ENABLED='true'
 
-# Bootsplash (optional) | Disable: false
+# Bootsplash | Disable: false
 ARCH_OS_BOOTSPLASH_ENABLED='true'
 
-# Arch OS Variant (mandatory) | Available: core, base, desktop
-ARCH_OS_VARIANT='desktop'
+# Arch OS Desktop | Disable: false
+ARCH_OS_DESKTOP_ENABLED='desktop'
 
-# Shell Enhancement (base) | Default: true | Disable: false
-ARCH_OS_SHELL_ENHANCED_ENABLED='true'
+# Shell Enhancement | Disable: false
+ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
 
-# AUR Helper (base) | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur
+# AUR Helper | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur
 ARCH_OS_AUR_HELPER='paru'
 
-# MultiLib 32 Bit Support (base) | Default: true | Disable: false
+# MultiLib 32 Bit Support | Disable: false
 ARCH_OS_MULTILIB_ENABLED='true'
 
-# Country used by reflector (base) | Default: null | Example: Germany,France
+# Housekeeping | Disable: false
+ARCH_OS_HOUSEKEEPING_ENABLED='true'
+
+# Country used by reflector | Default: null | Example: Germany,France
 ARCH_OS_REFLECTOR_COUNTRY=''
 
-# Driver (desktop) | Default: mesa | Available: mesa, intel_i915, nvidia, amd, ati
-ARCH_OS_GRAPHICS_DRIVER='nvidia'
+# Graphics Driver | Disable: none | Available: mesa, intel_i915, nvidia, amd, ati
+ARCH_OS_DESKTOP_GRAPHICS_DRIVER='nvidia'
 
-# X11 keyboard layout (desktop) | Show available: localectl list-x11-keymap-layouts | Example: de
-ARCH_OS_X11_KEYBOARD_LAYOUT='de'
+# X11 keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de
+ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='de'
 
-# X11 keyboard model (desktop) | Default: pc105 | Show available: localectl list-x11-keymap-models
-ARCH_OS_X11_KEYBOARD_MODEL='pc105'
+# X11 keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models
+ARCH_OS_DESKTOP_KEYBOARD_MODEL='pc105'
 
-# X11 keyboard variant (desktop) | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys
-ARCH_OS_X11_KEYBOARD_VARIANT='nodeadkeys'
+# X11 keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys
+ARCH_OS_DESKTOP_KEYBOARD_VARIANT='nodeadkeys'
 
-# VM Support (desktop) | Default: true | Disable: false
+# VM Support | Default: true | Disable: false
 ARCH_OS_VM_SUPPORT_ENABLED='true'
 ```
 
 ## Shell Enhancement
 
-If the property `ARCH_OS_SHELL_ENHANCED_ENABLED` is set to `true` (default), these packages are installed and preconfigured (for root & user):
+If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true` (default), these packages are installed and preconfigured (for root & user):
 
 ```
-fish starship eza bat neofetch mc btop man-db
+fish starship eza bat neofetch mc btop nano man-db
 ```
 
 - `fish` is set as default shell
 - `starship` is set as fancy default promt see `~/.config/fish/config.fish`
 - `ls` is replaced with colorful `eza` see `~/.config/fish/aliases.fish`
 - `man` is replaced with colorful `bat` see `~/.config/fish/config.fish`
+- `nano` is set as default editor
 
 ### Useful Terminal commands
 
@@ -299,27 +297,20 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 
 - `vm.max_map_count` is set to `1048576` for compatibility of some apps/games
 - `DefaultTimeoutStopSec` is set to `10s` for faster shutdown
-- `nowatchdog` is set to kernel parameters
+- `modprobe.blacklist=iTCO_wdt nowatchdog` is set to kernel parameters
 
 ## Screenshots
 
 <div align="center">
-
-<p><img src="./screenshots/installer_00.png" /></p>
-<p><img src="./screenshots/installer_01.png" /></p>
-<p><img src="./screenshots/installer_02.png" /></p>
-<p><img src="./screenshots/installer_03.png" /></p>
-<p><img src="./screenshots/installer_04.png" /></p>
-<p><img src="./screenshots/installer_05.png" /></p>
-<p><img src="./screenshots/installer_06.png" /></p>
-<p><img src="screenshots/neofetch.png" /></p>
+<p><img src="screenshots/desktop.jpg" /></p>
 <p><img src="screenshots/apps.png" /></p>
+<p><img src="screenshots/neofetch.png" /></p>
 <p><b>This screenshots may outdated.</b></p>
 </div>
 
 ## Troubleshooting
 
-If an error occurs, see created `installer.log` for more details. Each step in `installer.sh` is seperated in the log file with `>>> Progress Title` so you can identify the regarding script part.
+If an error occurs, see created `installer.log` for more details.
 
 ### Installation failed
 
