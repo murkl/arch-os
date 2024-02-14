@@ -29,7 +29,6 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 
 ### Theming (optional)
 
-- Wallpaper: [link](./wallpaper.png)
 - Desktop Font: [inter-font](https://archlinux.org/packages/extra/any/inter-font/)
 - Desktop Theme: [adw-gtk3](https://github.com/lassekongo83/adw-gtk3)
 - Icon Theme: [tela-icon-theme](https://github.com/vinceliuice/Tela-icon-theme)
