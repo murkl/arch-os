@@ -7,7 +7,7 @@
 # Contents
 
 1. [Recommendation](#recommendation)
-2. [Installation Properties](#installation-properties)
+2. [Advanced Installation](#advanced-installation)
 3. [Shell Enhancement](#shell-enhancement)
 4. [Technical Information](#technical-information)
 5. [Screenshots](#screenshots)
@@ -83,7 +83,7 @@ May check out these projects:
 - [AutoEq](https://github.com/jaakkopasanen/AutoEq)
 - [EasyEffects Presents](https://github.com/wwmm/easyeffects/wiki/Community-presets)
 
-## Installation Properties
+## Advanced Installation
 
 The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as defaults for Arch OS setup menu. This file provides some additional properties to modify your Arch OS installation (see [Example](#example-installerconf)).
 

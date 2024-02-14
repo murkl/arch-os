@@ -83,7 +83,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 ## Installing Arch OS
 
-**[➜ See Advanced Installation](DOCS.md#installation-properties)**
+**[➜ See Advanced Installation](DOCS.md#advanced-installation)**
 
 ### 1. Prepare bootable USB Device
 
