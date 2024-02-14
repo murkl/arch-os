@@ -98,7 +98,7 @@ ARCH_OS_BOOTSPLASH_ENABLED='false'
 ARCH_OS_DESKTOP_ENABLED='false'
 ARCH_OS_MULTILIB_ENABLED='false'
 ARCH_OS_HOUSEKEEPING_ENABLED='false'
-ARCH_OS_SHELL_ENHANCED_ENABLED='false'
+ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
 ARCH_OS_AUR_HELPER='none'
 ```
 
@@ -185,7 +185,7 @@ ARCH_OS_BOOTSPLASH_ENABLED='true'
 ARCH_OS_DESKTOP_ENABLED='desktop'
 
 # Shell Enhancement | Disable: false
-ARCH_OS_SHELL_ENHANCED_ENABLED='true'
+ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
 
 # AUR Helper | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur
 ARCH_OS_AUR_HELPER='paru'
@@ -217,7 +217,7 @@ ARCH_OS_VM_SUPPORT_ENABLED='true'
 
 ## Shell Enhancement
 
-If the property `ARCH_OS_SHELL_ENHANCED_ENABLED` is set to `true` (default), these packages are installed and preconfigured (for root & user):
+If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true` (default), these packages are installed and preconfigured (for root & user):
 
 ```
 fish starship eza bat neofetch mc btop nano man-db

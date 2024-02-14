@@ -330,7 +330,7 @@ properties_generate() {
         echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
         echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
-        echo "ARCH_OS_SHELL_ENHANCED_ENABLED='${ARCH_OS_SHELL_ENHANCED_ENABLED}'"
+        echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}'"
         echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}'"
         echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}'"
         echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}'"
@@ -521,11 +521,11 @@ select_housekeeping() {
 # ----------------------------------------------------------------------------------------------------
 
 select_shell_enhancement() {
-    if [ -z "$ARCH_OS_SHELL_ENHANCED_ENABLED" ]; then
+    if [ -z "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" ]; then
         local user_input="false" && gum_confirm "Install Shell Enhancement?" && user_input="true"
-        ARCH_OS_SHELL_ENHANCED_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+        ARCH_OS_SHELL_ENHANCEMENT_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_add "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCED_ENABLED}"
+    print_add "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -865,7 +865,7 @@ exec_desktop() {
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/cups.desktop"
 
             # Hide Shell Enhancement apps
-            if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
+            if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
                 arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/fish.desktop"
                 arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/btop.desktop"
             fi
@@ -1080,7 +1080,7 @@ exec_housekeeping() {
 
 exec_shell_enhancement() {
     local process_name="Install Shell Enhancement"
-    if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
+    if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                   # If debug mode then return
