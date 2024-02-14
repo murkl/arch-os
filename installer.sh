@@ -306,8 +306,8 @@ properties_generate() {
     [ -z "$ARCH_OS_AUR_HELPER" ] && ARCH_OS_AUR_HELPER="paru"
     [ -z "$ARCH_OS_MULTILIB_ENABLED" ] && ARCH_OS_MULTILIB_ENABLED="true"
     [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
-    [ -z "$ARCH_OS_X11_KEYBOARD_MODEL" ] && ARCH_OS_X11_KEYBOARD_MODEL="pc105"
-    [ -z "$ARCH_OS_X11_KEYBOARD_LAYOUT" ] && ARCH_OS_X11_KEYBOARD_LAYOUT="us"
+    [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
+    [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ] && ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="us"
     [ -z "$ARCH_OS_GRAPHICS_DRIVER" ] && ARCH_OS_GRAPHICS_DRIVER="mesa"
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu) " && ARCH_OS_MICROCODE="intel-ucode"
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
@@ -334,9 +334,9 @@ properties_generate() {
         echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}'"
         echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}'"
         echo "ARCH_OS_GRAPHICS_DRIVER='${ARCH_OS_GRAPHICS_DRIVER}'"
-        echo "ARCH_OS_X11_KEYBOARD_LAYOUT='${ARCH_OS_X11_KEYBOARD_LAYOUT}'"
-        echo "ARCH_OS_X11_KEYBOARD_MODEL='${ARCH_OS_X11_KEYBOARD_MODEL}'"
-        echo "ARCH_OS_X11_KEYBOARD_VARIANT='${ARCH_OS_X11_KEYBOARD_VARIANT}'"
+        echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}'"
+        echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}'"
+        echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}'"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
     } >"$SCRIPT_CONF" # Write properties to file
 }
@@ -466,7 +466,7 @@ select_bootsplash() {
 # ----------------------------------------------------------------------------------------------------
 
 select_variant() {
-    if [ -z "$ARCH_OS_VARIANT" ] || [ -z "$ARCH_OS_GRAPHICS_DRIVER" ]; then
+    if [ -z "$ARCH_OS_VARIANT" ] || [ -z "$ARCH_OS_GRAPHICS_DRIVER" ] || [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
         local user_input options
         options=("desktop" "base" "core")
         user_input=$(gum_choose --header " + Choose Arch OS Variant" "${options[@]}") || trap_gum_exit_confirm
@@ -477,10 +477,14 @@ select_variant() {
             user_input=$(gum_choose --header " + Choose Graphics Driver" "${options[@]}") || trap_gum_exit_confirm
             [ -z "$user_input" ] && return 1      # Check if new value is null
             ARCH_OS_GRAPHICS_DRIVER="$user_input" # Set properties
+            user_input=$(gum_input --header " + Enter X11 Keyboard Layout" --value "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT") || trap_gum_exit_confirm
+            [ -z "$user_input" ] && return 1                                     # Check if new value is null
+            ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input" && properties_generate # Set value and generate properties file
         fi
         properties_generate # Generate properties file
     fi
     print_add "Variant is set to ${ARCH_OS_VARIANT}"
+    [ "$ARCH_OS_VARIANT" = "desktop" ] && print_add "Desktop Keyboard Layout is set to ${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}"
     [ "$ARCH_OS_VARIANT" = "desktop" ] && print_add "Graphics Driver is set to ${ARCH_OS_GRAPHICS_DRIVER}"
     return 0
 }
@@ -496,7 +500,7 @@ pacman_install_chroot() {
     # Retry installing packages 5 times (in case of connection issues)
     for ((i = 1; i < 6; i++)); do
         # Print updated whiptail info
-        [ "$i" -gt 1 ] && log_warn "Pacman installation ${i}. retry..."
+        [ "$i" -gt 1 ] && log_warn "${i}. Retry Pacman installation..."
         # Try installing packages
         if ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
             sleep 10 && continue # Wait 10 seconds & try again
@@ -708,169 +712,173 @@ exec_arch_os_core() {
 
 exec_arch_os_base() {
     local process_name="Install Arch OS Base System"
-    process_init "$process_name"
-    (
-        [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+    if [ "$ARCH_OS_VARIANT" = "base" ] || [ "$ARCH_OS_VARIANT" = "desktop" ]; then
+        process_init "$process_name"
+        (
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
-        # Install Base packages
-        pacman_install_chroot pacman-contrib reflector pkgfile git nano
+            # Install Base packages
+            pacman_install_chroot pacman-contrib reflector pkgfile git nano
 
-        # Enable services
-        arch-chroot /mnt systemctl enable reflector.service    # Rank mirrors after boot (reflector)
-        arch-chroot /mnt systemctl enable paccache.timer       # Discard cached/unused packages weekly (pacman-contrib)
-        arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer (pkgfile)
+            # Enable services
+            arch-chroot /mnt systemctl enable reflector.service    # Rank mirrors after boot (reflector)
+            arch-chroot /mnt systemctl enable paccache.timer       # Discard cached/unused packages weekly (pacman-contrib)
+            arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer (pkgfile)
 
-        # Configure parrallel downloads, colors & multilib
-        sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
-        sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
-        if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
-            sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
-            arch-chroot /mnt pacman -Syy --noconfirm
-        fi
+            # Configure parrallel downloads, colors & multilib
+            sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
+            sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
+            if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
+                sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
+                arch-chroot /mnt pacman -Syy --noconfirm
+            fi
 
-        # Configure reflector service
-        {
-            echo "# Reflector config for the systemd service"
-            echo "--save /etc/pacman.d/mirrorlist"
-            [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
-            echo "--completion-percent 95"
-            echo "--protocol https"
-            echo "--latest 5"
-            echo "--sort rate"
-        } >/mnt/etc/xdg/reflector/reflector.conf
+            # Configure reflector service
+            {
+                echo "# Reflector config for the systemd service"
+                echo "--save /etc/pacman.d/mirrorlist"
+                [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
+                echo "--completion-percent 95"
+                echo "--protocol https"
+                echo "--latest 5"
+                echo "--sort rate"
+            } >/mnt/etc/xdg/reflector/reflector.conf
 
-        # Set nano environment
-        {
-            echo 'EDITOR=nano'
-            echo 'VISUAL=nano'
-        } >/mnt/etc/environment
+            # Set nano environment
+            {
+                echo 'EDITOR=nano'
+                echo 'VISUAL=nano'
+            } >/mnt/etc/environment
 
-        # Set Nano colors
-        sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
-        sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
-        sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
+            # Set Nano colors
+            sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
+            sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
+            sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
 
-        # Reduce shutdown timeout
-        sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
+            # Reduce shutdown timeout
+            sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
 
-        # Set max VMAs (need for some apps/games)
-        echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
+            # Set max VMAs (need for some apps/games)
+            echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
 
-        process_return 0
-    ) &>"$PROCESS_LOG" &
-    process_run $! "$process_name"
+            process_return 0
+        ) &>"$PROCESS_LOG" &
+        process_run $! "$process_name"
+    fi
 }
 
 # ----------------------------------------------------------------------------------------------------
 
 exec_arch_os_desktop() {
     local process_name="Install Arch OS Desktop System"
-    process_init "$process_name"
-    (
-        [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+    if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
+        process_init "$process_name"
+        (
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
-        # GNOME base packages
-        local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra gnome-firmware power-profiles-daemon fwupd rygel cups)
+            # GNOME base packages
+            local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra gnome-firmware power-profiles-daemon fwupd rygel cups)
 
-        # GNOME wayland screensharing, flatpak & pipewire support
-        packages+=(xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome)
+            # GNOME wayland screensharing, flatpak & pipewire support
+            packages+=(xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome)
 
-        # GNOME legacy Indicator support (need for systray) (51 packages)
-        packages+=(libappindicator-gtk2 libappindicator-gtk3)
-        [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-libappindicator-gtk2 lib32-libappindicator-gtk3)
+            # GNOME legacy Indicator support (need for systray) (51 packages)
+            packages+=(libappindicator-gtk2 libappindicator-gtk3)
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-libappindicator-gtk2 lib32-libappindicator-gtk3)
 
-        # Audio (Pipewire replacements + session manager)
-        packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
-        [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
+            # Audio (Pipewire replacements + session manager)
+            packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
 
-        # Networking & Access
-        packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google)
+            # Networking & Access
+            packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google)
 
-        # Utils (https://wiki.archlinux.org/title/File_systems)
-        packages+=(nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
+            # Utils (https://wiki.archlinux.org/title/File_systems)
+            packages+=(nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
 
-        # Codecs
-        packages+=(gstreamer gst-libav gst-plugin-pipewire gst-plugins-ugly libdvdcss libheif)
-        [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer)
+            # Codecs
+            packages+=(gstreamer gst-libav gst-plugin-pipewire gst-plugins-ugly libdvdcss libheif)
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer)
 
-        # Optimization
-        packages+=(gamemode)
-        [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
+            # Optimization
+            packages+=(gamemode)
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
 
-        # Fonts
-        packages+=(noto-fonts noto-fonts-emoji ttf-firacode-nerd ttf-liberation ttf-dejavu)
+            # Fonts
+            packages+=(noto-fonts noto-fonts-emoji ttf-firacode-nerd ttf-liberation ttf-dejavu)
 
-        # Install packages
-        pacman_install_chroot "${packages[@]}"
+            # Install packages
+            pacman_install_chroot "${packages[@]}"
 
-        # Add user to gamemode group
-        arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
+            # Add user to gamemode group
+            arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
-        # Enable GNOME auto login
-        grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
+            # Enable GNOME auto login
+            grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
 
-        # Configure Git in ~/.config/git/config
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- mkdir -p "/home/${ARCH_OS_USERNAME}/.config/git"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- touch "/home/${ARCH_OS_USERNAME}/.config/git/config"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git config --global credential.helper /usr/lib/git-core/git-credential-libsecret
+            # Configure Git in ~/.config/git/config
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- mkdir -p "/home/${ARCH_OS_USERNAME}/.config/git"
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- touch "/home/${ARCH_OS_USERNAME}/.config/git/config"
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git config --global credential.helper /usr/lib/git-core/git-credential-libsecret
 
-        # Samba
-        mkdir -p "/mnt/etc/samba/"
-        {
-            echo "[global]"
-            echo "   workgroup = WORKGROUP"
-            echo "   log file = /var/log/samba/%m"
-        } >/mnt/etc/samba/smb.conf
+            # Samba
+            mkdir -p "/mnt/etc/samba/"
+            {
+                echo "[global]"
+                echo "   workgroup = WORKGROUP"
+                echo "   log file = /var/log/samba/%m"
+            } >/mnt/etc/samba/smb.conf
 
-        # Set X11 keyboard layout in /etc/X11/xorg.conf.d/00-keyboard.conf
-        {
-            echo 'Section "InputClass"'
-            echo '    Identifier "system-keyboard"'
-            echo '    MatchIsKeyboard "yes"'
-            echo '    Option "XkbLayout" "'"${ARCH_OS_X11_KEYBOARD_LAYOUT}"'"'
-            echo '    Option "XkbModel" "'"${ARCH_OS_X11_KEYBOARD_MODEL}"'"'
-            echo '    Option "XkbVariant" "'"${ARCH_OS_X11_KEYBOARD_VARIANT}"'"'
-            echo 'EndSection'
-        } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
+            # Set X11 keyboard layout in /etc/X11/xorg.conf.d/00-keyboard.conf
+            {
+                echo 'Section "InputClass"'
+                echo '    Identifier "system-keyboard"'
+                echo '    MatchIsKeyboard "yes"'
+                echo '    Option "XkbLayout" "'"${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}"'"'
+                echo '    Option "XkbModel" "'"${ARCH_OS_DESKTOP_KEYBOARD_MODEL}"'"'
+                echo '    Option "XkbVariant" "'"${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}"'"'
+                echo 'EndSection'
+            } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
 
-        # Enable Arch OS Desktop services
-        arch-chroot /mnt systemctl enable gdm.service                                                              # GNOME
-        arch-chroot /mnt systemctl enable bluetooth.service                                                        # Bluetooth
-        arch-chroot /mnt systemctl enable avahi-daemon                                                             # Network browsing service
-        arch-chroot /mnt systemctl enable cups.socket                                                              # Printer
-        arch-chroot /mnt systemctl enable smb.service                                                              # Samba
-        arch-chroot /mnt systemctl enable nmb.service                                                              # Samba
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
+            # Enable Arch OS Desktop services
+            arch-chroot /mnt systemctl enable gdm.service                                                              # GNOME
+            arch-chroot /mnt systemctl enable bluetooth.service                                                        # Bluetooth
+            arch-chroot /mnt systemctl enable avahi-daemon                                                             # Network browsing service
+            arch-chroot /mnt systemctl enable cups.socket                                                              # Printer
+            arch-chroot /mnt systemctl enable smb.service                                                              # Samba
+            arch-chroot /mnt systemctl enable nmb.service                                                              # Samba
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
 
-        # Hide desktop Aaplications icons
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- mkdir -p "/home/$ARCH_OS_USERNAME/.local/share/applications"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/avahi-discover.desktop"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/bssh.desktop"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/bvnc.desktop"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/qv4l2.desktop"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/qvidcap.desktop"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/lstopo.desktop"
-        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/cups.desktop"
+            # Hide desktop Aaplications icons
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- mkdir -p "/home/$ARCH_OS_USERNAME/.local/share/applications"
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/avahi-discover.desktop"
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/bssh.desktop"
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/bvnc.desktop"
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/qv4l2.desktop"
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/qvidcap.desktop"
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/lstopo.desktop"
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/cups.desktop"
 
-        # Hide Shell Enhancement apps
-        if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/fish.desktop"
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/btop.desktop"
-        fi
+            # Hide Shell Enhancement apps
+            if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
+                arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/fish.desktop"
+                arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/btop.desktop"
+            fi
 
-        # Return
-        process_return 0
-    ) &>"$PROCESS_LOG" &
-    process_run $! "$process_name"
+            # Return
+            process_return 0
+        ) &>"$PROCESS_LOG" &
+        process_run $! "$process_name"
+    fi
 }
 
 # ----------------------------------------------------------------------------------------------------
 
 exec_graphics_driver() {
-    local process_name="Install Graphics Driver"
-    if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
+    local process_name="Install Desktop Graphics Driver"
+    if [ -n "$ARCH_OS_GRAPHICS_DRIVER" ] && [ "$ARCH_OS_VARIANT" = "desktop" ]; then
         process_init "$process_name"
         (
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
@@ -944,6 +952,46 @@ exec_graphics_driver() {
 
 # ----------------------------------------------------------------------------------------------------
 
+exec_vm_support() {
+    local process_name="Install Desktop VM Support"
+    if [ "$ARCH_OS_VM_SUPPORT_ENABLED" = "true" ] && [ "$ARCH_OS_VARIANT" = "desktop" ]; then
+        process_init "$process_name"
+        (
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            case $(systemd-detect-virt || true) in
+            kvm)
+                log_info "KVM detected"
+                pacman_install_chroot spice spice-vdagent spice-protocol spice-gtk qemu-guest-agent
+                arch-chroot /mnt systemctl enable qemu-guest-agent
+                ;;
+            vmware)
+                log_info "VMWare Workstation/ESXi detected"
+                pacman_install_chroot open-vm-tools
+                arch-chroot /mnt systemctl enable vmtoolsd
+                arch-chroot /mnt systemctl enable vmware-vmblock-fuse
+                ;;
+            oracle)
+                log_info "VirtualBox detected"
+                pacman_install_chroot virtualbox-guest-utils
+                arch-chroot /mnt systemctl enable vboxservice
+                ;;
+            microsoft)
+                log_info "Hyper-V detected"
+                pacman_install_chroot hyperv
+                arch-chroot /mnt systemctl enable hv_fcopy_daemon
+                arch-chroot /mnt systemctl enable hv_kvp_daemon
+                arch-chroot /mnt systemctl enable hv_vss_daemon
+                ;;
+            *) log_info "No VM detected" ;; # Do nothing
+            esac
+            process_return 0 # Return
+        ) &>"$PROCESS_LOG" &
+        process_run $! "$process_name"
+    fi
+}
+
+# ----------------------------------------------------------------------------------------------------
+
 exec_bootsplash() {
     local process_name="Install Bootsplash"
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
@@ -976,8 +1024,8 @@ exec_aur_helper() {
         process_init "$process_name"
         (
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
-            pacman_install_chroot git
             # Install AUR Helper as user
+            pacman_install_chroot git # Install git
             repo_url="https://aur.archlinux.org/${ARCH_OS_AUR_HELPER}.git"
             tmp_name=$(mktemp -u "/home/${ARCH_OS_USERNAME}/${ARCH_OS_AUR_HELPER}.XXXXXXXXXX")
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$tmp_name"
@@ -1087,7 +1135,7 @@ exec_shell_enhancement() {
             { # Create neofetch config for root & user
                 echo '# https://github.com/dylanaraps/neofetch/wiki/Customizing-Info'
                 echo ''
-                echo 'print_progress() {'
+                echo 'print_info() {'
                 echo '    prin'
                 echo '    prin "Distro\t" "Arch OS"'
                 echo '    info "Kernel\t" kernel'
@@ -1144,63 +1192,17 @@ exec_shell_enhancement() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_vm_support() {
-    local process_name="Install VM Support"
-    if [ "$ARCH_OS_VM_SUPPORT_ENABLED" = "true" ]; then
-        process_init "$process_name"
-        (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
-            case $(systemd-detect-virt || true) in
-            kvm)
-                log_info "KVM detected"
-                pacman_install_chroot spice spice-vdagent spice-protocol spice-gtk qemu-guest-agent
-                arch-chroot /mnt systemctl enable qemu-guest-agent
-                ;;
-            vmware)
-                log_info "VMWare Workstation/ESXi detected"
-                pacman_install_chroot open-vm-tools
-                arch-chroot /mnt systemctl enable vmtoolsd
-                arch-chroot /mnt systemctl enable vmware-vmblock-fuse
-                ;;
-            oracle)
-                log_info "VirtualBox detected"
-                pacman_install_chroot virtualbox-guest-utils
-                arch-chroot /mnt systemctl enable vboxservice
-                ;;
-            microsoft)
-                log_info "Hyper-V detected"
-                pacman_install_chroot hyperv
-                arch-chroot /mnt systemctl enable hv_fcopy_daemon
-                arch-chroot /mnt systemctl enable hv_kvp_daemon
-                arch-chroot /mnt systemctl enable hv_vss_daemon
-                ;;
-            *) log_info "No VM detected" ;; # Do nothing
-            esac
-            process_return 0 # Return
-        ) &>"$PROCESS_LOG" &
-        process_run $! "$process_name"
-    fi
-}
-
-# ----------------------------------------------------------------------------------------------------
-
+# shellcheck disable=SC2016
 exec_cleanup() {
     local process_name="Cleanup Installation"
     process_init "$process_name"
     (
-        [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
-        # Copy installer files to users home dir
-        cp "$SCRIPT_CONF" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
-        cp "$0" "/mnt/home/${ARCH_OS_USERNAME}/installer.sh"
-        # Remove sudo needs no password rights
-        sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
-        # Set home permission
-        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
-        # Remove orphans and force return true
-        # shellcheck disable=SC2016
-        arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true'
-
-        process_return 0 # Return
+        [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                                  # If debug mode then return
+        cp "$SCRIPT_CONF" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"                                      # Copy installer files to users home dir
+        sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Remove sudo needs no password rights
+        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"         # Set home permission
+        arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true' # Remove orphans and force return true
+        process_return 0                                                                                      # Return
     ) &>"$PROCESS_LOG" &
     process_run $! "$process_name"
 }

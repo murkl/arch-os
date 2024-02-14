@@ -206,13 +206,13 @@ ARCH_OS_REFLECTOR_COUNTRY=''
 ARCH_OS_GRAPHICS_DRIVER='nvidia'
 
 # X11 keyboard layout (desktop) | Show available: localectl list-x11-keymap-layouts | Example: de
-ARCH_OS_X11_KEYBOARD_LAYOUT='de'
+ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='de'
 
 # X11 keyboard model (desktop) | Default: pc105 | Show available: localectl list-x11-keymap-models
-ARCH_OS_X11_KEYBOARD_MODEL='pc105'
+ARCH_OS_DESKTOP_KEYBOARD_MODEL='pc105'
 
 # X11 keyboard variant (desktop) | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys
-ARCH_OS_X11_KEYBOARD_VARIANT='nodeadkeys'
+ARCH_OS_DESKTOP_KEYBOARD_VARIANT='nodeadkeys'
 
 # VM Support (desktop) | Default: true | Disable: false
 ARCH_OS_VM_SUPPORT_ENABLED='true'
