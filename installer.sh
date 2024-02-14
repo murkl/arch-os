@@ -529,11 +529,10 @@ select_shell_enhancement() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# EXECUTORS (SUB PROCESSES)
+# CHROOT HELPER
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-# Helper
-pacman_install_chroot() {
+chroot_pacman_install() {
     local packages=("$@")
     local pacman_failed="true"
     # Retry installing packages 5 times (in case of connection issues)
@@ -553,6 +552,22 @@ pacman_install_chroot() {
 }
 
 # ----------------------------------------------------------------------------------------------------
+
+chroot_aur_install() {
+    local repo repo_url repo_tmp_dir
+    repo="$1"
+    repo_url="https://aur.archlinux.org/${repo}.git"
+    repo_tmp_dir=$(mktemp -u "/home/${ARCH_OS_USERNAME}/${repo}.XXXXXXXXXX")
+    sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Disable sudo needs no password rights
+    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$repo_tmp_dir"
+    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $repo_tmp_dir && makepkg -si --noconfirm"
+    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$repo_tmp_dir"
+    sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Enable sudo needs no password rights
+}
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# EXECUTORS (SUB PROCESSES)
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 exec_init() {
     local process_name="Initialize Installation"
@@ -731,9 +746,6 @@ exec_core() {
         printf "%s\n%s" "${ARCH_OS_PASSWORD}" "${ARCH_OS_PASSWORD}" | arch-chroot /mnt passwd
         printf "%s\n%s" "${ARCH_OS_PASSWORD}" "${ARCH_OS_PASSWORD}" | arch-chroot /mnt passwd "$ARCH_OS_USERNAME"
 
-        # Add sudo needs no password rights (only for installation)
-        sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
-
         # Enable services
         arch-chroot /mnt systemctl enable NetworkManager                   # Network Manager
         arch-chroot /mnt systemctl enable fstrim.timer                     # SSD support
@@ -799,7 +811,7 @@ exec_desktop() {
             packages+=(noto-fonts noto-fonts-emoji ttf-firacode-nerd ttf-liberation ttf-dejavu)
 
             # Install packages
-            pacman_install_chroot "${packages[@]}"
+            chroot_pacman_install "${packages[@]}"
 
             # Add user to gamemode group
             arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
@@ -877,19 +889,19 @@ exec_graphics_driver() {
             "mesa") # https://wiki.archlinux.org/title/OpenGL#Installation
                 local packages=(mesa mesa-utils vkd3d)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-mesa lib32-mesa-utils lib32-vkd3d)
-                pacman_install_chroot "${packages[@]}"
+                chroot_pacman_install "${packages[@]}"
                 ;;
             "intel_i915") # https://wiki.archlinux.org/title/Intel_graphics#Installation
                 local packages=(vulkan-intel vkd3d libva-intel-driver)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-vulkan-intel lib32-vkd3d lib32-libva-intel-driver)
-                pacman_install_chroot "${packages[@]}"
+                chroot_pacman_install "${packages[@]}"
                 sed -i "s/^MODULES=(.*)/MODULES=(i915)/g" /mnt/etc/mkinitcpio.conf
                 arch-chroot /mnt mkinitcpio -P
                 ;;
             "nvidia") # https://wiki.archlinux.org/title/NVIDIA#Installation
                 local packages=("${ARCH_OS_KERNEL}-headers" nvidia-dkms nvidia-settings nvidia-utils opencl-nvidia vkd3d)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-nvidia-utils lib32-opencl-nvidia lib32-vkd3d)
-                pacman_install_chroot "${packages[@]}"
+                chroot_pacman_install "${packages[@]}"
                 # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
                 # Alternative (slow boot, bios logo twice, but correct plymouth resolution):
                 #sed -i "s/nowatchdog quiet/nowatchdog nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
@@ -922,7 +934,7 @@ exec_graphics_driver() {
             "amd") # https://wiki.archlinux.org/title/AMDGPU#Installation
                 local packages=(xf86-video-amdgpu libva-mesa-driver vulkan-radeon mesa-vdpau vkd3d)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-libva-mesa-driver lib32-vulkan-radeon lib32-mesa-vdpau lib32-vkd3d)
-                pacman_install_chroot "${packages[@]}"
+                chroot_pacman_install "${packages[@]}"
                 # Must be discussed: https://wiki.archlinux.org/title/AMDGPU#Disable_loading_radeon_completely_at_boot
                 sed -i "s/^MODULES=(.*)/MODULES=(amdgpu radeon)/g" /mnt/etc/mkinitcpio.conf
                 arch-chroot /mnt mkinitcpio -P
@@ -930,7 +942,7 @@ exec_graphics_driver() {
             "ati") # https://wiki.archlinux.org/title/ATI#Installation
                 local packages=(xf86-video-ati libva-mesa-driver mesa-vdpau vkd3d)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-libva-mesa-driver lib32-mesa-vdpau lib32-vkd3d)
-                pacman_install_chroot "${packages[@]}"
+                chroot_pacman_install "${packages[@]}"
                 sed -i "s/^MODULES=(.*)/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
                 arch-chroot /mnt mkinitcpio -P
                 ;;
@@ -952,23 +964,23 @@ exec_vm_support() {
             case $(systemd-detect-virt || true) in
             kvm)
                 log_info "KVM detected"
-                pacman_install_chroot spice spice-vdagent spice-protocol spice-gtk qemu-guest-agent
+                chroot_pacman_install spice spice-vdagent spice-protocol spice-gtk qemu-guest-agent
                 arch-chroot /mnt systemctl enable qemu-guest-agent
                 ;;
             vmware)
                 log_info "VMWare Workstation/ESXi detected"
-                pacman_install_chroot open-vm-tools
+                chroot_pacman_install open-vm-tools
                 arch-chroot /mnt systemctl enable vmtoolsd
                 arch-chroot /mnt systemctl enable vmware-vmblock-fuse
                 ;;
             oracle)
                 log_info "VirtualBox detected"
-                pacman_install_chroot virtualbox-guest-utils
+                chroot_pacman_install virtualbox-guest-utils
                 arch-chroot /mnt systemctl enable vboxservice
                 ;;
             microsoft)
                 log_info "Hyper-V detected"
-                pacman_install_chroot hyperv
+                chroot_pacman_install hyperv
                 arch-chroot /mnt systemctl enable hv_fcopy_daemon
                 arch-chroot /mnt systemctl enable hv_kvp_daemon
                 arch-chroot /mnt systemctl enable hv_vss_daemon
@@ -988,20 +1000,12 @@ exec_bootsplash() {
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
-            local repo_url tmp_name
-            pacman_install_chroot plymouth git base-devel # Install packages
-            # Configure mkinitcpio
-            sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf
-            # Install Arch OS plymouth theme
-            repo_url="https://aur.archlinux.org/plymouth-theme-arch-os.git"
-            tmp_name=$(mktemp -u "/home/${ARCH_OS_USERNAME}/plymouth-theme-arch-os.XXXXXXXXXX")
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$tmp_name"
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $tmp_name && makepkg -si --noconfirm"
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$tmp_name"
-            # Set Theme & rebuild initram disk
-            arch-chroot /mnt plymouth-set-default-theme -R arch-os
-            process_return 0
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                       # If debug mode then return
+            chroot_pacman_install plymouth git base-devel                                              # Install packages
+            sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf # Configure mkinitcpio
+            chroot_aur_install plymouth-theme-arch-os                                                  # Install Arch OS plymouth theme from AUR
+            arch-chroot /mnt plymouth-set-default-theme -R arch-os                                     # Set Theme & rebuild initram disk
+            process_return 0                                                                           # Return
         ) &>"$PROCESS_LOG" &
         process_run $! "$process_name"
     fi
@@ -1015,20 +1019,14 @@ exec_aur_helper() {
         process_init "$process_name"
         (
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
-            local repo_url tmp_name
-            pacman_install_chroot git base-devel # Install packages
-            repo_url="https://aur.archlinux.org/${ARCH_OS_AUR_HELPER}.git"
-            tmp_name=$(mktemp -u "/home/${ARCH_OS_USERNAME}/${ARCH_OS_AUR_HELPER}.XXXXXXXXXX")
-            # Install AUR Helper as user
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$tmp_name"
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $tmp_name && makepkg -si --noconfirm"
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$tmp_name"
+            chroot_pacman_install git base-devel                 # Install packages
+            chroot_aur_install "$ARCH_OS_AUR_HELPER"             # Install AUR helper
             # Paru config
             if [ "$ARCH_OS_AUR_HELPER" = "paru" ] || [ "$ARCH_OS_AUR_HELPER" = "paru-bin" ] || [ "$ARCH_OS_AUR_HELPER" = "paru-git" ]; then
                 sed -i 's/^#BottomUp/BottomUp/g' /mnt/etc/paru.conf
                 sed -i 's/^#SudoLoop/SudoLoop/g' /mnt/etc/paru.conf
             fi
-            process_return 0
+            process_return 0 # Return
         ) &>"$PROCESS_LOG" &
         process_run $! "$process_name"
     fi
@@ -1057,13 +1055,9 @@ exec_housekeeping() {
     if [ "$ARCH_OS_HOUSEKEEPING_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
-
-            # Install Base packages
-            pacman_install_chroot pacman-contrib reflector pkgfile
-
-            # Configure reflector service
-            {
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0   # If debug mode then return
+            chroot_pacman_install pacman-contrib reflector pkgfile # Install Base packages
+            {                                                      # Configure reflector service
                 echo "# Reflector config for the systemd service"
                 echo "--save /etc/pacman.d/mirrorlist"
                 [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
@@ -1072,13 +1066,11 @@ exec_housekeeping() {
                 echo "--latest 5"
                 echo "--sort rate"
             } >/mnt/etc/xdg/reflector/reflector.conf
-
             # Enable services
             arch-chroot /mnt systemctl enable reflector.service    # Rank mirrors after boot (reflector)
             arch-chroot /mnt systemctl enable paccache.timer       # Discard cached/unused packages weekly (pacman-contrib)
             arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer (pkgfile)
-
-            process_return 0
+            process_return 0                                       # Return
         ) &>"$PROCESS_LOG" &
         process_run $! "$process_name"
     fi
@@ -1091,13 +1083,10 @@ exec_shell_enhancement() {
     if [ "$ARCH_OS_SHELL_ENHANCED_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
-            # Install packages
-            pacman_install_chroot fish starship eza bat neofetch mc btop nano man-db
-            # Create config dirs for root & user
-            mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"
-            mkdir -p "/mnt/root/.config/neofetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch"
-
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                   # If debug mode then return
+            chroot_pacman_install fish starship eza bat neofetch mc btop nano man-db               # Install packages
+            mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"         # Create fish config dirs
+            mkdir -p "/mnt/root/.config/neofetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch" # Create neofetch config dirs
             # shellcheck disable=SC2016
             { # Create fish config for root & user
                 echo 'if status is-interactive'
@@ -1233,7 +1222,6 @@ exec_cleanup() {
     (
         [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                                  # If debug mode then return
         cp "$SCRIPT_CONF" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"                                      # Copy installer files to users home dir
-        sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Remove sudo needs no password rights
         arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"         # Set home permission
         arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true' # Remove orphans and force return true
         process_return 0                                                                                      # Return
