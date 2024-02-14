@@ -106,13 +106,11 @@ ARCH_OS_AUR_HELPER='none'
 
 ### Arch OS Core Packages
 
-This packages will be installed during `core` Installation (171 packages in total):
+This packages will be installed during `core` Installation (149 packages in total):
 
 ```
-base base-devel linux-zen linux-firmware zram-generator networkmanager [microcode_pkg]
+base sudo linux-zen linux-firmware zram-generator networkmanager [microcode_pkg]
 ```
-
-**Note:** Can be reduced by removing `base-devel` afterwards and install `sudo` instead. You may need more packages from [base-devel](https://archlinux.org/packages/core/any/base-devel/) group.
 
 ### Arch OS Core Services
 

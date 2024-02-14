@@ -46,7 +46,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 ## Core Features
 
-- [Minimal Arch Linux](DOCS.md#minimal-installation) (171 packages)
+- [Minimal Arch Linux](DOCS.md#minimal-installation) (149 packages)
 - Zen Kernel ([configurable](DOCS.md#installation-properties))
 - [Swap](DOCS.md#swap) with zram-generator (zstd)
 - Filesystem ext4

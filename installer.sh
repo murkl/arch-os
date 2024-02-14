@@ -628,6 +628,7 @@ exec_core() {
     (
         [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
+        # Minimal Core packages
         local packages=("$ARCH_OS_KERNEL" base sudo linux-firmware zram-generator networkmanager)
 
         # Add microcode package
@@ -988,7 +989,8 @@ exec_bootsplash() {
         process_init "$process_name"
         (
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
-            pacman_install_chroot plymouth git
+            local repo_url tmp_name
+            pacman_install_chroot plymouth git base-devel # Install packages
             # Configure mkinitcpio
             sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf
             # Install Arch OS plymouth theme
@@ -1013,10 +1015,11 @@ exec_aur_helper() {
         process_init "$process_name"
         (
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
-            # Install AUR Helper as user
-            pacman_install_chroot git # Install git
+            local repo_url tmp_name
+            pacman_install_chroot git base-devel # Install packages
             repo_url="https://aur.archlinux.org/${ARCH_OS_AUR_HELPER}.git"
             tmp_name=$(mktemp -u "/home/${ARCH_OS_USERNAME}/${ARCH_OS_AUR_HELPER}.XXXXXXXXXX")
+            # Install AUR Helper as user
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$tmp_name"
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $tmp_name && makepkg -si --noconfirm"
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$tmp_name"
