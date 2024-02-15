@@ -7,7 +7,7 @@
 
 <p><strong>Boot from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a> and simply run</strong></p>
 
-`curl -Ls http://arch.webhop.me | bash`
+`curl -Ls bit.ly/arch-os | bash`
 
 <p><b>
 
@@ -19,7 +19,7 @@
 This project aims to provide a robust Arch Linux base for desktop usage, along with an easy-to-use and fast installer with error handling. Install a minimal Arch Linux core with optional features such as Automatic Housekeeping, Zen Kernel, GNOME Desktop with Graphics Driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....
 </p>
 
-<p><img src="./screenshots/installer.png" /></p>
+<p><img src="./screenshots/installer_01.png" /></p>
 
 <p><b>
 
@@ -101,7 +101,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 - Load prefered keyboard layout (optional): `loadkeys de`
 - Connect to WLAN (optional): `iwctl station wlan0 connect "SSID"`
-- **Run Arch OS Installer:** `curl -Ls http://arch.webhop.me | bash`
+- **Run Arch OS Installer:** `curl -Ls  bit.ly/arch-os | bash`
 
 ## Using Arch OS
 

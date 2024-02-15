@@ -10,9 +10,9 @@
 2. [Advanced Installation](#advanced-installation)
 3. [Shell Enhancement](#shell-enhancement)
 4. [Technical Information](#technical-information)
-5. [Screenshots](#screenshots)
-6. [Troubleshooting](#troubleshooting)
-7. [Development](#development)
+5. [Troubleshooting](#troubleshooting)
+6. [Development](#development)
+7. [Screenshots](#screenshots)
 
 ## Recommendation
 
@@ -298,15 +298,6 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 - `DefaultTimeoutStopSec` is set to `10s` for faster shutdown
 - `modprobe.blacklist=iTCO_wdt nowatchdog` is set to kernel parameters
 
-## Screenshots
-
-<div align="center">
-<p><img src="screenshots/desktop.jpg" /></p>
-<p><img src="screenshots/apps.png" /></p>
-<p><img src="screenshots/neofetch.png" /></p>
-<p><b>This screenshots may outdated.</b></p>
-</div>
-
 ## Troubleshooting
 
 If an error occurs, see created `installer.log` for more details.
@@ -399,5 +390,28 @@ Create new pull request branches only from [main branch](https://github.com/murk
 The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broken, use only for testing!
 
 ```
-curl -Ls http://arch-dev.webhop.me | bash
+curl -Ls bit.ly/arch-os-dev | bash
 ```
+
+## Screenshots
+
+<p align="left"><b>This screenshots may outdated.</b></p>
+
+### Arch OS Desktop
+
+<div align="center">
+<p><img src="screenshots/desktop_01.jpg" /></p>
+<p><img src="screenshots/apps_01.png" /></p>
+<p><img src="screenshots/neofetch_01.png" /></p>
+</div>
+
+### Arch OS Installer
+
+<div align="center">
+<p><img src="screenshots/installer_02.png" /></p>
+<p><img src="screenshots/installer_03.png" /></p>
+<p><img src="screenshots/installer_04.png" /></p>
+<p><img src="screenshots/installer_05.png" /></p>
+<p><img src="screenshots/installer_06.png" /></p>
+
+</div>
