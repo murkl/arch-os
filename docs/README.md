@@ -7,7 +7,7 @@
 
 <p><strong>Boot from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a> and simply run</strong></p>
 
-`curl -Ls http://arch.webhop.me | bash`
+`curl -Ls bit.ly/arch-os | bash`
 
 <p><b>
 
@@ -19,7 +19,7 @@
 This project aims to provide a robust Arch Linux base for desktop usage, along with an easy-to-use and fast installer with error handling. Install a minimal Arch Linux core with optional features such as Automatic Housekeeping, Zen Kernel, GNOME Desktop with Graphics Driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....
 </p>
 
-<p><img src="./screenshots/installer.png" /></p>
+<p><img src="./screenshots/installer_01.png" /></p>
 
 <p><b>
 
@@ -70,9 +70,9 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - 32 Bit Support (Multilib)
 - Disk Encryption
 - [Shell Enhancement](DOCS.md#shell-enhancement)
-- Missing package suggestion for commands
-- Automatic Pacman mirrorlist update (on every startup)
+- Automatic Pacman mirrorlist update (see [Housekeeping](DOCS.md#housekeeping))
 - Pacman automatic cache optimization (weekly)
+- Missing package suggestion for commands
 - Flatpak Support + Auto Update (GNOME Software)
 - Samba, Networking Protocol Libs, Git, Utils & Codecs included
 - GNOME Power Profiles Support
@@ -100,8 +100,8 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 ### 3. Boot from USB Device
 
 - Load prefered keyboard layout (optional): `loadkeys de`
-- Connect to WLAN (optional): `iwctl station wlan0 connect "SSID"`
-- **Run Arch OS Installer:** `curl -Ls http://arch.webhop.me | bash`
+- Connect to WLAN (optional): `iwctl station wlan0 connect 'SSID'`
+- **Run Arch OS Installer:** `curl -Ls  bit.ly/arch-os | bash`
 
 ## Using Arch OS
 

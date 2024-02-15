@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.3.2'
+VERSION='1.3.3'
 GUM_VERSION="0.13.0"
 
 # ENVIRONMENT
@@ -78,11 +78,11 @@ main() {
         until select_disk; do :; done
         until select_encryption; do :; done
         until select_bootsplash; do :; done
-        until select_desktop; do :; done
-        until select_aur_helper; do :; done
         until select_multilib; do :; done
+        until select_aur_helper; do :; done
         until select_housekeeping; do :; done
         until select_shell_enhancement; do :; done
+        until select_desktop; do :; done
 
         # Edit properties?
         if [ "$first_run" = "true" ] && gum_confirm "Edit Properties?"; then
@@ -281,7 +281,7 @@ gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
 gum_style() { gum style "${@}"; } # Set default width
 gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
 gum_input() { gum input --placeholder "..." --prompt " + " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
-gum_write() { gum write --prompt " • " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
+gum_write() { gum write --prompt " • " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
 gum_choose() { gum choose --cursor " > " --height 8 --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
 gum_filter() { gum filter --prompt " > " --indicator " • " --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
 gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
