@@ -100,7 +100,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 ### 3. Boot from USB Device
 
 - Load prefered keyboard layout (optional): `loadkeys de`
-- Connect to WLAN (optional): `iwctl station wlan0 connect "SSID"`
+- Connect to WLAN (optional): `iwctl station wlan0 connect 'SSID'`
 - **Run Arch OS Installer:** `curl -Ls  bit.ly/arch-os | bash`
 
 ## Using Arch OS
