@@ -245,7 +245,7 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 
 ### Packages
 
-This packages will be installed during `core` Installation (149 packages in total):
+This packages will be installed during Arch OS Core Installation (149 packages in total):
 
 ```
 base linux-firmware zram-generator networkmanager sudo [kernel_pkg] [microcode_pkg]
@@ -253,13 +253,15 @@ base linux-firmware zram-generator networkmanager sudo [kernel_pkg] [microcode_p
 
 ### Services
 
-This services will be enabled during `core` Installation:
+This services will be enabled during Arch OS Core Installation:
 
 ```
 NetworkManager fstrim.timer systemd-zram-setup@zram0.service systemd-oomd.service systemd-boot-update.service systemd-timesyncd.service
 ```
 
 ### Configuration
+
+This configuration will be set during Arch OS Core Installation:
 
 - `vm.max_map_count` is set to `1048576` for compatibility of some apps/games
 - `DefaultTimeoutStopSec` is set to `10s` for faster shutdown
