@@ -70,9 +70,9 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - 32 Bit Support (Multilib)
 - Disk Encryption
 - [Shell Enhancement](DOCS.md#shell-enhancement)
-- Missing package suggestion for commands
-- Automatic Pacman mirrorlist update (on every startup)
+- Automatic Pacman mirrorlist update (see [Housekeeping](DOCS.md#housekeeping))
 - Pacman automatic cache optimization (weekly)
+- Missing package suggestion for commands
 - Flatpak Support + Auto Update (GNOME Software)
 - Samba, Networking Protocol Libs, Git, Utils & Codecs included
 - GNOME Power Profiles Support
