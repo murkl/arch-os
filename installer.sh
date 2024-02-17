@@ -469,7 +469,7 @@ select_bootsplash() {
 select_desktop() {
     if [ -z "$ARCH_OS_DESKTOP_ENABLED" ] || [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] || [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
         local user_input options
-        user_input="false" && gum_confirm "Install Arch OS Desktop?" && user_input="true"
+        user_input="false" && gum_confirm "Enable Arch OS Desktop?" && user_input="true"
         ARCH_OS_DESKTOP_ENABLED="$user_input"            # Set property
         if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then # If desktop is true set graphics driver and keyboard layout
             options=("mesa" "intel_i915" "nvidia" "amd" "ati")
@@ -492,7 +492,7 @@ select_desktop() {
 
 select_aur_helper() {
     if [ -z "$ARCH_OS_AUR_HELPER" ]; then
-        local user_input="none" && gum_confirm "Install AUR Helper?" && user_input="paru"
+        local user_input="none" && gum_confirm "Enable AUR Helper?" && user_input="paru"
         ARCH_OS_AUR_HELPER="$user_input" && properties_generate # Set value and generate properties file
     fi
     print_add "AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
@@ -522,7 +522,7 @@ select_housekeeping() {
 
 select_shell_enhancement() {
     if [ -z "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" ]; then
-        local user_input="false" && gum_confirm "Install Shell Enhancement?" && user_input="true"
+        local user_input="false" && gum_confirm "Enable Shell Enhancement?" && user_input="true"
         ARCH_OS_SHELL_ENHANCEMENT_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     print_add "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
@@ -800,8 +800,8 @@ exec_desktop() {
             packages+=(git nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
 
             # Codecs
-            # a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav fuse-exfat libdvdread
             packages+=(gstreamer gst-libav gst-plugin-pipewire gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader)
+            packages+=(a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav fuse-exfat libdvdread)
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer)
 
             # Optimization
