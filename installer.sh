@@ -281,7 +281,7 @@ gum_yellow() { gum_style --foreground "$COLOR_YELLOW" "${@}"; }
 gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
 
 # Gum
-gum_style() { gum style "${@}"; } # Set default width
+gum_style() { gum style "${@}"; }
 gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
 gum_input() { gum input --placeholder "..." --prompt " + " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
 gum_write() { gum write --prompt " • " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
