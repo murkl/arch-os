@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.3.3'
+VERSION='1.3.4'
 GUM_VERSION="0.13.0"
 
 # ENVIRONMENT
@@ -76,13 +76,14 @@ main() {
         until select_language; do :; done
         until select_keyboard; do :; done
         until select_disk; do :; done
-        until select_encryption; do :; done
-        until select_bootsplash; do :; done
-        until select_multilib; do :; done
-        until select_aur_helper; do :; done
-        until select_housekeeping; do :; done
-        until select_shell_enhancement; do :; done
-        until select_desktop; do :; done
+        until select_enable_encryption; do :; done
+        until select_enable_bootsplash; do :; done
+        until select_enable_multilib; do :; done
+        until select_enable_aur; do :; done
+        until select_enable_housekeeping; do :; done
+        until select_enable_shell_enhancement; do :; done
+        until select_enable_desktop; do :; done
+        until select_enable_app; do :; done
 
         # Edit properties?
         if [ "$first_run" = "true" ] && gum_confirm "Edit Properties?"; then
@@ -109,18 +110,19 @@ main() {
     SECONDS=0 # Messure execution time of installation
 
     # Executors
-    exec_init
-    exec_disk
-    exec_core
-    exec_multilib
-    exec_bootsplash
-    exec_aur_helper
-    exec_housekeeping
-    exec_shell_enhancement
-    exec_desktop
-    exec_graphics_driver
-    exec_vm_support
-    exec_cleanup
+    exec_init_installation
+    exec_prepare_disk
+    exec_pacstrap_core
+    exec_enable_multilib
+    exec_install_bootsplash
+    exec_install_aur_helper
+    exec_install_housekeeping
+    exec_install_shell_enhancement
+    exec_install_desktop
+    exec_install_graphics_driver
+    exec_install_vm_support
+    exec_install_app
+    exec_cleanup_installation
 
     # Calc installation duration
     duration=$SECONDS # This is set before install starts
@@ -244,16 +246,17 @@ process_return() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 print_header() {
-    local header_logo='
+    local header_logo header_title header_container
+    header_logo='
  █████  ██████   ██████ ██   ██      ██████  ███████ 
 ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
 ███████ ██████  ██      ███████     ██    ██ ███████ 
 ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
 ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
     ' && header_logo=$(gum_purple --bold "$header_logo")
-    local header_title="Arch OS Installer ${VERSION}" && header_title=$(gum_white --bold "$header_title")
-    local header_container && header_container=$(gum join --vertical --align center "$header_logo" "$header_title")
-    clear && gum_style --align center --border none --border-foreground "$COLOR_WHITE" --margin 0 --padding "0 1" "$header_container"
+    header_title="Arch OS Installer ${VERSION}" && header_title=$(gum_white --bold "$header_title")
+    header_container=$(gum join --vertical --align center "$header_logo" "$header_title")
+    clear && gum_style --padding "0 1" "$header_container"
 }
 
 # Log
@@ -282,7 +285,7 @@ gum_style() { gum style "${@}"; } # Set default width
 gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
 gum_input() { gum input --placeholder "..." --prompt " + " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
 gum_write() { gum write --prompt " • " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
-gum_choose() { gum choose --cursor " > " --height 8 --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
+gum_choose() { gum choose --cursor " > " --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
 gum_filter() { gum filter --prompt " > " --indicator " • " --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
 gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
 # shellcheck disable=SC2317
@@ -330,6 +333,7 @@ properties_generate() {
         echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
         echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
+        echo "ARCH_OS_APP_ENABLED='${ARCH_OS_APP_ENABLED}'"
         echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}'"
         echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}'"
         echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}'"
@@ -446,7 +450,7 @@ select_disk() {
 
 # ----------------------------------------------------------------------------------------------------
 
-select_encryption() {
+select_enable_encryption() {
     if [ -z "$ARCH_OS_ENCRYPTION_ENABLED" ]; then
         local user_input="false" && gum_confirm "Enable Disk Encryption?" && user_input="true"
         ARCH_OS_ENCRYPTION_ENABLED="$user_input" && properties_generate # Set value and generate properties file
@@ -456,7 +460,7 @@ select_encryption() {
 
 # ----------------------------------------------------------------------------------------------------
 
-select_bootsplash() {
+select_enable_bootsplash() {
     if [ -z "$ARCH_OS_BOOTSPLASH_ENABLED" ]; then
         local user_input="false" && gum_confirm "Enable Bootsplash?" && user_input="true"
         ARCH_OS_BOOTSPLASH_ENABLED="$user_input" && properties_generate # Set value and generate properties file
@@ -466,10 +470,10 @@ select_bootsplash() {
 
 # ----------------------------------------------------------------------------------------------------
 
-select_desktop() {
+select_enable_desktop() {
     if [ -z "$ARCH_OS_DESKTOP_ENABLED" ] || [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] || [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
         local user_input options
-        user_input="false" && gum_confirm "Install Arch OS Desktop?" && user_input="true"
+        user_input="false" && gum_confirm "Enable Arch OS Desktop?" && user_input="true"
         ARCH_OS_DESKTOP_ENABLED="$user_input"            # Set property
         if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then # If desktop is true set graphics driver and keyboard layout
             options=("mesa" "intel_i915" "nvidia" "amd" "ati")
@@ -490,9 +494,9 @@ select_desktop() {
 
 # ----------------------------------------------------------------------------------------------------
 
-select_aur_helper() {
+select_enable_aur() {
     if [ -z "$ARCH_OS_AUR_HELPER" ]; then
-        local user_input="none" && gum_confirm "Install AUR Helper?" && user_input="paru"
+        local user_input="none" && gum_confirm "Enable AUR Helper?" && user_input="paru"
         ARCH_OS_AUR_HELPER="$user_input" && properties_generate # Set value and generate properties file
     fi
     print_add "AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
@@ -500,7 +504,7 @@ select_aur_helper() {
 
 # ----------------------------------------------------------------------------------------------------
 
-select_multilib() {
+select_enable_multilib() {
     if [ -z "$ARCH_OS_MULTILIB_ENABLED" ]; then
         local user_input="false" && gum_confirm "Enable 32 Bit Support?" && user_input="true"
         ARCH_OS_MULTILIB_ENABLED="$user_input" && properties_generate # Set value and generate properties file
@@ -510,7 +514,7 @@ select_multilib() {
 
 # ----------------------------------------------------------------------------------------------------
 
-select_housekeeping() {
+select_enable_housekeeping() {
     if [ -z "$ARCH_OS_HOUSEKEEPING_ENABLED" ]; then
         local user_input="false" && gum_confirm "Enable Housekeeping?" && user_input="true"
         ARCH_OS_HOUSEKEEPING_ENABLED="$user_input" && properties_generate # Set value and generate properties file
@@ -520,12 +524,22 @@ select_housekeeping() {
 
 # ----------------------------------------------------------------------------------------------------
 
-select_shell_enhancement() {
+select_enable_shell_enhancement() {
     if [ -z "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" ]; then
-        local user_input="false" && gum_confirm "Install Shell Enhancement?" && user_input="true"
+        local user_input="false" && gum_confirm "Enable Shell Enhancement?" && user_input="true"
         ARCH_OS_SHELL_ENHANCEMENT_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     print_add "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+select_enable_app() {
+    if [ -z "$ARCH_OS_APP_ENABLED" ]; then
+        local user_input="false" && gum_confirm "Enable Arch OS App?" && user_input="true"
+        ARCH_OS_APP_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    print_add "Arch OS App is set to ${ARCH_OS_APP_ENABLED}"
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -569,7 +583,7 @@ chroot_aur_install() {
 # EXECUTORS (SUB PROCESSES)
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-exec_init() {
+exec_init_installation() {
     local process_name="Initialize Installation"
     process_init "$process_name"
     (
@@ -598,7 +612,7 @@ exec_init() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_disk() {
+exec_prepare_disk() {
     local process_name="Prepare Disk"
     process_init "$process_name"
     (
@@ -637,7 +651,7 @@ exec_disk() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_core() {
+exec_pacstrap_core() {
     local process_name="Pacstrap Arch OS Core System"
     process_init "$process_name"
     (
@@ -772,7 +786,7 @@ exec_core() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_desktop() {
+exec_install_desktop() {
     local process_name="Install Arch OS Desktop System"
     if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
         process_init "$process_name"
@@ -800,7 +814,8 @@ exec_desktop() {
             packages+=(git nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
 
             # Codecs
-            packages+=(gstreamer gst-libav gst-plugin-pipewire gst-plugins-ugly libdvdcss libheif)
+            packages+=(gstreamer gst-libav gst-plugin-pipewire gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader)
+            packages+=(a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav fuse-exfat libdvdread)
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer)
 
             # Optimization
@@ -868,6 +883,11 @@ exec_desktop() {
                 arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/btop.desktop"
             fi
 
+            # Hide Kitty app
+            if [ "$ARCH_OS_APP_ENABLED" = "true" ]; then
+                arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/$ARCH_OS_USERNAME/.local/share/applications/kitty.desktop"
+            fi
+
             # Return
             process_return 0
         ) &>"$PROCESS_LOG" &
@@ -877,7 +897,7 @@ exec_desktop() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_graphics_driver() {
+exec_install_graphics_driver() {
     local process_name="Install Graphics Driver"
     if [ -n "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] && [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" != "none" ]; then
         process_init "$process_name"
@@ -953,7 +973,7 @@ exec_graphics_driver() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_vm_support() {
+exec_install_vm_support() {
     local process_name="Install VM Support"
     if [ "$ARCH_OS_VM_SUPPORT_ENABLED" = "true" ]; then
         process_init "$process_name"
@@ -993,7 +1013,7 @@ exec_vm_support() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_bootsplash() {
+exec_install_bootsplash() {
     local process_name="Install Bootsplash"
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
         process_init "$process_name"
@@ -1011,7 +1031,7 @@ exec_bootsplash() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_aur_helper() {
+exec_install_aur_helper() {
     local process_name="Install AUR Helper"
     if [ -n "$ARCH_OS_AUR_HELPER" ] && [ "$ARCH_OS_AUR_HELPER" != "none" ]; then
         process_init "$process_name"
@@ -1032,7 +1052,7 @@ exec_aur_helper() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_multilib() {
+exec_enable_multilib() {
     local process_name="Enable Multilib"
     if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
         process_init "$process_name"
@@ -1048,7 +1068,7 @@ exec_multilib() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_housekeeping() {
+exec_install_housekeeping() {
     local process_name="Install Housekeeping"
     if [ "$ARCH_OS_HOUSEKEEPING_ENABLED" = "true" ]; then
         process_init "$process_name"
@@ -1076,7 +1096,26 @@ exec_housekeeping() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_shell_enhancement() {
+exec_install_app() {
+    local process_name="Install Arch OS App"
+    if [ "$ARCH_OS_APP_ENABLED" = "true" ]; then
+        process_init "$process_name"
+        (
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0             # If debug mode then return
+            chroot_pacman_install git base-devel kitty gum ttf-firacode-nerd # Install dependencies
+            if [ -z "$ARCH_OS_AUR_HELPER" ] || [ "$ARCH_OS_AUR_HELPER" = "none" ]; then
+                chroot_aur_install paru-bin # Install AUR Helper if not enabled
+            fi
+            chroot_aur_install arch-os-app # Install app
+            process_return 0               # Return
+        ) &>"$PROCESS_LOG" &
+        process_run $! "$process_name"
+    fi
+}
+
+# ----------------------------------------------------------------------------------------------------
+
+exec_install_shell_enhancement() {
     local process_name="Install Shell Enhancement"
     if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
         process_init "$process_name"
@@ -1214,7 +1253,7 @@ exec_shell_enhancement() {
 # ----------------------------------------------------------------------------------------------------
 
 # shellcheck disable=SC2016
-exec_cleanup() {
+exec_cleanup_installation() {
     local process_name="Cleanup Installation"
     process_init "$process_name"
     (
