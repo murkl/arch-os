@@ -7,7 +7,7 @@
 
 <p><strong>Boot from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a> and simply run</strong></p>
 
-`curl -Ls bit.ly/arch-os | bash`
+**`curl -Ls bit.ly/arch-os | bash`**
 
 <p><b>
 
@@ -65,7 +65,6 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
 - Wayland optimized
 - [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
-- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
 - AUR Helper ([configurable](DOCS.md#advanced-installation))
 - 32 Bit Support (Multilib)
 - Disk Encryption
@@ -80,6 +79,8 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - Gamemode preinstalled (desktop)
 - Firmware Update Tool preinstalled (desktop)
 - [VM Support](DOCS.md#vm-support)
+- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
+- [Arch OS App](https://github.com/murkl/arch-os-app)
 
 ## Installing Arch OS
 
@@ -101,7 +102,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 - Load prefered keyboard layout (optional): `loadkeys de`
 - Connect to WLAN (optional): `iwctl station wlan0 connect 'SSID'`
-- **Run Arch OS Installer:** `curl -Ls  bit.ly/arch-os | bash`
+- **Run Arch OS Installer: `curl -Ls  bit.ly/arch-os | bash`**
 
 ## Using Arch OS
 
