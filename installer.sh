@@ -841,6 +841,23 @@ exec_install_desktop() {
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.gnupg"
             echo 'pinentry-program /usr/bin/pinentry-gnome3' >"/mnt/home/${ARCH_OS_USERNAME}/.gnupg/gpg-agent.conf"
 
+            # Set environment
+            mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/environment.d/"
+            # shellcheck disable=SC2016
+            {
+                echo '# SSH AGENT'
+                echo 'SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/gcr/ssh' # Set gcr sock (https://wiki.archlinux.org/title/GNOME/Keyring#Setup_gcr)
+                echo ''
+                echo '# PATH'
+                echo 'PATH="${PATH}:${HOME}/.local/bin"'
+                echo ''
+                echo '# XDG'
+                echo 'XDG_CONFIG_HOME="${HOME}/.config"'
+                echo 'XDG_DATA_HOME="${HOME}/.local/share"'
+                echo 'XDG_STATE_HOME="${HOME}/.local/state"'
+                echo 'XDG_CACHE_HOME="${HOME}/.cache"                '
+            } >"/mnt/home/${ARCH_OS_USERNAME}/.config/environment.d/00-arch-os.conf"
+
             # Samba
             mkdir -p "/mnt/etc/samba/"
             {
@@ -870,6 +887,7 @@ exec_install_desktop() {
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user gcr-ssh-agent.socket   # GCR ssh-agent
 
             # Hide desktop Aaplications icons
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications"
@@ -1141,18 +1159,6 @@ exec_install_shell_enhancement() {
                 echo 'if status --is-login'
                 echo '    set PATH $PATH /usr/bin /sbin'
                 echo 'end'
-                echo ''
-                echo '# Start ssh-agent and set env'
-                echo 'if test -z (pgrep ssh-agent | string collect)'
-                echo '    eval (ssh-agent -c)'
-                echo '    set -Ux SSH_AUTH_SOCK $SSH_AUTH_SOCK'
-                echo '    set -Ux SSH_AGENT_PID $SSH_AGENT_PID'
-                echo '    ssh-add'
-                echo 'end'
-                echo ''
-                echo '# Trap and kill ssh-agent on exit'
-                echo 'trap "kill $SSH_AGENT_PID" exit'
-                echo 'trap "ssh-agent -k" exit'
                 echo ''
                 echo '# Disable welcome message'
                 echo 'set fish_greeting'
