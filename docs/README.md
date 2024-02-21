@@ -5,7 +5,7 @@
 
 <div align="center">
 
-<p><strong>Boot from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a> and simply run</strong></p>
+<p><strong>Boot from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a> and run</strong></p>
 
 **`curl -Ls bit.ly/arch-os | bash`**
 
@@ -15,9 +15,6 @@
 
 </b></p>
 
-<p>
-This project aims to provide a robust Arch Linux base for desktop usage, along with an easy-to-use and fast installer with error handling. Install a minimal Arch Linux core with optional features such as Automatic Housekeeping, Zen Kernel, GNOME Desktop with Graphics Driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....
-</p>
 
 <p><img src="./screenshots/installer_01.png" /></p>
 
@@ -26,6 +23,10 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 [➜ More Screenshots](DOCS.md#screenshots)
 
 </b></p>
+
+<p>
+This project aims to provide a robust Arch Linux base for desktop usage, along with an easy-to-use and fast installer with error handling. Install a minimal Arch Linux core with optional features such as Automatic Housekeeping, Zen Kernel, GNOME Desktop with Graphics Driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....
+</p>
 
 <p>
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
