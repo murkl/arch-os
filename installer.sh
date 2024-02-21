@@ -1126,8 +1126,8 @@ exec_install_app() {
     if [ "$ARCH_OS_APP_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0             # If debug mode then return
-            chroot_pacman_install git base-devel kitty gum ttf-firacode-nerd # Install dependencies
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                       # If debug mode then return
+            chroot_pacman_install git base-devel kitty gum libnotify ttf-firacode-nerd # Install dependencies
             if [ -z "$ARCH_OS_AUR_HELPER" ] || [ "$ARCH_OS_AUR_HELPER" = "none" ]; then
                 chroot_aur_install paru-bin # Install AUR Helper if not enabled
             fi
