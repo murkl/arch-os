@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.3.5'
+VERSION='1.3.6'
 GUM_VERSION="0.13.0"
 
 # ENVIRONMENT
@@ -310,7 +310,7 @@ properties_generate() {
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
     [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
     [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
-    [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] && ARCH_OS_DESKTOP_GRAPHICS_DRIVER="mesa"
+    [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] && ARCH_OS_DESKTOP_GRAPHICS_DRIVER="none"
     [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
     [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ] && ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="us"
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu) " && ARCH_OS_MICROCODE="intel-ucode"
@@ -1126,8 +1126,8 @@ exec_install_app() {
     if [ "$ARCH_OS_APP_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0             # If debug mode then return
-            chroot_pacman_install git base-devel kitty gum ttf-firacode-nerd # Install dependencies
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                       # If debug mode then return
+            chroot_pacman_install git base-devel kitty gum libnotify ttf-firacode-nerd # Install dependencies
             if [ -z "$ARCH_OS_AUR_HELPER" ] || [ "$ARCH_OS_AUR_HELPER" = "none" ]; then
                 chroot_aur_install paru-bin # Install AUR Helper if not enabled
             fi
