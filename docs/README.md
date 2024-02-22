@@ -81,7 +81,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - Firmware Update Tool preinstalled (desktop)
 - [VM Support](DOCS.md#vm-support)
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
-- [Arch OS App](https://github.com/murkl/arch-os-app)
+- [Arch OS Manager](https://github.com/murkl/arch-os-manager)
 
 ## Installing Arch OS
 
