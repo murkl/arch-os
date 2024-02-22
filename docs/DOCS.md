@@ -10,10 +10,11 @@
 2. [Advanced Installation](#advanced-installation)
 3. [Housekeeping](#housekeeping)
 4. [Shell Enhancement](#shell-enhancement)
-5. [Technical Information](#technical-information)
-6. [Troubleshooting](#troubleshooting)
-7. [Development](#development)
-8. [Screenshots](#screenshots)
+5. [Arch OS Manager](#arch-os-manager)
+6. [Technical Information](#technical-information)
+7. [Troubleshooting](#troubleshooting)
+8. [Development](#development)
+9. [Screenshots](#screenshots)
 
 ## Recommendation
 
@@ -44,14 +45,6 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/)
 - [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
 - [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (useful in wayland app toggler script)
-
-#### Arch Linux Update Indicator - GNOME Extension
-
-Set this options in [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/) extension to integrate [Arch OS Manager](https://github.com/murkl/arch-os-manager):
-
-- Check command: `/usr/bin/arch-os --check`
-- Update command: `arch-os --upgrade`
-- Package Manager (optional): `arch-os`
 
 ### Install Graphics Driver (manually)
 
@@ -229,6 +222,16 @@ fish_config
 # Btop config
 ~/.config/btop/btop.conf
 ```
+
+## Arch OS Manager
+
+**GitHub Project: [github.com/murkl/arch-os-manager](https://github.com/murkl/arch-os-manager)**
+
+Install [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/) and set this in extension options to integrate [Arch OS Manager](https://github.com/murkl/arch-os-manager):
+
+- Check command: `/usr/bin/arch-os --check`
+- Update command: `arch-os --upgrade`
+- Package Manager (optional): `arch-os`
 
 ## Technical Information
 
