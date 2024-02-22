@@ -376,18 +376,18 @@ curl -Ls bit.ly/arch-os-dev | bash
 ### Arch OS Desktop
 
 <div align="center">
-<p><img src="screenshots/desktop_01.jpg" /></p>
-<p><img src="screenshots/apps_01.png" /></p>
-<p><img src="screenshots/neofetch_01.png" /></p>
+<p><img src="screenshots/desktop_01.jpg"></p>
+<p><img src="screenshots/apps_01.png"></p>
+<p><img src="screenshots/neofetch_01.png"></p>
 </div>
 
 ### Arch OS Installer
 
 <div align="center">
-<p><img src="screenshots/installer_02.png" /></p>
-<p><img src="screenshots/installer_03.png" /></p>
-<p><img src="screenshots/installer_04.png" /></p>
-<p><img src="screenshots/installer_05.png" /></p>
-<p><img src="screenshots/installer_06.png" /></p>
+<p><img src="screenshots/installer_02.png"></p>
+<p><img src="screenshots/installer_03.png"></p>
+<p><img src="screenshots/installer_04.png"></p>
+<p><img src="screenshots/installer_05.png"></p>
+<p><img src="screenshots/installer_06.png"></p>
 
 </div>

@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="./logo.svg" width="150" height="150"/>
+  <img src="./logo.svg" width="150" height="150">
   <p>Arch OS</p>
 </h1>
 
@@ -15,8 +15,7 @@
 
 </b></p>
 
-
-<p><img src="./screenshots/installer_01.png" /></p>
+<p><img src="./screenshots/installer_01.png"></p>
 
 <p><b>
 
@@ -109,7 +108,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 <div align="center">
 
-<p><img src="./screenshots/desktop_01.jpg" /></p>
+<p><img src="./screenshots/desktop_01.jpg"></p>
 
 **[➜ See Recommendation](DOCS.md#recommendation)**
 
