@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.3.6'
+VERSION='1.3.7'
 GUM_VERSION="0.13.0"
 
 # ENVIRONMENT
@@ -798,10 +798,6 @@ exec_install_desktop() {
 
             # GNOME wayland screensharing, flatpak & pipewire support
             packages+=(xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome)
-
-            # GNOME legacy Indicator support (need for systray) (51 packages)
-            packages+=(libappindicator-gtk2 libappindicator-gtk3)
-            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-libappindicator-gtk2 lib32-libappindicator-gtk3)
 
             # Audio (Pipewire replacements + session manager)
             packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
