@@ -10,10 +10,11 @@
 2. [Advanced Installation](#advanced-installation)
 3. [Housekeeping](#housekeeping)
 4. [Shell Enhancement](#shell-enhancement)
-5. [Technical Information](#technical-information)
-6. [Troubleshooting](#troubleshooting)
-7. [Development](#development)
-8. [Screenshots](#screenshots)
+5. [Arch OS Manager](#arch-os-manager)
+6. [Technical Information](#technical-information)
+7. [Troubleshooting](#troubleshooting)
+8. [Development](#development)
+9. [Screenshots](#screenshots)
 
 ## Recommendation
 
@@ -136,7 +137,7 @@ ARCH_OS_MICROCODE='intel-ucode' # Microcode | Disable: none | Available: intel-u
 ARCH_OS_ECN_ENABLED='true' # Disable ECN support for legacy routers | Default: true | Disable: false
 ARCH_OS_BOOTSPLASH_ENABLED='true' # Bootsplash | Disable: false
 ARCH_OS_DESKTOP_ENABLED='desktop' # Arch OS Desktop | Disable: false
-ARCH_OS_APP_ENABLED='true' # Arch OS App | Disable: false
+ARCH_OS_MANAGER_ENABLED='true' # Arch OS Manager | Disable: false
 ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true' # Shell Enhancement | Disable: false
 ARCH_OS_AUR_HELPER='paru' # AUR Helper | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur
 ARCH_OS_MULTILIB_ENABLED='true' # MultiLib 32 Bit Support | Disable: false
@@ -221,6 +222,16 @@ fish_config
 # Btop config
 ~/.config/btop/btop.conf
 ```
+
+## Arch OS Manager
+
+**GitHub Project: [github.com/murkl/arch-os-manager](https://github.com/murkl/arch-os-manager)**
+
+Install [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/) and set this in extension options to integrate [Arch OS Manager](https://github.com/murkl/arch-os-manager):
+
+- Check command: `/usr/bin/arch-os --check`
+- Update command: `arch-os --upgrade`
+- Package Manager (optional): `arch-os`
 
 ## Technical Information
 
@@ -376,18 +387,18 @@ curl -Ls bit.ly/arch-os-dev | bash
 ### Arch OS Desktop
 
 <div align="center">
-<p><img src="screenshots/desktop_01.jpg" /></p>
-<p><img src="screenshots/apps_01.png" /></p>
-<p><img src="screenshots/neofetch_01.png" /></p>
+<p><img src="screenshots/desktop_01.jpg"></p>
+<p><img src="screenshots/apps_01.png"></p>
+<p><img src="screenshots/neofetch_01.png"></p>
 </div>
 
 ### Arch OS Installer
 
 <div align="center">
-<p><img src="screenshots/installer_02.png" /></p>
-<p><img src="screenshots/installer_03.png" /></p>
-<p><img src="screenshots/installer_04.png" /></p>
-<p><img src="screenshots/installer_05.png" /></p>
-<p><img src="screenshots/installer_06.png" /></p>
+<p><img src="screenshots/installer_02.png"></p>
+<p><img src="screenshots/installer_03.png"></p>
+<p><img src="screenshots/installer_04.png"></p>
+<p><img src="screenshots/installer_05.png"></p>
+<p><img src="screenshots/installer_06.png"></p>
 
 </div>

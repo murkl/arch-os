@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.3.7'
+VERSION='1.3.8'
 GUM_VERSION="0.13.0"
 
 # ENVIRONMENT
@@ -83,7 +83,7 @@ main() {
         until select_enable_housekeeping; do :; done
         until select_enable_shell_enhancement; do :; done
         until select_enable_desktop; do :; done
-        until select_enable_app; do :; done
+        until select_enable_manager; do :; done
 
         # Edit properties?
         if [ "$first_run" = "true" ] && gum_confirm "Edit Properties?"; then
@@ -121,7 +121,7 @@ main() {
     exec_install_desktop
     exec_install_graphics_driver
     exec_install_vm_support
-    exec_install_app
+    exec_install_manager
     exec_cleanup_installation
 
     # Calc installation duration
@@ -333,7 +333,7 @@ properties_generate() {
         echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
         echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
-        echo "ARCH_OS_APP_ENABLED='${ARCH_OS_APP_ENABLED}'"
+        echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}'"
         echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}'"
         echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}'"
         echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}'"
@@ -534,12 +534,12 @@ select_enable_shell_enhancement() {
 
 # ----------------------------------------------------------------------------------------------------
 
-select_enable_app() {
-    if [ -z "$ARCH_OS_APP_ENABLED" ]; then
-        local user_input="false" && gum_confirm "Enable Arch OS App?" && user_input="true"
-        ARCH_OS_APP_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+select_enable_manager() {
+    if [ -z "$ARCH_OS_MANAGER_ENABLED" ]; then
+        local user_input="false" && gum_confirm "Enable Arch OS Manager?" && user_input="true"
+        ARCH_OS_MANAGER_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_add "Arch OS App is set to ${ARCH_OS_APP_ENABLED}"
+    print_add "Arch OS Manager is set to ${ARCH_OS_MANAGER_ENABLED}"
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -902,7 +902,7 @@ exec_install_desktop() {
             fi
 
             # Hide Kitty app
-            if [ "$ARCH_OS_APP_ENABLED" = "true" ]; then
+            if [ "$ARCH_OS_MANAGER_ENABLED" = "true" ]; then
                 echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/kitty.desktop"
             fi
 
@@ -1117,9 +1117,9 @@ exec_install_housekeeping() {
 
 # ----------------------------------------------------------------------------------------------------
 
-exec_install_app() {
-    local process_name="Install Arch OS App"
-    if [ "$ARCH_OS_APP_ENABLED" = "true" ]; then
+exec_install_manager() {
+    local process_name="Install Arch OS Manager"
+    if [ "$ARCH_OS_MANAGER_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0                       # If debug mode then return
@@ -1127,8 +1127,8 @@ exec_install_app() {
             if [ -z "$ARCH_OS_AUR_HELPER" ] || [ "$ARCH_OS_AUR_HELPER" = "none" ]; then
                 chroot_aur_install paru-bin # Install AUR Helper if not enabled
             fi
-            chroot_aur_install arch-os-app # Install app
-            process_return 0               # Return
+            chroot_aur_install arch-os-manager # Install manager
+            process_return 0                   # Return
         ) &>"$PROCESS_LOG" &
         process_run $! "$process_name"
     fi
