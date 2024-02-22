@@ -45,6 +45,14 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
 - [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (useful in wayland app toggler script)
 
+#### Arch Linux Update Indicator - GNOME Extension
+
+Set this options in [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/) extension to integrate [Arch OS Manager](https://github.com/murkl/arch-os-manager):
+
+- Check command: `/usr/bin/arch-os --check`
+- Update command: `arch-os --upgrade`
+- Package Manager (optional): `arch-os`
+
 ### Install Graphics Driver (manually)
 
 The graphics driver can be installed independently of the Arch OS installation.
