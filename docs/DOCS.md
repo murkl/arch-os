@@ -18,6 +18,8 @@
 
 ## Recommendation
 
+<p><img src="screenshots/desktop.jpg"></p>
+
 For a robust & stable Arch OS experience, install as few additional packages from the official [Arch Repository](https://archlinux.org/packages) or [AUR](https://aur.archlinux.org) as possible. Instead, use [Flatpak](https://flathub.org) or [GNOME Software](https://apps.gnome.org). Furthermore change system files only if absolutely necessary and perform regular package upgrades.
 
 ### Additional Packages (optional)
@@ -167,6 +169,8 @@ Disable this feature with `ARCH_OS_HOUSEKEEPING_ENABLED='false'`
 
 ## Shell Enhancement
 
+<p><img src="screenshots/neofetch.png"></p>
+
 If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true`, these packages are installed and preconfigured (for root & user):
 
 ```
@@ -225,12 +229,14 @@ fish_config
 
 ## Arch OS Manager
 
-**GitHub Project: [github.com/murkl/arch-os-manager](https://github.com/murkl/arch-os-manager)**
+**GitHub Project ➜ [github.com/murkl/arch-os-manager](https://github.com/murkl/arch-os-manager)**
 
-Install [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/) and set this in extension options to integrate [Arch OS Manager](https://github.com/murkl/arch-os-manager):
+<p><img src="screenshots/manager.png"></p>
+
+Install **➜ [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/)** and set this in extension options to integrate [Arch OS Manager](https://github.com/murkl/arch-os-manager):
 
 - Check command: `/usr/bin/arch-os --check`
-- Update command: `arch-os --upgrade`
+- Update command: `arch-os --list`
 - Package Manager (optional): `arch-os`
 
 ## Technical Information
@@ -380,21 +386,26 @@ The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broke
 curl -Ls bit.ly/arch-os-dev | bash
 ```
 
+<div align="center">
+
 ## Screenshots
 
-<p align="left"><b>This screenshots may outdated.</b></p>
+<sub><b>This screenshots may outdated.</b></sub>
 
 ### Arch OS Desktop
 
-<div align="center">
-<p><img src="screenshots/desktop_01.jpg"></p>
-<p><img src="screenshots/apps_01.png"></p>
-<p><img src="screenshots/neofetch_01.png"></p>
-</div>
+<p><img src="screenshots/desktop.jpg"></p>
+
+### Apps
+
+<p><img src="screenshots/apps.png"></p>
+
+### Shell Enhancement
+
+<p><img src="screenshots/neofetch.png"></p>
 
 ### Arch OS Installer
 
-<div align="center">
 <p><img src="screenshots/installer_02.png"></p>
 <p><img src="screenshots/installer_03.png"></p>
 <p><img src="screenshots/installer_04.png"></p>

@@ -108,7 +108,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 <div align="center">
 
-<p><img src="./screenshots/desktop_01.jpg"></p>
+<p><img src="./screenshots/desktop.jpg"></p>
 
 **[➜ See Recommendation](DOCS.md#recommendation)**
 
