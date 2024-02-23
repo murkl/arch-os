@@ -11,19 +11,20 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.3.8'
-GUM_VERSION="0.13.0"
+VERSION='1.3.9'
+VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
-SCRIPT_CONF="./installer.conf"
+SCRIPT_CACHE="${HOME}/.cache/arch-os-installer"
+SCRIPT_CONFIG="./installer.conf"
 SCRIPT_LOG="./installer.log"
-
-# ERROR
-ERROR_MSG="./installer.err"
 
 # PROCESS
 PROCESS_LOG="./process.log"
-PROCESS_RETURN="./process.rt"
+PROCESS_RET="./process.ret"
+
+# ERROR
+ERROR_MSG="./installer.err"
 
 # COLORS
 COLOR_WHITE=251
@@ -44,18 +45,20 @@ main() {
     set -E          # ERR trap inherited by shell functions (errtrace)
 
     # Init
-    rm -f "$SCRIPT_LOG"     # Clear logfile
-    rm -f "$PROCESS_RETURN" # Clear process result file
-    gum_init                # Check gum binary or download
+    rm -f "$SCRIPT_LOG"      # Clear logfile
+    rm -f "$PROCESS_RET"     # Clear process result file
+    rm -rf "$SCRIPT_CACHE"   # Clean cache dir
+    mkdir -p "$SCRIPT_CACHE" # Create cache
+    gum_init                 # Check gum binary or download
 
     # Traps (error & exit)
     trap 'trap_exit' EXIT
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
 
     # Load existing config or remove
-    if [ -f "$SCRIPT_CONF" ] && print_header && ! gum_confirm "Continue Installation?"; then
+    if [ -f "$SCRIPT_CONFIG" ] && print_header && ! gum_confirm "Continue Installation?"; then
         gum_confirm "Remove existing properties?" || trap_gum_exit # If not want remove config, exit script
-        rm -f "$SCRIPT_CONF"
+        rm -f "$SCRIPT_CONFIG"
     fi
 
     # Properties step begin...
@@ -89,10 +92,10 @@ main() {
         if [ "$first_run" = "true" ] && gum_confirm "Edit Properties?"; then
             log_info "Edit properties..."
             local gum_header="Exit with CTRL + C and save with CTRL + D or ESC"
-            if gum_write --height=10 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONF")" >"${SCRIPT_CONF}.new"; then
-                mv "${SCRIPT_CONF}.new" "${SCRIPT_CONF}" && properties_source
+            if gum_write --height=10 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
+                mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
             fi
-            rm -f "${SCRIPT_CONF}.new" # Remove tmp properties
+            rm -f "${SCRIPT_CONFIG}.new" # Remove tmp properties
             gum_confirm "Change Password?" && until select_password --force; do :; done
             first_run="false" && continue # Restart properties step to refresh log above if changed
         fi
@@ -142,17 +145,14 @@ main() {
 gum_init() {
     if [ ! -x ./gum ] && ! command -v /usr/bin/gum &>/dev/null; then
         clear && echo "Loading Arch OS Installer..." # Loading
-        local gum_cache="${HOME}/.cache/arch-os-gum" # Cache dir
-        rm -rf "$gum_cache"                          # Clean cache dir
-        if ! mkdir -p "$gum_cache"; then echo "Error creating ${gum_cache}" && exit 1; fi
-        local gum_url # Prepare URL with version os and arch
+        local gum_url                                # Prepare URL with version os and arch
         # https://github.com/charmbracelet/gum/releases
-        gum_url="https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_$(uname -s)_$(uname -m).tar.gz"
-        if ! curl -Lsf "$gum_url" >"${gum_cache}/gum.tar.gz"; then echo "Error downloading ${gum_url}" && exit 1; fi
-        if ! tar -xf "${gum_cache}/gum.tar.gz" --directory "$gum_cache"; then echo "Error extracting ${gum_cache}/gum.tar.gz" && exit 1; fi
-        if ! mv "${gum_cache}/gum" ./gum; then echo "Error moving ${gum_cache}/gum to ./gum" && exit 1; fi
+        gum_url="https://github.com/charmbracelet/gum/releases/download/v${VERSION_GUM}/gum_${VERSION_GUM}_$(uname -s)_$(uname -m).tar.gz"
+        if ! curl -Lsf "$gum_url" >"${SCRIPT_CACHE}/gum.tar.gz"; then echo "Error downloading ${gum_url}" && exit 1; fi
+        if ! tar -xf "${SCRIPT_CACHE}/gum.tar.gz" --directory "$SCRIPT_CACHE"; then echo "Error extracting ${SCRIPT_CACHE}/gum.tar.gz" && exit 1; fi
+        if ! mv "${SCRIPT_CACHE}/gum" ./gum; then echo "Error moving ${SCRIPT_CACHE}/gum to ./gum" && exit 1; fi
         if ! chmod +x ./gum; then echo "Error chmod +x ./gum" && exit 1; fi
-        rm -rf "$gum_cache" # # Clean cache dir
+        rm -rf "$SCRIPT_CACHE" # # Clean cache dir
     fi
 }
 
@@ -178,8 +178,8 @@ trap_exit() {
     local error && [ -f "$ERROR_MSG" ] && error="$(<"$ERROR_MSG")" && rm -f "$ERROR_MSG"
 
     # Remove files
-    rm -f "$PROCESS_RETURN" # Remove process return info
-    rm -f "$PROCESS_LOG"    # Remove prcoess log
+    rm -f "$PROCESS_RET" # Remove process return info
+    rm -f "$PROCESS_LOG" # Remove prcoess log
 
     # When ctrl + c pressed exit without other stuff below
     [ "$result_code" = "130" ] && print_warn "Exit..." && exit 1
@@ -205,9 +205,9 @@ trap_gum_exit() { exit 130; }
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 process_init() {
-    [ -f "$PROCESS_RETURN" ] && print_fail "${PROCESS_RETURN} already exists" && exit 1
-    echo 1 >"$PROCESS_RETURN" # Init result with 1
-    log_proc "${1}..."        # Log starting
+    [ -f "$PROCESS_RET" ] && print_fail "${PROCESS_RET} already exists" && exit 1
+    echo 1 >"$PROCESS_RET" # Init result with 1
+    log_proc "${1}..."     # Log starting
 }
 
 process_run() {
@@ -226,18 +226,18 @@ process_run() {
     fi
 
     # Handle error while executing process
-    [ ! -f "$PROCESS_RETURN" ] && print_fail "${PROCESS_RETURN} not found (do not init process?)" && exit 1
-    [ "$(<"$PROCESS_RETURN")" != "0" ] && print_fail "${process_name} failed" && exit 1 # If process failed (result code 0 was not write in the end)
+    [ ! -f "$PROCESS_RET" ] && print_fail "${PROCESS_RET} not found (do not init process?)" && exit 1
+    [ "$(<"$PROCESS_RET")" != "0" ] && print_fail "${process_name} failed" && exit 1 # If process failed (result code 0 was not write in the end)
 
     # Finish
-    rm -f "$PROCESS_RETURN"                          # Remove process result file
+    rm -f "$PROCESS_RET"                             # Remove process result file
     print_add "${process_name} sucessfully finished" # Print process success
 }
 
 process_return() {
     # 1. Write from sub process 0 to file when succeed (at the end of the script part)
     # 2. Rread from parent process after sub process finished (0=success 1=failed)
-    echo "$1" >"$PROCESS_RETURN"
+    echo "$1" >"$PROCESS_RET"
     exit "$1"
 }
 
@@ -297,9 +297,9 @@ gum_pager() { gum pager "${@}"; } # Only used in exit trap
 
 # shellcheck disable=SC1090
 properties_source() {
-    if [ -f "$SCRIPT_CONF" ]; then
+    if [ -f "$SCRIPT_CONFIG" ]; then
         set -a # Enable auto export of variables
-        source "$SCRIPT_CONF"
+        source "$SCRIPT_CONFIG"
         set +a # Disable auto export of variables
     fi
 }
@@ -344,7 +344,7 @@ properties_generate() {
         echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}'"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
-    } >"$SCRIPT_CONF" # Write properties to file
+    } >"$SCRIPT_CONFIG" # Write properties to file
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1279,7 +1279,7 @@ exec_cleanup_installation() {
     process_init "$process_name"
     (
         [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                                  # If debug mode then return
-        cp "$SCRIPT_CONF" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"                                      # Copy installer files to users home dir
+        cp "$SCRIPT_CONFIG" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"                                    # Copy installer files to users home dir
         arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"         # Set home permission
         arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true' # Remove orphans and force return true
         process_return 0                                                                                      # Return
