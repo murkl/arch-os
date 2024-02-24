@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.4.0'
+VERSION='1.4.1'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -807,7 +807,7 @@ exec_install_desktop() {
             packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google)
 
             # Utils (https://wiki.archlinux.org/title/File_systems)
-            packages+=(git nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
+            packages+=(git nfs-utils f2fs-tools udftools dosfstools lvm2 btrfs-progs ntfs-3g exfat-utils p7zip zip unzip unrar tar)
 
             # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
             packages+=(ffmpeg gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader)
