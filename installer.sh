@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.3.9'
+VERSION='1.4.0'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -809,10 +809,10 @@ exec_install_desktop() {
             # Utils (https://wiki.archlinux.org/title/File_systems)
             packages+=(git nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
 
-            # Codecs
-            packages+=(gstreamer gst-libav gst-plugin-pipewire gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader)
-            packages+=(a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav fuse-exfat libdvdread)
-            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer)
+            # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
+            packages+=(gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader)
+            packages+=(a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread)
+            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer lib32-gst-plugins-good)
 
             # Optimization
             packages+=(gamemode)
