@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.4.1'
+VERSION='1.4.2'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -794,10 +794,10 @@ exec_install_desktop() {
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
             # GNOME base packages
-            local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra gnome-firmware power-profiles-daemon fwupd rygel cups)
+            local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra gnome-firmware file-roller power-profiles-daemon fwupd rygel cups)
 
             # GNOME wayland screensharing, flatpak & pipewire support
-            packages+=(xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome)
+            packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome)
 
             # Audio (Pipewire replacements + session manager)
             packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
@@ -807,7 +807,7 @@ exec_install_desktop() {
             packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google)
 
             # Utils (https://wiki.archlinux.org/title/File_systems)
-            packages+=(git nfs-utils f2fs-tools udftools dosfstools lvm2 btrfs-progs ntfs-3g exfat-utils p7zip zip unzip unrar tar)
+            packages+=(git net-tools inetutils nfs-utils f2fs-tools udftools dosfstools lvm2 btrfs-progs ntfs-3g exfat-utils p7zip zip unzip unrar tar)
 
             # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
             packages+=(ffmpeg gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader)
@@ -877,6 +877,7 @@ exec_install_desktop() {
             arch-chroot /mnt systemctl enable gdm.service                                                              # GNOME
             arch-chroot /mnt systemctl enable bluetooth.service                                                        # Bluetooth
             arch-chroot /mnt systemctl enable avahi-daemon                                                             # Network browsing service
+            arch-chroot /mnt systemctl enable power-profiles-daemon                                                    # Power daemon
             arch-chroot /mnt systemctl enable cups.socket                                                              # Printer
             arch-chroot /mnt systemctl enable smb.service                                                              # Samba
             arch-chroot /mnt systemctl enable nmb.service                                                              # Samba
