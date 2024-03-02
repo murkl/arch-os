@@ -473,7 +473,7 @@ select_enable_bootsplash() {
 select_enable_desktop() {
     if [ -z "$ARCH_OS_DESKTOP_ENABLED" ] || [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] || [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
         local user_input options
-        user_input="false" && gum_confirm "Enable Arch OS Desktop?" && user_input="true"
+        user_input="false" && gum_confirm "Enable Desktop Environment?" && user_input="true"
         ARCH_OS_DESKTOP_ENABLED="$user_input"            # Set property
         if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then # If desktop is true set graphics driver and keyboard layout
             options=("mesa" "intel_i915" "nvidia" "amd" "ati")
@@ -486,7 +486,7 @@ select_enable_desktop() {
         fi
         properties_generate # Generate properties file
     fi
-    print_add "Arch OS Desktop is set to ${ARCH_OS_DESKTOP_ENABLED}"
+    print_add "Desktop Environment is set to ${ARCH_OS_DESKTOP_ENABLED}"
     [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && print_add "Desktop Keyboard Layout is set to ${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}"
     [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && print_add "Desktop Graphics Driver is set to ${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}"
     return 0
