@@ -496,7 +496,7 @@ select_enable_desktop() {
 
 select_enable_aur() {
     if [ -z "$ARCH_OS_AUR_HELPER" ]; then
-        local user_input="none" && gum_confirm "Enable AUR Helper?" && user_input="paru"
+        local user_input="none" && gum_confirm "Enable AUR Helper?" && user_input="paru-bin"
         ARCH_OS_AUR_HELPER="$user_input" && properties_generate # Set value and generate properties file
     fi
     print_add "AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
@@ -717,7 +717,8 @@ exec_pacstrap_core() {
 
         # Kernel args
         # Zswap should be disabled when using zram (https://github.com/archlinux/archinstall/issues/881)
-        kernel_args_default="rw init=/usr/lib/systemd/systemd zswap.enabled=0 modprobe.blacklist=iTCO_wdt nowatchdog quiet splash vt.global_cursor_default=0"
+        # Silent boot: https://wiki.archlinux.org/title/Silent_boot
+        kernel_args_default="rw init=/usr/lib/systemd/systemd zswap.enabled=0 quiet splash vt.global_cursor_default=0"
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot ${kernel_args_default}"
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}") ${kernel_args_default}"
 
@@ -787,14 +788,14 @@ exec_pacstrap_core() {
 # ----------------------------------------------------------------------------------------------------
 
 exec_install_desktop() {
-    local process_name="Install Arch OS Desktop System"
+    local process_name="Install Desktop Environment"
     if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
             # GNOME base packages
-            local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra gnome-firmware file-roller power-profiles-daemon fwupd rygel cups)
+            local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra gnome-firmware file-roller power-profiles-daemon rygel cups)
 
             # GNOME wayland screensharing, flatpak & pipewire support
             packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome)
@@ -807,7 +808,7 @@ exec_install_desktop() {
             packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google)
 
             # Utils (https://wiki.archlinux.org/title/File_systems)
-            packages+=(git net-tools inetutils nfs-utils f2fs-tools udftools dosfstools lvm2 btrfs-progs ntfs-3g exfat-utils p7zip zip unzip unrar tar)
+            packages+=(git net-tools inetutils nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
 
             # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
             packages+=(ffmpeg gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader)
@@ -852,7 +853,7 @@ exec_install_desktop() {
                 echo 'XDG_DATA_HOME="${HOME}/.local/share"'
                 echo 'XDG_STATE_HOME="${HOME}/.local/state"'
                 echo 'XDG_CACHE_HOME="${HOME}/.cache"                '
-            } >"/mnt/home/${ARCH_OS_USERNAME}/.config/environment.d/00-arch-os.conf"
+            } >"/mnt/home/${ARCH_OS_USERNAME}/.config/environment.d/00-arch.conf"
 
             # Samba
             mkdir -p "/mnt/etc/samba/"
@@ -886,8 +887,20 @@ exec_install_desktop() {
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user gcr-ssh-agent.socket   # GCR ssh-agent
 
-            # Hide desktop Aaplications icons
+            # Create users applications dir
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications"
+
+            # Create UEFI Boot desktop entry
+            {
+                echo '[Desktop Entry]'
+                echo 'Name=Reboot to UEFI'
+                echo 'Icon=system-reboot'
+                echo 'Exec=systemctl reboot --firmware-setup'
+                echo 'Type=Application'
+                echo 'Terminal=false'
+            } >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/systemctl-reboot-firmware.desktop"
+
+            # Hide desktop Aaplications icons
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/bssh.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/bvnc.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/avahi-discover.desktop"
@@ -920,7 +933,7 @@ exec_install_desktop() {
 # ----------------------------------------------------------------------------------------------------
 
 exec_install_graphics_driver() {
-    local process_name="Install Graphics Driver"
+    local process_name="Install Desktop Graphics Driver"
     if [ -n "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] && [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" != "none" ]; then
         process_init "$process_name"
         (
@@ -944,7 +957,7 @@ exec_install_graphics_driver() {
                 chroot_pacman_install "${packages[@]}"
                 # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
                 # Alternative (slow boot, bios logo twice, but correct plymouth resolution):
-                #sed -i "s/nowatchdog quiet/nowatchdog nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
+                #sed -i "s/zswap.enabled=0 quiet/zswap.enabled=0 nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
                 mkdir -p /mnt/etc/modprobe.d/ && echo -e 'options nvidia_drm modeset=1 fbdev=1' >/mnt/etc/modprobe.d/nvidia.conf
                 sed -i "s/^MODULES=(.*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
                 # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
