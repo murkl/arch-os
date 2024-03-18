@@ -483,11 +483,14 @@ select_enable_desktop() {
             user_input=$(gum_input --header " + Enter Desktop Keyboard Layout" --value "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT") || trap_gum_exit_confirm
             [ -z "$user_input" ] && return 1              # Check if new value is null
             ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input" # Set property
+            user_input=$(gum_input --header " + Enter Desktop Keyboard Variant" --value "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT") || trap_gum_exit_confirm
+            ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input" # Set property
         fi
         properties_generate # Generate properties file
     fi
     print_add "Desktop Environment is set to ${ARCH_OS_DESKTOP_ENABLED}"
     [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && print_add "Desktop Keyboard Layout is set to ${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}"
+    [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && print_add "Desktop Keyboard Variant is set to ${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}"
     [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && print_add "Desktop Graphics Driver is set to ${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}"
     return 0
 }
