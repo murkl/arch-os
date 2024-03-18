@@ -708,8 +708,10 @@ exec_pacstrap_core() {
         } >/mnt/etc/hosts
 
         # Create initial ramdisk from /etc/mkinitcpio.conf
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect modconf block sd-encrypt filesystems sd-vconsole fsck)/" /mnt/etc/mkinitcpio.conf
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect modconf block filesystems sd-vconsole fsck)/" /mnt/etc/mkinitcpio.conf
+        # https://wiki.archlinux.org/title/Mkinitcpio#Common_hooks
+        # https://wiki.archlinux.org/title/Microcode#mkinitcpio
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect microcode modconf block sd-encrypt filesystems sd-vconsole fsck)/" /mnt/etc/mkinitcpio.conf
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect microcode modconf block filesystems sd-vconsole fsck)/" /mnt/etc/mkinitcpio.conf
         arch-chroot /mnt mkinitcpio -P
 
         # Install Bootloader to /boot (systemdboot)
@@ -734,7 +736,6 @@ exec_pacstrap_core() {
         {
             echo 'title   Arch OS'
             echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
-            [ -n "$ARCH_OS_MICROCODE" ] && [ "$ARCH_OS_MICROCODE" != "none" ] && echo "initrd  /${ARCH_OS_MICROCODE}.img"
             echo "initrd  /initramfs-${ARCH_OS_KERNEL}.img"
             echo "options ${kernel_args}"
         } >/mnt/boot/loader/entries/arch.conf
@@ -743,7 +744,6 @@ exec_pacstrap_core() {
         {
             echo 'title   Arch OS (Fallback)'
             echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
-            [ -n "$ARCH_OS_MICROCODE" ] && [ "$ARCH_OS_MICROCODE" != "none" ] && echo "initrd  /${ARCH_OS_MICROCODE}.img"
             echo "initrd  /initramfs-${ARCH_OS_KERNEL}-fallback.img"
             echo "options ${kernel_args}"
         } >/mnt/boot/loader/entries/arch-fallback.conf
