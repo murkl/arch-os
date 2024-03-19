@@ -813,6 +813,9 @@ exec_install_desktop() {
             # Utils (https://wiki.archlinux.org/title/File_systems)
             packages+=(git net-tools inetutils nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
 
+            # Certificates
+            packages+=(ca-certificates)
+
             # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
             packages+=(ffmpeg gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader)
             packages+=(a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread)
