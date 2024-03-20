@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.4.2'
+VERSION='1.4.3'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
