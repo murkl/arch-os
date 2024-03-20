@@ -141,7 +141,7 @@ ARCH_OS_BOOTSPLASH_ENABLED='true' # Bootsplash | Disable: false
 ARCH_OS_DESKTOP_ENABLED='desktop' # Arch OS Desktop | Disable: false
 ARCH_OS_MANAGER_ENABLED='true' # Arch OS Manager | Disable: false
 ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true' # Shell Enhancement | Disable: false
-ARCH_OS_AUR_HELPER='paru' # AUR Helper | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur
+ARCH_OS_AUR_HELPER='paru-bin' # AUR Helper | Default: paru-bin | Disable: none | Recommended: paru, yay, trizen, pikaur
 ARCH_OS_MULTILIB_ENABLED='true' # MultiLib 32 Bit Support | Disable: false
 ARCH_OS_HOUSEKEEPING_ENABLED='true' # Housekeeping | Disable: false
 ARCH_OS_REFLECTOR_COUNTRY='' # Country used by reflector | Default: null | Example: Germany,France
@@ -283,7 +283,6 @@ This configuration will be set during Arch OS Core Installation:
 
 - `vm.max_map_count` is set to `1048576` for compatibility of some apps/games
 - `DefaultTimeoutStopSec` is set to `10s` for faster shutdown
-- `modprobe.blacklist=iTCO_wdt nowatchdog` is set to kernel parameters
 - `quiet splash vt.global_cursor_default=0` is set to kernel parameters for silent boot
 - Pacman parallel downloads is set to `5`
 - Pacman colors and eyecandy is enabled

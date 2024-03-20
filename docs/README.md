@@ -35,7 +35,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 <p>
   <strong>Test successful</strong>
   <br>
-  <a target="_blank" href="https://www.archlinux.de/releases/2024.02.01">archlinux-2024.02.01-x86_64.iso</a>
+  <a target="_blank" href="https://www.archlinux.de/releases/2024.03.01">archlinux-2024.03.01-x86_64.iso</a>
   <br>
   <sub>100% shellcheck approved</sub>
 </p>
@@ -52,7 +52,6 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
 - Pacman parallel downloads & eyecandy
-- Watchdog disabled
 - Network Manager
 - SSD Support (fstrim)
 - Microcode Support (Intel/AMD)
