@@ -991,16 +991,16 @@ exec_install_graphics_driver() {
                 arch-chroot /mnt mkinitcpio -P
                 ;;
             "amd") # https://wiki.archlinux.org/title/AMDGPU#Installation
-                local packages=(xf86-video-amdgpu libva-mesa-driver vulkan-radeon mesa-vdpau vkd3d)
-                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-libva-mesa-driver lib32-vulkan-radeon lib32-mesa-vdpau lib32-vkd3d)
+                local packages=(mesa mesa-utils xf86-video-amdgpu vulkan-radeon libva-mesa-driver mesa-vdpau vkd3d)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-mesa lib32-vulkan-radeon lib32-libva-mesa-driver lib32-mesa-vdpau lib32-vkd3d)
                 chroot_pacman_install "${packages[@]}"
                 # Must be discussed: https://wiki.archlinux.org/title/AMDGPU#Disable_loading_radeon_completely_at_boot
-                sed -i "s/^MODULES=(.*)/MODULES=(amdgpu radeon)/g" /mnt/etc/mkinitcpio.conf
+                sed -i "s/^MODULES=(.*)/MODULES=(amdgpu)/g" /mnt/etc/mkinitcpio.conf
                 arch-chroot /mnt mkinitcpio -P
                 ;;
             "ati") # https://wiki.archlinux.org/title/ATI#Installation
-                local packages=(xf86-video-ati libva-mesa-driver mesa-vdpau vkd3d)
-                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-libva-mesa-driver lib32-mesa-vdpau lib32-vkd3d)
+                local packages=(mesa mesa-utils xf86-video-ati libva-mesa-driver mesa-vdpau vkd3d)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-mesa lib32-libva-mesa-driver lib32-mesa-vdpau lib32-vkd3d)
                 chroot_pacman_install "${packages[@]}"
                 sed -i "s/^MODULES=(.*)/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
                 arch-chroot /mnt mkinitcpio -P
