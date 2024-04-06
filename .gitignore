@@ -1,3 +1,6 @@
+# Ignore cache dir
+.arch-os-installer.*
+
 # Created by scripts
 installer.conf
 installer.log
