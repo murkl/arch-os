@@ -19,7 +19,7 @@ SCRIPT_CONFIG="./installer.conf"
 SCRIPT_LOG="./installer.log"
 
 # CACHE
-SCRIPT_CACHE="$(mktemp -d "/tmp/arch-os-installer.XXXXX")"
+SCRIPT_CACHE="$(mktemp -d "${HOME}/.cache/arch-os-installer.XXXXX")"
 ERROR_MSG="${SCRIPT_CACHE}/installer.err"
 PROCESS_LOG="${SCRIPT_CACHE}/process.log"
 PROCESS_RET="${SCRIPT_CACHE}/process.ret"
