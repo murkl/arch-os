@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.4.4'
+VERSION='1.4.5'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -19,7 +19,7 @@ SCRIPT_CONFIG="./installer.conf"
 SCRIPT_LOG="./installer.log"
 
 # CACHE
-SCRIPT_CACHE="$(mktemp -d "${HOME}/.cache/arch-os-installer.XXXXX")"
+SCRIPT_CACHE="$(mktemp -d "./.arch-os-installer.XXXXX")"
 ERROR_MSG="${SCRIPT_CACHE}/installer.err"
 PROCESS_LOG="${SCRIPT_CACHE}/process.log"
 PROCESS_RET="${SCRIPT_CACHE}/process.ret"
