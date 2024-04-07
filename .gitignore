@@ -1,5 +1,5 @@
 # Ignore cache dir
-.arch-os-installer.*
+.arch-os-cache.*
 
 # Created by scripts
 installer.conf

@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.4.5'
+VERSION='1.4.6'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -19,7 +19,7 @@ SCRIPT_CONFIG="./installer.conf"
 SCRIPT_LOG="./installer.log"
 
 # CACHE
-SCRIPT_CACHE="$(mktemp -d "./.arch-os-installer.XXXXX")"
+SCRIPT_CACHE="$(mktemp -d "./.arch-os-cache.XXXXX")"
 ERROR_MSG="${SCRIPT_CACHE}/installer.err"
 PROCESS_LOG="${SCRIPT_CACHE}/process.log"
 PROCESS_RET="${SCRIPT_CACHE}/process.ret"
@@ -56,21 +56,25 @@ main() {
         rm -f "$SCRIPT_CONFIG"
     fi
 
-    # Properties step begin...
-    local first_run="true" # Set first run (skip edit on refresh)
-    while (true); do       # Loop properties step to update screen if user edit properties
+    # Set script properties
+    local ARCH_OS_VARIANT='' # User env
+    local FIRST_RUN="true"   # Set first run (skip edit on refresh)
+
+    # Loop properties step to update screen if user edit properties
+    while (true); do
 
         # Print Welcome
         print_header && print_title "Welcome to Arch OS Installation"
 
+        # Prepare properties
         if [ -f "$SCRIPT_CONFIG" ]; then
             properties_source # Load properties file (if exists) and auto export variables
         else
-            until select_variant; do :; done # Select installation variant
+            until select_variant; do :; done # Select installation variant preset
         fi
 
-        # Prepare properties
-        properties_generate # Generate properties file (needed on first start of installer)
+        # Generate properties file (needed on first start of installer)
+        properties_generate
 
         # Selectors
         until select_username; do :; done
@@ -89,7 +93,7 @@ main() {
         until select_enable_manager; do :; done
 
         # Edit properties?
-        if [ "$first_run" = "true" ] && gum_confirm "Edit Properties?"; then
+        if [ "$FIRST_RUN" = "true" ] && gum_confirm "Edit Properties?"; then
             log_info "Edit properties..."
             local gum_header="Exit with CTRL + C and save with CTRL + D or ESC"
             if gum_write --height=10 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
@@ -97,7 +101,7 @@ main() {
             fi
             rm -f "${SCRIPT_CONFIG}.new" # Remove tmp properties
             gum_confirm "Change Password?" && until select_password --force; do :; done
-            first_run="false" && continue # Restart properties step to refresh log above if changed
+            FIRST_RUN="false" && continue # Restart properties step to refresh log above if changed
         fi
 
         print_info "Properties successfully initialized"
@@ -177,9 +181,8 @@ trap_exit() {
     # Read error msg from file (written in error trap)
     local error && [ -f "$ERROR_MSG" ] && error="$(<"$ERROR_MSG")" && rm -f "$ERROR_MSG"
 
-    # Remove files
-    rm -f "$PROCESS_RET" # Remove process return info
-    rm -f "$PROCESS_LOG" # Remove prcoess log
+    # Remove cache files
+    rm -rf "$SCRIPT_CACHE"
 
     # When ctrl + c pressed exit without other stuff below
     [ "$result_code" = "130" ] && print_warn "Exit..." && exit 1
