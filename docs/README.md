@@ -44,7 +44,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 ## Arch OS Core Features
 
-- [Minimal Arch Linux](DOCS.md#minimal-installation) (149 packages)
+- [Minimal Arch Linux](DOCS.md#minimal-installation) (147 packages)
 - Zen Kernel ([configurable](DOCS.md#advanced-installation))
 - [Swap](DOCS.md#swap) with zram-generator (zstd)
 - Filesystem ext4
@@ -68,9 +68,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - 32 Bit Support (Multilib)
 - Disk Encryption
 - [Shell Enhancement](DOCS.md#shell-enhancement)
-- Automatic Pacman mirrorlist update (see [Housekeeping](DOCS.md#housekeeping))
-- Pacman automatic cache optimization (weekly)
-- Missing package suggestion for commands
+- [Automatic Housekeeping](DOCS.md#housekeeping)
 - Flatpak Support + Auto Update (GNOME Software)
 - Samba, Networking Protocol Libs, Git, Utils & Codecs included
 - GNOME Power Profiles Support
@@ -95,7 +93,6 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 - Disable Secure Boot
 - Set Boot Mode to UEFI
-- Set Real Time Clock to **[UTC](https://time.is/de/UTC)**
 
 ### 3. Boot from USB Device
 
@@ -113,47 +110,13 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 </div>
 
-### System information
-
-```
-fetch
-```
-
-### Update system
-
-```
-paru -Syu
-```
-
-### Search package
-
-```
-paru -Ss <my search string>
-```
-
-### Install package
-
-```
-paru -S <my package>
-```
-
-### List installed packages
-
-```
-paru -Qe
-```
-
-### Show package info
-
-```
-paru -Qi <my package>
-```
-
-### Remove package
-
-```
-paru -Rsn <my package>
-```
+- **System information:** `fetch`
+- **Update system:** `paru -Syu`
+- **Search package:** `paru -Ss <my search string>`
+- **Install package:** `paru -S <my package>`
+- **List installed packages:** `paru -Qe`
+- **Show package info:** `paru -Qi <my package>`
+- **Remove package:** `paru -Rsn <my package>`
 
 ## More Information
 

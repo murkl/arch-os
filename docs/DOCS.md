@@ -263,7 +263,7 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 
 ### Packages
 
-This packages will be installed during Arch OS Core Installation (149 packages in total):
+This packages will be installed during Arch OS Core Installation (147 packages in total):
 
 ```
 base linux-firmware zram-generator networkmanager sudo [kernel_pkg] [microcode_pkg]
