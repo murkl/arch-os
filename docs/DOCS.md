@@ -231,7 +231,7 @@ fish_config
 
 **GitHub Project ➜ [github.com/murkl/arch-os-manager](https://github.com/murkl/arch-os-manager)**
 
-<p><img src="screenshots/manager.png"></p>
+<p><img src="screenshots/manager.jpg"></p>
 
 Install **➜ [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/)** and set this in extension options to integrate [Arch OS Manager](https://github.com/murkl/arch-os-manager):
 
@@ -263,7 +263,7 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 
 ### Packages
 
-This packages will be installed during Arch OS Core Installation (149 packages in total):
+This packages will be installed during Arch OS Core Installation (147 packages in total):
 
 ```
 base linux-firmware zram-generator networkmanager sudo [kernel_pkg] [microcode_pkg]
@@ -405,6 +405,7 @@ curl -Ls bit.ly/arch-os-dev | bash
 
 ### Arch OS Installer
 
+<p><img src="screenshots/installer_01.png"></p>
 <p><img src="screenshots/installer_02.png"></p>
 <p><img src="screenshots/installer_03.png"></p>
 <p><img src="screenshots/installer_04.png"></p>

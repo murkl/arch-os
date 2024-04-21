@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.4.6'
+VERSION='1.4.7'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -156,7 +156,6 @@ gum_init() {
         if ! tar -xf "${SCRIPT_TMP_DIR}/gum.tar.gz" --directory "$SCRIPT_TMP_DIR"; then echo "Error extracting ${SCRIPT_TMP_DIR}/gum.tar.gz" && exit 1; fi
         if ! mv "${SCRIPT_TMP_DIR}/gum" ./gum; then echo "Error moving ${SCRIPT_TMP_DIR}/gum to ./gum" && exit 1; fi
         if ! chmod +x ./gum; then echo "Error chmod +x ./gum" && exit 1; fi
-        rm -rf "$SCRIPT_TMP_DIR" # # Clean cache dir
     fi
 }
 

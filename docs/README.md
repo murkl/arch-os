@@ -15,7 +15,7 @@
 
 </b></p>
 
-<p><img src="./screenshots/installer_01.png"></p>
+<p><img src="./screenshots/installer.png"></p>
 
 <p><b>
 
@@ -44,10 +44,12 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 ## Arch OS Core Features
 
-- [Minimal Arch Linux](DOCS.md#minimal-installation) (149 packages)
+- Multilingual Installation
+- [Minimal Arch Linux](DOCS.md#minimal-installation) (147 packages)
 - Zen Kernel ([configurable](DOCS.md#advanced-installation))
 - [Swap](DOCS.md#swap) with zram-generator (zstd)
 - Filesystem ext4
+- Sole OS
 - Silent Boot
 - Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
@@ -55,8 +57,8 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - Network Manager
 - SSD Support (fstrim)
 - Microcode Support (Intel/AMD)
-- Sole OS on a single disk (see [Arch OS Docs](DOCS.md#partitions-layout))
 - UEFI only supported
+- [More Information...](DOCS.md#technical-information)
 
 ## Optional Features
 
@@ -67,10 +69,10 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - AUR Helper ([configurable](DOCS.md#advanced-installation))
 - 32 Bit Support (Multilib)
 - Disk Encryption
+- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
 - [Shell Enhancement](DOCS.md#shell-enhancement)
-- Automatic Pacman mirrorlist update (see [Housekeeping](DOCS.md#housekeeping))
-- Pacman automatic cache optimization (weekly)
-- Missing package suggestion for commands
+- [Automatic Housekeeping](DOCS.md#housekeeping)
+- [Arch OS Manager](DOCS.md#arch-os-manager)
 - Flatpak Support + Auto Update (GNOME Software)
 - Samba, Networking Protocol Libs, Git, Utils & Codecs included
 - GNOME Power Profiles Support
@@ -78,8 +80,6 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - Gamemode preinstalled (desktop)
 - Firmware Update Tool preinstalled (desktop)
 - [VM Support](DOCS.md#vm-support)
-- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
-- [Arch OS Manager](DOCS.md#arch-os-manager)
 
 ## Installing Arch OS
 
@@ -95,13 +95,16 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 - Disable Secure Boot
 - Set Boot Mode to UEFI
-- Set Real Time Clock to **[UTC](https://time.is/de/UTC)**
 
 ### 3. Boot from USB Device
 
 - Load prefered keyboard layout (optional): `loadkeys de`
 - Connect to WLAN (optional): `iwctl station wlan0 connect 'SSID'`
-- **Run Arch OS Installer: `curl -Ls  bit.ly/arch-os | bash`**
+- **Run Arch OS Installer:**
+
+```
+curl -Ls  bit.ly/arch-os | bash
+```
 
 ## Using Arch OS
 
