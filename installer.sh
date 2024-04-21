@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.4.7'
+VERSION='1.4.8'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -138,6 +138,14 @@ main() {
 
     # Finish & reboot
     print_info "Installation successful in ${duration_min} minutes and ${duration_sec} seconds"
+
+    # Copy installer files to users home
+    cp -f "$SCRIPT_CONFIG" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
+    cp -f "$SCRIPT_LOG" "/mnt/home/${ARCH_OS_USERNAME}/installer.log"
+    arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.conf"
+    arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.log"
+
+    # Show reboot promt
     gum_confirm "Reboot to Arch OS now?" && print_warn "Rebooting..." && [ "$MODE" != "debug" ] && reboot
     exit 0
 }
@@ -463,11 +471,12 @@ select_keyboard() {
 select_disk() {
     if [ -z "$ARCH_OS_DISK" ] || [ -z "$ARCH_OS_BOOT_PARTITION" ] || [ -z "$ARCH_OS_ROOT_PARTITION" ]; then
         local user_input items options
-        mapfile -t items < <(lsblk -I 8,259,254 -d -o KNAME -n)
+        mapfile -t items < <(lsblk -I 8,259,254 -d -o KNAME,SIZE -n)
         # size: $(lsblk -d -n -o SIZE "/dev/${item}")
         options=() && for item in "${items[@]}"; do options+=("/dev/${item}"); done
         user_input=$(gum_choose --header " + Choose Disk" "${options[@]}") || trap_gum_exit_confirm
-        [ -z "$user_input" ] && return 1 # Check if new value is null
+        [ -z "$user_input" ] && return 1                          # Check if new value is null
+        user_input=$(echo "$user_input" | awk -F' ' '{print $1}') # Remove size from input
         [ ! -e "$user_input" ] && log_fail "Disk does not exists" && return 1
         ARCH_OS_DISK="$user_input" # Set property
         [[ "$ARCH_OS_DISK" = "/dev/nvm"* ]] && ARCH_OS_BOOT_PARTITION="${ARCH_OS_DISK}p1" || ARCH_OS_BOOT_PARTITION="${ARCH_OS_DISK}1"
@@ -1335,8 +1344,7 @@ exec_cleanup_installation() {
     process_init "$process_name"
     (
         [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                                  # If debug mode then return
-        cp "$SCRIPT_CONFIG" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"                                    # Copy installer files to users home dir
-        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"         # Set home permission
+        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"         # Set correct home permissions
         arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true' # Remove orphans and force return true
         process_return 0                                                                                      # Return
     ) &>"$PROCESS_LOG" &
