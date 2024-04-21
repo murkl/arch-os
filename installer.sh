@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.4.8'
+VERSION='1.4.9'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -89,8 +89,8 @@ main() {
         until select_enable_aur; do :; done
         until select_enable_housekeeping; do :; done
         until select_enable_shell_enhancement; do :; done
-        until select_enable_desktop; do :; done
         until select_enable_manager; do :; done
+        until select_enable_desktop; do :; done
 
         # Edit properties?
         if [ "$FIRST_RUN" = "true" ] && gum_confirm "Edit Properties?"; then
@@ -140,10 +140,12 @@ main() {
     print_info "Installation successful in ${duration_min} minutes and ${duration_sec} seconds"
 
     # Copy installer files to users home
-    cp -f "$SCRIPT_CONFIG" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
-    cp -f "$SCRIPT_LOG" "/mnt/home/${ARCH_OS_USERNAME}/installer.log"
-    arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.conf"
-    arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.log"
+    if [ "$MODE" != "debug" ]; then
+        cp -f "$SCRIPT_CONFIG" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
+        cp -f "$SCRIPT_LOG" "/mnt/home/${ARCH_OS_USERNAME}/installer.log"
+        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.conf"
+        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.log"
+    fi
 
     # Show reboot promt
     gum_confirm "Reboot to Arch OS now?" && print_warn "Rebooting..." && [ "$MODE" != "debug" ] && reboot
