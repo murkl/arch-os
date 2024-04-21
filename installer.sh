@@ -89,8 +89,8 @@ main() {
         until select_enable_aur; do :; done
         until select_enable_housekeeping; do :; done
         until select_enable_shell_enhancement; do :; done
-        until select_enable_desktop; do :; done
         until select_enable_manager; do :; done
+        until select_enable_desktop; do :; done
 
         # Edit properties?
         if [ "$FIRST_RUN" = "true" ] && gum_confirm "Edit Properties?"; then
