@@ -138,6 +138,14 @@ main() {
 
     # Finish & reboot
     print_info "Installation successful in ${duration_min} minutes and ${duration_sec} seconds"
+
+    # Copy installer files to users home
+    cp -f "$SCRIPT_CONFIG" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
+    cp -f "$SCRIPT_LOG" "/mnt/home/${ARCH_OS_USERNAME}/installer.log"
+    arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.conf"
+    arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.log"
+
+    # Show reboot promt
     gum_confirm "Reboot to Arch OS now?" && print_warn "Rebooting..." && [ "$MODE" != "debug" ] && reboot
     exit 0
 }
@@ -1336,8 +1344,7 @@ exec_cleanup_installation() {
     process_init "$process_name"
     (
         [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                                  # If debug mode then return
-        cp "$SCRIPT_CONFIG" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"                                    # Copy installer files to users home dir
-        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"         # Set home permission
+        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"         # Set correct home permissions
         arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true' # Remove orphans and force return true
         process_return 0                                                                                      # Return
     ) &>"$PROCESS_LOG" &
