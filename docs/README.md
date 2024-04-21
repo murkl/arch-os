@@ -44,6 +44,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 ## Arch OS Core Features
 
+- Multilingual
 - [Minimal Arch Linux](DOCS.md#minimal-installation) (147 packages)
 - Zen Kernel ([configurable](DOCS.md#advanced-installation))
 - [Swap](DOCS.md#swap) with zram-generator (zstd)
@@ -55,8 +56,8 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - Network Manager
 - SSD Support (fstrim)
 - Microcode Support (Intel/AMD)
-- Sole OS on a single disk (see [Arch OS Docs](DOCS.md#partitions-layout))
 - UEFI only supported
+- Sole OS on a single disk (see [Arch OS Docs](DOCS.md#partitions-layout))
 
 ## Optional Features
 
