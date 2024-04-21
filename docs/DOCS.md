@@ -405,11 +405,11 @@ curl -Ls bit.ly/arch-os-dev | bash
 
 ### Arch OS Installer
 
+<p><img src="screenshots/installer_01.png"></p>
 <p><img src="screenshots/installer_02.png"></p>
 <p><img src="screenshots/installer_03.png"></p>
 <p><img src="screenshots/installer_04.png"></p>
 <p><img src="screenshots/installer_05.png"></p>
 <p><img src="screenshots/installer_06.png"></p>
-<p><img src="screenshots/installer_07.png"></p>
 
 </div>

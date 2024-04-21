@@ -15,7 +15,7 @@
 
 </b></p>
 
-<p><img src="./screenshots/installer_01.png"></p>
+<p><img src="./screenshots/installer.png"></p>
 
 <p><b>
 
