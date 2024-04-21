@@ -98,7 +98,11 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 - Load prefered keyboard layout (optional): `loadkeys de`
 - Connect to WLAN (optional): `iwctl station wlan0 connect 'SSID'`
-- **Run Arch OS Installer: `curl -Ls  bit.ly/arch-os | bash`**
+- **Run Arch OS Installer:**
+
+```
+curl -Ls  bit.ly/arch-os | bash
+```
 
 ## Using Arch OS
 
@@ -110,13 +114,47 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 </div>
 
-- **System information:** `fetch`
-- **Update system:** `paru -Syu`
-- **Search package:** `paru -Ss <my search string>`
-- **Install package:** `paru -S <my package>`
-- **List installed packages:** `paru -Qe`
-- **Show package info:** `paru -Qi <my package>`
-- **Remove package:** `paru -Rsn <my package>`
+### System information
+
+```
+fetch
+```
+
+### Update system
+
+```
+paru -Syu
+```
+
+### Search package
+
+```
+paru -Ss <my search string>
+```
+
+### Install package
+
+```
+paru -S <my package>
+```
+
+### List installed packages
+
+```
+paru -Qe
+```
+
+### Show package info
+
+```
+paru -Qi <my package>
+```
+
+### Remove package
+
+```
+paru -Rsn <my package>
+```
 
 ## More Information
 
