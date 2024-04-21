@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.4.7'
+VERSION='1.4.8'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -463,11 +463,12 @@ select_keyboard() {
 select_disk() {
     if [ -z "$ARCH_OS_DISK" ] || [ -z "$ARCH_OS_BOOT_PARTITION" ] || [ -z "$ARCH_OS_ROOT_PARTITION" ]; then
         local user_input items options
-        mapfile -t items < <(lsblk -I 8,259,254 -d -o KNAME -n)
+        mapfile -t items < <(lsblk -I 8,259,254 -d -o KNAME,SIZE -n)
         # size: $(lsblk -d -n -o SIZE "/dev/${item}")
         options=() && for item in "${items[@]}"; do options+=("/dev/${item}"); done
         user_input=$(gum_choose --header " + Choose Disk" "${options[@]}") || trap_gum_exit_confirm
-        [ -z "$user_input" ] && return 1 # Check if new value is null
+        [ -z "$user_input" ] && return 1                          # Check if new value is null
+        user_input=$(echo "$user_input" | awk -F' ' '{print $1}') # Remove size from input
         [ ! -e "$user_input" ] && log_fail "Disk does not exists" && return 1
         ARCH_OS_DISK="$user_input" # Set property
         [[ "$ARCH_OS_DISK" = "/dev/nvm"* ]] && ARCH_OS_BOOT_PARTITION="${ARCH_OS_DISK}p1" || ARCH_OS_BOOT_PARTITION="${ARCH_OS_DISK}1"
