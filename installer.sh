@@ -140,10 +140,12 @@ main() {
     print_info "Installation successful in ${duration_min} minutes and ${duration_sec} seconds"
 
     # Copy installer files to users home
-    cp -f "$SCRIPT_CONFIG" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
-    cp -f "$SCRIPT_LOG" "/mnt/home/${ARCH_OS_USERNAME}/installer.log"
-    arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.conf"
-    arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.log"
+    if [ "$MODE" != "debug" ]; then
+        cp -f "$SCRIPT_CONFIG" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
+        cp -f "$SCRIPT_LOG" "/mnt/home/${ARCH_OS_USERNAME}/installer.log"
+        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.conf"
+        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.log"
+    fi
 
     # Show reboot promt
     gum_confirm "Reboot to Arch OS now?" && print_warn "Rebooting..." && [ "$MODE" != "debug" ] && reboot
