@@ -116,6 +116,12 @@ curl -Ls  bit.ly/arch-os | bash
 
 </div>
 
+### System manager
+
+```
+arch-os
+```
+
 ### System information
 
 ```
