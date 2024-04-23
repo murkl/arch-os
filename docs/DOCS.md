@@ -24,6 +24,8 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 
 ### Additional Packages (optional)
 
+- Install [Pika Backup](https://flathub.org/apps/details/org.gnome.World.PikaBackup) for backup and restore home files
+- Install [Extension Manager](https://flathub.org/apps/com.mattjakeman.ExtensionManager) for manage GNOME Extensions
 - Install [webapp-manager](https://aur.archlinux.org/packages/webapp-manager) for easy creation of web-apps for any website
 - Install [preload](https://wiki.archlinux.org/title/Preload) (start the service after installation: `sudo systemctl enable preload`)
 - Install [mutter-performance](https://aur.archlinux.org/packages/mutter-performance) (great on Intel Graphics with Wayland)
@@ -35,29 +37,24 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 
 - Desktop Font: [inter-font](https://archlinux.org/packages/extra/any/inter-font/)
 - Desktop Theme: [adw-gtk3](https://github.com/lassekongo83/adw-gtk3)
-- Icon Theme: [tela-icon-theme](https://github.com/vinceliuice/Tela-icon-theme)
-- Cursor Theme: [nordzy-cursors](https://github.com/alvatip/Nordzy-cursors)
+- Icon Theme: [tela-icon-theme](https://github.com/vinceliuice/Tela-icon-theme), [tela-circle-icon-theme](https://github.com/vinceliuice/Tela-circle-icon-theme)
+- Cursor Theme: [capitaine-cursors](https://archlinux.org/packages/extra/any/capitaine-cursors), [nordzy-cursors](https://github.com/alvatip/Nordzy-cursors)
 - Firefox Theme: [firefox-gnome-theme](https://github.com/rafaelmardojai/firefox-gnome-theme)
 
 ### GNOME Extensions (optional)
 
 - [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/)
+- [dash-to-panel](https://extensions.gnome.org/extension/1160/dash-to-panel/)
 - [dash-to-dock](https://extensions.gnome.org/extension/307/dash-to-dock/)
-- [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
 - [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/)
+- [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
 - [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
+- [light-style](https://extensions.gnome.org/extension/6198/light-style/)
+- [vitals](https://extensions.gnome.org/extension/1460/vitals/)
+- [weather-oclock](https://extensions.gnome.org/extension/5470/weather-oclock/)
+- [caffeine](https://extensions.gnome.org/extension/517/caffeine/)
+- [gamemode-indicator](https://extensions.gnome.org/extension/6340/gamemode-indicator-in-system-settings/)
 - [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (useful in wayland app toggler script)
-
-### Install Graphics Driver (manually)
-
-The graphics driver can be installed independently of the Arch OS installation.
-
-- [OpenGL](https://wiki.archlinux.org/title/OpenGL)
-- [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
-- [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
-- [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Available_methods)
-- [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
-- [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
 
 ### For Developer
 
@@ -106,6 +103,17 @@ ARCH_OS_AUR_HELPER='none'
 ```
 
 **Note:** You will only be provided with a minimal tty after installation.
+
+### Install Graphics Driver (manually)
+
+Set the property `ARCH_OS_DESKTOP_GRAPHICS_DRIVER='none'` and install your graphics driver manually:
+
+- [OpenGL](https://wiki.archlinux.org/title/OpenGL)
+- [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
+- [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
+- [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Available_methods)
+- [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
+- [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
 
 ### VM Support
 
