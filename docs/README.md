@@ -44,12 +44,12 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 ## Arch OS Core Features
 
-- Multilingual Installation
+- Multilingual Support
 - [Minimal Arch Linux](DOCS.md#minimal-installation) (147 packages)
-- Zen Kernel ([configurable](DOCS.md#advanced-installation))
+- [Zen Kernel](DOCS.md#advanced-installation) (configurable)
 - [Swap](DOCS.md#swap) with zram-generator (zstd)
+- [Sole OS](DOCS.md#partitions-layout)
 - Filesystem ext4
-- Sole OS
 - Silent Boot
 - Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
@@ -62,17 +62,17 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 ## Optional Features
 
-- Vanilla GNOME Desktop + Auto Login
 - [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
+- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
+- [Arch OS Shell Enhancement](DOCS.md#shell-enhancement)
+- [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
+- [Arch OS Manager](DOCS.md#arch-os-manager)
+- Vanilla GNOME Desktop + Auto Login
 - Wayland optimized
 - [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
-- AUR Helper ([configurable](DOCS.md#advanced-installation))
+- [AUR Helper](DOCS.md#advanced-installation) (configurable)
 - 32 Bit Support (Multilib)
 - Disk Encryption
-- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
-- [Shell Enhancement](DOCS.md#shell-enhancement)
-- [Automatic Housekeeping](DOCS.md#housekeeping)
-- [Arch OS Manager](DOCS.md#arch-os-manager)
 - Flatpak Support + Auto Update (GNOME Software)
 - Samba, Networking Protocol Libs, Git, Utils & Codecs included
 - GNOME Power Profiles Support
