@@ -56,7 +56,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - Pacman parallel downloads & eyecandy
 - Network Manager
 - SSD Support (fstrim)
-- Microcode Support (Intel/AMD)
+- Microcode Support (Intel & AMD)
 - UEFI only supported
 - [More Information...](DOCS.md#technical-information)
 
@@ -67,19 +67,20 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - [Arch OS Shell Enhancement](DOCS.md#shell-enhancement)
 - [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
 - [Arch OS Manager](DOCS.md#arch-os-manager)
-- Vanilla GNOME Desktop + Auto Login
-- Wayland optimized
-- [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
 - [AUR Helper](DOCS.md#advanced-installation) (configurable)
+- [VM Support](DOCS.md#vm-support)
 - 32 Bit Support (Multilib)
 - Disk Encryption
-- Flatpak Support + Auto Update (GNOME Software)
-- Samba, Networking Protocol Libs, Git, Utils & Codecs included
-- GNOME Power Profiles Support
-- Printer Support (cups)
-- Gamemode preinstalled (desktop)
-- Firmware Update Tool preinstalled (desktop)
-- [VM Support](DOCS.md#vm-support)
+- GNOME Desktop
+  - Wayland optimized
+  - Auto Login enabled
+  - [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
+  - Flatpak Support + Auto Update (GNOME Software)
+  - Samba, Networking Protocol Libs, Git, Utils & Codecs included
+  - GNOME Power Profiles Support
+  - Printer Support (cups)
+  - Gamemode preinstalled
+  - Firmware Update Tool preinstalled
 
 ## Installing Arch OS
 
