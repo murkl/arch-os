@@ -89,22 +89,11 @@ The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better s
 
 **Note:** The `installer.conf` & `installer.log` will copied to the new user's home directory during installation. This files can be saved for reuse or simply deleted.
 
-### Installation Variants
-
-The installer provides three installation variants:
-
-- `minimal`: Arch OS Core
-- `desktop`: Arch OS Core + Desktop + Defaults
-- `custom`: Depending on your `installer.conf`
-
-**Note:** Set `ARCH_OS_VARIANT='custom'` if you edit properties manually. Otherwise the installer may override some properties.
-
 ### Minimal Installation
 
 Set these properties to install Arch OS Core only with minimal packages & configurations:
 
 ```
-ARCH_OS_VARIANT='custom' # or minimal
 ARCH_OS_BOOTSPLASH_ENABLED='false'
 ARCH_OS_DESKTOP_ENABLED='false'
 ARCH_OS_MULTILIB_ENABLED='false'
@@ -143,10 +132,7 @@ Disable this feature with `ARCH_OS_VM_SUPPORT_ENABLED='false'`
 
 ### Example: `installer.conf`
 
-**Note:** You have to set `ARCH_OS_VARIANT='custom'` otherwise the installer will override some properties.
-
 ```
-ARCH_OS_VARIANT='custom' # Variant: desktop, minimal, custom
 ARCH_OS_HOSTNAME='arch-os' # Hostname
 ARCH_OS_USERNAME='tux' # User
 ARCH_OS_DISK='/dev/sda' # Disk
