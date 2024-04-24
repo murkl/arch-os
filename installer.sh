@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.4.9'
+VERSION='1.5.0'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -26,7 +26,7 @@ PROCESS_RET="${SCRIPT_TMP_DIR}/process.ret"
 
 # COLORS
 COLOR_WHITE=251
-COLOR_GREEN=42
+COLOR_GREEN=36
 COLOR_PURPLE=212
 COLOR_YELLOW=221
 COLOR_RED=9
@@ -57,8 +57,7 @@ main() {
     fi
 
     # Set script properties
-    local ARCH_OS_VARIANT='' # User env
-    local FIRST_RUN="true"   # Set first run (skip edit on refresh)
+    local first_run="true" # Set first run (skip edit on refresh)
 
     # Loop properties step to update screen if user edit properties
     while (true); do
@@ -66,15 +65,11 @@ main() {
         # Print Welcome
         print_header && print_title "Welcome to Arch OS Installation"
 
-        # Prepare properties
-        if [ -f "$SCRIPT_CONFIG" ]; then
-            properties_source # Load properties file (if exists) and auto export variables
-        else
-            until select_variant; do :; done # Select installation variant preset
-        fi
+        # Load properties file (if exists) and auto export variables
+        properties_source
 
-        # Generate properties file (needed on first start of installer)
-        properties_generate
+        # Select installation variant preset
+        properties_preset
 
         # Selectors
         until select_username; do :; done
@@ -93,7 +88,7 @@ main() {
         until select_enable_desktop; do :; done
 
         # Edit properties?
-        if [ "$FIRST_RUN" = "true" ] && gum_confirm "Edit Properties?"; then
+        if [ "$first_run" = "true" ] && gum_confirm "Edit Properties?"; then
             log_info "Edit properties..."
             local gum_header="Exit with CTRL + C and save with CTRL + D or ESC"
             if gum_write --height=10 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
@@ -101,7 +96,7 @@ main() {
             fi
             rm -f "${SCRIPT_CONFIG}.new" # Remove tmp properties
             gum_confirm "Change Password?" && until select_password --force; do :; done
-            FIRST_RUN="false" && continue # Restart properties step to refresh log above if changed
+            first_run="false" && continue # Restart properties step to refresh log above if changed
         fi
 
         print_info "Properties successfully initialized"
@@ -127,8 +122,8 @@ main() {
     exec_install_shell_enhancement
     exec_install_desktop
     exec_install_graphics_driver
-    exec_install_vm_support
     exec_install_manager
+    exec_install_vm_support
     exec_cleanup_installation
 
     # Calc installation duration
@@ -242,8 +237,8 @@ process_run() {
     [ "$(<"$PROCESS_RET")" != "0" ] && print_fail "${process_name} failed" && exit 1 # If process failed (result code 0 was not write in the end)
 
     # Finish
-    rm -f "$PROCESS_RET"                             # Remove process result file
-    print_add "${process_name} sucessfully finished" # Print process success
+    rm -f "$PROCESS_RET"                              # Remove process result file
+    print_info "${process_name} sucessfully finished" # Print process success
 }
 
 process_return() {
@@ -280,17 +275,16 @@ log_proc() { write_log "PROC | ${*}"; }
 
 # Print
 print_title() { gum_purple --margin "1 1" --bold "${*}"; }
-print_info() { log_info "$*" && gum_green --bold " • ${*}"; }
-print_warn() { log_warn "$*" && gum_yellow --bold " • ${*}"; }
-print_fail() { log_fail "$*" && gum_red --bold " • ${*}"; }
-print_add() { log_info "$*" && gum_green --bold " + ${*}"; }
+print_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold " • ")" "$(gum_white --bold "${*}")"; }
+print_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold " • ")" "$(gum_white --bold "${*}")"; }
+print_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold " • ")" "$(gum_white --bold "${*}")"; }
 
 # Colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
 gum_white() { gum_style --foreground "$COLOR_WHITE" "${@}"; }
-gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
 gum_purple() { gum_style --foreground "$COLOR_PURPLE" "${@}"; }
 gum_yellow() { gum_style --foreground "$COLOR_YELLOW" "${@}"; }
 gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
+gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
 
 # Gum
 gum_style() { gum style "${@}"; }
@@ -317,16 +311,8 @@ properties_source() {
 }
 
 properties_generate() {
-    # Set defaults
-    [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
-    [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
-    [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
-    [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
-    [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
-    [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu) " && ARCH_OS_MICROCODE="intel-ucode"
-    [ -z "$ARCH_OS_MICROCODE" ] && grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
     { # Write properties to installer.conf
-        #echo "# Arch OS ${VERSION} ($(date --utc '+%Y-%m-%d %H:%M:%S') UTC)"
+        echo "ARCH_OS_VARIANT='${ARCH_OS_VARIANT}'"
         echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}'"
         echo "ARCH_OS_USERNAME='${ARCH_OS_USERNAME}'"
         echo "ARCH_OS_DISK='${ARCH_OS_DISK}'"
@@ -357,38 +343,58 @@ properties_generate() {
     } >"$SCRIPT_CONFIG" # Write properties to file
 }
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# SELECTORS
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+properties_preset() {
 
-select_variant() {
+    # Select variant
     if [ -z "$ARCH_OS_VARIANT" ]; then
+        local options user_input
         options=("desktop" "minimal" "custom")
         user_input=$(gum_choose --header " + Choose Installation Variant" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
-        if [ "$user_input" = "desktop" ]; then
-            ARCH_OS_BOOTSPLASH_ENABLED='true'
-            ARCH_OS_DESKTOP_ENABLED='true'
-            ARCH_OS_MULTILIB_ENABLED='true'
-            ARCH_OS_HOUSEKEEPING_ENABLED='true'
-            ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
-            ARCH_OS_AUR_HELPER='paru-bin'
-            ARCH_OS_MANAGER_ENABLED='true'
-        fi
-        if [ "$user_input" = "minimal" ]; then
-            ARCH_OS_BOOTSPLASH_ENABLED='false'
-            ARCH_OS_DESKTOP_ENABLED='false'
-            ARCH_OS_MULTILIB_ENABLED='false'
-            ARCH_OS_HOUSEKEEPING_ENABLED='false'
-            ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
-            ARCH_OS_AUR_HELPER='none'
-            ARCH_OS_MANAGER_ENABLED='false'
-            ARCH_OS_DESKTOP_GRAPHICS_DRIVER="none"
-        fi
-        ARCH_OS_VARIANT="$user_input" && properties_generate # Set property
+        ARCH_OS_VARIANT="$user_input"
     fi
-    print_add "Arch OS Variant is set to ${ARCH_OS_VARIANT}"
+
+    # Default presets
+    [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
+    [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
+    [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
+    [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
+    [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
+    [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu) " && ARCH_OS_MICROCODE="intel-ucode"
+    [ -z "$ARCH_OS_MICROCODE" ] && grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
+
+    # Minimal presets
+    if [ "$ARCH_OS_VARIANT" = "minimal" ]; then
+        ARCH_OS_BOOTSPLASH_ENABLED='false'
+        ARCH_OS_DESKTOP_ENABLED='false'
+        ARCH_OS_MULTILIB_ENABLED='false'
+        ARCH_OS_HOUSEKEEPING_ENABLED='false'
+        ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
+        ARCH_OS_AUR_HELPER='none'
+        ARCH_OS_MANAGER_ENABLED='false'
+        ARCH_OS_DESKTOP_GRAPHICS_DRIVER="none"
+    fi
+
+    # Desktop presets
+    if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
+        ARCH_OS_BOOTSPLASH_ENABLED='true'
+        ARCH_OS_DESKTOP_ENABLED='true'
+        ARCH_OS_MULTILIB_ENABLED='true'
+        ARCH_OS_HOUSEKEEPING_ENABLED='true'
+        ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
+        ARCH_OS_AUR_HELPER='paru-bin'
+        ARCH_OS_MANAGER_ENABLED='true'
+    fi
+
+    # Write properties
+    properties_generate
+
+    print_info "Arch OS Variant is set to ${ARCH_OS_VARIANT}"
 }
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# SELECTORS
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 select_username() {
     if [ -z "$ARCH_OS_USERNAME" ]; then
@@ -397,7 +403,7 @@ select_username() {
         [ -z "$user_input" ] && return 1                      # Check if new value is null
         ARCH_OS_USERNAME="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_add "Username is set to ${ARCH_OS_USERNAME}"
+    print_info "Username is set to ${ARCH_OS_USERNAME}"
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -412,7 +418,7 @@ select_password() { # --force
         [ "$user_password" != "$user_password_check" ] && print_fail "Passwords not identical" && return 1
         ARCH_OS_PASSWORD="$user_password" && properties_generate # Set value and generate properties file
     fi
-    print_add "Password is set to *******"
+    print_info "Password is set to *******"
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -426,7 +432,7 @@ select_timezone() {
         [ ! -f "/usr/share/zoneinfo/${user_input}" ] && print_fail "Timezone '${user_input}' is not supported" && return 1
         ARCH_OS_TIMEZONE="$user_input" && properties_generate # Set property and generate properties file
     fi
-    print_add "Timezone is set to ${ARCH_OS_TIMEZONE}"
+    print_info "Timezone is set to ${ARCH_OS_TIMEZONE}"
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -451,7 +457,7 @@ select_language() {
         [[ "${ARCH_OS_LOCALE_GEN_LIST[*]}" != *'en_US.UTF-8 UTF-8'* ]] && ARCH_OS_LOCALE_GEN_LIST+=('en_US.UTF-8 UTF-8')
         properties_generate # Generate properties file (for ARCH_OS_LOCALE_LANG & ARCH_OS_LOCALE_GEN_LIST)
     fi
-    print_add "Language is set to ${ARCH_OS_LOCALE_LANG}"
+    print_info "Language is set to ${ARCH_OS_LOCALE_LANG}"
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -465,7 +471,7 @@ select_keyboard() {
         [ -z "$user_input" ] && return 1                             # Check if new value is null
         ARCH_OS_VCONSOLE_KEYMAP="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_add "Keyboard is set to ${ARCH_OS_VCONSOLE_KEYMAP}"
+    print_info "Keyboard is set to ${ARCH_OS_VCONSOLE_KEYMAP}"
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -485,7 +491,7 @@ select_disk() {
         [[ "$ARCH_OS_DISK" = "/dev/nvm"* ]] && ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}p2" || ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}2"
         properties_generate # Generate properties file
     fi
-    print_add "Disk is set to ${ARCH_OS_DISK}"
+    print_info "Disk is set to ${ARCH_OS_DISK}"
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -495,7 +501,7 @@ select_enable_encryption() {
         local user_input="false" && gum_confirm "Enable Disk Encryption?" && user_input="true"
         ARCH_OS_ENCRYPTION_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_add "Disk Encryption is set to ${ARCH_OS_ENCRYPTION_ENABLED}"
+    print_info "Disk Encryption is set to ${ARCH_OS_ENCRYPTION_ENABLED}"
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -505,37 +511,46 @@ select_enable_bootsplash() {
         local user_input="false" && gum_confirm "Enable Bootsplash?" && user_input="true"
         ARCH_OS_BOOTSPLASH_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_add "Bootsplash is set to ${ARCH_OS_BOOTSPLASH_ENABLED}"
+    print_info "Bootsplash is set to ${ARCH_OS_BOOTSPLASH_ENABLED}"
 }
 
 # ----------------------------------------------------------------------------------------------------
 
 select_enable_desktop() {
+
+    local user_input options
+
+    # Select desktop environment
     if [ -z "$ARCH_OS_DESKTOP_ENABLED" ]; then
-        local user_input options
         user_input="false" && gum_confirm "Enable Desktop Environment?" && user_input="true"
-        ARCH_OS_DESKTOP_ENABLED="$user_input" # Set property
+        ARCH_OS_DESKTOP_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then # If desktop is true set graphics driver and keyboard layout
-        if [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ]; then
-            options=("mesa" "intel_i915" "nvidia" "amd" "ati")
-            user_input=$(gum_choose --header " + Choose Desktop Graphics Driver" "${options[@]}") || trap_gum_exit_confirm
-            [ -z "$user_input" ] && return 1              # Check if new value is null
-            ARCH_OS_DESKTOP_GRAPHICS_DRIVER="$user_input" # Set property
-        fi
-        if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
-            user_input=$(gum_input --header " + Enter Desktop Keyboard Layout" --value "us") || trap_gum_exit_confirm
-            [ -z "$user_input" ] && return 1              # Check if new value is null
-            ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input" # Set property
-            user_input=$(gum_input --header " + Enter Desktop Keyboard Variant" --value "") || trap_gum_exit_confirm
-            ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input" # Set property
-        fi
+    print_info "Desktop Environment is set to ${ARCH_OS_DESKTOP_ENABLED}"
+
+    # Return if desktop disabled
+    [ "$ARCH_OS_DESKTOP_ENABLED" = "false" ] && return 0
+
+    # Keyboard layout
+    if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
+        user_input=$(gum_input --header " + Enter Desktop Keyboard Layout" --value "us") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1 # Check if new value is null
+        ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input"
+        user_input=$(gum_input --header " + Enter Desktop Keyboard Variant" --value "") || trap_gum_exit_confirm
+        ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input"
+        properties_generate
     fi
-    properties_generate # Generate properties file
-    print_add "Desktop Environment is set to ${ARCH_OS_DESKTOP_ENABLED}"
-    [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && print_add "Desktop Keyboard Layout is set to ${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}"
-    [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && print_add "Desktop Keyboard Variant is set to ${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}"
-    [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && print_add "Desktop Graphics Driver is set to ${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}"
+    print_info "Desktop Keyboard Layout is set to ${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}"
+    [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && print_info "Desktop Keyboard Variant is set to ${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}"
+
+    # Graphics driver
+    if [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] || [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" = "none" ]; then
+        options=("mesa" "intel_i915" "nvidia" "amd" "ati")
+        user_input=$(gum_choose --header " + Choose Desktop Graphics Driver" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1                                     # Check if new value is null
+        ARCH_OS_DESKTOP_GRAPHICS_DRIVER="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    print_info "Desktop Graphics Driver is set to ${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}"
+
     return 0
 }
 
@@ -546,7 +561,7 @@ select_enable_aur() {
         local user_input="none" && gum_confirm "Enable AUR Helper?" && user_input="paru-bin"
         ARCH_OS_AUR_HELPER="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_add "AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
+    print_info "AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -556,7 +571,7 @@ select_enable_multilib() {
         local user_input="false" && gum_confirm "Enable 32 Bit Support?" && user_input="true"
         ARCH_OS_MULTILIB_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_add "32 Bit Support is set to ${ARCH_OS_MULTILIB_ENABLED}"
+    print_info "32 Bit Support is set to ${ARCH_OS_MULTILIB_ENABLED}"
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -566,7 +581,7 @@ select_enable_housekeeping() {
         local user_input="false" && gum_confirm "Enable Housekeeping?" && user_input="true"
         ARCH_OS_HOUSEKEEPING_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_add "Housekeeping is set to ${ARCH_OS_HOUSEKEEPING_ENABLED}"
+    print_info "Housekeeping is set to ${ARCH_OS_HOUSEKEEPING_ENABLED}"
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -576,7 +591,7 @@ select_enable_shell_enhancement() {
         local user_input="false" && gum_confirm "Enable Shell Enhancement?" && user_input="true"
         ARCH_OS_SHELL_ENHANCEMENT_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_add "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
+    print_info "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
 }
 
 # ----------------------------------------------------------------------------------------------------
@@ -586,7 +601,7 @@ select_enable_manager() {
         local user_input="false" && gum_confirm "Enable Arch OS Manager?" && user_input="true"
         ARCH_OS_MANAGER_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_add "Arch OS Manager is set to ${ARCH_OS_MANAGER_ENABLED}"
+    print_info "Arch OS Manager is set to ${ARCH_OS_MANAGER_ENABLED}"
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
