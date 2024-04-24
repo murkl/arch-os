@@ -308,8 +308,10 @@ properties_source() {
         ARCH_OS_VM_SUPPORT_ENABLED="true"
         ARCH_OS_ECN_ENABLED="true"
         ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
-        ARCH_OS_MICROCODE="intel-ucode"
-        ARCH_OS_MICROCODE="amd-ucode"
+
+        # Set microcode
+        grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
+        grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
 
         # Minimal presets
         if [ "$preset" = "minimal" ]; then
@@ -338,7 +340,7 @@ properties_source() {
         properties_generate && print_info "Arch OS Variant is set to ${preset}"
     fi
 
-    # Source priperties
+    # Source properties
     set -a # Enable auto export of variables
     source "$SCRIPT_CONFIG"
     set +a # Disable auto export of variables
