@@ -300,7 +300,7 @@ properties_source() {
     if [ ! -f "$SCRIPT_CONFIG" ]; then
         local preset options
         options=("desktop" "minimal" "custom")
-        preset=$(gum_choose --header " + Choose Installation Preset" "${options[@]}") || trap_gum_exit_confirm
+        preset=$(gum_choose --header " + Choose Installation Variant" "${options[@]}") || trap_gum_exit_confirm
 
         # Default presets
         ARCH_OS_HOSTNAME="arch-os"
@@ -335,7 +335,7 @@ properties_source() {
         fi
 
         # Write properties
-        properties_generate && print_info "Arch OS Preset ${preset} loaded"
+        properties_generate && print_info "Arch OS Variant is set to ${preset}"
     fi
 
     # Source priperties
