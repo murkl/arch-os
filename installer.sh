@@ -57,8 +57,7 @@ main() {
     fi
 
     # Set script properties
-    local ARCH_OS_VARIANT='' # User env
-    local FIRST_RUN="true"   # Set first run (skip edit on refresh)
+    local FIRST_RUN="true" # Set first run (skip edit on refresh)
 
     # Loop properties step to update screen if user edit properties
     while (true); do
@@ -66,17 +65,11 @@ main() {
         # Print Welcome
         print_header && print_title "Welcome to Arch OS Installation"
 
-        # Prepare properties
-        if [ -f "$SCRIPT_CONFIG" ]; then
-            properties_source # Load properties file (if exists) and auto export variables
-        else
-            until select_variant; do :; done # Select installation variant preset
-        fi
-
-        # Generate properties file (needed on first start of installer)
-        properties_generate
+        # Load properties file (if exists) and auto export variables
+        properties_source
 
         # Selectors
+        until select_variant; do :; done # Select installation variant preset
         until select_username; do :; done
         until select_password; do :; done
         until select_timezone; do :; done
@@ -127,8 +120,8 @@ main() {
     exec_install_shell_enhancement
     exec_install_desktop
     exec_install_graphics_driver
-    exec_install_vm_support
     exec_install_manager
+    exec_install_vm_support
     exec_cleanup_installation
 
     # Calc installation duration
@@ -316,16 +309,9 @@ properties_source() {
 }
 
 properties_generate() {
-    # Set defaults
-    [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
-    [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
-    [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
-    [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
-    [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
-    [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu) " && ARCH_OS_MICROCODE="intel-ucode"
-    [ -z "$ARCH_OS_MICROCODE" ] && grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
     { # Write properties to installer.conf
         #echo "# Arch OS ${VERSION} ($(date --utc '+%Y-%m-%d %H:%M:%S') UTC)"
+        echo "ARCH_OS_VARIANT='${ARCH_OS_VARIANT}'"
         echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}'"
         echo "ARCH_OS_USERNAME='${ARCH_OS_USERNAME}'"
         echo "ARCH_OS_DISK='${ARCH_OS_DISK}'"
@@ -361,6 +347,16 @@ properties_generate() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 select_variant() {
+
+    # Set defaults
+    [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
+    [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
+    [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
+    [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
+    [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
+    [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu) " && ARCH_OS_MICROCODE="intel-ucode"
+    [ -z "$ARCH_OS_MICROCODE" ] && grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
+
     if [ -z "$ARCH_OS_VARIANT" ]; then
         options=("desktop" "minimal" "custom")
         user_input=$(gum_choose --header " + Choose Installation Variant" "${options[@]}") || trap_gum_exit_confirm
