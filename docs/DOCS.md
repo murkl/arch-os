@@ -87,7 +87,7 @@ May check out these projects:
 
 The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as defaults for Arch OS setup menu. This file provides some additional properties to customize your Arch OS installation (see [Example](#example-installerconf)).
 
-**Note:** The `installer.conf` will copied to the new user's home directory during installation. This file can be saved for reuse or simply deleted.
+**Note:** The `installer.conf` & `installer.log` will copied to the new user's home directory during installation. This files can be saved for reuse or simply deleted.
 
 ### Minimal Installation
 
@@ -101,6 +101,8 @@ ARCH_OS_HOUSEKEEPING_ENABLED='false'
 ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
 ARCH_OS_AUR_HELPER='none'
 ```
+
+If you want to disable VM support add `ARCH_OS_VM_SUPPORT_ENABLED='false'`
 
 **Note:** You will only be provided with a minimal tty after installation.
 

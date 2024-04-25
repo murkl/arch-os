@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.5.0'
+VERSION='1.5.1'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -56,9 +56,6 @@ main() {
         rm -f "$SCRIPT_CONFIG"
     fi
 
-    # Set script properties
-    local first_run="true" # Set first run (skip edit on refresh)
-
     # Loop properties step to update screen if user edit properties
     while (true); do
 
@@ -67,9 +64,6 @@ main() {
 
         # Load properties file (if exists) and auto export variables
         properties_source
-
-        # Select installation variant preset
-        properties_preset
 
         # Selectors
         until select_username; do :; done
@@ -88,7 +82,7 @@ main() {
         until select_enable_desktop; do :; done
 
         # Edit properties?
-        if [ "$first_run" = "true" ] && gum_confirm "Edit Properties?"; then
+        if gum_confirm "Edit Properties?"; then
             log_info "Edit properties..."
             local gum_header="Exit with CTRL + C and save with CTRL + D or ESC"
             if gum_write --height=10 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
@@ -96,7 +90,7 @@ main() {
             fi
             rm -f "${SCRIPT_CONFIG}.new" # Remove tmp properties
             gum_confirm "Change Password?" && until select_password --force; do :; done
-            first_run="false" && continue # Restart properties step to refresh log above if changed
+            continue # Restart properties step to refresh log above if changed
         fi
 
         print_info "Properties successfully initialized"
@@ -303,16 +297,57 @@ gum_pager() { gum pager "${@}"; } # Only used in exit trap
 
 # shellcheck disable=SC1090
 properties_source() {
-    if [ -f "$SCRIPT_CONFIG" ]; then
-        set -a # Enable auto export of variables
-        source "$SCRIPT_CONFIG"
-        set +a # Disable auto export of variables
+    if [ ! -f "$SCRIPT_CONFIG" ]; then
+        local preset options
+        options=("desktop" "minimal" "custom")
+        preset=$(gum_choose --header " + Choose Installation Variant" "${options[@]}") || trap_gum_exit_confirm
+
+        # Default presets
+        ARCH_OS_HOSTNAME="arch-os"
+        ARCH_OS_KERNEL="linux-zen"
+        ARCH_OS_VM_SUPPORT_ENABLED="true"
+        ARCH_OS_ECN_ENABLED="true"
+        ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
+
+        # Set microcode
+        grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
+        grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
+
+        # Minimal presets
+        if [ "$preset" = "minimal" ]; then
+            ARCH_OS_BOOTSPLASH_ENABLED='false'
+            ARCH_OS_DESKTOP_ENABLED='false'
+            ARCH_OS_MULTILIB_ENABLED='false'
+            ARCH_OS_HOUSEKEEPING_ENABLED='false'
+            ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
+            ARCH_OS_AUR_HELPER='none'
+            ARCH_OS_MANAGER_ENABLED='false'
+            ARCH_OS_DESKTOP_GRAPHICS_DRIVER="none"
+        fi
+
+        # Desktop presets
+        if [ "$preset" = "desktop" ]; then
+            ARCH_OS_BOOTSPLASH_ENABLED='true'
+            ARCH_OS_DESKTOP_ENABLED='true'
+            ARCH_OS_MULTILIB_ENABLED='true'
+            ARCH_OS_HOUSEKEEPING_ENABLED='true'
+            ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
+            ARCH_OS_AUR_HELPER='paru-bin'
+            ARCH_OS_MANAGER_ENABLED='true'
+        fi
+
+        # Write properties
+        properties_generate && print_info "Arch OS Variant is set to ${preset}"
     fi
+
+    # Source properties
+    set -a # Enable auto export of variables
+    source "$SCRIPT_CONFIG"
+    set +a # Disable auto export of variables
 }
 
 properties_generate() {
     { # Write properties to installer.conf
-        echo "ARCH_OS_VARIANT='${ARCH_OS_VARIANT}'"
         echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}'"
         echo "ARCH_OS_USERNAME='${ARCH_OS_USERNAME}'"
         echo "ARCH_OS_DISK='${ARCH_OS_DISK}'"
@@ -328,68 +363,19 @@ properties_generate() {
         echo "ARCH_OS_MICROCODE='${ARCH_OS_MICROCODE}'"
         echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
-        echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
         echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}'"
         echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}'"
         echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}'"
         echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}'"
         echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}'"
         echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}'"
+        echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
         echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}'"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
     } >"$SCRIPT_CONFIG" # Write properties to file
-}
-
-properties_preset() {
-
-    # Select variant
-    if [ -z "$ARCH_OS_VARIANT" ]; then
-        local options user_input
-        options=("desktop" "minimal" "custom")
-        user_input=$(gum_choose --header " + Choose Installation Variant" "${options[@]}") || trap_gum_exit_confirm
-        [ -z "$user_input" ] && return 1 # Check if new value is null
-        ARCH_OS_VARIANT="$user_input"
-    fi
-
-    # Default presets
-    [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
-    [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
-    [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
-    [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
-    [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
-    [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu) " && ARCH_OS_MICROCODE="intel-ucode"
-    [ -z "$ARCH_OS_MICROCODE" ] && grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
-
-    # Minimal presets
-    if [ "$ARCH_OS_VARIANT" = "minimal" ]; then
-        ARCH_OS_BOOTSPLASH_ENABLED='false'
-        ARCH_OS_DESKTOP_ENABLED='false'
-        ARCH_OS_MULTILIB_ENABLED='false'
-        ARCH_OS_HOUSEKEEPING_ENABLED='false'
-        ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
-        ARCH_OS_AUR_HELPER='none'
-        ARCH_OS_MANAGER_ENABLED='false'
-        ARCH_OS_DESKTOP_GRAPHICS_DRIVER="none"
-    fi
-
-    # Desktop presets
-    if [ "$ARCH_OS_VARIANT" = "desktop" ]; then
-        ARCH_OS_BOOTSPLASH_ENABLED='true'
-        ARCH_OS_DESKTOP_ENABLED='true'
-        ARCH_OS_MULTILIB_ENABLED='true'
-        ARCH_OS_HOUSEKEEPING_ENABLED='true'
-        ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
-        ARCH_OS_AUR_HELPER='paru-bin'
-        ARCH_OS_MANAGER_ENABLED='true'
-    fi
-
-    # Write properties
-    properties_generate
-
-    print_info "Arch OS Variant is set to ${ARCH_OS_VARIANT}"
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
