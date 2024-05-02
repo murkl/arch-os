@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.5.1'
+VERSION='1.5.2'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -300,7 +300,7 @@ properties_source() {
     if [ ! -f "$SCRIPT_CONFIG" ]; then
         local preset options
         options=("desktop" "minimal" "custom")
-        preset=$(gum_choose --header " + Choose Installation Variant" "${options[@]}") || trap_gum_exit_confirm
+        preset=$(gum_choose --header " + Choose Installation Preset" "${options[@]}") || trap_gum_exit_confirm
 
         # Default presets
         ARCH_OS_HOSTNAME="arch-os"
@@ -337,7 +337,9 @@ properties_source() {
         fi
 
         # Write properties
-        properties_generate && print_info "Arch OS Variant is set to ${preset}"
+        properties_generate && print_info "Preset is set to ${preset}"
+    else
+        print_info "Preset is set to config" # If config exists already
     fi
 
     # Source properties
