@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.5.1'
+VERSION='1.5.2'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -337,7 +337,7 @@ properties_source() {
         fi
 
         # Write properties
-        properties_generate && print_info "Arch OS Variant is set to ${preset}"
+        properties_generate && print_info "Preset is set to ${preset}"
     fi
 
     # Source properties
