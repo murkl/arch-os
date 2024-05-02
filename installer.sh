@@ -338,6 +338,8 @@ properties_source() {
 
         # Write properties
         properties_generate && print_info "Preset is set to ${preset}"
+    else
+        print_info "Preset is set to config" # If config exists already
     fi
 
     # Source properties
