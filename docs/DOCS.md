@@ -22,6 +22,15 @@
 
 For a robust & stable Arch OS experience, install as few additional packages from the official [Arch Repository](https://archlinux.org/packages) or [AUR](https://aur.archlinux.org) as possible. Instead, use [Flatpak](https://flathub.org) or [GNOME Software](https://apps.gnome.org). Furthermore change system files only if absolutely necessary and perform regular package upgrades.
 
+- Arch OS Manager: **`arch-os`**
+- System information: **`fetch`**
+- Update system: **`paru -Syu`**
+- Search package: **`paru -Ss <my search string>`**
+- Install package: **`paru -S <my package>`**
+- List installed packages: **`paru -Qe`**
+- Show package info: **`paru -Qi <my package>`**
+- Remove package: **`paru -Rsn <my package>`**
+
 ### Additional Packages (optional)
 
 - Install [Pika Backup](https://flathub.org/apps/details/org.gnome.World.PikaBackup) for backup and restore home files
