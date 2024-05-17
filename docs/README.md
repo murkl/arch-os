@@ -84,8 +84,6 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 ## Installing Arch OS
 
-**[➜ See Advanced Installation](DOCS.md#advanced-installation)**
-
 ### 1. Prepare bootable USB Device
 
 - Download latest Arch Linux ISO from **[archlinux.org](https://www.archlinux.org/download)** or **[archlinux.de](https://www.archlinux.de/download)**
@@ -104,71 +102,13 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - **Run Arch OS Installer:**
 
 ```
-curl -Ls  bit.ly/arch-os | bash
+curl -Ls bit.ly/arch-os | bash
 ```
 
-## Using Arch OS
-
-<div align="center">
-
-<p><img src="./screenshots/desktop.jpg"></p>
-
-**[➜ See Recommendation](DOCS.md#recommendation)**
-
-</div>
-
-### System manager
-
-```
-arch-os
-```
-
-### System information
-
-```
-fetch
-```
-
-### Update system
-
-```
-paru -Syu
-```
-
-### Search package
-
-```
-paru -Ss <my search string>
-```
-
-### Install package
-
-```
-paru -S <my package>
-```
-
-### List installed packages
-
-```
-paru -Qe
-```
-
-### Show package info
-
-```
-paru -Qi <my package>
-```
-
-### Remove package
-
-```
-paru -Rsn <my package>
-```
+**[➜ See Advanced Installation](DOCS.md#advanced-installation)**
 
 ## More Information
 
 Further information can be found in the documentation.
 
 **[➜ Open Arch OS Docs](DOCS.md)**
-
-<div align="center"><sub>Developed with ❤ in Germany</sub></div>

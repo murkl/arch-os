@@ -22,6 +22,15 @@
 
 For a robust & stable Arch OS experience, install as few additional packages from the official [Arch Repository](https://archlinux.org/packages) or [AUR](https://aur.archlinux.org) as possible. Instead, use [Flatpak](https://flathub.org) or [GNOME Software](https://apps.gnome.org). Furthermore change system files only if absolutely necessary and perform regular package upgrades.
 
+- Arch OS Manager: **`arch-os`**
+- System information: **`fetch`**
+- Update system: **`paru -Syu`**
+- Search package: **`paru -Ss <my search string>`**
+- Install package: **`paru -S <my package>`**
+- List installed packages: **`paru -Qe`**
+- Show package info: **`paru -Qi <my package>`**
+- Remove package: **`paru -Rsn <my package>`**
+
 ### Additional Packages (optional)
 
 - Install [Pika Backup](https://flathub.org/apps/details/org.gnome.World.PikaBackup) for backup and restore home files
@@ -148,13 +157,13 @@ ARCH_OS_KERNEL='linux-zen' # Kernel | Default: linux-zen | Recommended: linux, l
 ARCH_OS_MICROCODE='intel-ucode' # Microcode | Disable: none | Available: intel-ucode, amd-ucode
 ARCH_OS_ECN_ENABLED='true' # Disable ECN support for legacy routers | Default: true | Disable: false
 ARCH_OS_BOOTSPLASH_ENABLED='true' # Bootsplash | Disable: false
-ARCH_OS_DESKTOP_ENABLED='desktop' # Arch OS Desktop | Disable: false
 ARCH_OS_MANAGER_ENABLED='true' # Arch OS Manager | Disable: false
 ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true' # Shell Enhancement | Disable: false
 ARCH_OS_AUR_HELPER='paru-bin' # AUR Helper | Default: paru-bin | Disable: none | Recommended: paru, yay, trizen, pikaur
 ARCH_OS_MULTILIB_ENABLED='true' # MultiLib 32 Bit Support | Disable: false
 ARCH_OS_HOUSEKEEPING_ENABLED='true' # Housekeeping | Disable: false
 ARCH_OS_REFLECTOR_COUNTRY='' # Country used by reflector | Default: null | Example: Germany,France
+ARCH_OS_DESKTOP_ENABLED='true' # Arch OS Desktop | Disable: false
 ARCH_OS_DESKTOP_GRAPHICS_DRIVER='nvidia' # Graphics Driver | Disable: none | Available: mesa, intel_i915, nvidia, amd, ati
 ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='de' # X11 keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de
 ARCH_OS_DESKTOP_KEYBOARD_MODEL='pc105' # X11 keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models
