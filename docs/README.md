@@ -99,7 +99,8 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 - Load prefered keyboard layout (optional): `loadkeys de`
 - Connect to WLAN (optional): `iwctl station wlan0 connect 'SSID'`
-- **Run Arch OS Installer:**
+
+#### Run Arch OS Installer
 
 ```
 curl -Ls bit.ly/arch-os | bash
