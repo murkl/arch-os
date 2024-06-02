@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.5.2'
+VERSION='1.5.3'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -917,6 +917,7 @@ exec_install_desktop() {
             } >/mnt/etc/samba/smb.conf
 
             # Set X11 keyboard layout in /etc/X11/xorg.conf.d/00-keyboard.conf
+            mkdir -p /mnt/etc/X11/xorg.conf.d/
             {
                 echo 'Section "InputClass"'
                 echo '    Identifier "system-keyboard"'
