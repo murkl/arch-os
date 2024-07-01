@@ -823,7 +823,7 @@ exec_pacstrap_core() {
         sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
 
         # Set max VMAs (need for some apps/games)
-        echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
+        #echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
 
         # Configure pacman parrallel downloads, colors, eyecandy
         sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
