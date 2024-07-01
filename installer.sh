@@ -11,7 +11,7 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # LICENCE:  GPL 2.0
 
 # VERSION
-VERSION='1.5.3'
+VERSION='1.5.4'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -823,7 +823,7 @@ exec_pacstrap_core() {
         sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
 
         # Set max VMAs (need for some apps/games)
-        echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
+        #echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
 
         # Configure pacman parrallel downloads, colors, eyecandy
         sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
@@ -855,7 +855,7 @@ exec_install_desktop() {
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
 
             # Networking & Access
-            packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google)
+            packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
 
             # Utils (https://wiki.archlinux.org/title/File_systems)
             packages+=(git dhcp net-tools inetutils nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
@@ -865,7 +865,7 @@ exec_install_desktop() {
 
             # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
             packages+=(ffmpeg gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader)
-            packages+=(a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread)
+            packages+=(a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread openh264)
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer lib32-gst-plugins-good)
 
             # Optimization
