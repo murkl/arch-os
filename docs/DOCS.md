@@ -254,9 +254,9 @@ fish_config
 
 Install **➜ [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/)** and set this in extension options to integrate [Arch OS Manager](https://github.com/murkl/arch-os-manager):
 
-- Check command: `/usr/bin/arch-os --check`
-- Update command: `arch-os --list`
-- Package Manager (optional): `arch-os`
+- Check command: `/usr/bin/arch-os check`
+- Update command: `arch-os --kitty list`
+- Package Manager (optional): `arch-os --kitty`
 
 ## Technical Information
 
@@ -300,7 +300,7 @@ NetworkManager fstrim.timer systemd-zram-setup@zram0.service systemd-oomd.servic
 
 This configuration will be set during Arch OS Core Installation:
 
-- `vm.max_map_count` is set to `1048576` for compatibility of some apps/games
+- `vm.max_map_count` is set to `1048576` for compatibility of some apps/games (default)
 - `DefaultTimeoutStopSec` is set to `10s` for faster shutdown
 - `quiet splash vt.global_cursor_default=0` is set to kernel parameters for silent boot
 - Pacman parallel downloads is set to `5`
