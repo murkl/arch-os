@@ -136,8 +136,25 @@ main() {
         arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.log"
     fi
 
-    # Show reboot promt
-    gum_confirm "Reboot to Arch OS now?" && print_warn "Rebooting..." && [ "$MODE" != "debug" ] && reboot
+    wait # Wait for sub processes
+
+    # Show reboot & unmount promt
+    local do_reboot="false"
+    local do_unmount="false"
+    gum_confirm "Reboot to Arch OS now?" && do_reboot="true" && do_unmount="true"
+    [ "$do_reboot" = "false" ] && gum_confirm "Unmount Arch OS from /mnt?" && do_unmount="true"
+
+    # Unmount
+    if [ "$do_unmount" = "true" ] && [ "$MODE" != "debug" ]; then
+        swapoff -a
+        umount -A -R /mnt
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
+        print_info "Unmounting successful"
+    fi
+
+    # Reboot
+    [ "$do_reboot" = "true" ] && [ "$MODE" != "debug" ] && print_warn "Rebooting..." && reboot
+
     exit 0
 }
 
@@ -486,7 +503,15 @@ select_disk() {
 
 select_enable_encryption() {
     if [ -z "$ARCH_OS_ENCRYPTION_ENABLED" ]; then
-        local user_input="false" && gum_confirm "Enable Disk Encryption?" && user_input="true"
+        gum_confirm "Enable Disk Encryption?"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        local user_input
+        [ $user_confirm = 1 ] && user_input="false"
+        [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_ENCRYPTION_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     print_info "Disk Encryption is set to ${ARCH_OS_ENCRYPTION_ENABLED}"
@@ -496,7 +521,15 @@ select_enable_encryption() {
 
 select_enable_bootsplash() {
     if [ -z "$ARCH_OS_BOOTSPLASH_ENABLED" ]; then
-        local user_input="false" && gum_confirm "Enable Bootsplash?" && user_input="true"
+        gum_confirm "Enable Bootsplash?"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        local user_input
+        [ $user_confirm = 1 ] && user_input="false"
+        [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_BOOTSPLASH_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     print_info "Bootsplash is set to ${ARCH_OS_BOOTSPLASH_ENABLED}"
@@ -505,12 +538,17 @@ select_enable_bootsplash() {
 # ----------------------------------------------------------------------------------------------------
 
 select_enable_desktop() {
-
     local user_input options
-
     # Select desktop environment
     if [ -z "$ARCH_OS_DESKTOP_ENABLED" ]; then
-        user_input="false" && gum_confirm "Enable Desktop Environment?" && user_input="true"
+        gum_confirm "Enable Desktop Environment?"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        [ $user_confirm = 1 ] && user_input="false"
+        [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_DESKTOP_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     print_info "Desktop Environment is set to ${ARCH_OS_DESKTOP_ENABLED}"
@@ -546,7 +584,15 @@ select_enable_desktop() {
 
 select_enable_aur() {
     if [ -z "$ARCH_OS_AUR_HELPER" ]; then
-        local user_input="none" && gum_confirm "Enable AUR Helper?" && user_input="paru-bin"
+        gum_confirm "Enable AUR Helper?"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        local user_input
+        [ $user_confirm = 1 ] && user_input="false"
+        [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_AUR_HELPER="$user_input" && properties_generate # Set value and generate properties file
     fi
     print_info "AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
@@ -556,7 +602,15 @@ select_enable_aur() {
 
 select_enable_multilib() {
     if [ -z "$ARCH_OS_MULTILIB_ENABLED" ]; then
-        local user_input="false" && gum_confirm "Enable 32 Bit Support?" && user_input="true"
+        gum_confirm "Enable 32 Bit Support?"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        local user_input
+        [ $user_confirm = 1 ] && user_input="false"
+        [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_MULTILIB_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     print_info "32 Bit Support is set to ${ARCH_OS_MULTILIB_ENABLED}"
@@ -566,7 +620,15 @@ select_enable_multilib() {
 
 select_enable_housekeeping() {
     if [ -z "$ARCH_OS_HOUSEKEEPING_ENABLED" ]; then
-        local user_input="false" && gum_confirm "Enable Housekeeping?" && user_input="true"
+        gum_confirm "Enable Housekeeping?"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        local user_input
+        [ $user_confirm = 1 ] && user_input="false"
+        [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_HOUSEKEEPING_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     print_info "Housekeeping is set to ${ARCH_OS_HOUSEKEEPING_ENABLED}"
@@ -576,7 +638,15 @@ select_enable_housekeeping() {
 
 select_enable_shell_enhancement() {
     if [ -z "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" ]; then
-        local user_input="false" && gum_confirm "Enable Shell Enhancement?" && user_input="true"
+        gum_confirm "Enable Shell Enhancement?"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        local user_input
+        [ $user_confirm = 1 ] && user_input="false"
+        [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_SHELL_ENHANCEMENT_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     print_info "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
@@ -586,7 +656,15 @@ select_enable_shell_enhancement() {
 
 select_enable_manager() {
     if [ -z "$ARCH_OS_MANAGER_ENABLED" ]; then
-        local user_input="false" && gum_confirm "Enable Arch OS Manager?" && user_input="true"
+        gum_confirm "Enable Arch OS Manager?"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        local user_input
+        [ $user_confirm = 1 ] && user_input="false"
+        [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_MANAGER_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     print_info "Arch OS Manager is set to ${ARCH_OS_MANAGER_ENABLED}"
