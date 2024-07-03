@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export MODE="$1" # Start debug: ./installer.sh debug
+export MODE="$1" # ./installer.sh debug
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # //////////////////////////////////////// ARCH OS INSTALLER /////////////////////////////////////////
@@ -10,8 +10,13 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # ORIGIN:   Germany
 # LICENCE:  GPL 2.0
 
+# CONFIG
+set -o pipefail # A pipeline error results in the error status of the entire pipeline
+set -e          # Terminate if any command exits with a non-zero
+set -E          # ERR trap inherited by shell functions (errtrace)
+
 # VERSION
-VERSION='1.5.4'
+VERSION='1.5.5'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -36,11 +41,6 @@ COLOR_RED=9
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 main() {
-
-    # Configuration
-    set -o pipefail # A pipeline error results in the error status of the entire pipeline
-    set -e          # Terminate if any command exits with a non-zero
-    set -E          # ERR trap inherited by shell functions (errtrace)
 
     # Init
     rm -f "$SCRIPT_LOG" # Clear logfile
