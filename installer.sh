@@ -926,7 +926,7 @@ exec_install_desktop() {
             local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra gnome-firmware file-roller power-profiles-daemon rygel cups)
 
             # GNOME wayland screensharing, flatpak & pipewire support
-            packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome)
+            packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
 
             # Audio (Pipewire replacements + session manager)
             packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
