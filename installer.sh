@@ -165,11 +165,13 @@ main() {
 gum_init() {
     if [ ! -x ./gum ] && ! command -v /usr/bin/gum &>/dev/null; then
         clear && echo "Loading Arch OS Installer..." # Loading
-        local gum_url                                # Prepare URL with version os and arch
+        local gum_url gum_path                       # Prepare URL with version os and arch
         # https://github.com/charmbracelet/gum/releases
         gum_url="https://github.com/charmbracelet/gum/releases/download/v${VERSION_GUM}/gum_${VERSION_GUM}_$(uname -s)_$(uname -m).tar.gz"
         if ! curl -Lsf "$gum_url" >"${SCRIPT_TMP_DIR}/gum.tar.gz"; then echo "Error downloading ${gum_url}" && exit 1; fi
         if ! tar -xf "${SCRIPT_TMP_DIR}/gum.tar.gz" --directory "$SCRIPT_TMP_DIR"; then echo "Error extracting ${SCRIPT_TMP_DIR}/gum.tar.gz" && exit 1; fi
+        gum_path=$(find "${SCRIPT_TMP_DIR}" -type f -executable -name "gum" -print -quit)
+        [ -n "$gum_path" ] && echo "Error: 'gum' binary not found in '${SCRIPT_TMP_DIR}'" && exit 1
         if ! mv "${SCRIPT_TMP_DIR}/gum" ./gum; then echo "Error moving ${SCRIPT_TMP_DIR}/gum to ./gum" && exit 1; fi
         if ! chmod +x ./gum; then echo "Error chmod +x ./gum" && exit 1; fi
     fi
