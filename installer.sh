@@ -17,7 +17,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 
 # VERSION
 VERSION='1.5.5'
-VERSION_GUM="0.14.1"
+VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
 SCRIPT_CONFIG="./installer.conf"
@@ -301,11 +301,11 @@ gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
 
 # Gum
 gum_style() { gum style "${@}"; }
-gum_confirm() { gum confirm --no-show-help --prompt.foreground "$COLOR_PURPLE" "${@}"; }
-gum_input() { gum input --no-show-help --placeholder "..." --prompt " + " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
-gum_write() { gum write --no-show-help --prompt " • " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
-gum_choose() { gum choose --no-show-help --cursor " > " --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
-gum_filter() { gum filter --prompt " > " --indicator " • " --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
+gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
+gum_input() { gum input --placeholder "..." --prompt " > " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
+gum_write() { gum write --prompt " • " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
+gum_choose() { gum choose --cursor " > " --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
+gum_filter() { gum filter --prompt " > " --indicator " >" --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
 gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
 # shellcheck disable=SC2317
 gum_pager() { gum pager "${@}"; } # Only used in exit trap
