@@ -925,7 +925,7 @@ exec_install_desktop() {
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
             # GNOME base packages
-            local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra gnome-firmware file-roller power-profiles-daemon rygel cups)
+            local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra gnome-firmware file-roller power-profiles-daemon rygel cups gnome-epub-thumbnailer)
 
             # GNOME wayland screensharing, flatpak & pipewire support
             packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
