@@ -147,7 +147,6 @@ main() {
         swapoff -a
         umount -A -R /mnt
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
-        print_info "Unmounting successful"
     fi
 
     # Reboot
