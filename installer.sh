@@ -16,7 +16,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # VERSION
-VERSION='1.5.5'
+VERSION='1.5.6'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -84,7 +84,7 @@ main() {
             log_info "Edit installer.conf..."
             local gum_header="Exit with CTRL + C and save with CTRL + D or ESC"
             if gum_write --height=10 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
-                mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
+                mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}"
             fi
             rm -f "${SCRIPT_CONFIG}.new" # Remove tmp properties
             gum_confirm "Change Password?" && until select_password --force; do :; done
