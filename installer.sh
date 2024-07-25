@@ -50,17 +50,15 @@ main() {
     trap 'trap_exit' EXIT
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
 
-    # Load existing config or remove
-    if [ -f "$SCRIPT_CONFIG" ] && print_header && ! gum_confirm "Continue Installation?"; then
-        gum_confirm "Remove existing properties?" || trap_gum_exit # If not want remove config, exit script
-        rm -f "$SCRIPT_CONFIG"
-    fi
-
     # Loop properties step to update screen if user edit properties
     while (true); do
 
-        # Print Welcome
-        print_header && print_title "Welcome to Arch OS Installation"
+        print_header # Show welcome screen
+        gum_white --margin "0 1" 'Please make sure you have:' && gum_white ''
+        gum_white --margin "0 1" '• Backed up your important data'
+        gum_white --margin "0 1" '• A stable internet connection'
+        gum_white --margin "0 1" '• Secure Boot disabled'
+        gum_white --margin "0 1" '• Boot Mode set to UEFI'
 
         # Load properties file (if exists) and auto export variables
         properties_source
@@ -82,8 +80,8 @@ main() {
         until select_enable_desktop; do :; done
 
         # Edit properties?
-        if gum_confirm "Edit Properties?"; then
-            log_info "Edit properties..."
+        if gum_confirm "Edit installer.conf?"; then
+            log_info "Edit installer.conf..."
             local gum_header="Exit with CTRL + C and save with CTRL + D or ESC"
             if gum_write --height=10 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
@@ -93,7 +91,7 @@ main() {
             continue # Restart properties step to refresh log above if changed
         fi
 
-        print_info "Properties successfully initialized"
+        print_info "installer.conf successfully initialized"
         break # Exit properties step and continue installation
     done
 
@@ -101,7 +99,7 @@ main() {
     gum_confirm "Start Arch OS Installation?" || trap_gum_exit
     local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel..."
     gum_spin --title=" $spin_title" -- sleep 5 || trap_gum_exit # CTRL + C pressed
-    print_info "Arch OS Installation starts..."
+    gum_white '' && print_title "• Arch OS Installation"
 
     SECONDS=0 # Messure execution time of installation
 
@@ -126,7 +124,7 @@ main() {
     duration_sec="$((duration % 60))"
 
     # Finish & reboot
-    print_info "Installation successful in ${duration_min} minutes and ${duration_sec} seconds"
+    gum_white '' && gum_green --margin "0 1" --bold "Installation successful in ${duration_min} minutes and ${duration_sec} seconds"
 
     # Copy installer files to users home
     if [ "$MODE" != "debug" ]; then
@@ -266,17 +264,15 @@ process_return() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 print_header() {
-    local header_logo header_title header_container
+    local header_logo
     header_logo='
- █████  ██████   ██████ ██   ██      ██████  ███████ 
-██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
-███████ ██████  ██      ███████     ██    ██ ███████ 
-██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
-██   ██ ██   ██  ██████ ██   ██      ██████  ███████
-    ' && header_logo=$(gum_purple --bold "$header_logo")
-    header_title="Arch OS Installer ${VERSION}" && header_title=$(gum_white --bold "$header_title")
-    header_container=$(gum join --vertical --align center "$header_logo" "$header_title")
-    clear && gum_style --padding "0 1" "$header_container"
+  █████  ██████   ██████ ██   ██      ██████  ███████ 
+ ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
+ ███████ ██████  ██      ███████     ██    ██ ███████ 
+ ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
+ ██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
+    clear && gum_purple "$header_logo"
+    gum_white --margin "1 1" --align left --bold "Welcome to Arch OS Installer ${VERSION}"
 }
 
 # Log
@@ -287,7 +283,7 @@ log_fail() { write_log "FAIL | ${*}"; }
 log_proc() { write_log "PROC | ${*}"; }
 
 # Print
-print_title() { gum_purple --margin "1 1" --bold "${*}"; }
+print_title() { gum_purple --margin "0 1" --bold "${*}"; }
 print_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold " • ")" "$(gum_white --bold "${*}")"; }
 print_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold " • ")" "$(gum_white --bold "${*}")"; }
 print_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold " • ")" "$(gum_white --bold "${*}")"; }
@@ -316,10 +312,19 @@ gum_pager() { gum pager "${@}"; } # Only used in exit trap
 
 # shellcheck disable=SC1090
 properties_source() {
+
+    # Load existing config file or remove
+    if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
+        gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config, exit script
+        rm -f "$SCRIPT_CONFIG"
+    fi
+
+    gum_white '' # Print empty line
+
     if [ ! -f "$SCRIPT_CONFIG" ]; then
         local preset options
         options=("desktop" "minimal" "custom")
-        preset=$(gum_choose --header " + Choose Installation Preset" "${options[@]}") || trap_gum_exit_confirm
+        preset=$(gum_choose --header " + Please choose prefered installer preset:" "${options[@]}") || trap_gum_exit_confirm
 
         # Default presets
         ARCH_OS_HOSTNAME="arch-os"
@@ -356,9 +361,11 @@ properties_source() {
         fi
 
         # Write properties
+        print_title "• Arch OS Setup"
         properties_generate && print_info "Preset is set to ${preset}"
     else
-        print_info "Preset is set to config" # If config exists already
+        print_title "• Arch OS Setup"
+        print_info "Preset is load from installer.conf" # If config exists already
     fi
 
     # Source properties
