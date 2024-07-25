@@ -361,10 +361,10 @@ properties_source() {
         fi
 
         # Write properties
-        print_title "• Arch OS Setup"
+        print_title "• Arch OS Properties"
         properties_generate && print_info "Preset is set to ${preset}"
     else
-        print_title "• Arch OS Setup"
+        print_title "• Arch OS Properties"
         print_info "Preset is load from installer.conf" # If config exists already
     fi
 
