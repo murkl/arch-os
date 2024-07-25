@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export MODE="$1" # Start debug: ./installer.sh debug
+export MODE="$1" # ./installer.sh debug
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # //////////////////////////////////////// ARCH OS INSTALLER /////////////////////////////////////////
@@ -10,8 +10,13 @@ export MODE="$1" # Start debug: ./installer.sh debug
 # ORIGIN:   Germany
 # LICENCE:  GPL 2.0
 
+# CONFIG
+set -o pipefail # A pipeline error results in the error status of the entire pipeline
+set -e          # Terminate if any command exits with a non-zero
+set -E          # ERR trap inherited by shell functions (errtrace)
+
 # VERSION
-VERSION='1.5.4'
+VERSION='1.5.5'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -37,11 +42,6 @@ COLOR_RED=9
 
 main() {
 
-    # Configuration
-    set -o pipefail # A pipeline error results in the error status of the entire pipeline
-    set -e          # Terminate if any command exits with a non-zero
-    set -E          # ERR trap inherited by shell functions (errtrace)
-
     # Init
     rm -f "$SCRIPT_LOG" # Clear logfile
     gum_init            # Check gum binary or download
@@ -50,17 +50,15 @@ main() {
     trap 'trap_exit' EXIT
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
 
-    # Load existing config or remove
-    if [ -f "$SCRIPT_CONFIG" ] && print_header && ! gum_confirm "Continue Installation?"; then
-        gum_confirm "Remove existing properties?" || trap_gum_exit # If not want remove config, exit script
-        rm -f "$SCRIPT_CONFIG"
-    fi
-
     # Loop properties step to update screen if user edit properties
     while (true); do
 
-        # Print Welcome
-        print_header && print_title "Welcome to Arch OS Installation"
+        print_header # Show welcome screen
+        gum_white --margin "0 1" 'Please make sure you have:' && gum_white ''
+        gum_white --margin "0 1" '• Backed up your important data'
+        gum_white --margin "0 1" '• A stable internet connection'
+        gum_white --margin "0 1" '• Secure Boot disabled'
+        gum_white --margin "0 1" '• Boot Mode set to UEFI'
 
         # Load properties file (if exists) and auto export variables
         properties_source
@@ -82,8 +80,8 @@ main() {
         until select_enable_desktop; do :; done
 
         # Edit properties?
-        if gum_confirm "Edit Properties?"; then
-            log_info "Edit properties..."
+        if gum_confirm "Edit installer.conf?"; then
+            log_info "Edit installer.conf..."
             local gum_header="Exit with CTRL + C and save with CTRL + D or ESC"
             if gum_write --height=10 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
@@ -93,7 +91,7 @@ main() {
             continue # Restart properties step to refresh log above if changed
         fi
 
-        print_info "Properties successfully initialized"
+        print_info "installer.conf successfully initialized"
         break # Exit properties step and continue installation
     done
 
@@ -101,7 +99,7 @@ main() {
     gum_confirm "Start Arch OS Installation?" || trap_gum_exit
     local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel..."
     gum_spin --title=" $spin_title" -- sleep 5 || trap_gum_exit # CTRL + C pressed
-    print_info "Arch OS Installation starts..."
+    gum_white '' && print_title "• Arch OS Installation"
 
     SECONDS=0 # Messure execution time of installation
 
@@ -126,7 +124,7 @@ main() {
     duration_sec="$((duration % 60))"
 
     # Finish & reboot
-    print_info "Installation successful in ${duration_min} minutes and ${duration_sec} seconds"
+    gum_white '' && gum_green --margin "0 1" --bold "Installation successful in ${duration_min} minutes and ${duration_sec} seconds"
 
     # Copy installer files to users home
     if [ "$MODE" != "debug" ]; then
@@ -149,7 +147,6 @@ main() {
         swapoff -a
         umount -A -R /mnt
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
-        print_info "Unmounting successful"
     fi
 
     # Reboot
@@ -165,12 +162,14 @@ main() {
 gum_init() {
     if [ ! -x ./gum ] && ! command -v /usr/bin/gum &>/dev/null; then
         clear && echo "Loading Arch OS Installer..." # Loading
-        local gum_url                                # Prepare URL with version os and arch
+        local gum_url gum_path                       # Prepare URL with version os and arch
         # https://github.com/charmbracelet/gum/releases
         gum_url="https://github.com/charmbracelet/gum/releases/download/v${VERSION_GUM}/gum_${VERSION_GUM}_$(uname -s)_$(uname -m).tar.gz"
         if ! curl -Lsf "$gum_url" >"${SCRIPT_TMP_DIR}/gum.tar.gz"; then echo "Error downloading ${gum_url}" && exit 1; fi
         if ! tar -xf "${SCRIPT_TMP_DIR}/gum.tar.gz" --directory "$SCRIPT_TMP_DIR"; then echo "Error extracting ${SCRIPT_TMP_DIR}/gum.tar.gz" && exit 1; fi
-        if ! mv "${SCRIPT_TMP_DIR}/gum" ./gum; then echo "Error moving ${SCRIPT_TMP_DIR}/gum to ./gum" && exit 1; fi
+        gum_path=$(find "${SCRIPT_TMP_DIR}" -type f -executable -name "gum" -print -quit)
+        [ -z "$gum_path" ] && echo "Error: 'gum' binary not found in '${SCRIPT_TMP_DIR}'" && exit 1
+        if ! mv "$gum_path" ./gum; then echo "Error moving ${gum_path} to ./gum" && exit 1; fi
         if ! chmod +x ./gum; then echo "Error chmod +x ./gum" && exit 1; fi
     fi
 }
@@ -264,17 +263,15 @@ process_return() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 print_header() {
-    local header_logo header_title header_container
+    local header_logo
     header_logo='
- █████  ██████   ██████ ██   ██      ██████  ███████ 
-██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
-███████ ██████  ██      ███████     ██    ██ ███████ 
-██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
-██   ██ ██   ██  ██████ ██   ██      ██████  ███████
-    ' && header_logo=$(gum_purple --bold "$header_logo")
-    header_title="Arch OS Installer ${VERSION}" && header_title=$(gum_white --bold "$header_title")
-    header_container=$(gum join --vertical --align center "$header_logo" "$header_title")
-    clear && gum_style --padding "0 1" "$header_container"
+  █████  ██████   ██████ ██   ██      ██████  ███████ 
+ ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
+ ███████ ██████  ██      ███████     ██    ██ ███████ 
+ ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
+ ██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
+    clear && gum_purple "$header_logo"
+    gum_white --margin "1 1" --align left --bold "Welcome to Arch OS Installer ${VERSION}"
 }
 
 # Log
@@ -285,7 +282,7 @@ log_fail() { write_log "FAIL | ${*}"; }
 log_proc() { write_log "PROC | ${*}"; }
 
 # Print
-print_title() { gum_purple --margin "1 1" --bold "${*}"; }
+print_title() { gum_purple --margin "0 1" --bold "${*}"; }
 print_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold " • ")" "$(gum_white --bold "${*}")"; }
 print_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold " • ")" "$(gum_white --bold "${*}")"; }
 print_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold " • ")" "$(gum_white --bold "${*}")"; }
@@ -300,10 +297,10 @@ gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
 # Gum
 gum_style() { gum style "${@}"; }
 gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
-gum_input() { gum input --placeholder "..." --prompt " + " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
+gum_input() { gum input --placeholder "..." --prompt " > " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
 gum_write() { gum write --prompt " • " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
 gum_choose() { gum choose --cursor " > " --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
-gum_filter() { gum filter --prompt " > " --indicator " • " --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
+gum_filter() { gum filter --prompt " > " --indicator " >" --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
 gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
 # shellcheck disable=SC2317
 gum_pager() { gum pager "${@}"; } # Only used in exit trap
@@ -314,10 +311,19 @@ gum_pager() { gum pager "${@}"; } # Only used in exit trap
 
 # shellcheck disable=SC1090
 properties_source() {
+
+    # Load existing config file or remove
+    if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
+        gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config, exit script
+        rm -f "$SCRIPT_CONFIG"
+    fi
+
+    gum_white '' # Print empty line
+
     if [ ! -f "$SCRIPT_CONFIG" ]; then
         local preset options
         options=("desktop" "minimal" "custom")
-        preset=$(gum_choose --header " + Choose Installation Preset" "${options[@]}") || trap_gum_exit_confirm
+        preset=$(gum_choose --header " + Please choose prefered installer preset:" "${options[@]}") || trap_gum_exit_confirm
 
         # Default presets
         ARCH_OS_HOSTNAME="arch-os"
@@ -354,9 +360,11 @@ properties_source() {
         fi
 
         # Write properties
+        print_title "• Arch OS Properties"
         properties_generate && print_info "Preset is set to ${preset}"
     else
-        print_info "Preset is set to config" # If config exists already
+        print_title "• Arch OS Properties"
+        print_info "Preset is load from installer.conf" # If config exists already
     fi
 
     # Source properties
@@ -558,10 +566,10 @@ select_enable_desktop() {
 
     # Keyboard layout
     if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
-        user_input=$(gum_input --header " + Enter Desktop Keyboard Layout" --value "us") || trap_gum_exit_confirm
+        user_input=$(gum_input --header " + Enter Desktop Keyboard Layout" --value "us" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
         ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input"
-        user_input=$(gum_input --header " + Enter Desktop Keyboard Variant" --value "") || trap_gum_exit_confirm
+        user_input=$(gum_input --header " + Enter Desktop Keyboard Variant" --value "" --placeholder "e.g. 'nodeadkeys' or leave empty...") || trap_gum_exit_confirm
         ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input"
         properties_generate
     fi
@@ -923,10 +931,10 @@ exec_install_desktop() {
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
             # GNOME base packages
-            local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra gnome-firmware file-roller power-profiles-daemon rygel cups)
+            local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra gnome-firmware file-roller power-profiles-daemon rygel cups gnome-epub-thumbnailer)
 
             # GNOME wayland screensharing, flatpak & pipewire support
-            packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome)
+            packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
 
             # Audio (Pipewire replacements + session manager)
             packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
