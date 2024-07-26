@@ -221,8 +221,9 @@ trap_exit() {
 
     # Check if failed and print error
     if [ "$result_code" -gt "0" ]; then
-        [ -n "$error" ] && print_fail "$error"                                   # Print error message (if exists)
-        [ -z "$error" ] && print_fail "Arch OS Installation failed"              # Otherwise pint default error message
+        [ -n "$error" ] && print_fail "$error"                      # Print error message (if exists)
+        [ -z "$error" ] && print_fail "Arch OS Installation failed" # Otherwise pint default error message
+        print_warn "See ${SCRIPT_LOG} for more information..."
         gum_confirm "Show Logs?" && gum pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
     fi
 
