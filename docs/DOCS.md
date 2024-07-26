@@ -181,6 +181,8 @@ This feature will install:
   - _Missing command suggestion and daily database update_
 - `reflector` and start `reflector.service` service (every boot)
   - _Rank & update the mirrorlist on every boot_
+- `smartmontools` and start `smartd` service
+  - _Monitor storage devices_
 
 The reflector service configuration is located here: `/etc/xdg/reflector/reflector.conf`
 
