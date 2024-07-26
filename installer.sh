@@ -132,7 +132,7 @@ main() {
     exec_install_shell_enhancement
     exec_install_desktop
     exec_install_graphics_driver
-    exec_install_manager
+    exec_install_archos_manager
     exec_install_vm_support
     exec_cleanup_installation
 
@@ -1282,7 +1282,7 @@ exec_install_housekeeping() {
 
 # ------------------------------------------------------------------------------------------------
 
-exec_install_manager() {
+exec_install_archos_manager() {
     local process_name="Install Arch OS Manager"
     if [ "$ARCH_OS_MANAGER_ENABLED" = "true" ]; then
         process_init "$process_name"
@@ -1291,8 +1291,10 @@ exec_install_manager() {
             chroot_pacman_install git base-devel kitty gum libnotify ttf-firacode-nerd # Install dependencies
             if [ -z "$ARCH_OS_AUR_HELPER" ] || [ "$ARCH_OS_AUR_HELPER" = "none" ]; then
                 chroot_aur_install paru-bin # Install AUR Helper if not enabled
+                sed -i 's/^#BottomUp/BottomUp/g' /mnt/etc/paru.conf
+                sed -i 's/^#SudoLoop/SudoLoop/g' /mnt/etc/paru.conf
             fi
-            chroot_aur_install arch-os-manager # Install manager
+            chroot_aur_install arch-os-manager # Install archos-manager
             process_return 0                   # Return
         ) &>"$PROCESS_LOG" &
         process_run $! "$process_name"
