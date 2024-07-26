@@ -54,11 +54,11 @@ main() {
     while (true); do
 
         print_header # Show welcome screen
-        gum_white --margin "0 1" 'Please make sure you have:' && gum_white ''
-        gum_white --margin "0 1" '• Backed up your important data'
-        gum_white --margin "0 1" '• A stable internet connection'
-        gum_white --margin "0 1" '• Secure Boot disabled'
-        gum_white --margin "0 1" '• Boot Mode set to UEFI'
+        gum_white 'Please make sure you have:' && gum_white ''
+        gum_white '• Backed up your important data'
+        gum_white '• A stable internet connection'
+        gum_white '• Secure Boot disabled'
+        gum_white '• Boot Mode set to UEFI'
 
         # Load properties file (if exists) and auto export variables
         properties_source
@@ -97,9 +97,9 @@ main() {
 
     # Start installation in 5 seconds?
     gum_confirm "Start Arch OS Installation?" || trap_gum_exit
-    local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel..."
-    gum_spin --title=" $spin_title" -- sleep 5 || trap_gum_exit # CTRL + C pressed
     gum_white '' && print_title "• Arch OS Installation"
+    local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel..."
+    gum_spin --title="$spin_title" -- sleep 5 || trap_gum_exit # CTRL + C pressed
 
     SECONDS=0 # Messure execution time of installation
 
@@ -124,7 +124,7 @@ main() {
     duration_sec="$((duration % 60))"
 
     # Finish & reboot
-    gum_white '' && gum_green --margin "0 1" --bold "Installation successful in ${duration_min} minutes and ${duration_sec} seconds"
+    gum_white '' && gum_green --bold "Installation successful in ${duration_min} minutes and ${duration_sec} seconds"
 
     # Copy installer files to users home
     if [ "$MODE" != "debug" ]; then
@@ -233,7 +233,7 @@ process_run() {
     local user_canceled="false" # Will set to true if user press ctrl + c
 
     # Show gum spinner until pid is not exists anymore and set user_canceled to true on failure
-    gum_spin --title " ${process_name}..." -- bash -c "while kill -0 $pid &> /dev/null; do sleep 1; done" || user_canceled="true"
+    gum_spin --title "${process_name}..." -- bash -c "while kill -0 $pid &> /dev/null; do sleep 1; done" || user_canceled="true"
     cat "$PROCESS_LOG" >>"$SCRIPT_LOG" # Write process log to logfile
 
     # When user press ctrl + c while process is running
@@ -263,15 +263,13 @@ process_return() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 print_header() {
-    local header_logo
-    header_logo='
-  █████  ██████   ██████ ██   ██      ██████  ███████ 
- ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
- ███████ ██████  ██      ███████     ██    ██ ███████ 
- ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
- ██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
-    clear && gum_purple "$header_logo"
-    gum_white --margin "1 1" --align left --bold "Welcome to Arch OS Installer ${VERSION}"
+    clear && gum_purple '
+ █████  ██████   ██████ ██   ██      ██████  ███████ 
+██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
+███████ ██████  ██      ███████     ██    ██ ███████ 
+██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
+██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
+    gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${VERSION}"
 }
 
 # Log
@@ -282,10 +280,10 @@ log_fail() { write_log "FAIL | ${*}"; }
 log_proc() { write_log "PROC | ${*}"; }
 
 # Print
-print_title() { gum_purple --margin "0 1" --bold "${*}"; }
-print_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold " • ")" "$(gum_white --bold "${*}")"; }
-print_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold " • ")" "$(gum_white --bold "${*}")"; }
-print_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold " • ")" "$(gum_white --bold "${*}")"; }
+print_title() { gum_purple --bold "${*}"; }
+print_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold "• ")" "$(gum_white --bold "${*}")"; }
+print_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold "• ")" "$(gum_white --bold "${*}")"; }
+print_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold "• ")" "$(gum_white --bold "${*}")"; }
 
 # Colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
 gum_white() { gum_style --foreground "$COLOR_WHITE" "${@}"; }
@@ -297,10 +295,10 @@ gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
 # Gum
 gum_style() { gum style "${@}"; }
 gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
-gum_input() { gum input --placeholder "..." --prompt " > " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
-gum_write() { gum write --prompt " • " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
-gum_choose() { gum choose --cursor " > " --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
-gum_filter() { gum filter --prompt " > " --indicator " >" --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
+gum_input() { gum input --placeholder "..." --prompt "> " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
+gum_write() { gum write --prompt "• " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
+gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
+gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
 gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
 # shellcheck disable=SC2317
 gum_pager() { gum pager "${@}"; } # Only used in exit trap
@@ -323,7 +321,7 @@ properties_source() {
     if [ ! -f "$SCRIPT_CONFIG" ]; then
         local preset options
         options=("desktop" "minimal" "custom")
-        preset=$(gum_choose --header " + Please choose prefered installer preset:" "${options[@]}") || trap_gum_exit_confirm
+        preset=$(gum_choose --header "+ Please choose prefered installer preset:" "${options[@]}") || trap_gum_exit_confirm
 
         # Default presets
         ARCH_OS_HOSTNAME="arch-os"
@@ -412,7 +410,7 @@ properties_generate() {
 select_username() {
     if [ -z "$ARCH_OS_USERNAME" ]; then
         local user_input
-        user_input=$(gum_input --header " + Enter Username") || trap_gum_exit_confirm
+        user_input=$(gum_input --header "+ Enter Username") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                      # Check if new value is null
         ARCH_OS_USERNAME="$user_input" && properties_generate # Set value and generate properties file
     fi
@@ -424,9 +422,9 @@ select_username() {
 select_password() { # --force
     if [ "$1" = "--force" ] || [ -z "$ARCH_OS_PASSWORD" ]; then
         local user_password user_password_check
-        user_password=$(gum_input --password --header " + Enter Password") || trap_gum_exit_confirm
+        user_password=$(gum_input --password --header "+ Enter Password") || trap_gum_exit_confirm
         [ -z "$user_password" ] && return 1 # Check if new value is null
-        user_password_check=$(gum_input --password --header " + Enter Password again") || trap_gum_exit_confirm
+        user_password_check=$(gum_input --password --header "+ Enter Password again") || trap_gum_exit_confirm
         [ -z "$user_password_check" ] && return 1 # Check if new value is null
         [ "$user_password" != "$user_password_check" ] && print_fail "Passwords not identical" && return 1
         ARCH_OS_PASSWORD="$user_password" && properties_generate # Set value and generate properties file
@@ -440,7 +438,7 @@ select_timezone() {
     if [ -z "$ARCH_OS_TIMEZONE" ]; then
         local tz_auto user_input
         tz_auto="$(curl -s http://ip-api.com/line?fields=timezone)"
-        user_input=$(gum_input --header " + Enter Timezone (auto)" --value "$tz_auto") || trap_gum_exit_confirm
+        user_input=$(gum_input --header "+ Enter Timezone (auto)" --value "$tz_auto") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
         [ ! -f "/usr/share/zoneinfo/${user_input}" ] && print_fail "Timezone '${user_input}' is not supported" && return 1
         ARCH_OS_TIMEZONE="$user_input" && properties_generate # Set property and generate properties file
@@ -459,7 +457,7 @@ select_language() {
         # Add only available locales (!!! intense command !!!)
         options=() && for item in "${items[@]}"; do grep -q -e "^$item" -e "^#$item" /etc/locale.gen && options+=("$item"); done
         # Select locale
-        user_input=$(gum_filter --header " + Choose Language" "${options[@]}") || trap_gum_exit_confirm
+        user_input=$(gum_filter --header "+ Choose Language" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1  # Check if new value is null
         ARCH_OS_LOCALE_LANG="$user_input" # Set property
         # Set locale.gen properties (auto generate ARCH_OS_LOCALE_GEN_LIST)
@@ -480,7 +478,7 @@ select_keyboard() {
         local user_input items options
         mapfile -t items < <(command localectl list-keymaps)
         options=() && for item in "${items[@]}"; do options+=("$item"); done
-        user_input=$(gum_filter --header " + Choose Keyboard" "${options[@]}") || trap_gum_exit_confirm
+        user_input=$(gum_filter --header "+ Choose Keyboard" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                             # Check if new value is null
         ARCH_OS_VCONSOLE_KEYMAP="$user_input" && properties_generate # Set value and generate properties file
     fi
@@ -495,7 +493,7 @@ select_disk() {
         mapfile -t items < <(lsblk -I 8,259,254 -d -o KNAME,SIZE -n)
         # size: $(lsblk -d -n -o SIZE "/dev/${item}")
         options=() && for item in "${items[@]}"; do options+=("/dev/${item}"); done
-        user_input=$(gum_choose --header " + Choose Disk" "${options[@]}") || trap_gum_exit_confirm
+        user_input=$(gum_choose --header "+ Choose Disk" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                          # Check if new value is null
         user_input=$(echo "$user_input" | awk -F' ' '{print $1}') # Remove size from input
         [ ! -e "$user_input" ] && log_fail "Disk does not exists" && return 1
@@ -566,10 +564,10 @@ select_enable_desktop() {
 
     # Keyboard layout
     if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
-        user_input=$(gum_input --header " + Enter Desktop Keyboard Layout" --value "us" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
+        user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout" --value "us" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
         ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input"
-        user_input=$(gum_input --header " + Enter Desktop Keyboard Variant" --value "" --placeholder "e.g. 'nodeadkeys' or leave empty...") || trap_gum_exit_confirm
+        user_input=$(gum_input --header "+ Enter Desktop Keyboard Variant" --value "" --placeholder "e.g. 'nodeadkeys' or leave empty...") || trap_gum_exit_confirm
         ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input"
         properties_generate
     fi
@@ -579,7 +577,7 @@ select_enable_desktop() {
     # Graphics driver
     if [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] || [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" = "none" ]; then
         options=("mesa" "intel_i915" "nvidia" "amd" "ati")
-        user_input=$(gum_choose --header " + Choose Desktop Graphics Driver" "${options[@]}") || trap_gum_exit_confirm
+        user_input=$(gum_choose --header "+ Choose Desktop Graphics Driver" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                                     # Check if new value is null
         ARCH_OS_DESKTOP_GRAPHICS_DRIVER="$user_input" && properties_generate # Set value and generate properties file
     fi
