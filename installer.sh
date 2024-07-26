@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1090
+
 export MODE="$1" # ./installer.sh debug
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -50,20 +52,32 @@ main() {
     trap 'trap_exit' EXIT
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
 
+    # ------------------------------------------------------------------------------------------------
+
     # Loop properties step to update screen if user edit properties
     while (true); do
 
         print_header # Show welcome screen
-        gum_white 'Please make sure you have:' && gum_white ''
+        gum_white 'Please make sure you have:'
+        gum_white ''
         gum_white '• Backed up your important data'
         gum_white '• A stable internet connection'
         gum_white '• Secure Boot disabled'
         gum_white '• Boot Mode set to UEFI'
+        gum_white ''
+        print_title "+ Arch OS Properties"
 
-        # Load properties file (if exists) and auto export variables
-        properties_source
+        # Ask for load & remove existing config file
+        if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
+            gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config -> exit script
+            rm -f "$SCRIPT_CONFIG"
+        fi
+
+        # Source installer.conf if exists
+        properties_source && print_info "Successfully loaded installer.conf"
 
         # Selectors
+        until select_preset; do :; done
         until select_username; do :; done
         until select_password; do :; done
         until select_timezone; do :; done
@@ -79,25 +93,29 @@ main() {
         until select_enable_manager; do :; done
         until select_enable_desktop; do :; done
 
+        # Print success
+        print_info "installer.conf successfully initialized"
+
         # Edit properties?
-        if gum_confirm "Edit installer.conf?"; then
-            log_info "Edit installer.conf..."
-            local gum_header="Exit with CTRL + C and save with CTRL + D or ESC"
+        if gum_confirm "Edit installer.conf manually?"; then
+            log_info "Edit installer.conf manually..."
+            local gum_header="Save with CTRL + D or ESC and cancel with CTRL + C"
             if gum_write --height=10 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
-                mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}"
+                mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
             fi
             rm -f "${SCRIPT_CONFIG}.new" # Remove tmp properties
             gum_confirm "Change Password?" && until select_password --force; do :; done
             continue # Restart properties step to refresh log above if changed
         fi
 
-        print_info "installer.conf successfully initialized"
         break # Exit properties step and continue installation
     done
 
+    # ------------------------------------------------------------------------------------------------
+
     # Start installation in 5 seconds?
     gum_confirm "Start Arch OS Installation?" || trap_gum_exit
-    gum_white '' && print_title "• Arch OS Installation"
+    gum_white '' && print_title "+ Arch OS Installation"
     local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel..."
     gum_spin --title="$spin_title" -- sleep 5 || trap_gum_exit # CTRL + C pressed
 
@@ -205,7 +223,7 @@ trap_exit() {
     if [ "$result_code" -gt "0" ]; then
         [ -n "$error" ] && print_fail "$error"                                   # Print error message (if exists)
         [ -z "$error" ] && print_fail "Arch OS Installation failed"              # Otherwise pint default error message
-        gum_confirm "Show Logs?" && gum_pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
+        gum_confirm "Show Logs?" && gum pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
     fi
 
     exit "$result_code" # Exit installer.sh
@@ -300,75 +318,20 @@ gum_write() { gum write --prompt "• " --header.foreground "$COLOR_PURPLE" --sh
 gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
 gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
 gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
-# shellcheck disable=SC2317
-gum_pager() { gum pager "${@}"; } # Only used in exit trap
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # PROPERTIES
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-# shellcheck disable=SC1090
 properties_source() {
-
-    # Load existing config file or remove
-    if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
-        gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config, exit script
-        rm -f "$SCRIPT_CONFIG"
+    # Load properties file (if exists) and auto export variables
+    if [ -f "$SCRIPT_CONFIG" ]; then
+        set -a # Enable auto export of variables
+        source "$SCRIPT_CONFIG"
+        set +a # Disable auto export of variables
+        return 0
     fi
-
-    gum_white '' # Print empty line
-
-    if [ ! -f "$SCRIPT_CONFIG" ]; then
-        local preset options
-        options=("desktop" "minimal" "custom")
-        preset=$(gum_choose --header "+ Please choose prefered installer preset:" "${options[@]}") || trap_gum_exit_confirm
-
-        # Default presets
-        ARCH_OS_HOSTNAME="arch-os"
-        ARCH_OS_KERNEL="linux-zen"
-        ARCH_OS_VM_SUPPORT_ENABLED="true"
-        ARCH_OS_ECN_ENABLED="true"
-        ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
-
-        # Set microcode
-        grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
-        grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
-
-        # Minimal presets
-        if [ "$preset" = "minimal" ]; then
-            ARCH_OS_BOOTSPLASH_ENABLED='false'
-            ARCH_OS_DESKTOP_ENABLED='false'
-            ARCH_OS_MULTILIB_ENABLED='false'
-            ARCH_OS_HOUSEKEEPING_ENABLED='false'
-            ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
-            ARCH_OS_AUR_HELPER='none'
-            ARCH_OS_MANAGER_ENABLED='false'
-            ARCH_OS_DESKTOP_GRAPHICS_DRIVER="none"
-        fi
-
-        # Desktop presets
-        if [ "$preset" = "desktop" ]; then
-            ARCH_OS_BOOTSPLASH_ENABLED='true'
-            ARCH_OS_DESKTOP_ENABLED='true'
-            ARCH_OS_MULTILIB_ENABLED='true'
-            ARCH_OS_HOUSEKEEPING_ENABLED='true'
-            ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
-            ARCH_OS_AUR_HELPER='paru-bin'
-            ARCH_OS_MANAGER_ENABLED='true'
-        fi
-
-        # Write properties
-        print_title "• Arch OS Properties"
-        properties_generate && print_info "Preset is set to ${preset}"
-    else
-        print_title "• Arch OS Properties"
-        print_info "Preset is load from installer.conf" # If config exists already
-    fi
-
-    # Source properties
-    set -a # Enable auto export of variables
-    source "$SCRIPT_CONFIG"
-    set +a # Disable auto export of variables
+    return 1
 }
 
 properties_generate() {
@@ -407,6 +370,54 @@ properties_generate() {
 # SELECTORS
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+select_preset() {
+    if [ ! -f "$SCRIPT_CONFIG" ]; then
+        local preset options
+        options=("desktop" "minimal" "custom")
+        preset=$(gum_choose --header "+ Choose Preset:" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$preset" ] && return 1 # Check if new value is null
+
+        # Default presets
+        ARCH_OS_HOSTNAME="arch-os"
+        ARCH_OS_KERNEL="linux-zen"
+        ARCH_OS_VM_SUPPORT_ENABLED="true"
+        ARCH_OS_ECN_ENABLED="true"
+        ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
+
+        # Set microcode
+        grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
+        grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
+
+        # Minimal presets
+        if [ "$preset" = "minimal" ]; then
+            ARCH_OS_BOOTSPLASH_ENABLED='false'
+            ARCH_OS_DESKTOP_ENABLED='false'
+            ARCH_OS_MULTILIB_ENABLED='false'
+            ARCH_OS_HOUSEKEEPING_ENABLED='false'
+            ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
+            ARCH_OS_AUR_HELPER='none'
+            ARCH_OS_MANAGER_ENABLED='false'
+            ARCH_OS_DESKTOP_GRAPHICS_DRIVER="none"
+        fi
+
+        # Desktop presets
+        if [ "$preset" = "desktop" ]; then
+            ARCH_OS_BOOTSPLASH_ENABLED='true'
+            ARCH_OS_DESKTOP_ENABLED='true'
+            ARCH_OS_MULTILIB_ENABLED='true'
+            ARCH_OS_HOUSEKEEPING_ENABLED='true'
+            ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
+            ARCH_OS_AUR_HELPER='paru-bin'
+            ARCH_OS_MANAGER_ENABLED='true'
+        fi
+
+        # Write properties
+        properties_generate && print_info "Preset is set to ${preset}"
+    fi
+}
+
+# ------------------------------------------------------------------------------------------------
+
 select_username() {
     if [ -z "$ARCH_OS_USERNAME" ]; then
         local user_input
@@ -417,7 +428,7 @@ select_username() {
     print_info "Username is set to ${ARCH_OS_USERNAME}"
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 select_password() { # --force
     if [ "$1" = "--force" ] || [ -z "$ARCH_OS_PASSWORD" ]; then
@@ -432,7 +443,7 @@ select_password() { # --force
     print_info "Password is set to *******"
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 select_timezone() {
     if [ -z "$ARCH_OS_TIMEZONE" ]; then
@@ -446,7 +457,7 @@ select_timezone() {
     print_info "Timezone is set to ${ARCH_OS_TIMEZONE}"
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 # shellcheck disable=SC2001
 select_language() {
@@ -471,7 +482,7 @@ select_language() {
     print_info "Language is set to ${ARCH_OS_LOCALE_LANG}"
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 select_keyboard() {
     if [ -z "$ARCH_OS_VCONSOLE_KEYMAP" ]; then
@@ -485,7 +496,7 @@ select_keyboard() {
     print_info "Keyboard is set to ${ARCH_OS_VCONSOLE_KEYMAP}"
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 select_disk() {
     if [ -z "$ARCH_OS_DISK" ] || [ -z "$ARCH_OS_BOOT_PARTITION" ] || [ -z "$ARCH_OS_ROOT_PARTITION" ]; then
@@ -505,7 +516,7 @@ select_disk() {
     print_info "Disk is set to ${ARCH_OS_DISK}"
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 select_enable_encryption() {
     if [ -z "$ARCH_OS_ENCRYPTION_ENABLED" ]; then
@@ -523,7 +534,7 @@ select_enable_encryption() {
     print_info "Disk Encryption is set to ${ARCH_OS_ENCRYPTION_ENABLED}"
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 select_enable_bootsplash() {
     if [ -z "$ARCH_OS_BOOTSPLASH_ENABLED" ]; then
@@ -541,7 +552,7 @@ select_enable_bootsplash() {
     print_info "Bootsplash is set to ${ARCH_OS_BOOTSPLASH_ENABLED}"
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 select_enable_desktop() {
     local user_input options
@@ -586,7 +597,7 @@ select_enable_desktop() {
     return 0
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 select_enable_aur() {
     if [ -z "$ARCH_OS_AUR_HELPER" ]; then
@@ -604,7 +615,7 @@ select_enable_aur() {
     print_info "AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 select_enable_multilib() {
     if [ -z "$ARCH_OS_MULTILIB_ENABLED" ]; then
@@ -622,7 +633,7 @@ select_enable_multilib() {
     print_info "32 Bit Support is set to ${ARCH_OS_MULTILIB_ENABLED}"
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 select_enable_housekeeping() {
     if [ -z "$ARCH_OS_HOUSEKEEPING_ENABLED" ]; then
@@ -640,7 +651,7 @@ select_enable_housekeeping() {
     print_info "Housekeeping is set to ${ARCH_OS_HOUSEKEEPING_ENABLED}"
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 select_enable_shell_enhancement() {
     if [ -z "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" ]; then
@@ -658,7 +669,7 @@ select_enable_shell_enhancement() {
     print_info "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 select_enable_manager() {
     if [ -z "$ARCH_OS_MANAGER_ENABLED" ]; then
@@ -699,7 +710,7 @@ chroot_pacman_install() {
     [ "$pacman_failed" = "false" ] && return 0 # Success
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 chroot_aur_install() {
     local repo repo_url repo_tmp_dir
@@ -744,7 +755,7 @@ exec_init_installation() {
     process_run $! "$process_name"
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 exec_prepare_disk() {
     local process_name="Prepare Disk"
@@ -783,7 +794,7 @@ exec_prepare_disk() {
     process_run $! "$process_name"
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 exec_pacstrap_core() {
     local process_name="Pacstrap Arch OS Core System"
@@ -919,7 +930,7 @@ exec_pacstrap_core() {
     process_run $! "$process_name"
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 exec_install_desktop() {
     local process_name="Install Desktop Environment"
@@ -1068,7 +1079,7 @@ exec_install_desktop() {
     fi
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 exec_install_graphics_driver() {
     local process_name="Install Desktop Graphics Driver"
@@ -1144,7 +1155,7 @@ exec_install_graphics_driver() {
     fi
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 exec_install_vm_support() {
     local process_name="Install VM Support"
@@ -1184,7 +1195,7 @@ exec_install_vm_support() {
     fi
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 exec_install_bootsplash() {
     local process_name="Install Bootsplash"
@@ -1202,7 +1213,7 @@ exec_install_bootsplash() {
     fi
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 exec_install_aur_helper() {
     local process_name="Install AUR Helper"
@@ -1223,7 +1234,7 @@ exec_install_aur_helper() {
     fi
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 exec_enable_multilib() {
     local process_name="Enable Multilib"
@@ -1239,7 +1250,7 @@ exec_enable_multilib() {
     fi
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 exec_install_housekeeping() {
     local process_name="Install Housekeeping"
@@ -1267,7 +1278,7 @@ exec_install_housekeeping() {
     fi
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 exec_install_manager() {
     local process_name="Install Arch OS Manager"
@@ -1286,7 +1297,7 @@ exec_install_manager() {
     fi
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 exec_install_shell_enhancement() {
     local process_name="Install Shell Enhancement"
@@ -1426,7 +1437,7 @@ exec_install_shell_enhancement() {
     fi
 }
 
-# ----------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
 
 # shellcheck disable=SC2016
 exec_cleanup_installation() {
