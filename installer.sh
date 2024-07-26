@@ -609,8 +609,8 @@ select_enable_aur() {
             return 1
         }
         local user_input
-        [ $user_confirm = 1 ] && user_input="false"
-        [ $user_confirm = 0 ] && user_input="true"
+        [ $user_confirm = 1 ] && user_input="none"
+        [ $user_confirm = 0 ] && user_input="paru-bin"
         ARCH_OS_AUR_HELPER="$user_input" && properties_generate # Set value and generate properties file
     fi
     print_info "AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
