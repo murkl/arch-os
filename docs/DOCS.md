@@ -53,6 +53,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 ### GNOME Extensions (optional)
 
 - [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/)
+- [app-tray-indicator](https://extensions.gnome.org/extension/615/appindicator-support/)
 - [dash-to-panel](https://extensions.gnome.org/extension/1160/dash-to-panel/)
 - [dash-to-dock](https://extensions.gnome.org/extension/307/dash-to-dock/)
 - [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/)
@@ -303,13 +304,13 @@ NetworkManager fstrim.timer systemd-zram-setup@zram0.service systemd-oomd.servic
 This configuration will be set during Arch OS Core Installation:
 
 - `vm.max_map_count` is set to `1048576` for compatibility of some apps/games (default)
-- `DefaultTimeoutStopSec` is set to `10s` for faster shutdown
 - `quiet splash vt.global_cursor_default=0` is set to kernel parameters for silent boot
 - Pacman parallel downloads is set to `5`
 - Pacman colors and eyecandy is enabled
 - Bootloader timeout is set to `0`
 - Sudo password feedback is enabled
 - User is added to group `wheel` to use `sudo`
+- Watchdog is disabled with kernel arg `nowatchdog` and blacklist: `/etc/modprobe.d/blacklist-watchdog.conf`
 
 ## Troubleshooting
 

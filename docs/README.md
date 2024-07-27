@@ -57,6 +57,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - Network Manager
 - SSD Support (fstrim)
 - Microcode Support (Intel & AMD)
+- Disabled Watchdog
 - UEFI only supported
 - [More Information...](DOCS.md#technical-information)
 
