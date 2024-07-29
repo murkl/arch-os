@@ -57,7 +57,7 @@ main() {
     # Loop properties step to update screen if user edit properties
     while (true); do
 
-        print_header # Show welcome screen
+        gum_header # Show welcome screen
         gum_white 'Please make sure you have:'
         gum_white ''
         gum_white '• Backed up your important data'
@@ -279,10 +279,18 @@ process_return() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# LOG & PRINT
+# LOG & GUM PRINT
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-print_header() {
+# Log
+write_log() { echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >>"$SCRIPT_LOG"; }
+log_info() { write_log "INFO | ${*}"; }
+log_warn() { write_log "WARN | ${*}"; }
+log_fail() { write_log "FAIL | ${*}"; }
+log_proc() { write_log "PROC | ${*}"; }
+
+# Gum header
+gum_header() {
     clear && gum_purple '
  █████  ██████   ██████ ██   ██      ██████  ███████ 
 ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
@@ -292,27 +300,20 @@ print_header() {
     gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${VERSION}"
 }
 
-# Log
-write_log() { echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >>"$SCRIPT_LOG"; }
-log_info() { write_log "INFO | ${*}"; }
-log_warn() { write_log "WARN | ${*}"; }
-log_fail() { write_log "FAIL | ${*}"; }
-log_proc() { write_log "PROC | ${*}"; }
-
-# Print
-gum_title() { gum_purple --bold "${*}"; }
-gum_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold "• ")" "$(gum_white --bold "${*}")"; }
-gum_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold "• ")" "$(gum_white --bold "${*}")"; }
-gum_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold "• ")" "$(gum_white --bold "${*}")"; }
-
-# Colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
+# Gum colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
 gum_white() { gum_style --foreground "$COLOR_WHITE" "${@}"; }
 gum_purple() { gum_style --foreground "$COLOR_PURPLE" "${@}"; }
 gum_yellow() { gum_style --foreground "$COLOR_YELLOW" "${@}"; }
 gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
 gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
 
-# Gum
+# Gum prints
+gum_title() { gum_purple --bold "${*}"; }
+gum_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold "• ")" "$(gum_white --bold "${*}")"; }
+gum_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold "• ")" "$(gum_white --bold "${*}")"; }
+gum_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold "• ")" "$(gum_white --bold "${*}")"; }
+
+# Gum wrapper
 gum_style() { gum style "${@}"; }
 gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
 gum_input() { gum input --placeholder "..." --prompt "> " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
