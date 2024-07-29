@@ -18,7 +18,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # VERSION
-VERSION='1.5.7'
+VERSION='1.5.8'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -74,7 +74,7 @@ main() {
         fi
 
         # Source installer.conf if exists
-        properties_source && print_info "Successfully loaded installer.conf"
+        properties_source && print_info "installer.conf successfully loaded"
 
         # Selectors
         until select_preset; do :; done
@@ -178,7 +178,7 @@ main() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 gum_init() {
-    if [ ! -x ./gum ] && ! command -v /usr/bin/gum &>/dev/null; then
+    if [ ! -x ./gum ]; then
         clear && echo "Loading Arch OS Installer..." # Loading
         local gum_url gum_path                       # Prepare URL with version os and arch
         # https://github.com/charmbracelet/gum/releases
