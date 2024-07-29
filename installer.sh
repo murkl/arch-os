@@ -18,7 +18,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # VERSION
-VERSION='1.5.6'
+VERSION='1.5.7'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -866,7 +866,7 @@ exec_pacstrap_core() {
         # Kernel args
         # Zswap should be disabled when using zram (https://github.com/archlinux/archinstall/issues/881)
         # Silent boot: https://wiki.archlinux.org/title/Silent_boot
-        kernel_args_default="rw init=/usr/lib/systemd/systemd zswap.enabled=0 quiet splash vt.global_cursor_default=0"
+        kernel_args_default="rw init=/usr/lib/systemd/systemd zswap.enabled=0 nowatchdog quiet splash vt.global_cursor_default=0"
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot ${kernel_args_default}"
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}") ${kernel_args_default}"
 
@@ -916,7 +916,7 @@ exec_pacstrap_core() {
         arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
         # Reduce shutdown timeout
-        sed -i "s/^#DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
+        #sed -i "s/^\s*#\s*DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
 
         # Set max VMAs (need for some apps/games)
         #echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
@@ -924,6 +924,11 @@ exec_pacstrap_core() {
         # Configure pacman parrallel downloads, colors, eyecandy
         sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
         sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
+
+        # Disable modules
+        mkdir -p /mnt/etc/modprobe.d/
+        echo 'blacklist sp5100_tco' >>/mnt/etc/modprobe.d/blacklist-watchdog.conf
+        echo 'blacklist iTCO_wdt' >>/mnt/etc/modprobe.d/blacklist-watchdog.conf
 
         # Return
         process_return 0
@@ -1107,7 +1112,7 @@ exec_install_graphics_driver() {
                 chroot_pacman_install "${packages[@]}"
                 # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
                 # Alternative (slow boot, bios logo twice, but correct plymouth resolution):
-                #sed -i "s/zswap.enabled=0 quiet/zswap.enabled=0 nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
+                #sed -i "s/nowatchdog quiet/nowatchdog nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
                 mkdir -p /mnt/etc/modprobe.d/ && echo -e 'options nvidia_drm modeset=1 fbdev=1' >/mnt/etc/modprobe.d/nvidia.conf
                 sed -i "s/^MODULES=(.*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
                 # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
