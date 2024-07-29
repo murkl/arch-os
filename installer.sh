@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1090
 
-export MODE="$1" # ./installer.sh debug
+export MODE="$1" # GUM=/usr/bin/gum ./installer.sh debug
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # //////////////////////////////////////// ARCH OS INSTALLER /////////////////////////////////////////
@@ -65,7 +65,7 @@ main() {
         gum_white '• Secure Boot disabled'
         gum_white '• Boot Mode set to UEFI'
         gum_white ''
-        print_title "+ Arch OS Properties"
+        gum_title "+ Arch OS Properties"
 
         # Ask for load & remove existing config file
         if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
@@ -74,7 +74,7 @@ main() {
         fi
 
         # Source installer.conf if exists
-        properties_source && print_info "installer.conf successfully loaded"
+        properties_source && gum_info "installer.conf successfully loaded"
 
         # Selectors
         until select_preset; do :; done
@@ -94,7 +94,7 @@ main() {
         until select_enable_desktop; do :; done
 
         # Print success
-        print_info "installer.conf successfully initialized"
+        gum_info "installer.conf successfully initialized"
 
         # Edit properties?
         if gum_confirm "Edit installer.conf manually?"; then
@@ -115,7 +115,7 @@ main() {
 
     # Start installation in 5 seconds?
     gum_confirm "Start Arch OS Installation?" || trap_gum_exit
-    gum_white '' && print_title "+ Arch OS Installation"
+    gum_white '' && gum_title "+ Arch OS Installation"
     local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel..."
     gum_spin --title="$spin_title" -- sleep 5 || trap_gum_exit # CTRL + C pressed
 
@@ -168,7 +168,7 @@ main() {
     fi
 
     # Reboot
-    [ "$do_reboot" = "true" ] && [ "$MODE" != "debug" ] && print_warn "Rebooting..." && reboot
+    [ "$do_reboot" = "true" ] && [ "$MODE" != "debug" ] && gum_warn "Rebooting..." && reboot
 
     exit 0
 }
@@ -193,7 +193,8 @@ gum_init() {
 }
 
 gum() {
-    if [ -x ./gum ]; then ./gum "$@"; else /usr/bin/gum "$@"; fi # Force open ./gum if exists
+    [ -n "$GUM" ] && [ ! -x "$GUM" ] && echo "Error: GUM='${GUM}' is not found or executable" >&2 && exit 1
+    if [ -n "$GUM" ]; then "$GUM" "$@"; else ./gum "$@"; fi # Force open $GUM if env variable is set
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -217,13 +218,13 @@ trap_exit() {
     rm -rf "$SCRIPT_TMP_DIR"
 
     # When ctrl + c pressed exit without other stuff below
-    [ "$result_code" = "130" ] && print_warn "Exit..." && exit 1
+    [ "$result_code" = "130" ] && gum_warn "Exit..." && exit 1
 
     # Check if failed and print error
     if [ "$result_code" -gt "0" ]; then
-        [ -n "$error" ] && print_fail "$error"                      # Print error message (if exists)
-        [ -z "$error" ] && print_fail "Arch OS Installation failed" # Otherwise pint default error message
-        print_warn "See ${SCRIPT_LOG} for more information..."
+        [ -n "$error" ] && gum_fail "$error"                      # Print error message (if exists)
+        [ -z "$error" ] && gum_fail "Arch OS Installation failed" # Otherwise pint default error message
+        gum_warn "See ${SCRIPT_LOG} for more information..."
         gum_confirm "Show Logs?" && gum pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
     fi
 
@@ -241,7 +242,7 @@ trap_gum_exit() { exit 130; }
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 process_init() {
-    [ -f "$PROCESS_RET" ] && print_fail "${PROCESS_RET} already exists" && exit 1
+    [ -f "$PROCESS_RET" ] && gum_fail "${PROCESS_RET} already exists" && exit 1
     echo 1 >"$PROCESS_RET" # Init result with 1
     log_proc "${1}..."     # Log starting
 }
@@ -257,17 +258,17 @@ process_run() {
 
     # When user press ctrl + c while process is running
     if [ "$user_canceled" = "true" ]; then
-        kill -0 "$pid" &>/dev/null && pkill -P "$pid"                            # Kill process if running
-        print_fail "Process with PID ${pid} was killed by user" && trap_gum_exit # Exit with 130
+        kill -0 "$pid" &>/dev/null && pkill -P "$pid"                          # Kill process if running
+        gum_fail "Process with PID ${pid} was killed by user" && trap_gum_exit # Exit with 130
     fi
 
     # Handle error while executing process
-    [ ! -f "$PROCESS_RET" ] && print_fail "${PROCESS_RET} not found (do not init process?)" && exit 1
-    [ "$(<"$PROCESS_RET")" != "0" ] && print_fail "${process_name} failed" && exit 1 # If process failed (result code 0 was not write in the end)
+    [ ! -f "$PROCESS_RET" ] && gum_fail "${PROCESS_RET} not found (do not init process?)" && exit 1
+    [ "$(<"$PROCESS_RET")" != "0" ] && gum_fail "${process_name} failed" && exit 1 # If process failed (result code 0 was not write in the end)
 
     # Finish
-    rm -f "$PROCESS_RET"                              # Remove process result file
-    print_info "${process_name} sucessfully finished" # Print process success
+    rm -f "$PROCESS_RET"                            # Remove process result file
+    gum_info "${process_name} sucessfully finished" # Print process success
 }
 
 process_return() {
@@ -299,10 +300,10 @@ log_fail() { write_log "FAIL | ${*}"; }
 log_proc() { write_log "PROC | ${*}"; }
 
 # Print
-print_title() { gum_purple --bold "${*}"; }
-print_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold "• ")" "$(gum_white --bold "${*}")"; }
-print_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold "• ")" "$(gum_white --bold "${*}")"; }
-print_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold "• ")" "$(gum_white --bold "${*}")"; }
+gum_title() { gum_purple --bold "${*}"; }
+gum_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold "• ")" "$(gum_white --bold "${*}")"; }
+gum_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold "• ")" "$(gum_white --bold "${*}")"; }
+gum_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold "• ")" "$(gum_white --bold "${*}")"; }
 
 # Colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
 gum_white() { gum_style --foreground "$COLOR_WHITE" "${@}"; }
@@ -413,7 +414,7 @@ select_preset() {
         fi
 
         # Write properties
-        properties_generate && print_info "Preset is set to ${preset}"
+        properties_generate && gum_info "Preset is set to ${preset}"
     fi
 }
 
@@ -426,7 +427,7 @@ select_username() {
         [ -z "$user_input" ] && return 1                      # Check if new value is null
         ARCH_OS_USERNAME="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Username is set to ${ARCH_OS_USERNAME}"
+    gum_info "Username is set to ${ARCH_OS_USERNAME}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -438,10 +439,10 @@ select_password() { # --force
         [ -z "$user_password" ] && return 1 # Check if new value is null
         user_password_check=$(gum_input --password --header "+ Enter Password again") || trap_gum_exit_confirm
         [ -z "$user_password_check" ] && return 1 # Check if new value is null
-        [ "$user_password" != "$user_password_check" ] && print_fail "Passwords not identical" && return 1
+        [ "$user_password" != "$user_password_check" ] && gum_fail "Passwords not identical" && return 1
         ARCH_OS_PASSWORD="$user_password" && properties_generate # Set value and generate properties file
     fi
-    print_info "Password is set to *******"
+    gum_info "Password is set to *******"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -452,10 +453,10 @@ select_timezone() {
         tz_auto="$(curl -s http://ip-api.com/line?fields=timezone)"
         user_input=$(gum_input --header "+ Enter Timezone (auto)" --value "$tz_auto") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
-        [ ! -f "/usr/share/zoneinfo/${user_input}" ] && print_fail "Timezone '${user_input}' is not supported" && return 1
+        [ ! -f "/usr/share/zoneinfo/${user_input}" ] && gum_fail "Timezone '${user_input}' is not supported" && return 1
         ARCH_OS_TIMEZONE="$user_input" && properties_generate # Set property and generate properties file
     fi
-    print_info "Timezone is set to ${ARCH_OS_TIMEZONE}"
+    gum_info "Timezone is set to ${ARCH_OS_TIMEZONE}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -480,7 +481,7 @@ select_language() {
         [[ "${ARCH_OS_LOCALE_GEN_LIST[*]}" != *'en_US.UTF-8 UTF-8'* ]] && ARCH_OS_LOCALE_GEN_LIST+=('en_US.UTF-8 UTF-8')
         properties_generate # Generate properties file (for ARCH_OS_LOCALE_LANG & ARCH_OS_LOCALE_GEN_LIST)
     fi
-    print_info "Language is set to ${ARCH_OS_LOCALE_LANG}"
+    gum_info "Language is set to ${ARCH_OS_LOCALE_LANG}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -494,7 +495,7 @@ select_keyboard() {
         [ -z "$user_input" ] && return 1                             # Check if new value is null
         ARCH_OS_VCONSOLE_KEYMAP="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Keyboard is set to ${ARCH_OS_VCONSOLE_KEYMAP}"
+    gum_info "Keyboard is set to ${ARCH_OS_VCONSOLE_KEYMAP}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -514,7 +515,7 @@ select_disk() {
         [[ "$ARCH_OS_DISK" = "/dev/nvm"* ]] && ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}p2" || ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}2"
         properties_generate # Generate properties file
     fi
-    print_info "Disk is set to ${ARCH_OS_DISK}"
+    gum_info "Disk is set to ${ARCH_OS_DISK}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -532,7 +533,7 @@ select_enable_encryption() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_ENCRYPTION_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Disk Encryption is set to ${ARCH_OS_ENCRYPTION_ENABLED}"
+    gum_info "Disk Encryption is set to ${ARCH_OS_ENCRYPTION_ENABLED}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -550,7 +551,7 @@ select_enable_bootsplash() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_BOOTSPLASH_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Bootsplash is set to ${ARCH_OS_BOOTSPLASH_ENABLED}"
+    gum_info "Bootsplash is set to ${ARCH_OS_BOOTSPLASH_ENABLED}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -569,7 +570,7 @@ select_enable_desktop() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_DESKTOP_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Desktop Environment is set to ${ARCH_OS_DESKTOP_ENABLED}"
+    gum_info "Desktop Environment is set to ${ARCH_OS_DESKTOP_ENABLED}"
 
     # Return if desktop disabled
     [ "$ARCH_OS_DESKTOP_ENABLED" = "false" ] && return 0
@@ -583,8 +584,8 @@ select_enable_desktop() {
         ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input"
         properties_generate
     fi
-    print_info "Desktop Keyboard Layout is set to ${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}"
-    [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && print_info "Desktop Keyboard Variant is set to ${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}"
+    gum_info "Desktop Keyboard Layout is set to ${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}"
+    [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gum_info "Desktop Keyboard Variant is set to ${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}"
 
     # Graphics driver
     if [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] || [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" = "none" ]; then
@@ -593,7 +594,7 @@ select_enable_desktop() {
         [ -z "$user_input" ] && return 1                                     # Check if new value is null
         ARCH_OS_DESKTOP_GRAPHICS_DRIVER="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Desktop Graphics Driver is set to ${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}"
+    gum_info "Desktop Graphics Driver is set to ${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}"
 
     return 0
 }
@@ -613,7 +614,7 @@ select_enable_aur() {
         [ $user_confirm = 0 ] && user_input="paru-bin"
         ARCH_OS_AUR_HELPER="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
+    gum_info "AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -631,7 +632,7 @@ select_enable_multilib() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_MULTILIB_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "32 Bit Support is set to ${ARCH_OS_MULTILIB_ENABLED}"
+    gum_info "32 Bit Support is set to ${ARCH_OS_MULTILIB_ENABLED}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -649,7 +650,7 @@ select_enable_housekeeping() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_HOUSEKEEPING_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Housekeeping is set to ${ARCH_OS_HOUSEKEEPING_ENABLED}"
+    gum_info "Housekeeping is set to ${ARCH_OS_HOUSEKEEPING_ENABLED}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -667,7 +668,7 @@ select_enable_shell_enhancement() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_SHELL_ENHANCEMENT_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
+    gum_info "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -685,7 +686,7 @@ select_enable_manager() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_MANAGER_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Arch OS Manager is set to ${ARCH_OS_MANAGER_ENABLED}"
+    gum_info "Arch OS Manager is set to ${ARCH_OS_MANAGER_ENABLED}"
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
