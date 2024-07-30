@@ -753,7 +753,7 @@ exec_init_installation() {
         [ ! -d /sys/firmware/efi ] && log_fail "BIOS not supported! Please set your boot mode to UEFI." && exit 1
         log_info "UEFI detected"
         [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && log_fail "You must execute the Installer from Arch ISO!" && exit 1
-        bootctl status | grep "Secure Boot" | grep -q "disabled" && log_fail "You must disable Secure Boot in UEFI to continue installation" && exit 1
+        bootctl status 2>/dev/null | grep "Secure Boot" | grep -q "disabled" && log_fail "You must disable Secure Boot in UEFI to continue installation" && exit 1
         log_info "Waiting for Reflector from Arch ISO"
         # This mirrorlist will copied to new Arch system during installation
         while timeout 180 tail --pid=$(pgrep reflector) -f /dev/null &>/dev/null; do sleep 1; done
