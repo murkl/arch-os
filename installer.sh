@@ -231,7 +231,7 @@ trap_exit() {
     # Cleanup
     rm -rf "$SCRIPT_TMP_DIR"
     [ "$MODE" = "debug" ] || swapoff -a &>/dev/null || true
-    [ "$MODE" = "debug" ] || umount -A -R /mnt &>/dev/null || true
+    [ "$MODE" = "debug" ] || umount -f -A -R /mnt &>/dev/null || true
 
     # When ctrl + c pressed exit without other stuff below
     [ "$result_code" = "130" ] && gum_warn "Exit..." && {
@@ -770,9 +770,6 @@ exec_init_installation() {
         # Make sure everything is unmounted before start install
         swapoff -a || true
         umount -f -A -R /mnt || true
-        umount -f -R "$ARCH_OS_ROOT_PARTITION" || true
-        umount -f -R "$ARCH_OS_BOOT_PARTITION" || true
-        umount -f -R "$ARCH_OS_DISK" || true
         cryptsetup close cryptroot || true
         vgchange -an || true
         # Temporarily disable ECN (prevent traffic problems with some old routers)
