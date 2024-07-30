@@ -762,12 +762,12 @@ exec_init_installation() {
         pgrep reflector &>/dev/null && log_fail "Reflector timeout after 180 seconds" && exit 1
         timedatectl set-ntp true # Set time
         # Make sure everything is unmounted before start install
-        swapoff -a &>/dev/null || true
-        umount -A -R /mnt 1>/dev/null || true
-        umount -R "$ARCH_OS_ROOT_PARTITION" 1>/dev/null || true
-        umount -R "$ARCH_OS_BOOT_PARTITION" 1>/dev/null || true
-        umount -R "$ARCH_OS_DISK" 1>/dev/null || true
-        cryptsetup close cryptroot &>/dev/null || true
+        swapoff -a || true
+        umount -f -A -R /mnt || true
+        umount -f -R "$ARCH_OS_ROOT_PARTITION" || true
+        umount -f -R "$ARCH_OS_BOOT_PARTITION" || true
+        umount -f -R "$ARCH_OS_DISK" || true
+        cryptsetup close cryptroot || true
         vgchange -an || true
         # Temporarily disable ECN (prevent traffic problems with some old routers)
         [ "$ARCH_OS_ECN_ENABLED" = "false" ] && sysctl net.ipv4.tcp_ecn=0
