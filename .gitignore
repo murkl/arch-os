@@ -4,6 +4,7 @@
 # Created by scripts
 installer.conf
 installer.log
+installer.log.old
 
 # Gum
 gum

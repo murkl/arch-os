@@ -52,9 +52,11 @@ COLOR_RED=9
 
 main() {
 
-    # Init
-    rm -f "$SCRIPT_LOG" # Clear logfile
-    gum_init            # Check gum binary or download
+    # Clear logfile
+    [ -f "$SCRIPT_LOG" ] && mv -f "$SCRIPT_LOG" "${SCRIPT_LOG}.old"
+
+    # Check gum binary or download
+    gum_init
 
     # Traps (error & exit)
     trap 'trap_exit' EXIT
