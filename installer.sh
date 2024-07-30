@@ -767,7 +767,8 @@ exec_init_installation() {
         timedatectl set-ntp true # Set time
         # Make sure everything is unmounted before start install
         swapoff -a || true
-        umount -f -A -R --lazy /mnt || true
+        umount -f -A -R /mnt || true
+        wait # Wait for sub process
         cryptsetup close cryptroot || true
         vgchange -an || true
         # Temporarily disable ECN (prevent traffic problems with some old routers)
