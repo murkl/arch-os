@@ -763,10 +763,10 @@ exec_init_installation() {
         timedatectl set-ntp true # Set time
         # Make sure everything is unmounted before start install
         swapoff -a &>/dev/null || true
-        umount -A -R /mnt &>/dev/null || true
-        umount -A -R "$ARCH_OS_DISK" &>/dev/null || true
-        umount -A -R "$ARCH_OS_BOOT_PARTITION" &>/dev/null || true
-        umount -A -R "$ARCH_OS_ROOT_PARTITION" &>/dev/null || true
+        umount -A -R /mnt 1>/dev/null || true
+        umount -R "$ARCH_OS_ROOT_PARTITION" 1>/dev/null || true
+        umount -R "$ARCH_OS_BOOT_PARTITION" 1>/dev/null || true
+        umount -R "$ARCH_OS_DISK" 1>/dev/null || true
         cryptsetup close cryptroot &>/dev/null || true
         vgchange -an || true
         # Temporarily disable ECN (prevent traffic problems with some old routers)
