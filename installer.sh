@@ -232,7 +232,10 @@ trap_exit() {
     rm -rf "$SCRIPT_TMP_DIR"
 
     # When ctrl + c pressed exit without other stuff below
-    [ "$result_code" = "130" ] && gum_warn "Exit..." && exit 1
+    [ "$result_code" = "130" ] && gum_warn "Exit..." && {
+        fuser -km /mnt || true
+        exit 1
+    }
 
     # Check if failed and print error
     if [ "$result_code" -gt "0" ]; then
@@ -242,6 +245,7 @@ trap_exit() {
         gum_confirm "Show Logs?" && gum pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
     fi
 
+    fuser -km /mnt || true
     exit "$result_code" # Exit installer.sh
 }
 
@@ -765,7 +769,6 @@ exec_init_installation() {
         timedatectl set-ntp true # Set time
         # Make sure everything is unmounted before start install
         swapoff -a || true
-        fuser -km /mnt || true
         umount -f -A -R /mnt || true
         umount -f -R "$ARCH_OS_ROOT_PARTITION" || true
         umount -f -R "$ARCH_OS_BOOT_PARTITION" || true
