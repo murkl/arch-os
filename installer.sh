@@ -154,6 +154,8 @@ main() {
 
     wait # Wait for sub processes
 
+    # ------------------------------------------------------------------------------------------------
+
     # Show reboot & unmount promt
     local do_reboot="false"
     local do_unmount="false"
@@ -297,7 +299,8 @@ gum_header() {
 ███████ ██████  ██      ███████     ██    ██ ███████ 
 ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
 ██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
-    gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${VERSION}"
+    local header_version="${VERSION}" && [ -n "${MODE}" ] && header_version="${VERSION} (${MODE})"
+    gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${header_version}"
 }
 
 # Gum colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
