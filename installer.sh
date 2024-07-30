@@ -765,8 +765,8 @@ exec_init_installation() {
         swapoff -a &>/dev/null || true
         umount -A -R /mnt &>/dev/null || true
         umount -A -R "$ARCH_OS_DISK" &>/dev/null || true
-        #umount -A -R "$ARCH_OS_BOOT_PARTITION" &>/dev/null || true
-        #umount -A -R "$ARCH_OS_ROOT_PARTITION" &>/dev/null || true
+        umount -A -R "$ARCH_OS_BOOT_PARTITION" &>/dev/null || true
+        umount -A -R "$ARCH_OS_ROOT_PARTITION" &>/dev/null || true
         cryptsetup close cryptroot &>/dev/null || true
         vgchange -an || true
         # Temporarily disable ECN (prevent traffic problems with some old routers)
