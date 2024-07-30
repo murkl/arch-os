@@ -763,13 +763,13 @@ exec_init_installation() {
         timedatectl set-ntp true # Set time
         # Make sure everything is unmounted before start install
         swapoff -a || true
-        fuser -km /mnt || true
+        fuser -m /mnt || true
         umount -f -A -R /mnt || true
-        fuser -km "$ARCH_OS_ROOT_PARTITION" || true
+        fuser -m "$ARCH_OS_ROOT_PARTITION" || true
         umount -f -R "$ARCH_OS_ROOT_PARTITION" || true
-        fuser -km "$ARCH_OS_BOOT_PARTITION" || true
+        fuser -m "$ARCH_OS_BOOT_PARTITION" || true
         umount -f -R "$ARCH_OS_BOOT_PARTITION" || true
-        fuser -km "$ARCH_OS_DISK" || true
+        fuser -m "$ARCH_OS_DISK" || true
         umount -f -R "$ARCH_OS_DISK" || true
         cryptsetup close cryptroot || true
         vgchange -an || true
