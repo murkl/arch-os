@@ -228,7 +228,7 @@ trap_exit() {
     # Read error msg from file (written in error trap)
     local error && [ -f "$ERROR_MSG" ] && error="$(<"$ERROR_MSG")" && rm -f "$ERROR_MSG"
 
-    # Remove cache files
+    # Cleanup
     rm -rf "$SCRIPT_TMP_DIR"
 
     # When ctrl + c pressed exit without other stuff below
@@ -274,7 +274,9 @@ process_run() {
 
     # When user press ctrl + c while process is running
     if [ "$user_canceled" = "true" ]; then
-        kill -0 "$pid" &>/dev/null && pkill -P "$pid"                          # Kill process if running
+        kill -0 "$pid" &>/dev/null && pkill -P "$pid" &>/dev/null # Kill process if running
+        [ "$MODE" = "debug" ] || swapoff -a || true
+        [ "$MODE" = "debug" ] || umount -A -R /mnt || true
         gum_fail "Process with PID ${pid} was killed by user" && trap_gum_exit # Exit with 130
     fi
 
