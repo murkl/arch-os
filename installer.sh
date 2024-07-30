@@ -230,8 +230,6 @@ trap_exit() {
 
     # Cleanup
     rm -rf "$SCRIPT_TMP_DIR"
-    [ "$MODE" = "debug" ] || swapoff -a &>/dev/null || true
-    [ "$MODE" = "debug" ] || umount -f -A -R /mnt &>/dev/null || true
 
     # When ctrl + c pressed exit without other stuff below
     [ "$result_code" = "130" ] && gum_warn "Exit..." && {
@@ -769,7 +767,7 @@ exec_init_installation() {
         timedatectl set-ntp true # Set time
         # Make sure everything is unmounted before start install
         swapoff -a || true
-        umount -f -A -R /mnt || true
+        umount -f -A -R --lazy /mnt || true
         cryptsetup close cryptroot || true
         vgchange -an || true
         # Temporarily disable ECN (prevent traffic problems with some old routers)
