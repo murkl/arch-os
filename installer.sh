@@ -768,6 +768,7 @@ exec_init_installation() {
         # Make sure everything is unmounted before start install
         swapoff -a || true
         if [[ "$(umount -f -A -R /mnt 2>&1)" == *"target is busy"* ]]; then
+            # If umount is busy execute fuser
             fuser -km /mnt || true
             umount -f -A -R /mnt || true
         fi
