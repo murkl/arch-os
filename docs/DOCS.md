@@ -338,6 +338,14 @@ Server = https://mirror.f4st.host/archlinux/$repo/os/$arch
 ....
 ```
 
+### Device is busy
+
+Try terminate all processes with:
+
+```
+fuser -km /mnt
+```
+
 ### Legacy Routers (ECN disabled)
 
 Set `ARCH_OS_ECN_ENABLED="false"` in Arch OS `installer.conf`.
