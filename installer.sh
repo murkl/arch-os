@@ -767,7 +767,7 @@ exec_init_installation() {
         timedatectl set-ntp true # Set time
         # Make sure everything is unmounted before start install
         swapoff -a || true
-        umount -f -A -R /mnt || true
+        umount -f -A -R /mnt | grep "target is busy" && fuser -km /mnt
         wait # Wait for sub process
         cryptsetup close cryptroot || true
         vgchange -an || true
