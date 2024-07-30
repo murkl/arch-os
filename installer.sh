@@ -233,7 +233,7 @@ trap_exit() {
 
     # When ctrl + c pressed exit without other stuff below
     [ "$result_code" = "130" ] && gum_warn "Exit..." && {
-        fuser -km /mnt &>/dev/null || true
+        fuser -k /mnt &>/dev/null || true
         exit 1
     }
 
@@ -245,7 +245,7 @@ trap_exit() {
         gum_confirm "Show Logs?" && gum pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
     fi
 
-    fuser -km /mnt &>/dev/null || true
+    fuser -k /mnt &>/dev/null || true
     exit "$result_code" # Exit installer.sh
 }
 
