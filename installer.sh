@@ -73,12 +73,12 @@ main() {
         gum_white '• Secure Boot disabled'
         gum_white '• Boot Mode set to UEFI'
         gum_white ''
-        gum_title "+ Arch OS Properties"
+        gum_title "Arch OS Properties"
 
         # Ask for load & remove existing config file
         if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
             gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config -> exit script
-            rm -f "$SCRIPT_CONFIG"
+            rm -f "$SCRIPT_CONFIG" && gum_info "installer.conf successfully removed"
         fi
 
         # Source installer.conf if exists
@@ -123,7 +123,7 @@ main() {
 
     # Start installation in 5 seconds?
     gum_confirm "Start Arch OS Installation?" || trap_gum_exit
-    gum_white '' && gum_title "+ Arch OS Installation"
+    gum_white '' && gum_title "Arch OS Installation"
     local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel..."
     gum_spin --title="$spin_title" -- sleep 5 || trap_gum_exit # CTRL + C pressed
 
@@ -150,7 +150,9 @@ main() {
     duration_sec="$((duration % 60))"
 
     # Finish & reboot
-    gum_white '' && gum_green --bold "Installation successful in ${duration_min} minutes and ${duration_sec} seconds"
+    local finish_txt="Installation successful in ${duration_min} minutes and ${duration_sec} seconds"
+    gum_white '' && gum_green --bold "$finish_txt"
+    log_info "$finish_txt"
 
     # Copy installer files to users home
     if [ "$MODE" != "debug" ]; then
@@ -319,7 +321,7 @@ gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
 gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
 
 # Gum prints
-gum_title() { gum_purple --bold "${*}"; }
+gum_title() { log_info "+ ${*}" && gum join --horizontal "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
 gum_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold "• ")" "$(gum_white --bold "${*}")"; }
 gum_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold "• ")" "$(gum_white --bold "${*}")"; }
 gum_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold "• ")" "$(gum_white --bold "${*}")"; }
