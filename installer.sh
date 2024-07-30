@@ -764,6 +764,7 @@ exec_init_installation() {
         # Make sure everything is unmounted before start install
         swapoff -a &>/dev/null || true
         umount -A -R /mnt &>/dev/null || true
+        unmount -A -R "$ARCH_OS_DISK" &>/dev/null || true
         cryptsetup close cryptroot &>/dev/null || true
         vgchange -an || true
         # Temporarily disable ECN (prevent traffic problems with some old routers)
