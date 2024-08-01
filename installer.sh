@@ -927,6 +927,7 @@ exec_pacstrap_core() {
         # Create user dirs
         mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config"
         mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.local/share"
+        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
 
         # Allow users in group wheel to use sudo
         sed -i 's^# %wheel ALL=(ALL:ALL) ALL^%wheel ALL=(ALL:ALL) ALL^g' /mnt/etc/sudoers
