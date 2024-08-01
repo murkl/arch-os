@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1090
 
-export MODE="$1" # ./installer.sh debug
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# START PARAMETER
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+# Dry simulator
+# MODE=debug ./installer.sh
+
+# Custom gum
+# GUM=/usr/bin/gum ./installer.sh
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # //////////////////////////////////////// ARCH OS INSTALLER /////////////////////////////////////////
@@ -18,7 +26,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # VERSION
-VERSION='1.5.7'
+VERSION='1.5.8'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -44,9 +52,11 @@ COLOR_RED=9
 
 main() {
 
-    # Init
-    rm -f "$SCRIPT_LOG" # Clear logfile
-    gum_init            # Check gum binary or download
+    # Clear logfile
+    [ -f "$SCRIPT_LOG" ] && mv -f "$SCRIPT_LOG" "${SCRIPT_LOG}.old"
+
+    # Check gum binary or download
+    gum_init
 
     # Traps (error & exit)
     trap 'trap_exit' EXIT
@@ -57,7 +67,7 @@ main() {
     # Loop properties step to update screen if user edit properties
     while (true); do
 
-        print_header # Show welcome screen
+        gum_header # Show welcome screen
         gum_white 'Please make sure you have:'
         gum_white ''
         gum_white '• Backed up your important data'
@@ -65,16 +75,16 @@ main() {
         gum_white '• Secure Boot disabled'
         gum_white '• Boot Mode set to UEFI'
         gum_white ''
-        print_title "+ Arch OS Properties"
+        gum_title "Arch OS Properties"
 
         # Ask for load & remove existing config file
         if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
             gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config -> exit script
-            rm -f "$SCRIPT_CONFIG"
+            rm -f "$SCRIPT_CONFIG" && gum_info "installer.conf successfully removed"
         fi
 
         # Source installer.conf if exists
-        properties_source && print_info "Successfully loaded installer.conf"
+        properties_source && gum_info "installer.conf successfully loaded"
 
         # Selectors
         until select_preset; do :; done
@@ -94,7 +104,7 @@ main() {
         until select_enable_desktop; do :; done
 
         # Print success
-        print_info "installer.conf successfully initialized"
+        gum_info "installer.conf successfully initialized"
 
         # Edit properties?
         if gum_confirm "Edit installer.conf manually?"; then
@@ -115,7 +125,7 @@ main() {
 
     # Start installation in 5 seconds?
     gum_confirm "Start Arch OS Installation?" || trap_gum_exit
-    gum_white '' && print_title "+ Arch OS Installation"
+    gum_white '' && gum_title "Arch OS Installation"
     local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel..."
     gum_spin --title="$spin_title" -- sleep 5 || trap_gum_exit # CTRL + C pressed
 
@@ -142,7 +152,9 @@ main() {
     duration_sec="$((duration % 60))"
 
     # Finish & reboot
-    gum_white '' && gum_green --bold "Installation successful in ${duration_min} minutes and ${duration_sec} seconds"
+    local finish_txt="Installation successful in ${duration_min} minutes and ${duration_sec} seconds"
+    gum_white '' && gum_green --bold "$finish_txt"
+    log_info "$finish_txt"
 
     # Copy installer files to users home
     if [ "$MODE" != "debug" ]; then
@@ -153,6 +165,8 @@ main() {
     fi
 
     wait # Wait for sub processes
+
+    # ------------------------------------------------------------------------------------------------
 
     # Show reboot & unmount promt
     local do_reboot="false"
@@ -168,7 +182,7 @@ main() {
     fi
 
     # Reboot
-    [ "$do_reboot" = "true" ] && [ "$MODE" != "debug" ] && print_warn "Rebooting..." && reboot
+    [ "$do_reboot" = "true" ] && [ "$MODE" != "debug" ] && gum_warn "Rebooting..." && reboot
 
     exit 0
 }
@@ -178,7 +192,7 @@ main() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 gum_init() {
-    if [ ! -x ./gum ] && ! command -v /usr/bin/gum &>/dev/null; then
+    if [ ! -x ./gum ]; then
         clear && echo "Loading Arch OS Installer..." # Loading
         local gum_url gum_path                       # Prepare URL with version os and arch
         # https://github.com/charmbracelet/gum/releases
@@ -193,7 +207,8 @@ gum_init() {
 }
 
 gum() {
-    if [ -x ./gum ]; then ./gum "$@"; else /usr/bin/gum "$@"; fi # Force open ./gum if exists
+    [ -n "$GUM" ] && [ ! -x "$GUM" ] && echo "Error: GUM='${GUM}' is not found or executable" >&2 && exit 1
+    if [ -n "$GUM" ]; then "$GUM" "$@"; else ./gum "$@"; fi # Force open $GUM if env variable is set
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -213,17 +228,19 @@ trap_exit() {
     # Read error msg from file (written in error trap)
     local error && [ -f "$ERROR_MSG" ] && error="$(<"$ERROR_MSG")" && rm -f "$ERROR_MSG"
 
-    # Remove cache files
+    # Cleanup
     rm -rf "$SCRIPT_TMP_DIR"
 
     # When ctrl + c pressed exit without other stuff below
-    [ "$result_code" = "130" ] && print_warn "Exit..." && exit 1
+    [ "$result_code" = "130" ] && gum_warn "Exit..." && {
+        exit 1
+    }
 
     # Check if failed and print error
     if [ "$result_code" -gt "0" ]; then
-        [ -n "$error" ] && print_fail "$error"                      # Print error message (if exists)
-        [ -z "$error" ] && print_fail "Arch OS Installation failed" # Otherwise pint default error message
-        print_warn "See ${SCRIPT_LOG} for more information..."
+        [ -n "$error" ] && gum_fail "$error"                      # Print error message (if exists)
+        [ -z "$error" ] && gum_fail "Arch OS Installation failed" # Otherwise pint default error message
+        gum_warn "See ${SCRIPT_LOG} for more information..."
         gum_confirm "Show Logs?" && gum pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
     fi
 
@@ -241,7 +258,7 @@ trap_gum_exit() { exit 130; }
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 process_init() {
-    [ -f "$PROCESS_RET" ] && print_fail "${PROCESS_RET} already exists" && exit 1
+    [ -f "$PROCESS_RET" ] && gum_fail "${PROCESS_RET} already exists" && exit 1
     echo 1 >"$PROCESS_RET" # Init result with 1
     log_proc "${1}..."     # Log starting
 }
@@ -257,17 +274,17 @@ process_run() {
 
     # When user press ctrl + c while process is running
     if [ "$user_canceled" = "true" ]; then
-        kill -0 "$pid" &>/dev/null && pkill -P "$pid"                            # Kill process if running
-        print_fail "Process with PID ${pid} was killed by user" && trap_gum_exit # Exit with 130
+        kill -0 "$pid" &>/dev/null && pkill -P "$pid" &>/dev/null              # Kill process if running
+        gum_fail "Process with PID ${pid} was killed by user" && trap_gum_exit # Exit with 130
     fi
 
     # Handle error while executing process
-    [ ! -f "$PROCESS_RET" ] && print_fail "${PROCESS_RET} not found (do not init process?)" && exit 1
-    [ "$(<"$PROCESS_RET")" != "0" ] && print_fail "${process_name} failed" && exit 1 # If process failed (result code 0 was not write in the end)
+    [ ! -f "$PROCESS_RET" ] && gum_fail "${PROCESS_RET} not found (do not init process?)" && exit 1
+    [ "$(<"$PROCESS_RET")" != "0" ] && gum_fail "${process_name} failed" && exit 1 # If process failed (result code 0 was not write in the end)
 
     # Finish
-    rm -f "$PROCESS_RET"                              # Remove process result file
-    print_info "${process_name} sucessfully finished" # Print process success
+    rm -f "$PROCESS_RET"                            # Remove process result file
+    gum_info "${process_name} sucessfully finished" # Print process success
 }
 
 process_return() {
@@ -278,18 +295,8 @@ process_return() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# LOG & PRINT
+# LOG & GUM PRINT
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-print_header() {
-    clear && gum_purple '
- █████  ██████   ██████ ██   ██      ██████  ███████ 
-██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
-███████ ██████  ██      ███████     ██    ██ ███████ 
-██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
-██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
-    gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${VERSION}"
-}
 
 # Log
 write_log() { echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >>"$SCRIPT_LOG"; }
@@ -298,20 +305,32 @@ log_warn() { write_log "WARN | ${*}"; }
 log_fail() { write_log "FAIL | ${*}"; }
 log_proc() { write_log "PROC | ${*}"; }
 
-# Print
-print_title() { gum_purple --bold "${*}"; }
-print_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold "• ")" "$(gum_white --bold "${*}")"; }
-print_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold "• ")" "$(gum_white --bold "${*}")"; }
-print_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold "• ")" "$(gum_white --bold "${*}")"; }
+# Gum header
+gum_header() {
+    clear && gum_purple '
+ █████  ██████   ██████ ██   ██      ██████  ███████ 
+██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
+███████ ██████  ██      ███████     ██    ██ ███████ 
+██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
+██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
+    local header_version="${VERSION}" && [ -n "${MODE}" ] && header_version="${VERSION} (${MODE})"
+    gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${header_version}"
+}
 
-# Colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
+# Gum colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
 gum_white() { gum_style --foreground "$COLOR_WHITE" "${@}"; }
 gum_purple() { gum_style --foreground "$COLOR_PURPLE" "${@}"; }
 gum_yellow() { gum_style --foreground "$COLOR_YELLOW" "${@}"; }
 gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
 gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
 
-# Gum
+# Gum prints
+gum_title() { log_info "+ ${*}" && gum join --horizontal "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
+gum_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold "• ")" "$(gum_white --bold "${*}")"; }
+gum_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold "• ")" "$(gum_white --bold "${*}")"; }
+gum_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold "• ")" "$(gum_white --bold "${*}")"; }
+
+# Gum wrapper
 gum_style() { gum style "${@}"; }
 gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
 gum_input() { gum input --placeholder "..." --prompt "> " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
@@ -413,7 +432,7 @@ select_preset() {
         fi
 
         # Write properties
-        properties_generate && print_info "Preset is set to ${preset}"
+        properties_generate && gum_info "Preset is set to ${preset}"
     fi
 }
 
@@ -426,7 +445,7 @@ select_username() {
         [ -z "$user_input" ] && return 1                      # Check if new value is null
         ARCH_OS_USERNAME="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Username is set to ${ARCH_OS_USERNAME}"
+    gum_info "Username is set to ${ARCH_OS_USERNAME}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -438,10 +457,10 @@ select_password() { # --force
         [ -z "$user_password" ] && return 1 # Check if new value is null
         user_password_check=$(gum_input --password --header "+ Enter Password again") || trap_gum_exit_confirm
         [ -z "$user_password_check" ] && return 1 # Check if new value is null
-        [ "$user_password" != "$user_password_check" ] && print_fail "Passwords not identical" && return 1
+        [ "$user_password" != "$user_password_check" ] && gum_fail "Passwords not identical" && return 1
         ARCH_OS_PASSWORD="$user_password" && properties_generate # Set value and generate properties file
     fi
-    print_info "Password is set to *******"
+    gum_info "Password is set to *******"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -452,10 +471,10 @@ select_timezone() {
         tz_auto="$(curl -s http://ip-api.com/line?fields=timezone)"
         user_input=$(gum_input --header "+ Enter Timezone (auto)" --value "$tz_auto") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
-        [ ! -f "/usr/share/zoneinfo/${user_input}" ] && print_fail "Timezone '${user_input}' is not supported" && return 1
+        [ ! -f "/usr/share/zoneinfo/${user_input}" ] && gum_fail "Timezone '${user_input}' is not supported" && return 1
         ARCH_OS_TIMEZONE="$user_input" && properties_generate # Set property and generate properties file
     fi
-    print_info "Timezone is set to ${ARCH_OS_TIMEZONE}"
+    gum_info "Timezone is set to ${ARCH_OS_TIMEZONE}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -480,7 +499,7 @@ select_language() {
         [[ "${ARCH_OS_LOCALE_GEN_LIST[*]}" != *'en_US.UTF-8 UTF-8'* ]] && ARCH_OS_LOCALE_GEN_LIST+=('en_US.UTF-8 UTF-8')
         properties_generate # Generate properties file (for ARCH_OS_LOCALE_LANG & ARCH_OS_LOCALE_GEN_LIST)
     fi
-    print_info "Language is set to ${ARCH_OS_LOCALE_LANG}"
+    gum_info "Language is set to ${ARCH_OS_LOCALE_LANG}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -494,7 +513,7 @@ select_keyboard() {
         [ -z "$user_input" ] && return 1                             # Check if new value is null
         ARCH_OS_VCONSOLE_KEYMAP="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Keyboard is set to ${ARCH_OS_VCONSOLE_KEYMAP}"
+    gum_info "Keyboard is set to ${ARCH_OS_VCONSOLE_KEYMAP}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -514,7 +533,7 @@ select_disk() {
         [[ "$ARCH_OS_DISK" = "/dev/nvm"* ]] && ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}p2" || ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}2"
         properties_generate # Generate properties file
     fi
-    print_info "Disk is set to ${ARCH_OS_DISK}"
+    gum_info "Disk is set to ${ARCH_OS_DISK}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -532,7 +551,7 @@ select_enable_encryption() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_ENCRYPTION_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Disk Encryption is set to ${ARCH_OS_ENCRYPTION_ENABLED}"
+    gum_info "Disk Encryption is set to ${ARCH_OS_ENCRYPTION_ENABLED}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -550,7 +569,7 @@ select_enable_bootsplash() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_BOOTSPLASH_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Bootsplash is set to ${ARCH_OS_BOOTSPLASH_ENABLED}"
+    gum_info "Bootsplash is set to ${ARCH_OS_BOOTSPLASH_ENABLED}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -569,7 +588,7 @@ select_enable_desktop() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_DESKTOP_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Desktop Environment is set to ${ARCH_OS_DESKTOP_ENABLED}"
+    gum_info "Desktop Environment is set to ${ARCH_OS_DESKTOP_ENABLED}"
 
     # Return if desktop disabled
     [ "$ARCH_OS_DESKTOP_ENABLED" = "false" ] && return 0
@@ -583,8 +602,8 @@ select_enable_desktop() {
         ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input"
         properties_generate
     fi
-    print_info "Desktop Keyboard Layout is set to ${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}"
-    [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && print_info "Desktop Keyboard Variant is set to ${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}"
+    gum_info "Desktop Keyboard Layout is set to ${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}"
+    [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gum_info "Desktop Keyboard Variant is set to ${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}"
 
     # Graphics driver
     if [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] || [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" = "none" ]; then
@@ -593,7 +612,7 @@ select_enable_desktop() {
         [ -z "$user_input" ] && return 1                                     # Check if new value is null
         ARCH_OS_DESKTOP_GRAPHICS_DRIVER="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Desktop Graphics Driver is set to ${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}"
+    gum_info "Desktop Graphics Driver is set to ${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}"
 
     return 0
 }
@@ -613,7 +632,7 @@ select_enable_aur() {
         [ $user_confirm = 0 ] && user_input="paru-bin"
         ARCH_OS_AUR_HELPER="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
+    gum_info "AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -631,7 +650,7 @@ select_enable_multilib() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_MULTILIB_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "32 Bit Support is set to ${ARCH_OS_MULTILIB_ENABLED}"
+    gum_info "32 Bit Support is set to ${ARCH_OS_MULTILIB_ENABLED}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -649,7 +668,7 @@ select_enable_housekeeping() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_HOUSEKEEPING_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Housekeeping is set to ${ARCH_OS_HOUSEKEEPING_ENABLED}"
+    gum_info "Housekeeping is set to ${ARCH_OS_HOUSEKEEPING_ENABLED}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -667,7 +686,7 @@ select_enable_shell_enhancement() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_SHELL_ENHANCEMENT_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
+    gum_info "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -685,7 +704,7 @@ select_enable_manager() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_MANAGER_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    print_info "Arch OS Manager is set to ${ARCH_OS_MANAGER_ENABLED}"
+    gum_info "Arch OS Manager is set to ${ARCH_OS_MANAGER_ENABLED}"
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -737,16 +756,24 @@ exec_init_installation() {
         # Check installation prerequisites
         [ ! -d /sys/firmware/efi ] && log_fail "BIOS not supported! Please set your boot mode to UEFI." && exit 1
         log_info "UEFI detected"
+        bootctl status | grep "Secure Boot" | grep -q "disabled" || { log_fail "You must disable Secure Boot in UEFI to continue installation" && exit 1; }
+        log_info "Secure Boot: disabled"
         [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && log_fail "You must execute the Installer from Arch ISO!" && exit 1
-        log_info "Waiting for Reflector from Arch ISO"
+        log_info "Arch ISO detected"
+        log_info "Waiting for Reflector from Arch ISO..."
         # This mirrorlist will copied to new Arch system during installation
         while timeout 180 tail --pid=$(pgrep reflector) -f /dev/null &>/dev/null; do sleep 1; done
         pgrep reflector &>/dev/null && log_fail "Reflector timeout after 180 seconds" && exit 1
         timedatectl set-ntp true # Set time
         # Make sure everything is unmounted before start install
-        swapoff -a &>/dev/null || true
-        umount -A -R /mnt &>/dev/null || true
-        cryptsetup close cryptroot &>/dev/null || true
+        swapoff -a || true
+        if [[ "$(umount -f -A -R /mnt 2>&1)" == *"target is busy"* ]]; then
+            # If umount is busy execute fuser
+            fuser -km /mnt || true
+            umount -f -A -R /mnt || true
+        fi
+        wait # Wait for sub process
+        cryptsetup close cryptroot || true
         vgchange -an || true
         # Temporarily disable ECN (prevent traffic problems with some old routers)
         [ "$ARCH_OS_ECN_ENABLED" = "false" ] && sysctl net.ipv4.tcp_ecn=0
@@ -897,6 +924,11 @@ exec_pacstrap_core() {
         # Create new user
         arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$ARCH_OS_USERNAME"
 
+        # Create user dirs
+        mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config"
+        mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.local/share"
+        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
+
         # Allow users in group wheel to use sudo
         sed -i 's^# %wheel ALL=(ALL:ALL) ALL^%wheel ALL=(ALL:ALL) ALL^g' /mnt/etc/sudoers
 
@@ -915,11 +947,11 @@ exec_pacstrap_core() {
         arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootloader update
         arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
-        # Reduce shutdown timeout
-        #sed -i "s/^\s*#\s*DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
-
         # Set max VMAs (need for some apps/games)
         #echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
+
+        # Reduce shutdown timeout
+        sed -i "s/^\s*#\s*DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
 
         # Configure pacman parrallel downloads, colors, eyecandy
         sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
@@ -959,7 +991,7 @@ exec_install_desktop() {
             packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
 
             # Utils (https://wiki.archlinux.org/title/File_systems)
-            packages+=(git dhcp net-tools inetutils nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
+            packages+=(bash-completion git dhcp net-tools inetutils nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
 
             # Certificates
             packages+=(ca-certificates)
@@ -1313,10 +1345,10 @@ exec_install_shell_enhancement() {
     if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                   # If debug mode then return
-            chroot_pacman_install fish starship eza bat neofetch mc btop nano man-db               # Install packages
-            mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"         # Create fish config dirs
-            mkdir -p "/mnt/root/.config/neofetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch" # Create neofetch config dirs
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                     # If debug mode then return
+            chroot_pacman_install fish starship eza bat neofetch mc btop nano man-db bash-completion # Install packages
+            mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"           # Create fish config dirs
+            mkdir -p "/mnt/root/.config/neofetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch"   # Create neofetch config dirs
             # shellcheck disable=SC2016
             { # Create fish config for root & user
                 echo 'if status is-interactive'

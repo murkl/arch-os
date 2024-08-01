@@ -197,7 +197,7 @@ Disable this feature with `ARCH_OS_HOUSEKEEPING_ENABLED='false'`
 If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true`, these packages are installed and preconfigured (for root & user):
 
 ```
-fish starship eza bat neofetch mc btop nano man-db
+fish starship eza bat neofetch mc btop nano man-db bash-completion
 ```
 
 - `fish` is set as default shell
@@ -305,6 +305,7 @@ NetworkManager fstrim.timer systemd-zram-setup@zram0.service systemd-oomd.servic
 This configuration will be set during Arch OS Core Installation:
 
 - `vm.max_map_count` is set to `1048576` for compatibility of some apps/games (default)
+- `DefaultTimeoutStopSec` is set to `10s` for faster shutdown in /etc/systemd/system.conf
 - `quiet splash vt.global_cursor_default=0` is set to kernel parameters for silent boot
 - Pacman parallel downloads is set to `5`
 - Pacman colors and eyecandy is enabled
@@ -336,6 +337,14 @@ Server = https://london.mirror.pkgbuild.com/$repo/os/$arch
 Server = https://mirror.ubrco.de/archlinux/$repo/os/$arch
 Server = https://mirror.f4st.host/archlinux/$repo/os/$arch
 ....
+```
+
+### Device is busy
+
+Try terminate all processes with:
+
+```
+fuser -km /mnt
 ```
 
 ### Legacy Routers (ECN disabled)

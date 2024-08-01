@@ -24,7 +24,7 @@
 </b></p>
 
 <p>
-This project aims to provide a robust Arch Linux base for desktop usage, along with an easy-to-use and fast installer with error handling. Install a minimal Arch Linux core with optional features such as Automatic Housekeeping, Zen Kernel, GNOME Desktop with Graphics Driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....
+This project aims to provide a robust Arch Linux base for desktop usage, along with an easy-to-use and fast properties-file-based installer with error handling. Install a minimal Arch Linux core with optional features such as Automatic Housekeeping, Zen Kernel, GNOME Desktop with Graphics Driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....
 </p>
 
 <p>
@@ -35,7 +35,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 <p>
   <strong>Test successful</strong>
   <br>
-  <a target="_blank" href="https://www.archlinux.de/releases/2024.07.01">archlinux-2024.07.01-x86_64.iso</a>
+  <a target="_blank" href="https://www.archlinux.de/releases/2024.08.01">archlinux-2024.08.01-x86_64.iso</a>
   <br>
   <sub>100% shellcheck approved</sub>
 </p>
