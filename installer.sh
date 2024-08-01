@@ -924,6 +924,10 @@ exec_pacstrap_core() {
         # Create new user
         arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$ARCH_OS_USERNAME"
 
+        # Create user dirs
+        mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config"
+        mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.local/share"
+
         # Allow users in group wheel to use sudo
         sed -i 's^# %wheel ALL=(ALL:ALL) ALL^%wheel ALL=(ALL:ALL) ALL^g' /mnt/etc/sudoers
 
