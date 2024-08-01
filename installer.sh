@@ -947,11 +947,11 @@ exec_pacstrap_core() {
         arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootloader update
         arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
-        # Reduce shutdown timeout
-        #sed -i "s/^\s*#\s*DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
-
         # Set max VMAs (need for some apps/games)
         #echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
+
+        # Reduce shutdown timeout
+        sed -i "s/^\s*#\s*DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
 
         # Configure pacman parrallel downloads, colors, eyecandy
         sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
