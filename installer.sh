@@ -1345,10 +1345,10 @@ exec_install_shell_enhancement() {
     if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                   # If debug mode then return
-            chroot_pacman_install fish starship eza bat neofetch mc btop nano man-db               # Install packages
-            mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"         # Create fish config dirs
-            mkdir -p "/mnt/root/.config/neofetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch" # Create neofetch config dirs
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                     # If debug mode then return
+            chroot_pacman_install fish starship eza bat neofetch mc btop nano man-db bash-completion # Install packages
+            mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"           # Create fish config dirs
+            mkdir -p "/mnt/root/.config/neofetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch"   # Create neofetch config dirs
             # shellcheck disable=SC2016
             { # Create fish config for root & user
                 echo 'if status is-interactive'

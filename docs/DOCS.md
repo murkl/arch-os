@@ -197,7 +197,7 @@ Disable this feature with `ARCH_OS_HOUSEKEEPING_ENABLED='false'`
 If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true`, these packages are installed and preconfigured (for root & user):
 
 ```
-fish starship eza bat neofetch mc btop nano man-db
+fish starship eza bat neofetch mc btop nano man-db bash-completion
 ```
 
 - `fish` is set as default shell
