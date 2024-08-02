@@ -26,7 +26,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # VERSION
-VERSION='1.5.8'
+VERSION='1.5.9'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -188,6 +188,17 @@ main() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
+# LOGGING
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+# Log
+write_log() { echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >>"$SCRIPT_LOG"; }
+log_info() { write_log "INFO | ${*}"; }
+log_warn() { write_log "WARN | ${*}"; }
+log_fail() { write_log "FAIL | ${*}"; }
+log_proc() { write_log "PROC | ${*}"; }
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 # GUM
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -210,6 +221,40 @@ gum() {
     [ -n "$GUM" ] && [ ! -x "$GUM" ] && echo "Error: GUM='${GUM}' is not found or executable" >&2 && exit 1
     if [ -n "$GUM" ]; then "$GUM" "$@"; else ./gum "$@"; fi # Force open $GUM if env variable is set
 }
+
+# Gum header
+gum_header() {
+    clear && gum_purple '
+ █████  ██████   ██████ ██   ██      ██████  ███████ 
+██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
+███████ ██████  ██      ███████     ██    ██ ███████ 
+██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
+██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
+    local header_version="${VERSION}" && [ -n "${MODE}" ] && header_version="${VERSION} (${MODE})"
+    gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${header_version}"
+}
+
+# Gum colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
+gum_white() { gum_style --foreground "$COLOR_WHITE" "${@}"; }
+gum_purple() { gum_style --foreground "$COLOR_PURPLE" "${@}"; }
+gum_yellow() { gum_style --foreground "$COLOR_YELLOW" "${@}"; }
+gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
+gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
+
+# Gum prints
+gum_title() { log_info "+ ${*}" && gum join --horizontal "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
+gum_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold "• ")" "$(gum_white --bold "${*}")"; }
+gum_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold "• ")" "$(gum_white --bold "${*}")"; }
+gum_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold "• ")" "$(gum_white --bold "${*}")"; }
+
+# Gum wrapper
+gum_style() { gum style "${@}"; }
+gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
+gum_input() { gum input --placeholder "..." --prompt "> " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
+gum_write() { gum write --prompt "• " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
+gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
+gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
+gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # TRAPS
@@ -293,51 +338,6 @@ process_return() {
     echo "$1" >"$PROCESS_RET"
     exit "$1"
 }
-
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# LOG & GUM PRINT
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-# Log
-write_log() { echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >>"$SCRIPT_LOG"; }
-log_info() { write_log "INFO | ${*}"; }
-log_warn() { write_log "WARN | ${*}"; }
-log_fail() { write_log "FAIL | ${*}"; }
-log_proc() { write_log "PROC | ${*}"; }
-
-# Gum header
-gum_header() {
-    clear && gum_purple '
- █████  ██████   ██████ ██   ██      ██████  ███████ 
-██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
-███████ ██████  ██      ███████     ██    ██ ███████ 
-██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
-██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
-    local header_version="${VERSION}" && [ -n "${MODE}" ] && header_version="${VERSION} (${MODE})"
-    gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${header_version}"
-}
-
-# Gum colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
-gum_white() { gum_style --foreground "$COLOR_WHITE" "${@}"; }
-gum_purple() { gum_style --foreground "$COLOR_PURPLE" "${@}"; }
-gum_yellow() { gum_style --foreground "$COLOR_YELLOW" "${@}"; }
-gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
-gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
-
-# Gum prints
-gum_title() { log_info "+ ${*}" && gum join --horizontal "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
-gum_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold "• ")" "$(gum_white --bold "${*}")"; }
-gum_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold "• ")" "$(gum_white --bold "${*}")"; }
-gum_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold "• ")" "$(gum_white --bold "${*}")"; }
-
-# Gum wrapper
-gum_style() { gum style "${@}"; }
-gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
-gum_input() { gum input --placeholder "..." --prompt "> " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
-gum_write() { gum write --prompt "• " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
-gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
-gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
-gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # PROPERTIES
@@ -705,43 +705,6 @@ select_enable_manager() {
         ARCH_OS_MANAGER_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     gum_info "Arch OS Manager is set to ${ARCH_OS_MANAGER_ENABLED}"
-}
-
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# CHROOT HELPER
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-chroot_pacman_install() {
-    local packages=("$@")
-    local pacman_failed="true"
-    # Retry installing packages 5 times (in case of connection issues)
-    for ((i = 1; i < 6; i++)); do
-        # Print updated whiptail info
-        [ "$i" -gt 1 ] && log_warn "${i}. Retry Pacman installation..."
-        # Try installing packages
-        if ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
-            sleep 10 && continue # Wait 10 seconds & try again
-        else
-            pacman_failed="false" && break # Success: break loop
-        fi
-    done
-    # Result
-    [ "$pacman_failed" = "true" ] && return 1  # Failed after 5 retries
-    [ "$pacman_failed" = "false" ] && return 0 # Success
-}
-
-# ------------------------------------------------------------------------------------------------
-
-chroot_aur_install() {
-    local repo repo_url repo_tmp_dir
-    repo="$1"
-    repo_url="https://aur.archlinux.org/${repo}.git"
-    repo_tmp_dir=$(mktemp -u "/home/${ARCH_OS_USERNAME}/${repo}.XXXXXXXXXX")
-    sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Disable sudo needs no password rights
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$repo_tmp_dir"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $repo_tmp_dir && makepkg -si --noconfirm"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$repo_tmp_dir"
-    sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Enable sudo needs no password rights
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1491,6 +1454,43 @@ exec_cleanup_installation() {
         process_return 0                                                                                      # Return
     ) &>"$PROCESS_LOG" &
     process_run $! "$process_name"
+}
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# CHROOT HELPER
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+chroot_pacman_install() {
+    local packages=("$@")
+    local pacman_failed="true"
+    # Retry installing packages 5 times (in case of connection issues)
+    for ((i = 1; i < 6; i++)); do
+        # Print updated whiptail info
+        [ "$i" -gt 1 ] && log_warn "${i}. Retry Pacman installation..."
+        # Try installing packages
+        if ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
+            sleep 10 && continue # Wait 10 seconds & try again
+        else
+            pacman_failed="false" && break # Success: break loop
+        fi
+    done
+    # Result
+    [ "$pacman_failed" = "true" ] && return 1  # Failed after 5 retries
+    [ "$pacman_failed" = "false" ] && return 0 # Success
+}
+
+# ------------------------------------------------------------------------------------------------
+
+chroot_aur_install() {
+    local repo repo_url repo_tmp_dir
+    repo="$1"
+    repo_url="https://aur.archlinux.org/${repo}.git"
+    repo_tmp_dir=$(mktemp -u "/home/${ARCH_OS_USERNAME}/${repo}.XXXXXXXXXX")
+    sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Disable sudo needs no password rights
+    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$repo_tmp_dir"
+    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $repo_tmp_dir && makepkg -si --noconfirm"
+    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$repo_tmp_dir"
+    sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Enable sudo needs no password rights
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
