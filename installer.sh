@@ -996,6 +996,7 @@ exec_install_desktop() {
                 echo ''
                 echo '# PATH'
                 echo 'PATH="${PATH}:${HOME}/.local/bin"'
+                echo 'PATH="${PATH}:/var/lib/flatpak/exports/bin"'
                 echo ''
                 echo '# XDG'
                 echo 'XDG_CONFIG_HOME="${HOME}/.config"'
