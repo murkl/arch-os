@@ -999,7 +999,7 @@ exec_install_desktop() {
                 chroot_pacman_remove snapshot || true
                 chroot_pacman_remove evince || true
                 chroot_pacman_remove loupe || true
-                chroot_pacman_remove epiphany
+                chroot_pacman_remove epiphany || true
             fi
 
             # Add user to gamemode group
@@ -1489,8 +1489,7 @@ exec_cleanup_installation() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 chroot_pacman_remove() {
-    local packages=("$@")
-    ! arch-chroot /mnt pacman -Rns --noconfirm "${packages[@]}" && return 1
+    arch-chroot /mnt pacman -Rns --noconfirm "$@" || return 1
 }
 
 # ------------------------------------------------------------------------------------------------
