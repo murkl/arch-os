@@ -944,7 +944,8 @@ exec_install_desktop() {
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
             # GNOME base packages
-            local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra gnome-firmware file-roller power-profiles-daemon rygel cups gnome-epub-thumbnailer)
+            local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer)
+            [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && packages=(gnome-firmware file-roller)
 
             # GNOME wayland screensharing, flatpak & pipewire support
             packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
@@ -988,12 +989,17 @@ exec_install_desktop() {
                 chroot_pacman_remove gnome-connections || true
                 chroot_pacman_remove gnome-music || true
                 chroot_pacman_remove gnome-weather || true
+                chroot_pacman_remove gnome-disk-utility || true
+                chroot_pacman_remove gnome-logs || true
+                chroot_pacman_remove gnome-calculator || true
+                chroot_pacman_remove gnome-text-editor || true
                 chroot_pacman_remove simple-scan || true
                 chroot_pacman_remove baobab || true
                 chroot_pacman_remove totem || true
                 chroot_pacman_remove snapshot || true
-                #chroot_pacman_remove epiphany
-                #chroot_pacman_remove gnome-disk-utility || true
+                chroot_pacman_remove evince || true
+                chroot_pacman_remove loupe || true
+                chroot_pacman_remove epiphany
             fi
 
             # Add user to gamemode group
