@@ -986,13 +986,14 @@ exec_install_desktop() {
                 chroot_pacman_remove gnome-characters || true
                 chroot_pacman_remove gnome-clocks || true
                 chroot_pacman_remove gnome-connections || true
-                chroot_pacman_remove gnome-disk-utility || true
                 chroot_pacman_remove gnome-music || true
                 chroot_pacman_remove gnome-weather || true
+                chroot_pacman_remove simple-scan || true
                 chroot_pacman_remove baobab || true
                 chroot_pacman_remove totem || true
                 chroot_pacman_remove snapshot || true
                 #chroot_pacman_remove epiphany
+                #chroot_pacman_remove gnome-disk-utility || true
             fi
 
             # Add user to gamemode group
