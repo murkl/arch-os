@@ -992,6 +992,7 @@ exec_install_desktop() {
                 chroot_pacman_remove gnome-calculator || true
                 chroot_pacman_remove gnome-logs || true
                 chroot_pacman_remove gnome-text-editor || true
+                chroot_pacman_remove gnome-disk-utility || true
                 chroot_pacman_remove simple-scan || true
                 chroot_pacman_remove baobab || true
                 chroot_pacman_remove totem || true
