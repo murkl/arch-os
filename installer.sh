@@ -615,6 +615,7 @@ select_enable_desktop() {
         ARCH_OS_DESKTOP_GRAPHICS_DRIVER="$user_input" && properties_generate # Set value and generate properties file
     fi
     gum_info "Desktop Graphics Driver is set to ${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}"
+    gum_info "Slim Desktop is set to ${ARCH_OS_DESKTOP_SLIM_ENABLED}"
 
     return 0
 }
