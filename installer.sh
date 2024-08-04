@@ -989,17 +989,16 @@ exec_install_desktop() {
                 chroot_pacman_remove gnome-connections || true
                 chroot_pacman_remove gnome-music || true
                 chroot_pacman_remove gnome-weather || true
-                chroot_pacman_remove gnome-disk-utility || true
-                chroot_pacman_remove gnome-logs || true
                 chroot_pacman_remove gnome-calculator || true
+                chroot_pacman_remove gnome-logs || true
                 chroot_pacman_remove gnome-text-editor || true
                 chroot_pacman_remove simple-scan || true
                 chroot_pacman_remove baobab || true
                 chroot_pacman_remove totem || true
                 chroot_pacman_remove snapshot || true
-                chroot_pacman_remove evince || true
                 chroot_pacman_remove loupe || true
                 chroot_pacman_remove epiphany || true
+                #chroot_pacman_remove evince || true # Need for sushi
             fi
 
             # Add user to gamemode group
