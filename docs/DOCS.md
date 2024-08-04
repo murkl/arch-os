@@ -170,6 +170,7 @@ ARCH_OS_DESKTOP_GRAPHICS_DRIVER='nvidia' # Graphics Driver | Disable: none | Ava
 ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='de' # X11 keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de
 ARCH_OS_DESKTOP_KEYBOARD_MODEL='pc105' # X11 keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models
 ARCH_OS_DESKTOP_KEYBOARD_VARIANT='nodeadkeys' # X11 keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys
+ARCH_OS_DESKTOP_SLIM_ENABLED='true' # Sim Desktop | Default: false
 ARCH_OS_VM_SUPPORT_ENABLED='true' # VM Support | Default: true | Disable: false
 ```
 
@@ -286,7 +287,7 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 
 ### Packages
 
-This packages will be installed during Arch OS Core Installation (147 packages in total):
+This packages will be installed during Arch OS Core Installation (~150 packages in total):
 
 ```
 base linux-firmware zram-generator networkmanager sudo [kernel_pkg] [microcode_pkg]

@@ -382,6 +382,7 @@ properties_generate() {
         echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}'"
+        echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}'"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
     } >"$SCRIPT_CONFIG" # Write properties to file
 }
@@ -403,6 +404,7 @@ select_preset() {
         ARCH_OS_VM_SUPPORT_ENABLED="true"
         ARCH_OS_ECN_ENABLED="true"
         ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
+        ARCH_OS_DESKTOP_SLIM_ENABLED='false'
 
         # Set microcode
         grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
@@ -974,6 +976,24 @@ exec_install_desktop() {
             # Install packages
             chroot_pacman_install "${packages[@]}"
 
+            # Force remove packages
+            if [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "true" ]; then
+                chroot_pacman_remove gnome-calendar || true
+                chroot_pacman_remove gnome-maps || true
+                chroot_pacman_remove gnome-contacts || true
+                chroot_pacman_remove gnome-font-viewer || true
+                chroot_pacman_remove gnome-characters || true
+                chroot_pacman_remove gnome-clocks || true
+                chroot_pacman_remove gnome-connections || true
+                chroot_pacman_remove gnome-disk-utility || true
+                chroot_pacman_remove gnome-music || true
+                chroot_pacman_remove gnome-weather || true
+                chroot_pacman_remove baobab || true
+                chroot_pacman_remove totem || true
+                chroot_pacman_remove snapshot || true
+                #chroot_pacman_remove epiphany
+            fi
+
             # Add user to gamemode group
             arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
@@ -1456,10 +1476,16 @@ exec_cleanup_installation() {
     ) &>"$PROCESS_LOG" &
     process_run $! "$process_name"
 }
-
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # CHROOT HELPER
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+chroot_pacman_remove() {
+    local packages=("$@")
+    ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}" && return 1
+}
+
+# ------------------------------------------------------------------------------------------------
 
 chroot_pacman_install() {
     local packages=("$@")
