@@ -1483,7 +1483,7 @@ exec_cleanup_installation() {
 
 chroot_pacman_remove() {
     local packages=("$@")
-    ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}" && return 1
+    ! arch-chroot /mnt pacman -Rns --noconfirm "${packages[@]}" && return 1
 }
 
 # ------------------------------------------------------------------------------------------------
