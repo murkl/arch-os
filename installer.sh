@@ -369,7 +369,6 @@ properties_generate() {
         echo "ARCH_OS_VCONSOLE_FONT='${ARCH_OS_VCONSOLE_FONT}'"
         echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}'"
         echo "ARCH_OS_MICROCODE='${ARCH_OS_MICROCODE}'"
-        echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
         echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}'"
         echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}'"
@@ -378,12 +377,13 @@ properties_generate() {
         echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}'"
         echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}'"
         echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
+        echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}'"
         echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}'"
-        echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}'"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
+        echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
     } >"$SCRIPT_CONFIG" # Write properties to file
 }
 
@@ -394,7 +394,7 @@ properties_generate() {
 select_preset() {
     if [ ! -f "$SCRIPT_CONFIG" ]; then
         local preset options
-        options=("desktop" "minimal" "custom")
+        options=("desktop" "core" "custom")
         preset=$(gum_choose --header "+ Choose Preset:" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$preset" ] && return 1 # Check if new value is null
 
@@ -404,14 +404,13 @@ select_preset() {
         ARCH_OS_VM_SUPPORT_ENABLED="true"
         ARCH_OS_ECN_ENABLED="true"
         ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
-        ARCH_OS_DESKTOP_SLIM_ENABLED='false'
 
         # Set microcode
         grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
         grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
 
-        # Minimal presets
-        if [ "$preset" = "minimal" ]; then
+        # Core preset
+        if [ "$preset" = "core" ]; then
             ARCH_OS_BOOTSPLASH_ENABLED='false'
             ARCH_OS_DESKTOP_ENABLED='false'
             ARCH_OS_MULTILIB_ENABLED='false'
@@ -422,7 +421,7 @@ select_preset() {
             ARCH_OS_DESKTOP_GRAPHICS_DRIVER="none"
         fi
 
-        # Desktop presets
+        # Desktop preset
         if [ "$preset" = "desktop" ]; then
             ARCH_OS_BOOTSPLASH_ENABLED='true'
             ARCH_OS_DESKTOP_ENABLED='true'
@@ -591,10 +590,22 @@ select_enable_desktop() {
         ARCH_OS_DESKTOP_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     gum_info "Desktop Environment is set to ${ARCH_OS_DESKTOP_ENABLED}"
-
     # Return if desktop disabled
     [ "$ARCH_OS_DESKTOP_ENABLED" = "false" ] && return 0
 
+    # Slim Mode
+    if [ -z "$ARCH_OS_DESKTOP_SLIM_ENABLED" ]; then
+        gum_confirm "Enable Desktop Slim Mode? (Install only minimal set of GNOME Apps)" --affirmative="No (default)" --negative="Yes"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        [ $user_confirm = 1 ] && user_input="true"
+        [ $user_confirm = 0 ] && user_input="false"
+        ARCH_OS_DESKTOP_SLIM_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    gum_info "Desktop Slim Mode is set to ${ARCH_OS_DESKTOP_SLIM_ENABLED}"
     # Keyboard layout
     if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
         user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout" --value "us" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
@@ -615,8 +626,6 @@ select_enable_desktop() {
         ARCH_OS_DESKTOP_GRAPHICS_DRIVER="$user_input" && properties_generate # Set value and generate properties file
     fi
     gum_info "Desktop Graphics Driver is set to ${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}"
-    gum_info "Slim Desktop is set to ${ARCH_OS_DESKTOP_SLIM_ENABLED}"
-
     return 0
 }
 
@@ -796,7 +805,7 @@ exec_pacstrap_core() {
     (
         [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
-        # Minimal Core packages
+        # Core packages
         local packages=("$ARCH_OS_KERNEL" base sudo linux-firmware zram-generator networkmanager)
 
         # Add microcode package
