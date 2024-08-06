@@ -170,6 +170,7 @@ ARCH_OS_DESKTOP_GRAPHICS_DRIVER='nvidia' # Graphics Driver | Disable: none | Ava
 ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='de' # X11 keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de
 ARCH_OS_DESKTOP_KEYBOARD_MODEL='pc105' # X11 keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models
 ARCH_OS_DESKTOP_KEYBOARD_VARIANT='nodeadkeys' # X11 keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys
+ARCH_OS_DESKTOP_SLIM_ENABLED='true' # Sim Desktop (Minimal Apps) | Default: false
 ARCH_OS_VM_SUPPORT_ENABLED='true' # VM Support | Default: true | Disable: false
 ```
 
@@ -286,7 +287,7 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 
 ### Packages
 
-This packages will be installed during Arch OS Core Installation (147 packages in total):
+This packages will be installed during Arch OS Core Installation (~150 packages in total):
 
 ```
 base linux-firmware zram-generator networkmanager sudo [kernel_pkg] [microcode_pkg]
@@ -305,7 +306,6 @@ NetworkManager fstrim.timer systemd-zram-setup@zram0.service systemd-oomd.servic
 This configuration will be set during Arch OS Core Installation:
 
 - `vm.max_map_count` is set to `1048576` for compatibility of some apps/games (default)
-- `DefaultTimeoutStopSec` is set to `10s` for faster shutdown in /etc/systemd/system.conf
 - `quiet splash vt.global_cursor_default=0` is set to kernel parameters for silent boot
 - Pacman parallel downloads is set to `5`
 - Pacman colors and eyecandy is enabled

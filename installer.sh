@@ -26,7 +26,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # VERSION
-VERSION='1.5.8'
+VERSION='1.5.9'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -188,6 +188,17 @@ main() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
+# LOGGING
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+# Log
+write_log() { echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >>"$SCRIPT_LOG"; }
+log_info() { write_log "INFO | ${*}"; }
+log_warn() { write_log "WARN | ${*}"; }
+log_fail() { write_log "FAIL | ${*}"; }
+log_proc() { write_log "PROC | ${*}"; }
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 # GUM
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -210,6 +221,40 @@ gum() {
     [ -n "$GUM" ] && [ ! -x "$GUM" ] && echo "Error: GUM='${GUM}' is not found or executable" >&2 && exit 1
     if [ -n "$GUM" ]; then "$GUM" "$@"; else ./gum "$@"; fi # Force open $GUM if env variable is set
 }
+
+# Gum header
+gum_header() {
+    clear && gum_purple '
+ █████  ██████   ██████ ██   ██      ██████  ███████ 
+██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
+███████ ██████  ██      ███████     ██    ██ ███████ 
+██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
+██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
+    local header_version="${VERSION}" && [ -n "${MODE}" ] && header_version="${VERSION} (${MODE})"
+    gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${header_version}"
+}
+
+# Gum colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
+gum_white() { gum_style --foreground "$COLOR_WHITE" "${@}"; }
+gum_purple() { gum_style --foreground "$COLOR_PURPLE" "${@}"; }
+gum_yellow() { gum_style --foreground "$COLOR_YELLOW" "${@}"; }
+gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
+gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
+
+# Gum prints
+gum_title() { log_info "+ ${*}" && gum join --horizontal "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
+gum_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold "• ")" "$(gum_white --bold "${*}")"; }
+gum_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold "• ")" "$(gum_white --bold "${*}")"; }
+gum_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold "• ")" "$(gum_white --bold "${*}")"; }
+
+# Gum wrapper
+gum_style() { gum style "${@}"; }
+gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
+gum_input() { gum input --placeholder "..." --prompt "> " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
+gum_write() { gum write --prompt "• " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
+gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
+gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
+gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # TRAPS
@@ -295,51 +340,6 @@ process_return() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# LOG & GUM PRINT
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-# Log
-write_log() { echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >>"$SCRIPT_LOG"; }
-log_info() { write_log "INFO | ${*}"; }
-log_warn() { write_log "WARN | ${*}"; }
-log_fail() { write_log "FAIL | ${*}"; }
-log_proc() { write_log "PROC | ${*}"; }
-
-# Gum header
-gum_header() {
-    clear && gum_purple '
- █████  ██████   ██████ ██   ██      ██████  ███████ 
-██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
-███████ ██████  ██      ███████     ██    ██ ███████ 
-██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
-██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
-    local header_version="${VERSION}" && [ -n "${MODE}" ] && header_version="${VERSION} (${MODE})"
-    gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${header_version}"
-}
-
-# Gum colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
-gum_white() { gum_style --foreground "$COLOR_WHITE" "${@}"; }
-gum_purple() { gum_style --foreground "$COLOR_PURPLE" "${@}"; }
-gum_yellow() { gum_style --foreground "$COLOR_YELLOW" "${@}"; }
-gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
-gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
-
-# Gum prints
-gum_title() { log_info "+ ${*}" && gum join --horizontal "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
-gum_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold "• ")" "$(gum_white --bold "${*}")"; }
-gum_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold "• ")" "$(gum_white --bold "${*}")"; }
-gum_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold "• ")" "$(gum_white --bold "${*}")"; }
-
-# Gum wrapper
-gum_style() { gum style "${@}"; }
-gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
-gum_input() { gum input --placeholder "..." --prompt "> " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
-gum_write() { gum write --prompt "• " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
-gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
-gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
-gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
-
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
 # PROPERTIES
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -369,7 +369,6 @@ properties_generate() {
         echo "ARCH_OS_VCONSOLE_FONT='${ARCH_OS_VCONSOLE_FONT}'"
         echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}'"
         echo "ARCH_OS_MICROCODE='${ARCH_OS_MICROCODE}'"
-        echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
         echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}'"
         echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}'"
@@ -378,11 +377,13 @@ properties_generate() {
         echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}'"
         echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}'"
         echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
+        echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}'"
         echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}'"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
+        echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
     } >"$SCRIPT_CONFIG" # Write properties to file
 }
 
@@ -393,7 +394,7 @@ properties_generate() {
 select_preset() {
     if [ ! -f "$SCRIPT_CONFIG" ]; then
         local preset options
-        options=("desktop" "minimal" "custom")
+        options=("desktop" "core" "custom")
         preset=$(gum_choose --header "+ Choose Preset:" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$preset" ] && return 1 # Check if new value is null
 
@@ -408,8 +409,8 @@ select_preset() {
         grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
         grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
 
-        # Minimal presets
-        if [ "$preset" = "minimal" ]; then
+        # Core preset
+        if [ "$preset" = "core" ]; then
             ARCH_OS_BOOTSPLASH_ENABLED='false'
             ARCH_OS_DESKTOP_ENABLED='false'
             ARCH_OS_MULTILIB_ENABLED='false'
@@ -420,7 +421,7 @@ select_preset() {
             ARCH_OS_DESKTOP_GRAPHICS_DRIVER="none"
         fi
 
-        # Desktop presets
+        # Desktop preset
         if [ "$preset" = "desktop" ]; then
             ARCH_OS_BOOTSPLASH_ENABLED='true'
             ARCH_OS_DESKTOP_ENABLED='true'
@@ -589,10 +590,22 @@ select_enable_desktop() {
         ARCH_OS_DESKTOP_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     gum_info "Desktop Environment is set to ${ARCH_OS_DESKTOP_ENABLED}"
-
     # Return if desktop disabled
     [ "$ARCH_OS_DESKTOP_ENABLED" = "false" ] && return 0
 
+    # Slim Mode
+    if [ -z "$ARCH_OS_DESKTOP_SLIM_ENABLED" ]; then
+        gum_confirm "Enable Desktop Slim Mode? (Install only minimal set of GNOME Apps)" --affirmative="No (default)" --negative="Yes"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        [ $user_confirm = 1 ] && user_input="true"
+        [ $user_confirm = 0 ] && user_input="false"
+        ARCH_OS_DESKTOP_SLIM_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    gum_info "Desktop Slim Mode is set to ${ARCH_OS_DESKTOP_SLIM_ENABLED}"
     # Keyboard layout
     if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
         user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout" --value "us" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
@@ -613,7 +626,6 @@ select_enable_desktop() {
         ARCH_OS_DESKTOP_GRAPHICS_DRIVER="$user_input" && properties_generate # Set value and generate properties file
     fi
     gum_info "Desktop Graphics Driver is set to ${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}"
-
     return 0
 }
 
@@ -708,43 +720,6 @@ select_enable_manager() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# CHROOT HELPER
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-chroot_pacman_install() {
-    local packages=("$@")
-    local pacman_failed="true"
-    # Retry installing packages 5 times (in case of connection issues)
-    for ((i = 1; i < 6; i++)); do
-        # Print updated whiptail info
-        [ "$i" -gt 1 ] && log_warn "${i}. Retry Pacman installation..."
-        # Try installing packages
-        if ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
-            sleep 10 && continue # Wait 10 seconds & try again
-        else
-            pacman_failed="false" && break # Success: break loop
-        fi
-    done
-    # Result
-    [ "$pacman_failed" = "true" ] && return 1  # Failed after 5 retries
-    [ "$pacman_failed" = "false" ] && return 0 # Success
-}
-
-# ------------------------------------------------------------------------------------------------
-
-chroot_aur_install() {
-    local repo repo_url repo_tmp_dir
-    repo="$1"
-    repo_url="https://aur.archlinux.org/${repo}.git"
-    repo_tmp_dir=$(mktemp -u "/home/${ARCH_OS_USERNAME}/${repo}.XXXXXXXXXX")
-    sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Disable sudo needs no password rights
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$repo_tmp_dir"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $repo_tmp_dir && makepkg -si --noconfirm"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$repo_tmp_dir"
-    sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Enable sudo needs no password rights
-}
-
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
 # EXECUTORS (SUB PROCESSES)
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -830,7 +805,7 @@ exec_pacstrap_core() {
     (
         [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
-        # Minimal Core packages
+        # Core packages
         local packages=("$ARCH_OS_KERNEL" base sudo linux-firmware zram-generator networkmanager)
 
         # Add microcode package
@@ -951,7 +926,7 @@ exec_pacstrap_core() {
         #echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
 
         # Reduce shutdown timeout
-        sed -i "s/^\s*#\s*DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
+        #sed -i "s/^\s*#\s*DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
 
         # Configure pacman parrallel downloads, colors, eyecandy
         sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
@@ -978,7 +953,8 @@ exec_install_desktop() {
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
             # GNOME base packages
-            local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra gnome-firmware file-roller power-profiles-daemon rygel cups gnome-epub-thumbnailer)
+            local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer)
+            [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && packages=(gnome-firmware file-roller)
 
             # GNOME wayland screensharing, flatpak & pipewire support
             packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
@@ -991,13 +967,13 @@ exec_install_desktop() {
             packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
 
             # Utils (https://wiki.archlinux.org/title/File_systems)
-            packages+=(bash-completion git dhcp net-tools inetutils nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
+            packages+=(fwupd bash-completion git dhcp net-tools inetutils nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
 
             # Certificates
             packages+=(ca-certificates)
 
             # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
-            packages+=(ffmpeg gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader)
+            packages+=(ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader)
             packages+=(a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread openh264)
             [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer lib32-gst-plugins-good)
 
@@ -1010,6 +986,30 @@ exec_install_desktop() {
 
             # Install packages
             chroot_pacman_install "${packages[@]}"
+
+            # Force remove packages
+            if [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "true" ]; then
+                chroot_pacman_remove gnome-calendar || true
+                chroot_pacman_remove gnome-maps || true
+                chroot_pacman_remove gnome-contacts || true
+                chroot_pacman_remove gnome-font-viewer || true
+                chroot_pacman_remove gnome-characters || true
+                chroot_pacman_remove gnome-clocks || true
+                chroot_pacman_remove gnome-connections || true
+                chroot_pacman_remove gnome-music || true
+                chroot_pacman_remove gnome-weather || true
+                chroot_pacman_remove gnome-calculator || true
+                chroot_pacman_remove gnome-logs || true
+                chroot_pacman_remove gnome-text-editor || true
+                chroot_pacman_remove gnome-disk-utility || true
+                chroot_pacman_remove simple-scan || true
+                chroot_pacman_remove baobab || true
+                chroot_pacman_remove totem || true
+                chroot_pacman_remove snapshot || true
+                chroot_pacman_remove loupe || true
+                chroot_pacman_remove epiphany || true
+                #chroot_pacman_remove evince || true # Need for sushi
+            fi
 
             # Add user to gamemode group
             arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
@@ -1033,6 +1033,7 @@ exec_install_desktop() {
                 echo ''
                 echo '# PATH'
                 echo 'PATH="${PATH}:${HOME}/.local/bin"'
+                echo 'PATH="${PATH}:/var/lib/flatpak/exports/bin"'
                 echo ''
                 echo '# XDG'
                 echo 'XDG_CONFIG_HOME="${HOME}/.config"'
@@ -1078,14 +1079,14 @@ exec_install_desktop() {
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications"
 
             # Create UEFI Boot desktop entry
-            {
-                echo '[Desktop Entry]'
-                echo 'Name=Reboot to UEFI'
-                echo 'Icon=system-reboot'
-                echo 'Exec=systemctl reboot --firmware-setup'
-                echo 'Type=Application'
-                echo 'Terminal=false'
-            } >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/systemctl-reboot-firmware.desktop"
+            #{
+            #    echo '[Desktop Entry]'
+            #    echo 'Name=Reboot to UEFI'
+            #    echo 'Icon=system-reboot'
+            #    echo 'Exec=systemctl reboot --firmware-setup'
+            #    echo 'Type=Application'
+            #    echo 'Terminal=false'
+            #} >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/systemctl-reboot-firmware.desktop"
 
             # Hide desktop Aaplications icons
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/bssh.desktop"
@@ -1491,6 +1492,48 @@ exec_cleanup_installation() {
         process_return 0                                                                                      # Return
     ) &>"$PROCESS_LOG" &
     process_run $! "$process_name"
+}
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# CHROOT HELPER
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+chroot_pacman_remove() {
+    arch-chroot /mnt pacman -Rns --noconfirm "$@" || return 1
+}
+
+# ------------------------------------------------------------------------------------------------
+
+chroot_pacman_install() {
+    local packages=("$@")
+    local pacman_failed="true"
+    # Retry installing packages 5 times (in case of connection issues)
+    for ((i = 1; i < 6; i++)); do
+        # Print updated whiptail info
+        [ "$i" -gt 1 ] && log_warn "${i}. Retry Pacman installation..."
+        # Try installing packages
+        if ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
+            sleep 10 && continue # Wait 10 seconds & try again
+        else
+            pacman_failed="false" && break # Success: break loop
+        fi
+    done
+    # Result
+    [ "$pacman_failed" = "true" ] && return 1  # Failed after 5 retries
+    [ "$pacman_failed" = "false" ] && return 0 # Success
+}
+
+# ------------------------------------------------------------------------------------------------
+
+chroot_aur_install() {
+    local repo repo_url repo_tmp_dir
+    repo="$1"
+    repo_url="https://aur.archlinux.org/${repo}.git"
+    repo_tmp_dir=$(mktemp -u "/home/${ARCH_OS_USERNAME}/${repo}.XXXXXXXXXX")
+    sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Disable sudo needs no password rights
+    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$repo_tmp_dir"
+    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $repo_tmp_dir && makepkg -si --noconfirm"
+    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$repo_tmp_dir"
+    sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Enable sudo needs no password rights
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////

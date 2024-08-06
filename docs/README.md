@@ -45,7 +45,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 ## Arch OS Core Features
 
 - Multilingual Support
-- [Minimal Arch Linux](DOCS.md#minimal-installation) (147 packages)
+- [Minimal Arch Linux](DOCS.md#minimal-installation) (~150 packages)
 - [Zen Kernel](DOCS.md#advanced-installation) (configurable)
 - [Swap](DOCS.md#swap) with zram-generator (zstd)
 - [Sole OS](DOCS.md#partitions-layout)
@@ -73,6 +73,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - 32 Bit Support (Multilib)
 - Disk Encryption
 - GNOME Desktop
+  - [Slim Version](DOCS.md#example-installerconf) (Minimal Apps)
   - Wayland optimized
   - Auto Login enabled
   - [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
