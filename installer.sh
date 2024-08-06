@@ -958,7 +958,7 @@ exec_install_desktop() {
             packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
 
             # Utils (https://wiki.archlinux.org/title/File_systems)
-            packages+=(bash-completion git dhcp net-tools inetutils nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
+            packages+=(fwupd bash-completion git dhcp net-tools inetutils nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
 
             # Certificates
             packages+=(ca-certificates)
@@ -1070,14 +1070,14 @@ exec_install_desktop() {
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications"
 
             # Create UEFI Boot desktop entry
-            {
-                echo '[Desktop Entry]'
-                echo 'Name=Reboot to UEFI'
-                echo 'Icon=system-reboot'
-                echo 'Exec=systemctl reboot --firmware-setup'
-                echo 'Type=Application'
-                echo 'Terminal=false'
-            } >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/systemctl-reboot-firmware.desktop"
+            #{
+            #    echo '[Desktop Entry]'
+            #    echo 'Name=Reboot to UEFI'
+            #    echo 'Icon=system-reboot'
+            #    echo 'Exec=systemctl reboot --firmware-setup'
+            #    echo 'Type=Application'
+            #    echo 'Terminal=false'
+            #} >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/systemctl-reboot-firmware.desktop"
 
             # Hide desktop Aaplications icons
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/bssh.desktop"
