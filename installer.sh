@@ -451,7 +451,7 @@ select_preset() {
 select_username() {
     if [ -z "$ARCH_OS_USERNAME" ]; then
         local user_input
-        user_input=$(gum_input --header "+ Enter Username") || trap_gum_exit_confirm
+        user_input=$(gum_input --header "+ Enter Username (mandatory)") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                      # Check if new value is null
         ARCH_OS_USERNAME="$user_input" && properties_generate # Set value and generate properties file
     fi
@@ -463,7 +463,7 @@ select_username() {
 select_password() { # --force
     if [ "$1" = "--force" ] || [ -z "$ARCH_OS_PASSWORD" ]; then
         local user_password user_password_check
-        user_password=$(gum_input --password --header "+ Enter Password") || trap_gum_exit_confirm
+        user_password=$(gum_input --password --header "+ Enter Password (mandatory)") || trap_gum_exit_confirm
         [ -z "$user_password" ] && return 1 # Check if new value is null
         user_password_check=$(gum_input --password --header "+ Enter Password again") || trap_gum_exit_confirm
         [ -z "$user_password_check" ] && return 1 # Check if new value is null
@@ -492,13 +492,14 @@ select_timezone() {
 # shellcheck disable=SC2001
 select_language() {
     if [ -z "$ARCH_OS_LOCALE_LANG" ] || [ -z "${ARCH_OS_LOCALE_GEN_LIST[*]}" ]; then
-        local user_input items options
+        local user_input items options filter
         # Fetch available options (list all from /usr/share/i18n/locales and check if entry exists in /etc/locale.gen)
         mapfile -t items < <(basename -a /usr/share/i18n/locales/* | grep -v "@") # Create array without @ files
         # Add only available locales (!!! intense command !!!)
         options=() && for item in "${items[@]}"; do grep -q -e "^$item" -e "^#$item" /etc/locale.gen && options+=("$item"); done
         # Select locale
-        user_input=$(gum_filter --header "+ Choose Language" "${options[@]}") || trap_gum_exit_confirm
+        filter=$(history | grep loadkeys | tail -n 1 | cut -d' ' -f2 | cut -d'-' -f1)
+        user_input=$(gum_filter --value "$filter" --header "+ Choose Language" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1  # Check if new value is null
         ARCH_OS_LOCALE_LANG="$user_input" # Set property
         # Set locale.gen properties (auto generate ARCH_OS_LOCALE_GEN_LIST)
@@ -516,10 +517,11 @@ select_language() {
 
 select_keyboard() {
     if [ -z "$ARCH_OS_VCONSOLE_KEYMAP" ]; then
-        local user_input items options
+        local user_input items options filter
         mapfile -t items < <(command localectl list-keymaps)
         options=() && for item in "${items[@]}"; do options+=("$item"); done
-        user_input=$(gum_filter --header "+ Choose Keyboard" "${options[@]}") || trap_gum_exit_confirm
+        filter=$(history | grep loadkeys | tail -n 1 | cut -d' ' -f2 | cut -d'-' -f1)
+        user_input=$(gum_filter --value "$filter" --header "+ Choose Keyboard" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                             # Check if new value is null
         ARCH_OS_VCONSOLE_KEYMAP="$user_input" && properties_generate # Set value and generate properties file
     fi
@@ -617,10 +619,10 @@ select_enable_desktop() {
     gum_info "Desktop Slim Mode is set to ${ARCH_OS_DESKTOP_SLIM_ENABLED}"
     # Keyboard layout
     if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
-        user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout" --value "us" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
+        user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout (mandatory)" --value "us" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
         ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input"
-        user_input=$(gum_input --header "+ Enter Desktop Keyboard Variant" --value "" --placeholder "e.g. 'nodeadkeys' or leave empty...") || trap_gum_exit_confirm
+        user_input=$(gum_input --header "+ Enter Desktop Keyboard Variant (optional)" --value "" --placeholder "e.g. 'nodeadkeys' or leave empty...") || trap_gum_exit_confirm
         ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input"
         properties_generate
     fi
@@ -630,7 +632,7 @@ select_enable_desktop() {
     # Graphics driver
     if [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] || [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" = "none" ]; then
         options=("mesa" "intel_i915" "nvidia" "amd" "ati")
-        user_input=$(gum_choose --header "+ Choose Desktop Graphics Driver" "${options[@]}") || trap_gum_exit_confirm
+        user_input=$(gum_choose --header "+ Choose Desktop Graphics Driver (default: mesa)" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                                     # Check if new value is null
         ARCH_OS_DESKTOP_GRAPHICS_DRIVER="$user_input" && properties_generate # Set value and generate properties file
     fi
@@ -1025,7 +1027,23 @@ exec_install_desktop() {
             arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
             # Enable GNOME auto login
-            grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
+            #grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
+            mkdir -p /mnt/etc/gdm
+            {
+                echo "[daemon]"
+                echo "#WaylandEnable=false"
+                echo ""
+                echo "AutomaticLoginEnable=True"
+                echo "AutomaticLogin=moritz"
+                echo ""
+                echo "[security]"
+                echo ""
+                echo "[xdmcp]"
+                echo ""
+                echo "[chooser]"
+                echo ""
+                echo "[debug]"
+            } >/mnt/etc/gdm/custom.conf
 
             # Set git-credential-libsecret in ~/.gitconfig
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git config --global credential.helper /usr/lib/git-core/git-credential-libsecret

@@ -86,6 +86,8 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 ## Installing Arch OS
 
+To install Arch OS, an internet connection is required, as many packages will be downloaded during the installation process.
+
 ### 1. Prepare bootable USB Device
 
 - Download latest Arch Linux ISO from **[archlinux.org](https://www.archlinux.org/download)** or **[archlinux.de](https://www.archlinux.de/download)**
