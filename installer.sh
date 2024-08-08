@@ -82,7 +82,7 @@ main() {
             gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config -> exit script
             rm -f "$SCRIPT_CONFIG" && gum_info "installer.conf successfully removed"
             gum_spin --title="Restart Arch OS Installer in 3 seconds..." -- sleep 3 || trap_gum_exit
-            exec "$0" "$@"
+            exec "$(dirname "$0")/installer.sh" "$@"
             exit 0
         fi
 
