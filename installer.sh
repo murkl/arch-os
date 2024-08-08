@@ -26,7 +26,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # VERSION
-VERSION='1.5.9'
+VERSION='1.6.0'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -739,7 +739,8 @@ exec_init_installation() {
         # This mirrorlist will copied to new Arch system during installation
         while timeout 180 tail --pid=$(pgrep reflector) -f /dev/null &>/dev/null; do sleep 1; done
         pgrep reflector &>/dev/null && log_fail "Reflector timeout after 180 seconds" && exit 1
-        timedatectl set-ntp true # Set time
+        rm -f /var/lib/pacman/db.lck # Remove pacman lock file if exists
+        timedatectl set-ntp true     # Set time
         # Make sure everything is unmounted before start install
         swapoff -a || true
         if [[ "$(umount -f -A -R /mnt 2>&1)" == *"target is busy"* ]]; then
@@ -1070,6 +1071,7 @@ exec_install_desktop() {
             arch-chroot /mnt systemctl enable cups.socket                                                              # Printer
             arch-chroot /mnt systemctl enable smb.service                                                              # Samba
             arch-chroot /mnt systemctl enable nmb.service                                                              # Samba
+            arch-chroot /mnt systemctl enable gpm.service                                                              # TTY Mouse Support
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
