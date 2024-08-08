@@ -81,6 +81,9 @@ main() {
         if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
             gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config -> exit script
             rm -f "$SCRIPT_CONFIG" && gum_info "installer.conf successfully removed"
+            gum_spin --title="Restart Arch OS Installer in 3 seconds..." -- sleep 3 || trap_gum_exit
+            exec "$BASH" "$0" "$@"
+            exit 0
         fi
 
         # Source installer.conf if exists
@@ -112,13 +115,19 @@ main() {
             local gum_header="Save with CTRL + D or ESC and cancel with CTRL + C"
             if gum_write --height=10 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
+                gum_info "installer.conf successfully edited"
+                gum_confirm "Change Password?" && until select_password --force && properties_source; do :; done
+                gum_spin --title="Reload Properties in 5 seconds..." -- sleep 5 || trap_gum_exit
+                continue # Restart properties step to refresh properties screen
+            else
+                rm -f "${SCRIPT_CONFIG}.new" # Remove tmp properties
+                gum_warn "Canceled"
             fi
-            rm -f "${SCRIPT_CONFIG}.new" # Remove tmp properties
-            gum_confirm "Change Password?" && until select_password --force; do :; done
-            continue # Restart properties step to refresh log above if changed
         fi
 
+        ######################################################
         break # Exit properties step and continue installation
+        ######################################################
     done
 
     # ------------------------------------------------------------------------------------------------
