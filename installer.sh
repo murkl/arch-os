@@ -622,10 +622,10 @@ select_enable_desktop() {
     gum_info "Desktop Slim Mode is set to ${ARCH_OS_DESKTOP_SLIM_ENABLED}"
     # Keyboard layout
     if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
-        user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout (mandatory)" --value "us" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
+        user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout (mandatory)" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
         ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input"
-        user_input=$(gum_input --header "+ Enter Desktop Keyboard Variant (optional)" --value "" --placeholder "e.g. 'nodeadkeys' or leave empty...") || trap_gum_exit_confirm
+        user_input=$(gum_input --header "+ Enter Desktop Keyboard Variant (optional)" --placeholder "e.g. 'nodeadkeys' or leave empty...") || trap_gum_exit_confirm
         ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input"
         properties_generate
     fi
