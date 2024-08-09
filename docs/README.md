@@ -119,3 +119,11 @@ _Cancel the Arch OS Installer with `ctrl + c`_
 Further information can be found in the documentation.
 
 **[➜ Open Arch OS Docs](DOCS.md)**
+
+<p><img src="./screenshots/desktop_demo.jpg"></p>
+
+<center>
+
+_Arch OS Demo Desktop_
+
+</center>

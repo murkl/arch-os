@@ -255,7 +255,7 @@ fish_config
 
 **GitHub Project ➜ [github.com/murkl/arch-os-manager](https://github.com/murkl/arch-os-manager)**
 
-<p><img src="screenshots/manager.jpg"></p>
+<p><img src="screenshots/arch-os-manager.png"></p>
 
 Install **➜ [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/)** and set this in extension options to integrate [Arch OS Manager](https://github.com/murkl/arch-os-manager):
 
