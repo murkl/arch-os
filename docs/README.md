@@ -15,7 +15,7 @@
 
 </b></p>
 
-<p><img src="./screenshots/installer.png"></p>
+<p><img src="./screenshots/installer_start_installation.png"></p>
 
 <p><b>
 
@@ -122,9 +122,9 @@ Further information can be found in the documentation.
 
 <br>
 
-<p><img src="./screenshots/desktop_demo.jpg"></p>
-
 <div align="center">
+
+<p><img src="./screenshots/desktop_demo.jpg"></p>
 
 _Arch OS Demo Desktop_
 

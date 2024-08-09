@@ -255,7 +255,7 @@ fish_config
 
 **GitHub Project ➜ [github.com/murkl/arch-os-manager](https://github.com/murkl/arch-os-manager)**
 
-<p><img src="screenshots/arch-os-manager.png"></p>
+<p><img src="screenshots/arch_os_manager.png"></p>
 
 Install **➜ [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/)** and set this in extension options to integrate [Arch OS Manager](https://github.com/murkl/arch-os-manager):
 
@@ -429,7 +429,7 @@ curl -Ls bit.ly/arch-os-dev | bash
 
 ### Apps
 
-<p><img src="screenshots/apps.png"></p>
+<p><img src="screenshots/desktop_apps.png"></p>
 
 ### Shell Enhancement
 
@@ -437,11 +437,13 @@ curl -Ls bit.ly/arch-os-dev | bash
 
 ### Arch OS Installer
 
-<p><img src="screenshots/installer_01.png"></p>
-<p><img src="screenshots/installer_02.png"></p>
-<p><img src="screenshots/installer_03.png"></p>
-<p><img src="screenshots/installer_04.png"></p>
-<p><img src="screenshots/installer_05.png"></p>
-<p><img src="screenshots/installer_06.png"></p>
+<p><img src="screenshots/installer_preset.png"></p>
+<p><img src="screenshots/installer_language.png"></p>
+<p><img src="screenshots/installer_disk.png"></p>
+<p><img src="screenshots/installer_driver.png"></p>
+<p><img src="screenshots/installer_slim.png"></p>
+<p><img src="screenshots/installer_start_installation.png"></p>
+<p><img src="screenshots/installer_process.png"></p>
+<p><img src="screenshots/installer_load_properties.png"></p>
 
 </div>
