@@ -437,6 +437,7 @@ curl -Ls bit.ly/arch-os-dev | bash
 
 ### Arch OS Installer
 
+<p><img src="screenshots/installer_load_properties.png"></p>
 <p><img src="screenshots/installer_preset.png"></p>
 <p><img src="screenshots/installer_language.png"></p>
 <p><img src="screenshots/installer_disk.png"></p>
@@ -444,6 +445,5 @@ curl -Ls bit.ly/arch-os-dev | bash
 <p><img src="screenshots/installer_slim.png"></p>
 <p><img src="screenshots/installer_start_installation.png"></p>
 <p><img src="screenshots/installer_process.png"></p>
-<p><img src="screenshots/installer_load_properties.png"></p>
 
 </div>
