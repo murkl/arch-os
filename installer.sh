@@ -1034,7 +1034,7 @@ exec_install_desktop() {
                 echo "#WaylandEnable=false"
                 echo ""
                 echo "AutomaticLoginEnable=True"
-                echo "AutomaticLogin=moritz"
+                echo "AutomaticLogin=${ARCH_OS_USERNAME}"
                 echo ""
                 echo "[security]"
                 echo ""
