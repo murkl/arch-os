@@ -1028,23 +1028,24 @@ exec_install_desktop() {
             arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
             # Enable GNOME auto login
-            #grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
             mkdir -p /mnt/etc/gdm
-            {
-                echo "[daemon]"
-                echo "#WaylandEnable=false"
-                echo ""
-                echo "AutomaticLoginEnable=True"
-                echo "AutomaticLogin=${ARCH_OS_USERNAME}"
-                echo ""
-                echo "[security]"
-                echo ""
-                echo "[xdmcp]"
-                echo ""
-                echo "[chooser]"
-                echo ""
-                echo "[debug]"
-            } >/mnt/etc/gdm/custom.conf
+            grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
+            # WORKAROUND?
+            #{
+            #    echo "[daemon]"
+            #    echo "#WaylandEnable=false"
+            #    echo ""
+            #    echo "AutomaticLoginEnable=True"
+            #    echo "AutomaticLogin=${ARCH_OS_USERNAME}"
+            #    echo ""
+            #    echo "[security]"
+            #    echo ""
+            #    echo "[xdmcp]"
+            #    echo ""
+            #    echo "[chooser]"
+            #    echo ""
+            #    echo "[debug]"
+            #} >/mnt/etc/gdm/custom.conf
 
             # Set git-credential-libsecret in ~/.gitconfig
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git config --global credential.helper /usr/lib/git-core/git-credential-libsecret
