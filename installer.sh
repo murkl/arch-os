@@ -498,7 +498,7 @@ select_language() {
         options=() && for item in "${items[@]}"; do grep -q -e "^$item" -e "^#$item" /etc/locale.gen && options+=("$item"); done
         # Select locale
         filter=$(history | grep 'loadkeys' | tail -n 1 | cut -d' ' -f7 | cut -d'-' -f1)
-        user_input=$(gum_filter --value "$filter" --header "+ Choose Language" "${options[@]}") || trap_gum_exit_confirm
+        user_input=$(gum_filter --value="$filter" --header "+ Choose Language" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1  # Check if new value is null
         ARCH_OS_LOCALE_LANG="$user_input" # Set property
         # Set locale.gen properties (auto generate ARCH_OS_LOCALE_GEN_LIST)
@@ -520,7 +520,7 @@ select_keyboard() {
         mapfile -t items < <(command localectl list-keymaps)
         options=() && for item in "${items[@]}"; do options+=("$item"); done
         filter=$(history | grep 'loadkeys' | tail -n 1 | cut -d' ' -f7 | cut -d'-' -f1)
-        user_input=$(gum_filter --value "$filter" --header "+ Choose Keyboard" "${options[@]}") || trap_gum_exit_confirm
+        user_input=$(gum_filter --value="$filter" --header "+ Choose Keyboard" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                             # Check if new value is null
         ARCH_OS_VCONSOLE_KEYMAP="$user_input" && properties_generate # Set value and generate properties file
     fi
