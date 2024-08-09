@@ -120,6 +120,8 @@ Further information can be found in the documentation.
 
 **[➜ Open Arch OS Docs](DOCS.md)**
 
+<br>
+
 <p><img src="./screenshots/desktop_demo.jpg"></p>
 
 <div align="center">
