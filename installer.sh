@@ -497,7 +497,8 @@ select_language() {
         # Add only available locales (!!! intense command !!!)
         options=() && for item in "${items[@]}"; do grep -q -e "^$item" -e "^#$item" /etc/locale.gen && options+=("$item"); done
         # Select locale
-        filter=$(history | grep 'loadkeys' | tail -n 1 | cut -d' ' -f7 | cut -d'-' -f1)
+        #filter=$(history | grep 'loadkeys' | tail -n 1 | cut -d' ' -f7 | cut -d'-' -f1)
+        filter=$(history | grep "loadkeys" | tail -n 1 | awk '{print $2}')
         user_input=$(gum_filter --value="$filter" --header "+ Choose Language" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1  # Check if new value is null
         ARCH_OS_LOCALE_LANG="$user_input" # Set property
