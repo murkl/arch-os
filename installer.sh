@@ -116,7 +116,7 @@ main() {
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
                 gum_info "installer.conf successfully edited"
                 gum_confirm "Change Password?" && until select_password --force && properties_source; do :; done
-                gum_spin --title="Reload Properties in 5 seconds..." -- sleep 5 || trap_gum_exit
+                gum_spin --title="Reload Properties in 3 seconds..." -- sleep 3 || trap_gum_exit
                 continue # Restart properties step to refresh properties screen
             else
                 rm -f "${SCRIPT_CONFIG}.new" # Remove tmp properties
