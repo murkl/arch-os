@@ -15,7 +15,7 @@
 
 </b></p>
 
-<p><img src="./screenshots/installer_core_complete.png"></p>
+<p><img src="./screenshots/installer_start.png"></p>
 
 <p><b>
 

@@ -443,7 +443,7 @@ curl -Ls bit.ly/arch-os-dev | bash
 <p><img src="screenshots/installer_disk.png"></p>
 <p><img src="screenshots/installer_driver.png"></p>
 <p><img src="screenshots/installer_slim.png"></p>
-<p><img src="screenshots/installer_start_installation.png"></p>
+<p><img src="screenshots/installer_start.png"></p>
 <p><img src="screenshots/installer_process.png"></p>
 <p><img src="screenshots/installer_finish.png"></p>
 <p><img src="screenshots/installer_core_complete.png"></p>
