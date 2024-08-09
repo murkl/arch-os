@@ -39,10 +39,6 @@ ERROR_MSG="${SCRIPT_TMP_DIR}/installer.err"
 PROCESS_LOG="${SCRIPT_TMP_DIR}/process.log"
 PROCESS_RET="${SCRIPT_TMP_DIR}/process.ret"
 
-# COUNTER
-MENU_COUNTER=0
-MENU_COUNTER_MAX=18
-
 # COLORS
 COLOR_WHITE=251
 COLOR_GREEN=36
@@ -93,21 +89,21 @@ main() {
         properties_source && gum_info "installer.conf successfully loaded"
 
         # Selectors
-        until select_preset; do :; done && MENU_COUNTER=$((MENU_COUNTER + 1)) && MENU_COUNTER=$(printf "%02d\n" "$MENU_COUNTER")
-        until select_username; do :; done && MENU_COUNTER=$((MENU_COUNTER + 1)) && MENU_COUNTER=$(printf "%02d\n" "$MENU_COUNTER")
-        until select_password; do :; done && MENU_COUNTER=$((MENU_COUNTER + 1)) && MENU_COUNTER=$(printf "%02d\n" "$MENU_COUNTER")
-        until select_timezone; do :; done && MENU_COUNTER=$((MENU_COUNTER + 1)) && MENU_COUNTER=$(printf "%02d\n" "$MENU_COUNTER")
-        until select_language; do :; done && MENU_COUNTER=$((MENU_COUNTER + 1)) && MENU_COUNTER=$(printf "%02d\n" "$MENU_COUNTER")
-        until select_keyboard; do :; done && MENU_COUNTER=$((MENU_COUNTER + 1)) && MENU_COUNTER=$(printf "%02d\n" "$MENU_COUNTER")
-        until select_disk; do :; done && MENU_COUNTER=$((MENU_COUNTER + 1))  && MENU_COUNTER=$(printf "%02d\n" "$MENU_COUNTER")
-        until select_enable_encryption; do :; done && MENU_COUNTER=$((MENU_COUNTER + 1)) 
-        until select_enable_bootsplash; do :; done && MENU_COUNTER=$((MENU_COUNTER + 1)) 
-        until select_enable_multilib; do :; done && MENU_COUNTER=$((MENU_COUNTER + 1)) 
-        until select_enable_aur; do :; done && MENU_COUNTER=$((MENU_COUNTER + 1)) 
-        until select_enable_housekeeping; do :; done && MENU_COUNTER=$((MENU_COUNTER + 1)) 
-        until select_enable_shell_enhancement; do :; done && MENU_COUNTER=$((MENU_COUNTER + 1)) 
-        until select_enable_manager; do :; done && MENU_COUNTER=$((MENU_COUNTER + 1)) 
-        until select_enable_desktop; do :; done && MENU_COUNTER=$((MENU_COUNTER + 1)) 
+        until select_preset; do :; done
+        until select_username; do :; done
+        until select_password; do :; done
+        until select_timezone; do :; done
+        until select_language; do :; done
+        until select_keyboard; do :; done
+        until select_disk; do :; done
+        until select_enable_encryption; do :; done
+        until select_enable_bootsplash; do :; done
+        until select_enable_multilib; do :; done
+        until select_enable_aur; do :; done
+        until select_enable_housekeeping; do :; done
+        until select_enable_shell_enhancement; do :; done
+        until select_enable_manager; do :; done
+        until select_enable_desktop; do :; done
 
         # Print success
         gum_info "installer.conf successfully initialized"
@@ -458,7 +454,7 @@ select_username() {
         [ -z "$user_input" ] && return 1                      # Check if new value is null
         ARCH_OS_USERNAME="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] Username is set to ${ARCH_OS_USERNAME}"
+    gum_info "Username is set to ${ARCH_OS_USERNAME}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -473,7 +469,7 @@ select_password() { # --force
         [ "$user_password" != "$user_password_check" ] && gum_fail "Passwords not identical" && return 1
         ARCH_OS_PASSWORD="$user_password" && properties_generate # Set value and generate properties file
     fi
-    gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] Password is set to *******"
+    gum_info "Password is set to *******"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -487,7 +483,7 @@ select_timezone() {
         [ ! -f "/usr/share/zoneinfo/${user_input}" ] && gum_fail "Timezone '${user_input}' is not supported" && return 1
         ARCH_OS_TIMEZONE="$user_input" && properties_generate # Set property and generate properties file
     fi
-    gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] Timezone is set to ${ARCH_OS_TIMEZONE}"
+    gum_info "Timezone is set to ${ARCH_OS_TIMEZONE}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -514,7 +510,7 @@ select_language() {
         [[ "${ARCH_OS_LOCALE_GEN_LIST[*]}" != *'en_US.UTF-8 UTF-8'* ]] && ARCH_OS_LOCALE_GEN_LIST+=('en_US.UTF-8 UTF-8')
         properties_generate # Generate properties file (for ARCH_OS_LOCALE_LANG & ARCH_OS_LOCALE_GEN_LIST)
     fi
-    gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] Language is set to ${ARCH_OS_LOCALE_LANG}"
+    gum_info "Language is set to ${ARCH_OS_LOCALE_LANG}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -530,7 +526,7 @@ select_keyboard() {
         [ -z "$user_input" ] && return 1                             # Check if new value is null
         ARCH_OS_VCONSOLE_KEYMAP="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] Keyboard is set to ${ARCH_OS_VCONSOLE_KEYMAP}"
+    gum_info "Keyboard is set to ${ARCH_OS_VCONSOLE_KEYMAP}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -550,7 +546,7 @@ select_disk() {
         [[ "$ARCH_OS_DISK" = "/dev/nvm"* ]] && ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}p2" || ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}2"
         properties_generate # Generate properties file
     fi
-    gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] Disk is set to ${ARCH_OS_DISK}"
+    gum_info "Disk is set to ${ARCH_OS_DISK}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -568,7 +564,7 @@ select_enable_encryption() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_ENCRYPTION_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] Disk Encryption is set to ${ARCH_OS_ENCRYPTION_ENABLED}"
+    gum_info "Disk Encryption is set to ${ARCH_OS_ENCRYPTION_ENABLED}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -586,7 +582,7 @@ select_enable_bootsplash() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_BOOTSPLASH_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] Bootsplash is set to ${ARCH_OS_BOOTSPLASH_ENABLED}"
+    gum_info "Bootsplash is set to ${ARCH_OS_BOOTSPLASH_ENABLED}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -605,7 +601,7 @@ select_enable_desktop() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_DESKTOP_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] Desktop Environment is set to ${ARCH_OS_DESKTOP_ENABLED}"
+    gum_info "Desktop Environment is set to ${ARCH_OS_DESKTOP_ENABLED}"
     # Return if desktop disabled
     [ "$ARCH_OS_DESKTOP_ENABLED" = "false" ] && return 0
 
@@ -621,7 +617,7 @@ select_enable_desktop() {
         [ $user_confirm = 0 ] && user_input="false"
         ARCH_OS_DESKTOP_SLIM_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] Desktop Slim Mode is set to ${ARCH_OS_DESKTOP_SLIM_ENABLED}"
+    gum_info "Desktop Slim Mode is set to ${ARCH_OS_DESKTOP_SLIM_ENABLED}"
     # Keyboard layout
     if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
         user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout (mandatory)" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
@@ -631,8 +627,8 @@ select_enable_desktop() {
         ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input"
         properties_generate
     fi
-    gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] Desktop Keyboard Layout is set to ${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}"
-    [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] Desktop Keyboard Variant is set to ${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}"
+    gum_info "Desktop Keyboard Layout is set to ${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}"
+    [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gum_info "Desktop Keyboard Variant is set to ${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}"
 
     # Graphics driver
     if [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] || [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" = "none" ]; then
@@ -641,7 +637,7 @@ select_enable_desktop() {
         [ -z "$user_input" ] && return 1                                     # Check if new value is null
         ARCH_OS_DESKTOP_GRAPHICS_DRIVER="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] Desktop Graphics Driver is set to ${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}"
+    gum_info "Desktop Graphics Driver is set to ${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}"
     return 0
 }
 
@@ -660,7 +656,7 @@ select_enable_aur() {
         [ $user_confirm = 0 ] && user_input="paru-bin"
         ARCH_OS_AUR_HELPER="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
+    gum_info "AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -678,7 +674,7 @@ select_enable_multilib() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_MULTILIB_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] 32 Bit Support is set to ${ARCH_OS_MULTILIB_ENABLED}"
+    gum_info "32 Bit Support is set to ${ARCH_OS_MULTILIB_ENABLED}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -696,7 +692,7 @@ select_enable_housekeeping() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_HOUSEKEEPING_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] Housekeeping is set to ${ARCH_OS_HOUSEKEEPING_ENABLED}"
+    gum_info "Housekeeping is set to ${ARCH_OS_HOUSEKEEPING_ENABLED}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -714,7 +710,7 @@ select_enable_shell_enhancement() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_SHELL_ENHANCEMENT_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
+    gum_info "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -732,7 +728,7 @@ select_enable_manager() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_MANAGER_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "[${MENU_COUNTER}/${MENU_COUNTER_MAX}] Arch OS Manager is set to ${ARCH_OS_MANAGER_ENABLED}"
+    gum_info "Arch OS Manager is set to ${ARCH_OS_MANAGER_ENABLED}"
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
