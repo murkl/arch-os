@@ -607,7 +607,7 @@ select_enable_desktop() {
 
     # Slim Mode
     if [ -z "$ARCH_OS_DESKTOP_SLIM_ENABLED" ]; then
-        gum_confirm "Enable Desktop Slim Mode? (Install only minimal set of GNOME Apps)" --affirmative="No (default)" --negative="Yes"
+        gum_confirm "Enable Desktop Slim Mode? (GNOME Core Apps only)" --affirmative="No (default)" --negative="Yes"
         local user_confirm=$?
         [ $user_confirm = 130 ] && {
             trap_gum_exit_confirm
