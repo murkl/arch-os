@@ -26,7 +26,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # VERSION
-VERSION='1.6.0'
+VERSION='1.6.0-a'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -497,8 +497,9 @@ select_language() {
         # Add only available locales (!!! intense command !!!)
         options=() && for item in "${items[@]}"; do grep -q -e "^$item" -e "^#$item" /etc/locale.gen && options+=("$item"); done
         # Select locale
+        #filter=$(history | grep "loadkeys" | tail -n 1 | awk '{print $2}')
         #filter=$(history | grep 'loadkeys' | tail -n 1 | cut -d' ' -f7 | cut -d'-' -f1)
-        filter=$(history | grep "loadkeys" | tail -n 1 | awk '{print $2}')
+        filter=$(history | grep 'loadkeys' | tail -n 1 | cut -d';' -f2 | cut -d' ' -f2 | cut -d'-' -f1)
         user_input=$(gum_filter --value="$filter" --header "+ Choose Language" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1  # Check if new value is null
         ARCH_OS_LOCALE_LANG="$user_input" # Set property
