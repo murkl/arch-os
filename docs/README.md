@@ -122,8 +122,8 @@ Further information can be found in the documentation.
 
 <p><img src="./screenshots/desktop_demo.jpg"></p>
 
-<center>
+<div align="center">
 
 _Arch OS Demo Desktop_
 
-</center>
+</div>
