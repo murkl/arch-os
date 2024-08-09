@@ -18,7 +18,7 @@
 
 ## Recommendation
 
-<p><img src="screenshots/desktop.jpg"></p>
+<p><img src="screenshots/desktop_demo.jpg"></p>
 
 For a robust & stable Arch OS experience, install as few additional packages from the official [Arch Repository](https://archlinux.org/packages) or [AUR](https://aur.archlinux.org) as possible. Instead, use [Flatpak](https://flathub.org) or [GNOME Software](https://apps.gnome.org). Furthermore change system files only if absolutely necessary and perform regular package upgrades.
 
@@ -255,7 +255,7 @@ fish_config
 
 **GitHub Project ➜ [github.com/murkl/arch-os-manager](https://github.com/murkl/arch-os-manager)**
 
-<p><img src="screenshots/manager.jpg"></p>
+<p><img src="screenshots/arch_os_manager.png"></p>
 
 Install **➜ [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/)** and set this in extension options to integrate [Arch OS Manager](https://github.com/murkl/arch-os-manager):
 
@@ -425,11 +425,11 @@ curl -Ls bit.ly/arch-os-dev | bash
 
 ### Arch OS Desktop
 
-<p><img src="screenshots/desktop.jpg"></p>
+<p><img src="screenshots/desktop_demo.jpg"></p>
 
-### Apps
+### GNOME Core Apps
 
-<p><img src="screenshots/apps.png"></p>
+<p><img src="screenshots/desktop_apps.png"></p>
 
 ### Shell Enhancement
 
@@ -437,11 +437,15 @@ curl -Ls bit.ly/arch-os-dev | bash
 
 ### Arch OS Installer
 
-<p><img src="screenshots/installer_01.png"></p>
-<p><img src="screenshots/installer_02.png"></p>
-<p><img src="screenshots/installer_03.png"></p>
-<p><img src="screenshots/installer_04.png"></p>
-<p><img src="screenshots/installer_05.png"></p>
-<p><img src="screenshots/installer_06.png"></p>
+<p><img src="screenshots/installer_load_properties.png"></p>
+<p><img src="screenshots/installer_preset.png"></p>
+<p><img src="screenshots/installer_language.png"></p>
+<p><img src="screenshots/installer_disk.png"></p>
+<p><img src="screenshots/installer_driver.png"></p>
+<p><img src="screenshots/installer_slim.png"></p>
+<p><img src="screenshots/installer_start.png"></p>
+<p><img src="screenshots/installer_process.png"></p>
+<p><img src="screenshots/installer_finish.png"></p>
+<p><img src="screenshots/installer_core_complete.png"></p>
 
 </div>

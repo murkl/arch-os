@@ -15,7 +15,7 @@
 
 </b></p>
 
-<p><img src="./screenshots/installer.png"></p>
+<p><img src="./screenshots/installer_start.png"></p>
 
 <p><b>
 
@@ -86,6 +86,8 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 ## Installing Arch OS
 
+To install Arch OS, an internet connection is required, as many packages will be downloaded during the installation process.
+
 ### 1. Prepare bootable USB Device
 
 - Download latest Arch Linux ISO from **[archlinux.org](https://www.archlinux.org/download)** or **[archlinux.de](https://www.archlinux.de/download)**
@@ -108,6 +110,8 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 curl -Ls bit.ly/arch-os | bash
 ```
 
+_Cancel the Arch OS Installer with `ctrl + c`_
+
 **[➜ See Advanced Installation](DOCS.md#advanced-installation)**
 
 ## More Information
@@ -115,3 +119,13 @@ curl -Ls bit.ly/arch-os | bash
 Further information can be found in the documentation.
 
 **[➜ Open Arch OS Docs](DOCS.md)**
+
+<br>
+
+<div align="center">
+
+<p><img src="./screenshots/desktop_demo.jpg"></p>
+
+_Arch OS Demo Desktop_
+
+</div>
