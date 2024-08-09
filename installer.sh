@@ -26,7 +26,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # VERSION
-VERSION='1.6.0-a'
+VERSION='1.6.0'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
