@@ -427,7 +427,7 @@ curl -Ls bit.ly/arch-os-dev | bash
 
 <p><img src="screenshots/desktop_demo.jpg"></p>
 
-### Apps
+### GNOME Core Apps
 
 <p><img src="screenshots/desktop_apps.png"></p>
 
