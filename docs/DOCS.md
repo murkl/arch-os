@@ -434,15 +434,17 @@ curl -Ls bit.ly/arch-os-dev | bash
 
 ### Arch OS Installer
 
-<p><img src="screenshots/installer_load_properties.png"></p>
-<p><img src="screenshots/installer_preset.png"></p>
-<p><img src="screenshots/installer_language.png"></p>
-<p><img src="screenshots/installer_disk.png"></p>
-<p><img src="screenshots/installer_driver.png"></p>
-<p><img src="screenshots/installer_slim.png"></p>
-<p><img src="screenshots/installer_start.png"></p>
-<p><img src="screenshots/installer_process.png"></p>
-<p><img src="screenshots/installer_finish.png"></p>
-<p><img src="screenshots/installer_core_complete.png"></p>
+<p>
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_load_properties.png">
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_preset.png">
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_language.png">
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_disk.png">
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_driver.png">
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_slim.png">
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_start.png">
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_process.png">
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_finish.png">
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_core_complete.png">
+</p>
 
 </div>
