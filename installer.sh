@@ -969,8 +969,8 @@ exec_install_desktop() {
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
             # GNOME base packages
-            local packages=(gnome gdm gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer)
-            [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && packages=(gnome-firmware file-roller)
+            local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer)
+            [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && packages+=(gnome-firmware file-roller)
 
             # GNOME wayland screensharing, flatpak & pipewire support
             packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
