@@ -442,8 +442,6 @@ curl -Ls bit.ly/arch-os-dev | bash
 <img width="24%" style="vertical-align: top;" src="screenshots/installer_driver.png">
 <img width="24%" style="vertical-align: top;" src="screenshots/installer_slim.png">
 <img width="24%" style="vertical-align: top;" src="screenshots/installer_start.png">
-<img width="24%" style="vertical-align: top;" src="screenshots/installer_process.png">
-<img width="24%" style="vertical-align: top;" src="screenshots/installer_finish.png">
 <img width="24%" style="vertical-align: top;" src="screenshots/installer_core_complete.png">
 </p>
 
