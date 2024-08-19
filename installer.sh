@@ -26,7 +26,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # VERSION
-VERSION='1.6.0'
+VERSION='1.6.1'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -503,10 +503,12 @@ select_language() {
         [ -z "$user_input" ] && return 1  # Check if new value is null
         ARCH_OS_LOCALE_LANG="$user_input" # Set property
         # Set locale.gen properties (auto generate ARCH_OS_LOCALE_GEN_LIST)
+
         ARCH_OS_LOCALE_GEN_LIST=() && while read -r locale_entry; do
             ARCH_OS_LOCALE_GEN_LIST+=("$locale_entry")
+            # Remove leading # from matched lang in /etc/locale.gen and add entry to array
         done < <(sed "/^#${ARCH_OS_LOCALE_LANG}/s/^#//" /etc/locale.gen | grep "$ARCH_OS_LOCALE_LANG")
-        # Add en_US fallback (every language)
+        # Add en_US fallback (every language) if not already exists in list
         [[ "${ARCH_OS_LOCALE_GEN_LIST[*]}" != *'en_US.UTF-8 UTF-8'* ]] && ARCH_OS_LOCALE_GEN_LIST+=('en_US.UTF-8 UTF-8')
         properties_generate # Generate properties file (for ARCH_OS_LOCALE_LANG & ARCH_OS_LOCALE_GEN_LIST)
     fi
@@ -780,11 +782,12 @@ exec_prepare_disk() {
         [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
         # Wipe and create partitions
-        wipefs -af "$ARCH_OS_DISK"                            # Wipe all partitions
-        sgdisk -o "$ARCH_OS_DISK"                             # Create new GPT partition table
-        sgdisk -n 1:0:+1G -t 1:ef00 -c 1:boot "$ARCH_OS_DISK" # Create partition /boot efi partition: 1 GiB
-        sgdisk -n 2:0:0 -t 2:8300 -c 2:root "$ARCH_OS_DISK"   # Create partition / partition: Rest of space
-        partprobe "$ARCH_OS_DISK"                             # Reload partition table
+        wipefs -af "$ARCH_OS_DISK"                                        # Remove All Filesystem Signatures
+        sgdisk --zap-all "$ARCH_OS_DISK"                                  # Remove the Partition Table
+        sgdisk -o "$ARCH_OS_DISK"                                         # Create new GPT partition table
+        sgdisk -n 1:0:+1G -t 1:ef00 -c 1:boot --align-end "$ARCH_OS_DISK" # Create partition /boot efi partition: 1 GiB
+        sgdisk -n 2:0:0 -t 2:8300 -c 2:root --align-end "$ARCH_OS_DISK"   # Create partition / partition: Rest of space
+        partprobe "$ARCH_OS_DISK"                                         # Reload partition table
 
         # Disk encryption
         if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
