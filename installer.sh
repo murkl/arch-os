@@ -969,7 +969,7 @@ exec_install_desktop() {
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
             # GNOME base packages
-            local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer)
+            local packages=(gnome gdm gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer)
             [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && packages=(gnome-firmware file-roller)
 
             # GNOME wayland screensharing, flatpak & pipewire support
@@ -1040,13 +1040,13 @@ exec_install_desktop() {
             [ -f /mnt/etc/gdm/custom.conf ] && mv /mnt/etc/gdm/custom.conf /mnt/etc/gdm/custom.conf.bak
             {
                 echo "[daemon]"
-                echo "WaylandEnable=true"
+                echo "WaylandEnable=True"
                 echo ""
                 echo "AutomaticLoginEnable=True"
                 echo "AutomaticLogin=${ARCH_OS_USERNAME}"
                 echo ""
                 echo "[debug]"
-                echo "Enable=false"
+                echo "Enable=False"
             } >/mnt/etc/gdm/custom.conf
 
             # Set git-credential-libsecret in ~/.gitconfig
