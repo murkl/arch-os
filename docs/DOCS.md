@@ -186,6 +186,8 @@ This feature will install:
   - _Rank & update the mirrorlist on every boot_
 - `smartmontools` and start `smartd` service
   - _Monitor storage devices_
+- `irqbalance` and start `irqbalance.service`
+  - _Distribute hardware interrupts across processors on a multicore system_
 
 The reflector service configuration is located here: `/etc/xdg/reflector/reflector.conf`
 

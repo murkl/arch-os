@@ -26,7 +26,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # VERSION
-VERSION='1.6.0'
+VERSION='1.6.1'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -503,10 +503,12 @@ select_language() {
         [ -z "$user_input" ] && return 1  # Check if new value is null
         ARCH_OS_LOCALE_LANG="$user_input" # Set property
         # Set locale.gen properties (auto generate ARCH_OS_LOCALE_GEN_LIST)
+
         ARCH_OS_LOCALE_GEN_LIST=() && while read -r locale_entry; do
             ARCH_OS_LOCALE_GEN_LIST+=("$locale_entry")
+            # Remove leading # from matched lang in /etc/locale.gen and add entry to array
         done < <(sed "/^#${ARCH_OS_LOCALE_LANG}/s/^#//" /etc/locale.gen | grep "$ARCH_OS_LOCALE_LANG")
-        # Add en_US fallback (every language)
+        # Add en_US fallback (every language) if not already exists in list
         [[ "${ARCH_OS_LOCALE_GEN_LIST[*]}" != *'en_US.UTF-8 UTF-8'* ]] && ARCH_OS_LOCALE_GEN_LIST+=('en_US.UTF-8 UTF-8')
         properties_generate # Generate properties file (for ARCH_OS_LOCALE_LANG & ARCH_OS_LOCALE_GEN_LIST)
     fi
@@ -521,7 +523,7 @@ select_keyboard() {
         mapfile -t items < <(command localectl list-keymaps)
         options=() && for item in "${items[@]}"; do options+=("$item"); done
         # shellcheck disable=SC2002
-         [ -r /root/.zsh_history ] && filter=$(cat /root/.zsh_history | grep 'loadkeys' | head -n 2 | tail -n 1 | cut -d';' -f2 | cut -d' ' -f2 | cut -d'-' -f1)
+        [ -r /root/.zsh_history ] && filter=$(cat /root/.zsh_history | grep 'loadkeys' | head -n 2 | tail -n 1 | cut -d';' -f2 | cut -d' ' -f2 | cut -d'-' -f1)
         user_input=$(gum_filter --value="$filter" --header "+ Choose Keyboard" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                             # Check if new value is null
         ARCH_OS_VCONSOLE_KEYMAP="$user_input" && properties_generate # Set value and generate properties file
@@ -780,11 +782,12 @@ exec_prepare_disk() {
         [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
         # Wipe and create partitions
-        wipefs -af "$ARCH_OS_DISK"                            # Wipe all partitions
-        sgdisk -o "$ARCH_OS_DISK"                             # Create new GPT partition table
-        sgdisk -n 1:0:+1G -t 1:ef00 -c 1:boot "$ARCH_OS_DISK" # Create partition /boot efi partition: 1 GiB
-        sgdisk -n 2:0:0 -t 2:8300 -c 2:root "$ARCH_OS_DISK"   # Create partition / partition: Rest of space
-        partprobe "$ARCH_OS_DISK"                             # Reload partition table
+        wipefs -af "$ARCH_OS_DISK"                                        # Remove All Filesystem Signatures
+        sgdisk --zap-all "$ARCH_OS_DISK"                                  # Remove the Partition Table
+        sgdisk -o "$ARCH_OS_DISK"                                         # Create new GPT partition table
+        sgdisk -n 1:0:+1G -t 1:ef00 -c 1:boot --align-end "$ARCH_OS_DISK" # Create partition /boot efi partition: 1 GiB
+        sgdisk -n 2:0:0 -t 2:8300 -c 2:root --align-end "$ARCH_OS_DISK"   # Create partition / partition: Rest of space
+        partprobe "$ARCH_OS_DISK"                                         # Reload partition table
 
         # Disk encryption
         if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
@@ -967,7 +970,7 @@ exec_install_desktop() {
 
             # GNOME base packages
             local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer)
-            [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && packages=(gnome-firmware file-roller)
+            [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && packages+=(gnome-firmware file-roller)
 
             # GNOME wayland screensharing, flatpak & pipewire support
             packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
@@ -996,6 +999,9 @@ exec_install_desktop() {
 
             # Fonts
             packages+=(noto-fonts noto-fonts-emoji ttf-firacode-nerd ttf-liberation ttf-dejavu)
+
+            # Theming
+            packages+=(adw-gtk-theme)
 
             # Install packages
             chroot_pacman_install "${packages[@]}"
@@ -1029,23 +1035,19 @@ exec_install_desktop() {
 
             # Enable GNOME auto login
             mkdir -p /mnt/etc/gdm
-            grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
+            #grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
             # WORKAROUND?
-            #{
-            #    echo "[daemon]"
-            #    echo "#WaylandEnable=false"
-            #    echo ""
-            #    echo "AutomaticLoginEnable=True"
-            #    echo "AutomaticLogin=${ARCH_OS_USERNAME}"
-            #    echo ""
-            #    echo "[security]"
-            #    echo ""
-            #    echo "[xdmcp]"
-            #    echo ""
-            #    echo "[chooser]"
-            #    echo ""
-            #    echo "[debug]"
-            #} >/mnt/etc/gdm/custom.conf
+            [ -f /mnt/etc/gdm/custom.conf ] && mv /mnt/etc/gdm/custom.conf /mnt/etc/gdm/custom.conf.bak
+            {
+                echo "[daemon]"
+                echo "WaylandEnable=True"
+                echo ""
+                echo "AutomaticLoginEnable=True"
+                echo "AutomaticLogin=${ARCH_OS_USERNAME}"
+                echo ""
+                echo "[debug]"
+                echo "Enable=False"
+            } >/mnt/etc/gdm/custom.conf
 
             # Set git-credential-libsecret in ~/.gitconfig
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git config --global credential.helper /usr/lib/git-core/git-credential-libsecret
@@ -1327,9 +1329,9 @@ exec_install_housekeeping() {
     if [ "$ARCH_OS_HOUSEKEEPING_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                 # If debug mode then return
-            chroot_pacman_install pacman-contrib reflector pkgfile smartmontools # Install Base packages
-            {                                                                    # Configure reflector service
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                            # If debug mode then return
+            chroot_pacman_install pacman-contrib reflector pkgfile smartmontools irqbalance # Install Base packages
+            {                                                                               # Configure reflector service
                 echo "# Reflector config for the systemd service"
                 echo "--save /etc/pacman.d/mirrorlist"
                 [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
@@ -1343,6 +1345,7 @@ exec_install_housekeeping() {
             arch-chroot /mnt systemctl enable paccache.timer       # Discard cached/unused packages weekly (pacman-contrib)
             arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer (pkgfile)
             arch-chroot /mnt systemctl enable smartd               # SMART check service (smartmontools)
+            arch-chroot /mnt systemctl enable irqbalance.service   # IRQ balancing daemon (irqbalance)
             process_return 0                                       # Return
         ) &>"$PROCESS_LOG" &
         process_run $! "$process_name"
