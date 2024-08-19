@@ -176,20 +176,15 @@ ARCH_OS_VM_SUPPORT_ENABLED='true' # VM Support | Default: true | Disable: false
 
 ## Housekeeping
 
-This feature will install:
+This feature will install and configure:
 
-- `pacman-contrib` and start `paccache.timer` service (weekly schedule)
-  - _Weekly clear the pacman cache_
-- `pkgfile` and start `pkgfile-update.timer` service (daily schedule)
-  - _Missing command suggestion and daily database update_
-- `reflector` and start `reflector.service` service (every boot)
-  - _Rank & update the mirrorlist on every boot_
-- `smartmontools` and start `smartd` service
-  - _Monitor storage devices_
-- `irqbalance` and start `irqbalance.service`
-  - _Distribute hardware interrupts across processors on a multicore system_
-
-The reflector service configuration is located here: `/etc/xdg/reflector/reflector.conf`
+| Package        | Service              | Description                                                            | Config                            |
+| -------------- | -------------------- | ---------------------------------------------------------------------- | --------------------------------- |
+| reflector      | reflector.service    | Rank & update the mirrorlist on every boot                             | /etc/xdg/reflector/reflector.conf |
+| pacman-contrib | paccache.timer       | Weekly clear the pacman cache                                          | none                              |
+| pkgfile        | pkgfile-update.timer | Missing command suggestion and daily database update                   | none                              |
+| smartmontools  | smartd               | Monitor storage devices                                                | none                              |
+| irqbalance     | irqbalance.service   | Distribute hardware interrupts across processors on a multicore system | none                              |
 
 Disable this feature with `ARCH_OS_HOUSEKEEPING_ENABLED='false'`
 
