@@ -257,7 +257,7 @@ fish_config
 Install **➜ [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/)** and set this in extension options to integrate [Arch OS Manager](https://github.com/murkl/arch-os-manager):
 
 - Check command: `/usr/bin/arch-os check`
-- Update command: `arch-os --kitty list`
+- Update command: `arch-os --kitty upgrade`
 - Package Manager (optional): `arch-os --kitty`
 
 ## Technical Information
