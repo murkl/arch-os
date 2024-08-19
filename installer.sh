@@ -1333,9 +1333,9 @@ exec_install_housekeeping() {
     if [ "$ARCH_OS_HOUSEKEEPING_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                 # If debug mode then return
-            chroot_pacman_install pacman-contrib reflector pkgfile smartmontools # Install Base packages
-            {                                                                    # Configure reflector service
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                            # If debug mode then return
+            chroot_pacman_install pacman-contrib reflector pkgfile smartmontools irqbalance # Install Base packages
+            {                                                                               # Configure reflector service
                 echo "# Reflector config for the systemd service"
                 echo "--save /etc/pacman.d/mirrorlist"
                 [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
@@ -1349,6 +1349,7 @@ exec_install_housekeeping() {
             arch-chroot /mnt systemctl enable paccache.timer       # Discard cached/unused packages weekly (pacman-contrib)
             arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer (pkgfile)
             arch-chroot /mnt systemctl enable smartd               # SMART check service (smartmontools)
+            arch-chroot /mnt systemctl enable irqbalance.service   # IRQ balancing daemon (irqbalance)
             process_return 0                                       # Return
         ) &>"$PROCESS_LOG" &
         process_run $! "$process_name"
