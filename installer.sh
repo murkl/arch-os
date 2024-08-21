@@ -1,18 +1,12 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1090
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# START PARAMETER
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-# Dry simulator
-# MODE=debug ./installer.sh
-
-# Custom gum
-# GUM=/usr/bin/gum ./installer.sh
+# Debug simulator:  MODE=debug ./installer.sh
+# Custom gum:       GUM=/usr/bin/gum ./installer.sh
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# //////////////////////////////////////// ARCH OS INSTALLER /////////////////////////////////////////
+#                                          ARCH OS INSTALLER
+#                                - Automated Arch Linux Installer TUI -
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 # SOURCE:   https://github.com/murkl/arch-os
@@ -26,7 +20,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # VERSION
-VERSION='1.6.1'
+VERSION='1.6.2'
 VERSION_GUM="0.13.0"
 
 # ENVIRONMENT
@@ -62,7 +56,7 @@ main() {
     trap 'trap_exit' EXIT
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
 
-    # ------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------
 
     # Loop properties step to update screen if user edit properties
     while (true); do
@@ -129,7 +123,7 @@ main() {
         ######################################################
     done
 
-    # ------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------
 
     # Start installation in 5 seconds?
     gum_confirm "Start Arch OS Installation?" || trap_gum_exit
@@ -174,7 +168,7 @@ main() {
 
     wait # Wait for sub processes
 
-    # ------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------
 
     # Show reboot & unmount promt
     local do_reboot="false"
@@ -196,170 +190,15 @@ main() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# LOGGING
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-# Log
-write_log() { echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >>"$SCRIPT_LOG"; }
-log_info() { write_log "INFO | ${*}"; }
-log_warn() { write_log "WARN | ${*}"; }
-log_fail() { write_log "FAIL | ${*}"; }
-log_proc() { write_log "PROC | ${*}"; }
-
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# GUM
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-gum_init() {
-    if [ ! -x ./gum ]; then
-        clear && echo "Loading Arch OS Installer..." # Loading
-        local gum_url gum_path                       # Prepare URL with version os and arch
-        # https://github.com/charmbracelet/gum/releases
-        gum_url="https://github.com/charmbracelet/gum/releases/download/v${VERSION_GUM}/gum_${VERSION_GUM}_$(uname -s)_$(uname -m).tar.gz"
-        if ! curl -Lsf "$gum_url" >"${SCRIPT_TMP_DIR}/gum.tar.gz"; then echo "Error downloading ${gum_url}" && exit 1; fi
-        if ! tar -xf "${SCRIPT_TMP_DIR}/gum.tar.gz" --directory "$SCRIPT_TMP_DIR"; then echo "Error extracting ${SCRIPT_TMP_DIR}/gum.tar.gz" && exit 1; fi
-        gum_path=$(find "${SCRIPT_TMP_DIR}" -type f -executable -name "gum" -print -quit)
-        [ -z "$gum_path" ] && echo "Error: 'gum' binary not found in '${SCRIPT_TMP_DIR}'" && exit 1
-        if ! mv "$gum_path" ./gum; then echo "Error moving ${gum_path} to ./gum" && exit 1; fi
-        if ! chmod +x ./gum; then echo "Error chmod +x ./gum" && exit 1; fi
-    fi
-}
-
-gum() {
-    [ -n "$GUM" ] && [ ! -x "$GUM" ] && echo "Error: GUM='${GUM}' is not found or executable" >&2 && exit 1
-    if [ -n "$GUM" ]; then "$GUM" "$@"; else ./gum "$@"; fi # Force open $GUM if env variable is set
-}
-
-# Gum header
-gum_header() {
-    clear && gum_purple '
- █████  ██████   ██████ ██   ██      ██████  ███████ 
-██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
-███████ ██████  ██      ███████     ██    ██ ███████ 
-██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
-██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
-    local header_version="${VERSION}" && [ -n "${MODE}" ] && header_version="${VERSION} (${MODE})"
-    gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${header_version}"
-}
-
-# Gum colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
-gum_white() { gum_style --foreground "$COLOR_WHITE" "${@}"; }
-gum_purple() { gum_style --foreground "$COLOR_PURPLE" "${@}"; }
-gum_yellow() { gum_style --foreground "$COLOR_YELLOW" "${@}"; }
-gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
-gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
-
-# Gum prints
-gum_title() { log_info "+ ${*}" && gum join --horizontal "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
-gum_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold "• ")" "$(gum_white --bold "${*}")"; }
-gum_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold "• ")" "$(gum_white --bold "${*}")"; }
-gum_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold "• ")" "$(gum_white --bold "${*}")"; }
-
-# Gum wrapper
-gum_style() { gum style "${@}"; }
-gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
-gum_input() { gum input --placeholder "..." --prompt "> " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
-gum_write() { gum write --prompt "• " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
-gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
-gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
-gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
-
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# TRAPS
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-# shellcheck disable=SC2317
-trap_error() {
-    # If process calls this trap, write error to file to use in exit trap
-    echo "Command '${BASH_COMMAND}' failed with exit code $? in function '${1}' (line ${2})" >"$ERROR_MSG"
-}
-
-# shellcheck disable=SC2317
-trap_exit() {
-    local result_code="$?"
-
-    # Read error msg from file (written in error trap)
-    local error && [ -f "$ERROR_MSG" ] && error="$(<"$ERROR_MSG")" && rm -f "$ERROR_MSG"
-
-    # Cleanup
-    rm -rf "$SCRIPT_TMP_DIR"
-
-    # When ctrl + c pressed exit without other stuff below
-    [ "$result_code" = "130" ] && gum_warn "Exit..." && {
-        exit 1
-    }
-
-    # Check if failed and print error
-    if [ "$result_code" -gt "0" ]; then
-        [ -n "$error" ] && gum_fail "$error"                      # Print error message (if exists)
-        [ -z "$error" ] && gum_fail "Arch OS Installation failed" # Otherwise pint default error message
-        gum_warn "See ${SCRIPT_LOG} for more information..."
-        gum_confirm "Show Logs?" && gum pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
-    fi
-
-    exit "$result_code" # Exit installer.sh
-}
-
-trap_gum_exit_confirm() {
-    gum_confirm "Exit Installation?" && trap_gum_exit
-}
-
-trap_gum_exit() { exit 130; }
-
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# PROCESS
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-process_init() {
-    [ -f "$PROCESS_RET" ] && gum_fail "${PROCESS_RET} already exists" && exit 1
-    echo 1 >"$PROCESS_RET" # Init result with 1
-    log_proc "${1}..."     # Log starting
-}
-
-process_run() {
-    local pid="$1"              # Set process pid
-    local process_name="$2"     # Set process name
-    local user_canceled="false" # Will set to true if user press ctrl + c
-
-    # Show gum spinner until pid is not exists anymore and set user_canceled to true on failure
-    gum_spin --title "${process_name}..." -- bash -c "while kill -0 $pid &> /dev/null; do sleep 1; done" || user_canceled="true"
-    cat "$PROCESS_LOG" >>"$SCRIPT_LOG" # Write process log to logfile
-
-    # When user press ctrl + c while process is running
-    if [ "$user_canceled" = "true" ]; then
-        kill -0 "$pid" &>/dev/null && pkill -P "$pid" &>/dev/null              # Kill process if running
-        gum_fail "Process with PID ${pid} was killed by user" && trap_gum_exit # Exit with 130
-    fi
-
-    # Handle error while executing process
-    [ ! -f "$PROCESS_RET" ] && gum_fail "${PROCESS_RET} not found (do not init process?)" && exit 1
-    [ "$(<"$PROCESS_RET")" != "0" ] && gum_fail "${process_name} failed" && exit 1 # If process failed (result code 0 was not write in the end)
-
-    # Finish
-    rm -f "$PROCESS_RET"                            # Remove process result file
-    gum_info "${process_name} sucessfully finished" # Print process success
-}
-
-process_return() {
-    # 1. Write from sub process 0 to file when succeed (at the end of the script part)
-    # 2. Rread from parent process after sub process finished (0=success 1=failed)
-    echo "$1" >"$PROCESS_RET"
-    exit "$1"
-}
-
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
 # PROPERTIES
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 properties_source() {
-    # Load properties file (if exists) and auto export variables
-    if [ -f "$SCRIPT_CONFIG" ]; then
-        set -a # Enable auto export of variables
-        source "$SCRIPT_CONFIG"
-        set +a # Disable auto export of variables
-        return 0
-    fi
-    return 1
+    [ ! -f "$SCRIPT_CONFIG" ] && return 1
+    set -a # Load properties file and auto export variables
+    source "$SCRIPT_CONFIG"
+    set +a
+    return 0
 }
 
 properties_generate() {
@@ -445,7 +284,7 @@ select_preset() {
     fi
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 select_username() {
     if [ -z "$ARCH_OS_USERNAME" ]; then
@@ -457,7 +296,7 @@ select_username() {
     gum_info "Username is set to ${ARCH_OS_USERNAME}"
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 select_password() { # --force
     if [ "$1" = "--force" ] || [ -z "$ARCH_OS_PASSWORD" ]; then
@@ -472,7 +311,7 @@ select_password() { # --force
     gum_info "Password is set to *******"
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 select_timezone() {
     if [ -z "$ARCH_OS_TIMEZONE" ]; then
@@ -486,7 +325,7 @@ select_timezone() {
     gum_info "Timezone is set to ${ARCH_OS_TIMEZONE}"
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 # shellcheck disable=SC2001
 select_language() {
@@ -503,7 +342,6 @@ select_language() {
         [ -z "$user_input" ] && return 1  # Check if new value is null
         ARCH_OS_LOCALE_LANG="$user_input" # Set property
         # Set locale.gen properties (auto generate ARCH_OS_LOCALE_GEN_LIST)
-
         ARCH_OS_LOCALE_GEN_LIST=() && while read -r locale_entry; do
             ARCH_OS_LOCALE_GEN_LIST+=("$locale_entry")
             # Remove leading # from matched lang in /etc/locale.gen and add entry to array
@@ -515,7 +353,7 @@ select_language() {
     gum_info "Language is set to ${ARCH_OS_LOCALE_LANG}"
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 select_keyboard() {
     if [ -z "$ARCH_OS_VCONSOLE_KEYMAP" ]; then
@@ -531,7 +369,7 @@ select_keyboard() {
     gum_info "Keyboard is set to ${ARCH_OS_VCONSOLE_KEYMAP}"
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 select_disk() {
     if [ -z "$ARCH_OS_DISK" ] || [ -z "$ARCH_OS_BOOT_PARTITION" ] || [ -z "$ARCH_OS_ROOT_PARTITION" ]; then
@@ -551,7 +389,7 @@ select_disk() {
     gum_info "Disk is set to ${ARCH_OS_DISK}"
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 select_enable_encryption() {
     if [ -z "$ARCH_OS_ENCRYPTION_ENABLED" ]; then
@@ -569,7 +407,7 @@ select_enable_encryption() {
     gum_info "Disk Encryption is set to ${ARCH_OS_ENCRYPTION_ENABLED}"
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 select_enable_bootsplash() {
     if [ -z "$ARCH_OS_BOOTSPLASH_ENABLED" ]; then
@@ -587,10 +425,11 @@ select_enable_bootsplash() {
     gum_info "Bootsplash is set to ${ARCH_OS_BOOTSPLASH_ENABLED}"
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 select_enable_desktop() {
     local user_input options
+
     # Select desktop environment
     if [ -z "$ARCH_OS_DESKTOP_ENABLED" ]; then
         gum_confirm "Enable Desktop Environment?"
@@ -620,6 +459,7 @@ select_enable_desktop() {
         ARCH_OS_DESKTOP_SLIM_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     gum_info "Desktop Slim Mode is set to ${ARCH_OS_DESKTOP_SLIM_ENABLED}"
+
     # Keyboard layout
     if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
         user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout (mandatory)" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
@@ -643,7 +483,7 @@ select_enable_desktop() {
     return 0
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 select_enable_aur() {
     if [ -z "$ARCH_OS_AUR_HELPER" ]; then
@@ -661,7 +501,7 @@ select_enable_aur() {
     gum_info "AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 select_enable_multilib() {
     if [ -z "$ARCH_OS_MULTILIB_ENABLED" ]; then
@@ -679,7 +519,7 @@ select_enable_multilib() {
     gum_info "32 Bit Support is set to ${ARCH_OS_MULTILIB_ENABLED}"
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 select_enable_housekeeping() {
     if [ -z "$ARCH_OS_HOUSEKEEPING_ENABLED" ]; then
@@ -697,7 +537,7 @@ select_enable_housekeeping() {
     gum_info "Housekeeping is set to ${ARCH_OS_HOUSEKEEPING_ENABLED}"
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 select_enable_shell_enhancement() {
     if [ -z "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" ]; then
@@ -715,7 +555,7 @@ select_enable_shell_enhancement() {
     gum_info "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 select_enable_manager() {
     if [ -z "$ARCH_OS_MANAGER_ENABLED" ]; then
@@ -773,7 +613,7 @@ exec_init_installation() {
     process_run $! "$process_name"
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 exec_prepare_disk() {
     local process_name="Prepare Disk"
@@ -813,7 +653,7 @@ exec_prepare_disk() {
     process_run $! "$process_name"
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 exec_pacstrap_core() {
     local process_name="Pacstrap Arch OS Core System"
@@ -959,7 +799,7 @@ exec_pacstrap_core() {
     process_run $! "$process_name"
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 exec_install_desktop() {
     local process_name="Install Desktop Environment"
@@ -1035,9 +875,8 @@ exec_install_desktop() {
 
             # Enable GNOME auto login
             mkdir -p /mnt/etc/gdm
-            #grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
-            # WORKAROUND?
             [ -f /mnt/etc/gdm/custom.conf ] && mv /mnt/etc/gdm/custom.conf /mnt/etc/gdm/custom.conf.bak
+            #grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
             {
                 echo "[daemon]"
                 echo "WaylandEnable=True"
@@ -1151,7 +990,7 @@ exec_install_desktop() {
     fi
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 exec_install_graphics_driver() {
     local process_name="Install Desktop Graphics Driver"
@@ -1227,47 +1066,23 @@ exec_install_graphics_driver() {
     fi
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
-exec_install_vm_support() {
-    local process_name="Install VM Support"
-    if [ "$ARCH_OS_VM_SUPPORT_ENABLED" = "true" ]; then
+exec_enable_multilib() {
+    local process_name="Enable Multilib"
+    if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
-            case $(systemd-detect-virt || true) in
-            kvm)
-                log_info "KVM detected"
-                chroot_pacman_install spice spice-vdagent spice-protocol spice-gtk qemu-guest-agent
-                arch-chroot /mnt systemctl enable qemu-guest-agent
-                ;;
-            vmware)
-                log_info "VMWare Workstation/ESXi detected"
-                chroot_pacman_install open-vm-tools
-                arch-chroot /mnt systemctl enable vmtoolsd
-                arch-chroot /mnt systemctl enable vmware-vmblock-fuse
-                ;;
-            oracle)
-                log_info "VirtualBox detected"
-                chroot_pacman_install virtualbox-guest-utils
-                arch-chroot /mnt systemctl enable vboxservice
-                ;;
-            microsoft)
-                log_info "Hyper-V detected"
-                chroot_pacman_install hyperv
-                arch-chroot /mnt systemctl enable hv_fcopy_daemon
-                arch-chroot /mnt systemctl enable hv_kvp_daemon
-                arch-chroot /mnt systemctl enable hv_vss_daemon
-                ;;
-            *) log_info "No VM detected" ;; # Do nothing
-            esac
-            process_return 0 # Return
+            sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
+            arch-chroot /mnt pacman -Syyu --noconfirm
+            process_return 0
         ) &>"$PROCESS_LOG" &
         process_run $! "$process_name"
     fi
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 exec_install_bootsplash() {
     local process_name="Install Bootsplash"
@@ -1285,7 +1100,7 @@ exec_install_bootsplash() {
     fi
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 exec_install_aur_helper() {
     local process_name="Install AUR Helper"
@@ -1306,23 +1121,7 @@ exec_install_aur_helper() {
     fi
 }
 
-# ------------------------------------------------------------------------------------------------
-
-exec_enable_multilib() {
-    local process_name="Enable Multilib"
-    if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
-        process_init "$process_name"
-        (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
-            sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
-            arch-chroot /mnt pacman -Syyu --noconfirm
-            process_return 0
-        ) &>"$PROCESS_LOG" &
-        process_run $! "$process_name"
-    fi
-}
-
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 exec_install_housekeeping() {
     local process_name="Install Housekeeping"
@@ -1352,7 +1151,7 @@ exec_install_housekeeping() {
     fi
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 exec_install_archos_manager() {
     local process_name="Install Arch OS Manager"
@@ -1373,7 +1172,7 @@ exec_install_archos_manager() {
     fi
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 exec_install_shell_enhancement() {
     local process_name="Install Shell Enhancement"
@@ -1513,7 +1312,47 @@ exec_install_shell_enhancement() {
     fi
 }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
+
+exec_install_vm_support() {
+    local process_name="Install VM Support"
+    if [ "$ARCH_OS_VM_SUPPORT_ENABLED" = "true" ]; then
+        process_init "$process_name"
+        (
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            case $(systemd-detect-virt || true) in
+            kvm)
+                log_info "KVM detected"
+                chroot_pacman_install spice spice-vdagent spice-protocol spice-gtk qemu-guest-agent
+                arch-chroot /mnt systemctl enable qemu-guest-agent
+                ;;
+            vmware)
+                log_info "VMWare Workstation/ESXi detected"
+                chroot_pacman_install open-vm-tools
+                arch-chroot /mnt systemctl enable vmtoolsd
+                arch-chroot /mnt systemctl enable vmware-vmblock-fuse
+                ;;
+            oracle)
+                log_info "VirtualBox detected"
+                chroot_pacman_install virtualbox-guest-utils
+                arch-chroot /mnt systemctl enable vboxservice
+                ;;
+            microsoft)
+                log_info "Hyper-V detected"
+                chroot_pacman_install hyperv
+                arch-chroot /mnt systemctl enable hv_fcopy_daemon
+                arch-chroot /mnt systemctl enable hv_kvp_daemon
+                arch-chroot /mnt systemctl enable hv_vss_daemon
+                ;;
+            *) log_info "No VM detected" ;; # Do nothing
+            esac
+            process_return 0 # Return
+        ) &>"$PROCESS_LOG" &
+        process_run $! "$process_name"
+    fi
+}
+
+# ---------------------------------------------------------------------------------------------------
 
 # shellcheck disable=SC2016
 exec_cleanup_installation() {
@@ -1531,11 +1370,9 @@ exec_cleanup_installation() {
 # CHROOT HELPER
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-chroot_pacman_remove() {
-    arch-chroot /mnt pacman -Rns --noconfirm "$@" || return 1
-}
+chroot_pacman_remove() { arch-chroot /mnt pacman -Rns --noconfirm "$@" || return 1; }
 
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 chroot_pacman_install() {
     local packages=("$@")
@@ -1556,8 +1393,6 @@ chroot_pacman_install() {
     [ "$pacman_failed" = "false" ] && return 0 # Success
 }
 
-# ------------------------------------------------------------------------------------------------
-
 chroot_aur_install() {
     local repo repo_url repo_tmp_dir
     repo="$1"
@@ -1569,6 +1404,159 @@ chroot_aur_install() {
     arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$repo_tmp_dir"
     sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Enable sudo needs no password rights
 }
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# TRAPS
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+trap_gum_exit() { exit 130; }
+trap_gum_exit_confirm() { gum_confirm "Exit Installation?" && trap_gum_exit; }
+
+# ---------------------------------------------------------------------------------------------------
+
+# shellcheck disable=SC2317
+trap_error() {
+    # If process calls this trap, write error to file to use in exit trap
+    echo "Command '${BASH_COMMAND}' failed with exit code $? in function '${1}' (line ${2})" >"$ERROR_MSG"
+}
+
+# shellcheck disable=SC2317
+trap_exit() {
+    local result_code="$?"
+
+    # Read error msg from file (written in error trap)
+    local error && [ -f "$ERROR_MSG" ] && error="$(<"$ERROR_MSG")" && rm -f "$ERROR_MSG"
+
+    # Cleanup
+    rm -rf "$SCRIPT_TMP_DIR"
+
+    # When ctrl + c pressed exit without other stuff below
+    [ "$result_code" = "130" ] && gum_warn "Exit..." && {
+        exit 1
+    }
+
+    # Check if failed and print error
+    if [ "$result_code" -gt "0" ]; then
+        [ -n "$error" ] && gum_fail "$error"                      # Print error message (if exists)
+        [ -z "$error" ] && gum_fail "Arch OS Installation failed" # Otherwise pint default error message
+        gum_warn "See ${SCRIPT_LOG} for more information..."
+        gum_confirm "Show Logs?" && gum pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
+    fi
+
+    exit "$result_code" # Exit installer.sh
+}
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# PROCESS
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+process_init() {
+    [ -f "$PROCESS_RET" ] && gum_fail "${PROCESS_RET} already exists" && exit 1
+    echo 1 >"$PROCESS_RET" # Init result with 1
+    log_proc "${1}..."     # Log starting
+}
+
+process_run() {
+    local pid="$1"              # Set process pid
+    local process_name="$2"     # Set process name
+    local user_canceled="false" # Will set to true if user press ctrl + c
+
+    # Show gum spinner until pid is not exists anymore and set user_canceled to true on failure
+    gum_spin --title "${process_name}..." -- bash -c "while kill -0 $pid &> /dev/null; do sleep 1; done" || user_canceled="true"
+    cat "$PROCESS_LOG" >>"$SCRIPT_LOG" # Write process log to logfile
+
+    # When user press ctrl + c while process is running
+    if [ "$user_canceled" = "true" ]; then
+        kill -0 "$pid" &>/dev/null && pkill -P "$pid" &>/dev/null              # Kill process if running
+        gum_fail "Process with PID ${pid} was killed by user" && trap_gum_exit # Exit with 130
+    fi
+
+    # Handle error while executing process
+    [ ! -f "$PROCESS_RET" ] && gum_fail "${PROCESS_RET} not found (do not init process?)" && exit 1
+    [ "$(<"$PROCESS_RET")" != "0" ] && gum_fail "${process_name} failed" && exit 1 # If process failed (result code 0 was not write in the end)
+
+    # Finish
+    rm -f "$PROCESS_RET"                            # Remove process result file
+    gum_info "${process_name} sucessfully finished" # Print process success
+}
+
+process_return() {
+    # 1. Write from sub process 0 to file when succeed (at the end of the script part)
+    # 2. Rread from parent process after sub process finished (0=success 1=failed)
+    echo "$1" >"$PROCESS_RET"
+    exit "$1"
+}
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# GUM
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+gum_init() {
+    if [ ! -x ./gum ]; then
+        clear && echo "Loading Arch OS Installer..." # Loading
+        local gum_url gum_path                       # Prepare URL with version os and arch
+        # https://github.com/charmbracelet/gum/releases
+        gum_url="https://github.com/charmbracelet/gum/releases/download/v${VERSION_GUM}/gum_${VERSION_GUM}_$(uname -s)_$(uname -m).tar.gz"
+        if ! curl -Lsf "$gum_url" >"${SCRIPT_TMP_DIR}/gum.tar.gz"; then echo "Error downloading ${gum_url}" && exit 1; fi
+        if ! tar -xf "${SCRIPT_TMP_DIR}/gum.tar.gz" --directory "$SCRIPT_TMP_DIR"; then echo "Error extracting ${SCRIPT_TMP_DIR}/gum.tar.gz" && exit 1; fi
+        gum_path=$(find "${SCRIPT_TMP_DIR}" -type f -executable -name "gum" -print -quit)
+        [ -z "$gum_path" ] && echo "Error: 'gum' binary not found in '${SCRIPT_TMP_DIR}'" && exit 1
+        if ! mv "$gum_path" ./gum; then echo "Error moving ${gum_path} to ./gum" && exit 1; fi
+        if ! chmod +x ./gum; then echo "Error chmod +x ./gum" && exit 1; fi
+    fi
+}
+
+gum() {
+    [ -n "$GUM" ] && [ ! -x "$GUM" ] && echo "Error: GUM='${GUM}' is not found or executable" >&2 && exit 1
+    if [ -n "$GUM" ]; then "$GUM" "$@"; else ./gum "$@"; fi # Force open $GUM if env variable is set
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+gum_header() {
+    clear && gum_purple '
+ █████  ██████   ██████ ██   ██      ██████  ███████ 
+██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
+███████ ██████  ██      ███████     ██    ██ ███████ 
+██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
+██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
+    local header_version="${VERSION}" && [ -n "${MODE}" ] && header_version="${VERSION} (${MODE})"
+    gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${header_version}"
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+# Gum colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
+gum_white() { gum_style --foreground "$COLOR_WHITE" "${@}"; }
+gum_purple() { gum_style --foreground "$COLOR_PURPLE" "${@}"; }
+gum_yellow() { gum_style --foreground "$COLOR_YELLOW" "${@}"; }
+gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
+gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
+
+# Gum prints
+gum_title() { log_info "+ ${*}" && gum join --horizontal "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
+gum_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold "• ")" "$(gum_white --bold "${*}")"; }
+gum_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold "• ")" "$(gum_white --bold "${*}")"; }
+gum_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold "• ")" "$(gum_white --bold "${*}")"; }
+
+# Gum wrapper
+gum_style() { gum style "${@}"; }
+gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
+gum_input() { gum input --placeholder "..." --prompt "> " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
+gum_write() { gum write --prompt "• " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
+gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
+gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
+gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# LOGGING
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+write_log() { echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >>"$SCRIPT_LOG"; }
+log_info() { write_log "INFO | ${*}"; }
+log_warn() { write_log "WARN | ${*}"; }
+log_fail() { write_log "FAIL | ${*}"; }
+log_proc() { write_log "PROC | ${*}"; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # ///////////////////////////////////////////  START MAIN  ///////////////////////////////////////////

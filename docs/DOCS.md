@@ -176,20 +176,15 @@ ARCH_OS_VM_SUPPORT_ENABLED='true' # VM Support | Default: true | Disable: false
 
 ## Housekeeping
 
-This feature will install:
+This feature will install and configure:
 
-- `pacman-contrib` and start `paccache.timer` service (weekly schedule)
-  - _Weekly clear the pacman cache_
-- `pkgfile` and start `pkgfile-update.timer` service (daily schedule)
-  - _Missing command suggestion and daily database update_
-- `reflector` and start `reflector.service` service (every boot)
-  - _Rank & update the mirrorlist on every boot_
-- `smartmontools` and start `smartd` service
-  - _Monitor storage devices_
-- `irqbalance` and start `irqbalance.service`
-  - _Distribute hardware interrupts across processors on a multicore system_
-
-The reflector service configuration is located here: `/etc/xdg/reflector/reflector.conf`
+| Package        | Service              | Description                                                            | Config                            |
+| -------------- | -------------------- | ---------------------------------------------------------------------- | --------------------------------- |
+| reflector      | reflector.service    | Rank & update the mirrorlist on every boot                             | /etc/xdg/reflector/reflector.conf |
+| pacman-contrib | paccache.timer       | Weekly clear the pacman cache                                          | none                              |
+| pkgfile        | pkgfile-update.timer | Missing command suggestion and daily database update                   | none                              |
+| smartmontools  | smartd               | Monitor storage devices                                                | none                              |
+| irqbalance     | irqbalance.service   | Distribute hardware interrupts across processors on a multicore system | none                              |
 
 Disable this feature with `ARCH_OS_HOUSEKEEPING_ENABLED='false'`
 
@@ -262,7 +257,7 @@ fish_config
 Install **➜ [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/)** and set this in extension options to integrate [Arch OS Manager](https://github.com/murkl/arch-os-manager):
 
 - Check command: `/usr/bin/arch-os check`
-- Update command: `arch-os --kitty list`
+- Update command: `arch-os --kitty upgrade`
 - Package Manager (optional): `arch-os --kitty`
 
 ## Technical Information
@@ -439,15 +434,15 @@ curl -Ls bit.ly/arch-os-dev | bash
 
 ### Arch OS Installer
 
-<p><img src="screenshots/installer_load_properties.png"></p>
-<p><img src="screenshots/installer_preset.png"></p>
-<p><img src="screenshots/installer_language.png"></p>
-<p><img src="screenshots/installer_disk.png"></p>
-<p><img src="screenshots/installer_driver.png"></p>
-<p><img src="screenshots/installer_slim.png"></p>
-<p><img src="screenshots/installer_start.png"></p>
-<p><img src="screenshots/installer_process.png"></p>
-<p><img src="screenshots/installer_finish.png"></p>
-<p><img src="screenshots/installer_core_complete.png"></p>
+<p>
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_load_properties.png">
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_preset.png">
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_language.png">
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_disk.png">
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_driver.png">
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_slim.png">
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_start.png">
+<img width="24%" style="vertical-align: top;" src="screenshots/installer_core_complete.png">
+</p>
 
 </div>
