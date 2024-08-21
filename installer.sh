@@ -1,18 +1,12 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1090
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# START PARAMETER
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-# Dry simulator:
-# MODE=debug ./installer.sh
-
-# Custom gum binary:
-# GUM=/usr/bin/gum ./installer.sh
+# Debug simulator:  MODE=debug ./installer.sh
+# Custom gum:       GUM=/usr/bin/gum ./installer.sh
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# //////////////////////////////////////// ARCH OS INSTALLER /////////////////////////////////////////
+#                                          ARCH OS INSTALLER
+#                                - Automated Arch Linux Installer TUI -
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 # SOURCE:   https://github.com/murkl/arch-os
@@ -1415,8 +1409,8 @@ chroot_aur_install() {
 # TRAPS
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-trap_gum_exit_confirm() { gum_confirm "Exit Installation?" && trap_gum_exit; }
 trap_gum_exit() { exit 130; }
+trap_gum_exit_confirm() { gum_confirm "Exit Installation?" && trap_gum_exit; }
 
 # ---------------------------------------------------------------------------------------------------
 
