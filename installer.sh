@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1090
 
+VERSION='1.6.3'
+
 # Debug simulator:  MODE=debug ./installer.sh
 # Custom gum:       GUM=/usr/bin/gum ./installer.sh
 
@@ -19,9 +21,8 @@ set -o pipefail # A pipeline error results in the error status of the entire pip
 set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
-# VERSION
-VERSION='1.6.2'
-VERSION_GUM="0.13.0"
+# GUM
+GUM_VERSION="0.13.0"
 
 # ENVIRONMENT
 SCRIPT_CONFIG="./installer.conf"
@@ -63,12 +64,12 @@ main() {
 
         gum_header # Show welcome screen
         gum_white 'Please make sure you have:'
-        gum_white ''
+        echo
         gum_white '• Backed up your important data'
         gum_white '• A stable internet connection'
         gum_white '• Secure Boot disabled'
         gum_white '• Boot Mode set to UEFI'
-        gum_white ''
+        echo
         gum_title "Arch OS Properties"
 
         # Ask for load & remove existing config file
@@ -127,7 +128,7 @@ main() {
 
     # Start installation in 5 seconds?
     gum_confirm "Start Arch OS Installation?" || trap_gum_exit
-    gum_white '' && gum_title "Arch OS Installation"
+    echo && gum_title "Arch OS Installation"
     local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel..."
     gum_spin --title="$spin_title" -- sleep 5 || trap_gum_exit # CTRL + C pressed
 
@@ -153,9 +154,9 @@ main() {
     duration_min="$((duration / 60))"
     duration_sec="$((duration % 60))"
 
-    # Finish & reboot
+    # Print duration time info
     local finish_txt="Installation successful in ${duration_min} minutes and ${duration_sec} seconds"
-    gum_white '' && gum_green --bold "$finish_txt"
+    echo && gum_green --bold "$finish_txt"
     log_info "$finish_txt"
 
     # Copy installer files to users home
@@ -610,7 +611,7 @@ exec_init_installation() {
         pacman -Sy --noconfirm archlinux-keyring # Update keyring
         process_return 0
     ) &>"$PROCESS_LOG" &
-    process_run $! "$process_name"
+    process_capture $! "$process_name"
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -650,7 +651,7 @@ exec_prepare_disk() {
         # Return
         process_return 0
     ) &>"$PROCESS_LOG" &
-    process_run $! "$process_name"
+    process_capture $! "$process_name"
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -796,7 +797,7 @@ exec_pacstrap_core() {
         # Return
         process_return 0
     ) &>"$PROCESS_LOG" &
-    process_run $! "$process_name"
+    process_capture $! "$process_name"
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -986,7 +987,7 @@ exec_install_desktop() {
             # Return
             process_return 0
         ) &>"$PROCESS_LOG" &
-        process_run $! "$process_name"
+        process_capture $! "$process_name"
     fi
 }
 
@@ -1062,7 +1063,7 @@ exec_install_graphics_driver() {
             esac
             process_return 0
         ) &>"$PROCESS_LOG" &
-        process_run $! "$process_name"
+        process_capture $! "$process_name"
     fi
 }
 
@@ -1078,7 +1079,7 @@ exec_enable_multilib() {
             arch-chroot /mnt pacman -Syyu --noconfirm
             process_return 0
         ) &>"$PROCESS_LOG" &
-        process_run $! "$process_name"
+        process_capture $! "$process_name"
     fi
 }
 
@@ -1096,7 +1097,7 @@ exec_install_bootsplash() {
             arch-chroot /mnt plymouth-set-default-theme -R arch-os                                     # Set Theme & rebuild initram disk
             process_return 0                                                                           # Return
         ) &>"$PROCESS_LOG" &
-        process_run $! "$process_name"
+        process_capture $! "$process_name"
     fi
 }
 
@@ -1117,7 +1118,7 @@ exec_install_aur_helper() {
             fi
             process_return 0 # Return
         ) &>"$PROCESS_LOG" &
-        process_run $! "$process_name"
+        process_capture $! "$process_name"
     fi
 }
 
@@ -1147,7 +1148,7 @@ exec_install_housekeeping() {
             arch-chroot /mnt systemctl enable irqbalance.service   # IRQ balancing daemon (irqbalance)
             process_return 0                                       # Return
         ) &>"$PROCESS_LOG" &
-        process_run $! "$process_name"
+        process_capture $! "$process_name"
     fi
 }
 
@@ -1168,7 +1169,7 @@ exec_install_archos_manager() {
             chroot_aur_install arch-os-manager # Install archos-manager
             process_return 0                   # Return
         ) &>"$PROCESS_LOG" &
-        process_run $! "$process_name"
+        process_capture $! "$process_name"
     fi
 }
 
@@ -1308,7 +1309,7 @@ exec_install_shell_enhancement() {
             arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
             process_return 0
         ) &>"$PROCESS_LOG" &
-        process_run $! "$process_name"
+        process_capture $! "$process_name"
     fi
 }
 
@@ -1348,7 +1349,7 @@ exec_install_vm_support() {
             esac
             process_return 0 # Return
         ) &>"$PROCESS_LOG" &
-        process_run $! "$process_name"
+        process_capture $! "$process_name"
     fi
 }
 
@@ -1364,7 +1365,7 @@ exec_cleanup_installation() {
         arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true' # Remove orphans and force return true
         process_return 0                                                                                      # Return
     ) &>"$PROCESS_LOG" &
-    process_run $! "$process_name"
+    process_capture $! "$process_name"
 }
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # CHROOT HELPER
@@ -1456,7 +1457,7 @@ process_init() {
     log_proc "${1}..."     # Log starting
 }
 
-process_run() {
+process_capture() {
     local pid="$1"              # Set process pid
     local process_name="$2"     # Set process name
     local user_canceled="false" # Will set to true if user press ctrl + c
@@ -1496,7 +1497,7 @@ gum_init() {
         clear && echo "Loading Arch OS Installer..." # Loading
         local gum_url gum_path                       # Prepare URL with version os and arch
         # https://github.com/charmbracelet/gum/releases
-        gum_url="https://github.com/charmbracelet/gum/releases/download/v${VERSION_GUM}/gum_${VERSION_GUM}_$(uname -s)_$(uname -m).tar.gz"
+        gum_url="https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_$(uname -s)_$(uname -m).tar.gz"
         if ! curl -Lsf "$gum_url" >"${SCRIPT_TMP_DIR}/gum.tar.gz"; then echo "Error downloading ${gum_url}" && exit 1; fi
         if ! tar -xf "${SCRIPT_TMP_DIR}/gum.tar.gz" --directory "$SCRIPT_TMP_DIR"; then echo "Error extracting ${SCRIPT_TMP_DIR}/gum.tar.gz" && exit 1; fi
         gum_path=$(find "${SCRIPT_TMP_DIR}" -type f -executable -name "gum" -print -quit)

@@ -63,6 +63,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - [vitals](https://extensions.gnome.org/extension/1460/vitals/)
 - [weather-oclock](https://extensions.gnome.org/extension/5470/weather-oclock/)
 - [caffeine](https://extensions.gnome.org/extension/517/caffeine/)
+- [fullscreen-to-empty-workspace](https://extensions.gnome.org/extension/6072/fullscreen-to-empty-workspace/)
 - [gamemode-indicator](https://extensions.gnome.org/extension/6340/gamemode-indicator-in-system-settings/)
 - [disable-unredirect-fullscreen](https://extensions.gnome.org/extension/1873/disable-unredirect-fullscreen-windows/) (fix some issues)
 - [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (useful in wayland app toggler script)
