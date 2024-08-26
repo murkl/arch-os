@@ -1159,11 +1159,10 @@ exec_install_archos_manager() {
     if [ "$ARCH_OS_MANAGER_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                             # If debug mode then return
-            chroot_pacman_install git base-devel gum pacman-contrib                          # Install dependencies
-            [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && chroot_pacman_install kitty libnotify # Install desktop dependencies
-            chroot_aur_install arch-os-manager                                               # Install archos-manager
-            process_return 0                                                                 # Return
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                    # If debug mode then return
+            chroot_pacman_install git base-devel kitty gum libnotify pacman-contrib # Install dependencies
+            chroot_aur_install arch-os-manager                                      # Install archos-manager
+            process_return 0                                                        # Return
         ) &>"$PROCESS_LOG" &
         process_capture $! "$process_name"
     fi
