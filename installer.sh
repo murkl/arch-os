@@ -139,7 +139,6 @@ main() {
     exec_init_installation
     exec_prepare_disk
     exec_pacstrap_core
-    exec_apply_core_tweaks
     exec_enable_multilib
     exec_install_bootsplash
     exec_install_aur_helper
@@ -222,8 +221,8 @@ properties_generate() {
         echo "ARCH_OS_CORE_TWEAKS_ENABLED='${ARCH_OS_CORE_TWEAKS_ENABLED}'"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
         echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}'"
-        echo "ARCH_OS_CONSOLE_TWEAKS_SHELL='${ARCH_OS_CONSOLE_TWEAKS_SHELL}'"
-        echo "ARCH_OS_CONSOLE_TWEAKS_ENABLED='${ARCH_OS_CONSOLE_TWEAKS_ENABLED}'"
+        echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}'"
+        echo "ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED}'"
         echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}'"
         echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}'"
         echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}'"
@@ -254,6 +253,7 @@ select_preset() {
         ARCH_OS_HOSTNAME="arch-os"
         ARCH_OS_KERNEL="linux-zen"
         ARCH_OS_VM_SUPPORT_ENABLED="true"
+        ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED="true"
         ARCH_OS_ECN_ENABLED="true"
         ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
 
@@ -267,7 +267,7 @@ select_preset() {
             ARCH_OS_DESKTOP_ENABLED='false'
             ARCH_OS_MULTILIB_ENABLED='false'
             ARCH_OS_HOUSEKEEPING_ENABLED='false'
-            ARCH_OS_CONSOLE_TWEAKS_ENABLED='false'
+            ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
             ARCH_OS_AUR_HELPER='none'
             ARCH_OS_MANAGER_ENABLED='false'
             ARCH_OS_DESKTOP_GRAPHICS_DRIVER="none"
@@ -280,8 +280,7 @@ select_preset() {
             ARCH_OS_DESKTOP_ENABLED='true'
             ARCH_OS_MULTILIB_ENABLED='true'
             ARCH_OS_HOUSEKEEPING_ENABLED='true'
-            ARCH_OS_CONSOLE_TWEAKS_SHELL="fish"
-            ARCH_OS_CONSOLE_TWEAKS_ENABLED='true'
+            ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
             ARCH_OS_AUR_HELPER='paru-bin'
             ARCH_OS_MANAGER_ENABLED='true'
         fi
@@ -565,7 +564,7 @@ select_enable_housekeeping() {
 # ---------------------------------------------------------------------------------------------------
 
 select_enable_shell_enhancement() {
-    if [ -z "$ARCH_OS_CONSOLE_TWEAKS_ENABLED" ]; then
+    if [ -z "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" ]; then
         gum_confirm "Enable Shell Enhancement?"
         local user_confirm=$?
         [ $user_confirm = 130 ] && {
@@ -575,9 +574,9 @@ select_enable_shell_enhancement() {
         local user_input
         [ $user_confirm = 1 ] && user_input="false"
         [ $user_confirm = 0 ] && user_input="true"
-        ARCH_OS_CONSOLE_TWEAKS_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+        ARCH_OS_SHELL_ENHANCEMENT_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Shell Enhancement is set to ${ARCH_OS_CONSOLE_TWEAKS_ENABLED}"
+    gum_info "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -826,40 +825,6 @@ exec_pacstrap_core() {
 
 # ---------------------------------------------------------------------------------------------------
 
-exec_apply_core_tweaks() {
-    local process_name="Apply Core Tweaks"
-    process_init "$process_name"
-    (
-        [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
-
-
-        # Add password feedback
-        echo -e "\n## Enable sudo password feedback\nDefaults pwfeedback" >>/mnt/etc/sudoers
-
-
-        # Set max VMAs (need for some apps/games)
-        #echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
-
-        # Reduce shutdown timeout
-        #sed -i "s/^\s*#\s*DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
-
-        # Configure pacman parrallel downloads, colors, eyecandy
-        sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
-        sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
-
-        # Disable modules
-        mkdir -p /mnt/etc/modprobe.d/
-        echo 'blacklist sp5100_tco' >>/mnt/etc/modprobe.d/blacklist-watchdog.conf
-        echo 'blacklist iTCO_wdt' >>/mnt/etc/modprobe.d/blacklist-watchdog.conf
-
-        # Return
-        process_return 0
-    ) &>"$PROCESS_LOG" &
-    process_capture $! "$process_name"
-}
-
-# ---------------------------------------------------------------------------------------------------
-
 exec_install_desktop() {
     local process_name="Install Desktop Environment"
     if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
@@ -1029,7 +994,7 @@ exec_install_desktop() {
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/cups.desktop"
 
             # Hide Shell Enhancement apps
-            if [ "$ARCH_OS_CONSOLE_TWEAKS_ENABLED" = "true" ]; then
+            if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
                 echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/fish.desktop"
                 echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/btop.desktop"
             fi
@@ -1230,7 +1195,7 @@ exec_install_archos_manager() {
 
 exec_install_shell_enhancement() {
     local process_name="Install Shell Enhancement"
-    if [ "$ARCH_OS_CONSOLE_TWEAKS_ENABLED" = "true" ]; then
+    if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                   # If debug mode then return
@@ -1238,7 +1203,7 @@ exec_install_shell_enhancement() {
             mkdir -p "/mnt/root/.config/neofetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch" # Create neofetch config dirs
 
             # Install & set fish for root & user
-            if [ "$ARCH_OS_CONSOLE_TWEAKS_SHELL" = "false" ]; then
+            if [ "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" = "true" ]; then
                 chroot_pacman_install fish
                 mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish" # Create fish config dirs
                 # shellcheck disable=SC2016
