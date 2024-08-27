@@ -1308,6 +1308,7 @@ exec_install_shell_enhancement() {
 
             } | tee "/mnt/root/.bashrc" "/mnt/home/${ARCH_OS_USERNAME}/.bashrc" >/dev/null
 
+            # shellcheck disable=SC2016
             { # Create starship config for root & user
                 echo "# Get editor completions based on the config schema"
                 echo "\"\$schema\" = 'https://starship.rs/config-schema.json'"
@@ -1331,6 +1332,14 @@ exec_install_shell_enhancement() {
                 echo "# Disable the package module, hiding it from the prompt completely"
                 echo "[package]"
                 echo "disabled = true"
+                echo ""
+                echo '[shell]'
+                echo 'disabled = false'
+                echo 'format = "[$indicator]($style)"'
+                echo 'unknown_indicator = "shell "'
+                echo 'bash_indicator = "bash "'
+                echo 'fish_indicator = ""'
+                echo 'style = "purple bold"'
             } | tee "/mnt/root/.config/starship.toml" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
 
             # shellcheck disable=SC2028,SC2016
