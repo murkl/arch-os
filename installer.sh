@@ -92,6 +92,7 @@ main() {
         until select_keyboard; do :; done
         until select_disk; do :; done
         until select_enable_encryption; do :; done
+        until select_enable_core_tweaks; do :; done
         until select_enable_bootsplash; do :; done
         until select_enable_multilib; do :; done
         until select_enable_aur; do :; done
@@ -138,6 +139,7 @@ main() {
     exec_init_installation
     exec_prepare_disk
     exec_pacstrap_core
+    exec_apply_core_tweaks
     exec_enable_multilib
     exec_install_bootsplash
     exec_install_aur_helper
@@ -217,9 +219,11 @@ properties_generate() {
         echo "ARCH_OS_VCONSOLE_FONT='${ARCH_OS_VCONSOLE_FONT}'"
         echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}'"
         echo "ARCH_OS_MICROCODE='${ARCH_OS_MICROCODE}'"
+        echo "ARCH_OS_CORE_TWEAKS_ENABLED='${ARCH_OS_CORE_TWEAKS_ENABLED}'"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
         echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}'"
-        echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}'"
+        echo "ARCH_OS_CONSOLE_TWEAKS_SHELL='${ARCH_OS_CONSOLE_TWEAKS_SHELL}'"
+        echo "ARCH_OS_CONSOLE_TWEAKS_ENABLED='${ARCH_OS_CONSOLE_TWEAKS_ENABLED}'"
         echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}'"
         echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}'"
         echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}'"
@@ -259,11 +263,11 @@ select_preset() {
 
         # Core preset
         if [ "$preset" = "core" ]; then
-            ARCH_OS_BOOTSPLASH_ENABLED='false'
+            ARCH_OS_CORE_TWEAKS_ENABLED="false"
             ARCH_OS_DESKTOP_ENABLED='false'
             ARCH_OS_MULTILIB_ENABLED='false'
             ARCH_OS_HOUSEKEEPING_ENABLED='false'
-            ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
+            ARCH_OS_CONSOLE_TWEAKS_ENABLED='false'
             ARCH_OS_AUR_HELPER='none'
             ARCH_OS_MANAGER_ENABLED='false'
             ARCH_OS_DESKTOP_GRAPHICS_DRIVER="none"
@@ -271,11 +275,13 @@ select_preset() {
 
         # Desktop preset
         if [ "$preset" = "desktop" ]; then
+            ARCH_OS_CORE_TWEAKS_ENABLED="true"
             ARCH_OS_BOOTSPLASH_ENABLED='true'
             ARCH_OS_DESKTOP_ENABLED='true'
             ARCH_OS_MULTILIB_ENABLED='true'
             ARCH_OS_HOUSEKEEPING_ENABLED='true'
-            ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
+            ARCH_OS_CONSOLE_TWEAKS_SHELL="fish"
+            ARCH_OS_CONSOLE_TWEAKS_ENABLED='true'
             ARCH_OS_AUR_HELPER='paru-bin'
             ARCH_OS_MANAGER_ENABLED='true'
         fi
@@ -406,6 +412,24 @@ select_enable_encryption() {
         ARCH_OS_ENCRYPTION_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     gum_info "Disk Encryption is set to ${ARCH_OS_ENCRYPTION_ENABLED}"
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+select_enable_core_tweaks() {
+    if [ -z "$ARCH_OS_CORE_TWEAKS_ENABLED" ]; then
+        gum_confirm "Enable Core Tweaks?"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        local user_input
+        [ $user_confirm = 1 ] && user_input="false"
+        [ $user_confirm = 0 ] && user_input="true"
+        ARCH_OS_CORE_TWEAKS_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    gum_info "Core Tweaks is set to ${ARCH_OS_CORE_TWEAKS_ENABLED}"
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -541,7 +565,7 @@ select_enable_housekeeping() {
 # ---------------------------------------------------------------------------------------------------
 
 select_enable_shell_enhancement() {
-    if [ -z "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" ]; then
+    if [ -z "$ARCH_OS_CONSOLE_TWEAKS_ENABLED" ]; then
         gum_confirm "Enable Shell Enhancement?"
         local user_confirm=$?
         [ $user_confirm = 130 ] && {
@@ -551,9 +575,9 @@ select_enable_shell_enhancement() {
         local user_input
         [ $user_confirm = 1 ] && user_input="false"
         [ $user_confirm = 0 ] && user_input="true"
-        ARCH_OS_SHELL_ENHANCEMENT_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+        ARCH_OS_CONSOLE_TWEAKS_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
+    gum_info "Shell Enhancement is set to ${ARCH_OS_CONSOLE_TWEAKS_ENABLED}"
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -802,6 +826,40 @@ exec_pacstrap_core() {
 
 # ---------------------------------------------------------------------------------------------------
 
+exec_apply_core_tweaks() {
+    local process_name="Apply Core Tweaks"
+    process_init "$process_name"
+    (
+        [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+
+
+        # Add password feedback
+        echo -e "\n## Enable sudo password feedback\nDefaults pwfeedback" >>/mnt/etc/sudoers
+
+
+        # Set max VMAs (need for some apps/games)
+        #echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
+
+        # Reduce shutdown timeout
+        #sed -i "s/^\s*#\s*DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
+
+        # Configure pacman parrallel downloads, colors, eyecandy
+        sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
+        sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
+
+        # Disable modules
+        mkdir -p /mnt/etc/modprobe.d/
+        echo 'blacklist sp5100_tco' >>/mnt/etc/modprobe.d/blacklist-watchdog.conf
+        echo 'blacklist iTCO_wdt' >>/mnt/etc/modprobe.d/blacklist-watchdog.conf
+
+        # Return
+        process_return 0
+    ) &>"$PROCESS_LOG" &
+    process_capture $! "$process_name"
+}
+
+# ---------------------------------------------------------------------------------------------------
+
 exec_install_desktop() {
     local process_name="Install Desktop Environment"
     if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
@@ -971,7 +1029,7 @@ exec_install_desktop() {
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/cups.desktop"
 
             # Hide Shell Enhancement apps
-            if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
+            if [ "$ARCH_OS_CONSOLE_TWEAKS_ENABLED" = "true" ]; then
                 echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/fish.desktop"
                 echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/btop.desktop"
             fi
@@ -1172,41 +1230,48 @@ exec_install_archos_manager() {
 
 exec_install_shell_enhancement() {
     local process_name="Install Shell Enhancement"
-    if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
+    if [ "$ARCH_OS_CONSOLE_TWEAKS_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                     # If debug mode then return
-            chroot_pacman_install fish starship eza bat neofetch mc btop nano man-db bash-completion # Install packages
-            mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish"           # Create fish config dirs
-            mkdir -p "/mnt/root/.config/neofetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch"   # Create neofetch config dirs
-            # shellcheck disable=SC2016
-            { # Create fish config for root & user
-                echo 'if status is-interactive'
-                echo '    # Commands to run in interactive sessions can go here'
-                echo 'end'
-                echo ''
-                echo '# Export environment variables'
-                echo 'if status --is-login'
-                echo '  for line in (/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator)'
-                echo '      set -gx (echo $line | cut -d= -f1) (echo $line | cut -d= -f2-)'
-                echo '  end'
-                echo 'end'
-                echo ''
-                echo '# Disable welcome message'
-                echo 'set fish_greeting'
-                echo ''
-                echo '# Colorize man pages (bat)'
-                echo -n 'export MANPAGER="sh -c ' && echo -n "'col -bx | bat -l man -p'" && echo '"'
-                echo 'export MANROFFOPT="-c"'
-                echo ''
-                echo '# Source user aliases'
-                echo 'source "$HOME/.aliases"'
-                echo ''
-                echo '# Source starship promt'
-                echo 'starship init fish | source'
-            } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                   # If debug mode then return
+            chroot_pacman_install starship eza bat neofetch mc btop nano man-db bash-completion    # Install packages
+            mkdir -p "/mnt/root/.config/neofetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch" # Create neofetch config dirs
 
-            { # Create fish aliases for root & user
+            # Install & set fish for root & user
+            if [ "$ARCH_OS_CONSOLE_TWEAKS_SHELL" = "false" ]; then
+                chroot_pacman_install fish
+                mkdir -p "/mnt/root/.config/fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish" # Create fish config dirs
+                # shellcheck disable=SC2016
+                { # Create fish config for root & user
+                    echo 'if status is-interactive'
+                    echo '    # Commands to run in interactive sessions can go here'
+                    echo 'end'
+                    echo ''
+                    echo '# Export environment variables'
+                    echo 'if status --is-login'
+                    echo '  for line in (/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator)'
+                    echo '      set -gx (echo $line | cut -d= -f1) (echo $line | cut -d= -f2-)'
+                    echo '  end'
+                    echo 'end'
+                    echo ''
+                    echo '# Disable welcome message'
+                    echo 'set fish_greeting'
+                    echo ''
+                    echo '# Colorize man pages (bat)'
+                    echo -n 'export MANPAGER="sh -c ' && echo -n "'col -bx | bat -l man -p'" && echo '"'
+                    echo 'export MANROFFOPT="-c"'
+                    echo ''
+                    echo '# Source user aliases'
+                    echo 'source "$HOME/.aliases"'
+                    echo ''
+                    echo '# Source starship promt'
+                    echo 'starship init fish | source'
+                } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
+                arch-chroot /mnt chsh -s /usr/bin/fish
+                arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
+            fi
+
+            { # Create aliases for root & user
                 echo 'alias ls="eza --color=always --group-directories-first"'
                 echo 'alias diff="diff --color=auto"'
                 echo 'alias grep="grep --color=auto"'
@@ -1216,7 +1281,59 @@ exec_install_shell_enhancement() {
                 echo 'alias fetch="neofetch"'
                 echo 'alias logs="systemctl --failed; echo; journalctl -p 3 -b"'
                 echo 'alias q="exit"'
+                echo 'alias .="cd .."'
+                echo 'alias ..="cd ../.."'
+                echo 'alias ...="cd ../../.."'
             } | tee "/mnt/root/.aliases" "/mnt/home/${ARCH_OS_USERNAME}/.aliases" >/dev/null
+
+            # shellcheck disable=SC2016
+            { # Create bash config for root & user
+                echo '# If not running interactively, do not do anything'
+                echo '[[ $- != *i* ]] && return'
+                echo ''
+                echo ' # Export systemd environment vars from ~/.config/environment.d/* (tty only)'
+                echo '[ -z "$DISPLAY" ] && export $(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator | xargs)'
+                echo ''
+                echo '# Source aliases'
+                echo 'source "${HOME}/.aliases"'
+                echo ''
+                echo '# Plugin: pkgfile (command not found)'
+                echo '[ -f /usr/share/doc/pkgfile/command-not-found.bash ] && source /usr/share/doc/pkgfile/command-not-found.bash'
+                echo ''
+                echo '# Options'
+                echo 'shopt -s autocd                  # Auto cd'
+                echo 'shopt -s cdspell                 # Correct cd typos'
+                echo 'shopt -s checkwinsize            # Update windows size on command'
+                echo 'shopt -s histappend              # Append History instead of overwriting file'
+                echo 'shopt -s cmdhist                 # Bash attempts to save all lines of a multiple-line command in the same history entry'
+                echo 'shopt -s extglob                 # Extended pattern'
+                echo 'shopt -s no_empty_cmd_completion # No empty completion'
+                echo 'shopt -s expand_aliases          # Expand aliases'
+                echo ''
+                echo '# Ignore upper and lowercase when TAB completion'
+                echo 'bind "set completion-ignore-case on"'
+                echo ''
+                echo '# Colorize man pages (bat)'
+                echo -n 'export MANPAGER="sh -c ' && echo -n "'col -bx | bat -l man -p'" && echo '"'
+                echo 'export MANROFFOPT="-c"'
+                echo ''
+                echo '# Colorize help (usage: help <command>)'
+                echo 'help() { "$@" --help 2>&1 | bat --plain --language=help; } '
+                echo ''
+                echo '# History'
+                echo 'export HISTSIZE=1000                    # History will save N commands'
+                echo 'export HISTFILESIZE=${HISTSIZE}         # History will remember N commands'
+                echo 'export HISTCONTROL=ignoredups:erasedups # Ingore duplicates and spaces (ignoreboth)'
+                echo 'export HISTTIMEFORMAT="%F %T "          # Add date to history'
+                echo ''
+                echo '# History ignore list'
+                echo 'export HISTIGNORE=' &
+                echo 'export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q"'
+                echo ''
+                echo '# Set starship'
+                echo 'command -v starship &>/dev/null && eval "$(starship init bash)"'
+
+            } | tee "/mnt/root/.bashrc" "/mnt/home/${ARCH_OS_USERNAME}/.bashrc" >/dev/null
 
             { # Create starship config for root & user
                 echo "# Get editor completions based on the config schema"
@@ -1290,20 +1407,21 @@ exec_install_shell_enhancement() {
                 echo 'disk_display="info"'
                 echo 'disk_subtitle="none"'
             } | tee "/mnt/root/.config/neofetch/config.conf" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch/config.conf" >/dev/null
-            # Set nano environment
-            {
+
+            { # Set nano environment
                 echo 'EDITOR=nano'
                 echo 'VISUAL=nano'
             } >/mnt/etc/environment
+
             # Set Nano colors
             sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
             sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
             sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
+
             # Set correct permissions
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
-            # Set Shell for root & user
-            arch-chroot /mnt chsh -s /usr/bin/fish
-            arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
+
+            # Finished
             process_return 0
         ) &>"$PROCESS_LOG" &
         process_capture $! "$process_name"

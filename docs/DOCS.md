@@ -110,7 +110,7 @@ ARCH_OS_BOOTSPLASH_ENABLED='false'
 ARCH_OS_DESKTOP_ENABLED='false'
 ARCH_OS_MULTILIB_ENABLED='false'
 ARCH_OS_HOUSEKEEPING_ENABLED='false'
-ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
+ARCH_OS_CONSOLE_TWEAKS_ENABLED='false'
 ARCH_OS_AUR_HELPER='none'
 ```
 
@@ -158,10 +158,12 @@ ARCH_OS_VCONSOLE_KEYMAP='de-latin1-nodeadkeys' # Console keymap | Show available
 ARCH_OS_VCONSOLE_FONT='' # Console font | Default: null | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Example: eurlatgr
 ARCH_OS_KERNEL='linux-zen' # Kernel | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened
 ARCH_OS_MICROCODE='intel-ucode' # Microcode | Disable: none | Available: intel-ucode, amd-ucode
+ARCH_OS_CORE_TWEAKS_ENABLED='true' # Arch OS Core Tweaks | Disable: false
 ARCH_OS_ECN_ENABLED='true' # Disable ECN support for legacy routers | Default: true | Disable: false
 ARCH_OS_BOOTSPLASH_ENABLED='true' # Bootsplash | Disable: false
 ARCH_OS_MANAGER_ENABLED='true' # Arch OS Manager | Disable: false
-ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true' # Shell Enhancement | Disable: false
+ARCH_OS_CONSOLE_TWEAKS_SHELL='fish' # Console Enhancement Shell | Default: fish | Available: fish, bash
+ARCH_OS_CONSOLE_TWEAKS_ENABLED='true' # Console Enhancement | Disable: false
 ARCH_OS_AUR_HELPER='paru-bin' # AUR Helper | Default: paru-bin | Disable: none | Recommended: paru, yay, trizen, pikaur
 ARCH_OS_MULTILIB_ENABLED='true' # MultiLib 32 Bit Support | Disable: false
 ARCH_OS_HOUSEKEEPING_ENABLED='true' # Housekeeping | Disable: false
@@ -193,7 +195,7 @@ Disable this feature with `ARCH_OS_HOUSEKEEPING_ENABLED='false'`
 
 <p><img src="screenshots/neofetch.png"></p>
 
-If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true`, these packages are installed and preconfigured (for root & user):
+If the property `ARCH_OS_CONSOLE_TWEAKS_ENABLED` is set to `true`, these packages are installed and preconfigured (for root & user):
 
 ```
 fish starship eza bat neofetch mc btop nano man-db bash-completion
