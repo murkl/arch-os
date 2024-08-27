@@ -263,7 +263,6 @@ select_preset() {
 
         # Core preset
         if [ "$preset" = "core" ]; then
-            ARCH_OS_CORE_TWEAKS_ENABLED="false"
             ARCH_OS_DESKTOP_ENABLED='false'
             ARCH_OS_MULTILIB_ENABLED='false'
             ARCH_OS_HOUSEKEEPING_ENABLED='false'
@@ -748,9 +747,10 @@ exec_pacstrap_core() {
         # Kernel args
         # Zswap should be disabled when using zram (https://github.com/archlinux/archinstall/issues/881)
         # Silent boot: https://wiki.archlinux.org/title/Silent_boot
-        kernel_args_default="rw init=/usr/lib/systemd/systemd zswap.enabled=0 nowatchdog quiet splash vt.global_cursor_default=0"
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args="rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot root=/dev/mapper/cryptroot ${kernel_args_default}"
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args="root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}") ${kernel_args_default}"
+        local kernel_args=()
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args+=("rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot" "root=/dev/mapper/cryptroot")
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args+=("root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}")")
+        kernel_args+=('rw' 'init=/usr/lib/systemd/systemd' 'zswap.enabled=0') && [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('nowatchdog' 'quiet' 'splash' 'vt.global_cursor_default=0')
 
         # Create Bootloader config
         {
@@ -765,7 +765,7 @@ exec_pacstrap_core() {
             echo 'title   Arch OS'
             echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
             echo "initrd  /initramfs-${ARCH_OS_KERNEL}.img"
-            echo "options ${kernel_args}"
+            echo "options ${kernel_args[*]}"
         } >/mnt/boot/loader/entries/arch.conf
 
         # Create fallback boot entry
@@ -773,7 +773,7 @@ exec_pacstrap_core() {
             echo 'title   Arch OS (Fallback)'
             echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
             echo "initrd  /initramfs-${ARCH_OS_KERNEL}-fallback.img"
-            echo "options ${kernel_args}"
+            echo "options ${kernel_args[*]}"
         } >/mnt/boot/loader/entries/arch-fallback.conf
 
         # Create new user
@@ -788,7 +788,7 @@ exec_pacstrap_core() {
         sed -i 's^# %wheel ALL=(ALL:ALL) ALL^%wheel ALL=(ALL:ALL) ALL^g' /mnt/etc/sudoers
 
         # Add password feedback
-        echo -e "\n## Enable sudo password feedback\nDefaults pwfeedback" >>/mnt/etc/sudoers
+        [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && echo -e "\n## Enable sudo password feedback\nDefaults pwfeedback" >>/mnt/etc/sudoers
 
         # Change passwords
         printf "%s\n%s" "${ARCH_OS_PASSWORD}" "${ARCH_OS_PASSWORD}" | arch-chroot /mnt passwd
@@ -802,20 +802,24 @@ exec_pacstrap_core() {
         arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootloader update
         arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
-        # Set max VMAs (need for some apps/games)
-        #echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
+        if [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ]; then
 
-        # Reduce shutdown timeout
-        #sed -i "s/^\s*#\s*DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
+            # Set max VMAs (need for some apps/games)
+            #echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
 
-        # Configure pacman parrallel downloads, colors, eyecandy
-        sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
-        sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
+            # Reduce shutdown timeout
+            #sed -i "s/^\s*#\s*DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
 
-        # Disable modules
-        mkdir -p /mnt/etc/modprobe.d/
-        echo 'blacklist sp5100_tco' >>/mnt/etc/modprobe.d/blacklist-watchdog.conf
-        echo 'blacklist iTCO_wdt' >>/mnt/etc/modprobe.d/blacklist-watchdog.conf
+            # Configure pacman parrallel downloads, colors, eyecandy
+            sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
+            sed -i 's/^#Color/Color\nILoveCandy/' /mnt/etc/pacman.conf
+
+            # Disable watchdog modules
+            mkdir -p /mnt/etc/modprobe.d/
+            echo 'blacklist sp5100_tco' >>/mnt/etc/modprobe.d/blacklist-watchdog.conf
+            echo 'blacklist iTCO_wdt' >>/mnt/etc/modprobe.d/blacklist-watchdog.conf
+
+        fi
 
         # Return
         process_return 0
@@ -1041,7 +1045,7 @@ exec_install_graphics_driver() {
                 chroot_pacman_install "${packages[@]}"
                 # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
                 # Alternative (slow boot, bios logo twice, but correct plymouth resolution):
-                #sed -i "s/nowatchdog quiet/nowatchdog nvidia_drm.modeset=1 nvidia_drm.fbdev=1 quiet/g" /mnt/boot/loader/entries/arch.conf
+                #sed -i "s/systemd zswap.enabled=0/systemd nvidia_drm.modeset=1 nvidia_drm.fbdev=1 zswap.enabled=0/g" /mnt/boot/loader/entries/arch.conf
                 mkdir -p /mnt/etc/modprobe.d/ && echo -e 'options nvidia_drm modeset=1 fbdev=1' >/mnt/etc/modprobe.d/nvidia.conf
                 sed -i "s/^MODULES=(.*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
                 # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
