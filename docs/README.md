@@ -64,6 +64,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 ## Optional Features
 
 - [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
+- [Arch OS Core Tweaks](DOCS.md#core-tweaks)
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
 - [Arch OS Shell Enhancement](DOCS.md#shell-enhancement)
 - [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
@@ -73,7 +74,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - 32 Bit Support (Multilib)
 - Disk Encryption
 - GNOME Desktop
-  - [Slim Version](DOCS.md#example-installerconf) (Minimal Apps)
+  - [Arch OS Slim Version](DOCS.md#example-installerconf) (Minimal Apps)
   - Wayland optimized
   - Auto Login enabled
   - [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)

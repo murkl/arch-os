@@ -9,12 +9,13 @@
 1. [Recommendation](#recommendation)
 2. [Advanced Installation](#advanced-installation)
 3. [Housekeeping](#housekeeping)
-4. [Shell Enhancement](#shell-enhancement)
-5. [Arch OS Manager](#arch-os-manager)
-6. [Technical Information](#technical-information)
-7. [Troubleshooting](#troubleshooting)
-8. [Development](#development)
-9. [Screenshots](#screenshots)
+4. [Core Tweaks](#core-tweaks)
+5. [Shell Enhancement](#shell-enhancement)
+6. [Arch OS Manager](#arch-os-manager)
+7. [Technical Information](#technical-information)
+8. [Troubleshooting](#troubleshooting)
+9. [Development](#development)
+10. [Screenshots](#screenshots)
 
 ## Recommendation
 
@@ -63,6 +64,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - [vitals](https://extensions.gnome.org/extension/1460/vitals/)
 - [weather-oclock](https://extensions.gnome.org/extension/5470/weather-oclock/)
 - [caffeine](https://extensions.gnome.org/extension/517/caffeine/)
+- [fullscreen-to-empty-workspace](https://extensions.gnome.org/extension/6072/fullscreen-to-empty-workspace/)
 - [gamemode-indicator](https://extensions.gnome.org/extension/6340/gamemode-indicator-in-system-settings/)
 - [disable-unredirect-fullscreen](https://extensions.gnome.org/extension/1873/disable-unredirect-fullscreen-windows/) (fix some issues)
 - [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (useful in wayland app toggler script)
@@ -105,6 +107,7 @@ The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better s
 Set these properties to install Arch OS Core only with minimal packages & configurations:
 
 ```
+ARCH_OS_CORE_TWEAKS_ENABLED='false'
 ARCH_OS_BOOTSPLASH_ENABLED='false'
 ARCH_OS_DESKTOP_ENABLED='false'
 ARCH_OS_MULTILIB_ENABLED='false'
@@ -153,26 +156,41 @@ ARCH_OS_ENCRYPTION_ENABLED='true' # Disk encryption | Disable: false
 ARCH_OS_TIMEZONE='Europe/Berlin' # Timezone | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin
 ARCH_OS_LOCALE_LANG='de_DE' # Locale | Show available: ls /usr/share/i18n/locales | Example: de_DE
 ARCH_OS_LOCALE_GEN_LIST=('de_DE.UTF-8 UTF-8' 'de_DE ISO-8859-1' 'de_DE@euro ISO-8859-15' 'en_US.UTF-8 UTF-8') # Locale List | Show available: cat /etc/locale.gen
+ARCH_OS_REFLECTOR_COUNTRY='' # Country used by reflector | Default: null | Example: Germany,France
 ARCH_OS_VCONSOLE_KEYMAP='de-latin1-nodeadkeys' # Console keymap | Show available: localectl list-keymaps | Example: de-latin1-nodeadkeys
 ARCH_OS_VCONSOLE_FONT='' # Console font | Default: null | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Example: eurlatgr
 ARCH_OS_KERNEL='linux-zen' # Kernel | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened
 ARCH_OS_MICROCODE='intel-ucode' # Microcode | Disable: none | Available: intel-ucode, amd-ucode
-ARCH_OS_ECN_ENABLED='true' # Disable ECN support for legacy routers | Default: true | Disable: false
-ARCH_OS_BOOTSPLASH_ENABLED='true' # Bootsplash | Disable: false
-ARCH_OS_MANAGER_ENABLED='true' # Arch OS Manager | Disable: false
-ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true' # Shell Enhancement | Disable: false
-ARCH_OS_AUR_HELPER='paru-bin' # AUR Helper | Default: paru-bin | Disable: none | Recommended: paru, yay, trizen, pikaur
+ARCH_OS_CORE_TWEAKS_ENABLED='true' # Arch OS Core Tweaks | Disable: false
 ARCH_OS_MULTILIB_ENABLED='true' # MultiLib 32 Bit Support | Disable: false
+ARCH_OS_AUR_HELPER='paru-bin' # AUR Helper | Default: paru-bin | Disable: none | Recommended: paru, yay, trizen, pikaur
+ARCH_OS_BOOTSPLASH_ENABLED='true' # Bootsplash | Disable: false
+ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true' # Shell Enhancement | Disable: false
+ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='true' # Enable fish shell | Default: true | Disable: false
 ARCH_OS_HOUSEKEEPING_ENABLED='true' # Housekeeping | Disable: false
-ARCH_OS_REFLECTOR_COUNTRY='' # Country used by reflector | Default: null | Example: Germany,France
+ARCH_OS_MANAGER_ENABLED='true' # Arch OS Manager | Disable: false
 ARCH_OS_DESKTOP_ENABLED='true' # Arch OS Desktop | Disable: false
+ARCH_OS_DESKTOP_SLIM_ENABLED='true' # Sim Desktop (Minimal Apps) | Default: false
 ARCH_OS_DESKTOP_GRAPHICS_DRIVER='nvidia' # Graphics Driver | Disable: none | Available: mesa, intel_i915, nvidia, amd, ati
 ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='de' # X11 keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de
 ARCH_OS_DESKTOP_KEYBOARD_MODEL='pc105' # X11 keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models
 ARCH_OS_DESKTOP_KEYBOARD_VARIANT='nodeadkeys' # X11 keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys
-ARCH_OS_DESKTOP_SLIM_ENABLED='true' # Sim Desktop (Minimal Apps) | Default: false
 ARCH_OS_VM_SUPPORT_ENABLED='true' # VM Support | Default: true | Disable: false
+ARCH_OS_ECN_ENABLED='true' # Disable ECN support for legacy routers | Default: true | Disable: false
 ```
+
+## Core Tweaks
+
+Enable this feature with `ARCH_OS_CORE_TWEAKS_ENABLED='true'`:
+
+- `vm.max_map_count` is set to `1048576` for compatibility of some apps/games (default)
+- `quiet splash vt.global_cursor_default=0` is set to kernel parameters for silent boot
+- Pacman parallel downloads is set to `5`
+- Pacman colors and eyecandy is enabled
+- Sudo password feedback is enabled
+- Watchdog is disabled with kernel arg `nowatchdog` and blacklist: `/etc/modprobe.d/blacklist-watchdog.conf`
+
+Disable this featuree with `ARCH_OS_CORE_TWEAKS_ENABLED='false'`
 
 ## Housekeeping
 
@@ -192,7 +210,7 @@ Disable this feature with `ARCH_OS_HOUSEKEEPING_ENABLED='false'`
 
 <p><img src="screenshots/neofetch.png"></p>
 
-If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true`, these packages are installed and preconfigured (for root & user):
+If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true`, the following packages are installed and preconfigured (for root & user). To keep `bash` as default shell, set `ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='false'`:
 
 ```
 fish starship eza bat neofetch mc btop nano man-db bash-completion
@@ -302,14 +320,8 @@ NetworkManager fstrim.timer systemd-zram-setup@zram0.service systemd-oomd.servic
 
 This configuration will be set during Arch OS Core Installation:
 
-- `vm.max_map_count` is set to `1048576` for compatibility of some apps/games (default)
-- `quiet splash vt.global_cursor_default=0` is set to kernel parameters for silent boot
-- Pacman parallel downloads is set to `5`
-- Pacman colors and eyecandy is enabled
 - Bootloader timeout is set to `0`
-- Sudo password feedback is enabled
 - User is added to group `wheel` to use `sudo`
-- Watchdog is disabled with kernel arg `nowatchdog` and blacklist: `/etc/modprobe.d/blacklist-watchdog.conf`
 
 ## Troubleshooting
 
