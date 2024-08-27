@@ -789,9 +789,6 @@ exec_pacstrap_core() {
         # Allow users in group wheel to use sudo
         sed -i 's^# %wheel ALL=(ALL:ALL) ALL^%wheel ALL=(ALL:ALL) ALL^g' /mnt/etc/sudoers
 
-        # Add password feedback
-        [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && echo -e "\n## Enable sudo password feedback\nDefaults pwfeedback" >>/mnt/etc/sudoers
-
         # Change passwords
         printf "%s\n%s" "${ARCH_OS_PASSWORD}" "${ARCH_OS_PASSWORD}" | arch-chroot /mnt passwd
         printf "%s\n%s" "${ARCH_OS_PASSWORD}" "${ARCH_OS_PASSWORD}" | arch-chroot /mnt passwd "$ARCH_OS_USERNAME"
@@ -804,13 +801,11 @@ exec_pacstrap_core() {
         arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootloader update
         arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
+        # Make some Arch OS tweaks
         if [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ]; then
 
-            # Set max VMAs (need for some apps/games)
-            #echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
-
-            # Reduce shutdown timeout
-            #sed -i "s/^\s*#\s*DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
+            # Add password feedback
+            echo -e "\n## Enable sudo password feedback\nDefaults pwfeedback" >>/mnt/etc/sudoers
 
             # Configure pacman parrallel downloads, colors, eyecandy
             sed -i 's/^#ParallelDownloads/ParallelDownloads/' /mnt/etc/pacman.conf
@@ -821,6 +816,11 @@ exec_pacstrap_core() {
             echo 'blacklist sp5100_tco' >>/mnt/etc/modprobe.d/blacklist-watchdog.conf
             echo 'blacklist iTCO_wdt' >>/mnt/etc/modprobe.d/blacklist-watchdog.conf
 
+            # Set max VMAs (need for some apps/games)
+            #echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
+
+            # Reduce shutdown timeout
+            #sed -i "s/^\s*#\s*DefaultTimeoutStopSec=.*/DefaultTimeoutStopSec=10s/" /mnt/etc/systemd/system.conf
         fi
 
         # Return
