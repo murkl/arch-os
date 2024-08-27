@@ -214,19 +214,19 @@ properties_generate() {
         echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}'"
         echo "ARCH_OS_LOCALE_LANG='${ARCH_OS_LOCALE_LANG}'"
         echo "ARCH_OS_LOCALE_GEN_LIST=(${ARCH_OS_LOCALE_GEN_LIST[*]@Q})"
+        echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}'"
         echo "ARCH_OS_VCONSOLE_KEYMAP='${ARCH_OS_VCONSOLE_KEYMAP}'"
         echo "ARCH_OS_VCONSOLE_FONT='${ARCH_OS_VCONSOLE_FONT}'"
         echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}'"
         echo "ARCH_OS_MICROCODE='${ARCH_OS_MICROCODE}'"
         echo "ARCH_OS_CORE_TWEAKS_ENABLED='${ARCH_OS_CORE_TWEAKS_ENABLED}'"
+        echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}'"
+        echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}'"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
-        echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}'"
         echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}'"
         echo "ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED}'"
-        echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}'"
-        echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}'"
         echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}'"
-        echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}'"
+        echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}'"
         echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
         echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}'"
         echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}'"
@@ -1244,10 +1244,12 @@ exec_install_shell_enhancement() {
 
             { # Create aliases for root & user
                 echo 'alias ls="eza --color=always --group-directories-first"'
+                echo 'alias ll="ls -l"'
+                echo 'alias la="ls -la"'
+                echo 'alias lt="ls -Tal"'
                 echo 'alias diff="diff --color=auto"'
                 echo 'alias grep="grep --color=auto"'
                 echo 'alias ip="ip -color=auto"'
-                echo 'alias lt="ls -Tal"'
                 echo 'alias open="xdg-open"'
                 echo 'alias fetch="neofetch"'
                 echo 'alias logs="systemctl --failed; echo; journalctl -p 3 -b"'
