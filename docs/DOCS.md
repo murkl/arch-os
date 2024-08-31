@@ -54,20 +54,26 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 ### GNOME Extensions (optional)
 
 - [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/)
-- [app-tray-indicator](https://extensions.gnome.org/extension/615/appindicator-support/)
-- [dash-to-panel](https://extensions.gnome.org/extension/1160/dash-to-panel/)
-- [dash-to-dock](https://extensions.gnome.org/extension/307/dash-to-dock/)
+- [app-indicator-support](https://extensions.gnome.org/extension/615/appindicator-support/)
+- [app-indicator-manager](https://extensions.gnome.org/extension/7266/lilypad/)
 - [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/)
+- [dash-to-dock](https://extensions.gnome.org/extension/307/dash-to-dock/)
+- [dash-to-panel](https://extensions.gnome.org/extension/1160/dash-to-panel/)
 - [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
-- [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
-- [light-style](https://extensions.gnome.org/extension/6198/light-style/)
-- [vitals](https://extensions.gnome.org/extension/1460/vitals/)
 - [weather-oclock](https://extensions.gnome.org/extension/5470/weather-oclock/)
+- [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
+- [system-monitor](https://extensions.gnome.org/extension/6807/system-monitor/)
+- [vitals](https://extensions.gnome.org/extension/1460/vitals/)
 - [caffeine](https://extensions.gnome.org/extension/517/caffeine/)
-- [fullscreen-to-empty-workspace](https://extensions.gnome.org/extension/6072/fullscreen-to-empty-workspace/)
+- [light-style](https://extensions.gnome.org/extension/6198/light-style/)
 - [gamemode-indicator](https://extensions.gnome.org/extension/6340/gamemode-indicator-in-system-settings/)
+
+
+#### Tweak Extensions
+
+- [fullscreen-to-empty-workspace](https://extensions.gnome.org/extension/6072/fullscreen-to-empty-workspace/) (open fullscreen apps on new workspace)
 - [disable-unredirect-fullscreen](https://extensions.gnome.org/extension/1873/disable-unredirect-fullscreen-windows/) (fix some issues)
-- [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (useful in wayland app toggler script)
+- [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (alternative to wmctrl in wayland)
 
 ### For Developer
 
