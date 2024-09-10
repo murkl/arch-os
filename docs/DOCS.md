@@ -68,7 +68,6 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - [light-style](https://extensions.gnome.org/extension/6198/light-style/)
 - [gamemode-indicator](https://extensions.gnome.org/extension/6340/gamemode-indicator-in-system-settings/)
 
-
 #### Tweak Extensions
 
 - [fullscreen-to-empty-workspace](https://extensions.gnome.org/extension/6072/fullscreen-to-empty-workspace/) (open fullscreen apps on new workspace)
@@ -214,12 +213,12 @@ Disable this feature with `ARCH_OS_HOUSEKEEPING_ENABLED='false'`
 
 ## Shell Enhancement
 
-<p><img src="screenshots/neofetch.png"></p>
+<p><img src="screenshots/fastfetch.png"></p>
 
 If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true`, the following packages are installed and preconfigured (for root & user). To keep `bash` as default shell, set `ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='false'`:
 
 ```
-fish starship eza bat neofetch mc btop nano man-db bash-completion
+fish starship eza bat fastfetch mc btop nano man-db bash-completion
 ```
 
 - `fish` is set as default shell
@@ -262,8 +261,8 @@ fish_config
 # Starship config
 ~/.config/starship.toml
 
-# Neofetch config
-~/.config/neofetch/config.conf
+# Fastfetch config
+~/.config/fastfetch/config.jsonc
 
 # Midnight Commander config
 ~/.config/mc/ini
@@ -448,7 +447,7 @@ curl -Ls bit.ly/arch-os-dev | bash
 
 ### Shell Enhancement
 
-<p><img src="screenshots/neofetch.png"></p>
+<p><img src="screenshots/fastfetch.png"></p>
 
 ### Arch OS Installer
 
