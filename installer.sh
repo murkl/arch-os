@@ -817,6 +817,9 @@ exec_pacstrap_core() {
             echo 'blacklist sp5100_tco' >>/mnt/etc/modprobe.d/blacklist-watchdog.conf
             echo 'blacklist iTCO_wdt' >>/mnt/etc/modprobe.d/blacklist-watchdog.conf
 
+            # Disable debug packages when using makepkg
+            sed -i '/OPTIONS=.*!debug/!s/\(OPTIONS=.*\)debug/\1!debug/' /mnt/etc/makepkg.conf
+
             # Set max VMAs (need for some apps/games)
             #echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
 
@@ -1418,13 +1421,14 @@ exec_install_shell_enhancement() {
                 echo '      "type": "memory"'
                 echo '    },'
                 echo '    {'
-                echo '      "key": "IP        ",'
+                echo '      "key": "Network   ",'
                 echo '      "type": "localip"'
                 echo '    },'
                 echo '    {'
                 echo '      "key": "Uptime    ",'
                 echo '      "type": "uptime"'
                 echo '    },'
+                echo '    "break",'
                 echo '    {'
                 echo '      "key": "Packages  ",'
                 echo '      "type": "packages"'

@@ -193,6 +193,7 @@ Enable this feature with `ARCH_OS_CORE_TWEAKS_ENABLED='true'`:
 - Pacman parallel downloads is set to `5`
 - Pacman colors and eyecandy is enabled
 - Sudo password feedback is enabled
+- Debug packages are disabled in `/etc/makepkg.conf`
 - Watchdog is disabled with kernel arg `nowatchdog` and blacklist: `/etc/modprobe.d/blacklist-watchdog.conf`
 
 Disable this featuree with `ARCH_OS_CORE_TWEAKS_ENABLED='false'`
