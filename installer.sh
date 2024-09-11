@@ -269,7 +269,6 @@ select_preset() {
             ARCH_OS_HOUSEKEEPING_ENABLED='false'
             ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
             ARCH_OS_AUR_HELPER='none'
-            ARCH_OS_MANAGER_ENABLED='false'
             ARCH_OS_DESKTOP_GRAPHICS_DRIVER="none"
         fi
 
