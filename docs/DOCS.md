@@ -54,20 +54,25 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 ### GNOME Extensions (optional)
 
 - [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/)
-- [app-tray-indicator](https://extensions.gnome.org/extension/615/appindicator-support/)
-- [dash-to-panel](https://extensions.gnome.org/extension/1160/dash-to-panel/)
-- [dash-to-dock](https://extensions.gnome.org/extension/307/dash-to-dock/)
+- [app-indicator-support](https://extensions.gnome.org/extension/615/appindicator-support/)
+- [app-indicator-manager](https://extensions.gnome.org/extension/7266/lilypad/)
 - [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/)
+- [dash-to-dock](https://extensions.gnome.org/extension/307/dash-to-dock/)
+- [dash-to-panel](https://extensions.gnome.org/extension/1160/dash-to-panel/)
 - [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
-- [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
-- [light-style](https://extensions.gnome.org/extension/6198/light-style/)
-- [vitals](https://extensions.gnome.org/extension/1460/vitals/)
 - [weather-oclock](https://extensions.gnome.org/extension/5470/weather-oclock/)
+- [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
+- [system-monitor](https://extensions.gnome.org/extension/6807/system-monitor/)
+- [vitals](https://extensions.gnome.org/extension/1460/vitals/)
 - [caffeine](https://extensions.gnome.org/extension/517/caffeine/)
-- [fullscreen-to-empty-workspace](https://extensions.gnome.org/extension/6072/fullscreen-to-empty-workspace/)
+- [light-style](https://extensions.gnome.org/extension/6198/light-style/)
 - [gamemode-indicator](https://extensions.gnome.org/extension/6340/gamemode-indicator-in-system-settings/)
+
+#### Tweak Extensions
+
+- [fullscreen-to-empty-workspace](https://extensions.gnome.org/extension/6072/fullscreen-to-empty-workspace/) (open fullscreen apps on new workspace)
 - [disable-unredirect-fullscreen](https://extensions.gnome.org/extension/1873/disable-unredirect-fullscreen-windows/) (fix some issues)
-- [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (useful in wayland app toggler script)
+- [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (alternative to wmctrl in wayland)
 
 ### For Developer
 
@@ -188,6 +193,7 @@ Enable this feature with `ARCH_OS_CORE_TWEAKS_ENABLED='true'`:
 - Pacman parallel downloads is set to `5`
 - Pacman colors and eyecandy is enabled
 - Sudo password feedback is enabled
+- Debug packages are disabled in `/etc/makepkg.conf`
 - Watchdog is disabled with kernel arg `nowatchdog` and blacklist: `/etc/modprobe.d/blacklist-watchdog.conf`
 
 Disable this featuree with `ARCH_OS_CORE_TWEAKS_ENABLED='false'`
@@ -208,12 +214,12 @@ Disable this feature with `ARCH_OS_HOUSEKEEPING_ENABLED='false'`
 
 ## Shell Enhancement
 
-<p><img src="screenshots/neofetch.png"></p>
+<p><img src="screenshots/fastfetch.png"></p>
 
 If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true`, the following packages are installed and preconfigured (for root & user). To keep `bash` as default shell, set `ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='false'`:
 
 ```
-fish starship eza bat neofetch mc btop nano man-db bash-completion
+fish starship eza bat fastfetch mc btop nano man-db bash-completion
 ```
 
 - `fish` is set as default shell
@@ -256,8 +262,8 @@ fish_config
 # Starship config
 ~/.config/starship.toml
 
-# Neofetch config
-~/.config/neofetch/config.conf
+# Fastfetch config
+~/.config/fastfetch/config.jsonc
 
 # Midnight Commander config
 ~/.config/mc/ini
@@ -442,19 +448,17 @@ curl -Ls bit.ly/arch-os-dev | bash
 
 ### Shell Enhancement
 
-<p><img src="screenshots/neofetch.png"></p>
+<p><img src="screenshots/fastfetch.png"></p>
 
 ### Arch OS Installer
 
-<p>
-<img width="24%" style="vertical-align: top;" src="screenshots/installer_load_properties.png">
-<img width="24%" style="vertical-align: top;" src="screenshots/installer_preset.png">
-<img width="24%" style="vertical-align: top;" src="screenshots/installer_language.png">
-<img width="24%" style="vertical-align: top;" src="screenshots/installer_disk.png">
-<img width="24%" style="vertical-align: top;" src="screenshots/installer_driver.png">
-<img width="24%" style="vertical-align: top;" src="screenshots/installer_slim.png">
-<img width="24%" style="vertical-align: top;" src="screenshots/installer_start.png">
-<img width="24%" style="vertical-align: top;" src="screenshots/installer_core_complete.png">
-</p>
+<p><img src="screenshots/installer_load_properties.png"></p>
+<p><img src="screenshots/installer_preset.png"></p>
+<p><img src="screenshots/installer_language.png"></p>
+<p><img src="screenshots/installer_disk.png"></p>
+<p><img src="screenshots/installer_driver.png"></p>
+<p><img src="screenshots/installer_slim.png"></p>
+<p><img src="screenshots/installer_start.png"></p>
+<p><img src="screenshots/installer_core_complete.png"></p>
 
 </div>

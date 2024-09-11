@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1090
 
-VERSION='1.6.3'
-
-# Debug simulator:  MODE=debug ./installer.sh
-# Custom gum:       GUM=/usr/bin/gum ./installer.sh
-
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 #                                          ARCH OS INSTALLER
 #                                - Automated Arch Linux Installer TUI -
@@ -16,10 +11,16 @@ VERSION='1.6.3'
 # ORIGIN:   Germany
 # LICENCE:  GPL 2.0
 
+# Debug simulator:  MODE=debug ./installer.sh
+# Custom gum:       GUM=/usr/bin/gum ./installer.sh
+
 # CONFIG
 set -o pipefail # A pipeline error results in the error status of the entire pipeline
 set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
+
+# SCRIPT
+VERSION='1.6.4'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -268,7 +269,6 @@ select_preset() {
             ARCH_OS_HOUSEKEEPING_ENABLED='false'
             ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
             ARCH_OS_AUR_HELPER='none'
-            ARCH_OS_MANAGER_ENABLED='false'
             ARCH_OS_DESKTOP_GRAPHICS_DRIVER="none"
         fi
 
@@ -816,6 +816,9 @@ exec_pacstrap_core() {
             echo 'blacklist sp5100_tco' >>/mnt/etc/modprobe.d/blacklist-watchdog.conf
             echo 'blacklist iTCO_wdt' >>/mnt/etc/modprobe.d/blacklist-watchdog.conf
 
+            # Disable debug packages when using makepkg
+            sed -i '/OPTIONS=.*!debug/!s/\(OPTIONS=.*\)debug/\1!debug/' /mnt/etc/makepkg.conf
+
             # Set max VMAs (need for some apps/games)
             #echo vm.max_map_count=1048576 >/mnt/etc/sysctl.d/vm.max_map_count.conf
 
@@ -1204,9 +1207,9 @@ exec_install_shell_enhancement() {
     if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                   # If debug mode then return
-            chroot_pacman_install starship eza bat neofetch mc btop nano man-db bash-completion    # Install packages
-            mkdir -p "/mnt/root/.config/neofetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch" # Create neofetch config dirs
+            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                     # If debug mode then return
+            chroot_pacman_install starship eza bat fastfetch mc btop nano man-db bash-completion     # Install packages
+            mkdir -p "/mnt/root/.config/fastfetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/fastfetch" # Create fastfetch config dirs
 
             # Install & set fish for root & user
             if [ "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" = "true" ]; then
@@ -1251,7 +1254,7 @@ exec_install_shell_enhancement() {
                 echo 'alias grep="grep --color=auto"'
                 echo 'alias ip="ip -color=auto"'
                 echo 'alias open="xdg-open"'
-                echo 'alias fetch="neofetch"'
+                echo 'alias fetch="fastfetch"'
                 echo 'alias logs="systemctl --failed; echo; journalctl -p 3 -b"'
                 echo 'alias q="exit"'
                 echo 'alias .="cd .."'
@@ -1343,52 +1346,100 @@ exec_install_shell_enhancement() {
             } | tee "/mnt/root/.config/starship.toml" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
 
             # shellcheck disable=SC2028,SC2016
-            { # Create neofetch config for root & user
-                echo '# https://github.com/dylanaraps/neofetch/wiki/Customizing-Info'
-                echo ''
-                echo 'print_info() {'
-                echo '    prin'
-                echo '    prin "Distro\t" "Arch OS"'
-                echo '    info "Kernel\t" kernel'
-                #echo '    info "Host\t" model'
-                echo '    info "CPU\t" cpu'
-                echo '    info "GPU\t" gpu'
-                echo '    prin'
-                echo '    info "Desktop\t" de'
-                echo '    prin "Window\t" "$([ $XDG_SESSION_TYPE = "x11" ] && echo X11 || echo Wayland)"'
-                echo '    info "Manager\t" wm'
-                echo '    info "Shell\t" shell'
-                echo '    info "Terminal\t" term'
-                echo '    prin'
-                echo '    info "Disk\t" disk'
-                echo '    info "Memory\t" memory'
-                echo '    info "IP\t" local_ip'
-                echo '    info "Uptime\t" uptime'
-                echo '    info "Packages\t" packages'
-                echo '    prin'
-                echo '    prin "$(color 1) ● \n $(color 2) ● \n $(color 3) ● \n $(color 4) ● \n $(color 5) ● \n $(color 6) ● \n $(color 7) ● \n $(color 8) ●"'
+            { # Create fastfetch config for root & user
+                echo '{'
+                echo '  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",'
+                echo '  "logo": {'
+                echo '    "source": "arch2",'
+                echo '    "type": "auto",'
+                echo '    "color": {'
+                echo '      "1": "magenta",'
+                echo '      "2": "magenta"'
+                echo '    },'
+                echo '    "padding": {'
+                echo '      "top": 0,'
+                echo '      "left": 4,'
+                echo '      "right": 8'
+                echo '    }'
+                echo '  },'
+                echo '  "display": {'
+                echo '    "key": {'
+                echo '      "width": 20'
+                echo '    },'
+                echo '    "separator": "  →  ",'
+                echo '    "color": {'
+                echo '      "keys": "default",'
+                echo '      "separator": "magenta"'
+                echo '    }'
+                echo '  },'
+                echo '  "modules": ['
+                echo '    "break",'
+                echo '    {'
+                echo '      "key": "Distro    ",'
+                echo '      "type": "os",'
+                echo '      "format": "Arch OS"'
+                echo '    },'
+                echo '    {'
+                echo '      "key": "Kernel    ",'
+                echo '      "type": "kernel"'
+                echo '    },'
+                echo '    {'
+                echo '      "key": "CPU       ",'
+                echo '      "type": "cpu",'
+                echo '      "temp": true'
+                echo '    },'
+                echo '    {'
+                echo '      "key": "GPU       ",'
+                echo '      "type": "gpu",'
+                echo '      "temp": true'
+                echo '    },'
+                echo '    "break",'
+                echo '    {'
+                echo '      "key": "Desktop   ",'
+                echo '      "type": "de"'
+                echo '    },'
+                echo '    {'
+                echo '      "key": "Manager   ",'
+                echo '      "type": "wm"'
+                echo '    },'
+                echo '    {'
+                echo '      "key": "Shell     ",'
+                echo '      "type": "shell"'
+                echo '    },'
+                echo '    {'
+                echo '      "key": "Terminal  ",'
+                echo '      "type": "terminal"'
+                echo '    },'
+                echo '    "break",'
+                echo '    {'
+                echo '      "key": "Disk      ",'
+                echo '      "type": "disk"'
+                echo '    },'
+                echo '    {'
+                echo '      "key": "Memory    ",'
+                echo '      "type": "memory"'
+                echo '    },'
+                echo '    {'
+                echo '      "key": "Network   ",'
+                echo '      "type": "localip"'
+                echo '    },'
+                echo '    {'
+                echo '      "key": "Uptime    ",'
+                echo '      "type": "uptime"'
+                echo '    },'
+                echo '    "break",'
+                echo '    {'
+                echo '      "key": "Packages  ",'
+                echo '      "type": "packages"'
+                echo '    },'
+                echo '    "break",'
+                echo '    {'
+                echo '      "type": "custom",'
+                echo '      "format": "{#red}●    {#green}●    {#yellow}●    {#blue}●    {#magenta}●    {#cyan}●    {#white}●    {#default}●"'
+                echo '    }'
+                echo '  ]'
                 echo '}'
-                echo ''
-                echo '# Config'
-                echo 'separator=" → "'
-                echo 'ascii_distro="auto"'
-                echo 'ascii_bold="on"'
-                echo 'ascii_colors=(5 5 5 5 5 5)'
-                echo 'bold="on"'
-                echo 'colors=(7 7 7 7 7 7)'
-                echo 'gap=8'
-                echo 'os_arch="off"'
-                echo 'shell_version="off"'
-                echo 'cpu_speed="off"'
-                echo 'cpu_brand="on"'
-                echo 'cpu_cores="off"'
-                echo 'cpu_temp="off"'
-                echo 'memory_display="info"'
-                echo 'memory_percent="on"'
-                echo 'memory_unit="gib"'
-                echo 'disk_display="info"'
-                echo 'disk_subtitle="none"'
-            } | tee "/mnt/root/.config/neofetch/config.conf" "/mnt/home/${ARCH_OS_USERNAME}/.config/neofetch/config.conf" >/dev/null
+            } | tee "/mnt/root/.config/fastfetch/config.jsonc" "/mnt/home/${ARCH_OS_USERNAME}/.config/fastfetch/config.jsonc" >/dev/null
 
             { # Set nano environment
                 echo 'EDITOR=nano'
