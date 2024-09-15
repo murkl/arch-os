@@ -20,7 +20,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # SCRIPT
-VERSION='1.6.4'
+VERSION='1.6.5'
 
 # GUM
 GUM_VERSION="0.13.0"
