@@ -1725,7 +1725,7 @@ gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
 gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
 
 # Gum prints
-gum_title() { log_info "+ ${*}" && gum join --horizontal "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
+gum_title() { log_head "+ ${*}" && gum join --horizontal "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
 gum_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold "• ")" "$(gum_white --bold "${*}")"; }
 gum_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold "• ")" "$(gum_white --bold "${*}")"; }
 gum_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold "• ")" "$(gum_white --bold "${*}")"; }
@@ -1740,7 +1740,7 @@ gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to f
 gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
 
 # Gum property
-gum_property() { log_info "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 24 "${1}")")" "$(gum_green --bold "  ➜  ")" "$(gum_white --bold "${2}")"; }
+gum_property() { log_prop "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 24 "${1}")")" "$(gum_green --bold "  ➜  ")" "$(gum_white --bold "${2}")"; }
 
 # ---------------------------------------------------------------------------------------------------
 
@@ -1755,10 +1755,12 @@ print_filled_space() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 write_log() { echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >>"$SCRIPT_LOG"; }
+log_head() { write_log "HEAD | ${*}"; }
 log_info() { write_log "INFO | ${*}"; }
 log_warn() { write_log "WARN | ${*}"; }
 log_fail() { write_log "FAIL | ${*}"; }
 log_proc() { write_log "PROC | ${*}"; }
+log_prop() { write_log "PROP | ${*}"; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # ///////////////////////////////////////////  START MAIN  ///////////////////////////////////////////
