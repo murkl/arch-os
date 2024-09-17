@@ -105,11 +105,11 @@ main() {
         until select_enable_desktop_driver; do :; done
 
         # Print success
-        echo && gum_info "Properties successfully initialized"
+        echo && gum_title "Arch OS Setup"
+        gum_info "Properties successfully initialized"
 
         # Edit properties?
         if gum_confirm "Edit installer.conf manually?"; then
-            log_info "Edit installer.conf manually..."
             local gum_header="Save with CTRL + D or ESC and cancel with CTRL + C"
             if gum_write --height=10 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
@@ -119,7 +119,7 @@ main() {
                 continue # Restart properties step to refresh properties screen
             else
                 rm -f "${SCRIPT_CONFIG}.new" # Remove tmp properties
-                gum_warn "Canceled"
+                gum_warn "Edit installer.conf canceled"
             fi
         fi
 
@@ -316,7 +316,10 @@ select_password() { # --force
         [ -z "$user_password" ] && return 1 # Check if new value is null
         user_password_check=$(gum_input --password --header "+ Enter Password again") || trap_gum_exit_confirm
         [ -z "$user_password_check" ] && return 1 # Check if new value is null
-        [ "$user_password" != "$user_password_check" ] && gum_confirm --negative="" "The passwords are not identical" && return 1
+        if [ "$user_password" != "$user_password_check" ]; then
+            gum_confirm --negative="" "The passwords are not identical"
+            return 1
+        fi
         ARCH_OS_PASSWORD="$user_password" && properties_generate # Set value and generate properties file
     fi
     gum_property "Password" "*******"
@@ -331,7 +334,10 @@ select_timezone() {
         tz_auto="$(curl -s http://ip-api.com/line?fields=timezone)"
         user_input=$(gum_input --header "+ Enter Timezone (auto)" --value "$tz_auto") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
-        [ ! -f "/usr/share/zoneinfo/${user_input}" ] && gum_confirm --negative="" "Timezone '${user_input}' is not supported" && return 1
+        if [ ! -f "/usr/share/zoneinfo/${user_input}" ]; then
+            gum_confirm --negative="" "Timezone '${user_input}' is not supported"
+            return 1
+        fi
         ARCH_OS_TIMEZONE="$user_input" && properties_generate # Set property and generate properties file
     fi
     gum_property "Timezone" "$ARCH_OS_TIMEZONE"
@@ -484,50 +490,56 @@ select_enable_desktop_environment() {
 # ---------------------------------------------------------------------------------------------------
 
 select_enable_desktop_slim() {
-    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && [ -z "$ARCH_OS_DESKTOP_SLIM_ENABLED" ]; then
-        local user_input
-        gum_confirm "Enable Desktop Slim Mode? (GNOME Core Apps only)" --affirmative="No (default)" --negative="Yes"
-        local user_confirm=$?
-        [ $user_confirm = 130 ] && {
-            trap_gum_exit_confirm
-            return 1
-        }
-        [ $user_confirm = 1 ] && user_input="true"
-        [ $user_confirm = 0 ] && user_input="false"
-        ARCH_OS_DESKTOP_SLIM_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
+        if [ -z "$ARCH_OS_DESKTOP_SLIM_ENABLED" ]; then
+            local user_input
+            gum_confirm "Enable Desktop Slim Mode? (GNOME Core Apps only)" --affirmative="No (default)" --negative="Yes"
+            local user_confirm=$?
+            [ $user_confirm = 130 ] && {
+                trap_gum_exit_confirm
+                return 1
+            }
+            [ $user_confirm = 1 ] && user_input="true"
+            [ $user_confirm = 0 ] && user_input="false"
+            ARCH_OS_DESKTOP_SLIM_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+        fi
+        gum_property "Desktop Slim Mode" "$ARCH_OS_DESKTOP_SLIM_ENABLED"
     fi
-    gum_property "Desktop Slim Mode" "$ARCH_OS_DESKTOP_SLIM_ENABLED"
     return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
 
 select_enable_desktop_keyboard() {
-    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
-        local user_input user_input2
-        user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
-        [ -z "$user_input" ] && return 1 # Check if new value is null
-        user_input2=$(gum_input --header "+ Enter Desktop Keyboard Variant (optional)" --placeholder "e.g. 'nodeadkeys' or leave empty...") || trap_gum_exit_confirm
-        ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input"
-        ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input2"
-        properties_generate
+    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
+        if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
+            local user_input user_input2
+            user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
+            [ -z "$user_input" ] && return 1 # Check if new value is null
+            user_input2=$(gum_input --header "+ Enter Desktop Keyboard Variant (optional)" --placeholder "e.g. 'nodeadkeys' or leave empty...") || trap_gum_exit_confirm
+            ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input"
+            ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input2"
+            properties_generate
+        fi
+        gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
+        [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gum_property "Desktop Keyboard Variant" "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT"
     fi
-    gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
-    [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gum_property "Desktop Keyboard Variant" "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT"
     return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
 
 select_enable_desktop_driver() {
-    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] || [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" = "none" ]; then
-        local user_input options
-        options=("mesa" "intel_i915" "nvidia" "amd" "ati")
-        user_input=$(gum_choose --header "+ Choose Desktop Graphics Driver (default: mesa)" "${options[@]}") || trap_gum_exit_confirm
-        [ -z "$user_input" ] && return 1                                     # Check if new value is null
-        ARCH_OS_DESKTOP_GRAPHICS_DRIVER="$user_input" && properties_generate # Set value and generate properties file
+    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
+        if [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] || [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" = "none" ]; then
+            local user_input options
+            options=("mesa" "intel_i915" "nvidia" "amd" "ati")
+            user_input=$(gum_choose --header "+ Choose Desktop Graphics Driver (default: mesa)" "${options[@]}") || trap_gum_exit_confirm
+            [ -z "$user_input" ] && return 1                                     # Check if new value is null
+            ARCH_OS_DESKTOP_GRAPHICS_DRIVER="$user_input" && properties_generate # Set value and generate properties file
+        fi
+        gum_property "Desktop Graphics Driver" "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER"
     fi
-    gum_property "Desktop Graphics Driver" "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER"
     return 0
 }
 
