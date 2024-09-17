@@ -64,14 +64,13 @@ main() {
     while (true); do
 
         gum_header # Show welcome screen
-        gum_white 'Please make sure you have:'
-        echo
+        gum_white 'Please make sure you have:' && echo
         gum_white '• Backed up your important data'
         gum_white '• A stable internet connection'
         gum_white '• Secure Boot disabled'
         gum_white '• Boot Mode set to UEFI'
-        echo
-        gum_title "Arch OS Properties"
+
+        echo && gum_title "Arch OS Preset"
 
         # Ask for load & remove existing config file
         if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
@@ -81,11 +80,11 @@ main() {
             exit 0
         fi
 
-        # Source installer.conf if exists
-        properties_source && gum_info "installer.conf successfully loaded"
+        # Source installer.conf if exists or select preset
+        until properties_preset_source; do :; done
 
         # Selectors
-        until select_preset; do :; done
+        echo && gum_title "Arch OS Properties"
         until select_username; do :; done
         until select_password; do :; done
         until select_timezone; do :; done
@@ -100,10 +99,13 @@ main() {
         until select_enable_housekeeping; do :; done
         until select_enable_shell_enhancement; do :; done
         until select_enable_manager; do :; done
-        until select_enable_desktop; do :; done
+        until select_enable_desktop_environment; do :; done
+        until select_enable_desktop_slim; do :; done
+        until select_enable_desktop_keyboard; do :; done
+        until select_enable_desktop_driver; do :; done
 
         # Print success
-        gum_info "installer.conf successfully initialized"
+        echo && gum_info "Properties successfully initialized"
 
         # Edit properties?
         if gum_confirm "Edit installer.conf manually?"; then
@@ -239,15 +241,13 @@ properties_generate() {
     } >"$SCRIPT_CONFIG" # Write properties to file
 }
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# SELECTORS
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-select_preset() {
-    if [ ! -f "$SCRIPT_CONFIG" ]; then
+properties_preset_source() {
+    if [ -f "$SCRIPT_CONFIG" ]; then
+        properties_source && gum_property "Preset" "installer.conf"
+    else
         local preset options
         options=("desktop" "core" "custom")
-        preset=$(gum_choose --header "+ Choose Preset:" "${options[@]}") || trap_gum_exit_confirm
+        preset=$(gum_choose --header "" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$preset" ] && return 1 # Check if new value is null
 
         # Default presets
@@ -285,20 +285,26 @@ select_preset() {
         fi
 
         # Write properties
-        properties_generate && gum_info "Preset is set to ${preset}"
+        properties_generate && gum_property "Preset" "$preset"
     fi
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
 
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# SELECTORS
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 select_username() {
     if [ -z "$ARCH_OS_USERNAME" ]; then
         local user_input
-        user_input=$(gum_input --header "+ Enter Username (mandatory)") || trap_gum_exit_confirm
+        user_input=$(gum_input --header "+ Enter Username") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                      # Check if new value is null
         ARCH_OS_USERNAME="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Username is set to ${ARCH_OS_USERNAME}"
+    gum_property "Username" "$ARCH_OS_USERNAME"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -306,14 +312,15 @@ select_username() {
 select_password() { # --force
     if [ "$1" = "--force" ] || [ -z "$ARCH_OS_PASSWORD" ]; then
         local user_password user_password_check
-        user_password=$(gum_input --password --header "+ Enter Password (mandatory)") || trap_gum_exit_confirm
+        user_password=$(gum_input --password --header "+ Enter Password") || trap_gum_exit_confirm
         [ -z "$user_password" ] && return 1 # Check if new value is null
         user_password_check=$(gum_input --password --header "+ Enter Password again") || trap_gum_exit_confirm
         [ -z "$user_password_check" ] && return 1 # Check if new value is null
-        [ "$user_password" != "$user_password_check" ] && gum_fail "Passwords not identical" && return 1
+        [ "$user_password" != "$user_password_check" ] && gum_confirm --negative="" "The passwords are not identical" && return 1
         ARCH_OS_PASSWORD="$user_password" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Password is set to *******"
+    gum_property "Password" "*******"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -324,10 +331,11 @@ select_timezone() {
         tz_auto="$(curl -s http://ip-api.com/line?fields=timezone)"
         user_input=$(gum_input --header "+ Enter Timezone (auto)" --value "$tz_auto") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
-        [ ! -f "/usr/share/zoneinfo/${user_input}" ] && gum_fail "Timezone '${user_input}' is not supported" && return 1
+        [ ! -f "/usr/share/zoneinfo/${user_input}" ] && gum_confirm --negative="" "Timezone '${user_input}' is not supported" && return 1
         ARCH_OS_TIMEZONE="$user_input" && properties_generate # Set property and generate properties file
     fi
-    gum_info "Timezone is set to ${ARCH_OS_TIMEZONE}"
+    gum_property "Timezone" "$ARCH_OS_TIMEZONE"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -355,7 +363,8 @@ select_language() {
         [[ "${ARCH_OS_LOCALE_GEN_LIST[*]}" != *'en_US.UTF-8 UTF-8'* ]] && ARCH_OS_LOCALE_GEN_LIST+=('en_US.UTF-8 UTF-8')
         properties_generate # Generate properties file (for ARCH_OS_LOCALE_LANG & ARCH_OS_LOCALE_GEN_LIST)
     fi
-    gum_info "Language is set to ${ARCH_OS_LOCALE_LANG}"
+    gum_property "Language" "$ARCH_OS_LOCALE_LANG"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -371,7 +380,8 @@ select_keyboard() {
         [ -z "$user_input" ] && return 1                             # Check if new value is null
         ARCH_OS_VCONSOLE_KEYMAP="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Keyboard is set to ${ARCH_OS_VCONSOLE_KEYMAP}"
+    gum_property "Keyboard" "$ARCH_OS_VCONSOLE_KEYMAP"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -391,7 +401,8 @@ select_disk() {
         [[ "$ARCH_OS_DISK" = "/dev/nvm"* ]] && ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}p2" || ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}2"
         properties_generate # Generate properties file
     fi
-    gum_info "Disk is set to ${ARCH_OS_DISK}"
+    gum_property "Disk" "$ARCH_OS_DISK"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -409,7 +420,8 @@ select_enable_encryption() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_ENCRYPTION_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Disk Encryption is set to ${ARCH_OS_ENCRYPTION_ENABLED}"
+    gum_property "Disk Encryption" "$ARCH_OS_ENCRYPTION_ENABLED"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -427,7 +439,8 @@ select_enable_core_tweaks() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_CORE_TWEAKS_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Core Tweaks is set to ${ARCH_OS_CORE_TWEAKS_ENABLED}"
+    gum_property "Core Tweaks" "$ARCH_OS_CORE_TWEAKS_ENABLED"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -445,16 +458,15 @@ select_enable_bootsplash() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_BOOTSPLASH_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Bootsplash is set to ${ARCH_OS_BOOTSPLASH_ENABLED}"
+    gum_property "Bootsplash" "$ARCH_OS_BOOTSPLASH_ENABLED"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
 
-select_enable_desktop() {
-    local user_input options
-
-    # Select desktop environment
+select_enable_desktop_environment() {
     if [ -z "$ARCH_OS_DESKTOP_ENABLED" ]; then
+        local user_input
         gum_confirm "Enable Desktop Environment?"
         local user_confirm=$?
         [ $user_confirm = 130 ] && {
@@ -465,12 +477,15 @@ select_enable_desktop() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_DESKTOP_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Desktop Environment is set to ${ARCH_OS_DESKTOP_ENABLED}"
-    # Return if desktop disabled
-    [ "$ARCH_OS_DESKTOP_ENABLED" = "false" ] && return 0
+    gum_property "Desktop Environment" "$ARCH_OS_DESKTOP_ENABLED"
+    return 0
+}
 
-    # Slim Mode
-    if [ -z "$ARCH_OS_DESKTOP_SLIM_ENABLED" ]; then
+# ---------------------------------------------------------------------------------------------------
+
+select_enable_desktop_slim() {
+    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && [ -z "$ARCH_OS_DESKTOP_SLIM_ENABLED" ]; then
+        local user_input
         gum_confirm "Enable Desktop Slim Mode? (GNOME Core Apps only)" --affirmative="No (default)" --negative="Yes"
         local user_confirm=$?
         [ $user_confirm = 130 ] && {
@@ -481,28 +496,38 @@ select_enable_desktop() {
         [ $user_confirm = 0 ] && user_input="false"
         ARCH_OS_DESKTOP_SLIM_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Desktop Slim Mode is set to ${ARCH_OS_DESKTOP_SLIM_ENABLED}"
+    gum_property "Desktop Slim Mode" "$ARCH_OS_DESKTOP_SLIM_ENABLED"
+    return 0
+}
 
-    # Keyboard layout
-    if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
-        user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout (mandatory)" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
+# ---------------------------------------------------------------------------------------------------
+
+select_enable_desktop_keyboard() {
+    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
+        local user_input user_input2
+        user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
+        user_input2=$(gum_input --header "+ Enter Desktop Keyboard Variant (optional)" --placeholder "e.g. 'nodeadkeys' or leave empty...") || trap_gum_exit_confirm
         ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input"
-        user_input=$(gum_input --header "+ Enter Desktop Keyboard Variant (optional)" --placeholder "e.g. 'nodeadkeys' or leave empty...") || trap_gum_exit_confirm
-        ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input"
+        ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input2"
         properties_generate
     fi
-    gum_info "Desktop Keyboard Layout is set to ${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}"
-    [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gum_info "Desktop Keyboard Variant is set to ${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}"
+    gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
+    [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gum_property "Desktop Keyboard Variant" "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT"
+    return 0
+}
 
-    # Graphics driver
-    if [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] || [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" = "none" ]; then
+# ---------------------------------------------------------------------------------------------------
+
+select_enable_desktop_driver() {
+    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] || [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" = "none" ]; then
+        local user_input options
         options=("mesa" "intel_i915" "nvidia" "amd" "ati")
         user_input=$(gum_choose --header "+ Choose Desktop Graphics Driver (default: mesa)" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                                     # Check if new value is null
         ARCH_OS_DESKTOP_GRAPHICS_DRIVER="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Desktop Graphics Driver is set to ${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}"
+    gum_property "Desktop Graphics Driver" "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER"
     return 0
 }
 
@@ -521,7 +546,8 @@ select_enable_aur() {
         [ $user_confirm = 0 ] && user_input="paru"
         ARCH_OS_AUR_HELPER="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
+    gum_property "AUR Helper" "$ARCH_OS_AUR_HELPER"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -539,7 +565,8 @@ select_enable_multilib() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_MULTILIB_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "32 Bit Support is set to ${ARCH_OS_MULTILIB_ENABLED}"
+    gum_property "32 Bit Support" "$ARCH_OS_MULTILIB_ENABLED"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -557,7 +584,8 @@ select_enable_housekeeping() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_HOUSEKEEPING_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Housekeeping is set to ${ARCH_OS_HOUSEKEEPING_ENABLED}"
+    gum_property "Housekeeping" "$ARCH_OS_HOUSEKEEPING_ENABLED"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -575,7 +603,8 @@ select_enable_shell_enhancement() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_SHELL_ENHANCEMENT_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
+    gum_property "Shell Enhancement" "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -593,7 +622,8 @@ select_enable_manager() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_MANAGER_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Arch OS Manager is set to ${ARCH_OS_MANAGER_ENABLED}"
+    gum_property "Arch OS Manager" "$ARCH_OS_MANAGER_ENABLED"
+    return 0
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1696,6 +1726,17 @@ gum_write() { gum write --prompt "• " --header.foreground "$COLOR_PURPLE" --sh
 gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
 gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
 gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
+
+# Gum property
+gum_property() { log_info "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 24 "${1}")")" "$(gum_green --bold "  ➜  ")" "$(gum_white --bold "${2}")"; }
+
+# ---------------------------------------------------------------------------------------------------
+
+print_filled_space() {
+    local total="$1" && local text="$2" && local length="${#text}"
+    [ "$length" -ge "$total" ] && echo "$text" && return 0
+    local padding=$((total - length)) && printf '%s%*s\n' "$text" "$padding" ""
+}
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # LOGGING
