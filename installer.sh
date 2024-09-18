@@ -75,7 +75,7 @@ main() {
         # Ask for load & remove existing config file
         if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
             gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config -> exit script
-            rm -f "$SCRIPT_CONFIG" && gum_info "installer.conf successfully removed"
+            mv -f "$SCRIPT_CONFIG" "${SCRIPT_CONFIG}.old" && gum_info "installer.conf successfully removed"
             gum_warn "Please restart Arch OS Installer..."
             exit 0
         fi
@@ -113,8 +113,8 @@ main() {
             local gum_header="Save with CTRL + D or ESC and cancel with CTRL + C"
             if gum_write --height=10 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
-                gum_info "installer.conf successfully edited"
-                gum_confirm "Change Password?" && until select_password --force && properties_source; do :; done
+                gum_info "Properties successfully saved"
+                gum_confirm "Change Password?" && until select_password --change && properties_source; do :; done
                 gum_spin --title="Reload Properties in 3 seconds..." -- sleep 3 || trap_gum_exit
                 continue # Restart properties step to refresh properties screen
             else
@@ -132,9 +132,9 @@ main() {
 
     # Start installation in 5 seconds?
     gum_confirm "Start Arch OS Installation?" || trap_gum_exit
-    echo && gum_title "Arch OS Installation"
     local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel..."
-    gum_spin --title="$spin_title" -- sleep 5 || trap_gum_exit # CTRL + C pressed
+    echo && ! gum_spin --title="$spin_title" -- sleep 5 && trap_gum_exit # CTRL + C pressed
+    gum_title "Arch OS Installation"
 
     SECONDS=0 # Messure execution time of installation
 
@@ -309,20 +309,21 @@ select_username() {
 
 # ---------------------------------------------------------------------------------------------------
 
-select_password() { # --force
-    if [ "$1" = "--force" ] || [ -z "$ARCH_OS_PASSWORD" ]; then
+select_password() { # --change
+    if [ "$1" = "--change" ] || [ -z "$ARCH_OS_PASSWORD" ]; then
         local user_password user_password_check
         user_password=$(gum_input --password --header "+ Enter Password") || trap_gum_exit_confirm
         [ -z "$user_password" ] && return 1 # Check if new value is null
         user_password_check=$(gum_input --password --header "+ Enter Password again") || trap_gum_exit_confirm
         [ -z "$user_password_check" ] && return 1 # Check if new value is null
         if [ "$user_password" != "$user_password_check" ]; then
-            gum_confirm --negative="" "The passwords are not identical"
+            gum_confirm --affirmative="Ok" --negative="" "The passwords are not identical"
             return 1
         fi
         ARCH_OS_PASSWORD="$user_password" && properties_generate # Set value and generate properties file
     fi
-    gum_property "Password" "*******"
+    [ "$1" = "--change" ] && gum_info "Password successfully changed"
+    [ "$1" != "--change" ] && gum_property "Password" "*******"
     return 0
 }
 
@@ -335,7 +336,7 @@ select_timezone() {
         user_input=$(gum_input --header "+ Enter Timezone (auto)" --value "$tz_auto") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
         if [ ! -f "/usr/share/zoneinfo/${user_input}" ]; then
-            gum_confirm --negative="" "Timezone '${user_input}' is not supported"
+            gum_confirm --affirmative="Ok" --negative="" "Timezone '${user_input}' is not supported"
             return 1
         fi
         ARCH_OS_TIMEZONE="$user_input" && properties_generate # Set property and generate properties file
@@ -721,7 +722,7 @@ exec_prepare_disk() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_pacstrap_core() {
-    local process_name="Pacstrap Arch OS Core System"
+    local process_name="Pacstrap Arch OS Core"
     process_init "$process_name"
     (
         [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
@@ -1068,7 +1069,7 @@ exec_install_desktop() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_graphics_driver() {
-    local process_name="Install Desktop Graphics Driver"
+    local process_name="Install Desktop Driver"
     if [ -n "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] && [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" != "none" ]; then
         process_init "$process_name"
         (
@@ -1667,8 +1668,8 @@ process_capture() {
     [ "$(<"$PROCESS_RET")" != "0" ] && gum_fail "${process_name} failed" && exit 1 # If process failed (result code 0 was not write in the end)
 
     # Finish
-    rm -f "$PROCESS_RET"                            # Remove process result file
-    gum_info "${process_name} sucessfully finished" # Print process success
+    rm -f "$PROCESS_RET"                 # Remove process result file
+    gum_proc "${process_name}" "success" # Print process success
 }
 
 process_return() {
@@ -1725,10 +1726,11 @@ gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
 gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
 
 # Gum prints
-gum_title() { log_head "+ ${*}" && gum join --horizontal "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
-gum_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold "• ")" "$(gum_white --bold "${*}")"; }
-gum_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold "• ")" "$(gum_white --bold "${*}")"; }
-gum_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold "• ")" "$(gum_white --bold "${*}")"; }
+gum_title() { log_head "+ ${*}" && gum join "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
+gum_info() { log_info "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "${*}")"; }
+gum_warn() { log_warn "$*" && gum join "$(gum_yellow --bold "• ")" "$(gum_white "${*}")"; }
+gum_fail() { log_fail "$*" && gum join "$(gum_red --bold "• ")" "$(gum_white "${*}")"; }
+gum_proc() { log_proc "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 27 "${1}")")" "$(gum_white "  ➜  ")" "$(gum_green "${2}")"; }
 
 # Gum wrapper
 gum_style() { gum style "${@}"; }
@@ -1740,7 +1742,7 @@ gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to f
 gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
 
 # Gum property
-gum_property() { log_prop "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 24 "${1}")")" "$(gum_green --bold "  ➜  ")" "$(gum_white --bold "${2}")"; }
+gum_property() { log_prop "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 27 "${1}")")" "$(gum_green --bold "  ➜  ")" "$(gum_white --bold "${2}")"; }
 
 # ---------------------------------------------------------------------------------------------------
 
