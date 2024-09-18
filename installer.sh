@@ -1730,7 +1730,6 @@ gum_title() { log_head "+ ${*}" && gum join "$(gum_purple --bold "+ ")" "$(gum_p
 gum_info() { log_info "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "${*}")"; }
 gum_warn() { log_warn "$*" && gum join "$(gum_yellow --bold "• ")" "$(gum_white "${*}")"; }
 gum_fail() { log_fail "$*" && gum join "$(gum_red --bold "• ")" "$(gum_white "${*}")"; }
-gum_proc() { log_proc "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 27 "${1}")")" "$(gum_white "  ➜  ")" "$(gum_green "${2}")"; }
 
 # Gum wrapper
 gum_style() { gum style "${@}"; }
@@ -1741,7 +1740,8 @@ gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_PURPLE" --cu
 gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
 gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
 
-# Gum property
+# Gum key & value
+gum_proc() { log_proc "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 27 "${1}")")" "$(gum_white "  ➜  ")" "$(gum_green "${2}")"; }
 gum_property() { log_prop "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 27 "${1}")")" "$(gum_green --bold "  ➜  ")" "$(gum_white --bold "${2}")"; }
 
 # ---------------------------------------------------------------------------------------------------
