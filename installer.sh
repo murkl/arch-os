@@ -914,7 +914,7 @@ exec_install_desktop() {
                 packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
 
                 # Utils (https://wiki.archlinux.org/title/File_systems)
-                packages+=(fwupd bash-completion dhcp net-tools inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfat-utils btrfs-progs xfsprogs p7zip zip unzip unrar tar)
+                packages+=(archlinux-contrib pacutils fwupd bash-completion dhcp net-tools inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfat-utils btrfs-progs xfsprogs p7zip zip unzip unrar tar)
 
                 # Runtimes & Helper
                 packages+=(jq zenity gum)
