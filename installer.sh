@@ -74,7 +74,7 @@ main() {
 
         # Ask for load & remove existing config file
         if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
-            gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config -> exit script
+            gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config > exit script
             mv -f "$SCRIPT_CONFIG" "${SCRIPT_CONFIG}.old" && gum_info "installer.conf successfully removed"
             gum_warn "Please restart Arch OS Installer..."
             exit 0
@@ -110,8 +110,8 @@ main() {
 
         # Edit properties?
         if gum_confirm "Edit installer.conf manually?"; then
-            local gum_header="Save with CTRL + D or ESC and cancel with CTRL + C"
-            if gum_write --height=10 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
+            local gum_header="• Save with CTRL + D or ESC and cancel with CTRL + C"
+            if gum_write --show-line-numbers --prompt "> " --height=10 --width=100 --header="${gum_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
                 gum_info "Properties successfully saved"
                 gum_confirm "Change Password?" && until select_password --change && properties_source; do :; done
@@ -243,7 +243,7 @@ properties_generate() {
 
 properties_preset_source() {
     if [ -f "$SCRIPT_CONFIG" ]; then
-        properties_source && gum_property "Preset" "installer.conf"
+        properties_source && gum_property "Properties Preset" "installer.conf"
     else
         local preset options
         options=("desktop" "core" "custom")
@@ -285,7 +285,7 @@ properties_preset_source() {
         fi
 
         # Write properties
-        properties_generate && gum_property "Preset" "$preset"
+        properties_generate && gum_property "Properties Preset" "$preset"
     fi
     return 0
 }
@@ -299,7 +299,7 @@ properties_preset_source() {
 select_username() {
     if [ -z "$ARCH_OS_USERNAME" ]; then
         local user_input
-        user_input=$(gum_input --header "+ Enter Username") || trap_gum_exit_confirm
+        user_input=$(gum_input --header "+ Enter Username (mandatory)") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                      # Check if new value is null
         ARCH_OS_USERNAME="$user_input" && properties_generate # Set value and generate properties file
     fi
@@ -312,7 +312,7 @@ select_username() {
 select_password() { # --change
     if [ "$1" = "--change" ] || [ -z "$ARCH_OS_PASSWORD" ]; then
         local user_password user_password_check
-        user_password=$(gum_input --password --header "+ Enter Password") || trap_gum_exit_confirm
+        user_password=$(gum_input --password --header "+ Enter Password (mandatory)") || trap_gum_exit_confirm
         [ -z "$user_password" ] && return 1 # Check if new value is null
         user_password_check=$(gum_input --password --header "+ Enter Password again") || trap_gum_exit_confirm
         [ -z "$user_password_check" ] && return 1 # Check if new value is null
@@ -1645,7 +1645,7 @@ trap_exit() {
 process_init() {
     [ -f "$PROCESS_RET" ] && gum_fail "${PROCESS_RET} already exists" && exit 1
     echo 1 >"$PROCESS_RET" # Init result with 1
-    log_proc "${1}..."     # Log starting
+    log_proc "${1}..."    # Log starting
 }
 
 process_capture() {
@@ -1735,14 +1735,14 @@ gum_fail() { log_fail "$*" && gum join "$(gum_red --bold "• ")" "$(gum_white "
 gum_style() { gum style "${@}"; }
 gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
 gum_input() { gum input --placeholder "..." --prompt "> " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
-gum_write() { gum write --prompt "• " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
+gum_write() { gum write --prompt "> " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
 gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
-gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
+gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
 gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
 
 # Gum key & value
-gum_proc() { log_proc "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white --bold "$(print_filled_space 27 "${1}")")" "$(gum_white "  ➜  ")" "$(gum_green "${2}")"; }
-gum_property() { log_prop "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 27 "${1}")")" "$(gum_green --bold "  ➜  ")" "$(gum_white --bold "${2}")"; }
+gum_proc() { log_proc "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white --bold "$(print_filled_space 27 "${1}")")" "$(gum_white "  >  ")" "$(gum_green "${2}")"; }
+gum_property() { log_prop "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 27 "${1}")")" "$(gum_green --bold "  >  ")" "$(gum_white --bold "${2}")"; }
 
 # ---------------------------------------------------------------------------------------------------
 

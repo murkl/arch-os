@@ -74,7 +74,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - 32 Bit Support (Multilib)
 - Disk Encryption
 - GNOME Desktop
-  - [Arch OS Slim Version](DOCS.md#example-installerconf) (Minimal GNOME Core Apps)
+  - [Arch OS Slim Version](DOCS.md#example-installerconf) (GNOME Core Apps only)
   - Wayland optimized
   - Auto Login enabled
   - [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
