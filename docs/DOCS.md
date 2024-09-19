@@ -432,6 +432,16 @@ The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broke
 curl -Ls bit.ly/arch-os-dev | bash
 ```
 
+### Parameter
+
+```
+# Custom gum:
+GUM=/usr/bin/gum ./installer.sh
+
+# Debug simulator:  
+MODE=debug ./installer.sh
+```
+
 <div align="center">
 
 ## Screenshots

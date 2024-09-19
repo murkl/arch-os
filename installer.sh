@@ -11,8 +11,8 @@
 # ORIGIN:   Germany
 # LICENCE:  GPL 2.0
 
-# Debug simulator:  MODE=debug ./installer.sh
 # Custom gum:       GUM=/usr/bin/gum ./installer.sh
+# Debug simulator:  MODE=debug ./installer.sh
 
 # CONFIG
 set -o pipefail # A pipeline error results in the error status of the entire pipeline
@@ -115,7 +115,7 @@ main() {
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
                 gum_info "Properties successfully saved"
                 gum_confirm "Change Password?" && until select_password --change && properties_source; do :; done
-                gum_spin --title="Reload Properties in 3 seconds..." -- sleep 3 || trap_gum_exit
+                echo && ! gum_spin --title="Reload Properties in 3 seconds..." -- sleep 3 && trap_gum_exit
                 continue # Restart properties step to refresh properties screen
             else
                 rm -f "${SCRIPT_CONFIG}.new" # Remove tmp properties
@@ -1741,7 +1741,7 @@ gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to f
 gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
 
 # Gum key & value
-gum_proc() { log_proc "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 27 "${1}")")" "$(gum_white "  ➜  ")" "$(gum_green "${2}")"; }
+gum_proc() { log_proc "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white --bold "$(print_filled_space 27 "${1}")")" "$(gum_white "  ➜  ")" "$(gum_green "${2}")"; }
 gum_property() { log_prop "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 27 "${1}")")" "$(gum_green --bold "  ➜  ")" "$(gum_white --bold "${2}")"; }
 
 # ---------------------------------------------------------------------------------------------------
