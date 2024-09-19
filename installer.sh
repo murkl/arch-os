@@ -287,7 +287,7 @@ properties_preset_source() {
             ARCH_OS_MULTILIB_ENABLED='true'
             ARCH_OS_HOUSEKEEPING_ENABLED='true'
             ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
-            ARCH_OS_AUR_HELPER='paru'
+            ARCH_OS_AUR_HELPER='paru-git'
             ARCH_OS_MANAGER_ENABLED='true'
         fi
 
@@ -564,7 +564,7 @@ select_enable_aur() {
         }
         local user_input
         [ $user_confirm = 1 ] && user_input="none"
-        [ $user_confirm = 0 ] && user_input="paru"
+        [ $user_confirm = 0 ] && user_input="paru-git"
         ARCH_OS_AUR_HELPER="$user_input" && properties_generate # Set value and generate properties file
     fi
     gum_property "AUR Helper" "$ARCH_OS_AUR_HELPER"
