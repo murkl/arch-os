@@ -186,6 +186,8 @@ main() {
         swapoff -a
         umount -A -R /mnt
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
+    else
+        gum_warn "Arch OS is still mounted at /mnt"
     fi
 
     # Reboot
@@ -1645,7 +1647,7 @@ trap_exit() {
 process_init() {
     [ -f "$PROCESS_RET" ] && gum_fail "${PROCESS_RET} already exists" && exit 1
     echo 1 >"$PROCESS_RET" # Init result with 1
-    log_proc "${1}..."    # Log starting
+    log_proc "${1}..."     # Log starting
 }
 
 process_capture() {
