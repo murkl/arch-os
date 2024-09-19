@@ -191,9 +191,8 @@ main() {
     fi
 
     # Reboot
-    [ "$do_reboot" = "true" ] && [ "$MODE" != "debug" ] && gum_warn "Rebooting..." && reboot
-
-    exit 0
+    [ "$do_reboot" = "true" ] && [ "$MODE" != "debug" ] && gum_green "Rebooting..." && reboot
+    gum_info "Exit" && exit 0
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -233,6 +232,7 @@ properties_generate() {
         echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}'"
         echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}'"
         echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
+        echo "ARCH_OS_DESKTOP_EXTRAS_ENABLED='${ARCH_OS_DESKTOP_EXTRAS_ENABLED}'"
         echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}'"
         echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}'"
@@ -244,25 +244,29 @@ properties_generate() {
 }
 
 properties_preset_source() {
+
+    # Default presets
+    [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
+    [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
+    [ -z "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
+    [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
+    [ -z "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" ] && ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED="true"
+    [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
+    [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
+
+    # Set microcode
+    [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
+    [ -z "$ARCH_OS_MICROCODE" ] && grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
+
+    # Load properties or select preset
     if [ -f "$SCRIPT_CONFIG" ]; then
         properties_source && gum_property "Properties Preset" "installer.conf"
     else
+        # Select preset
         local preset options
         options=("desktop" "core" "custom")
         preset=$(gum_choose --header "" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$preset" ] && return 1 # Check if new value is null
-
-        # Default presets
-        ARCH_OS_HOSTNAME="arch-os"
-        ARCH_OS_KERNEL="linux-zen"
-        ARCH_OS_VM_SUPPORT_ENABLED="true"
-        ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED="true"
-        ARCH_OS_ECN_ENABLED="true"
-        ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
-
-        # Set microcode
-        grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
-        grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
 
         # Core preset
         if [ "$preset" = "core" ]; then
@@ -276,6 +280,7 @@ properties_preset_source() {
 
         # Desktop preset
         if [ "$preset" = "desktop" ]; then
+            ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
             ARCH_OS_CORE_TWEAKS_ENABLED="true"
             ARCH_OS_BOOTSPLASH_ENABLED='true'
             ARCH_OS_DESKTOP_ENABLED='true'
@@ -487,6 +492,7 @@ select_enable_desktop_environment() {
         ARCH_OS_DESKTOP_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     gum_property "Desktop Environment" "$ARCH_OS_DESKTOP_ENABLED"
+    [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && [ -n "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && gum_property "Desktop Extras" "$ARCH_OS_DESKTOP_EXTRAS_ENABLED"
     return 0
 }
 
@@ -887,39 +893,47 @@ exec_install_desktop() {
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
             # GNOME base packages
-            local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer)
-            [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && packages+=(gnome-firmware file-roller)
+            local packages=(gnome git)
 
-            # GNOME wayland screensharing, flatpak & pipewire support
-            packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
+            # GNOME desktop extras
+            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
 
-            # Audio (Pipewire replacements + session manager)
-            packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
-            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
+                # GNOME base extras
+                packages+=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer)
 
-            # Networking & Access
-            packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
+                [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && packages+=(gnome-firmware file-roller)
 
-            # Utils (https://wiki.archlinux.org/title/File_systems)
-            packages+=(fwupd bash-completion git dhcp net-tools inetutils nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
+                # GNOME wayland screensharing, flatpak & pipewire support
+                packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
 
-            # Certificates
-            packages+=(ca-certificates)
+                # Audio (Pipewire replacements + session manager)
+                packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
 
-            # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
-            packages+=(ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader)
-            packages+=(a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread openh264)
-            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer lib32-gst-plugins-good)
+                # Networking & Access
+                packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
 
-            # Optimization
-            packages+=(gamemode)
-            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
+                # Utils (https://wiki.archlinux.org/title/File_systems)
+                packages+=(fwupd bash-completion dhcp net-tools inetutils nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
 
-            # Fonts
-            packages+=(noto-fonts noto-fonts-emoji ttf-firacode-nerd ttf-liberation ttf-dejavu)
+                # Certificates
+                packages+=(ca-certificates)
 
-            # Theming
-            packages+=(adw-gtk-theme)
+                # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
+                packages+=(ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader)
+                packages+=(a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread openh264)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer lib32-gst-plugins-good)
+
+                # Optimization
+                packages+=(gamemode)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
+
+                # Fonts
+                packages+=(noto-fonts noto-fonts-emoji ttf-firacode-nerd ttf-liberation ttf-dejavu)
+
+                # Theming
+                packages+=(adw-gtk-theme)
+            fi
 
             # Install packages
             chroot_pacman_install "${packages[@]}"
@@ -949,11 +963,10 @@ exec_install_desktop() {
             fi
 
             # Add user to gamemode group
-            arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
+            [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
             # Enable GNOME auto login
             mkdir -p /mnt/etc/gdm
-            [ -f /mnt/etc/gdm/custom.conf ] && mv /mnt/etc/gdm/custom.conf /mnt/etc/gdm/custom.conf.bak
             #grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
             {
                 echo "[daemon]"
@@ -992,12 +1005,14 @@ exec_install_desktop() {
             } >"/mnt/home/${ARCH_OS_USERNAME}/.config/environment.d/00-arch.conf"
 
             # Samba
-            mkdir -p "/mnt/etc/samba/"
-            {
-                echo "[global]"
-                echo "   workgroup = WORKGROUP"
-                echo "   log file = /var/log/samba/%m"
-            } >/mnt/etc/samba/smb.conf
+            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
+                mkdir -p "/mnt/etc/samba/"
+                {
+                    echo "[global]"
+                    echo "   workgroup = WORKGROUP"
+                    echo "   log file = /var/log/samba/%m"
+                } >/mnt/etc/samba/smb.conf
+            fi
 
             # Set X11 keyboard layout in /etc/X11/xorg.conf.d/00-keyboard.conf
             mkdir -p /mnt/etc/X11/xorg.conf.d/
@@ -1012,18 +1027,24 @@ exec_install_desktop() {
             } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
 
             # Enable Arch OS Desktop services
-            arch-chroot /mnt systemctl enable gdm.service                                                              # GNOME
-            arch-chroot /mnt systemctl enable bluetooth.service                                                        # Bluetooth
-            arch-chroot /mnt systemctl enable avahi-daemon                                                             # Network browsing service
-            arch-chroot /mnt systemctl enable power-profiles-daemon                                                    # Power daemon
-            arch-chroot /mnt systemctl enable cups.socket                                                              # Printer
-            arch-chroot /mnt systemctl enable smb.service                                                              # Samba
-            arch-chroot /mnt systemctl enable nmb.service                                                              # Samba
-            arch-chroot /mnt systemctl enable gpm.service                                                              # TTY Mouse Support
+            arch-chroot /mnt systemctl enable gdm.service       # GNOME
+            arch-chroot /mnt systemctl enable bluetooth.service # Bluetooth
+            arch-chroot /mnt systemctl enable avahi-daemon      # Network browsing service
+            arch-chroot /mnt systemctl enable gpm.service       # TTY Mouse Support
+
+            # User services
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user gcr-ssh-agent.socket   # GCR ssh-agent
+
+            # Extra services
+            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
+                arch-chroot /mnt systemctl enable power-profiles-daemon # Power daemon
+                arch-chroot /mnt systemctl enable cups.socket           # Printer
+                arch-chroot /mnt systemctl enable smb.service           # Samba
+                arch-chroot /mnt systemctl enable nmb.service           # Samba
+            fi
 
             # Create users applications dir
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications"
@@ -1045,7 +1066,7 @@ exec_install_desktop() {
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/qv4l2.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/qvidcap.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/lstopo.desktop"
-            echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/cups.desktop"
+            [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/cups.desktop"
 
             # Hide Shell Enhancement apps
             if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
