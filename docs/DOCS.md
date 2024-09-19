@@ -463,13 +463,13 @@ MODE=debug ./installer.sh
 
 ### Arch OS Installer
 
+<p><img src="screenshots/installer_start.png"></p>
 <p><img src="screenshots/installer_load_properties.png"></p>
 <p><img src="screenshots/installer_preset.png"></p>
 <p><img src="screenshots/installer_language.png"></p>
 <p><img src="screenshots/installer_disk.png"></p>
 <p><img src="screenshots/installer_driver.png"></p>
 <p><img src="screenshots/installer_slim.png"></p>
-<p><img src="screenshots/installer_start.png"></p>
 <p><img src="screenshots/installer_core_complete.png"></p>
 
 </div>
