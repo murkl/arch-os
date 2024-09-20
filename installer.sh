@@ -238,6 +238,7 @@ properties_generate() {
         echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}'"
+        echo "ARCH_OS_SAMBA_SHARE_ENABLED='${ARCH_OS_SAMBA_SHARE_ENABLED}'"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
         echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
     } >"$SCRIPT_CONFIG" # Write properties to file
@@ -249,6 +250,7 @@ properties_preset_source() {
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
     [ -z "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
+    [ -z "$ARCH_OS_SAMBA_SHARE_ENABLED" ] && ARCH_OS_SAMBA_SHARE_ENABLED="true"
     [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
     [ -z "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" ] && ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED="true"
     [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
@@ -281,6 +283,7 @@ properties_preset_source() {
         # Desktop preset
         if [ "$preset" = "desktop" ]; then
             ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
+            ARCH_OS_SAMBA_SHARE_ENABLED='true'
             ARCH_OS_CORE_TWEAKS_ENABLED="true"
             ARCH_OS_BOOTSPLASH_ENABLED='true'
             ARCH_OS_DESKTOP_ENABLED='true'
@@ -1009,12 +1012,63 @@ exec_install_desktop() {
 
             # Samba
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
+
+                # Create samba config
                 mkdir -p "/mnt/etc/samba/"
                 {
-                    echo "[global]"
-                    echo "   workgroup = WORKGROUP"
-                    echo "   log file = /var/log/samba/%m"
+                    echo '[global]'
+                    echo '   workgroup = WORKGROUP'
+                    echo '   server string = Samba Server'
+                    echo '   security = user'
+                    echo '   map to guest = Bad User'
+                    echo '   log file = /var/log/samba/%m.log'
+                    echo '   max log size = 50'
+                    echo '   client min protocol = SMB2'
+                    echo '   server min protocol = SMB2'
+                    if [ "$ARCH_OS_SAMBA_SHARE_ENABLED" = "true" ]; then
+                        echo
+                        echo '[homes]'
+                        echo '   comment = Home Directory'
+                        echo '   browseable = yes'
+                        echo '   read only = no'
+                        echo '   create mask = 0700'
+                        echo '   directory mask = 0700'
+                        echo '   valid users = %S'
+                        echo
+                        echo '[public]'
+                        echo '   comment = Public Share'
+                        echo '   path = /srv/samba/public'
+                        echo '   browseable = yes'
+                        echo '   guest ok = yes'
+                        echo '   read only = no'
+                        echo '   writable = yes'
+                        echo '   create mask = 0777'
+                        echo '   directory mask = 0777'
+                        echo '   force user = nobody'
+                        echo '   force group = users'
+                    fi
                 } >/mnt/etc/samba/smb.conf
+
+                # Test samba config
+                arch-chroot /mnt testparm -s /etc/samba/smb.conf
+
+                if [ "$ARCH_OS_SAMBA_SHARE_ENABLED" = "true" ]; then
+
+                    # Create samba public dir
+                    arch-chroot /mnt mkdir -p /srv/samba/public
+                    arch-chroot /mnt chmod 777 /srv/samba/public
+                    arch-chroot /mnt chown -R nobody:users /srv/samba/public
+
+                    # Add user as samba user with same password (different user db)
+                    (
+                        echo "$ARCH_OS_PASSWORD"
+                        echo "$ARCH_OS_PASSWORD"
+                    ) | arch-chroot /mnt smbpasswd -s -a "$ARCH_OS_USERNAME"
+                fi
+
+                # Start samba services
+                arch-chroot /mnt systemctl enable smb.service
+                arch-chroot /mnt systemctl enable nmb.service
             fi
 
             # Set X11 keyboard layout in /etc/X11/xorg.conf.d/00-keyboard.conf
@@ -1045,8 +1099,6 @@ exec_install_desktop() {
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
                 arch-chroot /mnt systemctl enable power-profiles-daemon # Power daemon
                 arch-chroot /mnt systemctl enable cups.socket           # Printer
-                arch-chroot /mnt systemctl enable smb.service           # Samba
-                arch-chroot /mnt systemctl enable nmb.service           # Samba
             fi
 
             # Create users applications dir
