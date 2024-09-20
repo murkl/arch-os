@@ -290,7 +290,6 @@ properties_preset_source() {
             ARCH_OS_MULTILIB_ENABLED='true'
             ARCH_OS_HOUSEKEEPING_ENABLED='true'
             ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
-            ARCH_OS_AUR_HELPER='paru-git'
             ARCH_OS_MANAGER_ENABLED='true'
         fi
 
@@ -559,15 +558,10 @@ select_enable_desktop_driver() {
 
 select_enable_aur() {
     if [ -z "$ARCH_OS_AUR_HELPER" ]; then
-        gum_confirm "Enable AUR Helper?"
-        local user_confirm=$?
-        [ $user_confirm = 130 ] && {
-            trap_gum_exit_confirm
-            return 1
-        }
-        local user_input
-        [ $user_confirm = 1 ] && user_input="none"
-        [ $user_confirm = 0 ] && user_input="paru-git"
+        local user_input options
+        options=("none" "paru" "paru-git" "paru-bin")
+        user_input=$(gum_choose --header "+ Choose AUR Helper (default: paru-git)" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1                        # Check if new value is null
         ARCH_OS_AUR_HELPER="$user_input" && properties_generate # Set value and generate properties file
     fi
     gum_property "AUR Helper" "$ARCH_OS_AUR_HELPER"
