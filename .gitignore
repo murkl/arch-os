@@ -3,6 +3,7 @@
 
 # Created by scripts
 installer.conf
+installer.conf.old
 installer.log
 installer.log.old
 

@@ -11,8 +11,8 @@
 # ORIGIN:   Germany
 # LICENCE:  GPL 2.0
 
-# Debug simulator:  MODE=debug ./installer.sh
 # Custom gum:       GUM=/usr/bin/gum ./installer.sh
+# Debug simulator:  MODE=debug ./installer.sh
 
 # CONFIG
 set -o pipefail # A pipeline error results in the error status of the entire pipeline
@@ -20,7 +20,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # SCRIPT
-VERSION='1.6.4'
+VERSION='1.6.5'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -64,28 +64,27 @@ main() {
     while (true); do
 
         gum_header # Show welcome screen
-        gum_white 'Please make sure you have:'
-        echo
+        gum_white 'Please make sure you have:' && echo
         gum_white '• Backed up your important data'
         gum_white '• A stable internet connection'
         gum_white '• Secure Boot disabled'
         gum_white '• Boot Mode set to UEFI'
-        echo
-        gum_title "Arch OS Properties"
+
+        echo && gum_title "Arch OS Preset"
 
         # Ask for load & remove existing config file
         if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
-            gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config -> exit script
-            rm -f "$SCRIPT_CONFIG" && gum_info "installer.conf successfully removed"
+            gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config > exit script
+            mv -f "$SCRIPT_CONFIG" "${SCRIPT_CONFIG}.old" && gum_info "installer.conf successfully removed"
             gum_warn "Please restart Arch OS Installer..."
-            exit 0
+            echo && exit 0
         fi
 
-        # Source installer.conf if exists
-        properties_source && gum_info "installer.conf successfully loaded"
+        # Source installer.conf if exists or select preset
+        until properties_preset_source; do :; done
 
         # Selectors
-        until select_preset; do :; done
+        echo && gum_title "Arch OS Properties"
         until select_username; do :; done
         until select_password; do :; done
         until select_timezone; do :; done
@@ -100,24 +99,27 @@ main() {
         until select_enable_housekeeping; do :; done
         until select_enable_shell_enhancement; do :; done
         until select_enable_manager; do :; done
-        until select_enable_desktop; do :; done
+        until select_enable_desktop_environment; do :; done
+        until select_enable_desktop_slim; do :; done
+        until select_enable_desktop_keyboard; do :; done
+        until select_enable_desktop_driver; do :; done
 
         # Print success
-        gum_info "installer.conf successfully initialized"
+        echo && gum_title "Arch OS Setup"
+        gum_info "Properties successfully initialized"
 
         # Edit properties?
         if gum_confirm "Edit installer.conf manually?"; then
-            log_info "Edit installer.conf manually..."
-            local gum_header="Save with CTRL + D or ESC and cancel with CTRL + C"
-            if gum_write --height=10 --width=100 --header=" ${gum_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
+            local gum_header="• Save with CTRL + D or ESC and cancel with CTRL + C"
+            if gum_write --show-line-numbers --prompt "> " --height=10 --width=100 --header="${gum_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
-                gum_info "installer.conf successfully edited"
-                gum_confirm "Change Password?" && until select_password --force && properties_source; do :; done
-                gum_spin --title="Reload Properties in 3 seconds..." -- sleep 3 || trap_gum_exit
+                gum_info "Properties successfully saved"
+                gum_confirm "Change Password?" && until select_password --change && properties_source; do :; done
+                echo && ! gum_spin --title="Reload Properties in 3 seconds..." -- sleep 3 && trap_gum_exit
                 continue # Restart properties step to refresh properties screen
             else
                 rm -f "${SCRIPT_CONFIG}.new" # Remove tmp properties
-                gum_warn "Canceled"
+                gum_warn "Edit installer.conf canceled"
             fi
         fi
 
@@ -130,9 +132,9 @@ main() {
 
     # Start installation in 5 seconds?
     gum_confirm "Start Arch OS Installation?" || trap_gum_exit
-    echo && gum_title "Arch OS Installation"
     local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel..."
-    gum_spin --title="$spin_title" -- sleep 5 || trap_gum_exit # CTRL + C pressed
+    echo && ! gum_spin --title="$spin_title" -- sleep 5 && trap_gum_exit # CTRL + C pressed
+    gum_title "Arch OS Installation"
 
     SECONDS=0 # Messure execution time of installation
 
@@ -184,12 +186,13 @@ main() {
         swapoff -a
         umount -A -R /mnt
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
+    else
+        gum_warn "Arch OS is still mounted at /mnt"
     fi
 
     # Reboot
-    [ "$do_reboot" = "true" ] && [ "$MODE" != "debug" ] && gum_warn "Rebooting..." && reboot
-
-    exit 0
+    [ "$do_reboot" = "true" ] && [ "$MODE" != "debug" ] && gum_green "Rebooting..." && reboot
+    gum_info "Exit" && exit 0
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -229,38 +232,43 @@ properties_generate() {
         echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}'"
         echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}'"
         echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
+        echo "ARCH_OS_DESKTOP_EXTRAS_ENABLED='${ARCH_OS_DESKTOP_EXTRAS_ENABLED}'"
         echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}'"
         echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}'"
+        echo "ARCH_OS_SAMBA_SHARE_ENABLED='${ARCH_OS_SAMBA_SHARE_ENABLED}'"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
         echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
     } >"$SCRIPT_CONFIG" # Write properties to file
 }
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# SELECTORS
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+properties_preset_source() {
 
-select_preset() {
-    if [ ! -f "$SCRIPT_CONFIG" ]; then
+    # Default presets
+    [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
+    [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
+    [ -z "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
+    [ -z "$ARCH_OS_SAMBA_SHARE_ENABLED" ] && ARCH_OS_SAMBA_SHARE_ENABLED="true"
+    [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
+    [ -z "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" ] && ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED="true"
+    [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
+    [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
+
+    # Set microcode
+    [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
+    [ -z "$ARCH_OS_MICROCODE" ] && grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
+
+    # Load properties or select preset
+    if [ -f "$SCRIPT_CONFIG" ]; then
+        properties_source && gum_property "Properties Preset" "installer.conf"
+    else
+        # Select preset
         local preset options
         options=("desktop" "core" "custom")
-        preset=$(gum_choose --header "+ Choose Preset:" "${options[@]}") || trap_gum_exit_confirm
+        preset=$(gum_choose --header "" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$preset" ] && return 1 # Check if new value is null
-
-        # Default presets
-        ARCH_OS_HOSTNAME="arch-os"
-        ARCH_OS_KERNEL="linux-zen"
-        ARCH_OS_VM_SUPPORT_ENABLED="true"
-        ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED="true"
-        ARCH_OS_ECN_ENABLED="true"
-        ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
-
-        # Set microcode
-        grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
-        grep -E "AuthenticAMD" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="amd-ucode"
 
         # Core preset
         if [ "$preset" = "core" ]; then
@@ -274,22 +282,29 @@ select_preset() {
 
         # Desktop preset
         if [ "$preset" = "desktop" ]; then
+            ARCH_OS_AUR_HELPER='paru-git' # Workaround for pacman >= 7
+            ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
+            ARCH_OS_SAMBA_SHARE_ENABLED='true'
             ARCH_OS_CORE_TWEAKS_ENABLED="true"
             ARCH_OS_BOOTSPLASH_ENABLED='true'
             ARCH_OS_DESKTOP_ENABLED='true'
             ARCH_OS_MULTILIB_ENABLED='true'
             ARCH_OS_HOUSEKEEPING_ENABLED='true'
             ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
-            ARCH_OS_AUR_HELPER='paru-bin'
             ARCH_OS_MANAGER_ENABLED='true'
         fi
 
         # Write properties
-        properties_generate && gum_info "Preset is set to ${preset}"
+        properties_generate && gum_property "Properties Preset" "$preset"
     fi
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# SELECTORS
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 select_username() {
     if [ -z "$ARCH_OS_USERNAME" ]; then
@@ -298,22 +313,28 @@ select_username() {
         [ -z "$user_input" ] && return 1                      # Check if new value is null
         ARCH_OS_USERNAME="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Username is set to ${ARCH_OS_USERNAME}"
+    gum_property "Username" "$ARCH_OS_USERNAME"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
 
-select_password() { # --force
-    if [ "$1" = "--force" ] || [ -z "$ARCH_OS_PASSWORD" ]; then
+select_password() { # --change
+    if [ "$1" = "--change" ] || [ -z "$ARCH_OS_PASSWORD" ]; then
         local user_password user_password_check
         user_password=$(gum_input --password --header "+ Enter Password (mandatory)") || trap_gum_exit_confirm
         [ -z "$user_password" ] && return 1 # Check if new value is null
         user_password_check=$(gum_input --password --header "+ Enter Password again") || trap_gum_exit_confirm
         [ -z "$user_password_check" ] && return 1 # Check if new value is null
-        [ "$user_password" != "$user_password_check" ] && gum_fail "Passwords not identical" && return 1
+        if [ "$user_password" != "$user_password_check" ]; then
+            gum_confirm --affirmative="Ok" --negative="" "The passwords are not identical"
+            return 1
+        fi
         ARCH_OS_PASSWORD="$user_password" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Password is set to *******"
+    [ "$1" = "--change" ] && gum_info "Password successfully changed"
+    [ "$1" != "--change" ] && gum_property "Password" "*******"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -324,10 +345,14 @@ select_timezone() {
         tz_auto="$(curl -s http://ip-api.com/line?fields=timezone)"
         user_input=$(gum_input --header "+ Enter Timezone (auto)" --value "$tz_auto") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
-        [ ! -f "/usr/share/zoneinfo/${user_input}" ] && gum_fail "Timezone '${user_input}' is not supported" && return 1
+        if [ ! -f "/usr/share/zoneinfo/${user_input}" ]; then
+            gum_confirm --affirmative="Ok" --negative="" "Timezone '${user_input}' is not supported"
+            return 1
+        fi
         ARCH_OS_TIMEZONE="$user_input" && properties_generate # Set property and generate properties file
     fi
-    gum_info "Timezone is set to ${ARCH_OS_TIMEZONE}"
+    gum_property "Timezone" "$ARCH_OS_TIMEZONE"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -355,7 +380,8 @@ select_language() {
         [[ "${ARCH_OS_LOCALE_GEN_LIST[*]}" != *'en_US.UTF-8 UTF-8'* ]] && ARCH_OS_LOCALE_GEN_LIST+=('en_US.UTF-8 UTF-8')
         properties_generate # Generate properties file (for ARCH_OS_LOCALE_LANG & ARCH_OS_LOCALE_GEN_LIST)
     fi
-    gum_info "Language is set to ${ARCH_OS_LOCALE_LANG}"
+    gum_property "Language" "$ARCH_OS_LOCALE_LANG"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -371,7 +397,8 @@ select_keyboard() {
         [ -z "$user_input" ] && return 1                             # Check if new value is null
         ARCH_OS_VCONSOLE_KEYMAP="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Keyboard is set to ${ARCH_OS_VCONSOLE_KEYMAP}"
+    gum_property "Keyboard" "$ARCH_OS_VCONSOLE_KEYMAP"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -391,7 +418,8 @@ select_disk() {
         [[ "$ARCH_OS_DISK" = "/dev/nvm"* ]] && ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}p2" || ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}2"
         properties_generate # Generate properties file
     fi
-    gum_info "Disk is set to ${ARCH_OS_DISK}"
+    gum_property "Disk" "$ARCH_OS_DISK"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -409,7 +437,8 @@ select_enable_encryption() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_ENCRYPTION_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Disk Encryption is set to ${ARCH_OS_ENCRYPTION_ENABLED}"
+    gum_property "Disk Encryption" "$ARCH_OS_ENCRYPTION_ENABLED"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -427,7 +456,8 @@ select_enable_core_tweaks() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_CORE_TWEAKS_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Core Tweaks is set to ${ARCH_OS_CORE_TWEAKS_ENABLED}"
+    gum_property "Core Tweaks" "$ARCH_OS_CORE_TWEAKS_ENABLED"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -445,16 +475,15 @@ select_enable_bootsplash() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_BOOTSPLASH_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Bootsplash is set to ${ARCH_OS_BOOTSPLASH_ENABLED}"
+    gum_property "Bootsplash" "$ARCH_OS_BOOTSPLASH_ENABLED"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
 
-select_enable_desktop() {
-    local user_input options
-
-    # Select desktop environment
+select_enable_desktop_environment() {
     if [ -z "$ARCH_OS_DESKTOP_ENABLED" ]; then
+        local user_input
         gum_confirm "Enable Desktop Environment?"
         local user_confirm=$?
         [ $user_confirm = 130 ] && {
@@ -465,44 +494,64 @@ select_enable_desktop() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_DESKTOP_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Desktop Environment is set to ${ARCH_OS_DESKTOP_ENABLED}"
-    # Return if desktop disabled
-    [ "$ARCH_OS_DESKTOP_ENABLED" = "false" ] && return 0
+    gum_property "Desktop Environment" "$ARCH_OS_DESKTOP_ENABLED"
+    [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && [ -n "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && gum_property "Desktop Extras" "$ARCH_OS_DESKTOP_EXTRAS_ENABLED"
+    return 0
+}
 
-    # Slim Mode
-    if [ -z "$ARCH_OS_DESKTOP_SLIM_ENABLED" ]; then
-        gum_confirm "Enable Desktop Slim Mode? (GNOME Core Apps only)" --affirmative="No (default)" --negative="Yes"
-        local user_confirm=$?
-        [ $user_confirm = 130 ] && {
-            trap_gum_exit_confirm
-            return 1
-        }
-        [ $user_confirm = 1 ] && user_input="true"
-        [ $user_confirm = 0 ] && user_input="false"
-        ARCH_OS_DESKTOP_SLIM_ENABLED="$user_input" && properties_generate # Set value and generate properties file
-    fi
-    gum_info "Desktop Slim Mode is set to ${ARCH_OS_DESKTOP_SLIM_ENABLED}"
+# ---------------------------------------------------------------------------------------------------
 
-    # Keyboard layout
-    if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
-        user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout (mandatory)" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
-        [ -z "$user_input" ] && return 1 # Check if new value is null
-        ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input"
-        user_input=$(gum_input --header "+ Enter Desktop Keyboard Variant (optional)" --placeholder "e.g. 'nodeadkeys' or leave empty...") || trap_gum_exit_confirm
-        ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input"
-        properties_generate
+select_enable_desktop_slim() {
+    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
+        if [ -z "$ARCH_OS_DESKTOP_SLIM_ENABLED" ]; then
+            local user_input
+            gum_confirm "Enable Desktop Slim Mode? (GNOME Core Apps only)" --affirmative="No (default)" --negative="Yes"
+            local user_confirm=$?
+            [ $user_confirm = 130 ] && {
+                trap_gum_exit_confirm
+                return 1
+            }
+            [ $user_confirm = 1 ] && user_input="true"
+            [ $user_confirm = 0 ] && user_input="false"
+            ARCH_OS_DESKTOP_SLIM_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+        fi
+        gum_property "Desktop Slim Mode" "$ARCH_OS_DESKTOP_SLIM_ENABLED"
     fi
-    gum_info "Desktop Keyboard Layout is set to ${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}"
-    [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gum_info "Desktop Keyboard Variant is set to ${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}"
+    return 0
+}
 
-    # Graphics driver
-    if [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] || [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" = "none" ]; then
-        options=("mesa" "intel_i915" "nvidia" "amd" "ati")
-        user_input=$(gum_choose --header "+ Choose Desktop Graphics Driver (default: mesa)" "${options[@]}") || trap_gum_exit_confirm
-        [ -z "$user_input" ] && return 1                                     # Check if new value is null
-        ARCH_OS_DESKTOP_GRAPHICS_DRIVER="$user_input" && properties_generate # Set value and generate properties file
+# ---------------------------------------------------------------------------------------------------
+
+select_enable_desktop_keyboard() {
+    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
+        if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
+            local user_input user_input2
+            user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
+            [ -z "$user_input" ] && return 1 # Check if new value is null
+            user_input2=$(gum_input --header "+ Enter Desktop Keyboard Variant (optional)" --placeholder "e.g. 'nodeadkeys' or leave empty...") || trap_gum_exit_confirm
+            ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input"
+            ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input2"
+            properties_generate
+        fi
+        gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
+        [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gum_property "Desktop Keyboard Variant" "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT"
     fi
-    gum_info "Desktop Graphics Driver is set to ${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}"
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+select_enable_desktop_driver() {
+    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
+        if [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] || [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" = "none" ]; then
+            local user_input options
+            options=("mesa" "intel_i915" "nvidia" "amd" "ati")
+            user_input=$(gum_choose --header "+ Choose Desktop Graphics Driver (default: mesa)" "${options[@]}") || trap_gum_exit_confirm
+            [ -z "$user_input" ] && return 1                                     # Check if new value is null
+            ARCH_OS_DESKTOP_GRAPHICS_DRIVER="$user_input" && properties_generate # Set value and generate properties file
+        fi
+        gum_property "Desktop Graphics Driver" "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER"
+    fi
     return 0
 }
 
@@ -510,18 +559,14 @@ select_enable_desktop() {
 
 select_enable_aur() {
     if [ -z "$ARCH_OS_AUR_HELPER" ]; then
-        gum_confirm "Enable AUR Helper?"
-        local user_confirm=$?
-        [ $user_confirm = 130 ] && {
-            trap_gum_exit_confirm
-            return 1
-        }
-        local user_input
-        [ $user_confirm = 1 ] && user_input="none"
-        [ $user_confirm = 0 ] && user_input="paru-bin"
+        local user_input options
+        options=("none" "paru" "paru-bin" "paru-git")
+        user_input=$(gum_choose --header "+ Choose AUR Helper (default: paru)" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1                        # Check if new value is null
         ARCH_OS_AUR_HELPER="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "AUR Helper is set to ${ARCH_OS_AUR_HELPER}"
+    gum_property "AUR Helper" "$ARCH_OS_AUR_HELPER"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -539,7 +584,8 @@ select_enable_multilib() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_MULTILIB_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "32 Bit Support is set to ${ARCH_OS_MULTILIB_ENABLED}"
+    gum_property "32 Bit Support" "$ARCH_OS_MULTILIB_ENABLED"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -557,7 +603,8 @@ select_enable_housekeeping() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_HOUSEKEEPING_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Housekeeping is set to ${ARCH_OS_HOUSEKEEPING_ENABLED}"
+    gum_property "Housekeeping" "$ARCH_OS_HOUSEKEEPING_ENABLED"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -575,7 +622,8 @@ select_enable_shell_enhancement() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_SHELL_ENHANCEMENT_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Shell Enhancement is set to ${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}"
+    gum_property "Shell Enhancement" "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED"
+    return 0
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -593,7 +641,8 @@ select_enable_manager() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_MANAGER_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_info "Arch OS Manager is set to ${ARCH_OS_MANAGER_ENABLED}"
+    gum_property "Arch OS Manager" "$ARCH_OS_MANAGER_ENABLED"
+    return 0
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -679,7 +728,7 @@ exec_prepare_disk() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_pacstrap_core() {
-    local process_name="Pacstrap Arch OS Core System"
+    local process_name="Pacstrap Arch OS Core"
     process_init "$process_name"
     (
         [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
@@ -730,8 +779,9 @@ exec_pacstrap_core() {
         # Set hostname & hosts
         echo "$ARCH_OS_HOSTNAME" >/mnt/etc/hostname
         {
-            echo '127.0.0.1    localhost'
-            echo '::1          localhost'
+            echo '# <ip>     <hostname.domain.org>  <hostname>'
+            echo '127.0.0.1  localhost.localdomain  localhost'
+            echo '::1        localhost.localdomain  localhost'
         } >/mnt/etc/hosts
 
         # Create initial ramdisk from /etc/mkinitcpio.conf
@@ -842,39 +892,50 @@ exec_install_desktop() {
             [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
 
             # GNOME base packages
-            local packages=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer)
-            [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && packages+=(gnome-firmware file-roller)
+            local packages=(gnome git)
 
-            # GNOME wayland screensharing, flatpak & pipewire support
-            packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
+            # GNOME desktop extras
+            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
 
-            # Audio (Pipewire replacements + session manager)
-            packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
-            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
+                # GNOME base extras
+                packages+=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer)
 
-            # Networking & Access
-            packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
+                [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && packages+=(gnome-firmware file-roller)
 
-            # Utils (https://wiki.archlinux.org/title/File_systems)
-            packages+=(fwupd bash-completion git dhcp net-tools inetutils nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfat-utils p7zip zip unzip unrar tar)
+                # GNOME wayland screensharing, flatpak & pipewire support
+                packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
 
-            # Certificates
-            packages+=(ca-certificates)
+                # Audio (Pipewire replacements + session manager)
+                packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
 
-            # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
-            packages+=(ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader)
-            packages+=(a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread openh264)
-            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer lib32-gst-plugins-good)
+                # Networking & Access
+                packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
 
-            # Optimization
-            packages+=(gamemode)
-            [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
+                # Utils (https://wiki.archlinux.org/title/File_systems)
+                packages+=(archlinux-contrib pacutils fwupd bash-completion dhcp net-tools inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfat-utils btrfs-progs xfsprogs p7zip zip unzip unrar tar)
 
-            # Fonts
-            packages+=(noto-fonts noto-fonts-emoji ttf-firacode-nerd ttf-liberation ttf-dejavu)
+                # Runtimes & Helper
+                packages+=(jq zenity gum)
 
-            # Theming
-            packages+=(adw-gtk-theme)
+                # Certificates
+                packages+=(ca-certificates)
+
+                # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
+                packages+=(ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader opus speex libvpx libwebp)
+                packages+=(a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread openh264)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer lib32-gst-plugins-good lib32-libvpx lib32-libwebp)
+
+                # Optimization
+                packages+=(gamemode)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
+
+                # Fonts
+                packages+=(noto-fonts noto-fonts-emoji ttf-firacode-nerd ttf-liberation ttf-dejavu)
+
+                # Theming
+                packages+=(adw-gtk-theme)
+            fi
 
             # Install packages
             chroot_pacman_install "${packages[@]}"
@@ -904,11 +965,10 @@ exec_install_desktop() {
             fi
 
             # Add user to gamemode group
-            arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
+            [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
             # Enable GNOME auto login
             mkdir -p /mnt/etc/gdm
-            [ -f /mnt/etc/gdm/custom.conf ] && mv /mnt/etc/gdm/custom.conf /mnt/etc/gdm/custom.conf.bak
             #grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
             {
                 echo "[daemon]"
@@ -947,12 +1007,65 @@ exec_install_desktop() {
             } >"/mnt/home/${ARCH_OS_USERNAME}/.config/environment.d/00-arch.conf"
 
             # Samba
-            mkdir -p "/mnt/etc/samba/"
-            {
-                echo "[global]"
-                echo "   workgroup = WORKGROUP"
-                echo "   log file = /var/log/samba/%m"
-            } >/mnt/etc/samba/smb.conf
+            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
+
+                # Create samba config
+                mkdir -p "/mnt/etc/samba/"
+                {
+                    echo '[global]'
+                    echo '   workgroup = WORKGROUP'
+                    echo '   server string = Samba Server'
+                    echo '   security = user'
+                    echo '   map to guest = Bad User'
+                    echo '   log file = /var/log/samba/%m.log'
+                    echo '   max log size = 50'
+                    echo '   client min protocol = SMB2'
+                    echo '   server min protocol = SMB2'
+                    if [ "$ARCH_OS_SAMBA_SHARE_ENABLED" = "true" ]; then
+                        echo
+                        echo '[homes]'
+                        echo '   comment = Home Directory'
+                        echo '   browseable = yes'
+                        echo '   read only = no'
+                        echo '   create mask = 0700'
+                        echo '   directory mask = 0700'
+                        echo '   valid users = %S'
+                        echo
+                        echo '[public]'
+                        echo '   comment = Public Share'
+                        echo '   path = /srv/samba/public'
+                        echo '   browseable = yes'
+                        echo '   guest ok = yes'
+                        echo '   read only = no'
+                        echo '   writable = yes'
+                        echo '   create mask = 0777'
+                        echo '   directory mask = 0777'
+                        echo '   force user = nobody'
+                        echo '   force group = users'
+                    fi
+                } >/mnt/etc/samba/smb.conf
+
+                # Test samba config
+                arch-chroot /mnt testparm -s /etc/samba/smb.conf
+
+                if [ "$ARCH_OS_SAMBA_SHARE_ENABLED" = "true" ]; then
+
+                    # Create samba public dir
+                    arch-chroot /mnt mkdir -p /srv/samba/public
+                    arch-chroot /mnt chmod 777 /srv/samba/public
+                    arch-chroot /mnt chown -R nobody:users /srv/samba/public
+
+                    # Add user as samba user with same password (different user db)
+                    (
+                        echo "$ARCH_OS_PASSWORD"
+                        echo "$ARCH_OS_PASSWORD"
+                    ) | arch-chroot /mnt smbpasswd -s -a "$ARCH_OS_USERNAME"
+                fi
+
+                # Start samba services
+                arch-chroot /mnt systemctl enable smb.service
+                arch-chroot /mnt systemctl enable nmb.service
+            fi
 
             # Set X11 keyboard layout in /etc/X11/xorg.conf.d/00-keyboard.conf
             mkdir -p /mnt/etc/X11/xorg.conf.d/
@@ -967,18 +1080,22 @@ exec_install_desktop() {
             } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
 
             # Enable Arch OS Desktop services
-            arch-chroot /mnt systemctl enable gdm.service                                                              # GNOME
-            arch-chroot /mnt systemctl enable bluetooth.service                                                        # Bluetooth
-            arch-chroot /mnt systemctl enable avahi-daemon                                                             # Network browsing service
-            arch-chroot /mnt systemctl enable power-profiles-daemon                                                    # Power daemon
-            arch-chroot /mnt systemctl enable cups.socket                                                              # Printer
-            arch-chroot /mnt systemctl enable smb.service                                                              # Samba
-            arch-chroot /mnt systemctl enable nmb.service                                                              # Samba
-            arch-chroot /mnt systemctl enable gpm.service                                                              # TTY Mouse Support
+            arch-chroot /mnt systemctl enable gdm.service       # GNOME
+            arch-chroot /mnt systemctl enable bluetooth.service # Bluetooth
+            arch-chroot /mnt systemctl enable avahi-daemon      # Network browsing service
+            arch-chroot /mnt systemctl enable gpm.service       # TTY Mouse Support
+
+            # User services
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user gcr-ssh-agent.socket   # GCR ssh-agent
+
+            # Extra services
+            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
+                arch-chroot /mnt systemctl enable power-profiles-daemon # Power daemon
+                arch-chroot /mnt systemctl enable cups.socket           # Printer
+            fi
 
             # Create users applications dir
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications"
@@ -1000,7 +1117,7 @@ exec_install_desktop() {
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/qv4l2.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/qvidcap.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/lstopo.desktop"
-            echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/cups.desktop"
+            [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/cups.desktop"
 
             # Hide Shell Enhancement apps
             if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
@@ -1026,7 +1143,7 @@ exec_install_desktop() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_graphics_driver() {
-    local process_name="Install Desktop Graphics Driver"
+    local process_name="Install Desktop Driver"
     if [ -n "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] && [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" != "none" ]; then
         process_init "$process_name"
         (
@@ -1549,7 +1666,7 @@ chroot_aur_install() {
     repo_tmp_dir=$(mktemp -u "/home/${ARCH_OS_USERNAME}/${repo}.XXXXXXXXXX")
     sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Disable sudo needs no password rights
     arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$repo_tmp_dir"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $repo_tmp_dir && makepkg -si --noconfirm"
+    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $repo_tmp_dir && echo -e \"\noptions=('!debug')\" >>PKGBUILD && makepkg -si --noconfirm"
     arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$repo_tmp_dir"
     sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Enable sudo needs no password rights
 }
@@ -1625,8 +1742,8 @@ process_capture() {
     [ "$(<"$PROCESS_RET")" != "0" ] && gum_fail "${process_name} failed" && exit 1 # If process failed (result code 0 was not write in the end)
 
     # Finish
-    rm -f "$PROCESS_RET"                            # Remove process result file
-    gum_info "${process_name} sucessfully finished" # Print process success
+    rm -f "$PROCESS_RET"                 # Remove process result file
+    gum_proc "${process_name}" "success" # Print process success
 }
 
 process_return() {
@@ -1683,29 +1800,43 @@ gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
 gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
 
 # Gum prints
-gum_title() { log_info "+ ${*}" && gum join --horizontal "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
-gum_info() { log_info "$*" && gum join --horizontal "$(gum_green --bold "• ")" "$(gum_white --bold "${*}")"; }
-gum_warn() { log_warn "$*" && gum join --horizontal "$(gum_yellow --bold "• ")" "$(gum_white --bold "${*}")"; }
-gum_fail() { log_fail "$*" && gum join --horizontal "$(gum_red --bold "• ")" "$(gum_white --bold "${*}")"; }
+gum_title() { log_head "+ ${*}" && gum join "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
+gum_info() { log_info "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "${*}")"; }
+gum_warn() { log_warn "$*" && gum join "$(gum_yellow --bold "• ")" "$(gum_white "${*}")"; }
+gum_fail() { log_fail "$*" && gum join "$(gum_red --bold "• ")" "$(gum_white "${*}")"; }
 
 # Gum wrapper
 gum_style() { gum style "${@}"; }
 gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
 gum_input() { gum input --placeholder "..." --prompt "> " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
-gum_write() { gum write --prompt "• " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
+gum_write() { gum write --prompt "> " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
 gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
-gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter ..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
+gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
 gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
+
+# Gum key & value
+gum_proc() { log_proc "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white --bold "$(print_filled_space 27 "${1}")")" "$(gum_white "  >  ")" "$(gum_green "${2}")"; }
+gum_property() { log_prop "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 27 "${1}")")" "$(gum_green --bold "  >  ")" "$(gum_white --bold "${2}")"; }
+
+# ---------------------------------------------------------------------------------------------------
+
+print_filled_space() {
+    local total="$1" && local text="$2" && local length="${#text}"
+    [ "$length" -ge "$total" ] && echo "$text" && return 0
+    local padding=$((total - length)) && printf '%s%*s\n' "$text" "$padding" ""
+}
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # LOGGING
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 write_log() { echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >>"$SCRIPT_LOG"; }
+log_head() { write_log "HEAD | ${*}"; }
 log_info() { write_log "INFO | ${*}"; }
 log_warn() { write_log "WARN | ${*}"; }
 log_fail() { write_log "FAIL | ${*}"; }
 log_proc() { write_log "PROC | ${*}"; }
+log_prop() { write_log "PROP | ${*}"; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # ///////////////////////////////////////////  START MAIN  ///////////////////////////////////////////

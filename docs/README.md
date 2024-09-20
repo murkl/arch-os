@@ -44,11 +44,11 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 
 ## Arch OS Core Features
 
-- Multilingual Support
 - [Minimal Arch Linux](DOCS.md#minimal-installation) (~150 packages)
 - [Zen Kernel](DOCS.md#advanced-installation) (configurable)
 - [Swap](DOCS.md#swap) with zram-generator (zstd)
 - [Sole OS](DOCS.md#partitions-layout)
+- Multilingual Support
 - Filesystem ext4
 - Silent Boot
 - Systemd Bootloader (auto updated)
@@ -59,31 +59,34 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - Microcode Support (Intel & AMD)
 - Disabled Watchdog
 - UEFI only supported
-- [More Information...](DOCS.md#technical-information)
+- [More Information ...](DOCS.md#technical-information)
 
-## Optional Features
+## Additional Features
 
-- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
+- [Arch OS Manager](DOCS.md#arch-os-manager)
 - [Arch OS Core Tweaks](DOCS.md#core-tweaks)
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
 - [Arch OS Shell Enhancement](DOCS.md#shell-enhancement)
 - [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
-- [Arch OS Manager](DOCS.md#arch-os-manager)
 - [AUR Helper](DOCS.md#advanced-installation) (configurable)
+- [GNOME Desktop Environment](#desktop-features) (optional with enhanced packages)
+- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
 - [VM Support](DOCS.md#vm-support)
 - 32 Bit Support (Multilib)
 - Disk Encryption
-- GNOME Desktop
-  - [Arch OS Slim Version](DOCS.md#example-installerconf) (Minimal GNOME Core Apps)
-  - Wayland optimized
-  - Auto Login enabled
-  - [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
-  - Flatpak Support + Auto Update (GNOME Software)
-  - Samba, Networking Protocol Libs, Git, Utils & Codecs included
-  - GNOME Power Profiles Support
-  - Printer Support (cups)
-  - Gamemode preinstalled
-  - Firmware Update Tool preinstalled
+
+## Desktop Features
+
+- [Arch OS Slim Version](DOCS.md#example-installerconf) (GNOME Core Apps only)
+- [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
+- Flatpak Support + Auto Update (GNOME Software)
+- Samba, Networking Protocol Libs, Git, Utils & Codecs included
+- Wayland optimized
+- GNOME Power Profiles Support
+- Auto Login enabled
+- Printer Support (cups)
+- Gamemode preinstalled
+- Firmware Update Tool preinstalled
 
 ## Installing Arch OS
 
@@ -105,13 +108,13 @@ To install Arch OS, an internet connection is required, as many packages will be
 - Load prefered keyboard layout (optional): `loadkeys de`
 - Connect to WLAN (optional): `iwctl station wlan0 connect 'SSID'`
 
-#### Run Arch OS Installer
+#### 3.1. Run Arch OS Installer
 
 ```
 curl -Ls bit.ly/arch-os | bash
 ```
 
-_Cancel the Arch OS Installer with `ctrl + c`_
+_Cancel the Arch OS Installer with `CTRL + c`_
 
 **[➜ See Advanced Installation](DOCS.md#advanced-installation)**
 

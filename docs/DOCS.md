@@ -168,18 +168,20 @@ ARCH_OS_KERNEL='linux-zen' # Kernel | Default: linux-zen | Recommended: linux, l
 ARCH_OS_MICROCODE='intel-ucode' # Microcode | Disable: none | Available: intel-ucode, amd-ucode
 ARCH_OS_CORE_TWEAKS_ENABLED='true' # Arch OS Core Tweaks | Disable: false
 ARCH_OS_MULTILIB_ENABLED='true' # MultiLib 32 Bit Support | Disable: false
-ARCH_OS_AUR_HELPER='paru-bin' # AUR Helper | Default: paru-bin | Disable: none | Recommended: paru, yay, trizen, pikaur
+ARCH_OS_AUR_HELPER='paru' # AUR Helper | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur
 ARCH_OS_BOOTSPLASH_ENABLED='true' # Bootsplash | Disable: false
 ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true' # Shell Enhancement | Disable: false
 ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='true' # Enable fish shell | Default: true | Disable: false
 ARCH_OS_HOUSEKEEPING_ENABLED='true' # Housekeeping | Disable: false
 ARCH_OS_MANAGER_ENABLED='true' # Arch OS Manager | Disable: false
-ARCH_OS_DESKTOP_ENABLED='true' # Arch OS Desktop | Disable: false
-ARCH_OS_DESKTOP_SLIM_ENABLED='true' # Sim Desktop (Minimal Apps) | Default: false
+ARCH_OS_DESKTOP_ENABLED='true' # Arch OS Desktop (caution: if disabled, only a minimal tty will be provied)| Disable: false
+ARCH_OS_DESKTOP_EXTRAS_ENABLED='true' # Enable desktop extra packages (caution: if disabled, only core + gnome + git packages will be installed) | Disable: false
+ARCH_OS_DESKTOP_SLIM_ENABLED='true' # Enable Sim Desktop (only GNOME Core Apps) | Default: false
 ARCH_OS_DESKTOP_GRAPHICS_DRIVER='nvidia' # Graphics Driver | Disable: none | Available: mesa, intel_i915, nvidia, amd, ati
 ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='de' # X11 keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de
 ARCH_OS_DESKTOP_KEYBOARD_MODEL='pc105' # X11 keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models
 ARCH_OS_DESKTOP_KEYBOARD_VARIANT='nodeadkeys' # X11 keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys
+ARCH_OS_SAMBA_SHARE_ENABLED='true' # Enable Samba public (anonymous) & home share (user) | Disable: false
 ARCH_OS_VM_SUPPORT_ENABLED='true' # VM Support | Default: true | Disable: false
 ARCH_OS_ECN_ENABLED='true' # Disable ECN support for legacy routers | Default: true | Disable: false
 ```
@@ -432,6 +434,16 @@ The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broke
 curl -Ls bit.ly/arch-os-dev | bash
 ```
 
+### Parameter
+
+```
+# Custom gum:
+GUM=/usr/bin/gum ./installer.sh
+
+# Debug simulator:
+MODE=debug ./installer.sh
+```
+
 <div align="center">
 
 ## Screenshots
@@ -452,13 +464,13 @@ curl -Ls bit.ly/arch-os-dev | bash
 
 ### Arch OS Installer
 
+<p><img src="screenshots/installer_start.png"></p>
 <p><img src="screenshots/installer_load_properties.png"></p>
 <p><img src="screenshots/installer_preset.png"></p>
 <p><img src="screenshots/installer_language.png"></p>
 <p><img src="screenshots/installer_disk.png"></p>
 <p><img src="screenshots/installer_driver.png"></p>
 <p><img src="screenshots/installer_slim.png"></p>
-<p><img src="screenshots/installer_start.png"></p>
 <p><img src="screenshots/installer_core_complete.png"></p>
 
 </div>
