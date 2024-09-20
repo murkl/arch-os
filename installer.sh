@@ -291,6 +291,7 @@ properties_preset_source() {
             ARCH_OS_HOUSEKEEPING_ENABLED='true'
             ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
             ARCH_OS_MANAGER_ENABLED='true'
+            ARCH_OS_AUR_HELPER='paru-git'
         fi
 
         # Write properties
