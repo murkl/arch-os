@@ -108,7 +108,7 @@ To install Arch OS, an internet connection is required, as many packages will be
 - Load prefered keyboard layout (optional): `loadkeys de`
 - Connect to WLAN (optional): `iwctl station wlan0 connect 'SSID'`
 
-#### Run Arch OS Installer
+#### 3.1. Run Arch OS Installer
 
 ```
 curl -Ls bit.ly/arch-os | bash
