@@ -282,6 +282,7 @@ properties_preset_source() {
 
         # Desktop preset
         if [ "$preset" = "desktop" ]; then
+            ARCH_OS_AUR_HELPER='paru-git' # Workaround for pacman >= 7
             ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
             ARCH_OS_SAMBA_SHARE_ENABLED='true'
             ARCH_OS_CORE_TWEAKS_ENABLED="true"
@@ -291,7 +292,6 @@ properties_preset_source() {
             ARCH_OS_HOUSEKEEPING_ENABLED='true'
             ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
             ARCH_OS_MANAGER_ENABLED='true'
-            ARCH_OS_AUR_HELPER='paru-git'
         fi
 
         # Write properties
@@ -560,8 +560,8 @@ select_enable_desktop_driver() {
 select_enable_aur() {
     if [ -z "$ARCH_OS_AUR_HELPER" ]; then
         local user_input options
-        options=("none" "paru" "paru-git" "paru-bin")
-        user_input=$(gum_choose --header "+ Choose AUR Helper (default: paru-git)" "${options[@]}") || trap_gum_exit_confirm
+        options=("none" "paru" "paru-bin" "paru-git")
+        user_input=$(gum_choose --header "+ Choose AUR Helper (default: paru)" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                        # Check if new value is null
         ARCH_OS_AUR_HELPER="$user_input" && properties_generate # Set value and generate properties file
     fi
