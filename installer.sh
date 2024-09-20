@@ -779,8 +779,9 @@ exec_pacstrap_core() {
         # Set hostname & hosts
         echo "$ARCH_OS_HOSTNAME" >/mnt/etc/hostname
         {
-            echo '127.0.0.1    localhost'
-            echo '::1          localhost'
+            echo '# <ip>     <hostname.domain.org>  <hostname>'
+            echo '127.0.0.1  localhost.localdomain  localhost'
+            echo '::1        localhost.localdomain  localhost'
         } >/mnt/etc/hosts
 
         # Create initial ramdisk from /etc/mkinitcpio.conf
