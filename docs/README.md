@@ -61,7 +61,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - UEFI only supported
 - [More Information ...](DOCS.md#technical-information)
 
-## Additional Features (optional)
+## Additional Features
 
 - [Arch OS Manager](DOCS.md#arch-os-manager)
 - [Arch OS Core Tweaks](DOCS.md#core-tweaks)
@@ -75,7 +75,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - 32 Bit Support (Multilib)
 - Disk Encryption
 
-## Desktop Features (optional)
+## Desktop Features
 
 - [Arch OS Slim Version](DOCS.md#example-installerconf) (GNOME Core Apps only)
 - [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
