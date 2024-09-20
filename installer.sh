@@ -20,7 +20,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # SCRIPT
-VERSION='1.6.5'
+VERSION='1.6.6'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -282,7 +282,7 @@ properties_preset_source() {
 
         # Desktop preset
         if [ "$preset" = "desktop" ]; then
-            ARCH_OS_AUR_HELPER='paru-git' # Workaround for pacman >= 7
+            ARCH_OS_AUR_HELPER='paru'
             ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
             ARCH_OS_SAMBA_SHARE_ENABLED='true'
             ARCH_OS_CORE_TWEAKS_ENABLED="true"
