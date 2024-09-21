@@ -75,7 +75,7 @@ main() {
         # Ask for load & remove existing config file
         if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
             gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config > exit script
-            mv -f "$SCRIPT_CONFIG" "${SCRIPT_CONFIG}.old" && gum_info "installer.conf successfully removed"
+            mv -f "$SCRIPT_CONFIG" "${SCRIPT_CONFIG}.old" && gum_info "installer.conf was moved to installer.conf.old"
             gum_warn "Please restart Arch OS Installer..."
             echo && exit 0
         fi
