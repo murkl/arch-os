@@ -124,7 +124,7 @@ _Cancel the Arch OS Installer with `CTRL + c`_
 
 ## System Maintenance
 
-After installing Arch OS with default properties preset, most maintenance tasks are performed automatically, but the following steps must be executed manually on a regular basis:
+After installing Arch OS with the default properties preset, most maintenance tasks are performed automatically, but the following steps must be executed manually on a regular basis:
 
 - Regularly upgrade your system packages (Pacman/AUR & Flatpak)
 - Regularly read the **[Arch Linux News](https://www.archlinux.org/news)** (preferably before upgrading your system)
