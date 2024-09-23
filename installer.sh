@@ -266,12 +266,13 @@ properties_preset_source() {
     else
         # Select preset
         local preset options
-        options=("desktop" "core" "custom")
+        options=("desktop | Desktop Environment (default)" "core    | Minimal TTY Environment" "none    | No pre-selection")
         preset=$(gum_choose --header "" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$preset" ] && return 1 # Check if new value is null
+        preset="$(echo "$preset" | awk '{print $1}')"
 
         # Core preset
-        if [ "$preset" = "core" ]; then
+        if [[ $preset == core* ]]; then
             ARCH_OS_DESKTOP_ENABLED='false'
             ARCH_OS_MULTILIB_ENABLED='false'
             ARCH_OS_HOUSEKEEPING_ENABLED='false'
@@ -281,7 +282,7 @@ properties_preset_source() {
         fi
 
         # Desktop preset
-        if [ "$preset" = "desktop" ]; then
+        if [[ $preset == desktop* ]]; then
             ARCH_OS_AUR_HELPER='paru'
             ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
             ARCH_OS_SAMBA_SHARE_ENABLED='true'
@@ -560,7 +561,7 @@ select_enable_desktop_driver() {
 select_enable_aur() {
     if [ -z "$ARCH_OS_AUR_HELPER" ]; then
         local user_input options
-        options=("none" "paru" "paru-bin" "paru-git")
+        options=("paru" "paru-bin" "paru-git" "none")
         user_input=$(gum_choose --header "+ Choose AUR Helper (default: paru)" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                        # Check if new value is null
         ARCH_OS_AUR_HELPER="$user_input" && properties_generate # Set value and generate properties file
@@ -1660,7 +1661,10 @@ chroot_pacman_install() {
 }
 
 chroot_aur_install() {
+
+    # Vars
     local repo repo_url repo_tmp_dir aur_failed
+    repo="$1" && repo_url="https://aur.archlinux.org/${repo}.git"
 
     # Disable sudo needs no password rights
     sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers

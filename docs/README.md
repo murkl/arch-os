@@ -145,6 +145,6 @@ Further information can be found in the documentation.
 
 <p><img src="./screenshots/desktop_demo.jpg"></p>
 
-<strong><i>Arch OS Demo Desktop</i></strong>
+<i>Arch OS Desktop Demo</i>
 
 </div>
