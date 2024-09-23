@@ -1645,7 +1645,7 @@ chroot_pacman_install() {
     local pacman_failed="true"
     # Retry installing packages 5 times (in case of connection issues)
     for ((i = 1; i < 6; i++)); do
-        # Print updated whiptail info
+        # Print log if greather than first try
         [ "$i" -gt 1 ] && log_warn "${i}. Retry Pacman installation..."
         # Try installing packages
         if ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
@@ -1660,15 +1660,44 @@ chroot_pacman_install() {
 }
 
 chroot_aur_install() {
-    local repo repo_url repo_tmp_dir
-    repo="$1"
-    repo_url="https://aur.archlinux.org/${repo}.git"
-    repo_tmp_dir=$(mktemp -u "/home/${ARCH_OS_USERNAME}/${repo}.XXXXXXXXXX")
-    sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Disable sudo needs no password rights
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$repo_tmp_dir"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $repo_tmp_dir && echo -e \"\noptions=('!debug')\" >>PKGBUILD && makepkg -si --noconfirm"
+    local repo repo_url repo_tmp_dir aur_failed
+
+    # Disable sudo needs no password rights
+    sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
+
+    # Temp dir
+    repo_tmp_dir=$(mktemp -u "/home/${ARCH_OS_USERNAME}/.tmp-aur-${repo}.XXXX")
+
+    # Retry installing AUR 5 times (in case of connection issues)
+    aur_failed="true"
+    for ((i = 1; i < 6; i++)); do
+
+        # Print log if greather than first try
+        [ "$i" -gt 1 ] && log_warn "${i}. Retry AUR installation..."
+
+        #  Try cloning AUR repo
+        ! arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "rm -rf ${repo_tmp_dir}; git clone ${repo_url} ${repo_tmp_dir}" && sleep 10 && continue
+
+        # Add '!debug' option to PKGBUILD
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd ${repo_tmp_dir} && echo -e \"\noptions=('!debug')\" >>PKGBUILD"
+
+        # Try installing AUR
+        if ! arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd ${repo_tmp_dir} && makepkg -si --noconfirm --needed"; then
+            sleep 10 && continue # Wait 10 seconds & try again
+        else
+            aur_failed="false" && break # Success: break loop
+        fi
+    done
+
+    # Remove tmp dir
     arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$repo_tmp_dir"
-    sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Enable sudo needs no password rights
+
+    # Enable sudo needs no password rights
+    sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
+
+    # Result
+    [ "$aur_failed" = "true" ] && return 1  # Failed after 5 retries
+    [ "$aur_failed" = "false" ] && return 0 # Success
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
