@@ -24,8 +24,12 @@
 </b></p>
 
 <p>
-This project aims to provide a robust Arch Linux base for desktop usage, along with an easy-to-use and fast properties-file-based installer with error handling. Install a minimal Arch Linux core with optional features such as Automatic Housekeeping, Zen Kernel, GNOME Desktop with Graphics Driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....
-</p>
+This project aims to provide a mostly automized and robust Arch Linux base for desktop usage, along with an easy-to-use and fast properties-file-based installer with error handling. Install a minimal Arch Linux core with optional features such as Automatic Housekeeping, Zen Kernel, Fancy Shell Enhancement, GNOME Desktop with Graphics Driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....</p>
+
+<p>
+  <strong>Tools</strong>
+  <br><strong><a target="_blank" href="https://github.com/murkl/arch-os-manager">Arch OS Manager</a></strong>
+ </p>
 
 <p>
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
@@ -59,7 +63,7 @@ This project aims to provide a robust Arch Linux base for desktop usage, along w
 - Microcode Support (Intel & AMD)
 - Disabled Watchdog
 - UEFI only supported
-- [More Information ...](DOCS.md#technical-information)
+- [More Information...](DOCS.md#technical-information)
 
 ## Additional Features
 
@@ -118,6 +122,17 @@ _Cancel the Arch OS Installer with `CTRL + c`_
 
 **[➜ See Advanced Installation](DOCS.md#advanced-installation)**
 
+## System Maintenance
+
+After installing Arch OS with the default properties preset, most maintenance tasks are performed automatically, but the following steps must be executed manually on a regular basis:
+
+- Regularly upgrade your system packages (Pacman/AUR & Flatpak)
+- Regularly read the **[Arch Linux News](https://www.archlinux.org/news)** (preferably before upgrading your system)
+- Regularly check & merge new configurations with `pacdiff` (preferably after each system upgrade)
+- Consult the **[Arch Linux Wiki](https://wiki.archlinux.org)** (if you need help)
+
+To streamline this process, you can use the preinstalled **[➜ Arch OS Manager](https://github.com/murkl/arch-os-manager)**
+
 ## More Information
 
 Further information can be found in the documentation.
@@ -130,6 +145,6 @@ Further information can be found in the documentation.
 
 <p><img src="./screenshots/desktop_demo.jpg"></p>
 
-_Arch OS Demo Desktop_
+<i>Arch OS Desktop Demo</i>
 
 </div>

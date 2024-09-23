@@ -20,7 +20,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # SCRIPT
-VERSION='1.6.5'
+VERSION='1.6.6'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -75,7 +75,7 @@ main() {
         # Ask for load & remove existing config file
         if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
             gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config > exit script
-            mv -f "$SCRIPT_CONFIG" "${SCRIPT_CONFIG}.old" && gum_info "installer.conf successfully removed"
+            mv -f "$SCRIPT_CONFIG" "${SCRIPT_CONFIG}.old" && gum_info "installer.conf was moved to installer.conf.old"
             gum_warn "Please restart Arch OS Installer..."
             echo && exit 0
         fi
@@ -266,12 +266,13 @@ properties_preset_source() {
     else
         # Select preset
         local preset options
-        options=("desktop" "core" "custom")
+        options=("desktop | Desktop Environment (default)" "core    | Minimal TTY Environment" "none    | No pre-selection")
         preset=$(gum_choose --header "" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$preset" ] && return 1 # Check if new value is null
+        preset="$(echo "$preset" | awk '{print $1}')"
 
         # Core preset
-        if [ "$preset" = "core" ]; then
+        if [[ $preset == core* ]]; then
             ARCH_OS_DESKTOP_ENABLED='false'
             ARCH_OS_MULTILIB_ENABLED='false'
             ARCH_OS_HOUSEKEEPING_ENABLED='false'
@@ -281,8 +282,8 @@ properties_preset_source() {
         fi
 
         # Desktop preset
-        if [ "$preset" = "desktop" ]; then
-            ARCH_OS_AUR_HELPER='paru-git' # Workaround for pacman >= 7
+        if [[ $preset == desktop* ]]; then
+            ARCH_OS_AUR_HELPER='paru'
             ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
             ARCH_OS_SAMBA_SHARE_ENABLED='true'
             ARCH_OS_CORE_TWEAKS_ENABLED="true"
@@ -560,7 +561,7 @@ select_enable_desktop_driver() {
 select_enable_aur() {
     if [ -z "$ARCH_OS_AUR_HELPER" ]; then
         local user_input options
-        options=("none" "paru" "paru-bin" "paru-git")
+        options=("paru" "paru-bin" "paru-git" "none")
         user_input=$(gum_choose --header "+ Choose AUR Helper (default: paru)" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                        # Check if new value is null
         ARCH_OS_AUR_HELPER="$user_input" && properties_generate # Set value and generate properties file
@@ -1645,7 +1646,7 @@ chroot_pacman_install() {
     local pacman_failed="true"
     # Retry installing packages 5 times (in case of connection issues)
     for ((i = 1; i < 6; i++)); do
-        # Print updated whiptail info
+        # Print log if greather than first try
         [ "$i" -gt 1 ] && log_warn "${i}. Retry Pacman installation..."
         # Try installing packages
         if ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
@@ -1660,15 +1661,47 @@ chroot_pacman_install() {
 }
 
 chroot_aur_install() {
-    local repo repo_url repo_tmp_dir
-    repo="$1"
-    repo_url="https://aur.archlinux.org/${repo}.git"
-    repo_tmp_dir=$(mktemp -u "/home/${ARCH_OS_USERNAME}/${repo}.XXXXXXXXXX")
-    sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Disable sudo needs no password rights
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- git clone "$repo_url" "$repo_tmp_dir"
-    arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd $repo_tmp_dir && echo -e \"\noptions=('!debug')\" >>PKGBUILD && makepkg -si --noconfirm"
+
+    # Vars
+    local repo repo_url repo_tmp_dir aur_failed
+    repo="$1" && repo_url="https://aur.archlinux.org/${repo}.git"
+
+    # Disable sudo needs no password rights
+    sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
+
+    # Temp dir
+    repo_tmp_dir=$(mktemp -u "/home/${ARCH_OS_USERNAME}/.tmp-aur-${repo}.XXXX")
+
+    # Retry installing AUR 5 times (in case of connection issues)
+    aur_failed="true"
+    for ((i = 1; i < 6; i++)); do
+
+        # Print log if greather than first try
+        [ "$i" -gt 1 ] && log_warn "${i}. Retry AUR installation..."
+
+        #  Try cloning AUR repo
+        ! arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "rm -rf ${repo_tmp_dir}; git clone ${repo_url} ${repo_tmp_dir}" && sleep 10 && continue
+
+        # Add '!debug' option to PKGBUILD
+        arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd ${repo_tmp_dir} && echo -e \"\noptions=('!debug')\" >>PKGBUILD"
+
+        # Try installing AUR
+        if ! arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "cd ${repo_tmp_dir} && makepkg -si --noconfirm --needed"; then
+            sleep 10 && continue # Wait 10 seconds & try again
+        else
+            aur_failed="false" && break # Success: break loop
+        fi
+    done
+
+    # Remove tmp dir
     arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- rm -rf "$repo_tmp_dir"
-    sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers # Enable sudo needs no password rights
+
+    # Enable sudo needs no password rights
+    sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' /mnt/etc/sudoers
+
+    # Result
+    [ "$aur_failed" = "true" ] && return 1  # Failed after 5 retries
+    [ "$aur_failed" = "false" ] && return 0 # Success
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
