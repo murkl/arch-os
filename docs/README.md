@@ -28,8 +28,7 @@ This project aims to provide mostly automized and robust Arch Linux base for des
 
 <p>
   <strong>Tools</strong>
-  <br>
-  <strong><a target="_blank" href="https://github.com/murkl/arch-os-manager">Arch OS Manager</a></strong>
+  <br><strong><a target="_blank" href="https://github.com/murkl/arch-os-manager">Arch OS Manager</a></strong>
  </p>
 
 <p>
@@ -125,7 +124,7 @@ _Cancel the Arch OS Installer with `CTRL + c`_
 
 ## System Maintenance
 
-After installing Arch OS with default preset, most maintenance tasks are executed automatically. These following steps must be performed manually on a regular basis:
+After installing Arch OS with default properties preset, most maintenance tasks are executed automatically. These following steps must be performed manually on a regular basis:
 
 - Regularly upgrade your system packages (Pacman/AUR & Flatpak)
 - Regularly read the **[Arch Linux News](https://www.archlinux.org/news)** (preferably before upgrading your system)
