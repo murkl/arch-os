@@ -129,6 +129,7 @@ After installing Arch OS with default properties preset, most maintenance tasks 
 - Regularly upgrade your system packages (Pacman/AUR & Flatpak)
 - Regularly read the **[Arch Linux News](https://www.archlinux.org/news)** (preferably before upgrading your system)
 - Regularly check & merge new configurations with `pacdiff` (preferably after each system upgrade)
+- Consult the **[Arch Linux Wiki](https://wiki.archlinux.org)** (if you need help)
 
 To streamline this process, you can use the preinstalled **[➜ Arch OS Manager](https://github.com/murkl/arch-os-manager)**
 
