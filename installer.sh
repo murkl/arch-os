@@ -63,7 +63,7 @@ main() {
     # Loop properties step to update screen if user edit properties
     while (true); do
 
-        gum_header # Show welcome screen
+        print_header # Show welcome screen
         gum_white 'Please make sure you have:' && echo
         gum_white '• Backed up your important data'
         gum_white '• A stable internet connection'
@@ -110,8 +110,8 @@ main() {
 
         # Edit properties?
         if gum_confirm "Edit installer.conf manually?"; then
-            local gum_header="• Save with CTRL + D or ESC and cancel with CTRL + C"
-            if gum_write --show-line-numbers --prompt "> " --height=10 --width=100 --header="${gum_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
+            local print_header="• Save with CTRL + D or ESC and cancel with CTRL + C"
+            if gum_write --show-line-numbers --prompt "> " --height=10 --width=100 --header="${print_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
                 gum_info "Properties successfully saved"
                 gum_confirm "Change Password?" && until select_password --change && properties_source; do :; done
@@ -300,8 +300,6 @@ properties_preset_source() {
     fi
     return 0
 }
-
-# ---------------------------------------------------------------------------------------------------
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # SELECTORS
@@ -1633,13 +1631,10 @@ exec_cleanup_installation() {
     ) &>"$PROCESS_LOG" &
     process_capture $! "$process_name"
 }
+
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # CHROOT HELPER
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-chroot_pacman_remove() { arch-chroot /mnt pacman -Rns --noconfirm "$@" || return 1; }
-
-# ---------------------------------------------------------------------------------------------------
 
 chroot_pacman_install() {
     local packages=("$@")
@@ -1704,14 +1699,11 @@ chroot_aur_install() {
     [ "$aur_failed" = "false" ] && return 0 # Success
 }
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# TRAPS
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+chroot_pacman_remove() { arch-chroot /mnt pacman -Rns --noconfirm "$@" || return 1; }
 
-trap_gum_exit() { exit 130; }
-trap_gum_exit_confirm() { gum_confirm "Exit Installation?" && trap_gum_exit; }
-
-# ---------------------------------------------------------------------------------------------------
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# TRAP FUNCTIONS
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 # shellcheck disable=SC2317
 trap_error() {
@@ -1746,7 +1738,7 @@ trap_exit() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# PROCESS
+# PROCESS FUNCTIONS
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 process_init() {
@@ -1787,8 +1779,25 @@ process_return() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# GUM
+# HELPER FUNCTIONS
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+print_header() {
+    clear && gum_purple '
+ █████  ██████   ██████ ██   ██      ██████  ███████ 
+██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
+███████ ██████  ██      ███████     ██    ██ ███████ 
+██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
+██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
+    local header_version="${VERSION}" && [ -n "${MODE}" ] && header_version="${VERSION} (${MODE})"
+    gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${header_version}"
+}
+
+print_filled_space() {
+    local total="$1" && local text="$2" && local length="${#text}"
+    [ "$length" -ge "$total" ] && echo "$text" && return 0
+    local padding=$((total - length)) && printf '%s%*s\n' "$text" "$padding" ""
+}
 
 gum_init() {
     if [ ! -x ./gum ]; then
@@ -1810,20 +1819,12 @@ gum() {
     if [ -n "$GUM" ]; then "$GUM" "$@"; else ./gum "$@"; fi # Force open $GUM if env variable is set
 }
 
-# ---------------------------------------------------------------------------------------------------
+trap_gum_exit() { exit 130; }
+trap_gum_exit_confirm() { gum_confirm "Exit Installation?" && trap_gum_exit; }
 
-gum_header() {
-    clear && gum_purple '
- █████  ██████   ██████ ██   ██      ██████  ███████ 
-██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
-███████ ██████  ██      ███████     ██    ██ ███████ 
-██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
-██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
-    local header_version="${VERSION}" && [ -n "${MODE}" ] && header_version="${VERSION} (${MODE})"
-    gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${header_version}"
-}
-
-# ---------------------------------------------------------------------------------------------------
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# GUM WRAPPER
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 # Gum colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
 gum_white() { gum_style --foreground "$COLOR_WHITE" "${@}"; }
@@ -1851,28 +1852,20 @@ gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinne
 gum_proc() { log_proc "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white --bold "$(print_filled_space 27 "${1}")")" "$(gum_white "  >  ")" "$(gum_green "${2}")"; }
 gum_property() { log_prop "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 27 "${1}")")" "$(gum_green --bold "  >  ")" "$(gum_white --bold "${2}")"; }
 
-# ---------------------------------------------------------------------------------------------------
-
-print_filled_space() {
-    local total="$1" && local text="$2" && local length="${#text}"
-    [ "$length" -ge "$total" ] && echo "$text" && return 0
-    local padding=$((total - length)) && printf '%s%*s\n' "$text" "$padding" ""
-}
-
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# LOGGING
+# LOGGING WRAPPER
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 write_log() { echo -e "$(date '+%Y-%m-%d %H:%M:%S') | arch-os | ${*}" >>"$SCRIPT_LOG"; }
-log_head() { write_log "HEAD | ${*}"; }
 log_info() { write_log "INFO | ${*}"; }
 log_warn() { write_log "WARN | ${*}"; }
 log_fail() { write_log "FAIL | ${*}"; }
+log_head() { write_log "HEAD | ${*}"; }
 log_proc() { write_log "PROC | ${*}"; }
 log_prop() { write_log "PROP | ${*}"; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# ///////////////////////////////////////////  START MAIN  ///////////////////////////////////////////
+# START MAIN
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 main "$@"
