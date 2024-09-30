@@ -109,7 +109,7 @@ main() {
         gum_info "Properties successfully initialized"
 
         # Open Advanced Config?
-        if gum_confirm --negative="Start Installation" "Open Advanced Config?"; then
+        if gum_confirm --negative="Skip" "Open Advanced Config?"; then
             local print_header="• Save with CTRL + D or ESC and cancel with CTRL + C"
             if gum_write --show-line-numbers --prompt "> " --height=10 --width=100 --header="${print_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
