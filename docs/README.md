@@ -46,12 +46,23 @@ This project aims to provide a mostly automized and robust Arch Linux base for d
 
 </div>
 
+## Arch OS Presets
+
+Select one of these presets (prompted in the installer) to install your customized Arch OS Base.
+
+- `desktop`: GNOME Desktop + Graphics Driver + Extras + Core
+- `core`: Minimal Arch Linux (only tty with ~150 preinstalled packages)
+- `none`: All properties are queried (customize)
+
+**Note:** If the `installer.conf` exists in the working dir, all properties are loaded as preset (except the password).
+
 ## Arch OS Core Features
 
 - [Minimal Arch Linux](DOCS.md#minimal-installation) (~150 packages)
 - [Zen Kernel](DOCS.md#advanced-installation) (configurable)
 - [Swap](DOCS.md#swap) with zram-generator (zstd)
 - [Sole OS](DOCS.md#partitions-layout)
+- All-in-One password (encryption, root & user)
 - Multilingual Support
 - Filesystem ext4
 - Silent Boot

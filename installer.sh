@@ -20,7 +20,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # SCRIPT
-VERSION='1.6.6'
+VERSION='1.6.7'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -108,8 +108,8 @@ main() {
         echo && gum_title "Arch OS Setup"
         gum_info "Properties successfully initialized"
 
-        # Edit properties?
-        if gum_confirm "Edit installer.conf manually?"; then
+        # Open Advanced Config?
+        if gum_confirm --negative="Start Installation" "Open Advanced Config?"; then
             local print_header="• Save with CTRL + D or ESC and cancel with CTRL + C"
             if gum_write --show-line-numbers --prompt "> " --height=10 --width=100 --header="${print_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
@@ -152,6 +152,10 @@ main() {
     exec_install_archos_manager
     exec_install_vm_support
     exec_cleanup_installation
+
+    # Print logs & config info
+    gum_proc "Installer Config" "/home/${ARCH_OS_USERNAME}/installer.conf"
+    gum_proc "Installer Logs" "/home/${ARCH_OS_USERNAME}/installer.log"
 
     # Calc installation duration
     duration=$SECONDS # This is set before install starts
@@ -1719,6 +1723,7 @@ trap_exit() {
     local error && [ -f "$ERROR_MSG" ] && error="$(<"$ERROR_MSG")" && rm -f "$ERROR_MSG"
 
     # Cleanup
+    unset ARCH_OS_PASSWORD
     rm -rf "$SCRIPT_TMP_DIR"
 
     # When ctrl + c pressed exit without other stuff below

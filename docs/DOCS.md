@@ -226,9 +226,10 @@ fish starship eza bat fastfetch mc btop nano man-db bash-completion
 
 - `fish` is set as default shell
 - `starship` is set as fancy default promt see `~/.config/fish/config.fish`
-- `ls` is replaced with colorful `eza` see `~/.config/fish/aliases.fish`
+- `ls` is replaced with colorful `eza` see `~/.aliases`
 - `man` is replaced with colorful `bat` see `~/.config/fish/config.fish`
 - `nano` is set as default editor
+- `fastfetch` is preconfigured as system info
 
 ### Useful Terminal commands
 
@@ -243,6 +244,8 @@ fish starship eza bat fastfetch mc btop nano man-db bash-completion
 - `history` open command history
 - `q` exit
 
+**Note:** See `~/.aliases` for all command aliases
+
 ### Useful Terminal keyboard shortcuts
 
 - Use `Tab` to autocomplete command
@@ -254,12 +257,14 @@ fish starship eza bat fastfetch mc btop nano man-db bash-completion
 ### Configuration
 
 ```
+# Aliases
+~/.aliases
+
 # Fish web config
 fish_config
 
 # Fish config
 ~/.config/fish/config.fish
-~/.config/fish/aliases.fish
 
 # Starship config
 ~/.config/starship.toml
@@ -330,6 +335,8 @@ This configuration will be set during Arch OS Core Installation:
 
 - Bootloader timeout is set to `0`
 - User is added to group `wheel` to use `sudo`
+
+**Note:** The password is used for encryption (optional), root and user login and can be changed afterwards with `passwd` if necessary.
 
 ## Troubleshooting
 
