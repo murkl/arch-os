@@ -48,7 +48,7 @@ This project aims to provide a mostly automized and robust Arch Linux base for d
 
 ## Arch OS Presets
 
-Select one of these presets (prompted in the installer) to install your customized Arch OS Base.
+Select one of these presets (prompted in the installer) to install your customized Arch Linux base.
 
 - `desktop`: GNOME Desktop + Graphics Driver + Extras + Core
 - `core`: Minimal Arch Linux (only tty with ~150 preinstalled packages)
