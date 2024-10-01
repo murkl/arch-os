@@ -88,7 +88,7 @@ Select one of these presets (prompted in the installer) to install your customiz
 - [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
 - [VM Support](DOCS.md#vm-support)
 - 32 Bit Support (Multilib)
-- Disk Encryption
+- Disk Encryption (LUKS2)
 
 ## Desktop Features
 
@@ -135,7 +135,7 @@ _Cancel the Arch OS Installer with `CTRL + c`_
 
 ## System Maintenance
 
-After installing Arch OS with the default properties preset, most maintenance tasks are performed automatically, but the following steps must be executed manually on a regular basis:
+After installing Arch OS with the default properties preset, most maintenance tasks are performed automatically. However, the following steps must be executed manually on a regular basis:
 
 - Regularly upgrade your system packages (Pacman/AUR & Flatpak)
 - Regularly read the **[Arch Linux News](https://www.archlinux.org/news)** (preferably before upgrading your system)
