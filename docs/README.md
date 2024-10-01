@@ -50,9 +50,9 @@ This project aims to provide a mostly automized and robust Arch Linux base for d
 
 Select one of these presets (prompted in the installer) to install your customized Arch Linux base.
 
-- `desktop`: GNOME Desktop Environment + Graphics Driver + Extras + Core (default)
-- `core`: Minimal Arch Linux TTY Environment (~150 packages in total)
-- `none`: All properties are queried (customize)
+- **`desktop` ➜** GNOME Desktop Environment + Graphics Driver + Extras + Core (default)
+- **`core` ➜** Minimal Arch Linux TTY Environment (~150 packages in total)
+- **`none` ➜** All properties are queried (customize)
 
 **Note:** If the `installer.conf` exists in the working dir, all properties are loaded as preset (except the password).
 
@@ -65,28 +65,28 @@ Select one of these presets (prompted in the installer) to install your customiz
 - All-in-One password (encryption, root & user)
 - Multilingual Support
 - Filesystem ext4
-- Silent Boot
+- Silent Boot (optional)
 - Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
-- Pacman parallel downloads & eyecandy
+- Pacman parallel downloads & eyecandy (optional)
 - Network Manager
 - SSD Support (fstrim)
 - Microcode Support (Intel & AMD)
-- Disabled Watchdog
+- Disabled Watchdog (optional)
 - UEFI only supported
 - [More Information...](DOCS.md#technical-information)
 
 ## Additional Features
 
-- [Arch OS Manager](DOCS.md#arch-os-manager)
+- [Arch OS System Manager](DOCS.md#arch-os-manager)
 - [Arch OS Core Tweaks](DOCS.md#core-tweaks)
-- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
 - [Arch OS Shell Enhancement](DOCS.md#shell-enhancement)
 - [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
+- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
 - [AUR Helper](DOCS.md#advanced-installation) (configurable)
-- [GNOME Desktop Environment](#desktop-features) (optional with enhanced packages)
+- [GNOME Desktop Environment](#desktop-features) (optional with additional packages)
 - [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
-- [VM Support](DOCS.md#vm-support)
+- [VM Support](DOCS.md#vm-support) (optional)
 - 32 Bit Support (Multilib)
 - Disk Encryption (LUKS2)
 
