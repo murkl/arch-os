@@ -42,6 +42,8 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [downgrade](https://aur.archlinux.org/packages/downgrade) when you need to downgrade a package
 - Install [EasyEffects](https://flathub.org/de/apps/com.github.wwmm.easyeffects) for Dolby Atmos
 - Install [folder-color-nautilus](https://aur.archlinux.org/packages/folder-color-nautilus) for setting colorful folders
+- Install [Flatseal](https://flathub.org/apps/com.github.tchx84.Flatseal) to manage Flatpak Permissions
+- Install [Warehouse](https://flathub.org/apps/io.github.flattool.Warehouse) to Manage Flatpak Packages
 
 ### Theming (optional)
 
@@ -78,6 +80,13 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 
 For sandboxed CLI tools or test environment you can try [Distrobox](https://distrobox.it/) or [Toolbox](https://containertoolbx.org) and as container runtime use [Podman](https://podman.io) or [Docker](https://www.docker.com).
 
+#### Useful Tools
+
+- [GNOME Boxes](https://archlinux.org/packages/extra/x86_64/gnome-boxes/)
+- [Podman Desktop](https://flathub.org/apps/io.podman_desktop.PodmanDesktop)
+- [Pods](https://flathub.org/apps/com.github.marhkb.Pods)
+- [BoxBuddy](https://flathub.org/apps/io.github.dvlv.boxbuddyrs)
+
 ### For Gamer
 
 For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.org/title/QEMU) and enable GPU Passthrough. Then you can use an emulated Microsoft Windows with native GPU access. For quick installation, have a look to this project: [quickpassthrough](https://github.com/HikariKnight/quickpassthrough)
@@ -91,6 +100,19 @@ Install prefered Steam version:
 - Average between performance and compatibility: `paru -S steam`
 - Best performance: `paru -S steam-native`
 - Best compatibility: `flatpak install com.valvesoftware.Steam`
+
+#### Other Tools
+
+- [Lutris](https://archlinux.org/packages/extra/any/lutris/)
+- [Bottles](https://aur.archlinux.org/packages/bottles)
+- [RetroDeck](https://flathub.org/apps/net.retrodeck.retrodeck)
+- [Sunshine](https://docs.lizardbyte.dev/projects/sunshine/en/latest/about/setup.html#install)
+- [Moonlight](https://flathub.org/apps/com.moonlight_stream.Moonlight)
+- [Wine](https://archlinux.org/packages/multilib/x86_64/wine/)
+- [Winetricks](https://archlinux.org/packages/multilib/x86_64/winetricks/)
+- [Proton](https://aur.archlinux.org/packages/proton-ge-custom-bin)
+- [Protontricks](https://aur.archlinux.org/packages/protontricks)
+- [Gamescope](https://archlinux.org/packages/extra/x86_64/gamescope/)
 
 ### For Audiophiles
 
@@ -204,13 +226,13 @@ Disable this featuree with `ARCH_OS_CORE_TWEAKS_ENABLED='false'`
 
 This feature will install and configure:
 
-| Package        | Service              | Description                                                            | Config                            |
-| -------------- | -------------------- | ---------------------------------------------------------------------- | --------------------------------- |
-| reflector      | reflector.service    | Rank & update the mirrorlist on every boot                             | /etc/xdg/reflector/reflector.conf |
-| pacman-contrib | paccache.timer       | Weekly clear the pacman cache                                          | none                              |
-| pkgfile        | pkgfile-update.timer | Missing command suggestion and daily database update                   | none                              |
-| smartmontools  | smartd               | Monitor storage devices                                                | none                              |
-| irqbalance     | irqbalance.service   | Distribute hardware interrupts across processors on a multicore system | none                              |
+| Package        | Service              | Config                            | Description                                                            |
+| -------------- | -------------------- | --------------------------------- | ---------------------------------------------------------------------- |
+| reflector      | reflector.service    | /etc/xdg/reflector/reflector.conf | Rank & update the mirrorlist on every boot                             |
+| pacman-contrib | paccache.timer       | none                              | Weekly clear the pacman cache                                          |
+| pkgfile        | pkgfile-update.timer | none                              | Missing command suggestion and daily database update                   |
+| smartmontools  | smartd               | none                              | Monitor storage devices                                                |
+| irqbalance     | irqbalance.service   | none                              | Distribute hardware interrupts across processors on a multicore system |
 
 Disable this feature with `ARCH_OS_HOUSEKEEPING_ENABLED='false'`
 
