@@ -110,12 +110,10 @@ Install prefered Steam version:
 - [Bottles](https://aur.archlinux.org/packages/bottles)
 - [RetroDeck](https://flathub.org/apps/net.retrodeck.retrodeck)
 - [Cartridges](https://flathub.org/de/apps/page.kramo.Cartridges)
-- [Sunshine](https://docs.lizardbyte.dev/projects/sunshine/en/latest/about/setup.html#install)
-- [Moonlight](https://flathub.org/apps/com.moonlight_stream.Moonlight)
-- [Wine](https://archlinux.org/packages/multilib/x86_64/wine/)
-- [Winetricks](https://archlinux.org/packages/multilib/x86_64/winetricks/)
-- [Proton](https://aur.archlinux.org/packages/proton-ge-custom-bin)
-- [Protontricks](https://aur.archlinux.org/packages/protontricks)
+- [Sunshine Streaming Server](https://docs.lizardbyte.dev/projects/sunshine/en/latest/about/setup.html#install)
+- [Moonlight Streaming Client](https://flathub.org/apps/com.moonlight_stream.Moonlight)
+- [Wine](https://archlinux.org/packages/multilib/x86_64/wine/), [Winetricks](https://archlinux.org/packages/multilib/x86_64/winetricks/)
+- [Proton](https://aur.archlinux.org/packages/proton-ge-custom-bin), [Protontricks](https://aur.archlinux.org/packages/protontricks)
 - [Gamescope](https://archlinux.org/packages/extra/x86_64/gamescope/)
 
 ### For Audiophiles
