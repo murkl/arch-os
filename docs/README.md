@@ -39,7 +39,7 @@ This project aims to provide a mostly automized and robust Arch Linux base for d
 <p>
   <strong>Test successful</strong>
   <br>
-  <a target="_blank" href="https://www.archlinux.de/releases/2024.09.01">archlinux-2024.09.01-x86_64.iso</a>
+  <a target="_blank" href="https://www.archlinux.de/releases/2024.10.01">archlinux-2024.10.01-x86_64.iso</a>
   <br>
   <sub>100% shellcheck approved</sub>
 </p>
@@ -48,7 +48,7 @@ This project aims to provide a mostly automized and robust Arch Linux base for d
 
 ## Arch OS Presets
 
-Select one of these presets (prompted in the installer) to install your individual Arch Linux base.
+Select one of these presets (prompted in the installer) to [install](#installing-arch-os) your individual Arch Linux base.
 
 - **`desktop` ➜** GNOME Desktop Environment + Graphics Driver + Extras + Core (default)
 - **`core` ➜** Minimal Arch Linux TTY Environment (~150 packages in total)

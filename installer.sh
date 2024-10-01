@@ -20,7 +20,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # SCRIPT
-VERSION='1.6.7'
+VERSION='1.6.8'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -200,8 +200,14 @@ main() {
     [ "$do_reboot" = "true" ] && gum_warn "Rebooting to Arch OS..." && [ "$MODE" != "debug" ] && reboot
 
     # Chroot
-    [ "$do_unmount" = "false" ] && gum_confirm "Chroot new Arch OS?" && do_chroot="true"
-    [ "$do_chroot" = "true" ] && gum_warn "Chrooting Arch OS at /mnt..." && [ "$MODE" != "debug" ] && arch-chroot /mnt
+    [ "$do_unmount" = "false" ] && gum_confirm "Chroot to new Arch OS?" && do_chroot="true"
+    if [ "$do_chroot" = "true" ] && gum_warn "Chrooting Arch OS at /mnt..."; then
+        gum_warn "!! YOUR ARE NOW ON YOUR NEW ARCH OS SYSTEM !!"
+        gum_warn "         Leave with command 'exit'"
+        [ "$MODE" != "debug" ] && arch-chroot /mnt </dev/tty
+        wait # Wait for subprocesses
+        gum_warn "Please reboot manually..."
+    fi
 
     # Print warning
     [ "$do_unmount" = "false" ] && [ "$do_chroot" = "false" ] && gum_warn "Arch OS is still mounted at /mnt"
