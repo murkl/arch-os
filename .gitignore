@@ -1,11 +1,11 @@
 # Ignore temp dir
 .tmp.*
 
-# Created by scripts
+# Ignore gum binary
+gum
+
+# Ignore installer files
 installer.conf
 installer.conf.old
 installer.log
 installer.log.old
-
-# Gum
-gum

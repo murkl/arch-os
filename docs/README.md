@@ -46,38 +46,49 @@ This project aims to provide a mostly automized and robust Arch Linux base for d
 
 </div>
 
+## Arch OS Presets
+
+Select one of these presets (prompted in the installer) to install your individual Arch Linux base.
+
+- **`desktop` ➜** GNOME Desktop Environment + Graphics Driver + Extras + Core (default)
+- **`core` ➜** Minimal Arch Linux TTY Environment (~150 packages in total)
+- **`none` ➜** All properties are queried (customize)
+
+**Note:** If the `installer.conf` exists in the working dir, all properties are loaded as preset (except the password).
+
 ## Arch OS Core Features
 
 - [Minimal Arch Linux](DOCS.md#minimal-installation) (~150 packages)
 - [Zen Kernel](DOCS.md#advanced-installation) (configurable)
 - [Swap](DOCS.md#swap) with zram-generator (zstd)
 - [Sole OS](DOCS.md#partitions-layout)
+- All-in-One password (encryption, root & user)
 - Multilingual Support
 - Filesystem ext4
-- Silent Boot
+- Silent Boot (optional)
 - Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
-- Pacman parallel downloads & eyecandy
+- Pacman parallel downloads & eyecandy (optional)
 - Network Manager
 - SSD Support (fstrim)
 - Microcode Support (Intel & AMD)
-- Disabled Watchdog
+- Disabled Watchdog (optional)
 - UEFI only supported
 - [More Information...](DOCS.md#technical-information)
 
 ## Additional Features
 
-- [Arch OS Manager](DOCS.md#arch-os-manager)
+- [Arch OS System Manager](DOCS.md#arch-os-manager)
 - [Arch OS Core Tweaks](DOCS.md#core-tweaks)
-- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
 - [Arch OS Shell Enhancement](DOCS.md#shell-enhancement)
 - [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
+- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
 - [AUR Helper](DOCS.md#advanced-installation) (configurable)
-- [GNOME Desktop Environment](#desktop-features) (optional with enhanced packages)
+- [GNOME Desktop Environment](#desktop-features) (optional with additional packages)
 - [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
-- [VM Support](DOCS.md#vm-support)
+- [VM Support](DOCS.md#vm-support) (optional)
 - 32 Bit Support (Multilib)
-- Disk Encryption
+- Disk Encryption (LUKS2)
 
 ## Desktop Features
 
@@ -124,7 +135,7 @@ _Cancel the Arch OS Installer with `CTRL + c`_
 
 ## System Maintenance
 
-After installing Arch OS with the default properties preset, most maintenance tasks are performed automatically, but the following steps must be executed manually on a regular basis:
+After installing Arch OS with the default properties preset, most maintenance tasks are performed automatically. However, the following steps must be executed manually on a regular basis:
 
 - Regularly upgrade your system packages (Pacman/AUR & Flatpak)
 - Regularly read the **[Arch Linux News](https://www.archlinux.org/news)** (preferably before upgrading your system)
