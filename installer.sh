@@ -200,7 +200,7 @@ main() {
     [ "$do_reboot" = "true" ] && gum_warn "Rebooting to Arch OS..." && [ "$MODE" != "debug" ] && reboot
 
     # Chroot
-    [ "$do_unmount" = "false" ] && gum_confirm "Chroot new Arch OS?" && do_chroot="true"
+    [ "$do_unmount" = "false" ] && gum_confirm "Chroot to new Arch OS?" && do_chroot="true"
     if [ "$do_chroot" = "true" ] && gum_warn "Chrooting Arch OS at /mnt..."; then
         gum_warn "!! YOUR ARE NOW ON YOUR NEW ARCH OS SYSTEM !!"
         gum_warn "         Leave with command 'exit'"
