@@ -201,10 +201,10 @@ main() {
 
     # Chroot
     [ "$do_unmount" = "false" ] && gum_confirm "Chroot new Arch OS?" && do_chroot="true"
-    if [ "$do_chroot" = "true" ] && gum_warn "Chrooting Arch OS at /mnt..." && [ "$MODE" != "debug" ]; then
+    if [ "$do_chroot" = "true" ] && gum_warn "Chrooting Arch OS at /mnt..."; then
         gum_warn "!! YOUR ARE NOW ON YOUR NEW ARCH OS SYSTEM !!"
         gum_warn "         Leave with command 'exit'"
-        arch-chroot /mnt </dev/tty
+        [ "$MODE" != "debug" ] && arch-chroot /mnt </dev/tty
         wait # Wait for subprocesses
         gum_warn "Please reboot manually..."
     fi
