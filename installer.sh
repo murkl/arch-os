@@ -186,7 +186,7 @@ main() {
     [ "$do_reboot" = "false" ] && gum_confirm "Unmount Arch OS from /mnt?" && do_unmount="true"
 
     # Unmount
-    if [ "$do_unmount" = "true" ] && [ "$MODE" != "debug" ]; then
+    if [ "$MODE" != "debug" ] && [ "$do_unmount" = "true" ]; then
         swapoff -a
         umount -A -R /mnt
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
@@ -195,7 +195,7 @@ main() {
     fi
 
     # Reboot
-    [ "$do_reboot" = "true" ] && [ "$MODE" != "debug" ] && gum_green "Rebooting..." && reboot
+    [ "$MODE" != "debug" ] && [ "$do_reboot" = "true" ] && gum_green "Rebooting..." && reboot
     gum_info "Exit" && exit 0
 }
 
