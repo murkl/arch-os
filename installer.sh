@@ -201,7 +201,7 @@ main() {
 
     # Chroot
     [ "$do_unmount" = "false" ] && gum_confirm "Chroot new Arch OS?" && do_chroot="true"
-    [ "$do_chroot" = "true" ] && gum_warn "Chrooting Arch OS at /mnt..." && [ "$MODE" != "debug" ] && arch-chroot /mnt
+    [ "$do_chroot" = "true" ] && gum_warn "Chrooting Arch OS at /mnt..." && [ "$MODE" != "debug" ] && arch-chroot /mnt && wait
 
     # Print warning
     [ "$do_unmount" = "false" ] && [ "$do_chroot" = "false" ] && gum_warn "Arch OS is still mounted at /mnt"
