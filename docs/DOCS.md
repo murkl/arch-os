@@ -44,6 +44,9 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [folder-color-nautilus](https://aur.archlinux.org/packages/folder-color-nautilus) for setting colorful folders
 - Install [Flatseal](https://flathub.org/apps/com.github.tchx84.Flatseal) to manage Flatpak Permissions
 - Install [Warehouse](https://flathub.org/apps/io.github.flattool.Warehouse) to Manage Flatpak Packages
+- Install [LocalSend](https://flathub.org/de/apps/org.localsend.localsend_app) to simply share files in same network
+- Install [MissionCenter](https://flathub.org/de/apps/io.missioncenter.MissionCenter) as system monitor
+- Install [Parabolic](https://flathub.org/de/apps/org.nickvision.tubeconverter) as download manager
 
 ### Theming (optional)
 
@@ -106,6 +109,7 @@ Install prefered Steam version:
 - [Lutris](https://archlinux.org/packages/extra/any/lutris/)
 - [Bottles](https://aur.archlinux.org/packages/bottles)
 - [RetroDeck](https://flathub.org/apps/net.retrodeck.retrodeck)
+- [Cartridges](https://flathub.org/de/apps/page.kramo.Cartridges)
 - [Sunshine](https://docs.lizardbyte.dev/projects/sunshine/en/latest/about/setup.html#install)
 - [Moonlight](https://flathub.org/apps/com.moonlight_stream.Moonlight)
 - [Wine](https://archlinux.org/packages/multilib/x86_64/wine/)
