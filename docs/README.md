@@ -50,8 +50,8 @@ This project aims to provide a mostly automized and robust Arch Linux base for d
 
 Select one of these presets (prompted in the installer) to install your customized Arch Linux base.
 
-- `desktop`: GNOME Desktop + Graphics Driver + Extras + Core
-- `core`: Minimal Arch Linux (only tty with ~150 preinstalled packages)
+- `desktop`: GNOME Desktop Environment + Graphics Driver + Extras + Core (default)
+- `core`: Minimal Arch Linux TTY Environment (~150 packages in total)
 - `none`: All properties are queried (customize)
 
 **Note:** If the `installer.conf` exists in the working dir, all properties are loaded as preset (except the password).
