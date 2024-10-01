@@ -110,8 +110,8 @@ main() {
 
         # Open Advanced Config?
         if gum_confirm --negative="Skip" "Open Advanced Config?"; then
-            local print_header="• Save with CTRL + D or ESC and cancel with CTRL + C"
-            if gum_write --show-line-numbers --prompt "> " --height=10 --width=100 --header="${print_header}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
+            local header_txt="• Save with CTRL + D or ESC and cancel with CTRL + C"
+            if gum_write --show-line-numbers --prompt "> " --height=10 --width=100 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
                 gum_info "Properties successfully saved"
                 gum_confirm "Change Password?" && until select_password --change && properties_source; do :; done
@@ -182,20 +182,30 @@ main() {
     # Show reboot & unmount promt
     local do_reboot="false"
     local do_unmount="false"
+    local do_chroot="false"
+
+    # Reboot promt
     gum_confirm "Reboot to Arch OS now?" && do_reboot="true" && do_unmount="true"
-    [ "$do_reboot" = "false" ] && gum_confirm "Unmount Arch OS from /mnt?" && do_unmount="true"
 
     # Unmount
+    [ "$do_reboot" = "false" ] && gum_confirm "Unmount Arch OS from /mnt?" && do_unmount="true"
+    [ "$do_unmount" = "true" ] && gum_warn "Unmounting Arch OS from /mnt..."
     if [ "$MODE" != "debug" ] && [ "$do_unmount" = "true" ]; then
         swapoff -a
         umount -A -R /mnt
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
-    else
-        gum_warn "Arch OS is still mounted at /mnt"
     fi
 
-    # Reboot
-    [ "$MODE" != "debug" ] && [ "$do_reboot" = "true" ] && gum_green "Rebooting..." && reboot
+    # Do reboot
+    [ "$do_reboot" = "true" ] && gum_warn "Rebooting to Arch OS..." && [ "$MODE" != "debug" ] && reboot
+
+    # Chroot
+    [ "$do_unmount" = "false" ] && gum_confirm "Chroot new Arch OS?" && do_chroot="true"
+    [ "$do_chroot" = "true" ] && gum_warn "Chrooting Arch OS at /mnt..." && [ "$MODE" != "debug" ] && arch-chroot /mnt
+
+    # Print warning
+    [ "$do_unmount" = "false" ] && [ "$do_chroot" = "false" ] && gum_warn "Arch OS is still mounted at /mnt"
+
     gum_info "Exit" && exit 0
 }
 
