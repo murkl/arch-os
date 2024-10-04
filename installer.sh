@@ -20,7 +20,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # SCRIPT
-VERSION='1.6.8'
+VERSION='1.6.9'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -41,6 +41,9 @@ COLOR_GREEN=36
 COLOR_PURPLE=212
 COLOR_YELLOW=221
 COLOR_RED=9
+
+# WALLPAPER JXL
+WALLPAPER_URL="https://raw.githubusercontent.com/murkl/arch-os/refs/heads/dev/docs/wallpaper.jxl"
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # MAIN
@@ -1151,6 +1154,14 @@ exec_install_desktop() {
 
             # Set correct permissions
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
+
+            # Download & set wallpaper (skip if failed)
+            if curl -Lf "$WALLPAPER_URL" >"${SCRIPT_TMP_DIR}/wallpaper.jxl"; then
+                cp -f "${SCRIPT_TMP_DIR}/wallpaper.jxl" /mnt/usr/share/backgrounds/gnome/adwaita-d.jxl
+                cp -f "${SCRIPT_TMP_DIR}/wallpaper.jxl" /mnt/usr/share/backgrounds/gnome/adwaita-l.jxl
+            else
+                echo "ERROR: Downloading wallpaper from ${WALLPAPER_URL}" >&2
+            fi
 
             # Return
             process_return 0
