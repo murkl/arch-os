@@ -161,7 +161,8 @@ Further information can be found in the documentation.
 
 Many thanks for these projects and the people behind them!
 
-- [Arch Linux](https://archlinux.org)
-- [GNOME](https://www.gnome.org/)
-- [Gum by charm](https://github.com/charmbracelet/gum)
-- Wallpaper: Mountain Lake by Agustin Gaute
+- Arch Linux
+- GNOME
+- Gum by charm
+- Wallpaper light: Mountain Lake by Agustin Gaute
+- Wallpaper dark: Pxhere Photo 344
