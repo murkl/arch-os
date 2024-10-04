@@ -150,12 +150,10 @@ Further information can be found in the documentation.
 
 **[➜ Open Arch OS Docs](DOCS.md)**
 
-<div align="center">
-<p>
+<p align="center">
   <div><img src="./screenshots/desktop_demo.jpg"></div>
   <sub><i>Arch OS Desktop Demo</i></sub>
 </p>
-</div>
 
 ## Credits
 
