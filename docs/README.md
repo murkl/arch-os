@@ -150,12 +150,17 @@ Further information can be found in the documentation.
 
 **[➜ Open Arch OS Docs](DOCS.md)**
 
-<br>
-
 <div align="center">
-
-<p><img src="./screenshots/desktop_demo.jpg"></p>
-
-<i>Arch OS Desktop Demo</i>
-
+  <div><img src="./screenshots/desktop_demo.jpg"></div>
+  <sub><i>Arch OS Desktop Demo</i></sub>
 </div>
+
+## Credits
+
+Many thanks for these projects and the people behind them!
+
+- Arch Linux
+- GNOME
+- Gum by charm
+- Wallpaper light: Mountain Lake by Agustin Gaute
+- Wallpaper dark: Pxhere Photo 344
