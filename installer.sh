@@ -1153,15 +1153,15 @@ exec_install_desktop() {
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
 
             # Download & set wallpaper (skip if failed)
-            local wallpaper_light_url="https://raw.githubusercontent.com/murkl/arch-os/refs/heads/dev/docs/wallpaper_light.jxl"
-            local wallpaper_dark_url="https://raw.githubusercontent.com/murkl/arch-os/refs/heads/dev/docs/wallpaper_dark.jxl"
-            if curl -Lf "$wallpaper_dark_url" >"${SCRIPT_TMP_DIR}/wallpaper_dark.jxl"; then
-                cp -f "${SCRIPT_TMP_DIR}/wallpaper_dark.jxl" /mnt/usr/share/backgrounds/gnome/adwaita-d.jxl
+            local wallpaper_light_url="https://raw.githubusercontent.com/murkl/arch-os/refs/heads/dev/docs/wallpaper/adwaita_light.jxl"
+            local wallpaper_dark_url="https://raw.githubusercontent.com/murkl/arch-os/refs/heads/dev/docs/wallpaper/adwaita_dark.jxl"
+            if curl -Lf "$wallpaper_dark_url" >"${SCRIPT_TMP_DIR}/adwaita_dark.jxl"; then
+                cp -f "${SCRIPT_TMP_DIR}/adwaita_dark.jxl" /mnt/usr/share/backgrounds/gnome/adwaita-d.jxl
             else
                 echo "ERROR: Downloading wallpaper (dark) from ${WALLPAPER_URL}" >&2
             fi
-            if curl -Lf "$wallpaper_light_url" >"${SCRIPT_TMP_DIR}/wallpaper_light.jxl"; then
-                cp -f "${SCRIPT_TMP_DIR}/wallpaper_light.jxl" /mnt/usr/share/backgrounds/gnome/adwaita-l.jxl
+            if curl -Lf "$wallpaper_light_url" >"${SCRIPT_TMP_DIR}/adwaita_light.jxl"; then
+                cp -f "${SCRIPT_TMP_DIR}/adwaita_light.jxl" /mnt/usr/share/backgrounds/gnome/adwaita-l.jxl
             else
                 echo "ERROR: Downloading wallpaper (light) from ${WALLPAPER_URL}" >&2
             fi
