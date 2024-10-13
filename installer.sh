@@ -253,9 +253,16 @@ start_recovery() {
     [[ "$user_input" = "/dev/nvm"* ]] && recovery_boot_partition="${user_input}p1" || recovery_boot_partition="${user_input}1"
     [[ "$user_input" = "/dev/nvm"* ]] && recovery_root_partition="${user_input}p2" || recovery_root_partition="${user_input}2"
 
-    # Ask for encryption
-    recovery_encryption_enabled="false" && gum_confirm "Disk Encryption enabled?" && recovery_encryption_enabled="true"
+    # Check encryption
+    if cryptsetup isLuks "$user_input" &>/dev/null; then
+        recovery_encryption_enabled="true"
+        gum_warn "The disk $user_input is encrypted with LUKS."
+    else
+        recovery_encryption_enabled="false"
+        gum_info "The disk $user_input is not encrypted with LUKS."
+    fi
 
+    # Check archiso
     [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && gum_fail "You must execute the Recovery from Arch ISO!" && exit 1
 
     # Make sure everything is unmounted
