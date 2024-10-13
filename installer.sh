@@ -228,7 +228,7 @@ main() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 start_recovery() {
-    print_header && gum_title "Recovery"
+    print_header && gum_title "Recovery Mode"
     local recovery_boot_partition recovery_root_partition user_input items options
     local recovery_mount_dir="/mnt/recovery"
     local recovery_crypt_label="cryptrecovery"
@@ -285,10 +285,11 @@ start_recovery() {
 
     # Chroot
     gum_green "!! YOUR ARE NOW ON YOUR RECOVERY SYSTEM !!"
-    gum_yellow "        Leave with command 'exit'         "
-    echo -e "\n"
+    gum_yellow ">> Leave with command 'exit'" && echo
     arch-chroot "$recovery_mount_dir" </dev/tty || exit 1
     wait && recovery_unmount
+    gum_green "Exit Recovery..."
+    exit 0
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
