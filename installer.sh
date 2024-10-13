@@ -288,7 +288,7 @@ start_recovery() {
     gum_yellow ">> Leave with command 'exit'" && echo
     arch-chroot "$recovery_mount_dir" </dev/tty || exit 1
     wait && recovery_unmount
-    gum_green "Exit Recovery..."
+    gum_green ">> Exit Recovery"
     exit 0
 }
 
