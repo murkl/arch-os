@@ -44,7 +44,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 
 Select one of these presets (prompted in the installer) to [install](#installing-arch-os) your individual Arch Linux base.
 
-- **`desktop`** ➜ GNOME Desktop Environment + Graphics Driver + Extras + Core (default)
+- **`desk`** ➜ GNOME Desktop Environment + Graphics Driver + Extras + Core (default)
 - **`core`** ➜ Minimal Arch Linux TTY Environment (~150 packages in total)
 - **`none`** ➜ All properties are queried (customize)
 

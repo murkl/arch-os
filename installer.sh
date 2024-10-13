@@ -286,7 +286,7 @@ properties_preset_source() {
     else
         # Select preset
         local preset options
-        options=("desktop | Desktop Environment (default)" "core    | Minimal TTY Environment" "none    | No pre-selection")
+        options=("desk | GNOME Desktop Environment (default)" "core | Minimal Arch Linux TTY Environment" "none | No pre-selection")
         preset=$(gum_choose --header "" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$preset" ] && return 1 # Check if new value is null
         preset="$(echo "$preset" | awk '{print $1}')"
@@ -302,7 +302,7 @@ properties_preset_source() {
         fi
 
         # Desktop preset
-        if [[ $preset == desktop* ]]; then
+        if [[ $preset == desk* ]]; then
             ARCH_OS_AUR_HELPER='paru'
             ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
             ARCH_OS_SAMBA_SHARE_ENABLED='true'
@@ -514,7 +514,6 @@ select_enable_desktop_environment() {
         ARCH_OS_DESKTOP_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     gum_property "Desktop Environment" "$ARCH_OS_DESKTOP_ENABLED"
-    [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && [ -n "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && gum_property "Desktop Extras" "$ARCH_OS_DESKTOP_EXTRAS_ENABLED"
     return 0
 }
 
