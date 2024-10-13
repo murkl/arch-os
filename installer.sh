@@ -285,8 +285,8 @@ start_recovery() {
 
     # Chroot
     clear && echo -e "\n"
-    print_green "!! YOUR ARE NOW ON YOUR RECOVERY SYSTEM !!"
-    print_yellow "        Leave with command 'exit'         "
+    gum_green "!! YOUR ARE NOW ON YOUR RECOVERY SYSTEM !!"
+    gum_yellow "        Leave with command 'exit'         "
     echo -e "\n"
     arch-chroot "$recovery_mount_dir" </dev/tty || exit 1
     wait && recovery_unmount
