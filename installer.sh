@@ -63,7 +63,7 @@ main() {
     gum_title "Operation Mode"
     gum_white '• Installer: New Arch OS will be installed'
     gum_white '• Recovery:  Existing Arch OS will be restored'
-    gum_confirm --affirmative="Installer" --negative="Recovery" "" || {
+    gum_confirm --affirmative="Installer" --negative="Recovery" "Select Operation Mode" || {
         start_recovery # Open recovery
         exit $?        # Exit after recovery
     }
@@ -245,7 +245,7 @@ start_recovery() {
     mapfile -t items < <(lsblk -I 8,259,254 -d -o KNAME,SIZE -n)
     # size: $(lsblk -d -n -o SIZE "/dev/${item}")
     options=() && for item in "${items[@]}"; do options+=("/dev/${item}"); done
-    user_input=$(gum_choose --header "+ Choose Recovery Disk" "${options[@]}") || exit 130
+    user_input=$(gum_choose --header "+ Choose Disk" "${options[@]}") || exit 130
     [ -z "$user_input" ] && return 1                          # Check if new value is null
     user_input=$(echo "$user_input" | awk -F' ' '{print $1}') # Remove size from input
     [ ! -e "$user_input" ] && log_fail "Disk does not exists" && return 1
@@ -254,7 +254,7 @@ start_recovery() {
     [[ "$user_input" = "/dev/nvm"* ]] && recovery_root_partition="${user_input}p2" || recovery_root_partition="${user_input}2"
 
     # Check encryption
-    if lsblk -ndo FSTYPE "$recovery_root_partition" | grep -q "crypto_LUKS"; then
+    if lsblk -ndo FSTYPE "$recovery_root_partition" 2>/dev/null | grep -q "crypto_LUKS"; then
         recovery_encryption_enabled="true"
         gum_warn "The disk $user_input is encrypted with LUKS"
     else
