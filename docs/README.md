@@ -148,13 +148,3 @@ Further information can be found in the documentation.
   <div><img src="./screenshots/desktop_demo.jpg"></div>
   <sub><i>Arch OS Desktop Demo</i></sub>
 </div>
-
-## Credits
-
-Many thanks for these projects and the people behind them!
-
-- Arch Linux
-- GNOME
-- Gum by charm
-- Wallpaper light: Mountain Lake by Agustin Gaute
-- Wallpaper dark: Pxhere Photo 344

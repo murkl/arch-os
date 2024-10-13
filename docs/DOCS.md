@@ -16,6 +16,7 @@
 8. [Troubleshooting](#troubleshooting)
 9. [Development](#development)
 10. [Screenshots](#screenshots)
+11. [Credits](#credits)
 
 ## Recommendation
 
@@ -506,3 +507,13 @@ MODE=debug ./installer.sh
 <p><img src="screenshots/installer_core_complete.png"></p>
 
 </div>
+
+## Credits
+
+Many thanks for these projects and the people behind them!
+
+- Arch Linux
+- GNOME
+- Gum by charm
+- Wallpaper light: Mountain Lake by Agustin Gaute
+- Wallpaper dark: Pxhere Photo 344
