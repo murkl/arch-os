@@ -102,8 +102,8 @@ main() {
         until select_enable_manager; do :; done
         echo && gum_title "Desktop"
         until select_enable_desktop_environment; do :; done
-        until select_enable_desktop_slim; do :; done
         until select_enable_desktop_driver; do :; done
+        until select_enable_desktop_slim; do :; done
         until select_enable_desktop_keyboard; do :; done
 
         # Print success
