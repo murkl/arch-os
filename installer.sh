@@ -279,7 +279,10 @@ start_recovery() {
         recovery_encryption_password=$(gum_input --password --header "+ Enter Encryption Password") || exit 130
 
         # Open encrypted Disk
-        echo -n "$recovery_encryption_password" | cryptsetup open "$recovery_root_partition" "$recovery_crypt_label" || exit 1
+        echo -n "$recovery_encryption_password" | cryptsetup open "$recovery_root_partition" "$recovery_crypt_label" || {
+            gum_fail "Wrong encryption password"
+            exit 130
+        }
 
         # Mount encrypted disk
         mount "/dev/mapper/${recovery_crypt_label}" "$recovery_mount_dir" || exit 1
