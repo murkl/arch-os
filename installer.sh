@@ -58,6 +58,16 @@ main() {
     trap 'trap_exit' EXIT
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
 
+    # Operation mode
+    print_header
+    gum_title "Operation Mode"
+    gum_white '• Installer: New Arch OS will be installed'
+    gum_white '• Recovery:  Existing Arch OS will be restored'
+    gum_confirm --affirmative="Installer" --negative="Recovery" "" || {
+        start_recovery # Open recovery
+        exit $?        # Exit after recovery
+    }
+
     # ---------------------------------------------------------------------------------------------------
 
     # Loop properties step to update screen if user edit properties
@@ -211,6 +221,75 @@ main() {
     [ "$do_unmount" = "false" ] && [ "$do_chroot" = "false" ] && gum_warn "Arch OS is still mounted at /mnt"
 
     gum_info "Exit" && exit 0
+}
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# RECOVERY
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+start_recovery() {
+    print_header && gum_title "Recovery"
+    local recovery_boot_partition recovery_root_partition user_input items options
+    local recovery_mount_dir="/mnt/recovery"
+    local recovery_crypt_label="cryptrecovery"
+
+    recovery_unmount() {
+        set +e
+        swapoff -a &>/dev/null
+        umount -A -R "$recovery_mount_dir" &>/dev/null
+        cryptsetup close "$recovery_crypt_label" &>/dev/null
+        set -e
+    }
+
+    # Select disk
+    mapfile -t items < <(lsblk -I 8,259,254 -d -o KNAME,SIZE -n)
+    # size: $(lsblk -d -n -o SIZE "/dev/${item}")
+    options=() && for item in "${items[@]}"; do options+=("/dev/${item}"); done
+    user_input=$(gum_choose --header "+ Choose Recovery Disk" "${options[@]}") || exit 130
+    [ -z "$user_input" ] && return 1                          # Check if new value is null
+    user_input=$(echo "$user_input" | awk -F' ' '{print $1}') # Remove size from input
+    [ ! -e "$user_input" ] && log_fail "Disk does not exists" && return 1
+
+    [[ "$user_input" = "/dev/nvm"* ]] && recovery_boot_partition="${user_input}p1" || recovery_boot_partition="${user_input}1"
+    [[ "$user_input" = "/dev/nvm"* ]] && recovery_root_partition="${user_input}p2" || recovery_root_partition="${user_input}2"
+
+    # Ask for encryption
+    recovery_encryption_enabled="false" && gum_confirm "Disk Encryption enabled?" && recovery_encryption_enabled="true"
+
+    [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && gum_fail "You must execute the Recovery from Arch ISO!" && exit 1
+
+    # Make sure everything is unmounted
+    recovery_unmount
+
+    # Create mount dir
+    mkdir -p "$recovery_mount_dir" || exit 1
+    mkdir -p "$recovery_mount_dir/boot" || exit 1
+
+    # Mount disk
+    if [ "$recovery_encryption_enabled" = "true" ]; then
+
+        # Encryption password
+        recovery_encryption_password=$(gum_input --password --header "+ Enter Encryption Password") || exit 130
+
+        # Open encrypted Disk
+        echo -n "$recovery_encryption_password" | cryptsetup open "$recovery_root_partition" "$recovery_crypt_label" || exit 1
+
+        # Mount encrypted disk
+        mount "/dev/mapper/${recovery_crypt_label}" "$recovery_mount_dir" || exit 1
+        mount "$recovery_boot_partition" "$recovery_mount_dir/boot" || exit 1
+    else
+        # Mount unencrypted disk
+        mount "$recovery_root_partition" "$recovery_mount_dir" || exit 1
+        mount "$recovery_boot_partition" "$recovery_mount_dir/boot" || exit 1
+    fi
+
+    # Chroot
+    clear && echo -e "\n"
+    print_green "!! YOUR ARE NOW ON YOUR RECOVERY SYSTEM !!"
+    print_yellow "        Leave with command 'exit'         "
+    echo -e "\n"
+    arch-chroot "$recovery_mount_dir" </dev/tty || exit 1
+    wait && recovery_unmount
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1764,8 +1843,8 @@ trap_exit() {
 
     # Check if failed and print error
     if [ "$result_code" -gt "0" ]; then
-        [ -n "$error" ] && gum_fail "$error"                      # Print error message (if exists)
-        [ -z "$error" ] && gum_fail "Arch OS Installation failed" # Otherwise pint default error message
+        [ -n "$error" ] && gum_fail "$error"            # Print error message (if exists)
+        [ -z "$error" ] && gum_fail "An Error occurred" # Otherwise pint default error message
         gum_warn "See ${SCRIPT_LOG} for more information..."
         gum_confirm "Show Logs?" && gum pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
     fi
