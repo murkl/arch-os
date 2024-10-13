@@ -96,6 +96,7 @@ Select one of these presets (prompted in the installer) to [install](#installing
 - Printer Support (cups)
 - Gamemode preinstalled
 - Firmware Update Tool preinstalled
+- Wallpaper included (light & dark)
 
 ## Installing Arch OS
 
