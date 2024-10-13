@@ -20,7 +20,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # SCRIPT
-VERSION='1.6.8'
+VERSION='1.6.9'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -58,6 +58,16 @@ main() {
     trap 'trap_exit' EXIT
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
 
+    # Operation mode
+    print_header
+    gum_title "Operation Mode"
+    gum_white '• Installer: New Arch OS will be installed'
+    gum_white '• Recovery:  Existing Arch OS will be restored'
+    gum_confirm --affirmative="Installer" --negative="Recovery" "Select Operation Mode" || {
+        start_recovery # Open recovery
+        exit $?        # Exit after recovery
+    }
+
     # ---------------------------------------------------------------------------------------------------
 
     # Loop properties step to update screen if user edit properties
@@ -70,7 +80,7 @@ main() {
         gum_white '• Secure Boot disabled'
         gum_white '• Boot Mode set to UEFI'
 
-        echo && gum_title "Arch OS Preset"
+        echo && gum_title "Preset"
 
         # Ask for load & remove existing config file
         if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
@@ -84,13 +94,14 @@ main() {
         until properties_preset_source; do :; done
 
         # Selectors
-        echo && gum_title "Arch OS Properties"
+        echo && gum_title "Properties"
         until select_username; do :; done
         until select_password; do :; done
         until select_timezone; do :; done
         until select_language; do :; done
         until select_keyboard; do :; done
         until select_disk; do :; done
+        echo && gum_title "Features"
         until select_enable_encryption; do :; done
         until select_enable_core_tweaks; do :; done
         until select_enable_bootsplash; do :; done
@@ -99,10 +110,11 @@ main() {
         until select_enable_housekeeping; do :; done
         until select_enable_shell_enhancement; do :; done
         until select_enable_manager; do :; done
+        echo && gum_title "Desktop"
         until select_enable_desktop_environment; do :; done
+        until select_enable_desktop_driver; do :; done
         until select_enable_desktop_slim; do :; done
         until select_enable_desktop_keyboard; do :; done
-        until select_enable_desktop_driver; do :; done
 
         # Print success
         echo && gum_title "Arch OS Setup"
@@ -153,10 +165,6 @@ main() {
     exec_install_vm_support
     exec_cleanup_installation
 
-    # Print logs & config info
-    gum_proc "Installer Config" "/home/${ARCH_OS_USERNAME}/installer.conf"
-    gum_proc "Installer Logs" "/home/${ARCH_OS_USERNAME}/installer.log"
-
     # Calc installation duration
     duration=$SECONDS # This is set before install starts
     duration_min="$((duration / 60))"
@@ -203,7 +211,7 @@ main() {
     [ "$do_unmount" = "false" ] && gum_confirm "Chroot to new Arch OS?" && do_chroot="true"
     if [ "$do_chroot" = "true" ] && gum_warn "Chrooting Arch OS at /mnt..."; then
         gum_warn "!! YOUR ARE NOW ON YOUR NEW ARCH OS SYSTEM !!"
-        gum_warn "         Leave with command 'exit'"
+        gum_warn ">> Leave with command 'exit'"
         [ "$MODE" != "debug" ] && arch-chroot /mnt </dev/tty
         wait # Wait for subprocesses
         gum_warn "Please reboot manually..."
@@ -213,6 +221,85 @@ main() {
     [ "$do_unmount" = "false" ] && [ "$do_chroot" = "false" ] && gum_warn "Arch OS is still mounted at /mnt"
 
     gum_info "Exit" && exit 0
+}
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# RECOVERY
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+start_recovery() {
+    print_header && gum_title "Recovery Mode"
+    local recovery_boot_partition recovery_root_partition user_input items options
+    local recovery_mount_dir="/mnt/recovery"
+    local recovery_crypt_label="cryptrecovery"
+
+    recovery_unmount() {
+        set +e
+        swapoff -a &>/dev/null
+        umount -A -R "$recovery_mount_dir" &>/dev/null
+        cryptsetup close "$recovery_crypt_label" &>/dev/null
+        set -e
+    }
+
+    # Select disk
+    mapfile -t items < <(lsblk -I 8,259,254 -d -o KNAME,SIZE -n)
+    # size: $(lsblk -d -n -o SIZE "/dev/${item}")
+    options=() && for item in "${items[@]}"; do options+=("/dev/${item}"); done
+    user_input=$(gum_choose --header "+ Choose Disk" "${options[@]}") || exit 130
+    [ -z "$user_input" ] && return 1                          # Check if new value is null
+    user_input=$(echo "$user_input" | awk -F' ' '{print $1}') # Remove size from input
+    [ ! -e "$user_input" ] && log_fail "Disk does not exists" && return 1
+
+    [[ "$user_input" = "/dev/nvm"* ]] && recovery_boot_partition="${user_input}p1" || recovery_boot_partition="${user_input}1"
+    [[ "$user_input" = "/dev/nvm"* ]] && recovery_root_partition="${user_input}p2" || recovery_root_partition="${user_input}2"
+
+    # Check encryption
+    if lsblk -ndo FSTYPE "$recovery_root_partition" 2>/dev/null | grep -q "crypto_LUKS"; then
+        recovery_encryption_enabled="true"
+        gum_warn "The disk $user_input is encrypted with LUKS"
+    else
+        recovery_encryption_enabled="false"
+        gum_info "The disk $user_input is not encrypted"
+    fi
+
+    # Check archiso
+    [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && gum_fail "You must execute the Recovery from Arch ISO!" && exit 1
+
+    # Make sure everything is unmounted
+    recovery_unmount
+
+    # Create mount dir
+    mkdir -p "$recovery_mount_dir" || exit 1
+    mkdir -p "$recovery_mount_dir/boot" || exit 1
+
+    # Mount disk
+    if [ "$recovery_encryption_enabled" = "true" ]; then
+
+        # Encryption password
+        recovery_encryption_password=$(gum_input --password --header "+ Enter Encryption Password") || exit 130
+
+        # Open encrypted Disk
+        echo -n "$recovery_encryption_password" | cryptsetup open "$recovery_root_partition" "$recovery_crypt_label" &>/dev/null || {
+            gum_fail "Wrong encryption password"
+            exit 130
+        }
+
+        # Mount encrypted disk
+        mount "/dev/mapper/${recovery_crypt_label}" "$recovery_mount_dir" || exit 1
+        mount "$recovery_boot_partition" "$recovery_mount_dir/boot" || exit 1
+    else
+        # Mount unencrypted disk
+        mount "$recovery_root_partition" "$recovery_mount_dir" || exit 1
+        mount "$recovery_boot_partition" "$recovery_mount_dir/boot" || exit 1
+    fi
+
+    # Chroot
+    gum_green "!! YOUR ARE NOW ON YOUR RECOVERY SYSTEM !!"
+    gum_yellow ">> Leave with command 'exit'" && echo
+    arch-chroot "$recovery_mount_dir" </dev/tty || exit 1
+    wait && recovery_unmount
+    gum_green ">> Exit Recovery"
+    exit 0
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -261,6 +348,7 @@ properties_generate() {
         echo "ARCH_OS_SAMBA_SHARE_ENABLED='${ARCH_OS_SAMBA_SHARE_ENABLED}'"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
         echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
+        echo "ARCH_OS_WALLPAPER_ENABLED='${ARCH_OS_WALLPAPER_ENABLED}'"
     } >"$SCRIPT_CONFIG" # Write properties to file
 }
 
@@ -275,6 +363,7 @@ properties_preset_source() {
     [ -z "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" ] && ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED="true"
     [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
     [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
+    [ -z "$ARCH_OS_WALLPAPER_ENABLED" ] && ARCH_OS_WALLPAPER_ENABLED="true"
 
     # Set microcode
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
@@ -286,7 +375,7 @@ properties_preset_source() {
     else
         # Select preset
         local preset options
-        options=("desktop | Desktop Environment (default)" "core    | Minimal TTY Environment" "none    | No pre-selection")
+        options=("desk | GNOME Desktop Environment (default)" "core | Minimal Arch Linux TTY Environment" "none | No pre-selection")
         preset=$(gum_choose --header "" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$preset" ] && return 1 # Check if new value is null
         preset="$(echo "$preset" | awk '{print $1}')"
@@ -302,7 +391,7 @@ properties_preset_source() {
         fi
 
         # Desktop preset
-        if [[ $preset == desktop* ]]; then
+        if [[ $preset == desk* ]]; then
             ARCH_OS_AUR_HELPER='paru'
             ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
             ARCH_OS_SAMBA_SHARE_ENABLED='true'
@@ -456,7 +545,7 @@ select_enable_encryption() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_ENCRYPTION_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_property "Disk Encryption" "$ARCH_OS_ENCRYPTION_ENABLED"
+    gum_property "Encryption" "$ARCH_OS_ENCRYPTION_ENABLED"
     return 0
 }
 
@@ -514,7 +603,6 @@ select_enable_desktop_environment() {
         ARCH_OS_DESKTOP_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     gum_property "Desktop Environment" "$ARCH_OS_DESKTOP_ENABLED"
-    [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && [ -n "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && gum_property "Desktop Extras" "$ARCH_OS_DESKTOP_EXTRAS_ENABLED"
     return 0
 }
 
@@ -1152,6 +1240,22 @@ exec_install_desktop() {
             # Set correct permissions
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
 
+            # Download & set wallpaper (skip if failed)
+            if [ "$ARCH_OS_WALLPAPER_ENABLED" = "true" ]; then
+                local wallpaper_light_url="https://raw.githubusercontent.com/murkl/arch-os/refs/heads/dev/docs/wallpaper/adwaita_light.jxl"
+                local wallpaper_dark_url="https://raw.githubusercontent.com/murkl/arch-os/refs/heads/dev/docs/wallpaper/adwaita_dark.jxl"
+                if curl -Lf "$wallpaper_dark_url" >"${SCRIPT_TMP_DIR}/adwaita_dark.jxl"; then
+                    cp -f "${SCRIPT_TMP_DIR}/adwaita_dark.jxl" /mnt/usr/share/backgrounds/gnome/adwaita-d.jxl
+                else
+                    echo "ERROR: Downloading wallpaper (dark) from ${WALLPAPER_URL}" >&2
+                fi
+                if curl -Lf "$wallpaper_light_url" >"${SCRIPT_TMP_DIR}/adwaita_light.jxl"; then
+                    cp -f "${SCRIPT_TMP_DIR}/adwaita_light.jxl" /mnt/usr/share/backgrounds/gnome/adwaita-l.jxl
+                else
+                    echo "ERROR: Downloading wallpaper (light) from ${WALLPAPER_URL}" >&2
+                fi
+            fi
+
             # Return
             process_return 0
         ) &>"$PROCESS_LOG" &
@@ -1749,8 +1853,8 @@ trap_exit() {
 
     # Check if failed and print error
     if [ "$result_code" -gt "0" ]; then
-        [ -n "$error" ] && gum_fail "$error"                      # Print error message (if exists)
-        [ -z "$error" ] && gum_fail "Arch OS Installation failed" # Otherwise pint default error message
+        [ -n "$error" ] && gum_fail "$error"            # Print error message (if exists)
+        [ -z "$error" ] && gum_fail "An Error occurred" # Otherwise pint default error message
         gum_warn "See ${SCRIPT_LOG} for more information..."
         gum_confirm "Show Logs?" && gum pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
     fi

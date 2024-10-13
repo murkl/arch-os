@@ -16,6 +16,7 @@
 8. [Troubleshooting](#troubleshooting)
 9. [Development](#development)
 10. [Screenshots](#screenshots)
+11. [Credits](#credits)
 
 ## Recommendation
 
@@ -208,6 +209,7 @@ ARCH_OS_DESKTOP_KEYBOARD_VARIANT='nodeadkeys' # X11 keyboard variant | Default: 
 ARCH_OS_SAMBA_SHARE_ENABLED='true' # Enable Samba public (anonymous) & home share (user) | Disable: false
 ARCH_OS_VM_SUPPORT_ENABLED='true' # VM Support | Default: true | Disable: false
 ARCH_OS_ECN_ENABLED='true' # Disable ECN support for legacy routers | Default: true | Disable: false
+ARCH_OS_WALLPAPER_ENABLED='true' # Enable Arch OS Wallpaper | Default: true | Disable: false
 ```
 
 ## Core Tweaks
@@ -505,3 +507,13 @@ MODE=debug ./installer.sh
 <p><img src="screenshots/installer_core_complete.png"></p>
 
 </div>
+
+## Credits
+
+Many thanks for these projects and the people behind them!
+
+- Arch Linux
+- GNOME
+- Gum by charm
+- Wallpaper light: Mountain Lake by Agustin Gaute
+- Wallpaper dark: Pxhere Photo 344
