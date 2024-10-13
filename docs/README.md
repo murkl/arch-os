@@ -24,12 +24,8 @@
 </b></p>
 
 <p>
-This project aims to provide a mostly automized, minimal and robust Arch Linux core base, along with an easy-to-use and fast properties-file-based installer with error handling. Install a minimal Arch Linux core with optional features such as Automatic Housekeeping, Zen Kernel, Fancy Shell Enhancement, GNOME Desktop with Graphics Driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....</p>
-<p>
-  <strong>Related Tools</strong>
-  <br><sub><a target="_blank" href="https://github.com/murkl/arch-os-creator">USB Creator</a></sub>
-  <br><sub><a target="_blank" href="https://github.com/murkl/arch-os-manager">System Manager</a></sub>
- </p>
+This project aims to provide a mostly automized, minimal and robust Arch Linux base, along with an easy-to-use and fast properties-file-based installer with error handling. Install a minimal Arch Linux core with optional features such as GNOME Desktop with Graphics Driver, Automatic Housekeeping, Zen Kernel, Fancy Shell Enhancement, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more...</p>
+
 <p>
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
   <img src="https://img.shields.io/badge/License-GPL_v2-blue?style=for-the-badge">
@@ -44,13 +40,13 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux c
 
 </div>
 
-## Presets
+## Properties Presets
 
 Select one of these presets (prompted in the installer) to [install](#installing-arch-os) your individual Arch Linux base.
 
-- **`desktop` ➜** GNOME Desktop Environment + Graphics Driver + Extras + Core (default)
-- **`core` ➜** Minimal Arch Linux TTY Environment (~150 packages in total)
-- **`none` ➜** All properties are queried (customize)
+- **`desktop`** ➜ GNOME Desktop Environment + Graphics Driver + Extras + Core (default)
+- **`core`** ➜ Minimal Arch Linux TTY Environment (~150 packages in total)
+- **`none`** ➜ All properties are queried (customize)
 
 **Note:** If the `installer.conf` exists in the working dir, all properties are loaded as preset (except the password).
 
