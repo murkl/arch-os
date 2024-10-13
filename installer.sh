@@ -254,7 +254,7 @@ start_recovery() {
     [[ "$user_input" = "/dev/nvm"* ]] && recovery_root_partition="${user_input}p2" || recovery_root_partition="${user_input}2"
 
     # Check encryption
-    if blkid -p -n crypto_LUKS "$user_input" >/dev/null 2>&1; then
+    if lsblk -ndo FSTYPE "$recovery_root_partition" | grep -q "crypto_LUKS"; then
         recovery_encryption_enabled="true"
         gum_warn "The disk $user_input is encrypted with LUKS"
     else
