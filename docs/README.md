@@ -25,17 +25,15 @@
 
 <p>
 This project aims to provide a mostly automized, minimal and robust Arch Linux core base, along with an easy-to-use and fast properties-file-based installer with error handling. Install a minimal Arch Linux core with optional features such as Automatic Housekeeping, Zen Kernel, Fancy Shell Enhancement, GNOME Desktop with Graphics Driver, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio, and some more....</p>
-
 <p>
-  <strong>Tools</strong>
-  <br><strong><a target="_blank" href="https://github.com/murkl/arch-os-manager">Arch OS Manager</a></strong>
+  <strong>Related Tools</strong>
+  <br><sub><a target="_blank" href="https://github.com/murkl/arch-os-creator">USB Creator</a></sub>
+  <br><sub><a target="_blank" href="https://github.com/murkl/arch-os-manager">System Manager</a></sub>
  </p>
-
 <p>
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
   <img src="https://img.shields.io/badge/License-GPL_v2-blue?style=for-the-badge">
 </p>
-
 <p>
   <strong>Test successful</strong>
   <br>
@@ -46,7 +44,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux c
 
 </div>
 
-## Arch OS Presets
+## Presets
 
 Select one of these presets (prompted in the installer) to [install](#installing-arch-os) your individual Arch Linux base.
 
@@ -56,7 +54,7 @@ Select one of these presets (prompted in the installer) to [install](#installing
 
 **Note:** If the `installer.conf` exists in the working dir, all properties are loaded as preset (except the password).
 
-## Arch OS Core Features
+## Core Features
 
 - [Minimal Arch Linux](DOCS.md#minimal-installation) (~150 packages)
 - [Zen Kernel](DOCS.md#advanced-installation) (configurable)
