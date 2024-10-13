@@ -70,7 +70,7 @@ main() {
         gum_white '• Secure Boot disabled'
         gum_white '• Boot Mode set to UEFI'
 
-        echo && gum_title "Arch OS Preset"
+        echo && gum_title "Preset"
 
         # Ask for load & remove existing config file
         if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
@@ -84,13 +84,14 @@ main() {
         until properties_preset_source; do :; done
 
         # Selectors
-        echo && gum_title "Arch OS Properties"
+        echo && gum_title "Properties"
         until select_username; do :; done
         until select_password; do :; done
         until select_timezone; do :; done
         until select_language; do :; done
         until select_keyboard; do :; done
         until select_disk; do :; done
+        echo && gum_title "Features"
         until select_enable_encryption; do :; done
         until select_enable_core_tweaks; do :; done
         until select_enable_bootsplash; do :; done
@@ -99,10 +100,11 @@ main() {
         until select_enable_housekeeping; do :; done
         until select_enable_shell_enhancement; do :; done
         until select_enable_manager; do :; done
+        echo && gum_title "Desktop"
         until select_enable_desktop_environment; do :; done
         until select_enable_desktop_slim; do :; done
-        until select_enable_desktop_keyboard; do :; done
         until select_enable_desktop_driver; do :; done
+        until select_enable_desktop_keyboard; do :; done
 
         # Print success
         echo && gum_title "Arch OS Setup"
@@ -152,10 +154,6 @@ main() {
     exec_install_archos_manager
     exec_install_vm_support
     exec_cleanup_installation
-
-    # Print logs & config info
-    gum_proc "Installer Config" "/home/${ARCH_OS_USERNAME}/installer.conf"
-    gum_proc "Installer Logs" "/home/${ARCH_OS_USERNAME}/installer.log"
 
     # Calc installation duration
     duration=$SECONDS # This is set before install starts
@@ -456,7 +454,7 @@ select_enable_encryption() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_ENCRYPTION_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_property "Disk Encryption" "$ARCH_OS_ENCRYPTION_ENABLED"
+    gum_property "Encryption" "$ARCH_OS_ENCRYPTION_ENABLED"
     return 0
 }
 
