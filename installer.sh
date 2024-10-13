@@ -284,7 +284,6 @@ start_recovery() {
     fi
 
     # Chroot
-    clear && echo -e "\n"
     gum_green "!! YOUR ARE NOW ON YOUR RECOVERY SYSTEM !!"
     gum_yellow "        Leave with command 'exit'         "
     echo -e "\n"
