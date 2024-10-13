@@ -254,12 +254,12 @@ start_recovery() {
     [[ "$user_input" = "/dev/nvm"* ]] && recovery_root_partition="${user_input}p2" || recovery_root_partition="${user_input}2"
 
     # Check encryption
-    if cryptsetup isLuks "$user_input" &>/dev/null; then
+    if blkid -p -n crypto_LUKS "$user_input" >/dev/null 2>&1; then
         recovery_encryption_enabled="true"
-        gum_warn "The disk $user_input is encrypted with LUKS."
+        gum_warn "The disk $user_input is encrypted with LUKS"
     else
         recovery_encryption_enabled="false"
-        gum_info "The disk $user_input is not encrypted with LUKS."
+        gum_info "The disk $user_input is not encrypted"
     fi
 
     # Check archiso
