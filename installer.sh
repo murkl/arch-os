@@ -20,7 +20,7 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # SCRIPT
-VERSION='1.6.9'
+VERSION='1.7.0'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -246,9 +246,9 @@ start_recovery() {
     # size: $(lsblk -d -n -o SIZE "/dev/${item}")
     options=() && for item in "${items[@]}"; do options+=("/dev/${item}"); done
     user_input=$(gum_choose --header "+ Choose Disk" "${options[@]}") || exit 130
-    [ -z "$user_input" ] && return 1                          # Check if new value is null
-    user_input=$(echo "$user_input" | awk -F' ' '{print $1}') # Remove size from input
-    [ ! -e "$user_input" ] && log_fail "Disk does not exists" && return 1
+    [ -z "$user_input" ] && log_fail "Disk is empty" && exit 1 # Check if new value is null
+    user_input=$(echo "$user_input" | awk -F' ' '{print $1}')  # Remove size from input
+    [ ! -e "$user_input" ] && log_fail "Disk does not exists" && exit 130
 
     [[ "$user_input" = "/dev/nvm"* ]] && recovery_boot_partition="${user_input}p1" || recovery_boot_partition="${user_input}1"
     [[ "$user_input" = "/dev/nvm"* ]] && recovery_root_partition="${user_input}p2" || recovery_root_partition="${user_input}2"
@@ -263,14 +263,14 @@ start_recovery() {
     fi
 
     # Check archiso
-    [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && gum_fail "You must execute the Recovery from Arch ISO!" && exit 1
+    [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && gum_fail "You must execute the Recovery from Arch ISO!" && exit 130
 
     # Make sure everything is unmounted
     recovery_unmount
 
     # Create mount dir
-    mkdir -p "$recovery_mount_dir" || exit 1
-    mkdir -p "$recovery_mount_dir/boot" || exit 1
+    mkdir -p "$recovery_mount_dir"
+    mkdir -p "$recovery_mount_dir/boot"
 
     # Mount disk
     if [ "$recovery_encryption_enabled" = "true" ]; then
@@ -285,21 +285,20 @@ start_recovery() {
         }
 
         # Mount encrypted disk
-        mount "/dev/mapper/${recovery_crypt_label}" "$recovery_mount_dir" || exit 1
-        mount "$recovery_boot_partition" "$recovery_mount_dir/boot" || exit 1
+        mount "/dev/mapper/${recovery_crypt_label}" "$recovery_mount_dir"
+        mount "$recovery_boot_partition" "$recovery_mount_dir/boot"
     else
         # Mount unencrypted disk
-        mount "$recovery_root_partition" "$recovery_mount_dir" || exit 1
-        mount "$recovery_boot_partition" "$recovery_mount_dir/boot" || exit 1
+        mount "$recovery_root_partition" "$recovery_mount_dir"
+        mount "$recovery_boot_partition" "$recovery_mount_dir/boot"
     fi
 
     # Chroot
     gum_green "!! YOUR ARE NOW ON YOUR RECOVERY SYSTEM !!"
     gum_yellow ">> Leave with command 'exit'" && echo
-    arch-chroot "$recovery_mount_dir" </dev/tty || exit 1
+    arch-chroot "$recovery_mount_dir" </dev/tty
     wait && recovery_unmount
     gum_green ">> Exit Recovery"
-    exit 0
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
