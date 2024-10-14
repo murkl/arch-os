@@ -14,7 +14,7 @@
 6. [Arch OS Manager](#arch-os-manager)
 7. [Technical Information](#technical-information)
 8. [Troubleshooting](#troubleshooting)
-9.  [Development](#development)
+9. [Development](#development)
 10. [Screenshots](#screenshots)
 11. [Credits](#credits)
 
