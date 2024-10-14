@@ -8,16 +8,15 @@
 
 1. [Recommendation](#recommendation)
 2. [Advanced Installation](#advanced-installation)
-3. [Features](#features)
-4. [Housekeeping](#housekeeping)
-5. [Core Tweaks](#core-tweaks)
-6. [Shell Enhancement](#shell-enhancement)
-7. [Arch OS Manager](#arch-os-manager)
-8. [Technical Information](#technical-information)
-9. [Troubleshooting](#troubleshooting)
-10. [Development](#development)
-11. [Screenshots](#screenshots)
-12. [Credits](#credits)
+3. [Housekeeping](#housekeeping)
+4. [Core Tweaks](#core-tweaks)
+5. [Shell Enhancement](#shell-enhancement)
+6. [Arch OS Manager](#arch-os-manager)
+7. [Technical Information](#technical-information)
+8. [Troubleshooting](#troubleshooting)
+9.  [Development](#development)
+10. [Screenshots](#screenshots)
+11. [Credits](#credits)
 
 ## Recommendation
 
