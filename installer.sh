@@ -58,14 +58,25 @@ main() {
     trap 'trap_exit' EXIT
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
 
-    # Operation mode
+    # Show landig page
     print_header
+    gum_white 'Please make sure you have:' && echo
+    gum_white '• Backed up your important data'
+    gum_white '• A stable internet connection'
+    gum_white '• Secure Boot disabled'
+    gum_white '• Boot Mode set to UEFI'
+    echo # Newline
+
     gum_title "Operation Mode"
-    gum_white '• Installer: New Arch OS will be installed'
-    gum_white '• Recovery:  Existing Arch OS will be restored'
-    gum_confirm --affirmative="Installer" --negative="Recovery" "Select Operation Mode" || {
-        start_recovery # Open recovery
-        exit $?        # Exit after recovery
+    local options user_input
+    options=("Installer | Install a new Arch OS system" "Recovery  | Restore an existing Arch OS system")
+    #gum_confirm --affirmative="Installer" --negative="Recovery" "Select Operation Mode" || exit
+    user_input=$(gum_choose --header "" "${options[@]}") || exit 130
+    [ -z "$user_input" ] && return 1
+    [[ "$user_input" = "Exit"* ]] && exit 130
+    [[ "$user_input" = "Recovery"* ]] && {
+        start_recovery
+        exit $? # Exit after recovery
     }
 
     # ---------------------------------------------------------------------------------------------------
@@ -74,13 +85,7 @@ main() {
     while (true); do
 
         print_header # Show welcome screen
-        gum_white 'Please make sure you have:' && echo
-        gum_white '• Backed up your important data'
-        gum_white '• A stable internet connection'
-        gum_white '• Secure Boot disabled'
-        gum_white '• Boot Mode set to UEFI'
-
-        echo && gum_title "Preset"
+        gum_title "Properties"
 
         # Ask for load & remove existing config file
         if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
@@ -94,13 +99,17 @@ main() {
         until properties_preset_source; do :; done
 
         # Selectors
-        echo && gum_title "Properties"
         until select_username; do :; done
         until select_password; do :; done
         until select_timezone; do :; done
         until select_language; do :; done
         until select_keyboard; do :; done
         until select_disk; do :; done
+        echo && gum_title "Desktop"
+        until select_enable_desktop_environment; do :; done
+        until select_enable_desktop_driver; do :; done
+        until select_enable_desktop_slim; do :; done
+        until select_enable_desktop_keyboard; do :; done
         echo && gum_title "Features"
         until select_enable_encryption; do :; done
         until select_enable_core_tweaks; do :; done
@@ -110,18 +119,13 @@ main() {
         until select_enable_housekeeping; do :; done
         until select_enable_shell_enhancement; do :; done
         until select_enable_manager; do :; done
-        echo && gum_title "Desktop"
-        until select_enable_desktop_environment; do :; done
-        until select_enable_desktop_driver; do :; done
-        until select_enable_desktop_slim; do :; done
-        until select_enable_desktop_keyboard; do :; done
 
         # Print success
-        echo && gum_title "Arch OS Setup"
+        echo && gum_title "Setup"
         gum_info "Properties successfully initialized"
 
-        # Open Advanced Config?
-        if gum_confirm --negative="Skip" "Open Advanced Config?"; then
+        # Open Advanced Properties?
+        if gum_confirm --negative="Skip" "Open Advanced Properties?"; then
             local header_txt="• Save with CTRL + D or ESC and cancel with CTRL + C"
             if gum_write --show-line-numbers --prompt "> " --height=10 --width=180 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
@@ -228,7 +232,7 @@ main() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 start_recovery() {
-    print_header && gum_title "Recovery Mode"
+    print_header
     local recovery_boot_partition recovery_root_partition user_input items options
     local recovery_mount_dir="/mnt/recovery"
     local recovery_crypt_label="cryptrecovery"
@@ -245,7 +249,8 @@ start_recovery() {
     mapfile -t items < <(lsblk -I 8,259,254 -d -o KNAME,SIZE -n)
     # size: $(lsblk -d -n -o SIZE "/dev/${item}")
     options=() && for item in "${items[@]}"; do options+=("/dev/${item}"); done
-    user_input=$(gum_choose --header "+ Choose Disk" "${options[@]}") || exit 130
+    user_input=$(gum_choose --header "+ Select Arch OS Recovery Disk" "${options[@]}") || exit 130
+    gum_title "Arch OS Recovery"
     [ -z "$user_input" ] && log_fail "Disk is empty" && exit 1 # Check if new value is null
     user_input=$(echo "$user_input" | awk -F' ' '{print $1}')  # Remove size from input
     [ ! -e "$user_input" ] && log_fail "Disk does not exists" && exit 130
@@ -370,12 +375,12 @@ properties_preset_source() {
 
     # Load properties or select preset
     if [ -f "$SCRIPT_CONFIG" ]; then
-        properties_source && gum_property "Properties Preset" "installer.conf"
+        properties_source && gum_property "Preset" "installer.conf"
     else
         # Select preset
         local preset options
         options=("desk | GNOME Desktop Environment (default)" "core | Minimal Arch Linux TTY Environment" "none | No pre-selection")
-        preset=$(gum_choose --header "" "${options[@]}") || trap_gum_exit_confirm
+        preset=$(gum_choose --header "+ Choose Preset" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$preset" ] && return 1 # Check if new value is null
         preset="$(echo "$preset" | awk '{print $1}')"
 
@@ -404,7 +409,7 @@ properties_preset_source() {
         fi
 
         # Write properties
-        properties_generate && gum_property "Properties Preset" "$preset"
+        properties_generate && gum_property "Preset" "$preset"
     fi
     return 0
 }
@@ -591,7 +596,7 @@ select_enable_bootsplash() {
 select_enable_desktop_environment() {
     if [ -z "$ARCH_OS_DESKTOP_ENABLED" ]; then
         local user_input
-        gum_confirm "Enable Desktop Environment?"
+        gum_confirm "Enable GNOME Desktop Environment?"
         local user_confirm=$?
         [ $user_confirm = 130 ] && {
             trap_gum_exit_confirm
@@ -601,7 +606,7 @@ select_enable_desktop_environment() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_DESKTOP_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_property "Desktop Environment" "$ARCH_OS_DESKTOP_ENABLED"
+    gum_property "GNOME Environment" "$ARCH_OS_DESKTOP_ENABLED"
     return 0
 }
 
@@ -991,7 +996,7 @@ exec_pacstrap_core() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_desktop() {
-    local process_name="Install Desktop Environment"
+    local process_name="GNOME Desktop"
     if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
@@ -1265,7 +1270,7 @@ exec_install_desktop() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_graphics_driver() {
-    local process_name="Install Desktop Driver"
+    local process_name="Desktop Driver"
     if [ -n "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] && [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" != "none" ]; then
         process_init "$process_name"
         (
@@ -1357,7 +1362,7 @@ exec_enable_multilib() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_bootsplash() {
-    local process_name="Install Bootsplash"
+    local process_name="Bootsplash"
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
@@ -1375,7 +1380,7 @@ exec_install_bootsplash() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_aur_helper() {
-    local process_name="Install AUR Helper"
+    local process_name="AUR Helper"
     if [ -n "$ARCH_OS_AUR_HELPER" ] && [ "$ARCH_OS_AUR_HELPER" != "none" ]; then
         process_init "$process_name"
         (
@@ -1396,7 +1401,7 @@ exec_install_aur_helper() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_housekeeping() {
-    local process_name="Install Housekeeping"
+    local process_name="Housekeeping"
     if [ "$ARCH_OS_HOUSEKEEPING_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
@@ -1426,7 +1431,7 @@ exec_install_housekeeping() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_archos_manager() {
-    local process_name="Install Arch OS Manager"
+    local process_name="Arch OS Manager"
     if [ "$ARCH_OS_MANAGER_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
@@ -1442,7 +1447,7 @@ exec_install_archos_manager() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_shell_enhancement() {
-    local process_name="Install Shell Enhancement"
+    local process_name="Shell Enhancement"
     if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
@@ -1703,7 +1708,7 @@ exec_install_shell_enhancement() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_vm_support() {
-    local process_name="Install VM Support"
+    local process_name="VM Support"
     if [ "$ARCH_OS_VM_SUPPORT_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
@@ -1973,8 +1978,8 @@ gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to f
 gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
 
 # Gum key & value
-gum_proc() { log_proc "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white --bold "$(print_filled_space 27 "${1}")")" "$(gum_white "  >  ")" "$(gum_green "${2}")"; }
-gum_property() { log_prop "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 27 "${1}")")" "$(gum_green --bold "  >  ")" "$(gum_white --bold "${2}")"; }
+gum_proc() { log_proc "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white --bold "$(print_filled_space 24 "${1}")")" "$(gum_white "  >  ")" "$(gum_green "${2}")"; }
+gum_property() { log_prop "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 24 "${1}")")" "$(gum_green --bold "  >  ")" "$(gum_white --bold "${2}")"; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # LOGGING WRAPPER
