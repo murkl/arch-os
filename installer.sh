@@ -89,6 +89,7 @@ main() {
         until properties_preset_source; do :; done
 
         # Selectors
+        echo && gum_title "Core"
         until select_username; do :; done
         until select_password; do :; done
         until select_timezone; do :; done
@@ -111,7 +112,7 @@ main() {
         until select_enable_manager; do :; done
 
         # Print success
-        echo && gum_green --bold "Properties successfully initialized"
+        echo && gum_info "Properties successfully initialized"
 
         # Open Advanced Properties?
         if gum_confirm --negative="Skip" "Open Advanced Properties?"; then
@@ -593,7 +594,7 @@ select_enable_desktop_environment() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_DESKTOP_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_property "GNOME Environment" "$ARCH_OS_DESKTOP_ENABLED"
+    gum_property "Desktop Environment" "$ARCH_OS_DESKTOP_ENABLED"
     return 0
 }
 
