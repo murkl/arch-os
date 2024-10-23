@@ -56,23 +56,8 @@ main() {
     trap 'trap_exit' EXIT
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
 
-    # Show landig page
-    print_header
-    gum_white 'Please make sure you have:' && echo
-    gum_white '• Backed up your important data'
-    gum_white '• A stable internet connection'
-    gum_white '• Secure Boot disabled'
-    gum_white '• Boot Mode set to UEFI'
-    echo # Newline
-
-    gum_title "Operation Mode"
-    local options user_input
-    options=("Installer | Install a new Arch OS system" "Recovery  | Restore an existing Arch OS system")
-    #gum_confirm --affirmative="Installer" --negative="Recovery" "Select Operation Mode" || exit
-    user_input=$(gum_choose --header "" "${options[@]}") || exit 130
-    [ -z "$user_input" ] && return 1
-    [[ "$user_input" = "Exit"* ]] && exit 130
-    [[ "$user_input" = "Recovery"* ]] && {
+    # Start recovery
+    [[ "$1" = "--recovery"* ]] && {
         start_recovery
         exit $? # Exit after recovery
     }
@@ -82,8 +67,13 @@ main() {
     # Loop properties step to update screen if user edit properties
     while (true); do
 
-        print_header # Show welcome screen
-        gum_title "Properties"
+        print_header # Show landig page
+        gum_white 'Please make sure you have:' && echo
+        gum_white '• Backed up your important data'
+        gum_white '• A stable internet connection'
+        gum_white '• Secure Boot disabled'
+        gum_white '• Boot Mode set to UEFI'
+        echo && gum_title "Properties"
 
         # Ask for load & remove existing config file
         if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
@@ -119,8 +109,7 @@ main() {
         until select_enable_manager; do :; done
 
         # Print success
-        echo && gum_title "Setup"
-        gum_info "Properties successfully initialized"
+        echo && gum_green --bold "Properties successfully initialized"
 
         # Open Advanced Properties?
         if gum_confirm --negative="Skip" "Open Advanced Properties?"; then
@@ -545,7 +534,7 @@ select_enable_encryption() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_ENCRYPTION_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_property "Encryption" "$ARCH_OS_ENCRYPTION_ENABLED"
+    gum_property "Disk Encryption" "$ARCH_OS_ENCRYPTION_ENABLED"
     return 0
 }
 
