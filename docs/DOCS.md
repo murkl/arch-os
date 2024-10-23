@@ -426,7 +426,14 @@ paru -Scc
 
 ### Rescue & Recovery
 
-If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and follow these instructions.
+If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and start the included recovery mode:
+
+```
+curl -Ls bit.ly/arch-os > installer.sh
+bash installer.sh --recovery
+```
+
+or follow these instructions to do this manually.
 
 #### 1. Disk Information
 

@@ -1,21 +1,23 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1090
 
-############################################################
-#  ARCH OS INSTALLER | Automated Arch Linux Installer TUI  #
-############################################################
+#########################################################
+# ARCH OS INSTALLER | Automated Arch Linux Installer TUI
+#########################################################
+
 # SOURCE:   https://github.com/murkl/arch-os
 # AUTOR:    murkl
 # ORIGIN:   Germany
 # LICENCE:  GPL 2.0
 
-: "${DEBUG:=false}" # DEBUG=true ./installer.sh
-: "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
-
 # CONFIG
 set -o pipefail # A pipeline error results in the error status of the entire pipeline
 set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
+
+# ENVIRONMENT
+: "${DEBUG:=false}" # DEBUG=true ./installer.sh
+: "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
 VERSION='1.7.0'
