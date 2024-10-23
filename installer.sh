@@ -1,18 +1,16 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1090
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-#                                          ARCH OS INSTALLER
-#                                - Automated Arch Linux Installer TUI -
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
+############################################################
+#  ARCH OS INSTALLER | Automated Arch Linux Installer TUI  #
+############################################################
 # SOURCE:   https://github.com/murkl/arch-os
 # AUTOR:    murkl
 # ORIGIN:   Germany
 # LICENCE:  GPL 2.0
 
-# Custom gum:       GUM=/usr/bin/gum ./installer.sh
-# Debug simulator:  MODE=debug ./installer.sh
+: "${DEBUG:=false}" # DEBUG=true ./installer.sh
+: "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
 
 # CONFIG
 set -o pipefail # A pipeline error results in the error status of the entire pipeline
@@ -180,7 +178,7 @@ main() {
     log_info "$finish_txt"
 
     # Copy installer files to users home
-    if [ "$MODE" != "debug" ]; then
+    if [ "$DEBUG" = "false" ]; then
         cp -f "$SCRIPT_CONFIG" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
         cp -f "$SCRIPT_LOG" "/mnt/home/${ARCH_OS_USERNAME}/installer.log"
         arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.conf"
@@ -202,21 +200,21 @@ main() {
     # Unmount
     [ "$do_reboot" = "false" ] && gum_confirm "Unmount Arch OS from /mnt?" && do_unmount="true"
     [ "$do_unmount" = "true" ] && gum_warn "Unmounting Arch OS from /mnt..."
-    if [ "$MODE" != "debug" ] && [ "$do_unmount" = "true" ]; then
+    if [ "$DEBUG" = "false" ] && [ "$do_unmount" = "true" ]; then
         swapoff -a
         umount -A -R /mnt
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
     fi
 
     # Do reboot
-    [ "$do_reboot" = "true" ] && gum_warn "Rebooting to Arch OS..." && [ "$MODE" != "debug" ] && reboot
+    [ "$do_reboot" = "true" ] && gum_warn "Rebooting to Arch OS..." && [ "$DEBUG" = "false" ] && reboot
 
     # Chroot
     [ "$do_unmount" = "false" ] && gum_confirm "Chroot to new Arch OS?" && do_chroot="true"
     if [ "$do_chroot" = "true" ] && gum_warn "Chrooting Arch OS at /mnt..."; then
         gum_warn "!! YOUR ARE NOW ON YOUR NEW ARCH OS SYSTEM !!"
         gum_warn ">> Leave with command 'exit'"
-        [ "$MODE" != "debug" ] && arch-chroot /mnt </dev/tty
+        [ "$DEBUG" = "false" ] && arch-chroot /mnt </dev/tty
         wait # Wait for subprocesses
         gum_warn "Please reboot manually..."
     fi
@@ -762,7 +760,7 @@ exec_init_installation() {
     local process_name="Initialize Installation"
     process_init "$process_name"
     (
-        [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+        [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
         # Check installation prerequisites
         [ ! -d /sys/firmware/efi ] && log_fail "BIOS not supported! Please set your boot mode to UEFI." && exit 1
         log_info "UEFI detected"
@@ -800,7 +798,7 @@ exec_prepare_disk() {
     local process_name="Prepare Disk"
     process_init "$process_name"
     (
-        [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+        [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
 
         # Wipe and create partitions
         wipefs -af "$ARCH_OS_DISK"                                        # Remove All Filesystem Signatures
@@ -840,7 +838,7 @@ exec_pacstrap_core() {
     local process_name="Pacstrap Arch OS Core"
     process_init "$process_name"
     (
-        [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+        [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
 
         # Core packages
         local packages=("$ARCH_OS_KERNEL" base sudo linux-firmware zram-generator networkmanager)
@@ -998,7 +996,7 @@ exec_install_desktop() {
     if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
 
             # GNOME base packages
             local packages=(gnome git)
@@ -1256,7 +1254,7 @@ exec_install_graphics_driver() {
     if [ -n "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] && [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" != "none" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
             case "${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}" in
             "mesa") # https://wiki.archlinux.org/title/OpenGL#Installation
                 local packages=(mesa mesa-utils vkd3d)
@@ -1332,7 +1330,7 @@ exec_enable_multilib() {
     if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
             sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
             arch-chroot /mnt pacman -Syyu --noconfirm
             process_return 0
@@ -1348,7 +1346,7 @@ exec_install_bootsplash() {
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                       # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                                       # If debug mode then return
             chroot_pacman_install plymouth git base-devel                                              # Install packages
             sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf # Configure mkinitcpio
             chroot_aur_install plymouth-theme-arch-os                                                  # Install Arch OS plymouth theme from AUR
@@ -1366,7 +1364,7 @@ exec_install_aur_helper() {
     if [ -n "$ARCH_OS_AUR_HELPER" ] && [ "$ARCH_OS_AUR_HELPER" != "none" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
             chroot_pacman_install git base-devel                 # Install packages
             chroot_aur_install "$ARCH_OS_AUR_HELPER"             # Install AUR helper
             # Paru config
@@ -1387,7 +1385,7 @@ exec_install_housekeeping() {
     if [ "$ARCH_OS_HOUSEKEEPING_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                            # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                            # If debug mode then return
             chroot_pacman_install pacman-contrib reflector pkgfile smartmontools irqbalance # Install Base packages
             {                                                                               # Configure reflector service
                 echo "# Reflector config for the systemd service"
@@ -1417,7 +1415,7 @@ exec_install_archos_manager() {
     if [ "$ARCH_OS_MANAGER_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                    # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                    # If debug mode then return
             chroot_pacman_install git base-devel kitty gum libnotify pacman-contrib # Install dependencies
             chroot_aur_install arch-os-manager                                      # Install archos-manager
             process_return 0                                                        # Return
@@ -1433,7 +1431,7 @@ exec_install_shell_enhancement() {
     if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                     # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                                     # If debug mode then return
             chroot_pacman_install starship eza bat fastfetch mc btop nano man-db bash-completion     # Install packages
             mkdir -p "/mnt/root/.config/fastfetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/fastfetch" # Create fastfetch config dirs
 
@@ -1694,7 +1692,7 @@ exec_install_vm_support() {
     if [ "$ARCH_OS_VM_SUPPORT_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
             case $(systemd-detect-virt || true) in
             kvm)
                 log_info "KVM detected"
@@ -1734,7 +1732,7 @@ exec_cleanup_installation() {
     local process_name="Cleanup Installation"
     process_init "$process_name"
     (
-        [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                                  # If debug mode then return
+        [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                                                  # If debug mode then return
         arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"         # Set correct home permissions
         arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true' # Remove orphans and force return true
         process_return 0                                                                                      # Return
@@ -1900,7 +1898,7 @@ print_header() {
 ███████ ██████  ██      ███████     ██    ██ ███████ 
 ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
 ██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
-    local header_version="${VERSION}" && [ -n "${MODE}" ] && header_version="${VERSION} (${MODE})"
+    local header_version="${VERSION}" && [ "$DEBUG" = "true" ] && header_version="${VERSION}-debug"
     gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${header_version}"
 }
 
@@ -1926,8 +1924,12 @@ gum_init() {
 }
 
 gum() {
-    [ -n "$GUM" ] && [ ! -x "$GUM" ] && echo "Error: GUM='${GUM}' is not found or executable" >&2 && exit 1
-    if [ -n "$GUM" ]; then "$GUM" "$@"; else ./gum "$@"; fi # Force open $GUM if env variable is set
+    if [ -n "$GUM" ] && [ -x "$GUM" ]; then
+        "$GUM" "$@"
+    else
+        echo "Error: GUM='${GUM}' is not found or executable" >&2
+        exit 1
+    fi
 }
 
 trap_gum_exit() { exit 130; }
