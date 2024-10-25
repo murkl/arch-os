@@ -8,15 +8,11 @@
 
 1. [Recommendation](#recommendation)
 2. [Advanced Installation](#advanced-installation)
-3. [Housekeeping](#housekeeping)
-4. [Core Tweaks](#core-tweaks)
-5. [Shell Enhancement](#shell-enhancement)
-6. [Arch OS Manager](#arch-os-manager)
-7. [Technical Information](#technical-information)
-8. [Troubleshooting](#troubleshooting)
-9. [Development](#development)
-10. [Screenshots](#screenshots)
-11. [Credits](#credits)
+3. [Features](#features)
+4. [Technical Information](#technical-information)
+5. [Troubleshooting](#troubleshooting)
+6. [Development](#development)
+7. [Screenshots](#screenshots)
 
 ## Recommendation
 
@@ -209,10 +205,13 @@ ARCH_OS_DESKTOP_KEYBOARD_VARIANT='nodeadkeys' # X11 keyboard variant | Default: 
 ARCH_OS_SAMBA_SHARE_ENABLED='true' # Enable Samba public (anonymous) & home share (user) | Disable: false
 ARCH_OS_VM_SUPPORT_ENABLED='true' # VM Support | Default: true | Disable: false
 ARCH_OS_ECN_ENABLED='true' # Disable ECN support for legacy routers | Default: true | Disable: false
-ARCH_OS_WALLPAPER_ENABLED='true' # Enable Arch OS Wallpaper | Default: true | Disable: false
 ```
 
-## Core Tweaks
+## Features
+
+Each feature can be activated/deactivated during installation. Further information can be found in the individual feature headings.
+
+### Core Tweaks
 
 Enable this feature with `ARCH_OS_CORE_TWEAKS_ENABLED='true'`:
 
@@ -226,7 +225,7 @@ Enable this feature with `ARCH_OS_CORE_TWEAKS_ENABLED='true'`:
 
 Disable this featuree with `ARCH_OS_CORE_TWEAKS_ENABLED='false'`
 
-## Housekeeping
+### Housekeeping
 
 This feature will install and configure:
 
@@ -240,7 +239,7 @@ This feature will install and configure:
 
 Disable this feature with `ARCH_OS_HOUSEKEEPING_ENABLED='false'`
 
-## Shell Enhancement
+### Shell Enhancement
 
 <p><img src="screenshots/fastfetch.png"></p>
 
@@ -257,7 +256,7 @@ fish starship eza bat fastfetch mc btop nano man-db bash-completion
 - `nano` is set as default editor
 - `fastfetch` is preconfigured as system info
 
-### Useful Terminal commands
+#### Useful Terminal commands
 
 - `fetch` show system info
 - `btop` show system manager
@@ -272,7 +271,7 @@ fish starship eza bat fastfetch mc btop nano man-db bash-completion
 
 **Note:** See `~/.aliases` for all command aliases
 
-### Useful Terminal keyboard shortcuts
+#### Useful Terminal keyboard shortcuts
 
 - Use `Tab` to autocomplete command
 - Use `Arrows` to navigate
@@ -280,7 +279,7 @@ fish starship eza bat fastfetch mc btop nano man-db bash-completion
 - Use `Alt + s` to run previous command as `sudo` (Bash: `sudo !!`)
 - Use `Alt + .` to paste the last parameter from previous command (Bash: `ESC .`)
 
-### Configuration
+#### Configuration
 
 ```
 # Aliases
@@ -305,7 +304,7 @@ fish_config
 ~/.config/btop/btop.conf
 ```
 
-## Arch OS Manager
+### Arch OS Manager
 
 **GitHub Project ➜ [github.com/murkl/arch-os-manager](https://github.com/murkl/arch-os-manager)**
 
@@ -427,7 +426,14 @@ paru -Scc
 
 ### Rescue & Recovery
 
-If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and follow these instructions.
+If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and start the included recovery mode:
+
+```
+curl -Ls bit.ly/arch-os > installer.sh
+bash installer.sh --recovery
+```
+
+or follow these instructions to do this manually.
 
 #### 1. Disk Information
 
@@ -515,5 +521,3 @@ Many thanks for these projects and the people behind them!
 - Arch Linux
 - GNOME
 - Gum by charm
-- Wallpaper light: Mountain Lake by Agustin Gaute
-- Wallpaper dark: Pxhere Photo 344

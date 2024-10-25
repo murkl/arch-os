@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1090
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-#                                          ARCH OS INSTALLER
-#                                - Automated Arch Linux Installer TUI -
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+#########################################################
+# ARCH OS INSTALLER | Automated Arch Linux Installer TUI
+#########################################################
 
 # SOURCE:   https://github.com/murkl/arch-os
 # AUTOR:    murkl
 # ORIGIN:   Germany
 # LICENCE:  GPL 2.0
 
-# Custom gum:       GUM=/usr/bin/gum ./installer.sh
-# Debug simulator:  MODE=debug ./installer.sh
-
 # CONFIG
 set -o pipefail # A pipeline error results in the error status of the entire pipeline
 set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
+# ENVIRONMENT
+: "${DEBUG:=false}" # DEBUG=true ./installer.sh
+: "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
+
 # SCRIPT
-VERSION='1.6.9'
+VERSION='1.7.0'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -58,14 +58,10 @@ main() {
     trap 'trap_exit' EXIT
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
 
-    # Operation mode
-    print_header
-    gum_title "Operation Mode"
-    gum_white '• Installer: New Arch OS will be installed'
-    gum_white '• Recovery:  Existing Arch OS will be restored'
-    gum_confirm --affirmative="Installer" --negative="Recovery" "Select Operation Mode" || {
-        start_recovery # Open recovery
-        exit $?        # Exit after recovery
+    # Start recovery
+    [[ "$1" = "--recovery"* ]] && {
+        start_recovery
+        exit $? # Exit after recovery
     }
 
     # ---------------------------------------------------------------------------------------------------
@@ -73,14 +69,13 @@ main() {
     # Loop properties step to update screen if user edit properties
     while (true); do
 
-        print_header # Show welcome screen
+        print_header # Show landig page
         gum_white 'Please make sure you have:' && echo
         gum_white '• Backed up your important data'
         gum_white '• A stable internet connection'
         gum_white '• Secure Boot disabled'
         gum_white '• Boot Mode set to UEFI'
-
-        echo && gum_title "Preset"
+        echo && gum_title "Properties"
 
         # Ask for load & remove existing config file
         if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
@@ -94,13 +89,18 @@ main() {
         until properties_preset_source; do :; done
 
         # Selectors
-        echo && gum_title "Properties"
+        echo && gum_title "Core"
         until select_username; do :; done
         until select_password; do :; done
         until select_timezone; do :; done
         until select_language; do :; done
         until select_keyboard; do :; done
         until select_disk; do :; done
+        echo && gum_title "Desktop"
+        until select_enable_desktop_environment; do :; done
+        until select_enable_desktop_driver; do :; done
+        until select_enable_desktop_slim; do :; done
+        until select_enable_desktop_keyboard; do :; done
         echo && gum_title "Features"
         until select_enable_encryption; do :; done
         until select_enable_core_tweaks; do :; done
@@ -110,20 +110,14 @@ main() {
         until select_enable_housekeeping; do :; done
         until select_enable_shell_enhancement; do :; done
         until select_enable_manager; do :; done
-        echo && gum_title "Desktop"
-        until select_enable_desktop_environment; do :; done
-        until select_enable_desktop_driver; do :; done
-        until select_enable_desktop_slim; do :; done
-        until select_enable_desktop_keyboard; do :; done
 
         # Print success
-        echo && gum_title "Arch OS Setup"
-        gum_info "Properties successfully initialized"
+        echo && gum_info "Properties successfully initialized"
 
-        # Open Advanced Config?
-        if gum_confirm --negative="Skip" "Open Advanced Config?"; then
+        # Open Advanced Properties?
+        if gum_confirm --negative="Skip" "Open Advanced Properties?"; then
             local header_txt="• Save with CTRL + D or ESC and cancel with CTRL + C"
-            if gum_write --show-line-numbers --prompt "> " --height=10 --width=100 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
+            if gum_write --show-line-numbers --prompt "> " --height=10 --width=180 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
                 gum_info "Properties successfully saved"
                 gum_confirm "Change Password?" && until select_password --change && properties_source; do :; done
@@ -176,7 +170,7 @@ main() {
     log_info "$finish_txt"
 
     # Copy installer files to users home
-    if [ "$MODE" != "debug" ]; then
+    if [ "$DEBUG" = "false" ]; then
         cp -f "$SCRIPT_CONFIG" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
         cp -f "$SCRIPT_LOG" "/mnt/home/${ARCH_OS_USERNAME}/installer.log"
         arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.conf"
@@ -198,21 +192,21 @@ main() {
     # Unmount
     [ "$do_reboot" = "false" ] && gum_confirm "Unmount Arch OS from /mnt?" && do_unmount="true"
     [ "$do_unmount" = "true" ] && gum_warn "Unmounting Arch OS from /mnt..."
-    if [ "$MODE" != "debug" ] && [ "$do_unmount" = "true" ]; then
+    if [ "$DEBUG" = "false" ] && [ "$do_unmount" = "true" ]; then
         swapoff -a
         umount -A -R /mnt
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
     fi
 
     # Do reboot
-    [ "$do_reboot" = "true" ] && gum_warn "Rebooting to Arch OS..." && [ "$MODE" != "debug" ] && reboot
+    [ "$do_reboot" = "true" ] && gum_warn "Rebooting to Arch OS..." && [ "$DEBUG" = "false" ] && reboot
 
     # Chroot
     [ "$do_unmount" = "false" ] && gum_confirm "Chroot to new Arch OS?" && do_chroot="true"
     if [ "$do_chroot" = "true" ] && gum_warn "Chrooting Arch OS at /mnt..."; then
         gum_warn "!! YOUR ARE NOW ON YOUR NEW ARCH OS SYSTEM !!"
         gum_warn ">> Leave with command 'exit'"
-        [ "$MODE" != "debug" ] && arch-chroot /mnt </dev/tty
+        [ "$DEBUG" = "false" ] && arch-chroot /mnt </dev/tty
         wait # Wait for subprocesses
         gum_warn "Please reboot manually..."
     fi
@@ -228,7 +222,7 @@ main() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 start_recovery() {
-    print_header && gum_title "Recovery Mode"
+    print_header
     local recovery_boot_partition recovery_root_partition user_input items options
     local recovery_mount_dir="/mnt/recovery"
     local recovery_crypt_label="cryptrecovery"
@@ -245,10 +239,11 @@ start_recovery() {
     mapfile -t items < <(lsblk -I 8,259,254 -d -o KNAME,SIZE -n)
     # size: $(lsblk -d -n -o SIZE "/dev/${item}")
     options=() && for item in "${items[@]}"; do options+=("/dev/${item}"); done
-    user_input=$(gum_choose --header "+ Choose Disk" "${options[@]}") || exit 130
-    [ -z "$user_input" ] && return 1                          # Check if new value is null
-    user_input=$(echo "$user_input" | awk -F' ' '{print $1}') # Remove size from input
-    [ ! -e "$user_input" ] && log_fail "Disk does not exists" && return 1
+    user_input=$(gum_choose --header "+ Select Arch OS Recovery Disk" "${options[@]}") || exit 130
+    gum_title "Arch OS Recovery"
+    [ -z "$user_input" ] && log_fail "Disk is empty" && exit 1 # Check if new value is null
+    user_input=$(echo "$user_input" | awk -F' ' '{print $1}')  # Remove size from input
+    [ ! -e "$user_input" ] && log_fail "Disk does not exists" && exit 130
 
     [[ "$user_input" = "/dev/nvm"* ]] && recovery_boot_partition="${user_input}p1" || recovery_boot_partition="${user_input}1"
     [[ "$user_input" = "/dev/nvm"* ]] && recovery_root_partition="${user_input}p2" || recovery_root_partition="${user_input}2"
@@ -263,14 +258,14 @@ start_recovery() {
     fi
 
     # Check archiso
-    [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && gum_fail "You must execute the Recovery from Arch ISO!" && exit 1
+    [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && gum_fail "You must execute the Recovery from Arch ISO!" && exit 130
 
     # Make sure everything is unmounted
     recovery_unmount
 
     # Create mount dir
-    mkdir -p "$recovery_mount_dir" || exit 1
-    mkdir -p "$recovery_mount_dir/boot" || exit 1
+    mkdir -p "$recovery_mount_dir"
+    mkdir -p "$recovery_mount_dir/boot"
 
     # Mount disk
     if [ "$recovery_encryption_enabled" = "true" ]; then
@@ -285,21 +280,20 @@ start_recovery() {
         }
 
         # Mount encrypted disk
-        mount "/dev/mapper/${recovery_crypt_label}" "$recovery_mount_dir" || exit 1
-        mount "$recovery_boot_partition" "$recovery_mount_dir/boot" || exit 1
+        mount "/dev/mapper/${recovery_crypt_label}" "$recovery_mount_dir"
+        mount "$recovery_boot_partition" "$recovery_mount_dir/boot"
     else
         # Mount unencrypted disk
-        mount "$recovery_root_partition" "$recovery_mount_dir" || exit 1
-        mount "$recovery_boot_partition" "$recovery_mount_dir/boot" || exit 1
+        mount "$recovery_root_partition" "$recovery_mount_dir"
+        mount "$recovery_boot_partition" "$recovery_mount_dir/boot"
     fi
 
     # Chroot
     gum_green "!! YOUR ARE NOW ON YOUR RECOVERY SYSTEM !!"
-    gum_yellow ">> Leave with command 'exit'" && echo
-    arch-chroot "$recovery_mount_dir" </dev/tty || exit 1
+    gum_yellow ">> Leave with command 'exit'"
+    arch-chroot "$recovery_mount_dir" </dev/tty
     wait && recovery_unmount
     gum_green ">> Exit Recovery"
-    exit 0
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -348,7 +342,6 @@ properties_generate() {
         echo "ARCH_OS_SAMBA_SHARE_ENABLED='${ARCH_OS_SAMBA_SHARE_ENABLED}'"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
         echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
-        echo "ARCH_OS_WALLPAPER_ENABLED='${ARCH_OS_WALLPAPER_ENABLED}'"
     } >"$SCRIPT_CONFIG" # Write properties to file
 }
 
@@ -363,7 +356,6 @@ properties_preset_source() {
     [ -z "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" ] && ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED="true"
     [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
     [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
-    [ -z "$ARCH_OS_WALLPAPER_ENABLED" ] && ARCH_OS_WALLPAPER_ENABLED="true"
 
     # Set microcode
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
@@ -371,12 +363,12 @@ properties_preset_source() {
 
     # Load properties or select preset
     if [ -f "$SCRIPT_CONFIG" ]; then
-        properties_source && gum_property "Properties Preset" "installer.conf"
+        properties_source && gum_property "Preset" "installer.conf"
     else
         # Select preset
         local preset options
         options=("desk | GNOME Desktop Environment (default)" "core | Minimal Arch Linux TTY Environment" "none | No pre-selection")
-        preset=$(gum_choose --header "" "${options[@]}") || trap_gum_exit_confirm
+        preset=$(gum_choose --header "+ Choose Preset" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$preset" ] && return 1 # Check if new value is null
         preset="$(echo "$preset" | awk '{print $1}')"
 
@@ -405,7 +397,7 @@ properties_preset_source() {
         fi
 
         # Write properties
-        properties_generate && gum_property "Properties Preset" "$preset"
+        properties_generate && gum_property "Preset" "$preset"
     fi
     return 0
 }
@@ -545,7 +537,7 @@ select_enable_encryption() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_ENCRYPTION_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_property "Encryption" "$ARCH_OS_ENCRYPTION_ENABLED"
+    gum_property "Disk Encryption" "$ARCH_OS_ENCRYPTION_ENABLED"
     return 0
 }
 
@@ -592,7 +584,7 @@ select_enable_bootsplash() {
 select_enable_desktop_environment() {
     if [ -z "$ARCH_OS_DESKTOP_ENABLED" ]; then
         local user_input
-        gum_confirm "Enable Desktop Environment?"
+        gum_confirm "Enable GNOME Desktop Environment?"
         local user_confirm=$?
         [ $user_confirm = 130 ] && {
             trap_gum_exit_confirm
@@ -760,7 +752,7 @@ exec_init_installation() {
     local process_name="Initialize Installation"
     process_init "$process_name"
     (
-        [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+        [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
         # Check installation prerequisites
         [ ! -d /sys/firmware/efi ] && log_fail "BIOS not supported! Please set your boot mode to UEFI." && exit 1
         log_info "UEFI detected"
@@ -798,7 +790,7 @@ exec_prepare_disk() {
     local process_name="Prepare Disk"
     process_init "$process_name"
     (
-        [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+        [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
 
         # Wipe and create partitions
         wipefs -af "$ARCH_OS_DISK"                                        # Remove All Filesystem Signatures
@@ -838,7 +830,7 @@ exec_pacstrap_core() {
     local process_name="Pacstrap Arch OS Core"
     process_init "$process_name"
     (
-        [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+        [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
 
         # Core packages
         local packages=("$ARCH_OS_KERNEL" base sudo linux-firmware zram-generator networkmanager)
@@ -992,11 +984,11 @@ exec_pacstrap_core() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_desktop() {
-    local process_name="Install Desktop Environment"
+    local process_name="GNOME Desktop"
     if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
 
             # GNOME base packages
             local packages=(gnome git)
@@ -1240,22 +1232,6 @@ exec_install_desktop() {
             # Set correct permissions
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
 
-            # Download & set wallpaper (skip if failed)
-            if [ "$ARCH_OS_WALLPAPER_ENABLED" = "true" ]; then
-                local wallpaper_light_url="https://raw.githubusercontent.com/murkl/arch-os/refs/heads/dev/docs/wallpaper/adwaita_light.jxl"
-                local wallpaper_dark_url="https://raw.githubusercontent.com/murkl/arch-os/refs/heads/dev/docs/wallpaper/adwaita_dark.jxl"
-                if curl -Lf "$wallpaper_dark_url" >"${SCRIPT_TMP_DIR}/adwaita_dark.jxl"; then
-                    cp -f "${SCRIPT_TMP_DIR}/adwaita_dark.jxl" /mnt/usr/share/backgrounds/gnome/adwaita-d.jxl
-                else
-                    echo "ERROR: Downloading wallpaper (dark) from ${WALLPAPER_URL}" >&2
-                fi
-                if curl -Lf "$wallpaper_light_url" >"${SCRIPT_TMP_DIR}/adwaita_light.jxl"; then
-                    cp -f "${SCRIPT_TMP_DIR}/adwaita_light.jxl" /mnt/usr/share/backgrounds/gnome/adwaita-l.jxl
-                else
-                    echo "ERROR: Downloading wallpaper (light) from ${WALLPAPER_URL}" >&2
-                fi
-            fi
-
             # Return
             process_return 0
         ) &>"$PROCESS_LOG" &
@@ -1266,11 +1242,11 @@ exec_install_desktop() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_graphics_driver() {
-    local process_name="Install Desktop Driver"
+    local process_name="Desktop Driver"
     if [ -n "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] && [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" != "none" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
             case "${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}" in
             "mesa") # https://wiki.archlinux.org/title/OpenGL#Installation
                 local packages=(mesa mesa-utils vkd3d)
@@ -1346,7 +1322,7 @@ exec_enable_multilib() {
     if [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
             sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
             arch-chroot /mnt pacman -Syyu --noconfirm
             process_return 0
@@ -1358,11 +1334,11 @@ exec_enable_multilib() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_bootsplash() {
-    local process_name="Install Bootsplash"
+    local process_name="Bootsplash"
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                       # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                                       # If debug mode then return
             chroot_pacman_install plymouth git base-devel                                              # Install packages
             sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf # Configure mkinitcpio
             chroot_aur_install plymouth-theme-arch-os                                                  # Install Arch OS plymouth theme from AUR
@@ -1376,11 +1352,11 @@ exec_install_bootsplash() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_aur_helper() {
-    local process_name="Install AUR Helper"
+    local process_name="AUR Helper"
     if [ -n "$ARCH_OS_AUR_HELPER" ] && [ "$ARCH_OS_AUR_HELPER" != "none" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
             chroot_pacman_install git base-devel                 # Install packages
             chroot_aur_install "$ARCH_OS_AUR_HELPER"             # Install AUR helper
             # Paru config
@@ -1397,11 +1373,11 @@ exec_install_aur_helper() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_housekeeping() {
-    local process_name="Install Housekeeping"
+    local process_name="Housekeeping"
     if [ "$ARCH_OS_HOUSEKEEPING_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                            # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                            # If debug mode then return
             chroot_pacman_install pacman-contrib reflector pkgfile smartmontools irqbalance # Install Base packages
             {                                                                               # Configure reflector service
                 echo "# Reflector config for the systemd service"
@@ -1427,11 +1403,11 @@ exec_install_housekeeping() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_archos_manager() {
-    local process_name="Install Arch OS Manager"
+    local process_name="Arch OS Manager"
     if [ "$ARCH_OS_MANAGER_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                    # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                    # If debug mode then return
             chroot_pacman_install git base-devel kitty gum libnotify pacman-contrib # Install dependencies
             chroot_aur_install arch-os-manager                                      # Install archos-manager
             process_return 0                                                        # Return
@@ -1443,11 +1419,11 @@ exec_install_archos_manager() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_shell_enhancement() {
-    local process_name="Install Shell Enhancement"
+    local process_name="Shell Enhancement"
     if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                     # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                                     # If debug mode then return
             chroot_pacman_install starship eza bat fastfetch mc btop nano man-db bash-completion     # Install packages
             mkdir -p "/mnt/root/.config/fastfetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/fastfetch" # Create fastfetch config dirs
 
@@ -1704,11 +1680,11 @@ exec_install_shell_enhancement() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_vm_support() {
-    local process_name="Install VM Support"
+    local process_name="VM Support"
     if [ "$ARCH_OS_VM_SUPPORT_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$MODE" = "debug" ] && sleep 1 && process_return 0 # If debug mode then return
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
             case $(systemd-detect-virt || true) in
             kvm)
                 log_info "KVM detected"
@@ -1748,7 +1724,7 @@ exec_cleanup_installation() {
     local process_name="Cleanup Installation"
     process_init "$process_name"
     (
-        [ "$MODE" = "debug" ] && sleep 1 && process_return 0                                                  # If debug mode then return
+        [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                                                  # If debug mode then return
         arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"         # Set correct home permissions
         arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true' # Remove orphans and force return true
         process_return 0                                                                                      # Return
@@ -1914,7 +1890,7 @@ print_header() {
 ███████ ██████  ██      ███████     ██    ██ ███████ 
 ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
 ██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
-    local header_version="${VERSION}" && [ -n "${MODE}" ] && header_version="${VERSION} (${MODE})"
+    local header_version="${VERSION}" && [ "$DEBUG" = "true" ] && header_version="${VERSION}-debug"
     gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${header_version}"
 }
 
@@ -1940,8 +1916,12 @@ gum_init() {
 }
 
 gum() {
-    [ -n "$GUM" ] && [ ! -x "$GUM" ] && echo "Error: GUM='${GUM}' is not found or executable" >&2 && exit 1
-    if [ -n "$GUM" ]; then "$GUM" "$@"; else ./gum "$@"; fi # Force open $GUM if env variable is set
+    if [ -n "$GUM" ] && [ -x "$GUM" ]; then
+        "$GUM" "$@"
+    else
+        echo "Error: GUM='${GUM}' is not found or executable" >&2
+        exit 1
+    fi
 }
 
 trap_gum_exit() { exit 130; }
@@ -1974,8 +1954,8 @@ gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to f
 gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
 
 # Gum key & value
-gum_proc() { log_proc "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white --bold "$(print_filled_space 27 "${1}")")" "$(gum_white "  >  ")" "$(gum_green "${2}")"; }
-gum_property() { log_prop "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 27 "${1}")")" "$(gum_green --bold "  >  ")" "$(gum_white --bold "${2}")"; }
+gum_proc() { log_proc "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white --bold "$(print_filled_space 24 "${1}")")" "$(gum_white "  >  ")" "$(gum_green "${2}")"; }
+gum_property() { log_prop "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 24 "${1}")")" "$(gum_green --bold "  >  ")" "$(gum_white --bold "${2}")"; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # LOGGING WRAPPER
