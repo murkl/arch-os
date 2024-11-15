@@ -1190,6 +1190,25 @@ exec_install_desktop() {
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user gcr-ssh-agent.socket   # GCR ssh-agent
 
+            # TODO:
+            # Note: systemctl enable --user doesn't work via arch-chroot, performing manual creation of symlinks
+            # systemctl enable --user --now pipewire.service
+            # systemctl enable --user --now pipewire-pulse.service
+            arch-chroot -u "$ARCH_OS_USERNAME" /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants"
+            arch-chroot -u "$ARCH_OS_USERNAME" /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants"
+
+            arch-chroot -u "$ARCH_OS_USERNAME" /mnt ln -s "/usr/lib/systemd/user/pipewire.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants/pipewire.service"
+            arch-chroot -u "$ARCH_OS_USERNAME" /mnt ln -s "/usr/lib/systemd/user/pipewire.socket /home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/pipewire.socket"
+
+            arch-chroot -u "$ARCH_OS_USERNAME" /mnt ln -s "/usr/lib/systemd/user/pipewire-pulse.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants/pipewire-pulse.service"
+            arch-chroot -u "$ARCH_OS_USERNAME" /mnt ln -s "/usr/lib/systemd/user/pipewire-pulse.socket /home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/pipewire-pulse.socket"
+
+            # systemctl enable --user --now wireplumber.service
+            arch-chroot -u "$ARCH_OS_USERNAME" /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire.service.wants"
+
+            arch-chroot -u "$ARCH_OS_USERNAME" /mnt ln -s "/usr/lib/systemd/user/wireplumber.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire-session-manager.service"
+            arch-chroot -u "$ARCH_OS_USERNAME" /mnt ln -s "/usr/lib/systemd/user/wireplumber.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire.service.wants/wireplumber.service"
+
             # Extra services
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
                 arch-chroot /mnt systemctl enable power-profiles-daemon # Power daemon
