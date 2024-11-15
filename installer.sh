@@ -148,14 +148,14 @@ main() {
     exec_prepare_disk
     exec_pacstrap_core
     exec_enable_multilib
-    exec_install_bootsplash
     exec_install_aur_helper
-    exec_install_housekeeping
-    exec_install_shell_enhancement
+    exec_install_bootsplash
     exec_install_desktop
     exec_install_graphics_driver
-    exec_install_archos_manager
     exec_install_vm_support
+    exec_install_shell_enhancement
+    exec_install_housekeeping
+    exec_install_archos_manager
     exec_cleanup_installation
 
     # Calc installation duration
