@@ -148,14 +148,14 @@ main() {
     exec_prepare_disk
     exec_pacstrap_core
     exec_enable_multilib
-    exec_install_aur_helper
     exec_install_bootsplash
+    exec_install_aur_helper
+    exec_install_housekeeping
+    exec_install_shell_enhancement
     exec_install_desktop
     exec_install_graphics_driver
-    exec_install_vm_support
-    exec_install_shell_enhancement
-    exec_install_housekeeping
     exec_install_archos_manager
+    exec_install_vm_support
     exec_cleanup_installation
 
     # Calc installation duration
@@ -1757,7 +1757,8 @@ chroot_pacman_install() {
         # Print log if greather than first try
         [ "$i" -gt 1 ] && log_warn "${i}. Retry Pacman installation..."
         # Try installing packages
-        if ! arch-chroot /mnt yes | LC_ALL=en_US.UTF-8 pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
+        if ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
+            arch-chroot /mnt bash -c "yes | LC_ALL=en_US.UTF-8 pacman -S --noconfirm --needed --disable-download-timeout ${packages[*]}"
             sleep 10 && continue # Wait 10 seconds & try again
         else
             pacman_failed="false" && break # Success: break loop
