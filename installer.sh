@@ -10,7 +10,6 @@
 # ORIGIN:   Germany
 # LICENCE:  GPL 2.0
 
-# CONFIG
 set -o pipefail # A pipeline error results in the error status of the entire pipeline
 set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
@@ -20,7 +19,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
-VERSION='1.7.0'
+VERSION='1.7.1'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -378,13 +377,14 @@ properties_preset_source() {
             ARCH_OS_MULTILIB_ENABLED='false'
             ARCH_OS_HOUSEKEEPING_ENABLED='false'
             ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
-            ARCH_OS_AUR_HELPER='none'
+            ARCH_OS_BOOTSPLASH_ENABLED='false'
+            ARCH_OS_MANAGER_ENABLED='false'
             ARCH_OS_DESKTOP_GRAPHICS_DRIVER="none"
+            ARCH_OS_AUR_HELPER='none'
         fi
 
         # Desktop preset
         if [[ $preset == desk* ]]; then
-            ARCH_OS_AUR_HELPER='paru'
             ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
             ARCH_OS_SAMBA_SHARE_ENABLED='true'
             ARCH_OS_CORE_TWEAKS_ENABLED="true"
@@ -394,6 +394,7 @@ properties_preset_source() {
             ARCH_OS_HOUSEKEEPING_ENABLED='true'
             ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
             ARCH_OS_MANAGER_ENABLED='true'
+            ARCH_OS_AUR_HELPER='paru'
         fi
 
         # Write properties
@@ -1184,30 +1185,28 @@ exec_install_desktop() {
             arch-chroot /mnt systemctl enable avahi-daemon      # Network browsing service
             arch-chroot /mnt systemctl enable gpm.service       # TTY Mouse Support
 
-            # User services
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user gcr-ssh-agent.socket   # GCR ssh-agent
+            # User services (Not working: permission denied)
+            #arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
+            #arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
+            #arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
+            #arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user gcr-ssh-agent.socket   # GCR ssh-agent
 
-            # TODO:
-            # Note: systemctl enable --user doesn't work via arch-chroot, performing manual creation of symlinks
-            # systemctl enable --user --now pipewire.service
-            # systemctl enable --user --now pipewire-pulse.service
+            # Workaround: Manual creation of symlinks
             arch-chroot -u "$ARCH_OS_USERNAME" /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants"
-            arch-chroot -u "$ARCH_OS_USERNAME" /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants"
-
             arch-chroot -u "$ARCH_OS_USERNAME" /mnt ln -s "/usr/lib/systemd/user/pipewire.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants/pipewire.service"
-            arch-chroot -u "$ARCH_OS_USERNAME" /mnt ln -s "/usr/lib/systemd/user/pipewire.socket /home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/pipewire.socket"
-
             arch-chroot -u "$ARCH_OS_USERNAME" /mnt ln -s "/usr/lib/systemd/user/pipewire-pulse.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants/pipewire-pulse.service"
+            arch-chroot -u "$ARCH_OS_USERNAME" /mnt chmod +x "/home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants/*"
+
+            arch-chroot -u "$ARCH_OS_USERNAME" /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants"
+            arch-chroot -u "$ARCH_OS_USERNAME" /mnt ln -s "/usr/lib/systemd/user/pipewire.socket /home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/pipewire.socket"
             arch-chroot -u "$ARCH_OS_USERNAME" /mnt ln -s "/usr/lib/systemd/user/pipewire-pulse.socket /home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/pipewire-pulse.socket"
+            arch-chroot -u "$ARCH_OS_USERNAME" /mnt ln -s "/usr/lib/systemd/user/gcr-ssh-agent.socket /home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/gcr-ssh-agent.socket"
+            arch-chroot -u "$ARCH_OS_USERNAME" /mnt chmod +x "/home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/*"
 
-            # systemctl enable --user --now wireplumber.service
             arch-chroot -u "$ARCH_OS_USERNAME" /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire.service.wants"
-
             arch-chroot -u "$ARCH_OS_USERNAME" /mnt ln -s "/usr/lib/systemd/user/wireplumber.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire-session-manager.service"
             arch-chroot -u "$ARCH_OS_USERNAME" /mnt ln -s "/usr/lib/systemd/user/wireplumber.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire.service.wants/wireplumber.service"
+            arch-chroot -u "$ARCH_OS_USERNAME" /mnt chmod +x "/home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire.service.wants/*"
 
             # Extra services
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
