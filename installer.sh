@@ -1030,7 +1030,6 @@ exec_install_desktop() {
                 chroot_pacman_install xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils
 
                 # Audio (Pipewire replacements + session manager): https://wiki.archlinux.org/title/PipeWire#Installation
-                chroot_pacman_remove jack2
                 chroot_pacman_install pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && chroot_pacman_install lib32-pipewire lib32-pipewire-jack
 
