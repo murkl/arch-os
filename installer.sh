@@ -1757,7 +1757,7 @@ chroot_pacman_install() {
         # Print log if greather than first try
         [ "$i" -gt 1 ] && log_warn "${i}. Retry Pacman installation..."
         # Try installing packages
-        if ! arch-chroot /mnt LC_ALL=C yes | pacman -S --needed --disable-download-timeout "${packages[@]}"; then
+        if ! arch-chroot /mnt yes | LC_ALL=en_US.UTF-8 pacman -S --needed --disable-download-timeout "${packages[@]}"; then
             sleep 10 && continue # Wait 10 seconds & try again
         else
             pacman_failed="false" && break # Success: break loop
