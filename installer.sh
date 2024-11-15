@@ -1029,7 +1029,7 @@ exec_install_desktop() {
                 # GNOME wayland screensharing, flatpak & pipewire support
                 chroot_pacman_install xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils
 
-                # Audio (Pipewire replacements + session manager)
+                # Audio (Pipewire replacements + session manager): https://wiki.archlinux.org/title/PipeWire#Installation
                 chroot_pacman_install pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && chroot_pacman_install lib32-pipewire lib32-pipewire-jack
 
@@ -1188,7 +1188,7 @@ exec_install_desktop() {
             #arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
             #arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user gcr-ssh-agent.socket   # GCR ssh-agent
 
-            # Workaround: Manual creation of symlinks
+            # Workaround: Manual creation of user service symlinks
             arch-chroot /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants"
             arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants/pipewire.service"
             arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire-pulse.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants/pipewire-pulse.service"
