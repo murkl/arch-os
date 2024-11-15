@@ -1816,7 +1816,7 @@ chroot_aur_install() {
     [ "$aur_failed" = "false" ] && return 0 # Success
 }
 
-chroot_pacman_remove() { arch-chroot /mnt pacman -Rns --noconfirm "$@" || return 1; }
+chroot_pacman_remove() { arch-chroot /mnt pacman -Rn --noconfirm "$@" || return 1; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # TRAP FUNCTIONS
