@@ -33,22 +33,12 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 <p>
   <strong>Test successful</strong>
   <br>
-  <a target="_blank" href="https://www.archlinux.de/releases/2024.10.01">archlinux-2024.10.01-x86_64.iso</a>
+  <a target="_blank" href="https://www.archlinux.de/releases/2024.11.01">archlinux-2024.11.01-x86_64.iso</a>
   <br>
   <sub>100% shellcheck approved</sub>
 </p>
 
 </div>
-
-## Properties Presets
-
-Select one of these presets (prompted in the installer) to [install](#installing-arch-os) your individual Arch Linux base.
-
-- **`desk`** ➜ GNOME Desktop Environment + Graphics Driver + Extras + Core (default)
-- **`core`** ➜ Minimal Arch Linux TTY Environment (~150 packages in total)
-- **`none`** ➜ All properties are queried (customize)
-
-**Note:** If the `installer.conf` exists in the working dir, all properties are loaded as preset (except the password).
 
 ## Core Features
 
@@ -96,6 +86,16 @@ Select one of these presets (prompted in the installer) to [install](#installing
 - Printer Support (cups)
 - Gamemode preinstalled
 - Firmware Update Tool preinstalled
+
+## Properties Presets
+
+Select one of these presets (prompted in the installer) to [install](#installing-arch-os) your individual Arch Linux base.
+
+- **`desk`** ➜ GNOME Desktop Environment + Graphics Driver + Extras + Core (default)
+- **`core`** ➜ Minimal Arch Linux TTY Environment (~150 packages in total)
+- **`none`** ➜ All properties are queried (customize)
+
+**Note:** If the `installer.conf` exists in the working dir, all properties are loaded as preset (except the password).
 
 ## Installing Arch OS
 

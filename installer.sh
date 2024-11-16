@@ -20,7 +20,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
-VERSION='1.7.0'
+VERSION='1.7.1'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -378,13 +378,14 @@ properties_preset_source() {
             ARCH_OS_MULTILIB_ENABLED='false'
             ARCH_OS_HOUSEKEEPING_ENABLED='false'
             ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
-            ARCH_OS_AUR_HELPER='none'
+            ARCH_OS_BOOTSPLASH_ENABLED='false'
+            ARCH_OS_MANAGER_ENABLED='false'
             ARCH_OS_DESKTOP_GRAPHICS_DRIVER="none"
+            ARCH_OS_AUR_HELPER='none'
         fi
 
         # Desktop preset
         if [[ $preset == desk* ]]; then
-            ARCH_OS_AUR_HELPER='paru'
             ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
             ARCH_OS_SAMBA_SHARE_ENABLED='true'
             ARCH_OS_CORE_TWEAKS_ENABLED="true"
@@ -394,6 +395,7 @@ properties_preset_source() {
             ARCH_OS_HOUSEKEEPING_ENABLED='true'
             ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
             ARCH_OS_MANAGER_ENABLED='true'
+            ARCH_OS_AUR_HELPER='paru'
         fi
 
         # Write properties
@@ -991,55 +993,9 @@ exec_install_desktop() {
             [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
 
             # GNOME base packages
-            local packages=(gnome git)
+            chroot_pacman_install gnome git
 
-            # GNOME desktop extras
-            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-
-                # GNOME base extras
-                packages+=(gnome gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer)
-
-                [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && packages+=(gnome-firmware file-roller)
-
-                # GNOME wayland screensharing, flatpak & pipewire support
-                packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
-
-                # Audio (Pipewire replacements + session manager)
-                packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
-                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
-
-                # Networking & Access
-                packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
-
-                # Utils (https://wiki.archlinux.org/title/File_systems)
-                packages+=(archlinux-contrib pacutils fwupd bash-completion dhcp net-tools inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfat-utils btrfs-progs xfsprogs p7zip zip unzip unrar tar)
-
-                # Runtimes & Helper
-                packages+=(jq zenity gum)
-
-                # Certificates
-                packages+=(ca-certificates)
-
-                # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
-                packages+=(ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader opus speex libvpx libwebp)
-                packages+=(a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread openh264)
-                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer lib32-gst-plugins-good lib32-libvpx lib32-libwebp)
-
-                # Optimization
-                packages+=(gamemode)
-                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
-
-                # Fonts
-                packages+=(noto-fonts noto-fonts-emoji ttf-firacode-nerd ttf-liberation ttf-dejavu)
-
-                # Theming
-                packages+=(adw-gtk-theme)
-            fi
-
-            # Install packages
-            chroot_pacman_install "${packages[@]}"
-
-            # Force remove packages
+            # Force remove gnome packages
             if [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "true" ]; then
                 chroot_pacman_remove gnome-calendar || true
                 chroot_pacman_remove gnome-maps || true
@@ -1061,6 +1017,49 @@ exec_install_desktop() {
                 chroot_pacman_remove loupe || true
                 chroot_pacman_remove epiphany || true
                 #chroot_pacman_remove evince || true # Need for sushi
+            fi
+
+            # GNOME desktop extras
+            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
+
+                # GNOME base extras
+                chroot_pacman_install gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer
+
+                [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && chroot_pacman_install gnome-firmware file-roller
+
+                # GNOME wayland screensharing, flatpak & pipewire support
+                chroot_pacman_install xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils
+
+                # Audio (Pipewire replacements + session manager): https://wiki.archlinux.org/title/PipeWire#Installation
+                chroot_pacman_install pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && chroot_pacman_install lib32-pipewire lib32-pipewire-jack
+
+                # Networking & Access
+                chroot_pacman_install samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd
+
+                # Utils (https://wiki.archlinux.org/title/File_systems)
+                chroot_pacman_install archlinux-contrib pacutils fwupd bash-completion dhcp net-tools inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfat-utils btrfs-progs xfsprogs p7zip zip unzip unrar tar
+
+                # Runtimes & Helper
+                chroot_pacman_install jq zenity gum
+
+                # Certificates
+                chroot_pacman_install ca-certificates
+
+                # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
+                chroot_pacman_install ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader opus speex libvpx libwebp
+                chroot_pacman_install a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread openh264
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && chroot_pacman_install lib32-gstreamer lib32-gst-plugins-good lib32-libvpx lib32-libwebp
+
+                # Optimization
+                chroot_pacman_install gamemode
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && chroot_pacman_install lib32-gamemode
+
+                # Fonts
+                chroot_pacman_install noto-fonts noto-fonts-emoji ttf-firacode-nerd ttf-liberation ttf-dejavu
+
+                # Theming
+                chroot_pacman_install adw-gtk-theme
             fi
 
             # Add user to gamemode group
@@ -1184,11 +1183,24 @@ exec_install_desktop() {
             arch-chroot /mnt systemctl enable avahi-daemon      # Network browsing service
             arch-chroot /mnt systemctl enable gpm.service       # TTY Mouse Support
 
-            # User services
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user gcr-ssh-agent.socket   # GCR ssh-agent
+            # User services (Not working: permission denied)
+            #arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
+            #arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
+            #arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
+            #arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user gcr-ssh-agent.socket   # GCR ssh-agent
+
+            # Workaround: Manual creation of user service symlinks
+            arch-chroot /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants"
+            arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants/pipewire.service"
+            arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire-pulse.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants/pipewire-pulse.service"
+            arch-chroot /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants"
+            arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire.socket /home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/pipewire.socket"
+            arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire-pulse.socket /home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/pipewire-pulse.socket"
+            arch-chroot /mnt ln -s "/usr/lib/systemd/user/gcr-ssh-agent.socket /home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/gcr-ssh-agent.socket"
+            arch-chroot /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire.service.wants"
+            arch-chroot /mnt ln -s "/usr/lib/systemd/user/wireplumber.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire-session-manager.service"
+            arch-chroot /mnt ln -s "/usr/lib/systemd/user/wireplumber.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire.service.wants/wireplumber.service"
+            arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/.config/systemd/"
 
             # Extra services
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
@@ -1294,16 +1306,18 @@ exec_install_graphics_driver() {
                 arch-chroot /mnt mkinitcpio -P
                 ;;
             "amd") # https://wiki.archlinux.org/title/AMDGPU#Installation
-                local packages=(mesa mesa-utils xf86-video-amdgpu vulkan-radeon libva-mesa-driver mesa-vdpau vkd3d)
-                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-mesa lib32-vulkan-radeon lib32-libva-mesa-driver lib32-mesa-vdpau lib32-vkd3d)
+                # Deprecated: libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau
+                local packages=(mesa mesa-utils xf86-video-amdgpu vulkan-radeon vkd3d)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-mesa lib32-vulkan-radeon lib32-vkd3d)
                 chroot_pacman_install "${packages[@]}"
                 # Must be discussed: https://wiki.archlinux.org/title/AMDGPU#Disable_loading_radeon_completely_at_boot
                 sed -i "s/^MODULES=(.*)/MODULES=(amdgpu)/g" /mnt/etc/mkinitcpio.conf
                 arch-chroot /mnt mkinitcpio -P
                 ;;
             "ati") # https://wiki.archlinux.org/title/ATI#Installation
-                local packages=(mesa mesa-utils xf86-video-ati libva-mesa-driver mesa-vdpau vkd3d)
-                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-mesa lib32-libva-mesa-driver lib32-mesa-vdpau lib32-vkd3d)
+                # Deprecated: libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau
+                local packages=(mesa mesa-utils xf86-video-ati vkd3d)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-mesa lib32-vkd3d)
                 chroot_pacman_install "${packages[@]}"
                 sed -i "s/^MODULES=(.*)/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
                 arch-chroot /mnt mkinitcpio -P
@@ -1745,7 +1759,9 @@ chroot_pacman_install() {
         [ "$i" -gt 1 ] && log_warn "${i}. Retry Pacman installation..."
         # Try installing packages
         if ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
-            sleep 10 && continue # Wait 10 seconds & try again
+            if ! arch-chroot /mnt bash -c "yes | LC_ALL=en_US.UTF-8 pacman -S --needed --disable-download-timeout ${packages[*]}"; then
+                sleep 10 && continue # Wait 10 seconds & try again
+            fi
         else
             pacman_failed="false" && break # Success: break loop
         fi
@@ -1799,7 +1815,7 @@ chroot_aur_install() {
     [ "$aur_failed" = "false" ] && return 0 # Success
 }
 
-chroot_pacman_remove() { arch-chroot /mnt pacman -Rns --noconfirm "$@" || return 1; }
+chroot_pacman_remove() { arch-chroot /mnt pacman -Rn --noconfirm "$@" || return 1; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # TRAP FUNCTIONS
