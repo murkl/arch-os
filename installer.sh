@@ -10,6 +10,7 @@
 # ORIGIN:   Germany
 # LICENCE:  GPL 2.0
 
+# CONFIG
 set -o pipefail # A pipeline error results in the error status of the entire pipeline
 set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
