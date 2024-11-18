@@ -11,7 +11,7 @@
 
 <p><b>
 
-[➜ Open Arch OS Docs](DOCS.md)
+[➜ Step by Step Installation](#installing-arch-os)
 
 </b></p>
 
