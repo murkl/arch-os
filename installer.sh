@@ -992,8 +992,56 @@ exec_install_desktop() {
         (
             [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
 
+            local packages=()
+
             # GNOME base packages
-            chroot_pacman_install gnome git
+            packages+=(gnome git)
+
+            # GNOME desktop extras
+            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
+
+                # GNOME base extras
+                packages+=(gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer)
+
+                [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && packages+=(gnome-firmware file-roller)
+
+                # GNOME wayland screensharing, flatpak & pipewire support
+                packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
+
+                # Audio (Pipewire replacements + session manager): https://wiki.archlinux.org/title/PipeWire#Installation
+                packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
+
+                # Networking & Access
+                packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
+
+                # Utils (https://wiki.archlinux.org/title/File_systems)
+                packages+=(archlinux-contrib pacutils fwupd bash-completion dhcp net-tools inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfat-utils btrfs-progs xfsprogs p7zip zip unzip unrar tar)
+
+                # Runtimes & Helper
+                packages+=(jq zenity gum)
+
+                # Certificates
+                packages+=(ca-certificates)
+
+                # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
+                packages+=(ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader opus speex libvpx libwebp)
+                packages+=(a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread openh264)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer lib32-gst-plugins-good lib32-libvpx lib32-libwebp)
+
+                # Optimization
+                packages+=(gamemode)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
+
+                # Fonts
+                packages+=(noto-fonts noto-fonts-emoji ttf-firacode-nerd ttf-liberation ttf-dejavu)
+
+                # Theming
+                packages+=(adw-gtk-theme)
+            fi
+
+            # Installing packages together (preventing conflicts e.g.: jack2 and piepwire-jack)
+            chroot_pacman_install "${packages[@]}"
 
             # Force remove gnome packages
             if [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "true" ]; then
@@ -1017,49 +1065,6 @@ exec_install_desktop() {
                 chroot_pacman_remove loupe || true
                 chroot_pacman_remove epiphany || true
                 #chroot_pacman_remove evince || true # Need for sushi
-            fi
-
-            # GNOME desktop extras
-            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-
-                # GNOME base extras
-                chroot_pacman_install base-devel gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer
-
-                [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && chroot_pacman_install gnome-firmware file-roller
-
-                # GNOME wayland screensharing, flatpak & pipewire support
-                chroot_pacman_install xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils
-
-                # Audio (Pipewire replacements + session manager): https://wiki.archlinux.org/title/PipeWire#Installation
-                chroot_pacman_install pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber
-                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && chroot_pacman_install lib32-pipewire lib32-pipewire-jack
-
-                # Networking & Access
-                chroot_pacman_install samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd
-
-                # Utils (https://wiki.archlinux.org/title/File_systems)
-                chroot_pacman_install archlinux-contrib pacutils fwupd bash-completion dhcp net-tools inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfat-utils btrfs-progs xfsprogs p7zip zip unzip unrar tar
-
-                # Runtimes & Helper
-                chroot_pacman_install jq zenity gum
-
-                # Certificates
-                chroot_pacman_install ca-certificates
-
-                # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
-                chroot_pacman_install ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader opus speex libvpx libwebp
-                chroot_pacman_install a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread openh264
-                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && chroot_pacman_install lib32-gstreamer lib32-gst-plugins-good lib32-libvpx lib32-libwebp
-
-                # Optimization
-                chroot_pacman_install gamemode
-                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && chroot_pacman_install lib32-gamemode
-
-                # Fonts
-                chroot_pacman_install noto-fonts noto-fonts-emoji ttf-firacode-nerd ttf-liberation ttf-dejavu
-
-                # Theming
-                chroot_pacman_install adw-gtk-theme
             fi
 
             # Add user to gamemode group
