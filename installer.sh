@@ -1023,7 +1023,7 @@ exec_install_desktop() {
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
 
                 # GNOME base extras
-                chroot_pacman_install gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer
+                chroot_pacman_install base-devel gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer
 
                 [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && chroot_pacman_install gnome-firmware file-roller
 
@@ -1190,10 +1190,10 @@ exec_install_desktop() {
             fi
 
             # User services (Not working: permission denied)
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user gcr-ssh-agent.socket   # GCR ssh-agent
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user gcr-ssh-agent.socket   # GCR ssh-agent
 
             # Workaround: Manual creation of user service symlinks
             #arch-chroot /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants"
