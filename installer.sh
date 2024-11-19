@@ -366,7 +366,7 @@ properties_preset_source() {
     # Load properties or select preset
     if [ -f "$SCRIPT_CONFIG" ]; then
         gum_title "Properties"
-        properties_source && gum_property "Preset" "installer.conf"
+        properties_source && gum_property "Preset (auto-detected)" "installer.conf"
     else
         # Select preset
         local preset options
@@ -449,7 +449,7 @@ select_timezone() {
     if [ -z "$ARCH_OS_TIMEZONE" ]; then
         local tz_auto user_input
         tz_auto="$(curl -s http://ip-api.com/line?fields=timezone)"
-        user_input=$(gum_input --header "+ Enter Timezone (auto)" --value "$tz_auto") || trap_gum_exit_confirm
+        user_input=$(gum_input --header "+ Enter Timezone (auto-detected)" --value "$tz_auto") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
         if [ ! -f "/usr/share/zoneinfo/${user_input}" ]; then
             gum_confirm --affirmative="Ok" --negative="" "Timezone '${user_input}' is not supported"
