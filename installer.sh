@@ -193,7 +193,7 @@ main() {
 
     # Unmount
     [ "$do_reboot" = "false" ] && gum_confirm "Unmount Arch OS from /mnt?" && do_unmount="true"
-    [ "$do_unmount" = "true" ] && gum_warn "Unmounting Arch OS from /mnt..."
+    [ "$do_unmount" = "true" ] && echo && gum_warn "Unmounting Arch OS from /mnt..."
     if [ "$DEBUG" = "false" ] && [ "$do_unmount" = "true" ]; then
         swapoff -a
         umount -A -R /mnt
@@ -214,7 +214,7 @@ main() {
     fi
 
     # Print warning
-    [ "$do_unmount" = "false" ] && [ "$do_chroot" = "false" ] && gum_warn "Arch OS is still mounted at /mnt"
+    [ "$do_unmount" = "false" ] && [ "$do_chroot" = "false" ] && echo && gum_warn "Arch OS is still mounted at /mnt"
 
     gum_info "Exit" && exit 0
 }
