@@ -20,7 +20,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
-VERSION='1.7.1'
+VERSION='1.7.2'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -75,15 +75,17 @@ main() {
         gum_white '• A stable internet connection'
         gum_white '• Secure Boot disabled'
         gum_white '• Boot Mode set to UEFI'
-        echo && gum_title "Properties"
 
         # Ask for load & remove existing config file
         if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
             gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config > exit script
+            echo && gum_title "Properties File"
             mv -f "$SCRIPT_CONFIG" "${SCRIPT_CONFIG}.old" && gum_info "installer.conf was moved to installer.conf.old"
             gum_warn "Please restart Arch OS Installer..."
             echo && exit 0
         fi
+
+        echo # Print new line
 
         # Source installer.conf if exists or select preset
         until properties_preset_source; do :; done
@@ -149,14 +151,14 @@ main() {
     exec_prepare_disk
     exec_pacstrap_core
     exec_enable_multilib
-    exec_install_bootsplash
     exec_install_aur_helper
-    exec_install_housekeeping
-    exec_install_shell_enhancement
     exec_install_desktop
     exec_install_graphics_driver
-    exec_install_archos_manager
     exec_install_vm_support
+    exec_install_bootsplash
+    exec_install_housekeeping
+    exec_install_shell_enhancement
+    exec_install_archos_manager
     exec_cleanup_installation
 
     # Calc installation duration
@@ -191,7 +193,7 @@ main() {
 
     # Unmount
     [ "$do_reboot" = "false" ] && gum_confirm "Unmount Arch OS from /mnt?" && do_unmount="true"
-    [ "$do_unmount" = "true" ] && gum_warn "Unmounting Arch OS from /mnt..."
+    [ "$do_unmount" = "true" ] && echo && gum_warn "Unmounting Arch OS from /mnt..."
     if [ "$DEBUG" = "false" ] && [ "$do_unmount" = "true" ]; then
         swapoff -a
         umount -A -R /mnt
@@ -203,7 +205,7 @@ main() {
 
     # Chroot
     [ "$do_unmount" = "false" ] && gum_confirm "Chroot to new Arch OS?" && do_chroot="true"
-    if [ "$do_chroot" = "true" ] && gum_warn "Chrooting Arch OS at /mnt..."; then
+    if [ "$do_chroot" = "true" ] && echo && gum_warn "Chrooting Arch OS at /mnt..."; then
         gum_warn "!! YOUR ARE NOW ON YOUR NEW ARCH OS SYSTEM !!"
         gum_warn ">> Leave with command 'exit'"
         [ "$DEBUG" = "false" ] && arch-chroot /mnt </dev/tty
@@ -212,7 +214,7 @@ main() {
     fi
 
     # Print warning
-    [ "$do_unmount" = "false" ] && [ "$do_chroot" = "false" ] && gum_warn "Arch OS is still mounted at /mnt"
+    [ "$do_unmount" = "false" ] && [ "$do_chroot" = "false" ] && echo && gum_warn "Arch OS is still mounted at /mnt"
 
     gum_info "Exit" && exit 0
 }
@@ -363,11 +365,12 @@ properties_preset_source() {
 
     # Load properties or select preset
     if [ -f "$SCRIPT_CONFIG" ]; then
-        properties_source && gum_property "Preset" "installer.conf"
+        gum_title "Properties"
+        properties_source && gum_property "Preset (auto-detected)" "installer.conf"
     else
         # Select preset
         local preset options
-        options=("desk | GNOME Desktop Environment (default)" "core | Minimal Arch Linux TTY Environment" "none | No pre-selection")
+        options=("desktop - GNOME Desktop Environment (default)" "core    - Minimal Arch Linux TTY Environment" "none    - No pre-selection")
         preset=$(gum_choose --header "+ Choose Preset" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$preset" ] && return 1 # Check if new value is null
         preset="$(echo "$preset" | awk '{print $1}')"
@@ -385,7 +388,7 @@ properties_preset_source() {
         fi
 
         # Desktop preset
-        if [[ $preset == desk* ]]; then
+        if [[ $preset == desktop* ]]; then
             ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
             ARCH_OS_SAMBA_SHARE_ENABLED='true'
             ARCH_OS_CORE_TWEAKS_ENABLED="true"
@@ -399,6 +402,7 @@ properties_preset_source() {
         fi
 
         # Write properties
+        gum_title "Properties"
         properties_generate && gum_property "Preset" "$preset"
     fi
     return 0
@@ -411,7 +415,7 @@ properties_preset_source() {
 select_username() {
     if [ -z "$ARCH_OS_USERNAME" ]; then
         local user_input
-        user_input=$(gum_input --header "+ Enter Username (mandatory)") || trap_gum_exit_confirm
+        user_input=$(gum_input --header "+ Enter Username") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                      # Check if new value is null
         ARCH_OS_USERNAME="$user_input" && properties_generate # Set value and generate properties file
     fi
@@ -424,7 +428,7 @@ select_username() {
 select_password() { # --change
     if [ "$1" = "--change" ] || [ -z "$ARCH_OS_PASSWORD" ]; then
         local user_password user_password_check
-        user_password=$(gum_input --password --header "+ Enter Password (mandatory)") || trap_gum_exit_confirm
+        user_password=$(gum_input --password --header "+ Enter Password") || trap_gum_exit_confirm
         [ -z "$user_password" ] && return 1 # Check if new value is null
         user_password_check=$(gum_input --password --header "+ Enter Password again") || trap_gum_exit_confirm
         [ -z "$user_password_check" ] && return 1 # Check if new value is null
@@ -445,7 +449,7 @@ select_timezone() {
     if [ -z "$ARCH_OS_TIMEZONE" ]; then
         local tz_auto user_input
         tz_auto="$(curl -s http://ip-api.com/line?fields=timezone)"
-        user_input=$(gum_input --header "+ Enter Timezone (auto)" --value "$tz_auto") || trap_gum_exit_confirm
+        user_input=$(gum_input --header "+ Enter Timezone (auto-detected)" --value "$tz_auto") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
         if [ ! -f "/usr/share/zoneinfo/${user_input}" ]; then
             gum_confirm --affirmative="Ok" --negative="" "Timezone '${user_input}' is not supported"
@@ -992,8 +996,56 @@ exec_install_desktop() {
         (
             [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
 
+            local packages=()
+
             # GNOME base packages
-            chroot_pacman_install gnome git
+            packages+=(gnome git)
+
+            # GNOME desktop extras
+            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
+
+                # GNOME base extras
+                packages+=(gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer)
+
+                [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && packages+=(gnome-firmware file-roller)
+
+                # GNOME wayland screensharing, flatpak & pipewire support
+                packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
+
+                # Audio (Pipewire replacements + session manager): https://wiki.archlinux.org/title/PipeWire#Installation
+                packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
+
+                # Networking & Access
+                packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
+
+                # Utils (https://wiki.archlinux.org/title/File_systems)
+                packages+=(base-devel archlinux-contrib pacutils fwupd bash-completion dhcp net-tools inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfat-utils btrfs-progs xfsprogs p7zip zip unzip unrar tar)
+
+                # Runtimes & Helper
+                packages+=(jq zenity gum)
+
+                # Certificates
+                packages+=(ca-certificates)
+
+                # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
+                packages+=(ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader opus speex libvpx libwebp)
+                packages+=(a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread openh264)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer lib32-gst-plugins-good lib32-libvpx lib32-libwebp)
+
+                # Optimization
+                packages+=(gamemode)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
+
+                # Fonts
+                packages+=(noto-fonts noto-fonts-emoji ttf-firacode-nerd ttf-liberation ttf-dejavu)
+
+                # Theming
+                packages+=(adw-gtk-theme)
+            fi
+
+            # Installing packages together (preventing conflicts e.g.: jack2 and piepwire-jack)
+            chroot_pacman_install "${packages[@]}"
 
             # Force remove gnome packages
             if [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "true" ]; then
@@ -1017,49 +1069,6 @@ exec_install_desktop() {
                 chroot_pacman_remove loupe || true
                 chroot_pacman_remove epiphany || true
                 #chroot_pacman_remove evince || true # Need for sushi
-            fi
-
-            # GNOME desktop extras
-            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-
-                # GNOME base extras
-                chroot_pacman_install gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer
-
-                [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && chroot_pacman_install gnome-firmware file-roller
-
-                # GNOME wayland screensharing, flatpak & pipewire support
-                chroot_pacman_install xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils
-
-                # Audio (Pipewire replacements + session manager): https://wiki.archlinux.org/title/PipeWire#Installation
-                chroot_pacman_install pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber
-                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && chroot_pacman_install lib32-pipewire lib32-pipewire-jack
-
-                # Networking & Access
-                chroot_pacman_install samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd
-
-                # Utils (https://wiki.archlinux.org/title/File_systems)
-                chroot_pacman_install archlinux-contrib pacutils fwupd bash-completion dhcp net-tools inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfat-utils btrfs-progs xfsprogs p7zip zip unzip unrar tar
-
-                # Runtimes & Helper
-                chroot_pacman_install jq zenity gum
-
-                # Certificates
-                chroot_pacman_install ca-certificates
-
-                # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
-                chroot_pacman_install ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader opus speex libvpx libwebp
-                chroot_pacman_install a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread openh264
-                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && chroot_pacman_install lib32-gstreamer lib32-gst-plugins-good lib32-libvpx lib32-libwebp
-
-                # Optimization
-                chroot_pacman_install gamemode
-                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && chroot_pacman_install lib32-gamemode
-
-                # Fonts
-                chroot_pacman_install noto-fonts noto-fonts-emoji ttf-firacode-nerd ttf-liberation ttf-dejavu
-
-                # Theming
-                chroot_pacman_install adw-gtk-theme
             fi
 
             # Add user to gamemode group
@@ -1183,30 +1192,30 @@ exec_install_desktop() {
             arch-chroot /mnt systemctl enable avahi-daemon      # Network browsing service
             arch-chroot /mnt systemctl enable gpm.service       # TTY Mouse Support
 
-            # User services (Not working: permission denied)
-            #arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
-            #arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
-            #arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
-            #arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user gcr-ssh-agent.socket   # GCR ssh-agent
-
-            # Workaround: Manual creation of user service symlinks
-            arch-chroot /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants"
-            arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants/pipewire.service"
-            arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire-pulse.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants/pipewire-pulse.service"
-            arch-chroot /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants"
-            arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire.socket /home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/pipewire.socket"
-            arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire-pulse.socket /home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/pipewire-pulse.socket"
-            arch-chroot /mnt ln -s "/usr/lib/systemd/user/gcr-ssh-agent.socket /home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/gcr-ssh-agent.socket"
-            arch-chroot /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire.service.wants"
-            arch-chroot /mnt ln -s "/usr/lib/systemd/user/wireplumber.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire-session-manager.service"
-            arch-chroot /mnt ln -s "/usr/lib/systemd/user/wireplumber.service /home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire.service.wants/wireplumber.service"
-            arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/.config/systemd/"
-
             # Extra services
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
                 arch-chroot /mnt systemctl enable power-profiles-daemon # Power daemon
                 arch-chroot /mnt systemctl enable cups.socket           # Printer
             fi
+
+            # User services (Not working: Failed to connect to user scope bus via local transport: Permission denied)
+            # arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
+            # arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
+            # arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
+            # arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user gcr-ssh-agent.socket   # GCR ssh-agent
+
+            # Workaround: Manual creation of user service symlinks
+            arch-chroot /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants"
+            arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire.service" "/home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants/pipewire.service"
+            arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire-pulse.service" "/home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants/pipewire-pulse.service"
+            arch-chroot /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants"
+            arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire.socket" "/home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/pipewire.socket"
+            arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire-pulse.socket" "/home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/pipewire-pulse.socket"
+            arch-chroot /mnt ln -s "/usr/lib/systemd/user/gcr-ssh-agent.socket" "/home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/gcr-ssh-agent.socket"
+            arch-chroot /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire.service.wants"
+            arch-chroot /mnt ln -s "/usr/lib/systemd/user/wireplumber.service" "/home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire-session-manager.service"
+            arch-chroot /mnt ln -s "/usr/lib/systemd/user/wireplumber.service" "/home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire.service.wants/wireplumber.service"
+            arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/.config/systemd/"
 
             # Create users applications dir
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications"
@@ -1758,10 +1767,9 @@ chroot_pacman_install() {
         # Print log if greather than first try
         [ "$i" -gt 1 ] && log_warn "${i}. Retry Pacman installation..."
         # Try installing packages
+        # if ! arch-chroot /mnt bash -c "yes | LC_ALL=en_US.UTF-8 pacman -S --needed --disable-download-timeout ${packages[*]}"; then
         if ! arch-chroot /mnt pacman -S --noconfirm --needed --disable-download-timeout "${packages[@]}"; then
-            if ! arch-chroot /mnt bash -c "yes | LC_ALL=en_US.UTF-8 pacman -S --needed --disable-download-timeout ${packages[*]}"; then
-                sleep 10 && continue # Wait 10 seconds & try again
-            fi
+            sleep 10 && continue # Wait 10 seconds & try again
         else
             pacman_failed="false" && break # Success: break loop
         fi
