@@ -75,15 +75,17 @@ main() {
         gum_white '• A stable internet connection'
         gum_white '• Secure Boot disabled'
         gum_white '• Boot Mode set to UEFI'
-        echo && gum_title "Properties"
 
         # Ask for load & remove existing config file
         if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
             gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config > exit script
+            echo && gum_title "Properties File"
             mv -f "$SCRIPT_CONFIG" "${SCRIPT_CONFIG}.old" && gum_info "installer.conf was moved to installer.conf.old"
             gum_warn "Please restart Arch OS Installer..."
             echo && exit 0
         fi
+
+        echo # Print new line
 
         # Source installer.conf if exists or select preset
         until properties_preset_source; do :; done
@@ -203,7 +205,7 @@ main() {
 
     # Chroot
     [ "$do_unmount" = "false" ] && gum_confirm "Chroot to new Arch OS?" && do_chroot="true"
-    if [ "$do_chroot" = "true" ] && gum_warn "Chrooting Arch OS at /mnt..."; then
+    if [ "$do_chroot" = "true" ] && echo && gum_warn "Chrooting Arch OS at /mnt..."; then
         gum_warn "!! YOUR ARE NOW ON YOUR NEW ARCH OS SYSTEM !!"
         gum_warn ">> Leave with command 'exit'"
         [ "$DEBUG" = "false" ] && arch-chroot /mnt </dev/tty
@@ -363,11 +365,12 @@ properties_preset_source() {
 
     # Load properties or select preset
     if [ -f "$SCRIPT_CONFIG" ]; then
+        gum_title "Properties"
         properties_source && gum_property "Preset" "installer.conf"
     else
         # Select preset
         local preset options
-        options=("desk | GNOME Desktop Environment (default)" "core | Minimal Arch Linux TTY Environment" "none | No pre-selection")
+        options=("desktop - GNOME Desktop Environment (default)" "core    - Minimal Arch Linux TTY Environment" "none    - No pre-selection")
         preset=$(gum_choose --header "+ Choose Preset" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$preset" ] && return 1 # Check if new value is null
         preset="$(echo "$preset" | awk '{print $1}')"
@@ -399,6 +402,7 @@ properties_preset_source() {
         fi
 
         # Write properties
+        gum_title "Properties"
         properties_generate && gum_property "Preset" "$preset"
     fi
     return 0
@@ -411,7 +415,7 @@ properties_preset_source() {
 select_username() {
     if [ -z "$ARCH_OS_USERNAME" ]; then
         local user_input
-        user_input=$(gum_input --header "+ Enter Username (mandatory)") || trap_gum_exit_confirm
+        user_input=$(gum_input --header "+ Enter Username") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                      # Check if new value is null
         ARCH_OS_USERNAME="$user_input" && properties_generate # Set value and generate properties file
     fi
@@ -424,7 +428,7 @@ select_username() {
 select_password() { # --change
     if [ "$1" = "--change" ] || [ -z "$ARCH_OS_PASSWORD" ]; then
         local user_password user_password_check
-        user_password=$(gum_input --password --header "+ Enter Password (mandatory)") || trap_gum_exit_confirm
+        user_password=$(gum_input --password --header "+ Enter Password") || trap_gum_exit_confirm
         [ -z "$user_password" ] && return 1 # Check if new value is null
         user_password_check=$(gum_input --password --header "+ Enter Password again") || trap_gum_exit_confirm
         [ -z "$user_password_check" ] && return 1 # Check if new value is null
