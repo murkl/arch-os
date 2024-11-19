@@ -388,7 +388,7 @@ properties_preset_source() {
         fi
 
         # Desktop preset
-        if [[ $preset == desk* ]]; then
+        if [[ $preset == desktop* ]]; then
             ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
             ARCH_OS_SAMBA_SHARE_ENABLED='true'
             ARCH_OS_CORE_TWEAKS_ENABLED="true"
