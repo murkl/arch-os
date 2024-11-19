@@ -11,7 +11,7 @@
 
 <p><b>
 
-[➜ Step by Step Installation](#installing-arch-os)
+[➜ Step by Step Installation Guide](#installing-arch-os)
 
 </b></p>
 
