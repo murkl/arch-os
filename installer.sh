@@ -20,7 +20,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
-VERSION='1.7.2'
+VERSION='1.7.3'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -365,8 +365,8 @@ properties_preset_source() {
 
     # Load properties or select preset
     if [ -f "$SCRIPT_CONFIG" ]; then
-        gum_title "Properties"
-        properties_source && gum_property "Preset (auto-detected)" "installer.conf"
+        properties_source
+        gum_title "Preset" && gum join "$(gum_green --bold "• ")" "$(gum_white "Loaded from ")" "$(gum_white --bold "installer.conf")"
     else
         # Select preset
         local preset options
@@ -402,8 +402,8 @@ properties_preset_source() {
         fi
 
         # Write properties
-        gum_title "Properties"
-        properties_generate && gum_property "Preset" "$preset"
+        properties_source
+        gum_title "Preset" && gum join "$(gum_green --bold "• ")" "$(gum_white "Set to ")" "$(gum_white --bold "$preset")"
     fi
     return 0
 }
@@ -1462,9 +1462,12 @@ exec_install_shell_enhancement() {
                     echo ''
                     echo '# Export environment variables'
                     echo 'if status --is-login'
-                    echo '  for line in (/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator)'
-                    echo '      set -gx (echo $line | cut -d= -f1) (echo $line | cut -d= -f2-)'
-                    echo '  end'
+                    echo '    set generator_path /usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator'
+                    echo '    if command -v $generator_path >/dev/null'
+                    echo '        for line in ($generator_path)'
+                    echo '            set -gx (echo $line | cut -d= -f1) (echo $line | cut -d= -f2-)'
+                    echo '        end'
+                    echo '    end'
                     echo 'end'
                     echo ''
                     echo '# Disable welcome message'
@@ -1478,7 +1481,9 @@ exec_install_shell_enhancement() {
                     echo 'source "$HOME/.aliases"'
                     echo ''
                     echo '# Source starship promt'
-                    echo 'starship init fish | source'
+                    echo 'if command -v starship > /dev/null'
+                    echo '    starship init fish | source'
+                    echo 'end'
                 } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
                 arch-chroot /mnt chsh -s /usr/bin/fish
                 arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
