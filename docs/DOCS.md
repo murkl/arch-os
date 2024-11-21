@@ -267,6 +267,7 @@ fish starship eza bat fastfetch mc btop nano man-db bash-completion
 - `mc` open file manager
 - `open <file>` open file in GNOME app
 - `history` open command history
+- `c` clear screen
 - `q` exit
 
 **Note:** See `~/.aliases` for all command aliases

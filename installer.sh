@@ -20,7 +20,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
-VERSION='1.7.2'
+VERSION='1.7.3'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -91,19 +91,19 @@ main() {
         until properties_preset_source; do :; done
 
         # Selectors
-        echo && gum_title "Core"
+        echo && gum_title "Core Setup"
         until select_username; do :; done
         until select_password; do :; done
         until select_timezone; do :; done
         until select_language; do :; done
         until select_keyboard; do :; done
         until select_disk; do :; done
-        echo && gum_title "Desktop"
+        echo && gum_title "Desktop Setup"
         until select_enable_desktop_environment; do :; done
         until select_enable_desktop_driver; do :; done
         until select_enable_desktop_slim; do :; done
         until select_enable_desktop_keyboard; do :; done
-        echo && gum_title "Features"
+        echo && gum_title "Feature Setup"
         until select_enable_encryption; do :; done
         until select_enable_core_tweaks; do :; done
         until select_enable_bootsplash; do :; done
@@ -117,7 +117,7 @@ main() {
         echo && gum_info "Properties successfully initialized"
 
         # Open Advanced Properties?
-        if gum_confirm --negative="Skip" "Open Advanced Properties?"; then
+        if gum_confirm --negative="Skip" "Open Advanced Setup?"; then
             local header_txt="• Save with CTRL + D or ESC and cancel with CTRL + C"
             if gum_write --show-line-numbers --prompt "> " --height=10 --width=180 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
@@ -127,7 +127,7 @@ main() {
                 continue # Restart properties step to refresh properties screen
             else
                 rm -f "${SCRIPT_CONFIG}.new" # Remove tmp properties
-                gum_warn "Edit installer.conf canceled"
+                gum_warn "Advanced Setup canceled"
             fi
         fi
 
@@ -365,13 +365,13 @@ properties_preset_source() {
 
     # Load properties or select preset
     if [ -f "$SCRIPT_CONFIG" ]; then
-        gum_title "Properties"
-        properties_source && gum_property "Preset (auto-detected)" "installer.conf"
+        properties_source
+        gum join "$(gum_green --bold "• ")" "$(gum_white "Setup preset loaded from: ")" "$(gum_white --bold "installer.conf")"
     else
         # Select preset
         local preset options
         options=("desktop - GNOME Desktop Environment (default)" "core    - Minimal Arch Linux TTY Environment" "none    - No pre-selection")
-        preset=$(gum_choose --header "+ Choose Preset" "${options[@]}") || trap_gum_exit_confirm
+        preset=$(gum_choose --header "+ Choose Setup Preset" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$preset" ] && return 1 # Check if new value is null
         preset="$(echo "$preset" | awk '{print $1}')"
 
@@ -402,8 +402,8 @@ properties_preset_source() {
         fi
 
         # Write properties
-        gum_title "Properties"
-        properties_generate && gum_property "Preset" "$preset"
+        properties_source
+        gum join "$(gum_green --bold "• ")" "$(gum_white "Setup preset loaded for: ")" "$(gum_white --bold "$preset")"
     fi
     return 0
 }
@@ -1462,30 +1462,34 @@ exec_install_shell_enhancement() {
                     echo ''
                     echo '# Export environment variables'
                     echo 'if status --is-login'
-                    echo '  for line in (/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator)'
-                    echo '      set -gx (echo $line | cut -d= -f1) (echo $line | cut -d= -f2-)'
-                    echo '  end'
+                    echo '    set generator_path /usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator'
+                    echo '    if command -v $generator_path >/dev/null'
+                    echo '        for line in ($generator_path)'
+                    echo '            set -gx (echo $line | cut -d= -f1) (echo $line | cut -d= -f2-)'
+                    echo '        end'
+                    echo '    end'
                     echo 'end'
                     echo ''
                     echo '# Disable welcome message'
                     echo 'set fish_greeting'
                     echo ''
                     echo '# Colorize man pages (bat)'
-                    echo -n 'export MANPAGER="sh -c ' && echo -n "'col -bx | bat -l man -p'" && echo '"'
-                    echo 'export MANROFFOPT="-c"'
+                    echo 'command -v bat &>/dev/null && export MANPAGER="sh -c \"col -bx | bat -l man -p\""'
+                    echo 'command -v bat &>/dev/null && export MANROFFOPT="-c"'
                     echo ''
                     echo '# Source user aliases'
-                    echo 'source "$HOME/.aliases"'
+                    echo 'test -f "$HOME/.aliases" && source "$HOME/.aliases"'
                     echo ''
-                    echo '# Source starship promt'
-                    echo 'starship init fish | source'
+                    echo '# Init starship promt'
+                    echo 'command -v starship > /dev/null && starship init fish | source'
                 } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
                 arch-chroot /mnt chsh -s /usr/bin/fish
                 arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
             fi
 
             { # Create aliases for root & user
-                echo 'alias ls="eza --color=always --group-directories-first"'
+                echo 'alias ls="ls -h --color=always --group-directories-first"'
+                echo 'command -v eza &>/dev/null && alias ls="eza -h --color=always --group-directories-first"'
                 echo 'alias ll="ls -l"'
                 echo 'alias la="ls -la"'
                 echo 'alias lt="ls -Tal"'
@@ -1496,6 +1500,7 @@ exec_install_shell_enhancement() {
                 echo 'alias fetch="fastfetch"'
                 echo 'alias logs="systemctl --failed; echo; journalctl -p 3 -b"'
                 echo 'alias q="exit"'
+                echo 'alias c="clear"'
                 echo 'alias .="cd .."'
                 echo 'alias ..="cd ../.."'
                 echo 'alias ...="cd ../../.."'
@@ -1529,11 +1534,8 @@ exec_install_shell_enhancement() {
                 echo 'bind "set completion-ignore-case on"'
                 echo ''
                 echo '# Colorize man pages (bat)'
-                echo -n 'export MANPAGER="sh -c ' && echo -n "'col -bx | bat -l man -p'" && echo '"'
-                echo 'export MANROFFOPT="-c"'
-                echo ''
-                echo '# Colorize help (usage: help <command>)'
-                echo 'help() { "$@" --help 2>&1 | bat --plain --language=help; } '
+                echo 'command -v bat &>/dev/null && export MANPAGER="sh -c \"col -bx | bat -l man -p\""'
+                echo 'command -v bat &>/dev/null && export MANROFFOPT="-c"'
                 echo ''
                 echo '# History'
                 echo 'export HISTSIZE=1000                    # History will save N commands'
