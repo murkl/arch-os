@@ -371,7 +371,7 @@ properties_preset_source() {
         # Select preset
         local preset options
         options=("desktop - GNOME Desktop Environment (default)" "core    - Minimal Arch Linux TTY Environment" "none    - No pre-selection")
-        preset=$(gum_choose --header "+ Choose Preset" "${options[@]}") || trap_gum_exit_confirm
+        preset=$(gum_choose --header "+ Choose Setup Preset" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$preset" ] && return 1 # Check if new value is null
         preset="$(echo "$preset" | awk '{print $1}')"
 
