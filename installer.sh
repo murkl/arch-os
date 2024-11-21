@@ -366,7 +366,7 @@ properties_preset_source() {
     # Load properties or select preset
     if [ -f "$SCRIPT_CONFIG" ]; then
         properties_source
-        gum join "$(gum_green --bold "• ")" "$(gum_white "Setup preset loaded from ")" "$(gum_white --bold "installer.conf")"
+        gum join "$(gum_green --bold "• ")" "$(gum_white "Setup preset loaded from: ")" "$(gum_white --bold "installer.conf")"
     else
         # Select preset
         local preset options
@@ -403,7 +403,7 @@ properties_preset_source() {
 
         # Write properties
         properties_source
-        gum join "$(gum_green --bold "• ")" "$(gum_white "Setup preset loaded for ")" "$(gum_white --bold "$preset")"
+        gum join "$(gum_green --bold "• ")" "$(gum_white "Setup preset loaded for: ")" "$(gum_white --bold "$preset")"
     fi
     return 0
 }
