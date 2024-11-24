@@ -13,6 +13,8 @@
 
 [➜ Step by Step Installation Guide](#installing-arch-os)
 
+<sub><i>Takes 30 seconds to install Arch OS...</i></sub>
+
 </b></p>
 
 <p><img src="./screenshots/installer_start.png"></p>
