@@ -44,6 +44,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [LocalSend](https://flathub.org/de/apps/org.localsend.localsend_app) to simply share files in same network
 - Install [MissionCenter](https://flathub.org/de/apps/io.missioncenter.MissionCenter) as system monitor
 - Install [Parabolic](https://flathub.org/de/apps/org.nickvision.tubeconverter) as download manager
+- Install [arch-gaming-meta](https://aur.archlinux.org/packages/arch-gaming-meta) to install all common gaming libs
 
 ### Theming (optional)
 
@@ -112,6 +113,7 @@ Install prefered Steam version:
 - [Wine](https://archlinux.org/packages/multilib/x86_64/wine/), [Winetricks](https://archlinux.org/packages/multilib/x86_64/winetricks/)
 - [Proton](https://aur.archlinux.org/packages/proton-ge-custom-bin), [Protontricks](https://aur.archlinux.org/packages/protontricks)
 - [Gamescope](https://archlinux.org/packages/extra/x86_64/gamescope/)
+- [ProtonPlus](https://aur.archlinux.org/packages/protonplus)
 
 ### For Audiophiles
 

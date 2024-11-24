@@ -13,6 +13,8 @@
 
 [➜ Step by Step Installation Guide](#installing-arch-os)
 
+<sub><i>Takes 30 seconds to install Arch OS...</i></sub>
+
 </b></p>
 
 <p><img src="./screenshots/installer_start.png"></p>
@@ -122,6 +124,8 @@ To install Arch OS, an internet connection is required, as many packages will be
 ```
 curl -Ls bit.ly/arch-os | bash
 ```
+
+![Animated Arch OS Installation](./animation.gif)
 
 _Cancel the Arch OS Installer with `CTRL + c`_
 
