@@ -123,6 +123,8 @@ To install Arch OS, an internet connection is required, as many packages will be
 curl -Ls bit.ly/arch-os | bash
 ```
 
+![Animated Arch OS Installation](./animation.gif)
+
 _Cancel the Arch OS Installer with `CTRL + c`_
 
 **[➜ See Advanced Installation](DOCS.md#advanced-installation)**
