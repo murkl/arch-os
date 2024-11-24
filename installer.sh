@@ -1071,6 +1071,10 @@ exec_install_desktop() {
                 #chroot_pacman_remove evince || true # Need for sushi
             fi
 
+            # Add user to other useful groups (https://wiki.archlinux.org/title/Users_and_groups#User_groups)
+            arch-chroot /mnt groupadd -f plugdev
+            arch-chroot /mnt usermod -aG audio,video,disk,storage,input,tty,plugdev "$ARCH_OS_USERNAME"
+
             # Add user to gamemode group
             [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
