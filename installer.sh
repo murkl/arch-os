@@ -1450,9 +1450,9 @@ exec_install_shell_enhancement() {
     if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                                     # If debug mode then return
-            chroot_pacman_install starship eza bat fastfetch mc btop nano man-db bash-completion     # Install packages
-            mkdir -p "/mnt/root/.config/fastfetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/fastfetch" # Create fastfetch config dirs
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                                                          # If debug mode then return
+            chroot_pacman_install starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-highlighting # Install packages
+            mkdir -p "/mnt/root/.config/fastfetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/fastfetch"                      # Create fastfetch config dirs
 
             # Install & set fish for root & user
             if [ "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" = "true" ]; then
@@ -1695,6 +1695,7 @@ exec_install_shell_enhancement() {
             sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
             sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
             sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
+            sed -i '/include \/usr\/share\/nano\/extra\/\*\.nanorc/a include "/usr/share/nano-syntax-highlighting/*.nanorc"' /mnt/etc/nanorc # Syntax highlighting
 
             # Set correct permissions
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
