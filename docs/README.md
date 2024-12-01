@@ -86,6 +86,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - GNOME Power Profiles Support
 - Auto Login enabled
 - Printer Support (cups)
+- SSH Agent (gcr)
 - Gamemode preinstalled
 - Firmware Update Tool preinstalled
 
