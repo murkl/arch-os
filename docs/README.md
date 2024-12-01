@@ -35,7 +35,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 <p>
   <strong>Test successful</strong>
   <br>
-  <a target="_blank" href="https://www.archlinux.de/releases/2024.11.01">archlinux-2024.11.01-x86_64.iso</a>
+  <a target="_blank" href="https://www.archlinux.de/releases/2024.12.01">archlinux-2024.12.01-x86_64.iso</a>
   <br>
   <sub>100% shellcheck approved</sub>
 </p>
