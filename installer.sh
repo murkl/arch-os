@@ -20,7 +20,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
-VERSION='1.7.3'
+VERSION='1.7.4'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -1071,6 +1071,10 @@ exec_install_desktop() {
                 #chroot_pacman_remove evince || true # Need for sushi
             fi
 
+            # Add user to other useful groups (https://wiki.archlinux.org/title/Users_and_groups#User_groups)
+            arch-chroot /mnt groupadd -f plugdev
+            arch-chroot /mnt usermod -aG adm,audio,video,optical,input,tty,plugdev "$ARCH_OS_USERNAME"
+
             # Add user to gamemode group
             [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
@@ -1446,9 +1450,9 @@ exec_install_shell_enhancement() {
     if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                                     # If debug mode then return
-            chroot_pacman_install starship eza bat fastfetch mc btop nano man-db bash-completion     # Install packages
-            mkdir -p "/mnt/root/.config/fastfetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/fastfetch" # Create fastfetch config dirs
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                                                          # If debug mode then return
+            chroot_pacman_install starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-highlighting # Install packages
+            mkdir -p "/mnt/root/.config/fastfetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/fastfetch"                      # Create fastfetch config dirs
 
             # Install & set fish for root & user
             if [ "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" = "true" ]; then
@@ -1690,7 +1694,7 @@ exec_install_shell_enhancement() {
             # Set Nano colors
             sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
             sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
-            sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
+            sed -i 's;^# include /usr/share/nano/\*\.nanorc;include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc"\ninclude "/usr/share/nano-syntax-highlighting/*.nanorc";g' /mnt/etc/nanorc
 
             # Set correct permissions
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"

@@ -248,7 +248,7 @@ Disable this feature with `ARCH_OS_HOUSEKEEPING_ENABLED='false'`
 If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true`, the following packages are installed and preconfigured (for root & user). To keep `bash` as default shell, set `ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='false'`:
 
 ```
-fish starship eza bat fastfetch mc btop nano man-db bash-completion
+fish starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-highlighting
 ```
 
 - `fish` is set as default shell
