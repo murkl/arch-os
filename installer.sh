@@ -1694,8 +1694,7 @@ exec_install_shell_enhancement() {
             # Set Nano colors
             sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
             sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
-            sed -i 's;^# include "/usr/share/nano/\*\.nanorc";include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc";g' /mnt/etc/nanorc
-            sed -i '/include \/usr\/share\/nano\/extra\/\*\.nanorc/a include "/usr/share/nano-syntax-highlighting/*.nanorc"' /mnt/etc/nanorc # Syntax highlighting
+            sed -i 's;^# include /usr/share/nano/\*\.nanorc;include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc"\ninclude "/usr/share/nano-syntax-highlighting/*.nanorc";g' /mnt/etc/nanorc
 
             # Set correct permissions
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
