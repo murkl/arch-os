@@ -1487,8 +1487,8 @@ exec_install_shell_enhancement() {
                     echo '# Init starship promt'
                     echo 'command -v starship > /dev/null && starship init fish | source'
                 } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
-                arch-chroot /mnt chsh -s /usr/bin/fish
-                arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
+                #arch-chroot /mnt chsh -s /usr/bin/fish
+                #arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
             fi
 
             { # Create aliases for root & user
@@ -1553,6 +1553,12 @@ exec_install_shell_enhancement() {
                 echo ''
                 echo '# Set starship'
                 echo 'command -v starship &>/dev/null && eval "$(starship init bash)"'
+                echo ''
+                echo '# Start fish shell'
+                echo 'if [[ $(ps --no-header --pid=$PPID --format=comm) != "fish" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then'
+                echo '[ -n "$DISPLAY" ] && command -v fish &>/dev/null && shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION='''
+                echo '[ -n "$DISPLAY" ] && command -v fish &>/dev/null && exec fish $LOGIN_OPTION'
+                echo 'fi'
 
             } | tee "/mnt/root/.bashrc" "/mnt/home/${ARCH_OS_USERNAME}/.bashrc" >/dev/null
 
