@@ -1554,7 +1554,7 @@ exec_install_shell_enhancement() {
                 echo '# Set starship'
                 echo 'command -v starship &>/dev/null && eval "$(starship init bash)"'
                 echo ''
-                echo '# Start fish shell'
+                echo '# Start fish shell (https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish)'
                 echo 'if [ -n "$DISPLAY" ] && command -v fish &>/dev/null && [[ $(ps --no-header --pid=$PPID --format=comm) != "fish" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then'
                 echo '    shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""'
                 echo '    exec fish $LOGIN_OPTION'
