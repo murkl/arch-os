@@ -1555,11 +1555,10 @@ exec_install_shell_enhancement() {
                 echo 'command -v starship &>/dev/null && eval "$(starship init bash)"'
                 echo ''
                 echo '# Start fish shell'
-                echo 'if [[ $(ps --no-header --pid=$PPID --format=comm) != "fish" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then'
-                echo '[ -n "$DISPLAY" ] && command -v fish &>/dev/null && shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION='''
-                echo '[ -n "$DISPLAY" ] && command -v fish &>/dev/null && exec fish $LOGIN_OPTION'
+                echo 'if [ -n "$DISPLAY" ] && command -v fish &>/dev/null && [[ $(ps --no-header --pid=$PPID --format=comm) != "fish" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then'
+                echo '    shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""'
+                echo '    exec fish $LOGIN_OPTION'
                 echo 'fi'
-
             } | tee "/mnt/root/.bashrc" "/mnt/home/${ARCH_OS_USERNAME}/.bashrc" >/dev/null
 
             # shellcheck disable=SC2016
