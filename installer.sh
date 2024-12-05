@@ -20,7 +20,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
-VERSION='1.7.4'
+VERSION='1.7.5'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -1487,8 +1487,8 @@ exec_install_shell_enhancement() {
                     echo '# Init starship promt'
                     echo 'command -v starship > /dev/null && starship init fish | source'
                 } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
-                arch-chroot /mnt chsh -s /usr/bin/fish
-                arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
+                #arch-chroot /mnt chsh -s /usr/bin/fish
+                #arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
             fi
 
             { # Create aliases for root & user
@@ -1500,8 +1500,8 @@ exec_install_shell_enhancement() {
                 echo 'alias diff="diff --color=auto"'
                 echo 'alias grep="grep --color=auto"'
                 echo 'alias ip="ip -color=auto"'
-                echo 'alias open="xdg-open"'
-                echo 'alias fetch="fastfetch"'
+                echo 'command -v xdg-open &>/dev/null && alias open="xdg-open"'
+                echo 'command -v fastfetch &>/dev/null && alias fetch="fastfetch"'
                 echo 'alias logs="systemctl --failed; echo; journalctl -p 3 -b"'
                 echo 'alias q="exit"'
                 echo 'alias c="clear"'
@@ -1553,7 +1553,12 @@ exec_install_shell_enhancement() {
                 echo ''
                 echo '# Set starship'
                 echo 'command -v starship &>/dev/null && eval "$(starship init bash)"'
-
+                echo ''
+                echo '# Start fish shell (https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish)'
+                echo 'if [ -n "$DISPLAY" ] && command -v fish &>/dev/null && [[ $(ps --no-header --pid=$PPID --format=comm) != "fish" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then'
+                echo '    shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""'
+                echo '    exec fish $LOGIN_OPTION'
+                echo 'fi'
             } | tee "/mnt/root/.bashrc" "/mnt/home/${ARCH_OS_USERNAME}/.bashrc" >/dev/null
 
             # shellcheck disable=SC2016
