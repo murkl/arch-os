@@ -1948,6 +1948,7 @@ print_header() {
     local header_version="${VERSION}" && [ "$DEBUG" = "true" ] && header_version="${VERSION}-debug"
     gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${header_version}"
     [ "$FORCE" = "true" ] && gum_red --bold "CAUTION: Force mode enabled. Cancel with: Ctrl + c" && echo
+    return 0
 }
 
 print_filled_space() {
