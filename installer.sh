@@ -1585,7 +1585,7 @@ exec_install_shell_enhancement() {
             #     echo 'fish_indicator = ""'
             #     echo 'style = "purple bold"'
             # } | tee "/mnt/root/.config/starship.toml" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "starship preset gruvbox-rainbow -o /mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- /usr/bin/starship preset gruvbox-rainbow -o "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
 
             # shellcheck disable=SC2028,SC2016
             { # Create fastfetch config for root & user
