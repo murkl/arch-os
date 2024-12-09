@@ -269,6 +269,7 @@ fish starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-
 - `mc` open file manager
 - `open <file>` open file in GNOME app
 - `history` open command history
+- `help` open fish help in browser
 - `c` clear screen
 - `q` exit
 

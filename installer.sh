@@ -1464,16 +1464,6 @@ exec_install_shell_enhancement() {
                     echo '    # Commands to run in interactive sessions can go here'
                     echo 'end'
                     echo ''
-                    echo '# Export environment variables'
-                    echo 'if status --is-login'
-                    echo '    set generator_path /usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator'
-                    echo '    if command -v $generator_path >/dev/null'
-                    echo '        for line in ($generator_path)'
-                    echo '            set -gx (echo $line | cut -d= -f1) (echo $line | cut -d= -f2-)'
-                    echo '        end'
-                    echo '    end'
-                    echo 'end'
-                    echo ''
                     echo '# Disable welcome message'
                     echo 'set fish_greeting'
                     echo ''
@@ -1485,7 +1475,7 @@ exec_install_shell_enhancement() {
                     echo 'test -f "$HOME/.aliases" && source "$HOME/.aliases"'
                     echo ''
                     echo '# Init starship promt'
-                    echo 'command -v starship > /dev/null && starship init fish | source'
+                    echo '[ -n "$DISPLAY" ] && command -v starship > /dev/null && starship init fish | source'
                 } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
                 #arch-chroot /mnt chsh -s /usr/bin/fish
                 #arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
@@ -1552,48 +1542,50 @@ exec_install_shell_enhancement() {
                 echo 'export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q"'
                 echo ''
                 echo '# Set starship'
-                echo 'command -v starship &>/dev/null && eval "$(starship init bash)"'
+                echo '[ -n "$DISPLAY" ] && command -v starship &>/dev/null && eval "$(starship init bash)"'
                 echo ''
                 echo '# Start fish shell (https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish)'
-                echo 'if [ -n "$DISPLAY" ] && command -v fish &>/dev/null && [[ $(ps --no-header --pid=$PPID --format=comm) != "fish" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then'
+                echo 'if command -v fish &>/dev/null && [[ $(ps --no-header --pid=$PPID --format=comm) != "fish" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then'
                 echo '    shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""'
                 echo '    exec fish $LOGIN_OPTION'
                 echo 'fi'
             } | tee "/mnt/root/.bashrc" "/mnt/home/${ARCH_OS_USERNAME}/.bashrc" >/dev/null
 
             # shellcheck disable=SC2016
-            { # Create starship config for root & user
-                echo "# Get editor completions based on the config schema"
-                echo "\"\$schema\" = 'https://starship.rs/config-schema.json'"
-                echo ""
-                echo "# Wait 10 milliseconds for starship to check files under the current directory"
-                echo "scan_timeout = 10"
-                echo ""
-                echo "# Set command timeout"
-                echo "command_timeout = 10000"
-                echo ""
-                echo "# Inserts a blank line between shell prompts"
-                echo "add_newline = true"
-                echo ""
-                echo "[directory]"
-                echo "style = 'bold green'"
-                echo ""
-                echo "# Replace the promt symbol"
-                echo "[character]"
-                echo "success_symbol = '[>](bold purple)'"
-                echo ""
-                echo "# Disable the package module, hiding it from the prompt completely"
-                echo "[package]"
-                echo "disabled = true"
-                echo ""
-                echo '[shell]'
-                echo 'disabled = false'
-                echo 'format = "[$indicator]($style)"'
-                echo 'unknown_indicator = "shell "'
-                echo 'bash_indicator = "bash "'
-                echo 'fish_indicator = ""'
-                echo 'style = "purple bold"'
-            } | tee "/mnt/root/.config/starship.toml" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
+            # { # Create starship config for root & user
+            #     echo "# Get editor completions based on the config schema"
+            #     echo "\"\$schema\" = 'https://starship.rs/config-schema.json'"
+            #     echo ""
+            #     echo "# Wait 10 milliseconds for starship to check files under the current directory"
+            #     echo "scan_timeout = 10"
+            #     echo ""
+            #     echo "# Set command timeout"
+            #     echo "command_timeout = 10000"
+            #     echo ""
+            #     echo "# Inserts a blank line between shell prompts"
+            #     echo "add_newline = true"
+            #     echo ""
+            #     echo "[directory]"
+            #     echo "style = 'bold green'"
+            #     echo ""
+            #     echo "# Replace the promt symbol"
+            #     echo "[character]"
+            #     echo "success_symbol = '[>](bold purple)'"
+            #     echo "error_symbol = '[x](bold red)'"
+            #     echo ""
+            #     echo "# Disable the package module, hiding it from the prompt completely"
+            #     echo "[package]"
+            #     echo "disabled = true"
+            #     echo ""
+            #     echo '[shell]'
+            #     echo 'disabled = false'
+            #     echo 'format = "[$indicator]($style)"'
+            #     echo 'unknown_indicator = "shell "'
+            #     echo 'bash_indicator = "bash "'
+            #     echo 'fish_indicator = ""'
+            #     echo 'style = "purple bold"'
+            # } | tee "/mnt/root/.config/starship.toml" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "starship preset gruvbox-rainbow -o /mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
 
             # shellcheck disable=SC2028,SC2016
             { # Create fastfetch config for root & user
