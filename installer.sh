@@ -1591,15 +1591,14 @@ exec_install_shell_enhancement() {
                 echo '[shell]'
                 echo 'disabled = false'
                 echo 'format = "[$indicator]($style)"'
-                echo 'unknown_indicator = " shell |"'
-                echo 'bash_indicator = " bash |"'
+                echo 'unknown_indicator = "| shell "'
+                echo 'bash_indicator = "| bash "'
                 echo 'fish_indicator = ""'
                 echo 'style = "fg:color_fg0 bg:color_orange"'
             } | tee -a "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
             sed -i 's// >/g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i 's// </g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i "s;\$os\\\;\$os\\\ \n\$shell\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-
+            sed -i "s;\$username\\\;\$username\\\ \n\$shell\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             cp "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" "/mnt/root/.config/starship.toml"
 
             # shellcheck disable=SC2028,SC2016
@@ -1610,8 +1609,8 @@ exec_install_shell_enhancement() {
                 echo '    "source": "arch2",'
                 echo '    "type": "auto",'
                 echo '    "color": {'
-                echo '      "1": "magenta",'
-                echo '      "2": "magenta"'
+                echo '      "1": "white",'
+                echo '      "2": "white"'
                 echo '    },'
                 echo '    "padding": {'
                 echo '      "top": 0,'
