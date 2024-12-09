@@ -18,6 +18,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 # ENVIRONMENT
 : "${DEBUG:=false}" # DEBUG=true ./installer.sh
 : "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
+: "${FORCE:=false}" # FORCE=true ./installer.sh
 
 # SCRIPT
 VERSION='1.7.5'
@@ -77,7 +78,7 @@ main() {
         gum_white '• Boot Mode set to UEFI'
 
         # Ask for load & remove existing config file
-        if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
+        if [ "$FORCE" = "false" ] && [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
             gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config > exit script
             echo && gum_title "Properties File"
             mv -f "$SCRIPT_CONFIG" "${SCRIPT_CONFIG}.old" && gum_info "installer.conf was moved to installer.conf.old"
@@ -117,7 +118,7 @@ main() {
         echo && gum_info "Properties successfully initialized"
 
         # Open Advanced Properties?
-        if gum_confirm --negative="Skip" "Open Advanced Setup?"; then
+        if [ "$FORCE" = "false" ] && gum_confirm --negative="Skip" "Open Advanced Setup?"; then
             local header_txt="• Save with CTRL + D or ESC and cancel with CTRL + C"
             if gum_write --show-line-numbers --prompt "> " --height=10 --width=180 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
@@ -139,7 +140,9 @@ main() {
     # ---------------------------------------------------------------------------------------------------
 
     # Start installation in 5 seconds?
-    gum_confirm "Start Arch OS Installation?" || trap_gum_exit
+    if [ "$FORCE" = "false" ]; then
+        gum_confirm "Start Arch OS Installation?" || trap_gum_exit
+    fi
     local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel..."
     echo && ! gum_spin --title="$spin_title" -- sleep 5 && trap_gum_exit # CTRL + C pressed
     gum_title "Arch OS Installation"
@@ -184,15 +187,20 @@ main() {
     # ---------------------------------------------------------------------------------------------------
 
     # Show reboot & unmount promt
-    local do_reboot="false"
-    local do_unmount="false"
-    local do_chroot="false"
+    local do_reboot do_unmount do_chroot
+
+    # Force values
+    if [ "$FORCE" = "true" ]; then
+        do_unmount="true"
+        do_reboot="false"
+        do_chroot="false"
+    fi
 
     # Reboot promt
-    gum_confirm "Reboot to Arch OS now?" && do_reboot="true" && do_unmount="true"
+    [ -z "$do_reboot" ] && gum_confirm "Reboot to Arch OS now?" && do_reboot="true" && do_unmount="true"
 
     # Unmount
-    [ "$do_reboot" = "false" ] && gum_confirm "Unmount Arch OS from /mnt?" && do_unmount="true"
+    [ "$FORCE" = "false" ] && [ "$do_reboot" = "false" ] && gum_confirm "Unmount Arch OS from /mnt?" && do_unmount="true"
     [ "$do_unmount" = "true" ] && echo && gum_warn "Unmounting Arch OS from /mnt..."
     if [ "$DEBUG" = "false" ] && [ "$do_unmount" = "true" ]; then
         swapoff -a
@@ -204,7 +212,7 @@ main() {
     [ "$do_reboot" = "true" ] && gum_warn "Rebooting to Arch OS..." && [ "$DEBUG" = "false" ] && reboot
 
     # Chroot
-    [ "$do_unmount" = "false" ] && gum_confirm "Chroot to new Arch OS?" && do_chroot="true"
+    [ "$FORCE" = "false" ] && [ "$do_unmount" = "false" ] && gum_confirm "Chroot to new Arch OS?" && do_chroot="true"
     if [ "$do_chroot" = "true" ] && echo && gum_warn "Chrooting Arch OS at /mnt..."; then
         gum_warn "!! YOUR ARE NOW ON YOUR NEW ARCH OS SYSTEM !!"
         gum_warn ">> Leave with command 'exit'"
@@ -1939,6 +1947,7 @@ print_header() {
 ██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
     local header_version="${VERSION}" && [ "$DEBUG" = "true" ] && header_version="${VERSION}-debug"
     gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${header_version}"
+    [ "$FORCE" = "true" ] && gum_red --bold "CAUTION: Force mode enabled. Cancel with: Ctrl + c" && echo
 }
 
 print_filled_space() {

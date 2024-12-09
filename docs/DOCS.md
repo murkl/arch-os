@@ -480,6 +480,12 @@ curl -Ls bit.ly/arch-os-dev | bash
 ### Parameter
 
 ```
+# Set password:
+ARCH_OS_PASSWORD=mySecret123 ./installer.sh
+
+# Force install:
+FORCE=true ./installer.sh
+
 # Custom gum:
 GUM=/usr/bin/gum ./installer.sh
 
