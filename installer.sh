@@ -1538,8 +1538,7 @@ exec_install_shell_enhancement() {
                 echo 'export HISTTIMEFORMAT="%F %T "          # Add date to history'
                 echo ''
                 echo '# History ignore list'
-                echo 'export HISTIGNORE=' &
-                echo 'export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q"'
+                echo 'export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q:c"'
                 echo ''
                 echo '# Set starship'
                 echo '[ -n "$DISPLAY" ] && command -v starship &>/dev/null && eval "$(starship init bash)"'
@@ -1584,8 +1583,24 @@ exec_install_shell_enhancement() {
             #     echo 'bash_indicator = "bash "'
             #     echo 'fish_indicator = ""'
             #     echo 'style = "purple bold"'
-            # } | tee "/mnt/root/.config/starship.toml" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
-            arch-chroot /mnt /usr/bin/starship preset gruvbox-rainbow -o "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            # } | tee "/mnt/root/.confiqg/starship.toml" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
+            arch-chroot /mnt /usr/bin/starship preset gruvbox-rainbow -o "/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            # shellcheck disable=SC2016
+            { # Create starship config for root & user
+                echo ''
+                echo '[shell]'
+                echo 'disabled = false'
+                echo 'format = "[$indicator]($style)"'
+                echo 'unknown_indicator = " shell |"'
+                echo 'bash_indicator = " bash |"'
+                echo 'fish_indicator = ""'
+                echo 'style = "fg:color_fg0 bg:color_orange"'
+            } | tee -a "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
+            sed -i 's// >/g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i 's// </g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i "s;\$os\\\;\$os\\\ \n\$shell\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+
+            cp "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" "/mnt/root/.config/starship.toml"
 
             # shellcheck disable=SC2028,SC2016
             { # Create fastfetch config for root & user
