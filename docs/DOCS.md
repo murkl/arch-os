@@ -260,6 +260,7 @@ fish starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-
 
 #### Useful Terminal commands
 
+- `bash` switch to bash
 - `fetch` show system info
 - `btop` show system manager
 - `logs` show system logs

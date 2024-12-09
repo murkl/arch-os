@@ -1549,7 +1549,7 @@ exec_install_shell_enhancement() {
                 echo 'export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q:c"'
                 echo ''
                 echo '# Force default font'
-                echo 'if command -v gsettings &>/dev/null && [[ "$(gsettings get org.gnome.desktop.interface monospace-font-name)" = *"Source Code Pro 10"* ]]; then'
+                echo 'if [ "$EUID" -ne 0 ] && command -v gsettings &>/dev/null && [[ "$(gsettings get org.gnome.desktop.interface monospace-font-name)" = *"Source Code Pro 10"* ]]; then'
                 echo '    gsettings set org.gnome.desktop.interface monospace-font-name "FiraCode Nerd Font 10"'
                 echo 'fi'
                 echo ''
