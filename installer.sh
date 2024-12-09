@@ -1599,6 +1599,7 @@ exec_install_shell_enhancement() {
             sed -i 's// >/g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i 's// </g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i "s;\$username\\\;\$username\\\ \n\$shell\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i '/\[directory\.substitutions\]/a "~" = " "' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             cp "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" "/mnt/root/.config/starship.toml"
 
             # shellcheck disable=SC2028,SC2016
