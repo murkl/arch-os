@@ -512,6 +512,10 @@ MODE=debug ./installer.sh
 
 <p><img src="screenshots/fastfetch.png"></p>
 
+### Bootsplash
+
+<p><img src="screenshots/bootsplash.png"></p>
+
 ### Arch OS Installer
 
 <p><img src="screenshots/installer_start.png"></p>

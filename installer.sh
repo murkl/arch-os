@@ -1549,7 +1549,7 @@ exec_install_shell_enhancement() {
                 echo 'export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q:c"'
                 echo ''
                 echo '# Force default font'
-                echo 'if [ "$EUID" -ne 0 ] && command -v gsettings &>/dev/null && [[ "$(gsettings get org.gnome.desktop.interface monospace-font-name)" = *"Source Code Pro 10"* ]]; then'
+                echo 'if [ -n "$DISPLAY" ] && [ "$EUID" -ne 0 ] && command -v gsettings &>/dev/null && [[ "$(gsettings get org.gnome.desktop.interface monospace-font-name)" = *"Source Code Pro 10"* ]]; then'
                 echo '    gsettings set org.gnome.desktop.interface monospace-font-name "FiraCode Nerd Font 10"'
                 echo 'fi'
                 echo ''
@@ -1609,10 +1609,12 @@ exec_install_shell_enhancement() {
                 echo 'fish_indicator = ""'
                 echo 'style = "fg:color_fg0 bg:color_orange"'
             } | tee -a "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
-            sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i "s;\$username\\\;\$username\\\ \n\$shell\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i '/\[directory\.substitutions\]/a "~" = " "' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i "s/ \$time/  \$time/g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i '/\[line_break\]$/{N;s/\[line_break\]\ndisabled = false/[line_break]\ndisabled = true/}' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             cp "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" "/mnt/root/.config/starship.toml"
 
             # shellcheck disable=SC2028,SC2016
