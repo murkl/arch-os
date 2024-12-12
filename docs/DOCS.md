@@ -148,30 +148,6 @@ If you want to disable VM support add `ARCH_OS_VM_SUPPORT_ENABLED='false'`
 
 **Note:** You will only be provided with a minimal tty after installation.
 
-### Install Graphics Driver (manually)
-
-Set the property `ARCH_OS_DESKTOP_GRAPHICS_DRIVER='none'` and install your graphics driver manually:
-
-- [OpenGL](https://wiki.archlinux.org/title/OpenGL)
-- [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
-- [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
-- [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Available_methods)
-- [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
-- [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
-
-### VM Support
-
-If the installation is executed in a VM (autodetected), the corresponding packages are installed.
-
-Supported VMs:
-
-- kvm
-- vmware
-- oracle
-- microsoft
-
-Disable this feature with `ARCH_OS_VM_SUPPORT_ENABLED='false'`
-
 ### Example: `installer.conf`
 
 ```
@@ -212,6 +188,30 @@ ARCH_OS_ECN_ENABLED='true' # Disable ECN support for legacy routers | Default: t
 ## Features
 
 Each feature can be activated/deactivated during installation. Further information can be found in the individual feature headings.
+
+### Install Graphics Driver (manually)
+
+Set the property `ARCH_OS_DESKTOP_GRAPHICS_DRIVER='none'` and install your graphics driver manually:
+
+- [OpenGL](https://wiki.archlinux.org/title/OpenGL)
+- [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
+- [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
+- [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Available_methods)
+- [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
+- [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
+
+### VM Support
+
+If the installation is executed in a VM (autodetected), the corresponding packages are installed.
+
+Supported VMs:
+
+- kvm
+- vmware
+- oracle
+- microsoft
+
+Disable this feature with `ARCH_OS_VM_SUPPORT_ENABLED='false'`
 
 ### Core Tweaks
 
@@ -313,7 +313,7 @@ fish_config
 
 **GitHub Project ➜ [github.com/murkl/arch-os-manager](https://github.com/murkl/arch-os-manager)**
 
-<p><img src="screenshots/arch_os_manager.png"></p>
+<p><img src="screenshots/manager_menu.png"></p>
 
 Install **➜ [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/)** and set this in extension options to integrate [Arch OS Manager](https://github.com/murkl/arch-os-manager):
 
@@ -491,7 +491,7 @@ FORCE=true ./installer.sh
 GUM=/usr/bin/gum ./installer.sh
 
 # Debug simulator:
-MODE=debug ./installer.sh
+DEBUG=true ./installer.sh
 ```
 
 <div align="center">
@@ -516,16 +516,13 @@ MODE=debug ./installer.sh
 
 <p><img src="screenshots/bootsplash.png"></p>
 
+### Arch OS System Manager
+
+<p><img src="screenshots/manager_upgrade.png"></p>
+
 ### Arch OS Installer
 
 <p><img src="screenshots/installer_start.png"></p>
-<p><img src="screenshots/installer_load_properties.png"></p>
-<p><img src="screenshots/installer_preset.png"></p>
-<p><img src="screenshots/installer_language.png"></p>
-<p><img src="screenshots/installer_disk.png"></p>
-<p><img src="screenshots/installer_driver.png"></p>
-<p><img src="screenshots/installer_slim.png"></p>
-<p><img src="screenshots/installer_core_complete.png"></p>
 
 </div>
 
