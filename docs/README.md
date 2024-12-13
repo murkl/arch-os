@@ -21,7 +21,7 @@
 
 <p><b>
 
-[➜ More Screenshots](DOCS.md#screenshots)
+[➜ More Screenshots](#screenshots)
 
 </b></p>
 
@@ -152,15 +152,14 @@ Further information can be found in the documentation.
 **[➜ Open Arch OS Docs](DOCS.md)**
 
 <div align="center">
-  <div><img src="./screenshots/desktop_demo.jpg"></div>
-  <sub><i>Arch OS Desktop Demo</i></sub>
-  <br><br>
-  <div><img src="./screenshots/fastfetch.png"></div>
-  <sub><i>Arch OS Shell Enhancement</i></sub>
-  <br><br>
-  <div><img src="./screenshots/bootsplash.png"></div>
-  <sub><i>Arch OS Bootsplash</i></sub>
-  <br><br>
-  <div><img src="./screenshots/manager_upgrade.png"></div>
-  <sub><i>Arch OS System Upgrade Demo</i></sub>
+
+### Screenshots
+
+<p><sub><b>This screenshots may outdated.</b></sub></p>
+<p><sub><i>Arch OS Desktop Demo</i></sub><div><img src="./screenshots/desktop_demo.jpg"></div></p>
+<p><sub><i>Arch OS Bootsplash</i></sub><div><img src="./screenshots/bootsplash.png"></div></p>
+<p><sub><i>Arch OS Shell Enhancement</i></sub><div><img src="./screenshots/fastfetch.png"></div></p>
+<p><sub><i>Arch OS Manager - System Upgrade Demo</i></sub><div><img src="./screenshots/manager_upgrade.png"></div></p>
+<p><sub><i>Arch OS Desktop Core Apps </i></sub><div><img src="./screenshots/desktop_apps.png"></div></p>
+
 </div>

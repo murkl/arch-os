@@ -12,7 +12,6 @@
 4. [Technical Information](#technical-information)
 5. [Troubleshooting](#troubleshooting)
 6. [Development](#development)
-7. [Screenshots](#screenshots)
 
 ## Recommendation
 
@@ -493,40 +492,6 @@ GUM=/usr/bin/gum ./installer.sh
 # Debug simulator:
 DEBUG=true ./installer.sh
 ```
-
-<div align="center">
-
-## Screenshots
-
-<sub><b>This screenshots may outdated.</b></sub>
-
-### Arch OS Desktop
-
-<p><img src="screenshots/desktop_demo.jpg"></p>
-
-### GNOME Core Apps
-
-<p><img src="screenshots/desktop_apps.png"></p>
-
-### Shell Enhancement
-
-<p><img src="screenshots/fastfetch.png"></p>
-
-### Bootsplash
-
-<p><img src="screenshots/bootsplash.png"></p>
-
-### Arch OS System Manager
-
-<p><img src="screenshots/manager_menu.png"></p>
-
-<p><img src="screenshots/manager_upgrade.png"></p>
-
-### Arch OS Installer
-
-<p><img src="screenshots/installer_start.png"></p>
-
-</div>
 
 ## Credits
 
