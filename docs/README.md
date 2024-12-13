@@ -151,15 +151,14 @@ Further information can be found in the documentation.
 
 **[➜ Open Arch OS Docs](DOCS.md)**
 
+## Screenshots
+
+**This screenshots may outdated.**
+
 <div align="center">
-
-### Screenshots
-
-<p><sub><b>This screenshots may outdated.</b></sub></p>
-<p><sub><i>Arch OS Desktop Demo</i></sub><div><img src="./screenshots/desktop_demo.jpg"></div></p>
-<p><sub><i>Arch OS Bootsplash</i></sub><div><img src="./screenshots/bootsplash.png"></div></p>
-<p><sub><i>Arch OS Shell Enhancement</i></sub><div><img src="./screenshots/fastfetch.png"></div></p>
-<p><sub><i>Arch OS Manager - System Upgrade Demo</i></sub><div><img src="./screenshots/manager_upgrade.png"></div></p>
-<p><sub><i>Arch OS Desktop Core Apps </i></sub><div><img src="./screenshots/desktop_apps.png"></div></p>
-
+<p><div><img src="./screenshots/desktop_demo.jpg"></div><sub><i>Arch OS Desktop Demo</i></sub></p><br>
+<p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Arch OS Bootsplash</i></sub></p><br>
+<p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Arch OS Shell Enhancement</i></sub></p><br>
+<p><div><img src="./screenshots/manager_upgrade.png"></div><sub><i>Arch OS Manager - System Upgrade Demo</i></sub></p><br>
+<p><div><img src="./screenshots/desktop_apps.png"></div><sub><i>Arch OS Desktop Core Apps </i></sub></p><br>
 </div>
