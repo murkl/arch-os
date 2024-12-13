@@ -102,8 +102,6 @@ Select one of these presets (prompted in the installer) to [install](#installing
 
 ## Installing Arch OS
 
-![Animated Arch OS Installation](./animation.gif)
-
 To install Arch OS, an internet connection is required, as many packages will be downloaded during the installation process.
 
 ### 1. Prepare bootable USB Device
@@ -128,13 +126,13 @@ To install Arch OS, an internet connection is required, as many packages will be
 curl -Ls bit.ly/arch-os | bash
 ```
 
+![Animated Arch OS Installation](./animation.gif)
+
 _Cancel the Arch OS Installer with `CTRL + c`_
 
 **[➜ See Advanced Installation](DOCS.md#advanced-installation)**
 
 ## System Maintenance
-
-![Fastfetch](./screenshots/fastfetch.png)
 
 After installing Arch OS with the default properties preset, most maintenance tasks are performed automatically. However, the following steps must be executed manually on a regular basis:
 
@@ -143,7 +141,7 @@ After installing Arch OS with the default properties preset, most maintenance ta
 - Regularly check & merge new configurations with `pacdiff` (preferably after each system upgrade)
 - Consult the **[Arch Linux Wiki](https://wiki.archlinux.org)** (if you need help)
 
-To streamline this process, you can use the preinstalled **[➜ Arch OS Manager](https://github.com/murkl/arch-os-manager)**
+To streamline this process, you can use the preinstalled **[➜ Arch OS System Manager](https://github.com/murkl/arch-os-manager)**
 
 ![Arch OS Manager](./screenshots/manager_menu.png)
 
@@ -156,4 +154,13 @@ Further information can be found in the documentation.
 <div align="center">
   <div><img src="./screenshots/desktop_demo.jpg"></div>
   <sub><i>Arch OS Desktop Demo</i></sub>
+  <br><br>
+  <div><img src="./screenshots/fastfetch.png"></div>
+  <sub><i>Arch OS Shell Enhancement</i></sub>
+  <br><br>
+  <div><img src="./screenshots/bootsplash.png"></div>
+  <sub><i>Arch OS Bootsplash</i></sub>
+  <br><br>
+  <div><img src="./screenshots/manager_upgrade.png"></div>
+  <sub><i>Arch OS System Upgrade Demo</i></sub>
 </div>

@@ -518,6 +518,8 @@ DEBUG=true ./installer.sh
 
 ### Arch OS System Manager
 
+<p><img src="screenshots/manager_menu.png"></p>
+
 <p><img src="screenshots/manager_upgrade.png"></p>
 
 ### Arch OS Installer
