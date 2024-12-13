@@ -153,8 +153,6 @@ Further information can be found in the documentation.
 
 ## Screenshots
 
-**This screenshots may outdated.**
-
 <div align="center">
 <p><div><img src="./screenshots/desktop_demo.jpg"></div><sub><i>Arch OS Desktop Demo</i></sub></p><br>
 <p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Arch OS Bootsplash</i></sub></p><br>
