@@ -13,8 +13,6 @@
 
 [➜ Step by Step Installation Guide](#installing-arch-os)
 
-<sub><i>Takes ~60 seconds to install Arch OS...</i></sub>
-
 </b></p>
 
 <p><img src="./screenshots/installer_start.png"></p>
@@ -27,6 +25,8 @@
 
 <p>
 This project aims to provide a mostly automized, minimal and robust Arch Linux base (minimal tty core or desktop), along with an easy-to-use and fast properties-file-based installer with error handling. Install a minimal Arch Linux core with optional features such as GNOME Desktop with Graphics Driver, Automatic Housekeeping, Zen Kernel, Fancy Shell Enhancement, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more...</p>
+
+<sub><i>Takes ~60 seconds to install...</i></sub>
 
 <p>
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
@@ -143,20 +143,19 @@ After installing Arch OS with the default properties preset, most maintenance ta
 
 To streamline this process, you can use the preinstalled **[➜ Arch OS System Manager](https://github.com/murkl/arch-os-manager)**
 
-![Arch OS Manager](./screenshots/manager_menu.png)
+## Screenshots
+
+<div align="center">
+<p><div><img src="./screenshots/manager_menu.png"></div><sub><i>Arch OS Manager - Menu</i></sub></p>
+<p><div><img src="./screenshots/desktop_demo.jpg"></div><sub><i>Arch OS Desktop Demo</i></sub></p>
+<p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Arch OS Shell Enhancement</i></sub></p>
+<p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Arch OS Bootsplash</i></sub></p>
+<p><div><img src="./screenshots/manager_upgrade.png"></div><sub><i>Arch OS Manager - System Upgrade Demo</i></sub></p>
+<p><div><img src="./screenshots/desktop_apps.png"></div><sub><i>Arch OS Desktop Core Apps </i></sub></p>
+</div>
 
 ## More Information
 
 Further information can be found in the documentation.
 
 **[➜ Open Arch OS Docs](DOCS.md)**
-
-## Screenshots
-
-<div align="center">
-<p><div><img src="./screenshots/desktop_demo.jpg"></div><sub><i>Arch OS Desktop Demo</i></sub></p><br>
-<p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Arch OS Bootsplash</i></sub></p><br>
-<p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Arch OS Shell Enhancement</i></sub></p><br>
-<p><div><img src="./screenshots/manager_upgrade.png"></div><sub><i>Arch OS Manager - System Upgrade Demo</i></sub></p><br>
-<p><div><img src="./screenshots/desktop_apps.png"></div><sub><i>Arch OS Desktop Core Apps </i></sub></p><br>
-</div>

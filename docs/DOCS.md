@@ -43,7 +43,6 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [LocalSend](https://flathub.org/de/apps/org.localsend.localsend_app) to simply share files in same network
 - Install [MissionCenter](https://flathub.org/de/apps/io.missioncenter.MissionCenter) as system monitor
 - Install [Parabolic](https://flathub.org/de/apps/org.nickvision.tubeconverter) as download manager
-- Install [arch-gaming-meta](https://aur.archlinux.org/packages/arch-gaming-meta) to install all common gaming libs
 
 ### Theming (optional)
 
@@ -93,6 +92,14 @@ For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.or
 
 **Note:** Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games from Linux with: `gamemoderun <file>`
 
+#### Gaming Meta Package (recommended)
+
+You can install install [AUR/arch-gaming-meta](https://aur.archlinux.org/packages/arch-gaming-meta) package to install some useful apps and libraries for gaming:
+
+```
+paru -S arch-gaming-meta
+```
+
 #### Steam
 
 Install prefered Steam version:
@@ -128,24 +135,6 @@ May check out these projects:
 The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as preset for the installer properties. This file provides some additional properties to customize your Arch OS installation (see [Example](#example-installerconf)).
 
 **Note:** The `installer.conf` & `installer.log` will copied to the new user's home directory during installation. This files can be saved for reuse or simply deleted.
-
-### Minimal Installation
-
-Set these properties to install Arch OS Core only with minimal packages & configurations:
-
-```
-ARCH_OS_CORE_TWEAKS_ENABLED='false'
-ARCH_OS_BOOTSPLASH_ENABLED='false'
-ARCH_OS_DESKTOP_ENABLED='false'
-ARCH_OS_MULTILIB_ENABLED='false'
-ARCH_OS_HOUSEKEEPING_ENABLED='false'
-ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
-ARCH_OS_AUR_HELPER='none'
-```
-
-If you want to disable VM support add `ARCH_OS_VM_SUPPORT_ENABLED='false'`
-
-**Note:** You will only be provided with a minimal tty after installation.
 
 ### Example: `installer.conf`
 
@@ -183,6 +172,24 @@ ARCH_OS_SAMBA_SHARE_ENABLED='true' # Enable Samba public (anonymous) & home shar
 ARCH_OS_VM_SUPPORT_ENABLED='true' # VM Support | Default: true | Disable: false
 ARCH_OS_ECN_ENABLED='true' # Disable ECN support for legacy routers | Default: true | Disable: false
 ```
+
+### Minimal Installation
+
+Set these properties to install Arch OS Core only with minimal packages & configurations. This is the same as preset `core`:
+
+```
+ARCH_OS_CORE_TWEAKS_ENABLED='false'
+ARCH_OS_BOOTSPLASH_ENABLED='false'
+ARCH_OS_DESKTOP_ENABLED='false'
+ARCH_OS_MULTILIB_ENABLED='false'
+ARCH_OS_HOUSEKEEPING_ENABLED='false'
+ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
+ARCH_OS_AUR_HELPER='none'
+```
+
+If you want to disable VM support add `ARCH_OS_VM_SUPPORT_ENABLED='false'`
+
+**Note:** You will only be provided with a minimal tty after installation.
 
 ## Features
 
