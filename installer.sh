@@ -1529,22 +1529,44 @@ exec_install_shell_enhancement() {
             fi
 
             { # Create aliases for root & user
+                echo '# ls / eza'
                 echo 'alias ls="ls -h --color=always --group-directories-first"'
                 echo 'command -v eza &>/dev/null && alias ls="eza -h --color=always --group-directories-first"'
                 echo 'alias ll="ls -l"'
                 echo 'alias la="ls -la"'
                 echo 'alias lt="ls -Tal"'
+                echo -e '\n# Colorize'
                 echo 'alias diff="diff --color=auto"'
                 echo 'alias grep="grep --color=auto"'
                 echo 'alias ip="ip -color=auto"'
-                echo 'command -v xdg-open &>/dev/null && alias open="xdg-open"'
-                echo 'command -v fastfetch &>/dev/null && alias fetch="fastfetch"'
+                echo -e '\n# Wrapper'
                 echo 'alias logs="systemctl --failed; echo; journalctl -p 3 -b"'
                 echo 'alias q="exit"'
                 echo 'alias c="clear"'
+                echo 'command -v fastfetch &>/dev/null && alias fetch="fastfetch"'
+                echo 'command -v meld &>/dev/null && alias pacnew="sudo DIFFPROG=meld pacdiff"'
+                echo 'command -v xdg-open &>/dev/null && alias open="xdg-open"'
+                echo 'alias myip="curl ipv4.icanhazip.com"'
+                echo -e '\n# Change dir'
                 echo 'alias .="cd .."'
                 echo 'alias ..="cd ../.."'
                 echo 'alias ...="cd ../../.."'
+                echo -e '\n# Packages'
+                local pkg_manager='pacman' && [ -n "$ARCH_OS_AUR_HELPER" ] && [ "$ARCH_OS_AUR_HELPER" != "none" ] && pkg_manager="$ARCH_OS_AUR_HELPER"
+                if [ "$pkg_manager" = "pacman" ]; then
+                    echo "alias paci='sudo ${pkg_manager} -S' # Install package"
+                    echo "alias pacu='sudo ${pkg_manager} -Syu' # System upgrade"
+                else
+                    echo "alias paci='${pkg_manager} -S' # Install package"
+                    echo "alias pacu='${pkg_manager} -Syu' # System upgrade"
+                fi
+                echo "alias pacs='${pkg_manager} -Ss' # Search package in database"
+                echo "alias pacr='${pkg_manager} -Rns' # Remove package"
+                echo "alias pacrc='${pkg_manager} -Scc' # Clear Cache"
+                echo "alias pacl='${pkg_manager} -Qe' # List all installed packages"
+                echo "alias pacla='${pkg_manager} -Qm' # List installed AUR packages"
+                echo "alias pacls='${pkg_manager} -Qs' # Search installed packages"
+                echo "alias pacli='${pkg_manager} -Qi' # Show package info"
             } | tee "/mnt/root/.aliases" "/mnt/home/${ARCH_OS_USERNAME}/.aliases" >/dev/null
 
             # shellcheck disable=SC2016
