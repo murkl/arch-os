@@ -41,6 +41,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [Flatseal](https://flathub.org/apps/com.github.tchx84.Flatseal) to manage Flatpak Permissions
 - Install [Warehouse](https://flathub.org/apps/io.github.flattool.Warehouse) to Manage Flatpak Packages
 - Install [LocalSend](https://flathub.org/de/apps/org.localsend.localsend_app) to simply share files in same network
+- Install [Monitorets](https://flathub.org/de/apps/io.github.jorchube.monitorets) as sticky system monitor
 - Install [MissionCenter](https://flathub.org/de/apps/io.missioncenter.MissionCenter) as system monitor
 - Install [Parabolic](https://flathub.org/de/apps/org.nickvision.tubeconverter) as download manager
 
