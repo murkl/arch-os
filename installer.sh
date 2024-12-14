@@ -1303,6 +1303,8 @@ exec_install_desktop() {
                     echo "gsettings set org.gnome.desktop.wm.keybindings minimize "['<Super>h']""
                     echo "gsettings set org.gnome.desktop.wm.keybindings show-desktop "['<Super>d']""
                     echo "gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen "['<Super>F11']""
+                    echo "# Favorite apps"
+                    echo "gsettings set org.gnome.shell favorite-apps \"['arch-os.desktop', 'org.gnome.Console.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.SystemMonitor.desktop', 'org.gnome.Software.desktop', 'org.gnome.Settings.desktop']\""
                 } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
             fi
 
@@ -1870,7 +1872,7 @@ exec_initialize_arch_os() {
                 echo "Type=Application"
                 echo "Name=Arch OS Initialize"
                 echo "Icon=preferences-system"
-                echo "Exec=bash -c 'sleep 5 && /home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh'"
+                echo "Exec=bash -c 'sleep 5 && /home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh 2>> /home/${ARCH_OS_USERNAME}/${INIT_FILENAME}-error.log'"
             } >"/mnt/home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
             process_return 0 # Return
