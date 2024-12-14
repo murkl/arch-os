@@ -112,7 +112,7 @@ To install Arch OS, an internet connection is required, as many packages will be
 - Use **[Ventoy](https://www.ventoy.net/en/download.html)** or your prefered iso writer tool to create a bootable USB device
 - Alternatively (Linux only): **[➜ Arch OS Creator](https://github.com/murkl/arch-os-creator)**
 
-### 2. Configure BIOS Settings
+### 2. Configure BIOS / UEFI Settings
 
 - Disable Secure Boot
 - Set Boot Mode to UEFI
