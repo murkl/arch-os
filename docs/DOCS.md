@@ -508,3 +508,4 @@ Many thanks for these projects and the people behind them!
 - Arch Linux
 - GNOME
 - Gum by charm
+- Wallpaper: Mountain Lake by Agustin Gaute
