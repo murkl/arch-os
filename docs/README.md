@@ -134,6 +134,8 @@ _Cancel the Arch OS Installer with `CTRL + c`_
 
 ## System Maintenance
 
+<p><img src="./screenshots/manager_menu.png"></p>
+
 After installing Arch OS with the default properties preset, most maintenance tasks are performed automatically. However, the following steps must be executed manually on a regular basis:
 
 - Regularly upgrade your system packages (Pacman/AUR & Flatpak)
@@ -146,10 +148,9 @@ To streamline this process, you can use the preinstalled **[➜ Arch OS System M
 ## Screenshots
 
 <div align="center">
-<p><div><img src="./screenshots/manager_menu.png"></div><sub><i>Arch OS Manager - Menu</i></sub></p>
 <p><div><img src="./screenshots/desktop_demo.jpg"></div><sub><i>Arch OS Desktop Demo</i></sub></p>
-<p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Arch OS Shell Enhancement</i></sub></p>
 <p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Arch OS Bootsplash</i></sub></p>
+<p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Arch OS Shell Enhancement</i></sub></p>
 <p><div><img src="./screenshots/manager_upgrade.png"></div><sub><i>Arch OS Manager - System Upgrade Demo</i></sub></p>
 <p><div><img src="./screenshots/desktop_apps.png"></div><sub><i>Arch OS Desktop Core Apps </i></sub></p>
 </div>
