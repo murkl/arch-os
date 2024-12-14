@@ -30,6 +30,9 @@ GUM_VERSION="0.13.0"
 SCRIPT_CONFIG="./installer.conf"
 SCRIPT_LOG="./installer.log"
 
+# INIT
+INIT_FILENAME="arch-os-initialize"
+
 # TEMP
 SCRIPT_TMP_DIR="$(mktemp -d "./.tmp.XXXXX")"
 ERROR_MSG="${SCRIPT_TMP_DIR}/installer.err"
@@ -162,6 +165,7 @@ main() {
     exec_install_housekeeping
     exec_install_shell_enhancement
     exec_install_archos_manager
+    exec_initialize_arch_os
     exec_cleanup_installation
 
     # Calc installation duration
@@ -1048,10 +1052,10 @@ exec_install_desktop() {
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
 
                 # Fonts
-                packages+=(noto-fonts noto-fonts-emoji ttf-firacode-nerd ttf-liberation ttf-dejavu)
+                packages+=(inter-font ttf-firacode-nerd ttf-nerd-fonts-symbols noto-fonts noto-fonts-emoji ttf-liberation ttf-dejavu)
 
                 # Theming
-                packages+=(adw-gtk-theme)
+                packages+=(adw-gtk-theme tela-circle-icon-theme-standard)
             fi
 
             # Installing packages together (preventing conflicts e.g.: jack2 and piepwire-jack)
@@ -1076,8 +1080,8 @@ exec_install_desktop() {
                 chroot_pacman_remove baobab || true
                 chroot_pacman_remove totem || true
                 chroot_pacman_remove snapshot || true
-                chroot_pacman_remove loupe || true
                 chroot_pacman_remove epiphany || true
+                #chroot_pacman_remove loupe || true # Need as essential
                 #chroot_pacman_remove evince || true # Need for sushi
             fi
 
@@ -1264,6 +1268,33 @@ exec_install_desktop() {
                 echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/kitty.desktop"
             fi
 
+            # Add Init script
+            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
+                {
+                    echo "# Theming settings"
+                    echo "gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'"
+                    echo "gsettings set org.gnome.desktop.interface icon-theme 'Tela-circle'"
+                    echo "# Font settings"
+                    echo "gsettings set org.gnome.desktop.interface font-hinting 'slight'"
+                    echo "gsettings set org.gnome.desktop.interface font-antialiasing 'rgba'"
+                    echo "gsettings set org.gnome.desktop.interface font-name 'Inter 10'"
+                    echo "gsettings set org.gnome.desktop.interface document-font-name 'Inter 10'"
+                    echo "gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Inter Bold 10'"
+                    echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 10'"
+                    echo "# Mutter settings"
+                    echo "gsettings set org.gnome.mutter center-new-windows true"
+                    echo "# Keybinding settings"
+                    echo "gsettings set org.gnome.desktop.wm.keybindings close "['<Super>q']""
+                    echo "gsettings set org.gnome.desktop.wm.keybindings minimize "['<Super>h']""
+                    echo "gsettings set org.gnome.desktop.wm.keybindings show-desktop "['<Super>d']""
+                    echo "gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen "['<Super>F11']""
+                    echo "# File chooser settings"
+                    echo "gsettings set org.gtk.Settings.FileChooser sort-directories-first true"
+                    echo "gsettings set org.gtk.gtk4.Settings.FileChooser sort-directories-first true"
+                    echo
+                } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+            fi
+
             # Set correct permissions
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
 
@@ -1447,7 +1478,12 @@ exec_install_archos_manager() {
             [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                    # If debug mode then return
             chroot_pacman_install git base-devel kitty gum libnotify pacman-contrib # Install dependencies
             chroot_aur_install arch-os-manager                                      # Install archos-manager
-            process_return 0                                                        # Return
+            {
+                echo "# Arch OS Manager Init"
+                echo "( sleep 60  && /usr/bin/arch-os notify ) &"
+                echo
+            } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+            process_return 0 # Return
         ) &>"$PROCESS_LOG" &
         process_capture $! "$process_name"
     fi
@@ -1552,11 +1588,6 @@ exec_install_shell_enhancement() {
                 echo ''
                 echo '# History ignore list'
                 echo 'export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q:c"'
-                echo ''
-                echo '# Force default font'
-                echo 'if [ -n "$DISPLAY" ] && [ "$EUID" -ne 0 ] && command -v gsettings &>/dev/null && [[ "$(gsettings get org.gnome.desktop.interface monospace-font-name)" = *"Source Code Pro 10"* ]]; then'
-                echo '    gsettings set org.gnome.desktop.interface monospace-font-name "FiraCode Nerd Font 10"'
-                echo 'fi'
                 echo ''
                 echo '# Set starship'
                 echo '[ -n "$DISPLAY" ] && command -v starship &>/dev/null && eval "$(starship init bash)"'
@@ -1728,6 +1759,13 @@ exec_install_shell_enhancement() {
             sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
             sed -i 's;^# include /usr/share/nano/\*\.nanorc;include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc"\ninclude "/usr/share/nano-syntax-highlighting/*.nanorc";g' /mnt/etc/nanorc
 
+            # Add init script
+            {
+                echo "# Set default monospace font"
+                echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 10'"
+                echo
+            } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+
             # Set correct permissions
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
 
@@ -1772,6 +1810,37 @@ exec_install_vm_support() {
                 ;;
             *) log_info "No VM detected" ;; # Do nothing
             esac
+            process_return 0 # Return
+        ) &>"$PROCESS_LOG" &
+        process_capture $! "$process_name"
+    fi
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+# shellcheck disable=SC2016
+exec_initialize_arch_os() {
+    local process_name="Initialize Arch OS"
+    if [ -s "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" ]; then
+        process_init "$process_name"
+        (
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
+            sed -i '1i\#!/usr/bin/env bash' "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+            {
+                echo "# Remove autostart init files"
+                echo "rm -f /home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
+                echo "rm -f /home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+            } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+            arch-chroot /mnt chmod +x "/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+            mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/autostart"
+            {
+                echo "[Desktop Entry]"
+                echo "Type=Application"
+                echo "Name=Arch OS Initialize"
+                echo "Icon=preferences-system"
+                echo "Exec=bash -c 'sleep 5 && /home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh'"
+            } >"/mnt/home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
+            arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
             process_return 0 # Return
         ) &>"$PROCESS_LOG" &
         process_capture $! "$process_name"
