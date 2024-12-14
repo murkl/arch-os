@@ -1274,6 +1274,7 @@ exec_install_desktop() {
                     echo "# Theming settings"
                     echo "gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'"
                     echo "gsettings set org.gnome.desktop.interface icon-theme 'Tela-circle'"
+                    echo "gsettings set org.gnome.desktop.interface accent-color 'slate'"
                     echo "# Font settings"
                     echo "gsettings set org.gnome.desktop.interface font-hinting 'slight'"
                     echo "gsettings set org.gnome.desktop.interface font-antialiasing 'rgba'"
@@ -1283,14 +1284,14 @@ exec_install_desktop() {
                     echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 10'"
                     echo "# Mutter settings"
                     echo "gsettings set org.gnome.mutter center-new-windows true"
+                    echo "# File chooser settings"
+                    echo "gsettings set org.gtk.Settings.FileChooser sort-directories-first true"
+                    echo "gsettings set org.gtk.gtk4.Settings.FileChooser sort-directories-first true"
                     echo "# Keybinding settings"
                     echo "gsettings set org.gnome.desktop.wm.keybindings close "['<Super>q']""
                     echo "gsettings set org.gnome.desktop.wm.keybindings minimize "['<Super>h']""
                     echo "gsettings set org.gnome.desktop.wm.keybindings show-desktop "['<Super>d']""
                     echo "gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen "['<Super>F11']""
-                    echo "# File chooser settings"
-                    echo "gsettings set org.gtk.Settings.FileChooser sort-directories-first true"
-                    echo "gsettings set org.gtk.gtk4.Settings.FileChooser sort-directories-first true"
                     echo
                 } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
             fi
@@ -1516,9 +1517,6 @@ exec_install_shell_enhancement() {
                     echo '# Colorize man pages (bat)'
                     echo 'command -v bat &>/dev/null && export MANPAGER="sh -c \"col -bx | bat -l man -p\""'
                     echo 'command -v bat &>/dev/null && export MANROFFOPT="-c"'
-                    echo ''
-                    echo '# Set theme'
-                    echo 'fish_config theme choose Base16\ Default\ Dark'
                     echo ''
                     echo '# Source user aliases'
                     echo 'test -f "$HOME/.aliases" && source "$HOME/.aliases"'
@@ -1763,6 +1761,10 @@ exec_install_shell_enhancement() {
             {
                 echo "# Set default monospace font"
                 echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 10'"
+                if [ "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" = "true" ]; then
+                    echo "# Set fish theme"
+                    echo "fish -c 'fish_config theme choose Base16\ Default\ Dark && echo 'y' | fish_config theme save'"
+                fi
                 echo
             } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
 
@@ -1838,7 +1840,7 @@ exec_initialize_arch_os() {
                 echo "Type=Application"
                 echo "Name=Arch OS Initialize"
                 echo "Icon=preferences-system"
-                echo "Exec=bash -c 'sleep 5 && /home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh'"
+                echo "Exec=bash -c 'sleep 5 && /home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh' 2>> /home/${ARCH_OS_USERNAME}/init.log'"
             } >"/mnt/home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
             process_return 0 # Return
