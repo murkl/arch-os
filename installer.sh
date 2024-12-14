@@ -1275,7 +1275,6 @@ exec_install_desktop() {
                     {
                         echo "# Set wallpaper"
                         echo "gsettings set org.gnome.desktop.background picture-uri 'file:///home/${ARCH_OS_USERNAME}/.arch-os/wallpaper.jpg'"
-                        echo
                     } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
                 fi
             fi
@@ -1304,7 +1303,6 @@ exec_install_desktop() {
                     echo "gsettings set org.gnome.desktop.wm.keybindings minimize "['<Super>h']""
                     echo "gsettings set org.gnome.desktop.wm.keybindings show-desktop "['<Super>d']""
                     echo "gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen "['<Super>F11']""
-                    echo
                 } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
             fi
 
@@ -1494,7 +1492,6 @@ exec_install_archos_manager() {
             {
                 echo "# Arch OS Manager Init"
                 echo "( sleep 60  && /usr/bin/arch-os notify ) &"
-                echo
             } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
             process_return 0 # Return
         ) &>"$PROCESS_LOG" &
@@ -1799,7 +1796,6 @@ exec_install_shell_enhancement() {
                     echo "# Set fish theme"
                     echo "fish -c 'fish_config theme choose Base16\ Default\ Dark && echo 'y' | fish_config theme save'"
                 fi
-                echo
             } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
 
             # Set correct permissions
@@ -1874,7 +1870,7 @@ exec_initialize_arch_os() {
                 echo "Type=Application"
                 echo "Name=Arch OS Initialize"
                 echo "Icon=preferences-system"
-                echo "Exec=bash -c 'sleep 5 && /home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh' 2>> /home/${ARCH_OS_USERNAME}/init.log'"
+                echo "Exec=bash -c 'sleep 5 && /home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh'"
             } >"/mnt/home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
             process_return 0 # Return
