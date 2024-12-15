@@ -64,20 +64,6 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - UEFI only supported
 - [More Information...](DOCS.md#technical-information)
 
-## Additional Features
-
-- [Arch OS System Manager](DOCS.md#arch-os-manager)
-- [Arch OS Core Tweaks](DOCS.md#core-tweaks)
-- [Arch OS Shell Enhancement](DOCS.md#shell-enhancement)
-- [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
-- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
-- [AUR Helper](DOCS.md#advanced-installation) (configurable)
-- [GNOME Desktop Environment](#desktop-features) (optional with additional packages)
-- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
-- [VM Support](DOCS.md#vm-support) (optional)
-- 32 Bit Support (Multilib)
-- Disk Encryption (LUKS2)
-
 ## Desktop Features
 
 - [Arch OS Slim Version](DOCS.md#example-installerconf) (GNOME Core Apps only)
@@ -91,6 +77,20 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - SSH Agent (gcr)
 - Gamemode preinstalled
 - Firmware Update Tool preinstalled
+
+## Additional Features
+
+- [Arch OS System Manager](DOCS.md#arch-os-manager)
+- [Arch OS Core Tweaks](DOCS.md#core-tweaks)
+- [Arch OS Shell Enhancement](DOCS.md#shell-enhancement)
+- [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
+- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
+- [AUR Helper](DOCS.md#advanced-installation) (configurable)
+- [GNOME Desktop Environment](#desktop-features) (optional with additional packages)
+- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
+- [VM Support](DOCS.md#vm-support) (optional)
+- 32 Bit Support (Multilib)
+- Disk Encryption (LUKS2)
 
 ## Installing Arch OS
 
