@@ -92,16 +92,6 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - Gamemode preinstalled
 - Firmware Update Tool preinstalled
 
-## Properties Presets
-
-Select one of these presets (prompted in the installer) to [install](#installing-arch-os) your individual Arch Linux base.
-
-- **`desktop`** ➜ GNOME Desktop Environment + Graphics Driver + Extras + Core (default)
-- **`core`** ➜ Minimal Arch Linux TTY Environment (~150 packages in total)
-- **`none`** ➜ All properties are queried (customize)
-
-**Note:** If the `installer.conf` exists in the working dir (auto-detected), all properties are loaded as preset (except the password).
-
 ## Installing Arch OS
 
 To install Arch OS, an internet connection is required, as many packages will be downloaded during the installation process.
@@ -128,9 +118,17 @@ To install Arch OS, an internet connection is required, as many packages will be
 curl -Ls bit.ly/arch-os | bash
 ```
 
+Select one of these presets to install your individual Arch Linux base:
+
+- **`desktop`:** GNOME Desktop Environment + Graphics Driver + Extras + Core (default)
+- **`core`:** Minimal Arch Linux TTY Environment (~150 packages in total)
+- **`none:`:** All properties are queried (customize)
+
 ![Animated Arch OS Installation](./animation.gif)
 
 _Cancel the Arch OS Installer with `CTRL + c`_
+
+**Note:** If the `installer.conf` exists in the working dir (auto-detected), all properties are loaded as preset (except the password).
 
 **[➜ See Advanced Installation](DOCS.md#advanced-installation)**
 
