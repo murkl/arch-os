@@ -122,7 +122,7 @@ Select one of these presets to install your individual Arch Linux base:
 
 - **`desktop`:** GNOME Desktop Environment + Graphics Driver + Extras + Core (default)
 - **`core`:** Minimal Arch Linux TTY Environment (~150 packages in total)
-- **`none:`:** All properties are queried (customize)
+- **`none`:** All properties are queried (customize)
 
 ![Animated Arch OS Installation](./animation.gif)
 
