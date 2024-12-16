@@ -11,9 +11,7 @@
 
 <p><b>
 
-[➜ Step by Step Installation Guide](#installing-arch-os)
-
-<sub><i>Takes 30 seconds to install Arch OS...</i></sub>
+[➜ Step by Step Installation Guide](#arch-os-installation)
 
 </b></p>
 
@@ -21,12 +19,16 @@
 
 <p><b>
 
-[➜ More Screenshots](DOCS.md#screenshots)
+[➜ More Screenshots](#screenshots)
 
 </b></p>
 
+<p>Optimized for <b>Gaming, Emulation, Audio & Development</b></p>
+
 <p>
 This project aims to provide a mostly automized, minimal and robust Arch Linux base (minimal tty core or desktop), along with an easy-to-use and fast properties-file-based installer with error handling. Install a minimal Arch Linux core with optional features such as GNOME Desktop with Graphics Driver, Automatic Housekeeping, Zen Kernel, Fancy Shell Enhancement, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more...</p>
+
+<sub><i>Setup takes less than 60 seconds...</i></sub>
 
 <p>
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
@@ -62,20 +64,6 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - UEFI only supported
 - [More Information...](DOCS.md#technical-information)
 
-## Additional Features
-
-- [Arch OS System Manager](DOCS.md#arch-os-manager)
-- [Arch OS Core Tweaks](DOCS.md#core-tweaks)
-- [Arch OS Shell Enhancement](DOCS.md#shell-enhancement)
-- [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
-- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
-- [AUR Helper](DOCS.md#advanced-installation) (configurable)
-- [GNOME Desktop Environment](#desktop-features) (optional with additional packages)
-- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
-- [VM Support](DOCS.md#vm-support) (optional)
-- 32 Bit Support (Multilib)
-- Disk Encryption (LUKS2)
-
 ## Desktop Features
 
 - [Arch OS Slim Version](DOCS.md#example-installerconf) (GNOME Core Apps only)
@@ -90,17 +78,21 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - Gamemode preinstalled
 - Firmware Update Tool preinstalled
 
-## Properties Presets
+## Additional Features
 
-Select one of these presets (prompted in the installer) to [install](#installing-arch-os) your individual Arch Linux base.
+- [Arch OS System Manager](DOCS.md#arch-os-manager)
+- [Arch OS Core Tweaks](DOCS.md#core-tweaks)
+- [Arch OS Shell Enhancement](DOCS.md#shell-enhancement)
+- [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
+- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
+- [AUR Helper](DOCS.md#advanced-installation) (configurable)
+- [GNOME Desktop Environment](#desktop-features) (optional with additional packages)
+- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
+- [VM Support](DOCS.md#vm-support) (optional)
+- 32 Bit Support (Multilib)
+- Disk Encryption (LUKS2)
 
-- **`desktop`** ➜ GNOME Desktop Environment + Graphics Driver + Extras + Core (default)
-- **`core`** ➜ Minimal Arch Linux TTY Environment (~150 packages in total)
-- **`none`** ➜ All properties are queried (customize)
-
-**Note:** If the `installer.conf` exists in the working dir (auto-detected), all properties are loaded as preset (except the password).
-
-## Installing Arch OS
+## Arch OS Installation
 
 To install Arch OS, an internet connection is required, as many packages will be downloaded during the installation process.
 
@@ -110,7 +102,7 @@ To install Arch OS, an internet connection is required, as many packages will be
 - Use **[Ventoy](https://www.ventoy.net/en/download.html)** or your prefered iso writer tool to create a bootable USB device
 - Alternatively (Linux only): **[➜ Arch OS Creator](https://github.com/murkl/arch-os-creator)**
 
-### 2. Configure BIOS Settings
+### 2. Configure BIOS / UEFI Settings
 
 - Disable Secure Boot
 - Set Boot Mode to UEFI
@@ -126,13 +118,23 @@ To install Arch OS, an internet connection is required, as many packages will be
 curl -Ls bit.ly/arch-os | bash
 ```
 
+Select one of these presets to install your individual Arch Linux base:
+
+- **`desktop`:** GNOME Desktop Environment + Graphics Driver + Extras + Core (default)
+- **`core`:** Minimal Arch Linux TTY Environment (~150 packages in total)
+- **`none`:** All properties are queried (customize)
+
 ![Animated Arch OS Installation](./animation.gif)
 
 _Cancel the Arch OS Installer with `CTRL + c`_
 
+**Note:** If the `installer.conf` exists in the working dir (auto-detected), all properties are loaded as preset (except the password).
+
 **[➜ See Advanced Installation](DOCS.md#advanced-installation)**
 
 ## System Maintenance
+
+<p><img src="./screenshots/manager_menu.png"></p>
 
 After installing Arch OS with the default properties preset, most maintenance tasks are performed automatically. However, the following steps must be executed manually on a regular basis:
 
@@ -141,15 +143,20 @@ After installing Arch OS with the default properties preset, most maintenance ta
 - Regularly check & merge new configurations with `pacdiff` (preferably after each system upgrade)
 - Consult the **[Arch Linux Wiki](https://wiki.archlinux.org)** (if you need help)
 
-To streamline this process, you can use the preinstalled **[➜ Arch OS Manager](https://github.com/murkl/arch-os-manager)**
+To streamline this process, you can use the preinstalled **[➜ Arch OS System Manager](https://github.com/murkl/arch-os-manager)**
+
+## Screenshots
+
+<div align="center">
+<p><div><img src="./screenshots/desktop_demo.jpg"></div><sub><i>Arch OS Desktop Demo</i></sub></p>
+<p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Arch OS Bootsplash</i></sub></p>
+<p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Arch OS Shell Enhancement</i></sub></p>
+<p><div><img src="./screenshots/manager_upgrade.png"></div><sub><i>Arch OS Manager - System Upgrade Demo</i></sub></p>
+<p><div><img src="./screenshots/desktop_apps.png"></div><sub><i>Arch OS Desktop Core Apps </i></sub></p>
+</div>
 
 ## More Information
 
 Further information can be found in the documentation.
 
 **[➜ Open Arch OS Docs](DOCS.md)**
-
-<div align="center">
-  <div><img src="./screenshots/desktop_demo.jpg"></div>
-  <sub><i>Arch OS Desktop Demo</i></sub>
-</div>

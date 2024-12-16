@@ -18,9 +18,10 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 # ENVIRONMENT
 : "${DEBUG:=false}" # DEBUG=true ./installer.sh
 : "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
+: "${FORCE:=false}" # FORCE=true ./installer.sh
 
 # SCRIPT
-VERSION='1.7.4'
+VERSION='1.7.5'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -28,6 +29,9 @@ GUM_VERSION="0.13.0"
 # ENVIRONMENT
 SCRIPT_CONFIG="./installer.conf"
 SCRIPT_LOG="./installer.log"
+
+# INIT
+INIT_FILENAME="arch-os-initialize"
 
 # TEMP
 SCRIPT_TMP_DIR="$(mktemp -d "./.tmp.XXXXX")"
@@ -77,7 +81,7 @@ main() {
         gum_white '• Boot Mode set to UEFI'
 
         # Ask for load & remove existing config file
-        if [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
+        if [ "$FORCE" = "false" ] && [ -f "$SCRIPT_CONFIG" ] && ! gum_confirm "Load existing installer.conf?"; then
             gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config > exit script
             echo && gum_title "Properties File"
             mv -f "$SCRIPT_CONFIG" "${SCRIPT_CONFIG}.old" && gum_info "installer.conf was moved to installer.conf.old"
@@ -117,7 +121,7 @@ main() {
         echo && gum_info "Properties successfully initialized"
 
         # Open Advanced Properties?
-        if gum_confirm --negative="Skip" "Open Advanced Setup?"; then
+        if [ "$FORCE" = "false" ] && gum_confirm --negative="Skip" "Open Advanced Setup?"; then
             local header_txt="• Save with CTRL + D or ESC and cancel with CTRL + C"
             if gum_write --show-line-numbers --prompt "> " --height=10 --width=180 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
@@ -139,7 +143,9 @@ main() {
     # ---------------------------------------------------------------------------------------------------
 
     # Start installation in 5 seconds?
-    gum_confirm "Start Arch OS Installation?" || trap_gum_exit
+    if [ "$FORCE" = "false" ]; then
+        gum_confirm "Start Arch OS Installation?" || trap_gum_exit
+    fi
     local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel..."
     echo && ! gum_spin --title="$spin_title" -- sleep 5 && trap_gum_exit # CTRL + C pressed
     gum_title "Arch OS Installation"
@@ -159,6 +165,7 @@ main() {
     exec_install_housekeeping
     exec_install_shell_enhancement
     exec_install_archos_manager
+    exec_initialize_arch_os
     exec_cleanup_installation
 
     # Calc installation duration
@@ -184,15 +191,20 @@ main() {
     # ---------------------------------------------------------------------------------------------------
 
     # Show reboot & unmount promt
-    local do_reboot="false"
-    local do_unmount="false"
-    local do_chroot="false"
+    local do_reboot do_unmount do_chroot
+
+    # Force values
+    if [ "$FORCE" = "true" ]; then
+        do_unmount="true"
+        do_reboot="false"
+        do_chroot="false"
+    fi
 
     # Reboot promt
-    gum_confirm "Reboot to Arch OS now?" && do_reboot="true" && do_unmount="true"
+    [ -z "$do_reboot" ] && gum_confirm "Reboot to Arch OS now?" && do_reboot="true" && do_unmount="true"
 
     # Unmount
-    [ "$do_reboot" = "false" ] && gum_confirm "Unmount Arch OS from /mnt?" && do_unmount="true"
+    [ "$FORCE" = "false" ] && [ "$do_reboot" = "false" ] && gum_confirm "Unmount Arch OS from /mnt?" && do_unmount="true"
     [ "$do_unmount" = "true" ] && echo && gum_warn "Unmounting Arch OS from /mnt..."
     if [ "$DEBUG" = "false" ] && [ "$do_unmount" = "true" ]; then
         swapoff -a
@@ -204,7 +216,7 @@ main() {
     [ "$do_reboot" = "true" ] && gum_warn "Rebooting to Arch OS..." && [ "$DEBUG" = "false" ] && reboot
 
     # Chroot
-    [ "$do_unmount" = "false" ] && gum_confirm "Chroot to new Arch OS?" && do_chroot="true"
+    [ "$FORCE" = "false" ] && [ "$do_unmount" = "false" ] && gum_confirm "Chroot to new Arch OS?" && do_chroot="true"
     if [ "$do_chroot" = "true" ] && echo && gum_warn "Chrooting Arch OS at /mnt..."; then
         gum_warn "!! YOUR ARE NOW ON YOUR NEW ARCH OS SYSTEM !!"
         gum_warn ">> Leave with command 'exit'"
@@ -330,16 +342,16 @@ properties_generate() {
         echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}'"
         echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}'"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
-        echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}'"
-        echo "ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED}'"
         echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}'"
         echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}'"
+        echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}'"
+        echo "ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED}'"
         echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
+        echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}'"
         echo "ARCH_OS_DESKTOP_EXTRAS_ENABLED='${ARCH_OS_DESKTOP_EXTRAS_ENABLED}'"
         echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}'"
-        echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}'"
-        echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}'"
+        echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}'"
         echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}'"
         echo "ARCH_OS_SAMBA_SHARE_ENABLED='${ARCH_OS_SAMBA_SHARE_ENABLED}'"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
@@ -633,12 +645,14 @@ select_enable_desktop_keyboard() {
             local user_input user_input2
             user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
             [ -z "$user_input" ] && return 1 # Check if new value is null
-            user_input2=$(gum_input --header "+ Enter Desktop Keyboard Variant (optional)" --placeholder "e.g. 'nodeadkeys' or leave empty...") || trap_gum_exit_confirm
             ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input"
+            gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
+            user_input2=$(gum_input --header "+ Enter Desktop Keyboard Variant (optional)" --placeholder "e.g. 'nodeadkeys' or leave empty...") || trap_gum_exit_confirm
             ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input2"
             properties_generate
+        else
+            gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
         fi
-        gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
         [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gum_property "Desktop Keyboard Variant" "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT"
     fi
     return 0
@@ -1038,10 +1052,10 @@ exec_install_desktop() {
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
 
                 # Fonts
-                packages+=(noto-fonts noto-fonts-emoji ttf-firacode-nerd ttf-liberation ttf-dejavu)
+                packages+=(inter-font ttf-firacode-nerd ttf-nerd-fonts-symbols noto-fonts noto-fonts-emoji ttf-liberation ttf-dejavu)
 
                 # Theming
-                packages+=(adw-gtk-theme)
+                packages+=(adw-gtk-theme tela-circle-icon-theme-standard)
             fi
 
             # Installing packages together (preventing conflicts e.g.: jack2 and piepwire-jack)
@@ -1066,8 +1080,8 @@ exec_install_desktop() {
                 chroot_pacman_remove baobab || true
                 chroot_pacman_remove totem || true
                 chroot_pacman_remove snapshot || true
-                chroot_pacman_remove loupe || true
                 chroot_pacman_remove epiphany || true
+                chroot_pacman_remove loupe || true
                 #chroot_pacman_remove evince || true # Need for sushi
             fi
 
@@ -1254,6 +1268,46 @@ exec_install_desktop() {
                 echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/kitty.desktop"
             fi
 
+            # Install wappaper
+            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
+                mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/"
+                if curl -Lsf https://raw.githubusercontent.com/murkl/arch-os/refs/heads/dev/docs/wallpaper.jpg >"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/wallpaper.jpg"; then
+                    {
+                        echo "# Set wallpaper"
+                        echo "gsettings set org.gnome.desktop.background picture-uri 'file:///home/${ARCH_OS_USERNAME}/.arch-os/wallpaper.jpg'"
+                    } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+                fi
+            fi
+
+            # Add Init script
+            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
+                {
+                    echo "# Theming settings"
+                    echo "gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'"
+                    echo "gsettings set org.gnome.desktop.interface icon-theme 'Tela-circle'"
+                    echo "gsettings set org.gnome.desktop.interface accent-color 'slate'"
+                    echo "# Font settings"
+                    echo "gsettings set org.gnome.desktop.interface font-hinting 'slight'"
+                    echo "gsettings set org.gnome.desktop.interface font-antialiasing 'rgba'"
+                    echo "gsettings set org.gnome.desktop.interface font-name 'Inter 10'"
+                    echo "gsettings set org.gnome.desktop.interface document-font-name 'Inter 10'"
+                    echo "gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Inter Bold 10'"
+                    echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 10'"
+                    echo "# Mutter settings"
+                    echo "gsettings set org.gnome.mutter center-new-windows true"
+                    echo "# File chooser settings"
+                    echo "gsettings set org.gtk.Settings.FileChooser sort-directories-first true"
+                    echo "gsettings set org.gtk.gtk4.Settings.FileChooser sort-directories-first true"
+                    echo "# Keybinding settings"
+                    echo "gsettings set org.gnome.desktop.wm.keybindings close \"['<Super>q']\""
+                    echo "gsettings set org.gnome.desktop.wm.keybindings minimize \"['<Super>h']\""
+                    echo "gsettings set org.gnome.desktop.wm.keybindings show-desktop \"['<Super>d']\""
+                    echo "gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen \"['<Super>F11']\""
+                    echo "# Favorite apps"
+                    echo "gsettings set org.gnome.shell favorite-apps \"['arch-os.desktop', 'org.gnome.Console.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.SystemMonitor.desktop', 'org.gnome.Software.desktop', 'org.gnome.Settings.desktop']\""
+                } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+            fi
+
             # Set correct permissions
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
 
@@ -1437,7 +1491,11 @@ exec_install_archos_manager() {
             [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                    # If debug mode then return
             chroot_pacman_install git base-devel kitty gum libnotify pacman-contrib # Install dependencies
             chroot_aur_install arch-os-manager                                      # Install archos-manager
-            process_return 0                                                        # Return
+            {
+                echo "# Arch OS Manager Init"
+                echo "( sleep 60  && /usr/bin/arch-os version ) &"
+            } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+            process_return 0 # Return
         ) &>"$PROCESS_LOG" &
         process_capture $! "$process_name"
     fi
@@ -1464,16 +1522,6 @@ exec_install_shell_enhancement() {
                     echo '    # Commands to run in interactive sessions can go here'
                     echo 'end'
                     echo ''
-                    echo '# Export environment variables'
-                    echo 'if status --is-login'
-                    echo '    set generator_path /usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator'
-                    echo '    if command -v $generator_path >/dev/null'
-                    echo '        for line in ($generator_path)'
-                    echo '            set -gx (echo $line | cut -d= -f1) (echo $line | cut -d= -f2-)'
-                    echo '        end'
-                    echo '    end'
-                    echo 'end'
-                    echo ''
                     echo '# Disable welcome message'
                     echo 'set fish_greeting'
                     echo ''
@@ -1485,29 +1533,51 @@ exec_install_shell_enhancement() {
                     echo 'test -f "$HOME/.aliases" && source "$HOME/.aliases"'
                     echo ''
                     echo '# Init starship promt'
-                    echo 'command -v starship > /dev/null && starship init fish | source'
+                    echo '[ -n "$DISPLAY" ] && command -v starship > /dev/null && starship init fish | source'
                 } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
-                arch-chroot /mnt chsh -s /usr/bin/fish
-                arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
+                #arch-chroot /mnt chsh -s /usr/bin/fish
+                #arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
             fi
 
             { # Create aliases for root & user
+                echo '# ls / eza'
                 echo 'alias ls="ls -h --color=always --group-directories-first"'
                 echo 'command -v eza &>/dev/null && alias ls="eza -h --color=always --group-directories-first"'
                 echo 'alias ll="ls -l"'
                 echo 'alias la="ls -la"'
                 echo 'alias lt="ls -Tal"'
+                echo -e '\n# Colorize'
                 echo 'alias diff="diff --color=auto"'
                 echo 'alias grep="grep --color=auto"'
                 echo 'alias ip="ip -color=auto"'
-                echo 'alias open="xdg-open"'
-                echo 'alias fetch="fastfetch"'
+                echo -e '\n# Wrapper'
                 echo 'alias logs="systemctl --failed; echo; journalctl -p 3 -b"'
                 echo 'alias q="exit"'
                 echo 'alias c="clear"'
+                echo 'command -v fastfetch &>/dev/null && alias fetch="fastfetch"'
+                echo 'command -v meld &>/dev/null && alias pacnew="sudo DIFFPROG=meld pacdiff"'
+                echo 'command -v xdg-open &>/dev/null && alias open="xdg-open"'
+                echo 'alias myip="curl ipv4.icanhazip.com"'
+                echo -e '\n# Change dir'
                 echo 'alias .="cd .."'
                 echo 'alias ..="cd ../.."'
                 echo 'alias ...="cd ../../.."'
+                echo -e '\n# Packages'
+                local pkg_manager='pacman' && [ -n "$ARCH_OS_AUR_HELPER" ] && [ "$ARCH_OS_AUR_HELPER" != "none" ] && pkg_manager="$ARCH_OS_AUR_HELPER"
+                if [ "$pkg_manager" = "pacman" ]; then
+                    echo "alias paci='sudo ${pkg_manager} -S' # Install package"
+                    echo "alias pacu='sudo ${pkg_manager} -Syu' # System upgrade"
+                else
+                    echo "alias paci='${pkg_manager} -S' # Install package"
+                    echo "alias pacu='${pkg_manager} -Syu' # System upgrade"
+                fi
+                echo "alias pacs='${pkg_manager} -Ss' # Search package in database"
+                echo "alias pacr='${pkg_manager} -Rns' # Remove package"
+                echo "alias pacrc='${pkg_manager} -Scc' # Clear Cache"
+                echo "alias pacl='${pkg_manager} -Qe' # List all installed packages"
+                echo "alias pacla='${pkg_manager} -Qm' # List installed AUR packages"
+                echo "alias pacls='${pkg_manager} -Qs' # Search installed packages"
+                echo "alias pacli='${pkg_manager} -Qi' # Show package info"
             } | tee "/mnt/root/.aliases" "/mnt/home/${ARCH_OS_USERNAME}/.aliases" >/dev/null
 
             # shellcheck disable=SC2016
@@ -1548,47 +1618,71 @@ exec_install_shell_enhancement() {
                 echo 'export HISTTIMEFORMAT="%F %T "          # Add date to history'
                 echo ''
                 echo '# History ignore list'
-                echo 'export HISTIGNORE=' &
-                echo 'export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q"'
+                echo 'export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q:c"'
                 echo ''
-                echo '# Set starship'
-                echo 'command -v starship &>/dev/null && eval "$(starship init bash)"'
-
+                echo '# Set starship (disabled)'
+                echo '# [ -n "$DISPLAY" ] && command -v starship &>/dev/null && eval "$(starship init bash)"'
+                echo ''
+                echo '# Start fish shell (https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish)'
+                echo 'if command -v fish &>/dev/null && [[ $(ps --no-header --pid=$PPID --format=comm) != "fish" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then'
+                echo '    shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""'
+                echo '    exec fish $LOGIN_OPTION'
+                echo 'fi'
             } | tee "/mnt/root/.bashrc" "/mnt/home/${ARCH_OS_USERNAME}/.bashrc" >/dev/null
 
             # shellcheck disable=SC2016
+            # { # Create starship config for root & user
+            #     echo "# Get editor completions based on the config schema"
+            #     echo "\"\$schema\" = 'https://starship.rs/config-schema.json'"
+            #     echo ""
+            #     echo "# Wait 10 milliseconds for starship to check files under the current directory"
+            #     echo "scan_timeout = 10"
+            #     echo ""
+            #     echo "# Set command timeout"
+            #     echo "command_timeout = 10000"
+            #     echo ""
+            #     echo "# Inserts a blank line between shell prompts"
+            #     echo "add_newline = true"
+            #     echo ""
+            #     echo "[directory]"
+            #     echo "style = 'bold green'"
+            #     echo ""
+            #     echo "# Replace the promt symbol"
+            #     echo "[character]"
+            #     echo "success_symbol = '[>](bold purple)'"
+            #     echo "error_symbol = '[x](bold red)'"
+            #     echo ""
+            #     echo "# Disable the package module, hiding it from the prompt completely"
+            #     echo "[package]"
+            #     echo "disabled = true"
+            #     echo ""
+            #     echo '[shell]'
+            #     echo 'disabled = false'
+            #     echo 'format = "[$indicator]($style)"'
+            #     echo 'unknown_indicator = "shell "'
+            #     echo 'bash_indicator = "bash "'
+            #     echo 'fish_indicator = ""'
+            #     echo 'style = "purple bold"'
+            # } | tee "/mnt/root/.confiqg/starship.toml" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
+            arch-chroot /mnt /usr/bin/starship preset gruvbox-rainbow -o "/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            # shellcheck disable=SC2016
             { # Create starship config for root & user
-                echo "# Get editor completions based on the config schema"
-                echo "\"\$schema\" = 'https://starship.rs/config-schema.json'"
-                echo ""
-                echo "# Wait 10 milliseconds for starship to check files under the current directory"
-                echo "scan_timeout = 10"
-                echo ""
-                echo "# Set command timeout"
-                echo "command_timeout = 10000"
-                echo ""
-                echo "# Inserts a blank line between shell prompts"
-                echo "add_newline = true"
-                echo ""
-                echo "[directory]"
-                echo "style = 'bold green'"
-                echo ""
-                echo "# Replace the promt symbol"
-                echo "[character]"
-                echo "success_symbol = '[>](bold purple)'"
-                echo ""
-                echo "# Disable the package module, hiding it from the prompt completely"
-                echo "[package]"
-                echo "disabled = true"
-                echo ""
+                echo ''
                 echo '[shell]'
                 echo 'disabled = false'
                 echo 'format = "[$indicator]($style)"'
-                echo 'unknown_indicator = "shell "'
-                echo 'bash_indicator = "bash "'
+                echo 'unknown_indicator = "| shell "'
+                echo 'bash_indicator = "| bash "'
                 echo 'fish_indicator = ""'
-                echo 'style = "purple bold"'
-            } | tee "/mnt/root/.config/starship.toml" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
+                echo 'style = "fg:color_fg0 bg:color_orange"'
+            } | tee -a "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
+            sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i "s;\$username\\\;\$username\\\ \n\$shell\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i '/\[directory\.substitutions\]/a "~" = " "' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i "s/ \$time/  \$time/g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i '/\[line_break\]$/{N;s/\[line_break\]\ndisabled = false/[line_break]\ndisabled = true/}' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            cp "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" "/mnt/root/.config/starship.toml"
 
             # shellcheck disable=SC2028,SC2016
             { # Create fastfetch config for root & user
@@ -1598,8 +1692,8 @@ exec_install_shell_enhancement() {
                 echo '    "source": "arch2",'
                 echo '    "type": "auto",'
                 echo '    "color": {'
-                echo '      "1": "magenta",'
-                echo '      "2": "magenta"'
+                echo '      "1": "white",'
+                echo '      "2": "white"'
                 echo '    },'
                 echo '    "padding": {'
                 echo '      "top": 0,'
@@ -1696,6 +1790,16 @@ exec_install_shell_enhancement() {
             sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
             sed -i 's;^# include /usr/share/nano/\*\.nanorc;include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc"\ninclude "/usr/share/nano-syntax-highlighting/*.nanorc";g' /mnt/etc/nanorc
 
+            # Add init script
+            {
+                echo "# Set default monospace font"
+                echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 10'"
+                if [ "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" = "true" ]; then
+                    echo "# Set fish theme"
+                    echo "fish -c 'fish_config theme choose Base16\ Default\ Dark && echo 'y' | fish_config theme save'"
+                fi
+            } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+
             # Set correct permissions
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
 
@@ -1740,6 +1844,37 @@ exec_install_vm_support() {
                 ;;
             *) log_info "No VM detected" ;; # Do nothing
             esac
+            process_return 0 # Return
+        ) &>"$PROCESS_LOG" &
+        process_capture $! "$process_name"
+    fi
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+# shellcheck disable=SC2016
+exec_initialize_arch_os() {
+    local process_name="Initialize Arch OS"
+    if [ -s "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" ]; then
+        process_init "$process_name"
+        (
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
+            sed -i '1i\#!/usr/bin/env bash' "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+            {
+                echo "# Remove autostart init files"
+                echo "rm -f /home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
+                echo "rm -f /home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+            } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+            arch-chroot /mnt chmod +x "/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+            mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/autostart"
+            {
+                echo "[Desktop Entry]"
+                echo "Type=Application"
+                echo "Name=Arch OS Initialize"
+                echo "Icon=preferences-system"
+                echo "Exec=bash -c 'sleep 5 && /home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh 2>> /home/${ARCH_OS_USERNAME}/${INIT_FILENAME}-error.log'"
+            } >"/mnt/home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
+            arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
             process_return 0 # Return
         ) &>"$PROCESS_LOG" &
         process_capture $! "$process_name"
@@ -1922,6 +2057,8 @@ print_header() {
 ██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
     local header_version="${VERSION}" && [ "$DEBUG" = "true" ] && header_version="${VERSION}-debug"
     gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${header_version}"
+    [ "$FORCE" = "true" ] && gum_red --bold "CAUTION: Force mode enabled. Cancel with: Ctrl + c" && echo
+    return 0
 }
 
 print_filled_space() {

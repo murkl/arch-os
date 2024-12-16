@@ -12,7 +12,6 @@
 4. [Technical Information](#technical-information)
 5. [Troubleshooting](#troubleshooting)
 6. [Development](#development)
-7. [Screenshots](#screenshots)
 
 ## Recommendation
 
@@ -42,9 +41,9 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [Flatseal](https://flathub.org/apps/com.github.tchx84.Flatseal) to manage Flatpak Permissions
 - Install [Warehouse](https://flathub.org/apps/io.github.flattool.Warehouse) to Manage Flatpak Packages
 - Install [LocalSend](https://flathub.org/de/apps/org.localsend.localsend_app) to simply share files in same network
+- Install [Monitorets](https://flathub.org/de/apps/io.github.jorchube.monitorets) as sticky system monitor
 - Install [MissionCenter](https://flathub.org/de/apps/io.missioncenter.MissionCenter) as system monitor
 - Install [Parabolic](https://flathub.org/de/apps/org.nickvision.tubeconverter) as download manager
-- Install [arch-gaming-meta](https://aur.archlinux.org/packages/arch-gaming-meta) to install all common gaming libs
 
 ### Theming (optional)
 
@@ -94,6 +93,14 @@ For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.or
 
 **Note:** Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games from Linux with: `gamemoderun <file>`
 
+#### Gaming Meta Package (recommended)
+
+You can install install [AUR/arch-gaming-meta](https://aur.archlinux.org/packages/arch-gaming-meta) package to install some useful apps and libraries for gaming:
+
+```
+paru -S arch-gaming-meta
+```
+
 #### Steam
 
 Install prefered Steam version:
@@ -129,48 +136,6 @@ May check out these projects:
 The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as preset for the installer properties. This file provides some additional properties to customize your Arch OS installation (see [Example](#example-installerconf)).
 
 **Note:** The `installer.conf` & `installer.log` will copied to the new user's home directory during installation. This files can be saved for reuse or simply deleted.
-
-### Minimal Installation
-
-Set these properties to install Arch OS Core only with minimal packages & configurations:
-
-```
-ARCH_OS_CORE_TWEAKS_ENABLED='false'
-ARCH_OS_BOOTSPLASH_ENABLED='false'
-ARCH_OS_DESKTOP_ENABLED='false'
-ARCH_OS_MULTILIB_ENABLED='false'
-ARCH_OS_HOUSEKEEPING_ENABLED='false'
-ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
-ARCH_OS_AUR_HELPER='none'
-```
-
-If you want to disable VM support add `ARCH_OS_VM_SUPPORT_ENABLED='false'`
-
-**Note:** You will only be provided with a minimal tty after installation.
-
-### Install Graphics Driver (manually)
-
-Set the property `ARCH_OS_DESKTOP_GRAPHICS_DRIVER='none'` and install your graphics driver manually:
-
-- [OpenGL](https://wiki.archlinux.org/title/OpenGL)
-- [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
-- [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
-- [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Available_methods)
-- [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
-- [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
-
-### VM Support
-
-If the installation is executed in a VM (autodetected), the corresponding packages are installed.
-
-Supported VMs:
-
-- kvm
-- vmware
-- oracle
-- microsoft
-
-Disable this feature with `ARCH_OS_VM_SUPPORT_ENABLED='false'`
 
 ### Example: `installer.conf`
 
@@ -208,6 +173,24 @@ ARCH_OS_SAMBA_SHARE_ENABLED='true' # Enable Samba public (anonymous) & home shar
 ARCH_OS_VM_SUPPORT_ENABLED='true' # VM Support | Default: true | Disable: false
 ARCH_OS_ECN_ENABLED='true' # Disable ECN support for legacy routers | Default: true | Disable: false
 ```
+
+### Minimal Installation
+
+Set these properties to install Arch OS Core only with minimal packages & configurations. This is the same as preset `core`:
+
+```
+ARCH_OS_CORE_TWEAKS_ENABLED='false'
+ARCH_OS_BOOTSPLASH_ENABLED='false'
+ARCH_OS_DESKTOP_ENABLED='false'
+ARCH_OS_MULTILIB_ENABLED='false'
+ARCH_OS_HOUSEKEEPING_ENABLED='false'
+ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
+ARCH_OS_AUR_HELPER='none'
+```
+
+If you want to disable VM support add `ARCH_OS_VM_SUPPORT_ENABLED='false'`
+
+**Note:** You will only be provided with a minimal tty after installation.
 
 ## Features
 
@@ -260,6 +243,7 @@ fish starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-
 
 #### Useful Terminal commands
 
+- `bash` switch to bash
 - `fetch` show system info
 - `btop` show system manager
 - `logs` show system logs
@@ -269,6 +253,7 @@ fish starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-
 - `mc` open file manager
 - `open <file>` open file in GNOME app
 - `history` open command history
+- `help` open fish help in browser
 - `c` clear screen
 - `q` exit
 
@@ -311,13 +296,37 @@ fish_config
 
 **GitHub Project ➜ [github.com/murkl/arch-os-manager](https://github.com/murkl/arch-os-manager)**
 
-<p><img src="screenshots/arch_os_manager.png"></p>
+<p><img src="screenshots/manager_menu.png"></p>
 
 Install **➜ [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/)** and set this in extension options to integrate [Arch OS Manager](https://github.com/murkl/arch-os-manager):
 
 - Check command: `/usr/bin/arch-os check`
 - Update command: `arch-os --kitty upgrade`
 - Package Manager (optional): `arch-os --kitty`
+
+### Install Graphics Driver (manually)
+
+Set the property `ARCH_OS_DESKTOP_GRAPHICS_DRIVER='none'` and install your graphics driver manually:
+
+- [OpenGL](https://wiki.archlinux.org/title/OpenGL)
+- [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
+- [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
+- [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Available_methods)
+- [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
+- [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
+
+### VM Support
+
+If the installation is executed in a VM (autodetected), the corresponding packages are installed.
+
+Supported VMs:
+
+- kvm
+- vmware
+- oracle
+- microsoft
+
+Disable this feature with `ARCH_OS_VM_SUPPORT_ENABLED='false'`
 
 ## Technical Information
 
@@ -479,43 +488,18 @@ curl -Ls bit.ly/arch-os-dev | bash
 ### Parameter
 
 ```
+# Set password:
+ARCH_OS_PASSWORD=mySecret123 ./installer.sh
+
+# Force install:
+FORCE=true ./installer.sh
+
 # Custom gum:
 GUM=/usr/bin/gum ./installer.sh
 
 # Debug simulator:
-MODE=debug ./installer.sh
+DEBUG=true ./installer.sh
 ```
-
-<div align="center">
-
-## Screenshots
-
-<sub><b>This screenshots may outdated.</b></sub>
-
-### Arch OS Desktop
-
-<p><img src="screenshots/desktop_demo.jpg"></p>
-
-### GNOME Core Apps
-
-<p><img src="screenshots/desktop_apps.png"></p>
-
-### Shell Enhancement
-
-<p><img src="screenshots/fastfetch.png"></p>
-
-### Arch OS Installer
-
-<p><img src="screenshots/installer_start.png"></p>
-<p><img src="screenshots/installer_load_properties.png"></p>
-<p><img src="screenshots/installer_preset.png"></p>
-<p><img src="screenshots/installer_language.png"></p>
-<p><img src="screenshots/installer_disk.png"></p>
-<p><img src="screenshots/installer_driver.png"></p>
-<p><img src="screenshots/installer_slim.png"></p>
-<p><img src="screenshots/installer_core_complete.png"></p>
-
-</div>
 
 ## Credits
 
@@ -524,3 +508,4 @@ Many thanks for these projects and the people behind them!
 - Arch Linux
 - GNOME
 - Gum by charm
+- Wallpaper: Mountain Lake by Agustin Gaute
