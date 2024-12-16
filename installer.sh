@@ -1493,7 +1493,7 @@ exec_install_archos_manager() {
             chroot_aur_install arch-os-manager                                      # Install archos-manager
             {
                 echo "# Arch OS Manager Init"
-                echo "( sleep 60  && /usr/bin/arch-os notify ) &"
+                echo "( sleep 60  && /usr/bin/arch-os version ) &"
             } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
             process_return 0 # Return
         ) &>"$PROCESS_LOG" &
