@@ -196,30 +196,6 @@ If you want to disable VM support add `ARCH_OS_VM_SUPPORT_ENABLED='false'`
 
 Each feature can be activated/deactivated during installation. Further information can be found in the individual feature headings.
 
-### Install Graphics Driver (manually)
-
-Set the property `ARCH_OS_DESKTOP_GRAPHICS_DRIVER='none'` and install your graphics driver manually:
-
-- [OpenGL](https://wiki.archlinux.org/title/OpenGL)
-- [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
-- [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
-- [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Available_methods)
-- [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
-- [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
-
-### VM Support
-
-If the installation is executed in a VM (autodetected), the corresponding packages are installed.
-
-Supported VMs:
-
-- kvm
-- vmware
-- oracle
-- microsoft
-
-Disable this feature with `ARCH_OS_VM_SUPPORT_ENABLED='false'`
-
 ### Core Tweaks
 
 Enable this feature with `ARCH_OS_CORE_TWEAKS_ENABLED='true'`:
@@ -327,6 +303,30 @@ Install **➜ [archlinux-updates-indicator](https://extensions.gnome.org/extensi
 - Check command: `/usr/bin/arch-os check`
 - Update command: `arch-os --kitty upgrade`
 - Package Manager (optional): `arch-os --kitty`
+
+### Install Graphics Driver (manually)
+
+Set the property `ARCH_OS_DESKTOP_GRAPHICS_DRIVER='none'` and install your graphics driver manually:
+
+- [OpenGL](https://wiki.archlinux.org/title/OpenGL)
+- [Intel HD](https://wiki.archlinux.org/title/Intel_graphics#Installation)
+- [NVIDIA](https://wiki.archlinux.org/title/NVIDIA#Installation)
+- [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Available_methods)
+- [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
+- [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
+
+### VM Support
+
+If the installation is executed in a VM (autodetected), the corresponding packages are installed.
+
+Supported VMs:
+
+- kvm
+- vmware
+- oracle
+- microsoft
+
+Disable this feature with `ARCH_OS_VM_SUPPORT_ENABLED='false'`
 
 ## Technical Information
 

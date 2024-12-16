@@ -11,7 +11,7 @@
 
 <p><b>
 
-[➜ Step by Step Installation Guide](#installing-arch-os)
+[➜ Step by Step Installation Guide](#arch-os-installation)
 
 </b></p>
 
@@ -92,7 +92,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - 32 Bit Support (Multilib)
 - Disk Encryption (LUKS2)
 
-## Installing Arch OS
+## Arch OS Installation
 
 To install Arch OS, an internet connection is required, as many packages will be downloaded during the installation process.
 
