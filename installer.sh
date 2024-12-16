@@ -1081,7 +1081,7 @@ exec_install_desktop() {
                 chroot_pacman_remove totem || true
                 chroot_pacman_remove snapshot || true
                 chroot_pacman_remove epiphany || true
-                #chroot_pacman_remove loupe || true # Need as essential
+                chroot_pacman_remove loupe || true
                 #chroot_pacman_remove evince || true # Need for sushi
             fi
 
@@ -1299,10 +1299,10 @@ exec_install_desktop() {
                     echo "gsettings set org.gtk.Settings.FileChooser sort-directories-first true"
                     echo "gsettings set org.gtk.gtk4.Settings.FileChooser sort-directories-first true"
                     echo "# Keybinding settings"
-                    echo "gsettings set org.gnome.desktop.wm.keybindings close "['<Super>q']""
-                    echo "gsettings set org.gnome.desktop.wm.keybindings minimize "['<Super>h']""
-                    echo "gsettings set org.gnome.desktop.wm.keybindings show-desktop "['<Super>d']""
-                    echo "gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen "['<Super>F11']""
+                    echo "gsettings set org.gnome.desktop.wm.keybindings close \"['<Super>q']\""
+                    echo "gsettings set org.gnome.desktop.wm.keybindings minimize \"['<Super>h']\""
+                    echo "gsettings set org.gnome.desktop.wm.keybindings show-desktop \"['<Super>d']\""
+                    echo "gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen \"['<Super>F11']\""
                     echo "# Favorite apps"
                     echo "gsettings set org.gnome.shell favorite-apps \"['arch-os.desktop', 'org.gnome.Console.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.SystemMonitor.desktop', 'org.gnome.Software.desktop', 'org.gnome.Settings.desktop']\""
                 } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
