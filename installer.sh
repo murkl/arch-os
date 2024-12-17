@@ -1872,7 +1872,7 @@ exec_finalize_arch_os() {
             # Add finish
             {
                 echo "# Finished"
-                echo "echo 'Arch OS init completed'"
+                echo "echo \"\$(date '+%Y-%m-%d %H:%M:%S') | Arch OS initialize completed\""
             } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             arch-chroot /mnt chmod +x "/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             {
