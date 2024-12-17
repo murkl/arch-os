@@ -66,7 +66,9 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 
 ## Desktop Features
 
+- [GNOME Desktop Environment](DOCS.md#recommendation) (optional with additional packages)
 - [Arch OS Slim Version](DOCS.md#example-installerconf) (GNOME Core Apps only)
+- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
 - [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
 - Flatpak Support + Auto Update (GNOME Software)
 - Samba, Networking Protocol Libs, Git, Utils & Codecs included
@@ -80,13 +82,11 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 
 ## Additional Features
 
-- [GNOME Desktop Environment](#desktop-features) (optional with additional packages)
-- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
-- [Arch OS System Manager](DOCS.md#arch-os-manager)
 - [Arch OS Core Tweaks](DOCS.md#core-tweaks)
+- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
+- [Arch OS System Manager](DOCS.md#arch-os-manager)
 - [Arch OS Shell Enhancement](DOCS.md#shell-enhancement)
 - [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
-- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
 - [AUR Helper](DOCS.md#advanced-installation) (configurable)
 - [VM Support](DOCS.md#vm-support) (optional)
 - 32 Bit Support (Multilib)
