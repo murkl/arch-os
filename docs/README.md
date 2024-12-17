@@ -26,7 +26,7 @@
 <p>Optimized for <b>Gaming, Emulation, Audio & Development</b></p>
 
 <p>
-This project aims to provide a mostly automized, minimal and robust Arch Linux base (minimal tty core or desktop), along with an easy-to-use and fast properties-file-based installer with error handling. Install a minimal Arch Linux core with optional features such as GNOME Desktop with Graphics Driver, Automatic Housekeeping, Zen Kernel, Fancy Shell Enhancement, preinstalled Paru as AUR Helper, enabled MultiLib, Pipewire Audio and some more...</p>
+This project aims to provide a mostly automized, minimal and robust Arch Linux base (minimal tty core or desktop), along with an easy-to-use and fast properties-file-based installer with error handling. Install a minimal Arch Linux core with optional features such as GNOME Desktop with Graphics Driver, Automatic Housekeeping, Zen Kernel, Fancy Shell Enhancement, preinstalled Paru as AUR Helper, enabled MultiLib, Bootsplash, System Manager and some more...</p>
 
 <sub><i>Setup takes less than 60 seconds...</i></sub>
 
@@ -80,14 +80,14 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 
 ## Additional Features
 
+- [GNOME Desktop Environment](#desktop-features) (optional with additional packages)
+- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
 - [Arch OS System Manager](DOCS.md#arch-os-manager)
 - [Arch OS Core Tweaks](DOCS.md#core-tweaks)
 - [Arch OS Shell Enhancement](DOCS.md#shell-enhancement)
 - [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
 - [AUR Helper](DOCS.md#advanced-installation) (configurable)
-- [GNOME Desktop Environment](#desktop-features) (optional with additional packages)
-- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
 - [VM Support](DOCS.md#vm-support) (optional)
 - 32 Bit Support (Multilib)
 - Disk Encryption (LUKS2)
