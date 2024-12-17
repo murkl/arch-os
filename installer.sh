@@ -165,7 +165,7 @@ main() {
     exec_install_housekeeping
     exec_install_shell_enhancement
     exec_install_archos_manager
-    exec_initialize_arch_os
+    exec_finalize_arch_os
     exec_cleanup_installation
 
     # Calc installation duration
@@ -1270,11 +1270,11 @@ exec_install_desktop() {
 
             # Install wappaper
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-                mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/"
-                if curl -Lsf https://raw.githubusercontent.com/murkl/arch-os/refs/heads/dev/docs/wallpaper.jpg >"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/wallpaper.jpg"; then
+                mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system"
+                if curl -Lsf https://raw.githubusercontent.com/murkl/arch-os/refs/heads/main/docs/wallpaper.jpg >"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/wallpaper.jpg"; then
                     {
                         echo "# Set wallpaper"
-                        echo "gsettings set org.gnome.desktop.background picture-uri 'file:///home/${ARCH_OS_USERNAME}/.arch-os/wallpaper.jpg'"
+                        echo "gsettings set org.gnome.desktop.background picture-uri 'file:///home/${ARCH_OS_USERNAME}/.arch-os/system/wallpaper.jpg'"
                     } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
                 fi
             fi
@@ -1493,7 +1493,7 @@ exec_install_archos_manager() {
             chroot_aur_install arch-os-manager                                      # Install archos-manager
             {
                 echo "# Arch OS Manager Init"
-                echo "( sleep 60  && /usr/bin/arch-os version ) &"
+                echo "/usr/bin/arch-os --init"
             } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
             process_return 0 # Return
         ) &>"$PROCESS_LOG" &
@@ -1853,26 +1853,29 @@ exec_install_vm_support() {
 # ---------------------------------------------------------------------------------------------------
 
 # shellcheck disable=SC2016
-exec_initialize_arch_os() {
-    local process_name="Initialize Arch OS"
+exec_finalize_arch_os() {
+    local process_name="Finalize Arch OS"
     if [ -s "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" ]; then
         process_init "$process_name"
         (
             [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
-            sed -i '1i\#!/usr/bin/env bash' "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+            mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system"
+            mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/autostart"
+            mv "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
+            # Add shebang
+            sed -i '1i\#!/usr/bin/env bash' "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
+            # Add autostart-remove
             {
                 echo "# Remove autostart init files"
                 echo "rm -f /home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
-                echo "rm -f /home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
-            } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
-            arch-chroot /mnt chmod +x "/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
-            mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/autostart"
+            } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
+            arch-chroot /mnt chmod +x "/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             {
                 echo "[Desktop Entry]"
                 echo "Type=Application"
                 echo "Name=Arch OS Initialize"
                 echo "Icon=preferences-system"
-                echo "Exec=bash -c 'sleep 5 && /home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh 2>> /home/${ARCH_OS_USERNAME}/${INIT_FILENAME}-error.log'"
+                echo "Exec=bash -c 'sleep 3 && /home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh 2>> /home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.log'"
             } >"/mnt/home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
             process_return 0 # Return
