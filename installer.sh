@@ -31,7 +31,7 @@ SCRIPT_CONFIG="./installer.conf"
 SCRIPT_LOG="./installer.log"
 
 # INIT
-INIT_FILENAME="arch-os-initialize"
+INIT_FILENAME="initialize"
 
 # TEMP
 SCRIPT_TMP_DIR="$(mktemp -d "./.tmp.XXXXX")"
