@@ -1493,7 +1493,7 @@ exec_install_archos_manager() {
             chroot_aur_install arch-os-manager                                      # Install archos-manager
             {
                 echo "# Arch OS Manager Init"
-                echo "/usr/bin/arch-os --init"
+                echo "/usr/bin/arch-os --init &> /dev/null"
             } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
             process_return 0 # Return
         ) &>"$PROCESS_LOG" &
@@ -1869,13 +1869,18 @@ exec_finalize_arch_os() {
                 echo "# Remove autostart init files"
                 echo "rm -f /home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
             } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
+            # Add finish
+            {
+                echo "# Finished"
+                echo "echo 'Arch OS init completed'"
+            } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             arch-chroot /mnt chmod +x "/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             {
                 echo "[Desktop Entry]"
                 echo "Type=Application"
                 echo "Name=Arch OS Initialize"
                 echo "Icon=preferences-system"
-                echo "Exec=bash -c 'sleep 3 && /home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh 2>> /home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.log'"
+                echo "Exec=bash -c 'sleep 3 && /home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh > /home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.log'"
             } >"/mnt/home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
             process_return 0 # Return
