@@ -874,8 +874,6 @@ exec_pacstrap_core() {
             echo '[zram0]'
             echo 'zram-size = ram / 2'
             echo 'compression-algorithm = zstd'
-            echo 'swap-priority = 100'
-            echo 'fs-type = swap'
         } >/mnt/etc/systemd/zram-generator.conf
 
         # Optimize swap on zram (https://wiki.archlinux.org/title/Zram#Optimizing_swap_on_zram)
