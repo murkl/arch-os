@@ -269,12 +269,14 @@ fish starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-
 
 #### Configuration
 
+This config files are created or modified during the Arch OS installation.
+
 ```
 # Aliases
 ~/.aliases
 
-# Fish web config
-fish_config
+# Bash config
+~/.bashrc
 
 # Fish config
 ~/.config/fish/config.fish
@@ -290,6 +292,15 @@ fish_config
 
 # Btop config
 ~/.config/btop/btop.conf
+
+# Nano config
+/etc/nanorc
+
+# Environment config
+/etc/environment
+
+# Open Fish web config
+fish_config
 ```
 
 ### Arch OS Manager
