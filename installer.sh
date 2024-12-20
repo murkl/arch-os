@@ -1138,6 +1138,7 @@ exec_install_desktop() {
                     echo '[global]'
                     echo '   workgroup = WORKGROUP'
                     echo '   server string = Samba Server'
+                    echo '   server role = standalone server'
                     echo '   security = user'
                     echo '   map to guest = Bad User'
                     echo '   log file = /var/log/samba/%m.log'
