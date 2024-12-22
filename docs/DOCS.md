@@ -12,6 +12,7 @@
 4. [Technical Information](#technical-information)
 5. [Troubleshooting](#troubleshooting)
 6. [Development](#development)
+7. [Credits](#credits)
 
 ## Recommendation
 
