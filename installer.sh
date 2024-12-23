@@ -1188,9 +1188,12 @@ exec_install_desktop() {
 
                 # Start samba services
                 arch-chroot /mnt systemctl enable smb.service
-                
-                # Disabled (master browser issues)
-                #arch-chroot /mnt systemctl enable nmb.service 
+
+                # https://wiki.archlinux.org/title/Samba#Windows_1709_or_up_does_not_discover_the_samba_server_in_Network_view
+                arch-chroot /mnt systemctl enable wsdd.service
+
+                # Disabled (master browser issues) > may needed for old windows clients
+                #arch-chroot /mnt systemctl enable nmb.service
             fi
 
             # Set X11 keyboard layout in /etc/X11/xorg.conf.d/00-keyboard.conf
