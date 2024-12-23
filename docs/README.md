@@ -33,7 +33,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 ## More Information
 
 **[➜ Arch OS Docs](DOCS.md)**<br>
-<strong><a about="_blank" href="https://t.me/archos_community">➜ t.me/archos_community</a></strong>
+<b><a about="_blank" href="https://t.me/archos_community">➜ t.me/archos_community</a></b>
 
 <p>
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
