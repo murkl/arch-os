@@ -21,7 +21,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${FORCE:=false}" # FORCE=true ./installer.sh
 
 # SCRIPT
-VERSION='1.7.6'
+VERSION='1.7.7'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -874,8 +874,6 @@ exec_pacstrap_core() {
             echo '[zram0]'
             echo 'zram-size = ram / 2'
             echo 'compression-algorithm = zstd'
-            echo 'swap-priority = 100'
-            echo 'fs-type = swap'
         } >/mnt/etc/systemd/zram-generator.conf
 
         # Optimize swap on zram (https://wiki.archlinux.org/title/Zram#Optimizing_swap_on_zram)
@@ -1140,6 +1138,7 @@ exec_install_desktop() {
                     echo '[global]'
                     echo '   workgroup = WORKGROUP'
                     echo '   server string = Samba Server'
+                    echo '   server role = standalone server'
                     echo '   security = user'
                     echo '   map to guest = Bad User'
                     echo '   log file = /var/log/samba/%m.log'
@@ -1189,7 +1188,12 @@ exec_install_desktop() {
 
                 # Start samba services
                 arch-chroot /mnt systemctl enable smb.service
-                arch-chroot /mnt systemctl enable nmb.service
+
+                # https://wiki.archlinux.org/title/Samba#Windows_1709_or_up_does_not_discover_the_samba_server_in_Network_view
+                arch-chroot /mnt systemctl enable wsdd.service
+
+                # Disabled (master browser issues) > may needed for old windows clients
+                #arch-chroot /mnt systemctl enable nmb.service
             fi
 
             # Set X11 keyboard layout in /etc/X11/xorg.conf.d/00-keyboard.conf
