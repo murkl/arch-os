@@ -1188,7 +1188,9 @@ exec_install_desktop() {
 
                 # Start samba services
                 arch-chroot /mnt systemctl enable smb.service
-                arch-chroot /mnt systemctl enable nmb.service
+                
+                # Disabled (master browser issues)
+                #arch-chroot /mnt systemctl enable nmb.service 
             fi
 
             # Set X11 keyboard layout in /etc/X11/xorg.conf.d/00-keyboard.conf
