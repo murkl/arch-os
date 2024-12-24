@@ -30,10 +30,16 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 
 <sub><i>Setup takes less than 60 seconds...</i></sub>
 
+## More Information
+
+**[➜ Arch OS Docs](DOCS.md)**<br>
+<b><a about="_blank" href="https://t.me/archos_community">➜ t.me/archos_community</a></b>
+
 <p>
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
   <img src="https://img.shields.io/badge/License-GPL_v2-blue?style=for-the-badge">
 </p>
+
 <p>
   <strong>Test successful</strong>
   <br>
@@ -145,18 +151,13 @@ After installing Arch OS with the default properties preset, most maintenance ta
 
 To streamline this process, you can use the preinstalled **[➜ Arch OS System Manager](https://github.com/murkl/arch-os-manager)**
 
+<div align="center">
+
 ## Screenshots
 
-<div align="center">
 <p><div><img src="./screenshots/desktop_demo.jpg"></div><sub><i>Arch OS Desktop Demo</i></sub></p>
 <p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Arch OS Bootsplash</i></sub></p>
 <p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Arch OS Shell Enhancement</i></sub></p>
 <p><div><img src="./screenshots/manager_upgrade.png"></div><sub><i>Arch OS Manager - System Upgrade Demo</i></sub></p>
 <p><div><img src="./screenshots/desktop_apps.png"></div><sub><i>Arch OS Desktop Core Apps </i></sub></p>
 </div>
-
-## More Information
-
-Further information can be found in the documentation.
-
-**[➜ Open Arch OS Docs](DOCS.md)**

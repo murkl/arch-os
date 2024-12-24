@@ -21,7 +21,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${FORCE:=false}" # FORCE=true ./installer.sh
 
 # SCRIPT
-VERSION='1.7.7'
+VERSION='1.7.8'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -181,6 +181,7 @@ main() {
     # Copy installer files to users home
     if [ "$DEBUG" = "false" ]; then
         cp -f "$SCRIPT_CONFIG" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
+        sed -i "1i\# Arch OS Version: ${VERSION}" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
         cp -f "$SCRIPT_LOG" "/mnt/home/${ARCH_OS_USERNAME}/installer.log"
         arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.conf"
         arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.log"
@@ -1272,7 +1273,7 @@ exec_install_desktop() {
                 echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/kitty.desktop"
             fi
 
-            # Install wappaper
+            # Install wallpaper
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
                 mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system"
                 if curl -Lsf https://raw.githubusercontent.com/murkl/arch-os/refs/heads/main/docs/wallpaper.jpg >"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/wallpaper.jpg"; then
@@ -1876,7 +1877,7 @@ exec_finalize_arch_os() {
             # Add finish
             {
                 echo "# Finished"
-                echo "echo \"\$(date '+%Y-%m-%d %H:%M:%S') | Arch OS initialize completed\""
+                echo "echo \"\$(date '+%Y-%m-%d %H:%M:%S') | Arch OS ${VERSION} initialize completed\""
             } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             arch-chroot /mnt chmod +x "/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             {
