@@ -21,7 +21,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${FORCE:=false}" # FORCE=true ./installer.sh
 
 # SCRIPT
-VERSION='1.7.8'
+VERSION='1.7.9'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -160,11 +160,11 @@ main() {
     exec_install_aur_helper
     exec_install_desktop
     exec_install_graphics_driver
-    exec_install_vm_support
     exec_install_bootsplash
     exec_install_housekeeping
     exec_install_shell_enhancement
     exec_install_archos_manager
+    exec_install_vm_support
     exec_finalize_arch_os
     exec_cleanup_installation
 
@@ -194,15 +194,20 @@ main() {
     # Show reboot & unmount promt
     local do_reboot do_unmount do_chroot
 
+    # Default values
+    do_reboot="false"
+    do_chroot="false"
+    do_unmount="false"
+
     # Force values
     if [ "$FORCE" = "true" ]; then
-        do_unmount="true"
         do_reboot="false"
         do_chroot="false"
+        do_unmount="true"
     fi
 
     # Reboot promt
-    [ -z "$do_reboot" ] && gum_confirm "Reboot to Arch OS now?" && do_reboot="true" && do_unmount="true"
+    [ "$FORCE" = "false" ] && gum_confirm "Reboot to Arch OS now?" && do_reboot="true" && do_unmount="true"
 
     # Unmount
     [ "$FORCE" = "false" ] && [ "$do_reboot" = "false" ] && gum_confirm "Unmount Arch OS from /mnt?" && do_unmount="true"
@@ -214,7 +219,7 @@ main() {
     fi
 
     # Do reboot
-    [ "$do_reboot" = "true" ] && gum_warn "Rebooting to Arch OS..." && [ "$DEBUG" = "false" ] && reboot
+    [ "$FORCE" = "false" ] && [ "$do_reboot" = "true" ] && gum_warn "Rebooting to Arch OS..." && [ "$DEBUG" = "false" ] && reboot
 
     # Chroot
     [ "$FORCE" = "false" ] && [ "$do_unmount" = "false" ] && gum_confirm "Chroot to new Arch OS?" && do_chroot="true"
@@ -1028,6 +1033,7 @@ exec_install_desktop() {
                 # Audio (Pipewire replacements + session manager): https://wiki.archlinux.org/title/PipeWire#Installation
                 packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
+                packages+=(sof-firmware) # Need for intel i5 audio
 
                 # Networking & Access
                 packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
