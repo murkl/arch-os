@@ -79,7 +79,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - Flatpak Support + Auto Update (GNOME Software)
 - Samba, Networking Protocol Libs, Git, Utils & Codecs included
 - Wayland optimized
-- GNOME Power Profiles Support
+- GNOME Power Profiles Support (tuned-ppd)
 - Auto Login enabled
 - Printer Support (cups)
 - SSH Agent (gcr)
