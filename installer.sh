@@ -1022,8 +1022,8 @@ exec_install_desktop() {
             # GNOME desktop extras
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
 
-                # GNOME base extras
-                packages+=(gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer)
+                # GNOME base extras (buggy: power-profiles-daemon)
+                packages+=(gnome-tweaks gnome-browser-connector gnome-themes-extra tuned-ppd rygel cups gnome-epub-thumbnailer)
 
                 [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && packages+=(gnome-firmware file-roller)
 
