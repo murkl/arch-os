@@ -1226,6 +1226,7 @@ exec_install_desktop() {
             # Extra services
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
                 arch-chroot /mnt systemctl enable tuned       # Power daemon
+                arch-chroot /mnt systemctl enable tuned-ppd   # Power daemon
                 arch-chroot /mnt systemctl enable cups.socket # Printer
             fi
 
