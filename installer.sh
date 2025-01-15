@@ -1033,7 +1033,9 @@ exec_install_desktop() {
                 # Audio (Pipewire replacements + session manager): https://wiki.archlinux.org/title/PipeWire#Installation
                 packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
-                packages+=(sof-firmware) # Need for intel i5 audio
+
+                # Disabled because hardware-specific
+                #packages+=(sof-firmware) # Need for intel i5 audio
 
                 # Networking & Access
                 packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
@@ -1223,8 +1225,8 @@ exec_install_desktop() {
 
             # Extra services
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-                arch-chroot /mnt systemctl enable power-profiles-daemon # Power daemon
-                arch-chroot /mnt systemctl enable cups.socket           # Printer
+                arch-chroot /mnt systemctl enable tuned       # Power daemon
+                arch-chroot /mnt systemctl enable cups.socket # Printer
             fi
 
             # User services (Not working: Failed to connect to user scope bus via local transport: Permission denied)
@@ -1267,6 +1269,7 @@ exec_install_desktop() {
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/qvidcap.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/lstopo.desktop"
             [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/cups.desktop"
+            [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/tuned-gui.desktop"
 
             # Hide Shell Enhancement apps
             if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
