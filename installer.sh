@@ -1025,8 +1025,6 @@ exec_install_desktop() {
                 # GNOME base extras (buggy: power-profiles-daemon)
                 packages+=(gnome-tweaks gnome-browser-connector gnome-themes-extra tuned-ppd rygel cups gnome-epub-thumbnailer)
 
-                [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && packages+=(gnome-firmware file-roller)
-
                 # GNOME wayland screensharing, flatpak & pipewire support
                 packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
 
@@ -1038,13 +1036,15 @@ exec_install_desktop() {
                 #packages+=(sof-firmware) # Need for intel i5 audio
 
                 # Networking & Access
-                packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
+                packages+=(samba rsync gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
+                packages+=(modemmanager network-manager-sstp networkmanager-l2tp networkmanager-vpnc networkmanager-pptp networkmanager-openvpn networkmanager-openconnect networkmanager-strongswan)
 
                 # Utils (https://wiki.archlinux.org/title/File_systems)
-                packages+=(base-devel archlinux-contrib pacutils fwupd bash-completion dhcp net-tools inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfat-utils btrfs-progs xfsprogs p7zip zip unzip unrar tar)
+                packages+=(base-devel archlinux-contrib pacutils fwupd bash-completion dhcp net-tools inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfat-utils btrfs-progs xfsprogs p7zip zip unzip unrar tar wget curl)
+                packages+=(nautilus-image-converter)
 
-                # Runtimes & Helper
-                packages+=(jq zenity gum)
+                # Runtimes, Builder & Helper
+                packages+=(python go rust nodejs lua cmake jq zenity gum fzf)
 
                 # Certificates
                 packages+=(ca-certificates)
@@ -1055,11 +1055,11 @@ exec_install_desktop() {
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer lib32-gst-plugins-good lib32-libvpx lib32-libwebp)
 
                 # Optimization
-                packages+=(gamemode)
-                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
+                packages+=(gamemode sdl_image)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode lib32-sdl_image)
 
                 # Fonts
-                packages+=(inter-font ttf-firacode-nerd ttf-nerd-fonts-symbols noto-fonts noto-fonts-emoji ttf-liberation ttf-dejavu)
+                packages+=(inter-font ttf-firacode-nerd ttf-nerd-fonts-symbols ttf-font-awesome noto-fonts noto-fonts-emoji ttf-liberation ttf-dejavu adobe-source-sans-fonts adobe-source-serif-fonts)
 
                 # Theming
                 packages+=(adw-gtk-theme tela-circle-icon-theme-standard)
@@ -1262,15 +1262,22 @@ exec_install_desktop() {
             #    echo 'Terminal=false'
             #} >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/systemctl-reboot-firmware.desktop"
 
-            # Hide desktop Aaplications icons
+            # Hide aplications desktop icons
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/bssh.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/bvnc.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/avahi-discover.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/qv4l2.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/qvidcap.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/lstopo.desktop"
-            [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/cups.desktop"
-            [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/tuned-gui.desktop"
+
+            # Hide aplications (extra) desktop icons
+            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
+                echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/stoken-gui.desktop"       # networkmanager-openconnect
+                echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/stoken-gui-small.desktop" # networkmanager-openconnect
+                echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/cups.desktop"
+                echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/tuned-gui.desktop"
+                echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/cmake-gui.desktop"
+            fi
 
             # Hide Shell Enhancement apps
             if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then

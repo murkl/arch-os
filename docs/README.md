@@ -78,13 +78,14 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
 - Flatpak Support + Auto Update (GNOME Software)
 - Samba, Networking Protocol Libs, Git, Utils & Codecs included
-- Wayland optimized
 - GNOME Power Profiles Support (tuned-ppd)
+- VPN Support
+- Basic Fonts
+- Wayland optimized
 - Auto Login enabled
 - Printer Support (cups)
 - SSH Agent (gcr)
 - Gamemode preinstalled
-- Firmware Update Tool preinstalled
 
 ## Additional Features
 
