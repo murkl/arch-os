@@ -69,11 +69,12 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - [vitals](https://extensions.gnome.org/extension/1460/vitals/)
 - [caffeine](https://extensions.gnome.org/extension/517/caffeine/)
 - [light-style](https://extensions.gnome.org/extension/6198/light-style/)
-- [gamemode-indicator](https://extensions.gnome.org/extension/6340/gamemode-indicator-in-system-settings/)
+- [app-hotkeys](https://extensions.gnome.org/extension/6057/happy-appy-hotkey/)
+- [app-hider](https://extensions.gnome.org/extension/5895/app-hider/)
 
 #### Tweak Extensions
 
-- [fullscreen-to-empty-workspace](https://extensions.gnome.org/extension/6072/fullscreen-to-empty-workspace/) (open fullscreen apps on new workspace)
+- [fullscreen-to-empty-workspace](https://extensions.gnome.org/extension/7559/fullscreen-to-empty-workspace/) (open fullscreen apps on new workspace)
 - [disable-unredirect-fullscreen](https://extensions.gnome.org/extension/1873/disable-unredirect-fullscreen-windows/) (fix some issues)
 - [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (alternative to wmctrl in wayland)
 
@@ -520,4 +521,3 @@ Many thanks for these projects and the people behind them!
 - Arch Linux
 - GNOME
 - Gum by charm
-- Wallpaper: Mountain Lake by Agustin Gaute

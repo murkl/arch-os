@@ -1281,17 +1281,7 @@ exec_install_desktop() {
             # Hide Kitty app
             if [ "$ARCH_OS_MANAGER_ENABLED" = "true" ]; then
                 echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/kitty.desktop"
-            fi
-
-            # Install wallpaper
-            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-                mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system"
-                if curl -Lsf https://raw.githubusercontent.com/murkl/arch-os/refs/heads/main/docs/wallpaper.jpg >"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/wallpaper.jpg"; then
-                    {
-                        echo "# Set wallpaper"
-                        echo "gsettings set org.gnome.desktop.background picture-uri 'file:///home/${ARCH_OS_USERNAME}/.arch-os/system/wallpaper.jpg'"
-                    } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
-                fi
+                echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/kitty-open.desktop"
             fi
 
             # Add Init script
