@@ -1803,7 +1803,7 @@ exec_install_shell_enhancement() {
             # Set Nano colors
             sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
             sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
-            sed -i 's;^# include /usr/share/nano/\*\.nanorc;include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc"\ninclude "/usr/share/nano-syntax-highlighting/*.nanorc";g' /mnt/etc/nanorc
+            sed -i 's;^# include /usr/share/nano/\*\.nanorc;include /usr/share/nano/*.nanorc\ninclude /usr/share/nano/extra/*.nanorc\ninclude /usr/share/nano-syntax-highlighting/*.nanorc;g' /mnt/etc/nanorc
 
             # Add init script
             {
