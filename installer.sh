@@ -1876,6 +1876,8 @@ exec_finalize_arch_os() {
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system"
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/autostart"
             mv "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
+            # Add version env
+            sed -i "1i\ARCH_OS_VERSION=${VERSION}" "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             # Add shebang
             sed -i '1i\#!/usr/bin/env bash' "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             # Add autostart-remove
@@ -1883,10 +1885,10 @@ exec_finalize_arch_os() {
                 echo "# exec_finalize_arch_os | Remove autostart init files"
                 echo "rm -f /home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
             } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
-            # Add finish
+            # Print initialized info
             {
                 echo "# exec_finalize_arch_os | Print initialized info"
-                echo "echo \"\$(date '+%Y-%m-%d %H:%M:%S') | Arch OS ${VERSION} | Initialized\""
+                echo "echo \"\$(date '+%Y-%m-%d %H:%M:%S') | Arch OS \${ARCH_OS_VERSION} | Initialized\""
             } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             arch-chroot /mnt chmod +x "/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             {

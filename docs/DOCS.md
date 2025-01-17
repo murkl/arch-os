@@ -29,6 +29,15 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Show package info: **`paru -Qi <my package>`**
 - Remove package: **`paru -Rsn <my package>`**
 
+### Shortcuts
+
+- Close Window: **`Super + Q`**
+- Hide Window: **`Super + H`**
+- Show Desktop: **`Super + D`**
+- Toggle Fullscreen: **`Super + F11`**
+
+**Note:** Only available with default desktop preset.
+
 ### Additional Packages (optional)
 
 - Install [Pika Backup](https://flathub.org/apps/details/org.gnome.World.PikaBackup) for backup and restore home files
@@ -45,6 +54,11 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [Monitorets](https://flathub.org/de/apps/io.github.jorchube.monitorets) as sticky system monitor
 - Install [MissionCenter](https://flathub.org/de/apps/io.missioncenter.MissionCenter) as system monitor
 - Install [Parabolic](https://flathub.org/de/apps/org.nickvision.tubeconverter) as download manager
+- Install [Amberol](https://archlinux.org/packages/extra/x86_64/amberol/) as music player
+- Install [AddWater](https://flathub.org/apps/dev.qwery.AddWater) for Firefox GNOME Theme
+- Install [MenuLibre](https://aur.archlinux.org/packages/menulibre) as desktop app editor
+- Install [GNOME Firmware](https://archlinux.org/packages/extra/x86_64/gnome-firmware/) to update firmware
+- Install [File Roller](https://archlinux.org/packages/extra/x86_64/file-roller/) as archive helper tool
 
 ### Theming (optional)
 
@@ -52,7 +66,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Desktop Theme: [adw-gtk3](https://github.com/lassekongo83/adw-gtk3)
 - Icon Theme: [tela-icon-theme](https://github.com/vinceliuice/Tela-icon-theme), [tela-circle-icon-theme](https://github.com/vinceliuice/Tela-circle-icon-theme)
 - Cursor Theme: [capitaine-cursors](https://archlinux.org/packages/extra/any/capitaine-cursors), [nordzy-cursors](https://github.com/alvatip/Nordzy-cursors)
-- Firefox Theme: [firefox-gnome-theme](https://github.com/rafaelmardojai/firefox-gnome-theme)
+- Firefox Theme: [AddWater](https://flathub.org/apps/dev.qwery.AddWater), [firefox-gnome-theme](https://github.com/rafaelmardojai/firefox-gnome-theme)
 
 ### GNOME Extensions (optional)
 
@@ -76,6 +90,13 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (alternative to wmctrl in wayland)
 - [lilypad](https://extensions.gnome.org/extension/7266/lilypad/) (deprecated)
 
+### Office Support
+
+- [LibreOffice](https://archlinux.org/packages/extra/x86_64/libreoffice-fresh/)
+- [OnlyOffice](https://flathub.org/apps/org.onlyoffice.desktopeditors)
+- [Drawing](https://flathub.org/apps/com.github.maoschanz.drawing)
+- [BoxySVG](https://flathub.org/apps/com.boxy_svg.BoxySVG)
+
 ### For Developer
 
 For sandboxed CLI tools or test environment you can try [Distrobox](https://distrobox.it/) or [Toolbox](https://containertoolbx.org) and as container runtime use [Podman](https://podman.io) or [Docker](https://www.docker.com).
@@ -93,12 +114,13 @@ For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.or
 
 **Note:** Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games from Linux with: `gamemoderun <file>`
 
-#### Gaming Meta Package (recommended)
+#### Gaming Meta Package
 
-You can install install [AUR/arch-gaming-meta](https://aur.archlinux.org/packages/arch-gaming-meta) package to install some useful apps and libraries for gaming:
+You can install install [AUR/lutris-wine-meta](https://aur.archlinux.org/packages/lutris-wine-meta) and [AUR/arch-gaming-meta](https://aur.archlinux.org/packages/arch-gaming-meta) package to install some useful apps and libraries for gaming:
 
 ```
-paru -S arch-gaming-meta
+paru -S lutris-wine-meta # Recommended from lutris maintainers
+paru -S arch-gaming-meta # Has a lot of depenencies
 ```
 
 #### Steam
@@ -108,6 +130,7 @@ Install prefered Steam version:
 - Average between performance and compatibility: `paru -S steam`
 - Best performance: `paru -S steam-native`
 - Best compatibility: `flatpak install com.valvesoftware.Steam`
+- GNOME Theme: [AdwSteamGtk](https://flathub.org/apps/io.github.Foldex.AdwSteamGtk)
 
 #### Other Tools
 
@@ -120,6 +143,7 @@ Install prefered Steam version:
 - [Wine](https://archlinux.org/packages/multilib/x86_64/wine/), [Winetricks](https://archlinux.org/packages/multilib/x86_64/winetricks/)
 - [Proton](https://aur.archlinux.org/packages/proton-ge-custom-bin), [Protontricks](https://aur.archlinux.org/packages/protontricks)
 - [Gamescope](https://archlinux.org/packages/extra/x86_64/gamescope/)
+- [MangoHud](https://archlinux.org/packages/extra/x86_64/mangohud/)
 - [ProtonPlus](https://aur.archlinux.org/packages/protonplus)
 
 ### For Audiophiles
