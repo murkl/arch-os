@@ -877,16 +877,14 @@ exec_pacstrap_core() {
         arch-chroot /mnt ln -sf "/usr/share/zoneinfo/${ARCH_OS_TIMEZONE}" /etc/localtime
         arch-chroot /mnt hwclock --systohc # Set hardware clock from system clock
 
-        # Create swap (zram-generator with zstd compression)
-        {
+        { # Create swap (zram-generator with zstd compression)
             # https://wiki.archlinux.org/title/Zram#Using_zram-generator
             echo '[zram0]'
             echo 'zram-size = ram / 2'
             echo 'compression-algorithm = zstd'
         } >/mnt/etc/systemd/zram-generator.conf
 
-        # Optimize swap on zram (https://wiki.archlinux.org/title/Zram#Optimizing_swap_on_zram)
-        {
+        { # Optimize swap on zram (https://wiki.archlinux.org/title/Zram#Optimizing_swap_on_zram)
             echo 'vm.swappiness = 180'
             echo 'vm.watermark_boost_factor = 0'
             echo 'vm.watermark_scale_factor = 125'
@@ -930,24 +928,21 @@ exec_pacstrap_core() {
         [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('nowatchdog')
         [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('quiet' 'splash' 'vt.global_cursor_default=0')
 
-        # Create Bootloader config
-        {
+        { # Create Bootloader config
             echo 'default arch.conf'
             echo 'console-mode auto'
             echo 'timeout 0'
             echo 'editor yes'
         } >/mnt/boot/loader/loader.conf
 
-        # Create default boot entry
-        {
+        { # Create default boot entry
             echo 'title   Arch OS'
             echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
             echo "initrd  /initramfs-${ARCH_OS_KERNEL}.img"
             echo "options ${kernel_args[*]}"
         } >/mnt/boot/loader/entries/arch.conf
 
-        # Create fallback boot entry
-        {
+        { # Create fallback boot entry
             echo 'title   Arch OS (Fallback)'
             echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
             echo "initrd  /initramfs-${ARCH_OS_KERNEL}-fallback.img"
@@ -1104,7 +1099,7 @@ exec_install_desktop() {
 
             # Enable GNOME auto login
             mkdir -p /mnt/etc/gdm
-            #grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
+            # grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
             {
                 echo "[daemon]"
                 echo "WaylandEnable=True"
@@ -1256,14 +1251,14 @@ exec_install_desktop() {
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications"
 
             # Create UEFI Boot desktop entry
-            #{
+            # {
             #    echo '[Desktop Entry]'
             #    echo 'Name=Reboot to UEFI'
             #    echo 'Icon=system-reboot'
             #    echo 'Exec=systemctl reboot --firmware-setup'
             #    echo 'Type=Application'
             #    echo 'Terminal=false'
-            #} >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/systemctl-reboot-firmware.desktop"
+            # } >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/systemctl-reboot-firmware.desktop"
 
             # Hide aplications desktop icons
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/bssh.desktop"
@@ -1647,12 +1642,18 @@ exec_install_shell_enhancement() {
                 echo 'fi'
             } | tee "/mnt/root/.bashrc" "/mnt/home/${ARCH_OS_USERNAME}/.bashrc" >/dev/null
 
+            # Create default starship.toml from gruvbox-rainbow
             arch-chroot /mnt /usr/bin/starship preset gruvbox-rainbow -o "/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/.config/"
-
-            arch-chroot /mnt /usr/bin/starship preset gruvbox-rainbow -o "/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            # Replace properties in starship.toml
+            sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i "s;\$username\\\;\$username\\\ \n\$shell\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i "s;\$username\\\\;\$hostname\\\\ \n\$username\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i '/\[directory\.substitutions\]/a "~" = " "' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i "s/ \$time/  \$time/g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i '/\[line_break\]$/{N;s/\[line_break\]\ndisabled = false/[line_break]\ndisabled = true/}' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             # shellcheck disable=SC2016
-            { # Create starship config for root & user
+            { # Append starship.toml
                 echo ''
                 echo '[shell]'
                 echo 'disabled = false'
@@ -1661,27 +1662,19 @@ exec_install_shell_enhancement() {
                 echo 'bash_indicator = "| bash "'
                 echo 'fish_indicator = ""'
                 echo 'style = "fg:color_fg0 bg:color_orange"'
-            } | tee -a "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
-            sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i "s;\$username\\\;\$username\\\ \n\$shell\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i "s;\$username\\\\;\$hostname\\\\ \n\$username\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i '/\[directory\.substitutions\]/a "~" = " "' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i "s/ \$time/  \$time/g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i '/\[line_break\]$/{N;s/\[line_break\]\ndisabled = false/[line_break]\ndisabled = true/}' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            cp "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" "/mnt/root/.config/starship.toml"
-            # Set starship config
-            # shellcheck disable=SC2016
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c starship config os.format 'format = "[ $symbol ]($style)"'
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c 'starship config hostname.disabled false'
-            # shellcheck disable=SC2016
-            {
+                echo ''
                 echo '[hostname]'
                 echo 'disabled = false'
                 echo 'ssh_only = false'
                 echo 'style = "bg:color_orange fg:color_fg0"'
                 echo 'format = "[ $ssh_symbol]($style)[$hostname]($style)[  ]($style)"'
-            } >>"/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            } | tee -a "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
+            # Configure starship
+            arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/.config/"
+            # shellcheck disable=SC2016
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c 'starship config os.format "[ \$symbol ](\$style)"'
+            # Copy starship.toml to root
+            cp "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" "/mnt/root/.config/starship.toml"
 
             # shellcheck disable=SC2028,SC2016
             { # Create fastfetch config for root & user
@@ -1789,8 +1782,7 @@ exec_install_shell_enhancement() {
             sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
             sed -i 's;^# include /usr/share/nano/\*\.nanorc;include /usr/share/nano/*.nanorc\ninclude /usr/share/nano/extra/*.nanorc\ninclude /usr/share/nano-syntax-highlighting/*.nanorc;g' /mnt/etc/nanorc
 
-            # Add init script
-            {
+            { # Add init script
                 echo "# exec_install_shell_enhancement | Set default monospace font"
                 echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 10'"
                 if [ "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" = "true" ]; then
