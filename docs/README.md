@@ -133,7 +133,7 @@ Select one of these presets to install your individual Arch Linux base:
 
 ![Animated Arch OS Installation](./animation.gif)
 
-_Cancel the Arch OS Installer with `CTRL + c`_
+_Cancel the Arch OS Installer with `Ctrl + c`_
 
 **Note:** If the `installer.conf` exists in the working dir (auto-detected), all properties are loaded as preset (except the password).
 

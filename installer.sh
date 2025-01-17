@@ -62,6 +62,9 @@ main() {
     trap 'trap_exit' EXIT
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
 
+    # Print version to logfile
+    log_info "Arch OS Installer Version: ${VERSION}"
+
     # Start recovery
     [[ "$1" = "--recovery"* ]] && {
         start_recovery

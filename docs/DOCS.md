@@ -29,16 +29,20 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Show package info: **`paru -Qi <my package>`**
 - Remove package: **`paru -Rsn <my package>`**
 
-### Shortcuts
+**Note:** See `~/.aliases` for useful command aliases
 
-- Close Window: **`Super + Q`**
-- Hide Window: **`Super + H`**
-- Show Desktop: **`Super + D`**
+### GNOME Shortcuts
+
+**Note:** Only available with default installation preset (desktop).
+
+- Close Window: **`Super + q`**
+- Hide Window: **`Super + h`**
+- Toggle Desktop: **`Super + d`**
 - Toggle Fullscreen: **`Super + F11`**
 
-**Note:** Only available with default desktop preset.
-
 ### Additional Packages (optional)
+
+**Note:** The target of the respective URL is also the recommended way to install the package.
 
 - Install [Pika Backup](https://flathub.org/apps/details/org.gnome.World.PikaBackup) for backup and restore home files
 - Install [Extension Manager](https://flathub.org/apps/com.mattjakeman.ExtensionManager) for manage GNOME Extensions
@@ -54,11 +58,14 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [Monitorets](https://flathub.org/de/apps/io.github.jorchube.monitorets) as sticky system monitor
 - Install [MissionCenter](https://flathub.org/de/apps/io.missioncenter.MissionCenter) as system monitor
 - Install [Parabolic](https://flathub.org/de/apps/org.nickvision.tubeconverter) as download manager
-- Install [Amberol](https://archlinux.org/packages/extra/x86_64/amberol/) as music player
+- Install [Amberol](https://archlinux.org/packages/extra/x86_64/amberol/) or [Gapless](https://flathub.org/apps/com.github.neithern.g4music) as music player
+- Install [noisetorch](https://aur.archlinux.org/packages/noisetorch) for microphone noise suppression
 - Install [AddWater](https://flathub.org/apps/dev.qwery.AddWater) for Firefox GNOME Theme
 - Install [MenuLibre](https://aur.archlinux.org/packages/menulibre) as desktop app editor
-- Install [GNOME Firmware](https://archlinux.org/packages/extra/x86_64/gnome-firmware/) to update firmware
 - Install [File Roller](https://archlinux.org/packages/extra/x86_64/file-roller/) as archive helper tool
+- Install [GNOME Firmware](https://archlinux.org/packages/extra/x86_64/gnome-firmware/) to update firmware of the local hardware
+- Install [seahorse](https://archlinux.org/packages/extra/x86_64/seahorse/) as keyring editor (login password can be set to empty)
+- Install [dconf-editor](https://archlinux.org/packages/extra/x86_64/dconf-editor/) as graphical tool for `gsettings` and `dconf`
 
 ### Theming (optional)
 
@@ -97,6 +104,34 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - [Drawing](https://flathub.org/apps/com.github.maoschanz.drawing)
 - [BoxySVG](https://flathub.org/apps/com.boxy_svg.BoxySVG)
 
+### Realtime Streaming to other PC, TV or Smart Device
+
+- Streaming Server: [Sunshine](https://docs.lizardbyte.dev/projects/sunshine/latest/index.html)
+- Streaming Client: [Moonlight](https://moonlight-stream.org)
+
+#### Install Sunshine (Streaming Server)
+
+1. Install package from [AUR/sunshine](https://aur.archlinux.org/packages/sunshine): `paru -S sunshine`
+2. Create this user service: `nano ~/.config/systemd/user/sunshine.service`
+
+```
+[Unit]
+Description=Sunshine self-hosted game stream host for Moonlight.
+StartLimitIntervalSec=500
+StartLimitBurst=5
+
+[Service]
+ExecStart=/usr/bin/sunshine
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=graphical-session.target
+```
+
+3. Start Sunshine Desktop Application (see system tray)
+4. Open local Sunshine Web Interface: https://localhost:47990
+
 ### For Developer
 
 For sandboxed CLI tools or test environment you can try [Distrobox](https://distrobox.it/) or [Toolbox](https://containertoolbx.org) and as container runtime use [Podman](https://podman.io) or [Docker](https://www.docker.com).
@@ -130,21 +165,21 @@ Install prefered Steam version:
 - Average between performance and compatibility: `paru -S steam`
 - Best performance: `paru -S steam-native`
 - Best compatibility: `flatpak install com.valvesoftware.Steam`
-- GNOME Theme: [AdwSteamGtk](https://flathub.org/apps/io.github.Foldex.AdwSteamGtk)
+- Install and apply GNOME Theme: [AdwSteamGtk](https://flathub.org/apps/io.github.Foldex.AdwSteamGtk)
 
-#### Other Tools
+#### Other Gaming Tools
 
 - [Lutris](https://archlinux.org/packages/extra/any/lutris/)
 - [Bottles](https://aur.archlinux.org/packages/bottles)
 - [RetroDeck](https://flathub.org/apps/net.retrodeck.retrodeck)
 - [Cartridges](https://flathub.org/de/apps/page.kramo.Cartridges)
-- [Sunshine Streaming Server](https://docs.lizardbyte.dev/projects/sunshine/en/latest/about/setup.html#install)
-- [Moonlight Streaming Client](https://flathub.org/apps/com.moonlight_stream.Moonlight)
+- [ScummVM](https://flathub.org/apps/org.scummvm.ScummVM)
 - [Wine](https://archlinux.org/packages/multilib/x86_64/wine/), [Winetricks](https://archlinux.org/packages/multilib/x86_64/winetricks/)
 - [Proton](https://aur.archlinux.org/packages/proton-ge-custom-bin), [Protontricks](https://aur.archlinux.org/packages/protontricks)
 - [Gamescope](https://archlinux.org/packages/extra/x86_64/gamescope/)
 - [MangoHud](https://archlinux.org/packages/extra/x86_64/mangohud/)
 - [ProtonPlus](https://aur.archlinux.org/packages/protonplus)
+- [Haguichi](https://flathub.org/apps/com.github.ztefn.haguichi), [logmein-hamachi](https://aur.archlinux.org/packages/logmein-hamachi])
 
 ### For Audiophiles
 
@@ -267,7 +302,7 @@ fish starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-
 
 #### Useful Terminal commands
 
-- `bash` switch to bash
+- `bash` switch to bash shell (go back to fish with `q`)
 - `fetch` show system info
 - `btop` show system manager
 - `logs` show system logs
