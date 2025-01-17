@@ -1305,6 +1305,8 @@ exec_install_desktop() {
                     echo "gsettings set org.gnome.desktop.interface document-font-name 'Inter 10'"
                     echo "gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Inter Bold 10'"
                     echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 10'"
+                    echo "# exec_install_desktop | Show all input sources"
+                    echo "gsettings set org.gnome.desktop.input-sources show-all-sources true"
                     echo "# exec_install_desktop | Mutter settings"
                     echo "gsettings set org.gnome.mutter center-new-windows true"
                     echo "# exec_install_desktop | File chooser settings"
