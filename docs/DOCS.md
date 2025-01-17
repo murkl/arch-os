@@ -108,6 +108,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 
 - Streaming Server: [Sunshine](https://docs.lizardbyte.dev/projects/sunshine/latest/index.html)
 - Streaming Client: [Moonlight](https://moonlight-stream.org)
+- Discord: [Vesktop](https://flathub.org/apps/dev.vencord.Vesktop) (incl. Wayland Screen Sharing)
 
 #### Install Sunshine (Streaming Server)
 
