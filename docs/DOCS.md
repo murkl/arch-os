@@ -130,7 +130,8 @@ WantedBy=graphical-session.target
 ```
 
 3. Start Sunshine Desktop Application (see system tray)
-4. Open local Sunshine Web Interface: https://localhost:47990
+4. Open local Sunshine Web Interface: https://localhost:47990 and set username and password
+5. Simply start streaming with [Moonlight](https://moonlight-stream.org)
 
 ### For Developer
 
