@@ -1647,40 +1647,9 @@ exec_install_shell_enhancement() {
                 echo 'fi'
             } | tee "/mnt/root/.bashrc" "/mnt/home/${ARCH_OS_USERNAME}/.bashrc" >/dev/null
 
-            # shellcheck disable=SC2016
-            # { # Create starship config for root & user
-            #     echo "# Get editor completions based on the config schema"
-            #     echo "\"\$schema\" = 'https://starship.rs/config-schema.json'"
-            #     echo ""
-            #     echo "# Wait 10 milliseconds for starship to check files under the current directory"
-            #     echo "scan_timeout = 10"
-            #     echo ""
-            #     echo "# Set command timeout"
-            #     echo "command_timeout = 10000"
-            #     echo ""
-            #     echo "# Inserts a blank line between shell prompts"
-            #     echo "add_newline = true"
-            #     echo ""
-            #     echo "[directory]"
-            #     echo "style = 'bold green'"
-            #     echo ""
-            #     echo "# Replace the promt symbol"
-            #     echo "[character]"
-            #     echo "success_symbol = '[>](bold purple)'"
-            #     echo "error_symbol = '[x](bold red)'"
-            #     echo ""
-            #     echo "# Disable the package module, hiding it from the prompt completely"
-            #     echo "[package]"
-            #     echo "disabled = true"
-            #     echo ""
-            #     echo '[shell]'
-            #     echo 'disabled = false'
-            #     echo 'format = "[$indicator]($style)"'
-            #     echo 'unknown_indicator = "shell "'
-            #     echo 'bash_indicator = "bash "'
-            #     echo 'fish_indicator = ""'
-            #     echo 'style = "purple bold"'
-            # } | tee "/mnt/root/.confiqg/starship.toml" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
+            arch-chroot /mnt /usr/bin/starship preset gruvbox-rainbow -o "/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/.config/"
+
             arch-chroot /mnt /usr/bin/starship preset gruvbox-rainbow -o "/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             # shellcheck disable=SC2016
             { # Create starship config for root & user
@@ -1696,10 +1665,23 @@ exec_install_shell_enhancement() {
             sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i "s;\$username\\\;\$username\\\ \n\$shell\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i "s;\$username\\\\;\$username\\\\ \n\$hostname\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i '/\[directory\.substitutions\]/a "~" = " "' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i "s/ \$time/  \$time/g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i '/\[line_break\]$/{N;s/\[line_break\]\ndisabled = false/[line_break]\ndisabled = true/}' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             cp "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" "/mnt/root/.config/starship.toml"
+            # Set starship config
+            # shellcheck disable=SC2016
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c starship config os.format 'format = "[ $symbol ]($style)"'
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c 'starship config hostname.disabled false'
+            # shellcheck disable=SC2016
+            {
+                echo '[hostname]'
+                echo 'disabled = false'
+                echo 'ssh_only = false'
+                echo 'style = "bg:color_orange fg:color_fg0"'
+                echo 'format = "[ $ssh_symbol]($style)[$hostname]($style)[  ]($style)"'
+            } >>"/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
 
             # shellcheck disable=SC2028,SC2016
             { # Create fastfetch config for root & user
