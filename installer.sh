@@ -1294,28 +1294,28 @@ exec_install_desktop() {
             # Add Init script
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
                 {
-                    echo "# Theming settings"
+                    echo "# exec_install_desktop | Theming settings"
                     echo "gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'"
                     echo "gsettings set org.gnome.desktop.interface icon-theme 'Tela-circle'"
                     echo "gsettings set org.gnome.desktop.interface accent-color 'slate'"
-                    echo "# Font settings"
+                    echo "# exec_install_desktop | Font settings"
                     echo "gsettings set org.gnome.desktop.interface font-hinting 'slight'"
                     echo "gsettings set org.gnome.desktop.interface font-antialiasing 'rgba'"
                     echo "gsettings set org.gnome.desktop.interface font-name 'Inter 10'"
                     echo "gsettings set org.gnome.desktop.interface document-font-name 'Inter 10'"
                     echo "gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Inter Bold 10'"
                     echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 10'"
-                    echo "# Mutter settings"
+                    echo "# exec_install_desktop | Mutter settings"
                     echo "gsettings set org.gnome.mutter center-new-windows true"
-                    echo "# File chooser settings"
+                    echo "# exec_install_desktop | File chooser settings"
                     echo "gsettings set org.gtk.Settings.FileChooser sort-directories-first true"
                     echo "gsettings set org.gtk.gtk4.Settings.FileChooser sort-directories-first true"
-                    echo "# Keybinding settings"
+                    echo "# exec_install_desktop | Keybinding settings"
                     echo "gsettings set org.gnome.desktop.wm.keybindings close \"['<Super>q']\""
                     echo "gsettings set org.gnome.desktop.wm.keybindings minimize \"['<Super>h']\""
                     echo "gsettings set org.gnome.desktop.wm.keybindings show-desktop \"['<Super>d']\""
                     echo "gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen \"['<Super>F11']\""
-                    echo "# Favorite apps"
+                    echo "# exec_install_desktop | Favorite apps"
                     echo "gsettings set org.gnome.shell favorite-apps \"['org.gnome.Console.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Software.desktop', 'org.gnome.Settings.desktop']\""
                 } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
             fi
@@ -1504,7 +1504,7 @@ exec_install_archos_manager() {
             chroot_pacman_install git base-devel kitty gum libnotify pacman-contrib # Install dependencies
             chroot_aur_install arch-os-manager                                      # Install archos-manager
             {
-                echo "# Arch OS Manager Init"
+                echo "# exec_install_archos_manager | Initialize"
                 echo "/usr/bin/arch-os --init &> /dev/null"
             } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
             process_return 0 # Return
@@ -1804,11 +1804,11 @@ exec_install_shell_enhancement() {
 
             # Add init script
             {
-                echo "# Set default monospace font"
+                echo "# exec_install_shell_enhancement | Set default monospace font"
                 echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 10'"
                 if [ "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" = "true" ]; then
-                    echo "# Set fish theme"
-                    echo "fish -c 'fish_config theme choose Base16\ Default\ Dark && echo 'y' | fish_config theme save'"
+                    echo "# exec_install_shell_enhancement | Set fish theme"
+                    echo "fish -c 'fish_config theme choose Base16\ Default\ Dark && echo y | fish_config theme save'"
                 fi
             } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
 
@@ -1878,13 +1878,13 @@ exec_finalize_arch_os() {
             sed -i '1i\#!/usr/bin/env bash' "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             # Add autostart-remove
             {
-                echo "# Remove autostart init files"
+                echo "# exec_finalize_arch_os | Remove autostart init files"
                 echo "rm -f /home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
             } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             # Add finish
             {
-                echo "# Finished"
-                echo "echo \"\$(date '+%Y-%m-%d %H:%M:%S') | Arch OS ${VERSION} initialize completed\""
+                echo "# exec_finalize_arch_os | Print initialized info"
+                echo "echo \"\$(date '+%Y-%m-%d %H:%M:%S') | Arch OS ${VERSION} | Initialized\""
             } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             arch-chroot /mnt chmod +x "/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             {
