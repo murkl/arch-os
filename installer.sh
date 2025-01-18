@@ -1649,6 +1649,9 @@ exec_install_shell_enhancement() {
             arch-chroot /mnt /usr/bin/starship preset gruvbox-rainbow -o "/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             # Replace properties in starship.toml
             # 󰬫 󰧛 
+            sed -i 's/bg:color_yellow fg:color_orange/bg:color_red fg:color_orange/g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i 's/fg:color_yellow bg:color_aqua/fg:color_red bg:color_aqua/g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            sed -i 's/fg:color_fg0 bg:color_yellow/fg:color_fg0 bg:color_red/g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i 's//   /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i "s;\$username\\\;\$username\\\ \n\$shell\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
