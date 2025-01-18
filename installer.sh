@@ -1671,7 +1671,7 @@ exec_install_shell_enhancement() {
                 echo 'disabled = false'
                 echo 'ssh_only = false'
                 echo 'style = "bg:color_orange fg:color_fg0"'
-                echo 'format = "[ $ssh_symbol]($style)[$hostname]($style)[  ]($style)"' #       
+                echo 'format = "[ $ssh_symbol]($style)[ $hostname]($style)[  ]($style)"' #       
             } | tee -a "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
             # Configure starship
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/.config/"
