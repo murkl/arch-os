@@ -1544,8 +1544,11 @@ exec_install_shell_enhancement() {
                     echo '# Source user aliases'
                     echo 'test -f "$HOME/.aliases" && source "$HOME/.aliases"'
                     echo ''
-                    echo '# Init starship promt'
-                    echo '[ -n "$DISPLAY" ] && command -v starship > /dev/null && starship init fish | source'
+                    echo '# Init starship promt (except tty)'
+                    echo 'if not tty | string match -q "/dev/tty*"'
+                    echo '    and command -v starship >/dev/null'
+                    echo '    starship init fish | source'
+                    echo 'end'
                 } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
                 #arch-chroot /mnt chsh -s /usr/bin/fish
                 #arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
@@ -1632,8 +1635,8 @@ exec_install_shell_enhancement() {
                 echo '# History ignore list'
                 echo 'export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q:c"'
                 echo ''
-                echo '# Set starship (disabled)'
-                echo '# [ -n "$DISPLAY" ] && command -v starship &>/dev/null && eval "$(starship init bash)"'
+                echo '# Init starship (except tty)'
+                echo '[[ ! $(tty) =~ /dev/tty[0-9]* ]] && command -v starship &>/dev/null && eval "$(starship init bash)"'
                 echo ''
                 echo '# Start fish shell (https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish)'
                 echo 'if command -v fish &>/dev/null && [[ $(ps --no-header --pid=$PPID --format=comm) != "fish" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then'
@@ -1645,34 +1648,35 @@ exec_install_shell_enhancement() {
             # Create default starship.toml from gruvbox-rainbow
             arch-chroot /mnt /usr/bin/starship preset gruvbox-rainbow -o "/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             # Replace properties in starship.toml
-            sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            # 󰬫 󰧛 
+            sed -i 's//   /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i "s;\$username\\\;\$username\\\ \n\$shell\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i "s;\$username\\\\;\$hostname\\\\ \n\$username\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i '/\[directory\.substitutions\]/a "~" = " "' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             sed -i "s/ \$time/  \$time/g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i '/\[line_break\]$/{N;s/\[line_break\]\ndisabled = false/[line_break]\ndisabled = true/}' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            #sed -i '/\[line_break\]$/{N;s/\[line_break\]\ndisabled = false/[line_break]\ndisabled = true/}' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             # shellcheck disable=SC2016
             { # Append starship.toml
                 echo ''
                 echo '[shell]'
                 echo 'disabled = false'
                 echo 'format = "[$indicator]($style)"'
-                echo 'unknown_indicator = "| shell "'
-                echo 'bash_indicator = "| bash "'
-                echo 'fish_indicator = ""'
+                echo 'unknown_indicator = " 󰆍  shell "'
+                echo 'bash_indicator = " 󰆍  bash "'
+                echo 'fish_indicator = " 󰆍  fish "'
                 echo 'style = "fg:color_fg0 bg:color_orange"'
                 echo ''
                 echo '[hostname]'
                 echo 'disabled = false'
                 echo 'ssh_only = false'
                 echo 'style = "bg:color_orange fg:color_fg0"'
-                echo 'format = "[ $ssh_symbol]($style)[$hostname]($style)[  ]($style)"'
+                echo 'format = "[ $ssh_symbol]($style)[$hostname]($style)[  ]($style)"' #       
             } | tee -a "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
             # Configure starship
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/.config/"
             # shellcheck disable=SC2016
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c 'starship config os.format "[ \$symbol ](\$style)"'
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c 'starship config os.format "[ \$symbol](\$style)"'
             # Copy starship.toml to root
             cp "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" "/mnt/root/.config/starship.toml"
 
