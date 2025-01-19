@@ -180,7 +180,7 @@ Install prefered Steam version:
 - [Proton](https://aur.archlinux.org/packages/proton-ge-custom-bin), [Protontricks](https://aur.archlinux.org/packages/protontricks)
 - [Gamescope](https://archlinux.org/packages/extra/x86_64/gamescope/)
 - [MangoHud](https://archlinux.org/packages/extra/x86_64/mangohud/)
-- [ProtonPlus](https://aur.archlinux.org/packages/protonplus)
+- [ProtonPlus](https://flathub.org/apps/com.vysp3r.ProtonPlus)
 - [Haguichi](https://flathub.org/apps/com.github.ztefn.haguichi), [logmein-hamachi](https://aur.archlinux.org/packages/logmein-hamachi])
 
 ### For Audiophiles
