@@ -1530,7 +1530,7 @@ exec_install_shell_enhancement() {
             [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
 
             # Install packages
-            local packages=(starship eza bat fastfetch mc btop nano vim man-db bash-completion nano-syntax-highlighting git neovim python-pynvim)
+            local packages=(git starship eza bat fastfetch mc btop nano neovim python-pynvim man-db bash-completion nano-syntax-highlighting)
             chroot_pacman_install "${packages[@]}"
 
             # Create fastfetch config dirs
