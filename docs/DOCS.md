@@ -301,27 +301,30 @@ fish starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-
 
 - `fish` is set as default shell
 - `starship` is set as fancy default promt see `~/.config/fish/config.fish`
+- `nvim` is preconfigured with SpaceVim
 - `ls` is replaced with colorful `eza` see `~/.aliases`
 - `man` is replaced with colorful `bat` see `~/.config/fish/config.fish`
 - `nano` is set as default editor
 - `fastfetch` is preconfigured as system info
-- `nvim` is preconfigured with SpaceVim
 
 #### Useful Terminal commands
 
+- `help` open fish help in browser
+- `history` open command history
+- `fish` open fish shell (default)
 - `bash` switch to bash shell (go back to fish with `q`)
+- `vim` open enhanced file editor
 - `fetch` show system info
 - `btop` show system manager
 - `logs` show system logs
+- `mc` open file manager
 - `ll` list files in dir
 - `la` list all files (+ hidden files) in dir
 - `lt` tree files in dir
-- `mc` open file manager
-- `open <file>` open file in GNOME app
-- `history` open command history
-- `help` open fish help in browser
+- `.` go back
 - `c` clear screen
 - `q` exit
+- `open <file>` open file in GNOME app
 
 **Note:** See `~/.aliases` for all command aliases
 
