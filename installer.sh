@@ -1793,6 +1793,9 @@ exec_install_shell_enhancement() {
 
                 # Execute spacevim installer
                 arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- "/home/${ARCH_OS_USERNAME}/spacevim-installer.sh" --install neovim
+
+                # Remove spacevim installer
+                rm -f "/mnt/home/${ARCH_OS_USERNAME}/spacevim-installer.sh"
             fi
 
             { # Add init script
