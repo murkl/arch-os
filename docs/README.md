@@ -93,6 +93,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
 - [Arch OS System Manager](DOCS.md#arch-os-manager)
 - [Arch OS Shell Enhancement](DOCS.md#shell-enhancement)
+- [Arch OS Starship Theme](https://github.com/murkl/starship-theme-arch-os)
 - [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
 - [AUR Helper](DOCS.md#advanced-installation) (configurable)
 - [VM Support](DOCS.md#vm-support) (optional)
@@ -156,6 +157,7 @@ To streamline this process, you can use the preinstalled **[➜ Arch OS System M
 
 ## Screenshots
 
+<p><div><img src="./screenshots/starship.png"></div><sub><i>Arch OS Starship Promt Demo</i></sub></p>
 <p><div><img src="./screenshots/desktop_demo.jpg"></div><sub><i>Arch OS Desktop Demo</i></sub></p>
 <p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Arch OS Bootsplash</i></sub></p>
 <p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Arch OS Shell Enhancement</i></sub></p>

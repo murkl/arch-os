@@ -289,11 +289,15 @@ Disable this feature with `ARCH_OS_HOUSEKEEPING_ENABLED='false'`
 
 <p><img src="screenshots/fastfetch.png"></p>
 
-If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true`, the following packages are installed and preconfigured (for root & user). To keep `bash` as default shell, set `ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='false'`:
+If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true`, the following packages are installed and preconfigured (for root & user). To keep `bash` as default shell, set `ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='false'`.
+
+<strong>Package Dependencies:</strong>
 
 ```
 fish starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-highlighting
 ```
+
+**Promt Theme [➜ Arch OS Starship Theme](https://github.com/murkl/starship-theme-arch-os)**
 
 - `fish` is set as default shell
 - `starship` is set as fancy default promt see `~/.config/fish/config.fish`
