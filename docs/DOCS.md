@@ -301,7 +301,7 @@ fish starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-
 
 - `fish` is set as default shell
 - `starship` is set as fancy default promt see `~/.config/fish/config.fish`
-- `nvim` is preconfigured with SpaceVim
+- `nvim` is preconfigured with SpaceVim and linked to `/usr/bin/vim` and `/usr/bin/vi`
 - `ls` is replaced with colorful `eza` see `~/.aliases`
 - `man` is replaced with colorful `bat` see `~/.config/fish/config.fish`
 - `nano` is set as default editor

@@ -1773,9 +1773,8 @@ exec_install_shell_enhancement() {
             sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
             sed -i 's;^# include /usr/share/nano/\*\.nanorc;include /usr/share/nano/*.nanorc\ninclude /usr/share/nano/extra/*.nanorc\ninclude /usr/share/nano-syntax-highlighting/*.nanorc;g' /mnt/etc/nanorc
 
-            # Install spacevim for root & user (colorful vim ide)
+            # Install spacevim for user (colorful vim ide)
             if ! arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- curl -sLf https://spacevim.org/install.sh | bash; then rm -rf "/mnt/home/${ARCH_OS_USERNAME}/.config/nvim"; fi
-            if ! arch-chroot /mnt curl -sLf https://spacevim.org/install.sh | bash; then rm -rf "/mnt/root/.config/nvim"; fi
             arch-chroot /mnt ln -s /usr/bin/nvim /usr/bin/vim
             arch-chroot /mnt ln -s /usr/bin/nvim /usr/bin/vi
 
