@@ -1773,10 +1773,27 @@ exec_install_shell_enhancement() {
             sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
             sed -i 's;^# include /usr/share/nano/\*\.nanorc;include /usr/share/nano/*.nanorc\ninclude /usr/share/nano/extra/*.nanorc\ninclude /usr/share/nano-syntax-highlighting/*.nanorc;g' /mnt/etc/nanorc
 
-            # Install spacevim for user (colorful vim ide)
-            if ! arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- curl -sLf https://spacevim.org/install.sh | bash; then rm -rf "/mnt/home/${ARCH_OS_USERNAME}/.config/nvim"; fi
+            # Set neovim links
             arch-chroot /mnt ln -s /usr/bin/nvim /usr/bin/vim
             arch-chroot /mnt ln -s /usr/bin/nvim /usr/bin/vi
+
+            # Install spacevim for user (colorful vim ide) - https://spacevim.org/quick-start-guide/#installation
+            if curl -sLf https://spacevim.org/install.sh >"/mnt/home/${ARCH_OS_USERNAME}/spacevim-installer.sh"; then
+
+                # Make executable
+                chmod +x "/mnt/home/${ARCH_OS_USERNAME}/spacevim-installer.sh"
+
+                # Replace to git absolute path
+                sed -i 's/git clone/\/usr\/bin\/git clone/g' "/mnt/home/${ARCH_OS_USERNAME}/spacevim-installer.sh"
+                sed -i 's/git pull/\/usr\/bin\/git pull/g' "/mnt/home/${ARCH_OS_USERNAME}/spacevim-installer.sh"
+                sed -i "s/need_cmd 'git'/need_cmd '\/usr\/bin\/git'/g" "/mnt/home/${ARCH_OS_USERNAME}/spacevim-installer.sh"
+
+                # Set permissions
+                arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
+
+                # Execute spacevim installer
+                arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- "/home/${ARCH_OS_USERNAME}/spacevim-installer.sh" --install neovim
+            fi
 
             { # Add init script
                 echo "# exec_install_shell_enhancement | Set default monospace font"
