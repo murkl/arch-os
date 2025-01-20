@@ -1645,43 +1645,15 @@ exec_install_shell_enhancement() {
                 echo 'fi'
             } | tee "/mnt/root/.bashrc" "/mnt/home/${ARCH_OS_USERNAME}/.bashrc" >/dev/null
 
-            # Create default starship.toml from gruvbox-rainbow
-            arch-chroot /mnt /usr/bin/starship preset gruvbox-rainbow -o "/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            # Replace properties in starship.toml
-            # 󰬫 󰧛 
-            sed -i 's/bg:color_yellow fg:color_orange/bg:color_red fg:color_orange/g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i 's/fg:color_yellow bg:color_aqua/fg:color_red bg:color_aqua/g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i 's/fg:color_fg0 bg:color_yellow/fg:color_fg0 bg:color_red/g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i 's//   /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i "s;\$username\\\;\$username\\\ \n\$shell\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i "s;\$username\\\\;\$hostname\\\\ \n\$username\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i '/\[directory\.substitutions\]/a "~" = " "' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i "s/ \$time/  \$time/g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            #sed -i '/\[line_break\]$/{N;s/\[line_break\]\ndisabled = false/[line_break]\ndisabled = true/}' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            # shellcheck disable=SC2016
-            { # Append starship.toml
-                echo ''
-                echo '[shell]'
-                echo 'disabled = false'
-                echo 'format = "[$indicator]($style)"'
-                echo 'unknown_indicator = " 󰆍  shell "'
-                echo 'bash_indicator = " 󰆍  bash "'
-                echo 'fish_indicator = " 󰆍  fish "'
-                echo 'style = "fg:color_fg0 bg:color_orange"'
-                echo ''
-                echo '[hostname]'
-                echo 'disabled = false'
-                echo 'ssh_only = false'
-                echo 'style = "bg:color_orange fg:color_fg0"'
-                echo 'format = "[ $ssh_symbol]($style)[ $hostname]($style)[  ]($style)"' #       
-            } | tee -a "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
-            # Configure starship
-            arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/.config/"
-            # shellcheck disable=SC2016
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c 'starship config os.format "[ \$symbol](\$style)"'
-            # Copy starship.toml to root
+            # Download Arch OS starship theme
+            mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/"
+            curl -Lf https://raw.githubusercontent.com/murkl/starship-theme-arch-os/refs/heads/main/starship.toml >"/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            # Theme fallback
+            if [ ! -s "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" ]; then
+                arch-chroot /mnt /usr/bin/starship preset pure-preset -o "/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            fi
             cp "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" "/mnt/root/.config/starship.toml"
+            arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/.config/"
 
             # shellcheck disable=SC2028,SC2016
             { # Create fastfetch config for root & user
