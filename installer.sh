@@ -1772,7 +1772,7 @@ exec_install_shell_enhancement() {
                 echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 10'"
                 if [ "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" = "true" ]; then
                     echo "# exec_install_shell_enhancement | Set fish theme"
-                    echo "fish -c 'fish_config theme choose Base16\ Default\ Dark && echo y | fish_config theme save'"
+                    echo "fish -c 'fish_config theme choose Nord && echo y | fish_config theme save'"
                 fi
             } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
 
