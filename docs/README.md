@@ -160,6 +160,7 @@ To streamline this process, you can use the preinstalled **[➜ Arch OS System M
 
 <p><div><img src="./screenshots/starship.png"></div><sub><i>Arch OS Starship Promt Demo</i></sub></p>
 <p><div><img src="./screenshots/desktop_demo.jpg"></div><sub><i>Arch OS Desktop Demo</i></sub></p>
+<p><div><img src="./screenshots/vim.png"></div><sub><i>SpaceVim Demo</i></sub></p>
 <p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Arch OS Bootsplash</i></sub></p>
 <p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Arch OS Shell Enhancement</i></sub></p>
 <p><div><img src="./screenshots/manager_upgrade.png"></div><sub><i>Arch OS Manager - System Upgrade Demo</i></sub></p>
