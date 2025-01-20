@@ -164,9 +164,9 @@ main() {
     exec_install_bootsplash
     exec_install_housekeeping
     exec_install_shell_enhancement
-    exec_install_archos_manager
     exec_install_desktop
     exec_install_graphics_driver
+    exec_install_archos_manager
     exec_install_vm_support
     exec_finalize_arch_os
     exec_cleanup_installation
