@@ -1042,7 +1042,7 @@ exec_install_desktop() {
                 packages+=(nautilus-image-converter)
 
                 # Runtimes, Builder & Helper
-                packages+=(gdb python go rust nodejs lua cmake jq zenity gum fzf)
+                packages+=(gdb python go rust nodejs npm lua cmake jq zenity gum fzf)
 
                 # Certificates
                 packages+=(ca-certificates)
