@@ -1127,7 +1127,7 @@ exec_install_desktop() {
                 echo ''
                 echo '# PATH'
                 echo 'PATH="${PATH}:${HOME}/.local/bin"'
-                echo 'PATH="${PATH}:/var/lib/flatpak/exports/bin"'
+                echo 'PATH="${PATH}:/var/lib/flatpak/exports/bin" # Workaround'
                 echo ''
                 echo '# XDG'
                 echo 'XDG_CONFIG_HOME="${HOME}/.config"'
@@ -1135,6 +1135,12 @@ exec_install_desktop() {
                 echo 'XDG_STATE_HOME="${HOME}/.local/state"'
                 echo 'XDG_CACHE_HOME="${HOME}/.cache"                '
             } >"/mnt/home/${ARCH_OS_USERNAME}/.config/environment.d/00-arch.conf"
+
+            # shellcheck disable=SC2016
+            {
+                echo '# Workaround: Flatpak short command support eg: com.github.tchx84.Flatseal'
+                echo 'PATH="${PATH}:/var/lib/flatpak/exports/bin"'
+            } >"/mnt/home/${ARCH_OS_USERNAME}/.config/environment.d/99-flatpak.conf"
 
             # Samba
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
@@ -1601,7 +1607,7 @@ exec_install_shell_enhancement() {
                 echo '[[ $- != *i* ]] && return'
                 echo ''
                 echo ' # Export systemd environment vars from ~/.config/environment.d/* (tty only)'
-                echo '[ -z "$DISPLAY" ] && export $(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator | xargs)'
+                echo '[[ ${SHLVL} == 1 ]] && [[ $(tty) =~ /dev/tty[0-9]* ]] && export $(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator | xargs)'
                 echo ''
                 echo '# Source aliases'
                 echo 'source "${HOME}/.aliases"'
