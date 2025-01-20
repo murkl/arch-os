@@ -97,6 +97,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
 - [AUR Helper](DOCS.md#advanced-installation) (configurable)
 - [VM Support](DOCS.md#vm-support) (optional)
+- [SpaceVim](https://spacevim.org) (optional)
 - 32 Bit Support (Multilib)
 - Disk Encryption (LUKS2)
 

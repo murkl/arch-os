@@ -1287,6 +1287,7 @@ exec_install_desktop() {
             if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
                 echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/fish.desktop"
                 echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/btop.desktop"
+                echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/nvim.desktop"
             fi
 
             # Hide Kitty app
@@ -1526,9 +1527,14 @@ exec_install_shell_enhancement() {
     if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                                                          # If debug mode then return
-            chroot_pacman_install starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-highlighting # Install packages
-            mkdir -p "/mnt/root/.config/fastfetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/fastfetch"                      # Create fastfetch config dirs
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
+
+            # Install packages
+            local packages=(starship eza bat fastfetch mc btop nano vim man-db bash-completion nano-syntax-highlighting git neovim python-pynvim)
+            chroot_pacman_install "${packages[@]}"
+
+            # Create fastfetch config dirs
+            mkdir -p "/mnt/root/.config/fastfetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/fastfetch"
 
             # Install & set fish for root & user
             if [ "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" = "true" ]; then
@@ -1654,8 +1660,8 @@ exec_install_shell_enhancement() {
             # Download Arch OS starship theme
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/"
             curl -Lf https://raw.githubusercontent.com/murkl/starship-theme-arch-os/refs/heads/main/starship.toml >"/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            # Theme fallback
             if [ ! -s "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" ]; then
+                # Theme fallback
                 arch-chroot /mnt /usr/bin/starship preset pure-preset -o "/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             fi
             cp "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" "/mnt/root/.config/starship.toml"
@@ -1766,6 +1772,12 @@ exec_install_shell_enhancement() {
             sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
             sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
             sed -i 's;^# include /usr/share/nano/\*\.nanorc;include /usr/share/nano/*.nanorc\ninclude /usr/share/nano/extra/*.nanorc\ninclude /usr/share/nano-syntax-highlighting/*.nanorc;g' /mnt/etc/nanorc
+
+            # Install spacevim for root & user (colorful vim ide)
+            if ! arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- curl -sLf https://spacevim.org/install.sh | bash; then rm -rf "/mnt/home/${ARCH_OS_USERNAME}/.config/nvim"; fi
+            if ! arch-chroot /mnt curl -sLf https://spacevim.org/install.sh | bash; then rm -rf "/mnt/root/.config/nvim"; fi
+            arch-chroot /mnt ln -s /usr/bin/nvim /usr/bin/vim
+            arch-chroot /mnt ln -s /usr/bin/nvim /usr/bin/vi
 
             { # Add init script
                 echo "# exec_install_shell_enhancement | Set default monospace font"
