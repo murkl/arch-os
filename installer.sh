@@ -1127,7 +1127,6 @@ exec_install_desktop() {
                 echo ''
                 echo '# PATH'
                 echo 'PATH="${PATH}:${HOME}/.local/bin"'
-                echo 'PATH="${PATH}:/var/lib/flatpak/exports/bin" # Workaround'
                 echo ''
                 echo '# XDG'
                 echo 'XDG_CONFIG_HOME="${HOME}/.config"'
@@ -1138,7 +1137,7 @@ exec_install_desktop() {
 
             # shellcheck disable=SC2016
             {
-                echo '# Workaround: Flatpak short command support eg: com.github.tchx84.Flatseal'
+                echo '# Workaround for Flatpak aliases'
                 echo 'PATH="${PATH}:/var/lib/flatpak/exports/bin"'
             } >"/mnt/home/${ARCH_OS_USERNAME}/.config/environment.d/99-flatpak.conf"
 
