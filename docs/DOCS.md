@@ -114,27 +114,20 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 
 #### Install Sunshine (Streaming Server)
 
-1. Install package from [AUR/sunshine](https://aur.archlinux.org/packages/sunshine): `paru -S sunshine`
-2. Create this user service: `nano ~/.config/systemd/user/sunshine.service`
+1. Add [LizardByte Repository](https://github.com/LizardByte/pacman-repo) to Pacman config: `sudo nano /etc/pacman.conf`
 
 ```
-[Unit]
-Description=Sunshine self-hosted game stream host for Moonlight.
-StartLimitIntervalSec=500
-StartLimitBurst=5
-
-[Service]
-ExecStart=/usr/bin/sunshine
-Restart=on-failure
-RestartSec=5s
-
-[Install]
-WantedBy=graphical-session.target
+[lizardbyte]
+SigLevel = Optional
+Server = https://github.com/LizardByte/pacman-repo/releases/latest/download
 ```
 
+2. Install Sunshine: `sudo pacman -Syyu lizardbyte/sunshine`
 3. Start Sunshine Desktop Application (see system tray)
 4. Open local Sunshine Web Interface: https://localhost:47990 and set username and password
 5. Simply start streaming with [Moonlight](https://moonlight-stream.org)
+
+Source: [LizardByte Docs](https://docs.lizardbyte.dev/projects/sunshine/latest/md_docs_2getting__started.html#archlinux)
 
 ### For Developer
 
