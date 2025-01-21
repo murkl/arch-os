@@ -21,7 +21,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${FORCE:=false}" # FORCE=true ./installer.sh
 
 # SCRIPT
-VERSION='1.7.9'
+VERSION='1.8.0'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -62,6 +62,9 @@ main() {
     trap 'trap_exit' EXIT
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
 
+    # Print version to logfile
+    log_info "Arch OS ${VERSION}"
+
     # Start recovery
     [[ "$1" = "--recovery"* ]] && {
         start_recovery
@@ -73,7 +76,7 @@ main() {
     # Loop properties step to update screen if user edit properties
     while (true); do
 
-        print_header # Show landig page
+        print_header "Arch OS Installer" # Show landig page
         gum_white 'Please make sure you have:' && echo
         gum_white '• Backed up your important data'
         gum_white '• A stable internet connection'
@@ -158,11 +161,11 @@ main() {
     exec_pacstrap_core
     exec_enable_multilib
     exec_install_aur_helper
-    exec_install_desktop
-    exec_install_graphics_driver
     exec_install_bootsplash
     exec_install_housekeeping
     exec_install_shell_enhancement
+    exec_install_desktop
+    exec_install_graphics_driver
     exec_install_archos_manager
     exec_install_vm_support
     exec_finalize_arch_os
@@ -242,7 +245,7 @@ main() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 start_recovery() {
-    print_header
+    print_header "Arch OS Recovery"
     local recovery_boot_partition recovery_root_partition user_input items options
     local recovery_mount_dir="/mnt/recovery"
     local recovery_crypt_label="cryptrecovery"
@@ -259,8 +262,8 @@ start_recovery() {
     mapfile -t items < <(lsblk -I 8,259,254 -d -o KNAME,SIZE -n)
     # size: $(lsblk -d -n -o SIZE "/dev/${item}")
     options=() && for item in "${items[@]}"; do options+=("/dev/${item}"); done
-    user_input=$(gum_choose --header "+ Select Arch OS Recovery Disk" "${options[@]}") || exit 130
-    gum_title "Arch OS Recovery"
+    user_input=$(gum_choose --header "+ Select Arch OS Disk" "${options[@]}") || exit 130
+    gum_title "Recovery"
     [ -z "$user_input" ] && log_fail "Disk is empty" && exit 1 # Check if new value is null
     user_input=$(echo "$user_input" | awk -F' ' '{print $1}')  # Remove size from input
     [ ! -e "$user_input" ] && log_fail "Disk does not exists" && exit 130
@@ -874,16 +877,14 @@ exec_pacstrap_core() {
         arch-chroot /mnt ln -sf "/usr/share/zoneinfo/${ARCH_OS_TIMEZONE}" /etc/localtime
         arch-chroot /mnt hwclock --systohc # Set hardware clock from system clock
 
-        # Create swap (zram-generator with zstd compression)
-        {
+        { # Create swap (zram-generator with zstd compression)
             # https://wiki.archlinux.org/title/Zram#Using_zram-generator
             echo '[zram0]'
             echo 'zram-size = ram / 2'
             echo 'compression-algorithm = zstd'
         } >/mnt/etc/systemd/zram-generator.conf
 
-        # Optimize swap on zram (https://wiki.archlinux.org/title/Zram#Optimizing_swap_on_zram)
-        {
+        { # Optimize swap on zram (https://wiki.archlinux.org/title/Zram#Optimizing_swap_on_zram)
             echo 'vm.swappiness = 180'
             echo 'vm.watermark_boost_factor = 0'
             echo 'vm.watermark_scale_factor = 125'
@@ -927,24 +928,21 @@ exec_pacstrap_core() {
         [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('nowatchdog')
         [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('quiet' 'splash' 'vt.global_cursor_default=0')
 
-        # Create Bootloader config
-        {
+        { # Create Bootloader config
             echo 'default arch.conf'
             echo 'console-mode auto'
             echo 'timeout 0'
             echo 'editor yes'
         } >/mnt/boot/loader/loader.conf
 
-        # Create default boot entry
-        {
+        { # Create default boot entry
             echo 'title   Arch OS'
             echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
             echo "initrd  /initramfs-${ARCH_OS_KERNEL}.img"
             echo "options ${kernel_args[*]}"
         } >/mnt/boot/loader/entries/arch.conf
 
-        # Create fallback boot entry
-        {
+        { # Create fallback boot entry
             echo 'title   Arch OS (Fallback)'
             echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
             echo "initrd  /initramfs-${ARCH_OS_KERNEL}-fallback.img"
@@ -1022,10 +1020,8 @@ exec_install_desktop() {
             # GNOME desktop extras
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
 
-                # GNOME base extras
-                packages+=(gnome-tweaks gnome-browser-connector gnome-themes-extra power-profiles-daemon rygel cups gnome-epub-thumbnailer)
-
-                [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "false" ] && packages+=(gnome-firmware file-roller)
+                # GNOME base extras (buggy: power-profiles-daemon)
+                packages+=(gnome-browser-connector gnome-themes-extra tuned-ppd rygel cups gnome-epub-thumbnailer)
 
                 # GNOME wayland screensharing, flatpak & pipewire support
                 packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
@@ -1033,16 +1029,20 @@ exec_install_desktop() {
                 # Audio (Pipewire replacements + session manager): https://wiki.archlinux.org/title/PipeWire#Installation
                 packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
-                packages+=(sof-firmware) # Need for intel i5 audio
+
+                # Disabled because hardware-specific
+                #packages+=(sof-firmware) # Need for intel i5 audio
 
                 # Networking & Access
-                packages+=(samba gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
+                packages+=(samba rsync gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
+                packages+=(modemmanager network-manager-sstp networkmanager-l2tp networkmanager-vpnc networkmanager-pptp networkmanager-openvpn networkmanager-openconnect networkmanager-strongswan)
 
                 # Utils (https://wiki.archlinux.org/title/File_systems)
-                packages+=(base-devel archlinux-contrib pacutils fwupd bash-completion dhcp net-tools inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfat-utils btrfs-progs xfsprogs p7zip zip unzip unrar tar)
+                packages+=(base-devel archlinux-contrib pacutils fwupd bash-completion dhcp net-tools inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfat-utils btrfs-progs xfsprogs p7zip zip unzip unrar tar wget curl)
+                packages+=(nautilus-image-converter)
 
-                # Runtimes & Helper
-                packages+=(jq zenity gum)
+                # Runtimes, Builder & Helper
+                packages+=(gdb python go rust nodejs npm lua cmake jq zenity gum fzf)
 
                 # Certificates
                 packages+=(ca-certificates)
@@ -1053,11 +1053,11 @@ exec_install_desktop() {
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gstreamer lib32-gst-plugins-good lib32-libvpx lib32-libwebp)
 
                 # Optimization
-                packages+=(gamemode)
-                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
+                packages+=(gamemode sdl_image)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode lib32-sdl_image)
 
                 # Fonts
-                packages+=(inter-font ttf-firacode-nerd ttf-nerd-fonts-symbols noto-fonts noto-fonts-emoji ttf-liberation ttf-dejavu)
+                packages+=(inter-font ttf-firacode-nerd ttf-nerd-fonts-symbols ttf-font-awesome noto-fonts noto-fonts-emoji ttf-liberation ttf-dejavu adobe-source-sans-fonts adobe-source-serif-fonts)
 
                 # Theming
                 packages+=(adw-gtk-theme tela-circle-icon-theme-standard)
@@ -1099,7 +1099,7 @@ exec_install_desktop() {
 
             # Enable GNOME auto login
             mkdir -p /mnt/etc/gdm
-            #grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
+            # grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
             {
                 echo "[daemon]"
                 echo "WaylandEnable=True"
@@ -1127,7 +1127,6 @@ exec_install_desktop() {
                 echo ''
                 echo '# PATH'
                 echo 'PATH="${PATH}:${HOME}/.local/bin"'
-                echo 'PATH="${PATH}:/var/lib/flatpak/exports/bin"'
                 echo ''
                 echo '# XDG'
                 echo 'XDG_CONFIG_HOME="${HOME}/.config"'
@@ -1135,6 +1134,12 @@ exec_install_desktop() {
                 echo 'XDG_STATE_HOME="${HOME}/.local/state"'
                 echo 'XDG_CACHE_HOME="${HOME}/.cache"                '
             } >"/mnt/home/${ARCH_OS_USERNAME}/.config/environment.d/00-arch.conf"
+
+            # shellcheck disable=SC2016
+            {
+                echo '# Workaround for Flatpak aliases'
+                echo 'PATH="${PATH}:/var/lib/flatpak/exports/bin"'
+            } >"/mnt/home/${ARCH_OS_USERNAME}/.config/environment.d/99-flatpak.conf"
 
             # Samba
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
@@ -1223,8 +1228,9 @@ exec_install_desktop() {
 
             # Extra services
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-                arch-chroot /mnt systemctl enable power-profiles-daemon # Power daemon
-                arch-chroot /mnt systemctl enable cups.socket           # Printer
+                arch-chroot /mnt systemctl enable tuned       # Power daemon
+                arch-chroot /mnt systemctl enable tuned-ppd   # Power daemon
+                arch-chroot /mnt systemctl enable cups.socket # Printer
             fi
 
             # User services (Not working: Failed to connect to user scope bus via local transport: Permission denied)
@@ -1250,71 +1256,72 @@ exec_install_desktop() {
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications"
 
             # Create UEFI Boot desktop entry
-            #{
+            # {
             #    echo '[Desktop Entry]'
             #    echo 'Name=Reboot to UEFI'
             #    echo 'Icon=system-reboot'
             #    echo 'Exec=systemctl reboot --firmware-setup'
             #    echo 'Type=Application'
             #    echo 'Terminal=false'
-            #} >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/systemctl-reboot-firmware.desktop"
+            # } >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/systemctl-reboot-firmware.desktop"
 
-            # Hide desktop Aaplications icons
+            # Hide aplications desktop icons
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/bssh.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/bvnc.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/avahi-discover.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/qv4l2.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/qvidcap.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/lstopo.desktop"
-            [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/cups.desktop"
+
+            # Hide aplications (extra) desktop icons
+            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
+                echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/stoken-gui.desktop"       # networkmanager-openconnect
+                echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/stoken-gui-small.desktop" # networkmanager-openconnect
+                echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/cups.desktop"
+                echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/tuned-gui.desktop"
+                echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/cmake-gui.desktop"
+            fi
 
             # Hide Shell Enhancement apps
             if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
                 echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/fish.desktop"
                 echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/btop.desktop"
+                echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/nvim.desktop"
             fi
 
             # Hide Kitty app
             if [ "$ARCH_OS_MANAGER_ENABLED" = "true" ]; then
                 echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/kitty.desktop"
-            fi
-
-            # Install wallpaper
-            if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-                mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system"
-                if curl -Lsf https://raw.githubusercontent.com/murkl/arch-os/refs/heads/main/docs/wallpaper.jpg >"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/wallpaper.jpg"; then
-                    {
-                        echo "# Set wallpaper"
-                        echo "gsettings set org.gnome.desktop.background picture-uri 'file:///home/${ARCH_OS_USERNAME}/.arch-os/system/wallpaper.jpg'"
-                    } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
-                fi
+                echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/kitty-open.desktop"
             fi
 
             # Add Init script
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
                 {
-                    echo "# Theming settings"
+                    echo "# exec_install_desktop | Theming settings"
                     echo "gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'"
                     echo "gsettings set org.gnome.desktop.interface icon-theme 'Tela-circle'"
                     echo "gsettings set org.gnome.desktop.interface accent-color 'slate'"
-                    echo "# Font settings"
+                    echo "# exec_install_desktop | Font settings"
                     echo "gsettings set org.gnome.desktop.interface font-hinting 'slight'"
                     echo "gsettings set org.gnome.desktop.interface font-antialiasing 'rgba'"
                     echo "gsettings set org.gnome.desktop.interface font-name 'Inter 10'"
                     echo "gsettings set org.gnome.desktop.interface document-font-name 'Inter 10'"
                     echo "gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Inter Bold 10'"
                     echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 10'"
-                    echo "# Mutter settings"
+                    echo "# exec_install_desktop | Show all input sources"
+                    echo "gsettings set org.gnome.desktop.input-sources show-all-sources true"
+                    echo "# exec_install_desktop | Mutter settings"
                     echo "gsettings set org.gnome.mutter center-new-windows true"
-                    echo "# File chooser settings"
+                    echo "# exec_install_desktop | File chooser settings"
                     echo "gsettings set org.gtk.Settings.FileChooser sort-directories-first true"
                     echo "gsettings set org.gtk.gtk4.Settings.FileChooser sort-directories-first true"
-                    echo "# Keybinding settings"
+                    echo "# exec_install_desktop | Keybinding settings"
                     echo "gsettings set org.gnome.desktop.wm.keybindings close \"['<Super>q']\""
                     echo "gsettings set org.gnome.desktop.wm.keybindings minimize \"['<Super>h']\""
                     echo "gsettings set org.gnome.desktop.wm.keybindings show-desktop \"['<Super>d']\""
                     echo "gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen \"['<Super>F11']\""
-                    echo "# Favorite apps"
+                    echo "# exec_install_desktop | Favorite apps"
                     echo "gsettings set org.gnome.shell favorite-apps \"['org.gnome.Console.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Software.desktop', 'org.gnome.Settings.desktop']\""
                 } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
             fi
@@ -1503,7 +1510,7 @@ exec_install_archos_manager() {
             chroot_pacman_install git base-devel kitty gum libnotify pacman-contrib # Install dependencies
             chroot_aur_install arch-os-manager                                      # Install archos-manager
             {
-                echo "# Arch OS Manager Init"
+                echo "# exec_install_archos_manager | Initialize"
                 echo "/usr/bin/arch-os --init &> /dev/null"
             } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
             process_return 0 # Return
@@ -1519,9 +1526,14 @@ exec_install_shell_enhancement() {
     if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                                                          # If debug mode then return
-            chroot_pacman_install starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-highlighting # Install packages
-            mkdir -p "/mnt/root/.config/fastfetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/fastfetch"                      # Create fastfetch config dirs
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
+
+            # Install packages
+            local packages=(git starship eza bat fastfetch mc btop nano neovim python-pynvim man-db bash-completion nano-syntax-highlighting ttf-firacode-nerd ttf-nerd-fonts-symbols)
+            chroot_pacman_install "${packages[@]}"
+
+            # Create fastfetch config dirs
+            mkdir -p "/mnt/root/.config/fastfetch" "/mnt/home/${ARCH_OS_USERNAME}/.config/fastfetch"
 
             # Install & set fish for root & user
             if [ "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" = "true" ]; then
@@ -1543,8 +1555,11 @@ exec_install_shell_enhancement() {
                     echo '# Source user aliases'
                     echo 'test -f "$HOME/.aliases" && source "$HOME/.aliases"'
                     echo ''
-                    echo '# Init starship promt'
-                    echo '[ -n "$DISPLAY" ] && command -v starship > /dev/null && starship init fish | source'
+                    echo '# Init starship promt (except tty)'
+                    echo 'if not tty | string match -q "/dev/tty*"'
+                    echo '    and command -v starship >/dev/null'
+                    echo '    starship init fish | source'
+                    echo 'end'
                 } | tee "/mnt/root/.config/fish/config.fish" "/mnt/home/${ARCH_OS_USERNAME}/.config/fish/config.fish" >/dev/null
                 #arch-chroot /mnt chsh -s /usr/bin/fish
                 #arch-chroot /mnt chsh -s /usr/bin/fish "$ARCH_OS_USERNAME"
@@ -1597,7 +1612,7 @@ exec_install_shell_enhancement() {
                 echo '[[ $- != *i* ]] && return'
                 echo ''
                 echo ' # Export systemd environment vars from ~/.config/environment.d/* (tty only)'
-                echo '[ -z "$DISPLAY" ] && export $(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator | xargs)'
+                echo '[[ ${SHLVL} == 1 ]] && [[ $(tty) =~ /dev/tty[0-9]* ]] && export $(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator | xargs)'
                 echo ''
                 echo '# Source aliases'
                 echo 'source "${HOME}/.aliases"'
@@ -1631,8 +1646,8 @@ exec_install_shell_enhancement() {
                 echo '# History ignore list'
                 echo 'export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q:c"'
                 echo ''
-                echo '# Set starship (disabled)'
-                echo '# [ -n "$DISPLAY" ] && command -v starship &>/dev/null && eval "$(starship init bash)"'
+                echo '# Init starship (except tty)'
+                echo '[[ ! $(tty) =~ /dev/tty[0-9]* ]] && command -v starship &>/dev/null && eval "$(starship init bash)"'
                 echo ''
                 echo '# Start fish shell (https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish)'
                 echo 'if command -v fish &>/dev/null && [[ $(ps --no-header --pid=$PPID --format=comm) != "fish" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then'
@@ -1641,59 +1656,15 @@ exec_install_shell_enhancement() {
                 echo 'fi'
             } | tee "/mnt/root/.bashrc" "/mnt/home/${ARCH_OS_USERNAME}/.bashrc" >/dev/null
 
-            # shellcheck disable=SC2016
-            # { # Create starship config for root & user
-            #     echo "# Get editor completions based on the config schema"
-            #     echo "\"\$schema\" = 'https://starship.rs/config-schema.json'"
-            #     echo ""
-            #     echo "# Wait 10 milliseconds for starship to check files under the current directory"
-            #     echo "scan_timeout = 10"
-            #     echo ""
-            #     echo "# Set command timeout"
-            #     echo "command_timeout = 10000"
-            #     echo ""
-            #     echo "# Inserts a blank line between shell prompts"
-            #     echo "add_newline = true"
-            #     echo ""
-            #     echo "[directory]"
-            #     echo "style = 'bold green'"
-            #     echo ""
-            #     echo "# Replace the promt symbol"
-            #     echo "[character]"
-            #     echo "success_symbol = '[>](bold purple)'"
-            #     echo "error_symbol = '[x](bold red)'"
-            #     echo ""
-            #     echo "# Disable the package module, hiding it from the prompt completely"
-            #     echo "[package]"
-            #     echo "disabled = true"
-            #     echo ""
-            #     echo '[shell]'
-            #     echo 'disabled = false'
-            #     echo 'format = "[$indicator]($style)"'
-            #     echo 'unknown_indicator = "shell "'
-            #     echo 'bash_indicator = "bash "'
-            #     echo 'fish_indicator = ""'
-            #     echo 'style = "purple bold"'
-            # } | tee "/mnt/root/.confiqg/starship.toml" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
-            arch-chroot /mnt /usr/bin/starship preset gruvbox-rainbow -o "/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            # shellcheck disable=SC2016
-            { # Create starship config for root & user
-                echo ''
-                echo '[shell]'
-                echo 'disabled = false'
-                echo 'format = "[$indicator]($style)"'
-                echo 'unknown_indicator = "| shell "'
-                echo 'bash_indicator = "| bash "'
-                echo 'fish_indicator = ""'
-                echo 'style = "fg:color_fg0 bg:color_orange"'
-            } | tee -a "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" >/dev/null
-            sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i 's// /g' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i "s;\$username\\\;\$username\\\ \n\$shell\\\;g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i '/\[directory\.substitutions\]/a "~" = " "' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i "s/ \$time/  \$time/g" "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
-            sed -i '/\[line_break\]$/{N;s/\[line_break\]\ndisabled = false/[line_break]\ndisabled = true/}' "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            # Download Arch OS starship theme
+            mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/"
+            curl -Lf https://raw.githubusercontent.com/murkl/starship-theme-arch-os/refs/heads/main/starship.toml >"/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            if [ ! -s "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" ]; then
+                # Theme fallback
+                arch-chroot /mnt /usr/bin/starship preset pure-preset -o "/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            fi
             cp "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" "/mnt/root/.config/starship.toml"
+            arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/.config/"
 
             # shellcheck disable=SC2028,SC2016
             { # Create fastfetch config for root & user
@@ -1799,15 +1770,39 @@ exec_install_shell_enhancement() {
             # Set Nano colors
             sed -i "s/^# set linenumbers/set linenumbers/" /mnt/etc/nanorc
             sed -i "s/^# set minibar/set minibar/" /mnt/etc/nanorc
-            sed -i 's;^# include /usr/share/nano/\*\.nanorc;include "/usr/share/nano/*.nanorc"\ninclude "/usr/share/nano/extra/*.nanorc"\ninclude "/usr/share/nano-syntax-highlighting/*.nanorc";g' /mnt/etc/nanorc
+            sed -i 's;^# include /usr/share/nano/\*\.nanorc;include /usr/share/nano/*.nanorc\ninclude /usr/share/nano/extra/*.nanorc\ninclude /usr/share/nano-syntax-highlighting/*.nanorc;g' /mnt/etc/nanorc
 
-            # Add init script
-            {
-                echo "# Set default monospace font"
+            # Set neovim links
+            arch-chroot /mnt ln -s /usr/bin/nvim /usr/bin/vim
+            arch-chroot /mnt ln -s /usr/bin/nvim /usr/bin/vi
+
+            # Install spacevim for user (colorful vim ide) - https://spacevim.org/quick-start-guide/#installation
+            if curl -sLf https://spacevim.org/install.sh >"/mnt/home/${ARCH_OS_USERNAME}/spacevim-installer.sh"; then
+
+                # Make executable
+                chmod +x "/mnt/home/${ARCH_OS_USERNAME}/spacevim-installer.sh"
+
+                # Replace to git absolute path
+                sed -i 's/git clone/\/usr\/bin\/git clone/g' "/mnt/home/${ARCH_OS_USERNAME}/spacevim-installer.sh"
+                sed -i 's/git pull/\/usr\/bin\/git pull/g' "/mnt/home/${ARCH_OS_USERNAME}/spacevim-installer.sh"
+                sed -i "s/need_cmd 'git'/need_cmd '\/usr\/bin\/git'/g" "/mnt/home/${ARCH_OS_USERNAME}/spacevim-installer.sh"
+
+                # Set permissions
+                arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
+
+                # Execute spacevim installer
+                arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- "/home/${ARCH_OS_USERNAME}/spacevim-installer.sh" --install neovim
+
+                # Remove spacevim installer
+                rm -f "/mnt/home/${ARCH_OS_USERNAME}/spacevim-installer.sh"
+            fi
+
+            { # Add init script
+                echo "# exec_install_shell_enhancement | Set default monospace font"
                 echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 10'"
                 if [ "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" = "true" ]; then
-                    echo "# Set fish theme"
-                    echo "fish -c 'fish_config theme choose Base16\ Default\ Dark && echo 'y' | fish_config theme save'"
+                    echo "# exec_install_shell_enhancement | Set fish theme"
+                    echo "fish -c 'fish_config theme choose Nord && echo y | fish_config theme save'"
                 fi
             } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
 
@@ -1873,17 +1868,19 @@ exec_finalize_arch_os() {
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system"
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/autostart"
             mv "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
+            # Add version env
+            sed -i "1i\ARCH_OS_VERSION=${VERSION}" "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             # Add shebang
             sed -i '1i\#!/usr/bin/env bash' "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             # Add autostart-remove
             {
-                echo "# Remove autostart init files"
+                echo "# exec_finalize_arch_os | Remove autostart init files"
                 echo "rm -f /home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
             } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
-            # Add finish
+            # Print initialized info
             {
-                echo "# Finished"
-                echo "echo \"\$(date '+%Y-%m-%d %H:%M:%S') | Arch OS ${VERSION} initialize completed\""
+                echo "# exec_finalize_arch_os | Print initialized info"
+                echo "echo \"\$(date '+%Y-%m-%d %H:%M:%S') | Arch OS \${ARCH_OS_VERSION} | Initialized\""
             } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             arch-chroot /mnt chmod +x "/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             {
@@ -2068,14 +2065,15 @@ process_return() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 print_header() {
+    local title="$1"
     clear && gum_purple '
  █████  ██████   ██████ ██   ██      ██████  ███████ 
 ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
 ███████ ██████  ██      ███████     ██    ██ ███████ 
 ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
 ██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
-    local header_version="${VERSION}" && [ "$DEBUG" = "true" ] && header_version="${VERSION}-debug"
-    gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${header_version}"
+    local header_version="${VERSION}" && [ "$DEBUG" = "true" ] && header_version="${VERSION} (debug)"
+    gum_white --margin "1 0" --align left --bold "Welcome to ${title} ${header_version}"
     [ "$FORCE" = "true" ] && gum_red --bold "CAUTION: Force mode enabled. Cancel with: Ctrl + c" && echo
     return 0
 }
@@ -2125,7 +2123,7 @@ gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
 gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
 
 # Gum prints
-gum_title() { log_head "+ ${*}" && gum join "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
+gum_title() { log_head "${*}" && gum join "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
 gum_info() { log_info "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "${*}")"; }
 gum_warn() { log_warn "$*" && gum join "$(gum_yellow --bold "• ")" "$(gum_white "${*}")"; }
 gum_fail() { log_fail "$*" && gum join "$(gum_red --bold "• ")" "$(gum_white "${*}")"; }

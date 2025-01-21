@@ -29,7 +29,20 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Show package info: **`paru -Qi <my package>`**
 - Remove package: **`paru -Rsn <my package>`**
 
+**Note:** See `~/.aliases` for useful command aliases
+
+### GNOME Shortcuts
+
+**Note:** Only available with default installation preset (desktop).
+
+- Close Window: **`Super + q`**
+- Hide Window: **`Super + h`**
+- Toggle Desktop: **`Super + d`**
+- Toggle Fullscreen: **`Super + F11`**
+
 ### Additional Packages (optional)
+
+**Note:** The target of the respective URL is also the recommended way to install the package.
 
 - Install [Pika Backup](https://flathub.org/apps/details/org.gnome.World.PikaBackup) for backup and restore home files
 - Install [Extension Manager](https://flathub.org/apps/com.mattjakeman.ExtensionManager) for manage GNOME Extensions
@@ -45,6 +58,16 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [Monitorets](https://flathub.org/de/apps/io.github.jorchube.monitorets) as sticky system monitor
 - Install [MissionCenter](https://flathub.org/de/apps/io.missioncenter.MissionCenter) as system monitor
 - Install [Parabolic](https://flathub.org/de/apps/org.nickvision.tubeconverter) as download manager
+- Install [Amberol](https://archlinux.org/packages/extra/x86_64/amberol/) or [Gapless](https://flathub.org/apps/com.github.neithern.g4music) as music player
+- Install [noisetorch](https://aur.archlinux.org/packages/noisetorch) for microphone noise suppression
+- Install [AddWater](https://flathub.org/apps/dev.qwery.AddWater) for Firefox GNOME Theme
+- Install [MenuLibre](https://aur.archlinux.org/packages/menulibre) as desktop app editor
+- Install [File Roller](https://archlinux.org/packages/extra/x86_64/file-roller/) as archive helper tool
+- Install [GNOME Firmware](https://archlinux.org/packages/extra/x86_64/gnome-firmware/) to update firmware of the local hardware
+- Install [seahorse](https://archlinux.org/packages/extra/x86_64/seahorse/) as keyring editor (login password can be set to empty)
+- Install [dconf-editor](https://archlinux.org/packages/extra/x86_64/dconf-editor/) as graphical tool for `gsettings` and `dconf`
+- Install [GNOME Tweaks](https://archlinux.org/packages/extra/x86_64/gnome-tweaks/) as graphical tool for advanced GNOME settings
+- Install [Refine](https://flathub.org/apps/page.tesk.Refine) as replacement for GNOME Tweaks
 
 ### Theming (optional)
 
@@ -52,30 +75,59 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Desktop Theme: [adw-gtk3](https://github.com/lassekongo83/adw-gtk3)
 - Icon Theme: [tela-icon-theme](https://github.com/vinceliuice/Tela-icon-theme), [tela-circle-icon-theme](https://github.com/vinceliuice/Tela-circle-icon-theme)
 - Cursor Theme: [capitaine-cursors](https://archlinux.org/packages/extra/any/capitaine-cursors), [nordzy-cursors](https://github.com/alvatip/Nordzy-cursors)
-- Firefox Theme: [firefox-gnome-theme](https://github.com/rafaelmardojai/firefox-gnome-theme)
+- Firefox Theme: [AddWater](https://flathub.org/apps/dev.qwery.AddWater), [firefox-gnome-theme](https://github.com/rafaelmardojai/firefox-gnome-theme)
 
 ### GNOME Extensions (optional)
 
 - [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/archlinux-updates-indicator/)
 - [app-indicator-support](https://extensions.gnome.org/extension/615/appindicator-support/)
-- [lilypad](https://extensions.gnome.org/extension/7266/lilypad/)
-- [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/)
-- [dash-to-dock](https://extensions.gnome.org/extension/307/dash-to-dock/)
-- [dash-to-panel](https://extensions.gnome.org/extension/1160/dash-to-panel/)
-- [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
 - [weather-oclock](https://extensions.gnome.org/extension/5470/weather-oclock/)
-- [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
-- [system-monitor](https://extensions.gnome.org/extension/6807/system-monitor/)
-- [vitals](https://extensions.gnome.org/extension/1460/vitals/)
+- [just-perfection](https://extensions.gnome.org/extension/3843/just-perfection/)
+- [dash-to-panel](https://extensions.gnome.org/extension/1160/dash-to-panel/)
+- [dash-to-dock](https://extensions.gnome.org/extension/307/dash-to-dock/)
 - [caffeine](https://extensions.gnome.org/extension/517/caffeine/)
-- [light-style](https://extensions.gnome.org/extension/6198/light-style/)
-- [gamemode-indicator](https://extensions.gnome.org/extension/6340/gamemode-indicator-in-system-settings/)
-
-#### Tweak Extensions
-
-- [fullscreen-to-empty-workspace](https://extensions.gnome.org/extension/6072/fullscreen-to-empty-workspace/) (open fullscreen apps on new workspace)
+- [tiling-assistant](https://extensions.gnome.org/extension/3733/tiling-assistant/)
+- [happy-appy-hotkey](https://extensions.gnome.org/extension/6057/happy-appy-hotkey/)
+- [app-hider](https://extensions.gnome.org/extension/5895/app-hider/)
+- [hide-minimized](https://extensions.gnome.org/extension/2639/hide-minimized/)
+- [blur-my-shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
+- [open-bar](https://extensions.gnome.org/extension/6580/open-bar/)
+- [vitals](https://extensions.gnome.org/extension/1460/vitals/)
+- [system-monitor](https://extensions.gnome.org/extension/6807/system-monitor/)
+- [fullscreen-to-empty-workspace](https://extensions.gnome.org/extension/7559/fullscreen-to-empty-workspace/) (open fullscreen apps on new workspace)
 - [disable-unredirect-fullscreen](https://extensions.gnome.org/extension/1873/disable-unredirect-fullscreen-windows/) (fix some issues)
 - [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (alternative to wmctrl in wayland)
+- [lilypad](https://extensions.gnome.org/extension/7266/lilypad/) (deprecated)
+
+### Office Support
+
+- [LibreOffice](https://archlinux.org/packages/extra/x86_64/libreoffice-fresh/)
+- [OnlyOffice](https://flathub.org/apps/org.onlyoffice.desktopeditors)
+- [Drawing](https://flathub.org/apps/com.github.maoschanz.drawing)
+- [BoxySVG](https://flathub.org/apps/com.boxy_svg.BoxySVG)
+
+### Realtime Streaming to other PC, TV or Smart Device
+
+- Streaming Server: [Sunshine](https://docs.lizardbyte.dev/projects/sunshine/latest/index.html)
+- Streaming Client: [Moonlight](https://moonlight-stream.org)
+- Discord: [Vesktop](https://flathub.org/apps/dev.vencord.Vesktop) (incl. Wayland Screen Sharing)
+
+#### Install Sunshine (Streaming Server)
+
+1. Add [LizardByte Repository](https://github.com/LizardByte/pacman-repo) to Pacman config: `sudo nano /etc/pacman.conf`
+
+```
+[lizardbyte]
+SigLevel = Optional
+Server = https://github.com/LizardByte/pacman-repo/releases/latest/download
+```
+
+2. Install Sunshine: `sudo pacman -Syyu lizardbyte/sunshine`
+3. Start Sunshine Desktop Application (see system tray)
+4. Open local Sunshine Web Interface: https://localhost:47990 and set username and password
+5. Simply start streaming with [Moonlight](https://moonlight-stream.org)
+
+Source: [LizardByte Docs](https://docs.lizardbyte.dev/projects/sunshine/latest/md_docs_2getting__started.html#archlinux)
 
 ### For Developer
 
@@ -94,12 +146,13 @@ For native **Microsoft Windows Gaming** install [Qemu](https://wiki.archlinux.or
 
 **Note:** Use [gamemode](https://wiki.archlinux.org/title/Gamemode) when playing games from Linux with: `gamemoderun <file>`
 
-#### Gaming Meta Package (recommended)
+#### Gaming Meta Package
 
-You can install install [AUR/arch-gaming-meta](https://aur.archlinux.org/packages/arch-gaming-meta) package to install some useful apps and libraries for gaming:
+You can install install [AUR/lutris-wine-meta](https://aur.archlinux.org/packages/lutris-wine-meta) and [AUR/arch-gaming-meta](https://aur.archlinux.org/packages/arch-gaming-meta) package to install some useful apps and libraries for gaming:
 
 ```
-paru -S arch-gaming-meta
+paru -S lutris-wine-meta # Recommended from lutris maintainers
+paru -S arch-gaming-meta # Has a lot of depenencies
 ```
 
 #### Steam
@@ -109,19 +162,21 @@ Install prefered Steam version:
 - Average between performance and compatibility: `paru -S steam`
 - Best performance: `paru -S steam-native`
 - Best compatibility: `flatpak install com.valvesoftware.Steam`
+- Install and apply GNOME Theme: [AdwSteamGtk](https://flathub.org/apps/io.github.Foldex.AdwSteamGtk)
 
-#### Other Tools
+#### Other Gaming Tools
 
 - [Lutris](https://archlinux.org/packages/extra/any/lutris/)
 - [Bottles](https://aur.archlinux.org/packages/bottles)
 - [RetroDeck](https://flathub.org/apps/net.retrodeck.retrodeck)
 - [Cartridges](https://flathub.org/de/apps/page.kramo.Cartridges)
-- [Sunshine Streaming Server](https://docs.lizardbyte.dev/projects/sunshine/en/latest/about/setup.html#install)
-- [Moonlight Streaming Client](https://flathub.org/apps/com.moonlight_stream.Moonlight)
+- [ScummVM](https://flathub.org/apps/org.scummvm.ScummVM)
 - [Wine](https://archlinux.org/packages/multilib/x86_64/wine/), [Winetricks](https://archlinux.org/packages/multilib/x86_64/winetricks/)
 - [Proton](https://aur.archlinux.org/packages/proton-ge-custom-bin), [Protontricks](https://aur.archlinux.org/packages/protontricks)
 - [Gamescope](https://archlinux.org/packages/extra/x86_64/gamescope/)
-- [ProtonPlus](https://aur.archlinux.org/packages/protonplus)
+- [MangoHud](https://archlinux.org/packages/extra/x86_64/mangohud/)
+- [ProtonPlus](https://flathub.org/apps/com.vysp3r.ProtonPlus)
+- [Haguichi](https://flathub.org/apps/com.github.ztefn.haguichi), [logmein-hamachi](https://aur.archlinux.org/packages/logmein-hamachi])
 
 ### For Audiophiles
 
@@ -229,14 +284,19 @@ Disable this feature with `ARCH_OS_HOUSEKEEPING_ENABLED='false'`
 
 <p><img src="screenshots/fastfetch.png"></p>
 
-If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true`, the following packages are installed and preconfigured (for root & user). To keep `bash` as default shell, set `ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='false'`:
+If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true`, the following packages are installed and preconfigured (for root & user). To keep `bash` as default shell, set `ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='false'`.
+
+<strong>Package Dependencies:</strong>
 
 ```
 fish starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-highlighting
 ```
 
+**Promt Theme [➜ Arch OS Starship Theme](https://github.com/murkl/starship-theme-arch-os)**
+
 - `fish` is set as default shell
 - `starship` is set as fancy default promt see `~/.config/fish/config.fish`
+- `nvim` is preconfigured with SpaceVim and linked to `/usr/bin/vim` and `/usr/bin/vi`
 - `ls` is replaced with colorful `eza` see `~/.aliases`
 - `man` is replaced with colorful `bat` see `~/.config/fish/config.fish`
 - `nano` is set as default editor
@@ -244,19 +304,22 @@ fish starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-
 
 #### Useful Terminal commands
 
-- `bash` switch to bash
+- `help` open fish help in browser
+- `history` open command history
+- `fish` open fish shell (default)
+- `bash` switch to bash shell (go back to fish with `q`)
+- `vim` open enhanced file editor
 - `fetch` show system info
 - `btop` show system manager
 - `logs` show system logs
+- `mc` open file manager
 - `ll` list files in dir
 - `la` list all files (+ hidden files) in dir
 - `lt` tree files in dir
-- `mc` open file manager
-- `open <file>` open file in GNOME app
-- `history` open command history
-- `help` open fish help in browser
+- `.` go back
 - `c` clear screen
 - `q` exit
+- `open <file>` open file in GNOME app
 
 **Note:** See `~/.aliases` for all command aliases
 
@@ -520,4 +583,3 @@ Many thanks for these projects and the people behind them!
 - Arch Linux
 - GNOME
 - Gum by charm
-- Wallpaper: Mountain Lake by Agustin Gaute

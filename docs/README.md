@@ -43,7 +43,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 <p>
   <strong>Test successful</strong>
   <br>
-  <a target="_blank" href="https://www.archlinux.de/releases/2024.12.01">archlinux-2024.12.01-x86_64.iso</a>
+  <a target="_blank" href="https://www.archlinux.de/releases/2025.01.01">archlinux-2025.01.01-x86_64.iso</a>
   <br>
   <sub>100% shellcheck approved</sub>
 </p>
@@ -78,13 +78,14 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
 - Flatpak Support + Auto Update (GNOME Software)
 - Samba, Networking Protocol Libs, Git, Utils & Codecs included
+- GNOME Power Profiles Support (tuned-ppd)
+- VPN Support
+- Basic Fonts
 - Wayland optimized
-- GNOME Power Profiles Support
 - Auto Login enabled
 - Printer Support (cups)
 - SSH Agent (gcr)
 - Gamemode preinstalled
-- Firmware Update Tool preinstalled
 
 ## Additional Features
 
@@ -92,9 +93,11 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
 - [Arch OS System Manager](DOCS.md#arch-os-manager)
 - [Arch OS Shell Enhancement](DOCS.md#shell-enhancement)
+- [Arch OS Starship Theme](https://github.com/murkl/starship-theme-arch-os)
 - [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
 - [AUR Helper](DOCS.md#advanced-installation) (configurable)
 - [VM Support](DOCS.md#vm-support) (optional)
+- [SpaceVim](https://spacevim.org) (optional)
 - 32 Bit Support (Multilib)
 - Disk Encryption (LUKS2)
 
@@ -132,7 +135,7 @@ Select one of these presets to install your individual Arch Linux base:
 
 ![Animated Arch OS Installation](./animation.gif)
 
-_Cancel the Arch OS Installer with `CTRL + c`_
+_Cancel the Arch OS Installer with `Ctrl + c`_
 
 **Note:** If the `installer.conf` exists in the working dir (auto-detected), all properties are loaded as preset (except the password).
 
@@ -155,7 +158,9 @@ To streamline this process, you can use the preinstalled **[➜ Arch OS System M
 
 ## Screenshots
 
+<p><div><img src="./screenshots/starship.png"></div><sub><i>Arch OS Starship Promt Demo</i></sub></p>
 <p><div><img src="./screenshots/desktop_demo.jpg"></div><sub><i>Arch OS Desktop Demo</i></sub></p>
+<p><div><img src="./screenshots/vim.png"></div><sub><i>SpaceVim Demo</i></sub></p>
 <p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Arch OS Bootsplash</i></sub></p>
 <p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Arch OS Shell Enhancement</i></sub></p>
 <p><div><img src="./screenshots/manager_upgrade.png"></div><sub><i>Arch OS Manager - System Upgrade Demo</i></sub></p>
