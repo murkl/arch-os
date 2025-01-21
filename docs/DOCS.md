@@ -66,6 +66,8 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [GNOME Firmware](https://archlinux.org/packages/extra/x86_64/gnome-firmware/) to update firmware of the local hardware
 - Install [seahorse](https://archlinux.org/packages/extra/x86_64/seahorse/) as keyring editor (login password can be set to empty)
 - Install [dconf-editor](https://archlinux.org/packages/extra/x86_64/dconf-editor/) as graphical tool for `gsettings` and `dconf`
+- Install [GNOME Tweaks](https://archlinux.org/packages/extra/x86_64/gnome-tweaks/) as graphical tool for advanced GNOME settings
+- Install [Refine](https://flathub.org/apps/page.tesk.Refine) as replacement for GNOME Tweaks
 
 ### Theming (optional)
 

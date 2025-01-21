@@ -63,7 +63,7 @@ main() {
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
 
     # Print version to logfile
-    log_info "Arch OS Installer Version: ${VERSION}"
+    log_info "Arch OS ${VERSION}"
 
     # Start recovery
     [[ "$1" = "--recovery"* ]] && {
@@ -76,7 +76,7 @@ main() {
     # Loop properties step to update screen if user edit properties
     while (true); do
 
-        print_header # Show landig page
+        print_header "Arch OS Installer" # Show landig page
         gum_white 'Please make sure you have:' && echo
         gum_white '• Backed up your important data'
         gum_white '• A stable internet connection'
@@ -245,7 +245,7 @@ main() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 start_recovery() {
-    print_header
+    print_header "Arch OS Recovery"
     local recovery_boot_partition recovery_root_partition user_input items options
     local recovery_mount_dir="/mnt/recovery"
     local recovery_crypt_label="cryptrecovery"
@@ -262,8 +262,8 @@ start_recovery() {
     mapfile -t items < <(lsblk -I 8,259,254 -d -o KNAME,SIZE -n)
     # size: $(lsblk -d -n -o SIZE "/dev/${item}")
     options=() && for item in "${items[@]}"; do options+=("/dev/${item}"); done
-    user_input=$(gum_choose --header "+ Select Arch OS Recovery Disk" "${options[@]}") || exit 130
-    gum_title "Arch OS Recovery"
+    user_input=$(gum_choose --header "+ Select Arch OS Disk" "${options[@]}") || exit 130
+    gum_title "Recovery"
     [ -z "$user_input" ] && log_fail "Disk is empty" && exit 1 # Check if new value is null
     user_input=$(echo "$user_input" | awk -F' ' '{print $1}')  # Remove size from input
     [ ! -e "$user_input" ] && log_fail "Disk does not exists" && exit 130
@@ -1021,7 +1021,7 @@ exec_install_desktop() {
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
 
                 # GNOME base extras (buggy: power-profiles-daemon)
-                packages+=(gnome-tweaks gnome-browser-connector gnome-themes-extra tuned-ppd rygel cups gnome-epub-thumbnailer)
+                packages+=(gnome-browser-connector gnome-themes-extra tuned-ppd rygel cups gnome-epub-thumbnailer)
 
                 # GNOME wayland screensharing, flatpak & pipewire support
                 packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
@@ -2066,14 +2066,15 @@ process_return() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 print_header() {
+    local title="$1"
     clear && gum_purple '
  █████  ██████   ██████ ██   ██      ██████  ███████ 
 ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
 ███████ ██████  ██      ███████     ██    ██ ███████ 
 ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
 ██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
-    local header_version="${VERSION}" && [ "$DEBUG" = "true" ] && header_version="${VERSION}-debug"
-    gum_white --margin "1 0" --align left --bold "Welcome to Arch OS Installer ${header_version}"
+    local header_version="${VERSION}" && [ "$DEBUG" = "true" ] && header_version="${VERSION} (debug)"
+    gum_white --margin "1 0" --align left --bold "Welcome to ${title} ${header_version}"
     [ "$FORCE" = "true" ] && gum_red --bold "CAUTION: Force mode enabled. Cancel with: Ctrl + c" && echo
     return 0
 }
@@ -2123,7 +2124,7 @@ gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
 gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
 
 # Gum prints
-gum_title() { log_head "+ ${*}" && gum join "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
+gum_title() { log_head "${*}" && gum join "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
 gum_info() { log_info "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "${*}")"; }
 gum_warn() { log_warn "$*" && gum join "$(gum_yellow --bold "• ")" "$(gum_white "${*}")"; }
 gum_fail() { log_fail "$*" && gum join "$(gum_red --bold "• ")" "$(gum_white "${*}")"; }
