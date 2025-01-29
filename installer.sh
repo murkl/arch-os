@@ -1615,7 +1615,7 @@ exec_install_shell_enhancement() {
                 echo '[[ $- != *i* ]] && return'
                 echo ''
                 echo ' # Export systemd environment vars from ~/.config/environment.d/* (tty only)'
-                echo '[[ ${SHLVL} == 1 ]] && [[ $(tty) =~ /dev/tty[0-9]* ]] && export $(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator | xargs)'
+                echo '[[ ${SHLVL} == 1 ]] && [ -z "${DISPLAY}" ] && export $(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator | xargs)'
                 echo ''
                 echo '# Source aliases'
                 echo 'source "${HOME}/.aliases"'
