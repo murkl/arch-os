@@ -68,6 +68,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [dconf-editor](https://archlinux.org/packages/extra/x86_64/dconf-editor/) as graphical tool for `gsettings` and `dconf`
 - Install [GNOME Tweaks](https://archlinux.org/packages/extra/x86_64/gnome-tweaks/) as graphical tool for advanced GNOME settings
 - Install [Refine](https://flathub.org/apps/page.tesk.Refine) as replacement for GNOME Tweaks
+- Install [Ferdium](https://flathub.org/apps/org.ferdium.Ferdium) for all web services at one place
 
 ### Theming (optional)
 
