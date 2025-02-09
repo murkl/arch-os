@@ -121,12 +121,12 @@ main() {
         until select_enable_manager; do :; done
 
         # Print success
-        echo && gum_info "Properties successfully initialized"
+        echo && gum_title "Properties"
 
         # Open Advanced Properties?
         if [ "$FORCE" = "false" ] && gum_confirm --negative="Skip" "Open Advanced Setup?"; then
-            local header_txt="• Save with CTRL + D or ESC and cancel with CTRL + C"
-            if gum_write --show-line-numbers --prompt "> " --height=10 --width=180 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
+            local header_txt="• Advanced Setup | Save with CTRL + D or ESC and cancel with CTRL + C"
+            if gum_write --show-line-numbers --prompt "" --height=12 --width=180 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
                 gum_info "Properties successfully saved"
                 gum_confirm "Change Password?" && until select_password --change && properties_source; do :; done
@@ -137,6 +137,9 @@ main() {
                 gum_warn "Advanced Setup canceled"
             fi
         fi
+
+        # Finish
+        gum_info "Successfully initialized"
 
         ######################################################
         break # Exit properties step and continue installation
@@ -2069,7 +2072,8 @@ print_header() {
 ███████ ██████  ██      ███████     ██    ██ ███████ 
 ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
 ██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
-    local header_version="${VERSION}" && [ "$DEBUG" = "true" ] && header_version="${VERSION} (debug)"
+    local header_version="               v. ${VERSION}"
+    [ "$DEBUG" = "true" ] && header_version="               d. ${VERSION}"
     gum_white --margin "1 0" --align left --bold "Welcome to ${title} ${header_version}"
     [ "$FORCE" = "true" ] && gum_red --bold "CAUTION: Force mode enabled. Cancel with: Ctrl + c" && echo
     return 0
