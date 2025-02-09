@@ -71,10 +71,11 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [Ferdium](https://flathub.org/apps/org.ferdium.Ferdium) for all web services at one place
 - Install [Alpaca](https://flathub.org/apps/com.jeffser.Alpaca) for local AI support
 - Install [Ignition](https://flathub.org/apps/io.github.flattool.Ignition) to manage GNOME autostart files
+- Install [Papers](https://flathub.org/apps/org.gnome.Papers) as elegant document viewer for GNOME
 
 ### Theming (optional)
 
-- Desktop Font: [inter-font](https://archlinux.org/packages/extra/any/inter-font/)
+- Desktop Font: [inter-font](https://archlinux.org/packages/extra/any/inter-font/), [adwaita-fonts](https://archlinux.org/packages/extra/any/adwaita-fonts/)
 - Desktop Theme: [adw-gtk3](https://github.com/lassekongo83/adw-gtk3)
 - Icon Theme: [tela-icon-theme](https://github.com/vinceliuice/Tela-icon-theme), [tela-circle-icon-theme](https://github.com/vinceliuice/Tela-circle-icon-theme)
 - Cursor Theme: [capitaine-cursors](https://archlinux.org/packages/extra/any/capitaine-cursors), [nordzy-cursors](https://github.com/alvatip/Nordzy-cursors)
