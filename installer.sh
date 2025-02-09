@@ -1506,9 +1506,9 @@ exec_install_archos_manager() {
     if [ "$ARCH_OS_MANAGER_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                    # If debug mode then return
-            chroot_pacman_install git base-devel kitty gum libnotify pacman-contrib # Install dependencies
-            chroot_aur_install arch-os-manager                                      # Install archos-manager
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
+            chroot_pacman_install git base-devel pacman-contrib  # Install dependencies
+            chroot_aur_install arch-os-manager                   # Install archos-manager
             {
                 echo "# exec_install_archos_manager | Initialize"
                 echo "/usr/bin/arch-os --init &> /dev/null"
