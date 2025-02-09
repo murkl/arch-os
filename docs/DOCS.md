@@ -69,6 +69,8 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [GNOME Tweaks](https://archlinux.org/packages/extra/x86_64/gnome-tweaks/) as graphical tool for advanced GNOME settings
 - Install [Refine](https://flathub.org/apps/page.tesk.Refine) as replacement for GNOME Tweaks
 - Install [Ferdium](https://flathub.org/apps/org.ferdium.Ferdium) for all web services at one place
+- Install [Alpaca](https://flathub.org/apps/com.jeffser.Alpaca) for local AI support
+- Install [Ignition](https://flathub.org/apps/io.github.flattool.Ignition) to manage GNOME autostart files
 
 ### Theming (optional)
 
