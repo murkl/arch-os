@@ -21,7 +21,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${FORCE:=false}" # FORCE=true ./installer.sh
 
 # SCRIPT
-VERSION='1.8.0'
+VERSION='1.8.1'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -121,12 +121,12 @@ main() {
         until select_enable_manager; do :; done
 
         # Print success
-        echo && gum_info "Properties successfully initialized"
+        echo && gum_title "Properties"
 
         # Open Advanced Properties?
         if [ "$FORCE" = "false" ] && gum_confirm --negative="Skip" "Open Advanced Setup?"; then
-            local header_txt="• Save with CTRL + D or ESC and cancel with CTRL + C"
-            if gum_write --show-line-numbers --prompt "> " --height=10 --width=180 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
+            local header_txt="• Advanced Setup | Save with CTRL + D or ESC and cancel with CTRL + C"
+            if gum_write --show-line-numbers --prompt "" --height=12 --width=180 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
                 gum_info "Properties successfully saved"
                 gum_confirm "Change Password?" && until select_password --change && properties_source; do :; done
@@ -137,6 +137,9 @@ main() {
                 gum_warn "Advanced Setup canceled"
             fi
         fi
+
+        # Finish
+        gum_info "Successfully initialized"
 
         ######################################################
         break # Exit properties step and continue installation
@@ -1289,12 +1292,6 @@ exec_install_desktop() {
                 echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/nvim.desktop"
             fi
 
-            # Hide Kitty app
-            if [ "$ARCH_OS_MANAGER_ENABLED" = "true" ]; then
-                echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/kitty.desktop"
-                echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/kitty-open.desktop"
-            fi
-
             # Add Init script
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
                 {
@@ -1506,13 +1503,18 @@ exec_install_archos_manager() {
     if [ "$ARCH_OS_MANAGER_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
-            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                    # If debug mode then return
-            chroot_pacman_install git base-devel kitty gum libnotify pacman-contrib # Install dependencies
-            chroot_aur_install arch-os-manager                                      # Install archos-manager
-            {
-                echo "# exec_install_archos_manager | Initialize"
-                echo "/usr/bin/arch-os --init &> /dev/null"
-            } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
+            chroot_pacman_install git base-devel pacman-contrib  # Install dependencies
+            chroot_aur_install arch-os-manager                   # Install archos-manager
+
+            # {
+            #     echo "# exec_install_archos_manager | Initialize"
+            #     echo "/usr/bin/arch-os --init &> /dev/null"
+            # } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+
+            # Init manager
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- /usr/bin/arch-os --init
+
             process_return 0 # Return
         ) &>"$PROCESS_LOG" &
         process_capture $! "$process_name"
@@ -1529,7 +1531,7 @@ exec_install_shell_enhancement() {
             [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
 
             # Install packages
-            local packages=(git starship eza bat fastfetch mc btop nano neovim python-pynvim man-db bash-completion nano-syntax-highlighting ttf-firacode-nerd ttf-nerd-fonts-symbols)
+            local packages=(git starship eza bat zoxide fd fzf fastfetch mc btop nano neovim python-pynvim man-db bash-completion nano-syntax-highlighting ttf-firacode-nerd ttf-nerd-fonts-symbols)
             chroot_pacman_install "${packages[@]}"
 
             # Create fastfetch config dirs
@@ -1554,6 +1556,9 @@ exec_install_shell_enhancement() {
                     echo ''
                     echo '# Source user aliases'
                     echo 'test -f "$HOME/.aliases" && source "$HOME/.aliases"'
+                    echo ''
+                    echo '# Init zoxide'
+                    echo 'command -v zoxide &>/dev/null && zoxide init fish | source'
                     echo ''
                     echo '# Init starship promt (except tty)'
                     echo 'if not tty | string match -q "/dev/tty*"'
@@ -1612,7 +1617,7 @@ exec_install_shell_enhancement() {
                 echo '[[ $- != *i* ]] && return'
                 echo ''
                 echo ' # Export systemd environment vars from ~/.config/environment.d/* (tty only)'
-                echo '[[ ${SHLVL} == 1 ]] && [[ $(tty) =~ /dev/tty[0-9]* ]] && export $(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator | xargs)'
+                echo '[[ ${SHLVL} == 1 ]] && [ -z "${DISPLAY}" ] && export $(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator | xargs)'
                 echo ''
                 echo '# Source aliases'
                 echo 'source "${HOME}/.aliases"'
@@ -2072,7 +2077,8 @@ print_header() {
 ███████ ██████  ██      ███████     ██    ██ ███████ 
 ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
 ██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
-    local header_version="${VERSION}" && [ "$DEBUG" = "true" ] && header_version="${VERSION} (debug)"
+    local header_version="               v. ${VERSION}"
+    [ "$DEBUG" = "true" ] && header_version="               d. ${VERSION}"
     gum_white --margin "1 0" --align left --bold "Welcome to ${title} ${header_version}"
     [ "$FORCE" = "true" ] && gum_red --bold "CAUTION: Force mode enabled. Cancel with: Ctrl + c" && echo
     return 0

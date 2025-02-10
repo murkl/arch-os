@@ -68,10 +68,14 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [dconf-editor](https://archlinux.org/packages/extra/x86_64/dconf-editor/) as graphical tool for `gsettings` and `dconf`
 - Install [GNOME Tweaks](https://archlinux.org/packages/extra/x86_64/gnome-tweaks/) as graphical tool for advanced GNOME settings
 - Install [Refine](https://flathub.org/apps/page.tesk.Refine) as replacement for GNOME Tweaks
+- Install [Ferdium](https://flathub.org/apps/org.ferdium.Ferdium) for all web services at one place
+- Install [Alpaca](https://flathub.org/apps/com.jeffser.Alpaca) for local AI support
+- Install [Ignition](https://flathub.org/apps/io.github.flattool.Ignition) to manage GNOME autostart files
+- Install [Papers](https://flathub.org/apps/org.gnome.Papers) as elegant document viewer for GNOME
 
 ### Theming (optional)
 
-- Desktop Font: [inter-font](https://archlinux.org/packages/extra/any/inter-font/)
+- Desktop Font: [inter-font](https://archlinux.org/packages/extra/any/inter-font/), [adwaita-fonts](https://archlinux.org/packages/extra/any/adwaita-fonts/)
 - Desktop Theme: [adw-gtk3](https://github.com/lassekongo83/adw-gtk3)
 - Icon Theme: [tela-icon-theme](https://github.com/vinceliuice/Tela-icon-theme), [tela-circle-icon-theme](https://github.com/vinceliuice/Tela-circle-icon-theme)
 - Cursor Theme: [capitaine-cursors](https://archlinux.org/packages/extra/any/capitaine-cursors), [nordzy-cursors](https://github.com/alvatip/Nordzy-cursors)
@@ -289,7 +293,7 @@ If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true`, the follow
 <strong>Package Dependencies:</strong>
 
 ```
-fish starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-highlighting
+fish git starship eza bat zoxide fd fzf fastfetch mc btop nano neovim python-pynvim man-db bash-completion nano-syntax-highlighting ttf-firacode-nerd ttf-nerd-fonts-symbols
 ```
 
 **Promt Theme [➜ Arch OS Starship Theme](https://github.com/murkl/starship-theme-arch-os)**
@@ -308,11 +312,13 @@ fish starship eza bat fastfetch mc btop nano man-db bash-completion nano-syntax-
 - `history` open command history
 - `fish` open fish shell (default)
 - `bash` switch to bash shell (go back to fish with `q`)
-- `vim` open enhanced file editor
+- `vim` open enhanced file editor (also `vi` or `nvim`)
 - `fetch` show system info
 - `btop` show system manager
 - `logs` show system logs
 - `mc` open file manager
+- `fd` Alternative search
+- `z` Alternative cd (zoxide)
 - `ll` list files in dir
 - `la` list all files (+ hidden files) in dir
 - `lt` tree files in dir
