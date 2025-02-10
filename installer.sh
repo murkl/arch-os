@@ -1506,10 +1506,15 @@ exec_install_archos_manager() {
             [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
             chroot_pacman_install git base-devel pacman-contrib  # Install dependencies
             chroot_aur_install arch-os-manager                   # Install archos-manager
-            {
-                echo "# exec_install_archos_manager | Initialize"
-                echo "/usr/bin/arch-os --init &> /dev/null"
-            } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+
+            # {
+            #     echo "# exec_install_archos_manager | Initialize"
+            #     echo "/usr/bin/arch-os --init &> /dev/null"
+            # } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+
+            # Init manager
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- /usr/bin/arch-os --init
+
             process_return 0 # Return
         ) &>"$PROCESS_LOG" &
         process_capture $! "$process_name"
