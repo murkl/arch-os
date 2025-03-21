@@ -1255,6 +1255,9 @@ exec_install_desktop() {
             arch-chroot /mnt ln -s "/usr/lib/systemd/user/wireplumber.service" "/home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire.service.wants/wireplumber.service"
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/.config/systemd/"
 
+            # Enhance PAM (fix keyring issue for relogin): add try_first_pass
+            sed -i 's/auth\s\+optional\s\+pam_gnome_keyring\.so$/& try_first_pass/' /mnt/etc/pam.d/gdm-password /mnt/etc/pam.d/gdm-autologin
+
             # Create users applications dir
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications"
 
