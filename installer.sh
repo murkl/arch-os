@@ -1060,7 +1060,7 @@ exec_install_desktop() {
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode lib32-sdl_image)
 
                 # Fonts
-                packages+=(inter-font ttf-firacode-nerd ttf-nerd-fonts-symbols ttf-font-awesome noto-fonts noto-fonts-emoji ttf-liberation ttf-dejavu adobe-source-sans-fonts adobe-source-serif-fonts)
+                packages+=(ttf-firacode-nerd ttf-nerd-fonts-symbols ttf-font-awesome noto-fonts noto-fonts-emoji ttf-liberation ttf-dejavu adobe-source-sans-fonts adobe-source-serif-fonts)
 
                 # Theming
                 packages+=(adw-gtk-theme tela-circle-icon-theme-standard)
@@ -1306,9 +1306,6 @@ exec_install_desktop() {
                     echo "# exec_install_desktop | Font settings"
                     echo "gsettings set org.gnome.desktop.interface font-hinting 'slight'"
                     echo "gsettings set org.gnome.desktop.interface font-antialiasing 'rgba'"
-                    echo "gsettings set org.gnome.desktop.interface font-name 'Inter 10'"
-                    echo "gsettings set org.gnome.desktop.interface document-font-name 'Inter 10'"
-                    echo "gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Inter Bold 10'"
                     echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 10'"
                     echo "# exec_install_desktop | Show all input sources"
                     echo "gsettings set org.gnome.desktop.input-sources show-all-sources true"
