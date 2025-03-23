@@ -1090,6 +1090,7 @@ exec_install_desktop() {
                 chroot_pacman_remove snapshot || true
                 chroot_pacman_remove epiphany || true
                 chroot_pacman_remove loupe || true
+                chroot_pacman_remove decibels || true
                 #chroot_pacman_remove evince || true # Need for sushi
             fi
 
