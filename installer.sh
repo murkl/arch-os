@@ -1299,6 +1299,8 @@ exec_install_desktop() {
             # Add Init script
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
                 {
+                    echo "# exec_install_desktop | Reset app-folders"
+                    echo "dconf reset -f /org/gnome/desktop/app-folders/"
                     echo "# exec_install_desktop | Theming settings"
                     echo "gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'"
                     echo "gsettings set org.gnome.desktop.interface icon-theme 'Tela-circle'"
