@@ -883,7 +883,7 @@ exec_pacstrap_core() {
         { # Create swap (zram-generator with zstd compression)
             # https://wiki.archlinux.org/title/Zram#Using_zram-generator
             echo '[zram0]'
-            echo 'zram-size = ram / 2'
+            echo 'zram-size = min(ram / 2, 4096)'
             echo 'compression-algorithm = zstd'
         } >/mnt/etc/systemd/zram-generator.conf
 
@@ -1480,9 +1480,10 @@ exec_install_housekeeping() {
                 echo "# Reflector config for the systemd service"
                 echo "--save /etc/pacman.d/mirrorlist"
                 [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
-                echo "--completion-percent 95"
+                #echo "--completion-percent 95"
                 echo "--protocol https"
-                echo "--latest 5"
+                echo "--age 12"
+                echo "--latest 10"
                 echo "--sort rate"
             } >/mnt/etc/xdg/reflector/reflector.conf
             # Enable services
