@@ -28,8 +28,6 @@
 <p>
 This project aims to provide a mostly automized, minimal and robust Arch Linux base (minimal tty core or desktop), along with an easy-to-use and fast properties-file-based installer with error handling. Install a minimal Arch Linux core with optional features such as GNOME Desktop with Graphics Driver, Automatic Housekeeping, Zen Kernel, Fancy Shell Enhancement, preinstalled Paru as AUR Helper, enabled MultiLib, Bootsplash, System Manager and some more...</p>
 
-<sub><i>Setup takes less than 60 seconds...</i></sub>
-
 ## More Information
 
 **[➜ Arch OS Docs](DOCS.md)**<br>
@@ -40,13 +38,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
   <img src="https://img.shields.io/badge/License-GPL_v2-blue?style=for-the-badge">
 </p>
 
-<p>
-  <strong>Test successful</strong>
-  <br>
-  <a target="_blank" href="https://www.archlinux.de/releases/2025.03.01">archlinux-2025.03.01-x86_64.iso</a>
-  <br>
-  <sub>100% shellcheck approved</sub>
-</p>
+<sub>100% shellcheck approved</sub>
 
 </div>
 
