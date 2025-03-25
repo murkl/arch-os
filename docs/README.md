@@ -30,15 +30,15 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 
 ## More Information
 
-**[➜ Arch OS Docs](DOCS.md)**<br>
-<b><a about="_blank" href="https://t.me/archos_community">➜ t.me/archos_community</a></b>
-
 <p>
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
   <img src="https://img.shields.io/badge/License-GPL_v2-blue?style=for-the-badge">
 </p>
 
-<sub>100% shellcheck approved</sub>
+**[➜ Arch OS Documentation](DOCS.md)**<br>
+<b><a about="_blank" href="https://t.me/archos_community">➜ t.me/archos_community</a></b>
+
+<p><sub>100% shellcheck approved</sub></p>
 
 </div>
 
