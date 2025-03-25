@@ -21,7 +21,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${FORCE:=false}" # FORCE=true ./installer.sh
 
 # SCRIPT
-VERSION='1.8.1'
+VERSION='1.8.2'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -883,7 +883,7 @@ exec_pacstrap_core() {
         { # Create swap (zram-generator with zstd compression)
             # https://wiki.archlinux.org/title/Zram#Using_zram-generator
             echo '[zram0]'
-            echo 'zram-size = ram / 2'
+            echo 'zram-size = min(ram / 2, 4096)'
             echo 'compression-algorithm = zstd'
         } >/mnt/etc/systemd/zram-generator.conf
 
@@ -1040,6 +1040,9 @@ exec_install_desktop() {
                 packages+=(samba rsync gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
                 packages+=(modemmanager network-manager-sstp networkmanager-l2tp networkmanager-vpnc networkmanager-pptp networkmanager-openvpn networkmanager-openconnect networkmanager-strongswan)
 
+                # Kernel headers
+                packages+=("${ARCH_OS_KERNEL}-headers")
+
                 # Utils (https://wiki.archlinux.org/title/File_systems)
                 packages+=(base-devel archlinux-contrib pacutils fwupd bash-completion dhcp net-tools inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfat-utils btrfs-progs xfsprogs p7zip zip unzip unrar tar wget curl)
                 packages+=(nautilus-image-converter)
@@ -1060,7 +1063,7 @@ exec_install_desktop() {
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode lib32-sdl_image)
 
                 # Fonts
-                packages+=(inter-font ttf-firacode-nerd ttf-nerd-fonts-symbols ttf-font-awesome noto-fonts noto-fonts-emoji ttf-liberation ttf-dejavu adobe-source-sans-fonts adobe-source-serif-fonts)
+                packages+=(ttf-firacode-nerd ttf-nerd-fonts-symbols ttf-font-awesome noto-fonts noto-fonts-emoji ttf-liberation ttf-dejavu adobe-source-sans-fonts adobe-source-serif-fonts)
 
                 # Theming
                 packages+=(adw-gtk-theme tela-circle-icon-theme-standard)
@@ -1090,6 +1093,7 @@ exec_install_desktop() {
                 chroot_pacman_remove snapshot || true
                 chroot_pacman_remove epiphany || true
                 chroot_pacman_remove loupe || true
+                chroot_pacman_remove decibels || true
                 #chroot_pacman_remove evince || true # Need for sushi
             fi
 
@@ -1255,6 +1259,9 @@ exec_install_desktop() {
             arch-chroot /mnt ln -s "/usr/lib/systemd/user/wireplumber.service" "/home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire.service.wants/wireplumber.service"
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/.config/systemd/"
 
+            # Enhance PAM (fix keyring issue for relogin): add try_first_pass
+            sed -i 's/auth\s\+optional\s\+pam_gnome_keyring\.so$/& try_first_pass/' /mnt/etc/pam.d/gdm-password /mnt/etc/pam.d/gdm-autologin
+
             # Create users applications dir
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications"
 
@@ -1295,6 +1302,10 @@ exec_install_desktop() {
             # Add Init script
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
                 {
+                    echo "# exec_install_desktop | Favorite apps"
+                    echo "gsettings set org.gnome.shell favorite-apps \"['org.gnome.Console.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Software.desktop', 'org.gnome.Settings.desktop']\""
+                    echo "# exec_install_desktop | Reset app-folders"
+                    echo "dconf reset -f /org/gnome/desktop/app-folders/"
                     echo "# exec_install_desktop | Theming settings"
                     echo "gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'"
                     echo "gsettings set org.gnome.desktop.interface icon-theme 'Tela-circle'"
@@ -1302,9 +1313,6 @@ exec_install_desktop() {
                     echo "# exec_install_desktop | Font settings"
                     echo "gsettings set org.gnome.desktop.interface font-hinting 'slight'"
                     echo "gsettings set org.gnome.desktop.interface font-antialiasing 'rgba'"
-                    echo "gsettings set org.gnome.desktop.interface font-name 'Inter 10'"
-                    echo "gsettings set org.gnome.desktop.interface document-font-name 'Inter 10'"
-                    echo "gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Inter Bold 10'"
                     echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 10'"
                     echo "# exec_install_desktop | Show all input sources"
                     echo "gsettings set org.gnome.desktop.input-sources show-all-sources true"
@@ -1318,8 +1326,6 @@ exec_install_desktop() {
                     echo "gsettings set org.gnome.desktop.wm.keybindings minimize \"['<Super>h']\""
                     echo "gsettings set org.gnome.desktop.wm.keybindings show-desktop \"['<Super>d']\""
                     echo "gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen \"['<Super>F11']\""
-                    echo "# exec_install_desktop | Favorite apps"
-                    echo "gsettings set org.gnome.shell favorite-apps \"['org.gnome.Console.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Software.desktop', 'org.gnome.Settings.desktop']\""
                 } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
             fi
 
@@ -1343,19 +1349,19 @@ exec_install_graphics_driver() {
             [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
             case "${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}" in
             "mesa") # https://wiki.archlinux.org/title/OpenGL#Installation
-                local packages=(mesa mesa-utils vkd3d)
+                local packages=(mesa mesa-utils vkd3d vulkan-tools)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-mesa lib32-mesa-utils lib32-vkd3d)
                 chroot_pacman_install "${packages[@]}"
                 ;;
             "intel_i915") # https://wiki.archlinux.org/title/Intel_graphics#Installation
-                local packages=(vulkan-intel vkd3d libva-intel-driver)
+                local packages=(vulkan-intel vkd3d libva-intel-driver vulkan-tools)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-vulkan-intel lib32-vkd3d lib32-libva-intel-driver)
                 chroot_pacman_install "${packages[@]}"
                 sed -i "s/^MODULES=(.*)/MODULES=(i915)/g" /mnt/etc/mkinitcpio.conf
                 arch-chroot /mnt mkinitcpio -P
                 ;;
             "nvidia") # https://wiki.archlinux.org/title/NVIDIA#Installation
-                local packages=("${ARCH_OS_KERNEL}-headers" nvidia-dkms nvidia-settings nvidia-utils opencl-nvidia vkd3d)
+                local packages=("${ARCH_OS_KERNEL}-headers" nvidia-dkms nvidia-settings nvidia-utils opencl-nvidia vkd3d vulkan-tools)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-nvidia-utils lib32-opencl-nvidia lib32-vkd3d)
                 chroot_pacman_install "${packages[@]}"
                 # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
@@ -1389,7 +1395,7 @@ exec_install_graphics_driver() {
                 ;;
             "amd") # https://wiki.archlinux.org/title/AMDGPU#Installation
                 # Deprecated: libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau
-                local packages=(mesa mesa-utils xf86-video-amdgpu vulkan-radeon vkd3d)
+                local packages=(mesa mesa-utils xf86-video-amdgpu vulkan-radeon vkd3d vulkan-tools)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-mesa lib32-vulkan-radeon lib32-vkd3d)
                 chroot_pacman_install "${packages[@]}"
                 # Must be discussed: https://wiki.archlinux.org/title/AMDGPU#Disable_loading_radeon_completely_at_boot
@@ -1398,7 +1404,7 @@ exec_install_graphics_driver() {
                 ;;
             "ati") # https://wiki.archlinux.org/title/ATI#Installation
                 # Deprecated: libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau
-                local packages=(mesa mesa-utils xf86-video-ati vkd3d)
+                local packages=(mesa mesa-utils xf86-video-ati vkd3d vulkan-tools)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-mesa lib32-vkd3d)
                 chroot_pacman_install "${packages[@]}"
                 sed -i "s/^MODULES=(.*)/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
@@ -1479,9 +1485,10 @@ exec_install_housekeeping() {
                 echo "# Reflector config for the systemd service"
                 echo "--save /etc/pacman.d/mirrorlist"
                 [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
-                echo "--completion-percent 95"
+                #echo "--completion-percent 95"
                 echo "--protocol https"
-                echo "--latest 5"
+                echo "--age 12"
+                echo "--latest 10"
                 echo "--sort rate"
             } >/mnt/etc/xdg/reflector/reflector.conf
             # Enable services
@@ -1651,14 +1658,15 @@ exec_install_shell_enhancement() {
                 echo '# History ignore list'
                 echo 'export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q:c"'
                 echo ''
-                echo '# Init starship (except tty)'
-                echo '[[ ! $(tty) =~ /dev/tty[0-9]* ]] && command -v starship &>/dev/null && eval "$(starship init bash)"'
-                echo ''
-                echo '# Start fish shell (https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish)'
-                echo 'if command -v fish &>/dev/null && [[ $(ps --no-header --pid=$PPID --format=comm) != "fish" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then'
+                echo '# Start fish shell - no tty (https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish)'
+                echo 'if [[ ! $(tty) =~ /dev/tty[0-9]* ]] && command -v fish &>/dev/null && [[ $(ps --no-header --pid=$PPID --format=comm) != "fish" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then'
                 echo '    shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""'
                 echo '    exec fish $LOGIN_OPTION'
+                echo '    return'
                 echo 'fi'
+                echo ''
+                echo '# Init starship (no tty & bash only)'
+                echo '[[ ! $(tty) =~ /dev/tty[0-9]* ]] && command -v starship &>/dev/null && eval "$(starship init bash)"'
             } | tee "/mnt/root/.bashrc" "/mnt/home/${ARCH_OS_USERNAME}/.bashrc" >/dev/null
 
             # Download Arch OS starship theme

@@ -72,13 +72,14 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [Alpaca](https://flathub.org/apps/com.jeffser.Alpaca) for local AI support
 - Install [Ignition](https://flathub.org/apps/io.github.flattool.Ignition) to manage GNOME autostart files
 - Install [Papers](https://flathub.org/apps/org.gnome.Papers) as elegant document viewer for GNOME
+- Install [GDM Settings](https://flathub.org/apps/io.github.realmazharhussain.GdmSettings) GDM Login Manager Settings
 
 ### Theming (optional)
 
 - Desktop Font: [inter-font](https://archlinux.org/packages/extra/any/inter-font/), [adwaita-fonts](https://archlinux.org/packages/extra/any/adwaita-fonts/)
 - Desktop Theme: [adw-gtk3](https://github.com/lassekongo83/adw-gtk3)
 - Icon Theme: [tela-icon-theme](https://github.com/vinceliuice/Tela-icon-theme), [tela-circle-icon-theme](https://github.com/vinceliuice/Tela-circle-icon-theme)
-- Cursor Theme: [capitaine-cursors](https://archlinux.org/packages/extra/any/capitaine-cursors), [nordzy-cursors](https://github.com/alvatip/Nordzy-cursors)
+- Cursor Theme: [bibata-cursor](https://aur.archlinux.org/packages/bibata-cursor-theme-bin), [nordzy-cursors](https://github.com/alvatip/Nordzy-cursors)
 - Firefox Theme: [AddWater](https://flathub.org/apps/dev.qwery.AddWater), [firefox-gnome-theme](https://github.com/rafaelmardojai/firefox-gnome-theme)
 
 ### GNOME Extensions (optional)
@@ -115,6 +116,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Streaming Server: [Sunshine](https://docs.lizardbyte.dev/projects/sunshine/latest/index.html)
 - Streaming Client: [Moonlight](https://moonlight-stream.org)
 - Discord: [Vesktop](https://flathub.org/apps/dev.vencord.Vesktop) (incl. Wayland Screen Sharing)
+- All-In-One Game Collection Manager (TV/Desktop): [RetroDECK](https://retrodeck.readthedocs.io/en/latest/wiki_experiments/desktop-launch/desktop-launch/)
 
 #### Install Sunshine (Streaming Server)
 
@@ -163,7 +165,7 @@ paru -S arch-gaming-meta # Has a lot of depenencies
 
 Install prefered Steam version:
 
-- Average between performance and compatibility: `paru -S steam`
+- Average between performance and compatibility (recommended): `paru -S steam`
 - Best performance: `paru -S steam-native`
 - Best compatibility: `flatpak install com.valvesoftware.Steam`
 - Install and apply GNOME Theme: [AdwSteamGtk](https://flathub.org/apps/io.github.Foldex.AdwSteamGtk)
@@ -395,6 +397,10 @@ Set the property `ARCH_OS_DESKTOP_GRAPHICS_DRIVER='none'` and install your graph
 - [NVIDIA Optimus](https://wiki.archlinux.org/title/NVIDIA_Optimus#Available_methods)
 - [AMD](https://wiki.archlinux.org/title/AMDGPU#Installation)
 - [ATI Legacy](https://wiki.archlinux.org/title/ATI#Installation)
+
+#### Tools
+
+- [AMD LACT](https://archlinux.org/packages/extra/x86_64/lact-libadwaita/): Overclocking Tool
 
 ### VM Support
 
