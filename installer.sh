@@ -1655,14 +1655,15 @@ exec_install_shell_enhancement() {
                 echo '# History ignore list'
                 echo 'export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q:c"'
                 echo ''
-                echo '# Init starship (except tty)'
-                echo '[[ ! $(tty) =~ /dev/tty[0-9]* ]] && command -v starship &>/dev/null && eval "$(starship init bash)"'
-                echo ''
-                echo '# Start fish shell (https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish)'
-                echo 'if command -v fish &>/dev/null && [[ $(ps --no-header --pid=$PPID --format=comm) != "fish" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then'
+                echo '# Start fish shell - no tty (https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish)'
+                echo 'if [[ ! $(tty) =~ /dev/tty[0-9]* ]] && command -v fish &>/dev/null && [[ $(ps --no-header --pid=$PPID --format=comm) != "fish" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then'
                 echo '    shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""'
                 echo '    exec fish $LOGIN_OPTION'
+                echo '    return'
                 echo 'fi'
+                echo ''
+                echo '# Init starship (no tty & bash only)'
+                echo '[[ ! $(tty) =~ /dev/tty[0-9]* ]] && command -v starship &>/dev/null && eval "$(starship init bash)"'
             } | tee "/mnt/root/.bashrc" "/mnt/home/${ARCH_OS_USERNAME}/.bashrc" >/dev/null
 
             # Download Arch OS starship theme
