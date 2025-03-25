@@ -21,7 +21,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${FORCE:=false}" # FORCE=true ./installer.sh
 
 # SCRIPT
-VERSION='1.8.2'
+VERSION='1.8.3'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -232,7 +232,9 @@ main() {
     if [ "$do_chroot" = "true" ] && echo && gum_warn "Chrooting Arch OS at /mnt..."; then
         gum_warn "!! YOUR ARE NOW ON YOUR NEW ARCH OS SYSTEM !!"
         gum_warn ">> Leave with command 'exit'"
-        [ "$DEBUG" = "false" ] && arch-chroot /mnt </dev/tty
+        if [ "$DEBUG" = "false" ]; then
+            arch-chroot /mnt </dev/tty || true
+        fi
         wait # Wait for subprocesses
         gum_warn "Please reboot manually..."
     fi
