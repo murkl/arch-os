@@ -119,19 +119,16 @@ To install Arch OS, an internet connection is required, as many packages will be
 curl -Ls bit.ly/arch-os | bash
 ```
 
-Select one of these presets to install your individual Arch Linux base:
+**Note:** _Cancel the Arch OS Installer with `Ctrl + c`. The properties will be restored when executed again._
 
-- **`desktop`:** GNOME Desktop Environment + Graphics Driver + Extras + Core (default)
-- **`core`:** Minimal Arch Linux TTY Environment (~150 packages in total)
-- **`none`:** All properties are queried (customize)
+**[➜ See Advanced Installation](DOCS.md#advanced-installation)**
+
+<details>
+<summary><h4 style="display: inline;">Animated Installer Demo</h4></summary>
 
 ![Animated Arch OS Installation](./animation.gif)
 
-_Cancel the Arch OS Installer with `Ctrl + c`_
-
-**Note:** If the `installer.conf` exists in the working dir (auto-detected), all properties are loaded as preset (except the password).
-
-**[➜ See Advanced Installation](DOCS.md#advanced-installation)**
+</details>
 
 ## System Maintenance
 
@@ -146,15 +143,17 @@ After installing Arch OS with the default properties preset, most maintenance ta
 
 To streamline this process, you can use the preinstalled **[➜ Arch OS System Manager](https://github.com/murkl/arch-os-manager)**
 
+<details>
+<summary><h2 style="display: inline;" id="screenshots">Screenshots</h2></summary>
+
 <div align="center">
-
-## Screenshots
-
-<p><div><img src="./screenshots/starship.png"></div><sub><i>Arch OS Starship Promt Demo</i></sub></p>
-<p><div><img src="./screenshots/desktop_demo.jpg"></div><sub><i>Arch OS Desktop Demo</i></sub></p>
-<p><div><img src="./screenshots/vim.png"></div><sub><i>SpaceVim Demo</i></sub></p>
-<p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Arch OS Bootsplash</i></sub></p>
-<p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Arch OS Shell Enhancement</i></sub></p>
-<p><div><img src="./screenshots/manager_upgrade.png"></div><sub><i>Arch OS Manager - System Upgrade Demo</i></sub></p>
-<p><div><img src="./screenshots/desktop_apps.png"></div><sub><i>Arch OS Desktop Core Apps </i></sub></p>
+  <p><div><img src="./screenshots/starship.png"></div><sub><i>Arch OS Starship Promt Demo</i></sub></p>
+  <p><div><img src="./screenshots/desktop_demo.jpg"></div><sub><i>Arch OS Desktop Demo</i></sub></p>
+  <p><div><img src="./screenshots/vim.png"></div><sub><i>SpaceVim Demo</i></sub></p>
+  <p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Arch OS Bootsplash</i></sub></p>
+  <p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Arch OS Shell Enhancement</i></sub></p>
+  <p><div><img src="./screenshots/manager_upgrade.png"></div><sub><i>Arch OS Manager - System Upgrade Demo</i></sub></p>
+  <p><div><img src="./screenshots/desktop_apps.png"></div><sub><i>Arch OS Desktop Core Apps </i></sub></p>
 </div>
+
+</details>
