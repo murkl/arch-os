@@ -125,7 +125,7 @@ curl -Ls bit.ly/arch-os | bash
 
 <details>
 
-<summary style="font-size: 1.0em; font-weight: bold;" id="animations">Animated Installation Demo</summary>
+<summary style="font-weight: bold;" id="animations">Animated Installation Demo</summary>
 
 ![Animated Arch OS Installation](./animation.gif)
 
@@ -146,7 +146,7 @@ To streamline this process, you can use the preinstalled **[➜ Arch OS System M
 
 <details>
 
-<summary style="font-size: 1.5em; font-weight: bold;" id="screenshots">Screenshots</summary>
+<summary><h2 style="display: inline;" id="screenshots">Screenshots</h2></summary>
 
 <div align="center">
   <p><div><img src="./screenshots/desktop_demo.jpg"></div><sub><i>Arch OS Desktop Demo</i></sub></p>
