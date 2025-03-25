@@ -21,7 +21,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${FORCE:=false}" # FORCE=true ./installer.sh
 
 # SCRIPT
-VERSION='1.8.3'
+VERSION='1.8.4'
 
 # GUM
 GUM_VERSION="0.13.0"
