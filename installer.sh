@@ -21,7 +21,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${FORCE:=false}" # FORCE=true ./installer.sh
 
 # SCRIPT
-VERSION='1.8.3'
+VERSION='1.8.4'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -1667,8 +1667,11 @@ exec_install_shell_enhancement() {
                 echo '    return'
                 echo 'fi'
                 echo ''
-                echo '# Init starship (no tty & bash only)'
+                echo '# Init starship (no tty)'
                 echo '[[ ! $(tty) =~ /dev/tty[0-9]* ]] && command -v starship &>/dev/null && eval "$(starship init bash)"'
+                echo ''
+                echo '# Init zoxide'
+                echo 'command -v zoxide &>/dev/null && eval "$(zoxide init bash)"'
             } | tee "/mnt/root/.bashrc" "/mnt/home/${ARCH_OS_USERNAME}/.bashrc" >/dev/null
 
             # Download Arch OS starship theme
