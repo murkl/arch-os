@@ -1,7 +1,7 @@
 <h1 align="center">
   <img src="./logo.svg" width="150" height="150"/>
   <br>
-  Arch OS Docs
+  Instarcher Docs
 </h1>
 
 # Contents
@@ -18,7 +18,7 @@
 
 <p><img src="screenshots/desktop_demo.jpg"></p>
 
-For a robust & stable Arch OS experience, install as few additional packages from the official [Arch Repository](https://archlinux.org/packages) or [AUR](https://aur.archlinux.org) as possible. Instead, use [Flatpak](https://flathub.org) or [GNOME Software](https://apps.gnome.org). Furthermore change system files only if absolutely necessary and perform regular package upgrades.
+For a robust & stable Instarcher experience, install as few additional packages from the official [Arch Repository](https://archlinux.org/packages) or [AUR](https://aur.archlinux.org) as possible. Instead, use [Flatpak](https://flathub.org) or [GNOME Software](https://apps.gnome.org). Furthermore change system files only if absolutely necessary and perform regular package upgrades.
 
 - Arch OS System Manager: **`arch-os`**
 - System information: **`fetch`**
@@ -195,7 +195,7 @@ May check out these projects:
 
 ## Advanced Installation
 
-The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as preset for the installer properties. This file provides some additional properties to customize your Arch OS installation (see [Example](#example-installerconf)).
+The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better security) will automatically generated on first start of the installer and be updated on every setup change. If the file exists on startup, the values will set as preset for the installer properties. This file provides some additional properties to customize your Instarcher installation (see [Example](#example-installerconf)).
 
 **Note:** The `installer.conf` & `installer.log` will copied to the new user's home directory during installation. This files can be saved for reuse or simply deleted.
 
@@ -216,15 +216,15 @@ ARCH_OS_VCONSOLE_KEYMAP='de-latin1-nodeadkeys' # Console keymap | Show available
 ARCH_OS_VCONSOLE_FONT='' # Console font | Default: null | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Example: eurlatgr
 ARCH_OS_KERNEL='linux-zen' # Kernel | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened
 ARCH_OS_MICROCODE='intel-ucode' # Microcode | Disable: none | Available: intel-ucode, amd-ucode
-ARCH_OS_CORE_TWEAKS_ENABLED='true' # Arch OS Core Tweaks | Disable: false
+ARCH_OS_CORE_TWEAKS_ENABLED='true' # Instarcher Core Tweaks | Disable: false
 ARCH_OS_MULTILIB_ENABLED='true' # MultiLib 32 Bit Support | Disable: false
 ARCH_OS_AUR_HELPER='paru' # AUR Helper | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur
 ARCH_OS_BOOTSPLASH_ENABLED='true' # Bootsplash | Disable: false
 ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true' # Shell Enhancement | Disable: false
 ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='true' # Enable fish shell | Default: true | Disable: false
 ARCH_OS_HOUSEKEEPING_ENABLED='true' # Housekeeping | Disable: false
-ARCH_OS_MANAGER_ENABLED='true' # Arch OS Manager | Disable: false
-ARCH_OS_DESKTOP_ENABLED='true' # Arch OS Desktop (caution: if disabled, only a minimal tty will be provied)| Disable: false
+ARCH_OS_MANAGER_ENABLED='true' # Instarcher Manager | Disable: false
+ARCH_OS_DESKTOP_ENABLED='true' # Instarcher Desktop (caution: if disabled, only a minimal tty will be provied)| Disable: false
 ARCH_OS_DESKTOP_EXTRAS_ENABLED='true' # Enable desktop extra packages (caution: if disabled, only core + gnome + git packages will be installed) | Disable: false
 ARCH_OS_DESKTOP_SLIM_ENABLED='true' # Enable Sim Desktop (only GNOME Core Apps) | Default: false
 ARCH_OS_DESKTOP_GRAPHICS_DRIVER='nvidia' # Graphics Driver | Disable: none | Available: mesa, intel_i915, nvidia, amd, ati
@@ -238,7 +238,7 @@ ARCH_OS_ECN_ENABLED='true' # Disable ECN support for legacy routers | Default: t
 
 ### Minimal Installation
 
-Set these properties to install Arch OS Core only with minimal packages & configurations. This is the same as preset `core`:
+Set these properties to install Instarcher Core only with minimal packages & configurations. This is the same as preset `core`:
 
 ```
 ARCH_OS_CORE_TWEAKS_ENABLED='false'
@@ -298,7 +298,7 @@ If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true`, the follow
 fish git starship eza bat zoxide fd fzf fastfetch mc btop nano neovim python-pynvim man-db bash-completion nano-syntax-highlighting ttf-firacode-nerd ttf-nerd-fonts-symbols
 ```
 
-**Promt Theme [➜ Arch OS Starship Theme](https://github.com/murkl/starship-theme-arch-os)**
+**Promt Theme [➜ Instarcher Starship Theme](https://github.com/murkl/starship-theme-arch-os)**
 
 - `fish` is set as default shell
 - `starship` is set as fancy default promt see `~/.config/fish/config.fish`
@@ -341,7 +341,7 @@ fish git starship eza bat zoxide fd fzf fastfetch mc btop nano neovim python-pyn
 
 #### Configuration
 
-This config files are created or modified during the Arch OS installation.
+This config files are created or modified during the Instarcher installation.
 
 ```
 # Aliases
@@ -375,13 +375,13 @@ This config files are created or modified during the Arch OS installation.
 fish_config
 ```
 
-### Arch OS Manager
+### Instarcher Manager
 
 **GitHub Project ➜ [github.com/murkl/arch-os-manager](https://github.com/murkl/arch-os-manager)**
 
 <p><img src="screenshots/manager_menu.png"></p>
 
-Install **➜ [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/)** and set this in extension options to integrate [Arch OS Manager](https://github.com/murkl/arch-os-manager):
+Install **➜ [archlinux-updates-indicator](https://extensions.gnome.org/extension/1010/)** and set this in extension options to integrate [Instarcher Manager](https://github.com/murkl/arch-os-manager):
 
 - Check command: `/usr/bin/arch-os check`
 - Update command: `arch-os --kitty upgrade`
@@ -417,7 +417,7 @@ Disable this feature with `ARCH_OS_VM_SUPPORT_ENABLED='false'`
 
 ## Technical Information
 
-Here are some technical information regarding the Arch OS Core installation.
+Here are some technical information regarding the Instarcher Core installation.
 
 ### Partitions layout
 
@@ -439,7 +439,7 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 
 ### Packages
 
-This packages will be installed during Arch OS Core Installation (~150 packages in total):
+This packages will be installed during Instarcher Core Installation (~150 packages in total):
 
 ```
 base linux-firmware zram-generator networkmanager sudo [kernel_pkg] [microcode_pkg]
@@ -447,7 +447,7 @@ base linux-firmware zram-generator networkmanager sudo [kernel_pkg] [microcode_p
 
 ### Services
 
-This services will be enabled during Arch OS Core Installation:
+This services will be enabled during Instarcher Core Installation:
 
 ```
 NetworkManager fstrim.timer systemd-zram-setup@zram0.service systemd-oomd.service systemd-boot-update.service systemd-timesyncd.service
@@ -455,7 +455,7 @@ NetworkManager fstrim.timer systemd-zram-setup@zram0.service systemd-oomd.servic
 
 ### Configuration
 
-This configuration will be set during Arch OS Core Installation:
+This configuration will be set during Instarcher Core Installation:
 
 - Bootloader timeout is set to `0`
 - User is added to group `wheel` to use `sudo`
@@ -468,7 +468,7 @@ If an error occurs, see created `installer.log` for more details.
 
 ### Installation failed
 
-If you encounter problems with a server during Arch OS installation (`error: failed retrieving file` or related errors), remove this server from `/etc/pacman.d/mirrorlist` (Arch ISO) and run Arch OS Installer again.
+If you encounter problems with a server during Instarcher installation (`error: failed retrieving file` or related errors), remove this server from `/etc/pacman.d/mirrorlist` (Arch ISO) and run Instarcher Installer again.
 
 #### Example
 
@@ -497,7 +497,7 @@ fuser -km /mnt
 
 ### Legacy Routers (ECN disabled)
 
-Set `ARCH_OS_ECN_ENABLED="false"` in Arch OS `installer.conf`.
+Set `ARCH_OS_ECN_ENABLED="false"` in Instarcher `installer.conf`.
 
 ### Downgrade a package
 
@@ -525,7 +525,7 @@ paru -Scc
 
 ### Rescue & Recovery
 
-If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and start the included recovery mode:
+If you need to rescue your Instarcher in case of a crash, **boot from an Arch ISO device** and start the included recovery mode:
 
 ```
 curl -Ls bit.ly/arch-os > installer.sh
@@ -559,14 +559,14 @@ _**Example**_
 #### 3. Chroot
 
 - Enter chroot: `arch-chroot /mnt`
-- _Fix your Arch OS..._
+- _Fix your Instarcher..._
 - Exit: `exit`
 
 ## Development
 
 Create new pull request branches only from [main branch](https://github.com/murkl/arch-os/tree/main)! The [dev branch](https://github.com/murkl/arch-os/tree/dev) will be deleted after each merge into main.
 
-The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broken, use only for testing!
+The Instarcher [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broken, use only for testing!
 
 ```
 curl -Ls bit.ly/arch-os-dev | bash

@@ -36,7 +36,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
   <img src="https://img.shields.io/badge/License-GPL_v2-blue?style=for-the-badge">
 </p>
 
-**[➜ Arch OS Documentation](DOCS.md)**<br>
+**[➜ Instarcher Documentation](DOCS.md)**<br>
 <b><a about="_blank" href="https://t.me/archos_community">➜ t.me/archos_community</a></b>
 
 <p><sub>100% shellcheck approved</sub></p>
@@ -67,7 +67,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 ## Desktop Features
 
 - [GNOME Desktop Environment](DOCS.md#recommendation) (optional with additional packages)
-- [Arch OS Slim Version](DOCS.md#example-installerconf) (GNOME Core Apps only)
+- [Instarcher Slim Version](DOCS.md#example-installerconf) (GNOME Core Apps only)
 - [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
 - [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
 - Flatpak Support + Auto Update (GNOME Software)
@@ -95,9 +95,9 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - 32 Bit Support (Multilib)
 - Disk Encryption (LUKS2)
 
-## Arch OS Installation
+## Instarcher Installation
 
-To install Arch OS, an internet connection is required, as many packages will be downloaded during the installation process.
+To install Instarcher, an internet connection is required, as many packages will be downloaded during the installation process.
 
 ### 1. Prepare bootable USB Device
 
@@ -115,13 +115,13 @@ To install Arch OS, an internet connection is required, as many packages will be
 - Load prefered keyboard layout (optional): `loadkeys de`
 - Connect to WLAN (optional): `iwctl station wlan0 connect 'SSID'`
 
-#### 3.1. Run Arch OS Installer
+#### 3.1. Run Instarcher Installer
 
 ```
 curl -Ls bit.ly/arch-os | bash
 ```
 
-**Note:** _Cancel the Arch OS Installer with `Ctrl + c`. The properties will be restored upon the next execution._
+**Note:** _Cancel the Instarcher Installer with `Ctrl + c`. The properties will be restored upon the next execution._
 
 **[➜ See Advanced Installation](DOCS.md#advanced-installation)**
 
@@ -129,7 +129,7 @@ curl -Ls bit.ly/arch-os | bash
 
 <summary style="font-weight: bold;" id="animations">Animated Installation Demo</summary>
 
-![Animated Arch OS Installation](./animation.gif)
+![Animated Instarcher Installation](./animation.gif)
 
 </details>
 
@@ -137,27 +137,27 @@ curl -Ls bit.ly/arch-os | bash
 
 <p><img src="./screenshots/manager_menu.png"></p>
 
-After installing Arch OS with the default properties preset, most maintenance tasks are performed automatically. However, the following steps must be executed manually on a regular basis:
+After installing Instarcher with the default properties preset, most maintenance tasks are performed automatically. However, the following steps must be executed manually on a regular basis:
 
 - Regularly upgrade your system packages (Pacman/AUR & Flatpak)
 - Regularly read the **[Arch Linux News](https://www.archlinux.org/news)** (preferably before upgrading your system)
 - Regularly check & merge new configurations with `pacdiff` (preferably after each system upgrade)
 - Consult the **[Arch Linux Wiki](https://wiki.archlinux.org)** (if you need help)
 
-To streamline this process, you can use the preinstalled **[➜ Arch OS System Manager](https://github.com/murkl/arch-os-manager)**
+To streamline this process, you can use the preinstalled **[➜ Instarcher System Manager](https://github.com/murkl/arch-os-manager)**
 
 <details>
 
 <summary><h2 style="display: inline;" id="screenshots">Screenshots</h2></summary>
 
 <div align="center">
-  <p><div><img src="./screenshots/desktop_demo.jpg"></div><sub><i>Arch OS Desktop Demo</i></sub></p>
-  <p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Arch OS Bootsplash</i></sub></p>
-  <p><div><img src="./screenshots/starship.png"></div><sub><i>Arch OS Starship Promt Demo</i></sub></p>
-  <p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Arch OS Shell Enhancement</i></sub></p>
+  <p><div><img src="./screenshots/desktop_demo.jpg"></div><sub><i>Instarcher Desktop Demo</i></sub></p>
+  <p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Instarcher Bootsplash</i></sub></p>
+  <p><div><img src="./screenshots/starship.png"></div><sub><i>Instarcher Starship Promt Demo</i></sub></p>
+  <p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Instarcher Shell Enhancement</i></sub></p>
   <p><div><img src="./screenshots/vim.png"></div><sub><i>SpaceVim Demo</i></sub></p>
-  <p><div><img src="./screenshots/desktop_apps.png"></div><sub><i>Arch OS Desktop Core Apps </i></sub></p>
-  <p><div><img src="./screenshots/manager_upgrade.png"></div><sub><i>Arch OS Manager - System Upgrade Demo</i></sub></p>
+  <p><div><img src="./screenshots/desktop_apps.png"></div><sub><i>Instarcher Desktop Core Apps </i></sub></p>
+  <p><div><img src="./screenshots/manager_upgrade.png"></div><sub><i>Instarcher Manager - System Upgrade Demo</i></sub></p>
 </div>
 
 </details>

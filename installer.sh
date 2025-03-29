@@ -2,10 +2,10 @@
 # shellcheck disable=SC1090
 
 #########################################################
-# ARCH OS INSTALLER | Automated Arch Linux Installer TUI
+# INSTARCHER | Automated Arch Linux Installer TUI
 #########################################################
 
-# SOURCE:   https://github.com/diesys/arch-gum (forks `murkl/arch-os`)
+# SOURCE:   https://github.com/diesys/instarcher (forks `murkl/arch-os`)
 # AUTOR:    diesys
 # LICENCE:  GPL 2.0
 
@@ -64,7 +64,7 @@ main() {
     trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
 
     # Print version to logfile
-    log_info "Arch OS ${VERSION}"
+    log_info "Instarcher ${VERSION}"
 
     # Start recovery
     [[ "$1" = "--recovery"* ]] && {
@@ -77,7 +77,7 @@ main() {
     # Loop properties step to update screen if user edit properties
     while (true); do
 
-        print_header "Arch OS Installer" # Show landig page
+        print_header "Instarcher Installer" # Show landig page
         gum_white 'Please make sure you have:' && echo
         gum_white '• Backed up your important data'
         gum_white '• A stable internet connection'
@@ -89,7 +89,7 @@ main() {
             gum_confirm "Remove existing installer.conf?" || trap_gum_exit # If not want remove config > exit script
             echo && gum_title "Properties File"
             mv -f "$SCRIPT_CONFIG" "${SCRIPT_CONFIG}.old" && gum_info "installer.conf was moved to installer.conf.old"
-            gum_warn "Please restart Arch OS Installer..."
+            gum_warn "Please restart Instarcher Installer..."
             echo && exit 0
         fi
 
@@ -152,11 +152,11 @@ main() {
 
     # Start installation in 5 seconds?
     if [ "$FORCE" = "false" ]; then
-        gum_confirm "Start Arch OS Installation?" || trap_gum_exit
+        gum_confirm "Start Instarcher Installation?" || trap_gum_exit
     fi
-    local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel..."
+    local spin_title="Instarcher Installation starts in 5 seconds. Press CTRL + C to cancel..."
     echo && ! gum_spin --title="$spin_title" -- sleep 5 && trap_gum_exit # CTRL + C pressed
-    gum_title "Arch OS Installation"
+    gum_title "Instarcher Installation"
 
     SECONDS=0 # Messure execution time of installation
 
@@ -189,7 +189,7 @@ main() {
     # Copy installer files to users home
     if [ "$DEBUG" = "false" ]; then
         cp -f "$SCRIPT_CONFIG" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
-        sed -i "1i\# Arch OS Version: ${VERSION}" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
+        sed -i "1i\# Instarcher Version: ${VERSION}" "/mnt/home/${ARCH_OS_USERNAME}/installer.conf"
         cp -f "$SCRIPT_LOG" "/mnt/home/${ARCH_OS_USERNAME}/installer.log"
         arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.conf"
         arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.log"
@@ -215,11 +215,11 @@ main() {
     fi
 
     # Reboot promt
-    [ "$FORCE" = "false" ] && gum_confirm "Reboot to Arch OS now?" && do_reboot="true" && do_unmount="true"
+    [ "$FORCE" = "false" ] && gum_confirm "Reboot to Instarcher now?" && do_reboot="true" && do_unmount="true"
 
     # Unmount
-    [ "$FORCE" = "false" ] && [ "$do_reboot" = "false" ] && gum_confirm "Unmount Arch OS from /mnt?" && do_unmount="true"
-    [ "$do_unmount" = "true" ] && echo && gum_warn "Unmounting Arch OS from /mnt..."
+    [ "$FORCE" = "false" ] && [ "$do_reboot" = "false" ] && gum_confirm "Unmount Instarcher from /mnt?" && do_unmount="true"
+    [ "$do_unmount" = "true" ] && echo && gum_warn "Unmounting Instarcher from /mnt..."
     if [ "$DEBUG" = "false" ] && [ "$do_unmount" = "true" ]; then
         swapoff -a
         umount -A -R /mnt
@@ -227,12 +227,12 @@ main() {
     fi
 
     # Do reboot
-    [ "$FORCE" = "false" ] && [ "$do_reboot" = "true" ] && gum_warn "Rebooting to Arch OS..." && [ "$DEBUG" = "false" ] && reboot
+    [ "$FORCE" = "false" ] && [ "$do_reboot" = "true" ] && gum_warn "Rebooting to Instarcher..." && [ "$DEBUG" = "false" ] && reboot
 
     # Chroot
-    [ "$FORCE" = "false" ] && [ "$do_unmount" = "false" ] && gum_confirm "Chroot to new Arch OS?" && do_chroot="true"
-    if [ "$do_chroot" = "true" ] && echo && gum_warn "Chrooting Arch OS at /mnt..."; then
-        gum_warn "!! YOUR ARE NOW ON YOUR NEW ARCH OS SYSTEM !!"
+    [ "$FORCE" = "false" ] && [ "$do_unmount" = "false" ] && gum_confirm "Chroot to new Instarcher?" && do_chroot="true"
+    if [ "$do_chroot" = "true" ] && echo && gum_warn "Chrooting Instarcher at /mnt..."; then
+        gum_warn "!! YOUR ARE NOW ON YOUR NEW ARCH LINUX SYSTEM !!"
         gum_warn ">> Leave with command 'exit'"
         if [ "$DEBUG" = "false" ]; then
             arch-chroot /mnt </dev/tty || true
@@ -242,7 +242,7 @@ main() {
     fi
 
     # Print warning
-    [ "$do_unmount" = "false" ] && [ "$do_chroot" = "false" ] && echo && gum_warn "Arch OS is still mounted at /mnt"
+    [ "$do_unmount" = "false" ] && [ "$do_chroot" = "false" ] && echo && gum_warn "Instarcher is still mounted at /mnt"
 
     gum_info "Exit" && exit 0
 }
@@ -252,7 +252,7 @@ main() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 start_recovery() {
-    print_header "Arch OS Recovery"
+    print_header "Instarcher Recovery"
     local recovery_boot_partition recovery_root_partition user_input items options
     local recovery_mount_dir="/mnt/recovery"
     local recovery_crypt_label="cryptrecovery"
@@ -269,7 +269,7 @@ start_recovery() {
     mapfile -t items < <(lsblk -I 8,259,254 -d -o KNAME,SIZE -n)
     # size: $(lsblk -d -n -o SIZE "/dev/${item}")
     options=() && for item in "${items[@]}"; do options+=("/dev/${item}"); done
-    user_input=$(gum_choose --header "+ Select Arch OS Disk" "${options[@]}") || exit 130
+    user_input=$(gum_choose --header "+ Select Instarcher Disk" "${options[@]}") || exit 130
     gum_title "Recovery"
     [ -z "$user_input" ] && log_fail "Disk is empty" && exit 1 # Check if new value is null
     user_input=$(echo "$user_input" | awk -F' ' '{print $1}')  # Remove size from input
@@ -781,7 +781,7 @@ select_enable_shell_enhancement() {
 
 select_enable_manager() {
     if [ -z "$ARCH_OS_MANAGER_ENABLED" ]; then
-        gum_confirm "Enable Arch OS Manager?"
+        gum_confirm "Enable Instarcher Manager?"
         local user_confirm=$?
         [ $user_confirm = 130 ] && {
             trap_gum_exit_confirm
@@ -792,7 +792,7 @@ select_enable_manager() {
         [ $user_confirm = 0 ] && user_input="true"
         ARCH_OS_MANAGER_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_property "Arch OS Manager" "$ARCH_OS_MANAGER_ENABLED"
+    gum_property "Instarcher Manager" "$ARCH_OS_MANAGER_ENABLED"
     return 0
 }
 
@@ -884,7 +884,7 @@ exec_prepare_disk() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_pacstrap_core() {
-    local process_name="Pacstrap Arch OS Core"
+    local process_name="Pacstrap Instarcher Core"
     process_init "$process_name"
     (
         [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
@@ -964,14 +964,14 @@ exec_pacstrap_core() {
         } >/mnt/boot/loader/loader.conf
 
         { # Create default boot entry
-            echo 'title   Arch OS'
+            echo 'title   Instarcher'
             echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
             echo "initrd  /initramfs-${ARCH_OS_KERNEL}.img"
             echo "options ${kernel_args[*]}"
         } >/mnt/boot/loader/entries/arch.conf
 
         { # Create fallback boot entry
-            echo 'title   Arch OS (Fallback)'
+            echo 'title   Instarcher (Fallback)'
             echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
             echo "initrd  /initramfs-${ARCH_OS_KERNEL}-fallback.img"
             echo "options ${kernel_args[*]}"
@@ -1000,7 +1000,7 @@ exec_pacstrap_core() {
         arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootloader update
         arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
-        # Make some Arch OS tweaks
+        # Make some Instarcher tweaks
         if [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ]; then
 
             # Add password feedback
@@ -1252,7 +1252,7 @@ exec_install_desktop() {
                 echo 'EndSection'
             } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
 
-            # Enable Arch OS Desktop services
+            # Enable Instarcher Desktop services
             arch-chroot /mnt systemctl enable gdm.service       # GNOME
             arch-chroot /mnt systemctl enable bluetooth.service # Bluetooth
             arch-chroot /mnt systemctl enable avahi-daemon      # Network browsing service
@@ -1468,7 +1468,7 @@ exec_install_bootsplash() {
             [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                                       # If debug mode then return
             chroot_pacman_install plymouth git base-devel                                              # Install packages
             sed -i "s/base systemd keyboard/base systemd plymouth keyboard/g" /mnt/etc/mkinitcpio.conf # Configure mkinitcpio
-            chroot_aur_install plymouth-theme-arch-os                                                  # Install Arch OS plymouth theme from AUR
+            chroot_aur_install plymouth-theme-arch-os                                                  # Install Instarcher plymouth theme from AUR
             arch-chroot /mnt plymouth-set-default-theme -R arch-os                                     # Set Theme & rebuild initram disk
             process_return 0                                                                           # Return
         ) &>"$PROCESS_LOG" &
@@ -1531,7 +1531,7 @@ exec_install_housekeeping() {
 # ---------------------------------------------------------------------------------------------------
 
 exec_install_archos_manager() {
-    local process_name="Arch OS Manager"
+    local process_name="Instarcher Manager"
     if [ "$ARCH_OS_MANAGER_ENABLED" = "true" ]; then
         process_init "$process_name"
         (
@@ -1694,7 +1694,7 @@ exec_install_shell_enhancement() {
                 echo '[[ ! $(tty) =~ /dev/tty[0-9]* ]] && command -v starship &>/dev/null && eval "$(starship init bash)"'
             } | tee "/mnt/root/.bashrc" "/mnt/home/${ARCH_OS_USERNAME}/.bashrc" >/dev/null
 
-            # Download Arch OS starship theme
+            # Download Instarcher starship theme
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/"
             curl -Lf https://raw.githubusercontent.com/murkl/starship-theme-arch-os/refs/heads/main/starship.toml >"/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
             if [ ! -s "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" ]; then
@@ -1736,7 +1736,7 @@ exec_install_shell_enhancement() {
                 echo '    {'
                 echo '      "key": "Distro    ",'
                 echo '      "type": "os",'
-                echo '      "format": "Arch OS"'
+                echo '      "format": "Instarcher"'
                 echo '    },'
                 echo '    {'
                 echo '      "key": "Kernel    ",'
@@ -1898,7 +1898,7 @@ exec_install_vm_support() {
 
 # shellcheck disable=SC2016
 exec_finalize_arch_os() {
-    local process_name="Finalize Arch OS"
+    local process_name="Finalize Instarcher"
     if [ -s "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" ]; then
         process_init "$process_name"
         (
@@ -1918,13 +1918,13 @@ exec_finalize_arch_os() {
             # Print initialized info
             {
                 echo "# exec_finalize_arch_os | Print initialized info"
-                echo "echo \"\$(date '+%Y-%m-%d %H:%M:%S') | Arch OS \${ARCH_OS_VERSION} | Initialized\""
+                echo "echo \"\$(date '+%Y-%m-%d %H:%M:%S') | Instarcher \${ARCH_OS_VERSION} | Initialized\""
             } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             arch-chroot /mnt chmod +x "/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
             {
                 echo "[Desktop Entry]"
                 echo "Type=Application"
-                echo "Name=Arch OS Initialize"
+                echo "Name=Instarcher Initialize"
                 echo "Icon=preferences-system"
                 echo "Exec=bash -c '/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh > /home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.log'"
             } >"/mnt/home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
@@ -2104,12 +2104,15 @@ process_return() {
 
 print_header() {
     local title="$1"
-    clear && gum_purple '
- █████  ██████   ██████ ██   ██      ██████  ███████
-██   ██ ██   ██ ██      ██   ██     ██    ██ ██
-███████ ██████  ██      ███████     ██    ██ ███████
-██   ██ ██   ██ ██      ██   ██     ██    ██      ██
-██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
+    clear && gum_green '                                                                                                  
+    _|_|_|                        _|                                    _|                            
+      _|    _|_|_|      _|_|_|  _|_|_|_|    _|_|_|  _|  _|_|    _|_|_|  _|_|_|      _|_|    _|  _|_|  
+      _|    _|    _|  _|_|        _|      _|    _|  _|_|      _|        _|    _|  _|_|_|_|  _|_|      
+      _|    _|    _|      _|_|    _|      _|    _|  _|        _|        _|    _|  _|        _|        
+    _|_|_|  _|    _|  _|_|_|        _|_|    _|_|_|  _|          _|_|_|  _|    _|    _|_|_|  _|        
+                                                                                                      
+                                                                                                      
+'
     local header_version="               v. ${VERSION}"
     [ "$DEBUG" = "true" ] && header_version="               d. ${VERSION}"
     gum_white --margin "1 0" --align left --bold "Welcome to ${title} ${header_version}"
@@ -2125,7 +2128,7 @@ print_filled_space() {
 
 gum_init() {
     if [ ! -x ./gum ]; then
-        clear && echo "Loading Arch OS Installer..." # Loading
+        clear && echo "Loading Instarcher Installer..." # Loading
         local gum_url gum_path                       # Prepare URL with version os and arch
         # https://github.com/charmbracelet/gum/releases
         gum_url="https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_$(uname -s)_$(uname -m).tar.gz"
