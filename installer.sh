@@ -5,9 +5,8 @@
 # ARCH OS INSTALLER | Automated Arch Linux Installer TUI
 #########################################################
 
-# SOURCE:   https://github.com/murkl/arch-os
-# AUTOR:    murkl
-# ORIGIN:   Germany
+# SOURCE:   https://github.com/diesys/arch-gum (forks `murkl/arch-os`)
+# AUTOR:    diesys
 # LICENCE:  GPL 2.0
 
 # CONFIG
@@ -21,7 +20,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${FORCE:=false}" # FORCE=true ./installer.sh
 
 # SCRIPT
-VERSION='1.8.3'
+VERSION='0.1.83'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -51,6 +50,8 @@ COLOR_RED=9
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 main() {
+    # echo $ARCH_OS_FILESYSTEM; until select_filesystem; do :; done; echo $ARCH/_OS_FILESYSTEM; return 0;
+
 
     # Clear logfile
     [ -f "$SCRIPT_LOG" ] && mv -f "$SCRIPT_LOG" "${SCRIPT_LOG}.old"
@@ -105,6 +106,7 @@ main() {
         until select_language; do :; done
         until select_keyboard; do :; done
         until select_disk; do :; done
+        until select_filesystem; do :; done
         echo && gum_title "Desktop Setup"
         until select_enable_desktop_environment; do :; done
         until select_enable_desktop_driver; do :; done
@@ -341,6 +343,7 @@ properties_generate() {
         echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}'"
         echo "ARCH_OS_USERNAME='${ARCH_OS_USERNAME}'"
         echo "ARCH_OS_DISK='${ARCH_OS_DISK}'"
+        echo "ARCH_OS_FILESYSTEM='${ARCH_OS_FILESYSTEM}'"
         echo "ARCH_OS_BOOT_PARTITION='${ARCH_OS_BOOT_PARTITION}'"
         echo "ARCH_OS_ROOT_PARTITION='${ARCH_OS_ROOT_PARTITION}'"
         echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}'"
@@ -551,6 +554,21 @@ select_disk() {
         properties_generate # Generate properties file
     fi
     gum_property "Disk" "$ARCH_OS_DISK"
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+select_filesystem() {
+    if [ -z "$ARCH_OS_FILESYSTEM" ]; then
+        local user_input options
+        options=("ext4" "btrfs")
+        user_input=$(gum_choose --header "+ Choose Filesystem" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1                          # Check if new value is null
+        ARCH_OS_FILESYSTEM="$user_input" # Set property
+        properties_generate # Generate properties file
+    fi
+    gum_property "Filesystem" "$ARCH_OS_FILESYSTEM"
     return 0
 }
 
@@ -843,9 +861,14 @@ exec_prepare_disk() {
 
         # Format disk
         mkfs.fat -F 32 -n BOOT "$ARCH_OS_BOOT_PARTITION"
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.ext4 -F -L ROOT /dev/mapper/cryptroot
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.ext4 -F -L ROOT "$ARCH_OS_ROOT_PARTITION"
 
+        if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.btrfs -F -L ROOT /dev/mapper/cryptroot
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.btrfs -F -L ROOT "$ARCH_OS_ROOT_PARTITION"
+        else
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.ext4 -F -L ROOT /dev/mapper/cryptroot
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.ext4 -F -L ROOT "$ARCH_OS_ROOT_PARTITION"
+        fi
         # Mount disk to /mnt
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mount -v /dev/mapper/cryptroot /mnt
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount -v "$ARCH_OS_ROOT_PARTITION" /mnt
@@ -2082,10 +2105,10 @@ process_return() {
 print_header() {
     local title="$1"
     clear && gum_purple '
- █████  ██████   ██████ ██   ██      ██████  ███████ 
-██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
-███████ ██████  ██      ███████     ██    ██ ███████ 
-██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
+ █████  ██████   ██████ ██   ██      ██████  ███████
+██   ██ ██   ██ ██      ██   ██     ██    ██ ██
+███████ ██████  ██      ███████     ██    ██ ███████
+██   ██ ██   ██ ██      ██   ██     ██    ██      ██
 ██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
     local header_version="               v. ${VERSION}"
     [ "$DEBUG" = "true" ] && header_version="               d. ${VERSION}"

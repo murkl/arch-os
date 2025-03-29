@@ -1,13 +1,14 @@
 <h1 align="center">
   <img src="./logo.svg" width="150" height="150">
-  <p>Arch OS</p>
+  <p>Arch-Gum</p>
+  <small><a href="https://github.com/murkl/arch-os">Arch OS</a> fork, for tesing support for btrfs</small>
 </h1>
 
 <div align="center">
 
 <p><strong>Boot from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a> and run</strong></p>
 
-**`curl -Ls bit.ly/arch-os | bash`**
+**`curl -Ls https://raw.githubusercontent.com/diesys/arch-gum/refs/heads/main/installer.sh | bash`**
 
 <p><b>
 
@@ -49,6 +50,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - [Swap](DOCS.md#swap) with zram-generator (zstd)
 - [Sole OS](DOCS.md#partitions-layout)
 - All-in-One password (encryption, root & user)
+- **WIP: Btrfs Support**
 - Multilingual Support
 - Filesystem ext4
 - Silent Boot (optional)
