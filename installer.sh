@@ -49,7 +49,7 @@ COLOR_PURPLE=13 #  #ff00ff
 COLOR_CYAN=14   #  #00ffff
 COLOR_WHITE=15  #  #ffffff
 
-COLOR_FOREGROUND="${COLOR_CYAN}"
+COLOR_FOREGROUND="${COLOR_BLUE}"
 COLOR_BACKGROUND="${COLOR_WHITE}"
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
