@@ -21,7 +21,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${FORCE:=false}" # FORCE=true ./installer.sh
 
 # SCRIPT
-VERSION='1.8.3'
+VERSION='1.8.4'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -40,11 +40,17 @@ PROCESS_LOG="${SCRIPT_TMP_DIR}/process.log"
 PROCESS_RET="${SCRIPT_TMP_DIR}/process.ret"
 
 # COLORS
-COLOR_WHITE=251
-COLOR_GREEN=36
-COLOR_PURPLE=212
-COLOR_YELLOW=221
-COLOR_RED=9
+COLOR_BLACK=0   #  #000000
+COLOR_RED=9     #  #ff0000
+COLOR_GREEN=10  #  #00ff00
+COLOR_YELLOW=11 #  #ffff00
+COLOR_BLUE=12   #  #0000ff
+COLOR_PURPLE=13 #  #ff00ff
+COLOR_CYAN=14   #  #00ffff
+COLOR_WHITE=15  #  #ffffff
+
+COLOR_FOREGROUND="${COLOR_BLUE}"
+COLOR_BACKGROUND="${COLOR_WHITE}"
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # MAIN
@@ -124,7 +130,7 @@ main() {
         echo && gum_title "Properties"
 
         # Open Advanced Properties?
-        if [ "$FORCE" = "false" ] && gum_confirm --negative="Skip" "Open Advanced Setup?"; then
+        if [ "$FORCE" = "false" ] && gum_confirm --negative="Skip" "Open Advanced Setup Editor?"; then
             local header_txt="• Advanced Setup | Save with CTRL + D or ESC and cancel with CTRL + C"
             if gum_write --show-line-numbers --prompt "" --height=12 --width=180 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
@@ -1667,8 +1673,11 @@ exec_install_shell_enhancement() {
                 echo '    return'
                 echo 'fi'
                 echo ''
-                echo '# Init starship (no tty & bash only)'
+                echo '# Init starship (no tty)'
                 echo '[[ ! $(tty) =~ /dev/tty[0-9]* ]] && command -v starship &>/dev/null && eval "$(starship init bash)"'
+                echo ''
+                echo '# Init zoxide'
+                echo 'command -v zoxide &>/dev/null && eval "$(zoxide init bash)"'
             } | tee "/mnt/root/.bashrc" "/mnt/home/${ARCH_OS_USERNAME}/.bashrc" >/dev/null
 
             # Download Arch OS starship theme
@@ -2081,7 +2090,7 @@ process_return() {
 
 print_header() {
     local title="$1"
-    clear && gum_purple '
+    clear && gum_foreground '
  █████  ██████   ██████ ██   ██      ██████  ███████ 
 ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
 ███████ ██████  ██      ███████     ██    ██ ███████ 
@@ -2132,26 +2141,31 @@ trap_gum_exit_confirm() { gum_confirm "Exit Installation?" && trap_gum_exit; }
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 # Gum colors (https://github.com/muesli/termenv?tab=readme-ov-file#color-chart)
+gum_foreground() { gum_style --foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_background() { gum_style --foreground "$COLOR_BACKGROUND" "${@}"; }
 gum_white() { gum_style --foreground "$COLOR_WHITE" "${@}"; }
-gum_purple() { gum_style --foreground "$COLOR_PURPLE" "${@}"; }
-gum_yellow() { gum_style --foreground "$COLOR_YELLOW" "${@}"; }
+gum_black() { gum_style --foreground "$COLOR_BLACK" "${@}"; }
 gum_red() { gum_style --foreground "$COLOR_RED" "${@}"; }
 gum_green() { gum_style --foreground "$COLOR_GREEN" "${@}"; }
+gum_blue() { gum_style --foreground "$COLOR_BLUE" "${@}"; }
+gum_yellow() { gum_style --foreground "$COLOR_YELLOW" "${@}"; }
+gum_cyan() { gum_style --foreground "$COLOR_CYAN" "${@}"; }
+gum_purple() { gum_style --foreground "$COLOR_PURPLE" "${@}"; }
 
 # Gum prints
-gum_title() { log_head "${*}" && gum join "$(gum_purple --bold "+ ")" "$(gum_purple --bold "${*}")"; }
+gum_title() { log_head "${*}" && gum join "$(gum_foreground --bold "+ ")" "$(gum_foreground --bold "${*}")"; }
 gum_info() { log_info "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "${*}")"; }
 gum_warn() { log_warn "$*" && gum join "$(gum_yellow --bold "• ")" "$(gum_white "${*}")"; }
 gum_fail() { log_fail "$*" && gum join "$(gum_red --bold "• ")" "$(gum_white "${*}")"; }
 
 # Gum wrapper
 gum_style() { gum style "${@}"; }
-gum_confirm() { gum confirm --prompt.foreground "$COLOR_PURPLE" "${@}"; }
-gum_input() { gum input --placeholder "..." --prompt "> " --prompt.foreground "$COLOR_PURPLE" --header.foreground "$COLOR_PURPLE" "${@}"; }
-gum_write() { gum write --prompt "> " --header.foreground "$COLOR_PURPLE" --show-cursor-line --char-limit 0 "${@}"; }
-gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_PURPLE" --cursor.foreground "$COLOR_PURPLE" "${@}"; }
-gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter..." --height 8 --header.foreground "$COLOR_PURPLE" "${@}"; }
-gum_spin() { gum spin --spinner line --title.foreground "$COLOR_PURPLE" --spinner.foreground "$COLOR_PURPLE" "${@}"; }
+gum_confirm() { gum confirm --prompt.foreground "$COLOR_FOREGROUND" --selected.background "$COLOR_FOREGROUND" --selected.foreground "$COLOR_BACKGROUND" --unselected.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_input() { gum input --placeholder "..." --prompt "> " --cursor.foreground "$COLOR_FOREGROUND" --prompt.foreground "$COLOR_FOREGROUND" --header.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_FOREGROUND" --cursor.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter..." --height 8 --header.foreground "$COLOR_FOREGROUND" --indicator.foreground "$COLOR_FOREGROUND" --match.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_write() { gum write --prompt "> " --show-cursor-line --char-limit 0 --cursor.foreground "$COLOR_FOREGROUND" --header.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_spin() { gum spin --spinner line --title.foreground "$COLOR_FOREGROUND" --spinner.foreground "$COLOR_FOREGROUND" "${@}"; }
 
 # Gum key & value
 gum_proc() { log_proc "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white --bold "$(print_filled_space 24 "${1}")")" "$(gum_white "  >  ")" "$(gum_green "${2}")"; }
