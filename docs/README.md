@@ -155,7 +155,7 @@ To streamline this process, you can use the preinstalled **[➜ Arch OS System M
   <p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Arch OS Shell Enhancement</i></sub></p>
   <p><div><img src="./screenshots/vim.png"></div><sub><i>SpaceVim Demo</i></sub></p>
   <p><div><img src="./screenshots/desktop_apps.png"></div><sub><i>Arch OS Desktop Core Apps </i></sub></p>
-  <p><div><img src="./screenshots/manager_upgrade.png"></div><sub><i>Arch OS Manager - System Upgrade Demo</i></sub></p>
+  <p><div><img src="./screenshots/manager_dashboard.png"></div><sub><i>Arch OS Manager - System Upgrade Demo</i></sub></p>
 </div>
 
 </details>
