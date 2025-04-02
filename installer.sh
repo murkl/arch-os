@@ -49,8 +49,8 @@ COLOR_PURPLE=13 #  #ff00ff
 COLOR_CYAN=14   #  #00ffff
 COLOR_WHITE=15  #  #ffffff
 
-COLOR_FOREGROUND="${COLOR_GREEN}"
-COLOR_BACKGROUND="${COLOR_BLACK}"
+COLOR_FOREGROUND="${COLOR_CYAN}"
+COLOR_BACKGROUND="${COLOR_WHITE}"
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # MAIN
@@ -2160,7 +2160,7 @@ gum_fail() { log_fail "$*" && gum join "$(gum_red --bold "• ")" "$(gum_white "
 
 # Gum wrapper
 gum_style() { gum style "${@}"; }
-gum_confirm() { gum confirm --prompt.foreground "$COLOR_FOREGROUND" --selected.background "$COLOR_FOREGROUND" --selected.foreground "$COLOR_BACKGROUND" --unselected.background "$COLOR_BACKGROUND" --unselected.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_confirm() { gum confirm --prompt.foreground "$COLOR_FOREGROUND" --selected.background "$COLOR_FOREGROUND" --selected.foreground "$COLOR_BACKGROUND" --unselected.foreground "$COLOR_FOREGROUND" "${@}"; }
 gum_input() { gum input --placeholder "..." --prompt "> " --cursor.foreground "$COLOR_FOREGROUND" --prompt.foreground "$COLOR_FOREGROUND" --header.foreground "$COLOR_FOREGROUND" "${@}"; }
 gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_FOREGROUND" --cursor.foreground "$COLOR_FOREGROUND" "${@}"; }
 gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter..." --height 8 --header.foreground "$COLOR_FOREGROUND" --indicator.foreground "$COLOR_FOREGROUND" --match.foreground "$COLOR_FOREGROUND" "${@}"; }
