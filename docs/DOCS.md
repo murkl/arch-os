@@ -16,7 +16,7 @@
 
 ## Recommendation
 
-<p><img src="screenshots/desktop_demo.jpg"></p>
+<p><img src="screenshots/desktop_overview.jpg"></p>
 
 For a robust & stable Arch OS experience, install as few additional packages from the official [Arch Repository](https://archlinux.org/packages) or [AUR](https://aur.archlinux.org) as possible. Instead, use [Flatpak](https://flathub.org) or [GNOME Software](https://apps.gnome.org). Furthermore change system files only if absolutely necessary and perform regular package upgrades.
 
