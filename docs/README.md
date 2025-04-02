@@ -149,13 +149,13 @@ To streamline this process, you can use the preinstalled **[➜ Arch OS System M
 <summary><h2 style="display: inline;" id="screenshots">Screenshots</h2></summary>
 
 <div align="center">
-  <p><div><img src="./screenshots/desktop_demo.jpg"></div><sub><i>Arch OS Desktop Demo</i></sub></p>
-  <p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Arch OS Bootsplash</i></sub></p>
-  <p><div><img src="./screenshots/starship.png"></div><sub><i>Arch OS Starship Promt Demo</i></sub></p>
-  <p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Arch OS Shell Enhancement</i></sub></p>
-  <p><div><img src="./screenshots/vim.png"></div><sub><i>SpaceVim Demo</i></sub></p>
-  <p><div><img src="./screenshots/desktop_apps.png"></div><sub><i>Arch OS Desktop Core Apps </i></sub></p>
-  <p><div><img src="./screenshots/manager_dashboard.png"></div><sub><i>Arch OS Manager - System Upgrade Demo</i></sub></p>
+  <p><div><img src="./screenshots/desktop_demo.jpg"></div><sub><i>Desktop Demo</i></sub></p><br>
+  <p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Bootsplash Demo</i></sub></p><br>
+  <p><div><img src="./screenshots/starship.png"></div><sub><i>Starship Demo</i></sub></p><br>
+  <p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Fetch Demo</i></sub></p><br>
+  <p><div><img src="./screenshots/vim.png"></div><sub><i>SpaceVim Demo</i></sub></p><br>
+  <p><div><img src="./screenshots/desktop_apps.png"></div><sub><i>Desktop Core Apps Demo</i></sub></p><br>
+  <p><div><img src="./screenshots/manager_dashboard.png"></div><sub><i>System Manager Demo</i></sub></p><br>
 </div>
 
 </details>
