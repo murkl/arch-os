@@ -89,7 +89,6 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
 - [AUR Helper](DOCS.md#advanced-installation) (configurable)
 - [VM Support](DOCS.md#vm-support) (optional)
-- [SpaceVim](https://spacevim.org) (optional)
 - 32 Bit Support (Multilib)
 - Disk Encryption (LUKS2)
 
@@ -145,7 +144,6 @@ To streamline this process, you can use the preinstalled **[➜ Arch OS System M
   <p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Bootsplash Demo</i></sub></p>
   <p><div><img src="./screenshots/starship.png"></div><sub><i>Starship Demo</i></sub></p>
   <p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Fetch Demo</i></sub></p>
-  <p><div><img src="./screenshots/spacevim.png"></div><sub><i>SpaceVim Demo</i></sub></p>
   <p><div><img src="./screenshots/desktop_apps.png"></div><sub><i>Desktop Core Apps Demo</i></sub></p>
   <p><div><img src="./screenshots/manager_dashboard.png"></div><sub><i>System Manager Demo</i></sub></p>
 </div>

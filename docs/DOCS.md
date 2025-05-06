@@ -295,14 +295,13 @@ If the property `ARCH_OS_SHELL_ENHANCEMENT_ENABLED` is set to `true`, the follow
 <strong>Package Dependencies:</strong>
 
 ```
-fish git starship eza bat zoxide fd fzf fastfetch mc btop nano neovim python-pynvim man-db bash-completion nano-syntax-highlighting ttf-firacode-nerd ttf-nerd-fonts-symbols
+fish git starship eza bat zoxide fd fzf fastfetch mc btop nano man-db bash-completion nano-syntax-highlighting ttf-firacode-nerd ttf-nerd-fonts-symbols
 ```
 
 **Promt Theme [➜ Arch OS Starship Theme](https://github.com/murkl/starship-theme-arch-os)**
 
 - `fish` is set as default shell
 - `starship` is set as fancy default promt see `~/.config/fish/config.fish`
-- `nvim` is preconfigured with SpaceVim and linked to `/usr/bin/vim` and `/usr/bin/vi`
 - `ls` is replaced with colorful `eza` see `~/.aliases`
 - `man` is replaced with colorful `bat` see `~/.config/fish/config.fish`
 - `nano` is set as default editor
@@ -314,7 +313,6 @@ fish git starship eza bat zoxide fd fzf fastfetch mc btop nano neovim python-pyn
 - `history` open command history
 - `fish` open fish shell (default)
 - `bash` switch to bash shell (go back to fish with `q`)
-- `vim` open enhanced file editor (also `vi` or `nvim`)
 - `fetch` show system info
 - `btop` show system manager
 - `logs` show system logs
