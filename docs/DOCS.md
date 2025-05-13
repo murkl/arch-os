@@ -81,6 +81,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Icon Theme: [tela-icon-theme](https://github.com/vinceliuice/Tela-icon-theme), [tela-circle-icon-theme](https://github.com/vinceliuice/Tela-circle-icon-theme)
 - Cursor Theme: [bibata-cursor](https://aur.archlinux.org/packages/bibata-cursor-theme-bin), [nordzy-cursors](https://github.com/alvatip/Nordzy-cursors)
 - Firefox Theme: [AddWater](https://flathub.org/apps/dev.qwery.AddWater), [firefox-gnome-theme](https://github.com/rafaelmardojai/firefox-gnome-theme)
+- GNOME GTK3 Theme Variant: [adw-gtk3-colorizer](https://extensions.gnome.org/extension/8084/adw-gtk3-colorizer/)
 
 ### GNOME Extensions (optional)
 
@@ -102,7 +103,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - [fullscreen-to-empty-workspace](https://extensions.gnome.org/extension/7559/fullscreen-to-empty-workspace/) (open fullscreen apps on new workspace)
 - [disable-unredirect-fullscreen](https://extensions.gnome.org/extension/1873/disable-unredirect-fullscreen-windows/) (fix some issues)
 - [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (alternative to wmctrl in wayland)
-- [lilypad](https://extensions.gnome.org/extension/7266/lilypad/) (deprecated)
+- [lilypad](https://extensions.gnome.org/extension/7266/lilypad/)
 
 ### Office Support
 
