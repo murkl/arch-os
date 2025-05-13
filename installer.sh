@@ -1320,7 +1320,7 @@ exec_install_desktop() {
                     echo "# exec_install_desktop | Font settings"
                     echo "gsettings set org.gnome.desktop.interface font-hinting 'slight'"
                     echo "gsettings set org.gnome.desktop.interface font-antialiasing 'rgba'"
-                    echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 10'"
+                    echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 11'"
                     echo "# exec_install_desktop | Show all input sources"
                     echo "gsettings set org.gnome.desktop.input-sources show-all-sources true"
                     echo "# exec_install_desktop | Mutter settings"
@@ -1797,7 +1797,7 @@ exec_install_shell_enhancement() {
 
             { # Add init script
                 echo "# exec_install_shell_enhancement | Set default monospace font"
-                echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 10'"
+                echo "gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 11'"
                 if [ "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" = "true" ]; then
                     echo "# exec_install_shell_enhancement | Set fish theme"
                     echo "fish -c 'fish_config theme choose Nord && echo y | fish_config theme save'"
