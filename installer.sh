@@ -1308,6 +1308,7 @@ exec_install_desktop() {
 
             # Set Flatpak theme access
             arch-chroot /mnt flatpak override --filesystem=xdg-config/gtk-3.0
+            arch-chroot /mnt flatpak override --filesystem=xdg-config/gtk-4.0
 
             # Add Init script
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
