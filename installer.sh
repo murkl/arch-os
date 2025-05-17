@@ -885,6 +885,10 @@ exec_prepare_disk() {
             [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.btrfs -f -L ROOT /dev/mapper/cryptroot
             [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.btrfs -f -L ROOT "$ARCH_OS_ROOT_PARTITION"
 
+            # Mount disk to /mnt
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mount -v /dev/mapper/cryptroot /mnt
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount -v "$ARCH_OS_ROOT_PARTITION" /mnt
+
             # Create subvolumes
             btrfs subvolume create /mnt/@
             btrfs subvolume create /mnt/@home
