@@ -17,8 +17,8 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 
 # ENVIRONMENT
 : "${DEBUG:=false}" # DEBUG=true ./installer.sh
-: "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
 : "${FORCE:=false}" # FORCE=true ./installer.sh
+: "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
 VERSION='1.8.6'
@@ -111,6 +111,7 @@ main() {
         until select_language; do :; done
         until select_keyboard; do :; done
         until select_disk; do :; done
+        until select_filesystem; do :; done
         echo && gum_title "Desktop Setup"
         until select_enable_desktop_environment; do :; done
         until select_enable_desktop_driver; do :; done
@@ -349,6 +350,7 @@ properties_generate() {
         echo "ARCH_OS_DISK='${ARCH_OS_DISK}'"
         echo "ARCH_OS_BOOT_PARTITION='${ARCH_OS_BOOT_PARTITION}'"
         echo "ARCH_OS_ROOT_PARTITION='${ARCH_OS_ROOT_PARTITION}'"
+        echo "ARCH_OS_FILESYSTEM='${ARCH_OS_FILESYSTEM}'"
         echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}'"
         echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}'"
         echo "ARCH_OS_LOCALE_LANG='${ARCH_OS_LOCALE_LANG}'"
@@ -557,6 +559,20 @@ select_disk() {
         properties_generate # Generate properties file
     fi
     gum_property "Disk" "$ARCH_OS_DISK"
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+select_filesystem() {
+    if [ -z "$ARCH_OS_FILESYSTEM" ]; then
+        local user_input options
+        options=("btrfs" "ext4")
+        user_input=$(gum_choose --header "+ Choose Filesystem (default: btrfs)" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1                        # Check if new value is null
+        ARCH_OS_FILESYSTEM="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    gum_property "Filesystem" "$ARCH_OS_FILESYSTEM"
     return 0
 }
 
@@ -849,14 +865,47 @@ exec_prepare_disk() {
 
         # Format disk
         mkfs.fat -F 32 -n BOOT "$ARCH_OS_BOOT_PARTITION"
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.ext4 -F -L ROOT /dev/mapper/cryptroot
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.ext4 -F -L ROOT "$ARCH_OS_ROOT_PARTITION"
 
-        # Mount disk to /mnt
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mount -v /dev/mapper/cryptroot /mnt
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount -v "$ARCH_OS_ROOT_PARTITION" /mnt
-        mkdir -p /mnt/boot
-        mount -v "$ARCH_OS_BOOT_PARTITION" /mnt/boot
+        # ext4
+        if [ "$ARCH_OS_FILESYSTEM" = "ext4" ]; then
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.ext4 -F -L ROOT /dev/mapper/cryptroot
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.ext4 -F -L ROOT "$ARCH_OS_ROOT_PARTITION"
+
+            # Mount disk to /mnt
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mount -v /dev/mapper/cryptroot /mnt
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount -v "$ARCH_OS_ROOT_PARTITION" /mnt
+
+            # Mount /boot
+            mkdir -p /mnt/boot
+            mount -v "$ARCH_OS_BOOT_PARTITION" /mnt/boot
+        fi
+
+        # btrfs
+        if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.btrfs -F -L ROOT /dev/mapper/cryptroot
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.btrfs -F -L ROOT "$ARCH_OS_ROOT_PARTITION"
+
+            # Create subvolumes
+            btrfs subvolume create /mnt/@
+            btrfs subvolume create /mnt/@home
+            btrfs subvolume create /mnt/@snapshots
+            #btrfs subvolume set-default <subvol-id-of-@ >/mnt
+            umount -R /mnt
+
+            # Mount subvolumes
+            local mount_target=""
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount_target="$ARCH_OS_ROOT_PARTITION"
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mount_target="/dev/mapper/cryptroot"
+
+            local mount_opts="defaults,noatime,compress=zstd"
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@ "${mount_target}" /mnt
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" /mnt/home
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" /mnt/.snapshots
+
+            # Mount boot
+            #mount --mkdir LABEL=BOOT /mnt/boot
+            mount --mkdir "$ARCH_OS_BOOT_PARTITION" /mnt/boot
+        fi
 
         # Return
         process_return 0
@@ -878,6 +927,9 @@ exec_pacstrap_core() {
         # Add microcode package
         [ -n "$ARCH_OS_MICROCODE" ] && [ "$ARCH_OS_MICROCODE" != "none" ] && packages+=("$ARCH_OS_MICROCODE")
 
+        # Add filesystem packages
+        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(btrfs-progs base-devel)
+
         # Install core packages and initialize an empty pacman keyring in the target
         pacstrap -K /mnt "${packages[@]}"
 
@@ -891,7 +943,7 @@ exec_pacstrap_core() {
         { # Create swap (zram-generator with zstd compression)
             # https://wiki.archlinux.org/title/Zram#Using_zram-generator
             echo '[zram0]'
-            echo 'zram-size = min(ram / 2, 4096)'
+            echo 'zram-size = min(ram / 2, 8192)'
             echo 'compression-algorithm = zstd'
         } >/mnt/etc/systemd/zram-generator.conf
 
@@ -935,6 +987,7 @@ exec_pacstrap_core() {
         local kernel_args=()
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args+=("rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot" "root=/dev/mapper/cryptroot")
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args+=("root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}")")
+        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && kernel_args+=('rootflags=subvol=@')
         kernel_args+=('rw' 'init=/usr/lib/systemd/systemd' 'zswap.enabled=0')
         [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('nowatchdog')
         [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('quiet' 'splash' 'vt.global_cursor_default=0')
@@ -982,6 +1035,11 @@ exec_pacstrap_core() {
         arch-chroot /mnt systemctl enable systemd-oomd.service             # Out of memory killer (swap is required)
         arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootloader update
         arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
+
+        # Btrfs scrub timer
+        arch-chroot /mnt systemctl enable btrfs-scrub@-.timer         # Btrfs scrub timer @
+        arch-chroot /mnt systemctl enable btrfs-scrub@home.timer      # Btrfs scrub timer @home
+        arch-chroot /mnt systemctl enable btrfs-scrub@snapshots.timer # Btrfs scrub timer @snapshots
 
         # Make some Arch OS tweaks
         if [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ]; then

@@ -50,7 +50,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - [Sole OS](DOCS.md#partitions-layout)
 - All-in-One password (encryption, root & user)
 - Multilingual Support
-- Filesystem ext4
+- Filesystem btrfs or ext4
 - Silent Boot (optional)
 - Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
