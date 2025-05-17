@@ -876,6 +876,7 @@ exec_prepare_disk() {
             [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount -v "$ARCH_OS_ROOT_PARTITION" /mnt
 
             # Mount /boot
+            #mount -v --mkdir "$ARCH_OS_BOOT_PARTITION" /mnt/boot
             mount -v --mkdir LABEL=BOOT /mnt/boot
         fi
 
@@ -904,7 +905,7 @@ exec_prepare_disk() {
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@ "${mount_target}" /mnt
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" /mnt/home
 
-            # Mount boot
+            # Mount /boot
             #mount -v --mkdir "$ARCH_OS_BOOT_PARTITION" /mnt/boot
             mount -v --mkdir LABEL=BOOT /mnt/boot
         fi
