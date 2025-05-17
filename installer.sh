@@ -863,10 +863,10 @@ exec_prepare_disk() {
             echo -n "$ARCH_OS_PASSWORD" | cryptsetup open "$ARCH_OS_ROOT_PARTITION" cryptroot
         fi
 
-        # Format disk
+        # Format /boot partition
         mkfs.fat -F 32 -n BOOT "$ARCH_OS_BOOT_PARTITION"
 
-        # ext4
+        # EXT4
         if [ "$ARCH_OS_FILESYSTEM" = "ext4" ]; then
             [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.ext4 -F -L ROOT /dev/mapper/cryptroot
             [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.ext4 -F -L ROOT "$ARCH_OS_ROOT_PARTITION"
@@ -876,11 +876,10 @@ exec_prepare_disk() {
             [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount -v "$ARCH_OS_ROOT_PARTITION" /mnt
 
             # Mount /boot
-            mkdir -p /mnt/boot
-            mount -v "$ARCH_OS_BOOT_PARTITION" /mnt/boot
+            mount -v --mkdir LABEL=BOOT /mnt/boot
         fi
 
-        # btrfs
+        # BTRFS
         if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
             [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.btrfs -f -L ROOT /dev/mapper/cryptroot
             [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.btrfs -f -L ROOT "$ARCH_OS_ROOT_PARTITION"
@@ -890,25 +889,24 @@ exec_prepare_disk() {
             [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount -v "$ARCH_OS_ROOT_PARTITION" /mnt
 
             # Create subvolumes
+            local btrfs_root_id mount_target
             btrfs subvolume create /mnt/@
             btrfs subvolume create /mnt/@home
-            btrfs subvolume create /mnt/@snapshots
-            #btrfs subvolume set-default <subvol-id-of-@ >/mnt
+            btrfs_root_id="$(btrfs subvolume list /mnt | awk '$NF == "@" {print $2}')"
+            btrfs subvolume set-default "${btrfs_root_id}" /mnt # Set @ as default
             umount -R /mnt
 
             # Mount subvolumes
-            local mount_target=""
             [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount_target="$ARCH_OS_ROOT_PARTITION"
             [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mount_target="/dev/mapper/cryptroot"
 
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@ "${mount_target}" /mnt
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" /mnt/home
-            mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" /mnt/.snapshots
 
             # Mount boot
-            #mount --mkdir LABEL=BOOT /mnt/boot
-            mount --mkdir "$ARCH_OS_BOOT_PARTITION" /mnt/boot
+            #mount -v --mkdir "$ARCH_OS_BOOT_PARTITION" /mnt/boot
+            mount -v --mkdir LABEL=BOOT /mnt/boot
         fi
 
         # Return
