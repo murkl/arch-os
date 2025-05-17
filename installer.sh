@@ -882,8 +882,8 @@ exec_prepare_disk() {
 
         # btrfs
         if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
-            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.btrfs -F -L ROOT /dev/mapper/cryptroot
-            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.btrfs -F -L ROOT "$ARCH_OS_ROOT_PARTITION"
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.btrfs -f -L ROOT /dev/mapper/cryptroot
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.btrfs -f -L ROOT "$ARCH_OS_ROOT_PARTITION"
 
             # Create subvolumes
             btrfs subvolume create /mnt/@
