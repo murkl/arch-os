@@ -989,7 +989,7 @@ exec_pacstrap_core() {
         local kernel_args=()
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args+=("rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot" "root=/dev/mapper/cryptroot")
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args+=("root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}")")
-        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && kernel_args+=('rootflags=subvol=@')
+        #[ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && kernel_args+=('rootflags=subvol=@')
         kernel_args+=('rw' 'init=/usr/lib/systemd/systemd' 'zswap.enabled=0')
         [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('nowatchdog')
         [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('quiet' 'splash' 'vt.global_cursor_default=0')
