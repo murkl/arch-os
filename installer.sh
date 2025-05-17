@@ -568,7 +568,7 @@ select_filesystem() {
     if [ -z "$ARCH_OS_FILESYSTEM" ]; then
         local user_input options
         options=("btrfs" "ext4")
-        user_input=$(gum_choose --header "+ Choose Filesystem (default: btrfs)" "${options[@]}") || trap_gum_exit_confirm
+        user_input=$(gum_choose --header "+ Choose Filesystem (snapshot support: btrfs)" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                        # Check if new value is null
         ARCH_OS_FILESYSTEM="$user_input" && properties_generate # Set value and generate properties file
     fi
