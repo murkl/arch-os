@@ -893,6 +893,7 @@ exec_prepare_disk() {
             local btrfs_root_id mount_target
             btrfs subvolume create /mnt/@
             btrfs subvolume create /mnt/@home
+            btrfs subvolume create /mnt/@snapshots
             btrfs_root_id="$(btrfs subvolume list /mnt | awk '$NF == "@" {print $2}')"
             btrfs subvolume set-default "${btrfs_root_id}" /mnt # Set @ as default
             umount -R /mnt
@@ -904,6 +905,7 @@ exec_prepare_disk() {
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@ "${mount_target}" /mnt
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" /mnt/home
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" /mnt/.snapshots
 
             # Mount /boot
             #mount -v --mkdir LABEL=BOOT /mnt/boot
@@ -1039,10 +1041,26 @@ exec_pacstrap_core() {
         arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootloader update
         arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
-        # Btrfs scrub timer
-        arch-chroot /mnt systemctl enable btrfs-scrub@-.timer    # Btrfs scrub timer @
-        arch-chroot /mnt systemctl enable btrfs-scrub@home.timer # Btrfs scrub timer @home
+        if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
+            # Create pacman hook
+            mkdir -p /mnt/etc/pacman.d/hooks/
+            # shellcheck disable=SC2016
+            {
+                echo '[Trigger]'
+                echo 'Operation = Upgrade'
+                echo 'Target = *'
+                echo ''
+                echo '[Action]'
+                echo 'Description = Creating BTRFS snapshot'
+                echo 'When = PreTransaction'
+                echo 'Exec = /usr/bin/btrfs subvolume snapshot -r / /.snapshots/$(date +%Y-%m-%d_%H-%M-%S)'
+            } >/mnt/etc/pacman.d/hooks/50-btrfs-snapshot.hook
 
+            # Btrfs scrub timer
+            arch-chroot /mnt systemctl enable btrfs-scrub@-.timer         # Btrfs scrub timer @
+            arch-chroot /mnt systemctl enable btrfs-scrub@home.timer      # Btrfs scrub timer @home
+            arch-chroot /mnt systemctl enable btrfs-scrub@snapshots.timer # Btrfs scrub timer @snapshots
+        fi
         # Make some Arch OS tweaks
         if [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ]; then
 
