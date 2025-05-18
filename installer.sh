@@ -339,10 +339,18 @@ properties_source() {
     set -a # Load properties file and auto export variables
     source "$SCRIPT_CONFIG"
     set +a
+
+    # Force bootloader
+    [ "$ARCH_OS_FILESYSTEM" = "ext4" ] && ARCH_OS_BOOTLOADER="systemd"
+
     return 0
 }
 
 properties_generate() {
+
+    # Force bootloader
+    [ "$ARCH_OS_FILESYSTEM" = "ext4" ] && ARCH_OS_BOOTLOADER="systemd"
+
     { # Write properties to installer.conf
         echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}'"
         echo "ARCH_OS_USERNAME='${ARCH_OS_USERNAME}'"
@@ -350,6 +358,7 @@ properties_generate() {
         echo "ARCH_OS_BOOT_PARTITION='${ARCH_OS_BOOT_PARTITION}'"
         echo "ARCH_OS_ROOT_PARTITION='${ARCH_OS_ROOT_PARTITION}'"
         echo "ARCH_OS_FILESYSTEM='${ARCH_OS_FILESYSTEM}'"
+        echo "ARCH_OS_BOOTLOADER='${ARCH_OS_BOOTLOADER}'"
         echo "ARCH_OS_SNAPSHOTS_ENABLED='${ARCH_OS_SNAPSHOTS_ENABLED}'"
         echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}'"
         echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}'"
@@ -386,6 +395,7 @@ properties_preset_source() {
     # Default presets
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
+    [ -z "$ARCH_OS_BOOTLOADER" ] && ARCH_OS_BOOTLOADER="grub"
     [ -z "$ARCH_OS_SNAPSHOTS_ENABLED" ] && ARCH_OS_SNAPSHOTS_ENABLED='true'
     [ -z "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
     [ -z "$ARCH_OS_SAMBA_SHARE_ENABLED" ] && ARCH_OS_SAMBA_SHARE_ENABLED="true"
@@ -569,11 +579,12 @@ select_filesystem() {
     if [ -z "$ARCH_OS_FILESYSTEM" ]; then
         local user_input options
         options=("btrfs" "ext4")
-        user_input=$(gum_choose --header "+ Choose Filesystem (snapshot support: btrfs)" "${options[@]}") || trap_gum_exit_confirm
-        [ -z "$user_input" ] && return 1                        # Check if new value is null
+        user_input=$(gum_choose --header "+ Choose Filesystem (btrfs: grub/systemd, ext4: systemd)" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1 # Check if new value is null
+        [ "$user_input" = "ext4" ] && ARCH_OS_BOOTLOADER="systemd"
         ARCH_OS_FILESYSTEM="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_property "Filesystem" "$ARCH_OS_FILESYSTEM"
+    gum_property "Filesystem" "${ARCH_OS_FILESYSTEM} @ ${ARCH_OS_BOOTLOADER}"
     return 0
 }
 
@@ -891,15 +902,16 @@ exec_prepare_disk() {
             [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount -v "$ARCH_OS_ROOT_PARTITION" /mnt
 
             # Create subvolumes
-            local btrfs_root_id mount_target
             btrfs subvolume create /mnt/@
             btrfs subvolume create /mnt/@home
             [ "$ARCH_OS_SNAPSHOTS_ENABLED" = "true" ] && btrfs subvolume create /mnt/@snapshots
-            btrfs_root_id="$(btrfs subvolume list /mnt | awk '$NF == "@" {print $2}')"
-            btrfs subvolume set-default "${btrfs_root_id}" /mnt # Set @ as default
+            #local btrfs_root_id
+            #btrfs_root_id="$(btrfs subvolume list /mnt | awk '$NF == "@" {print $2}')"
+            #btrfs subvolume set-default "${btrfs_root_id}" /mnt # Set @ as default
             umount -R /mnt
 
             # Mount subvolumes
+            local mount_target
             [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount_target="$ARCH_OS_ROOT_PARTITION"
             [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mount_target="/dev/mapper/cryptroot"
 
@@ -935,6 +947,9 @@ exec_pacstrap_core() {
 
         # Add filesystem packages
         [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(btrfs-progs base-devel)
+
+        # Add grub packages
+        [ "$ARCH_OS_BOOTLOADER" = "grub" ] && packages+=(grub grub-btrfs)
 
         # Install core packages and initialize an empty pacman keyring in the target
         pacstrap -K /mnt "${packages[@]}"
@@ -984,40 +999,53 @@ exec_pacstrap_core() {
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect microcode modconf sd-vconsole block filesystems fsck)/" /mnt/etc/mkinitcpio.conf
         arch-chroot /mnt mkinitcpio -P
 
-        # Install Bootloader to /boot (systemdboot)
-        arch-chroot /mnt bootctl --esp-path=/boot install # Install systemdboot to /boot
+        # SYSTEMD-BOOT | EXT4
+        if [ "$ARCH_OS_BOOTLOADER" = "systemd" ]; then
+            # Install Bootloader to /boot (systemdboot)
+            arch-chroot /mnt bootctl --esp-path=/boot install # Install systemdboot to /boot
 
-        # Kernel args
-        # Zswap should be disabled when using zram (https://github.com/archlinux/archinstall/issues/881)
-        # Silent boot: https://wiki.archlinux.org/title/Silent_boot
-        local kernel_args=()
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args+=("rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot" "root=/dev/mapper/cryptroot")
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args+=("root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}")")
-        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && kernel_args+=('rootflags=subvol=@' 'rootfstype=btrfs')
-        kernel_args+=('rw' 'init=/usr/lib/systemd/systemd' 'zswap.enabled=0')
-        [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('nowatchdog')
-        [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('quiet' 'splash' 'vt.global_cursor_default=0')
+            # Kernel args
+            # Zswap should be disabled when using zram (https://github.com/archlinux/archinstall/issues/881)
+            # Silent boot: https://wiki.archlinux.org/title/Silent_boot
+            local kernel_args=()
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args+=("rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot" "root=/dev/mapper/cryptroot")
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args+=("root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}")")
+            [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && kernel_args+=('rootflags=subvol=@' 'rootfstype=btrfs')
+            kernel_args+=('rw' 'init=/usr/lib/systemd/systemd' 'zswap.enabled=0')
+            [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('nowatchdog')
+            [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('quiet' 'splash' 'vt.global_cursor_default=0')
 
-        { # Create Bootloader config
-            echo 'default main.conf'
-            echo 'console-mode auto'
-            echo 'timeout 3'
-            echo 'editor yes'
-        } >/mnt/boot/loader/loader.conf
+            { # Create Bootloader config
+                echo 'default main.conf'
+                echo 'console-mode auto'
+                echo 'timeout 3'
+                echo 'editor yes'
+            } >/mnt/boot/loader/loader.conf
 
-        { # Create default boot entry
-            echo 'title   Arch OS'
-            echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
-            echo "initrd  /initramfs-${ARCH_OS_KERNEL}.img"
-            echo "options ${kernel_args[*]}"
-        } >/mnt/boot/loader/entries/main.conf
+            { # Create default boot entry
+                echo 'title   Arch OS'
+                echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
+                echo "initrd  /initramfs-${ARCH_OS_KERNEL}.img"
+                echo "options ${kernel_args[*]}"
+            } >/mnt/boot/loader/entries/main.conf
 
-        { # Create fallback boot entry
-            echo 'title   Arch OS (Fallback)'
-            echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
-            echo "initrd  /initramfs-${ARCH_OS_KERNEL}-fallback.img"
-            echo "options ${kernel_args[*]}"
-        } >/mnt/boot/loader/entries/main-fallback.conf
+            { # Create fallback boot entry
+                echo 'title   Arch OS (Fallback)'
+                echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
+                echo "initrd  /initramfs-${ARCH_OS_KERNEL}-fallback.img"
+                echo "options ${kernel_args[*]}"
+            } >/mnt/boot/loader/entries/main-fallback.conf
+
+            # Enable service: Auto bootloader update
+            arch-chroot /mnt systemctl enable systemd-boot-update.service
+        fi
+
+        # ------------------------------------------------------------------
+
+        # GRUB | BTRFS
+        if [ "$ARCH_OS_BOOTLOADER" = "grub" ]; then
+            echo "TODO..."
+        fi
 
         # Create new user
         arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$ARCH_OS_USERNAME"
@@ -1039,7 +1067,6 @@ exec_pacstrap_core() {
         arch-chroot /mnt systemctl enable fstrim.timer                     # SSD support
         arch-chroot /mnt systemctl enable systemd-zram-setup@zram0.service # Swap (zram-generator)
         arch-chroot /mnt systemctl enable systemd-oomd.service             # Out of memory killer (swap is required)
-        arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootloader update
         arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
         if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
@@ -1981,7 +2008,7 @@ exec_finalize_arch_os() {
                     echo '[Action]'
                     echo 'Description = Creating BTRFS snapshot'
                     echo 'When = PreTransaction'
-                    echo 'Exec = /usr/bin/btrfs subvolume snapshot --read-only / /.snapshots/$(date +%Y-%m-%d_%H-%M-%S)'
+                    echo 'Exec = /usr/bin/btrfs subvolume snapshot -r / /.snapshots/$(date +%Y-%m-%d_%H-%M-%S)'
                 } >/mnt/etc/pacman.d/hooks/50-btrfs-snapshot.hook
             fi
 

@@ -209,6 +209,7 @@ ARCH_OS_DISK='/dev/sda' # Disk
 ARCH_OS_BOOT_PARTITION='/dev/sda1' # Boot partition
 ARCH_OS_ROOT_PARTITION='/dev/sda2' # Root partition
 ARCH_OS_FILESYSTEM='btrfs' # Filesystem | Available: btrfs, ext4
+ARCH_OS_BOOTLOADER='grub' # Bootloader (auto select) | Available: grub (btrfs), systemd (ext4)
 ARCH_OS_SNAPSHOTS_ENABLED='true' # BTRFS Snapshots support | Disable: false
 ARCH_OS_ENCRYPTION_ENABLED='true' # Disk encryption | Disable: false
 ARCH_OS_TIMEZONE='Europe/Berlin' # Timezone | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin
