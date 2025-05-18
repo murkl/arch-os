@@ -1978,7 +1978,7 @@ exec_finalize_arch_os() {
                     echo '[Action]'
                     echo 'Description = Creating BTRFS snapshot'
                     echo 'When = PreTransaction'
-                    echo 'Exec = /usr/bin/btrfs subvolume snapshot -r / /.snapshots/$(date +%Y-%m-%d_%H-%M-%S)'
+                    echo 'Exec = /usr/bin/btrfs subvolume snapshot --read-only / /.snapshots/$(date +%Y-%m-%d_%H-%M-%S)'
                 } >/mnt/etc/pacman.d/hooks/50-btrfs-snapshot.hook
             fi
 
