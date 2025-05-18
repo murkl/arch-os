@@ -351,6 +351,7 @@ properties_generate() {
         echo "ARCH_OS_BOOT_PARTITION='${ARCH_OS_BOOT_PARTITION}'"
         echo "ARCH_OS_ROOT_PARTITION='${ARCH_OS_ROOT_PARTITION}'"
         echo "ARCH_OS_FILESYSTEM='${ARCH_OS_FILESYSTEM}'"
+        echo "ARCH_OS_SNAPSHOTS_ENABLED='${ARCH_OS_SNAPSHOTS_ENABLED}'"
         echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}'"
         echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}'"
         echo "ARCH_OS_LOCALE_LANG='${ARCH_OS_LOCALE_LANG}'"
@@ -386,6 +387,7 @@ properties_preset_source() {
     # Default presets
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
+    [ -z "$ARCH_OS_SNAPSHOTS_ENABLED" ] && ARCH_OS_SNAPSHOTS_ENABLED='true'
     [ -z "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
     [ -z "$ARCH_OS_SAMBA_SHARE_ENABLED" ] && ARCH_OS_SAMBA_SHARE_ENABLED="true"
     [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
@@ -893,7 +895,7 @@ exec_prepare_disk() {
             local btrfs_root_id mount_target
             btrfs subvolume create /mnt/@
             btrfs subvolume create /mnt/@home
-            btrfs subvolume create /mnt/@snapshots
+            [ "$ARCH_OS_SNAPSHOTS_ENABLED" = "true" ] && btrfs subvolume create /mnt/@snapshots
             btrfs_root_id="$(btrfs subvolume list /mnt | awk '$NF == "@" {print $2}')"
             btrfs subvolume set-default "${btrfs_root_id}" /mnt # Set @ as default
             umount -R /mnt
@@ -905,7 +907,7 @@ exec_prepare_disk() {
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@ "${mount_target}" /mnt
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" /mnt/home
-            mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" /mnt/.snapshots
+            [ "$ARCH_OS_SNAPSHOTS_ENABLED" = "true" ] && mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" /mnt/.snapshots
 
             # Mount /boot
             #mount -v --mkdir LABEL=BOOT /mnt/boot
@@ -1042,24 +1044,26 @@ exec_pacstrap_core() {
         arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
         if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
-            # Create pacman hook (auto create snapshot on pre-transaction)
-            mkdir -p /mnt/etc/pacman.d/hooks/
-            # shellcheck disable=SC2016
-            {
-                echo '[Trigger]'
-                echo 'Operation = Upgrade'
-                echo 'Target = *'
-                echo ''
-                echo '[Action]'
-                echo 'Description = Creating BTRFS snapshot'
-                echo 'When = PreTransaction'
-                echo 'Exec = /usr/bin/btrfs subvolume snapshot -r / /.snapshots/$(date +%Y-%m-%d_%H-%M-%S)'
-            } >/mnt/etc/pacman.d/hooks/50-btrfs-snapshot.hook
+            if [ "$ARCH_OS_SNAPSHOTS_ENABLED" = "true" ]; then
+                # Create pacman hook (auto create snapshot on pre-transaction)
+                mkdir -p /mnt/etc/pacman.d/hooks/
+                # shellcheck disable=SC2016
+                {
+                    echo '[Trigger]'
+                    echo 'Operation = Upgrade'
+                    echo 'Target = *'
+                    echo ''
+                    echo '[Action]'
+                    echo 'Description = Creating BTRFS snapshot'
+                    echo 'When = PreTransaction'
+                    echo 'Exec = /usr/bin/btrfs subvolume snapshot -r / /.snapshots/$(date +%Y-%m-%d_%H-%M-%S)'
+                } >/mnt/etc/pacman.d/hooks/50-btrfs-snapshot.hook
+            fi
 
             # Btrfs scrub timer
-            arch-chroot /mnt systemctl enable btrfs-scrub@-.timer         # Btrfs scrub timer @
-            arch-chroot /mnt systemctl enable btrfs-scrub@home.timer      # Btrfs scrub timer @home
-            arch-chroot /mnt systemctl enable btrfs-scrub@snapshots.timer # Btrfs scrub timer @snapshots
+            arch-chroot /mnt systemctl enable btrfs-scrub@-.timer
+            arch-chroot /mnt systemctl enable btrfs-scrub@home.timer
+            [ "$ARCH_OS_SNAPSHOTS_ENABLED" = "true" ] && arch-chroot /mnt systemctl enable btrfs-scrub@snapshots.timer
         fi
         # Make some Arch OS tweaks
         if [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ]; then
