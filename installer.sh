@@ -1044,22 +1044,6 @@ exec_pacstrap_core() {
         arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
         if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
-            if [ "$ARCH_OS_SNAPSHOTS_ENABLED" = "true" ]; then
-                # Create pacman hook (auto create snapshot on pre-transaction)
-                mkdir -p /mnt/etc/pacman.d/hooks/
-                # shellcheck disable=SC2016
-                {
-                    echo '[Trigger]'
-                    echo 'Operation = Upgrade'
-                    echo 'Target = *'
-                    echo ''
-                    echo '[Action]'
-                    echo 'Description = Creating BTRFS snapshot'
-                    echo 'When = PreTransaction'
-                    echo 'Exec = /usr/bin/btrfs subvolume snapshot -r / /.snapshots/$(date +%Y-%m-%d_%H-%M-%S)'
-                } >/mnt/etc/pacman.d/hooks/50-btrfs-snapshot.hook
-            fi
-
             # Btrfs scrub timer
             arch-chroot /mnt systemctl enable btrfs-scrub@-.timer
             arch-chroot /mnt systemctl enable btrfs-scrub@home.timer
@@ -1991,7 +1975,25 @@ exec_cleanup_installation() {
         [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                                                  # If debug mode then return
         arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"         # Set correct home permissions
         arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true' # Remove orphans and force return true
-        process_return 0                                                                                      # Return
+
+        # Need to place on the end of script
+        if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPSHOTS_ENABLED" = "true" ]; then
+            # Create pacman hook (auto create snapshot on pre-transaction)
+            mkdir -p /mnt/etc/pacman.d/hooks/
+            # shellcheck disable=SC2016
+            {
+                echo '[Trigger]'
+                echo 'Operation = Upgrade'
+                echo 'Target = *'
+                echo ''
+                echo '[Action]'
+                echo 'Description = Creating BTRFS snapshot'
+                echo 'When = PreTransaction'
+                echo 'Exec = /usr/bin/btrfs subvolume snapshot -r / /.snapshots/$(date +%Y-%m-%d_%H-%M-%S)'
+            } >/mnt/etc/pacman.d/hooks/50-btrfs-snapshot.hook
+        fi
+
+        process_return 0 # Return
     ) &>"$PROCESS_LOG" &
     process_capture $! "$process_name"
 }
