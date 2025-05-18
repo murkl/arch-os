@@ -876,14 +876,14 @@ exec_prepare_disk() {
             [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount -v "$ARCH_OS_ROOT_PARTITION" /mnt
 
             # Mount /boot
-            #mount -v --mkdir "$ARCH_OS_BOOT_PARTITION" /mnt/boot
-            mount -v --mkdir LABEL=BOOT /mnt/boot
+            #mount -v --mkdir LABEL=BOOT /mnt/boot
+            mount -v --mkdir "$ARCH_OS_BOOT_PARTITION" /mnt/boot
         fi
 
         # BTRFS
         if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
-            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.btrfs -f -L ROOT /dev/mapper/cryptroot
-            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.btrfs -f -L ROOT "$ARCH_OS_ROOT_PARTITION"
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.btrfs -f -L BTRFS /dev/mapper/cryptroot
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.btrfs -f -L BTRFS "$ARCH_OS_ROOT_PARTITION"
 
             # Mount disk to /mnt
             [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mount -v /dev/mapper/cryptroot /mnt
@@ -906,8 +906,8 @@ exec_prepare_disk() {
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" /mnt/home
 
             # Mount /boot
-            #mount -v --mkdir "$ARCH_OS_BOOT_PARTITION" /mnt/boot
-            mount -v --mkdir LABEL=BOOT /mnt/boot
+            #mount -v --mkdir LABEL=BOOT /mnt/boot
+            mount -v --mkdir "$ARCH_OS_BOOT_PARTITION" /mnt/boot
         fi
 
         # Return
@@ -1040,9 +1040,8 @@ exec_pacstrap_core() {
         arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
         # Btrfs scrub timer
-        arch-chroot /mnt systemctl enable btrfs-scrub@-.timer         # Btrfs scrub timer @
-        arch-chroot /mnt systemctl enable btrfs-scrub@home.timer      # Btrfs scrub timer @home
-        arch-chroot /mnt systemctl enable btrfs-scrub@snapshots.timer # Btrfs scrub timer @snapshots
+        arch-chroot /mnt systemctl enable btrfs-scrub@-.timer    # Btrfs scrub timer @
+        arch-chroot /mnt systemctl enable btrfs-scrub@home.timer # Btrfs scrub timer @home
 
         # Make some Arch OS tweaks
         if [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ]; then
