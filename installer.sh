@@ -1042,7 +1042,7 @@ exec_pacstrap_core() {
         arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
 
         if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
-            # Create pacman hook
+            # Create pacman hook (auto create snapshot on pre-transaction)
             mkdir -p /mnt/etc/pacman.d/hooks/
             # shellcheck disable=SC2016
             {
