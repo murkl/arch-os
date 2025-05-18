@@ -386,7 +386,7 @@ properties_preset_source() {
     # Default presets
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
-    [ -z "$ARCH_OS_SNAPSHOTS_ENABLED" ] && ARCH_OS_SNAPSHOTS_ENABLED='false'
+    [ -z "$ARCH_OS_SNAPSHOTS_ENABLED" ] && ARCH_OS_SNAPSHOTS_ENABLED='true'
     [ -z "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
     [ -z "$ARCH_OS_SAMBA_SHARE_ENABLED" ] && ARCH_OS_SAMBA_SHARE_ENABLED="true"
     [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
