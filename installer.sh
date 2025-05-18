@@ -1000,7 +1000,7 @@ exec_pacstrap_core() {
         { # Create Bootloader config
             echo 'default arch.conf'
             echo 'console-mode auto'
-            echo 'timeout 0'
+            echo 'timeout 3'
             echo 'editor yes'
         } >/mnt/boot/loader/loader.conf
 
