@@ -1972,7 +1972,9 @@ exec_finalize_arch_os() {
                 # shellcheck disable=SC2016
                 {
                     echo '[Trigger]'
+                    echo 'Operation = Install'
                     echo 'Operation = Upgrade'
+                    echo 'Operation = Remove'
                     echo 'Type = Package'
                     echo 'Target = *'
                     echo ''
