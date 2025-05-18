@@ -1973,6 +1973,7 @@ exec_finalize_arch_os() {
                 {
                     echo '[Trigger]'
                     echo 'Operation = Upgrade'
+                    echo 'Type = Package'
                     echo 'Target = *'
                     echo ''
                     echo '[Action]'
