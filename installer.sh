@@ -999,7 +999,7 @@ exec_pacstrap_core() {
         [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('quiet' 'splash' 'vt.global_cursor_default=0')
 
         { # Create Bootloader config
-            echo 'default arch.conf'
+            echo 'default main.conf'
             echo 'console-mode auto'
             echo 'timeout 3'
             echo 'editor yes'
@@ -1010,14 +1010,14 @@ exec_pacstrap_core() {
             echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
             echo "initrd  /initramfs-${ARCH_OS_KERNEL}.img"
             echo "options ${kernel_args[*]}"
-        } >/mnt/boot/loader/entries/arch.conf
+        } >/mnt/boot/loader/entries/main.conf
 
         { # Create fallback boot entry
             echo 'title   Arch OS (Fallback)'
             echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
             echo "initrd  /initramfs-${ARCH_OS_KERNEL}-fallback.img"
             echo "options ${kernel_args[*]}"
-        } >/mnt/boot/loader/entries/arch-fallback.conf
+        } >/mnt/boot/loader/entries/main-fallback.conf
 
         # Create new user
         arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$ARCH_OS_USERNAME"
@@ -1442,7 +1442,7 @@ exec_install_graphics_driver() {
                 chroot_pacman_install "${packages[@]}"
                 # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
                 # Alternative (slow boot, bios logo twice, but correct plymouth resolution):
-                #sed -i "s/systemd zswap.enabled=0/systemd nvidia_drm.modeset=1 nvidia_drm.fbdev=1 zswap.enabled=0/g" /mnt/boot/loader/entries/arch.conf
+                #sed -i "s/systemd zswap.enabled=0/systemd nvidia_drm.modeset=1 nvidia_drm.fbdev=1 zswap.enabled=0/g" /mnt/boot/loader/entries/main.conf
                 mkdir -p /mnt/etc/modprobe.d/ && echo -e 'options nvidia_drm modeset=1 fbdev=1' >/mnt/etc/modprobe.d/nvidia.conf
                 sed -i "s/^MODULES=(.*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
                 # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
