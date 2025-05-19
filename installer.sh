@@ -942,7 +942,7 @@ exec_pacstrap_core() {
         [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(btrfs-progs base-devel)
 
         # Add grub packages
-        [ "$ARCH_OS_BOOTLOADER" = "grub" ] && packages+=(grub grub-btrfs)
+        [ "$ARCH_OS_BOOTLOADER" = "grub" ] && packages+=(grub grub-btrfs efibootmgr)
 
         # Install core packages and initialize an empty pacman keyring in the target
         pacstrap -K /mnt "${packages[@]}"
@@ -1059,6 +1059,9 @@ exec_pacstrap_core() {
 
             # Creating grub config file
             arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+
+            # Enable btrfs update service
+            arch-chroot /mnt systemctl enable grub-btrfsd.service
         fi
 
         # Create new user
