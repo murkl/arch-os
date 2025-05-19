@@ -1972,10 +1972,10 @@ exec_install_vm_support() {
 # shellcheck disable=SC2016
 exec_finalize_arch_os() {
     local process_name="Finalize Arch OS"
-    if [ -s "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" ]; then
-        process_init "$process_name"
-        (
-            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
+    process_init "$process_name"
+    (
+        [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
+        if [ -s "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" ]; then
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system"
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/autostart"
             mv "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
@@ -2001,39 +2001,38 @@ exec_finalize_arch_os() {
                 echo "Icon=preferences-system"
                 echo "Exec=bash -c '/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh > /home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.log'"
             } >"/mnt/home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
-            arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
+        fi
 
-            # Set correct home permissions
-            arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
+        # Set correct home permissions
+        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
 
-            # Remove orphans and force return true
-            arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true'
+        # Remove orphans and force return true
+        arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true'
 
-            # Need to place on the end of script
-            if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPSHOTS_ENABLED" = "true" ]; then
-                # Create pacman hook (auto create snapshot on pre-transaction)
-                mkdir -p /mnt/etc/pacman.d/hooks/
-                # shellcheck disable=SC2016
-                {
-                    echo '[Trigger]'
-                    echo 'Operation = Install'
-                    echo 'Operation = Upgrade'
-                    echo 'Operation = Remove'
-                    echo 'Type = Package'
-                    echo 'Target = *'
-                    echo ''
-                    echo '[Action]'
-                    echo 'Description = Creating BTRFS snapshot'
-                    echo 'When = PreTransaction'
-                    #echo 'Exec = /usr/bin/btrfs subvolume snapshot -r / /.snapshots/$(date +%Y-%m-%d_%H-%M-%S)'
-                    echo 'Exec = /bin/sh -c '\''/usr/bin/btrfs subvolume snapshot -r / /.snapshots/"$(date "+%Y-%m-%d_%H-%M-%S")"'\'''
-                } >/mnt/etc/pacman.d/hooks/50-btrfs-snapshot.hook
-            fi
+        # Need to place on the end of script
+        if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPSHOTS_ENABLED" = "true" ]; then
+            # Create pacman hook (auto create snapshot on pre-transaction)
+            mkdir -p /mnt/etc/pacman.d/hooks/
+            # shellcheck disable=SC2016
+            {
+                echo '[Trigger]'
+                echo 'Operation = Install'
+                echo 'Operation = Upgrade'
+                echo 'Operation = Remove'
+                echo 'Type = Package'
+                echo 'Target = *'
+                echo ''
+                echo '[Action]'
+                echo 'Description = Creating BTRFS snapshot'
+                echo 'When = PreTransaction'
+                #echo 'Exec = /usr/bin/btrfs subvolume snapshot -r / /.snapshots/$(date +%Y-%m-%d_%H-%M-%S)'
+                echo 'Exec = /bin/sh -c '\''/usr/bin/btrfs subvolume snapshot -r / /.snapshots/"$(date "+%Y-%m-%d_%H-%M-%S")"'\'''
+            } >/mnt/etc/pacman.d/hooks/50-btrfs-snapshot.hook
+        fi
 
-            process_return 0 # Return
-        ) &>"$PROCESS_LOG" &
-        process_capture $! "$process_name"
-    fi
+        process_return 0 # Return
+    ) &>"$PROCESS_LOG" &
+    process_capture $! "$process_name"
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
