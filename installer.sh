@@ -1011,7 +1011,7 @@ exec_pacstrap_core() {
             { # Create Bootloader config
                 echo 'default main.conf'
                 echo 'console-mode auto'
-                echo 'timeout 3'
+                echo 'timeout 0'
                 echo 'editor yes'
             } >/mnt/boot/loader/loader.conf
 
@@ -1048,9 +1048,11 @@ exec_pacstrap_core() {
             kernel_args+=('rw' 'init=/usr/lib/systemd/systemd' 'zswap.enabled=0')
             [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('nowatchdog')
             [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('quiet' 'splash' 'vt.global_cursor_default=0')
+
+            # Add kernel args to /etc/default/grub
             #sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&rd.luks.name=$UUID=cryptroot root=$BTRFS," /mnt/etc/default/grub
-            sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&${kernel_args[*]}," /mnt/etc/default/grub
             #echo "GRUB_CMDLINE_LINUX=\"${kernel_args[*]}\"" >/mnt/etc/default/grub
+            sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&${kernel_args[*]}," /mnt/etc/default/grub
 
             # Installing GRUB
             arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
