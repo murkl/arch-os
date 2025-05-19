@@ -339,18 +339,10 @@ properties_source() {
     set -a # Load properties file and auto export variables
     source "$SCRIPT_CONFIG"
     set +a
-
-    # Force bootloader
-    [ "$ARCH_OS_FILESYSTEM" = "ext4" ] && ARCH_OS_BOOTLOADER="systemd"
-
     return 0
 }
 
 properties_generate() {
-
-    # Force bootloader
-    [ "$ARCH_OS_FILESYSTEM" = "ext4" ] && ARCH_OS_BOOTLOADER="systemd"
-
     { # Write properties to installer.conf
         echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}'"
         echo "ARCH_OS_USERNAME='${ARCH_OS_USERNAME}'"
@@ -582,6 +574,7 @@ select_filesystem() {
         user_input=$(gum_choose --header "+ Choose Filesystem (btrfs: grub/systemd, ext4: systemd)" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
         [ "$user_input" = "ext4" ] && ARCH_OS_BOOTLOADER="systemd"
+        [ "$user_input" = "btrfs" ] && ARCH_OS_BOOTLOADER="grub"
         ARCH_OS_FILESYSTEM="$user_input" && properties_generate # Set value and generate properties file
     fi
     gum_property "Filesystem" "${ARCH_OS_FILESYSTEM} @ ${ARCH_OS_BOOTLOADER}"
@@ -1044,7 +1037,26 @@ exec_pacstrap_core() {
 
         # GRUB | BTRFS
         if [ "$ARCH_OS_BOOTLOADER" = "grub" ]; then
-            echo "TODO..."
+
+            # Kernel args
+            # Zswap should be disabled when using zram (https://github.com/archlinux/archinstall/issues/881)
+            # Silent boot: https://wiki.archlinux.org/title/Silent_boot
+            local kernel_args=()
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args+=("rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot" "root=/dev/mapper/cryptroot")
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args+=("root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}")")
+            [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && kernel_args+=('rootflags=subvol=@' 'rootfstype=btrfs')
+            kernel_args+=('rw' 'init=/usr/lib/systemd/systemd' 'zswap.enabled=0')
+            [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('nowatchdog')
+            [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('quiet' 'splash' 'vt.global_cursor_default=0')
+            #sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&rd.luks.name=$UUID=cryptroot root=$BTRFS," /mnt/etc/default/grub
+            sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&${kernel_args[*]}," /mnt/etc/default/grub
+            #echo "GRUB_CMDLINE_LINUX=\"${kernel_args[*]}\"" >/mnt/etc/default/grub
+
+            # Installing GRUB
+            arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+
+            # Creating grub config file
+            arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
         fi
 
         # Create new user
