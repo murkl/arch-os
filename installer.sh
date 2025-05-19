@@ -942,7 +942,7 @@ exec_pacstrap_core() {
         [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(btrfs-progs base-devel)
 
         # Add grub packages
-        [ "$ARCH_OS_BOOTLOADER" = "grub" ] && packages+=(grub grub-btrfs efibootmgr)
+        [ "$ARCH_OS_BOOTLOADER" = "grub" ] && packages+=(grub grub-btrfs efibootmgr inotify-tools)
 
         # Install core packages and initialize an empty pacman keyring in the target
         pacstrap -K /mnt "${packages[@]}"
@@ -1975,6 +1975,8 @@ exec_finalize_arch_os() {
     process_init "$process_name"
     (
         [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
+
+        # Add init script
         if [ -s "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" ]; then
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system"
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/autostart"
@@ -2009,7 +2011,7 @@ exec_finalize_arch_os() {
         # Remove orphans and force return true
         arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true'
 
-        # Need to place on the end of script
+        # Add pacman btrfs hook (need to place on the end of script)
         if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPSHOTS_ENABLED" = "true" ]; then
             # Create pacman hook (auto create snapshot on pre-transaction)
             mkdir -p /mnt/etc/pacman.d/hooks/
