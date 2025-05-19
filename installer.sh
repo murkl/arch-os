@@ -992,21 +992,21 @@ exec_pacstrap_core() {
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect microcode modconf sd-vconsole block filesystems fsck)/" /mnt/etc/mkinitcpio.conf
         arch-chroot /mnt mkinitcpio -P
 
-        # SYSTEMD-BOOT | EXT4
-        if [ "$ARCH_OS_BOOTLOADER" = "systemd" ]; then
-            # Install Bootloader to /boot (systemdboot)
-            arch-chroot /mnt bootctl --esp-path=/boot install # Install systemdboot to /boot
+        # KERNEL PARAMETER
+        # Zswap should be disabled when using zram (https://github.com/archlinux/archinstall/issues/881)
+        # Silent boot: https://wiki.archlinux.org/title/Silent_boot
+        local kernel_args=('rw' 'init=/usr/lib/systemd/systemd' 'zswap.enabled=0')
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args+=("rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot" "root=/dev/mapper/cryptroot")
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args+=("root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}")")
+        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && kernel_args+=('rootflags=subvol=@' 'rootfstype=btrfs')
+        [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('nowatchdog')
+        [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('quiet' 'splash' 'vt.global_cursor_default=0')
 
-            # Kernel args
-            # Zswap should be disabled when using zram (https://github.com/archlinux/archinstall/issues/881)
-            # Silent boot: https://wiki.archlinux.org/title/Silent_boot
-            local kernel_args=()
-            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args+=("rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot" "root=/dev/mapper/cryptroot")
-            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args+=("root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}")")
-            [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && kernel_args+=('rootflags=subvol=@' 'rootfstype=btrfs')
-            kernel_args+=('rw' 'init=/usr/lib/systemd/systemd' 'zswap.enabled=0')
-            [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('nowatchdog')
-            [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('quiet' 'splash' 'vt.global_cursor_default=0')
+        # SYSTEMD-BOOT INSTALLATION
+        if [ "$ARCH_OS_BOOTLOADER" = "systemd" ]; then
+
+            # Install Bootloader to /boot (systemdboot)
+            arch-chroot /mnt bootctl --esp-path=/boot install
 
             { # Create Bootloader config
                 echo 'default main.conf'
@@ -1035,23 +1035,10 @@ exec_pacstrap_core() {
 
         # ------------------------------------------------------------------
 
-        # GRUB | BTRFS
+        # GRUB INSTALLATION
         if [ "$ARCH_OS_BOOTLOADER" = "grub" ]; then
 
-            # Kernel args
-            # Zswap should be disabled when using zram (https://github.com/archlinux/archinstall/issues/881)
-            # Silent boot: https://wiki.archlinux.org/title/Silent_boot
-            local kernel_args=()
-            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args+=("rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot" "root=/dev/mapper/cryptroot")
-            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args+=("root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}")")
-            [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && kernel_args+=('rootflags=subvol=@' 'rootfstype=btrfs')
-            kernel_args+=('rw' 'init=/usr/lib/systemd/systemd' 'zswap.enabled=0')
-            [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('nowatchdog')
-            [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('quiet' 'splash' 'vt.global_cursor_default=0')
-
             # Add kernel args to /etc/default/grub
-            #sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&rd.luks.name=$UUID=cryptroot root=$BTRFS," /mnt/etc/default/grub
-            #echo "GRUB_CMDLINE_LINUX=\"${kernel_args[*]}\"" >/mnt/etc/default/grub
             sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&${kernel_args[*]}," /mnt/etc/default/grub
 
             # Installing GRUB
