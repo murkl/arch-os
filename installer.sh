@@ -1061,7 +1061,7 @@ exec_pacstrap_core() {
             arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 
             # Enable btrfs update service
-            arch-chroot /mnt systemctl enable grub-btrfsd.service
+            [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && arch-chroot /mnt systemctl enable grub-btrfsd.service
         fi
 
         # Create new user
