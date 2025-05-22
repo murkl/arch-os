@@ -426,12 +426,34 @@ Here are some technical information regarding the Arch OS Core installation.
 The partitions layout is seperated in two partitions:
 
 1. **FAT32** partition (1 GiB), mounted at `/boot` as ESP
-2. **EXT4** partition (rest of disk) optional with **LUKS2 encrypted container**, mounted at `/` as root
+2. **EXT4/BTRFS** partition (rest of disk) optional with **LUKS2 encrypted container**, mounted at `/` as root
 
-| Partition | Label            | Size         | Mount | Filesystem                |
-| --------- | ---------------- | ------------ | ----- | ------------------------- |
-| 1         | BOOT             | 1 GiB        | /boot | FAT32                     |
-| 2         | ROOT / cryptroot | Rest of disk | /     | EXT4 + Encryption (LUKS2) |
+| Partition | Label                    | Size         | Mount | Filesystem                      |
+| --------- | ------------------------ | ------------ | ----- | ------------------------------- |
+| 1         | BOOT                     | 1 GiB        | /boot | FAT32                           |
+| 2         | ROOT / BTRFS / cryptroot | Rest of disk | /     | EXT4/BTRFS + Encryption (LUKS2) |
+
+#### BTRFS
+
+| Subvolume  | Mountpoint  | Description                            | Snapper Config |
+| ---------- | ----------- | -------------------------------------- | -------------- |
+| @          | /           | Mount point for root                   | x              |
+| @home      | /home       | Mount point for home                   |                |
+| @snapshots | /.snapshots | Read-only snapshots created by snapper |                |
+
+This additional packages are installed:
+
+```
+base-devel btrfs-progs grub grub-btrfs efibootmgr inotify-tools snapper snap-pac
+```
+
+This additional services are enabled:
+
+```
+grub-btrfsd.service btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@snapshots.timer snapper-timeline.timer snapper-cleanup.timer
+```
+
+**Note:** If `btrfs` as filesystem and `grub` as bootloader is selected, _OverlayFS_ is used and lets you overlay a writable layer on top of a read-only Btrfs snapshot, so changes are temporary and the original data stays untouched. It is enabled by adding `grub-btrfs-overlayfs` to the `HOOKS` array in `/etc/mkinitcpio.conf`.
 
 ### Swap
 
