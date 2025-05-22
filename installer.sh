@@ -1067,6 +1067,7 @@ exec_pacstrap_core() {
             arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
 
             # Creating grub config file
+            sed -i "s/^GRUB_TIMEOUT=.*$/GRUB_TIMEOUT=1/" /mnt/etc/default/grub
             arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 
             # Enable btrfs update service
