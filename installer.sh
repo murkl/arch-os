@@ -950,19 +950,19 @@ exec_pacstrap_core() {
         [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
 
         # Core packages
-        local packages=("$ARCH_OS_KERNEL" base sudo linux-firmware zram-generator networkmanager)
+        local packages=("$ARCH_OS_KERNEL" base base-devel linux-firmware zram-generator networkmanager)
 
         # Add microcode package
         [ -n "$ARCH_OS_MICROCODE" ] && [ "$ARCH_OS_MICROCODE" != "none" ] && packages+=("$ARCH_OS_MICROCODE")
 
         # Add filesystem packages
-        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(base-devel btrfs-progs)
+        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(btrfs-progs)
 
         # Add grub packages
         [ "$ARCH_OS_BOOTLOADER" = "grub" ] && packages+=(grub grub-btrfs efibootmgr inotify-tools)
 
         # Add snapper packages
-        [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ] && packages+=(snapper)
+        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ] && packages+=(snapper)
 
         # Install core packages and initialize an empty pacman keyring in the target
         pacstrap -K /mnt "${packages[@]}"
@@ -1104,7 +1104,7 @@ exec_pacstrap_core() {
             arch-chroot /mnt systemctl enable btrfs-scrub@snapshots.timer
         fi
 
-        if [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ]; then
+        if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ]; then
 
             # Create snapper config
             arch-chroot /mnt umount /.snapshots
