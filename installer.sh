@@ -953,10 +953,10 @@ exec_pacstrap_core() {
         [ -n "$ARCH_OS_MICROCODE" ] && [ "$ARCH_OS_MICROCODE" != "none" ] && packages+=("$ARCH_OS_MICROCODE")
 
         # Add filesystem packages
-        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(btrfs-progs)
+        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(btrfs-progs efibootmgr inotify-tools)
 
         # Add grub packages
-        [ "$ARCH_OS_BOOTLOADER" = "grub" ] && packages+=(grub grub-btrfs efibootmgr inotify-tools)
+        [ "$ARCH_OS_BOOTLOADER" = "grub" ] && packages+=(grub grub-btrfs)
 
         # Add snapper packages
         [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ] && packages+=(snapper)
