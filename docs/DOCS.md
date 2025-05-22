@@ -441,7 +441,7 @@ The partitions layout is seperated in two partitions:
 | @home      | /home       | Mount point for home                   | x                         |
 | @snapshots | /.snapshots | Read-only snapshots created by snapper | x                         |
 
-Recommended GUI for managing Snapshots: [AUR/btrfs-assistant](https://aur.archlinux.org/packages/btrfs-assistant)
+Great GUI for managing Snapshots: [AUR/btrfs-assistant](https://aur.archlinux.org/packages/btrfs-assistant)
 
 This additional packages are installed:
 
