@@ -134,7 +134,7 @@ main() {
         # Open Advanced Properties?
         if [ "$FORCE" = "false" ] && gum_confirm --negative="Skip" "Open Advanced Setup Editor?"; then
             local header_txt="• Advanced Setup | Save with CTRL + D or ESC and cancel with CTRL + C"
-            if gum_write --show-line-numbers --prompt "" --height=12 --width=180 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
+            if gum_write --show-line-numbers --prompt "" --height=12 --width=180 --char-limit=0 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
                 gum_info "Properties successfully saved"
                 gum_confirm "Change Password?" && until select_password --change && properties_source; do :; done
@@ -366,16 +366,16 @@ properties_generate() {
         echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}' # MultiLib 32 Bit Support | Disable: false"
         echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}' # AUR Helper | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}' # Bootsplash | Disable: false"
-        echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}' # Shell Enhancement | Disable: false"
-        echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}' # Enable fish shell | Default: true | Disable: false"
-        echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}' # Housekeeping | Disable: false"
-        echo "ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED}' # Arch OS Manager | Disable: false"
+        echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}'  # Housekeeping | Disable: false"
+        echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}' # Arch OS Manager | Disable: false"
+        echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}' # Shell Enhancement | Disable: false"
+        echo "ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED}' # Enable fish shell | Default: true | Disable: false"
         echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}' # Arch OS Desktop (caution: if disabled, only a minimal tty will be provied)| Disable: false"
-        echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}' # Enable desktop extra packages (caution: if disabled, only core + gnome + git packages will be installed) | Disable: false"
-        echo "ARCH_OS_DESKTOP_EXTRAS_ENABLED='${ARCH_OS_DESKTOP_EXTRAS_ENABLED}' # Enable Sim Desktop (only GNOME Core Apps) | Default: false"
-        echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}' # Graphics Driver | Disable: none | Available: mesa, intel_i915, nvidia, amd, ati"
-        echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}' # X11 keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de"
-        echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}' # X11 keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models"
+        echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}' # Graphics Driver | Disable: none | Available: mesa, intel_i915, nvidia, amd, ati"
+        echo "ARCH_OS_DESKTOP_EXTRAS_ENABLED='${ARCH_OS_DESKTOP_EXTRAS_ENABLED}' # Enable desktop extra packages (caution: if disabled, only core + gnome + git packages will be installed) | Disable: false"
+        echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}' # Enable Sim Desktop (only GNOME Core Apps) | Default: false"
+        echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}' # X11 keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models"
+        echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}' # X11 keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de"
         echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}' # X11 keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys"
         echo "ARCH_OS_SAMBA_SHARE_ENABLED='${ARCH_OS_SAMBA_SHARE_ENABLED}' # Enable Samba public (anonymous) & home share (user) | Disable: false"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}' # VM Support | Default: true | Disable: false"
