@@ -1009,9 +1009,9 @@ exec_pacstrap_core() {
         # https://wiki.archlinux.org/title/Mkinitcpio#Common_hooks
         # https://wiki.archlinux.org/title/Microcode#mkinitcpio
         local btrfs_hook
-        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BOOTLOADER" = "grub" ] && btrfs_hook='grub-btrfs-overlayfs'
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect microcode modconf sd-vconsole block sd-encrypt filesystems fsck ${btrfs_hook})/" /mnt/etc/mkinitcpio.conf
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect microcode modconf sd-vconsole block filesystems fsck ${btrfs_hook})/" /mnt/etc/mkinitcpio.conf
+        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BOOTLOADER" = "grub" ] && btrfs_hook=' grub-btrfs-overlayfs'
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect microcode modconf sd-vconsole block sd-encrypt filesystems fsck${btrfs_hook})/" /mnt/etc/mkinitcpio.conf
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect microcode modconf sd-vconsole block filesystems fsck${btrfs_hook})/" /mnt/etc/mkinitcpio.conf
         arch-chroot /mnt mkinitcpio -P
 
         # KERNEL PARAMETER
@@ -1123,6 +1123,7 @@ exec_pacstrap_core() {
             # Enable snapper services
             arch-chroot /mnt systemctl enable snapper-timeline.timer
             arch-chroot /mnt systemctl enable snapper-cleanup.timer
+            arch-chroot /mnt systemctl enable snapper-boot.timer
         fi
 
         # Make some Arch OS tweaks
