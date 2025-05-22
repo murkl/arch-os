@@ -389,12 +389,12 @@ properties_preset_source() {
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
     [ -z "$ARCH_OS_SNAPPER_ENABLED" ] && ARCH_OS_SNAPPER_ENABLED='true'
-    [ -z "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
-    [ -z "$ARCH_OS_SAMBA_SHARE_ENABLED" ] && ARCH_OS_SAMBA_SHARE_ENABLED="true"
-    [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
     [ -z "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" ] && ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED="true"
-    [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
+    [ -z "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
     [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
+    [ -z "$ARCH_OS_SAMBA_SHARE_ENABLED" ] && ARCH_OS_SAMBA_SHARE_ENABLED="true"
+    [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
+    [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
 
     # Set microcode
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
@@ -414,6 +414,8 @@ properties_preset_source() {
 
         # Core preset
         if [[ $preset == core* ]]; then
+            ARCH_OS_FILESYSTEM="ext4"
+            ARCH_OS_BOOTLOADER="systemd"
             ARCH_OS_DESKTOP_ENABLED='false'
             ARCH_OS_MULTILIB_ENABLED='false'
             ARCH_OS_HOUSEKEEPING_ENABLED='false'
@@ -426,6 +428,8 @@ properties_preset_source() {
 
         # Desktop preset
         if [[ $preset == desktop* ]]; then
+            ARCH_OS_FILESYSTEM="btrfs"
+            ARCH_OS_BOOTLOADER="grub"
             ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
             ARCH_OS_SAMBA_SHARE_ENABLED='true'
             ARCH_OS_CORE_TWEAKS_ENABLED="true"
@@ -436,6 +440,7 @@ properties_preset_source() {
             ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
             ARCH_OS_MANAGER_ENABLED='true'
             ARCH_OS_AUR_HELPER='paru'
+
         fi
 
         # Write properties
@@ -571,11 +576,8 @@ select_filesystem() {
     if [ -z "$ARCH_OS_FILESYSTEM" ]; then
         local user_input options
         options=("btrfs" "ext4")
-        user_input=$(gum_choose --header "+ Choose Filesystem (btrfs: snapshot support)" "${options[@]}") || trap_gum_exit_confirm
-        [ -z "$user_input" ] && return 1 # Check if new value is null
-        # Pre-select bootloader if not already set
-        [ -z "$ARCH_OS_BOOTLOADER" ] && [ "$user_input" = "btrfs" ] && ARCH_OS_BOOTLOADER="grub"
-        [ -z "$ARCH_OS_BOOTLOADER" ] && [ "$user_input" = "ext4" ] && ARCH_OS_BOOTLOADER="systemd"
+        user_input=$(gum_choose --header "+ Choose Filesystem (snapshot support: btrfs)" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1                        # Check if new value is null
         ARCH_OS_FILESYSTEM="$user_input" && properties_generate # Set value and generate properties file
     fi
     gum_property "Filesystem" "${ARCH_OS_FILESYSTEM}"
@@ -588,7 +590,7 @@ select_bootloader() {
     if [ -z "$ARCH_OS_BOOTLOADER" ]; then
         local user_input options
         options=("grub" "systemd")
-        user_input=$(gum_choose --header "+ Choose Bootloader (grub: snapshot support)" "${options[@]}") || trap_gum_exit_confirm
+        user_input=$(gum_choose --header "+ Choose Bootloader (snapshot menu: grub)" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                        # Check if new value is null
         ARCH_OS_BOOTLOADER="$user_input" && properties_generate # Set value and generate properties file
     fi
@@ -1006,8 +1008,10 @@ exec_pacstrap_core() {
         # Create initial ramdisk from /etc/mkinitcpio.conf
         # https://wiki.archlinux.org/title/Mkinitcpio#Common_hooks
         # https://wiki.archlinux.org/title/Microcode#mkinitcpio
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect microcode modconf sd-vconsole block sd-encrypt filesystems fsck)/" /mnt/etc/mkinitcpio.conf
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect microcode modconf sd-vconsole block filesystems fsck)/" /mnt/etc/mkinitcpio.conf
+        local btrfs_hook
+        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && btrfs_hook='grub-btrfs-overlayfs'
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect microcode modconf sd-vconsole block sd-encrypt filesystems fsck ${btrfs_hook})/" /mnt/etc/mkinitcpio.conf
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect microcode modconf sd-vconsole block filesystems fsck ${btrfs_hook})/" /mnt/etc/mkinitcpio.conf
         arch-chroot /mnt mkinitcpio -P
 
         # KERNEL PARAMETER
