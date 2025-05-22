@@ -110,9 +110,9 @@ main() {
         until select_timezone; do :; done
         until select_language; do :; done
         until select_keyboard; do :; done
-        until select_disk; do :; done
         until select_filesystem; do :; done
         until select_bootloader; do :; done
+        until select_disk; do :; done
         echo && gum_title "Desktop Setup"
         until select_enable_desktop_environment; do :; done
         until select_enable_desktop_driver; do :; done
@@ -414,8 +414,6 @@ properties_preset_source() {
 
         # Core preset
         if [[ $preset == core* ]]; then
-            ARCH_OS_FILESYSTEM="ext4"
-            ARCH_OS_BOOTLOADER="systemd"
             ARCH_OS_SNAPPER_ENABLED='false'
             ARCH_OS_DESKTOP_ENABLED='false'
             ARCH_OS_MULTILIB_ENABLED='false'
@@ -429,8 +427,6 @@ properties_preset_source() {
 
         # Desktop preset
         if [[ $preset == desktop* ]]; then
-            ARCH_OS_FILESYSTEM="btrfs"
-            ARCH_OS_BOOTLOADER="grub"
             ARCH_OS_SNAPPER_ENABLED='true'
             ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
             ARCH_OS_SAMBA_SHARE_ENABLED='true'
