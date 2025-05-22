@@ -112,6 +112,7 @@ main() {
         until select_keyboard; do :; done
         until select_disk; do :; done
         until select_filesystem; do :; done
+        until select_bootloader; do :; done
         echo && gum_title "Desktop Setup"
         until select_enable_desktop_environment; do :; done
         until select_enable_desktop_driver; do :; done
@@ -344,41 +345,41 @@ properties_source() {
 
 properties_generate() {
     { # Write properties to installer.conf
-        echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}'"
-        echo "ARCH_OS_USERNAME='${ARCH_OS_USERNAME}'"
-        echo "ARCH_OS_DISK='${ARCH_OS_DISK}'"
-        echo "ARCH_OS_BOOT_PARTITION='${ARCH_OS_BOOT_PARTITION}'"
-        echo "ARCH_OS_ROOT_PARTITION='${ARCH_OS_ROOT_PARTITION}'"
-        echo "ARCH_OS_FILESYSTEM='${ARCH_OS_FILESYSTEM}'"
-        echo "ARCH_OS_BOOTLOADER='${ARCH_OS_BOOTLOADER}'"
-        echo "ARCH_OS_SNAPSHOTS_ENABLED='${ARCH_OS_SNAPSHOTS_ENABLED}'"
-        echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}'"
-        echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}'"
-        echo "ARCH_OS_LOCALE_LANG='${ARCH_OS_LOCALE_LANG}'"
-        echo "ARCH_OS_LOCALE_GEN_LIST=(${ARCH_OS_LOCALE_GEN_LIST[*]@Q})"
-        echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}'"
-        echo "ARCH_OS_VCONSOLE_KEYMAP='${ARCH_OS_VCONSOLE_KEYMAP}'"
-        echo "ARCH_OS_VCONSOLE_FONT='${ARCH_OS_VCONSOLE_FONT}'"
-        echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}'"
-        echo "ARCH_OS_MICROCODE='${ARCH_OS_MICROCODE}'"
-        echo "ARCH_OS_CORE_TWEAKS_ENABLED='${ARCH_OS_CORE_TWEAKS_ENABLED}'"
-        echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}'"
-        echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}'"
-        echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
-        echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}'"
-        echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}'"
-        echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}'"
-        echo "ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED}'"
-        echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
-        echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}'"
-        echo "ARCH_OS_DESKTOP_EXTRAS_ENABLED='${ARCH_OS_DESKTOP_EXTRAS_ENABLED}'"
-        echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}'"
-        echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}'"
-        echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}'"
-        echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}'"
-        echo "ARCH_OS_SAMBA_SHARE_ENABLED='${ARCH_OS_SAMBA_SHARE_ENABLED}'"
-        echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
-        echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
+        echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}' # Hostname"
+        echo "ARCH_OS_USERNAME='${ARCH_OS_USERNAME}' # User"
+        echo "ARCH_OS_DISK='${ARCH_OS_DISK}' # Disk"
+        echo "ARCH_OS_BOOT_PARTITION='${ARCH_OS_BOOT_PARTITION}' # Boot partition"
+        echo "ARCH_OS_ROOT_PARTITION='${ARCH_OS_ROOT_PARTITION}' # Root partition"
+        echo "ARCH_OS_FILESYSTEM='${ARCH_OS_FILESYSTEM}' # Filesystem | Available: btrfs, ext4"
+        echo "ARCH_OS_BOOTLOADER='${ARCH_OS_BOOTLOADER}' # Bootloader | Available: grub, systemd"
+        echo "ARCH_OS_SNAPPER_ENABLED='${ARCH_OS_SNAPPER_ENABLED}' # BTRFS Snapper enabled | Disable: false"
+        echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}' # Disk encryption | Disable: false"
+        echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}' # Timezone | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin"
+        echo "ARCH_OS_LOCALE_LANG='${ARCH_OS_LOCALE_LANG}' # Locale | Show available: ls /usr/share/i18n/locales | Example: de_DE"
+        echo "ARCH_OS_LOCALE_GEN_LIST=(${ARCH_OS_LOCALE_GEN_LIST[*]@Q}) # Locale List | Show available: cat /etc/locale.gen"
+        echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}' # Country used by reflector | Default: null | Example: Germany,France"
+        echo "ARCH_OS_VCONSOLE_KEYMAP='${ARCH_OS_VCONSOLE_KEYMAP}' # Console keymap | Show available: localectl list-keymaps | Example: de-latin1-nodeadkeys"
+        echo "ARCH_OS_VCONSOLE_FONT='${ARCH_OS_VCONSOLE_FONT}' # Console font | Default: null | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Example: eurlatgr"
+        echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}' # Kernel | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened"
+        echo "ARCH_OS_MICROCODE='${ARCH_OS_MICROCODE}' # Microcode | Disable: none | Available: intel-ucode, amd-ucode"
+        echo "ARCH_OS_CORE_TWEAKS_ENABLED='${ARCH_OS_CORE_TWEAKS_ENABLED}' # Arch OS Core Tweaks | Disable: false"
+        echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}' # MultiLib 32 Bit Support | Disable: false"
+        echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}' # AUR Helper | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur"
+        echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}' # Bootsplash | Disable: false"
+        echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}' # Shell Enhancement | Disable: false"
+        echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}' # Enable fish shell | Default: true | Disable: false"
+        echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}' # Housekeeping | Disable: false"
+        echo "ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED}' # Arch OS Manager | Disable: false"
+        echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}' # Arch OS Desktop (caution: if disabled, only a minimal tty will be provied)| Disable: false"
+        echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}' # Enable desktop extra packages (caution: if disabled, only core + gnome + git packages will be installed) | Disable: false"
+        echo "ARCH_OS_DESKTOP_EXTRAS_ENABLED='${ARCH_OS_DESKTOP_EXTRAS_ENABLED}' # Enable Sim Desktop (only GNOME Core Apps) | Default: false"
+        echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}' # Graphics Driver | Disable: none | Available: mesa, intel_i915, nvidia, amd, ati"
+        echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}' # X11 keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de"
+        echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}' # X11 keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models"
+        echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}' # X11 keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys"
+        echo "ARCH_OS_SAMBA_SHARE_ENABLED='${ARCH_OS_SAMBA_SHARE_ENABLED}' # Enable Samba public (anonymous) & home share (user) | Disable: false"
+        echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}' # VM Support | Default: true | Disable: false"
+        echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}' # Disable ECN support for legacy routers | Default: true | Disable: false"
     } >"$SCRIPT_CONFIG" # Write properties to file
 }
 
@@ -387,8 +388,7 @@ properties_preset_source() {
     # Default presets
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
-    [ -z "$ARCH_OS_BOOTLOADER" ] && ARCH_OS_BOOTLOADER="grub"
-    [ -z "$ARCH_OS_SNAPSHOTS_ENABLED" ] && ARCH_OS_SNAPSHOTS_ENABLED='true'
+    [ -z "$ARCH_OS_SNAPPER_ENABLED" ] && ARCH_OS_SNAPPER_ENABLED='true'
     [ -z "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
     [ -z "$ARCH_OS_SAMBA_SHARE_ENABLED" ] && ARCH_OS_SAMBA_SHARE_ENABLED="true"
     [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
@@ -571,13 +571,28 @@ select_filesystem() {
     if [ -z "$ARCH_OS_FILESYSTEM" ]; then
         local user_input options
         options=("btrfs" "ext4")
-        user_input=$(gum_choose --header "+ Choose Filesystem (btrfs: grub/systemd, ext4: systemd)" "${options[@]}") || trap_gum_exit_confirm
+        user_input=$(gum_choose --header "+ Choose Filesystem (btrfs: snapshot support)" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
-        [ "$user_input" = "ext4" ] && ARCH_OS_BOOTLOADER="systemd"
-        [ "$user_input" = "btrfs" ] && ARCH_OS_BOOTLOADER="grub"
+        # Pre-select bootloader if not already set
+        [ -z "$ARCH_OS_BOOTLOADER" ] && [ "$user_input" = "btrfs" ] && ARCH_OS_BOOTLOADER="grub"
+        [ -z "$ARCH_OS_BOOTLOADER" ] && [ "$user_input" = "ext4" ] && ARCH_OS_BOOTLOADER="systemd"
         ARCH_OS_FILESYSTEM="$user_input" && properties_generate # Set value and generate properties file
     fi
-    gum_property "Filesystem" "${ARCH_OS_FILESYSTEM} @ ${ARCH_OS_BOOTLOADER}"
+    gum_property "Filesystem" "${ARCH_OS_FILESYSTEM}"
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+select_bootloader() {
+    if [ -z "$ARCH_OS_BOOTLOADER" ]; then
+        local user_input options
+        options=("grub" "systemd")
+        user_input=$(gum_choose --header "+ Choose Bootloader (grub: snapshot support)" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1                        # Check if new value is null
+        ARCH_OS_BOOTLOADER="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    gum_property "Bootloader" "${ARCH_OS_BOOTLOADER}"
     return 0
 }
 
@@ -897,7 +912,7 @@ exec_prepare_disk() {
             # Create subvolumes
             btrfs subvolume create /mnt/@
             btrfs subvolume create /mnt/@home
-            [ "$ARCH_OS_SNAPSHOTS_ENABLED" = "true" ] && btrfs subvolume create /mnt/@snapshots
+            btrfs subvolume create /mnt/@snapshots
             #local btrfs_root_id
             #btrfs_root_id="$(btrfs subvolume list /mnt | awk '$NF == "@" {print $2}')"
             #btrfs subvolume set-default "${btrfs_root_id}" /mnt # Set @ as default
@@ -911,7 +926,7 @@ exec_prepare_disk() {
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@ "${mount_target}" /mnt
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" /mnt/home
-            [ "$ARCH_OS_SNAPSHOTS_ENABLED" = "true" ] && mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" /mnt/.snapshots
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" /mnt/.snapshots
 
             # Mount /boot
             #mount -v --mkdir LABEL=BOOT /mnt/boot
@@ -943,6 +958,9 @@ exec_pacstrap_core() {
 
         # Add grub packages
         [ "$ARCH_OS_BOOTLOADER" = "grub" ] && packages+=(grub grub-btrfs efibootmgr inotify-tools)
+
+        # Add snapper packages
+        [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ] && packages+=(snapper snap-pac)
 
         # Install core packages and initialize an empty pacman keyring in the target
         pacstrap -K /mnt "${packages[@]}"
@@ -1077,8 +1095,30 @@ exec_pacstrap_core() {
             # Btrfs scrub timer
             arch-chroot /mnt systemctl enable btrfs-scrub@-.timer
             arch-chroot /mnt systemctl enable btrfs-scrub@home.timer
-            [ "$ARCH_OS_SNAPSHOTS_ENABLED" = "true" ] && arch-chroot /mnt systemctl enable btrfs-scrub@snapshots.timer
+            arch-chroot /mnt systemctl enable btrfs-scrub@snapshots.timer
         fi
+
+        if [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ]; then
+
+            # Create snapper config
+            arch-chroot /mnt umount /.snapshots
+            arch-chroot /mnt rm -r /.snapshots
+            arch-chroot /mnt snapper --no-dbus -c root create-config /
+            arch-chroot /mnt btrfs subvolume delete /.snapshots
+            arch-chroot /mnt mkdir /.snapshots
+            arch-chroot /mnt mount -a
+            arch-chroot /mnt chmod 750 /.snapshots
+            arch-chroot /mnt sudo chown :wheel /.snapshots
+
+            # Modify snapper config
+            # https://www.dwarmstrong.org/btrfs-snapshots-rollbacks/
+            # /etc/snapper/configs/root
+
+            # Enable snapper services
+            arch-chroot /mnt systemctl enable snapper-timeline.timer
+            arch-chroot /mnt systemctl enable snapper-cleanup.timer
+        fi
+
         # Make some Arch OS tweaks
         if [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ]; then
 
@@ -1999,7 +2039,7 @@ exec_finalize_arch_os() {
         arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true'
 
         # Add pacman btrfs hook (need to place on the end of script)
-        if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPSHOTS_ENABLED" = "true" ]; then
+        if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "false" ]; then
             # Create pacman hook (auto create snapshot on pre-transaction)
             mkdir -p /mnt/etc/pacman.d/hooks/
             # shellcheck disable=SC2016
