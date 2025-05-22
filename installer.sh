@@ -962,7 +962,7 @@ exec_pacstrap_core() {
         [ "$ARCH_OS_BOOTLOADER" = "grub" ] && packages+=(grub grub-btrfs efibootmgr inotify-tools)
 
         # Add snapper packages
-        [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ] && packages+=(snapper snap-pac)
+        [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ] && packages+=(snapper)
 
         # Install core packages and initialize an empty pacman keyring in the target
         pacstrap -K /mnt "${packages[@]}"
@@ -2041,6 +2041,9 @@ exec_finalize_arch_os() {
 
         # Remove orphans and force return true
         arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true'
+
+        # Install snapper pacman hook
+        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ] && chroot_pacman_install snap-pac
 
         # Add pacman btrfs hook (need to place on the end of script)
         if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "false" ]; then
