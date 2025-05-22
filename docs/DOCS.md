@@ -435,6 +435,8 @@ The partitions layout is seperated in two partitions:
 
 #### BTRFS
 
+Customize the root config: `sudo nano /etc/snapper/configs/root`
+
 | Subvolume  | Mountpoint  | Description                            | Snapper Config |
 | ---------- | ----------- | -------------------------------------- | -------------- |
 | @          | /           | Mount point for root                   | x              |
