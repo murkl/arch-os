@@ -435,20 +435,18 @@ The partitions layout is seperated in two partitions:
 
 #### BTRFS
 
-Recommended GUI for managing Snapshots: [AUR/btrfs-assistant](https://aur.archlinux.org/packages/btrfs-assistant).
+| Subvolume  | Mountpoint  | Description                            | Snapper Config            |
+| ---------- | ----------- | -------------------------------------- | ------------------------- |
+| @          | /           | Mount point for root                   | /etc/snapper/configs/root |
+| @home      | /home       | Mount point for home                   | x                         |
+| @snapshots | /.snapshots | Read-only snapshots created by snapper | x                         |
 
-Customize manually: `sudo nano /etc/snapper/configs/root`
-
-| Subvolume  | Mountpoint  | Description                            | Snapper Config |
-| ---------- | ----------- | -------------------------------------- | -------------- |
-| @          | /           | Mount point for root                   | x              |
-| @home      | /home       | Mount point for home                   |                |
-| @snapshots | /.snapshots | Read-only snapshots created by snapper |                |
+Recommended GUI for managing Snapshots: [AUR/btrfs-assistant](https://aur.archlinux.org/packages/btrfs-assistant)
 
 This additional packages are installed:
 
 ```
-base-devel btrfs-progs grub grub-btrfs efibootmgr inotify-tools snapper snap-pac
+base-devel btrfs-progs efibootmgr inotify-tools grub grub-btrfs snapper snap-pac
 ```
 
 This additional services are enabled:

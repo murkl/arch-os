@@ -48,7 +48,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - [Zen Kernel](DOCS.md#advanced-installation) (configurable)
 - [Swap](DOCS.md#swap) with zram-generator (zstd)
 - [Sole OS](DOCS.md#partitions-layout)
-- Snapshot Support (Snapper, OverlayFS, Grub & Pacman integration)
+- BTRFS Snapshot Support (Snapper, OverlayFS)
 - All-in-One password (encryption, root & user)
 - Multilingual Support
 - Filesystem btrfs or ext4
