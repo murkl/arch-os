@@ -1022,7 +1022,7 @@ exec_pacstrap_core() {
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args+=("root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}")")
         [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && kernel_args+=('rootflags=subvol=@' 'rootfstype=btrfs')
         [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('nowatchdog')
-        [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('quiet' 'splash' 'vt.global_cursor_default=0')
+        [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('quiet' 'splash' 'vt.global_cursor_default=0' 'loglevel=3' 'rd.udev.log_level=3' 'systemd.show_status=auto')
 
         # SYSTEMD-BOOT INSTALLATION
         if [ "$ARCH_OS_BOOTLOADER" = "systemd" ]; then
@@ -1068,6 +1068,7 @@ exec_pacstrap_core() {
 
             # Creating grub config file
             sed -i "s/^GRUB_TIMEOUT=.*$/GRUB_TIMEOUT=1/" /mnt/etc/default/grub
+            sed -i "s/^GRUB_TIMEOUT_STYLE=.*$/GRUB_TIMEOUT_STYLE=menu/" /mnt/etc/default/grub
             arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 
             # Enable btrfs update service
