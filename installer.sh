@@ -416,6 +416,7 @@ properties_preset_source() {
         if [[ $preset == core* ]]; then
             ARCH_OS_FILESYSTEM="ext4"
             ARCH_OS_BOOTLOADER="systemd"
+            ARCH_OS_SNAPPER_ENABLED='false'
             ARCH_OS_DESKTOP_ENABLED='false'
             ARCH_OS_MULTILIB_ENABLED='false'
             ARCH_OS_HOUSEKEEPING_ENABLED='false'
@@ -430,6 +431,7 @@ properties_preset_source() {
         if [[ $preset == desktop* ]]; then
             ARCH_OS_FILESYSTEM="btrfs"
             ARCH_OS_BOOTLOADER="grub"
+            ARCH_OS_SNAPPER_ENABLED='true'
             ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
             ARCH_OS_SAMBA_SHARE_ENABLED='true'
             ARCH_OS_CORE_TWEAKS_ENABLED="true"
@@ -440,7 +442,6 @@ properties_preset_source() {
             ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
             ARCH_OS_MANAGER_ENABLED='true'
             ARCH_OS_AUR_HELPER='paru'
-
         fi
 
         # Write properties
