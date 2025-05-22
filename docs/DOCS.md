@@ -435,7 +435,9 @@ The partitions layout is seperated in two partitions:
 
 #### BTRFS
 
-Customize the root config: `sudo nano /etc/snapper/configs/root`
+Recommended GUI for managing Snapshots: [AUR/btrfs-assistant](https://aur.archlinux.org/packages/btrfs-assistant).
+
+Customize manually: `sudo nano /etc/snapper/configs/root`
 
 | Subvolume  | Mountpoint  | Description                            | Snapper Config |
 | ---------- | ----------- | -------------------------------------- | -------------- |
