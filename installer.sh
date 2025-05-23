@@ -317,31 +317,34 @@ start_recovery() {
         # BTRFS: Mount encrypted disk
         local mount_target="/dev/mapper/${recovery_crypt_label}"
         if [ "$(findmnt -n -o FSTYPE --target "${mount_target}")" = "btrfs" ]; then
+            gum_info "Mounting encrypted BTRFS..."
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@ "${mount_target}" "${recovery_mount_dir}"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" "${recovery_mount_dir}/.snapshots"
-            u
         else
             # EXT4: Mount encrypted disk
+            gum_info "Mounting encrypted EXT4..."
             mount "/dev/mapper/${recovery_crypt_label}" "$recovery_mount_dir"
         fi
     else
         # BTRFS: Mount unencrypted disk
         local mount_target="$recovery_root_partition"
         if [ "$(findmnt -n -o FSTYPE --target "${mount_target}")" = "btrfs" ]; then
+            gum_info "Mounting unencrypted BTRFS..."
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@ "${mount_target}" "${recovery_mount_dir}"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" "${recovery_mount_dir}/.snapshots"
-            u
         else
             # EXT4: Mount unencrypted disk
+            gum_info "Mounting unencrypted EXT4..."
             mount "$recovery_root_partition" "$recovery_mount_dir"
         fi
     fi
 
     # Mount boot
+    gum_info "Mounting /boot"
     mount "$recovery_boot_partition" "${recovery_mount_dir}/boot"
 
     # Chroot
