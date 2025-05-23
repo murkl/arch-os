@@ -588,6 +588,16 @@ _**Example**_
 - _Fix your Arch OS..._
 - Exit: `exit`
 
+### Rescue & Recovery (BTRFS)
+
+```
+sudo mount -o subvolid=5 /dev/sdXY /mnt
+sudo mv /mnt/@ /mnt/@.broken # or sudo btrfs subvolume delete /mnt/@
+sudo btrfs subvolume list /mnt # List Snapshots <ID>
+sudo btrfs subvolume snapshot /mnt/@snapshots/<ID>/snapshot /mnt/@
+sudo umount /mnt
+```
+
 ## Development
 
 Create new pull request branches only from [main branch](https://github.com/murkl/arch-os/tree/main)! The [dev branch](https://github.com/murkl/arch-os/tree/dev) will be deleted after each merge into main.
