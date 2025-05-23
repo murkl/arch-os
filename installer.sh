@@ -366,7 +366,7 @@ start_recovery() {
         gum_info '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'
         gum_info 'BTRFS Rollback Commands'
         gum_info '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'
-        gum_info "btrfs subvolume delete ${recovery_mount_dir}/@"
+        gum_info "btrfs subvolume delete --recursive ${recovery_mount_dir}/@"
         gum_info "btrfs subvolume snapshot ${recovery_mount_dir}/@snapshots/<ID>/snapshot ${recovery_mount_dir}/@"
         echo
         gum_info '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'
