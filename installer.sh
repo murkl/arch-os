@@ -347,12 +347,23 @@ start_recovery() {
     gum_info "Mounting /boot"
     mount "$recovery_boot_partition" "${recovery_mount_dir}/boot"
 
-    # Chroot
-    gum_green "!! YOUR ARE NOW ON YOUR RECOVERY SYSTEM !!"
-    gum_yellow ">> Leave with command 'exit'"
-    arch-chroot "$recovery_mount_dir" </dev/tty
-    wait && recovery_unmount
-    gum_green ">> Exit Recovery"
+    # Chroot (ext4)
+    if [ "$(lsblk -no fstype "${mount_target}")" = "ext4" ]; then
+        gum_green "!! YOUR ARE NOW ON YOUR RECOVERY SYSTEM !!"
+        gum_yellow ">> Leave with command 'exit'"
+        arch-chroot "$recovery_mount_dir" </dev/tty
+        wait && recovery_unmount
+        gum_green ">> Exit Recovery"
+    fi
+
+    # BTRFS Rollback
+    if [ "$(lsblk -no fstype "${mount_target}")" = "btrfs" ]; then
+        gum_green "SNAPSHOTS"
+        gum_yellow "----------------------------------------------------------------"
+        btrfs subvolume list /mnt/recovery
+        gum_yellow "----------------------------------------------------------------"
+        gum_green "!! YOUR BTRFS ROLLBACK SYSTEM IS PREPARED !!"
+    fi
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////

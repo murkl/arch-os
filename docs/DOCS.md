@@ -561,10 +561,10 @@ bash installer.sh --recovery
 #### BTRFS Rollback
 
 ```
-mv /mnt/@ /mnt/@.broken # or sudo btrfs subvolume delete /mnt/@
-btrfs subvolume list /mnt # List Snapshots <ID>
-btrfs subvolume snapshot /mnt/@snapshots/<ID>/snapshot /mnt/@
-umount /mnt
+mv /mnt/recovery/@ /mnt/recovery/@.broken # or sudo btrfs subvolume delete /mnt/recovery/@
+btrfs subvolume list /mnt/recovery # List Snapshots <ID>
+btrfs subvolume snapshot /mnt/recovery/@snapshots/<ID>/snapshot /mnt/recovery/@
+umount /mnt/recovery
 ```
 
 #### EXT4 - manually
