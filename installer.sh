@@ -316,7 +316,7 @@ start_recovery() {
 
         # BTRFS: Mount encrypted disk
         local mount_target="/dev/mapper/${recovery_crypt_label}"
-        if [ "$(findmnt -n -o FSTYPE --target "${mount_target}")" = "btrfs" ]; then
+        if [ "$(lsblk -no fstype "${mount_target}")" = "btrfs" ]; then
             gum_info "Mounting encrypted BTRFS..."
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@ "${mount_target}" "${recovery_mount_dir}"
@@ -330,7 +330,7 @@ start_recovery() {
     else
         # BTRFS: Mount unencrypted disk
         local mount_target="$recovery_root_partition"
-        if [ "$(findmnt -n -o FSTYPE --target "${mount_target}")" = "btrfs" ]; then
+        if [ "$(lsblk -no fstype "${mount_target}")" = "btrfs" ]; then
             gum_info "Mounting unencrypted BTRFS..."
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@ "${mount_target}" "${recovery_mount_dir}"
