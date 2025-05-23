@@ -358,11 +358,11 @@ start_recovery() {
 
     # BTRFS Rollback
     if [ "$(lsblk -no fstype "${mount_target}")" = "btrfs" ]; then
-        gum_green "SNAPSHOTS"
-        gum_yellow "----------------------------------------------------------------"
-        btrfs subvolume list /mnt/recovery
-        gum_yellow "----------------------------------------------------------------"
-        gum_green "!! YOUR BTRFS ROLLBACK SYSTEM IS PREPARED !!"
+        gum_green "BTRFS SNAPSHOTS"
+        gum_yellow '!! ---------------------------------------------------------------- !!'
+        btrfs subvolume list "$recovery_mount_dir"
+        gum_yellow '!! ---------------------------------------------------------------- !!'
+        gum_green '!! YOUR BTRFS ROLLBACK SYSTEM IS PREPARED !!'
     fi
 }
 
