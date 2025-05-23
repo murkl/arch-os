@@ -358,11 +358,20 @@ start_recovery() {
 
     # BTRFS Rollback
     if [ "$(lsblk -no fstype "${mount_target}")" = "btrfs" ]; then
-        gum_info "Snapshots"
+        gum_info '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'
+        gum_info "BTRFS Snapshots"
         gum_info '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'
         btrfs subvolume list "$recovery_mount_dir"
+        echo
+        gum_info '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'
+        gum_info 'BTRFS Rollback Commands'
+        gum_info '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'
+        gum_info 'btrfs subvolume delete /mnt/recovery/@'
+        gum_info 'btrfs subvolume snapshot /mnt/recovery/@snapshots/<ID>/snapshot /mnt/recovery/@'
+        echo
         gum_info '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'
         gum_info 'BTRFS Rollback system initialized'
+        gum_info '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'
     fi
 }
 
