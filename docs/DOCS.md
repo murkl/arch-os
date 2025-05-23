@@ -558,9 +558,20 @@ curl -Ls bit.ly/arch-os > installer.sh
 bash installer.sh --recovery
 ```
 
-or follow these instructions to do this manually.
+#### BTRFS Rollback
 
-#### 1. Disk Information
+```
+mv /mnt/@ /mnt/@.broken # or sudo btrfs subvolume delete /mnt/@
+btrfs subvolume list /mnt # List Snapshots <ID>
+btrfs subvolume snapshot /mnt/@snapshots/<ID>/snapshot /mnt/@
+umount /mnt
+```
+
+#### EXT4 - manually
+
+Follow these instructions to do this manually.
+
+##### 1. Disk Information
 
 - Show disk info: `lsblk`
 
@@ -570,7 +581,7 @@ _**Example**_
 - _Example Boot: `/dev/sda1`_
 - _Example Root: `/dev/sda2`_
 
-#### 2. Mount
+##### 2. Mount
 
 **Note:** _You may have to replace the example `/dev/sda` with your own disk_
 
@@ -582,21 +593,11 @@ _**Example**_
   - `mount /dev/sda2 /mnt`
 - Mount boot partition: `mount /dev/sda1 /mnt/boot`
 
-#### 3. Chroot
+##### 3. Chroot
 
 - Enter chroot: `arch-chroot /mnt`
 - _Fix your Arch OS..._
 - Exit: `exit`
-
-### Rescue & Recovery (BTRFS)
-
-```
-sudo mount -o subvolid=5 /dev/sdXY /mnt
-sudo mv /mnt/@ /mnt/@.broken # or sudo btrfs subvolume delete /mnt/@
-sudo btrfs subvolume list /mnt # List Snapshots <ID>
-sudo btrfs subvolume snapshot /mnt/@snapshots/<ID>/snapshot /mnt/@
-sudo umount /mnt
-```
 
 ## Development
 

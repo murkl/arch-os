@@ -302,7 +302,7 @@ start_recovery() {
     mkdir -p "$recovery_mount_dir"
     mkdir -p "$recovery_mount_dir/boot"
 
-    # Mount disk
+    # Mount encrypted disk
     if [ "$recovery_encryption_enabled" = "true" ]; then
 
         # Encryption password
@@ -314,14 +314,35 @@ start_recovery() {
             exit 130
         }
 
-        # Mount encrypted disk
-        mount "/dev/mapper/${recovery_crypt_label}" "$recovery_mount_dir"
-        mount "$recovery_boot_partition" "$recovery_mount_dir/boot"
+        # BTRFS: Mount encrypted disk
+        local mount_target="/dev/mapper/${recovery_crypt_label}"
+        if [ "$(findmnt -n -o FSTYPE --target "${mount_target}")" = "btrfs" ]; then
+            local mount_opts="defaults,noatime,compress=zstd"
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@ "${mount_target}" "${recovery_mount_dir}"
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" "${recovery_mount_dir}/.snapshots"
+            u
+        else
+            # EXT4: Mount encrypted disk
+            mount "/dev/mapper/${recovery_crypt_label}" "$recovery_mount_dir"
+        fi
     else
-        # Mount unencrypted disk
-        mount "$recovery_root_partition" "$recovery_mount_dir"
-        mount "$recovery_boot_partition" "$recovery_mount_dir/boot"
+        # BTRFS: Mount unencrypted disk
+        local mount_target="$recovery_root_partition"
+        if [ "$(findmnt -n -o FSTYPE --target "${mount_target}")" = "btrfs" ]; then
+            local mount_opts="defaults,noatime,compress=zstd"
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@ "${mount_target}" "${recovery_mount_dir}"
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" "${recovery_mount_dir}/.snapshots"
+            u
+        else
+            # EXT4: Mount unencrypted disk
+            mount "$recovery_root_partition" "$recovery_mount_dir"
+        fi
     fi
+
+    # Mount boot
+    mount "$recovery_boot_partition" "${recovery_mount_dir}/boot"
 
     # Chroot
     gum_green "!! YOUR ARE NOW ON YOUR RECOVERY SYSTEM !!"
