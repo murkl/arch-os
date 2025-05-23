@@ -319,7 +319,7 @@ start_recovery() {
         if [ "$(lsblk -no fstype "${mount_target}")" = "btrfs" ]; then
             gum_info "Mounting encrypted BTRFS..."
             local mount_opts="defaults,noatime,compress=zstd"
-            mount --mkdir -t btrfs -o ${mount_opts},subvol=@ "${mount_target}" "${recovery_mount_dir}"
+            mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" "${recovery_mount_dir}/.snapshots"
         else
@@ -333,7 +333,7 @@ start_recovery() {
         if [ "$(lsblk -no fstype "${mount_target}")" = "btrfs" ]; then
             gum_info "Mounting unencrypted BTRFS..."
             local mount_opts="defaults,noatime,compress=zstd"
-            mount --mkdir -t btrfs -o ${mount_opts},subvol=@ "${mount_target}" "${recovery_mount_dir}"
+            mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" "${recovery_mount_dir}/.snapshots"
         else
