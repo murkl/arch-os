@@ -303,6 +303,9 @@ start_recovery() {
     mkdir -p "$recovery_mount_dir"
     mkdir -p "$recovery_mount_dir/boot"
 
+    # Env
+    local mount_target
+
     # Mount encrypted disk
     if [ "$recovery_encryption_enabled" = "true" ]; then
 
@@ -316,40 +319,46 @@ start_recovery() {
         }
 
         # BTRFS: Mount encrypted disk
-        local mount_target="/dev/mapper/${recovery_crypt_label}"
-        if [ "$(lsblk -no fstype "${mount_target}")" = "btrfs" ]; then
+        mount_target="/dev/mapper/${recovery_crypt_label}"
+        if lsblk -no fstype "${mount_target}" | grep -qw btrfs; then
             gum_info "Mounting encrypted BTRFS..."
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" "${recovery_mount_dir}/.snapshots"
-        else
-            # EXT4: Mount encrypted disk
+        fi
+
+        # EXT4: Mount encrypted disk
+        if lsblk -no fstype "${mount_target}" | grep -qw ext4; then
             gum_info "Mounting encrypted EXT4..."
             mount "/dev/mapper/${recovery_crypt_label}" "$recovery_mount_dir"
         fi
     else
         # BTRFS: Mount unencrypted disk
-        local mount_target="$recovery_root_partition"
-        if [ "$(lsblk -no fstype "${mount_target}")" = "btrfs" ]; then
+        mount_target="$recovery_root_partition"
+        if lsblk -no fstype "${mount_target}" | grep -qw btrfs; then
             gum_info "Mounting unencrypted BTRFS..."
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" "${recovery_mount_dir}/.snapshots"
-        else
-            # EXT4: Mount unencrypted disk
+        fi
+
+        # EXT4: Mount unencrypted disk
+        if lsblk -no fstype "${mount_target}" | grep -qw ext4; then
             gum_info "Mounting unencrypted EXT4..."
             mount "$recovery_root_partition" "$recovery_mount_dir"
         fi
     fi
+
+    [ -z "$mount_target" ] && gum_fail "Filesystem not found" && exit 130
 
     # Mount boot
     gum_info "Mounting /boot"
     mount "$recovery_boot_partition" "${recovery_mount_dir}/boot"
 
     # Chroot (ext4)
-    if [ "$(lsblk -no fstype "${mount_target}")" = "ext4" ]; then
+    if lsblk -no fstype "${mount_target}" | grep -qw ext4; then
         gum_green "!! YOUR ARE NOW ON YOUR RECOVERY SYSTEM !!"
         gum_yellow ">> Leave with command 'exit'"
         arch-chroot "$recovery_mount_dir" </dev/tty
@@ -365,7 +374,7 @@ start_recovery() {
         local snapshot_input
         snapshot_input=$(btrfs subvolume list "$recovery_mount_dir" | awk '$NF ~ /^@snapshots\/[0-9]+\/snapshot$/ {print $NF}' | gum_filter --header "+ Select Snapshot") || exit 130
         gum_info "${snapshot_input} > @"
-        gum_confirm "Confirm Rollback " || exit 130
+        gum_confirm "Confirm Rollback" || exit 130
 
         # Rollback
         btrfs subvolume delete --recursive "${recovery_mount_dir}/@"
