@@ -329,7 +329,7 @@ start_recovery() {
 
         # BTRFS: Mount encrypted disk
         if $mount_fs_btrfs; then
-            gum_info "Mounting @, @home & @snapshots (encrypted BTRFS)..."
+            gum_info "Mounting BTRFS: @, @home & @snapshots"
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
@@ -338,7 +338,7 @@ start_recovery() {
 
         # EXT4: Mount encrypted disk
         if $mount_fs_ext4; then
-            gum_info "Mounting /root (encrypted EXT4)..."
+            gum_info "Mounting EXT4: /root"
             mount "/dev/mapper/${recovery_crypt_label}" "$recovery_mount_dir"
         fi
     else
@@ -348,7 +348,7 @@ start_recovery() {
         mount_fs_ext4=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw ext4 && echo true || echo false)
 
         if $mount_fs_btrfs; then
-            gum_info "Mounting @, @home & @snapshots (unencrypted BTRFS)..."
+            gum_info "Mounting BTRFS: @, @home & @snapshots"
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
@@ -357,7 +357,7 @@ start_recovery() {
 
         # EXT4: Mount unencrypted disk
         if $mount_fs_ext4; then
-            gum_info "Mounting /root (unencrypted EXT4)..."
+            gum_info "Mounting EXT4: /root"
             mount "$recovery_root_partition" "$recovery_mount_dir"
         fi
     fi
@@ -369,7 +369,7 @@ start_recovery() {
     fi
 
     # Mount boot
-    gum_info "Mounting /boot"
+    gum_info "Mounting EFI: /boot"
     mkdir -p "$recovery_mount_dir/boot"
     mount "$recovery_boot_partition" "${recovery_mount_dir}/boot"
 
