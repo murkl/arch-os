@@ -363,7 +363,7 @@ start_recovery() {
 
     # Check if ext4 or btrfs found
     if ! $mount_fs_btrfs && ! $mount_fs_ext4; then
-        gum_fail "Filesystem not found. Only btrfs & ext4 supported."
+        gum_fail "Filesystem not found. Only BTRFS & EXT4 supported."
         exit 130
     fi
 
@@ -387,14 +387,14 @@ start_recovery() {
         echo && gum_title "BTRFS Rollback"
         local snapshot_input
         snapshot_input=$(btrfs subvolume list "$recovery_mount_dir" | awk '$NF ~ /^@snapshots\/[0-9]+\/snapshot$/ {print $NF}' | gum_filter --header "+ Select Snapshot") || exit 130
-        gum_info "Snapsshot: ${snapshot_input}"
+        gum_info "Snapshot: ${snapshot_input}"
         gum_confirm "Confirm Rollback to @" || exit 130
 
         # Rollback
         btrfs subvolume delete --recursive "${recovery_mount_dir}/@"
         btrfs subvolume snapshot "${recovery_mount_dir}/${snapshot_input}" "${recovery_mount_dir}/@"
-        gum_info "Snapshot ${snapshot_input} was set to @"
-        gum_info "Rollback successfully finished"
+        gum_info "Snapshot ${snapshot_input} is set to @ after next reboot"
+        gum_green "Rollback successfully finished"
     fi
 }
 
