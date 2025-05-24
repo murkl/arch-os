@@ -270,6 +270,7 @@ start_recovery() {
         swapoff -a &>/dev/null
         umount -A -R "$recovery_mount_dir" &>/dev/null
         cryptsetup close "$recovery_crypt_label" &>/dev/null
+        cryptsetup close cryptroot &>/dev/null || true
         set -e
     }
 
@@ -920,6 +921,7 @@ exec_init_installation() {
         fi
         wait # Wait for sub process
         cryptsetup close cryptroot || true
+        cryptsetup close cryptrecovery || true
         vgchange -an || true
         # Temporarily disable ECN (prevent traffic problems with some old routers)
         [ "$ARCH_OS_ECN_ENABLED" = "false" ] && sysctl net.ipv4.tcp_ecn=0
