@@ -7,5 +7,6 @@ gum
 # Ignore installer files
 installer.conf
 installer.conf.old
+installer.conf.new
 installer.log
 installer.log.old
