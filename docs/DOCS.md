@@ -554,7 +554,7 @@ paru -Scc
 If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and start the included recovery mode:
 
 ```
-curl -Ls bit.ly/arch-os | RECOVERY=true bash
+curl -Ls bit.ly/arch-os | env RECOVERY=true bash
 ```
 
 #### BTRFS Rollback
