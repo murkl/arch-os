@@ -362,7 +362,10 @@ start_recovery() {
     fi
 
     # Check if ext4 or btrfs found
-    [ -z "$mount_target" ] && gum_fail "Filesystem not found. Only btrfs & ext4 supported." && exit 130
+    if ! $mount_fs_btrfs && ! $mount_fs_ext4; then
+        gum_fail "Filesystem not found. Only btrfs & ext4 supported."
+        exit 130
+    fi
 
     # Mount boot
     gum_info "Mounting /boot"
