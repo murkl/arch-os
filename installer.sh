@@ -323,8 +323,8 @@ start_recovery() {
         }
 
         mount_target="/dev/mapper/${recovery_crypt_label}"
-        mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" | grep -qw btrfs || false)
-        mount_fs_ext4=$(lsblk -no fstype "${mount_target}" | grep -qw ext4 || false)
+        mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw btrfs && echo true || echo false)
+        mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw ext4 && echo true || echo false)
 
         # BTRFS: Mount encrypted disk
         if $mount_fs_btrfs; then
@@ -343,8 +343,8 @@ start_recovery() {
     else
         # BTRFS: Mount unencrypted disk
         mount_target="$recovery_root_partition"
-        mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" | grep -qw btrfs || false)
-        mount_fs_ext4=$(lsblk -no fstype "${mount_target}" | grep -qw ext4 || false)
+        mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw btrfs && echo true || echo false)
+        mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw ext4 && echo true || echo false)
 
         if $mount_fs_btrfs; then
             gum_info "Mounting unencrypted BTRFS..."
