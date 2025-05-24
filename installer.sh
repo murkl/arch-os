@@ -912,6 +912,7 @@ exec_init_installation() {
         timedatectl set-ntp true     # Set time
         # Make sure everything is unmounted before start install
         swapoff -a || true
+        umount -R /mnt/recovery || true
         if [[ "$(umount -f -A -R /mnt 2>&1)" == *"target is busy"* ]]; then
             # If umount is busy execute fuser
             fuser -km /mnt || true
