@@ -332,6 +332,10 @@ start_recovery() {
         # BTRFS: Mount encrypted disk
         if $mount_fs_btrfs; then
             gum_info "Mounting BTRFS: @, @home & @snapshots"
+            mount "$recovery_root_partition" "$recovery_mount_dir"
+        fi
+        if false; then
+            gum_info "Mounting BTRFS: @, @home & @snapshots"
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
@@ -350,6 +354,10 @@ start_recovery() {
         mount_fs_ext4=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw ext4 && echo true || echo false)
 
         if $mount_fs_btrfs; then
+            gum_info "Mounting BTRFS: @, @home & @snapshots"
+            mount "$recovery_root_partition" "$recovery_mount_dir"
+        fi
+        if false; then
             gum_info "Mounting BTRFS: @, @home & @snapshots"
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
