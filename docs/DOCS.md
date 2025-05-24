@@ -452,9 +452,9 @@ Great GUI for managing Snapshots: [AUR/btrfs-assistant](https://aur.archlinux.or
 | btrfs-progs | btrfs-scrub@-.timer         | Schedules regular Btrfs scrub for the root filesystem.               |
 | btrfs-progs | btrfs-scrub@home.timer      | Schedules regular Btrfs scrub for the /home subvolume.               |
 | btrfs-progs | btrfs-scrub@snapshots.timer | Schedules regular Btrfs scrub for the /snapshots subvolume.          |
+| snapper     | snapper-boot.timer          | Automatically creates a Btrfs snapshot at every system boot.         |
 | snapper     | snapper-timeline.timer      | Automatically creates periodic Btrfs snapshots.                      |
 | snapper     | snapper-cleanup.timer       | Cleans up old Btrfs snapshots based on retention policy.             |
-| snapper     | snapper-boot.timer          | Automatically creates a Btrfs snapshot at every system boot.         |
 
 This packages are installed:
 
