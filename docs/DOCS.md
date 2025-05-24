@@ -436,27 +436,33 @@ The partitions layout is seperated in two partitions:
 
 #### BTRFS
 
+Great GUI for managing Snapshots: [AUR/btrfs-assistant](https://aur.archlinux.org/packages/btrfs-assistant)
+
 | Subvolume  | Mountpoint  | Description                            | Snapper Config            |
 | ---------- | ----------- | -------------------------------------- | ------------------------- |
 | @          | /           | Mount point for root                   | /etc/snapper/configs/root |
 | @home      | /home       | Mount point for home                   | x                         |
 | @snapshots | /.snapshots | Read-only snapshots created by snapper | x                         |
 
-Great GUI for managing Snapshots: [AUR/btrfs-assistant](https://aur.archlinux.org/packages/btrfs-assistant)
+**Note:** If `btrfs` as filesystem and `grub` as bootloader is selected, _OverlayFS_ is used and lets you overlay a writable layer on top of a read-only Btrfs snapshot, so changes are temporary and the original data stays untouched. It is enabled by adding `grub-btrfs-overlayfs` to the `HOOKS` array in `/etc/mkinitcpio.conf`.
 
-This additional packages are installed:
+| Package     | Service/Timer               | Description                                                          |
+| ----------- | --------------------------- | -------------------------------------------------------------------- |
+| grub-btrfs  | grub-btrfsd.service         | Automatically updates GRUB menu entries when Btrfs snapshots change. |
+| btrfs-progs | btrfs-scrub@-.timer         | Schedules regular Btrfs scrub for the root filesystem.               |
+| btrfs-progs | btrfs-scrub@home.timer      | Schedules regular Btrfs scrub for the /home subvolume.               |
+| btrfs-progs | btrfs-scrub@snapshots.timer | Schedules regular Btrfs scrub for the /snapshots subvolume.          |
+| snapper     | snapper-timeline.timer      | Automatically creates periodic Btrfs snapshots.                      |
+| snapper     | snapper-cleanup.timer       | Cleans up old Btrfs snapshots based on retention policy.             |
+| snapper     | snapper-boot.timer          | Automatically creates a Btrfs snapshot at every system boot.         |
+
+This packages are installed:
 
 ```
 base-devel btrfs-progs efibootmgr inotify-tools grub grub-btrfs snapper snap-pac
 ```
 
-This additional services are enabled:
-
-```
-grub-btrfsd.service btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@snapshots.timer snapper-timeline.timer snapper-cleanup.timer
-```
-
-**Note:** If `btrfs` as filesystem and `grub` as bootloader is selected, _OverlayFS_ is used and lets you overlay a writable layer on top of a read-only Btrfs snapshot, so changes are temporary and the original data stays untouched. It is enabled by adding `grub-btrfs-overlayfs` to the `HOOKS` array in `/etc/mkinitcpio.conf`.
+**Note:** By installing `snap-pac`, a Pacman hook is created that automatically generates Btrfs snapshots before and after each package transaction.
 
 ### Swap
 
