@@ -334,6 +334,8 @@ start_recovery() {
             gum_info "Mounting BTRFS: @, @home & @snapshots"
             mount "$recovery_root_partition" "$recovery_mount_dir"
         fi
+
+        # TODO: DEPRECATED
         if false; then
             gum_info "Mounting BTRFS: @, @home & @snapshots"
             local mount_opts="defaults,noatime,compress=zstd"
@@ -357,6 +359,8 @@ start_recovery() {
             gum_info "Mounting BTRFS: @, @home & @snapshots"
             mount "$recovery_root_partition" "$recovery_mount_dir"
         fi
+
+        # TODO: DEPRECATED
         if false; then
             gum_info "Mounting BTRFS: @, @home & @snapshots"
             local mount_opts="defaults,noatime,compress=zstd"
