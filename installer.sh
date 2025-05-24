@@ -264,6 +264,7 @@ start_recovery() {
     local recovery_crypt_label="cryptrecovery"
     local recovery_encryption_enabled
     local recovery_encryption_password
+    local mount_target
 
     recovery_unmount() {
         set +e
@@ -293,9 +294,11 @@ start_recovery() {
     # Check encryption
     if lsblk -ndo FSTYPE "$recovery_root_partition" 2>/dev/null | grep -q "crypto_LUKS"; then
         recovery_encryption_enabled="true"
+        mount_target="/dev/mapper/${recovery_crypt_label}"
         gum_warn "The disk $user_input is encrypted with LUKS"
     else
         recovery_encryption_enabled="false"
+        mount_target="$recovery_root_partition"
         gum_info "The disk $user_input is not encrypted"
     fi
 
@@ -309,73 +312,8 @@ start_recovery() {
     mkdir -p "$recovery_mount_dir"
 
     # Env
-    local mount_target
-    local mount_fs_btrfs
-    local mount_fs_ext4
-
-    # Mount encrypted disk
-    if [ "$recovery_encryption_enabled" = "true" ]; then
-
-        mount_target="/dev/mapper/${recovery_crypt_label}"
-        mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw btrfs && echo true || echo false)
-        mount_fs_ext4=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw ext4 && echo true || echo false)
-
-        # Encryption password
-        recovery_encryption_password=$(gum_input --password --header "+ Enter Encryption Password" </dev/tty) || exit 130
-
-        # Open encrypted Disk
-        echo -n "$recovery_encryption_password" | cryptsetup open "$recovery_root_partition" "$recovery_crypt_label" &>/dev/null || {
-            gum_fail "Wrong encryption password"
-            exit 130
-        }
-
-        # TODO
-        if false; then
-            gum_info "Mounting BTRFS: @, @home & @snapshots"
-            mount "$recovery_root_partition" "$recovery_mount_dir"
-        fi
-
-        # BTRFS: Mount encrypted disk
-        if $mount_fs_btrfs; then
-            gum_info "Mounting BTRFS: @, @home & @snapshots"
-            local mount_opts="defaults,noatime,compress=zstd"
-            mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
-            mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
-            mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" "${recovery_mount_dir}/.snapshots"
-        fi
-
-        # EXT4: Mount encrypted disk
-        if $mount_fs_ext4; then
-            gum_info "Mounting EXT4: /root"
-            mount "${mount_target}" "$recovery_mount_dir"
-        fi
-    else
-        # BTRFS: Mount unencrypted disk
-        mount_target="$recovery_root_partition"
-        mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw btrfs && echo true || echo false)
-        mount_fs_ext4=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw ext4 && echo true || echo false)
-
-        # TODO
-        if false; then
-            gum_info "Mounting BTRFS: @, @home & @snapshots"
-            mount "$recovery_root_partition" "$recovery_mount_dir"
-        fi
-
-        # BTRFS: Mount unencrypted disk
-        if $mount_fs_btrfs; then
-            gum_info "Mounting BTRFS: @, @home & @snapshots"
-            local mount_opts="defaults,noatime,compress=zstd"
-            mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
-            mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
-            mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" "${recovery_mount_dir}/.snapshots"
-        fi
-
-        # EXT4: Mount unencrypted disk
-        if $mount_fs_ext4; then
-            gum_info "Mounting EXT4: /root"
-            mount "$recovery_root_partition" "$recovery_mount_dir"
-        fi
-    fi
+    local mount_fs_btrfs && mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw btrfs && echo true || echo false)
+    local mount_fs_ext4 && mount_fs_ext4=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw ext4 && echo true || echo false)
 
     # Check if ext4 OR btrfs found
     if ! $mount_fs_btrfs && ! $mount_fs_ext4; then
@@ -387,6 +325,63 @@ start_recovery() {
     if $mount_fs_btrfs && $mount_fs_ext4; then
         gum_fail "ERROR: BTRFS and EXT4 are found at the same device."
         exit 130
+    fi
+
+    # Mount encrypted disk
+    if [ "$recovery_encryption_enabled" = "true" ]; then
+
+        # Encryption password
+        recovery_encryption_password=$(gum_input --password --header "+ Enter Encryption Password" </dev/tty) || exit 130
+
+        # Open encrypted Disk
+        echo -n "$recovery_encryption_password" | cryptsetup open "$recovery_root_partition" "$recovery_crypt_label" &>/dev/null || {
+            gum_fail "Wrong encryption password"
+            exit 130
+        }
+
+        # EXT4: Mount encrypted disk
+        if $mount_fs_ext4; then
+            gum_info "Mounting EXT4: /root"
+            mount "${mount_target}" "$recovery_mount_dir"
+        fi
+
+        # BTRFS: Mount encrypted disk
+        if $mount_fs_btrfs; then
+            gum_info "Mounting BTRFS: @, @home & @snapshots"
+            local mount_opts="defaults,noatime,compress=zstd"
+            mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" "${recovery_mount_dir}/.snapshots"
+        fi
+
+        # TODO
+        if false; then
+            gum_info "Mounting BTRFS: @, @home & @snapshots"
+            mount "$recovery_root_partition" "$recovery_mount_dir"
+        fi
+
+    else
+
+        # EXT4: Mount unencrypted disk
+        if $mount_fs_ext4; then
+            gum_info "Mounting EXT4: /root"
+            mount "$recovery_root_partition" "$recovery_mount_dir"
+        fi
+
+        # BTRFS: Mount unencrypted disk
+        if $mount_fs_btrfs; then
+            gum_info "Mounting BTRFS: @, @home & @snapshots"
+            local mount_opts="defaults,noatime,compress=zstd"
+            mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" "${recovery_mount_dir}/.snapshots"
+        fi
+
+        # TODO
+        if false; then
+            gum_info "Mounting BTRFS: @, @home & @snapshots"
+            mount "$recovery_root_partition" "$recovery_mount_dir"
+        fi
     fi
 
     # Mount boot
