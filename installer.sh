@@ -303,7 +303,6 @@ start_recovery() {
 
     # Create mount dir
     mkdir -p "$recovery_mount_dir"
-    mkdir -p "$recovery_mount_dir/boot"
 
     # Env
     local mount_target
@@ -369,6 +368,7 @@ start_recovery() {
 
     # Mount boot
     gum_info "Mounting /boot"
+    mkdir -p "$recovery_mount_dir/boot"
     mount "$recovery_boot_partition" "${recovery_mount_dir}/boot"
 
     # Chroot (ext4)
