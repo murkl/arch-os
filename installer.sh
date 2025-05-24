@@ -358,21 +358,19 @@ start_recovery() {
     fi
 
     # BTRFS Rollback
-    if [ "$(lsblk -no fstype "${mount_target}")" = "btrfs" ]; then
-        gum_info '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'
-        gum_info "BTRFS Snapshots"
-        gum_info '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'
-        btrfs subvolume list "$recovery_mount_dir"
-        echo
-        gum_info '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'
-        gum_info 'BTRFS Rollback Commands'
-        gum_info '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'
-        gum_info "btrfs subvolume delete --recursive ${recovery_mount_dir}/@"
-        gum_info "btrfs subvolume snapshot ${recovery_mount_dir}/@snapshots/<ID>/snapshot ${recovery_mount_dir}/@"
-        echo
-        gum_info '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'
-        gum_info "BTRFS Rollback system initialized: ${recovery_mount_dir}"
-        gum_info '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'
+    if lsblk -no fstype "${mount_target}" | grep -qw btrfs; then
+
+        # Input & info
+        echo && gum_title "BTRFS Rollback"
+        local snapshot_input
+        snapshot_input=$(btrfs subvolume list "$recovery_mount_dir" | awk '$NF ~ /^@snapshots\/[0-9]+\/snapshot$/ {print $NF}' | gum_filter --header "+ Select Snapshot") || exit 130
+        gum_info "${snapshot_input} > @"
+        gum_confirm "Confirm Rollback " || exit 130
+
+        # Rollback
+        btrfs subvolume delete --recursive "${recovery_mount_dir}/@"
+        btrfs subvolume snapshot "${recovery_mount_dir}/${snapshot_input}" "${recovery_mount_dir}/@"
+        gum_info "Rollback successful"
     fi
 }
 
