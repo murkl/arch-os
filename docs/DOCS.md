@@ -10,9 +10,10 @@
 2. [Advanced Installation](#advanced-installation)
 3. [Features](#features)
 4. [Technical Information](#technical-information)
-5. [Troubleshooting](#troubleshooting)
-6. [Development](#development)
-7. [Credits](#credits)
+5. [Rescue & Recovery](#rescue--recovery)
+6. [Troubleshooting](#troubleshooting)
+7. [Development](#development)
+8. [Credits](#credits)
 
 ## Recommendation
 
@@ -488,6 +489,54 @@ This configuration will be set during Arch OS Core Installation:
 
 **Note:** The password (`ARCH_OS_PASSWORD`) is used for encryption (optional), root and user login and can be changed afterwards with `passwd` if necessary.
 
+## Rescue & Recovery
+
+If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and start the included recovery mode:
+
+```
+curl -Ls bit.ly/arch-os | RECOVERY=true bash
+```
+
+### BTRFS Rollback - manually
+
+```
+btrfs subvolume list /mnt/recovery # List BTRFS snapshots
+btrfs subvolume delete --recursive /mnt/recovery/@
+btrfs subvolume snapshot /mnt/recovery/@snapshots/<ID>/snapshot /mnt/recovery/@
+```
+
+### EXT4 Recovery - manually
+
+Follow these instructions to do this manually.
+
+#### 1. Disk Information
+
+- Show disk info: `lsblk`
+
+_**Example**_
+
+- _Example Disk: `/dev/sda`_
+- _Example Boot: `/dev/sda1`_
+- _Example Root: `/dev/sda2`_
+
+#### 2. Mount
+
+**Note:** _You may have to replace the example `/dev/sda` with your own disk_
+
+- Create mount dir: `mkdir -p /mnt/boot`
+- a) Mount root partition (disk encryption enabled):
+  - `cryptsetup open /dev/sda2 cryptroot`
+  - `mount /dev/mapper/cryptroot /mnt`
+- b) Mount root partition (disk encryption disabled):
+  - `mount /dev/sda2 /mnt`
+- Mount boot partition: `mount /dev/sda1 /mnt/boot`
+
+#### 3. Chroot
+
+- Enter chroot: `arch-chroot /mnt`
+- _Fix your Arch OS..._
+- Exit: `exit`
+
 ## Troubleshooting
 
 If an error occurs, see created `installer.log` for more details.
@@ -549,54 +598,6 @@ sudo pacman -Sy archlinux-keyring && paru -Su
 paru -Scc
 ```
 
-### Rescue & Recovery
-
-If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and start the included recovery mode:
-
-```
-curl -Ls bit.ly/arch-os | env RECOVERY=true bash
-```
-
-#### BTRFS Rollback
-
-```
-btrfs subvolume list /mnt/recovery # List BTRFS snapshots
-btrfs subvolume delete --recursive /mnt/recovery/@
-btrfs subvolume snapshot /mnt/recovery/@snapshots/<ID>/snapshot /mnt/recovery/@
-```
-
-#### EXT4 - manually
-
-Follow these instructions to do this manually.
-
-##### 1. Disk Information
-
-- Show disk info: `lsblk`
-
-_**Example**_
-
-- _Example Disk: `/dev/sda`_
-- _Example Boot: `/dev/sda1`_
-- _Example Root: `/dev/sda2`_
-
-##### 2. Mount
-
-**Note:** _You may have to replace the example `/dev/sda` with your own disk_
-
-- Create mount dir: `mkdir -p /mnt/boot`
-- a) Mount root partition (disk encryption enabled):
-  - `cryptsetup open /dev/sda2 cryptroot`
-  - `mount /dev/mapper/cryptroot /mnt`
-- b) Mount root partition (disk encryption disabled):
-  - `mount /dev/sda2 /mnt`
-- Mount boot partition: `mount /dev/sda1 /mnt/boot`
-
-##### 3. Chroot
-
-- Enter chroot: `arch-chroot /mnt`
-- _Fix your Arch OS..._
-- Exit: `exit`
-
 ## Development
 
 Create new pull request branches only from [main branch](https://github.com/murkl/arch-os/tree/main)! The [dev branch](https://github.com/murkl/arch-os/tree/dev) will be deleted after each merge into main.
@@ -621,6 +622,9 @@ GUM=/usr/bin/gum ./installer.sh
 
 # Debug simulator:
 DEBUG=true ./installer.sh
+
+# Start recovery mode:
+RECOVERY=true ./installer.sh
 ```
 
 ## Credits
