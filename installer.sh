@@ -262,6 +262,8 @@ start_recovery() {
     local recovery_boot_partition recovery_root_partition user_input items options
     local recovery_mount_dir="/mnt/recovery"
     local recovery_crypt_label="cryptrecovery"
+    local recovery_encryption_enabled
+    local recovery_encryption_password
 
     recovery_unmount() {
         set +e
@@ -305,6 +307,8 @@ start_recovery() {
 
     # Env
     local mount_target
+    local mount_fs_btrfs
+    local mount_fs_ext4
 
     # Mount encrypted disk
     if [ "$recovery_encryption_enabled" = "true" ]; then
@@ -318,9 +322,12 @@ start_recovery() {
             exit 130
         }
 
-        # BTRFS: Mount encrypted disk
         mount_target="/dev/mapper/${recovery_crypt_label}"
-        if lsblk -no fstype "${mount_target}" | grep -qw btrfs; then
+        mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" | grep -qw btrfs || false)
+        mount_fs_ext4=$(lsblk -no fstype "${mount_target}" | grep -qw ext4 || false)
+
+        # BTRFS: Mount encrypted disk
+        if $mount_fs_btrfs; then
             gum_info "Mounting encrypted BTRFS..."
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
@@ -329,14 +336,17 @@ start_recovery() {
         fi
 
         # EXT4: Mount encrypted disk
-        if lsblk -no fstype "${mount_target}" | grep -qw ext4; then
+        if $mount_fs_ext4; then
             gum_info "Mounting encrypted EXT4..."
             mount "/dev/mapper/${recovery_crypt_label}" "$recovery_mount_dir"
         fi
     else
         # BTRFS: Mount unencrypted disk
         mount_target="$recovery_root_partition"
-        if lsblk -no fstype "${mount_target}" | grep -qw btrfs; then
+        mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" | grep -qw btrfs || false)
+        mount_fs_ext4=$(lsblk -no fstype "${mount_target}" | grep -qw ext4 || false)
+
+        if $mount_fs_btrfs; then
             gum_info "Mounting unencrypted BTRFS..."
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
@@ -345,20 +355,21 @@ start_recovery() {
         fi
 
         # EXT4: Mount unencrypted disk
-        if lsblk -no fstype "${mount_target}" | grep -qw ext4; then
+        if $mount_fs_ext4; then
             gum_info "Mounting unencrypted EXT4..."
             mount "$recovery_root_partition" "$recovery_mount_dir"
         fi
     fi
 
-    [ -z "$mount_target" ] && gum_fail "Filesystem not found" && exit 130
+    # Check if ext4 or btrfs found
+    [ -z "$mount_target" ] && gum_fail "Filesystem not found. Only btrfs & ext4 supported." && exit 130
 
     # Mount boot
     gum_info "Mounting /boot"
     mount "$recovery_boot_partition" "${recovery_mount_dir}/boot"
 
     # Chroot (ext4)
-    if lsblk -no fstype "${mount_target}" | grep -qw ext4; then
+    if $mount_fs_ext4; then
         gum_green "!! YOUR ARE NOW ON YOUR RECOVERY SYSTEM !!"
         gum_yellow ">> Leave with command 'exit'"
         arch-chroot "$recovery_mount_dir" </dev/tty
@@ -367,19 +378,20 @@ start_recovery() {
     fi
 
     # BTRFS Rollback
-    if lsblk -no fstype "${mount_target}" | grep -qw btrfs; then
+    if $mount_fs_btrfs; then
 
         # Input & info
         echo && gum_title "BTRFS Rollback"
         local snapshot_input
         snapshot_input=$(btrfs subvolume list "$recovery_mount_dir" | awk '$NF ~ /^@snapshots\/[0-9]+\/snapshot$/ {print $NF}' | gum_filter --header "+ Select Snapshot") || exit 130
-        gum_info "${snapshot_input} > @"
-        gum_confirm "Confirm Rollback" || exit 130
+        gum_info "Snapsshot: ${snapshot_input}"
+        gum_confirm "Confirm Rollback to @" || exit 130
 
         # Rollback
         btrfs subvolume delete --recursive "${recovery_mount_dir}/@"
         btrfs subvolume snapshot "${recovery_mount_dir}/${snapshot_input}" "${recovery_mount_dir}/@"
-        gum_info "Rollback successful"
+        gum_info "Snapshot ${snapshot_input} was set to @"
+        gum_info "Rollback successfully finished"
     fi
 }
 
