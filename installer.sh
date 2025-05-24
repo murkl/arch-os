@@ -293,7 +293,7 @@ start_recovery() {
 
     # Check encryption
     #if lsblk -ndo FSTYPE "$recovery_root_partition" 2>/dev/null | grep -q "crypto_LUKS"; then
-    if  lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw crypto_LUKS && echo true || echo false; then
+    if lsblk -no fstype "${recovery_root_partition}" 2>/dev/null | grep -qw crypto_LUKS && echo true || echo false; then
         recovery_encryption_enabled="true"
         mount_target="/dev/mapper/${recovery_crypt_label}"
         gum_warn "The disk $user_input is encrypted with LUKS"
@@ -318,7 +318,7 @@ start_recovery() {
 
     # Check if ext4 OR btrfs found
     if ! $mount_fs_btrfs && ! $mount_fs_ext4; then
-        gum_fail "Filesystem not found. Only BTRFS & EXT4 supported."
+        gum_fail "ERROR: Filesystem not found. Only BTRFS & EXT4 supported."
         exit 130
     fi
 
