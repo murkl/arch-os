@@ -16,9 +16,10 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # ENVIRONMENT
-: "${DEBUG:=false}" # DEBUG=true ./installer.sh
-: "${FORCE:=false}" # FORCE=true ./installer.sh
-: "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
+: "${DEBUG:=false}"    # DEBUG=true ./installer.sh
+: "${FORCE:=false}"    # FORCE=true ./installer.sh
+: "${GUM:=./gum}"      # GUM=/usr/bin/gum ./installer.sh
+: "${RECOVERY:=false}" # RECOVERY=true ./installer.sh
 
 # SCRIPT
 VERSION='1.8.6'
@@ -72,7 +73,7 @@ main() {
     log_info "Arch OS ${VERSION}"
 
     # Start recovery
-    [[ "$1" = "--recovery"* ]] && {
+    [[ "$RECOVERY" = "true" ]] && {
         start_recovery
         exit $? # Exit after recovery
     }
