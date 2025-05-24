@@ -270,6 +270,7 @@ start_recovery() {
         swapoff -a &>/dev/null
         umount -A -R "$recovery_mount_dir" &>/dev/null
         cryptsetup close "$recovery_crypt_label" &>/dev/null
+        umount -A -R /mnt &>/dev/null
         cryptsetup close cryptroot &>/dev/null || true
         set -e
     }
