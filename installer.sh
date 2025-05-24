@@ -327,7 +327,7 @@ start_recovery() {
 
         # BTRFS: Mount encrypted disk
         if $mount_fs_btrfs; then
-            gum_info "Mounting encrypted BTRFS..."
+            gum_info "Mounting @, @home & @snapshots (encrypted BTRFS)..."
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
@@ -336,7 +336,7 @@ start_recovery() {
 
         # EXT4: Mount encrypted disk
         if $mount_fs_ext4; then
-            gum_info "Mounting encrypted EXT4..."
+            gum_info "Mounting /root (encrypted EXT4)..."
             mount "/dev/mapper/${recovery_crypt_label}" "$recovery_mount_dir"
         fi
     else
@@ -346,7 +346,7 @@ start_recovery() {
         mount_fs_ext4=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw ext4 && echo true || echo false)
 
         if $mount_fs_btrfs; then
-            gum_info "Mounting unencrypted BTRFS..."
+            gum_info "Mounting @, @home & @snapshots (unencrypted BTRFS)..."
             local mount_opts="defaults,noatime,compress=zstd"
             mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
             mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
@@ -355,7 +355,7 @@ start_recovery() {
 
         # EXT4: Mount unencrypted disk
         if $mount_fs_ext4; then
-            gum_info "Mounting unencrypted EXT4..."
+            gum_info "Mounting /root (unencrypted EXT4)..."
             mount "$recovery_root_partition" "$recovery_mount_dir"
         fi
     fi
@@ -385,8 +385,10 @@ start_recovery() {
 
         # Input & info
         echo && gum_title "BTRFS Rollback"
-        local snapshot_input
-        snapshot_input=$(btrfs subvolume list "$recovery_mount_dir" | awk '$NF ~ /^@snapshots\/[0-9]+\/snapshot$/ {print $NF}' | gum_filter --header "+ Select Snapshot") || exit 130
+        local snapshots snapshot_input
+        snapshots=$(btrfs subvolume list "$recovery_mount_dir" | awk '$NF ~ /^@snapshots\/[0-9]+\/snapshot$/ {print $NF}')
+        [ -z "$snapshots" ] && gum_fail "No Snapshot found in @snapshots" && exit 130
+        snapshot_input=$(echo "$snapshots" | gum_filter --header "+ Select Snapshot") || exit 130
         gum_info "Snapshot: ${snapshot_input}"
         gum_confirm "Confirm Rollback to @" || exit 130
 
