@@ -292,7 +292,8 @@ start_recovery() {
     [[ "$user_input" = "/dev/nvm"* ]] && recovery_root_partition="${user_input}p2" || recovery_root_partition="${user_input}2"
 
     # Check encryption
-    if lsblk -ndo FSTYPE "$recovery_root_partition" 2>/dev/null | grep -q "crypto_LUKS"; then
+    #if lsblk -ndo FSTYPE "$recovery_root_partition" 2>/dev/null | grep -q "crypto_LUKS"; then
+    if  lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw crypto_LUKS && echo true || echo false; then
         recovery_encryption_enabled="true"
         mount_target="/dev/mapper/${recovery_crypt_label}"
         gum_warn "The disk $user_input is encrypted with LUKS"
