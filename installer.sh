@@ -313,20 +313,8 @@ start_recovery() {
     mkdir -p "$recovery_mount_dir"
 
     # Env
-    local mount_fs_btrfs && mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw btrfs && echo true || echo false)
-    local mount_fs_ext4 && mount_fs_ext4=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw ext4 && echo true || echo false)
-
-    # Check if ext4 OR btrfs found
-    if ! $mount_fs_btrfs && ! $mount_fs_ext4; then
-        gum_fail "ERROR: Filesystem not found. Only BTRFS & EXT4 supported."
-        exit 130
-    fi
-
-    # Check if ext4 AND btrfs found
-    if $mount_fs_btrfs && $mount_fs_ext4; then
-        gum_fail "ERROR: BTRFS and EXT4 are found at the same device."
-        exit 130
-    fi
+    local mount_fs_btrfs
+    local mount_fs_ext4
 
     # Mount encrypted disk
     if [ "$recovery_encryption_enabled" = "true" ]; then
@@ -339,6 +327,9 @@ start_recovery() {
             gum_fail "Wrong encryption password"
             exit 130
         }
+
+        mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw btrfs && echo true || echo false)
+        mount_fs_ext4=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw ext4 && echo true || echo false)
 
         # EXT4: Mount encrypted disk
         if $mount_fs_ext4; then
@@ -363,6 +354,9 @@ start_recovery() {
 
     else
 
+        mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw btrfs && echo true || echo false)
+        mount_fs_ext4=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw ext4 && echo true || echo false)
+
         # EXT4: Mount unencrypted disk
         if $mount_fs_ext4; then
             gum_info "Mounting EXT4: /root"
@@ -383,6 +377,18 @@ start_recovery() {
             gum_info "Mounting BTRFS: @, @home & @snapshots"
             mount "$recovery_root_partition" "$recovery_mount_dir"
         fi
+    fi
+
+    # Check if ext4 OR btrfs found
+    if ! $mount_fs_btrfs && ! $mount_fs_ext4; then
+        gum_fail "ERROR: Filesystem not found. Only BTRFS & EXT4 supported."
+        exit 130
+    fi
+
+    # Check if ext4 AND btrfs found
+    if $mount_fs_btrfs && $mount_fs_ext4; then
+        gum_fail "ERROR: BTRFS and EXT4 are found at the same device."
+        exit 130
     fi
 
     # Mount boot
