@@ -313,7 +313,7 @@ start_recovery() {
     if [ "$recovery_encryption_enabled" = "true" ]; then
 
         # Encryption password
-        recovery_encryption_password=$(gum_input --password --header "+ Enter Encryption Password") || exit 130
+        recovery_encryption_password=$(gum_input --password --header "+ Enter Encryption Password" </dev/tty) || exit 130
 
         # Open encrypted Disk
         echo -n "$recovery_encryption_password" | cryptsetup open "$recovery_root_partition" "$recovery_crypt_label" &>/dev/null || {
