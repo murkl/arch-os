@@ -376,9 +376,15 @@ start_recovery() {
         fi
     fi
 
-    # Check if ext4 or btrfs found
+    # Check if ext4 OR btrfs found
     if ! $mount_fs_btrfs && ! $mount_fs_ext4; then
         gum_fail "Filesystem not found. Only BTRFS & EXT4 supported."
+        exit 130
+    fi
+
+    # Check if ext4 AND btrfs found
+    if $mount_fs_btrfs && $mount_fs_ext4; then
+        gum_fail "ERROR: BTRFS and EXT4 are found at the same device."
         exit 130
     fi
 
