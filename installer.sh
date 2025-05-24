@@ -284,9 +284,9 @@ start_recovery() {
     options=() && for item in "${items[@]}"; do options+=("/dev/${item}"); done
     user_input=$(gum_choose --header "+ Select Arch OS Disk" "${options[@]}") || exit 130
     gum_title "Recovery"
-    [ -z "$user_input" ] && log_fail "Disk is empty" && exit 1 # Check if new value is null
+    [ -z "$user_input" ] && gum_fail "Disk is empty" && exit 1 # Check if new value is null
     user_input=$(echo "$user_input" | awk -F' ' '{print $1}')  # Remove size from input
-    [ ! -e "$user_input" ] && log_fail "Disk does not exists" && exit 130
+    [ ! -e "$user_input" ] && gum_fail "Disk does not exists" && exit 130
 
     [[ "$user_input" = "/dev/nvm"* ]] && recovery_boot_partition="${user_input}p1" || recovery_boot_partition="${user_input}1"
     [[ "$user_input" = "/dev/nvm"* ]] && recovery_root_partition="${user_input}p2" || recovery_root_partition="${user_input}2"
@@ -296,11 +296,11 @@ start_recovery() {
     if lsblk -no fstype "${recovery_root_partition}" 2>/dev/null | grep -qw crypto_LUKS && echo true || echo false; then
         recovery_encryption_enabled="true"
         mount_target="/dev/mapper/${recovery_crypt_label}"
-        gum_warn "The disk $user_input is encrypted with LUKS"
+        gum_warn "The disk $recovery_root_partition is encrypted with LUKS"
     else
         recovery_encryption_enabled="false"
         mount_target="$recovery_root_partition"
-        gum_info "The disk $user_input is not encrypted"
+        gum_info "The disk $recovery_root_partition is not encrypted"
     fi
 
     # Check archiso
