@@ -421,6 +421,7 @@ start_recovery() {
         # Rollback
         btrfs subvolume delete --recursive "${recovery_mount_dir}/@"
         btrfs subvolume snapshot "${recovery_mount_dir}/${snapshot_input}" "${recovery_mount_dir}/@"
+        rm -f "${recovery_mount_dir}/mnt/var/lib/pacman/db.lck"
         gum_info "Snapshot ${snapshot_input} is set to @ after next reboot"
         gum_green "Rollback successfully finished"
     fi
