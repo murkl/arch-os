@@ -16,12 +16,13 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # ENVIRONMENT
-: "${DEBUG:=false}" # DEBUG=true ./installer.sh
-: "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
-: "${FORCE:=false}" # FORCE=true ./installer.sh
+: "${DEBUG:=false}"    # DEBUG=true ./installer.sh
+: "${FORCE:=false}"    # FORCE=true ./installer.sh
+: "${GUM:=./gum}"      # GUM=/usr/bin/gum ./installer.sh
+: "${RECOVERY:=false}" # RECOVERY=true ./installer.sh
 
 # SCRIPT
-VERSION='1.8.5'
+VERSION='1.8.6'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -72,7 +73,7 @@ main() {
     log_info "Arch OS ${VERSION}"
 
     # Start recovery
-    [[ "$1" = "--recovery"* ]] && {
+    [[ "$RECOVERY" = "true" ]] && {
         start_recovery
         exit $? # Exit after recovery
     }
@@ -110,6 +111,8 @@ main() {
         until select_timezone; do :; done
         until select_language; do :; done
         until select_keyboard; do :; done
+        until select_filesystem; do :; done
+        until select_bootloader; do :; done
         until select_disk; do :; done
         echo && gum_title "Desktop Setup"
         until select_enable_desktop_environment; do :; done
@@ -132,7 +135,7 @@ main() {
         # Open Advanced Properties?
         if [ "$FORCE" = "false" ] && gum_confirm --negative="Skip" "Open Advanced Setup Editor?"; then
             local header_txt="• Advanced Setup | Save with CTRL + D or ESC and cancel with CTRL + C"
-            if gum_write --show-line-numbers --prompt "" --height=12 --width=180 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
+            if gum_write --show-line-numbers --prompt "" --height=12 --width=180 --char-limit=0 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
                 gum_info "Properties successfully saved"
                 gum_confirm "Change Password?" && until select_password --change && properties_source; do :; done
@@ -178,7 +181,6 @@ main() {
     exec_install_archos_manager
     exec_install_vm_support
     exec_finalize_arch_os
-    exec_cleanup_installation
 
     # Calc installation duration
     duration=$SECONDS # This is set before install starts
@@ -260,12 +262,19 @@ start_recovery() {
     local recovery_boot_partition recovery_root_partition user_input items options
     local recovery_mount_dir="/mnt/recovery"
     local recovery_crypt_label="cryptrecovery"
+    local recovery_encryption_enabled
+    local recovery_encryption_password
+    local mount_target
 
     recovery_unmount() {
         set +e
         swapoff -a &>/dev/null
         umount -A -R "$recovery_mount_dir" &>/dev/null
+        umount -l -A -R "$recovery_mount_dir" &>/dev/null
         cryptsetup close "$recovery_crypt_label" &>/dev/null
+        umount -A -R /mnt &>/dev/null
+        umount -l -A -R /mnt &>/dev/null
+        cryptsetup close cryptroot &>/dev/null
         set -e
     }
 
@@ -275,20 +284,23 @@ start_recovery() {
     options=() && for item in "${items[@]}"; do options+=("/dev/${item}"); done
     user_input=$(gum_choose --header "+ Select Arch OS Disk" "${options[@]}") || exit 130
     gum_title "Recovery"
-    [ -z "$user_input" ] && log_fail "Disk is empty" && exit 1 # Check if new value is null
+    [ -z "$user_input" ] && gum_fail "Disk is empty" && exit 1 # Check if new value is null
     user_input=$(echo "$user_input" | awk -F' ' '{print $1}')  # Remove size from input
-    [ ! -e "$user_input" ] && log_fail "Disk does not exists" && exit 130
+    [ ! -e "$user_input" ] && gum_fail "Disk does not exists" && exit 130
 
     [[ "$user_input" = "/dev/nvm"* ]] && recovery_boot_partition="${user_input}p1" || recovery_boot_partition="${user_input}1"
     [[ "$user_input" = "/dev/nvm"* ]] && recovery_root_partition="${user_input}p2" || recovery_root_partition="${user_input}2"
 
     # Check encryption
-    if lsblk -ndo FSTYPE "$recovery_root_partition" 2>/dev/null | grep -q "crypto_LUKS"; then
+    #if lsblk -ndo FSTYPE "$recovery_root_partition" 2>/dev/null | grep -q "crypto_LUKS"; then
+    if lsblk -no fstype "${recovery_root_partition}" 2>/dev/null | grep -qw crypto_LUKS || false; then
         recovery_encryption_enabled="true"
-        gum_warn "The disk $user_input is encrypted with LUKS"
+        mount_target="/dev/mapper/${recovery_crypt_label}"
+        gum_warn "The disk $recovery_root_partition is encrypted with LUKS"
     else
         recovery_encryption_enabled="false"
-        gum_info "The disk $user_input is not encrypted"
+        mount_target="$recovery_root_partition"
+        gum_info "The disk $recovery_root_partition is not encrypted"
     fi
 
     # Check archiso
@@ -299,13 +311,16 @@ start_recovery() {
 
     # Create mount dir
     mkdir -p "$recovery_mount_dir"
-    mkdir -p "$recovery_mount_dir/boot"
 
-    # Mount disk
+    # Env
+    local mount_fs_btrfs
+    local mount_fs_ext4
+
+    # Mount encrypted disk
     if [ "$recovery_encryption_enabled" = "true" ]; then
 
         # Encryption password
-        recovery_encryption_password=$(gum_input --password --header "+ Enter Encryption Password") || exit 130
+        recovery_encryption_password=$(gum_input --password --header "+ Enter Encryption Password" </dev/tty) || exit 130
 
         # Open encrypted Disk
         echo -n "$recovery_encryption_password" | cryptsetup open "$recovery_root_partition" "$recovery_crypt_label" &>/dev/null || {
@@ -313,21 +328,103 @@ start_recovery() {
             exit 130
         }
 
-        # Mount encrypted disk
-        mount "/dev/mapper/${recovery_crypt_label}" "$recovery_mount_dir"
-        mount "$recovery_boot_partition" "$recovery_mount_dir/boot"
+        mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw btrfs && echo true || echo false)
+        mount_fs_ext4=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw ext4 && echo true || echo false)
+
+        # EXT4: Mount encrypted disk
+        if $mount_fs_ext4; then
+            gum_info "Mounting EXT4: /root"
+            mount "${mount_target}" "$recovery_mount_dir"
+        fi
+
+        # BTRFS: Mount encrypted disk
+        if $mount_fs_btrfs; then
+            gum_info "Mounting BTRFS: @, @home & @snapshots"
+            local mount_opts="defaults,noatime,compress=zstd"
+            mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" "${recovery_mount_dir}/.snapshots"
+        fi
+
+        # TODO
+        if false; then
+            gum_info "Mounting BTRFS: @, @home & @snapshots"
+            mount "$recovery_root_partition" "$recovery_mount_dir"
+        fi
+
     else
-        # Mount unencrypted disk
-        mount "$recovery_root_partition" "$recovery_mount_dir"
-        mount "$recovery_boot_partition" "$recovery_mount_dir/boot"
+
+        mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw btrfs && echo true || echo false)
+        mount_fs_ext4=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw ext4 && echo true || echo false)
+
+        # EXT4: Mount unencrypted disk
+        if $mount_fs_ext4; then
+            gum_info "Mounting EXT4: /root"
+            mount "$recovery_root_partition" "$recovery_mount_dir"
+        fi
+
+        # BTRFS: Mount unencrypted disk
+        if $mount_fs_btrfs; then
+            gum_info "Mounting BTRFS: @, @home & @snapshots"
+            local mount_opts="defaults,noatime,compress=zstd"
+            mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" "${recovery_mount_dir}/.snapshots"
+        fi
+
+        # TODO
+        if false; then
+            gum_info "Mounting BTRFS: @, @home & @snapshots"
+            mount "$recovery_root_partition" "$recovery_mount_dir"
+        fi
     fi
 
-    # Chroot
-    gum_green "!! YOUR ARE NOW ON YOUR RECOVERY SYSTEM !!"
-    gum_yellow ">> Leave with command 'exit'"
-    arch-chroot "$recovery_mount_dir" </dev/tty
-    wait && recovery_unmount
-    gum_green ">> Exit Recovery"
+    # Check if ext4 OR btrfs found
+    if ! $mount_fs_btrfs && ! $mount_fs_ext4; then
+        gum_fail "ERROR: Filesystem not found. Only BTRFS & EXT4 supported."
+        exit 130
+    fi
+
+    # Check if ext4 AND btrfs found
+    if $mount_fs_btrfs && $mount_fs_ext4; then
+        gum_fail "ERROR: BTRFS and EXT4 are found at the same device."
+        exit 130
+    fi
+
+    # Mount boot
+    gum_info "Mounting EFI: /boot"
+    mkdir -p "$recovery_mount_dir/boot"
+    mount "$recovery_boot_partition" "${recovery_mount_dir}/boot"
+
+    # Chroot (ext4)
+    if $mount_fs_ext4; then
+        gum_green "!! YOUR ARE NOW ON YOUR RECOVERY SYSTEM !!"
+        gum_yellow ">> Leave with command 'exit'"
+        arch-chroot "$recovery_mount_dir" </dev/tty
+        wait && recovery_unmount
+        gum_green ">> Exit Recovery"
+    fi
+
+    # BTRFS Rollback
+    if $mount_fs_btrfs; then
+
+        # Input & info
+        echo && gum_title "BTRFS Rollback"
+        local snapshots snapshot_input
+        #snapshots=$(btrfs subvolume list "$recovery_mount_dir" | awk '$NF ~ /^@snapshots\/[0-9]+\/snapshot$/ {print $NF}')
+        snapshots=$(btrfs subvolume list -o "${recovery_mount_dir}/.snapshots" | awk '{print $NF}')
+        [ -z "$snapshots" ] && gum_fail "No Snapshot found in @snapshots" && exit 130
+        snapshot_input=$(echo "$snapshots" | gum_filter --header "+ Select Snapshot") || exit 130
+        gum_info "Snapshot: ${snapshot_input}"
+        gum_confirm "Confirm Rollback to @" || exit 130
+
+        # Rollback
+        btrfs subvolume delete --recursive "${recovery_mount_dir}/@"
+        btrfs subvolume snapshot "${recovery_mount_dir}/${snapshot_input}" "${recovery_mount_dir}/@"
+        rm -f "${recovery_mount_dir}/mnt/var/lib/pacman/db.lck"
+        gum_info "Snapshot ${snapshot_input} is set to @ after next reboot"
+        gum_green "Rollback successfully finished"
+    fi
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -344,38 +441,41 @@ properties_source() {
 
 properties_generate() {
     { # Write properties to installer.conf
-        echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}'"
-        echo "ARCH_OS_USERNAME='${ARCH_OS_USERNAME}'"
-        echo "ARCH_OS_DISK='${ARCH_OS_DISK}'"
-        echo "ARCH_OS_BOOT_PARTITION='${ARCH_OS_BOOT_PARTITION}'"
-        echo "ARCH_OS_ROOT_PARTITION='${ARCH_OS_ROOT_PARTITION}'"
-        echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}'"
-        echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}'"
-        echo "ARCH_OS_LOCALE_LANG='${ARCH_OS_LOCALE_LANG}'"
-        echo "ARCH_OS_LOCALE_GEN_LIST=(${ARCH_OS_LOCALE_GEN_LIST[*]@Q})"
-        echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}'"
-        echo "ARCH_OS_VCONSOLE_KEYMAP='${ARCH_OS_VCONSOLE_KEYMAP}'"
-        echo "ARCH_OS_VCONSOLE_FONT='${ARCH_OS_VCONSOLE_FONT}'"
-        echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}'"
-        echo "ARCH_OS_MICROCODE='${ARCH_OS_MICROCODE}'"
-        echo "ARCH_OS_CORE_TWEAKS_ENABLED='${ARCH_OS_CORE_TWEAKS_ENABLED}'"
-        echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}'"
-        echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}'"
-        echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}'"
-        echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}'"
-        echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}'"
-        echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}'"
-        echo "ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED}'"
-        echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}'"
-        echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}'"
-        echo "ARCH_OS_DESKTOP_EXTRAS_ENABLED='${ARCH_OS_DESKTOP_EXTRAS_ENABLED}'"
-        echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}'"
-        echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}'"
-        echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}'"
-        echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}'"
-        echo "ARCH_OS_SAMBA_SHARE_ENABLED='${ARCH_OS_SAMBA_SHARE_ENABLED}'"
-        echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}'"
-        echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}'"
+        echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}' # Hostname"
+        echo "ARCH_OS_USERNAME='${ARCH_OS_USERNAME}' # User"
+        echo "ARCH_OS_DISK='${ARCH_OS_DISK}' # Disk"
+        echo "ARCH_OS_BOOT_PARTITION='${ARCH_OS_BOOT_PARTITION}' # Boot partition"
+        echo "ARCH_OS_ROOT_PARTITION='${ARCH_OS_ROOT_PARTITION}' # Root partition"
+        echo "ARCH_OS_FILESYSTEM='${ARCH_OS_FILESYSTEM}' # Filesystem | Available: btrfs, ext4"
+        echo "ARCH_OS_BOOTLOADER='${ARCH_OS_BOOTLOADER}' # Bootloader | Available: grub, systemd"
+        echo "ARCH_OS_SNAPPER_ENABLED='${ARCH_OS_SNAPPER_ENABLED}' # BTRFS Snapper enabled | Disable: false"
+        echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}' # Disk encryption | Disable: false"
+        echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}' # Timezone | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin"
+        echo "ARCH_OS_LOCALE_LANG='${ARCH_OS_LOCALE_LANG}' # Locale | Show available: ls /usr/share/i18n/locales | Example: de_DE"
+        echo "ARCH_OS_LOCALE_GEN_LIST=(${ARCH_OS_LOCALE_GEN_LIST[*]@Q}) # Locale List | Show available: cat /etc/locale.gen"
+        echo "ARCH_OS_REFLECTOR_COUNTRY='${ARCH_OS_REFLECTOR_COUNTRY}' # Country used by reflector | Default: null | Example: Germany,France"
+        echo "ARCH_OS_VCONSOLE_KEYMAP='${ARCH_OS_VCONSOLE_KEYMAP}' # Console keymap | Show available: localectl list-keymaps | Example: de-latin1-nodeadkeys"
+        echo "ARCH_OS_VCONSOLE_FONT='${ARCH_OS_VCONSOLE_FONT}' # Console font | Default: null | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Example: eurlatgr"
+        echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}' # Kernel | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened"
+        echo "ARCH_OS_MICROCODE='${ARCH_OS_MICROCODE}' # Microcode | Disable: none | Available: intel-ucode, amd-ucode"
+        echo "ARCH_OS_CORE_TWEAKS_ENABLED='${ARCH_OS_CORE_TWEAKS_ENABLED}' # Arch OS Core Tweaks | Disable: false"
+        echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}' # MultiLib 32 Bit Support | Disable: false"
+        echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}' # AUR Helper | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur"
+        echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}' # Bootsplash | Disable: false"
+        echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}'  # Housekeeping | Disable: false"
+        echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}' # Arch OS Manager | Disable: false"
+        echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}' # Shell Enhancement | Disable: false"
+        echo "ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED}' # Enable fish shell | Default: true | Disable: false"
+        echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}' # Arch OS Desktop (caution: if disabled, only a minimal tty will be provied)| Disable: false"
+        echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}' # Graphics Driver | Disable: none | Available: mesa, intel_i915, nvidia, amd, ati"
+        echo "ARCH_OS_DESKTOP_EXTRAS_ENABLED='${ARCH_OS_DESKTOP_EXTRAS_ENABLED}' # Enable desktop extra packages (caution: if disabled, only core + gnome + git packages will be installed) | Disable: false"
+        echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}' # Enable Sim Desktop (only GNOME Core Apps) | Default: false"
+        echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}' # X11 keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models"
+        echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}' # X11 keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de"
+        echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}' # X11 keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys"
+        echo "ARCH_OS_SAMBA_SHARE_ENABLED='${ARCH_OS_SAMBA_SHARE_ENABLED}' # Enable Samba public (anonymous) & home share (user) | Disable: false"
+        echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}' # VM Support | Default: true | Disable: false"
+        echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}' # Disable ECN support for legacy routers | Default: true | Disable: false"
     } >"$SCRIPT_CONFIG" # Write properties to file
 }
 
@@ -384,12 +484,13 @@ properties_preset_source() {
     # Default presets
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
-    [ -z "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
-    [ -z "$ARCH_OS_SAMBA_SHARE_ENABLED" ] && ARCH_OS_SAMBA_SHARE_ENABLED="true"
-    [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
+    [ -z "$ARCH_OS_SNAPPER_ENABLED" ] && ARCH_OS_SNAPPER_ENABLED='true'
     [ -z "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" ] && ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED="true"
-    [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
+    [ -z "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
     [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
+    [ -z "$ARCH_OS_SAMBA_SHARE_ENABLED" ] && ARCH_OS_SAMBA_SHARE_ENABLED="true"
+    [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
+    [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
 
     # Set microcode
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
@@ -409,6 +510,7 @@ properties_preset_source() {
 
         # Core preset
         if [[ $preset == core* ]]; then
+            ARCH_OS_SNAPPER_ENABLED='false'
             ARCH_OS_DESKTOP_ENABLED='false'
             ARCH_OS_MULTILIB_ENABLED='false'
             ARCH_OS_HOUSEKEEPING_ENABLED='false'
@@ -421,6 +523,7 @@ properties_preset_source() {
 
         # Desktop preset
         if [[ $preset == desktop* ]]; then
+            ARCH_OS_SNAPPER_ENABLED='true'
             ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
             ARCH_OS_SAMBA_SHARE_ENABLED='true'
             ARCH_OS_CORE_TWEAKS_ENABLED="true"
@@ -557,6 +660,34 @@ select_disk() {
         properties_generate # Generate properties file
     fi
     gum_property "Disk" "$ARCH_OS_DISK"
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+select_filesystem() {
+    if [ -z "$ARCH_OS_FILESYSTEM" ]; then
+        local user_input options
+        options=("btrfs" "ext4")
+        user_input=$(gum_choose --header "+ Choose Filesystem (snapshot support: btrfs)" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1                        # Check if new value is null
+        ARCH_OS_FILESYSTEM="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    gum_property "Filesystem" "${ARCH_OS_FILESYSTEM}"
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+select_bootloader() {
+    if [ -z "$ARCH_OS_BOOTLOADER" ]; then
+        local user_input options
+        options=("grub" "systemd")
+        user_input=$(gum_choose --header "+ Choose Bootloader (snapshot menu: grub)" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1                        # Check if new value is null
+        ARCH_OS_BOOTLOADER="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    gum_property "Bootloader" "${ARCH_OS_BOOTLOADER}"
     return 0
 }
 
@@ -808,6 +939,7 @@ exec_init_installation() {
         timedatectl set-ntp true     # Set time
         # Make sure everything is unmounted before start install
         swapoff -a || true
+        umount -R /mnt/recovery || true
         if [[ "$(umount -f -A -R /mnt 2>&1)" == *"target is busy"* ]]; then
             # If umount is busy execute fuser
             fuser -km /mnt || true
@@ -815,6 +947,7 @@ exec_init_installation() {
         fi
         wait # Wait for sub process
         cryptsetup close cryptroot || true
+        cryptsetup close cryptrecovery || true
         vgchange -an || true
         # Temporarily disable ECN (prevent traffic problems with some old routers)
         [ "$ARCH_OS_ECN_ENABLED" = "false" ] && sysctl net.ipv4.tcp_ecn=0
@@ -847,16 +980,55 @@ exec_prepare_disk() {
             echo -n "$ARCH_OS_PASSWORD" | cryptsetup open "$ARCH_OS_ROOT_PARTITION" cryptroot
         fi
 
-        # Format disk
+        # Format /boot partition
         mkfs.fat -F 32 -n BOOT "$ARCH_OS_BOOT_PARTITION"
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.ext4 -F -L ROOT /dev/mapper/cryptroot
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.ext4 -F -L ROOT "$ARCH_OS_ROOT_PARTITION"
 
-        # Mount disk to /mnt
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mount -v /dev/mapper/cryptroot /mnt
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount -v "$ARCH_OS_ROOT_PARTITION" /mnt
-        mkdir -p /mnt/boot
-        mount -v "$ARCH_OS_BOOT_PARTITION" /mnt/boot
+        # EXT4
+        if [ "$ARCH_OS_FILESYSTEM" = "ext4" ]; then
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.ext4 -F -L ROOT /dev/mapper/cryptroot
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.ext4 -F -L ROOT "$ARCH_OS_ROOT_PARTITION"
+
+            # Mount disk to /mnt
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mount -v /dev/mapper/cryptroot /mnt
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount -v "$ARCH_OS_ROOT_PARTITION" /mnt
+
+            # Mount /boot
+            #mount -v --mkdir LABEL=BOOT /mnt/boot
+            mount -v --mkdir "$ARCH_OS_BOOT_PARTITION" /mnt/boot
+        fi
+
+        # BTRFS
+        if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mkfs.btrfs -f -L BTRFS /dev/mapper/cryptroot
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mkfs.btrfs -f -L BTRFS "$ARCH_OS_ROOT_PARTITION"
+
+            # Mount disk to /mnt
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mount -v /dev/mapper/cryptroot /mnt
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount -v "$ARCH_OS_ROOT_PARTITION" /mnt
+
+            # Create subvolumes
+            btrfs subvolume create /mnt/@
+            btrfs subvolume create /mnt/@home
+            btrfs subvolume create /mnt/@snapshots
+            #local btrfs_root_id
+            #btrfs_root_id="$(btrfs subvolume list /mnt | awk '$NF == "@" {print $2}')"
+            #btrfs subvolume set-default "${btrfs_root_id}" /mnt # Set @ as default
+            umount -R /mnt
+
+            # Mount subvolumes
+            local mount_target
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && mount_target="$ARCH_OS_ROOT_PARTITION"
+            [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && mount_target="/dev/mapper/cryptroot"
+
+            local mount_opts="defaults,noatime,compress=zstd"
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@ "${mount_target}" /mnt
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" /mnt/home
+            mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" /mnt/.snapshots
+
+            # Mount /boot
+            #mount -v --mkdir LABEL=BOOT /mnt/boot
+            mount -v --mkdir "$ARCH_OS_BOOT_PARTITION" /mnt/boot
+        fi
 
         # Return
         process_return 0
@@ -873,10 +1045,19 @@ exec_pacstrap_core() {
         [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
 
         # Core packages
-        local packages=("$ARCH_OS_KERNEL" base sudo linux-firmware zram-generator networkmanager)
+        local packages=("$ARCH_OS_KERNEL" base base-devel linux-firmware zram-generator networkmanager)
 
         # Add microcode package
         [ -n "$ARCH_OS_MICROCODE" ] && [ "$ARCH_OS_MICROCODE" != "none" ] && packages+=("$ARCH_OS_MICROCODE")
+
+        # Add filesystem packages
+        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(btrfs-progs efibootmgr inotify-tools)
+
+        # Add grub packages
+        [ "$ARCH_OS_BOOTLOADER" = "grub" ] && packages+=(grub grub-btrfs)
+
+        # Add snapper packages
+        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ] && packages+=(snapper)
 
         # Install core packages and initialize an empty pacman keyring in the target
         pacstrap -K /mnt "${packages[@]}"
@@ -891,7 +1072,7 @@ exec_pacstrap_core() {
         { # Create swap (zram-generator with zstd compression)
             # https://wiki.archlinux.org/title/Zram#Using_zram-generator
             echo '[zram0]'
-            echo 'zram-size = min(ram / 2, 4096)'
+            echo 'zram-size = min(ram / 2, 8192)'
             echo 'compression-algorithm = zstd'
         } >/mnt/etc/systemd/zram-generator.conf
 
@@ -922,43 +1103,72 @@ exec_pacstrap_core() {
         # Create initial ramdisk from /etc/mkinitcpio.conf
         # https://wiki.archlinux.org/title/Mkinitcpio#Common_hooks
         # https://wiki.archlinux.org/title/Microcode#mkinitcpio
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect microcode modconf sd-vconsole block sd-encrypt filesystems fsck)/" /mnt/etc/mkinitcpio.conf
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect microcode modconf sd-vconsole block filesystems fsck)/" /mnt/etc/mkinitcpio.conf
+        local btrfs_hook
+        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BOOTLOADER" = "grub" ] && btrfs_hook=' grub-btrfs-overlayfs'
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect microcode modconf sd-vconsole block sd-encrypt filesystems fsck${btrfs_hook})/" /mnt/etc/mkinitcpio.conf
+        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && sed -i "s/^HOOKS=(.*)$/HOOKS=(base systemd keyboard autodetect microcode modconf sd-vconsole block filesystems fsck${btrfs_hook})/" /mnt/etc/mkinitcpio.conf
         arch-chroot /mnt mkinitcpio -P
 
-        # Install Bootloader to /boot (systemdboot)
-        arch-chroot /mnt bootctl --esp-path=/boot install # Install systemdboot to /boot
-
-        # Kernel args
+        # KERNEL PARAMETER
         # Zswap should be disabled when using zram (https://github.com/archlinux/archinstall/issues/881)
         # Silent boot: https://wiki.archlinux.org/title/Silent_boot
-        local kernel_args=()
+        local kernel_args=('rw' 'init=/usr/lib/systemd/systemd' 'zswap.enabled=0')
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && kernel_args+=("rd.luks.name=$(blkid -s UUID -o value "${ARCH_OS_ROOT_PARTITION}")=cryptroot" "root=/dev/mapper/cryptroot")
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "false" ] && kernel_args+=("root=PARTUUID=$(lsblk -dno PARTUUID "${ARCH_OS_ROOT_PARTITION}")")
-        kernel_args+=('rw' 'init=/usr/lib/systemd/systemd' 'zswap.enabled=0')
+        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && kernel_args+=('rootflags=subvol=@' 'rootfstype=btrfs')
         [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('nowatchdog')
-        [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('quiet' 'splash' 'vt.global_cursor_default=0')
+        [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('quiet' 'splash' 'vt.global_cursor_default=0' 'loglevel=3' 'rd.udev.log_level=3' 'systemd.show_status=auto')
 
-        { # Create Bootloader config
-            echo 'default arch.conf'
-            echo 'console-mode auto'
-            echo 'timeout 0'
-            echo 'editor yes'
-        } >/mnt/boot/loader/loader.conf
+        # SYSTEMD-BOOT INSTALLATION
+        if [ "$ARCH_OS_BOOTLOADER" = "systemd" ]; then
 
-        { # Create default boot entry
-            echo 'title   Arch OS'
-            echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
-            echo "initrd  /initramfs-${ARCH_OS_KERNEL}.img"
-            echo "options ${kernel_args[*]}"
-        } >/mnt/boot/loader/entries/arch.conf
+            # Install Bootloader to /boot (systemdboot)
+            arch-chroot /mnt bootctl --esp-path=/boot install
 
-        { # Create fallback boot entry
-            echo 'title   Arch OS (Fallback)'
-            echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
-            echo "initrd  /initramfs-${ARCH_OS_KERNEL}-fallback.img"
-            echo "options ${kernel_args[*]}"
-        } >/mnt/boot/loader/entries/arch-fallback.conf
+            { # Create Bootloader config
+                echo 'default main.conf'
+                echo 'console-mode auto'
+                echo 'timeout 0'
+                echo 'editor yes'
+            } >/mnt/boot/loader/loader.conf
+
+            { # Create default boot entry
+                echo 'title   Arch OS'
+                echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
+                echo "initrd  /initramfs-${ARCH_OS_KERNEL}.img"
+                echo "options ${kernel_args[*]}"
+            } >/mnt/boot/loader/entries/main.conf
+
+            { # Create fallback boot entry
+                echo 'title   Arch OS (Fallback)'
+                echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
+                echo "initrd  /initramfs-${ARCH_OS_KERNEL}-fallback.img"
+                echo "options ${kernel_args[*]}"
+            } >/mnt/boot/loader/entries/main-fallback.conf
+
+            # Enable service: Auto bootloader update
+            arch-chroot /mnt systemctl enable systemd-boot-update.service
+        fi
+
+        # ------------------------------------------------------------------
+
+        # GRUB INSTALLATION
+        if [ "$ARCH_OS_BOOTLOADER" = "grub" ]; then
+
+            # Add kernel args to /etc/default/grub
+            sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&${kernel_args[*]}," /mnt/etc/default/grub
+
+            # Installing GRUB
+            arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+
+            # Creating grub config file
+            sed -i "s/^GRUB_TIMEOUT=.*$/GRUB_TIMEOUT=3/" /mnt/etc/default/grub
+            sed -i "s/^GRUB_TIMEOUT_STYLE=.*$/GRUB_TIMEOUT_STYLE=menu/" /mnt/etc/default/grub
+            arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+
+            # Enable btrfs update service
+            [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && arch-chroot /mnt systemctl enable grub-btrfsd.service
+        fi
 
         # Create new user
         arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$ARCH_OS_USERNAME"
@@ -980,8 +1190,36 @@ exec_pacstrap_core() {
         arch-chroot /mnt systemctl enable fstrim.timer                     # SSD support
         arch-chroot /mnt systemctl enable systemd-zram-setup@zram0.service # Swap (zram-generator)
         arch-chroot /mnt systemctl enable systemd-oomd.service             # Out of memory killer (swap is required)
-        arch-chroot /mnt systemctl enable systemd-boot-update.service      # Auto bootloader update
         arch-chroot /mnt systemctl enable systemd-timesyncd.service        # Sync time from internet after boot
+
+        if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
+            # Btrfs scrub timer
+            arch-chroot /mnt systemctl enable btrfs-scrub@-.timer
+            arch-chroot /mnt systemctl enable btrfs-scrub@home.timer
+            arch-chroot /mnt systemctl enable btrfs-scrub@snapshots.timer
+        fi
+
+        if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ]; then
+
+            # Create snapper config
+            arch-chroot /mnt umount /.snapshots
+            arch-chroot /mnt rm -r /.snapshots
+            arch-chroot /mnt snapper --no-dbus -c root create-config /
+            arch-chroot /mnt btrfs subvolume delete /.snapshots
+            arch-chroot /mnt mkdir /.snapshots
+            arch-chroot /mnt mount -a
+            arch-chroot /mnt chmod 750 /.snapshots
+            arch-chroot /mnt sudo chown :wheel /.snapshots
+
+            # Modify snapper config
+            # https://www.dwarmstrong.org/btrfs-snapshots-rollbacks/
+            # /etc/snapper/configs/root
+
+            # Enable snapper services
+            arch-chroot /mnt systemctl enable snapper-timeline.timer
+            arch-chroot /mnt systemctl enable snapper-cleanup.timer
+            arch-chroot /mnt systemctl enable snapper-boot.timer
+        fi
 
         # Make some Arch OS tweaks
         if [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ]; then
@@ -1306,6 +1544,10 @@ exec_install_desktop() {
                 echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/btop.desktop"
             fi
 
+            # Set Flatpak theme access
+            arch-chroot /mnt flatpak override --filesystem=xdg-config/gtk-3.0
+            arch-chroot /mnt flatpak override --filesystem=xdg-config/gtk-4.0
+
             # Add Init script
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
                 {
@@ -1373,7 +1615,7 @@ exec_install_graphics_driver() {
                 chroot_pacman_install "${packages[@]}"
                 # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
                 # Alternative (slow boot, bios logo twice, but correct plymouth resolution):
-                #sed -i "s/systemd zswap.enabled=0/systemd nvidia_drm.modeset=1 nvidia_drm.fbdev=1 zswap.enabled=0/g" /mnt/boot/loader/entries/arch.conf
+                #sed -i "s/systemd zswap.enabled=0/systemd nvidia_drm.modeset=1 nvidia_drm.fbdev=1 zswap.enabled=0/g" /mnt/boot/loader/entries/main.conf
                 mkdir -p /mnt/etc/modprobe.d/ && echo -e 'options nvidia_drm modeset=1 fbdev=1' >/mnt/etc/modprobe.d/nvidia.conf
                 sed -i "s/^MODULES=(.*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" /mnt/etc/mkinitcpio.conf
                 # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
@@ -1859,10 +2101,12 @@ exec_install_vm_support() {
 # shellcheck disable=SC2016
 exec_finalize_arch_os() {
     local process_name="Finalize Arch OS"
-    if [ -s "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" ]; then
-        process_init "$process_name"
-        (
-            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
+    process_init "$process_name"
+    (
+        [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
+
+        # Add init script
+        if [ -s "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" ]; then
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system"
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/autostart"
             mv "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
@@ -1888,24 +2132,39 @@ exec_finalize_arch_os() {
                 echo "Icon=preferences-system"
                 echo "Exec=bash -c '/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh > /home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.log'"
             } >"/mnt/home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
-            arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
-            process_return 0 # Return
-        ) &>"$PROCESS_LOG" &
-        process_capture $! "$process_name"
-    fi
-}
+        fi
 
-# ---------------------------------------------------------------------------------------------------
+        # Set correct home permissions
+        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
 
-# shellcheck disable=SC2016
-exec_cleanup_installation() {
-    local process_name="Cleanup Installation"
-    process_init "$process_name"
-    (
-        [ "$DEBUG" = "true" ] && sleep 1 && process_return 0                                                  # If debug mode then return
-        arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"         # Set correct home permissions
-        arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true' # Remove orphans and force return true
-        process_return 0                                                                                      # Return
+        # Remove orphans and force return true
+        arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true'
+
+        # Install snapper pacman hook
+        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ] && chroot_pacman_install snap-pac
+
+        # Add pacman btrfs hook (need to place on the end of script)
+        if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "false" ]; then
+            # Create pacman hook (auto create snapshot on pre-transaction)
+            mkdir -p /mnt/etc/pacman.d/hooks/
+            # shellcheck disable=SC2016
+            {
+                echo '[Trigger]'
+                echo 'Operation = Install'
+                echo 'Operation = Upgrade'
+                echo 'Operation = Remove'
+                echo 'Type = Package'
+                echo 'Target = *'
+                echo ''
+                echo '[Action]'
+                echo 'Description = Creating BTRFS snapshot'
+                echo 'When = PreTransaction'
+                #echo 'Exec = /usr/bin/btrfs subvolume snapshot -r / /.snapshots/$(date +%Y-%m-%d_%H-%M-%S)'
+                echo 'Exec = /bin/sh -c '\''/usr/bin/btrfs subvolume snapshot -r / /.snapshots/"$(date "+%Y-%m-%d_%H-%M-%S")"'\'''
+            } >/mnt/etc/pacman.d/hooks/50-btrfs-snapshot.hook
+        fi
+
+        process_return 0 # Return
     ) &>"$PROCESS_LOG" &
     process_capture $! "$process_name"
 }

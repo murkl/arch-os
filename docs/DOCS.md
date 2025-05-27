@@ -10,9 +10,10 @@
 2. [Advanced Installation](#advanced-installation)
 3. [Features](#features)
 4. [Technical Information](#technical-information)
-5. [Troubleshooting](#troubleshooting)
-6. [Development](#development)
-7. [Credits](#credits)
+5. [Rescue & Recovery](#rescue--recovery)
+6. [Troubleshooting](#troubleshooting)
+7. [Development](#development)
+8. [Credits](#credits)
 
 ## Recommendation
 
@@ -81,6 +82,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Icon Theme: [tela-icon-theme](https://github.com/vinceliuice/Tela-icon-theme), [tela-circle-icon-theme](https://github.com/vinceliuice/Tela-circle-icon-theme)
 - Cursor Theme: [bibata-cursor](https://aur.archlinux.org/packages/bibata-cursor-theme-bin), [nordzy-cursors](https://github.com/alvatip/Nordzy-cursors)
 - Firefox Theme: [AddWater](https://flathub.org/apps/dev.qwery.AddWater), [firefox-gnome-theme](https://github.com/rafaelmardojai/firefox-gnome-theme)
+- GNOME GTK3 Theme Variant: [adw-gtk3-colorizer](https://extensions.gnome.org/extension/8084/adw-gtk3-colorizer/)
 
 ### GNOME Extensions (optional)
 
@@ -102,7 +104,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - [fullscreen-to-empty-workspace](https://extensions.gnome.org/extension/7559/fullscreen-to-empty-workspace/) (open fullscreen apps on new workspace)
 - [disable-unredirect-fullscreen](https://extensions.gnome.org/extension/1873/disable-unredirect-fullscreen-windows/) (fix some issues)
 - [window-calls](https://extensions.gnome.org/extension/4724/window-calls/) (alternative to wmctrl in wayland)
-- [lilypad](https://extensions.gnome.org/extension/7266/lilypad/) (deprecated)
+- [lilypad](https://extensions.gnome.org/extension/7266/lilypad/)
 
 ### Office Support
 
@@ -207,11 +209,14 @@ ARCH_OS_USERNAME='tux' # User
 ARCH_OS_DISK='/dev/sda' # Disk
 ARCH_OS_BOOT_PARTITION='/dev/sda1' # Boot partition
 ARCH_OS_ROOT_PARTITION='/dev/sda2' # Root partition
+ARCH_OS_FILESYSTEM='btrfs' # Filesystem | Available: btrfs, ext4
+ARCH_OS_BOOTLOADER='grub' # Bootloader | Available: grub, systemd
+ARCH_OS_SNAPPER_ENABLED='true' # BTRFS Snapper enabled | Disable: false
 ARCH_OS_ENCRYPTION_ENABLED='true' # Disk encryption | Disable: false
 ARCH_OS_TIMEZONE='Europe/Berlin' # Timezone | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin
 ARCH_OS_LOCALE_LANG='de_DE' # Locale | Show available: ls /usr/share/i18n/locales | Example: de_DE
 ARCH_OS_LOCALE_GEN_LIST=('de_DE.UTF-8 UTF-8' 'de_DE ISO-8859-1' 'de_DE@euro ISO-8859-15' 'en_US.UTF-8 UTF-8') # Locale List | Show available: cat /etc/locale.gen
-ARCH_OS_REFLECTOR_COUNTRY='' # Country used by reflector | Default: null | Example: Germany,France
+ARCH_OS_REFLECTOR_COUNTRY='Germany' # Country used by reflector | Default: null | Example: Germany,France
 ARCH_OS_VCONSOLE_KEYMAP='de-latin1-nodeadkeys' # Console keymap | Show available: localectl list-keymaps | Example: de-latin1-nodeadkeys
 ARCH_OS_VCONSOLE_FONT='' # Console font | Default: null | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Example: eurlatgr
 ARCH_OS_KERNEL='linux-zen' # Kernel | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened
@@ -220,16 +225,16 @@ ARCH_OS_CORE_TWEAKS_ENABLED='true' # Arch OS Core Tweaks | Disable: false
 ARCH_OS_MULTILIB_ENABLED='true' # MultiLib 32 Bit Support | Disable: false
 ARCH_OS_AUR_HELPER='paru' # AUR Helper | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur
 ARCH_OS_BOOTSPLASH_ENABLED='true' # Bootsplash | Disable: false
+ARCH_OS_HOUSEKEEPING_ENABLED='true'  # Housekeeping | Disable: false
+ARCH_OS_MANAGER_ENABLED='true' # Arch OS Manager | Disable: false
 ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true' # Shell Enhancement | Disable: false
 ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='true' # Enable fish shell | Default: true | Disable: false
-ARCH_OS_HOUSEKEEPING_ENABLED='true' # Housekeeping | Disable: false
-ARCH_OS_MANAGER_ENABLED='true' # Arch OS Manager | Disable: false
 ARCH_OS_DESKTOP_ENABLED='true' # Arch OS Desktop (caution: if disabled, only a minimal tty will be provied)| Disable: false
+ARCH_OS_DESKTOP_GRAPHICS_DRIVER='amd' # Graphics Driver | Disable: none | Available: mesa, intel_i915, nvidia, amd, ati
 ARCH_OS_DESKTOP_EXTRAS_ENABLED='true' # Enable desktop extra packages (caution: if disabled, only core + gnome + git packages will be installed) | Disable: false
 ARCH_OS_DESKTOP_SLIM_ENABLED='true' # Enable Sim Desktop (only GNOME Core Apps) | Default: false
-ARCH_OS_DESKTOP_GRAPHICS_DRIVER='nvidia' # Graphics Driver | Disable: none | Available: mesa, intel_i915, nvidia, amd, ati
-ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='de' # X11 keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de
 ARCH_OS_DESKTOP_KEYBOARD_MODEL='pc105' # X11 keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models
+ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='de' # X11 keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de
 ARCH_OS_DESKTOP_KEYBOARD_VARIANT='nodeadkeys' # X11 keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys
 ARCH_OS_SAMBA_SHARE_ENABLED='true' # Enable Samba public (anonymous) & home share (user) | Disable: false
 ARCH_OS_VM_SUPPORT_ENABLED='true' # VM Support | Default: true | Disable: false
@@ -422,12 +427,42 @@ Here are some technical information regarding the Arch OS Core installation.
 The partitions layout is seperated in two partitions:
 
 1. **FAT32** partition (1 GiB), mounted at `/boot` as ESP
-2. **EXT4** partition (rest of disk) optional with **LUKS2 encrypted container**, mounted at `/` as root
+2. **EXT4/BTRFS** partition (rest of disk) optional with **LUKS2 encrypted container**, mounted at `/` as root
 
-| Partition | Label            | Size         | Mount | Filesystem                |
-| --------- | ---------------- | ------------ | ----- | ------------------------- |
-| 1         | BOOT             | 1 GiB        | /boot | FAT32                     |
-| 2         | ROOT / cryptroot | Rest of disk | /     | EXT4 + Encryption (LUKS2) |
+| Partition | Label                    | Size         | Mount | Filesystem                      |
+| --------- | ------------------------ | ------------ | ----- | ------------------------------- |
+| 1         | BOOT                     | 1 GiB        | /boot | FAT32                           |
+| 2         | ROOT / BTRFS / cryptroot | Rest of disk | /     | EXT4/BTRFS + Encryption (LUKS2) |
+
+#### BTRFS
+
+Great GUI for managing Snapshots: [AUR/btrfs-assistant](https://aur.archlinux.org/packages/btrfs-assistant)
+
+| Subvolume  | Mountpoint  | Description                            | Snapper Config            |
+| ---------- | ----------- | -------------------------------------- | ------------------------- |
+| @          | /           | Mount point for root                   | /etc/snapper/configs/root |
+| @home      | /home       | Mount point for home                   | x                         |
+| @snapshots | /.snapshots | Read-only snapshots created by snapper | x                         |
+
+**Note:** If `btrfs` as filesystem and `grub` as bootloader is selected, _OverlayFS_ is used and lets you overlay a writable layer on top of a read-only Btrfs snapshot, so changes are temporary and the original data stays untouched. It is enabled by adding `grub-btrfs-overlayfs` to the `HOOKS` array in `/etc/mkinitcpio.conf`.
+
+| Package     | Service/Timer               | Description                                                          |
+| ----------- | --------------------------- | -------------------------------------------------------------------- |
+| grub-btrfs  | grub-btrfsd.service         | Automatically updates GRUB menu entries when Btrfs snapshots change. |
+| btrfs-progs | btrfs-scrub@-.timer         | Schedules regular Btrfs scrub for the root filesystem.               |
+| btrfs-progs | btrfs-scrub@home.timer      | Schedules regular Btrfs scrub for the /home subvolume.               |
+| btrfs-progs | btrfs-scrub@snapshots.timer | Schedules regular Btrfs scrub for the /snapshots subvolume.          |
+| snapper     | snapper-boot.timer          | Automatically creates a Btrfs snapshot at every system boot.         |
+| snapper     | snapper-timeline.timer      | Automatically creates periodic Btrfs snapshots.                      |
+| snapper     | snapper-cleanup.timer       | Cleans up old Btrfs snapshots based on retention policy.             |
+
+This packages are installed:
+
+```
+base-devel btrfs-progs efibootmgr inotify-tools grub grub-btrfs snapper snap-pac
+```
+
+**Note:** By installing `snap-pac`, a Pacman hook is created that automatically generates Btrfs snapshots before and after each package transaction.
 
 ### Swap
 
@@ -440,7 +475,7 @@ You can edit the zram-generator default configuration in `/etc/systemd/zram-gene
 This packages will be installed during Arch OS Core Installation (~150 packages in total):
 
 ```
-base linux-firmware zram-generator networkmanager sudo [kernel_pkg] [microcode_pkg]
+base base-devel linux-firmware zram-generator networkmanager [kernel_pkg] [microcode_pkg]
 ```
 
 ### Services
@@ -459,6 +494,54 @@ This configuration will be set during Arch OS Core Installation:
 - User is added to group `wheel` to use `sudo`
 
 **Note:** The password (`ARCH_OS_PASSWORD`) is used for encryption (optional), root and user login and can be changed afterwards with `passwd` if necessary.
+
+## Rescue & Recovery
+
+If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and start the included recovery mode:
+
+```
+curl -Ls bit.ly/arch-os | RECOVERY=true bash
+```
+
+### BTRFS Rollback - manually
+
+```
+btrfs subvolume list /mnt/recovery # List BTRFS snapshots
+btrfs subvolume delete --recursive /mnt/recovery/@
+btrfs subvolume snapshot /mnt/recovery/@snapshots/<ID>/snapshot /mnt/recovery/@
+```
+
+### EXT4 Recovery - manually
+
+Follow these instructions to do this manually.
+
+#### 1. Disk Information
+
+- Show disk info: `lsblk`
+
+_**Example**_
+
+- _Example Disk: `/dev/sda`_
+- _Example Boot: `/dev/sda1`_
+- _Example Root: `/dev/sda2`_
+
+#### 2. Mount
+
+**Note:** _You may have to replace the example `/dev/sda` with your own disk_
+
+- Create mount dir: `mkdir -p /mnt/boot`
+- a) Mount root partition (disk encryption enabled):
+  - `cryptsetup open /dev/sda2 cryptroot`
+  - `mount /dev/mapper/cryptroot /mnt`
+- b) Mount root partition (disk encryption disabled):
+  - `mount /dev/sda2 /mnt`
+- Mount boot partition: `mount /dev/sda1 /mnt/boot`
+
+#### 3. Chroot
+
+- Enter chroot: `arch-chroot /mnt`
+- _Fix your Arch OS..._
+- Exit: `exit`
 
 ## Troubleshooting
 
@@ -521,45 +604,6 @@ sudo pacman -Sy archlinux-keyring && paru -Su
 paru -Scc
 ```
 
-### Rescue & Recovery
-
-If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and start the included recovery mode:
-
-```
-curl -Ls bit.ly/arch-os > installer.sh
-bash installer.sh --recovery
-```
-
-or follow these instructions to do this manually.
-
-#### 1. Disk Information
-
-- Show disk info: `lsblk`
-
-_**Example**_
-
-- _Example Disk: `/dev/sda`_
-- _Example Boot: `/dev/sda1`_
-- _Example Root: `/dev/sda2`_
-
-#### 2. Mount
-
-**Note:** _You may have to replace the example `/dev/sda` with your own disk_
-
-- Create mount dir: `mkdir -p /mnt/boot`
-- a) Mount root partition (disk encryption enabled):
-  - `cryptsetup open /dev/sda2 cryptroot`
-  - `mount /dev/mapper/cryptroot /mnt`
-- b) Mount root partition (disk encryption disabled):
-  - `mount /dev/sda2 /mnt`
-- Mount boot partition: `mount /dev/sda1 /mnt/boot`
-
-#### 3. Chroot
-
-- Enter chroot: `arch-chroot /mnt`
-- _Fix your Arch OS..._
-- Exit: `exit`
-
 ## Development
 
 Create new pull request branches only from [main branch](https://github.com/murkl/arch-os/tree/main)! The [dev branch](https://github.com/murkl/arch-os/tree/dev) will be deleted after each merge into main.
@@ -584,6 +628,9 @@ GUM=/usr/bin/gum ./installer.sh
 
 # Debug simulator:
 DEBUG=true ./installer.sh
+
+# Start recovery mode:
+RECOVERY=true ./installer.sh
 ```
 
 ## Credits

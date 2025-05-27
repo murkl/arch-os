@@ -48,11 +48,12 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - [Zen Kernel](DOCS.md#advanced-installation) (configurable)
 - [Swap](DOCS.md#swap) with zram-generator (zstd)
 - [Sole OS](DOCS.md#partitions-layout)
+- BTRFS Snapshot Support (Snapper, OverlayFS)
 - All-in-One password (encryption, root & user)
 - Multilingual Support
-- Filesystem ext4
+- Filesystem btrfs or ext4
+- Bootloader: grub or systemd (auto updated)
 - Silent Boot (optional)
-- Systemd Bootloader (auto updated)
 - Systemd OOM (out-of-memory killer)
 - Pacman parallel downloads & eyecandy (optional)
 - Network Manager
@@ -73,11 +74,12 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - GNOME Power Profiles Support (tuned-ppd)
 - VPN Support
 - Basic Fonts
-- Wayland optimized
-- Auto Login enabled
+- Wayland optimized (no Xorg pre-installed)
+- Auto GNOME Login enabled
 - Printer Support (cups)
 - SSH Agent (gcr)
 - Gamemode preinstalled
+- No Xorg included
 
 ## Additional Features
 
