@@ -847,6 +847,10 @@ exec_prepare_disk() {
             # Mount /boot
             #mount -v --mkdir LABEL=BOOT /mnt/boot
             mount -v --mkdir "$ARCH_OS_BOOT_PARTITION" /mnt/boot
+
+            # Create dirs instead of subvolumes by systemd
+            mkdir -p /mnt/var/lib/portables
+            mkdir -p /mnt/var/lib/machines
         fi
 
         # Return
