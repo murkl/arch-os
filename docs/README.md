@@ -154,6 +154,7 @@ curl -Ls bit.ly/arch-os-recovery | bash
   <p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Fetch Demo</i></sub></p>
   <p><div><img src="./screenshots/desktop_apps.png"></div><sub><i>Desktop Core Apps Demo</i></sub></p>
   <p><div><img src="./screenshots/manager_dashboard.png"></div><sub><i>System Manager Demo</i></sub></p>
+  <p><div><img src="./screenshots/recovery.png"></div><sub><i>BTRFS Recovery Demo</i></sub></p>
 </div>
 
 </details>

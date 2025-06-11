@@ -497,6 +497,8 @@ This configuration will be set during Arch OS Core Installation:
 
 ## Rescue & Recovery
 
+<p><img src="./screenshots/recovery.png"></p>
+
 If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and start the
 **[Arch OS Recovery](https://github.com/murkl/arch-os-recovery)**.
 
