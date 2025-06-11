@@ -74,7 +74,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - GNOME Power Profiles Support (tuned-ppd)
 - VPN Support
 - Basic Fonts
-- Wayland optimized (no Xorg pre-installed)
+- Wayland optimized
 - Auto GNOME Login enabled
 - Printer Support (cups)
 - SSH Agent (gcr)
@@ -136,6 +136,12 @@ After installing Arch OS with the default properties preset, most maintenance ta
 - Consult the **[Arch Linux Wiki](https://wiki.archlinux.org)** (if you need help)
 
 To streamline this process, you can use the preinstalled **[➜ Arch OS System Manager](https://github.com/murkl/arch-os-manager)**
+
+If you need to rescue your Arch OS in case of a crash, boot from an **[Arch ISO Device](#1-prepare-bootable-usb-device)** and start the **[➜ Arch OS Recovery](https://github.com/murkl/arch-os-recovery)** with:
+
+```
+curl -Ls bit.ly/arch-os-recovery | bash
+```
 
 <details>
 
