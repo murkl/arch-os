@@ -5,7 +5,7 @@
 
 <div align="center">
 
-<p><strong>Boot from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a> and run</strong></p>
+<p><strong>Boot from official <a target="_blank" href="#1-prepare-bootable-usb-device">Arch ISO Device</a> and run</strong></p>
 
 **`curl -Ls bit.ly/arch-os | bash`**
 
