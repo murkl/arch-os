@@ -5,7 +5,7 @@
 
 <div align="center">
 
-<p><strong>Boot from official <a target="_blank" href="https://archlinux.org/download/">Arch ISO</a> and run</strong></p>
+<p><strong>Boot from official <a target="_blank" href="#1-prepare-bootable-usb-device">Arch ISO Device</a> and run</strong></p>
 
 **`curl -Ls bit.ly/arch-os | bash`**
 
@@ -74,7 +74,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - GNOME Power Profiles Support (tuned-ppd)
 - VPN Support
 - Basic Fonts
-- Wayland optimized (no Xorg pre-installed)
+- Wayland optimized
 - Auto GNOME Login enabled
 - Printer Support (cups)
 - SSH Agent (gcr)
@@ -137,6 +137,12 @@ After installing Arch OS with the default properties preset, most maintenance ta
 
 To streamline this process, you can use the preinstalled **[➜ Arch OS System Manager](https://github.com/murkl/arch-os-manager)**
 
+If you need to rescue your Arch OS in case of a crash, boot from an **[Arch ISO Device](#1-prepare-bootable-usb-device)** and start the **[➜ Arch OS Recovery](https://github.com/murkl/arch-os-recovery)** with:
+
+```
+curl -Ls bit.ly/arch-os-recovery | bash
+```
+
 <details>
 
 <summary><h2 style="display: inline;" id="screenshots">Screenshots</h2></summary>
@@ -148,6 +154,7 @@ To streamline this process, you can use the preinstalled **[➜ Arch OS System M
   <p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Fetch Demo</i></sub></p>
   <p><div><img src="./screenshots/desktop_apps.png"></div><sub><i>Desktop Core Apps Demo</i></sub></p>
   <p><div><img src="./screenshots/manager_dashboard.png"></div><sub><i>System Manager Demo</i></sub></p>
+  <p><div><img src="./screenshots/recovery.png"></div><sub><i>BTRFS Recovery Demo</i></sub></p>
 </div>
 
 </details>

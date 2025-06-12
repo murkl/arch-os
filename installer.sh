@@ -16,13 +16,12 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # ENVIRONMENT
-: "${DEBUG:=false}"    # DEBUG=true ./installer.sh
-: "${FORCE:=false}"    # FORCE=true ./installer.sh
-: "${GUM:=./gum}"      # GUM=/usr/bin/gum ./installer.sh
-: "${RECOVERY:=false}" # RECOVERY=true ./installer.sh
+: "${DEBUG:=false}" # DEBUG=true ./installer.sh
+: "${FORCE:=false}" # FORCE=true ./installer.sh
+: "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
-VERSION='1.8.6'
+VERSION='1.8.7'
 
 # GUM
 GUM_VERSION="0.13.0"
@@ -71,12 +70,6 @@ main() {
 
     # Print version to logfile
     log_info "Arch OS ${VERSION}"
-
-    # Start recovery
-    [[ "$RECOVERY" = "true" ]] && {
-        start_recovery
-        exit $? # Exit after recovery
-    }
 
     # ---------------------------------------------------------------------------------------------------
 
@@ -251,180 +244,6 @@ main() {
     [ "$do_unmount" = "false" ] && [ "$do_chroot" = "false" ] && echo && gum_warn "Arch OS is still mounted at /mnt"
 
     gum_info "Exit" && exit 0
-}
-
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-# RECOVERY
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-start_recovery() {
-    print_header "Arch OS Recovery"
-    local recovery_boot_partition recovery_root_partition user_input items options
-    local recovery_mount_dir="/mnt/recovery"
-    local recovery_crypt_label="cryptrecovery"
-    local recovery_encryption_enabled
-    local recovery_encryption_password
-    local mount_target
-
-    recovery_unmount() {
-        set +e
-        swapoff -a &>/dev/null
-        umount -A -R "$recovery_mount_dir" &>/dev/null
-        umount -l -A -R "$recovery_mount_dir" &>/dev/null
-        cryptsetup close "$recovery_crypt_label" &>/dev/null
-        umount -A -R /mnt &>/dev/null
-        umount -l -A -R /mnt &>/dev/null
-        cryptsetup close cryptroot &>/dev/null
-        set -e
-    }
-
-    # Select disk
-    mapfile -t items < <(lsblk -I 8,259,254 -d -o KNAME,SIZE -n)
-    # size: $(lsblk -d -n -o SIZE "/dev/${item}")
-    options=() && for item in "${items[@]}"; do options+=("/dev/${item}"); done
-    user_input=$(gum_choose --header "+ Select Arch OS Disk" "${options[@]}") || exit 130
-    gum_title "Recovery"
-    [ -z "$user_input" ] && gum_fail "Disk is empty" && exit 1 # Check if new value is null
-    user_input=$(echo "$user_input" | awk -F' ' '{print $1}')  # Remove size from input
-    [ ! -e "$user_input" ] && gum_fail "Disk does not exists" && exit 130
-
-    [[ "$user_input" = "/dev/nvm"* ]] && recovery_boot_partition="${user_input}p1" || recovery_boot_partition="${user_input}1"
-    [[ "$user_input" = "/dev/nvm"* ]] && recovery_root_partition="${user_input}p2" || recovery_root_partition="${user_input}2"
-
-    # Check encryption
-    #if lsblk -ndo FSTYPE "$recovery_root_partition" 2>/dev/null | grep -q "crypto_LUKS"; then
-    if lsblk -no fstype "${recovery_root_partition}" 2>/dev/null | grep -qw crypto_LUKS || false; then
-        recovery_encryption_enabled="true"
-        mount_target="/dev/mapper/${recovery_crypt_label}"
-        gum_warn "The disk $recovery_root_partition is encrypted with LUKS"
-    else
-        recovery_encryption_enabled="false"
-        mount_target="$recovery_root_partition"
-        gum_info "The disk $recovery_root_partition is not encrypted"
-    fi
-
-    # Check archiso
-    [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && gum_fail "You must execute the Recovery from Arch ISO!" && exit 130
-
-    # Make sure everything is unmounted
-    recovery_unmount
-
-    # Create mount dir
-    mkdir -p "$recovery_mount_dir"
-
-    # Env
-    local mount_fs_btrfs
-    local mount_fs_ext4
-
-    # Mount encrypted disk
-    if [ "$recovery_encryption_enabled" = "true" ]; then
-
-        # Encryption password
-        recovery_encryption_password=$(gum_input --password --header "+ Enter Encryption Password" </dev/tty) || exit 130
-
-        # Open encrypted Disk
-        echo -n "$recovery_encryption_password" | cryptsetup open "$recovery_root_partition" "$recovery_crypt_label" &>/dev/null || {
-            gum_fail "Wrong encryption password"
-            exit 130
-        }
-
-        mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw btrfs && echo true || echo false)
-        mount_fs_ext4=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw ext4 && echo true || echo false)
-
-        # EXT4: Mount encrypted disk
-        if $mount_fs_ext4; then
-            gum_info "Mounting EXT4: /root"
-            mount "${mount_target}" "$recovery_mount_dir"
-        fi
-
-        # BTRFS: Mount encrypted disk
-        if $mount_fs_btrfs; then
-            gum_info "Mounting BTRFS: @, @home & @snapshots"
-            local mount_opts="defaults,noatime,compress=zstd"
-            mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
-            mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
-            mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" "${recovery_mount_dir}/.snapshots"
-        fi
-
-        # TODO
-        if false; then
-            gum_info "Mounting BTRFS: @, @home & @snapshots"
-            mount "$recovery_root_partition" "$recovery_mount_dir"
-        fi
-
-    else
-
-        mount_fs_btrfs=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw btrfs && echo true || echo false)
-        mount_fs_ext4=$(lsblk -no fstype "${mount_target}" 2>/dev/null | grep -qw ext4 && echo true || echo false)
-
-        # EXT4: Mount unencrypted disk
-        if $mount_fs_ext4; then
-            gum_info "Mounting EXT4: /root"
-            mount "$recovery_root_partition" "$recovery_mount_dir"
-        fi
-
-        # BTRFS: Mount unencrypted disk
-        if $mount_fs_btrfs; then
-            gum_info "Mounting BTRFS: @, @home & @snapshots"
-            local mount_opts="defaults,noatime,compress=zstd"
-            mount --mkdir -t btrfs -o ${mount_opts},subvolid=5 "${mount_target}" "${recovery_mount_dir}"
-            mount --mkdir -t btrfs -o ${mount_opts},subvol=@home "${mount_target}" "${recovery_mount_dir}/home"
-            mount --mkdir -t btrfs -o ${mount_opts},subvol=@snapshots "${mount_target}" "${recovery_mount_dir}/.snapshots"
-        fi
-
-        # TODO
-        if false; then
-            gum_info "Mounting BTRFS: @, @home & @snapshots"
-            mount "$recovery_root_partition" "$recovery_mount_dir"
-        fi
-    fi
-
-    # Check if ext4 OR btrfs found
-    if ! $mount_fs_btrfs && ! $mount_fs_ext4; then
-        gum_fail "ERROR: Filesystem not found. Only BTRFS & EXT4 supported."
-        exit 130
-    fi
-
-    # Check if ext4 AND btrfs found
-    if $mount_fs_btrfs && $mount_fs_ext4; then
-        gum_fail "ERROR: BTRFS and EXT4 are found at the same device."
-        exit 130
-    fi
-
-    # Mount boot
-    gum_info "Mounting EFI: /boot"
-    mkdir -p "$recovery_mount_dir/boot"
-    mount "$recovery_boot_partition" "${recovery_mount_dir}/boot"
-
-    # Chroot (ext4)
-    if $mount_fs_ext4; then
-        gum_green "!! YOUR ARE NOW ON YOUR RECOVERY SYSTEM !!"
-        gum_yellow ">> Leave with command 'exit'"
-        arch-chroot "$recovery_mount_dir" </dev/tty
-        wait && recovery_unmount
-        gum_green ">> Exit Recovery"
-    fi
-
-    # BTRFS Rollback
-    if $mount_fs_btrfs; then
-
-        # Input & info
-        echo && gum_title "BTRFS Rollback"
-        local snapshots snapshot_input
-        #snapshots=$(btrfs subvolume list "$recovery_mount_dir" | awk '$NF ~ /^@snapshots\/[0-9]+\/snapshot$/ {print $NF}')
-        snapshots=$(btrfs subvolume list -o "${recovery_mount_dir}/.snapshots" | awk '{print $NF}')
-        [ -z "$snapshots" ] && gum_fail "No Snapshot found in @snapshots" && exit 130
-        snapshot_input=$(echo "$snapshots" | gum_filter --header "+ Select Snapshot") || exit 130
-        gum_info "Snapshot: ${snapshot_input}"
-        gum_confirm "Confirm Rollback to @" || exit 130
-
-        # Rollback
-        btrfs subvolume delete --recursive "${recovery_mount_dir}/@"
-        btrfs subvolume snapshot "${recovery_mount_dir}/${snapshot_input}" "${recovery_mount_dir}/@"
-        rm -f "${recovery_mount_dir}/mnt/var/lib/pacman/db.lck"
-        gum_info "Snapshot ${snapshot_input} is set to @ after next reboot"
-        gum_green "Rollback successfully finished"
-    fi
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1028,6 +847,10 @@ exec_prepare_disk() {
             # Mount /boot
             #mount -v --mkdir LABEL=BOOT /mnt/boot
             mount -v --mkdir "$ARCH_OS_BOOT_PARTITION" /mnt/boot
+
+            # Create dirs instead of subvolumes by systemd
+            mkdir -p /mnt/var/lib/portables
+            mkdir -p /mnt/var/lib/machines
         fi
 
         # Return

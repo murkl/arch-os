@@ -497,10 +497,13 @@ This configuration will be set during Arch OS Core Installation:
 
 ## Rescue & Recovery
 
-If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and start the included recovery mode:
+<p><img src="./screenshots/recovery.png"></p>
+
+If you need to rescue your Arch OS in case of a crash, **boot from an Arch ISO device** and start the
+**[Arch OS Recovery](https://github.com/murkl/arch-os-recovery)**.
 
 ```
-curl -Ls bit.ly/arch-os | RECOVERY=true bash
+curl -Ls bit.ly/arch-os-recovery | bash
 ```
 
 ### BTRFS Rollback - manually
@@ -628,9 +631,6 @@ GUM=/usr/bin/gum ./installer.sh
 
 # Debug simulator:
 DEBUG=true ./installer.sh
-
-# Start recovery mode:
-RECOVERY=true ./installer.sh
 ```
 
 ## Credits
