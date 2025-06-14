@@ -16,9 +16,9 @@ set -e          # Terminate if any command exits with a non-zero
 set -E          # ERR trap inherited by shell functions (errtrace)
 
 # ENVIRONMENT
-: "${DEBUG:=false}" # DEBUG=true ./installer.sh
-: "${FORCE:=false}" # FORCE=true ./installer.sh
-: "${GUM:=./gum}"   # GUM=/usr/bin/gum ./installer.sh
+: "${DEBUG:=false}"            # DEBUG=true ./installer.sh
+: "${FORCE:=false}"            # FORCE=true ./installer.sh
+: "${GUM:=/usr/local/bin/gum}" # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
 VERSION='1.8.7'
@@ -2184,7 +2184,7 @@ gum() {
     if [ -n "$GUM" ] && [ -x "$GUM" ]; then
         "$GUM" "$@"
     else
-        echo "Error: GUM='${GUM}' is not found or executable" >&2
+        echo "Error: GUM '${GUM}' is not found or executable" >&2
         exit 1
     fi
 }
