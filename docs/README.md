@@ -5,7 +5,9 @@
 
 <div align="center">
 
-<p><strong>Boot from official <a target="_blank" href="#1-prepare-bootable-usb-device">Arch ISO Device</a> and run</strong></p>
+<p><strong>Download latest <a target="_blank" href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a> and create <a target="_blank" href="#1-prepare-bootable-usb-device">bootable device</a>.</strong></p>
+
+<p><strong>Alternatively, boot from official <a target="_blank" href="#1-prepare-bootable-usb-device">Arch Linux ISO Device</a> and run</strong></p>
 
 **`curl -Ls bit.ly/arch-os | bash`**
 

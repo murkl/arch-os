@@ -40,11 +40,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: archos-${{ env.SNAPSHOT_VERSION }}-x86_64
-          path: ./archiso/out/*.iso
+          path: ./iso/archiso/out/*.iso
 
       - name: Upload Arch OS ISO to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ./archiso/out/*.iso
+          files: ./iso/archiso/out/*.iso
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
