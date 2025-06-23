@@ -104,6 +104,7 @@ else
 fi
 
 # Run Installer or Recovery
+gum_print_header
 if gum_confirm --affirmative="Installer" --negative="Recovery" "Please select the Arch OS Operation Mode"; then
     echo && gum_title "Installer" && gum_print "Starting..." && sleep 1
     [ "$DEBUG" = "false" ] && GUM="${ARCH_OS_GUM_BIN}" "$ARCH_OS_INSTALLER_BIN"
