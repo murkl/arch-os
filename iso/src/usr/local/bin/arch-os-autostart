@@ -1,0 +1,117 @@
+#!/bin/bash
+set -e
+
+# GUM
+: "${DEBUG:=false}"
+: "${GUM:=/usr/local/bin/gum}"
+
+# AIROOTFS BIN
+ARCH_OS_GUM_BIN="/usr/local/bin/gum"
+ARCH_OS_INSTALLER_BIN="/usr/local/bin/arch-os"
+ARCH_OS_RECOVERY_BIN="/usr/local/bin/arch-os-recovery"
+
+# TEST IP
+INTERNET_TEST_IP=8.8.8.8
+
+# COLORS
+COLOR_FOREGROUND="12"  #0000ff
+COLOR_BACKGROUND="15}" #ffffff
+
+gum() { "${GUM}" "${@}"; }
+gum_confirm() { gum confirm --prompt.foreground "$COLOR_FOREGROUND" --selected.background "$COLOR_FOREGROUND" --selected.foreground "$COLOR_BACKGROUND" --unselected.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter..." --height 12 --header.foreground "$COLOR_FOREGROUND" --indicator.foreground "$COLOR_FOREGROUND" --match.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_spin() { gum spin --spinner line --title.foreground "$COLOR_FOREGROUND" --spinner.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_title() { gum style --foreground "$COLOR_FOREGROUND" --bold "+ ${*}"; }
+gum_print() { gum style --foreground "$COLOR_BACKGROUND" "  ${*}"; }
+gum_print_bold() { gum style --bold --foreground "$COLOR_BACKGROUND" "  ${*}"; }
+
+# Header
+gum_print_header() {
+    clear && gum style --foreground "$COLOR_FOREGROUND" "
+   █████  ██████   ██████ ██   ██      ██████  ███████ 
+  ██   ██ ██   ██ ██      ██   ██     ██    ██ ██      
+  ███████ ██████  ██      ███████     ██    ██ ███████ 
+  ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
+  ██   ██ ██   ██  ██████ ██   ██      ██████  ███████ 
+"
+}
+
+# Trap
+trap_exit() {
+    local result_code="$?"
+    echo && gum_title "Help" && echo
+    gum_print "Open installer:"
+    gum_print_bold "  arch-os"
+    gum_print
+    gum_print "Open recovery:"
+    gum_print_bold "  arch-os-recovery"
+    gum_print
+    gum_print "Open autostart:"
+    gum_print_bold "  arch-os-autostart"
+    gum_print
+    exit $result_code
+}
+
+# Set trap
+trap 'trap_exit' EXIT
+
+# Print header
+gum_print_header
+
+# Welcome
+gum_title "Autostart"
+gum_print_bold "Welcome to the automated Autostart script of Arch OS"
+
+if gum_confirm "Load Keymap for Installation and Recovery?"; then
+    keymaps=$(localectl list-keymaps)
+    selected_keymap="$(echo "$keymaps" | gum_filter --header "+ Load Keymap" "${@}")"
+    echo && gum_title "Keymap"
+    gum_print_bold "loadkeys $selected_keymap"
+    [ "$DEBUG" = "false" ] && loadkeys "$selected_keymap"
+fi
+
+# Check internet
+check_internet() {
+    for i in {1..3}; do
+        timeout 0.7 ping -c 1 -W 5 ${INTERNET_TEST_IP} &>/dev/null && return 0
+        gum_spin --title "${i}/3 Waiting for internet connection..." -- bash -c "timeout 5 ping -c 1 -W 5 ${INTERNET_TEST_IP} &>/dev/null && exit 0" && return 0
+    done
+    return 1
+}
+
+echo && gum_title "Internet"
+
+# WLAN Hotspot?
+if ! check_internet; then
+    if gum_confirm "No internet connection! Connect to WLAN Hotspot?"; then
+
+        # Open Network Manager TUI
+        nmtui
+
+        # Clear nmtui screen and print header
+        gum_print_header && echo && gum_title "Internet"
+
+        # Wait for sub processes
+        wait
+
+        # Waiting for internet
+        gum_spin --title "Waiting for internet connection..." -- sleep 5
+    fi
+fi
+
+# Finaly check internet
+if check_internet; then
+    gum_print_bold "Internet sucessfully connected"
+else
+    if ! gum_confirm "No internet connection! Continue?"; then exit 1; fi
+fi
+
+# Run Installer or Recovery
+
+if gum_confirm --affirmative="Installer" --negative="Recovery" "Please select the Arch OS Operation Mode"; then
+    echo && gum_title "Installer" && gum_print "Starting..." && sleep 1
+    [ "$DEBUG" = "false" ] && GUM="${ARCH_OS_GUM_BIN}" "$ARCH_OS_INSTALLER_BIN"
+else
+    echo && gum_title "Recovery" && gum_print "Starting..." && sleep 1
+    [ "$DEBUG" = "false" ] && GUM="${ARCH_OS_GUM_BIN}" "$ARCH_OS_RECOVERY_BIN"
+fi
