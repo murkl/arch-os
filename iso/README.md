@@ -2,8 +2,14 @@
 
 <p><img src="./screenshot.png"></p>
 
-## Build
+- Arch OS Installer included
+- Arch OS Recvovery included
+- NetworkManager preinstalled
+- Keyboard Layout Support
+- WLAN support
+
+## Build bootable ISO
 
 ```
-SNAPSHOT_VERSION=2025.06 ./build.sh
+SNAPSHOT_VERSION=1.0.0 ./build.sh
 ```
