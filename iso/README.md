@@ -13,3 +13,5 @@
 ```
 SNAPSHOT_VERSION=1.0.0 ./build.sh
 ```
+
+**Note:** The generated `*.iso` file can be found in the `./out` directory.
