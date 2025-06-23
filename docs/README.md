@@ -7,7 +7,7 @@
 
 <p><strong>Boot from latest <a target="_blank" href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a> to launch the Installer automatically.</strong></p>
 
- <p><strong>Alternatively boot from official <a target="_blank" href="https://archlinux.org/download/">Arch Linux ISO</a> and run</strong></p>
+ <p>Alternatively boot from official <a target="_blank" href="https://archlinux.org/download/">Arch Linux ISO</a> and run</p>
 
 **`curl -Ls bit.ly/arch-os | bash`**
 
