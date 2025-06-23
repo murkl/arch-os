@@ -1,0 +1,50 @@
+name: Build & Release Arch OS ISO
+
+on:
+  push:
+    tags:
+      - "*"
+  #    branches:
+  #      - "dev"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    container:
+      image: archlinux:latest
+      options: --privileged
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set Environment
+        run: |
+          echo "SNAPSHOT_VERSION=$(date +'%Y.%m')" >> $GITHUB_ENV
+
+      - name: Install Dependencies
+        run: pacman -Syu --noconfirm archiso sudo
+
+      - name: Build Arch OS ISO
+        env:
+          SNAPSHOT_VERSION: ${{ env.SNAPSHOT_VERSION }}
+        run: |
+          cd ./iso
+          SNAPSHOT_VERSION=${SNAPSHOT_VERSION} bash build.sh
+
+      - name: Upload Arch OS ISO to Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: archos-${{ env.SNAPSHOT_VERSION }}-x86_64
+          path: ./archiso/out/*.iso
+
+      - name: Upload Arch OS ISO to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./archiso/out/*.iso
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
