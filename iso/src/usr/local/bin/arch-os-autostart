@@ -88,8 +88,8 @@ if ! check_internet; then
         # Open Network Manager TUI
         nmtui
 
-        # Clear and print header
-        gum_print_header
+        # Clear nmtui screen and print header
+        gum_print_header && echo && gum_title "Internet"
 
         # Wait for sub processes
         wait
