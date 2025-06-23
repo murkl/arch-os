@@ -5,9 +5,7 @@
 
 <div align="center">
 
-<p><strong>Download latest <a target="_blank" href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a> and create <a target="_blank" href="#1-prepare-bootable-usb-device">bootable device</a>.</strong></p>
-
-<p><strong>Alternatively, boot from official <a target="_blank" href="#1-prepare-bootable-usb-device">Arch Linux ISO Device</a> and run</strong></p>
+<p><strong>Boot from latest <a target="_blank" href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a> to launch the Installer automatically. Alternatively boot from official <a target="_blank" href="https://archlinux.org/download/">Arch Linux ISO</a> and run</strong></p>
 
 **`curl -Ls bit.ly/arch-os | bash`**
 
@@ -102,7 +100,8 @@ To install Arch OS, an internet connection is required, as many packages will be
 
 ### 1. Prepare bootable USB Device
 
-- Download latest Arch Linux ISO from **[archlinux.org](https://www.archlinux.org/download)** or **[archlinux.de](https://www.archlinux.de/download)**
+- Download latest Arch OS ISO from **[GitHub](https://github.com/murkl/arch-os/releases/latest)**
+  - Alternatively, official Arch Linux ISO from **[archlinux.org](https://www.archlinux.org/download)** or **[archlinux.de](https://www.archlinux.de/download)**
 - Use **[Ventoy](https://www.ventoy.net/en/download.html)** or your prefered iso writer tool to create a bootable USB device
 - Alternatively (Linux only): **[➜ Arch OS Creator](https://github.com/murkl/arch-os-creator)**
 
