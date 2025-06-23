@@ -3,9 +3,9 @@
 <p><img src="./screenshot.png"></p>
 
 - Arch OS Installer included
-- Arch OS Recvovery included
+- Arch OS Recovery included
 - NetworkManager preinstalled
-- Keyboard Layout Support
+- Keyboard Layout support
 - WLAN support
 
 ## Build bootable ISO
