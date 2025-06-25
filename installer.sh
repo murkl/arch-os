@@ -21,7 +21,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${GUM:=/usr/local/bin/gum}" # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
-VERSION='1.8.9'
+VERSION='1.9.0'
 
 # VERSION
 [ "$*" = "--version" ] && echo "$VERSION" && exit 0
@@ -1589,13 +1589,8 @@ exec_install_archos_manager() {
             chroot_pacman_install git base-devel pacman-contrib  # Install dependencies
             chroot_aur_install arch-os-manager                   # Install archos-manager
 
-            # {
-            #     echo "# exec_install_archos_manager | Initialize"
-            #     echo "/usr/bin/arch-os --init &> /dev/null"
-            # } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
-
             # Init manager
-            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- /usr/bin/arch-os --init
+            arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "unset GUM; /usr/bin/arch-os --init"
 
             process_return 0 # Return
         ) &>"$PROCESS_LOG" &

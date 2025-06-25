@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 # GUM
 : "${DEBUG:=false}"
@@ -14,16 +13,18 @@ ARCH_OS_RECOVERY_BIN="/usr/local/bin/arch-os-recovery"
 INTERNET_TEST_IP=8.8.8.8
 
 # COLORS
-COLOR_FOREGROUND="12"  #0000ff
-COLOR_BACKGROUND="15}" #ffffff
+COLOR_FOREGROUND="12" #0000ff
+COLOR_BACKGROUND="15" #ffffff
+COLOR_ERROR="9"       #ff0000
 
 gum() { "${GUM}" "${@}"; }
 gum_confirm() { gum confirm --prompt.foreground "$COLOR_FOREGROUND" --selected.background "$COLOR_FOREGROUND" --selected.foreground "$COLOR_BACKGROUND" --unselected.foreground "$COLOR_FOREGROUND" "${@}"; }
 gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter..." --height 12 --header.foreground "$COLOR_FOREGROUND" --indicator.foreground "$COLOR_FOREGROUND" --match.foreground "$COLOR_FOREGROUND" "${@}"; }
 gum_spin() { gum spin --spinner line --title.foreground "$COLOR_FOREGROUND" --spinner.foreground "$COLOR_FOREGROUND" "${@}"; }
 gum_title() { gum style --foreground "$COLOR_FOREGROUND" --bold "+ ${*}"; }
-gum_print() { gum style --foreground "$COLOR_BACKGROUND" "  ${*}"; }
-gum_print_bold() { gum style --bold --foreground "$COLOR_BACKGROUND" "  ${*}"; }
+gum_print() { gum style --padding "0 2" --width 55 --foreground "$COLOR_BACKGROUND" "${*}"; }
+gum_print_bold() { gum style --padding "0 2" --width 55 --bold --foreground "$COLOR_BACKGROUND" "${*}"; }
+gum_print_error() { gum style --padding "0 2" --width 55 --bold --foreground "$COLOR_ERROR" "${*}"; }
 
 # Header
 gum_print_header() {
@@ -34,12 +35,14 @@ gum_print_header() {
   ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
   ██   ██ ██   ██  ██████ ██   ██      ██████  ███████ 
 "
+    gum_title "Live ISO Autostart"
+    gum_print_bold "Install Arch OS or recover your existing system"
 }
 
 # Trap
 trap_exit() {
     local result_code="$?"
-    echo && gum_title "Help" && echo
+    echo && gum_title "Exit"
     gum_print "Open installer:"
     gum_print_bold "  arch-os"
     gum_print
@@ -52,25 +55,7 @@ trap_exit() {
     exit $result_code
 }
 
-# Set trap
-trap 'trap_exit' EXIT
-
-# Print header
-gum_print_header
-
-# Welcome
-gum_title "Autostart"
-gum_print_bold "Welcome to the automated Autostart script of Arch OS"
-
-if gum_confirm "Load Keymap for Installation and Recovery?"; then
-    keymaps=$(localectl list-keymaps)
-    selected_keymap="$(echo "$keymaps" | gum_filter --header "+ Load Keymap" "${@}")"
-    echo && gum_title "Keymap"
-    gum_print_bold "loadkeys $selected_keymap"
-    [ "$DEBUG" = "false" ] && loadkeys "$selected_keymap"
-fi
-
-# Check internet
+# Check internet helper
 check_internet() {
     for i in {1..3}; do
         timeout 0.7 ping -c 1 -W 5 ${INTERNET_TEST_IP} &>/dev/null && return 0
@@ -79,11 +64,30 @@ check_internet() {
     return 1
 }
 
+# Set trap
+trap 'trap_exit' EXIT
+
+# Print header
+gum_print_header
+
+gum_confirm "Load your preferred keymap?"
+user_confirm=$? && [ $user_confirm = 130 ] && exit 1
+if [ $user_confirm = 0 ]; then
+    echo && gum_title "Keymap"
+    keymaps=$(localectl list-keymaps)
+    selected_keymap="$(echo "$keymaps" | gum_filter "${@}")"
+    [ -z "$selected_keymap" ] && gum_print_error "Keymap is empty" && exit 1
+    gum_print_bold "loadkeys $selected_keymap"
+    [ "$DEBUG" = "false" ] && loadkeys "$selected_keymap"
+fi
+
 echo && gum_title "Internet"
 
 # WLAN Hotspot?
 if ! check_internet; then
-    if gum_confirm "No internet connection! Connect to WLAN Hotspot?"; then
+    gum_confirm "No internet connection! Connect to WLAN Hotspot?"
+    user_confirm=$? && [ $user_confirm = 130 ] && exit 1
+    if [ $user_confirm = 0 ]; then
 
         # Open Network Manager TUI
         nmtui
@@ -103,15 +107,22 @@ fi
 if check_internet; then
     gum_print_bold "Internet sucessfully connected"
 else
-    if ! gum_confirm "No internet connection! Continue?"; then exit 1; fi
+    gum_print_error "No internet connection"
+    gum_confirm "Continue anyway?"
+    user_confirm=$? && [ $user_confirm = 130 ] && exit 1
+    if [ $user_confirm = 1 ]; then
+        exit 1
+    fi
 fi
 
 # Run Installer or Recovery
-
-if gum_confirm --affirmative="Installer" --negative="Recovery" "Please select the Arch OS Operation Mode"; then
+gum_confirm --affirmative="Installer" --negative="Recovery" "Please select the Arch OS Operation Mode"
+user_confirm=$? && [ $user_confirm = 130 ] && exit 1
+if [ $user_confirm = 0 ]; then
     echo && gum_title "Installer" && gum_print "Starting..." && sleep 1
     [ "$DEBUG" = "false" ] && GUM="${ARCH_OS_GUM_BIN}" "$ARCH_OS_INSTALLER_BIN"
-else
+fi
+if [ $user_confirm = 1 ]; then
     echo && gum_title "Recovery" && gum_print "Starting..." && sleep 1
     [ "$DEBUG" = "false" ] && GUM="${ARCH_OS_GUM_BIN}" "$ARCH_OS_RECOVERY_BIN"
 fi
