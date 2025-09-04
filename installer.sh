@@ -1667,7 +1667,6 @@ exec_install_shell_enhancement() {
                 echo 'command -v xdg-open &>/dev/null && alias open="xdg-open"'
                 echo 'alias myip="curl ipv4.icanhazip.com"'
                 echo -e '\n# Change dir'
-                echo 'alias .="cd .."'
                 echo 'alias ..="cd ../.."'
                 echo 'alias ...="cd ../../.."'
                 echo -e '\n# Packages'
