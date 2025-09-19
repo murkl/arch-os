@@ -270,7 +270,7 @@ properties_generate() {
 		echo "ARCH_OS_ROOT_PARTITION='${ARCH_OS_ROOT_PARTITION}' # Root partition"
 		echo "ARCH_OS_FILESYSTEM='${ARCH_OS_FILESYSTEM}' # Filesystem | Available: btrfs, ext4"
 		echo "ARCH_OS_BOOTLOADER='${ARCH_OS_BOOTLOADER}' # Bootloader | Available: grub, systemd"
-		echo "ARCH_OS_SNAPPER_ENABLED='${ARCH_OS_SNAPPER_ENABLED}' # BTRFS Snapper enabled | Disable: false"
+		echo "ARCH_OS_BTRFS_SNAPPER_ENABLED='${ARCH_OS_BTRFS_SNAPPER_ENABLED}' # BTRFS Snapper enabled | Disable: false"
 		echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}' # Disk encryption | Disable: false"
 		echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}' # Timezone | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin"
 		echo "ARCH_OS_LOCALE_LANG='${ARCH_OS_LOCALE_LANG}' # Locale | Show available: ls /usr/share/i18n/locales | Example: de_DE"
@@ -306,7 +306,7 @@ properties_preset_source() {
 	# Default presets
 	[ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
 	[ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
-	[ -z "$ARCH_OS_SNAPPER_ENABLED" ] && ARCH_OS_SNAPPER_ENABLED='true'
+	[ -z "$ARCH_OS_BTRFS_SNAPPER_ENABLED" ] && ARCH_OS_BTRFS_SNAPPER_ENABLED='true'
 	[ -z "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" ] && ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED="true"
 	[ -z "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
 	[ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
@@ -332,7 +332,7 @@ properties_preset_source() {
 
 		# Core preset
 		if [[ $preset == core* ]]; then
-			ARCH_OS_SNAPPER_ENABLED='false'
+			ARCH_OS_BTRFS_SNAPPER_ENABLED='false'
 			ARCH_OS_DESKTOP_ENABLED='false'
 			ARCH_OS_MULTILIB_ENABLED='false'
 			ARCH_OS_HOUSEKEEPING_ENABLED='false'
@@ -345,7 +345,6 @@ properties_preset_source() {
 
 		# Desktop preset
 		if [[ $preset == desktop* ]]; then
-			ARCH_OS_SNAPPER_ENABLED='true'
 			ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
 			ARCH_OS_SAMBA_SHARE_ENABLED='true'
 			ARCH_OS_CORE_TWEAKS_ENABLED="true"
@@ -490,7 +489,7 @@ select_disk() {
 select_filesystem() {
 	if [ -z "$ARCH_OS_FILESYSTEM" ]; then
 		local user_input options
-		options=("btrfs" "ext4")
+		options=("ext4" "btrfs")
 		user_input=$(gum_choose --header "+ Choose Filesystem (snapshot support: btrfs)" "${options[@]}") || trap_gum_exit_confirm
 		[ -z "$user_input" ] && return 1                        # Check if new value is null
 		ARCH_OS_FILESYSTEM="$user_input" && properties_generate # Set value and generate properties file
@@ -504,7 +503,7 @@ select_filesystem() {
 select_bootloader() {
 	if [ -z "$ARCH_OS_BOOTLOADER" ]; then
 		local user_input options
-		options=("grub" "systemd")
+		options=("systemd" "grub")
 		user_input=$(gum_choose --header "+ Choose Bootloader (snapshot menu: grub)" "${options[@]}") || trap_gum_exit_confirm
 		[ -z "$user_input" ] && return 1                        # Check if new value is null
 		ARCH_OS_BOOTLOADER="$user_input" && properties_generate # Set value and generate properties file
@@ -883,7 +882,7 @@ exec_pacstrap_core() {
 		[ "$ARCH_OS_BOOTLOADER" = "grub" ] && packages+=(grub grub-btrfs)
 
 		# Add snapper packages
-		[ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ] && packages+=(snapper)
+		[ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_SNAPPER_ENABLED" = "true" ] && packages+=(snapper)
 
 		# Install core packages and initialize an empty pacman keyring in the target
 		pacstrap -K /mnt "${packages[@]}"
@@ -1028,7 +1027,7 @@ exec_pacstrap_core() {
 			arch-chroot /mnt systemctl enable btrfs-scrub@snapshots.timer
 		fi
 
-		if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ]; then
+		if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_SNAPPER_ENABLED" = "true" ]; then
 
 			# Create snapper config
 			arch-chroot /mnt umount /.snapshots
@@ -1964,10 +1963,10 @@ exec_finalize_arch_os() {
 		arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true'
 
 		# Install snapper pacman hook
-		[ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ] && chroot_pacman_install snap-pac
+		[ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_SNAPPER_ENABLED" = "true" ] && chroot_pacman_install snap-pac
 
 		# Add pacman btrfs hook (need to place on the end of script)
-		if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "false" ]; then
+		if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_SNAPPER_ENABLED" = "false" ]; then
 			# Create pacman hook (auto create snapshot on pre-transaction)
 			mkdir -p /mnt/etc/pacman.d/hooks/
 			# shellcheck disable=SC2016
