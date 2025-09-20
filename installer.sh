@@ -891,7 +891,7 @@ exec_pacstrap_core() {
         genfstab -U /mnt >>/mnt/etc/fstab
 
         # Set fstab /boot permissions to 0077
-        #sed -i '/\/boot/ {s/fmask=[0-9]\+/fmask=0077/g; s/dmask=[0-9]\+/dmask=0077/g}' /mnt/etc/fstab
+        sed -i '/\/boot/ {s/fmask=[0-9]\+/fmask=0077/g; s/dmask=[0-9]\+/dmask=0077/g}' /mnt/etc/fstab
 
         # Set timezone & system clock
         arch-chroot /mnt ln -sf "/usr/share/zoneinfo/${ARCH_OS_TIMEZONE}" /etc/localtime
