@@ -1669,8 +1669,8 @@ exec_install_shell_enhancement() {
                 echo 'command -v xdg-open &>/dev/null && alias open="xdg-open"'
                 echo 'alias myip="curl ipv4.icanhazip.com"'
                 echo -e '\n# Change dir'
-                echo 'alias ..="cd ../.."'
-                echo 'alias ...="cd ../../.."'
+                echo 'alias ..="cd .."'
+                echo 'alias ...="cd ../.."'
                 echo -e '\n# Packages'
                 local pkg_manager='pacman' && [ -n "$ARCH_OS_AUR_HELPER" ] && [ "$ARCH_OS_AUR_HELPER" != "none" ] && pkg_manager="$ARCH_OS_AUR_HELPER"
                 if [ "$pkg_manager" = "pacman" ]; then
