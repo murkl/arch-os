@@ -318,7 +318,7 @@ properties_preset_source() {
     # Load properties or select preset
     if [ -f "$SCRIPT_CONFIG" ]; then
         properties_source
-        $GUM join "$(gum_green --bold "• ")" "$(gum_white "Setup preset loaded from: ")" "$(gum_white --bold "installer.conf")"
+        gum join "$(gum_green --bold "• ")" "$(gum_white "Setup preset loaded from: ")" "$(gum_white --bold "installer.conf")"
     else
         # Select preset
         local preset options
@@ -356,7 +356,7 @@ properties_preset_source() {
 
         # Write properties
         properties_source
-        $GUM join "$(gum_green --bold "• ")" "$(gum_white "Setup preset loaded for: ")" "$(gum_white --bold "$preset")"
+        gum join "$(gum_green --bold "• ")" "$(gum_white "Setup preset loaded for: ")" "$(gum_white --bold "$preset")"
     fi
     return 0
 }
@@ -2092,7 +2092,7 @@ trap_exit() {
         [ -n "$error" ] && gum_fail "$error"            # Print error message (if exists)
         [ -z "$error" ] && gum_fail "An Error occurred" # Otherwise pint default error message
         gum_warn "See ${SCRIPT_LOG} for more information..."
-        gum_confirm "Show Logs?" && $GUM pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
+        gum_confirm "Show Logs?" && gum pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
     fi
 
     exit "$result_code" # Exit installer.sh
@@ -2208,23 +2208,23 @@ gum_cyan() { gum_style --foreground "$COLOR_CYAN" "${@}"; }
 gum_purple() { gum_style --foreground "$COLOR_PURPLE" "${@}"; }
 
 # Gum prints
-gum_title() { log_head "${*}" && $GUM join "$(gum_foreground --bold "+ ")" "$(gum_foreground --bold "${*}")"; }
-gum_info() { log_info "$*" && $GUM join "$(gum_green --bold "• ")" "$(gum_white "${*}")"; }
-gum_warn() { log_warn "$*" && $GUM join "$(gum_yellow --bold "• ")" "$(gum_white "${*}")"; }
-gum_fail() { log_fail "$*" && $GUM join "$(gum_red --bold "• ")" "$(gum_white "${*}")"; }
+gum_title() { log_head "${*}" && gum join "$(gum_foreground --bold "+ ")" "$(gum_foreground --bold "${*}")"; }
+gum_info() { log_info "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "${*}")"; }
+gum_warn() { log_warn "$*" && gum join "$(gum_yellow --bold "• ")" "$(gum_white "${*}")"; }
+gum_fail() { log_fail "$*" && gum join "$(gum_red --bold "• ")" "$(gum_white "${*}")"; }
 
 # Gum wrapper
-gum_style() { $GUM style "${@}"; }
-gum_confirm() { $GUM confirm --prompt.foreground "$COLOR_FOREGROUND" --selected.background "$COLOR_FOREGROUND" --selected.foreground "$COLOR_BACKGROUND" --unselected.foreground "$COLOR_FOREGROUND" "${@}"; }
-gum_input() { $GUM input --placeholder "..." --prompt "> " --cursor.foreground "$COLOR_FOREGROUND" --prompt.foreground "$COLOR_FOREGROUND" --header.foreground "$COLOR_FOREGROUND" "${@}"; }
-gum_choose() { $GUM choose --cursor "> " --header.foreground "$COLOR_FOREGROUND" --cursor.foreground "$COLOR_FOREGROUND" "${@}"; }
-gum_filter() { $GUM filter --prompt "> " --indicator ">" --placeholder "Type to filter..." --height 8 --header.foreground "$COLOR_FOREGROUND" --indicator.foreground "$COLOR_FOREGROUND" --match.foreground "$COLOR_FOREGROUND" "${@}"; }
-gum_write() { $GUM write --prompt "> " --show-cursor-line --char-limit 0 --cursor.foreground "$COLOR_FOREGROUND" --header.foreground "$COLOR_FOREGROUND" "${@}"; }
-gum_spin() { $GUM spin --spinner line --title.foreground "$COLOR_FOREGROUND" --spinner.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_style() { gum style "${@}"; }
+gum_confirm() { gum confirm --prompt.foreground "$COLOR_FOREGROUND" --selected.background "$COLOR_FOREGROUND" --selected.foreground "$COLOR_BACKGROUND" --unselected.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_input() { gum input --placeholder "..." --prompt "> " --cursor.foreground "$COLOR_FOREGROUND" --prompt.foreground "$COLOR_FOREGROUND" --header.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_FOREGROUND" --cursor.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter..." --height 8 --header.foreground "$COLOR_FOREGROUND" --indicator.foreground "$COLOR_FOREGROUND" --match.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_write() { gum write --prompt "> " --show-cursor-line --char-limit 0 --cursor.foreground "$COLOR_FOREGROUND" --header.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_spin() { gum spin --spinner line --title.foreground "$COLOR_FOREGROUND" --spinner.foreground "$COLOR_FOREGROUND" "${@}"; }
 
 # Gum key & value
-gum_proc() { log_proc "$*" && $GUM join "$(gum_green --bold "• ")" "$(gum_white --bold "$(print_filled_space 24 "${1}")")" "$(gum_white "  >  ")" "$(gum_green "${2}")"; }
-gum_property() { log_prop "$*" && $GUM join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 24 "${1}")")" "$(gum_green --bold "  >  ")" "$(gum_white --bold "${2}")"; }
+gum_proc() { log_proc "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white --bold "$(print_filled_space 24 "${1}")")" "$(gum_white "  >  ")" "$(gum_green "${2}")"; }
+gum_property() { log_prop "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 24 "${1}")")" "$(gum_green --bold "  >  ")" "$(gum_white --bold "${2}")"; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # LOGGING WRAPPER
