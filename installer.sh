@@ -33,9 +33,6 @@ GUM_VERSION="0.13.0"
 SCRIPT_CONFIG="./installer.conf"
 SCRIPT_LOG="./installer.log"
 
-# INIT
-INIT_FILENAME="initialize"
-
 # TEMP
 SCRIPT_TMP_DIR="$(mktemp -d "./.tmp.XXXXX")"
 ERROR_MSG="${SCRIPT_TMP_DIR}/installer.err"
@@ -321,7 +318,7 @@ properties_preset_source() {
     # Load properties or select preset
     if [ -f "$SCRIPT_CONFIG" ]; then
         properties_source
-        gum join "$(gum_green --bold "• ")" "$(gum_white "Setup preset loaded from: ")" "$(gum_white --bold "installer.conf")"
+        $GUM join "$(gum_green --bold "• ")" "$(gum_white "Setup preset loaded from: ")" "$(gum_white --bold "installer.conf")"
     else
         # Select preset
         local preset options
@@ -359,7 +356,7 @@ properties_preset_source() {
 
         # Write properties
         properties_source
-        gum join "$(gum_green --bold "• ")" "$(gum_white "Setup preset loaded for: ")" "$(gum_white --bold "$preset")"
+        $GUM join "$(gum_green --bold "• ")" "$(gum_white "Setup preset loaded for: ")" "$(gum_white --bold "$preset")"
     fi
     return 0
 }
@@ -1406,7 +1403,7 @@ exec_install_desktop() {
                     echo "gsettings set org.gnome.desktop.wm.keybindings minimize \"['<Super>h']\""
                     echo "gsettings set org.gnome.desktop.wm.keybindings show-desktop \"['<Super>d']\""
                     echo "gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen \"['<Super>F11']\""
-                } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+                } >>"/mnt/home/${ARCH_OS_USERNAME}/initialize.sh"
             fi
 
             # Set correct permissions
@@ -1869,7 +1866,7 @@ exec_install_shell_enhancement() {
                     echo "# exec_install_shell_enhancement | Set fish theme"
                     echo "fish -c 'fish_config theme choose Nord && echo y | fish_config theme save'"
                 fi
-            } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+            } >>"/mnt/home/${ARCH_OS_USERNAME}/initialize.sh"
 
             # Set correct permissions
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
@@ -1931,32 +1928,32 @@ exec_finalize_arch_os() {
         [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
 
         # Add init script
-        if [ -s "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" ]; then
+        if [ -s "/mnt/home/${ARCH_OS_USERNAME}/initialize.sh" ]; then
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system"
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/autostart"
-            mv "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
+            mv "/mnt/home/${ARCH_OS_USERNAME}/initialize.sh" "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/initialize.sh"
             # Add version env
-            sed -i "1i\ARCH_OS_VERSION=${VERSION}" "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
+            sed -i "1i\ARCH_OS_VERSION=${VERSION}" "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/initialize.sh"
             # Add shebang
-            sed -i '1i\#!/usr/bin/env bash' "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
+            sed -i '1i\#!/usr/bin/env bash' "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/initialize.sh"
             # Add autostart-remove
             {
                 echo "# exec_finalize_arch_os | Remove autostart init files"
-                echo "rm -f /home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
-            } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
+                echo "rm -f /home/${ARCH_OS_USERNAME}/.config/autostart/initialize.desktop"
+            } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/initialize.sh"
             # Print initialized info
             {
                 echo "# exec_finalize_arch_os | Print initialized info"
                 echo "echo \"\$(date '+%Y-%m-%d %H:%M:%S') | Arch OS \${ARCH_OS_VERSION} | Initialized\""
-            } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
-            arch-chroot /mnt chmod +x "/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
+            } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/initialize.sh"
+            arch-chroot /mnt chmod +x "/home/${ARCH_OS_USERNAME}/.arch-os/system/initialize.sh"
             {
                 echo "[Desktop Entry]"
                 echo "Type=Application"
                 echo "Name=Arch OS Initialize"
                 echo "Icon=preferences-system"
-                echo "Exec=bash -c '/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh > /home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.log'"
-            } >"/mnt/home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
+                echo "Exec=bash -c '/home/${ARCH_OS_USERNAME}/.arch-os/system/initialize.sh > /home/${ARCH_OS_USERNAME}/.arch-os/system/initialize.log'"
+            } >"/mnt/home/${ARCH_OS_USERNAME}/.config/autostart/initialize.desktop"
         fi
 
         # Set correct home permissions
@@ -2095,7 +2092,7 @@ trap_exit() {
         [ -n "$error" ] && gum_fail "$error"            # Print error message (if exists)
         [ -z "$error" ] && gum_fail "An Error occurred" # Otherwise pint default error message
         gum_warn "See ${SCRIPT_LOG} for more information..."
-        gum_confirm "Show Logs?" && gum pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
+        gum_confirm "Show Logs?" && $GUM pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
     fi
 
     exit "$result_code" # Exit installer.sh
@@ -2211,23 +2208,23 @@ gum_cyan() { gum_style --foreground "$COLOR_CYAN" "${@}"; }
 gum_purple() { gum_style --foreground "$COLOR_PURPLE" "${@}"; }
 
 # Gum prints
-gum_title() { log_head "${*}" && gum join "$(gum_foreground --bold "+ ")" "$(gum_foreground --bold "${*}")"; }
-gum_info() { log_info "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "${*}")"; }
-gum_warn() { log_warn "$*" && gum join "$(gum_yellow --bold "• ")" "$(gum_white "${*}")"; }
-gum_fail() { log_fail "$*" && gum join "$(gum_red --bold "• ")" "$(gum_white "${*}")"; }
+gum_title() { log_head "${*}" && $GUM join "$(gum_foreground --bold "+ ")" "$(gum_foreground --bold "${*}")"; }
+gum_info() { log_info "$*" && $GUM join "$(gum_green --bold "• ")" "$(gum_white "${*}")"; }
+gum_warn() { log_warn "$*" && $GUM join "$(gum_yellow --bold "• ")" "$(gum_white "${*}")"; }
+gum_fail() { log_fail "$*" && $GUM join "$(gum_red --bold "• ")" "$(gum_white "${*}")"; }
 
 # Gum wrapper
-gum_style() { gum style "${@}"; }
-gum_confirm() { gum confirm --prompt.foreground "$COLOR_FOREGROUND" --selected.background "$COLOR_FOREGROUND" --selected.foreground "$COLOR_BACKGROUND" --unselected.foreground "$COLOR_FOREGROUND" "${@}"; }
-gum_input() { gum input --placeholder "..." --prompt "> " --cursor.foreground "$COLOR_FOREGROUND" --prompt.foreground "$COLOR_FOREGROUND" --header.foreground "$COLOR_FOREGROUND" "${@}"; }
-gum_choose() { gum choose --cursor "> " --header.foreground "$COLOR_FOREGROUND" --cursor.foreground "$COLOR_FOREGROUND" "${@}"; }
-gum_filter() { gum filter --prompt "> " --indicator ">" --placeholder "Type to filter..." --height 8 --header.foreground "$COLOR_FOREGROUND" --indicator.foreground "$COLOR_FOREGROUND" --match.foreground "$COLOR_FOREGROUND" "${@}"; }
-gum_write() { gum write --prompt "> " --show-cursor-line --char-limit 0 --cursor.foreground "$COLOR_FOREGROUND" --header.foreground "$COLOR_FOREGROUND" "${@}"; }
-gum_spin() { gum spin --spinner line --title.foreground "$COLOR_FOREGROUND" --spinner.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_style() { $GUM style "${@}"; }
+gum_confirm() { $GUM confirm --prompt.foreground "$COLOR_FOREGROUND" --selected.background "$COLOR_FOREGROUND" --selected.foreground "$COLOR_BACKGROUND" --unselected.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_input() { $GUM input --placeholder "..." --prompt "> " --cursor.foreground "$COLOR_FOREGROUND" --prompt.foreground "$COLOR_FOREGROUND" --header.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_choose() { $GUM choose --cursor "> " --header.foreground "$COLOR_FOREGROUND" --cursor.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_filter() { $GUM filter --prompt "> " --indicator ">" --placeholder "Type to filter..." --height 8 --header.foreground "$COLOR_FOREGROUND" --indicator.foreground "$COLOR_FOREGROUND" --match.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_write() { $GUM write --prompt "> " --show-cursor-line --char-limit 0 --cursor.foreground "$COLOR_FOREGROUND" --header.foreground "$COLOR_FOREGROUND" "${@}"; }
+gum_spin() { $GUM spin --spinner line --title.foreground "$COLOR_FOREGROUND" --spinner.foreground "$COLOR_FOREGROUND" "${@}"; }
 
 # Gum key & value
-gum_proc() { log_proc "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white --bold "$(print_filled_space 24 "${1}")")" "$(gum_white "  >  ")" "$(gum_green "${2}")"; }
-gum_property() { log_prop "$*" && gum join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 24 "${1}")")" "$(gum_green --bold "  >  ")" "$(gum_white --bold "${2}")"; }
+gum_proc() { log_proc "$*" && $GUM join "$(gum_green --bold "• ")" "$(gum_white --bold "$(print_filled_space 24 "${1}")")" "$(gum_white "  >  ")" "$(gum_green "${2}")"; }
+gum_property() { log_prop "$*" && $GUM join "$(gum_green --bold "• ")" "$(gum_white "$(print_filled_space 24 "${1}")")" "$(gum_green --bold "  >  ")" "$(gum_white --bold "${2}")"; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # LOGGING WRAPPER
