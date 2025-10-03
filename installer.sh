@@ -126,7 +126,7 @@ main() {
         echo && gum_title "Properties"
 
         # Open Advanced Properties?
-        if [ "$FORCE" = "false" ] && gum_confirm --negative="Skip" "Open Advanced Setup Editor?"; then
+        if [ "$FORCE" = "false" ] && gum_confirm --default=false --negative="Skip" "Open Advanced Setup Editor?"; then
             local header_txt="• Advanced Setup | Save with CTRL + D or ESC and cancel with CTRL + C"
             if gum_write --show-line-numbers --prompt "" --height=12 --width=180 --char-limit=0 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
