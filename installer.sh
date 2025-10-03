@@ -1103,9 +1103,7 @@ exec_install_desktop() {
                 # Audio (Pipewire replacements + session manager): https://wiki.archlinux.org/title/PipeWire#Installation
                 packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
-
-                # Disabled because hardware-specific
-                #packages+=(sof-firmware) # Need for intel i5 audio
+                packages+=(sof-firmware) # Need for intel i5 audio
 
                 # Networking & Access
                 packages+=(samba rsync gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
