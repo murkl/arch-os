@@ -594,14 +594,14 @@ select_enable_desktop_slim() {
     if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
         if [ -z "$ARCH_OS_DESKTOP_SLIM_ENABLED" ]; then
             local user_input
-            gum_confirm "Enable Desktop Slim Mode? (GNOME Core Apps only)" --affirmative="No (default)" --negative="Yes"
+            gum_confirm "Enable Desktop Slim Mode? (GNOME Core Apps only)"
             local user_confirm=$?
             [ $user_confirm = 130 ] && {
                 trap_gum_exit_confirm
                 return 1
             }
-            [ $user_confirm = 1 ] && user_input="true"
-            [ $user_confirm = 0 ] && user_input="false"
+            [ $user_confirm = 1 ] && user_input="false"
+            [ $user_confirm = 0 ] && user_input="true"
             ARCH_OS_DESKTOP_SLIM_ENABLED="$user_input" && properties_generate # Set value and generate properties file
         fi
         gum_property "Desktop Slim Mode" "$ARCH_OS_DESKTOP_SLIM_ENABLED"
