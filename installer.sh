@@ -1168,6 +1168,8 @@ exec_install_desktop() {
                 chroot_pacman_remove epiphany || true
                 chroot_pacman_remove loupe || true
                 chroot_pacman_remove decibels || true
+                chroot_pacman_remove showtime || true
+                chroot_pacman_remove papers || true
                 #chroot_pacman_remove evince || true # Need for sushi
             fi
 
@@ -1356,6 +1358,7 @@ exec_install_desktop() {
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/qv4l2.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/qvidcap.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/lstopo.desktop"
+            echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/org.gnome.Evince.desktop"
 
             # Hide aplications (extra) desktop icons
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
