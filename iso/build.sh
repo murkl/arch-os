@@ -106,14 +106,14 @@ ln -sf /run/NetworkManager/resolv.conf "${ISO_DIR}/airootfs/etc/resolv.conf"
 ln -sf /usr/lib/systemd/system/NetworkManager.service "${ISO_DIR}/airootfs/etc/systemd/system/multi-user.target.wants/NetworkManager.service"
 
 # Bootloader config
-sed -i '/^options / s/$/ quiet loglevel=0/' "${ISO_DIR}/efiboot/loader/entries/01-archiso-x86_64-linux.conf"
+sed -i '/^options / s/$/ quiet loglevel=0/' "${ISO_DIR}"/efiboot/loader/entries/01-archiso-linux*.conf
 sed -i 's/^timeout.*/timeout 0/' "${ISO_DIR}/efiboot/loader/loader.conf"
 
 # Remove Arch-Banner
 : >"${ISO_DIR}/airootfs/etc/issue"
 
 # Set arch-os-autostart as kernel parameter
-sed -i '/^options /{/script=\/usr\/local\/bin\/arch-os-autostart/!s/$/ script=\/usr\/local\/bin\/arch-os-autostart/}' "${ISO_DIR}/efiboot/loader/entries/01-archiso-x86_64-linux.conf"
+sed -i '/^options /{/script=\/usr\/local\/bin\/arch-os-autostart/!s/$/ script=\/usr\/local\/bin\/arch-os-autostart/}' "${ISO_DIR}"/efiboot/loader/entries/01-archiso-linux*.conf
 
 # Set ISO config
 set_key_value() { grep -q "^$2=" "$1" && sed -i "s|^$2=.*|$2=\"$3\"|" "$1" || echo "$2=$3" >>"$1"; }

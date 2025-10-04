@@ -21,7 +21,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${GUM:=/usr/local/bin/gum}" # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
-VERSION='1.9.0'
+VERSION='1.9.1'
 
 # VERSION
 [ "$*" = "--version" ] && echo "$VERSION" && exit 0
@@ -32,9 +32,6 @@ GUM_VERSION="0.13.0"
 # ENVIRONMENT
 SCRIPT_CONFIG="./installer.conf"
 SCRIPT_LOG="./installer.log"
-
-# INIT
-INIT_FILENAME="initialize"
 
 # TEMP
 SCRIPT_TMP_DIR="$(mktemp -d "./.tmp.XXXXX")"
@@ -129,7 +126,7 @@ main() {
         echo && gum_title "Properties"
 
         # Open Advanced Properties?
-        if [ "$FORCE" = "false" ] && gum_confirm --negative="Skip" "Open Advanced Setup Editor?"; then
+        if [ "$FORCE" = "false" ] && gum_confirm --default=false --negative="Skip" "Open Advanced Setup Editor?"; then
             local header_txt="• Advanced Setup | Save with CTRL + D or ESC and cancel with CTRL + C"
             if gum_write --show-line-numbers --prompt "" --height=12 --width=180 --char-limit=0 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
@@ -270,7 +267,7 @@ properties_generate() {
         echo "ARCH_OS_ROOT_PARTITION='${ARCH_OS_ROOT_PARTITION}' # Root partition"
         echo "ARCH_OS_FILESYSTEM='${ARCH_OS_FILESYSTEM}' # Filesystem | Available: btrfs, ext4"
         echo "ARCH_OS_BOOTLOADER='${ARCH_OS_BOOTLOADER}' # Bootloader | Available: grub, systemd"
-        echo "ARCH_OS_SNAPPER_ENABLED='${ARCH_OS_SNAPPER_ENABLED}' # BTRFS Snapper enabled | Disable: false"
+        echo "ARCH_OS_BTRFS_SNAPPER_ENABLED='${ARCH_OS_BTRFS_SNAPPER_ENABLED}' # BTRFS Snapper enabled | Disable: false"
         echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}' # Disk encryption | Disable: false"
         echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}' # Timezone | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin"
         echo "ARCH_OS_LOCALE_LANG='${ARCH_OS_LOCALE_LANG}' # Locale | Show available: ls /usr/share/i18n/locales | Example: de_DE"
@@ -306,7 +303,7 @@ properties_preset_source() {
     # Default presets
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
-    [ -z "$ARCH_OS_SNAPPER_ENABLED" ] && ARCH_OS_SNAPPER_ENABLED='true'
+    [ -z "$ARCH_OS_BTRFS_SNAPPER_ENABLED" ] && ARCH_OS_BTRFS_SNAPPER_ENABLED='true'
     [ -z "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" ] && ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED="true"
     [ -z "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
     [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
@@ -332,7 +329,7 @@ properties_preset_source() {
 
         # Core preset
         if [[ $preset == core* ]]; then
-            ARCH_OS_SNAPPER_ENABLED='false'
+            ARCH_OS_BTRFS_SNAPPER_ENABLED='false'
             ARCH_OS_DESKTOP_ENABLED='false'
             ARCH_OS_MULTILIB_ENABLED='false'
             ARCH_OS_HOUSEKEEPING_ENABLED='false'
@@ -345,7 +342,6 @@ properties_preset_source() {
 
         # Desktop preset
         if [[ $preset == desktop* ]]; then
-            ARCH_OS_SNAPPER_ENABLED='true'
             ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
             ARCH_OS_SAMBA_SHARE_ENABLED='true'
             ARCH_OS_CORE_TWEAKS_ENABLED="true"
@@ -490,7 +486,7 @@ select_disk() {
 select_filesystem() {
     if [ -z "$ARCH_OS_FILESYSTEM" ]; then
         local user_input options
-        options=("btrfs" "ext4")
+        options=("ext4" "btrfs")
         user_input=$(gum_choose --header "+ Choose Filesystem (snapshot support: btrfs)" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                        # Check if new value is null
         ARCH_OS_FILESYSTEM="$user_input" && properties_generate # Set value and generate properties file
@@ -504,7 +500,7 @@ select_filesystem() {
 select_bootloader() {
     if [ -z "$ARCH_OS_BOOTLOADER" ]; then
         local user_input options
-        options=("grub" "systemd")
+        options=("systemd" "grub")
         user_input=$(gum_choose --header "+ Choose Bootloader (snapshot menu: grub)" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                        # Check if new value is null
         ARCH_OS_BOOTLOADER="$user_input" && properties_generate # Set value and generate properties file
@@ -595,14 +591,14 @@ select_enable_desktop_slim() {
     if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
         if [ -z "$ARCH_OS_DESKTOP_SLIM_ENABLED" ]; then
             local user_input
-            gum_confirm "Enable Desktop Slim Mode? (GNOME Core Apps only)" --affirmative="No (default)" --negative="Yes"
+            gum_confirm "Enable Desktop Slim Mode? (GNOME Core Apps only)"
             local user_confirm=$?
             [ $user_confirm = 130 ] && {
                 trap_gum_exit_confirm
                 return 1
             }
-            [ $user_confirm = 1 ] && user_input="true"
-            [ $user_confirm = 0 ] && user_input="false"
+            [ $user_confirm = 1 ] && user_input="false"
+            [ $user_confirm = 0 ] && user_input="true"
             ARCH_OS_DESKTOP_SLIM_ENABLED="$user_input" && properties_generate # Set value and generate properties file
         fi
         gum_property "Desktop Slim Mode" "$ARCH_OS_DESKTOP_SLIM_ENABLED"
@@ -883,13 +879,16 @@ exec_pacstrap_core() {
         [ "$ARCH_OS_BOOTLOADER" = "grub" ] && packages+=(grub grub-btrfs)
 
         # Add snapper packages
-        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ] && packages+=(snapper)
+        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_SNAPPER_ENABLED" = "true" ] && packages+=(snapper)
 
         # Install core packages and initialize an empty pacman keyring in the target
         pacstrap -K /mnt "${packages[@]}"
 
         # Generate /etc/fstab
         genfstab -U /mnt >>/mnt/etc/fstab
+
+        # Set fstab /boot permissions to 0077
+        sed -i '/\/boot/ {s/fmask=[0-9]\+/fmask=0077/g; s/dmask=[0-9]\+/dmask=0077/g}' /mnt/etc/fstab
 
         # Set timezone & system clock
         arch-chroot /mnt ln -sf "/usr/share/zoneinfo/${ARCH_OS_TIMEZONE}" /etc/localtime
@@ -1025,7 +1024,7 @@ exec_pacstrap_core() {
             arch-chroot /mnt systemctl enable btrfs-scrub@snapshots.timer
         fi
 
-        if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ]; then
+        if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_SNAPPER_ENABLED" = "true" ]; then
 
             # Create snapper config
             arch-chroot /mnt umount /.snapshots
@@ -1104,9 +1103,7 @@ exec_install_desktop() {
                 # Audio (Pipewire replacements + session manager): https://wiki.archlinux.org/title/PipeWire#Installation
                 packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
-
-                # Disabled because hardware-specific
-                #packages+=(sof-firmware) # Need for intel i5 audio
+                packages+=(sof-firmware) # Need for intel i5 audio
 
                 # Networking & Access
                 packages+=(samba rsync gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-google gvfs-dnssd gvfs-wsdd)
@@ -1135,7 +1132,7 @@ exec_install_desktop() {
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode lib32-sdl_image)
 
                 # Fonts
-                packages+=(ttf-firacode-nerd ttf-nerd-fonts-symbols ttf-font-awesome noto-fonts noto-fonts-emoji ttf-liberation ttf-dejavu adobe-source-sans-fonts adobe-source-serif-fonts)
+                packages+=(ttf-firacode-nerd ttf-nerd-fonts-symbols woff2-font-awesome noto-fonts noto-fonts-emoji ttf-liberation ttf-dejavu adobe-source-sans-fonts adobe-source-serif-fonts)
 
                 # Theming
                 packages+=(adw-gtk-theme tela-circle-icon-theme-standard)
@@ -1166,6 +1163,8 @@ exec_install_desktop() {
                 chroot_pacman_remove epiphany || true
                 chroot_pacman_remove loupe || true
                 chroot_pacman_remove decibels || true
+                chroot_pacman_remove showtime || true
+                chroot_pacman_remove papers || true
                 #chroot_pacman_remove evince || true # Need for sushi
             fi
 
@@ -1354,6 +1353,7 @@ exec_install_desktop() {
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/qv4l2.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/qvidcap.desktop"
             echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/lstopo.desktop"
+            echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/org.gnome.Evince.desktop"
 
             # Hide aplications (extra) desktop icons
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
@@ -1401,7 +1401,7 @@ exec_install_desktop() {
                     echo "gsettings set org.gnome.desktop.wm.keybindings minimize \"['<Super>h']\""
                     echo "gsettings set org.gnome.desktop.wm.keybindings show-desktop \"['<Super>d']\""
                     echo "gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen \"['<Super>F11']\""
-                } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+                } >>"/mnt/home/${ARCH_OS_USERNAME}/initialize.sh"
             fi
 
             # Set correct permissions
@@ -1667,9 +1667,8 @@ exec_install_shell_enhancement() {
                 echo 'command -v xdg-open &>/dev/null && alias open="xdg-open"'
                 echo 'alias myip="curl ipv4.icanhazip.com"'
                 echo -e '\n# Change dir'
-                echo 'alias .="cd .."'
-                echo 'alias ..="cd ../.."'
-                echo 'alias ...="cd ../../.."'
+                echo 'alias ..="cd .."'
+                echo 'alias ...="cd ../.."'
                 echo -e '\n# Packages'
                 local pkg_manager='pacman' && [ -n "$ARCH_OS_AUR_HELPER" ] && [ "$ARCH_OS_AUR_HELPER" != "none" ] && pkg_manager="$ARCH_OS_AUR_HELPER"
                 if [ "$pkg_manager" = "pacman" ]; then
@@ -1865,7 +1864,7 @@ exec_install_shell_enhancement() {
                     echo "# exec_install_shell_enhancement | Set fish theme"
                     echo "fish -c 'fish_config theme choose Nord && echo y | fish_config theme save'"
                 fi
-            } >>"/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh"
+            } >>"/mnt/home/${ARCH_OS_USERNAME}/initialize.sh"
 
             # Set correct permissions
             arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}"
@@ -1927,32 +1926,32 @@ exec_finalize_arch_os() {
         [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
 
         # Add init script
-        if [ -s "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" ]; then
+        if [ -s "/mnt/home/${ARCH_OS_USERNAME}/initialize.sh" ]; then
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system"
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/autostart"
-            mv "/mnt/home/${ARCH_OS_USERNAME}/${INIT_FILENAME}.sh" "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
+            mv "/mnt/home/${ARCH_OS_USERNAME}/initialize.sh" "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/initialize.sh"
             # Add version env
-            sed -i "1i\ARCH_OS_VERSION=${VERSION}" "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
+            sed -i "1i\ARCH_OS_VERSION=${VERSION}" "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/initialize.sh"
             # Add shebang
-            sed -i '1i\#!/usr/bin/env bash' "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
+            sed -i '1i\#!/usr/bin/env bash' "/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/initialize.sh"
             # Add autostart-remove
             {
                 echo "# exec_finalize_arch_os | Remove autostart init files"
-                echo "rm -f /home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
-            } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
+                echo "rm -f /home/${ARCH_OS_USERNAME}/.config/autostart/initialize.desktop"
+            } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/initialize.sh"
             # Print initialized info
             {
                 echo "# exec_finalize_arch_os | Print initialized info"
                 echo "echo \"\$(date '+%Y-%m-%d %H:%M:%S') | Arch OS \${ARCH_OS_VERSION} | Initialized\""
-            } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
-            arch-chroot /mnt chmod +x "/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh"
+            } >>"/mnt/home/${ARCH_OS_USERNAME}/.arch-os/system/initialize.sh"
+            arch-chroot /mnt chmod +x "/home/${ARCH_OS_USERNAME}/.arch-os/system/initialize.sh"
             {
                 echo "[Desktop Entry]"
                 echo "Type=Application"
                 echo "Name=Arch OS Initialize"
                 echo "Icon=preferences-system"
-                echo "Exec=bash -c '/home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.sh > /home/${ARCH_OS_USERNAME}/.arch-os/system/${INIT_FILENAME}.log'"
-            } >"/mnt/home/${ARCH_OS_USERNAME}/.config/autostart/${INIT_FILENAME}.desktop"
+                echo "Exec=bash -c '/home/${ARCH_OS_USERNAME}/.arch-os/system/initialize.sh > /home/${ARCH_OS_USERNAME}/.arch-os/system/initialize.log'"
+            } >"/mnt/home/${ARCH_OS_USERNAME}/.config/autostart/initialize.desktop"
         fi
 
         # Set correct home permissions
@@ -1962,10 +1961,10 @@ exec_finalize_arch_os() {
         arch-chroot /mnt bash -c 'pacman -Qtd &>/dev/null && pacman -Rns --noconfirm $(pacman -Qtdq) || true'
 
         # Install snapper pacman hook
-        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "true" ] && chroot_pacman_install snap-pac
+        [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_SNAPPER_ENABLED" = "true" ] && chroot_pacman_install snap-pac
 
         # Add pacman btrfs hook (need to place on the end of script)
-        if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_SNAPPER_ENABLED" = "false" ]; then
+        if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_SNAPPER_ENABLED" = "false" ]; then
             # Create pacman hook (auto create snapshot on pre-transaction)
             mkdir -p /mnt/etc/pacman.d/hooks/
             # shellcheck disable=SC2016
