@@ -115,6 +115,10 @@ else
     fi
 fi
 
+# Start reflector in background
+reflector --latest 10 --protocol https --sort rate --save /etc/pacman.d/mirrorlist >/dev/null 2>&1 &
+gum_print_bold "Reflector sucessfully started"
+
 # Run Installer or Recovery
 gum_confirm --affirmative="Installer" --negative="Recovery" "Please select the Arch OS Operation Mode"
 user_confirm=$? && [ $user_confirm = 130 ] && exit 1
