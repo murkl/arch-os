@@ -21,7 +21,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${GUM:=/usr/local/bin/gum}" # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
-VERSION='1.9.1'
+VERSION='1.9.2'
 
 # VERSION
 [ "$*" = "--version" ] && echo "$VERSION" && exit 0
@@ -268,6 +268,7 @@ properties_generate() {
         echo "ARCH_OS_FILESYSTEM='${ARCH_OS_FILESYSTEM}' # Filesystem | Available: btrfs, ext4"
         echo "ARCH_OS_BOOTLOADER='${ARCH_OS_BOOTLOADER}' # Bootloader | Available: grub, systemd"
         echo "ARCH_OS_BTRFS_SNAPPER_ENABLED='${ARCH_OS_BTRFS_SNAPPER_ENABLED}' # BTRFS Snapper enabled | Disable: false"
+        echo "ARCH_OS_BTRFS_ASSISTANT_ENABLED='${ARCH_OS_BTRFS_ASSISTANT_ENABLED}' # BTRFS Desktop Assistant enabled | Disable: false"
         echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}' # Disk encryption | Disable: false"
         echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}' # Timezone | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin"
         echo "ARCH_OS_LOCALE_LANG='${ARCH_OS_LOCALE_LANG}' # Locale | Show available: ls /usr/share/i18n/locales | Example: de_DE"
@@ -304,6 +305,7 @@ properties_preset_source() {
     [ -z "$ARCH_OS_HOSTNAME" ] && ARCH_OS_HOSTNAME="arch-os"
     [ -z "$ARCH_OS_KERNEL" ] && ARCH_OS_KERNEL="linux-zen"
     [ -z "$ARCH_OS_BTRFS_SNAPPER_ENABLED" ] && ARCH_OS_BTRFS_SNAPPER_ENABLED='true'
+    [ -z "$ARCH_OS_BTRFS_ASSISTANT_ENABLED" ] && ARCH_OS_BTRFS_ASSISTANT_ENABLED='true'
     [ -z "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" ] && ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED="true"
     [ -z "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
     [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
@@ -330,6 +332,7 @@ properties_preset_source() {
         # Core preset
         if [[ $preset == core* ]]; then
             ARCH_OS_BTRFS_SNAPPER_ENABLED='false'
+            ARCH_OS_BTRFS_ASSISTANT_ENABLED='false'
             ARCH_OS_DESKTOP_ENABLED='false'
             ARCH_OS_MULTILIB_ENABLED='false'
             ARCH_OS_HOUSEKEEPING_ENABLED='false'
@@ -342,6 +345,8 @@ properties_preset_source() {
 
         # Desktop preset
         if [[ $preset == desktop* ]]; then
+            ARCH_OS_BTRFS_SNAPPER_ENABLED='true'
+            ARCH_OS_BTRFS_ASSISTANT_ENABLED='true'
             ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
             ARCH_OS_SAMBA_SHARE_ENABLED='true'
             ARCH_OS_CORE_TWEAKS_ENABLED="true"
@@ -486,7 +491,7 @@ select_disk() {
 select_filesystem() {
     if [ -z "$ARCH_OS_FILESYSTEM" ]; then
         local user_input options
-        options=("ext4" "btrfs")
+        options=("btrfs" "ext4")
         user_input=$(gum_choose --header "+ Choose Filesystem (snapshot support: btrfs)" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                        # Check if new value is null
         ARCH_OS_FILESYSTEM="$user_input" && properties_generate # Set value and generate properties file
@@ -1137,6 +1142,9 @@ exec_install_desktop() {
                 # Theming
                 packages+=(adw-gtk-theme tela-circle-icon-theme-standard)
             fi
+
+            # Add btrfs assistant
+            [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_ASSISTANT_ENABLED" = "true" ] && packages+=(btrfs-assistant)
 
             # Installing packages together (preventing conflicts e.g.: jack2 and piepwire-jack)
             chroot_pacman_install "${packages[@]}"

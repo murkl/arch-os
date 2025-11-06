@@ -105,7 +105,13 @@ fi
 
 # Finaly check internet
 if check_internet; then
+
+    # Print internet success
     gum_print_bold "Internet sucessfully connected"
+
+    # Start reflector in background
+    echo && gum_title "Reflector" && gum_print_bold "Optimizing mirror list (in background)..."
+    reflector --latest 10 --protocol https --sort rate --save /etc/pacman.d/mirrorlist >/dev/null 2>&1 &
 else
     gum_print_error "No internet connection"
     gum_confirm "Continue anyway?"
