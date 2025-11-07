@@ -1658,7 +1658,7 @@ exec_install_shell_enhancement() {
             { # Create aliases for root & user
                 echo '# ls / eza'
                 echo 'alias ls="ls -h --color=always --group-directories-first"'
-                echo 'command -v eza &>/dev/null && alias ls="eza -h --color=always --group-directories-first"'
+                echo 'command -v eza &>/dev/null && alias ls="eza --icons --color=always --group-directories-first"'
                 echo 'alias ll="ls -l"'
                 echo 'alias la="ls -la"'
                 echo 'alias lt="ls -Tal"'
