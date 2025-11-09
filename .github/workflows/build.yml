@@ -43,9 +43,11 @@ jobs:
           name: archos-${{ env.SNAPSHOT_VERSION }}-x86_64
           path: ./iso/archiso/out/*.iso
 
-      - name: Upload Arch OS ISO to Release
+      - name: Upload Arch OS ISO and installer.sh to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ./iso/archiso/out/*.iso
+          files: |
+            ./iso/archiso/out/*.iso
+            ./installer.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
