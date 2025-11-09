@@ -143,5 +143,5 @@ sudo mkarchiso -v .
 cd ..
 
 # Copy to release
-#echo "### Copy ISO to Release"
-#cp -f "${ISO_DIR}//out/"*.iso "${ARCH_OS_RELEASE}/"
+echo "### Copy ISO to Release"
+cp -f "${ISO_DIR}//out/"*.iso "${ARCH_OS_RELEASE}/"
