@@ -6,6 +6,7 @@ GUM_VERSION="0.13.0"
 GUM_ARCH="Linux_x86_64"
 
 # SCRIPT
+ARCH_OS_RELEASE="./release"
 DOWNLOAD_DIR="./download"
 ISO_DIR="./archiso"
 ISO_CONFIG="releng" # baseline or releng
@@ -26,8 +27,9 @@ trap 'rm -rf "${TEMP_DIR}"' EXIT
 # Init
 echo "### Initialize Build"
 mkdir -p "$DOWNLOAD_DIR"
-sudo rm -rf "${ISO_DIR}"
+sudo rm -rf "${ISO_DIR}" "${ARCH_OS_RELEASE}"
 mkdir -p "${ISO_DIR}"
+mkdir -p "${ARCH_OS_RELEASE}"
 
 # Install dependencies
 ! command -v /usr/bin/mkarchiso &>/dev/null && sudo pacman -S --noconfirm archiso
@@ -61,8 +63,8 @@ fi
 if ! cp -f "${DOWNLOAD_DIR}/gum" "${AIRFS_GUM}"; then echo "Error copy ${DOWNLOAD_DIR}/gum to ${AIRFS_GUM}" && exit 1; fi
 if ! chmod +x "${AIRFS_GUM}"; then echo "Error chmod +x ${AIRFS_GUM}" && exit 1; fi
 
-# Copy gum for Release Upload (see .github/workflows/build.yml)
-cp -f "${DOWNLOAD_DIR}/gum" "${DOWNLOAD_DIR}/gum-${GUM_VERSION}-${GUM_ARCH}"
+echo "### Copy Gum to Release"
+cp -f "${DOWNLOAD_DIR}/gum" "${ARCH_OS_RELEASE}/gum-${GUM_VERSION}-${GUM_ARCH}"
 
 # Download Arch OS Installer script
 #echo "### Downloading Arch OS Installer"
@@ -71,6 +73,9 @@ cp -f "${DOWNLOAD_DIR}/gum" "${DOWNLOAD_DIR}/gum-${GUM_VERSION}-${GUM_ARCH}"
 # Copy Arch OS Installer script
 echo "### Copy Arch OS Installer"
 cp -f ../installer.sh "${DOWNLOAD_DIR}/arch-os"
+
+echo "### Copy Installer to Release"
+cp -f "${DOWNLOAD_DIR}/arch-os" "${ARCH_OS_RELEASE}/arch-os-installer"
 
 # Install Arch OS Installer script
 [ ! -f "${DOWNLOAD_DIR}/arch-os" ] && echo "Error: 'arch-os' binary not found in '${DOWNLOAD_DIR}'" && exit 1
@@ -85,6 +90,9 @@ curl -L bit.ly/arch-os-recovery >"${DOWNLOAD_DIR}/arch-os-recovery"
 [ ! -f "${DOWNLOAD_DIR}/arch-os-recovery" ] && echo "Error: 'arch-os-recovery' binary not found in '${DOWNLOAD_DIR}'" && exit 1
 if ! cp -f "${DOWNLOAD_DIR}/arch-os-recovery" "${AIRFS_RECOVERY}"; then echo "Error copy ${DOWNLOAD_DIR}/arch-os-recovery to ${AIRFS_RECOVERY}" && exit 1; fi
 if ! chmod +x "${AIRFS_RECOVERY}"; then echo "Error chmod +x ${AIRFS_RECOVERY}" && exit 1; fi
+
+echo "### Copy Recovery to Release"
+cp -f "${DOWNLOAD_DIR}/arch-os-recovery" "${ARCH_OS_RELEASE}/arch-os-recovery"
 
 # Set permissions
 grep -q '\["/usr/local/bin/arch-os-autostart"\]' "${ISO_DIR}/profiledef.sh" || sed -i '/^file_permissions=(/a\  ["/usr/local/bin/arch-os-autostart"]="0:0:755"' "${ISO_DIR}/profiledef.sh"
@@ -132,3 +140,8 @@ echo "### Make Arch OS ISO"
 cd "${ISO_DIR}"
 sudo rm -rf work out
 sudo mkarchiso -v .
+cd ..
+
+# Copy to release
+echo "### Copy ISO to Release"
+cp -f "${ISO_DIR}//out/"*.iso "${ARCH_OS_RELEASE}/"

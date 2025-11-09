@@ -46,9 +46,6 @@ jobs:
       - name: Upload Arch OS ISO and installer.sh to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            ./iso/archiso/out/*.iso
-            ./installer.sh
-            ./iso/download/gum-*
+          files: ./iso/release/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
