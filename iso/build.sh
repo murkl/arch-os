@@ -3,6 +3,7 @@ set -e
 
 # VERSION
 GUM_VERSION="0.13.0"
+GUM_ARCH="Linux_x86_64"
 
 # SCRIPT
 DOWNLOAD_DIR="./download"
@@ -38,7 +39,7 @@ cp -r "/usr/share/archiso/configs/${ISO_CONFIG}/"* "${ISO_DIR}"
 cp -rf src/* "${ISO_DIR}/airootfs/"
 
 # Download gum: https://github.com/charmbracelet/gum/releases
-gum_url="https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_$(uname -s)_$(uname -m).tar.gz"
+gum_url="https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_${GUM_ARCH}.tar.gz"
 gum_tar="${DOWNLOAD_DIR}/gum-${GUM_VERSION}.tar.gz"
 if [ ! -f "${gum_tar}" ]; then
     echo "### Downloading gum-${GUM_VERSION}.tar.gz"
@@ -59,6 +60,9 @@ fi
 [ ! -f "${DOWNLOAD_DIR}/gum" ] && echo "Error: 'gum' binary not found in '${DOWNLOAD_DIR}'" && exit 1
 if ! cp -f "${DOWNLOAD_DIR}/gum" "${AIRFS_GUM}"; then echo "Error copy ${DOWNLOAD_DIR}/gum to ${AIRFS_GUM}" && exit 1; fi
 if ! chmod +x "${AIRFS_GUM}"; then echo "Error chmod +x ${AIRFS_GUM}" && exit 1; fi
+
+# Copy gum for Release Upload (see .github/workflows/build.yml)
+cp -f "${DOWNLOAD_DIR}/gum" "${DOWNLOAD_DIR}/gum-${GUM_VERSION}-${GUM_ARCH}"
 
 # Download Arch OS Installer script
 #echo "### Downloading Arch OS Installer"
