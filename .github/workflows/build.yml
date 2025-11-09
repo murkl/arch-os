@@ -37,8 +37,15 @@ jobs:
           cd ./iso
           SNAPSHOT_VERSION=${SNAPSHOT_VERSION} bash build.sh
 
-      - name: Upload release directory as artifact
+      - name: Upload Arch OS ISO to Artifact
         uses: actions/upload-artifact@v4
         with:
           name: archos-${{ env.SNAPSHOT_VERSION }}-x86_64
-          path: ./iso/release/
+          path: ./iso/archiso/out/*.iso
+
+      - name: Upload Release dir to Artifact
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./iso/release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
