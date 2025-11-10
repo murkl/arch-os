@@ -75,7 +75,7 @@ echo "### Copy Arch OS Installer"
 cp -f ../installer.sh "${DOWNLOAD_DIR}/arch-os"
 
 echo "### Copy Installer to Release"
-cp -f "${DOWNLOAD_DIR}/arch-os" "${ARCH_OS_RELEASE}/arch-os-installer"
+cp -f "${DOWNLOAD_DIR}/arch-os" "${ARCH_OS_RELEASE}/installer.sh"
 
 # Install Arch OS Installer script
 [ ! -f "${DOWNLOAD_DIR}/arch-os" ] && echo "Error: 'arch-os' binary not found in '${DOWNLOAD_DIR}'" && exit 1
@@ -92,7 +92,7 @@ if ! cp -f "${DOWNLOAD_DIR}/arch-os-recovery" "${AIRFS_RECOVERY}"; then echo "Er
 if ! chmod +x "${AIRFS_RECOVERY}"; then echo "Error chmod +x ${AIRFS_RECOVERY}" && exit 1; fi
 
 echo "### Copy Recovery to Release"
-cp -f "${DOWNLOAD_DIR}/arch-os-recovery" "${ARCH_OS_RELEASE}/arch-os-recovery"
+cp -f "${DOWNLOAD_DIR}/arch-os-recovery" "${ARCH_OS_RELEASE}/recovery.sh"
 
 # Set permissions
 grep -q '\["/usr/local/bin/arch-os-autostart"\]' "${ISO_DIR}/profiledef.sh" || sed -i '/^file_permissions=(/a\  ["/usr/local/bin/arch-os-autostart"]="0:0:755"' "${ISO_DIR}/profiledef.sh"
