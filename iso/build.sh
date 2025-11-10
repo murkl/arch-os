@@ -75,7 +75,7 @@ echo "### Copy Arch OS Installer"
 cp -f ../installer.sh "${DOWNLOAD_DIR}/arch-os"
 
 echo "### Copy Installer to Release"
-cp -f "${DOWNLOAD_DIR}/arch-os" "${ARCH_OS_RELEASE}/arch-os-installer-${SNAPSHOT_VERSION}.sh"
+cp -f "${DOWNLOAD_DIR}/arch-os" "${ARCH_OS_RELEASE}/arch-os-installer.sh"
 
 # Install Arch OS Installer script
 [ ! -f "${DOWNLOAD_DIR}/arch-os" ] && echo "Error: 'arch-os' binary not found in '${DOWNLOAD_DIR}'" && exit 1
@@ -91,8 +91,8 @@ curl -L bit.ly/arch-os-recovery >"${DOWNLOAD_DIR}/arch-os-recovery"
 if ! cp -f "${DOWNLOAD_DIR}/arch-os-recovery" "${AIRFS_RECOVERY}"; then echo "Error copy ${DOWNLOAD_DIR}/arch-os-recovery to ${AIRFS_RECOVERY}" && exit 1; fi
 if ! chmod +x "${AIRFS_RECOVERY}"; then echo "Error chmod +x ${AIRFS_RECOVERY}" && exit 1; fi
 
-#echo "### Copy Recovery to Release"
-#cp -f "${DOWNLOAD_DIR}/arch-os-recovery" "${ARCH_OS_RELEASE}/arch-os-recovery.sh"
+echo "### Copy Recovery to Release"
+cp -f "${DOWNLOAD_DIR}/arch-os-recovery" "${ARCH_OS_RELEASE}/arch-os-recovery.sh"
 
 # Set permissions
 grep -q '\["/usr/local/bin/arch-os-autostart"\]' "${ISO_DIR}/profiledef.sh" || sed -i '/^file_permissions=(/a\  ["/usr/local/bin/arch-os-autostart"]="0:0:755"' "${ISO_DIR}/profiledef.sh"
@@ -142,6 +142,6 @@ sudo rm -rf work out
 sudo mkarchiso -v .
 cd ..
 
-# Copy to release
-echo "### Copy ISO to Release"
-cp -f "${ISO_DIR}/out/"*.iso "${ARCH_OS_RELEASE}/"
+# Move ISO to release dir
+echo "### Move ISO to Release"
+mv -f "${ISO_DIR}/out/"*.iso "${ARCH_OS_RELEASE}/"
