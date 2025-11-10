@@ -75,7 +75,7 @@ echo "### Copy Arch OS Installer"
 cp -f ../installer.sh "${DOWNLOAD_DIR}/arch-os"
 
 echo "### Copy Installer to Release"
-cp -f "${DOWNLOAD_DIR}/arch-os" "${ARCH_OS_RELEASE}/installer.sh"
+cp -f "${DOWNLOAD_DIR}/arch-os" "${ARCH_OS_RELEASE}/arch-os-installer-${SNAPSHOT_VERSION}.sh"
 
 # Install Arch OS Installer script
 [ ! -f "${DOWNLOAD_DIR}/arch-os" ] && echo "Error: 'arch-os' binary not found in '${DOWNLOAD_DIR}'" && exit 1
@@ -91,8 +91,8 @@ curl -L bit.ly/arch-os-recovery >"${DOWNLOAD_DIR}/arch-os-recovery"
 if ! cp -f "${DOWNLOAD_DIR}/arch-os-recovery" "${AIRFS_RECOVERY}"; then echo "Error copy ${DOWNLOAD_DIR}/arch-os-recovery to ${AIRFS_RECOVERY}" && exit 1; fi
 if ! chmod +x "${AIRFS_RECOVERY}"; then echo "Error chmod +x ${AIRFS_RECOVERY}" && exit 1; fi
 
-echo "### Copy Recovery to Release"
-cp -f "${DOWNLOAD_DIR}/arch-os-recovery" "${ARCH_OS_RELEASE}/recovery.sh"
+#echo "### Copy Recovery to Release"
+#cp -f "${DOWNLOAD_DIR}/arch-os-recovery" "${ARCH_OS_RELEASE}/arch-os-recovery.sh"
 
 # Set permissions
 grep -q '\["/usr/local/bin/arch-os-autostart"\]' "${ISO_DIR}/profiledef.sh" || sed -i '/^file_permissions=(/a\  ["/usr/local/bin/arch-os-autostart"]="0:0:755"' "${ISO_DIR}/profiledef.sh"
@@ -129,7 +129,7 @@ sed -i '/^options /{/script=\/usr\/local\/bin\/arch-os-autostart/!s/$/ script=\/
 
 # Set ISO config
 set_key_value() { grep -q "^$2=" "$1" && sed -i "s|^$2=.*|$2=\"$3\"|" "$1" || echo "$2=$3" >>"$1"; }
-set_key_value "${ISO_DIR}/profiledef.sh" iso_name "archos"
+set_key_value "${ISO_DIR}/profiledef.sh" iso_name "arch-os"
 set_key_value "${ISO_DIR}/profiledef.sh" iso_version "$SNAPSHOT_VERSION"
 set_key_value "${ISO_DIR}/profiledef.sh" iso_label "ARCH_OS_${SNAPSHOT_VERSION}"
 set_key_value "${ISO_DIR}/profiledef.sh" iso_application "Arch OS Autostart ISO"
