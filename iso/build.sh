@@ -40,22 +40,31 @@ cp -r "/usr/share/archiso/configs/${ISO_CONFIG}/"* "${ISO_DIR}"
 # Copy sources
 cp -rf src/* "${ISO_DIR}/airootfs/"
 
-# Download gum: https://github.com/charmbracelet/gum/releases
-gum_url="https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_${GUM_ARCH}.tar.gz"
-gum_tar="${DOWNLOAD_DIR}/gum-${GUM_VERSION}.tar.gz"
-if [ ! -f "${gum_tar}" ]; then
-    echo "### Downloading gum-${GUM_VERSION}.tar.gz"
-    if ! curl -Lf "$gum_url" >"${gum_tar}"; then echo "Error downloading ${gum_url}" && exit 1; fi
+# Copy internal Gum binary to download dir
+if [ -f "../bin/gum-${GUM_VERSION}-${GUM_ARCH}" ]; then
+    echo "### Copy internal Gum binary"
+    cp -f "../bin/gum-${GUM_VERSION}-${GUM_ARCH}" "${DOWNLOAD_DIR}/gum"
 fi
 
-# Extract gum
+# Check if gum already exists in download dir or download from internet
 if [ ! -f "${DOWNLOAD_DIR}/gum" ]; then
-    mkdir -p ${DOWNLOAD_DIR}/gum-${GUM_VERSION}
-    if ! tar -xf "${gum_tar}" --directory "${DOWNLOAD_DIR}/gum-${GUM_VERSION}"; then echo "Error extracting ${gum_tar}" && exit 1; fi
-    gum_path=$(find "${DOWNLOAD_DIR}/gum-${GUM_VERSION}" -type f -executable -name "gum" -print -quit)
-    [ -z "$gum_path" ] && echo "Error: 'gum' binary not found in '${DOWNLOAD_DIR}/gum-${GUM_VERSION}'" && exit 1
-    cp -f "$gum_path" "${DOWNLOAD_DIR}/gum"
-    rm -rf "${DOWNLOAD_DIR}/gum-${GUM_VERSION}/"
+    echo "### Gum binary "../bin/gum-${GUM_VERSION}-${GUM_ARCH}" not found. Downloading..."
+    # Download gum: https://github.com/charmbracelet/gum/releases
+    gum_url="https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_${GUM_ARCH}.tar.gz"
+    gum_tar="${DOWNLOAD_DIR}/gum-${GUM_VERSION}.tar.gz"
+    if [ ! -f "${gum_tar}" ]; then
+        echo "### Downloading gum-${GUM_VERSION}.tar.gz"
+        if ! curl -Lf "$gum_url" >"${gum_tar}"; then echo "Error downloading ${gum_url}" && exit 1; fi
+    fi
+    # Extract gum
+    if [ ! -f "${DOWNLOAD_DIR}/gum" ]; then
+        mkdir -p ${DOWNLOAD_DIR}/gum-${GUM_VERSION}
+        if ! tar -xf "${gum_tar}" --directory "${DOWNLOAD_DIR}/gum-${GUM_VERSION}"; then echo "Error extracting ${gum_tar}" && exit 1; fi
+        gum_path=$(find "${DOWNLOAD_DIR}/gum-${GUM_VERSION}" -type f -executable -name "gum" -print -quit)
+        [ -z "$gum_path" ] && echo "Error: 'gum' binary not found in '${DOWNLOAD_DIR}/gum-${GUM_VERSION}'" && exit 1
+        cp -f "$gum_path" "${DOWNLOAD_DIR}/gum"
+        rm -rf "${DOWNLOAD_DIR}/gum-${GUM_VERSION}/"
+    fi
 fi
 
 # Install gum
@@ -63,8 +72,8 @@ fi
 if ! cp -f "${DOWNLOAD_DIR}/gum" "${AIRFS_GUM}"; then echo "Error copy ${DOWNLOAD_DIR}/gum to ${AIRFS_GUM}" && exit 1; fi
 if ! chmod +x "${AIRFS_GUM}"; then echo "Error chmod +x ${AIRFS_GUM}" && exit 1; fi
 
-echo "### Copy Gum to Release"
-cp -f "${DOWNLOAD_DIR}/gum" "${ARCH_OS_RELEASE}/gum-${GUM_VERSION}-${GUM_ARCH}"
+#echo "### Copy Gum to Release"
+#cp -f "${DOWNLOAD_DIR}/gum" "${ARCH_OS_RELEASE}/gum-${GUM_VERSION}-${GUM_ARCH}"
 
 # Download Arch OS Installer script
 #echo "### Downloading Arch OS Installer"
@@ -74,8 +83,8 @@ cp -f "${DOWNLOAD_DIR}/gum" "${ARCH_OS_RELEASE}/gum-${GUM_VERSION}-${GUM_ARCH}"
 echo "### Copy Arch OS Installer"
 cp -f ../installer.sh "${DOWNLOAD_DIR}/arch-os"
 
-echo "### Copy Installer to Release"
-cp -f "${DOWNLOAD_DIR}/arch-os" "${ARCH_OS_RELEASE}/arch-os-installer.sh"
+#echo "### Copy Installer to Release"
+#cp -f "${DOWNLOAD_DIR}/arch-os" "${ARCH_OS_RELEASE}/arch-os-installer.sh"
 
 # Install Arch OS Installer script
 [ ! -f "${DOWNLOAD_DIR}/arch-os" ] && echo "Error: 'arch-os' binary not found in '${DOWNLOAD_DIR}'" && exit 1
@@ -91,8 +100,8 @@ curl -L bit.ly/arch-os-recovery >"${DOWNLOAD_DIR}/arch-os-recovery"
 if ! cp -f "${DOWNLOAD_DIR}/arch-os-recovery" "${AIRFS_RECOVERY}"; then echo "Error copy ${DOWNLOAD_DIR}/arch-os-recovery to ${AIRFS_RECOVERY}" && exit 1; fi
 if ! chmod +x "${AIRFS_RECOVERY}"; then echo "Error chmod +x ${AIRFS_RECOVERY}" && exit 1; fi
 
-echo "### Copy Recovery to Release"
-cp -f "${DOWNLOAD_DIR}/arch-os-recovery" "${ARCH_OS_RELEASE}/arch-os-recovery.sh"
+#echo "### Copy Recovery to Release"
+#cp -f "${DOWNLOAD_DIR}/arch-os-recovery" "${ARCH_OS_RELEASE}/arch-os-recovery.sh"
 
 # Set permissions
 grep -q '\["/usr/local/bin/arch-os-autostart"\]' "${ISO_DIR}/profiledef.sh" || sed -i '/^file_permissions=(/a\  ["/usr/local/bin/arch-os-autostart"]="0:0:755"' "${ISO_DIR}/profiledef.sh"
