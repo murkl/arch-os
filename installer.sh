@@ -29,7 +29,7 @@ VERSION='1.9.3'
 # GUM
 GUM_VERSION="0.13.0"
 
-# ENVIRONMENT
+# FILES
 SCRIPT_CONFIG="./installer.conf"
 SCRIPT_LOG="./installer.log"
 
@@ -122,7 +122,7 @@ main() {
         until select_enable_shell_enhancement; do :; done
         until select_enable_manager; do :; done
 
-        # Print success
+        # Finish & show Advanced Properties
         echo && gum_title "Properties"
 
         # Open Advanced Properties?
@@ -140,7 +140,7 @@ main() {
             fi
         fi
 
-        # Finish
+        # Print success
         gum_info "Successfully initialized"
 
         ######################################################
