@@ -153,4 +153,4 @@ cd ..
 
 # Move ISO to release dir
 echo "### Move ISO to Release"
-mv -f "${ISO_DIR}/out/"*.iso "${ARCH_OS_RELEASE}/"
+cp -f "${ISO_DIR}/out/"*.iso "${ARCH_OS_RELEASE}/"
