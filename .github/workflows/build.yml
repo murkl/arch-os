@@ -29,11 +29,9 @@ jobs:
         run: pacman -Syu --noconfirm archiso sudo
 
       - name: Build Arch OS ISO
-        env:
-          SNAPSHOT_VERSION: ${{ env.SNAPSHOT_VERSION }}
         run: |
           cd ./iso
-          SNAPSHOT_VERSION=${SNAPSHOT_VERSION} bash build.sh
+          SNAPSHOT_VERSION=${{ env.SNAPSHOT_VERSION }} bash build.sh
 
       - name: Upload Release dir to GitHub Release
         uses: softprops/action-gh-release@v2
