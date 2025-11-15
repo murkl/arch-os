@@ -46,55 +46,55 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 
 ## Core Features
 
-- [Minimal Arch Linux](DOCS.md#minimal-installation) (~150 packages)
-- [Zen Kernel](DOCS.md#advanced-installation) (configurable)
-- [Swap](DOCS.md#swap) with zram-generator (zstd)
-- [Sole OS](DOCS.md#partitions-layout)
-- BTRFS Snapshot Support (Snapper, OverlayFS)
-- All-in-One password (encryption, root & user)
-- Multilingual Support
-- Filesystem btrfs or ext4
-- Bootloader: grub or systemd (auto updated)
-- Silent Boot (optional)
-- Systemd OOM (out-of-memory killer)
-- Pacman parallel downloads & eyecandy (optional)
-- Network Manager
-- SSD Support (fstrim)
-- Microcode Support (Intel & AMD)
-- Disabled Watchdog (optional)
-- UEFI only supported
-- [More Information...](DOCS.md#technical-information)
+-   [Minimal Arch Linux](DOCS.md#minimal-installation) (~150 packages)
+-   [Zen Kernel](DOCS.md#advanced-installation) (configurable)
+-   [Swap](DOCS.md#swap) with zram-generator (zstd)
+-   [Sole OS](DOCS.md#partitions-layout)
+-   BTRFS Snapshot Support (Snapper, OverlayFS)
+-   All-in-One password (encryption, root & user)
+-   Multilingual Support
+-   Filesystem btrfs or ext4
+-   Bootloader: grub or systemd (auto updated)
+-   Silent Boot (optional)
+-   Systemd OOM (out-of-memory killer)
+-   Pacman parallel downloads & eyecandy (optional)
+-   Network Manager
+-   SSD Support (fstrim)
+-   Microcode Support (Intel & AMD)
+-   Disabled Watchdog (optional)
+-   UEFI only supported
+-   [More Information...](DOCS.md#technical-information)
 
 ## Desktop Features
 
-- [GNOME Desktop Environment](DOCS.md#recommendation) (optional with additional packages)
-- [Arch OS Slim Version](DOCS.md#example-installerconf) (GNOME Core Apps only)
-- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
-- [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
-- Flatpak Support + Auto Update (GNOME Software)
-- Samba, Networking Protocol Libs, Git, Utils & Codecs included
-- GNOME Power Profiles Support (tuned-ppd)
-- VPN Support
-- Basic Fonts
-- Wayland optimized
-- Auto GNOME Login enabled
-- Printer Support (cups)
-- SSH Agent (gcr)
-- Gamemode preinstalled
-- No Xorg included
+-   [GNOME Desktop Environment](DOCS.md#recommendation) (optional with additional packages)
+-   [Arch OS Slim Version](DOCS.md#example-installerconf) (GNOME Core Apps only)
+-   [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
+-   [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
+-   Flatpak Support + Auto Update (GNOME Software)
+-   Samba, Networking Protocol Libs, Git, Utils & Codecs included
+-   GNOME Power Profiles Support (tuned-ppd)
+-   VPN Support
+-   Basic Fonts
+-   Wayland optimized
+-   Auto GNOME Login enabled
+-   Printer Support (cups)
+-   SSH Agent (gcr)
+-   Gamemode preinstalled
+-   No Xorg included
 
 ## Additional Features
 
-- [Arch OS Core Tweaks](DOCS.md#core-tweaks)
-- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
-- [Arch OS System Manager](DOCS.md#arch-os-manager)
-- [Arch OS Shell Enhancement](DOCS.md#shell-enhancement)
-- [Arch OS Starship Theme](https://github.com/murkl/starship-theme-arch-os)
-- [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
-- [AUR Helper](DOCS.md#advanced-installation) (configurable)
-- [VM Support](DOCS.md#vm-support) (optional)
-- 32 Bit Support (Multilib)
-- Disk Encryption (LUKS2)
+-   [Arch OS Core Tweaks](DOCS.md#core-tweaks)
+-   [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
+-   [Arch OS System Manager](DOCS.md#arch-os-manager)
+-   [Arch OS Shell Enhancement](DOCS.md#shell-enhancement)
+-   [Arch OS Starship Theme](https://github.com/murkl/starship-theme-arch-os)
+-   [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
+-   [AUR Helper](DOCS.md#advanced-installation) (configurable)
+-   [VM Support](DOCS.md#vm-support) (optional)
+-   32 Bit Support (Multilib)
+-   Disk Encryption (LUKS2)
 
 ## Arch OS Installation
 
@@ -102,20 +102,20 @@ To install Arch OS, an internet connection is required, as many packages will be
 
 ### 1. Prepare bootable USB Device
 
-- Download latest Arch OS ISO from **[GitHub](https://github.com/murkl/arch-os/releases/latest)**
-  - Alternatively, download official Arch Linux ISO from **[archlinux.org](https://www.archlinux.org/download)** or **[archlinux.de](https://www.archlinux.de/download)**
-- Use **[Ventoy](https://www.ventoy.net/en/download.html)** or your prefered iso writer tool to create a bootable USB device
-- Alternatively (Linux only): **[➜ Arch OS Creator](https://github.com/murkl/arch-os-creator)**
+-   Download latest Arch OS ISO from **[GitHub](https://github.com/murkl/arch-os/releases/latest)**
+    -   Alternatively, download official Arch Linux ISO from **[archlinux.org](https://www.archlinux.org/download)** or **[archlinux.de](https://www.archlinux.de/download)**
+-   Use **[Ventoy](https://www.ventoy.net/en/download.html)** or your prefered iso writer tool to create a bootable USB device
+-   Alternatively (Linux only): **[➜ Arch OS Creator](https://github.com/murkl/arch-os-creator)**
 
 ### 2. Configure BIOS / UEFI Settings
 
-- Disable Secure Boot
-- Set Boot Mode to UEFI
+-   Disable Secure Boot
+-   Set Boot Mode to UEFI
 
 ### 3. Boot from USB Device
 
-- Load prefered keyboard layout (optional): `loadkeys de`
-- Connect to WLAN (optional): `iwctl station wlan0 connect 'SSID'`
+-   Load prefered keyboard layout (optional): `loadkeys de`
+-   Connect to WLAN (optional): `iwctl station wlan0 connect 'SSID'`
 
 #### 3.1. Run Arch OS Installer
 
@@ -133,10 +133,10 @@ curl -Ls bit.ly/arch-os | bash
 
 After installing Arch OS with the default properties preset, most maintenance tasks are performed automatically. However, the following steps must be executed manually on a regular basis:
 
-- Regularly upgrade your system packages (Pacman/AUR & Flatpak)
-- Regularly read the **[Arch Linux News](https://www.archlinux.org/news)** (preferably before upgrading your system)
-- Regularly check & merge new configurations with `pacdiff` (preferably after each system upgrade)
-- Consult the **[Arch Linux Wiki](https://wiki.archlinux.org)** (if you need help)
+-   Regularly upgrade your system packages (Pacman/AUR & Flatpak)
+-   Regularly read the **[Arch Linux News](https://www.archlinux.org/news)** (preferably before upgrading your system)
+-   Regularly check & merge new configurations with `pacdiff` (preferably after each system upgrade)
+-   Consult the **[Arch Linux Wiki](https://wiki.archlinux.org)** (if you need help)
 
 To streamline this process, you can use the preinstalled **[➜ Arch OS System Manager](https://github.com/murkl/arch-os-manager)**
 

@@ -21,7 +21,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${GUM:=/usr/local/bin/gum}" # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
-VERSION='1.9.2'
+VERSION='1.9.3'
 
 # VERSION
 [ "$*" = "--version" ] && echo "$VERSION" && exit 0
@@ -29,15 +29,15 @@ VERSION='1.9.2'
 # GUM
 GUM_VERSION="0.13.0"
 
-# ENVIRONMENT
+# FILES
 SCRIPT_CONFIG="./installer.conf"
 SCRIPT_LOG="./installer.log"
 
 # TEMP
 SCRIPT_TMP_DIR="$(mktemp -d "./.tmp.XXXXX")"
-ERROR_MSG="${SCRIPT_TMP_DIR}/installer.err"
-PROCESS_LOG="${SCRIPT_TMP_DIR}/process.log"
-PROCESS_RET="${SCRIPT_TMP_DIR}/process.ret"
+ERROR_MSG_TMP_FILE="${SCRIPT_TMP_DIR}/installer.err"
+PROCESS_LOG_TMP_FILE="${SCRIPT_TMP_DIR}/process.log"
+PROCESS_RET_TMP_FILE="${SCRIPT_TMP_DIR}/process.ret"
 
 # COLORS
 COLOR_BLACK=0   #  #000000
@@ -122,7 +122,7 @@ main() {
         until select_enable_shell_enhancement; do :; done
         until select_enable_manager; do :; done
 
-        # Print success
+        # Finish & show Advanced Properties
         echo && gum_title "Properties"
 
         # Open Advanced Properties?
@@ -140,7 +140,7 @@ main() {
             fi
         fi
 
-        # Finish
+        # Print success
         gum_info "Successfully initialized"
 
         ######################################################
@@ -776,7 +776,7 @@ exec_init_installation() {
         [ "$ARCH_OS_ECN_ENABLED" = "false" ] && sysctl net.ipv4.tcp_ecn=0
         pacman -Sy --noconfirm archlinux-keyring # Update keyring
         process_return 0
-    ) &>"$PROCESS_LOG" &
+    ) &>"$PROCESS_LOG_TMP_FILE" &
     process_capture $! "$process_name"
 }
 
@@ -859,7 +859,7 @@ exec_prepare_disk() {
 
         # Return
         process_return 0
-    ) &>"$PROCESS_LOG" &
+    ) &>"$PROCESS_LOG_TMP_FILE" &
     process_capture $! "$process_name"
 }
 
@@ -1078,7 +1078,7 @@ exec_pacstrap_core() {
 
         # Return
         process_return 0
-    ) &>"$PROCESS_LOG" &
+    ) &>"$PROCESS_LOG_TMP_FILE" &
     process_capture $! "$process_name"
 }
 
@@ -1417,7 +1417,7 @@ exec_install_desktop() {
 
             # Return
             process_return 0
-        ) &>"$PROCESS_LOG" &
+        ) &>"$PROCESS_LOG_TMP_FILE" &
         process_capture $! "$process_name"
     fi
 }
@@ -1495,7 +1495,7 @@ exec_install_graphics_driver() {
                 ;;
             esac
             process_return 0
-        ) &>"$PROCESS_LOG" &
+        ) &>"$PROCESS_LOG_TMP_FILE" &
         process_capture $! "$process_name"
     fi
 }
@@ -1511,7 +1511,7 @@ exec_enable_multilib() {
             sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
             arch-chroot /mnt pacman -Syyu --noconfirm
             process_return 0
-        ) &>"$PROCESS_LOG" &
+        ) &>"$PROCESS_LOG_TMP_FILE" &
         process_capture $! "$process_name"
     fi
 }
@@ -1529,7 +1529,7 @@ exec_install_bootsplash() {
             chroot_aur_install plymouth-theme-arch-os                                                  # Install Arch OS plymouth theme from AUR
             arch-chroot /mnt plymouth-set-default-theme -R arch-os                                     # Set Theme & rebuild initram disk
             process_return 0                                                                           # Return
-        ) &>"$PROCESS_LOG" &
+        ) &>"$PROCESS_LOG_TMP_FILE" &
         process_capture $! "$process_name"
     fi
 }
@@ -1550,7 +1550,7 @@ exec_install_aur_helper() {
                 sed -i 's/^#SudoLoop/SudoLoop/g' /mnt/etc/paru.conf
             fi
             process_return 0 # Return
-        ) &>"$PROCESS_LOG" &
+        ) &>"$PROCESS_LOG_TMP_FILE" &
         process_capture $! "$process_name"
     fi
 }
@@ -1581,7 +1581,7 @@ exec_install_housekeeping() {
             arch-chroot /mnt systemctl enable smartd               # SMART check service (smartmontools)
             arch-chroot /mnt systemctl enable irqbalance.service   # IRQ balancing daemon (irqbalance)
             process_return 0                                       # Return
-        ) &>"$PROCESS_LOG" &
+        ) &>"$PROCESS_LOG_TMP_FILE" &
         process_capture $! "$process_name"
     fi
 }
@@ -1601,7 +1601,7 @@ exec_install_archos_manager() {
             arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "unset GUM; /usr/bin/arch-os --init"
 
             process_return 0 # Return
-        ) &>"$PROCESS_LOG" &
+        ) &>"$PROCESS_LOG_TMP_FILE" &
         process_capture $! "$process_name"
     fi
 }
@@ -1658,7 +1658,7 @@ exec_install_shell_enhancement() {
             { # Create aliases for root & user
                 echo '# ls / eza'
                 echo 'alias ls="ls -h --color=always --group-directories-first"'
-                echo 'command -v eza &>/dev/null && alias ls="eza -h --color=always --group-directories-first"'
+                echo 'command -v eza &>/dev/null && alias ls="eza --icons --color=always --group-directories-first"'
                 echo 'alias ll="ls -l"'
                 echo 'alias la="ls -la"'
                 echo 'alias lt="ls -Tal"'
@@ -1879,7 +1879,7 @@ exec_install_shell_enhancement() {
 
             # Finished
             process_return 0
-        ) &>"$PROCESS_LOG" &
+        ) &>"$PROCESS_LOG_TMP_FILE" &
         process_capture $! "$process_name"
     fi
 }
@@ -1919,7 +1919,7 @@ exec_install_vm_support() {
             *) log_info "No VM detected" ;; # Do nothing
             esac
             process_return 0 # Return
-        ) &>"$PROCESS_LOG" &
+        ) &>"$PROCESS_LOG_TMP_FILE" &
         process_capture $! "$process_name"
     fi
 }
@@ -1993,7 +1993,7 @@ exec_finalize_arch_os() {
         fi
 
         process_return 0 # Return
-    ) &>"$PROCESS_LOG" &
+    ) &>"$PROCESS_LOG_TMP_FILE" &
     process_capture $! "$process_name"
 }
 
@@ -2074,7 +2074,7 @@ chroot_pacman_remove() { arch-chroot /mnt pacman -Rn --noconfirm "$@" || return 
 # shellcheck disable=SC2317
 trap_error() {
     # If process calls this trap, write error to file to use in exit trap
-    echo "Command '${BASH_COMMAND}' failed with exit code $? in function '${1}' (line ${2})" >"$ERROR_MSG"
+    echo "Command '${BASH_COMMAND}' failed with exit code $? in function '${1}' (line ${2})" >"$ERROR_MSG_TMP_FILE"
 }
 
 # shellcheck disable=SC2317
@@ -2082,7 +2082,7 @@ trap_exit() {
     local result_code="$?"
 
     # Read error msg from file (written in error trap)
-    local error && [ -f "$ERROR_MSG" ] && error="$(<"$ERROR_MSG")" && rm -f "$ERROR_MSG"
+    local error && [ -f "$ERROR_MSG_TMP_FILE" ] && error="$(<"$ERROR_MSG_TMP_FILE")" && rm -f "$ERROR_MSG_TMP_FILE"
 
     # Cleanup
     unset ARCH_OS_PASSWORD
@@ -2109,9 +2109,9 @@ trap_exit() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 process_init() {
-    [ -f "$PROCESS_RET" ] && gum_fail "${PROCESS_RET} already exists" && exit 1
-    echo 1 >"$PROCESS_RET" # Init result with 1
-    log_proc "${1}..."     # Log starting
+    [ -f "$PROCESS_RET_TMP_FILE" ] && gum_fail "${PROCESS_RET_TMP_FILE} already exists" && exit 1
+    echo 1 >"$PROCESS_RET_TMP_FILE" # Init result with 1
+    log_proc "${1}..."              # Log starting
 }
 
 process_capture() {
@@ -2121,7 +2121,7 @@ process_capture() {
 
     # Show gum spinner until pid is not exists anymore and set user_canceled to true on failure
     gum_spin --title "${process_name}..." -- bash -c "while kill -0 $pid &> /dev/null; do sleep 1; done" || user_canceled="true"
-    cat "$PROCESS_LOG" >>"$SCRIPT_LOG" # Write process log to logfile
+    cat "$PROCESS_LOG_TMP_FILE" >>"$SCRIPT_LOG" # Write process log to logfile
 
     # When user press ctrl + c while process is running
     if [ "$user_canceled" = "true" ]; then
@@ -2130,23 +2130,56 @@ process_capture() {
     fi
 
     # Handle error while executing process
-    [ ! -f "$PROCESS_RET" ] && gum_fail "${PROCESS_RET} not found (do not init process?)" && exit 1
-    [ "$(<"$PROCESS_RET")" != "0" ] && gum_fail "${process_name} failed" && exit 1 # If process failed (result code 0 was not write in the end)
+    [ ! -f "$PROCESS_RET_TMP_FILE" ] && gum_fail "${PROCESS_RET_TMP_FILE} not found (do not init process?)" && exit 1
+    [ "$(<"$PROCESS_RET_TMP_FILE")" != "0" ] && gum_fail "${process_name} failed" && exit 1 # If process failed (result code 0 was not write in the end)
 
     # Finish
-    rm -f "$PROCESS_RET"                 # Remove process result file
+    rm -f "$PROCESS_RET_TMP_FILE"        # Remove process result file
     gum_proc "${process_name}" "success" # Print process success
 }
 
 process_return() {
     # 1. Write from sub process 0 to file when succeed (at the end of the script part)
     # 2. Rread from parent process after sub process finished (0=success 1=failed)
-    echo "$1" >"$PROCESS_RET"
+    echo "$1" >"$PROCESS_RET_TMP_FILE"
     exit "$1"
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# HELPER FUNCTIONS
+# GUM BINARY
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+gum_init() {
+    if [ ! -x "$GUM" ]; then
+        clear && echo "Loading Arch OS Installer..." # Loading
+        local gum_url gum_path                       # Prepare URL with version os and arch
+        # https://github.com/charmbracelet/gum/releases
+        gum_url="https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_$(uname -s)_$(uname -m).tar.gz"
+        if ! curl -Lsf "$gum_url" >"${SCRIPT_TMP_DIR}/gum.tar.gz"; then echo "Error downloading ${gum_url}" && exit 1; fi
+        if ! tar -xf "${SCRIPT_TMP_DIR}/gum.tar.gz" --directory "$SCRIPT_TMP_DIR"; then echo "Error extracting ${SCRIPT_TMP_DIR}/gum.tar.gz" && exit 1; fi
+        gum_path=$(find "${SCRIPT_TMP_DIR}" -type f -executable -name "gum" -print -quit)
+        [ -z "$gum_path" ] && echo "Error: 'gum' binary not found in '${SCRIPT_TMP_DIR}'" && exit 1
+        if ! mv "$gum_path" "$GUM"; then echo "Error moving ${gum_path} to ${GUM}" && exit 1; fi
+        if ! chmod +x "$GUM"; then echo "Error chmod +x ${GUM}" && exit 1; fi
+    fi
+}
+
+# Gum wrapper function
+gum() {
+    if [ -n "$GUM" ] && [ -x "$GUM" ]; then
+        "$GUM" "$@"
+    else
+        echo "Error: GUM '${GUM}' is not found or executable" >&2
+        exit 1
+    fi
+}
+
+# Gum trap functions
+trap_gum_exit() { exit 130; }
+trap_gum_exit_confirm() { gum_confirm "Exit Installation?" && trap_gum_exit; }
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# PRINT FUNCTIONS
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 print_header() {
@@ -2169,33 +2202,6 @@ print_filled_space() {
     [ "$length" -ge "$total" ] && echo "$text" && return 0
     local padding=$((total - length)) && printf '%s%*s\n' "$text" "$padding" ""
 }
-
-gum_init() {
-    if [ ! -x "$GUM" ]; then
-        clear && echo "Loading Arch OS Installer..." # Loading
-        local gum_url gum_path                       # Prepare URL with version os and arch
-        # https://github.com/charmbracelet/gum/releases
-        gum_url="https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_$(uname -s)_$(uname -m).tar.gz"
-        if ! curl -Lsf "$gum_url" >"${SCRIPT_TMP_DIR}/gum.tar.gz"; then echo "Error downloading ${gum_url}" && exit 1; fi
-        if ! tar -xf "${SCRIPT_TMP_DIR}/gum.tar.gz" --directory "$SCRIPT_TMP_DIR"; then echo "Error extracting ${SCRIPT_TMP_DIR}/gum.tar.gz" && exit 1; fi
-        gum_path=$(find "${SCRIPT_TMP_DIR}" -type f -executable -name "gum" -print -quit)
-        [ -z "$gum_path" ] && echo "Error: 'gum' binary not found in '${SCRIPT_TMP_DIR}'" && exit 1
-        if ! mv "$gum_path" "$GUM"; then echo "Error moving ${gum_path} to ${GUM}" && exit 1; fi
-        if ! chmod +x "$GUM"; then echo "Error chmod +x ${GUM}" && exit 1; fi
-    fi
-}
-
-gum() {
-    if [ -n "$GUM" ] && [ -x "$GUM" ]; then
-        "$GUM" "$@"
-    else
-        echo "Error: GUM '${GUM}' is not found or executable" >&2
-        exit 1
-    fi
-}
-
-trap_gum_exit() { exit 130; }
-trap_gum_exit_confirm() { gum_confirm "Exit Installation?" && trap_gum_exit; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # GUM WRAPPER
