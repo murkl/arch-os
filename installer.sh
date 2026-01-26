@@ -127,17 +127,19 @@ main() {
 
         # Open Advanced Properties?
         if [ "$FORCE" = "false" ] && gum_confirm --default=false --negative="Skip" "Open Advanced Setup Editor?"; then
-            local header_txt="• Advanced Setup | Save with CTRL + D or ESC and cancel with CTRL + C"
-            if gum_write --show-line-numbers --prompt "" --height=12 --width=180 --char-limit=0 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
+            print_header "Arch OS Installer" # Show landig page
+            gum_title "Advanced Setup Editor"
+            local header_txt="• Save with CTRL + D or ESC and cancel with CTRL + C"
+            if gum_write --show-line-numbers --prompt "" --height=18 --width=180 --char-limit=0 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
                 mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
                 gum_info "Properties successfully saved"
                 gum_confirm "Change Password?" && until select_password --change && properties_source; do :; done
-                echo && ! gum_spin --title="Reload Properties in 3 seconds..." -- sleep 3 && trap_gum_exit
-                continue # Restart properties step to refresh properties screen
             else
                 rm -f "${SCRIPT_CONFIG}.new" # Remove tmp properties
                 gum_warn "Advanced Setup canceled"
             fi
+            echo && ! gum_spin --title="Reload Properties in 3 seconds..." -- sleep 3 && trap_gum_exit
+            continue # Restart properties step to refresh properties screen
         fi
 
         # Print success
