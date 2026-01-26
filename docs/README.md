@@ -7,7 +7,7 @@
 
 <p><strong>Boot from latest <a target="_blank" href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a> to launch the Installer automatically.</strong></p>
 
- <p>Alternatively boot from official <a target="_blank" href="https://archlinux.org/download/">Arch Linux ISO</a> and run</p>
+ <p>Alternatively boot from official <a target="_blank" href="https://archlinux.org/download/">Arch Linux ISO</a> and run:</p>
 
 **`curl -Ls bit.ly/arch-os | bash`**
 
@@ -34,7 +34,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 
 <p>
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
-  <img src="https://img.shields.io/badge/License-GPL_v2-blue?style=for-the-badge">
+  <img src="https://img.shields.io/badge/License-Apache_v2-blue?style=for-the-badge">
 </p>
 
 **[➜ Arch OS Documentation](DOCS.md)**<br>
