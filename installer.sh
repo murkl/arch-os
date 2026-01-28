@@ -1577,7 +1577,7 @@ exec_install_housekeeping() {
                 echo "--sort rate"
             } >/mnt/etc/xdg/reflector/reflector.conf
             # Enable services
-            arch-chroot /mnt systemctl enable reflector.service    # Rank mirrors after boot (reflector)
+            arch-chroot /mnt systemctl enable reflector.timer      # Rank mirrors weekly (reflector)
             arch-chroot /mnt systemctl enable paccache.timer       # Discard cached/unused packages weekly (pacman-contrib)
             arch-chroot /mnt systemctl enable pkgfile-update.timer # Pkgfile update timer (pkgfile)
             arch-chroot /mnt systemctl enable smartd               # SMART check service (smartmontools)
