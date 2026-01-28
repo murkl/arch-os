@@ -142,7 +142,7 @@ After installing Arch OS with the default properties preset, most maintenance ta
 
 To streamline this process, you can use the preinstalled **[➜ Arch OS System Manager](https://github.com/murkl/arch-os-manager)**
 
-If you need to rescue your Arch OS in case of a crash, boot from an **[Arch ISO Device](#1-prepare-bootable-usb-device)** and start the **[➜ Arch OS Recovery](https://github.com/murkl/arch-os-recovery)** with:
+If you need to rescue your Arch OS in case of a crash, boot from an **[Arch ISO Device](#1-prepare-bootable-usb-device)** and choose `Recovery` from Arch OS ISO or start **[➜ Arch OS Recovery](https://github.com/murkl/arch-os-recovery)** from official Arch ISO manually with:
 
 ```
 curl -Ls bit.ly/arch-os-recovery | bash

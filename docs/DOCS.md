@@ -284,7 +284,7 @@ This feature will install and configure:
 
 | Package        | Service              | Config                            | Description                                                            |
 | -------------- | -------------------- | --------------------------------- | ---------------------------------------------------------------------- |
-| reflector      | reflector.service    | /etc/xdg/reflector/reflector.conf | Rank & update the mirrorlist on every boot                             |
+| reflector      | reflector.timer      | /etc/xdg/reflector/reflector.conf | Rank & update the mirrorlist weekly                                    |
 | pacman-contrib | paccache.timer       | none                              | Weekly clear the pacman cache                                          |
 | pkgfile        | pkgfile-update.timer | none                              | Missing command suggestion and daily database update                   |
 | smartmontools  | smartd               | none                              | Monitor storage devices                                                |
