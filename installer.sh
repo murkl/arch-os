@@ -19,9 +19,10 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${DEBUG:=false}"            # DEBUG=true ./installer.sh
 : "${FORCE:=false}"            # FORCE=true ./installer.sh
 : "${GUM:=/usr/local/bin/gum}" # GUM=/usr/bin/gum ./installer.sh
+: "${ARCH_OS_HASTEBIN_BASE_URL:=https://hastebin.com}" # Override for self-hosted Hastebin-compatible instances
 
 # SCRIPT
-VERSION='1.9.5'
+VERSION='1.9.6'
 
 # VERSION
 [ "$*" = "--version" ] && echo "$VERSION" && exit 0
@@ -112,15 +113,20 @@ main() {
         until select_enable_desktop_driver; do :; done
         until select_enable_desktop_slim; do :; done
         until select_enable_desktop_keyboard; do :; done
+        until select_gnome_autologin; do :; done
         echo && gum_title "Feature Setup"
         until select_enable_encryption; do :; done
         until select_enable_core_tweaks; do :; done
         until select_enable_bootsplash; do :; done
         until select_enable_multilib; do :; done
+        until select_enable_chaotic_aur; do :; done
         until select_enable_aur; do :; done
         until select_enable_housekeeping; do :; done
+        until select_dns_profile; do :; done
         until select_enable_shell_enhancement; do :; done
         until select_enable_manager; do :; done
+        until select_log_hastebin_upload; do :; done
+        until select_log_cleanup_after_hastebin; do :; done
 
         # Finish & show Advanced Properties
         echo && gum_title "Properties"
@@ -166,7 +172,9 @@ main() {
     exec_init_installation
     exec_prepare_disk
     exec_pacstrap_core
+    exec_configure_dns
     exec_enable_multilib
+    exec_enable_chaotic_aur
     exec_install_aur_helper
     exec_install_bootsplash
     exec_install_housekeeping
@@ -194,6 +202,23 @@ main() {
         cp -f "$SCRIPT_LOG" "/mnt/home/${ARCH_OS_USERNAME}/installer.log"
         arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.conf"
         arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/installer.log"
+    fi
+
+    local hastebin_upload_ok="false"
+    if [ "$ARCH_OS_LOG_HASTEBIN_ENABLED" = "true" ]; then
+        if hastebin_upload_install_logs; then
+            hastebin_upload_ok="true"
+            gum_info "Hastebin URL: ${HASTEBIN_LAST_URL}"
+        else
+            gum_warn "Hastebin upload failed; installer.conf and installer.log were kept."
+            log_warn "Hastebin upload failed"
+        fi
+    fi
+
+    if [ "$hastebin_upload_ok" = "true" ] && [ "$ARCH_OS_LOG_CLEANUP_AFTER_HASTEBIN_ENABLED" = "true" ]; then
+        hastebin_cleanup_installer_artifacts
+        gum_info "Removed installer.conf and installer.log after upload."
+        log_info "Removed installer artifacts after Hastebin upload"
     fi
 
     wait # Wait for sub processes
@@ -282,6 +307,7 @@ properties_generate() {
         echo "ARCH_OS_MICROCODE='${ARCH_OS_MICROCODE}' # Microcode | Disable: none | Available: intel-ucode, amd-ucode"
         echo "ARCH_OS_CORE_TWEAKS_ENABLED='${ARCH_OS_CORE_TWEAKS_ENABLED}' # Arch OS Core Tweaks | Disable: false"
         echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}' # MultiLib 32 Bit Support | Disable: false"
+        echo "ARCH_OS_CHAOTIC_AUR_ENABLED='${ARCH_OS_CHAOTIC_AUR_ENABLED}' # Chaotic-AUR repository | Disable: false | https://aur.chaotic.cx/docs"
         echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}' # AUR Helper | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur"
         echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}' # Bootsplash | Disable: false"
         echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}'  # Housekeeping | Disable: false"
@@ -292,12 +318,16 @@ properties_generate() {
         echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}' # Graphics Driver | Disable: none | Available: mesa, intel_i915, nvidia, amd, ati"
         echo "ARCH_OS_DESKTOP_EXTRAS_ENABLED='${ARCH_OS_DESKTOP_EXTRAS_ENABLED}' # Enable desktop extra packages (caution: if disabled, only core + gnome + git packages will be installed) | Disable: false"
         echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}' # Enable Sim Desktop (only GNOME Core Apps) | Default: false"
+        echo "ARCH_OS_GNOME_AUTOLOGIN_ENABLED='${ARCH_OS_GNOME_AUTOLOGIN_ENABLED}' # GNOME GDM automatic login | Disable: false | Only applies when Desktop is enabled"
         echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}' # X11 keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models"
         echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}' # X11 keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de"
         echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}' # X11 keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys"
         echo "ARCH_OS_SAMBA_SHARE_ENABLED='${ARCH_OS_SAMBA_SHARE_ENABLED}' # Enable Samba public (anonymous) & home share (user) | Disable: false"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}' # VM Support | Default: true | Disable: false"
         echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}' # Disable ECN support for legacy routers | Default: true | Disable: false"
+        echo "ARCH_OS_LOG_HASTEBIN_ENABLED='${ARCH_OS_LOG_HASTEBIN_ENABLED}' # Upload installer log to Hastebin | Disable: false | https://hastebin.com"
+        echo "ARCH_OS_LOG_CLEANUP_AFTER_HASTEBIN_ENABLED='${ARCH_OS_LOG_CLEANUP_AFTER_HASTEBIN_ENABLED}' # Remove installer.conf & logs after successful Hastebin upload | Requires: ARCH_OS_LOG_HASTEBIN_ENABLED"
+        echo "ARCH_OS_DNS_PROFILE='${ARCH_OS_DNS_PROFILE}' # DNS | default=DHCP | cloudflare google quad9 adguard opendns mullvad"
     } >"$SCRIPT_CONFIG" # Write properties to file
 }
 
@@ -337,12 +367,17 @@ properties_preset_source() {
             ARCH_OS_BTRFS_ASSISTANT_ENABLED='false'
             ARCH_OS_DESKTOP_ENABLED='false'
             ARCH_OS_MULTILIB_ENABLED='false'
+            ARCH_OS_CHAOTIC_AUR_ENABLED='false'
             ARCH_OS_HOUSEKEEPING_ENABLED='false'
             ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
             ARCH_OS_BOOTSPLASH_ENABLED='false'
             ARCH_OS_MANAGER_ENABLED='false'
             ARCH_OS_DESKTOP_GRAPHICS_DRIVER="none"
             ARCH_OS_AUR_HELPER='none'
+            ARCH_OS_LOG_HASTEBIN_ENABLED='false'
+            ARCH_OS_LOG_CLEANUP_AFTER_HASTEBIN_ENABLED='false'
+            ARCH_OS_DNS_PROFILE='default'
+            ARCH_OS_GNOME_AUTOLOGIN_ENABLED='false'
         fi
 
         # Desktop preset
@@ -359,6 +394,8 @@ properties_preset_source() {
             ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
             ARCH_OS_MANAGER_ENABLED='true'
             ARCH_OS_AUR_HELPER='paru'
+            ARCH_OS_DNS_PROFILE='cloudflare'
+            ARCH_OS_GNOME_AUTOLOGIN_ENABLED='true'
         fi
 
         # Write properties
@@ -636,6 +673,27 @@ select_enable_desktop_keyboard() {
 
 # ---------------------------------------------------------------------------------------------------
 
+select_gnome_autologin() {
+    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
+        if [ -z "$ARCH_OS_GNOME_AUTOLOGIN_ENABLED" ]; then
+            gum_confirm "Enable automatic login in GNOME (GDM)?"
+            local user_confirm=$?
+            [ $user_confirm = 130 ] && {
+                trap_gum_exit_confirm
+                return 1
+            }
+            local user_input
+            [ $user_confirm = 1 ] && user_input="false"
+            [ $user_confirm = 0 ] && user_input="true"
+            ARCH_OS_GNOME_AUTOLOGIN_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+        fi
+        gum_property "GNOME autologin" "$ARCH_OS_GNOME_AUTOLOGIN_ENABLED"
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
 select_enable_desktop_driver() {
     if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
         if [ -z "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ] || [ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" = "none" ]; then
@@ -685,6 +743,25 @@ select_enable_multilib() {
 
 # ---------------------------------------------------------------------------------------------------
 
+select_enable_chaotic_aur() {
+    if [ -z "$ARCH_OS_CHAOTIC_AUR_ENABLED" ]; then
+        gum_confirm "Enable Chaotic-AUR repository? (https://aur.chaotic.cx)"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        local user_input
+        [ $user_confirm = 1 ] && user_input="false"
+        [ $user_confirm = 0 ] && user_input="true"
+        ARCH_OS_CHAOTIC_AUR_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    gum_property "Chaotic-AUR" "$ARCH_OS_CHAOTIC_AUR_ENABLED"
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
 select_enable_housekeeping() {
     if [ -z "$ARCH_OS_HOUSEKEEPING_ENABLED" ]; then
         gum_confirm "Enable Housekeeping?"
@@ -699,6 +776,28 @@ select_enable_housekeeping() {
         ARCH_OS_HOUSEKEEPING_ENABLED="$user_input" && properties_generate # Set value and generate properties file
     fi
     gum_property "Housekeeping" "$ARCH_OS_HOUSEKEEPING_ENABLED"
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+select_dns_profile() {
+    if [ -z "$ARCH_OS_DNS_PROFILE" ]; then
+        local user_input options
+        options=(
+            "default    - ISP / router (DHCP, no override)"
+            "cloudflare - Cloudflare 1.1.1.1 (speed & privacy)"
+            "google     - Google Public DNS 8.8.8.8"
+            "quad9      - Quad9 9.9.9.9 (malware blocking)"
+            "adguard    - AdGuard DNS 94.140.14.14"
+            "opendns    - Cisco OpenDNS 208.67.222.222"
+            "mullvad    - Mullvad DNS (privacy, no logging)"
+        )
+        user_input=$(gum_choose --header "+ Choose DNS resolver" "${options[@]}") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1 # Check if new value is null
+        ARCH_OS_DNS_PROFILE="$(echo "$user_input" | awk '{print $1}')" && properties_generate # Set value and generate properties file
+    fi
+    gum_property "DNS" "$ARCH_OS_DNS_PROFILE"
     return 0
 }
 
@@ -738,6 +837,100 @@ select_enable_manager() {
     fi
     gum_property "Arch OS Manager" "$ARCH_OS_MANAGER_ENABLED"
     return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+select_log_hastebin_upload() {
+    if [ -z "$ARCH_OS_LOG_HASTEBIN_ENABLED" ]; then
+        gum_confirm "Upload installation log to Hastebin when finished?"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        local user_input
+        [ $user_confirm = 1 ] && user_input="false"
+        [ $user_confirm = 0 ] && user_input="true"
+        ARCH_OS_LOG_HASTEBIN_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    gum_property "Hastebin log upload" "$ARCH_OS_LOG_HASTEBIN_ENABLED"
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+select_log_cleanup_after_hastebin() {
+    if [ "$ARCH_OS_LOG_HASTEBIN_ENABLED" != "true" ]; then
+        if [ -z "$ARCH_OS_LOG_CLEANUP_AFTER_HASTEBIN_ENABLED" ] || [ "$ARCH_OS_LOG_CLEANUP_AFTER_HASTEBIN_ENABLED" != "false" ]; then
+            ARCH_OS_LOG_CLEANUP_AFTER_HASTEBIN_ENABLED="false"
+            properties_generate
+        fi
+        gum_property "Remove files after Hastebin" "false"
+        return 0
+    fi
+    if [ -z "$ARCH_OS_LOG_CLEANUP_AFTER_HASTEBIN_ENABLED" ]; then
+        gum_confirm "Remove installer.conf and installer.log after a successful Hastebin upload?"
+        local user_confirm=$?
+        [ $user_confirm = 130 ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        local user_input
+        [ $user_confirm = 1 ] && user_input="false"
+        [ $user_confirm = 0 ] && user_input="true"
+        ARCH_OS_LOG_CLEANUP_AFTER_HASTEBIN_ENABLED="$user_input" && properties_generate # Set value and generate properties file
+    fi
+    gum_property "Remove files after Hastebin" "$ARCH_OS_LOG_CLEANUP_AFTER_HASTEBIN_ENABLED"
+    return 0
+}
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# HASTEBIN (LOG UPLOAD)
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+hastebin_upload_install_logs() {
+    HASTEBIN_LAST_URL=""
+    command -v curl >/dev/null 2>&1 || {
+        log_warn "curl not found; cannot upload to Hastebin"
+        return 1
+    }
+    [ -f "$SCRIPT_LOG" ] || {
+        log_warn "installer.log not found; cannot upload to Hastebin"
+        return 1
+    }
+    local api_url tmpf response key base
+    base="${ARCH_OS_HASTEBIN_BASE_URL%/}"
+    api_url="${base}/documents"
+    tmpf=$(mktemp "${SCRIPT_TMP_DIR}/hastebin.XXXXXX")
+    {
+        echo "### Arch OS installer.log (${VERSION}) ###"
+        cat "$SCRIPT_LOG"
+        echo ""
+        echo "### installer.conf ###"
+        if [ -f "$SCRIPT_CONFIG" ]; then
+            cat "$SCRIPT_CONFIG"
+        else
+            echo "(installer.conf missing)"
+        fi
+    } >"$tmpf"
+    response=$(curl -sS -f -X POST --data-binary @"$tmpf" "$api_url") || {
+        rm -f "$tmpf"
+        return 1
+    }
+    rm -f "$tmpf"
+    key=$(printf '%s' "$response" | sed -n 's/.*"key"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+    [ -n "$key" ] || return 1
+    HASTEBIN_LAST_URL="${base}/${key}"
+    log_info "Hastebin upload OK: ${HASTEBIN_LAST_URL}"
+    return 0
+}
+
+hastebin_cleanup_installer_artifacts() {
+    rm -f "$SCRIPT_CONFIG" "$SCRIPT_LOG" "${SCRIPT_LOG}.old"
+    if [ "$DEBUG" = "false" ] && [ -n "${ARCH_OS_USERNAME:-}" ] && [ -d "/mnt/home/${ARCH_OS_USERNAME}" ]; then
+        rm -f "/mnt/home/${ARCH_OS_USERNAME}/installer.conf" "/mnt/home/${ARCH_OS_USERNAME}/installer.log"
+    fi
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1086,6 +1279,74 @@ exec_pacstrap_core() {
 
 # ---------------------------------------------------------------------------------------------------
 
+exec_configure_dns() {
+    local process_name="Configure DNS"
+    process_init "$process_name"
+    (
+        [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
+
+        # NetworkManager + systemd-resolved (https://wiki.archlinux.org/title/NetworkManager#DNS)
+        mkdir -p /mnt/etc/NetworkManager/conf.d
+        mkdir -p /mnt/etc/systemd/resolved.conf.d
+        {
+            echo '[main]'
+            echo 'dns=systemd-resolved'
+        } >/mnt/etc/NetworkManager/conf.d/dns-systemd.conf
+        ln -sf ../run/systemd/resolve/stub-resolv.conf /mnt/etc/resolv.conf
+        arch-chroot /mnt systemctl enable systemd-resolved.service
+
+        rm -f /mnt/etc/systemd/resolved.conf.d/99-arch-os-dns.conf
+        case "${ARCH_OS_DNS_PROFILE:-default}" in
+            default) ;; # DHCP DNS from NetworkManager → resolved
+            cloudflare)
+                {
+                    echo '[Resolve]'
+                    echo 'DNS=1.1.1.1 1.0.0.1 2606:4700:4700::1111 2606:4700:4700::1001'
+                } >/mnt/etc/systemd/resolved.conf.d/99-arch-os-dns.conf
+                ;;
+            google)
+                {
+                    echo '[Resolve]'
+                    echo 'DNS=8.8.8.8 8.8.4.4 2001:4860:4860::8888 2001:4860:4860::8844'
+                } >/mnt/etc/systemd/resolved.conf.d/99-arch-os-dns.conf
+                ;;
+            quad9)
+                {
+                    echo '[Resolve]'
+                    echo 'DNS=9.9.9.9 149.112.112.112 2620:fe::fe 2620:fe::9'
+                } >/mnt/etc/systemd/resolved.conf.d/99-arch-os-dns.conf
+                ;;
+            adguard)
+                {
+                    echo '[Resolve]'
+                    echo 'DNS=94.140.14.14 94.140.15.15'
+                } >/mnt/etc/systemd/resolved.conf.d/99-arch-os-dns.conf
+                ;;
+            opendns)
+                {
+                    echo '[Resolve]'
+                    echo 'DNS=208.67.222.222 208.67.220.220'
+                } >/mnt/etc/systemd/resolved.conf.d/99-arch-os-dns.conf
+                ;;
+            mullvad)
+                {
+                    echo '[Resolve]'
+                    echo 'DNS=194.242.2.2 194.242.2.3'
+                } >/mnt/etc/systemd/resolved.conf.d/99-arch-os-dns.conf
+                ;;
+            *)
+                log_warn "Unknown ARCH_OS_DNS_PROFILE=${ARCH_OS_DNS_PROFILE}, using default (DHCP DNS)"
+                ;;
+        esac
+
+        log_info "DNS profile: ${ARCH_OS_DNS_PROFILE:-default}"
+        process_return 0
+    ) &>"$PROCESS_LOG_TMP_FILE" &
+    process_capture $! "$process_name"
+}
+
+# ---------------------------------------------------------------------------------------------------
+
 exec_install_desktop() {
     local process_name="GNOME Desktop"
     if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
@@ -1185,15 +1446,18 @@ exec_install_desktop() {
             # Add user to gamemode group
             [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
-            # Enable GNOME auto login
+            # GDM: Wayland and optional automatic login (https://wiki.archlinux.org/title/GDM#Automatic_login)
             mkdir -p /mnt/etc/gdm
-            # grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
             {
                 echo "[daemon]"
                 echo "WaylandEnable=True"
                 echo ""
-                echo "AutomaticLoginEnable=True"
-                echo "AutomaticLogin=${ARCH_OS_USERNAME}"
+                if [ "${ARCH_OS_GNOME_AUTOLOGIN_ENABLED:-true}" = "true" ]; then
+                    echo "AutomaticLoginEnable=True"
+                    echo "AutomaticLogin=${ARCH_OS_USERNAME}"
+                else
+                    echo "AutomaticLoginEnable=False"
+                fi
                 echo ""
                 echo "[debug]"
                 echo "Enable=False"
@@ -1511,6 +1775,34 @@ exec_enable_multilib() {
         (
             [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
             sed -i '/\[multilib\]/,/Include/s/^#//' /mnt/etc/pacman.conf
+            arch-chroot /mnt pacman -Syyu --noconfirm
+            process_return 0
+        ) &>"$PROCESS_LOG_TMP_FILE" &
+        process_capture $! "$process_name"
+    fi
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+exec_enable_chaotic_aur() {
+    local process_name="Chaotic-AUR"
+    if [ "$ARCH_OS_CHAOTIC_AUR_ENABLED" = "true" ]; then
+        process_init "$process_name"
+        (
+            [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
+            # https://aur.chaotic.cx/docs
+            arch-chroot /mnt pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+            arch-chroot /mnt pacman-key --lsign-key 3056513887B78AEB
+            arch-chroot /mnt pacman -U --noconfirm \
+                'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' \
+                'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
+            if ! grep -q '^\[chaotic-aur\]' /mnt/etc/pacman.conf; then
+                {
+                    echo ''
+                    echo '[chaotic-aur]'
+                    echo 'Include = /etc/pacman.d/chaotic-mirrorlist'
+                } >>/mnt/etc/pacman.conf
+            fi
             arch-chroot /mnt pacman -Syyu --noconfirm
             process_return 0
         ) &>"$PROCESS_LOG_TMP_FILE" &
