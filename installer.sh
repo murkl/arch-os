@@ -22,7 +22,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${ARCH_OS_HASTEBIN_BASE_URL:=https://hastebin.com}" # Override for self-hosted Hastebin-compatible instances
 
 # SCRIPT
-VERSION='1.9.6'
+VERSION='1.9.9'
 
 # VERSION
 [ "$*" = "--version" ] && echo "$VERSION" && exit 0
