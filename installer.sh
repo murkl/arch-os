@@ -1286,7 +1286,13 @@ exec_install_desktop() {
                     ) | arch-chroot /mnt smbpasswd -s -a "$ARCH_OS_USERNAME"
                 fi
 
-                # Start samba services
+                # Set IPv4 only for Windows/WS-Discovery (WSDD)
+                grep -q -- '-4' /etc/conf.d/wsdd || sed -i 's/WSDD_PARAMS="/WSDD_PARAMS="-4 /' /etc/conf.d/wsdd
+
+                # Set IPv4 only for macOS/Bonjour (avahi/mDNS)
+                sed -i -E 's/^#?\s*use-ipv6=.*/use-ipv6=no/' /etc/avahi/avahi-daemon.conf
+
+                # Enable samba services
                 arch-chroot /mnt systemctl enable smb.service
 
                 # https://wiki.archlinux.org/title/Samba#Windows_1709_or_up_does_not_discover_the_samba_server_in_Network_view
