@@ -234,6 +234,7 @@ ARCH_OS_DESKTOP_ENABLED='true' # Arch OS Desktop (caution: if disabled, only a m
 ARCH_OS_DESKTOP_GRAPHICS_DRIVER='amd' # Graphics Driver | Disable: none | Available: mesa, intel_i915, nvidia, amd, ati
 ARCH_OS_DESKTOP_EXTRAS_ENABLED='true' # Enable desktop extra packages (caution: if disabled, only core + gnome + git packages will be installed) | Disable: false
 ARCH_OS_DESKTOP_SLIM_ENABLED='true' # Enable Sim Desktop (only GNOME Core Apps) | Default: false
+ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED='true' # Enable GNOME autologin | Default: true | Disable: false (note: autologin leaves the login keyring locked)
 ARCH_OS_DESKTOP_KEYBOARD_MODEL='pc105' # X11 keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models
 ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='de' # X11 keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de
 ARCH_OS_DESKTOP_KEYBOARD_VARIANT='nodeadkeys' # X11 keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys

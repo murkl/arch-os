@@ -111,6 +111,7 @@ main() {
         until select_enable_desktop_environment; do :; done
         until select_enable_desktop_driver; do :; done
         until select_enable_desktop_slim; do :; done
+        until select_enable_desktop_autologin; do :; done
         until select_enable_desktop_keyboard; do :; done
         echo && gum_title "Feature Setup"
         until select_enable_encryption; do :; done
@@ -292,6 +293,7 @@ properties_generate() {
         echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}' # Graphics Driver | Disable: none | Available: mesa, intel_i915, nvidia, amd, ati"
         echo "ARCH_OS_DESKTOP_EXTRAS_ENABLED='${ARCH_OS_DESKTOP_EXTRAS_ENABLED}' # Enable desktop extra packages (caution: if disabled, only core + gnome + git packages will be installed) | Disable: false"
         echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}' # Enable Sim Desktop (only GNOME Core Apps) | Default: false"
+        echo "ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED='${ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED}' # Enable GNOME autologin | Default: true | Disable: false (note: autologin leaves the login keyring locked)"
         echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}' # X11 keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models"
         echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}' # X11 keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de"
         echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}' # X11 keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys"
@@ -310,6 +312,7 @@ properties_preset_source() {
     [ -z "$ARCH_OS_BTRFS_ASSISTANT_ENABLED" ] && ARCH_OS_BTRFS_ASSISTANT_ENABLED='true'
     [ -z "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" ] && ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED="true"
     [ -z "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
+    [ -z "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" ] && ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED='true'
     [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
     [ -z "$ARCH_OS_SAMBA_SHARE_ENABLED" ] && ARCH_OS_SAMBA_SHARE_ENABLED="true"
     [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
@@ -371,6 +374,24 @@ properties_preset_source() {
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # SELECTORS
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+# Generic yes/no selector: select_toggle <var_name> "<prompt>" "<label>"
+select_toggle() {
+    local var_name="$1" prompt="$2" label="$3"
+    if [ -z "${!var_name}" ]; then
+        gum_confirm "$prompt"
+        local user_confirm=$?
+        [ "$user_confirm" = "130" ] && {
+            trap_gum_exit_confirm
+            return 1
+        }
+        local user_input="true"
+        [ "$user_confirm" = "1" ] && user_input="false"
+        printf -v "$var_name" '%s' "$user_input" && properties_generate # Set value and generate properties file
+    fi
+    gum_property "$label" "${!var_name}"
+    return 0
+}
 
 select_username() {
     if [ -z "$ARCH_OS_USERNAME" ]; then
@@ -480,8 +501,10 @@ select_disk() {
         user_input=$(echo "$user_input" | awk -F' ' '{print $1}') # Remove size from input
         [ ! -e "$user_input" ] && log_fail "Disk does not exists" && return 1
         ARCH_OS_DISK="$user_input" # Set property
-        [[ "$ARCH_OS_DISK" = "/dev/nvm"* ]] && ARCH_OS_BOOT_PARTITION="${ARCH_OS_DISK}p1" || ARCH_OS_BOOT_PARTITION="${ARCH_OS_DISK}1"
-        [[ "$ARCH_OS_DISK" = "/dev/nvm"* ]] && ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}p2" || ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}2"
+        # Append 'p' when the device name ends in a digit (covers nvme*, mmcblk*, loop*)
+        local part_sep="" && [[ "$ARCH_OS_DISK" =~ [0-9]$ ]] && part_sep="p"
+        ARCH_OS_BOOT_PARTITION="${ARCH_OS_DISK}${part_sep}1"
+        ARCH_OS_ROOT_PARTITION="${ARCH_OS_DISK}${part_sep}2"
         properties_generate # Generate properties file
     fi
     gum_property "Disk" "$ARCH_OS_DISK"
@@ -518,99 +541,32 @@ select_bootloader() {
 
 # ---------------------------------------------------------------------------------------------------
 
-select_enable_encryption() {
-    if [ -z "$ARCH_OS_ENCRYPTION_ENABLED" ]; then
-        gum_confirm "Enable Disk Encryption?"
-        local user_confirm=$?
-        [ $user_confirm = 130 ] && {
-            trap_gum_exit_confirm
-            return 1
-        }
-        local user_input
-        [ $user_confirm = 1 ] && user_input="false"
-        [ $user_confirm = 0 ] && user_input="true"
-        ARCH_OS_ENCRYPTION_ENABLED="$user_input" && properties_generate # Set value and generate properties file
-    fi
-    gum_property "Disk Encryption" "$ARCH_OS_ENCRYPTION_ENABLED"
-    return 0
-}
+select_enable_encryption() { select_toggle ARCH_OS_ENCRYPTION_ENABLED "Enable Disk Encryption?" "Disk Encryption"; }
 
 # ---------------------------------------------------------------------------------------------------
 
-select_enable_core_tweaks() {
-    if [ -z "$ARCH_OS_CORE_TWEAKS_ENABLED" ]; then
-        gum_confirm "Enable Core Tweaks?"
-        local user_confirm=$?
-        [ $user_confirm = 130 ] && {
-            trap_gum_exit_confirm
-            return 1
-        }
-        local user_input
-        [ $user_confirm = 1 ] && user_input="false"
-        [ $user_confirm = 0 ] && user_input="true"
-        ARCH_OS_CORE_TWEAKS_ENABLED="$user_input" && properties_generate # Set value and generate properties file
-    fi
-    gum_property "Core Tweaks" "$ARCH_OS_CORE_TWEAKS_ENABLED"
-    return 0
-}
+select_enable_core_tweaks() { select_toggle ARCH_OS_CORE_TWEAKS_ENABLED "Enable Core Tweaks?" "Core Tweaks"; }
 
 # ---------------------------------------------------------------------------------------------------
 
-select_enable_bootsplash() {
-    if [ -z "$ARCH_OS_BOOTSPLASH_ENABLED" ]; then
-        gum_confirm "Enable Bootsplash?"
-        local user_confirm=$?
-        [ $user_confirm = 130 ] && {
-            trap_gum_exit_confirm
-            return 1
-        }
-        local user_input
-        [ $user_confirm = 1 ] && user_input="false"
-        [ $user_confirm = 0 ] && user_input="true"
-        ARCH_OS_BOOTSPLASH_ENABLED="$user_input" && properties_generate # Set value and generate properties file
-    fi
-    gum_property "Bootsplash" "$ARCH_OS_BOOTSPLASH_ENABLED"
-    return 0
-}
+select_enable_bootsplash() { select_toggle ARCH_OS_BOOTSPLASH_ENABLED "Enable Bootsplash?" "Bootsplash"; }
 
 # ---------------------------------------------------------------------------------------------------
 
-select_enable_desktop_environment() {
-    if [ -z "$ARCH_OS_DESKTOP_ENABLED" ]; then
-        local user_input
-        gum_confirm "Enable GNOME Desktop Environment?"
-        local user_confirm=$?
-        [ $user_confirm = 130 ] && {
-            trap_gum_exit_confirm
-            return 1
-        }
-        [ $user_confirm = 1 ] && user_input="false"
-        [ $user_confirm = 0 ] && user_input="true"
-        ARCH_OS_DESKTOP_ENABLED="$user_input" && properties_generate # Set value and generate properties file
-    fi
-    gum_property "Desktop Environment" "$ARCH_OS_DESKTOP_ENABLED"
-    return 0
-}
+select_enable_desktop_environment() { select_toggle ARCH_OS_DESKTOP_ENABLED "Enable GNOME Desktop Environment?" "Desktop Environment"; }
 
 # ---------------------------------------------------------------------------------------------------
 
 select_enable_desktop_slim() {
-    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
-        if [ -z "$ARCH_OS_DESKTOP_SLIM_ENABLED" ]; then
-            local user_input
-            gum_confirm "Enable Desktop Slim Mode? (GNOME Core Apps only)"
-            local user_confirm=$?
-            [ $user_confirm = 130 ] && {
-                trap_gum_exit_confirm
-                return 1
-            }
-            [ $user_confirm = 1 ] && user_input="false"
-            [ $user_confirm = 0 ] && user_input="true"
-            ARCH_OS_DESKTOP_SLIM_ENABLED="$user_input" && properties_generate # Set value and generate properties file
-        fi
-        gum_property "Desktop Slim Mode" "$ARCH_OS_DESKTOP_SLIM_ENABLED"
-    fi
-    return 0
+    [ "$ARCH_OS_DESKTOP_ENABLED" != "true" ] && return 0
+    select_toggle ARCH_OS_DESKTOP_SLIM_ENABLED "Enable Desktop Slim Mode? (GNOME Core Apps only)" "Desktop Slim Mode"
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+select_enable_desktop_autologin() {
+    [ "$ARCH_OS_DESKTOP_ENABLED" != "true" ] && return 0
+    select_toggle ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED "Enable GNOME Autologin? (note: leaves login keyring locked)" "Desktop Autologin"
 }
 
 # ---------------------------------------------------------------------------------------------------
@@ -666,79 +622,19 @@ select_enable_aur() {
 
 # ---------------------------------------------------------------------------------------------------
 
-select_enable_multilib() {
-    if [ -z "$ARCH_OS_MULTILIB_ENABLED" ]; then
-        gum_confirm "Enable 32 Bit Support?"
-        local user_confirm=$?
-        [ $user_confirm = 130 ] && {
-            trap_gum_exit_confirm
-            return 1
-        }
-        local user_input
-        [ $user_confirm = 1 ] && user_input="false"
-        [ $user_confirm = 0 ] && user_input="true"
-        ARCH_OS_MULTILIB_ENABLED="$user_input" && properties_generate # Set value and generate properties file
-    fi
-    gum_property "32 Bit Support" "$ARCH_OS_MULTILIB_ENABLED"
-    return 0
-}
+select_enable_multilib() { select_toggle ARCH_OS_MULTILIB_ENABLED "Enable 32 Bit Support?" "32 Bit Support"; }
 
 # ---------------------------------------------------------------------------------------------------
 
-select_enable_housekeeping() {
-    if [ -z "$ARCH_OS_HOUSEKEEPING_ENABLED" ]; then
-        gum_confirm "Enable Housekeeping?"
-        local user_confirm=$?
-        [ $user_confirm = 130 ] && {
-            trap_gum_exit_confirm
-            return 1
-        }
-        local user_input
-        [ $user_confirm = 1 ] && user_input="false"
-        [ $user_confirm = 0 ] && user_input="true"
-        ARCH_OS_HOUSEKEEPING_ENABLED="$user_input" && properties_generate # Set value and generate properties file
-    fi
-    gum_property "Housekeeping" "$ARCH_OS_HOUSEKEEPING_ENABLED"
-    return 0
-}
+select_enable_housekeeping() { select_toggle ARCH_OS_HOUSEKEEPING_ENABLED "Enable Housekeeping?" "Housekeeping"; }
 
 # ---------------------------------------------------------------------------------------------------
 
-select_enable_shell_enhancement() {
-    if [ -z "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" ]; then
-        gum_confirm "Enable Shell Enhancement?"
-        local user_confirm=$?
-        [ $user_confirm = 130 ] && {
-            trap_gum_exit_confirm
-            return 1
-        }
-        local user_input
-        [ $user_confirm = 1 ] && user_input="false"
-        [ $user_confirm = 0 ] && user_input="true"
-        ARCH_OS_SHELL_ENHANCEMENT_ENABLED="$user_input" && properties_generate # Set value and generate properties file
-    fi
-    gum_property "Shell Enhancement" "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED"
-    return 0
-}
+select_enable_shell_enhancement() { select_toggle ARCH_OS_SHELL_ENHANCEMENT_ENABLED "Enable Shell Enhancement?" "Shell Enhancement"; }
 
 # ---------------------------------------------------------------------------------------------------
 
-select_enable_manager() {
-    if [ -z "$ARCH_OS_MANAGER_ENABLED" ]; then
-        gum_confirm "Enable Arch OS Manager?"
-        local user_confirm=$?
-        [ $user_confirm = 130 ] && {
-            trap_gum_exit_confirm
-            return 1
-        }
-        local user_input
-        [ $user_confirm = 1 ] && user_input="false"
-        [ $user_confirm = 0 ] && user_input="true"
-        ARCH_OS_MANAGER_ENABLED="$user_input" && properties_generate # Set value and generate properties file
-    fi
-    gum_property "Arch OS Manager" "$ARCH_OS_MANAGER_ENABLED"
-    return 0
-}
+select_enable_manager() { select_toggle ARCH_OS_MANAGER_ENABLED "Enable Arch OS Manager?" "Arch OS Manager"; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # EXECUTORS (SUB PROCESSES)
@@ -1114,13 +1010,13 @@ exec_install_desktop() {
 
                 # Networking & Access
                 packages+=(samba rsync gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-dnssd gvfs-wsdd)
-                packages+=(modemmanager network-manager-sstp networkmanager-l2tp networkmanager-vpnc networkmanager-pptp networkmanager-openvpn networkmanager-openconnect networkmanager-strongswan)
+                packages+=(modemmanager network-manager-sstp networkmanager-l2tp networkmanager-vpnc networkmanager-openvpn networkmanager-openconnect networkmanager-strongswan)
 
                 # Kernel headers
                 packages+=("${ARCH_OS_KERNEL}-headers")
 
                 # Utils (https://wiki.archlinux.org/title/File_systems)
-                packages+=(base-devel archlinux-contrib pacutils fwupd bash-completion dhcp net-tools inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfat-utils btrfs-progs xfsprogs p7zip zip unzip unrar tar wget curl)
+                packages+=(base-devel archlinux-contrib pacutils fwupd bash-completion inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfatprogs btrfs-progs xfsprogs p7zip zip unzip unrar tar wget curl)
                 packages+=(nautilus-image-converter)
 
                 # Runtimes, Builder & Helper
@@ -1131,12 +1027,12 @@ exec_install_desktop() {
 
                 # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
                 packages+=(ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader opus speex libvpx libwebp)
-                packages+=(a52dec faac faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread openh264)
+                packages+=(a52dec faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread openh264)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-libvpx lib32-libwebp)
 
                 # Optimization
-                packages+=(gamemode sdl_image)
-                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode lib32-sdl_image)
+                packages+=(gamemode sdl2_image)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode lib32-sdl2_image)
 
                 # Fonts
                 packages+=(ttf-firacode-nerd ttf-nerd-fonts-symbols woff2-font-awesome noto-fonts noto-fonts-emoji ttf-liberation ttf-dejavu adobe-source-sans-fonts adobe-source-serif-fonts)
@@ -1185,15 +1081,16 @@ exec_install_desktop() {
             # Add user to gamemode group
             [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
-            # Enable GNOME auto login
+            # Configure GDM (Wayland + optional autologin)
             mkdir -p /mnt/etc/gdm
-            # grep -qrnw /mnt/etc/gdm/custom.conf -e "AutomaticLoginEnable" || sed -i "s/^\[security\]/AutomaticLoginEnable=True\nAutomaticLogin=${ARCH_OS_USERNAME}\n\n\[security\]/g" /mnt/etc/gdm/custom.conf
             {
                 echo "[daemon]"
                 echo "WaylandEnable=True"
-                echo ""
-                echo "AutomaticLoginEnable=True"
-                echo "AutomaticLogin=${ARCH_OS_USERNAME}"
+                if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
+                    echo ""
+                    echo "AutomaticLoginEnable=True"
+                    echo "AutomaticLogin=${ARCH_OS_USERNAME}"
+                fi
                 echo ""
                 echo "[debug]"
                 echo "Enable=False"
@@ -1287,10 +1184,10 @@ exec_install_desktop() {
                 fi
 
                 # Set IPv4 only for Windows/WS-Discovery (WSDD)
-                grep -q -- '-4' /etc/conf.d/wsdd || sed -i 's/WSDD_PARAMS="/WSDD_PARAMS="-4 /' /etc/conf.d/wsdd
+                grep -q -- '-4' /mnt/etc/conf.d/wsdd || sed -i 's/WSDD_PARAMS="/WSDD_PARAMS="-4 /' /mnt/etc/conf.d/wsdd
 
                 # Set IPv4 only for macOS/Bonjour (avahi/mDNS)
-                sed -i -E 's/^#?\s*use-ipv6=.*/use-ipv6=no/' /etc/avahi/avahi-daemon.conf
+                sed -i -E 's/^#?\s*use-ipv6=.*/use-ipv6=no/' /mnt/etc/avahi/avahi-daemon.conf
 
                 # Enable samba services
                 arch-chroot /mnt systemctl enable smb.service
@@ -1327,27 +1224,13 @@ exec_install_desktop() {
                 arch-chroot /mnt systemctl enable cups.socket # Printer
             fi
 
-            # User services (Not working: Failed to connect to user scope bus via local transport: Permission denied)
-            # arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire.service       # Pipewire
-            # arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user pipewire-pulse.service # Pipewire
-            # arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user wireplumber.service    # Pipewire
-            # arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- systemctl enable --user gcr-ssh-agent.socket   # GCR ssh-agent
+            # Enable PipeWire, WirePlumber & GCR ssh-agent for all users (sockets follow via 'Also=').
+            # systemctl --global writes to /etc/systemd/user and is robust against future unit changes.
+            arch-chroot /mnt systemctl --global enable pipewire.service pipewire-pulse.service wireplumber.service gcr-ssh-agent.socket
 
-            # Workaround: Manual creation of user service symlinks
-            arch-chroot /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants"
-            arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire.service" "/home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants/pipewire.service"
-            arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire-pulse.service" "/home/${ARCH_OS_USERNAME}/.config/systemd/user/default.target.wants/pipewire-pulse.service"
-            arch-chroot /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants"
-            arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire.socket" "/home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/pipewire.socket"
-            arch-chroot /mnt ln -s "/usr/lib/systemd/user/pipewire-pulse.socket" "/home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/pipewire-pulse.socket"
-            arch-chroot /mnt ln -s "/usr/lib/systemd/user/gcr-ssh-agent.socket" "/home/${ARCH_OS_USERNAME}/.config/systemd/user/sockets.target.wants/gcr-ssh-agent.socket"
-            arch-chroot /mnt mkdir -p "/home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire.service.wants"
-            arch-chroot /mnt ln -s "/usr/lib/systemd/user/wireplumber.service" "/home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire-session-manager.service"
-            arch-chroot /mnt ln -s "/usr/lib/systemd/user/wireplumber.service" "/home/${ARCH_OS_USERNAME}/.config/systemd/user/pipewire.service.wants/wireplumber.service"
-            arch-chroot /mnt chown -R "$ARCH_OS_USERNAME":"$ARCH_OS_USERNAME" "/home/${ARCH_OS_USERNAME}/.config/systemd/"
-
-            # Enhance PAM (fix keyring issue for relogin): add try_first_pass
-            sed -i 's/auth\s\+optional\s\+pam_gnome_keyring\.so$/& try_first_pass/' /mnt/etc/pam.d/gdm-password /mnt/etc/pam.d/gdm-autologin
+            # Let the login keyring unlock with the GDM password on normal login.
+            # No effect under autologin: GDM provides no password there, so the keyring stays locked by design.
+            sed -i 's/auth\s\+optional\s\+pam_gnome_keyring\.so$/& try_first_pass/' /mnt/etc/pam.d/gdm-password
 
             # Create users applications dir
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications"
@@ -1445,8 +1328,8 @@ exec_install_graphics_driver() {
                 chroot_pacman_install "${packages[@]}"
                 ;;
             "intel_i915") # https://wiki.archlinux.org/title/Intel_graphics#Installation
-                local packages=(vulkan-intel vkd3d libva-intel-driver vulkan-tools)
-                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-vulkan-intel lib32-vkd3d lib32-libva-intel-driver)
+                local packages=(vulkan-intel vkd3d intel-media-driver vulkan-tools)
+                [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-vulkan-intel lib32-vkd3d)
                 chroot_pacman_install "${packages[@]}"
                 sed -i "s/^MODULES=(.*)/MODULES=(i915)/g" /mnt/etc/mkinitcpio.conf
                 arch-chroot /mnt mkinitcpio -P
@@ -1486,7 +1369,7 @@ exec_install_graphics_driver() {
                 ;;
             "amd") # https://wiki.archlinux.org/title/AMDGPU#Installation
                 # Deprecated: libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau
-                local packages=(mesa mesa-utils xf86-video-amdgpu vulkan-radeon vkd3d vulkan-tools vulkan-mesa-layers opencl-mesa)
+                local packages=(mesa mesa-utils vulkan-radeon vkd3d vulkan-tools vulkan-mesa-layers opencl-mesa)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-mesa lib32-vulkan-radeon lib32-vkd3d lib32-vulkan-mesa-layers lib32-opencl-mesa)
                 chroot_pacman_install "${packages[@]}"
                 # Must be discussed: https://wiki.archlinux.org/title/AMDGPU#Disable_loading_radeon_completely_at_boot
@@ -1495,7 +1378,7 @@ exec_install_graphics_driver() {
                 ;;
             "ati") # https://wiki.archlinux.org/title/ATI#Installation
                 # Deprecated: libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau
-                local packages=(mesa mesa-utils xf86-video-ati vkd3d vulkan-tools vulkan-mesa-layers opencl-mesa)
+                local packages=(mesa mesa-utils vkd3d vulkan-tools vulkan-mesa-layers opencl-mesa)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-mesa lib32-vkd3d lib32-vulkan-mesa-layers lib32-opencl-mesa)
                 chroot_pacman_install "${packages[@]}"
                 sed -i "s/^MODULES=(.*)/MODULES=(radeon)/g" /mnt/etc/mkinitcpio.conf
