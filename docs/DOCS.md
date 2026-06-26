@@ -615,7 +615,7 @@ paru -Scc
 
 ## Development
 
-Create new pull request branches only from [main branch](https://github.com/murkl/arch-os/tree/main)! The [dev branch](https://github.com/murkl/arch-os/tree/dev) will be deleted after each merge into main.
+Create pull request branches from **[dev branch !](https://github.com/murkl/arch-os/tree/dev)** only (targeting `dev`). The upstream `dev` branch is **never deleted**. Merged changes go to [main branch](https://github.com/murkl/arch-os/tree/main) on the next official Arch OS release.
 
 The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broken, use only for testing!
 
@@ -633,10 +633,10 @@ ARCH_OS_PASSWORD=mySecret123 ./installer.sh
 FORCE=true ./installer.sh
 
 # Custom gum:
-GUM=/usr/bin/gum ./installer.sh
+GUM=./gum ./installer.sh
 
-# Debug simulator:
-DEBUG=true ./installer.sh
+# Debug simulator (develop):
+DEBUG=true GUM=./gum ./installer.sh
 ```
 
 ## Credits

@@ -60,7 +60,12 @@ main() {
 
     # Show short debug warning
     if [ "$DEBUG" = "true" ]; then
-        clear && echo "!!! DEBUG MODE IS ACTIVE !!!" && sleep 1
+        clear && echo "!!! DEBUG MODE IS ENABLED !!!" && sleep 1
+    fi
+
+    # Must run as root (except in debug mode)
+    if [ "$DEBUG" = "false" ] && [ "$(id -u)" -ne 0 ]; then
+        echo "Error: Arch OS Installer must be run as root" >&2 && exit 1
     fi
 
     # Clear logfile
@@ -638,8 +643,9 @@ select_enable_desktop_keyboard() {
             [ "$variant" != "(none)" ] && ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$variant"
         fi
         properties_generate
+    else
+        gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
     fi
-    gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
     [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gum_property "Desktop Keyboard Variant" "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT"
     return 0
 }
