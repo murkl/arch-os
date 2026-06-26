@@ -780,8 +780,17 @@ exec_pacstrap_core() {
         # Add snapper packages
         [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_SNAPPER_ENABLED" = "true" ] && packages+=(snapper)
 
-        # Install core packages and initialize an empty pacman keyring in the target
-        pacstrap -K /mnt "${packages[@]}"
+        # Install core packages and initialize an empty pacman keyring in the target.
+        # Retry on transient connection issues; --disable-download-timeout avoids aborts on slow mirrors.
+        local pacstrap_failed="true"
+        for ((i = 1; i < 6; i++)); do
+            [ "$i" -gt 1 ] && log_warn "${i}. Retry Pacstrap installation..."
+            if pacstrap -K /mnt "${packages[@]}" --disable-download-timeout; then
+                pacstrap_failed="false" && break # Success: break loop
+            fi
+            sleep 10 # Wait 10 seconds & try again
+        done
+        [ "$pacstrap_failed" = "true" ] && log_fail "Pacstrap failed after 5 retries" && exit 1
 
         # Generate /etc/fstab
         genfstab -U /mnt >>/mnt/etc/fstab
