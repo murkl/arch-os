@@ -16,7 +16,7 @@ jobs:
       image: archlinux:latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Dependencies
         run: pacman -Syu --noconfirm shellcheck
@@ -37,7 +37,7 @@ jobs:
       options: --privileged
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set Environment
         run: echo "SNAPSHOT_VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
