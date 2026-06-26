@@ -21,7 +21,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${GUM:=/usr/local/bin/gum}" # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
-VERSION='1.9.5'
+VERSION='1.9.6'
 
 # VERSION
 [ "$*" = "--version" ] && echo "$VERSION" && exit 0
@@ -58,9 +58,9 @@ COLOR_BACKGROUND="${COLOR_WHITE}"
 
 main() {
 
-    # Require root for a real installation (gum download to /usr/local/bin + every install step needs it)
-    if [ "$DEBUG" = "false" ] && [ "$(id -u)" -ne 0 ]; then
-        echo "Error: Arch OS Installer must be run as root" >&2 && exit 1
+    # Show short debug warning
+    if [ "$DEBUG" = "true" ]; then
+        clear && echo "!!! DEBUG MODE IS ACTIVE !!!" && sleep 1
     fi
 
     # Clear logfile
@@ -2108,7 +2108,6 @@ print_header() {
 ██   ██ ██   ██ ██      ██   ██     ██    ██      ██ 
 ██   ██ ██   ██  ██████ ██   ██      ██████  ███████'
     local header_version="               v. ${VERSION}"
-    [ "$DEBUG" = "true" ] && header_version="               d. ${VERSION}"
     gum_white --margin "1 0" --align left --bold "Welcome to ${title} ${header_version}"
     [ "$FORCE" = "true" ] && gum_red --bold "CAUTION: Force mode enabled. Cancel with: Ctrl + c" && echo
     return 0
