@@ -2,23 +2,26 @@ name: Build & Release Arch OS ISO
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
 permissions:
   contents: write
 
+# Cancel superseded PR runs; let main/release runs finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   lint:
     runs-on: ubuntu-latest
-
-    container:
-      image: archlinux:latest
-
+    container: archlinux:latest
     steps:
       - uses: actions/checkout@v5
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: pacman -Syu --noconfirm shellcheck
 
       - name: Check Bash syntax
@@ -27,34 +30,50 @@ jobs:
       - name: Run ShellCheck
         run: shellcheck -S style installer.sh
 
-  build:
+  # Runs on every merge into main. The version is the single source of truth
+  # (installer.sh --version); a release is only built when that version has no
+  # release yet, so non-version-bump merges are skipped automatically.
+  release:
     needs: lint
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-
     container:
       image: archlinux:latest
       options: --privileged
-
     steps:
       - uses: actions/checkout@v5
 
-      - name: Set Environment
-        run: echo "SNAPSHOT_VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
-        env:
-          GITHUB_REF_NAME: ${{ github.ref_name }}
+      - name: Read version from installer.sh
+        id: version
+        run: echo "version=$(bash installer.sh --version)" >> "$GITHUB_OUTPUT"
 
-      - name: Install Dependencies
+      - name: Check for existing release
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          pacman -Syu --noconfirm github-cli
+          if gh release view "${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install build dependencies
+        if: steps.check.outputs.exists == 'false'
         run: pacman -Syu --noconfirm archiso sudo
 
       - name: Build Arch OS ISO
-        run: |
-          cd ./iso
-          SNAPSHOT_VERSION=${{ env.SNAPSHOT_VERSION }} bash build.sh
+        if: steps.check.outputs.exists == 'false'
+        working-directory: ./iso
+        run: SNAPSHOT_VERSION="${{ steps.version.outputs.version }}" bash build.sh
 
-      - name: Upload Release dir to GitHub Release
+      - name: Publish GitHub Release
+        if: steps.check.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Arch OS ${{ steps.version.outputs.version }}
           files: ./iso/release/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          generate_release_notes: true

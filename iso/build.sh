@@ -17,8 +17,8 @@ AIRFS_GUM="${AIRFS_BIN}/gum"
 AIRFS_ARCHOS="${AIRFS_BIN}/arch-os"
 AIRFS_RECOVERY="${AIRFS_BIN}/arch-os-recovery"
 
-# TAGS
-: "${SNAPSHOT_VERSION:=$(date +'%Y.%m')}"
+# VERSION (single source of truth: installer.sh --version)
+: "${SNAPSHOT_VERSION:=$(bash ../installer.sh --version)}"
 
 # TEMP DIR
 TEMP_DIR="$(mktemp -d)"
