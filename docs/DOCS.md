@@ -269,7 +269,7 @@ Each feature can be activated/deactivated during installation. Further informati
 
 Enable this feature with `ARCH_OS_CORE_TWEAKS_ENABLED='true'`:
 
-- `vm.max_map_count` is set to `1048576` for compatibility of some apps/games (default)
+- `vm.max_map_count` is set to `1048576` for compatibility of some apps/games (by default)
 - `quiet splash vt.global_cursor_default=0` is set to kernel parameters for silent boot
 - Pacman parallel downloads is set to `5`
 - Pacman colors and eyecandy is enabled
@@ -277,7 +277,7 @@ Enable this feature with `ARCH_OS_CORE_TWEAKS_ENABLED='true'`:
 - Debug packages are disabled in `/etc/makepkg.conf`
 - Watchdog is disabled with kernel arg `nowatchdog` and blacklist: `/etc/modprobe.d/blacklist-watchdog.conf`
 
-Disable this featuree with `ARCH_OS_CORE_TWEAKS_ENABLED='false'`
+Disable this feature with `ARCH_OS_CORE_TWEAKS_ENABLED='false'`
 
 ### Housekeeping
 

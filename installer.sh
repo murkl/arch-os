@@ -58,6 +58,11 @@ COLOR_BACKGROUND="${COLOR_WHITE}"
 
 main() {
 
+    # Require root for a real installation (gum download to /usr/local/bin + every install step needs it)
+    if [ "$DEBUG" = "false" ] && [ "$(id -u)" -ne 0 ]; then
+        echo "Error: Arch OS Installer must be run as root" >&2 && exit 1
+    fi
+
     # Clear logfile
     [ -f "$SCRIPT_LOG" ] && mv -f "$SCRIPT_LOG" "${SCRIPT_LOG}.old"
 
@@ -393,11 +398,18 @@ select_toggle() {
     return 0
 }
 
+# ---------------------------------------------------------------------------------------------------
+
 select_username() {
     if [ -z "$ARCH_OS_USERNAME" ]; then
         local user_input
         user_input=$(gum_input --header "+ Enter Username") || trap_gum_exit_confirm
-        [ -z "$user_input" ] && return 1                      # Check if new value is null
+        [ -z "$user_input" ] && return 1 # Check if new value is null
+        # Validate against Linux username rules early (before any destructive step like disk wipe)
+        if [[ ! "$user_input" =~ ^[a-z_][a-z0-9_-]*$ ]] || [ "${#user_input}" -gt 32 ]; then
+            gum_confirm --affirmative="Ok" --negative="" "Invalid username '${user_input}' (allowed: a-z, 0-9, '-', '_'; must not start with a digit; max 32 chars)"
+            return 1
+        fi
         ARCH_OS_USERNAME="$user_input" && properties_generate # Set value and generate properties file
     fi
     gum_property "Username" "$ARCH_OS_USERNAME"
@@ -410,11 +422,17 @@ select_password() { # --change
     if [ "$1" = "--change" ] || [ -z "$ARCH_OS_PASSWORD" ]; then
         local user_password user_password_check
         user_password=$(gum_input --password --header "+ Enter Password") || trap_gum_exit_confirm
-        [ -z "$user_password" ] && return 1 # Check if new value is null
+        if [ -z "$user_password" ]; then
+            gum_confirm --affirmative="Ok" --negative="" "Password must not be empty"
+            return 1
+        fi
         user_password_check=$(gum_input --password --header "+ Enter Password again") || trap_gum_exit_confirm
-        [ -z "$user_password_check" ] && return 1 # Check if new value is null
         if [ "$user_password" != "$user_password_check" ]; then
             gum_confirm --affirmative="Ok" --negative="" "The passwords are not identical"
+            return 1
+        fi
+        # Warn (but allow) on weak passwords; user keeps the final say
+        if [ "${#user_password}" -lt 8 ] && ! gum_confirm "Password is shorter than 8 chars. Use anyway?"; then
             return 1
         fi
         ARCH_OS_PASSWORD="$user_password" && properties_generate # Set value and generate properties file
@@ -429,7 +447,7 @@ select_password() { # --change
 select_timezone() {
     if [ -z "$ARCH_OS_TIMEZONE" ]; then
         local tz_auto user_input
-        tz_auto="$(curl -s http://ip-api.com/line?fields=timezone)"
+        tz_auto="$(curl -s --connect-timeout 5 --max-time 5 http://ip-api.com/line?fields=timezone)"
         user_input=$(gum_input --header "+ Enter Timezone (auto-detected)" --value "$tz_auto") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1 # Check if new value is null
         if [ ! -f "/usr/share/zoneinfo/${user_input}" ]; then
@@ -575,7 +593,8 @@ select_enable_desktop_keyboard() {
     if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
         if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
             local user_input user_input2
-            user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
+            # Pre-fill from the already chosen console keymap (e.g. 'de-latin1-nodeadkeys' -> 'de')
+            user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout" --value "${ARCH_OS_VCONSOLE_KEYMAP%%-*}" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
             [ -z "$user_input" ] && return 1 # Check if new value is null
             ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input"
             gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
@@ -652,6 +671,11 @@ exec_init_installation() {
         log_info "Secure Boot: disabled"
         [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && log_fail "You must execute the Installer from Arch ISO!" && exit 1
         log_info "Arch ISO detected"
+        # Check internet connection (required for keyring update, pacstrap, AUR, ...)
+        if ! curl -Lsf --connect-timeout 5 --max-time 10 https://archlinux.org >/dev/null 2>&1; then
+            log_fail "No internet connection. Please connect to the internet and restart the installer." && exit 1
+        fi
+        log_info "Internet connection detected"
         log_info "Waiting for Reflector from Arch ISO..."
         # This mirrorlist will copied to new Arch system during installation
         while timeout 180 tail --pid=$(pgrep reflector) -f /dev/null &>/dev/null; do sleep 1; done
@@ -1016,7 +1040,7 @@ exec_install_desktop() {
                 packages+=("${ARCH_OS_KERNEL}-headers")
 
                 # Utils (https://wiki.archlinux.org/title/File_systems)
-                packages+=(base-devel archlinux-contrib pacutils fwupd bash-completion inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfatprogs btrfs-progs xfsprogs p7zip zip unzip unrar tar wget curl)
+                packages+=(base-devel archlinux-contrib pacutils fwupd bash-completion inetutils nfs-utils e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfatprogs btrfs-progs xfsprogs 7zip zip unzip unrar tar wget curl)
                 packages+=(nautilus-image-converter)
 
                 # Runtimes, Builder & Helper
@@ -1027,7 +1051,8 @@ exec_install_desktop() {
 
                 # Codecs (https://wiki.archlinux.org/title/Codecs_and_containers)
                 packages+=(ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader opus speex libvpx libwebp)
-                packages+=(a52dec faad2 flac jasper lame libdca libdv libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore libdvdnav libdvdread openh264)
+                # Codecs not pulled in as a dependency by the stack above
+                packages+=(jasper libmad)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-libvpx lib32-libwebp)
 
                 # Optimization
@@ -1335,7 +1360,8 @@ exec_install_graphics_driver() {
                 arch-chroot /mnt mkinitcpio -P
                 ;;
             "nvidia") # https://wiki.archlinux.org/title/NVIDIA#Installation
-                local packages=("${ARCH_OS_KERNEL}-headers" nvidia-dkms nvidia-settings nvidia-utils opencl-nvidia vkd3d vulkan-tools)
+                # Arch dropped the closed driver; nvidia-open (Turing+) is the only repo option, DKMS for custom kernels
+                local packages=("${ARCH_OS_KERNEL}-headers" nvidia-open-dkms nvidia-settings nvidia-utils opencl-nvidia vkd3d vulkan-tools)
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-nvidia-utils lib32-opencl-nvidia lib32-vkd3d)
                 chroot_pacman_install "${packages[@]}"
                 # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
@@ -1351,7 +1377,7 @@ exec_install_graphics_driver() {
                     echo "Operation=Upgrade"
                     echo "Operation=Remove"
                     echo "Type=Package"
-                    echo "Target=nvidia"
+                    echo "Target=nvidia-open-dkms"
                     echo "Target=${ARCH_OS_KERNEL}"
                     echo "# Change the linux part above if a different kernel is used"
                     echo ""
@@ -1642,7 +1668,7 @@ exec_install_shell_enhancement() {
 
             # Download Arch OS starship theme
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.config/"
-            curl -Lf https://raw.githubusercontent.com/murkl/starship-theme-arch-os/refs/heads/main/starship.toml >"/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml"
+            curl -Lf --connect-timeout 5 --max-time 30 https://raw.githubusercontent.com/murkl/starship-theme-arch-os/refs/heads/main/starship.toml >"/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" || true
             if [ ! -s "/mnt/home/${ARCH_OS_USERNAME}/.config/starship.toml" ]; then
                 # Theme fallback
                 arch-chroot /mnt /usr/bin/starship preset pure-preset -o "/home/${ARCH_OS_USERNAME}/.config/starship.toml"
@@ -2046,7 +2072,7 @@ gum_init() {
         local gum_url gum_path                       # Prepare URL with version os and arch
         # https://github.com/charmbracelet/gum/releases
         gum_url="https://github.com/charmbracelet/gum/releases/download/v${GUM_VERSION}/gum_${GUM_VERSION}_$(uname -s)_$(uname -m).tar.gz"
-        if ! curl -Lsf "$gum_url" >"${SCRIPT_TMP_DIR}/gum.tar.gz"; then echo "Error downloading ${gum_url}" && exit 1; fi
+        if ! curl -Lsf --connect-timeout 5 --max-time 60 "$gum_url" >"${SCRIPT_TMP_DIR}/gum.tar.gz"; then echo "Error downloading ${gum_url}" && exit 1; fi
         if ! tar -xf "${SCRIPT_TMP_DIR}/gum.tar.gz" --directory "$SCRIPT_TMP_DIR"; then echo "Error extracting ${SCRIPT_TMP_DIR}/gum.tar.gz" && exit 1; fi
         gum_path=$(find "${SCRIPT_TMP_DIR}" -type f -executable -name "gum" -print -quit)
         [ -z "$gum_path" ] && echo "Error: 'gum' binary not found in '${SCRIPT_TMP_DIR}'" && exit 1

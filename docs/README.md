@@ -77,7 +77,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 - VPN Support
 - Basic Fonts
 - Wayland optimized
-- Auto GNOME Login enabled
+- Auto GNOME Login (optional, enabled by default)
 - Printer Support (cups)
 - SSH Agent (gcr)
 - Gamemode preinstalled
