@@ -1018,11 +1018,14 @@ exec_install_desktop() {
             # GNOME base packages
             packages+=(gnome git)
 
+            # Packages for services enabled below (don't rely on transitive gnome-group deps)
+            packages+=(bluez bluez-utils avahi)
+
             # GNOME desktop extras
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
 
                 # GNOME base extras (buggy: power-profiles-daemon)
-                packages+=(gnome-browser-connector gnome-themes-extra tuned-ppd rygel cups gnome-epub-thumbnailer)
+                packages+=(gnome-browser-connector gnome-themes-extra tuned-ppd cups gnome-epub-thumbnailer)
 
                 # GNOME wayland screensharing, flatpak & pipewire support
                 packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
@@ -1060,7 +1063,7 @@ exec_install_desktop() {
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode lib32-sdl2_image)
 
                 # Fonts
-                packages+=(ttf-firacode-nerd ttf-nerd-fonts-symbols woff2-font-awesome noto-fonts noto-fonts-emoji ttf-liberation ttf-dejavu adobe-source-sans-fonts adobe-source-serif-fonts)
+                packages+=(ttf-firacode-nerd ttf-nerd-fonts-symbols woff2-font-awesome noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation ttf-dejavu adobe-source-sans-fonts adobe-source-serif-fonts)
 
                 # Theming
                 packages+=(adw-gtk-theme tela-circle-icon-theme-standard)
@@ -1236,16 +1239,22 @@ exec_install_desktop() {
                 echo 'EndSection'
             } >/mnt/etc/X11/xorg.conf.d/00-keyboard.conf
 
+            # Set GNOME keyboard layout (Wayland uses input-sources, not 00-keyboard.conf)
+            local gnome_keyboard_source="$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
+            [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gnome_keyboard_source="${gnome_keyboard_source}+${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}"
+            {
+                echo "# exec_install_desktop | Set GNOME keyboard layout"
+                echo "gsettings set org.gnome.desktop.input-sources sources \"[('xkb', '${gnome_keyboard_source}')]\""
+            } >>"/mnt/home/${ARCH_OS_USERNAME}/initialize.sh"
+
             # Enable Arch OS Desktop services
             arch-chroot /mnt systemctl enable gdm.service       # GNOME
             arch-chroot /mnt systemctl enable bluetooth.service # Bluetooth
             arch-chroot /mnt systemctl enable avahi-daemon      # Network browsing service
-            arch-chroot /mnt systemctl enable gpm.service       # TTY Mouse Support
 
             # Extra services
             if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-                arch-chroot /mnt systemctl enable tuned       # Power daemon
-                arch-chroot /mnt systemctl enable tuned-ppd   # Power daemon
+                arch-chroot /mnt systemctl enable tuned-ppd   # Power daemon (pulls tuned.service via Requires=)
                 arch-chroot /mnt systemctl enable cups.socket # Printer
             fi
 

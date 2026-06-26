@@ -2,15 +2,34 @@ name: Build & Release Arch OS ISO
 
 on:
   push:
-    tags:
-      - "*"
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    container:
+      image: archlinux:latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: pacman -Syu --noconfirm shellcheck
+
+      - name: Check Bash syntax
+        run: bash -n installer.sh
+
+      - name: Run ShellCheck
+        run: shellcheck -S style installer.sh
+
   build:
+    needs: lint
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
 
     container:

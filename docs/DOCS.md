@@ -244,6 +244,8 @@ ARCH_OS_VM_SUPPORT_ENABLED='true' # VM Support | Default: true | Disable: false
 ARCH_OS_ECN_ENABLED='true' # Disable ECN support for legacy routers | Default: true | Disable: false
 ```
 
+**Note:** With `ARCH_OS_SAMBA_SHARE_ENABLED='true'`, the `[public]` share (`/srv/samba/public`) is exposed **anonymously and writable** to everyone on the local network (guest access, no password). Only enable it on trusted networks, or restrict the share in `/etc/samba/smb.conf` afterwards.
+
 ### Minimal Installation
 
 Set these properties to install Arch OS Core only with minimal packages & configurations. This is the same as preset `core`:
