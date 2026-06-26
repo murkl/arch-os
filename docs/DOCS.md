@@ -74,6 +74,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [Ignition](https://flathub.org/apps/io.github.flattool.Ignition) to manage GNOME autostart files
 - Install [Papers](https://flathub.org/apps/org.gnome.Papers) as elegant document viewer for GNOME
 - Install [GDM Settings](https://flathub.org/apps/io.github.realmazharhussain.GdmSettings) GDM Login Manager Settings
+- Install [wayland-scroll-factor](https://github.com/daniel-g-carrasco/wayland-scroll-factor) for modify touchpad scroll speed
 
 ### Theming (optional)
 
