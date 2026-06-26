@@ -1302,6 +1302,21 @@ exec_install_desktop() {
                 echo -e '[Desktop Entry]\nType=Application\nHidden=true' >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/btop.desktop"
             fi
 
+            # Rebrand Btrfs Assistant launcher to "Snapshots" with the deja-dup icon (overrides /usr by XDG filename precedence)
+            if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_ASSISTANT_ENABLED" = "true" ]; then
+                {
+                    echo '[Desktop Entry]'
+                    echo 'Name=Snapshots'
+                    echo 'Comment=Change system settings'
+                    echo 'Exec=btrfs-assistant-launcher'
+                    echo 'Terminal=false'
+                    echo 'Type=Application'
+                    echo 'Icon=deja-dup'
+                    echo 'Categories=System'
+                    echo 'NoDisplay=false'
+                } >"/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications/btrfs-assistant.desktop"
+            fi
+
             # Set Flatpak theme access
             arch-chroot /mnt flatpak override --filesystem=xdg-config/gtk-3.0
             arch-chroot /mnt flatpak override --filesystem=xdg-config/gtk-4.0
