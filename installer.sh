@@ -8,7 +8,7 @@
 # SOURCE:   https://github.com/murkl/arch-os
 # AUTOR:    murkl
 # ORIGIN:   Germany
-# LICENCE:  GPL 2.0
+# LICENCE:  GPL 3.0
 
 # CONFIG
 set -o pipefail # A pipeline error results in the error status of the entire pipeline
@@ -285,6 +285,7 @@ properties_generate() {
         echo "ARCH_OS_VCONSOLE_KEYMAP='${ARCH_OS_VCONSOLE_KEYMAP}' # Console keymap | Show available: localectl list-keymaps | Example: de-latin1-nodeadkeys"
         echo "ARCH_OS_VCONSOLE_FONT='${ARCH_OS_VCONSOLE_FONT}' # Console font | Default: null | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Example: eurlatgr"
         echo "ARCH_OS_KERNEL='${ARCH_OS_KERNEL}' # Kernel | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened"
+        echo "ARCH_OS_KERNEL_ARGS='${ARCH_OS_KERNEL_ARGS}' # Additional kernel parameters (space separated) | Default: null | Example: amd_pstate=active mitigations=off"
         echo "ARCH_OS_MICROCODE='${ARCH_OS_MICROCODE}' # Microcode | Disable: none | Available: intel-ucode, amd-ucode"
         echo "ARCH_OS_CORE_TWEAKS_ENABLED='${ARCH_OS_CORE_TWEAKS_ENABLED}' # Arch OS Core Tweaks | Disable: false"
         echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}' # MultiLib 32 Bit Support | Disable: false"
@@ -447,13 +448,10 @@ select_password() { # --change
 select_timezone() {
     if [ -z "$ARCH_OS_TIMEZONE" ]; then
         local tz_auto user_input
+        # Auto-detect timezone via IP (best-effort) to pre-fill the filter
         tz_auto="$(curl -s --connect-timeout 5 --max-time 5 http://ip-api.com/line?fields=timezone)"
-        user_input=$(gum_input --header "+ Enter Timezone (auto-detected)" --value "$tz_auto") || trap_gum_exit_confirm
-        [ -z "$user_input" ] && return 1 # Check if new value is null
-        if [ ! -f "/usr/share/zoneinfo/${user_input}" ]; then
-            gum_confirm --affirmative="Ok" --negative="" "Timezone '${user_input}' is not supported"
-            return 1
-        fi
+        user_input=$(timedatectl list-timezones | gum_filter --value="$tz_auto" --header "+ Choose Timezone") || trap_gum_exit_confirm
+        [ -z "$user_input" ] && return 1                       # Check if new value is null
         ARCH_OS_TIMEZONE="$user_input" && properties_generate # Set property and generate properties file
     fi
     gum_property "Timezone" "$ARCH_OS_TIMEZONE"
@@ -589,23 +587,60 @@ select_enable_desktop_autologin() {
 
 # ---------------------------------------------------------------------------------------------------
 
+# X11 keyboard data embedded for the Arch ISO (which ships no xkeyboard-config).
+# Source: localectl list-x11-keymap-layouts / list-x11-keymap-variants <layout>.
+x11_keymap_layouts() { echo "af al am ara at au az ba bd be bg br brai bt bw by ca cd ch cm cn cz de dk dz ee eg epo es et fi fo fr gb ge gh gn gr hr hu id ie il in iq ir is it jp ke kg kh kr kz la latam lk lt lv ma md me mk ml mm mn mt mv my ng nl no np nz ph pk pl pt ro rs ru se si sk sn sy tg th tj tm tr tw tz ua us uz vn za"; }
+
 select_enable_desktop_keyboard() {
-    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
-        if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
-            local user_input user_input2
-            # Pre-fill from the already chosen console keymap (e.g. 'de-latin1-nodeadkeys' -> 'de')
-            user_input=$(gum_input --header "+ Enter Desktop Keyboard Layout" --value "${ARCH_OS_VCONSOLE_KEYMAP%%-*}" --placeholder "e.g. 'us' or 'de'...") || trap_gum_exit_confirm
-            [ -z "$user_input" ] && return 1 # Check if new value is null
-            ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$user_input"
-            gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
-            user_input2=$(gum_input --header "+ Enter Desktop Keyboard Variant (optional)" --placeholder "e.g. 'nodeadkeys' or leave empty...") || trap_gum_exit_confirm
-            ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$user_input2"
-            properties_generate
-        else
-            gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
+    [ "$ARCH_OS_DESKTOP_ENABLED" != "true" ] && return 0
+    if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
+        local layout variant variants
+        local layouts=() variant_list=()
+        # X11 variants per layout (legacy/olpc dropped); only valid layout+variant combos are offered
+        local -A variant_map=(
+        [af]="ps uz" [al]="plisi veqilharxhi" [am]="phonetic phonetic-alt eastern eastern-alt western" [ara]="digits azerty azerty_digits buckwalter mac mac-phonetic" [at]="nodeadkeys mac" [az]="cyrillic"
+        [ba]="alternatequotes unicode unicodeus us" [bd]="probhat" [be]="oss oss_latin9 iso-alternate nodeadkeys wang" [bg]="phonetic bas_phonetic bekl" [brai]="left_hand left_hand_invert right_hand right_hand_invert"
+        [br]="nodeadkeys dvorak nativo nativo-us thinkpad thinkpad_nodeadkeys nativo-epo rus" [by]="latin intl phonetic ru" [ca]="fr-dvorak multix eng ike" [ch]="de_nodeadkeys de_mac fr fr_nodeadkeys fr_mac"
+        [cm]="french qwerty azerty dvorak mmuock" [cn]="altgr-pinyin mon_trad mon_trad_todo mon_trad_xibe mon_trad_manchu mon_trad_galik mon_todo_galik mon_manchu_galik tib tib_asciinum ug"
+        [cz]="bksl qwerty qwerty_bksl winkeys winkeys-qwerty qwerty-mac ucw dvorak-ucw rus" [de]="deadacute deadgraveacute deadtilde nodeadkeys e1 e2 T3 us dvorak mac mac_nodeadkeys neo qwerty dsb dsb_qwertz ro ro_nodeadkeys ru tr"
+        [dk]="nodeadkeys winkeys mac mac_nodeadkeys dvorak" [dz]="ber azerty-deadkeys qwerty-gb-deadkeys qwerty-us-deadkeys ar" [ee]="nodeadkeys dvorak us" [es]="nodeadkeys deadtilde winkeys dvorak ast cat"
+        [fi]="winkeys classic nodeadkeys mac smi" [fo]="nodeadkeys" [fr]="nodeadkeys oss oss_nodeadkeys oss_latin9 latin9 latin9_nodeadkeys azerty afnor bepo bepo_latin9 bepo_afnor dvorak ergol ergol_iso mac us bre oci geo"
+        [gb]="extd intl dvorak dvorakukp mac mac_intl colemak colemak_dh gla pl" [ge]="ergonomic mess os ru" [gh]="generic gillbt akan avn ewe fula ga hausa" [gr]="simple nodeadkeys polytonic" [hr]="alternatequotes unicode unicodeus us"
+        [hu]="standard nodeadkeys qwerty 101_qwertz_comma_dead 101_qwertz_comma_nodead 101_qwertz_dot_dead 101_qwertz_dot_nodead 101_qwerty_comma_dead 101_qwerty_comma_nodead 101_qwerty_dot_dead 101_qwerty_dot_nodead 102_qwertz_comma_dead 102_qwertz_comma_nodead 102_qwertz_dot_dead 102_qwertz_dot_nodead 102_qwerty_comma_dead 102_qwerty_comma_nodead 102_qwerty_dot_dead 102_qwerty_dot_nodead"
+        [id]="melayu-phonetic melayu-phoneticx pegon-phonetic javanese" [ie]="UnicodeExpert CloGaelach ogam ogam_is434" [il]="si2 lyx phonetic biblical"
+        [in]="asm-kagapa ben ben_probhat ben_baishakhi ben_bornona ben-kagapa ben_gitanjali ben_inscript eng guj guj-kagapa bolnagri hin-wx hin-kagapa kan kan-kagapa mal mal_lalitha mal_enhanced mal_poorna mara mni mar-kagapa marathi ori ori-bolnagri ori-wx guru jhelum san-kagapa sat tamilnet tamilnet_tamilnumbers tamilnet_TAB tamilnet_TSCII tam tam_tamilnumbers tel tel-kagapa tel-sarala urd-phonetic urd-phonetic3 urd-winkeys iipa"
+        [iq]="ku ku_alt ku_f ku_ara" [ir]="pes_keypad winkeys azb ku ku_alt ku_f ku_ara" [is]="mac dvorak" [it]="nodeadkeys winkeys mac us ibm fur scn geo" [jp]="kana OADG109A mac dvorak" [ke]="kik" [kg]="phonetic" [kr]="kr104"
+        [kz]="kazrus ext latin ruskaz" [la]="stea" [latam]="nodeadkeys deadtilde dvorak colemak" [lk]="us tam_unicode tam_TAB" [lt]="std us ibm lekp lekpa ratise sgs" [lv]="apostrophe tilde fkey modern modern-cyr ergonomic adapted"
+        [ma]="tifinagh tifinagh-alt tifinagh-alt-phonetic tifinagh-extended tifinagh-phonetic tifinagh-extended-phonetic french rif" [md]="gag"
+        [me]="cyrillic cyrillicyz cyrillicalternatequotes latinunicode latinyz latinunicodeyz latinalternatequotes" [mk]="nodeadkeys" [ml]="fr-oss us-mac us-intl" [mm]="zawgyi mara mnw mnw-a1 shn zgt" [mt]="us alt-us alt-gb"
+        [my]="phonetic" [ng]="hausa igbo yoruba" [nl]="us mac std" [no]="nodeadkeys winkeys mac mac_nodeadkeys colemak colemak_dh colemak_dh_wide dvorak smi smi_nodeadkeys" [nz]="mao"
+        [ph]="qwerty-bay capewell-dvorak capewell-dvorak-bay capewell-qwerf2k6 capewell-qwerf2k6-bay colemak colemak-bay dvorak dvorak-bay" [pk]="urd-crulp urd-nla pak_urdu_phonetic ara snd"
+        [pl]="qwertz dvorak dvorak_quotes dvorak_altquotes dvp csb szl ru_phonetic_dvorak" [pt]="nodeadkeys mac mac_nodeadkeys nativo nativo-us nativo-epo" [ro]="std winkeys"
+        [rs]="alternatequotes yz latin latinalternatequotes latinunicode latinyz latinunicodeyz rue"
+        [ru]="phonetic phonetic_winkeys phonetic_YAZHERTY phonetic_azerty phonetic_dvorak typewriter ruchey_ru ruchey_en dos mac ab bak cv cv_latin xal kom chm os_winkeys srp tt udm sah"
+        [se]="nodeadkeys dvorak us_dvorak svdvorak colemak mac us swl smi rus" [si]="alternatequotes us" [sk]="bksl qwerty qwerty_bksl" [sy]="syc syc_phonetic ku ku_alt ku_f" [th]="tis pat mnc" [tm]="alt"
+        [tr]="f e alt intl ku ku_f ku_alt" [tw]="indigenous saisiyat" [ua]="phonetic typewriter winkeys winkeysenhanced macOS homophonic crh crh_f crh_alt"
+        [us]="euro intl alt-intl altgr-intl mac mac-iso colemak colemak_dh colemak_dh_wide colemak_dh_ortho colemak_dh_iso colemak_dh_wide_iso dvorak dvorak-intl dvorak-alt-intl dvorak-l dvorak-r dvorak-classic dvp dvorak-mac dvorak-mac-iso norman symbolic workman workman-intl chr haw rus hbs"
+        [uz]="latin" [vn]="us fr"
+        )
+        read -ra layouts <<<"$(x11_keymap_layouts)"
+        # Layout filter, pre-filled from the chosen console keymap (e.g. 'de-latin1-...' -> 'de')
+        layout=$(gum_filter --value="${ARCH_OS_VCONSOLE_KEYMAP%%-*}" --header "+ Choose Desktop Keyboard Layout" "${layouts[@]}") || trap_gum_exit_confirm
+        [ -z "$layout" ] && return 1 # Check if new value is null
+        ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$layout"
+        ARCH_OS_DESKTOP_KEYBOARD_VARIANT=""
+        gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
+        # Variant filter restricted to the chosen layout; '(none)' = no variant
+        variants="${variant_map[$layout]:-}"
+        if [ -n "$variants" ]; then
+            read -ra variant_list <<<"$variants"
+            variant=$(gum_filter --header "+ Choose Desktop Keyboard Variant" "(none)" "${variant_list[@]}") || trap_gum_exit_confirm
+            [ "$variant" != "(none)" ] && ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$variant"
         fi
-        [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gum_property "Desktop Keyboard Variant" "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT"
+        properties_generate
     fi
+    gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
+    [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gum_property "Desktop Keyboard Variant" "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT"
     return 0
 }
 
@@ -870,6 +905,8 @@ exec_pacstrap_core() {
         [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && kernel_args+=('rootflags=subvol=@' 'rootfstype=btrfs')
         [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('nowatchdog')
         [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && kernel_args+=('quiet' 'splash' 'vt.global_cursor_default=0' 'loglevel=3' 'rd.udev.log_level=3' 'systemd.show_status=auto')
+        # Append user-defined extra kernel parameters (joined via ${kernel_args[*]} below)
+        [ -n "$ARCH_OS_KERNEL_ARGS" ] && kernel_args+=("$ARCH_OS_KERNEL_ARGS")
 
         # SYSTEMD-BOOT INSTALLATION
         if [ "$ARCH_OS_BOOTLOADER" = "systemd" ]; then

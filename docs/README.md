@@ -34,7 +34,7 @@ This project aims to provide a mostly automized, minimal and robust Arch Linux b
 
 <p>
   <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
-  <img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge">
+  <img src="https://img.shields.io/badge/License-GPL_3.0-blue?style=for-the-badge">
 </p>
 
 **[➜ Arch OS Documentation](DOCS.md)**<br>
