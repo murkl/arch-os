@@ -638,10 +638,17 @@ exec_init_installation() {
         log_info "Secure Boot: disabled"
         [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ] && log_fail "You must execute the Installer from Arch ISO!" && exit 1
         log_info "Arch ISO detected"
-        # Check internet connection (required for keyring update, pacstrap, AUR, ...)
-        if ! curl -Lsf --connect-timeout 5 --max-time 10 https://archlinux.org >/dev/null 2>&1; then
-            log_fail "No internet connection. Please connect to the internet and restart the installer." && exit 1
-        fi
+        # Check internet connection (required for keyring update, pacstrap, AUR, ...).
+        # Retry to tolerate a slow link or a network coming up late after boot.
+        local internet_ok="false"
+        for ((i = 1; i < 6; i++)); do
+            [ "$i" -gt 1 ] && log_warn "${i}. Retry internet connection check..."
+            if curl -Lsf --connect-timeout 5 --max-time 15 https://archlinux.org >/dev/null 2>&1; then
+                internet_ok="true" && break # Success: break loop
+            fi
+            sleep 5 # Wait & try again
+        done
+        [ "$internet_ok" = "false" ] && log_fail "No internet connection. Please connect to the internet and restart the installer." && exit 1
         log_info "Internet connection detected"
         log_info "Waiting for Reflector from Arch ISO..."
         # This mirrorlist will copied to new Arch system during installation
