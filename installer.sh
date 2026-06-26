@@ -81,6 +81,9 @@ main() {
     # Print version to logfile
     log_info "Arch OS ${VERSION}"
 
+    # Offer self update and restart with new version if a newer release is available
+    update_installer
+
     # ---------------------------------------------------------------------------------------------------
 
     # Loop properties step to update screen if user edit properties
@@ -280,6 +283,7 @@ properties_generate() {
         echo "ARCH_OS_ROOT_PARTITION='${ARCH_OS_ROOT_PARTITION}' # Root partition"
         echo "ARCH_OS_FILESYSTEM='${ARCH_OS_FILESYSTEM}' # Filesystem | Available: btrfs, ext4"
         echo "ARCH_OS_BOOTLOADER='${ARCH_OS_BOOTLOADER}' # Bootloader | Available: grub, systemd"
+        echo "ARCH_OS_DUAL_BOOT_ENABLED='${ARCH_OS_DUAL_BOOT_ENABLED}' # Dual boot: install alongside existing OS (no disk wipe, reuse ESP, add boot entry only) | Default: false | Enable: true"
         echo "ARCH_OS_BTRFS_SNAPPER_ENABLED='${ARCH_OS_BTRFS_SNAPPER_ENABLED}' # BTRFS Snapper enabled | Disable: false"
         echo "ARCH_OS_BTRFS_ASSISTANT_ENABLED='${ARCH_OS_BTRFS_ASSISTANT_ENABLED}' # BTRFS Desktop Assistant enabled | Disable: false"
         echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}' # Disk encryption | Disable: false"
@@ -328,6 +332,7 @@ properties_preset_source() {
     [ -z "$ARCH_OS_SAMBA_SHARE_ENABLED" ] && ARCH_OS_SAMBA_SHARE_ENABLED="true"
     [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
     [ -z "$ARCH_OS_VM_SUPPORT_ENABLED" ] && ARCH_OS_VM_SUPPORT_ENABLED="true"
+    [ -z "$ARCH_OS_DUAL_BOOT_ENABLED" ] && ARCH_OS_DUAL_BOOT_ENABLED="false"
 
     # Set microcode
     [ -z "$ARCH_OS_MICROCODE" ] && grep -E "GenuineIntel" &>/dev/null <<<"$(lscpu)" && ARCH_OS_MICROCODE="intel-ucode"
@@ -672,13 +677,15 @@ exec_prepare_disk() {
     (
         [ "$DEBUG" = "true" ] && sleep 1 && process_return 0 # If debug mode then return
 
-        # Wipe and create partitions
-        wipefs -af "$ARCH_OS_DISK"                                        # Remove All Filesystem Signatures
-        sgdisk --zap-all "$ARCH_OS_DISK"                                  # Remove the Partition Table
-        sgdisk -o "$ARCH_OS_DISK"                                         # Create new GPT partition table
-        sgdisk -n 1:0:+1G -t 1:ef00 -c 1:boot --align-end "$ARCH_OS_DISK" # Create partition /boot efi partition: 1 GiB
-        sgdisk -n 2:0:0 -t 2:8300 -c 2:root --align-end "$ARCH_OS_DISK"   # Create partition / partition: Rest of space
-        partprobe "$ARCH_OS_DISK"                                         # Reload partition table
+        # Wipe and create partitions (skip in dual boot mode: keep existing disk layout of the parallel OS)
+        if [ "$ARCH_OS_DUAL_BOOT_ENABLED" != "true" ]; then
+            wipefs -af "$ARCH_OS_DISK"                                        # Remove All Filesystem Signatures
+            sgdisk --zap-all "$ARCH_OS_DISK"                                  # Remove the Partition Table
+            sgdisk -o "$ARCH_OS_DISK"                                         # Create new GPT partition table
+            sgdisk -n 1:0:+1G -t 1:ef00 -c 1:boot --align-end "$ARCH_OS_DISK" # Create partition /boot efi partition: 1 GiB
+            sgdisk -n 2:0:0 -t 2:8300 -c 2:root --align-end "$ARCH_OS_DISK"   # Create partition / partition: Rest of space
+            partprobe "$ARCH_OS_DISK"                                         # Reload partition table
+        fi
 
         # Disk encryption
         if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
@@ -687,8 +694,8 @@ exec_prepare_disk() {
             echo -n "$ARCH_OS_PASSWORD" | cryptsetup open "$ARCH_OS_ROOT_PARTITION" cryptroot
         fi
 
-        # Format /boot partition
-        mkfs.fat -F 32 -n BOOT "$ARCH_OS_BOOT_PARTITION"
+        # Format /boot partition (skip in dual boot mode: reuse existing ESP, keep other OS bootloaders intact)
+        [ "$ARCH_OS_DUAL_BOOT_ENABLED" != "true" ] && mkfs.fat -F 32 -n BOOT "$ARCH_OS_BOOT_PARTITION"
 
         # EXT4
         if [ "$ARCH_OS_FILESYSTEM" = "ext4" ]; then
@@ -767,6 +774,9 @@ exec_pacstrap_core() {
         # Add grub packages
         [ "$ARCH_OS_BOOTLOADER" = "grub" ] && packages+=(grub grub-btrfs)
 
+        # Add os-prober for grub dual boot detection (finds parallel OS like Windows)
+        [ "$ARCH_OS_BOOTLOADER" = "grub" ] && [ "$ARCH_OS_DUAL_BOOT_ENABLED" = "true" ] && packages+=(os-prober)
+
         # Add snapper packages
         [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_SNAPPER_ENABLED" = "true" ] && packages+=(snapper)
 
@@ -838,13 +848,18 @@ exec_pacstrap_core() {
         # SYSTEMD-BOOT INSTALLATION
         if [ "$ARCH_OS_BOOTLOADER" = "systemd" ]; then
 
-            # Install Bootloader to /boot (systemdboot)
+            # Install Bootloader to /boot (systemdboot). This only adds an entry to the existing ESP,
+            # it never overwrites other bootloaders (e.g. Windows Boot Manager is auto-detected).
             arch-chroot /mnt bootctl --esp-path=/boot install
+
+            # Show boot menu in dual boot mode so the parallel OS can be selected (otherwise boot Arch OS directly)
+            local loader_timeout='0'
+            [ "$ARCH_OS_DUAL_BOOT_ENABLED" = "true" ] && loader_timeout='5'
 
             { # Create Bootloader config
                 echo 'default main.conf'
                 echo 'console-mode auto'
-                echo 'timeout 0'
+                echo "timeout ${loader_timeout}"
                 echo 'editor yes'
             } >/mnt/boot/loader/loader.conf
 
@@ -880,6 +895,10 @@ exec_pacstrap_core() {
             # Creating grub config file
             sed -i "s/^GRUB_TIMEOUT=.*$/GRUB_TIMEOUT=3/" /mnt/etc/default/grub
             sed -i "s/^GRUB_TIMEOUT_STYLE=.*$/GRUB_TIMEOUT_STYLE=menu/" /mnt/etc/default/grub
+
+            # Enable os-prober in dual boot mode so the parallel OS appears in the grub menu (disabled by default since grub 2.06)
+            [ "$ARCH_OS_DUAL_BOOT_ENABLED" = "true" ] && echo 'GRUB_DISABLE_OS_PROBER=false' >>/mnt/etc/default/grub
+
             arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 
             # Enable btrfs update service
@@ -2217,6 +2236,48 @@ select_enable_desktop_keyboard() {
     fi
     [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gum_property "Desktop Keyboard Variant" "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT"
     return 0
+}
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# INSTALLER SELF UPDATE
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+update_installer() {
+
+    # Skip in debug mode (protect local working copy) and force mode (non-interactive)
+    { [ "$DEBUG" = "true" ] || [ "$FORCE" = "true" ]; } && return 0
+
+    # Fetch latest release version from GitHub (silently continue on missing network)
+    local latest_version=""
+    latest_version=$(curl -Lsf --max-time 10 "https://api.github.com/repos/murkl/arch-os/releases/latest" 2>/dev/null | grep -m1 '"tag_name"' | cut -d'"' -f4) || true
+    [ -z "$latest_version" ] && return 0
+
+    # Skip if local version is already up to date or newer (e.g. dev build / pre-release)
+    [ "$(printf '%s\n%s\n' "$VERSION" "$latest_version" | sort -V | tail -n1)" = "$VERSION" ] && return 0
+
+    # Ask user (continue with current version if declined)
+    gum_confirm "Installer update available: ${VERSION} → ${latest_version}. Update now?" || return 0
+
+    # Download new installer of the matching release tag to a temp file
+    local new_installer="${SCRIPT_TMP_DIR}/installer.sh.new"
+    local download_url="https://raw.githubusercontent.com/murkl/arch-os/${latest_version}/installer.sh"
+    if ! gum_spin --title="Downloading Arch OS Installer ${latest_version}..." -- curl -Lsf --max-time 60 -o "$new_installer" "$download_url"; then
+        gum_warn "Update download failed, continuing with current version (${VERSION})..." && return 0
+    fi
+
+    # Validate downloaded installer (must declare the expected version)
+    if ! grep -q "^VERSION='${latest_version}'" "$new_installer"; then
+        gum_warn "Downloaded installer is invalid, continuing with current version (${VERSION})..." && return 0
+    fi
+
+    # Replace current installer file and restart with the new version (env vars like DEBUG/FORCE are inherited)
+    local script_path && script_path="$(readlink -f "${BASH_SOURCE[0]}")"
+    if ! cp -f "$new_installer" "$script_path"; then
+        gum_warn "Could not replace installer at ${script_path}, continuing with current version (${VERSION})..." && return 0
+    fi
+    chmod +x "$script_path" || true
+    rm -rf "$SCRIPT_TMP_DIR" # Cleanup manually (exit trap is skipped by exec)
+    gum_info "Updated to ${latest_version}. Restarting installer..." && exec bash "$script_path"
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////

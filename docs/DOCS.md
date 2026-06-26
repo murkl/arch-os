@@ -212,6 +212,7 @@ ARCH_OS_BOOT_PARTITION='/dev/sda1' # Boot partition
 ARCH_OS_ROOT_PARTITION='/dev/sda2' # Root partition
 ARCH_OS_FILESYSTEM='btrfs' # Filesystem | Available: btrfs, ext4
 ARCH_OS_BOOTLOADER='grub' # Bootloader | Available: grub, systemd
+ARCH_OS_DUAL_BOOT_ENABLED='false' # Dual boot: install alongside existing OS (no disk wipe, reuse ESP, add boot entry only) | Default: false | Enable: true
 ARCH_OS_BTRFS_SNAPPER_ENABLED='true' # BTRFS Snapper enabled | Disable: false
 ARCH_OS_BTRFS_ASSISTANT_ENABLED='true' # BTRFS Desktop Assistant enabled | Disable: false
 ARCH_OS_ENCRYPTION_ENABLED='true' # Disk encryption | Disable: false
@@ -264,6 +265,29 @@ ARCH_OS_AUR_HELPER='none'
 If you want to disable VM support add `ARCH_OS_VM_SUPPORT_ENABLED='false'`
 
 **Note:** You will only be provided with a minimal tty after installation.
+
+### Dual Boot Installation
+
+Install Arch OS **alongside an existing operating system** (e.g. Windows or another Linux distribution) without touching it. Set this property in the **Advanced Setup Editor** only (there is no installer prompt for it):
+
+```
+ARCH_OS_DUAL_BOOT_ENABLED='true'
+```
+
+When enabled, the installer:
+
+- does **not** wipe or repartition the disk (the existing OS stays intact)
+- **reuses** the existing EFI partition (ESP) instead of formatting it, so other bootloaders (e.g. Windows Boot Manager) are kept
+- only **adds** its own boot entry; with `systemd` the boot menu is shown (`timeout 5`) and the parallel OS is auto-detected, with `grub` the parallel OS is detected via `os-prober`
+
+You must point the partition properties at **existing** partitions before starting the installation (in the Advanced Setup Editor):
+
+```
+ARCH_OS_BOOT_PARTITION='/dev/sdaX'  # existing EFI system partition (ESP) — will NOT be formatted
+ARCH_OS_ROOT_PARTITION='/dev/sdaY'  # empty/target partition for Arch OS — WILL be formatted
+```
+
+**Caution:** The `ARCH_OS_ROOT_PARTITION` is formatted (all data on it is lost). Make sure you have already created a free partition for Arch OS and that the ESP has enough free space (~300 MB) for an additional kernel. Disk encryption can stay enabled; it is applied to the root partition only.
 
 ## Features
 
