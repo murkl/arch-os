@@ -21,7 +21,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${GUM:=/usr/local/bin/gum}" # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
-VERSION='1.9.6'
+VERSION='1.9.5'
 
 # VERSION
 [ "$*" = "--version" ] && echo "$VERSION" && exit 0
@@ -1036,7 +1036,7 @@ exec_install_desktop() {
 
                 # Networking & Access
                 packages+=(samba rsync gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-dnssd gvfs-wsdd)
-                packages+=(modemmanager network-manager-sstp networkmanager-l2tp networkmanager-vpnc networkmanager-openvpn networkmanager-openconnect networkmanager-strongswan)
+                packages+=(modemmanager network-manager-sstp networkmanager-l2tp networkmanager-vpnc networkmanager-openvpn networkmanager-openconnect networkmanager-strongswan rygel)
 
                 # Kernel headers
                 packages+=("${ARCH_OS_KERNEL}-headers")
@@ -2276,7 +2276,7 @@ select_enable_desktop_keyboard() {
 update_installer() {
 
     # Skip in debug mode (protect local working copy) and force mode (non-interactive)
-    { [ "$DEBUG" = "true" ] || [ "$FORCE" = "true" ]; } && return 0
+    #{ [ "$DEBUG" = "true" ] || [ "$FORCE" = "true" ]; } && return 0
 
     # Fetch latest release version from GitHub (silently continue on missing network)
     local latest_version=""
