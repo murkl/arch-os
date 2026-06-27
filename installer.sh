@@ -2276,7 +2276,7 @@ select_enable_desktop_keyboard() {
 update_installer() {
 
     # Skip in debug mode (protect local working copy) and force mode (non-interactive)
-    #{ [ "$DEBUG" = "true" ] || [ "$FORCE" = "true" ]; } && return 0
+    { [ "$DEBUG" = "true" ] || [ "$FORCE" = "true" ]; } && return 0
 
     # Fetch latest release version from GitHub (silently continue on missing network)
     local latest_version=""
