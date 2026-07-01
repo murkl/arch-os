@@ -309,9 +309,9 @@ properties_generate() {
         echo "ARCH_OS_DESKTOP_EXTRAS_ENABLED='${ARCH_OS_DESKTOP_EXTRAS_ENABLED}' # Enable desktop extra packages (caution: if disabled, only core + gnome + git packages will be installed) | Disable: false"
         echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}' # Enable Sim Desktop (only GNOME Core Apps) | Default: false"
         echo "ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED='${ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED}' # Enable GNOME autologin | Default: true | Disable: false (note: autologin leaves the login keyring locked)"
-        echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}' # X11 keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models"
-        echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}' # X11 keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de"
-        echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}' # X11 keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys"
+        echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}' # GNOME keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models"
+        echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}' # GNOME keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de"
+        echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}' # GNOME keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys"
         echo "ARCH_OS_SAMBA_SHARE_ENABLED='${ARCH_OS_SAMBA_SHARE_ENABLED}' # Enable Samba public (anonymous) & home share (user) | Disable: false"
         echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}' # VM Support | Default: true | Disable: false"
         echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}' # Disable ECN support for legacy routers | Default: true | Disable: false"
@@ -1226,7 +1226,7 @@ exec_install_desktop() {
                 #arch-chroot /mnt systemctl enable nmb.service
             fi
 
-            # Set X11 keyboard layout in /etc/X11/xorg.conf.d/00-keyboard.conf
+            # Set GNOME keyboard layout in /etc/X11/xorg.conf.d/00-keyboard.conf
             mkdir -p /mnt/etc/X11/xorg.conf.d/
             {
                 echo 'Section "InputClass"'
@@ -2208,10 +2208,10 @@ log_prop() { write_log "PROP | ${*}"; }
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # STATIC INPUT VALUES
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# X11 keyboard data embedded for the Arch ISO (which ships no xkeyboard-config).
+# GNOME keyboard data embedded for the Arch ISO (which ships no xkeyboard-config).
 # Source: localectl list-x11-keymap-layouts / list-x11-keymap-variants <layout>.
 
-x11_keymap_layouts() { echo "af al am ara at au az ba bd be bg br brai bt bw by ca cd ch cm cn cz de dk dz ee eg epo es et fi fo fr gb ge gh gn gr hr hu id ie il in iq ir is it jp ke kg kh kr kz la latam lk lt lv ma md me mk ml mm mn mt mv my ng nl no np nz ph pk pl pt ro rs ru se si sk sn sy tg th tj tm tr tw tz ua us uz vn za"; }
+gnome_keymap_layouts() { echo "af al am ara at au az ba bd be bg br brai bt bw by ca cd ch cm cn cz de dk dz ee eg epo es et fi fo fr gb ge gh gn gr hr hu id ie il in iq ir is it jp ke kg kh kr kz la latam lk lt lv ma md me mk ml mm mn mt mv my ng nl no np nz ph pk pl pt ro rs ru se si sk sn sy tg th tj tm tr tw tz ua us uz vn za"; }
 
 # ---------------------------------------------------------------------------------------------------
 
@@ -2220,7 +2220,7 @@ select_enable_desktop_keyboard() {
     if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
         local layout variant variants
         local layouts=() variant_list=()
-        # X11 variants per layout (legacy/olpc dropped); only valid layout+variant combos are offered
+        # GNOME variants per layout (legacy/olpc dropped); only valid layout+variant combos are offered
         local -A variant_map=(
             [af]="ps uz" [al]="plisi veqilharxhi" [am]="phonetic phonetic-alt eastern eastern-alt western" [ara]="digits azerty azerty_digits buckwalter mac mac-phonetic" [at]="nodeadkeys mac" [az]="cyrillic"
             [ba]="alternatequotes unicode unicodeus us" [bd]="probhat" [be]="oss oss_latin9 iso-alternate nodeadkeys wang" [bg]="phonetic bas_phonetic bekl" [brai]="left_hand left_hand_invert right_hand right_hand_invert"
@@ -2247,7 +2247,7 @@ select_enable_desktop_keyboard() {
             [us]="euro intl alt-intl altgr-intl mac mac-iso colemak colemak_dh colemak_dh_wide colemak_dh_ortho colemak_dh_iso colemak_dh_wide_iso dvorak dvorak-intl dvorak-alt-intl dvorak-l dvorak-r dvorak-classic dvp dvorak-mac dvorak-mac-iso norman symbolic workman workman-intl chr haw rus hbs"
             [uz]="latin" [vn]="us fr"
         )
-        read -ra layouts <<<"$(x11_keymap_layouts)"
+        read -ra layouts <<<"$(gnome_keymap_layouts)"
         # Layout filter, pre-filled from the chosen console keymap (e.g. 'de-latin1-...' -> 'de')
         layout=$(gum_filter --value="${ARCH_OS_VCONSOLE_KEYMAP%%-*}" --header "+ Choose Desktop Keyboard Layout" "${layouts[@]}") || trap_gum_exit_confirm
         [ -z "$layout" ] && return 1 # Check if new value is null
