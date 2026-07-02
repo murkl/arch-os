@@ -17,8 +17,8 @@ AIRFS_GUM="${AIRFS_BIN}/gum"
 AIRFS_ARCHOS="${AIRFS_BIN}/arch-os"
 AIRFS_RECOVERY="${AIRFS_BIN}/arch-os-recovery"
 
-# TAGS
-: "${SNAPSHOT_VERSION:=$(date +'%Y.%m')}"
+# VERSION (single source of truth: installer.sh --version)
+: "${SNAPSHOT_VERSION:=$(bash ../installer.sh --version)}"
 
 # TEMP DIR
 TEMP_DIR="$(mktemp -d)"
@@ -69,7 +69,7 @@ fi
 
 # Install gum
 [ ! -f "${DOWNLOAD_DIR}/gum" ] && echo "Error: 'gum' binary not found in '${DOWNLOAD_DIR}'" && exit 1
-if ! cp -f "${DOWNLOAD_DIR}/gum" "${AIRFS_GUM}"; then echo "Error copy ${DOWNLOAD_DIR}/gum to ${AIRFS_GUM}" && exit 1; fi
+if ! cp -f "${DOWNLOAD_DIR}/gum" "${AIRFS_GUM}"; then echo "Error copying ${DOWNLOAD_DIR}/gum to ${AIRFS_GUM}" && exit 1; fi
 if ! chmod +x "${AIRFS_GUM}"; then echo "Error chmod +x ${AIRFS_GUM}" && exit 1; fi
 
 #echo "### Copy Gum to Release"
@@ -83,12 +83,9 @@ if ! chmod +x "${AIRFS_GUM}"; then echo "Error chmod +x ${AIRFS_GUM}" && exit 1;
 echo "### Copy Arch OS Installer"
 cp -f ../installer.sh "${DOWNLOAD_DIR}/arch-os"
 
-#echo "### Copy Installer to Release"
-#cp -f "${DOWNLOAD_DIR}/arch-os" "${ARCH_OS_RELEASE}/arch-os-installer.sh"
-
 # Install Arch OS Installer script
 [ ! -f "${DOWNLOAD_DIR}/arch-os" ] && echo "Error: 'arch-os' binary not found in '${DOWNLOAD_DIR}'" && exit 1
-if ! cp -f "${DOWNLOAD_DIR}/arch-os" "${AIRFS_ARCHOS}"; then echo "Error copy ${DOWNLOAD_DIR}/arch-os to ${AIRFS_ARCHOS}" && exit 1; fi
+if ! cp -f "${DOWNLOAD_DIR}/arch-os" "${AIRFS_ARCHOS}"; then echo "Error copying ${DOWNLOAD_DIR}/arch-os to ${AIRFS_ARCHOS}" && exit 1; fi
 if ! chmod +x "${AIRFS_ARCHOS}"; then echo "Error chmod +x ${AIRFS_ARCHOS}" && exit 1; fi
 
 # Download Arch OS Recovery script
@@ -97,7 +94,7 @@ curl -L bit.ly/arch-os-recovery >"${DOWNLOAD_DIR}/arch-os-recovery"
 
 # Install Arch OS Recovery script
 [ ! -f "${DOWNLOAD_DIR}/arch-os-recovery" ] && echo "Error: 'arch-os-recovery' binary not found in '${DOWNLOAD_DIR}'" && exit 1
-if ! cp -f "${DOWNLOAD_DIR}/arch-os-recovery" "${AIRFS_RECOVERY}"; then echo "Error copy ${DOWNLOAD_DIR}/arch-os-recovery to ${AIRFS_RECOVERY}" && exit 1; fi
+if ! cp -f "${DOWNLOAD_DIR}/arch-os-recovery" "${AIRFS_RECOVERY}"; then echo "Error copying ${DOWNLOAD_DIR}/arch-os-recovery to ${AIRFS_RECOVERY}" && exit 1; fi
 if ! chmod +x "${AIRFS_RECOVERY}"; then echo "Error chmod +x ${AIRFS_RECOVERY}" && exit 1; fi
 
 #echo "### Copy Recovery to Release"
@@ -154,3 +151,10 @@ cd ..
 # Move ISO to release dir
 echo "### Move ISO to Release"
 cp -f "${ISO_DIR}/out/"*.iso "${ARCH_OS_RELEASE}/"
+
+# Publish the installer script + checksum (the checksum is verified by the installer's own
+# self-update integrity check, the script itself allows 'curl -Ls .../installer.sh' style usage)
+echo "### Copy Installer to Release"
+cp -f ../installer.sh "${ARCH_OS_RELEASE}/installer.sh"
+echo "### Generate Installer Checksum"
+sha256sum ../installer.sh | awk '{print $1, "installer.sh"}' >"${ARCH_OS_RELEASE}/installer.sh.sha256"

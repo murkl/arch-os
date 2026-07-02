@@ -74,6 +74,7 @@ For a robust & stable Arch OS experience, install as few additional packages fro
 - Install [Ignition](https://flathub.org/apps/io.github.flattool.Ignition) to manage GNOME autostart files
 - Install [Papers](https://flathub.org/apps/org.gnome.Papers) as elegant document viewer for GNOME
 - Install [GDM Settings](https://flathub.org/apps/io.github.realmazharhussain.GdmSettings) GDM Login Manager Settings
+- Install [wayland-scroll-factor](https://github.com/daniel-g-carrasco/wayland-scroll-factor) for modify touchpad scroll speed
 
 ### Theming (optional)
 
@@ -204,15 +205,16 @@ The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better s
 ### Example: `installer.conf`
 
 ```
-ARCH_OS_HOSTNAME='arch-os' # Hostname
 ARCH_OS_USERNAME='tux' # User
+ARCH_OS_HOSTNAME='arch-os' # Hostname
 ARCH_OS_DISK='/dev/sda' # Disk
 ARCH_OS_BOOT_PARTITION='/dev/sda1' # Boot partition
 ARCH_OS_ROOT_PARTITION='/dev/sda2' # Root partition
 ARCH_OS_FILESYSTEM='btrfs' # Filesystem | Available: btrfs, ext4
-ARCH_OS_BOOTLOADER='grub' # Bootloader | Available: grub, systemd
 ARCH_OS_BTRFS_SNAPPER_ENABLED='true' # BTRFS Snapper enabled | Disable: false
 ARCH_OS_BTRFS_ASSISTANT_ENABLED='true' # BTRFS Desktop Assistant enabled | Disable: false
+ARCH_OS_BOOTLOADER='grub' # Bootloader | Available: grub, systemd
+ARCH_OS_DUAL_BOOT_ENABLED='false' # Dual boot: install alongside existing OS (no disk wipe, reuse ESP, add boot entry only) | Default: false | Enable: true
 ARCH_OS_ENCRYPTION_ENABLED='true' # Disk encryption | Disable: false
 ARCH_OS_TIMEZONE='Europe/Berlin' # Timezone | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin
 ARCH_OS_LOCALE_LANG='de_DE' # Locale | Show available: ls /usr/share/i18n/locales | Example: de_DE
@@ -221,26 +223,30 @@ ARCH_OS_REFLECTOR_COUNTRY='Germany' # Country used by reflector | Default: null 
 ARCH_OS_VCONSOLE_KEYMAP='de-latin1-nodeadkeys' # Console keymap | Show available: localectl list-keymaps | Example: de-latin1-nodeadkeys
 ARCH_OS_VCONSOLE_FONT='' # Console font | Default: null | Show available: find /usr/share/kbd/consolefonts/*.psfu.gz | Example: eurlatgr
 ARCH_OS_KERNEL='linux-zen' # Kernel | Default: linux-zen | Recommended: linux, linux-lts linux-zen, linux-hardened
+ARCH_OS_KERNEL_ARGS='' # Additional kernel parameters (space separated) | Default: null | Example: amd_pstate=active mitigations=off
 ARCH_OS_MICROCODE='intel-ucode' # Microcode | Disable: none | Available: intel-ucode, amd-ucode
 ARCH_OS_CORE_TWEAKS_ENABLED='true' # Arch OS Core Tweaks | Disable: false
+ARCH_OS_BOOTSPLASH_ENABLED='true' # Bootsplash | Disable: false
 ARCH_OS_MULTILIB_ENABLED='true' # MultiLib 32 Bit Support | Disable: false
 ARCH_OS_AUR_HELPER='paru' # AUR Helper | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur
-ARCH_OS_BOOTSPLASH_ENABLED='true' # Bootsplash | Disable: false
 ARCH_OS_HOUSEKEEPING_ENABLED='true'  # Housekeeping | Disable: false
-ARCH_OS_MANAGER_ENABLED='true' # Arch OS Manager | Disable: false
 ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true' # Shell Enhancement | Disable: false
 ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='true' # Enable fish shell | Default: true | Disable: false
+ARCH_OS_MANAGER_ENABLED='true' # Arch OS Manager | Disable: false
+ARCH_OS_VM_SUPPORT_ENABLED='true' # VM Support | Default: true | Disable: false
+ARCH_OS_ECN_ENABLED='true' # Disable ECN support for legacy routers | Default: true | Disable: false
 ARCH_OS_DESKTOP_ENABLED='true' # Arch OS Desktop (caution: if disabled, only a minimal tty will be provied)| Disable: false
 ARCH_OS_DESKTOP_GRAPHICS_DRIVER='amd' # Graphics Driver | Disable: none | Available: mesa, intel_i915, nvidia, amd, ati
 ARCH_OS_DESKTOP_EXTRAS_ENABLED='true' # Enable desktop extra packages (caution: if disabled, only core + gnome + git packages will be installed) | Disable: false
 ARCH_OS_DESKTOP_SLIM_ENABLED='true' # Enable Sim Desktop (only GNOME Core Apps) | Default: false
-ARCH_OS_DESKTOP_KEYBOARD_MODEL='pc105' # X11 keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models
-ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='de' # X11 keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de
-ARCH_OS_DESKTOP_KEYBOARD_VARIANT='nodeadkeys' # X11 keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys
+ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED='true' # Enable GNOME autologin | Default: matches Disk Encryption (on -> autologin on, avoids a 2nd password prompt) | Override: true, false
+ARCH_OS_DESKTOP_KEYBOARD_MODEL='pc105' # GNOME keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models
+ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='de' # GNOME keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de
+ARCH_OS_DESKTOP_KEYBOARD_VARIANT='nodeadkeys' # GNOME keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys
 ARCH_OS_SAMBA_SHARE_ENABLED='true' # Enable Samba public (anonymous) & home share (user) | Disable: false
-ARCH_OS_VM_SUPPORT_ENABLED='true' # VM Support | Default: true | Disable: false
-ARCH_OS_ECN_ENABLED='true' # Disable ECN support for legacy routers | Default: true | Disable: false
 ```
+
+**Note:** With `ARCH_OS_SAMBA_SHARE_ENABLED='true'`, the `[public]` share (`/srv/samba/public`) is exposed **anonymously and writable** to everyone on the local network (guest access, no password). Only enable it on trusted networks, or restrict the share in `/etc/samba/smb.conf` afterwards.
 
 ### Minimal Installation
 
@@ -260,6 +266,29 @@ If you want to disable VM support add `ARCH_OS_VM_SUPPORT_ENABLED='false'`
 
 **Note:** You will only be provided with a minimal tty after installation.
 
+### Dual Boot Installation
+
+Install Arch OS **alongside an existing operating system** (e.g. Windows or another Linux distribution) without touching it. Set this property in the **Advanced Setup Editor** only (there is no installer prompt for it):
+
+```
+ARCH_OS_DUAL_BOOT_ENABLED='true'
+```
+
+When enabled, the installer:
+
+- does **not** wipe or repartition the disk (the existing OS stays intact)
+- **reuses** the existing EFI partition (ESP) instead of formatting it, so other bootloaders (e.g. Windows Boot Manager) are kept
+- only **adds** its own boot entry; with `systemd` the boot menu is shown (`timeout 5`) and the parallel OS is auto-detected, with `grub` the parallel OS is detected via `os-prober`
+
+You must point the partition properties at **existing** partitions before starting the installation (in the Advanced Setup Editor):
+
+```
+ARCH_OS_BOOT_PARTITION='/dev/sdaX'  # existing EFI system partition (ESP) — will NOT be formatted
+ARCH_OS_ROOT_PARTITION='/dev/sdaY'  # empty/target partition for Arch OS — WILL be formatted
+```
+
+**Caution:** The `ARCH_OS_ROOT_PARTITION` is formatted (all data on it is lost). Make sure you have already created a free partition for Arch OS and that the ESP has enough free space (~300 MB) for an additional kernel. Disk encryption can stay enabled; it is applied to the root partition only.
+
 ## Features
 
 Each feature can be activated/deactivated during installation. Further information can be found in the individual feature headings.
@@ -268,7 +297,7 @@ Each feature can be activated/deactivated during installation. Further informati
 
 Enable this feature with `ARCH_OS_CORE_TWEAKS_ENABLED='true'`:
 
-- `vm.max_map_count` is set to `1048576` for compatibility of some apps/games (default)
+- `vm.max_map_count` is set to `1048576` for compatibility of some apps/games (by default)
 - `quiet splash vt.global_cursor_default=0` is set to kernel parameters for silent boot
 - Pacman parallel downloads is set to `5`
 - Pacman colors and eyecandy is enabled
@@ -276,7 +305,7 @@ Enable this feature with `ARCH_OS_CORE_TWEAKS_ENABLED='true'`:
 - Debug packages are disabled in `/etc/makepkg.conf`
 - Watchdog is disabled with kernel arg `nowatchdog` and blacklist: `/etc/modprobe.d/blacklist-watchdog.conf`
 
-Disable this featuree with `ARCH_OS_CORE_TWEAKS_ENABLED='false'`
+Disable this feature with `ARCH_OS_CORE_TWEAKS_ENABLED='false'`
 
 ### Housekeeping
 
@@ -610,7 +639,7 @@ paru -Scc
 
 ## Development
 
-Create new pull request branches only from [main branch](https://github.com/murkl/arch-os/tree/main)! The [dev branch](https://github.com/murkl/arch-os/tree/dev) will be deleted after each merge into main.
+Create pull request branches from **[dev branch !](https://github.com/murkl/arch-os/tree/dev)** only (targeting `dev`). The upstream `dev` branch is **never deleted**. Merged changes go to [main branch](https://github.com/murkl/arch-os/tree/main) on the next official Arch OS release.
 
 The Arch OS [dev branch](https://github.com/murkl/arch-os/tree/dev) can be broken, use only for testing!
 
@@ -628,10 +657,10 @@ ARCH_OS_PASSWORD=mySecret123 ./installer.sh
 FORCE=true ./installer.sh
 
 # Custom gum:
-GUM=/usr/bin/gum ./installer.sh
+GUM=./gum ./installer.sh
 
-# Debug simulator:
-DEBUG=true ./installer.sh
+# Debug simulator (develop):
+DEBUG=true GUM=./gum ./installer.sh
 ```
 
 ## Credits
