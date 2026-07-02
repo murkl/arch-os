@@ -33,11 +33,19 @@ GUM_VERSION="0.13.0"
 SCRIPT_CONFIG="./installer.conf"
 SCRIPT_LOG="./installer.log"
 
-# TEMP
+# TEMP (everything volatile lives here, so a single rm -rf "$SCRIPT_TMP_DIR" cleans it all up;
+# installer.conf/installer.log are the only persistent files and stay outside on purpose)
 SCRIPT_TMP_DIR="$(mktemp -d "./.tmp.XXXXX")"
 ERROR_MSG_TMP_FILE="${SCRIPT_TMP_DIR}/installer.err"
 PROCESS_LOG_TMP_FILE="${SCRIPT_TMP_DIR}/process.log"
 PROCESS_RET_TMP_FILE="${SCRIPT_TMP_DIR}/process.ret"
+SCRIPT_CONFIG_TMP_FILE="${SCRIPT_TMP_DIR}/installer.conf.new"
+
+# Traps (error & exit) - registered as early as possible, right after SCRIPT_TMP_DIR exists, so the
+# tmp dir is guaranteed to be removed by trap_exit no matter where the script later fails (e.g. the
+# root check or gum_init below, both of which can exit before main() would otherwise set this up).
+trap 'trap_exit' EXIT
+trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
 
 # COLORS
 COLOR_BLACK=0   #  #000000
@@ -73,10 +81,6 @@ main() {
 
     # Check gum binary or download
     gum_init
-
-    # Traps (error & exit)
-    trap 'trap_exit' EXIT
-    trap 'trap_error ${FUNCNAME} ${LINENO}' ERR
 
     # Print version to logfile
     log_info "Arch OS ${VERSION}"
@@ -143,20 +147,17 @@ main() {
             print_header "Arch OS Installer" # Show landig page
             gum_title "Advanced Setup Editor"
             local header_txt="• Save with CTRL + D or ESC and cancel with CTRL + C"
-            if gum_write --show-line-numbers --prompt "" --height=18 --width=180 --char-limit=0 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
-                mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
+            if gum_write --show-line-numbers --prompt "" --height=18 --width=180 --char-limit=0 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"$SCRIPT_CONFIG_TMP_FILE"; then
+                mv "$SCRIPT_CONFIG_TMP_FILE" "$SCRIPT_CONFIG" && properties_source
                 gum_info "Properties successfully saved"
                 gum_confirm "Change Password?" && until select_password --change && properties_source; do :; done
             else
-                rm -f "${SCRIPT_CONFIG}.new" # Remove tmp properties
+                rm -f "$SCRIPT_CONFIG_TMP_FILE" # Remove tmp properties
                 gum_warn "Advanced Setup canceled"
             fi
             echo && ! gum_spin --title="Reload Properties in 3 seconds..." -- sleep 3 && trap_gum_exit
             continue # Restart properties step to refresh properties screen
         fi
-
-        # Print success
-        gum_info "Successfully initialized"
 
         # Hard safety gates right at the init of the installation, before touching any disk and
         # before the Summary/confirm below - by the time the user confirms, the install is already
@@ -165,6 +166,7 @@ main() {
         # Setup Editor; afterwards it restarts this whole properties step from the top so the
         # corrected values are shown again before the Summary.
         validate_properties || continue
+        gum_info "Successfully validated"
 
         ######################################################
         break # Exit properties step and continue installation
@@ -179,9 +181,9 @@ main() {
         gum_confirm "Start Arch OS Installation?" || trap_gum_exit
     fi
 
+    echo && gum_title "Arch OS Installation"
     local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel..."
     ! gum_spin --title="$spin_title" -- sleep 5 && trap_gum_exit # CTRL + C pressed
-    gum_title "Arch OS Installation"
 
     SECONDS=0 # Messure execution time of installation
 
@@ -402,12 +404,18 @@ properties_preset_source() {
 # VALIDATORS
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+# Shared error format for all validators below: a "Property: / Issue:" pair instead of one long
+# sentence per validator - gum_fail renders this as an aligned two-line bullet (see gum_fail).
+validate_fail() { printf 'Property: %s\nIssue:    %s\n' "$1" "$2" >"$ERROR_MSG_TMP_FILE"; }
+
+# ---------------------------------------------------------------------------------------------------
+
 # ARCH_OS_USERNAME can be set directly via the Advanced Setup Editor, bypassing the interactive
 # check in select_username (which only runs while the value is still empty); re-check here so a
 # bad value can never reach useradd.
 validate_username() {
     if [[ ! "$ARCH_OS_USERNAME" =~ ^[a-z_][a-z0-9_-]*$ ]] || [ "${#ARCH_OS_USERNAME}" -gt 32 ]; then
-        echo "ARCH_OS_USERNAME (${ARCH_OS_USERNAME}) is invalid (allowed: a-z, 0-9, '-', '_'; must not start with a digit; max 32 chars). Fix it in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+        validate_fail "ARCH_OS_USERNAME" "invalid value '${ARCH_OS_USERNAME}' (allowed: a-z, 0-9, '-', '_'; must not start with a digit; max 32 chars)"
         return 1
     fi
     return 0
@@ -419,7 +427,7 @@ validate_username() {
 # properties_preset_source); an invalid value would silently end up in /etc/hostname
 validate_hostname() {
     if [[ ! "$ARCH_OS_HOSTNAME" =~ ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$ ]]; then
-        echo "ARCH_OS_HOSTNAME (${ARCH_OS_HOSTNAME}) is invalid (allowed: a-z, 0-9, '-'; must not start/end with '-'; max 63 chars). Fix it in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+        validate_fail "ARCH_OS_HOSTNAME" "invalid value '${ARCH_OS_HOSTNAME}' (allowed: a-z, 0-9, '-'; must not start/end with '-'; max 63 chars)"
         return 1
     fi
     return 0
@@ -432,20 +440,20 @@ validate_hostname() {
 # half-installed, unbootable, or unaccelerated system with no visible error at all
 validate_install_properties() {
     if [ ! -b "$ARCH_OS_DISK" ]; then
-        echo "ARCH_OS_DISK (${ARCH_OS_DISK}) does not exist. Fix it in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+        validate_fail "ARCH_OS_DISK" "disk '${ARCH_OS_DISK}' does not exist"
         return 1
     fi
     case "$ARCH_OS_FILESYSTEM" in
     btrfs | ext4) ;;
     *)
-        echo "ARCH_OS_FILESYSTEM (${ARCH_OS_FILESYSTEM}) must be 'btrfs' or 'ext4'. Fix it in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+        validate_fail "ARCH_OS_FILESYSTEM" "must be 'btrfs' or 'ext4' (got '${ARCH_OS_FILESYSTEM}')"
         return 1
         ;;
     esac
     case "$ARCH_OS_BOOTLOADER" in
     systemd | grub) ;;
     *)
-        echo "ARCH_OS_BOOTLOADER (${ARCH_OS_BOOTLOADER}) must be 'systemd' or 'grub'. Fix it in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+        validate_fail "ARCH_OS_BOOTLOADER" "must be 'systemd' or 'grub' (got '${ARCH_OS_BOOTLOADER}')"
         return 1
         ;;
     esac
@@ -453,7 +461,7 @@ validate_install_properties() {
         case "$ARCH_OS_MICROCODE" in
         none | intel-ucode | amd-ucode) ;;
         *)
-            echo "ARCH_OS_MICROCODE (${ARCH_OS_MICROCODE}) must be 'none', 'intel-ucode' or 'amd-ucode'. Fix it in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+            validate_fail "ARCH_OS_MICROCODE" "must be 'none', 'intel-ucode' or 'amd-ucode' (got '${ARCH_OS_MICROCODE}')"
             return 1
             ;;
         esac
@@ -462,7 +470,7 @@ validate_install_properties() {
         case "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" in
         none | mesa | intel_i915 | nvidia | amd | ati) ;;
         *)
-            echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER (${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}) must be one of: none, mesa, intel_i915, nvidia, amd, ati. Fix it in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+            validate_fail "ARCH_OS_DESKTOP_GRAPHICS_DRIVER" "must be one of: none, mesa, intel_i915, nvidia, amd, ati (got '${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}')"
             return 1
             ;;
         esac
@@ -480,12 +488,12 @@ validate_dual_boot_partitions() {
     local boot_type root_bytes
     boot_type="$(blkid -s TYPE -o value "$ARCH_OS_BOOT_PARTITION" 2>/dev/null)"
     if [ "$boot_type" != "vfat" ]; then
-        echo "Dual Boot: ${ARCH_OS_BOOT_PARTITION} is not an existing vfat/EFI partition (detected: ${boot_type:-none}). Fix ARCH_OS_BOOT_PARTITION / ARCH_OS_ROOT_PARTITION in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+        validate_fail "ARCH_OS_BOOT_PARTITION" "'${ARCH_OS_BOOT_PARTITION}' is not an existing vfat/EFI partition (detected: ${boot_type:-none})"
         return 1
     fi
     root_bytes="$(lsblk -bdn -o SIZE "$ARCH_OS_ROOT_PARTITION" 2>/dev/null)"
     if [ -z "$root_bytes" ] || [ "$root_bytes" -lt $((8 * 1024 * 1024 * 1024)) ]; then
-        echo "Dual Boot: ${ARCH_OS_ROOT_PARTITION} is smaller than 8 GiB, refusing to format it (looks like the wrong partition). Fix ARCH_OS_BOOT_PARTITION / ARCH_OS_ROOT_PARTITION in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+        validate_fail "ARCH_OS_ROOT_PARTITION" "'${ARCH_OS_ROOT_PARTITION}' is smaller than 8 GiB, refusing to format it (looks like the wrong partition)"
         return 1
     fi
     return 0
@@ -499,7 +507,7 @@ validate_dual_boot_partitions() {
 validate_kernel_args() {
     case "$ARCH_OS_KERNEL_ARGS" in
     *[,\&\\]*)
-        echo "ARCH_OS_KERNEL_ARGS contains an unsupported character (, & or \\). Fix it in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+        validate_fail "ARCH_OS_KERNEL_ARGS" "contains an unsupported character (, & or \\)"
         return 1
         ;;
     esac
@@ -508,17 +516,15 @@ validate_kernel_args() {
 
 # ---------------------------------------------------------------------------------------------------
 
-# Runs all pre-flight validators above; on success prints a short confirmation. On failure, shows
-# the specific reason directly (no log dump) and offers to fix it right away in the Advanced Setup
-# Editor instead of a hard exit. Call as: validate_properties || continue - a fix (or a cancel)
-# makes the caller restart the whole properties step from the top (see main) so the corrected
-# values are shown again before the Summary.
+# Runs all pre-flight validators above, part of the "Properties" step (see main) rather than its
+# own section. On failure, shows the specific reason directly (no log dump) and offers to fix it
+# right away in the Advanced Setup Editor instead of a hard exit. Call as: validate_properties ||
+# continue - a fix (or a cancel) makes the caller restart the whole properties step from the top so
+# the corrected values are shown again before the Summary.
 validate_properties() {
-    echo && gum_title "Validate"
     if validate_username && validate_hostname && validate_install_properties \
         && { [ -z "$ARCH_OS_KERNEL_ARGS" ] || validate_kernel_args; } \
         && { [ "$ARCH_OS_DUAL_BOOT_ENABLED" != "true" ] || validate_dual_boot_partitions; }; then
-        gum_info "Validation successful"
         return 0
     fi
 
@@ -532,11 +538,11 @@ validate_properties() {
     print_header "Arch OS Installer" # Show landing page
     gum_title "Advanced Setup Editor"
     local header_txt="• Save with CTRL + D or ESC and cancel with CTRL + C"
-    if gum_write --show-line-numbers --prompt "" --height=18 --width=180 --char-limit=0 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
-        mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
+    if gum_write --show-line-numbers --prompt "" --height=18 --width=180 --char-limit=0 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"$SCRIPT_CONFIG_TMP_FILE"; then
+        mv "$SCRIPT_CONFIG_TMP_FILE" "$SCRIPT_CONFIG" && properties_source
         gum_info "Properties saved"
     else
-        rm -f "${SCRIPT_CONFIG}.new" # Remove tmp properties
+        rm -f "$SCRIPT_CONFIG_TMP_FILE" # Remove tmp properties
         gum_warn "Advanced Setup canceled"
     fi
     echo && ! gum_spin --title="Reload Properties in 3 seconds..." -- sleep 3 && trap_gum_exit
@@ -2226,9 +2232,17 @@ trap_exit() {
     # Read error msg from file (written in error trap)
     local error && [ -f "$ERROR_MSG_TMP_FILE" ] && error="$(<"$ERROR_MSG_TMP_FILE")" && rm -f "$ERROR_MSG_TMP_FILE"
 
-    # Cleanup
+    # Cleanup (always: this must run even if gum itself failed to install below, since the trap
+    # now also covers gum_init - see the top-level 'trap' call for why)
     unset ARCH_OS_PASSWORD
     rm -rf "$SCRIPT_TMP_DIR"
+
+    # gum is not guaranteed to be installed yet at this point - fall back to plain output instead
+    # of calling gum_* (which would itself exit 1 with a confusing "GUM not found" message)
+    if [ ! -x "$GUM" ]; then
+        [ "$result_code" -gt "0" ] && [ "$result_code" != "130" ] && echo "${error:-An error occurred}" >&2
+        exit "$result_code"
+    fi
 
     # When ctrl + c pressed exit without other stuff below
     [ "$result_code" = "130" ] && gum_warn "Exit..." && {
@@ -2348,41 +2362,44 @@ print_header() {
 
 # ---------------------------------------------------------------------------------------------------
 
-# Last-look summary before the point of no return: short plain-English sentences instead of a
+# Last-look summary before the point of no return: short plain-English lines instead of a
 # property dump - disk/partition fate (bootloader in parens on the boot partition), then what it
-# means for login. The disk itself is highlighted in blue (like gum_title) so it stands out as
-# "the one thing to double check"; everything else stays green like gum_property - an all-green
-# sentence would bury the one value that matters most. Wording stays desktop-environment-agnostic
-# ("your system", not "GNOME") except for the risky-override warning, where naming GNOME
-# explicitly reads more concrete.
+# means for login. Each topic is a top-level bullet with its details broken out as indented
+# sub-bullets on their own line, rather than one long sentence - keeps every line short enough to
+# not wrap on narrow terminals. The disk itself is highlighted in blue (like gum_title) so it
+# stands out as "the one thing to double check"; everything else stays green like gum_property -
+# an all-green sentence would bury the one value that matters most. Wording stays
+# desktop-environment-agnostic ("your system", not "GNOME") except for the risky-override warning,
+# where naming GNOME explicitly reads more concrete.
 print_summary() {
     local disk_size && disk_size="$(lsblk -dn -o SIZE "$ARCH_OS_DISK" 2>/dev/null)"
     local disk_label="$ARCH_OS_DISK" && [ -n "$disk_size" ] && disk_label="${ARCH_OS_DISK} (${disk_size})"
     local bootloader_name="GRUB" && [ "$ARCH_OS_BOOTLOADER" = "systemd" ] && bootloader_name="systemd-boot"
 
     if [ "$ARCH_OS_DUAL_BOOT_ENABLED" = "true" ]; then
-        gum join "$(gum_white "• Shares disk ")" "$(gum_blue --bold "$disk_label")" \
-            "$(gum_white " with your other system: keeps boot partition ")" "$(gum_green --bold "$ARCH_OS_BOOT_PARTITION")" "$(gum_white " (")" "$(gum_green --bold "$bootloader_name")" \
-            "$(gum_white "), formats root partition ")" "$(gum_green --bold "$ARCH_OS_ROOT_PARTITION")" "$(gum_white " as ")" "$(gum_green --bold "$ARCH_OS_FILESYSTEM")" "$(gum_white ".")"
+        gum join "$(gum_white "• Shares disk ")" "$(gum_blue --bold "$disk_label")" "$(gum_white " with your other system:")"
+        gum join "$(gum_white "  • keeps boot partition ")" "$(gum_green --bold "$ARCH_OS_BOOT_PARTITION")" "$(gum_white " (")" "$(gum_green --bold "$bootloader_name")" "$(gum_white ")")"
+        gum join "$(gum_white "  • formats root partition ")" "$(gum_green --bold "$ARCH_OS_ROOT_PARTITION")" "$(gum_white " as ")" "$(gum_green --bold "$ARCH_OS_FILESYSTEM")"
     else
-        gum join "$(gum_white "• Erases disk ")" "$(gum_blue --bold "$disk_label")" \
-            "$(gum_white ": creates boot partition ")" "$(gum_green --bold "$ARCH_OS_BOOT_PARTITION")" "$(gum_white " (")" "$(gum_green --bold "$bootloader_name")" \
-            "$(gum_white ") and root partition ")" "$(gum_green --bold "$ARCH_OS_ROOT_PARTITION")" "$(gum_white ", formats root as ")" "$(gum_green --bold "$ARCH_OS_FILESYSTEM")" "$(gum_white ".")"
+        gum join "$(gum_white "• Erases disk ")" "$(gum_blue --bold "$disk_label")" "$(gum_white ":")"
+        gum join "$(gum_white "  • creates boot partition ")" "$(gum_green --bold "$ARCH_OS_BOOT_PARTITION")" "$(gum_white " (")" "$(gum_green --bold "$bootloader_name")" "$(gum_white ")")"
+        gum join "$(gum_white "  • creates root partition ")" "$(gum_green --bold "$ARCH_OS_ROOT_PARTITION")" "$(gum_white ", formats as ")" "$(gum_green --bold "$ARCH_OS_FILESYSTEM")"
     fi
 
     if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
         local autologin="${ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED:-$ARCH_OS_ENCRYPTION_ENABLED}"
         if [ "$autologin" = "true" ] && [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
-            gum join "$(gum_white "• Disk encryption ")" "$(gum_green --bold "on")" \
-                "$(gum_white ": your system unlocks automatically, just one password at boot.")"
+            gum join "$(gum_white "• Disk encryption ")" "$(gum_green --bold "on")" "$(gum_white ":")"
+            gum_white "  • your system unlocks automatically, just one password at boot"
         elif [ "$autologin" = "true" ]; then
-            gum join "$(gum_white "• No disk encryption, but GNOME logs you in automatically: ")" \
-                "$(gum_yellow --bold "anyone with physical access can reach your system")" "$(gum_white ".")"
+            gum_white "• No disk encryption, but GNOME logs you in automatically:"
+            gum join "$(gum_white "  • ")" "$(gum_yellow --bold "anyone with physical access can reach your system")"
         elif [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
-            gum join "$(gum_white "• Disk encryption ")" "$(gum_green --bold "on")" "$(gum_white ": your system also asks for a ")" \
-                "$(gum_green --bold "password")" "$(gum_white " at login, two prompts in total.")"
+            gum join "$(gum_white "• Disk encryption ")" "$(gum_green --bold "on")" "$(gum_white ":")"
+            gum join "$(gum_white "  • your system also asks for a ")" "$(gum_green --bold "password")" "$(gum_white " at login, two prompts in total")"
         else
-            gum join "$(gum_white "• No disk encryption: your system asks for a ")" "$(gum_green --bold "password")" "$(gum_white " at every login.")"
+            gum_white "• No disk encryption:"
+            gum join "$(gum_white "  • your system asks for a ")" "$(gum_green --bold "password")" "$(gum_white " at every login")"
         fi
     fi
     return 0
