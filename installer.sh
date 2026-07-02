@@ -120,14 +120,13 @@ main() {
         until select_filesystem; do :; done
         until select_bootloader; do :; done
         until select_disk; do :; done
+        until select_enable_encryption; do :; done
         echo && gum_title "Desktop Setup"
         until select_enable_desktop_environment; do :; done
         until select_enable_desktop_driver; do :; done
         until select_enable_desktop_slim; do :; done
-        until select_enable_desktop_autologin; do :; done
         until select_enable_desktop_keyboard; do :; done
         echo && gum_title "Feature Setup"
-        until select_enable_encryption; do :; done
         until select_enable_core_tweaks; do :; done
         until select_enable_bootsplash; do :; done
         until select_enable_multilib; do :; done
@@ -159,6 +158,14 @@ main() {
         # Print success
         gum_info "Successfully initialized"
 
+        # Hard safety gates right at the init of the installation, before touching any disk and
+        # before the Summary/confirm below - by the time the user confirms, the install is already
+        # known to work. All read-only checks (string/regex tests, blkid/lsblk queries) so they run
+        # in DEBUG/FORCE mode too. On failure, validate_properties offers to fix it in the Advanced
+        # Setup Editor; afterwards it restarts this whole properties step from the top so the
+        # corrected values are shown again before the Summary.
+        validate_properties || continue
+
         ######################################################
         break # Exit properties step and continue installation
         ######################################################
@@ -168,10 +175,12 @@ main() {
 
     # Start installation in 5 seconds?
     if [ "$FORCE" = "false" ]; then
+        echo && gum_title "Summary" && print_summary
         gum_confirm "Start Arch OS Installation?" || trap_gum_exit
     fi
+
     local spin_title="Arch OS Installation starts in 5 seconds. Press CTRL + C to cancel..."
-    echo && ! gum_spin --title="$spin_title" -- sleep 5 && trap_gum_exit # CTRL + C pressed
+    ! gum_spin --title="$spin_title" -- sleep 5 && trap_gum_exit # CTRL + C pressed
     gum_title "Arch OS Installation"
 
     SECONDS=0 # Messure execution time of installation
@@ -247,7 +256,7 @@ main() {
     # Chroot
     [ "$FORCE" = "false" ] && [ "$do_unmount" = "false" ] && gum_confirm "Chroot to new Arch OS?" && do_chroot="true"
     if [ "$do_chroot" = "true" ] && echo && gum_warn "Chrooting Arch OS at /mnt..."; then
-        gum_warn "!! YOUR ARE NOW ON YOUR NEW ARCH OS SYSTEM !!"
+        gum_warn "!! YOU ARE NOW ON YOUR NEW ARCH OS SYSTEM !!"
         gum_warn ">> Leave with command 'exit'"
         if [ "$DEBUG" = "false" ]; then
             arch-chroot /mnt </dev/tty || true
@@ -275,17 +284,18 @@ properties_source() {
 }
 
 properties_generate() {
-    { # Write properties to installer.conf
-        echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}' # Hostname"
+    { # Write properties to installer.conf, grouped the way a user thinks: identity -> storage ->
+        # regional -> kernel -> system features -> desktop (mirrors the interactive TUI order)
         echo "ARCH_OS_USERNAME='${ARCH_OS_USERNAME}' # User"
+        echo "ARCH_OS_HOSTNAME='${ARCH_OS_HOSTNAME}' # Hostname"
         echo "ARCH_OS_DISK='${ARCH_OS_DISK}' # Disk"
         echo "ARCH_OS_BOOT_PARTITION='${ARCH_OS_BOOT_PARTITION}' # Boot partition"
         echo "ARCH_OS_ROOT_PARTITION='${ARCH_OS_ROOT_PARTITION}' # Root partition"
         echo "ARCH_OS_FILESYSTEM='${ARCH_OS_FILESYSTEM}' # Filesystem | Available: btrfs, ext4"
-        echo "ARCH_OS_BOOTLOADER='${ARCH_OS_BOOTLOADER}' # Bootloader | Available: grub, systemd"
-        echo "ARCH_OS_DUAL_BOOT_ENABLED='${ARCH_OS_DUAL_BOOT_ENABLED}' # Dual boot: install alongside existing OS (no disk wipe, reuse ESP, add boot entry only) | Default: false | Enable: true"
         echo "ARCH_OS_BTRFS_SNAPPER_ENABLED='${ARCH_OS_BTRFS_SNAPPER_ENABLED}' # BTRFS Snapper enabled | Disable: false"
         echo "ARCH_OS_BTRFS_ASSISTANT_ENABLED='${ARCH_OS_BTRFS_ASSISTANT_ENABLED}' # BTRFS Desktop Assistant enabled | Disable: false"
+        echo "ARCH_OS_BOOTLOADER='${ARCH_OS_BOOTLOADER}' # Bootloader | Available: grub, systemd"
+        echo "ARCH_OS_DUAL_BOOT_ENABLED='${ARCH_OS_DUAL_BOOT_ENABLED}' # Dual boot: install alongside existing OS (no disk wipe, reuse ESP, add boot entry only) | Default: false | Enable: true"
         echo "ARCH_OS_ENCRYPTION_ENABLED='${ARCH_OS_ENCRYPTION_ENABLED}' # Disk encryption | Disable: false"
         echo "ARCH_OS_TIMEZONE='${ARCH_OS_TIMEZONE}' # Timezone | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin"
         echo "ARCH_OS_LOCALE_LANG='${ARCH_OS_LOCALE_LANG}' # Locale | Show available: ls /usr/share/i18n/locales | Example: de_DE"
@@ -297,24 +307,24 @@ properties_generate() {
         echo "ARCH_OS_KERNEL_ARGS='${ARCH_OS_KERNEL_ARGS}' # Additional kernel parameters (space separated) | Default: null | Example: amd_pstate=active mitigations=off"
         echo "ARCH_OS_MICROCODE='${ARCH_OS_MICROCODE}' # Microcode | Disable: none | Available: intel-ucode, amd-ucode"
         echo "ARCH_OS_CORE_TWEAKS_ENABLED='${ARCH_OS_CORE_TWEAKS_ENABLED}' # Arch OS Core Tweaks | Disable: false"
+        echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}' # Bootsplash | Disable: false"
         echo "ARCH_OS_MULTILIB_ENABLED='${ARCH_OS_MULTILIB_ENABLED}' # MultiLib 32 Bit Support | Disable: false"
         echo "ARCH_OS_AUR_HELPER='${ARCH_OS_AUR_HELPER}' # AUR Helper | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur"
-        echo "ARCH_OS_BOOTSPLASH_ENABLED='${ARCH_OS_BOOTSPLASH_ENABLED}' # Bootsplash | Disable: false"
         echo "ARCH_OS_HOUSEKEEPING_ENABLED='${ARCH_OS_HOUSEKEEPING_ENABLED}'  # Housekeeping | Disable: false"
-        echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}' # Arch OS Manager | Disable: false"
         echo "ARCH_OS_SHELL_ENHANCEMENT_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_ENABLED}' # Shell Enhancement | Disable: false"
         echo "ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='${ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED}' # Enable fish shell | Default: true | Disable: false"
+        echo "ARCH_OS_MANAGER_ENABLED='${ARCH_OS_MANAGER_ENABLED}' # Arch OS Manager | Disable: false"
+        echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}' # VM Support | Default: true | Disable: false"
+        echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}' # Disable ECN support for legacy routers | Default: true | Disable: false"
         echo "ARCH_OS_DESKTOP_ENABLED='${ARCH_OS_DESKTOP_ENABLED}' # Arch OS Desktop (caution: if disabled, only a minimal tty will be provied)| Disable: false"
         echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER='${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}' # Graphics Driver | Disable: none | Available: mesa, intel_i915, nvidia, amd, ati"
         echo "ARCH_OS_DESKTOP_EXTRAS_ENABLED='${ARCH_OS_DESKTOP_EXTRAS_ENABLED}' # Enable desktop extra packages (caution: if disabled, only core + gnome + git packages will be installed) | Disable: false"
         echo "ARCH_OS_DESKTOP_SLIM_ENABLED='${ARCH_OS_DESKTOP_SLIM_ENABLED}' # Enable Sim Desktop (only GNOME Core Apps) | Default: false"
-        echo "ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED='${ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED}' # Enable GNOME autologin | Default: true | Disable: false (note: autologin leaves the login keyring locked)"
+        echo "ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED='${ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED}' # Enable GNOME autologin | Default: matches Disk Encryption (on -> autologin on, avoids a 2nd password prompt) | Override: true, false"
         echo "ARCH_OS_DESKTOP_KEYBOARD_MODEL='${ARCH_OS_DESKTOP_KEYBOARD_MODEL}' # GNOME keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models"
         echo "ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}' # GNOME keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de"
         echo "ARCH_OS_DESKTOP_KEYBOARD_VARIANT='${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}' # GNOME keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys"
         echo "ARCH_OS_SAMBA_SHARE_ENABLED='${ARCH_OS_SAMBA_SHARE_ENABLED}' # Enable Samba public (anonymous) & home share (user) | Disable: false"
-        echo "ARCH_OS_VM_SUPPORT_ENABLED='${ARCH_OS_VM_SUPPORT_ENABLED}' # VM Support | Default: true | Disable: false"
-        echo "ARCH_OS_ECN_ENABLED='${ARCH_OS_ECN_ENABLED}' # Disable ECN support for legacy routers | Default: true | Disable: false"
     } >"$SCRIPT_CONFIG" # Write properties to file
 }
 
@@ -327,7 +337,6 @@ properties_preset_source() {
     [ -z "$ARCH_OS_BTRFS_ASSISTANT_ENABLED" ] && ARCH_OS_BTRFS_ASSISTANT_ENABLED='true'
     [ -z "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" ] && ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED="true"
     [ -z "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" ] && ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
-    [ -z "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" ] && ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED='true'
     [ -z "$ARCH_OS_DESKTOP_KEYBOARD_MODEL" ] && ARCH_OS_DESKTOP_KEYBOARD_MODEL="pc105"
     [ -z "$ARCH_OS_SAMBA_SHARE_ENABLED" ] && ARCH_OS_SAMBA_SHARE_ENABLED="true"
     [ -z "$ARCH_OS_ECN_ENABLED" ] && ARCH_OS_ECN_ENABLED="true"
@@ -390,6 +399,151 @@ properties_preset_source() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
+# VALIDATORS
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+# ARCH_OS_USERNAME can be set directly via the Advanced Setup Editor, bypassing the interactive
+# check in select_username (which only runs while the value is still empty); re-check here so a
+# bad value can never reach useradd.
+validate_username() {
+    if [[ ! "$ARCH_OS_USERNAME" =~ ^[a-z_][a-z0-9_-]*$ ]] || [ "${#ARCH_OS_USERNAME}" -gt 32 ]; then
+        echo "ARCH_OS_USERNAME (${ARCH_OS_USERNAME}) is invalid (allowed: a-z, 0-9, '-', '_'; must not start with a digit; max 32 chars). Fix it in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+        return 1
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+# ARCH_OS_HOSTNAME has no interactive selector at all (always advanced-editor-only, see
+# properties_preset_source); an invalid value would silently end up in /etc/hostname
+validate_hostname() {
+    if [[ ! "$ARCH_OS_HOSTNAME" =~ ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$ ]]; then
+        echo "ARCH_OS_HOSTNAME (${ARCH_OS_HOSTNAME}) is invalid (allowed: a-z, 0-9, '-'; must not start/end with '-'; max 63 chars). Fix it in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+        return 1
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+# Disk must already exist, and the enum-like properties below fall through their case/if-chains
+# silently when misspelled (no default branch anywhere) - that would otherwise produce a
+# half-installed, unbootable, or unaccelerated system with no visible error at all
+validate_install_properties() {
+    if [ ! -b "$ARCH_OS_DISK" ]; then
+        echo "ARCH_OS_DISK (${ARCH_OS_DISK}) does not exist. Fix it in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+        return 1
+    fi
+    case "$ARCH_OS_FILESYSTEM" in
+    btrfs | ext4) ;;
+    *)
+        echo "ARCH_OS_FILESYSTEM (${ARCH_OS_FILESYSTEM}) must be 'btrfs' or 'ext4'. Fix it in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+        return 1
+        ;;
+    esac
+    case "$ARCH_OS_BOOTLOADER" in
+    systemd | grub) ;;
+    *)
+        echo "ARCH_OS_BOOTLOADER (${ARCH_OS_BOOTLOADER}) must be 'systemd' or 'grub'. Fix it in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+        return 1
+        ;;
+    esac
+    if [ -n "$ARCH_OS_MICROCODE" ]; then
+        case "$ARCH_OS_MICROCODE" in
+        none | intel-ucode | amd-ucode) ;;
+        *)
+            echo "ARCH_OS_MICROCODE (${ARCH_OS_MICROCODE}) must be 'none', 'intel-ucode' or 'amd-ucode'. Fix it in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+            return 1
+            ;;
+        esac
+    fi
+    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ] && [ -n "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" ]; then
+        case "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" in
+        none | mesa | intel_i915 | nvidia | amd | ati) ;;
+        *)
+            echo "ARCH_OS_DESKTOP_GRAPHICS_DRIVER (${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}) must be one of: none, mesa, intel_i915, nvidia, amd, ati. Fix it in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+            return 1
+            ;;
+        esac
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+# Hard safety gate for dual boot: refuse to continue if the configured partitions look wrong
+# (e.g. still pointing at the disk-derived defaults instead of an existing ESP + a real target partition).
+# The reason is written to ERROR_MSG_TMP_FILE so trap_exit shows this exact text instead of its
+# generic "An error occurred" fallback - one clear message instead of two stacked ones.
+validate_dual_boot_partitions() {
+    local boot_type root_bytes
+    boot_type="$(blkid -s TYPE -o value "$ARCH_OS_BOOT_PARTITION" 2>/dev/null)"
+    if [ "$boot_type" != "vfat" ]; then
+        echo "Dual Boot: ${ARCH_OS_BOOT_PARTITION} is not an existing vfat/EFI partition (detected: ${boot_type:-none}). Fix ARCH_OS_BOOT_PARTITION / ARCH_OS_ROOT_PARTITION in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+        return 1
+    fi
+    root_bytes="$(lsblk -bdn -o SIZE "$ARCH_OS_ROOT_PARTITION" 2>/dev/null)"
+    if [ -z "$root_bytes" ] || [ "$root_bytes" -lt $((8 * 1024 * 1024 * 1024)) ]; then
+        echo "Dual Boot: ${ARCH_OS_ROOT_PARTITION} is smaller than 8 GiB, refusing to format it (looks like the wrong partition). Fix ARCH_OS_BOOT_PARTITION / ARCH_OS_ROOT_PARTITION in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+        return 1
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+# ARCH_OS_KERNEL_ARGS is appended into a ',' delimited sed expression (see exec_pacstrap_core);
+# reject characters that would break or hijack that substitution instead of trying to escape them.
+# See validate_dual_boot_partitions above for why this writes to ERROR_MSG_TMP_FILE instead of gum_fail.
+validate_kernel_args() {
+    case "$ARCH_OS_KERNEL_ARGS" in
+    *[,\&\\]*)
+        echo "ARCH_OS_KERNEL_ARGS contains an unsupported character (, & or \\). Fix it in the Advanced Setup Editor." >"$ERROR_MSG_TMP_FILE"
+        return 1
+        ;;
+    esac
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
+# Runs all pre-flight validators above; on success prints a short confirmation. On failure, shows
+# the specific reason directly (no log dump) and offers to fix it right away in the Advanced Setup
+# Editor instead of a hard exit. Call as: validate_properties || continue - a fix (or a cancel)
+# makes the caller restart the whole properties step from the top (see main) so the corrected
+# values are shown again before the Summary.
+validate_properties() {
+    echo && gum_title "Validate"
+    if validate_username && validate_hostname && validate_install_properties \
+        && { [ -z "$ARCH_OS_KERNEL_ARGS" ] || validate_kernel_args; } \
+        && { [ "$ARCH_OS_DUAL_BOOT_ENABLED" != "true" ] || validate_dual_boot_partitions; }; then
+        gum_info "Validation successful"
+        return 0
+    fi
+
+    # Show the specific reason directly and consume the file so trap_exit's generic "An error
+    # occurred" + log pointer can't also fire below (exit 130 takes the short "Exit..." path instead)
+    local error && [ -f "$ERROR_MSG_TMP_FILE" ] && error="$(<"$ERROR_MSG_TMP_FILE")" && rm -f "$ERROR_MSG_TMP_FILE"
+    gum_fail "${error:-Validation failed}"
+    [ "$FORCE" = "true" ] && exit 130 # Unattended: no prompt to hang on, just exit
+    gum_confirm --affirmative="Fix" --negative="Exit" "Open Advanced Setup Editor?" || exit 130
+
+    print_header "Arch OS Installer" # Show landing page
+    gum_title "Advanced Setup Editor"
+    local header_txt="• Save with CTRL + D or ESC and cancel with CTRL + C"
+    if gum_write --show-line-numbers --prompt "" --height=18 --width=180 --char-limit=0 --header="${header_txt}" --value="$(cat "$SCRIPT_CONFIG")" >"${SCRIPT_CONFIG}.new"; then
+        mv "${SCRIPT_CONFIG}.new" "${SCRIPT_CONFIG}" && properties_source
+        gum_info "Properties saved"
+    else
+        rm -f "${SCRIPT_CONFIG}.new" # Remove tmp properties
+        gum_warn "Advanced Setup canceled"
+    fi
+    echo && ! gum_spin --title="Reload Properties in 3 seconds..." -- sleep 3 && trap_gum_exit
+    return 1 # Restart the whole properties step from the top (see main)
+}
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 # SELECTORS
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -425,7 +579,7 @@ select_password() { # --change
             return 1
         fi
         # Warn (but allow) on weak passwords; user keeps the final say
-        if [ "${#user_password}" -lt 8 ] && ! gum_confirm "Password is shorter than 8 chars. Use anyway?"; then
+        if [ "${#user_password}" -lt 8 ] && ! gum_confirm $'Password is shorter than 8 chars.\nUse anyway?'; then
             return 1
         fi
         ARCH_OS_PASSWORD="$user_password" && properties_generate # Set value and generate properties file
@@ -507,7 +661,7 @@ select_disk() {
         user_input=$(gum_choose --header "+ Choose Disk" "${options[@]}") || trap_gum_exit_confirm
         [ -z "$user_input" ] && return 1                          # Check if new value is null
         user_input=$(echo "$user_input" | awk -F' ' '{print $1}') # Remove size from input
-        [ ! -e "$user_input" ] && log_fail "Disk does not exists" && return 1
+        [ ! -e "$user_input" ] && log_fail "Disk does not exist" && return 1
         ARCH_OS_DISK="$user_input" # Set property
         # Append 'p' when the device name ends in a digit (covers nvme*, mmcblk*, loop*)
         local part_sep="" && [[ "$ARCH_OS_DISK" =~ [0-9]$ ]] && part_sep="p"
@@ -565,6 +719,36 @@ select_enable_desktop_driver() {
 
 # ---------------------------------------------------------------------------------------------------
 
+# variant_map (layout -> valid variants) is static reference data, see STATIC INPUT VALUES below
+select_enable_desktop_keyboard() {
+    [ "$ARCH_OS_DESKTOP_ENABLED" != "true" ] && return 0
+    if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
+        local layout variant variants
+        local layouts=() variant_list=()
+        read -ra layouts <<<"$(gnome_keymap_layouts)"
+        # Layout filter, pre-filled from the chosen console keymap (e.g. 'de-latin1-...' -> 'de')
+        layout=$(gum_filter --value="${ARCH_OS_VCONSOLE_KEYMAP%%-*}" --header "+ Choose Desktop Keyboard Layout" "${layouts[@]}") || trap_gum_exit_confirm
+        [ -z "$layout" ] && return 1 # Check if new value is null
+        ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$layout"
+        ARCH_OS_DESKTOP_KEYBOARD_VARIANT=""
+        gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
+        # Variant filter restricted to the chosen layout; '(none)' = no variant
+        variants="${variant_map[$layout]:-}"
+        if [ -n "$variants" ]; then
+            read -ra variant_list <<<"$variants"
+            variant=$(gum_filter --header "+ Choose Desktop Keyboard Variant" "(none)" "${variant_list[@]}") || trap_gum_exit_confirm
+            [ "$variant" != "(none)" ] && ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$variant"
+        fi
+        properties_generate
+    else
+        gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
+    fi
+    [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gum_property "Desktop Keyboard Variant" "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT"
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
 select_enable_aur() {
     if [ -z "$ARCH_OS_AUR_HELPER" ]; then
         local user_input options
@@ -605,13 +789,6 @@ select_enable_desktop_slim() {
     [ "$ARCH_OS_DESKTOP_ENABLED" != "true" ] && return 0
     select_toggle ARCH_OS_DESKTOP_SLIM_ENABLED "Enable Desktop Slim Mode? (GNOME Core Apps only)" "Desktop Slim Mode"
 }
-
-select_enable_desktop_autologin() {
-    [ "$ARCH_OS_DESKTOP_ENABLED" != "true" ] && return 0
-    select_toggle ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED "Enable GNOME Autologin? (note: leaves login keyring locked)" "Desktop Autologin"
-}
-
-# ---------------------------------------------------------------------------------------------------
 
 select_enable_encryption() { select_toggle ARCH_OS_ENCRYPTION_ENABLED "Enable Disk Encryption?" "Disk Encryption"; }
 select_enable_core_tweaks() { select_toggle ARCH_OS_CORE_TWEAKS_ENABLED "Enable Core Tweaks?" "Core Tweaks"; }
@@ -1108,12 +1285,15 @@ exec_install_desktop() {
             # Add user to gamemode group
             [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && arch-chroot /mnt gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
-            # Configure GDM (Wayland + optional autologin)
+            # Configure GDM (Wayland + optional autologin). Autologin follows disk encryption by
+            # default (override via ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED): the LUKS passphrase already
+            # gates access at boot, so a second GDM password prompt would be redundant.
+            local autologin_enabled="${ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED:-$ARCH_OS_ENCRYPTION_ENABLED}"
             mkdir -p /mnt/etc/gdm
             {
                 echo "[daemon]"
                 echo "WaylandEnable=True"
-                if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
+                if [ "$autologin_enabled" = "true" ]; then
                     echo ""
                     echo "AutomaticLoginEnable=True"
                     echo "AutomaticLogin=${ARCH_OS_USERNAME}"
@@ -1261,9 +1441,17 @@ exec_install_desktop() {
             # systemctl --global writes to /etc/systemd/user and is robust against future unit changes.
             arch-chroot /mnt systemctl --global enable pipewire.service pipewire-pulse.service wireplumber.service gcr-ssh-agent.socket
 
-            # Let the login keyring unlock with the GDM password on normal login.
-            # No effect under autologin: GDM provides no password there, so the keyring stays locked by design.
+            # Let the login keyring unlock with the GDM password on normal (non-autologin) login.
             sed -i 's/auth\s\+optional\s\+pam_gnome_keyring\.so$/& try_first_pass/' /mnt/etc/pam.d/gdm-password
+
+            # Under autologin GDM never captures a password, so the keyring could never auto-unlock via
+            # PAM. Pre-create it with a blank password now (before first boot) so it still unlocks
+            # transparently - doing this in initialize.sh instead would race GDM's own PAM session hook,
+            # which already runs on that same first login before any autostart app gets a chance to.
+            # Data stays protected by LUKS whenever this applies with encryption enabled (the default).
+            if [ "$autologin_enabled" = "true" ]; then
+                arch-chroot /mnt /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c 'dbus-run-session -- gnome-keyring-daemon --unlock <<< ""' || log_warn "Could not pre-create a passwordless login keyring"
+            fi
 
             # Create users applications dir
             mkdir -p "/mnt/home/${ARCH_OS_USERNAME}/.local/share/applications"
@@ -1383,8 +1571,16 @@ exec_install_graphics_driver() {
                 arch-chroot /mnt mkinitcpio -P
                 ;;
             "nvidia") # https://wiki.archlinux.org/title/NVIDIA#Installation
-                # Arch dropped the closed driver; nvidia-open (Turing+) is the only repo option, DKMS for custom kernels
-                local packages=("${ARCH_OS_KERNEL}-headers" nvidia-open-dkms nvidia-settings nvidia-utils opencl-nvidia vkd3d vulkan-tools)
+                # Arch dropped the closed driver; nvidia-open (Turing+) is the only repo option.
+                # Precompiled nvidia-open only exists for the exact 'linux' package; every other
+                # kernel (zen/lts/hardened/custom) needs nvidia-open-dkms, built against its headers.
+                local nvidia_pkg="nvidia-open-dkms"
+                local packages=("${ARCH_OS_KERNEL}-headers" nvidia-settings nvidia-utils opencl-nvidia vkd3d vulkan-tools)
+                if [ "$ARCH_OS_KERNEL" = "linux" ]; then
+                    nvidia_pkg="nvidia-open"
+                    packages=(nvidia-settings nvidia-utils opencl-nvidia vkd3d vulkan-tools)
+                fi
+                packages+=("$nvidia_pkg")
                 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-nvidia-utils lib32-opencl-nvidia lib32-vkd3d)
                 chroot_pacman_install "${packages[@]}"
                 # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
@@ -1400,7 +1596,7 @@ exec_install_graphics_driver() {
                     echo "Operation=Upgrade"
                     echo "Operation=Remove"
                     echo "Type=Package"
-                    echo "Target=nvidia-open-dkms"
+                    echo "Target=${nvidia_pkg}"
                     echo "Target=${ARCH_OS_KERNEL}"
                     echo "# Change the linux part above if a different kernel is used"
                     echo ""
@@ -2042,7 +2238,7 @@ trap_exit() {
     # Check if failed and print error
     if [ "$result_code" -gt "0" ]; then
         [ -n "$error" ] && gum_fail "$error"            # Print error message (if exists)
-        [ -z "$error" ] && gum_fail "An Error occurred" # Otherwise pint default error message
+        [ -z "$error" ] && gum_fail "An error occurred" # Otherwise print default error message
         gum_warn "See ${SCRIPT_LOG} for more information..."
         gum_confirm "Show Logs?" && gum pager --show-line-numbers <"$SCRIPT_LOG" # Ask for show logs?
     fi
@@ -2078,7 +2274,7 @@ process_capture() {
     fi
 
     # Handle error while executing process
-    [ ! -f "$PROCESS_RET_TMP_FILE" ] && gum_fail "${PROCESS_RET_TMP_FILE} not found (do not init process?)" && exit 1
+    [ ! -f "$PROCESS_RET_TMP_FILE" ] && gum_fail "${PROCESS_RET_TMP_FILE} not found (process_init not called?)" && exit 1
     [ "$(<"$PROCESS_RET_TMP_FILE")" != "0" ] && gum_fail "${process_name} failed" && exit 1 # If process failed (result code 0 was not write in the end)
 
     # Finish
@@ -2152,6 +2348,48 @@ print_header() {
 
 # ---------------------------------------------------------------------------------------------------
 
+# Last-look summary before the point of no return: short plain-English sentences instead of a
+# property dump - disk/partition fate (bootloader in parens on the boot partition), then what it
+# means for login. The disk itself is highlighted in blue (like gum_title) so it stands out as
+# "the one thing to double check"; everything else stays green like gum_property - an all-green
+# sentence would bury the one value that matters most. Wording stays desktop-environment-agnostic
+# ("your system", not "GNOME") except for the risky-override warning, where naming GNOME
+# explicitly reads more concrete.
+print_summary() {
+    local disk_size && disk_size="$(lsblk -dn -o SIZE "$ARCH_OS_DISK" 2>/dev/null)"
+    local disk_label="$ARCH_OS_DISK" && [ -n "$disk_size" ] && disk_label="${ARCH_OS_DISK} (${disk_size})"
+    local bootloader_name="GRUB" && [ "$ARCH_OS_BOOTLOADER" = "systemd" ] && bootloader_name="systemd-boot"
+
+    if [ "$ARCH_OS_DUAL_BOOT_ENABLED" = "true" ]; then
+        gum join "$(gum_white "• Shares disk ")" "$(gum_blue --bold "$disk_label")" \
+            "$(gum_white " with your other system: keeps boot partition ")" "$(gum_green --bold "$ARCH_OS_BOOT_PARTITION")" "$(gum_white " (")" "$(gum_green --bold "$bootloader_name")" \
+            "$(gum_white "), formats root partition ")" "$(gum_green --bold "$ARCH_OS_ROOT_PARTITION")" "$(gum_white " as ")" "$(gum_green --bold "$ARCH_OS_FILESYSTEM")" "$(gum_white ".")"
+    else
+        gum join "$(gum_white "• Erases disk ")" "$(gum_blue --bold "$disk_label")" \
+            "$(gum_white ": creates boot partition ")" "$(gum_green --bold "$ARCH_OS_BOOT_PARTITION")" "$(gum_white " (")" "$(gum_green --bold "$bootloader_name")" \
+            "$(gum_white ") and root partition ")" "$(gum_green --bold "$ARCH_OS_ROOT_PARTITION")" "$(gum_white ", formats root as ")" "$(gum_green --bold "$ARCH_OS_FILESYSTEM")" "$(gum_white ".")"
+    fi
+
+    if [ "$ARCH_OS_DESKTOP_ENABLED" = "true" ]; then
+        local autologin="${ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED:-$ARCH_OS_ENCRYPTION_ENABLED}"
+        if [ "$autologin" = "true" ] && [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
+            gum join "$(gum_white "• Disk encryption ")" "$(gum_green --bold "on")" \
+                "$(gum_white ": your system unlocks automatically, just one password at boot.")"
+        elif [ "$autologin" = "true" ]; then
+            gum join "$(gum_white "• No disk encryption, but GNOME logs you in automatically: ")" \
+                "$(gum_yellow --bold "anyone with physical access can reach your system")" "$(gum_white ".")"
+        elif [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
+            gum join "$(gum_white "• Disk encryption ")" "$(gum_green --bold "on")" "$(gum_white ": your system also asks for a ")" \
+                "$(gum_green --bold "password")" "$(gum_white " at login, two prompts in total.")"
+        else
+            gum join "$(gum_white "• No disk encryption: your system asks for a ")" "$(gum_green --bold "password")" "$(gum_white " at every login.")"
+        fi
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------------------------------
+
 print_filled_space() {
     local total="$1" && local text="$2" && local length="${#text}"
     [ "$length" -ge "$total" ] && echo "$text" && return 0
@@ -2215,59 +2453,34 @@ gnome_keymap_layouts() { echo "af al am ara at au az ba bd be bg br brai bt bw b
 
 # ---------------------------------------------------------------------------------------------------
 
-select_enable_desktop_keyboard() {
-    [ "$ARCH_OS_DESKTOP_ENABLED" != "true" ] && return 0
-    if [ -z "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" ]; then
-        local layout variant variants
-        local layouts=() variant_list=()
-        # GNOME variants per layout (legacy/olpc dropped); only valid layout+variant combos are offered
-        local -A variant_map=(
-            [af]="ps uz" [al]="plisi veqilharxhi" [am]="phonetic phonetic-alt eastern eastern-alt western" [ara]="digits azerty azerty_digits buckwalter mac mac-phonetic" [at]="nodeadkeys mac" [az]="cyrillic"
-            [ba]="alternatequotes unicode unicodeus us" [bd]="probhat" [be]="oss oss_latin9 iso-alternate nodeadkeys wang" [bg]="phonetic bas_phonetic bekl" [brai]="left_hand left_hand_invert right_hand right_hand_invert"
-            [br]="nodeadkeys dvorak nativo nativo-us thinkpad thinkpad_nodeadkeys nativo-epo rus" [by]="latin intl phonetic ru" [ca]="fr-dvorak multix eng ike" [ch]="de_nodeadkeys de_mac fr fr_nodeadkeys fr_mac"
-            [cm]="french qwerty azerty dvorak mmuock" [cn]="altgr-pinyin mon_trad mon_trad_todo mon_trad_xibe mon_trad_manchu mon_trad_galik mon_todo_galik mon_manchu_galik tib tib_asciinum ug"
-            [cz]="bksl qwerty qwerty_bksl winkeys winkeys-qwerty qwerty-mac ucw dvorak-ucw rus" [de]="deadacute deadgraveacute deadtilde nodeadkeys e1 e2 T3 us dvorak mac mac_nodeadkeys neo qwerty dsb dsb_qwertz ro ro_nodeadkeys ru tr"
-            [dk]="nodeadkeys winkeys mac mac_nodeadkeys dvorak" [dz]="ber azerty-deadkeys qwerty-gb-deadkeys qwerty-us-deadkeys ar" [ee]="nodeadkeys dvorak us" [es]="nodeadkeys deadtilde winkeys dvorak ast cat"
-            [fi]="winkeys classic nodeadkeys mac smi" [fo]="nodeadkeys" [fr]="nodeadkeys oss oss_nodeadkeys oss_latin9 latin9 latin9_nodeadkeys azerty afnor bepo bepo_latin9 bepo_afnor dvorak ergol ergol_iso mac us bre oci geo"
-            [gb]="extd intl dvorak dvorakukp mac mac_intl colemak colemak_dh gla pl" [ge]="ergonomic mess os ru" [gh]="generic gillbt akan avn ewe fula ga hausa" [gr]="simple nodeadkeys polytonic" [hr]="alternatequotes unicode unicodeus us"
-            [hu]="standard nodeadkeys qwerty 101_qwertz_comma_dead 101_qwertz_comma_nodead 101_qwertz_dot_dead 101_qwertz_dot_nodead 101_qwerty_comma_dead 101_qwerty_comma_nodead 101_qwerty_dot_dead 101_qwerty_dot_nodead 102_qwertz_comma_dead 102_qwertz_comma_nodead 102_qwertz_dot_dead 102_qwertz_dot_nodead 102_qwerty_comma_dead 102_qwerty_comma_nodead 102_qwerty_dot_dead 102_qwerty_dot_nodead"
-            [id]="melayu-phonetic melayu-phoneticx pegon-phonetic javanese" [ie]="UnicodeExpert CloGaelach ogam ogam_is434" [il]="si2 lyx phonetic biblical"
-            [in]="asm-kagapa ben ben_probhat ben_baishakhi ben_bornona ben-kagapa ben_gitanjali ben_inscript eng guj guj-kagapa bolnagri hin-wx hin-kagapa kan kan-kagapa mal mal_lalitha mal_enhanced mal_poorna mara mni mar-kagapa marathi ori ori-bolnagri ori-wx guru jhelum san-kagapa sat tamilnet tamilnet_tamilnumbers tamilnet_TAB tamilnet_TSCII tam tam_tamilnumbers tel tel-kagapa tel-sarala urd-phonetic urd-phonetic3 urd-winkeys iipa"
-            [iq]="ku ku_alt ku_f ku_ara" [ir]="pes_keypad winkeys azb ku ku_alt ku_f ku_ara" [is]="mac dvorak" [it]="nodeadkeys winkeys mac us ibm fur scn geo" [jp]="kana OADG109A mac dvorak" [ke]="kik" [kg]="phonetic" [kr]="kr104"
-            [kz]="kazrus ext latin ruskaz" [la]="stea" [latam]="nodeadkeys deadtilde dvorak colemak" [lk]="us tam_unicode tam_TAB" [lt]="std us ibm lekp lekpa ratise sgs" [lv]="apostrophe tilde fkey modern modern-cyr ergonomic adapted"
-            [ma]="tifinagh tifinagh-alt tifinagh-alt-phonetic tifinagh-extended tifinagh-phonetic tifinagh-extended-phonetic french rif" [md]="gag"
-            [me]="cyrillic cyrillicyz cyrillicalternatequotes latinunicode latinyz latinunicodeyz latinalternatequotes" [mk]="nodeadkeys" [ml]="fr-oss us-mac us-intl" [mm]="zawgyi mara mnw mnw-a1 shn zgt" [mt]="us alt-us alt-gb"
-            [my]="phonetic" [ng]="hausa igbo yoruba" [nl]="us mac std" [no]="nodeadkeys winkeys mac mac_nodeadkeys colemak colemak_dh colemak_dh_wide dvorak smi smi_nodeadkeys" [nz]="mao"
-            [ph]="qwerty-bay capewell-dvorak capewell-dvorak-bay capewell-qwerf2k6 capewell-qwerf2k6-bay colemak colemak-bay dvorak dvorak-bay" [pk]="urd-crulp urd-nla pak_urdu_phonetic ara snd"
-            [pl]="qwertz dvorak dvorak_quotes dvorak_altquotes dvp csb szl ru_phonetic_dvorak" [pt]="nodeadkeys mac mac_nodeadkeys nativo nativo-us nativo-epo" [ro]="std winkeys"
-            [rs]="alternatequotes yz latin latinalternatequotes latinunicode latinyz latinunicodeyz rue"
-            [ru]="phonetic phonetic_winkeys phonetic_YAZHERTY phonetic_azerty phonetic_dvorak typewriter ruchey_ru ruchey_en dos mac ab bak cv cv_latin xal kom chm os_winkeys srp tt udm sah"
-            [se]="nodeadkeys dvorak us_dvorak svdvorak colemak mac us swl smi rus" [si]="alternatequotes us" [sk]="bksl qwerty qwerty_bksl" [sy]="syc syc_phonetic ku ku_alt ku_f" [th]="tis pat mnc" [tm]="alt"
-            [tr]="f e alt intl ku ku_f ku_alt" [tw]="indigenous saisiyat" [ua]="phonetic typewriter winkeys winkeysenhanced macOS homophonic crh crh_f crh_alt"
-            [us]="euro intl alt-intl altgr-intl mac mac-iso colemak colemak_dh colemak_dh_wide colemak_dh_ortho colemak_dh_iso colemak_dh_wide_iso dvorak dvorak-intl dvorak-alt-intl dvorak-l dvorak-r dvorak-classic dvp dvorak-mac dvorak-mac-iso norman symbolic workman workman-intl chr haw rus hbs"
-            [uz]="latin" [vn]="us fr"
-        )
-        read -ra layouts <<<"$(gnome_keymap_layouts)"
-        # Layout filter, pre-filled from the chosen console keymap (e.g. 'de-latin1-...' -> 'de')
-        layout=$(gum_filter --value="${ARCH_OS_VCONSOLE_KEYMAP%%-*}" --header "+ Choose Desktop Keyboard Layout" "${layouts[@]}") || trap_gum_exit_confirm
-        [ -z "$layout" ] && return 1 # Check if new value is null
-        ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$layout"
-        ARCH_OS_DESKTOP_KEYBOARD_VARIANT=""
-        gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
-        # Variant filter restricted to the chosen layout; '(none)' = no variant
-        variants="${variant_map[$layout]:-}"
-        if [ -n "$variants" ]; then
-            read -ra variant_list <<<"$variants"
-            variant=$(gum_filter --header "+ Choose Desktop Keyboard Variant" "(none)" "${variant_list[@]}") || trap_gum_exit_confirm
-            [ "$variant" != "(none)" ] && ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$variant"
-        fi
-        properties_generate
-    else
-        gum_property "Desktop Keyboard" "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
-    fi
-    [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && gum_property "Desktop Keyboard Variant" "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT"
-    return 0
-}
+# GNOME variants per layout (legacy/olpc dropped); only valid layout+variant combos are offered in
+# select_enable_desktop_keyboard
+declare -A variant_map=(
+    [af]="ps uz" [al]="plisi veqilharxhi" [am]="phonetic phonetic-alt eastern eastern-alt western" [ara]="digits azerty azerty_digits buckwalter mac mac-phonetic" [at]="nodeadkeys mac" [az]="cyrillic"
+    [ba]="alternatequotes unicode unicodeus us" [bd]="probhat" [be]="oss oss_latin9 iso-alternate nodeadkeys wang" [bg]="phonetic bas_phonetic bekl" [brai]="left_hand left_hand_invert right_hand right_hand_invert"
+    [br]="nodeadkeys dvorak nativo nativo-us thinkpad thinkpad_nodeadkeys nativo-epo rus" [by]="latin intl phonetic ru" [ca]="fr-dvorak multix eng ike" [ch]="de_nodeadkeys de_mac fr fr_nodeadkeys fr_mac"
+    [cm]="french qwerty azerty dvorak mmuock" [cn]="altgr-pinyin mon_trad mon_trad_todo mon_trad_xibe mon_trad_manchu mon_trad_galik mon_todo_galik mon_manchu_galik tib tib_asciinum ug"
+    [cz]="bksl qwerty qwerty_bksl winkeys winkeys-qwerty qwerty-mac ucw dvorak-ucw rus" [de]="deadacute deadgraveacute deadtilde nodeadkeys e1 e2 T3 us dvorak mac mac_nodeadkeys neo qwerty dsb dsb_qwertz ro ro_nodeadkeys ru tr"
+    [dk]="nodeadkeys winkeys mac mac_nodeadkeys dvorak" [dz]="ber azerty-deadkeys qwerty-gb-deadkeys qwerty-us-deadkeys ar" [ee]="nodeadkeys dvorak us" [es]="nodeadkeys deadtilde winkeys dvorak ast cat"
+    [fi]="winkeys classic nodeadkeys mac smi" [fo]="nodeadkeys" [fr]="nodeadkeys oss oss_nodeadkeys oss_latin9 latin9 latin9_nodeadkeys azerty afnor bepo bepo_latin9 bepo_afnor dvorak ergol ergol_iso mac us bre oci geo"
+    [gb]="extd intl dvorak dvorakukp mac mac_intl colemak colemak_dh gla pl" [ge]="ergonomic mess os ru" [gh]="generic gillbt akan avn ewe fula ga hausa" [gr]="simple nodeadkeys polytonic" [hr]="alternatequotes unicode unicodeus us"
+    [hu]="standard nodeadkeys qwerty 101_qwertz_comma_dead 101_qwertz_comma_nodead 101_qwertz_dot_dead 101_qwertz_dot_nodead 101_qwerty_comma_dead 101_qwerty_comma_nodead 101_qwerty_dot_dead 101_qwerty_dot_nodead 102_qwertz_comma_dead 102_qwertz_comma_nodead 102_qwertz_dot_dead 102_qwertz_dot_nodead 102_qwerty_comma_dead 102_qwerty_comma_nodead 102_qwerty_dot_dead 102_qwerty_dot_nodead"
+    [id]="melayu-phonetic melayu-phoneticx pegon-phonetic javanese" [ie]="UnicodeExpert CloGaelach ogam ogam_is434" [il]="si2 lyx phonetic biblical"
+    [in]="asm-kagapa ben ben_probhat ben_baishakhi ben_bornona ben-kagapa ben_gitanjali ben_inscript eng guj guj-kagapa bolnagri hin-wx hin-kagapa kan kan-kagapa mal mal_lalitha mal_enhanced mal_poorna mara mni mar-kagapa marathi ori ori-bolnagri ori-wx guru jhelum san-kagapa sat tamilnet tamilnet_tamilnumbers tamilnet_TAB tamilnet_TSCII tam tam_tamilnumbers tel tel-kagapa tel-sarala urd-phonetic urd-phonetic3 urd-winkeys iipa"
+    [iq]="ku ku_alt ku_f ku_ara" [ir]="pes_keypad winkeys azb ku ku_alt ku_f ku_ara" [is]="mac dvorak" [it]="nodeadkeys winkeys mac us ibm fur scn geo" [jp]="kana OADG109A mac dvorak" [ke]="kik" [kg]="phonetic" [kr]="kr104"
+    [kz]="kazrus ext latin ruskaz" [la]="stea" [latam]="nodeadkeys deadtilde dvorak colemak" [lk]="us tam_unicode tam_TAB" [lt]="std us ibm lekp lekpa ratise sgs" [lv]="apostrophe tilde fkey modern modern-cyr ergonomic adapted"
+    [ma]="tifinagh tifinagh-alt tifinagh-alt-phonetic tifinagh-extended tifinagh-phonetic tifinagh-extended-phonetic french rif" [md]="gag"
+    [me]="cyrillic cyrillicyz cyrillicalternatequotes latinunicode latinyz latinunicodeyz latinalternatequotes" [mk]="nodeadkeys" [ml]="fr-oss us-mac us-intl" [mm]="zawgyi mara mnw mnw-a1 shn zgt" [mt]="us alt-us alt-gb"
+    [my]="phonetic" [ng]="hausa igbo yoruba" [nl]="us mac std" [no]="nodeadkeys winkeys mac mac_nodeadkeys colemak colemak_dh colemak_dh_wide dvorak smi smi_nodeadkeys" [nz]="mao"
+    [ph]="qwerty-bay capewell-dvorak capewell-dvorak-bay capewell-qwerf2k6 capewell-qwerf2k6-bay colemak colemak-bay dvorak dvorak-bay" [pk]="urd-crulp urd-nla pak_urdu_phonetic ara snd"
+    [pl]="qwertz dvorak dvorak_quotes dvorak_altquotes dvp csb szl ru_phonetic_dvorak" [pt]="nodeadkeys mac mac_nodeadkeys nativo nativo-us nativo-epo" [ro]="std winkeys"
+    [rs]="alternatequotes yz latin latinalternatequotes latinunicode latinyz latinunicodeyz rue"
+    [ru]="phonetic phonetic_winkeys phonetic_YAZHERTY phonetic_azerty phonetic_dvorak typewriter ruchey_ru ruchey_en dos mac ab bak cv cv_latin xal kom chm os_winkeys srp tt udm sah"
+    [se]="nodeadkeys dvorak us_dvorak svdvorak colemak mac us swl smi rus" [si]="alternatequotes us" [sk]="bksl qwerty qwerty_bksl" [sy]="syc syc_phonetic ku ku_alt ku_f" [th]="tis pat mnc" [tm]="alt"
+    [tr]="f e alt intl ku ku_f ku_alt" [tw]="indigenous saisiyat" [ua]="phonetic typewriter winkeys winkeysenhanced macOS homophonic crh crh_f crh_alt"
+    [us]="euro intl alt-intl altgr-intl mac mac-iso colemak colemak_dh colemak_dh_wide colemak_dh_ortho colemak_dh_iso colemak_dh_wide_iso dvorak dvorak-intl dvorak-alt-intl dvorak-l dvorak-r dvorak-classic dvp dvorak-mac dvorak-mac-iso norman symbolic workman workman-intl chr haw rus hbs"
+    [uz]="latin" [vn]="us fr"
+)
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # INSTALLER SELF UPDATE
@@ -2290,25 +2503,46 @@ update_installer() {
     gum_confirm "Installer update available: ${VERSION} → ${latest_version}. Update now?" || return 0
 
     # Download new installer of the matching release tag to a temp file
-    local new_installer="${SCRIPT_TMP_DIR}/installer.sh.new"
+    # (kept outside SCRIPT_TMP_DIR so it survives the cleanup below)
+    local new_installer && new_installer="$(mktemp)"
     local download_url="https://raw.githubusercontent.com/murkl/arch-os/${latest_version}/installer.sh"
     if ! gum_spin --title="Downloading Arch OS Installer ${latest_version}..." -- curl -Lsf --max-time 60 -o "$new_installer" "$download_url"; then
-        gum_warn "Update download failed, continuing with current version (${VERSION})..." && return 0
+        gum_warn "Update download failed, continuing with current version (${VERSION})..." && rm -f "$new_installer" && return 0
     fi
 
     # Validate downloaded installer (must declare the expected version)
     if ! grep -q "^VERSION='${latest_version}'" "$new_installer"; then
-        gum_warn "Downloaded installer is invalid, continuing with current version (${VERSION})..." && return 0
+        gum_warn "Downloaded installer is invalid, continuing with current version (${VERSION})..." && rm -f "$new_installer" && return 0
     fi
 
-    # Replace current installer file and restart with the new version (env vars like DEBUG/FORCE are inherited)
-    local script_path && script_path="$(readlink -f "${BASH_SOURCE[0]}")"
-    if ! cp -f "$new_installer" "$script_path"; then
-        gum_warn "Could not replace installer at ${script_path}, continuing with current version (${VERSION})..." && return 0
+    # Verify integrity against the checksum published as a release asset (fails safe: any
+    # mismatch or missing checksum aborts the update, the current version keeps running)
+    local checksum_url="https://github.com/murkl/arch-os/releases/download/${latest_version}/installer.sh.sha256"
+    local expected_sha actual_sha
+    expected_sha=$(curl -Lsf --max-time 10 "$checksum_url" 2>/dev/null | awk '{print $1}')
+    actual_sha=$(sha256sum "$new_installer" | awk '{print $1}')
+    if [ -z "$expected_sha" ] || [ "$expected_sha" != "$actual_sha" ]; then
+        gum_warn "Checksum verification failed, continuing with current version (${VERSION})..." && rm -f "$new_installer" && return 0
     fi
-    chmod +x "$script_path" || true
+
+    # Restart with the new version. Only overwrite the running script file in place when it is
+    # actually backed by one (e.g. the ISO's /usr/local/bin/arch-os or a locally saved installer.sh).
+    # 'curl -Ls bit.ly/arch-os | bash' has no backing file: ${BASH_SOURCE[0]} is just the literal
+    # string "bash", so resolving/writing to it would create a stray "./bash" file in the current
+    # directory instead of updating anything - just restart from the downloaded copy in that case.
+    local exec_path="$new_installer"
+    if [ -f "${BASH_SOURCE[0]}" ] && grep -q "^VERSION='${VERSION}'" "${BASH_SOURCE[0]}"; then
+        local script_path && script_path="$(readlink -f "${BASH_SOURCE[0]}")"
+        if cp -f "$new_installer" "$script_path"; then
+            exec_path="$script_path"
+        else
+            gum_warn "Could not replace installer at ${script_path}, updating for this run only..."
+        fi
+    fi
+    chmod +x "$exec_path" || true
+
     rm -rf "$SCRIPT_TMP_DIR" # Cleanup manually (exit trap is skipped by exec)
-    gum_info "Updated to ${latest_version}. Restarting installer..." && exec bash "$script_path"
+    gum_info "Updated to ${latest_version}. Restarting installer..." && exec bash "$exec_path"
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////

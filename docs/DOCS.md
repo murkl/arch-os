@@ -205,16 +205,16 @@ The `installer.conf` with all properties (except `ARCH_OS_PASSWORD` for better s
 ### Example: `installer.conf`
 
 ```
-ARCH_OS_HOSTNAME='arch-os' # Hostname
 ARCH_OS_USERNAME='tux' # User
+ARCH_OS_HOSTNAME='arch-os' # Hostname
 ARCH_OS_DISK='/dev/sda' # Disk
 ARCH_OS_BOOT_PARTITION='/dev/sda1' # Boot partition
 ARCH_OS_ROOT_PARTITION='/dev/sda2' # Root partition
 ARCH_OS_FILESYSTEM='btrfs' # Filesystem | Available: btrfs, ext4
-ARCH_OS_BOOTLOADER='grub' # Bootloader | Available: grub, systemd
-ARCH_OS_DUAL_BOOT_ENABLED='false' # Dual boot: install alongside existing OS (no disk wipe, reuse ESP, add boot entry only) | Default: false | Enable: true
 ARCH_OS_BTRFS_SNAPPER_ENABLED='true' # BTRFS Snapper enabled | Disable: false
 ARCH_OS_BTRFS_ASSISTANT_ENABLED='true' # BTRFS Desktop Assistant enabled | Disable: false
+ARCH_OS_BOOTLOADER='grub' # Bootloader | Available: grub, systemd
+ARCH_OS_DUAL_BOOT_ENABLED='false' # Dual boot: install alongside existing OS (no disk wipe, reuse ESP, add boot entry only) | Default: false | Enable: true
 ARCH_OS_ENCRYPTION_ENABLED='true' # Disk encryption | Disable: false
 ARCH_OS_TIMEZONE='Europe/Berlin' # Timezone | Show available: ls /usr/share/zoneinfo/** | Example: Europe/Berlin
 ARCH_OS_LOCALE_LANG='de_DE' # Locale | Show available: ls /usr/share/i18n/locales | Example: de_DE
@@ -226,24 +226,24 @@ ARCH_OS_KERNEL='linux-zen' # Kernel | Default: linux-zen | Recommended: linux, l
 ARCH_OS_KERNEL_ARGS='' # Additional kernel parameters (space separated) | Default: null | Example: amd_pstate=active mitigations=off
 ARCH_OS_MICROCODE='intel-ucode' # Microcode | Disable: none | Available: intel-ucode, amd-ucode
 ARCH_OS_CORE_TWEAKS_ENABLED='true' # Arch OS Core Tweaks | Disable: false
+ARCH_OS_BOOTSPLASH_ENABLED='true' # Bootsplash | Disable: false
 ARCH_OS_MULTILIB_ENABLED='true' # MultiLib 32 Bit Support | Disable: false
 ARCH_OS_AUR_HELPER='paru' # AUR Helper | Default: paru | Disable: none | Recommended: paru, yay, trizen, pikaur
-ARCH_OS_BOOTSPLASH_ENABLED='true' # Bootsplash | Disable: false
 ARCH_OS_HOUSEKEEPING_ENABLED='true'  # Housekeeping | Disable: false
-ARCH_OS_MANAGER_ENABLED='true' # Arch OS Manager | Disable: false
 ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true' # Shell Enhancement | Disable: false
 ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED='true' # Enable fish shell | Default: true | Disable: false
+ARCH_OS_MANAGER_ENABLED='true' # Arch OS Manager | Disable: false
+ARCH_OS_VM_SUPPORT_ENABLED='true' # VM Support | Default: true | Disable: false
+ARCH_OS_ECN_ENABLED='true' # Disable ECN support for legacy routers | Default: true | Disable: false
 ARCH_OS_DESKTOP_ENABLED='true' # Arch OS Desktop (caution: if disabled, only a minimal tty will be provied)| Disable: false
 ARCH_OS_DESKTOP_GRAPHICS_DRIVER='amd' # Graphics Driver | Disable: none | Available: mesa, intel_i915, nvidia, amd, ati
 ARCH_OS_DESKTOP_EXTRAS_ENABLED='true' # Enable desktop extra packages (caution: if disabled, only core + gnome + git packages will be installed) | Disable: false
 ARCH_OS_DESKTOP_SLIM_ENABLED='true' # Enable Sim Desktop (only GNOME Core Apps) | Default: false
-ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED='true' # Enable GNOME autologin | Default: true | Disable: false (note: autologin leaves the login keyring locked)
+ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED='true' # Enable GNOME autologin | Default: matches Disk Encryption (on -> autologin on, avoids a 2nd password prompt) | Override: true, false
 ARCH_OS_DESKTOP_KEYBOARD_MODEL='pc105' # GNOME keyboard model | Default: pc105 | Show available: localectl list-x11-keymap-models
 ARCH_OS_DESKTOP_KEYBOARD_LAYOUT='de' # GNOME keyboard layout | Show available: localectl list-x11-keymap-layouts | Example: de
 ARCH_OS_DESKTOP_KEYBOARD_VARIANT='nodeadkeys' # GNOME keyboard variant | Default: null | Show available: localectl list-x11-keymap-variants | Example: nodeadkeys
 ARCH_OS_SAMBA_SHARE_ENABLED='true' # Enable Samba public (anonymous) & home share (user) | Disable: false
-ARCH_OS_VM_SUPPORT_ENABLED='true' # VM Support | Default: true | Disable: false
-ARCH_OS_ECN_ENABLED='true' # Disable ECN support for legacy routers | Default: true | Disable: false
 ```
 
 **Note:** With `ARCH_OS_SAMBA_SHARE_ENABLED='true'`, the `[public]` share (`/srv/samba/public`) is exposed **anonymously and writable** to everyone on the local network (guest access, no password). Only enable it on trusted networks, or restrict the share in `/etc/samba/smb.conf` afterwards.
