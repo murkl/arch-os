@@ -21,7 +21,7 @@ set -E          # ERR trap inherited by shell functions (errtrace)
 : "${GUM:=/usr/local/bin/gum}" # GUM=/usr/bin/gum ./installer.sh
 
 # SCRIPT
-VERSION='1.9.6'
+VERSION='1.9.7'
 
 # VERSION
 [ "$*" = "--version" ] && echo "$VERSION" && exit 0
