@@ -14,9 +14,10 @@ between.
   and a second run picks up where the first left off. `/etc/motd` and
   `/etc/issue` say so, and so does the installer on its way out
 - Plymouth bootsplash with the Arch OS theme
-- Nord palette and a console font loaded on tty1, so the installer looks like
-  itself on a bare VT — a console font holds at most 512 glyphs, and the
-  interface draws itself out of what one is guaranteed to have
+- Nord palette and a console font, put on by the `installer` script itself and
+  so by every start of it, so the installer looks like itself on a bare VT — a
+  console font holds at most 512 glyphs, and the interface draws itself out of
+  what one is guaranteed to have
 - Networking left exactly as the Arch ISO ships it (iwd, systemd-networkd);
   the installer's own preflight check says to use `iwctl` if there is none
 - UEFI only, squashfs/zstd
@@ -49,7 +50,7 @@ one.
 ```
 build.sh                                   assembles and runs mkarchiso
 src/etc/systemd/system/installer.service   starts the installer on tty1
-src/usr/local/bin/installer                the one way in: the unit and the prompt both run this
+src/usr/local/bin/installer                the one way in: the unit and the prompt both run this, and it dresses the console first
 src/usr/local/bin/installer-console-theme  paints the console in the Nord palette
 ```
 

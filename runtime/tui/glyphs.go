@@ -66,6 +66,14 @@ type glyphSet struct {
 
 	// spinner turns while something runs.
 	spinner []string
+
+	// spell rewrites the marks a set has no glyph for but that turn up inside a
+	// sentence rather than beside one: the return symbol a key hint names, and
+	// the ellipsis a line that is still going ends on. They arrive as words
+	// rather than as marks — out of the code, and out of a catalog that
+	// translates them — so this is a rewriting of what is said and not one more
+	// entry above.
+	spell *strings.Replacer
 }
 
 // glyphBlank is the cursor's own width in empty cells. The same in either set,
@@ -99,6 +107,9 @@ var fullGlyphs = glyphSet{
 	// A filled quadrant sweeping round a circle: it reads as one round thing
 	// rotating in place and stays inside a single cell.
 	spinner: []string{"◐", "◓", "◑", "◒"},
+
+	// Nothing to rewrite: this is the set every mark was written in.
+	spell: strings.NewReplacer(),
 }
 
 // plainGlyphs is the same interface on a virtual console. Every entry here is
@@ -114,11 +125,12 @@ var plainGlyphs = glyphSet{
 	scrollTrack: "│",
 	scrollThumb: "█",
 
-	// No console font has a tick or a cross. A filled bullet against the faded
-	// dot a skipped row keeps carries the same distinction — done, passed
-	// over — and the colour says the rest; a cross is the one mark ASCII
-	// already has.
-	ok:     "•",
+	// No console font has a tick or a cross. A filled square is a box filled
+	// in, which is what a finished row is, and it holds that meaning against
+	// the faded dot a passed-over row keeps: two marks of different shape
+	// rather than one dot in two sizes, which is a distinction nobody makes at
+	// a glance. A cross is the one mark ASCII already has.
+	ok:     "■",
 	fail:   "x",
 	ask:    "?",
 	skip:   "·",
@@ -126,11 +138,17 @@ var plainGlyphs = glyphSet{
 	secret: "•",
 	focus:  []string{"░", "▒", string(glyphBlockPixel)},
 
-	// A block coming up out of the field and sinking back into it. The full
-	// set's circle is nowhere in a console font, and the arrows and slashes
-	// that usually stand in for one read as punctuation next to the word they
-	// sit in front of; a block only ever reads as a block.
-	spinner: []string{"░", "▒", string(glyphBlockPixel), "▒"},
+	// One stroke turning on the spot: upright, leaning, flat, leaning back.
+	// The full set's circle is nowhere in a console font, and the shaded
+	// blocks that stood here before were a whole cell of ink going on and off
+	// beside the word — a mark that size next to a line of text reads as a
+	// cursor stuck on the row rather than as something turning. A stroke is
+	// the weight of the rules the interface is already drawn with.
+	spinner: []string{"│", "/", "─", "\\"},
+
+	// The return symbol is in no console font at all, and the ellipsis is
+	// missing from the one the kernel falls back to; both are spelled out.
+	spell: strings.NewReplacer("⏎", "enter", "…", "..."),
 }
 
 // glyphs is the set showing right now, read at draw time from everywhere the

@@ -32,17 +32,9 @@ StartLimitBurst=3
 [Service]
 # idle keeps the first frame from being drawn over by the tail of the boot log.
 Type=idle
-# The console font decides which glyphs exist at all, and the palette decides
-# what the sixteen colour slots look like. Both are set here rather than in
-# vconsole.conf, because vconsole.conf applies to every tty and this is about
-# the one the installer draws on.
-#
-# A console font holds at most 512 glyphs and this one is no exception, so the
-# interface draws itself out of what it has — see tui/glyphs.go in the runtime.
-ExecStartPre=-/usr/bin/setfont Lat2-Terminus16
-ExecStartPre=-/usr/local/bin/installer-console-theme
 # The same command the user types at the prompt, so a run started by this
-# machine and one started by hand are the same run — see the script itself.
+# machine and one started by hand are the same run — see the script itself,
+# which is also where this console gets its font and its colours.
 ExecStart=/usr/local/bin/installer
 Restart=on-failure
 RestartSec=2

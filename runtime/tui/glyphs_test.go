@@ -1,33 +1,50 @@
 package tui
 
 import (
+	"io/fs"
 	"strings"
 	"testing"
 	"unicode"
+
+	"installer/internal/i18n"
+	"installer/locales"
 
 	"github.com/charmbracelet/lipgloss"
 )
 
 // consoleFont is what a Linux virtual console can draw: the printable ASCII
-// range, plus the handful of codepoints every console font inherits from
-// codepage 437 and from the lat* tables built on it.
+// range, the Latin-1 letters, and what is left of the rest once two fonts are
+// laid over each other — the kernel's own, which is codepage 437 and is what a
+// console wears until something loads a font over it, and Lat2-Terminus16,
+// which is what the ISO loads. Neither holds everything the other does: the
+// kernel font has no ellipsis, no angle quotes, no multiplication sign; the
+// terminus font has no half blocks and no dark shade. What is below is in both.
 //
 // Written out rather than read off the running machine on purpose. What matters
 // is not which font this developer happens to have loaded — it is which
 // codepoints are safe on the machine the ISO boots on, and that is a fact about
 // console fonts rather than about anything here.
-const consoleFont = "─│┌┐└┘├┤┬┴┼░▒█▄▀▌▐■·•»«›‹±°÷×↑↓←→▲▼"
+const consoleFont = "─│┌┐└┘├┤┬┴┼░▒█■·•»«±°÷↑↓←→▲▼▶◀♦"
 
 func inConsoleFont(s string) bool {
+	return undrawable(s) == 0
+}
+
+// undrawable is the first mark in a string a console font has no glyph for, or
+// zero when it can draw all of it. Latin-1 letters pass: a console font is
+// built around the alphabet it is named for, and every one of them holds the
+// accented letters the languages here are written in.
+func undrawable(s string) rune {
 	for _, r := range s {
-		if r < unicode.MaxASCII && unicode.IsPrint(r) {
-			continue
-		}
-		if !strings.ContainsRune(consoleFont, r) {
-			return false
+		switch {
+		case r < unicode.MaxASCII && (unicode.IsPrint(r) || r == '\n'):
+		case r <= 0xff && unicode.IsLetter(r):
+		case strings.ContainsRune(consoleFont, r):
+		default:
+			return r
 		}
 	}
-	return true
+	return 0
 }
 
 // The whole point of the reduced set: a console font holds at most 512 glyphs,
@@ -142,5 +159,76 @@ func TestTheConsoleGetsTheReducedSet(t *testing.T) {
 	adaptGlyphs(false)
 	if glyphs.ok != fullGlyphs.ok {
 		t.Error("adapting back to a terminal left the reduced set showing")
+	}
+}
+
+// A turning mark and a finished one are the two things in the same column, and
+// the eye has to tell them apart in a still frame as well as in motion. A
+// spinner that passes through the mark a done row keeps says, for a tenth of a
+// second at a time, that the row it sits on is over.
+func TestNothingTurningLooksLikeAFinishedRow(t *testing.T) {
+	for name, g := range map[string]glyphSet{"full": fullGlyphs, "plain": plainGlyphs} {
+		for _, frame := range g.spinner {
+			if frame == g.ok {
+				t.Errorf("%s: the spinner passes through %q, the mark a finished row keeps", name, frame)
+			}
+			if frame == g.skip {
+				t.Errorf("%s: the spinner passes through %q, the mark a skipped row keeps", name, frame)
+			}
+		}
+	}
+}
+
+// The marks are chosen for a console font. The words are not: they come out of
+// the code and out of a catalog, and both are written by somebody with a real
+// font in front of them — an ellipsis or a return symbol costs nothing there
+// and is a hole in the line on a virtual console. So the words are put through
+// the same set the marks come from, and this is that working.
+func TestEveryWordOnScreenFitsAConsoleFont(t *testing.T) {
+	t.Cleanup(func() { adaptGlyphs(false) })
+	adaptGlyphs(true)
+
+	pages := map[string]func(*harness){
+		"the preset page":   func(h *harness) {},
+		"a question":        func(h *harness) { h.down().enter() },
+		"a list of answers": func(h *harness) { h.down().enter().typeIn("moritz").enter() },
+		"the hub":           func(h *harness) { h.down().enter().typeIn("moritz").enter().enter() },
+		"settings":          func(h *harness) { h.down().enter().typeIn("moritz").enter().enter().down().enter() },
+		"the confirmation":  func(h *harness) { h.down().enter().typeIn("moritz").enter().enter().enter() },
+		"the way out":       func(h *harness) { h.down().enter().typeIn("moritz").enter().enter().typeIn("q") },
+	}
+	for name, open := range pages {
+		h := newHarness(t, leaveTree("true", "true"))
+		open(h)
+		if r := undrawable(h.screen()); r != 0 {
+			t.Errorf("%s shows %q, which no console font can draw:\n%s", name, r, h.screen())
+		}
+	}
+}
+
+// The same, for the languages the runtime has been translated into: a catalog
+// is where the marks the code was careful about come back in, because a
+// translator writes the line again from scratch.
+func TestEveryTranslationFitsAConsoleFont(t *testing.T) {
+	files, err := fs.ReadDir(locales.FS, ".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range files {
+		raw, err := locales.FS.ReadFile(f.Name())
+		if err != nil {
+			t.Fatal(err)
+		}
+		c, err := i18n.Parse(raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for msgid, translation := range c.Messages {
+			for _, said := range []string{msgid, translation} {
+				if r := undrawable(plainGlyphs.spell.Replace(said)); r != 0 {
+					t.Errorf("%s says %q, and no console font can draw %q", f.Name(), said, r)
+				}
+			}
+		}
 	}
 }
