@@ -1,0 +1,9 @@
+# The scripts here are sourced by the runtime, never executed, so none of them
+# carries a shebang for shellcheck to read the dialect from.
+shell=bash
+
+# The runtime sources tasks/_lib/lib.sh before every one of them, so what it
+# defines — MNT, simulating, chroot_pacman_install — is in scope without any
+# script saying so. shellcheck cannot see that, and takes an all-caps name it
+# cannot resolve for an environment variable, which is exactly right here: every
+# answer arrives as one.

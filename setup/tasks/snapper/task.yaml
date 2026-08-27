@@ -1,0 +1,6 @@
+name: Set up snapshots
+stage: base
+needs: [services]
+conditions:
+  - ARCH_OS_FILESYSTEM == btrfs
+  - ARCH_OS_BTRFS_SNAPPER_ENABLED == true

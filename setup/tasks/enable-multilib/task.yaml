@@ -1,0 +1,3 @@
+name: Enable 32-bit support
+stage: system
+conditions: ARCH_OS_MULTILIB_ENABLED == true

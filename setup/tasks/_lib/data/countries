@@ -1,0 +1,83 @@
+# The countries Arch has mirrors in, as the mirror list names them — reflector
+# matches on this exact spelling. The code in front is the territory an ISO
+# locale ends in, which is what ties de_DE to Germany.
+#
+# Regenerate with: reflector --list-countries
+AL	Albania
+AR	Argentina
+AM	Armenia
+AU	Australia
+AT	Austria
+AZ	Azerbaijan
+BD	Bangladesh
+BY	Belarus
+BE	Belgium
+BR	Brazil
+BG	Bulgaria
+KH	Cambodia
+CA	Canada
+CL	Chile
+CN	China
+CO	Colombia
+HR	Croatia
+CZ	Czechia
+DK	Denmark
+EC	Ecuador
+EE	Estonia
+FI	Finland
+FR	France
+GE	Georgia
+DE	Germany
+GR	Greece
+HK	Hong Kong
+HU	Hungary
+IS	Iceland
+IN	India
+ID	Indonesia
+IR	Iran
+IL	Israel
+IT	Italy
+JP	Japan
+KZ	Kazakhstan
+KE	Kenya
+LV	Latvia
+LT	Lithuania
+LU	Luxembourg
+MY	Malaysia
+MU	Mauritius
+MX	Mexico
+MD	Moldova
+MA	Morocco
+NP	Nepal
+NL	Netherlands
+NC	New Caledonia
+NZ	New Zealand
+MK	North Macedonia
+NO	Norway
+PY	Paraguay
+PH	Philippines
+PL	Poland
+PT	Portugal
+RO	Romania
+RU	Russia
+RE	Réunion
+SA	Saudi Arabia
+RS	Serbia
+SG	Singapore
+SK	Slovakia
+SI	Slovenia
+ZA	South Africa
+KR	South Korea
+ES	Spain
+SE	Sweden
+CH	Switzerland
+TW	Taiwan
+TH	Thailand
+TN	Tunisia
+TR	Türkiye
+UA	Ukraine
+AE	United Arab Emirates
+GB	United Kingdom
+US	United States
+UZ	Uzbekistan
+VN	Vietnam

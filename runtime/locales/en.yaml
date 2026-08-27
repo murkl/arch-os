@@ -1,0 +1,4 @@
+# English is the language every message is written in, so this catalog needs no
+# entries — it only gives the language a name in the language picker.
+language: English
+messages: {}

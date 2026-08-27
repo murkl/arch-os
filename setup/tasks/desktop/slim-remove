@@ -1,0 +1,25 @@
+# The GNOME applications the slim desktop leaves out. Each is removed on its
+# own and a failure is ignored: which of them the gnome group pulls in changes
+# between releases, and one that is not installed is not a problem.
+gnome-calendar
+gnome-maps
+gnome-contacts
+gnome-font-viewer
+gnome-characters
+gnome-clocks
+gnome-connections
+gnome-music
+gnome-weather
+gnome-calculator
+gnome-logs
+gnome-text-editor
+gnome-disk-utility
+simple-scan
+baobab
+totem
+snapshot
+epiphany
+loupe
+decibels
+showtime
+papers

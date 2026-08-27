@@ -1,0 +1,3 @@
+name: Install the boot splash
+stage: system
+conditions: ARCH_OS_BOOTSPLASH_ENABLED == true

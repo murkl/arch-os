@@ -1,0 +1,6 @@
+name: Share files with other machines
+stage: desktop
+needs: [desktop]
+conditions:
+  - ARCH_OS_DESKTOP_ENABLED == true
+  - ARCH_OS_DESKTOP_EXTRAS_ENABLED == true

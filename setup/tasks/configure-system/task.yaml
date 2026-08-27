@@ -1,0 +1,3 @@
+name: Configure the system
+stage: base
+needs: [pacstrap-core]

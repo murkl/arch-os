@@ -1,0 +1,3 @@
+name: Install Arch OS Manager
+stage: desktop
+conditions: ARCH_OS_MANAGER_ENABLED == true

@@ -1,0 +1,9 @@
+name: Restart into the new system
+stage: finish
+needs: [chroot]
+confirm: |
+  Restart into {{ARCH_OS_HOSTNAME}} now?
+
+  Everything is unmounted first. Remove the installation medium once the screen
+  goes blank.
+quits: true

@@ -1,0 +1,6 @@
+name: Install the graphics driver
+stage: desktop
+needs: [desktop]
+conditions:
+  - ARCH_OS_DESKTOP_ENABLED == true
+  - ARCH_OS_DESKTOP_GRAPHICS_DRIVER != none

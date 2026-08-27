@@ -9,7 +9,7 @@ on:
 permissions:
   contents: write
 
-# Cancel superseded PR runs; let main/release runs finish.
+# Cancel superseded PR runs; let main runs finish.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -22,39 +22,25 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Install dependencies
-        run: pacman -Syu --noconfirm shellcheck curl
+        run: pacman -Syu --noconfirm go shellcheck shfmt curl make
 
-      - name: Check Bash syntax
-        run: bash -n installer.sh
-
-      - name: Run ShellCheck
-        run: shellcheck -S style installer.sh
-
-      # Catches the case where dev is merged into main without bumping VERSION, which would
-      # make the release job below skip silently (it only builds when no release exists yet).
-      - name: Ensure VERSION bump before merging into main
-        if: github.event_name == 'pull_request' && github.base_ref == 'main'
+      - name: Check Go formatting
         run: |
-          current_version="$(bash installer.sh --version)"
-          latest_version="$(curl -sf "https://api.github.com/repos/${{ github.repository }}/releases/latest" | grep -m1 '"tag_name"' | cut -d'"' -f4)"
-          echo "Current: ${current_version}, latest released: ${latest_version:-none}"
-          if [ -z "$latest_version" ]; then
-            echo "No prior release found, skipping version check"
-            exit 0
-          fi
-          if [ "$current_version" = "$latest_version" ]; then
-            echo "::error::installer.sh VERSION (${current_version}) is unchanged from the latest release (${latest_version})"
-            exit 1
-          fi
-          newest="$(printf '%s\n%s\n' "$current_version" "$latest_version" | sort -V | tail -n1)"
-          if [ "$newest" != "$current_version" ]; then
-            echo "::error::installer.sh VERSION (${current_version}) is older than the latest release (${latest_version})"
+          unformatted="$(cd runtime && gofmt -s -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "::error::not gofmt'd: ${unformatted}"
             exit 1
           fi
 
-  # Runs on every merge into main. The version is the single source of truth
-  # (installer.sh --version); a release is only built when that version has no
-  # release yet, so non-version-bump merges are skipped automatically.
+      # Vets, tests and builds the runtime; loads the setup tree exactly as
+      # the runtime does at startup and lints every task; shellchecks and
+      # shfmts the ISO scripts. See each component's own Makefile.
+      - name: Check runtime, setup tree and ISO scripts
+        run: make check
+
+  # Runs on every merge into main. There is no version to bump: the short
+  # commit SHA that names the release is unique by construction, so a release
+  # is built and published on every push.
   release:
     needs: lint
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -64,38 +50,30 @@ jobs:
       options: --privileged
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # HEAD's short SHA is the version; nothing else needs history
 
-      - name: Read version from installer.sh
+      - name: Version
         id: version
-        run: echo "version=$(bash installer.sh --version)" >> "$GITHUB_OUTPUT"
-
-      - name: Check for existing release
-        id: check
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          pacman -Syu --noconfirm github-cli
-          if gh release view "${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
+        run: echo "version=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Install build dependencies
-        if: steps.check.outputs.exists == 'false'
-        run: pacman -Syu --noconfirm archiso sudo
+        run: pacman -Syu --noconfirm archiso sudo go make
 
       - name: Build Arch OS ISO
-        if: steps.check.outputs.exists == 'false'
-        working-directory: ./iso
-        run: SNAPSHOT_VERSION="${{ steps.version.outputs.version }}" bash build.sh
+        run: make iso
 
+      # The image and its checksum out of release/iso, and beside them the two
+      # files that turn a stock Arch ISO into the same installer. tasks/ is a
+      # folder and a release asset is a file, so it is not among them — a
+      # checkout is where that comes from.
       - name: Publish GitHub Release
-        if: steps.check.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.version }}
           name: Arch OS ${{ steps.version.outputs.version }}
-          files: ./iso/release/*
+          files: |
+            ./release/iso/*
+            ./release/installer
+            ./release/installer.yaml
           generate_release_notes: true

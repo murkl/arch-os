@@ -1,0 +1,21 @@
+# Desktop entries that ship with a dependency and mean nothing to anyone using
+# the desktop. Hidden rather than removed: the package they belong to is still
+# needed. One name per line, with the condition it is hidden under.
+#
+# always      hidden on every desktop install
+# extras      only where the desktop extras were installed
+# shell       only where the shell enhancement was installed
+always bssh
+always bvnc
+always avahi-discover
+always qv4l2
+always qvidcap
+always lstopo
+always org.gnome.Evince
+extras stoken-gui
+extras stoken-gui-small
+extras cups
+extras tuned-gui
+extras cmake-gui
+shell fish
+shell btop

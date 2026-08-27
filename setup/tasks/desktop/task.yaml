@@ -1,0 +1,3 @@
+name: Install the GNOME desktop
+stage: desktop
+conditions: ARCH_OS_DESKTOP_ENABLED == true

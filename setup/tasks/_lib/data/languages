@@ -1,0 +1,77 @@
+# What a language implies: the keyboard it is typed on — in the console's names
+# and in xkb's — and the font the console can draw it in.
+#
+# The key is a locale or the language in front of it, and the longer match wins:
+# de_CH is not de, and pt_BR is not pt. A language nobody wrote a row for falls
+# back to the American layout, which is what an unlabelled keyboard is.
+#
+# The font is about the script rather than the language. eurlatgr draws every
+# European alphabet including Greek, latarcyrheb-sun16 the Cyrillic, Hebrew and
+# Arabic ones, and none is the honest answer for the languages a text console has
+# no glyphs for at all.
+#
+# language  console keymap  xkb layout  console font
+af          us              za          eurlatgr
+ar          us              ara         latarcyrheb-sun16
+be          by              by          latarcyrheb-sun16
+bg          bg_bds-utf8     bg          latarcyrheb-sun16
+bs          croat           ba          eurlatgr
+ca          es              es          eurlatgr
+cs          cz              cz          eurlatgr
+da          dk-latin1       dk          eurlatgr
+de          de-latin1       de          eurlatgr
+de_CH       de_CH-latin1    ch          eurlatgr
+el          gr              gr          eurlatgr
+en          us              us          eurlatgr
+en_GB       uk              gb          eurlatgr
+en_IE       ie              ie          eurlatgr
+en_ZA       us              za          eurlatgr
+es          es              es          eurlatgr
+et          et              ee          eurlatgr
+eu          es              es          eurlatgr
+fa          fa              ir          latarcyrheb-sun16
+fi          fi              fi          eurlatgr
+fr          fr-latin1       fr          eurlatgr
+fr_BE       be-latin1       be          eurlatgr
+fr_CA       cf              ca          eurlatgr
+fr_CH       fr_CH-latin1    ch          eurlatgr
+ga          ie              ie          eurlatgr
+gl          es              es          eurlatgr
+he          il              il          latarcyrheb-sun16
+hi          us              in          none
+hr          croat           hr          eurlatgr
+hu          hu              hu          eurlatgr
+hy          us              am          none
+id          us              us          eurlatgr
+is          is-latin1       is          eurlatgr
+it          it              it          eurlatgr
+ja          jp106           jp          none
+ka          us              ge          none
+kk          kazakh          kz          latarcyrheb-sun16
+ko          us              kr          none
+ky          kyrgyz          kg          latarcyrheb-sun16
+lt          lt              lt          eurlatgr
+lv          lv              lv          eurlatgr
+mk          mk-utf          mk          latarcyrheb-sun16
+ms          us              my          eurlatgr
+nb          no-latin1       no          eurlatgr
+nl          nl              nl          eurlatgr
+nl_BE       be-latin1       be          eurlatgr
+nn          no-latin1       no          eurlatgr
+no          no-latin1       no          eurlatgr
+pl          pl              pl          eurlatgr
+pt          pt-latin1       pt          eurlatgr
+pt_BR       br-abnt2        br          eurlatgr
+ro          ro              ro          eurlatgr
+ru          ru              ru          latarcyrheb-sun16
+sk          sk-qwertz       sk          eurlatgr
+sl          slovene         si          eurlatgr
+sq          us              al          eurlatgr
+sr          sr-cy           rs          latarcyrheb-sun16
+sv          sv-latin1       se          eurlatgr
+th          us              th          none
+tr          trq             tr          eurlatgr
+uk          ua-utf          ua          latarcyrheb-sun16
+vi          us              vn          eurlatgr
+zh          us              cn          none
+zh_TW       us              tw          none

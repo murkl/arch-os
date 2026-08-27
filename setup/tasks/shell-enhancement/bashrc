@@ -1,0 +1,43 @@
+# If not running interactively, do nothing.
+[[ $- != *i* ]] && return
+
+# Export the systemd user environment on a text console, where nothing else has.
+[[ ${SHLVL} == 1 ]] && [ -z "${DISPLAY}" ] && export $(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator | xargs)
+
+source "${HOME}/.aliases"
+
+# Suggest the package a missing command lives in.
+[ -f /usr/share/doc/pkgfile/command-not-found.bash ] && source /usr/share/doc/pkgfile/command-not-found.bash
+
+shopt -s autocd                  # a bare directory name changes into it
+shopt -s cdspell                 # correct small typos in a path
+shopt -s checkwinsize            # notice the terminal being resized
+shopt -s histappend              # add to the history file rather than replacing it
+shopt -s cmdhist                 # keep a multi-line command as one entry
+shopt -s extglob                 # extended patterns
+shopt -s no_empty_cmd_completion # do not list every command on an empty line
+shopt -s expand_aliases
+
+bind "set completion-ignore-case on"
+
+# Colourful man pages.
+command -v bat &>/dev/null && export MANPAGER="sh -c \"col -bx | bat -l man -p\""
+command -v bat &>/dev/null && export MANROFFOPT="-c"
+
+export HISTSIZE=1000
+export HISTFILESIZE=${HISTSIZE}
+export HISTCONTROL=ignoredups:erasedups
+export HISTTIMEFORMAT="%F %T "
+export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q:c"
+
+# Hand over to fish outside a text console, where its suggestions are worth
+# having and where the font can draw the prompt.
+# https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish
+if [[ ! $(tty) =~ /dev/tty[0-9]* ]] && command -v fish &>/dev/null && [[ $(ps --no-header --pid=$PPID --format=comm) != "fish" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then
+    shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""
+    exec fish $LOGIN_OPTION
+    return
+fi
+
+[[ ! $(tty) =~ /dev/tty[0-9]* ]] && command -v starship &>/dev/null && eval "$(starship init bash)"
+command -v zoxide &>/dev/null && eval "$(zoxide init bash)"

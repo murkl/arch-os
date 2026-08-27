@@ -1,0 +1,666 @@
+# What this installer is, what it needs to know, and in what order it works.
+#
+# This file and the tasks beside it are the whole installer. The runtime is
+# a binary that knows nothing about Arch Linux, disks or packages: it draws what
+# this file names, asks what it declares, and runs the tasks in the order
+# their stages and needs add up to.
+#
+# It has to sit next to that binary — the program looks for it there and nowhere
+# else, so a release is one folder holding both.
+
+title: Arch OS Installer
+
+# Arch blue. The one colour the interface is built from: the cursor, the brand,
+# the marks against finished steps. It is taken towards the terminal's own
+# background until it is readable there, so it holds on a light terminal too.
+accent: "#1793d1"
+
+# The opening. Everything above the blank line is the eyebrow, dimmed; the block
+# below it is the wordmark and comes up in the accent, sweeping in from the left.
+logo: |
+  Arch Linux
+
+   █████  ██████   ██████ ██   ██      ██████  ███████
+  ██   ██ ██   ██ ██      ██   ██     ██    ██ ██
+  ███████ ██████  ██      ███████     ██    ██ ███████
+  ██   ██ ██   ██ ██      ██   ██     ██    ██      ██
+  ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
+
+# What every task of this tree is given before its own script, so a unit is
+# plain shell with no preamble. Everything shared lives under tasks/_lib —
+# a folder there whose name starts with _ is not a unit.
+lib: ./tasks/_lib/lib.sh
+
+# One <code>.yaml catalog per language this installer speaks, laid over the
+# runtime's own words.
+locales: ./tasks/_lib/locales
+
+# How this installer finds and joins a wireless network: the screen, the
+# network list and the passphrase prompt belong to the runtime and are the
+# same for any tree — only the commands below are Arch's own.
+#
+# Arch's own tool is iwd, and the Arch ISO already ships it, so nothing is
+# installed to make this work. (The installed system gets NetworkManager
+# instead; that is tasks/pacstrap-core's business, not this.)
+#
+# Every command below is handed WLAN_DEVICE, WLAN_SSID and WLAN_PASSPHRASE in
+# the environment, as far as it has them yet.
+wlan:
+  title: WLAN
+  description: Join a wireless network to continue.
+
+  # Real HTTPS to a host that has to work for the install anyway, not a ping —
+  # a captive portal answers pings.
+  check: curl -Lsf --connect-timeout 5 --max-time 15 https://archlinux.org >/dev/null
+
+  # The first wireless station is taken rather than asked for — a machine with
+  # two wireless cards is rare enough that a prompt would cost everyone else a
+  # question.
+  device: iwctl device list | grep -E '\bstation\b' | awk '{print $2}' | head -n 1
+
+  # Scanning is fire-and-forget: iwctl returns before the results are in, so
+  # the runtime waits and then reads the list.
+  scan: iwctl station "$WLAN_DEVICE" scan
+
+  # Parsing iwctl's table needs more than a pipeline can carry honestly.
+  networks: ./tasks/_lib/wlan-networks.sh
+
+  connect: iwctl --passphrase "$WLAN_PASSPHRASE" station "$WLAN_DEVICE" connect "$WLAN_SSID"
+
+# The task that runs once at startup, before anything is asked bar the keyboard.
+# It belongs to no stage: everything it checks is a wall, and there is no point
+# asking twenty questions on a machine that cannot be installed onto.
+preflight: preflight
+
+# How this machine is put down, and how it is left running. Declaring this block
+# is what makes the installer something that cannot simply be quit by accident:
+# this image booted to run it, so every way out of the interface — ctrl+c, the
+# row that says quit, backing off the first page, the end of an installation —
+# asks here instead of closing.
+#
+# The two commands go through _lib/lib.sh, which is what makes them do nothing
+# at all under DEBUG=true: an installer being tried out on somebody's own
+# machine must not switch it off.
+#
+# `console:` is the third way out, and the only one that is not a command: the
+# installer closes and the machine keeps running. There is a root shell behind
+# it on this image — the systemd unit that started the installer hands tty1 to a
+# login shell when it stops — and `installer` there starts it again, from the
+# same answers, because both ways in are the same script. What is written here
+# is the sentence somebody reads on the way out; /etc/motd says the same thing
+# on the way in. See iso/src.
+leave:
+  restart: restart_machine
+  shutdown: shutdown_machine
+  console: Type installer at the prompt to start it again.
+
+# The order the installation happens in, top to bottom. Every task names one
+# of these; several in the same stage run in the order their `needs` demand, and
+# in folder order where nothing demands anything.
+stages:
+  - prepare # the live system, made ready to install from
+  - disk # partitioned, encrypted, formatted, mounted
+  - base # the system on the disk, configured, with an account on it
+  - boot # the boot loader
+  - system # everything that is switched on rather than installed
+  - desktop # GNOME, its driver, and what belongs to it
+  - finalize # the last things done to the new system
+  - finish # what is offered once it is installed
+
+# The last thing shown before the first task runs. {{VAR}} is filled in from
+# the answers, so this names the actual disk rather than warning in the abstract.
+confirm: |
+  Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.
+
+  Everything on that disk will be erased. There is no undo, and nothing before
+  this point has changed anything.
+
+# A preset is a set of answers, not a mode: choosing one fills in what that kind
+# of installation usually wants and then stops mattering. Every value it sets is
+# an ordinary value from the next page on, and every one of them is on the
+# settings page afterwards, where it can be changed like anything else. It is
+# offered once, on a machine that has never answered anything.
+#
+# Each block below is one page — one question, and the options it is answered
+# with.
+presets:
+  - id: system
+    title: Setup
+    description: Choose what kind of system to install. Every detail can still be changed afterwards.
+    options:
+      # Each option names every setting it has an opinion about, including the
+      # ones it turns off — this page is meant to read as a complete description
+      # of a kind of system.
+      - id: desktop
+        title: Desktop
+        description: A full GNOME desktop with drivers, codecs, fonts and everyday applications.
+        values:
+          ARCH_OS_DESKTOP_ENABLED: true
+          ARCH_OS_DESKTOP_EXTRAS_ENABLED: true
+          ARCH_OS_DESKTOP_SLIM_ENABLED: false
+          ARCH_OS_SAMBA_SHARE_ENABLED: true
+          ARCH_OS_CORE_TWEAKS_ENABLED: true
+          ARCH_OS_BOOTSPLASH_ENABLED: true
+          ARCH_OS_MULTILIB_ENABLED: true
+          ARCH_OS_HOUSEKEEPING_ENABLED: true
+          ARCH_OS_SHELL_ENHANCEMENT_ENABLED: true
+          ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED: true
+          ARCH_OS_MANAGER_ENABLED: true
+          ARCH_OS_BTRFS_SNAPPER_ENABLED: true
+          ARCH_OS_BTRFS_ASSISTANT_ENABLED: true
+          ARCH_OS_AUR_HELPER: paru
+
+      - id: minimal
+        title: Minimal
+        description: Arch Linux on the console only — no desktop, no extras, nothing that was not asked for.
+        values:
+          ARCH_OS_DESKTOP_ENABLED: false
+          ARCH_OS_DESKTOP_EXTRAS_ENABLED: false
+          ARCH_OS_DESKTOP_SLIM_ENABLED: false
+          ARCH_OS_SAMBA_SHARE_ENABLED: false
+          ARCH_OS_CORE_TWEAKS_ENABLED: true
+          ARCH_OS_BOOTSPLASH_ENABLED: false
+          ARCH_OS_MULTILIB_ENABLED: false
+          ARCH_OS_HOUSEKEEPING_ENABLED: false
+          ARCH_OS_SHELL_ENHANCEMENT_ENABLED: false
+          ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED: false
+          ARCH_OS_MANAGER_ENABLED: false
+          ARCH_OS_BTRFS_SNAPPER_ENABLED: false
+          ARCH_OS_BTRFS_ASSISTANT_ENABLED: false
+          ARCH_OS_DESKTOP_GRAPHICS_DRIVER: none
+          ARCH_OS_AUR_HELPER: none
+
+# Everything this installer needs to know.
+#
+# The order here is the order the questions are asked in, and the order the
+# settings page lists them in. `group` puts a heading over the rows that follow
+# it — there is nothing to declare up front, a group is simply the run of rows
+# that named it.
+#
+# A variable is required or it is not. Required and unanswered is what makes the
+# installer ask; an answer is what makes it stop. Everything else — a value with
+# a default, a value a preset filled in — is reachable on the settings page and
+# never stands in the way.
+#
+# Each name reaches every task as an environment variable of that name.
+variables:
+  # ─── Region ────────────────────────────────────────────────────────────────
+  #
+  # What the system being installed is set to — none of it about the words this
+  # installer is read in. That is a setting of the program rather than an answer
+  # about the machine, it is asked for on the way in, and it is the row above
+  # this group on the settings page. Somebody installing a German system from an
+  # English installer is doing something ordinary, not something to work around.
+  #
+  # The console keyboard is `first` of all — before the wireless screen, before
+  # the preflight, before anything else this program does — because it is the
+  # keyboard everything after it is typed on. On a German keyboard read as an
+  # American one y and z change places and half the punctuation moves, and a
+  # wireless passphrase typed that way is not the passphrase.
+  #
+  # The rest of the group follows the language on `auto`: the console font, the
+  # mirror country, and the keyboard itself where it was left there. Each stays a
+  # question anyone can answer outright.
+  - name: ARCH_OS_LOCALE_LANG
+    title: Language and region
+    description: |
+      The language and country this system is set up for, as a locale code —
+      de_DE is German as it is written in Germany. It settles the system language
+      and the formats for dates, numbers and currency, and — left on auto — the
+      keyboard, the console font, the time zone and the mirror country follow
+      from it. English is always installed alongside it as a fallback.
+    group: Region
+    required: true
+    apply: load_console_keyboard
+    command: |
+      # Every locale the C library ships that /etc/locale.gen also knows about,
+      # since one that cannot be generated is one that cannot be used. One row
+      # per locale and nothing else on it: every row reads the same way, in one
+      # alphabetical run, and the code that ends up in installer.conf is the code
+      # that was on screen. Press / to narrow it — de_ is a handful of rows.
+      #
+      # The @-suffixed variants are left out — they are the same language in a
+      # different script or currency, and offering both doubles a long list for
+      # a distinction almost nobody is looking for.
+      comm -12 \
+          <(basename -a /usr/share/i18n/locales/* | grep -v '@' | sort -u) \
+          <(sed -n 's/^#\? *\([a-zA-Z_]*\)[. ].*/\1/p' /etc/locale.gen | sort -u)
+
+  - name: ARCH_OS_VCONSOLE_KEYMAP
+    title: Console keyboard
+    description: |
+      The keyboard you are typing on. It is loaded here and now, and it is what
+      the new system uses on the text console. auto is the layout the system
+      language is typed on, which is only settled further down.
+    group: Region
+    required: true
+    first: true
+    apply: load_console_keyboard
+    command: |
+      # The auto row carries what auto currently comes to, so it says what it is
+      # about to do rather than only that it will do something. Asked before the
+      # system language, that is whatever this live image booted with — anyone
+      # whose keyboard is not that one is here to say so.
+      printf 'auto\tauto — %s\n' "$(auto_keymap)"
+      localectl list-keymaps
+
+  - name: ARCH_OS_VCONSOLE_FONT
+    title: Console font
+    description: |
+      The font of the text console. auto is the one that can draw the chosen
+      language; a larger one helps on a high resolution screen.
+    group: Region
+    default: auto
+    required: true
+    free: Type a font name
+    command: |
+      printf 'auto\tauto — %s\n' "$(auto_font)"
+      echo none
+      find /usr/share/kbd/consolefonts -name '*.psf*' -printf '%f\n' 2>/dev/null |
+          sed 's/\.psfu\?\(\.gz\)\?$//' | sort -u
+
+  - name: ARCH_OS_TIMEZONE
+    title: Time zone
+    description: |
+      Where this machine is, so the clock is right. The list opens on the zone
+      the chosen country keeps — which is the only answer in a country that keeps
+      one, and the one most of it lives in where there are several.
+    group: Region
+    required: true
+    command: timedatectl list-timezones
+    prefill: |
+      # The zone the chosen country keeps, and — for a locale no country named —
+      # where this machine appears to be, asked of the network. A guess either
+      # way, offered as the value the list opens on and never as an answer.
+      region_timezone "$ARCH_OS_LOCALE_LANG" ||
+          curl -sf --connect-timeout 5 --max-time 5 "http://ip-api.com/line?fields=timezone" || true
+
+  - name: ARCH_OS_REFLECTOR_COUNTRY
+    title: Mirror country
+    description: |
+      Where package downloads are fetched from. auto is the country the chosen
+      language belongs to; none ranks every mirror worldwide by speed, which is
+      also what auto comes to where Arch has no mirror.
+    group: Region
+    default: auto
+    required: true
+    free: Type a country
+    command: |
+      printf 'auto\tauto — %s\n' "$(auto_country)"
+      echo none
+      awk -F'\t' '!/^#/ && NF { print $2 }' "${DATA}/countries"
+
+  # ─── Identity ──────────────────────────────────────────────────────────────
+  - name: ARCH_OS_USERNAME
+    title: User name
+    description: |
+      The account you will log in with. Lower case letters, digits, hyphen and
+      underscore. It must not start with a digit.
+    group: Identity
+    required: true
+    pattern: '^[a-z_][a-z0-9_-]{0,31}$'
+    error: Lower case letters, digits, hyphen and underscore only, at most 32 characters. It must not start with a digit.
+
+  - name: ARCH_OS_PASSWORD
+    title: Password
+    description: |
+      Used for your account, for the root account, and — where disk encryption
+      is on — to unlock the disk at boot. It is asked for immediately before the
+      installation starts and is never written to a file.
+    group: Identity
+    type: secret
+    required: true
+
+  - name: ARCH_OS_HOSTNAME
+    title: Host name
+    description: The name this machine has on the network.
+    group: Identity
+    default: arch-os
+    required: true
+    pattern: '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$'
+    error: Lower case letters, digits and hyphen only, at most 63 characters. It must not start or end with a hyphen.
+
+  # ─── Storage ───────────────────────────────────────────────────────────────
+  - name: ARCH_OS_DISK
+    title: Disk
+    description: |
+      The disk Arch Linux is installed on. Unless dual boot is switched on,
+      everything on it is erased.
+    group: Storage
+    required: true
+    error: Choose a disk that exists.
+    command: |
+      # The value is the device path; what follows the tab is what the user
+      # reads. Nobody chooses between /dev/sda and /dev/sdb by name — they
+      # choose by size and by what the drive is called.
+      #
+      # Only whole disks: 8 is SCSI and SATA, 259 NVMe, 254 virtual block
+      # devices.
+      lsblk -d -n -I 8,259,254 -o PATH,SIZE,MODEL |
+          awk '{ path = $1; $1 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
+
+  - name: ARCH_OS_FILESYSTEM
+    title: File system
+    description: |
+      btrfs supports snapshots, so a system update can be rolled back. ext4 is
+      simpler and does not.
+    group: Storage
+    values: [btrfs, ext4]
+    required: true
+
+  - name: ARCH_OS_ENCRYPTION_ENABLED
+    title: Disk encryption
+    description: |
+      Encrypts the whole system with your password, so the data cannot be read
+      by taking the disk out. The password is then asked for at every boot.
+    group: Storage
+    type: bool
+    required: true
+
+  - name: ARCH_OS_BTRFS_SNAPPER_ENABLED
+    title: Snapshots
+    description: |
+      Takes a snapshot before every package transaction and cleans up old ones
+      on a timer, so a bad update can be undone.
+    group: Storage
+    type: bool
+    default: true
+    conditions: ARCH_OS_FILESYSTEM == btrfs
+
+  - name: ARCH_OS_BTRFS_ASSISTANT_ENABLED
+    title: Snapshot manager
+    description: A desktop application for browsing and restoring snapshots.
+    group: Storage
+    type: bool
+    default: true
+    conditions: ARCH_OS_FILESYSTEM == btrfs
+
+  - name: ARCH_OS_DUAL_BOOT_ENABLED
+    title: Dual boot
+    description: |
+      Install alongside a system that is already on this disk: nothing is
+      partitioned or erased, the existing EFI partition is reused, and only a
+      boot entry is added. You then have to name the two partitions yourself.
+    group: Storage
+    type: bool
+    default: false
+
+  - name: ARCH_OS_BOOT_PARTITION
+    title: Boot partition
+    description: The existing EFI partition to add a boot entry to. It is not formatted.
+    group: Storage
+    required: true
+    conditions: ARCH_OS_DUAL_BOOT_ENABLED == true
+    prefill: |
+      # The existing EFI partition, guessed: the first vfat partition on this
+      # disk is almost always the one the other system boots from.
+      lsblk -n -o PATH,FSTYPE "$ARCH_OS_DISK" | awk '$2 == "vfat" { print $1; exit }'
+    command: |
+      # Every partition of the chosen disk. The size and file system are what
+      # tell an existing EFI partition apart from the one the other operating
+      # system lives on.
+      lsblk -n -o PATH,SIZE,FSTYPE,LABEL "$ARCH_OS_DISK" | tail -n +2 |
+          awk '{ path = $1; $1 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
+
+  - name: ARCH_OS_ROOT_PARTITION
+    title: Root partition
+    description: The partition Arch Linux is installed into. It is formatted and everything on it is lost.
+    group: Storage
+    required: true
+    conditions: ARCH_OS_DUAL_BOOT_ENABLED == true
+    prefill: |
+      # The largest partition on this disk that is not the EFI one — the
+      # likeliest candidate for the space that was freed up to install into.
+      lsblk -bn -o PATH,SIZE,FSTYPE "$ARCH_OS_DISK" | tail -n +2 |
+          awk '$3 != "vfat" { print $2, $1 }' | sort -rn | head -n1 | awk '{ print $2 }'
+    command: |
+      lsblk -n -o PATH,SIZE,FSTYPE,LABEL "$ARCH_OS_DISK" | tail -n +2 |
+          awk '{ path = $1; $1 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
+
+  # ─── Boot ──────────────────────────────────────────────────────────────────
+  - name: ARCH_OS_BOOTLOADER
+    title: Boot loader
+    description: |
+      systemd-boot is small and needs no maintenance. GRUB can show a menu of
+      btrfs snapshots to boot into.
+    group: Boot
+    values: [systemd, grub]
+    required: true
+
+  - name: ARCH_OS_KERNEL
+    title: Kernel
+    description: |
+      linux-zen is tuned for desktop responsiveness. linux is the stock kernel,
+      linux-lts a long-term one, linux-hardened a security-focused one.
+    group: Boot
+    values: [linux-zen, linux, linux-lts, linux-hardened]
+    default: linux-zen
+    required: true
+
+  - name: ARCH_OS_KERNEL_ARGS
+    title: Kernel parameters
+    description: |
+      Extra parameters passed to the kernel at boot, separated by spaces.
+      Leave empty unless you know you need one.
+    group: Boot
+    pattern: '^[^,&\\]*$'
+    error: The characters comma, ampersand and backslash cannot be used here.
+
+  - name: ARCH_OS_MICROCODE
+    title: Processor firmware
+    description: |
+      Firmware updates loaded at boot. auto is whatever this processor turns out
+      to be — which is the answer on every machine that is not being prepared for
+      a different one.
+    group: Boot
+    default: auto
+    required: true
+    command: |
+      # The auto row carries the processor this is actually running on, read out
+      # of /proc/cpuinfo. The same reading happens again at install time, so a
+      # tree of answers carried to another machine still fits it.
+      printf 'auto\tauto — %s\n' "$(auto_microcode)"
+      echo intel-ucode
+      echo amd-ucode
+      echo none
+
+  # ─── Desktop ───────────────────────────────────────────────────────────────
+  - name: ARCH_OS_DESKTOP_ENABLED
+    title: Desktop
+    description: |
+      Install the GNOME desktop. Without it the system starts into a text
+      console and nothing graphical is installed at all.
+    group: Desktop
+    type: bool
+    required: true
+
+  - name: ARCH_OS_DESKTOP_GRAPHICS_DRIVER
+    title: Graphics driver
+    description: |
+      mesa is the open driver and fits almost every machine. Pick one matching
+      your card only if you know you need it.
+    group: Desktop
+    values: [mesa, intel_i915, nvidia, amd, ati, none]
+    required: true
+    conditions: ARCH_OS_DESKTOP_ENABLED == true
+
+  - name: ARCH_OS_DESKTOP_KEYBOARD_LAYOUT
+    title: Desktop keyboard
+    description: |
+      The keyboard layout the desktop starts with. auto is the same choice as the
+      console keyboard, in the names the desktop uses for it — de-latin1 and de
+      are one layout.
+    group: Desktop
+    default: auto
+    required: true
+    conditions: ARCH_OS_DESKTOP_ENABLED == true
+    command: |
+      # Asked of the running system where it can answer, and read from the files
+      # beside this installer where it cannot: the Arch live image ships no
+      # xkeyboard-config, so on the one machine this question is actually asked
+      # on there is nothing to ask.
+      printf 'auto\tauto — %s\n' "$(auto_layout)"
+
+      layouts="$(localectl list-x11-keymap-layouts 2>/dev/null)"
+      if [ -n "$layouts" ]; then
+          echo "$layouts"
+          exit 0
+      fi
+      grep -v '^#' "${DATA}/x11-layouts"
+
+  - name: ARCH_OS_DESKTOP_KEYBOARD_VARIANT
+    title: Keyboard variant
+    description: |
+      A variation of that layout — dead keys, a different punctuation
+      arrangement. none is the standard one.
+    group: Desktop
+    default: none
+    required: true
+    conditions: ARCH_OS_DESKTOP_ENABLED == true
+    command: |
+      # The variants of the chosen layout, with the standard one first. Same two
+      # sources as the layouts themselves, for the same reason. The layout is
+      # already the resolved one — auto became a real layout before this ran.
+      layout="$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
+      [ -n "$layout" ] || exit 0
+
+      echo none
+
+      variants="$(localectl list-x11-keymap-variants "$layout" 2>/dev/null)"
+      if [ -n "$variants" ]; then
+          echo "$variants"
+          exit 0
+      fi
+      grep "^${layout} " "${DATA}/x11-variants" | cut -d' ' -f2- | tr ' ' '\n'
+
+  - name: ARCH_OS_DESKTOP_KEYBOARD_MODEL
+    title: Keyboard model
+    description: The physical shape of the keyboard. pc105 fits almost every keyboard sold.
+    group: Desktop
+    default: pc105
+    conditions: ARCH_OS_DESKTOP_ENABLED == true
+
+  - name: ARCH_OS_DESKTOP_EXTRAS_ENABLED
+    title: Desktop extras
+    description: |
+      Codecs, fonts, printing, network protocols, development tools and the
+      applications that make the desktop usable straight away.
+    group: Desktop
+    type: bool
+    default: true
+    conditions: ARCH_OS_DESKTOP_ENABLED == true
+
+  - name: ARCH_OS_DESKTOP_SLIM_ENABLED
+    title: Slim desktop
+    description: Removes the GNOME applications that come with the desktop and are rarely used.
+    group: Desktop
+    type: bool
+    default: false
+    conditions: ARCH_OS_DESKTOP_ENABLED == true
+
+  - name: ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED
+    title: Log in automatically
+    description: |
+      Skips the login screen. auto follows disk encryption: with the disk already
+      unlocked by a password at boot, a second one at login adds nothing — and
+      without encryption the login screen is the only thing standing there.
+    group: Desktop
+    values: [auto, true, false]
+    default: auto
+    required: true
+    conditions: ARCH_OS_DESKTOP_ENABLED == true
+
+  - name: ARCH_OS_SAMBA_SHARE_ENABLED
+    title: File sharing
+    description: |
+      Shares your home folder and a public folder on the local network, readable
+      by Windows and macOS.
+    group: Desktop
+    type: bool
+    default: true
+    conditions: ARCH_OS_DESKTOP_ENABLED == true
+
+  # ─── System ────────────────────────────────────────────────────────────────
+  - name: ARCH_OS_CORE_TWEAKS_ENABLED
+    title: System tweaks
+    description: |
+      Small adjustments that do not change what is installed: parallel package
+      downloads, a quieter boot, password feedback in the terminal.
+    group: System
+    type: bool
+    default: true
+
+  - name: ARCH_OS_BOOTSPLASH_ENABLED
+    title: Boot splash
+    description: Shows a logo while the system starts instead of a wall of text.
+    group: System
+    type: bool
+    default: true
+
+  - name: ARCH_OS_MULTILIB_ENABLED
+    title: 32-bit support
+    description: Needed by Steam, Wine and other software that is still 32-bit.
+    group: System
+    type: bool
+    default: true
+
+  - name: ARCH_OS_AUR_HELPER
+    title: AUR helper
+    description: |
+      Installs software from the Arch User Repository as easily as from the
+      official one.
+    group: System
+    values: [paru, paru-bin, paru-git, yay, none]
+    default: paru
+    required: true
+
+  - name: ARCH_OS_HOUSEKEEPING_ENABLED
+    title: Housekeeping
+    description: |
+      Timers that keep the system tidy on their own: mirrors ranked weekly, the
+      package cache trimmed, disk health watched.
+    group: System
+    type: bool
+    default: true
+
+  - name: ARCH_OS_SHELL_ENHANCEMENT_ENABLED
+    title: Shell enhancement
+    description: |
+      A better terminal out of the box: a prompt showing git state, colourful
+      listings, fuzzy search, useful aliases.
+    group: System
+    type: bool
+    default: true
+
+  - name: ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED
+    title: Fish shell
+    description: Installs fish alongside bash, with completion and suggestions as you type.
+    group: System
+    type: bool
+    default: true
+    conditions: ARCH_OS_SHELL_ENHANCEMENT_ENABLED == true
+
+  - name: ARCH_OS_MANAGER_ENABLED
+    title: Arch OS Manager
+    description: A menu for updating, cleaning up and repairing the system after installation.
+    group: System
+    type: bool
+    default: true
+
+  - name: ARCH_OS_VM_SUPPORT_ENABLED
+    title: Virtual machine support
+    description: |
+      Installs guest tools when this is running inside a virtual machine, so the
+      screen resizes and the clipboard is shared. Does nothing on real hardware.
+    group: System
+    type: bool
+    default: true
+
+  - name: ARCH_OS_ECN_ENABLED
+    title: Explicit congestion notification
+    description: |
+      Leave on. Turning it off helps only behind old routers that drop
+      connections which use it.
+    group: System
+    type: bool
+    default: true

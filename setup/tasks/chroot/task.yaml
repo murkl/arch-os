@@ -1,0 +1,9 @@
+name: Enter the new system
+stage: finish
+needs: [copy-config]
+confirm: |
+  Open a shell inside the system that was just installed?
+
+  Everything is still mounted, so this is the moment to look around or fix
+  something by hand. Leave it again with `exit`.
+tty: true

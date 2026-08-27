@@ -1,12 +1,12 @@
-# Ignore temp dir
-.tmp.*
+# Build output — see /Makefile. Nothing under here is a source file.
+/release/
 
-# Ignore gum binary
-gum
-
-# Ignore installer files
+# What a local run of the installer leaves beside itself, wherever it runs from
 installer.conf
 installer.conf.old
-installer.conf.new
 installer.log
 installer.log.old
+
+# Editors / OS noise
+*.swp
+.DS_Store
