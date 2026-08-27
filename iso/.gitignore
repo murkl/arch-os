@@ -1,0 +1,3 @@
+# Everything build.sh creates or downloads while assembling the ISO.
+download/
+archiso/

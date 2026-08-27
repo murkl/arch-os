@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Start the installer. The one way in on this image — the systemd unit on tty1
+# runs this, and so does anybody typing `installer` at a prompt after leaving
+# it. One entry point, so both ways behave identically.
+#
+# Two things it settles, and both are the reason it exists rather than a symlink:
+#
+# The runtime looks for its installer.yaml beside its own binary, so it is
+# started out of the folder it was installed into.
+#
+# And its answers land beside that tree: installer.conf and installer.log go to
+# the working directory, so leaving the installer and starting it again from any
+# prompt, in any directory, picks up exactly where it left off. A second copy of
+# the answers in ~ would be a machine that quietly forgot what it was told.
+set -eu
+
+cd /opt/installer
+exec ./installer "$@"
