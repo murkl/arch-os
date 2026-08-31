@@ -98,6 +98,14 @@ type scheme struct {
 	head  lipgloss.Color // a heading inside the body
 	warn  lipgloss.Color
 	fail  lipgloss.Color
+
+	// good is the third of the status roles, opposite fail: something worked,
+	// and worked for good. It is not the accent — the accent is whatever colour
+	// a tree dressed itself in, and an installation that finished has to read as
+	// finished in an installer painted red as readily as in one painted green.
+	// So it is green here and stays green, the one colour that means this
+	// everywhere a person has ever looked at a machine.
+	good lipgloss.Color
 }
 
 var darkScheme = scheme{
@@ -111,6 +119,7 @@ var darkScheme = scheme{
 	head:   nord9,
 	warn:   darkAmber,
 	fail:   darkRed,
+	good:   nord14,
 }
 
 var lightScheme = scheme{
@@ -124,6 +133,7 @@ var lightScheme = scheme{
 	head:   lightSteel,
 	warn:   lightAmber,
 	fail:   lightRed,
+	good:   lightGreen,
 }
 
 var (

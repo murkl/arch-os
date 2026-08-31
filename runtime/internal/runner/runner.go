@@ -127,6 +127,32 @@ func (r *Runner) Apply(v *spec.Variable) {
 	}
 }
 
+// Import is shell that answers questions rather than reporting anything: a
+// configuration fetched from wherever somebody shared it, merged into the
+// answer file. What comes back is what it said if it would not work, which is a
+// sentence for the page that asked rather than a report of a broken task.
+//
+// It is handed back as something to run rather than run here, because it talks
+// to the network and the frame has to keep drawing while it does. The
+// environment is taken now, on the goroutine that owns the answers; the shell
+// itself may run anywhere. Reading back what it wrote is Imported, which
+// belongs on this side again.
+func (r *Runner) Import(shell string) func() error {
+	env := r.store.Env()
+	return func() error { return r.sh.Reason(shell, env) }
+}
+
+// Imported reads back what such a script left in the answer file and puts
+// whatever it answered into force — the console keyboard, most of all, since
+// what is typed next is typed on it.
+func (r *Runner) Imported() error {
+	if err := r.store.Reload(); err != nil {
+		return err
+	}
+	r.Settle()
+	return nil
+}
+
 // Settle applies every answer that stands, so the live system agrees with the
 // answer file: at startup, so a second start stands where the first one left
 // off, and after a preset, whose values were never typed at a prompt that could

@@ -47,6 +47,7 @@ type runScreen struct {
 	stage   phase // how far the one at the cursor has got through what it declared
 	ask     *ask
 	asking  *picker
+	told    *report
 	session *exec.Session
 	err     error
 	done    bool
@@ -74,15 +75,17 @@ const (
 )
 
 // phase is how far the task at the cursor has got through what it declared
-// about itself: a value it has to ask for, then the offer, then the work. Each
-// is skipped by a task that declared none, and the order is the useful one —
-// an offer can name what was just chosen.
+// about itself: a value it has to ask for, then the offer, then the work, then
+// whatever it has to report of what the work came to. Each is skipped by a task
+// that declared none, and the order is the useful one — an offer can name what
+// was just chosen, and a report can name what the work produced.
 type phase int
 
 const (
 	phaseAsk phase = iota
 	phaseConfirm
 	phaseRun
+	phaseReport
 )
 
 // settleFor is the pause before a keystroke counts, after a question appears
@@ -117,11 +120,12 @@ func (s *runScreen) Title() string { return "" }
 func (s *runScreen) crumbRoot() bool { return true }
 
 // working is what puts the turning mark in the header: something is running,
-// which a question waiting for an answer is not. Fetching the answers to one
-// still is — that is a command of the tree's, running like any other.
+// which a question waiting for an answer is not, and neither is a page being
+// read. Fetching the answers to one still is — that is a command of the tree's,
+// running like any other.
 func (s *runScreen) working() bool {
 	switch {
-	case s.done:
+	case s.done, s.told != nil:
 		return false
 	case s.ask != nil:
 		return s.ask.loading
@@ -129,9 +133,12 @@ func (s *runScreen) working() bool {
 	return s.asking == nil
 }
 
-// status is the counter beside it: which step of how many.
+// status is the counter beside it: which step of how many. A run stopped on
+// something it has to report is not counting: what that page says is that a
+// thing is finished, and a number beside it saying how much is left would take
+// it straight back.
 func (s *runScreen) status() string {
-	if s.done {
+	if s.done || s.told != nil {
 		return ""
 	}
 	return labelCounter(min(s.at+1, len(s.steps)), len(s.steps))
@@ -145,6 +152,8 @@ func (s *runScreen) Hint() string {
 		return labelHintChoose()
 	case !s.settled:
 		return labelHintRunning()
+	case s.told != nil:
+		return s.told.Hint()
 	case s.err != nil:
 		return labelHintBack()
 	}
@@ -217,7 +226,29 @@ func (s *runScreen) step() tea.Cmd {
 			return s.settle()
 		}
 	}
+	if s.stage == phaseReport {
+		return s.tell(e)
+	}
 	return s.start()
+}
+
+// tell puts up what a task had to report of what it just did, and holds the run
+// there until it has been read.
+//
+// The answer file is read back first, because a task that has something to show
+// is a task that wrote it down: the value the page draws as a code is an answer
+// like any other, and this is the moment it arrives. A task with nothing to
+// report — which is nearly all of them — passes straight through.
+func (s *runScreen) tell(e *spec.Task) tea.Cmd {
+	if !e.Reports() {
+		return s.advance()
+	}
+	if err := s.app.runner.Imported(); err != nil {
+		logging.Warn("%s: %s", e.Name, err)
+	}
+	headline, body := e.ReportText(s.app.store.Get)
+	s.told = newReport(headline, body, s.app.store.Get(e.Shows))
+	return tea.Batch(s.app.save(), s.settle())
 }
 
 // advance moves the cursor to the next task, which starts over at the first
@@ -303,7 +334,8 @@ func (s *runScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 		if s.steps[s.at].Quits {
 			return s, quit()
 		}
-		return s, s.advance()
+		s.stage = phaseReport
+		return s, s.step()
 
 	case askedMsg:
 		if err := s.ask.fill(msg, s.app.store.Get(s.ask.v.Name)); err != nil {
@@ -327,6 +359,15 @@ func (s *runScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 		}
 		if s.asking != nil {
 			return s, s.answer(msg)
+		}
+		// A page that only had to be read is closed the way the result of a run
+		// is: deliberately, with enter or esc, and by nothing else.
+		if s.told != nil {
+			if answers(msg) {
+				s.told = nil
+				return s, s.advance()
+			}
+			return s, nil
 		}
 		// The result is dismissed deliberately or not at all: enter and esc,
 		// nothing else. Every other key — and every scroll, which arrives here
@@ -380,6 +421,12 @@ const (
 )
 
 func (s *runScreen) View(width, height int) string {
+	// A report is the whole page. The line that says what is running is what it
+	// is standing in for: the run has stopped, and there is nothing above the
+	// mark it draws for that line to be about.
+	if s.told != nil {
+		return s.told.View(width, height)
+	}
 	var b strings.Builder
 	b.WriteString(s.headline() + "\n\n")
 	switch {

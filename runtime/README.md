@@ -70,6 +70,11 @@ presets:                 # pages of starting points, offered on a machine with n
         description: A full GNOME desktop.
         values:
           ARCH_OS_DESKTOP: gnome
+      - id: shared
+        title: Online                    # a starting point fetched rather than written out
+        description: Take the answers from a configuration somebody shared.
+        asks: ARCH_OS_CONFIG_SOURCE      # the one question choosing this row puts
+        apply: import_config             # shell that turns that answer into answers
 
 variables:
   - name: ARCH_OS_USERNAME     # reaches every script as an environment variable
@@ -180,13 +185,15 @@ conditions:                          # every one has to hold, or it is not in th
   - ARCH_OS_DESKTOP_GRAPHICS_DRIVER != none
 ```
 
-Five more keys change what a unit *is* rather than what it does:
+Seven more keys change what a unit *is* rather than what it does:
 
 | | |
 |---|---|
 | `asks: VAR` | the run stops and asks for that value before this one runs |
 | `confirm:` | asked as a yes or no in the frame before it runs; declining skips it |
 | `default: no` | that offer opens on no instead of on yes |
+| `report:` | the run stops on a page of this one's own once it has run |
+| `shows: VAR` | that answer put on the page as a code to scan |
 | `quits: true` | the program does not come back from this one — a reboot |
 | `tty: true` | the interface stands aside and the script has the terminal, whole |
 
@@ -202,6 +209,30 @@ moment it is safe to. Being named by a task is the whole declaration: the value
 is then left out of the opening questions and off the settings page, because
 until that task's turn there is nothing to choose from. It is asked every time,
 whatever the answer file says.
+
+**`report:`** is the milestone a list of task names cannot say on its own: the
+work is done, and everything after it is offered rather than needed. The run
+stops on a page of nothing else until it has been read. The first paragraph is
+the headline — the way the opening logo's first block is its eyebrow — and
+`{{VAR}}` is filled in from the answers, so it names the machine it is about.
+
+**`shows:`** puts one answer on that page twice over: drawn large as a code to
+scan, and printed under it as itself. For the value whose use is on a different
+machine from the one showing it — a link. A code is black on white wherever it
+is drawn, and a frame with no room for a whole one draws none rather than one
+that will not scan; the page still reads.
+
+The value is read back out of the answer file once the task has run, which is
+also how the task puts it there:
+
+```sh
+printf "MY_LINK='%s'\n" "$url" >>"$INSTALLER_CONF"
+```
+
+That file is the only channel, and it is not a new one: it is shell, `KEY='value'`
+to a line, and a script writing one is doing exactly what a person editing it by
+hand does. A value that comes back empty is not a failure — the page shows its
+words and no code.
 
 Nothing lists the tasks: the folder is the list, and the order comes out of
 the stages and the needs. A unit added is a step added, and the two can never
@@ -302,7 +333,11 @@ In this order, and each page shown only if there is something on it:
 - **Presets**, one page for each the tree declares, in the order they are
   declared. A set of answers, not a mode: every value one fills in is an ordinary
   value from the next page on. Offered once, on a machine that has never answered
-  anything.
+  anything. A row with **`asks:`** on it is the same idea reached the long way
+  round — one question, answered on the page every question is answered on, and
+  then the shell in its **`apply:`** turns that answer into answers by writing
+  them into the answer file. The row is not got past until that has worked, and
+  what the shell said on stderr is what stands on the page if it did not.
 - **The questions** that are required, mean something, and have no acceptable
   answer yet — one to a page, numbered, in the order the tree declared them.
 - **Install** or **Settings**, once nothing is left open.
@@ -314,7 +349,8 @@ In this order, and each page shown only if there is something on it:
   not information here, they are noise with escape codes in it. All of it goes to
   the log. A task that asks stops the list to ask — for a yes or no, or for a
   value it declared with `asks:` — and a declined one keeps its row, marked as
-  passed over.
+  passed over. A task that declared a `report:` stops it to say something, on a
+  page of nothing but that.
 - **A failure** — what the tool said, then which script, which line, which
   command, which exit code, then where the rest is written down.
 - **The way out**, where the tree declared one: a restart, a shutdown, and —

@@ -235,7 +235,25 @@ type PresetOption struct {
 	Title       string            `yaml:"title"`
 	Description string            `yaml:"description"`
 	Values      map[string]Scalar `yaml:"values"`
+
+	// Asks names the one question choosing this row puts, for the starting
+	// point that is not written down here but fetched: a code somebody was
+	// handed, and a whole set of answers standing behind it.
+	//
+	// The variable it names is asked on the page every other question is asked
+	// on, and being named here is its whole declaration — it is left out of the
+	// opening run and off the settings page, because a code that has already
+	// been used stands for nothing anybody would want to change.
+	Asks string `yaml:"asks"`
+
+	// Apply is shell run once that answer is given, and the row is not got past
+	// until it has worked. It is how an answer becomes answers: it writes them
+	// into the answer file, which the runtime reads back — see Runner.Import.
+	Apply string `yaml:"apply"`
 }
+
+// Fetches reports whether this row asks something before it fills anything in.
+func (o *PresetOption) Fetches() bool { return o.Asks != "" }
 
 func (p *Preset) Label() string { return i18n.T(p.Title) }
 func (p *Preset) Help() string  { return i18n.T(p.Description) }
@@ -280,6 +298,26 @@ type Task struct {
 	// belong on no, so that an enter meant for the page before it does not walk
 	// into one.
 	Default Scalar `yaml:"default"`
+
+	// Report is what the run stops to say once this one has run: the milestone
+	// somebody watching a list of task names has no other way of recognising —
+	// the work is done, and everything after it is offered rather than
+	// required. {{VAR}} is filled in from the answers, and the first paragraph
+	// is the headline, the way the opening logo's first block is its eyebrow.
+	//
+	// A run has at most a handful of these and most have none. It is not a
+	// progress note: it is the page the run holds still on until somebody has
+	// read it.
+	Report string `yaml:"report"`
+
+	// Shows names an answer to put on that page as a code to scan, and under it
+	// as itself. For the value that is of no use inside the frame — a link, a
+	// key — because the machine it is wanted on is the one in somebody's hand.
+	//
+	// The value is read back out of the answer file after this task has run, so
+	// the task itself is what puts it there. Empty is not a failure: a page that
+	// has nothing to show simply shows its words.
+	Shows string `yaml:"shows"`
 
 	// Quits marks a task the program does not come back from — a reboot. The
 	// frame stops drawing rather than waiting for output nobody will read.
@@ -326,6 +364,18 @@ const (
 // Question is the offer, translated and with the answers filled in.
 func (t *Task) Question(get func(string) string) string {
 	return strings.TrimSpace(Expand(i18n.T(t.Confirm), get))
+}
+
+// Reports reports whether the run stops on a page of its own once this one has
+// run.
+func (t *Task) Reports() bool { return t.Report != "" }
+
+// ReportText is that page's words, translated and with the answers filled in:
+// the headline first, then whatever else it has to say.
+func (t *Task) ReportText(get func(string) string) (headline, body string) {
+	text := strings.TrimSpace(Expand(i18n.T(t.Report), get))
+	headline, body, _ = strings.Cut(text, "\n\n")
+	return headline, strings.TrimSpace(body)
 }
 
 // The shapes a variable takes. The type is what the frame draws; a set of
@@ -424,14 +474,15 @@ type Variable struct {
 	deferred bool
 }
 
-// Deferred reports whether this value is one a task asks for in the middle of a
-// run — see Task.Asks. Nothing declares it: being named by a task is the
-// declaration.
+// Deferred reports whether this value is one the opening run of questions has
+// no business asking. Nothing declares it: being named by a task's `asks:` or
+// `shows:`, or by a preset option's `asks:`, is the declaration.
 //
 // It is the second kind of required value that does not stop the program from
 // being ready, and for the same reason a secret is the first: there is no
-// answering it yet. A snapshot to go back to cannot be chosen, or shown on a
-// settings page, while the disk holding it is still locked.
+// answering it yet, or no point answering it twice. A snapshot to go back to
+// cannot be chosen, or shown on a settings page, while the disk holding it is
+// still locked; a link a run has yet to produce is not a question at all.
 func (v *Variable) Deferred() bool { return v.deferred }
 
 func (v *Variable) Label() string { return i18n.T(v.Title) }
@@ -515,7 +566,7 @@ func (s *Spec) Strings() []string {
 		add(v.Title, v.Description, v.Group, v.Free, v.Error)
 	}
 	for _, t := range s.Tasks {
-		add(t.Name, t.Confirm)
+		add(t.Name, t.Confirm, t.Report)
 	}
 	return out
 }

@@ -309,6 +309,9 @@ func (s *Spec) checkTasks(tasks []*Task) error {
 		if err := checkConfirm(t); err != nil {
 			return fmt.Errorf("%s: %w", where, err)
 		}
+		if err := s.checkShows(t); err != nil {
+			return fmt.Errorf("%s: %w", where, err)
+		}
 		cond, err := s.conditions(t.Conditions)
 		if err != nil {
 			return fmt.Errorf("%s: %w", where, err)
@@ -335,6 +338,29 @@ func checkConfirm(t *Task) error {
 	case t.Default != ConfirmYes && t.Default != ConfirmNo:
 		return fmt.Errorf("default: %s or %s, got %q", ConfirmYes, ConfirmNo, t.Default)
 	}
+	return nil
+}
+
+// checkShows settles a task's `shows:`, which is an answer put on the page its
+// `report:` draws — as a code to scan, and under it as itself.
+//
+// A secret is refused for the reason it is refused everywhere: it is never
+// written down, and drawing one at a size a camera across the room can read is
+// the opposite of what it is for.
+func (s *Spec) checkShows(t *Task) error {
+	if t.Shows == "" {
+		return nil
+	}
+	v := s.byName[t.Shows]
+	switch {
+	case v == nil:
+		return fmt.Errorf("shows: no such variable: %s", t.Shows)
+	case v.Secret():
+		return fmt.Errorf("shows: %s is a secret, and a secret is not put on screen to be read across a room", t.Shows)
+	case !t.Reports():
+		return fmt.Errorf("shows: there is no report for it to appear on")
+	}
+	v.deferred = true
 	return nil
 }
 
@@ -380,12 +406,15 @@ func (s *Spec) normalize(tasks []*Task) {
 	}
 	for _, p := range s.Presets {
 		fields = append(fields, &p.Title, &p.Description)
+		for _, o := range p.Options {
+			fields = append(fields, &o.Title, &o.Description)
+		}
 	}
 	for _, v := range s.Vars {
 		fields = append(fields, &v.Title, &v.Description, &v.Group, &v.Free, &v.Error)
 	}
 	for _, t := range tasks {
-		fields = append(fields, &t.Name, &t.Confirm)
+		fields = append(fields, &t.Name, &t.Confirm, &t.Report)
 	}
 	for _, f := range fields {
 		*f = reflow(*f)
@@ -518,8 +547,41 @@ func (s *Spec) checkPresets() error {
 					return fmt.Errorf("preset %s: option %s: no such variable: %s", p.ID, o.ID, name)
 				}
 			}
+			if err := s.checkFetch(o); err != nil {
+				return fmt.Errorf("preset %s: option %s: %w", p.ID, o.ID, err)
+			}
 		}
 	}
+	return nil
+}
+
+// checkFetch settles a preset option's `asks:` and `apply:` — the starting
+// point that is fetched rather than written out here.
+//
+// The question is put on a page of its own, so unlike a task's it may be a text
+// box: a code somebody was handed is typed, not chosen. A secret is refused,
+// because a starting point is a set of answers and a secret is never one of
+// them.
+func (s *Spec) checkFetch(o *PresetOption) error {
+	if o.Asks == "" {
+		if o.Apply != "" {
+			return fmt.Errorf("apply: there is no asks for it to work from")
+		}
+		return nil
+	}
+	v := s.byName[o.Asks]
+	switch {
+	case v == nil:
+		return fmt.Errorf("asks: no such variable: %s", o.Asks)
+	case v.Secret():
+		return fmt.Errorf("asks: %s is a secret, which is asked for immediately before the run", o.Asks)
+	}
+	resolved, err := s.shell(o.Apply)
+	if err != nil {
+		return err
+	}
+	o.Apply = resolved
+	v.deferred = true
 	return nil
 }
 

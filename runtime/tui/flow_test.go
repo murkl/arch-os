@@ -305,6 +305,37 @@ func (h *harness) askedFor() *harness {
 	return h
 }
 
+// reported waits for the run to stop on something it has to say, and for that
+// page to become answerable.
+func (h *harness) reported() *harness {
+	h.t.Helper()
+	deadline := time.Now().Add(20 * time.Second)
+	for time.Now().Before(deadline) {
+		if r, ok := h.m.top().(*runScreen); ok && r.told != nil && r.settled {
+			return h
+		}
+		h.drain()
+	}
+	h.t.Fatalf("nothing was ever reported; the page on top is %T", h.m.top())
+	return h
+}
+
+// answered waits for a question with shell hanging on it to have run that shell
+// and come back — either onto the next page, or onto the same one with the
+// reason it would not work.
+func (h *harness) answered() *harness {
+	h.t.Helper()
+	deadline := time.Now().Add(20 * time.Second)
+	for time.Now().Before(deadline) {
+		if f, ok := h.m.top().(*fieldScreen); !ok || !f.busy {
+			return h
+		}
+		h.drain()
+	}
+	h.t.Fatalf("the answer was never made good on")
+	return h
+}
+
 // ─── What comes first ────────────────────────────────────────────────────────
 
 // The one thing that cannot wait for the opening run of questions: a question
@@ -1202,4 +1233,130 @@ func TestClockReadsAsAClock(t *testing.T) {
 			t.Errorf("clock(%s) = %q, want %q", c.d, got, c.want)
 		}
 	}
+}
+
+// ─── What a run has to report ────────────────────────────────────────────────
+
+// A run of two dozen identical-looking rows cannot say that the work is done
+// and everything after it is an offer. So a task may stop the run and say it,
+// once, on a page of its own — with whatever it produced drawn as a code for
+// the machine in somebody's hand.
+func TestATaskCanReportWhatItProduced(t *testing.T) {
+	h := newHarness(t, map[string]string{
+		spec.FileInstaller: testInstaller + `
+  - name: LINK
+    title: Shared at
+`,
+		"tasks/d-share/task.yaml": "name: Share\nstage: finish\nshows: LINK\nreport: |\n  Installed on {{DISK}}\n\n  Everything after this is offered rather than needed.\n",
+		// A script answers by writing one line of the answer file, which is the
+		// only channel there is and the same one a person editing it uses.
+		"tasks/d-share/task.sh": `printf "LINK='https://example.test/abc'\n" >>"$INSTALLER_CONF"` + "\n",
+	})
+	h.down().enter().typeIn("moritz").enter().enter()
+	h.enter().enter()
+	h.typeIn("x").enter().typeIn("x").enter()
+
+	h.reported()
+	// The words are the tree's, filled in from the answers, and the value the
+	// task wrote is on the page as itself.
+	h.wants("Installed on /dev/sda", "Everything after this is offered", "https://example.test/abc")
+	// A page being read is not a run in progress: no counter, no turning mark.
+	h.refuses("of 3")
+
+	// And it is an answer like any other from here on.
+	if got := h.a.store.Get("LINK"); got != "https://example.test/abc" {
+		t.Errorf("LINK = %q, want the address the task wrote", got)
+	}
+
+	h.enter()
+	h.ran()
+	h.wants("Installation complete", "Share")
+}
+
+// A task that produced nothing still says what it has to say. Not being able to
+// share a configuration is not a reason to withhold the news that the machine
+// is installed.
+func TestAReportWithNothingToShowIsStillShown(t *testing.T) {
+	h := newHarness(t, map[string]string{
+		spec.FileInstaller: testInstaller + `
+  - name: LINK
+    title: Shared at
+`,
+		"tasks/d-share/task.yaml": "name: Share\nstage: finish\nshows: LINK\nreport: Installed on {{DISK}}\n",
+		"tasks/d-share/task.sh":   "echo 'it did not work' >&2\n",
+	})
+	h.down().enter().typeIn("moritz").enter().enter()
+	h.enter().enter()
+	h.typeIn("x").enter().typeIn("x").enter()
+
+	h.reported()
+	h.wants("Installed on /dev/sda")
+}
+
+// ─── A starting point that is fetched rather than written down ───────────────
+
+// The third kind of starting point: not a set of answers in the tree but a code
+// somebody was handed, and the answers behind it. One row, one question, and
+// from the next page on nothing about it is any different.
+func TestAPresetCanFetchItsAnswers(t *testing.T) {
+	h := newHarness(t, presetFetches("printf \"USER='moritz'\\nDISK='/dev/sdb'\\nEXTRAS='false'\\n\" >>\"$INSTALLER_CONF\""))
+	h.down().down()
+	h.wants("Online")
+
+	// An answer has already been written down once, which is what a real run
+	// looks like by the time it reaches this page — so the file carries an empty
+	// line for the code, and reading it back would undo the answer about to be
+	// given unless that answer is written down first.
+	if err := h.a.store.Save(); err != nil {
+		t.Fatal(err)
+	}
+
+	h.enter()
+	h.wants("Configuration code")
+	h.typeIn("abc12").enter().answered()
+
+	// Everything the code stood for is an answer now, and with nothing left
+	// open the hub is what follows.
+	h.wants("Install", "Settings")
+	for name, want := range map[string]string{"USER": "moritz", "DISK": "/dev/sdb", "EXTRAS": "false"} {
+		if got := h.a.store.Get(name); got != want {
+			t.Errorf("%s = %q, want %q", name, got, want)
+		}
+	}
+	if got := h.a.store.Get("SOURCE"); got != "abc12" {
+		t.Errorf("SOURCE = %q, want abc12", got)
+	}
+}
+
+// A code that stands for nothing is a page that has not moved, with the reason
+// on it in the shell's own words — there is nothing to do about it but read
+// that and try another.
+func TestAPresetThatCannotFetchSaysWhyAndStaysPut(t *testing.T) {
+	h := newHarness(t, presetFetches("echo 'Nothing is shared under that code' >&2; exit 1"))
+	h.down().down().enter()
+	h.typeIn("nope").enter().answered()
+
+	h.wants("Configuration code", "Nothing is shared under that code")
+	h.refuses("Settings")
+	if _, ok := h.m.top().(*fieldScreen); !ok {
+		t.Errorf("the page moved on to %T", h.m.top())
+	}
+}
+
+// presetFetches is the test tree with a third starting point on it: one that
+// asks for a code and runs the given shell to make something of it.
+func presetFetches(apply string) map[string]string {
+	tree := strings.Replace(testInstaller, "\nvariables:", `
+      - id: shared
+        title: Online
+        description: Take the answers from somewhere else.
+        asks: SOURCE
+        apply: `+apply+`
+variables:`, 1)
+	return map[string]string{spec.FileInstaller: tree + `
+  - name: SOURCE
+    title: Configuration code
+    description: The code of a configuration somebody shared.
+    required: true
+`}
 }

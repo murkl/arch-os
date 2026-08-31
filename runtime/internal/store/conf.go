@@ -53,6 +53,17 @@ func (s *Store) Load() error {
 	return nil
 }
 
+// Reload reads the answer file back over what is held, for the one moment a
+// script may have written into it: shell that answers questions rather than
+// reporting anything — a configuration fetched from somewhere, a link a run has
+// just produced.
+//
+// The answer file is the channel because it already is one. It is shell,
+// KEY='value' to a line, and somebody editing it in an editor is doing exactly
+// what such a script does — so there is no second way in for a script to learn
+// and no second way for one to go wrong.
+func (s *Store) Reload() error { return s.Load() }
+
 // Exists reports whether this machine has answered anything yet. It is the one
 // question asked before the interface opens: an answer file is what turns a
 // first run into a return.

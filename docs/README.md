@@ -42,6 +42,8 @@ image that starts the installer the moment it boots.
 - AUR helper, 32-bit (multilib) support, automatic housekeeping
 - Shell enhancement (bash, zsh or fish), preinstalled system manager TUI
 - Samba share, automatic mirror ranking by country (reflector)
+- Shareable configuration: an installation ends on a QR code that carries its
+  answers, and the next machine is set up from that code in one question
 - Multilingual interface (English, German); a tree can add its own languages
   without touching the runtime — see [runtime/README.md](../runtime/README.md#translations)
 

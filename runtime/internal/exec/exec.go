@@ -7,6 +7,7 @@ package exec
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -79,18 +80,45 @@ const handover = preamble + `source "$1"`
 // Run executes a one-liner and returns its trimmed stdout. Used for the small
 // reads: an option list, a suggested value.
 func (r Runner) Run(s string, env Env) (string, error) {
+	out, said, err := r.say(s, env)
+	switch {
+	case err == nil:
+		return out, nil
+	case said != "":
+		return "", fmt.Errorf("%s: %s", err, said)
+	}
+	return "", err
+}
+
+// Reason runs a one-liner and answers with what it said went wrong — the
+// script's own last words on stderr, where it left any, and the exit status
+// where it did not.
+//
+// For the shell whose failure is a sentence somebody reads on the page they are
+// standing on rather than a report of where a task broke: "nothing is shared
+// under that code" is the whole of what is worth saying, and an exit status in
+// front of it only gets in the way.
+func (r Runner) Reason(s string, env Env) error {
+	_, said, err := r.say(s, env)
+	switch {
+	case err == nil:
+		return nil
+	case said != "":
+		return errors.New(said)
+	}
+	return err
+}
+
+// say runs a one-liner and keeps its two channels apart: what it printed, and
+// what it said on the way out.
+func (r Runner) say(s string, env Env) (out, said string, err error) {
 	cmd := exec.Command("bash", "-c", snippet, "--", s, r.Lib)
 	cmd.Env = env
-	var out, errb bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &errb
-	if err := cmd.Run(); err != nil {
-		if msg := strings.TrimSpace(errb.String()); msg != "" {
-			return "", fmt.Errorf("%s: %s", err, msg)
-		}
-		return "", err
-	}
-	return strings.TrimRight(out.String(), "\n"), nil
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err = cmd.Run()
+	return strings.TrimRight(stdout.String(), "\n"), strings.TrimSpace(stderr.String()), err
 }
 
 // Lines runs a command and returns its stdout, one entry per line, with blank

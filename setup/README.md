@@ -128,14 +128,17 @@ live in the session's own database — goes through `on_first_login`, which
 collects the lines into a script that runs once at the first login and then
 removes itself.
 
-### Tasks that ask, and one that takes the terminal
+### Tasks that ask, one that reports, and one that takes the terminal
 
-Five keys change what a unit is rather than what it does:
+Seven keys change what a unit is rather than what it does:
 
 ```yaml
 asks: ARCH_OS_RECOVERY_SNAPSHOT                   # a value, asked mid-run, before the offer
 confirm: Restart into {{ARCH_OS_HOSTNAME}} now?   # a yes or no in the frame; no skips it
 default: no                                       # which of the two that offer opens on
+report: |                                         # the run stops on a page of this one's own
+  Arch Linux is installed
+shows: ARCH_OS_CONFIG_URL                         # an answer on that page, as a code to scan
 quits: true                                       # the program does not come back from this
 tty: true                                         # hand it the terminal, and take it back after
 ```
@@ -148,6 +151,40 @@ any other, rather than a page of its own.
 disk cannot be listed before that disk has been unlocked and mounted, which is
 the task before it. So the question is asked in the middle of the run, and the
 `confirm:` under it names the snapshot that was just chosen.
+
+`report:` is on `copy-config`, the last thing done to the installation itself.
+Everything past it is an offer, and a list of task names cannot say that on its
+own — so the run stops there, once, under a large green tick, and says the
+machine is installed before it asks whether to open a shell in it. The first
+paragraph is the headline; the rest is the paragraph under it.
+
+## Sharing a configuration
+
+An installation is two dozen answers, and the second machine set up the same way
+is otherwise those two dozen answers given again by hand. So the finished
+`installer.conf` goes to [paste.rs](https://paste.rs) — no account, no key,
+nothing to agree to — and the address of it stands on the page above as a code
+to scan.
+
+Both ends of that are in `lib.sh`:
+
+| | |
+|---|---|
+| `share_config` | uploads and records the address as `ARCH_OS_CONFIG_URL`; never fails an installation that has already worked |
+| `import_config` | fetches one and appends it to the answer file, which the runtime reads back |
+| `config_url` | the address, from either the whole link or the code at the end of it |
+
+The upload is `ARCH_OS_CONFIG_SHARE_ENABLED`, on by default and a row in the
+settings like any other. What goes up is the answer file with its own
+`ARCH_OS_CONFIG_*` lines stripped, and the password is not in it — the runtime
+never writes a secret down at all. Everything else is: the host name, the user
+name, the disk, the language. **Anybody holding the address can read it.**
+
+The other end is the third row of the starting points, `paste.rs - Online`. It
+asks for the code, `import_config` turns it into answers, and from the next page
+on nothing about them is any different — which usually means the main menu
+straight away, since a configuration that installed one machine answers
+everything a second one asks.
 
 ## Hooks
 
@@ -245,7 +282,9 @@ check`. Nothing else has to be told about it.
 
 **A new starting point** — an option under `presets:`. A page is offered once, on
 a machine that has never answered anything, and what it fills in is an ordinary
-answer from the next page on.
+answer from the next page on. One that fetches its answers instead of writing
+them out names the question it asks with `asks:` and the shell that makes
+something of the answer with `apply:`.
 
 **Something in the recovery** — the logic goes in `recovery.sh` and the step that
 calls it under `tasks/recovery-*/`, in a stage of the `recovery` mode. Its
@@ -288,6 +327,11 @@ ordinary running system, as an ordinary user. It installs nothing. The guard is
 any value is given, and copied into the new system at the end. The password is
 never in it: it is asked for immediately before the installation starts and
 forgotten when it is over.
+
+It is also the one way a script answers anything — `answer NAME value` in
+`util.sh` appends a line, and the runtime reads the file back. That is how the
+address a configuration was shared at becomes an answer, and how a configuration
+fetched from one becomes two dozen of them.
 
 ## Credit
 

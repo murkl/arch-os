@@ -51,7 +51,7 @@ func (s *presetScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 		}
 		for _, o := range s.preset.Options {
 			if o.ID == id {
-				return s, tea.Batch(s.app.adopt(o), s.done())
+				return s, s.take(o)
 			}
 		}
 		return s, nil
@@ -59,6 +59,25 @@ func (s *presetScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 		return s, pop()
 	}
 	return s, nil
+}
+
+// take is a starting point being chosen: its values become answers, and the
+// page after it is the next one.
+//
+// A row that asks something first is the same idea reached the long way round.
+// A starting point somebody was handed rather than picked off this page — a
+// configuration shared after another installation — is one question and then
+// exactly the same set of answers, so it is one more row here and not a mode,
+// a flag or a page of its own. What it asks is asked on the page every other
+// question is asked on, and what the answer stands for is fetched by the tree's
+// own shell, since only the tree knows where such a thing is kept.
+func (s *presetScreen) take(o *spec.PresetOption) tea.Cmd {
+	if !o.Fetches() {
+		return tea.Batch(s.app.adopt(o), s.done())
+	}
+	return push(newField(s.app, s.app.spec.Var(o.Asks), func() tea.Cmd {
+		return tea.Batch(s.app.adopt(o), s.done())
+	}).importing(o.Apply))
 }
 
 func (s *presetScreen) View(width, height int) string {

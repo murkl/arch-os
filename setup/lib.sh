@@ -321,6 +321,97 @@ FIRST_LOGIN="${MNT}/home/${ARCH_OS_USERNAME}/.first-login"
 
 on_first_login() { cat >>"$FIRST_LOGIN"; }
 
+# ─── Sharing what was answered ───────────────────────────────────────────────
+#
+# An installation is two dozen answers, and the second machine set up the same
+# way is otherwise two dozen answers given again by hand. So the finished
+# configuration is put somewhere a phone can reach and the address of it is
+# shown at the end of the run; the other end of the same idea is the starting
+# point that takes its answers from such an address instead of from this tree.
+#
+# It is only ever the answer file: names, a host name, a disk, a language. The
+# password is not in it — the runtime never writes a secret down — and neither
+# is the log.
+
+# Where a configuration is shared. paste.rs takes a file over an ordinary POST,
+# answers with the address it now lives at, and serves it back as plain text —
+# no account, no key, nothing to agree to. Everything it does not do is a thing
+# that cannot break.
+CONFIG_SERVICE="https://paste.rs"
+
+# The address a shared configuration lives at, from whatever somebody has in
+# front of them: the whole link, or only the code at the end of it. They are the
+# same thing said differently, and asking which one they are holding would be a
+# question about our storage rather than about their installation.
+config_url() {
+    local ref
+    ref="$(printf '%s' "$1" | tr -d '[:space:]')"
+    case "$ref" in
+    http://* | https://*) printf '%s' "$ref" ;;
+    *) printf '%s/%s' "$CONFIG_SERVICE" "${ref##*/}" ;;
+    esac
+}
+
+# The answers as somebody else should read them: everything this installation
+# was told, without the lines about the sharing itself. A configuration naming
+# where an earlier copy of it went would send whoever opened it somewhere else
+# again.
+shareable_config() {
+    grep -v '^ARCH_OS_CONFIG_' "$INSTALLER_CONF" || true
+}
+
+# The answers, put where a camera can reach them, and the address kept as an
+# answer of its own — which is what puts it on the page at the end of the run
+# and into the copy inside the new system.
+#
+# Nothing here may fail the installation. The system on the disk is finished by
+# the time this runs, and a pastebin that was unreachable says nothing at all
+# about it: a failure is a line in the log, an address that stays empty, and a
+# page with no code on it.
+share_config() {
+    # Simulated, this still answers with an address. The page at the end of a
+    # run is the thing most worth looking at while this tree is being worked on,
+    # and a page with nothing on it cannot be looked at.
+    simulating && {
+        answer ARCH_OS_CONFIG_URL "${CONFIG_SERVICE}/demo"
+        return 0
+    }
+
+    local url
+    if ! url="$(shareable_config | curl -sf --connect-timeout 10 --max-time 30 --data-binary @- "${CONFIG_SERVICE}/")"; then
+        echo "the configuration could not be shared" >&2
+        return 0
+    fi
+    url="$(printf '%s' "$url" | tr -d '[:space:]')"
+    [ -n "$url" ] && answer ARCH_OS_CONFIG_URL "$url"
+    return 0
+}
+
+# A configuration somebody shared, taken as the answers to this installation.
+#
+# What the runtime owns is left where it is: which language this interface is
+# read in and what this run is doing are settings of the program in front of
+# you, not of a system installed on somebody else's machine. So is the sharing.
+#
+# This one may fail, and says why in a sentence: it runs while somebody is
+# looking at the box they typed the code into, and there is nothing to do about
+# a wrong code but read that and try another.
+import_config() {
+    local url body
+    url="$(config_url "$ARCH_OS_CONFIG_SOURCE")"
+
+    if ! body="$(curl -Lsf --connect-timeout 10 --max-time 30 "$url")"; then
+        echo "Nothing could be read at ${url}" >&2
+        return 1
+    fi
+    body="$(printf '%s\n' "$body" | grep '^ARCH_OS_[A-Z0-9_]*=' | grep -v '^ARCH_OS_CONFIG_' || true)"
+    if [ -z "$body" ]; then
+        echo "What is kept at ${url} is not an Arch OS configuration" >&2
+        return 1
+    fi
+    printf '%s\n' "$body" >>"$INSTALLER_CONF"
+}
+
 # ─── Leaving ─────────────────────────────────────────────────────────────────
 
 # Everything the installation mounted, taken back down in the right order. Used

@@ -58,6 +58,31 @@ part_of() {
     printf '%s%s%s' "$1" "$sep" "$2"
 }
 
+# ─── Answering ───────────────────────────────────────────────────────────────
+
+# An answer, written where the runtime keeps them.
+#
+# The answer file is shell — one KEY='value' to a line — and the runtime reads
+# it back at the two moments a script can have written into it: after a task
+# that reports something, and after the shell a preset option hangs on its
+# question. So a script answers a question by appending one line, and there is
+# nothing else for it to learn.
+#
+# Whatever the file said about that name is dropped and the new line goes on the
+# end, so there is one answer for one name — the runtime would read the last of
+# two and be right either way, but a file somebody opens should not say a thing
+# twice. Order and comments come back the next time the runtime saves, which
+# rewrites the whole file in declaration order.
+#
+# Written whole and moved into place, the way the runtime writes it: a script
+# interrupted mid-write must not leave a half-file where the answers were.
+answer() {
+    local tmp="${INSTALLER_CONF}.answer"
+    grep -v "^${1}=" "$INSTALLER_CONF" >"$tmp" 2>/dev/null || : >>"$tmp"
+    printf "%s='%s'\n" "$1" "$(printf '%s' "$2" | sed "s/'/'\\\\''/g")" >>"$tmp"
+    mv -f "$tmp" "$INSTALLER_CONF"
+}
+
 # ─── Where a task lives ──────────────────────────────────────────────────────
 
 # The folder of the task that called it, where a unit keeps the files it ships

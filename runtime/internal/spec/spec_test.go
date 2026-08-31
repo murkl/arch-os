@@ -539,6 +539,34 @@ func TestLoadRefuses(t *testing.T) {
 			want: "is a secret",
 		},
 		{
+			name:  "a value shown on a page that does not exist",
+			files: unit("do", "name: Do\nstage: go\nshows: DISK\n"),
+			want:  "no report for it to appear on",
+		},
+		{
+			name:  "a report showing a variable nobody declared",
+			files: unit("do", "name: Do\nstage: go\nreport: Done\nshows: NOPE\n"),
+			want:  "no such variable",
+		},
+		{
+			name: "a report showing a secret",
+			files: units(
+				map[string]string{FileInstaller: head("variables:\n  - name: PW\n    title: Password\n    type: secret\n")},
+				unit("do", "name: Do\nstage: go\nreport: Done\nshows: PW\n"),
+			),
+			want: "is a secret",
+		},
+		{
+			name:  "a starting point asking for a variable nobody declared",
+			files: map[string]string{FileInstaller: head("presets:\n  - id: p\n    title: P\n    options:\n      - id: o\n        title: O\n        asks: NOPE\n")},
+			want:  "no such variable",
+		},
+		{
+			name:  "a starting point with shell and nothing to run it on",
+			files: map[string]string{FileInstaller: head("presets:\n  - id: p\n    title: P\n    options:\n      - id: o\n        title: O\n        apply: echo hi\n")},
+			want:  "no asks for it to work from",
+		},
+		{
 			name:  "a hook whose name is a typo",
 			files: map[string]string{"hooks/preflght.sh": "exit 0\n"},
 			want:  "not a hook",
@@ -768,5 +796,68 @@ func TestConditionsRefuseAnythingButAConditionOrAListOfThem(t *testing.T) {
 	_, err := Load(tree(t, unit("do", "name: Do\nstage: go\nconditions:\n  DISK: yes\n")))
 	if err == nil || !strings.Contains(err.Error(), "conditions takes a condition") {
 		t.Errorf("err = %v", err)
+	}
+}
+
+// A value a task shows and one a starting point asks for are both values the
+// opening run of questions has no business asking: the first does not exist yet
+// and the second stands for nothing once it has been used. Nothing declares
+// that — being named is the declaration.
+func TestBeingNamedIsWhatDefersAValue(t *testing.T) {
+	dir := tree(t, units(
+		map[string]string{
+			FileInstaller: head(`presets:
+  - id: p
+    title: P
+    options:
+      - id: o
+        title: O
+        asks: SOURCE
+        apply: echo hi
+variables:
+  - name: DISK
+    title: Disk
+    required: true
+  - name: LINK
+    title: Shared at
+  - name: SOURCE
+    title: Configuration code
+`),
+		},
+		unit("do", "name: Do\nstage: go\nreport: Done\nshows: LINK\n"),
+	))
+	sp, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"LINK", "SOURCE"} {
+		if !sp.Var(name).Deferred() {
+			t.Errorf("%s is not deferred", name)
+		}
+	}
+	if sp.Var("DISK").Deferred() {
+		t.Error("an ordinary question was deferred")
+	}
+}
+
+// The first paragraph of a report is its headline, the way the first block of
+// the opening logo is its eyebrow — one idiom, and nothing extra to declare.
+func TestAReportsFirstParagraphIsItsHeadline(t *testing.T) {
+	dir := tree(t, unit("do", "name: Do\nstage: go\nreport: |\n  Installed on {{DISK}}\n\n  And here is what that means.\n"))
+	sp, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	answers := func(string) string { return "/dev/sda" }
+	headline, body := sp.Tasks[0].ReportText(answers)
+	if headline != "Installed on /dev/sda" {
+		t.Errorf("headline = %q", headline)
+	}
+	if body != "And here is what that means." {
+		t.Errorf("body = %q", body)
+	}
+	// A report of one paragraph is a headline and nothing else.
+	if !sp.Tasks[0].Reports() {
+		t.Error("a task with a report says it has none")
 	}
 }

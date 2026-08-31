@@ -80,6 +80,47 @@ type glyphSet struct {
 // because a space is a space.
 const glyphBlank = "  "
 
+// The four cells everything drawn as a picture rather than as writing is built
+// from: a full block, its two halves, and nothing. Between them they say what
+// two stacked square pixels are doing, which is what makes a terminal cell —
+// twice as tall as it is wide — carry two square dots instead of one oblong.
+//
+// They are not in either glyph set above, because there is nothing to choose
+// between: all four are in codepage 437 and in every lat* console font, so the
+// large tick and the code beside it are the same shape on a virtual console as
+// in a terminal emulator. Nothing else the interface draws can say that.
+const (
+	blockFull  = "█"
+	blockUpper = "▀"
+	blockLower = "▄"
+	blockNone  = " "
+)
+
+// cell is the one of those four that says what a pair of stacked pixels does.
+func cell(upper, lower bool) string {
+	switch {
+	case upper && lower:
+		return blockFull
+	case upper:
+		return blockUpper
+	case lower:
+		return blockLower
+	}
+	return blockNone
+}
+
+// glyphTick is the mark a finished run is headed by, at the size of something
+// worth stopping for. The same tick every finished row carries, drawn out of
+// blocks instead of asked of the font — a font's own tick is one cell tall
+// whatever it is set beside, and this one has a whole page under it.
+var glyphTick = []string{
+	"           ▄█▀",
+	"         ▄█▀",
+	"█▄     ▄█▀",
+	" ▀█▄ ▄█▀",
+	"   ▀██▀",
+}
+
 // glyphBlockPixel is the one rune the shipped block-letter wordmark draws with —
 // every "on" cell of a letter is this and nothing else. The splash checks for it
 // by name rather than by literal, so a custom logo built from something else

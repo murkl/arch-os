@@ -124,6 +124,18 @@ presets:
           ARCH_OS_DESKTOP_GRAPHICS_DRIVER: none
           ARCH_OS_AUR_HELPER: none
 
+      # The third row is not a set of answers written out here but one fetched:
+      # a configuration shared at the end of an earlier installation, taken
+      # whole. It is a starting point like the two above — every value it fills
+      # in is an ordinary answer from the next page on — and it is the same
+      # question this page always asks, so it is a row here rather than a mode,
+      # a flag or a page of its own.
+      - id: shared
+        title: paste.rs - Online
+        description: Take every answer from a configuration that was shared at the end of an earlier installation.
+        asks: ARCH_OS_CONFIG_SOURCE
+        apply: import_config
+
 # Everything this installer needs to know, in the order it is asked and listed
 # in the settings. `group` puts a heading over the rows that follow it. Required
 # and unanswered is what makes the installer ask; an answer is what makes it
@@ -656,6 +668,46 @@ variables:
     mode: install
     type: bool
     default: true
+
+  # ─── Sharing ───────────────────────────────────────────────────────────────
+  #
+  # The two ends of one idea: an installation that says where its answers can be
+  # picked up, and a starting point that picks them up. Neither is asked in the
+  # opening run — the first is answered by the installation itself, the second
+  # only by somebody who chose the row that asks it — so both are off the
+  # settings page, and only the switch above them is a question.
+  - name: ARCH_OS_CONFIG_SHARE_ENABLED
+    title: Share this configuration
+    description: |
+      When the installation is finished, put the answers on this page — never the
+      password, which is not written down at all — on paste.rs, and show the
+      address as a code to scan. Anybody holding that address can read them, and
+      can set up another machine exactly like this one by typing it in here.
+    group: System
+    mode: install
+    type: bool
+    default: true
+
+  - name: ARCH_OS_CONFIG_URL
+    title: Shared at
+    description: |
+      Where this installation's answers ended up. The installation answers this
+      one itself and shows it on the page it finishes on.
+    group: System
+    mode: install
+
+  - name: ARCH_OS_CONFIG_SOURCE
+    title: Configuration code
+    description: |
+      The code of a configuration somebody shared: the short word at the end of
+      a paste.rs address, or the whole address pasted in. Every answer kept
+      there becomes an answer here, and every one of them can still be changed
+      afterwards.
+    group: System
+    mode: install
+    required: true
+    pattern: '^[A-Za-z0-9][A-Za-z0-9:/._-]*$'
+    error: A code such as aBc12, or the whole address it sits at.
 
   # ─── Recovery ──────────────────────────────────────────────────────────────
   #

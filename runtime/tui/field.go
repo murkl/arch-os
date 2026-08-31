@@ -27,6 +27,13 @@ type fieldScreen struct {
 	// the length of it; somebody who opened one row of a settings page is not.
 	at, of int
 
+	// imports is shell to run once the answer is given, and the page is not got
+	// past until it has worked — for the answer whose whole point is what it
+	// fetches. A failure is shown exactly where a value that broke a rule is
+	// shown: the answer is still in the box, and nothing has moved on.
+	imports string
+	busy    bool
+
 	picker *picker
 	input  textinput.Model
 	typing bool
@@ -56,7 +63,20 @@ func (s *fieldScreen) counted(at, of int) *fieldScreen {
 	return s
 }
 
+// importing hangs shell on the answer: it runs when the answer is given, off
+// the frame, and the page stays where it is until it comes back. See
+// Runner.Import — what such a script does is answer further questions.
+func (s *fieldScreen) importing(shell string) *fieldScreen {
+	s.imports = shell
+	return s
+}
+
 func (s *fieldScreen) Title() string { return s.v.Label() }
+
+// working puts the turning mark in the header while the answer is being made
+// good on. The page itself keeps drawing, so what is on screen is the question
+// with its answer in it and something visibly happening about it.
+func (s *fieldScreen) working() bool { return s.busy }
 
 func (s *fieldScreen) Init() tea.Cmd {
 	// The answers can come from a command and the suggestion from another, and
@@ -74,7 +94,10 @@ type fieldMsg struct {
 }
 
 func (s *fieldScreen) Hint() string {
-	if s.typing {
+	switch {
+	case s.busy:
+		return labelHintRunning()
+	case s.typing:
 		return labelHintInput()
 	}
 	return filterHint(labelHintChoose(), s.filter)
@@ -122,7 +145,27 @@ func (s *fieldScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 		}
 		return s, nil
 
+	case importedMsg:
+		s.busy = false
+		if err := msg.err; err != nil {
+			s.problem = err.Error()
+			return s, nil
+		}
+		// Whatever it wrote is read back on this side, where the answers are
+		// only ever touched — and only now saved, so the file holds the merge
+		// rather than what was in memory before it.
+		if err := s.app.runner.Imported(); err != nil {
+			s.problem = err.Error()
+			return s, nil
+		}
+		return s, tea.Batch(s.app.save(), s.done())
+
 	case tea.KeyMsg:
+		// Nothing is answerable while the answer already given is being made
+		// good on. ctrl+c still leaves, as it does everywhere.
+		if s.busy {
+			return s, nil
+		}
 		// The narrowing box gets the key before the page does: / opens it,
 		// typing narrows, esc closes it — which is why esc only leaves the
 		// question once there is no box left to close. Not while the text box is
@@ -236,8 +279,24 @@ func (s *fieldScreen) commit() (screen, tea.Cmd) {
 	if s.v.Name == s.app.spec.Language {
 		s.app.speakLike(value)
 	}
+	// An answer with shell hanging on it is not given until that shell has
+	// worked. It runs off the frame — it talks to the network — so the page
+	// keeps drawing, with the mark turning, and answers the result below.
+	//
+	// Written down first, and that is load bearing: what such a script writes is
+	// read back over the answers held, and the file would otherwise still carry
+	// the value this answer replaced — which would quietly undo it.
+	if s.imports != "" {
+		s.busy, s.problem = true, ""
+		run := s.app.runner.Import(s.imports)
+		return s, tea.Batch(s.app.save(), func() tea.Msg { return importedMsg{run()} })
+	}
 	return s, tea.Batch(s.app.save(), s.done())
 }
+
+// importedMsg is that shell coming back, with whatever it had to say about why
+// it would not work.
+type importedMsg struct{ err error }
 
 // View opens with the variable's own description — what this value is for, in
 // the folder's own words. It is the reason a list of names is answerable by

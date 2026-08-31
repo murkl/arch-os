@@ -43,6 +43,8 @@ messages:
   "A GNOME desktop with drivers, codecs, fonts and everyday applications.": "Ein GNOME-Desktop mit Treibern, Codecs, Schriften und den Programmen für den Alltag."
   "Minimal": "Minimal"
   "Arch Linux on the console only — no desktop, no extras, nothing that was not asked for.": "Arch Linux nur auf der Konsole — kein Desktop, keine Extras, nichts Ungefragtes."
+  "paste.rs - Online": "paste.rs - Online"
+  "Take every answer from a configuration that was shared at the end of an earlier installation.": "Alle Antworten aus einer Konfiguration übernehmen, die am Ende einer früheren Installation geteilt wurde."
 
   # ─── Region ────────────────────────────────────────────────────────────────
   "Region": "Region"
@@ -144,6 +146,15 @@ messages:
   "Explicit congestion notification": "ECN-Überlastungsanzeige"
   "Leave on. Turning it off helps only behind old routers that drop connections which use it.": "Eingeschaltet lassen. Ausschalten hilft nur hinter alten Routern, die Verbindungen damit abbrechen."
 
+  # ─── Teilen ────────────────────────────────────────────────────────────────
+  "Share this configuration": "Diese Konfiguration teilen"
+  "When the installation is finished, put the answers on this page — never the password, which is not written down at all — on paste.rs, and show the address as a code to scan. Anybody holding that address can read them, and can set up another machine exactly like this one by typing it in here.": "Legt die Antworten dieser Seite — nie das Passwort, das überhaupt nicht gespeichert wird — nach der Installation auf paste.rs ab und zeigt die Adresse als Code zum Abscannen. Wer diese Adresse hat, kann sie lesen und mit ihr einen weiteren Rechner genau wie diesen einrichten."
+  "Shared at": "Geteilt unter"
+  "Where this installation's answers ended up. The installation answers this one itself and shows it on the page it finishes on.": "Wo die Antworten dieser Installation gelandet sind. Diese Antwort gibt die Installation selbst und zeigt sie auf der Seite, mit der sie endet."
+  "Configuration code": "Konfigurations-Code"
+  "The code of a configuration somebody shared: the short word at the end of a paste.rs address, or the whole address pasted in. Every answer kept there becomes an answer here, and every one of them can still be changed afterwards.": "Der Code einer geteilten Konfiguration: das kurze Wort am Ende einer paste.rs-Adresse — oder die ganze Adresse, eingefügt. Jede dort hinterlegte Antwort wird hier zur Antwort, und jede davon lässt sich danach noch ändern."
+  "A code such as aBc12, or the whole address it sits at.": "Ein Code wie aBc12 — oder die vollständige Adresse dazu."
+
   # ─── Stufen ────────────────────────────────────────────────────────────────
   "Prepare the installation": "Installation vorbereiten"
   "Set up the disk": "Datenträger einrichten"
@@ -173,10 +184,28 @@ messages:
   Snapshot on every update: Schnappschuss vor jedem Update
   Tidy up: Aufräumen
   Sign the boot chain: Boot-Kette signieren
+  # "Share this configuration" is the task and the setting that switches it on,
+  # in the same words — one key, translated once, up under Teilen.
   Keep a copy of this installation: Kopie dieser Installation ablegen
   Enter the new system: In das neue System wechseln
   Restart into the new system: In das neue System neu starten
   Unmount everything: Alles aushängen
+
+  # ─── Was der Lauf zwischendurch meldet ─────────────────────────────────────
+  #
+  # Der erste Absatz ist die Überschrift, alles danach der Text darunter.
+  ? |-
+    Arch Linux is installed
+
+    {{ARCH_OS_HOSTNAME}} is on {{ARCH_OS_DISK}} and ready to start. Everything from here on is offered rather than needed: a shell inside the new system, and the restart into it.
+
+    The answers are kept in your home folder as installer.conf, beside the log of this run.
+  : |-
+    Arch Linux ist installiert
+
+    {{ARCH_OS_HOSTNAME}} liegt auf {{ARCH_OS_DISK}} und ist startbereit. Alles Weitere wird angeboten, nicht verlangt: eine Shell im neuen System und der Neustart hinein.
+
+    Die Antworten liegen in deinem Benutzerordner als installer.conf, neben dem Protokoll dieses Laufs.
 
   # ─── Was sie vorher fragen ─────────────────────────────────────────────────
   ? |-

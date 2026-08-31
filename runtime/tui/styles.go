@@ -24,6 +24,7 @@ var (
 	mutedStyle  lipgloss.Style
 	headStyle   lipgloss.Style
 	infoStyle   lipgloss.Style
+	goodStyle   lipgloss.Style
 	failStyle   lipgloss.Style
 	alertStyle  lipgloss.Style
 	ruleStyle   lipgloss.Style
@@ -57,6 +58,7 @@ func buildStyles() {
 	mutedStyle = baseStyle.Foreground(fade(colors.muted))
 	headStyle = baseStyle.Foreground(fade(colors.head)).Bold(true)
 	infoStyle = baseStyle.Foreground(fade(colors.info))
+	goodStyle = baseStyle.Foreground(fade(colors.good)).Bold(true)
 	failStyle = baseStyle.Foreground(fade(colors.fail))
 
 	// The one loud style in the program, for the one moment that has to be

@@ -1,0 +1,3 @@
+name: Share this configuration
+stage: finish
+conditions: ARCH_OS_CONFIG_SHARE_ENABLED == true
