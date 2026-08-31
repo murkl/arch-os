@@ -112,7 +112,7 @@ func (a *app) adopt(o *spec.PresetOption) tea.Cmd {
 // how this machine is put down, enter continues to the page that asks; where it
 // does not, it is the end of the program, and otherwise is the word for that.
 func (a *app) hintEnd(otherwise string) string {
-	if a.spec.Leave.Offers() {
+	if a.spec.Leaves() {
 		return labelHintContinue()
 	}
 	return otherwise
@@ -178,7 +178,7 @@ func (a *app) network() screen {
 // something or was told to carry on without. Then comes the tree's own check
 // that this machine can be installed onto at all, where it declares one.
 func (a *app) afterNetwork() screen {
-	if a.spec.Preflight == nil {
+	if a.spec.Hook(spec.HookPreflight) == "" {
 		return a.afterCheck()
 	}
 	return newCheck(a)

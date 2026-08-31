@@ -2,16 +2,15 @@
 #
 # Everything here is read-only and everything here is a wall. It runs before the
 # first question, because being told the firmware is wrong is worth very little
-# after twenty answers — and because none of it can be fixed from inside this
+# after twenty answers, and because none of it can be fixed from inside this
 # program.
 #
-# What is written to stderr is what the user reads, so each message says what is
-# wrong and what to do about it, in that order, and nothing else.
+# What goes to stderr is what the user reads, so each message says what is wrong
+# and what to do about it, in that order, and nothing else.
 
-# DEBUG=true takes every wall down and simulates the installation instead of
-# running it — see scripts/lib.sh. None of what follows is true on the machine a
-# run is usually tried out on, so none of it is asked.
-[ "${DEBUG:-false}" = "true" ] && return 0
+# DEBUG=true simulates the installation instead of running it, on a machine
+# where none of what follows is true.
+[ "$DEBUG" = "true" ] && return 0
 
 if [ "$(id -u)" -ne 0 ]; then
     echo "The installer has to run as root. Log in as root and start it again." >&2
@@ -33,13 +32,12 @@ if [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ]; then
     exit 1
 fi
 
-# The network is checked rather than assumed: everything from here on downloads
-# something, and a link that is merely slow to come up after boot is common
-# enough to be worth waiting for rather than failing on.
+# Everything from here on downloads something, and a link that is merely slow to
+# come up after boot is common enough to be worth waiting for.
 online=false
 for i in 1 2 3 4 5; do
     [ "$i" -gt 1 ] && echo "retry ${i}/5: waiting for the network" && sleep 5
-    if curl -Lsf --connect-timeout 5 --max-time 15 https://archlinux.org >/dev/null 2>&1; then
+    if is_online; then
         online=true
         break
     fi

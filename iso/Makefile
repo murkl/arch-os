@@ -2,6 +2,7 @@
 # ISO. There is nothing to build here without one already in place.
 
 RELEASE_DIR ?= ../release
+DIST_DIR    ?= ../dist
 VERSION     ?= $(shell git -C .. rev-parse --short HEAD 2>/dev/null || echo dev)
 
 SCRIPTS := build.sh src/usr/local/bin/installer src/usr/local/bin/installer-console-theme
@@ -9,7 +10,7 @@ SCRIPTS := build.sh src/usr/local/bin/installer src/usr/local/bin/installer-cons
 .PHONY: build lint check
 
 build:
-	RELEASE_DIR=$(RELEASE_DIR) SNAPSHOT_VERSION=$(VERSION) ./build.sh
+	RELEASE_DIR=$(RELEASE_DIR) DIST_DIR=$(DIST_DIR) SNAPSHOT_VERSION=$(VERSION) ./build.sh
 
 lint:
 	@for f in $(SCRIPTS); do bash -n "$$f" || exit 1; done

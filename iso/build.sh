@@ -1,16 +1,17 @@
 #!/bin/bash
-# Turns a built release (the runtime binary, installer.yaml and tasks/,
+# Turns a built release (the runtime binary and the installer tree beside it,
 # already assembled by `make build` at the repo root) into a bootable ISO:
 # stock Arch `releng`, patched so it boots straight into the installer.
 #
-# Takes no arguments. RELEASE_DIR points at the release to ship (default
-# ../release, which is where the root Makefile puts it) and SNAPSHOT_VERSION
-# names the build (default: the short commit SHA, like everything else here).
-# The finished image and its checksum land in RELEASE_DIR/iso.
+# Takes no arguments. RELEASE_DIR points at the release to ship, DIST_DIR at
+# where a download goes (defaults ../release and ../dist, which is where the
+# root Makefile puts them), and SNAPSHOT_VERSION names the build (default: the
+# short commit SHA, like everything else here). The finished image and its
+# checksum land in DIST_DIR.
 set -e
 
 RELEASE_DIR="${RELEASE_DIR:-../release}"
-ISO_RELEASE_DIR="${RELEASE_DIR}/iso"
+DIST_DIR="${DIST_DIR:-../dist}"
 DOWNLOAD_DIR="./download"
 ISO_DIR="./archiso"
 ISO_CONFIG="releng" # baseline or releng
@@ -47,14 +48,12 @@ cp -r "/usr/share/archiso/configs/${ISO_CONFIG}/"* "${ISO_DIR}"
 # Copy sources (the systemd unit and the console theme)
 cp -rf src/* "${ISO_DIR}/airootfs/"
 
-# Install the release: the runtime binary next to its installer.yaml and
-# tasks/, which is the only place the runtime looks for one — see
-# runtime/README.md. /opt/installer is what the systemd unit below starts.
+# Install the release: the runtime binary next to its tree, which is the only
+# place the runtime looks for one — see runtime/README.md. /opt/installer is
+# what the systemd unit below starts.
 echo "### Install Arch OS Installer"
 mkdir -p "${AIRFS_OPT}"
-cp -f "${RELEASE_DIR}/installer" "${AIRFS_OPT}/installer"
-cp -f "${RELEASE_DIR}/installer.yaml" "${AIRFS_OPT}/installer.yaml"
-cp -r "${RELEASE_DIR}/tasks" "${AIRFS_OPT}/tasks"
+cp -r "${RELEASE_DIR}/." "${AIRFS_OPT}/"
 chmod +x "${AIRFS_OPT}/installer"
 
 # Set permissions
@@ -179,11 +178,10 @@ sudo rm -rf work out
 sudo mkarchiso -v .
 cd ..
 
-# Move the image and its checksum into the release, in a folder of their own:
-# everything else in there is the installer as a machine runs it, and an image
-# is the one thing in a release that is downloaded rather than executed.
-echo "### Move ISO to Release"
-mkdir -p "${ISO_RELEASE_DIR}"
-cp -f "${ISO_DIR}/out/"*.iso "${ISO_RELEASE_DIR}/"
+# The image and its checksum go to DIST_DIR, beside the tarball: the release is
+# the installer as a machine runs it, and both of these are downloaded instead.
+echo "### Move ISO to Dist"
+mkdir -p "${DIST_DIR}"
+cp -f "${ISO_DIR}/out/"*.iso "${DIST_DIR}/"
 echo "### Generate ISO Checksum"
-(cd "${ISO_RELEASE_DIR}" && for iso in *.iso; do sha256sum "$iso" >"${iso}.sha256"; done)
+(cd "${DIST_DIR}" && for iso in *.iso; do sha256sum "$iso" >"${iso}.sha256"; done)

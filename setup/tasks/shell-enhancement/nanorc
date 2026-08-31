@@ -1,0 +1,8 @@
+set linenumbers
+set minibar
+
+# Syntax highlighting: what nano ships, its extra set, and the definitions from
+# nano-syntax-highlighting. A glob that matches nothing is simply skipped.
+include /usr/share/nano/*.nanorc
+include /usr/share/nano/extra/*.nanorc
+include /usr/share/nano-syntax-highlighting/*.nanorc

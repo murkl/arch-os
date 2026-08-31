@@ -33,6 +33,8 @@ func labelHintStart() string    { return say("⏎ start · esc back") }
 
 // The network screen: checking for internet, and — where the tree describes
 // how — joining a wireless one.
+func labelNetwork() string         { return say("Wireless network") }
+func labelNetworkHelp() string     { return say("Join a wireless network to continue.") }
 func labelNetworkChecking() string { return say("Checking the internet connection …") }
 func labelNetworkScanning() string { return say("Looking for wireless networks …") }
 func labelNetworkJoining(ssid string) string {

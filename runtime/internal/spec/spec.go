@@ -1,7 +1,7 @@
 // Package spec is the installer tree, read into memory: what the installer is
 // called, what it needs to know, and what it does.
 //
-// A tree is one installer.yaml and the tasks beside it. Everything in it is
+// A tree is one installer.yaml and the folders beside it. Everything in it is
 // data. The runtime ships no tree of its own — without one there is no
 // installer, only a binary that says so and stops. That is the whole point of
 // the split: this package knows the shape of the yaml, and nothing in the
@@ -15,19 +15,41 @@ import (
 	"installer/internal/i18n"
 )
 
-// What a tree is made of: one file that says what the installer is, and one
-// folder holding the work, a unit per subfolder.
+// What a tree is made of. Only installer.yaml has to be there; everything else
+// is found by its own name, so a tree turns a part of the program off by
+// leaving the file or folder out rather than by declaring anything.
 const (
-	FileInstaller = "installer.yaml"
-	TaskDir       = "tasks"
-	TaskFile      = "task.yaml"
-	TaskScript    = "task.sh"
+	FileInstaller = "installer.yaml" // what the installer is, asks, and does
+	FileLib       = "lib.sh"         // shell put in front of every script
+	DirTasks      = "tasks"          // the installation, one folder per step
+	DirHooks      = "hooks"          // everything around it, one script per hook
+	DirLocales    = "locales"        // one catalog per language the tree speaks
+	FileTask      = "task.yaml"      // where a step belongs
+	FileScript    = "task.sh"        // what it does
+	ScriptExt     = ".sh"
 )
 
-// SharedPrefix marks a folder under tasks/ that is not one: a place for what
-// several of them share — the library, the catalogs, data files. One character,
-// and no list of exceptions to keep in the runtime.
-const SharedPrefix = "_"
+// The hooks, each a bash script in hooks/ called by its own name. This is
+// everything the runtime does around the installation: nothing here installs
+// anything, and a tree that leaves one out simply does not get that part.
+const (
+	HookPreflight = "preflight"     // can this machine be installed onto at all
+	HookOnline    = "online"        // is there internet
+	HookDevice    = "wlan-device"   // the wireless device to use
+	HookNetworks  = "wlan-networks" // the networks in range, one per line
+	HookConnect   = "wlan-connect"  // join one
+	HookRestart   = "restart"       // put this machine down and start it again
+	HookShutdown  = "shutdown"      // switch it off
+)
+
+// HookNames is every hook there is. A file in hooks/ that is not one of them is
+// refused when the tree loads, the way a misspelled yaml key is: a hook that is
+// never called because its name has a typo in it is the worst kind of
+// authoring bug, since everything loads and nothing happens.
+var HookNames = []string{
+	HookPreflight, HookOnline, HookDevice, HookNetworks, HookConnect,
+	HookRestart, HookShutdown,
+}
 
 // LangVar is the runtime's own setting, and the only key it writes into the
 // answer file that no installer.yaml declared. Language is not something an
@@ -43,15 +65,6 @@ type Spec struct {
 	Presets []*Preset
 	Vars    []*Variable
 
-	// Wlan is how this tree finds and joins a wireless network, or nil when it
-	// declares none.
-	Wlan *Wlan
-
-	// Leave is what this machine is offered when the interface is finished with
-	// it, or nil when the tree declares nothing — in which case the program
-	// simply exits, as any program does.
-	Leave *Leave
-
 	// Stages are the phases of an installation, in the order they happen. Every
 	// task names one; that is what puts it in the run and where.
 	Stages []string
@@ -62,14 +75,9 @@ type Spec struct {
 	// again.
 	Tasks []*Task
 
-	// Preflight is the one task that belongs to no stage: it runs at startup,
-	// before anything is asked bar the few questions a tree marks `first`, and a
-	// failure is a wall.
-	Preflight *Task
-
 	// Lib is the shell every script of this tree is given before its own, and
-	// Locales the folder its catalogs live in. Both optional, both named by
-	// installer.yaml — the runtime knows they exist, never what is in them.
+	// Locales the folder its catalogs live in. Both are whatever FileLib and
+	// DirLocales turned out to be, or empty where the tree has neither.
 	Lib     string
 	Locales string
 
@@ -83,6 +91,7 @@ type Spec struct {
 	// on the way in.
 	Language string
 
+	hooks  map[string]string
 	byName map[string]*Variable
 }
 
@@ -97,77 +106,38 @@ type UI struct {
 	// filled in from the answers — the sentence that says which disk is about to
 	// be erased.
 	Confirm string `yaml:"confirm"`
-}
 
-// Wlan is how this tree finds and joins a wireless network, declared inline
-// under the `wlan:` key in installer.yaml. A tree that declares none leaves
-// Spec.Wlan nil, and the interface never offers the screen: not every
-// installer needs one, and nothing downstream assumes it does.
-//
-// Only the commands live here — the screen, the network list and the
-// passphrase prompt are the runtime's own and the same for any tree; what is
-// declared is purely a property of the distribution being installed.
-type Wlan struct {
-	Title       string `yaml:"title"`
-	Description string `yaml:"description"`
-
-	// Check is the one required field: whether there is internet at all.
-	Check string `yaml:"check"`
-
-	// Device, Scan, Networks and Connect are what it takes to actually join a
-	// network. A tree may declare only Check, which means "tell me if I am
-	// offline" and nothing more — see Joinable.
-	Device   string `yaml:"device"`
-	Scan     string `yaml:"scan"`
-	Networks string `yaml:"networks"`
-	Connect  string `yaml:"connect"`
-}
-
-func (w *Wlan) Label() string { return i18n.T(w.Title) }
-func (w *Wlan) Help() string  { return i18n.T(w.Description) }
-
-// Joinable reports whether the tree described enough to actually connect, or
-// only a check.
-func (w *Wlan) Joinable() bool {
-	return w.Device != "" && w.Networks != "" && w.Connect != ""
-}
-
-// Leave is how this machine is put down, declared inline under the `leave:` key
-// in installer.yaml.
-//
-// A tree that declares it is saying that leaving the interface is not quitting a
-// program: the machine booted to run this and has nothing else to do, so the way
-// out is a restart or a shutdown and the interface offers those instead of an
-// exit. A tree that declares none leaves the program exiting the way anything
-// does, which is right for an installer run from a shell somebody is sitting in.
-//
-// Only the commands live here. What the page looks like, what the two rows are
-// called and in which language is the runtime's own and the same for any tree;
-// how a machine is restarted is not.
-type Leave struct {
-	Restart  string `yaml:"restart"`
-	Shutdown string `yaml:"shutdown"`
-
-	// Console is the way out that leaves the machine running: the installer
-	// stops and hands the terminal back to whatever was behind it. Its value is
-	// the sentence saying how to start it again, because what the installer is
-	// called out there is something only the tree can know — and somebody who
-	// has just left it is looking at a bare prompt.
-	//
-	// Declaring nothing leaves the row off, which is right for an image where
-	// there is genuinely nothing behind the interface.
+	// Console is the sentence read on the way out of the interface, where the
+	// machine keeps running. What the installer is called out there is something
+	// only the tree can know, and somebody who has just left it is looking at a
+	// bare prompt. Empty leaves that row off, which is right for an image where
+	// there is nothing behind the interface.
 	Console string `yaml:"console"`
 }
 
-// Offers reports whether this tree named anything to actually do. A block with
-// nothing in it is nothing to offer, and is refused when the tree is loaded
-// rather than shown as an empty page.
-func (l *Leave) Offers() bool {
-	return l != nil && (l.Restart != "" || l.Shutdown != "" || l.Console != "")
+// Hook is the script this tree put in hooks/ under that name, absolute, or
+// empty where it has none.
+func (s *Spec) Hook(name string) string { return s.hooks[name] }
+
+// Source is the shell that runs a script file, for the places that take shell
+// rather than a path. Empty in, empty out — a hook a tree does not have.
+func Source(path string) string {
+	if path == "" {
+		return ""
+	}
+	return "source " + quote(path)
 }
 
-// ConsoleHelp is the sentence under that row: what to type to be back here.
-func (l *Leave) ConsoleHelp() string { return i18n.T(l.Console) }
+// Leaves reports whether this machine can be left at all: a tree that says how
+// is saying the machine booted to run the installer, so every way out of the
+// interface asks what to do with it instead of quitting.
+func (s *Spec) Leaves() bool {
+	return s.Hook(HookRestart) != "" || s.Hook(HookShutdown) != "" || s.UI.Console != ""
+}
+
+// ConsoleHelp is the sentence under the row that leaves the machine running:
+// what to type to be back here.
+func (s *Spec) ConsoleHelp() string { return i18n.T(s.UI.Console) }
 
 // Preset is one page of starting points: a question a machine with no answer
 // file is asked before the real ones, answered by choosing one of the options
@@ -399,13 +369,7 @@ func (s *Spec) Strings() []string {
 			}
 		}
 	}
-	add(s.UI.Title, s.UI.Confirm)
-	if s.Leave != nil {
-		add(s.Leave.Console)
-	}
-	if s.Wlan != nil {
-		add(s.Wlan.Title, s.Wlan.Description)
-	}
+	add(s.UI.Title, s.UI.Confirm, s.UI.Console)
 	for _, p := range s.Presets {
 		add(p.Title, p.Description)
 		for _, o := range p.Options {
@@ -414,9 +378,6 @@ func (s *Spec) Strings() []string {
 	}
 	for _, v := range s.Vars {
 		add(v.Title, v.Description, v.Group, v.Free, v.Error)
-	}
-	if s.Preflight != nil {
-		add(s.Preflight.Name)
 	}
 	for _, t := range s.Tasks {
 		add(t.Name, t.Confirm)

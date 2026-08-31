@@ -1,83 +1,93 @@
-# The countries Arch has mirrors in, as the mirror list names them — reflector
-# matches on this exact spelling. The code in front is the territory an ISO
-# locale ends in, which is what ties de_DE to Germany.
+# What a country implies: where Arch's mirrors for it are called, and the time
+# zone it keeps.
 #
-# Regenerate with: reflector --list-countries
-AL	Albania
-AR	Argentina
-AM	Armenia
-AU	Australia
-AT	Austria
-AZ	Azerbaijan
-BD	Bangladesh
-BY	Belarus
-BE	Belgium
-BR	Brazil
-BG	Bulgaria
-KH	Cambodia
-CA	Canada
-CL	Chile
-CN	China
-CO	Colombia
-HR	Croatia
-CZ	Czechia
-DK	Denmark
-EC	Ecuador
-EE	Estonia
-FI	Finland
-FR	France
-GE	Georgia
-DE	Germany
-GR	Greece
-HK	Hong Kong
-HU	Hungary
-IS	Iceland
-IN	India
-ID	Indonesia
-IR	Iran
-IL	Israel
-IT	Italy
-JP	Japan
-KZ	Kazakhstan
-KE	Kenya
-LV	Latvia
-LT	Lithuania
-LU	Luxembourg
-MY	Malaysia
-MU	Mauritius
-MX	Mexico
-MD	Moldova
-MA	Morocco
-NP	Nepal
-NL	Netherlands
-NC	New Caledonia
-NZ	New Zealand
-MK	North Macedonia
-NO	Norway
-PY	Paraguay
-PH	Philippines
-PL	Poland
-PT	Portugal
-RO	Romania
-RU	Russia
-RE	Réunion
-SA	Saudi Arabia
-RS	Serbia
-SG	Singapore
-SK	Slovakia
-SI	Slovenia
-ZA	South Africa
-KR	South Korea
-ES	Spain
-SE	Sweden
-CH	Switzerland
-TW	Taiwan
-TH	Thailand
-TN	Tunisia
-TR	Türkiye
-UA	Ukraine
-AE	United Arab Emirates
-GB	United Kingdom
-US	United States
-UZ	Uzbekistan
-VN	Vietnam
+# The code is the territory an ISO locale ends in, which is what ties de_DE to
+# Germany. The country is spelled exactly as the mirror list spells it, because
+# reflector matches on that spelling — regenerate with `reflector
+# --list-countries`. A "-" means Arch has no mirror there, so only the time zone
+# is of any use.
+#
+# The time zone is a suggestion, never an answer: it is the row the time zone
+# question opens on, and a country that keeps several gets the one most of it
+# lives in.
+#
+# code	country	time zone
+AE	United Arab Emirates	Asia/Dubai
+AL	Albania	Europe/Tirane
+AM	Armenia	Asia/Yerevan
+AR	Argentina	America/Argentina/Buenos_Aires
+AT	Austria	Europe/Vienna
+AU	Australia	Australia/Sydney
+AZ	Azerbaijan	Asia/Baku
+BD	Bangladesh	Asia/Dhaka
+BE	Belgium	Europe/Brussels
+BG	Bulgaria	Europe/Sofia
+BR	Brazil	America/Sao_Paulo
+BY	Belarus	Europe/Minsk
+CA	Canada	America/Toronto
+CH	Switzerland	Europe/Zurich
+CL	Chile	America/Santiago
+CN	China	Asia/Shanghai
+CO	Colombia	America/Bogota
+CZ	Czechia	Europe/Prague
+DE	Germany	Europe/Berlin
+DK	Denmark	Europe/Copenhagen
+EC	Ecuador	America/Guayaquil
+EE	Estonia	Europe/Tallinn
+ES	Spain	Europe/Madrid
+FI	Finland	Europe/Helsinki
+FR	France	Europe/Paris
+GB	United Kingdom	Europe/London
+GE	Georgia	Asia/Tbilisi
+GR	Greece	Europe/Athens
+HK	Hong Kong	Asia/Hong_Kong
+HR	Croatia	Europe/Zagreb
+HU	Hungary	Europe/Budapest
+ID	Indonesia	Asia/Jakarta
+IE	-	Europe/Dublin
+IL	Israel	Asia/Jerusalem
+IN	India	Asia/Kolkata
+IR	Iran	Asia/Tehran
+IS	Iceland	Atlantic/Reykjavik
+IT	Italy	Europe/Rome
+JP	Japan	Asia/Tokyo
+KE	Kenya	Africa/Nairobi
+KH	Cambodia	Asia/Phnom_Penh
+KR	South Korea	Asia/Seoul
+KZ	Kazakhstan	Asia/Almaty
+LT	Lithuania	Europe/Vilnius
+LU	Luxembourg	Europe/Luxembourg
+LV	Latvia	Europe/Riga
+MA	Morocco	Africa/Casablanca
+MD	Moldova	Europe/Chisinau
+MK	North Macedonia	Europe/Skopje
+MU	Mauritius	Indian/Mauritius
+MX	Mexico	America/Mexico_City
+MY	Malaysia	Asia/Kuala_Lumpur
+NC	New Caledonia	Pacific/Noumea
+NL	Netherlands	Europe/Amsterdam
+NO	Norway	Europe/Oslo
+NP	Nepal	Asia/Kathmandu
+NZ	New Zealand	Pacific/Auckland
+PH	Philippines	Asia/Manila
+PL	Poland	Europe/Warsaw
+PT	Portugal	Europe/Lisbon
+PY	Paraguay	America/Asuncion
+RE	Réunion	Indian/Reunion
+RO	Romania	Europe/Bucharest
+RS	Serbia	Europe/Belgrade
+RU	Russia	Europe/Moscow
+SA	Saudi Arabia	Asia/Riyadh
+SE	Sweden	Europe/Stockholm
+SG	Singapore	Asia/Singapore
+SI	Slovenia	Europe/Ljubljana
+SK	Slovakia	Europe/Bratislava
+TH	Thailand	Asia/Bangkok
+TN	Tunisia	Africa/Tunis
+TR	Türkiye	Europe/Istanbul
+TW	Taiwan	Asia/Taipei
+UA	Ukraine	Europe/Kyiv
+US	United States	America/New_York
+UZ	Uzbekistan	Asia/Tashkent
+VN	Vietnam	Asia/Ho_Chi_Minh
+ZA	South Africa	Africa/Johannesburg

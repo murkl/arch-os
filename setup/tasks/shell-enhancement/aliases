@@ -1,0 +1,33 @@
+# Listing
+alias ls="ls -h --color=always --group-directories-first"
+command -v eza &>/dev/null && alias ls="eza --icons --color=always --group-directories-first"
+alias ll="ls -l"
+alias la="ls -la"
+alias lt="ls -Tal"
+
+# Colour
+alias diff="diff --color=auto"
+alias grep="grep --color=auto"
+alias ip="ip -color=auto"
+
+# Everyday
+alias logs="systemctl --failed; echo; journalctl -p 3 -b"
+alias q="exit"
+alias c="clear"
+command -v fastfetch &>/dev/null && alias fetch="fastfetch"
+command -v meld &>/dev/null && alias pacnew="sudo DIFFPROG=meld pacdiff"
+command -v xdg-open &>/dev/null && alias open="xdg-open"
+alias myip="curl ipv4.icanhazip.com"
+alias ..="cd .."
+alias ...="cd ../.."
+
+# Packages
+alias paci='{{SUDO}}{{PKG}} -S'    # install
+alias pacu='{{SUDO}}{{PKG}} -Syu'  # update everything
+alias pacr='{{PKG}} -Rns'  # remove
+alias pacs='{{PKG}} -Ss'   # search the repositories
+alias pacls='{{PKG}} -Qs'  # search what is installed
+alias pacl='{{PKG}} -Qe'   # list what was asked for
+alias pacla='{{PKG}} -Qm'  # list what came from the AUR
+alias pacli='{{PKG}} -Qi'  # show a package
+alias pacrc='{{PKG}} -Scc' # clear the download cache

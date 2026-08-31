@@ -101,7 +101,7 @@ presets:
 	if len(sp.Tasks) != 2 {
 		t.Fatalf("tasks = %d, want 2", len(sp.Tasks))
 	}
-	if !strings.HasSuffix(sp.Tasks[0].Path(), filepath.Join("do", TaskScript)) {
+	if !strings.HasSuffix(sp.Tasks[0].Path(), filepath.Join("do", FileScript)) {
 		t.Errorf("script = %q", sp.Tasks[0].Path())
 	}
 	last := sp.Tasks[1]
@@ -185,12 +185,12 @@ func TestOrderRefusesWhatCannotBeWalked(t *testing.T) {
 		{
 			name:  "a task folder with no yaml in it",
 			files: map[string]string{"tasks/half/task.sh": "echo\n"},
-			want:  TaskFile,
+			want:  FileTask,
 		},
 		{
 			name:  "a task yaml with no script beside it",
 			files: map[string]string{"tasks/half/task.yaml": "name: Half\nstage: go\n"},
-			want:  "missing " + TaskScript,
+			want:  "missing " + FileScript,
 		},
 	}
 	for _, tc := range cases {
@@ -206,119 +206,83 @@ func TestOrderRefusesWhatCannotBeWalked(t *testing.T) {
 	}
 }
 
-// The preflight is the one task outside the stages, and saying so is what
-// takes it out of the run. Anything else about it is an authoring mistake.
-func TestPreflightIsTheOneTaskWithoutAStage(t *testing.T) {
-	files := units(
-		map[string]string{FileInstaller: "title: T\nstages: [go]\npreflight: check\n"},
-		unit("check", "name: System check\n"),
-	)
-	sp, err := Load(tree(t, files))
+// Nothing declares the hooks: a script in hooks/ under a name the runtime
+// knows is the declaration, and every other name there is a typo rather than
+// something to ignore.
+func TestHooksAreFoundByTheirName(t *testing.T) {
+	sp, err := Load(tree(t, map[string]string{
+		"hooks/" + HookPreflight + ScriptExt: "exit 0\n",
+		"hooks/" + HookRestart + ScriptExt:   "reboot\n",
+	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if sp.Preflight == nil || sp.Preflight.ID() != "check" {
-		t.Fatalf("preflight = %+v", sp.Preflight)
+	if !strings.HasSuffix(sp.Hook(HookPreflight), "preflight.sh") {
+		t.Errorf("preflight hook = %q", sp.Hook(HookPreflight))
 	}
-	for _, e := range sp.Tasks {
-		if e.ID() == "check" {
-			t.Error("the preflight is also in the run")
+	if got := Source(sp.Hook(HookRestart)); !strings.HasPrefix(got, "source ") {
+		t.Errorf("Source() = %q, want it to source the file", got)
+	}
+	if sp.Hook(HookShutdown) != "" {
+		t.Errorf("shutdown hook = %q, want none", sp.Hook(HookShutdown))
+	}
+	if !sp.Leaves() {
+		t.Error("Leaves() = false, want true: there is a restart hook")
+	}
+}
+
+func TestATreeWithoutHooksHasNone(t *testing.T) {
+	sp, err := Load(tree(t, nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range HookNames {
+		if sp.Hook(name) != "" {
+			t.Errorf("%s = %q, want none", name, sp.Hook(name))
 		}
 	}
-
-	files["tasks/check/task.yaml"] = "name: System check\nstage: go\n"
-	if _, err := Load(tree(t, files)); err == nil || !strings.Contains(err.Error(), "belongs to none") {
-		t.Errorf("a preflight with a stage loaded: %v", err)
-	}
-
-	files["tasks/check/task.yaml"] = "name: System check\n"
-	files[FileInstaller] = "title: T\nstages: [go]\npreflight: ghost\n"
-	if _, err := Load(tree(t, files)); err == nil || !strings.Contains(err.Error(), "no such task") {
-		t.Errorf("a preflight naming nothing loaded: %v", err)
+	if sp.Leaves() {
+		t.Error("Leaves() = true, want false: nothing says how to leave")
 	}
 }
 
-// A folder under tasks/ whose name starts with _ is where a tree keeps what
-// its tasks share. It is not a unit and must not be read as a broken one.
-func TestSharedFoldersAreNotTasks(t *testing.T) {
+// lib.sh and locales/ are found the same way, so a tree turns them on by
+// having them and off by not.
+func TestLibAndLocalesAreFoundBesideTheInstallerFile(t *testing.T) {
 	sp, err := Load(tree(t, map[string]string{
-		FileInstaller:       head("lib: ./tasks/_lib/lib.sh\n"),
-		"tasks/_lib/lib.sh": "helper() { echo hi; }\n",
+		FileLib:                 "helper() { echo hi; }\n",
+		DirLocales + "/de.yaml": "language: Deutsch\n",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(sp.Tasks) != 1 {
-		t.Errorf("tasks = %d, want the shared folder left out", len(sp.Tasks))
-	}
-	if !strings.HasSuffix(sp.Lib, "lib.sh") {
+	if !strings.HasSuffix(sp.Lib, FileLib) {
 		t.Errorf("lib = %q", sp.Lib)
 	}
-}
-
-// A tree that declares a wlan: block gets it validated the same way everything
-// else in the tree is; a tree that declares none gets a nil Wlan and is never
-// offered the screen.
-func TestWlanIsLoadedWhenDeclared(t *testing.T) {
-	dir := tree(t, map[string]string{
-		FileInstaller: head("wlan:\n  title: WLAN\n  description: Join a network.\n  check: curl -sf http://example\n" +
-			"  device: iwctl device list\n  scan: iwctl scan\n  networks: ./networks.sh\n  connect: iwctl connect\n"),
-		"networks.sh": "iwctl get-networks\n",
-	})
-	sp, err := Load(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if sp.Wlan == nil {
-		t.Fatal("Wlan = nil, want it loaded")
-	}
-	if sp.Wlan.Label() != "WLAN" {
-		t.Errorf("title = %q", sp.Wlan.Label())
-	}
-	if !sp.Wlan.Joinable() {
-		t.Error("Joinable() = false, want true: every field needed is set")
-	}
-	if !strings.HasPrefix(sp.Wlan.Networks, "source ") || !strings.Contains(sp.Wlan.Networks, "networks.sh") {
-		t.Errorf("networks = %q, want it to source the file", sp.Wlan.Networks)
+	if !strings.HasSuffix(sp.Locales, DirLocales) {
+		t.Errorf("locales = %q", sp.Locales)
 	}
 
-	dir = tree(t, nil)
-	sp, err = Load(dir)
-	if err != nil {
+	if sp, err = Load(tree(t, nil)); err != nil {
 		t.Fatal(err)
 	}
-	if sp.Wlan != nil {
-		t.Errorf("Wlan = %+v, want nil for a tree that declares none", sp.Wlan)
+	if sp.Lib != "" || sp.Locales != "" {
+		t.Errorf("lib = %q, locales = %q, want neither", sp.Lib, sp.Locales)
 	}
 }
 
-func TestWlanNeedsAtLeastACheck(t *testing.T) {
-	_, err := Load(tree(t, map[string]string{
-		FileInstaller: head("wlan:\n  title: WLAN\n"),
+// The sentence read on the way out is the tree's, so it is translated like
+// everything else it says.
+func TestConsoleIsTranslatable(t *testing.T) {
+	sp, err := Load(tree(t, map[string]string{
+		FileInstaller: head("console: Type installer to start again.\n"),
 	}))
-	if err == nil || !strings.Contains(err.Error(), "check is required") {
-		t.Errorf("err = %v", err)
-	}
-}
-
-func TestWlanTitleAndDescriptionAreTranslatable(t *testing.T) {
-	dir := tree(t, map[string]string{
-		FileInstaller: head("wlan:\n  title: WLAN\n  description: Join a network.\n  check: 'true'\n"),
-	})
-	sp, err := Load(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"Test Installer", "WLAN", "Join a network.", "Do it"}
+	want := []string{"Test Installer", "Type installer to start again.", "Do it"}
 	if strings.Join(sp.Strings(), "|") != strings.Join(want, "|") {
 		t.Errorf("Strings() = %v\nwant %v", sp.Strings(), want)
-	}
-}
-
-func TestLoadRefusesAFileItWasPointedAtThatIsNotThere(t *testing.T) {
-	_, err := Load(tree(t, map[string]string{FileInstaller: head("lib: ./nope.sh\n")}))
-	if err == nil || !strings.Contains(err.Error(), "no such file") {
-		t.Errorf("err = %v", err)
 	}
 }
 
@@ -437,6 +401,16 @@ func TestLoadRefuses(t *testing.T) {
 			files: map[string]string{FileInstaller: "title: T\nstages: [go, go]\n"},
 			want:  "listed twice",
 		},
+		{
+			name:  "a hook whose name is a typo",
+			files: map[string]string{"hooks/preflght.sh": "exit 0\n"},
+			want:  "not a hook",
+		},
+		{
+			name:  "a hook with no .sh after it",
+			files: map[string]string{"hooks/preflight": "exit 0\n"},
+			want:  "not a hook",
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -492,10 +466,10 @@ func TestShellFieldsTellCodeFromFiles(t *testing.T) {
 variables:
   - name: DISK
     title: Disk
-    command: ./tasks/_lib/disks.sh
+    command: ./data/disks.sh
     prefill: lsblk -dno PATH | head -n1
 `),
-		"tasks/_lib/disks.sh": "lsblk\n",
+		"data/disks.sh": "lsblk\n",
 	})
 	sp, err := Load(dir)
 	if err != nil {

@@ -1,34 +1,29 @@
-# Shared ground for every task: the target, the values that are worked out
-# rather than asked for, and the three or four things every task does.
+# Shared ground for every script of this tree: the target, the values that are
+# worked out rather than asked for, and the few things every task does.
 #
-# The runtime sources this before every script of this tree — see `lib:` in
-# installer.yaml — so a task is plain shell with no preamble of its own. It
-# sets no traps and no shell options: the runtime already wraps every script in
-# an ERR trap that stops at the first real failure and reports the file, the
-# line and the command.
+# The runtime sources this before every task and every hook, so a script is
+# plain shell with no preamble. It sets no traps and no shell options — the
+# runtime already wraps each one in an ERR trap that stops at the first failure
+# and reports the file, the line and the command.
 #
-# Nothing in here prints for a person to read. Everything on stdout and stderr
-# goes to the log; the interface shows the name of the task and nothing else.
+# Nothing here prints for a person to read: stdout and stderr go to the log.
 
 # Where the new system is mounted while it is being built.
 MNT=/mnt
 
-# The tables this file looks things up in, beside itself.
+# The tables looked up below, beside this file.
 DATA="$(dirname "${BASH_SOURCE[0]}")/data"
 
-# where is the folder of the task that called it: a unit keeps the files it
-# ships with beside its own script, and this is how it reaches them.
+# The folder of the task that called it, where a unit keeps the files it ships
+# with.
 where() { dirname "${BASH_SOURCE[1]}"; }
 
 # ─── Simulation ──────────────────────────────────────────────────────────────
 
-# DEBUG=true runs the whole installer without touching the machine: the preflight
-# walls step aside and every task reports success without doing anything. It
-# is how the questions, the wording and the order of the tasks are tried out
-# on an ordinary running system — it installs nothing.
-#
-# Every task guards itself with `simulating && return 0` as its first line,
-# so a unit can only ever be skipped as a whole and never halfway.
+# DEBUG=true runs the whole installer without touching the machine: every wall
+# steps aside and every task reports success without doing anything. Each task
+# guards itself with `simulating && return 0` as its first line, so a unit can
+# only ever be skipped as a whole.
 : "${DEBUG:=false}"
 
 simulating() {
@@ -37,60 +32,47 @@ simulating() {
     sleep 1 # so the unit is visible in the interface rather than flashing past
 }
 
-# ─── What a language implies ─────────────────────────────────────────────────
-#
-# A language is not only what the system speaks. It is the keyboard it is typed
-# on, the font a text console can draw it in, the country its packages come from
-# and the time zone that country keeps — and none of those can be guessed from
-# the name of a locale: de_CH is not de, sv is not se, and Germany is not DE to a
-# mirror list.
-#
-# So they are looked up in _lib/data, which is also where the question pages get
-# what they offer. Each stays a variable anyone can answer outright.
+# ─── Network ─────────────────────────────────────────────────────────────────
 
-# The row of data/languages that fits a locale: the one for the whole locale if
-# there is one, otherwise the one for the language in front of it.
-language_row() {
-    local locale="${1%%.*}"
-    awk -v locale="$locale" -v lang="${locale%%_*}" '
+# Real HTTPS to a host the installation needs anyway, not a ping — a captive
+# portal answers pings.
+is_online() {
+    curl -Lsf --connect-timeout 5 --max-time 15 https://archlinux.org >/dev/null
+}
+
+# ─── What a language and a country imply ─────────────────────────────────────
+#
+# The keyboard a language is typed on, the font a console can draw it in, the
+# mirrors its country has and the time zone that country keeps. None of it can
+# be guessed from the shape of a locale — de_CH is not de, sv is not se, and a
+# mirror list has never heard of DE — so all four are looked up in data/.
+#
+# The same tables fill the lists the question pages offer, so what a page shows
+# beside `auto` and what a task gets can never disagree.
+
+# A column of the data/languages row for a locale: its own row where there is
+# one, otherwise its language's.
+language_field() {
+    awk -v col="$1" -v locale="${2%%.*}" '
+        BEGIN { lang = locale; sub(/_.*/, "", lang) }
         /^#/ || NF == 0 { next }
         $1 == locale { hit = $0; exit }
-        $1 == lang && lang_hit == "" { lang_hit = $0 }
-        END { print (hit != "" ? hit : lang_hit) }
+        $1 == lang && fallback == "" { fallback = $0 }
+        END { split(hit != "" ? hit : fallback, f); print f[col] }
     ' "${DATA}/languages"
 }
 
-# What that row says, by column.
-language_field() { language_row "$2" | awk -v n="$1" '{ print $n }'; }
-
-language_keymap() { language_field 2 "$1"; }
-language_layout() { language_field 3 "$1"; }
-language_font() { language_field 4 "$1"; }
-
-# The mirror country a locale's territory belongs to, spelled as the mirror list
-# spells it. Nothing for a locale that names no territory, or one Arch has no
-# mirror in — which is an answer in itself: ranking the world beats ranking a
-# country with nothing in it.
-language_country() {
-    local locale="${1%%.*}"
+# A column of the data/countries row for the territory a locale ends in.
+# Nothing for a locale that names none.
+country_field() {
+    local locale="${2%%.*}"
     [ "${locale#*_}" != "$locale" ] || return 0
-    awk -F'\t' -v code="${locale#*_}" '$1 == code { print $2 }' "${DATA}/countries"
+    awk -F'\t' -v col="$1" -v code="${locale#*_}" '$1 == code { print $col }' "${DATA}/countries"
 }
 
-# The time zone the country behind a locale keeps, from the same table the first
-# question offers its countries from. Nothing — and a failure rather than an
-# empty line — for a locale no country there named, which is what puts the
-# network guess behind it rather than beside it.
-region_timezone() {
-    local zone
-    zone="$(awk -F'\t' -v locale="${1%%.*}" '$1 == locale { print $2 }' "${DATA}/regions")"
-    [ -n "$zone" ] || return 1
-    printf '%s' "$zone"
-}
-
-# The console keyboard the live image was started with, if it was started with
-# one. The Arch image records it in root's shell history as the loadkeys command
-# that set it, which is the only place it can be read back from.
+# The keyboard the live image was started with, if it was started with one. The
+# Arch image records it in root's shell history as the loadkeys command that set
+# it, which is the only place it can be read back from.
 live_keymap() {
     grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null |
         tail -n1 | sed 's/.*loadkeys *//' | tr -d ' ' || true
@@ -98,30 +80,25 @@ live_keymap() {
 
 # ─── Values that are worked out rather than asked for ────────────────────────
 #
-# Each is a variable the user may set, and each falls back to something this
-# machine can answer for itself. Doing it here rather than in one stage means
-# every stage sees the same answer, however it was arrived at.
-#
 # `auto` and `none` are the two words the lists in installer.yaml share, and
-# neither ever reaches a task. They are not the same test: auto is a value
-# still to be found, none is the value itself — the empty answer said out loud.
+# neither ever reaches a task. They are not the same test: auto is a value still
+# to be found, none is the value itself — the empty answer said out loud.
 
 is_auto() { [ -z "$1" ] || [ "$1" = "auto" ]; }
 not_none() { [ "$1" = "none" ] || printf '%s' "$1"; }
 
-# What each of those lists comes to when it is left on auto. Named rather than
-# inlined because the question page shows the same answer beside the auto row,
-# and the two must never be able to disagree.
+# What each list comes to when it is left on auto. Named rather than inlined
+# because the question page shows the same answer beside its auto row.
 auto_keymap() {
     local keymap
-    keymap="$(language_keymap "$ARCH_OS_LOCALE_LANG")"
+    keymap="$(language_field 2 "$ARCH_OS_LOCALE_LANG")"
     : "${keymap:=$(live_keymap)}"
     printf '%s' "${keymap:-us}"
 }
 
 auto_layout() {
     local layout
-    layout="$(language_layout "$ARCH_OS_LOCALE_LANG")"
+    layout="$(language_field 3 "$ARCH_OS_LOCALE_LANG")"
     if [ -z "$layout" ]; then
         layout="$(auto_keymap)"
         layout="${layout%%-*}"
@@ -134,14 +111,25 @@ auto_layout() {
 # the world ranked by speed.
 auto_font() {
     local font
-    font="$(language_font "$ARCH_OS_LOCALE_LANG")"
+    font="$(language_field 4 "$ARCH_OS_LOCALE_LANG")"
     printf '%s' "${font:-none}"
 }
 
 auto_country() {
     local country
-    country="$(language_country "$ARCH_OS_LOCALE_LANG")"
+    country="$(country_field 2 "$ARCH_OS_LOCALE_LANG")"
+    [ "$country" = "-" ] && country="" # a country Arch has no mirror in
     printf '%s' "${country:-none}"
+}
+
+# The zone the chosen country keeps, and — for a locale that names none — where
+# this machine appears to be, asked of the network. A guess either way, offered
+# as the value the list opens on and never as an answer.
+auto_timezone() {
+    local zone
+    zone="$(country_field 3 "$ARCH_OS_LOCALE_LANG")"
+    [ -n "$zone" ] || zone="$(curl -sf --connect-timeout 5 --max-time 5 "http://ip-api.com/line?fields=timezone" || true)"
+    printf '%s' "$zone"
 }
 
 auto_microcode() {
@@ -155,9 +143,7 @@ auto_microcode() {
 }
 
 # Logging in automatically follows disk encryption: the disk is already unlocked
-# by a password at boot, so a second password at the login screen protects
-# nothing that the first one did not — and without encryption the login screen is
-# the only thing standing there.
+# by a password at boot, so a second one at the login screen protects nothing.
 auto_autologin() { printf '%s' "${ARCH_OS_ENCRYPTION_ENABLED:-false}"; }
 
 # part_of names a partition of a disk. Devices whose name ends in a digit —
@@ -168,6 +154,8 @@ part_of() {
     printf '%s%s%s' "$1" "$sep" "$2"
 }
 
+# Resolved once here rather than in one stage, so every stage sees the same
+# answer however it was arrived at.
 : "${ARCH_OS_BOOT_PARTITION:=$(part_of "$ARCH_OS_DISK" 1)}"
 : "${ARCH_OS_ROOT_PARTITION:=$(part_of "$ARCH_OS_DISK" 2)}"
 
@@ -182,49 +170,47 @@ ARCH_OS_VCONSOLE_FONT="$(not_none "$ARCH_OS_VCONSOLE_FONT")"
 ARCH_OS_REFLECTOR_COUNTRY="$(not_none "$ARCH_OS_REFLECTOR_COUNTRY")"
 ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$(not_none "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT")"
 
-# ─── The console keyboard, in force ──────────────────────────────────────────
+# Every line of /etc/locale.gen belonging to the chosen language, uncommented,
+# plus English as a fallback.
+locale_gen_lines() {
+    sed "/^#${ARCH_OS_LOCALE_LANG}/s/^#//" /etc/locale.gen | grep "^${ARCH_OS_LOCALE_LANG}" || true
+    echo 'en_US.UTF-8 UTF-8'
+}
 
 # Loading the keyboard on the machine the installer is running on, which is what
-# `apply:` calls the moment the language or the keyboard itself is answered:
-# until this has run, every answer after it is typed on a layout nobody chose,
-# and on a German keyboard read as an American one a password is not the
-# password.
+# `apply:` calls the moment the language or the keyboard itself is answered.
+# Until this has run, every answer after it is typed on a layout nobody chose.
 load_console_keyboard() {
-    # DEBUG runs on somebody's own machine, where the console keyboard is not
-    # this installer's to touch.
+    # DEBUG runs on somebody's own machine, whose keyboard is not ours to touch.
     [ "$DEBUG" = "true" ] && return 0
     loadkeys "$ARCH_OS_VCONSOLE_KEYMAP"
 }
 
 # ─── Secure Boot ─────────────────────────────────────────────────────────────
 
-# The same rule the secure-boot task is gated by in its own yaml, in the form
-# the two units that only partly depend on it need: the boot loader and the
-# initial ram disk are built differently for a signed boot chain, but both run
-# either way.
-#
 # Whether this installation gets Secure Boot, which always comes as a package
-# with a Unified Kernel Image. Both are tied to disk encryption on systemd-boot,
-# for three reasons:
-#   - Without disk encryption, Secure Boot guards a boot chain whose data an
-#     attacker simply reads off the drive instead. The two only add up together.
+# with a Unified Kernel Image. The same rule the secure-boot task is gated by,
+# in the form the boot loader and the initial ram disk need: both are built
+# differently for a signed boot chain, and both run either way.
+#
+# Tied to disk encryption on systemd-boot for three reasons:
+#   - Without encryption, Secure Boot guards a boot chain whose data an attacker
+#     simply reads off the drive instead. The two only add up together.
 #   - A UKI holds kernel, initramfs and command line in one signed binary.
 #     Signing only kernel and boot loader would leave the initramfs on the
 #     unencrypted EFI partition forgeable — and a forged initramfs collects the
-#     passphrase, which is the very attack this is supposed to stop.
+#     passphrase, which is the attack this is supposed to stop.
 #   - GRUB is left out on purpose: its EFI binary is generated by grub-install,
-#     so it would need a re-run plus re-signing after every update, and no hook
-#     does that.
+#     so it would need re-signing after every update, and no hook does that.
 secure_boot_wanted() {
     [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && [ "$ARCH_OS_BOOTLOADER" = "systemd" ]
 }
 
-# Whether the firmware is in setup mode — the only state in which our own keys
-# may be enrolled. "Secure Boot disabled" is not the same thing: the vendor keys
-# are usually still in place, and clearing them is a manual step in the UEFI.
-# Read from the UEFI variable rather than parsed out of `sbctl status`, whose
-# output is meant for humans: the first four bytes are attributes, the fifth
-# holds the value.
+# Whether the firmware is in setup mode — the only state our own keys may be
+# enrolled in. "Secure Boot disabled" is not the same thing: the vendor keys are
+# usually still in place. Read from the UEFI variable rather than parsed out of
+# `sbctl status`, whose output is meant for humans: the first four bytes are
+# attributes, the fifth holds the value.
 secure_boot_setup_mode() {
     local efivar=/sys/firmware/efi/efivars/SetupMode-8be4df61-93ca-11d2-aa0d-00e098032b8c
     [ -r "$efivar" ] || return 1
@@ -261,21 +247,11 @@ kernel_args() {
     printf '%s' "${args[*]}"
 }
 
-# ─── The locales to generate ─────────────────────────────────────────────────
-
-# Every line of /etc/locale.gen belonging to the chosen language, uncommented,
-# plus English as a fallback — worked out from the one answer rather than asked
-# for as a second question nobody could answer usefully.
-locale_gen_lines() {
-    sed "/^#${ARCH_OS_LOCALE_LANG}/s/^#//" /etc/locale.gen | grep "^${ARCH_OS_LOCALE_LANG}" || true
-    echo 'en_US.UTF-8 UTF-8'
-}
-
 # ─── Installing into the new system ──────────────────────────────────────────
 
-# Package installs are retried, because the one thing that reliably goes wrong
-# during an installation is the network, and losing twenty minutes of work to a
-# mirror that blinked would be absurd.
+# Package installs are retried: the one thing that reliably goes wrong during an
+# installation is the network, and losing twenty minutes of work to a mirror
+# that blinked would be absurd.
 RETRIES=5
 RETRY_WAIT=10
 
@@ -294,8 +270,8 @@ chroot_pacman_install() {
 
 chroot_pacman_remove() { arch-chroot "$MNT" pacman -Rn --noconfirm "$@"; }
 
-# Building from the AUR needs a normal user who may use sudo without a password,
-# which is granted for exactly the length of the build and taken back after —
+# Building from the AUR needs a normal user who may use sudo without a password.
+# It is granted for exactly the length of the build and taken back after —
 # including when the build fails, which is why the revoking is not left to the
 # end of the function.
 chroot_aur_install() {
@@ -331,20 +307,20 @@ as_user() {
     arch-chroot "$MNT" /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "$1"
 }
 
-# ─── The first-login script ──────────────────────────────────────────────────
+# ─── The first login ─────────────────────────────────────────────────────────
 
 # A few desktop settings can only be applied by the user's own session, because
 # they live in that session's settings database and there is no session yet.
-# Stages append lines here; the last stage turns whatever collected into a
+# Tasks append lines here; the first-login task turns whatever collected into a
 # script that runs once, at the first login, and then removes itself.
 FIRST_LOGIN="${MNT}/home/${ARCH_OS_USERNAME}/.first-login"
 
 on_first_login() { cat >>"$FIRST_LOGIN"; }
 
-# ─── Closing the target again ────────────────────────────────────────────────
+# ─── Leaving ─────────────────────────────────────────────────────────────────
 
 # Everything the installation mounted, taken back down in the right order. Used
-# by the task that only unmounts, by the one that restarts, and by the way out
+# by the task that only unmounts, by the one that restarts, and by the hooks
 # below, so none of them can ever do it differently.
 unmount_target() {
     swapoff -a || true
@@ -353,21 +329,13 @@ unmount_target() {
     echo "unmounted"
 }
 
-# ─── Leaving ─────────────────────────────────────────────────────────────────
-
-# The two ways out of the installer — see `leave:` in installer.yaml. They are
-# not tasks: nothing follows them, and the interface is asking what to do with
-# the machine rather than running a step.
-#
-# Whatever the installation had mounted is closed first, so a machine restarted
-# halfway through a run does not take a half-written file system down with it.
-# Nothing mounted is not an error: the question is as likely to be asked before
-# the first task as after the last.
+# What the restart and shutdown hooks do. Whatever the installation had mounted
+# is closed first, so a machine restarted halfway through a run does not take a
+# half-written file system down with it — and nothing mounted is not an error,
+# since the question is as likely to be asked before the first task as after the
+# last.
 leave_machine() {
     simulating && return 0
     unmount_target || true
     systemctl "$1"
 }
-
-restart_machine() { leave_machine reboot; }
-shutdown_machine() { leave_machine poweroff; }

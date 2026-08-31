@@ -11,7 +11,7 @@ RUNTIME ?= ../runtime/bin/installer-$(shell go env GOOS)-$(shell go env GOARCH)
 # and here it is the tree that stays put while the binary lives elsewhere.
 RUN := $(RUNTIME) -dir .
 
-SCRIPTS := $(shell find tasks -name '*.sh')
+SCRIPTS := $(shell find . -name '*.sh')
 
 .PHONY: check load lint fmt strings
 
@@ -32,7 +32,7 @@ fmt:
 	shfmt -w -i 4 $(SCRIPTS)
 
 # Prints an empty translation catalog for this tree. Redirect it to
-# tasks/_lib/locales/<code>.yaml and fill in the right-hand side.
+# locales/<code>.yaml and fill in the right-hand side.
 strings: $(RUNTIME)
 	@$(RUN) -strings
 

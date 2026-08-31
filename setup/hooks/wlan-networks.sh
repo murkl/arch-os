@@ -1,11 +1,14 @@
-# Print one SSID per line, strongest first, from iwctl's table.
+# The networks in range, one SSID per line, strongest first.
 #
-# This is a file of its own because the table is genuinely awkward: it is
-# coloured, it is drawn for a human, and an SSID may contain spaces — so the
-# columns cannot be split on whitespace. They are padded out instead, which
-# makes "two or more spaces" the real separator and the only one that does not
-# corrupt a name like "Coffee Bar Free".
+# The scan is fired here rather than by the runtime because iwctl returns as
+# soon as it has started one: the wait belongs beside the command that needs it.
+iwctl station "$WLAN_DEVICE" scan || true
+sleep 3
 
+# iwctl's table is coloured, drawn for a human, and an SSID may hold spaces — so
+# the columns cannot be split on whitespace. They are padded apart instead,
+# which makes "two or more spaces" the only separator that does not corrupt a
+# name like "Coffee Bar Free".
 iwctl station "$WLAN_DEVICE" get-networks |
     sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r//' |
     awk '

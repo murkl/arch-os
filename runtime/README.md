@@ -6,8 +6,8 @@ and runs shell in order, reporting exactly where it broke.
 It installs nothing. It knows nothing about Arch Linux, disks, packages,
 bootloaders or desktops — there is not one of those words anywhere in the source.
 What is asked, what the answers mean and what the shell does is an
-**installer.yaml and a folder of tasks** beside it. Started without one, the
-binary says so and stops.
+**installer.yaml and the folders beside it**. Started without one, the binary
+says so and stops.
 
 That split is the whole design. Every system-specific thing there is lives in the
 tree, so the same binary drives an installer for anything, and the tree can be
@@ -23,13 +23,17 @@ installer -version
 
 ## The tree
 
-One file that says what the installer is, and one folder holding the work.
+One file that says what the installer is, and folders holding the work. Only
+`installer.yaml` has to be there — everything else is found by its own name, so
+a tree turns a part of the program off by leaving it out.
 
 ```
 installer.yaml           the whole declaration: what it is, what it asks, what order it works in
 tasks/<id>/task.yaml     where that unit belongs
 tasks/<id>/task.sh       what it does
-tasks/_lib/              anything several units share — a folder named _* is not a unit
+hooks/<name>.sh          everything around the installation itself, one script per hook
+lib.sh                   sourced before every script of this tree
+locales/<code>.yaml      one catalog per language it speaks
 ```
 
 The binary looks for `installer.yaml` **next to itself** and nowhere else, so a
@@ -45,15 +49,14 @@ logo: |                  # everything above the blank line is a dim eyebrow
 
   ██████ …               # the wordmark, swept in behind the accent
 
-lib: ./tasks/_lib/lib.sh      # sourced before every script of this tree
-locales: ./tasks/_lib/locales # one <code>.yaml per language it speaks
 language: ARCH_OS_LOCALE_LANG # optional: an answer that also settles the words on screen
-preflight: preflight          # runs before all but the `first` questions
 
 stages: [prepare, disk, base, finish]   # the order the installation happens in
 
 confirm: |               # the last thing read before anything changes
   Arch Linux will be installed on {{ARCH_OS_DISK}}.
+
+console: Type installer to start it again.   # optional: read on the way out
 
 presets:                 # pages of starting points, offered on a machine with no answers
   - id: system
@@ -77,38 +80,46 @@ variables:
     error: Lower case letters, digits, - and _ only.
 ```
 
-`preflight` names a task that belongs to no stage. It runs once at startup
-and is a wall: what it writes to stderr is what the user reads, and the only
-thing left to do is leave. `confirm` is filled in from the answers, so it names
-the disk it is about rather than warning in the abstract.
+`confirm` is filled in from the answers, so it names the disk it is about rather
+than warning in the abstract.
 
-`leave:` is what makes leaving the interface a question rather than an exit:
+### `hooks/`
 
-```yaml
-leave:
-  restart: systemctl reboot
-  shutdown: systemctl poweroff
-  console: Type installer to start it again.   # optional
-```
+Everything the runtime does around the installation itself, as bash called by
+its own name. Nothing declares them: a script under one of these names is the
+declaration, and any other name there is refused when the tree loads — a hook
+that never runs because of a typo is the one bug this check exists to prevent.
 
-A tree that declares it is saying the machine booted to run this installer, so
-every way out of the interface — ctrl+c, the row that says quit, backing off the
-first page, the end of an installation — lands on a page offering these instead
-of closing. A tree that declares none leaves the program exiting the way
-anything does, which is right for an installer somebody started from a shell
-they are still sitting in.
+| | |
+|---|---|
+| `preflight.sh` | can this machine be installed onto at all — a wall, run before all but the `first` questions |
+| `online.sh` | is there internet; without it the network screen never appears |
+| `wlan-device.sh` | the wireless device to use |
+| `wlan-networks.sh` | the networks in range, one SSID per line — scanning and waiting belong here |
+| `wlan-connect.sh` | join one, with `WLAN_DEVICE`, `WLAN_SSID` and `WLAN_PASSPHRASE` in the environment |
+| `restart.sh` | put this machine down and start it again |
+| `shutdown.sh` | switch it off |
 
-The first two are shell like any other field here, so a tree that simulates its
-work simulates these too, and an installer being tried out on somebody's own
-machine closes rather than switching it off.
+The preflight is a wall: what it writes to stderr is what the user reads, and
+the only thing left to do is leave.
 
-**`console:`** is the way out that runs nothing: the program stops and the
-machine keeps running. Declare it where there is something behind the interface
-to stop into — a login shell on a live image, the terminal it was started from —
-and leave it out where there is not. Its value is the sentence saying how to
-start the installer again, which is printed on the terminal once the frame is
-gone: what the installer is called out there is something only the tree knows,
-and somebody who has just left it is looking at a bare prompt.
+`restart.sh` and `shutdown.sh` are what make leaving the interface a question
+rather than an exit. A tree with them is saying the machine booted to run this
+installer, so every way out — ctrl+c, the row that says quit, backing off the
+first page, the end of an installation — lands on a page offering them instead
+of closing. A tree with neither leaves the program exiting the way anything
+does, which is right for an installer somebody started from a shell they are
+still sitting in. They are ordinary scripts, so a tree that simulates its work
+simulates these too, and an installer being tried out on somebody's own machine
+closes rather than switching it off.
+
+**`console:`** in installer.yaml is the third way out, and the only one that
+runs nothing: the program stops and the machine keeps running. Declare it where
+there is something behind the interface to stop into — a login shell on a live
+image, the terminal it was started from — and leave it out where there is not.
+Its value is the sentence printed once the frame is gone: what the installer is
+called out there is something only the tree knows, and somebody who has just
+left it is looking at a bare prompt.
 
 ### `task.yaml`
 
@@ -219,9 +230,9 @@ In this order, and each page shown only if there is something on it:
   is on offer. Afterwards it is a row in the settings.
 - **The `first` questions**, unnumbered — the few that cannot wait, because
   everything after them is typed on the keyboard they settle.
-- **Network**, if the tree describes one, since every stage past it downloads
-  something.
-- **The check**, if the tree declares a preflight. A failure here is a wall.
+- **Network**, if the tree has an `online.sh` hook, since every stage past it
+  downloads something.
+- **The check**, if the tree has a `preflight.sh` hook. A failure here is a wall.
 - **Presets**, one page for each the tree declares, in the order they are
   declared. A set of answers, not a mode: every value one fills in is an ordinary
   value from the next page on. Offered once, on a machine that has never answered
@@ -292,11 +303,11 @@ standing. So a half-finished translation is useful from its first line, and the
 code and the YAML stay readable on their own.
 
 Two independent catalogs are merged: the runtime's own, compiled into the binary
-under `locales/`, and the tree's, wherever its `locales:` points. Adding a
-language is adding a file.
+under `locales/`, and the tree's own `locales/` beside its installer.yaml.
+Adding a language is adding a file.
 
 ```sh
-installer -strings > .../locales/fr.yaml   # every word the tree says, empty
+installer -strings > locales/fr.yaml       # every word the tree says, empty
 installer -check                           # reports coverage per language
 ```
 
@@ -328,6 +339,7 @@ internal/spec        the tree, read into memory, checked over and put in order
 internal/store       the answers, and the file they survive a restart in
 internal/exec        the only place a process is started, and the failure shape
 internal/runner      what a question offers, which tasks this run consists of
+internal/wlan        joining a wireless network, the way the tree's hooks say to
 internal/i18n        the message catalogs
 internal/logging     the single sink for everything a run records
 locales/             the runtime's own words, compiled in

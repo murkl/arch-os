@@ -1,10 +1,9 @@
 // Package wlan joins a wireless network the way the tree says to.
 //
-// It knows that connecting means finding a device, scanning, listing what is
-// out there and offering a passphrase — and nothing about which commands do
-// that. Those live in the tree's installer.yaml (see internal/spec.Wlan),
-// because they are the one part of this that is a property of the
-// distribution rather than of the flow.
+// It knows that connecting means finding a device, listing what is out there
+// and offering a passphrase — and nothing about which commands do that. Those
+// are the tree's hooks, because they are the one part of this that is a
+// property of the distribution rather than of the flow.
 package wlan
 
 import (
@@ -12,18 +11,26 @@ import (
 	"time"
 
 	"installer/internal/exec"
-	"installer/internal/spec"
 )
+
+// Config is the shell one tree uses to find and join a network. Every field is
+// optional bar Online: a tree may say only "tell me if I am offline".
+type Config struct {
+	Online   string
+	Device   string
+	Networks string
+	Connect  string
+}
 
 // Radio joins a network the way one tree describes.
 type Radio struct {
-	cfg *spec.Wlan
+	cfg Config
 	sh  exec.Runner
 	env exec.Env
 
-	// How long a scan is given to settle and how many times a fresh connection
-	// is given to come up. Fields rather than constants so a test can drive the
-	// whole thing without waiting out a real radio.
+	// How long a fresh connection is given to come up, and how many times it is
+	// looked at. Fields rather than constants so a test can drive the whole
+	// thing without waiting out a real radio.
 	settle time.Duration
 	tries  int
 }
@@ -35,36 +42,32 @@ const (
 	envPassphrase = "WLAN_PASSPHRASE"
 )
 
-// Defaults for a real radio. A scan returns as soon as it is *started* — iwctl
-// does — so reading the list straight away finds nothing; and a fresh
-// connection needs a DHCP lease before it carries anything.
+// Defaults for a real radio: a fresh connection needs a DHCP lease before it
+// carries anything.
 const (
 	defaultSettle = 3 * time.Second
 	defaultTries  = 4
 )
 
-// New builds the tree's radio. A tree that describes no network gets a nil
-// Radio, which is not an error — it just never gets offered the screen.
-func New(sp *spec.Spec, sh exec.Runner, env exec.Env) *Radio {
-	if sp.Wlan == nil {
+// New builds the tree's radio. A tree that cannot even say whether it is online
+// gets a nil Radio, which is not an error — it just never gets offered the
+// screen.
+func New(cfg Config, sh exec.Runner, env exec.Env) *Radio {
+	if cfg.Online == "" {
 		return nil
 	}
-	return &Radio{cfg: sp.Wlan, sh: sh, env: env, settle: defaultSettle, tries: defaultTries}
+	return &Radio{cfg: cfg, sh: sh, env: env, settle: defaultSettle, tries: defaultTries}
 }
 
-// Title and Description are the tree's own words for this screen.
-func (r *Radio) Title() string       { return r.cfg.Label() }
-func (r *Radio) Description() string { return r.cfg.Help() }
-
-// Joinable reports whether the tree described enough to actually connect. A
-// tree may declare only a check, which means "tell me if I am offline" and
-// nothing more.
-func (r *Radio) Joinable() bool { return r.cfg.Joinable() }
+// Joinable reports whether the tree described enough to actually connect.
+func (r *Radio) Joinable() bool {
+	return r.cfg.Device != "" && r.cfg.Networks != "" && r.cfg.Connect != ""
+}
 
 // Online reports whether there is internet. A failing check is an answer, not
 // an error — being offline is the normal case this whole package exists for.
 func (r *Radio) Online() bool {
-	_, err := r.sh.Run(r.cfg.Check, r.env)
+	_, err := r.sh.Run(r.cfg.Online, r.env)
 	return err == nil
 }
 
@@ -80,20 +83,11 @@ func (r *Radio) Interface() (string, error) {
 	return out, nil
 }
 
-// Networks scans and returns the networks in range. The scan and the read are
-// one call because they are never useful apart: a list read before the scan
-// has settled is empty, and that is not something a caller should have to
-// know.
+// Networks returns the networks in range. Scanning and waiting for the results
+// to settle belong to the hook: how long a card takes to answer is the tree's
+// business, and a list read too early is empty rather than wrong.
 func (r *Radio) Networks(device string) ([]string, error) {
-	env := r.withDevice(device)
-	if r.cfg.Scan != "" {
-		// A scan that fails is not fatal: the card may already hold results
-		// from a moment ago, and an empty list says more than an error would.
-		if _, err := r.sh.Run(r.cfg.Scan, env); err == nil {
-			time.Sleep(r.settle)
-		}
-	}
-	lines, err := r.sh.Lines(r.cfg.Networks, env)
+	lines, err := r.sh.Lines(r.cfg.Networks, r.withDevice(device))
 	if err != nil {
 		return nil, fmt.Errorf("cannot list networks: %w", err)
 	}

@@ -1,8 +1,7 @@
 # A terminal that is pleasant on the first login rather than after an evening of
 # configuration.
 #
-# Everything static is a file under data/shell and is copied. Only the aliases
-# are written here, because which package manager they wrap depends on an answer.
+# Everything it writes is a file beside this one, copied into place.
 
 simulating && return 0
 
@@ -16,54 +15,21 @@ chroot_pacman_install "${packages[@]}"
 mkdir -p "${MNT}/root/.config/fastfetch" "${home}/.config/fastfetch"
 
 # ─── Aliases ─────────────────────────────────────────────────────────────────
-# Written for both root and the user, because the shell is the same shell and
-# muscle memory does not check who is logged in.
+# For both root and the user, because the shell is the same shell and muscle
+# memory does not check who is logged in.
+#
+# {{PKG}} and {{SUDO}} in the file are the only part of it the answers decide:
+# an AUR helper handles the AUR and the official repositories alike and asks for
+# the password itself, so it needs no sudo — pacman does.
 pkg="pacman"
 sudo_prefix="sudo "
 if [ "$ARCH_OS_AUR_HELPER" != "none" ]; then
-    # An AUR helper handles the AUR and the official repositories alike, and
-    # asks for the password itself.
     pkg="$ARCH_OS_AUR_HELPER"
     sudo_prefix=""
 fi
 
-{
-    cat <<'ALIASES'
-# Listing
-alias ls="ls -h --color=always --group-directories-first"
-command -v eza &>/dev/null && alias ls="eza --icons --color=always --group-directories-first"
-alias ll="ls -l"
-alias la="ls -la"
-alias lt="ls -Tal"
-
-# Colour
-alias diff="diff --color=auto"
-alias grep="grep --color=auto"
-alias ip="ip -color=auto"
-
-# Everyday
-alias logs="systemctl --failed; echo; journalctl -p 3 -b"
-alias q="exit"
-alias c="clear"
-command -v fastfetch &>/dev/null && alias fetch="fastfetch"
-command -v meld &>/dev/null && alias pacnew="sudo DIFFPROG=meld pacdiff"
-command -v xdg-open &>/dev/null && alias open="xdg-open"
-alias myip="curl ipv4.icanhazip.com"
-alias ..="cd .."
-alias ...="cd ../.."
-ALIASES
-    echo
-    echo '# Packages'
-    echo "alias paci='${sudo_prefix}${pkg} -S'    # install"
-    echo "alias pacu='${sudo_prefix}${pkg} -Syu'  # update everything"
-    echo "alias pacr='${pkg} -Rns'  # remove"
-    echo "alias pacs='${pkg} -Ss'   # search the repositories"
-    echo "alias pacls='${pkg} -Qs'  # search what is installed"
-    echo "alias pacl='${pkg} -Qe'   # list what was asked for"
-    echo "alias pacla='${pkg} -Qm'  # list what came from the AUR"
-    echo "alias pacli='${pkg} -Qi'  # show a package"
-    echo "alias pacrc='${pkg} -Scc' # clear the download cache"
-} | tee "${MNT}/root/.aliases" "${home}/.aliases" >/dev/null
+sed -e "s|{{PKG}}|${pkg}|g" -e "s|{{SUDO}}|${sudo_prefix}|g" "${data}/aliases" |
+    tee "${MNT}/root/.aliases" "${home}/.aliases" >/dev/null
 
 # ─── Shell configuration ─────────────────────────────────────────────────────
 tee "${MNT}/root/.bashrc" "${home}/.bashrc" <"${data}/bashrc" >/dev/null
@@ -95,9 +61,10 @@ cp "${home}/.config/starship.toml" "${MNT}/root/.config/starship.toml"
     echo 'VISUAL=nano'
 } >"${MNT}/etc/environment"
 
-sed -i "s/^# set linenumbers/set linenumbers/" "${MNT}/etc/nanorc"
-sed -i "s/^# set minibar/set minibar/" "${MNT}/etc/nanorc"
-sed -i 's;^# include /usr/share/nano/\*\.nanorc;include /usr/share/nano/*.nanorc\ninclude /usr/share/nano/extra/*.nanorc\ninclude /usr/share/nano-syntax-highlighting/*.nanorc;g' "${MNT}/etc/nanorc"
+# In each home rather than in /etc/nanorc: that file belongs to the nano package,
+# so editing it leaves a .pacnew to merge by hand on every update of it.
+mkdir -p "${MNT}/root/.config/nano" "${home}/.config/nano"
+tee "${MNT}/root/.config/nano/nanorc" "${home}/.config/nano/nanorc" <"${data}/nanorc" >/dev/null
 
 # ─── What only the first login can do ────────────────────────────────────────
 on_first_login <<'FIRST'

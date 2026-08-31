@@ -60,20 +60,15 @@ jobs:
       - name: Install build dependencies
         run: pacman -Syu --noconfirm archiso sudo go make
 
-      - name: Build Arch OS ISO
-        run: make iso
+      - name: Build Arch OS ISO and installer tarball
+        run: make iso tarball
 
-      # The image and its checksum out of release/iso, and beside them the two
-      # files that turn a stock Arch ISO into the same installer. tasks/ is a
-      # folder and a release asset is a file, so it is not among them — a
-      # checkout is where that comes from.
+      # Everything in dist/ and nothing else: the bootable image, the whole
+      # installer as one tarball, and a checksum for each.
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.version }}
           name: Arch OS ${{ steps.version.outputs.version }}
-          files: |
-            ./release/iso/*
-            ./release/installer
-            ./release/installer.yaml
+          files: ./dist/*
           generate_release_notes: true

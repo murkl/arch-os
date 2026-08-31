@@ -25,8 +25,8 @@ between.
 ## Building
 
 ```sh
-make -C .. build   # assembles ../release: the binary, installer.yaml, tasks/
-make -C .. iso     # the above, then this ISO, into ../release/iso
+make -C .. build   # assembles ../release: the binary and the installer tree
+make -C .. iso     # the above, then this ISO, into ../dist
 ```
 
 Run from here directly once a release exists:
@@ -35,9 +35,10 @@ Run from here directly once a release exists:
 make build          # or: RELEASE_DIR=../release SNAPSHOT_VERSION=1234abc ./build.sh
 ```
 
-The generated `*.iso` (and its `.sha256`) land in `RELEASE_DIR/iso`, which
-defaults to `../release/iso`. `SNAPSHOT_VERSION` defaults to the short commit
-SHA of `HEAD`, the same scheme [runtime](../runtime) uses for the binary.
+The generated `*.iso` (and its `.sha256`) land in `DIST_DIR`, which defaults to
+`../dist` — the folder for what is downloaded rather than executed, where the
+installer tarball goes too. `SNAPSHOT_VERSION` defaults to the short commit SHA
+of `HEAD`, the same scheme [runtime](../runtime) uses for the binary.
 
 The Plymouth theme is taken from a
 **[plymouth-theme-arch-os](https://github.com/murkl/plymouth-theme-arch-os)**

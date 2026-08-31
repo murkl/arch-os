@@ -47,7 +47,7 @@ func newNetwork(a *app, r *wlan.Radio) *networkScreen {
 	return &networkScreen{app: a, radio: r}
 }
 
-func (s *networkScreen) Title() string { return s.radio.Title() }
+func (s *networkScreen) Title() string { return labelNetwork() }
 
 // working is what puts the turning mark in the header while a check, a scan
 // or a join is in flight.
@@ -197,11 +197,9 @@ func (s *networkScreen) View(width, height int) string {
 
 	case netChoosing:
 		var b strings.Builder
-		if help := s.radio.Description(); help != "" {
-			head := paragraph(help, width) + "\n\n"
-			height -= strings.Count(head, "\n")
-			b.WriteString(head)
-		}
+		head := paragraph(labelNetworkHelp(), width) + "\n\n"
+		height -= strings.Count(head, "\n")
+		b.WriteString(head)
 		errRows := 0
 		if s.err != "" {
 			errRows = 2

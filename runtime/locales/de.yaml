@@ -9,11 +9,11 @@
 # Seite übersetzen.
 language: Deutsch
 messages:
-  # Ohne Installer-Ordner startet nichts. Diese Meldungen erscheinen als einzige
+  # Ohne Installer startet nichts. Diese Meldungen erscheinen als einzige
   # außerhalb der Oberfläche, auf stderr.
-  "No installer folder found.": "Kein Installer-Ordner gefunden."
-  "A folder holding %s is needed. Looked in:": "Es wird ein Ordner mit %s benötigt. Gesucht wurde in:"
-  "no installer folder here": "hier liegt kein Installer-Ordner"
+  "No installer found.": "Kein Installer gefunden."
+  "%s has to sit next to this program, in %s.": "%s muss neben diesem Programm liegen, in %s."
+  "no installer here": "hier liegt kein Installer"
 
   # Tastenhinweise in der Fußzeile.
   "↑↓ move · ⏎ select · q quit": "↑↓ wählen · ⏎ öffnen · q beenden"
@@ -30,6 +30,8 @@ messages:
   "No matches": "Keine Treffer"
 
   # Der Ablauf, von der Sprachwahl bis zur fertigen Installation.
+  "Wireless network": "WLAN"
+  "Join a wireless network to continue.": "Verbinde dich mit einem WLAN, um fortzufahren."
   "Checking the internet connection …": "Internetverbindung wird geprüft …"
   "Looking for wireless networks …": "WLAN-Netzwerke werden gesucht …"
   "Joining %s …": "Verbinde mit %s …"

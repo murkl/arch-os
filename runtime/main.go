@@ -116,6 +116,7 @@ func inspect(dir string) error {
 	fmt.Printf("  presets    %d\n", len(sp.Presets))
 	fmt.Printf("  stages     %s\n", strings.Join(sp.Stages, " "))
 	fmt.Printf("  tasks      %d\n", len(sp.Tasks))
+	fmt.Printf("  hooks      %s\n", strings.Join(hooks(sp), " "))
 	fmt.Printf("  languages  %s\n", strings.Join(names, " "))
 
 	// The order they run in, which is worked out rather than written down
@@ -203,6 +204,19 @@ func run(dir, conf string) error {
 	rn.Settle()
 
 	return tui.Run(sp, st, rn, version, langs, sources)
+}
+
+// hooks is which of the hooks this tree actually has, in the order the runtime
+// knows them — so a hook that is not being called because of a typo in its name
+// is visible as one missing from this line.
+func hooks(sp *spec.Spec) []string {
+	var out []string
+	for _, name := range spec.HookNames {
+		if sp.Hook(name) != "" {
+			out = append(out, name)
+		}
+	}
+	return out
 }
 
 // catalogs is every source of words this run has: the runtime's own, and the

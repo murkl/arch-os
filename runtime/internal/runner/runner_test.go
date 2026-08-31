@@ -135,21 +135,20 @@ func TestTasksAreOnlyTheOnesThatWillRun(t *testing.T) {
 	}
 }
 
-func TestPreflightPassesWhenNobodyDeclaredOne(t *testing.T) {
+func TestPreflightPassesWhenTheTreeHasNoHook(t *testing.T) {
 	_, _, r := setup(t, "variables: []\n", nil)
 	if err := r.Preflight(); err != nil {
 		t.Errorf("err = %v", err)
 	}
 }
 
-func TestPreflightCarriesWhatTheCheckSaid(t *testing.T) {
+func TestPreflightCarriesWhatTheHookSaid(t *testing.T) {
 	dir := t.TempDir()
 	files := map[string]string{
-		spec.FileInstaller:      "title: T\nstages: [go]\npreflight: check\nvariables: []\n",
-		"tasks/go/task.yaml":    "name: Go\nstage: go\n",
-		"tasks/go/task.sh":      "true\n",
-		"tasks/check/task.yaml": "name: System check\n",
-		"tasks/check/task.sh":   "echo Set the boot mode to UEFI. >&2\nexit 1\n",
+		spec.FileInstaller:   "title: T\nstages: [go]\nvariables: []\n",
+		"tasks/go/task.yaml": "name: Go\nstage: go\n",
+		"tasks/go/task.sh":   "true\n",
+		"hooks/preflight.sh": "echo Set the boot mode to UEFI. >&2\nexit 1\n",
 	}
 	for name, body := range files {
 		path := filepath.Join(dir, name)

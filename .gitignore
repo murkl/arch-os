@@ -1,5 +1,7 @@
-# Build output — see /Makefile. Nothing under here is a source file.
+# Build output — see /Makefile. Nothing under here is a source file: release/ is
+# the installer as a machine runs it, dist/ is what a person downloads.
 /release/
+/dist/
 
 # What a local run of the installer leaves beside itself, wherever it runs from
 installer.conf

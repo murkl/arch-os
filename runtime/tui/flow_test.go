@@ -298,10 +298,10 @@ func (h *harness) asked() *harness {
 func TestAFirstQuestionIsAskedBeforeTheNetwork(t *testing.T) {
 	h := newHarness(t, map[string]string{
 		spec.FileInstaller: testInstaller +
-			"  - name: LOCALE\n    title: Language and formats\n    required: true\n    first: true\n    values: [de, en]\n" +
-			"wlan:\n  title: WLAN\n  check: \"false\"\n",
+			"  - name: LOCALE\n    title: Language and formats\n    required: true\n    first: true\n    values: [de, en]\n",
+		"hooks/online.sh": "exit 1\n",
 	})
-	h.wants("Language and formats", "de", "en").refuses("WLAN", "internet connection")
+	h.wants("Language and formats", "de", "en").refuses("Wireless network", "internet connection")
 
 	// Answered, and only now is there a network to look for.
 	h.enter()
@@ -341,8 +341,8 @@ func TestAnsweringAFirstQuestionPutsItInForce(t *testing.T) {
 func TestAnAnsweredFirstQuestionIsNotAskedAgain(t *testing.T) {
 	h := newHarness(t, map[string]string{
 		spec.FileInstaller: testInstaller +
-			"  - name: LOCALE\n    title: Language and formats\n    required: true\n    first: true\n    default: de\n    values: [de, en]\n" +
-			"wlan:\n  title: WLAN\n  check: \"false\"\n",
+			"  - name: LOCALE\n    title: Language and formats\n    required: true\n    first: true\n    default: de\n    values: [de, en]\n",
+		"hooks/online.sh": "exit 1\n",
 	})
 	h.wants("There is no internet connection.").refuses("Language and formats")
 }
@@ -373,7 +373,7 @@ func presetTreeTying(apply string) map[string]string {
 	return map[string]string{
 		spec.FileInstaller: tree +
 			"  - name: LOCALE\n    title: System language\n    required: true\n    values: [de_DE, en_US]\n" + apply +
-			"language: LOCALE\nlocales: ./locales\n",
+			"language: LOCALE\n",
 		"locales/de.yaml": "language: Deutsch\nmessages:\n  \"User name\": \"Benutzername\"\n",
 	}
 }
@@ -409,8 +409,7 @@ func TestAPresetPutsWhatItFilledInInForce(t *testing.T) {
 func twoLanguageTree() map[string]string {
 	return map[string]string{
 		spec.FileInstaller: testInstaller +
-			"  - name: LOCALE\n    title: System language\n    required: true\n    values: [de_DE, en_US]\n" +
-			"locales: ./locales\n",
+			"  - name: LOCALE\n    title: System language\n    required: true\n    values: [de_DE, en_US]\n",
 		"locales/de.yaml": "language: Deutsch\nmessages:\n  \"Setup\": \"Einrichtung\"\n",
 	}
 }
@@ -445,9 +444,9 @@ func TestTheInterfaceLanguageIsNotAnAnswer(t *testing.T) {
 // installation has to click through.
 func TestNetworkScreenIsSkippedWhenAlreadyOnline(t *testing.T) {
 	h := newHarness(t, map[string]string{
-		spec.FileInstaller: testInstaller + "wlan:\n  title: WLAN\n  check: \"true\"\n",
+		"hooks/online.sh": "exit 0\n",
 	})
-	h.wants("Full", "Bare").refuses("WLAN")
+	h.wants("Full", "Bare").refuses("Wireless network")
 }
 
 // Offline and nothing declared to join with: the screen says so and lets the
@@ -455,7 +454,7 @@ func TestNetworkScreenIsSkippedWhenAlreadyOnline(t *testing.T) {
 // properly if the connection still matters.
 func TestNetworkScreenOffersToContinueWithoutWhenNotJoinable(t *testing.T) {
 	h := newHarness(t, map[string]string{
-		spec.FileInstaller: testInstaller + "wlan:\n  title: WLAN\n  check: \"false\"\n",
+		"hooks/online.sh": "exit 1\n",
 	})
 	h.wants("There is no internet connection.", "wireless network before continuing.")
 	h.enter()
@@ -468,15 +467,12 @@ func TestNetworkScreenOffersToContinueWithoutWhenNotJoinable(t *testing.T) {
 func TestNetworkScreenJoinsAWirelessNetworkWhenOffline(t *testing.T) {
 	marker := filepath.Join(t.TempDir(), "online")
 	h := newHarness(t, map[string]string{
-		spec.FileInstaller: testInstaller +
-			"wlan:\n" +
-			"  title: WLAN\n" +
-			"  check: test -e " + marker + "\n" +
-			"  device: printf wlan0\n" +
-			"  networks: printf 'HomeNet\\nCafeNet\\n'\n" +
-			"  connect: touch " + marker + "\n",
+		"hooks/online.sh":        "test -e " + marker + "\n",
+		"hooks/wlan-device.sh":   "printf wlan0\n",
+		"hooks/wlan-networks.sh": "printf 'HomeNet\\nCafeNet\\n'\n",
+		"hooks/wlan-connect.sh":  "touch " + marker + "\n",
 	})
-	h.wants("WLAN", "HomeNet", "CafeNet")
+	h.wants("Wireless network", "HomeNet", "CafeNet")
 
 	h.enter() // join HomeNet
 	h.wants("HomeNet", "Passphrase")
@@ -535,7 +531,7 @@ var regionTree = map[string]string{
 	spec.FileInstaller: testInstaller +
 		"  - name: LOCALE\n    title: Language and region\n    required: true\n    first: true\n" +
 		"    values: [de_DE, en_US]\n" +
-		"language: LOCALE\nlocales: ./locales\n",
+		"language: LOCALE\n",
 	"locales/de.yaml": "language: Deutsch\nmessages:\n  \"Setup\": \"Einrichtung\"\n",
 }
 
@@ -769,9 +765,7 @@ func TestASecretIsForgottenWhenTheRunIsOver(t *testing.T) {
 
 func TestAFailedSystemCheckIsAWall(t *testing.T) {
 	h := newHarness(t, map[string]string{
-		spec.FileInstaller:      testInstaller + "preflight: check\n",
-		"tasks/check/task.yaml": "name: System check\n",
-		"tasks/check/task.sh":   "echo Set the boot mode to UEFI. >&2\nexit 1\n",
+		"hooks/preflight.sh": "echo Set the boot mode to UEFI. >&2\nexit 1\n",
 	})
 	h.wants("Cannot continue", "Set the boot mode to UEFI.")
 	// Nothing leads anywhere from here: the only key that does anything leaves.
@@ -783,9 +777,7 @@ func TestAFailedSystemCheckIsAWall(t *testing.T) {
 
 func TestASystemCheckThatPassesLeadsStraightOn(t *testing.T) {
 	h := newHarness(t, map[string]string{
-		spec.FileInstaller:      testInstaller + "preflight: check\n",
-		"tasks/check/task.yaml": "name: System check\n",
-		"tasks/check/task.sh":   "echo fine\n",
+		"hooks/preflight.sh": "echo fine\n",
 	})
 	h.wants("Full", "Bare")
 }
@@ -871,8 +863,8 @@ func TestTheSmallestTreeStillWorks(t *testing.T) {
 // behind it to quit into.
 func leaveTree(restart, shutdown string) map[string]string {
 	return map[string]string{
-		spec.FileInstaller: testInstaller +
-			"leave:\n  restart: " + restart + "\n  shutdown: " + shutdown + "\n",
+		"hooks/restart.sh":  restart + "\n",
+		"hooks/shutdown.sh": shutdown + "\n",
 	}
 }
 
@@ -899,7 +891,7 @@ func TestQuittingAsksWhatToDoWithTheMachine(t *testing.T) {
 func TestLeavingToTheConsoleClosesOnlyTheProgram(t *testing.T) {
 	const back = "Type installer to start it again."
 	files := leaveTree("true", "true")
-	files[spec.FileInstaller] += "  console: " + back + "\n"
+	files[spec.FileInstaller] = testInstaller + "console: " + back + "\n"
 
 	h := newHarness(t, files)
 	h.down().enter().typeIn("moritz").enter().enter()

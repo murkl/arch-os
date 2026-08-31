@@ -72,12 +72,8 @@ type installerFile struct {
 	Logo      string      `yaml:"logo"`
 	Accent    string      `yaml:"accent"`
 	Confirm   string      `yaml:"confirm"`
-	Lib       string      `yaml:"lib"`
-	Locales   string      `yaml:"locales"`
+	Console   string      `yaml:"console"`
 	Language  string      `yaml:"language"`
-	Preflight string      `yaml:"preflight"`
-	Wlan      *Wlan       `yaml:"wlan"`
-	Leave     *Leave      `yaml:"leave"`
 	Stages    []string    `yaml:"stages"`
 	Presets   []*Preset   `yaml:"presets"`
 	Variables []*Variable `yaml:"variables"`
@@ -96,43 +92,76 @@ func Load(dir string) (*Spec, error) {
 	if err := read(filepath.Join(dir, FileInstaller), &head); err != nil {
 		return nil, err
 	}
-	s.UI = UI{Title: head.Title, Logo: head.Logo, Accent: head.Accent, Confirm: head.Confirm}
-	s.Presets, s.Vars, s.Stages = head.Presets, head.Variables, head.Stages
-	s.Wlan, s.Leave, s.Language = head.Wlan, head.Leave, head.Language
+	s.UI = UI{Title: head.Title, Logo: head.Logo, Accent: head.Accent, Confirm: head.Confirm, Console: head.Console}
+	s.Presets, s.Vars, s.Stages, s.Language = head.Presets, head.Variables, head.Stages, head.Language
+	s.Lib = beside(dir, FileLib)
+	s.Locales = beside(dir, DirLocales)
 
-	for path, into := range map[string]*string{head.Lib: &s.Lib, head.Locales: &s.Locales} {
-		if path == "" {
-			continue
-		}
-		abs := filepath.Join(dir, path)
-		if _, err := os.Stat(abs); err != nil {
-			return nil, fmt.Errorf("%s: no such file: %s", FileInstaller, path)
-		}
-		*into = abs
+	hooks, err := loadHooks(dir)
+	if err != nil {
+		return nil, err
 	}
+	s.hooks = hooks
 
 	tasks, err := loadTasks(dir)
 	if err != nil {
 		return nil, err
 	}
-	if err := s.check(tasks, head.Preflight); err != nil {
+	if err := s.check(tasks); err != nil {
 		return nil, err
 	}
 	return s, nil
 }
 
-// loadTasks reads every tasks/<id>/task.yaml, in folder order.
-//
-// A subfolder without one is an authoring mistake rather than an opt-out: it is
-// an error, not a unit quietly dropped from the installation. A folder whose
-// name starts with _ is not a unit at all — that is where a tree keeps what its
-// units share.
-func loadTasks(dir string) ([]*Task, error) {
-	base := filepath.Join(dir, TaskDir)
+// beside is the path of one of the tree's optional parts, or empty where the
+// tree does not have it. Nothing declares them: being there is the declaration.
+func beside(dir, name string) string {
+	path := filepath.Join(dir, name)
+	if _, err := os.Stat(path); err != nil {
+		return ""
+	}
+	return path
+}
+
+// loadHooks reads hooks/, where every file is one of HookNames with .sh after
+// it. Anything else there is refused rather than ignored: a hook nothing calls
+// because its name has a typo in it would leave everything loading and nothing
+// happening.
+func loadHooks(dir string) (map[string]string, error) {
+	base := filepath.Join(dir, DirHooks)
 	entries, err := os.ReadDir(base)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("no %s folder in %s", TaskDir, dir)
+			return nil, nil
+		}
+		return nil, err
+	}
+	known := map[string]bool{}
+	for _, name := range HookNames {
+		known[name] = true
+	}
+	out := map[string]string{}
+	for _, entry := range entries {
+		name := strings.TrimSuffix(entry.Name(), ScriptExt)
+		if entry.IsDir() || !known[name] || name == entry.Name() {
+			return nil, fmt.Errorf("%s/%s: not a hook — one of %s with %s after it",
+				DirHooks, entry.Name(), strings.Join(HookNames, ", "), ScriptExt)
+		}
+		out[name] = filepath.Join(base, entry.Name())
+	}
+	return out, nil
+}
+
+// loadTasks reads every tasks/<id>/task.yaml, in folder order.
+//
+// A subfolder without one is an authoring mistake rather than an opt-out: it is
+// an error, not a unit quietly dropped from the installation.
+func loadTasks(dir string) ([]*Task, error) {
+	base := filepath.Join(dir, DirTasks)
+	entries, err := os.ReadDir(base)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("no %s folder in %s", DirTasks, dir)
 		}
 		return nil, err
 	}
@@ -141,21 +170,21 @@ func loadTasks(dir string) ([]*Task, error) {
 	var out []*Task
 	for _, entry := range entries {
 		id := entry.Name()
-		if !entry.IsDir() || strings.HasPrefix(id, SharedPrefix) {
+		if !entry.IsDir() {
 			continue
 		}
 		where := filepath.Join(base, id)
-		t := &Task{id: id, path: filepath.Join(where, TaskScript)}
-		if err := read(filepath.Join(where, TaskFile), t); err != nil {
+		t := &Task{id: id, path: filepath.Join(where, FileScript)}
+		if err := read(filepath.Join(where, FileTask), t); err != nil {
 			return nil, err
 		}
 		if _, err := os.Stat(t.path); err != nil {
-			return nil, fmt.Errorf("%s/%s: missing %s", TaskDir, id, TaskScript)
+			return nil, fmt.Errorf("%s/%s: missing %s", DirTasks, id, FileScript)
 		}
 		out = append(out, t)
 	}
 	if len(out) == 0 {
-		return nil, fmt.Errorf("%s: no tasks", TaskDir)
+		return nil, fmt.Errorf("%s: no tasks", DirTasks)
 	}
 	return out, nil
 }
@@ -176,7 +205,7 @@ func read(path string, into any) error {
 	return nil
 }
 
-func (s *Spec) check(tasks []*Task, preflight string) error {
+func (s *Spec) check(tasks []*Task) error {
 	s.normalize(tasks)
 	if s.UI.Title == "" {
 		return fmt.Errorf("%s: title is required", FileInstaller)
@@ -193,99 +222,29 @@ func (s *Spec) check(tasks []*Task, preflight string) error {
 	if err := s.checkPresets(); err != nil {
 		return fmt.Errorf("%s: %w", FileInstaller, err)
 	}
-	if err := s.checkWlan(); err != nil {
-		return fmt.Errorf("%s: %w", FileInstaller, err)
-	}
-	if err := s.checkLeave(); err != nil {
-		return fmt.Errorf("%s: %w", FileInstaller, err)
-	}
-	return s.checkTasks(tasks, preflight)
+	return s.checkTasks(tasks)
 }
 
-// checkWlan validates the tree's optional network description: Check is the
-// one thing it must declare, and every command may point at a file the same
-// way a variable's command or prefill does.
-func (s *Spec) checkWlan() error {
-	if s.Wlan == nil {
-		return nil
-	}
-	if s.Wlan.Check == "" {
-		return fmt.Errorf("wlan: check is required")
-	}
-	for _, expr := range []*string{
-		&s.Wlan.Check, &s.Wlan.Device, &s.Wlan.Scan, &s.Wlan.Networks, &s.Wlan.Connect,
-	} {
-		resolved, err := s.shell(*expr)
-		if err != nil {
-			return fmt.Errorf("wlan: %w", err)
-		}
-		*expr = resolved
-	}
-	return nil
-}
-
-// checkLeave validates the tree's optional way out. Declaring the block and
-// naming nothing in it is an authoring mistake rather than a way to turn it off:
-// it would trap the interface on a page with no rows on it. Each command may
-// point at a file the same way a variable's command does.
-func (s *Spec) checkLeave() error {
-	if s.Leave == nil {
-		return nil
-	}
-	for _, expr := range []*string{&s.Leave.Restart, &s.Leave.Shutdown} {
-		resolved, err := s.shell(*expr)
-		if err != nil {
-			return fmt.Errorf("leave: %w", err)
-		}
-		*expr = resolved
-	}
-	if !s.Leave.Offers() {
-		return fmt.Errorf("leave: restart, shutdown or console is required")
-	}
-	return nil
-}
-
-// checkTasks settles what runs and in what order: the one that runs before
-// everything else is taken out, every other one has to belong to a stage, and
-// what is left is sorted once and for all.
-func (s *Spec) checkTasks(tasks []*Task, preflight string) error {
-	if preflight != "" {
-		named := false
-		for _, t := range tasks {
-			named = named || t.id == preflight
-		}
-		if !named {
-			return fmt.Errorf("%s: preflight: no such task: %s", FileInstaller, preflight)
-		}
-	}
-
-	staged := make([]*Task, 0, len(tasks))
+// checkTasks settles what runs and in what order: every task has to belong to a
+// stage, and what is left is sorted once and for all.
+func (s *Spec) checkTasks(tasks []*Task) error {
 	for _, t := range tasks {
-		where := TaskDir + "/" + t.id
+		where := DirTasks + "/" + t.id
 		if t.Name == "" {
 			return fmt.Errorf("%s: name is required", where)
+		}
+		if t.Stage == "" {
+			return fmt.Errorf("%s: stage is required", where)
 		}
 		cond, err := s.conditions(t.Conditions)
 		if err != nil {
 			return fmt.Errorf("%s: %w", where, err)
 		}
 		t.cond = cond
-
-		if t.id == preflight {
-			if t.Stage != "" {
-				return fmt.Errorf("%s: the preflight runs before every stage, so it belongs to none", where)
-			}
-			s.Preflight = t
-			continue
-		}
-		if t.Stage == "" {
-			return fmt.Errorf("%s: stage is required", where)
-		}
-		staged = append(staged, t)
 	}
-	ordered, err := order(staged, s.Stages)
+	ordered, err := order(tasks, s.Stages)
 	if err != nil {
-		return fmt.Errorf("%s: %w", TaskDir, err)
+		return fmt.Errorf("%s: %w", DirTasks, err)
 	}
 	s.Tasks = ordered
 	return nil
@@ -303,10 +262,7 @@ func (s *Spec) checkTasks(tasks []*Task, preflight string) error {
 //
 // A blank line survives, because that is the one break that was meant.
 func (s *Spec) normalize(tasks []*Task) {
-	fields := []*string{&s.UI.Title, &s.UI.Confirm}
-	if s.Wlan != nil {
-		fields = append(fields, &s.Wlan.Title, &s.Wlan.Description)
-	}
+	fields := []*string{&s.UI.Title, &s.UI.Confirm, &s.UI.Console}
 	for _, p := range s.Presets {
 		fields = append(fields, &p.Title, &p.Description)
 	}
@@ -475,7 +431,7 @@ func (s *Spec) shell(expr string) (string, error) {
 	if _, err := os.Stat(path); err != nil {
 		return "", fmt.Errorf("no such script: %s", trimmed)
 	}
-	return "source " + quote(path), nil
+	return Source(path), nil
 }
 
 // quote wraps a path for the shell, so a tree whose name holds a space or a

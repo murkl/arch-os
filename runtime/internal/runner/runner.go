@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"installer/internal/exec"
+	"installer/internal/i18n"
 	"installer/internal/logging"
 	"installer/internal/spec"
 	"installer/internal/store"
@@ -26,7 +27,13 @@ type Runner struct {
 
 func New(sp *spec.Spec, st *store.Store) *Runner {
 	sh := exec.Runner{Lib: sp.Lib}
-	return &Runner{spec: sp, store: st, sh: sh, radio: wlan.New(sp, sh, st.Env())}
+	cfg := wlan.Config{
+		Online:   spec.Source(sp.Hook(spec.HookOnline)),
+		Device:   spec.Source(sp.Hook(spec.HookDevice)),
+		Networks: spec.Source(sp.Hook(spec.HookNetworks)),
+		Connect:  spec.Source(sp.Hook(spec.HookConnect)),
+	}
+	return &Runner{spec: sp, store: st, sh: sh, radio: wlan.New(cfg, sh, st.Env())}
 }
 
 // Radio is how this tree finds and joins a wireless network, or nil when it
@@ -161,40 +168,38 @@ func (r *Runner) Terminal(t *spec.Task) *osexec.Cmd {
 }
 
 // Leave carries out one of the two ways this tree says a machine is put down,
-// and blocks until it has. What comes back is whether the command worked —
-// which on a machine that is genuinely restarting is a question nothing lives
-// long enough to ask, and on one that is not is the only thing worth knowing.
+// and blocks until it has. What comes back is whether the hook worked — which
+// on a machine that is genuinely restarting is a question nothing lives long
+// enough to ask, and on one that is not is the only thing worth knowing.
 //
-// A tree that declares nothing has nothing to carry out and says so, so the
+// A tree with no such hook has nothing to carry out and says so, so the
 // interface never offers a row that would do nothing.
 func (r *Runner) Leave(restart bool) error {
-	if !r.spec.Leave.Offers() {
-		return nil
-	}
-	cmd := r.spec.Leave.Shutdown
+	name := spec.HookShutdown
 	if restart {
-		cmd = r.spec.Leave.Restart
+		name = spec.HookRestart
 	}
-	if cmd == "" {
+	path := r.spec.Hook(name)
+	if path == "" {
 		return nil
 	}
-	logging.Info("leaving: %s", cmd)
-	_, err := r.sh.Run(cmd, r.store.Env())
+	logging.Info("leaving: %s", name)
+	_, err := r.sh.Run(spec.Source(path), r.store.Env())
 	return err
 }
 
 // Preflight runs the tree's own check that this machine can be installed onto
-// at all, and blocks until it has an answer. A tree that declares none passes.
+// at all, and blocks until it has an answer. A tree without the hook passes.
 //
 // It runs before anything is asked bar the few questions a tree marks `first`,
 // which is the whole point: being told the firmware is wrong is worth very
 // little after twenty questions.
 func (r *Runner) Preflight() error {
-	t := r.spec.Preflight
-	if t == nil {
+	path := r.spec.Hook(spec.HookPreflight)
+	if path == "" {
 		return nil
 	}
-	session, err := r.sh.Start(t.Label(), t.Path(), r.store.Env())
+	session, err := r.sh.Start(i18n.T("System check"), path, r.store.Env())
 	if err != nil {
 		return err
 	}

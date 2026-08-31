@@ -7,7 +7,7 @@
 
 <p><strong>Boot the Arch OS ISO to launch the installer automatically.</strong></p>
 
-<p>Alternatively, boot the official <a target="_blank" href="https://archlinux.org/download/">Arch Linux ISO</a>, drop a release's <code>installer</code>, <code>installer.yaml</code> and <code>tasks/</code> onto it, and run <code>./installer</code>.</p>
+<p>Alternatively, boot the official <a target="_blank" href="https://archlinux.org/download/">Arch Linux ISO</a>, unpack a release's <code>*.tar.gz</code> onto it, and run <code>./installer</code>.</p>
 
 <p><img src="./screenshots/installer.png"></p>
 
@@ -26,7 +26,7 @@ Two things, on purpose kept apart — see the [root README](../README.md) for
 the architecture. **[`runtime/`](../runtime)** is a Go binary that draws the
 interface, asks questions, keeps the answers and runs shell in order; it knows
 nothing about Arch. **[`setup/`](../setup)** is everything that does: one
-`installer.yaml` and a folder of tasks describing exactly the Arch Linux
+`installer.yaml` and the folders beside it, describing exactly the Arch Linux
 install below. **[`iso/`](../iso)** turns a build of both into a bootable
 image that starts the installer the moment it boots.
 

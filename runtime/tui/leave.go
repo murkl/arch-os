@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"installer/internal/logging"
+	"installer/internal/spec"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -11,14 +12,14 @@ import (
 // leaveScreen is the way out, on a machine where leaving the installer is not
 // quitting a program.
 //
-// A tree that declares `leave:` is saying that this machine booted to run the
-// installer: quitting into whatever is behind it is not an exit unless there is
-// something there. So every way out of the interface arrives here instead, and
-// what is offered is what this machine can actually be left in — off, starting
-// again, or, where the tree says there is a console to go back to, running with
-// the installer closed.
+// A tree with a restart or a shutdown hook is saying that this machine booted
+// to run the installer: quitting into whatever is behind it is not an exit
+// unless there is something there. So every way out of the interface arrives
+// here instead, and what is offered is what this machine can actually be left
+// in — off, starting again, or, where the tree names a console to go back to,
+// running with the installer closed.
 //
-// The commands are the tree's, which is also what makes them harmless while an
+// The hooks are the tree's, which is also what makes them harmless while an
 // installer is being tried out: a tree that simulates its work simulates this
 // too, and the program simply closes.
 type leaveScreen struct {
@@ -42,21 +43,21 @@ const (
 func newLeave(a *app) *leaveScreen {
 	s := &leaveScreen{app: a}
 	var items []item
-	// Only what the tree actually declared: a row that would run nothing is a
-	// row that reads as a machine refusing to switch off.
-	if a.spec.Leave.Restart != "" {
+	// Only what the tree actually has: a row that would run nothing is a row
+	// that reads as a machine refusing to switch off.
+	if a.spec.Hook(spec.HookRestart) != "" {
 		items = append(items, item{title: labelRestart(), detail: labelRestartHelp(), key: keyRestart})
 	}
-	if a.spec.Leave.Shutdown != "" {
+	if a.spec.Hook(spec.HookShutdown) != "" {
 		items = append(items, item{title: labelShutdown(), detail: labelShutdownHelp(), key: keyShutdown})
 	}
-	// Last, and only where the tree named a way back: the two rows above end
+	// Last, and only where the tree names a way back: the two rows above end
 	// this machine's session, and this one only ends the program. It reads as
 	// the smallest of the three and belongs under them.
-	if a.spec.Leave.Console != "" {
+	if a.spec.UI.Console != "" {
 		items = append(items, item{
 			title:  labelConsole(),
-			detail: a.spec.Leave.ConsoleHelp(),
+			detail: a.spec.ConsoleHelp(),
 			key:    keyConsole,
 		})
 	}
@@ -130,7 +131,7 @@ func (s *leaveScreen) carryOut(key string) tea.Cmd {
 	// closes, and the sentence the tree wrote is printed where the frame was —
 	// the first thing on the terminal somebody is left looking at.
 	if key == keyConsole {
-		s.app.farewell = s.app.spec.Leave.ConsoleHelp()
+		s.app.farewell = s.app.spec.ConsoleHelp()
 		return quit()
 	}
 	s.doing, s.err = key, nil

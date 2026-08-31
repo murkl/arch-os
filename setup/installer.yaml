@@ -1,22 +1,18 @@
-# What this installer is, what it needs to know, and in what order it works.
+# What this installer is, what it asks, and in what order it works.
 #
-# This file and the tasks beside it are the whole installer. The runtime is
-# a binary that knows nothing about Arch Linux, disks or packages: it draws what
-# this file names, asks what it declares, and runs the tasks in the order
-# their stages and needs add up to.
-#
-# It has to sit next to that binary — the program looks for it there and nowhere
-# else, so a release is one folder holding both.
+# The runtime beside it knows nothing about Arch Linux: it draws what is named
+# here, asks what is declared here, and runs the tasks in the order their stages
+# and needs add up to. Everything else is found by its own name — lib.sh, data/,
+# locales/, hooks/, tasks/ — and nothing points at it from this file.
 
 title: Arch OS Installer
 
-# Arch blue. The one colour the interface is built from: the cursor, the brand,
-# the marks against finished steps. It is taken towards the terminal's own
-# background until it is readable there, so it holds on a light terminal too.
+# Arch blue, taken towards the terminal's own background until it is readable
+# there, so it holds on a light terminal too.
 accent: "#1793d1"
 
 # The opening. Everything above the blank line is the eyebrow, dimmed; the block
-# below it is the wordmark and comes up in the accent, sweeping in from the left.
+# below it is the wordmark and comes up in the accent.
 logo: |
   Arch Linux
 
@@ -26,77 +22,20 @@ logo: |
   ██   ██ ██   ██ ██      ██   ██     ██    ██      ██
   ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
 
-# What every task of this tree is given before its own script, so a unit is
-# plain shell with no preamble. Everything shared lives under tasks/_lib —
-# a folder there whose name starts with _ is not a unit.
-lib: ./tasks/_lib/lib.sh
+# The last thing shown before the first task runs. {{VAR}} is filled in from the
+# answers, so this names the actual disk rather than warning in the abstract.
+confirm: |
+  Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.
 
-# One <code>.yaml catalog per language this installer speaks, laid over the
-# runtime's own words.
-locales: ./tasks/_lib/locales
+  Everything on that disk will be erased. There is no undo, and nothing before
+  this point has changed anything.
 
-# How this installer finds and joins a wireless network: the screen, the
-# network list and the passphrase prompt belong to the runtime and are the
-# same for any tree — only the commands below are Arch's own.
-#
-# Arch's own tool is iwd, and the Arch ISO already ships it, so nothing is
-# installed to make this work. (The installed system gets NetworkManager
-# instead; that is tasks/pacstrap-core's business, not this.)
-#
-# Every command below is handed WLAN_DEVICE, WLAN_SSID and WLAN_PASSPHRASE in
-# the environment, as far as it has them yet.
-wlan:
-  title: WLAN
-  description: Join a wireless network to continue.
+# Read on the way out when the installer is closed and the machine keeps
+# running. There is a root shell behind it on this image — see iso/.
+console: Type installer at the prompt to start it again.
 
-  # Real HTTPS to a host that has to work for the install anyway, not a ping —
-  # a captive portal answers pings.
-  check: curl -Lsf --connect-timeout 5 --max-time 15 https://archlinux.org >/dev/null
-
-  # The first wireless station is taken rather than asked for — a machine with
-  # two wireless cards is rare enough that a prompt would cost everyone else a
-  # question.
-  device: iwctl device list | grep -E '\bstation\b' | awk '{print $2}' | head -n 1
-
-  # Scanning is fire-and-forget: iwctl returns before the results are in, so
-  # the runtime waits and then reads the list.
-  scan: iwctl station "$WLAN_DEVICE" scan
-
-  # Parsing iwctl's table needs more than a pipeline can carry honestly.
-  networks: ./tasks/_lib/wlan-networks.sh
-
-  connect: iwctl --passphrase "$WLAN_PASSPHRASE" station "$WLAN_DEVICE" connect "$WLAN_SSID"
-
-# The task that runs once at startup, before anything is asked bar the keyboard.
-# It belongs to no stage: everything it checks is a wall, and there is no point
-# asking twenty questions on a machine that cannot be installed onto.
-preflight: preflight
-
-# How this machine is put down, and how it is left running. Declaring this block
-# is what makes the installer something that cannot simply be quit by accident:
-# this image booted to run it, so every way out of the interface — ctrl+c, the
-# row that says quit, backing off the first page, the end of an installation —
-# asks here instead of closing.
-#
-# The two commands go through _lib/lib.sh, which is what makes them do nothing
-# at all under DEBUG=true: an installer being tried out on somebody's own
-# machine must not switch it off.
-#
-# `console:` is the third way out, and the only one that is not a command: the
-# installer closes and the machine keeps running. There is a root shell behind
-# it on this image — the systemd unit that started the installer hands tty1 to a
-# login shell when it stops — and `installer` there starts it again, from the
-# same answers, because both ways in are the same script. What is written here
-# is the sentence somebody reads on the way out; /etc/motd says the same thing
-# on the way in. See iso/src.
-leave:
-  restart: restart_machine
-  shutdown: shutdown_machine
-  console: Type installer at the prompt to start it again.
-
-# The order the installation happens in, top to bottom. Every task names one
-# of these; several in the same stage run in the order their `needs` demand, and
-# in folder order where nothing demands anything.
+# The order the installation happens in, top to bottom. Every task names one of
+# these; several in the same stage run in the order their `needs` demand.
 stages:
   - prepare # the live system, made ready to install from
   - disk # partitioned, encrypted, formatted, mounted
@@ -107,30 +46,16 @@ stages:
   - finalize # the last things done to the new system
   - finish # what is offered once it is installed
 
-# The last thing shown before the first task runs. {{VAR}} is filled in from
-# the answers, so this names the actual disk rather than warning in the abstract.
-confirm: |
-  Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.
-
-  Everything on that disk will be erased. There is no undo, and nothing before
-  this point has changed anything.
-
-# A preset is a set of answers, not a mode: choosing one fills in what that kind
-# of installation usually wants and then stops mattering. Every value it sets is
-# an ordinary value from the next page on, and every one of them is on the
-# settings page afterwards, where it can be changed like anything else. It is
-# offered once, on a machine that has never answered anything.
-#
-# Each block below is one page — one question, and the options it is answered
-# with.
+# A preset is a set of answers, not a mode: it is offered once, on a machine
+# that has never answered anything, and every value it fills in is an ordinary
+# answer from the next page on. Each block is one page.
 presets:
   - id: system
     title: Setup
     description: Choose what kind of system to install. Every detail can still be changed afterwards.
     options:
       # Each option names every setting it has an opinion about, including the
-      # ones it turns off — this page is meant to read as a complete description
-      # of a kind of system.
+      # ones it turns off, so the page reads as a complete description.
       - id: desktop
         title: Desktop
         description: A GNOME desktop with drivers, codecs, fonts and everyday applications.
@@ -170,37 +95,21 @@ presets:
           ARCH_OS_DESKTOP_GRAPHICS_DRIVER: none
           ARCH_OS_AUR_HELPER: none
 
-# Everything this installer needs to know.
-#
-# The order here is the order the questions are asked in, and the order the
-# settings page lists them in. `group` puts a heading over the rows that follow
-# it — there is nothing to declare up front, a group is simply the run of rows
-# that named it.
-#
-# A variable is required or it is not. Required and unanswered is what makes the
-# installer ask; an answer is what makes it stop. Everything else — a value with
-# a default, a value a preset filled in — is reachable on the settings page and
-# never stands in the way.
-#
-# Each name reaches every task as an environment variable of that name.
+# Everything this installer needs to know, in the order it is asked and listed
+# in the settings. `group` puts a heading over the rows that follow it. Required
+# and unanswered is what makes the installer ask; an answer is what makes it
+# stop. Each name reaches every script as an environment variable.
 variables:
   # ─── Region ────────────────────────────────────────────────────────────────
   #
-  # What the system being installed is set to — none of it about the words this
-  # installer is read in. That is a setting of the program rather than an answer
-  # about the machine, it is asked for on the way in, and it is the row above
-  # this group on the settings page. Somebody installing a German system from an
-  # English installer is doing something ordinary, not something to work around.
+  # What the installed system is set to, not the words this installer is read
+  # in: that is a setting of the program, asked for on the way in.
   #
-  # The console keyboard is `first` of all — before the wireless screen, before
-  # the preflight, before anything else this program does — because it is the
-  # keyboard everything after it is typed on. On a German keyboard read as an
-  # American one y and z change places and half the punctuation moves, and a
-  # wireless passphrase typed that way is not the passphrase.
-  #
-  # The rest of the group follows the language on `auto`: the console font, the
-  # mirror country, and the keyboard itself where it was left there. Each stays a
-  # question anyone can answer outright.
+  # The console keyboard is asked `first`, before every other thing this program
+  # does, because it is the keyboard everything after it is typed on — a
+  # passphrase typed on the wrong layout is not the passphrase. The rest of the
+  # group follows the language on `auto`, and each stays a question anyone can
+  # answer outright.
   - name: ARCH_OS_LOCALE_LANG
     title: Language and region
     description: |
@@ -214,14 +123,9 @@ variables:
     apply: load_console_keyboard
     command: |
       # Every locale the C library ships that /etc/locale.gen also knows about,
-      # since one that cannot be generated is one that cannot be used. One row
-      # per locale and nothing else on it: every row reads the same way, in one
-      # alphabetical run, and the code that ends up in installer.conf is the code
-      # that was on screen. Press / to narrow it — de_ is a handful of rows.
-      #
-      # The @-suffixed variants are left out — they are the same language in a
-      # different script or currency, and offering both doubles a long list for
-      # a distinction almost nobody is looking for.
+      # since one that cannot be generated is one that cannot be used. The
+      # @-suffixed variants are left out: they are the same language in another
+      # script or currency, and offering both doubles a long list.
       comm -12 \
           <(basename -a /usr/share/i18n/locales/* | grep -v '@' | sort -u) \
           <(sed -n 's/^#\? *\([a-zA-Z_]*\)[. ].*/\1/p' /etc/locale.gen | sort -u)
@@ -238,9 +142,7 @@ variables:
     apply: load_console_keyboard
     command: |
       # The auto row carries what auto currently comes to, so it says what it is
-      # about to do rather than only that it will do something. Asked before the
-      # system language, that is whatever this live image booted with — anyone
-      # whose keyboard is not that one is here to say so.
+      # about to do rather than only that it will do something.
       printf 'auto\tauto — %s\n' "$(auto_keymap)"
       localectl list-keymaps
 
@@ -268,12 +170,7 @@ variables:
     group: Region
     required: true
     command: timedatectl list-timezones
-    prefill: |
-      # The zone the chosen country keeps, and — for a locale no country named —
-      # where this machine appears to be, asked of the network. A guess either
-      # way, offered as the value the list opens on and never as an answer.
-      region_timezone "$ARCH_OS_LOCALE_LANG" ||
-          curl -sf --connect-timeout 5 --max-time 5 "http://ip-api.com/line?fields=timezone" || true
+    prefill: auto_timezone
 
   - name: ARCH_OS_REFLECTOR_COUNTRY
     title: Mirror country
@@ -288,7 +185,8 @@ variables:
     command: |
       printf 'auto\tauto — %s\n' "$(auto_country)"
       echo none
-      awk -F'\t' '!/^#/ && NF { print $2 }' "${DATA}/countries"
+      # A "-" marks a country Arch has no mirror in.
+      awk -F'\t' '!/^#/ && $2 != "-" { print $2 }' "${DATA}/countries"
 
   # ─── Identity ──────────────────────────────────────────────────────────────
   - name: ARCH_OS_USERNAME
@@ -331,11 +229,9 @@ variables:
     error: Choose a disk that exists.
     command: |
       # The value is the device path; what follows the tab is what the user
-      # reads. Nobody chooses between /dev/sda and /dev/sdb by name — they
-      # choose by size and by what the drive is called.
-      #
-      # Only whole disks: 8 is SCSI and SATA, 259 NVMe, 254 virtual block
-      # devices.
+      # reads. Nobody chooses between /dev/sda and /dev/sdb by name — they choose
+      # by size and by what the drive is called. Whole disks only: 8 is SCSI and
+      # SATA, 259 NVMe, 254 virtual block devices.
       lsblk -d -n -I 8,259,254 -o PATH,SIZE,MODEL |
           awk '{ path = $1; $1 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
 
@@ -392,13 +288,12 @@ variables:
     required: true
     conditions: ARCH_OS_DUAL_BOOT_ENABLED == true
     prefill: |
-      # The existing EFI partition, guessed: the first vfat partition on this
-      # disk is almost always the one the other system boots from.
+      # The first vfat partition on this disk is almost always the one the other
+      # system boots from.
       lsblk -n -o PATH,FSTYPE "$ARCH_OS_DISK" | awk '$2 == "vfat" { print $1; exit }'
     command: |
-      # Every partition of the chosen disk. The size and file system are what
-      # tell an existing EFI partition apart from the one the other operating
-      # system lives on.
+      # The size and file system are what tell an existing EFI partition apart
+      # from the one the other operating system lives on.
       lsblk -n -o PATH,SIZE,FSTYPE,LABEL "$ARCH_OS_DISK" | tail -n +2 |
           awk '{ path = $1; $1 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
 
@@ -409,8 +304,8 @@ variables:
     required: true
     conditions: ARCH_OS_DUAL_BOOT_ENABLED == true
     prefill: |
-      # The largest partition on this disk that is not the EFI one — the
-      # likeliest candidate for the space that was freed up to install into.
+      # The largest partition that is not the EFI one — the likeliest candidate
+      # for space freed up to install into.
       lsblk -bn -o PATH,SIZE,FSTYPE "$ARCH_OS_DISK" | tail -n +2 |
           awk '$3 != "vfat" { print $2, $1 }' | sort -rn | head -n1 | awk '{ print $2 }'
     command: |
@@ -456,9 +351,8 @@ variables:
     default: auto
     required: true
     command: |
-      # The auto row carries the processor this is actually running on, read out
-      # of /proc/cpuinfo. The same reading happens again at install time, so a
-      # tree of answers carried to another machine still fits it.
+      # Read again at install time, so a tree of answers carried to another
+      # machine still fits it.
       printf 'auto\tauto — %s\n' "$(auto_microcode)"
       echo intel-ucode
       echo amd-ucode
@@ -495,10 +389,9 @@ variables:
     required: true
     conditions: ARCH_OS_DESKTOP_ENABLED == true
     command: |
-      # Asked of the running system where it can answer, and read from the files
-      # beside this installer where it cannot: the Arch live image ships no
-      # xkeyboard-config, so on the one machine this question is actually asked
-      # on there is nothing to ask.
+      # Asked of the running system where it can answer, and read from data/
+      # where it cannot: the Arch live image ships no xkeyboard-config, so on the
+      # one machine this question is actually asked on there is nothing to ask.
       printf 'auto\tauto — %s\n' "$(auto_layout)"
 
       layouts="$(localectl list-x11-keymap-layouts 2>/dev/null)"
@@ -518,9 +411,8 @@ variables:
     required: true
     conditions: ARCH_OS_DESKTOP_ENABLED == true
     command: |
-      # The variants of the chosen layout, with the standard one first. Same two
-      # sources as the layouts themselves, for the same reason. The layout is
-      # already the resolved one — auto became a real layout before this ran.
+      # Same two sources as the layouts themselves. The layout is already the
+      # resolved one — auto became a real layout before this ran.
       layout="$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
       [ -n "$layout" ] || exit 0
 

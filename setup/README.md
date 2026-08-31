@@ -1,7 +1,7 @@
 # Arch OS Installer
 
 Everything this installer knows about Arch Linux. It is data — one YAML file and
-a folder of tasks — and it does not run on its own: the [runtime](../runtime)
+the folders beside it — and it does not run on its own: the [runtime](../runtime)
 draws the interface, asks the questions and runs the tasks in order.
 
 ```sh
@@ -21,19 +21,21 @@ accident.
 installer.yaml           what the installer is, what it asks, what order it works in
 tasks/<id>/task.yaml     where that unit belongs: its stage, its needs, its conditions
 tasks/<id>/task.sh       what it does — and any file it ships with, beside it
-tasks/_lib/              what they all share: lib.sh, the catalogs, static data
-installer                the runtime (a build artefact, not part of the tree)
+hooks/<name>.sh          everything around the installation itself
+lib.sh                   what every script shares, sourced before each one
+data/                    the tables a language and a country are looked up in
+locales/                 one <code>.yaml per language this installer speaks
 ```
 
-A folder under `tasks/` whose name starts with `_` is not a unit. Everything
-else there is one, and nothing lists them: the folder is the list.
+Nothing points at any of this from `installer.yaml`: each part is found by its
+own name. `tasks/` is only Arch Linux — the steps that build a system on a disk.
+Everything else the program does is a hook.
 
-## The order things happen in
+## Tasks
 
-`installer.yaml` declares the stages, top to bottom. Every task names one,
-and `needs:` orders the ones that share a stage — the same idea as a CI
-pipeline, and for the same reason: what has to come first is a property of the
-unit, not of a list somebody maintains by hand.
+Every folder under `tasks/` is a step, and nothing lists them: the folder is the
+list. `installer.yaml` declares the stages, top to bottom; every task names one,
+and `needs:` orders the ones that share a stage.
 
 ```yaml
 # tasks/aur-helper/task.yaml
@@ -63,13 +65,13 @@ afterwards.
 `make check` prints the order the whole tree adds up to. It is the one thing
 about an installer nobody writes down, so it is worth reading after every change.
 
-## Writing a task
+### Writing one
 
 A unit is a folder with two files in it. The script is **sourced** by the runtime
-into a shell that already carries an `ERR` trap and the shared library, so it
-needs no shebang, no `set -e`, no imports and no error handling: if a command
-fails, the task fails, and the interface shows the file, the line, the command
-and the exit code.
+into a shell that already carries an `ERR` trap and `lib.sh`, so it needs no
+shebang, no `set -e`, no imports and no error handling: if a command fails, the
+task fails, and the interface shows the file, the line, the command and the exit
+code.
 
 ```sh
 # tasks/thing/task.sh
@@ -100,7 +102,7 @@ live in the session's own database — goes through `on_first_login`, which
 collects the lines into a script that runs once at the first login and then
 removes itself.
 
-## Tasks that ask, and one that takes the terminal
+### Tasks that ask, and one that takes the terminal
 
 Three keys change what a unit is rather than what it does:
 
@@ -114,39 +116,43 @@ That is how everything after the installation — a copy of the answers, a shell
 in the new system, a restart, an unmount — is a task of the `finish` stage like
 any other, rather than a page of its own.
 
-## The way out
+## Hooks
 
-Not an exit but a question: the ISO boots to run this, so quitting by accident
-would leave a machine that answers nothing. `leave:` in `installer.yaml` is what
-replaces quitting —
+Bash the runtime calls by name for everything that is not the installation
+itself. A hook that is there is used; one that is not turns that part of the
+interface off. Any other file name under `hooks/` is refused when the tree
+loads, so a typo is a message at startup rather than a hook that never runs.
 
-```yaml
-leave:
-  restart: restart_machine
-  shutdown: shutdown_machine
-  console: Type installer at the prompt to start it again.
-```
+| | |
+|---|---|
+| `preflight.sh` | root, UEFI, Secure Boot off, the live image, a network — all four before anything is asked bar the keyboard |
+| `online.sh` | whether there is internet |
+| `wlan-device.sh` | the wireless device to use |
+| `wlan-networks.sh` | scan, wait, and print one SSID per line |
+| `wlan-connect.sh` | join one, with `WLAN_DEVICE`, `WLAN_SSID` and `WLAN_PASSPHRASE` in the environment |
+| `restart.sh` | close the target and reboot |
+| `shutdown.sh` | close the target and switch off |
 
-— so ctrl+c, the row that says quit, backing off the first page and the end of
-an installation all land on the same three answers. The two functions live in
-`_lib/lib.sh`, unmount whatever the installation had open, and do nothing at all
-under `DEBUG=true`.
+The last two are what make leaving the installer a question rather than an exit:
+the ISO boots to run this, so quitting by accident would leave a machine that
+answers nothing. ctrl+c, the row that says quit, backing off the first page and
+the end of an installation all land on the same three answers. Both go through
+`leave_machine` in `lib.sh`, which unmounts whatever the installation had open
+and does nothing at all under `DEBUG=true`.
 
-`console:` runs nothing: the installer closes and the machine keeps running. It
-is declared because on this image there *is* something behind the interface —
-the systemd unit that started the installer hands tty1 to a root shell when it
-stops, whether it stopped because somebody chose this row or because it crashed.
-`installer` there starts it again, out of `/opt/installer` and from the answers
-already given, because the prompt and the unit run the same script. The sentence
-above is what the interface prints on the way out; `/etc/motd` says it again on
-the way in. See [iso/](../iso).
+The third answer is `console:` in `installer.yaml`, and it runs nothing: the
+installer closes and the machine keeps running. On this image the systemd unit
+that started it hands tty1 to a root shell when it stops, and `installer` there
+starts it again from the answers already given. The sentence in that key is what
+the interface prints on the way out; `/etc/motd` says it again on the way in.
+See [iso/](../iso).
 
 ## `auto` and `none`
 
 The two words the lists in `installer.yaml` share. `auto` says this machine works
-the answer out; `none` is the empty answer said out loud. `_lib/lib.sh` resolves
-both before any task runs, so nothing downstream ever tests for either word —
-and each stays a variable anyone can answer outright.
+the answer out; `none` is the empty answer said out loud. `lib.sh` resolves both
+before any task runs, so nothing downstream ever tests for either word — and each
+stays a variable anyone can answer outright.
 
 | on `auto` | comes to |
 |---|---|
@@ -159,20 +165,32 @@ and each stays a variable anyone can answer outright.
 
 The boot and root partitions are worked out the same way, from the disk.
 
-The first four come out of the language, and out of the tables in `_lib/data`
-rather than out of the shape of a locale's name: `de_CH` is not `de`, `sv` is not
-`se`, and a mirror list has never heard of `DE`. The same tables fill the lists
-those questions offer, so what a page shows beside `auto` and what a task gets
-can never disagree.
+## Language, and what follows from it
 
-## The first two pages
+One answer — `ARCH_OS_LOCALE_LANG` — settles the system language, and with it
+the keyboard, the console font, the mirror country and the time zone. None of
+that can be guessed from the shape of a locale: `de_CH` is not `de`, `sv` is not
+`se`, and a mirror list has never heard of `DE`. So it is looked up in two
+tables, and each answer stays a question anyone can override.
 
-**The language of the interface** comes first, before anything else — it is the
+| table | keyed by | says |
+|---|---|---|
+| `data/languages` | a language, or a locale where it differs | console keymap, xkb layout, console font |
+| `data/countries` | the territory a locale ends in | the country as the mirror list spells it, and its time zone |
+
+The same tables fill the lists those questions offer, so what a page shows beside
+`auto` and what a task gets can never disagree. `data/x11-layouts` and
+`data/x11-variants` are only a fallback: the Arch live image ships no
+xkeyboard-config, so on the one machine the desktop keyboard is actually chosen
+on there is nothing to ask.
+
+### The first two pages
+
+**The language of the interface** comes first, before anything else. It is the
 runtime's own page, and this tree declares nothing to make it appear beyond the
-catalogs under `_lib/locales`. It settles the words on screen and nothing else:
-it is a setting of the program, not an answer about the machine, and it is a row
-in the settings afterwards. Installing a German system from an English installer
-is an ordinary thing to do.
+catalogs under `locales/`. It settles the words on screen and nothing else:
+installing a German system from an English installer is an ordinary thing to do,
+and it is a row in the settings afterwards.
 
 **The console keyboard** comes second: `ARCH_OS_VCONSOLE_KEYMAP` is `first: true`,
 so it is asked before the network screen, before the preflight, before every
@@ -183,43 +201,6 @@ chose, and a password typed on the wrong one is not the password. It has no
 `default:` for exactly that reason: a default would answer it, and then it would
 never be asked.
 
-Everything else about the region is an ordinary question in the opening run —
-the system language, the console font, the time zone, the mirror country. Each
-follows the language on `auto`, and each can be answered outright:
-
-| what it settles | how |
-|---|---|
-| the system language and its formats | `ARCH_OS_LOCALE_LANG` — every locale the system can generate, as plain codes: `de_DE`, `en_GB`. Press `/` to narrow the list |
-| the keyboard, the console font, the mirror country | `auto`, above — they follow from the language |
-| the time zone | asked, opening on the zone the chosen country keeps |
-
-`_lib/data/regions` is what lets the time zone follow the language: one row per
-locale, naming the zone the country behind it keeps. It is a suggestion — the
-row the list opens on — never an answer.
-
-## Adding a preset
-
-`presets:` is a list of pages, each one question and the options it is answered
-with. A page is offered once, on a machine that has never answered anything, and
-what it fills in is an ordinary answer from the next page on — visible on the
-settings page, changeable like anything else.
-
-```yaml
-presets:
-  - id: system
-    title: Setup
-    description: Choose what kind of system to install.
-    options:
-      - id: minimal
-        title: Minimal
-        description: Arch Linux on the console only.
-        values:
-          ARCH_OS_DESKTOP_ENABLED: false
-```
-
-An option that names no values fills in nothing, and then the questions behind
-it are simply asked.
-
 ## Adding something
 
 **A new option** — add it to `variables:` in `installer.yaml`. It is on the
@@ -229,11 +210,15 @@ answers it. Guard the tasks that care with `conditions:`.
 **A new step** — make a folder under `tasks/`, write the two files, and `make
 check`. Nothing else has to be told about it.
 
+**A new starting point** — an option under `presets:`. A page is offered once, on
+a machine that has never answered anything, and what it fills in is an ordinary
+answer from the next page on.
+
 **A new language** —
 
 ```sh
-make strings > tasks/_lib/locales/fr.yaml   # every word this tree says, empty
-make check                                  # reports coverage per language
+make strings > locales/fr.yaml   # every word this tree says, empty
+make check                       # reports coverage per language
 ```
 
 The runtime's own words — key hints, buttons, the labels on a failure report —
@@ -242,8 +227,8 @@ are translated separately, in the runtime's own `locales/`.
 ## Requirements
 
 Root, the Arch Linux live image, booted in UEFI mode with Secure Boot off, and a
-network. The `preflight` task checks all four before anything is asked bar the
-keyboard; it belongs to no stage, which is what makes it run first.
+network. `hooks/preflight.sh` checks all four before anything is asked bar the
+keyboard.
 
 ## Trying it out
 
@@ -251,11 +236,10 @@ keyboard; it belongs to no stage, which is what makes it run first.
 DEBUG=true make -C ../runtime run
 ```
 
-Every wall in the preflight steps aside and every task reports success without
-doing anything, so the questions, the wording and the order of the tasks can be
-tried out on an ordinary running system, as an ordinary user. It installs
-nothing. The guard is `simulating && return 0` at the top of each task — see
-`tasks/_lib/lib.sh`.
+Every wall steps aside and every task reports success without doing anything, so
+the questions, the wording and the order of the tasks can be tried out on an
+ordinary running system, as an ordinary user. It installs nothing. The guard is
+`simulating && return 0` at the top of each task — see `lib.sh`.
 
 ## Where the answers go
 

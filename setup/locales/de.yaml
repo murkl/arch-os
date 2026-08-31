@@ -21,10 +21,6 @@ messages:
 
   "Type installer at the prompt to start it again.": "Mit dem Befehl installer startest du ihn wieder."
 
-  # ─── WLAN ──────────────────────────────────────────────────────────────────
-  "WLAN": "WLAN"
-  "Join a wireless network to continue.": "Verbinde dich mit einem WLAN, um fortzufahren."
-
   # ─── Presets ───────────────────────────────────────────────────────────────
   "Setup": "Einrichtung"
   "Choose what kind of system to install. Every detail can still be changed afterwards.": "Wähle, welche Art von System installiert werden soll. Jede Einzelheit lässt sich danach noch ändern."
@@ -153,7 +149,6 @@ messages:
   # ─── Nach der Installation ─────────────────────────────────────────────────
 
   # ─── Was die Tasks tun ─────────────────────────────────────────────────────
-  System check: Systemprüfung
   Build the initial ram disk: Initiale Ramdisk bauen
   Apply the core tweaks: Systemfeinschliff anwenden
   Switch on the system services: Systemdienste einschalten
