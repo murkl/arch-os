@@ -48,10 +48,9 @@ if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
     btrfs subvolume create "${MNT}/@snapshots"
     umount -R "$MNT"
 
-    opts="defaults,noatime,compress=zstd"
-    mount --mkdir -t btrfs -o "${opts},subvol=@" "$root_device" "$MNT"
-    mount --mkdir -t btrfs -o "${opts},subvol=@home" "$root_device" "${MNT}/home"
-    mount --mkdir -t btrfs -o "${opts},subvol=@snapshots" "$root_device" "${MNT}/.snapshots"
+    mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=@" "$root_device" "$MNT"
+    mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=@home" "$root_device" "${MNT}/home"
+    mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=@snapshots" "$root_device" "${MNT}/.snapshots"
 
     # systemd would otherwise make subvolumes of these on first boot, which then
     # show up in every snapshot listing as noise.

@@ -61,11 +61,23 @@ func labelHintFilterKey() string { return say("/ filter") }
 func labelHintFilter() string {
 	return say("type to filter · ↑↓ move · ⏎ select · esc close")
 }
+
+// labelHintFilterBlind is the permanent box's own hint: esc means back rather
+// than close, because there is no box left to close first.
+func labelHintFilterBlind() string {
+	return say("type to filter · ↑↓ move · ⏎ select · esc back")
+}
+
 func labelFilterPlaceholder() string { return say("Filter …") }
 func labelNoMatch() string           { return say("No matches") }
 
 func labelLanguage() string     { return say("Interface language") }
 func labelLanguageHelp() string { return say("Choose the language for this installer.") }
+
+// The fork at the top, where a tree can do more than one thing. Only the page's
+// own name is the runtime's: what is on it, and what each of them is, is said in
+// the tree's own words.
+func labelMode() string { return say("What to do") }
 
 // labelCounter is where something sits in a run of things: which question of
 // how many, which task of how many. Bare numbers, because it is read in the
@@ -87,6 +99,19 @@ func labelPasswordMismatch() string { return say("The entries do not match.") }
 func labelReady() string        { return say("Ready to install") }
 func labelStartInstall() string { return say("Start installation") }
 
+// The same two, where the tree named what is about to happen. An installer is
+// the only thing an unnamed run can be; a named one is whatever it says it is,
+// and the runtime supplies the sentence around the name and nothing else.
+func labelReadyToStart() string          { return say("Ready to start") }
+func labelStartNamed(name string) string { return say("Start %s", name) }
+func labelRunFailed(name string) string  { return say("%s failed", name) }
+func labelRunningFor(name, elapsed string) string {
+	return say("%s · %s", name, elapsed)
+}
+func labelRunDone(name, elapsed string) string {
+	return say("%s complete in %s", name, elapsed)
+}
+
 // The installation, with the clock on it. How long it has been going is the one
 // thing somebody watching a list of tasks actually wants to know and cannot work
 // out for themselves, and how long it took is the same answer once it is over.
@@ -100,6 +125,13 @@ func labelSucceededIn(elapsed string) string {
 func labelFailed() string { return say("Installation failed") }
 func labelLogHint(path string) string {
 	return say("The full log is in %s.", path)
+}
+
+// What a question put in the middle of a run says when the answers to it turn
+// out to be none. A run cannot go on past it — the value it was waiting for
+// does not exist on this machine — so it reads as the failure it is.
+func labelNothingToChoose(title string) string {
+	return say("%s: there is nothing to choose from.", title)
 }
 
 func labelCannotContinue() string { return say("Cannot continue") }

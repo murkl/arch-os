@@ -290,6 +290,21 @@ func (h *harness) asked() *harness {
 	return h
 }
 
+// askedFor waits for the run to stop at a task that needs a value, with its
+// answers fetched and its question answerable.
+func (h *harness) askedFor() *harness {
+	h.t.Helper()
+	deadline := time.Now().Add(20 * time.Second)
+	for time.Now().Before(deadline) {
+		if r, ok := h.m.top().(*runScreen); ok && r.ask != nil && !r.ask.loading && r.settled {
+			return h
+		}
+		h.drain()
+	}
+	h.t.Fatalf("nothing was ever asked for; the page on top is %T", h.m.top())
+	return h
+}
+
 // ─── What comes first ────────────────────────────────────────────────────────
 
 // The one thing that cannot wait for the opening run of questions: a question
@@ -345,6 +360,94 @@ func TestAnAnsweredFirstQuestionIsNotAskedAgain(t *testing.T) {
 		"hooks/online.sh": "exit 1\n",
 	})
 	h.wants("There is no internet connection.").refuses("Language and formats")
+}
+
+// A question marked `blind` is asked before loadkeys has run, so even the key
+// that would normally open the filter is typed on a layout nobody has chosen
+// yet. Its box is up from the first frame, and typing narrows straight away —
+// no / needed first.
+func TestABlindQuestionOpensItsFilterFromTheStart(t *testing.T) {
+	h := newHarness(t, map[string]string{
+		spec.FileInstaller: testInstaller +
+			"  - name: KEYMAP\n    title: Console keyboard\n    required: true\n    first: true\n    blind: true\n    values: [us, de]\n",
+	})
+	h.wants("Console keyboard", "Filter …")
+	h.typeIn("de")
+	h.wants("de").refuses("us")
+}
+
+// ─── What this run is ────────────────────────────────────────────────────────
+
+// A tree that can do more than one thing asks which before anything else
+// follows from it — and what it asks with is entirely the tree's own words.
+// What is chosen then decides which questions there are and what the run is
+// called from there on.
+const testModes = `
+title: Test Installer
+modes:
+  - id: install
+    title: Installation
+    description: Put a system on this machine.
+    confirm: Erasing {{DISK}}.
+    stages: [go, finish]
+  - id: repair
+    title: Recovery
+    description: Open a system already on a disk.
+    confirm: Opening {{DISK}}.
+    stages: [open]
+variables:
+  - name: DISK
+    title: Disk
+    required: true
+    values: [/dev/sda]
+  - name: SNAPSHOT
+    title: Snapshot
+    required: true
+    values: [one, two]
+    mode: repair
+`
+
+// modeFiles is that tree as the files it is made of: one task in each mode, and
+// none of the standard ones.
+var modeFiles = map[string]string{
+	spec.FileInstaller:         testModes,
+	"tasks/a-first/task.yaml":  "name: First\nstage: go\n",
+	"tasks/b-second/task.yaml": "",
+	"tasks/b-second/task.sh":   "",
+	"tasks/c-extras/task.yaml": "",
+	"tasks/c-extras/task.sh":   "",
+	"tasks/d-open/task.yaml":   "name: Open the disk\nstage: open\n",
+	"tasks/d-open/task.sh":     "echo opened\n",
+}
+
+func TestChoosingAModeSettlesTheQuestionsTheWarningAndTheRun(t *testing.T) {
+	h := newHarness(t, modeFiles)
+	h.wants("What to do", "Installation", "Recovery", "Put a system on this machine.")
+
+	h.down().enter() // Recovery
+	h.wants("Disk").enter()
+	h.wants("Snapshot", "one", "two").enter()
+
+	// The hub, the warning and the run are all read in the mode's own name, and
+	// only its own stage runs.
+	h.wants("Recovery", "Open a system already on a disk.").enter()
+	h.wants("Ready to start", "Opening /dev/sda.", "Start Recovery").enter()
+	h.ran()
+	h.wants("Recovery complete in", "Open the disk")
+	h.refuses("First")
+}
+
+func TestAQuestionGuardedByAModeIsNotAskedInTheOther(t *testing.T) {
+	h := newHarness(t, modeFiles)
+	h.enter() // Installation, the row the page opens on
+	h.wants("Disk").enter()
+	h.wants("Installation", "Put a system on this machine.")
+	h.refuses("Snapshot")
+	h.enter()
+	h.wants("Erasing /dev/sda.", "Start Installation").enter()
+	h.ran()
+	h.wants("Installation complete in", "First")
+	h.refuses("Open the disk")
 }
 
 // ─── Starting points ─────────────────────────────────────────────────────────
@@ -628,7 +731,7 @@ func TestSettingsSaysASecretIsAskedForLater(t *testing.T) {
 	h := newHarness(t, nil)
 	h.down().enter().typeIn("moritz").enter().enter()
 	h.down().enter()
-	h.wants("Password", "asked before installing")
+	h.wants("Password", "asked just before the run")
 }
 
 func TestChangingAValueInSettingsShowsTheNewOne(t *testing.T) {
@@ -692,6 +795,24 @@ func TestTheSettingsFilterSurvivesChangingAValue(t *testing.T) {
 	h.wants("Disk", "/dev/sdb").refuses("User name")
 }
 
+// Turning a setting on can call for an answer nothing has asked for yet —
+// extras on means a driver has to be chosen. Backing out of settings must run
+// into that question rather than hand the hub a machine one enter key away
+// from installing without it.
+func TestTurningOnASettingAsksForWhatItNowRequiresOnTheWayOut(t *testing.T) {
+	h := newHarness(t, nil)
+	h.down().enter().typeIn("moritz").enter().enter()
+	h.down().enter()            // Settings
+	h.typeIn("/extras").enter() // the Extras row, currently No
+	h.wants("Extras")
+	h.key(tea.KeyUp).enter() // Yes is the row above No
+	h.wants("Extras", "Yes")
+	h.esc().esc() // close the filter, then leave settings
+	h.wants("Driver", "mesa", "nvidia").refuses("Settings")
+	h.enter() // mesa, the focused row
+	h.wants("Install", "Settings")
+}
+
 // ─── Installing ──────────────────────────────────────────────────────────────
 
 func TestTheConfirmationNamesTheDiskItIsAbout(t *testing.T) {
@@ -746,6 +867,81 @@ func TestAnTaskThatAsksIsOfferedRatherThanRun(t *testing.T) {
 	h.down().enter()
 	h.ran()
 	h.wants("Installation complete", "First", "Second", "Reboot")
+}
+
+// An offer opens on yes unless the task says otherwise, and one that says `no`
+// is answered no by an enter nobody aimed at it — which is the whole point:
+// the run is over, and the offer under it is an extra.
+func TestAnOfferCanOpenOnNo(t *testing.T) {
+	h := newHarness(t, map[string]string{
+		"tasks/d-shell/task.yaml": "name: Shell\nstage: finish\nconfirm: Open a shell?\ndefault: no\n",
+		// Would fail the run if it were ever started.
+		"tasks/d-shell/task.sh": "exit 1\n",
+	})
+	h.down().enter().typeIn("moritz").enter().enter()
+	h.enter().enter()
+	h.typeIn("x").enter().typeIn("x").enter()
+
+	h.asked()
+	h.wants("Shell", "Open a shell?", "Yes", "No")
+
+	h.enter()
+	h.ran()
+	h.wants("Installation complete", "Shell")
+}
+
+// A value that could not have been known before the work started: the run
+// stops where the list of tasks was, asks, and carries on with the answer — and
+// the offer after it can name what was just chosen.
+func TestATaskCanAskForAValueInTheMiddleOfTheRun(t *testing.T) {
+	h := newHarness(t, map[string]string{
+		spec.FileInstaller: testInstaller + `
+  - name: SNAPSHOT
+    title: Snapshot
+    description: Which one to go back to.
+    required: true
+    command: printf 'one\ntwo\n'
+`,
+		"tasks/d-roll/task.yaml": "name: Roll back\nstage: finish\nasks: SNAPSHOT\nconfirm: Replace @ with {{SNAPSHOT}}?\n",
+		"tasks/d-roll/task.sh":   "echo rolled\n",
+	})
+	h.down().enter().typeIn("moritz").enter().enter()
+	h.enter().enter()
+	h.typeIn("x").enter().typeIn("x").enter()
+
+	h.askedFor()
+	h.wants("Roll back", "Which one to go back to.", "one", "two")
+
+	// The answer is stored, and the offer that follows reads it back.
+	h.down().enter()
+	h.asked()
+	h.wants("Replace @ with two?")
+	if got := h.a.store.Get("SNAPSHOT"); got != "two" {
+		t.Errorf("SNAPSHOT = %q, want two", got)
+	}
+
+	h.enter()
+	h.ran()
+	h.wants("Installation complete", "Roll back")
+}
+
+// A question the run stopped for that turns out to have no answers is the end
+// of the run: the work has happened, and what it was waiting for is not here.
+func TestAskingForSomethingThatIsNotThereEndsTheRun(t *testing.T) {
+	h := newHarness(t, map[string]string{
+		spec.FileInstaller: testInstaller + `
+  - name: SNAPSHOT
+    title: Snapshot
+    command: "true"
+`,
+		"tasks/d-roll/task.yaml": "name: Roll back\nstage: finish\nasks: SNAPSHOT\n",
+		"tasks/d-roll/task.sh":   "echo never\n",
+	})
+	h.down().enter().typeIn("moritz").enter().enter()
+	h.enter().enter()
+	h.typeIn("x").enter().typeIn("x").enter()
+	h.ran()
+	h.wants("Installation failed", "there is nothing to choose from")
 }
 
 // Nothing typed while a run is going may dismiss its result, and nothing said

@@ -21,6 +21,12 @@ import (
 type filter struct {
 	input textinput.Model
 	open  bool
+
+	// permanent is set for the one question asked before loadkeys has run:
+	// its box opens already open and never closes, because the key that
+	// would otherwise open or close it is typed on a layout nobody has
+	// chosen yet.
+	permanent bool
 }
 
 // filterKey opens the box. Slash rather than a letter, because a list already
@@ -28,12 +34,18 @@ type filter struct {
 // what a terminal has meant by "narrow this" since long before this program.
 const filterKey = "/"
 
-func newFilter() *filter {
-	f := &filter{}
+// newFilter builds the box closed, the shape every list but one wants. blind
+// is the one exception — see permanent — and opens it already focused.
+func newFilter(blind bool) *filter {
+	f := &filter{permanent: blind}
 	f.input = textinput.New()
 	f.input.Placeholder = labelFilterPlaceholder()
 	f.input.CharLimit = 64
 	styleInput(&f.input)
+	if blind {
+		f.open = true
+		f.input.Focus()
+	}
 	return f
 }
 
@@ -55,6 +67,12 @@ func (f *filter) Update(key tea.KeyMsg) (took bool, cmd tea.Cmd) {
 		return true, textinput.Blink
 	}
 	switch {
+	// The permanent box has nothing to close, so what would close it instead
+	// leaves the question the same way it would have if the box had never
+	// been there: esc and an empty backspace are handed on rather than acted
+	// on here.
+	case f.permanent && (cancels(key) || erases(key) && f.input.Value() == ""):
+		return false, nil
 	// Backspace closes the box too, but not while there is a character left in
 	// it: there it is the delete key first.
 	case cancels(key), erases(key) && f.input.Value() == "":
@@ -118,6 +136,8 @@ func filterHint(base string, f *filter) string {
 	switch {
 	case f == nil:
 		return base
+	case f.permanent:
+		return labelHintFilterBlind()
 	case f.open:
 		return labelHintFilter()
 	}

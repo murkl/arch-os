@@ -1,0 +1,11 @@
+name: Rebuild the boot files
+stage: repair
+needs: [recovery-rollback]
+conditions: ARCH_OS_RECOVERY_FILESYSTEM == btrfs
+confirm: |
+  Rebuild the kernel images and the initial ram disks?
+
+  Needed when the rollback went back past a kernel update: the modules in the
+  restored system and the images in /boot are then two different kernels, and
+  the machine comes up without a single module. Everything is taken from the
+  package cache, so this needs no network.

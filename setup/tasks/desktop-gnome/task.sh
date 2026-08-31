@@ -93,13 +93,39 @@ mkdir -p "${MNT}/etc/gdm"
 sed -i 's/auth\s\+optional\s\+pam_gnome_keyring\.so$/& try_first_pass/' "${MNT}/etc/pam.d/gdm-password"
 
 # Under automatic login GDM never sees a password, so PAM has none to unlock the
-# keyring with. It is created empty now, before the first boot, rather than from
-# the first-login script — that would race GDM's own PAM hook, which runs on the
-# same login before anything of ours gets a turn. The data is still behind disk
-# encryption wherever this applies by default.
+# keyring with. The way out that GNOME itself documents is a login keyring with
+# no password: the daemon then opens it on its own at the start of the session,
+# and nothing ever asks. The data is still behind disk encryption wherever this
+# applies by default — which is exactly where automatic login switches itself on.
+#
+# It is created now, before the first boot, rather than from the first-login
+# script: that would race GDM's own PAM hook, which runs on the same login
+# before anything of ours gets a turn.
+#
+# https://wiki.archlinux.org/title/GNOME/Keyring#Passwords_are_not_remembered
 if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
-    as_user 'dbus-run-session -- gnome-keyring-daemon --unlock <<< ""' ||
-        echo "could not pre-create a passwordless login keyring"
+    keyrings="/home/${ARCH_OS_USERNAME}/.local/share/keyrings"
+
+    # gnome-keyring-daemon needs a session bus and a runtime directory of its
+    # own, and inside a chroot there is neither — /run/user/<uid> is made by
+    # logind at a login that has not happened yet. It goes under /tmp, which
+    # arch-chroot mounts as a tmpfs of its own, so nothing of it can reach the
+    # installed system however this ends.
+    runtime="/tmp/keyring"
+    arch-chroot "$MNT" install -d -m 700 -o "$ARCH_OS_USERNAME" -g "$ARCH_OS_USERNAME" "$runtime"
+    as_user "XDG_RUNTIME_DIR=${runtime} dbus-run-session -- gnome-keyring-daemon --unlock <<< ''" || true
+
+    if [ -f "${MNT}${keyrings}/login.keyring" ]; then
+        echo "created a passwordless login keyring"
+    else
+        echo "could not pre-create a passwordless login keyring — the desktop will ask for one on first use" >&2
+    fi
+
+    # The daemon forks and stays behind once it has written the keyring. Nothing
+    # here needs it any more, and a process of the target still running is a
+    # mount that will not come down at the end of the installation. The name is
+    # what the kernel truncates it to.
+    arch-chroot "$MNT" pkill -u "$ARCH_OS_USERNAME" -x gnome-keyring-d || true
 fi
 
 # ─── The user's environment ──────────────────────────────────────────────────

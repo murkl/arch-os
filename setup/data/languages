@@ -1,16 +1,13 @@
-# What a language implies: the keyboard it is typed on — in the console's names
-# and in xkb's — and the font the console can draw it in.
-#
-# The key is a locale or the language in front of it, and the longer match wins:
-# de_CH is not de, and pt_BR is not pt. A language nobody wrote a row for falls
-# back to the American layout, which is what an unlabelled keyboard is.
-#
-# The font is about the script rather than the language. eurlatgr draws every
-# European alphabet including Greek, latarcyrheb-sun16 the Cyrillic, Hebrew and
-# Arabic ones, and none is the honest answer for the languages a text console has
-# no glyphs for at all.
-#
 # language  console keymap  xkb layout  console font
+#
+# What a language implies: the keyboard it is typed on — in the console's
+# names and in xkb's — and the font the console can draw it in. language is a
+# locale or the language in front of it, longer match wins (de_CH is not de);
+# unlisted falls back to the American layout. font is about the script rather
+# than the language — none is the honest answer for a text console with no
+# glyphs for it at all.
+#
+# Validate against: localectl list-keymaps, ./x11-layouts, /usr/share/i18n/SUPPORTED
 af          us              za          eurlatgr
 ar          us              ara         latarcyrheb-sun16
 be          by              by          latarcyrheb-sun16
@@ -58,7 +55,6 @@ nb          no-latin1       no          eurlatgr
 nl          nl              nl          eurlatgr
 nl_BE       be-latin1       be          eurlatgr
 nn          no-latin1       no          eurlatgr
-no          no-latin1       no          eurlatgr
 pl          pl              pl          eurlatgr
 pt          pt-latin1       pt          eurlatgr
 pt_BR       br-abnt2        br          eurlatgr

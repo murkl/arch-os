@@ -14,31 +14,10 @@ MNT=/mnt
 # The tables looked up below, beside this file.
 DATA="$(dirname "${BASH_SOURCE[0]}")/data"
 
-# The folder of the task that called it, where a unit keeps the files it ships
-# with.
-where() { dirname "${BASH_SOURCE[1]}"; }
-
-# ─── Simulation ──────────────────────────────────────────────────────────────
-
-# DEBUG=true runs the whole installer without touching the machine: every wall
-# steps aside and every task reports success without doing anything. Each task
-# guards itself with `simulating && return 0` as its first line, so a unit can
-# only ever be skipped as a whole.
-: "${DEBUG:=false}"
-
-simulating() {
-    [ "$DEBUG" = "true" ] || return 1
-    echo "simulated: ${BASH_SOURCE[1]}"
-    sleep 1 # so the unit is visible in the interface rather than flashing past
-}
-
-# ─── Network ─────────────────────────────────────────────────────────────────
-
-# Real HTTPS to a host the installation needs anyway, not a ping — a captive
-# portal answers pings.
-is_online() {
-    curl -Lsf --connect-timeout 5 --max-time 15 https://archlinux.org >/dev/null
-}
+# Shell that knows nothing about Arch OS — DEBUG, is_online, part_of and the
+# rest — sourced first so everything below can lean on it.
+# shellcheck source=util.sh
+source "$(dirname "${BASH_SOURCE[0]}")/util.sh"
 
 # ─── What a language and a country imply ─────────────────────────────────────
 #
@@ -80,12 +59,7 @@ live_keymap() {
 
 # ─── Values that are worked out rather than asked for ────────────────────────
 #
-# `auto` and `none` are the two words the lists in installer.yaml share, and
-# neither ever reaches a task. They are not the same test: auto is a value still
-# to be found, none is the value itself — the empty answer said out loud.
-
-is_auto() { [ -z "$1" ] || [ "$1" = "auto" ]; }
-not_none() { [ "$1" = "none" ] || printf '%s' "$1"; }
+# is_auto and not_none, used throughout this section, are defined in util.sh.
 
 # What each list comes to when it is left on auto. Named rather than inlined
 # because the question page shows the same answer beside its auto row.
@@ -146,13 +120,14 @@ auto_microcode() {
 # by a password at boot, so a second one at the login screen protects nothing.
 auto_autologin() { printf '%s' "${ARCH_OS_ENCRYPTION_ENABLED:-false}"; }
 
-# part_of names a partition of a disk. Devices whose name ends in a digit —
-# nvme0n1, mmcblk0, loop0 — put a p between the disk and the number.
-part_of() {
-    local sep=""
-    [[ "$1" =~ [0-9]$ ]] && sep="p"
-    printf '%s%s%s' "$1" "$sep" "$2"
-}
+# ─── Disks and partitions ─────────────────────────────────────────────────────
+#
+# disk_options and part_of, used below, are defined in util.sh.
+
+# How this project mounts btrfs, written down once: the installation lays the
+# file system out with these and the recovery has to put it back exactly as it
+# found it, so the two must never drift apart.
+BTRFS_OPTS="defaults,noatime,compress=zstd"
 
 # Resolved once here rather than in one stage, so every stage sees the same
 # answer however it was arrived at.
@@ -175,6 +150,21 @@ ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$(not_none "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT"
 locale_gen_lines() {
     sed "/^#${ARCH_OS_LOCALE_LANG}/s/^#//" /etc/locale.gen | grep "^${ARCH_OS_LOCALE_LANG}" || true
     echo 'en_US.UTF-8 UTF-8'
+}
+
+# The console keyboard and font of the new system, written into it.
+#
+# A function rather than four lines in the task that configures the system,
+# because it is needed once before that: the kernel's own package hook builds a
+# ram disk during pacstrap, and mkinitcpio's sd-vconsole hook reads this file
+# while it does. Without it that build warns and falls back to a US layout —
+# which the ram disk built later replaces, but not before the warning has sent
+# somebody looking for a keyboard problem that was never there.
+write_vconsole() {
+    mkdir -p "${MNT}/etc"
+    echo "KEYMAP=${ARCH_OS_VCONSOLE_KEYMAP}" >"${MNT}/etc/vconsole.conf"
+    [ -n "$ARCH_OS_VCONSOLE_FONT" ] && echo "FONT=${ARCH_OS_VCONSOLE_FONT}" >>"${MNT}/etc/vconsole.conf"
+    return 0
 }
 
 # Loading the keyboard on the machine the installer is running on, which is what
@@ -211,6 +201,20 @@ secure_boot_wanted() {
 # usually still in place. Read from the UEFI variable rather than parsed out of
 # `sbctl status`, whose output is meant for humans: the first four bytes are
 # attributes, the fifth holds the value.
+# What mkinitcpio builds for this system, as paths inside it: two unified kernel
+# images where the boot chain is signed, and the two plain ram disks everywhere
+# else. Named here because two tasks have to agree about it — the one that sets
+# the preset up, and the one that checks what came out of it.
+kernel_images() {
+    if secure_boot_wanted; then
+        echo "/boot/EFI/Linux/arch-${ARCH_OS_KERNEL}.efi"
+        echo "/boot/EFI/Linux/arch-${ARCH_OS_KERNEL}-fallback.efi"
+        return 0
+    fi
+    echo "/boot/initramfs-${ARCH_OS_KERNEL}.img"
+    echo "/boot/initramfs-${ARCH_OS_KERNEL}-fallback.img"
+}
+
 secure_boot_setup_mode() {
     local efivar=/sys/firmware/efi/efivars/SetupMode-8be4df61-93ca-11d2-aa0d-00e098032b8c
     [ -r "$efivar" ] || return 1
@@ -322,11 +326,36 @@ on_first_login() { cat >>"$FIRST_LOGIN"; }
 # Everything the installation mounted, taken back down in the right order. Used
 # by the task that only unmounts, by the one that restarts, and by the hooks
 # below, so none of them can ever do it differently.
+#
+# Written to the disk before anything is taken down, so a target that will not
+# unmount is a mount left standing rather than a file half written. The second
+# go is deliberately unguarded: a target still held after everything using it
+# was killed is a real failure and belongs on the screen with the command that
+# hit it.
 unmount_target() {
     swapoff -a || true
-    umount -A -R "$MNT"
+    sync
+    if ! umount -A -R "$MNT"; then
+        free_target
+        umount -A -R "$MNT"
+    fi
     [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
     echo "unmounted"
+}
+
+# Whatever still has the target open, named in the log and then killed. Once the
+# tasks are done nothing on this machine has any business inside the new system,
+# so what turns up here is a process a package hook or a chroot left running —
+# and the pause is what the kernel needs to let go of its files afterwards.
+#
+# -M is the whole safety of it: without it, a target that is not a mount point
+# resolves to the file system containing it, which on the live image is the live
+# image — and the kill would take this installer and everything else with it.
+free_target() {
+    echo "the target did not unmount, what is holding it:"
+    fuser -Mvm "$MNT" || true
+    fuser -Mkm "$MNT" || true
+    sleep 2
 }
 
 # What the restart and shutdown hooks do. Whatever the installation had mounted
@@ -336,6 +365,21 @@ unmount_target() {
 # last.
 leave_machine() {
     simulating && return 0
-    unmount_target || true
+    if [ "$INSTALLER_MODE" = "recovery" ]; then
+        recovery_unmount || true
+    else
+        unmount_target || true
+    fi
     systemctl "$1"
 }
+
+# ─── The recovery ────────────────────────────────────────────────────────────
+
+# The other thing this tree does, kept in a file of its own: everything above is
+# what an installation shares, everything there is what a recovery shares, and
+# the two only meet in MNT and in the handful of helpers above.
+#
+# Sourced last, so it can use them. Nothing declares it — it is beside this file
+# under its own name, the way everything else in this tree is found.
+# shellcheck source=recovery.sh
+source "$(dirname "${BASH_SOURCE[0]}")/recovery.sh"

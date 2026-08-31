@@ -48,11 +48,16 @@ messages:
   "Cannot continue": "Installation nicht möglich"
   "Interface language": "Sprache der Oberfläche"
   "Choose the language for this installer.": "Sprache für diesen Installer wählen."
+
+  # Die Gabelung ganz vorn, wo ein Ordner mehr als eine Sache kann. Wie die
+  # einzelnen heißen, sagt der Ordner selbst.
+  "What to do": "Was getan werden soll"
+  "What this run does": "Was dieser Durchlauf tut"
   "Install": "Installieren"
   "Start the installation with the answers below.": "Die Installation mit den bisherigen Angaben starten."
   "Settings": "Einstellungen"
   "Every value this installer will use. Choose one to change it.": "Alle Werte, mit denen dieser Installer arbeitet. Zum Ändern einen davon öffnen."
-  "asked before installing": "wird vor der Installation abgefragt"
+  "asked just before the run": "wird kurz vor dem Start abgefragt"
   "Repeat": "Wiederholen"
   "The entries do not match.": "Die Eingaben stimmen nicht überein."
   "Ready to install": "Bereit zur Installation"
@@ -62,6 +67,18 @@ messages:
   "%d of %d": "%d von %d"
   "Installation complete in %s": "Installation abgeschlossen in %s"
   "Installation failed": "Installation fehlgeschlagen"
+
+  # Dieselben Sätze, wo der Ordner dem Durchlauf einen Namen gegeben hat. Der
+  # Name steht darin, die Runtime steuert nur den Satz drumherum bei.
+  "Ready to start": "Bereit zum Start"
+  "Start %s": "%s starten"
+  "%s · %s": "%s · %s"
+  "%s complete in %s": "%s abgeschlossen in %s"
+  "%s failed": "%s fehlgeschlagen"
+
+  # Eine Frage mitten im Durchlauf, auf die es keine Antwort gibt: Die Arbeit
+  # ist getan, und das, worauf sie wartet, liegt auf diesem Rechner nicht vor.
+  "%s: there is nothing to choose from.": "%s: Es gibt nichts zur Auswahl."
 
   # Der Weg hinaus. Auf einem Rechner, der nur zum Installieren gestartet wurde,
   # heißt Beenden nicht, ein Programm zu schließen, sondern zu entscheiden, was

@@ -33,17 +33,24 @@ sed -e "s|{{PKG}}|${pkg}|g" -e "s|{{SUDO}}|${sudo_prefix}|g" "${data}/aliases" |
 
 # ─── Shell configuration ─────────────────────────────────────────────────────
 # bash is the shell every task and hook runs in, so it is always configured;
-# zsh or fish, chosen in ARCH_OS_SHELL_ENHANCEMENT_SHELL, is what bash then
-# hands over to outside a text console — see shell-handover.
+# zsh or fish is chosen in ARCH_OS_SHELL_ENHANCEMENT_SHELL, and the two become
+# the shell that opens in different ways.
+#
+# zsh becomes the login shell outright, with chsh, because that is what a login
+# shell is for and because everything that runs one — a terminal, ssh, a
+# service — then gets it without having to be told. fish cannot: it is not a
+# POSIX shell, and a login shell that cannot read a POSIX profile breaks things
+# that have nothing to do with the terminal. So fish is handed over to from
+# .bashrc instead — see shell-handover.
 shell="$ARCH_OS_SHELL_ENHANCEMENT_SHELL"
 
 marker=$'# {{SHELL_HANDOVER}}\n'
 bashrc="$(cat "${data}/bashrc")"
-if [ "$shell" = "bash" ]; then
-    bashrc="${bashrc/$marker/}"
-else
+if [ "$shell" = "fish" ]; then
     handover="$(sed "s/{{SHELL}}/${shell}/g" "${data}/shell-handover")"$'\n'
     bashrc="${bashrc/$marker/$handover}"
+else
+    bashrc="${bashrc/$marker/}"
 fi
 printf '%s\n' "$bashrc" | tee "${MNT}/root/.bashrc" "${home}/.bashrc" >/dev/null
 
@@ -53,6 +60,10 @@ case "$shell" in
 zsh)
     chroot_pacman_install zsh zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search
     tee "${MNT}/root/.zshrc" "${home}/.zshrc" <"${data}/zshrc" >/dev/null
+    # For both accounts, because the shell is the same shell whoever is logged
+    # in. /etc/shells already lists it, which is what chsh checks against.
+    arch-chroot "$MNT" chsh -s /usr/bin/zsh root
+    arch-chroot "$MNT" chsh -s /usr/bin/zsh "$ARCH_OS_USERNAME"
     ;;
 fish)
     chroot_pacman_install fish

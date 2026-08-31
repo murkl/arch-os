@@ -1,5 +1,8 @@
-# X11 keyboard layouts, as GNOME offers them.
+# One xkb layout code per line, as GNOME offers them.
+#
 # Kept here because the Arch live image ships no xkeyboard-config to ask.
+#
+# Validate against: localectl list-x11-keymap-layouts
 af
 al
 am

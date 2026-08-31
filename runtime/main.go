@@ -114,6 +114,9 @@ func inspect(dir string) error {
 	fmt.Printf("  title      %s\n", sp.UI.Title)
 	fmt.Printf("  variables  %d (%d required, %d secret)\n", len(sp.Vars), required, secret)
 	fmt.Printf("  presets    %d\n", len(sp.Presets))
+	if sp.Asked() {
+		fmt.Printf("  modes      %s\n", strings.Join(modes(sp), " "))
+	}
 	fmt.Printf("  stages     %s\n", strings.Join(sp.Stages, " "))
 	fmt.Printf("  tasks      %d\n", len(sp.Tasks))
 	fmt.Printf("  hooks      %s\n", strings.Join(hooks(sp), " "))
@@ -178,6 +181,14 @@ func run(dir, conf string) error {
 	if err := st.Load(); err != nil {
 		return err
 	}
+	// Which of the tree's modes this run is in, settled before the first page so
+	// that every condition, every script and the answer file read the same thing
+	// from the start. Whatever was chosen last if it is still on offer, otherwise
+	// the first the tree names — which is also the whole of it for a tree that
+	// does one thing and is never asked.
+	if sp.Mode(st.Get(spec.ModeVar)) == nil {
+		st.Set(spec.ModeVar, sp.Modes[0].ID)
+	}
 
 	// The log is opened before the interface, so that anything the first page
 	// does is already being recorded — and only now, because where it goes is
@@ -204,6 +215,15 @@ func run(dir, conf string) error {
 	rn.Settle()
 
 	return tui.Run(sp, st, rn, version, langs, sources)
+}
+
+// modes is what this tree can do, in the order it offers it.
+func modes(sp *spec.Spec) []string {
+	out := make([]string, len(sp.Modes))
+	for i, m := range sp.Modes {
+		out[i] = m.ID
+	}
+	return out
 }
 
 // hooks is which of the hooks this tree actually has, in the order the runtime

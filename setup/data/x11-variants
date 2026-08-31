@@ -1,5 +1,11 @@
-# X11 keyboard variants per layout: <layout> <variant> <variant> ...
+# layout  variant  variant ...
+#
 # Kept here because the Arch live image ships no xkeyboard-config to ask.
+# "legacy" and "olpc" variants are left out on purpose — obscure keyboards
+# nobody is offered a question for.
+#
+# Validate against: the "! variant" section of
+# /usr/share/xkeyboard-config-2/rules/base.lst
 af ps uz
 al plisi veqilharxhi
 am phonetic phonetic-alt eastern eastern-alt western

@@ -17,5 +17,22 @@ fi
 
 chroot_aur_install plymouth-theme-arch-os
 
-# -R rebuilds the ram disk, which is what actually puts the theme in it.
-arch-chroot "$MNT" plymouth-set-default-theme -R arch-os
+# The theme first, then the ram disk it goes into. Split rather than done in one
+# go with `plymouth-set-default-theme -R`: that command ends on `exit 0`
+# whatever mkinitcpio made of the rebuild, so an image that failed to build
+# would leave this task looking like it worked and the machine booting without a
+# splash.
+arch-chroot "$MNT" plymouth-set-default-theme arch-os
+arch-chroot "$MNT" mkinitcpio -P
+
+# And what was built rather than what was asked for. plymouth's is a build hook
+# like any other: when it cannot find the theme's plugin or its font it says so
+# and gives up, and mkinitcpio finishes the image without it. That image boots
+# perfectly well — it simply has no splash in it, which is the one outcome
+# nobody would go looking for the cause of.
+for image in $(kernel_images); do
+    if ! arch-chroot "$MNT" lsinitcpio "$image" | grep -q 'plymouthd'; then
+        echo "plymouth is missing from ${image}" >&2
+        exit 1
+    fi
+done

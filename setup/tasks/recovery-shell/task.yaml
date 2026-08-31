@@ -1,0 +1,10 @@
+name: Open a shell in the system
+stage: repair
+needs: [recovery-kernel]
+tty: true
+confirm: |
+  Open a shell inside the system on {{ARCH_OS_RECOVERY_DISK}}?
+
+  Everything is mounted, so this is where anything the recovery does not do by
+  itself gets fixed by hand — a package reinstalled, a config file put back.
+  Leave it again with `exit`.

@@ -58,6 +58,8 @@ confirm: |               # the last thing read before anything changes
 
 console: Type installer to start it again.   # optional: read on the way out
 
+modes: …                 # optional: the several things this tree can do
+
 presets:                 # pages of starting points, offered on a machine with no answers
   - id: system
     title: Setup                    # the page's own name and sentence
@@ -67,7 +69,7 @@ presets:                 # pages of starting points, offered on a machine with n
         title: Desktop
         description: A full GNOME desktop.
         values:
-          ARCH_OS_DESKTOP_ENABLED: true
+          ARCH_OS_DESKTOP: gnome
 
 variables:
   - name: ARCH_OS_USERNAME     # reaches every script as an environment variable
@@ -82,6 +84,52 @@ variables:
 
 `confirm` is filled in from the answers, so it names the disk it is about rather
 than warning in the abstract.
+
+### `modes:`
+
+A tree that does more than one thing says so, and the program asks which before
+anything follows from it. An installer that can also repair what it installed is
+not one program with a switch in it: the two ask different questions, do
+different work, and are dangerous in different ways.
+
+```yaml
+modes:
+  - id: install
+    title: Installation                      # the row, and what the run is called
+    description: Put Arch Linux on this machine.
+    confirm: |                               # this mode's own last warning
+      Arch Linux will be installed on {{ARCH_OS_DISK}}.
+    stages: [prepare, disk, base, finish]    # this mode's own phases
+
+  - id: recovery
+    title: Recovery
+    description: Repair a system that is already on a disk.
+    confirm: |
+      The system on {{ARCH_OS_RECOVERY_DISK}} will be opened.
+    stages: [open, repair, close]
+```
+
+`stages` and `confirm` then belong to a mode rather than to the installer, and
+declaring them in both places is refused — there is one place each is written
+down. A tree that declares no modes keeps them at the top level and has exactly
+one, unnamed: it is never asked, and nothing about the idea reaches it.
+
+**A task says which mode it is in by naming a stage**, which it did anyway. No
+two modes may claim the same stage, so the two can never disagree. A **variable**
+or a **preset** says so with `mode:`, and one that names none belongs to every
+mode — which is what the questions asked before the fork want, since there is no
+answer yet to say which mode they are for:
+
+```yaml
+- name: ARCH_OS_RECOVERY_DISK
+  title: Disk
+  mode: recovery
+```
+
+`mode:` is a key of its own rather than a condition because there is nothing to
+compare: a row is one mode's or it is everybody's. The answer reaches every
+script as `INSTALLER_MODE`, so a hook that has to differ — a preflight that
+demands a network to install and not to repair — reads it there.
 
 ### `hooks/`
 
@@ -126,19 +174,34 @@ left it is looking at a bare prompt.
 ```yaml
 name: Install the graphics driver    # the line somebody reads while they wait
 stage: desktop                       # one of the stages, which is what puts it in the run
-needs: [desktop]                     # ordered after these, inside the same stage
+needs: [desktop-gnome]               # ordered after these, inside the same stage
 conditions:                          # every one has to hold, or it is not in the run at all
-  - ARCH_OS_DESKTOP_ENABLED == true
+  - ARCH_OS_DESKTOP != none
   - ARCH_OS_DESKTOP_GRAPHICS_DRIVER != none
 ```
 
-Three more keys change what a unit *is* rather than what it does:
+Five more keys change what a unit *is* rather than what it does:
 
 | | |
 |---|---|
+| `asks: VAR` | the run stops and asks for that value before this one runs |
 | `confirm:` | asked as a yes or no in the frame before it runs; declining skips it |
+| `default: no` | that offer opens on no instead of on yes |
 | `quits: true` | the program does not come back from this one — a reboot |
 | `tty: true` | the interface stands aside and the script has the terminal, whole |
+
+**`asks:`** is for the value that could not have been known before the work
+started — the snapshot to go back to, once the disk holding them is open. The
+question stands where the list of tasks was rather than on a page of its own: a
+run is one thing happening, and it stopped to ask. It comes before `confirm:`,
+so an offer can name what was just chosen.
+
+The variable it names must be one with a set of answers — a list is what the
+frame can put there — and never a secret, which is already asked for at the one
+moment it is safe to. Being named by a task is the whole declaration: the value
+is then left out of the opening questions and off the settings page, because
+until that task's turn there is nothing to choose from. It is asked every time,
+whatever the answer file says.
 
 Nothing lists the tasks: the folder is the list, and the order comes out of
 the stages and the needs. A unit added is a step added, and the two can never
@@ -160,7 +223,7 @@ Decided by the declaration rather than by a switch:
 Further fields: `default` (any scalar — `true`, `8`, `pc105`), `prefill` (shell
 printing a suggestion), `apply` (shell run when the answer takes effect), `first`
 (asked before everything else), `free` (a row under a list that opens a text
-box), and `conditions`.
+box), `mode` (the mode it belongs to), and `conditions`.
 
 `true` and `false` are read out loud as Yes and No wherever they turn up, not
 only under `type: bool` — so `values: [auto, true, false]` is a bool with a
@@ -230,6 +293,9 @@ In this order, and each page shown only if there is something on it:
   is on offer. Afterwards it is a row in the settings.
 - **The `first` questions**, unnumbered — the few that cannot wait, because
   everything after them is typed on the keyboard they settle.
+- **What to do**, if the tree declares more than one mode. It sits here because
+  it is a decision, and a decision taken on a keyboard nobody has chosen yet is
+  not one — and because everything after it depends on the answer.
 - **Network**, if the tree has an `online.sh` hook, since every stage past it
   downloads something.
 - **The check**, if the tree has a `preflight.sh` hook. A failure here is a wall.
@@ -246,8 +312,9 @@ In this order, and each page shown only if there is something on it:
 - **Installing** — a list of tasks filling in from the top, and nothing else.
   Not one line of what any script printed: a package manager's progress bars are
   not information here, they are noise with escape codes in it. All of it goes to
-  the log. A task that asks stops the list to ask, and a declined one keeps
-  its row, marked as passed over.
+  the log. A task that asks stops the list to ask — for a yes or no, or for a
+  value it declared with `asks:` — and a declined one keeps its row, marked as
+  passed over.
 - **A failure** — what the tool said, then which script, which line, which
   command, which exit code, then where the rest is written down.
 - **The way out**, where the tree declared one: a restart, a shutdown, and —
@@ -281,6 +348,7 @@ Every declared variable under its own name, answered or not, plus:
 | `INSTALLER_CONF` | the answer file |
 | `INSTALLER_LOG` | the log |
 | `INSTALLER_LANG` | the language showing |
+| `INSTALLER_MODE` | the mode this run is in, where the tree declares any |
 | `INSTALLER_VERSION` | the runtime's version |
 
 Scripts are **sourced** into a shell that already carries an `ERR` trap and,

@@ -18,24 +18,47 @@ accident.
 ## What is where
 
 ```
-installer.yaml           what the installer is, what it asks, what order it works in
+installer.yaml           what this image can do, what it asks, what order it works in
 tasks/<id>/task.yaml     where that unit belongs: its stage, its needs, its conditions
 tasks/<id>/task.sh       what it does — and any file it ships with, beside it
-hooks/<name>.sh          everything around the installation itself
-lib.sh                   what every script shares, sourced before each one
+hooks/<name>.sh          everything around the work itself
+lib.sh                   what every script of an installation shares, sourced before each one
+util.sh                  general shell with no idea what Arch OS is, sourced by lib.sh
+recovery.sh              what every script of a recovery shares, sourced by lib.sh
 data/                    the tables a language and a country are looked up in
 locales/                 one <code>.yaml per language this installer speaks
 ```
 
 Nothing points at any of this from `installer.yaml`: each part is found by its
-own name. `tasks/` is only Arch Linux — the steps that build a system on a disk.
-Everything else the program does is a hook.
+own name. `tasks/` is only Arch Linux — the steps that build a system on a disk,
+and the steps that put a broken one back. Everything else the program does is a
+hook.
+
+## The two things this image does
+
+`installer.yaml` declares two **modes**, and the program asks which one this run
+is right after the console keyboard — before the network screen, before the
+check, before the starting points, because every one of those depends on the
+answer.
+
+| | |
+|---|---|
+| `install` | put Arch Linux on this machine — stages `prepare` … `finish` |
+| `recovery` | repair one that is already on a disk — stages `open`, `repair`, `close` |
+
+A task belongs to whichever mode owns the stage it names, so nothing says it
+twice. A question says so with `mode:`, and one that says nothing belongs to
+both — which is exactly the console keyboard, asked before there is a mode for
+it to belong to. Both halves reach every script as `INSTALLER_MODE`, which is
+what `hooks/preflight.sh` and `hooks/online.sh` branch on: a recovery downloads
+nothing and has no opinion about this machine's firmware, so neither a network
+nor UEFI is a wall in front of it.
 
 ## Tasks
 
 Every folder under `tasks/` is a step, and nothing lists them: the folder is the
-list. `installer.yaml` declares the stages, top to bottom; every task names one,
-and `needs:` orders the ones that share a stage.
+list. Each mode in `installer.yaml` declares its stages, top to bottom; every
+task names one, and `needs:` orders the ones that share a stage.
 
 ```yaml
 # tasks/aur-helper/task.yaml
@@ -55,6 +78,9 @@ conditions: ARCH_OS_AUR_HELPER != none
 | `desktop` | GNOME, its driver, and what belongs to it |
 | `finalize` | the last things done to the new system |
 | `finish` | what is offered once it is installed |
+| `open` | *(recovery)* the installed system unlocked and mounted at `/mnt` |
+| `repair` | *(recovery)* rolled back, made bootable again, worked in by hand |
+| `close` | *(recovery)* unmounted, and the disk locked again |
 
 Three orderings are load bearing, and each is written down as a `needs:` or as a
 stage: the disk exists before anything is installed onto it, 32-bit support is
@@ -104,10 +130,12 @@ removes itself.
 
 ### Tasks that ask, and one that takes the terminal
 
-Three keys change what a unit is rather than what it does:
+Five keys change what a unit is rather than what it does:
 
 ```yaml
+asks: ARCH_OS_RECOVERY_SNAPSHOT                   # a value, asked mid-run, before the offer
 confirm: Restart into {{ARCH_OS_HOSTNAME}} now?   # a yes or no in the frame; no skips it
+default: no                                       # which of the two that offer opens on
 quits: true                                       # the program does not come back from this
 tty: true                                         # hand it the terminal, and take it back after
 ```
@@ -115,6 +143,11 @@ tty: true                                         # hand it the terminal, and ta
 That is how everything after the installation — a copy of the answers, a shell
 in the new system, a restart, an unmount — is a task of the `finish` stage like
 any other, rather than a page of its own.
+
+`asks:` is what the rollback needs and nothing else does: the snapshots on a
+disk cannot be listed before that disk has been unlocked and mounted, which is
+the task before it. So the question is asked in the middle of the run, and the
+`confirm:` under it names the snapshot that was just chosen.
 
 ## Hooks
 
@@ -125,8 +158,8 @@ loads, so a typo is a message at startup rather than a hook that never runs.
 
 | | |
 |---|---|
-| `preflight.sh` | root, UEFI, Secure Boot off, the live image, a network — all four before anything is asked bar the keyboard |
-| `online.sh` | whether there is internet |
+| `preflight.sh` | root and the live image, and — installing — UEFI, Secure Boot off and a network, all before anything is asked bar the keyboard |
+| `online.sh` | whether there is internet; always yes in a recovery, which downloads nothing |
 | `wlan-device.sh` | the wireless device to use |
 | `wlan-networks.sh` | scan, wait, and print one SSID per line |
 | `wlan-connect.sh` | join one, with `WLAN_DEVICE`, `WLAN_SSID` and `WLAN_PASSPHRASE` in the environment |
@@ -214,6 +247,10 @@ check`. Nothing else has to be told about it.
 a machine that has never answered anything, and what it fills in is an ordinary
 answer from the next page on.
 
+**Something in the recovery** — the logic goes in `recovery.sh` and the step that
+calls it under `tasks/recovery-*/`, in a stage of the `recovery` mode. Its
+questions go in `installer.yaml` with `mode: recovery` on them.
+
 **A new language** —
 
 ```sh
@@ -226,9 +263,13 @@ are translated separately, in the runtime's own `locales/`.
 
 ## Requirements
 
-Root, the Arch Linux live image, booted in UEFI mode with Secure Boot off, and a
-network. `hooks/preflight.sh` checks all four before anything is asked bar the
-keyboard.
+To install: root, the Arch Linux live image, booted in UEFI mode with Secure Boot
+off, and a network. `hooks/preflight.sh` checks all four before anything is asked
+bar the keyboard.
+
+To recover: root and the live image. Nothing else — a machine that needs
+repairing is one whose network may be part of what broke, and everything the
+recovery uses is already on its own disk.
 
 ## Trying it out
 
@@ -251,4 +292,6 @@ forgotten when it is over.
 ## Credit
 
 The Arch Linux logic here is a port of [murkl/arch-os](https://github.com/murkl/arch-os),
-whose `installer.sh` this tree was carved out of.
+whose `installer.sh` this tree was carved out of. `recovery.sh` is the same for
+[murkl/arch-os-recovery](https://github.com/murkl/arch-os-recovery), whose
+questions are now pages of the interface rather than gum prompts.

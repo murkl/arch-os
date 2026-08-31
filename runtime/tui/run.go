@@ -29,9 +29,10 @@ import (
 type runScreen struct {
 	app *app
 
-	// title names this run in the log. What is on screen says the same thing in
-	// the interface's own words and with the clock on it — see headline.
-	title string
+	// name is what this run is called, where the tree gave it a name: a mode's
+	// own title, which is what the headline and the log are read in. Empty for a
+	// tree that does one thing, which the runtime can only call an installation.
+	name string
 
 	steps []*spec.Task
 	state []mark
@@ -42,7 +43,9 @@ type runScreen struct {
 	then func() tea.Cmd
 	back func() tea.Cmd
 
-	at      int // the task running now, or len(steps) once they all have
+	at      int   // the task running now, or len(steps) once they all have
+	stage   phase // how far the one at the cursor has got through what it declared
+	ask     *ask
 	asking  *picker
 	session *exec.Session
 	err     error
@@ -70,6 +73,18 @@ const (
 	skipped
 )
 
+// phase is how far the task at the cursor has got through what it declared
+// about itself: a value it has to ask for, then the offer, then the work. Each
+// is skipped by a task that declared none, and the order is the useful one —
+// an offer can name what was just chosen.
+type phase int
+
+const (
+	phaseAsk phase = iota
+	phaseConfirm
+	phaseRun
+)
+
 // settleFor is the pause before a keystroke counts, after a question appears
 // and after the run ends.
 //
@@ -80,8 +95,17 @@ const (
 // yet would be answered by an enter meant for something else entirely.
 const settleFor = 618 * time.Millisecond
 
-func newRun(a *app, title string, steps []*spec.Task, then, back func() tea.Cmd) *runScreen {
-	return &runScreen{app: a, title: title, steps: steps, state: make([]mark, len(steps)), then: then, back: back}
+func newRun(a *app, name string, steps []*spec.Task, then, back func() tea.Cmd) *runScreen {
+	return &runScreen{app: a, name: name, steps: steps, state: make([]mark, len(steps)), then: then, back: back}
+}
+
+// title is what this run is called in the log, which is the one place a name
+// has to stand on its own.
+func (s *runScreen) title() string {
+	if s.name == "" {
+		return labelInstalling()
+	}
+	return s.name
 }
 
 func (s *runScreen) Title() string { return "" }
@@ -93,8 +117,17 @@ func (s *runScreen) Title() string { return "" }
 func (s *runScreen) crumbRoot() bool { return true }
 
 // working is what puts the turning mark in the header: something is running,
-// which a question waiting for an answer is not.
-func (s *runScreen) working() bool { return !s.done && s.asking == nil }
+// which a question waiting for an answer is not. Fetching the answers to one
+// still is — that is a command of the tree's, running like any other.
+func (s *runScreen) working() bool {
+	switch {
+	case s.done:
+		return false
+	case s.ask != nil:
+		return s.ask.loading
+	}
+	return s.asking == nil
+}
 
 // status is the counter beside it: which step of how many.
 func (s *runScreen) status() string {
@@ -106,6 +139,8 @@ func (s *runScreen) status() string {
 
 func (s *runScreen) Hint() string {
 	switch {
+	case s.ask != nil:
+		return s.ask.Hint()
 	case s.asking != nil:
 		return labelHintChoose()
 	case !s.settled:
@@ -150,8 +185,10 @@ type (
 	settleMsg   struct{}
 )
 
-// step takes on the task at the cursor: asks about it if it is an offer,
-// runs it if it is not, and ends the run when there are none left.
+// step takes on the task at the cursor: asks it whatever it said it needed,
+// offers it if it is an offer, runs it, and ends the run when there are none
+// left. It is called again after each of those, and carries on from where the
+// phase says it got to.
 //
 // Each is started from here rather than from a loop, so the frame is redrawn
 // between them and the list is always showing the truth.
@@ -159,14 +196,36 @@ func (s *runScreen) step() tea.Cmd {
 	if s.at >= len(s.steps) {
 		return s.finish(nil)
 	}
-	if e := s.steps[s.at]; e.Asks() {
-		s.asking = newPicker([]item{
-			{title: labelYes(), key: keyYes},
-			{title: labelNo(), key: keyNo},
-		})
-		return s.settle()
+	e := s.steps[s.at]
+	if s.stage == phaseAsk {
+		s.stage = phaseConfirm
+		if e.Asks != "" {
+			s.ask = newAsk(s.app.spec.Var(e.Asks))
+			return tea.Batch(s.ask.Init(s.app), s.settle())
+		}
+	}
+	if s.stage == phaseConfirm {
+		s.stage = phaseRun
+		if e.Confirms() {
+			s.asking = newPicker([]item{
+				{title: labelYes(), key: keyYes},
+				{title: labelNo(), key: keyNo},
+			})
+			if e.Declines() {
+				s.asking.focus(keyNo)
+			}
+			return s.settle()
+		}
 	}
 	return s.start()
+}
+
+// advance moves the cursor to the next task, which starts over at the first
+// phase — the one after it has its own questions to be asked.
+func (s *runScreen) advance() tea.Cmd {
+	s.at++
+	s.stage = phaseAsk
+	return s.step()
 }
 
 // start runs the task at the cursor, either in the background like every
@@ -203,11 +262,11 @@ func waitFor(session *exec.Session) tea.Cmd {
 // finish ends the run, one way or the other.
 func (s *runScreen) finish(err error) tea.Cmd {
 	s.took = time.Since(s.started)
-	s.done, s.err, s.session, s.asking = true, err, nil, nil
+	s.done, s.err, s.session, s.asking, s.ask = true, err, nil, nil, nil
 	if err != nil {
 		logging.Error("%s", err)
 	} else {
-		logging.Info("%s: ok", s.title)
+		logging.Info("%s: ok", s.title())
 	}
 	// Whatever a run was given is gone the moment it is over, whether it worked
 	// or not: a failed installation is one that gets looked at, and nothing
@@ -227,7 +286,7 @@ func (s *runScreen) settle() tea.Cmd {
 // which somebody has to mean.
 func (s *runScreen) stop() {
 	if s.session != nil {
-		logging.Warn("%s: stopped", s.title)
+		logging.Warn("%s: stopped", s.title())
 		s.session.Kill()
 	}
 }
@@ -244,8 +303,13 @@ func (s *runScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 		if s.steps[s.at].Quits {
 			return s, quit()
 		}
-		s.at++
-		return s, s.step()
+		return s, s.advance()
+
+	case askedMsg:
+		if err := s.ask.fill(msg, s.app.store.Get(s.ask.v.Name)); err != nil {
+			return s, s.finish(err)
+		}
+		return s, nil
 
 	case settleMsg:
 		s.settled = true
@@ -257,6 +321,9 @@ func (s *runScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 			// for it, so the only way out while it runs is ctrl+c, which the
 			// model handles and which somebody has to mean.
 			return s, nil
+		}
+		if s.ask != nil {
+			return s, s.answerAsk(msg)
 		}
 		if s.asking != nil {
 			return s, s.answer(msg)
@@ -274,6 +341,20 @@ func (s *runScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 	return s, nil
 }
 
+// answerAsk takes the value a task asked for and carries on into whatever else
+// that task declared. There is no way past the question but answering it: the
+// work it belongs to has already started, and esc has nothing behind it to go
+// back to.
+func (s *runScreen) answerAsk(key tea.KeyMsg) tea.Cmd {
+	cmd, given := s.ask.Update(key, s.app)
+	if !given {
+		return cmd
+	}
+	logging.Info("%s: %s", s.ask.v.Name, s.app.store.Get(s.ask.v.Name))
+	s.ask = nil
+	return tea.Batch(cmd, s.step())
+}
+
 // answer takes the yes or no to a task that asked. No is an answer like any
 // other: the task is skipped, and the run carries on.
 func (s *runScreen) answer(key tea.KeyMsg) tea.Cmd {
@@ -288,8 +369,7 @@ func (s *runScreen) answer(key tea.KeyMsg) tea.Cmd {
 	}
 	logging.Info("%s: declined", s.steps[s.at].Name)
 	s.state[s.at] = skipped
-	s.at++
-	return s.step()
+	return s.advance()
 }
 
 // The two rows of a question. The NUL prefix cannot collide with anything a
@@ -305,6 +385,8 @@ func (s *runScreen) View(width, height int) string {
 	switch {
 	case s.err != nil:
 		return b.String() + renderFailure(s.err, width)
+	case s.ask != nil:
+		return b.String() + s.ask.View(width, height-2)
 	case s.asking != nil:
 		return b.String() + s.question(width, height-2)
 	}
@@ -317,15 +399,41 @@ func (s *runScreen) View(width, height int) string {
 // somebody watching it cannot work out for themselves, and how long it took is
 // the same answer once it is over.
 func (s *runScreen) headline() string {
+	// A task that has stopped the run to ask something is named in place of the
+	// run itself: what is on screen is that one question, and the clock has
+	// nothing to do with how long somebody takes to answer it.
 	switch {
-	case s.asking != nil:
+	case s.asking != nil, s.ask != nil && !s.ask.loading:
 		return accentBold.Render(glyphs.ask) + field(" ") + boldStyle.Render(s.steps[s.at].Label())
 	case !s.done:
-		return accentStyle.Render(spinFrame()) + field(" ") + boldStyle.Render(labelInstallingFor(clock(s.elapsed())))
+		return accentStyle.Render(spinFrame()) + field(" ") + boldStyle.Render(s.running())
 	case s.err != nil:
-		return failStyle.Render(glyphs.fail) + field(" ") + boldStyle.Render(labelFailed())
+		return failStyle.Render(glyphs.fail) + field(" ") + boldStyle.Render(s.failed())
 	}
-	return accentBold.Render(glyphs.ok) + field(" ") + boldStyle.Render(labelSucceededIn(clock(s.took)))
+	return accentBold.Render(glyphs.ok) + field(" ") + boldStyle.Render(s.succeeded())
+}
+
+// The three things a run says about itself, each in the tree's own name for it
+// where there is one and in the only name the runtime has where there is not.
+func (s *runScreen) running() string {
+	if s.name == "" {
+		return labelInstallingFor(clock(s.elapsed()))
+	}
+	return labelRunningFor(s.name, clock(s.elapsed()))
+}
+
+func (s *runScreen) succeeded() string {
+	if s.name == "" {
+		return labelSucceededIn(clock(s.took))
+	}
+	return labelRunDone(s.name, clock(s.took))
+}
+
+func (s *runScreen) failed() string {
+	if s.name == "" {
+		return labelFailed()
+	}
+	return labelRunFailed(s.name)
 }
 
 // question is what a task asked, with the answers filled into it, and the

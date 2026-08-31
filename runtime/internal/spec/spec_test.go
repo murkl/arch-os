@@ -92,7 +92,12 @@ presets:
 	if sp.UI.Title != "Test Installer" {
 		t.Errorf("title = %q", sp.UI.Title)
 	}
-	if got := sp.ConfirmText(func(string) string { return "/dev/sda" }); got != "Erasing /dev/sda." {
+	// A tree that says nothing about modes has exactly one, holding the stages
+	// and the warning it wrote at the top level.
+	if len(sp.Modes) != 1 || sp.Asked() {
+		t.Errorf("modes = %+v, want one and unasked", sp.Modes)
+	}
+	if got := sp.Modes[0].ConfirmText(func(string) string { return "/dev/sda" }); got != "Erasing /dev/sda." {
 		t.Errorf("confirm = %q", got)
 	}
 	if len(sp.Presets) != 1 || sp.Presets[0].Options[0].Values["DISK"] != "/dev/sda" {
@@ -105,7 +110,7 @@ presets:
 		t.Errorf("script = %q", sp.Tasks[0].Path())
 	}
 	last := sp.Tasks[1]
-	if !last.Quits || !last.Asks() {
+	if !last.Quits || !last.Confirms() {
 		t.Errorf("reboot = %+v, want it to ask and to quit", last)
 	}
 	if got := last.Question(func(string) string { return "" }); got != "Restart now?" {
@@ -116,6 +121,75 @@ presets:
 // The order is worked out from what each task says about itself, and it is
 // the one thing about a tree nobody writes down. Getting it wrong means
 // installing onto a disk that has not been partitioned yet.
+// A tree that does more than one thing: each mode owns its stages, and a task
+// says which run it belongs to by naming one of them and nothing else.
+func TestModesOwnTheirStagesAndTheTasksInThem(t *testing.T) {
+	dir := tree(t, units(
+		map[string]string{
+			// The tree helper's own task belongs to neither mode's story here.
+			"tasks/do/task.yaml": "",
+			"tasks/do/task.sh":   "",
+			FileInstaller: `
+title: Test Installer
+modes:
+  - id: install
+    title: Installation
+    confirm: Erasing {{DISK}}.
+    stages: [go, done]
+  - id: repair
+    title: Recovery
+    confirm: Opening {{DISK}}.
+    stages: [open]
+variables:
+  - name: DISK
+    title: Disk
+    required: true
+  - name: SNAP
+    title: Snapshot
+    values: [one, two]
+    mode: repair
+`,
+		},
+		unit("a-install", "name: Install\nstage: go\n"),
+		unit("b-finish", "name: Finish\nstage: done\n"),
+		unit("c-repair", "name: Repair\nstage: open\nasks: SNAP\n"),
+	))
+	sp, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !sp.Asked() || len(sp.Modes) != 2 {
+		t.Fatalf("modes = %+v, want two and a question about them", sp.Modes)
+	}
+	// The stages of every mode, in the order the modes were declared: one list,
+	// so one order settles the whole tree.
+	if got := strings.Join(sp.Stages, " "); got != "go done open" {
+		t.Errorf("stages = %q", got)
+	}
+	want := map[string]string{"a-install": "install", "b-finish": "install", "c-repair": "repair"}
+	for _, task := range sp.Tasks {
+		if got := task.Mode(); got != want[task.ID()] {
+			t.Errorf("%s is in mode %q, want %q", task.ID(), got, want[task.ID()])
+		}
+	}
+	if got := sp.Mode("repair").ConfirmText(func(string) string { return "/dev/sda" }); got != "Opening /dev/sda." {
+		t.Errorf("confirm = %q", got)
+	}
+	// A variable guarded by the mode is only a question in that mode.
+	in := func(mode string) func(string) string {
+		return func(name string) string {
+			if name == ModeVar {
+				return mode
+			}
+			return ""
+		}
+	}
+	snap := sp.Var("SNAP")
+	if snap.Applies(in("install")) || !snap.Applies(in("repair")) {
+		t.Error("SNAP should belong to the repair mode alone")
+	}
+}
+
 func TestOrderFollowsStagesThenNeeds(t *testing.T) {
 	dir := tree(t, units(
 		map[string]string{
@@ -312,6 +386,16 @@ func TestLoadRefuses(t *testing.T) {
 			want:  "name is required",
 		},
 		{
+			name:  "an offer opening on an answer it does not have",
+			files: unit("do", "name: Do\nstage: go\nconfirm: Really?\ndefault: maybe\n"),
+			want:  "yes or no",
+		},
+		{
+			name:  "an answer to an offer that was never made",
+			files: unit("do", "name: Do\nstage: go\ndefault: no\n"),
+			want:  "no confirm for it to answer",
+		},
+		{
 			name:  "a preset filling in a variable nobody declared",
 			files: map[string]string{FileInstaller: head("presets:\n  - id: p\n    title: P\n    options:\n      - id: o\n        title: O\n        values:\n          NOPE: x\n")},
 			want:  "no such variable",
@@ -350,6 +434,11 @@ func TestLoadRefuses(t *testing.T) {
 			name:  "a secret asked first, which is a question that would never be asked",
 			files: map[string]string{FileInstaller: head("variables:\n  - name: PW\n    title: P\n    type: secret\n    first: true\n")},
 			want:  "cannot also be asked first",
+		},
+		{
+			name:  "blind on a question that is not asked first",
+			files: map[string]string{FileInstaller: head("variables:\n  - name: KEYMAP\n    title: K\n    blind: true\n    values: [us, de]\n")},
+			want:  "blind only matters for a question asked first",
 		},
 		{
 			name:  "a secret with a default, which would be a stored password",
@@ -402,6 +491,54 @@ func TestLoadRefuses(t *testing.T) {
 			want:  "listed twice",
 		},
 		{
+			name:  "a mode with no id",
+			files: map[string]string{FileInstaller: "title: T\nmodes:\n  - title: Go\n    stages: [go]\n"},
+			want:  "a mode needs an id",
+		},
+		{
+			name:  "a mode with no stages of its own",
+			files: map[string]string{FileInstaller: "title: T\nmodes:\n  - id: a\n    title: A\n"},
+			want:  "no stages",
+		},
+		{
+			name:  "one stage claimed by two modes, so a task could not say which it is in",
+			files: map[string]string{FileInstaller: "title: T\nmodes:\n  - id: a\n    title: A\n    stages: [go]\n  - id: b\n    title: B\n    stages: [go]\n"},
+			want:  "already belongs to mode",
+		},
+		{
+			name:  "stages at the top level as well as in the modes",
+			files: map[string]string{FileInstaller: "title: T\nstages: [go]\nmodes:\n  - id: a\n    title: A\n    stages: [go]\n"},
+			want:  "belong to a mode",
+		},
+		{
+			name:  "a question belonging to a mode the tree does not offer",
+			files: map[string]string{FileInstaller: head("variables:\n  - name: DISK\n    title: D\n    mode: nope\n")},
+			want:  "no such mode",
+		},
+		{
+			name:  "a question asked first and claimed by a mode, which is before there is one",
+			files: map[string]string{FileInstaller: "title: T\nmodes:\n  - id: a\n    title: A\n    stages: [go]\nvariables:\n  - name: K\n    title: K\n    first: true\n    mode: a\n"},
+			want:  "before there is a mode",
+		},
+		{
+			name:  "asks naming a variable nobody declared",
+			files: unit("do", "name: Do\nstage: go\nasks: NOPE\n"),
+			want:  "no such variable",
+		},
+		{
+			name:  "asks on a free text value, which is not a question the frame can put mid-run",
+			files: unit("do", "name: Do\nstage: go\nasks: DISK\n"),
+			want:  "no answers to choose from",
+		},
+		{
+			name: "asks on a secret, which is already asked at the only safe moment",
+			files: units(
+				map[string]string{FileInstaller: head("variables:\n  - name: PW\n    title: P\n    type: secret\n")},
+				unit("do", "name: Do\nstage: go\nasks: PW\n"),
+			),
+			want: "is a secret",
+		},
+		{
 			name:  "a hook whose name is a typo",
 			files: map[string]string{"hooks/preflght.sh": "exit 0\n"},
 			want:  "not a hook",
@@ -443,7 +580,14 @@ func TestConditionsDecideWhatBelongs(t *testing.T) {
 		{"false", "Only without one"},
 		{"", "Only without one"},
 	} {
-		get := func(string) string { return tc.desktop }
+		// Only the one variable answers, the way a store does: everything else,
+		// the mode this run is in included, is empty.
+		get := func(name string) string {
+			if name == "DESKTOP" {
+				return tc.desktop
+			}
+			return ""
+		}
 		var names []string
 		for _, e := range sp.Tasks {
 			if e.Applies(get) {

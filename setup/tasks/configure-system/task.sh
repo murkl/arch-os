@@ -4,7 +4,23 @@
 simulating && return 0
 
 # ─── Clock ───────────────────────────────────────────────────────────────────
+# A symbolic link is made whether or not it points at anything, and a dangling
+# /etc/localtime is a system that quietly runs in UTC — so the zone is looked
+# for before it is linked to.
+if [ ! -f "${MNT}/usr/share/zoneinfo/${ARCH_OS_TIMEZONE}" ]; then
+    echo "there is no time zone called ${ARCH_OS_TIMEZONE}" >&2
+    exit 1
+fi
 arch-chroot "$MNT" ln -sf "/usr/share/zoneinfo/${ARCH_OS_TIMEZONE}" /etc/localtime
+
+# The live system keeps the same zone from here on. Nothing on the new system
+# depends on it — the hardware clock is written in UTC either way — but the
+# installer's own log is stamped with it, and a log that reads in a different
+# time zone than the journal of the machine it installed is a log nobody can
+# line up with anything.
+timedatectl set-timezone "$ARCH_OS_TIMEZONE" || true
+
+# The hardware clock, set from a system clock that init put on network time.
 arch-chroot "$MNT" hwclock --systohc
 
 # ─── Language and keyboard ───────────────────────────────────────────────────
@@ -27,8 +43,7 @@ if ! arch-chroot "$MNT" locale -a | grep -qxF "${ARCH_OS_LOCALE_LANG}.utf8"; the
     exit 1
 fi
 
-echo "KEYMAP=${ARCH_OS_VCONSOLE_KEYMAP}" >"${MNT}/etc/vconsole.conf"
-[ -n "$ARCH_OS_VCONSOLE_FONT" ] && echo "FONT=${ARCH_OS_VCONSOLE_FONT}" >>"${MNT}/etc/vconsole.conf"
+write_vconsole
 
 # ─── Name ────────────────────────────────────────────────────────────────────
 echo "$ARCH_OS_HOSTNAME" >"${MNT}/etc/hostname"

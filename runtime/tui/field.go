@@ -47,7 +47,7 @@ type fieldScreen struct {
 const keyFieldFree = "\x00free"
 
 func newField(a *app, v *spec.Variable, done func() tea.Cmd) *fieldScreen {
-	return &fieldScreen{app: a, v: v, done: done, loading: true, filter: newFilter()}
+	return &fieldScreen{app: a, v: v, done: done, loading: true, filter: newFilter(v.Blind)}
 }
 
 // counted marks this question as one of a numbered run.
@@ -111,6 +111,9 @@ func (s *fieldScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 		}
 		s.picker = newPicker(s.list())
 		s.picker.focus(current)
+		if s.filter.permanent {
+			return s, textinput.Blink
+		}
 		return s, nil
 
 	case tickMsg:

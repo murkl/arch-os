@@ -1,6 +1,6 @@
 name: Share files with other machines
 stage: desktop
-needs: [desktop]
+needs: [desktop-gnome]
 conditions:
-  - ARCH_OS_DESKTOP_ENABLED == true
+  - ARCH_OS_DESKTOP != none
   - ARCH_OS_DESKTOP_EXTRAS_ENABLED == true

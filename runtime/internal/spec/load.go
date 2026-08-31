@@ -68,13 +68,20 @@ func binaryDir() string {
 // it is about the installer as a whole and a nesting level would only be there
 // to be typed.
 type installerFile struct {
-	Title     string      `yaml:"title"`
-	Logo      string      `yaml:"logo"`
-	Accent    string      `yaml:"accent"`
-	Confirm   string      `yaml:"confirm"`
-	Console   string      `yaml:"console"`
-	Language  string      `yaml:"language"`
-	Stages    []string    `yaml:"stages"`
+	Title    string `yaml:"title"`
+	Logo     string `yaml:"logo"`
+	Accent   string `yaml:"accent"`
+	Console  string `yaml:"console"`
+	Language string `yaml:"language"`
+
+	// What this installer does. A tree that does one thing writes its stages and
+	// its warning here and never says the word mode; one that does several names
+	// them under `modes:` and leaves these two out. Both at once is refused —
+	// see settleModes.
+	Confirm string   `yaml:"confirm"`
+	Stages  []string `yaml:"stages"`
+	Modes   []*Mode  `yaml:"modes"`
+
 	Presets   []*Preset   `yaml:"presets"`
 	Variables []*Variable `yaml:"variables"`
 }
@@ -92,8 +99,11 @@ func Load(dir string) (*Spec, error) {
 	if err := read(filepath.Join(dir, FileInstaller), &head); err != nil {
 		return nil, err
 	}
-	s.UI = UI{Title: head.Title, Logo: head.Logo, Accent: head.Accent, Confirm: head.Confirm, Console: head.Console}
-	s.Presets, s.Vars, s.Stages, s.Language = head.Presets, head.Variables, head.Stages, head.Language
+	s.UI = UI{Title: head.Title, Logo: head.Logo, Accent: head.Accent, Console: head.Console}
+	s.Presets, s.Vars, s.Language = head.Presets, head.Variables, head.Language
+	if err := s.settleModes(&head); err != nil {
+		return nil, err
+	}
 	s.Lib = beside(dir, FileLib)
 	s.Locales = beside(dir, DirLocales)
 
@@ -111,6 +121,57 @@ func Load(dir string) (*Spec, error) {
 		return nil, err
 	}
 	return s, nil
+}
+
+// settleModes works out what this tree can do, so that everything below here
+// reads one list of modes and never asks whether there were any.
+//
+// A tree that does one thing writes `stages:` and `confirm:` at the top level
+// and gets a single nameless mode holding them — it is never asked which mode
+// it is in, and nothing about the idea reaches it. A tree that does several
+// names them, and then those two keys belong to a mode rather than to the
+// installer: having them in both places would be two answers to one question,
+// so it is refused rather than resolved.
+func (s *Spec) settleModes(head *installerFile) error {
+	where := FileInstaller + ": "
+	if len(head.Modes) == 0 {
+		if len(head.Stages) == 0 {
+			return fmt.Errorf("%sno stages", where)
+		}
+		s.Modes = []*Mode{{Confirm: head.Confirm, Stages: head.Stages}}
+		s.Stages = head.Stages
+		return nil
+	}
+	if len(head.Stages) > 0 || head.Confirm != "" {
+		return fmt.Errorf("%sstages and confirm belong to a mode once there are modes", where)
+	}
+	seen := map[string]bool{}
+	owner := map[string]string{}
+	for _, m := range head.Modes {
+		switch {
+		case m.ID == "":
+			return fmt.Errorf("%sa mode needs an id", where)
+		case seen[m.ID]:
+			return fmt.Errorf("%smode %s is declared twice", where, m.ID)
+		case m.Title == "":
+			return fmt.Errorf("%smode %s: title is required", where, m.ID)
+		case len(m.Stages) == 0:
+			return fmt.Errorf("%smode %s: no stages", where, m.ID)
+		}
+		seen[m.ID] = true
+		// A stage is what a task points at to say where it belongs, so it can
+		// only belong to one mode — otherwise a task would be in two runs at
+		// once and there would be nothing to read that says which.
+		for _, stage := range m.Stages {
+			if other, taken := owner[stage]; taken {
+				return fmt.Errorf("%smode %s: stage %s already belongs to mode %s", where, m.ID, stage, other)
+			}
+			owner[stage] = m.ID
+			s.Stages = append(s.Stages, stage)
+		}
+	}
+	s.Modes = head.Modes
+	return nil
 }
 
 // beside is the path of one of the tree's optional parts, or empty where the
@@ -213,9 +274,6 @@ func (s *Spec) check(tasks []*Task) error {
 	if s.UI.Accent != "" && !hexColor.MatchString(s.UI.Accent) {
 		return fmt.Errorf("%s: accent must be #rrggbb, got %q", FileInstaller, s.UI.Accent)
 	}
-	if len(s.Stages) == 0 {
-		return fmt.Errorf("%s: no stages", FileInstaller)
-	}
 	if err := s.checkVars(); err != nil {
 		return fmt.Errorf("%s: %w", FileInstaller, err)
 	}
@@ -228,6 +286,14 @@ func (s *Spec) check(tasks []*Task) error {
 // checkTasks settles what runs and in what order: every task has to belong to a
 // stage, and what is left is sorted once and for all.
 func (s *Spec) checkTasks(tasks []*Task) error {
+	// Which mode a stage puts a task in. Built here rather than carried on the
+	// task, so a unit says where it belongs exactly once.
+	mode := map[string]string{}
+	for _, m := range s.Modes {
+		for _, stage := range m.Stages {
+			mode[stage] = m.ID
+		}
+	}
 	for _, t := range tasks {
 		where := DirTasks + "/" + t.id
 		if t.Name == "" {
@@ -235,6 +301,13 @@ func (s *Spec) checkTasks(tasks []*Task) error {
 		}
 		if t.Stage == "" {
 			return fmt.Errorf("%s: stage is required", where)
+		}
+		t.mode = mode[t.Stage]
+		if err := s.checkAsks(t); err != nil {
+			return fmt.Errorf("%s: %w", where, err)
+		}
+		if err := checkConfirm(t); err != nil {
+			return fmt.Errorf("%s: %w", where, err)
 		}
 		cond, err := s.conditions(t.Conditions)
 		if err != nil {
@@ -250,6 +323,45 @@ func (s *Spec) checkTasks(tasks []*Task) error {
 	return nil
 }
 
+// checkConfirm settles a task's `default:`, which says which of the two answers
+// its offer opens on. There are exactly two, and a task that names one without
+// making an offer at all has said something that can never take effect.
+func checkConfirm(t *Task) error {
+	switch {
+	case t.Default == "":
+		return nil
+	case !t.Confirms():
+		return fmt.Errorf("default: there is no confirm for it to answer")
+	case t.Default != ConfirmYes && t.Default != ConfirmNo:
+		return fmt.Errorf("default: %s or %s, got %q", ConfirmYes, ConfirmNo, t.Default)
+	}
+	return nil
+}
+
+// checkAsks settles a task's `asks:`, which is a question put in the middle of
+// a run and therefore has to be one the frame can put there.
+//
+// Only a list qualifies. A text box mid-run would be a second way of answering
+// with nothing to check it against on a page nobody navigated to, and a secret
+// is already asked for at the one moment it is safe to — immediately before the
+// run that needs it.
+func (s *Spec) checkAsks(t *Task) error {
+	if t.Asks == "" {
+		return nil
+	}
+	v := s.byName[t.Asks]
+	switch {
+	case v == nil:
+		return fmt.Errorf("asks: no such variable: %s", t.Asks)
+	case v.Secret():
+		return fmt.Errorf("asks: %s is a secret, which is asked for immediately before the run", t.Asks)
+	case len(v.Values) == 0 && v.Command == "" && v.Shape() != TypeBool:
+		return fmt.Errorf("asks: %s has no answers to choose from, and a question asked mid-run is a list", t.Asks)
+	}
+	v.deferred = true
+	return nil
+}
+
 // normalize settles every word the tree says into the shape it is both shown in
 // and translated by.
 //
@@ -262,7 +374,10 @@ func (s *Spec) checkTasks(tasks []*Task) error {
 //
 // A blank line survives, because that is the one break that was meant.
 func (s *Spec) normalize(tasks []*Task) {
-	fields := []*string{&s.UI.Title, &s.UI.Confirm, &s.UI.Console}
+	fields := []*string{&s.UI.Title, &s.UI.Console}
+	for _, m := range s.Modes {
+		fields = append(fields, &m.Title, &m.Description, &m.Confirm)
+	}
 	for _, p := range s.Presets {
 		fields = append(fields, &p.Title, &p.Description)
 	}
@@ -300,8 +415,8 @@ func (s *Spec) checkVars() error {
 		switch {
 		case !varName.MatchString(v.Name):
 			return fmt.Errorf("%q is not a usable variable name", v.Name)
-		case v.Name == LangVar:
-			return fmt.Errorf("%s belongs to the runtime and cannot be declared", LangVar)
+		case runtimeVar(v.Name):
+			return fmt.Errorf("%s belongs to the runtime and cannot be declared", v.Name)
 		case s.byName[v.Name] != nil:
 			return fmt.Errorf("%s is declared twice", v.Name)
 		case v.Title == "":
@@ -321,6 +436,17 @@ func (s *Spec) checkVars() error {
 		}
 		if v.Secret() && v.First {
 			return fmt.Errorf("%s: a secret is asked for immediately before the run that needs it, so it cannot also be asked first", v.Name)
+		}
+		if v.Blind && !v.First {
+			return fmt.Errorf("%s: blind only matters for a question asked first — anything later is typed on a keyboard already loaded", v.Name)
+		}
+		if err := s.belongs(v.Mode); err != nil {
+			return fmt.Errorf("%s: %w", v.Name, err)
+		}
+		// A question asked before the mode is chosen cannot belong to one of
+		// them: there is no answer yet to say which.
+		if v.First && v.Mode != "" {
+			return fmt.Errorf("%s: asked first, which is before there is a mode for it to belong to", v.Name)
 		}
 		if len(v.Values) > 0 && v.Command != "" {
 			return fmt.Errorf("%s: values and command are two answers to the same question", v.Name)
@@ -373,6 +499,9 @@ func (s *Spec) checkPresets() error {
 			return fmt.Errorf("preset %s: no options", p.ID)
 		}
 		seen[p.ID] = true
+		if err := s.belongs(p.Mode); err != nil {
+			return fmt.Errorf("preset %s: %w", p.ID, err)
+		}
 		chosen := map[string]bool{}
 		for _, o := range p.Options {
 			switch {
@@ -396,6 +525,11 @@ func (s *Spec) checkPresets() error {
 
 // conditions parses a `conditions:` and checks that every line of it is about a
 // variable this tree actually declares.
+//
+// Which mode a row belongs to is deliberately not one of them: that is `mode:`,
+// a key of its own, because there is nothing to compare. A row is one mode's or
+// it is everybody's, and two ways of writing the same guard would be one too
+// many.
 func (s *Spec) conditions(exprs Conditions) ([]*condition, error) {
 	var out []*condition
 	for _, expr := range exprs {
@@ -412,6 +546,16 @@ func (s *Spec) conditions(exprs Conditions) ([]*condition, error) {
 		out = append(out, c)
 	}
 	return out, nil
+}
+
+// belongs checks that a `mode:` names a mode this tree offers. A row guarded by
+// one that does not exist is a row that never appears, which is exactly the
+// silence every check here exists to prevent.
+func (s *Spec) belongs(mode string) error {
+	if mode == "" || s.Mode(mode) != nil {
+		return nil
+	}
+	return fmt.Errorf("no such mode: %s", mode)
 }
 
 // shell settles a field that may hold either shell or the file it lives in: a

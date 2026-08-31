@@ -125,12 +125,12 @@ var plainGlyphs = glyphSet{
 	scrollTrack: "│",
 	scrollThumb: "█",
 
-	// No console font has a tick or a cross. A filled square is a box filled
-	// in, which is what a finished row is, and it holds that meaning against
-	// the faded dot a passed-over row keeps: two marks of different shape
-	// rather than one dot in two sizes, which is a distinction nobody makes at
-	// a glance. A cross is the one mark ASCII already has.
-	ok:     "■",
+	// No console font has a tick or a cross, so both come out of ASCII, where
+	// a plus and a cross are the two marks that already mean added and gone.
+	// A block would read as ink rather than as a mark: at the weight of a
+	// filled cell it sits on the line like a cursor stuck on the row, and a
+	// column of them beside the titles is heavier than the titles.
+	ok:     "+",
 	fail:   "x",
 	ask:    "?",
 	skip:   "·",

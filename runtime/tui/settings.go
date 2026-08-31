@@ -44,7 +44,7 @@ type settingRow struct {
 }
 
 func newSettings(a *app) *settingsScreen {
-	s := &settingsScreen{app: a, filter: newFilter()}
+	s := &settingsScreen{app: a, filter: newFilter(false)}
 	s.build()
 	return s
 }
@@ -173,11 +173,23 @@ func (s *settingsScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 	s.picker.Update(msg)
 	switch {
 	case backs(key), key.String() == "q":
-		return s, pop()
+		return s, s.leave()
 	case confirms(key):
 		return s, s.open(s.picker.selected())
 	}
 	return s, nil
+}
+
+// leave is what backing out of the page does — ordinarily straight to the hub,
+// but through whatever answer is now missing first. Turning a setting on can
+// call for values nothing has asked for yet — dual boot names two partitions
+// only once it is on — and letting the hub come up before those are answered
+// would leave an install one enter key away from running without them.
+func (s *settingsScreen) leave() tea.Cmd {
+	if missing := s.app.store.Missing(); len(missing) > 0 {
+		return push(newWizard(s.app).screen(missing[0]))
+	}
+	return pop()
 }
 
 // open is the page behind a row. A secret has none: it is not stored, so there

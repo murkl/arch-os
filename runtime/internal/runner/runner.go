@@ -139,10 +139,10 @@ func (r *Runner) Settle() {
 	}
 }
 
-// Tasks is what this run consists of: the ones whose conditions hold, in
-// the order the tree put them in. One that has ruled itself out is not listed
-// at all — the list is a promise of what is about to happen, and a row that
-// will be skipped is not part of that promise.
+// Tasks is what this run consists of: the ones belonging to the mode this run
+// is in and whose conditions hold, in the order the tree put them in. One that
+// has ruled itself out is not listed at all — the list is a promise of what is
+// about to happen, and a row that will be skipped is not part of that promise.
 func (r *Runner) Tasks() []*spec.Task {
 	var out []*spec.Task
 	for _, t := range r.spec.Tasks {

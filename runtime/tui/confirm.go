@@ -21,8 +21,14 @@ type confirmScreen struct {
 
 func newConfirm(a *app) *confirmScreen { return &confirmScreen{app: a} }
 
-func (s *confirmScreen) Title() string { return labelInstall() }
-func (s *confirmScreen) Hint() string  { return labelHintStart() }
+func (s *confirmScreen) Title() string {
+	if name := s.app.mode().Label(); name != "" {
+		return name
+	}
+	return labelInstall()
+}
+
+func (s *confirmScreen) Hint() string { return labelHintStart() }
 
 func (s *confirmScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 	key, ok := msg.(tea.KeyMsg)
@@ -39,12 +45,18 @@ func (s *confirmScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 }
 
 func (s *confirmScreen) View(width, height int) string {
+	// Named after what is about to happen where the tree has a name for it, and
+	// after the only thing an installer does where it has not.
+	ready, start := labelReady(), labelStartInstall()
+	if name := s.app.mode().Label(); name != "" {
+		ready, start = labelReadyToStart(), labelStartNamed(name)
+	}
 	var b strings.Builder
-	b.WriteString(alertStyle.Render(labelReady()) + "\n\n")
-	if text := s.app.spec.ConfirmText(s.app.store.Get); text != "" {
+	b.WriteString(alertStyle.Render(ready) + "\n\n")
+	if text := s.app.mode().ConfirmText(s.app.store.Get); text != "" {
 		b.WriteString(paragraph(text, width) + "\n")
 	}
-	return b.String() + "\n" + accentBold.Render(glyphs.cursor+labelStartInstall())
+	return b.String() + "\n" + accentBold.Render(glyphs.cursor+start)
 }
 
 // startInstall is the way into an installation: the secrets that have to be
@@ -64,7 +76,7 @@ func startInstall(a *app, next int) screen {
 	// system was installed was a task of the last stage and has been offered.
 	// Enter on the result leaves. A failed one lands back on the hub, which is
 	// where a wrong answer is corrected.
-	return newRun(a, labelInstalling(), a.runner.Tasks(),
+	return newRun(a, a.mode().Label(), a.runner.Tasks(),
 		leave,
 		func() tea.Cmd { return reset(newHub(a)) })
 }

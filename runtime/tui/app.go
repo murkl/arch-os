@@ -65,6 +65,16 @@ func Run(sp *spec.Spec, st *store.Store, rn *runner.Runner, version string, lang
 	return nil
 }
 
+// mode is what this run is doing: the mode named in the answers, or the first
+// the tree offers. Never nil — a tree always has at least one, and the answer
+// is settled before the first page is drawn.
+func (a *app) mode() *spec.Mode {
+	if m := a.spec.Mode(a.store.Get(spec.ModeVar)); m != nil {
+		return m
+	}
+	return a.spec.Modes[0]
+}
+
 // speak puts the whole interface in a language and remembers the choice like
 // any other answer. Every word on screen is read through i18n at draw time, so
 // there is nothing to rebuild — the next frame is simply in the new language.
@@ -160,9 +170,23 @@ func (a *app) start() screen {
 func (a *app) afterLanguage() screen {
 	open := a.store.Upfront()
 	if len(open) == 0 {
-		return a.network()
+		return a.chooseMode()
 	}
 	return newField(a, open[0], func() tea.Cmd { return push(a.afterLanguage()) })
+}
+
+// chooseMode is the fork, where the tree can do more than one thing. It sits
+// here and not earlier because it is a decision, and a decision taken on a
+// keyboard nobody has chosen yet is not one — and not later because everything
+// after it is different depending on the answer.
+//
+// A tree that does one thing hands straight on, the way every other link in
+// this chain does when it has nothing to ask.
+func (a *app) chooseMode() screen {
+	if !a.spec.Asked() {
+		return a.network()
+	}
+	return newMode(a, func() tea.Cmd { return push(a.network()) })
 }
 
 // network is where a tree that describes one gets the chance to join it, because
@@ -194,9 +218,13 @@ func (a *app) preset(next int) screen {
 	if !a.first || next >= len(a.spec.Presets) {
 		return a.afterPreset()
 	}
-	return newPreset(a, a.spec.Presets[next], func() tea.Cmd {
-		return push(a.preset(next + 1))
-	})
+	// A page whose conditions do not hold is passed over the way a question
+	// that means nothing is: a set of starting points for an installation is
+	// not something to put to somebody who came here to repair one.
+	if p := a.spec.Presets[next]; p.Applies(a.store.Get) {
+		return newPreset(a, p, func() tea.Cmd { return push(a.preset(next + 1)) })
+	}
+	return a.preset(next + 1)
 }
 
 // afterPreset is the fork the whole program turns on: a question still open

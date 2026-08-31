@@ -54,3 +54,11 @@ if secure_boot_wanted; then
 fi
 
 arch-chroot "$MNT" mkinitcpio -P
+
+# Installing the kernel already built a pair of plain ram disks, from the preset
+# the package ships. With the preset above they are never written again — and an
+# initramfs nothing updates, sitting unsigned on the one partition that is never
+# encrypted, is precisely what a unified kernel image is here to do away with.
+if secure_boot_wanted; then
+    rm -f "${MNT}/boot/initramfs-${ARCH_OS_KERNEL}.img" "${MNT}/boot/initramfs-${ARCH_OS_KERNEL}-fallback.img"
+fi

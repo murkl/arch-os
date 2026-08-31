@@ -10,6 +10,7 @@ package spec
 
 import (
 	"regexp"
+	"slices"
 	"strings"
 
 	"installer/internal/i18n"
@@ -51,11 +52,24 @@ var HookNames = []string{
 	HookRestart, HookShutdown,
 }
 
-// LangVar is the runtime's own setting, and the only key it writes into the
-// answer file that no installer.yaml declared. Language is not something an
-// installer's data can own: the words it is chosen with belong to the frame,
-// not to the thing being installed.
-const LangVar = "INSTALLER_LANG"
+// The runtime's own settings: the two keys it writes into the answer file that
+// no installer.yaml declared. Neither is something an installer's data can own —
+// the words the interface is read in belong to the frame, and which of the
+// tree's modes is being carried out is a decision about the program rather than
+// a value inside it.
+//
+// A tree may not declare either, and may name either in a `conditions:` — which
+// is how a variable says it only belongs to one of the modes.
+const (
+	LangVar = "INSTALLER_LANG"
+	ModeVar = "INSTALLER_MODE"
+)
+
+// RuntimeVars is every name that belongs to the runtime rather than to a tree.
+var RuntimeVars = []string{LangVar, ModeVar}
+
+// runtimeVar reports whether a name is one of them.
+func runtimeVar(name string) bool { return slices.Contains(RuntimeVars, name) }
 
 // Spec is a whole installer tree.
 type Spec struct {
@@ -65,8 +79,14 @@ type Spec struct {
 	Presets []*Preset
 	Vars    []*Variable
 
-	// Stages are the phases of an installation, in the order they happen. Every
-	// task names one; that is what puts it in the run and where.
+	// Modes are the things this tree can do, in the order it offers them. There
+	// is always at least one: a tree that declares none has exactly one made of
+	// its own top-level stages and confirm, and is never asked which.
+	Modes []*Mode
+
+	// Stages are the phases the work happens in, in the order they happen —
+	// every mode's own, one after another. Every task names one, which is what
+	// puts it in a run, where, and in which mode.
 	Stages []string
 
 	// Tasks, already in the order they run: by stage, and inside a stage by what
@@ -102,11 +122,6 @@ type UI struct {
 	Logo   string `yaml:"logo"`
 	Accent string `yaml:"accent"`
 
-	// Confirm is the last thing read before the first task runs, with {{VAR}}
-	// filled in from the answers — the sentence that says which disk is about to
-	// be erased.
-	Confirm string `yaml:"confirm"`
-
 	// Console is the sentence read on the way out of the interface, where the
 	// machine keeps running. What the installer is called out there is something
 	// only the tree can know, and somebody who has just left it is looking at a
@@ -114,6 +129,58 @@ type UI struct {
 	// there is nothing behind the interface.
 	Console string `yaml:"console"`
 }
+
+// Mode is one of the things a tree can do: a run with a name, a warning of its
+// own, and the phases it happens in.
+//
+// An installer that can also repair what it installed is not one program with a
+// switch in it — the two ask different questions, do different work and are
+// dangerous in different ways. So a tree says what it can do rather than what it
+// is, and the program asks which of them this run is before anything else
+// happens. A tree with one mode is never asked and never notices.
+//
+// Nothing about a mode reaches a task. A task names a stage, as it always did,
+// and the stage says which mode it belongs to — so the two can never disagree
+// and no unit has to repeat what its stage already said.
+type Mode struct {
+	ID          string `yaml:"id"`
+	Title       string `yaml:"title"`
+	Description string `yaml:"description"`
+
+	// Confirm is the last thing read before this mode's first task runs, with
+	// {{VAR}} filled in from the answers — the sentence that says which disk is
+	// about to be erased.
+	Confirm string `yaml:"confirm"`
+
+	// Stages are this mode's phases, in the order they happen. They are its own:
+	// no two modes may name the same one, since a stage is what a task points at
+	// to say where it belongs.
+	Stages []string `yaml:"stages"`
+}
+
+func (m *Mode) Label() string { return i18n.T(m.Title) }
+func (m *Mode) Help() string  { return i18n.T(m.Description) }
+
+// ConfirmText is the last sentence before this mode's first task, translated
+// and with {{VAR}} filled in from the answers.
+func (m *Mode) ConfirmText(get func(string) string) string {
+	return strings.TrimSpace(Expand(i18n.T(m.Confirm), get))
+}
+
+// Mode finds a mode by id, or nil where the tree has no such one.
+func (s *Spec) Mode(id string) *Mode {
+	for _, m := range s.Modes {
+		if m.ID == id {
+			return m
+		}
+	}
+	return nil
+}
+
+// Asked reports whether which mode this run is in is a question at all. One
+// mode is not a choice, and a page offering it would be a page with a single
+// row on it.
+func (s *Spec) Asked() bool { return len(s.Modes) > 1 }
 
 // Hook is the script this tree put in hooks/ under that name, absolute, or
 // empty where it has none.
@@ -150,7 +217,15 @@ type Preset struct {
 	Title       string          `yaml:"title"`
 	Description string          `yaml:"description"`
 	Options     []*PresetOption `yaml:"options"`
+
+	// Mode is the mode this page belongs to, empty for all of them. A set of
+	// starting points for an installation is not a question to put to somebody
+	// who came here to repair one.
+	Mode string `yaml:"mode"`
 }
+
+// Applies reports whether this page of starting points is worth offering.
+func (p *Preset) Applies(get func(string) string) bool { return inMode(p.Mode, get) }
 
 // PresetOption is one answer to that question: the values choosing it fills in.
 // Nothing else about it survives being chosen — it is a set of answers, not a
@@ -181,10 +256,30 @@ type Task struct {
 	Needs      []string   `yaml:"needs"`
 	Conditions Conditions `yaml:"conditions"`
 
+	// Asks names a variable whose answer is not knowable before this point: the
+	// snapshot to go back to, once the disk holding it is open. The run stops and
+	// puts the question in the frame, exactly where the list of tasks was, and
+	// carries on with the answer.
+	//
+	// It is asked every time, whatever the answer file says. A value that had to
+	// wait for the work to start is a value about what the work found, and last
+	// run found something else.
+	Asks string `yaml:"asks"`
+
 	// Confirm is asked before this one runs, as a yes or no in the frame.
 	// Declining skips it and the run carries on — which is what makes an
 	// offer ("reboot now?") a unit like any other rather than a page of its own.
+	// It comes after `asks`, so the offer can name what was just chosen.
 	Confirm string `yaml:"confirm"`
+
+	// Default is which of the two answers the offer opens on: `yes`, which is
+	// what it is when nothing says otherwise, or `no`.
+	//
+	// Most offers are the obvious next thing and belong on yes. The ones that
+	// are an extra — a root shell inside the system that was just installed —
+	// belong on no, so that an enter meant for the page before it does not walk
+	// into one.
+	Default Scalar `yaml:"default"`
 
 	// Quits marks a task the program does not come back from — a reboot. The
 	// frame stops drawing rather than waiting for output nobody will read.
@@ -197,11 +292,15 @@ type Task struct {
 	TTY bool `yaml:"tty"`
 
 	id   string
+	mode string
 	path string
 	cond []*condition
 }
 
 func (t *Task) Label() string { return i18n.T(t.Name) }
+
+// Mode is the mode this task belongs to, which is whichever one owns its stage.
+func (t *Task) Mode() string { return t.mode }
 
 // ID is the folder this task was read from, which is also the name other tasks
 // reach it by in their needs.
@@ -210,8 +309,19 @@ func (t *Task) ID() string { return t.id }
 // Path is the script it runs, absolute.
 func (t *Task) Path() string { return t.path }
 
-// Asks reports whether this one is offered rather than simply run.
-func (t *Task) Asks() bool { return t.Confirm != "" }
+// Confirms reports whether this one is offered rather than simply run.
+func (t *Task) Confirms() bool { return t.Confirm != "" }
+
+// Declines reports whether the offer opens on no rather than on yes.
+func (t *Task) Declines() bool { return t.Default == ConfirmNo }
+
+// The two answers `default:` takes on a task. They are the words somebody
+// writing a task.yaml would reach for, not the true/false a variable is stored
+// as: this is which row a question opens on, not a value anything reads back.
+const (
+	ConfirmYes = "yes"
+	ConfirmNo  = "no"
+)
 
 // Question is the offer, translated and with the answers filled in.
 func (t *Task) Question(get func(string) string) string {
@@ -249,6 +359,15 @@ type Variable struct {
 	// that named it — there is nothing to declare up front.
 	Group string `yaml:"group"`
 
+	// Mode is the mode this question belongs to, empty for all of them.
+	//
+	// It is how a tree that does more than one thing keeps its questions apart,
+	// and it is a key of its own rather than a condition because there is
+	// nothing to compare: a question is one mode's or it is everybody's. The
+	// few that are everybody's are the ones asked before the mode is — the
+	// keyboard both sides are typed on.
+	Mode string `yaml:"mode"`
+
 	Type     string `yaml:"type"`
 	Default  Scalar `yaml:"default"`
 	Required bool   `yaml:"required"`
@@ -263,6 +382,14 @@ type Variable struct {
 	// question asked before the check that says this machine cannot be installed
 	// onto at all.
 	First bool `yaml:"first"`
+
+	// Blind marks the one first question whose own answer is what loadkeys is
+	// about to run. Until it is answered, no key on this machine is known to
+	// print what it looks like it does — not even the / that would otherwise
+	// open the box narrowing its list. So that box is shown from the first
+	// frame instead of waited for, and does not close: a box nobody can find
+	// the key to open is no box at all.
+	Blind bool `yaml:"blind"`
 
 	// Where the answers come from, when there is a set of them: written out, or
 	// printed by a command one per line. A variable with neither is free text.
@@ -292,9 +419,20 @@ type Variable struct {
 	Error      string     `yaml:"error"`
 	Conditions Conditions `yaml:"conditions"`
 
-	re   *regexp.Regexp
-	cond []*condition
+	re       *regexp.Regexp
+	cond     []*condition
+	deferred bool
 }
+
+// Deferred reports whether this value is one a task asks for in the middle of a
+// run — see Task.Asks. Nothing declares it: being named by a task is the
+// declaration.
+//
+// It is the second kind of required value that does not stop the program from
+// being ready, and for the same reason a secret is the first: there is no
+// answering it yet. A snapshot to go back to cannot be chosen, or shown on a
+// settings page, while the disk holding it is still locked.
+func (v *Variable) Deferred() bool { return v.deferred }
 
 func (v *Variable) Label() string { return i18n.T(v.Title) }
 func (v *Variable) Help() string  { return i18n.T(v.Description) }
@@ -346,12 +484,6 @@ func (s *Spec) Var(name string) *Variable { return s.byName[name] }
 // Name is the installer's own title, translated.
 func (s *Spec) Name() string { return i18n.T(s.UI.Title) }
 
-// ConfirmText is the last sentence before the first task, translated and
-// with {{VAR}} filled in from the answers.
-func (s *Spec) ConfirmText(get func(string) string) string {
-	return strings.TrimSpace(Expand(i18n.T(s.UI.Confirm), get))
-}
-
 // Strings is every word this tree says, in the order it says them, with
 // duplicates dropped.
 //
@@ -369,7 +501,10 @@ func (s *Spec) Strings() []string {
 			}
 		}
 	}
-	add(s.UI.Title, s.UI.Confirm, s.UI.Console)
+	add(s.UI.Title, s.UI.Console)
+	for _, m := range s.Modes {
+		add(m.Title, m.Description, m.Confirm)
+	}
 	for _, p := range s.Presets {
 		add(p.Title, p.Description)
 		for _, o := range p.Options {

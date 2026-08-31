@@ -32,6 +32,11 @@ func New(sp *spec.Spec, path string) *Store {
 	for _, v := range sp.Vars {
 		s.val[v.Name] = v.Default.String()
 	}
+	// The mode is a default like any other, and the tree's first is it: there is
+	// never a moment where a condition asking which mode this is has no answer,
+	// and a tree that does one thing is in it from the start without anything
+	// having had to be chosen.
+	s.val[spec.ModeVar] = sp.Modes[0].ID
 	return s
 }
 
@@ -80,6 +85,7 @@ func (s *Store) Env() exec.Env {
 		env = append(env, v.Name+"="+s.val[v.Name])
 	}
 	env = append(env, spec.LangVar+"="+i18n.Current())
+	env = append(env, spec.ModeVar+"="+s.val[spec.ModeVar])
 	for k, v := range s.facts {
 		env = append(env, k+"="+v)
 	}
@@ -112,14 +118,15 @@ func (s *Store) Apply(o *spec.PresetOption) {
 // every variable that is required, means something given the answers so far,
 // and has no acceptable value yet.
 //
-// Secrets are not among them, and that is deliberate. A secret is never written
-// down, so it would be missing at every start and no machine could ever be
-// finished answering. It is asked for immediately before the run that needs it
-// instead — see Secrets.
+// Two kinds are not among them, and for the same reason: there is no answering
+// them yet, so leaving them in would be a machine that can never be finished
+// answering. A secret is never written down and is asked for immediately before
+// the run that needs it — see Secrets. A deferred value is one a task asks for
+// mid-run, because until that task's turn there is nothing to choose from.
 func (s *Store) Missing() []*spec.Variable {
 	var out []*spec.Variable
 	for _, v := range s.spec.Vars {
-		if v.Secret() || !v.Applies(s.Get) {
+		if v.Secret() || v.Deferred() || !v.Applies(s.Get) {
 			continue
 		}
 		if s.Invalid(v, s.val[v.Name]) != "" {
@@ -159,10 +166,14 @@ func (s *Store) Secrets() []*spec.Variable {
 
 // Visible lists the variables worth showing on the settings page: everything
 // that means something given the answers so far, in declaration order.
+//
+// A deferred value is not among them. It is a row nobody could answer from
+// here — what it offers is read off work that has not happened yet — and a
+// settings page is a promise that every row on it can be opened.
 func (s *Store) Visible() []*spec.Variable {
 	var out []*spec.Variable
 	for _, v := range s.spec.Vars {
-		if v.Applies(s.Get) {
+		if !v.Deferred() && v.Applies(s.Get) {
 			out = append(out, v)
 		}
 	}
@@ -200,7 +211,7 @@ func (s *Store) Display(v *spec.Variable) string {
 	value := s.val[v.Name]
 	switch {
 	case v.Secret():
-		return i18n.T("asked before installing")
+		return i18n.T("asked just before the run")
 	case value == "":
 		return "—"
 	}

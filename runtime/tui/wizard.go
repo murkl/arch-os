@@ -6,9 +6,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// wizard is the opening run of questions: every value that is required, means
-// something, and has no acceptable answer yet — asked one to a page, in the
-// order the folder declared them.
+// wizard is a run of questions: every value that is required, means something,
+// and has no acceptable answer yet — asked one to a page, in the order the
+// folder declared them. Usually the opening run, before the hub is ever shown,
+// but the same run of questions is what settings falls back into on the way
+// out, if flipping a setting just left something else standing open.
 //
 // It is not a screen. It is the thing that decides which screen comes next, and
 // it holds nothing but the length of the run it started with. What is still

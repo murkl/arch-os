@@ -5,9 +5,9 @@
 
 <div align="center">
 
-<p><strong>Boot the Arch OS ISO to launch the installer automatically.</strong></p>
+<p><strong>One command, on your own machine to get a boot device — and on the machine that device booted.</strong></p>
 
-<p>Alternatively, boot the official <a target="_blank" href="https://archlinux.org/download/">Arch Linux ISO</a>, unpack a release's <code>*.tar.gz</code> onto it, and run <code>./installer</code>.</p>
+<p><code>curl -Ls bit.ly/arch-os | bash</code></p>
 
 <p><img src="./screenshots/installer.png"></p>
 
@@ -50,8 +50,16 @@ image that starts the installer the moment it boots.
 An internet connection is required — most packages are downloaded during
 installation.
 
-1. **Get a bootable USB device.** Write the latest Arch OS ISO to a USB drive
-   (e.g. with [Ventoy](https://www.ventoy.net) or `dd`).
+```sh
+curl -Ls bit.ly/arch-os | bash
+```
+
+The same command twice, and where it runs decides what it does — see
+[`get.sh`](../get.sh):
+
+1. **On your own machine** it fetches the latest Arch OS image, verifies its
+   checksum and writes it to a USB device you pick from the ones plugged in.
+   ([Ventoy](https://www.ventoy.net) or `dd` do just as well.)
 2. **UEFI, Secure Boot off.** The installer checks this on startup and
    refuses to run otherwise — it can turn Secure Boot back on for you once
    the system exists.
@@ -59,6 +67,11 @@ installation.
    keyboard layout or network step is needed beforehand: the interface asks
    for a keymap, and a machine with no link is told to connect one with
    `iwctl` before it will go any further.
+
+On a stock [Arch Linux ISO](https://archlinux.org/download/) the same command
+is what starts an installation: it fetches the latest release, unpacks it and
+runs it. `MODE=install|create` picks either half by hand, and `DEBUG=true`
+keeps both off the hardware.
 
 `Ctrl+C` asks what to do with the machine — restart it or switch it off — and
 does not drop out into a blank console: there is nothing behind the installer to
@@ -79,6 +92,10 @@ housekeeping. Worth doing by hand regardless:
   breaks
 - Roll back with Btrfs Assistant (or `snapper`) if it does, and a snapshot
   exists to roll back to
+- Boot the installation image and choose **Recovery** if it no longer starts at
+  all: it unlocks the disk, puts a snapshot back in place of the root subvolume,
+  rebuilds the kernel images from the package cache and hands you a shell inside
+  the repaired system — without needing a network
 
 <details>
 <summary><h2 style="display: inline;" id="screenshots">Screenshots</h2></summary>

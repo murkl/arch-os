@@ -13,6 +13,10 @@ packages=("$ARCH_OS_KERNEL" base base-devel linux-firmware zram-generator networ
 [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_SNAPPER_ENABLED" = "true" ] && packages+=(snapper)
 secure_boot_wanted && packages+=(sbctl)
 
+# Before the packages, because installing the kernel builds a ram disk, and the
+# hook that puts a keyboard layout in it reads this file — see write_vconsole.
+write_vconsole
+
 # Retried, and with the download timeout off: this is the longest download of
 # the installation and the one most likely to meet a slow mirror.
 installed=false

@@ -17,7 +17,7 @@ RUNTIME_BIN := runtime/bin/installer-linux-amd64
 # What the installer tree is, and the only place it is written down: everything
 # in setup/ that a machine being installed onto needs, and nothing meant for a
 # developer.
-TREE := installer.yaml lib.sh data locales hooks tasks
+TREE := installer.yaml lib.sh util.sh recovery.sh data locales hooks tasks
 
 # What a download is called. Both artefacts of a build carry the same name and
 # differ only by extension, the way archiso already names the image — so a
@@ -26,7 +26,7 @@ TREE := installer.yaml lib.sh data locales hooks tasks
 STEM    := archos-$(VERSION)
 TARBALL := $(STEM)-x86_64.tar.gz
 
-.PHONY: all build tarball iso check clean
+.PHONY: all build tarball iso lint fmt check clean
 
 # Every target here writes release/, and build empties it first. Running two of
 # them at once would pull the folder out from under the other.
@@ -44,9 +44,12 @@ build:
 	install -m 755 $(RUNTIME_BIN) $(RELEASE_DIR)/installer
 	cp -r $(addprefix setup/,$(TREE)) $(RELEASE_DIR)/
 
-# The release as one file, for a stock Arch ISO: unpack it, run ./installer.
-# It unpacks into a folder of its own rather than over the directory it was
-# downloaded into, and gets a checksum beside it the way the image does.
+# The release as one file, for a stock Arch ISO: unpack it, run ./installer —
+# which is what get.sh does there on its own. It unpacks into a folder of its
+# own rather than over the directory it was downloaded into, and gets a checksum
+# beside it the way the image does. get.sh needs that checksum, and picks both
+# files out of a release by extension, so renaming either one is a change here
+# and nowhere else.
 tarball: build
 	mkdir -p $(DIST_DIR)
 	tar -czf $(DIST_DIR)/$(TARBALL) --owner=0 --group=0 --sort=name \
@@ -59,8 +62,18 @@ tarball: build
 iso: build
 	$(MAKE) -C iso build RELEASE_DIR=../$(RELEASE_DIR) DIST_DIR=../$(DIST_DIR) VERSION=$(VERSION)
 
+# get.sh is the only script that lives at the root, because it is the only one
+# that runs before any of this has been downloaded. It is POSIX sh, so it is
+# checked as such rather than as bash.
+lint:
+	shellcheck -s sh -S style get.sh
+	shfmt -d -ln posix -i 4 get.sh
+
+fmt:
+	shfmt -w -ln posix -i 4 get.sh
+
 # The one command that has to pass before anything is committed.
-check:
+check: lint
 	$(MAKE) -C runtime check
 	$(MAKE) -C setup check
 	$(MAKE) -C iso check

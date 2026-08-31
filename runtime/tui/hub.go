@@ -33,9 +33,17 @@ func (h *hub) Refresh() {
 	h.picker.focus(key)
 }
 
+// build names the top row after whatever this run is doing. A tree that offers
+// several modes has already said what each of them is called and what it does,
+// in its own words — and the row that starts one should be read in those words
+// rather than in the runtime's guess at them.
 func (h *hub) build() {
+	title, detail := labelInstall(), labelInstallHelp()
+	if m := h.app.mode(); m.Title != "" {
+		title, detail = m.Label(), m.Help()
+	}
 	h.picker = newPicker([]item{
-		{title: labelInstall(), detail: labelInstallHelp(), key: keyInstall},
+		{title: title, detail: detail, key: keyInstall},
 		{title: labelSettings(), detail: labelSettingsHelp(), key: keySettings},
 	})
 }

@@ -1,0 +1,7 @@
+name: Unmount and lock the disk
+stage: close
+confirm: |
+  Unmount the system and lock the disk again?
+
+  Nothing is lost either way — the recovery is finished. Leaving it mounted is
+  only useful if you want to keep working on it from here.

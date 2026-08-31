@@ -53,13 +53,26 @@ func holdAll(conds []*condition, get func(string) string) bool {
 	return true
 }
 
-// Applies reports whether a task belongs in this run.
-func (t *Task) Applies(get func(string) string) bool { return holdAll(t.cond, get) }
+// inMode reports whether a row declaring this mode belongs in the run. Empty is
+// every mode — the questions asked before the fork, which both sides of it are
+// typed on.
+func inMode(mode string, get func(string) string) bool {
+	return mode == "" || mode == get(ModeVar)
+}
+
+// Applies reports whether a task belongs in this run: the right mode, which its
+// stage settled, and every condition holding.
+func (t *Task) Applies(get func(string) string) bool {
+	return t.mode == get(ModeVar) && holdAll(t.cond, get)
+}
 
 // Applies reports whether a variable means anything given the answers so far.
 // One that does not is neither asked for nor shown — a graphics driver is not a
-// question on a machine that is not getting a desktop.
-func (v *Variable) Applies(get func(string) string) bool { return holdAll(v.cond, get) }
+// question on a machine that is not getting a desktop, and nothing about an
+// installation is a question in a recovery.
+func (v *Variable) Applies(get func(string) string) bool {
+	return inMode(v.Mode, get) && holdAll(v.cond, get)
+}
 
 // Conditions is `conditions:` as it may be written: one line, or a list of them.
 //
