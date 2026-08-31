@@ -29,7 +29,7 @@ messages:
   "Setup": "Einrichtung"
   "Choose what kind of system to install. Every detail can still be changed afterwards.": "Wähle, welche Art von System installiert werden soll. Jede Einzelheit lässt sich danach noch ändern."
   "Desktop": "Desktop"
-  "A full GNOME desktop with drivers, codecs, fonts and everyday applications.": "Ein vollständiger GNOME-Desktop mit Treibern, Codecs, Schriften und den Programmen für den Alltag."
+  "A GNOME desktop with drivers, codecs, fonts and everyday applications.": "Ein GNOME-Desktop mit Treibern, Codecs, Schriften und den Programmen für den Alltag."
   "Minimal": "Minimal"
   "Arch Linux on the console only — no desktop, no extras, nothing that was not asked for.": "Arch Linux nur auf der Konsole — kein Desktop, keine Extras, nichts Ungefragtes."
 

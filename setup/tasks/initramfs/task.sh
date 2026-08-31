@@ -7,9 +7,21 @@ simulating && return 0
 btrfs_hook=""
 [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BOOTLOADER" = "grub" ] && btrfs_hook=" grub-btrfs-overlayfs"
 
-hooks="base systemd keyboard autodetect microcode modconf sd-vconsole block filesystems fsck${btrfs_hook}"
-[ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] &&
-    hooks="base systemd keyboard autodetect microcode modconf sd-vconsole block sd-encrypt filesystems fsck${btrfs_hook}"
+# kms puts the graphics driver in the ram disk, so the screen is at its own
+# resolution from the first frame rather than after a mode switch halfway
+# through the boot — which is what the boot splash needs to be drawn once
+# instead of appearing, vanishing and coming back.
+#
+# Left out for NVIDIA, whose modules the graphics driver stage names itself:
+# kms would put nouveau in beside them and the two fight over the card.
+# https://wiki.archlinux.org/title/NVIDIA#Early_loading
+kms=" kms"
+[ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" = "nvidia" ] && kms=""
+
+encrypt_hook=""
+[ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && encrypt_hook=" sd-encrypt"
+
+hooks="base systemd keyboard autodetect microcode modconf${kms} sd-vconsole block${encrypt_hook} filesystems fsck${btrfs_hook}"
 sed -i "s/^HOOKS=(.*)$/HOOKS=(${hooks})/" "${MNT}/etc/mkinitcpio.conf"
 
 # A unified kernel image packs kernel, ram disk and command line into one EFI

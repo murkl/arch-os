@@ -1,3 +1,8 @@
 name: Install the boot splash
 stage: system
+# After the 32-bit repository, because switching that on upgrades the whole
+# system: the theme below is built from source against the packages that are
+# installed, and replacing them a minute later is how a freshly built package
+# stops matching the system it was built for.
+needs: [enable-multilib]
 conditions: ARCH_OS_BOOTSPLASH_ENABLED == true

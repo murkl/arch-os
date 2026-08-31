@@ -12,10 +12,20 @@ echo "LANG=${ARCH_OS_LOCALE_LANG}.UTF-8" >"${MNT}/etc/locale.conf"
 while read -r line; do
     [ -n "$line" ] || continue
     # Uncomment the matching entry rather than appending: locale.gen already
-    # lists every locale there is, commented out.
-    sed -i "s|^#${line}$|${line}|" "${MNT}/etc/locale.gen"
+    # lists every locale there is, commented out. Matched by its beginning
+    # alone, because the file pads its entries with trailing spaces and an
+    # anchored pattern would find none of them.
+    sed -i "s|^#${line}|${line}|" "${MNT}/etc/locale.gen"
 done < <(locale_gen_lines)
 arch-chroot "$MNT" locale-gen
+
+# locale-gen is happy to generate nothing at all, and a system whose LANG names
+# a locale that was never built answers every program with a warning and falls
+# back to English.
+if ! arch-chroot "$MNT" locale -a | grep -qxF "${ARCH_OS_LOCALE_LANG}.utf8"; then
+    echo "the locale ${ARCH_OS_LOCALE_LANG}.UTF-8 was not generated" >&2
+    exit 1
+fi
 
 echo "KEYMAP=${ARCH_OS_VCONSOLE_KEYMAP}" >"${MNT}/etc/vconsole.conf"
 [ -n "$ARCH_OS_VCONSOLE_FONT" ] && echo "FONT=${ARCH_OS_VCONSOLE_FONT}" >>"${MNT}/etc/vconsole.conf"

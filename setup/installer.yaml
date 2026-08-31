@@ -133,11 +133,11 @@ presets:
       # of a kind of system.
       - id: desktop
         title: Desktop
-        description: A full GNOME desktop with drivers, codecs, fonts and everyday applications.
+        description: A GNOME desktop with drivers, codecs, fonts and everyday applications.
         values:
           ARCH_OS_DESKTOP_ENABLED: true
           ARCH_OS_DESKTOP_EXTRAS_ENABLED: true
-          ARCH_OS_DESKTOP_SLIM_ENABLED: false
+          ARCH_OS_DESKTOP_SLIM_ENABLED: true
           ARCH_OS_SAMBA_SHARE_ENABLED: true
           ARCH_OS_CORE_TWEAKS_ENABLED: true
           ARCH_OS_BOOTSPLASH_ENABLED: true
@@ -555,7 +555,7 @@ variables:
     description: Removes the GNOME applications that come with the desktop and are rarely used.
     group: Desktop
     type: bool
-    default: false
+    default: true
     conditions: ARCH_OS_DESKTOP_ENABLED == true
 
   - name: ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED
