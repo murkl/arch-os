@@ -1,0 +1,8 @@
+# Hand over to {{SHELL}} outside a text console, where its extras are worth
+# having and where the font can draw the prompt.
+# https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish
+if [[ ! $(tty) =~ /dev/tty[0-9]* ]] && command -v {{SHELL}} &>/dev/null && [[ $(ps --no-header --pid=$PPID --format=comm) != "{{SHELL}}" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then
+    shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""
+    exec {{SHELL}} $LOGIN_OPTION
+    return
+fi

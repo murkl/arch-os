@@ -1,0 +1,97 @@
+# If not running interactively, do nothing.
+[[ $- != *i* ]] && return
+
+# Export the systemd user environment on a text console, where nothing else has.
+if [[ ${SHLVL} == 1 && -z ${DISPLAY} ]]; then
+    while IFS= read -r line; do
+        [[ $line == *=* ]] && export "$line"
+    done < <(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator)
+fi
+
+source "${HOME}/.aliases"
+
+# Suggest the package a missing command lives in.
+[[ -f /usr/share/doc/pkgfile/command-not-found.zsh ]] && source /usr/share/doc/pkgfile/command-not-found.zsh
+
+HISTFILE="${HOME}/.zsh_history"
+HISTSIZE=1000
+SAVEHIST=${HISTSIZE}
+setopt APPEND_HISTORY        # add to the history file rather than replacing it
+setopt HIST_IGNORE_ALL_DUPS  # drop older duplicates when a command is added
+setopt HIST_IGNORE_SPACE     # do not record commands that start with a space
+setopt HIST_REDUCE_BLANKS    # strip superfluous whitespace before recording
+setopt HIST_VERIFY           # load !-expansions into the line instead of running them
+setopt EXTENDED_HISTORY      # store a timestamp with each command
+
+# Skip noisy commands from the history entirely.
+zshaddhistory() {
+    case ${1%%$'\n'} in
+    ls | ll | la | cd | exit | clear | history | q | c) return 1 ;;
+    esac
+    return 0
+}
+
+setopt AUTO_CD       # a bare directory name changes into it
+setopt CORRECT       # offer corrections for mistyped commands
+setopt EXTENDED_GLOB # extended patterns
+setopt NO_NOMATCH    # leave an unmatched glob untouched instead of erroring
+unsetopt BEEP
+
+bindkey -e # Emacs-style key bindings, to match bash's default
+
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+zstyle ':completion:*' menu select
+
+autoload -Uz compinit
+() {
+    local dump="${HOME}/.cache/zsh/zcompdump"
+    [[ -d ${dump:h} ]] || mkdir -p "${dump:h}"
+    # Rebuild the dump (and run the security audit) at most once every 24h;
+    # otherwise load it as-is with -C, which skips the audit and speeds up startup.
+    if [[ -f $dump && -z $dump(#qN.mh+24) ]]; then
+        compinit -C -d "$dump"
+    else
+        compinit -d "$dump"
+    fi
+}
+
+# Colourful man pages.
+command -v bat &>/dev/null && export MANPAGER="sh -c \"col -bx | bat -l man -p\""
+command -v bat &>/dev/null && export MANROFFOPT="-c"
+
+# Faded inline suggestions from history as you type.
+if [[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+    source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+    # Upstream bug: _zsh_autosuggest_highlight_reset drops the old suggestion
+    # highlight via ${region_highlight:#$style} but runs without `emulate`, so
+    # EXTENDED_GLOB above turns the `#` in a true-colour style into a glob
+    # quantifier. The pattern then no longer matches, the stale highlight
+    # survives and bleeds onto commands recalled from history. Wrap the
+    # function to neutralise EXTENDED_GLOB for that match.
+    if (($+functions[_zsh_autosuggest_highlight_reset])); then
+        functions[_zsh_autosuggest_highlight_reset_orig]=$functions[_zsh_autosuggest_highlight_reset]
+        _zsh_autosuggest_highlight_reset() {
+            emulate -L zsh
+            _zsh_autosuggest_highlight_reset_orig "$@"
+        }
+    fi
+fi
+
+# Syntax highlighting on the command line. Must be sourced after every other
+# widget-defining plugin, with the sole exception of history-substring-search
+# below, which requires it to be sourced *after* highlighting.
+[[ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] &&
+    source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+# Substring history search: type a fragment, press Up/Down to step through
+# every matching past command (fish-style).
+if [[ -f /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh ]]; then
+    source /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
+    bindkey '^[[A' history-substring-search-up
+    bindkey '^[[B' history-substring-search-down
+fi
+
+command -v zoxide &>/dev/null && eval "$(zoxide init zsh)"
+
+# The prompt, outside a text console where the font can draw it.
+[[ $TTY != /dev/tty[0-9]* ]] && command -v starship &>/dev/null && eval "$(starship init zsh)"

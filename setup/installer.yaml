@@ -69,7 +69,7 @@ presets:
           ARCH_OS_MULTILIB_ENABLED: true
           ARCH_OS_HOUSEKEEPING_ENABLED: true
           ARCH_OS_SHELL_ENHANCEMENT_ENABLED: true
-          ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED: true
+          ARCH_OS_SHELL_ENHANCEMENT_SHELL: fish
           ARCH_OS_MANAGER_ENABLED: true
           ARCH_OS_BTRFS_SNAPPER_ENABLED: true
           ARCH_OS_BTRFS_ASSISTANT_ENABLED: true
@@ -88,7 +88,7 @@ presets:
           ARCH_OS_MULTILIB_ENABLED: false
           ARCH_OS_HOUSEKEEPING_ENABLED: false
           ARCH_OS_SHELL_ENHANCEMENT_ENABLED: false
-          ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED: false
+          ARCH_OS_SHELL_ENHANCEMENT_SHELL: bash
           ARCH_OS_MANAGER_ENABLED: false
           ARCH_OS_BTRFS_SNAPPER_ENABLED: false
           ARCH_OS_BTRFS_ASSISTANT_ENABLED: false
@@ -524,12 +524,15 @@ variables:
     type: bool
     default: true
 
-  - name: ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED
-    title: Fish shell
-    description: Installs fish alongside bash, with completion and suggestions as you type.
+  - name: ARCH_OS_SHELL_ENHANCEMENT_SHELL
+    title: Shell
+    description: |
+      bash is always set up; zsh or fish add completion and suggestions as you
+      type and become the shell that opens instead.
     group: System
-    type: bool
-    default: true
+    values: [bash, zsh, fish]
+    default: fish
+    required: true
     conditions: ARCH_OS_SHELL_ENHANCEMENT_ENABLED == true
 
   - name: ARCH_OS_MANAGER_ENABLED

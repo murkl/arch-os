@@ -30,14 +30,6 @@ export HISTCONTROL=ignoredups:erasedups
 export HISTTIMEFORMAT="%F %T "
 export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q:c"
 
-# Hand over to fish outside a text console, where its suggestions are worth
-# having and where the font can draw the prompt.
-# https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish
-if [[ ! $(tty) =~ /dev/tty[0-9]* ]] && command -v fish &>/dev/null && [[ $(ps --no-header --pid=$PPID --format=comm) != "fish" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then
-    shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""
-    exec fish $LOGIN_OPTION
-    return
-fi
-
+# {{SHELL_HANDOVER}}
 [[ ! $(tty) =~ /dev/tty[0-9]* ]] && command -v starship &>/dev/null && eval "$(starship init bash)"
 command -v zoxide &>/dev/null && eval "$(zoxide init bash)"

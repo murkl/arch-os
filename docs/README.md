@@ -40,7 +40,7 @@ image that starts the installer the moment it boots.
 - Graphics driver selection (Mesa, Intel, NVIDIA, AMD)
 - Plymouth bootsplash, Nord-themed
 - AUR helper, 32-bit (multilib) support, automatic housekeeping
-- Shell enhancement (Fish optional), preinstalled system manager TUI
+- Shell enhancement (bash, zsh or fish), preinstalled system manager TUI
 - Samba share, automatic mirror ranking by country (reflector)
 - Multilingual interface (English, German); a tree can add its own languages
   without touching the runtime — see [runtime/README.md](../runtime/README.md#translations)

@@ -32,14 +32,34 @@ sed -e "s|{{PKG}}|${pkg}|g" -e "s|{{SUDO}}|${sudo_prefix}|g" "${data}/aliases" |
     tee "${MNT}/root/.aliases" "${home}/.aliases" >/dev/null
 
 # ─── Shell configuration ─────────────────────────────────────────────────────
-tee "${MNT}/root/.bashrc" "${home}/.bashrc" <"${data}/bashrc" >/dev/null
+# bash is the shell every task and hook runs in, so it is always configured;
+# zsh or fish, chosen in ARCH_OS_SHELL_ENHANCEMENT_SHELL, is what bash then
+# hands over to outside a text console — see shell-handover.
+shell="$ARCH_OS_SHELL_ENHANCEMENT_SHELL"
+
+marker=$'# {{SHELL_HANDOVER}}\n'
+bashrc="$(cat "${data}/bashrc")"
+if [ "$shell" = "bash" ]; then
+    bashrc="${bashrc/$marker/}"
+else
+    handover="$(sed "s/{{SHELL}}/${shell}/g" "${data}/shell-handover")"$'\n'
+    bashrc="${bashrc/$marker/$handover}"
+fi
+printf '%s\n' "$bashrc" | tee "${MNT}/root/.bashrc" "${home}/.bashrc" >/dev/null
+
 tee "${MNT}/root/.config/fastfetch/config.jsonc" "${home}/.config/fastfetch/config.jsonc" <"${data}/fastfetch.jsonc" >/dev/null
 
-if [ "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" = "true" ]; then
+case "$shell" in
+zsh)
+    chroot_pacman_install zsh zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search
+    tee "${MNT}/root/.zshrc" "${home}/.zshrc" <"${data}/zshrc" >/dev/null
+    ;;
+fish)
     chroot_pacman_install fish
     mkdir -p "${MNT}/root/.config/fish" "${home}/.config/fish"
     tee "${MNT}/root/.config/fish/config.fish" "${home}/.config/fish/config.fish" <"${data}/config.fish" >/dev/null
-fi
+    ;;
+esac
 
 # ─── Prompt ──────────────────────────────────────────────────────────────────
 # Fetched rather than shipped, so the theme can be improved without a new
@@ -72,7 +92,7 @@ on_first_login <<'FIRST'
 gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 11'
 FIRST
 
-if [ "$ARCH_OS_SHELL_ENHANCEMENT_FISH_ENABLED" = "true" ]; then
+if [ "$shell" = "fish" ]; then
     on_first_login <<'FIRST'
 fish -c 'fish_config theme choose Nord && echo y | fish_config theme save'
 FIRST
