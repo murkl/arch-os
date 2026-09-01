@@ -55,8 +55,12 @@ test:
 # The same tests under the race detector. Not part of `check`: it doubles a run
 # that already takes over a minute, and it is the deeper question rather than
 # the everyday one. CI runs it on every push.
+#
+# The detector is built on cgo, and Go turns cgo off by itself wherever it finds
+# no C compiler — asking for it explicitly turns a silently skipped check into a
+# missing gcc.
 test-race:
-	go test -race ./...
+	CGO_ENABLED=1 go test -race ./...
 
 vet:
 	go vet ./...

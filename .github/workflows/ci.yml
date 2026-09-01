@@ -43,9 +43,11 @@ jobs:
 
       - uses: actions/checkout@v5
 
+      # gcc is in here for the race detector further down: it is built on
+      # cgo, which needs a C compiler that the base image does not carry.
       - uses: ./.github/actions/arch
         with:
-          packages: go make shellcheck shfmt staticcheck yamllint actionlint
+          packages: go gcc make shellcheck shfmt staticcheck yamllint actionlint
 
       - uses: actions/cache@v4
         with:
