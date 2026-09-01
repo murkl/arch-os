@@ -115,7 +115,7 @@ presets:
         title: paste.rs - Online
         description: Take every answer from a configuration that was shared at the end of an earlier installation.
         asks: ARCH_OS_CONFIG_SOURCE
-        apply: import_config
+        apply: ./tasks/share-config/import.sh
 
 # Everything this installer needs to know, in the order it is asked. Required and
 # unanswered is what makes the installer ask; an answer is what makes it stop.
@@ -278,7 +278,12 @@ variables:
     group: Storage
     required: true
     error: Choose a disk that exists.
-    command: disk_options
+    command: |
+      # The device path is the answer, what follows the tab is what it is chosen
+      # by. Nobody picks between /dev/sda and /dev/sdb by name. Whole disks only
+      # — 8 is SCSI and SATA, 259 NVMe, 254 virtual block devices.
+      lsblk -d -n -I 8,259,254 -o PATH,SIZE,MODEL |
+          awk '{ path = $1; $1 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
 
   - name: ARCH_OS_FILESYSTEM
     title: File system

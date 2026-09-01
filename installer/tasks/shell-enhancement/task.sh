@@ -6,8 +6,8 @@ simulating && return 0
 home="${MNT}/home/${ARCH_OS_USERNAME}"
 data="$(where)"
 
-packages=(git starship eza bat zoxide fd fzf fastfetch mc btop nano man-db
-    bash-completion nano-syntax-highlighting ttf-firacode-nerd ttf-nerd-fonts-symbols)
+packages=(git starship eza bat zoxide fd fzf fastfetch mc btop
+    bash-completion nano-syntax-highlighting ttf-firacode-nerd)
 chroot_pacman_install "${packages[@]}"
 
 mkdir -p "${MNT}/root/.config/fastfetch" "${home}/.config/fastfetch"
@@ -75,11 +75,6 @@ fi
 cp "${home}/.config/starship.toml" "${MNT}/root/.config/starship.toml"
 
 # ─── Editor ──────────────────────────────────────────────────────────────────
-{
-    echo 'EDITOR=nano'
-    echo 'VISUAL=nano'
-} >"${MNT}/etc/environment"
-
 # In each home rather than /etc/nanorc, which belongs to the nano package and
 # would leave a .pacnew to merge on every update.
 mkdir -p "${MNT}/root/.config/nano" "${home}/.config/nano"

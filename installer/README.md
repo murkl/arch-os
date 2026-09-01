@@ -18,7 +18,7 @@ installer.yaml           what this installer is, what it asks, what order it wor
 tasks/<id>/task.yaml     where that unit belongs: its stage, its needs, its conditions
 tasks/<id>/task.sh       what it does — and any file it ships with, beside it
 hooks/<name>.sh          everything around the work itself
-lib.sh                   what every script of this tree shares
+lib.sh                   the little every script of this tree shares
 data/                    the tables a language and a country are looked up in
 locales/                 one <code>.yaml per language this installer speaks
 ```
@@ -92,6 +92,12 @@ The first line is what makes `DEBUG=true` a simulation rather than an
 installation. It belongs at the top of every task, before the first command that
 changes anything. `where` is the unit's own folder.
 
+`lib.sh` is deliberately small. What is in it is there because several tasks
+need the same answer and must not disagree about it — the kernel command line,
+the mount point, how a package is installed and retried. Everything else belongs
+in the task that does it, even when that means a longer script: a task nobody
+can read without opening a second file is a task nobody will change.
+
 Three rules:
 
 - **Ask nothing.** Every question is declared in `installer.yaml` and asked
@@ -132,13 +138,12 @@ of task names cannot say that on its own.
 
 The finished `installer.conf` can go to [paste.rs](https://paste.rs) — no
 account, no key — and its address comes back as a code to scan. Both ends are in
-`lib.sh`:
+the `share-config` task:
 
 | | |
 |---|---|
-| `share_config` | uploads and records the address as `ARCH_OS_CONFIG_URL`; never fails an installation that has already worked |
-| `import_config` | fetches one and appends it to the answer file |
-| `config_url` | the address, from either the whole link or the code at the end of it |
+| `task.sh` | uploads and records the address as `ARCH_OS_CONFIG_URL`; never fails an installation that has already worked |
+| `import.sh` | fetches one and appends it to the answer file, from either the whole link or the code at the end of it |
 
 The upload is the `share-config` task: a `confirm:` opening on **no**, asked
 immediately after the page that says the installation is finished. There is no
@@ -151,8 +156,8 @@ host name, the user name, the disk and the language are. **Anybody holding the
 address can read it.**
 
 The other end is the third starting point, `paste.rs - Online`: it asks for the
-code, `import_config` turns it into answers, and from the next page on nothing
-about them is any different.
+code, `import.sh` turns it into answers, and from the next page on nothing about
+them is any different.
 
 ## Hooks
 
@@ -172,8 +177,9 @@ refused when the tree loads.
 
 The last two are what make leaving the installer a question rather than an exit:
 the ISO boots to run this, so quitting by accident would leave a machine that
-answers nothing. Both go through `leave_machine` in `lib.sh`, which unmounts
-whatever the installation had open and does nothing at all under `DEBUG=true`.
+answers nothing. Both call `unmount_target` first, so a machine on its way down
+does not take a half-written file system with it, and both do nothing at all
+under `DEBUG=true`.
 
 The third way out is `console:` in `installer.yaml`, and it runs nothing: the
 installer closes and the machine keeps running. See [iso/](../iso).
@@ -255,5 +261,6 @@ any value is given and copied into the new system at the end. The password is
 never in it: it is asked for immediately before the installation starts and
 forgotten when it is over.
 
-It is also the one way a script answers anything — `answer NAME value` in
-`lib.sh` appends a line, and the runtime reads the file back.
+It is also the one way a script answers anything: a task appends a
+`NAME='value'` line to it — see the `share-config` task — and the runtime reads
+the file back.

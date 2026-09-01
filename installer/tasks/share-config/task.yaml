@@ -4,8 +4,8 @@ needs: [copy-config]
 
 # Asked here rather than among the settings an hour earlier, and opening on no:
 # nothing leaves the machine until somebody in front of it has said so, on the
-# page that has just told them the installation is over. share_config in lib.sh
-# is the only thing in this tree that sends anything anywhere.
+# page that has just told them the installation is over. This task is the only
+# thing in this tree that sends anything anywhere.
 confirm: |
   Put these answers online now?
 

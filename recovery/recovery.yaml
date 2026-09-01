@@ -74,9 +74,18 @@ variables:
     required: true
     first: true
     blind: true
-    apply: load_console_keyboard
-    prefill: live_keymap
     command: localectl list-keymaps
+    prefill: |
+      # The keyboard the live image was started with. The Arch image records it
+      # in root's shell history as the loadkeys command that set it, which is
+      # the only place it can be read back from.
+      grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null |
+          tail -n1 | sed 's/.*loadkeys *//' | tr -d ' ' || true
+    apply: |
+      # DEBUG runs on somebody's own machine, whose keyboard is not ours to
+      # touch.
+      [ "$DEBUG" = "true" ] && exit 0
+      loadkeys "$ARCH_OS_RECOVERY_KEYMAP"
 
   # ─── The system to repair ──────────────────────────────────────────────────
   #
@@ -92,7 +101,12 @@ variables:
     group: Storage
     required: true
     error: Choose a disk that exists.
-    command: disk_options
+    command: |
+      # The device path is the answer, what follows the tab is what it is chosen
+      # by. Nobody picks between /dev/sda and /dev/sdb by name. Whole disks only
+      # — 8 is SCSI and SATA, 259 NVMe, 254 virtual block devices.
+      lsblk -d -n -I 8,259,254 -o PATH,SIZE,MODEL |
+          awk '{ path = $1; $1 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
 
   - name: ARCH_OS_RECOVERY_ENCRYPTION_ENABLED
     title: Disk encryption
@@ -102,7 +116,9 @@ variables:
     group: Storage
     type: bool
     required: true
-    prefill: disk_encrypted
+    prefill: |
+      # A LUKS header is readable without the password, so this one is reliable.
+      [ "$(fstype "$(root_part)")" = "crypto_LUKS" ] && echo true || echo false
 
   - name: ARCH_OS_RECOVERY_PASSWORD
     title: Encryption password
@@ -123,7 +139,12 @@ variables:
     group: Storage
     values: [btrfs, ext4]
     required: true
-    prefill: disk_filesystem
+    prefill: |
+      # Readable everywhere except behind LUKS, where the question is a real one.
+      case "$(fstype "$(root_part)")" in
+      btrfs) echo btrfs ;;
+      ext4) echo ext4 ;;
+      esac
 
   - name: ARCH_OS_RECOVERY_SNAPSHOT
     title: Snapshot
@@ -133,6 +154,7 @@ variables:
     group: Storage
     required: true
     conditions: ARCH_OS_RECOVERY_FILESYSTEM == btrfs
-    # Asked by the rollback task: the snapshots cannot be listed until the disk
-    # they are on is unlocked and mounted.
-    command: snapshots
+    # Asked by the rollback task, which is also where the shell that lists them
+    # lives: the snapshots cannot be listed until the disk they are on is
+    # unlocked and mounted.
+    command: ./tasks/rollback/snapshots.sh

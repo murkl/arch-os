@@ -3,6 +3,10 @@
 
 simulating && return 0
 
+# How this project mounts btrfs. The recovery mounts what this lays down and has
+# the same line in its own lib.sh — the two must not drift apart.
+BTRFS_OPTS="defaults,noatime,compress=zstd"
+
 # Dual boot keeps the disk as it is — the other system's partitions, its EFI
 # partition and its boot entries all stay.
 if [ "$ARCH_OS_DUAL_BOOT_ENABLED" != "true" ]; then

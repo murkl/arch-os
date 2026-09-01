@@ -4,14 +4,16 @@ simulating && return 0
 
 chroot_pacman_install plymouth git base-devel
 
-# The hook goes directly behind whichever init hook is in use, which is early
-# enough to have a screen to draw on. Matched that way rather than against the
-# whole line, so it still lands when the rest of the list changes.
-sed -i 's/^HOOKS=(\(base [a-z]*\)/HOOKS=(\1 plymouth/' "${MNT}/etc/mkinitcpio.conf"
-if ! grep -qE '^HOOKS=\(.*\bplymouth\b' "${MNT}/etc/mkinitcpio.conf"; then
-    echo "plymouth could not be added to the mkinitcpio hooks" >&2
-    exit 1
-fi
+# The hook goes directly behind the init hook, which is early enough to have a
+# screen to draw on. mkinitcpio concatenates its own configuration and every
+# drop-in and sources the lot as one file, so this splices the array the
+# initramfs task already set rather than matching a line with a pattern.
+mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
+{
+    echo '# Written by the Arch OS Installer.'
+    # shellcheck disable=SC2016  # mkinitcpio expands this, not us
+    echo 'HOOKS=("${HOOKS[@]:0:2}" plymouth "${HOOKS[@]:2}")'
+} >"${MNT}/etc/mkinitcpio.conf.d/20-plymouth.conf"
 
 chroot_aur_install plymouth-theme-arch-os
 
@@ -24,7 +26,16 @@ arch-chroot "$MNT" mkinitcpio -P
 # so and gives up when it cannot find the theme's plugin or font, and mkinitcpio
 # finishes the image without it. That image boots perfectly well, without a
 # splash.
-for image in $(kernel_images); do
+#
+# What it built is a signed unified image where the boot chain is signed, and a
+# bare ram disk where it is not.
+if secure_boot_wanted; then
+    images=("/boot/EFI/Linux/arch-${ARCH_OS_KERNEL}.efi" "/boot/EFI/Linux/arch-${ARCH_OS_KERNEL}-fallback.efi")
+else
+    images=("/boot/initramfs-${ARCH_OS_KERNEL}.img" "/boot/initramfs-${ARCH_OS_KERNEL}-fallback.img")
+fi
+
+for image in "${images[@]}"; do
     if ! arch-chroot "$MNT" lsinitcpio "$image" | grep -q 'plymouthd'; then
         echo "plymouth is missing from ${image}" >&2
         exit 1

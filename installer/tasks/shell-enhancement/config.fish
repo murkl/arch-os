@@ -4,6 +4,9 @@ end
 
 set fish_greeting
 
+set -gx EDITOR nano
+set -gx VISUAL nano
+
 # Colourful man pages.
 command -v bat &>/dev/null && export MANPAGER="sh -c \"col -bx | bat -l man -p\""
 command -v bat &>/dev/null && export MANROFFOPT="-c"

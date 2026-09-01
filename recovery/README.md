@@ -18,9 +18,9 @@ DEBUG=true make -C ../runtime run TREE=../recovery
 ```
 recovery.yaml            what this recovery is, what it asks, what order it works in
 tasks/<id>/task.yaml     where that unit belongs: its stage, its needs, its conditions
-tasks/<id>/task.sh       what it does
+tasks/<id>/task.sh       what it does — and any file it ships with, beside it
 hooks/<name>.sh          everything around the work itself
-lib.sh                   what every script of this tree shares
+lib.sh                   the little every script of this tree shares
 locales/                 one <code>.yaml per language this recovery speaks
 ```
 
@@ -51,7 +51,7 @@ front of you.
 |---|---|---|
 | `open` | `open` | unlock and mount, the way the system mounts itself |
 | `rollback` | `repair` | put a snapshot in place of the root subvolume — btrfs only |
-| `kernel` | `repair` | rebuild the kernel images and ram disks from the package cache |
+| `kernel` | `repair` | rebuild the kernel images and ram disks from the package cache, and sign them again where the boot chain is signed |
 | `shell` | `repair` | `arch-chroot` into the repaired system, with the terminal handed over |
 | `close` | `close` | unmount everything and lock the disk |
 
@@ -80,9 +80,9 @@ rollback happens in the second: `@` cannot be replaced while it is the root that
 is mounted, and the top level has to survive `/mnt` going away. It is kept out
 of the chroot on purpose.
 
-The mount options are the installer's, written out in both `lib.sh` files. The
-recovery puts a file system back the way the installation laid it out, so the
-two lines must not drift apart.
+The mount options are the installer's, written out here in `lib.sh` and in the
+installer's `prepare-disk` task. The recovery puts a file system back the way
+the installation laid it out, so the two lines must not drift apart.
 
 ## Writing a task
 
@@ -91,6 +91,15 @@ Same as in the installer, and the rules are written down there:
 with `task.yaml` and `task.sh` in it, the script is sourced into a shell that
 already carries `lib.sh` and an `ERR` trap, and `simulating && return 0` is what
 makes `DEBUG=true` a simulation rather than a repair.
+
+The repair itself lives in those scripts, not in `lib.sh`: unlocking, rolling
+back and rebuilding are each one task's whole job and are read there. What
+`lib.sh` holds is what more than one of them has to agree about — where the
+system is mounted, what its partitions are called, and the mount options a
+rollback has to put back exactly as the open found them. A task that ships a
+file of its own keeps it beside itself: `tasks/rollback/snapshots.sh` is the
+list of snapshots, named from `recovery.yaml` as the answers that question
+offers.
 
 ## Answers
 

@@ -30,39 +30,44 @@ fi
 packages+=("${desktop[@]}")
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-    packages+=(gnome-browser-connector gnome-themes-extra gnome-epub-thumbnailer tuned-ppd cups)
+    packages+=(gnome-browser-connector gnome-themes-extra tuned-ppd cups)
 
     # Portals, for flatpaks and screen sharing on Wayland. The GNOME portal
-    # itself is in the group.
-    packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk flatpak-xdg-utils)
+    # itself is in the group; the GTK one is the fall-back for what it does not
+    # implement.
+    packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk)
 
     # Audio. https://wiki.archlinux.org/title/PipeWire#Installation
     packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber sof-firmware)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
 
     # Reaching other machines, and letting them reach this one. The gvfs back
-    # ends are in the group.
-    packages+=(samba rsync modemmanager network-manager-sstp networkmanager-l2tp
-        networkmanager-vpnc networkmanager-openvpn networkmanager-openconnect
-        networkmanager-strongswan)
+    # ends are in the group, and NetworkManager speaks WireGuard by itself —
+    # OpenVPN is the one protocol still worth a plug-in nobody has to look for.
+    # The rest of the VPN plug-ins are a package away for whoever needs them.
+    packages+=(rsync networkmanager-openvpn)
 
     # base-devel is what builds from the AUR; the rest opens a drive or an
-    # archive from anywhere else.
-    packages+=(base-devel archlinux-contrib pacutils fwupd bash-completion inetutils
-        nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfatprogs btrfs-progs xfsprogs
-        7zip zip unzip unrar wget nautilus-image-converter jq fzf gum zenity)
+    # archive from anywhere else. The file systems are the ones a stick or an
+    # external drive actually turns up formatted as.
+    packages+=(base-devel fwupd bash-completion inetutils
+        dosfstools ntfs-3g exfatprogs btrfs-progs nfs-utils
+        7zip zip unzip unrar wget jq zenity)
 
     # Codecs. https://wiki.archlinux.org/title/Codecs_and_containers
     packages+=(ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire
         gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss webp-pixbuf-loader)
 
-    # No lib32 build of sdl2-compat or sdl12-compat exists — only gamemode
-    # itself is shipped 32 bit.
-    packages+=(gamemode sdl3_image sdl2-compat sdl12-compat)
+    # gamemode alone: the SDL compatibility libraries arrive as dependencies of
+    # the games that need them, and only gamemode is shipped 32 bit anyway.
+    packages+=(gamemode)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
 
-    packages+=(ttf-firacode-nerd ttf-nerd-fonts-symbols woff2-font-awesome noto-fonts noto-fonts-cjk
-        noto-fonts-emoji ttf-liberation ttf-dejavu adobe-source-sans-fonts adobe-source-serif-fonts)
+    # One family that covers every script the web has, one that draws emoji, two
+    # metric-compatible with what documents ask for, and the terminal font the
+    # prompt is drawn with.
+    packages+=(noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation ttf-dejavu
+        ttf-firacode-nerd)
 
     packages+=(adw-gtk-theme tela-circle-icon-theme-standard)
 fi
@@ -78,22 +83,20 @@ arch-chroot "$MNT" usermod -aG adm,audio,video,optical,input,tty,plugdev "$ARCH_
 [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && arch-chroot "$MNT" gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
 # ─── Login screen ────────────────────────────────────────────────────────────
-mkdir -p "${MNT}/etc/gdm"
-{
-    echo '[daemon]'
-    echo 'WaylandEnable=True'
-    if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
-        echo
+# Only where there is something to say. /etc/gdm/custom.conf belongs to the gdm
+# package, so a copy of it that only repeats gdm's own defaults — Wayland on,
+# debugging off — would be a file to merge after an update in exchange for
+# nothing. GDM unlocks the login keyring from the password it was given by
+# itself, so there is nothing to arrange for that either.
+if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
+    mkdir -p "${MNT}/etc/gdm"
+    {
+        echo '# Written by the Arch OS Installer.'
+        echo '[daemon]'
         echo 'AutomaticLoginEnable=True'
         echo "AutomaticLogin=${ARCH_OS_USERNAME}"
-    fi
-    echo
-    echo '[debug]'
-    echo 'Enable=False'
-} >"${MNT}/etc/gdm/custom.conf"
-
-# The login password also unlocks the keyring, so nothing asks twice.
-sed -i 's/auth\s\+optional\s\+pam_gnome_keyring\.so$/& try_first_pass/' "${MNT}/etc/pam.d/gdm-password"
+    } >"${MNT}/etc/gdm/custom.conf"
+fi
 
 # Under automatic login GDM never sees a password, so PAM has none to unlock the
 # keyring with. GNOME's own answer is a login keyring without a password: the

@@ -15,7 +15,18 @@ encrypt_hook=""
 [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && encrypt_hook=" sd-encrypt"
 
 hooks="base systemd keyboard autodetect microcode modconf sd-vconsole block${encrypt_hook} filesystems fsck${btrfs_hook}"
-sed -i "s/^HOOKS=(.*)$/HOOKS=(${hooks})/" "${MNT}/etc/mkinitcpio.conf"
+
+# As a drop-in, not as an edit of /etc/mkinitcpio.conf: that file belongs to the
+# mkinitcpio package and editing it would leave a .pacnew to merge every time
+# upstream touches it. mkinitcpio reads its own file first and every
+# /etc/mkinitcpio.conf.d/*.conf after it, in name order, so what is set here
+# wins — and later drop-ins can still build on it (see the boot splash and the
+# graphics driver).
+mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
+{
+    echo '# Written by the Arch OS Installer.'
+    echo "HOOKS=(${hooks})"
+} >"${MNT}/etc/mkinitcpio.conf.d/10-arch-os.conf"
 
 # A unified kernel image packs kernel, ram disk and command line into one EFI
 # binary that is signed as a whole. Without it the ram disk sits unsigned on the

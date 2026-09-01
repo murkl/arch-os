@@ -6,6 +6,11 @@ simulating && return 0
 # that builds from the AUR needs — and the wheel rule is written either way.
 packages=("$ARCH_OS_KERNEL" base sudo linux-firmware wireless-regdb zram-generator networkmanager)
 
+# `base` ships no editor, no manuals and no ssh, so a console-only installation
+# cannot edit its own configuration, look anything up or reach another machine.
+# Four packages, no service switched on by any of them.
+packages+=(nano man-db man-pages openssh)
+
 [ "$ARCH_OS_MICROCODE" != "none" ] && packages+=("$ARCH_OS_MICROCODE")
 [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(btrfs-progs)
 [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_SNAPPER_ENABLED" = "true" ] && packages+=(snapper)

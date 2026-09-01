@@ -75,7 +75,7 @@ presets:                 # pages of starting points, offered on a machine with n
         title: Online                    # a starting point fetched rather than written out
         description: Take the answers from a configuration somebody shared.
         asks: ARCH_OS_CONFIG_SOURCE      # the one question choosing this row puts
-        apply: import_config             # shell that turns that answer into answers
+        apply: ./tasks/share/import.sh   # shell that turns that answer into answers
 
 variables:
   - name: ARCH_OS_USERNAME     # reaches every script as an environment variable

@@ -36,7 +36,12 @@ arch-chroot "$MNT" bootctl --esp-path=/boot install || echo "reinstalling the si
 # mode; anything else needs a trip into the UEFI. -m keeps Microsoft's
 # certificates, without which many boards reject their own option ROMs and a
 # parallel Windows stops booting.
-if ! secure_boot_setup_mode; then
+# The firmware is in setup mode only while its key hierarchy is empty, which is
+# the one state our own keys may be enrolled in. "Secure Boot disabled" is not
+# the same thing. Read from the UEFI variable rather than out of `sbctl status`:
+# the first four bytes are attributes, the fifth holds the value.
+setup_mode=/sys/firmware/efi/efivars/SetupMode-8be4df61-93ca-11d2-aa0d-00e098032b8c
+if [ ! -r "$setup_mode" ] || [ "$(od -An -t u1 -j 4 -N 1 "$setup_mode" 2>/dev/null | tr -d ' ')" != "1" ]; then
     echo "Secure Boot: the firmware is not in setup mode, so no keys were enrolled — the boot chain is signed, so enrolling later is enough"
     return 0
 fi

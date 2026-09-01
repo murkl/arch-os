@@ -13,6 +13,9 @@ source "${HOME}/.aliases"
 # Suggest the package a missing command lives in.
 [[ -f /usr/share/doc/pkgfile/command-not-found.zsh ]] && source /usr/share/doc/pkgfile/command-not-found.zsh
 
+export EDITOR=nano
+export VISUAL=nano
+
 HISTFILE="${HOME}/.zsh_history"
 HISTSIZE=1000
 SAVEHIST=${HISTSIZE}

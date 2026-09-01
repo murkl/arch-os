@@ -107,6 +107,11 @@ same kind of tree for repairing a system that is already on a disk. The
 [`runtime/`](runtime) is the frame around both and changes for bugs and
 features, not for a new package.
 
+[AGENTS.md](AGENTS.md) is the same ground written as rules rather than as prose:
+the layering, the task contract, what may and may not be edited on an installed
+system, and how everything here is written. It is meant for a coding agent, and
+it is the shortest way in for a person too.
+
 ## Commits
 
 Write them in the imperative — "Add", "Fix", "Refactor" — and keep one logical

@@ -24,6 +24,9 @@ bind "set completion-ignore-case on"
 command -v bat &>/dev/null && export MANPAGER="sh -c \"col -bx | bat -l man -p\""
 command -v bat &>/dev/null && export MANROFFOPT="-c"
 
+export EDITOR=nano
+export VISUAL=nano
+
 export HISTSIZE=1000
 export HISTFILESIZE=${HISTSIZE}
 export HISTCONTROL=ignoredups:erasedups

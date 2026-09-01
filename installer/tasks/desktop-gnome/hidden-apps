@@ -12,8 +12,6 @@ always qv4l2
 always qvidcap
 always lstopo
 always org.gnome.Evince
-extras stoken-gui
-extras stoken-gui-small
 extras cups
 extras tuned-gui
 shell btop

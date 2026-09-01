@@ -4,6 +4,18 @@
 
 simulating && return 0
 
+# The modules this card needs in the ram disk. A drop-in rather than an edit of
+# /etc/mkinitcpio.conf, which belongs to the mkinitcpio package: it is read
+# after the hooks the initramfs task set, and leaves nothing to merge after an
+# update.
+early_modules() {
+    mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
+    {
+        echo '# Written by the Arch OS Installer.'
+        echo "MODULES=($*)"
+    } >"${MNT}/etc/mkinitcpio.conf.d/30-graphics.conf"
+}
+
 case "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" in
 
 mesa) # https://wiki.archlinux.org/title/OpenGL#Installation
@@ -16,7 +28,7 @@ intel_i915) # https://wiki.archlinux.org/title/Intel_graphics#Installation
     packages=(vulkan-intel vkd3d intel-media-driver vulkan-tools)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-vulkan-intel lib32-vkd3d)
     chroot_pacman_install "${packages[@]}"
-    sed -i "s/^MODULES=(.*)/MODULES=(i915)/g" "${MNT}/etc/mkinitcpio.conf"
+    early_modules i915
     arch-chroot "$MNT" mkinitcpio -P
     ;;
 
@@ -37,7 +49,7 @@ nvidia) # https://wiki.archlinux.org/title/NVIDIA#Installation
     # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
     mkdir -p "${MNT}/etc/modprobe.d"
     echo 'options nvidia_drm modeset=1 fbdev=1' >"${MNT}/etc/modprobe.d/nvidia.conf"
-    sed -i "s/^MODULES=(.*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" "${MNT}/etc/mkinitcpio.conf"
+    early_modules nvidia nvidia_modeset nvidia_uvm nvidia_drm
 
     # The modules live in the ram disk, so it is rebuilt whenever the driver or
     # the kernel changes — once per batch, not once per package.
@@ -73,7 +85,7 @@ amd) # https://wiki.archlinux.org/title/AMDGPU#Installation
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] &&
         packages+=(lib32-mesa lib32-vulkan-radeon lib32-vkd3d lib32-vulkan-mesa-layers lib32-opencl-mesa)
     chroot_pacman_install "${packages[@]}"
-    sed -i "s/^MODULES=(.*)/MODULES=(amdgpu)/g" "${MNT}/etc/mkinitcpio.conf"
+    early_modules amdgpu
     arch-chroot "$MNT" mkinitcpio -P
     ;;
 
@@ -82,7 +94,7 @@ ati) # https://wiki.archlinux.org/title/ATI#Installation
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] &&
         packages+=(lib32-mesa lib32-vkd3d lib32-vulkan-mesa-layers lib32-opencl-mesa)
     chroot_pacman_install "${packages[@]}"
-    sed -i "s/^MODULES=(.*)/MODULES=(radeon)/g" "${MNT}/etc/mkinitcpio.conf"
+    early_modules radeon
     arch-chroot "$MNT" mkinitcpio -P
     ;;
 

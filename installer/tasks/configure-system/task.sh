@@ -21,12 +21,21 @@ arch-chroot "$MNT" hwclock --systohc
 
 # ─── Language and keyboard ───────────────────────────────────────────────────
 echo "LANG=${ARCH_OS_LOCALE_LANG}.UTF-8" >"${MNT}/etc/locale.conf"
-while read -r line; do
+
+# Every line of /etc/locale.gen belonging to the chosen language, plus English as
+# a fallback. locale.gen already lists every locale, commented out; each is
+# matched by its beginning alone, because the file pads entries with trailing
+# spaces.
+#
+# The file belongs to glibc and locale-gen reads no other, so this is an edit
+# rather than a drop-in — and one of the few places a .pacnew is still possible.
+{
+    sed "/^#${ARCH_OS_LOCALE_LANG}/s/^#//" /etc/locale.gen | grep "^${ARCH_OS_LOCALE_LANG}" || true
+    echo 'en_US.UTF-8 UTF-8'
+} | while read -r line; do
     [ -n "$line" ] || continue
-    # locale.gen already lists every locale, commented out. Matched by its
-    # beginning alone, because the file pads entries with trailing spaces.
     sed -i "s|^#${line}|${line}|" "${MNT}/etc/locale.gen"
-done < <(locale_gen_lines)
+done
 arch-chroot "$MNT" locale-gen
 
 # locale-gen is happy to generate nothing, and a system whose LANG names a locale

@@ -1,6 +1,11 @@
 # Shared ground for every script of this tree: the target, the values worked out
 # rather than asked for, and the few things every task does.
 #
+# Everything else lives in the task that does it. What is here is here because
+# several scripts need the same answer and must not disagree about it — a boot
+# entry and a unified kernel image that describe different command lines are a
+# system that boots one way and updates the other.
+#
 # The runtime sources this before every task and every hook, so a script is plain
 # shell with no preamble — the ERR trap that stops at the first failure is the
 # runtime's. Nothing here prints for a person to read; stdout goes to the log.
@@ -38,21 +43,6 @@ is_online() {
 # with.
 where() { dirname "${BASH_SOURCE[1]}"; }
 
-# ─── Answering ───────────────────────────────────────────────────────────────
-
-# An answer, appended to the file the runtime keeps them in — one KEY='value' to
-# a line, which the runtime reads back. Any earlier line for the same name is
-# dropped, so a file somebody opens does not say a thing twice.
-#
-# Written whole and moved into place: a script interrupted mid-write must not
-# leave half a file where the answers were.
-answer() {
-    local tmp="${INSTALLER_CONF}.answer"
-    grep -v "^${1}=" "$INSTALLER_CONF" >"$tmp" 2>/dev/null || : >>"$tmp"
-    printf "%s='%s'\n" "$1" "$(printf '%s' "$2" | sed "s/'/'\\\\''/g")" >>"$tmp"
-    mv -f "$tmp" "$INSTALLER_CONF"
-}
-
 # ─── What a language and a country imply ─────────────────────────────────────
 #
 # The keyboard a language is typed on, the font that can draw it, the mirrors its
@@ -80,14 +70,6 @@ country_field() {
     awk -F'\t' -v col="$1" -v code="${locale#*_}" '$1 == code { print $col }' "${DATA}/countries"
 }
 
-# The keyboard the live image was started with. The Arch image records it in
-# root's shell history as the loadkeys command that set it, which is the only
-# place it can be read back from.
-live_keymap() {
-    grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null |
-        tail -n1 | sed 's/.*loadkeys *//' | tr -d ' ' || true
-}
-
 # ─── auto / none ─────────────────────────────────────────────────────────────
 
 # The two words the lists in installer.yaml share; neither ever reaches a task.
@@ -102,7 +84,11 @@ not_none() { [ "$1" = "none" ] || printf '%s' "$1"; }
 auto_keymap() {
     local keymap
     keymap="$(language_field 2 "$ARCH_OS_LOCALE_LANG")"
-    : "${keymap:=$(live_keymap)}"
+    # Otherwise the keyboard the live image was started with. The Arch image
+    # records it in root's shell history as the loadkeys command that set it,
+    # which is the only place it can be read back from.
+    : "${keymap:=$(grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null |
+        tail -n1 | sed 's/.*loadkeys *//' | tr -d ' ')}"
     printf '%s' "${keymap:-us}"
 }
 
@@ -155,15 +141,7 @@ auto_microcode() {
 # password at boot, so a second one at the login screen protects nothing.
 auto_autologin() { printf '%s' "${ARCH_OS_ENCRYPTION_ENABLED:-false}"; }
 
-# ─── Disks and partitions ─────────────────────────────────────────────────────
-
-# The disks this machine has: the device path is the answer, what follows the tab
-# is what it is chosen by. Nobody picks between /dev/sda and /dev/sdb by name.
-# Whole disks only — 8 is SCSI and SATA, 259 NVMe, 254 virtual block devices.
-disk_options() {
-    lsblk -d -n -I 8,259,254 -o PATH,SIZE,MODEL |
-        awk '{ path = $1; $1 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
-}
+# ─── Where the new system goes ───────────────────────────────────────────────
 
 # part_of names a partition of a disk. Devices whose name ends in a digit —
 # nvme0n1, mmcblk0, loop0 — put a p between the disk and the number.
@@ -172,11 +150,6 @@ part_of() {
     [[ "$1" =~ [0-9]$ ]] && sep="p"
     printf '%s%s%s' "$1" "$sep" "$2"
 }
-
-# How this project mounts btrfs. The recovery mounts what this lays down and has
-# the same line in its own lib.sh — the two must not drift apart.
-# shellcheck disable=SC2034 # prepare-disk reads it, and is checked on its own
-BTRFS_OPTS="defaults,noatime,compress=zstd"
 
 # Resolved once here rather than in one stage, so every stage sees the same
 # answer however it was arrived at.
@@ -194,12 +167,7 @@ ARCH_OS_VCONSOLE_FONT="$(not_none "$ARCH_OS_VCONSOLE_FONT")"
 ARCH_OS_REFLECTOR_COUNTRY="$(not_none "$ARCH_OS_REFLECTOR_COUNTRY")"
 ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$(not_none "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT")"
 
-# Every line of /etc/locale.gen belonging to the chosen language, uncommented,
-# plus English as a fallback.
-locale_gen_lines() {
-    sed "/^#${ARCH_OS_LOCALE_LANG}/s/^#//" /etc/locale.gen | grep "^${ARCH_OS_LOCALE_LANG}" || true
-    echo 'en_US.UTF-8 UTF-8'
-}
+# ─── The console of the new system ───────────────────────────────────────────
 
 # The console keyboard and font of the new system.
 #
@@ -222,7 +190,7 @@ load_console_keyboard() {
     loadkeys "$ARCH_OS_VCONSOLE_KEYMAP"
 }
 
-# ─── Secure Boot ─────────────────────────────────────────────────────────────
+# ─── The signed boot chain ───────────────────────────────────────────────────
 
 # Whether this installation gets Secure Boot, which always comes with a unified
 # kernel image. The boot loader and the ram disk are both built differently for a
@@ -238,29 +206,6 @@ load_console_keyboard() {
 secure_boot_wanted() {
     [ "$ARCH_OS_SECURE_BOOT_ENABLED" = "true" ] &&
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && [ "$ARCH_OS_BOOTLOADER" = "systemd" ]
-}
-
-# What mkinitcpio builds, as paths inside the new system. Named here because two
-# tasks have to agree about it: the one that writes the preset, and the one that
-# checks what came out of it.
-kernel_images() {
-    if secure_boot_wanted; then
-        echo "/boot/EFI/Linux/arch-${ARCH_OS_KERNEL}.efi"
-        echo "/boot/EFI/Linux/arch-${ARCH_OS_KERNEL}-fallback.efi"
-        return 0
-    fi
-    echo "/boot/initramfs-${ARCH_OS_KERNEL}.img"
-    echo "/boot/initramfs-${ARCH_OS_KERNEL}-fallback.img"
-}
-
-# Whether the firmware is in setup mode — the only state our own keys may be
-# enrolled in. "Secure Boot disabled" is not the same thing. Read from the UEFI
-# variable rather than out of `sbctl status`: the first four bytes are
-# attributes, the fifth holds the value.
-secure_boot_setup_mode() {
-    local efivar=/sys/firmware/efi/efivars/SetupMode-8be4df61-93ca-11d2-aa0d-00e098032b8c
-    [ -r "$efivar" ] || return 1
-    [ "$(od -An -t u1 -j 4 -N 1 "$efivar" 2>/dev/null | tr -d ' ')" = "1" ]
 }
 
 # ─── The kernel command line ─────────────────────────────────────────────────
@@ -370,103 +315,10 @@ FIRST_LOGIN="${MNT}/home/${ARCH_OS_USERNAME}/.first-login"
 
 on_first_login() { cat >>"$FIRST_LOGIN"; }
 
-# ─── The copy left behind ────────────────────────────────────────────────────
-
-# The answers as they are kept inside the finished system. Named here rather than
-# in the task that writes it, because share_config appends to the same file once
-# there is an address to append.
-TARGET_CONF="${MNT}/home/${ARCH_OS_USERNAME}/installer.conf"
-
-# ─── Sharing what was answered ───────────────────────────────────────────────
-#
-# An installation is two dozen answers, and the next machine set up the same way
-# is otherwise those answers given again by hand. So the finished configuration
-# can be put where a phone reaches it, and a starting point can take its answers
-# from there.
-#
-# Only ever the answer file: a user name, a host name, a disk, a language. The
-# password is not in it — the runtime never writes a secret down.
-#
-# Nothing here runs unasked: share_config is the body of a task that offers
-# itself first and opens on no.
-
-# paste.rs takes a file over an ordinary POST, answers with the address it now
-# lives at, and serves it back as plain text. No account, no key.
-CONFIG_SERVICE="https://paste.rs"
-
-# The address, from whatever somebody has in front of them: the whole link, or
-# only the code at the end of it.
-config_url() {
-    local ref
-    ref="$(printf '%s' "$1" | tr -d '[:space:]')"
-    case "$ref" in
-    http://* | https://*) printf '%s' "$ref" ;;
-    *) printf '%s/%s' "$CONFIG_SERVICE" "${ref##*/}" ;;
-    esac
-}
-
-# Everything this installation was told, without the lines about the sharing
-# itself: a configuration naming where an earlier copy went would send whoever
-# opened it somewhere else again.
-shareable_config() {
-    grep -v '^ARCH_OS_CONFIG_' "$INSTALLER_CONF" || true
-}
-
-# The answers, uploaded, and the address kept as an answer of its own — which is
-# what puts it on the page the run stops on next.
-#
-# Nothing here may fail the installation: the system on the disk is finished by
-# the time this is offered, and an unreachable pastebin says nothing about it.
-share_config() {
-    # Simulated, this still answers with an address: the page at the end of a
-    # run is the one most worth looking at while this tree is being worked on.
-    simulating && {
-        answer ARCH_OS_CONFIG_URL "${CONFIG_SERVICE}/demo"
-        return 0
-    }
-
-    local url
-    if ! url="$(shareable_config | curl -sf --connect-timeout 10 --max-time 30 --data-binary @- "${CONFIG_SERVICE}/")"; then
-        echo "the configuration could not be shared" >&2
-        return 0
-    fi
-    url="$(printf '%s' "$url" | tr -d '[:space:]')"
-    [ -n "$url" ] || return 0
-
-    answer ARCH_OS_CONFIG_URL "$url"
-
-    # And into the copy already in the new system: the one record of it that
-    # survives the machine being restarted.
-    [ -f "$TARGET_CONF" ] && printf "ARCH_OS_CONFIG_URL='%s'\n" "$url" >>"$TARGET_CONF"
-    return 0
-}
-
-# A configuration somebody shared, taken as the answers to this installation.
-# What the runtime owns is left alone: the interface language and the mode are
-# settings of the program in front of you, not of somebody else's machine.
-#
-# This one may fail, and says why: it runs while somebody is looking at the box
-# they typed the code into.
-import_config() {
-    local url body
-    url="$(config_url "$ARCH_OS_CONFIG_SOURCE")"
-
-    if ! body="$(curl -Lsf --connect-timeout 10 --max-time 30 "$url")"; then
-        echo "Nothing could be read at ${url}" >&2
-        return 1
-    fi
-    body="$(printf '%s\n' "$body" | grep '^ARCH_OS_[A-Z0-9_]*=' | grep -v '^ARCH_OS_CONFIG_' || true)"
-    if [ -z "$body" ]; then
-        echo "What is kept at ${url} is not an Arch OS configuration" >&2
-        return 1
-    fi
-    printf '%s\n' "$body" >>"$INSTALLER_CONF"
-}
-
 # ─── Leaving ─────────────────────────────────────────────────────────────────
 
 # Everything the installation mounted, taken back down in the right order —
-# named once, so the unmount task, the restart and the hooks cannot differ.
+# named once, so the unmount task, the restart and the shutdown cannot differ.
 #
 # Flushed before anything comes down, so a target that will not unmount is a
 # mount left standing rather than a file half written. The second attempt is
@@ -494,13 +346,4 @@ free_target() {
     fuser -Mvm "$MNT" || true
     fuser -Mkm "$MNT" || true
     sleep 2
-}
-
-# What the restart and shutdown hooks do. Whatever was mounted is closed first,
-# so a machine restarted halfway through does not take a half-written file system
-# with it. Nothing mounted is not an error.
-leave_machine() {
-    simulating && return 0
-    unmount_target || true
-    systemctl "$1"
 }

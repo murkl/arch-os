@@ -280,7 +280,7 @@ func catalog(dir string) error {
 	}
 	fmt.Printf("# Translation catalog for %s.\n", sp.UI.Title)
 	fmt.Printf("# Fill in the right-hand side. Anything left empty stays as it is written here.\n")
-	fmt.Printf("language: \n")
+	fmt.Printf("language: \"\"\n")
 	fmt.Printf("messages:\n")
 	for _, msg := range sp.Strings() {
 		fmt.Printf("  %s: \"\"\n", quoteYAML(msg))
@@ -296,8 +296,15 @@ func quoteYAML(s string) string {
 	}
 	var b strings.Builder
 	b.WriteString("? |-\n")
-	for _, line := range strings.Split(strings.TrimRight(s, "\n"), "\n") {
-		b.WriteString("    " + line + "\n")
+	for line := range strings.SplitSeq(strings.TrimRight(s, "\n"), "\n") {
+		// The blank line between two paragraphs is written as a blank line, not
+		// as four spaces: a catalog is edited and then linted like any other
+		// yaml, and trailing whitespace is what a linter says first.
+		if line != "" {
+			b.WriteString("    ")
+			b.WriteString(line)
+		}
+		b.WriteByte('\n')
 	}
 	return strings.TrimRight(b.String(), "\n") + "\n  "
 }

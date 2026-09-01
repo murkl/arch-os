@@ -107,3 +107,15 @@ has never heard of.
 </div>
 
 </details>
+
+## Why this exists
+
+Arch OS is a spare-time project, and the system it installs is the one I use
+every day — privately and at work, as a project lead and cloud native engineer.
+The road to it started with Ubuntu, in 2005.
+
+The split between the two halves is also a split in how they are written. The
+runtime is Go, written with AI assistance and reviewed line by line before it
+goes in. The Arch Linux side — the installer and the recovery, the shell scripts
+and the YAML — is handwritten, and grew out of the installer that came before
+there was a runtime to drive it.

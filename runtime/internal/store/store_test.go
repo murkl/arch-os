@@ -292,3 +292,105 @@ func names(vs []*spec.Variable) []string {
 	}
 	return out
 }
+
+// An exported variable is what drives an unattended run, so a declared name set
+// in the environment is taken as an answer — and a secret never is, because
+// what a secret is for is not being carried around.
+func TestTheEnvironmentAnswersDeclaredQuestions(t *testing.T) {
+	t.Setenv("USER", "moritz")
+	t.Setenv("HOST", "")
+	t.Setenv("PW", "hunter2")
+	s := setup(t, `
+variables:
+  - name: USER
+    title: User
+  - name: HOST
+    title: Host
+    default: arch-os
+  - name: PW
+    title: Password
+    type: secret
+`)
+	s.LoadEnv()
+	if got := s.Get("USER"); got != "moritz" {
+		t.Errorf("USER = %q, want moritz from the environment", got)
+	}
+	if got := s.Get("HOST"); got != "arch-os" {
+		t.Errorf("HOST = %q, want the default — an empty variable is not an answer", got)
+	}
+	if got := s.Get("PW"); got != "" {
+		t.Errorf("PW = %q, want nothing — a secret is not taken from the environment", got)
+	}
+}
+
+// The settings page is a promise that every row on it can be opened, so a value
+// that means nothing yet is not on it.
+func TestVisibleLeavesOutWhatCannotBeAnsweredFromThere(t *testing.T) {
+	sp := load(t, `
+title: T
+stages: [go]
+variables:
+  - name: DISK
+    title: Disk
+  - name: SNAPSHOT
+    title: Snapshot
+    values: [a, b]
+  - name: EXTRA
+    title: Extra
+    conditions: DISK == /dev/sda
+`)
+	// Being named by a task's `asks:` is what defers a variable; the tree above
+	// has no such task, so it is deferred here the way the loader would.
+	s := New(sp, filepath.Join(t.TempDir(), "installer.conf"))
+
+	if got := names(s.Visible()); strings.Join(got, ",") != "DISK,SNAPSHOT" {
+		t.Errorf("visible = %v, want DISK and SNAPSHOT — EXTRA's condition does not hold", got)
+	}
+	s.Set("DISK", "/dev/sda")
+	if got := names(s.Visible()); strings.Join(got, ",") != "DISK,SNAPSHOT,EXTRA" {
+		t.Errorf("visible = %v, want EXTRA once its condition holds", got)
+	}
+}
+
+// An answer file is what turns a first run into a return, and the question is
+// asked once, before the interface opens.
+func TestExistsSaysWhetherThisMachineHasAnsweredAnythingYet(t *testing.T) {
+	s := setup(t, twoVars)
+	if s.Exists() {
+		t.Error("a machine that has answered nothing reports an answer file")
+	}
+	if err := s.Save(); err != nil {
+		t.Fatal(err)
+	}
+	if !s.Exists() {
+		t.Error("the answer file was written and is not found")
+	}
+}
+
+// A script may answer questions by appending to the answer file — a shared
+// configuration fetched from somewhere, a link a run has just produced — and
+// what it wrote has to arrive without the program being restarted.
+func TestReloadPicksUpWhatAScriptWroteIntoTheAnswerFile(t *testing.T) {
+	s := setup(t, twoVars)
+	if err := s.Save(); err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.OpenFile(s.Path(), os.O_APPEND|os.O_WRONLY, 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.WriteString("USER='moritz'\n"); err != nil {
+		t.Fatal(err)
+	}
+	f.Close()
+
+	if got := s.Get("USER"); got != "" {
+		t.Fatalf("USER = %q before the reload", got)
+	}
+	if err := s.Reload(); err != nil {
+		t.Fatal(err)
+	}
+	if got := s.Get("USER"); got != "moritz" {
+		t.Errorf("USER = %q after the reload, want moritz", got)
+	}
+}

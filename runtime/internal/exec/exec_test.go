@@ -179,3 +179,34 @@ func TestKillingAStageTakesEverythingItStartedWithIt(t *testing.T) {
 		t.Fatal("something the stage started outlived it")
 	}
 }
+
+// Reason is for the shell whose failure is a sentence somebody reads on the page
+// they are standing on — a configuration that could not be fetched — rather than
+// a report of where a task broke. What the script said is the whole of it.
+func TestReasonAnswersWithWhatTheScriptSaid(t *testing.T) {
+	err := sh.Reason(`echo "Nothing is shared under that code" >&2; exit 1`, Env(os.Environ()))
+	if err == nil {
+		t.Fatal("a script that failed reported nothing")
+	}
+	if err.Error() != "Nothing is shared under that code" {
+		t.Errorf("err = %q, want the script's own last words and nothing else", err)
+	}
+}
+
+// A script that fails without saying anything still has to be reported, and
+// then the exit status is all there is.
+func TestReasonFallsBackToTheExitStatusWhenNothingWasSaid(t *testing.T) {
+	err := sh.Reason("exit 3", Env(os.Environ()))
+	if err == nil {
+		t.Fatal("a script that failed reported nothing")
+	}
+	if !strings.Contains(err.Error(), "3") {
+		t.Errorf("err = %q, want the exit status in it", err)
+	}
+}
+
+func TestReasonIsSilentWhenTheScriptWorks(t *testing.T) {
+	if err := sh.Reason("echo fine", Env(os.Environ())); err != nil {
+		t.Errorf("err = %v, want nothing", err)
+	}
+}
