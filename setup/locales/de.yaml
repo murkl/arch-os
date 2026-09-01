@@ -96,6 +96,8 @@ messages:
   "Boot": "Start"
   "Boot loader": "Bootloader"
   "systemd-boot is small and needs no maintenance. GRUB can show a menu of btrfs snapshots to boot into.": "systemd-boot ist klein und wartungsfrei. GRUB kann ein Menü mit btrfs-Schnappschüssen zum Starten anzeigen."
+  "Secure Boot": "Secure Boot"
+  "Signs the kernel and the boot loader with keys made for this machine, so the firmware starts nothing else. Where the firmware is in setup mode the keys are enrolled straight away and Secure Boot only has to be switched on there afterwards; otherwise everything is signed and enrolling is left to you.": "Signiert Kernel und Bootloader mit Schlüsseln, die für diesen Rechner erzeugt werden, sodass die Firmware nichts anderes startet. Steht die Firmware im Setup-Modus, werden die Schlüssel gleich hinterlegt und Secure Boot muss dort anschließend nur noch eingeschaltet werden; sonst ist alles signiert und das Hinterlegen bleibt dir überlassen."
   "Kernel": "Kernel"
   "linux-zen is tuned for desktop responsiveness. linux is the stock kernel, linux-lts a long-term one, linux-hardened a security-focused one.": "linux-zen ist auf einen reaktionsschnellen Desktop abgestimmt. linux ist der Standardkernel, linux-lts der langfristig gepflegte, linux-hardened der sicherheitsgehärtete."
   "Kernel parameters": "Kernel-Parameter"

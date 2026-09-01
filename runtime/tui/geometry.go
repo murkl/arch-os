@@ -29,10 +29,6 @@ const (
 	gapL   = 3
 	gapXL  = 5
 	gapXXL = 8
-
-	// Reading width for a paragraph. Long enough to avoid ragged fragments,
-	// short enough that the eye finds the next line without hunting.
-	textW = 55
 )
 
 // split divides a width in the golden ratio: the major part is what the eye

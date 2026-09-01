@@ -15,6 +15,7 @@ import (
 // indistinguishable from a program that has hung. A page with a turning mark on
 // it is a program working.
 type checkScreen struct {
+	opening
 	app  *app
 	done bool
 }

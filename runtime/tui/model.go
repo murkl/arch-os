@@ -192,13 +192,7 @@ func (m *Model) View() string {
 	}
 	w, h := frameSize(m.width, m.height)
 
-	trail := crumbFrom(m.stack)
-	crumbs := make([]string, 0, len(trail))
-	for _, s := range trail {
-		if t := s.Title(); t != "" {
-			crumbs = append(crumbs, t)
-		}
-	}
+	crumbs := crumbTrail(m.stack)
 
 	// A flash stands where the page's own status usually is, and how it is inked
 	// says which of the two it is: what went wrong reads as a failure, what

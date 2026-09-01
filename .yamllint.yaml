@@ -1,0 +1,33 @@
+# What counts as sound yaml here, for `make lint`.
+#
+# Three of yamllint's defaults are switched off. Each is a convention of the
+# linter rather than a rule of the format, and each would ask for the source to
+# be rewritten for the tool's sake:
+#
+#   line-length  installer.yaml and the translation catalogs are prose. A
+#                sentence broken at column 80 reads worse and diffs worse.
+#   truthy       `default: no` is an answer to an offer, not a boolean — the
+#                runtime reads every scalar as the text it was written as (see
+#                runtime/internal/spec/scalar.go). check-keys off because a
+#                workflow's `on:` is a key, not a value.
+#   comments     the stage lists in installer.yaml are annotated one space out,
+#                so the comment sits against its entry rather than adrift of it.
+
+extends: default
+
+rules:
+  line-length: disable
+  document-start: disable
+  truthy:
+    allowed-values: ["true", "false", "yes", "no"]
+    check-keys: false
+  comments:
+    min-spaces-from-content: 1
+
+# Build output and the ISO's scratch space. Nothing under either is a source
+# file — see /Makefile and iso/build.sh.
+ignore: |
+  /release/
+  /dist/
+  /iso/archiso/
+  /iso/download/

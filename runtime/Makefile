@@ -24,7 +24,7 @@ GOFLAGS       := CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH)
 # the release's business, not this one's.
 TREE ?= ../setup
 
-.PHONY: all build run tidy test vet fmt clean check release
+.PHONY: all build run tidy tidy-check test test-race vet staticcheck vuln fmt fmt-check clean check release
 
 all: build
 
@@ -43,17 +43,45 @@ release:
 tidy:
 	go mod tidy
 
+# What `tidy` would change, said as an error instead of made as a change. A
+# go.mod that has drifted from what the code imports builds here and nowhere
+# else.
+tidy-check:
+	go mod tidy -diff
+
 test:
 	go test ./...
+
+# The same tests under the race detector. Not part of `check`: it doubles a run
+# that already takes over a minute, and it is the deeper question rather than
+# the everyday one. CI runs it on every push.
+test-race:
+	go test -race ./...
 
 vet:
 	go vet ./...
 
+# Dead code, values that go nowhere, the mistakes vet does not look for.
+staticcheck:
+	staticcheck ./...
+
+# Known vulnerabilities in what this imports. It asks a server, so it stays out
+# of `check` — a check that needs the network is a check that fails on a train.
+# CI runs it on every push.
+vuln:
+	govulncheck ./...
+
 fmt:
 	gofmt -s -w .
 
+# gofmt asked as a question rather than made as an edit, so a branch that was
+# never formatted fails here instead of arriving later as a diff nobody wrote.
+fmt-check:
+	@unformatted="$$(gofmt -s -l .)"; \
+	[ -z "$$unformatted" ] || { echo "not gofmt'd:" >&2; echo "$$unformatted" >&2; exit 1; }
+
 # The one command that has to pass before anything is committed.
-check: vet test build
+check: fmt-check tidy-check vet staticcheck test build
 
 # There is deliberately no install target. The binary looks for its
 # installer.yaml beside itself, so a copy on $PATH with nothing next to it is a

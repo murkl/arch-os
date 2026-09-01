@@ -71,6 +71,12 @@ func labelHintFilterBlind() string {
 func labelFilterPlaceholder() string { return say("Filter …") }
 func labelNoMatch() string           { return say("No matches") }
 
+// The heading over the opening: the pages in front of the questions proper.
+// They come one after another rather than one inside the other, so the line
+// above them says which part of the program this is and then which of its pages
+// — never the row of answers already given.
+func labelOpening() string { return say("Start") }
+
 func labelLanguage() string     { return say("Interface language") }
 func labelLanguageHelp() string { return say("Choose the language for this installer.") }
 

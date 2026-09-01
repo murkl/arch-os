@@ -46,6 +46,7 @@ messages:
   "Checking this machine …": "System wird geprüft …"
   "System check": "Systemprüfung"
   "Cannot continue": "Installation nicht möglich"
+  "Start": "Start"
   "Interface language": "Sprache der Oberfläche"
   "Choose the language for this installer.": "Sprache für diesen Installer wählen."
 

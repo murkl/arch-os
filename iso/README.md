@@ -46,14 +46,41 @@ checkout beside this repository when there is one, and fetched otherwise.
 Point `PLYMOUTH_THEME_SRC` at a `src/` directory to build against a different
 one.
 
+A build leaves nothing behind. `archiso/` is a copy of the stock profile made
+fresh every run, so a build that worked takes it with it; a build that failed
+keeps it — there is nothing else to read a failure out of — but hands it back to
+whoever started the build rather than leaving it owned by root. `download/` is
+the exception on purpose: it is the vendored theme, and it is what lets the next
+build run without a network.
+
+## Booting it
+
+```sh
+make smoke                  # the newest image in ../dist
+make smoke ISO=path/to.iso
+```
+
+Boots the image under qemu and OVMF and waits for the installer's first page to
+appear on its console — no installation happens, and the machine is switched off
+the moment the page is recognised. What that proves is the part no linter sees:
+the boot entry, the initramfs and its plymouth hook, the systemd unit on tty1,
+the runtime, and the tree it loads.
+
+Needs `qemu-base`, `edk2-ovmf`, `tesseract` and `tesseract-data-eng`. The
+console it photographed is left in `smoke/` — one frame on success, all of them
+on a failure. CI runs this on every image it builds, before anything is
+promoted.
+
 ## What is where
 
 ```
 build.sh                                   assembles and runs mkarchiso
+smoke.sh                                   boots a built image and waits for the installer
 src/etc/systemd/system/installer.service   starts the installer on tty1
 src/usr/local/bin/installer                the one way in: the unit and the prompt both run this, and it dresses the console first
 src/usr/local/bin/installer-console-theme  paints the console in the Nord palette
 ```
 
 `make lint` shellchecks and shfmts every script here; `archiso` itself, and
-root, are only needed for `make build`.
+root, are only needed for `make build`. `make clean` takes back `archiso/`,
+`download/` and `smoke/`.

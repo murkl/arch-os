@@ -7,21 +7,16 @@ simulating && return 0
 btrfs_hook=""
 [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BOOTLOADER" = "grub" ] && btrfs_hook=" grub-btrfs-overlayfs"
 
-# kms puts the graphics driver in the ram disk, so the screen is at its own
-# resolution from the first frame rather than after a mode switch halfway
-# through the boot — which is what the boot splash needs to be drawn once
-# instead of appearing, vanishing and coming back.
-#
-# Left out for NVIDIA, whose modules the graphics driver stage names itself:
-# kms would put nouveau in beside them and the two fight over the card.
-# https://wiki.archlinux.org/title/NVIDIA#Early_loading
-kms=" kms"
-[ "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" = "nvidia" ] && kms=""
-
+# The graphics driver deliberately stays out of the ram disk — no kms hook. In
+# it, the card is handed over from the firmware framebuffer to the real driver
+# while plymouth is already drawing on it, and the console takes the screen back
+# for the rest of the boot: no splash, and the disk passphrase asked for in
+# plain text. Left out, the handover happens once the root file system is
+# mounted, which is past everything the splash is there for.
 encrypt_hook=""
 [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && encrypt_hook=" sd-encrypt"
 
-hooks="base systemd keyboard autodetect microcode modconf${kms} sd-vconsole block${encrypt_hook} filesystems fsck${btrfs_hook}"
+hooks="base systemd keyboard autodetect microcode modconf sd-vconsole block${encrypt_hook} filesystems fsck${btrfs_hook}"
 sed -i "s/^HOOKS=(.*)$/HOOKS=(${hooks})/" "${MNT}/etc/mkinitcpio.conf"
 
 # A unified kernel image packs kernel, ram disk and command line into one EFI

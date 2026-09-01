@@ -51,6 +51,10 @@ func (h *hub) build() {
 func (h *hub) Title() string { return "" }
 func (h *hub) Hint() string  { return labelHintMenu() }
 
+// crumbRoot: the hub is home. Whatever run of pages ended on it is over, and
+// none of it is behind this page any more.
+func (h *hub) crumbRoot() bool { return true }
+
 func (h *hub) Update(msg tea.Msg) (screen, tea.Cmd) {
 	h.picker.Update(msg)
 	key, ok := msg.(tea.KeyMsg)

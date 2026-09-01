@@ -10,6 +10,12 @@
 # checksum land in DIST_DIR.
 set -e
 
+# mkarchiso has to run as root. In CI this script already is, and asking for
+# sudo there would mean shipping a sudoers file for a privilege nobody has to
+# gain. Empty when there is nothing to elevate.
+SUDO=""
+[ "$(id -u)" -eq 0 ] || SUDO="sudo"
+
 RELEASE_DIR="${RELEASE_DIR:-../release}"
 DIST_DIR="${DIST_DIR:-../dist}"
 DOWNLOAD_DIR="./download"
@@ -20,7 +26,7 @@ ISO_CONFIG="releng" # baseline or releng
 # and /sys inside it, and anything on the desktop that walks a project folder —
 # an editor's file watcher, a background grep — holds those open long enough for
 # the unmount to fail. The build then dies cleaning up after itself. Absolute,
-# because it is passed to mkarchiso from inside ISO_DIR.
+# because it is somewhere else entirely and has to be found from here.
 WORK_DIR="$(realpath -m "${WORK_DIR:-/var/tmp/archos-iso-work}")"
 
 AIRFS_OPT="${ISO_DIR}/airootfs/opt/installer"
@@ -36,7 +42,6 @@ PLYMOUTH_THEME_REPO="https://github.com/murkl/plymouth-theme-arch-os"
 : "${SNAPSHOT_VERSION:=$(git -C .. rev-parse --short HEAD 2>/dev/null || echo dev)}"
 
 TEMP_DIR="$(mktemp -d)"
-trap 'rm -rf "${TEMP_DIR}"' EXIT
 
 # A run interrupted between pacstrap's mounts and its teardown leaves them
 # behind, and every later run then fails on those rather than on anything it did
@@ -45,9 +50,39 @@ trap 'rm -rf "${TEMP_DIR}"' EXIT
 unmount_leftovers() {
     findmnt -rno TARGET | grep "^$(realpath -m "$1")/" | sort -r | while read -r target; do
         echo "unmounting leftover: ${target}"
-        sudo umount -l "$target"
+        ${SUDO} umount -l "$target"
     done
 }
+
+# What a build leaves behind, and what it does not.
+#
+# mkarchiso writes as root, and a root-owned file inside a checkout breaks
+# everything that walks it afterwards: an editor indexing the project, a grep, a
+# `make clean`, the next build. So nothing root-owned survives this script,
+# whichever way it ends.
+#
+# ISO_DIR is a copy of the stock archiso profile, made fresh at the start of
+# every run — keeping it saves nothing, so a build that worked takes it with it.
+# A build that failed keeps it, because that is the only place the failure can be
+# read afterwards, and hands it to whoever started the build.
+#
+# DOWNLOAD_DIR is the exception on purpose: it belongs to the user already, and
+# it is what lets the next build run without a network.
+cleanup() {
+    status=$?
+    set +e
+    rm -rf "${TEMP_DIR}"
+    unmount_leftovers "${WORK_DIR}"
+    ${SUDO} rm -rf "${WORK_DIR}"
+    if [ "$status" -eq 0 ]; then
+        ${SUDO} rm -rf "${ISO_DIR}"
+    elif [ -d "${ISO_DIR}" ]; then
+        echo "build failed — the profile is left at ${ISO_DIR}"
+        ${SUDO} chown -R "$(id -u):$(id -g)" "${ISO_DIR}"
+    fi
+    exit "$status"
+}
+trap cleanup EXIT
 
 echo "### Initialize Build"
 [ -x "${RELEASE_DIR}/installer" ] || { echo "Error: ${RELEASE_DIR}/installer not found — run 'make build' first" >&2 && exit 1; }
@@ -55,12 +90,12 @@ echo "### Initialize Build"
 mkdir -p "$DOWNLOAD_DIR"
 unmount_leftovers "${WORK_DIR}"
 unmount_leftovers "${ISO_DIR}"
-sudo rm -rf "${ISO_DIR}" "${WORK_DIR}"
+${SUDO} rm -rf "${ISO_DIR}" "${WORK_DIR}"
 mkdir -p "${ISO_DIR}"
 mkdir -p "${RELEASE_DIR}"
 
 # Install dependencies
-! command -v /usr/bin/mkarchiso &>/dev/null && sudo pacman -S --noconfirm archiso
+! command -v /usr/bin/mkarchiso &>/dev/null && ${SUDO} pacman -S --noconfirm archiso
 
 # Generate ISO (baseline/releng)
 cp -r "/usr/share/archiso/configs/${ISO_CONFIG}/"* "${ISO_DIR}"
@@ -209,11 +244,7 @@ set_key_value "${ISO_DIR}/profiledef.sh" iso_application "Arch OS Installer ISO"
 
 # Make ISO
 echo "### Make Arch OS ISO"
-cd "${ISO_DIR}"
-sudo rm -rf out
-sudo mkarchiso -v -w "${WORK_DIR}" .
-cd ..
-sudo rm -rf "${WORK_DIR}"
+${SUDO} mkarchiso -v -w "${WORK_DIR}" -o "${ISO_DIR}/out" "${ISO_DIR}"
 
 # The image and its checksum go to DIST_DIR, beside the tarball: the release is
 # the installer as a machine runs it, and both of these are downloaded instead.

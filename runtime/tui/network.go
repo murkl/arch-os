@@ -19,6 +19,7 @@ import (
 // here — the tree's own preflight check runs right after this one and refuses
 // properly if it still matters.
 type networkScreen struct {
+	opening
 	app   *app
 	radio *wlan.Radio
 

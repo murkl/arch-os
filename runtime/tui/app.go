@@ -172,7 +172,7 @@ func (a *app) afterLanguage() screen {
 	if len(open) == 0 {
 		return a.chooseMode()
 	}
-	return newField(a, open[0], func() tea.Cmd { return push(a.afterLanguage()) })
+	return newField(a, open[0], func() tea.Cmd { return push(a.afterLanguage()) }).opening()
 }
 
 // chooseMode is the fork, where the tree can do more than one thing. It sits

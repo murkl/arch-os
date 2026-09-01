@@ -15,6 +15,7 @@ import (
 // immediate and total — every word on the next frame is in the new language,
 // including the one on the row that was just chosen.
 type languageScreen struct {
+	opening
 	app    *app
 	picker *picker
 	done   func() tea.Cmd

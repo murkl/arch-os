@@ -409,6 +409,22 @@ variables:
     values: [systemd, grub]
     required: true
 
+  - name: ARCH_OS_SECURE_BOOT_ENABLED
+    title: Secure Boot
+    description: |
+      Signs the kernel and the boot loader with keys made for this machine, so
+      the firmware starts nothing else. Where the firmware is in setup mode the
+      keys are enrolled straight away and Secure Boot only has to be switched on
+      there afterwards; otherwise everything is signed and enrolling is left to
+      you.
+    group: Boot
+    mode: install
+    type: bool
+    default: true
+    conditions:
+      - ARCH_OS_ENCRYPTION_ENABLED == true
+      - ARCH_OS_BOOTLOADER == systemd
+
   - name: ARCH_OS_KERNEL
     title: Kernel
     description: |

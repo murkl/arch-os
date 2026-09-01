@@ -1,0 +1,18 @@
+# Dependencies and actions, kept current without anybody remembering to. The
+# pull requests go to dev, like every other change — main is only ever
+# fast-forwarded onto a commit that already passed.
+
+version: 2
+
+updates:
+  - package-ecosystem: gomod
+    directory: /runtime
+    target-branch: dev
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly

@@ -704,6 +704,28 @@ func TestTheOpeningQuestionsShowACounterRatherThanATrail(t *testing.T) {
 	h.wants("2 of 2").refuses("User name ›")
 }
 
+// And the pages in front of that run are the same idea: they come one after
+// another rather than one inside the other, so each is read under the heading
+// of the opening instead of behind every page already answered.
+func TestTheOpeningPagesStandUnderOneHeadingRatherThanInsideEachOther(t *testing.T) {
+	h := newHarness(t, map[string]string{
+		spec.FileInstaller: testInstaller +
+			"  - name: LOCALE\n    title: Language and formats\n    required: true\n    first: true\n    values: [de, en]\n" +
+			"  - name: KEYMAP\n    title: Console keyboard\n    required: true\n    first: true\n    values: [de, us]\n",
+	})
+	h.wants("Start", "Language and formats")
+
+	h.enter()
+	h.wants("Start", "Console keyboard").refuses("Language and formats")
+
+	h.enter()
+	h.wants("Start", "Setup").refuses("Console keyboard")
+
+	// And the run of questions leaves the opening behind it entirely.
+	h.enter()
+	h.wants("User name", "1 of 3").refuses("Setup")
+}
+
 func TestAnAnswerThatBreaksTheRulesIsRefusedWithTheReason(t *testing.T) {
 	h := newHarness(t, nil)
 	h.down().enter()

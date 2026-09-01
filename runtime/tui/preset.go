@@ -17,6 +17,7 @@ import (
 // not remember which of them came from here. That is the whole reason this can
 // be one keypress: nothing it does is hard to undo.
 type presetScreen struct {
+	opening
 	app    *app
 	preset *spec.Preset
 	done   func() tea.Cmd
@@ -77,7 +78,7 @@ func (s *presetScreen) take(o *spec.PresetOption) tea.Cmd {
 	}
 	return push(newField(s.app, s.app.spec.Var(o.Asks), func() tea.Cmd {
 		return tea.Batch(s.app.adopt(o), s.done())
-	}).importing(o.Apply))
+	}).opening().importing(o.Apply))
 }
 
 func (s *presetScreen) View(width, height int) string {

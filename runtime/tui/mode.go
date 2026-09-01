@@ -19,6 +19,7 @@ import (
 // chosen anything on the first mode the tree names. There is always an answer
 // under the cursor, so the page can be got past with one key.
 type modeScreen struct {
+	opening
 	app    *app
 	picker *picker
 	done   func() tea.Cmd

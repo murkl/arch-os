@@ -36,7 +36,23 @@ type (
 	// trail of every answer already given would be a line that grows across the
 	// frame saying nothing about where you are.
 	crumbRooter interface{ crumbRoot() bool }
+
+	// A screen that names the heading it stands under. For a page that begins
+	// the trail and is still not the whole of where you are: the opening is a
+	// row of pages one after another, and each of them is somewhere inside it.
+	crumbHeader interface{ crumbHead() string }
 )
+
+// opening is embedded by the pages in front of the questions proper: the
+// language, what the tree asks first, the fork, the network, the check, the
+// starting points. They follow one another rather than lead into one another,
+// so each stands under one heading instead of inside the page before it — a
+// line growing by a segment for every page already answered says where somebody
+// has been, which is not what a breadcrumb is for.
+type opening struct{}
+
+func (opening) crumbRoot() bool   { return true }
+func (opening) crumbHead() string { return labelOpening() }
 
 // working reports whether s has something running, defaulting to no: most
 // screens are a list waiting for a key.
@@ -54,6 +70,24 @@ func crumbFrom(stack []screen) []screen {
 		}
 	}
 	return stack
+}
+
+// crumbTrail is what the breadcrumb says: the heading the page stands under,
+// where it names one, and then the title of every screen from there up.
+func crumbTrail(stack []screen) []string {
+	trail := crumbFrom(stack)
+	out := make([]string, 0, len(trail)+1)
+	if len(trail) > 0 {
+		if h, ok := trail[0].(crumbHeader); ok && h.crumbHead() != "" {
+			out = append(out, h.crumbHead())
+		}
+	}
+	for _, s := range trail {
+		if t := s.Title(); t != "" {
+			out = append(out, t)
+		}
+	}
+	return out
 }
 
 // stop tells a screen to put down whatever it is holding, on the way out.
@@ -98,9 +132,6 @@ func pop() tea.Cmd           { return func() tea.Msg { return popScreenMsg{n: 1}
 func reset(s screen) tea.Cmd { return func() tea.Msg { return resetStackMsg{s} } }
 func leave() tea.Cmd         { return func() tea.Msg { return leaveMsg{} } }
 func quit() tea.Cmd          { return func() tea.Msg { return quitMsg{} } }
-
-// popTo leaves n screens at once, back onto whatever was under all of them.
-func popTo(n int) tea.Cmd { return func() tea.Msg { return popScreenMsg{n: n} } }
 
 func flashBad(text string) tea.Cmd {
 	return func() tea.Msg { return flashMsg{text: text, bad: true} }

@@ -65,9 +65,17 @@ iso: build
 # get.sh is the only script that lives at the root, because it is the only one
 # that runs before any of this has been downloaded. It is POSIX sh, so it is
 # checked as such rather than as bash.
+#
+# The yaml is checked here rather than in each component's Makefile: it is one
+# rule set (.yamllint.yaml) over one kind of file, and the tree under setup/ is
+# the same kind of file as the workflows under .github/. actionlint reads the
+# workflows again on top of that, for what a yaml linter cannot see — the
+# expressions, the contexts, and the shell inside every `run:` block.
 lint:
 	shellcheck -s sh -S style get.sh
 	shfmt -d -ln posix -i 4 get.sh
+	yamllint .
+	actionlint
 
 fmt:
 	shfmt -w -ln posix -i 4 get.sh
@@ -80,4 +88,5 @@ check: lint
 
 clean:
 	$(MAKE) -C runtime clean
+	$(MAKE) -C iso clean
 	rm -rf $(RELEASE_DIR) $(DIST_DIR)

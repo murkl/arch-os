@@ -22,8 +22,9 @@
 
 ## What this is
 
-Two things, on purpose kept apart — see the [root README](../README.md) for
-the architecture. **[`runtime/`](../runtime)** is a Go binary that draws the
+Two things, on purpose kept apart — see
+[CONTRIBUTING.md](../CONTRIBUTING.md) for how a change gets from a branch to a
+release. **[`runtime/`](../runtime)** is a Go binary that draws the
 interface, asks questions, keeps the answers and runs shell in order; it knows
 nothing about Arch. **[`setup/`](../setup)** is everything that does: one
 `installer.yaml` and the folders beside it, describing exactly the Arch Linux
@@ -37,6 +38,8 @@ image that starts the installer the moment it boots.
 - BTRFS snapshots (Snapper) with an optional Btrfs Assistant GUI for rollback
 - Dual boot aware partitioning
 - Bootloader (systemd-boot or GRUB) and kernel are both a choice, not a default
+- Secure Boot, on by default where the boot chain can be signed: own keys, a
+  signed unified kernel image, re-signed on every kernel update
 - Graphics driver selection (Mesa, Intel, NVIDIA, AMD)
 - Plymouth bootsplash, Nord-themed
 - AUR helper, 32-bit (multilib) support, automatic housekeeping

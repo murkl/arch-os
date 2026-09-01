@@ -5,12 +5,20 @@ RELEASE_DIR ?= ../release
 DIST_DIR    ?= ../dist
 VERSION     ?= $(shell git -C .. rev-parse --short HEAD 2>/dev/null || echo dev)
 
-SCRIPTS := build.sh src/usr/local/bin/installer src/usr/local/bin/installer-console-theme
+# The image `make smoke` boots: the newest one built, so `make build && make
+# smoke` needs no argument.
+ISO ?= $(shell ls -t $(DIST_DIR)/*.iso 2>/dev/null | head -1)
 
-.PHONY: build lint check
+SCRIPTS := build.sh smoke.sh src/usr/local/bin/installer src/usr/local/bin/installer-console-theme
+
+.PHONY: build smoke lint fmt check clean
 
 build:
 	RELEASE_DIR=$(RELEASE_DIR) DIST_DIR=$(DIST_DIR) SNAPSHOT_VERSION=$(VERSION) ./build.sh
+
+# Boots the image and waits for the installer to come up in it. See smoke.sh.
+smoke:
+	./smoke.sh $(ISO)
 
 lint:
 	@for f in $(SCRIPTS); do bash -n "$$f" || exit 1; done
@@ -22,3 +30,8 @@ fmt:
 
 # The one command that has to pass before anything is committed.
 check: lint
+
+# build.sh takes its own scratch space with it, whichever way it ends — what is
+# left here is the download cache, which it keeps on purpose.
+clean:
+	rm -rf archiso download smoke

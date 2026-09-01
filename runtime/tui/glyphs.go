@@ -166,12 +166,16 @@ var plainGlyphs = glyphSet{
 	scrollTrack: "│",
 	scrollThumb: "█",
 
-	// No console font has a tick or a cross, so both come out of ASCII, where
-	// a plus and a cross are the two marks that already mean added and gone.
-	// A block would read as ink rather than as a mark: at the weight of a
-	// filled cell it sits on the line like a cursor stuck on the row, and a
-	// column of them beside the titles is heavier than the titles.
-	ok:     "+",
+	// No console font has a tick, so a finished row takes the bullet instead:
+	// a mark that says something happened on this line without spelling out
+	// what, and one that reads against the smaller middle dot a row that was
+	// passed over keeps. The cross is missing too, and comes out of ASCII,
+	// where an x already means gone.
+	//
+	// Neither is a block. At the weight of a filled cell a mark sits on the
+	// line like a cursor stuck on the row, and a column of them beside the
+	// titles is heavier than the titles.
+	ok:     "•",
 	fail:   "x",
 	ask:    "?",
 	skip:   "·",

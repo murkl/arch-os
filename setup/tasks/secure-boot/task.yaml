@@ -2,5 +2,6 @@ name: Sign the boot chain
 stage: finalize
 needs: [first-login, snapshot-hook, tidy-up]
 conditions:
+  - ARCH_OS_SECURE_BOOT_ENABLED == true
   - ARCH_OS_ENCRYPTION_ENABLED == true
   - ARCH_OS_BOOTLOADER == systemd

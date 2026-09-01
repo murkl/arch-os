@@ -37,7 +37,7 @@ arch-chroot "$MNT" bootctl --esp-path=/boot install || echo "reinstalling the si
 
 # Enrolling replaces the firmware's key hierarchy and is only allowed in setup
 # mode. Anything else needs a trip into the UEFI, so it is skipped rather than
-# left half done — the confirmation page said so before any of this started.
+# left half done — the setting said so when it was answered.
 #
 # -m keeps Microsoft's certificates, without which many boards reject their own
 # option ROMs and a parallel Windows stops booting.

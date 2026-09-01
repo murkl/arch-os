@@ -27,6 +27,12 @@ type fieldScreen struct {
 	// the length of it; somebody who opened one row of a settings page is not.
 	at, of int
 
+	// head is the heading this question stands under, for the few asked in
+	// front of the run: they come one after another rather than one inside the
+	// other, and a page whose breadcrumb is only its own title reads as if the
+	// whole program were this one question.
+	head string
+
 	// imports is shell to run once the answer is given, and the page is not got
 	// past until it has worked — for the answer whose whole point is what it
 	// fetches. A failure is shown exactly where a value that broke a rule is
@@ -60,6 +66,13 @@ func newField(a *app, v *spec.Variable, done func() tea.Cmd) *fieldScreen {
 // counted marks this question as one of a numbered run.
 func (s *fieldScreen) counted(at, of int) *fieldScreen {
 	s.at, s.of = at, of
+	return s
+}
+
+// opening marks this question as one of the few asked before the run proper,
+// which is where it is put in the breadcrumb rather than how it is asked.
+func (s *fieldScreen) opening() *fieldScreen {
+	s.head = labelOpening()
 	return s
 }
 
@@ -332,11 +345,14 @@ func (s *fieldScreen) problemRows() int {
 	return 2
 }
 
-// crumbRoot: a question in the opening run stands alone. Which questions came
-// before it is what the counter in the header says, and saying it twice — once
-// as a number and once as a growing line of answers already given — would be
-// two ways of saying the same thing, one of them badly.
-func (s *fieldScreen) crumbRoot() bool { return s.of > 0 }
+// crumbRoot: a question asked in a run stands alone, whichever run it is.
+// Which questions came before it is what the counter in the header says, or the
+// heading above it, and a growing line of answers already given would say the
+// same thing a third time and worse. A question opened from the settings page
+// is the exception: there it really is one page inside another.
+func (s *fieldScreen) crumbRoot() bool { return s.of > 0 || s.head != "" }
+
+func (s *fieldScreen) crumbHead() string { return s.head }
 
 // status is the question's place in the opening run, shown in the header where
 // every other page shows what it is doing. Empty outside that run.
