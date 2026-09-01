@@ -115,7 +115,15 @@ if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
     arch-chroot "$MNT" install -d -m 700 -o "$ARCH_OS_USERNAME" -g "$ARCH_OS_USERNAME" "$runtime"
     as_user "XDG_RUNTIME_DIR=${runtime} dbus-run-session -- gnome-keyring-daemon --unlock <<< ''" || true
 
-    if [ -f "${MNT}${keyrings}/login.keyring" ]; then
+    # The daemon forks before it has written the keyring, so the file is there a
+    # moment before it holds one. Waiting for content is the difference between
+    # a keyring and an empty file that passes for one.
+    for _ in $(seq 50); do
+        [ -s "${MNT}${keyrings}/login.keyring" ] && break
+        sleep 0.1
+    done
+
+    if [ -s "${MNT}${keyrings}/login.keyring" ]; then
         echo "created a passwordless login keyring"
     else
         echo "could not pre-create a passwordless login keyring — the desktop will ask for one on first use" >&2
