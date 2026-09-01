@@ -23,7 +23,7 @@ runs:
     # freezes on the day it was written — and for the ISO job the interesting
     # packages are the seven hundred pacstrap fetches *during* the build, which
     # only a save at the end of the job ever sees.
-    - uses: actions/cache@v4
+    - uses: actions/cache@v6
       with:
         path: /var/cache/pacman/pkg
         key: pacman-${{ github.job }}-${{ github.run_id }}

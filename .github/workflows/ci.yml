@@ -49,7 +49,7 @@ jobs:
         with:
           packages: go gcc make shellcheck shfmt staticcheck yamllint actionlint
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: |
             ~/.cache/go-build
@@ -81,7 +81,7 @@ jobs:
         with:
           packages: go make govulncheck gitleaks
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: |
             ~/.cache/go-build
@@ -118,7 +118,7 @@ jobs:
         with:
           packages: go make
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: |
             ~/.cache/go-build
@@ -140,13 +140,13 @@ jobs:
           done
           (cd dist && sha256sum -c ./*.sha256)
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release
           path: release/
           retention-days: 7
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: tarball
           path: dist/
@@ -185,7 +185,7 @@ jobs:
         with:
           packages: make archiso
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: release
           path: release
@@ -197,7 +197,7 @@ jobs:
 
       - run: make -C iso build
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: iso
           path: dist/
@@ -221,13 +221,16 @@ jobs:
       # a run that passes never waits this long anyway.
       TIMEOUT: 600
     steps:
+      - name: Make the checkout a repository
+        run: pacman -Sy --needed --noconfirm git
+
       - uses: actions/checkout@v5
 
       - uses: ./.github/actions/arch
         with:
           packages: make qemu-base edk2-ovmf tesseract tesseract-data-eng
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: iso
           path: dist
@@ -236,7 +239,7 @@ jobs:
 
       # The console, whichever way it went. On a failure it is the only account
       # of what the machine was showing when it gave up.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: console
@@ -268,12 +271,12 @@ jobs:
           # merge-base needs enough history to find one.
           fetch-depth: 0
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: tarball
           path: dist
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: iso
           path: dist
@@ -311,7 +314,7 @@ jobs:
 
       # Which commit and which run these two files came out of, signed, for
       # anybody who wants more than a checksum written by the same hand.
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             dist/*.iso
