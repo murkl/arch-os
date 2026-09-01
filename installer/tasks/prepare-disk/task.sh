@@ -1,14 +1,10 @@
-# Partition, encrypt, format and mount the target.
-#
-# This is the stage that destroys data, and the only one. Everything before it
-# is reversible by walking away; nothing after it is reached unless this
-# succeeded.
+# Partition, encrypt, format and mount the target. The only stage that destroys
+# data: everything before it is reversible by walking away.
 
 simulating && return 0
 
-# Dual boot keeps the disk exactly as it is: the other system's partitions, its
-# EFI partition and its boot entries all stay. Only the root partition named in
-# the answers is formatted.
+# Dual boot keeps the disk as it is — the other system's partitions, its EFI
+# partition and its boot entries all stay.
 if [ "$ARCH_OS_DUAL_BOOT_ENABLED" != "true" ]; then
     wipefs -af "$ARCH_OS_DISK"
     sgdisk --zap-all "$ARCH_OS_DISK"
@@ -18,8 +14,7 @@ if [ "$ARCH_OS_DUAL_BOOT_ENABLED" != "true" ]; then
     partprobe "$ARCH_OS_DISK"
 fi
 
-# The passphrase reaches cryptsetup on stdin and appears nowhere else — not in
-# the argument list, which any other user could read out of /proc.
+# On stdin, so the passphrase never reaches an argument list that /proc shows.
 root_device="$ARCH_OS_ROOT_PARTITION"
 if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
     echo "encrypting ${ARCH_OS_ROOT_PARTITION}"
@@ -28,8 +23,8 @@ if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
     root_device=/dev/mapper/cryptroot
 fi
 
-# The EFI partition is only formatted when this installer created it. Formatting
-# one that was already there would take the other system's boot loader with it.
+# Only formatted when this installer created it: formatting one that was already
+# there would take the other system's boot loader with it.
 [ "$ARCH_OS_DUAL_BOOT_ENABLED" != "true" ] && mkfs.fat -F 32 -n BOOT "$ARCH_OS_BOOT_PARTITION"
 
 if [ "$ARCH_OS_FILESYSTEM" = "ext4" ]; then
@@ -41,8 +36,8 @@ if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
     mkfs.btrfs -f -L BTRFS "$root_device"
     mount -v "$root_device" "$MNT"
 
-    # Three subvolumes rather than one: the system, the home directories and the
-    # snapshots are separate things to roll back, keep or scrub.
+    # The system, the home directories and the snapshots are separate things to
+    # roll back or keep.
     btrfs subvolume create "${MNT}/@"
     btrfs subvolume create "${MNT}/@home"
     btrfs subvolume create "${MNT}/@snapshots"
@@ -52,8 +47,8 @@ if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
     mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=@home" "$root_device" "${MNT}/home"
     mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=@snapshots" "$root_device" "${MNT}/.snapshots"
 
-    # systemd would otherwise make subvolumes of these on first boot, which then
-    # show up in every snapshot listing as noise.
+    # systemd would otherwise make subvolumes of these on first boot, which show
+    # up in every snapshot listing as noise.
     mkdir -p "${MNT}/var/lib/portables" "${MNT}/var/lib/machines"
 fi
 

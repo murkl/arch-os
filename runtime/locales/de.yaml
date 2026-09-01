@@ -12,8 +12,9 @@ messages:
   # Ohne Installer startet nichts. Diese Meldungen erscheinen als einzige
   # außerhalb der Oberfläche, auf stderr.
   "No installer found.": "Kein Installer gefunden."
-  "%s has to sit next to this program, in %s.": "%s muss neben diesem Programm liegen, in %s."
-  "no installer here": "hier liegt kein Installer"
+  "A %s file has to sit next to this program, in %s.": "Eine %s-Datei muss neben diesem Programm liegen, in %s."
+  "no %s file here": "hier liegt keine %s-Datei"
+  "more than one %s file here": "hier liegt mehr als eine %s-Datei"
 
   # Tastenhinweise in der Fußzeile.
   "↑↓ move · ⏎ select · q quit": "↑↓ wählen · ⏎ öffnen · q beenden"

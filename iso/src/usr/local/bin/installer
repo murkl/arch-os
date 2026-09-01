@@ -1,29 +1,21 @@
 #!/usr/bin/env bash
-# Start the installer. The one way in on this image — the systemd unit on tty1
-# runs this, and so does anybody typing `installer` at a prompt after leaving
-# it. One entry point, so both ways behave identically.
+# Start the installer. The way in on this image — the systemd unit on tty1 runs
+# this, and so does anybody typing `installer` at a prompt after leaving it.
+# Repairing an installation is the other program, `recovery`, beside this one.
 #
-# Three things it settles, and they are the reason it exists rather than a
-# symlink:
+# Three things it settles, and they are why it is a script rather than a symlink:
 #
-# The console is dressed the moment before the interface draws on it. The font
-# decides which glyphs exist at all and the palette decides what the sixteen
-# colour slots look like — see installer-console-theme. This is done here rather
-# than in the unit because the unit's ExecStartPre runs while the boot splash is
-# still holding the console: setfont finds no console to load into and gives up,
-# which as an ExecStartPre is a failure nobody ever sees. By the time this runs,
-# the console has been handed over. It is also why somebody who leaves the
-# installer and types `installer` again gets the same console back, which a unit
-# could never do. Neither is worth refusing to start over, so both may fail —
-# loudly, into the journal, rather than silently.
+# The console is dressed the moment before the interface draws on it — the font
+# decides which glyphs exist, the palette what the sixteen colour slots look
+# like. Not in the unit, because an ExecStartPre runs while the boot splash still
+# holds the console and setfont finds none to load into. Doing it here is also
+# what gives somebody who leaves and types `installer` again the same console
+# back. Neither is worth refusing to start over, so both may fail.
 #
-# The runtime looks for its installer.yaml beside its own binary, so it is
-# started out of the folder it was installed into.
-#
-# And its answers land beside that tree: installer.conf and installer.log go to
-# the working directory, so leaving the installer and starting it again from any
-# prompt, in any directory, picks up exactly where it left off. A second copy of
-# the answers in ~ would be a machine that quietly forgot what it was told.
+# The runtime looks for a tree beside its own binary, so it is started out of the
+# folder it was installed into — and installer.conf and installer.log then land
+# beside that tree, so starting it again from any prompt picks up where it left
+# off.
 set -eu
 
 setfont Lat2-Terminus16 || true

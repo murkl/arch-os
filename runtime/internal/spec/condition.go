@@ -16,15 +16,13 @@ import (
 //	  - DESKTOP_ENABLED == true
 //	  - GRAPHICS_DRIVER != none
 //
-// Deliberately not an expression language. Three tokens cover every guard an
-// installer needs, they read as a sentence to anyone editing the yaml, and they
-// can be checked at load time against the variables actually declared — so a
-// renamed variable is caught when the tree is opened rather than by a task
-// that silently never runs.
+// Deliberately not an expression language: three tokens cover every guard an
+// installer needs, read as a sentence, and can be checked at load time against
+// the variables actually declared — so a renamed variable is caught when the
+// tree is opened rather than by a task that silently never runs.
 //
-// Several of them are a list, and every one has to hold. There is no `or`: a
-// row that belongs under two unrelated circumstances is two rows, and saying so
-// in the yaml is clearer than a line nobody can read back.
+// Several are a list, and every one has to hold. There is no `or`: a row that
+// belongs under two unrelated circumstances is two rows.
 type condition struct {
 	name  string
 	equal bool

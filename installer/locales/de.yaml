@@ -10,11 +10,9 @@ language: Deutsch
 messages:
   "Arch OS Installer": "Arch OS Installer"
 
-  # ─── Was dieses Abbild kann ────────────────────────────────────────────────
+  # ─── Was dieser Installer tut ──────────────────────────────────────────────
   "Installation": "Installation"
   "Put Arch Linux on this machine.": "Arch Linux auf diesen Rechner bringen."
-  "Recovery": "Wiederherstellung"
-  "Repair an Arch Linux system that is already on a disk.": "Ein Arch-Linux-System reparieren, das schon auf einem Datenträger liegt."
 
   ? |-
     Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.
@@ -24,15 +22,6 @@ messages:
     Arch Linux wird auf {{ARCH_OS_DISK}} als {{ARCH_OS_HOSTNAME}} installiert.
 
     Alles auf diesem Datenträger wird gelöscht. Das lässt sich nicht rückgängig machen, und bis zu diesem Punkt wurde nichts verändert.
-
-  ? |-
-    The system on {{ARCH_OS_RECOVERY_DISK}} will be unlocked and mounted at /mnt.
-
-    Nothing on it is changed by that. Going back to a snapshot, rebuilding the boot files and opening a shell are each offered on their own once it is open.
-  : |-
-    Das System auf {{ARCH_OS_RECOVERY_DISK}} wird entsperrt und unter /mnt eingehängt.
-
-    Daran ändert sich dadurch nichts. Auf einen Schnappschuss zurückgehen, die Startdateien neu bauen und eine Shell öffnen werden danach einzeln angeboten.
 
   "Type installer at the prompt to start it again.": "Mit dem Befehl installer startest du ihn wieder."
 
@@ -247,54 +236,3 @@ messages:
     Das neue System aushängen und in der Live-Umgebung bleiben?
 
     Verloren geht so oder so nichts, die Installation ist fertig. Eingehängt zu lassen lohnt nur, wenn du von hier aus weiterarbeiten willst.
-
-  # ─── Die Wiederherstellung ─────────────────────────────────────────────────
-  "The disk holding the Arch OS installation to repair. Opening it changes nothing on it.": "Der Datenträger mit der Arch-OS-Installation, die repariert werden soll. Ihn zu öffnen ändert nichts daran."
-  "Whether that disk is encrypted with LUKS. This is read off the disk, which can be done without the password — change it only if the answer is wrong.": "Ob dieser Datenträger mit LUKS verschlüsselt ist. Das wird vom Datenträger selbst gelesen, wofür kein Passwort nötig ist — ändere es nur, wenn die Antwort nicht stimmt."
-  "Encryption password": "Verschlüsselungspasswort"
-  "The password that unlocks that disk. It is asked for immediately before the recovery starts and is never written to a file.": "Das Passwort, das diesen Datenträger entsperrt. Es wird unmittelbar vor dem Start der Wiederherstellung abgefragt und nie in eine Datei geschrieben."
-  "The file system of the system being repaired. btrfs can be rolled back to a snapshot; ext4 can be opened and worked in by hand. On an encrypted disk this cannot be read in advance, so check it.": "Das Dateisystem des Systems, das repariert wird. btrfs lässt sich auf einen Schnappschuss zurücksetzen, ext4 nur öffnen und von Hand bearbeiten. Auf einem verschlüsselten Datenträger lässt sich das vorher nicht auslesen — prüfe es also."
-  "Snapshot": "Schnappschuss"
-  "The snapshot to put in place of the root subvolume. Newest first, with the date it was taken and what took it.": "Der Schnappschuss, der an die Stelle des Wurzel-Subvolumes tritt. Der neueste zuerst, mit dem Zeitpunkt der Aufnahme und dem Anlass."
-
-  "Unlock and mount the system": "System entsperren und einhängen"
-  "Go back to a snapshot": "Auf einen Schnappschuss zurückgehen"
-  "Rebuild the boot files": "Startdateien neu bauen"
-  "Open a shell in the system": "Eine Shell im System öffnen"
-  "Unmount and lock the disk": "Aushängen und Datenträger sperren"
-
-  ? |-
-    Put {{ARCH_OS_RECOVERY_SNAPSHOT}} in place of the root subvolume on {{ARCH_OS_RECOVERY_DISK}}?
-
-    The system as it is now is deleted and replaced by that snapshot. Everything under /home is untouched, and so are the other snapshots — you can come back and choose a different one.
-  : |-
-    {{ARCH_OS_RECOVERY_SNAPSHOT}} an die Stelle des Wurzel-Subvolumes auf {{ARCH_OS_RECOVERY_DISK}} setzen?
-
-    Das System, wie es jetzt ist, wird gelöscht und durch diesen Schnappschuss ersetzt. Alles unter /home bleibt unangetastet, die übrigen Schnappschüsse ebenfalls — du kannst also wiederkommen und einen anderen wählen.
-
-  ? |-
-    Rebuild the kernel images and the initial ram disks?
-
-    Needed when the rollback went back past a kernel update: the modules in the restored system and the images in /boot are then two different kernels, and the machine comes up without a single module. Everything is taken from the package cache, so this needs no network.
-  : |-
-    Die Kernel-Abbilder und die Initial-RAM-Disks neu bauen?
-
-    Nötig, wenn der Rücksprung über ein Kernel-Update hinweg ging: Die Module im wiederhergestellten System und die Abbilder in /boot sind dann zwei verschiedene Kernel, und der Rechner startet ohne ein einziges Modul. Alles kommt aus dem Paket-Cache, ein Netzwerk braucht es dafür nicht.
-
-  ? |-
-    Open a shell inside the system on {{ARCH_OS_RECOVERY_DISK}}?
-
-    Everything is mounted, so this is where anything the recovery does not do by itself gets fixed by hand — a package reinstalled, a config file put back. Leave it again with `exit`.
-  : |-
-    Eine Shell in dem System auf {{ARCH_OS_RECOVERY_DISK}} öffnen?
-
-    Es ist alles eingehängt — hier wird von Hand erledigt, was die Wiederherstellung nicht selbst tut: ein Paket neu installieren, eine Konfigurationsdatei zurücklegen. Mit `exit` geht es zurück.
-
-  ? |-
-    Unmount the system and lock the disk again?
-
-    Nothing is lost either way — the recovery is finished. Leaving it mounted is only useful if you want to keep working on it from here.
-  : |-
-    Das System aushängen und den Datenträger wieder sperren?
-
-    Verloren geht so oder so nichts, die Wiederherstellung ist fertig. Eingehängt zu lassen lohnt nur, wenn du von hier aus weiterarbeiten willst.

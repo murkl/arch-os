@@ -42,17 +42,13 @@ type Runner struct {
 // A dedicated descriptor keeps the report out of the script's own output, so a
 // script may print anything at all without being mistaken for a failure report.
 //
-// The trap is the single detector, and it is deliberate that -e is NOT set.
-// Both react to exactly the same failures, but -e would also kill the shell
-// when `source` merely *returns* the status of a benign last line — a guard
-// like `[ "$X" = true ] && do_it` leaves status 1 when the test is false — and
-// a working step would be reported as failed. The trap fires only for a real
-// failure, exits with its code, and so stops at the first one.
+// The trap is the single detector, and -e is deliberately not set: -e would also
+// kill the shell when `source` merely returns the status of a benign last line —
+// `[ "$X" = true ] && do_it` leaves status 1 when the test is false.
 //
 // It reports on the failure's own terms: BASH_SOURCE and LINENO point into the
-// script file, BASH_COMMAND is the command that failed. The empty-BASH_SOURCE
-// check drops the status a failing `source` propagates back to this wrapper —
-// that frame is not where anything went wrong.
+// script, BASH_COMMAND is the command that failed. The empty-BASH_SOURCE check
+// drops the status a failing `source` propagates back to this wrapper.
 const trapped = `set -Eo pipefail
 trap 'c=$?; s=${BASH_SOURCE[0]}; [ -n "$s" ] && { printf "%d\t%s\t%d\t%s\n" "$c" "$s" "$LINENO" "$BASH_COMMAND" >&3; exit $c; }' ERR
 `

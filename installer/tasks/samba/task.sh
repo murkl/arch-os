@@ -1,5 +1,5 @@
-# Samba: the file sharing the rest of the network can see, and the two
-# discovery services that make this machine appear in it.
+# File sharing the rest of the network can see, and the two discovery services
+# that make this machine appear in it.
 
 simulating && return 0
 
@@ -10,8 +10,7 @@ if [ "$ARCH_OS_SAMBA_SHARE_ENABLED" = "true" ]; then
     cat "$(where)/smb-shares.conf" >>"${MNT}/etc/samba/smb.conf"
 fi
 
-# Refuses to start on a broken file, so it is checked before anything is
-# switched on.
+# Samba refuses to start on a broken file, so it is checked first.
 arch-chroot "$MNT" testparm -s /etc/samba/smb.conf
 
 if [ "$ARCH_OS_SAMBA_SHARE_ENABLED" = "true" ]; then
@@ -25,7 +24,7 @@ if [ "$ARCH_OS_SAMBA_SHARE_ENABLED" = "true" ]; then
 fi
 
 # Windows and macOS both find the machine faster over IPv4 only, and both
-# discovery services default to trying IPv6 first.
+# services try IPv6 first.
 # https://wiki.archlinux.org/title/Samba#Windows_1709_or_up_does_not_discover_the_samba_server_in_Network_view
 grep -q -- '-4' "${MNT}/etc/conf.d/wsdd" || sed -i 's/WSDD_PARAMS="/WSDD_PARAMS="-4 /' "${MNT}/etc/conf.d/wsdd"
 sed -i -E 's/^#?\s*use-ipv6=.*/use-ipv6=no/' "${MNT}/etc/avahi/avahi-daemon.conf"

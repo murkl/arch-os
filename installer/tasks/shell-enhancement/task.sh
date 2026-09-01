@@ -1,7 +1,5 @@
-# A terminal that is pleasant on the first login rather than after an evening of
-# configuration.
-#
-# Everything it writes is a file beside this one, copied into place.
+# A terminal that is pleasant on the first login. Everything it writes is a file
+# beside this one, copied into place.
 
 simulating && return 0
 
@@ -15,12 +13,9 @@ chroot_pacman_install "${packages[@]}"
 mkdir -p "${MNT}/root/.config/fastfetch" "${home}/.config/fastfetch"
 
 # ─── Aliases ─────────────────────────────────────────────────────────────────
-# For both root and the user, because the shell is the same shell and muscle
-# memory does not check who is logged in.
-#
-# {{PKG}} and {{SUDO}} in the file are the only part of it the answers decide:
-# an AUR helper handles the AUR and the official repositories alike and asks for
-# the password itself, so it needs no sudo — pacman does.
+# For both root and the user: the shell is the same shell. {{PKG}} and {{SUDO}}
+# are the only part the answers decide — an AUR helper covers both repositories
+# and asks for the password itself, where pacman needs sudo.
 pkg="pacman"
 sudo_prefix="sudo "
 if [ "$ARCH_OS_AUR_HELPER" != "none" ]; then
@@ -32,16 +27,12 @@ sed -e "s|{{PKG}}|${pkg}|g" -e "s|{{SUDO}}|${sudo_prefix}|g" "${data}/aliases" |
     tee "${MNT}/root/.aliases" "${home}/.aliases" >/dev/null
 
 # ─── Shell configuration ─────────────────────────────────────────────────────
-# bash is the shell every task and hook runs in, so it is always configured;
-# zsh or fish is chosen in ARCH_OS_SHELL_ENHANCEMENT_SHELL, and the two become
-# the shell that opens in different ways.
+# bash is always configured, because it is the shell every task and hook runs in.
 #
-# zsh becomes the login shell outright, with chsh, because that is what a login
-# shell is for and because everything that runs one — a terminal, ssh, a
-# service — then gets it without having to be told. fish cannot: it is not a
-# POSIX shell, and a login shell that cannot read a POSIX profile breaks things
-# that have nothing to do with the terminal. So fish is handed over to from
-# .bashrc instead — see shell-handover.
+# zsh becomes the login shell outright, so everything that starts one — a
+# terminal, ssh, a service — gets it. fish cannot: it is not a POSIX shell, and a
+# login shell that cannot read a POSIX profile breaks things well outside the
+# terminal. So .bashrc hands over to it instead — see shell-handover.
 shell="$ARCH_OS_SHELL_ENHANCEMENT_SHELL"
 
 marker=$'# {{SHELL_HANDOVER}}\n'
@@ -60,8 +51,7 @@ case "$shell" in
 zsh)
     chroot_pacman_install zsh zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search
     tee "${MNT}/root/.zshrc" "${home}/.zshrc" <"${data}/zshrc" >/dev/null
-    # For both accounts, because the shell is the same shell whoever is logged
-    # in. /etc/shells already lists it, which is what chsh checks against.
+    # /etc/shells already lists it, which is what chsh checks against.
     arch-chroot "$MNT" chsh -s /usr/bin/zsh root
     arch-chroot "$MNT" chsh -s /usr/bin/zsh "$ARCH_OS_USERNAME"
     ;;
@@ -73,10 +63,8 @@ fish)
 esac
 
 # ─── Prompt ──────────────────────────────────────────────────────────────────
-# Fetched rather than shipped, so the theme can be improved without a new
-# release of this installer. A machine that cannot reach it gets a good one from
-# starship itself instead — a missing prompt theme is not worth failing an
-# installation over.
+# Fetched rather than shipped, so the theme can be improved without a new release
+# of this installer. A machine that cannot reach it gets one from starship.
 mkdir -p "${MNT}/root/.config"
 if ! curl -Lf --connect-timeout 5 --max-time 30 \
     https://raw.githubusercontent.com/murkl/starship-theme-arch-os/refs/heads/main/starship.toml \
@@ -92,18 +80,20 @@ cp "${home}/.config/starship.toml" "${MNT}/root/.config/starship.toml"
     echo 'VISUAL=nano'
 } >"${MNT}/etc/environment"
 
-# In each home rather than in /etc/nanorc: that file belongs to the nano package,
-# so editing it leaves a .pacnew to merge by hand on every update of it.
+# In each home rather than /etc/nanorc, which belongs to the nano package and
+# would leave a .pacnew to merge on every update.
 mkdir -p "${MNT}/root/.config/nano" "${home}/.config/nano"
 tee "${MNT}/root/.config/nano/nanorc" "${home}/.config/nano/nanorc" <"${data}/nanorc" >/dev/null
 
 # ─── What only the first login can do ────────────────────────────────────────
-on_first_login <<'FIRST'
+if [ "$ARCH_OS_DESKTOP" != "none" ]; then
+    on_first_login <<'FIRST'
 # The terminal font, which has to match the one the prompt draws with.
 gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 11'
 FIRST
+fi
 
-if [ "$shell" = "fish" ]; then
+if [ "$shell" = "fish" ] && [ "$ARCH_OS_DESKTOP" != "none" ]; then
     on_first_login <<'FIRST'
 fish -c 'fish_config theme choose Nord && echo y | fish_config theme save'
 FIRST

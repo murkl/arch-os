@@ -9,23 +9,15 @@ import (
 // Every glyph the interface draws, in one place, so the set can be checked
 // against a font rather than discovered to be wrong on someone's terminal.
 //
-// There are two sets, because there are two kinds of terminal this runs in and
-// they are not equally able. A terminal emulator on a desktop draws from a font
-// with tens of thousands of glyphs in it. A Linux virtual console — which is
-// where an installer actually lives — draws from a console font holding at most
-// 512, and a codepoint that is not in it is not drawn as anything sensible: the
-// kernel puts a replacement glyph in its place, so a spinner turns into a
-// character that never changes and a tick turns into a letter.
+// Two sets, because a terminal emulator draws from a font with tens of thousands
+// of glyphs and a Linux virtual console — where an installer actually lives —
+// from a console font holding at most 512. A codepoint that is not in it gets a
+// replacement glyph: a spinner that never changes, a tick that reads as a letter.
 //
-// So the reduced set is not a poorer version of the same idea. It is the same
-// interface built out of what a console font is guaranteed to hold: the ASCII
-// range, the box drawing and block characters, and the handful of punctuation
-// marks every one of them inherits from codepage 437. Nothing in it is chosen
-// for looking similar to what it replaces — each is chosen for being a mark
-// that reads on its own.
-//
-// The tree's own icons are Nerd Font glyphs and are the tree's problem, not
-// this file's.
+// So the reduced set is built out of what a console font is guaranteed to hold:
+// ASCII, box drawing and blocks, and the punctuation every one of them inherits
+// from codepage 437. Each mark is chosen for reading on its own rather than for
+// resembling what it replaces.
 type glyphSet struct {
 	// cursor and its blank are the same width, so a row never shifts as the
 	// selection moves over it.

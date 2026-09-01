@@ -1,10 +1,10 @@
-# None of these change what is installed. They change how it behaves in the small
-# ways that are noticed every day.
+# None of these change what is installed. They change how it behaves in the
+# small ways that are noticed every day.
 
 simulating && return 0
 
 # Stars while typing a sudo password, so a terminal does not look frozen.
-printf '\n## Show feedback while a sudo password is typed\nDefaults pwfeedback\n' >>"${MNT}/etc/sudoers"
+sudoers_rule 20-pwfeedback 'Defaults pwfeedback'
 
 # Parallel downloads and colour, which pacman ships switched off.
 sed -i 's/^#ParallelDownloads/ParallelDownloads/' "${MNT}/etc/pacman.conf"

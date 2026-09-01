@@ -22,16 +22,6 @@ if [ "$(cat /proc/sys/kernel/hostname)" != "archiso" ]; then
     exit 1
 fi
 
-# Everything past this point is about installing onto this machine. A recovery
-# works on a system that is already installed and asks nothing of the machine it
-# runs from: not its firmware, which is not what is being set up, and not a
-# network, because it downloads nothing — which is the whole point on a machine
-# whose network is one of the things that stopped working.
-[ "$INSTALLER_MODE" = "recovery" ] && {
-    echo "preflight ok: root, live image"
-    return 0
-}
-
 if [ ! -d /sys/firmware/efi ]; then
     echo "This machine booted in BIOS mode, which Arch OS does not install to. Set the boot mode to UEFI in the firmware settings and start again." >&2
     exit 1

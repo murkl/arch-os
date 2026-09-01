@@ -3,11 +3,16 @@
 /release/
 /dist/
 
-# What a local run of the installer leaves beside itself, wherever it runs from
+# What a local run leaves beside itself, wherever it runs from. Both trees name
+# their answers and their log after themselves — see runtime/main.go.
 installer.conf
 installer.conf.old
 installer.log
 installer.log.old
+recovery.conf
+recovery.conf.old
+recovery.log
+recovery.log.old
 
 # Editors / OS noise
 *.swp

@@ -9,9 +9,6 @@ arch-chroot "$MNT" systemctl enable systemd-zram-setup@zram0.service # the swap 
 arch-chroot "$MNT" systemctl enable systemd-oomd.service             # kills a runaway before the machine locks up
 arch-chroot "$MNT" systemctl enable systemd-timesyncd.service
 
-if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
-    # Monthly verification of every checksum on the file system.
-    arch-chroot "$MNT" systemctl enable btrfs-scrub@-.timer
-    arch-chroot "$MNT" systemctl enable btrfs-scrub@home.timer
-    arch-chroot "$MNT" systemctl enable btrfs-scrub@snapshots.timer
-fi
+# One timer, not one per subvolume: a scrub verifies the whole file system, so
+# the subvolumes would only be three passes over the same disk.
+[ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && arch-chroot "$MNT" systemctl enable btrfs-scrub@-.timer

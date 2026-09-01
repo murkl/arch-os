@@ -1,17 +1,12 @@
 #!/usr/bin/env bash
 # Paint the virtual console's sixteen colour slots with the Nord palette.
 #
-# This is what lets the installer look like itself on a bare console. The
-# interface never names a colour: a Linux VT has exactly sixteen slots, so a
-# hand-picked #RRGGBB would only be quantised back into one of them, and badly.
-# It works in slots instead — and this decides what the slots are.
+# A Linux VT has exactly sixteen slots, so a hand-picked #RRGGBB would only be
+# quantised back into one of them, and badly. The interface works in slots
+# instead, and this decides what the slots are — the same binary in any other
+# terminal wears that terminal's own colours.
 #
-# The same binary run in any other terminal names the same slots and quietly
-# wears that terminal's own colours, which is the point: one palette lives
-# here, on the medium we actually control, and nowhere in the Go.
-#
-# setvtrgb reads three lines — all sixteen reds, then greens, then blues.
-#
+# setvtrgb reads three lines: all sixteen reds, then greens, then blues.
 # https://www.nordtheme.com
 set -eu
 

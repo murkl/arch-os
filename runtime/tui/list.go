@@ -276,22 +276,14 @@ func (p *picker) columns(width int) (titleW, valueW int) {
 }
 
 // scroll keeps the cursor inside the visible window, in the combined space of
-// the description rows and the list rows — pre of the former sit ahead of the
-// cursor's own index, so a page with a description starts that many rows lower
-// and the sentence scrolls off as the cursor moves down into the list.
+// the description rows and the list rows: pre of the former sit ahead of the
+// cursor's index, so the sentence scrolls off as the cursor moves down.
 //
-// The clamps alone would never bring the description back: the cursor cannot
-// climb above the first row, so pinning to it leaves the top of the window at
-// the first row, one line below where the description sits. The pull-in below
-// is what puts it back — while there is room under the cursor, the window keeps
-// reaching up over rows that lead the ones below them.
-//
-// Two kinds of row are pulled in that way. A heading belongs to the rows under
-// it, so scrolling up to the first row of a group brings its heading along —
-// otherwise coming back to the start of a group would show its rows without the
-// title they started under. And the description leads the whole list the same
-// way, so scrolling back to the first rows brings the sentence back down with
-// them rather than leaving it stranded off the top.
+// Clamping alone would never bring it back — the cursor cannot climb above the
+// first row. The pull-in below does: while there is room under the cursor, the
+// window keeps reaching up over rows that lead the ones below them. That is a
+// heading, which belongs to the rows under it, and the description, which leads
+// the whole list the same way.
 func (p *picker) scroll(height, pre int) {
 	cur := pre + p.cursor
 	// A cursor that was put here rather than moved here gets the middle of the

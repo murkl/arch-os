@@ -1,4 +1,4 @@
-# Timers that keep the system tidy without anyone remembering to.
+# Timers that keep the system tidy without anybody remembering to.
 
 simulating && return 0
 

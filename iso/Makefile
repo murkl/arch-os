@@ -1,5 +1,5 @@
-# Turns a release (see the root Makefile's `build` target) into a bootable
-# ISO. There is nothing to build here without one already in place.
+# Turns a release (the root Makefile's `build` target) into a bootable ISO.
+# There is nothing to build here without one already in place.
 
 RELEASE_DIR ?= ../release
 DIST_DIR    ?= ../dist
@@ -9,7 +9,7 @@ VERSION     ?= $(shell git -C .. rev-parse --short HEAD 2>/dev/null || echo dev)
 # smoke` needs no argument.
 ISO ?= $(shell ls -t $(DIST_DIR)/*.iso 2>/dev/null | head -1)
 
-SCRIPTS := build.sh smoke.sh src/usr/local/bin/installer src/usr/local/bin/installer-console-theme
+SCRIPTS := build.sh smoke.sh src/usr/local/bin/installer src/usr/local/bin/recovery src/usr/local/bin/installer-console-theme
 
 .PHONY: build smoke lint fmt check clean
 
@@ -28,10 +28,10 @@ lint:
 fmt:
 	shfmt -w -i 4 $(SCRIPTS)
 
-# The one command that has to pass before anything is committed.
+# What has to pass before anything is committed.
 check: lint
 
-# build.sh takes its own scratch space with it, whichever way it ends — what is
+# build.sh takes its own scratch space with it whichever way it ends. What is
 # left here is the download cache, which it keeps on purpose.
 clean:
 	rm -rf archiso download smoke

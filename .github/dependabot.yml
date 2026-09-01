@@ -1,6 +1,5 @@
 # Dependencies and actions, kept current without anybody remembering to. The
-# pull requests go to dev, like every other change — main is only ever
-# fast-forwarded onto a commit that already passed.
+# pull requests go to dev, like every other change.
 
 version: 2
 

@@ -7,6 +7,11 @@ import (
 	"testing"
 )
 
+// What a test tree's declaration is called. Any name would do — the runtime
+// takes whichever yaml it finds — and these tests use the one the trees in this
+// repository use.
+const treeFile = "installer.yaml"
+
 // tree writes a minimal but complete installer tree and returns its path. Each
 // test starts from a working one and breaks exactly the thing it is about, so a
 // failure names the rule that was broken rather than a missing file three rules
@@ -17,7 +22,7 @@ func tree(t *testing.T, files map[string]string) string {
 	t.Helper()
 	dir := t.TempDir()
 	base := map[string]string{
-		FileInstaller:        head("variables:\n  - name: DISK\n    title: Disk\n    required: true\n"),
+		treeFile:             head("variables:\n  - name: DISK\n    title: Disk\n    required: true\n"),
 		"tasks/do/task.yaml": "name: Do it\nstage: go\n",
 		"tasks/do/task.sh":   "echo hi\n",
 	}
@@ -39,7 +44,7 @@ func tree(t *testing.T, files map[string]string) string {
 	return dir
 }
 
-// head is an installer.yaml with the two keys every tree needs, and whatever
+// head is a declaration with the two keys every tree needs, and whatever
 // the test is actually about after them.
 func head(body string) string { return "title: Test Installer\nstages: [go]\n" + body }
 
@@ -64,7 +69,7 @@ func units(all ...map[string]string) map[string]string {
 
 func TestLoadReadsAWholeTree(t *testing.T) {
 	dir := tree(t, map[string]string{
-		FileInstaller: `
+		treeFile: `
 title: Test Installer
 accent: "#1793d1"
 confirm: Erasing {{DISK}}.
@@ -129,7 +134,7 @@ func TestModesOwnTheirStagesAndTheTasksInThem(t *testing.T) {
 			// The tree helper's own task belongs to neither mode's story here.
 			"tasks/do/task.yaml": "",
 			"tasks/do/task.sh":   "",
-			FileInstaller: `
+			treeFile: `
 title: Test Installer
 modes:
   - id: install
@@ -193,7 +198,7 @@ variables:
 func TestOrderFollowsStagesThenNeeds(t *testing.T) {
 	dir := tree(t, units(
 		map[string]string{
-			FileInstaller: "title: T\nstages: [first, second]\n",
+			treeFile: "title: T\nstages: [first, second]\n",
 			// The default task is removed: this test owns the whole list.
 			"tasks/do/task.yaml": "name: Do\nstage: first\n",
 		},
@@ -237,7 +242,7 @@ func TestOrderRefusesWhatCannotBeWalked(t *testing.T) {
 		{
 			name: "a need on a later stage, which could never be waited for",
 			files: units(
-				map[string]string{FileInstaller: "title: T\nstages: [go, later]\n"},
+				map[string]string{treeFile: "title: T\nstages: [go, later]\n"},
 				unit("do", "name: Do\nstage: go\nneeds: [after]\n"),
 				unit("after", "name: After\nstage: later\n"),
 			),
@@ -349,7 +354,7 @@ func TestLibAndLocalesAreFoundBesideTheInstallerFile(t *testing.T) {
 // everything else it says.
 func TestConsoleIsTranslatable(t *testing.T) {
 	sp, err := Load(tree(t, map[string]string{
-		FileInstaller: head("console: Type installer to start again.\n"),
+		treeFile: head("console: Type installer to start again.\n"),
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -397,67 +402,67 @@ func TestLoadRefuses(t *testing.T) {
 		},
 		{
 			name:  "a preset filling in a variable nobody declared",
-			files: map[string]string{FileInstaller: head("presets:\n  - id: p\n    title: P\n    options:\n      - id: o\n        title: O\n        values:\n          NOPE: x\n")},
+			files: map[string]string{treeFile: head("presets:\n  - id: p\n    title: P\n    options:\n      - id: o\n        title: O\n        values:\n          NOPE: x\n")},
 			want:  "no such variable",
 		},
 		{
 			name:  "a preset page with nothing to choose on it",
-			files: map[string]string{FileInstaller: head("presets:\n  - id: p\n    title: P\n")},
+			files: map[string]string{treeFile: head("presets:\n  - id: p\n    title: P\n")},
 			want:  "no options",
 		},
 		{
 			name:  "a preset option with no title",
-			files: map[string]string{FileInstaller: head("presets:\n  - id: p\n    title: P\n    options:\n      - id: o\n")},
+			files: map[string]string{treeFile: head("presets:\n  - id: p\n    title: P\n    options:\n      - id: o\n")},
 			want:  "title is required",
 		},
 		{
 			name:  "two variables of the same name",
-			files: map[string]string{FileInstaller: head("variables:\n  - name: DISK\n    title: A\n  - name: DISK\n    title: B\n")},
+			files: map[string]string{treeFile: head("variables:\n  - name: DISK\n    title: A\n  - name: DISK\n    title: B\n")},
 			want:  "declared twice",
 		},
 		{
 			name:  "a variable with no title",
-			files: map[string]string{FileInstaller: head("variables:\n  - name: DISK\n")},
+			files: map[string]string{treeFile: head("variables:\n  - name: DISK\n")},
 			want:  "title is required",
 		},
 		{
 			name:  "a type nobody has heard of",
-			files: map[string]string{FileInstaller: head("variables:\n  - name: DISK\n    title: D\n    type: colour\n")},
+			files: map[string]string{treeFile: head("variables:\n  - name: DISK\n    title: D\n    type: colour\n")},
 			want:  "unknown type",
 		},
 		{
 			name:  "a bool with values of its own",
-			files: map[string]string{FileInstaller: head("variables:\n  - name: DISK\n    title: D\n    type: bool\n    values: [a, b]\n")},
+			files: map[string]string{treeFile: head("variables:\n  - name: DISK\n    title: D\n    type: bool\n    values: [a, b]\n")},
 			want:  "has no values of its own",
 		},
 		{
 			name:  "a secret asked first, which is a question that would never be asked",
-			files: map[string]string{FileInstaller: head("variables:\n  - name: PW\n    title: P\n    type: secret\n    first: true\n")},
+			files: map[string]string{treeFile: head("variables:\n  - name: PW\n    title: P\n    type: secret\n    first: true\n")},
 			want:  "cannot also be asked first",
 		},
 		{
 			name:  "blind on a question that is not asked first",
-			files: map[string]string{FileInstaller: head("variables:\n  - name: KEYMAP\n    title: K\n    blind: true\n    values: [us, de]\n")},
+			files: map[string]string{treeFile: head("variables:\n  - name: KEYMAP\n    title: K\n    blind: true\n    values: [us, de]\n")},
 			want:  "blind only matters for a question asked first",
 		},
 		{
 			name:  "a secret with a default, which would be a stored password",
-			files: map[string]string{FileInstaller: head("variables:\n  - name: PW\n    title: P\n    type: secret\n    default: hunter2\n")},
+			files: map[string]string{treeFile: head("variables:\n  - name: PW\n    title: P\n    type: secret\n    default: hunter2\n")},
 			want:  "cannot have a default",
 		},
 		{
 			name:  "both a list and a command for the same question",
-			files: map[string]string{FileInstaller: head("variables:\n  - name: DISK\n    title: D\n    values: [a]\n    command: ls\n")},
+			files: map[string]string{treeFile: head("variables:\n  - name: DISK\n    title: D\n    values: [a]\n    command: ls\n")},
 			want:  "two answers to the same question",
 		},
 		{
 			name:  "a pattern that is not a pattern",
-			files: map[string]string{FileInstaller: head("variables:\n  - name: DISK\n    title: D\n    pattern: '['\n")},
+			files: map[string]string{treeFile: head("variables:\n  - name: DISK\n    title: D\n    pattern: '['\n")},
 			want:  "pattern",
 		},
 		{
 			name:  "a key that is a typo, silently ignored by a lesser reader",
-			files: map[string]string{FileInstaller: head("variables:\n  - name: DISK\n    title: D\n    requird: true\n")},
+			files: map[string]string{treeFile: head("variables:\n  - name: DISK\n    title: D\n    requird: true\n")},
 			want:  "field requird not found",
 		},
 		{
@@ -467,57 +472,57 @@ func TestLoadRefuses(t *testing.T) {
 		},
 		{
 			name:  "a language tied to a variable nobody declared",
-			files: map[string]string{FileInstaller: head("language: NOPE\nvariables:\n  - name: DISK\n    title: D\n")},
+			files: map[string]string{treeFile: head("language: NOPE\nvariables:\n  - name: DISK\n    title: D\n")},
 			want:  "no such variable",
 		},
 		{
 			name:  "the runtime's own variable, redeclared",
-			files: map[string]string{FileInstaller: head("variables:\n  - name: " + LangVar + "\n    title: L\n")},
+			files: map[string]string{treeFile: head("variables:\n  - name: " + LangVar + "\n    title: L\n")},
 			want:  "belongs to the runtime",
 		},
 		{
 			name:  "an accent that is not a colour",
-			files: map[string]string{FileInstaller: "title: T\nstages: [go]\naccent: blue\n"},
+			files: map[string]string{treeFile: "title: T\nstages: [go]\naccent: blue\n"},
 			want:  "accent must be",
 		},
 		{
 			name:  "no stages at all",
-			files: map[string]string{FileInstaller: "title: T\nstages: []\n"},
+			files: map[string]string{treeFile: "title: T\nstages: []\n"},
 			want:  "no stages",
 		},
 		{
 			name:  "a stage listed twice",
-			files: map[string]string{FileInstaller: "title: T\nstages: [go, go]\n"},
+			files: map[string]string{treeFile: "title: T\nstages: [go, go]\n"},
 			want:  "listed twice",
 		},
 		{
 			name:  "a mode with no id",
-			files: map[string]string{FileInstaller: "title: T\nmodes:\n  - title: Go\n    stages: [go]\n"},
+			files: map[string]string{treeFile: "title: T\nmodes:\n  - title: Go\n    stages: [go]\n"},
 			want:  "a mode needs an id",
 		},
 		{
 			name:  "a mode with no stages of its own",
-			files: map[string]string{FileInstaller: "title: T\nmodes:\n  - id: a\n    title: A\n"},
+			files: map[string]string{treeFile: "title: T\nmodes:\n  - id: a\n    title: A\n"},
 			want:  "no stages",
 		},
 		{
 			name:  "one stage claimed by two modes, so a task could not say which it is in",
-			files: map[string]string{FileInstaller: "title: T\nmodes:\n  - id: a\n    title: A\n    stages: [go]\n  - id: b\n    title: B\n    stages: [go]\n"},
+			files: map[string]string{treeFile: "title: T\nmodes:\n  - id: a\n    title: A\n    stages: [go]\n  - id: b\n    title: B\n    stages: [go]\n"},
 			want:  "already belongs to mode",
 		},
 		{
 			name:  "stages at the top level as well as in the modes",
-			files: map[string]string{FileInstaller: "title: T\nstages: [go]\nmodes:\n  - id: a\n    title: A\n    stages: [go]\n"},
+			files: map[string]string{treeFile: "title: T\nstages: [go]\nmodes:\n  - id: a\n    title: A\n    stages: [go]\n"},
 			want:  "belong to a mode",
 		},
 		{
 			name:  "a question belonging to a mode the tree does not offer",
-			files: map[string]string{FileInstaller: head("variables:\n  - name: DISK\n    title: D\n    mode: nope\n")},
+			files: map[string]string{treeFile: head("variables:\n  - name: DISK\n    title: D\n    mode: nope\n")},
 			want:  "no such mode",
 		},
 		{
 			name:  "a question asked first and claimed by a mode, which is before there is one",
-			files: map[string]string{FileInstaller: "title: T\nmodes:\n  - id: a\n    title: A\n    stages: [go]\nvariables:\n  - name: K\n    title: K\n    first: true\n    mode: a\n"},
+			files: map[string]string{treeFile: "title: T\nmodes:\n  - id: a\n    title: A\n    stages: [go]\nvariables:\n  - name: K\n    title: K\n    first: true\n    mode: a\n"},
 			want:  "before there is a mode",
 		},
 		{
@@ -533,7 +538,7 @@ func TestLoadRefuses(t *testing.T) {
 		{
 			name: "asks on a secret, which is already asked at the only safe moment",
 			files: units(
-				map[string]string{FileInstaller: head("variables:\n  - name: PW\n    title: P\n    type: secret\n")},
+				map[string]string{treeFile: head("variables:\n  - name: PW\n    title: P\n    type: secret\n")},
 				unit("do", "name: Do\nstage: go\nasks: PW\n"),
 			),
 			want: "is a secret",
@@ -551,19 +556,19 @@ func TestLoadRefuses(t *testing.T) {
 		{
 			name: "a report showing a secret",
 			files: units(
-				map[string]string{FileInstaller: head("variables:\n  - name: PW\n    title: Password\n    type: secret\n")},
+				map[string]string{treeFile: head("variables:\n  - name: PW\n    title: Password\n    type: secret\n")},
 				unit("do", "name: Do\nstage: go\nreport: Done\nshows: PW\n"),
 			),
 			want: "is a secret",
 		},
 		{
 			name:  "a starting point asking for a variable nobody declared",
-			files: map[string]string{FileInstaller: head("presets:\n  - id: p\n    title: P\n    options:\n      - id: o\n        title: O\n        asks: NOPE\n")},
+			files: map[string]string{treeFile: head("presets:\n  - id: p\n    title: P\n    options:\n      - id: o\n        title: O\n        asks: NOPE\n")},
 			want:  "no such variable",
 		},
 		{
 			name:  "a starting point with shell and nothing to run it on",
-			files: map[string]string{FileInstaller: head("presets:\n  - id: p\n    title: P\n    options:\n      - id: o\n        title: O\n        apply: echo hi\n")},
+			files: map[string]string{treeFile: head("presets:\n  - id: p\n    title: P\n    options:\n      - id: o\n        title: O\n        apply: echo hi\n")},
 			want:  "no asks for it to work from",
 		},
 		{
@@ -593,7 +598,7 @@ func TestLoadRefuses(t *testing.T) {
 func TestConditionsDecideWhatBelongs(t *testing.T) {
 	dir := tree(t, units(
 		map[string]string{
-			FileInstaller:        head("variables:\n  - name: DESKTOP\n    title: Desktop\n    type: bool\n"),
+			treeFile:             head("variables:\n  - name: DESKTOP\n    title: Desktop\n    type: bool\n"),
 			"tasks/do/task.yaml": "name: Always\nstage: go\n",
 		},
 		unit("with", "name: Only with a desktop\nstage: go\nconditions: DESKTOP == true\n"),
@@ -634,7 +639,7 @@ func TestConditionsDecideWhatBelongs(t *testing.T) {
 // path run as a command, or a command looked for as a file.
 func TestShellFieldsTellCodeFromFiles(t *testing.T) {
 	dir := tree(t, map[string]string{
-		FileInstaller: head(`
+		treeFile: head(`
 variables:
   - name: DISK
     title: Disk
@@ -658,7 +663,7 @@ variables:
 
 func TestReflowKeepsOnlyTheBreaksThatWereMeant(t *testing.T) {
 	dir := tree(t, map[string]string{
-		FileInstaller: head("variables:\n  - name: DISK\n    title: Disk\n    description: |\n      One sentence\n      wrapped by an editor.\n\n      A second paragraph.\n"),
+		treeFile: head("variables:\n  - name: DISK\n    title: Disk\n    description: |\n      One sentence\n      wrapped by an editor.\n\n      A second paragraph.\n"),
 	})
 	sp, err := Load(dir)
 	if err != nil {
@@ -693,7 +698,7 @@ func TestExpandFillsInAnswers(t *testing.T) {
 // Every answer is a string in the end, but nobody writes `default: "true"`.
 func TestScalarReadsWhateverShapeItWasWrittenIn(t *testing.T) {
 	dir := tree(t, map[string]string{
-		FileInstaller: head("variables:\n  - name: A\n    title: A\n    default: true\n  - name: B\n    title: B\n    default: 8\n  - name: C\n    title: C\n    default: pc105\n"),
+		treeFile: head("variables:\n  - name: A\n    title: A\n    default: true\n  - name: B\n    title: B\n    default: 8\n  - name: C\n    title: C\n    default: pc105\n"),
 	})
 	sp, err := Load(dir)
 	if err != nil {
@@ -708,7 +713,7 @@ func TestScalarReadsWhateverShapeItWasWrittenIn(t *testing.T) {
 
 func TestStringsIsEveryWordTheTreeSays(t *testing.T) {
 	dir := tree(t, map[string]string{
-		FileInstaller: head(`
+		treeFile: head(`
 confirm: Careful.
 presets:
   - id: p
@@ -749,17 +754,45 @@ func TestFindTakesAnInstallerItIsPointedAt(t *testing.T) {
 	}
 }
 
-// Beside the binary and nowhere else. The test binary has no installer.yaml
-// next to it, which is exactly the case a user hits when they copy the program
-// out of the folder it belongs to.
+// Beside the binary and nowhere else. The test binary has no declaration next
+// to it, which is exactly the case a user hits when they copy the program out
+// of the folder it belongs to.
 func TestFindSaysWhereTheInstallerHasToBe(t *testing.T) {
 	t.Chdir(tree(t, nil))
 	_, err := Find("")
 	if err == nil {
 		t.Fatal("found an installer beside the test binary")
 	}
-	if !strings.Contains(err.Error(), FileInstaller) {
-		t.Errorf("error = %q, want it to name %s", err, FileInstaller)
+	if !strings.Contains(err.Error(), SpecExt) {
+		t.Errorf("error = %q, want it to name %s", err, SpecExt)
+	}
+}
+
+// Whatever it is called: a tree names its declaration after what it declares,
+// and the runtime takes the one yaml it finds.
+func TestATreeIsFoundByAnyName(t *testing.T) {
+	dir := tree(t, map[string]string{treeFile: "", "recovery.yaml": head("")})
+	sp, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sp.File != "recovery.yaml" {
+		t.Errorf("File = %q, want recovery.yaml", sp.File)
+	}
+}
+
+// Two of them is two trees in one folder, and picking one would be the runtime
+// deciding which installer somebody meant.
+func TestTwoDeclarationsAreRefused(t *testing.T) {
+	dir := tree(t, map[string]string{"recovery.yaml": head("")})
+	_, err := Load(dir)
+	if err == nil {
+		t.Fatal("loaded a folder holding two declarations")
+	}
+	for _, want := range []string{treeFile, "recovery.yaml"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error = %q, want it to name %s", err, want)
+		}
 	}
 }
 
@@ -767,7 +800,7 @@ func TestFindSaysWhereTheInstallerHasToBe(t *testing.T) {
 // hold: a row that belongs under two unrelated circumstances is two rows.
 func TestSeveralConditionsAllHaveToHold(t *testing.T) {
 	dir := tree(t, map[string]string{
-		FileInstaller:        head("variables:\n  - name: DESKTOP\n    title: D\n    type: bool\n  - name: DRIVER\n    title: G\n"),
+		treeFile:             head("variables:\n  - name: DESKTOP\n    title: D\n    type: bool\n  - name: DRIVER\n    title: G\n"),
 		"tasks/do/task.yaml": "name: Driver\nstage: go\nconditions:\n  - DESKTOP == true\n  - DRIVER != none\n",
 	})
 	sp, err := Load(dir)
@@ -806,7 +839,7 @@ func TestConditionsRefuseAnythingButAConditionOrAListOfThem(t *testing.T) {
 func TestBeingNamedIsWhatDefersAValue(t *testing.T) {
 	dir := tree(t, units(
 		map[string]string{
-			FileInstaller: head(`presets:
+			treeFile: head(`presets:
   - id: p
     title: P
     options:

@@ -1,10 +1,7 @@
-# What happens to a commit, from the moment it is pushed to the moment it is a
-# release. The branch it is on decides how far it gets — see CONTRIBUTING.md.
-#
 # A commit is built exactly once. The image and the tarball made here on `dev`
-# are the ones a release is published from, because promoting is a fast-forward
-# and a fast-forward does not change the commit: what was checked and booted is
-# bit for bit what is downloaded.
+# are the ones the release is published from: promoting is a fast-forward, so
+# what was checked and booted is bit for bit what is downloaded.
+# See CONTRIBUTING.md.
 
 name: CI
 
@@ -13,38 +10,33 @@ on:
   pull_request:
   workflow_dispatch:
 
-# Nothing is granted here. Each job asks for what it actually writes, and only
-# the last one writes anything at all.
 permissions: {}
 
-# A superseded run on a working branch is worth nothing. On dev it is worth
-# something: that is the run that would have released.
+# Keyed so a branch and its pull request share one group: only the newer of the
+# two runs. On dev and main nothing is cancelled — that is the run that releases.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: ${{ github.ref_name != 'dev' && github.ref_name != 'main' }}
 
 jobs:
-  # `make check`, and nothing this file adds to it. What is checked lives in the
-  # Makefiles — gofmt, go vet, staticcheck, the tests, the setup tree loaded the
-  # way the runtime loads it, shellcheck and shfmt over every script, yamllint
-  # and actionlint over every yaml. A rule that holds in CI holds at a desk,
-  # because it is the same command.
+  # `make check` and nothing this file adds to it: what is checked lives in the
+  # Makefiles, so a rule that holds in CI holds at a desk.
   check:
     name: Check
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     container: archlinux:latest
     permissions:
       contents: read
     steps:
-      # Before the checkout, not after it: without git, actions/checkout falls
-      # back to a tarball, and then there is no HEAD for a version to come from.
+      # Before the checkout: without git, actions/checkout falls back to a
+      # tarball, and then there is no HEAD for a version to come from.
       - name: Make the checkout a repository
         run: pacman -Sy --needed --noconfirm git
 
       - uses: actions/checkout@v5
 
-      # gcc is in here for the race detector further down: it is built on
-      # cgo, which needs a C compiler that the base image does not carry.
+      # gcc is for the race detector below, which is built on cgo.
       - uses: ./.github/actions/arch
         with:
           packages: go gcc make shellcheck shfmt staticcheck yamllint actionlint
@@ -54,20 +46,20 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: go-${{ hashFiles('runtime/go.sum') }}-${{ github.run_id }}
-          restore-keys: go-${{ hashFiles('runtime/go.sum') }}-
+          key: go-${{ github.job }}-${{ hashFiles('runtime/go.sum') }}-${{ github.run_id }}
+          restore-keys: go-${{ github.job }}-${{ hashFiles('runtime/go.sum') }}-
 
       - run: make check
 
-      # The deeper question, asked once per push rather than once per save. It
-      # doubles a test run that already takes over a minute, which is why it is
-      # here and not in `check`.
+      # Once per push rather than once per save: it doubles a test run that
+      # already takes over a minute.
       - name: Tests under the race detector
         run: make -C runtime test-race
 
   security:
     name: Security
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     container: archlinux:latest
     permissions:
       contents: read
@@ -86,11 +78,9 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: go-${{ hashFiles('runtime/go.sum') }}-${{ github.run_id }}
-          restore-keys: go-${{ hashFiles('runtime/go.sum') }}-
+          key: go-${{ github.job }}-${{ hashFiles('runtime/go.sum') }}-${{ github.run_id }}
+          restore-keys: go-${{ github.job }}-${{ hashFiles('runtime/go.sum') }}-
 
-      # Known vulnerabilities in what the runtime imports, narrowed to the ones
-      # its own code can actually reach.
       - name: Vulnerabilities
         run: make -C runtime vuln
 
@@ -99,12 +89,12 @@ jobs:
       - name: Secrets in the tree
         run: gitleaks dir . --redact --no-banner
 
-  # The release as a machine runs it, and the tarball a stock Arch ISO
-  # downloads. Everything downstream is made of this artefact rather than built
-  # again — the binary in it is compiled exactly once per commit.
+  # The only job that compiles anything. Everything downstream downloads this
+  # artefact rather than building again.
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     container: archlinux:latest
     permissions:
       contents: read
@@ -123,14 +113,13 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: go-${{ hashFiles('runtime/go.sum') }}-${{ github.run_id }}
-          restore-keys: go-${{ hashFiles('runtime/go.sum') }}-
+          key: go-${{ github.job }}-${{ hashFiles('runtime/go.sum') }}-${{ github.run_id }}
+          restore-keys: go-${{ github.job }}-${{ hashFiles('runtime/go.sum') }}-
 
       - run: make tarball
 
-      # Unpacked and loaded with the binary that was packed beside it: the one
-      # check that what ships is what was tested, rather than what was tested
-      # plus whatever the packaging did to it.
+      # What ships is what was tested, rather than what was tested plus whatever
+      # the packaging did to it.
       - name: The tarball holds a working installer
         run: |
           unpacked="$(mktemp -d)"
@@ -152,14 +141,8 @@ jobs:
           path: dist/
           retention-days: 7
 
-  # Every branch is checked; only some are turned into an image, because an
-  # archiso build is a quarter of an hour and a work in progress does not need
-  # one. Anywhere else it is one button away — run this workflow by hand on the
-  # branch.
-  #
-  # `neo` is here because that is where the rewrite is being done, and while it
-  # is, an image on every push is worth the quarter of an hour. It is a working
-  # branch like any other otherwise: nothing is promoted from it.
+  # An archiso build is a quarter of an hour, and a work in progress does not
+  # need an image. Run this workflow by hand on a branch to get one.
   iso:
     name: ISO
     needs: [check, security, build]
@@ -167,8 +150,8 @@ jobs:
       github.event_name == 'workflow_dispatch'
       || github.ref_name == 'dev'
       || github.ref_name == 'main'
-      || github.ref_name == 'neo'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     container:
       image: archlinux:latest
       # pacstrap mounts /proc and /sys inside the airootfs it is filling.
@@ -190,8 +173,8 @@ jobs:
           name: release
           path: release
 
-      # An artefact travels as a zip, and what comes back out of one is not
-      # reliably still executable. build.sh refuses a release it cannot run.
+      # An artefact travels as a zip, and what comes out of one is not reliably
+      # still executable. build.sh refuses a release it cannot run.
       - name: The installer is executable again
         run: chmod +x release/installer
 
@@ -203,12 +186,12 @@ jobs:
           path: dist/
           retention-days: 7
 
-  # The image, booted. Everything above this is a linter's opinion of files; this
-  # is the only job that finds out whether the thing actually starts.
+  # The only job that finds out whether the thing actually starts.
   smoke:
     name: Boot test
     needs: iso
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     container:
       image: archlinux:latest
       # qemu falls back to emulation without it, which the timeout below would
@@ -217,8 +200,8 @@ jobs:
     permissions:
       contents: read
     env:
-      # Generous on purpose: a boot that is slow is not a boot that failed, and
-      # a run that passes never waits this long anyway.
+      # Generous on purpose: a slow boot is not a failed boot, and a run that
+      # passes never waits this long.
       TIMEOUT: 600
     steps:
       - name: Make the checkout a repository
@@ -237,8 +220,8 @@ jobs:
 
       - run: make -C iso smoke
 
-      # The console, whichever way it went. On a failure it is the only account
-      # of what the machine was showing when it gave up.
+      # On a failure this is the only account of what the machine was showing
+      # when it gave up.
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -247,8 +230,6 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  # The merge into main, and the release that is the point of it.
-  #
   # Nothing is built here. A fast-forward leaves main pointing at the commit the
   # jobs above checked and booted, so the release is published from their
   # artefacts — the same bytes, under a tag.
@@ -257,6 +238,7 @@ jobs:
     needs: [check, security, build, iso, smoke]
     if: github.ref_name == 'dev'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write # the fast-forward, the tag, the release
       id-token: write # the provenance below is signed
@@ -281,10 +263,7 @@ jobs:
           name: iso
           path: dist
 
-      # The whole release model in four lines: main only ever moves forward onto
-      # a commit that already passed, and it moves onto that exact commit. If
-      # main has grown something dev does not have, that is a person's decision
-      # to make, not a push to force.
+      # main only ever moves forward, and onto a commit that already passed.
       - name: Fast-forward main
         run: |
           git fetch --no-tags origin main
@@ -294,9 +273,9 @@ jobs:
           fi
           git push origin HEAD:refs/heads/main
 
-      # The tag is the short commit SHA, like every other version in this
-      # project. Skipped rather than failed when it already exists, so re-running
-      # a half-finished run finishes it instead of refusing.
+      # The tag is the short commit SHA, like every other version here. Skipped
+      # rather than failed when it exists, so re-running a half-finished run
+      # finishes it.
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -312,8 +291,7 @@ jobs:
             --target "$SHA" \
             --generate-notes
 
-      # Which commit and which run these two files came out of, signed, for
-      # anybody who wants more than a checksum written by the same hand.
+      # Which commit and which run these files came out of, signed.
       - uses: actions/attest-build-provenance@v4
         with:
           subject-path: |

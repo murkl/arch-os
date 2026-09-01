@@ -1,12 +1,9 @@
-# Shared ground for every script of this tree: the target, the values that are
-# worked out rather than asked for, and the few things every task does.
+# Shared ground for every script of this tree: the target, the values worked out
+# rather than asked for, and the few things every task does.
 #
-# The runtime sources this before every task and every hook, so a script is
-# plain shell with no preamble. It sets no traps and no shell options — the
-# runtime already wraps each one in an ERR trap that stops at the first failure
-# and reports the file, the line and the command.
-#
-# Nothing here prints for a person to read: stdout and stderr go to the log.
+# The runtime sources this before every task and every hook, so a script is plain
+# shell with no preamble — the ERR trap that stops at the first failure is the
+# runtime's. Nothing here prints for a person to read; stdout goes to the log.
 
 # Where the new system is mounted while it is being built.
 MNT=/mnt
@@ -16,10 +13,9 @@ DATA="$(dirname "${BASH_SOURCE[0]}")/data"
 
 # ─── Simulation ──────────────────────────────────────────────────────────────
 
-# DEBUG=true runs the whole installer without touching the machine: every wall
-# steps aside and every task reports success without doing anything. Each task
-# guards itself with `simulating && return 0` as its first line, so a unit can
-# only ever be skipped as a whole.
+# DEBUG=true runs the installer without touching the machine. Each task guards
+# itself with `simulating && return 0` as its first line, so a unit is only ever
+# skipped as a whole.
 : "${DEBUG:=false}"
 
 simulating() {
@@ -44,22 +40,12 @@ where() { dirname "${BASH_SOURCE[1]}"; }
 
 # ─── Answering ───────────────────────────────────────────────────────────────
 
-# An answer, written where the runtime keeps them.
+# An answer, appended to the file the runtime keeps them in — one KEY='value' to
+# a line, which the runtime reads back. Any earlier line for the same name is
+# dropped, so a file somebody opens does not say a thing twice.
 #
-# The answer file is shell — one KEY='value' to a line — and the runtime reads
-# it back at the two moments a script can have written into it: after a task
-# that reports something, and after the shell a preset option hangs on its
-# question. So a script answers a question by appending one line, and there is
-# nothing else for it to learn.
-#
-# Whatever the file said about that name is dropped and the new line goes on the
-# end, so there is one answer for one name — the runtime would read the last of
-# two and be right either way, but a file somebody opens should not say a thing
-# twice. Order and comments come back the next time the runtime saves, which
-# rewrites the whole file in declaration order.
-#
-# Written whole and moved into place, the way the runtime writes it: a script
-# interrupted mid-write must not leave a half-file where the answers were.
+# Written whole and moved into place: a script interrupted mid-write must not
+# leave half a file where the answers were.
 answer() {
     local tmp="${INSTALLER_CONF}.answer"
     grep -v "^${1}=" "$INSTALLER_CONF" >"$tmp" 2>/dev/null || : >>"$tmp"
@@ -69,13 +55,10 @@ answer() {
 
 # ─── What a language and a country imply ─────────────────────────────────────
 #
-# The keyboard a language is typed on, the font a console can draw it in, the
-# mirrors its country has and the time zone that country keeps. None of it can
-# be guessed from the shape of a locale — de_CH is not de, sv is not se, and a
-# mirror list has never heard of DE — so all four are looked up in data/.
-#
-# The same tables fill the lists the question pages offer, so what a page shows
-# beside `auto` and what a task gets can never disagree.
+# The keyboard a language is typed on, the font that can draw it, the mirrors its
+# country has, the time zone it keeps. None of it follows from the shape of a
+# locale — de_CH is not de, sv is not se — so all four are looked up in data/.
+# The same tables fill the lists the question pages offer.
 
 # A column of the data/languages row for a locale: its own row where there is
 # one, otherwise its language's.
@@ -97,9 +80,9 @@ country_field() {
     awk -F'\t' -v col="$1" -v code="${locale#*_}" '$1 == code { print $col }' "${DATA}/countries"
 }
 
-# The keyboard the live image was started with, if it was started with one. The
-# Arch image records it in root's shell history as the loadkeys command that set
-# it, which is the only place it can be read back from.
+# The keyboard the live image was started with. The Arch image records it in
+# root's shell history as the loadkeys command that set it, which is the only
+# place it can be read back from.
 live_keymap() {
     grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null |
         tail -n1 | sed 's/.*loadkeys *//' | tr -d ' ' || true
@@ -107,16 +90,15 @@ live_keymap() {
 
 # ─── auto / none ─────────────────────────────────────────────────────────────
 
-# `auto` and `none` are the two words the lists in installer.yaml share, and
-# neither ever reaches a task. They are not the same test: auto is a value
-# still to be found, none is the value itself — the empty answer said out loud.
+# The two words the lists in installer.yaml share; neither ever reaches a task.
+# auto is a value still to be found, none is the empty answer said out loud.
 is_auto() { [ -z "$1" ] || [ "$1" = "auto" ]; }
 not_none() { [ "$1" = "none" ] || printf '%s' "$1"; }
 
 # ─── Values that are worked out rather than asked for ────────────────────────
 
-# What each list comes to when it is left on auto. Named rather than inlined
-# because the question page shows the same answer beside its auto row.
+# What each list comes to on auto. Named rather than inlined, because the
+# question page shows the same answer beside its auto row.
 auto_keymap() {
     local keymap
     keymap="$(language_field 2 "$ARCH_OS_LOCALE_LANG")"
@@ -134,9 +116,8 @@ auto_layout() {
     printf '%s' "$layout"
 }
 
-# Both fall back to none rather than to nothing, because for these two none is
-# the answer: no font is the console's own, and no country is every mirror in
-# the world ranked by speed.
+# Both fall back to none rather than to nothing: no font is the console's own,
+# and no country is every mirror in the world ranked by speed.
 auto_font() {
     local font
     font="$(language_field 4 "$ARCH_OS_LOCALE_LANG")"
@@ -150,9 +131,9 @@ auto_country() {
     printf '%s' "${country:-none}"
 }
 
-# The zone the chosen country keeps, and — for a locale that names none — where
-# this machine appears to be, asked of the network. A guess either way, offered
-# as the value the list opens on and never as an answer.
+# The zone the chosen country keeps, or — for a locale naming none — where this
+# machine appears to be. A guess either way, offered as the value the list opens
+# on and never as an answer.
 auto_timezone() {
     local zone
     zone="$(country_field 3 "$ARCH_OS_LOCALE_LANG")"
@@ -170,21 +151,15 @@ auto_microcode() {
     fi
 }
 
-# Logging in automatically follows disk encryption: the disk is already unlocked
-# by a password at boot, so a second one at the login screen protects nothing.
+# Automatic login follows disk encryption: the disk is already unlocked by a
+# password at boot, so a second one at the login screen protects nothing.
 auto_autologin() { printf '%s' "${ARCH_OS_ENCRYPTION_ENABLED:-false}"; }
 
 # ─── Disks and partitions ─────────────────────────────────────────────────────
 
-# The disks this machine has, as a question offers them: the device path is the
-# answer, and what follows the tab is what it is chosen by. Nobody picks between
-# /dev/sda and /dev/sdb by name — they pick by size and by what the drive is
-# called. Whole disks only: 8 is SCSI and SATA, 259 NVMe, 254 virtual block
-# devices.
-#
-# Named rather than written out twice: an installation and a recovery ask for a
-# disk in exactly the same words, and a list that differed between them would be
-# two answers to one question.
+# The disks this machine has: the device path is the answer, what follows the tab
+# is what it is chosen by. Nobody picks between /dev/sda and /dev/sdb by name.
+# Whole disks only — 8 is SCSI and SATA, 259 NVMe, 254 virtual block devices.
 disk_options() {
     lsblk -d -n -I 8,259,254 -o PATH,SIZE,MODEL |
         awk '{ path = $1; $1 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
@@ -198,9 +173,9 @@ part_of() {
     printf '%s%s%s' "$1" "$sep" "$2"
 }
 
-# How this project mounts btrfs, written down once: the installation lays the
-# file system out with these and the recovery has to put it back exactly as it
-# found it, so the two must never drift apart.
+# How this project mounts btrfs. The recovery mounts what this lays down and has
+# the same line in its own lib.sh — the two must not drift apart.
+# shellcheck disable=SC2034 # prepare-disk reads it, and is checked on its own
 BTRFS_OPTS="defaults,noatime,compress=zstd"
 
 # Resolved once here rather than in one stage, so every stage sees the same
@@ -226,14 +201,11 @@ locale_gen_lines() {
     echo 'en_US.UTF-8 UTF-8'
 }
 
-# The console keyboard and font of the new system, written into it.
+# The console keyboard and font of the new system.
 #
-# A function rather than four lines in the task that configures the system,
-# because it is needed once before that: the kernel's own package hook builds a
-# ram disk during pacstrap, and mkinitcpio's sd-vconsole hook reads this file
-# while it does. Without it that build warns and falls back to a US layout —
-# which the ram disk built later replaces, but not before the warning has sent
-# somebody looking for a keyboard problem that was never there.
+# A function rather than four lines in configure-system, because it is needed
+# once before that: the kernel's package hook builds a ram disk during pacstrap,
+# and mkinitcpio's sd-vconsole hook reads this file while it does.
 write_vconsole() {
     mkdir -p "${MNT}/etc"
     echo "KEYMAP=${ARCH_OS_VCONSOLE_KEYMAP}" >"${MNT}/etc/vconsole.conf"
@@ -241,9 +213,9 @@ write_vconsole() {
     return 0
 }
 
-# Loading the keyboard on the machine the installer is running on, which is what
-# `apply:` calls the moment the language or the keyboard itself is answered.
-# Until this has run, every answer after it is typed on a layout nobody chose.
+# The keyboard on the machine the installer runs on, which `apply:` calls the
+# moment the language or the keyboard is answered. Until it has run, everything
+# after it is typed on a layout nobody chose.
 load_console_keyboard() {
     # DEBUG runs on somebody's own machine, whose keyboard is not ours to touch.
     [ "$DEBUG" = "true" ] && return 0
@@ -252,30 +224,25 @@ load_console_keyboard() {
 
 # ─── Secure Boot ─────────────────────────────────────────────────────────────
 
-# Whether this installation gets Secure Boot, which always comes as a package
-# with a Unified Kernel Image. The same rule the secure-boot task is gated by,
-# in the form the boot loader and the initial ram disk need: both are built
-# differently for a signed boot chain, and both run either way.
+# Whether this installation gets Secure Boot, which always comes with a unified
+# kernel image. The boot loader and the ram disk are both built differently for a
+# signed boot chain and both run either way, so the rule is named once.
 #
-# It is a setting, and it is only put as a question where disk encryption and
-# systemd-boot are both in place — for three reasons:
-#   - Without encryption, Secure Boot guards a boot chain whose data an attacker
-#     simply reads off the drive instead. The two only add up together.
-#   - A UKI holds kernel, initramfs and command line in one signed binary.
-#     Signing only kernel and boot loader would leave the initramfs on the
-#     unencrypted EFI partition forgeable — and a forged initramfs collects the
-#     passphrase, which is the attack this is supposed to stop.
-#   - GRUB is left out on purpose: its EFI binary is generated by grub-install,
-#     so it would need re-signing after every update, and no hook does that.
+# Only offered with encryption and systemd-boot:
+#   - Without encryption an attacker reads the data off the drive instead.
+#   - A UKI signs kernel, initramfs and command line together. Signing only the
+#     kernel would leave a forgeable initramfs on the unencrypted EFI partition,
+#     and a forged initramfs collects the passphrase.
+#   - GRUB's EFI binary is generated by grub-install, so it would need re-signing
+#     after every update and no hook does that.
 secure_boot_wanted() {
     [ "$ARCH_OS_SECURE_BOOT_ENABLED" = "true" ] &&
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && [ "$ARCH_OS_BOOTLOADER" = "systemd" ]
 }
 
-# What mkinitcpio builds for this system, as paths inside it: two unified kernel
-# images where the boot chain is signed, and the two plain ram disks everywhere
-# else. Named here because two tasks have to agree about it — the one that sets
-# the preset up, and the one that checks what came out of it.
+# What mkinitcpio builds, as paths inside the new system. Named here because two
+# tasks have to agree about it: the one that writes the preset, and the one that
+# checks what came out of it.
 kernel_images() {
     if secure_boot_wanted; then
         echo "/boot/EFI/Linux/arch-${ARCH_OS_KERNEL}.efi"
@@ -287,9 +254,8 @@ kernel_images() {
 }
 
 # Whether the firmware is in setup mode — the only state our own keys may be
-# enrolled in. "Secure Boot disabled" is not the same thing: the vendor keys are
-# usually still in place. Read from the UEFI variable rather than parsed out of
-# `sbctl status`, whose output is meant for humans: the first four bytes are
+# enrolled in. "Secure Boot disabled" is not the same thing. Read from the UEFI
+# variable rather than out of `sbctl status`: the first four bytes are
 # attributes, the fifth holds the value.
 secure_boot_setup_mode() {
     local efivar=/sys/firmware/efi/efivars/SetupMode-8be4df61-93ca-11d2-aa0d-00e098032b8c
@@ -299,8 +265,8 @@ secure_boot_setup_mode() {
 
 # ─── The kernel command line ─────────────────────────────────────────────────
 
-# Written once and read by both the boot entries and the unified kernel image,
-# so the two can never disagree about how this system boots.
+# Read by both the boot entries and the unified kernel image, so the two cannot
+# disagree about how this system boots.
 kernel_args() {
     local args=(rw init=/usr/lib/systemd/systemd)
 
@@ -330,8 +296,7 @@ kernel_args() {
 # ─── Installing into the new system ──────────────────────────────────────────
 
 # Package installs are retried: the one thing that reliably goes wrong during an
-# installation is the network, and losing twenty minutes of work to a mirror
-# that blinked would be absurd.
+# installation is the network.
 RETRIES=5
 RETRY_WAIT=10
 
@@ -348,7 +313,16 @@ chroot_pacman_install() {
     return 1
 }
 
-chroot_pacman_remove() { arch-chroot "$MNT" pacman -Rn --noconfirm "$@"; }
+# A sudo rule in the new system, as a drop-in. /etc/sudoers belongs to the sudo
+# package, and a syntax error in it locks everybody out of root — so rules go
+# beside it, one file each, checked before they are believed.
+sudoers_rule() {
+    local file="${MNT}/etc/sudoers.d/${1}"
+    mkdir -p "${MNT}/etc/sudoers.d"
+    printf '# Written by the Arch OS Installer.\n%s\n' "$2" >"$file"
+    chmod 0440 "$file"
+    arch-chroot "$MNT" visudo -cqf "/etc/sudoers.d/${1}"
+}
 
 # Building from the AUR needs a normal user who may use sudo without a password.
 # It is granted for exactly the length of the build and taken back after —
@@ -360,7 +334,7 @@ chroot_aur_install() {
     local dir status=1 i
     dir="$(mktemp -u "/home/${ARCH_OS_USERNAME}/.aur-${repo}.XXXX")"
 
-    sed -i 's/^# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/' "${MNT}/etc/sudoers"
+    sudoers_rule 99-aur-build '%wheel ALL=(ALL:ALL) NOPASSWD: ALL'
 
     for ((i = 1; i <= RETRIES; i++)); do
         [ "$i" -gt 1 ] && echo "retry ${i}/${RETRIES}: building ${repo} from the AUR"
@@ -374,7 +348,7 @@ chroot_aur_install() {
     done
 
     as_user "rm -rf ${dir}"
-    sed -i 's/^%wheel ALL=(ALL:ALL) NOPASSWD: ALL/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/' "${MNT}/etc/sudoers"
+    rm -f "${MNT}/etc/sudoers.d/99-aur-build"
 
     [ "$status" -eq 0 ] || echo "building ${repo} from the AUR failed after ${RETRIES} attempts" >&2
     return "$status"
@@ -389,51 +363,39 @@ as_user() {
 
 # ─── The first login ─────────────────────────────────────────────────────────
 
-# A few desktop settings can only be applied by the user's own session, because
-# they live in that session's settings database and there is no session yet.
-# Tasks append lines here; the first-login task turns whatever collected into a
-# script that runs once, at the first login, and then removes itself.
+# Some desktop settings live in the user's own settings database, and there is no
+# session yet. Tasks append lines here; the first-login task turns them into a
+# script that runs once at the first login and then removes itself.
 FIRST_LOGIN="${MNT}/home/${ARCH_OS_USERNAME}/.first-login"
 
 on_first_login() { cat >>"$FIRST_LOGIN"; }
 
 # ─── The copy left behind ────────────────────────────────────────────────────
 
-# The answers as they are kept inside the finished system, which is where
-# anybody looks years later to find out how this machine was set up.
-#
-# Named here rather than inside the task that writes it, because the sharing
-# below appends to the same file once there is an address to append — and two
-# scripts each spelling out one path is one spelling too many.
+# The answers as they are kept inside the finished system. Named here rather than
+# in the task that writes it, because share_config appends to the same file once
+# there is an address to append.
 TARGET_CONF="${MNT}/home/${ARCH_OS_USERNAME}/installer.conf"
 
 # ─── Sharing what was answered ───────────────────────────────────────────────
 #
-# An installation is two dozen answers, and the second machine set up the same
-# way is otherwise two dozen answers given again by hand. So the finished
-# configuration can be put somewhere a phone can reach and the address of it
-# shown at the end of the run; the other end of the same idea is the starting
-# point that takes its answers from such an address instead of from this tree.
+# An installation is two dozen answers, and the next machine set up the same way
+# is otherwise those answers given again by hand. So the finished configuration
+# can be put where a phone reaches it, and a starting point can take its answers
+# from there.
 #
-# It is only ever the answer file: names, a host name, a disk, a language. The
-# password is not in it — the runtime never writes a secret down — and neither
-# is the log.
+# Only ever the answer file: a user name, a host name, a disk, a language. The
+# password is not in it — the runtime never writes a secret down.
 #
-# Nothing below runs unasked. share_config is the body of a task that offers
-# itself first and opens on no, so this machine sends nothing anywhere until
-# somebody in front of it has said so with the installation already finished —
-# which is the only moment at which the question is about a real thing.
+# Nothing here runs unasked: share_config is the body of a task that offers
+# itself first and opens on no.
 
-# Where a configuration is shared. paste.rs takes a file over an ordinary POST,
-# answers with the address it now lives at, and serves it back as plain text —
-# no account, no key, nothing to agree to. Everything it does not do is a thing
-# that cannot break.
+# paste.rs takes a file over an ordinary POST, answers with the address it now
+# lives at, and serves it back as plain text. No account, no key.
 CONFIG_SERVICE="https://paste.rs"
 
-# The address a shared configuration lives at, from whatever somebody has in
-# front of them: the whole link, or only the code at the end of it. They are the
-# same thing said differently, and asking which one they are holding would be a
-# question about our storage rather than about their installation.
+# The address, from whatever somebody has in front of them: the whole link, or
+# only the code at the end of it.
 config_url() {
     local ref
     ref="$(printf '%s' "$1" | tr -d '[:space:]')"
@@ -443,26 +405,21 @@ config_url() {
     esac
 }
 
-# The answers as somebody else should read them: everything this installation
-# was told, without the lines about the sharing itself. A configuration naming
-# where an earlier copy of it went would send whoever opened it somewhere else
-# again.
+# Everything this installation was told, without the lines about the sharing
+# itself: a configuration naming where an earlier copy went would send whoever
+# opened it somewhere else again.
 shareable_config() {
     grep -v '^ARCH_OS_CONFIG_' "$INSTALLER_CONF" || true
 }
 
-# The answers, put where a camera can reach them, and the address kept as an
-# answer of its own — which is what puts it on the page the run stops on next,
-# and into the copy of the answers inside the new system.
+# The answers, uploaded, and the address kept as an answer of its own — which is
+# what puts it on the page the run stops on next.
 #
-# Nothing here may fail the installation. The system on the disk is finished by
-# the time this is even offered, and a pastebin that was unreachable says nothing
-# at all about it: a failure is a line in the log, an address that stays empty,
-# and a page with no code on it.
+# Nothing here may fail the installation: the system on the disk is finished by
+# the time this is offered, and an unreachable pastebin says nothing about it.
 share_config() {
-    # Simulated, this still answers with an address. The page at the end of a
-    # run is the thing most worth looking at while this tree is being worked on,
-    # and a page with nothing on it cannot be looked at.
+    # Simulated, this still answers with an address: the page at the end of a
+    # run is the one most worth looking at while this tree is being worked on.
     simulating && {
         answer ARCH_OS_CONFIG_URL "${CONFIG_SERVICE}/demo"
         return 0
@@ -478,22 +435,18 @@ share_config() {
 
     answer ARCH_OS_CONFIG_URL "$url"
 
-    # And into the copy already lying in the new system, so somebody who never
-    # wrote the address down can still find out where their answers went — the
-    # one record of it that survives the machine being restarted.
+    # And into the copy already in the new system: the one record of it that
+    # survives the machine being restarted.
     [ -f "$TARGET_CONF" ] && printf "ARCH_OS_CONFIG_URL='%s'\n" "$url" >>"$TARGET_CONF"
     return 0
 }
 
 # A configuration somebody shared, taken as the answers to this installation.
+# What the runtime owns is left alone: the interface language and the mode are
+# settings of the program in front of you, not of somebody else's machine.
 #
-# What the runtime owns is left where it is: which language this interface is
-# read in and what this run is doing are settings of the program in front of
-# you, not of a system installed on somebody else's machine. So is the sharing.
-#
-# This one may fail, and says why in a sentence: it runs while somebody is
-# looking at the box they typed the code into, and there is nothing to do about
-# a wrong code but read that and try another.
+# This one may fail, and says why: it runs while somebody is looking at the box
+# they typed the code into.
 import_config() {
     local url body
     url="$(config_url "$ARCH_OS_CONFIG_SOURCE")"
@@ -512,15 +465,12 @@ import_config() {
 
 # ─── Leaving ─────────────────────────────────────────────────────────────────
 
-# Everything the installation mounted, taken back down in the right order. Used
-# by the task that only unmounts, by the one that restarts, and by the hooks
-# below, so none of them can ever do it differently.
+# Everything the installation mounted, taken back down in the right order —
+# named once, so the unmount task, the restart and the hooks cannot differ.
 #
-# Written to the disk before anything is taken down, so a target that will not
-# unmount is a mount left standing rather than a file half written. The second
-# go is deliberately unguarded: a target still held after everything using it
-# was killed is a real failure and belongs on the screen with the command that
-# hit it.
+# Flushed before anything comes down, so a target that will not unmount is a
+# mount left standing rather than a file half written. The second attempt is
+# unguarded on purpose: that one is a real failure.
 unmount_target() {
     swapoff -a || true
     sync
@@ -532,14 +482,13 @@ unmount_target() {
     echo "unmounted"
 }
 
-# Whatever still has the target open, named in the log and then killed. Once the
-# tasks are done nothing on this machine has any business inside the new system,
-# so what turns up here is a process a package hook or a chroot left running —
-# and the pause is what the kernel needs to let go of its files afterwards.
+# Whatever still has the target open, named in the log and then killed — a
+# process a package hook or a chroot left running. The pause is what the kernel
+# needs to let go of its files afterwards.
 #
-# -M is the whole safety of it: without it, a target that is not a mount point
+# -M is the whole safety of it: without it a target that is not a mount point
 # resolves to the file system containing it, which on the live image is the live
-# image — and the kill would take this installer and everything else with it.
+# image itself.
 free_target() {
     echo "the target did not unmount, what is holding it:"
     fuser -Mvm "$MNT" || true
@@ -547,28 +496,11 @@ free_target() {
     sleep 2
 }
 
-# What the restart and shutdown hooks do. Whatever the installation had mounted
-# is closed first, so a machine restarted halfway through a run does not take a
-# half-written file system down with it — and nothing mounted is not an error,
-# since the question is as likely to be asked before the first task as after the
-# last.
+# What the restart and shutdown hooks do. Whatever was mounted is closed first,
+# so a machine restarted halfway through does not take a half-written file system
+# with it. Nothing mounted is not an error.
 leave_machine() {
     simulating && return 0
-    if [ "$INSTALLER_MODE" = "recovery" ]; then
-        recovery_unmount || true
-    else
-        unmount_target || true
-    fi
+    unmount_target || true
     systemctl "$1"
 }
-
-# ─── The recovery ────────────────────────────────────────────────────────────
-
-# The other thing this tree does, kept in a file of its own: everything above is
-# what an installation shares, everything there is what a recovery shares, and
-# the two only meet in MNT and in the handful of helpers above.
-#
-# Sourced last, so it can use them. Nothing declares it — it is beside this file
-# under its own name, the way everything else in this tree is found.
-# shellcheck source=recovery.sh
-source "$(dirname "${BASH_SOURCE[0]}")/recovery.sh"

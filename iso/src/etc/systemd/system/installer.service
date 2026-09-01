@@ -8,33 +8,25 @@ After=plymouth-quit-wait.service systemd-user-sessions.service
 Conflicts=getty@tty1.service
 After=getty@tty1.service
 
-# Whatever becomes of the installer, this console is handed back to a login
-# shell rather than left as the blank screen the installer was drawing on.
-#
-# On success that is somebody choosing to leave the installer: the way out that
-# keeps the machine running, offered beside restart and shut down. They wanted a
-# console and this is it, with /etc/motd saying how to get back.
-#
-# On failure it is the same console for the opposite reason — the installer
-# crashed, was killed, could not start — and it is exactly then that somebody
-# needs a root prompt in front of them: to read the log, to mount a disk, to try
-# again. A machine that answers nothing is the one outcome this image must not
-# have.
+# Whatever becomes of the installer, this console is handed back to a login shell
+# rather than left as the blank screen it was drawing on. On success that is
+# somebody choosing to leave it, with /etc/motd saying how to get back; on
+# failure it is a root prompt for reading the log and trying again. A machine
+# that answers nothing is the one outcome this image must not have.
 OnSuccess=getty@tty1.service
 OnFailure=getty@tty1.service
 
-# Three goes inside a minute, then the console goes to the getty above. Without
-# a bound, an installer that dies the moment it starts would restart for ever
-# and never reach OnFailure.
+# Three goes inside a minute, then the console goes to the getty above: without a
+# bound, an installer that dies at once would restart for ever and never reach
+# OnFailure.
 StartLimitIntervalSec=60
 StartLimitBurst=3
 
 [Service]
 # idle keeps the first frame from being drawn over by the tail of the boot log.
 Type=idle
-# The same command the user types at the prompt, so a run started by this
-# machine and one started by hand are the same run — see the script itself,
-# which is also where this console gets its font and its colours.
+# The same command the user types at the prompt, so a run started by this machine
+# and one started by hand are the same run.
 ExecStart=/usr/local/bin/installer
 Restart=on-failure
 RestartSec=2
@@ -47,9 +39,8 @@ TTYReset=yes
 TTYVHangup=yes
 TTYVTDisallocate=yes
 
-# The installer is the reason this machine booted, and stopping it is a
-# decision rather than an accident: what follows either way is the console
-# above.
+# The installer is the reason this machine booted, and stopping it is a decision
+# rather than an accident.
 KillMode=process
 IgnoreSIGPIPE=no
 SendSIGHUP=yes

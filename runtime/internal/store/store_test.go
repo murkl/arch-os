@@ -9,6 +9,10 @@ import (
 	"installer/internal/spec"
 )
 
+// What a test tree's declaration is called: the runtime takes whichever yaml it
+// finds in the folder, and these tests use the name the real trees use.
+const treeFile = "installer.yaml"
+
 // setup builds a store over a tree written for the test, with the answer file
 // inside a temporary directory of its own.
 func setup(t *testing.T, variables string) *Store {
@@ -22,7 +26,7 @@ func load(t *testing.T, installer string) *spec.Spec {
 	t.Helper()
 	dir := t.TempDir()
 	files := map[string]string{
-		spec.FileInstaller:   installer,
+		treeFile:             installer,
 		"tasks/go/task.yaml": "name: Go\nstage: go\n",
 		"tasks/go/task.sh":   "true\n",
 	}

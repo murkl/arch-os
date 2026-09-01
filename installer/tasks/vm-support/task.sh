@@ -1,8 +1,5 @@
-# Guest tools, if this is running inside a virtual machine.
-#
-# Detected rather than asked about: nobody installing into a virtual machine
-# wants to be quizzed about which hypervisor it is, and on real hardware this
-# stage finds nothing and does nothing.
+# Guest tools, if this is running inside a virtual machine. Detected rather than
+# asked about; on real hardware it finds nothing and does nothing.
 
 simulating && return 0
 

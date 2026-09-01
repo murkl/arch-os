@@ -1,7 +1,6 @@
-# A handful of settings can only be applied by the user's own session, because
-# they live in that session's settings database and there is no session yet.
-# Earlier tasks appended their lines to one file; it becomes a script that
-# runs once, at the first login, and removes itself.
+# Settings that live in the user's own database, which needs a session that does
+# not exist yet. Earlier tasks appended their lines to one file; it becomes a
+# script that runs once at the first login and removes itself.
 
 simulating && return 0
 

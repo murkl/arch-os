@@ -9,8 +9,8 @@ if [ "$ARCH_OS_BTRFS_SNAPPER_ENABLED" = "true" ]; then
     return 0
 fi
 
-# Without snapper there is still a file system that can snapshot, so it does —
-# plainly, by date, and without anything cleaning up after it.
+# Without snapper there is still a file system that can snapshot: by date, and
+# with nothing cleaning up after it.
 mkdir -p "${MNT}/etc/pacman.d/hooks"
 {
     echo '[Trigger]'

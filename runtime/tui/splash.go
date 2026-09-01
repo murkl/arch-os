@@ -8,23 +8,14 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// The splash is the one thing here that is not part of the interface: no
-// breadcrumb, no footer, no keys, no frame. It is a moment before the
-// interface, not a page inside it, and stands free of the border and padding
-// that every other screen draws within.
-//
-// It is still the same program, though. Two programs would mean leaving the
-// alternate screen and entering it again in between, and what that looks like
-// is the shell blinking through the middle of the start.
+// The one thing here that is not part of the interface: no breadcrumb, no
+// footer, no keys, no frame. A moment before the interface rather than a page
+// inside it — but the same program, because leaving the alternate screen and
+// entering it again would blink the shell through the middle of the start.
 //
 // Under the wordmark stands the version, not the title: the wordmark already
-// says the name, and the one thing a splash can usefully add is which build of
-// it is running. It stands beneath the wordmark with room of its own, a
-// caption rather than a third line competing with the other two for the same
-// few rows — and it is the last thing to arrive, fading in only once the
-// wordmark has settled and held there a moment before the handover, so the
-// two never compete for the eye at once and neither goes past too fast to
-// read.
+// says the name. It fades in last, once the wordmark has settled, so the two
+// never compete for the eye.
 
 const (
 	// animEvery is one animation frame — the rate the wordmark sweeps in and

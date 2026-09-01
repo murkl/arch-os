@@ -11,12 +11,16 @@ import (
 	"installer/internal/store"
 )
 
+// What a test tree's declaration is called: the runtime takes whichever yaml it
+// finds in the folder, and these tests use the name the real trees use.
+const treeFile = "installer.yaml"
+
 // setup writes a tree: installer.yaml from the given variables and tasks,
 // plus whatever extra files a test asked for.
 func setup(t *testing.T, variables string, tasks map[string]string) (*spec.Spec, *store.Store, *Runner) {
 	t.Helper()
 	dir := t.TempDir()
-	files := map[string]string{spec.FileInstaller: "title: T\nstages: [go]\n" + variables}
+	files := map[string]string{treeFile: "title: T\nstages: [go]\n" + variables}
 	if len(tasks) == 0 {
 		tasks = oneTask
 	}
@@ -145,7 +149,7 @@ func TestPreflightPassesWhenTheTreeHasNoHook(t *testing.T) {
 func TestPreflightCarriesWhatTheHookSaid(t *testing.T) {
 	dir := t.TempDir()
 	files := map[string]string{
-		spec.FileInstaller:   "title: T\nstages: [go]\nvariables: []\n",
+		treeFile:             "title: T\nstages: [go]\nvariables: []\n",
 		"tasks/go/task.yaml": "name: Go\nstage: go\n",
 		"tasks/go/task.sh":   "true\n",
 		"hooks/preflight.sh": "echo Set the boot mode to UEFI. >&2\nexit 1\n",
@@ -295,5 +299,45 @@ func TestAListHoldingTrueAndFalseStillReadsInWords(t *testing.T) {
 		if got[i] != want[i] {
 			t.Errorf("option %d = %+v, want %+v", i, got[i], want[i])
 		}
+	}
+}
+
+// The starting point that fetches its answers: a shell writes them into the
+// answer file, and the runner reads them back and puts them into force. This is
+// the whole of how a shared configuration becomes an installation.
+func TestAnImportedConfigurationBecomesTheAnswers(t *testing.T) {
+	applied := filepath.Join(t.TempDir(), "applied")
+	_, st, r := setup(t, "variables:\n"+
+		"  - name: DISK\n    title: Disk\n"+
+		"  - name: KEYMAP\n    title: Keymap\n    apply: touch \"$APPLIED\"\n", nil)
+	t.Setenv("APPLIED", applied)
+	st.SetFacts("test")
+
+	shell := "printf \"DISK='/dev/sdz'\\nKEYMAP='de'\\n\" >>\"$INSTALLER_CONF\""
+	if err := r.Import(shell)(); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Imported(); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := st.Get("DISK"); got != "/dev/sdz" {
+		t.Errorf("DISK = %q, want /dev/sdz", got)
+	}
+	if _, err := os.Stat(applied); err != nil {
+		t.Error("the imported keymap was never applied to the live system")
+	}
+}
+
+// What a shell says on stderr is what stands on the page, so a wrong code reads
+// as a wrong code rather than as a number.
+func TestAnImportThatFailsSaysWhy(t *testing.T) {
+	_, _, r := setup(t, "variables:\n  - name: X\n    title: X\n", nil)
+	err := r.Import("echo 'nothing is kept at that address' >&2; exit 1")()
+	if err == nil {
+		t.Fatal("a failing import reported success")
+	}
+	if !strings.Contains(err.Error(), "nothing is kept at that address") {
+		t.Errorf("the message is %q", err)
 	}
 }

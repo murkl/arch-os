@@ -1,6 +1,6 @@
 name: Rebuild the boot files
 stage: repair
-needs: [recovery-rollback]
+needs: [rollback]
 conditions: ARCH_OS_RECOVERY_FILESYSTEM == btrfs
 confirm: |
   Rebuild the kernel images and the initial ram disks?

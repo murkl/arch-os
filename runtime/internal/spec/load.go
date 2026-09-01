@@ -14,8 +14,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Find locates the tree this binary is the runtime for: the installer.yaml
-// beside the binary itself, or wherever a caller points.
+// Find locates the tree this binary is the runtime for: the folder holding a
+// declaration, beside the binary itself or wherever a caller points.
 //
 // Beside the binary and nowhere else, because that is what makes a release one
 // thing — a folder holding the program and everything it runs, copied to a
@@ -23,32 +23,52 @@ import (
 // to be one: finding nothing is an error with somewhere to look in it, not a
 // program that starts up empty.
 func Find(explicit string) (string, error) {
-	look := func(dir string) (string, bool) {
-		if dir == "" {
-			return "", false
-		}
-		abs, err := filepath.Abs(dir)
-		if err != nil {
-			return "", false
-		}
-		if _, err := os.Stat(filepath.Join(abs, FileInstaller)); err != nil {
-			return abs, false
-		}
-		return abs, true
-	}
 	if explicit != "" {
-		if dir, ok := look(explicit); ok {
-			return dir, nil
+		abs, err := filepath.Abs(explicit)
+		if err != nil {
+			return "", err
 		}
-		return "", fmt.Errorf("%s: %s", i18n.T("no installer here"), explicit)
+		if _, err := Declaration(abs); err != nil {
+			return "", fmt.Errorf("%s: %w", abs, err)
+		}
+		return abs, nil
 	}
-	beside, ok := look(binaryDir())
-	if ok {
+	beside := binaryDir()
+	if _, err := Declaration(beside); err == nil {
 		return beside, nil
 	}
 	return "", fmt.Errorf("%s\n%s",
 		i18n.T("No installer found."),
-		i18n.T("%s has to sit next to this program, in %s.", FileInstaller, beside))
+		i18n.T("A %s file has to sit next to this program, in %s.", SpecExt, beside))
+}
+
+// Declaration is the tree's own yaml, by name: the one file ending in SpecExt
+// in the folder's top level. The catalogs and the tasks are yaml too, which is
+// why only the top level counts — everything below it belongs to a part of the
+// tree that is found by its own name.
+//
+// Two of them is refused rather than resolved: a folder holding an
+// installer.yaml and a recovery.yaml is two trees in one place, and picking one
+// would be the runtime deciding which installer somebody meant.
+func Declaration(dir string) (string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return "", err
+	}
+	var found []string
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), SpecExt) {
+			found = append(found, entry.Name())
+		}
+	}
+	switch len(found) {
+	case 1:
+		return found[0], nil
+	case 0:
+		return "", fmt.Errorf("%s", i18n.T("no %s file here", SpecExt))
+	default:
+		return "", fmt.Errorf("%s: %s", i18n.T("more than one %s file here", SpecExt), strings.Join(found, ", "))
+	}
 }
 
 // binaryDir is where this program's own file is, with symlinks resolved so that
@@ -64,10 +84,10 @@ func binaryDir() string {
 	return filepath.Dir(exe)
 }
 
-// installerFile is installer.yaml as it is written: flat, because every key in
+// declaration is the tree's yaml as it is written: flat, because every key in
 // it is about the installer as a whole and a nesting level would only be there
 // to be typed.
-type installerFile struct {
+type declaration struct {
 	Title    string `yaml:"title"`
 	Logo     string `yaml:"logo"`
 	Accent   string `yaml:"accent"`
@@ -93,10 +113,14 @@ type installerFile struct {
 // A tree that loads is a tree that runs: an authoring mistake is a message at
 // startup, never a task that silently never fires.
 func Load(dir string) (*Spec, error) {
-	s := &Spec{Dir: dir, byName: map[string]*Variable{}}
+	file, err := Declaration(dir)
+	if err != nil {
+		return nil, err
+	}
+	s := &Spec{Dir: dir, File: file, byName: map[string]*Variable{}}
 
-	var head installerFile
-	if err := read(filepath.Join(dir, FileInstaller), &head); err != nil {
+	var head declaration
+	if err := read(filepath.Join(dir, file), &head); err != nil {
 		return nil, err
 	}
 	s.UI = UI{Title: head.Title, Logo: head.Logo, Accent: head.Accent, Console: head.Console}
@@ -132,8 +156,8 @@ func Load(dir string) (*Spec, error) {
 // names them, and then those two keys belong to a mode rather than to the
 // installer: having them in both places would be two answers to one question,
 // so it is refused rather than resolved.
-func (s *Spec) settleModes(head *installerFile) error {
-	where := FileInstaller + ": "
+func (s *Spec) settleModes(head *declaration) error {
+	where := s.File + ": "
 	if len(head.Modes) == 0 {
 		if len(head.Stages) == 0 {
 			return fmt.Errorf("%sno stages", where)
@@ -269,16 +293,16 @@ func read(path string, into any) error {
 func (s *Spec) check(tasks []*Task) error {
 	s.normalize(tasks)
 	if s.UI.Title == "" {
-		return fmt.Errorf("%s: title is required", FileInstaller)
+		return fmt.Errorf("%s: title is required", s.File)
 	}
 	if s.UI.Accent != "" && !hexColor.MatchString(s.UI.Accent) {
-		return fmt.Errorf("%s: accent must be #rrggbb, got %q", FileInstaller, s.UI.Accent)
+		return fmt.Errorf("%s: accent must be #rrggbb, got %q", s.File, s.UI.Accent)
 	}
 	if err := s.checkVars(); err != nil {
-		return fmt.Errorf("%s: %w", FileInstaller, err)
+		return fmt.Errorf("%s: %w", s.File, err)
 	}
 	if err := s.checkPresets(); err != nil {
-		return fmt.Errorf("%s: %w", FileInstaller, err)
+		return fmt.Errorf("%s: %w", s.File, err)
 	}
 	return s.checkTasks(tasks)
 }

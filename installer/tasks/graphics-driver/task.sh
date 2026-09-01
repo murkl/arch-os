@@ -1,9 +1,6 @@
-# The graphics driver, and whatever else the card needs to start with the
-# desktop rather than after it.
-#
-# Every branch here rebuilds the initial ram disk directly rather than through
-# pacman, which is why the Secure Boot signing in the last stage has to come
-# after this one: a rebuilt kernel image is an unsigned one.
+# The graphics driver, and whatever else the card needs to start with the desktop
+# rather than after it. Every branch rebuilds the ram disk directly rather than
+# through pacman, which is why the Secure Boot signing comes after this one.
 
 simulating && return 0
 
@@ -24,9 +21,8 @@ intel_i915) # https://wiki.archlinux.org/title/Intel_graphics#Installation
     ;;
 
 nvidia) # https://wiki.archlinux.org/title/NVIDIA#Installation
-    # Arch dropped the closed driver; nvidia-open is the only one in the
-    # repositories. The precompiled build exists for the stock kernel alone —
-    # every other one needs the dkms package, built against its own headers.
+    # Arch dropped the closed driver. The precompiled nvidia-open exists for the
+    # stock kernel alone; every other one needs the dkms package.
     driver=nvidia-open-dkms
     packages=("${ARCH_OS_KERNEL}-headers" nvidia-settings nvidia-utils opencl-nvidia vkd3d vulkan-tools)
     if [ "$ARCH_OS_KERNEL" = "linux" ]; then
@@ -43,9 +39,9 @@ nvidia) # https://wiki.archlinux.org/title/NVIDIA#Installation
     echo 'options nvidia_drm modeset=1 fbdev=1' >"${MNT}/etc/modprobe.d/nvidia.conf"
     sed -i "s/^MODULES=(.*)/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/g" "${MNT}/etc/mkinitcpio.conf"
 
-    # The modules live in the ram disk, so it has to be rebuilt whenever either
-    # the driver or the kernel changes — and not once per package of a batch
-    # that changes both. https://wiki.archlinux.org/title/NVIDIA#pacman_hook
+    # The modules live in the ram disk, so it is rebuilt whenever the driver or
+    # the kernel changes — once per batch, not once per package.
+    # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
     mkdir -p "${MNT}/etc/pacman.d/hooks"
     {
         echo '[Trigger]'
@@ -64,8 +60,7 @@ nvidia) # https://wiki.archlinux.org/title/NVIDIA#Installation
         echo "Exec=/bin/sh -c 'while read -r trg; do case \$trg in linux*) exit 0; esac; done; /usr/bin/mkinitcpio -P'"
     } >"${MNT}/etc/pacman.d/hooks/nvidia.hook"
 
-    # GDM refuses Wayland on this driver by default; the empty rule overrides
-    # the one that says so.
+    # GDM refuses Wayland on this driver by default; the empty rule overrides it.
     # https://wiki.archlinux.org/title/GDM#Wayland_and_the_proprietary_NVIDIA_driver
     mkdir -p "${MNT}/etc/udev/rules.d"
     [ -f "${MNT}/etc/udev/rules.d/61-gdm.rules" ] || ln -s /dev/null "${MNT}/etc/udev/rules.d/61-gdm.rules"

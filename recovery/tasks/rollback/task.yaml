@@ -2,9 +2,8 @@ name: Go back to a snapshot
 stage: repair
 conditions: ARCH_OS_RECOVERY_FILESYSTEM == btrfs
 
-# The snapshots cannot be listed before this point: they are on the disk this
-# run has only just unlocked and mounted. So the question is asked here, in the
-# middle of the run, and the offer under it names what was chosen.
+# The snapshots are on the disk this run has only just unlocked, so the question
+# is asked here, in the middle of the run, and the offer names what was chosen.
 asks: ARCH_OS_RECOVERY_SNAPSHOT
 confirm: |
   Put {{ARCH_OS_RECOVERY_SNAPSHOT}} in place of the root subvolume on {{ARCH_OS_RECOVERY_DISK}}?

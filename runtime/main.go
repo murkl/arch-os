@@ -1,15 +1,11 @@
-// Command installer is a runtime for an installer that lives beside it as
-// files.
+// Command installer is a runtime for an installer that lives beside it as files.
 //
-// The binary on its own installs nothing and claims nothing. It knows how to
-// draw an interface, ask questions, keep the answers, and run shell in order,
-// reporting exactly where it broke. What is asked, what the answers mean and
-// what the shell does is an installer.yaml and the tasks beside it — and without
-// one this program has nothing to do and says so.
+// On its own the binary installs nothing: it draws an interface, asks questions,
+// keeps the answers and runs shell in order, reporting where it broke. What is
+// asked and what the shell does is a yaml and the tasks beside it.
 //
-// That split is the whole design. Every system-specific thing there is lives in
-// the tree, so the same binary drives an installer for anything, and the tree
-// can be maintained, versioned and translated entirely on its own.
+// Everything system-specific lives in that tree, so the same binary drives an
+// installer for anything, and the tree is maintained and translated on its own.
 package main
 
 import (
@@ -33,18 +29,18 @@ import (
 // version is set by the build (see the Makefile).
 var version = "dev"
 
-// The answers and the log, where they live when nobody says otherwise: beside
-// whoever started the program, never inside the installer tree. That tree
-// may be a read-only medium, a git checkout or a mounted image, and a runtime
-// that writes into the thing it reads is a runtime that cannot be shipped that
-// way.
+// The answers and the log live beside whoever started the program, never inside
+// the installer tree — which may be a read-only medium or a mounted image. Both
+// are named after the tree they belong to, so two trees started from the same
+// folder keep their own: installer.yaml answers into installer.conf, and
+// recovery.yaml beside it into recovery.conf.
 const (
-	confName = "installer.conf"
-	logName  = "installer.log"
+	confExt = ".conf"
+	logExt  = ".log"
 )
 
-// The two knobs, each with an environment variable of the same meaning so an
-// unattended run needs no command line at all.
+// Each knob has an environment variable of the same meaning, so an unattended
+// run needs no command line.
 const (
 	dirVar  = "INSTALLER_DIR"
 	confVar = "INSTALLER_CONF"
@@ -79,13 +75,9 @@ func main() {
 	}
 }
 
-// inspect loads a tree and says what it found, without touching anything.
-//
-// It is the same load the program does at startup, so everything it refuses is
-// something that would have stopped the installer — a script that moved, a
-// condition naming a variable that no longer exists, a preset filling one in
-// that was never declared. It exists so that a tree can be checked from a
-// build script, before it reaches a machine with a disk in it.
+// inspect loads a tree and says what it found, without touching anything. The
+// same load the program does at startup, so everything it refuses would have
+// stopped the installer — for checking a tree from a build script.
 func inspect(dir string) error {
 	dir, err := spec.Find(dir)
 	if err != nil {
@@ -110,7 +102,7 @@ func inspect(dir string) error {
 	for i, l := range langs {
 		names[i] = l.Code
 	}
-	fmt.Printf("%s\n", dir)
+	fmt.Printf("%s\n", filepath.Join(dir, sp.File))
 	fmt.Printf("  title      %s\n", sp.UI.Title)
 	fmt.Printf("  variables  %d (%d required, %d secret)\n", len(sp.Vars), required, secret)
 	fmt.Printf("  presets    %d\n", len(sp.Presets))
@@ -122,17 +114,14 @@ func inspect(dir string) error {
 	fmt.Printf("  hooks      %s\n", strings.Join(hooks(sp), " "))
 	fmt.Printf("  languages  %s\n", strings.Join(names, " "))
 
-	// The order they run in, which is worked out rather than written down
-	// anywhere: printing it is how an author sees what their stages and needs
-	// actually add up to.
+	// The order they run in is worked out rather than written down anywhere.
 	for i, t := range sp.Tasks {
 		fmt.Printf("  %2d. %-10s %s\n", i+1, t.Stage, t.ID())
 	}
 
-	// How much of the tree each language actually covers. A catalog whose
-	// keys have drifted from the yaml shows up here as a coverage that dropped,
-	// which is the only way a stale translation is ever noticed — nothing else
-	// about it fails.
+	// A catalog whose keys have drifted from the yaml shows up here as a
+	// coverage that dropped, which is the only way a stale translation is
+	// noticed.
 	msgs := sp.Strings()
 	for _, l := range langs {
 		if l.Code == i18n.SourceLang {
@@ -151,9 +140,8 @@ func inspect(dir string) error {
 }
 
 func run(dir, conf string) error {
-	// A language before anything else, so that even the message saying no
-	// installer was found is in one. Only the runtime's own catalogs are
-	// available this early — the tree's arrive with the tree.
+	// A language before anything else, so even the message saying no installer
+	// was found is in one. Only the runtime's own catalogs exist this early.
 	i18n.Activate(i18n.Match(locale(), codes(i18n.Discover(locales.FS))), locales.FS)
 
 	dir, err := spec.Find(dir)
@@ -165,8 +153,10 @@ func run(dir, conf string) error {
 		return err
 	}
 
+	// What this tree's answers and log are called, after the tree itself.
+	name := strings.TrimSuffix(sp.File, spec.SpecExt)
 	if conf == "" {
-		conf = confName
+		conf = name + confExt
 	}
 	if conf, err = filepath.Abs(conf); err != nil {
 		return err
@@ -174,43 +164,37 @@ func run(dir, conf string) error {
 
 	st := store.New(sp, conf)
 	st.SetFacts(version)
-	// The environment first, then the file: a written answer is one this
-	// machine actually gave, while an inherited variable is as often an
-	// accident as an instruction.
+	// The environment first, then the file: a written answer is one this machine
+	// gave, an inherited variable as often an accident as an instruction.
 	st.LoadEnv()
 	if err := st.Load(); err != nil {
 		return err
 	}
-	// Which of the tree's modes this run is in, settled before the first page so
-	// that every condition, every script and the answer file read the same thing
-	// from the start. Whatever was chosen last if it is still on offer, otherwise
-	// the first the tree names — which is also the whole of it for a tree that
-	// does one thing and is never asked.
+	// Settled before the first page, so every condition, every script and the
+	// answer file read the same thing from the start: whatever was chosen last if
+	// it is still on offer, otherwise the first the tree names.
 	if sp.Mode(st.Get(spec.ModeVar)) == nil {
 		st.Set(spec.ModeVar, sp.Modes[0].ID)
 	}
 
-	// The log is opened before the interface, so that anything the first page
-	// does is already being recorded — and only now, because where it goes is
-	// settled by where the answers go.
-	logPath := filepath.Join(filepath.Dir(conf), logName)
+	// Opened before the interface, so the first page is already recorded — and
+	// only now, because where it goes follows where the answers go.
+	logPath := filepath.Join(filepath.Dir(conf), name+logExt)
 	if err := logging.Init(logPath); err != nil {
 		return err
 	}
 	st.SetFact("INSTALLER_LOG", logPath)
 	logging.Info("%s %s", sp.UI.Title, version)
 
-	// Now the tree can speak too. Its catalogs are laid over the runtime's, so a
-	// tree may reword anything — and the stored choice beats the machine's own
-	// locale, because it is somebody having said so.
+	// The tree's catalogs are laid over the runtime's, so a tree may reword
+	// anything. A stored choice beats the machine's locale: somebody said so.
 	sources := catalogs(sp)
 	langs := i18n.Discover(sources...)
 	i18n.Activate(language(st.Get(spec.LangVar), langs), sources...)
 	st.Set(spec.LangVar, i18n.Current())
 
-	// Whatever the answers already put in force on this machine, put back before
-	// the first page: they survived a restart in the answer file and their
-	// effect on the live system did not.
+	// The answers survived a restart in the file; their effect on the live system
+	// did not.
 	rn := runner.New(sp, st)
 	rn.Settle()
 
@@ -226,9 +210,8 @@ func modes(sp *spec.Spec) []string {
 	return out
 }
 
-// hooks is which of the hooks this tree actually has, in the order the runtime
-// knows them — so a hook that is not being called because of a typo in its name
-// is visible as one missing from this line.
+// hooks is which of them this tree actually has, so one that is not being called
+// because of a typo in its name is visible as one missing from this line.
 func hooks(sp *spec.Spec) []string {
 	var out []string
 	for _, name := range spec.HookNames {
@@ -283,13 +266,9 @@ func codes(langs []i18n.Lang) []string {
 	return out
 }
 
-// catalog prints every word an installer says, as a catalog with the
-// right-hand side left empty.
-//
-// This is what makes a tree translatable by somebody who did not write it:
-// redirect it to locales/<code>.yaml, fill in the right-hand side, done. Run
-// again after the tree changes and the new strings are in the output, so
-// nothing has to be hunted for by reading the yaml.
+// catalog prints every word an installer says, with the right-hand side left
+// empty: redirect it to locales/<code>.yaml and fill it in. Run again after the
+// tree changes and the new strings are in the output.
 func catalog(dir string) error {
 	dir, err := spec.Find(dir)
 	if err != nil {
@@ -323,10 +302,9 @@ func quoteYAML(s string) string {
 	return strings.TrimRight(b.String(), "\n") + "\n  "
 }
 
-// die reports on stderr and in the log, then leaves. This is the one thing that
-// is not shown inside the interface, and it cannot be: everything that gives
-// the interface its name, its colours and its words is in the tree that could
-// not be read.
+// die reports on stderr and in the log, then leaves. The one thing not shown
+// inside the interface, because everything that gives the interface its name,
+// its colours and its words is in the tree that could not be read.
 func die(err error) {
 	msg := strings.TrimRight(err.Error(), "\n")
 	logging.Error("%s", msg)

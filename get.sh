@@ -3,37 +3,28 @@
 #
 #   curl -Ls bit.ly/arch-os | bash
 #
-# It does one of two things, and where it runs decides which. On a booted Arch
-# live image there is a machine to install onto, so it fetches the latest
-# release and starts the installer. Anywhere else there is not, so it fetches
-# the latest image and writes it to a USB device — which turns this machine into
-# the one that makes the stick that boots the other case.
+# Where it runs decides what it does. On a booted Arch live image there is a
+# machine to install onto, so it fetches the latest release and starts the
+# installer. Anywhere else there is not, so it fetches the latest image and
+# writes it to a USB device — the one that boots the other case.
 #
-# So the same command is the right one to run twice: once on the desktop to get
-# a boot device, and once on the machine that device booted.
+# MODE=install|create picks the half by hand, DEBUG=true keeps both off the
+# hardware.
 #
-# MODE=install|create picks the half by hand, and DEBUG=true keeps both off the
-# hardware — nothing is written to a device, and the installer it starts
-# simulates every step. Together they are how either half is tried from a
-# desktop without a spare machine.
-#
-# POSIX sh on purpose: this is the one part of the project that runs before
-# anything of it has been downloaded, on whatever shell the machine happens to
-# have. Nothing beyond what an Arch image and a Linux desktop both already
-# ship — curl, tar, coreutils, util-linux.
+# POSIX sh, because this runs before anything else of the project has been
+# downloaded, on whatever shell the machine happens to have.
 set -eu
 
 # ─── Where a release comes from ──────────────────────────────────────────────
 
-# What an artefact is called is deliberately not written down here. The release
-# is asked what it holds and the assets are picked by extension, so renaming a
-# download stays a change to the Makefile that builds it.
+# Asset names are not written down here: the release is asked what it holds and
+# the files are picked by extension, so renaming a download stays a change to
+# the Makefile that builds it.
 REPO="murkl/arch-os"
 RELEASE_API="https://api.github.com/repos/${REPO}/releases/latest"
 
-# Everything downloaded lands here and is reused on a second run rather than
-# fetched twice — a wrong device, a lost connection or a crashed installer costs
-# the download once.
+# Downloads land here and are reused on a second run, so a wrong device or a
+# crashed installer costs the download once.
 DOWNLOAD_DIR="${DOWNLOAD_DIR:-${HOME}/Downloads}"
 
 # install, create, or auto: worked out from where this runs.
@@ -42,6 +33,10 @@ MODE="${MODE:-auto}"
 # Touch no hardware: no device is written, and the installer simulates every
 # step (see setup/lib.sh, which reads the same variable).
 DEBUG="${DEBUG:-false}"
+
+# The file currently being fetched, so an interrupt cleans up its own mess and
+# nothing else in the folder.
+PARTIAL=""
 
 # ─── Output ──────────────────────────────────────────────────────────────────
 
@@ -73,9 +68,8 @@ EOF
 # ─── What this machine is ────────────────────────────────────────────────────
 
 # An Arch live image, the official one or ours — they are built the same way.
-# The initramfs hook that mounted the image leaves /run/archiso behind, and the
-# kernel command line names the image it booted. Either one on its own is
-# enough, and a shell that lost the first still has the second.
+# Either marker on its own is enough, and a shell that lost the first still has
+# the second.
 is_live() {
     [ -d /run/archiso ] || grep -qs archisobasedir /proc/cmdline
 }
@@ -86,9 +80,8 @@ require() {
     done
 }
 
-# Unmounting and writing a device need root, and how one gets there depends on
-# who is asking: a desktop runs this as a person and reaches for sudo, a root
-# shell has nothing to escalate and may not have sudo installed at all.
+# A desktop runs this as a person and reaches for sudo; a root shell has nothing
+# to escalate and may not have sudo installed at all.
 as_root() {
     if [ "$(id -u)" -eq 0 ]; then "$@"; else sudo "$@"; fi
 }
@@ -96,8 +89,8 @@ as_root() {
 # ─── Downloads ───────────────────────────────────────────────────────────────
 
 # The download URL of the one asset of the latest release whose name ends the
-# given way. Matched literally rather than by pattern, so ".iso" is the image
-# and never the checksum file beside it.
+# given way. Matched literally, so ".iso" is the image and never the checksum
+# file beside it.
 asset_url() {
     printf '%s' "$RELEASE" |
         grep -o '"browser_download_url": *"[^"]*"' |
@@ -109,9 +102,8 @@ asset_url() {
 }
 
 # Fetches a URL into DOWNLOAD_DIR under the name it ends in, and leaves what is
-# already there alone. Written to a .part first and moved into place after, so
-# a file that is there is a file that arrived whole — an interrupted download
-# is never mistaken for one on the next run.
+# already there alone. Written to a .part and moved into place after, so a file
+# that is there is a file that arrived whole.
 download() {
     download_name="${1##*/}"
     if [ -f "${DOWNLOAD_DIR}/${download_name}" ]; then
@@ -119,16 +111,15 @@ download() {
         return 0
     fi
     info "Fetching: ${download_name}"
-    curl -Lf --progress-bar "$1" -o "${DOWNLOAD_DIR}/${download_name}.part" ||
-        fail "Download failed: $1"
-    mv "${DOWNLOAD_DIR}/${download_name}.part" "${DOWNLOAD_DIR}/${download_name}"
+    PARTIAL="${DOWNLOAD_DIR}/${download_name}.part"
+    curl -Lf --progress-bar "$1" -o "$PARTIAL" || fail "Download failed: $1"
+    mv "$PARTIAL" "${DOWNLOAD_DIR}/${download_name}"
+    PARTIAL=""
 }
 
 # Every release artefact ships a .sha256 beside it holding the file's own name,
-# so an image is checked here exactly the way it would be checked by hand. A
-# file that fails is thrown away rather than kept: what is left in
-# DOWNLOAD_DIR is only ever something that verified, and the next run fetches
-# it again instead of failing on it forever.
+# so this is the check anyone would run by hand. A file that fails is thrown
+# away rather than kept, and the next run fetches it again.
 verify() {
     download "${1}.sha256"
     verify_name="${1##*/}"
@@ -160,23 +151,20 @@ install_mode() {
     [ -x "${tarball_dir}/installer" ] || fail "No installer in ${tarball}"
     ok "Unpacked: ${tarball_dir}"
 
-    # Started out of its own folder, because the runtime looks for the tree it
-    # runs beside its own binary, and because its answers and its log land in
-    # the working directory — so leaving the installer and running this again
-    # picks up exactly where it left off.
+    # Started out of its own folder: the runtime looks for its tree beside its
+    # own binary, and its answers and log land in the working directory — so
+    # leaving the installer and running this again picks up where it left off.
     #
     # stdin is this script itself when the command arrives through a pipe, so
-    # the interface is handed the terminal instead. Without it, it reads an
-    # exhausted pipe and quits the moment it starts.
+    # the interface is handed the terminal instead.
     cd "$tarball_dir"
     exec ./installer </dev/tty
 }
 
 # ─── Create: this machine makes the device that boots the other one ──────────
 
-# The USB disks this machine has, one per line: the device path, a tab, and
-# what a person picks it by. Nobody knows their stick as /dev/sdb — they know
-# it by its size and the name printed on it.
+# The USB disks this machine has: the device path, a tab, and what a person
+# picks it by. Nobody knows their stick as /dev/sdb.
 usb_disks() {
     lsblk -dn -o PATH,TRAN,SIZE,MODEL |
         awk '$2 == "usb" { path = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); print path "\t" $0 }'
@@ -222,9 +210,9 @@ create_mode() {
     if [ "$DEBUG" = "true" ]; then
         warn "Simulated: ${iso##*/} would be written to ${device}"
     else
-        # A mounted partition would be written out from under its own
-        # filesystem. Lazy as the fallback: a file manager holding the stick
-        # open is the usual reason a plain umount refuses.
+        # A mounted partition would be written out from under its own file
+        # system. Lazy as the fallback: a file manager holding the stick open is
+        # the usual reason a plain umount refuses.
         lsblk -nro MOUNTPOINT "$device" | while IFS= read -r mountpoint; do
             [ -n "$mountpoint" ] || continue
             as_root umount "$mountpoint" || as_root umount -l "$mountpoint"
@@ -252,12 +240,11 @@ case "${1:-}" in
     ;;
 esac
 
-# Both halves ask something, and the answer cannot come from stdin: through a
-# pipe that is this script. Said here once, before anything is downloaded.
+# Both halves ask something, and through a pipe stdin is this script.
 [ -r /dev/tty ] || fail "No terminal — run this from an interactive shell"
 
 mkdir -p "$DOWNLOAD_DIR" || fail "Cannot write to ${DOWNLOAD_DIR}"
-trap 'rm -f "${DOWNLOAD_DIR}"/*.part; exit 130' INT TERM HUP
+trap '[ -n "$PARTIAL" ] && rm -f "$PARTIAL"; exit 130' INT TERM HUP
 
 if [ "$MODE" = "auto" ]; then
     if is_live; then MODE="install"; else MODE="create"; fi

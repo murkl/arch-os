@@ -1,5 +1,4 @@
-# Packages pulled in as dependencies of something that has since gone — the slim
-# desktop removals leave a few.
+# Packages pulled in as dependencies of something that has since gone.
 
 simulating && return 0
 

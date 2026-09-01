@@ -3,4 +3,4 @@
 
 simulating && return 0
 
-recovery_unmount
+unmount_system

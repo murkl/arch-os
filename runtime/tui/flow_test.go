@@ -18,6 +18,10 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// What a test tree's declaration is called: the runtime takes whichever yaml it
+// finds in the folder, and these tests use the name the real trees use.
+const treeFile = "installer.yaml"
+
 // A whole program, driven by keystrokes, with a folder written for the test.
 //
 // The interface is tested the way it is used: press keys, read the screen. What
@@ -95,7 +99,7 @@ func newHarness(t *testing.T, files map[string]string) *harness {
 	i18n.Use(i18n.SourceLang)
 
 	dir := t.TempDir()
-	base := map[string]string{spec.FileInstaller: testInstaller}
+	base := map[string]string{treeFile: testInstaller}
 	for name, body := range testTasks {
 		base[name] = body
 	}
@@ -231,8 +235,6 @@ func (h *harness) typeIn(s string) *harness {
 	return h
 }
 
-// screen is what is on it, once everything in flight has landed.
-
 // screen is what is on it, as plain text.
 func (h *harness) screen() string { return h.m.View() }
 
@@ -343,7 +345,7 @@ func (h *harness) answered() *harness {
 // typed into that screen is already typed on the keyboard this answer settles.
 func TestAFirstQuestionIsAskedBeforeTheNetwork(t *testing.T) {
 	h := newHarness(t, map[string]string{
-		spec.FileInstaller: testInstaller +
+		treeFile: testInstaller +
 			"  - name: LOCALE\n    title: Language and formats\n    required: true\n    first: true\n    values: [de, en]\n",
 		"hooks/online.sh": "exit 1\n",
 	})
@@ -362,7 +364,7 @@ func TestAFirstQuestionIsAskedBeforeTheNetwork(t *testing.T) {
 func TestAnsweringAFirstQuestionPutsItInForce(t *testing.T) {
 	loaded := filepath.Join(t.TempDir(), "loaded")
 	h := newHarness(t, map[string]string{
-		spec.FileInstaller: testInstaller +
+		treeFile: testInstaller +
 			"  - name: LOCALE\n    title: Language and formats\n    required: true\n    first: true\n" +
 			"    values: [de, en]\n    apply: echo \"$LOCALE\" > " + loaded + "\n",
 	})
@@ -386,7 +388,7 @@ func TestAnsweringAFirstQuestionPutsItInForce(t *testing.T) {
 // had ever been marked.
 func TestAnAnsweredFirstQuestionIsNotAskedAgain(t *testing.T) {
 	h := newHarness(t, map[string]string{
-		spec.FileInstaller: testInstaller +
+		treeFile: testInstaller +
 			"  - name: LOCALE\n    title: Language and formats\n    required: true\n    first: true\n    default: de\n    values: [de, en]\n",
 		"hooks/online.sh": "exit 1\n",
 	})
@@ -399,7 +401,7 @@ func TestAnAnsweredFirstQuestionIsNotAskedAgain(t *testing.T) {
 // no / needed first.
 func TestABlindQuestionOpensItsFilterFromTheStart(t *testing.T) {
 	h := newHarness(t, map[string]string{
-		spec.FileInstaller: testInstaller +
+		treeFile: testInstaller +
 			"  - name: KEYMAP\n    title: Console keyboard\n    required: true\n    first: true\n    blind: true\n    values: [us, de]\n",
 	})
 	h.wants("Console keyboard", "Filter …")
@@ -441,7 +443,7 @@ variables:
 // modeFiles is that tree as the files it is made of: one task in each mode, and
 // none of the standard ones.
 var modeFiles = map[string]string{
-	spec.FileInstaller:         testModes,
+	treeFile:                   testModes,
 	"tasks/a-first/task.yaml":  "name: First\nstage: go\n",
 	"tasks/b-second/task.yaml": "",
 	"tasks/b-second/task.sh":   "",
@@ -505,7 +507,7 @@ func presetTreeTying(apply string) map[string]string {
 		"          EXTRAS: \"true\"\n",
 		"          EXTRAS: \"true\"\n          LOCALE: de_DE\n", 1)
 	return map[string]string{
-		spec.FileInstaller: tree +
+		treeFile: tree +
 			"  - name: LOCALE\n    title: System language\n    required: true\n    values: [de_DE, en_US]\n" + apply +
 			"language: LOCALE\n",
 		"locales/de.yaml": "language: Deutsch\nmessages:\n  \"User name\": \"Benutzername\"\n",
@@ -542,7 +544,7 @@ func TestAPresetPutsWhatItFilledInInForce(t *testing.T) {
 // tree's own language question is a question about the machine like any other.
 func twoLanguageTree() map[string]string {
 	return map[string]string{
-		spec.FileInstaller: testInstaller +
+		treeFile: testInstaller +
 			"  - name: LOCALE\n    title: System language\n    required: true\n    values: [de_DE, en_US]\n",
 		"locales/de.yaml": "language: Deutsch\nmessages:\n  \"Setup\": \"Einrichtung\"\n",
 	}
@@ -662,7 +664,7 @@ func TestSettingsOffersNoLanguageOfItsOwnWhenTheTreeOwnsIt(t *testing.T) {
 // The tree the two tests above are about: one question standing for a whole
 // region, and a catalog for one of the languages it can come to.
 var regionTree = map[string]string{
-	spec.FileInstaller: testInstaller +
+	treeFile: testInstaller +
 		"  - name: LOCALE\n    title: Language and region\n    required: true\n    first: true\n" +
 		"    values: [de_DE, en_US]\n" +
 		"language: LOCALE\n",
@@ -709,7 +711,7 @@ func TestTheOpeningQuestionsShowACounterRatherThanATrail(t *testing.T) {
 // of the opening instead of behind every page already answered.
 func TestTheOpeningPagesStandUnderOneHeadingRatherThanInsideEachOther(t *testing.T) {
 	h := newHarness(t, map[string]string{
-		spec.FileInstaller: testInstaller +
+		treeFile: testInstaller +
 			"  - name: LOCALE\n    title: Language and formats\n    required: true\n    first: true\n    values: [de, en]\n" +
 			"  - name: KEYMAP\n    title: Console keyboard\n    required: true\n    first: true\n    values: [de, us]\n",
 	})
@@ -948,7 +950,7 @@ func TestAnOfferCanOpenOnNo(t *testing.T) {
 // the offer after it can name what was just chosen.
 func TestATaskCanAskForAValueInTheMiddleOfTheRun(t *testing.T) {
 	h := newHarness(t, map[string]string{
-		spec.FileInstaller: testInstaller + `
+		treeFile: testInstaller + `
   - name: SNAPSHOT
     title: Snapshot
     description: Which one to go back to.
@@ -982,7 +984,7 @@ func TestATaskCanAskForAValueInTheMiddleOfTheRun(t *testing.T) {
 // of the run: the work has happened, and what it was waiting for is not here.
 func TestAskingForSomethingThatIsNotThereEndsTheRun(t *testing.T) {
 	h := newHarness(t, map[string]string{
-		spec.FileInstaller: testInstaller + `
+		treeFile: testInstaller + `
   - name: SNAPSHOT
     title: Snapshot
     command: "true"
@@ -1081,7 +1083,7 @@ func TestAFailureReportFitsTheSmallestTerminal(t *testing.T) {
 // point, a task that asks first — is a page that simply does not appear.
 func TestTheSmallestTreeStillWorks(t *testing.T) {
 	h := newHarness(t, map[string]string{
-		spec.FileInstaller:         "title: Test Installer\nstages: [go]\nvariables:\n  - name: USER\n    title: User name\n    required: true\n",
+		treeFile:                   "title: Test Installer\nstages: [go]\nvariables:\n  - name: USER\n    title: User name\n    required: true\n",
 		"tasks/a-first/task.yaml":  "name: Do it\nstage: go\n",
 		"tasks/b-second/task.yaml": "",
 		"tasks/b-second/task.sh":   "",
@@ -1140,7 +1142,7 @@ func TestQuittingAsksWhatToDoWithTheMachine(t *testing.T) {
 func TestLeavingToTheConsoleClosesOnlyTheProgram(t *testing.T) {
 	const back = "Type installer to start it again."
 	files := leaveTree("true", "true")
-	files[spec.FileInstaller] = testInstaller + "console: " + back + "\n"
+	files[treeFile] = testInstaller + "console: " + back + "\n"
 
 	h := newHarness(t, files)
 	h.down().enter().typeIn("moritz").enter().enter()
@@ -1265,7 +1267,7 @@ func TestClockReadsAsAClock(t *testing.T) {
 // the machine in somebody's hand.
 func TestATaskCanReportWhatItProduced(t *testing.T) {
 	h := newHarness(t, map[string]string{
-		spec.FileInstaller: testInstaller + `
+		treeFile: testInstaller + `
   - name: LINK
     title: Shared at
 `,
@@ -1300,7 +1302,7 @@ func TestATaskCanReportWhatItProduced(t *testing.T) {
 // is installed.
 func TestAReportWithNothingToShowIsStillShown(t *testing.T) {
 	h := newHarness(t, map[string]string{
-		spec.FileInstaller: testInstaller + `
+		treeFile: testInstaller + `
   - name: LINK
     title: Shared at
 `,
@@ -1375,7 +1377,7 @@ func presetFetches(apply string) map[string]string {
         asks: SOURCE
         apply: `+apply+`
 variables:`, 1)
-	return map[string]string{spec.FileInstaller: tree + `
+	return map[string]string{treeFile: tree + `
   - name: SOURCE
     title: Configuration code
     description: The code of a configuration somebody shared.

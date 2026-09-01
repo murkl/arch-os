@@ -1,18 +1,19 @@
 # What this installer is, what it asks, and in what order it works.
 #
-# The runtime beside it knows nothing about Arch Linux: it draws what is named
-# here, asks what is declared here, and runs the tasks in the order their stages
-# and needs add up to. Everything else is found by its own name — lib.sh, data/,
-# locales/, hooks/, tasks/ — and nothing points at it from this file.
+# The runtime beside it knows nothing about Arch Linux. Everything else in this
+# tree is found by its own name — lib.sh, data/, locales/, hooks/, tasks/ — and
+# nothing points at it from here.
+#
+# Repairing a system that is already on a disk is a program of its own, with a
+# declaration of its own: see ../recovery.
 
 title: Arch OS Installer
 
-# Arch blue, taken towards the terminal's own background until it is readable
-# there, so it holds on a light terminal too.
+# Arch blue, pulled towards the terminal's background so it holds on a light one.
 accent: "#1793d1"
 
-# The opening. Everything above the blank line is the eyebrow, dimmed; the block
-# below it is the wordmark and comes up in the accent.
+# Above the blank line is the eyebrow, dimmed; below it the wordmark, in the
+# accent.
 logo: |
   Arch Linux
 
@@ -22,32 +23,31 @@ logo: |
   ██   ██ ██   ██ ██      ██   ██     ██    ██      ██
   ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
 
-# Read on the way out when the installer is closed and the machine keeps
-# running. There is a root shell behind it on this image — see iso/.
+# Read on the way out, when the installer closes and the machine keeps running.
+# There is a root shell behind it on this image — see iso/.
 console: Type installer at the prompt to start it again.
 
-# What this image can do, asked once the keyboard is settled and before anything
-# follows from the answer.
+# What one run of this is: what it is called, the last thing it says before it
+# starts, and the phases the work happens in.
 #
-# Each mode is a run of its own: its own stages, its own last warning, and — by
-# `mode:` on the rows below — its own questions. A task belongs to whichever mode
-# owns the stage it names, so nothing has to say it twice.
+# One of them, so there is nothing to choose and nobody is asked. It is here for
+# the name: the interface reads it out wherever it says what is happening — the
+# row that starts it, the last warning, the clock while it runs. ../recovery
+# says the same about itself, in its own words.
 modes:
   - id: install
     title: Installation
     description: Put Arch Linux on this machine.
 
     # The last thing shown before the first task runs. {{VAR}} is filled in from
-    # the answers, so this names the actual disk rather than warning in the
-    # abstract.
+    # the answers, so this names the actual disk.
     confirm: |
       Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.
 
       Everything on that disk will be erased. There is no undo, and nothing before
       this point has changed anything.
 
-    # The order the installation happens in, top to bottom. Several tasks in the
-    # same stage run in the order their `needs` demand.
+    # Top to bottom. Tasks sharing a stage run in the order `needs` demands.
     stages:
       - prepare # the live system, made ready to install from
       - disk # partitioned, encrypted, formatted, mounted
@@ -58,32 +58,16 @@ modes:
       - finalize # the last things done to the new system
       - finish # what is offered once it is installed
 
-  - id: recovery
-    title: Recovery
-    description: Repair an Arch Linux system that is already on a disk.
-
-    confirm: |
-      The system on {{ARCH_OS_RECOVERY_DISK}} will be unlocked and mounted at /mnt.
-
-      Nothing on it is changed by that. Going back to a snapshot, rebuilding the
-      boot files and opening a shell are each offered on their own once it is open.
-
-    stages:
-      - open # unlocked and mounted, as the system mounts itself
-      - repair # rolled back, made bootable again, worked in by hand
-      - close # unmounted, and the disk locked again
-
-# A preset is a set of answers, not a mode: it is offered once, on a machine
+# A set of answers, not a mode the installer stays in: offered once, on a machine
 # that has never answered anything, and every value it fills in is an ordinary
-# answer from the next page on. Each block is one page.
+# answer from the next page on.
 presets:
   - id: system
     title: Setup
     description: Choose what kind of system to install. Every detail can still be changed afterwards.
-    mode: install
     options:
       # Each option names every setting it has an opinion about, including the
-      # ones it turns off, so the page reads as a complete description.
+      # ones it turns off.
       - id: desktop
         title: Desktop
         description: A GNOME desktop with drivers, codecs, fonts and everyday applications.
@@ -124,32 +108,26 @@ presets:
           ARCH_OS_DESKTOP_GRAPHICS_DRIVER: none
           ARCH_OS_AUR_HELPER: none
 
-      # The third row is not a set of answers written out here but one fetched:
-      # a configuration shared at the end of an earlier installation, taken
-      # whole. It is a starting point like the two above — every value it fills
-      # in is an ordinary answer from the next page on — and it is the same
-      # question this page always asks, so it is a row here rather than a mode,
-      # a flag or a page of its own.
+      # Not a set of answers written out here but one fetched: a configuration
+      # shared at the end of an earlier installation. A starting point like the
+      # two above, so a row here rather than a page of its own.
       - id: shared
         title: paste.rs - Online
         description: Take every answer from a configuration that was shared at the end of an earlier installation.
         asks: ARCH_OS_CONFIG_SOURCE
         apply: import_config
 
-# Everything this installer needs to know, in the order it is asked and listed
-# in the settings. `group` puts a heading over the rows that follow it. Required
-# and unanswered is what makes the installer ask; an answer is what makes it
-# stop. Each name reaches every script as an environment variable.
+# Everything this installer needs to know, in the order it is asked. Required and
+# unanswered is what makes the installer ask; an answer is what makes it stop.
+# Each name reaches every script as an environment variable.
 #
-# Every key a row may use, briefly — see runtime/internal/spec/spec.go for the
-# full rules:
+# Every key a row may use — see runtime/internal/spec/spec.go for the full
+# rules:
 #
 #   name         the environment variable — ARCH_OS_UPPER_SNAKE_CASE
 #   title        the row's label
 #   description  the paragraph under it, on the page that asks the question
 #   group        heading over this row and the ones after it, until the next
-#   mode         install or recovery; empty asks it in both — the keyboard is
-#                asked before there is a mode to belong to
 #   type         text (default), bool, or secret — a secret is never written
 #                to the answer file and is asked right before the run
 #   default      the value this starts with; empty means no default
@@ -171,21 +149,18 @@ presets:
 #                empty — leave out for the generic message
 #   conditions   `VAR == value` / `VAR != value`, one or a list; all must hold
 #   first        asked before everything else the program does, even the
-#                network screen — sparingly, and never together with mode
+#                network screen — sparingly
 #   blind        keeps the filter box open from the start, since no key is
 #                known to type what it looks like before the layout loads —
 #                only meaningful together with first
 variables:
   # ─── Region ────────────────────────────────────────────────────────────────
   #
-  # What the installed system is set to, not the words this installer is read
-  # in: that is a setting of the program, asked for on the way in.
+  # What the installed system is set to, not the words this installer is read in.
   #
-  # The console keyboard is asked `first`, before every other thing this program
-  # does, because it is the keyboard everything after it is typed on — a
-  # passphrase typed on the wrong layout is not the passphrase. The rest of the
-  # group follows the language on `auto`, and each stays a question anyone can
-  # answer outright.
+  # The console keyboard is asked `first` because it is the keyboard everything
+  # after it is typed on — a passphrase typed on the wrong layout is not the
+  # passphrase. The rest follows the language on `auto`.
   - name: ARCH_OS_LOCALE_LANG
     title: Language and region
     description: |
@@ -195,14 +170,12 @@ variables:
       keyboard, the console font, the time zone and the mirror country follow
       from it. English is always installed alongside it as a fallback.
     group: Region
-    mode: install
     required: true
     apply: load_console_keyboard
     command: |
-      # Every locale the C library ships that /etc/locale.gen also knows about,
-      # since one that cannot be generated is one that cannot be used. The
-      # @-suffixed variants are left out: they are the same language in another
-      # script or currency, and offering both doubles a long list.
+      # Every locale the C library ships that /etc/locale.gen also knows about:
+      # one that cannot be generated cannot be used. The @-suffixed variants are
+      # the same language in another script or currency, and double a long list.
       comm -12 \
           <(basename -a /usr/share/i18n/locales/* | grep -v '@' | sort -u) \
           <(sed -n 's/^#\? *\([a-zA-Z_]*\)[. ].*/\1/p' /etc/locale.gen | sort -u)
@@ -220,7 +193,7 @@ variables:
     apply: load_console_keyboard
     command: |
       # The auto row carries what auto currently comes to, so it says what it is
-      # about to do rather than only that it will do something.
+      # about to do.
       printf 'auto\tauto — %s\n' "$(auto_keymap)"
       localectl list-keymaps
 
@@ -230,7 +203,6 @@ variables:
       The font of the text console. auto is the one that can draw the chosen
       language; a larger one helps on a high resolution screen.
     group: Region
-    mode: install
     default: auto
     required: true
     free: Type a font name
@@ -247,7 +219,6 @@ variables:
       the chosen country keeps — which is the only answer in a country that keeps
       one, and the one most of it lives in where there are several.
     group: Region
-    mode: install
     required: true
     command: timedatectl list-timezones
     prefill: auto_timezone
@@ -259,7 +230,6 @@ variables:
       language belongs to; none ranks every mirror worldwide by speed, which is
       also what auto comes to where Arch has no mirror.
     group: Region
-    mode: install
     default: auto
     required: true
     free: Type a country
@@ -276,7 +246,6 @@ variables:
       The account you will log in with. Lower case letters, digits, hyphen and
       underscore. It must not start with a digit.
     group: Identity
-    mode: install
     required: true
     pattern: '^[a-z_][a-z0-9_-]{0,31}$'
     error: Lower case letters, digits, hyphen and underscore only, at most 32 characters. It must not start with a digit.
@@ -288,7 +257,6 @@ variables:
       is on — to unlock the disk at boot. It is asked for immediately before the
       installation starts and is never written to a file.
     group: Identity
-    mode: install
     type: secret
     required: true
 
@@ -296,7 +264,6 @@ variables:
     title: Host name
     description: The name this machine has on the network.
     group: Identity
-    mode: install
     default: arch-os
     required: true
     pattern: '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$'
@@ -309,7 +276,6 @@ variables:
       The disk Arch Linux is installed on. Unless dual boot is switched on,
       everything on it is erased.
     group: Storage
-    mode: install
     required: true
     error: Choose a disk that exists.
     command: disk_options
@@ -320,7 +286,6 @@ variables:
       btrfs supports snapshots, so a system update can be rolled back. ext4 is
       simpler and does not.
     group: Storage
-    mode: install
     values: [btrfs, ext4]
     required: true
 
@@ -330,7 +295,6 @@ variables:
       Encrypts the whole system with your password, so the data cannot be read
       by taking the disk out. The password is then asked for at every boot.
     group: Storage
-    mode: install
     type: bool
     required: true
 
@@ -340,7 +304,6 @@ variables:
       Takes a snapshot before every package transaction and cleans up old ones
       on a timer, so a bad update can be undone.
     group: Storage
-    mode: install
     type: bool
     default: true
     conditions: ARCH_OS_FILESYSTEM == btrfs
@@ -349,10 +312,11 @@ variables:
     title: Snapshot manager
     description: A desktop application for browsing and restoring snapshots.
     group: Storage
-    mode: install
     type: bool
     default: true
-    conditions: ARCH_OS_FILESYSTEM == btrfs
+    conditions:
+      - ARCH_OS_FILESYSTEM == btrfs
+      - ARCH_OS_BTRFS_SNAPPER_ENABLED == true
 
   - name: ARCH_OS_DUAL_BOOT_ENABLED
     title: Dual boot
@@ -361,7 +325,6 @@ variables:
       partitioned or erased, the existing EFI partition is reused, and only a
       boot entry is added. You then have to name the two partitions yourself.
     group: Storage
-    mode: install
     type: bool
     default: false
 
@@ -369,16 +332,15 @@ variables:
     title: Boot partition
     description: The existing EFI partition to add a boot entry to. It is not formatted.
     group: Storage
-    mode: install
     required: true
     conditions: ARCH_OS_DUAL_BOOT_ENABLED == true
     prefill: |
-      # The first vfat partition on this disk is almost always the one the other
-      # system boots from.
+      # The first vfat partition is almost always the one the other system boots
+      # from.
       lsblk -n -o PATH,FSTYPE "$ARCH_OS_DISK" | awk '$2 == "vfat" { print $1; exit }'
     command: |
-      # The size and file system are what tell an existing EFI partition apart
-      # from the one the other operating system lives on.
+      # The size and file system are what tell the EFI partition apart from the
+      # one the other operating system lives on.
       lsblk -n -o PATH,SIZE,FSTYPE,LABEL "$ARCH_OS_DISK" | tail -n +2 |
           awk '{ path = $1; $1 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
 
@@ -386,11 +348,10 @@ variables:
     title: Root partition
     description: The partition Arch Linux is installed into. It is formatted and everything on it is lost.
     group: Storage
-    mode: install
     required: true
     conditions: ARCH_OS_DUAL_BOOT_ENABLED == true
     prefill: |
-      # The largest partition that is not the EFI one — the likeliest candidate
+      # The largest partition that is not the EFI one: the likeliest candidate
       # for space freed up to install into.
       lsblk -bn -o PATH,SIZE,FSTYPE "$ARCH_OS_DISK" | tail -n +2 |
           awk '$3 != "vfat" { print $2, $1 }' | sort -rn | head -n1 | awk '{ print $2 }'
@@ -405,7 +366,6 @@ variables:
       systemd-boot is small and needs no maintenance. GRUB can show a menu of
       btrfs snapshots to boot into.
     group: Boot
-    mode: install
     values: [systemd, grub]
     required: true
 
@@ -418,7 +378,6 @@ variables:
       there afterwards; otherwise everything is signed and enrolling is left to
       you.
     group: Boot
-    mode: install
     type: bool
     default: true
     conditions:
@@ -431,7 +390,6 @@ variables:
       linux-zen is tuned for desktop responsiveness. linux is the stock kernel,
       linux-lts a long-term one, linux-hardened a security-focused one.
     group: Boot
-    mode: install
     values: [linux-zen, linux, linux-lts, linux-hardened]
     default: linux-zen
     required: true
@@ -442,7 +400,6 @@ variables:
       Extra parameters passed to the kernel at boot, separated by spaces.
       Leave empty unless you know you need one.
     group: Boot
-    mode: install
     pattern: '^[^,&\\]*$'
     error: The characters comma, ampersand and backslash cannot be used here.
 
@@ -453,12 +410,11 @@ variables:
       to be — which is the answer on every machine that is not being prepared for
       a different one.
     group: Boot
-    mode: install
     default: auto
     required: true
     command: |
-      # Read again at install time, so a tree of answers carried to another
-      # machine still fits it.
+      # Read again at install time, so answers carried to another machine still
+      # fit it.
       printf 'auto\tauto — %s\n' "$(auto_microcode)"
       echo intel-ucode
       echo amd-ucode
@@ -471,7 +427,6 @@ variables:
       gnome installs the GNOME desktop. none leaves the system on a text
       console, with nothing graphical installed at all.
     group: Desktop
-    mode: install
     values: [gnome, none]
     required: true
 
@@ -481,7 +436,6 @@ variables:
       mesa is the open driver and fits almost every machine. Pick one matching
       your card only if you know you need it.
     group: Desktop
-    mode: install
     values: [mesa, intel_i915, nvidia, amd, ati, none]
     required: true
     conditions: ARCH_OS_DESKTOP != none
@@ -493,14 +447,12 @@ variables:
       console keyboard, in the names the desktop uses for it — de-latin1 and de
       are one layout.
     group: Desktop
-    mode: install
     default: auto
     required: true
     conditions: ARCH_OS_DESKTOP != none
     command: |
-      # Asked of the running system where it can answer, and read from data/
-      # where it cannot: the Arch live image ships no xkeyboard-config, so on the
-      # one machine this question is actually asked on there is nothing to ask.
+      # Asked of the running system where it can answer, read from data/ where it
+      # cannot: the Arch live image ships no xkeyboard-config.
       printf 'auto\tauto — %s\n' "$(auto_layout)"
 
       layouts="$(localectl list-x11-keymap-layouts 2>/dev/null)"
@@ -516,13 +468,12 @@ variables:
       A variation of that layout — dead keys, a different punctuation
       arrangement. none is the standard one.
     group: Desktop
-    mode: install
     default: none
     required: true
     conditions: ARCH_OS_DESKTOP != none
     command: |
-      # Same two sources as the layouts themselves. The layout is already the
-      # resolved one — auto became a real layout before this ran.
+      # Same two sources as the layouts. The layout is already resolved — auto
+      # became a real one before this ran.
       layout="$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
       [ -n "$layout" ] || exit 0
 
@@ -539,7 +490,6 @@ variables:
     title: Keyboard model
     description: The physical shape of the keyboard. pc105 fits almost every keyboard sold.
     group: Desktop
-    mode: install
     default: pc105
     conditions: ARCH_OS_DESKTOP != none
 
@@ -549,7 +499,6 @@ variables:
       Codecs, fonts, printing, network protocols, development tools and the
       applications that make the desktop usable straight away.
     group: Desktop
-    mode: install
     type: bool
     default: true
     conditions: ARCH_OS_DESKTOP != none
@@ -558,7 +507,6 @@ variables:
     title: Slim desktop
     description: Removes the GNOME applications that come with the desktop and are rarely used.
     group: Desktop
-    mode: install
     type: bool
     default: true
     conditions: ARCH_OS_DESKTOP != none
@@ -570,7 +518,6 @@ variables:
       unlocked by a password at boot, a second one at login adds nothing — and
       without encryption the login screen is the only thing standing there.
     group: Desktop
-    mode: install
     values: [auto, true, false]
     default: auto
     required: true
@@ -582,7 +529,6 @@ variables:
       Shares your home folder and a public folder on the local network, readable
       by Windows and macOS.
     group: Desktop
-    mode: install
     type: bool
     default: true
     conditions: ARCH_OS_DESKTOP != none
@@ -594,7 +540,6 @@ variables:
       Small adjustments that do not change what is installed: parallel package
       downloads, a quieter boot, password feedback in the terminal.
     group: System
-    mode: install
     type: bool
     default: true
 
@@ -602,7 +547,6 @@ variables:
     title: Boot splash
     description: Shows a logo while the system starts instead of a wall of text.
     group: System
-    mode: install
     type: bool
     default: true
 
@@ -610,7 +554,6 @@ variables:
     title: 32-bit support
     description: Needed by Steam, Wine and other software that is still 32-bit.
     group: System
-    mode: install
     type: bool
     default: true
 
@@ -620,7 +563,6 @@ variables:
       Installs software from the Arch User Repository as easily as from the
       official one.
     group: System
-    mode: install
     values: [paru, paru-bin, paru-git, yay, none]
     default: paru
     required: true
@@ -631,7 +573,6 @@ variables:
       Timers that keep the system tidy on their own: mirrors ranked weekly, the
       package cache trimmed, disk health watched.
     group: System
-    mode: install
     type: bool
     default: true
 
@@ -641,7 +582,6 @@ variables:
       A better terminal out of the box: a prompt showing git state, colourful
       listings, fuzzy search, useful aliases.
     group: System
-    mode: install
     type: bool
     default: true
 
@@ -651,7 +591,6 @@ variables:
       bash is always set up; zsh or fish add completion and suggestions as you
       type and become the shell that opens instead.
     group: System
-    mode: install
     values: [bash, zsh, fish]
     default: zsh
     required: true
@@ -661,7 +600,6 @@ variables:
     title: Arch OS Manager
     description: A menu for updating, cleaning up and repairing the system after installation.
     group: System
-    mode: install
     type: bool
     default: true
 
@@ -671,7 +609,6 @@ variables:
       Installs guest tools when this is running inside a virtual machine, so the
       screen resizes and the clipboard is shared. Does nothing on real hardware.
     group: System
-    mode: install
     type: bool
     default: true
 
@@ -681,7 +618,6 @@ variables:
       Leave on. Turning it off helps only behind old routers that drop
       connections which use it.
     group: System
-    mode: install
     type: bool
     default: true
 
@@ -689,15 +625,13 @@ variables:
   #
   # The two ends of one idea: an installation that says where its answers can be
   # picked up, and a starting point that picks them up. Neither is a question
-  # here — the address is answered by the installation itself, and the code is
-  # asked only of somebody who chose the row that asks for it — so neither is on
-  # the settings page.
+  # here — the address is answered by the installation itself, and the code only
+  # by somebody who chose the row that asks for it.
   #
-  # There is deliberately no switch above them either. Whether this installation
-  # is put online is asked once, at the end of the run, by the task that would do
-  # it: an answer given while the disk is still being partitioned is an answer
-  # about something that has not happened yet, and it would be consent collected
-  # long before there was anything to consent to.
+  # There is no switch above them either. Whether this installation goes online is
+  # asked at the end of the run, by the task that would do it: a switch set while
+  # the disk is being partitioned is consent collected before there is anything to
+  # consent to.
   - name: ARCH_OS_CONFIG_URL
     title: Shared at
     description: |
@@ -705,7 +639,6 @@ variables:
       offer at the end of the run has been accepted; the installation then
       answers this one itself and shows it as a code to scan.
     group: System
-    mode: install
 
   - name: ARCH_OS_CONFIG_SOURCE
     title: Configuration code
@@ -715,72 +648,6 @@ variables:
       there becomes an answer here, and every one of them can still be changed
       afterwards.
     group: System
-    mode: install
     required: true
     pattern: '^[A-Za-z0-9][A-Za-z0-9:/._-]*$'
     error: A code such as aBc12, or the whole address it sits at.
-
-  # ─── Recovery ──────────────────────────────────────────────────────────────
-  #
-  # The recovery asks for the disk and nothing else it can read for itself. The
-  # two questions that follow are read off that disk and open on the answer, and
-  # they are still questions because behind LUKS nothing can be read at all
-  # until the password has been given — and because a disk laid out by something
-  # other than this installer has to stay answerable by hand.
-  - name: ARCH_OS_RECOVERY_DISK
-    title: Disk
-    description: |
-      The disk holding the Arch OS installation to repair. Opening it changes
-      nothing on it.
-    group: Recovery
-    mode: recovery
-    required: true
-    error: Choose a disk that exists.
-    command: disk_options
-
-  - name: ARCH_OS_RECOVERY_ENCRYPTION_ENABLED
-    title: Disk encryption
-    description: |
-      Whether that disk is encrypted with LUKS. This is read off the disk, which
-      can be done without the password — change it only if the answer is wrong.
-    group: Recovery
-    mode: recovery
-    type: bool
-    required: true
-    prefill: recovery_is_encrypted
-
-  - name: ARCH_OS_RECOVERY_PASSWORD
-    title: Encryption password
-    description: |
-      The password that unlocks that disk. It is asked for immediately before
-      the recovery starts and is never written to a file.
-    group: Recovery
-    mode: recovery
-    type: secret
-    required: true
-    conditions: ARCH_OS_RECOVERY_ENCRYPTION_ENABLED == true
-
-  - name: ARCH_OS_RECOVERY_FILESYSTEM
-    title: File system
-    description: |
-      The file system of the system being repaired. btrfs can be rolled back to
-      a snapshot; ext4 can be opened and worked in by hand. On an encrypted disk
-      this cannot be read in advance, so check it.
-    group: Recovery
-    mode: recovery
-    values: [btrfs, ext4]
-    required: true
-    prefill: recovery_filesystem
-
-  - name: ARCH_OS_RECOVERY_SNAPSHOT
-    title: Snapshot
-    description: |
-      The snapshot to put in place of the root subvolume. Newest first, with the
-      date it was taken and what took it.
-    group: Recovery
-    mode: recovery
-    required: true
-    conditions: ARCH_OS_RECOVERY_FILESYSTEM == btrfs
-    # Asked by the rollback task rather than here: the snapshots cannot be
-    # listed until the disk they are on is unlocked and mounted.
-    command: recovery_snapshots

@@ -11,10 +11,8 @@
 // runtime uses INFO/WARN/ERROR, a script's captured output uses DEBUG (see
 // External), so third-party noise is filtered by level alone.
 //
-// This is where every technical detail goes, and it is the only place: the
-// interface shows a spinner and a name, never a line of build output. A log
-// nobody reads is cheap; a frame torn apart by somebody else's progress bar is
-// not.
+// Every technical detail goes here and only here: the interface shows a spinner
+// and a name, never a line of build output.
 package logging
 
 import (

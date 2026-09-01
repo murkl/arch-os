@@ -4,20 +4,16 @@
 simulating && return 0
 
 # ─── Clock ───────────────────────────────────────────────────────────────────
-# A symbolic link is made whether or not it points at anything, and a dangling
-# /etc/localtime is a system that quietly runs in UTC — so the zone is looked
-# for before it is linked to.
+# ln makes the link whether or not it points at anything, and a dangling
+# /etc/localtime is a system that quietly runs in UTC.
 if [ ! -f "${MNT}/usr/share/zoneinfo/${ARCH_OS_TIMEZONE}" ]; then
     echo "there is no time zone called ${ARCH_OS_TIMEZONE}" >&2
     exit 1
 fi
 arch-chroot "$MNT" ln -sf "/usr/share/zoneinfo/${ARCH_OS_TIMEZONE}" /etc/localtime
 
-# The live system keeps the same zone from here on. Nothing on the new system
-# depends on it — the hardware clock is written in UTC either way — but the
-# installer's own log is stamped with it, and a log that reads in a different
-# time zone than the journal of the machine it installed is a log nobody can
-# line up with anything.
+# The live system keeps the same zone from here on, so the installer's log lines
+# up with the journal of the machine it installed.
 timedatectl set-timezone "$ARCH_OS_TIMEZONE" || true
 
 # The hardware clock, set from a system clock that init put on network time.
@@ -27,17 +23,14 @@ arch-chroot "$MNT" hwclock --systohc
 echo "LANG=${ARCH_OS_LOCALE_LANG}.UTF-8" >"${MNT}/etc/locale.conf"
 while read -r line; do
     [ -n "$line" ] || continue
-    # Uncomment the matching entry rather than appending: locale.gen already
-    # lists every locale there is, commented out. Matched by its beginning
-    # alone, because the file pads its entries with trailing spaces and an
-    # anchored pattern would find none of them.
+    # locale.gen already lists every locale, commented out. Matched by its
+    # beginning alone, because the file pads entries with trailing spaces.
     sed -i "s|^#${line}|${line}|" "${MNT}/etc/locale.gen"
 done < <(locale_gen_lines)
 arch-chroot "$MNT" locale-gen
 
-# locale-gen is happy to generate nothing at all, and a system whose LANG names
-# a locale that was never built answers every program with a warning and falls
-# back to English.
+# locale-gen is happy to generate nothing, and a system whose LANG names a locale
+# that was never built warns at every program and falls back to English.
 if ! arch-chroot "$MNT" locale -a | grep -qxF "${ARCH_OS_LOCALE_LANG}.utf8"; then
     echo "the locale ${ARCH_OS_LOCALE_LANG}.UTF-8 was not generated" >&2
     exit 1
@@ -54,8 +47,7 @@ echo "$ARCH_OS_HOSTNAME" >"${MNT}/etc/hostname"
 } >"${MNT}/etc/hosts"
 
 # ─── Swap ────────────────────────────────────────────────────────────────────
-# Compressed swap in memory rather than on disk: faster than a swap partition,
-# and it does not wear out an SSD.
+# Compressed swap in memory: faster than a swap partition, and no SSD wear.
 # https://wiki.archlinux.org/title/Zram
 {
     echo '[zram0]'

@@ -1,6 +1,6 @@
 name: Open a shell in the system
 stage: repair
-needs: [recovery-kernel]
+needs: [kernel]
 tty: true
 confirm: |
   Open a shell inside the system on {{ARCH_OS_RECOVERY_DISK}}?

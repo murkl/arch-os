@@ -1,11 +1,11 @@
 // Package spec is the installer tree, read into memory: what the installer is
 // called, what it needs to know, and what it does.
 //
-// A tree is one installer.yaml and the folders beside it. Everything in it is
-// data. The runtime ships no tree of its own — without one there is no
-// installer, only a binary that says so and stops. That is the whole point of
-// the split: this package knows the shape of the yaml, and nothing in the
-// program below it knows a single thing about the system being installed.
+// A tree is one yaml and the folders beside it. Everything in it is data. The
+// runtime ships no tree of its own — without one there is no installer, only a
+// binary that says so and stops. That is the whole point of the split: this
+// package knows the shape of the yaml, and nothing in the program below it
+// knows a single thing about the system being installed.
 package spec
 
 import (
@@ -16,18 +16,23 @@ import (
 	"installer/internal/i18n"
 )
 
-// What a tree is made of. Only installer.yaml has to be there; everything else
+// What a tree is made of. Only the declaration has to be there; everything else
 // is found by its own name, so a tree turns a part of the program off by
 // leaving the file or folder out rather than by declaring anything.
+//
+// The declaration is the one yaml in the folder's top level, whatever it is
+// called — installer.yaml, recovery.yaml. Naming it after what it declares is
+// what lets two trees sit beside each other and still be told apart at a
+// glance, and there is nothing to configure because a folder holds one.
 const (
-	FileInstaller = "installer.yaml" // what the installer is, asks, and does
-	FileLib       = "lib.sh"         // shell put in front of every script
-	DirTasks      = "tasks"          // the installation, one folder per step
-	DirHooks      = "hooks"          // everything around it, one script per hook
-	DirLocales    = "locales"        // one catalog per language the tree speaks
-	FileTask      = "task.yaml"      // where a step belongs
-	FileScript    = "task.sh"        // what it does
-	ScriptExt     = ".sh"
+	SpecExt    = ".yaml"     // the declaration: what the installer is, asks, and does
+	FileLib    = "lib.sh"    // shell put in front of every script
+	DirTasks   = "tasks"     // the installation, one folder per step
+	DirHooks   = "hooks"     // everything around it, one script per hook
+	DirLocales = "locales"   // one catalog per language the tree speaks
+	FileTask   = "task.yaml" // where a step belongs
+	FileScript = "task.sh"   // what it does
+	ScriptExt  = ".sh"
 )
 
 // The hooks, each a bash script in hooks/ called by its own name. This is
@@ -53,7 +58,7 @@ var HookNames = []string{
 }
 
 // The runtime's own settings: the two keys it writes into the answer file that
-// no installer.yaml declared. Neither is something an installer's data can own —
+// no tree declared. Neither is something an installer's data can own —
 // the words the interface is read in belong to the frame, and which of the
 // tree's modes is being carried out is a decision about the program rather than
 // a value inside it.
@@ -73,7 +78,8 @@ func runtimeVar(name string) bool { return slices.Contains(RuntimeVars, name) }
 
 // Spec is a whole installer tree.
 type Spec struct {
-	Dir string // absolute, and never written to
+	Dir  string // absolute, and never written to
+	File string // the declaration in it, e.g. installer.yaml
 
 	UI      UI
 	Presets []*Preset

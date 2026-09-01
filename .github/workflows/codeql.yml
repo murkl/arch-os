@@ -1,10 +1,10 @@
 # Static analysis that follows a value across functions, which is the one thing
 # vet and staticcheck do not do.
 #
-# Deliberately not part of CI: a finding here belongs in the security tab, not
-# in the way of a release. It runs on what is about to be released and once a
-# week on what already is, because a vulnerability found in a dependency last
-# Tuesday is news about code that has not changed since.
+# Not part of CI: a finding here belongs in the security tab, not in the way of
+# a release. It runs on what is about to be released and weekly on what already
+# is — a vulnerability found last Tuesday is news about code that has not
+# changed since.
 
 name: CodeQL
 
@@ -21,6 +21,7 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       security-events: write
@@ -33,7 +34,7 @@ jobs:
           cache-dependency-path: runtime/go.sum
 
       # Manual, because the module is in runtime/ rather than at the root, which
-      # is the one thing the automatic build looks for.
+      # is what the automatic build looks for.
       - uses: github/codeql-action/init@v4
         with:
           languages: go

@@ -1,10 +1,8 @@
-# The toolchain every job here runs on, and the cache that keeps fetching it
-# cheap.
+# The toolchain every job runs on, and the cache that keeps fetching it cheap.
 #
-# Everything runs on Arch because that is what this project builds, what it is
-# developed on, and where every tool it checks itself with is a package. CI ends
-# up running the literal commands from the Makefiles rather than an
-# approximation of them assembled out of setup actions.
+# Everything runs on Arch: it is what this project builds, and every tool it
+# checks itself with is a package. CI ends up running the literal commands from
+# the Makefiles rather than an approximation assembled out of setup actions.
 
 name: Arch toolchain
 description: An Arch container with the given packages, from cache where possible.
@@ -18,11 +16,9 @@ runs:
   using: composite
   steps:
     # A key nothing can hit, over a prefix that almost always does: the restore
-    # takes the newest cache this job ever wrote, and the save at the end of the
-    # job writes a fresh one. A cache pinned to a key it hits is a cache that
-    # freezes on the day it was written — and for the ISO job the interesting
-    # packages are the seven hundred pacstrap fetches *during* the build, which
-    # only a save at the end of the job ever sees.
+    # takes the newest cache this job wrote, and the save at the end writes a
+    # fresh one. For the ISO job the interesting packages are the ones pacstrap
+    # fetches *during* the build, which only a save at the end ever sees.
     - uses: actions/cache@v6
       with:
         path: /var/cache/pacman/pkg
@@ -37,10 +33,10 @@ runs:
         pacman -Syu --needed --noconfirm pacman-contrib "${packages[@]}"
 
         # Two versions of each package is plenty to restore from, and keeps a
-        # cache that is written on every run from growing without end.
+        # cache written on every run from growing without end.
         paccache -rk2 -q
 
         # The checkout belongs to the runner's user and this container is root,
-        # which git reads as somebody else's repository. Every version in this
-        # project is `git rev-parse --short HEAD`, so it has to be able to.
+        # which git reads as somebody else's repository. Every version here is
+        # `git rev-parse --short HEAD`, so it has to be able to.
         git config --global --add safe.directory "$GITHUB_WORKSPACE"

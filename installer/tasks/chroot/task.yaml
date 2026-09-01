@@ -6,8 +6,7 @@ confirm: |
 
   Everything is still mounted, so this is the moment to look around or fix
   something by hand. Leave it again with `exit`.
-# The installation is finished by the time this is offered, and this is the one
-# thing after it that nobody needs. Opening on no keeps an enter meant for the
-# page before it from dropping somebody into a root shell.
+# Opening on no, so an enter meant for the page before does not drop somebody
+# into a root shell.
 default: no
 tty: true

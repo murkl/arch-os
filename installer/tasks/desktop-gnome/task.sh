@@ -8,46 +8,56 @@ data="$(where)"
 apps="${home}/.local/share/applications"
 
 # ─── Packages ────────────────────────────────────────────────────────────────
-# Installed in one transaction rather than in groups: packages that replace each
-# other — pipewire-jack and jack2 — can only be resolved when pacman sees them
-# together.
-packages=(gnome git)
+# One transaction rather than several: packages that replace each other —
+# pipewire-jack and jack2 — can only be resolved when pacman sees them together.
 
-# Named outright rather than relied on as dependencies of the gnome group, since
-# services are switched on for them below.
-packages+=(bluez bluez-utils avahi)
+# Named outright rather than left to the group, because services are switched on
+# for them below.
+packages=(git bluez bluez-utils avahi)
+
+# The group, filtered, rather than the group and a round of removals: what the
+# slim desktop leaves out is never downloaded, and a member another member
+# really depends on still arrives as a dependency.
+mapfile -t desktop < <(arch-chroot "$MNT" pacman -Sgq gnome)
+[ "${#desktop[@]}" -gt 0 ] || {
+    echo "the gnome package group is empty" >&2
+    exit 1
+}
+if [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "true" ]; then
+    mapfile -t desktop < <(printf '%s\n' "${desktop[@]}" |
+        grep -vxF -f <(grep -vE '^(#|[[:space:]]*$)' "${data}/slim-exclude"))
+fi
+packages+=("${desktop[@]}")
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-    packages+=(gnome-browser-connector gnome-themes-extra tuned-ppd cups gnome-epub-thumbnailer)
+    packages+=(gnome-browser-connector gnome-themes-extra gnome-epub-thumbnailer tuned-ppd cups)
 
-    # Screen sharing, portals and flatpak integration on Wayland.
-    packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-gnome flatpak-xdg-utils)
+    # Portals, for flatpaks and screen sharing on Wayland. The GNOME portal
+    # itself is in the group.
+    packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk flatpak-xdg-utils)
 
     # Audio. https://wiki.archlinux.org/title/PipeWire#Installation
     packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber sof-firmware)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
 
-    # Reaching other machines, and letting them reach this one.
-    packages+=(samba rsync gvfs gvfs-mtp gvfs-smb gvfs-nfs gvfs-afc gvfs-goa gvfs-gphoto2 gvfs-dnssd gvfs-wsdd)
-    packages+=(modemmanager network-manager-sstp networkmanager-l2tp networkmanager-vpnc
-        networkmanager-openvpn networkmanager-openconnect networkmanager-strongswan rygel)
+    # Reaching other machines, and letting them reach this one. The gvfs back
+    # ends are in the group.
+    packages+=(samba rsync modemmanager network-manager-sstp networkmanager-l2tp
+        networkmanager-vpnc networkmanager-openvpn networkmanager-openconnect
+        networkmanager-strongswan)
 
-    packages+=("${ARCH_OS_KERNEL}-headers")
-
-    # File systems and archives, so a drive from anywhere else opens.
-    packages+=(base-devel archlinux-contrib pacutils fwupd bash-completion inetutils nfs-utils
-        e2fsprogs f2fs-tools udftools dosfstools ntfs-3g exfatprogs btrfs-progs xfsprogs
-        7zip zip unzip unrar tar wget curl nautilus-image-converter ca-certificates)
-
-    packages+=(gdb python go rust nodejs npm lua cmake jq zenity gum fzf)
+    # base-devel is what builds from the AUR; the rest opens a drive or an
+    # archive from anywhere else.
+    packages+=(base-devel archlinux-contrib pacutils fwupd bash-completion inetutils
+        nfs-utils f2fs-tools udftools dosfstools ntfs-3g exfatprogs btrfs-progs xfsprogs
+        7zip zip unzip unrar wget nautilus-image-converter jq fzf gum zenity)
 
     # Codecs. https://wiki.archlinux.org/title/Codecs_and_containers
-    packages+=(ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire gst-plugins-good
-        gst-plugins-bad gst-plugins-ugly libdvdcss libheif webp-pixbuf-loader opus speex
-        libvpx libwebp jasper libmad)
+    packages+=(ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire
+        gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss webp-pixbuf-loader)
 
-    # No lib32 build of libvpx, libwebp, sdl2-compat or sdl12-compat exists —
-    # only gamemode itself is shipped 32 bit.
+    # No lib32 build of sdl2-compat or sdl12-compat exists — only gamemode
+    # itself is shipped 32 bit.
     packages+=(gamemode sdl3_image sdl2-compat sdl12-compat)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
 
@@ -60,13 +70,6 @@ fi
 [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_ASSISTANT_ENABLED" = "true" ] && packages+=(btrfs-assistant)
 
 chroot_pacman_install "${packages[@]}"
-
-if [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "true" ]; then
-    while read -r pkg; do
-        case "$pkg" in '' | \#*) continue ;; esac
-        chroot_pacman_remove "$pkg" || true
-    done <"${data}/slim-remove"
-fi
 
 # ─── Groups ──────────────────────────────────────────────────────────────────
 # https://wiki.archlinux.org/title/Users_and_groups#User_groups
@@ -93,31 +96,25 @@ mkdir -p "${MNT}/etc/gdm"
 sed -i 's/auth\s\+optional\s\+pam_gnome_keyring\.so$/& try_first_pass/' "${MNT}/etc/pam.d/gdm-password"
 
 # Under automatic login GDM never sees a password, so PAM has none to unlock the
-# keyring with. The way out that GNOME itself documents is a login keyring with
-# no password: the daemon then opens it on its own at the start of the session,
-# and nothing ever asks. The data is still behind disk encryption wherever this
-# applies by default — which is exactly where automatic login switches itself on.
+# keyring with. GNOME's own answer is a login keyring without a password: the
+# daemon opens it at the start of the session and nothing ever asks. The data is
+# still behind disk encryption wherever this applies by default.
 #
-# It is created now, before the first boot, rather than from the first-login
-# script: that would race GDM's own PAM hook, which runs on the same login
-# before anything of ours gets a turn.
-#
+# Created here rather than from the first-login script, which would race GDM's
+# own PAM hook on the same login.
 # https://wiki.archlinux.org/title/GNOME/Keyring#Passwords_are_not_remembered
 if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
     keyrings="/home/${ARCH_OS_USERNAME}/.local/share/keyrings"
 
-    # gnome-keyring-daemon needs a session bus and a runtime directory of its
-    # own, and inside a chroot there is neither — /run/user/<uid> is made by
-    # logind at a login that has not happened yet. It goes under /tmp, which
-    # arch-chroot mounts as a tmpfs of its own, so nothing of it can reach the
-    # installed system however this ends.
+    # The daemon needs a session bus and a runtime directory, and inside a chroot
+    # there is neither. /tmp is a tmpfs arch-chroot mounts itself, so nothing of
+    # this reaches the installed system.
     runtime="/tmp/keyring"
     arch-chroot "$MNT" install -d -m 700 -o "$ARCH_OS_USERNAME" -g "$ARCH_OS_USERNAME" "$runtime"
     as_user "XDG_RUNTIME_DIR=${runtime} dbus-run-session -- gnome-keyring-daemon --unlock <<< ''" || true
 
-    # The daemon forks before it has written the keyring, so the file is there a
-    # moment before it holds one. Waiting for content is the difference between
-    # a keyring and an empty file that passes for one.
+    # It forks before it has written the keyring, so the file exists a moment
+    # before it holds one.
     for _ in $(seq 50); do
         [ -s "${MNT}${keyrings}/login.keyring" ] && break
         sleep 0.1
@@ -129,10 +126,8 @@ if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
         echo "could not pre-create a passwordless login keyring — the desktop will ask for one on first use" >&2
     fi
 
-    # The daemon forks and stays behind once it has written the keyring. Nothing
-    # here needs it any more, and a process of the target still running is a
-    # mount that will not come down at the end of the installation. The name is
-    # what the kernel truncates it to.
+    # It stays behind once it is done, and a process of the target still running
+    # is a mount that will not come down at the end.
     arch-chroot "$MNT" pkill -u "$ARCH_OS_USERNAME" -x gnome-keyring-d || true
 fi
 
@@ -145,8 +140,8 @@ echo 'pinentry-program /usr/bin/pinentry-gnome3' >"${home}/.gnupg/gpg-agent.conf
 as_user 'git config --global credential.helper /usr/lib/git-core/git-credential-libsecret'
 
 # ─── Keyboard ────────────────────────────────────────────────────────────────
-# X11 applications read this file; Wayland reads the setting written at first
-# login below. Both are needed, and both say the same thing.
+# X11 applications read this file, Wayland the setting written at first login.
+# Both are needed, and both say the same thing.
 mkdir -p "${MNT}/etc/X11/xorg.conf.d"
 {
     echo 'Section "InputClass"'

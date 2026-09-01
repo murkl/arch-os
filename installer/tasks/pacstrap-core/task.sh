@@ -2,16 +2,24 @@
 
 simulating && return 0
 
-packages=("$ARCH_OS_KERNEL" base base-devel linux-firmware wireless-regdb zram-generator networkmanager)
+# sudo is named outright: it comes with base-devel, which only an installation
+# that builds from the AUR needs — and the wheel rule is written either way.
+packages=("$ARCH_OS_KERNEL" base sudo linux-firmware wireless-regdb zram-generator networkmanager)
 
 [ "$ARCH_OS_MICROCODE" != "none" ] && packages+=("$ARCH_OS_MICROCODE")
-[ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(btrfs-progs efibootmgr inotify-tools)
-[ "$ARCH_OS_BOOTLOADER" = "grub" ] && packages+=(grub grub-btrfs)
-
-# os-prober is what finds the other system so GRUB can offer it.
-[ "$ARCH_OS_BOOTLOADER" = "grub" ] && [ "$ARCH_OS_DUAL_BOOT_ENABLED" = "true" ] && packages+=(os-prober)
+[ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(btrfs-progs)
 [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_SNAPPER_ENABLED" = "true" ] && packages+=(snapper)
 secure_boot_wanted && packages+=(sbctl)
+
+# grub-install writes the firmware boot entry through efibootmgr; bootctl talks
+# to efivarfs itself and needs neither. grub-btrfsd watches the snapshot
+# directory with inotify.
+if [ "$ARCH_OS_BOOTLOADER" = "grub" ]; then
+    packages+=(grub efibootmgr)
+    [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(grub-btrfs inotify-tools)
+    # Finds the other system so GRUB can offer it.
+    [ "$ARCH_OS_DUAL_BOOT_ENABLED" = "true" ] && packages+=(os-prober)
+fi
 
 # Before the packages, because installing the kernel builds a ram disk, and the
 # hook that puts a keyboard layout in it reads this file — see write_vconsole.

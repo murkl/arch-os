@@ -2,10 +2,9 @@
 # Boots a built Arch OS image and waits for the installer to come up in it.
 #
 # Nothing is installed: the machine is switched off the moment the installer's
-# first page is recognised on its console. What that proves is the whole chain
-# no linter can see — the boot entry, the initramfs and its plymouth hook, the
-# systemd unit on tty1, the runtime, and the installer tree it loads. An image
-# that fails here is one that would have failed on somebody's hardware.
+# first page is recognised on its console. That proves the whole chain no linter
+# can see — the boot entry, the initramfs and its plymouth hook, the systemd unit
+# on tty1, the runtime, and the tree it loads.
 #
 # Takes the image as its one argument; `make smoke` hands it the newest build.
 # Needs qemu, OVMF and tesseract — see README.md.
@@ -14,28 +13,25 @@ set -e
 ISO="$1"
 [ -f "$ISO" ] || { echo "usage: $0 <image.iso>" >&2 && exit 1; }
 
-# Where the console is photographed. A failure keeps every frame, because a
-# picture of the screen is the only thing there is to go on afterwards; a run
-# that worked keeps the one frame the installer was recognised in and nothing
-# else.
+# Where the console is photographed. A failure keeps every frame — a picture of
+# the screen is all there is to go on afterwards; a run that worked keeps the one
+# frame the installer was recognised in.
 FRAME_DIR="${FRAME_DIR:-./smoke}"
 
-# How long the image gets, and how often it is looked at. The slow case is a
-# cold boot under emulation with no KVM to fall back on, and five minutes
-# covers it with room to spare.
+# The slow case is a cold boot under emulation with no KVM, which five minutes
+# covers with room to spare.
 TIMEOUT="${TIMEOUT:-300}"
 INTERVAL="${INTERVAL:-15}"
 
 OVMF_CODE="${OVMF_CODE:-/usr/share/edk2/x64/OVMF_CODE.4m.fd}"
 OVMF_VARS="${OVMF_VARS:-/usr/share/edk2/x64/OVMF_VARS.4m.fd}"
 
-# The installer's first page after the splash, as the console spells it. Two
-# strings rather than one: a console font read back through OCR loses a letter
-# now and again, and the page is recognised as long as either survives intact.
+# The installer's first page, as the console spells it. Two strings rather than
+# one: OCR over a console font loses a letter now and again.
 EXPECT='Interface language|Choose the language for this installer'
 
-# Read off the same screen: a machine that got this far and no further says so
-# in plain words, and there is no reason to sit out the timeout for it.
+# A machine that got this far and no further says so in plain words, and there is
+# no reason to sit out the timeout for it.
 PANIC='Kernel panic|Failed to start'
 
 for tool in qemu-system-x86_64 tesseract; do
@@ -46,9 +42,8 @@ done
 rm -rf "$FRAME_DIR"
 mkdir -p "$FRAME_DIR"
 
-# OVMF writes its variables back to the file it was given, so this machine gets
-# a copy of its own rather than the one every other guest on this host boots
-# from.
+# OVMF writes its variables back to the file it was given, so this machine gets a
+# copy of its own.
 VARS="${FRAME_DIR}/vars.fd"
 cp "$OVMF_VARS" "$VARS"
 
@@ -62,9 +57,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# A free port for qemu's monitor. It is spoken to over tcp rather than a unix
-# socket because bash can open a tcp connection on its own, and a unix one would
-# mean a second program on the machine for the sake of saying `screendump`.
+# A free port for qemu's monitor. Over tcp rather than a unix socket because bash
+# can open a tcp connection on its own.
 port=0
 while [ "$port" -eq 0 ]; do
     candidate=$((RANDOM % 20000 + 30000))
@@ -98,9 +92,8 @@ for _ in $(seq 40); do
 done
 [ "$connected" = true ] || { echo "Error: qemu's monitor never came up on port ${port}" >&2 && exit 1; }
 
-# The monitor answers on the same connection. Nothing here reads those answers —
-# a screendump is judged by the file it leaves, not by what the monitor says
-# about it — and a run's worth of prompts is far too little to fill the socket.
+# The monitor answers on the same connection, and nothing here reads those
+# answers: a screendump is judged by the file it leaves.
 screendump() {
     printf 'screendump %s\n' "$1" >&3
     for _ in $(seq 25); do
@@ -110,9 +103,8 @@ screendump() {
     return 1
 }
 
-# What the console says, as far as it can be made out. --psm 6 because a console
-# is one block of text in one font, which is exactly the case the default page
-# segmentation is wrong about.
+# --psm 6 because a console is one block of text in one font, which is exactly
+# what the default page segmentation gets wrong.
 console_text() {
     tesseract "$1" - --psm 6 2>/dev/null || true
 }
