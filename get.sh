@@ -40,7 +40,7 @@ DOWNLOAD_DIR="${DOWNLOAD_DIR:-${HOME}/Downloads}"
 MODE="${MODE:-auto}"
 
 # Touch no hardware: no device is written, and the installer simulates every
-# step (see setup/util.sh, which reads the same variable).
+# step (see setup/lib.sh, which reads the same variable).
 DEBUG="${DEBUG:-false}"
 
 # ─── Output ──────────────────────────────────────────────────────────────────

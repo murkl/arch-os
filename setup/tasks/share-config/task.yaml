@@ -1,3 +1,27 @@
 name: Share this configuration
 stage: finish
-conditions: ARCH_OS_CONFIG_SHARE_ENABLED == true
+needs: [copy-config]
+
+# Asked here rather than switched on among the settings an hour earlier, and
+# opening on no: nothing of this installation leaves the machine until somebody
+# standing in front of it has said so, on the page that has just told them the
+# installation is over. Declining skips the task, and with it the upload — see
+# share_config in lib.sh, which is the only thing in this tree that sends
+# anything anywhere.
+confirm: |
+  Put these answers online now?
+
+  Every answer of this installation goes to paste.rs, and its address comes back as
+  a code to scan — enough to set another machine up exactly like this one. Anybody
+  holding that address can read them. The password is not among them and was never
+  written down anywhere.
+default: no
+
+# The address, once there is one: as a code for the machine in somebody's hand,
+# and under it as itself for the one in front of them.
+shows: ARCH_OS_CONFIG_URL
+report: |
+  Configuration shared
+
+  Scan the code, or type the word at the end of the address into the paste.rs
+  starting point of another installation.

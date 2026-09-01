@@ -14,10 +14,58 @@ MNT=/mnt
 # The tables looked up below, beside this file.
 DATA="$(dirname "${BASH_SOURCE[0]}")/data"
 
-# Shell that knows nothing about Arch OS — DEBUG, is_online, part_of and the
-# rest — sourced first so everything below can lean on it.
-# shellcheck source=util.sh
-source "$(dirname "${BASH_SOURCE[0]}")/util.sh"
+# ─── Simulation ──────────────────────────────────────────────────────────────
+
+# DEBUG=true runs the whole installer without touching the machine: every wall
+# steps aside and every task reports success without doing anything. Each task
+# guards itself with `simulating && return 0` as its first line, so a unit can
+# only ever be skipped as a whole.
+: "${DEBUG:=false}"
+
+simulating() {
+    [ "$DEBUG" = "true" ] || return 1
+    echo "simulated: ${BASH_SOURCE[1]}"
+    sleep 1 # so the unit is visible in the interface rather than flashing past
+}
+
+# ─── Network ─────────────────────────────────────────────────────────────────
+
+# Real HTTPS to a host the installation needs anyway, not a ping — a captive
+# portal answers pings.
+is_online() {
+    curl -Lsf --connect-timeout 5 --max-time 15 https://archlinux.org >/dev/null
+}
+
+# ─── Where a task lives ──────────────────────────────────────────────────────
+
+# The folder of the task that called it, where a unit keeps the files it ships
+# with.
+where() { dirname "${BASH_SOURCE[1]}"; }
+
+# ─── Answering ───────────────────────────────────────────────────────────────
+
+# An answer, written where the runtime keeps them.
+#
+# The answer file is shell — one KEY='value' to a line — and the runtime reads
+# it back at the two moments a script can have written into it: after a task
+# that reports something, and after the shell a preset option hangs on its
+# question. So a script answers a question by appending one line, and there is
+# nothing else for it to learn.
+#
+# Whatever the file said about that name is dropped and the new line goes on the
+# end, so there is one answer for one name — the runtime would read the last of
+# two and be right either way, but a file somebody opens should not say a thing
+# twice. Order and comments come back the next time the runtime saves, which
+# rewrites the whole file in declaration order.
+#
+# Written whole and moved into place, the way the runtime writes it: a script
+# interrupted mid-write must not leave a half-file where the answers were.
+answer() {
+    local tmp="${INSTALLER_CONF}.answer"
+    grep -v "^${1}=" "$INSTALLER_CONF" >"$tmp" 2>/dev/null || : >>"$tmp"
+    printf "%s='%s'\n" "$1" "$(printf '%s' "$2" | sed "s/'/'\\\\''/g")" >>"$tmp"
+    mv -f "$tmp" "$INSTALLER_CONF"
+}
 
 # ─── What a language and a country imply ─────────────────────────────────────
 #
@@ -57,9 +105,15 @@ live_keymap() {
         tail -n1 | sed 's/.*loadkeys *//' | tr -d ' ' || true
 }
 
+# ─── auto / none ─────────────────────────────────────────────────────────────
+
+# `auto` and `none` are the two words the lists in installer.yaml share, and
+# neither ever reaches a task. They are not the same test: auto is a value
+# still to be found, none is the value itself — the empty answer said out loud.
+is_auto() { [ -z "$1" ] || [ "$1" = "auto" ]; }
+not_none() { [ "$1" = "none" ] || printf '%s' "$1"; }
+
 # ─── Values that are worked out rather than asked for ────────────────────────
-#
-# is_auto and not_none, used throughout this section, are defined in util.sh.
 
 # What each list comes to when it is left on auto. Named rather than inlined
 # because the question page shows the same answer beside its auto row.
@@ -121,8 +175,28 @@ auto_microcode() {
 auto_autologin() { printf '%s' "${ARCH_OS_ENCRYPTION_ENABLED:-false}"; }
 
 # ─── Disks and partitions ─────────────────────────────────────────────────────
+
+# The disks this machine has, as a question offers them: the device path is the
+# answer, and what follows the tab is what it is chosen by. Nobody picks between
+# /dev/sda and /dev/sdb by name — they pick by size and by what the drive is
+# called. Whole disks only: 8 is SCSI and SATA, 259 NVMe, 254 virtual block
+# devices.
 #
-# disk_options and part_of, used below, are defined in util.sh.
+# Named rather than written out twice: an installation and a recovery ask for a
+# disk in exactly the same words, and a list that differed between them would be
+# two answers to one question.
+disk_options() {
+    lsblk -d -n -I 8,259,254 -o PATH,SIZE,MODEL |
+        awk '{ path = $1; $1 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
+}
+
+# part_of names a partition of a disk. Devices whose name ends in a digit —
+# nvme0n1, mmcblk0, loop0 — put a p between the disk and the number.
+part_of() {
+    local sep=""
+    [[ "$1" =~ [0-9]$ ]] && sep="p"
+    printf '%s%s%s' "$1" "$sep" "$2"
+}
 
 # How this project mounts btrfs, written down once: the installation lays the
 # file system out with these and the recovery has to put it back exactly as it
@@ -321,17 +395,32 @@ FIRST_LOGIN="${MNT}/home/${ARCH_OS_USERNAME}/.first-login"
 
 on_first_login() { cat >>"$FIRST_LOGIN"; }
 
+# ─── The copy left behind ────────────────────────────────────────────────────
+
+# The answers as they are kept inside the finished system, which is where
+# anybody looks years later to find out how this machine was set up.
+#
+# Named here rather than inside the task that writes it, because the sharing
+# below appends to the same file once there is an address to append — and two
+# scripts each spelling out one path is one spelling too many.
+TARGET_CONF="${MNT}/home/${ARCH_OS_USERNAME}/installer.conf"
+
 # ─── Sharing what was answered ───────────────────────────────────────────────
 #
 # An installation is two dozen answers, and the second machine set up the same
 # way is otherwise two dozen answers given again by hand. So the finished
-# configuration is put somewhere a phone can reach and the address of it is
+# configuration can be put somewhere a phone can reach and the address of it
 # shown at the end of the run; the other end of the same idea is the starting
 # point that takes its answers from such an address instead of from this tree.
 #
 # It is only ever the answer file: names, a host name, a disk, a language. The
 # password is not in it — the runtime never writes a secret down — and neither
 # is the log.
+#
+# Nothing below runs unasked. share_config is the body of a task that offers
+# itself first and opens on no, so this machine sends nothing anywhere until
+# somebody in front of it has said so with the installation already finished —
+# which is the only moment at which the question is about a real thing.
 
 # Where a configuration is shared. paste.rs takes a file over an ordinary POST,
 # answers with the address it now lives at, and serves it back as plain text —
@@ -361,13 +450,13 @@ shareable_config() {
 }
 
 # The answers, put where a camera can reach them, and the address kept as an
-# answer of its own — which is what puts it on the page at the end of the run
-# and into the copy inside the new system.
+# answer of its own — which is what puts it on the page the run stops on next,
+# and into the copy of the answers inside the new system.
 #
 # Nothing here may fail the installation. The system on the disk is finished by
-# the time this runs, and a pastebin that was unreachable says nothing at all
-# about it: a failure is a line in the log, an address that stays empty, and a
-# page with no code on it.
+# the time this is even offered, and a pastebin that was unreachable says nothing
+# at all about it: a failure is a line in the log, an address that stays empty,
+# and a page with no code on it.
 share_config() {
     # Simulated, this still answers with an address. The page at the end of a
     # run is the thing most worth looking at while this tree is being worked on,
@@ -383,7 +472,14 @@ share_config() {
         return 0
     fi
     url="$(printf '%s' "$url" | tr -d '[:space:]')"
-    [ -n "$url" ] && answer ARCH_OS_CONFIG_URL "$url"
+    [ -n "$url" ] || return 0
+
+    answer ARCH_OS_CONFIG_URL "$url"
+
+    # And into the copy already lying in the new system, so somebody who never
+    # wrote the address down can still find out where their answers went — the
+    # one record of it that survives the machine being restarted.
+    [ -f "$TARGET_CONF" ] && printf "ARCH_OS_CONFIG_URL='%s'\n" "$url" >>"$TARGET_CONF"
     return 0
 }
 

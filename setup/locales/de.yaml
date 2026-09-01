@@ -148,9 +148,8 @@ messages:
 
   # ─── Teilen ────────────────────────────────────────────────────────────────
   "Share this configuration": "Diese Konfiguration teilen"
-  "When the installation is finished, put the answers on this page — never the password, which is not written down at all — on paste.rs, and show the address as a code to scan. Anybody holding that address can read them, and can set up another machine exactly like this one by typing it in here.": "Legt die Antworten dieser Seite — nie das Passwort, das überhaupt nicht gespeichert wird — nach der Installation auf paste.rs ab und zeigt die Adresse als Code zum Abscannen. Wer diese Adresse hat, kann sie lesen und mit ihr einen weiteren Rechner genau wie diesen einrichten."
   "Shared at": "Geteilt unter"
-  "Where this installation's answers ended up. The installation answers this one itself and shows it on the page it finishes on.": "Wo die Antworten dieser Installation gelandet sind. Diese Antwort gibt die Installation selbst und zeigt sie auf der Seite, mit der sie endet."
+  "Where this installation's answers ended up. Nothing is uploaded until the offer at the end of the run has been accepted; the installation then answers this one itself and shows it as a code to scan.": "Wo die Antworten dieser Installation gelandet sind. Hochgeladen wird nichts, bevor das Angebot am Ende des Laufs angenommen wurde; danach gibt die Installation diese Antwort selbst und zeigt sie als Code zum Abscannen."
   "Configuration code": "Konfigurations-Code"
   "The code of a configuration somebody shared: the short word at the end of a paste.rs address, or the whole address pasted in. Every answer kept there becomes an answer here, and every one of them can still be changed afterwards.": "Der Code einer geteilten Konfiguration: das kurze Wort am Ende einer paste.rs-Adresse — oder die ganze Adresse, eingefügt. Jede dort hinterlegte Antwort wird hier zur Antwort, und jede davon lässt sich danach noch ändern."
   "A code such as aBc12, or the whole address it sits at.": "Ein Code wie aBc12 — oder die vollständige Adresse dazu."
@@ -184,8 +183,8 @@ messages:
   Snapshot on every update: Schnappschuss vor jedem Update
   Tidy up: Aufräumen
   Sign the boot chain: Boot-Kette signieren
-  # "Share this configuration" is the task and the setting that switches it on,
-  # in the same words — one key, translated once, up under Teilen.
+  # "Share this configuration" is the name of the task that does it, and stands
+  # up under Teilen with the rest of the sharing rather than here.
   Keep a copy of this installation: Kopie dieser Installation ablegen
   Enter the new system: In das neue System wechseln
   Restart into the new system: In das neue System neu starten
@@ -195,19 +194,33 @@ messages:
   #
   # Der erste Absatz ist die Überschrift, alles danach der Text darunter.
   ? |-
-    Arch Linux is installed
+    Arch OS is installed
 
-    {{ARCH_OS_HOSTNAME}} is on {{ARCH_OS_DISK}} and ready to start. Everything from here on is offered rather than needed: a shell inside the new system, and the restart into it.
-
-    The answers are kept in your home folder as installer.conf, beside the log of this run.
+    {{ARCH_OS_HOSTNAME}} is on {{ARCH_OS_DISK}} and ready to start. Everything from here on is offered rather than needed.
   : |-
-    Arch Linux ist installiert
+    Arch OS ist installiert
 
-    {{ARCH_OS_HOSTNAME}} liegt auf {{ARCH_OS_DISK}} und ist startbereit. Alles Weitere wird angeboten, nicht verlangt: eine Shell im neuen System und der Neustart hinein.
+    {{ARCH_OS_HOSTNAME}} liegt auf {{ARCH_OS_DISK}} und ist startbereit. Alles Weitere wird angeboten, nicht verlangt.
 
-    Die Antworten liegen in deinem Benutzerordner als installer.conf, neben dem Protokoll dieses Laufs.
+  ? |-
+    Configuration shared
+
+    Scan the code, or type the word at the end of the address into the paste.rs starting point of another installation.
+  : |-
+    Konfiguration geteilt
+
+    Scanne den Code — oder tippe das Wort am Ende der Adresse beim paste.rs-Startpunkt einer weiteren Installation ein.
 
   # ─── Was sie vorher fragen ─────────────────────────────────────────────────
+  ? |-
+    Put these answers online now?
+
+    Every answer of this installation goes to paste.rs, and its address comes back as a code to scan — enough to set another machine up exactly like this one. Anybody holding that address can read them. The password is not among them and was never written down anywhere.
+  : |-
+    Diese Antworten jetzt online ablegen?
+
+    Jede Antwort dieser Installation geht zu paste.rs, und ihre Adresse kommt als Code zum Abscannen zurück — genug, um einen weiteren Rechner genau wie diesen einzurichten. Wer diese Adresse hat, kann sie alle lesen. Das Passwort ist nicht dabei und wurde nirgends gespeichert.
+
   ? |-
     Open a shell inside the system that was just installed?
 

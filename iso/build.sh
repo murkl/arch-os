@@ -16,6 +16,13 @@ DOWNLOAD_DIR="./download"
 ISO_DIR="./archiso"
 ISO_CONFIG="releng" # baseline or releng
 
+# mkarchiso's scratch space, kept outside the repository. pacstrap mounts /proc
+# and /sys inside it, and anything on the desktop that walks a project folder —
+# an editor's file watcher, a background grep — holds those open long enough for
+# the unmount to fail. The build then dies cleaning up after itself. Absolute,
+# because it is passed to mkarchiso from inside ISO_DIR.
+WORK_DIR="$(realpath -m "${WORK_DIR:-/var/tmp/archos-iso-work}")"
+
 AIRFS_OPT="${ISO_DIR}/airootfs/opt/installer"
 
 # The bootsplash theme, vendored into the ISO. A checkout beside this repo is
@@ -31,11 +38,24 @@ PLYMOUTH_THEME_REPO="https://github.com/murkl/plymouth-theme-arch-os"
 TEMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TEMP_DIR}"' EXIT
 
+# A run interrupted between pacstrap's mounts and its teardown leaves them
+# behind, and every later run then fails on those rather than on anything it did
+# itself. Deepest first, and lazily: whatever was holding them is long gone, but
+# an open handle on the desktop can still be in the way.
+unmount_leftovers() {
+    findmnt -rno TARGET | grep "^$(realpath -m "$1")/" | sort -r | while read -r target; do
+        echo "unmounting leftover: ${target}"
+        sudo umount -l "$target"
+    done
+}
+
 echo "### Initialize Build"
 [ -x "${RELEASE_DIR}/installer" ] || { echo "Error: ${RELEASE_DIR}/installer not found — run 'make build' first" >&2 && exit 1; }
 [ -f "${RELEASE_DIR}/installer.yaml" ] || { echo "Error: ${RELEASE_DIR}/installer.yaml not found — run 'make build' first" >&2 && exit 1; }
 mkdir -p "$DOWNLOAD_DIR"
-sudo rm -rf "${ISO_DIR}"
+unmount_leftovers "${WORK_DIR}"
+unmount_leftovers "${ISO_DIR}"
+sudo rm -rf "${ISO_DIR}" "${WORK_DIR}"
 mkdir -p "${ISO_DIR}"
 mkdir -p "${RELEASE_DIR}"
 
@@ -47,6 +67,22 @@ cp -r "/usr/share/archiso/configs/${ISO_CONFIG}/"* "${ISO_DIR}"
 
 # Copy sources (the systemd unit and the console theme)
 cp -rf src/* "${ISO_DIR}/airootfs/"
+
+# The stock package list outlives the repositories it names: a package dropped
+# from Arch stays in the profile until the next archiso release, and pacstrap
+# refuses the whole list over the one name it cannot find — which is a build
+# that fails on somebody else's packaging decision. Whatever is no longer in the
+# repositories is taken out here and said out loud, so the image is one package
+# short instead of missing entirely.
+echo "### Check Packages"
+ISO_PACKAGES="${ISO_DIR}/packages.x86_64"
+DROPPED="$(comm -23 \
+    <(grep -v '^[[:space:]]*\(#\|$\)' "$ISO_PACKAGES" | sort -u) \
+    <({ pacman -Slq && pacman -Sgq; } | sort -u))"
+if [ -n "$DROPPED" ]; then
+    echo "not in the repositories, dropped: $(tr '\n' ' ' <<<"$DROPPED")"
+    grep -vxF "$DROPPED" "$ISO_PACKAGES" >"${TEMP_DIR}/packages" && mv "${TEMP_DIR}/packages" "$ISO_PACKAGES"
+fi
 
 # Install the release: the runtime binary next to its tree, which is the only
 # place the runtime looks for one — see runtime/README.md. /opt/installer is
@@ -174,9 +210,10 @@ set_key_value "${ISO_DIR}/profiledef.sh" iso_application "Arch OS Installer ISO"
 # Make ISO
 echo "### Make Arch OS ISO"
 cd "${ISO_DIR}"
-sudo rm -rf work out
-sudo mkarchiso -v .
+sudo rm -rf out
+sudo mkarchiso -v -w "${WORK_DIR}" .
 cd ..
+sudo rm -rf "${WORK_DIR}"
 
 # The image and its checksum go to DIST_DIR, beside the tarball: the release is
 # the installer as a machine runs it, and both of these are downloaded instead.

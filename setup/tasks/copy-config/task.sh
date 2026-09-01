@@ -5,10 +5,10 @@ simulating && return 0
 
 home="${MNT}/home/${ARCH_OS_USERNAME}"
 
-if cp -f "$INSTALLER_CONF" "${home}/installer.conf" 2>/dev/null; then
+if cp -f "$INSTALLER_CONF" "$TARGET_CONF" 2>/dev/null; then
     # Which build of the installer produced this system, so the answers can be
     # read back years later against the right version of the tree.
-    sed -i "1i\# Installed by Arch OS Installer ${INSTALLER_VERSION}" "${home}/installer.conf"
+    sed -i "1i\# Installed by Arch OS Installer ${INSTALLER_VERSION}" "$TARGET_CONF"
 fi
 cp -f "$INSTALLER_LOG" "${home}/installer.log" 2>/dev/null || true
 

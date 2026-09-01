@@ -58,7 +58,12 @@ func (r *report) Hint() string { return labelHintContinue() }
 func (r *report) View(width, height int) string {
 	code := qrCode(r.code, width-reportWordsMin-reportGap, height)
 	if len(code) == 0 {
-		return block(centred(r.words(width, height), height))
+		// Nothing beside it, so the margin has to come from somewhere: the same
+		// golden one every other page's running text keeps off the frame's edge.
+		// A page whose whole content is a headline and a sentence would otherwise
+		// set that sentence in a single line the full width of the frame, which is
+		// half again the measure the rest of the interface reads at.
+		return block(centred(r.words(bodyWidth(width), height), height))
 	}
 	words := r.words(width-lipgloss.Width(code[0])-reportGap, height)
 	return block(beside(words, code, reportGap))

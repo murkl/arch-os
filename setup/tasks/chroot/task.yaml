@@ -1,6 +1,6 @@
 name: Enter the new system
 stage: finish
-needs: [copy-config]
+needs: [share-config]
 confirm: |
   Open a shell inside the system that was just installed?
 

@@ -2,7 +2,7 @@
 
 simulating && return 0
 
-packages=("$ARCH_OS_KERNEL" base base-devel linux-firmware zram-generator networkmanager)
+packages=("$ARCH_OS_KERNEL" base base-devel linux-firmware wireless-regdb zram-generator networkmanager)
 
 [ "$ARCH_OS_MICROCODE" != "none" ] && packages+=("$ARCH_OS_MICROCODE")
 [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(btrfs-progs efibootmgr inotify-tools)

@@ -1,17 +1,15 @@
 name: Keep a copy of this installation
 stage: finish
-needs: [share-config]
 
-# The last thing done to the installation itself. Everything after it is an
-# offer, so this is where the run says so — with the address the answers were
-# shared at, where they were, as a code for the machine in somebody's hand.
-shows: ARCH_OS_CONFIG_URL
+# The last thing done to the installation itself, and the moment the run says
+# so. Everything after it is an offer — sharing the answers, a shell inside the
+# new system, the restart — and a list of task names filling in from the top
+# cannot mark that on its own.
+#
+# Short on purpose. This page is one fact, and the questions that follow it are
+# what the page is there to make room for.
 report: |
-  Arch Linux is installed
+  Arch OS is installed
 
   {{ARCH_OS_HOSTNAME}} is on {{ARCH_OS_DISK}} and ready to start. Everything from
-  here on is offered rather than needed: a shell inside the new system, and the
-  restart into it.
-
-  The answers are kept in your home folder as installer.conf, beside the log of
-  this run.
+  here on is offered rather than needed.

@@ -17,7 +17,7 @@ RUNTIME_BIN := runtime/bin/installer-linux-amd64
 # What the installer tree is, and the only place it is written down: everything
 # in setup/ that a machine being installed onto needs, and nothing meant for a
 # developer.
-TREE := installer.yaml lib.sh util.sh recovery.sh data locales hooks tasks
+TREE := installer.yaml lib.sh recovery.sh data locales hooks tasks
 
 # What a download is called. Both artefacts of a build carry the same name and
 # differ only by extension, the way archiso already names the image — so a
