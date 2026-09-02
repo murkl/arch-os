@@ -1,3 +1,16 @@
+// Package tui is the interface: one frame, a stack of pages inside it, and
+// nothing above the shell layer that knows what a task is.
+//
+// It is the only half of the program a person ever sees, and it draws whatever
+// tree it was handed without knowing anything about what that tree installs.
+// Every page is a screen — four methods, no state shared with its neighbours —
+// and the frame around them belongs to the model alone, so there is exactly one
+// place that decides what this program looks like and exactly one that can
+// promise nothing escapes it.
+//
+// Three things are deliberately kept to one file each: palette.go names every
+// colour, glyphs.go every character, and labels.go every word the interface
+// says that did not come out of a tree.
 package tui
 
 import (

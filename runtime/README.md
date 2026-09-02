@@ -360,9 +360,10 @@ Every declared variable under its own name, answered or not, plus:
 Scripts are **sourced** into a shell that already carries an `ERR` trap and,
 where the tree declares one, the shared library. They need no preamble, no
 `set -e`, no imports, no error handling: if a command fails, the task fails, and
-the user is told the file, the line, the command and the exit code. The one
-idiom this rests on (`[ "$X" = true ] && do_it` leaving a non-zero status when
-the test is false) is not a failure and never reported as one.
+the user is told the file, the line, the command and the exit code. A script
+that merely *ends* on a false test (`[ "$X" = true ] && do_it`) is not a
+failure and is never reported as one — except in a `tty: true` task, which has
+no wrapper around it and is its own exit status.
 
 Scripts ask nothing and print nothing for a person to read. The single exception
 is a `tty: true` task, which is a session somebody is sitting in front of rather

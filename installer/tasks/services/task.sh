@@ -11,4 +11,6 @@ arch-chroot "$MNT" systemctl enable systemd-timesyncd.service
 
 # One timer, not one per subvolume: a scrub verifies the whole file system, so
 # the subvolumes would only be three passes over the same disk.
-[ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && arch-chroot "$MNT" systemctl enable btrfs-scrub@-.timer
+if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
+    arch-chroot "$MNT" systemctl enable btrfs-scrub@-.timer
+fi

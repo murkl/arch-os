@@ -483,6 +483,19 @@ func (v *Variable) Secret() bool { return v.Shape() == TypeSecret }
 // anything.
 func (v *Variable) Matches(s string) bool { return v.re == nil || v.re.MatchString(s) }
 
+// domain is every answer this question has, or nil where the tree left that
+// open — a name typed into a box, a list a command prints. It is what makes a
+// guard something that can be reasoned about rather than only evaluated.
+func (v *Variable) domain() []string {
+	switch {
+	case len(v.Values) > 0:
+		return v.Values
+	case v.Shape() == TypeBool:
+		return []string{BoolTrue, BoolFalse}
+	}
+	return nil
+}
+
 // Var finds a variable by name.
 func (s *Spec) Var(name string) *Variable { return s.byName[name] }
 

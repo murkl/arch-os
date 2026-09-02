@@ -11,7 +11,7 @@ import (
 var sh = exec.Runner{}
 
 func radio(cfg Config) *Radio {
-	return &Radio{cfg: cfg, sh: sh, settle: time.Millisecond, tries: 2}
+	return &Radio{cfg: cfg, sh: sh, env: func() exec.Env { return nil }, settle: time.Millisecond, tries: 2}
 }
 
 func TestNewGivesNoRadioWhenTheTreeDescribesNone(t *testing.T) {
@@ -116,5 +116,28 @@ func TestJoinFailsWhenItNeverComesOnline(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "still no internet") {
 		t.Errorf("err = %v", err)
+	}
+}
+
+func TestAHookIsHandedTheEnvironmentAsItStandsNow(t *testing.T) {
+	env := exec.Env{"ANSWER=first"}
+	r := &Radio{
+		cfg:    Config{Online: "true", Networks: `printf '%s\n' "$ANSWER"`},
+		sh:     sh,
+		env:    func() exec.Env { return env },
+		settle: time.Millisecond,
+		tries:  2,
+	}
+
+	// An answer given after the radio was built. Every other shell in the
+	// program is started with the environment as it stands; so is this one.
+	env = exec.Env{"ANSWER=second"}
+
+	lines, err := r.Networks("wlan0")
+	if err != nil {
+		t.Fatalf("Networks() = %v", err)
+	}
+	if len(lines) != 1 || lines[0] != "second" {
+		t.Errorf("the hook was handed %q, want [second]", lines)
 	}
 }

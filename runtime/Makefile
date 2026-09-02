@@ -90,10 +90,19 @@ locales:
 # message that breaks where it is printed rather than where it was written,
 # which is the one thing about a catalog that cannot wait for somebody to
 # notice.
+#
+# --statistics because nothing else ever counts these. A tree's coverage is
+# reported by `arch-os -check`, which reads the tree's own messages back out of
+# it; the runtime's messages only exist in the template, which is deliberately
+# not shipped — so an entry left empty or fuzzy here would otherwise reach a
+# release with nobody having seen a number.
 locales-check:
 	@go run ./tools/potgen | diff -u $(POT) - \
 		|| { echo "$(POT) is out of date — run 'make locales'" >&2; exit 1; }
-	@for po in $(CATALOGS); do msgfmt --check-format -o /dev/null "$$po" || exit 1; done
+	@for po in $(CATALOGS); do \
+		printf '%s: ' "$$po"; \
+		msgfmt --check-format --statistics -o /dev/null "$$po" || exit 1; \
+	done
 
 fmt:
 	gofmt -s -w .

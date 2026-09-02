@@ -38,7 +38,65 @@ func parseCondition(s string) (*condition, error) {
 }
 
 func (c *condition) holds(get func(string) string) bool {
-	return (get(c.name) == c.want) == c.equal
+	return c.holdsFor(get(c.name))
+}
+
+// holdsFor is the same question asked about one value rather than about the
+// answers as they stand, which is what lets a condition be reasoned about
+// before anything has been answered — see Spec.implies.
+func (c *condition) holdsFor(value string) bool { return (value == c.want) == c.equal }
+
+// implies reports whether want necessarily holds wherever every condition in
+// have does.
+//
+// Exact rather than approximate, and it can be: a variable that writes its
+// values out has a domain small enough to decide the whole question over. Under
+// `DESKTOP != none` a two-valued DESKTOP is gnome and nothing else, so a task
+// guarded on `DESKTOP == gnome` runs wherever such a question is asked. Where
+// the domain is open — a name typed into a box — only the same condition said
+// again counts, which errs towards saying nothing rather than towards crying
+// wolf about a tree that is fine.
+func (s *Spec) implies(have []*condition, want *condition) bool {
+	v := s.byName[want.name]
+	if v == nil {
+		return false
+	}
+	values := v.domain()
+	if values == nil {
+		for _, c := range have {
+			if c.name != want.name {
+				continue
+			}
+			// The same thing said again, or a value pinned to one thing, which
+			// settles every other question about it.
+			if *c == *want || (c.equal && !want.equal && c.want != want.want) {
+				return true
+			}
+		}
+		return false
+	}
+	// Every answer still open to the variable has to satisfy want. None left
+	// open means the question is never asked at all, and anything holds there.
+	for _, value := range values {
+		if !allHold(have, want.name, value) {
+			continue
+		}
+		if !want.holdsFor(value) {
+			return false
+		}
+	}
+	return true
+}
+
+// allHold reports whether every condition about one variable holds for one of
+// its values. Conditions about anything else are somebody else's question.
+func allHold(conds []*condition, name, value string) bool {
+	for _, c := range conds {
+		if c.name == name && !c.holdsFor(value) {
+			return false
+		}
+	}
+	return true
 }
 
 // holdAll reports whether every condition holds. No conditions always do.

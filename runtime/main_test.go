@@ -213,7 +213,12 @@ variables:
     title: Password
     type: secret
     required: true
-`, map[string]string{"hooks/preflight.sh": "true\n"})
+`, map[string]string{
+		"hooks/preflight.sh": "true\n",
+		// The one task reads both answers, so the report is about what the tree
+		// holds rather than about a guard that disagrees — see spec.Unread.
+		"tasks/first/task.sh": "echo \"$HOST $PASSWORD\"\n",
+	})
 	out := captureStdout(t, func() {
 		if err := inspect(dir); err != nil {
 			t.Fatal(err)
@@ -229,6 +234,29 @@ variables:
 		if !strings.Contains(out, want) {
 			t.Errorf("the report does not say %q:\n%s", want, out)
 		}
+	}
+}
+
+// A tree that behaves is not a tree that refuses to start, so this is the one
+// thing -check has to say that loading it never will.
+func TestInspectingRefusesAQuestionNothingReadsTheAnswerOf(t *testing.T) {
+	dir := tree(t, `
+title: Installer
+stages: [go]
+variables:
+  - name: SPARE
+    title: Spare
+`, nil)
+	if _, err := spec.Load(dir); err != nil {
+		t.Fatalf("the tree does not load, and it has to: %v", err)
+	}
+	var err error
+	captureStdout(t, func() { err = inspect(dir) })
+	if err == nil {
+		t.Fatal("a question nothing reads was reported as fine")
+	}
+	if !strings.Contains(err.Error(), "nothing reads the answer") {
+		t.Errorf("inspect() = %v, want it to say nothing reads the answer", err)
 	}
 }
 

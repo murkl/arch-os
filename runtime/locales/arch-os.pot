@@ -33,11 +33,16 @@ msgstr ""
 msgid "Exit code"
 msgstr ""
 
+#: internal/exec/failure.go:57 tui/labels.go:119
+#, c-format
+msgid "%s failed"
+msgstr ""
+
 #: internal/exec/failure.go:62
 msgid "Error"
 msgstr ""
 
-#: internal/runner/runner.go:228
+#: internal/runner/runner.go:232
 msgid "System check"
 msgstr ""
 
@@ -68,12 +73,12 @@ msgstr ""
 msgid "This value is required."
 msgstr ""
 
-#: internal/store/conf.go:89
+#: internal/store/conf.go:78
 #, c-format
 msgid "Answers given to %s. Edit by hand if you like."
 msgstr ""
 
-#: internal/store/conf.go:90 tui/labels.go:82
+#: internal/store/conf.go:79 tui/labels.go:82
 msgid "Interface language"
 msgstr ""
 
@@ -87,6 +92,26 @@ msgstr ""
 
 #: internal/store/store.go:227 tui/labels.go:166
 msgid "No"
+msgstr ""
+
+#: internal/wlan/wlan.go:88 internal/wlan/wlan.go:91
+msgid "No wireless device."
+msgstr ""
+
+#: internal/wlan/wlan.go:102
+msgid "The networks in range could not be read."
+msgstr ""
+
+#. %s is the name of the wireless network.
+#: internal/wlan/wlan.go:115
+#, c-format
+msgid "%s could not be joined."
+msgstr ""
+
+#. %s is the name of the wireless network.
+#: internal/wlan/wlan.go:124
+#, c-format
+msgid "%s was joined, but there is still no internet."
 msgstr ""
 
 #: tui/labels.go:22
@@ -267,11 +292,6 @@ msgstr ""
 #: tui/labels.go:118
 #, c-format
 msgid "Start %s"
-msgstr ""
-
-#: tui/labels.go:119
-#, c-format
-msgid "%s failed"
 msgstr ""
 
 #: tui/labels.go:121

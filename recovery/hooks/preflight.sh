@@ -13,7 +13,7 @@
 # wrong and what to do about it, in that order, and nothing else.
 
 # DEBUG=true simulates the recovery instead of running it, on a machine where
-# neither check above would pass.
+# neither of the checks below would pass.
 [ "$DEBUG" = "true" ] && return 0
 
 if [ "$(id -u)" -ne 0 ]; then

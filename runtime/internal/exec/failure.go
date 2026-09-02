@@ -54,7 +54,7 @@ func (f *Failure) Fields() [][2]string {
 // Error renders the one format every failure is reported in.
 func (f *Failure) Error() string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "%s failed", f.Unit)
+	b.WriteString(i18n.T("%s failed", f.Unit))
 	for _, kv := range f.Fields() {
 		fmt.Fprintf(&b, "\n%-11s %s", kv[0]+":", kv[1])
 	}

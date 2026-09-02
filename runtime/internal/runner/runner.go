@@ -33,7 +33,7 @@ func New(sp *spec.Spec, st *store.Store) *Runner {
 		Networks: spec.Source(sp.Hook(spec.HookNetworks)),
 		Connect:  spec.Source(sp.Hook(spec.HookConnect)),
 	}
-	return &Runner{spec: sp, store: st, sh: sh, radio: wlan.New(cfg, sh, st.Env())}
+	return &Runner{spec: sp, store: st, sh: sh, radio: wlan.New(cfg, sh, st.Env)}
 }
 
 // Radio is how this tree finds and joins a wireless network, or nil when it
@@ -146,7 +146,11 @@ func (r *Runner) Import(shell string) func() error {
 // whatever it answered into force — the console keyboard, most of all, since
 // what is typed next is typed on it.
 func (r *Runner) Imported() error {
-	if err := r.store.Reload(); err != nil {
+	// Load again over what is held. The answer file is the channel because it
+	// already is one: shell, KEY='value' to a line, and somebody editing it in
+	// an editor is doing exactly what such a script does — so there is no second
+	// way in for a script to learn and no second way for one to go wrong.
+	if err := r.store.Load(); err != nil {
 		return err
 	}
 	r.Settle()

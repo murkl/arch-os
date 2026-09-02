@@ -88,10 +88,34 @@ func inspect(dir string) error {
 		return err
 	}
 	reportRelease(rel)
+	unread := 0
 	for _, sp := range trees {
 		report(sp)
+		n, err := reportUnread(sp)
+		if err != nil {
+			return err
+		}
+		unread += n
+	}
+	// The one thing here that is a verdict rather than a description, so this
+	// fails where a build script runs it — see spec.Unread.
+	if unread > 0 {
+		return fmt.Errorf("%d question(s) asked where nothing reads the answer", unread)
 	}
 	return nil
+}
+
+// reportUnread names every question this tree asks under conditions no task
+// that reads it can run under, and how many there were.
+func reportUnread(sp *spec.Spec) (int, error) {
+	unread, err := sp.Unread()
+	if err != nil {
+		return 0, err
+	}
+	for _, u := range unread {
+		fmt.Printf("  %-10s %s\n", "unread", u)
+	}
+	return len(unread), nil
 }
 
 // reportRelease is what the release says about itself, printed. A release that

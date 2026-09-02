@@ -21,7 +21,10 @@ const (
 	frameMinW = 34
 	frameMinH = 13
 
-	// The spacing scale. Nothing uses a number that is not on it.
+	// The spacing scale. Nothing uses a number that is not on it, and the scale
+	// is kept whole rather than trimmed to what happens to be referenced today:
+	// a run of names with a step missing out of its middle reads as a mistake,
+	// and the next size up then gets chosen for the wrong reason.
 	padV   = 1
 	padH   = 2
 	gapS   = 1

@@ -15,8 +15,12 @@ apps="${home}/.local/share/applications"
 # (pipewire-jack and jack2) can only be resolved when pacman sees them together.
 
 # Named outright rather than left to the group, because services are switched
-# on for them below.
-packages=(git bluez bluez-utils avahi)
+# on for them below - the audio stack included. The group only ever pulls
+# pipewire in as somebody else's dependency, which leaves the session manager
+# out and the pulse replacement to whichever provider pacman picks: three units
+# switched on at the end of this task that are not there.
+# https://wiki.archlinux.org/title/PipeWire#Installation
+packages=(git bluez bluez-utils avahi pipewire pipewire-pulse wireplumber)
 
 # The group, filtered, rather than the group and a round of removals: what the
 # slim desktop leaves out is never downloaded, and a member another member
@@ -40,8 +44,10 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     # implement.
     packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk)
 
-    # Audio. https://wiki.archlinux.org/title/PipeWire#Installation
-    packages+=(pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber sof-firmware)
+    # What the audio stack above needs to stand in for the two APIs older
+    # software still opens, and the firmware many laptop codecs will not play
+    # a sound without.
+    packages+=(pipewire-alsa pipewire-jack sof-firmware)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
 
     # Reaching other machines, and letting them reach this one. The gvfs back

@@ -370,7 +370,7 @@ func TestExistsSaysWhetherThisMachineHasAnsweredAnythingYet(t *testing.T) {
 // A script may answer questions by appending to the answer file — a shared
 // configuration fetched from somewhere, a link a run has just produced — and
 // what it wrote has to arrive without the program being restarted.
-func TestReloadPicksUpWhatAScriptWroteIntoTheAnswerFile(t *testing.T) {
+func TestLoadingAgainPicksUpWhatAScriptWroteIntoTheAnswerFile(t *testing.T) {
 	s := setup(t, twoVars)
 	if err := s.Save(); err != nil {
 		t.Fatal(err)
@@ -385,12 +385,12 @@ func TestReloadPicksUpWhatAScriptWroteIntoTheAnswerFile(t *testing.T) {
 	f.Close()
 
 	if got := s.Get("USER"); got != "" {
-		t.Fatalf("USER = %q before the reload", got)
+		t.Fatalf("USER = %q before loading again", got)
 	}
-	if err := s.Reload(); err != nil {
+	if err := s.Load(); err != nil {
 		t.Fatal(err)
 	}
 	if got := s.Get("USER"); got != "moritz" {
-		t.Errorf("USER = %q after the reload, want moritz", got)
+		t.Errorf("USER = %q after loading again, want moritz", got)
 	}
 }

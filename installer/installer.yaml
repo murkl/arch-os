@@ -305,9 +305,13 @@ variables:
     group: Storage
     type: bool
     default: true
+    # The desktop among them because it is a desktop application, and the
+    # desktop task is what installs it: without one there would be a row here
+    # nothing in the run could keep.
     conditions:
       - ARCH_OS_FILESYSTEM == btrfs
       - ARCH_OS_BTRFS_SNAPPER_ENABLED == true
+      - ARCH_OS_DESKTOP != none
 
   - name: ARCH_OS_DUAL_BOOT_ENABLED
     title: Dual boot
@@ -522,7 +526,11 @@ variables:
     group: Desktop
     type: bool
     default: true
-    conditions: ARCH_OS_DESKTOP != none
+    # The same two the task that shares carries, so this is never a row that is
+    # answered and then never acted on.
+    conditions:
+      - ARCH_OS_DESKTOP != none
+      - ARCH_OS_DESKTOP_EXTRAS_ENABLED == true
 
   # ─── System ────────────────────────────────────────────────────────────────
   - name: ARCH_OS_CORE_TWEAKS_ENABLED

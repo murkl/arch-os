@@ -7,10 +7,12 @@
 package wlan
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"installer/internal/exec"
+	"installer/internal/i18n"
 )
 
 // Config is the shell one tree uses to find and join a network. Every field is
@@ -26,7 +28,11 @@ type Config struct {
 type Radio struct {
 	cfg Config
 	sh  exec.Runner
-	env exec.Env
+
+	// What a hook is handed, asked for rather than kept: this outlives several
+	// answers being given, and every other shell in the program is started with
+	// the environment as it stands rather than as it was.
+	env func() exec.Env
 
 	// How long a fresh connection is given to come up, and how many times it is
 	// looked at. Fields rather than constants so a test can drive the whole
@@ -52,7 +58,7 @@ const (
 // New builds the tree's radio. A tree that cannot even say whether it is online
 // gets a nil Radio, which is not an error — it just never gets offered the
 // screen.
-func New(cfg Config, sh exec.Runner, env exec.Env) *Radio {
+func New(cfg Config, sh exec.Runner, env func() exec.Env) *Radio {
 	if cfg.Online == "" {
 		return nil
 	}
@@ -67,18 +73,22 @@ func (r *Radio) Joinable() bool {
 // Online reports whether there is internet. A failing check is an answer, not
 // an error — being offline is the normal case this whole package exists for.
 func (r *Radio) Online() bool {
-	_, err := r.sh.Run(r.cfg.Online, r.env)
+	_, err := r.sh.Run(r.cfg.Online, r.env())
 	return err == nil
 }
 
 // Interface finds the wireless device to use.
+//
+// What comes back here is read on the network page rather than in the log, so
+// it is said in the interface's own language with whatever the hook had to add
+// after it — that part is the tool's own words and is nobody's to translate.
 func (r *Radio) Interface() (string, error) {
-	out, err := r.sh.Run(r.cfg.Device, r.env)
+	out, err := r.sh.Run(r.cfg.Device, r.env())
 	if err != nil {
-		return "", fmt.Errorf("no wireless device: %w", err)
+		return "", fmt.Errorf("%s: %w", i18n.T("No wireless device."), err)
 	}
 	if out == "" {
-		return "", fmt.Errorf("no wireless device found")
+		return "", errors.New(i18n.T("No wireless device."))
 	}
 	return out, nil
 }
@@ -89,7 +99,7 @@ func (r *Radio) Interface() (string, error) {
 func (r *Radio) Networks(device string) ([]string, error) {
 	lines, err := r.sh.Lines(r.cfg.Networks, r.withDevice(device))
 	if err != nil {
-		return nil, fmt.Errorf("cannot list networks: %w", err)
+		return nil, fmt.Errorf("%s: %w", i18n.T("The networks in range could not be read."), err)
 	}
 	return lines, nil
 }
@@ -101,7 +111,8 @@ func (r *Radio) Networks(device string) ([]string, error) {
 func (r *Radio) Join(device, ssid, passphrase string) error {
 	env := r.withCredentials(device, ssid, passphrase)
 	if _, err := r.sh.Run(r.cfg.Connect, env); err != nil {
-		return fmt.Errorf("could not join %s: %w", ssid, err)
+		// TRANSLATORS: %s is the name of the wireless network.
+		return fmt.Errorf("%s: %w", i18n.T("%s could not be joined.", ssid), err)
 	}
 	for i := 0; i < r.tries; i++ {
 		if r.Online() {
@@ -109,11 +120,12 @@ func (r *Radio) Join(device, ssid, passphrase string) error {
 		}
 		time.Sleep(r.settle)
 	}
-	return fmt.Errorf("joined %s but there is still no internet", ssid)
+	// TRANSLATORS: %s is the name of the wireless network.
+	return errors.New(i18n.T("%s was joined, but there is still no internet.", ssid))
 }
 
 func (r *Radio) withDevice(device string) exec.Env {
-	return append(append(exec.Env{}, r.env...), envDevice+"="+device)
+	return append(append(exec.Env{}, r.env()...), envDevice+"="+device)
 }
 
 func (r *Radio) withCredentials(device, ssid, passphrase string) exec.Env {

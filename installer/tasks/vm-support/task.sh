@@ -27,7 +27,9 @@ oracle)
 microsoft)
     echo "detected Hyper-V"
     chroot_pacman_install hyperv
-    arch-chroot "$MNT" systemctl enable hv_fcopy_daemon
+    # The two units the package ships. File copy lost its daemon when the
+    # kernel replaced it with hv_fcopy_uio_daemon, which comes with no unit at
+    # all, so there is nothing left to switch on for it.
     arch-chroot "$MNT" systemctl enable hv_kvp_daemon
     arch-chroot "$MNT" systemctl enable hv_vss_daemon
     ;;

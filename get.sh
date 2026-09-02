@@ -34,7 +34,7 @@ DOWNLOAD_DIR="${DOWNLOAD_DIR:-${HOME}/Downloads}"
 MODE="${MODE:-auto}"
 
 # Touch no hardware: no device gets written, and the installer simulates
-# every step (see setup/lib.sh, which reads the same variable).
+# every step (see installer/lib.sh, which reads the same variable).
 DEBUG="${DEBUG:-false}"
 
 # The file currently being fetched, so an interrupt only cleans up its own
@@ -67,6 +67,11 @@ and writes it to a USB device, so this machine can make the one that boots it.
   MODE=install|create   pick the half by hand instead of by where it runs
   DEBUG=true            write nothing: no device, and a simulated installation
   DOWNLOAD_DIR=<dir>    where downloads are kept (default ${DOWNLOAD_DIR})
+
+These are read by the shell this script runs in, which through a pipe is the
+one on the right of it:
+
+  curl -Ls bit.ly/arch-os | DEBUG=true bash
 EOF
 }
 

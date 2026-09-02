@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -33,6 +34,11 @@ type harness struct {
 	m    *Model
 	a    *app
 	msgs chan tea.Msg
+
+	// How many commands are out and have not answered yet. Without it the loop
+	// below could only tell "settled" from "still working" by waiting, and a
+	// keystroke that starts nothing would cost the same as an installation.
+	inflight atomic.Int64
 }
 
 // The tree every flow test starts from: one page of presets, a handful of
@@ -187,42 +193,64 @@ func (h *harness) run(cmd tea.Cmd) {
 	if cmd == nil {
 		return
 	}
+	h.inflight.Add(1)
 	go func() {
+		// Counted down only after the message is queued, so a loop that sees
+		// nothing out there has already been handed everything there was.
+		defer h.inflight.Add(-1)
 		if msg := cmd(); msg != nil {
 			h.msgs <- msg
 		}
 	}()
 }
 
-// quiet is how long the loop waits with nothing arriving before it takes the
-// interface to have settled.
+// quiet is how long the loop waits on a command that is still out there before
+// it takes the interface to have settled anyway. It is the clocks this is for —
+// a tick re-arms itself and never stops being outstanding — and it is only ever
+// waited out when something really is in flight.
 const quiet = 60 * time.Millisecond
 
 // drain handles everything waiting, and everything that arrives while it is
-// handling it, until nothing has for a moment.
+// handling it, until nothing is left and nothing is still coming.
 func (h *harness) drain() {
 	for {
+		var msg tea.Msg
 		select {
-		case msg := <-h.msgs:
-			switch msg := msg.(type) {
-			case tea.BatchMsg:
-				for _, c := range msg {
-					h.run(c)
-				}
-			case tickMsg, spinMsg, animMsg:
-				// A clock. It carries nothing and re-arms itself, so handling
-				// one would be a test that never ends.
-			default:
-				if blink(msg) {
-					continue
-				}
-				m, cmd := h.m.Update(msg)
-				h.m = m.(*Model)
-				h.run(cmd)
+		case msg = <-h.msgs:
+		default:
+			// Nothing queued. With nothing out there either, this is as
+			// settled as it is going to get, and waiting would only be a
+			// keystroke costing a tenth of a second for no reason.
+			if h.inflight.Load() == 0 {
+				return
 			}
-		case <-time.After(quiet):
+			select {
+			case msg = <-h.msgs:
+			case <-time.After(quiet):
+				return
+			}
+		}
+		h.handle(msg)
+	}
+}
+
+// handle is one message put through the program, exactly as bubbletea would.
+func (h *harness) handle(msg tea.Msg) {
+	switch msg := msg.(type) {
+	case tea.BatchMsg:
+		for _, c := range msg {
+			h.run(c)
+		}
+	case tickMsg, spinMsg, animMsg:
+		// A clock. It carries nothing and re-arms itself, so handling one
+		// would be a test that never ends.
+	default:
+		if blink(msg) {
 			return
 		}
+		m, cmd := h.m.Update(msg)
+		h.m = m.(*Model)
+		h.run(cmd)
 	}
 }
 
