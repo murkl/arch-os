@@ -9,6 +9,7 @@
 package spec
 
 import (
+	"path"
 	"regexp"
 	"slices"
 	"strings"
@@ -57,21 +58,15 @@ var HookNames = []string{
 	HookRestart, HookShutdown,
 }
 
-// The runtime's own settings: the two keys it writes into the answer file that
-// no tree declared. Neither is something an installer's data can own —
-// the words the interface is read in belong to the frame, and which of the
-// tree's modes is being carried out is a decision about the program rather than
-// a value inside it.
+// The runtime's own setting: the one key it writes into the answer file that no
+// tree declared. It is not something an installer's data can own — the words the
+// interface is read in belong to the frame rather than to a value inside it.
 //
-// A tree may not declare either, and may name either in a `conditions:` — which
-// is how a variable says it only belongs to one of the modes.
-const (
-	LangVar = "INSTALLER_LANG"
-	ModeVar = "INSTALLER_MODE"
-)
+// A tree may not declare it, and may name it in a `conditions:`.
+const LangVar = "INSTALLER_LANG"
 
 // RuntimeVars is every name that belongs to the runtime rather than to a tree.
-var RuntimeVars = []string{LangVar, ModeVar}
+var RuntimeVars = []string{LangVar}
 
 // runtimeVar reports whether a name is one of them.
 func runtimeVar(name string) bool { return slices.Contains(RuntimeVars, name) }
@@ -85,14 +80,13 @@ type Spec struct {
 	Presets []*Preset
 	Vars    []*Variable
 
-	// Modes are the things this tree can do, in the order it offers them. There
-	// is always at least one: a tree that declares none has exactly one made of
-	// its own top-level stages and confirm, and is never asked which.
-	Modes []*Mode
+	// Confirm is the last thing read before the first task runs, with {{VAR}}
+	// filled in from the answers — the sentence that says which disk is about to
+	// be erased.
+	Confirm string
 
-	// Stages are the phases the work happens in, in the order they happen —
-	// every mode's own, one after another. Every task names one, which is what
-	// puts it in a run, where, and in which mode.
+	// Stages are the phases the work happens in, in the order they happen. Every
+	// task names one, which is what puts it in the run and where.
 	Stages []string
 
 	// Tasks, already in the order they run: by stage, and inside a stage by what
@@ -128,6 +122,17 @@ type UI struct {
 	Logo   string `yaml:"logo"`
 	Accent string `yaml:"accent"`
 
+	// Description is what this program is, in one sentence, and Run what one
+	// run of it is called.
+	//
+	// The description is read on the page that asks which of the programs beside
+	// the binary to open; the name is read wherever the interface says what is
+	// happening — the row that starts it, the last warning, the clock while it
+	// runs. A tree that names no run is an installation as far as the runtime is
+	// concerned, which is right for one kind of tree and wrong for every other.
+	Description string `yaml:"description"`
+	Run         string `yaml:"run"`
+
 	// Console is the sentence read on the way out of the interface, where the
 	// machine keeps running. What the installer is called out there is something
 	// only the tree can know, and somebody who has just left it is looking at a
@@ -136,57 +141,19 @@ type UI struct {
 	Console string `yaml:"console"`
 }
 
-// Mode is one of the things a tree can do: a run with a name, a warning of its
-// own, and the phases it happens in.
-//
-// An installer that can also repair what it installed is not one program with a
-// switch in it — the two ask different questions, do different work and are
-// dangerous in different ways. So a tree says what it can do rather than what it
-// is, and the program asks which of them this run is before anything else
-// happens. A tree with one mode is never asked and never notices.
-//
-// Nothing about a mode reaches a task. A task names a stage, as it always did,
-// and the stage says which mode it belongs to — so the two can never disagree
-// and no unit has to repeat what its stage already said.
-type Mode struct {
-	ID          string `yaml:"id"`
-	Title       string `yaml:"title"`
-	Description string `yaml:"description"`
+// RunName is what one run of this tree is called, translated. Empty where the
+// tree did not say, which the runtime can only read as an installation.
+func (s *Spec) RunName() string { return i18n.T(s.UI.Run) }
 
-	// Confirm is the last thing read before this mode's first task runs, with
-	// {{VAR}} filled in from the answers — the sentence that says which disk is
-	// about to be erased.
-	Confirm string `yaml:"confirm"`
+// Help is what this program is, in one sentence: the line under its row on the
+// page that asks which of them to open.
+func (s *Spec) Help() string { return i18n.T(s.UI.Description) }
 
-	// Stages are this mode's phases, in the order they happen. They are its own:
-	// no two modes may name the same one, since a stage is what a task points at
-	// to say where it belongs.
-	Stages []string `yaml:"stages"`
+// ConfirmText is the last sentence before the first task, translated and with
+// {{VAR}} filled in from the answers.
+func (s *Spec) ConfirmText(get func(string) string) string {
+	return strings.TrimSpace(Expand(i18n.T(s.Confirm), get))
 }
-
-func (m *Mode) Label() string { return i18n.T(m.Title) }
-func (m *Mode) Help() string  { return i18n.T(m.Description) }
-
-// ConfirmText is the last sentence before this mode's first task, translated
-// and with {{VAR}} filled in from the answers.
-func (m *Mode) ConfirmText(get func(string) string) string {
-	return strings.TrimSpace(Expand(i18n.T(m.Confirm), get))
-}
-
-// Mode finds a mode by id, or nil where the tree has no such one.
-func (s *Spec) Mode(id string) *Mode {
-	for _, m := range s.Modes {
-		if m.ID == id {
-			return m
-		}
-	}
-	return nil
-}
-
-// Asked reports whether which mode this run is in is a question at all. One
-// mode is not a choice, and a page offering it would be a page with a single
-// row on it.
-func (s *Spec) Asked() bool { return len(s.Modes) > 1 }
 
 // Hook is the script this tree put in hooks/ under that name, absolute, or
 // empty where it has none.
@@ -223,15 +190,7 @@ type Preset struct {
 	Title       string          `yaml:"title"`
 	Description string          `yaml:"description"`
 	Options     []*PresetOption `yaml:"options"`
-
-	// Mode is the mode this page belongs to, empty for all of them. A set of
-	// starting points for an installation is not a question to put to somebody
-	// who came here to repair one.
-	Mode string `yaml:"mode"`
 }
-
-// Applies reports whether this page of starting points is worth offering.
-func (p *Preset) Applies(get func(string) string) bool { return inMode(p.Mode, get) }
 
 // PresetOption is one answer to that question: the values choosing it fills in.
 // Nothing else about it survives being chosen — it is a set of answers, not a
@@ -336,15 +295,11 @@ type Task struct {
 	TTY bool `yaml:"tty"`
 
 	id   string
-	mode string
 	path string
 	cond []*condition
 }
 
 func (t *Task) Label() string { return i18n.T(t.Name) }
-
-// Mode is the mode this task belongs to, which is whichever one owns its stage.
-func (t *Task) Mode() string { return t.mode }
 
 // ID is the folder this task was read from, which is also the name other tasks
 // reach it by in their needs.
@@ -414,15 +369,6 @@ type Variable struct {
 	// the order they were declared in, so a group is simply the run of rows
 	// that named it — there is nothing to declare up front.
 	Group string `yaml:"group"`
-
-	// Mode is the mode this question belongs to, empty for all of them.
-	//
-	// It is how a tree that does more than one thing keeps its questions apart,
-	// and it is a key of its own rather than a condition because there is
-	// nothing to compare: a question is one mode's or it is everybody's. The
-	// few that are everybody's are the ones asked before the mode is — the
-	// keyboard both sides are typed on.
-	Mode string `yaml:"mode"`
 
 	Type     string `yaml:"type"`
 	Default  Scalar `yaml:"default"`
@@ -541,38 +487,67 @@ func (s *Spec) Var(name string) *Variable { return s.byName[name] }
 // Name is the installer's own title, translated.
 func (s *Spec) Name() string { return i18n.T(s.UI.Title) }
 
-// Strings is every word this tree says, in the order it says them, with
+// Message is one thing a tree says: the text, what it is, and the files it was
+// read out of. The last two are all a translator has — the words arrive out of
+// the tree they belong to, one sentence at a time.
+type Message struct {
+	Text  string
+	Note  string
+	Files []string
+}
+
+// Messages is every word this tree says, in the order it says them, with
 // duplicates dropped.
 //
 // It is the list a translator works from, and the reason there is no separate
 // file listing what needs translating: the strings are the yaml's own, and
 // asking the loaded tree for them means the list can never fall behind it.
-func (s *Spec) Strings() []string {
-	var out []string
-	seen := map[string]bool{}
-	add := func(texts ...string) {
-		for _, t := range texts {
-			if t = strings.TrimSpace(t); t != "" && !seen[t] {
-				seen[t] = true
-				out = append(out, t)
-			}
+func (s *Spec) Messages() []Message {
+	var out []Message
+	at := map[string]int{}
+	add := func(file, note, text string) {
+		text = strings.TrimSpace(text)
+		if text == "" {
+			return
 		}
+		// The same sentence in two places is one message said twice, and both
+		// places are worth naming.
+		if i, ok := at[text]; ok {
+			if !slices.Contains(out[i].Files, file) {
+				out[i].Files = append(out[i].Files, file)
+			}
+			return
+		}
+		at[text] = len(out)
+		out = append(out, Message{Text: text, Note: note, Files: []string{file}})
 	}
-	add(s.UI.Title, s.UI.Console)
-	for _, m := range s.Modes {
-		add(m.Title, m.Description, m.Confirm)
-	}
+
+	decl := s.File
+	add(decl, "what this program is called", s.UI.Title)
+	add(decl, "what it is, in one sentence, on the page that offers it", s.UI.Description)
+	add(decl, "what one run of it is called", s.UI.Run)
+	add(decl, "how to get back in, read on the way out to the console", s.UI.Console)
+	add(decl, "the last thing read before the first task runs", s.Confirm)
 	for _, p := range s.Presets {
-		add(p.Title, p.Description)
+		add(decl, "starting point "+p.ID+": the question", p.Title)
+		add(decl, "starting point "+p.ID+": what it means", p.Description)
 		for _, o := range p.Options {
-			add(o.Title, o.Description)
+			add(decl, "starting point "+p.ID+", "+o.ID+": the row", o.Title)
+			add(decl, "starting point "+p.ID+", "+o.ID+": what choosing it does", o.Description)
 		}
 	}
 	for _, v := range s.Vars {
-		add(v.Title, v.Description, v.Group, v.Free, v.Error)
+		add(decl, v.Name+": the question", v.Title)
+		add(decl, v.Name+": what it means", v.Description)
+		add(decl, v.Name+": the heading its row sits under", v.Group)
+		add(decl, v.Name+": the row that opens a box for an answer of one's own", v.Free)
+		add(decl, v.Name+": what a wrong answer is told", v.Error)
 	}
 	for _, t := range s.Tasks {
-		add(t.Name, t.Confirm, t.Report)
+		file := path.Join(DirTasks, t.ID(), FileTask)
+		add(file, "the step, as the run lists it", t.Name)
+		add(file, "asked before the step runs", t.Confirm)
+		add(file, "read once the step is done, and held on until somebody has", t.Report)
 	}
 	return out
 }

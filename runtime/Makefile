@@ -19,16 +19,26 @@ LDFLAGS_BUILD := -s -w -X main.version=$(VERSION)
 LDFLAGS_RUN   := -X main.version=$(VERSION_DEV)
 GOFLAGS       := CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH)
 
-# The tree this runtime is developed against. A build leaves its binary in bin/;
-# putting a copy of it in the tree is the release's business, not this one's.
+# The tree this runtime is developed against, one at a time. The page that asks
+# which of several to open needs them beside a binary, which is what a build
+# makes: `make build` at the root, then `release/archos`.
+#
+# A build leaves its binary in bin/; putting a copy of it beside a tree is the
+# release's business, not this one's.
 TREE ?= ../installer
 
-.PHONY: all build run tidy tidy-check test test-race vet staticcheck vuln fmt fmt-check clean check release
+# The template every catalog here is filled in from, and the catalogs
+# themselves. Both are generated: the template out of the Go sources, the
+# catalogs out of the template.
+POT      := locales/archos.pot
+CATALOGS := $(wildcard locales/*.po)
+
+.PHONY: all build run tidy tidy-check test test-race vet staticcheck vuln fmt fmt-check locales locales-check clean check release
 
 all: build
 
-# -dir because `go run` builds into a temporary folder, where nothing of the
-# tree is beside the binary.
+# -dir because `go run` builds into a temporary folder, where none of this is
+# beside the binary.
 run:
 	go run -ldflags="$(LDFLAGS_RUN)" $(PKG) -dir $(TREE)
 
@@ -67,6 +77,24 @@ staticcheck:
 vuln:
 	govulncheck ./...
 
+# Reads every T("…") out of the sources and writes the template, then brings
+# each catalog up to it. msgmerge keeps every translation whose source text is
+# unchanged and marks the rest fuzzy rather than dropping it — a reworded
+# sentence is a translation to look at again, not one to write from scratch.
+locales:
+	go run ./tools/potgen > $(POT)
+	@for po in $(CATALOGS); do msgmerge --quiet --update --backup=none --no-wrap "$$po" $(POT); done
+
+# A word added or reworded without `make locales` being run is a word no
+# translator will ever be shown. And a translation that drops a placeholder is a
+# message that breaks where it is printed rather than where it was written,
+# which is the one thing about a catalog that cannot wait for somebody to
+# notice.
+locales-check:
+	@go run ./tools/potgen | diff -u $(POT) - \
+		|| { echo "$(POT) is out of date — run 'make locales'" >&2; exit 1; }
+	@for po in $(CATALOGS); do msgfmt --check-format -o /dev/null "$$po" || exit 1; done
+
 fmt:
 	gofmt -s -w .
 
@@ -77,7 +105,7 @@ fmt-check:
 	[ -z "$$unformatted" ] || { echo "not gofmt'd:" >&2; echo "$$unformatted" >&2; exit 1; }
 
 # What has to pass before anything is committed.
-check: fmt-check tidy-check vet staticcheck test build
+check: fmt-check tidy-check vet staticcheck locales-check test build
 
 # There is deliberately no install target: the binary looks for a tree beside
 # itself, so a copy on $PATH with nothing next to it can only say it found no

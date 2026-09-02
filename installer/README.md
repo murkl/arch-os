@@ -7,8 +7,8 @@ in order. Repairing a system that is already on a disk is a tree of its own, and
 a program of its own: [`recovery/`](../recovery).
 
 ```sh
-make check                            # load the tree and lint every script
-DEBUG=true make -C ../runtime run     # run it, without touching this machine
+make check                                            # load the tree and lint every script
+DEBUG=true make -C ../runtime run TREE=../installer   # run it, without touching this machine
 ```
 
 ## What is where
@@ -20,20 +20,20 @@ tasks/<id>/task.sh       what it does — and any file it ships with, beside it
 hooks/<name>.sh          everything around the work itself
 lib.sh                   the little every script of this tree shares
 data/                    the tables a language and a country are looked up in
-locales/                 one <code>.yaml per language this installer speaks
+locales/                 one <code>.po per language this installer speaks, and the template they are filled in from
 ```
 
 Nothing points at any of this from `installer.yaml`: each part is found by its
-own name. A release is this folder with the runtime binary in it — the binary
-takes the one YAML file it finds beside itself, which is what lets the recovery
-tree sit next to this one and still be a program of its own.
+own name. A release is the runtime binary with this folder beside it and the
+recovery beside that — one binary, two programs, and the first thing it asks is
+which of them to open.
 
 ## What a run is called
 
-`installer.yaml` declares exactly one `mode:` — `Installation`, with the last
-warning and the stages under it. There is nothing to choose, so nobody is asked;
-it is there for the name, which the interface reads out wherever it says what is
-happening: the row that starts it, the last warning, the clock while it runs.
+`installer.yaml` says `run: Installation`, which the interface reads out wherever
+it says what is happening: the row that starts it, the last warning, the clock
+while it runs. `description:` beside it is the sentence under this program's row
+on the page that asks which to open.
 
 Left out, the runtime falls back to the only thing an unnamed run can be and
 calls it an installation — right here, wrong in [`recovery/`](../recovery),
@@ -42,8 +42,8 @@ which names its own run the same way.
 ## Tasks
 
 Every folder under `tasks/` is a step, and nothing lists them: the folder is the
-list. The mode declares the stages top to bottom; every task names one, and
-`needs:` orders the ones that share a stage.
+list. `installer.yaml` declares the stages top to bottom; every task names one,
+and `needs:` orders the ones that share a stage.
 
 ```yaml
 # tasks/aur-helper/task.yaml
@@ -243,11 +243,15 @@ shell that makes something of the answer with `apply:`.
 **A language** —
 
 ```sh
-make strings > locales/fr.yaml   # every word this tree says, empty
-make check                       # reports coverage per language
+cp locales/installer.pot locales/fr.po   # every word this tree says, none of them translated
+make check                               # reports coverage per language
 ```
 
-The runtime's own words are translated separately, in its own `locales/`.
+Fill in the `msgstr` lines and nothing else. `make locales` regenerates
+`installer.pot` from the tree and brings every catalog up to it, which is what
+has to run after a question is added or reworded. The runtime's own words are
+translated separately, in its own `locales/`. See
+[TRANSLATING.md](../TRANSLATING.md).
 
 ## Requirements
 

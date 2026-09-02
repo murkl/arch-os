@@ -1,0 +1,11 @@
+# Where this repository is translated, for the wlc command line client.
+#
+# The project has to exist on the server before this points anywhere; the slug
+# below is the one to create. Three components under it, one per catalog — see
+# TRANSLATING.md for what to fill their file mask and template in with.
+#
+# An API key is personal and belongs in ~/.config/weblate. Never here: this file
+# is read by everyone who clones the repository.
+[weblate]
+url = https://hosted.weblate.org/api/
+translation = arch-os

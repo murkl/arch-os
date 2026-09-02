@@ -7,9 +7,6 @@ import (
 	"strings"
 )
 
-// Ext is what a catalog file is called: the language code, and this.
-const Ext = ".yaml"
-
 // Lang is one language on offer: the code it is selected by and the name it
 // calls itself.
 type Lang struct {

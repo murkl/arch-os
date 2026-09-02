@@ -102,23 +102,35 @@ func TestAnUntranslatableMachineLeavesTheSourceLanguage(t *testing.T) {
 	}
 }
 
-func TestModesAreListedInTheOrderTheTreeOffersThem(t *testing.T) {
-	sp := load(t, tree(t, `
-title: T
-modes:
-  - id: install
-    title: Install
-    stages: [go]
-  - id: repair
-    title: Repair
-    stages: [fix]
-`, map[string]string{
-		"tasks/second/task.yaml": "name: Second\nstage: fix\n",
-		"tasks/second/task.sh":   "true\n",
-	}))
-	got := strings.Join(modes(sp), " ")
-	if got != "install repair" {
-		t.Errorf("modes() = %q, want \"install repair\"", got)
+// A release is the binary and the trees beside it. All of them are read at
+// startup, so one that will not load is a message before anything is offered
+// rather than a row that fails when it is chosen.
+func TestEveryTreeOfAReleaseIsRead(t *testing.T) {
+	release := t.TempDir()
+	for _, name := range []string{"installer", "recovery"} {
+		if err := os.Rename(tree(t, "title: "+name+"\nstages: [go]\n", nil), filepath.Join(release, name)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := loadTrees(release)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || got[0].UI.Title != "installer" || got[1].UI.Title != "recovery" {
+		t.Errorf("loadTrees() = %d trees, want the two beside the binary in folder order", len(got))
+	}
+}
+
+func TestAReleaseHoldingABrokenTreeWillNotStart(t *testing.T) {
+	release := t.TempDir()
+	if err := os.Rename(tree(t, "title: T\nstages: [go]\n", nil), filepath.Join(release, "installer")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(tree(t, "title: T\n", nil), filepath.Join(release, "recovery")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := loadTrees(release); err == nil {
+		t.Fatal("a release with a tree that declares no stages was read as sound")
 	}
 }
 
@@ -142,7 +154,7 @@ func TestATreeWithNoCatalogsSpeaksTheRuntimesOwn(t *testing.T) {
 
 func TestATreesCatalogsAreLaidOverTheRuntimes(t *testing.T) {
 	sp := load(t, tree(t, "title: T\nstages: [go]\n", map[string]string{
-		"locales/de.yaml": "language: Deutsch\nmessages:\n  Back: Zurück\n",
+		"locales/de.po": "msgid \"Back\"\nmsgstr \"Zurück\"\n",
 	}))
 	sources := catalogs(sp)
 	if len(sources) != 2 {
@@ -154,24 +166,7 @@ func TestATreesCatalogsAreLaidOverTheRuntimes(t *testing.T) {
 	}
 }
 
-func TestAOneLineMessageIsQuotedAsAYamlKey(t *testing.T) {
-	if got := quoteYAML(`Back`); got != `"Back"` {
-		t.Errorf("quoteYAML() = %s, want \"Back\"", got)
-	}
-	if got := quoteYAML(`He said "no"`); got != `"He said \"no\""` {
-		t.Errorf("quoteYAML() = %s, want the quotes escaped", got)
-	}
-}
-
-func TestAMessageOverSeveralLinesBecomesABlockKey(t *testing.T) {
-	got := quoteYAML("First line.\n\nSecond line.\n")
-	want := "? |-\n    First line.\n\n    Second line.\n  "
-	if got != want {
-		t.Errorf("quoteYAML() = %q, want %q", got, want)
-	}
-}
-
-func TestTheCatalogOfATreeIsValidYamlEveryMessageCanBeReadBackFrom(t *testing.T) {
+func TestTheTemplateOfATreeHoldsEveryWordItSays(t *testing.T) {
 	dir := tree(t, `
 title: Installer
 stages: [go]
@@ -179,28 +174,29 @@ variables:
   - name: HOST
     title: Host name
     description: |
-      The name this machine has
-      on the network.
+      The name this machine has.
+
+      It is the one the network knows it by.
 `, nil)
 	out := captureStdout(t, func() {
 		if err := catalog(dir); err != nil {
 			t.Fatal(err)
 		}
 	})
-	c, err := i18n.Parse([]byte(out))
-	if err != nil {
-		t.Fatalf("the catalog is not readable yaml: %v\n%s", err, out)
+	if _, err := i18n.Parse([]byte(out)); err != nil {
+		t.Fatalf("the template is not readable po: %v\n%s", err, out)
 	}
-	for _, msg := range []string{"Installer", "Host name", "The name this machine has on the network."} {
-		if _, ok := c.Messages[msg]; !ok {
-			t.Errorf("the catalog has no entry for %q:\n%s", msg, out)
-		}
-	}
-	// A catalog is redirected into locales/<code>.yaml and then linted like any
-	// other yaml in this project, so it has to come out clean.
-	for i, line := range strings.Split(out, "\n") {
-		if line != strings.TrimRight(line, " \t") {
-			t.Errorf("line %d ends in whitespace, which the yaml linter refuses: %q", i+1, line)
+	for _, want := range []string{
+		`msgid "Installer"`,
+		`msgid "Host name"`,
+		// Paragraphs are written as lines, so a translator reads them as they
+		// will be read.
+		"msgid \"\"\n\"The name this machine has.\\n\"\n\"\\n\"\n\"It is the one the network knows it by.\"",
+		// And every one of them says where it was read.
+		"#: installer.yaml",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the template has no %q in it:\n%s", want, out)
 		}
 	}
 }

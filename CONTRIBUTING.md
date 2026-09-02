@@ -48,11 +48,11 @@ required check on `main` would block the very push that publishes the release.
 flowchart TD
     P["push"] --> C["check<br/><small>make check · race detector</small>"]
     P --> S["security<br/><small>govulncheck · gitleaks</small>"]
-    P --> B["build<br/><small>binary · release tree · tarball</small>"]
+    P --> B["build<br/><small>binary · release · tarball</small>"]
     C --> I
     S --> I
     B --> I["iso<br/><small>archiso, from the build's artefact</small>"]
-    I --> K["boot test<br/><small>qemu + OVMF, until the installer appears</small>"]
+    I --> K["boot test<br/><small>qemu + OVMF, until the first page appears</small>"]
     K --> M["promote<br/><small>fast-forward main · tag · release</small>"]
 
     style I stroke-dasharray: 4 4
@@ -64,9 +64,9 @@ flowchart TD
 | --- | --- | --- |
 | `check` | every branch | `make check`, then the tests again under the race detector |
 | `security` | every branch | vulnerabilities in the runtime's imports, and a scan for secrets in the tree |
-| `build` | every branch | the runtime binary, the release tree, the tarball — and unpacks the tarball to load the tree out of it |
-| `iso` | `dev`, `main`, on demand | the bootable image, out of the artefact `build` produced |
-| `boot test` | after `iso` | boots that image and waits for the installer's first page |
+| `build` | every branch | the runtime binary, the release, the tarball — and unpacks the tarball to load both trees out of it |
+| `iso` | `dev`, `main`, `neo`, on demand | the bootable image, out of the artefact `build` produced |
+| `boot test` | after `iso` | boots that image and waits for the first page |
 | `promote` | `dev` | fast-forwards `main`, tags, publishes, signs |
 
 The dashed jobs are the expensive ones. An archiso build is a quarter of an
@@ -74,28 +74,36 @@ hour, and a work in progress does not need an image — so a feature branch gets
 everything except those two, in about two minutes. To get an image from a
 branch, run the workflow on it by hand (Actions ▸ CI ▸ Run workflow).
 
-`build` is the only job that compiles anything. `iso` downloads what it made
-rather than making it again, and `promote` downloads what both of them made.
+`neo` is the exception: the rewrite living there changes the image itself, so it
+builds and boots one on every push. That line comes out of the workflow when the
+branch is gone.
+
+`build` is the only job that compiles anything, and the tarball is the only
+thing it hands on: `iso` unpacks that tarball instead of building again, so the
+image is filled with the very file the release page offers, and `promote`
+downloads what both of them made.
 
 ## Doing the work
 
 ```sh
 make check            # everything below, and what has to pass before a commit
 make -C runtime run   # the installer on this machine; TREE=../recovery for the other tree
+make build && release/archos   # the release as a machine runs it, both programs
 make tarball          # the release, as a stock Arch ISO downloads it
+make locales          # every translation template, and every catalog brought up to it
 make iso              # the release, as a bootable image
-make -C iso smoke     # boot the newest image and wait for the installer
+make -C iso smoke     # boot the newest image and wait for its first page
 make clean            # all of the above, taken back
 ```
 
-`make check` needs `go`, `shellcheck`, `shfmt`, `staticcheck`, `yamllint` and
-`actionlint`. `make iso` needs `archiso` and root; `make -C iso smoke` needs
-`qemu-base`, `edk2-ovmf`, `tesseract` and `tesseract-data-eng`. All of them are
-packages:
+`make check` needs `go`, `shellcheck`, `shfmt`, `staticcheck`, `yamllint`,
+`actionlint` and `gettext`. `make iso` needs `archiso` and root; `make -C iso
+smoke` needs `qemu-base`, `edk2-ovmf`, `tesseract` and `tesseract-data-eng`. All
+of them are packages:
 
 ```sh
 sudo pacman -S --needed go shellcheck shfmt staticcheck yamllint actionlint \
-    govulncheck gitleaks archiso qemu-base edk2-ovmf tesseract tesseract-data-eng
+    gettext govulncheck gitleaks archiso qemu-base edk2-ovmf tesseract tesseract-data-eng
 ```
 
 CI installs the same packages and runs the same commands, in an Arch container.
@@ -111,6 +119,25 @@ features, not for a new package.
 the layering, the task contract, what may and may not be edited on an installed
 system, and how everything here is written. It is meant for a coding agent, and
 it is the shortest way in for a person too.
+
+## Words on screen
+
+Every sentence the program shows is translatable, and the English sentence is
+its own key — so writing one is writing the source text and the key at once.
+Reword one and the old translation is marked fuzzy rather than dropped.
+
+The catalogs are gettext `.po` files and the templates they are filled in from
+are generated: the runtime's out of the Go sources, a tree's out of the loaded
+tree. Nothing keeps a list of translatable strings, which is why no list can
+fall behind.
+
+```sh
+make locales   # after adding, rewording or deleting anything on screen
+```
+
+`make check` refuses a template that is out of date and a translation that has
+lost a placeholder. [TRANSLATING.md](TRANSLATING.md) is the whole of it, and is
+written for whoever translates rather than for whoever builds.
 
 ## Commits
 

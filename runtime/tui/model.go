@@ -203,7 +203,7 @@ func (m *Model) View() string {
 	}
 
 	return renderFrame(m.width, m.height, chrome{
-		brand:   m.app.spec.Name(),
+		brand:   m.app.brand(),
 		status:  status,
 		alarm:   alarm,
 		mark:    m.indicator(),
@@ -229,7 +229,7 @@ func (m *Model) View() string {
 // asks is put in its place rather than on top of it — there is nothing behind it
 // to go back to.
 func (m *Model) exit() tea.Cmd {
-	if !m.app.spec.Leaves() {
+	if !m.app.leaves() {
 		return m.stopAndQuit()
 	}
 	if _, asking := m.top().(*leaveScreen); asking {

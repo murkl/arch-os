@@ -1,0 +1,775 @@
+# German translation of installer.
+# This file is distributed under the same license as the arch-os package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: installer\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. the name of this language in the language itself — "Deutsch", not
+#. "German". A list of languages is read by the people who speak them.
+msgid "English"
+msgstr "Deutsch"
+
+#. what this program is called
+#: installer.yaml
+msgid "Arch OS Installer"
+msgstr "Arch OS Installer"
+
+#. what it is, in one sentence, on the page that offers it
+#: installer.yaml
+msgid "Put Arch Linux on this machine."
+msgstr "Arch Linux auf diesen Rechner bringen."
+
+#. what one run of it is called
+#: installer.yaml
+msgid "Installation"
+msgstr "Installation"
+
+#. how to get back in, read on the way out to the console
+#: installer.yaml
+msgid "Type installer at the prompt to start it again."
+msgstr "Mit dem Befehl installer startest du ihn wieder."
+
+#. the last thing read before the first task runs
+#: installer.yaml
+msgid ""
+"Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.\n"
+"\n"
+"Everything on that disk will be erased. There is no undo, and nothing before this point has changed anything."
+msgstr ""
+"Arch Linux wird auf {{ARCH_OS_DISK}} als {{ARCH_OS_HOSTNAME}} installiert.\n"
+"\n"
+"Alles auf diesem Datenträger wird gelöscht. Das lässt sich nicht rückgängig machen, und bis zu diesem Punkt wurde nichts verändert."
+
+#. starting point system: the question
+#: installer.yaml
+msgid "Setup"
+msgstr "Einrichtung"
+
+#. starting point system: what it means
+#: installer.yaml
+msgid "Choose what kind of system to install. Every detail can still be changed afterwards."
+msgstr "Wähle, welche Art von System installiert werden soll. Jede Einzelheit lässt sich danach noch ändern."
+
+#. starting point system, desktop: the row
+#: installer.yaml
+msgid "Desktop"
+msgstr "Desktop"
+
+#. starting point system, desktop: what choosing it does
+#: installer.yaml
+msgid "A GNOME desktop with drivers, codecs, fonts and everyday applications."
+msgstr "Ein GNOME-Desktop mit Treibern, Codecs, Schriften und den Programmen für den Alltag."
+
+#. starting point system, minimal: the row
+#: installer.yaml
+msgid "Minimal"
+msgstr "Minimal"
+
+#. starting point system, minimal: what choosing it does
+#: installer.yaml
+msgid "Arch Linux on the console only — no desktop, no extras, nothing that was not asked for."
+msgstr "Arch Linux nur auf der Konsole — kein Desktop, keine Extras, nichts Ungefragtes."
+
+#. starting point system, shared: the row
+#: installer.yaml
+msgid "paste.rs - Online"
+msgstr "paste.rs - Online"
+
+#. starting point system, shared: what choosing it does
+#: installer.yaml
+msgid "Take every answer from a configuration that was shared at the end of an earlier installation."
+msgstr "Alle Antworten aus einer Konfiguration übernehmen, die am Ende einer früheren Installation geteilt wurde."
+
+#. ARCH_OS_LOCALE_LANG: the question
+#: installer.yaml
+msgid "Language and region"
+msgstr "Sprache und Region"
+
+#. ARCH_OS_LOCALE_LANG: what it means
+#: installer.yaml
+msgid "The language and country this system is set up for, as a locale code — de_DE is German as it is written in Germany. It settles the system language and the formats for dates, numbers and currency, and — left on auto — the keyboard, the console font, the time zone and the mirror country follow from it. English is always installed alongside it as a fallback."
+msgstr "Sprache und Land, für die dieses System eingerichtet wird, als Locale-Code — de_DE ist Deutsch, wie es in Deutschland geschrieben wird. Das legt die Sprache des Systems und die Formate für Datum, Zahlen und Währung fest; Tastatur, Konsolenschrift, Zeitzone und Spiegelserver-Land richten sich danach, solange sie auf auto stehen. Englisch wird immer zusätzlich als Rückfallebene installiert."
+
+#. ARCH_OS_LOCALE_LANG: the heading its row sits under
+#: installer.yaml
+msgid "Region"
+msgstr "Region"
+
+#. ARCH_OS_VCONSOLE_KEYMAP: the question
+#: installer.yaml
+msgid "Console keyboard"
+msgstr "Konsolentastatur"
+
+#. ARCH_OS_VCONSOLE_KEYMAP: what it means
+#: installer.yaml
+msgid "The keyboard you are typing on. It is loaded here and now, and it is what the new system uses on the text console. auto is the layout the system language is typed on, which is only settled further down."
+msgstr "Die Tastatur, auf der du gerade tippst. Sie wird sofort geladen und ist zugleich die Belegung der Textkonsole des neuen Systems. auto ist die Belegung, auf der die Systemsprache getippt wird — die weiter unten festgelegt wird."
+
+#. ARCH_OS_VCONSOLE_FONT: the question
+#: installer.yaml
+msgid "Console font"
+msgstr "Konsolenschrift"
+
+#. ARCH_OS_VCONSOLE_FONT: what it means
+#: installer.yaml
+msgid "The font of the text console. auto is the one that can draw the chosen language; a larger one helps on a high resolution screen."
+msgstr "Die Schrift der Textkonsole. auto ist die, die die gewählte Sprache darstellen kann; eine größere hilft auf einem hochauflösenden Bildschirm."
+
+#. ARCH_OS_VCONSOLE_FONT: the row that opens a box for an answer of one's
+#. own
+#: installer.yaml
+msgid "Type a font name"
+msgstr "Schriftnamen eingeben"
+
+#. ARCH_OS_TIMEZONE: the question
+#: installer.yaml
+msgid "Time zone"
+msgstr "Zeitzone"
+
+#. ARCH_OS_TIMEZONE: what it means
+#: installer.yaml
+msgid "Where this machine is, so the clock is right. The list opens on the zone the chosen country keeps — which is the only answer in a country that keeps one, and the one most of it lives in where there are several."
+msgstr "Wo dieser Rechner steht, damit die Uhr stimmt. Die Liste öffnet auf der Zeitzone des gewählten Landes — in einem Land mit nur einer ist das die Antwort, in einem mit mehreren die, in der die meisten leben."
+
+#. ARCH_OS_REFLECTOR_COUNTRY: the question
+#: installer.yaml
+msgid "Mirror country"
+msgstr "Spiegelserver-Land"
+
+#. ARCH_OS_REFLECTOR_COUNTRY: what it means
+#: installer.yaml
+msgid "Where package downloads are fetched from. auto is the country the chosen language belongs to; none ranks every mirror worldwide by speed, which is also what auto comes to where Arch has no mirror."
+msgstr "Woher Pakete geladen werden. auto ist das Land, zu dem die gewählte Sprache gehört; none sortiert weltweit alle Spiegelserver nach Geschwindigkeit — worauf auch auto hinausläuft, wo Arch keinen Spiegelserver hat."
+
+#. ARCH_OS_REFLECTOR_COUNTRY: the row that opens a box for an answer of
+#. one's own
+#: installer.yaml
+msgid "Type a country"
+msgstr "Land eingeben"
+
+#. ARCH_OS_USERNAME: the question
+#: installer.yaml
+msgid "User name"
+msgstr "Benutzername"
+
+#. ARCH_OS_USERNAME: what it means
+#: installer.yaml
+msgid "The account you will log in with. Lower case letters, digits, hyphen and underscore. It must not start with a digit."
+msgstr "Das Konto, mit dem du dich anmeldest. Kleinbuchstaben, Ziffern, Bindestrich und Unterstrich. Darf nicht mit einer Ziffer beginnen."
+
+#. ARCH_OS_USERNAME: the heading its row sits under
+#: installer.yaml
+msgid "Identity"
+msgstr "Identität"
+
+#. ARCH_OS_USERNAME: what a wrong answer is told
+#: installer.yaml
+msgid "Lower case letters, digits, hyphen and underscore only, at most 32 characters. It must not start with a digit."
+msgstr "Nur Kleinbuchstaben, Ziffern, Bindestrich und Unterstrich, höchstens 32 Zeichen. Darf nicht mit einer Ziffer beginnen."
+
+#. ARCH_OS_PASSWORD: the question
+#: installer.yaml
+msgid "Password"
+msgstr "Passwort"
+
+#. ARCH_OS_PASSWORD: what it means
+#: installer.yaml
+msgid "Used for your account, for the root account, and — where disk encryption is on — to unlock the disk at boot. It is asked for immediately before the installation starts and is never written to a file."
+msgstr "Gilt für dein Konto, für das Konto root und — bei aktiver Verschlüsselung — zum Entsperren des Datenträgers beim Start. Es wird unmittelbar vor der Installation abgefragt und nie in eine Datei geschrieben."
+
+#. ARCH_OS_HOSTNAME: the question
+#: installer.yaml
+msgid "Host name"
+msgstr "Rechnername"
+
+#. ARCH_OS_HOSTNAME: what it means
+#: installer.yaml
+msgid "The name this machine has on the network."
+msgstr "Der Name, unter dem dieser Rechner im Netzwerk erscheint."
+
+#. ARCH_OS_HOSTNAME: what a wrong answer is told
+#: installer.yaml
+msgid "Lower case letters, digits and hyphen only, at most 63 characters. It must not start or end with a hyphen."
+msgstr "Nur Kleinbuchstaben, Ziffern und Bindestrich, höchstens 63 Zeichen. Darf nicht mit einem Bindestrich beginnen oder enden."
+
+#. ARCH_OS_DISK: the question
+#: installer.yaml
+msgid "Disk"
+msgstr "Datenträger"
+
+#. ARCH_OS_DISK: what it means
+#: installer.yaml
+msgid "The disk Arch Linux is installed on. Unless dual boot is switched on, everything on it is erased."
+msgstr "Der Datenträger, auf dem Arch Linux installiert wird. Ohne Dual-Boot wird alles darauf gelöscht."
+
+#. ARCH_OS_DISK: the heading its row sits under
+#: installer.yaml
+msgid "Storage"
+msgstr "Speicher"
+
+#. ARCH_OS_DISK: what a wrong answer is told
+#: installer.yaml
+msgid "Choose a disk that exists."
+msgstr "Wähle einen vorhandenen Datenträger."
+
+#. ARCH_OS_FILESYSTEM: the question
+#: installer.yaml
+msgid "File system"
+msgstr "Dateisystem"
+
+#. ARCH_OS_FILESYSTEM: what it means
+#: installer.yaml
+msgid "btrfs supports snapshots, so a system update can be rolled back. ext4 is simpler and does not."
+msgstr "btrfs beherrscht Schnappschüsse, ein Update lässt sich damit zurücknehmen. ext4 ist einfacher und kann das nicht."
+
+#. ARCH_OS_ENCRYPTION_ENABLED: the question
+#: installer.yaml
+msgid "Disk encryption"
+msgstr "Verschlüsselung"
+
+#. ARCH_OS_ENCRYPTION_ENABLED: what it means
+#: installer.yaml
+msgid "Encrypts the whole system with your password, so the data cannot be read by taking the disk out. The password is then asked for at every boot."
+msgstr "Verschlüsselt das gesamte System mit deinem Passwort, sodass die Daten durch Ausbau des Datenträgers nicht lesbar sind. Das Passwort wird dann bei jedem Start abgefragt."
+
+#. ARCH_OS_BTRFS_SNAPPER_ENABLED: the question
+#: installer.yaml
+msgid "Snapshots"
+msgstr "Schnappschüsse"
+
+#. ARCH_OS_BTRFS_SNAPPER_ENABLED: what it means
+#: installer.yaml
+msgid "Takes a snapshot before every package transaction and cleans up old ones on a timer, so a bad update can be undone."
+msgstr "Legt vor jeder Paketänderung einen Schnappschuss an und räumt alte automatisch auf, sodass sich ein misslungenes Update zurücknehmen lässt."
+
+#. ARCH_OS_BTRFS_ASSISTANT_ENABLED: the question
+#: installer.yaml
+msgid "Snapshot manager"
+msgstr "Schnappschuss-Verwaltung"
+
+#. ARCH_OS_BTRFS_ASSISTANT_ENABLED: what it means
+#: installer.yaml
+msgid "A desktop application for browsing and restoring snapshots."
+msgstr "Ein Desktop-Programm zum Durchsehen und Wiederherstellen von Schnappschüssen."
+
+#. ARCH_OS_DUAL_BOOT_ENABLED: the question
+#: installer.yaml
+msgid "Dual boot"
+msgstr "Dual-Boot"
+
+#. ARCH_OS_DUAL_BOOT_ENABLED: what it means
+#: installer.yaml
+msgid "Install alongside a system that is already on this disk: nothing is partitioned or erased, the existing EFI partition is reused, and only a boot entry is added. You then have to name the two partitions yourself."
+msgstr "Neben einem System installieren, das schon auf diesem Datenträger liegt: es wird nicht partitioniert und nichts gelöscht, die vorhandene EFI-Partition wird weiterverwendet und nur ein Starteintrag ergänzt. Die beiden Partitionen musst du dann selbst angeben."
+
+#. ARCH_OS_BOOT_PARTITION: the question
+#: installer.yaml
+msgid "Boot partition"
+msgstr "Boot-Partition"
+
+#. ARCH_OS_BOOT_PARTITION: what it means
+#: installer.yaml
+msgid "The existing EFI partition to add a boot entry to. It is not formatted."
+msgstr "Die vorhandene EFI-Partition, die einen Starteintrag bekommt. Sie wird nicht formatiert."
+
+#. ARCH_OS_ROOT_PARTITION: the question
+#: installer.yaml
+msgid "Root partition"
+msgstr "System-Partition"
+
+#. ARCH_OS_ROOT_PARTITION: what it means
+#: installer.yaml
+msgid "The partition Arch Linux is installed into. It is formatted and everything on it is lost."
+msgstr "Die Partition, in die Arch Linux installiert wird. Sie wird formatiert, alles darauf geht verloren."
+
+#. ARCH_OS_BOOTLOADER: the question
+#: installer.yaml
+msgid "Boot loader"
+msgstr "Bootloader"
+
+#. ARCH_OS_BOOTLOADER: what it means
+#: installer.yaml
+msgid "systemd-boot is small and needs no maintenance. GRUB can show a menu of btrfs snapshots to boot into."
+msgstr "systemd-boot ist klein und wartungsfrei. GRUB kann ein Menü mit btrfs-Schnappschüssen zum Starten anzeigen."
+
+#. ARCH_OS_BOOTLOADER: the heading its row sits under
+#: installer.yaml
+msgid "Boot"
+msgstr "Start"
+
+#. ARCH_OS_SECURE_BOOT_ENABLED: the question
+#: installer.yaml
+msgid "Secure Boot"
+msgstr "Secure Boot"
+
+#. ARCH_OS_SECURE_BOOT_ENABLED: what it means
+#: installer.yaml
+msgid "Signs the kernel and the boot loader with keys made for this machine, so the firmware starts nothing else. Where the firmware is in setup mode the keys are enrolled straight away and Secure Boot only has to be switched on there afterwards; otherwise everything is signed and enrolling is left to you."
+msgstr "Signiert Kernel und Bootloader mit Schlüsseln, die für diesen Rechner erzeugt werden, sodass die Firmware nichts anderes startet. Steht die Firmware im Setup-Modus, werden die Schlüssel gleich hinterlegt und Secure Boot muss dort anschließend nur noch eingeschaltet werden; sonst ist alles signiert und das Hinterlegen bleibt dir überlassen."
+
+#. ARCH_OS_KERNEL: the question
+#: installer.yaml
+msgid "Kernel"
+msgstr "Kernel"
+
+#. ARCH_OS_KERNEL: what it means
+#: installer.yaml
+msgid "linux-zen is tuned for desktop responsiveness. linux is the stock kernel, linux-lts a long-term one, linux-hardened a security-focused one."
+msgstr "linux-zen ist auf einen reaktionsschnellen Desktop abgestimmt. linux ist der Standardkernel, linux-lts der langfristig gepflegte, linux-hardened der sicherheitsgehärtete."
+
+#. ARCH_OS_KERNEL_ARGS: the question
+#: installer.yaml
+msgid "Kernel parameters"
+msgstr "Kernel-Parameter"
+
+#. ARCH_OS_KERNEL_ARGS: what it means
+#: installer.yaml
+msgid "Extra parameters passed to the kernel at boot, separated by spaces. Leave empty unless you know you need one."
+msgstr "Zusätzliche Parameter, die dem Kernel beim Start übergeben werden, durch Leerzeichen getrennt. Leer lassen, solange du keinen brauchst."
+
+#. ARCH_OS_KERNEL_ARGS: what a wrong answer is told
+#: installer.yaml
+msgid "The characters comma, ampersand and backslash cannot be used here."
+msgstr "Die Zeichen Komma, Und-Zeichen und Backslash sind hier nicht möglich."
+
+#. ARCH_OS_MICROCODE: the question
+#: installer.yaml
+msgid "Processor firmware"
+msgstr "Prozessor-Firmware"
+
+#. ARCH_OS_MICROCODE: what it means
+#: installer.yaml
+msgid "Firmware updates loaded at boot. auto is whatever this processor turns out to be — which is the answer on every machine that is not being prepared for a different one."
+msgstr "Firmware-Aktualisierungen, die beim Start geladen werden. auto ist das, was dieser Prozessor tatsächlich ist — also die Antwort auf jedem Rechner, der nicht für einen anderen vorbereitet wird."
+
+#. ARCH_OS_DESKTOP: what it means
+#: installer.yaml
+msgid "gnome installs the GNOME desktop. none leaves the system on a text console, with nothing graphical installed at all."
+msgstr "gnome installiert den GNOME-Desktop. none belässt das System bei einer Textkonsole, ohne dass etwas Grafisches installiert wird."
+
+#. ARCH_OS_DESKTOP_GRAPHICS_DRIVER: the question
+#: installer.yaml
+msgid "Graphics driver"
+msgstr "Grafiktreiber"
+
+#. ARCH_OS_DESKTOP_GRAPHICS_DRIVER: what it means
+#: installer.yaml
+msgid "mesa is the open driver and fits almost every machine. Pick one matching your card only if you know you need it."
+msgstr "mesa ist der offene Treiber und passt auf fast jeden Rechner. Wähle nur dann einen zu deiner Karte passenden, wenn du weißt, dass du ihn brauchst."
+
+#. ARCH_OS_DESKTOP_KEYBOARD_LAYOUT: the question
+#: installer.yaml
+msgid "Desktop keyboard"
+msgstr "Desktop-Tastatur"
+
+#. ARCH_OS_DESKTOP_KEYBOARD_LAYOUT: what it means
+#: installer.yaml
+msgid "The keyboard layout the desktop starts with. auto is the same choice as the console keyboard, in the names the desktop uses for it — de-latin1 and de are one layout."
+msgstr "Die Tastaturbelegung, mit der der Desktop startet. auto ist dieselbe Wahl wie bei der Konsolentastatur, nur in den Namen des Desktops — de-latin1 und de sind eine Belegung."
+
+#. ARCH_OS_DESKTOP_KEYBOARD_VARIANT: the question
+#: installer.yaml
+msgid "Keyboard variant"
+msgstr "Tastaturvariante"
+
+#. ARCH_OS_DESKTOP_KEYBOARD_VARIANT: what it means
+#: installer.yaml
+msgid "A variation of that layout — dead keys, a different punctuation arrangement. none is the standard one."
+msgstr "Eine Abwandlung dieser Belegung — tote Tasten, eine andere Anordnung der Satzzeichen. none ist die Standardvariante."
+
+#. ARCH_OS_DESKTOP_KEYBOARD_MODEL: the question
+#: installer.yaml
+msgid "Keyboard model"
+msgstr "Tastaturmodell"
+
+#. ARCH_OS_DESKTOP_KEYBOARD_MODEL: what it means
+#: installer.yaml
+msgid "The physical shape of the keyboard. pc105 fits almost every keyboard sold."
+msgstr "Die Bauform der Tastatur. pc105 passt auf fast jede erhältliche Tastatur."
+
+#. ARCH_OS_DESKTOP_EXTRAS_ENABLED: the question
+#: installer.yaml
+msgid "Desktop extras"
+msgstr "Desktop-Extras"
+
+#. ARCH_OS_DESKTOP_EXTRAS_ENABLED: what it means
+#: installer.yaml
+msgid "Codecs, fonts, printing, network protocols, development tools and the applications that make the desktop usable straight away."
+msgstr "Codecs, Schriften, Druck, Netzwerkprotokolle, Entwicklungswerkzeuge und die Programme, die den Desktop sofort brauchbar machen."
+
+#. ARCH_OS_DESKTOP_SLIM_ENABLED: the question
+#: installer.yaml
+msgid "Slim desktop"
+msgstr "Schlanker Desktop"
+
+#. ARCH_OS_DESKTOP_SLIM_ENABLED: what it means
+#: installer.yaml
+msgid "Removes the GNOME applications that come with the desktop and are rarely used."
+msgstr "Entfernt die GNOME-Programme, die mit dem Desktop kommen und selten benutzt werden."
+
+#. ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED: the question
+#: installer.yaml
+msgid "Log in automatically"
+msgstr "Automatisch anmelden"
+
+#. ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED: what it means
+#: installer.yaml
+msgid "Skips the login screen. auto follows disk encryption: with the disk already unlocked by a password at boot, a second one at login adds nothing — and without encryption the login screen is the only thing standing there."
+msgstr "Überspringt die Anmeldemaske. auto folgt der Verschlüsselung: ist der Datenträger beim Start schon per Passwort entsperrt, bringt ein zweites bei der Anmeldung nichts — und ohne Verschlüsselung ist die Anmeldemaske das Einzige, was überhaupt davorsteht."
+
+#. ARCH_OS_SAMBA_SHARE_ENABLED: the question
+#: installer.yaml
+msgid "File sharing"
+msgstr "Dateifreigabe"
+
+#. ARCH_OS_SAMBA_SHARE_ENABLED: what it means
+#: installer.yaml
+msgid "Shares your home folder and a public folder on the local network, readable by Windows and macOS."
+msgstr "Gibt dein Benutzerverzeichnis und einen öffentlichen Ordner im lokalen Netz frei, lesbar von Windows und macOS."
+
+#. ARCH_OS_CORE_TWEAKS_ENABLED: the question
+#: installer.yaml
+msgid "System tweaks"
+msgstr "System-Feinschliff"
+
+#. ARCH_OS_CORE_TWEAKS_ENABLED: what it means
+#: installer.yaml
+msgid "Small adjustments that do not change what is installed: parallel package downloads, a quieter boot, password feedback in the terminal."
+msgstr "Kleine Anpassungen, die nichts an den installierten Paketen ändern: parallele Downloads, ein ruhigerer Start, Rückmeldung bei der Passworteingabe im Terminal."
+
+#. ARCH_OS_CORE_TWEAKS_ENABLED: the heading its row sits under
+#: installer.yaml
+msgid "System"
+msgstr "System"
+
+#. ARCH_OS_BOOTSPLASH_ENABLED: the question
+#: installer.yaml
+msgid "Boot splash"
+msgstr "Startbildschirm"
+
+#. ARCH_OS_BOOTSPLASH_ENABLED: what it means
+#: installer.yaml
+msgid "Shows a logo while the system starts instead of a wall of text."
+msgstr "Zeigt beim Start ein Logo statt einer Textwand."
+
+#. ARCH_OS_MULTILIB_ENABLED: the question
+#: installer.yaml
+msgid "32-bit support"
+msgstr "32-Bit-Unterstützung"
+
+#. ARCH_OS_MULTILIB_ENABLED: what it means
+#: installer.yaml
+msgid "Needed by Steam, Wine and other software that is still 32-bit."
+msgstr "Wird von Steam, Wine und anderer Software gebraucht, die noch 32-bittig ist."
+
+#. ARCH_OS_AUR_HELPER: the question
+#: installer.yaml
+msgid "AUR helper"
+msgstr "AUR-Helfer"
+
+#. ARCH_OS_AUR_HELPER: what it means
+#: installer.yaml
+msgid "Installs software from the Arch User Repository as easily as from the official one."
+msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen."
+
+#. ARCH_OS_HOUSEKEEPING_ENABLED: the question
+#: installer.yaml
+msgid "Housekeeping"
+msgstr "Systempflege"
+
+#. ARCH_OS_HOUSEKEEPING_ENABLED: what it means
+#: installer.yaml
+msgid "Timers that keep the system tidy on their own: mirrors ranked weekly, the package cache trimmed, disk health watched."
+msgstr "Zeitgesteuerte Aufgaben, die das System von selbst in Ordnung halten: Spiegelserver werden wöchentlich sortiert, der Paketzwischenspeicher geleert, die Laufwerksgesundheit überwacht."
+
+#. ARCH_OS_SHELL_ENHANCEMENT_ENABLED: the question
+#: installer.yaml
+msgid "Shell enhancement"
+msgstr "Bessere Shell"
+
+#. ARCH_OS_SHELL_ENHANCEMENT_ENABLED: what it means
+#: installer.yaml
+msgid "A better terminal out of the box: a prompt showing git state, colourful listings, fuzzy search, useful aliases."
+msgstr "Ein besseres Terminal ohne Nacharbeit: eine Eingabezeile mit Git-Status, farbige Auflistungen, unscharfe Suche, sinnvolle Kurzbefehle."
+
+#. ARCH_OS_SHELL_ENHANCEMENT_SHELL: the question
+#: installer.yaml
+msgid "Shell"
+msgstr "Shell"
+
+#. ARCH_OS_SHELL_ENHANCEMENT_SHELL: what it means
+#: installer.yaml
+msgid "bash is always set up; zsh or fish add completion and suggestions as you type and become the shell that opens instead."
+msgstr "bash wird immer eingerichtet; zsh oder fish ergänzen Vervollständigung und Vorschläge beim Tippen und werden zur Shell, die stattdessen geöffnet wird."
+
+#. ARCH_OS_MANAGER_ENABLED: the question
+#: installer.yaml
+msgid "Arch OS Manager"
+msgstr "Arch OS Manager"
+
+#. ARCH_OS_MANAGER_ENABLED: what it means
+#: installer.yaml
+msgid "A menu for updating, cleaning up and repairing the system after installation."
+msgstr "Ein Menü zum Aktualisieren, Aufräumen und Reparieren des Systems nach der Installation."
+
+#. ARCH_OS_VM_SUPPORT_ENABLED: the question
+#: installer.yaml
+msgid "Virtual machine support"
+msgstr "Unterstützung für virtuelle Maschinen"
+
+#. ARCH_OS_VM_SUPPORT_ENABLED: what it means
+#: installer.yaml
+msgid "Installs guest tools when this is running inside a virtual machine, so the screen resizes and the clipboard is shared. Does nothing on real hardware."
+msgstr "Installiert Gasterweiterungen, wenn das hier in einer virtuellen Maschine läuft, damit sich der Bildschirm anpasst und die Zwischenablage geteilt wird. Auf echter Hardware passiert nichts."
+
+#. ARCH_OS_ECN_ENABLED: the question
+#: installer.yaml
+msgid "Explicit congestion notification"
+msgstr "ECN-Überlastungsanzeige"
+
+#. ARCH_OS_ECN_ENABLED: what it means
+#: installer.yaml
+msgid "Leave on. Turning it off helps only behind old routers that drop connections which use it."
+msgstr "Eingeschaltet lassen. Ausschalten hilft nur hinter alten Routern, die Verbindungen damit abbrechen."
+
+#. ARCH_OS_CONFIG_URL: the question
+#: installer.yaml
+msgid "Shared at"
+msgstr "Geteilt unter"
+
+#. ARCH_OS_CONFIG_URL: what it means
+#: installer.yaml
+msgid "Where this installation's answers ended up. Nothing is uploaded until the offer at the end of the run has been accepted; the installation then answers this one itself and shows it as a code to scan."
+msgstr "Wo die Antworten dieser Installation gelandet sind. Hochgeladen wird nichts, bevor das Angebot am Ende des Laufs angenommen wurde; danach gibt die Installation diese Antwort selbst und zeigt sie als Code zum Abscannen."
+
+#. ARCH_OS_CONFIG_SOURCE: the question
+#: installer.yaml
+msgid "Configuration code"
+msgstr "Konfigurations-Code"
+
+#. ARCH_OS_CONFIG_SOURCE: what it means
+#: installer.yaml
+msgid "The code of a configuration somebody shared: the short word at the end of a paste.rs address, or the whole address pasted in. Every answer kept there becomes an answer here, and every one of them can still be changed afterwards."
+msgstr "Der Code einer geteilten Konfiguration: das kurze Wort am Ende einer paste.rs-Adresse — oder die ganze Adresse, eingefügt. Jede dort hinterlegte Antwort wird hier zur Antwort, und jede davon lässt sich danach noch ändern."
+
+#. ARCH_OS_CONFIG_SOURCE: what a wrong answer is told
+#: installer.yaml
+msgid "A code such as aBc12, or the whole address it sits at."
+msgstr "Ein Code wie aBc12 — oder die vollständige Adresse dazu."
+
+#. the step, as the run lists it
+#: tasks/init/task.yaml
+msgid "Prepare the installation"
+msgstr "Installation vorbereiten"
+
+#. the step, as the run lists it
+#: tasks/prepare-disk/task.yaml
+msgid "Set up the disk"
+msgstr "Datenträger einrichten"
+
+#. the step, as the run lists it
+#: tasks/pacstrap-core/task.yaml
+msgid "Install the base system"
+msgstr "Basissystem installieren"
+
+#. the step, as the run lists it
+#: tasks/configure-system/task.yaml
+msgid "Configure the system"
+msgstr "System konfigurieren"
+
+#. the step, as the run lists it
+#: tasks/core-tweaks/task.yaml
+msgid "Apply the core tweaks"
+msgstr "Systemfeinschliff anwenden"
+
+#. the step, as the run lists it
+#: tasks/initramfs/task.yaml
+msgid "Build the initial ram disk"
+msgstr "Initiale Ramdisk bauen"
+
+#. the step, as the run lists it
+#: tasks/user-account/task.yaml
+msgid "Create your account"
+msgstr "Benutzerkonto anlegen"
+
+#. the step, as the run lists it
+#: tasks/services/task.yaml
+msgid "Switch on the system services"
+msgstr "Systemdienste einschalten"
+
+#. the step, as the run lists it
+#: tasks/snapper/task.yaml
+msgid "Set up snapshots"
+msgstr "Schnappschüsse einrichten"
+
+#. the step, as the run lists it
+#: tasks/bootloader/task.yaml
+msgid "Install the boot loader"
+msgstr "Bootloader installieren"
+
+#. the step, as the run lists it
+#: tasks/enable-multilib/task.yaml
+msgid "Enable 32-bit support"
+msgstr "32-Bit-Unterstützung einschalten"
+
+#. the step, as the run lists it
+#: tasks/aur-helper/task.yaml
+msgid "Install the AUR helper"
+msgstr "AUR-Helfer installieren"
+
+#. the step, as the run lists it
+#: tasks/bootsplash/task.yaml
+msgid "Install the boot splash"
+msgstr "Startbildschirm installieren"
+
+#. the step, as the run lists it
+#: tasks/housekeeping/task.yaml
+msgid "Set up housekeeping"
+msgstr "Systempflege einrichten"
+
+#. the step, as the run lists it
+#: tasks/shell-enhancement/task.yaml
+msgid "Enhance the shell"
+msgstr "Shell verbessern"
+
+#. the step, as the run lists it
+#: tasks/vm-support/task.yaml
+msgid "Add virtual machine support"
+msgstr "Unterstützung für virtuelle Maschinen ergänzen"
+
+#. the step, as the run lists it
+#: tasks/desktop-gnome/task.yaml
+msgid "Install the GNOME desktop"
+msgstr "GNOME-Desktop installieren"
+
+#. the step, as the run lists it
+#: tasks/graphics-driver/task.yaml
+msgid "Install the graphics driver"
+msgstr "Grafiktreiber installieren"
+
+#. the step, as the run lists it
+#: tasks/manager/task.yaml
+msgid "Install Arch OS Manager"
+msgstr "Arch OS Manager installieren"
+
+#. the step, as the run lists it
+#: tasks/samba/task.yaml
+msgid "Share files with other machines"
+msgstr "Dateifreigabe einrichten"
+
+#. the step, as the run lists it
+#: tasks/first-login/task.yaml
+msgid "Prepare the first login"
+msgstr "Erste Anmeldung vorbereiten"
+
+#. the step, as the run lists it
+#: tasks/snapshot-hook/task.yaml
+msgid "Snapshot on every update"
+msgstr "Schnappschuss vor jedem Update"
+
+#. the step, as the run lists it
+#: tasks/tidy-up/task.yaml
+msgid "Tidy up"
+msgstr "Aufräumen"
+
+#. the step, as the run lists it
+#: tasks/secure-boot/task.yaml
+msgid "Sign the boot chain"
+msgstr "Boot-Kette signieren"
+
+#. the step, as the run lists it
+#: tasks/copy-config/task.yaml
+msgid "Keep a copy of this installation"
+msgstr "Kopie dieser Installation ablegen"
+
+#. read once the step is done, and held on until somebody has
+#: tasks/copy-config/task.yaml
+msgid ""
+"Arch OS is installed\n"
+"\n"
+"{{ARCH_OS_HOSTNAME}} is on {{ARCH_OS_DISK}} and ready to start. Everything from here on is offered rather than needed."
+msgstr ""
+"Arch OS ist installiert\n"
+"\n"
+"{{ARCH_OS_HOSTNAME}} liegt auf {{ARCH_OS_DISK}} und ist startbereit. Alles Weitere ist optional."
+
+#. the step, as the run lists it
+#: tasks/share-config/task.yaml
+msgid "Share this configuration"
+msgstr "Diese Konfiguration teilen"
+
+#. asked before the step runs
+#: tasks/share-config/task.yaml
+msgid ""
+"Put these answers online now?\n"
+"\n"
+"Every answer of this installation goes to paste.rs, and its address comes back as a code to scan — enough to set another machine up exactly like this one. Anybody holding that address can read them. The password is not among them and was never written down anywhere."
+msgstr ""
+"Diese Antworten jetzt online ablegen?\n"
+"\n"
+"Jede Antwort dieser Installation geht zu paste.rs, und ihre Adresse kommt als Code zum Abscannen zurück — genug, um einen weiteren Rechner genau wie diesen einzurichten. Wer diese Adresse hat, kann sie alle lesen. Das Passwort ist nicht dabei und wurde nirgends gespeichert."
+
+#. read once the step is done, and held on until somebody has
+#: tasks/share-config/task.yaml
+msgid ""
+"Configuration shared\n"
+"\n"
+"Scan the code, or type the word at the end of the address into the paste.rs starting point of another installation."
+msgstr ""
+"Konfiguration geteilt\n"
+"\n"
+"Scanne den Code — oder tippe das Wort am Ende der Adresse beim paste.rs-Startpunkt einer weiteren Installation ein."
+
+#. the step, as the run lists it
+#: tasks/chroot/task.yaml
+msgid "Enter the new system"
+msgstr "In das neue System wechseln"
+
+#. asked before the step runs
+#: tasks/chroot/task.yaml
+msgid ""
+"Open a shell inside the system that was just installed?\n"
+"\n"
+"Everything is still mounted, so this is the moment to look around or fix something by hand. Leave it again with `exit`."
+msgstr ""
+"Eine Shell im soeben installierten System öffnen?\n"
+"\n"
+"Es ist noch alles eingehängt — der richtige Moment, um sich umzusehen oder von Hand etwas zu richten. Mit `exit` geht es zurück."
+
+#. the step, as the run lists it
+#: tasks/reboot/task.yaml
+msgid "Restart into the new system"
+msgstr "In das neue System neu starten"
+
+#. asked before the step runs
+#: tasks/reboot/task.yaml
+msgid ""
+"Restart into {{ARCH_OS_HOSTNAME}} now?\n"
+"\n"
+"Everything is unmounted first. Remove the installation medium once the screen goes blank."
+msgstr ""
+"Jetzt in {{ARCH_OS_HOSTNAME}} neu starten?\n"
+"\n"
+"Vorher wird alles ausgehängt. Nimm das Installationsmedium heraus, sobald der Bildschirm schwarz wird."
+
+#. the step, as the run lists it
+#: tasks/unmount/task.yaml
+msgid "Unmount everything"
+msgstr "Alles aushängen"
+
+#. asked before the step runs
+#: tasks/unmount/task.yaml
+msgid ""
+"Unmount the new system and stay in the live environment?\n"
+"\n"
+"Nothing is lost either way — the installation is finished. Leaving it mounted is only useful if you want to keep working on it from here."
+msgstr ""
+"Das neue System aushängen und in der Live-Umgebung bleiben?\n"
+"\n"
+"Verloren geht so oder so nichts, die Installation ist fertig. Eingehängt zu lassen lohnt nur, wenn du von hier aus weiterarbeiten willst."

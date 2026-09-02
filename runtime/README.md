@@ -1,7 +1,9 @@
-# installer — a runtime for an installer that lives beside it
+# runtime — the program the trees beside it are run by
 
 A single Go binary that draws an interface, asks questions, keeps the answers
-and runs shell in order, reporting exactly where it broke.
+and runs shell in order, reporting exactly where it broke. It is built as
+`installer-linux-amd64` and a release ships it under whatever name that release
+goes by — `archos`, in this one.
 
 It installs nothing, and it knows nothing about Arch Linux, disks, packages or
 desktops — there is not one of those words in the source. What is asked, what
@@ -9,11 +11,11 @@ the answers mean and what the shell does is **one yaml and the folders beside
 it**. Started without one, the binary says so and stops.
 
 ```
-installer                     # runs the tree beside the binary
-installer -check              # loads it, reports what it holds, changes nothing
-installer -strings            # prints an empty translation catalog for it
-installer -dir /path/to/tree  # runs that one instead (for development and CI)
-installer -version
+archos                     # runs the tree beside the binary, or asks which of several
+archos -check              # loads them, reports what they hold, changes nothing
+archos -strings            # prints the translation template for one tree
+archos -dir /path/to/tree  # runs that one and asks nothing
+archos -version
 ```
 
 ## The tree
@@ -27,7 +29,7 @@ tasks/<id>/task.yaml     where that unit belongs
 tasks/<id>/task.sh       what it does
 hooks/<name>.sh          everything around the installation itself, one script per hook
 lib.sh                   sourced before every script of this tree
-locales/<code>.yaml      one catalog per language it speaks
+locales/<code>.po        one catalog per language it speaks, beside the template it is filled in from
 ```
 
 The declaration is **the one `.yaml` file in the folder's top level**, whatever
@@ -37,13 +39,36 @@ two of them in one folder is refused rather than resolved. The answer file and
 the log are named after it too, so `recovery.yaml` answers into `recovery.conf`
 and logs into `recovery.log`.
 
-The binary looks for a tree **next to itself** and nowhere else, so a release is
-one folder holding the program and everything it runs.
+### A release is a binary and the trees beside it
+
+The binary looks **next to itself** and nowhere else. What it finds there is
+either a tree, or a folder of them:
+
+```
+archos          the binary
+installer/      one program — installer.yaml and the folders beside it
+recovery/       another — recovery.yaml and its own
+```
+
+Several is a question, and it is the first page of the program: each tree's own
+`title` and `description`, in the order the folders are named. One is no
+question at all and is opened on the way in. Nothing about a tree is read from
+the outside — the folder names decide the order and nothing else.
+
+Until one is chosen the frame is dressed by the first of them: the trees of one
+release are one product, one wordmark and one colour. From the moment one is
+opened, everything — the answers, the log, the words on screen — is that tree's.
+
+`-dir` names one tree outright and skips the question, which is what the
+`installer` and `recovery` commands on the ISO are.
 
 ### The declaration
 
 ```yaml
 title: Arch OS Installer
+description: Put Arch Linux on this machine.   # its row on the page that asks which program
+run: Installation        # what one run of it is called
+
 accent: "#1793d1"        # the one colour the interface is built from
 logo: |                  # everything above the blank line is a dim eyebrow
   Arch Linux
@@ -58,8 +83,6 @@ confirm: |               # the last thing read before anything changes
   Arch Linux will be installed on {{ARCH_OS_DISK}}.
 
 console: Type installer to start it again.   # optional: read on the way out
-
-modes: …                 # optional: the several things this tree can do
 
 presets:                 # pages of starting points, offered on a machine with no answers
   - id: system
@@ -91,53 +114,12 @@ variables:
 `confirm` is filled in from the answers, so it names the disk it is about rather
 than warning in the abstract.
 
-### `modes:`
-
-A tree that does more than one thing says so, and the program asks which before
-anything follows from it. An installer that can also repair what it installed is
-not one program with a switch in it: the two ask different questions and are
-dangerous in different ways.
-
-```yaml
-modes:
-  - id: install
-    title: Installation                      # the row, and what the run is called
-    description: Put Arch Linux on this machine.
-    confirm: |                               # this mode's own last warning
-      Arch Linux will be installed on {{ARCH_OS_DISK}}.
-    stages: [prepare, disk, base, finish]    # this mode's own phases
-
-  - id: recovery
-    title: Recovery
-    description: Repair a system that is already on a disk.
-    confirm: |
-      The system on {{ARCH_OS_RECOVERY_DISK}} will be opened.
-    stages: [open, repair, close]
-```
-
-`stages` and `confirm` then belong to a mode, and declaring them in both places
-is refused. A tree that declares no modes keeps them at the top level and has
-exactly one, unnamed.
-
-**A task says which mode it is in by naming a stage**, which it did anyway; no
-two modes may claim the same stage. A **variable** or a **preset** says so with
-`mode:`, and one that names none belongs to every mode — which is what the
-questions asked before the fork want:
-
-```yaml
-- name: ARCH_OS_RECOVERY_DISK
-  title: Disk
-  mode: recovery
-```
-
-The answer reaches every script as `INSTALLER_MODE`, so a hook that has to
-differ between them reads it there.
-
-Two trees beside each other are the other way to do this, and the one this
-repository takes: the installer and the recovery are separate folders, run by
-the same binary with `-dir`. Each declares a single mode — not to be chosen
-between, but for its **name**: an unnamed run is an installation as far as the
-runtime is concerned, which is right for one of them and wrong for the other.
+`description` and `run` are two different things and a tree needs both once a
+release holds several: one is what the program *is*, read on the page that asks
+which to open; the other is what one *run* of it is called, read wherever the
+interface says what is happening — the row that starts it, the last warning, the
+clock while it runs. A tree that names no run is an installation as far as the
+runtime is concerned, which is right for one kind of tree and wrong for the rest.
 
 ### `hooks/`
 
@@ -239,7 +221,7 @@ Decided by the declaration rather than by a switch:
 Further fields: `default` (any scalar — `true`, `8`, `pc105`), `prefill` (shell
 printing a suggestion), `apply` (shell run when the answer takes effect), `first`
 (asked before everything else), `free` (a row under a list that opens a text
-box), `mode`, and `conditions`.
+box), and `conditions`.
 
 `true` and `false` are read out loud as Yes and No wherever they turn up, so
 `values: [auto, true, false]` is a bool with a third answer beside it.
@@ -303,15 +285,17 @@ into a file.
 
 In this order, and each page shown only if there is something on it:
 
+- **What to do**, if there is more than one tree beside the binary. Everything
+  after it belongs to whichever was chosen.
 - **Language**, on a machine that has never answered anything, if more than one
   is on offer. Afterwards it is a row in the settings.
 - **The `first` questions**, unnumbered — the few that cannot wait, because
   everything after them is typed on the keyboard they settle.
-- **What to do**, if the tree declares more than one mode.
 - **Network**, if the tree has an `online.sh` hook.
 - **The check**, if the tree has a `preflight.sh` hook. A failure here is a wall.
-- **Presets**, one page for each the tree declares. A set of answers, not a mode:
-  every value one fills in is an ordinary value from the next page on. Offered
+- **Presets**, one page for each the tree declares. A set of answers, not a state
+  the program stays in: every value one fills in is an ordinary value from the
+  next page on. Offered
   once, on a machine that has never answered anything. A row with **`asks:`** is
   the same idea reached the long way round — one question, and the shell in its
   **`apply:`** turns that answer into answers by writing them into the answer
@@ -359,7 +343,6 @@ Every declared variable under its own name, answered or not, plus:
 | `INSTALLER_CONF` | the answer file |
 | `INSTALLER_LOG` | the log |
 | `INSTALLER_LANG` | the language showing |
-| `INSTALLER_MODE` | the mode this run is in, where the tree declares any |
 | `INSTALLER_VERSION` | the runtime's version |
 
 Scripts are **sourced** into a shell that already carries an `ERR` trap and,
@@ -379,14 +362,26 @@ The source string is the key. A line of Go says `T("Back")` and a catalog
 answers with `"Zurück"`; a catalog with nothing to say about it leaves the
 English standing. So a half-finished translation is useful from its first line.
 
+The catalogs are **gettext `.po` files**, one per language, filled in from a
+`.pot` template beside them — the format every translation platform reads, and
+the one where the msgid a translator is shown is the English sentence itself.
+Both templates are generated and neither is edited by hand: the runtime's out of
+the Go sources, a tree's out of the loaded tree. `make locales` writes them and
+brings every catalog up to them.
+
 Two independent catalogs are merged: the runtime's own, compiled into the binary
 under `locales/`, and the tree's own `locales/` beside its declaration. Adding a
 language is adding a file.
 
 ```sh
-installer -strings > locales/fr.yaml       # every word the tree says, empty
-installer -check                           # reports coverage per language
+cp locales/archos.pot locales/fr.po   # a language nobody has started yet
+make locales                          # every template, and every catalog brought up to it
+archos -check                         # reports coverage per language
 ```
+
+A catalog names its own language in it, as the translation of `English` — that
+is what the picker lists, so a language is always offered in its own words. See
+[TRANSLATING.md](../TRANSLATING.md).
 
 The language is chosen on the first run, changed in the settings, and otherwise
 read from `LC_ALL`, `LC_MESSAGES` or `LANG`.
@@ -400,18 +395,23 @@ row in the settings.
 ## Building
 
 ```sh
-make build     # bin/installer-linux-amd64, and its checksum
-make run       # straight from source, against ../installer
-make check     # gofmt, vet, staticcheck, test, build — before anything is committed
+make build                  # bin/installer-linux-amd64, and its checksum
+make run                    # straight from source, against ../installer
+make run TREE=../recovery   # the other tree
+make check                  # gofmt, vet, staticcheck, test, build — before a commit
 ```
 
+`run` takes one tree, so the page that asks which of several to open is not on
+its way. That page needs the trees beside a binary, which is what a build makes:
+`make build` at the repository root, then `release/archos`.
+
 The binary is static and has no runtime dependencies of its own. It has to live
-in the tree it runs, since that is where it looks for one.
+beside the trees it runs, since that is where it looks for them.
 
 ## Layout
 
 ```
-main.go              find the tree, load it, open the interface
+main.go              find the trees, load them, open the interface
 internal/spec        the tree, read into memory, checked over and put in order
 internal/store       the answers, and the file they survive a restart in
 internal/exec        the only place a process is started, and the failure shape
@@ -420,5 +420,6 @@ internal/wlan        joining a wireless network, the way the tree's hooks say to
 internal/i18n        the message catalogs
 internal/logging     the single sink for everything a run records
 locales/             the runtime's own words, compiled in
+tools/potgen/        reads every T("…") out of the sources and writes the template
 tui/                 the interface: one frame, a stack of pages, no page draws its own
 ```

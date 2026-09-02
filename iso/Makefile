@@ -9,14 +9,14 @@ VERSION     ?= $(shell git -C .. rev-parse --short HEAD 2>/dev/null || echo dev)
 # smoke` needs no argument.
 ISO ?= $(shell ls -t $(DIST_DIR)/*.iso 2>/dev/null | head -1)
 
-SCRIPTS := build.sh smoke.sh src/usr/local/bin/installer src/usr/local/bin/recovery src/usr/local/bin/installer-console-theme
+SCRIPTS := build.sh smoke.sh $(wildcard src/usr/local/bin/*)
 
 .PHONY: build smoke lint fmt check clean
 
 build:
 	RELEASE_DIR=$(RELEASE_DIR) DIST_DIR=$(DIST_DIR) SNAPSHOT_VERSION=$(VERSION) ./build.sh
 
-# Boots the image and waits for the installer to come up in it. See smoke.sh.
+# Boots the image and waits for the interface to come up in it. See smoke.sh.
 smoke:
 	./smoke.sh $(ISO)
 

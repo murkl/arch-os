@@ -1,19 +1,7 @@
 #!/usr/bin/env bash
-# Start the recovery. The second of the two programs on this image — the other
-# one is `installer`, which the systemd unit on tty1 starts on boot.
-#
-# It is the installer's binary: one runtime drives both trees, and -dir is what
-# says which. Started out of /opt/installer all the same, so recovery.conf and
-# recovery.log land beside the installer's own and starting it again from any
-# prompt picks up where it left off.
-#
-# The console is dressed the moment before the interface draws on it — the font
-# decides which glyphs exist, the palette what the sixteen colour slots look
-# like. Neither is worth refusing to start over, so both may fail.
+# Straight into the recovery, past the question of which program to open. The
+# same runtime and the same folder as the installer; -dir is what says which of
+# the two trees beside it this is.
 set -eu
 
-setfont Lat2-Terminus16 || true
-installer-console-theme || true
-
-cd /opt/installer
-exec ./installer -dir recovery "$@"
+exec archos -dir recovery "$@"

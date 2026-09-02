@@ -5,9 +5,18 @@
 # nothing points at it from here.
 #
 # Repairing a system that is already on a disk is a program of its own, with a
-# declaration of its own: see ../recovery.
+# declaration of its own: see ../recovery. A release holds both, beside one
+# binary, and asks which of them to open.
 
 title: Arch OS Installer
+
+# The sentence under this program's row on the page that asks which to open.
+description: Put Arch Linux on this machine.
+
+# What one run of this is called. The interface reads it out wherever it says
+# what is happening — the row that starts it, the last warning, the clock while
+# it runs. ../recovery names its own run in its own words.
+run: Installation
 
 # Arch blue, pulled towards the terminal's background so it holds on a light one.
 accent: "#1793d1"
@@ -27,40 +36,30 @@ logo: |
 # There is a root shell behind it on this image — see iso/.
 console: Type installer at the prompt to start it again.
 
-# What one run of this is: what it is called, the last thing it says before it
-# starts, and the phases the work happens in.
-#
-# One of them, so there is nothing to choose and nobody is asked. It is here for
-# the name: the interface reads it out wherever it says what is happening — the
-# row that starts it, the last warning, the clock while it runs. ../recovery
-# says the same about itself, in its own words.
-modes:
-  - id: install
-    title: Installation
-    description: Put Arch Linux on this machine.
+# The last thing shown before the first task runs. {{VAR}} is filled in from the
+# answers, so this names the actual disk.
+confirm: |
+  Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.
 
-    # The last thing shown before the first task runs. {{VAR}} is filled in from
-    # the answers, so this names the actual disk.
-    confirm: |
-      Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.
+  Everything on that disk will be erased. There is no undo, and nothing before
+  this point has changed anything.
 
-      Everything on that disk will be erased. There is no undo, and nothing before
-      this point has changed anything.
+# The phases the work happens in, top to bottom. Every task names one, which is
+# what puts it in the run and where; tasks sharing a stage run in the order
+# `needs` demands.
+stages:
+  - prepare # the live system, made ready to install from
+  - disk # partitioned, encrypted, formatted, mounted
+  - base # the system on the disk, configured, with an account on it
+  - boot # the boot loader
+  - system # everything that is switched on rather than installed
+  - desktop # the chosen desktop, its driver, and what belongs to it
+  - finalize # the last things done to the new system
+  - finish # what is offered once it is installed
 
-    # Top to bottom. Tasks sharing a stage run in the order `needs` demands.
-    stages:
-      - prepare # the live system, made ready to install from
-      - disk # partitioned, encrypted, formatted, mounted
-      - base # the system on the disk, configured, with an account on it
-      - boot # the boot loader
-      - system # everything that is switched on rather than installed
-      - desktop # the chosen desktop, its driver, and what belongs to it
-      - finalize # the last things done to the new system
-      - finish # what is offered once it is installed
-
-# A set of answers, not a mode the installer stays in: offered once, on a machine
-# that has never answered anything, and every value it fills in is an ordinary
-# answer from the next page on.
+# A set of answers, not a state the installer stays in: offered once, on a
+# machine that has never answered anything, and every value it fills in is an
+# ordinary answer from the next page on.
 presets:
   - id: system
     title: Setup

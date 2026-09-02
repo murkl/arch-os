@@ -32,11 +32,6 @@ func New(sp *spec.Spec, path string) *Store {
 	for _, v := range sp.Vars {
 		s.val[v.Name] = v.Default.String()
 	}
-	// The mode is a default like any other, and the tree's first is it: there is
-	// never a moment where a condition asking which mode this is has no answer,
-	// and a tree that does one thing is in it from the start without anything
-	// having had to be chosen.
-	s.val[spec.ModeVar] = sp.Modes[0].ID
 	return s
 }
 
@@ -85,7 +80,6 @@ func (s *Store) Env() exec.Env {
 		env = append(env, v.Name+"="+s.val[v.Name])
 	}
 	env = append(env, spec.LangVar+"="+i18n.Current())
-	env = append(env, spec.ModeVar+"="+s.val[spec.ModeVar])
 	for k, v := range s.facts {
 		env = append(env, k+"="+v)
 	}

@@ -1,10 +1,10 @@
 #!/bin/bash
-# Boots a built Arch OS image and waits for the installer to come up in it.
+# Boots a built Arch OS image and waits for the interface to come up in it.
 #
-# Nothing is installed: the machine is switched off the moment the installer's
-# first page is recognised on its console. That proves the whole chain no linter
-# can see — the boot entry, the initramfs and its plymouth hook, the systemd unit
-# on tty1, the runtime, and the tree it loads.
+# Nothing is installed: the machine is switched off the moment the first page is
+# recognised on its console. That proves the whole chain no linter can see — the
+# boot entry, the initramfs and its plymouth hook, the systemd unit on tty1, the
+# runtime, and the trees it loads.
 #
 # Takes the image as its one argument; `make smoke` hands it the newest build.
 # Needs qemu, OVMF and tesseract — see README.md.
@@ -15,7 +15,7 @@ ISO="$1"
 
 # Where the console is photographed. A failure keeps every frame — a picture of
 # the screen is all there is to go on afterwards; a run that worked keeps the one
-# frame the installer was recognised in.
+# frame the interface was recognised in.
 FRAME_DIR="${FRAME_DIR:-./smoke}"
 
 # The slow case is a cold boot under emulation with no KVM, which five minutes
@@ -26,9 +26,10 @@ INTERVAL="${INTERVAL:-15}"
 OVMF_CODE="${OVMF_CODE:-/usr/share/edk2/x64/OVMF_CODE.4m.fd}"
 OVMF_VARS="${OVMF_VARS:-/usr/share/edk2/x64/OVMF_VARS.4m.fd}"
 
-# The installer's first page, as the console spells it. Two strings rather than
-# one: OCR over a console font loses a letter now and again.
-EXPECT='Interface language|Choose the language for this installer'
+# The first page, as the console spells it: the question of which of the two
+# programs to open. Two strings rather than one, because OCR over a console font
+# loses a letter now and again.
+EXPECT='What to do|Arch OS Recovery'
 
 # A machine that got this far and no further says so in plain words, and there is
 # no reason to sit out the timeout for it.
@@ -115,13 +116,13 @@ fail() {
     exit 1
 }
 
-echo "### Wait for the installer (up to ${TIMEOUT}s)"
+echo "### Wait for the interface (up to ${TIMEOUT}s)"
 deadline=$((SECONDS + TIMEOUT))
 found=""
 frame=0
 while [ "$SECONDS" -lt "$deadline" ]; do
     sleep "$INTERVAL"
-    kill -0 "$QEMU_PID" 2>/dev/null || fail "the machine stopped before the installer came up"
+    kill -0 "$QEMU_PID" 2>/dev/null || fail "the machine stopped before the interface came up"
 
     frame=$((frame + 1))
     shot="$(printf '%s/frame-%02d.ppm' "$FRAME_DIR" "$frame")"
@@ -135,9 +136,9 @@ while [ "$SECONDS" -lt "$deadline" ]; do
     fi
 done
 
-[ -n "$found" ] || fail "the installer did not come up within ${TIMEOUT}s"
+[ -n "$found" ] || fail "the interface did not come up within ${TIMEOUT}s"
 
 # The one frame worth keeping is the one it was recognised in.
-mv "$found" "${FRAME_DIR}/installer.ppm"
+mv "$found" "${FRAME_DIR}/archos.ppm"
 rm -f "${FRAME_DIR}"/frame-*.ppm
-echo "### The installer is up — ${FRAME_DIR}/installer.ppm"
+echo "### Arch OS is up — ${FRAME_DIR}/archos.ppm"

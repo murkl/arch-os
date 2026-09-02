@@ -37,6 +37,8 @@ func labelNetwork() string         { return say("Wireless network") }
 func labelNetworkHelp() string     { return say("Join a wireless network to continue.") }
 func labelNetworkChecking() string { return say("Checking the internet connection …") }
 func labelNetworkScanning() string { return say("Looking for wireless networks …") }
+
+// TRANSLATORS: %s is the name of the wireless network being joined.
 func labelNetworkJoining(ssid string) string {
 	return say("Joining %s …", ssid)
 }
@@ -80,10 +82,10 @@ func labelOpening() string { return say("Start") }
 func labelLanguage() string     { return say("Interface language") }
 func labelLanguageHelp() string { return say("Choose the language for this installer.") }
 
-// The fork at the top, where a tree can do more than one thing. Only the page's
-// own name is the runtime's: what is on it, and what each of them is, is said in
-// the tree's own words.
-func labelMode() string { return say("What to do") }
+// The fork at the top, where a release holds more than one program. Only the
+// page's own name is the runtime's: what is on it, and what each of them is, is
+// said in each tree's own words.
+func labelChoice() string { return say("What to do") }
 
 // labelCounter is where something sits in a run of things: which question of
 // how many, which task of how many. Bare numbers, because it is read in the

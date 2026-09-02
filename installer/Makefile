@@ -12,10 +12,16 @@ RUN := $(RUNTIME) -dir .
 
 SCRIPTS := $(shell find . -name '*.sh')
 
-.PHONY: check load lint fmt strings
+# The template this tree's catalogs are filled in from, and the catalogs
+# themselves. Both are generated: the template out of the tree, the catalogs out
+# of the template.
+POT      := locales/installer.pot
+CATALOGS := $(wildcard locales/*.po)
+
+.PHONY: check load lint fmt locales locales-check
 
 # What has to pass before anything is committed.
-check: load lint
+check: load lint locales-check
 
 # Loads the tree exactly as the runtime does at startup, so every task, every
 # condition and every preset is resolved — and prints the order they add up to,
@@ -30,10 +36,21 @@ lint:
 fmt:
 	shfmt -w -i 4 $(SCRIPTS)
 
-# An empty translation catalog for this tree. Redirect it to locales/<code>.yaml
-# and fill in the right-hand side.
-strings: $(RUNTIME)
-	@$(RUN) -strings
+# Asks the loaded tree for every word it says, writes the template, and brings
+# each catalog up to it. msgmerge keeps every translation whose source text is
+# unchanged and marks the rest fuzzy rather than dropping it — a reworded
+# sentence is a translation to look at again, not one to write from scratch.
+locales: $(RUNTIME)
+	@$(RUN) -strings > $(POT)
+	@for po in $(CATALOGS); do msgmerge --quiet --update --backup=none --no-wrap "$$po" $(POT); done
+
+# A question added or reworded without `make locales` being run is a question no
+# translator will ever be shown. And a translation that drops a placeholder is a
+# message that breaks where it is printed rather than where it was written.
+locales-check: $(RUNTIME)
+	@$(RUN) -strings | diff -u $(POT) - \
+		|| { echo "$(POT) is out of date — run 'make locales'" >&2; exit 1; }
+	@for po in $(CATALOGS); do msgfmt --check-format -o /dev/null "$$po" || exit 1; done
 
 # Neither target builds a runtime: building it from here would hide which half a
 # failure came from.

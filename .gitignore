@@ -1,10 +1,10 @@
 # Build output — see /Makefile. Nothing under here is a source file: release/ is
-# the installer as a machine runs it, dist/ is what a person downloads.
+# Arch OS as a machine runs it, dist/ is what a person downloads.
 /release/
 /dist/
 
-# What a local run leaves beside itself, wherever it runs from. Both trees name
-# their answers and their log after themselves — see runtime/main.go.
+# What a local run leaves beside itself, wherever it runs from. Each tree names
+# its answers and its log after itself — see runtime/main.go.
 installer.conf
 installer.conf.old
 installer.log

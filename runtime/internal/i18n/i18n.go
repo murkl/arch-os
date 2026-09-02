@@ -7,6 +7,12 @@
 // look up what ui.button.back renders as — and a missing translation degrades
 // to the source language instead of to a key nobody can read.
 //
+// The catalogs are gettext po files, one per language, filled in from a pot
+// template that is generated rather than kept by hand. That is what puts every
+// message on a translation platform without anything here knowing about one:
+// po is what they all read, and the msgid being the source text is what they
+// all show the translator.
+//
 // Two catalogs are merged at startup and behave as one: the runtime's own,
 // compiled into the binary, and the installer tree's, which translates the
 // words that tree wrote. Neither knows about the other.
@@ -15,29 +21,21 @@ package i18n
 import (
 	"fmt"
 	"strings"
-
-	"gopkg.in/yaml.v3"
 )
 
-// SourceLang is the language every msgid is written in. A catalog for it would
-// be a file mapping each string to itself.
+// SourceLang is the language every msgid is written in. It has no catalog of
+// its own — the template lists every message in it, and a message nothing
+// translates is shown exactly as the code and the yaml wrote it.
 const SourceLang = "en"
 
 // Catalog is one language: what it calls itself, and what it has to say.
 type Catalog struct {
 	// Language is the name in the language itself — "Deutsch", not "German".
-	// A list of languages is read by the people who speak them.
-	Language string            `yaml:"language"`
-	Messages map[string]string `yaml:"messages"`
-}
-
-// Parse reads a catalog file.
-func Parse(raw []byte) (*Catalog, error) {
-	c := &Catalog{}
-	if err := yaml.Unmarshal(raw, c); err != nil {
-		return nil, err
-	}
-	return c, nil
+	// It is not a field of its own in the file: it is the translation of
+	// LanguageName, so a catalog names its language the same way it says
+	// everything else.
+	Language string
+	Messages map[string]string
 }
 
 // active is what is currently showing. Package state rather than a value passed
@@ -71,10 +69,11 @@ func Use(code string, catalogs ...*Catalog) {
 // Current is the code currently showing.
 func Current() string { return lang }
 
-// T translates, then formats. The arguments are applied after the lookup so a
-// translation may move its placeholders — "%d of %d" and "%d von %d" are the
-// same message, and a language that needs the numbers the other way round can
-// write "%[2]d …".
+// T translates, then formats. The arguments are applied after the lookup, so a
+// translation is free to put its placeholders wherever its own sentence needs
+// them — "%d of %d" and "%d von %d" are the same message. Not to reorder them
+// among themselves, though: the catalogs are checked against the English with
+// msgfmt, and Go's "%[2]d" is not something a c-format check will accept.
 func T(msg string, a ...any) string {
 	out := msg
 	if t, ok := active[msg]; ok {

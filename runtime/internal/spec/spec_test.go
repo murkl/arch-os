@@ -97,12 +97,7 @@ presets:
 	if sp.UI.Title != "Test Installer" {
 		t.Errorf("title = %q", sp.UI.Title)
 	}
-	// A tree that says nothing about modes has exactly one, holding the stages
-	// and the warning it wrote at the top level.
-	if len(sp.Modes) != 1 || sp.Asked() {
-		t.Errorf("modes = %+v, want one and unasked", sp.Modes)
-	}
-	if got := sp.Modes[0].ConfirmText(func(string) string { return "/dev/sda" }); got != "Erasing /dev/sda." {
+	if got := sp.ConfirmText(func(string) string { return "/dev/sda" }); got != "Erasing /dev/sda." {
 		t.Errorf("confirm = %q", got)
 	}
 	if len(sp.Presets) != 1 || sp.Presets[0].Options[0].Values["DISK"] != "/dev/sda" {
@@ -126,75 +121,6 @@ presets:
 // The order is worked out from what each task says about itself, and it is
 // the one thing about a tree nobody writes down. Getting it wrong means
 // installing onto a disk that has not been partitioned yet.
-// A tree that does more than one thing: each mode owns its stages, and a task
-// says which run it belongs to by naming one of them and nothing else.
-func TestModesOwnTheirStagesAndTheTasksInThem(t *testing.T) {
-	dir := tree(t, units(
-		map[string]string{
-			// The tree helper's own task belongs to neither mode's story here.
-			"tasks/do/task.yaml": "",
-			"tasks/do/task.sh":   "",
-			treeFile: `
-title: Test Installer
-modes:
-  - id: install
-    title: Installation
-    confirm: Erasing {{DISK}}.
-    stages: [go, done]
-  - id: repair
-    title: Recovery
-    confirm: Opening {{DISK}}.
-    stages: [open]
-variables:
-  - name: DISK
-    title: Disk
-    required: true
-  - name: SNAP
-    title: Snapshot
-    values: [one, two]
-    mode: repair
-`,
-		},
-		unit("a-install", "name: Install\nstage: go\n"),
-		unit("b-finish", "name: Finish\nstage: done\n"),
-		unit("c-repair", "name: Repair\nstage: open\nasks: SNAP\n"),
-	))
-	sp, err := Load(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !sp.Asked() || len(sp.Modes) != 2 {
-		t.Fatalf("modes = %+v, want two and a question about them", sp.Modes)
-	}
-	// The stages of every mode, in the order the modes were declared: one list,
-	// so one order settles the whole tree.
-	if got := strings.Join(sp.Stages, " "); got != "go done open" {
-		t.Errorf("stages = %q", got)
-	}
-	want := map[string]string{"a-install": "install", "b-finish": "install", "c-repair": "repair"}
-	for _, task := range sp.Tasks {
-		if got := task.Mode(); got != want[task.ID()] {
-			t.Errorf("%s is in mode %q, want %q", task.ID(), got, want[task.ID()])
-		}
-	}
-	if got := sp.Mode("repair").ConfirmText(func(string) string { return "/dev/sda" }); got != "Opening /dev/sda." {
-		t.Errorf("confirm = %q", got)
-	}
-	// A variable guarded by the mode is only a question in that mode.
-	in := func(mode string) func(string) string {
-		return func(name string) string {
-			if name == ModeVar {
-				return mode
-			}
-			return ""
-		}
-	}
-	snap := sp.Var("SNAP")
-	if snap.Applies(in("install")) || !snap.Applies(in("repair")) {
-		t.Error("SNAP should belong to the repair mode alone")
-	}
-}
-
 func TestOrderFollowsStagesThenNeeds(t *testing.T) {
 	dir := tree(t, units(
 		map[string]string{
@@ -329,8 +255,8 @@ func TestATreeWithoutHooksHasNone(t *testing.T) {
 // having them and off by not.
 func TestLibAndLocalesAreFoundBesideTheInstallerFile(t *testing.T) {
 	sp, err := Load(tree(t, map[string]string{
-		FileLib:                 "helper() { echo hi; }\n",
-		DirLocales + "/de.yaml": "language: Deutsch\n",
+		FileLib:               "helper() { echo hi; }\n",
+		DirLocales + "/de.po": "msgid \"English\"\nmsgstr \"Deutsch\"\n",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -360,8 +286,8 @@ func TestConsoleIsTranslatable(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []string{"Test Installer", "Type installer to start again.", "Do it"}
-	if strings.Join(sp.Strings(), "|") != strings.Join(want, "|") {
-		t.Errorf("Strings() = %v\nwant %v", sp.Strings(), want)
+	if got := texts(sp); strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Errorf("Messages() = %v\nwant %v", got, want)
 	}
 }
 
@@ -494,36 +420,6 @@ func TestLoadRefuses(t *testing.T) {
 			name:  "a stage listed twice",
 			files: map[string]string{treeFile: "title: T\nstages: [go, go]\n"},
 			want:  "listed twice",
-		},
-		{
-			name:  "a mode with no id",
-			files: map[string]string{treeFile: "title: T\nmodes:\n  - title: Go\n    stages: [go]\n"},
-			want:  "a mode needs an id",
-		},
-		{
-			name:  "a mode with no stages of its own",
-			files: map[string]string{treeFile: "title: T\nmodes:\n  - id: a\n    title: A\n"},
-			want:  "no stages",
-		},
-		{
-			name:  "one stage claimed by two modes, so a task could not say which it is in",
-			files: map[string]string{treeFile: "title: T\nmodes:\n  - id: a\n    title: A\n    stages: [go]\n  - id: b\n    title: B\n    stages: [go]\n"},
-			want:  "already belongs to mode",
-		},
-		{
-			name:  "stages at the top level as well as in the modes",
-			files: map[string]string{treeFile: "title: T\nstages: [go]\nmodes:\n  - id: a\n    title: A\n    stages: [go]\n"},
-			want:  "belong to a mode",
-		},
-		{
-			name:  "a question belonging to a mode the tree does not offer",
-			files: map[string]string{treeFile: head("variables:\n  - name: DISK\n    title: D\n    mode: nope\n")},
-			want:  "no such mode",
-		},
-		{
-			name:  "a question asked first and claimed by a mode, which is before there is one",
-			files: map[string]string{treeFile: "title: T\nmodes:\n  - id: a\n    title: A\n    stages: [go]\nvariables:\n  - name: K\n    title: K\n    first: true\n    mode: a\n"},
-			want:  "before there is a mode",
 		},
 		{
 			name:  "asks naming a variable nobody declared",
@@ -737,31 +633,78 @@ variables:
 		t.Fatal(err)
 	}
 	want := []string{"Test Installer", "Careful.", "Setup", "What kind.", "Full", "Everything.", "Disk", "Where it goes.", "Storage", "Pick one.", "Do it", "Really?"}
-	got := sp.Strings()
+	got := texts(sp)
 	if strings.Join(got, "|") != strings.Join(want, "|") {
-		t.Errorf("Strings() = %v\nwant %v", got, want)
+		t.Errorf("Messages() = %v\nwant %v", got, want)
+	}
+
+	// A translator gets the words out of the tree they belong to, so every one
+	// of them says where it was read and what it is.
+	for _, m := range sp.Messages() {
+		if len(m.Files) == 0 || m.Note == "" {
+			t.Errorf("%q has no origin: %+v", m.Text, m)
+		}
+	}
+	if m := sp.Messages()[len(sp.Messages())-1]; m.Files[0] != "tasks/do/task.yaml" {
+		t.Errorf("%q was read from %v, want the task it is in", m.Text, m.Files)
 	}
 }
 
-func TestFindTakesAnInstallerItIsPointedAt(t *testing.T) {
+// texts is what the tree says, without where it says it.
+func texts(sp *Spec) []string {
+	var out []string
+	for _, m := range sp.Messages() {
+		out = append(out, m.Text)
+	}
+	return out
+}
+
+// A folder holding a declaration is the tree, and there is nothing below it to
+// look at.
+func TestATreeItIsPointedAtIsTheOnlyOne(t *testing.T) {
 	dir := tree(t, nil)
-	got, err := Find(dir)
+	got, err := Trees(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got != dir {
-		t.Errorf("Find(%q) = %q", dir, got)
+	if len(got) != 1 || got[0] != dir {
+		t.Errorf("Trees(%q) = %v, want just the folder itself", dir, got)
+	}
+}
+
+// A release is the binary and the programs beside it, a folder each. All of
+// them are offered, in folder order.
+func TestEveryTreeInAFolderIsOffered(t *testing.T) {
+	release := t.TempDir()
+	for _, name := range []string{"recovery", "installer"} {
+		if err := os.Rename(tree(t, nil), filepath.Join(release, name)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// A folder that is not a tree is not one, and neither is a loose file.
+	if err := os.MkdirAll(filepath.Join(release, "locales"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(release, "notes.txt"), []byte("hi\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got, err := Trees(release)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{filepath.Join(release, "installer"), filepath.Join(release, "recovery")}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Errorf("Trees() = %v, want %v", got, want)
 	}
 }
 
 // Beside the binary and nowhere else. The test binary has no declaration next
 // to it, which is exactly the case a user hits when they copy the program out
 // of the folder it belongs to.
-func TestFindSaysWhereTheInstallerHasToBe(t *testing.T) {
-	t.Chdir(tree(t, nil))
-	_, err := Find("")
+func TestTreesSaysWhereTheInstallerHasToBe(t *testing.T) {
+	_, err := Trees(t.TempDir())
 	if err == nil {
-		t.Fatal("found an installer beside the test binary")
+		t.Fatal("found an installer in an empty folder")
 	}
 	if !strings.Contains(err.Error(), SpecExt) {
 		t.Errorf("error = %q, want it to name %s", err, SpecExt)

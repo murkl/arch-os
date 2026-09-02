@@ -31,7 +31,7 @@
 - AUR helper, 32-bit support, automatic housekeeping timers
 - Shell enhancement (bash, zsh or fish) and a system manager TUI
 - Samba sharing, mirrors ranked by country
-- English and German interface — a tree can add its own language
+- English and German interface, and [more languages are welcome](../TRANSLATING.md) — a tree can add its own
 - A recovery on the same image that rolls a broken system back, without a network
 
 ## Installing
@@ -46,15 +46,16 @@ curl -Ls bit.ly/arch-os | bash
 1. **On your own machine** it fetches the latest image, verifies its checksum
    and writes it to a USB device you pick.
    ([Ventoy](https://www.ventoy.net) or `dd` work just as well.)
-2. **Boot the target machine from that device.** The installer starts on its
-   own — no keymap or network step first.
+2. **Boot the target machine from that device.** It starts on its own and asks
+   what to do — install, or repair a system already on a disk. No keymap or
+   network step first.
 3. **Answer the questions.** Every answer is saved as it is given, so an
    interrupted run picks up where it left off.
 
 On a stock [Arch Linux ISO](https://archlinux.org/download/) the same command
-starts an installation instead: it fetches the latest release, unpacks it and
-runs it. `MODE=install|create` picks a half by hand, `DEBUG=true` keeps both off
-the hardware.
+puts you at the same question instead: it fetches the latest release, unpacks it
+and runs it. `MODE=install|create` picks a half by hand, `DEBUG=true` keeps both
+off the hardware.
 
 <p><img src="./screenshots/setup.png" width="820"></p>
 
@@ -67,10 +68,10 @@ updates, `pacdiff`, Snapper housekeeping. Worth doing yourself:
 
 - Read the [Arch Linux news](https://www.archlinux.org/news) before a big upgrade
 - Roll back with Btrfs Assistant (or `snapper`) when an update goes wrong
-- Boot the installation image and type **`recovery`** when the system no longer
-  starts at all: it unlocks the disk, puts a snapshot back in place of the root
-  subvolume, rebuilds the kernel images from the package cache and hands you a
-  shell inside the repaired system — no network needed
+- Boot the installation image and choose **Arch OS Recovery** when the system no
+  longer starts at all: it unlocks the disk, puts a snapshot back in place of the
+  root subvolume, rebuilds the kernel images from the package cache and hands you
+  a shell inside the repaired system — no network needed
 
 <p><img src="./screenshots/recovery.png" width="820"></p>
 
@@ -84,14 +85,14 @@ Four parts, deliberately kept apart — see
 | [`runtime/`](../runtime) | a Go binary that draws the interface, asks the questions and runs shell in order. It knows nothing about Arch, disks or packages — there is not one of those words in it. |
 | [`installer/`](../installer) | everything that does: one `installer.yaml`, the questions it asks, and a folder per step of the installation. |
 | [`recovery/`](../recovery) | the same shape again, for repairing a system that is already on a disk: its own `recovery.yaml`, its own steps, its own answers. |
-| [`iso/`](../iso) | turns a build of the three into a bootable image that starts the installer on boot. |
+| [`iso/`](../iso) | turns a build of the three into a bootable image that starts on boot. |
 
 The two trees are **data, not programs**: one binary runs either of them, and
-which one is a folder it is pointed at. That is why the image carries two
-commands — `installer` and `recovery` — and one executable. Adding a question is
-a few lines of YAML; adding a step is a folder with two files in it; neither is a
-change to the runtime, and the runtime cannot break Arch-specific behaviour it
-has never heard of.
+which one is a folder beside it. A release is that binary with `installer/` and
+`recovery/` next to it, and the first thing it asks is which of the two to open.
+Adding a question is a few lines of YAML; adding a step is a folder with two
+files in it; neither is a change to the runtime, and the runtime cannot break
+Arch-specific behaviour it has never heard of.
 
 <details>
 <summary><h2 style="display: inline;" id="screenshots">More screenshots</h2></summary>

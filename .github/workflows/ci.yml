@@ -39,7 +39,7 @@ jobs:
       # gcc is for the race detector below, which is built on cgo.
       - uses: ./.github/actions/arch
         with:
-          packages: go gcc make shellcheck shfmt staticcheck yamllint actionlint
+          packages: go gcc make shellcheck shfmt staticcheck yamllint actionlint gettext
 
       - uses: actions/cache@v6
         with:
@@ -120,20 +120,14 @@ jobs:
 
       # What ships is what was tested, rather than what was tested plus whatever
       # the packaging did to it.
-      - name: The tarball holds a working installer
+      - name: The tarball holds a working release
         run: |
           unpacked="$(mktemp -d)"
           tar -xzf dist/*.tar.gz -C "$unpacked"
-          for tree in "$unpacked"/*; do
-            "$tree/installer" -check -dir "$tree"
+          for release in "$unpacked"/*; do
+            "$release/archos" -check -dir "$release"
           done
           (cd dist && sha256sum -c ./*.sha256)
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: release
-          path: release/
-          retention-days: 7
 
       - uses: actions/upload-artifact@v7
         with:
@@ -150,6 +144,7 @@ jobs:
       github.event_name == 'workflow_dispatch'
       || github.ref_name == 'dev'
       || github.ref_name == 'main'
+      || github.ref_name == 'neo'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     container:
@@ -170,13 +165,17 @@ jobs:
 
       - uses: actions/download-artifact@v8
         with:
-          name: release
-          path: release
+          name: tarball
+          path: tarball
 
-      # An artefact travels as a zip, and what comes out of one is not reliably
-      # still executable. build.sh refuses a release it cannot run.
-      - name: The installer is executable again
-        run: chmod +x release/installer
+      # The image is built out of the file that gets published, so what boots
+      # here is what a download unpacks. Kept out of dist/, which this job fills
+      # with the image.
+      - name: Unpack the release
+        run: |
+          (cd tarball && sha256sum -c ./*.sha256)
+          mkdir -p release
+          tar -xzf tarball/*.tar.gz --strip-components=1 -C release
 
       - run: make -C iso build
 

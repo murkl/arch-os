@@ -4,9 +4,10 @@
 #   curl -Ls bit.ly/arch-os | bash
 #
 # Where it runs decides what it does. On a booted Arch live image there is a
-# machine to install onto, so it fetches the latest release and starts the
-# installer. Anywhere else there is not, so it fetches the latest image and
-# writes it to a USB device — the one that boots the other case.
+# machine to work on, so it fetches the latest release and starts it — which then
+# asks whether this is an installation or a repair. Anywhere else there is not,
+# so it fetches the latest image and writes it to a USB device — the one that
+# boots the other case.
 #
 # MODE=install|create picks the half by hand, DEBUG=true keeps both off the
 # hardware.
@@ -55,9 +56,9 @@ Arch OS — https://github.com/${REPO}
 
   curl -Ls bit.ly/arch-os | bash
 
-On a booted Arch live image: fetches the latest release and starts the
-installer. Anywhere else: fetches the latest image and writes it to a USB
-device, so this machine can make the one that boots it.
+On a booted Arch live image: fetches the latest release and starts it, which
+asks whether to install or to repair. Anywhere else: fetches the latest image and
+writes it to a USB device, so this machine can make the one that boots it.
 
   MODE=install|create   pick the half by hand instead of by where it runs
   DEBUG=true            write nothing: no device, and a simulated installation
@@ -135,11 +136,11 @@ verify() {
 
 install_mode() {
     require curl tar sha256sum
-    [ "$(id -u)" -eq 0 ] || fail "The installer needs root"
+    [ "$(id -u)" -eq 0 ] || fail "Arch OS needs root"
 
-    title "Arch OS Installer"
+    title "Arch OS"
     tarball_url="$(asset_url .tar.gz)"
-    [ -n "$tarball_url" ] || fail "The latest release holds no installer"
+    [ -n "$tarball_url" ] || fail "The latest release holds no program"
     download "$tarball_url"
     verify "$tarball_url"
 
@@ -148,17 +149,18 @@ install_mode() {
     tarball="${DOWNLOAD_DIR}/${tarball_url##*/}"
     tarball_dir="${DOWNLOAD_DIR}/$(tar -tzf "$tarball" | head -n1 | cut -d/ -f1)"
     tar -xzf "$tarball" -C "$DOWNLOAD_DIR" || fail "Could not unpack ${tarball}"
-    [ -x "${tarball_dir}/installer" ] || fail "No installer in ${tarball}"
+    [ -x "${tarball_dir}/archos" ] || fail "No program in ${tarball}"
     ok "Unpacked: ${tarball_dir}"
 
-    # Started out of its own folder: the runtime looks for its tree beside its
-    # own binary, and its answers and log land in the working directory — so
-    # leaving the installer and running this again picks up where it left off.
+    # Started out of its own folder and with no argument: the runtime looks for
+    # its programs beside its own binary, finds the installer and the recovery,
+    # and asks which to open. Their answers and logs land in the working
+    # directory — so leaving and running this again picks up where it left off.
     #
     # stdin is this script itself when the command arrives through a pipe, so
     # the interface is handed the terminal instead.
     cd "$tarball_dir"
-    exec ./installer </dev/tty
+    exec ./archos </dev/tty
 }
 
 # ─── Create: this machine makes the device that boots the other one ──────────
@@ -228,7 +230,7 @@ create_mode() {
 
     title "Finished"
     info "Remove ${device} and boot the machine you want Arch OS on from it."
-    info "The installer starts on its own."
+    info "It starts on its own and asks what to do."
 }
 
 # ─── Main ────────────────────────────────────────────────────────────────────
@@ -252,7 +254,7 @@ fi
 
 title "Arch OS"
 case "$MODE" in
-install) info "Live environment — installing Arch OS on this machine" ;;
+install) info "Live environment — running Arch OS on this machine" ;;
 create) info "No live environment — creating a bootable Arch OS device" ;;
 *) fail "MODE is install, create or auto — not ${MODE}" ;;
 esac

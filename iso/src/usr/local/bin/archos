@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Start Arch OS. The way in on this image — the systemd unit on tty1 runs this,
+# and so does anybody typing `archos` at a prompt after leaving it. With no
+# argument the runtime finds both programs beside itself and asks which to open;
+# `installer` and `recovery` beside this script are the two shortcuts past that
+# question.
+#
+# Two things it settles, and they are why it is a script rather than a symlink:
+#
+# The console is dressed the moment before the interface draws on it — the font
+# decides which glyphs exist, the palette what the sixteen colour slots look
+# like. Not in the unit, because an ExecStartPre runs while the boot splash still
+# holds the console and setfont finds none to load into. Doing it here is also
+# what gives somebody who leaves and starts it again the same console back.
+# Neither is worth refusing to start over, so both may fail.
+#
+# The runtime looks for its programs beside its own binary, so it is started out
+# of the folder it was installed into — and every answer file and log then lands
+# beside them, so starting it again from any prompt picks up where it left off.
+set -eu
+
+setfont Lat2-Terminus16 || true
+archos-console-theme || true
+
+cd /opt/archos
+exec ./archos "$@"

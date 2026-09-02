@@ -88,12 +88,6 @@ func (s *Store) Save() error {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# %s\n", i18n.T("Answers given to %s. Edit by hand if you like.", s.spec.Name()))
 	entry(&b, spec.LangVar, s.val[spec.LangVar], i18n.T("Interface language"))
-	// Only where there was a choice: a tree that does one thing has a mode
-	// nobody picked and a line saying so would be a question this file is
-	// pretending was asked.
-	if s.spec.Asked() {
-		entry(&b, spec.ModeVar, s.val[spec.ModeVar], i18n.T("What this run does"))
-	}
 	group := ""
 	for _, v := range s.spec.Vars {
 		if v.Secret() {

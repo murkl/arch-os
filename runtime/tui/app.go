@@ -13,9 +13,35 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// Program is one tree, opened: the answers it keeps, the runner that joins the
+// two, and the words it is read in.
+//
+// What it takes to open one — where the answer file and the log go, what this
+// machine has already been told — is the caller's business rather than the
+// interface's, so the interface is handed the finished thing.
+type Program struct {
+	Spec    *spec.Spec
+	Store   *store.Store
+	Runner  *runner.Runner
+	Langs   []i18n.Lang
+	Sources []fs.FS
+}
+
+// Open opens one tree, once it has been chosen. Nothing is opened before that:
+// the answers, the log and the catalogs are all named after the tree they belong
+// to, and opening two would be a machine writing files for a program nobody
+// asked for.
+type Open func(*spec.Spec) (*Program, error)
+
 // app is what every screen shares: the tree, the answers, and the runner that
 // joins them. Screens hold a pointer to it rather than to each other.
 type app struct {
+	// The programs this release holds, and how one of them is opened. Several is
+	// a question the interface puts before anything else; one is opened on the
+	// way in and never mentioned.
+	trees []*spec.Spec
+	open  Open
+
 	spec    *spec.Spec
 	store   *store.Store
 	runner  *runner.Runner
@@ -42,18 +68,26 @@ type app struct {
 // Run shows the splash and then the interface, and returns when the user
 // leaves. One program for both, because the splash fades into the first page
 // and a fade cannot cross a program boundary — the terminal would drop out of
-// the alternate screen in between.
-func Run(sp *spec.Spec, st *store.Store, rn *runner.Runner, version string, langs []i18n.Lang, sources []fs.FS) error {
+// the alternate screen in between. Choosing which tree to open happens inside
+// it for the same reason.
+func Run(trees []*spec.Spec, open Open, version string) error {
 	// Which kind of terminal this is has to be settled here: the question is put
 	// to the terminal itself, and from the next line on there is a key reader
 	// running that would take the answer for somebody typing.
 	Adapt()
-	a := &app{
-		spec: sp, store: st, runner: rn, version: version,
-		langs: langs, sources: sources, first: !st.Exists(),
+	a := &app{trees: trees, open: open, version: version}
+	// The frame has to be dressed before there is a tree to dress it with. The
+	// trees of one release are one product — one wordmark, one colour — so the
+	// first of them stands for all of them until one is opened.
+	SetAccent(trees[0].UI.Accent)
+	// One program is no question: it is opened here, so the interface comes up on
+	// its first page rather than on a list with a single row on it.
+	if len(trees) == 1 {
+		if err := a.enter(trees[0]); err != nil {
+			return err
+		}
 	}
-	SetAccent(sp.UI.Accent)
-	if _, err := tea.NewProgram(newModel(a, sp.UI.Logo), tea.WithAltScreen()).Run(); err != nil {
+	if _, err := tea.NewProgram(newModel(a, trees[0].UI.Logo), tea.WithAltScreen()).Run(); err != nil {
 		return err
 	}
 	// After the program, not inside it: the alternate screen is gone by now, so
@@ -65,15 +99,40 @@ func Run(sp *spec.Spec, st *store.Store, rn *runner.Runner, version string, lang
 	return nil
 }
 
-// mode is what this run is doing: the mode named in the answers, or the first
-// the tree offers. Never nil — a tree always has at least one, and the answer
-// is settled before the first page is drawn.
-func (a *app) mode() *spec.Mode {
-	if m := a.spec.Mode(a.store.Get(spec.ModeVar)); m != nil {
-		return m
+// enter opens a tree and makes it the one this run is about: from here on the
+// answers, the log and every word on screen belong to it.
+//
+// Choosing the tree already open is not a second opening. It would rotate a log
+// this run is already writing, and there is nothing to settle that the first one
+// did not.
+func (a *app) enter(sp *spec.Spec) error {
+	if a.spec == sp {
+		return nil
 	}
-	return a.spec.Modes[0]
+	p, err := a.open(sp)
+	if err != nil {
+		return err
+	}
+	a.spec, a.store, a.runner = p.Spec, p.Store, p.Runner
+	a.langs, a.sources = p.Langs, p.Sources
+	a.first = !p.Store.Exists()
+	return nil
 }
+
+// brand is what the frame is titled: the tree this run is about, and nothing at
+// all before one has been chosen. The page that asks which program to open is
+// not any of them, and titling it after one would answer its own question.
+func (a *app) brand() string {
+	if a.spec == nil {
+		return ""
+	}
+	return a.spec.Name()
+}
+
+// leaves reports whether this machine has to be asked about on the way out. A
+// program nobody has opened yet has said nothing about the machine, so leaving
+// the page that asks which one is leaving.
+func (a *app) leaves() bool { return a.spec != nil && a.spec.Leaves() }
 
 // speak puts the whole interface in a language and remembers the choice like
 // any other answer. Every word on screen is read through i18n at draw time, so
@@ -122,7 +181,7 @@ func (a *app) adopt(o *spec.PresetOption) tea.Cmd {
 // how this machine is put down, enter continues to the page that asks; where it
 // does not, it is the end of the program, and otherwise is the word for that.
 func (a *app) hintEnd(otherwise string) string {
-	if a.spec.Leaves() {
+	if a.leaves() {
 		return labelHintContinue()
 	}
 	return otherwise
@@ -140,17 +199,27 @@ func (a *app) save() tea.Cmd {
 }
 
 // The opening is one chain, and each link only knows the one after it: pick a
-// language, settle whatever the tree wants settled before anything is typed,
-// join a network, let the tree look at the machine, pick a starting point,
-// answer what is still open — and from then on the installer is simply ready. A
-// link with nothing to ask hands straight on, so a tree with no presets never
-// shows a page offering none.
+// program, pick a language, settle whatever the tree wants settled before
+// anything is typed, join a network, let the tree look at the machine, pick a
+// starting point, answer what is still open — and from then on the installer is
+// simply ready. A link with nothing to ask hands straight on, so a tree with no
+// presets never shows a page offering none.
 //
-// The language leads because every word of every page after it is in it, and
-// because the first thing typed on this machine can already be the wrong thing:
-// a wireless passphrase given on a keyboard nobody chose is not the passphrase.
+// Which program leads because everything after it belongs to it — the questions,
+// the answers on disk, the words on screen. The language comes next because
+// every word of every page after that is in it, and because the first thing
+// typed on this machine can already be the wrong thing: a wireless passphrase
+// given on a keyboard nobody chose is not the passphrase.
 
 func (a *app) start() screen {
+	if a.spec == nil {
+		return newChoice(a, func() tea.Cmd { return push(a.language()) })
+	}
+	return a.language()
+}
+
+// language is where the words the rest of this is read in are settled.
+func (a *app) language() screen {
 	// A tree that ties the interface to one of its own answers has already asked
 	// which language this is by asking that question, and a page of nothing but
 	// languages in front of it would ask the same thing twice.
@@ -170,23 +239,9 @@ func (a *app) start() screen {
 func (a *app) afterLanguage() screen {
 	open := a.store.Upfront()
 	if len(open) == 0 {
-		return a.chooseMode()
-	}
-	return newField(a, open[0], func() tea.Cmd { return push(a.afterLanguage()) }).opening()
-}
-
-// chooseMode is the fork, where the tree can do more than one thing. It sits
-// here and not earlier because it is a decision, and a decision taken on a
-// keyboard nobody has chosen yet is not one — and not later because everything
-// after it is different depending on the answer.
-//
-// A tree that does one thing hands straight on, the way every other link in
-// this chain does when it has nothing to ask.
-func (a *app) chooseMode() screen {
-	if !a.spec.Asked() {
 		return a.network()
 	}
-	return newMode(a, func() tea.Cmd { return push(a.network()) })
+	return newField(a, open[0], func() tea.Cmd { return push(a.afterLanguage()) }).opening()
 }
 
 // network is where a tree that describes one gets the chance to join it, because
@@ -218,13 +273,7 @@ func (a *app) preset(next int) screen {
 	if !a.first || next >= len(a.spec.Presets) {
 		return a.afterPreset()
 	}
-	// A page whose conditions do not hold is passed over the way a question
-	// that means nothing is: a set of starting points for an installation is
-	// not something to put to somebody who came here to repair one.
-	if p := a.spec.Presets[next]; p.Applies(a.store.Get) {
-		return newPreset(a, p, func() tea.Cmd { return push(a.preset(next + 1)) })
-	}
-	return a.preset(next + 1)
+	return newPreset(a, a.spec.Presets[next], func() tea.Cmd { return push(a.preset(next + 1)) })
 }
 
 // afterPreset is the fork the whole program turns on: a question still open

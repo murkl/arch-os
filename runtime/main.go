@@ -14,7 +14,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"installer/internal/i18n"
@@ -51,7 +50,7 @@ func main() {
 	conf := flag.String("conf", os.Getenv(confVar), "where the answers are kept")
 	show := flag.Bool("version", false, "print the version and exit")
 	check := flag.Bool("check", false, "load the installer, report what it holds, and exit")
-	strs := flag.Bool("strings", false, "print an empty translation catalog for the installer")
+	strs := flag.Bool("strings", false, "print the translation template for the installer, and exit")
 	flag.Parse()
 
 	if *show {
@@ -75,18 +74,23 @@ func main() {
 	}
 }
 
-// inspect loads a tree and says what it found, without touching anything. The
-// same load the program does at startup, so everything it refuses would have
-// stopped the installer — for checking a tree from a build script.
+// inspect loads every tree this binary would offer and says what it found,
+// without touching anything. The same load the program does at startup, so
+// everything it refuses would have stopped the installer — for checking a
+// release from a build script.
 func inspect(dir string) error {
-	dir, err := spec.Find(dir)
+	trees, err := loadTrees(dir)
 	if err != nil {
 		return err
 	}
-	sp, err := spec.Load(dir)
-	if err != nil {
-		return err
+	for _, sp := range trees {
+		report(sp)
 	}
+	return nil
+}
+
+// report is what one tree holds, printed.
+func report(sp *spec.Spec) {
 	required, secret := 0, 0
 	for _, v := range sp.Vars {
 		if v.Required {
@@ -102,13 +106,10 @@ func inspect(dir string) error {
 	for i, l := range langs {
 		names[i] = l.Code
 	}
-	fmt.Printf("%s\n", filepath.Join(dir, sp.File))
+	fmt.Printf("%s\n", filepath.Join(sp.Dir, sp.File))
 	fmt.Printf("  title      %s\n", sp.UI.Title)
 	fmt.Printf("  variables  %d (%d required, %d secret)\n", len(sp.Vars), required, secret)
 	fmt.Printf("  presets    %d\n", len(sp.Presets))
-	if sp.Asked() {
-		fmt.Printf("  modes      %s\n", strings.Join(modes(sp), " "))
-	}
 	fmt.Printf("  stages     %s\n", strings.Join(sp.Stages, " "))
 	fmt.Printf("  tasks      %d\n", len(sp.Tasks))
 	fmt.Printf("  hooks      %s\n", strings.Join(hooks(sp), " "))
@@ -122,7 +123,7 @@ func inspect(dir string) error {
 	// A catalog whose keys have drifted from the yaml shows up here as a
 	// coverage that dropped, which is the only way a stale translation is
 	// noticed.
-	msgs := sp.Strings()
+	msgs := sp.Messages()
 	for _, l := range langs {
 		if l.Code == i18n.SourceLang {
 			continue
@@ -130,13 +131,32 @@ func inspect(dir string) error {
 		i18n.Activate(l.Code, sources...)
 		done := 0
 		for _, m := range msgs {
-			if i18n.Has(m) {
+			if i18n.Has(m.Text) {
 				done++
 			}
 		}
 		fmt.Printf("  %-10s %d of %d strings translated\n", l.Code, done, len(msgs))
 	}
-	return nil
+}
+
+// trees is every program this binary would offer, read and checked over. One
+// that will not load stops the program here rather than when somebody chooses
+// it: a release ships its programs together, so a broken one is a broken
+// release.
+func loadTrees(dir string) ([]*spec.Spec, error) {
+	dirs, err := spec.Trees(dir)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*spec.Spec, 0, len(dirs))
+	for _, d := range dirs {
+		sp, err := spec.Load(d)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, sp)
+	}
+	return out, nil
 }
 
 func run(dir, conf string) error {
@@ -144,22 +164,35 @@ func run(dir, conf string) error {
 	// was found is in one. Only the runtime's own catalogs exist this early.
 	i18n.Activate(i18n.Match(locale(), codes(i18n.Discover(locales.FS))), locales.FS)
 
-	dir, err := spec.Find(dir)
-	if err != nil {
-		return err
-	}
-	sp, err := spec.Load(dir)
+	trees, err := loadTrees(dir)
 	if err != nil {
 		return err
 	}
 
+	// The page that asks which of them to open is read in their own words, and
+	// nothing has been chosen yet — so every tree's catalogs are laid over the
+	// runtime's until one has been. Opening one narrows them to its own.
+	sources := catalogs(trees...)
+	i18n.Activate(i18n.Match(locale(), codes(i18n.Discover(sources...))), sources...)
+
+	return tui.Run(trees, func(sp *spec.Spec) (*tui.Program, error) {
+		return open(sp, conf)
+	}, version)
+}
+
+// open makes one tree runnable: the answers it keeps and the file they survive
+// in, the log, the words it is read in, and the runner that joins the tree to
+// the answers. Everything here is named after the tree, which is why none of it
+// happens before one has been chosen.
+func open(sp *spec.Spec, conf string) (*tui.Program, error) {
 	// What this tree's answers and log are called, after the tree itself.
 	name := strings.TrimSuffix(sp.File, spec.SpecExt)
 	if conf == "" {
 		conf = name + confExt
 	}
-	if conf, err = filepath.Abs(conf); err != nil {
-		return err
+	conf, err := filepath.Abs(conf)
+	if err != nil {
+		return nil, err
 	}
 
 	st := store.New(sp, conf)
@@ -168,25 +201,19 @@ func run(dir, conf string) error {
 	// gave, an inherited variable as often an accident as an instruction.
 	st.LoadEnv()
 	if err := st.Load(); err != nil {
-		return err
-	}
-	// Settled before the first page, so every condition, every script and the
-	// answer file read the same thing from the start: whatever was chosen last if
-	// it is still on offer, otherwise the first the tree names.
-	if sp.Mode(st.Get(spec.ModeVar)) == nil {
-		st.Set(spec.ModeVar, sp.Modes[0].ID)
+		return nil, err
 	}
 
-	// Opened before the interface, so the first page is already recorded — and
-	// only now, because where it goes follows where the answers go.
+	// Opened before the first page of this tree is drawn — and only now, because
+	// where it goes follows where the answers go.
 	logPath := filepath.Join(filepath.Dir(conf), name+logExt)
 	if err := logging.Init(logPath); err != nil {
-		return err
+		return nil, err
 	}
 	st.SetFact("INSTALLER_LOG", logPath)
 	logging.Info("%s %s", sp.UI.Title, version)
 
-	// The tree's catalogs are laid over the runtime's, so a tree may reword
+	// This tree's catalogs are laid over the runtime's, so a tree may reword
 	// anything. A stored choice beats the machine's locale: somebody said so.
 	sources := catalogs(sp)
 	langs := i18n.Discover(sources...)
@@ -198,16 +225,7 @@ func run(dir, conf string) error {
 	rn := runner.New(sp, st)
 	rn.Settle()
 
-	return tui.Run(sp, st, rn, version, langs, sources)
-}
-
-// modes is what this tree can do, in the order it offers it.
-func modes(sp *spec.Spec) []string {
-	out := make([]string, len(sp.Modes))
-	for i, m := range sp.Modes {
-		out[i] = m.ID
-	}
-	return out
+	return &tui.Program{Spec: sp, Store: st, Runner: rn, Langs: langs, Sources: sources}, nil
 }
 
 // hooks is which of them this tree actually has, so one that is not being called
@@ -222,13 +240,19 @@ func hooks(sp *spec.Spec) []string {
 	return out
 }
 
-// catalogs is every source of words this run has: the runtime's own, and the
+// catalogs is every source of words a run has: the runtime's own, and each
 // tree's laid over them. A tree that declares none simply speaks the runtime's.
-func catalogs(sp *spec.Spec) []fs.FS {
-	if sp.Locales == "" {
-		return []fs.FS{locales.FS}
+//
+// Several trees at once is what the page asking which to open needs, since none
+// of them is the one this run is about yet.
+func catalogs(trees ...*spec.Spec) []fs.FS {
+	out := []fs.FS{locales.FS}
+	for _, sp := range trees {
+		if sp.Locales != "" {
+			out = append(out, os.DirFS(sp.Locales))
+		}
 	}
-	return []fs.FS{locales.FS, os.DirFS(sp.Locales)}
+	return out
 }
 
 // language settles which one to speak: the stored choice if it is still on
@@ -266,47 +290,27 @@ func codes(langs []i18n.Lang) []string {
 	return out
 }
 
-// catalog prints every word an installer says, with the right-hand side left
-// empty: redirect it to locales/<code>.yaml and fill it in. Run again after the
-// tree changes and the new strings are in the output.
+// catalog writes the translation template for one tree: every word it says,
+// each with its translation left empty, in the order it says them. Redirect it
+// to locales/<name>.pot, and a catalog for a language is that file with the
+// right-hand side filled in — by hand, or on a platform that speaks po.
 func catalog(dir string) error {
-	dir, err := spec.Find(dir)
+	trees, err := loadTrees(dir)
 	if err != nil {
 		return err
 	}
-	sp, err := spec.Load(dir)
-	if err != nil {
-		return err
+	// One template belongs to one tree. Which of several is not something to
+	// guess at, so it is named with -dir rather than picked here.
+	if len(trees) > 1 {
+		return fmt.Errorf("%d trees here — name one with -dir", len(trees))
 	}
-	fmt.Printf("# Translation catalog for %s.\n", sp.UI.Title)
-	fmt.Printf("# Fill in the right-hand side. Anything left empty stays as it is written here.\n")
-	fmt.Printf("language: \"\"\n")
-	fmt.Printf("messages:\n")
-	for _, msg := range sp.Strings() {
-		fmt.Printf("  %s: \"\"\n", quoteYAML(msg))
+	sp := trees[0]
+	msgs := sp.Messages()
+	entries := make([]i18n.Entry, 0, len(msgs))
+	for _, m := range msgs {
+		entries = append(entries, i18n.Entry{Text: m.Text, Note: m.Note, Refs: m.Files})
 	}
-	return nil
-}
-
-// quoteYAML renders one message as a yaml key, using a block of its own where
-// the text runs over several lines.
-func quoteYAML(s string) string {
-	if !strings.Contains(s, "\n") {
-		return strconv.Quote(s)
-	}
-	var b strings.Builder
-	b.WriteString("? |-\n")
-	for line := range strings.SplitSeq(strings.TrimRight(s, "\n"), "\n") {
-		// The blank line between two paragraphs is written as a blank line, not
-		// as four spaces: a catalog is edited and then linted like any other
-		// yaml, and trailing whitespace is what a linter says first.
-		if line != "" {
-			b.WriteString("    ")
-			b.WriteString(line)
-		}
-		b.WriteByte('\n')
-	}
-	return strings.TrimRight(b.String(), "\n") + "\n  "
+	return i18n.Template(os.Stdout, strings.TrimSuffix(sp.File, spec.SpecExt), entries)
 }
 
 // die reports on stderr and in the log, then leaves. The one thing not shown

@@ -94,11 +94,10 @@ var testTasks = map[string]string{
 	"tasks/c-extras/task.sh":   "echo ran\n",
 }
 
-func newHarness(t *testing.T, files map[string]string) *harness {
+// writeTree puts one tree on disk — the standard one, with whatever a test
+// changed about it — and answers with the folder it went into.
+func writeTree(t *testing.T, dir string, files map[string]string) string {
 	t.Helper()
-	i18n.Use(i18n.SourceLang)
-
-	dir := t.TempDir()
 	base := map[string]string{treeFile: testInstaller}
 	for name, body := range testTasks {
 		base[name] = body
@@ -119,28 +118,61 @@ func newHarness(t *testing.T, files map[string]string) *harness {
 			t.Fatal(err)
 		}
 	}
+	return dir
+}
+
+func loadTree(t *testing.T, dir string) *spec.Spec {
+	t.Helper()
 	sp, err := spec.Load(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	st := store.New(sp, filepath.Join(t.TempDir(), "installer.conf"))
-	st.SetFacts("test")
-	// The catalogs the tree brought, discovered the way the program discovers
-	// them — so a test that writes one is testing the thing that ships.
-	var sources []fs.FS
-	if sp.Locales != "" {
-		sources = append(sources, os.DirFS(sp.Locales))
+	return sp
+}
+
+// openTree is the interface's Open, as the program supplies it: where this
+// tree's answers go, the runner that joins the two, and the catalogs it brought.
+func openTree(t *testing.T) Open {
+	t.Helper()
+	answers := t.TempDir()
+	return func(sp *spec.Spec) (*Program, error) {
+		name := strings.TrimSuffix(sp.File, spec.SpecExt)
+		st := store.New(sp, filepath.Join(answers, name+".conf"))
+		st.SetFacts("test")
+		// The catalogs the tree brought, discovered the way the program
+		// discovers them — so a test that writes one is testing what ships.
+		var sources []fs.FS
+		if sp.Locales != "" {
+			sources = append(sources, os.DirFS(sp.Locales))
+		}
+		return &Program{
+			Spec: sp, Store: st, Runner: runner.New(sp, st),
+			Langs: i18n.Discover(sources...), Sources: sources,
+		}, nil
 	}
-	a := &app{
-		spec: sp, store: st, runner: runner.New(sp, st), version: "test",
-		langs: i18n.Discover(sources...), sources: sources,
-		first: true,
+}
+
+// start brings the interface up around a release of one or more trees, exactly
+// as Run does.
+func start(t *testing.T, trees ...*spec.Spec) *harness {
+	t.Helper()
+	i18n.Use(i18n.SourceLang)
+	a := &app{trees: trees, open: openTree(t), version: "test"}
+	if len(trees) == 1 {
+		if err := a.enter(trees[0]); err != nil {
+			t.Fatal(err)
+		}
 	}
 	h := &harness{t: t, a: a, msgs: make(chan tea.Msg, 64)}
 	h.m = newModel(a, "")
 	h.run(h.m.Init())
 	h.drain()
 	return h
+}
+
+func newHarness(t *testing.T, files map[string]string) *harness {
+	t.Helper()
+	return start(t, loadTree(t, writeTree(t, t.TempDir(), files)))
 }
 
 // The loop, as the real program runs it: a command goes off on its own and
@@ -409,25 +441,18 @@ func TestABlindQuestionOpensItsFilterFromTheStart(t *testing.T) {
 	h.wants("de").refuses("us")
 }
 
-// ─── What this run is ────────────────────────────────────────────────────────
+// ─── Which program ───────────────────────────────────────────────────────────
 
-// A tree that can do more than one thing asks which before anything else
-// follows from it — and what it asks with is entirely the tree's own words.
-// What is chosen then decides which questions there are and what the run is
-// called from there on.
-const testModes = `
-title: Test Installer
-modes:
-  - id: install
-    title: Installation
-    description: Put a system on this machine.
-    confirm: Erasing {{DISK}}.
-    stages: [go, finish]
-  - id: repair
-    title: Recovery
-    description: Open a system already on a disk.
-    confirm: Opening {{DISK}}.
-    stages: [open]
+// A release holding more than one tree asks which to open before anything else
+// follows from it — and what it asks with is entirely each tree's own words.
+// What is chosen then decides which questions there are, where the answers go
+// and what the run is called from there on.
+const testRecovery = `
+title: Test Recovery
+run: Recovery
+description: Open a system already on a disk.
+confirm: Opening {{DISK}}.
+stages: [open]
 variables:
   - name: DISK
     title: Disk
@@ -437,32 +462,42 @@ variables:
     title: Snapshot
     required: true
     values: [one, two]
-    mode: repair
 `
 
-// modeFiles is that tree as the files it is made of: one task in each mode, and
-// none of the standard ones.
-var modeFiles = map[string]string{
-	treeFile:                   testModes,
-	"tasks/a-first/task.yaml":  "name: First\nstage: go\n",
-	"tasks/b-second/task.yaml": "",
-	"tasks/b-second/task.sh":   "",
-	"tasks/c-extras/task.yaml": "",
-	"tasks/c-extras/task.sh":   "",
-	"tasks/d-open/task.yaml":   "name: Open the disk\nstage: open\n",
-	"tasks/d-open/task.sh":     "echo opened\n",
+// release is a folder holding two trees, the way a build leaves one: the
+// standard installer, and a recovery beside it.
+func release(t *testing.T) []*spec.Spec {
+	t.Helper()
+	dir := t.TempDir()
+	installer := writeTree(t, filepath.Join(dir, "installer"), map[string]string{
+		treeFile: strings.Replace(testInstaller, "title: Test Installer",
+			"title: Test Installer\nrun: Installation\ndescription: Put a system on this machine.", 1),
+	})
+	recovery := writeTree(t, filepath.Join(dir, "recovery"), map[string]string{
+		treeFile:                   "",
+		"recovery.yaml":            testRecovery,
+		"tasks/a-first/task.yaml":  "",
+		"tasks/a-first/task.sh":    "",
+		"tasks/b-second/task.yaml": "",
+		"tasks/b-second/task.sh":   "",
+		"tasks/c-extras/task.yaml": "",
+		"tasks/c-extras/task.sh":   "",
+		"tasks/d-open/task.yaml":   "name: Open the disk\nstage: open\n",
+		"tasks/d-open/task.sh":     "echo opened\n",
+	})
+	return []*spec.Spec{loadTree(t, installer), loadTree(t, recovery)}
 }
 
-func TestChoosingAModeSettlesTheQuestionsTheWarningAndTheRun(t *testing.T) {
-	h := newHarness(t, modeFiles)
-	h.wants("What to do", "Installation", "Recovery", "Put a system on this machine.")
+func TestChoosingAProgramSettlesTheQuestionsTheWarningAndTheRun(t *testing.T) {
+	h := start(t, release(t)...)
+	h.wants("What to do", "Test Installer", "Test Recovery", "Put a system on this machine.")
 
-	h.down().enter() // Recovery
+	h.down().enter() // the recovery
 	h.wants("Disk").enter()
 	h.wants("Snapshot", "one", "two").enter()
 
-	// The hub, the warning and the run are all read in the mode's own name, and
-	// only its own stage runs.
+	// The hub, the warning and the run are all read in that tree's own name for
+	// a run of it, and only its own tasks run.
 	h.wants("Recovery", "Open a system already on a disk.").enter()
 	h.wants("Ready to start", "Opening /dev/sda.", "Start Recovery").enter()
 	h.ran()
@@ -470,17 +505,13 @@ func TestChoosingAModeSettlesTheQuestionsTheWarningAndTheRun(t *testing.T) {
 	h.refuses("First")
 }
 
-func TestAQuestionGuardedByAModeIsNotAskedInTheOther(t *testing.T) {
-	h := newHarness(t, modeFiles)
-	h.enter() // Installation, the row the page opens on
-	h.wants("Disk").enter()
-	h.wants("Installation", "Put a system on this machine.")
+// The other tree's questions are not this one's: they are declared in a folder
+// this run never opened.
+func TestTheOtherProgramsQuestionsAreNotAsked(t *testing.T) {
+	h := start(t, release(t)...)
+	h.enter() // the installer, the row the page opens on
+	h.wants("Setup", "Choose what kind of system to install.")
 	h.refuses("Snapshot")
-	h.enter()
-	h.wants("Erasing /dev/sda.", "Start Installation").enter()
-	h.ran()
-	h.wants("Installation complete in", "First")
-	h.refuses("Open the disk")
 }
 
 // ─── Starting points ─────────────────────────────────────────────────────────
@@ -510,7 +541,7 @@ func presetTreeTying(apply string) map[string]string {
 		treeFile: tree +
 			"  - name: LOCALE\n    title: System language\n    required: true\n    values: [de_DE, en_US]\n" + apply +
 			"language: LOCALE\n",
-		"locales/de.yaml": "language: Deutsch\nmessages:\n  \"User name\": \"Benutzername\"\n",
+		"locales/de.po": "msgid \"English\"\nmsgstr \"Deutsch\"\n\nmsgid \"User name\"\nmsgstr \"Benutzername\"\n",
 	}
 }
 
@@ -546,7 +577,7 @@ func twoLanguageTree() map[string]string {
 	return map[string]string{
 		treeFile: testInstaller +
 			"  - name: LOCALE\n    title: System language\n    required: true\n    values: [de_DE, en_US]\n",
-		"locales/de.yaml": "language: Deutsch\nmessages:\n  \"Setup\": \"Einrichtung\"\n",
+		"locales/de.po": "msgid \"English\"\nmsgstr \"Deutsch\"\n\nmsgid \"Setup\"\nmsgstr \"Einrichtung\"\n",
 	}
 }
 
@@ -668,7 +699,7 @@ var regionTree = map[string]string{
 		"  - name: LOCALE\n    title: Language and region\n    required: true\n    first: true\n" +
 		"    values: [de_DE, en_US]\n" +
 		"language: LOCALE\n",
-	"locales/de.yaml": "language: Deutsch\nmessages:\n  \"Setup\": \"Einrichtung\"\n",
+	"locales/de.po": "msgid \"English\"\nmsgstr \"Deutsch\"\n\nmsgid \"Setup\"\nmsgstr \"Einrichtung\"\n",
 }
 
 func TestTheOpeningRunsPresetThenQuestionsThenHub(t *testing.T) {

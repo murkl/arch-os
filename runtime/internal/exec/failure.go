@@ -38,6 +38,10 @@ func (f *Failure) Fields() [][2]string {
 		}
 	}
 	if f.Script != "" {
+		// TRANSLATORS: the four labels below head the table shown when a step
+		// failed: the script it was in, the line that ran, what it returned,
+		// and what it printed. Each is one column of a narrow table, so short
+		// wins over exact.
 		add(i18n.T("Script"), fmt.Sprintf("%s:%d", f.Script, f.Line))
 	}
 	add(i18n.T("Command"), f.Command)

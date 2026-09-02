@@ -14,32 +14,61 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Find locates the tree this binary is the runtime for: the folder holding a
-// declaration, beside the binary itself or wherever a caller points.
+// Trees lists the programs this binary can run, in the order it offers them:
+// the folder named — beside the binary itself when none is — if that folder is
+// a tree, and otherwise every folder inside it that is.
 //
-// Beside the binary and nowhere else, because that is what makes a release one
-// thing — a folder holding the program and everything it runs, copied to a
-// stick and started. A binary on its own is not an installer and never pretends
-// to be one: finding nothing is an error with somewhere to look in it, not a
-// program that starts up empty.
-func Find(explicit string) (string, error) {
-	if explicit != "" {
-		abs, err := filepath.Abs(explicit)
-		if err != nil {
-			return "", err
-		}
-		if _, err := Declaration(abs); err != nil {
-			return "", fmt.Errorf("%s: %w", abs, err)
-		}
-		return abs, nil
+// A release is the binary and the trees beside it, a folder each, which is what
+// makes it one thing: copied to a stick and started, it holds every program the
+// machine it boots might need. Several of them is a question the runtime puts
+// before anything else; one is no question at all.
+//
+// Beside the binary and nowhere else, because a binary on its own is not an
+// installer and never pretends to be one: finding nothing is an error with
+// somewhere to look in it, not a program that starts up empty.
+//
+// They are offered in folder order, so what a release is asked first is what its
+// folders are called.
+func Trees(explicit string) ([]string, error) {
+	dir := explicit
+	if dir == "" {
+		dir = binaryDir()
 	}
-	beside := binaryDir()
-	if _, err := Declaration(beside); err == nil {
-		return beside, nil
+	dir, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, err
 	}
-	return "", fmt.Errorf("%s\n%s",
-		i18n.T("No installer found."),
-		i18n.T("A %s file has to sit next to this program, in %s.", SpecExt, beside))
+	// A folder holding a declaration is itself the tree, and there is nothing
+	// below it to look at. Two declarations in it is refused here rather than
+	// resolved, exactly as it is when a tree is named outright.
+	if len(declarations(dir)) > 0 {
+		if _, err := Declaration(dir); err != nil {
+			return nil, fmt.Errorf("%s: %w", dir, err)
+		}
+		return []string{dir}, nil
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	var out []string
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		if sub := filepath.Join(dir, entry.Name()); len(declarations(sub)) > 0 {
+			if _, err := Declaration(sub); err != nil {
+				return nil, fmt.Errorf("%s: %w", sub, err)
+			}
+			out = append(out, sub)
+		}
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("%s\n%s",
+			i18n.T("No installer found."),
+			i18n.T("A %s file has to sit next to this program, in %s.", SpecExt, dir))
+	}
+	return out, nil
 }
 
 // Declaration is the tree's own yaml, by name: the one file ending in SpecExt
@@ -51,17 +80,7 @@ func Find(explicit string) (string, error) {
 // installer.yaml and a recovery.yaml is two trees in one place, and picking one
 // would be the runtime deciding which installer somebody meant.
 func Declaration(dir string) (string, error) {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return "", err
-	}
-	var found []string
-	for _, entry := range entries {
-		if !entry.IsDir() && strings.HasSuffix(entry.Name(), SpecExt) {
-			found = append(found, entry.Name())
-		}
-	}
-	switch len(found) {
+	switch found := declarations(dir); len(found) {
 	case 1:
 		return found[0], nil
 	case 0:
@@ -69,6 +88,23 @@ func Declaration(dir string) (string, error) {
 	default:
 		return "", fmt.Errorf("%s: %s", i18n.T("more than one %s file here", SpecExt), strings.Join(found, ", "))
 	}
+}
+
+// declarations is every top-level yaml in a folder, in name order. A folder
+// that cannot be read holds none, which is what a caller about to read it again
+// wants: the error belongs to whoever is looking, not to the counting.
+func declarations(dir string) []string {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+	var found []string
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), SpecExt) {
+			found = append(found, entry.Name())
+		}
+	}
+	return found
 }
 
 // binaryDir is where this program's own file is, with symlinks resolved so that
@@ -94,13 +130,13 @@ type declaration struct {
 	Console  string `yaml:"console"`
 	Language string `yaml:"language"`
 
-	// What this installer does. A tree that does one thing writes its stages and
-	// its warning here and never says the word mode; one that does several names
-	// them under `modes:` and leaves these two out. Both at once is refused —
-	// see settleModes.
-	Confirm string   `yaml:"confirm"`
-	Stages  []string `yaml:"stages"`
-	Modes   []*Mode  `yaml:"modes"`
+	// What this installer is and what it does: one sentence about the program,
+	// the name of one run of it, the last warning before that run starts, and the
+	// phases it happens in.
+	Description string   `yaml:"description"`
+	Run         string   `yaml:"run"`
+	Confirm     string   `yaml:"confirm"`
+	Stages      []string `yaml:"stages"`
 
 	Presets   []*Preset   `yaml:"presets"`
 	Variables []*Variable `yaml:"variables"`
@@ -123,10 +159,14 @@ func Load(dir string) (*Spec, error) {
 	if err := read(filepath.Join(dir, file), &head); err != nil {
 		return nil, err
 	}
-	s.UI = UI{Title: head.Title, Logo: head.Logo, Accent: head.Accent, Console: head.Console}
+	s.UI = UI{
+		Title: head.Title, Logo: head.Logo, Accent: head.Accent, Console: head.Console,
+		Description: head.Description, Run: head.Run,
+	}
 	s.Presets, s.Vars, s.Language = head.Presets, head.Variables, head.Language
-	if err := s.settleModes(&head); err != nil {
-		return nil, err
+	s.Confirm, s.Stages = head.Confirm, head.Stages
+	if len(s.Stages) == 0 {
+		return nil, fmt.Errorf("%s: no stages", s.File)
 	}
 	s.Lib = beside(dir, FileLib)
 	s.Locales = beside(dir, DirLocales)
@@ -145,57 +185,6 @@ func Load(dir string) (*Spec, error) {
 		return nil, err
 	}
 	return s, nil
-}
-
-// settleModes works out what this tree can do, so that everything below here
-// reads one list of modes and never asks whether there were any.
-//
-// A tree that does one thing writes `stages:` and `confirm:` at the top level
-// and gets a single nameless mode holding them — it is never asked which mode
-// it is in, and nothing about the idea reaches it. A tree that does several
-// names them, and then those two keys belong to a mode rather than to the
-// installer: having them in both places would be two answers to one question,
-// so it is refused rather than resolved.
-func (s *Spec) settleModes(head *declaration) error {
-	where := s.File + ": "
-	if len(head.Modes) == 0 {
-		if len(head.Stages) == 0 {
-			return fmt.Errorf("%sno stages", where)
-		}
-		s.Modes = []*Mode{{Confirm: head.Confirm, Stages: head.Stages}}
-		s.Stages = head.Stages
-		return nil
-	}
-	if len(head.Stages) > 0 || head.Confirm != "" {
-		return fmt.Errorf("%sstages and confirm belong to a mode once there are modes", where)
-	}
-	seen := map[string]bool{}
-	owner := map[string]string{}
-	for _, m := range head.Modes {
-		switch {
-		case m.ID == "":
-			return fmt.Errorf("%sa mode needs an id", where)
-		case seen[m.ID]:
-			return fmt.Errorf("%smode %s is declared twice", where, m.ID)
-		case m.Title == "":
-			return fmt.Errorf("%smode %s: title is required", where, m.ID)
-		case len(m.Stages) == 0:
-			return fmt.Errorf("%smode %s: no stages", where, m.ID)
-		}
-		seen[m.ID] = true
-		// A stage is what a task points at to say where it belongs, so it can
-		// only belong to one mode — otherwise a task would be in two runs at
-		// once and there would be nothing to read that says which.
-		for _, stage := range m.Stages {
-			if other, taken := owner[stage]; taken {
-				return fmt.Errorf("%smode %s: stage %s already belongs to mode %s", where, m.ID, stage, other)
-			}
-			owner[stage] = m.ID
-			s.Stages = append(s.Stages, stage)
-		}
-	}
-	s.Modes = head.Modes
-	return nil
 }
 
 // beside is the path of one of the tree's optional parts, or empty where the
@@ -310,14 +299,6 @@ func (s *Spec) check(tasks []*Task) error {
 // checkTasks settles what runs and in what order: every task has to belong to a
 // stage, and what is left is sorted once and for all.
 func (s *Spec) checkTasks(tasks []*Task) error {
-	// Which mode a stage puts a task in. Built here rather than carried on the
-	// task, so a unit says where it belongs exactly once.
-	mode := map[string]string{}
-	for _, m := range s.Modes {
-		for _, stage := range m.Stages {
-			mode[stage] = m.ID
-		}
-	}
 	for _, t := range tasks {
 		where := DirTasks + "/" + t.id
 		if t.Name == "" {
@@ -326,7 +307,6 @@ func (s *Spec) checkTasks(tasks []*Task) error {
 		if t.Stage == "" {
 			return fmt.Errorf("%s: stage is required", where)
 		}
-		t.mode = mode[t.Stage]
 		if err := s.checkAsks(t); err != nil {
 			return fmt.Errorf("%s: %w", where, err)
 		}
@@ -424,10 +404,7 @@ func (s *Spec) checkAsks(t *Task) error {
 //
 // A blank line survives, because that is the one break that was meant.
 func (s *Spec) normalize(tasks []*Task) {
-	fields := []*string{&s.UI.Title, &s.UI.Console}
-	for _, m := range s.Modes {
-		fields = append(fields, &m.Title, &m.Description, &m.Confirm)
-	}
+	fields := []*string{&s.UI.Title, &s.UI.Description, &s.UI.Run, &s.UI.Console, &s.Confirm}
 	for _, p := range s.Presets {
 		fields = append(fields, &p.Title, &p.Description)
 		for _, o := range p.Options {
@@ -493,14 +470,6 @@ func (s *Spec) checkVars() error {
 		if v.Blind && !v.First {
 			return fmt.Errorf("%s: blind only matters for a question asked first — anything later is typed on a keyboard already loaded", v.Name)
 		}
-		if err := s.belongs(v.Mode); err != nil {
-			return fmt.Errorf("%s: %w", v.Name, err)
-		}
-		// A question asked before the mode is chosen cannot belong to one of
-		// them: there is no answer yet to say which.
-		if v.First && v.Mode != "" {
-			return fmt.Errorf("%s: asked first, which is before there is a mode for it to belong to", v.Name)
-		}
 		if len(v.Values) > 0 && v.Command != "" {
 			return fmt.Errorf("%s: values and command are two answers to the same question", v.Name)
 		}
@@ -552,9 +521,6 @@ func (s *Spec) checkPresets() error {
 			return fmt.Errorf("preset %s: no options", p.ID)
 		}
 		seen[p.ID] = true
-		if err := s.belongs(p.Mode); err != nil {
-			return fmt.Errorf("preset %s: %w", p.ID, err)
-		}
 		chosen := map[string]bool{}
 		for _, o := range p.Options {
 			switch {
@@ -611,11 +577,6 @@ func (s *Spec) checkFetch(o *PresetOption) error {
 
 // conditions parses a `conditions:` and checks that every line of it is about a
 // variable this tree actually declares.
-//
-// Which mode a row belongs to is deliberately not one of them: that is `mode:`,
-// a key of its own, because there is nothing to compare. A row is one mode's or
-// it is everybody's, and two ways of writing the same guard would be one too
-// many.
 func (s *Spec) conditions(exprs Conditions) ([]*condition, error) {
 	var out []*condition
 	for _, expr := range exprs {
@@ -632,16 +593,6 @@ func (s *Spec) conditions(exprs Conditions) ([]*condition, error) {
 		out = append(out, c)
 	}
 	return out, nil
-}
-
-// belongs checks that a `mode:` names a mode this tree offers. A row guarded by
-// one that does not exist is a row that never appears, which is exactly the
-// silence every check here exists to prevent.
-func (s *Spec) belongs(mode string) error {
-	if mode == "" || s.Mode(mode) != nil {
-		return nil
-	}
-	return fmt.Errorf("no such mode: %s", mode)
 }
 
 // shell settles a field that may hold either shell or the file it lives in: a

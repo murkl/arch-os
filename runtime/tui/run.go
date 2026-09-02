@@ -29,9 +29,9 @@ import (
 type runScreen struct {
 	app *app
 
-	// name is what this run is called, where the tree gave it a name: a mode's
-	// own title, which is what the headline and the log are read in. Empty for a
-	// tree that does one thing, which the runtime can only call an installation.
+	// name is what this run is called, where the tree gave it a name: its own
+	// `run:`, which is what the headline and the log are read in. Empty for a
+	// tree that named none, which the runtime can only call an installation.
 	name string
 
 	steps []*spec.Task

@@ -1,21 +1,28 @@
 package i18n
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 	"testing/fstest"
 )
 
+// catalog is a po file as a translation platform hands one back, minus
+// everything a running program has no use for.
 func catalog(language string, messages map[string]string) []byte {
 	var b strings.Builder
-	b.WriteString("language: " + language + "\nmessages:\n")
+	b.WriteString("msgid \"\"\nmsgstr \"\"\n\"Content-Type: text/plain; charset=UTF-8\\n\"\n")
+	entry := func(k, v string) {
+		b.WriteString("\nmsgid " + strconv.Quote(k) + "\nmsgstr " + strconv.Quote(v) + "\n")
+	}
+	if language != "" {
+		entry(LanguageName, language)
+	}
 	for k, v := range messages {
-		b.WriteString("  " + quote(k) + ": " + quote(v) + "\n")
+		entry(k, v)
 	}
 	return []byte(b.String())
 }
-
-func quote(s string) string { return `"` + strings.ReplaceAll(s, `"`, `\"`) + `"` }
 
 // The source string is the key, and a message nothing has to say about stays
 // exactly as it is written in the code. That is what makes a half-finished
@@ -53,10 +60,10 @@ func TestHasIsAboutTheCatalogNotTheOutput(t *testing.T) {
 // Two independent sources, merged. The folder's catalog is laid over the
 // runtime's, so a folder may reword something the runtime also says.
 func TestTheFolderCatalogWinsOverTheRuntimeOne(t *testing.T) {
-	runtime := fstest.MapFS{"de.yaml": {Data: catalog("Deutsch", map[string]string{
+	runtime := fstest.MapFS{"de.po": {Data: catalog("Deutsch", map[string]string{
 		"Back": "Zurück", "Install": "Installieren",
 	})}}
-	folder := fstest.MapFS{"de.yaml": {Data: catalog("Deutsch", map[string]string{
+	folder := fstest.MapFS{"de.po": {Data: catalog("Deutsch", map[string]string{
 		"Install": "Einspielen", "Disk": "Datenträger",
 	})}}
 	Activate("de", runtime, folder)
@@ -72,7 +79,7 @@ func TestTheFolderCatalogWinsOverTheRuntimeOne(t *testing.T) {
 }
 
 func TestActivatingALanguageNobodyHasLeavesTheSourceText(t *testing.T) {
-	Activate("fr", fstest.MapFS{"de.yaml": {Data: catalog("Deutsch", map[string]string{"Back": "Zurück"})}})
+	Activate("fr", fstest.MapFS{"de.po": {Data: catalog("Deutsch", map[string]string{"Back": "Zurück"})}})
 	if got := T("Back"); got != "Back" {
 		t.Errorf("T(Back) = %q, want the source text", got)
 	}
@@ -83,7 +90,7 @@ func TestActivatingALanguageNobodyHasLeavesTheSourceText(t *testing.T) {
 
 // A broken translation must never be the reason an installer will not start.
 func TestABrokenCatalogIsIgnoredRatherThanFatal(t *testing.T) {
-	src := fstest.MapFS{"de.yaml": {Data: []byte("language: [this is not\n  valid: yaml")}}
+	src := fstest.MapFS{"de.po": {Data: []byte("msgid \"Back\"\nthis is not a po file\n")}}
 	Activate("de", src)
 	if got := T("Back"); got != "Back" {
 		t.Errorf("T(Back) = %q", got)
@@ -95,10 +102,12 @@ func TestABrokenCatalogIsIgnoredRatherThanFatal(t *testing.T) {
 
 func TestDiscoverListsTheSourceLanguageFirst(t *testing.T) {
 	src := fstest.MapFS{
-		"de.yaml": {Data: catalog("Deutsch", nil)},
-		"fr.yaml": {Data: catalog("Français", nil)},
-		"es.yaml": {Data: catalog("Español", nil)},
-		"notes":   {Data: []byte("not a catalog")},
+		"de.po": {Data: catalog("Deutsch", nil)},
+		"fr.po": {Data: catalog("Français", nil)},
+		"es.po": {Data: catalog("Español", nil)},
+		"notes": {Data: []byte("not a catalog")},
+		// The template is what catalogs are filled in from, not a language.
+		"archos.pot": {Data: catalog("", map[string]string{"Back": ""})},
 	}
 	got := Discover(src)
 	var codes, names []string

@@ -21,21 +21,23 @@ tasks/<id>/task.yaml     where that unit belongs: its stage, its needs, its cond
 tasks/<id>/task.sh       what it does — and any file it ships with, beside it
 hooks/<name>.sh          everything around the work itself
 lib.sh                   the little every script of this tree shares
-locales/                 one <code>.yaml per language this recovery speaks
+locales/                 one <code>.po per language this recovery speaks, and the template they are filled in from
 ```
 
 Nothing points at any of this from `recovery.yaml`: each part is found by its own
 name. The runtime takes the one YAML file it finds in a folder, which is what
 lets this tree and the installer's sit side by side and stay two programs. A
-release holds both, and one binary: `./installer -dir recovery` is this one, and
-on the ISO that is the `recovery` command.
+release holds both beside one binary, which asks which of them to open;
+`./archos -dir recovery` is this one outright, and on the ISO that is the
+`recovery` command.
 
 ## What it does
 
-`recovery.yaml` declares exactly one `mode:` — `Recovery`, with the last warning
-and the stages under it. There is nothing to choose, so nobody is asked; it is
-there for the name. Without it the runtime falls back to the only thing an
-unnamed run can be and calls a repair an installation.
+`recovery.yaml` says `run: Recovery`, which is the name the interface reads out
+wherever it says what is happening. Without it the runtime falls back to the only
+thing an unnamed run can be and calls a repair an installation. `description:`
+beside it is the sentence under this program's row on the page that asks which to
+open.
 
 Three stages, and after the first one every step is offered rather than done.
 The system is opened, and what to repair is then a decision with the disk in
@@ -124,11 +126,15 @@ been given, and a disk laid out some other way has to stay answerable by hand.
 ## A language
 
 ```sh
-make strings > locales/fr.yaml   # every word this tree says, empty
-make check                       # reports coverage per language
+cp locales/recovery.pot locales/fr.po   # every word this tree says, none of them translated
+make check                              # reports coverage per language
 ```
 
-The runtime's own words are translated separately, in its own `locales/`.
+Fill in the `msgstr` lines and nothing else. `make locales` regenerates
+`recovery.pot` from the tree and brings every catalog up to it, which is what has
+to run after a question is added or reworded. The runtime's own words are
+translated separately, in its own `locales/`. See
+[TRANSLATING.md](../TRANSLATING.md).
 
 ## Requirements
 
