@@ -27,9 +27,11 @@ OVMF_CODE="${OVMF_CODE:-/usr/share/edk2/x64/OVMF_CODE.4m.fd}"
 OVMF_VARS="${OVMF_VARS:-/usr/share/edk2/x64/OVMF_VARS.4m.fd}"
 
 # The first page, as the console spells it: the question of which of the two
-# programs to open. Two strings rather than one, because OCR over a console font
-# loses a letter now and again.
-EXPECT='What to do|Arch OS Recovery'
+# programs to open. Several strings rather than one, because OCR over a console
+# font loses a letter now and again - and it loses them in the same places every
+# time, so what is looked for is the part it reads cleanly. "Arch OS" is not on
+# the list: tesseract reads the capital O beside the S as a zero.
+EXPECT='What to do|Recovery|Installer'
 
 # A machine that got this far and no further says so in plain words, and there is
 # no reason to sit out the timeout for it.
@@ -110,8 +112,18 @@ console_text() {
     tesseract "$1" - --psm 6 2>/dev/null || true
 }
 
+# What the console was showing when it gave up, in the log rather than only in
+# the frames: the picture is kept, but whoever reads a failed run reads the log,
+# and a boot that ends in a login prompt and one that never leaves the splash
+# are the same message without it.
 fail() {
     echo "Error: $1" >&2
+    if [ -n "$last_shot" ]; then
+        echo "the console read:" >&2
+        console_text "$last_shot" | sed 's/^/  | /' >&2
+    else
+        echo "the console could not be photographed at all - see the monitor above" >&2
+    fi
     echo "the console is in ${FRAME_DIR}" >&2
     exit 1
 }
@@ -120,6 +132,7 @@ echo "### Wait for the interface (up to ${TIMEOUT}s)"
 deadline=$((SECONDS + TIMEOUT))
 found=""
 frame=0
+last_shot=""
 while [ "$SECONDS" -lt "$deadline" ]; do
     sleep "$INTERVAL"
     kill -0 "$QEMU_PID" 2>/dev/null || fail "the machine stopped before the interface came up"
@@ -127,6 +140,7 @@ while [ "$SECONDS" -lt "$deadline" ]; do
     frame=$((frame + 1))
     shot="$(printf '%s/frame-%02d.ppm' "$FRAME_DIR" "$frame")"
     screendump "$shot" || continue
+    last_shot="$shot"
 
     text="$(console_text "$shot")"
     grep -qE "$PANIC" <<<"$text" && fail "the machine did not finish booting"

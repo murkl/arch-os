@@ -44,7 +44,7 @@ func (h *hub) build() {
 	}
 	h.picker = newPicker([]item{
 		{title: title, detail: detail, key: keyInstall},
-		{title: labelSettings(), detail: labelSettingsHelp(), key: keySettings},
+		{title: labelSettings(), detail: labelSettingsHelp(h.app.spec.Name()), key: keySettings},
 	})
 }
 

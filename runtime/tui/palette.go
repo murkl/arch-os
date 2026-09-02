@@ -192,11 +192,17 @@ func adapt(dark bool) {
 // whichever terminal is attached and passes it along — so inside tmux the
 // question goes out under a TERM that termenv is willing to ask, and only there.
 //
-// Asking costs nothing when there is no answer. termenv sends a cursor-position
-// query behind the colour one, and every terminal alive answers that; a reply in
-// the wrong shape is a terminal saying it does not know, and is taken for dark
-// rather than waited on.
+// A terminal with no colour to report is not asked at all. A virtual console has
+// sixteen slots painted by whoever booted the machine and nothing to say about
+// what is behind them; a terminal calling itself dumb has said as much outright.
+// Either way the answer is the dark this falls back to, and asking for it costs
+// a round trip on the console and five seconds on anything that answers nothing.
+// Which terminals those are is the question next door: the ones with no font of
+// their own to draw with.
 func terminalIsDark() bool {
+	if terminalIsPlain() {
+		return true
+	}
 	var opts []termenv.OutputOption
 	if os.Getenv("TMUX") != "" {
 		opts = append(opts, termenv.WithEnvironment(plainTerm{}))

@@ -81,11 +81,11 @@ msgstr ""
 msgid "asked just before the run"
 msgstr ""
 
-#: internal/store/store.go:225 tui/labels.go:161
+#: internal/store/store.go:225 tui/labels.go:169
 msgid "Yes"
 msgstr ""
 
-#: internal/store/store.go:227 tui/labels.go:162
+#: internal/store/store.go:227 tui/labels.go:170
 msgid "No"
 msgstr ""
 
@@ -211,139 +211,147 @@ msgstr ""
 msgid "Start"
 msgstr ""
 
-#: tui/labels.go:83
-msgid "Choose the language for this installer."
+#. %s is the name of the program being read, e.g. "Arch OS Installer".
+#: tui/labels.go:85
+#, c-format
+msgid "Choose the language for %s."
 msgstr ""
 
-#: tui/labels.go:88
+#: tui/labels.go:90
 msgid "What to do"
 msgstr ""
 
 #: tui/labels.go:94
+msgid "Arch OS"
+msgstr ""
+
+#: tui/labels.go:100
 #, c-format
 msgid "%d of %d"
 msgstr ""
 
-#: tui/labels.go:96
+#: tui/labels.go:102
 msgid "Install"
 msgstr ""
 
-#: tui/labels.go:97
+#: tui/labels.go:103
 msgid "Start the installation with the answers below."
 msgstr ""
 
-#: tui/labels.go:99
+#: tui/labels.go:105
 msgid "Settings"
 msgstr ""
 
-#: tui/labels.go:101
-msgid "Every value this installer will use. Choose one to change it."
+#. %s is the name of the program whose values these are.
+#: tui/labels.go:109
+#, c-format
+msgid "Every value %s will use. Choose one to change it."
 msgstr ""
 
-#: tui/labels.go:104
+#: tui/labels.go:112
 msgid "Repeat"
 msgstr ""
 
-#: tui/labels.go:105
+#: tui/labels.go:113
 msgid "The entries do not match."
 msgstr ""
 
-#: tui/labels.go:107
+#: tui/labels.go:115
 msgid "Ready to install"
 msgstr ""
 
-#: tui/labels.go:108
+#: tui/labels.go:116
 msgid "Start installation"
 msgstr ""
 
-#: tui/labels.go:113
+#: tui/labels.go:121
 msgid "Ready to start"
 msgstr ""
 
-#: tui/labels.go:114
+#: tui/labels.go:122
 #, c-format
 msgid "Start %s"
 msgstr ""
 
-#: tui/labels.go:115
+#: tui/labels.go:123
 #, c-format
 msgid "%s failed"
 msgstr ""
 
-#: tui/labels.go:117
+#: tui/labels.go:125
 #, c-format
 msgid "%s · %s"
 msgstr ""
 
-#: tui/labels.go:120
+#: tui/labels.go:128
 #, c-format
 msgid "%s complete in %s"
 msgstr ""
 
-#: tui/labels.go:126
+#: tui/labels.go:134
 msgid "Installing"
 msgstr ""
 
-#: tui/labels.go:128
+#: tui/labels.go:136
 #, c-format
 msgid "Installing for %s"
 msgstr ""
 
-#: tui/labels.go:131
+#: tui/labels.go:139
 #, c-format
 msgid "Installation complete in %s"
 msgstr ""
 
-#: tui/labels.go:133
+#: tui/labels.go:141
 msgid "Installation failed"
 msgstr ""
 
-#: tui/labels.go:135
+#: tui/labels.go:143
 #, c-format
 msgid "The full log is in %s."
 msgstr ""
 
-#: tui/labels.go:142
+#: tui/labels.go:150
 #, c-format
 msgid "%s: there is nothing to choose from."
 msgstr ""
 
-#: tui/labels.go:145
+#: tui/labels.go:153
 msgid "Cannot continue"
 msgstr ""
 
-#: tui/labels.go:149
+#: tui/labels.go:157
 msgid "Leave"
 msgstr ""
 
-#: tui/labels.go:150
+#: tui/labels.go:158
 msgid "Restart"
 msgstr ""
 
-#: tui/labels.go:151
+#: tui/labels.go:159
 msgid "Close this machine down and start it again."
 msgstr ""
 
-#: tui/labels.go:152
+#: tui/labels.go:160
 msgid "Shut down"
 msgstr ""
 
-#: tui/labels.go:153
+#: tui/labels.go:161
 msgid "Exit to the console"
 msgstr ""
 
-#: tui/labels.go:154
+#: tui/labels.go:162
 msgid "Switch this machine off."
 msgstr ""
 
-#: tui/labels.go:155
+#: tui/labels.go:163
 msgid "Restarting …"
 msgstr ""
 
-#: tui/labels.go:156
+#: tui/labels.go:164
 msgid "Shutting down …"
 msgstr ""
 
-#: tui/labels.go:157
+#: tui/labels.go:165
 msgid "This machine did not do as it was told."
 msgstr ""

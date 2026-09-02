@@ -514,6 +514,27 @@ func TestTheOtherProgramsQuestionsAreNotAsked(t *testing.T) {
 	h.refuses("Snapshot")
 }
 
+// The page in front of both of them is headed by neither: naming it after one
+// would answer its own question, and a release has a name of its own to be read
+// under.
+func TestTheQuestionOfWhichProgramIsHeadedByTheRelease(t *testing.T) {
+	h := start(t, release(t)...)
+	h.wants("Arch OS", "What to do")
+}
+
+// The pages the runtime brings with it belong to whichever tree was opened and
+// are read in its name. A recovery whose settings talk about an installer is the
+// runtime putting words in a program's mouth.
+func TestTheRuntimesOwnPagesNameTheProgramThatWasOpened(t *testing.T) {
+	h := start(t, release(t)...)
+	h.down().enter() // the recovery
+	h.wants("Disk").enter()
+	h.wants("Snapshot").enter()
+
+	h.down() // the settings row, which is where its description is read
+	h.wants("Every value Test Recovery will use.").refuses("installer")
+}
+
 // ─── Starting points ─────────────────────────────────────────────────────────
 
 // A starting point is only a starting point once: a machine that has answered

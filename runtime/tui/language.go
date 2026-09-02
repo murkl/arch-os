@@ -34,7 +34,7 @@ func (s *languageScreen) build() {
 	}
 	s.picker = newPicker(items)
 	s.picker.focus(s.app.store.Get(spec.LangVar))
-	s.picker.describe(labelLanguageHelp())
+	s.picker.describe(labelLanguageHelp(s.app.spec.Name()))
 }
 
 func (s *languageScreen) Title() string { return labelLanguage() }

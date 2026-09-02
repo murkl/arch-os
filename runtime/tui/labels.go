@@ -79,13 +79,19 @@ func labelNoMatch() string           { return say("No matches") }
 // — never the row of answers already given.
 func labelOpening() string { return say("Start") }
 
-func labelLanguage() string     { return say("Interface language") }
-func labelLanguageHelp() string { return say("Choose the language for this installer.") }
+func labelLanguage() string { return say("Interface language") }
+
+// TRANSLATORS: %s is the name of the program being read, e.g. "Arch OS Installer".
+func labelLanguageHelp(name string) string { return say("Choose the language for %s.", name) }
 
 // The fork at the top, where a release holds more than one program. Only the
 // page's own name is the runtime's: what is on it, and what each of them is, is
 // said in each tree's own words.
 func labelChoice() string { return say("What to do") }
+
+// labelBrand titles that same page. Neither tree has been chosen yet, so the
+// header names the release rather than either of them.
+func labelBrand() string { return say("Arch OS") }
 
 // labelCounter is where something sits in a run of things: which question of
 // how many, which task of how many. Bare numbers, because it is read in the
@@ -97,8 +103,10 @@ func labelInstall() string     { return say("Install") }
 func labelInstallHelp() string { return say("Start the installation with the answers below.") }
 
 func labelSettings() string { return say("Settings") }
-func labelSettingsHelp() string {
-	return say("Every value this installer will use. Choose one to change it.")
+
+// TRANSLATORS: %s is the name of the program whose values these are.
+func labelSettingsHelp(name string) string {
+	return say("Every value %s will use. Choose one to change it.", name)
 }
 
 func labelPasswordRepeat() string   { return say("Repeat") }

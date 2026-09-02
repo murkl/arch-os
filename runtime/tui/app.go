@@ -119,12 +119,13 @@ func (a *app) enter(sp *spec.Spec) error {
 	return nil
 }
 
-// brand is what the frame is titled: the tree this run is about, and nothing at
-// all before one has been chosen. The page that asks which program to open is
-// not any of them, and titling it after one would answer its own question.
+// brand is what the frame is titled: the tree this run is about, once one has
+// been chosen. The page that asks which program to open is not any of them —
+// titling it after one would answer its own question — so it wears the
+// release's own name instead.
 func (a *app) brand() string {
 	if a.spec == nil {
-		return ""
+		return labelBrand()
 	}
 	return a.spec.Name()
 }
