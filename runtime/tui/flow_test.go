@@ -152,12 +152,16 @@ func openTree(t *testing.T) Open {
 	}
 }
 
+// The release the flow tests run inside: a name over the programs, and nothing
+// else it needs to say for a test with no terminal to dress.
+var testRelease = &spec.Release{Name: "Test OS"}
+
 // start brings the interface up around a release of one or more trees, exactly
 // as Run does.
 func start(t *testing.T, trees ...*spec.Spec) *harness {
 	t.Helper()
 	i18n.Use(i18n.SourceLang)
-	a := &app{trees: trees, open: openTree(t), version: "test"}
+	a := &app{release: testRelease, trees: trees, open: openTree(t), version: "test"}
 	if len(trees) == 1 {
 		if err := a.enter(trees[0]); err != nil {
 			t.Fatal(err)
@@ -515,11 +519,11 @@ func TestTheOtherProgramsQuestionsAreNotAsked(t *testing.T) {
 }
 
 // The page in front of both of them is headed by neither: naming it after one
-// would answer its own question, and a release has a name of its own to be read
-// under.
+// would answer its own question, so it is read under the name the release gave
+// itself.
 func TestTheQuestionOfWhichProgramIsHeadedByTheRelease(t *testing.T) {
 	h := start(t, release(t)...)
-	h.wants("Arch OS", "What to do")
+	h.wants(testRelease.Name, "What to do")
 }
 
 // The pages the runtime brings with it belong to whichever tree was opened and

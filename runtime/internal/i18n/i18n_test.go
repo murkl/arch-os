@@ -107,7 +107,7 @@ func TestDiscoverListsTheSourceLanguageFirst(t *testing.T) {
 		"es.po": {Data: catalog("Español", nil)},
 		"notes": {Data: []byte("not a catalog")},
 		// The template is what catalogs are filled in from, not a language.
-		"archos.pot": {Data: catalog("", map[string]string{"Back": ""})},
+		"arch-os.pot": {Data: catalog("", map[string]string{"Back": ""})},
 	}
 	got := Discover(src)
 	var codes, names []string

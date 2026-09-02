@@ -4,4 +4,4 @@
 # the two trees beside it this is.
 set -eu
 
-exec archos -dir recovery "$@"
+exec arch-os -dir recovery "$@"

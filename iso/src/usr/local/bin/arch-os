@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Start Arch OS. This is the way in on this image: the systemd unit on tty1
-# runs this, and so does anybody typing `archos` at a prompt after leaving it.
+# runs this, and so does anybody typing `arch-os` at a prompt after leaving it.
 # With no argument the runtime finds both programs beside itself and asks
 # which to open; `installer` and `recovery` beside this script are the two
 # shortcuts past that question.
@@ -22,7 +22,7 @@
 set -eu
 
 setfont Lat2-Terminus16 || true
-archos-console-theme || true
+arch-os-console-theme || true
 
-cd /opt/archos
-exec ./archos "$@"
+cd /opt/arch-os
+exec ./arch-os "$@"

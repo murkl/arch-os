@@ -25,9 +25,9 @@ ISO_CONFIG="releng" # baseline or releng
 # mkarchiso's scratch space, outside the repository: pacstrap mounts /proc and
 # /sys inside it, and anything on the desktop that walks a project folder holds
 # those open long enough for the unmount, and the build, to fail.
-WORK_DIR="$(realpath -m "${WORK_DIR:-/var/tmp/archos-iso-work}")"
+WORK_DIR="$(realpath -m "${WORK_DIR:-/var/tmp/arch-os-iso-work}")"
 
-AIRFS_OPT="${ISO_DIR}/airootfs/opt/archos"
+AIRFS_OPT="${ISO_DIR}/airootfs/opt/arch-os"
 
 # The bootsplash theme, vendored into the ISO. A checkout beside this repo is
 # used when there is one; CI has none and fetches it instead.
@@ -80,7 +80,8 @@ trap cleanup EXIT
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 echo "### Initialize Build"
-[ -x "${RELEASE_DIR}/archos" ] || { echo "Error: ${RELEASE_DIR}/archos not found - run 'make build' first" >&2 && exit 1; }
+[ -x "${RELEASE_DIR}/arch-os" ] || { echo "Error: ${RELEASE_DIR}/arch-os not found - run 'make build' first" >&2 && exit 1; }
+[ -f "${RELEASE_DIR}/arch-os.yaml" ] || { echo "Error: ${RELEASE_DIR}/arch-os.yaml not found - run 'make build' first" >&2 && exit 1; }
 [ -f "${RELEASE_DIR}/installer/installer.yaml" ] || { echo "Error: ${RELEASE_DIR}/installer/installer.yaml not found - run 'make build' first" >&2 && exit 1; }
 [ -f "${RELEASE_DIR}/recovery/recovery.yaml" ] || { echo "Error: ${RELEASE_DIR}/recovery/recovery.yaml not found - run 'make build' first" >&2 && exit 1; }
 mkdir -p "$DOWNLOAD_DIR"
@@ -115,20 +116,20 @@ if [ -n "$DROPPED" ]; then
 fi
 
 # The runtime binary with both trees beside it, a folder each - the only place
-# the runtime looks for one. /opt/archos is what the systemd unit below starts,
+# the runtime looks for one. /opt/arch-os is what the systemd unit below starts,
 # and what the three launchers on the path run out of.
 echo "### Install Arch OS"
 mkdir -p "${AIRFS_OPT}"
 cp -r "${RELEASE_DIR}/." "${AIRFS_OPT}/"
-chmod +x "${AIRFS_OPT}/archos"
+chmod +x "${AIRFS_OPT}/arch-os"
 
 # Set permissions
 add_permission() { grep -q "\[\"$1\"\]" "${ISO_DIR}/profiledef.sh" || sed -i "/^file_permissions=(/a\\  [\"$1\"]=\"0:0:755\"" "${ISO_DIR}/profiledef.sh"; }
-add_permission /opt/archos/archos
-add_permission /usr/local/bin/archos
+add_permission /opt/arch-os/arch-os
+add_permission /usr/local/bin/arch-os
 add_permission /usr/local/bin/installer
 add_permission /usr/local/bin/recovery
-add_permission /usr/local/bin/archos-console-theme
+add_permission /usr/local/bin/arch-os-console-theme
 
 # The theme is vendored rather than taken from the AUR: building an AUR package
 # needs makepkg, a build user and a network, none of which an ISO build should
@@ -170,8 +171,8 @@ fi
 # there is exactly one thing this machine booted to do, and which of the two
 # programs that turns out to be is the interface's own first page.
 mkdir -p "${ISO_DIR}/airootfs/etc/systemd/system/multi-user.target.wants"
-ln -sf /etc/systemd/system/archos.service \
-    "${ISO_DIR}/airootfs/etc/systemd/system/multi-user.target.wants/archos.service"
+ln -sf /etc/systemd/system/arch-os.service \
+    "${ISO_DIR}/airootfs/etc/systemd/system/multi-user.target.wants/arch-os.service"
 
 # Networking is left as the Arch ISO ships it: iwd and systemd-networkd, already
 # enabled. A machine with no link is refused by the installer's own preflight
@@ -193,21 +194,21 @@ sed -i 's/^timeout.*/timeout 0/' "${ISO_DIR}/efiboot/loader/loader.conf"
 # Both files, because they are shown at different moments: /etc/issue before the
 # login, /etc/motd after it.
 cat >"${ISO_DIR}/airootfs/etc/issue" <<'EOF'
-Arch OS live environment. Type archos to start it again.
+Arch OS live environment. Type arch-os to start it again.
 
 EOF
 
 cat >"${ISO_DIR}/airootfs/etc/motd" <<'EOF'
 Arch OS live environment
 
-  archos       install Arch Linux on this machine, or repair one already on a disk
+  arch-os      install Arch Linux on this machine, or repair one already on a disk
   installer    straight into the installer
   recovery     straight into the recovery
   iwctl        join a wireless network
 
-Both programs keep their answers in /opt/archos, so starting either again picks
-up where it left off. What they did is in /opt/archos/installer.log and
-/opt/archos/recovery.log.
+Both programs keep their answers in /opt/arch-os, so starting either again picks
+up where it left off. What they did is in /opt/arch-os/installer.log and
+/opt/arch-os/recovery.log.
 
 EOF
 
@@ -226,7 +227,7 @@ sed -i "s|^airootfs_image_tool_options=.*|airootfs_image_tool_options=('-comp' '
 # replaced - rewriting its first line leaves the rest behind as a syntax error.
 sed -i "/^bootmodes=(/,/)$/c\\bootmodes=('uefi.systemd-boot')" "${ISO_DIR}/profiledef.sh"
 
-set_key_value "${ISO_DIR}/profiledef.sh" iso_name "archos"
+set_key_value "${ISO_DIR}/profiledef.sh" iso_name "arch-os"
 set_key_value "${ISO_DIR}/profiledef.sh" iso_version "$SNAPSHOT_VERSION"
 set_key_value "${ISO_DIR}/profiledef.sh" iso_label "ARCH_OS_${SNAPSHOT_VERSION}"
 set_key_value "${ISO_DIR}/profiledef.sh" iso_application "Arch OS ISO"

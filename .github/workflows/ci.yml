@@ -125,7 +125,7 @@ jobs:
           unpacked="$(mktemp -d)"
           tar -xzf dist/*.tar.gz -C "$unpacked"
           for release in "$unpacked"/*; do
-            "$release/archos" -check -dir "$release"
+            "$release/arch-os" -check -dir "$release"
           done
           (cd dist && sha256sum -c ./*.sha256)
 

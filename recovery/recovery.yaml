@@ -6,7 +6,8 @@
 #
 # Putting Arch Linux on a disk is a program of its own, with a declaration of its
 # own: see ../installer. A release holds both, beside one binary, and asks which
-# of them to open.
+# of them to open — and what the two of them are called together and look like is
+# ../arch-os.yaml, not here.
 
 title: Arch OS Recovery
 
@@ -16,20 +17,6 @@ description: Repair an Arch Linux system that is already on a disk.
 # What one run of this is called. Without it the interface would fall back to the
 # only thing an unnamed run can be, and call a repair an installation.
 run: Recovery
-
-# Arch blue, pulled towards the terminal's background so it holds on a light one.
-accent: "#1793d1"
-
-# Above the blank line is the eyebrow, dimmed; below it the wordmark, in the
-# accent.
-logo: |
-  Arch Linux
-
-   █████  ██████   ██████ ██   ██      ██████  ███████
-  ██   ██ ██   ██ ██      ██   ██     ██    ██ ██
-  ███████ ██████  ██      ███████     ██    ██ ███████
-  ██   ██ ██   ██ ██      ██   ██     ██    ██      ██
-  ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
 
 # Read on the way out, when the recovery closes and the machine keeps running.
 # There is a root shell behind it on this image — see iso/.

@@ -28,7 +28,7 @@ Nothing points at any of this from `recovery.yaml`: each part is found by its ow
 name. The runtime takes the one YAML file it finds in a folder, which is what
 lets this tree and the installer's sit side by side and stay two programs. A
 release holds both beside one binary, which asks which of them to open;
-`./archos -dir recovery` is this one outright, and on the ISO that is the
+`./arch-os -dir recovery` is this one outright, and on the ISO that is the
 `recovery` command.
 
 ## What it does

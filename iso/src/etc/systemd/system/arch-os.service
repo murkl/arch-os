@@ -28,7 +28,7 @@ Type=idle
 # The same command the user types at the prompt, so a run started by this machine
 # and one started by hand are the same run. Without an argument, which is what
 # makes the first page the question of which program to open.
-ExecStart=/usr/local/bin/archos
+ExecStart=/usr/local/bin/arch-os
 Restart=on-failure
 RestartSec=2
 

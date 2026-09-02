@@ -153,6 +153,6 @@ done
 [ -n "$found" ] || fail "the interface did not come up within ${TIMEOUT}s"
 
 # The one frame worth keeping is the one it was recognised in.
-mv "$found" "${FRAME_DIR}/archos.ppm"
+mv "$found" "${FRAME_DIR}/arch-os.ppm"
 rm -f "${FRAME_DIR}"/frame-*.ppm
-echo "### Arch OS is up: ${FRAME_DIR}/archos.ppm"
+echo "### Arch OS is up: ${FRAME_DIR}/arch-os.ppm"

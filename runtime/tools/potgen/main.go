@@ -28,7 +28,7 @@ import (
 
 // project is what the template says it belongs to: the program as it ships,
 // not the module it is built from.
-const project = "archos"
+const project = "arch-os"
 
 // keywords are the calls that put a string in front of somebody — the
 // translator itself, and the interface's own voice, which wraps it.

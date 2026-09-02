@@ -16,7 +16,7 @@ component of its own on a translation platform.
 
 | | Template | Catalogs | What is in it |
 |---|---|---|---|
-| Runtime | `runtime/locales/archos.pot` | `runtime/locales/<code>.po` | the frame's own words: buttons, key hints, the labels on a failure report |
+| Runtime | `runtime/locales/arch-os.pot` | `runtime/locales/<code>.po` | the frame's own words: buttons, key hints, the labels on a failure report |
 | Installer | `installer/locales/installer.pot` | `installer/locales/<code>.po` | what the Arch Linux installation asks and says about itself |
 | Recovery | `recovery/locales/recovery.pot` | `recovery/locales/<code>.po` | the same, for repairing a system already on a disk |
 
@@ -33,7 +33,7 @@ is no list of translatable strings to keep in step with.
 Copy the template, fill in the `msgstr` lines, open a pull request:
 
 ```sh
-cp runtime/locales/archos.pot runtime/locales/fr.po
+cp runtime/locales/arch-os.pot runtime/locales/fr.po
 ```
 
 Nothing else has to be declared anywhere. The language is offered as soon as the
@@ -94,7 +94,7 @@ make check     # refuses a stale template and a broken placeholder
 translation whose English is unchanged, marks the ones whose English moved as
 fuzzy, and drops nothing silently.
 
-`archos -check` reports coverage per language, which is how a catalog that has
+`arch-os -check` reports coverage per language, which is how a catalog that has
 fallen behind is noticed.
 
 ## On a translation platform
@@ -105,7 +105,7 @@ Weblate reads this repository as it stands. One component per catalog:
 |---|---|---|---|
 | File format | gettext PO | gettext PO | gettext PO |
 | File mask | `runtime/locales/*.po` | `installer/locales/*.po` | `recovery/locales/*.po` |
-| Template for new translations | `runtime/locales/archos.pot` | `installer/locales/installer.pot` | `recovery/locales/recovery.pot` |
+| Template for new translations | `runtime/locales/arch-os.pot` | `installer/locales/installer.pot` | `recovery/locales/recovery.pot` |
 | Monolingual base file | *(none, PO is bilingual)* | | |
 
 Point them all at the `dev` branch. `.weblate` in the repository root holds the

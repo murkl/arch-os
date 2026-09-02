@@ -3,7 +3,7 @@
 A single Go binary that draws an interface, asks questions, keeps the answers
 and runs shell in order, reporting exactly where it broke. It is built as
 `installer-linux-amd64` and a release ships it under whatever name that release
-goes by, `archos` in this one.
+goes by, `arch-os` in this one.
 
 It installs nothing, and it knows nothing about Arch Linux, disks, packages or
 desktops: there is not one of those words in the source. What is asked, what
@@ -11,11 +11,11 @@ the answers mean and what the shell does is **one yaml and the folders beside
 it**. Started without one, the binary says so and stops.
 
 ```
-archos                     # runs the tree beside the binary, or asks which of several
-archos -check              # loads them, reports what they hold, changes nothing
-archos -strings            # prints the translation template for one tree
-archos -dir /path/to/tree  # runs that one and asks nothing
-archos -version
+arch-os                     # runs the tree beside the binary, or asks which of several
+arch-os -check              # loads them, reports what they hold, changes nothing
+arch-os -strings            # prints the translation template for one tree
+arch-os -dir /path/to/tree  # runs that one and asks nothing
+arch-os -version
 ```
 
 ## The tree
@@ -45,7 +45,8 @@ The binary looks **next to itself** and nowhere else. What it finds there is
 either a tree, or a folder of them:
 
 ```
-archos          the binary
+arch-os         the binary
+arch-os.yaml    what they are called together, and what they look like
 installer/      one program: installer.yaml and the folders beside it
 recovery/       another: recovery.yaml and its own
 ```
@@ -55,12 +56,29 @@ Several is a question, and it is the first page of the program: each tree's own
 question at all and is opened on the way in. Nothing about a tree is read from
 the outside: the folder names decide the order and nothing else.
 
-Until one is chosen the frame is dressed by the first of them: the trees of one
-release are one product, one wordmark and one colour. From the moment one is
-opened, everything (the answers, the log, the words on screen) is that tree's.
+From the moment one is opened, everything (the answers, the log, the words on
+screen) is that tree's. What never changes is the frame around it: the wordmark
+it comes up out of, the colour, and the name over the question of which program
+to open belong to the release rather than to either program in it.
 
 `-dir` names one tree outright and skips the question, which is what the
 `installer` and `recovery` commands on the ISO are.
+
+### The release
+
+`arch-os.yaml` is the one yaml beside the binary that does not declare a
+program — the name is reserved, so the folder its programs sit in does not
+become a program itself. Everything in it is optional, and a release without one
+comes up in the interface's own colour with no wordmark in front of it.
+
+```yaml
+name: Arch OS            # over the page that asks which program to open
+accent: "#1793d1"        # the one colour the interface is built from
+logo: |                  # everything above the blank line is a dim eyebrow
+  Arch Linux
+
+  ██████ …               # the wordmark, swept in behind the accent
+```
 
 ### The declaration
 
@@ -68,12 +86,6 @@ opened, everything (the answers, the log, the words on screen) is that tree's.
 title: Arch OS Installer
 description: Put Arch Linux on this machine.   # its row on the page that asks which program
 run: Installation        # what one run of it is called
-
-accent: "#1793d1"        # the one colour the interface is built from
-logo: |                  # everything above the blank line is a dim eyebrow
-  Arch Linux
-
-  ██████ …               # the wordmark, swept in behind the accent
 
 language: ARCH_OS_LOCALE_LANG # optional: an answer that also settles the words on screen
 
@@ -374,9 +386,9 @@ under `locales/`, and the tree's own `locales/` beside its declaration. Adding a
 language is adding a file.
 
 ```sh
-cp locales/archos.pot locales/fr.po   # a language nobody has started yet
+cp locales/arch-os.pot locales/fr.po  # a language nobody has started yet
 make locales                          # every template, and every catalog brought up to it
-archos -check                         # reports coverage per language
+arch-os -check                        # reports coverage per language
 ```
 
 A catalog names its own language in it, as the translation of `English`, that
@@ -403,7 +415,7 @@ make check                  # gofmt, vet, staticcheck, test, build, before a com
 
 `run` takes one tree, so the page that asks which of several to open is not on
 its way. That page needs the trees beside a binary, which is what a build makes:
-`make build` at the repository root, then `release/archos`.
+`make build` at the repository root, then `release/arch-os`.
 
 The binary is static and has no runtime dependencies of its own. It has to live
 beside the trees it runs, since that is where it looks for them.

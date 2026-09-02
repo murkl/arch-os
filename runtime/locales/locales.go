@@ -3,11 +3,11 @@
 // that can go missing.
 //
 // One po file per language, named by its code. Adding a language is adding a
-// file: copy archos.pot to <code>.po, fill in the right-hand side, done.
+// file: copy arch-os.pot to <code>.po, fill in the right-hand side, done.
 // Anything left untranslated stays as it is written in the code, which is
 // English — so a partial catalog is useful from its first line.
 //
-// archos.pot is the list those files are filled in from, and it is generated:
+// arch-os.pot is the list those files are filled in from, and it is generated:
 // it is every string the Go sources hand to T, read out of them rather than
 // kept beside them. `make locales` writes it and brings the catalogs up to it.
 //

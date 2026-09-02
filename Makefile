@@ -12,10 +12,12 @@ RELEASE_DIR := release
 DIST_DIR    := dist
 RUNTIME_BIN := runtime/bin/installer-linux-amd64
 
-# What a release is called and what it holds: one binary, and one folder per
-# program it can run. The binary looks for its trees beside itself, finds two,
-# and asks which — so the folder names are what the machine offers.
-APP      := archos
+# What a release is called and what it holds: one binary, the declaration of the
+# product they add up to, and one folder per program it can run. The binary
+# looks beside itself, finds two trees, and asks which — so the folder names are
+# what the machine offers.
+APP      := arch-os
+RELEASE  := arch-os.yaml
 PROGRAMS := installer recovery
 
 # What each tree is, and the only place either is written down. What is not
@@ -26,7 +28,7 @@ RECOVERY_TREE  := recovery.yaml lib.sh locales hooks tasks
 
 # Both artefacts of a build carry the same name and differ only by extension, so
 # a release page reads as one build rather than two. Only x86_64 is built.
-STEM    := archos-$(VERSION)
+STEM    := arch-os-$(VERSION)
 TARBALL := $(STEM)-x86_64.tar.gz
 
 .PHONY: all build tarball iso locales lint fmt check clean
@@ -47,18 +49,19 @@ build:
 	rm -rf $(RELEASE_DIR)
 	mkdir -p $(RELEASE_DIR)/installer $(RELEASE_DIR)/recovery
 	install -m 755 $(RUNTIME_BIN) $(RELEASE_DIR)/$(APP)
+	cp $(RELEASE) $(RELEASE_DIR)/
 	cp -r $(addprefix installer/,$(INSTALLER_TREE)) $(RELEASE_DIR)/installer/
 	cp -r $(addprefix recovery/,$(RECOVERY_TREE)) $(RELEASE_DIR)/recovery/
 	find $(RELEASE_DIR) -name '*.pot' -delete
 
-# The release as one file, for a stock Arch ISO: unpack it, run ./archos.
+# The release as one file, for a stock Arch ISO: unpack it, run ./arch-os.
 # get.sh picks both files out of a release by extension, so renaming either one
 # is a change here and nowhere else.
 tarball: build
 	mkdir -p $(DIST_DIR)
 	tar -czf $(DIST_DIR)/$(TARBALL) --owner=0 --group=0 --sort=name \
 		--transform 's,^,$(STEM)/,' \
-		-C $(RELEASE_DIR) $(APP) $(PROGRAMS)
+		-C $(RELEASE_DIR) $(APP) $(RELEASE) $(PROGRAMS)
 	cd $(DIST_DIR) && sha256sum $(TARBALL) > $(TARBALL).sha256
 
 iso: build

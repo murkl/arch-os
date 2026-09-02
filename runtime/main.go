@@ -74,19 +74,36 @@ func main() {
 	}
 }
 
-// inspect loads every tree this binary would offer and says what it found,
-// without touching anything. The same load the program does at startup, so
-// everything it refuses would have stopped the installer — for checking a
-// release from a build script.
+// inspect loads a whole release — what it is called, and every tree it would
+// offer — and says what it found, without touching anything. The same load the
+// program does at startup, so everything it refuses would have stopped the
+// installer — for checking a release from a build script.
 func inspect(dir string) error {
+	rel, err := spec.LoadRelease(dir)
+	if err != nil {
+		return err
+	}
 	trees, err := loadTrees(dir)
 	if err != nil {
 		return err
 	}
+	reportRelease(rel)
 	for _, sp := range trees {
 		report(sp)
 	}
 	return nil
+}
+
+// reportRelease is what the release says about itself, printed. A release that
+// declares nothing prints nothing: there is no file to have got wrong.
+func reportRelease(rel *spec.Release) {
+	if rel.File == "" {
+		return
+	}
+	fmt.Printf("%s\n", rel.File)
+	fmt.Printf("  name       %s\n", rel.Name)
+	fmt.Printf("  accent     %s\n", rel.Accent)
+	fmt.Printf("  logo       %d lines\n", len(strings.Split(strings.TrimRight(rel.Logo, "\n"), "\n")))
 }
 
 // report is what one tree holds, printed.
@@ -164,6 +181,14 @@ func run(dir, conf string) error {
 	// was found is in one. Only the runtime's own catalogs exist this early.
 	i18n.Activate(i18n.Match(locale(), codes(i18n.Discover(locales.FS))), locales.FS)
 
+	// What the programs beside the binary are called together, and what they
+	// look like. Read before them, because it dresses the first frame — which is
+	// drawn before any of them has been chosen.
+	rel, err := spec.LoadRelease(dir)
+	if err != nil {
+		return err
+	}
+
 	trees, err := loadTrees(dir)
 	if err != nil {
 		return err
@@ -175,7 +200,7 @@ func run(dir, conf string) error {
 	sources := catalogs(trees...)
 	i18n.Activate(i18n.Match(locale(), codes(i18n.Discover(sources...))), sources...)
 
-	return tui.Run(trees, func(sp *spec.Spec) (*tui.Program, error) {
+	return tui.Run(rel, trees, func(sp *spec.Spec) (*tui.Program, error) {
 		return open(sp, conf)
 	}, version)
 }

@@ -36,11 +36,13 @@ type Open func(*spec.Spec) (*Program, error)
 // app is what every screen shares: the tree, the answers, and the runner that
 // joins them. Screens hold a pointer to it rather than to each other.
 type app struct {
-	// The programs this release holds, and how one of them is opened. Several is
-	// a question the interface puts before anything else; one is opened on the
-	// way in and never mentioned.
-	trees []*spec.Spec
-	open  Open
+	// What this release is called and what it looks like, and the programs it
+	// holds with the way one of them is opened. Several is a question the
+	// interface puts before anything else; one is opened on the way in and never
+	// mentioned.
+	release *spec.Release
+	trees   []*spec.Spec
+	open    Open
 
 	spec    *spec.Spec
 	store   *store.Store
@@ -70,16 +72,16 @@ type app struct {
 // and a fade cannot cross a program boundary — the terminal would drop out of
 // the alternate screen in between. Choosing which tree to open happens inside
 // it for the same reason.
-func Run(trees []*spec.Spec, open Open, version string) error {
+func Run(rel *spec.Release, trees []*spec.Spec, open Open, version string) error {
 	// Which kind of terminal this is has to be settled here: the question is put
 	// to the terminal itself, and from the next line on there is a key reader
 	// running that would take the answer for somebody typing.
 	Adapt()
-	a := &app{trees: trees, open: open, version: version}
-	// The frame has to be dressed before there is a tree to dress it with. The
-	// trees of one release are one product — one wordmark, one colour — so the
-	// first of them stands for all of them until one is opened.
-	SetAccent(trees[0].UI.Accent)
+	a := &app{release: rel, trees: trees, open: open, version: version}
+	// The frame is dressed before there is a tree to dress it with, and stays
+	// dressed that way afterwards: the wordmark and the colour are the release's,
+	// which is what makes two programs read as one product.
+	SetAccent(rel.Accent)
 	// One program is no question: it is opened here, so the interface comes up on
 	// its first page rather than on a list with a single row on it.
 	if len(trees) == 1 {
@@ -87,7 +89,7 @@ func Run(trees []*spec.Spec, open Open, version string) error {
 			return err
 		}
 	}
-	if _, err := tea.NewProgram(newModel(a, trees[0].UI.Logo), tea.WithAltScreen()).Run(); err != nil {
+	if _, err := tea.NewProgram(newModel(a, rel.Logo), tea.WithAltScreen()).Run(); err != nil {
 		return err
 	}
 	// After the program, not inside it: the alternate screen is gone by now, so
@@ -121,11 +123,11 @@ func (a *app) enter(sp *spec.Spec) error {
 
 // brand is what the frame is titled: the tree this run is about, once one has
 // been chosen. The page that asks which program to open is not any of them —
-// titling it after one would answer its own question — so it wears the
-// release's own name instead.
+// titling it after one would answer its own question — so it wears the release's
+// own name, and nothing at all where the release did not give one.
 func (a *app) brand() string {
 	if a.spec == nil {
-		return labelBrand()
+		return a.release.Name
 	}
 	return a.spec.Name()
 }

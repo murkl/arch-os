@@ -18,10 +18,11 @@ import (
 // the folder named — beside the binary itself when none is — if that folder is
 // a tree, and otherwise every folder inside it that is.
 //
-// A release is the binary and the trees beside it, a folder each, which is what
-// makes it one thing: copied to a stick and started, it holds every program the
-// machine it boots might need. Several of them is a question the runtime puts
-// before anything else; one is no question at all.
+// A release is the binary and the trees beside it, a folder each, with a
+// FileRelease saying what they are called together — which is what makes it one
+// thing: copied to a stick and started, it holds every program the machine it
+// boots might need. Several of them is a question the runtime puts before
+// anything else; one is no question at all.
 //
 // Beside the binary and nowhere else, because a binary on its own is not an
 // installer and never pretends to be one: finding nothing is an error with
@@ -30,11 +31,7 @@ import (
 // They are offered in folder order, so what a release is asked first is what its
 // folders are called.
 func Trees(explicit string) ([]string, error) {
-	dir := explicit
-	if dir == "" {
-		dir = binaryDir()
-	}
-	dir, err := filepath.Abs(dir)
+	dir, err := root(explicit)
 	if err != nil {
 		return nil, err
 	}
@@ -90,9 +87,14 @@ func Declaration(dir string) (string, error) {
 	}
 }
 
-// declarations is every top-level yaml in a folder, in name order. A folder
-// that cannot be read holds none, which is what a caller about to read it again
-// wants: the error belongs to whoever is looking, not to the counting.
+// declarations is every top-level yaml in a folder that declares a program, in
+// name order. A folder that cannot be read holds none, which is what a caller
+// about to read it again wants: the error belongs to whoever is looking, not to
+// the counting.
+//
+// FileRelease is not one of them. It sits in the folder the programs sit in and
+// says what they are called together — counting it would make that folder a
+// program in its own right and hide the ones inside it.
 func declarations(dir string) []string {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -100,7 +102,10 @@ func declarations(dir string) []string {
 	}
 	var found []string
 	for _, entry := range entries {
-		if !entry.IsDir() && strings.HasSuffix(entry.Name(), SpecExt) {
+		if entry.IsDir() || entry.Name() == FileRelease {
+			continue
+		}
+		if strings.HasSuffix(entry.Name(), SpecExt) {
 			found = append(found, entry.Name())
 		}
 	}
@@ -125,8 +130,6 @@ func binaryDir() string {
 // to be typed.
 type declaration struct {
 	Title    string `yaml:"title"`
-	Logo     string `yaml:"logo"`
-	Accent   string `yaml:"accent"`
 	Console  string `yaml:"console"`
 	Language string `yaml:"language"`
 
@@ -160,7 +163,7 @@ func Load(dir string) (*Spec, error) {
 		return nil, err
 	}
 	s.UI = UI{
-		Title: head.Title, Logo: head.Logo, Accent: head.Accent, Console: head.Console,
+		Title: head.Title, Console: head.Console,
 		Description: head.Description, Run: head.Run,
 	}
 	s.Presets, s.Vars, s.Language = head.Presets, head.Variables, head.Language
@@ -283,9 +286,6 @@ func (s *Spec) check(tasks []*Task) error {
 	s.normalize(tasks)
 	if s.UI.Title == "" {
 		return fmt.Errorf("%s: title is required", s.File)
-	}
-	if s.UI.Accent != "" && !hexColor.MatchString(s.UI.Accent) {
-		return fmt.Errorf("%s: accent must be #rrggbb, got %q", s.File, s.UI.Accent)
 	}
 	if err := s.checkVars(); err != nil {
 		return fmt.Errorf("%s: %w", s.File, err)

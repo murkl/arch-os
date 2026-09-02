@@ -24,7 +24,9 @@ import (
 // The declaration is the one yaml in the folder's top level, whatever it is
 // called — installer.yaml, recovery.yaml. Naming it after what it declares is
 // what lets two trees sit beside each other and still be told apart at a
-// glance, and there is nothing to configure because a folder holds one.
+// glance, and there is nothing to configure because a folder holds one. The
+// exception is FileRelease, which is reserved: it declares the product a folder
+// of trees adds up to rather than a tree, and is never read as one.
 const (
 	SpecExt    = ".yaml"     // the declaration: what the installer is, asks, and does
 	FileLib    = "lib.sh"    // shell put in front of every script
@@ -115,12 +117,12 @@ type Spec struct {
 	byName map[string]*Variable
 }
 
-// UI is what the tree says about itself: the words and the one colour that make
-// the frame this installer rather than any other.
+// UI is what the tree says about itself: the words that make the frame this
+// program rather than the one beside it. What the two of them look like is not
+// here — one wordmark and one colour belong to the release, not to either of
+// the programs in it. See Release.
 type UI struct {
-	Title  string `yaml:"title"`
-	Logo   string `yaml:"logo"`
-	Accent string `yaml:"accent"`
+	Title string `yaml:"title"`
 
 	// Description is what this program is, in one sentence, and Run what one
 	// run of it is called.

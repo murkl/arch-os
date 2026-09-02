@@ -159,7 +159,7 @@ install_mode() {
     tarball="${DOWNLOAD_DIR}/${tarball_url##*/}"
     tarball_dir="${DOWNLOAD_DIR}/$(tar -tzf "$tarball" | head -n1 | cut -d/ -f1)"
     tar -xzf "$tarball" -C "$DOWNLOAD_DIR" || fail "Could not unpack ${tarball}"
-    [ -x "${tarball_dir}/archos" ] || fail "No program in ${tarball}"
+    [ -x "${tarball_dir}/arch-os" ] || fail "No program in ${tarball}"
     ok "Unpacked: ${tarball_dir}"
 
     # Started out of its own folder with no argument: the runtime looks for
@@ -171,7 +171,7 @@ install_mode() {
     # stdin is this script itself when the command arrives through a pipe, so
     # the interface is handed the terminal instead.
     cd "$tarball_dir"
-    exec ./archos </dev/tty
+    exec ./arch-os </dev/tty
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////

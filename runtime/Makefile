@@ -21,7 +21,7 @@ GOFLAGS       := CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH)
 
 # The tree this runtime is developed against, one at a time. The page that asks
 # which of several to open needs them beside a binary, which is what a build
-# makes: `make build` at the root, then `release/archos`.
+# makes: `make build` at the root, then `release/arch-os`.
 #
 # A build leaves its binary in bin/; putting a copy of it beside a tree is the
 # release's business, not this one's.
@@ -30,7 +30,7 @@ TREE ?= ../installer
 # The template every catalog here is filled in from, and the catalogs
 # themselves. Both are generated: the template out of the Go sources, the
 # catalogs out of the template.
-POT      := locales/archos.pot
+POT      := locales/arch-os.pot
 CATALOGS := $(wildcard locales/*.po)
 
 .PHONY: all build run tidy tidy-check test test-race vet staticcheck vuln fmt fmt-check locales locales-check clean check release

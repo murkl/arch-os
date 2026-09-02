@@ -88,7 +88,7 @@ downloads what both of them made.
 ```sh
 make check            # everything below, and what has to pass before a commit
 make -C runtime run   # the installer on this machine; TREE=../recovery for the other tree
-make build && release/archos   # the release as a machine runs it, both programs
+make build && release/arch-os   # the release as a machine runs it, both programs
 make tarball          # the release, as a stock Arch ISO downloads it
 make locales          # every translation template, and every catalog brought up to it
 make iso              # the release, as a bootable image

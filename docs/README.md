@@ -89,7 +89,8 @@ Four parts, deliberately kept apart, see
 
 The two trees are **data, not programs**: one binary runs either of them, and
 which one is a folder beside it. A release is that binary with `installer/` and
-`recovery/` next to it, and the first thing it asks is which of the two to open.
+`recovery/` next to it and an `arch-os.yaml` saying what the two are called
+together, and the first thing it asks is which of them to open.
 Adding a question is a few lines of YAML; adding a step is a folder with two
 files in it; neither is a change to the runtime, and the runtime cannot break
 Arch-specific behaviour it has never heard of.

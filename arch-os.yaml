@@ -1,0 +1,30 @@
+# What the programs in this release are called together, and what they look
+# like. This is the whole of it: everything else — what each program is, what it
+# asks and what it does — is declared by the program itself, in installer/ and
+# recovery/.
+#
+# It sits beside the binary rather than inside either of them because neither
+# can answer for the other. An installer and a recovery are two programs and one
+# product, and the wordmark on the way in, the colour on every page and the name
+# over the question of which to open are the product's.
+#
+# The runtime reads this file by name and looks for nothing else in it: a
+# release that leaves it out comes up in the interface's own colour, with no
+# wordmark and no name over that question.
+
+# Over the page that asks which program to open. Not translated — it is a name.
+name: Arch OS
+
+# Arch blue, pulled towards the terminal's background so it holds on a light one.
+accent: "#1793d1"
+
+# Above the blank line is the eyebrow, dimmed; below it the wordmark, in the
+# accent.
+logo: |
+  Arch Linux
+
+   █████  ██████   ██████ ██   ██      ██████  ███████
+  ██   ██ ██   ██ ██      ██   ██     ██    ██ ██
+  ███████ ██████  ██      ███████     ██    ██ ███████
+  ██   ██ ██   ██ ██      ██   ██     ██    ██      ██
+  ██   ██ ██   ██  ██████ ██   ██      ██████  ███████

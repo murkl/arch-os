@@ -71,7 +71,6 @@ func TestLoadReadsAWholeTree(t *testing.T) {
 	dir := tree(t, map[string]string{
 		treeFile: `
 title: Test Installer
-accent: "#1793d1"
 confirm: Erasing {{DISK}}.
 stages: [go, done]
 variables:
@@ -405,11 +404,6 @@ func TestLoadRefuses(t *testing.T) {
 			name:  "the runtime's own variable, redeclared",
 			files: map[string]string{treeFile: head("variables:\n  - name: " + LangVar + "\n    title: L\n")},
 			want:  "belongs to the runtime",
-		},
-		{
-			name:  "an accent that is not a colour",
-			files: map[string]string{treeFile: "title: T\nstages: [go]\naccent: blue\n"},
-			want:  "accent must be",
 		},
 		{
 			name:  "no stages at all",

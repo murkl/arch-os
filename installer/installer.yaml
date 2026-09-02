@@ -6,7 +6,8 @@
 #
 # Repairing a system that is already on a disk is a program of its own, with a
 # declaration of its own: see ../recovery. A release holds both, beside one
-# binary, and asks which of them to open.
+# binary, and asks which of them to open — and what the two of them are called
+# together and look like is ../arch-os.yaml, not here.
 
 title: Arch OS Installer
 
@@ -17,20 +18,6 @@ description: Put Arch Linux on this machine.
 # what is happening — the row that starts it, the last warning, the clock while
 # it runs. ../recovery names its own run in its own words.
 run: Installation
-
-# Arch blue, pulled towards the terminal's background so it holds on a light one.
-accent: "#1793d1"
-
-# Above the blank line is the eyebrow, dimmed; below it the wordmark, in the
-# accent.
-logo: |
-  Arch Linux
-
-   █████  ██████   ██████ ██   ██      ██████  ███████
-  ██   ██ ██   ██ ██      ██   ██     ██    ██ ██
-  ███████ ██████  ██      ███████     ██    ██ ███████
-  ██   ██ ██   ██ ██      ██   ██     ██    ██      ██
-  ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
 
 # Read on the way out, when the installer closes and the machine keeps running.
 # There is a root shell behind it on this image — see iso/.

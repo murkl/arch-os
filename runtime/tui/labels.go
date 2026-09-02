@@ -89,10 +89,6 @@ func labelLanguageHelp(name string) string { return say("Choose the language for
 // said in each tree's own words.
 func labelChoice() string { return say("What to do") }
 
-// labelBrand titles that same page. Neither tree has been chosen yet, so the
-// header names the release rather than either of them.
-func labelBrand() string { return say("Arch OS") }
-
 // labelCounter is where something sits in a run of things: which question of
 // how many, which task of how many. Bare numbers, because it is read in the
 // header beside what it is counting — a word in front of it would only repeat
