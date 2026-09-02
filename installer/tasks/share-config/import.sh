@@ -1,16 +1,16 @@
-# A configuration somebody shared, taken as the answers to this installation —
-# the other end of task.sh beside it.
+# A configuration somebody shared, taken as the answers to this installation.
+# The other end of task.sh beside it.
 #
-# It is run by the starting point that asks for a code, the moment the code is
-# given, and the row is not got past until it has worked. What the runtime owns
-# is left alone: the interface language and the mode are settings of the program
-# in front of you, not of somebody else's machine.
+# Run by the starting point that asks for a code, the moment the code is
+# given, and the row is not passed until it succeeds. What the runtime owns
+# is left alone: the interface language and the mode are settings of the
+# program in front of you, not of somebody else's machine.
 #
-# This one may fail, and says why: it runs while somebody is looking at the box
-# they typed the code into.
+# This one is allowed to fail, and says why: it runs while somebody is
+# looking at the box they typed the code into.
 
-# The address, from whatever somebody has in front of them: the whole link, or
-# only the code at the end of it.
+# The address, from whatever somebody has in front of them: the whole link,
+# or just the code at the end of it.
 ref="$(printf '%s' "$ARCH_OS_CONFIG_SOURCE" | tr -d '[:space:]')"
 case "$ref" in
 http://* | https://*) url="$ref" ;;
@@ -28,6 +28,6 @@ if [ -z "$body" ]; then
     exit 1
 fi
 
-# Appended to the answer file, which the runtime reads back — that file is how a
-# script answers questions, and there is no second way in.
+# Appended to the answer file, which the runtime reads back. That file is how
+# a script answers questions, and there is no second way in.
 printf '%s\n' "$body" >>"$INSTALLER_CONF"

@@ -7,12 +7,15 @@ home="${MNT}/home/${ARCH_OS_USERNAME}"
 data="$(where)"
 apps="${home}/.local/share/applications"
 
-# ─── Packages ────────────────────────────────────────────────────────────────
-# One transaction rather than several: packages that replace each other —
-# pipewire-jack and jack2 — can only be resolved when pacman sees them together.
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# PACKAGES
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-# Named outright rather than left to the group, because services are switched on
-# for them below.
+# One transaction rather than several: packages that replace each other
+# (pipewire-jack and jack2) can only be resolved when pacman sees them together.
+
+# Named outright rather than left to the group, because services are switched
+# on for them below.
 packages=(git bluez bluez-utils avahi)
 
 # The group, filtered, rather than the group and a round of removals: what the
@@ -33,7 +36,7 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     packages+=(gnome-browser-connector gnome-themes-extra tuned-ppd cups)
 
     # Portals, for flatpaks and screen sharing on Wayland. The GNOME portal
-    # itself is in the group; the GTK one is the fall-back for what it does not
+    # itself is in the group; the GTK one is the fallback for what it does not
     # implement.
     packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk)
 
@@ -42,7 +45,7 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
 
     # Reaching other machines, and letting them reach this one. The gvfs back
-    # ends are in the group, and NetworkManager speaks WireGuard by itself —
+    # ends are in the group, and NetworkManager speaks WireGuard by itself, so
     # OpenVPN is the one protocol still worth a plug-in nobody has to look for.
     # The rest of the VPN plug-ins are a package away for whoever needs them.
     packages+=(rsync networkmanager-openvpn)
@@ -63,9 +66,9 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     packages+=(gamemode)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
 
-    # One family that covers every script the web has, one that draws emoji, two
-    # metric-compatible with what documents ask for, and the terminal font the
-    # prompt is drawn with.
+    # One family that covers every script the web has, one that draws emoji,
+    # two metric-compatible with what documents ask for, and the terminal font
+    # the prompt is drawn with.
     packages+=(noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation ttf-dejavu
         ttf-firacode-nerd)
 
@@ -76,18 +79,24 @@ fi
 
 chroot_pacman_install "${packages[@]}"
 
-# ─── Groups ──────────────────────────────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# GROUPS
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 # https://wiki.archlinux.org/title/Users_and_groups#User_groups
 arch-chroot "$MNT" groupadd -f plugdev
 arch-chroot "$MNT" usermod -aG adm,audio,video,optical,input,tty,plugdev "$ARCH_OS_USERNAME"
 [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && arch-chroot "$MNT" gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
-# ─── Login screen ────────────────────────────────────────────────────────────
-# Only where there is something to say. /etc/gdm/custom.conf belongs to the gdm
-# package, so a copy of it that only repeats gdm's own defaults — Wayland on,
-# debugging off — would be a file to merge after an update in exchange for
-# nothing. GDM unlocks the login keyring from the password it was given by
-# itself, so there is nothing to arrange for that either.
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# LOGIN SCREEN
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+# Only written where there is something to say. /etc/gdm/custom.conf belongs
+# to the gdm package, so a copy of it that only repeats gdm's own defaults
+# (Wayland on, debugging off) would just be a file to merge after every
+# update, for nothing gained. GDM unlocks the login keyring from the password
+# it was given itself, so there's nothing to arrange for that either.
 if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
     mkdir -p "${MNT}/etc/gdm"
     {
@@ -98,26 +107,26 @@ if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
     } >"${MNT}/etc/gdm/custom.conf"
 fi
 
-# Under automatic login GDM never sees a password, so PAM has none to unlock the
-# keyring with. GNOME's own answer is a login keyring without a password: the
-# daemon opens it at the start of the session and nothing ever asks. The data is
-# still behind disk encryption wherever this applies by default.
+# Under automatic login GDM never sees a password, so PAM has none to unlock
+# the keyring with. GNOME's own answer is a login keyring without a password:
+# the daemon opens it at the start of the session and nothing ever asks. The
+# data is still behind disk encryption wherever that applies by default.
 #
-# Created here rather than from the first-login script, which would race GDM's
-# own PAM hook on the same login.
+# Created here rather than from the first-login script, which would race
+# GDM's own PAM hook on the same login.
 # https://wiki.archlinux.org/title/GNOME/Keyring#Passwords_are_not_remembered
 if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
     keyrings="/home/${ARCH_OS_USERNAME}/.local/share/keyrings"
 
-    # The daemon needs a session bus and a runtime directory, and inside a chroot
-    # there is neither. /tmp is a tmpfs arch-chroot mounts itself, so nothing of
-    # this reaches the installed system.
+    # The daemon needs a session bus and a runtime directory, and there is
+    # neither inside a chroot. /tmp is a tmpfs arch-chroot mounts itself, so
+    # none of this reaches the installed system.
     runtime="/tmp/keyring"
     arch-chroot "$MNT" install -d -m 700 -o "$ARCH_OS_USERNAME" -g "$ARCH_OS_USERNAME" "$runtime"
     as_user "XDG_RUNTIME_DIR=${runtime} dbus-run-session -- gnome-keyring-daemon --unlock <<< ''" || true
 
     # It forks before it has written the keyring, so the file exists a moment
-    # before it holds one.
+    # before it actually holds one.
     for _ in $(seq 50); do
         [ -s "${MNT}${keyrings}/login.keyring" ] && break
         sleep 0.1
@@ -126,15 +135,18 @@ if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
     if [ -s "${MNT}${keyrings}/login.keyring" ]; then
         echo "created a passwordless login keyring"
     else
-        echo "could not pre-create a passwordless login keyring — the desktop will ask for one on first use" >&2
+        echo "could not pre-create a passwordless login keyring, the desktop will ask for one on first use" >&2
     fi
 
-    # It stays behind once it is done, and a process of the target still running
-    # is a mount that will not come down at the end.
+    # It stays behind once it's done, and a process of the target still
+    # running is a mount that will not come down at the end.
     arch-chroot "$MNT" pkill -u "$ARCH_OS_USERNAME" -x gnome-keyring-d || true
 fi
 
-# ─── The user's environment ──────────────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# THE USER'S ENVIRONMENT
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 mkdir -p "${home}/.config/environment.d" "${home}/.gnupg" "${apps}"
 cp "${data}/environment.conf" "${home}/.config/environment.d/00-arch.conf"
 echo 'pinentry-program /usr/bin/pinentry-gnome3' >"${home}/.gnupg/gpg-agent.conf"
@@ -142,7 +154,10 @@ echo 'pinentry-program /usr/bin/pinentry-gnome3' >"${home}/.gnupg/gpg-agent.conf
 # Git passwords in the keyring rather than in a file.
 as_user 'git config --global credential.helper /usr/lib/git-core/git-credential-libsecret'
 
-# ─── Keyboard ────────────────────────────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# KEYBOARD
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 # X11 applications read this file, Wayland the setting written at first login.
 # Both are needed, and both say the same thing.
 mkdir -p "${MNT}/etc/X11/xorg.conf.d"
@@ -162,7 +177,10 @@ on_first_login <<FIRST
 gsettings set org.gnome.desktop.input-sources sources "[('xkb', '${keyboard}')]"
 FIRST
 
-# ─── Services ────────────────────────────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# SERVICES
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 arch-chroot "$MNT" systemctl enable gdm.service
 arch-chroot "$MNT" systemctl enable bluetooth.service
 arch-chroot "$MNT" systemctl enable avahi-daemon
@@ -176,7 +194,10 @@ fi
 # and keeps working when a unit is renamed. The sockets follow through Also=.
 arch-chroot "$MNT" systemctl --global enable pipewire.service pipewire-pulse.service wireplumber.service gcr-ssh-agent.socket
 
-# ─── Application list ────────────────────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# APPLICATION LIST
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 hide() {
     printf '[Desktop Entry]\nType=Application\nHidden=true\n' >"${apps}/${1}.desktop"
 }
@@ -189,8 +210,8 @@ while read -r scope name; do
     hide "$name"
 done <"${data}/hidden-apps"
 
-# The snapshot browser under a name that says what it is for. A file of the same
-# name in the user's own applications folder wins over the one in /usr.
+# The snapshot browser under a name that says what it's for. A file of the
+# same name in the user's own applications folder wins over the one in /usr.
 if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_ASSISTANT_ENABLED" = "true" ]; then
     {
         echo '[Desktop Entry]'
@@ -205,12 +226,15 @@ if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_ASSISTANT_ENABLED" =
     } >"${apps}/btrfs-assistant.desktop"
 fi
 
-# Let flatpaks read the desktop theme, so they do not stand out as light windows
-# on a dark desktop.
+# Let flatpaks read the desktop theme, so they don't stand out as light
+# windows on a dark desktop.
 arch-chroot "$MNT" flatpak override --filesystem=xdg-config/gtk-3.0
 arch-chroot "$MNT" flatpak override --filesystem=xdg-config/gtk-4.0
 
-# ─── What only the first login can do ────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# WHAT ONLY THE FIRST LOGIN CAN DO
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     on_first_login <<'FIRST'
 gsettings set org.gnome.shell favorite-apps "['org.gnome.Console.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Software.desktop', 'org.gnome.Settings.desktop']"

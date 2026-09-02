@@ -1,5 +1,5 @@
-# A terminal that is pleasant on the first login. Everything it writes is a file
-# beside this one, copied into place.
+# A terminal that is pleasant on the first login. Everything it writes is a
+# file beside this one, copied into place.
 
 simulating && return 0
 
@@ -12,10 +12,12 @@ chroot_pacman_install "${packages[@]}"
 
 mkdir -p "${MNT}/root/.config/fastfetch" "${home}/.config/fastfetch"
 
-# ─── Aliases ─────────────────────────────────────────────────────────────────
-# For both root and the user: the shell is the same shell. {{PKG}} and {{SUDO}}
-# are the only part the answers decide — an AUR helper covers both repositories
-# and asks for the password itself, where pacman needs sudo.
+# ---------------------------------------------------------------------------------------------------
+
+# Aliases, for both root and the user: it is the same shell either way.
+# {{PKG}} and {{SUDO}} are the only part the answers decide - an AUR helper
+# covers both repositories and asks for the password itself, where pacman
+# needs sudo.
 pkg="pacman"
 sudo_prefix="sudo "
 if [ "$ARCH_OS_AUR_HELPER" != "none" ]; then
@@ -26,13 +28,15 @@ fi
 sed -e "s|{{PKG}}|${pkg}|g" -e "s|{{SUDO}}|${sudo_prefix}|g" "${data}/aliases" |
     tee "${MNT}/root/.aliases" "${home}/.aliases" >/dev/null
 
-# ─── Shell configuration ─────────────────────────────────────────────────────
-# bash is always configured, because it is the shell every task and hook runs in.
+# ---------------------------------------------------------------------------------------------------
+
+# bash is always configured: it is the shell every task and hook runs in.
 #
-# zsh becomes the login shell outright, so everything that starts one — a
-# terminal, ssh, a service — gets it. fish cannot: it is not a POSIX shell, and a
-# login shell that cannot read a POSIX profile breaks things well outside the
-# terminal. So .bashrc hands over to it instead — see shell-handover.
+# zsh becomes the login shell outright, so everything that starts one (a
+# terminal, ssh, a service) gets it. fish cannot: it is not a POSIX shell,
+# and a login shell that cannot read a POSIX profile breaks things well
+# outside the terminal. So .bashrc hands over to it instead, see
+# shell-handover.
 shell="$ARCH_OS_SHELL_ENHANCEMENT_SHELL"
 
 marker=$'# {{SHELL_HANDOVER}}\n'
@@ -62,9 +66,11 @@ fish)
     ;;
 esac
 
-# ─── Prompt ──────────────────────────────────────────────────────────────────
-# Fetched rather than shipped, so the theme can be improved without a new release
-# of this installer. A machine that cannot reach it gets one from starship.
+# ---------------------------------------------------------------------------------------------------
+
+# The prompt theme is fetched rather than shipped, so it can be improved
+# without a new release of this installer. A machine that cannot reach it
+# gets a fallback preset from starship instead.
 mkdir -p "${MNT}/root/.config"
 if ! curl -Lf --connect-timeout 5 --max-time 30 \
     https://raw.githubusercontent.com/murkl/starship-theme-arch-os/refs/heads/main/starship.toml \
@@ -74,13 +80,16 @@ if ! curl -Lf --connect-timeout 5 --max-time 30 \
 fi
 cp "${home}/.config/starship.toml" "${MNT}/root/.config/starship.toml"
 
-# ─── Editor ──────────────────────────────────────────────────────────────────
-# In each home rather than /etc/nanorc, which belongs to the nano package and
-# would leave a .pacnew to merge on every update.
+# ---------------------------------------------------------------------------------------------------
+
+# nanorc goes into each home rather than /etc/nanorc, which belongs to the
+# nano package and would leave a .pacnew to merge on every update.
 mkdir -p "${MNT}/root/.config/nano" "${home}/.config/nano"
 tee "${MNT}/root/.config/nano/nanorc" "${home}/.config/nano/nanorc" <"${data}/nanorc" >/dev/null
 
-# ─── What only the first login can do ────────────────────────────────────────
+# ---------------------------------------------------------------------------------------------------
+
+# Settings only reachable once a session exists.
 if [ "$ARCH_OS_DESKTOP" != "none" ]; then
     on_first_login <<'FIRST'
 # The terminal font, which has to match the one the prompt draws with.

@@ -3,7 +3,7 @@
 simulating && return 0
 
 # sudo is named outright: it comes with base-devel, which only an installation
-# that builds from the AUR needs — and the wheel rule is written either way.
+# that builds from the AUR needs, and the wheel rule is written either way.
 packages=("$ARCH_OS_KERNEL" base sudo linux-firmware wireless-regdb zram-generator networkmanager)
 
 # `base` ships no editor, no manuals and no ssh, so a console-only installation
@@ -27,7 +27,7 @@ if [ "$ARCH_OS_BOOTLOADER" = "grub" ]; then
 fi
 
 # Before the packages, because installing the kernel builds a ram disk, and the
-# hook that puts a keyboard layout in it reads this file — see write_vconsole.
+# hook that puts a keyboard layout in it reads this file, see write_vconsole.
 write_vconsole
 
 # Retried, and with the download timeout off: this is the longest download of

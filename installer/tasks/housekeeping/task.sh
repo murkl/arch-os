@@ -5,7 +5,7 @@ simulating && return 0
 chroot_pacman_install pacman-contrib reflector pkgfile smartmontools irqbalance
 
 # reflector.service names this exact path on its command line, so a systemd
-# drop-in could only override it by restating the whole command — which would
+# drop-in could only override it by restating the whole command, which would
 # then be ours to keep in step with the unit. The file is the smaller risk: it
 # has not changed upstream in years.
 {

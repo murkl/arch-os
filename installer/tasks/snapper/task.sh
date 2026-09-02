@@ -14,11 +14,11 @@ arch-chroot "$MNT" chmod 750 /.snapshots
 arch-chroot "$MNT" chown :wheel /.snapshots
 
 # Snapper's defaults are written for a system that changes slowly. A rolling
-# release is not one: every snapshot pins the package versions it was taken over
-# as data nothing else can free, and fifty of them plus a year of timeline is how
-# a disk fills up — measured on one machine after nine months, 70G held against
-# 35G of actual system. A rollback is for the update that just broke something,
-# which is days rather than months.
+# release is not one: every snapshot pins the package versions it was taken
+# over as data nothing else can free, and fifty of them plus a year of
+# timeline is how a disk fills up - measured on one machine after nine
+# months, 70G held against 35G of actual system. A rollback is for the
+# update that just broke something, which is days rather than months.
 arch-chroot "$MNT" snapper --no-dbus -c root set-config \
     "NUMBER_LIMIT=10 NUMBER_LIMIT_IMPORTANT=5 TIMELINE_LIMIT_MONTHLY=2 TIMELINE_LIMIT_YEARLY=0"
 

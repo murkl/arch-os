@@ -3,32 +3,33 @@
 
 simulating && return 0
 
-# ─── Clock ───────────────────────────────────────────────────────────────────
-# ln makes the link whether or not it points at anything, and a dangling
-# /etc/localtime is a system that quietly runs in UTC.
+# Clock. ln makes the link whether or not it points at anything, so a
+# dangling /etc/localtime would be a system that quietly runs in UTC.
 if [ ! -f "${MNT}/usr/share/zoneinfo/${ARCH_OS_TIMEZONE}" ]; then
     echo "there is no time zone called ${ARCH_OS_TIMEZONE}" >&2
     exit 1
 fi
 arch-chroot "$MNT" ln -sf "/usr/share/zoneinfo/${ARCH_OS_TIMEZONE}" /etc/localtime
 
-# The live system keeps the same zone from here on, so the installer's log lines
-# up with the journal of the machine it installed.
+# The live system keeps the same zone from here on, so the installer's log
+# lines up with the journal of the machine it installed.
 timedatectl set-timezone "$ARCH_OS_TIMEZONE" || true
 
 # The hardware clock, set from a system clock that init put on network time.
 arch-chroot "$MNT" hwclock --systohc
 
-# ─── Language and keyboard ───────────────────────────────────────────────────
+# ---------------------------------------------------------------------------------------------------
+
+# Language and keyboard.
 echo "LANG=${ARCH_OS_LOCALE_LANG}.UTF-8" >"${MNT}/etc/locale.conf"
 
-# Every line of /etc/locale.gen belonging to the chosen language, plus English as
-# a fallback. locale.gen already lists every locale, commented out; each is
+# Every line of /etc/locale.gen belonging to the chosen language, plus English
+# as a fallback. locale.gen already lists every locale, commented out; each is
 # matched by its beginning alone, because the file pads entries with trailing
 # spaces.
 #
 # The file belongs to glibc and locale-gen reads no other, so this is an edit
-# rather than a drop-in — and one of the few places a .pacnew is still possible.
+# rather than a drop-in, and one of the few places a .pacnew is still possible.
 {
     sed "/^#${ARCH_OS_LOCALE_LANG}/s/^#//" /etc/locale.gen | grep "^${ARCH_OS_LOCALE_LANG}" || true
     echo 'en_US.UTF-8 UTF-8'
@@ -38,8 +39,8 @@ echo "LANG=${ARCH_OS_LOCALE_LANG}.UTF-8" >"${MNT}/etc/locale.conf"
 done
 arch-chroot "$MNT" locale-gen
 
-# locale-gen is happy to generate nothing, and a system whose LANG names a locale
-# that was never built warns at every program and falls back to English.
+# locale-gen is happy to generate nothing, and a system whose LANG names a
+# locale that was never built warns at every program and falls back to English.
 if ! arch-chroot "$MNT" locale -a | grep -qxF "${ARCH_OS_LOCALE_LANG}.utf8"; then
     echo "the locale ${ARCH_OS_LOCALE_LANG}.UTF-8 was not generated" >&2
     exit 1
@@ -47,7 +48,9 @@ fi
 
 write_vconsole
 
-# ─── Name ────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------------------------------
+
+# Name.
 echo "$ARCH_OS_HOSTNAME" >"${MNT}/etc/hostname"
 {
     echo '# <ip>     <hostname.domain.org>  <hostname>'
@@ -55,9 +58,10 @@ echo "$ARCH_OS_HOSTNAME" >"${MNT}/etc/hostname"
     echo '::1        localhost.localdomain  localhost'
 } >"${MNT}/etc/hosts"
 
-# ─── Swap ────────────────────────────────────────────────────────────────────
-# Compressed swap in memory: faster than a swap partition, and no SSD wear.
-# https://wiki.archlinux.org/title/Zram
+# ---------------------------------------------------------------------------------------------------
+
+# Swap. Compressed swap in memory: faster than a swap partition, and no SSD
+# wear. https://wiki.archlinux.org/title/Zram
 {
     echo '[zram0]'
     echo 'zram-size = min(ram / 2, 8192)'

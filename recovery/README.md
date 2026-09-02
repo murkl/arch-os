@@ -1,7 +1,7 @@
 # Arch OS Recovery
 
-Everything this recovery knows about Arch Linux. It is data — one YAML file and
-the folders beside it — and it does not run on its own: the
+Everything this recovery knows about Arch Linux. It is data, one YAML file and
+the folders beside it, and it does not run on its own: the
 [runtime](../runtime) draws the interface, asks the questions and runs the tasks
 in order. Putting Arch Linux on a disk is a tree of its own, and a program of
 its own: [`installer/`](../installer).
@@ -18,7 +18,7 @@ DEBUG=true make -C ../runtime run TREE=../recovery
 ```
 recovery.yaml            what this recovery is, what it asks, what order it works in
 tasks/<id>/task.yaml     where that unit belongs: its stage, its needs, its conditions
-tasks/<id>/task.sh       what it does — and any file it ships with, beside it
+tasks/<id>/task.sh       what it does, and any file it ships with, beside it
 hooks/<name>.sh          everything around the work itself
 lib.sh                   the little every script of this tree shares
 locales/                 one <code>.po per language this recovery speaks, and the template they are filled in from
@@ -52,7 +52,7 @@ front of you.
 | task | stage | |
 |---|---|---|
 | `open` | `open` | unlock and mount, the way the system mounts itself |
-| `rollback` | `repair` | put a snapshot in place of the root subvolume — btrfs only |
+| `rollback` | `repair` | put a snapshot in place of the root subvolume, btrfs only |
 | `kernel` | `repair` | rebuild the kernel images and ram disks from the package cache, and sign them again where the boot chain is signed |
 | `shell` | `repair` | `arch-chroot` into the repaired system, with the terminal handed over |
 | `close` | `close` | unmount everything and lock the disk |
@@ -71,7 +71,7 @@ turns the network screen off, and the kernel images come out of the repaired
 system's own pacman cache rather than off a mirror.
 
 For the same reason `hooks/preflight.sh` asks less than the installer's: root
-and the live image, and nothing about this machine's firmware — it is not what
+and the live image, and nothing about this machine's firmware: it is not what
 is being set up.
 
 ## Two views of one disk
@@ -96,7 +96,7 @@ makes `DEBUG=true` a simulation rather than a repair.
 
 The repair itself lives in those scripts, not in `lib.sh`: unlocking, rolling
 back and rebuilding are each one task's whole job and are read there. What
-`lib.sh` holds is what more than one of them has to agree about — where the
+`lib.sh` holds is what more than one of them has to agree about: where the
 system is mounted, what its partitions are called, and the mount options a
 rollback has to put back exactly as the open found them. A task that ships a
 file of its own keeps it beside itself: `tasks/rollback/snapshots.sh` is the
@@ -105,14 +105,14 @@ offers.
 
 ## Answers
 
-`recovery.conf`, beside wherever the recovery was started — its own file, never
+`recovery.conf`, beside wherever the recovery was started, its own file, never
 the installer's, so a repair leaves no trace in a configuration that gets copied
 into an installed system. Every answer is `ARCH_OS_RECOVERY_*`; the encryption
 password is not among them, because the runtime never writes a secret down.
 
 | | |
 |---|---|
-| `ARCH_OS_RECOVERY_KEYMAP` | the console keyboard, asked `first` and loaded at once — the password below is typed on it |
+| `ARCH_OS_RECOVERY_KEYMAP` | the console keyboard, asked `first` and loaded at once, the password below is typed on it |
 | `ARCH_OS_RECOVERY_DISK` | the disk holding the installation to repair |
 | `ARCH_OS_RECOVERY_ENCRYPTION_ENABLED` | whether it is LUKS; read off the disk, which needs no password |
 | `ARCH_OS_RECOVERY_PASSWORD` | what unlocks it, asked immediately before the run |

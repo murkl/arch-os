@@ -1,57 +1,58 @@
-# Shared ground for every script of this tree: the target, the values worked out
-# rather than asked for, and the few things every task does.
+# SHARED LIBRARY | Sourced by the runtime before every task and every hook
 #
-# Everything else lives in the task that does it. What is here is here because
-# several scripts need the same answer and must not disagree about it — a boot
-# entry and a unified kernel image that describe different command lines are a
-# system that boots one way and updates the other.
+# Everything here is needed by more than one script and must not be answered
+# twice - a boot entry and a unified kernel image built from two different
+# command lines would be a system that boots one way and updates itself
+# another. Anything only one task needs stays in that task instead.
 #
-# The runtime sources this before every task and every hook, so a script is plain
-# shell with no preamble — the ERR trap that stops at the first failure is the
-# runtime's. Nothing here prints for a person to read; stdout goes to the log.
+# Because this is sourced, every script here is plain shell with no preamble
+# of its own - the ERR trap that stops on the first failure belongs to the
+# runtime. Nothing in this file prints for a person to read, only to the log.
 
 # Where the new system is mounted while it is being built.
 MNT=/mnt
 
-# The tables looked up below, beside this file.
+# The lookup tables used below, next to this file.
 DATA="$(dirname "${BASH_SOURCE[0]}")/data"
 
-# ─── Simulation ──────────────────────────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# SIMULATION & NETWORK
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 # DEBUG=true runs the installer without touching the machine. Each task guards
-# itself with `simulating && return 0` as its first line, so a unit is only ever
-# skipped as a whole.
+# itself with `simulating && return 0` as its first line, so a unit is only
+# ever skipped as a whole.
 : "${DEBUG:=false}"
 
 simulating() {
     [ "$DEBUG" = "true" ] || return 1
     echo "simulated: ${BASH_SOURCE[1]}"
-    sleep 1 # so the unit is visible in the interface rather than flashing past
+    sleep 1 # keep the step visible in the interface instead of flashing past
 }
 
-# ─── Network ─────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------------------------------
 
-# Real HTTPS to a host the installation needs anyway, not a ping — a captive
-# portal answers pings.
+# Real HTTPS to a host the installation needs anyway, not a ping - a captive
+# portal answers pings too.
 is_online() {
     curl -Lsf --connect-timeout 5 --max-time 15 https://archlinux.org >/dev/null
 }
 
-# ─── Where a task lives ──────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------------------------------
 
-# The folder of the task that called it, where a unit keeps the files it ships
-# with.
+# The folder of the task that called it, where a unit keeps the files it ships with.
 where() { dirname "${BASH_SOURCE[1]}"; }
 
-# ─── What a language and a country imply ─────────────────────────────────────
-#
-# The keyboard a language is typed on, the font that can draw it, the mirrors its
-# country has, the time zone it keeps. None of it follows from the shape of a
-# locale — de_CH is not de, sv is not se — so all four are looked up in data/.
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# LOCALE LOOKUP & AUTO VALUES
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+# Keyboard, font, mirror country and timezone don't follow from the shape of a
+# locale (de_CH is not de, sv is not se), so all four are looked up in data/.
 # The same tables fill the lists the question pages offer.
 
-# A column of the data/languages row for a locale: its own row where there is
-# one, otherwise its language's.
+# A column of the data/languages row for a locale: its own row if there is one,
+# otherwise its language's row.
 language_field() {
     awk -v col="$1" -v locale="${2%%.*}" '
         BEGIN { lang = locale; sub(/_.*/, "", lang) }
@@ -63,30 +64,30 @@ language_field() {
 }
 
 # A column of the data/countries row for the territory a locale ends in.
-# Nothing for a locale that names none.
+# Empty for a locale that names none.
 country_field() {
     local locale="${2%%.*}"
     [ "${locale#*_}" != "$locale" ] || return 0
     awk -F'\t' -v col="$1" -v code="${locale#*_}" '$1 == code { print $col }' "${DATA}/countries"
 }
 
-# ─── auto / none ─────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------------------------------
 
-# The two words the lists in installer.yaml share; neither ever reaches a task.
-# auto is a value still to be found, none is the empty answer said out loud.
+# The two magic words the lists in installer.yaml share; neither ever reaches a
+# task. auto means "not answered yet, work it out"; none means "answered: empty".
 is_auto() { [ -z "$1" ] || [ "$1" = "auto" ]; }
 not_none() { [ "$1" = "none" ] || printf '%s' "$1"; }
 
-# ─── Values that are worked out rather than asked for ────────────────────────
+# ---------------------------------------------------------------------------------------------------
 
-# What each list comes to on auto. Named rather than inlined, because the
-# question page shows the same answer beside its auto row.
+# What each list resolves to on auto. Kept as functions rather than inlined,
+# because the question page shows the same answer next to its auto row.
 auto_keymap() {
     local keymap
     keymap="$(language_field 2 "$ARCH_OS_LOCALE_LANG")"
-    # Otherwise the keyboard the live image was started with. The Arch image
-    # records it in root's shell history as the loadkeys command that set it,
-    # which is the only place it can be read back from.
+    # Fall back to the keyboard the live image was started with. The Arch
+    # image only records it as the loadkeys command in root's shell history,
+    # so that's the one place it can be read back from.
     : "${keymap:=$(grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null |
         tail -n1 | sed 's/.*loadkeys *//' | tr -d ' ')}"
     printf '%s' "${keymap:-us}"
@@ -102,8 +103,8 @@ auto_layout() {
     printf '%s' "$layout"
 }
 
-# Both fall back to none rather than to nothing: no font is the console's own,
-# and no country is every mirror in the world ranked by speed.
+# Both fall back to none rather than to an empty string: no font means the
+# console keeps its own, no country means every mirror ranked by speed.
 auto_font() {
     local font
     font="$(language_field 4 "$ARCH_OS_LOCALE_LANG")"
@@ -117,9 +118,9 @@ auto_country() {
     printf '%s' "${country:-none}"
 }
 
-# The zone the chosen country keeps, or — for a locale naming none — where this
-# machine appears to be. A guess either way, offered as the value the list opens
-# on and never as an answer.
+# The timezone the chosen country keeps, or a best guess at where this machine
+# is for a locale that names no country. Only ever offered as the value a list
+# opens on, never taken as the answer.
 auto_timezone() {
     local zone
     zone="$(country_field 3 "$ARCH_OS_LOCALE_LANG")"
@@ -137,22 +138,24 @@ auto_microcode() {
     fi
 }
 
-# Automatic login follows disk encryption: the disk is already unlocked by a
+# Autologin follows disk encryption: the disk is already unlocked by a
 # password at boot, so a second one at the login screen protects nothing.
 auto_autologin() { printf '%s' "${ARCH_OS_ENCRYPTION_ENABLED:-false}"; }
 
-# ─── Where the new system goes ───────────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# TARGET DISK & CONSOLE
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-# part_of names a partition of a disk. Devices whose name ends in a digit —
-# nvme0n1, mmcblk0, loop0 — put a p between the disk and the number.
+# Names a partition of a disk. Devices whose name ends in a digit (nvme0n1,
+# mmcblk0, loop0) get a p between the disk and the partition number.
 part_of() {
     local sep=""
     [[ "$1" =~ [0-9]$ ]] && sep="p"
     printf '%s%s%s' "$1" "$sep" "$2"
 }
 
-# Resolved once here rather than in one stage, so every stage sees the same
-# answer however it was arrived at.
+# Resolved once here instead of in a task, so every task sees the same answer
+# regardless of how it was arrived at.
 : "${ARCH_OS_BOOT_PARTITION:=$(part_of "$ARCH_OS_DISK" 1)}"
 : "${ARCH_OS_ROOT_PARTITION:=$(part_of "$ARCH_OS_DISK" 2)}"
 
@@ -167,13 +170,13 @@ ARCH_OS_VCONSOLE_FONT="$(not_none "$ARCH_OS_VCONSOLE_FONT")"
 ARCH_OS_REFLECTOR_COUNTRY="$(not_none "$ARCH_OS_REFLECTOR_COUNTRY")"
 ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$(not_none "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT")"
 
-# ─── The console of the new system ───────────────────────────────────────────
+# ---------------------------------------------------------------------------------------------------
 
 # The console keyboard and font of the new system.
 #
-# A function rather than four lines in configure-system, because it is needed
-# once before that: the kernel's package hook builds a ram disk during pacstrap,
-# and mkinitcpio's sd-vconsole hook reads this file while it does.
+# Kept as a function instead of four lines in configure-system, because it is
+# needed once before that already runs: mkinitcpio's sd-vconsole hook reads
+# this file while pacstrap builds the ram disk.
 write_vconsole() {
     mkdir -p "${MNT}/etc"
     echo "KEYMAP=${ARCH_OS_VCONSOLE_KEYMAP}" >"${MNT}/etc/vconsole.conf"
@@ -181,42 +184,43 @@ write_vconsole() {
     return 0
 }
 
-# The keyboard on the machine the installer runs on, which `apply:` calls the
-# moment the language or the keyboard is answered. Until it has run, everything
-# after it is typed on a layout nobody chose.
+# The keyboard on the machine the installer runs on, called by `apply:` the
+# moment the language or the keyboard is answered. Until this has run,
+# everything typed after it is typed on a layout nobody chose.
 load_console_keyboard() {
     # DEBUG runs on somebody's own machine, whose keyboard is not ours to touch.
     [ "$DEBUG" = "true" ] && return 0
     loadkeys "$ARCH_OS_VCONSOLE_KEYMAP"
 }
 
-# ─── The signed boot chain ───────────────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# SECURE BOOT & KERNEL COMMAND LINE
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-# Whether this installation gets Secure Boot, which always comes with a unified
-# kernel image. The boot loader and the ram disk are both built differently for a
-# signed boot chain and both run either way, so the rule is named once.
+# Whether this installation gets Secure Boot, which always means a unified
+# kernel image. The boot loader and the ram disk are both built differently
+# for a signed boot chain, so this rule is named once instead of repeated.
 #
-# Only offered with encryption and systemd-boot:
-#   - Without encryption an attacker reads the data off the drive instead.
-#   - A UKI signs kernel, initramfs and command line together. Signing only the
-#     kernel would leave a forgeable initramfs on the unencrypted EFI partition,
-#     and a forged initramfs collects the passphrase.
-#   - GRUB's EFI binary is generated by grub-install, so it would need re-signing
-#     after every update and no hook does that.
+# Only offered together with encryption and systemd-boot:
+#   - Without encryption an attacker just reads the data off the drive instead.
+#   - A UKI signs kernel, initramfs and command line together. Signing only
+#     the kernel would leave a forgeable initramfs on the unencrypted EFI
+#     partition, and a forged initramfs is how the passphrase gets stolen.
+#   - GRUB's EFI binary is generated by grub-install, so it would need
+#     re-signing after every update, and no hook does that.
 secure_boot_wanted() {
     [ "$ARCH_OS_SECURE_BOOT_ENABLED" = "true" ] &&
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && [ "$ARCH_OS_BOOTLOADER" = "systemd" ]
 }
 
-# ─── The kernel command line ─────────────────────────────────────────────────
+# ---------------------------------------------------------------------------------------------------
 
-# Read by both the boot entries and the unified kernel image, so the two cannot
-# disagree about how this system boots.
+# Read by both the boot entries and the unified kernel image, so the two can
+# never disagree about how this system boots.
 kernel_args() {
     local args=(rw init=/usr/lib/systemd/systemd)
 
-    # zswap is pointless next to zram and the two interfere.
-    args+=(zswap.enabled=0)
+    args+=(zswap.enabled=0) # pointless next to zram, and the two interfere
 
     if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
         args+=("rd.luks.name=$(blkid -s UUID -o value "$ARCH_OS_ROOT_PARTITION")=cryptroot")
@@ -228,7 +232,7 @@ kernel_args() {
     [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && args+=(rootflags=subvol=@ rootfstype=btrfs)
     [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && args+=(nowatchdog)
 
-    # A quiet boot, so the splash is not written over by kernel messages.
+    # Quiet boot, so the splash isn't written over by kernel messages.
     # https://wiki.archlinux.org/title/Silent_boot
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ]; then
         args+=(quiet splash vt.global_cursor_default=0 loglevel=3 rd.udev.log_level=3 systemd.show_status=auto)
@@ -238,10 +242,12 @@ kernel_args() {
     printf '%s' "${args[*]}"
 }
 
-# ─── Installing into the new system ──────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# INSTALLING INTO THE NEW SYSTEM
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-# Package installs are retried: the one thing that reliably goes wrong during an
-# installation is the network.
+# Package installs are retried: the one thing that reliably goes wrong during
+# an installation is the network.
 RETRIES=5
 RETRY_WAIT=10
 
@@ -258,9 +264,11 @@ chroot_pacman_install() {
     return 1
 }
 
-# A sudo rule in the new system, as a drop-in. /etc/sudoers belongs to the sudo
-# package, and a syntax error in it locks everybody out of root — so rules go
-# beside it, one file each, checked before they are believed.
+# ---------------------------------------------------------------------------------------------------
+
+# A sudo rule in the new system, as a drop-in. /etc/sudoers belongs to the
+# sudo package, and a syntax error in it locks everybody out of root - so
+# rules go beside it instead, one file each, checked before they're trusted.
 sudoers_rule() {
     local file="${MNT}/etc/sudoers.d/${1}"
     mkdir -p "${MNT}/etc/sudoers.d"
@@ -269,10 +277,10 @@ sudoers_rule() {
     arch-chroot "$MNT" visudo -cqf "/etc/sudoers.d/${1}"
 }
 
-# Building from the AUR needs a normal user who may use sudo without a password.
-# It is granted for exactly the length of the build and taken back after —
-# including when the build fails, which is why the revoking is not left to the
-# end of the function.
+# Building from the AUR needs a normal user allowed to sudo without a
+# password. Granted for exactly the length of the build and taken back
+# afterwards - including when the build fails, which is why the revoke isn't
+# left to the end of the function.
 chroot_aur_install() {
     local repo="$1"
     local url="https://aur.archlinux.org/${repo}.git"
@@ -299,30 +307,34 @@ chroot_aur_install() {
     return "$status"
 }
 
-# as_user runs a command inside the new system as the account being created,
-# which is what makepkg insists on and what anything writing into that home
-# directory should do anyway.
+# Runs a command inside the new system as the account being created - what
+# makepkg insists on, and what anything writing into that home directory
+# should do anyway.
 as_user() {
     arch-chroot "$MNT" /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "$1"
 }
 
-# ─── The first login ─────────────────────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# FIRST LOGIN & LEAVING
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-# Some desktop settings live in the user's own settings database, and there is no
-# session yet. Tasks append lines here; the first-login task turns them into a
-# script that runs once at the first login and then removes itself.
+# Some desktop settings only live in the user's own settings database, and
+# there is no session yet to write them into. Tasks append lines here; the
+# first-login task turns them into a script that runs once at the first login
+# and then removes itself.
 FIRST_LOGIN="${MNT}/home/${ARCH_OS_USERNAME}/.first-login"
 
 on_first_login() { cat >>"$FIRST_LOGIN"; }
 
-# ─── Leaving ─────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------------------------------
 
-# Everything the installation mounted, taken back down in the right order —
-# named once, so the unmount task, the restart and the shutdown cannot differ.
+# Everything the installation mounted, taken back down in the right order -
+# named once here so the unmount task, the restart and the shutdown can't
+# disagree.
 #
-# Flushed before anything comes down, so a target that will not unmount is a
+# Flushed before anything comes down, so a target that refuses to unmount is a
 # mount left standing rather than a file half written. The second attempt is
-# unguarded on purpose: that one is a real failure.
+# left unguarded on purpose: that one is a real failure.
 unmount_target() {
     swapoff -a || true
     sync
@@ -334,13 +346,13 @@ unmount_target() {
     echo "unmounted"
 }
 
-# Whatever still has the target open, named in the log and then killed — a
-# process a package hook or a chroot left running. The pause is what the kernel
-# needs to let go of its files afterwards.
+# Whatever still has the target open, logged and then killed - typically a
+# process a package hook or a chroot left running. The sleep gives the kernel
+# time to actually let go of the files afterwards.
 #
-# -M is the whole safety of it: without it a target that is not a mount point
-# resolves to the file system containing it, which on the live image is the live
-# image itself.
+# -M carries the whole safety of this: without it, a target that isn't itself
+# a mount point resolves to the file system containing it, which on the live
+# image is the live image itself.
 free_target() {
     echo "the target did not unmount, what is holding it:"
     fuser -Mvm "$MNT" || true

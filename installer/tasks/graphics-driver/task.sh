@@ -52,7 +52,7 @@ nvidia) # https://wiki.archlinux.org/title/NVIDIA#Installation
     early_modules nvidia nvidia_modeset nvidia_uvm nvidia_drm
 
     # The modules live in the ram disk, so it is rebuilt whenever the driver or
-    # the kernel changes — once per batch, not once per package.
+    # the kernel changes: once per batch, not once per package.
     # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
     mkdir -p "${MNT}/etc/pacman.d/hooks"
     {

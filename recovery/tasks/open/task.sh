@@ -22,7 +22,7 @@ if [ "$ARCH_OS_RECOVERY_ENCRYPTION_ENABLED" = "true" ]; then
     fi
 fi
 
-# What is actually on it, now that it can be seen — so a wrong answer is caught
+# What is actually on it, now that it can be seen - so a wrong answer is caught
 # here rather than by a mount command that names no question.
 found="$(fstype "$(root_device)")"
 if [ "$found" != "$ARCH_OS_RECOVERY_FILESYSTEM" ]; then

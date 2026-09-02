@@ -1,4 +1,4 @@
-# The initial ram disk, and — where the boot chain is signed — the unified kernel
+# The initial ram disk, and, where the boot chain is signed, the unified kernel
 # image that replaces it.
 
 simulating && return 0
@@ -20,7 +20,7 @@ hooks="base systemd keyboard autodetect microcode modconf sd-vconsole block${enc
 # mkinitcpio package and editing it would leave a .pacnew to merge every time
 # upstream touches it. mkinitcpio reads its own file first and every
 # /etc/mkinitcpio.conf.d/*.conf after it, in name order, so what is set here
-# wins — and later drop-ins can still build on it (see the boot splash and the
+# wins, and later drop-ins can still build on it (see the boot splash and the
 # graphics driver).
 mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
 {

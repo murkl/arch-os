@@ -4,10 +4,10 @@
 #   curl -Ls bit.ly/arch-os | bash
 #
 # Where it runs decides what it does. On a booted Arch live image there is a
-# machine to work on, so it fetches the latest release and starts it — which then
-# asks whether this is an installation or a repair. Anywhere else there is not,
-# so it fetches the latest image and writes it to a USB device — the one that
-# boots the other case.
+# machine to work on, so it fetches the latest release and starts it, which
+# then asks whether this is an installation or a repair. Anywhere else there
+# is no machine to work on, so it fetches the latest image and writes it to a
+# USB device instead - the one that boots the other case.
 #
 # MODE=install|create picks the half by hand, DEBUG=true keeps both off the
 # hardware.
@@ -16,30 +16,34 @@
 # downloaded, on whatever shell the machine happens to have.
 set -eu
 
-# ─── Where a release comes from ──────────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# WHERE A RELEASE COMES FROM
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-# Asset names are not written down here: the release is asked what it holds and
+# Asset names are not hardcoded here: the release is asked what it holds and
 # the files are picked by extension, so renaming a download stays a change to
 # the Makefile that builds it.
 REPO="murkl/arch-os"
 RELEASE_API="https://api.github.com/repos/${REPO}/releases/latest"
 
 # Downloads land here and are reused on a second run, so a wrong device or a
-# crashed installer costs the download once.
+# crashed installer only costs the download once.
 DOWNLOAD_DIR="${DOWNLOAD_DIR:-${HOME}/Downloads}"
 
 # install, create, or auto: worked out from where this runs.
 MODE="${MODE:-auto}"
 
-# Touch no hardware: no device is written, and the installer simulates every
-# step (see setup/lib.sh, which reads the same variable).
+# Touch no hardware: no device gets written, and the installer simulates
+# every step (see setup/lib.sh, which reads the same variable).
 DEBUG="${DEBUG:-false}"
 
-# The file currently being fetched, so an interrupt cleans up its own mess and
-# nothing else in the folder.
+# The file currently being fetched, so an interrupt only cleans up its own
+# mess and leaves the rest of the folder alone.
 PARTIAL=""
 
-# ─── Output ──────────────────────────────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# OUTPUT
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 title() { printf '\n\033[34m// %s\033[0m\n' "$1"; }
 info() { printf ':: %s\n' "$1"; }
@@ -52,13 +56,13 @@ fail() {
 
 usage() {
     cat <<EOF
-Arch OS — https://github.com/${REPO}
+Arch OS - https://github.com/${REPO}
 
   curl -Ls bit.ly/arch-os | bash
 
 On a booted Arch live image: fetches the latest release and starts it, which
-asks whether to install or to repair. Anywhere else: fetches the latest image and
-writes it to a USB device, so this machine can make the one that boots it.
+asks whether to install or to repair. Anywhere else: fetches the latest image
+and writes it to a USB device, so this machine can make the one that boots it.
 
   MODE=install|create   pick the half by hand instead of by where it runs
   DEBUG=true            write nothing: no device, and a simulated installation
@@ -66,11 +70,13 @@ writes it to a USB device, so this machine can make the one that boots it.
 EOF
 }
 
-# ─── What this machine is ────────────────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# WHAT THIS MACHINE IS
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-# An Arch live image, the official one or ours — they are built the same way.
-# Either marker on its own is enough, and a shell that lost the first still has
-# the second.
+# An Arch live image, the official one or ours - both are built the same way.
+# Either marker on its own is enough, so a shell that lost the first still
+# has the second.
 is_live() {
     [ -d /run/archiso ] || grep -qs archisobasedir /proc/cmdline
 }
@@ -81,17 +87,19 @@ require() {
     done
 }
 
-# A desktop runs this as a person and reaches for sudo; a root shell has nothing
-# to escalate and may not have sudo installed at all.
+# A desktop runs this as a normal user and reaches for sudo; a root shell has
+# nothing to escalate and may not even have sudo installed.
 as_root() {
     if [ "$(id -u)" -eq 0 ]; then "$@"; else sudo "$@"; fi
 }
 
-# ─── Downloads ───────────────────────────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# DOWNLOADS
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 # The download URL of the one asset of the latest release whose name ends the
-# given way. Matched literally, so ".iso" is the image and never the checksum
-# file beside it.
+# given way. Matched literally, so ".iso" is the image and never the
+# checksum file beside it.
 asset_url() {
     printf '%s' "$RELEASE" |
         grep -o '"browser_download_url": *"[^"]*"' |
@@ -102,9 +110,9 @@ asset_url() {
         head -n1
 }
 
-# Fetches a URL into DOWNLOAD_DIR under the name it ends in, and leaves what is
-# already there alone. Written to a .part and moved into place after, so a file
-# that is there is a file that arrived whole.
+# Fetches a URL into DOWNLOAD_DIR under the name it ends in, and leaves what
+# is already there alone. Written to a .part and moved into place afterwards,
+# so a file that's there is a file that arrived whole.
 download() {
     download_name="${1##*/}"
     if [ -f "${DOWNLOAD_DIR}/${download_name}" ]; then
@@ -118,9 +126,9 @@ download() {
     PARTIAL=""
 }
 
-# Every release artefact ships a .sha256 beside it holding the file's own name,
-# so this is the check anyone would run by hand. A file that fails is thrown
-# away rather than kept, and the next run fetches it again.
+# Every release artefact ships a .sha256 beside it holding the file's own
+# name, so this is the check anyone would run by hand. A file that fails is
+# thrown away rather than kept, and the next run fetches it again.
 verify() {
     download "${1}.sha256"
     verify_name="${1##*/}"
@@ -132,7 +140,9 @@ verify() {
     ok "Checksum is correct"
 }
 
-# ─── Install: the machine this runs on becomes Arch OS ───────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# INSTALL | This machine becomes Arch OS
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 install_mode() {
     require curl tar sha256sum
@@ -144,18 +154,19 @@ install_mode() {
     download "$tarball_url"
     verify "$tarball_url"
 
-    # The folder is named by the archive rather than by this script: it carries
-    # a version, and which version that is belongs to the build.
+    # The folder is named after the archive rather than by this script: it
+    # carries a version, and which version that is belongs to the build.
     tarball="${DOWNLOAD_DIR}/${tarball_url##*/}"
     tarball_dir="${DOWNLOAD_DIR}/$(tar -tzf "$tarball" | head -n1 | cut -d/ -f1)"
     tar -xzf "$tarball" -C "$DOWNLOAD_DIR" || fail "Could not unpack ${tarball}"
     [ -x "${tarball_dir}/archos" ] || fail "No program in ${tarball}"
     ok "Unpacked: ${tarball_dir}"
 
-    # Started out of its own folder and with no argument: the runtime looks for
-    # its programs beside its own binary, finds the installer and the recovery,
-    # and asks which to open. Their answers and logs land in the working
-    # directory — so leaving and running this again picks up where it left off.
+    # Started out of its own folder with no argument: the runtime looks for
+    # its programs beside its own binary, finds the installer and the
+    # recovery, and asks which to open. Their answers and logs land in the
+    # working directory, so leaving and running this again picks up where it
+    # left off.
     #
     # stdin is this script itself when the command arrives through a pipe, so
     # the interface is handed the terminal instead.
@@ -163,7 +174,9 @@ install_mode() {
     exec ./archos </dev/tty
 }
 
-# ─── Create: this machine makes the device that boots the other one ──────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# CREATE | This machine makes the device that boots the other one
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 # The USB disks this machine has: the device path, a tab, and what a person
 # picks it by. Nobody knows their stick as /dev/sdb.
@@ -185,7 +198,7 @@ create_mode() {
 
     title "Target Device"
     disks="$(usb_disks)"
-    [ -n "$disks" ] || fail "No USB device found — plug one in and run this again"
+    [ -n "$disks" ] || fail "No USB device found, plug one in and run this again"
     printf '%s\n' "$disks" | awk -F'\t' '{ printf "  %d) %s  %s\n", NR, $1, $2 }'
 
     disk_count="$(printf '%s\n' "$disks" | wc -l)"
@@ -212,9 +225,9 @@ create_mode() {
     if [ "$DEBUG" = "true" ]; then
         warn "Simulated: ${iso##*/} would be written to ${device}"
     else
-        # A mounted partition would be written out from under its own file
-        # system. Lazy as the fallback: a file manager holding the stick open is
-        # the usual reason a plain umount refuses.
+        # A mounted partition would get written out from under its own file
+        # system. umount -l is the fallback: a file manager holding the stick
+        # open is the usual reason a plain umount refuses.
         lsblk -nro MOUNTPOINT "$device" | while IFS= read -r mountpoint; do
             [ -n "$mountpoint" ] || continue
             as_root umount "$mountpoint" || as_root umount -l "$mountpoint"
@@ -233,7 +246,9 @@ create_mode() {
     info "It starts on its own and asks what to do."
 }
 
-# ─── Main ────────────────────────────────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# MAIN
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 case "${1:-}" in
 -h | --help)
@@ -243,7 +258,7 @@ case "${1:-}" in
 esac
 
 # Both halves ask something, and through a pipe stdin is this script.
-[ -r /dev/tty ] || fail "No terminal — run this from an interactive shell"
+[ -r /dev/tty ] || fail "No terminal, run this from an interactive shell"
 
 mkdir -p "$DOWNLOAD_DIR" || fail "Cannot write to ${DOWNLOAD_DIR}"
 trap '[ -n "$PARTIAL" ] && rm -f "$PARTIAL"; exit 130' INT TERM HUP
@@ -254,9 +269,9 @@ fi
 
 title "Arch OS"
 case "$MODE" in
-install) info "Live environment — running Arch OS on this machine" ;;
-create) info "No live environment — creating a bootable Arch OS device" ;;
-*) fail "MODE is install, create or auto — not ${MODE}" ;;
+install) info "Live environment - running Arch OS on this machine" ;;
+create) info "No live environment - creating a bootable Arch OS device" ;;
+*) fail "MODE is install, create or auto - not ${MODE}" ;;
 esac
 if [ "$DEBUG" = "true" ]; then
     warn "DEBUG: nothing will be written to any hardware"

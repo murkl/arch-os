@@ -7,6 +7,10 @@
 # The finished image and its checksum land in DIST_DIR.
 set -e
 
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# CONFIGURATION
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 # mkarchiso has to run as root. Empty when there is nothing to elevate, which is
 # the case in CI.
 SUDO=""
@@ -20,7 +24,7 @@ ISO_CONFIG="releng" # baseline or releng
 
 # mkarchiso's scratch space, outside the repository: pacstrap mounts /proc and
 # /sys inside it, and anything on the desktop that walks a project folder holds
-# those open long enough for the unmount — and the build — to fail.
+# those open long enough for the unmount, and the build, to fail.
 WORK_DIR="$(realpath -m "${WORK_DIR:-/var/tmp/archos-iso-work}")"
 
 AIRFS_OPT="${ISO_DIR}/airootfs/opt/archos"
@@ -34,6 +38,10 @@ PLYMOUTH_THEME_REPO="https://github.com/murkl/plymouth-theme-arch-os"
 : "${SNAPSHOT_VERSION:=$(git -C .. rev-parse --short HEAD 2>/dev/null || echo dev)}"
 
 TEMP_DIR="$(mktemp -d)"
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# CLEANUP
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 # A run interrupted between pacstrap's mounts and its teardown leaves them
 # behind, and every later run then fails on those. Deepest first, and lazily.
@@ -49,8 +57,8 @@ unmount_leftovers() {
 # mkarchiso writes as root, and a root-owned file inside a checkout breaks
 # everything that walks it afterwards, so nothing root-owned survives this
 # script. ISO_DIR is a fresh copy of the stock profile every run, so a build that
-# worked takes it with it; a build that failed keeps it — there is nothing else
-# to read a failure out of — but hands it back. DOWNLOAD_DIR stays either way.
+# worked takes it with it; a build that failed keeps it - there is nothing else
+# to read a failure out of - but hands it back. DOWNLOAD_DIR stays either way.
 cleanup() {
     status=$?
     set +e
@@ -60,17 +68,21 @@ cleanup() {
     if [ "$status" -eq 0 ]; then
         ${SUDO} rm -rf "${ISO_DIR}"
     elif [ -d "${ISO_DIR}" ]; then
-        echo "build failed — the profile is left at ${ISO_DIR}"
+        echo "build failed - the profile is left at ${ISO_DIR}"
         ${SUDO} chown -R "$(id -u):$(id -g)" "${ISO_DIR}"
     fi
     exit "$status"
 }
 trap cleanup EXIT
 
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# BUILD
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 echo "### Initialize Build"
-[ -x "${RELEASE_DIR}/archos" ] || { echo "Error: ${RELEASE_DIR}/archos not found — run 'make build' first" >&2 && exit 1; }
-[ -f "${RELEASE_DIR}/installer/installer.yaml" ] || { echo "Error: ${RELEASE_DIR}/installer/installer.yaml not found — run 'make build' first" >&2 && exit 1; }
-[ -f "${RELEASE_DIR}/recovery/recovery.yaml" ] || { echo "Error: ${RELEASE_DIR}/recovery/recovery.yaml not found — run 'make build' first" >&2 && exit 1; }
+[ -x "${RELEASE_DIR}/archos" ] || { echo "Error: ${RELEASE_DIR}/archos not found - run 'make build' first" >&2 && exit 1; }
+[ -f "${RELEASE_DIR}/installer/installer.yaml" ] || { echo "Error: ${RELEASE_DIR}/installer/installer.yaml not found - run 'make build' first" >&2 && exit 1; }
+[ -f "${RELEASE_DIR}/recovery/recovery.yaml" ] || { echo "Error: ${RELEASE_DIR}/recovery/recovery.yaml not found - run 'make build' first" >&2 && exit 1; }
 mkdir -p "$DOWNLOAD_DIR"
 unmount_leftovers "${WORK_DIR}"
 unmount_leftovers "${ISO_DIR}"
@@ -102,7 +114,7 @@ if [ -n "$DROPPED" ]; then
     grep -vxF "$DROPPED" "$ISO_PACKAGES" >"${TEMP_DIR}/packages" && mv "${TEMP_DIR}/packages" "$ISO_PACKAGES"
 fi
 
-# The runtime binary with both trees beside it, a folder each — the only place
+# The runtime binary with both trees beside it, a folder each - the only place
 # the runtime looks for one. /opt/archos is what the systemd unit below starts,
 # and what the three launchers on the path run out of.
 echo "### Install Arch OS"
@@ -138,7 +150,7 @@ mkdir -p "${ISO_DIR}/airootfs/usr/share/plymouth/themes"
 cp -rT "${PLYMOUTH_THEME_SRC}" "${ISO_DIR}/airootfs/usr/share/plymouth/themes/arch-os"
 
 # plymouth-set-default-theme would theme the build host, so the config is written
-# and the hook added by hand — which is all that command does.
+# and the hook added by hand - which is all that command does.
 mkdir -p "${ISO_DIR}/airootfs/etc/plymouth"
 {
     echo "[Daemon]"
@@ -175,7 +187,7 @@ done
 sed -i 's/^timeout.*/timeout 0/' "${ISO_DIR}/efiboot/loader/loader.conf"
 
 # A prompt on this image is reached by leaving Arch OS or by it failing, and
-# either way the first question is how to get back to it — which Arch's own motd,
+# either way the first question is how to get back to it, which Arch's own motd,
 # a wall of text about an installation guide, does not answer.
 #
 # Both files, because they are shown at different moments: /etc/issue before the
@@ -211,7 +223,7 @@ sed -i "s|^airootfs_image_tool_options=.*|airootfs_image_tool_options=('-comp' '
 # would only offer a boot that ends in a refusal.
 #
 # bootmodes is a multi-line array in the stock profile, so the whole block is
-# replaced — rewriting its first line leaves the rest behind as a syntax error.
+# replaced - rewriting its first line leaves the rest behind as a syntax error.
 sed -i "/^bootmodes=(/,/)$/c\\bootmodes=('uefi.systemd-boot')" "${ISO_DIR}/profiledef.sh"
 
 set_key_value "${ISO_DIR}/profiledef.sh" iso_name "archos"
@@ -222,6 +234,10 @@ set_key_value "${ISO_DIR}/profiledef.sh" iso_application "Arch OS ISO"
 # Make ISO
 echo "### Make Arch OS ISO"
 ${SUDO} mkarchiso -v -w "${WORK_DIR}" -o "${ISO_DIR}/out" "${ISO_DIR}"
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# SHIP
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 # The image and its checksum go to DIST_DIR, beside the tarball.
 echo "### Move ISO to Dist"

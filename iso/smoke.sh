@@ -2,18 +2,18 @@
 # Boots a built Arch OS image and waits for the interface to come up in it.
 #
 # Nothing is installed: the machine is switched off the moment the first page is
-# recognised on its console. That proves the whole chain no linter can see — the
+# recognised on its console. That proves the whole chain no linter can see: the
 # boot entry, the initramfs and its plymouth hook, the systemd unit on tty1, the
 # runtime, and the trees it loads.
 #
 # Takes the image as its one argument; `make smoke` hands it the newest build.
-# Needs qemu, OVMF and tesseract — see README.md.
+# Needs qemu, OVMF and tesseract - see README.md.
 set -e
 
 ISO="$1"
 [ -f "$ISO" ] || { echo "usage: $0 <image.iso>" >&2 && exit 1; }
 
-# Where the console is photographed. A failure keeps every frame — a picture of
+# Where the console is photographed. A failure keeps every frame, since a picture of
 # the screen is all there is to go on afterwards; a run that worked keeps the one
 # frame the interface was recognised in.
 FRAME_DIR="${FRAME_DIR:-./smoke}"
@@ -36,9 +36,9 @@ EXPECT='What to do|Arch OS Recovery'
 PANIC='Kernel panic|Failed to start'
 
 for tool in qemu-system-x86_64 tesseract; do
-    command -v "$tool" >/dev/null || { echo "Error: ${tool} not found — see README.md" >&2 && exit 1; }
+    command -v "$tool" >/dev/null || { echo "Error: ${tool} not found - see README.md" >&2 && exit 1; }
 done
-[ -f "$OVMF_CODE" ] || { echo "Error: no OVMF firmware at ${OVMF_CODE} — install edk2-ovmf" >&2 && exit 1; }
+[ -f "$OVMF_CODE" ] || { echo "Error: no OVMF firmware at ${OVMF_CODE} - install edk2-ovmf" >&2 && exit 1; }
 
 rm -rf "$FRAME_DIR"
 mkdir -p "$FRAME_DIR"
@@ -141,4 +141,4 @@ done
 # The one frame worth keeping is the one it was recognised in.
 mv "$found" "${FRAME_DIR}/archos.ppm"
 rm -f "${FRAME_DIR}"/frame-*.ppm
-echo "### Arch OS is up — ${FRAME_DIR}/archos.ppm"
+echo "### Arch OS is up: ${FRAME_DIR}/archos.ppm"

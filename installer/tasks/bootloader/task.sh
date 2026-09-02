@@ -6,7 +6,7 @@ cmdline="$(kernel_args)"
 
 if [ "$ARCH_OS_BOOTLOADER" = "systemd" ]; then
 
-    # Adds an entry and never overwrites another system's loader — a Windows
+    # Adds an entry and never overwrites another system's loader - a Windows
     # Boot Manager already there is picked up on its own.
     arch-chroot "$MNT" bootctl --esp-path=/boot install
 
@@ -15,8 +15,9 @@ if [ "$ARCH_OS_BOOTLOADER" = "systemd" ]; then
     [ "$ARCH_OS_DUAL_BOOT_ENABLED" = "true" ] && timeout=5
 
     # A unified image needs no entry: systemd-boot finds every EFI binary under
-    # EFI/Linux. The editor goes off with it — an editable command line hands any
-    # bystander a root shell via init=/bin/sh, straight past Secure Boot.
+    # EFI/Linux. The editor is switched off with it too: an editable command
+    # line hands any bystander a root shell via init=/bin/sh, straight past
+    # Secure Boot.
     default=main.conf
     editor=yes
     if secure_boot_wanted; then

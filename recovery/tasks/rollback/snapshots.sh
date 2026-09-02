@@ -3,7 +3,7 @@
 #
 # A number alone is not something anyone can pick between, so the date and the
 # reason are read out of each snapshot's own info.xml. It is asked by the
-# rollback task, in the middle of the run — the disk holding these has only just
+# rollback task, in the middle of the run - the disk holding these has only just
 # been unlocked.
 
 # Simulated, so the page that asks is worth looking at while this tree is being

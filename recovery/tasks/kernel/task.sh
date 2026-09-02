@@ -49,10 +49,10 @@ arch-chroot "$MNT" mkinitcpio -P
 
 # A rebuilt unified image is an unsigned one, and a machine with Secure Boot on
 # refuses to start it. sbctl's own database says what this system signs, so
-# signing it all again is the whole repair — and a system that never had Secure
+# signing it all again is the whole repair, and a system that never had Secure
 # Boot has no sbctl to run.
 if [ -x "${MNT}/usr/bin/sbctl" ]; then
-    arch-chroot "$MNT" sbctl sign-all || echo "signing the boot chain again failed — enroll or sign by hand before switching Secure Boot back on" >&2
+    arch-chroot "$MNT" sbctl sign-all || echo "signing the boot chain again failed - enroll or sign by hand before switching Secure Boot back on" >&2
 fi
 
 # GRUB lists the snapshots it can boot from the file system, so its menu is stale

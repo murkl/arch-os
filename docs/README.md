@@ -5,7 +5,7 @@
 
 <div align="center">
 
-<p><strong>A minimal, reproducible Arch Linux base — tty-only or with a full GNOME desktop.</strong></p>
+<p><strong>A minimal, reproducible Arch Linux base, tty-only or with a full GNOME desktop.</strong></p>
 
 <p><code>curl -Ls bit.ly/arch-os | bash</code></p>
 
@@ -20,7 +20,7 @@
 
 ## What you get
 
-- Minimal Arch Linux base, GNOME desktop optional — full or slim
+- Minimal Arch Linux base, GNOME desktop optional (full or slim)
 - LUKS2 disk encryption, btrfs or ext4
 - Btrfs snapshots (Snapper), taken before every package transaction
 - Secure Boot with your own keys and a signed unified kernel image, re-signed on
@@ -31,13 +31,13 @@
 - AUR helper, 32-bit support, automatic housekeeping timers
 - Shell enhancement (bash, zsh or fish) and a system manager TUI
 - Samba sharing, mirrors ranked by country
-- English and German interface, and [more languages are welcome](../TRANSLATING.md) — a tree can add its own
+- English and German interface, and [more languages are welcome](../TRANSLATING.md): a tree can add its own
 - A recovery on the same image that rolls a broken system back, without a network
 
 ## Installing
 
 You need a UEFI machine with Secure Boot switched off and an internet
-connection. Run the same command twice — where it runs decides what it does:
+connection. Run the same command twice, where it runs decides what it does:
 
 ```sh
 curl -Ls bit.ly/arch-os | bash
@@ -47,7 +47,7 @@ curl -Ls bit.ly/arch-os | bash
    and writes it to a USB device you pick.
    ([Ventoy](https://www.ventoy.net) or `dd` work just as well.)
 2. **Boot the target machine from that device.** It starts on its own and asks
-   what to do — install, or repair a system already on a disk. No keymap or
+   what to do, install or repair a system already on a disk. No keymap or
    network step first.
 3. **Answer the questions.** Every answer is saved as it is given, so an
    interrupted run picks up where it left off.
@@ -71,18 +71,18 @@ updates, `pacdiff`, Snapper housekeeping. Worth doing yourself:
 - Boot the installation image and choose **Arch OS Recovery** when the system no
   longer starts at all: it unlocks the disk, puts a snapshot back in place of the
   root subvolume, rebuilds the kernel images from the package cache and hands you
-  a shell inside the repaired system — no network needed
+  a shell inside the repaired system, no network needed
 
 <p><img src="./screenshots/recovery.png" width="820"></p>
 
 ## How it is built
 
-Four parts, deliberately kept apart — see
+Four parts, deliberately kept apart, see
 [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 | | |
 |---|---|
-| [`runtime/`](../runtime) | a Go binary that draws the interface, asks the questions and runs shell in order. It knows nothing about Arch, disks or packages — there is not one of those words in it. |
+| [`runtime/`](../runtime) | a Go binary that draws the interface, asks the questions and runs shell in order. It knows nothing about Arch, disks or packages, there is not one of those words in it. |
 | [`installer/`](../installer) | everything that does: one `installer.yaml`, the questions it asks, and a folder per step of the installation. |
 | [`recovery/`](../recovery) | the same shape again, for repairing a system that is already on a disk: its own `recovery.yaml`, its own steps, its own answers. |
 | [`iso/`](../iso) | turns a build of the three into a bootable image that starts on boot. |
@@ -112,11 +112,11 @@ Arch-specific behaviour it has never heard of.
 ## Why this exists
 
 Arch OS is a spare-time project, and the system it installs is the one I use
-every day — privately and at work, as a project lead and cloud native engineer.
+every day, privately and at work, as a project lead and cloud native engineer.
 The road to it started with Ubuntu, in 2005.
 
 The split between the two halves is also a split in how they are written. The
 runtime is Go, written with AI assistance and reviewed line by line before it
-goes in. The Arch Linux side — the installer and the recovery, the shell scripts
-and the YAML — is handwritten, and grew out of the installer that came before
-there was a runtime to drive it.
+goes in. The Arch Linux side, the installer and the recovery, the shell
+scripts and the YAML, is handwritten, and grew out of the installer that came
+before there was a runtime to drive it.

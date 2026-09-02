@@ -3,7 +3,7 @@
 #
 # A Linux VT has exactly sixteen slots, so a hand-picked #RRGGBB would only be
 # quantised back into one of them, and badly. The interface works in slots
-# instead, and this decides what the slots are — the same binary in any other
+# instead, and this decides what the slots are - the same binary in any other
 # terminal wears that terminal's own colours.
 #
 # setvtrgb reads three lines: all sixteen reds, then greens, then blues.

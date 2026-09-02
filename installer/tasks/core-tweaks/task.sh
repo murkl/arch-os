@@ -6,10 +6,10 @@ simulating && return 0
 # Stars while typing a sudo password, so a terminal does not look frozen.
 sudoers_rule 20-pwfeedback 'Defaults pwfeedback'
 
-# Parallel downloads and colour, which pacman ships switched off. pacman has no
-# drop-in directory — every setting and every repository has to be a section of
-# this one file — so this is an edit, and one of the few places a .pacnew is
-# still possible.
+# Parallel downloads and colour, which pacman ships switched off. pacman has
+# no drop-in directory - every setting and every repository has to be a
+# section of this one file - so this is an edit, and one of the few places a
+# .pacnew is still possible.
 sed -i 's/^#ParallelDownloads/ParallelDownloads/' "${MNT}/etc/pacman.conf"
 sed -i 's/^#Color/Color\nILoveCandy/' "${MNT}/etc/pacman.conf"
 

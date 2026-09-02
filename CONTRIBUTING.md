@@ -1,7 +1,7 @@
 # Working on Arch OS
 
 Everything below follows from one decision: **a commit is built once**. The
-image on the release page is not a rebuild of what was tested — it is the file
+image on the release page is not a rebuild of what was tested, it is the file
 that was tested, moved. That only works if promoting a commit does not change
 it, which is why `main` is only ever fast-forwarded.
 
@@ -10,7 +10,7 @@ it, which is why `main` is only ever fast-forwarded.
 ```mermaid
 flowchart LR
     F["feature/*"] -->|"squash merge, via a pull request"| D["dev"]
-    D -->|"fast-forward — only when everything passed"| M["main"]
+    D -->|"fast-forward, only when everything passed"| M["main"]
     M --> R["tag &lt;short-sha&gt;<br/>GitHub Release"]
 
     style M fill:#1793d1,stroke:#1793d1,color:#fff
@@ -21,8 +21,8 @@ flowchart LR
 follows from it.
 
 **`dev`** is the only branch anything is merged into, by squash, so one change
-is one commit. A push here produces an image, boots it, and — if all of that
-passed — promotes.
+is one commit. A push here produces an image, boots it, and, if all of that
+passed, promotes.
 
 **`main`** is not written to by hand. CI fast-forwards it onto the `dev` commit
 that just passed, and every commit that arrives there is tagged and released.
@@ -30,7 +30,7 @@ Its history is linear, and every entry in it is a state that was checked, built
 and booted.
 
 Because the fast-forward keeps the commit, the short SHA is the same on both
-branches — and that short SHA is the version everywhere: inside the binary, on
+branches, and that short SHA is the version everywhere: inside the binary, on
 the ISO label, in both filenames, and as the tag.
 
 A squash into `main` would make a new commit with a new SHA, and the image built
@@ -39,7 +39,7 @@ preference here; it is what makes the artefact promotable.
 
 There is **no CI on `main`**: the commit that arrives there is the commit that
 was checked on `dev`, down to the SHA. Branch protection therefore requires a
-linear history and forbids force pushes, but does not require status checks — a
+linear history and forbids force pushes, but does not require status checks: a
 required check on `main` would block the very push that publishes the release.
 
 ## What a push runs
@@ -64,13 +64,13 @@ flowchart TD
 | --- | --- | --- |
 | `check` | every branch | `make check`, then the tests again under the race detector |
 | `security` | every branch | vulnerabilities in the runtime's imports, and a scan for secrets in the tree |
-| `build` | every branch | the runtime binary, the release, the tarball — and unpacks the tarball to load both trees out of it |
+| `build` | every branch | the runtime binary, the release, the tarball, and unpacks the tarball to load both trees out of it |
 | `iso` | `dev`, `main`, `neo`, on demand | the bootable image, out of the artefact `build` produced |
 | `boot test` | after `iso` | boots that image and waits for the first page |
 | `promote` | `dev` | fast-forwards `main`, tags, publishes, signs |
 
 The dashed jobs are the expensive ones. An archiso build is a quarter of an
-hour, and a work in progress does not need an image — so a feature branch gets
+hour, and a work in progress does not need an image, so a feature branch gets
 everything except those two, in about two minutes. To get an image from a
 branch, run the workflow on it by hand (Actions ▸ CI ▸ Run workflow).
 
@@ -109,8 +109,8 @@ sudo pacman -S --needed go shellcheck shfmt staticcheck yamllint actionlint \
 CI installs the same packages and runs the same commands, in an Arch container.
 There is no second definition of what "green" means.
 
-Most changes belong in [`installer/`](installer) — the Arch Linux half, which is
-where packages, tasks and questions live — or in [`recovery/`](recovery), the
+Most changes belong in [`installer/`](installer) (the Arch Linux half, which is
+where packages, tasks and questions live) or in [`recovery/`](recovery), the
 same kind of tree for repairing a system that is already on a disk. The
 [`runtime/`](runtime) is the frame around both and changes for bugs and
 features, not for a new package.
@@ -123,7 +123,7 @@ it is the shortest way in for a person too.
 ## Words on screen
 
 Every sentence the program shows is translatable, and the English sentence is
-its own key — so writing one is writing the source text and the key at once.
+its own key, so writing one is writing the source text and the key at once.
 Reword one and the old translation is marked fuzzy rather than dropped.
 
 The catalogs are gettext `.po` files and the templates they are filled in from
@@ -141,7 +141,7 @@ written for whoever translates rather than for whoever builds.
 
 ## Commits
 
-Write them in the imperative — "Add", "Fix", "Refactor" — and keep one logical
+Write them in the imperative ("Add", "Fix", "Refactor") and keep one logical
 change to a commit. They are squashed into `dev`, so the pull request title is
 what ends up in the history.
 

@@ -18,7 +18,7 @@ timedatectl set-ntp true
 # stalling partway through a download.
 [ "$ARCH_OS_ECN_ENABLED" = "false" ] && sysctl net.ipv4.tcp_ecn=0
 
-# What a previous attempt left behind. All of it may fail — on a first run there
+# What a previous attempt left behind. All of it may fail, since on a first run there
 # is nothing to close.
 swapoff -a || true
 umount -R "${MNT}/recovery" || true

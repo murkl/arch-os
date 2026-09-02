@@ -1,12 +1,12 @@
 # Can this machine be installed onto at all?
 #
-# Everything here is read-only and everything here is a wall. It runs before the
-# first question, because being told the firmware is wrong is worth very little
-# after twenty answers, and because none of it can be fixed from inside this
-# program.
+# Everything here is read-only, and every check is a hard stop. Runs before the
+# first question, so a wrong firmware setting is caught up front instead of
+# after twenty answers - and because none of it can be fixed from inside this
+# program anyway.
 #
-# What goes to stderr is what the user reads, so each message says what is wrong
-# and what to do about it, in that order, and nothing else.
+# What goes to stderr is what the user reads, so each message says what is
+# wrong and what to do about it, in that order, and nothing else.
 
 # DEBUG=true simulates the installation instead of running it, on a machine
 # where none of what follows is true.
@@ -28,12 +28,12 @@ if [ ! -d /sys/firmware/efi ]; then
 fi
 
 if ! bootctl status 2>/dev/null | grep -q "Secure Boot: disabled"; then
-    echo "Secure Boot is switched on. Turn it off in the firmware settings and start again — the installer can set it up again for you afterwards." >&2
+    echo "Secure Boot is switched on. Turn it off in the firmware settings and start again - the installer can set it up again for you afterwards." >&2
     exit 1
 fi
 
-# Everything from here on downloads something, and a link that is merely slow to
-# come up after boot is common enough to be worth waiting for.
+# Everything from here on downloads something, and a link that's merely slow
+# to come up after boot is common enough to be worth waiting for.
 online=false
 for i in 1 2 3 4 5; do
     [ "$i" -gt 1 ] && echo "retry ${i}/5: waiting for the network" && sleep 5
@@ -43,7 +43,7 @@ for i in 1 2 3 4 5; do
     fi
 done
 if [ "$online" != "true" ]; then
-    echo "No internet connection. Connect this machine to the network — use iwctl for wireless — and start the installer again." >&2
+    echo "No internet connection. Connect this machine to the network (use iwctl for wireless) and start the installer again." >&2
     exit 1
 fi
 

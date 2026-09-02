@@ -15,7 +15,7 @@ fi
 
 # @ cannot be replaced while it is the root that is mounted. Anything still
 # holding it open is named in the log and killed first, the same way closing the
-# system does it — a rollback that stops here leaves the machine exactly as it
+# system does it - a rollback that stops here leaves the machine exactly as it
 # found it, but it should not stop for a process nobody is using.
 if ! umount -A -R "$MNT"; then
     free_target

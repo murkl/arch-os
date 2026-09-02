@@ -1,12 +1,12 @@
-# runtime — the program the trees beside it are run by
+# runtime: the program the trees beside it are run by
 
 A single Go binary that draws an interface, asks questions, keeps the answers
 and runs shell in order, reporting exactly where it broke. It is built as
 `installer-linux-amd64` and a release ships it under whatever name that release
-goes by — `archos`, in this one.
+goes by, `archos` in this one.
 
 It installs nothing, and it knows nothing about Arch Linux, disks, packages or
-desktops — there is not one of those words in the source. What is asked, what
+desktops: there is not one of those words in the source. What is asked, what
 the answers mean and what the shell does is **one yaml and the folders beside
 it**. Started without one, the binary says so and stops.
 
@@ -33,7 +33,7 @@ locales/<code>.po        one catalog per language it speaks, beside the template
 ```
 
 The declaration is **the one `.yaml` file in the folder's top level**, whatever
-it is called — `installer.yaml`, `recovery.yaml`. Naming it after what it
+it is called: `installer.yaml`, `recovery.yaml`. Naming it after what it
 declares is what lets two trees sit beside each other and still be told apart;
 two of them in one folder is refused rather than resolved. The answer file and
 the log are named after it too, so `recovery.yaml` answers into `recovery.conf`
@@ -46,18 +46,18 @@ either a tree, or a folder of them:
 
 ```
 archos          the binary
-installer/      one program — installer.yaml and the folders beside it
-recovery/       another — recovery.yaml and its own
+installer/      one program: installer.yaml and the folders beside it
+recovery/       another: recovery.yaml and its own
 ```
 
 Several is a question, and it is the first page of the program: each tree's own
 `title` and `description`, in the order the folders are named. One is no
 question at all and is opened on the way in. Nothing about a tree is read from
-the outside — the folder names decide the order and nothing else.
+the outside: the folder names decide the order and nothing else.
 
 Until one is chosen the frame is dressed by the first of them: the trees of one
 release are one product, one wordmark and one colour. From the moment one is
-opened, everything — the answers, the log, the words on screen — is that tree's.
+opened, everything (the answers, the log, the words on screen) is that tree's.
 
 `-dir` names one tree outright and skips the question, which is what the
 `installer` and `recovery` commands on the ISO are.
@@ -117,7 +117,7 @@ than warning in the abstract.
 `description` and `run` are two different things and a tree needs both once a
 release holds several: one is what the program *is*, read on the page that asks
 which to open; the other is what one *run* of it is called, read wherever the
-interface says what is happening — the row that starts it, the last warning, the
+interface says what is happening: the row that starts it, the last warning, the
 clock while it runs. A tree that names no run is an installation as far as the
 runtime is concerned, which is right for one kind of tree and wrong for the rest.
 
@@ -129,7 +129,7 @@ loads.
 
 | | |
 |---|---|
-| `preflight.sh` | can this machine be installed onto at all — a wall, run before all but the `first` questions |
+| `preflight.sh` | can this machine be installed onto at all, a wall, run before all but the `first` questions |
 | `online.sh` | is there internet; without it the network screen never appears |
 | `wlan-device.sh` | the wireless device to use |
 | `wlan-networks.sh` | the networks in range, one SSID per line |
@@ -141,8 +141,8 @@ The preflight is a wall: what it writes to stderr is what the user reads.
 
 `restart.sh` and `shutdown.sh` are what make leaving the interface a question
 rather than an exit. A tree with them is saying the machine booted to run this
-installer, so every way out — ctrl+c, the row that says quit, backing off the
-first page, the end of an installation — lands on a page offering them. A tree
+installer, so every way out (ctrl+c, the row that says quit, backing off the
+first page, the end of an installation) lands on a page offering them. A tree
 with neither exits the way any program does, which is right for an installer
 somebody started from a shell they are still sitting in.
 
@@ -171,11 +171,11 @@ Seven more keys change what a unit *is* rather than what it does:
 | `default: no` | that offer opens on no instead of on yes |
 | `report:` | the run stops on a page of this one's own once it has run |
 | `shows: VAR` | that answer put on the page as a code to scan |
-| `quits: true` | the program does not come back from this one — a reboot |
+| `quits: true` | the program does not come back from this one, a reboot |
 | `tty: true` | the interface stands aside and the script has the terminal, whole |
 
 **`asks:`** is for the value that could not have been known before the work
-started — the snapshot to go back to, once the disk holding them is open. The
+started: the snapshot to go back to, once the disk holding them is open. The
 question stands where the list of tasks was, and comes before `confirm:`, so an
 offer can name what was just chosen. The variable it names must be one with a
 set of answers and never a secret. Being named by a task is the whole
@@ -187,7 +187,7 @@ work is done, and everything after it is offered rather than needed. The first
 paragraph is the headline, and `{{VAR}}` is filled in from the answers.
 
 **`shows:`** puts one answer on that page twice: drawn large as a code to scan,
-and printed under it as itself — for the value whose use is on a different
+and printed under it as itself, for the value whose use is on a different
 machine from the one showing it. A frame with no room for a whole code draws
 none rather than one that will not scan.
 
@@ -199,7 +199,7 @@ printf "MY_LINK='%s'\n" "$url" >>"$INSTALLER_CONF"
 ```
 
 That file is the only channel, and it is not a new one: it is shell, `KEY='value'`
-to a line. A value that comes back empty is not a failure — the page shows its
+to a line. A value that comes back empty is not a failure: the page shows its
 words and no code.
 
 Nothing lists the tasks: the folder is the list, and the order comes out of the
@@ -218,7 +218,7 @@ Decided by the declaration rather than by a switch:
 | `type: bool` | Yes / No, in the interface's language |
 | `type: secret` | a password field, asked twice, never written down |
 
-Further fields: `default` (any scalar — `true`, `8`, `pc105`), `prefill` (shell
+Further fields: `default` (any scalar, `true`, `8`, `pc105`), `prefill` (shell
 printing a suggestion), `apply` (shell run when the answer takes effect), `first`
 (asked before everything else), `free` (a row under a list that opens a text
 box), and `conditions`.
@@ -242,22 +242,22 @@ It runs the moment the answer is given, and once at startup for an answer this
 run began with, so a restart stands where the last one left off. A failure is a
 warning in the log; the answer stands either way.
 
-**`first: true`** puts a question before everything else — before the network
+**`first: true`** puts a question before everything else: before the network
 screen, before the preflight, before the presets. It is what makes the keyboard
 a passphrase is typed on a settled thing rather than a guess, and it is a
 promise to make sparingly: every question here is asked before the check that
 says this machine cannot be installed onto at all.
 
 An options command may hand back a value and the text it is chosen by, separated
-by a **tab** — everything before the tab is stored, everything after it is read:
+by a **tab**: everything before the tab is stored, everything after it is read:
 
 ```sh
 lsblk -dn -o PATH,SIZE,MODEL | awk '{printf "%s\t%s  %s %s\n", $1, $1, $2, $3}'
 # /dev/nvme0n1<TAB>/dev/nvme0n1  1.8T WD Black
 ```
 
-An empty value in front of the tab is a real answer — "no variant", "the
-default" — not a blank line.
+An empty value in front of the tab is a real answer ("no variant", "the
+default"), not a blank line.
 
 ### `conditions`
 
@@ -270,7 +270,7 @@ VAR != value
 
 Deliberately not an expression language. Three tokens cover every guard an
 installer needs, they read as a sentence, and they are checked against the
-declared variables when the tree is opened — so a renamed variable is a message
+declared variables when the tree is opened, so a renamed variable is a message
 at startup, never a task that silently never runs. There is no `or`: a row that
 belongs under two unrelated circumstances is two rows.
 
@@ -289,7 +289,7 @@ In this order, and each page shown only if there is something on it:
   after it belongs to whichever was chosen.
 - **Language**, on a machine that has never answered anything, if more than one
   is on offer. Afterwards it is a row in the settings.
-- **The `first` questions**, unnumbered — the few that cannot wait, because
+- **The `first` questions**, unnumbered: the few that cannot wait, because
   everything after them is typed on the keyboard they settle.
 - **Network**, if the tree has an `online.sh` hook.
 - **The check**, if the tree has a `preflight.sh` hook. A failure here is a wall.
@@ -297,23 +297,23 @@ In this order, and each page shown only if there is something on it:
   the program stays in: every value one fills in is an ordinary value from the
   next page on. Offered
   once, on a machine that has never answered anything. A row with **`asks:`** is
-  the same idea reached the long way round — one question, and the shell in its
+  the same idea reached the long way round: one question, and the shell in its
   **`apply:`** turns that answer into answers by writing them into the answer
   file. The row is not got past until that has worked.
 - **The questions** that are required, mean something, and have no acceptable
-  answer yet — one to a page, numbered, in declaration order.
+  answer yet, one to a page, numbered, in declaration order.
 - **Install** or **Settings**, once nothing is left open.
-- **Settings** — every answer on one page with what it is set to. `/` narrows it
+- **Settings**: every answer on one page with what it is set to. `/` narrows it
   by name or by heading.
-- **Installing** — a list of tasks filling in from the top, and nothing else. Not
+- **Installing**: a list of tasks filling in from the top, and nothing else. Not
   one line of what any script printed: a package manager's progress bars are
   noise with escape codes in them, and all of it goes to the log. A task that
   asks stops the list to ask; a declined one keeps its row, marked as passed
   over. A task with a `report:` stops it to say something.
-- **A failure** — what the tool said, then which script, which line, which
+- **A failure**: what the tool said, then which script, which line, which
   command, which exit code, then where the rest is written down.
-- **The way out**, where the tree declared one: a restart, a shutdown, and —
-  where the tree named a console to stop into — closing the installer with the
+- **The way out**, where the tree declared one: a restart, a shutdown, and,
+  where the tree named a console to stop into, closing the installer with the
   machine left running.
 
 Every answer is written to the answer file the moment it is given, so an
@@ -321,12 +321,12 @@ interruption costs nothing.
 
 ## Files it writes
 
-Beside whoever started the program — never inside the tree, which may be a
-read-only medium or a git checkout — and named after the tree, so two of them
+Beside whoever started the program (never inside the tree, which may be a
+read-only medium or a git checkout) and named after the tree, so two of them
 started from the same folder keep their own:
 
 ```
-./installer.conf   every answer, as KEY='value' — shell, editable by hand
+./installer.conf   every answer, as KEY='value': shell, editable by hand
 ./installer.log    everything: the runtime's own progress and every line a script printed
 ```
 
@@ -349,8 +349,8 @@ Scripts are **sourced** into a shell that already carries an `ERR` trap and,
 where the tree declares one, the shared library. They need no preamble, no
 `set -e`, no imports, no error handling: if a command fails, the task fails, and
 the user is told the file, the line, the command and the exit code. The one
-idiom this rests on — `[ "$X" = true ] && do_it` leaving a non-zero status when
-the test is false — is not a failure and never reported as one.
+idiom this rests on (`[ "$X" = true ] && do_it` leaving a non-zero status when
+the test is false) is not a failure and never reported as one.
 
 Scripts ask nothing and print nothing for a person to read. The single exception
 is a `tty: true` task, which is a session somebody is sitting in front of rather
@@ -363,7 +363,7 @@ answers with `"Zurück"`; a catalog with nothing to say about it leaves the
 English standing. So a half-finished translation is useful from its first line.
 
 The catalogs are **gettext `.po` files**, one per language, filled in from a
-`.pot` template beside them — the format every translation platform reads, and
+`.pot` template beside them: the format every translation platform reads, and
 the one where the msgid a translator is shown is the English sentence itself.
 Both templates are generated and neither is edited by hand: the runtime's out of
 the Go sources, a tree's out of the loaded tree. `make locales` writes them and
@@ -379,7 +379,7 @@ make locales                          # every template, and every catalog brough
 archos -check                         # reports coverage per language
 ```
 
-A catalog names its own language in it, as the translation of `English` — that
+A catalog names its own language in it, as the translation of `English`, that
 is what the picker lists, so a language is always offered in its own words. See
 [TRANSLATING.md](../TRANSLATING.md).
 
@@ -387,8 +387,8 @@ The language is chosen on the first run, changed in the settings, and otherwise
 read from `LC_ALL`, `LC_MESSAGES` or `LANG`.
 
 **`language:`** ties it to one of the tree's own answers instead. The value is
-matched against the catalogs the way a machine's own locale is — `de_DE` is
-German — so a tree that asks where a machine is has asked which language it
+matched against the catalogs the way a machine's own locale is (`de_DE` is
+German) so a tree that asks where a machine is has asked which language it
 speaks: the opening page of languages is not shown, and neither is the language
 row in the settings.
 
@@ -398,7 +398,7 @@ row in the settings.
 make build                  # bin/installer-linux-amd64, and its checksum
 make run                    # straight from source, against ../installer
 make run TREE=../recovery   # the other tree
-make check                  # gofmt, vet, staticcheck, test, build — before a commit
+make check                  # gofmt, vet, staticcheck, test, build, before a commit
 ```
 
 `run` takes one tree, so the page that asks which of several to open is not on

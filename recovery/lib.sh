@@ -1,63 +1,65 @@
-# Shared ground for every script of this tree: where the system being repaired
-# is mounted, how its parts are named on the disk, and the mounting that more
-# than one task does.
+# SHARED LIBRARY | Sourced by the runtime before every task and every hook
 #
-# Everything else lives in the task that does it. What is here is here because
-# several scripts need the same answer and must not disagree about it — a second
-# copy of a mount option or a partition number is a recovery that puts a system
-# back together differently from the way it was taken apart.
+# Everything here is needed by more than one script and must not be answered
+# twice - a second copy of a mount option or a partition number is a recovery
+# that puts the system back together differently from how it was taken apart.
+# Anything only one task needs stays in that task instead.
 #
-# The runtime sources this before every task and every hook, so a script is plain
-# shell with no preamble — the ERR trap that stops at the first failure is the
-# runtime's. Nothing here prints for a person to read; stdout goes to the log.
+# Because this is sourced, every script here is plain shell with no preamble
+# of its own - the ERR trap that stops on the first failure belongs to the
+# runtime. Nothing in this file prints for a person to read, only to the log.
 #
-# Nothing here asks anything either: the keyboard, the disk, the password and the
-# snapshot are questions in recovery.yaml, and this file is handed the answers.
+# Nothing here asks anything either: the keyboard, the disk, the password and
+# the snapshot are questions in recovery.yaml, and this file is only ever
+# handed the answers.
 
 # Where the system being repaired is mounted.
 MNT=/mnt
 
-# A btrfs installation is two views of one disk: the system as it runs, mounted
-# at MNT, and the top level holding @ and the snapshots, where a rollback
-# happens. The second is kept out of the first on purpose — it must not be inside
-# a chroot, and it must survive MNT being unmounted.
+# A btrfs installation is two views of one disk: the system as it runs,
+# mounted at MNT, and the top level holding @ and the snapshots, where a
+# rollback happens. Kept out of MNT on purpose - it must not end up inside a
+# chroot, and it must survive MNT being unmounted.
 BTRFS_TOP=/run/arch-os-recovery
 
 # What the unlocked disk is called under /dev/mapper.
 CRYPT=recovery
 
 # How this project mounts btrfs. The installer lays the file system out with
-# these and this puts it back the same way, so the two must not drift apart.
+# these options, and this puts it back the same way - the two must not drift
+# apart.
 BTRFS_OPTS="defaults,noatime,compress=zstd"
 
 # DEBUG=true runs the recovery without touching the machine. Each task guards
-# itself with `simulating && return 0` as its first line, so a unit is only ever
-# skipped as a whole.
+# itself with `simulating && return 0` as its first line, so a unit is only
+# ever skipped as a whole.
 : "${DEBUG:=false}"
 
 simulating() {
     [ "$DEBUG" = "true" ] || return 1
     echo "simulated: ${BASH_SOURCE[1]}"
-    sleep 1 # so the unit is visible in the interface rather than flashing past
+    sleep 1 # keep the step visible in the interface instead of flashing past
 }
 
-# ─── What the disk is called ─────────────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# WHAT THE DISK IS CALLED
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-# part_of names a partition of a disk. Devices whose name ends in a digit —
-# nvme0n1, mmcblk0, loop0 — put a p between the disk and the number.
+# Names a partition of a disk. Devices whose name ends in a digit (nvme0n1,
+# mmcblk0, loop0) get a p between the disk and the partition number.
 part_of() {
     local sep=""
     [[ "$1" =~ [0-9]$ ]] && sep="p"
     printf '%s%s%s' "$1" "$sep" "$2"
 }
 
-# Arch OS puts the EFI system partition first and the root second, whatever the
-# disk is called.
+# Arch OS always puts the EFI system partition first and the root second,
+# whatever the disk is called.
 boot_part() { part_of "$ARCH_OS_RECOVERY_DISK" 1; }
 root_part() { part_of "$ARCH_OS_RECOVERY_DISK" 2; }
 
-# What holds the file system: the unlocked mapper where the disk is encrypted,
-# the root partition itself where it is not.
+# What holds the file system: the unlocked mapper device where the disk is
+# encrypted, the root partition itself where it isn't.
 root_device() {
     if [ "$ARCH_OS_RECOVERY_ENCRYPTION_ENABLED" = "true" ]; then
         printf '/dev/mapper/%s' "$CRYPT"
@@ -67,15 +69,17 @@ root_device() {
 }
 
 # What a block device holds, or nothing for one that holds nothing readable.
-# Asked before the disk is open, to fill in the answers the questions offer, and
-# again after, to check that what turned up is what was answered.
+# Asked before the disk is opened, to fill in the answers the questions
+# offer, and again after, to check what turned up is what was answered.
 fstype() { lsblk -no FSTYPE "$1" 2>/dev/null | head -n1; }
 
-# ─── Mounting ────────────────────────────────────────────────────────────────
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# MOUNTING
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-# The installed system, mounted as it mounts itself. Shared because a rollback
-# takes it apart to replace @ and then has to put it back exactly as the open
-# left it.
+# The installed system, mounted exactly as it mounts itself. Shared because a
+# rollback takes it apart to replace @ and then has to put it back together
+# exactly as open left it.
 mount_system() {
     local target
     target="$(root_device)"
@@ -89,10 +93,13 @@ mount_system() {
     mount --mkdir "$(boot_part)" "${MNT}/boot"
 }
 
+# ---------------------------------------------------------------------------------------------------
+
 # Everything this recovery had mounted, taken back down, and the disk locked
-# again. Run before mounting as well as after, because a second attempt starts
-# from a target the first may have left half open, and on the way out of the
-# machine. Nothing mounted is ordinary.
+# again. Run before mounting as well as after, because a second attempt
+# starts from a target the first may have left half open - and on the way
+# out of the machine. Nothing here being mounted is the normal case, not an
+# error.
 unmount_system() {
     swapoff -a || true
     sync
@@ -105,13 +112,13 @@ unmount_system() {
     echo "closed ${MNT}"
 }
 
-# Whatever still has the system open, named in the log and then killed — a
-# process a chroot left running. The pause is what the kernel needs to let go of
-# its files afterwards.
+# Whatever still has the system open, logged and then killed - typically a
+# process a chroot left running. The sleep gives the kernel time to actually
+# let go of the files afterwards.
 #
-# -M is the whole safety of it: without it a target that is not a mount point
-# resolves to the file system containing it, which on the live image is the live
-# image itself.
+# -M carries the whole safety of this: without it, a target that isn't
+# itself a mount point resolves to the file system containing it, which on
+# the live image is the live image itself.
 free_target() {
     echo "the target did not unmount, what is holding it:"
     fuser -Mvm "$MNT" || true
