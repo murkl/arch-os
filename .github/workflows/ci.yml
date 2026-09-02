@@ -39,7 +39,7 @@ jobs:
       # gcc is for the race detector below, which is built on cgo.
       - uses: ./.github/actions/arch
         with:
-          packages: go gcc make shellcheck shfmt staticcheck yamllint actionlint gettext
+          packages: go gcc make shellcheck shfmt staticcheck yamllint actionlint gettext diffutils
 
       - uses: actions/cache@v6
         with:
