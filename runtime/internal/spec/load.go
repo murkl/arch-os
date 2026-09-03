@@ -85,7 +85,6 @@ type declaration struct {
 
 	Presets   []*Preset   `yaml:"presets"`
 	Variables []*Variable `yaml:"variables"`
-	Options   []*Option   `yaml:"options"`
 }
 
 // Load reads one module folder and checks it over — every reference resolved,
@@ -109,7 +108,7 @@ func Load(dir string) (*Module, error) {
 		Title: head.Title, Console: head.Console,
 		Description: head.Description, Run: head.Run,
 	}
-	s.Presets, s.Vars, s.Options, s.Language = head.Presets, head.Variables, head.Options, head.Language
+	s.Presets, s.Vars, s.Language = head.Presets, head.Variables, head.Language
 	s.Confirm, s.Stages = head.Confirm, head.Stages
 	if len(s.Stages) == 0 {
 		return nil, fmt.Errorf("%s: no stages", s.File)
@@ -232,9 +231,6 @@ func (s *Module) check(tasks []*Task) error {
 		return fmt.Errorf("%s: title is required", s.File)
 	}
 	if err := s.checkVars(); err != nil {
-		return fmt.Errorf("%s: %w", s.File, err)
-	}
-	if err := s.checkOptions(); err != nil {
 		return fmt.Errorf("%s: %w", s.File, err)
 	}
 	if err := s.checkPresets(); err != nil {
@@ -361,9 +357,6 @@ func (s *Module) normalize(tasks []*Task) {
 	for _, v := range s.Vars {
 		fields = append(fields, &v.Title, &v.Description, &v.Group, &v.Free, &v.Error)
 	}
-	for _, o := range s.Options {
-		fields = append(fields, &o.Title)
-	}
 	for _, t := range tasks {
 		fields = append(fields, &t.Name, &t.Confirm, &t.Report)
 	}
@@ -388,12 +381,6 @@ func reflow(s string) string {
 var (
 	hexColor = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 	varName  = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
-
-	// What a flag may be called: lower case, digits and hyphens, the shape
-	// every long option on a unix machine has had for thirty years. It is what
-	// somebody types, not what a script reads, so it is not the variable's own
-	// name in another case — `flag: password` answers ARCH_OS_PASSWORD.
-	flagName = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
 )
 
 func (s *Module) checkVars() error {
@@ -456,57 +443,6 @@ func (s *Module) checkVars() error {
 			return fmt.Errorf("%s: %w", v.Name, err)
 		}
 		v.cond = cond
-	}
-	return nil
-}
-
-// checkOptions settles what this module takes on the command line beyond its
-// questions: a name every script can read, a line --help can put against it,
-// and one of the two shapes an option comes in.
-func (s *Module) checkOptions() error {
-	seen := map[string]bool{}
-	for _, o := range s.Options {
-		switch {
-		case !varName.MatchString(o.Name):
-			return fmt.Errorf("%q is not a usable variable name", o.Name)
-		case runtimeVar(o.Name):
-			return fmt.Errorf("%s belongs to the runtime and cannot be declared", o.Name)
-		case s.byName[o.Name] != nil || seen[o.Name]:
-			return fmt.Errorf("%s is declared twice", o.Name)
-		case o.Title == "":
-			return fmt.Errorf("%s: title is required", o.Name)
-		}
-		seen[o.Name] = true
-		switch o.Type {
-		case "", TypeText, TypeBool:
-		default:
-			return fmt.Errorf("%s: an option is %s or %s, not %q", o.Name, TypeText, TypeBool, o.Type)
-		}
-		if o.Switch() && o.Default != "" && o.Default != BoolTrue && o.Default != BoolFalse {
-			return fmt.Errorf("%s: default: %s or %s, got %q", o.Name, BoolTrue, BoolFalse, o.Default)
-		}
-	}
-	return s.checkFlags()
-}
-
-// checkFlags settles the whole of this module's command line: every flag a name
-// somebody can type, and no two of them the same — so a question answered by
-// --password and an option called --password are caught here rather than by
-// whichever of them the parser happened to reach first.
-//
-// Whether a name is also one of the runtime's own is not decided here. A module
-// cannot see the runtime's flags from inside its own folder; the two are put
-// together in internal/cli, which is where that collision is found.
-func (s *Module) checkFlags() error {
-	seen := map[string]bool{}
-	for _, f := range s.Flags() {
-		if !flagName.MatchString(f.Name) {
-			return fmt.Errorf("%q is not a usable flag name — lower case, digits and hyphens", f.Name)
-		}
-		if seen[f.Name] {
-			return fmt.Errorf("--%s is declared twice", f.Name)
-		}
-		seen[f.Name] = true
 	}
 	return nil
 }

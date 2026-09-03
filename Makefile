@@ -92,10 +92,9 @@ iso: build
 	$(MAKE) -C iso build RELEASE_DIR=../$(RELEASE_DIR) DIST_DIR=../$(DIST_DIR) VERSION=$(VERSION)
 
 # Every template and every catalog, brought up to what the code and the modules
-# now say. The modules are asked through the runtime, so it is built first.
+# now say.
 locales:
 	$(MAKE) -C runtime locales
-	$(MAKE) -C runtime build
 	set -e; for m in $(MODULES); do $(MAKE) -C $(MODULES_DIR)/$$m locales; done
 
 # get.sh is POSIX sh, so it is checked as such rather than as bash. The yaml is

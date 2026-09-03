@@ -12,7 +12,7 @@ target="${home}/installer.conf"
 if cp -f "$MODULE_CONF" "$target" 2>/dev/null; then
     # Which build produced this system, so the answers can be read back against
     # the right version of the module.
-    sed -i "1i\# Installed by Arch OS Installer ${INSTALLER_VERSION}" "$target"
+    sed -i "1i\# Installed by Arch OS Installer ${RUNTIME_VERSION}" "$target"
 fi
 cp -f "$MODULE_LOG" "${home}/installer.log" 2>/dev/null || true
 

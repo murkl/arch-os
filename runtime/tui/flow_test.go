@@ -144,7 +144,7 @@ func openModule(t *testing.T) Open {
 	answers := t.TempDir()
 	return func(mod *spec.Module) (*Program, error) {
 		st := store.New(mod, filepath.Join(answers, mod.ID()+".conf"))
-		st.SetFacts("test")
+		st.SetFacts("test", false)
 		// The catalogs the module brought, discovered the way the program
 		// discovers them — so a test that writes one is testing what ships.
 		var sources []fs.FS

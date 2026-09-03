@@ -7,11 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/murkl/arch-os/runtime/internal/cli"
 	"github.com/murkl/arch-os/runtime/internal/i18n"
-	"github.com/murkl/arch-os/runtime/internal/runner"
 	"github.com/murkl/arch-os/runtime/internal/spec"
-	"github.com/murkl/arch-os/runtime/internal/store"
 )
 
 // writeModule writes the smallest module that will load, plus whatever extra
@@ -230,17 +227,6 @@ func TestARuntimeHoldingABrokenModuleWillNotStart(t *testing.T) {
 	}
 }
 
-func TestOnlyTheHooksAModuleActuallyHasAreListed(t *testing.T) {
-	mod := loaded(t, writeModule(t, "title: T\nstages: [go]\n", map[string]string{
-		"hooks/preflight.sh": "true\n",
-		"hooks/restart.sh":   "true\n",
-	}))
-	got := strings.Join(hooks(mod), " ")
-	if got != "preflight restart" {
-		t.Errorf("hooks() = %q, want \"preflight restart\" in HookNames order", got)
-	}
-}
-
 func TestAModuleWithNoCatalogsSpeaksTheRuntimesOwn(t *testing.T) {
 	mod := loaded(t, writeModule(t, "title: T\nstages: [go]\n", nil))
 	if got := len(catalogs(mod)); got != 1 {
@@ -262,107 +248,6 @@ func TestAModulesCatalogsAreLaidOverTheRuntimes(t *testing.T) {
 	}
 }
 
-func TestTheTemplateOfAModuleHoldsEveryWordItSays(t *testing.T) {
-	dir := around(t, writeModule(t, `
-title: Installer
-stages: [go]
-variables:
-  - name: HOST
-    title: Host name
-    description: |
-      The name this machine has.
-
-      It is the one the network knows it by.
-`, nil))
-	rt, mods := product(t, dir)
-	out := captureStdout(t, func() {
-		if err := catalog(rt, mods); err != nil {
-			t.Fatal(err)
-		}
-	})
-	if _, err := i18n.Parse([]byte(out)); err != nil {
-		t.Fatalf("the template is not readable po: %v\n%s", err, out)
-	}
-	for _, want := range []string{
-		`msgid "Installer"`,
-		`msgid "Host name"`,
-		// Paragraphs are written as lines, so a translator reads them as they
-		// will be read.
-		"msgid \"\"\n\"The name this machine has.\\n\"\n\"\\n\"\n\"It is the one the network knows it by.\"",
-		// And every one of them says where it was read.
-		"#: installer.yaml",
-	} {
-		if !strings.Contains(out, want) {
-			t.Errorf("the template has no %q in it:\n%s", want, out)
-		}
-	}
-}
-
-func TestInspectingAModuleNamesEverythingItHolds(t *testing.T) {
-	dir := around(t, writeModule(t, `
-title: Installer
-stages: [go]
-variables:
-  - name: HOST
-    title: Host name
-    required: true
-  - name: PASSWORD
-    title: Password
-    flag: password
-    type: secret
-    required: true
-`, map[string]string{
-		"hooks/preflight.sh": "true\n",
-		// The one task reads both answers, so the report is about what the
-		// module holds rather than about a guard that disagrees — see
-		// spec.Unread.
-		"tasks/first/task.sh": "echo \"$HOST $PASSWORD\"\n",
-	}))
-	rt, mods := product(t, dir)
-	out := captureStdout(t, func() {
-		if err := inspect(rt, mods); err != nil {
-			t.Fatal(err)
-		}
-	})
-	for _, want := range []string{
-		"modules    installer",
-		"title      Installer",
-		"variables  2 (2 required, 1 secret)",
-		"tasks      1",
-		"hooks      preflight",
-		"flags      --password",
-		"1. go         first",
-	} {
-		if !strings.Contains(out, want) {
-			t.Errorf("the report does not say %q:\n%s", want, out)
-		}
-	}
-}
-
-// A module that behaves is not a module that refuses to start, so this is the
-// one thing -check has to say that loading it never will.
-func TestInspectingRefusesAQuestionNothingReadsTheAnswerOf(t *testing.T) {
-	mod := writeModule(t, `
-title: Installer
-stages: [go]
-variables:
-  - name: SPARE
-    title: Spare
-`, nil)
-	if _, err := spec.Load(mod); err != nil {
-		t.Fatalf("the module does not load, and it has to: %v", err)
-	}
-	rt, mods := product(t, around(t, mod))
-	var err error
-	captureStdout(t, func() { err = inspect(rt, mods) })
-	if err == nil {
-		t.Fatal("a question nothing reads was reported as fine")
-	}
-	if !strings.Contains(err.Error(), "nothing reads the answer") {
-		t.Errorf("inspect() = %v, want it to say nothing reads the answer", err)
-	}
-}
-
 func TestAModuleThatWillNotLoadSaysWhatIsWrongWithIt(t *testing.T) {
 	dir := around(t, writeModule(t, "stages: [go]\n", nil)) // no title
 	rt, err := spec.LoadRuntime(dir)
@@ -374,254 +259,91 @@ func TestAModuleThatWillNotLoadSaysWhatIsWrongWithIt(t *testing.T) {
 	}
 }
 
-// captureStdout runs f with stdout redirected and answers with what it printed.
-// The two commands under test report by printing, which is the whole of what
-// they do.
-func captureStdout(t *testing.T, f func()) string {
-	t.Helper()
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatal(err)
-	}
-	saved := os.Stdout
-	os.Stdout = w
-	done := make(chan string)
-	go func() {
-		var b strings.Builder
-		buf := make([]byte, 4096)
-		for {
-			n, err := r.Read(buf)
-			b.Write(buf[:n])
+// The whole of what a command line says: which module to open, and the two
+// words that are not one. A module is written as a word or with the dashes an
+// option would carry, and may stand anywhere among them.
+func TestACommandLineIsAModuleAndTheRuntimesOwnTwoWords(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		args    []string
+		module  string
+		debug   bool
+		version bool
+	}{
+		{name: "nothing at all"},
+		{name: "a bare word", args: []string{"installer"}, module: "installer"},
+		{name: "the same word with dashes", args: []string{"--installer"}, module: "installer"},
+		{name: "one dash is the same request", args: []string{"-installer"}, module: "installer"},
+		{name: "in front of the module", args: []string{"--debug", "installer"}, module: "installer", debug: true},
+		{name: "behind it", args: []string{"installer", "--debug"}, module: "installer", debug: true},
+		{name: "the version on its own", args: []string{"--version"}, version: true},
+		{name: "both of the runtime's own", args: []string{"--debug", "--version"}, debug: true, version: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := parse(tc.args)
 			if err != nil {
-				break
+				t.Fatal(err)
 			}
+			if got.module != tc.module || got.debug != tc.debug || got.version != tc.version {
+				t.Errorf("parse(%v) = %+v, want module %q, debug %v, version %v",
+					tc.args, got, tc.module, tc.debug, tc.version)
+			}
+		})
+	}
+}
+
+func TestACommandLineThatCannotBeReadIsRefused(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		args []string
+		want string
+	}{
+		{"two modules", []string{"installer", "recovery"}, "One module at a time"},
+		{"a dash on its own", []string{"-"}, "names nothing"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := parse(tc.args)
+			if err == nil {
+				t.Fatal("the line was read as sound")
+			}
+			if !strings.Contains(err.Error(), tc.want) {
+				t.Errorf("error = %q, want it to mention %q", err, tc.want)
+			}
+		})
+	}
+}
+
+// The two words are the runtime's wherever they turn up, so a folder named
+// after one of them is a module nobody could ever open — said at startup rather
+// than found out by typing it.
+func TestAModuleNamedAfterTheRuntimesOwnWordsWillNotStart(t *testing.T) {
+	dir := runtime(t, runtimeDecl, "installer", "debug")
+	rt, err := spec.LoadRuntime(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := load(rt); err == nil {
+		t.Fatal("a module called debug loaded; nothing could ever open it")
+	}
+}
+
+// The one wire between the command line and a script: --debug reaches every one
+// of them as DEBUG, and a run without it says so rather than saying nothing.
+func TestDebugOnTheCommandLineReachesEveryScript(t *testing.T) {
+	for _, debug := range []bool{false, true} {
+		mod := loaded(t, writeModule(t, "title: T\nstages: [go]\n", nil))
+		t.Chdir(t.TempDir())
+
+		p, err := open(mod, debug)
+		if err != nil {
+			t.Fatal(err)
 		}
-		done <- b.String()
-	}()
-	f()
-	w.Close()
-	os.Stdout = saved
-	return <-done
-}
-
-// What a command line says reaches the answers the same way anything else does,
-// and is held to the same rules — so a wrong value stops a run rather than
-// reaching a script.
-func TestTheCommandLineAnswersQuestionsAndHandsOverOptions(t *testing.T) {
-	mod := loaded(t, writeModule(t, `
-title: T
-stages: [go]
-variables:
-  - name: DISK
-    title: Disk
-    flag: disk
-    values: [/dev/sda, /dev/sdb]
-    required: true
-  - name: PASSWORD
-    title: Password
-    flag: password
-    type: secret
-    required: true
-options:
-  - name: DEBUG
-    flag: debug
-    title: Simulate it.
-    type: bool
-    default: false
-`, nil))
-	st := store.New(mod, filepath.Join(t.TempDir(), "t.conf"))
-
-	given, err := apply(mod, st, read(t, mod, "--disk=/dev/sdb", "--password=hunter2", "--debug"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := st.Get("DISK"); got != "/dev/sdb" {
-		t.Errorf("DISK = %q, want /dev/sdb", got)
-	}
-	if got := st.Get("PASSWORD"); got != "hunter2" {
-		t.Errorf("PASSWORD = %q, want what the line gave", got)
-	}
-	if got := st.Get("DEBUG"); got != "true" {
-		t.Errorf("DEBUG = %q, want true", got)
-	}
-	if !given["DISK"] || !given["PASSWORD"] {
-		t.Errorf("given = %v, want both questions marked as answered by the line", given)
-	}
-	if given["DEBUG"] {
-		t.Error("an option was reported as a question the line answered")
-	}
-}
-
-// An option every script is handed whether the line mentioned it or not: a
-// script testing it must never be testing an empty string.
-func TestAnOptionIsHandedOverEvenWhenTheLineIsSilent(t *testing.T) {
-	mod := loaded(t, writeModule(t, `
-title: T
-stages: [go]
-options:
-  - name: DEBUG
-    flag: debug
-    title: Simulate it.
-    type: bool
-    default: false
-`, nil))
-	st := store.New(mod, filepath.Join(t.TempDir(), "t.conf"))
-	if _, err := apply(mod, st, read(t, mod)); err != nil {
-		t.Fatal(err)
-	}
-	if got := st.Get("DEBUG"); got != "false" {
-		t.Errorf("DEBUG = %q, want the declared default", got)
-	}
-}
-
-func TestAValueTheDeclarationRefusesStopsTheRun(t *testing.T) {
-	mod := loaded(t, writeModule(t, `
-title: T
-stages: [go]
-variables:
-  - name: DISK
-    title: Disk
-    flag: disk
-    values: [/dev/sda]
-    error: Choose a disk that exists.
-`, nil))
-	st := store.New(mod, filepath.Join(t.TempDir(), "t.conf"))
-	_, err := apply(mod, st, read(t, mod, "--disk=/dev/nope"))
-	if err == nil {
-		t.Fatal("a value no answer may have was taken from the command line")
-	}
-	if !strings.Contains(err.Error(), "--disk") || !strings.Contains(err.Error(), "Choose a disk") {
-		t.Errorf("error = %q, want it to name the flag and say why", err)
-	}
-}
-
-// A run nobody is watching says which questions are open and stops, rather than
-// handing a script an empty string.
-func TestAForcedRunWithAQuestionOpenWillNotStart(t *testing.T) {
-	mod := loaded(t, writeModule(t, `
-title: T
-stages: [go]
-variables:
-  - name: DISK
-    title: Disk
-    required: true
-  - name: PASSWORD
-    title: Password
-    flag: password
-    type: secret
-    required: true
-`, nil))
-	st := store.New(mod, filepath.Join(t.TempDir(), "t.conf"))
-	err := ready(st)
-	if err == nil {
-		t.Fatal("a run with two questions open was reported as ready")
-	}
-	for _, want := range []string{"DISK", "PASSWORD", "--password"} {
-		if !strings.Contains(err.Error(), want) {
-			t.Errorf("error = %q, want it to name %q", err, want)
+		want := spec.DebugVar + "=" + spec.BoolFalse
+		if debug {
+			want = spec.DebugVar + "=" + spec.BoolTrue
 		}
-	}
-
-	st.Set("DISK", "/dev/sda")
-	st.Set("PASSWORD", "hunter2")
-	if err := ready(st); err != nil {
-		t.Errorf("ready() = %v, want nothing once everything is answered", err)
-	}
-}
-
-// read is a command line as a run reads one: against the runtime's own flags
-// and the module's, together.
-func read(t *testing.T, mod *spec.Module, args ...string) *cli.Command {
-	t.Helper()
-	flags, err := line([]*spec.Module{mod})
-	if err != nil {
-		t.Fatal(err)
-	}
-	cmd, err := cli.Parse(args, flags)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return cmd
-}
-
-// A starting point that is fetched rather than written out is chosen in the
-// interface by picking its row and typing the code. Giving the code on the
-// command line is the same choice, so the same shell runs and what it wrote
-// becomes the answers of this run.
-func TestGivingTheCodeOfAFetchedStartingPointFetchesIt(t *testing.T) {
-	mod := loaded(t, writeModule(t, `
-title: T
-stages: [go]
-presets:
-  - id: start
-    title: Start
-    options:
-      - id: shared
-        title: Shared
-        asks: SOURCE
-        apply: ./import.sh
-variables:
-  - name: SOURCE
-    title: Configuration code
-    flag: config
-    required: true
-  - name: HOST
-    title: Host
-    required: true
-`, map[string]string{
-		// The answer file is the one way a script answers anything.
-		"import.sh": "printf \"HOST='%s'\\n\" \"$SOURCE\" >>\"$MODULE_CONF\"\n",
-	}))
-	st := store.New(mod, filepath.Join(t.TempDir(), "t.conf"))
-	st.SetFacts("test")
-	rn := runner.New(mod, st)
-
-	given, err := apply(mod, st, read(t, mod, "--config=elsewhere"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := fetch(mod, st, rn, given); err != nil {
-		t.Fatal(err)
-	}
-	if got := st.Get("HOST"); got != "elsewhere" {
-		t.Errorf("HOST = %q, want what the fetched configuration answered", got)
-	}
-	if err := ready(st); err != nil {
-		t.Errorf("ready() = %v, want nothing — the fetch answered the last question", err)
-	}
-}
-
-// Only a code this run was given. One already in the answer file was fetched by
-// the run that put it there, and fetching it again would put a pastebin between
-// a machine and its own answers.
-func TestACodeAlreadyInTheAnswerFileIsNotFetchedAgain(t *testing.T) {
-	mod := loaded(t, writeModule(t, `
-title: T
-stages: [go]
-presets:
-  - id: start
-    title: Start
-    options:
-      - id: shared
-        title: Shared
-        asks: SOURCE
-        apply: ./import.sh
-variables:
-  - name: SOURCE
-    title: Configuration code
-    flag: config
-  - name: HOST
-    title: Host
-`, map[string]string{
-		"import.sh": "printf \"HOST='fetched'\\n\" >>\"$MODULE_CONF\"\n",
-	}))
-	st := store.New(mod, filepath.Join(t.TempDir(), "t.conf"))
-	st.SetFacts("test")
-	st.Set("SOURCE", "elsewhere")
-	if err := fetch(mod, st, runner.New(mod, st), map[string]bool{}); err != nil {
-		t.Fatal(err)
-	}
-	if got := st.Get("HOST"); got != "" {
-		t.Errorf("HOST = %q, want nothing — nothing was fetched", got)
+		if env := strings.Join(p.Store.Env(), "\n"); !strings.Contains(env, want) {
+			t.Errorf("open(debug=%v) hands a script no %q", debug, want)
+		}
 	}
 }

@@ -59,18 +59,13 @@ off the hardware.
 
 <p><img src="./screenshots/setup.png" width="820"></p>
 
-### Without the questions
+### Answers you already have
 
-The same installation runs from one line, for a machine you set up more than
-once. Every answer comes out of a configuration shared at the end of an earlier
-run — or out of an `installer.conf` you already have, which `--conf` points at:
+An installation shares its answers at the end, as a code and as an
+`installer.conf`. Put that file next to where you start the installer and every
+question in it is already answered — for a machine you set up more than once.
 
-```sh
-installer --force --config=aBc12 --password=secret
-```
-
-`installer --help` lists what else it takes, `--debug` runs the whole thing
-without touching a disk.
+`installer --debug` runs the whole thing without touching a disk.
 
 ## Maintenance
 

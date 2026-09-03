@@ -311,7 +311,7 @@ func TestAnImportedConfigurationBecomesTheAnswers(t *testing.T) {
 		"  - name: DISK\n    title: Disk\n"+
 		"  - name: KEYMAP\n    title: Keymap\n    apply: touch \"$APPLIED\"\n", nil)
 	t.Setenv("APPLIED", applied)
-	st.SetFacts("test")
+	st.SetFacts("test", false)
 
 	shell := "printf \"DISK='/dev/sdz'\\nKEYMAP='de'\\n\" >>\"$MODULE_CONF\""
 	if err := r.Import(shell)(); err != nil {

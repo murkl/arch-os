@@ -172,9 +172,8 @@ install_mode() {
     # and asks which to open. Their answers and logs land in the working
     # directory, so leaving and running this again picks up where it left off.
     #
-    # --debug is a module's own option rather than the runtime's, and every
-    # module in this release declares it, so it can be given before one has been
-    # chosen.
+    # --debug is the runtime's own, so it can be given before a module has been
+    # chosen and means the same thing in whichever one is opened.
     #
     # stdin is this script itself when the command arrives through a pipe, so
     # the interface is handed the terminal instead.

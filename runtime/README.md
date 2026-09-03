@@ -11,20 +11,15 @@ mean and what the shell does is **one folder per module**, in `modules/`.
 Started without them, the binary says so and stops.
 
 ```
-runtime                        # asks the language, then which module to open
-runtime --installer            # that one outright, past the question
-runtime --installer --force    # and without asking anything at all
-runtime --help                 # what this is, what it offers, what it takes
-runtime --installer --help     # what that one takes on top
-runtime --check                # loads everything, reports what it holds, changes nothing
-runtime --installer --strings  # its translation template
-runtime --dir /path/to/release # look there instead of beside the binary
+runtime                       # asks the language, then which module to open
+runtime --installer           # that one outright, past the question
+runtime --installer --debug   # the same run against nothing, changing no disk
 runtime --version
 ```
 
-Seven of those flags are the runtime's own and are the only names on a command
-line compiled into this program. Everything else one may carry is declared by a
-module — see [The command line](#the-command-line) below.
+Two of those words are the runtime's own and are the only names on a command
+line compiled into this program. Everything else on it is the name of a module
+to open — see [The command line](#the-command-line) below.
 
 ## The runtime
 
@@ -45,20 +40,10 @@ logo: |                  # everything above the blank line is a dim eyebrow
   Arch Linux
 
   ██████ …               # the wordmark, swept in behind the accent
-
-help:                    # what --help says about the product as a whole
-  about: Put Arch Linux on this machine, or repair one already on a disk.
-  command: arch-os       # what to type; the binary's own name where this is left out
-  examples:
-    - run: arch-os --installer --force --config=aBc12 --password=…
-      about: Install without a single question.
 ```
 
-`help:` is the whole of what only the product can answer for. The list of
-modules and what each of them takes is read out of the modules themselves, so
-nothing there has to be kept in step with them. It is the product's own words,
-like `name:`: the runtime's catalogs are compiled into the binary and cannot
-know the sentences of a `runtime.yaml` they have never seen.
+That is the whole of it: three keys, and only what no module can answer for its
+neighbours.
 
 What it offers is not written down anywhere: it is the folders in `modules/`, in
 name order. Adding one is a folder and taking one away is deleting it — nothing
@@ -155,16 +140,8 @@ variables:
 
   - name: ARCH_OS_PASSWORD
     title: Password
-    flag: password             # and --password answers it
-    type: secret
+    type: secret               # asked just before the run, never written down
     required: true
-
-options:                       # what it takes on the command line that is not a question
-  - name: DEBUG
-    flag: debug
-    title: Simulate the run, changing nothing on this machine.
-    type: bool
-    default: false
 ```
 
 `confirm` is filled in from the answers, so it names the disk it is about rather
@@ -180,88 +157,36 @@ rest.
 
 ### The command line
 
-The runtime owns seven flags and not one more. Everything else a command line
-may carry is declared by a module, so the binary can be handed a different set
-of folders and answer to a different set of words without a line of it changing.
+The runtime owns two words and not one more:
 
 ```
-runtime [<module>] [options]
+runtime [<module>] [--debug] [--version]
 ```
 
-The module may be written as a word or with the dashes an option would carry —
-`runtime installer` and `runtime --installer` are the same request — and it may
-stand anywhere on the line. A value is given as `--conf x` or `--conf=x`; a
-switch stands on its own and is written out only to turn it off (`--debug=false`).
-
-| the runtime's own | |
-|---|---|
-| `--force` | run without asking anything |
-| `--conf <path>` | where the answers are kept |
-| `--dir <path>` | where `runtime.yaml` and the modules folder are |
-| `--version` | print the version and stop |
-| `--help`, `-h` | what this is; after a module, what that module takes |
-| `--check` | load everything, say what it holds, change nothing |
-| `--strings` | print one module's translation template |
-
-A module adds to that in two ways, and they are two different things:
-
-**`flag:` on a variable** makes a question answerable from the command line. It
-is for the answer a run cannot be given any other way — a secret, which is never
-written to the answer file and so is missing from it at every start, and the one
-answer that stands for all the others. Everything else an unattended run needs is
-already an answer file, and `--conf` points at one.
-
-**`options:`** is what is not a question at all. Nothing asks these, nothing
-writes them down, and a run without one is an ordinary run: they say how a run
-was *started* rather than what it was *told*, which is why a switch that
-simulates the work is one and a disk is not. Each reaches every script under its
-own name, exactly like a variable, and every script gets it whether the line
-mentioned it or not — a `default:` is what it is when nothing was said.
+Everything else on the line is the module to open. Whether that word names one
+is settled by what is in `modules/` at the moment it is given, which is what
+keeps the list of them out of the binary: adding a module is a folder, and it is
+openable by name from that moment on. It may be written as a word or with the
+dashes an option would carry — `runtime installer` and `runtime --installer` are
+the same request — and it may stand anywhere on the line. A folder named after
+one of the runtime's own two words is refused at startup: nothing could ever
+open it.
 
 | | |
 |---|---|
-| `name` | the environment variable every script sees |
-| `flag` | what it is written as, without its dashes |
-| `title` | the line `--help` puts against it |
-| `type` | `bool` for a switch, `text` for one that takes a value |
-| `default` | what every script sees when the line says nothing |
+| `--debug` | hand every script `DEBUG=true` |
+| `--version` | print the version and stop |
 
-A flag two modules both declare is one flag: it may be given before a module has
-been chosen and is carried by whichever is opened, which is what lets `--debug`
-mean the same thing in every module that has such a switch. A name the runtime
-already uses, one declared twice, or one that is a switch in one module and takes
-a value in another is refused at startup like any other authoring mistake.
+**`--debug`** is the runtime's rather than a module's, because it is the same
+switch in every one of them. It is handed to every script as `DEBUG`, `true` or
+`false`, alongside the module's own answers — so a script guarding itself with
+`[ "$DEBUG" = true ]` is never testing an empty string, and a module may not
+declare a variable of that name.
 
-**`--force`** is the runtime's, because whether anything is asked is the
-interface's business rather than any module's. It is the same run through the
-same pages: the module's own check of the machine still runs, the tasks still run
-in order, and the frame still draws what is happening. What changes is that
-nothing stops — the last warning is taken as read, an offer is answered by the
-`default:` it declared, and a page that only had something to report is not held
-on. Every question has to be answered before it starts, or the run says which are
-not and stops before the first task:
-
-```
-$ arch-os --installer --force
-Nothing to run without asking.
-2 question(s) here have no answer.
-  ARCH_OS_DISK
-  ARCH_OS_PASSWORD  --password
-```
-
-It needs a module named — there is nothing to ask *with* — and it reports by exit
-status, since nobody is there to read a page.
-
-A **preset row with an `asks:`** is chosen by giving its answer. In the interface
-that row is picked and the code typed into it; on the command line the code is
-given outright and the same shell runs, so `--config=aBc12` fetches the
-configuration and every answer in it becomes an answer of this run. Only for a
-code given on the line: one already in the answer file was fetched by the run
-that put it there.
-
-Nothing the environment holds is an answer. A variable inherited from whatever
-shell started a run is as often an accident as an instruction, and what a script
-is handed is settled here and given to it.
+Nothing else a command line could carry is an answer. Questions are answered in
+the interface and kept in the answer file beside it; a variable inherited from
+whatever shell started a run is as often an accident as an instruction, and what
+a script is handed is settled here and given to it.
 
 ### `hooks/`
 
@@ -475,10 +400,6 @@ arrow is also what a mouse wheel sends.
 Every answer is written to the answer file the moment it is given, so an
 interruption costs nothing.
 
-Under `--force` the same chain runs with every page that would ask left out: the
-check and the run, and nothing between them. See
-[The command line](#the-command-line).
-
 ## Files it writes
 
 Beside whoever started the program (never inside a module, which may be a
@@ -492,12 +413,11 @@ started from the same folder keep their own:
 ```
 
 That is the `installer` module's pair; `recovery` beside it writes
-`recovery.conf` and `recovery.log`. `--conf` moves them.
+`recovery.conf` and `recovery.log`.
 
 ## What a script is handed
 
-Every declared variable and every option under its own name, answered or not,
-plus:
+Every declared variable under its own name, answered or not, plus:
 
 | | |
 |---|---|
@@ -506,6 +426,7 @@ plus:
 | `MODULE_LOG` | its log |
 | `RUNTIME_LANG` | the language showing |
 | `RUNTIME_VERSION` | the runtime's version |
+| `DEBUG` | whether this run only pretends to work — see `--debug` |
 
 Scripts are **sourced** into a shell that already carries an `ERR` trap and,
 where the module declares one, the shared library. They need no preamble, no
@@ -539,7 +460,7 @@ a language is adding a file.
 ```sh
 cp locales/runtime.pot locales/fr.po  # a language nobody has started yet
 make locales                          # every template, and every catalog brought up to it
-runtime --check                       # reports coverage per language
+go run ./tools/inspect -dir ../.dev installer   # reports coverage per language
 ```
 
 A catalog names its own language in it, as the translation of `English`, that
@@ -567,10 +488,12 @@ make run MODULE=installer ARGS=--debug   # and whatever else that run takes
 make check                     # gofmt, vet, staticcheck, test, build, before a commit
 ```
 
-`run` reads `../.dev`, which `make dev` at the repository root lays out as a
-release is — a `runtime.yaml` with a modules folder beside it — out of symlinks
-into the tree, so a run reads the sources rather than a copy of them. `make
-build` at the repository root assembles the real thing: `release/runtime`.
+`run` builds into `../.dev`, which `make dev` at the repository root lays out as
+a release is — a `runtime.yaml` with a modules folder beside it — out of symlinks
+into the tree. The binary looks for both beside itself, so that folder is where
+it finds them, and what it reads is the sources rather than a copy of them.
+Answers and logs land there too. `make build` at the repository root assembles
+the real thing: `release/runtime`.
 
 The binary is static and has no runtime dependencies of its own. It has to live
 beside `runtime.yaml` and its modules folder, since that is where it looks for
@@ -579,8 +502,7 @@ them.
 ## Layout
 
 ```
-main.go              load the runtime and its modules, read the command line, open the interface
-internal/cli         the command line, read, and the page --help draws
+main.go              read the command line, load the runtime and its modules, open the interface
 internal/spec        the runtime and its modules, read into memory, checked over and put in order
 internal/store       the answers, and the file they survive a restart in
 internal/exec        the only place a process is started, and the failure shape
@@ -590,5 +512,6 @@ internal/i18n        the message catalogs
 internal/logging     the single sink for everything a run records
 locales/             the runtime's own words, compiled in
 tools/potgen/        reads every T("…") out of the sources and writes the template
+tools/inspect/       loads a folder of modules and says what it holds, or writes one's template
 tui/                 the interface: one frame, a stack of pages, no page draws its own
 ```

@@ -205,8 +205,7 @@ Arch OS live environment
   recovery     repair an Arch Linux system already on a disk
   iwctl        join a wireless network
 
-Add --help to either for what it takes on the command line, --debug for a run
-that changes nothing.
+Add --debug to either for a run that changes nothing.
 
 Both keep their answers in /opt/arch-os, so starting either again picks up where
 it left off. What they did is in /opt/arch-os/installer.log and

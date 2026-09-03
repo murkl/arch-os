@@ -205,11 +205,27 @@ func TestApplyingAPresetIsJustSettingValues(t *testing.T) {
 // read one without first checking whether the question was ever asked.
 func TestEveryVariableReachesAScript(t *testing.T) {
 	s := setup(t, twoVars)
-	s.SetFacts("1.0")
+	s.SetFacts("1.0", false)
 	s.Set("USER", "moritz")
 	env := strings.Join(s.Env(), "\n")
 	for _, want := range []string{"USER=moritz", "HOST=arch-os", "RUNTIME_VERSION=1.0", "MODULE_CONF="} {
 		if !strings.Contains(env, want) {
+			t.Errorf("env is missing %q", want)
+		}
+	}
+}
+
+// A script testing whether this run only pretends to work must never be testing
+// an empty string, so the answer is handed over either way.
+func TestHowTheRunWasStartedReachesEveryScript(t *testing.T) {
+	for _, debug := range []bool{false, true} {
+		s := setup(t, twoVars)
+		s.SetFacts("1.0", debug)
+		want := spec.DebugVar + "=" + spec.BoolFalse
+		if debug {
+			want = spec.DebugVar + "=" + spec.BoolTrue
+		}
+		if env := strings.Join(s.Env(), "\n"); !strings.Contains(env, want) {
 			t.Errorf("env is missing %q", want)
 		}
 	}
@@ -311,25 +327,6 @@ variables:
 	}
 	if got := s.Get("HOST"); got != "arch-os" {
 		t.Errorf("HOST = %q, want the declared default", got)
-	}
-}
-
-// A secret is asked for immediately before the run because there is nowhere to
-// keep it, not because it has to be typed. One this run was handed is given.
-func TestASecretAlreadyGivenIsNotAskedForAgain(t *testing.T) {
-	s := setup(t, `
-variables:
-  - name: PW
-    title: Password
-    type: secret
-    required: true
-`)
-	if got := len(s.Secrets()); got != 1 {
-		t.Fatalf("Secrets() has %d entries before anything was given, want 1", got)
-	}
-	s.Set("PW", "hunter2")
-	if got := len(s.Secrets()); got != 0 {
-		t.Errorf("Secrets() has %d entries, want none — it has been given", got)
 	}
 }
 

@@ -13,10 +13,9 @@ import (
 
 // Store is every declared variable and its current value.
 //
-// A value can come from five places, each beating the one before it: the
-// declared default, the saved answer file, the command line, the preset
-// somebody chose, and the answer somebody typed. That order is what lets a run
-// with nobody in front of it be driven from one line, and a saved file stop the
+// A value can come from four places, each beating the one before it: the
+// declared default, the saved answer file, the preset somebody chose, and the
+// answer somebody typed. That order is what lets a saved file stop the
 // questions from being asked twice.
 //
 // The environment this program was started in is not among them. What a script
@@ -66,10 +65,18 @@ func (s *Store) Set(name, value string) { s.val[name] = value }
 // What belongs to the module carries its name and what belongs to the runtime
 // carries the runtime's, so a script never has to work out which of the two it
 // is reading.
-func (s *Store) SetFacts(version string) {
+//
+// Whether this run only pretends to work is one of them. It is settled by the
+// command line and is the same for every module, so a script is handed it
+// whether --debug was given or not and never has to test an empty string.
+func (s *Store) SetFacts(version string, debug bool) {
 	s.facts[ModuleDirVar] = s.mod.Dir
 	s.facts[ModuleConfVar] = s.path
 	s.facts[VersionVar] = version
+	s.facts[spec.DebugVar] = spec.BoolFalse
+	if debug {
+		s.facts[spec.DebugVar] = spec.BoolTrue
+	}
 }
 
 // The facts every script is handed, by name. A module reaches its own folder,
@@ -155,21 +162,12 @@ func (s *Store) Upfront() []*spec.Variable {
 
 // Secrets lists the variables that have to be typed before a run and are never
 // kept — in declaration order, so a folder decides what is asked first.
-//
-// One this run was already given is not among them. A secret is asked for
-// immediately before the run that needs it because there is nowhere to keep it,
-// not because it has to be typed; a value handed in on the command line has
-// been given, and asking again would be asking the same question twice.
 func (s *Store) Secrets() []*spec.Variable {
 	var out []*spec.Variable
 	for _, v := range s.mod.Vars {
-		if !v.Secret() || !v.Applies(s.Get) {
-			continue
+		if v.Secret() && v.Applies(s.Get) {
+			out = append(out, v)
 		}
-		if value := s.val[v.Name]; value != "" && s.Invalid(v, value) == "" {
-			continue
-		}
-		out = append(out, v)
 	}
 	return out
 }

@@ -111,10 +111,6 @@ variables:
       The password that unlocks that disk. It is asked for immediately before
       the recovery starts and is never written to a file.
     group: Storage
-    # The one answer no answer file can carry, and so the one this module takes
-    # on the command line: without it a repair with nobody in front of it could
-    # never start.
-    flag: password
     type: secret
     required: true
     conditions: ARCH_OS_RECOVERY_ENCRYPTION_ENABLED == true
@@ -147,14 +143,3 @@ variables:
     # lives: the snapshots cannot be listed until the disk they are on is
     # unlocked and mounted.
     command: ./tasks/rollback/snapshots.sh
-
-# What this recovery takes on the command line that is not a question — see
-# ../installer/installer.yaml for the keys a row may use. Nothing asks these and
-# nothing writes them down: they say how a run was started rather than what it
-# was told.
-options:
-  - name: DEBUG
-    flag: debug
-    title: Simulate the recovery, changing nothing on this machine.
-    type: bool
-    default: false

@@ -23,7 +23,7 @@ GOFLAGS       := CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH)
 # beside it, exactly as a release has. The source tree is not that shape — each
 # component keeps its own declaration in its own folder — so `make dev` at the
 # root lays it out in symlinks, and this runs against the sources themselves.
-# MODULE opens one outright, the way `runtime --installer` does on a machine;
+# MODULE opens one outright, the way `runtime installer` does on a machine;
 # without it the interface asks which. ARGS is whatever else that run takes —
 # `make run MODULE=installer ARGS=--debug` for one that touches nothing.
 #
@@ -44,11 +44,13 @@ CATALOGS := $(wildcard locales/*.po)
 
 all: build
 
-# --dir because `go run` builds into a temporary folder, where none of this is
-# beside the binary.
+# Built into the dev folder rather than run out of a temporary one: the binary
+# looks for runtime.yaml and the modules beside itself, so this is the only
+# place it finds them.
 run:
 	$(MAKE) -C .. dev
-	go run -ldflags="$(LDFLAGS_RUN)" $(PKG) --dir $(DIR) $(MODULE) $(ARGS)
+	go build -ldflags="$(LDFLAGS_RUN)" -o $(DIR)/$(APP) $(PKG)
+	cd $(DIR) && ./$(APP) $(MODULE) $(ARGS)
 
 build: $(BIN_DIR)
 	$(GOFLAGS) go build -trimpath -ldflags="$(LDFLAGS_BUILD)" -o $(BIN) $(PKG)
@@ -100,10 +102,10 @@ locales:
 # notice.
 #
 # --statistics because nothing else ever counts these. A module's coverage is
-# reported by `runtime --check`, which reads the module's own messages back out
-# of it; the runtime's messages only exist in the template, which is
-# deliberately not shipped — so an entry left empty or fuzzy here would
-# otherwise reach a release with nobody having seen a number.
+# reported by ./tools/inspect, which reads the module's own messages back out of
+# it; the runtime's messages only exist in the template, which is deliberately
+# not shipped — so an entry left empty or fuzzy here would otherwise reach a
+# release with nobody having seen a number.
 locales-check:
 	@go run ./tools/potgen | diff -u $(POT) - \
 		|| { echo "$(POT) is out of date — run 'make locales'" >&2; exit 1; }

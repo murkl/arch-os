@@ -255,26 +255,13 @@ translated separately, in its own `locales/`. See
 
 ## The command line
 
-Three words on it belong to this module, and `--help` after `--installer` is
-what says so. Two answer a question; the third is not a question at all.
+Nothing on it belongs to this module. `arch-os --installer` opens it, and
+`--debug` beside it is the runtime's own switch — the same word in every module,
+handed to every script here as `DEBUG`, which is what `simulating` reads.
 
-| | |
-|---|---|
-| `--password <value>` | the one answer no answer file can carry, since a secret is never written down |
-| `--config <value>` | a configuration somebody shared: the code, or the whole address — the same starting point the setup page offers, chosen on the command line |
-| `--debug` | simulate the installation and change nothing on this machine |
-
-Together with the runtime's own `--force`, which is what turns off the asking,
-that is a whole installation in one line:
-
-```sh
-arch-os --installer --force --config=aBc12 --password=secret
-```
-
-Everything else an unattended run needs is already an answer file, and `--conf`
-points at one. A value given on a command line is visible to anything on this
-machine that can list processes — on a live image with nobody else on it, that
-is the whole of the exposure.
+Answers are given in the interface. A machine set up more than once starts from
+an `installer.conf` beside it, or from a configuration somebody shared, which is
+a row on the setup page.
 
 ## Requirements
 

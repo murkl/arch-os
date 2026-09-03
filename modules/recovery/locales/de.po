@@ -121,11 +121,6 @@ msgstr "Schnappschuss"
 msgid "The snapshot to put in place of the root subvolume. Newest first, with the date it was taken and what took it."
 msgstr "Der Schnappschuss, der an die Stelle des Wurzel-Subvolumes tritt. Der neueste zuerst, mit dem Zeitpunkt der Aufnahme und dem Anlass."
 
-#. --debug: the line --help puts against it
-#: recovery.yaml
-msgid "Simulate the recovery, changing nothing on this machine."
-msgstr "Die Reparatur simulieren, ohne an diesem Rechner etwas zu ändern."
-
 #. the step, as the run lists it
 #: tasks/open/task.yaml
 msgid "Unlock and mount the system"

@@ -406,6 +406,13 @@ func TestLoadRefuses(t *testing.T) {
 			want:  "belongs to the runtime",
 		},
 		{
+			// It is handed to every script by the runtime, so a module that
+			// declared it would be asking a question nothing reads the answer of.
+			name:  "the switch that simulates a run, redeclared",
+			files: map[string]string{treeFile: head("variables:\n  - name: " + DebugVar + "\n    title: D\n")},
+			want:  "belongs to the runtime",
+		},
+		{
 			name:  "no stages at all",
 			files: map[string]string{treeFile: "title: T\nstages: []\n"},
 			want:  "no stages",
@@ -777,166 +784,5 @@ func TestAReportsFirstParagraphIsItsHeadline(t *testing.T) {
 	// A report of one paragraph is a headline and nothing else.
 	if !sp.Tasks[0].Reports() {
 		t.Error("a task with a report says it has none")
-	}
-}
-
-// What a module takes on the command line is read off the same declaration
-// everything else is: the questions that named a flag, then the options.
-func TestAModuleDeclaresWhatItTakesOnTheCommandLine(t *testing.T) {
-	sp, err := Load(module(t, map[string]string{
-		treeFile: head(`
-variables:
-  - name: DISK
-    title: Disk
-    required: true
-  - name: PASSWORD
-    title: Password
-    flag: password
-    type: secret
-options:
-  - name: DEBUG
-    flag: debug
-    title: Simulate the run.
-    type: bool
-    default: false
-`),
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	flags := sp.Flags()
-	if len(flags) != 2 {
-		t.Fatalf("Flags() = %v, want --password and --debug", flags)
-	}
-	if flags[0].Name != "password" || flags[0].Switch() {
-		t.Errorf("Flags()[0] = %+v, want --password taking a value", flags[0])
-	}
-	if flags[1].Name != "debug" || !flags[1].Switch() {
-		t.Errorf("Flags()[1] = %+v, want --debug standing on its own", flags[1])
-	}
-	if got := sp.Options[0].Default.String(); got != BoolFalse {
-		t.Errorf("DEBUG default = %q, want %q", got, BoolFalse)
-	}
-}
-
-// An option is not a question: it is never among the things the interface can
-// ask for, so it cannot be confused with a variable that is.
-func TestAnOptionIsNotAQuestion(t *testing.T) {
-	sp, err := Load(module(t, map[string]string{
-		treeFile: head(`
-variables:
-  - name: DISK
-    title: Disk
-    required: true
-options:
-  - name: DEBUG
-    flag: debug
-    title: Simulate the run.
-    type: bool
-`),
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(sp.Vars) != 1 || sp.Var("DEBUG") != nil {
-		t.Error("an option turned up among the questions")
-	}
-}
-
-// The command line is held to the same standard as everything else in a
-// declaration: a mistake in it is a message at startup, not a flag that quietly
-// means the wrong thing.
-func TestACommandLineThatCannotBeReadStopsTheModuleLoading(t *testing.T) {
-	for _, tc := range []struct {
-		name string
-		body string
-		want string
-	}{
-		{
-			name: "the same flag twice",
-			body: `
-variables:
-  - name: DISK
-    title: Disk
-    flag: thing
-options:
-  - name: DEBUG
-    flag: thing
-    title: Simulate the run.
-`,
-			want: "--thing is declared twice",
-		},
-		{
-			name: "a flag nobody could type",
-			body: `
-variables:
-  - name: DISK
-    title: Disk
-    flag: Pass_Word
-`,
-			want: "not a usable flag name",
-		},
-		{
-			name: "an option with no line to put against it",
-			body: `
-variables:
-  - name: DISK
-    title: Disk
-options:
-  - name: DEBUG
-    flag: debug
-`,
-			want: "title is required",
-		},
-		{
-			name: "an option under a name a question already has",
-			body: `
-variables:
-  - name: DISK
-    title: Disk
-options:
-  - name: DISK
-    flag: disk
-    title: Simulate the run.
-`,
-			want: "DISK is declared twice",
-		},
-		{
-			name: "an option the runtime owns the name of",
-			body: `
-variables:
-  - name: DISK
-    title: Disk
-options:
-  - name: ` + LangVar + `
-    flag: lang
-    title: The language.
-`,
-			want: "belongs to the runtime",
-		},
-		{
-			name: "an option of a shape there is none of",
-			body: `
-variables:
-  - name: DISK
-    title: Disk
-options:
-  - name: DEBUG
-    flag: debug
-    title: Simulate the run.
-    type: secret
-`,
-			want: "an option is text or bool",
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			_, err := Load(module(t, map[string]string{treeFile: head(tc.body)}))
-			if err == nil {
-				t.Fatalf("loaded a module with %s", tc.name)
-			}
-			if !strings.Contains(err.Error(), tc.want) {
-				t.Errorf("error = %q, want it to mention %q", err, tc.want)
-			}
-		})
 	}
 }

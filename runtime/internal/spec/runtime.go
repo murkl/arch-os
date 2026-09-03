@@ -42,11 +42,6 @@ type Runtime struct {
 	Accent string `yaml:"accent"`
 	Logo   string `yaml:"logo"`
 
-	// Help is what --help says about the product as a whole. What each module
-	// takes is read out of the module, so nothing here has to be kept in step
-	// with it.
-	Help Help `yaml:"help"`
-
 	// Modules is what this runtime offers, in the order it offers them: the
 	// folders in DirModules, by name.
 	//
@@ -59,36 +54,6 @@ type Runtime struct {
 	// Where this was read: the file itself, and the folder its modules sit in.
 	File string `yaml:"-"`
 	Dir  string `yaml:"-"`
-}
-
-// Help is the page a run puts up when it is asked what it is rather than told
-// what to do.
-//
-// The runtime writes the page; this is the part of it only the product can
-// answer for — what it is for, what it is typed as, and the handful of whole
-// command lines worth copying. Everything else on that page is read off the
-// modules and off the runtime's own flags, so a product that gains a module
-// gains a line here without anybody editing one.
-type Help struct {
-	// About is the sentence under the name: what this product is for, over the
-	// list of what it offers.
-	About string `yaml:"about"`
-
-	// Command is what to type. Empty is the name the binary was started by,
-	// which is right everywhere except on a machine that reaches it through a
-	// launcher of another name.
-	Command string `yaml:"command"`
-
-	// Examples are whole command lines worth copying, each with what it does
-	// under it. Two or three: a help page nobody reads to the end has failed at
-	// the one job it has.
-	Examples []Example `yaml:"examples"`
-}
-
-// Example is one command line and what it does.
-type Example struct {
-	Run   string `yaml:"run"`
-	About string `yaml:"about"`
 }
 
 // LoadRuntime reads the declaration beside the binary, or in the folder named
@@ -111,10 +76,6 @@ func LoadRuntime(explicit string) (*Runtime, error) {
 		return nil, err
 	}
 	r.File, r.Dir = path, dir
-	r.Help.About = reflow(r.Help.About)
-	for i := range r.Help.Examples {
-		r.Help.Examples[i].About = reflow(r.Help.Examples[i].About)
-	}
 	if err := r.check(); err != nil {
 		return nil, err
 	}

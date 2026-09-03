@@ -563,11 +563,6 @@ msgstr ""
 msgid "A code such as aBc12, or the whole address it sits at."
 msgstr ""
 
-#. --debug: the line --help puts against it
-#: installer.yaml
-msgid "Simulate the installation, changing nothing on this machine."
-msgstr ""
-
 #. the step, as the run lists it
 #: tasks/init/task.yaml
 msgid "Prepare the installation"

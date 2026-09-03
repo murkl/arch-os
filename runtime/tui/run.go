@@ -221,33 +221,13 @@ func (s *runScreen) step() tea.Cmd {
 	if s.stage == phaseAsk {
 		s.stage = phaseConfirm
 		if e.Asks != "" {
-			if !s.app.forced {
-				s.ask = newAsk(s.app.module.Var(e.Asks))
-				return tea.Batch(s.ask.Init(s.app), s.settle())
-			}
-			// Where nobody is watching there is nothing to put the question to,
-			// so the answer is whatever the answer file already holds — and one
-			// that is not there ends the run rather than reaching a script as an
-			// empty string.
-			if s.app.store.Get(e.Asks) == "" {
-				return s.finish(fmt.Errorf("%s", labelNoAnswerFor(e.Asks)))
-			}
+			s.ask = newAsk(s.app.module.Var(e.Asks))
+			return tea.Batch(s.ask.Init(s.app), s.settle())
 		}
 	}
 	if s.stage == phaseConfirm {
 		s.stage = phaseRun
 		if e.Confirms() {
-			// An offer nobody is there to take is answered by the one it opens
-			// on. That is what a default is: what this task is when nothing
-			// else is said about it.
-			if s.app.forced {
-				if e.Declines() {
-					logging.Info("%s: declined", e.Name)
-					s.state[s.at] = skipped
-					return s.advance()
-				}
-				return s.start()
-			}
 			s.asking = newPicker([]item{
 				{title: labelYes(), key: keyYes},
 				{title: labelNo(), key: keyNo},
@@ -279,12 +259,6 @@ func (s *runScreen) tell(e *spec.Task) tea.Cmd {
 		logging.Warn("%s: %s", e.Name, err)
 	}
 	headline, body := e.ReportText(s.app.store.Get)
-	// Read back either way — what a task wrote down is an answer like any
-	// other — but only held on where somebody is there to read it.
-	if s.app.forced {
-		logging.Info("%s", headline)
-		return tea.Batch(s.app.save(), s.advance())
-	}
 	s.told = newReport(headline, body, s.app.store.Get(e.Shows))
 	return tea.Batch(s.app.save(), s.settle())
 }
@@ -341,12 +315,6 @@ func (s *runScreen) finish(err error) tea.Cmd {
 	// or not: a failed installation is one that gets looked at, and nothing
 	// typed in confidence should still be in memory while that happens.
 	s.app.store.Forget()
-	// A run nobody is watching ends the program rather than a page: the result
-	// is an exit status and a log, and there is no one here to press a key.
-	if s.app.forced {
-		s.app.failure = err
-		return quit()
-	}
 	return s.settle()
 }
 

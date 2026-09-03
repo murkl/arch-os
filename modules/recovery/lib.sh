@@ -34,8 +34,8 @@ BTRFS_OPTS="defaults,noatime,compress=zstd"
 # itself with `simulating && return 0` as its first line, so a unit is only
 # ever skipped as a whole.
 #
-# DEBUG is declared as an option in recovery.yaml beside this file, so every
-# script is handed it whether the command line mentioned it or not.
+# DEBUG is the runtime's own: every script is handed it whether the command line
+# mentioned it or not, so this never tests an empty string.
 
 simulating() {
     [ "$DEBUG" = "true" ] || return 1

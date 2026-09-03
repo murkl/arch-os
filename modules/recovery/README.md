@@ -139,16 +139,10 @@ translated separately, in its own `locales/`. See
 
 ## The command line
 
-Two words on it belong to this module, and `--help` after `--recovery` is what
-says so.
-
-| | |
-|---|---|
-| `--password <value>` | what unlocks the disk — the one answer no answer file can carry |
-| `--debug` | simulate the repair and change nothing on this machine |
-
-With the runtime's own `--force`, which is what turns off the asking, a repair
-runs from one line on an answer file `--conf` points at.
+Nothing on it belongs to this module. `arch-os --recovery` opens it, and
+`--debug` beside it is the runtime's own switch — the same word in every module,
+handed to every script here as `DEBUG`. Every answer, the disk password
+included, is given in the interface.
 
 ## Requirements
 

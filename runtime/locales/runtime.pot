@@ -18,65 +18,6 @@ msgstr ""
 msgid "English"
 msgstr ""
 
-#: internal/cli/cli.go:63
-#, c-format
-msgid "One module at a time: %s or %s."
-msgstr ""
-
-#: internal/cli/cli.go:87
-#, c-format
-msgid "--%s is %s or %s, not %q."
-msgstr ""
-
-#: internal/cli/cli.go:94
-#, c-format
-msgid "--%s takes a value."
-msgstr ""
-
-#: internal/cli/cli.go:146
-#, c-format
-msgid "%q names nothing."
-msgstr ""
-
-#: internal/cli/cli.go:175
-#, c-format
-msgid "No option called --%s."
-msgstr ""
-
-#: internal/cli/cli.go:176
-#, c-format
-msgid "This one takes %s."
-msgstr ""
-
-#: internal/cli/cli.go:198
-#, c-format
-msgid "--%s is a switch in one module and takes a value in another."
-msgstr ""
-
-#: internal/cli/help.go:113
-msgid "module"
-msgstr ""
-
-#: internal/cli/help.go:115
-msgid "Usage"
-msgstr ""
-
-#: internal/cli/help.go:119
-msgid "options"
-msgstr ""
-
-#: internal/cli/help.go:130
-msgid "Modules"
-msgstr ""
-
-#: internal/cli/help.go:139
-msgid "Options"
-msgstr ""
-
-#: internal/cli/help.go:156
-msgid "Examples"
-msgstr ""
-
 #. the four labels below head the table shown when a step failed: the script
 #. it was in, the line that ran, what it returned, and what it printed. Each
 #. is one column of a narrow table, so short wins over exact.
@@ -115,25 +56,25 @@ msgstr ""
 msgid "more than one %s file here"
 msgstr ""
 
-#: internal/spec/runtime.go:109
+#: internal/spec/runtime.go:74
 #, c-format
 msgid "A %s file has to sit next to this program, in %s."
 msgstr ""
 
-#: internal/spec/runtime.go:150
+#: internal/spec/runtime.go:111
 #, c-format
 msgid "A %s folder with something in it has to sit next to this program, in %s."
 msgstr ""
 
-#: internal/spec/runtime.go:157
+#: internal/spec/runtime.go:118
 msgid "Nothing to run here."
 msgstr ""
 
-#: internal/spec/spec.go:553
+#: internal/spec/spec.go:469
 msgid "This value has the wrong format."
 msgstr ""
 
-#: internal/spec/spec.go:555
+#: internal/spec/spec.go:471
 msgid "This value is required."
 msgstr ""
 
@@ -150,15 +91,15 @@ msgstr ""
 msgid "Answers the runtime keeps for every module. Edit by hand if you like."
 msgstr ""
 
-#: internal/store/store.go:224
+#: internal/store/store.go:222
 msgid "asked just before the run"
 msgstr ""
 
-#: internal/store/store.go:241 tui/labels.go:184
+#: internal/store/store.go:239 tui/labels.go:177
 msgid "Yes"
 msgstr ""
 
-#: internal/store/store.go:243 tui/labels.go:185
+#: internal/store/store.go:241 tui/labels.go:178
 msgid "No"
 msgstr ""
 
@@ -182,56 +123,24 @@ msgstr ""
 msgid "%s was joined, but there is still no internet."
 msgstr ""
 
-#: main.go:71
-msgid "Run without asking, on the answers there already."
+#: main.go:125
+#, c-format
+msgid "%q names nothing."
 msgstr ""
 
-#: main.go:72
-msgid "Where the answers are kept."
+#: main.go:128
+#, c-format
+msgid "One module at a time: %s or %s."
 msgstr ""
 
-#: main.go:73
-msgid "Where runtime.yaml and the modules folder are."
-msgstr ""
-
-#: main.go:74
-msgid "Print the version and stop."
-msgstr ""
-
-#: main.go:75
-msgid "This page, or what one module takes."
-msgstr ""
-
-#: main.go:76
-msgid "Load everything, say what it holds, change nothing."
-msgstr ""
-
-#: main.go:77
-msgid "Print one module's translation template."
-msgstr ""
-
-#: main.go:176
+#: main.go:148
 #, c-format
 msgid "No module called %s."
 msgstr ""
 
-#: main.go:177 main.go:349
+#: main.go:149
 #, c-format
 msgid "This one offers %s."
-msgstr ""
-
-#: main.go:348
-#, c-format
-msgid "--%s runs one module without asking anything, so it has to be told which."
-msgstr ""
-
-#: main.go:525
-#, c-format
-msgid "%d question(s) here have no answer."
-msgstr ""
-
-#: main.go:535
-msgid "Nothing to run without asking."
 msgstr ""
 
 #: tui/labels.go:22
@@ -460,47 +369,42 @@ msgstr ""
 msgid "Cannot continue"
 msgstr ""
 
-#: tui/labels.go:160
-#, c-format
-msgid "%s has no answer, and there is nobody to ask."
-msgstr ""
-
-#: tui/labels.go:165
+#: tui/labels.go:158
 msgid "Leave"
 msgstr ""
 
-#: tui/labels.go:170
+#: tui/labels.go:163
 msgid "Whatever was running is still running behind this page. Anything chosen here stops it."
 msgstr ""
 
-#: tui/labels.go:173
+#: tui/labels.go:166
 msgid "Restart"
 msgstr ""
 
-#: tui/labels.go:174
+#: tui/labels.go:167
 msgid "Close this machine down and start it again."
 msgstr ""
 
-#: tui/labels.go:175
+#: tui/labels.go:168
 msgid "Shut down"
 msgstr ""
 
-#: tui/labels.go:176
+#: tui/labels.go:169
 msgid "Exit to the console"
 msgstr ""
 
-#: tui/labels.go:177
+#: tui/labels.go:170
 msgid "Switch this machine off."
 msgstr ""
 
-#: tui/labels.go:178
+#: tui/labels.go:171
 msgid "Restarting …"
 msgstr ""
 
-#: tui/labels.go:179
+#: tui/labels.go:172
 msgid "Shutting down …"
 msgstr ""
 
-#: tui/labels.go:180
+#: tui/labels.go:173
 msgid "This machine did not do as it was told."
 msgstr ""
