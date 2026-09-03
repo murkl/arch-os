@@ -39,37 +39,56 @@
 ## Installing
 
 You need a UEFI machine with Secure Boot turned off and an internet
-connection. Run the same command twice — what it does depends on where you
-run it:
+connection.
 
 ```sh
 curl -Ls bit.ly/arch-os | bash
 ```
 
-1. **On your own machine**, it downloads the latest image, verifies its
-   checksum, and writes it to a USB drive you choose.
-   ([Ventoy](https://www.ventoy.net) or `dd` work just as well.)
-2. **Boot the target machine from that drive.** It starts on its own and asks
-   whether to install a new system or repair one already there — no keymap or
-   network setup first.
-3. **Answer the questions.** Every answer is saved as soon as you give it, so
-   an interrupted installation picks up right where it left off.
+Run this once, on your everyday machine. There's nothing to install onto
+there, so it downloads the latest image, verifies its checksum, and writes it
+to a USB drive you choose. ([Ventoy](https://www.ventoy.net) or `dd` work
+just as well.)
 
-On a stock [Arch Linux ISO](https://archlinux.org/download/), the same
-command takes you straight to that same question: it downloads the latest
-release, unpacks it, and runs it. Set `MODE=install` or `MODE=create` to skip
-the choice, and `DEBUG=true` to try it without touching any hardware.
+Boot the target machine from that drive and the installer starts on its own
+— no keymap or network setup, no command to type. It asks whether to install
+a new system or repair one already there, and every answer is saved as soon
+as you give it, so an interrupted run picks up right where it left off.
 
 <p><img src="./screenshots/setup.png" width="820"></p>
 
+### Without a USB drive
+
+Already booted into a stock [Arch Linux ISO](https://archlinux.org/download/)?
+The same command takes you straight to that same question, no image or drive
+needed — it downloads the latest release and runs it directly:
+
+```sh
+curl -Ls bit.ly/arch-os | bash
+```
+
+Both paths are worked out from where the command runs; `MODE=install` or
+`MODE=create` picks one by hand instead, and `DEBUG=true` tries either
+without touching real hardware. Already at a shell on a live system?
+`installer --debug` does the same thing, directly.
+
 ### Reusing your answers
 
-At the end of an installation, you can share your answers as a short code or
-as an `installer.conf` file. Place that file next to the installer and every
-question it answers is skipped — handy for setting up the same kind of
-machine more than once.
+Every answer lands in `installer.conf` as you give it — except your
+password, which is a secret and never gets written down. That file is what
+makes an interrupted run resumable, and it also makes a finished one
+reusable, two ways:
 
-`installer --debug` runs through the whole installer without touching a disk.
+- **Share it.** At the end of a run, put every answer online, at
+  [paste.rs](https://paste.rs). What comes back is a short code — shown as a
+  QR code to scan, and as the address it belongs to. The next installation
+  offers a preset asking for exactly that code, and pulls every answer in.
+- **Copy it.** `installer.conf` lives beside wherever `installer` was run.
+  Place a copy next to the installer on another machine, and every question
+  it already answers is skipped.
+
+Either way, nothing leaves the machine until you say so, and every answer it
+brings in can still be changed by hand afterwards.
 
 ## Maintenance
 
@@ -91,8 +110,7 @@ worth doing yourself:
 
 ## How it is built
 
-Four parts, kept deliberately separate — see
-[CONTRIBUTING.md](../CONTRIBUTING.md) for more.
+Four parts, kept deliberately separate:
 
 | | |
 |---|---|
@@ -105,10 +123,14 @@ The installer and recovery are modules — data, not programs. One binary runs
 either of them, picked from a folder beside it. A release is that binary plus
 a `modules/` folder holding both, and a `runtime.yaml` describing them
 together: the first page is the language, the second is which module to open.
+
 Adding a question is a few lines of YAML; adding a step is a folder with two
 files; adding a whole module is a folder in `modules/`. None of that touches
 the runtime, and the runtime can never break Arch-specific behavior it
 doesn't know about.
+
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for the rest — branches, releases,
+how a commit becomes an image.
 
 <details>
 <summary><h2 style="display: inline;" id="screenshots">More screenshots</h2></summary>
@@ -128,11 +150,11 @@ doesn't know about.
 ## Why this exists
 
 Arch OS is a side project, and it installs the system I use every day — at
-work and at home, as a project lead and cloud native engineer. It all started
+work and at home, as a project lead and cloud native engineer. It started
 with Ubuntu, back in 2005.
 
-The two halves are also written differently. The runtime is Go, written with
-AI assistance and reviewed line by line before it's merged. The Arch Linux
-side — the installer, the recovery module, the shell scripts, and the YAML —
-is handwritten, and grew out of the installer that existed before there was a
-runtime to drive it.
+The runtime and the Arch Linux side are written differently on purpose. The
+runtime is Go, written with AI assistance and reviewed line by line before
+anything is merged. The Arch Linux side — the installer, the recovery
+module, the shell scripts, the YAML — is handwritten, and grew out of the
+installer that existed before there was a runtime to drive it.
