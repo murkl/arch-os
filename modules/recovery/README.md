@@ -10,7 +10,7 @@ in order. Putting Arch Linux on a disk is a module of its own:
 make check   # load the module and lint every script
 
 # Run it, without touching this machine
-DEBUG=true make -C ../../runtime run MODULE=recovery
+make -C ../../runtime run MODULE=recovery ARGS=--debug
 ```
 
 ## What is where
@@ -93,7 +93,7 @@ Same as in the installer, and the rules are written down there:
 [`installer/README.md`](../installer/README.md#writing-one). A unit is a folder
 with `task.yaml` and `task.sh` in it, the script is sourced into a shell that
 already carries `lib.sh` and an `ERR` trap, and `simulating && return 0` is what
-makes `DEBUG=true` a simulation rather than a repair.
+makes `--debug` a simulation rather than a repair.
 
 The repair itself lives in those scripts, not in `lib.sh`: unlocking, rolling
 back and rebuilding are each one task's whole job and are read there. What
@@ -136,6 +136,19 @@ Fill in the `msgstr` lines and nothing else. `make locales` regenerates
 to run after a question is added or reworded. The runtime's own words are
 translated separately, in its own `locales/`. See
 [TRANSLATING.md](../TRANSLATING.md).
+
+## The command line
+
+Two words on it belong to this module, and `--help` after `--recovery` is what
+says so.
+
+| | |
+|---|---|
+| `--password <value>` | what unlocks the disk — the one answer no answer file can carry |
+| `--debug` | simulate the repair and change nothing on this machine |
+
+With the runtime's own `--force`, which is what turns off the asking, a repair
+runs from one line on an answer file `--conf` points at.
 
 ## Requirements
 

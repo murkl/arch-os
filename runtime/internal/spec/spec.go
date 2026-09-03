@@ -85,6 +85,10 @@ type Module struct {
 	Presets []*Preset
 	Vars    []*Variable
 
+	// Options are what this module takes on the command line beyond its
+	// questions. Nothing asks them and nothing writes them down — see Option.
+	Options []*Option
+
 	// Confirm is the last thing read before the first task runs, with {{VAR}}
 	// filled in from the answers — the sentence that says which disk is about to
 	// be erased.
@@ -119,6 +123,77 @@ type Module struct {
 	hooks  map[string]string
 	byName map[string]*Variable
 }
+
+// Option is something a module takes on the command line that is not a
+// question. Nothing asks it, nothing saves it, and a run without it is an
+// ordinary run: it says how a run was started rather than what it was told.
+//
+// The switch that simulates a run instead of carrying it out is the whole of
+// what this is for. It reaches every script under its own name the way a
+// variable does, and there the likeness ends — it is never a page, never a row
+// in the settings, never a line in the answer file, and so never carried to the
+// next machine along with them.
+type Option struct {
+	Name    string `yaml:"name"`  // the environment variable every script sees
+	Flag    string `yaml:"flag"`  // what it is written as, without its dashes
+	Title   string `yaml:"title"` // the line --help puts against it
+	Type    string `yaml:"type"`  // bool for a switch, text for one that takes a value
+	Default Scalar `yaml:"default"`
+}
+
+// Switch reports whether this one stands on its own, taking no value.
+func (o *Option) Switch() bool { return o.Type == TypeBool }
+
+// Flags is everything this module takes on the command line, in the order it
+// declared it: the questions that named a flag, then the options.
+//
+// It is the whole of what the runtime knows about a module's command line. What
+// each flag means is the module's business; parsing one and putting it in
+// --help is the runtime's, and this is the only thing that passes between them.
+func (s *Module) Flags() []Flag {
+	var out []Flag
+	for _, v := range s.Vars {
+		if v.Flag == "" {
+			continue
+		}
+		f := Flag{Name: v.Flag, Title: v.Label()}
+		if v.Shape() != TypeBool {
+			f.Value = FlagValue
+		}
+		out = append(out, f)
+	}
+	for _, o := range s.Options {
+		f := Flag{Name: o.Flag, Title: i18n.T(o.Title)}
+		if !o.Switch() {
+			f.Value = FlagValue
+		}
+		out = append(out, f)
+	}
+	return out
+}
+
+// FlagValue is what --help puts after a module's flag where it takes something.
+// A module's flags all take the same kind of thing — an answer — so there is one
+// word for it and nothing to declare.
+const FlagValue = "value"
+
+// Flag is one thing a command line may carry: what it is written as, what it
+// takes, and the line --help puts against it.
+//
+// The runtime declares its own the same way a module does, so there is one
+// shape for the whole command line rather than one for what is compiled in and
+// another for what was read out of a folder.
+type Flag struct {
+	Name  string // written as --name
+	Alias string // a second name it answers to, for the one letter people type
+	Value string // what it takes, named for --help; empty is a switch
+	Title string // the line --help puts against it
+}
+
+// Switch reports whether this one stands on its own. A switch never eats the
+// word after it, which is what keeps `--debug installer` a module rather than a
+// value.
+func (f Flag) Switch() bool { return f.Value == "" }
 
 // UI is what a module says about itself: the words that make the frame this
 // program rather than the one beside it. What they all look like is not here —
@@ -371,6 +446,18 @@ type Variable struct {
 	Title       string `yaml:"title"`
 	Description string `yaml:"description"`
 
+	// Flag is what this question is answered by on the command line, written
+	// without its dashes: `flag: password` is `--password`. A variable that
+	// names none can only be answered in the interface, which is what almost
+	// every one of them wants.
+	//
+	// It is for the two answers a run cannot be given any other way: the secret,
+	// which is never written to the answer file and so is missing from it at
+	// every start, and the one that stands for all the others — a configuration
+	// somebody shared. Everything else an unattended run needs is already in an
+	// answer file, which `--conf` points at.
+	Flag string `yaml:"flag"`
+
 	// Group is the heading this row sits under on the settings page. Rows keep
 	// the order they were declared in, so a group is simply the run of rows
 	// that named it — there is nothing to declare up front.
@@ -567,6 +654,9 @@ func (s *Module) Messages() []Message {
 		add(decl, v.Name+": the heading its row sits under", v.Group)
 		add(decl, v.Name+": the row that opens a box for an answer of one's own", v.Free)
 		add(decl, v.Name+": what a wrong answer is told", v.Error)
+	}
+	for _, o := range s.Options {
+		add(decl, "--"+o.Flag+": the line --help puts against it", o.Title)
 	}
 	for _, t := range s.Tasks {
 		file := path.Join(DirTasks, t.ID(), FileTask)

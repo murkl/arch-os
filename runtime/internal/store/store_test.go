@@ -293,13 +293,11 @@ func names(vs []*spec.Variable) []string {
 	return out
 }
 
-// An exported variable is what drives an unattended run, so a declared name set
-// in the environment is taken as an answer — and a secret never is, because
-// what a secret is for is not being carried around.
-func TestTheEnvironmentAnswersDeclaredQuestions(t *testing.T) {
+// What a run was started with is not an answer. A variable inherited from
+// whatever shell happened to start it is as often an accident as an
+// instruction, and an unattended run says what it means on the command line.
+func TestTheEnvironmentDoesNotAnswerQuestions(t *testing.T) {
 	t.Setenv("USER", "moritz")
-	t.Setenv("HOST", "")
-	t.Setenv("PW", "hunter2")
 	s := setup(t, `
 variables:
   - name: USER
@@ -307,19 +305,31 @@ variables:
   - name: HOST
     title: Host
     default: arch-os
+`)
+	if got := s.Get("USER"); got != "" {
+		t.Errorf("USER = %q, want nothing — the environment answers no question here", got)
+	}
+	if got := s.Get("HOST"); got != "arch-os" {
+		t.Errorf("HOST = %q, want the declared default", got)
+	}
+}
+
+// A secret is asked for immediately before the run because there is nowhere to
+// keep it, not because it has to be typed. One this run was handed is given.
+func TestASecretAlreadyGivenIsNotAskedForAgain(t *testing.T) {
+	s := setup(t, `
+variables:
   - name: PW
     title: Password
     type: secret
+    required: true
 `)
-	s.LoadEnv()
-	if got := s.Get("USER"); got != "moritz" {
-		t.Errorf("USER = %q, want moritz from the environment", got)
+	if got := len(s.Secrets()); got != 1 {
+		t.Fatalf("Secrets() has %d entries before anything was given, want 1", got)
 	}
-	if got := s.Get("HOST"); got != "arch-os" {
-		t.Errorf("HOST = %q, want the default — an empty variable is not an answer", got)
-	}
-	if got := s.Get("PW"); got != "" {
-		t.Errorf("PW = %q, want nothing — a secret is not taken from the environment", got)
+	s.Set("PW", "hunter2")
+	if got := len(s.Secrets()); got != 0 {
+		t.Errorf("Secrets() has %d entries, want none — it has been given", got)
 	}
 }
 

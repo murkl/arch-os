@@ -8,7 +8,7 @@
 # What goes to stderr is what the user reads, so each message says what is
 # wrong and what to do about it, in that order, and nothing else.
 
-# DEBUG=true simulates the installation instead of running it, on a machine
+# --debug simulates the installation instead of running it, on a machine
 # where none of what follows is true.
 [ "$DEBUG" = "true" ] && return 0
 

@@ -30,10 +30,12 @@ CRYPT=recovery
 # apart.
 BTRFS_OPTS="defaults,noatime,compress=zstd"
 
-# DEBUG=true runs the recovery without touching the machine. Each task guards
+# --debug runs the recovery without touching the machine. Each task guards
 # itself with `simulating && return 0` as its first line, so a unit is only
 # ever skipped as a whole.
-: "${DEBUG:=false}"
+#
+# DEBUG is declared as an option in recovery.yaml beside this file, so every
+# script is handed it whether the command line mentioned it or not.
 
 simulating() {
     [ "$DEBUG" = "true" ] || return 1

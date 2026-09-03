@@ -32,3 +32,30 @@ logo: |
   ███████ ██████  ██      ███████     ██    ██ ███████
   ██   ██ ██   ██ ██      ██   ██     ██    ██      ██
   ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
+
+# What `--help` says about the product as a whole. Only the part no module can
+# answer for is here: what all of them together are for, what they are typed as,
+# and the handful of whole command lines worth copying. The list of modules and
+# what each of them takes is read out of the modules themselves, so nothing here
+# has to be kept in step with them.
+#
+# These are the product's own words, like the name above: the runtime's catalogs
+# are compiled into the binary and cannot know the sentences of a runtime.yaml
+# it has never seen.
+help:
+  about: |
+    Put Arch Linux on this machine, or repair a system that is already on a disk.
+
+  # The binary is called runtime and is reached through a launcher of this name
+  # on the image it ships on — which is what somebody reading this typed.
+  command: arch-os
+
+  examples:
+    - run: arch-os --installer
+      about: Install, answering the questions as they come.
+    - run: arch-os --installer --debug
+      about: The same run against nothing, changing no disk and no device.
+    - run: arch-os --installer --force --config=aBc12 --password=secret
+      about: |
+        Install without a single question, taking every answer from a
+        configuration shared at the end of an earlier installation.

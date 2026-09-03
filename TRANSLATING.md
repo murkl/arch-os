@@ -95,7 +95,7 @@ make check     # refuses a stale template and a broken placeholder
 translation whose English is unchanged, marks the ones whose English moved as
 fuzzy, and drops nothing silently.
 
-`runtime -check` reports coverage per language, which is how a catalog that has
+`runtime --check` reports coverage per language, which is how a catalog that has
 fallen behind is noticed.
 
 ## On a translation platform

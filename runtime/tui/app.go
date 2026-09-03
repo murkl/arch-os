@@ -53,6 +53,11 @@ type Opening struct {
 	Lang    *store.Language
 	Langs   []i18n.Lang
 	Sources []fs.FS
+
+	// Forced is a run with nobody in front of it: every question already
+	// answered, and the interface asked to draw what is happening rather than
+	// to ask anything. See app.forced.
+	Forced bool
 }
 
 // Open opens one module, once it has been chosen. Nothing is opened before
@@ -96,6 +101,21 @@ type app struct {
 	// file exists whatever happens, and the question "is this a first run" would
 	// answer itself wrong for the rest of the session.
 	first bool
+
+	// forced is a run nobody is watching: --force on the command line, with
+	// every question answered before the program started.
+	//
+	// It is not a second interface. The same pages run the same work in the same
+	// order; what changes is that none of them stops to ask. Every question was
+	// settled before the first frame — the run would not have got this far
+	// otherwise, see ready in main.go — an offer is answered by the default it
+	// declared, and a page that only has something to say is not held on.
+	forced bool
+
+	// failure is how such a run reports. Nobody is going to read a page, and a
+	// script that started this one wants an exit status, so what went wrong is
+	// carried back out of the interface and printed on the terminal it left.
+	failure error
 }
 
 // Run shows the splash and then the interface, and returns when the user
@@ -111,7 +131,7 @@ func Run(o *Opening, open Open, version string) error {
 	a := &app{
 		runtime: o.Runtime, modules: o.Modules, lang: o.Lang,
 		langs: o.Langs, sources: o.Sources,
-		open: open, version: version,
+		open: open, version: version, forced: o.Forced,
 	}
 	// The frame is dressed before there is a module to dress it with, and stays
 	// dressed that way afterwards: the wordmark and the colour are the runtime's,
@@ -134,7 +154,9 @@ func Run(o *Opening, open Open, version string) error {
 	if a.farewell != "" {
 		fmt.Println(a.farewell)
 	}
-	return nil
+	// A run nobody watched says how it went here, where there is a terminal
+	// again and something that started it is waiting for an exit status.
+	return a.failure
 }
 
 // enter opens a module and makes it the one this run is about: from here on the
@@ -265,7 +287,16 @@ func (a *app) save() tea.Cmd {
 // module to settle anything. Which module comes next because everything after
 // that belongs to it: the questions, the answers on disk, the work.
 
-func (a *app) start() screen { return a.language() }
+func (a *app) start() screen {
+	// A forced run joins the chain where the asking stops: the module was named
+	// and is open, the language is settled, and every question it might have put
+	// has an answer. What is left is the module's own look at this machine, and
+	// then the work.
+	if a.forced {
+		return a.afterNetwork()
+	}
+	return a.language()
+}
 
 // language is where the words the rest of this is read in are settled. It is
 // asked whether or not a module was named on the way in: the words it puts on
@@ -324,7 +355,12 @@ func (a *app) afterNetwork() screen {
 // they were declared. They are skipped on a machine that has answered before: a
 // starting point is only a starting point once, and after that every value one
 // filled in is an ordinary answer somebody may since have changed.
-func (a *app) afterCheck() screen { return a.preset(0) }
+func (a *app) afterCheck() screen {
+	if a.forced {
+		return startInstall(a, 0)
+	}
+	return a.preset(0)
+}
 
 func (a *app) preset(next int) screen {
 	if !a.first || next >= len(a.module.Presets) {

@@ -563,6 +563,11 @@ msgstr "Der Code einer geteilten Konfiguration: das kurze Wort am Ende einer pas
 msgid "A code such as aBc12, or the whole address it sits at."
 msgstr "Ein Code wie aBc12 — oder die vollständige Adresse dazu."
 
+#. --debug: the line --help puts against it
+#: installer.yaml
+msgid "Simulate the installation, changing nothing on this machine."
+msgstr "Die Installation simulieren, ohne an diesem Rechner etwas zu ändern."
+
 #. the step, as the run lists it
 #: tasks/init/task.yaml
 msgid "Prepare the installation"

@@ -14,10 +14,15 @@ import (
 // Store is every declared variable and its current value.
 //
 // A value can come from five places, each beating the one before it: the
-// declared default, the process environment, the saved answer file, the preset
-// somebody chose, and the answer somebody typed. That order is what lets an
-// exported variable drive an unattended run, and a saved file stop the
+// declared default, the saved answer file, the command line, the preset
+// somebody chose, and the answer somebody typed. That order is what lets a run
+// with nobody in front of it be driven from one line, and a saved file stop the
 // questions from being asked twice.
+//
+// The environment this program was started in is not among them. What a script
+// is handed is settled here and given to it — a variable inherited from
+// whatever shell happened to start this run is as often an accident as an
+// instruction, and an installation is not a place to guess which.
 type Store struct {
 	mod   *spec.Module
 	val   map[string]string
@@ -100,18 +105,6 @@ func (s *Store) Env() exec.Env {
 	return env
 }
 
-// LoadEnv takes any declared variable that is set in the process environment.
-func (s *Store) LoadEnv() {
-	for _, v := range s.mod.Vars {
-		if v.Secret() {
-			continue
-		}
-		if got, ok := os.LookupEnv(v.Name); ok && got != "" {
-			s.val[v.Name] = got
-		}
-	}
-}
-
 // Apply takes the values of a chosen preset option. Nothing else about it
 // survives being chosen: it is a set of answers, not a mode the installer stays
 // in, so from here on every one of them is an ordinary value that can be
@@ -162,12 +155,21 @@ func (s *Store) Upfront() []*spec.Variable {
 
 // Secrets lists the variables that have to be typed before a run and are never
 // kept — in declaration order, so a folder decides what is asked first.
+//
+// One this run was already given is not among them. A secret is asked for
+// immediately before the run that needs it because there is nowhere to keep it,
+// not because it has to be typed; a value handed in on the command line has
+// been given, and asking again would be asking the same question twice.
 func (s *Store) Secrets() []*spec.Variable {
 	var out []*spec.Variable
 	for _, v := range s.mod.Vars {
-		if v.Secret() && v.Applies(s.Get) {
-			out = append(out, v)
+		if !v.Secret() || !v.Applies(s.Get) {
+			continue
 		}
+		if value := s.val[v.Name]; value != "" && s.Invalid(v, value) == "" {
+			continue
+		}
+		out = append(out, v)
 	}
 	return out
 }

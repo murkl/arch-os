@@ -10,7 +10,7 @@
 # USB device instead - the one that boots the other case.
 #
 # MODE=install|create picks the half by hand, DEBUG=true keeps both off the
-# hardware.
+# hardware — no device is written, and the program is started with --debug.
 #
 # POSIX sh, because this runs before anything else of the project has been
 # downloaded, on whatever shell the machine happens to have.
@@ -33,8 +33,8 @@ DOWNLOAD_DIR="${DOWNLOAD_DIR:-${HOME}/Downloads}"
 # install, create, or auto: worked out from where this runs.
 MODE="${MODE:-auto}"
 
-# Touch no hardware: no device gets written, and the installer simulates
-# every step (see modules/installer/lib.sh, which reads the same variable).
+# Touch no hardware: no device gets written, and the program is started with
+# --debug, which is what makes a module simulate its work instead of doing it.
 DEBUG="${DEBUG:-false}"
 
 # The file currently being fetched, so an interrupt only cleans up its own
@@ -65,7 +65,7 @@ asks whether to install or to repair. Anywhere else: fetches the latest image
 and writes it to a USB device, so this machine can make the one that boots it.
 
   MODE=install|create   pick the half by hand instead of by where it runs
-  DEBUG=true            write nothing: no device, and a simulated installation
+  DEBUG=true            write nothing: no device, and a simulated run
   DOWNLOAD_DIR=<dir>    where downloads are kept (default ${DOWNLOAD_DIR})
 
 These are read by the shell this script runs in, which through a pipe is the
@@ -172,9 +172,14 @@ install_mode() {
     # and asks which to open. Their answers and logs land in the working
     # directory, so leaving and running this again picks up where it left off.
     #
+    # --debug is a module's own option rather than the runtime's, and every
+    # module in this release declares it, so it can be given before one has been
+    # chosen.
+    #
     # stdin is this script itself when the command arrives through a pipe, so
     # the interface is handed the terminal instead.
     cd "$tarball_dir"
+    [ "$DEBUG" = "true" ] && exec ./runtime --debug </dev/tty
     exec ./runtime </dev/tty
 }
 

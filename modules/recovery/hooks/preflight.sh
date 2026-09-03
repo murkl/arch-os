@@ -12,7 +12,7 @@
 # What goes to stderr is what the user reads, so each message says what is
 # wrong and what to do about it, in that order, and nothing else.
 
-# DEBUG=true simulates the recovery instead of running it, on a machine where
+# --debug simulates the recovery instead of running it, on a machine where
 # neither of the checks below would pass.
 [ "$DEBUG" = "true" ] && return 0
 

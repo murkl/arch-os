@@ -24,13 +24,15 @@ GOFLAGS       := CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH)
 # component keeps its own declaration in its own folder — so `make dev` at the
 # root lays it out in symlinks, and this runs against the sources themselves.
 # MODULE opens one outright, the way `runtime --installer` does on a machine;
-# without it the interface asks which.
+# without it the interface asks which. ARGS is whatever else that run takes —
+# `make run MODULE=installer ARGS=--debug` for one that touches nothing.
 #
 # A build leaves its binary in bin/; putting a copy of it beside the modules is
 # the release's business, not this one's — `make build` at the root, then
 # `release/runtime`.
 DIR    ?= ../.dev
 MODULE ?=
+ARGS   ?=
 
 # The template every catalog here is filled in from, and the catalogs
 # themselves. Both are generated: the template out of the Go sources, the
@@ -42,11 +44,11 @@ CATALOGS := $(wildcard locales/*.po)
 
 all: build
 
-# -dir because `go run` builds into a temporary folder, where none of this is
+# --dir because `go run` builds into a temporary folder, where none of this is
 # beside the binary.
 run:
 	$(MAKE) -C .. dev
-	go run -ldflags="$(LDFLAGS_RUN)" $(PKG) -dir $(DIR) $(MODULE)
+	go run -ldflags="$(LDFLAGS_RUN)" $(PKG) --dir $(DIR) $(MODULE) $(ARGS)
 
 build: $(BIN_DIR)
 	$(GOFLAGS) go build -trimpath -ldflags="$(LDFLAGS_BUILD)" -o $(BIN) $(PKG)
@@ -98,7 +100,7 @@ locales:
 # notice.
 #
 # --statistics because nothing else ever counts these. A module's coverage is
-# reported by `runtime -check`, which reads the module's own messages back out
+# reported by `runtime --check`, which reads the module's own messages back out
 # of it; the runtime's messages only exist in the template, which is
 # deliberately not shipped — so an entry left empty or fuzzy here would
 # otherwise reach a release with nobody having seen a number.

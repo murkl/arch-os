@@ -70,9 +70,6 @@ func TestEveryFolderInTheModulesDirectoryIsOffered(t *testing.T) {
 	if strings.Join(rt.Modules, " ") != "installer recovery" {
 		t.Errorf("modules = %v, want every folder there, by name", rt.Modules)
 	}
-	if !rt.Has("installer") || rt.Has("manager") {
-		t.Error("Has() does not answer for what is actually there")
-	}
 	if got := rt.Path("installer"); got != filepath.Join(dir, DirModules, "installer") {
 		t.Errorf("Path() = %q, want the folder in %s", got, DirModules)
 	}

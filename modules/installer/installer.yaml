@@ -133,6 +133,9 @@ presets:
 #   pattern      a regex the answer must match
 #   error        the sentence shown when it doesn't, or when required and
 #                empty — leave out for the generic message
+#   flag         what answers this on the command line, without its dashes —
+#                `flag: password` is `--password`; for the answer a run cannot
+#                be given any other way, and for nothing else
 #   conditions   `VAR == value` / `VAR != value`, one or a list; all must hold
 #   first        asked before everything else the program does, even the
 #                network screen — sparingly
@@ -243,6 +246,12 @@ variables:
       is on — to unlock the disk at boot. It is asked for immediately before the
       installation starts and is never written to a file.
     group: Identity
+    # The one answer no answer file can carry, which is why it is also one of the
+    # two this module takes on the command line: without it an installation with
+    # nobody in front of it could never start. A value given there is visible to
+    # anything on this machine that can list processes, which on a live image
+    # nobody else is on is the whole of the exposure.
+    flag: password
     type: secret
     required: true
 
@@ -647,6 +656,31 @@ variables:
       there becomes an answer here, and every one of them can still be changed
       afterwards.
     group: System
+    # The other answer that stands for all the rest. Given here, it does what
+    # choosing the row that asks for it does: the configuration is fetched and
+    # every answer in it becomes an answer of this installation.
+    flag: config
     required: true
     pattern: '^[A-Za-z0-9][A-Za-z0-9:/._-]*$'
     error: A code such as aBc12, or the whole address it sits at.
+
+# What this installer takes on the command line that is not a question. Nothing
+# asks these, nothing writes them down, and an installation without them is an
+# ordinary installation — they say how a run was started rather than what it was
+# told, which is why they are not settings and never reach a shared
+# configuration.
+#
+# Each reaches every script as an environment variable, exactly like a variable
+# above.
+#
+#   name     the environment variable every script sees
+#   flag     what it is written as on the command line, without its dashes
+#   title    the line --help puts against it
+#   type     bool for a switch, text for one that takes a value
+#   default  what every script sees when the command line says nothing
+options:
+  - name: DEBUG
+    flag: debug
+    title: Simulate the installation, changing nothing on this machine.
+    type: bool
+    default: false

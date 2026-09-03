@@ -59,6 +59,19 @@ off the hardware.
 
 <p><img src="./screenshots/setup.png" width="820"></p>
 
+### Without the questions
+
+The same installation runs from one line, for a machine you set up more than
+once. Every answer comes out of a configuration shared at the end of an earlier
+run — or out of an `installer.conf` you already have, which `--conf` points at:
+
+```sh
+installer --force --config=aBc12 --password=secret
+```
+
+`installer --help` lists what else it takes, `--debug` runs the whole thing
+without touching a disk.
+
 ## Maintenance
 
 <p><img src="./screenshots/manager_menu.png" width="420"></p>

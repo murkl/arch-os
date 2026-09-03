@@ -148,6 +148,13 @@ func labelNothingToChoose(title string) string {
 
 func labelCannotContinue() string { return say("Cannot continue") }
 
+// The same question in a run nobody is watching, where there is nobody to put
+// it to. It names the value rather than the question, because whoever reads
+// this is reading a log and holding a command line.
+func labelNoAnswerFor(name string) string {
+	return say("%s has no answer, and there is nobody to ask.", name)
+}
+
 // The way out, on a machine where leaving is not quitting a program but
 // deciding what happens to the machine — see leave.go.
 func labelLeave() string { return say("Leave") }

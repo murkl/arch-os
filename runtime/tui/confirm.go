@@ -76,7 +76,12 @@ func startInstall(a *app, next int) screen {
 	// system was installed was a task of the last stage and has been offered.
 	// Enter on the result leaves. A failed one lands back on the hub, which is
 	// where a wrong answer is corrected.
-	return newRun(a, a.module.RunName(), a.runner.Tasks(),
-		leave,
-		func() tea.Cmd { return reset(newHub(a)) })
+	then, back := leave, func() tea.Cmd { return reset(newHub(a)) }
+	// Except where nobody is watching, and both outcomes are the end of the
+	// program: there is no hub to correct an answer on and no page anybody will
+	// read. What happened is said on the terminal the frame gives back.
+	if a.forced {
+		then, back = quit, quit
+	}
+	return newRun(a, a.module.RunName(), a.runner.Tasks(), then, back)
 }

@@ -10,17 +10,21 @@
 // about any particular operating system is compiled in, so the same binary
 // drives a different product by sitting next to a different runtime.yaml and a
 // different set of modules.
+//
+// That goes for the command line as well. Seven flags are the runtime's own —
+// where to look, whether to ask, what to say about itself — and every other
+// word one may carry is declared by a module and means whatever that module
+// says it means.
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 
+	"github.com/murkl/arch-os/runtime/internal/cli"
 	"github.com/murkl/arch-os/runtime/internal/i18n"
 	"github.com/murkl/arch-os/runtime/internal/logging"
 	"github.com/murkl/arch-os/runtime/internal/runner"
@@ -45,101 +49,164 @@ const (
 	runtimeConf = "runtime" + confExt
 )
 
-// Each knob has an environment variable of the same meaning, so an unattended
-// run needs no command line.
+// The runtime's own flags: the only names on a command line that are compiled
+// into this program. Everything else one may carry is a module's, read out of
+// its declaration — see spec.Module.Flags.
 const (
-	dirVar  = "RUNTIME_DIR"
-	confVar = "RUNTIME_CONF"
+	flagForce   = "force"
+	flagConf    = "conf"
+	flagDir     = "dir"
+	flagVersion = "version"
+	flagHelp    = "help"
+	flagShort   = "h"
+	flagCheck   = "check"
+	flagStrings = "strings"
 )
 
-func main() {
-	cmd := parse(os.Args[1:])
+// own is the runtime's flags in the order --help lists them: what a run does,
+// then where it reads and writes, then what it says about itself, and last the
+// two that are for a build script rather than for a machine.
+func own() []spec.Flag {
+	return []spec.Flag{
+		{Name: flagForce, Title: i18n.T("Run without asking, on the answers there already.")},
+		{Name: flagConf, Value: "path", Title: i18n.T("Where the answers are kept.")},
+		{Name: flagDir, Value: "path", Title: i18n.T("Where runtime.yaml and the modules folder are.")},
+		{Name: flagVersion, Title: i18n.T("Print the version and stop.")},
+		{Name: flagHelp, Alias: flagShort, Title: i18n.T("This page, or what one module takes.")},
+		{Name: flagCheck, Title: i18n.T("Load everything, say what it holds, change nothing.")},
+		{Name: flagStrings, Title: i18n.T("Print one module's translation template.")},
+	}
+}
 
-	if cmd.version {
-		fmt.Println(version)
-		return
-	}
-	if cmd.check {
-		if err := inspect(cmd.dir, cmd.module); err != nil {
-			die(err)
-		}
-		return
-	}
-	if cmd.strings {
-		if err := catalog(cmd.dir, cmd.module); err != nil {
-			die(err)
-		}
-		return
-	}
-	if err := run(cmd.dir, cmd.conf, cmd.module); err != nil {
+func main() {
+	if err := start(os.Args[1:]); err != nil {
 		die(err)
 	}
 }
 
-// command is a command line, read: which module to open, and everything the
-// flags say about where to find it and what to do with it.
-type command struct {
-	module  string
-	dir     string
-	conf    string
-	version bool
-	check   bool
-	strings bool
+// start reads the command line and does what it says.
+//
+// It is read in two passes, because half of it is not known yet: which flags
+// there are depends on which modules are beside the binary, and where those are
+// is itself something the line may say. So the first pass reads only that, and
+// the second reads the whole line against everything the modules turned out to
+// declare.
+func start(args []string) error {
+	// A language before anything else, so even the message saying there is
+	// nothing here to run is in one. Only the runtime's own catalogs exist this
+	// early.
+	i18n.Activate(i18n.Match(locale(), codes(i18n.Discover(locales.FS))), locales.FS)
+
+	early := cli.Early(args, own())
+	// Answered before anything is loaded: a version is what this binary is,
+	// which is true of a binary standing on its own with no product beside it.
+	if early.On(flagVersion) {
+		fmt.Println(version)
+		return nil
+	}
+
+	rt, err := spec.LoadRuntime(early.Value(flagDir))
+	if err != nil {
+		return err
+	}
+	mods, err := load(rt)
+	if err != nil {
+		return err
+	}
+	flags, err := line(mods)
+	if err != nil {
+		return err
+	}
+
+	cmd, err := cli.Parse(args, flags)
+	if err != nil {
+		return err
+	}
+	mod, err := pick(rt, mods, cmd.Module)
+	if err != nil {
+		return err
+	}
+
+	switch {
+	case cmd.On(flagHelp):
+		fmt.Print(help(rt, mods, mod, early.Value(flagConf)))
+		return nil
+	case cmd.On(flagCheck):
+		return inspect(rt, only(mods, mod))
+	case cmd.On(flagStrings):
+		return catalog(rt, only(mods, mod))
+	}
+	return run(rt, only(mods, mod), cmd)
 }
 
-// parse reads one.
-func parse(args []string) command {
-	var c command
-	set := flag.NewFlagSet(filepath.Base(os.Args[0]), flag.ExitOnError)
-	set.StringVar(&c.dir, "dir", os.Getenv(dirVar), "where runtime.yaml and the modules folder are, instead of beside this binary")
-	set.StringVar(&c.conf, "conf", os.Getenv(confVar), "where the answers are kept")
-	set.BoolVar(&c.version, "version", false, "print the version and exit")
-	set.BoolVar(&c.check, "check", false, "load what is there, report what it holds, and exit")
-	set.BoolVar(&c.strings, "strings", false, "print the translation template for one module, and exit")
-
-	c.module, args = take(set, args)
-	// ExitOnError: a flag it cannot read never comes back here.
-	_ = set.Parse(args)
-	return c
-}
-
-// take pulls the module out of a command line and hands back what is left.
+// line is every flag one command line may carry: the runtime's own, and each
+// module's laid beside them.
 //
-// It may be written as a word or with the dashes an option would carry —
-// `runtime installer` and `runtime --installer` are the same request — and it
-// may stand anywhere the flags do, because the walk below steps over each flag
-// and, where it takes one, over its value as well.
-//
-// Whether the word names a module at all is not decided here but by what is in
-// modules/, which is what makes adding one a folder rather than a change to
-// this program. -h and -help are the flag package's own: asking for usage is
-// not asking for a module called help.
-func take(set *flag.FlagSet, args []string) (string, []string) {
-	for i := 0; i < len(args); i++ {
-		arg := args[i]
-		if !strings.HasPrefix(arg, "-") {
-			return arg, slices.Delete(slices.Clone(args), i, i+1)
-		}
-		name, _, attached := strings.Cut(strings.TrimLeft(arg, "-"), "=")
-		if name == "" || name == "h" || name == "help" {
-			break
-		}
-		f := set.Lookup(name)
-		if f == nil {
-			return name, slices.Delete(slices.Clone(args), i, i+1)
-		}
-		if !attached && !boolFlag(f) {
-			i++ // the next word is this flag's value, not a module
+// A name two modules both declare is one flag here and is carried by whichever
+// module is opened, which is what lets a switch that simulates a run mean the
+// same thing in every module that has one. A name the runtime already uses is
+// refused: the two are declared in places that cannot see each other — one
+// compiled in, one read out of a folder — and this is where they meet.
+func line(mods []*spec.Module) ([]spec.Flag, error) {
+	flags := own()
+	for _, mod := range mods {
+		if name := cli.Collide(flags, mod.Flags()); name != "" {
+			return nil, fmt.Errorf("%s: --%s belongs to the runtime", mod.ID(), name)
 		}
 	}
-	return "", args
+	lists := [][]spec.Flag{flags}
+	for _, mod := range mods {
+		lists = append(lists, mod.Flags())
+	}
+	return cli.Union(lists...)
 }
 
-// boolFlag reports whether a flag stands on its own, the way the flag package
-// itself decides it.
-func boolFlag(f *flag.Flag) bool {
-	b, ok := f.Value.(interface{ IsBoolFlag() bool })
-	return ok && b.IsBoolFlag()
+// pick is the module a command line named, or nil where it named none. A word
+// that is not one of them is said to be, with everything on offer under it.
+func pick(rt *spec.Runtime, mods []*spec.Module, id string) (*spec.Module, error) {
+	if id == "" {
+		return nil, nil
+	}
+	for _, mod := range mods {
+		if mod.ID() == id {
+			return mod, nil
+		}
+	}
+	return nil, fmt.Errorf("%s\n%s",
+		i18n.T("No module called %s.", id),
+		i18n.T("This one offers %s.", strings.Join(rt.Modules, ", ")))
+}
+
+// only narrows a run to the module it is about, or leaves every one of them
+// where none was named — which is the question the interface then asks.
+func only(mods []*spec.Module, mod *spec.Module) []*spec.Module {
+	if mod == nil {
+		return mods
+	}
+	return []*spec.Module{mod}
+}
+
+// help is the page a run puts up when it is asked what it is rather than told
+// what to do.
+func help(rt *spec.Runtime, mods []*spec.Module, mod *spec.Module, conf string) string {
+	// The words a module says are its own, so the page is read in the language
+	// the interface would have opened in.
+	sources := catalogs(mods...)
+	i18n.Activate(language(saved(conf).Code(), i18n.Discover(sources...)), sources...)
+	return cli.Page{
+		Runtime: rt, Modules: mods, Module: mod,
+		Flags: own(), Command: command(rt), Version: version,
+	}.Render()
+}
+
+// command is what --help says to type. A product may name it, for the machine
+// that reaches this binary through a launcher under another name; otherwise it
+// is the name this run was started by, which is right everywhere else.
+func command(rt *spec.Runtime) string {
+	if rt.Help.Command != "" {
+		return rt.Help.Command
+	}
+	return filepath.Base(os.Args[0])
 }
 
 // inspect loads everything a folder holds — what the product is called, and
@@ -147,15 +214,7 @@ func boolFlag(f *flag.Flag) bool {
 // without touching anything. The same load the program does at startup, so
 // everything it refuses would have stopped the program too, which is what makes
 // it worth running from a build script.
-func inspect(dir, id string) error {
-	rt, err := spec.LoadRuntime(dir)
-	if err != nil {
-		return err
-	}
-	mods, err := load(rt, id)
-	if err != nil {
-		return err
-	}
+func inspect(rt *spec.Runtime, mods []*spec.Module) error {
 	reportRuntime(rt)
 	unread := 0
 	for _, mod := range mods {
@@ -220,6 +279,7 @@ func report(mod *spec.Module) {
 	fmt.Printf("  stages     %s\n", strings.Join(mod.Stages, " "))
 	fmt.Printf("  tasks      %d\n", len(mod.Tasks))
 	fmt.Printf("  hooks      %s\n", strings.Join(hooks(mod), " "))
+	fmt.Printf("  flags      %s\n", strings.Join(taken(mod), " "))
 	fmt.Printf("  languages  %s\n", strings.Join(names, " "))
 
 	// The order they run in is worked out rather than written down anywhere.
@@ -246,24 +306,28 @@ func report(mod *spec.Module) {
 	}
 }
 
-// load reads the modules a run is about: the one named on the command line, or
-// every module the runtime offers when none was.
-//
-// All of them, because a release ships its modules together: one that will not
-// load is a broken release, and saying so at startup beats a row that fails
-// when somebody chooses it.
-func load(rt *spec.Runtime, id string) ([]*spec.Module, error) {
-	ids := rt.Modules
-	if id != "" {
-		if !rt.Has(id) {
-			return nil, fmt.Errorf("%s\n%s",
-				i18n.T("No module called %s.", id),
-				i18n.T("This one offers %s.", strings.Join(rt.Modules, ", ")))
-		}
-		ids = []string{id}
+// taken is what this module accepts on the command line, as it is written
+// there — so a flag that is not being read because of a typo in its name is
+// visible as one missing from this line.
+func taken(mod *spec.Module) []string {
+	flags := mod.Flags()
+	out := make([]string, len(flags))
+	for i, f := range flags {
+		out[i] = "--" + f.Name
 	}
-	out := make([]*spec.Module, 0, len(ids))
-	for _, name := range ids {
+	return out
+}
+
+// load reads every module the runtime offers, in the order it offers them.
+//
+// All of them, whichever one a run turns out to be about. A command line cannot
+// be read until it is known what the words in it may be, and that is declared
+// module by module. A release ships its modules together anyway, so one that
+// will not load is a broken release, and saying so at startup beats a row that
+// fails when somebody chooses it.
+func load(rt *spec.Runtime) ([]*spec.Module, error) {
+	out := make([]*spec.Module, 0, len(rt.Modules))
+	for _, name := range rt.Modules {
 		mod, err := spec.Load(rt.Path(name))
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", name, err)
@@ -273,23 +337,16 @@ func load(rt *spec.Runtime, id string) ([]*spec.Module, error) {
 	return out, nil
 }
 
-func run(dir, conf, id string) error {
-	// A language before anything else, so even the message saying there is
-	// nothing here to run is in one. Only the runtime's own catalogs exist this
-	// early.
-	i18n.Activate(i18n.Match(locale(), codes(i18n.Discover(locales.FS))), locales.FS)
-
-	// What this product is called, what it looks like, and what it offers. Read
-	// before any of it, because it dresses the first frame — which is drawn
-	// before a module has been chosen.
-	rt, err := spec.LoadRuntime(dir)
-	if err != nil {
-		return err
-	}
-
-	mods, err := load(rt, id)
-	if err != nil {
-		return err
+func run(rt *spec.Runtime, mods []*spec.Module, cmd *cli.Command) error {
+	conf := cmd.Value(flagConf)
+	// A run nobody is watching has to be about something. There is no asking
+	// which module to open when there is nothing to ask with, so the one thing
+	// --force cannot supply is the one thing it insists on.
+	forced := cmd.On(flagForce)
+	if forced && len(mods) > 1 {
+		return fmt.Errorf("%s\n%s",
+			i18n.T("--%s runs one module without asking anything, so it has to be told which.", flagForce),
+			i18n.T("This one offers %s.", strings.Join(rt.Modules, ", ")))
 	}
 
 	// The language is asked before a module is opened, so it is offered in every
@@ -298,32 +355,37 @@ func run(dir, conf, id string) error {
 	sources := catalogs(mods...)
 	langs := i18n.Discover(sources...)
 
-	// The runtime's own answers sit in the folder a module's answers sit in, so
-	// that one folder holds one product's files and nothing else.
+	lang := saved(conf)
+	i18n.Activate(language(lang.Code(), langs), sources...)
+
+	opening := &tui.Opening{
+		Runtime: rt, Modules: mods, Lang: lang, Langs: langs, Sources: sources, Forced: forced,
+	}
+	return tui.Run(opening, func(mod *spec.Module) (*tui.Program, error) {
+		return open(mod, conf, cmd, forced)
+	}, version)
+}
+
+// saved is the runtime's own answers: the language, kept for every module.
+//
+// It sits in the folder a module's answers sit in, so that one folder holds one
+// product's files and nothing else.
+func saved(conf string) *store.Language {
 	beside := "."
 	if conf != "" {
 		beside = filepath.Dir(conf)
 	}
-	beside, err = filepath.Abs(beside)
-	if err != nil {
-		return err
+	if abs, err := filepath.Abs(beside); err == nil {
+		beside = abs
 	}
-	lang := store.NewLanguage(filepath.Join(beside, runtimeConf))
-	i18n.Activate(language(lang.Code(), langs), sources...)
-
-	opening := &tui.Opening{
-		Runtime: rt, Modules: mods, Lang: lang, Langs: langs, Sources: sources,
-	}
-	return tui.Run(opening, func(mod *spec.Module) (*tui.Program, error) {
-		return open(mod, conf)
-	}, version)
+	return store.NewLanguage(filepath.Join(beside, runtimeConf))
 }
 
 // open makes one module runnable: the answers it keeps and the file they
 // survive in, the log, and the runner that joins the module to the answers.
 // Everything here is named after the module, which is why none of it happens
 // before one has been chosen.
-func open(mod *spec.Module, conf string) (*tui.Program, error) {
+func open(mod *spec.Module, conf string, cmd *cli.Command, forced bool) (*tui.Program, error) {
 	// What this module's answers and log are called, after the module itself.
 	if conf == "" {
 		conf = mod.ID() + confExt
@@ -335,9 +397,6 @@ func open(mod *spec.Module, conf string) (*tui.Program, error) {
 
 	st := store.New(mod, conf)
 	st.SetFacts(version)
-	// The environment first, then the file: a written answer is one this machine
-	// gave, an inherited variable as often an accident as an instruction.
-	st.LoadEnv()
 	if err := st.Load(); err != nil {
 		return nil, err
 	}
@@ -351,6 +410,13 @@ func open(mod *spec.Module, conf string) (*tui.Program, error) {
 	st.SetFact(store.ModuleLogVar, logPath)
 	logging.Info("%s %s", mod.UI.Title, version)
 
+	// The command line over the file: a value given now is somebody at this
+	// machine saying so, and a value in the file is what it said last time.
+	given, err := apply(mod, st, cmd)
+	if err != nil {
+		return nil, err
+	}
+
 	// This module's catalogs are laid over the runtime's, so a module may reword
 	// anything. The language itself is the runtime's and is already settled: it
 	// is written into these answers so that every script gets it, not asked
@@ -360,12 +426,113 @@ func open(mod *spec.Module, conf string) (*tui.Program, error) {
 	i18n.Activate(i18n.Current(), sources...)
 	st.Set(spec.LangVar, i18n.Current())
 
+	rn := runner.New(mod, st)
+	if err := fetch(mod, st, rn, given); err != nil {
+		return nil, err
+	}
+
 	// The answers survived a restart in the file; their effect on the live system
 	// did not.
-	rn := runner.New(mod, st)
 	rn.Settle()
 
+	if forced {
+		if err := ready(st); err != nil {
+			return nil, err
+		}
+	}
 	return &tui.Program{Module: mod, Store: st, Runner: rn, Langs: langs, Sources: sources}, nil
+}
+
+// apply takes what the command line said and makes it this module's: every
+// option under its own name, and every question a flag answered.
+//
+// A value given here is held to exactly the rule the same value typed at a
+// prompt is held to, and a wrong one stops the run before it starts rather than
+// reaching a script — which is the whole point of a run nobody is watching.
+//
+// What comes back is which questions the line answered, because that is the one
+// thing the file it was read over cannot say.
+func apply(mod *spec.Module, st *store.Store, cmd *cli.Command) (map[string]bool, error) {
+	// The options first, defaults and all, so every script sees each of them
+	// under its own name whether the line mentioned it or not.
+	for _, o := range mod.Options {
+		value := o.Default.String()
+		if cmd.Has(o.Flag) {
+			value = cmd.Value(o.Flag)
+		}
+		st.SetFact(o.Name, value)
+	}
+	given := map[string]bool{}
+	for _, v := range mod.Vars {
+		if v.Flag == "" || !cmd.Has(v.Flag) {
+			continue
+		}
+		value := cmd.Value(v.Flag)
+		if why := st.Invalid(v, value); why != "" {
+			return nil, fmt.Errorf("--%s: %s", v.Flag, why)
+		}
+		st.Set(v.Name, value)
+		given[v.Name] = true
+		if !v.Secret() {
+			logging.Info("--%s: %s", v.Flag, value)
+		}
+	}
+	return given, nil
+}
+
+// fetch takes the starting point that is not written down but fetched, where
+// the command line gave the code that stands for it.
+//
+// A preset row with an `asks:` is one question and a whole configuration behind
+// it: in the interface it is chosen by picking the row and typing the code.
+// Giving the code outright is that same choice, made on the command line, so it
+// does the same thing — the shell behind the row runs and what it wrote into the
+// answer file is read back.
+//
+// Only for a code this run was given. One already in the answer file was
+// fetched by the run that put it there, and fetching it again at every start
+// would put a pastebin between this machine and its own answers.
+func fetch(mod *spec.Module, st *store.Store, rn *runner.Runner, given map[string]bool) error {
+	for _, p := range mod.Presets {
+		for _, o := range p.Options {
+			if !o.Fetches() || o.Apply == "" || !given[o.Asks] {
+				continue
+			}
+			logging.Info("%s: %s", o.Asks, st.Get(o.Asks))
+			if err := rn.Import(o.Apply)(); err != nil {
+				return err
+			}
+			if err := rn.Imported(); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// ready is what stops an unattended run before it starts: every question this
+// module needs answered, answered.
+//
+// It is the one thing a run with nobody in front of it has to say for itself. A
+// question that would have been a page is otherwise an empty string in a
+// script's environment, and an installation that partitions a disk on one is
+// worse than an installation that never began.
+func ready(st *store.Store) error {
+	unanswered := append(st.Missing(), st.Secrets()...)
+	if len(unanswered) == 0 {
+		return nil
+	}
+	lines := []string{i18n.T("%d question(s) here have no answer.", len(unanswered))}
+	for _, v := range unanswered {
+		// Named by the variable a script reads, and by the flag where there is
+		// one: between them they say both what is missing and how to give it.
+		how := ""
+		if v.Flag != "" {
+			how = "  --" + v.Flag
+		}
+		lines = append(lines, "  "+v.Name+how)
+	}
+	return fmt.Errorf("%s\n%s", i18n.T("Nothing to run without asking."), strings.Join(lines, "\n"))
 }
 
 // hooks is which of them this module actually has, so one that is not being
@@ -435,15 +602,7 @@ func codes(langs []i18n.Lang) []string {
 // each with its translation left empty, in the order it says them. Redirect it
 // to locales/<name>.pot, and a catalog for a language is that file with the
 // right-hand side filled in — by hand, or on a platform that speaks po.
-func catalog(dir, id string) error {
-	rt, err := spec.LoadRuntime(dir)
-	if err != nil {
-		return err
-	}
-	mods, err := load(rt, id)
-	if err != nil {
-		return err
-	}
+func catalog(rt *spec.Runtime, mods []*spec.Module) error {
 	// One template belongs to one module. Which of several is not something to
 	// guess at, so it is named on the command line rather than picked here.
 	if len(mods) > 1 {

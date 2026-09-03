@@ -15,6 +15,65 @@ msgstr ""
 msgid "English"
 msgstr "Deutsch"
 
+#: internal/cli/cli.go:63
+#, c-format
+msgid "One module at a time: %s or %s."
+msgstr "Nur ein Modul auf einmal: %s oder %s."
+
+#: internal/cli/cli.go:87
+#, c-format
+msgid "--%s is %s or %s, not %q."
+msgstr "--%s ist %s oder %s, nicht %q."
+
+#: internal/cli/cli.go:94
+#, c-format
+msgid "--%s takes a value."
+msgstr "--%s erwartet einen Wert."
+
+#: internal/cli/cli.go:146
+#, c-format
+msgid "%q names nothing."
+msgstr "%q benennt nichts."
+
+#: internal/cli/cli.go:175
+#, c-format
+msgid "No option called --%s."
+msgstr "Keine Option namens --%s."
+
+#: internal/cli/cli.go:176
+#, c-format
+msgid "This one takes %s."
+msgstr "Angenommen werden %s."
+
+#: internal/cli/cli.go:198
+#, c-format
+msgid "--%s is a switch in one module and takes a value in another."
+msgstr "--%s ist in einem Modul ein Schalter und erwartet in einem anderen einen Wert."
+
+#: internal/cli/help.go:113
+msgid "module"
+msgstr "Modul"
+
+#: internal/cli/help.go:115
+msgid "Usage"
+msgstr "Aufruf"
+
+#: internal/cli/help.go:119
+msgid "options"
+msgstr "Optionen"
+
+#: internal/cli/help.go:130
+msgid "Modules"
+msgstr "Module"
+
+#: internal/cli/help.go:139
+msgid "Options"
+msgstr "Optionen"
+
+#: internal/cli/help.go:156
+msgid "Examples"
+msgstr "Beispiele"
+
 #. the four labels below head the table shown when a step failed: the script
 #. it was in, the line that ran, what it returned, and what it printed. Each
 #. is one column of a narrow table, so short wins over exact.
@@ -53,25 +112,25 @@ msgstr "hier liegt keine %s-Datei"
 msgid "more than one %s file here"
 msgstr "hier liegt mehr als eine %s-Datei"
 
-#: internal/spec/runtime.go:75
+#: internal/spec/runtime.go:109
 #, c-format
 msgid "A %s file has to sit next to this program, in %s."
 msgstr "Eine %s-Datei muss neben diesem Programm liegen, in %s."
 
-#: internal/spec/runtime.go:112
+#: internal/spec/runtime.go:150
 #, c-format
 msgid "A %s folder with something in it has to sit next to this program, in %s."
 msgstr "Ein %s-Ordner mit Inhalt muss neben diesem Programm liegen, in %s."
 
-#: internal/spec/runtime.go:119
+#: internal/spec/runtime.go:157
 msgid "Nothing to run here."
 msgstr "Hier gibt es nichts auszuführen."
 
-#: internal/spec/spec.go:466
+#: internal/spec/spec.go:553
 msgid "This value has the wrong format."
 msgstr "Dieser Wert hat das falsche Format."
 
-#: internal/spec/spec.go:468
+#: internal/spec/spec.go:555
 msgid "This value is required."
 msgstr "Dieser Wert wird benötigt."
 
@@ -88,15 +147,15 @@ msgstr "Sprache der Oberfläche"
 msgid "Answers the runtime keeps for every module. Edit by hand if you like."
 msgstr "Angaben, die für jedes Modul gelten. Kann von Hand bearbeitet werden."
 
-#: internal/store/store.go:222
+#: internal/store/store.go:224
 msgid "asked just before the run"
 msgstr "wird kurz vor dem Start abgefragt"
 
-#: internal/store/store.go:239 tui/labels.go:172
+#: internal/store/store.go:241 tui/labels.go:179
 msgid "Yes"
 msgstr "Ja"
 
-#: internal/store/store.go:241 tui/labels.go:173
+#: internal/store/store.go:243 tui/labels.go:180
 msgid "No"
 msgstr "Nein"
 
@@ -120,15 +179,57 @@ msgstr "Verbindung mit %s fehlgeschlagen."
 msgid "%s was joined, but there is still no internet."
 msgstr "%s ist verbunden, aber es gibt weiterhin keine Internetverbindung."
 
-#: main.go:260
+#: main.go:71
+msgid "Run without asking, on the answers there already."
+msgstr "Ohne Rückfragen laufen, mit den Antworten, die schon da sind."
+
+#: main.go:72
+msgid "Where the answers are kept."
+msgstr "Wo die Antworten liegen."
+
+#: main.go:73
+msgid "Where runtime.yaml and the modules folder are."
+msgstr "Wo runtime.yaml und der Modulordner liegen."
+
+#: main.go:74
+msgid "Print the version and stop."
+msgstr "Die Version ausgeben und aufhören."
+
+#: main.go:75
+msgid "This page, or what one module takes."
+msgstr "Diese Seite, oder was ein Modul annimmt."
+
+#: main.go:76
+msgid "Load everything, say what it holds, change nothing."
+msgstr "Alles laden, sagen was darin steht, nichts ändern."
+
+#: main.go:77
+msgid "Print one module's translation template."
+msgstr "Die Übersetzungsvorlage eines Moduls ausgeben."
+
+#: main.go:176
 #, c-format
 msgid "No module called %s."
 msgstr "Kein Modul namens %s."
 
-#: main.go:261
+#: main.go:177 main.go:349
 #, c-format
 msgid "This one offers %s."
 msgstr "Angeboten werden %s."
+
+#: main.go:348
+#, c-format
+msgid "--%s runs one module without asking anything, so it has to be told which."
+msgstr "--%s führt ein Modul ohne Rückfragen aus, also muss gesagt werden welches."
+
+#: main.go:525
+#, c-format
+msgid "%d question(s) here have no answer."
+msgstr "%d Frage(n) hier sind unbeantwortet."
+
+#: main.go:535
+msgid "Nothing to run without asking."
+msgstr "Ohne Rückfragen gibt es hier nichts auszuführen."
 
 #: tui/labels.go:22
 msgid "↑↓ move · ⏎ select · q quit"
@@ -352,43 +453,48 @@ msgstr "%s: Es gibt nichts zur Auswahl."
 msgid "Cannot continue"
 msgstr "Installation nicht möglich"
 
-#: tui/labels.go:153
+#: tui/labels.go:155
+#, c-format
+msgid "%s has no answer, and there is nobody to ask."
+msgstr "%s ist unbeantwortet, und es ist niemand da, den man fragen könnte."
+
+#: tui/labels.go:160
 msgid "Leave"
 msgstr "Beenden"
 
-#: tui/labels.go:158
+#: tui/labels.go:165
 msgid "Whatever was running is still running behind this page. Anything chosen here stops it."
 msgstr "Was lief, läuft hinter dieser Seite weiter. Jede Auswahl hier bricht es ab."
 
-#: tui/labels.go:161
+#: tui/labels.go:168
 msgid "Restart"
 msgstr "Neu starten"
 
-#: tui/labels.go:162
+#: tui/labels.go:169
 msgid "Close this machine down and start it again."
 msgstr "Den Rechner herunterfahren und neu starten."
 
-#: tui/labels.go:163
+#: tui/labels.go:170
 msgid "Shut down"
 msgstr "Herunterfahren"
 
-#: tui/labels.go:164
+#: tui/labels.go:171
 msgid "Exit to the console"
 msgstr "Zurück zur Konsole"
 
-#: tui/labels.go:165
+#: tui/labels.go:172
 msgid "Switch this machine off."
 msgstr "Den Rechner ausschalten."
 
-#: tui/labels.go:166
+#: tui/labels.go:173
 msgid "Restarting …"
 msgstr "Neustart läuft …"
 
-#: tui/labels.go:167
+#: tui/labels.go:174
 msgid "Shutting down …"
 msgstr "Wird heruntergefahren …"
 
-#: tui/labels.go:168
+#: tui/labels.go:175
 msgid "This machine did not do as it was told."
 msgstr "Der Rechner hat den Befehl nicht ausgeführt."
 
