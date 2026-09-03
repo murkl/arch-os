@@ -305,6 +305,10 @@ func (h *harness) down() *harness  { return h.key(tea.KeyDown) }
 func (h *harness) esc() *harness   { return h.key(tea.KeyEsc) }
 func (h *harness) ctrlC() *harness { return h.key(tea.KeyCtrlC) }
 
+// erase is the other way to say back, and the delete key in front of a text
+// box. Which of the two it is is the whole point of testing it.
+func (h *harness) erase() *harness { return h.key(tea.KeyBackspace) }
+
 func (h *harness) typeIn(s string) *harness {
 	h.t.Helper()
 	for _, r := range s {
@@ -1409,6 +1413,117 @@ func TestClockReadsAsAClock(t *testing.T) {
 			t.Errorf("clock(%s) = %q, want %q", c.d, got, c.want)
 		}
 	}
+}
+
+// ─── The same keys on every page ─────────────────────────────────────────────
+
+// Four keys, one meaning each, wherever they are pressed: enter says yes, esc
+// and backspace say back, and q and ctrl+c ask to leave the program. What
+// follows is that promise, page by page.
+
+// Backspace is back, exactly where esc is.
+func TestBackspaceGoesBackWhereEscDoes(t *testing.T) {
+	h := newHarness(t, nil)
+	h.down().enter().typeIn("moritz").enter()
+	h.wants("2 of 2")
+	h.erase()
+	h.wants("User name", "1 of 2")
+}
+
+// Except in front of a text box, where it is the delete key first and only
+// means back once there is nothing left to delete.
+func TestBackspaceDeletesBeforeItGoesBack(t *testing.T) {
+	h := newHarness(t, nil)
+	h.down().enter()
+	h.typeIn("moritz").erase()
+	h.wants("morit").refuses("moritz")
+
+	h.erase().erase().erase().erase().erase()
+	h.wants("User name")
+	h.erase()
+	h.wants("Setup", "Full", "Bare")
+}
+
+// The question of which module to open is a page like any other: it was pushed
+// onto the language, so esc lands back on it.
+func TestTheQuestionOfWhichModuleIsBackedOutOfLikeAnyOther(t *testing.T) {
+	mods := both(t)
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "de.po"), []byte("msgid \"What to do\"\nmsgstr \"Was tun\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	h := startIn(t, dir, mods...)
+	h.enter() // English, and on to the question of which module
+	h.wants("What to do", "Test Installer")
+	h.esc()
+	h.wants("Interface language")
+}
+
+// q asks to leave from wherever it is pressed, not only from the menu — and
+// what it opens is drawn over the page rather than instead of it, so either
+// key that means back lands on exactly what was there before.
+func TestQAsksToLeaveFromAnyPageAndComesBackToIt(t *testing.T) {
+	h := newHarness(t, leaveTree("true", "true"))
+	h.down().enter().typeIn("moritz").enter()
+	h.wants("Disk", "/dev/sda")
+
+	h.typeIn("q")
+	h.wants("Restart", "Shut down")
+	h.esc()
+	h.wants("Disk", "/dev/sda", "2 of 2")
+
+	// And backspace closes it again just as esc does.
+	h.ctrlC()
+	h.wants("Restart", "Shut down")
+	h.erase()
+	h.wants("Disk", "/dev/sda")
+}
+
+// Wherever something is being typed, q is a letter. A page that took it for the
+// way out would be a program that cannot be told about a user called quinn.
+func TestQIsACharacterWhereSomethingIsBeingTyped(t *testing.T) {
+	h := newHarness(t, leaveTree("true", "true"))
+	h.down().enter()
+	h.typeIn("quinn")
+	h.refuses("Restart", "Shut down")
+	h.enter()
+	if got := h.a.store.Get("USER"); got != "quinn" {
+		t.Errorf("USER = %q, want the letter typed rather than the way out", got)
+	}
+
+	// The same in a narrowing box, which is a text box the moment it is open.
+	h.enter()        // the disk, and the hub follows
+	h.down().enter() // settings
+	h.typeIn("/q")
+	h.wants("No matches").refuses("Restart", "Shut down")
+
+	// And in a password, which may hold any letter there is.
+	h.esc().esc()            // close the box, then leave settings
+	h.key(tea.KeyUp).enter() // the install row, and the warning it opens
+	h.enter()                // start, which asks for the password first
+	h.typeIn("q")
+	h.wants("Password").refuses("Restart", "Shut down")
+}
+
+// A question a run stopped for has no page behind it — the task waiting on the
+// answer has already started — so back means the same thing there that ctrl+c
+// means everywhere, and the run is still standing on it afterwards.
+func TestAQuestionInARunIsLeftRatherThanBackedOutOf(t *testing.T) {
+	files := leaveTree("true", "true")
+	files["tasks/d-reboot/task.yaml"] = "name: Reboot\nstage: finish\nconfirm: Restart now?\n"
+	files["tasks/d-reboot/task.sh"] = "echo never\n"
+	h := newHarness(t, files)
+	h.down().enter().typeIn("moritz").enter().enter()
+	h.enter().enter()
+	h.typeIn("x").enter().typeIn("x").enter()
+
+	h.asked()
+	h.wants("Restart now?", "Yes", "No")
+
+	h.erase()
+	h.wants("Leave", "Shut down")
+	h.esc()
+	h.wants("Restart now?", "Yes", "No")
 }
 
 // ─── What a run has to report ────────────────────────────────────────────────

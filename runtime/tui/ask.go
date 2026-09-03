@@ -120,7 +120,7 @@ func (a *ask) Hint() string {
 	if a.loading {
 		return labelHintRunning()
 	}
-	return filterHint(labelHintChoose(), a.filter)
+	return filterHint(labelHintAnswer(), a.filter)
 }
 
 // View is the question as it sits inside the run: what the value is for, then

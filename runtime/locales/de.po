@@ -89,7 +89,7 @@ msgstr "Befehl"
 msgid "Exit code"
 msgstr "Exit-Code"
 
-#: internal/exec/failure.go:57 tui/labels.go:119
+#: internal/exec/failure.go:57 tui/labels.go:124
 #, c-format
 msgid "%s failed"
 msgstr "%s fehlgeschlagen"
@@ -139,7 +139,7 @@ msgstr "Dieser Wert wird benötigt."
 msgid "Answers given to %s. Edit by hand if you like."
 msgstr "Angaben für %s. Kann von Hand bearbeitet werden."
 
-#: internal/store/conf.go:79 internal/store/language.go:58 tui/labels.go:82
+#: internal/store/conf.go:79 internal/store/language.go:58 tui/labels.go:87
 msgid "Interface language"
 msgstr "Sprache der Oberfläche"
 
@@ -151,11 +151,11 @@ msgstr "Angaben, die für jedes Modul gelten. Kann von Hand bearbeitet werden."
 msgid "asked just before the run"
 msgstr "wird kurz vor dem Start abgefragt"
 
-#: internal/store/store.go:241 tui/labels.go:179
+#: internal/store/store.go:241 tui/labels.go:184
 msgid "Yes"
 msgstr "Ja"
 
-#: internal/store/store.go:243 tui/labels.go:180
+#: internal/store/store.go:243 tui/labels.go:185
 msgid "No"
 msgstr "Nein"
 
@@ -275,226 +275,230 @@ msgstr "⏎ beenden"
 msgid "⏎ start · esc back"
 msgstr "⏎ starten · esc zurück"
 
-#: tui/labels.go:36
+#: tui/labels.go:37
+msgid "↑↓ move · ⏎ confirm · esc quit"
+msgstr "↑↓ wählen · ⏎ bestätigen · esc beenden"
+
+#: tui/labels.go:41
 msgid "Wireless network"
 msgstr "WLAN"
 
-#: tui/labels.go:37
+#: tui/labels.go:42
 msgid "Join a wireless network to continue."
 msgstr "Verbinde dich mit einem WLAN, um fortzufahren."
 
-#: tui/labels.go:38
+#: tui/labels.go:43
 msgid "Checking the internet connection …"
 msgstr "Internetverbindung wird geprüft …"
 
-#: tui/labels.go:39
+#: tui/labels.go:44
 msgid "Looking for wireless networks …"
 msgstr "WLAN-Netzwerke werden gesucht …"
 
 #. %s is the name of the wireless network being joined.
-#: tui/labels.go:43
+#: tui/labels.go:48
 #, c-format
 msgid "Joining %s …"
 msgstr "Verbinde mit %s …"
 
-#: tui/labels.go:45
+#: tui/labels.go:50
 msgid "There is no internet connection."
 msgstr "Keine Internetverbindung."
 
-#: tui/labels.go:46
+#: tui/labels.go:51
 msgid "No wireless networks in range."
 msgstr "Keine WLAN-Netzwerke in Reichweite."
 
-#: tui/labels.go:47
+#: tui/labels.go:52
 msgid "Passphrase"
 msgstr "Passwort"
 
-#: tui/labels.go:48
+#: tui/labels.go:53
 msgid "Continue anyway"
 msgstr "Trotzdem fortfahren"
 
-#: tui/labels.go:50
+#: tui/labels.go:55
 msgid "↑↓ move · ⏎ join · r rescan · esc skip"
 msgstr "↑↓ wählen · ⏎ verbinden · r neu suchen · esc überspringen"
 
-#: tui/labels.go:52
-msgid "⏎ continue · r retry"
-msgstr "⏎ weiter · r erneut versuchen"
+#: tui/labels.go:57
+msgid "⏎ continue · r retry · esc back"
+msgstr "⏎ weiter · r erneut versuchen · esc zurück"
 
-#: tui/labels.go:54
+#: tui/labels.go:59
 msgid "The installation downloads everything it installs, so it will not get far without one. Plug in a cable, or press r to look for a network again."
 msgstr "Die Installation lädt alles herunter, was sie installiert, und kommt ohne Verbindung nicht weit. Stecke ein Kabel ein oder drücke r, um erneut nach einem Netzwerk zu suchen."
 
-#: tui/labels.go:57
+#: tui/labels.go:62
 msgid "The installation downloads everything it installs, so it will not get far without one. Plug in a cable, or connect to a wireless network before continuing."
 msgstr "Die Installation lädt alles herunter, was sie installiert, und kommt ohne Verbindung nicht weit. Stecke ein Kabel ein oder verbinde dich mit einem WLAN, bevor du fortfährst."
 
-#: tui/labels.go:62
+#: tui/labels.go:67
 msgid "/ filter"
 msgstr "/ filtern"
 
-#: tui/labels.go:64
+#: tui/labels.go:69
 msgid "type to filter · ↑↓ move · ⏎ select · esc close"
 msgstr "tippen filtert · ↑↓ wählen · ⏎ wählen · esc schließt"
 
-#: tui/labels.go:70
+#: tui/labels.go:75
 msgid "type to filter · ↑↓ move · ⏎ select · esc back"
 msgstr "tippen filtert · ↑↓ wählen · ⏎ wählen · esc zurück"
 
-#: tui/labels.go:73
+#: tui/labels.go:78
 msgid "Filter …"
 msgstr "Filtern …"
 
-#: tui/labels.go:74
+#: tui/labels.go:79
 msgid "No matches"
 msgstr "Keine Treffer"
 
-#: tui/labels.go:80
+#: tui/labels.go:85
 msgid "Start"
 msgstr "Start"
 
 #. %s is the name of the product being read, e.g. "Arch OS".
-#: tui/labels.go:85
+#: tui/labels.go:90
 #, c-format
 msgid "Choose the language for %s."
 msgstr "Sprache für %s wählen."
 
-#: tui/labels.go:90
+#: tui/labels.go:95
 msgid "What to do"
 msgstr "Was getan werden soll"
 
-#: tui/labels.go:96
+#: tui/labels.go:101
 #, c-format
 msgid "%d of %d"
 msgstr "%d von %d"
 
-#: tui/labels.go:98
+#: tui/labels.go:103
 msgid "Install"
 msgstr "Installieren"
 
-#: tui/labels.go:99
+#: tui/labels.go:104
 msgid "Start the installation with the answers below."
 msgstr "Die Installation mit den bisherigen Angaben starten."
 
-#: tui/labels.go:101
+#: tui/labels.go:106
 msgid "Settings"
 msgstr "Einstellungen"
 
 #. %s is the name of the module whose values these are.
-#: tui/labels.go:105
+#: tui/labels.go:110
 #, c-format
 msgid "Every value %s will use. Choose one to change it."
 msgstr "Alle Werte, mit denen %s arbeitet. Zum Ändern einen davon öffnen."
 
-#: tui/labels.go:108
+#: tui/labels.go:113
 msgid "Repeat"
 msgstr "Wiederholen"
 
-#: tui/labels.go:109
+#: tui/labels.go:114
 msgid "The entries do not match."
 msgstr "Die Eingaben stimmen nicht überein."
 
-#: tui/labels.go:111
+#: tui/labels.go:116
 msgid "Ready to install"
 msgstr "Bereit zur Installation"
 
-#: tui/labels.go:112
+#: tui/labels.go:117
 msgid "Start installation"
 msgstr "Installation starten"
 
-#: tui/labels.go:117
+#: tui/labels.go:122
 msgid "Ready to start"
 msgstr "Bereit zum Start"
 
-#: tui/labels.go:118
+#: tui/labels.go:123
 #, c-format
 msgid "Start %s"
 msgstr "%s starten"
 
-#: tui/labels.go:121
+#: tui/labels.go:126
 #, c-format
 msgid "%s · %s"
 msgstr "%s · %s"
 
-#: tui/labels.go:124
+#: tui/labels.go:129
 #, c-format
 msgid "%s complete in %s"
 msgstr "%s abgeschlossen in %s"
 
-#: tui/labels.go:130
+#: tui/labels.go:135
 msgid "Installing"
 msgstr "Installation läuft"
 
-#: tui/labels.go:132
+#: tui/labels.go:137
 #, c-format
 msgid "Installing for %s"
 msgstr "Installation läuft seit %s"
 
-#: tui/labels.go:135
+#: tui/labels.go:140
 #, c-format
 msgid "Installation complete in %s"
 msgstr "Installation abgeschlossen in %s"
 
-#: tui/labels.go:137
+#: tui/labels.go:142
 msgid "Installation failed"
 msgstr "Installation fehlgeschlagen"
 
-#: tui/labels.go:139
+#: tui/labels.go:144
 #, c-format
 msgid "The full log is in %s."
 msgstr "Das vollständige Protokoll steht in %s."
 
-#: tui/labels.go:146
+#: tui/labels.go:151
 #, c-format
 msgid "%s: there is nothing to choose from."
 msgstr "%s: Es gibt nichts zur Auswahl."
 
-#: tui/labels.go:149
+#: tui/labels.go:154
 msgid "Cannot continue"
 msgstr "Installation nicht möglich"
 
-#: tui/labels.go:155
+#: tui/labels.go:160
 #, c-format
 msgid "%s has no answer, and there is nobody to ask."
 msgstr "%s ist unbeantwortet, und es ist niemand da, den man fragen könnte."
 
-#: tui/labels.go:160
+#: tui/labels.go:165
 msgid "Leave"
 msgstr "Beenden"
 
-#: tui/labels.go:165
+#: tui/labels.go:170
 msgid "Whatever was running is still running behind this page. Anything chosen here stops it."
 msgstr "Was lief, läuft hinter dieser Seite weiter. Jede Auswahl hier bricht es ab."
 
-#: tui/labels.go:168
+#: tui/labels.go:173
 msgid "Restart"
 msgstr "Neu starten"
 
-#: tui/labels.go:169
+#: tui/labels.go:174
 msgid "Close this machine down and start it again."
 msgstr "Den Rechner herunterfahren und neu starten."
 
-#: tui/labels.go:170
+#: tui/labels.go:175
 msgid "Shut down"
 msgstr "Herunterfahren"
 
-#: tui/labels.go:171
+#: tui/labels.go:176
 msgid "Exit to the console"
 msgstr "Zurück zur Konsole"
 
-#: tui/labels.go:172
+#: tui/labels.go:177
 msgid "Switch this machine off."
 msgstr "Den Rechner ausschalten."
 
-#: tui/labels.go:173
+#: tui/labels.go:178
 msgid "Restarting …"
 msgstr "Neustart läuft …"
 
-#: tui/labels.go:174
+#: tui/labels.go:179
 msgid "Shutting down …"
 msgstr "Wird heruntergefahren …"
 
-#: tui/labels.go:175
+#: tui/labels.go:180
 msgid "This machine did not do as it was told."
 msgstr "Der Rechner hat den Befehl nicht ausgeführt."
 

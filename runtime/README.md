@@ -283,12 +283,13 @@ The preflight is a wall: what it writes to stderr is what the user reads.
 
 `restart.sh` and `shutdown.sh` are what make leaving the interface a question
 rather than an exit. A module with them is saying the machine booted to run it,
-so every way out (ctrl+c, esc during a run, the row that says quit, backing off
-the first page, the end of an installation) lands on a page offering them. That
-page is drawn *over* whatever was happening: a run carries on behind it and the
-header keeps counting, and only choosing one of its rows stops anything. A
-module with neither exits the way any program does, which is right for something
-somebody started from a shell they are still sitting in.
+so every way out (q or ctrl+c from wherever they are pressed, esc during a run,
+backing off the first page, the end of an installation) lands on a page offering
+them. That page is drawn *over* whatever was happening: a run carries on behind
+it and the header keeps counting, esc puts it away again and leaves what was
+underneath exactly as it was, and only choosing one of its rows stops anything.
+A module with neither exits the way any program does, which is right for
+something somebody started from a shell they are still sitting in.
 
 **`console:`** is the third way out, and the only one that runs nothing: the
 program stops and the machine keeps running. Declare it where there is something
@@ -462,6 +463,14 @@ In this order, and each page shown only if there is something on it:
 - **The way out**, where the module declared one: a restart, a shutdown, and,
   where the module named a console to stop into, closing the interface with the
   machine left running. Opening it never stops a run; choosing a row does.
+
+Four keys, one meaning each, on every page of every module: **enter** says yes,
+**esc** and **backspace** say back, and **q** and **ctrl+c** ask to leave.
+Backspace deletes a character while there is one to delete, and a narrowing box
+closes before the page holding it does. Backing off the last page there is is
+asking to leave, and so is esc on a run — the work, and the questions it stops
+for, have nothing behind them. Arrows move a cursor and nothing else, because an
+arrow is also what a mouse wheel sends.
 
 Every answer is written to the answer file the moment it is given, so an
 interruption costs nothing.

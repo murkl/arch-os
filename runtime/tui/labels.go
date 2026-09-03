@@ -31,6 +31,11 @@ func labelHintClose() string    { return say("⏎ close") }
 func labelHintQuit() string     { return say("⏎ quit") }
 func labelHintStart() string    { return say("⏎ start · esc back") }
 
+// labelHintAnswer is the hint for a question a run stopped to ask. It is the
+// one list in the program with nothing behind it — the task waiting on the
+// answer has already started — so esc there says what q says on the menu.
+func labelHintAnswer() string { return say("↑↓ move · ⏎ confirm · esc quit") }
+
 // The network screen: checking for internet, and — where the module describes
 // how — joining a wireless one.
 func labelNetwork() string         { return say("Wireless network") }
@@ -49,7 +54,7 @@ func labelContinueAnyway() string    { return say("Continue anyway") }
 func labelHintNetworkChoosing() string {
 	return say("↑↓ move · ⏎ join · r rescan · esc skip")
 }
-func labelHintNetworkOffline() string { return say("⏎ continue · r retry") }
+func labelHintNetworkOffline() string { return say("⏎ continue · r retry · esc back") }
 func labelNetworkOfflineHelp() string {
 	return say("The installation downloads everything it installs, so it will not get far without one. Plug in a cable, or press r to look for a network again.")
 }

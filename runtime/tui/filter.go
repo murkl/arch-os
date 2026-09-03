@@ -52,6 +52,11 @@ func newFilter(blind bool) *filter {
 // query is what has been typed so far.
 func (f *filter) query() string { return f.input.Value() }
 
+// active reports whether the box is open and taking what is typed. Asked by
+// the page holding it, which has to say whether a letter is a character or a
+// key of its own — see takesText.
+func (f *filter) active() bool { return f != nil && f.open }
+
 // Update offers a key to the box and reports whether it took it. What a list
 // owns everywhere else it still owns here — the arrows move the cursor, enter
 // chooses — and every other key is a character being typed, the same split the

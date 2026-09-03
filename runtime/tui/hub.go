@@ -69,8 +69,11 @@ func (h *hub) Update(msg tea.Msg) (screen, tea.Cmd) {
 		case keySettings:
 			return h, push(newSettings(h.app))
 		}
-	case key.String() == "q", cancels(key):
-		return h, leave()
+	case backs(key):
+		// Nothing is behind the hub: the run of questions that led here is
+		// spent, and the model turns backing off the last page there is into
+		// the question of how to leave.
+		return h, pop()
 	}
 	return h, nil
 }

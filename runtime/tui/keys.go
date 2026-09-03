@@ -13,14 +13,17 @@ import tea "github.com/charmbracelet/bubbletea"
 // just ran.
 //
 // So: arrows move a cursor and nothing else. enter says yes, esc and backspace
-// say no, and ctrl+c leaves — that is the whole vocabulary of an answer.
+// say back, and q and ctrl+c ask to leave — that is the whole vocabulary of an
+// answer, and it means the same thing on every page of every module.
+//
+// The two that leave are taken by the model before any screen sees them, so
+// no page can disagree about how this program is left, and every page can be
+// left the same way. See Model.wayOut.
 
 // confirms is the one key that means yes.
 func confirms(k tea.KeyMsg) bool { return k.String() == "enter" }
 
-// cancels is the one key that always means no. ctrl+c is not here: the model
-// takes it before any screen sees it, so leaving the program works from
-// everywhere.
+// cancels is the one key that always means back.
 func cancels(k tea.KeyMsg) bool { return k.String() == "esc" }
 
 // erases is the second way to say back, and the only key here that means two
@@ -36,6 +39,15 @@ func backs(k tea.KeyMsg) bool { return cancels(k) || erases(k) }
 // answers is yes or back. Used by the pages that are only there to be read and
 // closed, where the two mean the same thing.
 func answers(k tea.KeyMsg) bool { return confirms(k) || backs(k) }
+
+// quits asks to leave the program. A letter, so it is only ever read as one
+// where nothing is being typed — see takesText.
+func quits(k tea.KeyMsg) bool { return k.String() == "q" }
+
+// aborts asks the same thing from everywhere at all: out of a text box, out of
+// a run that answers no other key, out of the logo. It is the one way out that
+// nothing can be holding.
+func aborts(k tea.KeyMsg) bool { return k.String() == "ctrl+c" }
 
 // moves reports the keys that move a list's cursor and nothing else. This is the
 // line a page with a text box on it draws: these go to the list, everything else

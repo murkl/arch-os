@@ -155,6 +155,10 @@ func (s *settingsScreen) languageName() string {
 	return code
 }
 
+// takesText: the narrowing box, while it is open. A letter is a character
+// being typed into it rather than a key of this page's.
+func (s *settingsScreen) takesText() bool { return s.filter.active() }
+
 func (s *settingsScreen) Title() string { return labelSettings() }
 func (s *settingsScreen) Hint() string  { return filterHint(labelHintList(), s.filter) }
 
@@ -165,14 +169,14 @@ func (s *settingsScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 	}
 	// The box gets the key before the page does: / opens it, typing narrows,
 	// esc closes it — which is why esc only leaves the page once there is no
-	// box left to close, and why q is a character while one is open.
+	// box left to close.
 	if took, cmd := s.filter.Update(key); took {
 		s.layout()
 		return s, cmd
 	}
 	s.picker.Update(msg)
 	switch {
-	case backs(key), key.String() == "q":
+	case backs(key):
 		return s, s.leave()
 	case confirms(key):
 		return s, s.open(s.picker.selected())

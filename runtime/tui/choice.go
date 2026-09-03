@@ -44,6 +44,9 @@ func (s *choiceScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 	if !ok {
 		return s, nil
 	}
+	if backs(key) {
+		return s, pop()
+	}
 	if !confirms(key) {
 		return s, nil
 	}

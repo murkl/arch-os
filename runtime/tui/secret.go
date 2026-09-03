@@ -48,6 +48,10 @@ func (s *secretScreen) box() {
 
 func (s *secretScreen) Init() tea.Cmd { return textinput.Blink }
 
+// takesText: the whole page is a box being typed into, and a password is
+// allowed every letter there is — q included.
+func (s *secretScreen) takesText() bool { return true }
+
 func (s *secretScreen) Title() string { return s.v.Label() }
 func (s *secretScreen) Hint() string  { return labelHintInput() }
 

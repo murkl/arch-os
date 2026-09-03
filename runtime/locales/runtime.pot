@@ -92,7 +92,7 @@ msgstr ""
 msgid "Exit code"
 msgstr ""
 
-#: internal/exec/failure.go:57 tui/labels.go:119
+#: internal/exec/failure.go:57 tui/labels.go:124
 #, c-format
 msgid "%s failed"
 msgstr ""
@@ -142,7 +142,7 @@ msgstr ""
 msgid "Answers given to %s. Edit by hand if you like."
 msgstr ""
 
-#: internal/store/conf.go:79 internal/store/language.go:58 tui/labels.go:82
+#: internal/store/conf.go:79 internal/store/language.go:58 tui/labels.go:87
 msgid "Interface language"
 msgstr ""
 
@@ -154,11 +154,11 @@ msgstr ""
 msgid "asked just before the run"
 msgstr ""
 
-#: internal/store/store.go:241 tui/labels.go:179
+#: internal/store/store.go:241 tui/labels.go:184
 msgid "Yes"
 msgstr ""
 
-#: internal/store/store.go:243 tui/labels.go:180
+#: internal/store/store.go:243 tui/labels.go:185
 msgid "No"
 msgstr ""
 
@@ -278,225 +278,229 @@ msgstr ""
 msgid "⏎ start · esc back"
 msgstr ""
 
-#: tui/labels.go:36
+#: tui/labels.go:37
+msgid "↑↓ move · ⏎ confirm · esc quit"
+msgstr ""
+
+#: tui/labels.go:41
 msgid "Wireless network"
 msgstr ""
 
-#: tui/labels.go:37
+#: tui/labels.go:42
 msgid "Join a wireless network to continue."
 msgstr ""
 
-#: tui/labels.go:38
+#: tui/labels.go:43
 msgid "Checking the internet connection …"
 msgstr ""
 
-#: tui/labels.go:39
+#: tui/labels.go:44
 msgid "Looking for wireless networks …"
 msgstr ""
 
 #. %s is the name of the wireless network being joined.
-#: tui/labels.go:43
+#: tui/labels.go:48
 #, c-format
 msgid "Joining %s …"
 msgstr ""
 
-#: tui/labels.go:45
+#: tui/labels.go:50
 msgid "There is no internet connection."
 msgstr ""
 
-#: tui/labels.go:46
+#: tui/labels.go:51
 msgid "No wireless networks in range."
 msgstr ""
 
-#: tui/labels.go:47
+#: tui/labels.go:52
 msgid "Passphrase"
 msgstr ""
 
-#: tui/labels.go:48
+#: tui/labels.go:53
 msgid "Continue anyway"
 msgstr ""
 
-#: tui/labels.go:50
+#: tui/labels.go:55
 msgid "↑↓ move · ⏎ join · r rescan · esc skip"
 msgstr ""
 
-#: tui/labels.go:52
-msgid "⏎ continue · r retry"
+#: tui/labels.go:57
+msgid "⏎ continue · r retry · esc back"
 msgstr ""
 
-#: tui/labels.go:54
+#: tui/labels.go:59
 msgid "The installation downloads everything it installs, so it will not get far without one. Plug in a cable, or press r to look for a network again."
 msgstr ""
 
-#: tui/labels.go:57
+#: tui/labels.go:62
 msgid "The installation downloads everything it installs, so it will not get far without one. Plug in a cable, or connect to a wireless network before continuing."
 msgstr ""
 
-#: tui/labels.go:62
+#: tui/labels.go:67
 msgid "/ filter"
 msgstr ""
 
-#: tui/labels.go:64
+#: tui/labels.go:69
 msgid "type to filter · ↑↓ move · ⏎ select · esc close"
 msgstr ""
 
-#: tui/labels.go:70
+#: tui/labels.go:75
 msgid "type to filter · ↑↓ move · ⏎ select · esc back"
 msgstr ""
 
-#: tui/labels.go:73
+#: tui/labels.go:78
 msgid "Filter …"
 msgstr ""
 
-#: tui/labels.go:74
+#: tui/labels.go:79
 msgid "No matches"
 msgstr ""
 
-#: tui/labels.go:80
+#: tui/labels.go:85
 msgid "Start"
 msgstr ""
 
 #. %s is the name of the product being read, e.g. "Arch OS".
-#: tui/labels.go:85
+#: tui/labels.go:90
 #, c-format
 msgid "Choose the language for %s."
 msgstr ""
 
-#: tui/labels.go:90
+#: tui/labels.go:95
 msgid "What to do"
 msgstr ""
 
-#: tui/labels.go:96
+#: tui/labels.go:101
 #, c-format
 msgid "%d of %d"
 msgstr ""
 
-#: tui/labels.go:98
+#: tui/labels.go:103
 msgid "Install"
 msgstr ""
 
-#: tui/labels.go:99
+#: tui/labels.go:104
 msgid "Start the installation with the answers below."
 msgstr ""
 
-#: tui/labels.go:101
+#: tui/labels.go:106
 msgid "Settings"
 msgstr ""
 
 #. %s is the name of the module whose values these are.
-#: tui/labels.go:105
+#: tui/labels.go:110
 #, c-format
 msgid "Every value %s will use. Choose one to change it."
 msgstr ""
 
-#: tui/labels.go:108
+#: tui/labels.go:113
 msgid "Repeat"
 msgstr ""
 
-#: tui/labels.go:109
+#: tui/labels.go:114
 msgid "The entries do not match."
 msgstr ""
 
-#: tui/labels.go:111
+#: tui/labels.go:116
 msgid "Ready to install"
 msgstr ""
 
-#: tui/labels.go:112
+#: tui/labels.go:117
 msgid "Start installation"
 msgstr ""
 
-#: tui/labels.go:117
+#: tui/labels.go:122
 msgid "Ready to start"
 msgstr ""
 
-#: tui/labels.go:118
+#: tui/labels.go:123
 #, c-format
 msgid "Start %s"
 msgstr ""
 
-#: tui/labels.go:121
+#: tui/labels.go:126
 #, c-format
 msgid "%s · %s"
 msgstr ""
 
-#: tui/labels.go:124
+#: tui/labels.go:129
 #, c-format
 msgid "%s complete in %s"
 msgstr ""
 
-#: tui/labels.go:130
+#: tui/labels.go:135
 msgid "Installing"
 msgstr ""
 
-#: tui/labels.go:132
+#: tui/labels.go:137
 #, c-format
 msgid "Installing for %s"
 msgstr ""
 
-#: tui/labels.go:135
+#: tui/labels.go:140
 #, c-format
 msgid "Installation complete in %s"
 msgstr ""
 
-#: tui/labels.go:137
+#: tui/labels.go:142
 msgid "Installation failed"
 msgstr ""
 
-#: tui/labels.go:139
+#: tui/labels.go:144
 #, c-format
 msgid "The full log is in %s."
 msgstr ""
 
-#: tui/labels.go:146
+#: tui/labels.go:151
 #, c-format
 msgid "%s: there is nothing to choose from."
 msgstr ""
 
-#: tui/labels.go:149
+#: tui/labels.go:154
 msgid "Cannot continue"
 msgstr ""
 
-#: tui/labels.go:155
+#: tui/labels.go:160
 #, c-format
 msgid "%s has no answer, and there is nobody to ask."
 msgstr ""
 
-#: tui/labels.go:160
+#: tui/labels.go:165
 msgid "Leave"
 msgstr ""
 
-#: tui/labels.go:165
+#: tui/labels.go:170
 msgid "Whatever was running is still running behind this page. Anything chosen here stops it."
 msgstr ""
 
-#: tui/labels.go:168
+#: tui/labels.go:173
 msgid "Restart"
 msgstr ""
 
-#: tui/labels.go:169
+#: tui/labels.go:174
 msgid "Close this machine down and start it again."
 msgstr ""
 
-#: tui/labels.go:170
+#: tui/labels.go:175
 msgid "Shut down"
 msgstr ""
 
-#: tui/labels.go:171
+#: tui/labels.go:176
 msgid "Exit to the console"
 msgstr ""
 
-#: tui/labels.go:172
+#: tui/labels.go:177
 msgid "Switch this machine off."
 msgstr ""
 
-#: tui/labels.go:173
+#: tui/labels.go:178
 msgid "Restarting …"
 msgstr ""
 
-#: tui/labels.go:174
+#: tui/labels.go:179
 msgid "Shutting down …"
 msgstr ""
 
-#: tui/labels.go:175
+#: tui/labels.go:180
 msgid "This machine did not do as it was told."
 msgstr ""

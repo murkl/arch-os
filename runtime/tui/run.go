@@ -133,6 +133,18 @@ func (s *runScreen) working() bool {
 	return s.asking == nil
 }
 
+// holds: nothing in a run has a page behind it. The work cannot be stepped out
+// of, and neither can a question it stopped to ask — the task that needs the
+// answer has already started. So esc and backspace mean here what ctrl+c means
+// everywhere, and the model turns them into the way out. What is left of a run
+// once it is over is a page like any other, and is closed like one.
+func (s *runScreen) holds() bool { return !s.done && s.told == nil }
+
+// takesText: the narrowing box over a question the run stopped for. It has the
+// first claim on esc — the box is closed before the question is left — and
+// while it is open a letter is a character being typed.
+func (s *runScreen) takesText() bool { return s.ask != nil && s.ask.filter.active() }
+
 // status is the counter beside it: which step of how many. A run stopped on
 // something it has to report is not counting: what that page says is that a
 // thing is finished, and a number beside it saying how much is left would take
@@ -149,7 +161,7 @@ func (s *runScreen) Hint() string {
 	case s.ask != nil:
 		return s.ask.Hint()
 	case s.asking != nil:
-		return labelHintChoose()
+		return labelHintAnswer()
 	case !s.settled:
 		return labelHintRunning()
 	case s.told != nil:
@@ -384,18 +396,13 @@ func (s *runScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 		return s, nil
 
 	case tea.KeyMsg:
-		// esc asks to leave, the way ctrl+c does everywhere. It is a question
-		// rather than an answer: the page it opens is drawn over this one and
-		// the run carries on behind it, so nothing here is interrupted by
-		// asking — see leave.go.
-		if cancels(msg) && s.working() {
-			return s, leave()
-		}
+		// The keys that ask to leave never reach this page — the model takes
+		// them, and asking is not stopping: the page it opens is drawn over
+		// this one and the run carries on behind it. See holds and leave.go.
 		if !s.settled {
 			// Killing a half-finished package transaction is worse than waiting
-			// for it, so nothing else means anything while a task runs. The two
-			// keys that ask to leave are the exception, and both of them have to
-			// be meant.
+			// for it, so nothing else means anything while a task runs, and
+			// nothing at all for a moment after a question or a result appears.
 			return s, nil
 		}
 		if s.ask != nil {

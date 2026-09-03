@@ -51,7 +51,8 @@ func newNetwork(a *app, r *wlan.Radio) *networkScreen {
 func (s *networkScreen) Title() string { return labelNetwork() }
 
 // working is what puts the turning mark in the header while a check, a scan
-// or a join is in flight.
+// or a join is in flight. Nothing is answerable while one is: the keys that
+// leave are the model's, and this page has nothing else to say.
 func (s *networkScreen) working() bool {
 	switch s.step {
 	case netChecking, netScanning, netJoining:
@@ -59,6 +60,10 @@ func (s *networkScreen) working() bool {
 	}
 	return false
 }
+
+// takesText: the passphrase, which is a box like any other and may hold any
+// letter there is.
+func (s *networkScreen) takesText() bool { return s.step == netPassphrase }
 
 type (
 	netOnlineMsg  struct{ ok bool }
@@ -142,7 +147,10 @@ func (s *networkScreen) key(k tea.KeyMsg) tea.Cmd {
 			styleInput(&s.input)
 			s.input.Focus()
 			return textinput.Blink
-		case cancels(k):
+		case backs(k):
+			// One step back rather than out of the page: what is behind the
+			// list is this screen saying there is no connection, which is
+			// where carrying on without one is offered.
 			s.step = netOffline
 			return nil
 		case k.String() == "r":
@@ -157,7 +165,9 @@ func (s *networkScreen) key(k tea.KeyMsg) tea.Cmd {
 			s.step, s.busy = netJoining, labelNetworkJoining(s.ssid)
 			r, dev, ssid, pass := s.radio, s.dev, s.ssid, s.input.Value()
 			return func() tea.Msg { return netJoinedMsg{err: r.Join(dev, ssid, pass)} }
-		case cancels(k):
+		// Backspace goes back as well, once there is nothing left of the
+		// passphrase for it to delete.
+		case cancels(k), erases(k) && s.input.Value() == "":
 			s.step, s.err = netChoosing, ""
 			return nil
 		}
@@ -173,6 +183,9 @@ func (s *networkScreen) key(k tea.KeyMsg) tea.Cmd {
 			return reset(s.app.afterNetwork())
 		case k.String() == "r":
 			return s.Init()
+		case backs(k):
+			// Out of the page, to whatever the opening asked before it.
+			return pop()
 		}
 	}
 	return nil

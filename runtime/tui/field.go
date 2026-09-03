@@ -91,6 +91,11 @@ func (s *fieldScreen) Title() string { return s.v.Label() }
 // with its answer in it and something visibly happening about it.
 func (s *fieldScreen) working() bool { return s.busy }
 
+// takesText: the text box, and the narrowing box over a list of answers.
+// Neither while the answer already given is being made good on, when the page
+// is answering nothing at all.
+func (s *fieldScreen) takesText() bool { return !s.busy && (s.typing || s.filter.active()) }
+
 func (s *fieldScreen) Init() tea.Cmd {
 	// The answers can come from a command and the suggestion from another, and
 	// either can take a moment — a timezone guessed over the network does. Both

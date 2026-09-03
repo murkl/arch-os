@@ -45,6 +45,16 @@ type (
 	// the trail and is still not the whole of where you are: the opening is a
 	// row of pages one after another, and each of them is somewhere inside it.
 	crumbHeader interface{ crumbHead() string }
+
+	// A screen with a text box on it: a value being typed, a narrowing box
+	// left open. A letter is a character there rather than a command, which is
+	// what keeps q from leaving the program in the middle of a password.
+	texter interface{ takesText() bool }
+
+	// A screen there is no going back from, beyond whatever is running on it.
+	// A run is still a run while it stops to ask something, and the work the
+	// answer belongs to has already started.
+	holder interface{ holds() bool }
 )
 
 // opening is embedded by the pages in front of the questions proper: the
@@ -63,6 +73,25 @@ func (opening) crumbHead() string { return labelOpening() }
 func working(s screen) bool {
 	w, ok := s.(worker)
 	return ok && w.working()
+}
+
+// takesText reports whether s is holding a text box a keystroke could be meant
+// for, defaulting to no: most screens are a list, where every letter is free.
+func takesText(s screen) bool {
+	t, ok := s.(texter)
+	return ok && t.takesText()
+}
+
+// held reports whether there is no going back from s: something is running on
+// it, or it says so itself. The two are the same thing to somebody pressing
+// esc — there is no page behind this one — and both answer with the way out
+// rather than with a page that is not there.
+func held(s screen) bool {
+	if working(s) {
+		return true
+	}
+	h, ok := s.(holder)
+	return ok && h.holds()
 }
 
 // crumbFrom is where the breadcrumb starts: the last screen on the stack that

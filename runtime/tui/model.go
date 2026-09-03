@@ -130,23 +130,24 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.turn()
 
 	case tea.KeyMsg:
-		// ctrl+c always asks to leave, whatever a screen would otherwise do
-		// with it. It is the one way out that works from everywhere, including
-		// out of a run that answers no other key.
-		if msg.String() == "ctrl+c" {
-			return m, m.exit()
-		}
 		// The splash answers to one thing only, and swallows the key that says
 		// it — otherwise dismissing the logo would also press whatever the page
 		// underneath has under the cursor. Arrows are excepted: they are what
 		// this terminal makes of a mouse wheel, and are nobody saying anything.
+		// So is ctrl+c: it means leave wherever it is pressed, and the logo
+		// goes out of its way rather than standing in front of the answer.
 		if m.splash != nil {
 			if !scrolls(msg) {
 				m.splash.skip()
 			}
-			return m, nil
+			if !aborts(msg) {
+				return m, nil
+			}
 		}
 		m.status = "" // any keystroke clears a flash
+		if m.wayOut(msg) {
+			return m, m.exit()
+		}
 
 	case pushScreenMsg:
 		m.stack = append(m.stack, msg.s)
@@ -201,6 +202,26 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	next, cmd := m.top().Update(msg)
 	m.stack[len(m.stack)-1] = next
 	return m, tea.Batch(cmd, m.turn())
+}
+
+// wayOut reports whether a keystroke is somebody asking to leave the program
+// rather than answering the page in front of them. It is decided here, once,
+// so that every page of every module answers these keys alike and no page has
+// to remember to.
+//
+// ctrl+c always is. q is, wherever a letter is not a character being typed.
+// And so are esc and backspace on a page there is nothing behind — a run, and
+// the questions it stops to ask — where the way out is what going back means.
+// Everywhere else those two are the page's own, and mean one step back.
+func (m *Model) wayOut(k tea.KeyMsg) bool {
+	if aborts(k) {
+		return true
+	}
+	front := m.front()
+	if takesText(front) {
+		return false
+	}
+	return quits(k) || backs(k) && held(front)
 }
 
 // front is the page in front of the user: the way out while it is being asked,
@@ -270,9 +291,8 @@ func (m *Model) View() string {
 	})
 }
 
-// exit is what every way out of the interface goes through — ctrl+c, esc out of
-// a run, the row that says quit, backing off the last page, the end of an
-// installation.
+// exit is what every way out of the interface goes through — ctrl+c, q, esc out
+// of a run, backing off the last page, the end of an installation.
 //
 // Where the module said how this machine is put down, that is a question rather
 // than an exit: the machine booted to run this and there is nothing behind it to
