@@ -9,10 +9,10 @@ needs: [copy-config]
 confirm: |
   Put these answers online now?
 
-  Every answer of this installation goes to paste.rs, and its address comes back as
-  a code to scan — enough to set another machine up exactly like this one. Anybody
-  holding that address can read them. The password is not among them and was never
-  written down anywhere.
+  Every answer from this installation goes to paste.rs, and its address comes
+  back as a code to scan — enough to set up another machine exactly like this
+  one. Anyone holding that address can read them. The password is not among
+  them and was never written down anywhere.
 default: no
 
 # The address, once there is one: as a code to scan, and as itself under it.
@@ -20,5 +20,5 @@ shows: ARCH_OS_CONFIG_URL
 report: |
   Configuration shared
 
-  Scan the code, or type the word at the end of the address into the paste.rs
+  Scan the code, or type the word at the end of the address into the online
   starting point of another installation.

@@ -40,7 +40,7 @@ msgstr "Mit dem Befehl recovery startest du sie wieder."
 msgid ""
 "The system on {{ARCH_OS_RECOVERY_DISK}} will be unlocked and mounted at /mnt.\n"
 "\n"
-"Nothing on it is changed by that. Going back to a snapshot, rebuilding the boot files and opening a shell are each offered on their own once it is open."
+"This does not change anything on it. Once it is open, you can roll back to a snapshot, rebuild the boot files, or open a shell — each offered separately."
 msgstr ""
 "Das System auf {{ARCH_OS_RECOVERY_DISK}} wird entsperrt und unter /mnt eingehängt.\n"
 "\n"
@@ -53,7 +53,7 @@ msgstr "Konsolentastatur"
 
 #. ARCH_OS_RECOVERY_KEYMAP: what it means
 #: recovery.yaml
-msgid "The keyboard you are typing on. It is loaded here and now, and it opens on the layout this live image was started with."
+msgid "The keyboard you are typing on right now. It is loaded immediately, and opens on the layout this live image was started with."
 msgstr "Die Tastatur, auf der du tippst. Sie wird hier und jetzt geladen und steht anfangs auf der Belegung, mit der dieses Live-Abbild gestartet wurde."
 
 #. ARCH_OS_RECOVERY_KEYMAP: the heading its row sits under
@@ -68,7 +68,7 @@ msgstr "Datenträger"
 
 #. ARCH_OS_RECOVERY_DISK: what it means
 #: recovery.yaml
-msgid "The disk holding the Arch OS installation to repair. Opening it changes nothing on it."
+msgid "The disk holding the Arch OS installation to repair. Opening it does not change anything on it."
 msgstr "Der Datenträger mit der Arch-OS-Installation, die repariert werden soll. Ihn zu öffnen ändert nichts daran."
 
 #. ARCH_OS_RECOVERY_DISK: the heading its row sits under
@@ -88,7 +88,7 @@ msgstr "Verschlüsselung"
 
 #. ARCH_OS_RECOVERY_ENCRYPTION_ENABLED: what it means
 #: recovery.yaml
-msgid "Whether that disk is encrypted with LUKS. This is read off the disk, which can be done without the password — change it only if the answer is wrong."
+msgid "Whether that disk is encrypted with LUKS. This is read directly off the disk, without needing the password — change it only if the answer is wrong."
 msgstr "Ob dieser Datenträger mit LUKS verschlüsselt ist. Das wird vom Datenträger selbst gelesen, wofür kein Passwort nötig ist — ändere es nur, wenn die Antwort nicht stimmt."
 
 #. ARCH_OS_RECOVERY_PASSWORD: the question
@@ -98,7 +98,7 @@ msgstr "Verschlüsselungspasswort"
 
 #. ARCH_OS_RECOVERY_PASSWORD: what it means
 #: recovery.yaml
-msgid "The password that unlocks that disk. It is asked for immediately before the recovery starts and is never written to a file."
+msgid "The password that unlocks that disk. It is asked for right before the recovery starts and is never written to a file."
 msgstr "Das Passwort, das diesen Datenträger entsperrt. Es wird unmittelbar vor dem Start der Wiederherstellung abgefragt und nie in eine Datei geschrieben."
 
 #. ARCH_OS_RECOVERY_FILESYSTEM: the question
@@ -108,7 +108,7 @@ msgstr "Dateisystem"
 
 #. ARCH_OS_RECOVERY_FILESYSTEM: what it means
 #: recovery.yaml
-msgid "The file system of the system being repaired. btrfs can be rolled back to a snapshot; ext4 can be opened and worked in by hand. On an encrypted disk this cannot be read in advance, so check it."
+msgid "The file system of the system being repaired. btrfs can be rolled back to a snapshot; ext4 can be opened and worked on by hand. On an encrypted disk this cannot be read in advance, so please check it."
 msgstr "Das Dateisystem des Systems, das repariert wird. btrfs lässt sich auf einen Schnappschuss zurücksetzen, ext4 nur öffnen und von Hand bearbeiten. Auf einem verschlüsselten Datenträger lässt sich das vorher nicht auslesen — prüfe es also."
 
 #. ARCH_OS_RECOVERY_SNAPSHOT: the question
@@ -118,7 +118,7 @@ msgstr "Schnappschuss"
 
 #. ARCH_OS_RECOVERY_SNAPSHOT: what it means
 #: recovery.yaml
-msgid "The snapshot to put in place of the root subvolume. Newest first, with the date it was taken and what took it."
+msgid "The snapshot to put in place of the root subvolume. Newest first, with the date it was taken and what created it."
 msgstr "Der Schnappschuss, der an die Stelle des Wurzel-Subvolumes tritt. Der neueste zuerst, mit dem Zeitpunkt der Aufnahme und dem Anlass."
 
 #. the step, as the run lists it
@@ -152,7 +152,7 @@ msgstr "Startdateien neu bauen"
 msgid ""
 "Rebuild the kernel images and the initial ram disks?\n"
 "\n"
-"Needed when the rollback went back past a kernel update: the modules in the restored system and the images in /boot are then two different kernels, and the machine comes up without a single module. Everything is taken from the package cache, so this needs no network."
+"Needed when the rollback goes back past a kernel update: the modules in the restored system and the images in /boot would then belong to different kernels, and the machine would come up without a single module. Everything is taken from the package cache, so this needs no network."
 msgstr ""
 "Die Kernel-Abbilder und die Initial-RAM-Disks neu bauen?\n"
 "\n"
@@ -168,7 +168,7 @@ msgstr "Eine Shell im System öffnen"
 msgid ""
 "Open a shell inside the system on {{ARCH_OS_RECOVERY_DISK}}?\n"
 "\n"
-"Everything is mounted, so this is where anything the recovery does not do by itself gets fixed by hand — a package reinstalled, a config file put back. Leave it again with `exit`."
+"Everything is mounted, so this is where anything the recovery does not handle on its own can be fixed by hand — a package reinstalled, a config file put back. Leave the shell with `exit`."
 msgstr ""
 "Eine Shell in dem System auf {{ARCH_OS_RECOVERY_DISK}} öffnen?\n"
 "\n"

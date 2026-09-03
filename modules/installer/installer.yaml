@@ -28,8 +28,8 @@ console: Type installer at the prompt to start it again.
 confirm: |
   Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.
 
-  Everything on that disk will be erased. There is no undo, and nothing before
-  this point has changed anything.
+  Everything on that disk will be erased. This cannot be undone, but nothing
+  on your system has changed until now.
 
 # The phases the work happens in, top to bottom. Every task names one, which is
 # what puts it in the run and where; tasks sharing a stage run in the order
@@ -76,7 +76,7 @@ presets:
 
       - id: minimal
         title: Minimal
-        description: Arch Linux on the console only — no desktop, no extras, nothing that was not asked for.
+        description: Arch Linux on the console only — no desktop, no extras, nothing beyond what you choose.
         values:
           ARCH_OS_DESKTOP: none
           ARCH_OS_DESKTOP_EXTRAS_ENABLED: false
@@ -98,8 +98,8 @@ presets:
       # shared at the end of an earlier installation. A starting point like the
       # two above, so a row here rather than a page of its own.
       - id: shared
-        title: paste.rs - Online
-        description: Take every answer from a configuration that was shared at the end of an earlier installation.
+        title: Online (paste.rs)
+        description: Load every answer from a configuration shared at the end of an earlier installation.
         asks: ARCH_OS_CONFIG_SOURCE
         apply: ./tasks/share-config/import.sh
 
@@ -151,10 +151,10 @@ variables:
     title: Language and region
     description: |
       The language and country this system is set up for, as a locale code —
-      de_DE is German as it is written in Germany. It settles the system language
-      and the formats for dates, numbers and currency, and — left on auto — the
-      keyboard, the console font, the time zone and the mirror country follow
-      from it. English is always installed alongside it as a fallback.
+      for example, de_DE is German as used in Germany. This sets the system
+      language and the format for dates, numbers and currency. Left on auto, it
+      also decides the keyboard layout, console font, time zone and mirror
+      country. English is always installed alongside it as a fallback.
     group: Region
     required: true
     apply: load_console_keyboard
@@ -169,9 +169,9 @@ variables:
   - name: ARCH_OS_VCONSOLE_KEYMAP
     title: Console keyboard
     description: |
-      The keyboard you are typing on. It is loaded here and now, and it is what
-      the new system uses on the text console. auto is the layout the system
-      language is typed on, which is only settled further down.
+      The keyboard you are typing on right now. It is loaded immediately, and
+      used by the new system on the text console. auto uses the layout for the
+      system language chosen further down.
     group: Region
     required: true
     first: true
@@ -186,8 +186,8 @@ variables:
   - name: ARCH_OS_VCONSOLE_FONT
     title: Console font
     description: |
-      The font of the text console. auto is the one that can draw the chosen
-      language; a larger one helps on a high resolution screen.
+      The font used on the text console. auto picks one that can display the
+      chosen language; a larger font helps on a high-resolution screen.
     group: Region
     default: auto
     required: true
@@ -201,9 +201,9 @@ variables:
   - name: ARCH_OS_TIMEZONE
     title: Time zone
     description: |
-      Where this machine is, so the clock is right. The list opens on the zone
-      the chosen country keeps — which is the only answer in a country that keeps
-      one, and the one most of it lives in where there are several.
+      Where this machine is located, so the clock is set correctly. The list
+      opens on the time zone for the chosen country — the only one if the
+      country has just one, or its most populous one if it has several.
     group: Region
     required: true
     command: timedatectl list-timezones
@@ -212,9 +212,9 @@ variables:
   - name: ARCH_OS_REFLECTOR_COUNTRY
     title: Mirror country
     description: |
-      Where package downloads are fetched from. auto is the country the chosen
-      language belongs to; none ranks every mirror worldwide by speed, which is
-      also what auto comes to where Arch has no mirror.
+      Where package downloads come from. auto uses the country for the chosen
+      language; none ranks every mirror worldwide by speed — which is also what
+      auto falls back to when Arch has no mirror for that country.
     group: Region
     default: auto
     required: true
@@ -229,19 +229,19 @@ variables:
   - name: ARCH_OS_USERNAME
     title: User name
     description: |
-      The account you will log in with. Lower case letters, digits, hyphen and
-      underscore. It must not start with a digit.
+      The account you will log in with. Lowercase letters, digits, hyphens and
+      underscores only. It cannot start with a digit.
     group: Identity
     required: true
     pattern: '^[a-z_][a-z0-9_-]{0,31}$'
-    error: Lower case letters, digits, hyphen and underscore only, at most 32 characters. It must not start with a digit.
+    error: Lowercase letters, digits, hyphens and underscores only, up to 32 characters. It cannot start with a digit.
 
   - name: ARCH_OS_PASSWORD
     title: Password
     description: |
-      Used for your account, for the root account, and — where disk encryption
-      is on — to unlock the disk at boot. It is asked for immediately before the
-      installation starts and is never written to a file.
+      Used for your account, the root account, and — if disk encryption is on
+      — to unlock the disk at boot. It is asked for right before installation
+      starts and is never written to a file.
     group: Identity
     type: secret
     required: true
@@ -253,14 +253,14 @@ variables:
     default: arch-os
     required: true
     pattern: '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$'
-    error: Lower case letters, digits and hyphen only, at most 63 characters. It must not start or end with a hyphen.
+    error: Lowercase letters, digits and hyphens only, up to 63 characters. It cannot start or end with a hyphen.
 
   # ─── Storage ───────────────────────────────────────────────────────────────
   - name: ARCH_OS_DISK
     title: Disk
     description: |
-      The disk Arch Linux is installed on. Unless dual boot is switched on,
-      everything on it is erased.
+      The disk Arch Linux will be installed on. Unless dual boot is enabled,
+      everything on it will be erased.
     group: Storage
     required: true
     error: Choose a disk that exists.
@@ -275,7 +275,7 @@ variables:
     title: File system
     description: |
       btrfs supports snapshots, so a system update can be rolled back. ext4 is
-      simpler and does not.
+      simpler, but does not support that.
     group: Storage
     values: [btrfs, ext4]
     required: true
@@ -284,7 +284,7 @@ variables:
     title: Disk encryption
     description: |
       Encrypts the whole system with your password, so the data cannot be read
-      by taking the disk out. The password is then asked for at every boot.
+      by removing the disk. The password is then required at every boot.
     group: Storage
     type: bool
     required: true
@@ -292,8 +292,8 @@ variables:
   - name: ARCH_OS_BTRFS_SNAPPER_ENABLED
     title: Snapshots
     description: |
-      Takes a snapshot before every package transaction and cleans up old ones
-      on a timer, so a bad update can be undone.
+      Takes a snapshot before every package change and cleans up old ones
+      automatically, so a bad update can be undone.
     group: Storage
     type: bool
     default: true
@@ -316,16 +316,16 @@ variables:
   - name: ARCH_OS_DUAL_BOOT_ENABLED
     title: Dual boot
     description: |
-      Install alongside a system that is already on this disk: nothing is
-      partitioned or erased, the existing EFI partition is reused, and only a
-      boot entry is added. You then have to name the two partitions yourself.
+      Install alongside a system already on this disk: nothing is partitioned
+      or erased, the existing EFI partition is reused, and only a boot entry is
+      added. You will need to specify both partitions yourself.
     group: Storage
     type: bool
     default: false
 
   - name: ARCH_OS_BOOT_PARTITION
     title: Boot partition
-    description: The existing EFI partition to add a boot entry to. It is not formatted.
+    description: The existing EFI partition to add a boot entry to. It will not be formatted.
     group: Storage
     required: true
     conditions: ARCH_OS_DUAL_BOOT_ENABLED == true
@@ -341,7 +341,7 @@ variables:
 
   - name: ARCH_OS_ROOT_PARTITION
     title: Root partition
-    description: The partition Arch Linux is installed into. It is formatted and everything on it is lost.
+    description: The partition Arch Linux will be installed on. It will be formatted, and everything on it will be lost.
     group: Storage
     required: true
     conditions: ARCH_OS_DUAL_BOOT_ENABLED == true
@@ -367,11 +367,11 @@ variables:
   - name: ARCH_OS_SECURE_BOOT_ENABLED
     title: Secure Boot
     description: |
-      Signs the kernel and the boot loader with keys made for this machine, so
-      the firmware starts nothing else. Where the firmware is in setup mode the
-      keys are enrolled straight away and Secure Boot only has to be switched on
-      there afterwards; otherwise everything is signed and enrolling is left to
-      you.
+      Signs the kernel and boot loader with keys generated for this machine, so
+      the firmware will not start anything else. If the firmware is in setup
+      mode, the keys are enrolled automatically and you will only need to turn
+      Secure Boot on afterwards. Otherwise, everything is signed but enrolling
+      the keys is left to you.
     group: Boot
     type: bool
     default: true
@@ -396,14 +396,14 @@ variables:
       Leave empty unless you know you need one.
     group: Boot
     pattern: '^[^,&\\]*$'
-    error: The characters comma, ampersand and backslash cannot be used here.
+    error: Commas, ampersands and backslashes cannot be used here.
 
   - name: ARCH_OS_MICROCODE
     title: Processor firmware
     description: |
-      Firmware updates loaded at boot. auto is whatever this processor turns out
-      to be — which is the answer on every machine that is not being prepared for
-      a different one.
+      Firmware updates loaded at boot. auto detects the processor automatically
+      — the right choice unless you are preparing this image for a different
+      machine.
     group: Boot
     default: auto
     required: true
@@ -420,7 +420,7 @@ variables:
     title: Desktop
     description: |
       gnome installs the GNOME desktop. none leaves the system on a text
-      console, with nothing graphical installed at all.
+      console, with nothing graphical installed.
     group: Desktop
     values: [gnome, none]
     required: true
@@ -438,9 +438,9 @@ variables:
   - name: ARCH_OS_DESKTOP_KEYBOARD_LAYOUT
     title: Desktop keyboard
     description: |
-      The keyboard layout the desktop starts with. auto is the same choice as the
-      console keyboard, in the names the desktop uses for it — de-latin1 and de
-      are one layout.
+      The keyboard layout the desktop starts with. auto matches the console
+      keyboard, using the desktop's own naming — de-latin1 and de are the same
+      layout.
     group: Desktop
     default: auto
     required: true
@@ -509,9 +509,10 @@ variables:
   - name: ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED
     title: Log in automatically
     description: |
-      Skips the login screen. auto follows disk encryption: with the disk already
-      unlocked by a password at boot, a second one at login adds nothing — and
-      without encryption the login screen is the only thing standing there.
+      Skips the login screen. auto follows disk encryption: if the disk is
+      already unlocked by a password at boot, a second password at login adds
+      no security — but without encryption, the login screen is the only thing
+      protecting the system.
     group: Desktop
     values: [auto, true, false]
     default: auto
@@ -559,8 +560,8 @@ variables:
   - name: ARCH_OS_AUR_HELPER
     title: AUR helper
     description: |
-      Installs software from the Arch User Repository as easily as from the
-      official one.
+      Installs software from the Arch User Repository just as easily as from
+      the official repositories.
     group: System
     values: [paru, paru-bin, paru-git, yay, none]
     default: paru
@@ -569,8 +570,8 @@ variables:
   - name: ARCH_OS_HOUSEKEEPING_ENABLED
     title: Housekeeping
     description: |
-      Timers that keep the system tidy on their own: mirrors ranked weekly, the
-      package cache trimmed, disk health watched.
+      Timers that keep the system tidy automatically: mirrors ranked weekly,
+      the package cache trimmed, and disk health checked.
     group: System
     type: bool
     default: true
@@ -634,19 +635,19 @@ variables:
   - name: ARCH_OS_CONFIG_URL
     title: Shared at
     description: |
-      Where this installation's answers ended up. Nothing is uploaded until the
-      offer at the end of the run has been accepted; the installation then
-      answers this one itself and shows it as a code to scan.
+      Where this installation's answers ended up. Nothing is uploaded until you
+      accept the offer at the end of the run; the installation then fills this
+      in itself and shows it as a code to scan.
     group: System
 
   - name: ARCH_OS_CONFIG_SOURCE
     title: Configuration code
     description: |
       The code of a configuration somebody shared: the short word at the end of
-      a paste.rs address, or the whole address pasted in. Every answer kept
-      there becomes an answer here, and every one of them can still be changed
+      a paste.rs address, or the whole address pasted in. Every answer it
+      contains becomes an answer here, and every one can still be changed
       afterwards.
     group: System
     required: true
     pattern: '^[A-Za-z0-9][A-Za-z0-9:/._-]*$'
-    error: A code such as aBc12, or the whole address it sits at.
+    error: A code such as aBc12, or the whole address it belongs to.

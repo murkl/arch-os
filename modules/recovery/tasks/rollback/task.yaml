@@ -9,5 +9,5 @@ confirm: |
   Put {{ARCH_OS_RECOVERY_SNAPSHOT}} in place of the root subvolume on {{ARCH_OS_RECOVERY_DISK}}?
 
   The system as it is now is deleted and replaced by that snapshot. Everything
-  under /home is untouched, and so are the other snapshots — you can come back
-  and choose a different one.
+  under /home is untouched, and so are the other snapshots — you can come
+  back and choose a different one.

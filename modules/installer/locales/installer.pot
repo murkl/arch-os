@@ -43,7 +43,7 @@ msgstr ""
 msgid ""
 "Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.\n"
 "\n"
-"Everything on that disk will be erased. There is no undo, and nothing before this point has changed anything."
+"Everything on that disk will be erased. This cannot be undone, but nothing on your system has changed until now."
 msgstr ""
 
 #. starting point system: the question
@@ -73,17 +73,17 @@ msgstr ""
 
 #. starting point system, minimal: what choosing it does
 #: installer.yaml
-msgid "Arch Linux on the console only — no desktop, no extras, nothing that was not asked for."
+msgid "Arch Linux on the console only — no desktop, no extras, nothing beyond what you choose."
 msgstr ""
 
 #. starting point system, shared: the row
 #: installer.yaml
-msgid "paste.rs - Online"
+msgid "Online (paste.rs)"
 msgstr ""
 
 #. starting point system, shared: what choosing it does
 #: installer.yaml
-msgid "Take every answer from a configuration that was shared at the end of an earlier installation."
+msgid "Load every answer from a configuration shared at the end of an earlier installation."
 msgstr ""
 
 #. ARCH_OS_LOCALE_LANG: the question
@@ -93,7 +93,7 @@ msgstr ""
 
 #. ARCH_OS_LOCALE_LANG: what it means
 #: installer.yaml
-msgid "The language and country this system is set up for, as a locale code — de_DE is German as it is written in Germany. It settles the system language and the formats for dates, numbers and currency, and — left on auto — the keyboard, the console font, the time zone and the mirror country follow from it. English is always installed alongside it as a fallback."
+msgid "The language and country this system is set up for, as a locale code — for example, de_DE is German as used in Germany. This sets the system language and the format for dates, numbers and currency. Left on auto, it also decides the keyboard layout, console font, time zone and mirror country. English is always installed alongside it as a fallback."
 msgstr ""
 
 #. ARCH_OS_LOCALE_LANG: the heading its row sits under
@@ -108,7 +108,7 @@ msgstr ""
 
 #. ARCH_OS_VCONSOLE_KEYMAP: what it means
 #: installer.yaml
-msgid "The keyboard you are typing on. It is loaded here and now, and it is what the new system uses on the text console. auto is the layout the system language is typed on, which is only settled further down."
+msgid "The keyboard you are typing on right now. It is loaded immediately, and used by the new system on the text console. auto uses the layout for the system language chosen further down."
 msgstr ""
 
 #. ARCH_OS_VCONSOLE_FONT: the question
@@ -118,7 +118,7 @@ msgstr ""
 
 #. ARCH_OS_VCONSOLE_FONT: what it means
 #: installer.yaml
-msgid "The font of the text console. auto is the one that can draw the chosen language; a larger one helps on a high resolution screen."
+msgid "The font used on the text console. auto picks one that can display the chosen language; a larger font helps on a high-resolution screen."
 msgstr ""
 
 #. ARCH_OS_VCONSOLE_FONT: the row that opens a box for an answer of one's
@@ -134,7 +134,7 @@ msgstr ""
 
 #. ARCH_OS_TIMEZONE: what it means
 #: installer.yaml
-msgid "Where this machine is, so the clock is right. The list opens on the zone the chosen country keeps — which is the only answer in a country that keeps one, and the one most of it lives in where there are several."
+msgid "Where this machine is located, so the clock is set correctly. The list opens on the time zone for the chosen country — the only one if the country has just one, or its most populous one if it has several."
 msgstr ""
 
 #. ARCH_OS_REFLECTOR_COUNTRY: the question
@@ -144,7 +144,7 @@ msgstr ""
 
 #. ARCH_OS_REFLECTOR_COUNTRY: what it means
 #: installer.yaml
-msgid "Where package downloads are fetched from. auto is the country the chosen language belongs to; none ranks every mirror worldwide by speed, which is also what auto comes to where Arch has no mirror."
+msgid "Where package downloads come from. auto uses the country for the chosen language; none ranks every mirror worldwide by speed — which is also what auto falls back to when Arch has no mirror for that country."
 msgstr ""
 
 #. ARCH_OS_REFLECTOR_COUNTRY: the row that opens a box for an answer of
@@ -160,7 +160,7 @@ msgstr ""
 
 #. ARCH_OS_USERNAME: what it means
 #: installer.yaml
-msgid "The account you will log in with. Lower case letters, digits, hyphen and underscore. It must not start with a digit."
+msgid "The account you will log in with. Lowercase letters, digits, hyphens and underscores only. It cannot start with a digit."
 msgstr ""
 
 #. ARCH_OS_USERNAME: the heading its row sits under
@@ -170,7 +170,7 @@ msgstr ""
 
 #. ARCH_OS_USERNAME: what a wrong answer is told
 #: installer.yaml
-msgid "Lower case letters, digits, hyphen and underscore only, at most 32 characters. It must not start with a digit."
+msgid "Lowercase letters, digits, hyphens and underscores only, up to 32 characters. It cannot start with a digit."
 msgstr ""
 
 #. ARCH_OS_PASSWORD: the question
@@ -180,7 +180,7 @@ msgstr ""
 
 #. ARCH_OS_PASSWORD: what it means
 #: installer.yaml
-msgid "Used for your account, for the root account, and — where disk encryption is on — to unlock the disk at boot. It is asked for immediately before the installation starts and is never written to a file."
+msgid "Used for your account, the root account, and — if disk encryption is on — to unlock the disk at boot. It is asked for right before installation starts and is never written to a file."
 msgstr ""
 
 #. ARCH_OS_HOSTNAME: the question
@@ -195,7 +195,7 @@ msgstr ""
 
 #. ARCH_OS_HOSTNAME: what a wrong answer is told
 #: installer.yaml
-msgid "Lower case letters, digits and hyphen only, at most 63 characters. It must not start or end with a hyphen."
+msgid "Lowercase letters, digits and hyphens only, up to 63 characters. It cannot start or end with a hyphen."
 msgstr ""
 
 #. ARCH_OS_DISK: the question
@@ -205,7 +205,7 @@ msgstr ""
 
 #. ARCH_OS_DISK: what it means
 #: installer.yaml
-msgid "The disk Arch Linux is installed on. Unless dual boot is switched on, everything on it is erased."
+msgid "The disk Arch Linux will be installed on. Unless dual boot is enabled, everything on it will be erased."
 msgstr ""
 
 #. ARCH_OS_DISK: the heading its row sits under
@@ -225,7 +225,7 @@ msgstr ""
 
 #. ARCH_OS_FILESYSTEM: what it means
 #: installer.yaml
-msgid "btrfs supports snapshots, so a system update can be rolled back. ext4 is simpler and does not."
+msgid "btrfs supports snapshots, so a system update can be rolled back. ext4 is simpler, but does not support that."
 msgstr ""
 
 #. ARCH_OS_ENCRYPTION_ENABLED: the question
@@ -235,7 +235,7 @@ msgstr ""
 
 #. ARCH_OS_ENCRYPTION_ENABLED: what it means
 #: installer.yaml
-msgid "Encrypts the whole system with your password, so the data cannot be read by taking the disk out. The password is then asked for at every boot."
+msgid "Encrypts the whole system with your password, so the data cannot be read by removing the disk. The password is then required at every boot."
 msgstr ""
 
 #. ARCH_OS_BTRFS_SNAPPER_ENABLED: the question
@@ -245,7 +245,7 @@ msgstr ""
 
 #. ARCH_OS_BTRFS_SNAPPER_ENABLED: what it means
 #: installer.yaml
-msgid "Takes a snapshot before every package transaction and cleans up old ones on a timer, so a bad update can be undone."
+msgid "Takes a snapshot before every package change and cleans up old ones automatically, so a bad update can be undone."
 msgstr ""
 
 #. ARCH_OS_BTRFS_ASSISTANT_ENABLED: the question
@@ -265,7 +265,7 @@ msgstr ""
 
 #. ARCH_OS_DUAL_BOOT_ENABLED: what it means
 #: installer.yaml
-msgid "Install alongside a system that is already on this disk: nothing is partitioned or erased, the existing EFI partition is reused, and only a boot entry is added. You then have to name the two partitions yourself."
+msgid "Install alongside a system already on this disk: nothing is partitioned or erased, the existing EFI partition is reused, and only a boot entry is added. You will need to specify both partitions yourself."
 msgstr ""
 
 #. ARCH_OS_BOOT_PARTITION: the question
@@ -275,7 +275,7 @@ msgstr ""
 
 #. ARCH_OS_BOOT_PARTITION: what it means
 #: installer.yaml
-msgid "The existing EFI partition to add a boot entry to. It is not formatted."
+msgid "The existing EFI partition to add a boot entry to. It will not be formatted."
 msgstr ""
 
 #. ARCH_OS_ROOT_PARTITION: the question
@@ -285,7 +285,7 @@ msgstr ""
 
 #. ARCH_OS_ROOT_PARTITION: what it means
 #: installer.yaml
-msgid "The partition Arch Linux is installed into. It is formatted and everything on it is lost."
+msgid "The partition Arch Linux will be installed on. It will be formatted, and everything on it will be lost."
 msgstr ""
 
 #. ARCH_OS_BOOTLOADER: the question
@@ -310,7 +310,7 @@ msgstr ""
 
 #. ARCH_OS_SECURE_BOOT_ENABLED: what it means
 #: installer.yaml
-msgid "Signs the kernel and the boot loader with keys made for this machine, so the firmware starts nothing else. Where the firmware is in setup mode the keys are enrolled straight away and Secure Boot only has to be switched on there afterwards; otherwise everything is signed and enrolling is left to you."
+msgid "Signs the kernel and boot loader with keys generated for this machine, so the firmware will not start anything else. If the firmware is in setup mode, the keys are enrolled automatically and you will only need to turn Secure Boot on afterwards. Otherwise, everything is signed but enrolling the keys is left to you."
 msgstr ""
 
 #. ARCH_OS_KERNEL: the question
@@ -335,7 +335,7 @@ msgstr ""
 
 #. ARCH_OS_KERNEL_ARGS: what a wrong answer is told
 #: installer.yaml
-msgid "The characters comma, ampersand and backslash cannot be used here."
+msgid "Commas, ampersands and backslashes cannot be used here."
 msgstr ""
 
 #. ARCH_OS_MICROCODE: the question
@@ -345,12 +345,12 @@ msgstr ""
 
 #. ARCH_OS_MICROCODE: what it means
 #: installer.yaml
-msgid "Firmware updates loaded at boot. auto is whatever this processor turns out to be — which is the answer on every machine that is not being prepared for a different one."
+msgid "Firmware updates loaded at boot. auto detects the processor automatically — the right choice unless you are preparing this image for a different machine."
 msgstr ""
 
 #. ARCH_OS_DESKTOP: what it means
 #: installer.yaml
-msgid "gnome installs the GNOME desktop. none leaves the system on a text console, with nothing graphical installed at all."
+msgid "gnome installs the GNOME desktop. none leaves the system on a text console, with nothing graphical installed."
 msgstr ""
 
 #. ARCH_OS_DESKTOP_GRAPHICS_DRIVER: the question
@@ -370,7 +370,7 @@ msgstr ""
 
 #. ARCH_OS_DESKTOP_KEYBOARD_LAYOUT: what it means
 #: installer.yaml
-msgid "The keyboard layout the desktop starts with. auto is the same choice as the console keyboard, in the names the desktop uses for it — de-latin1 and de are one layout."
+msgid "The keyboard layout the desktop starts with. auto matches the console keyboard, using the desktop's own naming — de-latin1 and de are the same layout."
 msgstr ""
 
 #. ARCH_OS_DESKTOP_KEYBOARD_VARIANT: the question
@@ -420,7 +420,7 @@ msgstr ""
 
 #. ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED: what it means
 #: installer.yaml
-msgid "Skips the login screen. auto follows disk encryption: with the disk already unlocked by a password at boot, a second one at login adds nothing — and without encryption the login screen is the only thing standing there."
+msgid "Skips the login screen. auto follows disk encryption: if the disk is already unlocked by a password at boot, a second password at login adds no security — but without encryption, the login screen is the only thing protecting the system."
 msgstr ""
 
 #. ARCH_OS_SAMBA_SHARE_ENABLED: the question
@@ -475,7 +475,7 @@ msgstr ""
 
 #. ARCH_OS_AUR_HELPER: what it means
 #: installer.yaml
-msgid "Installs software from the Arch User Repository as easily as from the official one."
+msgid "Installs software from the Arch User Repository just as easily as from the official repositories."
 msgstr ""
 
 #. ARCH_OS_HOUSEKEEPING_ENABLED: the question
@@ -485,7 +485,7 @@ msgstr ""
 
 #. ARCH_OS_HOUSEKEEPING_ENABLED: what it means
 #: installer.yaml
-msgid "Timers that keep the system tidy on their own: mirrors ranked weekly, the package cache trimmed, disk health watched."
+msgid "Timers that keep the system tidy automatically: mirrors ranked weekly, the package cache trimmed, and disk health checked."
 msgstr ""
 
 #. ARCH_OS_SHELL_ENHANCEMENT_ENABLED: the question
@@ -545,7 +545,7 @@ msgstr ""
 
 #. ARCH_OS_CONFIG_URL: what it means
 #: installer.yaml
-msgid "Where this installation's answers ended up. Nothing is uploaded until the offer at the end of the run has been accepted; the installation then answers this one itself and shows it as a code to scan."
+msgid "Where this installation's answers ended up. Nothing is uploaded until you accept the offer at the end of the run; the installation then fills this in itself and shows it as a code to scan."
 msgstr ""
 
 #. ARCH_OS_CONFIG_SOURCE: the question
@@ -555,12 +555,12 @@ msgstr ""
 
 #. ARCH_OS_CONFIG_SOURCE: what it means
 #: installer.yaml
-msgid "The code of a configuration somebody shared: the short word at the end of a paste.rs address, or the whole address pasted in. Every answer kept there becomes an answer here, and every one of them can still be changed afterwards."
+msgid "The code of a configuration somebody shared: the short word at the end of a paste.rs address, or the whole address pasted in. Every answer it contains becomes an answer here, and every one can still be changed afterwards."
 msgstr ""
 
 #. ARCH_OS_CONFIG_SOURCE: what a wrong answer is told
 #: installer.yaml
-msgid "A code such as aBc12, or the whole address it sits at."
+msgid "A code such as aBc12, or the whole address it belongs to."
 msgstr ""
 
 #. the step, as the run lists it
@@ -693,7 +693,7 @@ msgstr ""
 msgid ""
 "Arch OS is installed\n"
 "\n"
-"{{ARCH_OS_HOSTNAME}} is on {{ARCH_OS_DISK}} and ready to start. Everything from here on is offered rather than needed."
+"{{ARCH_OS_HOSTNAME}} is on {{ARCH_OS_DISK}} and ready to start. Everything from here on is optional."
 msgstr ""
 
 #. the step, as the run lists it
@@ -706,7 +706,7 @@ msgstr ""
 msgid ""
 "Put these answers online now?\n"
 "\n"
-"Every answer of this installation goes to paste.rs, and its address comes back as a code to scan — enough to set another machine up exactly like this one. Anybody holding that address can read them. The password is not among them and was never written down anywhere."
+"Every answer from this installation goes to paste.rs, and its address comes back as a code to scan — enough to set up another machine exactly like this one. Anyone holding that address can read them. The password is not among them and was never written down anywhere."
 msgstr ""
 
 #. read once the step is done, and held on until somebody has
@@ -714,7 +714,7 @@ msgstr ""
 msgid ""
 "Configuration shared\n"
 "\n"
-"Scan the code, or type the word at the end of the address into the paste.rs starting point of another installation."
+"Scan the code, or type the word at the end of the address into the online starting point of another installation."
 msgstr ""
 
 #. the step, as the run lists it
@@ -727,7 +727,7 @@ msgstr ""
 msgid ""
 "Open a shell inside the system that was just installed?\n"
 "\n"
-"Everything is still mounted, so this is the moment to look around or fix something by hand. Leave it again with `exit`."
+"Everything is still mounted, so this is a good time to look around or fix something by hand. Leave the shell with `exit`."
 msgstr ""
 
 #. the step, as the run lists it
@@ -740,7 +740,7 @@ msgstr ""
 msgid ""
 "Restart into {{ARCH_OS_HOSTNAME}} now?\n"
 "\n"
-"Everything is unmounted first. Remove the installation medium once the screen goes blank."
+"Everything is unmounted first. Remove the installation media once the screen goes blank."
 msgstr ""
 
 #. the step, as the run lists it

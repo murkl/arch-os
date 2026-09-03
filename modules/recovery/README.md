@@ -1,148 +1,152 @@
 # Arch OS Recovery
 
-Everything this recovery knows about Arch Linux. It is data, one YAML file and
-the folders beside it, and it does not run on its own: the
-[runtime](../../runtime) draws the interface, asks the questions and runs the tasks
-in order. Putting Arch Linux on a disk is a module of its own:
+Everything this recovery module knows about Arch Linux. It's data — one YAML
+file and the folders beside it — and it doesn't run on its own: the
+[runtime](../../runtime) draws the interface, asks the questions, and runs
+the tasks in order. Putting Arch Linux on disk is a separate module:
 [`installer/`](../installer).
 
 ```sh
 make check   # load the module and lint every script
 
-# Run it, without touching this machine
+# Run it without touching this machine
 make -C ../../runtime run MODULE=recovery ARGS=--debug
 ```
 
 ## What is where
 
 ```
-recovery.yaml            what this recovery is, what it asks, what order it works in
-tasks/<id>/task.yaml     where that unit belongs: its stage, its needs, its conditions
-tasks/<id>/task.sh       what it does, and any file it ships with, beside it
+recovery.yaml            what this recovery is, what it asks, what order it runs in
+tasks/<id>/task.yaml     where that step belongs: its stage, its dependencies, its conditions
+tasks/<id>/task.sh       what it does, plus any file it ships with, beside it
 hooks/<name>.sh          everything around the work itself
-lib.sh                   the little every script of this module shares
-locales/                 one <code>.po per language this recovery speaks, and the template they are filled in from
+lib.sh                   the small shared library every script in this module uses
+locales/                 one <code>.po per language this recovery speaks, and the template they're filled in from
 ```
 
-Nothing points at any of this from `recovery.yaml`: each part is found by its
-own name. The runtime takes the one YAML file it finds in a folder, which is what
-lets this module and the installer sit side by side and stay two programs. Both
-are folders in `modules/`, which is the whole of what a release offers, and the
-interface asks which of them to open;
-`./runtime --recovery` is this one outright, and on the ISO that is the
+Nothing in `recovery.yaml` points at any of this — each part is found by its
+own name. The runtime picks up whichever single YAML file it finds in a
+folder, which is what lets this module and the installer sit side by side as
+two independent programs. Both are folders under `modules/`, which is the
+whole of what a release offers; the interface asks which one to open.
+`./runtime --recovery` opens this one directly, and on the ISO that's the
 `recovery` command.
 
 ## What it does
 
-`recovery.yaml` says `run: Recovery`, which is the name the interface reads out
-wherever it says what is happening. Without it the runtime falls back to the only
-thing an unnamed run can be and calls a repair an installation. `description:`
-beside it is the sentence under this module's row on the page that asks which to
-open.
+`recovery.yaml` sets `run: Recovery`, which is the name the interface reads
+out wherever it reports what's happening. Without it, the runtime would
+default to "Installation" and describe a repair as one. `description:` next
+to it is the sentence shown under this module's row on the page that asks
+which module to open.
 
-Three stages, and after the first one every step is offered rather than done.
-The system is opened, and what to repair is then a decision with the disk in
-front of you.
+Three stages, and after the first one, every step is optional. The system
+is opened first, and what to repair is then a decision made with the disk
+right in front of you.
 
 | stage | what it is |
 |---|---|
-| `open` | the installation unlocked where it is encrypted, and mounted at `/mnt` |
-| `repair` | rolled back, made bootable again, worked in by hand |
+| `open` | the installation unlocked (where encrypted) and mounted at `/mnt` |
+| `repair` | rolled back, made bootable again, worked on by hand |
 | `close` | unmounted, and the disk locked again |
 
 | task | stage | |
 |---|---|---|
-| `open` | `open` | unlock and mount, the way the system mounts itself |
-| `rollback` | `repair` | put a snapshot in place of the root subvolume, btrfs only |
-| `kernel` | `repair` | rebuild the kernel images and ram disks from the package cache, and sign them again where the boot chain is signed |
-| `shell` | `repair` | `arch-chroot` into the repaired system, with the terminal handed over |
-| `close` | `close` | unmount everything and lock the disk |
+| `open` | `open` | unlocks and mounts, the same way the system mounts itself |
+| `rollback` | `repair` | puts a snapshot in place of the root subvolume, btrfs only |
+| `kernel` | `repair` | rebuilds the kernel images and initramfs from the package cache, and re-signs them if the boot chain is signed |
+| `shell` | `repair` | `arch-chroot`s into the repaired system, with the terminal handed over |
+| `close` | `close` | unmounts everything and locks the disk |
 
-Each of the three under `repair` has a `confirm:` of its own, so a run can stop
-after any of them. `needs:` is what puts them in that order: a shell is worth
-having after the boot files are back, not before.
+Each of the three tasks under `repair` has its own `confirm:`, so a run can
+stop after any of them. `needs:` is what puts them in that order — a shell
+is worth having once the boot files are back, not before.
 
-`make check` prints the order the whole module adds up to.
+`make check` prints the order the whole module resolves to.
 
 ## Nothing is downloaded
 
-A machine that needs repairing is one whose network may be part of what broke,
-so this module never asks for one: there is no `online.sh` hook, which is what
-turns the network screen off, and the kernel images come out of the repaired
-system's own pacman cache rather than off a mirror.
+A machine that needs repairing might have a broken network as part of the
+problem, so this module never asks for one: there's no `online.sh` hook,
+which is what turns the network screen off, and the kernel images come from
+the repaired system's own pacman cache rather than a mirror.
 
-For the same reason `hooks/preflight.sh` asks less than the installer's: root
-and the live image, and nothing about this machine's firmware: it is not what
-is being set up.
+For the same reason, `hooks/preflight.sh` checks less than the installer's
+does: just root and the live image, nothing about this machine's firmware,
+since this machine isn't what's being set up.
 
 ## Two views of one disk
 
-A btrfs installation is the system as it runs, mounted at `/mnt`, and the top
-level holding `@` and the snapshots, mounted at `/run/arch-os-recovery`. A
-rollback happens in the second: `@` cannot be replaced while it is the root that
-is mounted, and the top level has to survive `/mnt` going away. It is kept out
-of the chroot on purpose.
+A btrfs installation is the running system, mounted at `/mnt`, sitting on a
+top level that holds `@` and the snapshots, mounted separately at
+`/run/arch-os-recovery`. A rollback happens through the second mount: `@`
+can't be replaced while it's mounted as the root, and the top level has to
+stay available once `/mnt` is gone. It's kept out of the chroot on purpose.
 
-The mount options are the installer's, written out here in `lib.sh` and in the
-installer's `prepare-disk` task. The recovery puts a file system back the way
-the installation laid it out, so the two lines must not drift apart.
+The mount options match the installer's, written out here in `lib.sh` and in
+the installer's `prepare-disk` task. The recovery module puts a file system
+back exactly the way the installer laid it out, so the two must not drift
+apart.
 
 ## Writing a task
 
-Same as in the installer, and the rules are written down there:
-[`installer/README.md`](../installer/README.md#writing-one). A unit is a folder
-with `task.yaml` and `task.sh` in it, the script is sourced into a shell that
-already carries `lib.sh` and an `ERR` trap, and `simulating && return 0` is what
-makes `--debug` a simulation rather than a repair.
+The same as in the installer, and the rules are written down there:
+[`installer/README.md`](../installer/README.md#writing-one). A task is a
+folder with `task.yaml` and `task.sh` in it, the script is sourced into a
+shell that already has `lib.sh` loaded and an `ERR` trap set, and
+`simulating && return 0` is what turns `--debug` into a simulation instead
+of a real repair.
 
-The repair itself lives in those scripts, not in `lib.sh`: unlocking, rolling
-back and rebuilding are each one task's whole job and are read there. What
-`lib.sh` holds is what more than one of them has to agree about: where the
-system is mounted, what its partitions are called, and the mount options a
-rollback has to put back exactly as the open found them. A task that ships a
-file of its own keeps it beside itself: `tasks/rollback/snapshots.sh` is the
-list of snapshots, named from `recovery.yaml` as the answers that question
-offers.
+The repair logic itself lives in those scripts, not in `lib.sh`: unlocking,
+rolling back and rebuilding are each one task's whole job, so that's where
+they're written. What `lib.sh` holds is only what more than one task needs
+to agree on: where the system is mounted, what its partitions are called,
+and the mount options a rollback has to restore exactly as it found them. A
+task that ships a file of its own keeps it right beside itself —
+`tasks/rollback/snapshots.sh` is the list of snapshots, named in
+`recovery.yaml` as the answers to that question.
 
 ## Answers
 
-`recovery.conf`, beside wherever the recovery was started, its own file, never
-the installer's, so a repair leaves no trace in a configuration that gets copied
-into an installed system. Every answer is `ARCH_OS_RECOVERY_*`; the encryption
-password is not among them, because the runtime never writes a secret down.
+`recovery.conf`, beside wherever the recovery was started — its own file,
+never the installer's, so a repair leaves no trace in a configuration that
+later gets copied into an installed system. Every answer is prefixed
+`ARCH_OS_RECOVERY_*`; the encryption password isn't among them, since the
+runtime never writes a secret to disk.
 
 | | |
 |---|---|
-| `ARCH_OS_RECOVERY_KEYMAP` | the console keyboard, asked `first` and loaded at once, the password below is typed on it |
+| `ARCH_OS_RECOVERY_KEYMAP` | the console keyboard, asked `first` and loaded immediately — the password below is typed on it |
 | `ARCH_OS_RECOVERY_DISK` | the disk holding the installation to repair |
-| `ARCH_OS_RECOVERY_ENCRYPTION_ENABLED` | whether it is LUKS; read off the disk, which needs no password |
-| `ARCH_OS_RECOVERY_PASSWORD` | what unlocks it, asked immediately before the run |
-| `ARCH_OS_RECOVERY_FILESYSTEM` | `btrfs` rolls back, `ext4` opens and is worked in by hand |
-| `ARCH_OS_RECOVERY_SNAPSHOT` | asked mid-run by the rollback: nothing can list them before the disk is open |
+| `ARCH_OS_RECOVERY_ENCRYPTION_ENABLED` | whether it's LUKS-encrypted; read directly off the disk, no password needed |
+| `ARCH_OS_RECOVERY_PASSWORD` | what unlocks it, asked right before the run starts |
+| `ARCH_OS_RECOVERY_FILESYSTEM` | `btrfs` supports rollback; `ext4` is opened and worked on by hand |
+| `ARCH_OS_RECOVERY_SNAPSHOT` | asked mid-run by the rollback task, since nothing can list snapshots before the disk is open |
 
-The two that are read off the disk fill in the answer their question opens on
-and are still questions: behind LUKS nothing can be read until the password has
-been given, and a disk laid out some other way has to stay answerable by hand.
+The two that are read off the disk fill in with the answer they'd already
+have and stay questions anyway: behind LUKS, nothing can be read until the
+password is given, and a disk laid out differently still needs to stay
+answerable by hand.
 
 ## A language
 
 ```sh
-cp locales/recovery.pot locales/fr.po   # every word this module says, none of them translated
+cp locales/recovery.pot locales/fr.po   # every string this module uses, none translated yet
 make check                              # reports coverage per language
 ```
 
 Fill in the `msgstr` lines and nothing else. `make locales` regenerates
-`recovery.pot` from the module and brings every catalog up to it, which is what has
-to run after a question is added or reworded. The runtime's own words are
+`recovery.pot` from the module and updates every catalog against it — run
+this whenever a question is added or reworded. The runtime's own strings are
 translated separately, in its own `locales/`. See
 [TRANSLATING.md](../TRANSLATING.md).
 
 ## The command line
 
 Nothing on it belongs to this module. `arch-os --recovery` opens it, and
-`--debug` beside it is the runtime's own switch — the same word in every module,
-handed to every script here as `DEBUG`. Every answer, the disk password
-included, is given in the interface.
+`--debug` beside it is the runtime's own switch — the same word in every
+module, passed to every script here as `DEBUG`. Every answer, including the
+disk password, is given inside the interface.
 
 ## Requirements
 

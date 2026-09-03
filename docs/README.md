@@ -5,7 +5,7 @@
 
 <div align="center">
 
-<p><strong>A minimal, reproducible Arch Linux base, tty-only or with a full GNOME desktop.</strong></p>
+<p><strong>A minimal, reproducible Arch Linux base — tty-only or with a full GNOME desktop.</strong></p>
 
 <p><code>curl -Ls bit.ly/arch-os | bash</code></p>
 
@@ -20,89 +20,95 @@
 
 ## What you get
 
-- Minimal Arch Linux base, GNOME desktop optional (full or slim)
-- LUKS2 disk encryption, btrfs or ext4
-- Btrfs snapshots (Snapper), taken before every package transaction
-- Secure Boot with your own keys and a signed unified kernel image, re-signed on
-  every kernel update
+- Minimal Arch Linux base, with an optional GNOME desktop (full or slim)
+- LUKS2 disk encryption, with Btrfs or ext4
+- Btrfs snapshots (via Snapper), taken automatically before every package change
+- Secure Boot with your own keys, and a signed unified kernel image that is
+  re-signed on every kernel update
 - Your choice of bootloader (systemd-boot or GRUB) and kernel
-- Dual boot aware partitioning
-- Graphics drivers (Mesa, Intel, NVIDIA, AMD), Plymouth boot splash
+- Dual-boot aware partitioning
+- Graphics drivers (Mesa, Intel, NVIDIA, AMD) and a Plymouth boot splash
 - AUR helper, 32-bit support, automatic housekeeping timers
-- Shell enhancement (bash, zsh or fish) and a system manager TUI
-- Samba sharing, mirrors ranked by country
-- English and German interface, and [more languages are welcome](../TRANSLATING.md): a module can add its own
-- A recovery on the same image that rolls a broken system back, without a network
+- Shell enhancements (bash, zsh or fish) and a system manager TUI
+- Samba file sharing, mirrors ranked by country
+- English and German interface — [more languages are welcome](../TRANSLATING.md);
+  a module can add its own
+- A recovery mode on the same image, to roll back a broken system without
+  needing a network connection
 
 ## Installing
 
-You need a UEFI machine with Secure Boot switched off and an internet
-connection. Run the same command twice, where it runs decides what it does:
+You need a UEFI machine with Secure Boot turned off and an internet
+connection. Run the same command twice — what it does depends on where you
+run it:
 
 ```sh
 curl -Ls bit.ly/arch-os | bash
 ```
 
-1. **On your own machine** it fetches the latest image, verifies its checksum
-   and writes it to a USB device you pick.
+1. **On your own machine**, it downloads the latest image, verifies its
+   checksum, and writes it to a USB drive you choose.
    ([Ventoy](https://www.ventoy.net) or `dd` work just as well.)
-2. **Boot the target machine from that device.** It starts on its own and asks
-   what to do, install or repair a system already on a disk. No keymap or
-   network step first.
-3. **Answer the questions.** Every answer is saved as it is given, so an
-   interrupted run picks up where it left off.
+2. **Boot the target machine from that drive.** It starts on its own and asks
+   whether to install a new system or repair one already there — no keymap or
+   network setup first.
+3. **Answer the questions.** Every answer is saved as soon as you give it, so
+   an interrupted installation picks up right where it left off.
 
-On a stock [Arch Linux ISO](https://archlinux.org/download/) the same command
-puts you at the same question instead: it fetches the latest release, unpacks it
-and runs it. `MODE=install|create` picks a half by hand, `DEBUG=true` keeps both
-off the hardware.
+On a stock [Arch Linux ISO](https://archlinux.org/download/), the same
+command takes you straight to that same question: it downloads the latest
+release, unpacks it, and runs it. Set `MODE=install` or `MODE=create` to skip
+the choice, and `DEBUG=true` to try it without touching any hardware.
 
 <p><img src="./screenshots/setup.png" width="820"></p>
 
-### Answers you already have
+### Reusing your answers
 
-An installation shares its answers at the end, as a code and as an
-`installer.conf`. Put that file next to where you start the installer and every
-question in it is already answered — for a machine you set up more than once.
+At the end of an installation, you can share your answers as a short code or
+as an `installer.conf` file. Place that file next to the installer and every
+question it answers is skipped — handy for setting up the same kind of
+machine more than once.
 
-`installer --debug` runs the whole thing without touching a disk.
+`installer --debug` runs through the whole installer without touching a disk.
 
 ## Maintenance
 
 <p><img src="./screenshots/manager_menu.png" width="420"></p>
 
-The preinstalled system manager handles the routine: package and Flatpak
-updates, `pacdiff`, Snapper housekeeping. Worth doing yourself:
+The preinstalled system manager handles routine maintenance: package and
+Flatpak updates, `pacdiff`, and Snapper housekeeping. A few things are still
+worth doing yourself:
 
-- Read the [Arch Linux news](https://www.archlinux.org/news) before a big upgrade
-- Roll back with Btrfs Assistant (or `snapper`) when an update goes wrong
-- Boot the installation image and choose **Arch OS Recovery** when the system no
-  longer starts at all: it unlocks the disk, puts a snapshot back in place of the
-  root subvolume, rebuilds the kernel images from the package cache and hands you
-  a shell inside the repaired system, no network needed
+- Read the [Arch Linux news](https://www.archlinux.org/news) before a big
+  upgrade
+- Roll back with Btrfs Assistant (or `snapper`) if an update breaks something
+- Boot the installation image and choose **Arch OS Recovery** if the system
+  won't start at all: it unlocks the disk, restores a snapshot in place of the
+  root subvolume, rebuilds the kernel images from the package cache, and drops
+  you into a shell inside the repaired system — no network needed
 
 <p><img src="./screenshots/recovery.png" width="820"></p>
 
 ## How it is built
 
-Four parts, deliberately kept apart, see
-[CONTRIBUTING.md](../CONTRIBUTING.md).
+Four parts, kept deliberately separate — see
+[CONTRIBUTING.md](../CONTRIBUTING.md) for more.
 
 | | |
 |---|---|
-| [`runtime/`](../runtime) | a Go binary that draws the interface, asks the questions and runs shell in order. It knows nothing about Arch, disks or packages, there is not one of those words in it. |
-| [`modules/installer/`](../modules/installer) | everything that does: one `installer.yaml`, the questions it asks, and a folder per step of the installation. |
-| [`modules/recovery/`](../modules/recovery) | the same shape again, for repairing a system that is already on a disk: its own `recovery.yaml`, its own steps, its own answers. |
-| [`iso/`](../iso) | turns a build of the three into a bootable image that starts on boot. |
+| [`runtime/`](../runtime) | A Go binary that draws the interface, asks the questions, and runs shell scripts in order. It knows nothing about Arch Linux, disks or packages — none of those words appear in it. |
+| [`modules/installer/`](../modules/installer) | Everything that does the actual work: one `installer.yaml`, the questions it asks, and a folder for each step of the installation. |
+| [`modules/recovery/`](../modules/recovery) | The same shape again, for repairing a system already on disk: its own `recovery.yaml`, its own steps, its own answers. |
+| [`iso/`](../iso) | Turns a build of the three into a bootable image. |
 
-The two are **modules: data, not programs**. One binary runs either of them, and
-which one is a folder beside it. A release is that binary with a `modules/`
-folder holding both and a `runtime.yaml` saying what they are called together;
-the first page is the language, the second the question of which to open. Adding
-a question is a few lines of YAML; adding a step is a folder with two files in
-it; adding a whole module is a folder in `modules/` — none of it is a change to
-the runtime, and the runtime cannot break Arch-specific behaviour it has never
-heard of.
+The installer and recovery are modules — data, not programs. One binary runs
+either of them, picked from a folder beside it. A release is that binary plus
+a `modules/` folder holding both, and a `runtime.yaml` describing them
+together: the first page is the language, the second is which module to open.
+Adding a question is a few lines of YAML; adding a step is a folder with two
+files; adding a whole module is a folder in `modules/`. None of that touches
+the runtime, and the runtime can never break Arch-specific behavior it
+doesn't know about.
 
 <details>
 <summary><h2 style="display: inline;" id="screenshots">More screenshots</h2></summary>
@@ -121,12 +127,12 @@ heard of.
 
 ## Why this exists
 
-Arch OS is a spare-time project, and the system it installs is the one I use
-every day, privately and at work, as a project lead and cloud native engineer.
-The road to it started with Ubuntu, in 2005.
+Arch OS is a side project, and it installs the system I use every day — at
+work and at home, as a project lead and cloud native engineer. It all started
+with Ubuntu, back in 2005.
 
-The split between the two halves is also a split in how they are written. The
-runtime is Go, written with AI assistance and reviewed line by line before it
-goes in. The Arch Linux side, the installer and the recovery, the shell
-scripts and the YAML, is handwritten, and grew out of the installer that came
-before there was a runtime to drive it.
+The two halves are also written differently. The runtime is Go, written with
+AI assistance and reviewed line by line before it's merged. The Arch Linux
+side — the installer, the recovery module, the shell scripts, and the YAML —
+is handwritten, and grew out of the installer that existed before there was a
+runtime to drive it.

@@ -26,8 +26,8 @@ console: Type recovery at the prompt to start it again.
 confirm: |
   The system on {{ARCH_OS_RECOVERY_DISK}} will be unlocked and mounted at /mnt.
 
-  Nothing on it is changed by that. Going back to a snapshot, rebuilding the boot
-  files and opening a shell are each offered on their own once it is open.
+  This does not change anything on it. Once it is open, you can roll back to a
+  snapshot, rebuild the boot files, or open a shell — each offered separately.
 
 # The phases the work happens in, top to bottom. Every task names one, which is
 # what puts it in the run and where; tasks sharing a stage run in the order
@@ -53,8 +53,8 @@ variables:
   - name: ARCH_OS_RECOVERY_KEYMAP
     title: Console keyboard
     description: |
-      The keyboard you are typing on. It is loaded here and now, and it opens on
-      the layout this live image was started with.
+      The keyboard you are typing on right now. It is loaded immediately, and
+      opens on the layout this live image was started with.
     group: Region
     required: true
     first: true
@@ -81,8 +81,8 @@ variables:
   - name: ARCH_OS_RECOVERY_DISK
     title: Disk
     description: |
-      The disk holding the Arch OS installation to repair. Opening it changes
-      nothing on it.
+      The disk holding the Arch OS installation to repair. Opening it does not
+      change anything on it.
     group: Storage
     required: true
     error: Choose a disk that exists.
@@ -96,8 +96,9 @@ variables:
   - name: ARCH_OS_RECOVERY_ENCRYPTION_ENABLED
     title: Disk encryption
     description: |
-      Whether that disk is encrypted with LUKS. This is read off the disk, which
-      can be done without the password — change it only if the answer is wrong.
+      Whether that disk is encrypted with LUKS. This is read directly off the
+      disk, without needing the password — change it only if the answer is
+      wrong.
     group: Storage
     type: bool
     required: true
@@ -108,8 +109,8 @@ variables:
   - name: ARCH_OS_RECOVERY_PASSWORD
     title: Encryption password
     description: |
-      The password that unlocks that disk. It is asked for immediately before
-      the recovery starts and is never written to a file.
+      The password that unlocks that disk. It is asked for right before the
+      recovery starts and is never written to a file.
     group: Storage
     type: secret
     required: true
@@ -119,8 +120,8 @@ variables:
     title: File system
     description: |
       The file system of the system being repaired. btrfs can be rolled back to
-      a snapshot; ext4 can be opened and worked in by hand. On an encrypted disk
-      this cannot be read in advance, so check it.
+      a snapshot; ext4 can be opened and worked on by hand. On an encrypted
+      disk this cannot be read in advance, so please check it.
     group: Storage
     values: [btrfs, ext4]
     required: true
@@ -134,8 +135,8 @@ variables:
   - name: ARCH_OS_RECOVERY_SNAPSHOT
     title: Snapshot
     description: |
-      The snapshot to put in place of the root subvolume. Newest first, with the
-      date it was taken and what took it.
+      The snapshot to put in place of the root subvolume. Newest first, with
+      the date it was taken and what created it.
     group: Storage
     required: true
     conditions: ARCH_OS_RECOVERY_FILESYSTEM == btrfs

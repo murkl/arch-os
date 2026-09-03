@@ -4,8 +4,8 @@ needs: [share-config]
 confirm: |
   Open a shell inside the system that was just installed?
 
-  Everything is still mounted, so this is the moment to look around or fix
-  something by hand. Leave it again with `exit`.
+  Everything is still mounted, so this is a good time to look around or fix
+  something by hand. Leave the shell with `exit`.
 # Opening on no, so an enter meant for the page before does not drop somebody
 # into a root shell.
 default: no

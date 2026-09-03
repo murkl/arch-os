@@ -7,5 +7,5 @@ stage: finish
 report: |
   Arch OS is installed
 
-  {{ARCH_OS_HOSTNAME}} is on {{ARCH_OS_DISK}} and ready to start. Everything from
-  here on is offered rather than needed.
+  {{ARCH_OS_HOSTNAME}} is on {{ARCH_OS_DISK}} and ready to start. Everything
+  from here on is optional.

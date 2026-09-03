@@ -4,5 +4,5 @@ needs: [reboot]
 confirm: |
   Unmount the new system and stay in the live environment?
 
-  Nothing is lost either way — the installation is finished. Leaving it mounted
-  is only useful if you want to keep working on it from here.
+  Nothing is lost either way — the installation is finished. Leaving it
+  mounted is only useful if you want to keep working on it from here.
