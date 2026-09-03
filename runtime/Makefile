@@ -1,4 +1,4 @@
-APP     := installer
+APP     := runtime
 PKG     := .
 BIN_DIR := bin
 
@@ -19,18 +19,21 @@ LDFLAGS_BUILD := -s -w -X main.version=$(VERSION)
 LDFLAGS_RUN   := -X main.version=$(VERSION_DEV)
 GOFLAGS       := CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH)
 
-# The tree this runtime is developed against, one at a time. The page that asks
-# which of several to open needs them beside a binary, which is what a build
-# makes: `make build` at the root, then `release/arch-os`.
+# Where the modules this runtime is developed against are: the repository root,
+# which holds a runtime.yaml with the module folders beside it, exactly as a
+# release does. MODULE opens one outright, the way `runtime --installer` does on
+# a machine; without it the interface asks which.
 #
-# A build leaves its binary in bin/; putting a copy of it beside a tree is the
-# release's business, not this one's.
-TREE ?= ../installer
+# A build leaves its binary in bin/; putting a copy of it beside the modules is
+# the release's business, not this one's — `make build` at the root, then
+# `release/runtime`.
+DIR    ?= ..
+MODULE ?=
 
 # The template every catalog here is filled in from, and the catalogs
 # themselves. Both are generated: the template out of the Go sources, the
 # catalogs out of the template.
-POT      := locales/arch-os.pot
+POT      := locales/runtime.pot
 CATALOGS := $(wildcard locales/*.po)
 
 .PHONY: all build run tidy tidy-check test test-race vet staticcheck vuln fmt fmt-check locales locales-check clean check release
@@ -40,7 +43,7 @@ all: build
 # -dir because `go run` builds into a temporary folder, where none of this is
 # beside the binary.
 run:
-	go run -ldflags="$(LDFLAGS_RUN)" $(PKG) -dir $(TREE)
+	go run -ldflags="$(LDFLAGS_RUN)" $(PKG) -dir $(DIR) $(MODULE)
 
 build: $(BIN_DIR)
 	$(GOFLAGS) go build -trimpath -ldflags="$(LDFLAGS_BUILD)" -o $(BIN) $(PKG)
@@ -91,11 +94,11 @@ locales:
 # which is the one thing about a catalog that cannot wait for somebody to
 # notice.
 #
-# --statistics because nothing else ever counts these. A tree's coverage is
-# reported by `arch-os -check`, which reads the tree's own messages back out of
-# it; the runtime's messages only exist in the template, which is deliberately
-# not shipped — so an entry left empty or fuzzy here would otherwise reach a
-# release with nobody having seen a number.
+# --statistics because nothing else ever counts these. A module's coverage is
+# reported by `runtime -check`, which reads the module's own messages back out
+# of it; the runtime's messages only exist in the template, which is
+# deliberately not shipped — so an entry left empty or fuzzy here would
+# otherwise reach a release with nobody having seen a number.
 locales-check:
 	@go run ./tools/potgen | diff -u $(POT) - \
 		|| { echo "$(POT) is out of date — run 'make locales'" >&2; exit 1; }
@@ -116,9 +119,9 @@ fmt-check:
 # What has to pass before anything is committed.
 check: fmt-check tidy-check vet staticcheck locales-check test build
 
-# There is deliberately no install target: the binary looks for a tree beside
-# itself, so a copy on $PATH with nothing next to it can only say it found no
-# installer. What ships is the tree with the binary in it.
+# There is deliberately no install target: the binary looks for its runtime.yaml
+# beside itself, so a copy on $PATH with nothing next to it can only say there is
+# nothing to run. What ships is the modules with the binary beside them.
 
 clean:
 	rm -rf $(BIN_DIR)

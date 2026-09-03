@@ -31,7 +31,7 @@
 - AUR helper, 32-bit support, automatic housekeeping timers
 - Shell enhancement (bash, zsh or fish) and a system manager TUI
 - Samba sharing, mirrors ranked by country
-- English and German interface, and [more languages are welcome](../TRANSLATING.md): a tree can add its own
+- English and German interface, and [more languages are welcome](../TRANSLATING.md): a module can add its own
 - A recovery on the same image that rolls a broken system back, without a network
 
 ## Installing
@@ -87,13 +87,14 @@ Four parts, deliberately kept apart, see
 | [`recovery/`](../recovery) | the same shape again, for repairing a system that is already on a disk: its own `recovery.yaml`, its own steps, its own answers. |
 | [`iso/`](../iso) | turns a build of the three into a bootable image that starts on boot. |
 
-The two trees are **data, not programs**: one binary runs either of them, and
+The two are **modules: data, not programs**. One binary runs either of them, and
 which one is a folder beside it. A release is that binary with `installer/` and
-`recovery/` next to it and an `arch-os.yaml` saying what the two are called
-together, and the first thing it asks is which of them to open.
-Adding a question is a few lines of YAML; adding a step is a folder with two
-files in it; neither is a change to the runtime, and the runtime cannot break
-Arch-specific behaviour it has never heard of.
+`recovery/` next to it and a `runtime.yaml` listing them and saying what they are
+called together; the first page is the language, the second the question of which
+to open. Adding a question is a few lines of YAML; adding a step is a folder with
+two files in it; adding a whole module is a folder and a line in `runtime.yaml` —
+none of it is a change to the runtime, and the runtime cannot break Arch-specific
+behaviour it has never heard of.
 
 <details>
 <summary><h2 style="display: inline;" id="screenshots">More screenshots</h2></summary>

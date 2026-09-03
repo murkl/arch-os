@@ -3,14 +3,14 @@
 Everything this recovery knows about Arch Linux. It is data, one YAML file and
 the folders beside it, and it does not run on its own: the
 [runtime](../runtime) draws the interface, asks the questions and runs the tasks
-in order. Putting Arch Linux on a disk is a tree of its own, and a program of
-its own: [`installer/`](../installer).
+in order. Putting Arch Linux on a disk is a module of its own:
+[`installer/`](../installer).
 
 ```sh
-make check   # load the tree and lint every script
+make check   # load the module and lint every script
 
 # Run it, without touching this machine
-DEBUG=true make -C ../runtime run TREE=../recovery
+DEBUG=true make -C ../runtime run MODULE=recovery
 ```
 
 ## What is where
@@ -20,15 +20,15 @@ recovery.yaml            what this recovery is, what it asks, what order it work
 tasks/<id>/task.yaml     where that unit belongs: its stage, its needs, its conditions
 tasks/<id>/task.sh       what it does, and any file it ships with, beside it
 hooks/<name>.sh          everything around the work itself
-lib.sh                   the little every script of this tree shares
+lib.sh                   the little every script of this module shares
 locales/                 one <code>.po per language this recovery speaks, and the template they are filled in from
 ```
 
-Nothing points at any of this from `recovery.yaml`: each part is found by its own
-name. The runtime takes the one YAML file it finds in a folder, which is what
-lets this tree and the installer's sit side by side and stay two programs. A
-release holds both beside one binary, which asks which of them to open;
-`./arch-os -dir recovery` is this one outright, and on the ISO that is the
+Nothing points at any of this from `recovery.yaml`: each part is found by its
+own name. The runtime takes the one YAML file it finds in a folder, which is what
+lets this module and the installer sit side by side and stay two programs. Both
+are listed in `../runtime.yaml`, and the interface asks which of them to open;
+`./runtime --recovery` is this one outright, and on the ISO that is the
 `recovery` command.
 
 ## What it does
@@ -36,7 +36,7 @@ release holds both beside one binary, which asks which of them to open;
 `recovery.yaml` says `run: Recovery`, which is the name the interface reads out
 wherever it says what is happening. Without it the runtime falls back to the only
 thing an unnamed run can be and calls a repair an installation. `description:`
-beside it is the sentence under this program's row on the page that asks which to
+beside it is the sentence under this module's row on the page that asks which to
 open.
 
 Three stages, and after the first one every step is offered rather than done.
@@ -61,12 +61,12 @@ Each of the three under `repair` has a `confirm:` of its own, so a run can stop
 after any of them. `needs:` is what puts them in that order: a shell is worth
 having after the boot files are back, not before.
 
-`make check` prints the order the whole tree adds up to.
+`make check` prints the order the whole module adds up to.
 
 ## Nothing is downloaded
 
 A machine that needs repairing is one whose network may be part of what broke,
-so this tree never asks for one: there is no `online.sh` hook, which is what
+so this module never asks for one: there is no `online.sh` hook, which is what
 turns the network screen off, and the kernel images come out of the repaired
 system's own pacman cache rather than off a mirror.
 
@@ -126,12 +126,12 @@ been given, and a disk laid out some other way has to stay answerable by hand.
 ## A language
 
 ```sh
-cp locales/recovery.pot locales/fr.po   # every word this tree says, none of them translated
+cp locales/recovery.pot locales/fr.po   # every word this module says, none of them translated
 make check                              # reports coverage per language
 ```
 
 Fill in the `msgstr` lines and nothing else. `make locales` regenerates
-`recovery.pot` from the tree and brings every catalog up to it, which is what has
+`recovery.pot` from the module and brings every catalog up to it, which is what has
 to run after a question is added or reworded. The runtime's own words are
 translated separately, in its own `locales/`. See
 [TRANSLATING.md](../TRANSLATING.md).

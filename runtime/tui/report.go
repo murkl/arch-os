@@ -16,7 +16,7 @@ import (
 // "restart now?") arrive as though the work were still going on. So the run
 // stops, once, and says so at the size the thing deserves.
 //
-// The words are the tree's, because what has just happened is the tree's own
+// The words are the module's, because what has just happened is the module's own
 // business. What is the runtime's is the mark, the green, and the code — a
 // value nobody is going to copy off a screen by hand.
 type report struct {
@@ -24,7 +24,7 @@ type report struct {
 	body     string
 
 	// code is the value drawn to be scanned, and printed underneath as itself.
-	// Empty where the tree named none, or where what it named came back empty —
+	// Empty where the module named none, or where what it named came back empty —
 	// a link that could not be made is not a page that cannot be shown.
 	code string
 }

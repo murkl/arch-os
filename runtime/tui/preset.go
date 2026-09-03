@@ -1,15 +1,15 @@
 package tui
 
 import (
-	"installer/internal/spec"
+	"github.com/murkl/arch-os/runtime/internal/spec"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // presetScreen is one of the questions a fresh machine is asked before the real
 // ones: where it is, what kind of system it is going to be. What the page is
-// called and what it says come from the tree, because what a starting point
-// stands for is the tree's own business.
+// called and what it says come from the module, because what a starting point
+// stands for is the module's own business.
 //
 // A preset is a set of answers, not a mode. Choosing one fills in what that
 // kind of installation usually wants and then stops mattering — every value it
@@ -70,13 +70,13 @@ func (s *presetScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 // configuration shared after another installation — is one question and then
 // exactly the same set of answers, so it is one more row here and not a mode,
 // a flag or a page of its own. What it asks is asked on the page every other
-// question is asked on, and what the answer stands for is fetched by the tree's
-// own shell, since only the tree knows where such a thing is kept.
+// question is asked on, and what the answer stands for is fetched by the
+// module's own shell, since only the module knows where such a thing is kept.
 func (s *presetScreen) take(o *spec.PresetOption) tea.Cmd {
 	if !o.Fetches() {
 		return tea.Batch(s.app.adopt(o), s.done())
 	}
-	return push(newField(s.app, s.app.spec.Var(o.Asks), func() tea.Cmd {
+	return push(newField(s.app, s.app.module.Var(o.Asks), func() tea.Cmd {
 		return tea.Batch(s.app.adopt(o), s.done())
 	}).opening().importing(o.Apply))
 }

@@ -46,30 +46,30 @@ msgstr ""
 msgid "System check"
 msgstr ""
 
-#: internal/spec/load.go:65
-msgid "No installer found."
-msgstr ""
-
-#: internal/spec/load.go:66
-#, c-format
-msgid "A %s file has to sit next to this program, in %s."
-msgstr ""
-
-#: internal/spec/load.go:84
+#: internal/spec/load.go:30
 #, c-format
 msgid "no %s file here"
 msgstr ""
 
-#: internal/spec/load.go:86
+#: internal/spec/load.go:32
 #, c-format
 msgid "more than one %s file here"
 msgstr ""
 
-#: internal/spec/spec.go:462
+#: internal/spec/runtime.go:73
+msgid "Nothing to run here."
+msgstr ""
+
+#: internal/spec/runtime.go:74
+#, c-format
+msgid "A %s file has to sit next to this program, in %s."
+msgstr ""
+
+#: internal/spec/spec.go:466
 msgid "This value has the wrong format."
 msgstr ""
 
-#: internal/spec/spec.go:464
+#: internal/spec/spec.go:468
 msgid "This value is required."
 msgstr ""
 
@@ -78,19 +78,23 @@ msgstr ""
 msgid "Answers given to %s. Edit by hand if you like."
 msgstr ""
 
-#: internal/store/conf.go:79 tui/labels.go:82
+#: internal/store/conf.go:79 internal/store/language.go:58 tui/labels.go:82
 msgid "Interface language"
 msgstr ""
 
-#: internal/store/store.go:208
+#: internal/store/language.go:57
+msgid "Answers the runtime keeps for every module. Edit by hand if you like."
+msgstr ""
+
+#: internal/store/store.go:222
 msgid "asked just before the run"
 msgstr ""
 
-#: internal/store/store.go:225 tui/labels.go:165
+#: internal/store/store.go:239 tui/labels.go:172
 msgid "Yes"
 msgstr ""
 
-#: internal/store/store.go:227 tui/labels.go:166
+#: internal/store/store.go:241 tui/labels.go:173
 msgid "No"
 msgstr ""
 
@@ -112,6 +116,16 @@ msgstr ""
 #: internal/wlan/wlan.go:124
 #, c-format
 msgid "%s was joined, but there is still no internet."
+msgstr ""
+
+#: main.go:259
+#, c-format
+msgid "No module called %s."
+msgstr ""
+
+#: main.go:260
+#, c-format
+msgid "This one offers %s."
 msgstr ""
 
 #: tui/labels.go:22
@@ -236,7 +250,7 @@ msgstr ""
 msgid "Start"
 msgstr ""
 
-#. %s is the name of the program being read, e.g. "Arch OS Installer".
+#. %s is the name of the product being read, e.g. "Arch OS".
 #: tui/labels.go:85
 #, c-format
 msgid "Choose the language for %s."
@@ -263,7 +277,7 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#. %s is the name of the program whose values these are.
+#. %s is the name of the module whose values these are.
 #: tui/labels.go:105
 #, c-format
 msgid "Every value %s will use. Choose one to change it."
@@ -340,34 +354,38 @@ msgstr ""
 msgid "Leave"
 msgstr ""
 
-#: tui/labels.go:154
-msgid "Restart"
-msgstr ""
-
-#: tui/labels.go:155
-msgid "Close this machine down and start it again."
-msgstr ""
-
-#: tui/labels.go:156
-msgid "Shut down"
-msgstr ""
-
-#: tui/labels.go:157
-msgid "Exit to the console"
-msgstr ""
-
 #: tui/labels.go:158
-msgid "Switch this machine off."
-msgstr ""
-
-#: tui/labels.go:159
-msgid "Restarting …"
-msgstr ""
-
-#: tui/labels.go:160
-msgid "Shutting down …"
+msgid "Whatever was running is still running behind this page. Anything chosen here stops it."
 msgstr ""
 
 #: tui/labels.go:161
+msgid "Restart"
+msgstr ""
+
+#: tui/labels.go:162
+msgid "Close this machine down and start it again."
+msgstr ""
+
+#: tui/labels.go:163
+msgid "Shut down"
+msgstr ""
+
+#: tui/labels.go:164
+msgid "Exit to the console"
+msgstr ""
+
+#: tui/labels.go:165
+msgid "Switch this machine off."
+msgstr ""
+
+#: tui/labels.go:166
+msgid "Restarting …"
+msgstr ""
+
+#: tui/labels.go:167
+msgid "Shutting down …"
+msgstr ""
+
+#: tui/labels.go:168
 msgid "This machine did not do as it was told."
 msgstr ""

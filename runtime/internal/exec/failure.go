@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"installer/internal/i18n"
+	"github.com/murkl/arch-os/runtime/internal/i18n"
 )
 
 // stderrKeep is how many of the last stderr lines a Failure carries. The real

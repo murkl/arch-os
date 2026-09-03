@@ -3,12 +3,12 @@
 Everything this installer knows about Arch Linux. It is data, one YAML file and
 the folders beside it, and it does not run on its own: the
 [runtime](../runtime) draws the interface, asks the questions and runs the tasks
-in order. Repairing a system that is already on a disk is a tree of its own, and
-a program of its own: [`recovery/`](../recovery).
+in order. Repairing a system that is already on a disk is a module of its own:
+[`recovery/`](../recovery).
 
 ```sh
-make check                                            # load the tree and lint every script
-DEBUG=true make -C ../runtime run TREE=../installer   # run it, without touching this machine
+make check                                              # load the module and lint every script
+DEBUG=true make -C ../runtime run MODULE=installer      # run it, without touching this machine
 ```
 
 ## What is where
@@ -18,21 +18,21 @@ installer.yaml           what this installer is, what it asks, what order it wor
 tasks/<id>/task.yaml     where that unit belongs: its stage, its needs, its conditions
 tasks/<id>/task.sh       what it does, and any file it ships with, beside it
 hooks/<name>.sh          everything around the work itself
-lib.sh                   the little every script of this tree shares
+lib.sh                   the little every script of this module shares
 data/                    the tables a language and a country are looked up in
 locales/                 one <code>.po per language this installer speaks, and the template they are filled in from
 ```
 
 Nothing points at any of this from `installer.yaml`: each part is found by its
-own name. A release is the runtime binary with this folder beside it and the
-recovery beside that: one binary, two programs, and the first thing it asks is
-which of them to open.
+own name. A release is the runtime binary with `runtime.yaml` beside it, and
+this folder and the recovery listed there: one binary, two modules, and the
+question of which of them to open is a page of the interface's own.
 
 ## What a run is called
 
 `installer.yaml` says `run: Installation`, which the interface reads out wherever
 it says what is happening: the row that starts it, the last warning, the clock
-while it runs. `description:` beside it is the sentence under this program's row
+while it runs. `description:` beside it is the sentence under this module's row
 on the page that asks which to open.
 
 Left out, the runtime falls back to the only thing an unnamed run can be and
@@ -69,7 +69,7 @@ stage: the disk exists before anything is installed onto it, 32-bit support is
 switched on before any package that needs it is pulled in, and the boot chain is
 signed last: signing only holds if nothing rebuilds the kernel image afterwards.
 
-`make check` prints the order the whole tree adds up to.
+`make check` prints the order the whole module adds up to.
 
 ### Writing one
 
@@ -163,7 +163,7 @@ them is any different.
 
 Bash the runtime calls by name. A hook that is there is used; one that is not
 turns that part of the interface off. Any other file name under `hooks/` is
-refused when the tree loads.
+refused when the module loads.
 
 | | |
 |---|---|
@@ -238,17 +238,17 @@ instead of writing them out names the question it asks with `asks:` and the
 shell that makes something of the answer with `apply:`.
 
 **Something in the recovery**: none of it is here. That is
-[`recovery/`](../recovery), a tree and a program of its own.
+[`recovery/`](../recovery), a module of its own.
 
 **A language**:
 
 ```sh
-cp locales/installer.pot locales/fr.po   # every word this tree says, none of them translated
+cp locales/installer.pot locales/fr.po   # every word this module says, none of them translated
 make check                               # reports coverage per language
 ```
 
 Fill in the `msgstr` lines and nothing else. `make locales` regenerates
-`installer.pot` from the tree and brings every catalog up to it, which is what
+`installer.pot` from the module and brings every catalog up to it, which is what
 has to run after a question is added or reworded. The runtime's own words are
 translated separately, in its own `locales/`. See
 [TRANSLATING.md](../TRANSLATING.md).

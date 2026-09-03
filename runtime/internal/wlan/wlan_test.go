@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"installer/internal/exec"
+	"github.com/murkl/arch-os/runtime/internal/exec"
 )
 
 var sh = exec.Runner{}
@@ -31,11 +31,11 @@ func TestOnlineReportsWhatTheHookSays(t *testing.T) {
 
 func TestJoinableNeedsDeviceNetworksAndConnect(t *testing.T) {
 	if radio(Config{Online: "true"}).Joinable() {
-		t.Error("a tree with only an online hook reported joinable")
+		t.Error("a module with only an online hook reported joinable")
 	}
 	full := Config{Online: "true", Device: "echo wlan0", Networks: "true", Connect: "true"}
 	if !radio(full).Joinable() {
-		t.Error("a fully described tree reported not joinable")
+		t.Error("a fully described module reported not joinable")
 	}
 }
 

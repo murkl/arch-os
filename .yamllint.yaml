@@ -4,7 +4,7 @@
 # linter rather than a rule of the format, and each would ask for the source to
 # be rewritten for the tool's sake:
 #
-#   line-length  the trees' declarations and the translation catalogs are
+#   line-length  the modules' declarations and the translation catalogs are
 #                prose. A sentence broken at column 80 reads worse and diffs
 #                worse.
 #   truthy       `default: no` is an answer to an offer, not a boolean — the

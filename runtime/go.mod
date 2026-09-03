@@ -1,4 +1,4 @@
-module installer
+module github.com/murkl/arch-os/runtime
 
 go 1.26.5
 

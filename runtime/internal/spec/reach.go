@@ -9,18 +9,18 @@ import (
 	"strings"
 )
 
-// The one kind of authoring mistake this tree's shape does not rule out on its
+// The one kind of authoring mistake a module's shape does not rule out on its
 // own.
 //
 // Everywhere else the same fact is written down once: the order comes out of
 // the stages and the needs, the settings page comes out of the variables, the
-// translation template comes out of the tree. A guard is the exception — a
+// translation template comes out of the module. A guard is the exception — a
 // question says when it is worth asking and a task says when it is worth
 // running, and the two are separate sentences in separate files that are meant
 // to agree. When they drift, everything still loads and everything still runs;
 // the only symptom is a question somebody answered that nothing acted on.
 //
-// So it is checked here instead. Not at load: a tree that behaves is not a tree
+// So it is checked here instead. Not at load: a module that behaves is not a module
 // that refuses to start, and a released image must never turn a lint into a
 // machine that will not boot. `arch-os -check` reports it and `make check` runs
 // that, which puts it in front of whoever wrote the guard, before the commit.
@@ -37,7 +37,7 @@ type Unread struct {
 
 func (u Unread) String() string {
 	if u.Task == "" {
-		return fmt.Sprintf("%s: nothing in this tree reads this answer", u.Var)
+		return fmt.Sprintf("%s: nothing in this module reads this answer", u.Var)
 	}
 	return fmt.Sprintf("%s is asked where %s/%s cannot run: %s", u.Var, DirTasks, u.Task, u.Need)
 }
@@ -54,7 +54,7 @@ func (u Unread) String() string {
 // Read outside a task — in the shared library, a hook, or the declaration's own
 // shell — and there is nothing to compare against: those run whatever the
 // answers say, so the question is answered by definition.
-func (s *Spec) Unread() ([]Unread, error) {
+func (s *Module) Unread() ([]Unread, error) {
 	free, byTask, err := s.readers()
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (s *Spec) Unread() ([]Unread, error) {
 // A condition about the question itself is passed over: a task guarded on the
 // very value being asked for — `AUR_HELPER != none` — is not a task that runs
 // somewhere else, it is the answer being acted on.
-func (s *Spec) unreachable(v *Variable, tasks []*Task) (Unread, bool) {
+func (s *Module) unreachable(v *Variable, tasks []*Task) (Unread, bool) {
 	var first Unread
 	for _, t := range tasks {
 		need := ""
@@ -105,7 +105,7 @@ func (s *Spec) unreachable(v *Variable, tasks []*Task) (Unread, bool) {
 
 // readers is where each declared variable is named as a value: the tasks whose
 // own files name it, and whether anything outside a task does.
-func (s *Spec) readers() (free map[string]bool, byTask map[string][]*Task, err error) {
+func (s *Module) readers() (free map[string]bool, byTask map[string][]*Task, err error) {
 	free, byTask = map[string]bool{}, map[string][]*Task{}
 	declared := map[string]bool{}
 	for _, v := range s.Vars {

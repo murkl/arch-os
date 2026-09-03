@@ -10,7 +10,7 @@ import (
 // Two rules, and no third: a task runs after every task of an earlier stage,
 // and after whatever it named in `needs`. Everything else about the order is
 // nobody's business — units that neither the stages nor a need put in sequence
-// are independent, and they run in folder order so that the same tree always
+// are independent, and they run in folder order so that the same module always
 // produces the same list.
 //
 // Working it out here rather than keeping a list of steps somewhere means the

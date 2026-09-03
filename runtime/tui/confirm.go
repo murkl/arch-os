@@ -8,8 +8,8 @@ import (
 
 // confirmScreen is the last page before anything is changed.
 //
-// What it says comes entirely from the tree, with the answers filled into it,
-// because only the tree knows what is about to happen — which disk, whether
+// What it says comes entirely from the module, with the answers filled into
+// it, because only the module knows what is about to happen — which disk, whether
 // it is erased or shared, what that costs. The runtime supplies the moment, not
 // the warning.
 //
@@ -22,7 +22,7 @@ type confirmScreen struct {
 func newConfirm(a *app) *confirmScreen { return &confirmScreen{app: a} }
 
 func (s *confirmScreen) Title() string {
-	if name := s.app.spec.RunName(); name != "" {
+	if name := s.app.module.RunName(); name != "" {
 		return name
 	}
 	return labelInstall()
@@ -45,15 +45,15 @@ func (s *confirmScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 }
 
 func (s *confirmScreen) View(width, height int) string {
-	// Named after what is about to happen where the tree has a name for it, and
+	// Named after what is about to happen where the module has a name for it, and
 	// after the only thing an installer does where it has not.
 	ready, start := labelReady(), labelStartInstall()
-	if name := s.app.spec.RunName(); name != "" {
+	if name := s.app.module.RunName(); name != "" {
 		ready, start = labelReadyToStart(), labelStartNamed(name)
 	}
 	var b strings.Builder
 	b.WriteString(alertStyle.Render(ready) + "\n\n")
-	if text := s.app.spec.ConfirmText(s.app.store.Get); text != "" {
+	if text := s.app.module.ConfirmText(s.app.store.Get); text != "" {
 		b.WriteString(paragraph(text, width) + "\n")
 	}
 	return b.String() + "\n" + accentBold.Render(glyphs.cursor+start)
@@ -72,11 +72,11 @@ func startInstall(a *app, next int) screen {
 			return push(startInstall(a, next+1))
 		})
 	}
-	// Nothing follows a finished run: everything the tree had to offer once the
+	// Nothing follows a finished run: everything the module had to offer once the
 	// system was installed was a task of the last stage and has been offered.
 	// Enter on the result leaves. A failed one lands back on the hub, which is
 	// where a wrong answer is corrected.
-	return newRun(a, a.spec.RunName(), a.runner.Tasks(),
+	return newRun(a, a.module.RunName(), a.runner.Tasks(),
 		leave,
 		func() tea.Cmd { return reset(newHub(a)) })
 }

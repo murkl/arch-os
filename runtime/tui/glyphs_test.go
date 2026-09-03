@@ -6,8 +6,8 @@ import (
 	"testing"
 	"unicode"
 
-	"installer/internal/i18n"
-	"installer/locales"
+	"github.com/murkl/arch-os/runtime/internal/i18n"
+	"github.com/murkl/arch-os/runtime/locales"
 
 	"github.com/charmbracelet/lipgloss"
 )

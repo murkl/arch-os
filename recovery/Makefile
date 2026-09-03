@@ -2,19 +2,20 @@
 # is, is a way to be sure it still loads and that every script in it is sound —
 # before it reaches a machine whose only copy of something is on that disk.
 
-# The runtime that drives this tree, as `make build` in ../runtime leaves it.
-# Nothing is copied in here: a binary in the tree would be a build artefact in
+# The runtime that drives this module, as `make build` in ../runtime leaves it.
+# Nothing is copied in here: a binary in the module would be a build artefact in
 # the middle of the source.
-RUNTIME ?= ../runtime/bin/installer-$(shell go env GOOS)-$(shell go env GOARCH)
+RUNTIME ?= ../runtime/bin/runtime-$(shell go env GOOS)-$(shell go env GOARCH)
 
-# -dir because the runtime otherwise looks for a tree beside its own binary.
-RUN := $(RUNTIME) -dir .
+# -dir because the runtime otherwise looks for its runtime.yaml beside its own
+# binary; the module name because everything below is about this one alone.
+RUN := $(RUNTIME) -dir .. recovery
 
 SCRIPTS := $(shell find . -name '*.sh')
 
-# The template this tree's catalogs are filled in from, and the catalogs
-# themselves. Both are generated: the template out of the tree, the catalogs out
-# of the template.
+# The template this module's catalogs are filled in from, and the catalogs
+# themselves. Both are generated: the template out of the module, the catalogs
+# out of the template.
 POT      := locales/recovery.pot
 CATALOGS := $(wildcard locales/*.po)
 
@@ -23,9 +24,9 @@ CATALOGS := $(wildcard locales/*.po)
 # What has to pass before anything is committed.
 check: load lint locales-check
 
-# Loads the tree exactly as the runtime does at startup, so every task, every
+# Loads the module exactly as the runtime does at startup, so every task, every
 # condition and every preset is resolved — and prints the order they add up to,
-# which is the one thing about a tree nobody writes down.
+# which is the one thing about a module nobody writes down.
 load: $(RUNTIME)
 	$(RUN) -check
 
@@ -36,7 +37,7 @@ lint:
 fmt:
 	shfmt -w -i 4 $(SCRIPTS)
 
-# Asks the loaded tree for every word it says, writes the template, and brings
+# Asks the loaded module for every word it says, writes the template, and brings
 # each catalog up to it. msgmerge keeps every translation whose source text is
 # unchanged and marks the rest fuzzy rather than dropping it — a reworded
 # sentence is a translation to look at again, not one to write from scratch.

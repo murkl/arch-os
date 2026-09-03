@@ -6,7 +6,7 @@ import "strings"
 //
 // Deliberately not a template language and deliberately not $VAR: this text is
 // read next to shell that uses $VAR for something else entirely — the
-// environment a script sees — and one notation meaning two things in one tree
+// environment a script sees — and one notation meaning two things in one module
 // is how a warning ends up naming the wrong disk. A name nothing answers is
 // left empty rather than left as its own braces, which would put the machinery
 // on screen at the one moment somebody has to read carefully.

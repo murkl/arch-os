@@ -7,8 +7,8 @@ import (
 	"slices"
 	"strings"
 
-	"installer/internal/i18n"
-	"installer/internal/spec"
+	"github.com/murkl/arch-os/runtime/internal/i18n"
+	"github.com/murkl/arch-os/runtime/internal/spec"
 )
 
 // The answer file is shell, not yaml, and that is on purpose. It is the one
@@ -44,7 +44,7 @@ func (s *Store) Load() error {
 			s.val[name] = value
 			continue
 		}
-		v := s.spec.Var(name)
+		v := s.mod.Var(name)
 		if v == nil || v.Secret() {
 			continue
 		}
@@ -75,10 +75,10 @@ func (s *Store) Save() error {
 		}
 	}
 	var b strings.Builder
-	fmt.Fprintf(&b, "# %s\n", i18n.T("Answers given to %s. Edit by hand if you like.", s.spec.Name()))
+	fmt.Fprintf(&b, "# %s\n", i18n.T("Answers given to %s. Edit by hand if you like.", s.mod.Name()))
 	entry(&b, spec.LangVar, s.val[spec.LangVar], i18n.T("Interface language"))
 	group := ""
-	for _, v := range s.spec.Vars {
+	for _, v := range s.mod.Vars {
 		if v.Secret() {
 			continue
 		}

@@ -6,7 +6,7 @@
 # rollback task, in the middle of the run - the disk holding these has only just
 # been unlocked.
 
-# Simulated, so the page that asks is worth looking at while this tree is being
+# Simulated, so the page that asks is worth looking at while this module is being
 # worked on.
 if [ "$DEBUG" = "true" ]; then
     printf '@snapshots/2/snapshot\t2   2026-08-30 21:04   after a system update\n'

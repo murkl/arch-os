@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Straight into the recovery, past the question of which program to open. The
-# same runtime and the same folder as the installer; -dir is what says which of
-# the two trees beside it this is.
+# Straight into the recovery, past the question of which module to open. The
+# same runtime and the same folder as the installer; the name is what says which
+# of the modules beside it this is.
 set -eu
 
-exec arch-os -dir recovery "$@"
+exec arch-os --recovery "$@"

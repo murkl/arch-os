@@ -80,8 +80,8 @@ trap cleanup EXIT
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 echo "### Initialize Build"
-[ -x "${RELEASE_DIR}/arch-os" ] || { echo "Error: ${RELEASE_DIR}/arch-os not found - run 'make build' first" >&2 && exit 1; }
-[ -f "${RELEASE_DIR}/arch-os.yaml" ] || { echo "Error: ${RELEASE_DIR}/arch-os.yaml not found - run 'make build' first" >&2 && exit 1; }
+[ -x "${RELEASE_DIR}/runtime" ] || { echo "Error: ${RELEASE_DIR}/runtime not found - run 'make build' first" >&2 && exit 1; }
+[ -f "${RELEASE_DIR}/runtime.yaml" ] || { echo "Error: ${RELEASE_DIR}/runtime.yaml not found - run 'make build' first" >&2 && exit 1; }
 [ -f "${RELEASE_DIR}/installer/installer.yaml" ] || { echo "Error: ${RELEASE_DIR}/installer/installer.yaml not found - run 'make build' first" >&2 && exit 1; }
 [ -f "${RELEASE_DIR}/recovery/recovery.yaml" ] || { echo "Error: ${RELEASE_DIR}/recovery/recovery.yaml not found - run 'make build' first" >&2 && exit 1; }
 mkdir -p "$DOWNLOAD_DIR"
@@ -115,17 +115,17 @@ if [ -n "$DROPPED" ]; then
     grep -vxF "$DROPPED" "$ISO_PACKAGES" >"${TEMP_DIR}/packages" && mv "${TEMP_DIR}/packages" "$ISO_PACKAGES"
 fi
 
-# The runtime binary with both trees beside it, a folder each - the only place
-# the runtime looks for one. /opt/arch-os is what the systemd unit below starts,
-# and what the three launchers on the path run out of.
+# The runtime binary with runtime.yaml and both modules beside it, a folder each
+# - the only place the runtime looks. /opt/arch-os is what the systemd unit
+# below starts, and what the three launchers on the path run out of.
 echo "### Install Arch OS"
 mkdir -p "${AIRFS_OPT}"
 cp -r "${RELEASE_DIR}/." "${AIRFS_OPT}/"
-chmod +x "${AIRFS_OPT}/arch-os"
+chmod +x "${AIRFS_OPT}/runtime"
 
 # Set permissions
 add_permission() { grep -q "\[\"$1\"\]" "${ISO_DIR}/profiledef.sh" || sed -i "/^file_permissions=(/a\\  [\"$1\"]=\"0:0:755\"" "${ISO_DIR}/profiledef.sh"; }
-add_permission /opt/arch-os/arch-os
+add_permission /opt/arch-os/runtime
 add_permission /usr/local/bin/arch-os
 add_permission /usr/local/bin/installer
 add_permission /usr/local/bin/recovery
@@ -169,7 +169,7 @@ fi
 
 # One systemd unit on tty1 replaces autologin, a shell profile and a menu script:
 # there is exactly one thing this machine booted to do, and which of the two
-# programs that turns out to be is the interface's own first page.
+# modules that turns out to be is a page of the interface's own.
 mkdir -p "${ISO_DIR}/airootfs/etc/systemd/system/multi-user.target.wants"
 ln -sf /etc/systemd/system/arch-os.service \
     "${ISO_DIR}/airootfs/etc/systemd/system/multi-user.target.wants/arch-os.service"
@@ -194,20 +194,19 @@ sed -i 's/^timeout.*/timeout 0/' "${ISO_DIR}/efiboot/loader/loader.conf"
 # Both files, because they are shown at different moments: /etc/issue before the
 # login, /etc/motd after it.
 cat >"${ISO_DIR}/airootfs/etc/issue" <<'EOF'
-Arch OS live environment. Type arch-os to start it again.
+Arch OS live environment. Type installer or recovery to start again.
 
 EOF
 
 cat >"${ISO_DIR}/airootfs/etc/motd" <<'EOF'
 Arch OS live environment
 
-  arch-os      install Arch Linux on this machine, or repair one already on a disk
-  installer    straight into the installer
-  recovery     straight into the recovery
+  installer    install Arch Linux on this machine
+  recovery     repair an Arch Linux system already on a disk
   iwctl        join a wireless network
 
-Both programs keep their answers in /opt/arch-os, so starting either again picks
-up where it left off. What they did is in /opt/arch-os/installer.log and
+Both keep their answers in /opt/arch-os, so starting either again picks up where
+it left off. What they did is in /opt/arch-os/installer.log and
 /opt/arch-os/recovery.log.
 
 EOF

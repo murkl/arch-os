@@ -3,8 +3,8 @@ package tui
 import (
 	"strings"
 
-	"installer/internal/runner"
-	"installer/internal/spec"
+	"github.com/murkl/arch-os/runtime/internal/runner"
+	"github.com/murkl/arch-os/runtime/internal/spec"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -286,10 +286,10 @@ func (s *fieldScreen) commit() (screen, tea.Cmd) {
 	// changes the machine this is running on — the console keyboard — has to
 	// hold for whatever is typed next, and the next page is where that is typed.
 	s.app.runner.Apply(s.v)
-	// The one answer that can also be about this program: a tree may tie the
+	// The one answer that can also be about this program: a module may tie the
 	// words on screen to a variable of its own, and then the next frame is
 	// already read in the language just chosen.
-	if s.v.Name == s.app.spec.Language {
+	if s.v.Name == s.app.module.Language {
 		s.app.speakLike(value)
 	}
 	// An answer with shell hanging on it is not given until that shell has

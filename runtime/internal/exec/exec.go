@@ -16,7 +16,7 @@ import (
 	"sync"
 	"syscall"
 
-	"installer/internal/logging"
+	"github.com/murkl/arch-os/runtime/internal/logging"
 
 	"github.com/charmbracelet/x/ansi"
 )
@@ -30,7 +30,7 @@ type Env []string
 
 // Runner starts scripts, each wrapped in the same failure-reporting trap.
 //
-// Lib is shell the tree hands to every script of its own before that script's
+// Lib is shell the module hands to every script of its own before that script's
 // own text — one place for what several of them share. The runtime never reads
 // it and has no idea what is in it; it only makes sure everything it starts
 // gets the same one.

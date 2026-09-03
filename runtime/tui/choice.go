@@ -1,24 +1,23 @@
 package tui
 
 import (
-	"installer/internal/spec"
+	"github.com/murkl/arch-os/runtime/internal/spec"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// choiceScreen is the front door of a release that holds more than one program:
-// which of the trees beside the binary this run is.
+// choiceScreen is which of the runtime's modules this run is.
 //
-// It comes before everything else, because everything else belongs to whichever
-// it settles — the questions, the answer file, the log, the words on screen. An
-// installer that can also repair what it installed is not one program with a
+// It comes before everything the module itself does, because all of that
+// belongs to whichever it settles — the questions, the answer file, the log.
+// An installer that can also repair what it installed is not one program with a
 // switch in it: the two ask different questions, do different work and are
-// dangerous in different ways, so they are two trees and this is the one moment
-// they are told apart.
+// dangerous in different ways, so they are two modules and this is the one
+// moment they are told apart.
 //
-// What is on offer is each tree's own name and its own sentence about itself, so
-// the runtime never learns what any of them is for. A release holding one tree
-// never draws this page.
+// What is on offer is each module's own name and its own sentence about itself,
+// so the runtime never learns what any of them is for. A runtime offering one
+// module, or one named on the command line, never draws this page.
 type choiceScreen struct {
 	opening
 	app    *app
@@ -28,9 +27,9 @@ type choiceScreen struct {
 
 func newChoice(a *app, done func() tea.Cmd) *choiceScreen {
 	s := &choiceScreen{app: a, done: done}
-	items := make([]item, 0, len(a.trees))
-	for _, sp := range a.trees {
-		items = append(items, item{title: sp.Name(), detail: sp.Help(), key: sp.Dir})
+	items := make([]item, 0, len(a.modules))
+	for _, mod := range a.modules {
+		items = append(items, item{title: mod.Name(), detail: mod.Help(), key: mod.ID()})
 	}
 	s.picker = newPicker(items)
 	return s
@@ -48,14 +47,14 @@ func (s *choiceScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 	if !confirms(key) {
 		return s, nil
 	}
-	dir, ok := s.picker.chosen()
+	id, ok := s.picker.chosen()
 	if !ok {
 		return s, nil
 	}
-	// A tree that will not open is the end of the road rather than a row that
+	// A module that will not open is the end of the road rather than a row that
 	// does nothing: it was read and checked at startup, so anything failing here
 	// is the machine refusing to keep the answers or the log.
-	if err := s.app.enter(s.app.tree(dir)); err != nil {
+	if err := s.app.enter(s.app.byID(id)); err != nil {
 		return s, push(newFatal(s.app, err))
 	}
 	return s, s.done()
@@ -65,11 +64,11 @@ func (s *choiceScreen) View(width, height int) string {
 	return withDetail(s.picker, width, height)
 }
 
-// tree is the program a row on that page stands for.
-func (a *app) tree(dir string) *spec.Spec {
-	for _, sp := range a.trees {
-		if sp.Dir == dir {
-			return sp
+// byID is the module a row on that page stands for.
+func (a *app) byID(id string) *spec.Module {
+	for _, mod := range a.modules {
+		if mod.ID() == id {
+			return mod
 		}
 	}
 	return nil

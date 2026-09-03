@@ -1,9 +1,9 @@
 package tui
 
-import "installer/internal/i18n"
+import "github.com/murkl/arch-os/runtime/internal/i18n"
 
-// Every word the interface says that does not come from the installer folder:
-// the fixed pages, the buttons, the key hints. They are here as functions
+// Every word the interface says that does not come out of a module: the fixed
+// pages, the buttons, the key hints. They are here as functions
 // rather than constants because the language can change while the program is
 // running — the first screen is the one that changes it — and a constant read
 // at package init would be the one word left in the old language.
@@ -31,7 +31,7 @@ func labelHintClose() string    { return say("⏎ close") }
 func labelHintQuit() string     { return say("⏎ quit") }
 func labelHintStart() string    { return say("⏎ start · esc back") }
 
-// The network screen: checking for internet, and — where the tree describes
+// The network screen: checking for internet, and — where the module describes
 // how — joining a wireless one.
 func labelNetwork() string         { return say("Wireless network") }
 func labelNetworkHelp() string     { return say("Join a wireless network to continue.") }
@@ -81,12 +81,12 @@ func labelOpening() string { return say("Start") }
 
 func labelLanguage() string { return say("Interface language") }
 
-// TRANSLATORS: %s is the name of the program being read, e.g. "Arch OS Installer".
+// TRANSLATORS: %s is the name of the product being read, e.g. "Arch OS".
 func labelLanguageHelp(name string) string { return say("Choose the language for %s.", name) }
 
-// The fork at the top, where a release holds more than one program. Only the
+// The fork after it, where a runtime offers more than one module. Only the
 // page's own name is the runtime's: what is on it, and what each of them is, is
-// said in each tree's own words.
+// said in each module's own words.
 func labelChoice() string { return say("What to do") }
 
 // labelCounter is where something sits in a run of things: which question of
@@ -100,7 +100,7 @@ func labelInstallHelp() string { return say("Start the installation with the ans
 
 func labelSettings() string { return say("Settings") }
 
-// TRANSLATORS: %s is the name of the program whose values these are.
+// TRANSLATORS: %s is the name of the module whose values these are.
 func labelSettingsHelp(name string) string {
 	return say("Every value %s will use. Choose one to change it.", name)
 }
@@ -111,7 +111,7 @@ func labelPasswordMismatch() string { return say("The entries do not match.") }
 func labelReady() string        { return say("Ready to install") }
 func labelStartInstall() string { return say("Start installation") }
 
-// The same two, where the tree named what is about to happen. An installer is
+// The same two, where the module named what is about to happen. An installer is
 // the only thing an unnamed run can be; a named one is whatever it says it is,
 // and the runtime supplies the sentence around the name and nothing else.
 func labelReadyToStart() string          { return say("Ready to start") }
@@ -148,9 +148,16 @@ func labelNothingToChoose(title string) string {
 
 func labelCannotContinue() string { return say("Cannot continue") }
 
-// The way out, on a machine where leaving the installer is not quitting a
-// program but deciding what happens to the machine — see leave.go.
-func labelLeave() string        { return say("Leave") }
+// The way out, on a machine where leaving is not quitting a program but
+// deciding what happens to the machine — see leave.go.
+func labelLeave() string { return say("Leave") }
+
+// Read over the rows when this page went up in the middle of a run: both halves
+// of what somebody who pressed esc during an installation needs to know.
+func labelLeaveRunning() string {
+	return say("Whatever was running is still running behind this page. Anything chosen here stops it.")
+}
+
 func labelRestart() string      { return say("Restart") }
 func labelRestartHelp() string  { return say("Close this machine down and start it again.") }
 func labelShutdown() string     { return say("Shut down") }

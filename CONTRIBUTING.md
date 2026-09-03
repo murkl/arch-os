@@ -63,8 +63,8 @@ flowchart TD
 | Job | Where it runs | What it does |
 | --- | --- | --- |
 | `check` | every branch | `make check`, then the tests again under the race detector |
-| `security` | every branch | vulnerabilities in the runtime's imports, and a scan for secrets in the tree |
-| `build` | every branch | the runtime binary, the release, the tarball, and unpacks the tarball to load both trees out of it |
+| `security` | every branch | vulnerabilities in the runtime's imports, and a scan for secrets in the repository |
+| `build` | every branch | the runtime binary, the release, the tarball, and unpacks the tarball to load both modules out of it |
 | `iso` | `dev`, `main`, `neo`, on demand | the bootable image, out of the artefact `build` produced |
 | `boot test` | after `iso` | boots that image and waits for the first page |
 | `promote` | `dev` | fast-forwards `main`, tags, publishes, signs |
@@ -87,8 +87,8 @@ downloads what both of them made.
 
 ```sh
 make check            # everything below, and what has to pass before a commit
-make -C runtime run   # the installer on this machine; TREE=../recovery for the other tree
-make build && release/arch-os   # the release as a machine runs it, both programs
+make -C runtime run   # both modules on this machine; MODULE=recovery for one outright
+make build && release/runtime   # the release as a machine runs it
 make tarball          # the release, as a stock Arch ISO downloads it
 make locales          # every translation template, and every catalog brought up to it
 make iso              # the release, as a bootable image
@@ -111,7 +111,7 @@ There is no second definition of what "green" means.
 
 Most changes belong in [`installer/`](installer) (the Arch Linux half, which is
 where packages, tasks and questions live) or in [`recovery/`](recovery), the
-same kind of tree for repairing a system that is already on a disk. The
+same kind of module for repairing a system that is already on a disk. The
 [`runtime/`](runtime) is the frame around both and changes for bugs and
 features, not for a new package.
 
@@ -127,8 +127,8 @@ its own key, so writing one is writing the source text and the key at once.
 Reword one and the old translation is marked fuzzy rather than dropped.
 
 The catalogs are gettext `.po` files and the templates they are filled in from
-are generated: the runtime's out of the Go sources, a tree's out of the loaded
-tree. Nothing keeps a list of translatable strings, which is why no list can
+are generated: the runtime's out of the Go sources, a module's out of the loaded
+module. Nothing keeps a list of translatable strings, which is why no list can
 fall behind.
 
 ```sh

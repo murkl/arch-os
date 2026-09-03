@@ -1,46 +1,47 @@
-// Package spec is the installer tree, read into memory: what the installer is
-// called, what it needs to know, and what it does.
+// Package spec is what a runtime and its modules declare about themselves,
+// read into memory: what the runtime is called and which modules it offers,
+// and for each module what it needs to know and what it does.
 //
-// A tree is one yaml and the folders beside it. Everything in it is data. The
-// runtime ships no tree of its own — without one there is no installer, only a
-// binary that says so and stops. That is the whole point of the split: this
-// package knows the shape of the yaml, and nothing in the program below it
+// A module is one yaml and the folders beside it. Everything in it is data. The
+// runtime ships none of its own — without a module there is nothing to run,
+// only a binary that says so and stops. That is the whole point of the split:
+// this package knows the shape of the yaml, and nothing in the program below it
 // knows a single thing about the system being installed.
 package spec
 
 import (
 	"path"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
 
-	"installer/internal/i18n"
+	"github.com/murkl/arch-os/runtime/internal/i18n"
 )
 
-// What a tree is made of. Only the declaration has to be there; everything else
-// is found by its own name, so a tree turns a part of the program off by
+// What a module is made of. Only the declaration has to be there; everything
+// else is found by its own name, so a module turns a part of the program off by
 // leaving the file or folder out rather than by declaring anything.
 //
 // The declaration is the one yaml in the folder's top level, whatever it is
-// called — installer.yaml, recovery.yaml. Naming it after what it declares is
-// what lets two trees sit beside each other and still be told apart at a
-// glance, and there is nothing to configure because a folder holds one. The
-// exception is FileRelease, which is reserved: it declares the product a folder
-// of trees adds up to rather than a tree, and is never read as one.
+// called. The convention is the module's own name — installer/installer.yaml,
+// recovery/recovery.yaml — which is what lets two of them sit open in an editor
+// and still be told apart, and there is nothing to configure because a folder
+// holds one.
 const (
-	SpecExt    = ".yaml"     // the declaration: what the installer is, asks, and does
+	Ext        = ".yaml"     // the declaration: what the module is, asks, and does
 	FileLib    = "lib.sh"    // shell put in front of every script
-	DirTasks   = "tasks"     // the installation, one folder per step
+	DirTasks   = "tasks"     // the work, one folder per step
 	DirHooks   = "hooks"     // everything around it, one script per hook
-	DirLocales = "locales"   // one catalog per language the tree speaks
+	DirLocales = "locales"   // one catalog per language the module speaks
 	FileTask   = "task.yaml" // where a step belongs
 	FileScript = "task.sh"   // what it does
 	ScriptExt  = ".sh"
 )
 
 // The hooks, each a bash script in hooks/ called by its own name. This is
-// everything the runtime does around the installation: nothing here installs
-// anything, and a tree that leaves one out simply does not get that part.
+// everything the runtime does around the work: nothing here installs anything,
+// and a module that leaves one out simply does not get that part.
 const (
 	HookPreflight = "preflight"     // can this machine be installed onto at all
 	HookOnline    = "online"        // is there internet
@@ -52,7 +53,7 @@ const (
 )
 
 // HookNames is every hook there is. A file in hooks/ that is not one of them is
-// refused when the tree loads, the way a misspelled yaml key is: a hook that is
+// refused when the module loads, the way a misspelled yaml key is: a hook that is
 // never called because its name has a typo in it is the worst kind of
 // authoring bug, since everything loads and nothing happens.
 var HookNames = []string{
@@ -60,21 +61,23 @@ var HookNames = []string{
 	HookRestart, HookShutdown,
 }
 
-// The runtime's own setting: the one key it writes into the answer file that no
-// tree declared. It is not something an installer's data can own — the words the
-// interface is read in belong to the frame rather than to a value inside it.
+// The runtime's own setting: the one key it writes into a module's answer file
+// that the module never declared. It is not something a module's data can own —
+// the words the interface is read in are settled before a module has been
+// chosen, and they are the same in every one of them.
 //
-// A tree may not declare it, and may name it in a `conditions:`.
-const LangVar = "INSTALLER_LANG"
+// A module may not declare it, and may name it in a `conditions:`.
+const LangVar = "RUNTIME_LANG"
 
-// RuntimeVars is every name that belongs to the runtime rather than to a tree.
+// RuntimeVars is every name that belongs to the runtime rather than to a module.
 var RuntimeVars = []string{LangVar}
 
 // runtimeVar reports whether a name is one of them.
 func runtimeVar(name string) bool { return slices.Contains(RuntimeVars, name) }
 
-// Spec is a whole installer tree.
-type Spec struct {
+// Module is one whole program the runtime can run: everything one folder
+// beside the binary declares about itself.
+type Module struct {
 	Dir  string // absolute, and never written to
 	File string // the declaration in it, e.g. installer.yaml
 
@@ -92,19 +95,19 @@ type Spec struct {
 	Stages []string
 
 	// Tasks, already in the order they run: by stage, and inside a stage by what
-	// they declared they need. Sorted once when the tree is loaded, so there is
+	// they declared they need. Sorted once when the module is loaded, so there is
 	// one order and everything downstream reads it rather than works it out
 	// again.
 	Tasks []*Task
 
-	// Lib is the shell every script of this tree is given before its own, and
+	// Lib is the shell every script of this module is given before its own, and
 	// Locales the folder its catalogs live in. Both are whatever FileLib and
-	// DirLocales turned out to be, or empty where the tree has neither.
+	// DirLocales turned out to be, or empty where the module has neither.
 	Lib     string
 	Locales string
 
 	// Language names the variable whose answer also settles the words this
-	// interface is read in — a tree that asks where a machine is has asked which
+	// interface is read in — a module that asks where a machine is has asked which
 	// language it speaks, and asking again would be the same question twice. The
 	// answer is matched against the catalogs on offer the way a machine's own
 	// locale is, so de_AT is German without anything having to say so.
@@ -117,10 +120,10 @@ type Spec struct {
 	byName map[string]*Variable
 }
 
-// UI is what the tree says about itself: the words that make the frame this
-// program rather than the one beside it. What the two of them look like is not
-// here — one wordmark and one colour belong to the release, not to either of
-// the programs in it. See Release.
+// UI is what a module says about itself: the words that make the frame this
+// program rather than the one beside it. What they all look like is not here —
+// one wordmark and one colour belong to the runtime, not to any module in it.
+// See Runtime.
 type UI struct {
 	Title string `yaml:"title"`
 
@@ -130,39 +133,40 @@ type UI struct {
 	// The description is read on the page that asks which of the programs beside
 	// the binary to open; the name is read wherever the interface says what is
 	// happening — the row that starts it, the last warning, the clock while it
-	// runs. A tree that names no run is an installation as far as the runtime is
-	// concerned, which is right for one kind of tree and wrong for every other.
+	// runs. A module that names no run is an installation as far as the runtime
+	// is concerned, which is right for one kind of module and wrong for every
+	// other.
 	Description string `yaml:"description"`
 	Run         string `yaml:"run"`
 
 	// Console is the sentence read on the way out of the interface, where the
-	// machine keeps running. What the installer is called out there is something
-	// only the tree can know, and somebody who has just left it is looking at a
+	// machine keeps running. What the module is called out there is something
+	// only the module can know, and somebody who has just left it is looking at a
 	// bare prompt. Empty leaves that row off, which is right for an image where
 	// there is nothing behind the interface.
 	Console string `yaml:"console"`
 }
 
-// RunName is what one run of this tree is called, translated. Empty where the
-// tree did not say, which the runtime can only read as an installation.
-func (s *Spec) RunName() string { return i18n.T(s.UI.Run) }
+// RunName is what one run of this module is called, translated. Empty where the
+// module did not say, which the runtime can only read as an installation.
+func (s *Module) RunName() string { return i18n.T(s.UI.Run) }
 
-// Help is what this program is, in one sentence: the line under its row on the
+// Help is what this module is, in one sentence: the line under its row on the
 // page that asks which of them to open.
-func (s *Spec) Help() string { return i18n.T(s.UI.Description) }
+func (s *Module) Help() string { return i18n.T(s.UI.Description) }
 
 // ConfirmText is the last sentence before the first task, translated and with
 // {{VAR}} filled in from the answers.
-func (s *Spec) ConfirmText(get func(string) string) string {
+func (s *Module) ConfirmText(get func(string) string) string {
 	return strings.TrimSpace(Expand(i18n.T(s.Confirm), get))
 }
 
-// Hook is the script this tree put in hooks/ under that name, absolute, or
+// Hook is the script this module put in hooks/ under that name, absolute, or
 // empty where it has none.
-func (s *Spec) Hook(name string) string { return s.hooks[name] }
+func (s *Module) Hook(name string) string { return s.hooks[name] }
 
 // Source is the shell that runs a script file, for the places that take shell
-// rather than a path. Empty in, empty out — a hook a tree does not have.
+// rather than a path. Empty in, empty out — a hook a module does not have.
 func Source(path string) string {
 	if path == "" {
 		return ""
@@ -170,22 +174,22 @@ func Source(path string) string {
 	return "source " + quote(path)
 }
 
-// Leaves reports whether this machine can be left at all: a tree that says how
-// is saying the machine booted to run the installer, so every way out of the
-// interface asks what to do with it instead of quitting.
-func (s *Spec) Leaves() bool {
+// Leaves reports whether this machine can be left at all: a module that says
+// how is saying the machine booted to run it, so every way out of the interface
+// asks what to do with the machine instead of quitting.
+func (s *Module) Leaves() bool {
 	return s.Hook(HookRestart) != "" || s.Hook(HookShutdown) != "" || s.UI.Console != ""
 }
 
 // ConsoleHelp is the sentence under the row that leaves the machine running:
 // what to type to be back here.
-func (s *Spec) ConsoleHelp() string { return i18n.T(s.UI.Console) }
+func (s *Module) ConsoleHelp() string { return i18n.T(s.UI.Console) }
 
 // Preset is one page of starting points: a question a machine with no answer
 // file is asked before the real ones, answered by choosing one of the options
 // under it. It is the only place a value arrives without being typed.
 //
-// A tree may declare several, and each is a page of its own, asked in the order
+// A module may declare several, each a page of its own, asked in the order
 // they are declared.
 type Preset struct {
 	ID          string          `yaml:"id"`
@@ -196,7 +200,7 @@ type Preset struct {
 
 // PresetOption is one answer to that question: the values choosing it fills in.
 // Nothing else about it survives being chosen — it is a set of answers, not a
-// mode the installer stays in.
+// mode the module stays in.
 type PresetOption struct {
 	ID          string            `yaml:"id"`
 	Title       string            `yaml:"title"`
@@ -358,7 +362,7 @@ const (
 	BoolFalse = "false"
 )
 
-// Variable is one thing the installer needs to know, and everything known
+// Variable is one thing a module needs to know, and everything known
 // about what a valid answer looks like. The rules live here once and are used
 // both when asking and when reading back an answer file somebody edited by
 // hand — a value typed into the file never passed a prompt.
@@ -377,12 +381,12 @@ type Variable struct {
 	Required bool   `yaml:"required"`
 
 	// First puts this question before everything else the program does — before
-	// the network screen, before the tree's own check of the machine, before the
+	// the network screen, before the module's own check of the machine, before the
 	// starting point is chosen. For the answer that everything after it is typed
 	// on: a wireless passphrase given on a keyboard nobody chose is not the
 	// passphrase, and there is nothing to be done about that afterwards.
 	//
-	// It is a promise a tree should make sparingly. Every question here is a
+	// It is a promise a module should make sparingly. Every question here is a
 	// question asked before the check that says this machine cannot be installed
 	// onto at all.
 	First bool `yaml:"first"`
@@ -411,7 +415,7 @@ type Variable struct {
 	// box, it does not answer the question.
 	Prefill string `yaml:"prefill"`
 
-	// Apply puts this answer into effect on the machine the installer is running
+	// Apply puts this answer into effect on the machine the runtime is running
 	// on, rather than on the one being installed. Almost nothing needs it — an
 	// answer is a string a script reads later — but a console keyboard is not a
 	// string: until it is loaded, every answer after it is typed on a layout
@@ -452,7 +456,7 @@ func (v *Variable) GroupLabel() string {
 }
 
 // Why is what to say about an answer that will not do. A variable that declares
-// nothing gets a sentence naming the rule it broke, so a tree is never obliged
+// nothing gets a sentence naming the rule it broke, so a module is never obliged
 // to write one out for every field.
 func (v *Variable) Why() string {
 	if v.Error != "" {
@@ -483,7 +487,7 @@ func (v *Variable) Secret() bool { return v.Shape() == TypeSecret }
 // anything.
 func (v *Variable) Matches(s string) bool { return v.re == nil || v.re.MatchString(s) }
 
-// domain is every answer this question has, or nil where the tree left that
+// domain is every answer this question has, or nil where the module left that
 // open — a name typed into a box, a list a command prints. It is what makes a
 // guard something that can be reasoned about rather than only evaluated.
 func (v *Variable) domain() []string {
@@ -496,28 +500,34 @@ func (v *Variable) domain() []string {
 	return nil
 }
 
+// ID is the folder this module was read from. It is what runtime.yaml lists it
+// as, the word that opens it from the command line, and the name its answers
+// and its log are kept under — one identity, so there is nothing to keep in
+// step.
+func (s *Module) ID() string { return filepath.Base(s.Dir) }
+
 // Var finds a variable by name.
-func (s *Spec) Var(name string) *Variable { return s.byName[name] }
+func (s *Module) Var(name string) *Variable { return s.byName[name] }
 
-// Name is the installer's own title, translated.
-func (s *Spec) Name() string { return i18n.T(s.UI.Title) }
+// Name is the module's own title, translated.
+func (s *Module) Name() string { return i18n.T(s.UI.Title) }
 
-// Message is one thing a tree says: the text, what it is, and the files it was
-// read out of. The last two are all a translator has — the words arrive out of
-// the tree they belong to, one sentence at a time.
+// Message is one thing a module says: the text, what it is, and the files it
+// was read out of. The last two are all a translator has — the words arrive out
+// of the module they belong to, one sentence at a time.
 type Message struct {
 	Text  string
 	Note  string
 	Files []string
 }
 
-// Messages is every word this tree says, in the order it says them, with
+// Messages is every word this module says, in the order it says them, with
 // duplicates dropped.
 //
 // It is the list a translator works from, and the reason there is no separate
 // file listing what needs translating: the strings are the yaml's own, and
-// asking the loaded tree for them means the list can never fall behind it.
-func (s *Spec) Messages() []Message {
+// asking the loaded module for them means the list can never fall behind it.
+func (s *Module) Messages() []Message {
 	var out []Message
 	at := map[string]int{}
 	add := func(file, note, text string) {

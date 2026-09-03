@@ -7,18 +7,18 @@ import (
 	"testing"
 )
 
-// What a test tree's declaration is called. Any name would do — the runtime
-// takes whichever yaml it finds — and these tests use the one the trees in this
+// What a test module's declaration is called. Any name would do — the runtime
+// takes whichever yaml it finds — and these tests use the one the modules in this
 // repository use.
 const treeFile = "installer.yaml"
 
-// tree writes a minimal but complete installer tree and returns its path. Each
+// module writes a minimal but complete module and returns its path. Each
 // test starts from a working one and breaks exactly the thing it is about, so a
 // failure names the rule that was broken rather than a missing file three rules
 // earlier.
 //
 // A file whose body is empty is left out, which is how a test removes one.
-func tree(t *testing.T, files map[string]string) string {
+func module(t *testing.T, files map[string]string) string {
 	t.Helper()
 	dir := t.TempDir()
 	base := map[string]string{
@@ -44,7 +44,7 @@ func tree(t *testing.T, files map[string]string) string {
 	return dir
 }
 
-// head is a declaration with the two keys every tree needs, and whatever
+// head is a declaration with the two keys every module needs, and whatever
 // the test is actually about after them.
 func head(body string) string { return "title: Test Installer\nstages: [go]\n" + body }
 
@@ -56,7 +56,7 @@ func unit(id, yaml string) map[string]string {
 	}
 }
 
-// units merges several unit() results into the map a tree is written from.
+// units merges several unit() results into the map a module is written from.
 func units(all ...map[string]string) map[string]string {
 	out := map[string]string{}
 	for _, m := range all {
@@ -68,7 +68,7 @@ func units(all ...map[string]string) map[string]string {
 }
 
 func TestLoadReadsAWholeTree(t *testing.T) {
-	dir := tree(t, map[string]string{
+	dir := module(t, map[string]string{
 		treeFile: `
 title: Test Installer
 confirm: Erasing {{DISK}}.
@@ -118,10 +118,10 @@ presets:
 }
 
 // The order is worked out from what each task says about itself, and it is
-// the one thing about a tree nobody writes down. Getting it wrong means
+// the one thing about a module nobody writes down. Getting it wrong means
 // installing onto a disk that has not been partitioned yet.
 func TestOrderFollowsStagesThenNeeds(t *testing.T) {
-	dir := tree(t, units(
+	dir := module(t, units(
 		map[string]string{
 			treeFile: "title: T\nstages: [first, second]\n",
 			// The default task is removed: this test owns the whole list.
@@ -199,9 +199,9 @@ func TestOrderRefusesWhatCannotBeWalked(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := Load(tree(t, tc.files))
+			_, err := Load(module(t, tc.files))
 			if err == nil {
-				t.Fatalf("loaded a tree with %s", tc.name)
+				t.Fatalf("loaded a module with %s", tc.name)
 			}
 			if !strings.Contains(err.Error(), tc.want) {
 				t.Errorf("error = %q, want it to mention %q", err, tc.want)
@@ -214,7 +214,7 @@ func TestOrderRefusesWhatCannotBeWalked(t *testing.T) {
 // knows is the declaration, and every other name there is a typo rather than
 // something to ignore.
 func TestHooksAreFoundByTheirName(t *testing.T) {
-	sp, err := Load(tree(t, map[string]string{
+	sp, err := Load(module(t, map[string]string{
 		"hooks/" + HookPreflight + ScriptExt: "exit 0\n",
 		"hooks/" + HookRestart + ScriptExt:   "reboot\n",
 	}))
@@ -236,7 +236,7 @@ func TestHooksAreFoundByTheirName(t *testing.T) {
 }
 
 func TestATreeWithoutHooksHasNone(t *testing.T) {
-	sp, err := Load(tree(t, nil))
+	sp, err := Load(module(t, nil))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,10 +250,10 @@ func TestATreeWithoutHooksHasNone(t *testing.T) {
 	}
 }
 
-// lib.sh and locales/ are found the same way, so a tree turns them on by
+// lib.sh and locales/ are found the same way, so a module turns them on by
 // having them and off by not.
 func TestLibAndLocalesAreFoundBesideTheInstallerFile(t *testing.T) {
-	sp, err := Load(tree(t, map[string]string{
+	sp, err := Load(module(t, map[string]string{
 		FileLib:               "helper() { echo hi; }\n",
 		DirLocales + "/de.po": "msgid \"English\"\nmsgstr \"Deutsch\"\n",
 	}))
@@ -267,7 +267,7 @@ func TestLibAndLocalesAreFoundBesideTheInstallerFile(t *testing.T) {
 		t.Errorf("locales = %q", sp.Locales)
 	}
 
-	if sp, err = Load(tree(t, nil)); err != nil {
+	if sp, err = Load(module(t, nil)); err != nil {
 		t.Fatal(err)
 	}
 	if sp.Lib != "" || sp.Locales != "" {
@@ -275,10 +275,10 @@ func TestLibAndLocalesAreFoundBesideTheInstallerFile(t *testing.T) {
 	}
 }
 
-// The sentence read on the way out is the tree's, so it is translated like
+// The sentence read on the way out is the module's, so it is translated like
 // everything else it says.
 func TestConsoleIsTranslatable(t *testing.T) {
-	sp, err := Load(tree(t, map[string]string{
+	sp, err := Load(module(t, map[string]string{
 		treeFile: head("console: Type installer to start again.\n"),
 	}))
 	if err != nil {
@@ -290,7 +290,7 @@ func TestConsoleIsTranslatable(t *testing.T) {
 	}
 }
 
-// Every one of these is an authoring mistake that must be caught while the tree
+// Every one of these is an authoring mistake that must be caught while the module
 // is being opened. The alternative — loading anyway — is a task that
 // silently never runs on somebody's machine, which is the failure this whole
 // check exists to prevent.
@@ -474,9 +474,9 @@ func TestLoadRefuses(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := Load(tree(t, tc.files))
+			_, err := Load(module(t, tc.files))
 			if err == nil {
-				t.Fatalf("loaded a tree with %s", tc.name)
+				t.Fatalf("loaded a module with %s", tc.name)
 			}
 			if !strings.Contains(err.Error(), tc.want) {
 				t.Errorf("error = %q, want it to mention %q", err, tc.want)
@@ -486,7 +486,7 @@ func TestLoadRefuses(t *testing.T) {
 }
 
 func TestConditionsDecideWhatBelongs(t *testing.T) {
-	dir := tree(t, units(
+	dir := module(t, units(
 		map[string]string{
 			treeFile:             head("variables:\n  - name: DESKTOP\n    title: Desktop\n    type: bool\n"),
 			"tasks/do/task.yaml": "name: Always\nstage: go\n",
@@ -528,7 +528,7 @@ func TestConditionsDecideWhatBelongs(t *testing.T) {
 // whole rule is the ./ in front. Getting this wrong either way is silent: a
 // path run as a command, or a command looked for as a file.
 func TestShellFieldsTellCodeFromFiles(t *testing.T) {
-	dir := tree(t, map[string]string{
+	dir := module(t, map[string]string{
 		treeFile: head(`
 variables:
   - name: DISK
@@ -552,7 +552,7 @@ variables:
 }
 
 func TestReflowKeepsOnlyTheBreaksThatWereMeant(t *testing.T) {
-	dir := tree(t, map[string]string{
+	dir := module(t, map[string]string{
 		treeFile: head("variables:\n  - name: DISK\n    title: Disk\n    description: |\n      One sentence\n      wrapped by an editor.\n\n      A second paragraph.\n"),
 	})
 	sp, err := Load(dir)
@@ -587,7 +587,7 @@ func TestExpandFillsInAnswers(t *testing.T) {
 
 // Every answer is a string in the end, but nobody writes `default: "true"`.
 func TestScalarReadsWhateverShapeItWasWrittenIn(t *testing.T) {
-	dir := tree(t, map[string]string{
+	dir := module(t, map[string]string{
 		treeFile: head("variables:\n  - name: A\n    title: A\n    default: true\n  - name: B\n    title: B\n    default: 8\n  - name: C\n    title: C\n    default: pc105\n"),
 	})
 	sp, err := Load(dir)
@@ -602,7 +602,7 @@ func TestScalarReadsWhateverShapeItWasWrittenIn(t *testing.T) {
 }
 
 func TestStringsIsEveryWordTheTreeSays(t *testing.T) {
-	dir := tree(t, map[string]string{
+	dir := module(t, map[string]string{
 		treeFile: head(`
 confirm: Careful.
 presets:
@@ -632,7 +632,7 @@ variables:
 		t.Errorf("Messages() = %v\nwant %v", got, want)
 	}
 
-	// A translator gets the words out of the tree they belong to, so every one
+	// A translator gets the words out of the module they belong to, so every one
 	// of them says where it was read and what it is.
 	for _, m := range sp.Messages() {
 		if len(m.Files) == 0 || m.Note == "" {
@@ -644,8 +644,8 @@ variables:
 	}
 }
 
-// texts is what the tree says, without where it says it.
-func texts(sp *Spec) []string {
+// texts is what the module says, without where it says it.
+func texts(sp *Module) []string {
 	var out []string
 	for _, m := range sp.Messages() {
 		out = append(out, m.Text)
@@ -653,62 +653,10 @@ func texts(sp *Spec) []string {
 	return out
 }
 
-// A folder holding a declaration is the tree, and there is nothing below it to
-// look at.
-func TestATreeItIsPointedAtIsTheOnlyOne(t *testing.T) {
-	dir := tree(t, nil)
-	got, err := Trees(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(got) != 1 || got[0] != dir {
-		t.Errorf("Trees(%q) = %v, want just the folder itself", dir, got)
-	}
-}
-
-// A release is the binary and the programs beside it, a folder each. All of
-// them are offered, in folder order.
-func TestEveryTreeInAFolderIsOffered(t *testing.T) {
-	release := t.TempDir()
-	for _, name := range []string{"recovery", "installer"} {
-		if err := os.Rename(tree(t, nil), filepath.Join(release, name)); err != nil {
-			t.Fatal(err)
-		}
-	}
-	// A folder that is not a tree is not one, and neither is a loose file.
-	if err := os.MkdirAll(filepath.Join(release, "locales"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(release, "notes.txt"), []byte("hi\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	got, err := Trees(release)
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := []string{filepath.Join(release, "installer"), filepath.Join(release, "recovery")}
-	if strings.Join(got, " ") != strings.Join(want, " ") {
-		t.Errorf("Trees() = %v, want %v", got, want)
-	}
-}
-
-// Beside the binary and nowhere else. The test binary has no declaration next
-// to it, which is exactly the case a user hits when they copy the program out
-// of the folder it belongs to.
-func TestTreesSaysWhereTheInstallerHasToBe(t *testing.T) {
-	_, err := Trees(t.TempDir())
-	if err == nil {
-		t.Fatal("found an installer in an empty folder")
-	}
-	if !strings.Contains(err.Error(), SpecExt) {
-		t.Errorf("error = %q, want it to name %s", err, SpecExt)
-	}
-}
-
-// Whatever it is called: a tree names its declaration after what it declares,
-// and the runtime takes the one yaml it finds.
-func TestATreeIsFoundByAnyName(t *testing.T) {
-	dir := tree(t, map[string]string{treeFile: "", "recovery.yaml": head("")})
+// Whatever it is called: a module names its declaration after what it declares,
+// and the runtime takes the one yaml it finds in the folder.
+func TestAModuleIsFoundByAnyName(t *testing.T) {
+	dir := module(t, map[string]string{treeFile: "", "recovery.yaml": head("")})
 	sp, err := Load(dir)
 	if err != nil {
 		t.Fatal(err)
@@ -718,10 +666,10 @@ func TestATreeIsFoundByAnyName(t *testing.T) {
 	}
 }
 
-// Two of them is two trees in one folder, and picking one would be the runtime
+// Two of them is two modules in one folder, and picking one would be the runtime
 // deciding which installer somebody meant.
 func TestTwoDeclarationsAreRefused(t *testing.T) {
-	dir := tree(t, map[string]string{"recovery.yaml": head("")})
+	dir := module(t, map[string]string{"recovery.yaml": head("")})
 	_, err := Load(dir)
 	if err == nil {
 		t.Fatal("loaded a folder holding two declarations")
@@ -736,7 +684,7 @@ func TestTwoDeclarationsAreRefused(t *testing.T) {
 // One guard is a line and several are a list, and every one of them has to
 // hold: a row that belongs under two unrelated circumstances is two rows.
 func TestSeveralConditionsAllHaveToHold(t *testing.T) {
-	dir := tree(t, map[string]string{
+	dir := module(t, map[string]string{
 		treeFile:             head("variables:\n  - name: DESKTOP\n    title: D\n    type: bool\n  - name: DRIVER\n    title: G\n"),
 		"tasks/do/task.yaml": "name: Driver\nstage: go\nconditions:\n  - DESKTOP == true\n  - DRIVER != none\n",
 	})
@@ -763,7 +711,7 @@ func TestSeveralConditionsAllHaveToHold(t *testing.T) {
 }
 
 func TestConditionsRefuseAnythingButAConditionOrAListOfThem(t *testing.T) {
-	_, err := Load(tree(t, unit("do", "name: Do\nstage: go\nconditions:\n  DISK: yes\n")))
+	_, err := Load(module(t, unit("do", "name: Do\nstage: go\nconditions:\n  DISK: yes\n")))
 	if err == nil || !strings.Contains(err.Error(), "conditions takes a condition") {
 		t.Errorf("err = %v", err)
 	}
@@ -774,7 +722,7 @@ func TestConditionsRefuseAnythingButAConditionOrAListOfThem(t *testing.T) {
 // and the second stands for nothing once it has been used. Nothing declares
 // that — being named is the declaration.
 func TestBeingNamedIsWhatDefersAValue(t *testing.T) {
-	dir := tree(t, units(
+	dir := module(t, units(
 		map[string]string{
 			treeFile: head(`presets:
   - id: p
@@ -813,7 +761,7 @@ variables:
 // The first paragraph of a report is its headline, the way the first block of
 // the opening logo is its eyebrow — one idiom, and nothing extra to declare.
 func TestAReportsFirstParagraphIsItsHeadline(t *testing.T) {
-	dir := tree(t, unit("do", "name: Do\nstage: go\nreport: |\n  Installed on {{DISK}}\n\n  And here is what that means.\n"))
+	dir := module(t, unit("do", "name: Do\nstage: go\nreport: |\n  Installed on {{DISK}}\n\n  And here is what that means.\n"))
 	sp, err := Load(dir)
 	if err != nil {
 		t.Fatal(err)

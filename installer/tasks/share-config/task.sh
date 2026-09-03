@@ -10,7 +10,7 @@
 # The password is not in it - the runtime never writes a secret down.
 #
 # Nothing here runs unasked: the task offers itself first and opens on no.
-# It is the only thing in this tree that sends anything anywhere.
+# It is the only thing in this module that sends anything anywhere.
 #
 # Nothing here may fail the installation either: the system on the disk is
 # finished by the time this is offered, and an unreachable pastebin says
@@ -28,14 +28,14 @@ service="https://paste.rs"
 # Written whole and moved into place: a script interrupted mid-write must
 # not leave half a file where the answers were.
 answer() {
-    local tmp="${INSTALLER_CONF}.answer"
-    grep -v "^${1}=" "$INSTALLER_CONF" >"$tmp" 2>/dev/null || : >>"$tmp"
+    local tmp="${MODULE_CONF}.answer"
+    grep -v "^${1}=" "$MODULE_CONF" >"$tmp" 2>/dev/null || : >>"$tmp"
     printf "%s='%s'\n" "$1" "$(printf '%s' "$2" | sed "s/'/'\\\\''/g")" >>"$tmp"
-    mv -f "$tmp" "$INSTALLER_CONF"
+    mv -f "$tmp" "$MODULE_CONF"
 }
 
 # Simulated, this still answers with an address: the page at the end of a
-# run is the one most worth looking at while this tree is being worked on.
+# run is the one most worth looking at while this module is being worked on.
 simulating && {
     answer ARCH_OS_CONFIG_URL "${service}/demo"
     return 0
@@ -44,7 +44,7 @@ simulating && {
 # Everything this installation was told, without the lines about the
 # sharing itself: a configuration naming where an earlier copy went would
 # send whoever opened it somewhere else again.
-if ! url="$(grep -v '^ARCH_OS_CONFIG_' "$INSTALLER_CONF" |
+if ! url="$(grep -v '^ARCH_OS_CONFIG_' "$MODULE_CONF" |
     curl -sf --connect-timeout 10 --max-time 30 --data-binary @- "${service}/")"; then
     echo "the configuration could not be shared" >&2
     return 0

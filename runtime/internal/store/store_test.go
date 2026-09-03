@@ -6,23 +6,23 @@ import (
 	"strings"
 	"testing"
 
-	"installer/internal/spec"
+	"github.com/murkl/arch-os/runtime/internal/spec"
 )
 
-// What a test tree's declaration is called: the runtime takes whichever yaml it
-// finds in the folder, and these tests use the name the real trees use.
+// What a test module's declaration is called: the runtime takes whichever yaml
+// it finds in the folder, and these tests use the name the real ones use.
 const treeFile = "installer.yaml"
 
-// setup builds a store over a tree written for the test, with the answer file
+// setup builds a store over a module written for the test, with the answer file
 // inside a temporary directory of its own.
 func setup(t *testing.T, variables string) *Store {
 	t.Helper()
 	return New(load(t, "title: T\nstages: [go]\n"+variables), filepath.Join(t.TempDir(), "installer.conf"))
 }
 
-// load writes the smallest tree that will load — the given installer.yaml and
+// load writes the smallest module that will load — the given installer.yaml and
 // one task — and reads it back.
-func load(t *testing.T, installer string) *spec.Spec {
+func load(t *testing.T, installer string) *spec.Module {
 	t.Helper()
 	dir := t.TempDir()
 	files := map[string]string{
@@ -150,7 +150,7 @@ func TestAnswersSurviveTheRoundTrip(t *testing.T) {
 
 	// A second store over the same file, to prove the values come back from the
 	// file rather than from memory.
-	back := New(s.spec, s.Path())
+	back := New(s.mod, s.Path())
 	if err := back.Load(); err != nil {
 		t.Fatal(err)
 	}
@@ -208,7 +208,7 @@ func TestEveryVariableReachesAScript(t *testing.T) {
 	s.SetFacts("1.0")
 	s.Set("USER", "moritz")
 	env := strings.Join(s.Env(), "\n")
-	for _, want := range []string{"USER=moritz", "HOST=arch-os", "INSTALLER_VERSION=1.0", "INSTALLER_CONF="} {
+	for _, want := range []string{"USER=moritz", "HOST=arch-os", "RUNTIME_VERSION=1.0", "MODULE_CONF="} {
 		if !strings.Contains(env, want) {
 			t.Errorf("env is missing %q", want)
 		}
@@ -276,11 +276,11 @@ variables:
 `)
 	for value, want := range map[string]string{"auto": "auto", "true": "Yes", "false": "No"} {
 		s.Set("AUTOLOGIN", value)
-		if got := s.Display(s.spec.Var("AUTOLOGIN")); got != want {
+		if got := s.Display(s.mod.Var("AUTOLOGIN")); got != want {
 			t.Errorf("display of %q = %q, want %q", value, got, want)
 		}
 	}
-	if got := s.Display(s.spec.Var("HOST")); got != "—" {
+	if got := s.Display(s.mod.Var("HOST")); got != "—" {
 		t.Errorf("display of nothing = %q, want a dash", got)
 	}
 }
@@ -339,7 +339,7 @@ variables:
     title: Extra
     conditions: DISK == /dev/sda
 `)
-	// Being named by a task's `asks:` is what defers a variable; the tree above
+	// Being named by a task's `asks:` is what defers a variable; the module above
 	// has no such task, so it is deferred here the way the loader would.
 	s := New(sp, filepath.Join(t.TempDir(), "installer.conf"))
 

@@ -236,7 +236,7 @@ func sweepColor(t float64, resting lipgloss.Color) lipgloss.Color {
 
 // sweepGlyph is what a rune renders as at a given point in the trail: a solid
 // block pixel comes into focus through glyphs.focus' density steps as t goes
-// from the front to fully resolved. Anything else — a tree's own logo may
+// from the front to fully resolved. Anything else — a runtime's own logo may
 // draw with letters or icons rather than block pixels — renders as itself
 // throughout; only the shipped block font resolves like this.
 func sweepGlyph(r rune, t float64) string {

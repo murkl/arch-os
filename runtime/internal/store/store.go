@@ -6,9 +6,9 @@ import (
 	"os"
 	"slices"
 
-	"installer/internal/exec"
-	"installer/internal/i18n"
-	"installer/internal/spec"
+	"github.com/murkl/arch-os/runtime/internal/exec"
+	"github.com/murkl/arch-os/runtime/internal/i18n"
+	"github.com/murkl/arch-os/runtime/internal/spec"
 )
 
 // Store is every declared variable and its current value.
@@ -19,7 +19,7 @@ import (
 // exported variable drive an unattended run, and a saved file stop the
 // questions from being asked twice.
 type Store struct {
-	spec  *spec.Spec
+	mod   *spec.Module
 	val   map[string]string
 	facts map[string]string
 	path  string // where the answers are written
@@ -27,9 +27,9 @@ type Store struct {
 
 // New builds a store from the folder's declarations, already carrying every
 // default. path is the answer file, read by Load and written by Save.
-func New(sp *spec.Spec, path string) *Store {
-	s := &Store{spec: sp, val: map[string]string{}, facts: map[string]string{}, path: path}
-	for _, v := range sp.Vars {
+func New(mod *spec.Module, path string) *Store {
+	s := &Store{mod: mod, val: map[string]string{}, facts: map[string]string{}, path: path}
+	for _, v := range mod.Vars {
 		s.val[v.Name] = v.Default.String()
 	}
 	return s
@@ -57,11 +57,25 @@ func (s *Store) Set(name, value string) { s.val[name] = value }
 // nothing declares them and nothing may prompt for them — but every script gets
 // them, so a script can reach the folder it came from, its own log, and the
 // answers it was given.
+//
+// What belongs to the module carries its name and what belongs to the runtime
+// carries the runtime's, so a script never has to work out which of the two it
+// is reading.
 func (s *Store) SetFacts(version string) {
-	s.facts["INSTALLER_DIR"] = s.spec.Dir
-	s.facts["INSTALLER_CONF"] = s.path
-	s.facts["INSTALLER_VERSION"] = version
+	s.facts[ModuleDirVar] = s.mod.Dir
+	s.facts[ModuleConfVar] = s.path
+	s.facts[VersionVar] = version
 }
+
+// The facts every script is handed, by name. A module reaches its own folder,
+// its own answers and its own log through these, and the runtime's version
+// through the last.
+const (
+	ModuleDirVar  = "MODULE_DIR"
+	ModuleConfVar = "MODULE_CONF"
+	ModuleLogVar  = "MODULE_LOG"
+	VersionVar    = "RUNTIME_VERSION"
+)
 
 // SetFact records one further fact, for what is only known later — the log
 // path, which exists once logging has opened it.
@@ -76,7 +90,7 @@ func (s *Store) SetFact(name, value string) { s.facts[name] = value }
 // file, not to the log.
 func (s *Store) Env() exec.Env {
 	env := append(exec.Env{}, os.Environ()...)
-	for _, v := range s.spec.Vars {
+	for _, v := range s.mod.Vars {
 		env = append(env, v.Name+"="+s.val[v.Name])
 	}
 	env = append(env, spec.LangVar+"="+i18n.Current())
@@ -88,7 +102,7 @@ func (s *Store) Env() exec.Env {
 
 // LoadEnv takes any declared variable that is set in the process environment.
 func (s *Store) LoadEnv() {
-	for _, v := range s.spec.Vars {
+	for _, v := range s.mod.Vars {
 		if v.Secret() {
 			continue
 		}
@@ -119,7 +133,7 @@ func (s *Store) Apply(o *spec.PresetOption) {
 // mid-run, because until that task's turn there is nothing to choose from.
 func (s *Store) Missing() []*spec.Variable {
 	var out []*spec.Variable
-	for _, v := range s.spec.Vars {
+	for _, v := range s.mod.Vars {
 		if v.Secret() || v.Deferred() || !v.Applies(s.Get) {
 			continue
 		}
@@ -130,7 +144,7 @@ func (s *Store) Missing() []*spec.Variable {
 	return out
 }
 
-// Upfront lists the questions this tree wants settled before anything else
+// Upfront lists the questions this module wants settled before anything else
 // happens at all: before a network is joined, before the machine is checked,
 // before a starting point is chosen.
 //
@@ -150,7 +164,7 @@ func (s *Store) Upfront() []*spec.Variable {
 // kept — in declaration order, so a folder decides what is asked first.
 func (s *Store) Secrets() []*spec.Variable {
 	var out []*spec.Variable
-	for _, v := range s.spec.Vars {
+	for _, v := range s.mod.Vars {
 		if v.Secret() && v.Applies(s.Get) {
 			out = append(out, v)
 		}
@@ -166,7 +180,7 @@ func (s *Store) Secrets() []*spec.Variable {
 // settings page is a promise that every row on it can be opened.
 func (s *Store) Visible() []*spec.Variable {
 	var out []*spec.Variable
-	for _, v := range s.spec.Vars {
+	for _, v := range s.mod.Vars {
 		if !v.Deferred() && v.Applies(s.Get) {
 			out = append(out, v)
 		}
@@ -232,7 +246,7 @@ func Label(value string) string {
 // Forget drops every secret, so nothing is left in memory once the run that
 // needed it is over.
 func (s *Store) Forget() {
-	for _, v := range s.spec.Vars {
+	for _, v := range s.mod.Vars {
 		if v.Secret() {
 			s.val[v.Name] = ""
 		}

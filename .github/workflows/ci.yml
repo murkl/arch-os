@@ -85,8 +85,8 @@ jobs:
         run: make -C runtime vuln
 
       # This project is installed by piping a script into a shell. A credential
-      # that reached the tree would be handed to everybody who did that.
-      - name: Secrets in the tree
+      # that reached the repository would be handed to everybody who did that.
+      - name: Secrets in the repository
         run: gitleaks dir . --redact --no-banner
 
   # The only job that compiles anything. Everything downstream downloads this
@@ -125,7 +125,7 @@ jobs:
           unpacked="$(mktemp -d)"
           tar -xzf dist/*.tar.gz -C "$unpacked"
           for release in "$unpacked"/*; do
-            "$release/arch-os" -check -dir "$release"
+            "$release/runtime" -check -dir "$release"
           done
           (cd dist && sha256sum -c ./*.sha256)
 

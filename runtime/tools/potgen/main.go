@@ -7,7 +7,7 @@
 // drift, because there is nothing to keep in step.
 //
 // Only string literals are taken. T(sp.UI.Title) is a message too, but it is
-// the installer tree's rather than the runtime's, and the tree lists its own —
+// a module's rather than the runtime's, and a module lists its own —
 // see the -strings flag on the runtime itself.
 package main
 
@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"strings"
 
-	"installer/internal/i18n"
+	"github.com/murkl/arch-os/runtime/internal/i18n"
 )
 
 // project is what the template says it belongs to: the program as it ships,

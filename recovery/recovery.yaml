@@ -1,17 +1,16 @@
 # What this recovery is, what it asks, and in what order it works.
 #
 # The runtime beside it knows nothing about Arch Linux. Everything else in this
-# tree is found by its own name — lib.sh, locales/, hooks/, tasks/ — and nothing
-# points at it from here.
+# module is found by its own name — lib.sh, locales/, hooks/, tasks/ — and
+# nothing points at it from here.
 #
-# Putting Arch Linux on a disk is a program of its own, with a declaration of its
-# own: see ../installer. A release holds both, beside one binary, and asks which
-# of them to open — and what the two of them are called together and look like is
-# ../arch-os.yaml, not here.
+# Putting Arch Linux on a disk is a module of its own, with a declaration of its
+# own: see ../installer. Which modules there are, what they are called together
+# and what they look like is ../runtime.yaml, not here.
 
 title: Arch OS Recovery
 
-# The sentence under this program's row on the page that asks which to open.
+# The sentence under this module's row on the page that asks which to open.
 description: Repair an Arch Linux system that is already on a disk.
 
 # What one run of this is called. Without it the interface would fall back to the

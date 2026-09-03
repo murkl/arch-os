@@ -164,19 +164,18 @@ install_mode() {
     tarball="${DOWNLOAD_DIR}/${tarball_url##*/}"
     tarball_dir="${DOWNLOAD_DIR}/$(tar -tzf "$tarball" | head -n1 | cut -d/ -f1)"
     tar -xzf "$tarball" -C "$DOWNLOAD_DIR" || fail "Could not unpack ${tarball}"
-    [ -x "${tarball_dir}/arch-os" ] || fail "No program in ${tarball}"
+    [ -x "${tarball_dir}/runtime" ] || fail "No program in ${tarball}"
     ok "Unpacked: ${tarball_dir}"
 
-    # Started out of its own folder with no argument: the runtime looks for
-    # its programs beside its own binary, finds the installer and the
-    # recovery, and asks which to open. Their answers and logs land in the
-    # working directory, so leaving and running this again picks up where it
-    # left off.
+    # Started out of its own folder with no module named: the runtime reads the
+    # runtime.yaml beside its own binary, finds the installer and the recovery,
+    # and asks which to open. Their answers and logs land in the working
+    # directory, so leaving and running this again picks up where it left off.
     #
     # stdin is this script itself when the command arrives through a pipe, so
     # the interface is handed the terminal instead.
     cd "$tarball_dir"
-    exec ./arch-os </dev/tty
+    exec ./runtime </dev/tty
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////

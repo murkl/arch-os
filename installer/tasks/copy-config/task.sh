@@ -9,11 +9,11 @@ home="${MNT}/home/${ARCH_OS_USERNAME}"
 # append, so the two must name it the same way.
 target="${home}/installer.conf"
 
-if cp -f "$INSTALLER_CONF" "$target" 2>/dev/null; then
+if cp -f "$MODULE_CONF" "$target" 2>/dev/null; then
     # Which build produced this system, so the answers can be read back against
-    # the right version of the tree.
+    # the right version of the module.
     sed -i "1i\# Installed by Arch OS Installer ${INSTALLER_VERSION}" "$target"
 fi
-cp -f "$INSTALLER_LOG" "${home}/installer.log" 2>/dev/null || true
+cp -f "$MODULE_LOG" "${home}/installer.log" 2>/dev/null || true
 
 arch-chroot "$MNT" chown -R "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" "/home/${ARCH_OS_USERNAME}"

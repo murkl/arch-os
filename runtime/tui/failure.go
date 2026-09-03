@@ -3,8 +3,8 @@ package tui
 import (
 	"strings"
 
-	"installer/internal/exec"
-	"installer/internal/logging"
+	"github.com/murkl/arch-os/runtime/internal/exec"
+	"github.com/murkl/arch-os/runtime/internal/logging"
 
 	"github.com/charmbracelet/lipgloss"
 )

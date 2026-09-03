@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"installer/internal/logging"
+	"github.com/murkl/arch-os/runtime/internal/logging"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

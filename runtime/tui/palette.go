@@ -101,7 +101,7 @@ type scheme struct {
 
 	// good is the third of the status roles, opposite fail: something worked,
 	// and worked for good. It is not the accent — the accent is whatever colour
-	// a tree dressed itself in, and an installation that finished has to read as
+	// the runtime dressed itself in, and an installation that finished has to read as
 	// finished in an installer painted red as readily as in one painted green.
 	// So it is green here and stays green, the one colour that means this
 	// everywhere a person has ever looked at a machine.
@@ -140,11 +140,11 @@ var (
 	// base is the scheme the terminal calls for.
 	base = darkScheme
 
-	// colors is that scheme with the tree's accent on it: what is actually
+	// colors is that scheme with the runtime's accent on it: what is actually
 	// showing, and the only thing the styles read.
 	colors = darkScheme
 
-	// accentHex is what the tree asked for, kept because it has to be laid on
+	// accentHex is what the runtime asked for, kept because it has to be laid on
 	// again whenever the scheme underneath it changes.
 	accentHex string
 
@@ -225,16 +225,16 @@ func (plainTerm) Getenv(key string) string {
 	return os.Getenv(key)
 }
 
-// SetAccent lets the tree pick the primary. Everything built from it is rebuilt
+// SetAccent lets the runtime pick the primary. Everything built from it is rebuilt
 // here, so nothing bakes the colour in at package init.
 func SetAccent(hex string) {
 	accentHex = hex
 	apply()
 }
 
-// apply lays the tree's accent on the scheme the terminal called for and rebuilds
+// apply lays the runtime's accent on the scheme the terminal called for and rebuilds
 // everything made from the two. It starts from base every time rather than from
-// what is showing, so a tree that drops its accent gets the scheme's own back.
+// what is showing, so a runtime that drops its accent gets the scheme's own back.
 func apply() {
 	colors = base
 	if accentHex != "" {
@@ -253,7 +253,7 @@ func init() { SetAccent("") }
 const minContrast = 4.5
 
 // readable takes a colour far enough from the field it sits on to be read
-// against it, and no further. The tree names one accent and cannot know which
+// against it, and no further. The runtime names one accent and cannot know which
 // terminal it will be shown in, so a green picked against Polar Night would
 // otherwise arrive on white paper as a pale smudge.
 //
@@ -261,7 +261,7 @@ const minContrast = 4.5
 // darkens or lightens without turning the hue, so a green stays a green — it
 // just stops being one nobody can see.
 //
-// A colour in some notation other than #rrggbb is left exactly as the tree wrote
+// A colour in some notation other than #rrggbb is left exactly as it was written
 // it: an accent this cannot measure is still an accent somebody chose.
 func readable(c, bezel lipgloss.Color) lipgloss.Color {
 	if _, ok := rgb(string(c)); !ok {
@@ -303,7 +303,7 @@ func fade(c lipgloss.Color) lipgloss.Color {
 }
 
 // blend mixes a into b, t of the way. A pair it cannot read comes back as a —
-// which only happens to an accent the tree named in some notation other than
+// which only happens to an accent named in some notation other than
 // #rrggbb, and an accent that does not blend beats an accent that turns to noise.
 func blend(a, b lipgloss.Color, t float64) lipgloss.Color {
 	from, ok := rgb(string(a))

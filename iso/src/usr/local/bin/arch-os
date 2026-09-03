@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
-# Start Arch OS. This is the way in on this image: the systemd unit on tty1
-# runs this, and so does anybody typing `arch-os` at a prompt after leaving it.
-# With no argument the runtime finds both programs beside itself and asks
-# which to open; `installer` and `recovery` beside this script are the two
-# shortcuts past that question.
+# Start Arch OS. This is the way in on this image: the systemd unit on tty1 runs
+# this, and so do `installer` and `recovery` beside it, which are the same run
+# with the module already named.
 #
 # Two things it settles, which is why it is a script rather than a symlink:
 #
@@ -15,14 +13,14 @@
 # same console back. Neither is worth refusing to start over for, so both may
 # fail.
 #
-# The runtime looks for its programs beside its own binary, so it is started
-# out of the folder it was installed into - every answer file and log then
-# lands beside them, so starting it again from any prompt picks up where it
-# left off.
+# The runtime looks for runtime.yaml and its modules beside its own binary, so
+# it is started out of the folder it was installed into - every answer file and
+# log then lands beside them, so starting it again from any prompt picks up
+# where it left off.
 set -eu
 
 setfont Lat2-Terminus16 || true
 arch-os-console-theme || true
 
 cd /opt/arch-os
-exec ./arch-os "$@"
+exec ./runtime "$@"

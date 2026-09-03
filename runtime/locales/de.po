@@ -43,30 +43,30 @@ msgstr "Fehler"
 msgid "System check"
 msgstr "Systemprüfung"
 
-#: internal/spec/load.go:65
-msgid "No installer found."
-msgstr "Kein Installer gefunden."
-
-#: internal/spec/load.go:66
-#, c-format
-msgid "A %s file has to sit next to this program, in %s."
-msgstr "Eine %s-Datei muss neben diesem Programm liegen, in %s."
-
-#: internal/spec/load.go:84
+#: internal/spec/load.go:30
 #, c-format
 msgid "no %s file here"
 msgstr "hier liegt keine %s-Datei"
 
-#: internal/spec/load.go:86
+#: internal/spec/load.go:32
 #, c-format
 msgid "more than one %s file here"
 msgstr "hier liegt mehr als eine %s-Datei"
 
-#: internal/spec/spec.go:462
+#: internal/spec/runtime.go:73
+msgid "Nothing to run here."
+msgstr "Hier gibt es nichts auszuführen."
+
+#: internal/spec/runtime.go:74
+#, c-format
+msgid "A %s file has to sit next to this program, in %s."
+msgstr "Eine %s-Datei muss neben diesem Programm liegen, in %s."
+
+#: internal/spec/spec.go:466
 msgid "This value has the wrong format."
 msgstr "Dieser Wert hat das falsche Format."
 
-#: internal/spec/spec.go:464
+#: internal/spec/spec.go:468
 msgid "This value is required."
 msgstr "Dieser Wert wird benötigt."
 
@@ -75,19 +75,23 @@ msgstr "Dieser Wert wird benötigt."
 msgid "Answers given to %s. Edit by hand if you like."
 msgstr "Angaben für %s. Kann von Hand bearbeitet werden."
 
-#: internal/store/conf.go:79 tui/labels.go:82
+#: internal/store/conf.go:79 internal/store/language.go:58 tui/labels.go:82
 msgid "Interface language"
 msgstr "Sprache der Oberfläche"
 
-#: internal/store/store.go:208
+#: internal/store/language.go:57
+msgid "Answers the runtime keeps for every module. Edit by hand if you like."
+msgstr "Angaben, die für jedes Modul gelten. Kann von Hand bearbeitet werden."
+
+#: internal/store/store.go:222
 msgid "asked just before the run"
 msgstr "wird kurz vor dem Start abgefragt"
 
-#: internal/store/store.go:225 tui/labels.go:165
+#: internal/store/store.go:239 tui/labels.go:172
 msgid "Yes"
 msgstr "Ja"
 
-#: internal/store/store.go:227 tui/labels.go:166
+#: internal/store/store.go:241 tui/labels.go:173
 msgid "No"
 msgstr "Nein"
 
@@ -110,6 +114,16 @@ msgstr "Verbindung mit %s fehlgeschlagen."
 #, c-format
 msgid "%s was joined, but there is still no internet."
 msgstr "%s ist verbunden, aber es gibt weiterhin keine Internetverbindung."
+
+#: main.go:259
+#, c-format
+msgid "No module called %s."
+msgstr "Kein Modul namens %s."
+
+#: main.go:260
+#, c-format
+msgid "This one offers %s."
+msgstr "Angeboten werden %s."
 
 #: tui/labels.go:22
 msgid "↑↓ move · ⏎ select · q quit"
@@ -233,7 +247,7 @@ msgstr "Keine Treffer"
 msgid "Start"
 msgstr "Start"
 
-#. %s is the name of the program being read, e.g. "Arch OS Installer".
+#. %s is the name of the product being read, e.g. "Arch OS".
 #: tui/labels.go:85
 #, c-format
 msgid "Choose the language for %s."
@@ -260,7 +274,7 @@ msgstr "Die Installation mit den bisherigen Angaben starten."
 msgid "Settings"
 msgstr "Einstellungen"
 
-#. %s is the name of the program whose values these are.
+#. %s is the name of the module whose values these are.
 #: tui/labels.go:105
 #, c-format
 msgid "Every value %s will use. Choose one to change it."
@@ -337,34 +351,41 @@ msgstr "Installation nicht möglich"
 msgid "Leave"
 msgstr "Beenden"
 
-#: tui/labels.go:154
+#: tui/labels.go:158
+msgid "Whatever was running is still running behind this page. Anything chosen here stops it."
+msgstr "Was lief, läuft hinter dieser Seite weiter. Jede Auswahl hier bricht es ab."
+
+#: tui/labels.go:161
 msgid "Restart"
 msgstr "Neu starten"
 
-#: tui/labels.go:155
+#: tui/labels.go:162
 msgid "Close this machine down and start it again."
 msgstr "Den Rechner herunterfahren und neu starten."
 
-#: tui/labels.go:156
+#: tui/labels.go:163
 msgid "Shut down"
 msgstr "Herunterfahren"
 
-#: tui/labels.go:157
+#: tui/labels.go:164
 msgid "Exit to the console"
 msgstr "Zurück zur Konsole"
 
-#: tui/labels.go:158
+#: tui/labels.go:165
 msgid "Switch this machine off."
 msgstr "Den Rechner ausschalten."
 
-#: tui/labels.go:159
+#: tui/labels.go:166
 msgid "Restarting …"
 msgstr "Neustart läuft …"
 
-#: tui/labels.go:160
+#: tui/labels.go:167
 msgid "Shutting down …"
 msgstr "Wird heruntergefahren …"
 
-#: tui/labels.go:161
+#: tui/labels.go:168
 msgid "This machine did not do as it was told."
 msgstr "Der Rechner hat den Befehl nicht ausgeführt."
+
+#~ msgid "No installer found."
+#~ msgstr "Kein Installer gefunden."

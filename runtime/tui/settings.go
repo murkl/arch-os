@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"installer/internal/spec"
+	"github.com/murkl/arch-os/runtime/internal/spec"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -18,7 +18,7 @@ import (
 // sentence, and a sentence belongs on the page that asks the question — which
 // is one keypress away, and is the same page the opening run of questions used.
 //
-// It narrows like any other long list: press / and type. A tree of any size
+// It narrows like any other long list: press / and type. A module of any size
 // puts more answers on this page than fit in a frame, and hunting for one by
 // scrolling is the thing the box exists to spare.
 type settingsScreen struct {
@@ -34,7 +34,7 @@ type settingsScreen struct {
 	picker *picker
 }
 
-// settingRow is one setting beside the heading it sits under. Both the tree's
+// settingRow is one setting beside the heading it sits under. Both the module's
 // own key and the words it reads as: the key is what marks the end of a group,
 // and the words are what a query is matched against.
 type settingRow struct {
@@ -69,11 +69,11 @@ func (s *settingsScreen) collect() []settingRow {
 	// is the one setting that changes this page itself, so it belongs where it
 	// can be found without reading anything.
 	//
-	// Unless the tree tied the language to one of its own answers — see
+	// Unless the module tied the language to one of its own answers — see
 	// `language:` — in which case that answer is the row, a few lines further
 	// down, and a second one above it would only be the same setting able to
 	// disagree with itself.
-	if s.app.spec.Language == "" && len(s.app.langs) > 1 {
+	if s.app.module.Language == "" && len(s.app.langs) > 1 {
 		rows = append(rows, settingRow{item: item{
 			title: labelLanguage(),
 			value: s.languageName(),
@@ -139,7 +139,7 @@ func (s *settingsScreen) layout() {
 		key = s.picker.selected()
 	}
 	s.picker = newPicker(s.list())
-	s.picker.describe(labelSettingsHelp(s.app.spec.Name()))
+	s.picker.describe(labelSettingsHelp(s.app.module.Name()))
 	s.picker.focus(key)
 }
 
@@ -202,7 +202,7 @@ func (s *settingsScreen) open(name string) tea.Cmd {
 	case name == spec.LangVar:
 		return push(newLanguage(s.app, pop))
 	}
-	v := s.app.spec.Var(name)
+	v := s.app.module.Var(name)
 	if v == nil || v.Secret() {
 		return nil
 	}

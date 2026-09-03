@@ -7,6 +7,10 @@ import tea "github.com/charmbracelet/bubbletea"
 // key, what it looks like in the space it is given, and which keys it answers
 // to. Everything else — the frame, the breadcrumb, the footer — belongs to the
 // model and no screen can disagree with it.
+//
+// Screens are a stack, one in front of the last, bar one: the way out is drawn
+// over the stack rather than on it, because it is a question about what is
+// happening rather than a step further into it. See Model.leaving.
 type screen interface {
 	// Title is this screen's segment of the breadcrumb. Empty adds nothing.
 	Title() string
@@ -44,7 +48,7 @@ type (
 )
 
 // opening is embedded by the pages in front of the questions proper: the
-// language, what the tree asks first, the fork, the network, the check, the
+// language, the fork, what a module asks first, the network, the check, the
 // starting points. They follow one another rather than lead into one another,
 // so each stands under one heading instead of inside the page before it — a
 // line growing by a segment for every page already answered says where somebody
@@ -125,12 +129,17 @@ type (
 	// does not come back from.
 	leaveMsg struct{}
 	quitMsg  struct{}
+
+	// dismissMsg closes the way out again, leaving whatever is behind it
+	// exactly as it was — including a run that never stopped.
+	dismissMsg struct{}
 )
 
 func push(s screen) tea.Cmd  { return func() tea.Msg { return pushScreenMsg{s} } }
 func pop() tea.Cmd           { return func() tea.Msg { return popScreenMsg{n: 1} } }
 func reset(s screen) tea.Cmd { return func() tea.Msg { return resetStackMsg{s} } }
 func leave() tea.Cmd         { return func() tea.Msg { return leaveMsg{} } }
+func dismiss() tea.Cmd       { return func() tea.Msg { return dismissMsg{} } }
 func quit() tea.Cmd          { return func() tea.Msg { return quitMsg{} } }
 
 func flashBad(text string) tea.Cmd {

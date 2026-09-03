@@ -11,12 +11,12 @@ import (
 // and the frame lays it out as a table — so what it holds is a contract.
 func TestAFailureIsReportedAsLabelledFields(t *testing.T) {
 	f := &Failure{
-		Unit: "Set up the disk", Script: "/tree/tasks/disk/task.sh", Line: 12,
+		Unit: "Set up the disk", Script: "/module/tasks/disk/task.sh", Line: 12,
 		Code: 2, Command: "mkfs.btrfs -f /dev/sda2", Stderr: "no such device",
 	}
 	got := f.Fields()
 	want := [][2]string{
-		{"Script", "/tree/tasks/disk/task.sh:12"},
+		{"Script", "/module/tasks/disk/task.sh:12"},
 		{"Command", "mkfs.btrfs -f /dev/sda2"},
 		{"Exit code", "2"},
 	}

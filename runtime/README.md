@@ -1,84 +1,100 @@
-# runtime: the program the trees beside it are run by
+# runtime: the program the modules beside it are run by
 
 A single Go binary that draws an interface, asks questions, keeps the answers
 and runs shell in order, reporting exactly where it broke. It is built as
-`installer-linux-amd64` and a release ships it under whatever name that release
-goes by, `arch-os` in this one.
+`runtime-linux-amd64` and a release ships it beside its modules as `runtime`.
 
 It installs nothing, and it knows nothing about Arch Linux, disks, packages or
-desktops: there is not one of those words in the source. What is asked, what
-the answers mean and what the shell does is **one yaml and the folders beside
-it**. Started without one, the binary says so and stops.
+desktops: there is not one of those words in the source. What the product is
+called, what it looks like and what it offers is `runtime.yaml`; what is asked,
+what the answers mean and what the shell does is **one folder per module**.
+Started without them, the binary says so and stops.
 
 ```
-arch-os                     # runs the tree beside the binary, or asks which of several
-arch-os -check              # loads them, reports what they hold, changes nothing
-arch-os -strings            # prints the translation template for one tree
-arch-os -dir /path/to/tree  # runs that one and asks nothing
-arch-os -version
+runtime                     # asks the language, then which module to open
+runtime --installer         # that one outright, past the question
+runtime -check              # loads everything, reports what it holds, changes nothing
+runtime --installer -check  # just that one
+runtime --installer -strings   # its translation template
+runtime -dir /path/to/release  # look there instead of beside the binary
+runtime -version
 ```
 
-## The tree
+## The runtime
 
-Only the declaration has to be there; everything else is found by its own name,
-so a tree turns a part of the program off by leaving it out.
-
-```
-<name>.yaml              the whole declaration: what it is, what it asks, what order it works in
-tasks/<id>/task.yaml     where that unit belongs
-tasks/<id>/task.sh       what it does
-hooks/<name>.sh          everything around the installation itself, one script per hook
-lib.sh                   sourced before every script of this tree
-locales/<code>.po        one catalog per language it speaks, beside the template it is filled in from
-```
-
-The declaration is **the one `.yaml` file in the folder's top level**, whatever
-it is called: `installer.yaml`, `recovery.yaml`. Naming it after what it
-declares is what lets two trees sit beside each other and still be told apart;
-two of them in one folder is refused rather than resolved. The answer file and
-the log are named after it too, so `recovery.yaml` answers into `recovery.conf`
-and logs into `recovery.log`.
-
-### A release is a binary and the trees beside it
-
-The binary looks **next to itself** and nowhere else. What it finds there is
-either a tree, or a folder of them:
+The binary looks **next to itself** and nowhere else, for `runtime.yaml` and the
+module folders it lists:
 
 ```
-arch-os         the binary
-arch-os.yaml    what they are called together, and what they look like
-installer/      one program: installer.yaml and the folders beside it
+runtime         the binary
+runtime.yaml    what the product is called, what it looks like, what it offers
+installer/      one module: installer.yaml and the folders beside it
 recovery/       another: recovery.yaml and its own
 ```
 
-Several is a question, and it is the first page of the program: each tree's own
-`title` and `description`, in the order the folders are named. One is no
-question at all and is opened on the way in. Nothing about a tree is read from
-the outside: the folder names decide the order and nothing else.
-
-From the moment one is opened, everything (the answers, the log, the words on
-screen) is that tree's. What never changes is the frame around it: the wordmark
-it comes up out of, the colour, and the name over the question of which program
-to open belong to the release rather than to either program in it.
-
-`-dir` names one tree outright and skips the question, which is what the
-`installer` and `recovery` commands on the ISO are.
-
-### The release
-
-`arch-os.yaml` is the one yaml beside the binary that does not declare a
-program — the name is reserved, so the folder its programs sit in does not
-become a program itself. Everything in it is optional, and a release without one
-comes up in the interface's own colour with no wordmark in front of it.
-
 ```yaml
-name: Arch OS            # over the page that asks which program to open
+name: Arch OS            # over the pages drawn before a module has been opened
 accent: "#1793d1"        # the one colour the interface is built from
 logo: |                  # everything above the blank line is a dim eyebrow
   Arch Linux
 
   ██████ …               # the wordmark, swept in behind the accent
+
+modules:                 # what it offers, in the order it offers them
+  - installer
+  - recovery
 ```
+
+`modules:` is the whole of the list. A folder that is not on it is not part of
+this product, and adding one is a line here and a folder — nothing in the
+binary knows any module by name. Each name is both the folder and the word that
+opens it outright: `runtime --installer`, which is what the `installer` and
+`recovery` commands on the ISO are.
+
+Nothing here is compiled in. A different name, a different colour and a
+different list of modules is a different product out of the same binary.
+
+## A module
+
+Only the declaration has to be there; everything else is found by its own name,
+so a module turns a part of the program off by leaving it out.
+
+```
+<name>.yaml              the whole declaration: what it is, what it asks, what order it works in
+tasks/<id>/task.yaml     where that unit belongs
+tasks/<id>/task.sh       what it does
+hooks/<name>.sh          everything around the work itself, one script per hook
+lib.sh                   sourced before every script of this module
+locales/<code>.po        one catalog per language it speaks, beside the template it is filled in from
+```
+
+The declaration is **the one `.yaml` file in the folder's top level**, whatever
+it is called: `installer.yaml`, `recovery.yaml`. Naming it after the folder is
+the convention and is what lets two modules sit open in an editor and still be
+told apart; two of them in one folder is refused rather than resolved.
+
+The **folder name is the module's identity**: what `runtime.yaml` lists, what
+the command line names, and what its answers and its log are called. The
+`installer` module answers into `installer.conf` and logs into `installer.log`.
+
+### The order of the opening
+
+The language leads, then the module, then everything that module wants settled:
+
+```
+language → which module → its `first:` questions → network → preflight → presets → hub
+```
+
+The language is the runtime's own answer rather than any module's — it is
+settled before there is a module to settle anything, the question of which
+module to open is itself read in it, and every module is read in it afterwards.
+It is kept in `runtime.conf` beside the modules' own answer files, and written
+into whichever module is opened so that every script it runs is told what is on
+screen. A module that ties it to one of its own answers (`language:` below) can
+still change it from there.
+
+Naming a module on the command line answers the second question, never the
+first: the language page is drawn either way.
 
 ### The declaration
 
@@ -126,17 +142,18 @@ variables:
 `confirm` is filled in from the answers, so it names the disk it is about rather
 than warning in the abstract.
 
-`description` and `run` are two different things and a tree needs both once a
-release holds several: one is what the program *is*, read on the page that asks
+`description` and `run` are two different things and a module needs both once a
+runtime offers several: one is what the module *is*, read on the page that asks
 which to open; the other is what one *run* of it is called, read wherever the
 interface says what is happening: the row that starts it, the last warning, the
-clock while it runs. A tree that names no run is an installation as far as the
-runtime is concerned, which is right for one kind of tree and wrong for the rest.
+clock while it runs. A module that names no run is an installation as far as the
+runtime is concerned, which is right for one kind of module and wrong for the
+rest.
 
 ### `hooks/`
 
 Bash called by its own name. Nothing declares them: a script under one of these
-names is the declaration, and any other name there is refused when the tree
+names is the declaration, and any other name there is refused when the module
 loads.
 
 | | |
@@ -152,10 +169,12 @@ loads.
 The preflight is a wall: what it writes to stderr is what the user reads.
 
 `restart.sh` and `shutdown.sh` are what make leaving the interface a question
-rather than an exit. A tree with them is saying the machine booted to run this
-installer, so every way out (ctrl+c, the row that says quit, backing off the
-first page, the end of an installation) lands on a page offering them. A tree
-with neither exits the way any program does, which is right for an installer
+rather than an exit. A module with them is saying the machine booted to run it,
+so every way out (ctrl+c, esc during a run, the row that says quit, backing off
+the first page, the end of an installation) lands on a page offering them. That
+page is drawn *over* whatever was happening: a run carries on behind it and the
+header keeps counting, and only choosing one of its rows stops anything. A
+module with neither exits the way any program does, which is right for something
 somebody started from a shell they are still sitting in.
 
 **`console:`** is the third way out, and the only one that runs nothing: the
@@ -207,7 +226,7 @@ The value is read back out of the answer file once the task has run, which is
 also how the task puts it there:
 
 ```sh
-printf "MY_LINK='%s'\n" "$url" >>"$INSTALLER_CONF"
+printf "MY_LINK='%s'\n" "$url" >>"$MODULE_CONF"
 ```
 
 That file is the only channel, and it is not a new one: it is shell, `KEY='value'`
@@ -282,7 +301,7 @@ VAR != value
 
 Deliberately not an expression language. Three tokens cover every guard an
 installer needs, they read as a sentence, and they are checked against the
-declared variables when the tree is opened, so a renamed variable is a message
+declared variables when the module is opened, so a renamed variable is a message
 at startup, never a task that silently never runs. There is no `or`: a row that
 belongs under two unrelated circumstances is two rows.
 
@@ -297,15 +316,17 @@ into a file.
 
 In this order, and each page shown only if there is something on it:
 
-- **What to do**, if there is more than one tree beside the binary. Everything
-  after it belongs to whichever was chosen.
-- **Language**, on a machine that has never answered anything, if more than one
-  is on offer. Afterwards it is a row in the settings.
+- **Language**, if more than one is on offer. It is the runtime's own question
+  and comes before everything, the question below included. Afterwards it is a
+  row in the settings.
+- **What to do**, if the runtime offers more than one module and none was named
+  on the command line. Everything after it belongs to whichever was chosen.
 - **The `first` questions**, unnumbered: the few that cannot wait, because
   everything after them is typed on the keyboard they settle.
-- **Network**, if the tree has an `online.sh` hook.
-- **The check**, if the tree has a `preflight.sh` hook. A failure here is a wall.
-- **Presets**, one page for each the tree declares. A set of answers, not a state
+- **Network**, if the module has an `online.sh` hook.
+- **The check**, if the module has a `preflight.sh` hook. A failure here is a
+  wall.
+- **Presets**, one page for each the module declares. A set of answers, not a state
   the program stays in: every value one fills in is an ordinary value from the
   next page on. Offered
   once, on a machine that has never answered anything. A row with **`asks:`** is
@@ -324,26 +345,27 @@ In this order, and each page shown only if there is something on it:
   over. A task with a `report:` stops it to say something.
 - **A failure**: what the tool said, then which script, which line, which
   command, which exit code, then where the rest is written down.
-- **The way out**, where the tree declared one: a restart, a shutdown, and,
-  where the tree named a console to stop into, closing the installer with the
-  machine left running.
+- **The way out**, where the module declared one: a restart, a shutdown, and,
+  where the module named a console to stop into, closing the interface with the
+  machine left running. Opening it never stops a run; choosing a row does.
 
 Every answer is written to the answer file the moment it is given, so an
 interruption costs nothing.
 
 ## Files it writes
 
-Beside whoever started the program (never inside the tree, which may be a
-read-only medium or a git checkout) and named after the tree, so two of them
+Beside whoever started the program (never inside a module, which may be a
+read-only medium or a git checkout) and named after the module, so two of them
 started from the same folder keep their own:
 
 ```
+./runtime.conf     what the runtime keeps for every module: the language
 ./installer.conf   every answer, as KEY='value': shell, editable by hand
 ./installer.log    everything: the runtime's own progress and every line a script printed
 ```
 
-That is `installer.yaml`'s pair; `recovery.yaml` beside it writes
-`recovery.conf` and `recovery.log`. `-conf` or `INSTALLER_CONF` moves them.
+That is the `installer` module's pair; `recovery` beside it writes
+`recovery.conf` and `recovery.log`. `-conf` or `RUNTIME_CONF` moves them.
 
 ## What a script is handed
 
@@ -351,14 +373,14 @@ Every declared variable under its own name, answered or not, plus:
 
 | | |
 |---|---|
-| `INSTALLER_DIR` | the tree, absolute |
-| `INSTALLER_CONF` | the answer file |
-| `INSTALLER_LOG` | the log |
-| `INSTALLER_LANG` | the language showing |
-| `INSTALLER_VERSION` | the runtime's version |
+| `MODULE_DIR` | the module's folder, absolute |
+| `MODULE_CONF` | its answer file |
+| `MODULE_LOG` | its log |
+| `RUNTIME_LANG` | the language showing |
+| `RUNTIME_VERSION` | the runtime's version |
 
 Scripts are **sourced** into a shell that already carries an `ERR` trap and,
-where the tree declares one, the shared library. They need no preamble, no
+where the module declares one, the shared library. They need no preamble, no
 `set -e`, no imports, no error handling: if a command fails, the task fails, and
 the user is told the file, the line, the command and the exit code. A script
 that merely *ends* on a false test (`[ "$X" = true ] && do_it`) is not a
@@ -379,57 +401,59 @@ The catalogs are **gettext `.po` files**, one per language, filled in from a
 `.pot` template beside them: the format every translation platform reads, and
 the one where the msgid a translator is shown is the English sentence itself.
 Both templates are generated and neither is edited by hand: the runtime's out of
-the Go sources, a tree's out of the loaded tree. `make locales` writes them and
-brings every catalog up to them.
+the Go sources, a module's out of the loaded module. `make locales` writes them
+and brings every catalog up to them.
 
 Two independent catalogs are merged: the runtime's own, compiled into the binary
-under `locales/`, and the tree's own `locales/` beside its declaration. Adding a
-language is adding a file.
+under `locales/`, and the module's own `locales/` beside its declaration. Adding
+a language is adding a file.
 
 ```sh
-cp locales/arch-os.pot locales/fr.po  # a language nobody has started yet
+cp locales/runtime.pot locales/fr.po  # a language nobody has started yet
 make locales                          # every template, and every catalog brought up to it
-arch-os -check                        # reports coverage per language
+runtime -check                        # reports coverage per language
 ```
 
 A catalog names its own language in it, as the translation of `English`, that
 is what the picker lists, so a language is always offered in its own words. See
 [TRANSLATING.md](../TRANSLATING.md).
 
-The language is chosen on the first run, changed in the settings, and otherwise
-read from `LC_ALL`, `LC_MESSAGES` or `LANG`.
+The language is the first page of every run, changed afterwards in the
+settings, and it opens on whatever `runtime.conf` last recorded — or, on a
+machine that has never said, on what `LC_ALL`, `LC_MESSAGES` or `LANG` comes
+closest to.
 
-**`language:`** ties it to one of the tree's own answers instead. The value is
+**`language:`** ties it to one of a module's own answers as well. The value is
 matched against the catalogs the way a machine's own locale is (`de_DE` is
-German) so a tree that asks where a machine is has asked which language it
-speaks: the opening page of languages is not shown, and neither is the language
-row in the settings.
+German), so a module that asks where a machine is has also said which language
+it speaks: answering it changes the words on screen, and the settings page shows
+that row instead of a language row of its own.
 
 ## Building
 
 ```sh
-make build                  # bin/installer-linux-amd64, and its checksum
-make run                    # straight from source, against ../installer
-make run TREE=../recovery   # the other tree
-make check                  # gofmt, vet, staticcheck, test, build, before a commit
+make build                     # bin/runtime-linux-amd64, and its checksum
+make run                       # straight from source, against the modules at ..
+make run MODULE=recovery       # one of them outright
+make check                     # gofmt, vet, staticcheck, test, build, before a commit
 ```
 
-`run` takes one tree, so the page that asks which of several to open is not on
-its way. That page needs the trees beside a binary, which is what a build makes:
-`make build` at the repository root, then `release/arch-os`.
+`run` reads the repository root, which is a `runtime.yaml` with the module
+folders beside it exactly as a release is. `make build` at the repository root
+assembles the real thing: `release/runtime`.
 
 The binary is static and has no runtime dependencies of its own. It has to live
-beside the trees it runs, since that is where it looks for them.
+beside `runtime.yaml` and its modules, since that is where it looks for them.
 
 ## Layout
 
 ```
-main.go              find the trees, load them, open the interface
-internal/spec        the tree, read into memory, checked over and put in order
+main.go              read the command line, load the runtime and its modules, open the interface
+internal/spec        the runtime and its modules, read into memory, checked over and put in order
 internal/store       the answers, and the file they survive a restart in
 internal/exec        the only place a process is started, and the failure shape
 internal/runner      what a question offers, which tasks this run consists of
-internal/wlan        joining a wireless network, the way the tree's hooks say to
+internal/wlan        joining a wireless network, the way a module's hooks say to
 internal/i18n        the message catalogs
 internal/logging     the single sink for everything a run records
 locales/             the runtime's own words, compiled in

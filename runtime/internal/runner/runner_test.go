@@ -6,18 +6,18 @@ import (
 	"strings"
 	"testing"
 
-	"installer/internal/i18n"
-	"installer/internal/spec"
-	"installer/internal/store"
+	"github.com/murkl/arch-os/runtime/internal/i18n"
+	"github.com/murkl/arch-os/runtime/internal/spec"
+	"github.com/murkl/arch-os/runtime/internal/store"
 )
 
-// What a test tree's declaration is called: the runtime takes whichever yaml it
-// finds in the folder, and these tests use the name the real trees use.
+// What a test module's declaration is called: the runtime takes whichever yaml
+// it finds in the folder, and these tests use the name the real ones use.
 const treeFile = "installer.yaml"
 
-// setup writes a tree: installer.yaml from the given variables and tasks,
+// setup writes a module: installer.yaml from the given variables and tasks,
 // plus whatever extra files a test asked for.
-func setup(t *testing.T, variables string, tasks map[string]string) (*spec.Spec, *store.Store, *Runner) {
+func setup(t *testing.T, variables string, tasks map[string]string) (*spec.Module, *store.Store, *Runner) {
 	t.Helper()
 	dir := t.TempDir()
 	files := map[string]string{treeFile: "title: T\nstages: [go]\n" + variables}
@@ -313,7 +313,7 @@ func TestAnImportedConfigurationBecomesTheAnswers(t *testing.T) {
 	t.Setenv("APPLIED", applied)
 	st.SetFacts("test")
 
-	shell := "printf \"DISK='/dev/sdz'\\nKEYMAP='de'\\n\" >>\"$INSTALLER_CONF\""
+	shell := "printf \"DISK='/dev/sdz'\\nKEYMAP='de'\\n\" >>\"$MODULE_CONF\""
 	if err := r.Import(shell)(); err != nil {
 		t.Fatal(err)
 	}

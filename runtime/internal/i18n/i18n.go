@@ -14,8 +14,8 @@
 // all show the translator.
 //
 // Two catalogs are merged at startup and behave as one: the runtime's own,
-// compiled into the binary, and the installer tree's, which translates the
-// words that tree wrote. Neither knows about the other.
+// compiled into the binary, and each module's, which translates the
+// words that module wrote. Neither knows about the other.
 package i18n
 
 import (
@@ -48,7 +48,7 @@ var (
 )
 
 // Use puts the program in a language, built from the catalogs given. Later
-// catalogs win, so the installer tree can override a word the runtime also
+// catalogs win, so a module can override a word the runtime also
 // uses. Nil entries are skipped, which is what a language with no catalog on
 // one side looks like.
 func Use(code string, catalogs ...*Catalog) {

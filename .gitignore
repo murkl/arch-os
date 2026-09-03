@@ -3,8 +3,10 @@
 /release/
 /dist/
 
-# What a local run leaves beside itself, wherever it runs from. Each tree names
-# its answers and its log after itself — see runtime/main.go.
+# What a local run leaves beside itself, wherever it runs from. Each module
+# names its answers and its log after itself, and the runtime keeps what belongs
+# to every module in one of its own — see runtime/main.go.
+runtime.conf
 installer.conf
 installer.conf.old
 installer.log

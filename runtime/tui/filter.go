@@ -10,7 +10,7 @@ import (
 // filter is the narrowing box a long list puts in front of itself: press / and
 // type, and only the rows that match are left. It is deliberately the same box
 // the search page is built around — cursor, field, list under it, one blank
-// between — because narrowing a folder and narrowing the whole tree are the
+// between — because narrowing one list and narrowing another are the
 // same gesture and must not look like two.
 //
 // Closed it draws nothing at all, so a list that is never narrowed carries no

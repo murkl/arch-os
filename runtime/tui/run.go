@@ -5,15 +5,15 @@ import (
 	"strings"
 	"time"
 
-	"installer/internal/exec"
-	"installer/internal/logging"
-	"installer/internal/spec"
+	"github.com/murkl/arch-os/runtime/internal/exec"
+	"github.com/murkl/arch-os/runtime/internal/logging"
+	"github.com/murkl/arch-os/runtime/internal/spec"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // runScreen runs the tasks, one after another, and shows how far it has got. It
-// is the installation, from the first partition to whatever the tree offers
+// is the installation, from the first partition to whatever the module offers
 // once the system is on the disk.
 //
 // What it shows is a list of names with a mark against each. What it does not
@@ -24,14 +24,14 @@ import (
 // where anyone chasing a detail was always going to look.
 //
 // The one thing that interrupts the list is a task that asks first. That is how
-// a tree offers something rather than does it — reboot now, unmount, drop into
+// a module offers something rather than does it — reboot now, unmount, drop into
 // the new system — without any of them being a page of their own.
 type runScreen struct {
 	app *app
 
-	// name is what this run is called, where the tree gave it a name: its own
+	// name is what this run is called, where the module gave it a name: its own
 	// `run:`, which is what the headline and the log are read in. Empty for a
-	// tree that named none, which the runtime can only call an installation.
+	// module that named none, which the runtime can only call an installation.
 	name string
 
 	steps []*spec.Task
@@ -121,7 +121,7 @@ func (s *runScreen) crumbRoot() bool { return true }
 
 // working is what puts the turning mark in the header: something is running,
 // which a question waiting for an answer is not, and neither is a page being
-// read. Fetching the answers to one still is — that is a command of the tree's,
+// read. Fetching the answers to one still is — that is a command of the module's,
 // running like any other.
 func (s *runScreen) working() bool {
 	switch {
@@ -209,7 +209,7 @@ func (s *runScreen) step() tea.Cmd {
 	if s.stage == phaseAsk {
 		s.stage = phaseConfirm
 		if e.Asks != "" {
-			s.ask = newAsk(s.app.spec.Var(e.Asks))
+			s.ask = newAsk(s.app.module.Var(e.Asks))
 			return tea.Batch(s.ask.Init(s.app), s.settle())
 		}
 	}
@@ -312,14 +312,18 @@ func (s *runScreen) settle() tea.Cmd {
 	return tea.Tick(settleFor, func(time.Time) tea.Msg { return settleMsg{} })
 }
 
-// stop kills the task that is running, and everything it started. Reached
-// only by ctrl+c, which is the one key that works while a run is going and
-// which somebody has to mean.
+// stop kills the task that is running, and everything it started. Reached only
+// once somebody has chosen a row on the way out — asking to leave a run does
+// not stop it, saying so does.
 func (s *runScreen) stop() {
-	if s.session != nil {
-		logging.Warn("%s: stopped", s.title())
-		s.session.Kill()
+	if s.session == nil {
+		return
 	}
+	logging.Warn("%s: stopped", s.title())
+	s.session.Kill()
+	// Let go of it, so a second way out asking the same thing of this page says
+	// so once. Whoever is waiting on the run holds its own reference.
+	s.session = nil
 }
 
 func (s *runScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
@@ -348,10 +352,18 @@ func (s *runScreen) Update(msg tea.Msg) (screen, tea.Cmd) {
 		return s, nil
 
 	case tea.KeyMsg:
+		// esc asks to leave, the way ctrl+c does everywhere. It is a question
+		// rather than an answer: the page it opens is drawn over this one and
+		// the run carries on behind it, so nothing here is interrupted by
+		// asking — see leave.go.
+		if cancels(msg) && s.working() {
+			return s, leave()
+		}
 		if !s.settled {
 			// Killing a half-finished package transaction is worse than waiting
-			// for it, so the only way out while it runs is ctrl+c, which the
-			// model handles and which somebody has to mean.
+			// for it, so nothing else means anything while a task runs. The two
+			// keys that ask to leave are the exception, and both of them have to
+			// be meant.
 			return s, nil
 		}
 		if s.ask != nil {
@@ -414,7 +426,7 @@ func (s *runScreen) answer(key tea.KeyMsg) tea.Cmd {
 }
 
 // The two rows of a question. The NUL prefix cannot collide with anything a
-// tree names.
+// module names.
 const (
 	keyYes = "\x00yes"
 	keyNo  = "\x00no"
@@ -460,7 +472,7 @@ func (s *runScreen) headline() string {
 	return accentBold.Render(glyphs.ok) + field(" ") + boldStyle.Render(s.succeeded())
 }
 
-// The three things a run says about itself, each in the tree's own name for it
+// The three things a run says about itself, each in the module's own name for it
 // where there is one and in the only name the runtime has where there is not.
 func (s *runScreen) running() string {
 	if s.name == "" {

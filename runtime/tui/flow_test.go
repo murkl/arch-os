@@ -10,17 +10,17 @@ import (
 	"testing"
 	"time"
 
-	"installer/internal/i18n"
-	"installer/internal/runner"
-	"installer/internal/spec"
-	"installer/internal/store"
+	"github.com/murkl/arch-os/runtime/internal/i18n"
+	"github.com/murkl/arch-os/runtime/internal/runner"
+	"github.com/murkl/arch-os/runtime/internal/spec"
+	"github.com/murkl/arch-os/runtime/internal/store"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
-// What a test tree's declaration is called: the runtime takes whichever yaml it
-// finds in the folder, and these tests use the name the real trees use.
+// What a test module's declaration is called: the runtime takes whichever yaml
+// it finds in the folder, and these tests use the name the real modules use.
 const treeFile = "installer.yaml"
 
 // A whole program, driven by keystrokes, with a folder written for the test.
@@ -41,7 +41,7 @@ type harness struct {
 	inflight atomic.Int64
 }
 
-// The tree every flow test starts from: one page of presets, a handful of
+// The module every flow test starts from: one page of presets, a handful of
 // questions, three tasks, one of them conditional.
 const testInstaller = `
 title: Test Installer
@@ -100,9 +100,9 @@ var testTasks = map[string]string{
 	"tasks/c-extras/task.sh":   "echo ran\n",
 }
 
-// writeTree puts one tree on disk — the standard one, with whatever a test
+// writeModule puts one module on disk — the standard one, with whatever a test
 // changed about it — and answers with the folder it went into.
-func writeTree(t *testing.T, dir string, files map[string]string) string {
+func writeModule(t *testing.T, dir string, files map[string]string) string {
 	t.Helper()
 	base := map[string]string{treeFile: testInstaller}
 	for name, body := range testTasks {
@@ -127,49 +127,63 @@ func writeTree(t *testing.T, dir string, files map[string]string) string {
 	return dir
 }
 
-func loadTree(t *testing.T, dir string) *spec.Spec {
+func loadModule(t *testing.T, dir string) *spec.Module {
 	t.Helper()
-	sp, err := spec.Load(dir)
+	mod, err := spec.Load(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return sp
+	return mod
 }
 
-// openTree is the interface's Open, as the program supplies it: where this
-// tree's answers go, the runner that joins the two, and the catalogs it brought.
-func openTree(t *testing.T) Open {
+// openModule is the interface's Open, as the program supplies it: where this
+// module's answers go, the runner that joins the two, and the catalogs it
+// brought.
+func openModule(t *testing.T) Open {
 	t.Helper()
 	answers := t.TempDir()
-	return func(sp *spec.Spec) (*Program, error) {
-		name := strings.TrimSuffix(sp.File, spec.SpecExt)
-		st := store.New(sp, filepath.Join(answers, name+".conf"))
+	return func(mod *spec.Module) (*Program, error) {
+		st := store.New(mod, filepath.Join(answers, mod.ID()+".conf"))
 		st.SetFacts("test")
-		// The catalogs the tree brought, discovered the way the program
+		// The catalogs the module brought, discovered the way the program
 		// discovers them — so a test that writes one is testing what ships.
 		var sources []fs.FS
-		if sp.Locales != "" {
-			sources = append(sources, os.DirFS(sp.Locales))
+		if mod.Locales != "" {
+			sources = append(sources, os.DirFS(mod.Locales))
 		}
 		return &Program{
-			Spec: sp, Store: st, Runner: runner.New(sp, st),
+			Module: mod, Store: st, Runner: runner.New(mod, st),
 			Langs: i18n.Discover(sources...), Sources: sources,
 		}, nil
 	}
 }
 
-// The release the flow tests run inside: a name over the programs, and nothing
+// The runtime the flow tests run inside: a name over the modules, and nothing
 // else it needs to say for a test with no terminal to dress.
-var testRelease = &spec.Release{Name: "Test OS"}
+var testRuntime = &spec.Runtime{Name: "Test OS", Modules: []string{"installer", "recovery"}}
 
-// start brings the interface up around a release of one or more trees, exactly
-// as Run does.
-func start(t *testing.T, trees ...*spec.Spec) *harness {
+// start brings the interface up around one or more modules, exactly as Run
+// does.
+func start(t *testing.T, mods ...*spec.Module) *harness {
+	t.Helper()
+	return startIn(t, "", mods...)
+}
+
+// startIn is the same with catalogs of the runtime's own, for the pages that
+// are drawn before any module has been opened.
+func startIn(t *testing.T, locales string, mods ...*spec.Module) *harness {
 	t.Helper()
 	i18n.Use(i18n.SourceLang)
-	a := &app{release: testRelease, trees: trees, open: openTree(t), version: "test"}
-	if len(trees) == 1 {
-		if err := a.enter(trees[0]); err != nil {
+	a := &app{
+		runtime: testRuntime, modules: mods, open: openModule(t), version: "test",
+		lang: store.NewLanguage(filepath.Join(t.TempDir(), "runtime.conf")),
+	}
+	if locales != "" {
+		a.sources = []fs.FS{os.DirFS(locales)}
+		a.langs = i18n.Discover(a.sources...)
+	}
+	if len(mods) == 1 {
+		if err := a.enter(mods[0]); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -182,7 +196,7 @@ func start(t *testing.T, trees ...*spec.Spec) *harness {
 
 func newHarness(t *testing.T, files map[string]string) *harness {
 	t.Helper()
-	return start(t, loadTree(t, writeTree(t, t.TempDir(), files)))
+	return start(t, loadModule(t, writeModule(t, t.TempDir(), files)))
 }
 
 // The loop, as the real program runs it: a command goes off on its own and
@@ -475,8 +489,8 @@ func TestABlindQuestionOpensItsFilterFromTheStart(t *testing.T) {
 
 // ─── Which program ───────────────────────────────────────────────────────────
 
-// A release holding more than one tree asks which to open before anything else
-// follows from it — and what it asks with is entirely each tree's own words.
+// A runtime offering more than one module asks which to open before anything
+// follows from it — and what it asks with is entirely each module's own words.
 // What is chosen then decides which questions there are, where the answers go
 // and what the run is called from there on.
 const testRecovery = `
@@ -496,16 +510,16 @@ variables:
     values: [one, two]
 `
 
-// release is a folder holding two trees, the way a build leaves one: the
+// both is a folder holding two modules, the way a build leaves one: the
 // standard installer, and a recovery beside it.
-func release(t *testing.T) []*spec.Spec {
+func both(t *testing.T) []*spec.Module {
 	t.Helper()
 	dir := t.TempDir()
-	installer := writeTree(t, filepath.Join(dir, "installer"), map[string]string{
+	installer := writeModule(t, filepath.Join(dir, "installer"), map[string]string{
 		treeFile: strings.Replace(testInstaller, "title: Test Installer",
 			"title: Test Installer\nrun: Installation\ndescription: Put a system on this machine.", 1),
 	})
-	recovery := writeTree(t, filepath.Join(dir, "recovery"), map[string]string{
+	recovery := writeModule(t, filepath.Join(dir, "recovery"), map[string]string{
 		treeFile:                   "",
 		"recovery.yaml":            testRecovery,
 		"tasks/a-first/task.yaml":  "",
@@ -517,18 +531,18 @@ func release(t *testing.T) []*spec.Spec {
 		"tasks/d-open/task.yaml":   "name: Open the disk\nstage: open\n",
 		"tasks/d-open/task.sh":     "echo opened\n",
 	})
-	return []*spec.Spec{loadTree(t, installer), loadTree(t, recovery)}
+	return []*spec.Module{loadModule(t, installer), loadModule(t, recovery)}
 }
 
 func TestChoosingAProgramSettlesTheQuestionsTheWarningAndTheRun(t *testing.T) {
-	h := start(t, release(t)...)
+	h := start(t, both(t)...)
 	h.wants("What to do", "Test Installer", "Test Recovery", "Put a system on this machine.")
 
 	h.down().enter() // the recovery
 	h.wants("Disk").enter()
 	h.wants("Snapshot", "one", "two").enter()
 
-	// The hub, the warning and the run are all read in that tree's own name for
+	// The hub, the warning and the run are all read in that module's own name for
 	// a run of it, and only its own tasks run.
 	h.wants("Recovery", "Open a system already on a disk.").enter()
 	h.wants("Ready to start", "Opening /dev/sda.", "Start Recovery").enter()
@@ -537,28 +551,44 @@ func TestChoosingAProgramSettlesTheQuestionsTheWarningAndTheRun(t *testing.T) {
 	h.refuses("First")
 }
 
-// The other tree's questions are not this one's: they are declared in a folder
+// The other module's questions are not this one's: they are declared in a folder
 // this run never opened.
 func TestTheOtherProgramsQuestionsAreNotAsked(t *testing.T) {
-	h := start(t, release(t)...)
+	h := start(t, both(t)...)
 	h.enter() // the installer, the row the page opens on
 	h.wants("Setup", "Choose what kind of system to install.")
 	h.refuses("Snapshot")
 }
 
-// The page in front of both of them is headed by neither: naming it after one
-// would answer its own question, so it is read under the name the release gave
-// itself.
-func TestTheQuestionOfWhichProgramIsHeadedByTheRelease(t *testing.T) {
-	h := start(t, release(t)...)
-	h.wants(testRelease.Name, "What to do")
+// The page in front of all of them is headed by none of them: naming it after
+// one would answer its own question, so it is read under the name the runtime
+// gave itself.
+func TestTheQuestionOfWhichModuleIsHeadedByTheRuntime(t *testing.T) {
+	h := start(t, both(t)...)
+	h.wants(testRuntime.Name, "What to do")
 }
 
-// The pages the runtime brings with it belong to whichever tree was opened and
+// And the language comes in front of that: it belongs to the runtime rather
+// than to any module, and the question of which module to open is itself read
+// in it.
+func TestTheLanguageIsAskedBeforeTheQuestionOfWhichModule(t *testing.T) {
+	mods := both(t)
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "de.po"), []byte("msgid \"What to do\"\nmsgstr \"Was tun\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	h := startIn(t, dir, mods...)
+	h.wants("Interface language", "Choose the language for Test OS.").refuses("What to do")
+
+	h.down().enter() // Deutsch
+	h.wants("Was tun", "Test Installer", "Test Recovery")
+}
+
+// The pages the runtime brings with it belong to whichever module was opened and
 // are read in its name. A recovery whose settings talk about an installer is the
 // runtime putting words in a program's mouth.
 func TestTheRuntimesOwnPagesNameTheProgramThatWasOpened(t *testing.T) {
-	h := start(t, release(t)...)
+	h := start(t, both(t)...)
 	h.down().enter() // the recovery
 	h.wants("Disk").enter()
 	h.wants("Snapshot").enter()
@@ -583,15 +613,15 @@ func TestAPresetIsOnlyOfferedOnce(t *testing.T) {
 }
 
 // A preset fills in answers, and an answer is an answer whether it was typed or
-// chosen in one keypress. This tree ties its words on screen to one of them and
+// chosen in one keypress. This module ties its words on screen to one of them and
 // puts the other into effect on the machine, which are the two things an answer
 // can do beyond being stored.
 func presetTreeTying(apply string) map[string]string {
-	tree := strings.Replace(testInstaller,
+	declared := strings.Replace(testInstaller,
 		"          EXTRAS: \"true\"\n",
 		"          EXTRAS: \"true\"\n          LOCALE: de_DE\n", 1)
 	return map[string]string{
-		treeFile: tree +
+		treeFile: declared +
 			"  - name: LOCALE\n    title: System language\n    required: true\n    values: [de_DE, en_US]\n" + apply +
 			"language: LOCALE\n",
 		"locales/de.po": "msgid \"English\"\nmsgstr \"Deutsch\"\n\nmsgid \"User name\"\nmsgstr \"Benutzername\"\n",
@@ -600,6 +630,7 @@ func presetTreeTying(apply string) map[string]string {
 
 func TestAPresetCanChangeTheLanguageItIsReadIn(t *testing.T) {
 	h := newHarness(t, presetTreeTying(""))
+	h.enter() // English, the language the interface opens in
 	h.enter() // Full, which fills in a German locale
 	h.wants("Benutzername").refuses("User name")
 }
@@ -611,6 +642,7 @@ func TestAPresetPutsWhatItFilledInInForce(t *testing.T) {
 		t.Fatal("a value was applied before the page that fills it in was answered")
 	}
 
+	h.enter() // English
 	h.enter() // Full
 	got, err := os.ReadFile(loaded)
 	if err != nil {
@@ -623,9 +655,9 @@ func TestAPresetPutsWhatItFilledInInForce(t *testing.T) {
 
 // ─── The language of the interface ───────────────────────────────────────────
 
-// A tree that speaks more than one language but ties none of them to an answer
+// A module that speaks more than one language but ties none of them to an answer
 // of its own. The words on screen are then a setting of this program, and the
-// tree's own language question is a question about the machine like any other.
+// module's own language question is a question about the machine like any other.
 func twoLanguageTree() map[string]string {
 	return map[string]string{
 		treeFile: testInstaller +
@@ -643,7 +675,7 @@ func TestTheInterfaceLanguageIsTheFirstThingAsked(t *testing.T) {
 	h.wants("Einrichtung", "Full", "Bare")
 }
 
-// And it answers nothing about the machine being installed: the tree's own
+// And it answers nothing about the machine being installed: the module's own
 // language question is still asked, and what was chosen here does not answer it.
 func TestTheInterfaceLanguageIsNotAnAnswer(t *testing.T) {
 	h := newHarness(t, twoLanguageTree())
@@ -659,7 +691,7 @@ func TestTheInterfaceLanguageIsNotAnAnswer(t *testing.T) {
 
 // ─── The network ─────────────────────────────────────────────────────────────
 
-// A tree with no internet problem to begin with never sees the network
+// A module with no internet problem to begin with never sees the network
 // screen at all: it is a fix offered when one is needed, not a page every
 // installation has to click through.
 func TestNetworkScreenIsSkippedWhenAlreadyOnline(t *testing.T) {
@@ -670,7 +702,7 @@ func TestNetworkScreenIsSkippedWhenAlreadyOnline(t *testing.T) {
 }
 
 // Offline and nothing declared to join with: the screen says so and lets the
-// installation carry on regardless — the tree's own preflight is what refuses
+// installation carry on regardless — the module's own preflight is what refuses
 // properly if the connection still matters.
 func TestNetworkScreenOffersToContinueWithoutWhenNotJoinable(t *testing.T) {
 	h := newHarness(t, map[string]string{
@@ -709,14 +741,13 @@ func TestOneLanguageIsNotAQuestion(t *testing.T) {
 	newHarness(t, nil).wants("Full", "Bare").refuses("Language")
 }
 
-// A tree may tie the words on screen to one of its own answers — see
-// `language:` in installer.yaml. Then where a machine is and which language it
-// is spoken to in are one question, and the opening page of nothing but
-// languages is not shown at all.
-func TestATreeCanTieTheInterfaceToOneOfItsOwnAnswers(t *testing.T) {
+// A module may tie the words on screen to one of its own answers — see
+// `language:` in a module's declaration. Answering it then also settles the
+// language, whatever was chosen on the way in.
+func TestAModuleCanTieTheInterfaceToOneOfItsOwnAnswers(t *testing.T) {
 	h := newHarness(t, regionTree)
-	// "Deutsch" is the row the opening page of languages would have shown.
-	h.wants("Language and region", "de_DE").refuses("Deutsch")
+	h.enter() // English, the language the interface opens in
+	h.wants("Language and region", "de_DE")
 
 	// The answer is a locale rather than the name of a catalog, and it is read
 	// as one: de_DE is German.
@@ -731,21 +762,23 @@ func TestATreeCanTieTheInterfaceToOneOfItsOwnAnswers(t *testing.T) {
 // is written in standing.
 func TestAnAnswerNoCatalogFitsLeavesTheSourceLanguage(t *testing.T) {
 	h := newHarness(t, regionTree)
-	h.down().enter()
+	h.enter()        // English
+	h.down().enter() // en_US
 	h.wants("Setup").refuses("Einrichtung")
 }
 
-// And the settings page does not offer a second way to set it: the tree's own
+// And the settings page does not offer a second way to set it: the module's own
 // row is the language, and a runtime row above it could only disagree with it.
-func TestSettingsOffersNoLanguageOfItsOwnWhenTheTreeOwnsIt(t *testing.T) {
+func TestSettingsOffersNoLanguageOfItsOwnWhenTheModuleOwnsIt(t *testing.T) {
 	h := newHarness(t, regionTree)
+	h.enter()        // English
 	h.down().enter() // en_US, so this page stays in the language it is read in
 	h.down().enter().typeIn("moritz").enter().enter()
 	h.down().enter() // Settings
 	h.wants("Language and region", "en_US").refuses("Deutsch")
 }
 
-// The tree the two tests above are about: one question standing for a whole
+// The module the three tests above are about: one question standing for a whole
 // region, and a catalog for one of the languages it can come to.
 var regionTree = map[string]string{
 	treeFile: testInstaller +
@@ -988,7 +1021,7 @@ func TestAFailedTaskStopsTheRunAndSaysWhereItBroke(t *testing.T) {
 	h.wants("Installation failed", "not/here", "Script", "Command", "Exit code")
 }
 
-// A task may ask before it runs, which is how a tree offers something
+// A task may ask before it runs, which is how a module offers something
 // rather than does it. Declining skips that one and the run carries on.
 func TestAnTaskThatAsksIsOfferedRatherThanRun(t *testing.T) {
 	h := newHarness(t, map[string]string{
@@ -1162,7 +1195,7 @@ func TestAFailureReportFitsTheSmallestTerminal(t *testing.T) {
 	}
 }
 
-// The smallest tree that is still an installer: some questions and something to
+// The smallest module that is still an installer: some questions and something to
 // do. Everything else the runtime offers — a language to pick, a starting
 // point, a task that asks first — is a page that simply does not appear.
 func TestTheSmallestTreeStillWorks(t *testing.T) {
@@ -1193,7 +1226,7 @@ func TestTheSmallestTreeStillWorks(t *testing.T) {
 
 // ─── Leaving ─────────────────────────────────────────────────────────────────
 
-// A tree that says how this machine is put down is a tree saying the installer
+// A module that says how this machine is put down is a module saying the installer
 // cannot simply be quit: the machine booted to run it and there is nothing
 // behind it to quit into.
 func leaveTree(restart, shutdown string) map[string]string {
@@ -1219,9 +1252,9 @@ func TestQuittingAsksWhatToDoWithTheMachine(t *testing.T) {
 	h.wants("Install", "Settings")
 }
 
-// Where the tree says there is a console behind the installer, there is a third
+// Where the module says there is a console behind the installer, there is a third
 // way out: the program stops and the machine keeps running. What it leaves on
-// the terminal is the tree's own sentence, because a bare prompt says nothing
+// the terminal is the module's own sentence, because a bare prompt says nothing
 // about how to get back.
 func TestLeavingToTheConsoleClosesOnlyTheProgram(t *testing.T) {
 	const back = "Type installer to start it again."
@@ -1243,7 +1276,7 @@ func TestLeavingToTheConsoleClosesOnlyTheProgram(t *testing.T) {
 		t.Fatal("choosing the console did not leave the program")
 	}
 	if h.a.farewell != back {
-		t.Errorf("farewell = %q, want the sentence the tree wrote", h.a.farewell)
+		t.Errorf("farewell = %q, want the sentence the module wrote", h.a.farewell)
 	}
 }
 
@@ -1291,10 +1324,10 @@ func TestAFinishedInstallationEndsOnTheWayOut(t *testing.T) {
 	}
 }
 
-// ctrl+c during a run is the one way out of one, and it has to be meant. What
-// it stops is over: the page it leads to has nothing behind it, so esc there is
-// not a way back into an installation that is no longer running.
-func TestCtrlCDuringARunStopsItAndOffersNoWayBack(t *testing.T) {
+// ctrl+c and esc during a run ask how to leave; neither stops it. The page is
+// drawn over the run, the run carries on behind it, and going back lands on an
+// installation that never noticed.
+func TestAskingToLeaveDuringARunDoesNotStopIt(t *testing.T) {
 	files := leaveTree("true", "true")
 	files["tasks/a-first/task.sh"] = "sleep 30\n"
 	h := newHarness(t, files)
@@ -1303,12 +1336,47 @@ func TestCtrlCDuringARunStopsItAndOffersNoWayBack(t *testing.T) {
 	h.typeIn("x").enter().typeIn("x").enter()
 	h.wants("Installing for")
 
+	h.esc()
+	h.wants("Restart", "Shut down", "still running behind this page")
+	if !working(h.m.top()) {
+		t.Error("the run was stopped by somebody asking how to leave it")
+	}
+
+	h.esc()
+	h.wants("Installing for").refuses("Restart")
+
 	h.ctrlC()
 	h.wants("Restart", "Shut down")
-	h.esc()
-	h.wants("Restart", "Shut down")
-	if h.m.quitting {
-		t.Error("esc on the way out left the program")
+}
+
+// And choosing one of its rows is what does stop it: from there on this is a
+// decision rather than a question, and a package transaction writing to a disk
+// nobody is watching any more is worse than an interrupted one.
+func TestChoosingAWayOutStopsTheRun(t *testing.T) {
+	files := leaveTree("true", "true")
+	files["tasks/a-first/task.sh"] = "sleep 30\n"
+	h := newHarness(t, files)
+	h.down().enter().typeIn("moritz").enter().enter()
+	h.enter().enter()
+	h.typeIn("x").enter().typeIn("x").enter()
+	h.wants("Installing for")
+
+	run, ok := h.m.top().(*runScreen)
+	if !ok || run.session == nil {
+		t.Fatalf("nothing is running to be stopped; the page on top is %T", h.m.top())
+	}
+	// Held on to here: the page lets go of it the moment it is stopped, which is
+	// the thing being watched for.
+	session := run.session
+
+	h.ctrlC().enter() // Restart
+	select {
+	case <-session.Done():
+	case <-time.After(5 * time.Second):
+		t.Error("the task was left running after a way out had been chosen")
+	}
+	if !h.m.quitting {
+		t.Error("the machine was restarted and the program stayed up")
 	}
 }
 
@@ -1358,14 +1426,14 @@ func TestATaskCanReportWhatItProduced(t *testing.T) {
 		"tasks/d-share/task.yaml": "name: Share\nstage: finish\nshows: LINK\nreport: |\n  Installed on {{DISK}}\n\n  Everything after this is offered rather than needed.\n",
 		// A script answers by writing one line of the answer file, which is the
 		// only channel there is and the same one a person editing it uses.
-		"tasks/d-share/task.sh": `printf "LINK='https://example.test/abc'\n" >>"$INSTALLER_CONF"` + "\n",
+		"tasks/d-share/task.sh": `printf "LINK='https://example.test/abc'\n" >>"$MODULE_CONF"` + "\n",
 	})
 	h.down().enter().typeIn("moritz").enter().enter()
 	h.enter().enter()
 	h.typeIn("x").enter().typeIn("x").enter()
 
 	h.reported()
-	// The words are the tree's, filled in from the answers, and the value the
+	// The words are the module's, filled in from the answers, and the value the
 	// task wrote is on the page as itself.
 	h.wants("Installed on /dev/sda", "Everything after this is offered", "https://example.test/abc")
 	// A page being read is not a run in progress: no counter, no turning mark.
@@ -1403,11 +1471,11 @@ func TestAReportWithNothingToShowIsStillShown(t *testing.T) {
 
 // ─── A starting point that is fetched rather than written down ───────────────
 
-// The third kind of starting point: not a set of answers in the tree but a code
+// The third kind of starting point: not a set of answers in the module but a code
 // somebody was handed, and the answers behind it. One row, one question, and
 // from the next page on nothing about it is any different.
 func TestAPresetCanFetchItsAnswers(t *testing.T) {
-	h := newHarness(t, presetFetches("printf \"USER='moritz'\\nDISK='/dev/sdb'\\nEXTRAS='false'\\n\" >>\"$INSTALLER_CONF\""))
+	h := newHarness(t, presetFetches("printf \"USER='moritz'\\nDISK='/dev/sdb'\\nEXTRAS='false'\\n\" >>\"$MODULE_CONF\""))
 	h.down().down()
 	h.wants("Online")
 
@@ -1451,17 +1519,17 @@ func TestAPresetThatCannotFetchSaysWhyAndStaysPut(t *testing.T) {
 	}
 }
 
-// presetFetches is the test tree with a third starting point on it: one that
+// presetFetches is the test module with a third starting point on it: one that
 // asks for a code and runs the given shell to make something of it.
 func presetFetches(apply string) map[string]string {
-	tree := strings.Replace(testInstaller, "\nvariables:", `
+	declared := strings.Replace(testInstaller, "\nvariables:", `
       - id: shared
         title: Online
         description: Take the answers from somewhere else.
         asks: SOURCE
         apply: `+apply+`
 variables:`, 1)
-	return map[string]string{treeFile: tree + `
+	return map[string]string{treeFile: declared + `
   - name: SOURCE
     title: Configuration code
     description: The code of a configuration somebody shared.

@@ -3,7 +3,7 @@ package tui
 import (
 	"strings"
 
-	"installer/internal/spec"
+	"github.com/murkl/arch-os/runtime/internal/spec"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"

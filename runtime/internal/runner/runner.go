@@ -1,4 +1,4 @@
-// Package runner joins the tree to the answers: what a question offers right
+// Package runner joins the module to the answers: what a question offers right
 // now, which tasks this run consists of, and how one of them is started.
 //
 // It is the only thing above the shell layer that starts anything, and the only
@@ -10,33 +10,33 @@ import (
 	osexec "os/exec"
 	"strings"
 
-	"installer/internal/exec"
-	"installer/internal/i18n"
-	"installer/internal/logging"
-	"installer/internal/spec"
-	"installer/internal/store"
-	"installer/internal/wlan"
+	"github.com/murkl/arch-os/runtime/internal/exec"
+	"github.com/murkl/arch-os/runtime/internal/i18n"
+	"github.com/murkl/arch-os/runtime/internal/logging"
+	"github.com/murkl/arch-os/runtime/internal/spec"
+	"github.com/murkl/arch-os/runtime/internal/store"
+	"github.com/murkl/arch-os/runtime/internal/wlan"
 )
 
 type Runner struct {
-	spec  *spec.Spec
+	mod   *spec.Module
 	store *store.Store
 	sh    exec.Runner
 	radio *wlan.Radio
 }
 
-func New(sp *spec.Spec, st *store.Store) *Runner {
-	sh := exec.Runner{Lib: sp.Lib}
+func New(mod *spec.Module, st *store.Store) *Runner {
+	sh := exec.Runner{Lib: mod.Lib}
 	cfg := wlan.Config{
-		Online:   spec.Source(sp.Hook(spec.HookOnline)),
-		Device:   spec.Source(sp.Hook(spec.HookDevice)),
-		Networks: spec.Source(sp.Hook(spec.HookNetworks)),
-		Connect:  spec.Source(sp.Hook(spec.HookConnect)),
+		Online:   spec.Source(mod.Hook(spec.HookOnline)),
+		Device:   spec.Source(mod.Hook(spec.HookDevice)),
+		Networks: spec.Source(mod.Hook(spec.HookNetworks)),
+		Connect:  spec.Source(mod.Hook(spec.HookConnect)),
 	}
-	return &Runner{spec: sp, store: st, sh: sh, radio: wlan.New(cfg, sh, st.Env)}
+	return &Runner{mod: mod, store: st, sh: sh, radio: wlan.New(cfg, sh, st.Env)}
 }
 
-// Radio is how this tree finds and joins a wireless network, or nil when it
+// Radio is how this module finds and joins a wireless network, or nil when it
 // declares none.
 func (r *Runner) Radio() *wlan.Radio { return r.radio }
 
@@ -162,7 +162,7 @@ func (r *Runner) Imported() error {
 // off, and after a preset, whose values were never typed at a prompt that could
 // have applied them one at a time.
 func (r *Runner) Settle() {
-	for _, v := range r.spec.Vars {
+	for _, v := range r.mod.Vars {
 		if r.store.Get(v.Name) != "" {
 			r.Apply(v)
 		}
@@ -170,12 +170,12 @@ func (r *Runner) Settle() {
 }
 
 // Tasks is what this run consists of: the ones belonging to the mode this run
-// is in and whose conditions hold, in the order the tree put them in. One that
+// is in and whose conditions hold, in the order the module put them in. One that
 // has ruled itself out is not listed at all — the list is a promise of what is
 // about to happen, and a row that will be skipped is not part of that promise.
 func (r *Runner) Tasks() []*spec.Task {
 	var out []*spec.Task
-	for _, t := range r.spec.Tasks {
+	for _, t := range r.mod.Tasks {
 		if t.Applies(r.store.Get) {
 			out = append(out, t)
 		}
@@ -197,19 +197,19 @@ func (r *Runner) Terminal(t *spec.Task) *osexec.Cmd {
 	return r.sh.Terminal(t.Path(), r.store.Env())
 }
 
-// Leave carries out one of the two ways this tree says a machine is put down,
+// Leave carries out one of the two ways this module says a machine is put down,
 // and blocks until it has. What comes back is whether the hook worked — which
 // on a machine that is genuinely restarting is a question nothing lives long
 // enough to ask, and on one that is not is the only thing worth knowing.
 //
-// A tree with no such hook has nothing to carry out and says so, so the
+// A module with no such hook has nothing to carry out and says so, so the
 // interface never offers a row that would do nothing.
 func (r *Runner) Leave(restart bool) error {
 	name := spec.HookShutdown
 	if restart {
 		name = spec.HookRestart
 	}
-	path := r.spec.Hook(name)
+	path := r.mod.Hook(name)
 	if path == "" {
 		return nil
 	}
@@ -218,14 +218,14 @@ func (r *Runner) Leave(restart bool) error {
 	return err
 }
 
-// Preflight runs the tree's own check that this machine can be installed onto
-// at all, and blocks until it has an answer. A tree without the hook passes.
+// Preflight runs the module's own check that this machine can be installed onto
+// at all, and blocks until it has an answer. A module without the hook passes.
 //
-// It runs before anything is asked bar the few questions a tree marks `first`,
+// It runs before anything is asked bar the few questions a module marks `first`,
 // which is the whole point: being told the firmware is wrong is worth very
 // little after twenty questions.
 func (r *Runner) Preflight() error {
-	path := r.spec.Hook(spec.HookPreflight)
+	path := r.mod.Hook(spec.HookPreflight)
 	if path == "" {
 		return nil
 	}

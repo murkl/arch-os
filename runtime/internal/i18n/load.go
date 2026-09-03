@@ -17,8 +17,8 @@ type Lang struct {
 // Discover lists the languages the given sources hold, merged into one list.
 //
 // There are two sources and they are independent: the runtime's own catalogs,
-// compiled into the binary, and the installer tree's, which translate the
-// words that tree wrote. A language present in either is offered — a tree
+// compiled into the binary, and each module's, which translate the
+// words that module wrote. A language present in either is offered — a module
 // may speak one the runtime has never heard of, and a half-translated interface
 // is still worth more to the person who needs it than an English one.
 //
@@ -49,7 +49,7 @@ func Discover(sources ...fs.FS) []Lang {
 }
 
 // Activate puts the program in a language, reading that language's catalog from
-// every source. Later sources win, so an installer tree may reword something
+// every source. Later sources win, so a module may reword something
 // the runtime also says.
 //
 // A code with no catalog anywhere leaves every message at its source text,
@@ -66,7 +66,7 @@ func Activate(code string, sources ...fs.FS) {
 }
 
 // catalogs reads every catalog in a source, keyed by language code. A source
-// that is not there — an installer tree with no locales at all — is simply
+// that is not there — a module with no locales at all — is simply
 // empty, not an error: translations are an addition, never a requirement.
 func catalogs(src fs.FS) map[string]*Catalog {
 	out := map[string]*Catalog{}

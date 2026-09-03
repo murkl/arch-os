@@ -1,19 +1,20 @@
 package tui
 
 import (
-	"installer/internal/spec"
+	"github.com/murkl/arch-os/runtime/internal/i18n"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // languageScreen picks the language the whole interface speaks.
 //
-// It is the first thing a fresh machine shows, and it is deliberately not one
-// of the folder's variables: which words the questions are asked in has to be
-// settled before any question can be read, and it belongs to the frame rather
-// than to the thing being installed. It is also the one setting whose effect is
-// immediate and total — every word on the next frame is in the new language,
-// including the one on the row that was just chosen.
+// It is the first page of every run, and it is deliberately not one of a
+// module's variables: which words the questions are asked in has to be settled
+// before any question can be read — before the question of which module to open
+// is read — and it belongs to the runtime rather than to the thing being
+// installed. It is also the one setting whose effect is immediate and total:
+// every word on the next frame is in the new language, including the one on the
+// row that was just chosen.
 type languageScreen struct {
 	opening
 	app    *app
@@ -33,8 +34,8 @@ func (s *languageScreen) build() {
 		items = append(items, item{title: l.Name, key: l.Code})
 	}
 	s.picker = newPicker(items)
-	s.picker.focus(s.app.store.Get(spec.LangVar))
-	s.picker.describe(labelLanguageHelp(s.app.spec.Name()))
+	s.picker.focus(i18n.Current())
+	s.picker.describe(labelLanguageHelp(s.app.brand()))
 }
 
 func (s *languageScreen) Title() string { return labelLanguage() }

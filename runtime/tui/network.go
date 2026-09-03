@@ -3,7 +3,7 @@ package tui
 import (
 	"strings"
 
-	"installer/internal/wlan"
+	"github.com/murkl/arch-os/runtime/internal/wlan"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -16,7 +16,7 @@ import (
 // wireless network.
 //
 // It is not a wall. Carrying on without a connection is a normal thing to do
-// here — the tree's own preflight check runs right after this one and refuses
+// here — the module's own preflight check runs right after this one and refuses
 // properly if it still matters.
 type networkScreen struct {
 	opening
@@ -168,7 +168,7 @@ func (s *networkScreen) key(k tea.KeyMsg) tea.Cmd {
 	case netOffline:
 		switch {
 		case confirms(k):
-			// Carry on without. The tree's preflight check runs next and
+			// Carry on without. The module's preflight check runs next and
 			// refuses properly if it still matters.
 			return reset(s.app.afterNetwork())
 		case k.String() == "r":

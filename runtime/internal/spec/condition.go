@@ -19,7 +19,7 @@ import (
 // Deliberately not an expression language: three tokens cover every guard an
 // installer needs, read as a sentence, and can be checked at load time against
 // the variables actually declared — so a renamed variable is caught when the
-// tree is opened rather than by a task that silently never runs.
+// module is opened rather than by a task that silently never runs.
 //
 // Several are a list, and every one has to hold. There is no `or`: a row that
 // belongs under two unrelated circumstances is two rows.
@@ -55,8 +55,8 @@ func (c *condition) holdsFor(value string) bool { return (value == c.want) == c.
 // guarded on `DESKTOP == gnome` runs wherever such a question is asked. Where
 // the domain is open — a name typed into a box — only the same condition said
 // again counts, which errs towards saying nothing rather than towards crying
-// wolf about a tree that is fine.
-func (s *Spec) implies(have []*condition, want *condition) bool {
+// wolf about a module that is fine.
+func (s *Module) implies(have []*condition, want *condition) bool {
 	v := s.byName[want.name]
 	if v == nil {
 		return false

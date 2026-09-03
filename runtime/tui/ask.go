@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"installer/internal/runner"
-	"installer/internal/spec"
+	"github.com/murkl/arch-os/runtime/internal/runner"
+	"github.com/murkl/arch-os/runtime/internal/spec"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

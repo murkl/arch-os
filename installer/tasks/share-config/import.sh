@@ -30,4 +30,4 @@ fi
 
 # Appended to the answer file, which the runtime reads back. That file is how
 # a script answers questions, and there is no second way in.
-printf '%s\n' "$body" >>"$INSTALLER_CONF"
+printf '%s\n' "$body" >>"$MODULE_CONF"

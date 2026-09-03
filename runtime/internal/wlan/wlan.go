@@ -1,8 +1,8 @@
-// Package wlan joins a wireless network the way the tree says to.
+// Package wlan joins a wireless network the way the module says to.
 //
 // It knows that connecting means finding a device, listing what is out there
 // and offering a passphrase — and nothing about which commands do that. Those
-// are the tree's hooks, because they are the one part of this that is a
+// are the module's hooks, because they are the one part of this that is a
 // property of the distribution rather than of the flow.
 package wlan
 
@@ -11,12 +11,12 @@ import (
 	"fmt"
 	"time"
 
-	"installer/internal/exec"
-	"installer/internal/i18n"
+	"github.com/murkl/arch-os/runtime/internal/exec"
+	"github.com/murkl/arch-os/runtime/internal/i18n"
 )
 
-// Config is the shell one tree uses to find and join a network. Every field is
-// optional bar Online: a tree may say only "tell me if I am offline".
+// Config is the shell one module uses to find and join a network. Every field is
+// optional bar Online: a module may say only "tell me if I am offline".
 type Config struct {
 	Online   string
 	Device   string
@@ -24,7 +24,7 @@ type Config struct {
 	Connect  string
 }
 
-// Radio joins a network the way one tree describes.
+// Radio joins a network the way one module describes.
 type Radio struct {
 	cfg Config
 	sh  exec.Runner
@@ -55,7 +55,7 @@ const (
 	defaultTries  = 4
 )
 
-// New builds the tree's radio. A tree that cannot even say whether it is online
+// New builds the module's radio. A module that cannot even say whether it is online
 // gets a nil Radio, which is not an error — it just never gets offered the
 // screen.
 func New(cfg Config, sh exec.Runner, env func() exec.Env) *Radio {
@@ -65,7 +65,7 @@ func New(cfg Config, sh exec.Runner, env func() exec.Env) *Radio {
 	return &Radio{cfg: cfg, sh: sh, env: env, settle: defaultSettle, tries: defaultTries}
 }
 
-// Joinable reports whether the tree described enough to actually connect.
+// Joinable reports whether the module described enough to actually connect.
 func (r *Radio) Joinable() bool {
 	return r.cfg.Device != "" && r.cfg.Networks != "" && r.cfg.Connect != ""
 }
@@ -94,7 +94,7 @@ func (r *Radio) Interface() (string, error) {
 }
 
 // Networks returns the networks in range. Scanning and waiting for the results
-// to settle belong to the hook: how long a card takes to answer is the tree's
+// to settle belong to the hook: how long a card takes to answer is the module's
 // business, and a list read too early is empty rather than wrong.
 func (r *Radio) Networks(device string) ([]string, error) {
 	lines, err := r.sh.Lines(r.cfg.Networks, r.withDevice(device))

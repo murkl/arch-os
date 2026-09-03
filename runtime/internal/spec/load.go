@@ -9,92 +9,34 @@ import (
 	"sort"
 	"strings"
 
-	"installer/internal/i18n"
+	"github.com/murkl/arch-os/runtime/internal/i18n"
 
 	"gopkg.in/yaml.v3"
 )
 
-// Trees lists the programs this binary can run, in the order it offers them:
-// the folder named — beside the binary itself when none is — if that folder is
-// a tree, and otherwise every folder inside it that is.
-//
-// A release is the binary and the trees beside it, a folder each, with a
-// FileRelease saying what they are called together — which is what makes it one
-// thing: copied to a stick and started, it holds every program the machine it
-// boots might need. Several of them is a question the runtime puts before
-// anything else; one is no question at all.
-//
-// Beside the binary and nowhere else, because a binary on its own is not an
-// installer and never pretends to be one: finding nothing is an error with
-// somewhere to look in it, not a program that starts up empty.
-//
-// They are offered in folder order, so what a release is asked first is what its
-// folders are called.
-func Trees(explicit string) ([]string, error) {
-	dir, err := root(explicit)
-	if err != nil {
-		return nil, err
-	}
-	// A folder holding a declaration is itself the tree, and there is nothing
-	// below it to look at. Two declarations in it is refused here rather than
-	// resolved, exactly as it is when a tree is named outright.
-	if len(declarations(dir)) > 0 {
-		if _, err := Declaration(dir); err != nil {
-			return nil, fmt.Errorf("%s: %w", dir, err)
-		}
-		return []string{dir}, nil
-	}
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return nil, err
-	}
-	var out []string
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-		if sub := filepath.Join(dir, entry.Name()); len(declarations(sub)) > 0 {
-			if _, err := Declaration(sub); err != nil {
-				return nil, fmt.Errorf("%s: %w", sub, err)
-			}
-			out = append(out, sub)
-		}
-	}
-	if len(out) == 0 {
-		return nil, fmt.Errorf("%s\n%s",
-			i18n.T("No installer found."),
-			i18n.T("A %s file has to sit next to this program, in %s.", SpecExt, dir))
-	}
-	return out, nil
-}
-
-// Declaration is the tree's own yaml, by name: the one file ending in SpecExt
-// in the folder's top level. The catalogs and the tasks are yaml too, which is
-// why only the top level counts — everything below it belongs to a part of the
-// tree that is found by its own name.
+// Declaration is a module's own yaml, by name: the one file ending in Ext in
+// the folder's top level. The catalogs and the tasks are yaml too, which is why
+// only the top level counts — everything below it belongs to a part of the
+// module that is found by its own name.
 //
 // Two of them is refused rather than resolved: a folder holding an
-// installer.yaml and a recovery.yaml is two trees in one place, and picking one
-// would be the runtime deciding which installer somebody meant.
+// installer.yaml and a recovery.yaml is two modules in one place, and picking
+// one would be the runtime deciding which of them somebody meant.
 func Declaration(dir string) (string, error) {
 	switch found := declarations(dir); len(found) {
 	case 1:
 		return found[0], nil
 	case 0:
-		return "", fmt.Errorf("%s", i18n.T("no %s file here", SpecExt))
+		return "", fmt.Errorf("%s", i18n.T("no %s file here", Ext))
 	default:
-		return "", fmt.Errorf("%s: %s", i18n.T("more than one %s file here", SpecExt), strings.Join(found, ", "))
+		return "", fmt.Errorf("%s: %s", i18n.T("more than one %s file here", Ext), strings.Join(found, ", "))
 	}
 }
 
-// declarations is every top-level yaml in a folder that declares a program, in
+// declarations is every top-level yaml in a folder that declares a module, in
 // name order. A folder that cannot be read holds none, which is what a caller
 // about to read it again wants: the error belongs to whoever is looking, not to
 // the counting.
-//
-// FileRelease is not one of them. It sits in the folder the programs sit in and
-// says what they are called together — counting it would make that folder a
-// program in its own right and hide the ones inside it.
 func declarations(dir string) []string {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -102,10 +44,10 @@ func declarations(dir string) []string {
 	}
 	var found []string
 	for _, entry := range entries {
-		if entry.IsDir() || entry.Name() == FileRelease {
+		if entry.IsDir() {
 			continue
 		}
-		if strings.HasSuffix(entry.Name(), SpecExt) {
+		if strings.HasSuffix(entry.Name(), Ext) {
 			found = append(found, entry.Name())
 		}
 	}
@@ -113,7 +55,7 @@ func declarations(dir string) []string {
 }
 
 // binaryDir is where this program's own file is, with symlinks resolved so that
-// a link on the path still finds the tree the binary was installed with.
+// a link on the path still finds the modules the binary was installed with.
 func binaryDir() string {
 	exe, err := os.Executable()
 	if err != nil {
@@ -125,9 +67,9 @@ func binaryDir() string {
 	return filepath.Dir(exe)
 }
 
-// declaration is the tree's yaml as it is written: flat, because every key in
-// it is about the installer as a whole and a nesting level would only be there
-// to be typed.
+// declaration is a module's yaml as it is written: flat, because every key in
+// it is about the module as a whole and a nesting level would only be there to
+// be typed.
 type declaration struct {
 	Title    string `yaml:"title"`
 	Console  string `yaml:"console"`
@@ -145,18 +87,18 @@ type declaration struct {
 	Variables []*Variable `yaml:"variables"`
 }
 
-// Load reads a tree into a Spec and checks it over — every reference resolved,
+// Load reads one module folder and checks it over — every reference resolved,
 // every script found, every condition naming a variable that exists, every task
 // in a stage that exists and in an order that can be walked.
 //
-// A tree that loads is a tree that runs: an authoring mistake is a message at
-// startup, never a task that silently never fires.
-func Load(dir string) (*Spec, error) {
+// A module that loads is a module that runs: an authoring mistake is a message
+// at startup, never a task that silently never fires.
+func Load(dir string) (*Module, error) {
 	file, err := Declaration(dir)
 	if err != nil {
 		return nil, err
 	}
-	s := &Spec{Dir: dir, File: file, byName: map[string]*Variable{}}
+	s := &Module{Dir: dir, File: file, byName: map[string]*Variable{}}
 
 	var head declaration
 	if err := read(filepath.Join(dir, file), &head); err != nil {
@@ -190,8 +132,9 @@ func Load(dir string) (*Spec, error) {
 	return s, nil
 }
 
-// beside is the path of one of the tree's optional parts, or empty where the
-// tree does not have it. Nothing declares them: being there is the declaration.
+// beside is the path of one of a module's optional parts, or empty where the
+// module does not have it. Nothing declares them: being there is the
+// declaration.
 func beside(dir, name string) string {
 	path := filepath.Join(dir, name)
 	if _, err := os.Stat(path); err != nil {
@@ -282,7 +225,7 @@ func read(path string, into any) error {
 	return nil
 }
 
-func (s *Spec) check(tasks []*Task) error {
+func (s *Module) check(tasks []*Task) error {
 	s.normalize(tasks)
 	if s.UI.Title == "" {
 		return fmt.Errorf("%s: title is required", s.File)
@@ -298,7 +241,7 @@ func (s *Spec) check(tasks []*Task) error {
 
 // checkTasks settles what runs and in what order: every task has to belong to a
 // stage, and what is left is sorted once and for all.
-func (s *Spec) checkTasks(tasks []*Task) error {
+func (s *Module) checkTasks(tasks []*Task) error {
 	for _, t := range tasks {
 		where := DirTasks + "/" + t.id
 		if t.Name == "" {
@@ -351,7 +294,7 @@ func checkConfirm(t *Task) error {
 // A secret is refused for the reason it is refused everywhere: it is never
 // written down, and drawing one at a size a camera across the room can read is
 // the opposite of what it is for.
-func (s *Spec) checkShows(t *Task) error {
+func (s *Module) checkShows(t *Task) error {
 	if t.Shows == "" {
 		return nil
 	}
@@ -375,7 +318,7 @@ func (s *Spec) checkShows(t *Task) error {
 // with nothing to check it against on a page nobody navigated to, and a secret
 // is already asked for at the one moment it is safe to — immediately before the
 // run that needs it.
-func (s *Spec) checkAsks(t *Task) error {
+func (s *Module) checkAsks(t *Task) error {
 	if t.Asks == "" {
 		return nil
 	}
@@ -392,7 +335,7 @@ func (s *Spec) checkAsks(t *Task) error {
 	return nil
 }
 
-// normalize settles every word the tree says into the shape it is both shown in
+// normalize settles every word the module says into the shape it is both shown in
 // and translated by.
 //
 // Where a line ends in the yaml is not where it ends on screen: a description is
@@ -403,7 +346,7 @@ func (s *Spec) checkAsks(t *Task) error {
 // to reproduce.
 //
 // A blank line survives, because that is the one break that was meant.
-func (s *Spec) normalize(tasks []*Task) {
+func (s *Module) normalize(tasks []*Task) {
 	fields := []*string{&s.UI.Title, &s.UI.Description, &s.UI.Run, &s.UI.Console, &s.Confirm}
 	for _, p := range s.Presets {
 		fields = append(fields, &p.Title, &p.Description)
@@ -440,7 +383,7 @@ var (
 	varName  = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 )
 
-func (s *Spec) checkVars() error {
+func (s *Module) checkVars() error {
 	for _, v := range s.Vars {
 		switch {
 		case !varName.MatchString(v.Name):
@@ -504,7 +447,7 @@ func (s *Spec) checkVars() error {
 	return nil
 }
 
-func (s *Spec) checkPresets() error {
+func (s *Module) checkPresets() error {
 	seen := map[string]bool{}
 	for _, p := range s.Presets {
 		switch {
@@ -552,7 +495,7 @@ func (s *Spec) checkPresets() error {
 // box: a code somebody was handed is typed, not chosen. A secret is refused,
 // because a starting point is a set of answers and a secret is never one of
 // them.
-func (s *Spec) checkFetch(o *PresetOption) error {
+func (s *Module) checkFetch(o *PresetOption) error {
 	if o.Asks == "" {
 		if o.Apply != "" {
 			return fmt.Errorf("apply: there is no asks for it to work from")
@@ -576,8 +519,8 @@ func (s *Spec) checkFetch(o *PresetOption) error {
 }
 
 // conditions parses a `conditions:` and checks that every line of it is about a
-// variable this tree actually declares.
-func (s *Spec) conditions(exprs Conditions) ([]*condition, error) {
+// variable this module actually declares.
+func (s *Module) conditions(exprs Conditions) ([]*condition, error) {
 	var out []*condition
 	for _, expr := range exprs {
 		if strings.TrimSpace(expr) == "" {
@@ -600,7 +543,7 @@ func (s *Spec) conditions(exprs Conditions) ([]*condition, error) {
 // itself. So a one-line option list stays in the yaml where it is read together
 // with the variable, and a long one moves into a file beside it — without a
 // second notation to learn.
-func (s *Spec) shell(expr string) (string, error) {
+func (s *Module) shell(expr string) (string, error) {
 	trimmed := strings.TrimSpace(expr)
 	if trimmed == "" || strings.Contains(trimmed, "\n") {
 		return expr, nil
@@ -615,7 +558,7 @@ func (s *Spec) shell(expr string) (string, error) {
 	return Source(path), nil
 }
 
-// quote wraps a path for the shell, so a tree whose name holds a space or a
+// quote wraps a path for the shell, so a module whose name holds a space or a
 // quote is still one word.
 func quote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"

@@ -7,13 +7,13 @@ import (
 	"strings"
 	"testing"
 
-	"installer/internal/i18n"
-	"installer/internal/spec"
+	"github.com/murkl/arch-os/runtime/internal/i18n"
+	"github.com/murkl/arch-os/runtime/internal/spec"
 )
 
-// tree writes the smallest installer tree that will load, plus whatever extra
+// writeModule writes the smallest module that will load, plus whatever extra
 // files a test needs, and answers with the folder it put them in.
-func tree(t *testing.T, declaration string, extra map[string]string) string {
+func writeModule(t *testing.T, declaration string, extra map[string]string) string {
 	t.Helper()
 	dir := t.TempDir()
 	files := map[string]string{
@@ -34,13 +34,43 @@ func tree(t *testing.T, declaration string, extra map[string]string) string {
 	return dir
 }
 
-func load(t *testing.T, dir string) *spec.Spec {
+// runtime lays a whole product out: a runtime.yaml over however many modules,
+// each of them the smallest one that will load.
+func runtime(t *testing.T, declaration string, modules ...string) string {
 	t.Helper()
-	sp, err := spec.Load(dir)
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, spec.FileRuntime), []byte(declaration), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range modules {
+		if err := os.Rename(writeModule(t, "title: "+name+"\nstages: [go]\n", nil), filepath.Join(dir, name)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return dir
+}
+
+// around puts a runtime.yaml over one module folder, so a module written on
+// its own can be read the way the program reads one.
+func around(t *testing.T, mod string) string {
+	t.Helper()
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, spec.FileRuntime), []byte("name: Test OS\nmodules: [installer]\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(mod, filepath.Join(dir, "installer")); err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}
+
+func loaded(t *testing.T, dir string) *spec.Module {
+	t.Helper()
+	mod, err := spec.Load(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return sp
+	return mod
 }
 
 func TestTheMachineLocaleIsReadInPosixOrder(t *testing.T) {
@@ -102,61 +132,136 @@ func TestAnUntranslatableMachineLeavesTheSourceLanguage(t *testing.T) {
 	}
 }
 
-// A release is the binary and the trees beside it. All of them are read at
-// startup, so one that will not load is a message before anything is offered
-// rather than a row that fails when it is chosen.
-func TestEveryTreeOfAReleaseIsRead(t *testing.T) {
-	release := t.TempDir()
-	for _, name := range []string{"installer", "recovery"} {
-		if err := os.Rename(tree(t, "title: "+name+"\nstages: [go]\n", nil), filepath.Join(release, name)); err != nil {
-			t.Fatal(err)
-		}
+// Every module is read at startup, so one that will not load is a message
+// before anything is offered rather than a row that fails when it is chosen.
+func TestEveryModuleOfARuntimeIsRead(t *testing.T) {
+	dir := runtime(t, "name: Test OS\nmodules: [installer, recovery]\n", "installer", "recovery")
+
+	rt, err := spec.LoadRuntime(dir)
+	if err != nil {
+		t.Fatal(err)
 	}
-	got, err := loadTrees(release)
+	got, err := load(rt, "")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(got) != 2 || got[0].UI.Title != "installer" || got[1].UI.Title != "recovery" {
-		t.Errorf("loadTrees() = %d trees, want the two beside the binary in folder order", len(got))
+		t.Errorf("load() = %d modules, want the two it lists, in that order", len(got))
 	}
 }
 
-func TestAReleaseHoldingABrokenTreeWillNotStart(t *testing.T) {
-	release := t.TempDir()
-	if err := os.Rename(tree(t, "title: T\nstages: [go]\n", nil), filepath.Join(release, "installer")); err != nil {
+// Naming one is the question of which to open, already answered — so only that
+// one is read, and nothing else it ships with can stop it starting.
+func TestNamingAModuleReadsOnlyThatOne(t *testing.T) {
+	dir := runtime(t, "name: Test OS\nmodules: [installer, recovery]\n", "installer", "recovery")
+
+	rt, err := spec.LoadRuntime(dir)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Rename(tree(t, "title: T\n", nil), filepath.Join(release, "recovery")); err != nil {
+	got, err := load(rt, "recovery")
+	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := loadTrees(release); err == nil {
-		t.Fatal("a release with a tree that declares no stages was read as sound")
+	if len(got) != 1 || got[0].UI.Title != "recovery" {
+		t.Errorf("load() = %d modules, want only the one that was named", len(got))
 	}
 }
 
-func TestOnlyTheHooksATreeActuallyHasAreListed(t *testing.T) {
-	sp := load(t, tree(t, "title: T\nstages: [go]\n", map[string]string{
+// Whether a name is a module is settled by runtime.yaml at the moment it is
+// given, which is what keeps the list of them out of this program.
+func TestAModuleNobodyDeclaredIsRefusedByName(t *testing.T) {
+	dir := runtime(t, "name: Test OS\nmodules: [installer]\n", "installer")
+
+	rt, err := spec.LoadRuntime(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = load(rt, "manager")
+	if err == nil {
+		t.Fatal("a module nobody declared was opened")
+	}
+	if !strings.Contains(err.Error(), "installer") {
+		t.Errorf("error = %q, want it to say what is on offer", err)
+	}
+}
+
+func TestARuntimeHoldingABrokenModuleWillNotStart(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, spec.FileRuntime), []byte("name: T\nmodules: [installer, recovery]\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(writeModule(t, "title: T\nstages: [go]\n", nil), filepath.Join(dir, "installer")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(writeModule(t, "title: T\n", nil), filepath.Join(dir, "recovery")); err != nil {
+		t.Fatal(err)
+	}
+	rt, err := spec.LoadRuntime(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := load(rt, ""); err == nil {
+		t.Fatal("a runtime with a module that declares no stages was read as sound")
+	}
+}
+
+// The one word on the command line that is not a flag is the module, with or
+// without the dashes an option would carry, and wherever it stands.
+func TestTheModuleIsTheWordAtTheFrontOfTheCommandLine(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		args []string
+		want string
+		conf string
+	}{
+		{"as an option", []string{"--installer"}, "installer", ""},
+		{"as a word", []string{"installer"}, "installer", ""},
+		{"with one dash", []string{"-recovery"}, "recovery", ""},
+		{"in front of the flags", []string{"--recovery", "-conf", "x"}, "recovery", "x"},
+		{"behind them", []string{"-conf", "x", "installer"}, "installer", "x"},
+		{"between them", []string{"-conf", "x", "--installer", "-version"}, "installer", "x"},
+		{"nothing at all", nil, "", ""},
+		{"a flag is not a module", []string{"-conf", "x"}, "", "x"},
+		{"nor is its value", []string{"-conf", "installer"}, "", "installer"},
+		{"nor is one with its value attached", []string{"-conf=x"}, "", "x"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("RUNTIME_CONF", "")
+			got := parse(tc.args)
+			if got.module != tc.want {
+				t.Errorf("parse(%v).module = %q, want %q", tc.args, got.module, tc.want)
+			}
+			if got.conf != tc.conf {
+				t.Errorf("parse(%v).conf = %q, want %q", tc.args, got.conf, tc.conf)
+			}
+		})
+	}
+}
+
+func TestOnlyTheHooksAModuleActuallyHasAreListed(t *testing.T) {
+	mod := loaded(t, writeModule(t, "title: T\nstages: [go]\n", map[string]string{
 		"hooks/preflight.sh": "true\n",
 		"hooks/restart.sh":   "true\n",
 	}))
-	got := strings.Join(hooks(sp), " ")
+	got := strings.Join(hooks(mod), " ")
 	if got != "preflight restart" {
 		t.Errorf("hooks() = %q, want \"preflight restart\" in HookNames order", got)
 	}
 }
 
-func TestATreeWithNoCatalogsSpeaksTheRuntimesOwn(t *testing.T) {
-	sp := load(t, tree(t, "title: T\nstages: [go]\n", nil))
-	if got := len(catalogs(sp)); got != 1 {
+func TestAModuleWithNoCatalogsSpeaksTheRuntimesOwn(t *testing.T) {
+	mod := loaded(t, writeModule(t, "title: T\nstages: [go]\n", nil))
+	if got := len(catalogs(mod)); got != 1 {
 		t.Errorf("catalogs() has %d sources, want 1 — the runtime's alone", got)
 	}
 }
 
-func TestATreesCatalogsAreLaidOverTheRuntimes(t *testing.T) {
-	sp := load(t, tree(t, "title: T\nstages: [go]\n", map[string]string{
+func TestAModulesCatalogsAreLaidOverTheRuntimes(t *testing.T) {
+	mod := loaded(t, writeModule(t, "title: T\nstages: [go]\n", map[string]string{
 		"locales/de.po": "msgid \"Back\"\nmsgstr \"Zurück\"\n",
 	}))
-	sources := catalogs(sp)
+	sources := catalogs(mod)
 	if len(sources) != 2 {
 		t.Fatalf("catalogs() has %d sources, want 2", len(sources))
 	}
@@ -166,8 +271,8 @@ func TestATreesCatalogsAreLaidOverTheRuntimes(t *testing.T) {
 	}
 }
 
-func TestTheTemplateOfATreeHoldsEveryWordItSays(t *testing.T) {
-	dir := tree(t, `
+func TestTheTemplateOfAModuleHoldsEveryWordItSays(t *testing.T) {
+	dir := around(t, writeModule(t, `
 title: Installer
 stages: [go]
 variables:
@@ -177,9 +282,9 @@ variables:
       The name this machine has.
 
       It is the one the network knows it by.
-`, nil)
+`, nil))
 	out := captureStdout(t, func() {
-		if err := catalog(dir); err != nil {
+		if err := catalog(dir, "installer"); err != nil {
 			t.Fatal(err)
 		}
 	})
@@ -201,8 +306,8 @@ variables:
 	}
 }
 
-func TestInspectingATreeNamesEverythingItHolds(t *testing.T) {
-	dir := tree(t, `
+func TestInspectingAModuleNamesEverythingItHolds(t *testing.T) {
+	dir := around(t, writeModule(t, `
 title: Installer
 stages: [go]
 variables:
@@ -215,16 +320,18 @@ variables:
     required: true
 `, map[string]string{
 		"hooks/preflight.sh": "true\n",
-		// The one task reads both answers, so the report is about what the tree
-		// holds rather than about a guard that disagrees — see spec.Unread.
+		// The one task reads both answers, so the report is about what the
+		// module holds rather than about a guard that disagrees — see
+		// spec.Unread.
 		"tasks/first/task.sh": "echo \"$HOST $PASSWORD\"\n",
-	})
+	}))
 	out := captureStdout(t, func() {
-		if err := inspect(dir); err != nil {
+		if err := inspect(dir, ""); err != nil {
 			t.Fatal(err)
 		}
 	})
 	for _, want := range []string{
+		"modules    installer",
 		"title      Installer",
 		"variables  2 (2 required, 1 secret)",
 		"tasks      1",
@@ -237,21 +344,22 @@ variables:
 	}
 }
 
-// A tree that behaves is not a tree that refuses to start, so this is the one
-// thing -check has to say that loading it never will.
+// A module that behaves is not a module that refuses to start, so this is the
+// one thing -check has to say that loading it never will.
 func TestInspectingRefusesAQuestionNothingReadsTheAnswerOf(t *testing.T) {
-	dir := tree(t, `
+	mod := writeModule(t, `
 title: Installer
 stages: [go]
 variables:
   - name: SPARE
     title: Spare
 `, nil)
-	if _, err := spec.Load(dir); err != nil {
-		t.Fatalf("the tree does not load, and it has to: %v", err)
+	if _, err := spec.Load(mod); err != nil {
+		t.Fatalf("the module does not load, and it has to: %v", err)
 	}
+	dir := around(t, mod)
 	var err error
-	captureStdout(t, func() { err = inspect(dir) })
+	captureStdout(t, func() { err = inspect(dir, "") })
 	if err == nil {
 		t.Fatal("a question nothing reads was reported as fine")
 	}
@@ -260,10 +368,10 @@ variables:
 	}
 }
 
-func TestInspectingSaysWhatIsWrongWithATreeThatWillNotLoad(t *testing.T) {
-	dir := tree(t, "stages: [go]\n", nil) // no title
-	if err := inspect(dir); err == nil {
-		t.Fatal("a tree with no title loaded; it must not")
+func TestInspectingSaysWhatIsWrongWithAModuleThatWillNotLoad(t *testing.T) {
+	dir := around(t, writeModule(t, "stages: [go]\n", nil)) // no title
+	if err := inspect(dir, ""); err == nil {
+		t.Fatal("a module with no title loaded; it must not")
 	}
 }
 

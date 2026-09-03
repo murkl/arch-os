@@ -16,16 +16,17 @@ component of its own on a translation platform.
 
 | | Template | Catalogs | What is in it |
 |---|---|---|---|
-| Runtime | `runtime/locales/arch-os.pot` | `runtime/locales/<code>.po` | the frame's own words: buttons, key hints, the labels on a failure report |
+| Runtime | `runtime/locales/runtime.pot` | `runtime/locales/<code>.po` | the frame's own words: buttons, key hints, the labels on a failure report |
 | Installer | `installer/locales/installer.pot` | `installer/locales/<code>.po` | what the Arch Linux installation asks and says about itself |
 | Recovery | `recovery/locales/recovery.pot` | `recovery/locales/<code>.po` | the same, for repairing a system already on a disk |
 
 Two of them are ever in use at once: the runtime's and the one belonging to the
-tree being run. They are merged at startup and behave as one, with the tree's
-laid over the runtime's, so a tree may reword something the runtime also says.
+module being run. They are merged at startup and behave as one, with the
+module's laid over the runtime's, so a module may reword something the runtime
+also says.
 
 The `.pot` files are **generated and never edited**: the runtime's out of the Go
-sources, a tree's out of the tree itself. That is why nothing can drift: there
+sources, a module's out of the module itself. That is why nothing can drift: there
 is no list of translatable strings to keep in step with.
 
 ## Adding a language
@@ -33,7 +34,7 @@ is no list of translatable strings to keep in step with.
 Copy the template, fill in the `msgstr` lines, open a pull request:
 
 ```sh
-cp runtime/locales/arch-os.pot runtime/locales/fr.po
+cp runtime/locales/runtime.pot runtime/locales/fr.po
 ```
 
 Nothing else has to be declared anywhere. The language is offered as soon as the
@@ -74,7 +75,7 @@ That covers German, French, Spanish, Italian, Portuguese, Dutch and the Nordic
 languages. It does not cover Polish, Czech, Turkish, Greek, Cyrillic or anything
 written in a script of its own: those letters are not in the font the live image
 loads, and the console puts a replacement mark where each of them should be. A
-test refuses a runtime catalog that would do that; a tree's catalog is not
+test refuses a runtime catalog that would do that; a module's catalog is not
 checked, and would simply be unreadable on screen.
 
 Making those languages possible is a change to the image (a console font loaded
@@ -94,7 +95,7 @@ make check     # refuses a stale template and a broken placeholder
 translation whose English is unchanged, marks the ones whose English moved as
 fuzzy, and drops nothing silently.
 
-`arch-os -check` reports coverage per language, which is how a catalog that has
+`runtime -check` reports coverage per language, which is how a catalog that has
 fallen behind is noticed.
 
 ## On a translation platform
@@ -105,7 +106,7 @@ Weblate reads this repository as it stands. One component per catalog:
 |---|---|---|---|
 | File format | gettext PO | gettext PO | gettext PO |
 | File mask | `runtime/locales/*.po` | `installer/locales/*.po` | `recovery/locales/*.po` |
-| Template for new translations | `runtime/locales/arch-os.pot` | `installer/locales/installer.pot` | `recovery/locales/recovery.pot` |
+| Template for new translations | `runtime/locales/runtime.pot` | `installer/locales/installer.pot` | `recovery/locales/recovery.pot` |
 | Monolingual base file | *(none, PO is bilingual)* | | |
 
 Point them all at the `dev` branch. `.weblate` in the repository root holds the

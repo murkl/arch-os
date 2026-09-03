@@ -38,11 +38,11 @@ func consistent(files map[string]string) map[string]string {
 	return out
 }
 
-// unread runs the check over a tree and hands back what it found, as the lines
+// unread runs the check over a module and hands back what it found, as the lines
 // a person would read.
 func unread(t *testing.T, files map[string]string) []string {
 	t.Helper()
-	sp, err := Load(tree(t, files))
+	sp, err := Load(module(t, files))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +82,7 @@ func TestAQuestionAskedWhereItsOnlyTaskCannotRunIsReported(t *testing.T) {
 }
 
 func TestAWrittenOutSetOfValuesSettlesTheGuard(t *testing.T) {
-	// The consistent tree is only consistent because DESKTOP has two values:
+	// The consistent module is only consistent because DESKTOP has two values:
 	// `!= none` over [gnome, none] is `== gnome`, so the task guarded on gnome
 	// runs wherever the question is asked. Take the values away and the same
 	// two guards no longer say the same thing.
@@ -132,7 +132,7 @@ func TestAQuestionNothingReadsAtAllIsReported(t *testing.T) {
 	if len(got) != 1 || !strings.Contains(got[0], "SPARE") {
 		t.Fatalf("Unread() = %v, want SPARE reported", got)
 	}
-	if !strings.Contains(got[0], "nothing in this tree reads this answer") {
+	if !strings.Contains(got[0], "nothing in this module reads this answer") {
 		t.Errorf("Unread() = %q, want it to say nothing reads it", got[0])
 	}
 }
