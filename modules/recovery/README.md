@@ -2,7 +2,7 @@
 
 Everything this recovery knows about Arch Linux. It is data, one YAML file and
 the folders beside it, and it does not run on its own: the
-[runtime](../runtime) draws the interface, asks the questions and runs the tasks
+[runtime](../../runtime) draws the interface, asks the questions and runs the tasks
 in order. Putting Arch Linux on a disk is a module of its own:
 [`installer/`](../installer).
 
@@ -10,7 +10,7 @@ in order. Putting Arch Linux on a disk is a module of its own:
 make check   # load the module and lint every script
 
 # Run it, without touching this machine
-DEBUG=true make -C ../runtime run MODULE=recovery
+DEBUG=true make -C ../../runtime run MODULE=recovery
 ```
 
 ## What is where
@@ -27,7 +27,8 @@ locales/                 one <code>.po per language this recovery speaks, and th
 Nothing points at any of this from `recovery.yaml`: each part is found by its
 own name. The runtime takes the one YAML file it finds in a folder, which is what
 lets this module and the installer sit side by side and stay two programs. Both
-are listed in `../runtime.yaml`, and the interface asks which of them to open;
+are folders in `modules/`, which is the whole of what a release offers, and the
+interface asks which of them to open;
 `./runtime --recovery` is this one outright, and on the ISO that is the
 `recovery` command.
 

@@ -22,7 +22,7 @@ Stock Arch `releng`, patched: boot ➜ Plymouth ➜ Arch OS. Nothing in between.
 ## Building
 
 ```sh
-make -C .. build   # assembles ../release: the binary, runtime.yaml, both modules
+make -C .. build   # assembles ../release: the binary, runtime.yaml, the modules folder
 make -C .. iso     # the above, then this ISO, into ../dist
 ```
 

@@ -24,8 +24,8 @@ import (
 // leaving the file or folder out rather than by declaring anything.
 //
 // The declaration is the one yaml in the folder's top level, whatever it is
-// called. The convention is the module's own name — installer/installer.yaml,
-// recovery/recovery.yaml — which is what lets two of them sit open in an editor
+// called. The convention is the module's own name — modules/installer/installer.yaml,
+// modules/recovery/recovery.yaml — which is what lets two sit open in an editor
 // and still be told apart, and there is nothing to configure because a folder
 // holds one.
 const (
@@ -500,10 +500,10 @@ func (v *Variable) domain() []string {
 	return nil
 }
 
-// ID is the folder this module was read from. It is what runtime.yaml lists it
-// as, the word that opens it from the command line, and the name its answers
-// and its log are kept under — one identity, so there is nothing to keep in
-// step.
+// ID is the folder this module was read from. It is what the page offering it
+// is keyed on, the word that opens it from the command line, and the name its
+// answers and its log are kept under — one identity, so there is nothing to
+// keep in step.
 func (s *Module) ID() string { return filepath.Base(s.Dir) }
 
 // Var finds a variable by name.

@@ -53,14 +53,19 @@ msgstr "hier liegt keine %s-Datei"
 msgid "more than one %s file here"
 msgstr "hier liegt mehr als eine %s-Datei"
 
-#: internal/spec/runtime.go:73
-msgid "Nothing to run here."
-msgstr "Hier gibt es nichts auszuführen."
-
-#: internal/spec/runtime.go:74
+#: internal/spec/runtime.go:75
 #, c-format
 msgid "A %s file has to sit next to this program, in %s."
 msgstr "Eine %s-Datei muss neben diesem Programm liegen, in %s."
+
+#: internal/spec/runtime.go:112
+#, c-format
+msgid "A %s folder with something in it has to sit next to this program, in %s."
+msgstr "Ein %s-Ordner mit Inhalt muss neben diesem Programm liegen, in %s."
+
+#: internal/spec/runtime.go:119
+msgid "Nothing to run here."
+msgstr "Hier gibt es nichts auszuführen."
 
 #: internal/spec/spec.go:466
 msgid "This value has the wrong format."
@@ -115,12 +120,12 @@ msgstr "Verbindung mit %s fehlgeschlagen."
 msgid "%s was joined, but there is still no internet."
 msgstr "%s ist verbunden, aber es gibt weiterhin keine Internetverbindung."
 
-#: main.go:259
+#: main.go:260
 #, c-format
 msgid "No module called %s."
 msgstr "Kein Modul namens %s."
 
-#: main.go:260
+#: main.go:261
 #, c-format
 msgid "This one offers %s."
 msgstr "Angeboten werden %s."

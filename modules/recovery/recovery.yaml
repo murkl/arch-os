@@ -5,8 +5,8 @@
 # nothing points at it from here.
 #
 # Putting Arch Linux on a disk is a module of its own, with a declaration of its
-# own: see ../installer. Which modules there are, what they are called together
-# and what they look like is ../runtime.yaml, not here.
+# own: see ../installer. What this and its neighbours are called together and
+# what they look like is ../../runtime/runtime.yaml, not here.
 
 title: Arch OS Recovery
 

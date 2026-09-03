@@ -109,11 +109,11 @@ sudo pacman -S --needed go shellcheck shfmt staticcheck yamllint actionlint \
 CI installs the same packages and runs the same commands, in an Arch container.
 There is no second definition of what "green" means.
 
-Most changes belong in [`installer/`](installer) (the Arch Linux half, which is
-where packages, tasks and questions live) or in [`recovery/`](recovery), the
-same kind of module for repairing a system that is already on a disk. The
-[`runtime/`](runtime) is the frame around both and changes for bugs and
-features, not for a new package.
+Most changes belong in [`modules/installer/`](modules/installer) (the Arch Linux
+half, which is where packages, tasks and questions live) or in
+[`modules/recovery/`](modules/recovery), the same kind of module for repairing a
+system that is already on a disk. The [`runtime/`](runtime) is the frame around
+both and changes for bugs and features, not for a new package.
 
 [AGENTS.md](AGENTS.md) is the same ground written as rules rather than as prose:
 the layering, the task contract, what may and may not be edited on an installed

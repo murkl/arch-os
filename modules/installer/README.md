@@ -2,13 +2,13 @@
 
 Everything this installer knows about Arch Linux. It is data, one YAML file and
 the folders beside it, and it does not run on its own: the
-[runtime](../runtime) draws the interface, asks the questions and runs the tasks
+[runtime](../../runtime) draws the interface, asks the questions and runs the tasks
 in order. Repairing a system that is already on a disk is a module of its own:
 [`recovery/`](../recovery).
 
 ```sh
 make check                                              # load the module and lint every script
-DEBUG=true make -C ../runtime run MODULE=installer      # run it, without touching this machine
+DEBUG=true make -C ../../runtime run MODULE=installer      # run it, without touching this machine
 ```
 
 ## What is where
@@ -24,9 +24,9 @@ locales/                 one <code>.po per language this installer speaks, and t
 ```
 
 Nothing points at any of this from `installer.yaml`: each part is found by its
-own name. A release is the runtime binary with `runtime.yaml` beside it, and
-this folder and the recovery listed there: one binary, two modules, and the
-question of which of them to open is a page of the interface's own.
+own name. A release is the runtime binary with `runtime.yaml` beside it and a
+`modules/` folder holding this one and the recovery: one binary, two modules,
+and the question of which of them to open is a page of the interface's own.
 
 ## What a run is called
 

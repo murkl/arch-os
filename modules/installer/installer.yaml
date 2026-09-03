@@ -5,8 +5,9 @@
 # and nothing points at it from here.
 #
 # Repairing a system that is already on a disk is a module of its own, with a
-# declaration of its own: see ../recovery. Which modules there are, what they
-# are called together and what they look like is ../runtime.yaml, not here.
+# declaration of its own: see ../recovery. What this and its neighbours are
+# called together and what they look like is ../../runtime/runtime.yaml, not
+# here.
 
 title: Arch OS Installer
 

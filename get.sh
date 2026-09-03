@@ -34,7 +34,7 @@ DOWNLOAD_DIR="${DOWNLOAD_DIR:-${HOME}/Downloads}"
 MODE="${MODE:-auto}"
 
 # Touch no hardware: no device gets written, and the installer simulates
-# every step (see installer/lib.sh, which reads the same variable).
+# every step (see modules/installer/lib.sh, which reads the same variable).
 DEBUG="${DEBUG:-false}"
 
 # The file currently being fetched, so an interrupt only cleans up its own
@@ -168,7 +168,7 @@ install_mode() {
     ok "Unpacked: ${tarball_dir}"
 
     # Started out of its own folder with no module named: the runtime reads the
-    # runtime.yaml beside its own binary, finds the installer and the recovery,
+    # runtime.yaml beside its own binary, finds the modules folder next to it,
     # and asks which to open. Their answers and logs land in the working
     # directory, so leaving and running this again picks up where it left off.
     #

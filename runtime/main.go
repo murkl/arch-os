@@ -4,11 +4,12 @@
 // keeps the answers and runs shell in order, reporting where it broke. What is
 // asked and what the shell does is a folder of yaml and scripts.
 //
-// One of those folders is a module. runtime.yaml beside the binary says what
-// the product they add up to is called, what it looks like, and which modules
-// it offers; each module says the rest for itself. Nothing about any particular
-// operating system is compiled in, so the same binary drives a different
-// product by sitting next to a different runtime.yaml.
+// One of those folders is a module, and they sit together in modules/ beside
+// the binary. runtime.yaml beside them says what the product they add up to is
+// called and what it looks like; each module says the rest for itself. Nothing
+// about any particular operating system is compiled in, so the same binary
+// drives a different product by sitting next to a different runtime.yaml and a
+// different set of modules.
 package main
 
 import (
@@ -90,7 +91,7 @@ type command struct {
 func parse(args []string) command {
 	var c command
 	set := flag.NewFlagSet(filepath.Base(os.Args[0]), flag.ExitOnError)
-	set.StringVar(&c.dir, "dir", os.Getenv(dirVar), "where runtime.yaml and its modules are, instead of beside this binary")
+	set.StringVar(&c.dir, "dir", os.Getenv(dirVar), "where runtime.yaml and the modules folder are, instead of beside this binary")
 	set.StringVar(&c.conf, "conf", os.Getenv(confVar), "where the answers are kept")
 	set.BoolVar(&c.version, "version", false, "print the version and exit")
 	set.BoolVar(&c.check, "check", false, "load what is there, report what it holds, and exit")
@@ -109,10 +110,10 @@ func parse(args []string) command {
 // may stand anywhere the flags do, because the walk below steps over each flag
 // and, where it takes one, over its value as well.
 //
-// Whether the word names a module at all is not decided here but by
-// runtime.yaml, which is what makes adding one a line of yaml and a folder
-// rather than a change to this program. -h and -help are the flag package's
-// own: asking for usage is not asking for a module called help.
+// Whether the word names a module at all is not decided here but by what is in
+// modules/, which is what makes adding one a folder rather than a change to
+// this program. -h and -help are the flag package's own: asking for usage is
+// not asking for a module called help.
 func take(set *flag.FlagSet, args []string) (string, []string) {
 	for i := 0; i < len(args); i++ {
 		arg := args[i]

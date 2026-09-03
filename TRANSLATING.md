@@ -17,8 +17,8 @@ component of its own on a translation platform.
 | | Template | Catalogs | What is in it |
 |---|---|---|---|
 | Runtime | `runtime/locales/runtime.pot` | `runtime/locales/<code>.po` | the frame's own words: buttons, key hints, the labels on a failure report |
-| Installer | `installer/locales/installer.pot` | `installer/locales/<code>.po` | what the Arch Linux installation asks and says about itself |
-| Recovery | `recovery/locales/recovery.pot` | `recovery/locales/<code>.po` | the same, for repairing a system already on a disk |
+| Installer | `modules/installer/locales/installer.pot` | `modules/installer/locales/<code>.po` | what the Arch Linux installation asks and says about itself |
+| Recovery | `modules/recovery/locales/recovery.pot` | `modules/recovery/locales/<code>.po` | the same, for repairing a system already on a disk |
 
 Two of them are ever in use at once: the runtime's and the one belonging to the
 module being run. They are merged at startup and behave as one, with the
@@ -105,8 +105,8 @@ Weblate reads this repository as it stands. One component per catalog:
 | Setting | Runtime | Installer | Recovery |
 |---|---|---|---|
 | File format | gettext PO | gettext PO | gettext PO |
-| File mask | `runtime/locales/*.po` | `installer/locales/*.po` | `recovery/locales/*.po` |
-| Template for new translations | `runtime/locales/runtime.pot` | `installer/locales/installer.pot` | `recovery/locales/recovery.pot` |
+| File mask | `runtime/locales/*.po` | `modules/installer/locales/*.po` | `modules/recovery/locales/*.po` |
+| Template for new translations | `runtime/locales/runtime.pot` | `modules/installer/locales/installer.pot` | `modules/recovery/locales/recovery.pot` |
 | Monolingual base file | *(none, PO is bilingual)* | | |
 
 Point them all at the `dev` branch. `.weblate` in the repository root holds the

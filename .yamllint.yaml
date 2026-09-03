@@ -30,5 +30,6 @@ rules:
 ignore: |
   /release/
   /dist/
+  /.dev/
   /iso/archiso/
   /iso/download/

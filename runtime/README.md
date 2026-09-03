@@ -6,8 +6,8 @@ and runs shell in order, reporting exactly where it broke. It is built as
 
 It installs nothing, and it knows nothing about Arch Linux, disks, packages or
 desktops: there is not one of those words in the source. What the product is
-called, what it looks like and what it offers is `runtime.yaml`; what is asked,
-what the answers mean and what the shell does is **one folder per module**.
+called and what it looks like is `runtime.yaml`; what is asked, what the answers
+mean and what the shell does is **one folder per module**, in `modules/`.
 Started without them, the binary says so and stops.
 
 ```
@@ -23,13 +23,13 @@ runtime -version
 ## The runtime
 
 The binary looks **next to itself** and nowhere else, for `runtime.yaml` and the
-module folders it lists:
+modules folder:
 
 ```
-runtime         the binary
-runtime.yaml    what the product is called, what it looks like, what it offers
-installer/      one module: installer.yaml and the folders beside it
-recovery/       another: recovery.yaml and its own
+runtime                 the binary
+runtime.yaml            what the product is called and what it looks like
+modules/installer/      one module: installer.yaml and the folders beside it
+modules/recovery/       another: recovery.yaml and its own
 ```
 
 ```yaml
@@ -39,20 +39,16 @@ logo: |                  # everything above the blank line is a dim eyebrow
   Arch Linux
 
   ██████ …               # the wordmark, swept in behind the accent
-
-modules:                 # what it offers, in the order it offers them
-  - installer
-  - recovery
 ```
 
-`modules:` is the whole of the list. A folder that is not on it is not part of
-this product, and adding one is a line here and a folder — nothing in the
-binary knows any module by name. Each name is both the folder and the word that
-opens it outright: `runtime --installer`, which is what the `installer` and
-`recovery` commands on the ISO are.
+What it offers is not written down anywhere: it is the folders in `modules/`, in
+name order. Adding one is a folder and taking one away is deleting it — nothing
+in the binary and nothing in `runtime.yaml` knows any module by name. The folder
+name is also the word that opens it outright: `runtime --installer`, which is
+what the `installer` and `recovery` commands on the ISO are.
 
 Nothing here is compiled in. A different name, a different colour and a
-different list of modules is a different product out of the same binary.
+different set of modules is a different product out of the same binary.
 
 ## A module
 
@@ -73,8 +69,8 @@ it is called: `installer.yaml`, `recovery.yaml`. Naming it after the folder is
 the convention and is what lets two modules sit open in an editor and still be
 told apart; two of them in one folder is refused rather than resolved.
 
-The **folder name is the module's identity**: what `runtime.yaml` lists, what
-the command line names, and what its answers and its log are called. The
+The **folder name is the module's identity**: what the page offering it is keyed
+on, what the command line names, and what its answers and its log are called. The
 `installer` module answers into `installer.conf` and logs into `installer.log`.
 
 ### The order of the opening
@@ -433,17 +429,19 @@ that row instead of a language row of its own.
 
 ```sh
 make build                     # bin/runtime-linux-amd64, and its checksum
-make run                       # straight from source, against the modules at ..
+make run                       # straight from source, against the modules at ../modules
 make run MODULE=recovery       # one of them outright
 make check                     # gofmt, vet, staticcheck, test, build, before a commit
 ```
 
-`run` reads the repository root, which is a `runtime.yaml` with the module
-folders beside it exactly as a release is. `make build` at the repository root
-assembles the real thing: `release/runtime`.
+`run` reads `../.dev`, which `make dev` at the repository root lays out as a
+release is — a `runtime.yaml` with a modules folder beside it — out of symlinks
+into the tree, so a run reads the sources rather than a copy of them. `make
+build` at the repository root assembles the real thing: `release/runtime`.
 
 The binary is static and has no runtime dependencies of its own. It has to live
-beside `runtime.yaml` and its modules, since that is where it looks for them.
+beside `runtime.yaml` and its modules folder, since that is where it looks for
+them.
 
 ## Layout
 

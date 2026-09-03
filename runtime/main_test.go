@@ -34,8 +34,13 @@ func writeModule(t *testing.T, declaration string, extra map[string]string) stri
 	return dir
 }
 
-// runtime lays a whole product out: a runtime.yaml over however many modules,
-// each of them the smallest one that will load.
+// runtimeDecl is a product with nothing to say about itself but its name: what
+// it offers is the folders beside it, so a test that is not about the runtime
+// writes no more than this.
+const runtimeDecl = "name: Test OS\n"
+
+// runtime lays a whole product out: a runtime.yaml over a modules folder, each
+// module in it the smallest one that will load.
 func runtime(t *testing.T, declaration string, modules ...string) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -43,9 +48,7 @@ func runtime(t *testing.T, declaration string, modules ...string) string {
 		t.Fatal(err)
 	}
 	for _, name := range modules {
-		if err := os.Rename(writeModule(t, "title: "+name+"\nstages: [go]\n", nil), filepath.Join(dir, name)); err != nil {
-			t.Fatal(err)
-		}
+		put(t, dir, name, writeModule(t, "title: "+name+"\nstages: [go]\n", nil))
 	}
 	return dir
 }
@@ -55,13 +58,22 @@ func runtime(t *testing.T, declaration string, modules ...string) string {
 func around(t *testing.T, mod string) string {
 	t.Helper()
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, spec.FileRuntime), []byte("name: Test OS\nmodules: [installer]\n"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, spec.FileRuntime), []byte(runtimeDecl), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Rename(mod, filepath.Join(dir, "installer")); err != nil {
-		t.Fatal(err)
-	}
+	put(t, dir, "installer", mod)
 	return dir
+}
+
+// put moves a module folder into the place a runtime looks for it.
+func put(t *testing.T, dir, name, mod string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Join(dir, spec.DirModules), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(mod, filepath.Join(dir, spec.DirModules, name)); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func loaded(t *testing.T, dir string) *spec.Module {
@@ -135,7 +147,7 @@ func TestAnUntranslatableMachineLeavesTheSourceLanguage(t *testing.T) {
 // Every module is read at startup, so one that will not load is a message
 // before anything is offered rather than a row that fails when it is chosen.
 func TestEveryModuleOfARuntimeIsRead(t *testing.T) {
-	dir := runtime(t, "name: Test OS\nmodules: [installer, recovery]\n", "installer", "recovery")
+	dir := runtime(t, runtimeDecl, "installer", "recovery")
 
 	rt, err := spec.LoadRuntime(dir)
 	if err != nil {
@@ -146,14 +158,14 @@ func TestEveryModuleOfARuntimeIsRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(got) != 2 || got[0].UI.Title != "installer" || got[1].UI.Title != "recovery" {
-		t.Errorf("load() = %d modules, want the two it lists, in that order", len(got))
+		t.Errorf("load() = %d modules, want both of them, in name order", len(got))
 	}
 }
 
 // Naming one is the question of which to open, already answered — so only that
 // one is read, and nothing else it ships with can stop it starting.
 func TestNamingAModuleReadsOnlyThatOne(t *testing.T) {
-	dir := runtime(t, "name: Test OS\nmodules: [installer, recovery]\n", "installer", "recovery")
+	dir := runtime(t, runtimeDecl, "installer", "recovery")
 
 	rt, err := spec.LoadRuntime(dir)
 	if err != nil {
@@ -168,10 +180,10 @@ func TestNamingAModuleReadsOnlyThatOne(t *testing.T) {
 	}
 }
 
-// Whether a name is a module is settled by runtime.yaml at the moment it is
-// given, which is what keeps the list of them out of this program.
+// Whether a name is a module is settled by what is beside the binary at the
+// moment it is given, which is what keeps the list of them out of this program.
 func TestAModuleNobodyDeclaredIsRefusedByName(t *testing.T) {
-	dir := runtime(t, "name: Test OS\nmodules: [installer]\n", "installer")
+	dir := runtime(t, runtimeDecl, "installer")
 
 	rt, err := spec.LoadRuntime(dir)
 	if err != nil {
@@ -188,15 +200,11 @@ func TestAModuleNobodyDeclaredIsRefusedByName(t *testing.T) {
 
 func TestARuntimeHoldingABrokenModuleWillNotStart(t *testing.T) {
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, spec.FileRuntime), []byte("name: T\nmodules: [installer, recovery]\n"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, spec.FileRuntime), []byte(runtimeDecl), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Rename(writeModule(t, "title: T\nstages: [go]\n", nil), filepath.Join(dir, "installer")); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Rename(writeModule(t, "title: T\n", nil), filepath.Join(dir, "recovery")); err != nil {
-		t.Fatal(err)
-	}
+	put(t, dir, "installer", writeModule(t, "title: T\nstages: [go]\n", nil))
+	put(t, dir, "recovery", writeModule(t, "title: T\n", nil))
 	rt, err := spec.LoadRuntime(dir)
 	if err != nil {
 		t.Fatal(err)

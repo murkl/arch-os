@@ -56,13 +56,18 @@ msgstr ""
 msgid "more than one %s file here"
 msgstr ""
 
-#: internal/spec/runtime.go:73
-msgid "Nothing to run here."
-msgstr ""
-
-#: internal/spec/runtime.go:74
+#: internal/spec/runtime.go:75
 #, c-format
 msgid "A %s file has to sit next to this program, in %s."
+msgstr ""
+
+#: internal/spec/runtime.go:112
+#, c-format
+msgid "A %s folder with something in it has to sit next to this program, in %s."
+msgstr ""
+
+#: internal/spec/runtime.go:119
+msgid "Nothing to run here."
 msgstr ""
 
 #: internal/spec/spec.go:466
@@ -118,12 +123,12 @@ msgstr ""
 msgid "%s was joined, but there is still no internet."
 msgstr ""
 
-#: main.go:259
+#: main.go:260
 #, c-format
 msgid "No module called %s."
 msgstr ""
 
-#: main.go:260
+#: main.go:261
 #, c-format
 msgid "This one offers %s."
 msgstr ""

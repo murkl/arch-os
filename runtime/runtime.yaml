@@ -1,5 +1,4 @@
-# What this runtime is: the product its modules add up to, and the modules
-# themselves.
+# What this runtime is: the product its modules add up to.
 #
 # It sits beside the binary rather than inside any module because no module can
 # answer for its neighbours. An installer and a recovery are two programs and
@@ -8,7 +7,13 @@
 #
 # It is also the whole of what makes this binary Arch OS rather than something
 # else. Nothing here is compiled in: a different name, a different colour and a
-# different list of modules is a different product out of the same runtime.
+# different set of modules is a different product out of the same runtime.
+#
+# Which modules there are is not written down here. They are whatever folders
+# sit in modules/ beside the binary, each holding its own declaration — see
+# ../modules. Adding one is a folder; taking one away is deleting it. What every
+# module says about itself, including the name and the sentence under it on the
+# page that offers it, it says in that declaration.
 
 # Over the pages drawn before a module has been opened — the language, and the
 # question of which of them to open. Not translated: it is a name.
@@ -27,14 +32,3 @@ logo: |
   ███████ ██████  ██      ███████     ██    ██ ███████
   ██   ██ ██   ██ ██      ██   ██     ██    ██      ██
   ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
-
-# What this runtime offers, in the order it offers them. Each name is a folder
-# beside this file holding that module's own declaration — installer/ holds
-# installer.yaml — and it is the word that opens it outright: `runtime
-# --installer`.
-#
-# Adding a module is a line here and a folder; taking one away is deleting both.
-# Nothing else in the runtime knows any of them by name.
-modules:
-  - installer
-  - recovery

@@ -19,15 +19,17 @@ LDFLAGS_BUILD := -s -w -X main.version=$(VERSION)
 LDFLAGS_RUN   := -X main.version=$(VERSION_DEV)
 GOFLAGS       := CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH)
 
-# Where the modules this runtime is developed against are: the repository root,
-# which holds a runtime.yaml with the module folders beside it, exactly as a
-# release does. MODULE opens one outright, the way `runtime --installer` does on
-# a machine; without it the interface asks which.
+# What this runtime is developed against: a runtime.yaml with a modules folder
+# beside it, exactly as a release has. The source tree is not that shape — each
+# component keeps its own declaration in its own folder — so `make dev` at the
+# root lays it out in symlinks, and this runs against the sources themselves.
+# MODULE opens one outright, the way `runtime --installer` does on a machine;
+# without it the interface asks which.
 #
 # A build leaves its binary in bin/; putting a copy of it beside the modules is
 # the release's business, not this one's — `make build` at the root, then
 # `release/runtime`.
-DIR    ?= ..
+DIR    ?= ../.dev
 MODULE ?=
 
 # The template every catalog here is filled in from, and the catalogs
@@ -43,6 +45,7 @@ all: build
 # -dir because `go run` builds into a temporary folder, where none of this is
 # beside the binary.
 run:
+	$(MAKE) -C .. dev
 	go run -ldflags="$(LDFLAGS_RUN)" $(PKG) -dir $(DIR) $(MODULE)
 
 build: $(BIN_DIR)

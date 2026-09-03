@@ -9,12 +9,16 @@ import (
 	"github.com/murkl/arch-os/runtime/internal/i18n"
 )
 
-// FileRuntime is the one yaml beside the binary that is not a module.
+// FileRuntime is the one yaml beside the binary that is not a module, and
+// DirModules the folder beside it that holds them.
 //
-// It has a reserved name because it is what the binary reads to know what it
-// is: everything a run needs before a module has been chosen — the product's
-// name, its wordmark, its one colour — and the list of modules it offers.
-const FileRuntime = "runtime.yaml"
+// Both have reserved names because they are what the binary reads to know what
+// it is: everything a run needs before a module has been chosen — the product's
+// name, its wordmark, its one colour — and the modules it offers.
+const (
+	FileRuntime = "runtime.yaml"
+	DirModules  = "modules"
+)
 
 // Runtime is the whole of what a binary and the folders beside it add up to.
 //
@@ -26,8 +30,8 @@ const FileRuntime = "runtime.yaml"
 //
 // It is also the whole of what makes this binary *this* product rather than
 // another one. Nothing about Arch Linux is compiled in: a different name, a
-// different colour and a different list of modules is a different product, out
-// of the same binary.
+// different colour and a different folder of modules is a different product,
+// out of the same binary.
 type Runtime struct {
 	// Name is the product, over the page that asks which of its modules to
 	// open. Not translated: it is a name, and the same one in every language.
@@ -39,27 +43,26 @@ type Runtime struct {
 	Accent string `yaml:"accent"`
 	Logo   string `yaml:"logo"`
 
-	// Modules is what this runtime offers, in the order it offers them. Each is
-	// a folder beside this file, holding that module's own declaration.
+	// Modules is what this runtime offers, in the order it offers them: the
+	// folders in DirModules, by name.
 	//
-	// Written out rather than discovered: the list is what a person adds a
-	// module to and takes one out of, it is the order they are offered in, and
-	// it is what the command line is checked against. A folder that is not on it
-	// is not part of this product.
-	Modules []string `yaml:"modules"`
+	// Read off the filesystem rather than written down here, because a list
+	// beside the folders is a second copy of them that can disagree. Adding a
+	// module is a folder and taking one away is deleting it, and what each of
+	// them is called on the page that offers it is in its own declaration.
+	Modules []string `yaml:"-"`
 
-	// Where this was read: the file itself, and the folder every module of it
-	// sits in.
+	// Where this was read: the file itself, and the folder its modules sit in.
 	File string `yaml:"-"`
 	Dir  string `yaml:"-"`
 }
 
 // LoadRuntime reads the declaration beside the binary, or in the folder named
-// outright, and checks over everything it says about itself.
+// outright, and finds the modules next to it.
 //
-// It is required. A binary with no runtime.yaml beside it is not a product yet:
-// it has no name, no colours and nothing to offer, and saying so at startup is
-// better than coming up blank.
+// Both are required. A binary with no runtime.yaml beside it is not a product
+// yet: it has no name, no colours and nothing to offer, and saying so at
+// startup is better than coming up blank.
 func LoadRuntime(explicit string) (*Runtime, error) {
 	dir, err := root(explicit)
 	if err != nil {
@@ -69,43 +72,60 @@ func LoadRuntime(explicit string) (*Runtime, error) {
 	var r Runtime
 	if err := read(path, &r); err != nil {
 		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("%s\n%s",
-				i18n.T("Nothing to run here."),
-				i18n.T("A %s file has to sit next to this program, in %s.", FileRuntime, dir))
+			return nil, missing(i18n.T("A %s file has to sit next to this program, in %s.", FileRuntime, dir))
 		}
 		return nil, err
 	}
 	r.File, r.Dir = path, dir
-	return &r, r.check()
+	if err := r.check(); err != nil {
+		return nil, err
+	}
+	if r.Modules, err = discover(filepath.Join(dir, DirModules)); err != nil {
+		return nil, err
+	}
+	return &r, nil
 }
 
 func (r *Runtime) check() error {
 	if r.Accent != "" && !hexColor.MatchString(r.Accent) {
 		return fmt.Errorf("%s: accent must be #rrggbb, got %q", FileRuntime, r.Accent)
 	}
-	if len(r.Modules) == 0 {
-		return fmt.Errorf("%s: no modules", FileRuntime)
-	}
-	seen := map[string]bool{}
-	for _, id := range r.Modules {
-		switch {
-		case id == "" || filepath.Base(id) != id || id == "." || id == "..":
-			return fmt.Errorf("%s: %q is not a folder name", FileRuntime, id)
-		case seen[id]:
-			return fmt.Errorf("%s: module %s is listed twice", FileRuntime, id)
-		}
-		seen[id] = true
-	}
 	return nil
+}
+
+// discover is the modules in a folder, in name order — which is the order they
+// are offered in. Every folder in it is one; whether it holds something that
+// loads is decided by loading it, so a broken module is a startup error rather
+// than a row quietly missing from the page.
+func discover(dir string) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil && !os.IsNotExist(err) {
+		return nil, err
+	}
+	var out []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			out = append(out, entry.Name())
+		}
+	}
+	if len(out) == 0 {
+		return nil, missing(i18n.T("A %s folder with something in it has to sit next to this program, in %s.", DirModules, filepath.Dir(dir)))
+	}
+	return out, nil
+}
+
+// missing is how a run says it was started somewhere that holds no product.
+func missing(detail string) error {
+	return fmt.Errorf("%s\n%s", i18n.T("Nothing to run here."), detail)
 }
 
 // Has reports whether id is one of the modules this runtime offers. It is what
 // a name given on the command line is held against, so adding a module is a
-// line of yaml and a folder rather than anything compiled in.
+// folder rather than anything compiled in.
 func (r *Runtime) Has(id string) bool { return slices.Contains(r.Modules, id) }
 
 // Path is where a module's folder is.
-func (r *Runtime) Path(id string) string { return filepath.Join(r.Dir, id) }
+func (r *Runtime) Path(id string) string { return filepath.Join(r.Dir, DirModules, id) }
 
 // root is where a run looks for everything it was shipped with: the folder
 // named outright, or the one the binary is in.

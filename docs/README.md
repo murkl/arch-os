@@ -83,18 +83,18 @@ Four parts, deliberately kept apart, see
 | | |
 |---|---|
 | [`runtime/`](../runtime) | a Go binary that draws the interface, asks the questions and runs shell in order. It knows nothing about Arch, disks or packages, there is not one of those words in it. |
-| [`installer/`](../installer) | everything that does: one `installer.yaml`, the questions it asks, and a folder per step of the installation. |
-| [`recovery/`](../recovery) | the same shape again, for repairing a system that is already on a disk: its own `recovery.yaml`, its own steps, its own answers. |
+| [`modules/installer/`](../modules/installer) | everything that does: one `installer.yaml`, the questions it asks, and a folder per step of the installation. |
+| [`modules/recovery/`](../modules/recovery) | the same shape again, for repairing a system that is already on a disk: its own `recovery.yaml`, its own steps, its own answers. |
 | [`iso/`](../iso) | turns a build of the three into a bootable image that starts on boot. |
 
 The two are **modules: data, not programs**. One binary runs either of them, and
-which one is a folder beside it. A release is that binary with `installer/` and
-`recovery/` next to it and a `runtime.yaml` listing them and saying what they are
-called together; the first page is the language, the second the question of which
-to open. Adding a question is a few lines of YAML; adding a step is a folder with
-two files in it; adding a whole module is a folder and a line in `runtime.yaml` —
-none of it is a change to the runtime, and the runtime cannot break Arch-specific
-behaviour it has never heard of.
+which one is a folder beside it. A release is that binary with a `modules/`
+folder holding both and a `runtime.yaml` saying what they are called together;
+the first page is the language, the second the question of which to open. Adding
+a question is a few lines of YAML; adding a step is a folder with two files in
+it; adding a whole module is a folder in `modules/` — none of it is a change to
+the runtime, and the runtime cannot break Arch-specific behaviour it has never
+heard of.
 
 <details>
 <summary><h2 style="display: inline;" id="screenshots">More screenshots</h2></summary>
