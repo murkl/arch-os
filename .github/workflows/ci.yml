@@ -119,13 +119,16 @@ jobs:
       - run: make tarball
 
       # What ships is what was tested, rather than what was tested plus whatever
-      # the packaging did to it.
+      # the packaging did to it. The runtime binary itself takes no flag to load
+      # everything and change nothing, so this asks the same question ./tools/
+      # inspect asks of a module during its own checks — see modules/installer/
+      # Makefile — of the whole unpacked release instead.
       - name: The tarball holds a working release
         run: |
           unpacked="$(mktemp -d)"
           tar -xzf dist/*.tar.gz -C "$unpacked"
           for release in "$unpacked"/*; do
-            "$release/runtime" -check -dir "$release"
+            go run -C runtime ./tools/inspect -dir "$release"
           done
           (cd dist && sha256sum -c ./*.sha256)
 
