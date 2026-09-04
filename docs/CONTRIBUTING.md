@@ -90,7 +90,7 @@ sudo pacman -S --needed make curl shellcheck shfmt yamllint actionlint \
 | `make iso` | `archiso` and root |
 | `make -C iso smoke` | `qemu-base`, `edk2-ovmf`, `tesseract`, `tesseract-data-eng` |
 
-**Note:** _Every command that runs a module downloads the Oak binary into `.oak/` once and keeps it. `OAK_VERSION=v1.2.0 make build` pins a release instead of following the newest._
+**Note:** _Every command that runs a module downloads the Oak binary into `.oak/` once and keeps it. The release it comes from is `OAK_VERSION` in the root Makefile; after raising it, `make oak` fetches the new one._
 
 **Note:** _CI installs the same packages and runs the same commands in an Arch container. There is no second definition of green._
 

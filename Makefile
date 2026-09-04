@@ -23,13 +23,15 @@ DIST_DIR    := dist
 # https://github.com/murkl/oak
 #
 # The binary is downloaded rather than built, so nothing here needs a Go
-# toolchain. OAK_VERSION pins it to a release; the default follows the newest.
+# toolchain. OAK_VERSION is the release it is taken from, named outright rather
+# than followed: the runtime is a dependency, and a build of a given commit of
+# this repository is the same build tomorrow.
 OAK_REPO    := murkl/oak
-OAK_VERSION ?= latest
+OAK_VERSION ?= v1.0.0
 OAK_ASSET   := oak-linux-amd64
 OAK_DIR     := .oak
 OAK_BIN     := $(OAK_DIR)/oak
-OAK_URL     := https://github.com/$(OAK_REPO)/releases/$(if $(filter latest,$(OAK_VERSION)),latest/download,download/$(OAK_VERSION))/$(OAK_ASSET)
+OAK_URL     := https://github.com/$(OAK_REPO)/releases/download/$(OAK_VERSION)/$(OAK_ASSET)
 
 # What a release is called and what it holds: one binary, the declaration of the
 # product it drives, and a folder per module under one modules folder. In the
@@ -75,8 +77,8 @@ TARBALL := $(STEM)-x86_64.tar.gz
 all: build
 
 # Fetches the runtime and checks it against the checksum published beside it.
-# Downloaded once and kept: `make oak` takes the newest release when OAK_VERSION
-# follows one, and `make clean` leaves it alone.
+# Downloaded once and kept: `make oak` fetches it again after OAK_VERSION was
+# raised, and `make clean` leaves it alone.
 $(OAK_BIN):
 	@mkdir -p $(OAK_DIR)
 	curl -Lf --progress-bar $(OAK_URL) -o $(OAK_DIR)/$(OAK_ASSET)
