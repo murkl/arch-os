@@ -9,7 +9,7 @@
 
 <p>Alternatively run this on any machine to write the ISO to a USB device, or from a booted <a target="_blank" href="https://archlinux.org/download/">Arch Linux ISO</a> to start the Installer:</p>
 
-**`curl -Ls raw.githubusercontent.com/murkl/arch-os/neo/get.sh | bash`**
+**`curl -Ls raw.githubusercontent.com/murkl/arch-os/main/get.sh | bash`**
 
 <p><b>
 
@@ -93,7 +93,7 @@ To install Arch OS, an internet connection is required, as many packages will be
 - Alternatively run this on any Linux machine to download, verify and write the ISO for you:
 
 ```
-curl -Ls raw.githubusercontent.com/murkl/arch-os/neo/get.sh | bash
+curl -Ls raw.githubusercontent.com/murkl/arch-os/main/get.sh | bash
 ```
 
 **Note:** _Downloads are kept in `~/Downloads` and reused, so a second run costs no bandwidth._
@@ -116,7 +116,7 @@ It first asks for the interface language, then whether to install a new system o
 From a booted official **[Arch Linux ISO](https://archlinux.org/download/)** the same command downloads the latest release and starts it directly:
 
 ```
-curl -Ls raw.githubusercontent.com/murkl/arch-os/neo/get.sh | bash
+curl -Ls raw.githubusercontent.com/murkl/arch-os/main/get.sh | bash
 ```
 
 **Note:** _Which of the two halves runs is worked out from where the command runs._
@@ -128,7 +128,7 @@ curl -Ls raw.githubusercontent.com/murkl/arch-os/neo/get.sh | bash
 | `DEBUG=true` | Touch no hardware: downloads still happen, no device is written and the run is simulated |
 | `DOWNLOAD_DIR=<dir>` | Where downloads are kept (default `~/Downloads`) |
 
-**Note:** _These are read by the shell on the right of the pipe: `curl -Ls raw.githubusercontent.com/murkl/arch-os/neo/get.sh | DEBUG=true bash`_
+**Note:** _These are read by the shell on the right of the pipe: `curl -Ls raw.githubusercontent.com/murkl/arch-os/main/get.sh | DEBUG=true bash`_
 
 ### 4. Reuse your Answers
 

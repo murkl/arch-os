@@ -1,22 +1,24 @@
-# A commit is built exactly once. The image and the tarball made here on `dev`
-# are the ones the release is published from: promoting is a fast-forward, so
-# what was checked and booted is bit for bit what is downloaded.
-# See docs/CONTRIBUTING.md.
+# A commit is built exactly once. The image and the tarball a tag produces here
+# are the ones its release is published from, so what was checked and booted is
+# bit for bit what is downloaded. See docs/CONTRIBUTING.md.
 
 name: CI
 
 on:
   push:
+    branches: ["**"]
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
 
 permissions: {}
 
 # Keyed so a branch and its pull request share one group: only the newer of the
-# two runs. On dev and main nothing is cancelled — that is the run that releases.
+# two runs. On main and on a tag nothing is cancelled — that is the run that
+# releases.
 concurrency:
   group: ci-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: ${{ github.ref_name != 'dev' && github.ref_name != 'main' }}
+  cancel-in-progress: ${{ github.ref_name != 'main' && !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
   # `make check` and nothing this file adds to it: what is checked lives in the
@@ -81,6 +83,10 @@ jobs:
         run: pacman -Sy --needed --noconfirm git
 
       - uses: actions/checkout@v5
+        with:
+          # The version is `git describe`, which needs the tags to describe
+          # anything. Without them every build here would be named after a SHA.
+          fetch-depth: 0
 
       - uses: ./.github/actions/arch
         with:
@@ -114,9 +120,8 @@ jobs:
     needs: [check, security, build]
     if: >-
       github.event_name == 'workflow_dispatch'
-      || github.ref_name == 'dev'
       || github.ref_name == 'main'
-      || github.ref_name == 'neo'
+      || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     container:
@@ -130,6 +135,9 @@ jobs:
         run: pacman -Sy --needed --noconfirm git
 
       - uses: actions/checkout@v5
+        with:
+          # The image is named after the same version the tarball is.
+          fetch-depth: 0
 
       - uses: ./.github/actions/arch
         with:
@@ -201,28 +209,20 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  # Nothing is built here. A fast-forward leaves main pointing at the commit the
-  # jobs above checked and booted, so the release is published from their
-  # artefacts — the same bytes, under a tag.
-  promote:
-    name: Promote and release
+  # Nothing is built here. A tag publishes the artefacts the jobs above checked
+  # and booted — the same bytes, under a version.
+  release:
+    name: Release
     needs: [check, security, build, iso, smoke]
-    if: github.ref_name == 'dev'
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: write # the fast-forward, the tag, the release
+      contents: write # the release
       id-token: write # the provenance below is signed
       attestations: write
-    # main moves in one place, one run at a time.
-    concurrency:
-      group: promote
-      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v5
-        with:
-          # merge-base needs enough history to find one.
-          fetch-depth: 0
 
       - uses: actions/download-artifact@v8
         with:
@@ -234,33 +234,23 @@ jobs:
           name: iso
           path: dist
 
-      # main only ever moves forward, and onto a commit that already passed.
-      - name: Fast-forward main
-        run: |
-          git fetch --no-tags origin main
-          if ! git merge-base --is-ancestor origin/main HEAD; then
-            echo "::error::main is not an ancestor of dev — rebase dev onto main"
-            exit 1
-          fi
-          git push origin HEAD:refs/heads/main
-
-      # The tag is the short commit SHA, like every other version here. Skipped
-      # rather than failed when it exists, so re-running a half-finished run
-      # finishes it.
+      # Two ways in, one outcome. A tag pushed from a terminal has no release
+      # yet, so this writes one; a release published from the web page has the
+      # tag and the notes already, so this only hangs the files on it. Either
+      # way the step can be run again on a half-finished run.
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
-          SHA: ${{ github.sha }}
+          VERSION: ${{ github.ref_name }}
         run: |
-          version="$(git rev-parse --short HEAD)"
-          if gh release view "$version" >/dev/null 2>&1; then
-            echo "release $version is already published"
-            exit 0
+          (cd dist && sha256sum -c ./*.sha256)
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            gh release upload "$VERSION" dist/* --clobber
+          else
+            gh release create "$VERSION" dist/* \
+              --title "Arch OS $VERSION" \
+              --generate-notes
           fi
-          gh release create "$version" dist/* \
-            --title "Arch OS $version" \
-            --target "$SHA" \
-            --generate-notes
 
       # Which commit and which run these files came out of, signed.
       - uses: actions/attest-build-provenance@v4

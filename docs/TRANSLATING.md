@@ -82,6 +82,6 @@ Weblate reads this repository as it stands. One component per catalog:
 | Template for new translations | `modules/installer/locales/installer.pot` | `modules/recovery/locales/recovery.pot` |
 | Monolingual base file | *(none, PO is bilingual)* | |
 
-Point them both at the `dev` branch.
+Point them both at `main`, which is the only long-lived branch.
 
 **Note:** _`.weblate` in the repository root holds the server and project for the `wlc` command line client. The API key belongs in `~/.config/weblate`, never here._

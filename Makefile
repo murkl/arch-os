@@ -4,10 +4,13 @@
 # release/ is Arch OS as a machine runs it; dist/ is what a person downloads.
 # `tarball` and `iso` each turn the first into one of the second.
 #
-# VERSION is the single source of truth for this whole project: the short commit
-# SHA of HEAD, or "dev" outside a repository. It is Arch OS's own — Oak carries
-# a version of its own and is a dependency of this, like any other.
-VERSION := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
+# VERSION is the single source of truth for this whole project: the tag this
+# commit carries, or the nearest one with the distance and the short SHA after
+# it, and "dev" outside a repository. A release is a tag, so a build made on one
+# is named after it and every build between two says how far past the last it is.
+# It is Arch OS's own — Oak carries a version of its own and is a dependency of
+# this, like any other.
+VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 
 RELEASE_DIR := release
 DIST_DIR    := dist

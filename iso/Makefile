@@ -3,7 +3,7 @@
 
 RELEASE_DIR ?= ../release
 DIST_DIR    ?= ../dist
-VERSION     ?= $(shell git -C .. rev-parse --short HEAD 2>/dev/null || echo dev)
+VERSION     ?= $(shell git -C .. describe --tags --always --dirty 2>/dev/null || echo dev)
 
 # The image `make smoke` boots: the newest one built, so `make build && make
 # smoke` needs no argument.

@@ -34,8 +34,9 @@ AIRFS_OPT="${ISO_DIR}/airootfs/opt/arch-os"
 PLYMOUTH_THEME_REPO="https://github.com/murkl/plymouth-theme-arch-os"
 : "${PLYMOUTH_THEME_SRC:=../../plymouth-theme-arch-os/src}"
 
-# The short commit SHA of HEAD, or "dev" outside a repository.
-: "${SNAPSHOT_VERSION:=$(git -C .. rev-parse --short HEAD 2>/dev/null || echo dev)}"
+# The tag this commit carries, or the nearest one with the distance and the
+# short SHA after it, and "dev" outside a repository.
+: "${SNAPSHOT_VERSION:=$(git -C .. describe --tags --always --dirty 2>/dev/null || echo dev)}"
 
 TEMP_DIR="$(mktemp -d)"
 
@@ -228,9 +229,15 @@ sed -i "s|^airootfs_image_tool_options=.*|airootfs_image_tool_options=('-comp' '
 # replaced - rewriting its first line leaves the rest behind as a syntax error.
 sed -i "/^bootmodes=(/,/)$/c\\bootmodes=('uefi.systemd-boot')" "${ISO_DIR}/profiledef.sh"
 
+# The label is how the kernel finds the medium it booted from - the boot line
+# carries it as archisolabel - and a volume identifier is upper case letters,
+# digits and underscores, at most 32 of them. A version is none of that once it
+# is a tag, so anything else in it becomes an underscore.
+ISO_LABEL="$(printf 'ARCH_OS_%s' "$SNAPSHOT_VERSION" | tr -c '[:alnum:]' '_' | tr '[:lower:]' '[:upper:]' | cut -c1-32)"
+
 set_key_value "${ISO_DIR}/profiledef.sh" iso_name "arch-os"
 set_key_value "${ISO_DIR}/profiledef.sh" iso_version "$SNAPSHOT_VERSION"
-set_key_value "${ISO_DIR}/profiledef.sh" iso_label "ARCH_OS_${SNAPSHOT_VERSION}"
+set_key_value "${ISO_DIR}/profiledef.sh" iso_label "$ISO_LABEL"
 set_key_value "${ISO_DIR}/profiledef.sh" iso_application "Arch OS ISO"
 
 # Make ISO

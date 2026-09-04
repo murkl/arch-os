@@ -33,10 +33,10 @@ make -C .. iso     # the above, then this ISO, into ../dist
 Or from here, once a release already exists:
 
 ```
-make build          # or: RELEASE_DIR=../release SNAPSHOT_VERSION=1234abc ./build.sh
+make build          # or: RELEASE_DIR=../release SNAPSHOT_VERSION=v2.0.0 ./build.sh
 ```
 
-**Note:** _The generated `*.iso` file and its `.sha256` can be found in the `../dist` directory. `SNAPSHOT_VERSION` defaults to the short commit SHA of `HEAD`._
+**Note:** _The generated `*.iso` file and its `.sha256` can be found in the `../dist` directory. `SNAPSHOT_VERSION` defaults to what `git describe` says: the tag `HEAD` carries, or the nearest one with the distance and the short SHA after it. The ISO label is that, upper-cased, with everything a volume identifier may not hold replaced by an underscore._
 
 The Bootsplash theme comes from a **[plymouth-theme-arch-os](https://github.com/murkl/plymouth-theme-arch-os)** checkout beside this repository if one exists, and is fetched otherwise. `PLYMOUTH_THEME_SRC` points at a different `src/`.
 
