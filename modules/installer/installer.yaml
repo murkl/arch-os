@@ -1,13 +1,12 @@
 # What this installer is, what it asks, and in what order it works.
 #
-# The runtime beside it knows nothing about Arch Linux. Everything else in this
-# module is found by its own name — lib.sh, data/, locales/, hooks/, tasks/ —
-# and nothing points at it from here.
+# Oak, the runtime beside it, knows nothing about Arch Linux. Everything else
+# in this module is found by its own name — lib.sh, data/, locales/, hooks/,
+# tasks/ — and nothing points at it from here.
 #
 # Repairing a system that is already on a disk is a module of its own, with a
 # declaration of its own: see ../recovery. What this and its neighbours are
-# called together and what they look like is ../../runtime/runtime.yaml, not
-# here.
+# called together and what they look like is ../../oak.yaml, not here.
 
 title: Arch OS Installer
 
@@ -107,7 +106,7 @@ presets:
 # unanswered is what makes the installer ask; an answer is what makes it stop.
 # Each name reaches every script as an environment variable.
 #
-# Every key a row may use — see runtime/internal/spec/spec.go for the full
+# Every key a row may use — see https://github.com/murkl/oak for the full
 # rules:
 #
 #   name         the environment variable — ARCH_OS_UPPER_SNAKE_CASE

@@ -1,6 +1,6 @@
 # The networks in range, one SSID per line, strongest first.
 #
-# The scan is fired here rather than by the runtime because iwctl returns as
+# The scan is fired here rather than by Oak because iwctl returns as
 # soon as it has started one: the wait belongs beside the command that needs it.
 iwctl station "$WLAN_DEVICE" scan || true
 sleep 3

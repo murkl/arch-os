@@ -1,23 +1,29 @@
-# What this runtime is: the product its modules add up to.
+# What Arch OS is, as the runtime that draws it reads it: the product its
+# modules add up to.
 #
 # It sits beside the binary rather than inside any module because no module can
 # answer for its neighbours. An installer and a recovery are two programs and
 # one product, and the wordmark on the way in, the colour on every page and the
 # name over the question of which to open are the product's.
 #
-# It is also the whole of what makes this binary Arch OS rather than something
-# else. Nothing here is compiled in: a different name, a different colour and a
-# different set of modules is a different product out of the same runtime.
+# It is also the whole of what makes a run of Oak Arch OS rather than something
+# else. Nothing here is compiled into that binary: a different name, a different
+# colour and a different set of modules is a different product out of the same
+# one — see https://github.com/murkl/oak.
 #
 # Which modules there are is not written down here. They are whatever folders
 # sit in modules/ beside the binary, each holding its own declaration — see
-# ../modules. Adding one is a folder; taking one away is deleting it. What every
+# modules. Adding one is a folder; taking one away is deleting it. What every
 # module says about itself, including the name and the sentence under it on the
 # page that offers it, it says in that declaration.
 
 # Over the pages drawn before a module has been opened — the language, and the
 # question of which of them to open. Not translated: it is a name.
 name: Arch OS
+
+# The build writes the short commit SHA over this line — see /Makefile. What
+# stands here is what a run out of the source tree shows.
+version: dev
 
 # Arch blue, pulled towards the terminal's background so it holds on a light one.
 accent: "#1793d1"

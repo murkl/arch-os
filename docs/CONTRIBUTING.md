@@ -20,7 +20,7 @@ flowchart LR
 | `dev` | The only branch anything is merged into, by squash, so one change is one commit. A push here builds an image, boots it and promotes if all of that passed |
 | `main` | Never written to by hand. CI fast-forwards it onto the `dev` commit that just passed, then tags and releases it |
 
-The fast-forward keeps the commit, so the short SHA is the same on both branches. That short SHA is the version everywhere: inside the binary, on the ISO label, in both filenames and as the tag.
+The fast-forward keeps the commit, so the short SHA is the same on both branches. That short SHA is the version everywhere: in `oak.yaml` and so on every page of the interface, on the ISO label, in both filenames and as the tag.
 
 **Note:** _A squash into `main` would create a new SHA and the image built on `dev` would carry a version no branch has._
 
@@ -30,9 +30,9 @@ There is no CI on `main`, because the commit arriving there is the commit that w
 
 ```mermaid
 flowchart TD
-    P["push"] --> C["check<br/><small>make check · race detector</small>"]
-    P --> S["security<br/><small>govulncheck · gitleaks</small>"]
-    P --> B["build<br/><small>binary · release · tarball</small>"]
+    P["push"] --> C["check<br/><small>make check</small>"]
+    P --> S["security<br/><small>gitleaks</small>"]
+    P --> B["build<br/><small>release · tarball</small>"]
     C --> I
     S --> I
     B --> I["iso<br/><small>archiso, from the build's artefact</small>"]
@@ -46,18 +46,20 @@ flowchart TD
 
 | Job | Where | Description |
 | --- | --- | --- |
-| `check` | every branch | `make check`, then the tests again under the race detector |
-| `security` | every branch | Vulnerabilities in the runtime's imports and a secret scan of the repository |
-| `build` | every branch | The binary, the release and the tarball, then unpacks the tarball and loads both modules out of it |
+| `check` | every branch | `make check`: every script linted, every module loaded, every catalog checked |
+| `security` | every branch | A secret scan of the repository |
+| `build` | every branch | The release and the tarball, then unpacks the tarball and loads both modules out of it |
 | `iso` | `dev`, `main`, `neo`, on demand | The bootable image, from the artefact `build` produced |
 | `boot test` | after `iso` | Boots that image and waits for the first page |
 | `promote` | `dev` | Fast-forwards `main`, tags, publishes, signs |
 
 The dashed jobs are the expensive ones. An archiso build takes a quarter of an hour and a work in progress does not need an image, so a feature branch gets everything except those two in about two minutes.
 
+**Note:** _No job here needs a Go toolchain. The runtime is **[Oak](https://github.com/murkl/oak)**, a project of its own, and every job that needs it downloads the release the Makefile pins._
+
 **Note:** _To build an image from a branch, run the workflow on it by hand (Actions ▸ CI ▸ Run workflow)._
 
-`build` is the only job that compiles anything and the tarball is the only thing it hands on. `iso` unpacks that tarball instead of building again, so the image holds the very file the release page offers.
+`build` is the only job that assembles anything and the tarball is the only thing it hands on. `iso` unpacks that tarball instead of assembling again, so the image holds the very file the release page offers.
 
 **Note:** _`neo` builds and boots an image on every push, because the rewrite living there changes the image itself. That line comes out of the workflow when the branch is gone._
 
@@ -65,44 +67,48 @@ The dashed jobs are the expensive ones. An archiso build takes a quarter of an h
 
 ```
 make check            # everything that has to pass before a commit
-make -C runtime run   # both modules on this machine, MODULE=recovery for one outright
-make build            # the release, as a machine runs it: release/runtime
+make run              # both modules on this machine, MODULE=recovery for one outright
+make build            # the release, as a machine runs it: release/oak
 make tarball          # the release, as a stock Arch ISO downloads it
 make locales          # every translation template, and every catalog brought up to it
 make iso              # the release, as a bootable image
 make -C iso smoke     # boot the newest image and wait for its first page
+make oak              # replace the downloaded runtime with the newest release
 make clean            # all of the above, taken back
 ```
 
 Install the required packages:
 
 ```
-sudo pacman -S --needed go shellcheck shfmt staticcheck yamllint actionlint \
-    gettext govulncheck gitleaks archiso qemu-base edk2-ovmf tesseract tesseract-data-eng
+sudo pacman -S --needed make curl shellcheck shfmt yamllint actionlint \
+    gettext gitleaks archiso qemu-base edk2-ovmf tesseract tesseract-data-eng
 ```
 
 | Command | Needs |
 | --- | --- |
-| `make check` | `go`, `shellcheck`, `shfmt`, `staticcheck`, `yamllint`, `actionlint`, `gettext` |
+| `make check` | `curl`, `shellcheck`, `shfmt`, `yamllint`, `actionlint`, `gettext` |
 | `make iso` | `archiso` and root |
 | `make -C iso smoke` | `qemu-base`, `edk2-ovmf`, `tesseract`, `tesseract-data-eng` |
+
+**Note:** _Every command that runs a module downloads the Oak binary into `.oak/` once and keeps it. `OAK_VERSION=v1.2.0 make build` pins a release instead of following the newest._
 
 **Note:** _CI installs the same packages and runs the same commands in an Arch container. There is no second definition of green._
 
 ### Where a Change belongs
 
-- Packages, tasks and questions: **[modules/installer](modules/installer)**
-- Repairing a system already on disk: **[modules/recovery](modules/recovery)**
-- The frame around both: **[runtime](runtime)**, for bugs and features, not for a new package
-- The bootable image: **[iso](iso)**
+- Packages, tasks and questions: **[modules/installer](../modules/installer)**
+- Repairing a system already on disk: **[modules/recovery](../modules/recovery)**
+- What the whole thing is called and what it looks like: **[oak.yaml](../oak.yaml)**
+- The bootable image: **[iso](../iso)**
+- The frame around all of it: **[Oak](https://github.com/murkl/oak)**, which is a repository of its own
 
-**[➜ See AGENTS.md](AGENTS.md)** for the same ground written as rules: the layering, the task contract, what may be edited on an installed system and how everything here is written. It is meant for a coding agent and is the shortest way in for a person too.
+**[➜ See AGENTS.md](../AGENTS.md)** for the same ground written as rules: the layering, the task contract, what may be edited on an installed system and how everything here is written. It is meant for a coding agent and is the shortest way in for a person too.
 
 ## Words on Screen
 
 Every sentence the program shows is translatable and the English sentence is its own key, so writing one is writing the source text and the key at once. Reword it and the old translation is marked fuzzy rather than dropped.
 
-The catalogs are gettext `.po` files. The templates they are filled in from are generated: the runtime's from the Go sources, a module's from the loaded module.
+The catalogs are gettext `.po` files. The template a module's catalogs are filled in from is generated out of the loaded module.
 
 ```
 make locales   # after adding, rewording or deleting anything on screen

@@ -9,6 +9,10 @@ VERSION     ?= $(shell git -C .. rev-parse --short HEAD 2>/dev/null || echo dev)
 # smoke` needs no argument.
 ISO ?= $(shell ls -t $(DIST_DIR)/*.iso 2>/dev/null | head -1)
 
+# Empty when there is nothing to elevate, which is the case in CI. Only `clean`
+# reaches for it, and only when a plain removal was refused.
+SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
+
 SCRIPTS := build.sh smoke.sh $(wildcard src/usr/local/bin/*)
 
 .PHONY: build smoke lint fmt check clean
@@ -31,7 +35,13 @@ fmt:
 # What has to pass before anything is committed.
 check: lint
 
-# build.sh takes its own scratch space with it whichever way it ends. What is
-# left here is the download cache, which it keeps on purpose.
+# Everything build.sh leaves behind, the vendored theme in download/ included:
+# a clean tree is one the next build starts from nothing with, and fetching the
+# theme again is one shallow clone.
+#
+# mkarchiso writes as root, and a build killed before its own cleanup ran leaves
+# those files here. The plain removal is tried first, so an ordinary clean never
+# asks for a password; what survives it is root-owned and needs the escalation
+# the build itself used — see build.sh.
 clean:
-	rm -rf archiso download smoke
+	rm -rf archiso download smoke || $(SUDO) rm -rf archiso download smoke

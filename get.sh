@@ -163,13 +163,13 @@ install_mode() {
     tarball="${DOWNLOAD_DIR}/${tarball_url##*/}"
     tarball_dir="${DOWNLOAD_DIR}/$(tar -tzf "$tarball" | head -n1 | cut -d/ -f1)"
     tar -xzf "$tarball" -C "$DOWNLOAD_DIR" || fail "Could not unpack ${tarball}"
-    [ -x "${tarball_dir}/runtime" ] || fail "No program in ${tarball}"
+    [ -x "${tarball_dir}/oak" ] || fail "No program in ${tarball}"
     ok "Unpacked: ${tarball_dir}"
 
     # Started out of its own folder with no module named: the runtime reads the
-    # runtime.yaml beside its own binary, finds the modules folder next to it,
-    # and asks which to open. Their answers and logs land in the working
-    # directory, so leaving and running this again picks up where it left off.
+    # oak.yaml beside its own binary, finds the modules folder next to it, and
+    # asks which to open. Their answers and logs land in the working directory,
+    # so leaving and running this again picks up where it left off.
     #
     # --debug is the runtime's own, so it can be given before a module has been
     # chosen and means the same thing in whichever one is opened.
@@ -177,8 +177,8 @@ install_mode() {
     # stdin is this script itself when the command arrives through a pipe, so
     # the interface is handed the terminal instead.
     cd "$tarball_dir"
-    [ "$DEBUG" = "true" ] && exec ./runtime --debug </dev/tty
-    exec ./runtime </dev/tty
+    [ "$DEBUG" = "true" ] && exec ./oak --debug </dev/tty
+    exec ./oak </dev/tty
 }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////

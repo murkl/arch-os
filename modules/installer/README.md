@@ -1,12 +1,12 @@
 # Arch OS Installer
 
-Everything this Installer knows about Arch Linux. It is data, one YAML file and the folders beside it, and it does not run on its own: the [runtime](../../runtime) draws the interface, asks the questions and runs the tasks in order.
+Everything this Installer knows about Arch Linux. It is data, one YAML file and the folders beside it, and it does not run on its own: [Oak](https://github.com/murkl/oak) draws the interface, asks the questions and runs the tasks in order.
 
 **Note:** _Repairing a system already on disk is a separate module: **[➜ Arch OS Recovery](../recovery)**_
 
 ```
 make check                                              # load the module and lint every script
-make -C ../../runtime run MODULE=installer ARGS=--debug # run it without touching this machine
+make -C ../.. run MODULE=installer ARGS=--debug        # run it without touching this machine
 ```
 
 ## What is where
@@ -23,13 +23,13 @@ locales/                 one <code>.po per language, and the template they are f
 
 **Note:** _Nothing in `installer.yaml` points at any of this. Each part is found by its own name._
 
-A release is the runtime binary with `runtime.yaml` beside it and a `modules/` folder holding this module and the Recovery: one binary, two modules, and which one to open is a page in the interface.
+A release is the Oak binary with `oak.yaml` beside it and a `modules/` folder holding this module and the Recovery: one binary, two modules, and which one to open is a page in the interface.
 
 ## What a Run is called
 
 `installer.yaml` sets `run: Installation`, which the interface reads out wherever it reports what is happening: the row that starts it, the final warning, the clock while it runs. `description:` next to it is the sentence shown under this module's row on the page that asks which module to open.
 
-**Note:** _Leave `run` out and the runtime defaults to "Installation", which is correct here but wrong in the Recovery, which names its own run differently._
+**Note:** _Leave `run` out and Oak defaults to "Installation", which is correct here but wrong in the Recovery, which names its own run differently._
 
 ## Tasks
 
@@ -64,7 +64,7 @@ Three orderings matter and each is captured as a `needs:` or a stage:
 
 ### Writing a Task
 
-A task is a folder with two files in it. The runtime **sources** the script into a shell that already has an `ERR` trap and `lib.sh` loaded, so it needs no shebang, no `set -e`, no imports and no error handling. If a command fails, the task fails and the interface shows the file, the line, the command and the exit code.
+A task is a folder with two files in it. Oak **sources** the script into a shell that already has an `ERR` trap and `lib.sh` loaded, so it needs no shebang, no `set -e`, no imports and no error handling. If a command fails, the task fails and the interface shows the file, the line, the command and the exit code.
 
 ```
 # tasks/thing/task.sh
@@ -122,7 +122,7 @@ The other end is the third preset, `Online (paste.rs)`: it asks for the code, `i
 
 ## Hooks
 
-Bash scripts the runtime calls by name. A hook that exists gets used, one that does not turns off that part of the interface. Any other file name under `hooks/` is rejected when the module loads.
+Bash scripts Oak calls by name. A hook that exists gets used, one that does not turns off that part of the interface. Any other file name under `hooks/` is rejected when the module loads.
 
 | Hook | Description |
 | --- | --- |
@@ -186,11 +186,11 @@ make check                               # reports coverage per language
 
 Fill in the `msgstr` lines and nothing else. `make locales` regenerates `installer.pot` from the module and updates every catalog against it.
 
-**[➜ See Translating](../../TRANSLATING.md)**
+**[➜ See Translating](../../docs/TRANSLATING.md)**
 
 ## The Command Line
 
-Nothing on it belongs to this module. On the ISO, `installer` is `arch-os --installer`: the runtime with this module already named. `--debug` beside it is the runtime's own switch, the same word in every module, passed to every script here as `DEBUG`, which is what `simulating` checks.
+Nothing on it belongs to this module. On the ISO, `installer` is `arch-os --installer`: Oak with this module already named. `--debug` beside it is Oak's own switch, the same word in every module, passed to every script here as `DEBUG`, which is what `simulating` checks.
 
 **Note:** _Answers are given inside the interface. A machine set up more than once can start from an `installer.conf` beside it, or from a shared configuration, which is a row on the setup page._
 
@@ -204,4 +204,4 @@ Root, the Arch Linux live image, booted in UEFI mode with Secure Boot off, and a
 
 `installer.conf`, beside wherever the Installer was started, written the moment any value is given and copied into the new system at the end. The password is never in it: it is asked for right before installation starts and forgotten once it is over.
 
-**Note:** _It is also the only way a script can record an answer of its own: a task appends a `NAME='value'` line to it (see the `share-config` task) and the runtime reads that file back._
+**Note:** _It is also the only way a script can record an answer of its own: a task appends a `NAME='value'` line to it (see the `share-config` task) and Oak reads that file back._

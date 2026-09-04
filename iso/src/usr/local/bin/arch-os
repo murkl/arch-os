@@ -13,14 +13,14 @@
 # same console back. Neither is worth refusing to start over for, so both may
 # fail.
 #
-# The runtime looks for runtime.yaml and the modules folder beside its own
-# binary, so it is started out of the folder it was installed into - every
-# answer file and log then lands beside them, so starting it again from any
-# prompt picks up where it left off.
+# Oak looks for oak.yaml and the modules folder beside its own binary, so it is
+# started out of the folder it was installed into - every answer file and log
+# then lands beside them, so starting it again from any prompt picks up where it
+# left off.
 set -eu
 
 setfont Lat2-Terminus16 || true
 arch-os-console-theme || true
 
 cd /opt/arch-os
-exec ./runtime "$@"
+exec ./oak "$@"

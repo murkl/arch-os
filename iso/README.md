@@ -11,7 +11,7 @@ Stock Arch `releng`, patched: boot → Plymouth → Arch OS. Nothing in between.
 
 ## How it starts
 
-The [runtime](../runtime) with the [Installer](../modules/installer) and the [Recovery](../modules/recovery) module beside it lives at `/opt/arch-os` and is started by a systemd unit on tty1. No autologin, no shell. A root shell is handed back on that console whenever it stops.
+The [Oak](https://github.com/murkl/oak) binary with the [Installer](../modules/installer) and the [Recovery](../modules/recovery) module beside it lives at `/opt/arch-os` and is started by a systemd unit on tty1. No autologin, no shell. A root shell is handed back on that console whenever it stops.
 
 It starts with no module named, so the first pages are the language and then the choice between the two.
 
@@ -26,7 +26,7 @@ It starts with no module named, so the first pages are the language and then the
 ## Build bootable ISO
 
 ```
-make -C .. build   # assembles ../release: the binary, runtime.yaml, the modules folder
+make -C .. build   # assembles ../release: the binary, oak.yaml, the modules folder
 make -C .. iso     # the above, then this ISO, into ../dist
 ```
 
@@ -52,7 +52,7 @@ make smoke                  # the newest image in ../dist
 make smoke ISO=path/to.iso
 ```
 
-Boots the image under QEMU and OVMF, waits for the first page to appear on its console, then shuts the machine down. This checks what no linter can: the boot entry, the initramfs and its Plymouth hook, the systemd unit on tty1, the runtime and the modules it loads.
+Boots the image under QEMU and OVMF, waits for the first page to appear on its console, then shuts the machine down. This checks what no linter can: the boot entry, the initramfs and its Plymouth hook, the systemd unit on tty1, the binary and the modules it loads.
 
 **Note:** _Needs `qemu-base`, `edk2-ovmf`, `tesseract` and `tesseract-data-eng`. The console screenshot is saved to `smoke/`, one frame on success and all of them on failure. CI runs this on every image it builds._
 

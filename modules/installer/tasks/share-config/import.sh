@@ -2,7 +2,7 @@
 # The other end of task.sh beside it.
 #
 # Run by the starting point that asks for a code, the moment the code is
-# given, and the row is not passed until it succeeds. What the runtime owns
+# given, and the row is not passed until it succeeds. What Oak owns
 # is left alone: the interface language and the mode are settings of the
 # program in front of you, not of somebody else's machine.
 #
@@ -28,6 +28,6 @@ if [ -z "$body" ]; then
     exit 1
 fi
 
-# Appended to the answer file, which the runtime reads back. That file is how
+# Appended to the answer file, which Oak reads back. That file is how
 # a script answers questions, and there is no second way in.
 printf '%s\n' "$body" >>"$MODULE_CONF"

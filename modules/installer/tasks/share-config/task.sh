@@ -7,7 +7,7 @@
 # the other end.
 #
 # Only ever the answer file: a user name, a host name, a disk, a language.
-# The password is not in it - the runtime never writes a secret down.
+# The password is not in it - Oak never writes a secret down.
 #
 # Nothing here runs unasked: the task offers itself first and opens on no.
 # It is the only thing in this module that sends anything anywhere.
@@ -20,8 +20,8 @@
 # now lives at, and serves it back as plain text. No account, no key.
 service="https://paste.rs"
 
-# An answer, appended to the file the runtime keeps them in - one
-# KEY='value' to a line, which the runtime reads back. Any earlier line for
+# An answer, appended to the file Oak keeps them in - one
+# KEY='value' to a line, which Oak reads back. Any earlier line for
 # the same name is dropped, so a file somebody opens does not say the same
 # thing twice.
 #

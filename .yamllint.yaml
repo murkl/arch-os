@@ -7,10 +7,9 @@
 #   line-length  the modules' declarations and the translation catalogs are
 #                prose. A sentence broken at column 80 reads worse and diffs
 #                worse.
-#   truthy       `default: no` is an answer to an offer, not a boolean — the
-#                runtime reads every scalar as the text it was written as (see
-#                runtime/internal/spec/scalar.go). check-keys off because a
-#                workflow's `on:` is a key, not a value.
+#   truthy       `default: no` is an answer to an offer, not a boolean — Oak
+#                reads every scalar as the text it was written as. check-keys
+#                off because a workflow's `on:` is a key, not a value.
 #   comments     the stage lists are annotated one space out, so the comment
 #                sits against its entry rather than adrift of it.
 
@@ -31,5 +30,6 @@ ignore: |
   /release/
   /dist/
   /.dev/
+  /.oak/
   /iso/archiso/
   /iso/download/

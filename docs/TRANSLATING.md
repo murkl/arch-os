@@ -4,26 +4,25 @@ Everything on screen can be translated and a translation is useful long before i
 
 The catalogs are gettext `.po` files, the format Weblate, Crowdin, Transifex and Pontoon all read.
 
-## The three Catalogs
+## The two Catalogs
 
 Kept apart because they belong to different things. Each is a component of its own on a translation platform.
 
 | Component | Template | Catalogs | Description |
 | --- | --- | --- | --- |
-| Runtime | `runtime/locales/runtime.pot` | `runtime/locales/<code>.po` | The frame's own words: buttons, key hints, the labels on a failure report |
 | Installer | `modules/installer/locales/installer.pot` | `modules/installer/locales/<code>.po` | What the Arch Linux installation asks and says about itself |
 | Recovery | `modules/recovery/locales/recovery.pot` | `modules/recovery/locales/<code>.po` | The same, for repairing a system already on disk |
 
-Two are ever in use at once: the runtime's and the one belonging to the module being run. They are merged at startup and behave as one, with the module's laid over the runtime's.
+The frame's own words — buttons, key hints, the labels on a failure report — belong to **[Oak](https://github.com/murkl/oak)** and are translated there. Two catalogs are in use at once: Oak's and the one belonging to the module being run. They are merged at startup and behave as one, with the module's laid over Oak's.
 
-**Note:** _The `.pot` files are generated and never edited: the runtime's from the Go sources, a module's from the module itself._
+**Note:** _The `.pot` files are generated and never edited. A module's comes out of the module itself, with `make locales`._
 
 ## Adding a Language
 
 Copy the template, fill in the `msgstr` lines, open a pull request:
 
 ```
-cp runtime/locales/runtime.pot runtime/locales/fr.po
+cp modules/installer/locales/installer.pot modules/installer/locales/fr.po
 ```
 
 Nothing else has to be declared anywhere. The language is offered as soon as the file exists and a machine whose own locale matches it opens in it.
@@ -55,7 +54,7 @@ The Installer runs on the Linux virtual console before any desktop exists and a 
 - Supported: German, French, Spanish, Italian, Portuguese, Dutch and the Nordic languages
 - Not supported: Polish, Czech, Turkish, Greek, Cyrillic or anything written in a script of its own
 
-Those letters are not in the font the live image loads and the console draws a replacement mark in their place. A test refuses a runtime catalog that would do that. A module's catalog is not checked and would simply be unreadable on screen.
+Those letters are not in the font the live image loads and the console draws a replacement mark in their place. A module's catalog is not checked for it and would simply be unreadable on screen.
 
 **Note:** _Making those languages possible is a change to the image (a console font loaded for the chosen language), not to the catalog. Open an issue if you want to translate into one._
 
@@ -68,7 +67,7 @@ make locales   # rewrites every template, brings every catalog up to it
 make check     # refuses a stale template and a broken placeholder
 ```
 
-`make locales` needs `gettext`. It calls `msgmerge`, which keeps every translation whose English is unchanged, marks the ones whose English moved as fuzzy and drops nothing silently.
+`make locales` needs `gettext` and the runtime, which the Makefile downloads. It calls `msgmerge`, which keeps every translation whose English is unchanged, marks the ones whose English moved as fuzzy and drops nothing silently.
 
 **Note:** _`make check` in a module's folder reports coverage per language, which is how a catalog that has fallen behind gets noticed._
 
@@ -76,13 +75,13 @@ make check     # refuses a stale template and a broken placeholder
 
 Weblate reads this repository as it stands. One component per catalog:
 
-| Setting | Runtime | Installer | Recovery |
-| --- | --- | --- | --- |
-| File format | gettext PO | gettext PO | gettext PO |
-| File mask | `runtime/locales/*.po` | `modules/installer/locales/*.po` | `modules/recovery/locales/*.po` |
-| Template for new translations | `runtime/locales/runtime.pot` | `modules/installer/locales/installer.pot` | `modules/recovery/locales/recovery.pot` |
-| Monolingual base file | *(none, PO is bilingual)* | | |
+| Setting | Installer | Recovery |
+| --- | --- | --- |
+| File format | gettext PO | gettext PO |
+| File mask | `modules/installer/locales/*.po` | `modules/recovery/locales/*.po` |
+| Template for new translations | `modules/installer/locales/installer.pot` | `modules/recovery/locales/recovery.pot` |
+| Monolingual base file | *(none, PO is bilingual)* | |
 
-Point them all at the `dev` branch.
+Point them both at the `dev` branch.
 
 **Note:** _`.weblate` in the repository root holds the server and project for the `wlc` command line client. The API key belongs in `~/.config/weblate`, never here._

@@ -1,7 +1,7 @@
 # A commit is built exactly once. The image and the tarball made here on `dev`
 # are the ones the release is published from: promoting is a fast-forward, so
 # what was checked and booted is bit for bit what is downloaded.
-# See CONTRIBUTING.md.
+# See docs/CONTRIBUTING.md.
 
 name: CI
 
@@ -21,6 +21,9 @@ concurrency:
 jobs:
   # `make check` and nothing this file adds to it: what is checked lives in the
   # Makefiles, so a rule that holds in CI holds at a desk.
+  #
+  # Nothing here needs a Go toolchain. The runtime is Oak, a project of its own,
+  # and every job that needs it downloads the release the Makefile pins.
   check:
     name: Check
     runs-on: ubuntu-latest
@@ -36,25 +39,11 @@ jobs:
 
       - uses: actions/checkout@v5
 
-      # gcc is for the race detector below, which is built on cgo.
       - uses: ./.github/actions/arch
         with:
-          packages: go gcc make shellcheck shfmt staticcheck yamllint actionlint gettext diffutils
-
-      - uses: actions/cache@v6
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: go-${{ github.job }}-${{ hashFiles('runtime/go.sum') }}-${{ github.run_id }}
-          restore-keys: go-${{ github.job }}-${{ hashFiles('runtime/go.sum') }}-
+          packages: make curl shellcheck shfmt yamllint actionlint gettext diffutils
 
       - run: make check
-
-      # Once per push rather than once per save: it doubles a test run that
-      # already takes over a minute.
-      - name: Tests under the race detector
-        run: make -C runtime test-race
 
   security:
     name: Security
@@ -71,25 +60,14 @@ jobs:
 
       - uses: ./.github/actions/arch
         with:
-          packages: go make govulncheck gitleaks
-
-      - uses: actions/cache@v6
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: go-${{ github.job }}-${{ hashFiles('runtime/go.sum') }}-${{ github.run_id }}
-          restore-keys: go-${{ github.job }}-${{ hashFiles('runtime/go.sum') }}-
-
-      - name: Vulnerabilities
-        run: make -C runtime vuln
+          packages: gitleaks
 
       # This project is installed by piping a script into a shell. A credential
       # that reached the repository would be handed to everybody who did that.
       - name: Secrets in the repository
         run: gitleaks dir . --redact --no-banner
 
-  # The only job that compiles anything. Everything downstream downloads this
+  # The only job that assembles anything. Everything downstream downloads this
   # artefact rather than building again.
   build:
     name: Build
@@ -106,29 +84,20 @@ jobs:
 
       - uses: ./.github/actions/arch
         with:
-          packages: go make
-
-      - uses: actions/cache@v6
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: go-${{ github.job }}-${{ hashFiles('runtime/go.sum') }}-${{ github.run_id }}
-          restore-keys: go-${{ github.job }}-${{ hashFiles('runtime/go.sum') }}-
+          packages: make curl
 
       - run: make tarball
 
-      # What ships is what was tested, rather than what was tested plus whatever
-      # the packaging did to it. The runtime binary itself takes no flag to load
-      # everything and change nothing, so this asks the same question ./tools/
-      # inspect asks of a module during its own checks — see modules/installer/
-      # Makefile — of the whole unpacked release instead.
+      # What ships is what was checked, rather than what was checked plus
+      # whatever the packaging did to it. `--inspect` loads a product the way a
+      # run does, so this asks of the whole unpacked release what `make check`
+      # asks of each module in the tree.
       - name: The tarball holds a working release
         run: |
           unpacked="$(mktemp -d)"
           tar -xzf dist/*.tar.gz -C "$unpacked"
           for release in "$unpacked"/*; do
-            go run -C runtime ./tools/inspect -dir "$release"
+            "$release/oak" --inspect
           done
           (cd dist && sha256sum -c ./*.sha256)
 

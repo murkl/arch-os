@@ -4,7 +4,7 @@
 # Nothing is installed: the machine is switched off the moment the first page is
 # recognised on its console. That proves the whole chain no linter can see: the
 # boot entry, the initramfs and its plymouth hook, the systemd unit on tty1, the
-# runtime, and the modules it loads.
+# Oak binary, and the modules it loads.
 #
 # Takes the image as its one argument; `make smoke` hands it the newest build.
 # Needs qemu, OVMF and tesseract - see README.md.
@@ -26,8 +26,8 @@ INTERVAL="${INTERVAL:-15}"
 OVMF_CODE="${OVMF_CODE:-/usr/share/edk2/x64/OVMF_CODE.4m.fd}"
 OVMF_VARS="${OVMF_VARS:-/usr/share/edk2/x64/OVMF_VARS.4m.fd}"
 
-# The first page, as the console spells it: the language, which the runtime asks
-# before anything of its own modules is drawn. Several strings rather than one,
+# The first page, as the console spells it: the language, which Oak asks before
+# anything of its own modules is drawn. Several strings rather than one,
 # because OCR over a console font loses a letter now and again - and it loses
 # them in the same places every time, so what is looked for is the part it reads
 # cleanly. "Arch OS" is not on the list: tesseract reads the capital O beside

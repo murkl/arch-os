@@ -1,12 +1,12 @@
 # What this recovery is, what it asks, and in what order it works.
 #
-# The runtime beside it knows nothing about Arch Linux. Everything else in this
-# module is found by its own name — lib.sh, locales/, hooks/, tasks/ — and
-# nothing points at it from here.
+# Oak, the runtime beside it, knows nothing about Arch Linux. Everything else
+# in this module is found by its own name — lib.sh, locales/, hooks/, tasks/ —
+# and nothing points at it from here.
 #
 # Putting Arch Linux on a disk is a module of its own, with a declaration of its
 # own: see ../installer. What this and its neighbours are called together and
-# what they look like is ../../runtime/runtime.yaml, not here.
+# what they look like is ../../oak.yaml, not here.
 
 title: Arch OS Recovery
 
@@ -42,7 +42,7 @@ stages:
 # reaches every script as an environment variable.
 #
 # The keys a row may use are the installer's — see ../installer/installer.yaml
-# for the full list, and runtime/internal/spec/spec.go for the rules.
+# for the full list, and https://github.com/murkl/oak for the rules.
 variables:
   # ─── The keyboard ──────────────────────────────────────────────────────────
   #

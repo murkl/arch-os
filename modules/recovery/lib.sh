@@ -1,4 +1,4 @@
-# SHARED LIBRARY | Sourced by the runtime before every task and every hook
+# SHARED LIBRARY | Sourced by Oak before every task and every hook
 #
 # Everything here is needed by more than one script and must not be answered
 # twice - a second copy of a mount option or a partition number is a recovery
@@ -6,8 +6,8 @@
 # Anything only one task needs stays in that task instead.
 #
 # Because this is sourced, every script here is plain shell with no preamble
-# of its own - the ERR trap that stops on the first failure belongs to the
-# runtime. Nothing in this file prints for a person to read, only to the log.
+# of its own - the ERR trap that stops on the first failure belongs to Oak.
+# Nothing in this file prints for a person to read, only to the log.
 #
 # Nothing here asks anything either: the keyboard, the disk, the password and
 # the snapshot are questions in recovery.yaml, and this file is only ever
@@ -34,7 +34,7 @@ BTRFS_OPTS="defaults,noatime,compress=zstd"
 # itself with `simulating && return 0` as its first line, so a unit is only
 # ever skipped as a whole.
 #
-# DEBUG is the runtime's own: every script is handed it whether the command line
+# DEBUG is Oak's own: every script is handed it whether the command line
 # mentioned it or not, so this never tests an empty string.
 
 simulating() {

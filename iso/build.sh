@@ -80,8 +80,8 @@ trap cleanup EXIT
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 echo "### Initialize Build"
-[ -x "${RELEASE_DIR}/runtime" ] || { echo "Error: ${RELEASE_DIR}/runtime not found - run 'make build' first" >&2 && exit 1; }
-[ -f "${RELEASE_DIR}/runtime.yaml" ] || { echo "Error: ${RELEASE_DIR}/runtime.yaml not found - run 'make build' first" >&2 && exit 1; }
+[ -x "${RELEASE_DIR}/oak" ] || { echo "Error: ${RELEASE_DIR}/oak not found - run 'make build' first" >&2 && exit 1; }
+[ -f "${RELEASE_DIR}/oak.yaml" ] || { echo "Error: ${RELEASE_DIR}/oak.yaml not found - run 'make build' first" >&2 && exit 1; }
 [ -f "${RELEASE_DIR}/modules/installer/installer.yaml" ] || { echo "Error: ${RELEASE_DIR}/modules/installer/installer.yaml not found - run 'make build' first" >&2 && exit 1; }
 [ -f "${RELEASE_DIR}/modules/recovery/recovery.yaml" ] || { echo "Error: ${RELEASE_DIR}/modules/recovery/recovery.yaml not found - run 'make build' first" >&2 && exit 1; }
 mkdir -p "$DOWNLOAD_DIR"
@@ -115,17 +115,17 @@ if [ -n "$DROPPED" ]; then
     grep -vxF "$DROPPED" "$ISO_PACKAGES" >"${TEMP_DIR}/packages" && mv "${TEMP_DIR}/packages" "$ISO_PACKAGES"
 fi
 
-# The runtime binary with runtime.yaml and the modules folder beside it - the
-# only place the runtime looks. /opt/arch-os is what the systemd unit
-# below starts, and what the three launchers on the path run out of.
+# The Oak binary with oak.yaml and the modules folder beside it - the only place
+# it looks. /opt/arch-os is what the systemd unit below starts, and what the
+# three launchers on the path run out of.
 echo "### Install Arch OS"
 mkdir -p "${AIRFS_OPT}"
 cp -r "${RELEASE_DIR}/." "${AIRFS_OPT}/"
-chmod +x "${AIRFS_OPT}/runtime"
+chmod +x "${AIRFS_OPT}/oak"
 
 # Set permissions
 add_permission() { grep -q "\[\"$1\"\]" "${ISO_DIR}/profiledef.sh" || sed -i "/^file_permissions=(/a\\  [\"$1\"]=\"0:0:755\"" "${ISO_DIR}/profiledef.sh"; }
-add_permission /opt/arch-os/runtime
+add_permission /opt/arch-os/oak
 add_permission /usr/local/bin/arch-os
 add_permission /usr/local/bin/installer
 add_permission /usr/local/bin/recovery

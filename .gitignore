@@ -5,10 +5,13 @@
 /dist/
 /.dev/
 
+# The runtime, downloaded from its own project rather than built here.
+/.oak/
+
 # What a local run leaves beside itself, wherever it runs from. Each module
-# names its answers and its log after itself, and the runtime keeps what belongs
-# to every module in one of its own — see runtime/main.go.
-runtime.conf
+# names its answers and its log after itself, and Oak keeps what belongs to
+# every module in one of its own.
+oak.conf
 installer.conf
 installer.conf.old
 installer.log

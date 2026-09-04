@@ -1,4 +1,4 @@
-# SHARED LIBRARY | Sourced by the runtime before every task and every hook
+# SHARED LIBRARY | Sourced by Oak before every task and every hook
 #
 # Everything here is needed by more than one script and must not be answered
 # twice - a boot entry and a unified kernel image built from two different
@@ -6,8 +6,8 @@
 # another. Anything only one task needs stays in that task instead.
 #
 # Because this is sourced, every script here is plain shell with no preamble
-# of its own - the ERR trap that stops on the first failure belongs to the
-# runtime. Nothing in this file prints for a person to read, only to the log.
+# of its own - the ERR trap that stops on the first failure belongs to Oak.
+# Nothing in this file prints for a person to read, only to the log.
 
 # Where the new system is mounted while it is being built.
 MNT=/mnt
@@ -23,7 +23,7 @@ DATA="$(dirname "${BASH_SOURCE[0]}")/data"
 # itself with `simulating && return 0` as its first line, so a unit is only
 # ever skipped as a whole.
 #
-# DEBUG is the runtime's own: every script is handed it whether the command line
+# DEBUG is Oak's own: every script is handed it whether the command line
 # mentioned it or not, so this never tests an empty string.
 
 simulating() {

@@ -1,12 +1,12 @@
 # Arch OS Recovery
 
-Everything this Recovery knows about Arch Linux. It is data, one YAML file and the folders beside it, and it does not run on its own: the [runtime](../../runtime) draws the interface, asks the questions and runs the tasks in order.
+Everything this Recovery knows about Arch Linux. It is data, one YAML file and the folders beside it, and it does not run on its own: [Oak](https://github.com/murkl/oak) draws the interface, asks the questions and runs the tasks in order.
 
 **Note:** _Putting Arch Linux on disk is a separate module: **[➜ Arch OS Installer](../installer)**_
 
 ```
 make check                                             # load the module and lint every script
-make -C ../../runtime run MODULE=recovery ARGS=--debug # run it without touching this machine
+make -C ../.. run MODULE=recovery ARGS=--debug        # run it without touching this machine
 ```
 
 ## What is where
@@ -22,11 +22,11 @@ locales/                 one <code>.po per language, and the template they are f
 
 **Note:** _Nothing in `recovery.yaml` points at any of this. Each part is found by its own name._
 
-Both modules are folders under `modules/`, which is the whole of what a release offers, and the interface asks which one to open. `./runtime --recovery` opens this one directly, and on the ISO that is the `recovery` command.
+Both modules are folders under `modules/`, which is the whole of what a release offers, and the interface asks which one to open. `./oak --recovery` opens this one directly, and on the ISO that is the `recovery` command.
 
 ## What it does
 
-`recovery.yaml` sets `run: Recovery`, which is the name the interface reads out wherever it reports what is happening. Without it the runtime would default to "Installation" and describe a repair as one.
+`recovery.yaml` sets `run: Recovery`, which is the name the interface reads out wherever it reports what is happening. Without it Oak would default to "Installation" and describe a repair as one.
 
 Three stages, and after the first one every step is optional. The system is opened first and what to repair is then a decision made with the disk right in front of you.
 
@@ -84,7 +84,7 @@ The repair logic itself lives in those scripts, not in `lib.sh`. Unlocking, roll
 | `ARCH_OS_RECOVERY_FILESYSTEM` | `btrfs` supports rollback, `ext4` is opened and worked on by hand |
 | `ARCH_OS_RECOVERY_SNAPSHOT` | Asked mid-run by the rollback task, since nothing can list snapshots before the disk is open |
 
-**Note:** _The encryption password is not written to `recovery.conf`, since the runtime never writes a secret to disk._
+**Note:** _The encryption password is not written to `recovery.conf`, since Oak never writes a secret to disk._
 
 The two that are read off the disk fill in with the answer they would already have and stay questions anyway: behind LUKS nothing can be read until the password is given, and a disk laid out differently still needs to stay answerable by hand.
 
@@ -97,11 +97,11 @@ make check                              # reports coverage per language
 
 Fill in the `msgstr` lines and nothing else. `make locales` regenerates `recovery.pot` from the module and updates every catalog against it.
 
-**[➜ See Translating](../../TRANSLATING.md)**
+**[➜ See Translating](../../docs/TRANSLATING.md)**
 
 ## The Command Line
 
-Nothing on it belongs to this module. On the ISO, `recovery` is `arch-os --recovery`: the runtime with this module already named. `--debug` beside it is the runtime's own switch, the same word in every module, passed to every script here as `DEBUG`.
+Nothing on it belongs to this module. On the ISO, `recovery` is `arch-os --recovery`: Oak with this module already named. `--debug` beside it is Oak's own switch, the same word in every module, passed to every script here as `DEBUG`.
 
 **Note:** _Every answer, including the disk password, is given inside the interface._
 

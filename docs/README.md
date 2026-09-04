@@ -34,8 +34,8 @@
   <img src="https://img.shields.io/badge/License-GPL_3.0-blue?style=for-the-badge">
 </p>
 
-**[➜ Contributing](../CONTRIBUTING.md)**<br>
-**[➜ Translating](../TRANSLATING.md)**<br>
+**[➜ Contributing](CONTRIBUTING.md)**<br>
+**[➜ Translating](TRANSLATING.md)**<br>
 <b><a about="_blank" href="https://t.me/archos_community">➜ t.me/archos_community</a></b>
 
 </div>
@@ -168,20 +168,20 @@ Arch OS is built as four parts, kept deliberately apart:
 
 | Part | Description |
 | --- | --- |
-| [`runtime/`](../runtime) | A Go binary. Draws the interface, asks the questions and runs the shell scripts in order. Knows nothing about Arch Linux, disks or packages |
+| [Oak](https://github.com/murkl/oak) | The runtime, a repository of its own. One Go binary that draws the interface, asks the questions and runs the shell scripts in order. Knows nothing about Arch Linux, disks or packages |
 | [`modules/installer/`](../modules/installer) | Everything that does the actual work: one `installer.yaml`, the questions it asks and a folder per step |
 | [`modules/recovery/`](../modules/recovery) | The same shape again, for repairing a system already on disk |
 | [`iso/`](../iso) | Turns a build of the three into a bootable image |
 
-Installer and Recovery are modules: data, not programs. One binary runs either of them. A release is that binary with a `modules/` folder and a `runtime.yaml` beside it.
+Installer and Recovery are modules: data, not programs. One binary runs either of them. A release is that binary with a `modules/` folder and an `oak.yaml` beside it, and the build downloads the binary rather than compiling it.
 
 - Adding a question is a few lines of YAML
 - Adding a step is a folder with two files
 - Adding a module is a folder under `modules/`
 
-**Note:** _None of that touches the runtime._
+**Note:** _None of that touches Oak._
 
-**[➜ See Contributing](../CONTRIBUTING.md)** for branches, releases and how a commit becomes an image.
+**[➜ See Contributing](CONTRIBUTING.md)** for branches, releases and how a commit becomes an image.
 
 <details>
 
@@ -203,7 +203,7 @@ Installer and Recovery are modules: data, not programs. One binary runs either o
 
 Arch OS is a side project and it installs the system I use every day, at work and at home, as a project lead and cloud native engineer. It started with Ubuntu, back in 2005.
 
-The two halves are written differently on purpose. The runtime is Go, written with AI assistance and reviewed line by line before anything is merged. The Arch Linux side (Installer, Recovery, shell scripts, YAML) is handwritten and grew out of the Installer that existed before there was a runtime to drive it.
+The two halves are written differently on purpose. Oak is Go, written with AI assistance and reviewed line by line before anything is merged, and it lives in a repository of its own so that anybody can build something like this without inheriting my Arch Linux opinions. The Arch Linux side (Installer, Recovery, shell scripts, YAML) is handwritten and grew out of the Installer that existed before there was a runtime to drive it.
 
 ## Credits
 

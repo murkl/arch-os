@@ -1,15 +1,12 @@
-# Dependencies and actions, kept current without anybody remembering to. The
-# pull requests go to dev, like every other change.
+# Actions kept current without anybody remembering to. The pull requests go to
+# dev, like every other change.
+#
+# The runtime is not a dependency Dependabot can see: it is downloaded from its
+# own project at build time — see the root Makefile.
 
 version: 2
 
 updates:
-  - package-ecosystem: gomod
-    directory: /runtime
-    target-branch: dev
-    schedule:
-      interval: weekly
-
   - package-ecosystem: github-actions
     directory: /
     target-branch: dev
