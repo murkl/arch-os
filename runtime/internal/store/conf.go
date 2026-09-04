@@ -75,7 +75,7 @@ func (s *Store) Save() error {
 		}
 	}
 	var b strings.Builder
-	fmt.Fprintf(&b, "# %s\n", i18n.T("Answers given to %s. Edit by hand if you like.", s.mod.Name()))
+	fmt.Fprintf(&b, "# %s\n", i18n.T("Answers for %s. Can be edited by hand.", s.mod.Name()))
 	entry(&b, spec.LangVar, s.val[spec.LangVar], i18n.T("Interface language"))
 	group := ""
 	for _, v := range s.mod.Vars {

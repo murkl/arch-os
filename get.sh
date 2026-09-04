@@ -60,16 +60,15 @@ Arch OS - https://github.com/${REPO}
 
   curl -Ls bit.ly/arch-os | bash
 
-On a booted Arch live image: fetches the latest release and starts it, which
-asks whether to install or to repair. Anywhere else: fetches the latest image
+On a booted Arch live image it fetches the latest release and starts it, which
+asks whether to install or to repair. Anywhere else it fetches the latest ISO
 and writes it to a USB device, so this machine can make the one that boots it.
 
   MODE=install|create   pick the half by hand instead of by where it runs
   DEBUG=true            write nothing: no device, and a simulated run
   DOWNLOAD_DIR=<dir>    where downloads are kept (default ${DOWNLOAD_DIR})
 
-These are read by the shell this script runs in, which through a pipe is the
-one on the right of it:
+These are read by the shell on the right of the pipe:
 
   curl -Ls bit.ly/arch-os | DEBUG=true bash
 EOF

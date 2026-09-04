@@ -43,7 +43,7 @@ msgstr ""
 msgid ""
 "The system on {{ARCH_OS_RECOVERY_DISK}} will be unlocked and mounted at /mnt.\n"
 "\n"
-"This does not change anything on it. Once it is open, you can roll back to a snapshot, rebuild the boot files, or open a shell — each offered separately."
+"This does not change anything on it. Once it is open, you can roll back to a snapshot, rebuild the boot files or open a shell. Each is offered separately."
 msgstr ""
 
 #. ARCH_OS_RECOVERY_KEYMAP: the question
@@ -88,7 +88,7 @@ msgstr ""
 
 #. ARCH_OS_RECOVERY_ENCRYPTION_ENABLED: what it means
 #: recovery.yaml
-msgid "Whether that disk is encrypted with LUKS. This is read directly off the disk, without needing the password — change it only if the answer is wrong."
+msgid "Whether that disk is encrypted with LUKS. This is read directly off the disk, without needing the password. Change it only if the answer is wrong."
 msgstr ""
 
 #. ARCH_OS_RECOVERY_PASSWORD: the question
@@ -136,7 +136,7 @@ msgstr ""
 msgid ""
 "Put {{ARCH_OS_RECOVERY_SNAPSHOT}} in place of the root subvolume on {{ARCH_OS_RECOVERY_DISK}}?\n"
 "\n"
-"The system as it is now is deleted and replaced by that snapshot. Everything under /home is untouched, and so are the other snapshots — you can come back and choose a different one."
+"The system as it is now is deleted and replaced by that snapshot. Everything under /home is untouched, and so are the other snapshots. You can come back and choose a different one."
 msgstr ""
 
 #. the step, as the run lists it
@@ -162,7 +162,7 @@ msgstr ""
 msgid ""
 "Open a shell inside the system on {{ARCH_OS_RECOVERY_DISK}}?\n"
 "\n"
-"Everything is mounted, so this is where anything the recovery does not handle on its own can be fixed by hand — a package reinstalled, a config file put back. Leave the shell with `exit`."
+"Everything is mounted, so this is where anything the recovery does not handle on its own can be fixed by hand: a package reinstalled, a config file put back. Leave the shell with `exit`."
 msgstr ""
 
 #. the step, as the run lists it
@@ -175,5 +175,5 @@ msgstr ""
 msgid ""
 "Unmount the system and lock the disk again?\n"
 "\n"
-"Nothing is lost either way — the recovery is finished. Leaving it mounted is only useful if you want to keep working on it from here."
+"Nothing is lost either way, the recovery is finished. Leaving it mounted is only useful if you want to keep working on it from here."
 msgstr ""

@@ -80,7 +80,7 @@ msgstr ""
 
 #: internal/store/conf.go:78
 #, c-format
-msgid "Answers given to %s. Edit by hand if you like."
+msgid "Answers for %s. Can be edited by hand."
 msgstr ""
 
 #: internal/store/conf.go:79 internal/store/language.go:58 tui/labels.go:87
@@ -88,7 +88,7 @@ msgid "Interface language"
 msgstr ""
 
 #: internal/store/language.go:57
-msgid "Answers the runtime keeps for every module. Edit by hand if you like."
+msgid "Answers kept for every module. Can be edited by hand."
 msgstr ""
 
 #: internal/store/store.go:222
@@ -238,11 +238,11 @@ msgid "⏎ continue · r retry · esc back"
 msgstr ""
 
 #: tui/labels.go:59
-msgid "The installation downloads everything it installs, so it will not get far without one. Plug in a cable, or press r to look for a network again."
+msgid "Everything that gets installed is downloaded. Plug in a cable, or press r to search again."
 msgstr ""
 
 #: tui/labels.go:62
-msgid "The installation downloads everything it installs, so it will not get far without one. Plug in a cable, or connect to a wireless network before continuing."
+msgid "Everything that gets installed is downloaded. Plug in a cable, or join a wireless network before continuing."
 msgstr ""
 
 #: tui/labels.go:67
@@ -374,7 +374,7 @@ msgid "Leave"
 msgstr ""
 
 #: tui/labels.go:163
-msgid "Whatever was running is still running behind this page. Anything chosen here stops it."
+msgid "This run continues behind this page. Any choice here stops it."
 msgstr ""
 
 #: tui/labels.go:166
@@ -406,5 +406,5 @@ msgid "Shutting down …"
 msgstr ""
 
 #: tui/labels.go:173
-msgid "This machine did not do as it was told."
+msgid "The machine did not respond."
 msgstr ""

@@ -77,7 +77,7 @@ msgstr "Dieser Wert wird benötigt."
 
 #: internal/store/conf.go:78
 #, c-format
-msgid "Answers given to %s. Edit by hand if you like."
+msgid "Answers for %s. Can be edited by hand."
 msgstr "Angaben für %s. Kann von Hand bearbeitet werden."
 
 #: internal/store/conf.go:79 internal/store/language.go:58 tui/labels.go:87
@@ -85,7 +85,7 @@ msgid "Interface language"
 msgstr "Sprache der Oberfläche"
 
 #: internal/store/language.go:57
-msgid "Answers the runtime keeps for every module. Edit by hand if you like."
+msgid "Answers kept for every module. Can be edited by hand."
 msgstr "Angaben, die für jedes Modul gelten. Kann von Hand bearbeitet werden."
 
 #: internal/store/store.go:222
@@ -142,19 +142,19 @@ msgstr "Angeboten werden %s."
 
 #: tui/labels.go:22
 msgid "↑↓ move · ⏎ select · q quit"
-msgstr "↑↓ wählen · ⏎ öffnen · q beenden"
+msgstr "↑↓ bewegen · ⏎ auswählen · q beenden"
 
 #: tui/labels.go:23
 msgid "↑↓ move · ⏎ open · esc back"
-msgstr "↑↓ wählen · ⏎ öffnen · esc zurück"
+msgstr "↑↓ bewegen · ⏎ öffnen · esc zurück"
 
 #: tui/labels.go:24
 msgid "↑↓ move · ⏎ confirm · esc back"
-msgstr "↑↓ wählen · ⏎ bestätigen · esc zurück"
+msgstr "↑↓ bewegen · ⏎ bestätigen · esc zurück"
 
 #: tui/labels.go:25
 msgid "⏎ confirm · esc back"
-msgstr "⏎ übernehmen · esc zurück"
+msgstr "⏎ bestätigen · esc zurück"
 
 #: tui/labels.go:26
 msgid "working …"
@@ -186,7 +186,7 @@ msgstr "⏎ starten · esc zurück"
 
 #: tui/labels.go:37
 msgid "↑↓ move · ⏎ confirm · esc quit"
-msgstr "↑↓ wählen · ⏎ bestätigen · esc beenden"
+msgstr "↑↓ bewegen · ⏎ bestätigen · esc beenden"
 
 #: tui/labels.go:41
 msgid "Wireless network"
@@ -228,19 +228,19 @@ msgstr "Trotzdem fortfahren"
 
 #: tui/labels.go:55
 msgid "↑↓ move · ⏎ join · r rescan · esc skip"
-msgstr "↑↓ wählen · ⏎ verbinden · r neu suchen · esc überspringen"
+msgstr "↑↓ bewegen · ⏎ verbinden · r neu suchen · esc überspringen"
 
 #: tui/labels.go:57
 msgid "⏎ continue · r retry · esc back"
 msgstr "⏎ weiter · r erneut versuchen · esc zurück"
 
 #: tui/labels.go:59
-msgid "The installation downloads everything it installs, so it will not get far without one. Plug in a cable, or press r to look for a network again."
-msgstr "Die Installation lädt alles herunter, was sie installiert, und kommt ohne Verbindung nicht weit. Stecke ein Kabel ein oder drücke r, um erneut nach einem Netzwerk zu suchen."
+msgid "Everything that gets installed is downloaded. Plug in a cable, or press r to search again."
+msgstr "Alles, was installiert wird, wird heruntergeladen. Stecke ein Kabel ein oder drücke r, um erneut zu suchen."
 
 #: tui/labels.go:62
-msgid "The installation downloads everything it installs, so it will not get far without one. Plug in a cable, or connect to a wireless network before continuing."
-msgstr "Die Installation lädt alles herunter, was sie installiert, und kommt ohne Verbindung nicht weit. Stecke ein Kabel ein oder verbinde dich mit einem WLAN, bevor du fortfährst."
+msgid "Everything that gets installed is downloaded. Plug in a cable, or join a wireless network before continuing."
+msgstr "Alles, was installiert wird, wird heruntergeladen. Stecke ein Kabel ein oder verbinde dich mit einem WLAN, bevor du fortfährst."
 
 #: tui/labels.go:67
 msgid "/ filter"
@@ -248,11 +248,11 @@ msgstr "/ filtern"
 
 #: tui/labels.go:69
 msgid "type to filter · ↑↓ move · ⏎ select · esc close"
-msgstr "tippen filtert · ↑↓ wählen · ⏎ wählen · esc schließt"
+msgstr "tippen filtert · ↑↓ bewegen · ⏎ auswählen · esc schließen"
 
 #: tui/labels.go:75
 msgid "type to filter · ↑↓ move · ⏎ select · esc back"
-msgstr "tippen filtert · ↑↓ wählen · ⏎ wählen · esc zurück"
+msgstr "tippen filtert · ↑↓ bewegen · ⏎ auswählen · esc zurück"
 
 #: tui/labels.go:78
 msgid "Filter …"
@@ -274,7 +274,7 @@ msgstr "Sprache für %s wählen."
 
 #: tui/labels.go:95
 msgid "What to do"
-msgstr "Was getan werden soll"
+msgstr "Was möchtest du tun?"
 
 #: tui/labels.go:101
 #, c-format
@@ -364,15 +364,15 @@ msgstr "%s: Es gibt nichts zur Auswahl."
 
 #: tui/labels.go:154
 msgid "Cannot continue"
-msgstr "Installation nicht möglich"
+msgstr "Fortfahren nicht möglich"
 
 #: tui/labels.go:158
 msgid "Leave"
 msgstr "Beenden"
 
 #: tui/labels.go:163
-msgid "Whatever was running is still running behind this page. Anything chosen here stops it."
-msgstr "Was lief, läuft hinter dieser Seite weiter. Jede Auswahl hier bricht es ab."
+msgid "This run continues behind this page. Any choice here stops it."
+msgstr "Der Vorgang läuft hinter dieser Seite weiter. Jede Auswahl hier bricht ihn ab."
 
 #: tui/labels.go:166
 msgid "Restart"
@@ -403,8 +403,11 @@ msgid "Shutting down …"
 msgstr "Wird heruntergefahren …"
 
 #: tui/labels.go:173
-msgid "This machine did not do as it was told."
-msgstr "Der Rechner hat den Befehl nicht ausgeführt."
+msgid "The machine did not respond."
+msgstr "Der Rechner hat nicht reagiert."
+
+#~ msgid "The installation downloads everything it installs, so it will not get far without one. Plug in a cable, or press r to look for a network again."
+#~ msgstr "Die Installation lädt alles herunter, was sie installiert, und kommt ohne Verbindung nicht weit. Stecke ein Kabel ein oder drücke r, um erneut nach einem Netzwerk zu suchen."
 
 #~ msgid "No installer found."
 #~ msgstr "Kein Installer gefunden."

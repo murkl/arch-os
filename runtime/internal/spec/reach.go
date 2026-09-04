@@ -22,7 +22,7 @@ import (
 //
 // So it is checked here instead. Not at load: a module that behaves is not a module
 // that refuses to start, and a released image must never turn a lint into a
-// machine that will not boot. `arch-os -check` reports it and `make check` runs
+// machine that will not boot. tools/inspect reports it and `make check` runs
 // that, which puts it in front of whoever wrote the guard, before the commit.
 
 // Unread is a question asked where nothing reads the answer.

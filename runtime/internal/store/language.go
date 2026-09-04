@@ -54,7 +54,7 @@ func (l *Language) Save() error {
 		}
 	}
 	var b strings.Builder
-	fmt.Fprintf(&b, "# %s\n", i18n.T("Answers the runtime keeps for every module. Edit by hand if you like."))
+	fmt.Fprintf(&b, "# %s\n", i18n.T("Answers kept for every module. Can be edited by hand."))
 	entry(&b, spec.LangVar, l.code, i18n.T("Interface language"))
 	tmp := l.path + ".new"
 	if err := os.WriteFile(tmp, []byte(b.String()), 0o600); err != nil {

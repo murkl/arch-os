@@ -1309,7 +1309,7 @@ func TestAMachineThatWillNotRestartIsSaidSo(t *testing.T) {
 	if h.m.quitting {
 		t.Fatal("the interface left although the machine is still running")
 	}
-	h.wants("did not do as it was told", "Restart", "Shut down")
+	h.wants("did not respond", "Restart", "Shut down")
 }
 
 // Nothing follows a finished installation but the machine being put down.
@@ -1341,7 +1341,7 @@ func TestAskingToLeaveDuringARunDoesNotStopIt(t *testing.T) {
 	h.wants("Installing for")
 
 	h.esc()
-	h.wants("Restart", "Shut down", "still running behind this page")
+	h.wants("Restart", "Shut down", "continues behind this page")
 	if !working(h.m.top()) {
 		t.Error("the run was stopped by somebody asking how to leave it")
 	}

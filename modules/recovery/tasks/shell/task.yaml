@@ -6,5 +6,5 @@ confirm: |
   Open a shell inside the system on {{ARCH_OS_RECOVERY_DISK}}?
 
   Everything is mounted, so this is where anything the recovery does not
-  handle on its own can be fixed by hand — a package reinstalled, a config
+  handle on its own can be fixed by hand: a package reinstalled, a config
   file put back. Leave the shell with `exit`.

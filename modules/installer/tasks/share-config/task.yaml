@@ -10,7 +10,7 @@ confirm: |
   Put these answers online now?
 
   Every answer from this installation goes to paste.rs, and its address comes
-  back as a code to scan — enough to set up another machine exactly like this
+  back as a code to scan, enough to set up another machine exactly like this
   one. Anyone holding that address can read them. The password is not among
   them and was never written down anywhere.
 default: no

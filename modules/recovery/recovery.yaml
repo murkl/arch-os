@@ -27,7 +27,7 @@ confirm: |
   The system on {{ARCH_OS_RECOVERY_DISK}} will be unlocked and mounted at /mnt.
 
   This does not change anything on it. Once it is open, you can roll back to a
-  snapshot, rebuild the boot files, or open a shell — each offered separately.
+  snapshot, rebuild the boot files or open a shell. Each is offered separately.
 
 # The phases the work happens in, top to bottom. Every task names one, which is
 # what puts it in the run and where; tasks sharing a stage run in the order
@@ -97,7 +97,7 @@ variables:
     title: Disk encryption
     description: |
       Whether that disk is encrypted with LUKS. This is read directly off the
-      disk, without needing the password — change it only if the answer is
+      disk, without needing the password. Change it only if the answer is
       wrong.
     group: Storage
     type: bool

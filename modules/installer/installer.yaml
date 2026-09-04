@@ -28,8 +28,8 @@ console: Type installer at the prompt to start it again.
 confirm: |
   Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.
 
-  Everything on that disk will be erased. This cannot be undone, but nothing
-  on your system has changed until now.
+  Everything on that disk will be erased and this cannot be undone. Nothing
+  has been changed so far.
 
 # The phases the work happens in, top to bottom. Every task names one, which is
 # what puts it in the run and where; tasks sharing a stage run in the order
@@ -76,7 +76,7 @@ presets:
 
       - id: minimal
         title: Minimal
-        description: Arch Linux on the console only — no desktop, no extras, nothing beyond what you choose.
+        description: Arch Linux on the console only. No desktop, no extras, nothing beyond what you choose.
         values:
           ARCH_OS_DESKTOP: none
           ARCH_OS_DESKTOP_EXTRAS_ENABLED: false
@@ -150,11 +150,11 @@ variables:
   - name: ARCH_OS_LOCALE_LANG
     title: Language and region
     description: |
-      The language and country this system is set up for, as a locale code —
-      for example, de_DE is German as used in Germany. This sets the system
-      language and the format for dates, numbers and currency. Left on auto, it
-      also decides the keyboard layout, console font, time zone and mirror
-      country. English is always installed alongside it as a fallback.
+      The locale this system is set up for, for example de_DE for German as
+      used in Germany. It sets the system language and the format for dates,
+      numbers and currency, and on auto also the keyboard layout, console
+      font, time zone and mirror country. English is always installed as a
+      fallback.
     group: Region
     required: true
     apply: load_console_keyboard
@@ -202,8 +202,7 @@ variables:
     title: Time zone
     description: |
       Where this machine is located, so the clock is set correctly. The list
-      opens on the time zone for the chosen country — the only one if the
-      country has just one, or its most populous one if it has several.
+      opens on the time zone for the chosen country.
     group: Region
     required: true
     command: timedatectl list-timezones
@@ -213,8 +212,8 @@ variables:
     title: Mirror country
     description: |
       Where package downloads come from. auto uses the country for the chosen
-      language; none ranks every mirror worldwide by speed — which is also what
-      auto falls back to when Arch has no mirror for that country.
+      language, none ranks every mirror worldwide by speed. auto falls back to
+      none when Arch has no mirror for that country.
     group: Region
     default: auto
     required: true
@@ -316,9 +315,9 @@ variables:
   - name: ARCH_OS_DUAL_BOOT_ENABLED
     title: Dual boot
     description: |
-      Install alongside a system already on this disk: nothing is partitioned
-      or erased, the existing EFI partition is reused, and only a boot entry is
-      added. You will need to specify both partitions yourself.
+      Install alongside a system already on this disk. Nothing is partitioned
+      or erased, the existing EFI partition is reused and only a boot entry is
+      added. Both partitions have to be chosen by you.
     group: Storage
     type: bool
     default: false
@@ -368,10 +367,10 @@ variables:
     title: Secure Boot
     description: |
       Signs the kernel and boot loader with keys generated for this machine, so
-      the firmware will not start anything else. If the firmware is in setup
-      mode, the keys are enrolled automatically and you will only need to turn
-      Secure Boot on afterwards. Otherwise, everything is signed but enrolling
-      the keys is left to you.
+      the firmware starts nothing else. In firmware setup mode the keys are
+      enrolled automatically and you only need to turn Secure Boot on
+      afterwards. Otherwise everything is signed and enrolling the keys is
+      left to you.
     group: Boot
     type: bool
     default: true
@@ -439,7 +438,7 @@ variables:
     title: Desktop keyboard
     description: |
       The keyboard layout the desktop starts with. auto matches the console
-      keyboard, using the desktop's own naming — de-latin1 and de are the same
+      keyboard, using the desktop's own naming: de-latin1 and de are the same
       layout.
     group: Desktop
     default: auto
@@ -460,8 +459,8 @@ variables:
   - name: ARCH_OS_DESKTOP_KEYBOARD_VARIANT
     title: Keyboard variant
     description: |
-      A variation of that layout — dead keys, a different punctuation
-      arrangement. none is the standard one.
+      A variation of that layout, such as dead keys or a different
+      punctuation arrangement. none is the standard one.
     group: Desktop
     default: none
     required: true
@@ -509,10 +508,9 @@ variables:
   - name: ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED
     title: Log in automatically
     description: |
-      Skips the login screen. auto follows disk encryption: if the disk is
-      already unlocked by a password at boot, a second password at login adds
-      no security — but without encryption, the login screen is the only thing
-      protecting the system.
+      Skips the login screen. auto follows disk encryption: a disk already
+      unlocked at boot gains nothing from a second password, while without
+      encryption the login screen is the only protection left.
     group: Desktop
     values: [auto, true, false]
     default: auto
@@ -635,18 +633,17 @@ variables:
   - name: ARCH_OS_CONFIG_URL
     title: Shared at
     description: |
-      Where this installation's answers ended up. Nothing is uploaded until you
-      accept the offer at the end of the run; the installation then fills this
-      in itself and shows it as a code to scan.
+      Where this installation's answers ended up. Nothing is uploaded until
+      you accept the offer at the end of the run. The installation then fills
+      this in itself and shows it as a code to scan.
     group: System
 
   - name: ARCH_OS_CONFIG_SOURCE
     title: Configuration code
     description: |
-      The code of a configuration somebody shared: the short word at the end of
-      a paste.rs address, or the whole address pasted in. Every answer it
-      contains becomes an answer here, and every one can still be changed
-      afterwards.
+      The code of a shared configuration: the short word at the end of a
+      paste.rs address, or the whole address. Every answer it contains can
+      still be changed afterwards.
     group: System
     required: true
     pattern: '^[A-Za-z0-9][A-Za-z0-9:/._-]*$'

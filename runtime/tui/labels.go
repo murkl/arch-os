@@ -56,10 +56,10 @@ func labelHintNetworkChoosing() string {
 }
 func labelHintNetworkOffline() string { return say("⏎ continue · r retry · esc back") }
 func labelNetworkOfflineHelp() string {
-	return say("The installation downloads everything it installs, so it will not get far without one. Plug in a cable, or press r to look for a network again.")
+	return say("Everything that gets installed is downloaded. Plug in a cable, or press r to search again.")
 }
 func labelNetworkOfflineHelpUnjoinable() string {
-	return say("The installation downloads everything it installs, so it will not get far without one. Plug in a cable, or connect to a wireless network before continuing.")
+	return say("Everything that gets installed is downloaded. Plug in a cable, or join a wireless network before continuing.")
 }
 
 // The narrowing box: the key that opens it, appended to a list's own hint, and
@@ -160,7 +160,7 @@ func labelLeave() string { return say("Leave") }
 // Read over the rows when this page went up in the middle of a run: both halves
 // of what somebody who pressed esc during an installation needs to know.
 func labelLeaveRunning() string {
-	return say("Whatever was running is still running behind this page. Anything chosen here stops it.")
+	return say("This run continues behind this page. Any choice here stops it.")
 }
 
 func labelRestart() string      { return say("Restart") }
@@ -170,7 +170,7 @@ func labelConsole() string      { return say("Exit to the console") }
 func labelShutdownHelp() string { return say("Switch this machine off.") }
 func labelRestarting() string   { return say("Restarting …") }
 func labelShuttingDown() string { return say("Shutting down …") }
-func labelLeaveFailed() string  { return say("This machine did not do as it was told.") }
+func labelLeaveFailed() string  { return say("The machine did not respond.") }
 
 // The two answers to a task that asks before it runs. The same two words a bool
 // is read out in, because they are the same question.
