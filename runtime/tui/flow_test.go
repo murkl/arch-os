@@ -1246,7 +1246,7 @@ func TestQuittingAsksWhatToDoWithTheMachine(t *testing.T) {
 	h.wants("Install", "Settings")
 
 	h.typeIn("q")
-	h.wants("Restart", "Shut down").refuses("Exit to the console")
+	h.wants("Restart", "Shut down").refuses("Exit")
 	if h.m.quitting {
 		t.Fatal("q left the program instead of asking")
 	}
@@ -1268,7 +1268,7 @@ func TestLeavingToTheConsoleClosesOnlyTheProgram(t *testing.T) {
 	h := newHarness(t, files)
 	h.down().enter().typeIn("moritz").enter().enter()
 	h.typeIn("q")
-	h.wants("Restart", "Shut down", "Exit to the console")
+	h.wants("Restart", "Shut down", "Exit")
 
 	// The sentence belongs to the row, so it is under the list once the cursor
 	// is on it.

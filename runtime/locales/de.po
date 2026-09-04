@@ -387,8 +387,8 @@ msgid "Shut down"
 msgstr "Herunterfahren"
 
 #: tui/labels.go:169
-msgid "Exit to the console"
-msgstr "Zurück zur Konsole"
+msgid "Exit"
+msgstr "Beenden"
 
 #: tui/labels.go:170
 msgid "Switch this machine off."
@@ -405,6 +405,9 @@ msgstr "Wird heruntergefahren …"
 #: tui/labels.go:173
 msgid "The machine did not respond."
 msgstr "Der Rechner hat nicht reagiert."
+
+#~ msgid "Exit to the console"
+#~ msgstr "Zurück zur Konsole"
 
 #~ msgid "The installation downloads everything it installs, so it will not get far without one. Plug in a cable, or press r to look for a network again."
 #~ msgstr "Die Installation lädt alles herunter, was sie installiert, und kommt ohne Verbindung nicht weit. Stecke ein Kabel ein oder drücke r, um erneut nach einem Netzwerk zu suchen."

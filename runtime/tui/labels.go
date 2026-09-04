@@ -166,7 +166,7 @@ func labelLeaveRunning() string {
 func labelRestart() string      { return say("Restart") }
 func labelRestartHelp() string  { return say("Close this machine down and start it again.") }
 func labelShutdown() string     { return say("Shut down") }
-func labelConsole() string      { return say("Exit to the console") }
+func labelConsole() string      { return say("Exit") }
 func labelShutdownHelp() string { return say("Switch this machine off.") }
 func labelRestarting() string   { return say("Restarting …") }
 func labelShuttingDown() string { return say("Shutting down …") }

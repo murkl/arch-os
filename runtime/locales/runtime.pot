@@ -390,7 +390,7 @@ msgid "Shut down"
 msgstr ""
 
 #: tui/labels.go:169
-msgid "Exit to the console"
+msgid "Exit"
 msgstr ""
 
 #: tui/labels.go:170
