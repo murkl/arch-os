@@ -83,11 +83,9 @@ That starts the Release workflow. It finds the run that built this commit, downl
 
 ```mermaid
 flowchart TD
-    P["push"] --> G["Image needed<br/><small>what changed</small>"]
-    P --> C["Check<br/><small>make check</small>"]
+    P["push"] --> C["Check<br/><small>make check</small>"]
     P --> S["Security<br/><small>gitleaks</small>"]
     P --> B["Build<br/><small>release · tarball</small>"]
-    G --> I
     C --> I
     S --> I
     B --> I["ISO<br/><small>archiso, from the build's artefact</small>"]
@@ -103,7 +101,6 @@ flowchart TD
 
 | Job | Where | Description |
 | --- | --- | --- |
-| `Image needed` | every run | Decides whether this change can reach the image at all |
 | `Check` | every run | `make check`: every script linted, every module loaded, every catalog checked |
 | `Security` | every run | A secret scan of the repository |
 | `Build` | every run | The release and the tarball, then unpacks the tarball and loads both modules out of it |
@@ -117,10 +114,10 @@ The dashed jobs are the expensive ones. An archiso build is a quarter of an hour
 
 | Where | Image built |
 | --- | --- |
-| `main` | Always. Every commit there has to be one a tag can publish |
-| `neo` | Unless the change is documentation only |
-| A pull request | No |
-| Run by hand | Always |
+| `main` | Yes. Every commit there has to be one a tag can publish |
+| `neo` | Yes |
+| A pull request | No. A pull request is judged on the three jobs above it |
+| Run by hand | Yes, on whatever branch it was started from |
 
 **Note:** _To build an image from any branch, run the workflow on it by hand (Actions ▸ CI ▸ Run workflow)._
 

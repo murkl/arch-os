@@ -26,63 +26,6 @@ concurrency:
   cancel-in-progress: ${{ github.ref_name != 'main' }}
 
 jobs:
-  # Whether this change can reach the image at all, decided before a runner is
-  # spent on finding out. An archiso build is a quarter of an hour, and a change
-  # to the documentation cannot alter one byte of what boots.
-  #
-  # On main the answer is always yes: every commit there has to be one a tag can
-  # publish, and a tag publishes what this run built.
-  gate:
-    name: Image needed
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-    outputs:
-      image: ${{ steps.decide.outputs.image }}
-    steps:
-      - id: decide
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          EVENT: ${{ github.event_name }}
-          BRANCH: ${{ github.ref_name }}
-          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
-          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          # Anything that cannot be read as "documentation only" builds an
-          # image: a wrong yes costs a quarter of an hour, a wrong no ships an
-          # image nobody looked at.
-          DOCS='^(docs/|LICENSE$|.*\.md$)'
-          empty=0000000000000000000000000000000000000000
-
-          if [ "$EVENT" = workflow_dispatch ]; then
-            reason="started by hand"
-            image=true
-          elif [ "$BRANCH" = main ]; then
-            reason="every commit on main has to be one a tag can publish"
-            image=true
-          elif [ -z "$BASE" ] || [ "$BASE" = "$empty" ]; then
-            reason="there is nothing to compare this against"
-            image=true
-          elif ! changed="$(gh api --paginate "repos/${GH_REPO}/compare/${BASE}...${HEAD}" --jq '.files[].filename')"; then
-            reason="the range ${BASE}...${HEAD} could not be read"
-            image=true
-          elif grep -qvE "$DOCS" <<<"$changed"; then
-            reason="something outside the documentation changed"
-            image=true
-          else
-            reason="only documentation changed"
-            image=false
-          fi
-
-          echo "image=${image}" >>"$GITHUB_OUTPUT"
-          if [ "$image" = true ]; then
-            printf 'The image is built: %s.\n' "$reason" | tee -a "$GITHUB_STEP_SUMMARY"
-          else
-            printf 'No image: %s.\n' "$reason" | tee -a "$GITHUB_STEP_SUMMARY"
-          fi
-
   # `make check` and nothing this file adds to it: what is checked lives in the
   # Makefiles, so a rule that holds in CI holds at a desk.
   #
@@ -199,10 +142,16 @@ jobs:
 
   # An image, out of the file the release page will offer rather than out of a
   # second build of the same sources.
+  #
+  # An archiso build is a quarter of an hour and a boot test another five
+  # minutes, which a pull request does not need: it is judged on the three jobs
+  # above. Pushes are watched on the long-lived branches only, so everything
+  # that gets here is main, the branch being integrated, or a run started by
+  # hand — see the trigger at the top.
   iso:
     name: ISO
-    needs: [gate, check, security, build]
-    if: needs.gate.outputs.image == 'true'
+    needs: [check, security, build]
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     container:
