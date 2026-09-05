@@ -21,9 +21,10 @@
 # question of which of them to open. Not translated: it is a name.
 name: Arch OS
 
-# The build writes the short commit SHA over this line — see /Makefile. What
-# stands here is what a run out of the source tree shows.
-version: dev
+# The version of this project, and the only place it is written down. The build
+# reads it, both downloads and the ISO label are named after it, and a release
+# is the tag `v` + this — see /Makefile.
+version: 2.0.0
 
 # Arch blue, pulled towards the terminal's background so it holds on a light one.
 accent: "#1793d1"

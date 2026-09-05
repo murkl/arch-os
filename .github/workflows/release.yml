@@ -1,0 +1,213 @@
+# Nothing is built here.
+#
+# A tag names a commit; that commit was checked, built and booted by CI when it
+# landed on main, and this hangs those exact files on the release page. What is
+# downloaded is therefore the file that booted, not a second build of the same
+# sources. See docs/CONTRIBUTING.md.
+
+name: Release
+
+on:
+  push:
+    tags: ["v[0-9]*"]
+  # The same publish again, for a tag whose run had to be repeated.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The tag to publish, for example v2.0.0
+        required: true
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+# One publish per tag at a time, and never cancelled halfway through.
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write # the release
+      actions: read # the run whose artefacts it is made of
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      # The `v` is the tag's and the tag's alone. Everything the release holds —
+      # the title, both filenames, the ISO label — is the version without it.
+      - name: The tag is a version
+        id: version
+        run: |
+          case "$TAG" in
+          v[0-9]*.[0-9]*.[0-9]*) ;;
+          *)
+            echo "::error::${TAG} is not a version tag, which is v followed by a version"
+            exit 1
+            ;;
+          esac
+          echo "version=${TAG#v}" >>"$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+
+      # A tag is a name for a version that was decided in the commit, so the two
+      # have to agree. They disagree when a merge forgot to raise it, and that is
+      # worth finding here rather than on a release page.
+      - name: The tag says what the commit declares
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          declared="$(make -s version)"
+          if [ "$declared" != "$VERSION" ]; then
+            echo "::error::oak.yaml declares ${declared}, the tag says ${VERSION} — raise the one that is behind"
+            exit 1
+          fi
+
+      # A release is a tag on main. Anywhere else there is no run whose artefacts
+      # could be published, and no history the notes could be generated from.
+      - name: The commit is on main
+        id: commit
+        run: |
+          sha="$(git rev-parse HEAD)"
+          status="$(gh api "repos/${GH_REPO}/compare/main...${sha}" --jq .status)"
+          case "$status" in
+          identical | behind) ;;
+          *)
+            echo "::error::${TAG} points at ${sha}, which is not on main"
+            exit 1
+            ;;
+          esac
+          echo "sha=${sha}" >>"$GITHUB_OUTPUT"
+
+      # The run that made the files. A tag pushed the moment a merge lands finds
+      # that run still going, so this waits for it rather than refusing.
+      - name: The run that built this commit
+        id: ci
+        env:
+          SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          # Both artefacts, and neither of them expired: a successful run whose
+          # files are gone is no more use here than no run at all.
+          complete() {
+            gh api "repos/${GH_REPO}/actions/runs/${1}/artifacts" \
+              --jq '[.artifacts[] | select(.expired | not) | .name] | contains(["tarball", "iso"])'
+          }
+
+          run_id=""
+          deadline=$((SECONDS + 2700))
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            # A blip against the API is a reason to ask again rather than to
+            # end a release, so nothing in this loop is fatal on its own.
+            if ! runs="$(gh api "repos/${GH_REPO}/actions/workflows/ci.yml/runs?head_sha=${SHA}&per_page=100" \
+              --jq '.workflow_runs[] | [.id, .status, .conclusion] | @tsv')"; then
+              echo "the runs for ${SHA} could not be listed, asking again"
+              sleep 30
+              continue
+            fi
+
+            # Newest first, which is what the API returns.
+            while IFS=$'\t' read -r id _ conclusion; do
+              [ "$conclusion" = success ] || continue
+              if [ "$(complete "$id")" = true ]; then
+                run_id="$id"
+                break
+              fi
+            done <<<"$runs"
+            [ -z "$run_id" ] || break
+
+            # Nothing left in flight, so waiting would not change the answer.
+            if ! grep -qv $'\tcompleted\t' <<<"$runs"; then
+              break
+            fi
+            echo "CI is still running on ${SHA}"
+            sleep 30
+          done
+
+          if [ -z "$run_id" ]; then
+            echo "::error::no finished CI run with a tarball and an image for ${SHA} — re-run CI on that commit, then start this workflow again"
+            exit 1
+          fi
+          echo "run_id=${run_id}" >>"$GITHUB_OUTPUT"
+          echo "publishing what run ${run_id} built"
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: tarball
+          path: dist
+          run-id: ${{ steps.ci.outputs.run_id }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: iso
+          path: dist
+          run-id: ${{ steps.ci.outputs.run_id }}
+          github-token: ${{ github.token }}
+
+      # The last chance to notice that these are not the files this tag names.
+      - name: The files are the ones this tag names
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          for file in "arch-os-${VERSION}-x86_64.tar.gz" "arch-os-${VERSION}-x86_64.iso"; do
+            if [ ! -f "dist/${file}" ]; then
+              echo "::error::${file} is not among the artefacts — that run built a different version"
+              ls -1 dist
+              exit 1
+            fi
+          done
+          (cd dist && sha256sum -c ./*.sha256)
+
+      # Two ways in, one outcome. A tag pushed from a terminal has no release
+      # yet, so this writes one; a release published from the web page has the
+      # tag and the notes already, so this only hangs the files on it. Either
+      # way the step can be run again on a half-finished run.
+      - name: Publish the release
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          notes="$(mktemp)"
+          cat >"$notes" <<NOTES
+          Boot the ISO on the machine to install, or run this from a booted Arch Linux live image:
+
+          \`\`\`
+          curl -Ls raw.githubusercontent.com/murkl/arch-os/main/get.sh | bash
+          \`\`\`
+
+          | File | Description |
+          | --- | --- |
+          | \`arch-os-${VERSION}-x86_64.iso\` | The bootable image: Installer and Recovery, started on its own |
+          | \`arch-os-${VERSION}-x86_64.tar.gz\` | The same program without the image, for a stock Arch live ISO: unpack it and run \`./oak\` |
+
+          Each file has a \`.sha256\` beside it, and both carry signed build provenance:
+
+          \`\`\`
+          sha256sum -c arch-os-${VERSION}-x86_64.iso.sha256
+          gh attestation verify arch-os-${VERSION}-x86_64.iso -R ${GH_REPO}
+          \`\`\`
+          NOTES
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* \
+              --title "Arch OS ${VERSION}" \
+              --notes-file "$notes" \
+              --generate-notes
+          fi
+
+      - name: What was published
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          .github/summary.sh "Arch OS ${VERSION} published" dist/*.iso dist/*.tar.gz
+          printf 'https://github.com/%s/releases/tag/%s\n' "$GH_REPO" "$TAG" >>"$GITHUB_STEP_SUMMARY"

@@ -1,26 +1,88 @@
-# A commit is built exactly once. The image and the tarball a tag produces here
-# are the ones its release is published from, so what was checked and booted is
-# bit for bit what is downloaded. See docs/CONTRIBUTING.md.
+# A commit is built exactly once. What this run assembles is what its own jobs
+# check and boot, and — when a tag comes to point at that commit — the very
+# files the release workflow hangs on the release page. Nothing downstream ever
+# builds again. See docs/CONTRIBUTING.md.
 
 name: CI
 
 on:
   push:
-    branches: ["**"]
-    tags: ["v*"]
+    branches: [main, neo]
   pull_request:
   workflow_dispatch:
 
 permissions: {}
 
-# Keyed so a branch and its pull request share one group: only the newer of the
-# two runs. On main and on a tag nothing is cancelled — that is the run that
-# releases.
+# -o pipefail on every step: a failure in the middle of a pipeline is a failure.
+defaults:
+  run:
+    shell: bash
+
+# A branch and its pull request never both run: pushes are watched on the two
+# long-lived branches, everything else arrives as a pull request. On main
+# nothing is cancelled — that is the run a tag publishes.
 concurrency:
-  group: ci-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: ${{ github.ref_name != 'main' && !startsWith(github.ref, 'refs/tags/') }}
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
 
 jobs:
+  # Whether this change can reach the image at all, decided before a runner is
+  # spent on finding out. An archiso build is a quarter of an hour, and a change
+  # to the documentation cannot alter one byte of what boots.
+  #
+  # On main the answer is always yes: every commit there has to be one a tag can
+  # publish, and a tag publishes what this run built.
+  gate:
+    name: Image needed
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      image: ${{ steps.decide.outputs.image }}
+    steps:
+      - id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          BRANCH: ${{ github.ref_name }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          # Anything that cannot be read as "documentation only" builds an
+          # image: a wrong yes costs a quarter of an hour, a wrong no ships an
+          # image nobody looked at.
+          DOCS='^(docs/|LICENSE$|.*\.md$)'
+          empty=0000000000000000000000000000000000000000
+
+          if [ "$EVENT" = workflow_dispatch ]; then
+            reason="started by hand"
+            image=true
+          elif [ "$BRANCH" = main ]; then
+            reason="every commit on main has to be one a tag can publish"
+            image=true
+          elif [ -z "$BASE" ] || [ "$BASE" = "$empty" ]; then
+            reason="there is nothing to compare this against"
+            image=true
+          elif ! changed="$(gh api --paginate "repos/${GH_REPO}/compare/${BASE}...${HEAD}" --jq '.files[].filename')"; then
+            reason="the range ${BASE}...${HEAD} could not be read"
+            image=true
+          elif grep -qvE "$DOCS" <<<"$changed"; then
+            reason="something outside the documentation changed"
+            image=true
+          else
+            reason="only documentation changed"
+            image=false
+          fi
+
+          echo "image=${image}" >>"$GITHUB_OUTPUT"
+          if [ "$image" = true ]; then
+            printf 'The image is built: %s.\n' "$reason" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            printf 'No image: %s.\n' "$reason" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
   # `make check` and nothing this file adds to it: what is checked lives in the
   # Makefiles, so a rule that holds in CI holds at a desk.
   #
@@ -35,7 +97,7 @@ jobs:
       contents: read
     steps:
       # Before the checkout: without git, actions/checkout falls back to a
-      # tarball, and then there is no HEAD for a version to come from.
+      # tarball, and a tarball is not a repository.
       - name: Make the checkout a repository
         run: pacman -Sy --needed --noconfirm git
 
@@ -78,19 +140,24 @@ jobs:
     container: archlinux:latest
     permissions:
       contents: read
+      id-token: write # the provenance below is signed
+      attestations: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Make the checkout a repository
         run: pacman -Sy --needed --noconfirm git
 
       - uses: actions/checkout@v5
-        with:
-          # The version is `git describe`, which needs the tags to describe
-          # anything. Without them every build here would be named after a SHA.
-          fetch-depth: 0
 
       - uses: ./.github/actions/arch
         with:
           packages: make curl
+
+      # Out of oak.yaml, through make, so there is one reading of it and not a
+      # second one written into this file.
+      - id: version
+        run: echo "version=$(make -s version)" >>"$GITHUB_OUTPUT"
 
       - run: make tarball
 
@@ -107,21 +174,35 @@ jobs:
           done
           (cd dist && sha256sum -c ./*.sha256)
 
+      # Kept long enough on main that a tag pushed weeks later still finds them.
       - uses: actions/upload-artifact@v7
         with:
           name: tarball
-          path: dist/
-          retention-days: 7
+          path: |
+            dist/*.tar.gz
+            dist/*.tar.gz.sha256
+          retention-days: ${{ github.ref_name == 'main' && 90 || 7 }}
 
-  # An archiso build is a quarter of an hour, and a work in progress does not
-  # need an image. Run this workflow by hand on a branch to get one.
+      # Which commit and which run this file came out of, signed where it is
+      # made rather than where it is published — the run that assembled it is
+      # the only one that can say so truthfully.
+      - name: Sign the provenance
+        if: github.ref_name == 'main'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: dist/*.tar.gz
+
+      - name: What this built
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: .github/summary.sh "Arch OS ${VERSION}" dist/*.tar.gz
+
+  # An image, out of the file the release page will offer rather than out of a
+  # second build of the same sources.
   iso:
     name: ISO
-    needs: [check, security, build]
-    if: >-
-      github.event_name == 'workflow_dispatch'
-      || github.ref_name == 'main'
-      || startsWith(github.ref, 'refs/tags/v')
+    needs: [gate, check, security, build]
+    if: needs.gate.outputs.image == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     container:
@@ -130,14 +211,13 @@ jobs:
       options: --privileged
     permissions:
       contents: read
+      id-token: write
+      attestations: write
     steps:
       - name: Make the checkout a repository
         run: pacman -Sy --needed --noconfirm git
 
       - uses: actions/checkout@v5
-        with:
-          # The image is named after the same version the tarball is.
-          fetch-depth: 0
 
       - uses: ./.github/actions/arch
         with:
@@ -146,24 +226,36 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: tarball
-          path: tarball
+          path: dist
 
-      # The image is built out of the file that gets published, so what boots
-      # here is what a download unpacks. Kept out of dist/, which this job fills
-      # with the image.
+      # Unpacked where a local build would have left it, under the name the
+      # archive carries, so the command below is the one from the Makefile and
+      # not a version of it adapted to CI.
       - name: Unpack the release
         run: |
-          (cd tarball && sha256sum -c ./*.sha256)
-          mkdir -p release
-          tar -xzf tarball/*.tar.gz --strip-components=1 -C release
+          (cd dist && sha256sum -c ./*.sha256)
+          tar -xzf dist/*.tar.gz -C dist
 
       - run: make -C iso build
 
       - uses: actions/upload-artifact@v7
         with:
           name: iso
-          path: dist/
-          retention-days: 7
+          path: |
+            dist/*.iso
+            dist/*.iso.sha256
+          retention-days: ${{ github.ref_name == 'main' && 90 || 7 }}
+
+      - name: Sign the provenance
+        if: github.ref_name == 'main'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: dist/*.iso
+
+      - name: What this built
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: .github/summary.sh "Arch OS ${VERSION} image" dist/*.iso
 
   # The only job that finds out whether the thing actually starts.
   smoke:
@@ -188,9 +280,11 @@ jobs:
 
       - uses: actions/checkout@v5
 
+      # netpbm turns the console into something a browser will show: a failed
+      # boot is read off the picture, and nothing opens a .ppm.
       - uses: ./.github/actions/arch
         with:
-          packages: make qemu-base edk2-ovmf tesseract tesseract-data-eng
+          packages: make qemu-base edk2-ovmf tesseract tesseract-data-eng netpbm
 
       - uses: actions/download-artifact@v8
         with:
@@ -201,60 +295,30 @@ jobs:
 
       # On a failure this is the only account of what the machine was showing
       # when it gave up.
+      - name: The console, as a picture
+        if: always()
+        run: |
+          shopt -s nullglob
+          for frame in iso/smoke/*.ppm; do
+            pnmtopng "$frame" >"${frame%.ppm}.png"
+          done
+
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: console
-          path: iso/smoke/
+          path: iso/smoke/*.png
           if-no-files-found: ignore
           retention-days: 7
 
-  # Nothing is built here. A tag publishes the artefacts the jobs above checked
-  # and booted — the same bytes, under a version.
-  release:
-    name: Release
-    needs: [check, security, build, iso, smoke]
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: write # the release
-      id-token: write # the provenance below is signed
-      attestations: write
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: tarball
-          path: dist
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: iso
-          path: dist
-
-      # Two ways in, one outcome. A tag pushed from a terminal has no release
-      # yet, so this writes one; a release published from the web page has the
-      # tag and the notes already, so this only hangs the files on it. Either
-      # way the step can be run again on a half-finished run.
-      - name: Publish the release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ github.ref_name }}
+      - name: What the console showed
+        if: always()
         run: |
-          (cd dist && sha256sum -c ./*.sha256)
-          if gh release view "$VERSION" >/dev/null 2>&1; then
-            gh release upload "$VERSION" dist/* --clobber
+          if [ "$JOB" = success ]; then
+            said="Arch OS came up. The frame it was recognised in is the \`console\` artefact."
           else
-            gh release create "$VERSION" dist/* \
-              --title "Arch OS $VERSION" \
-              --generate-notes
+            said="The interface did not come up. Every frame of the console is in the \`console\` artefact."
           fi
-
-      # Which commit and which run these files came out of, signed.
-      - uses: actions/attest-build-provenance@v4
-        with:
-          subject-path: |
-            dist/*.iso
-            dist/*.tar.gz
+          printf '## Boot test\n\n%s\n\n' "$said" >>"$GITHUB_STEP_SUMMARY"
+        env:
+          JOB: ${{ job.status }}

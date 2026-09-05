@@ -27,7 +27,6 @@ rules:
 # Build output and the ISO's scratch space. Nothing under either is a source
 # file — see /Makefile and iso/build.sh.
 ignore: |
-  /release/
   /dist/
   /.dev/
   /.oak/

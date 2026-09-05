@@ -1,9 +1,12 @@
 # Turns a release (the root Makefile's `build` target) into a bootable ISO.
 # There is nothing to build here without one already in place.
 
-RELEASE_DIR ?= ../release
-DIST_DIR    ?= ../dist
-VERSION     ?= $(shell git -C .. describe --tags --always --dirty 2>/dev/null || echo dev)
+DIST_DIR ?= ../dist
+
+# Which build to ship. A release is named after the version it declares, so the
+# folder it lies in follows from that declaration and needs no argument here.
+VERSION     ?= $(shell sed -n 's/^version:[[:space:]]*//p' ../oak.yaml)
+RELEASE_DIR ?= $(DIST_DIR)/arch-os-$(VERSION)
 
 # The image `make smoke` boots: the newest one built, so `make build && make
 # smoke` needs no argument.
@@ -17,8 +20,10 @@ SCRIPTS := build.sh smoke.sh $(wildcard src/usr/local/bin/*)
 
 .PHONY: build smoke lint fmt check clean
 
+# What the image is called comes out of the release it ships, not from here —
+# see build.sh.
 build:
-	RELEASE_DIR=$(RELEASE_DIR) DIST_DIR=$(DIST_DIR) SNAPSHOT_VERSION=$(VERSION) ./build.sh
+	RELEASE_DIR=$(RELEASE_DIR) DIST_DIR=$(DIST_DIR) ./build.sh
 
 # Boots the image and waits for the interface to come up in it. See smoke.sh.
 smoke:

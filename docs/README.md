@@ -199,12 +199,6 @@ Installer and Recovery are modules: data, not programs. One binary runs either o
 
 </details>
 
-## Why this exists
-
-Arch OS is a side project and it installs the system I use every day, at work and at home, as a project lead and cloud native engineer. It started with Ubuntu, back in 2005.
-
-The two halves are written differently on purpose. Oak is Go, written with AI assistance and reviewed line by line before anything is merged, and it lives in a repository of its own so that anybody can build something like this without inheriting my Arch Linux opinions. The Arch Linux side (Installer, Recovery, shell scripts, YAML) is handwritten and grew out of the Installer that existed before there was a runtime to drive it.
-
 ## Credits
 
 Many thanks for these projects and the people behind them!

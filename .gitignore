@@ -1,7 +1,7 @@
-# Build output — see /Makefile. Nothing under here is a source file: release/ is
-# Arch OS as a machine runs it, dist/ is what a person downloads, and .dev/ is
-# the same shape as release/ made of symlinks, for running against the sources.
-/release/
+# Build output — see /Makefile. Nothing under here is a source file: dist/ holds
+# everything a build produces, the product as a machine runs it and the files a
+# person downloads, and .dev/ is that same shape made of symlinks, for running
+# against the sources.
 /dist/
 /.dev/
 

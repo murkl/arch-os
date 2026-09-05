@@ -15,15 +15,29 @@ inputs:
 runs:
   using: composite
   steps:
-    # A key nothing can hit, over a prefix that almost always does: the restore
-    # takes the newest cache this job wrote, and the save at the end writes a
-    # fresh one. For the ISO job the interesting packages are the ones pacstrap
-    # fetches *during* the build, which only a save at the end ever sees.
+    # The key is the package list and the week, so the ordinary run is an exact
+    # hit and writes no cache at all — the two restore-keys below are what a
+    # fresh week or a changed list falls back to, and it then saves once. For
+    # the ISO job the interesting packages are the ones pacstrap fetches *during*
+    # the build, which only that save ever sees, so a week is also how long the
+    # image's own downloads are kept.
+    - id: cache-key
+      shell: bash
+      env:
+        PACKAGES: ${{ inputs.packages }}
+      run: |
+        {
+          echo "packages=$(printf '%s' "$PACKAGES" | sha256sum | cut -c1-12)"
+          echo "week=$(date -u +%G-%V)"
+        } >>"$GITHUB_OUTPUT"
+
     - uses: actions/cache@v6
       with:
         path: /var/cache/pacman/pkg
-        key: pacman-${{ github.job }}-${{ github.run_id }}
-        restore-keys: pacman-${{ github.job }}-
+        key: pacman-${{ github.job }}-${{ steps.cache-key.outputs.packages }}-${{ steps.cache-key.outputs.week }}
+        restore-keys: |
+          pacman-${{ github.job }}-${{ steps.cache-key.outputs.packages }}-
+          pacman-${{ github.job }}-
 
     - shell: bash
       env:
@@ -37,6 +51,5 @@ runs:
         paccache -rk2 -q
 
         # The checkout belongs to the runner's user and this container is root,
-        # which git reads as somebody else's repository. Every version here is
-        # `git rev-parse --short HEAD`, so it has to be able to.
+        # which git reads as somebody else's repository.
         git config --global --add safe.directory "$GITHUB_WORKSPACE"

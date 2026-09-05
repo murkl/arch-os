@@ -2,9 +2,10 @@
 # Turns a built release into a bootable ISO: stock Arch `releng`, patched so it
 # boots straight into the installer.
 #
-# RELEASE_DIR points at the release to ship, DIST_DIR at where the download goes,
-# SNAPSHOT_VERSION names the build. The defaults are what the root Makefile uses.
-# The finished image and its checksum land in DIST_DIR.
+# RELEASE_DIR points at the release to ship and DIST_DIR at where the image goes;
+# the defaults are what the root Makefile uses. What the image is called is read
+# out of the release itself, so it is named after what is inside it. The finished
+# image and its checksum land in DIST_DIR.
 set -e
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -16,8 +17,12 @@ set -e
 SUDO=""
 [ "$(id -u)" -eq 0 ] || SUDO="sudo"
 
-RELEASE_DIR="${RELEASE_DIR:-../release}"
+# `version:` in a product declaration - the one place this project's version is
+# written down, and what everything a build produces is named after.
+declared_version() { sed -n 's/^version:[[:space:]]*//p' "$1"; }
+
 DIST_DIR="${DIST_DIR:-../dist}"
+RELEASE_DIR="${RELEASE_DIR:-${DIST_DIR}/arch-os-$(declared_version ../oak.yaml)}"
 DOWNLOAD_DIR="./download"
 ISO_DIR="./archiso"
 ISO_CONFIG="releng" # baseline or releng
@@ -33,10 +38,6 @@ AIRFS_OPT="${ISO_DIR}/airootfs/opt/arch-os"
 # used when there is one; CI has none and fetches it instead.
 PLYMOUTH_THEME_REPO="https://github.com/murkl/plymouth-theme-arch-os"
 : "${PLYMOUTH_THEME_SRC:=../../plymouth-theme-arch-os/src}"
-
-# The tag this commit carries, or the nearest one with the distance and the
-# short SHA after it, and "dev" outside a repository.
-: "${SNAPSHOT_VERSION:=$(git -C .. describe --tags --always --dirty 2>/dev/null || echo dev)}"
 
 TEMP_DIR="$(mktemp -d)"
 
@@ -85,12 +86,16 @@ echo "### Initialize Build"
 [ -f "${RELEASE_DIR}/oak.yaml" ] || { echo "Error: ${RELEASE_DIR}/oak.yaml not found - run 'make build' first" >&2 && exit 1; }
 [ -f "${RELEASE_DIR}/modules/installer/installer.yaml" ] || { echo "Error: ${RELEASE_DIR}/modules/installer/installer.yaml not found - run 'make build' first" >&2 && exit 1; }
 [ -f "${RELEASE_DIR}/modules/recovery/recovery.yaml" ] || { echo "Error: ${RELEASE_DIR}/modules/recovery/recovery.yaml not found - run 'make build' first" >&2 && exit 1; }
+
+# The release says what it is, so the image cannot end up named after anything
+# else than what it ships.
+: "${VERSION:=$(declared_version "${RELEASE_DIR}/oak.yaml")}"
+echo "building Arch OS ${VERSION} from ${RELEASE_DIR}"
 mkdir -p "$DOWNLOAD_DIR"
 unmount_leftovers "${WORK_DIR}"
 unmount_leftovers "${ISO_DIR}"
 ${SUDO} rm -rf "${ISO_DIR}" "${WORK_DIR}"
 mkdir -p "${ISO_DIR}"
-mkdir -p "${RELEASE_DIR}"
 
 # Install dependencies
 ! command -v /usr/bin/mkarchiso &>/dev/null && ${SUDO} pacman -S --noconfirm archiso
@@ -233,10 +238,10 @@ sed -i "/^bootmodes=(/,/)$/c\\bootmodes=('uefi.systemd-boot')" "${ISO_DIR}/profi
 # carries it as archisolabel - and a volume identifier is upper case letters,
 # digits and underscores, at most 32 of them. A version is none of that once it
 # is a tag, so anything else in it becomes an underscore.
-ISO_LABEL="$(printf 'ARCH_OS_%s' "$SNAPSHOT_VERSION" | tr -c '[:alnum:]' '_' | tr '[:lower:]' '[:upper:]' | cut -c1-32)"
+ISO_LABEL="$(printf 'ARCH_OS_%s' "$VERSION" | tr -c '[:alnum:]' '_' | tr '[:lower:]' '[:upper:]' | cut -c1-32)"
 
 set_key_value "${ISO_DIR}/profiledef.sh" iso_name "arch-os"
-set_key_value "${ISO_DIR}/profiledef.sh" iso_version "$SNAPSHOT_VERSION"
+set_key_value "${ISO_DIR}/profiledef.sh" iso_version "$VERSION"
 set_key_value "${ISO_DIR}/profiledef.sh" iso_label "$ISO_LABEL"
 set_key_value "${ISO_DIR}/profiledef.sh" iso_application "Arch OS ISO"
 
