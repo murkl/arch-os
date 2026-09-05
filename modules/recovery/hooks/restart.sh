@@ -5,5 +5,5 @@
 
 simulating && return 0
 
-unmount_system || true
+close_target || true
 systemctl reboot

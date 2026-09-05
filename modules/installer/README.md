@@ -136,7 +136,7 @@ Bash scripts Oak calls by name. A hook that exists gets used, one that does not 
 
 The last two turn leaving the Installer into a choice rather than a plain exit: the ISO boots specifically to run this, so quitting by accident would leave a machine that has answered nothing.
 
-**Note:** _Both call `unmount_target` first, so a machine shutting down does not take a half-written file system with it, and both do nothing at all under `--debug`._
+**Note:** _Both call `close_target` first, so a machine shutting down does not take a half-written file system with it, and both do nothing at all under `--debug`._
 
 The third way out is `console:` in `installer.yaml`, which runs nothing: the Installer closes and the machine keeps running. See **[iso/](../../iso)**.
 

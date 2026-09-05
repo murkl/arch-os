@@ -16,4 +16,4 @@ if cp -f "$MODULE_CONF" "$target" 2>/dev/null; then
 fi
 cp -f "$MODULE_LOG" "${home}/installer.log" 2>/dev/null || true
 
-arch-chroot "$MNT" chown -R "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" "/home/${ARCH_OS_USERNAME}"
+own_home

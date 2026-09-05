@@ -4,7 +4,7 @@ simulating && return 0
 
 arch-chroot "$MNT" useradd -m -G wheel -s /bin/bash "$ARCH_OS_USERNAME"
 mkdir -p "${MNT}/home/${ARCH_OS_USERNAME}/.config" "${MNT}/home/${ARCH_OS_USERNAME}/.local/share"
-arch-chroot "$MNT" chown -R "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" "/home/${ARCH_OS_USERNAME}"
+own_home
 
 # A drop-in rather than an edit of /etc/sudoers: that file belongs to the sudo
 # package, and a syntax error in it locks the account out of root entirely.

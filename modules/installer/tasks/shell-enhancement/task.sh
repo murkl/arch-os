@@ -103,4 +103,4 @@ fish -c 'fish_config theme choose Nord && echo y | fish_config theme save'
 FIRST
 fi
 
-arch-chroot "$MNT" chown -R "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" "/home/${ARCH_OS_USERNAME}"
+own_home

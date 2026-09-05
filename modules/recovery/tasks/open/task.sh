@@ -5,7 +5,7 @@
 simulating && return 0
 
 # A second attempt starts from whatever the first one left behind.
-unmount_system
+close_target
 
 root="$(root_part)"
 if [ ! -b "$root" ]; then
@@ -35,6 +35,6 @@ fi
 if [ "$ARCH_OS_RECOVERY_FILESYSTEM" = "btrfs" ]; then
     mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvolid=5" "$(root_device)" "$BTRFS_TOP"
 fi
-mount_system
+mount_target
 
 echo "opened ${ARCH_OS_RECOVERY_DISK} at ${MNT}"

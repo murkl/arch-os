@@ -114,39 +114,40 @@ if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
 fi
 
 # Under automatic login GDM never sees a password, so PAM has none to unlock
-# the keyring with. GNOME's own answer is a login keyring without a password:
-# the daemon opens it at the start of the session and nothing ever asks. The
-# data is still behind disk encryption wherever that applies by default.
+# the login keyring with - except on an encrypted disk, where it takes the LUKS
+# passphrase instead: systemd-cryptsetup leaves it in the kernel keyring,
+# pam_gdm hands it on, and pam_gnome_keyring unlocks the login keyring with it,
+# or creates it with it at the first login. That wants the systemd hook, a
+# rd.luks.name command line and a hardware clock in UTC, which is how this
+# installer builds a system anyway, so there is nothing to arrange for it.
+# https://wiki.archlinux.org/title/GNOME/Keyring#PAM_step
 #
-# Created here rather than from the first-login script, which would race
-# GDM's own PAM hook on the same login.
-# https://wiki.archlinux.org/title/GNOME/Keyring#Passwords_are_not_remembered
-if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
-    keyrings="/home/${ARCH_OS_USERNAME}/.local/share/keyrings"
+# Without encryption there is no passphrase to hand on, and GNOME's own answer
+# is a login keyring with no password at all: the daemon opens it at the start
+# of the session and nothing ever asks. Its contents are then stored
+# unencrypted, which is the trade a machine that logs itself in has made
+# already.
+#
+# Created from here rather than from the first-login script, which would race
+# GDM's own PAM hook on that same login.
+if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ] && [ "$ARCH_OS_ENCRYPTION_ENABLED" != "true" ]; then
+    keyring="/home/${ARCH_OS_USERNAME}/.local/share/keyrings/login.keyring"
 
-    # The daemon needs a session bus and a runtime directory, and there is
-    # neither inside a chroot. /tmp is a tmpfs arch-chroot mounts itself, so
-    # none of this reaches the installed system.
-    runtime="/tmp/keyring"
-    arch-chroot "$MNT" install -d -m 700 -o "$ARCH_OS_USERNAME" -g "$ARCH_OS_USERNAME" "$runtime"
-    as_user "XDG_RUNTIME_DIR=${runtime} dbus-run-session -- gnome-keyring-daemon --unlock <<< ''" || true
+    # A session bus, which a chroot has as little as it has a session. The
+    # daemon makes its own socket directory and needs nothing else.
+    as_user 'dbus-run-session -- gnome-keyring-daemon --unlock <<< ""' || true
 
-    # It forks before it has written the keyring, so the file exists a moment
-    # before it actually holds one.
+    # It forks before it has written the keyring, and stays behind once it has -
+    # and a process of the target still running is a mount that will not come
+    # down at the end.
     for _ in $(seq 50); do
-        [ -s "${MNT}${keyrings}/login.keyring" ] && break
+        [ -s "${MNT}${keyring}" ] && break
         sleep 0.1
     done
-
-    if [ -s "${MNT}${keyrings}/login.keyring" ]; then
-        echo "created a passwordless login keyring"
-    else
-        echo "could not pre-create a passwordless login keyring, the desktop will ask for one on first use" >&2
-    fi
-
-    # It stays behind once it's done, and a process of the target still
-    # running is a mount that will not come down at the end.
     arch-chroot "$MNT" pkill -u "$ARCH_OS_USERNAME" -x gnome-keyring-d || true
+
+    [ -s "${MNT}${keyring}" ] ||
+        echo "no passwordless login keyring was created, the desktop will ask for one on first use" >&2
 fi
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -261,4 +262,4 @@ gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen "['<Super>F11']
 FIRST
 fi
 
-arch-chroot "$MNT" chown -R "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" "/home/${ARCH_OS_USERNAME}"
+own_home

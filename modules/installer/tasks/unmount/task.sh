@@ -3,4 +3,4 @@
 
 simulating && return 0
 
-unmount_target
+close_target

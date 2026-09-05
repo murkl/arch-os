@@ -30,6 +30,10 @@ CRYPT=recovery
 # apart.
 BTRFS_OPTS="defaults,noatime,compress=zstd"
 
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# SIMULATION
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 # --debug runs the recovery without touching the machine. Each task guards
 # itself with `simulating && return 0` as its first line, so a unit is only
 # ever skipped as a whole.
@@ -76,13 +80,13 @@ root_device() {
 fstype() { lsblk -no FSTYPE "$1" 2>/dev/null | head -n1; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# MOUNTING
+# MOUNTING & CLOSING
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 # The installed system, mounted exactly as it mounts itself. Shared because a
 # rollback takes it apart to replace @ and then has to put it back together
 # exactly as open left it.
-mount_system() {
+mount_target() {
     local target
     target="$(root_device)"
     if [ "$ARCH_OS_RECOVERY_FILESYSTEM" = "btrfs" ]; then
@@ -97,33 +101,38 @@ mount_system() {
 
 # ---------------------------------------------------------------------------------------------------
 
-# Everything this recovery had mounted, taken back down, and the disk locked
-# again. Run before mounting as well as after, because a second attempt
-# starts from a target the first may have left half open - and on the way
-# out of the machine. Nothing here being mounted is the normal case, not an
-# error.
-unmount_system() {
-    swapoff -a || true
-    sync
-    if mountpoint -q "$MNT" && ! umount -A -R "$MNT"; then
-        free_target
-        umount -A -R "$MNT"
-    fi
-    mountpoint -q "$BTRFS_TOP" && umount -R "$BTRFS_TOP"
-    [ -e "/dev/mapper/${CRYPT}" ] && cryptsetup close "$CRYPT"
-    echo "closed ${MNT}"
-}
-
-# Whatever still has the system open, logged and then killed - typically a
-# process a chroot left running. The sleep gives the kernel time to actually
-# let go of the files afterwards.
+# Everything under /mnt, taken back down. Nothing mounted is not an error: a
+# rollback takes the system apart with this in the middle of a run, and a second
+# attempt starts from whatever the first one left behind.
+#
+# Whatever still holds the system is named in the log and then killed -
+# typically a process a chroot left running. The second attempt is left
+# unguarded on purpose: that one is a real failure.
 #
 # -M carries the whole safety of this: without it, a target that isn't
 # itself a mount point resolves to the file system containing it, which on
 # the live image is the live image itself.
-free_target() {
+unmount_target() {
+    mountpoint -q "$MNT" || return 0
+    umount -A -R "$MNT" && return 0
+
     echo "the target did not unmount, what is holding it:"
     fuser -Mvm "$MNT" || true
     fuser -Mkm "$MNT" || true
-    sleep 2
+    sleep 2 # the kernel needs a moment to actually let go of the files
+
+    umount -A -R "$MNT"
+}
+
+# The system closed for good: swap off, everything unmounted and the disk locked
+# again. Run before opening as well as after, because a second attempt starts
+# from a target the first may have left half open - and on the way out of the
+# machine.
+close_target() {
+    swapoff -a || true
+    sync
+    unmount_target || return 1 # a system still standing cannot be locked either
+    mountpoint -q "$BTRFS_TOP" && umount -R "$BTRFS_TOP"
+    [ -e "/dev/mapper/${CRYPT}" ] && cryptsetup close "$CRYPT"
+    echo "closed ${MNT}"
 }

@@ -4,5 +4,5 @@
 
 simulating && return 0
 
-unmount_target || echo "restarting with the target still mounted"
+close_target || echo "restarting with the target still mounted"
 reboot

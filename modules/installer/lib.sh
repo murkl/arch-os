@@ -15,6 +15,9 @@ MNT=/mnt
 # The lookup tables used below, next to this file.
 DATA="$(dirname "${BASH_SOURCE[0]}")/data"
 
+# The folder of the task that called it, where a unit keeps the files it ships with.
+where() { dirname "${BASH_SOURCE[1]}"; }
+
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # SIMULATION & NETWORK
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -39,11 +42,6 @@ simulating() {
 is_online() {
     curl -Lsf --connect-timeout 5 --max-time 15 https://archlinux.org >/dev/null
 }
-
-# ---------------------------------------------------------------------------------------------------
-
-# The folder of the task that called it, where a unit keeps the files it ships with.
-where() { dirname "${BASH_SOURCE[1]}"; }
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # LOCALE LOOKUP & AUTO VALUES
@@ -140,10 +138,6 @@ auto_microcode() {
     fi
 }
 
-# Autologin follows disk encryption: the disk is already unlocked by a
-# password at boot, so a second one at the login screen protects nothing.
-auto_autologin() { printf '%s' "${ARCH_OS_ENCRYPTION_ENABLED:-false}"; }
-
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 # TARGET DISK & CONSOLE
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -166,7 +160,10 @@ is_auto "$ARCH_OS_VCONSOLE_FONT" && ARCH_OS_VCONSOLE_FONT="$(auto_font)"
 is_auto "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" && ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$(auto_layout)"
 is_auto "$ARCH_OS_REFLECTOR_COUNTRY" && ARCH_OS_REFLECTOR_COUNTRY="$(auto_country)"
 is_auto "$ARCH_OS_MICROCODE" && ARCH_OS_MICROCODE="$(auto_microcode)"
-is_auto "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" && ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED="$(auto_autologin)"
+
+# Autologin follows disk encryption: the disk is already unlocked by a password
+# at boot, so a second one at the login screen protects nothing.
+is_auto "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" && ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED="${ARCH_OS_ENCRYPTION_ENABLED:-false}"
 
 ARCH_OS_VCONSOLE_FONT="$(not_none "$ARCH_OS_VCONSOLE_FONT")"
 ARCH_OS_REFLECTOR_COUNTRY="$(not_none "$ARCH_OS_REFLECTOR_COUNTRY")"
@@ -317,8 +314,16 @@ as_user() {
     arch-chroot "$MNT" /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "$1"
 }
 
+# The new home, given back to the account it belongs to. Most of what ends up in
+# it is written from out here rather than through as_user, and everything
+# written from out here belongs to root until this has run - a home the user
+# cannot write to is a desktop that comes up broken.
+own_home() {
+    arch-chroot "$MNT" chown -R "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" "/home/${ARCH_OS_USERNAME}"
+}
+
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
-# FIRST LOGIN & LEAVING
+# FIRST LOGIN
 # ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 # Some desktop settings only live in the user's own settings database, and
@@ -329,36 +334,45 @@ FIRST_LOGIN="${MNT}/home/${ARCH_OS_USERNAME}/.first-login"
 
 on_first_login() { cat >>"$FIRST_LOGIN"; }
 
-# ---------------------------------------------------------------------------------------------------
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# CLOSING THE TARGET
+# ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-# Everything the installation mounted, taken back down in the right order -
-# named once here so the unmount task, the restart and the shutdown can't
-# disagree.
+# Everything under /mnt, taken back down. Nothing mounted is not an error: this
+# runs before the first partition is made as well as after the last file is
+# written.
 #
-# Flushed before anything comes down, so a target that refuses to unmount is a
-# mount left standing rather than a file half written. The second attempt is
-# left unguarded on purpose: that one is a real failure.
-unmount_target() {
-    swapoff -a || true
-    sync
-    if ! umount -A -R "$MNT"; then
-        free_target
-        umount -A -R "$MNT"
-    fi
-    [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && cryptsetup close cryptroot
-    echo "unmounted"
-}
-
-# Whatever still has the target open, logged and then killed - typically a
-# process a package hook or a chroot left running. The sleep gives the kernel
-# time to actually let go of the files afterwards.
+# Whatever still holds the target is named in the log and then killed -
+# typically a process a package hook or a chroot left running. The second
+# attempt is left unguarded on purpose: that one is a real failure.
 #
 # -M carries the whole safety of this: without it, a target that isn't itself
 # a mount point resolves to the file system containing it, which on the live
 # image is the live image itself.
-free_target() {
+unmount_target() {
+    mountpoint -q "$MNT" || return 0
+    umount -A -R "$MNT" && return 0
+
     echo "the target did not unmount, what is holding it:"
     fuser -Mvm "$MNT" || true
     fuser -Mkm "$MNT" || true
-    sleep 2
+    sleep 2 # the kernel needs a moment to actually let go of the files
+
+    umount -A -R "$MNT"
+}
+
+# The target closed for good: swap off, everything unmounted and the encrypted
+# volume locked again - named once here so the init task, the unmount task, the
+# restart and the shutdown can't disagree.
+#
+# Flushed before anything comes down, so a target that refuses to unmount is a
+# mount left standing rather than a file half written. The volume is closed on
+# finding it open rather than on the answer, because a previous attempt leaves
+# one open whatever this run was told.
+close_target() {
+    swapoff -a || true
+    sync
+    unmount_target || return 1 # a target still standing cannot be locked either
+    [ -e /dev/mapper/cryptroot ] && cryptsetup close cryptroot
+    echo "closed ${MNT}"
 }

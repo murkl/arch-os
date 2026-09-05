@@ -35,6 +35,6 @@ paru | paru-bin | paru-git)
         echo '# One password for a whole batch of builds, not one per package.'
         echo 'SudoLoop'
     } >"${config}/paru.conf"
-    arch-chroot "$MNT" chown -R "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" "/home/${ARCH_OS_USERNAME}/.config"
+    own_home
     ;;
 esac

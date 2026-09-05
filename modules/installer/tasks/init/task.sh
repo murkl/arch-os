@@ -18,17 +18,16 @@ timedatectl set-ntp true
 # stalling partway through a download.
 [ "$ARCH_OS_ECN_ENABLED" = "false" ] && sysctl net.ipv4.tcp_ecn=0
 
-# What a previous attempt left behind. All of it may fail, since on a first run there
-# is nothing to close.
-swapoff -a || true
-umount -R "${MNT}/recovery" || true
-if [[ "$(umount -f -A -R "$MNT" 2>&1)" == *"target is busy"* ]]; then
-    fuser -km "$MNT" || true
-    umount -f -A -R "$MNT" || true
-fi
-cryptsetup close cryptroot || true
-cryptsetup close cryptrecovery || true
+# What a previous attempt left behind, closed the same way this run will close
+# the target at the end. A first run finds nothing to close, which is not an
+# error - but a target that will not come down is, because the next stage
+# partitions the disk under it.
+close_target
+
+# An LVM group the live image activated on its own, off whatever was on the disk
+# before. Nothing here creates one; an active one holds the partition open.
 vgchange -an || true
+
 rm -f /var/lib/pacman/db.lck
 
 # A stale keyring is the commonest reason a fresh install refuses to verify a

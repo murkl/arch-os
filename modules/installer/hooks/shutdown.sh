@@ -5,5 +5,5 @@
 
 simulating && return 0
 
-unmount_target || true
+close_target || true
 systemctl poweroff
