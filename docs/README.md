@@ -4,7 +4,7 @@
 
 <h1>Arch OS</h1>
 
-<p><strong>A minimal and robust Arch Linux base — a text console or a GNOME desktop — with an Installer and a Recovery on one bootable image.</strong></p>
+<p><strong>A minimal and robust Arch Linux base, as a text console or a GNOME desktop, with an Installer and a Recovery on one bootable image.</strong></p>
 
 <p>
   <img src="https://img.shields.io/github/v/release/murkl/arch-os?style=for-the-badge&label=RELEASE&color=1793d1" alt="">
@@ -16,9 +16,9 @@
 
 <p>Boot the latest <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and the Installer starts on its own. No keyboard layout to load, no network to configure, no command to type.</p>
 
-<p>Or run this on any Linux machine to write that ISO to a USB device — and from a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a>, the same command starts the Installer instead:</p>
+<p>Or run this on any Linux machine to write that ISO to a USB device. From a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> the same command starts the Installer instead:</p>
 
-**`curl -Ls raw.githubusercontent.com/murkl/arch-os/main/get.sh | bash`**
+**`curl -Ls bit.ly/arch-os | bash`**
 
 <p><b>
 
@@ -30,34 +30,20 @@
 
 ## Features
 
-**Core**
-
-- Minimal Arch Linux base, UEFI only
-- Kernel: linux-zen, linux, linux-lts or linux-hardened
-- File system btrfs or ext4, with disk encryption (LUKS2)
-- Boot loader: systemd-boot or GRUB
-- Secure Boot with own keys and a signed Unified Kernel Image, re-signed on every kernel update
-- Btrfs snapshots (Snapper), taken before every package change
-- Dual boot aware partitioning
-- One password for encryption, root and user
-- Swap with zram-generator (zstd), systemd OOM, fstrim, microcode, NetworkManager
-- Mirrors ranked by country (reflector)
-- English and German interface
-
-**Desktop** (optional)
-
-- GNOME, Wayland optimized
+- Minimal Arch Linux base, UEFI only, with linux-zen, linux, linux-lts or linux-hardened
+- File system btrfs or ext4, boot loader systemd-boot or GRUB, dual boot aware partitioning
+- Disk encryption (LUKS2) and Secure Boot with own keys, signed again on every kernel update
+- One password for encryption, root and user, and automatic login behind an encrypted disk
+- Btrfs snapshots taken before every package change (Snapper), restored from the desktop (Btrfs Assistant)
+- GNOME, Wayland optimized, with graphics driver (Mesa, Intel i915, NVIDIA, AMD or ATI), or a text console with nothing graphical on it
+- Desktop extras: codecs, fonts, printing, network protocols, everyday applications and Samba shares
 - Slim version: GNOME Core Apps only
-- Graphics driver: Mesa, Intel i915, NVIDIA, AMD or ATI
-- Extras: codecs, fonts, printing, network protocols and everyday applications
-- Samba public and home share
-- Automatic login, following disk encryption by default — one password prompt in total
-
-**On top**
-
-- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), Manager, Shell Enhancement (bash, zsh or fish) and automatic housekeeping
+- Swap with zram-generator (zstd), systemd OOM, fstrim, microcode, NetworkManager and mirrors ranked by country (reflector)
+- AUR helper, 32-bit support (multilib), virtual machine support and automatic housekeeping
+- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager and Shell Enhancement (bash, zsh or fish)
 - Arch OS Recovery on the same image, works without a network connection
-- AUR helper, 32-bit support (multilib) and virtual machine support
+- Two starting points, Desktop or Minimal, with every question behind them still answerable
+- English and German interface
 
 ## Installation
 
@@ -69,15 +55,15 @@ An internet connection is required: most packages are downloaded during the inst
 - Or let this download, verify and write it for you, on any Linux machine:
 
 ```
-curl -Ls raw.githubusercontent.com/murkl/arch-os/main/get.sh | bash
+curl -Ls bit.ly/arch-os | bash
 ```
 
-**Note:** _Downloads are kept in `~/Downloads` and reused, so a second run costs no bandwidth._
+**Note:** _Downloads are kept in `~/Downloads` and reused, so a second run costs no bandwidth. `DOWNLOAD_DIR` points somewhere else, `DEBUG=true` writes no device, and `MODE=install` or `MODE=create` picks the half by hand instead of by where the command runs: `curl -Ls bit.ly/arch-os | DEBUG=true bash`_
 
 ### 2. Set the Firmware up
 
 - Boot mode: UEFI
-- Secure Boot: off — the Installer sets it up again for you afterwards
+- Secure Boot: off, the Installer sets it up again for you afterwards
 
 ### 3. Boot from the USB Device
 
@@ -85,16 +71,7 @@ The Installer starts on its own. It asks for the interface language, then whethe
 
 <p><img src="screenshots/setup.png" alt="The page that asks which of the two to open"></p>
 
-**Note:** _From a booted official **[Arch Linux ISO](https://archlinux.org/download/)** the same `get.sh` command downloads the latest release and starts it directly. Which of its two halves runs is worked out from where it runs._
-
-| Variable | Description |
-| --- | --- |
-| `MODE=install` | Run the Installer here, instead of writing a USB device |
-| `MODE=create` | Write a USB device, instead of running the Installer here |
-| `DEBUG=true` | Touch no hardware: downloads still happen, no device is written, the run is simulated |
-| `DOWNLOAD_DIR=<dir>` | Where downloads are kept (default `~/Downloads`) |
-
-**Note:** _These are read by the shell on the right of the pipe: `curl -Ls … | DEBUG=true bash`_
+**Note:** _From a booted official **[Arch Linux ISO](https://archlinux.org/download/)** the same command downloads the latest release and starts it here instead of writing a device._
 
 ### 4. Reuse your Answers
 
@@ -150,12 +127,12 @@ Arch OS is four parts, kept deliberately apart:
 
 | Part | Description |
 | --- | --- |
-| [Oak](https://github.com/murkl/oak) | The runtime, a repository of its own. One Go binary that draws the interface, asks the questions and runs the shell scripts in order. Knows nothing about Arch Linux, disks or packages |
+| [Oak](https://github.com/murkl/oak) | The runtime, a repository of its own. One binary that draws the interface, asks the questions and runs the shell scripts in order. Knows nothing about Arch Linux, disks or packages |
 | [`modules/installer/`](../modules/installer) | Everything that does the actual work: one `installer.yaml`, the questions it asks and a folder per step |
 | [`modules/recovery/`](../modules/recovery) | The same shape again, for repairing a system already on disk |
 | [`iso/`](../iso) | Turns a build of the three into a bootable image |
 
-Installer and Recovery are modules: data, not programs. One binary runs either of them, and a release is that binary with a `modules/` folder and an `oak.yaml` beside it. The build downloads the binary rather than compiling it, so nothing here needs a Go toolchain.
+Installer and Recovery are modules: data, not programs. One binary runs either of them, `oak --module=installer` opens one outright, and a release is that binary with `oak.yaml` and `modules/` beside it. The build downloads the binary rather than compiling it, so nothing here needs a Go toolchain.
 
 - Adding a question is a few lines of YAML
 - Adding a step is a folder with two files
@@ -173,4 +150,5 @@ Many thanks to these projects and the people behind them!
 
 - **[Arch Linux](https://archlinux.org)**
 - **[GNOME](https://www.gnome.org)**
+- **[Oak](https://github.com/murkl/oak)**
 - **[Bubble Tea](https://github.com/charmbracelet/bubbletea)** by charm

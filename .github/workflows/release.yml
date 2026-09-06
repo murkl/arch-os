@@ -180,7 +180,7 @@ jobs:
           Boot the ISO on the machine to install, or run this from a booted Arch Linux live image:
 
           \`\`\`
-          curl -Ls raw.githubusercontent.com/murkl/arch-os/main/get.sh | bash
+          curl -Ls bit.ly/arch-os | bash
           \`\`\`
 
           | File | Description |

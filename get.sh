@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Arch OS, from one command:
 #
-#   curl -Ls raw.githubusercontent.com/murkl/arch-os/main/get.sh | bash
+#   curl -Ls bit.ly/arch-os | bash
 #
 # Where it runs decides what it does. On a booted Arch live image there is a
 # machine to work on, so it fetches the latest release and starts it, which
@@ -10,7 +10,7 @@
 # USB device instead - the one that boots the other case.
 #
 # MODE=install|create picks the half by hand, DEBUG=true keeps both off the
-# hardware — no device is written, and the program is started with --debug.
+# hardware: no device is written, and the program is started with --debug.
 #
 # POSIX sh, because this runs before anything else of the project has been
 # downloaded, on whatever shell the machine happens to have.
@@ -58,7 +58,7 @@ usage() {
     cat <<EOF
 Arch OS - https://github.com/${REPO}
 
-  curl -Ls raw.githubusercontent.com/murkl/arch-os/main/get.sh | bash
+  curl -Ls bit.ly/arch-os | bash
 
 On a booted Arch live image it fetches the latest release and starts it, which
 asks whether to install or to repair. Anywhere else it fetches the latest ISO
@@ -70,7 +70,7 @@ and writes it to a USB device, so this machine can make the one that boots it.
 
 These are read by the shell on the right of the pipe:
 
-  curl -Ls raw.githubusercontent.com/murkl/arch-os/main/get.sh | DEBUG=true bash
+  curl -Ls bit.ly/arch-os | DEBUG=true bash
 EOF
 }
 
