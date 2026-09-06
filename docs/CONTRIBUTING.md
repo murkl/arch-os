@@ -4,25 +4,23 @@ Everything here follows from one rule: **a commit is built once**. The ISO on th
 
 ## Branches
 
+One long-lived branch. Work happens on a branch off it and comes back through a pull request.
+
 ```mermaid
 flowchart LR
-    F["feature/*"] -->|"squash merge"| M["main"]
-    N["neo"] -->|"squash merge"| M
-    M -->|"push a tag"| R["v2.0.0<br/>GitHub Release"]
+    M["main"] -->|branch off| F["feature/*"]
+    F -->|pull request| C["CI checks it"]
+    C -->|squash merge| M2["main<br/>one commit per change"]
+    M2 -->|tag v2.0.0| R["Release<br/>artefacts of that commit"]
 
-    style M fill:#1793d1,stroke:#1793d1,color:#fff
     style R fill:#1793d1,stroke:#1793d1,color:#fff
 ```
 
-| Branch | Description |
-| --- | --- |
-| `main` | The one long-lived branch. Everything arrives by squash merge, so one change is one commit and the history stays linear |
-| `neo` | The integration branch of the current rework. Every push runs the whole pipeline, image and boot test included |
-| `feature/*` | Where work happens, branched off `main`. Checked as a pull request |
+- Branch off `main`, name it `feature/<what>`
+- Open a pull request. CI checks it
+- **Merge with squash.** One pull request is one commit, so `main` stays a straight line and its title is what ends up in the history
 
 A release is a tag, not a branch that reached a state. `main` never has to *be* the released version.
-
-**Note:** _Pushes are watched on `main` and `neo` only. Everything else is checked as a pull request, so a branch and its pull request never both run. Dropping `neo` once it is merged is one line in `.github/workflows/ci.yml`._
 
 ## The Version
 
@@ -42,21 +40,9 @@ This is what lets a tag publish without building. The version is decided in the 
 
 ## Releasing
 
-### 1. Raise the Version
-
-On the branch the work is on, before the merge:
-
-```
-version: 2.0.0
-```
-
-### 2. Merge into main
-
-Squash merge the pull request. The title becomes the commit, so name it after the version.
-
-The run on `main` checks, builds, boots and keeps its artefacts for 90 days. It publishes nothing.
-
-### 3. Create the Tag
+1. **Raise `version:`** in `oak.yaml`, on the branch the work is on
+2. **Squash merge** the pull request. Name it after the version, since the title becomes the commit. The run on `main` checks, builds, boots and keeps its artefacts for 90 days — it publishes nothing
+3. **Push the tag:**
 
 ```
 git switch main && git pull
@@ -69,13 +55,11 @@ That starts the Release workflow. It finds the run that built this commit, downl
 | File | Description |
 | --- | --- |
 | `arch-os-2.0.0-x86_64.iso` | The bootable image |
-| `arch-os-2.0.0-x86_64.iso.sha256` | Its checksum |
 | `arch-os-2.0.0-x86_64.tar.gz` | The Oak binary, `oak.yaml` and both modules, for a stock Arch live ISO |
-| `arch-os-2.0.0-x86_64.tar.gz.sha256` | Its checksum |
 
-**Note:** _`get.sh` picks both downloads out of the latest release by extension. The ISO is written to a USB device, the tarball is unpacked and started on a booted Arch Linux live image._
+Each has a `.sha256` beside it. `get.sh` picks both out of the latest release by extension.
 
-**Note:** _A release can be written on the web page instead. Publishing it creates the tag, the workflow starts on that and hangs the files on the release that is already there._
+**Note:** _A release can be written on the web page instead. Publishing it creates the tag, and the workflow starts on that._
 
 **Note:** _Nothing is built from a tag. If the run on `main` failed, re-run it first, then start the Release workflow by hand (Actions ▸ Release ▸ Run workflow) with the tag._
 
@@ -101,23 +85,16 @@ flowchart TD
 
 | Job | Where | Description |
 | --- | --- | --- |
-| `Check` | every run | `make check`: every script linted, every module loaded, every catalog checked |
+| `Check` | every run | `make check`: every script linted, both modules loaded, every catalog checked |
 | `Security` | every run | A secret scan of the repository |
-| `Build` | every run | The release and the tarball, then unpacks the tarball and loads both modules out of it |
-| `ISO` | `main`, `neo`, on demand | The bootable image, from the artefact `Build` produced |
+| `Build` | every run | The release and the tarball, then unpacks the tarball and loads the product out of it |
+| `ISO` | `main`, on demand | The bootable image, from the artefact `Build` produced |
 | `Boot test` | after `ISO` | Boots that image and waits for the first page |
 | `Release` | a tag on `main` | Hangs the artefacts of that commit's run on the release page |
 
 `Build` is the only job that assembles anything, and the tarball is the only thing it hands on. `ISO` unpacks that tarball instead of assembling again, so the image holds the very file the release page offers. `Release` builds nothing at all.
 
-The dashed jobs are the expensive ones. An archiso build is a quarter of an hour.
-
-| Where | Image built |
-| --- | --- |
-| `main` | Yes. Every commit there has to be one a tag can publish |
-| `neo` | Yes |
-| A pull request | No. A pull request is judged on the three jobs above it |
-| Run by hand | Yes, on whatever branch it was started from |
+The dashed jobs are the expensive ones — an archiso build is a quarter of an hour — so a pull request is judged on the three above them.
 
 **Note:** _To build an image from any branch, run the workflow on it by hand (Actions ▸ CI ▸ Run workflow)._
 
@@ -125,20 +102,13 @@ The dashed jobs are the expensive ones. An archiso build is a quarter of an hour
 
 **Note:** _No job needs a Go toolchain. The runtime is **[Oak](https://github.com/murkl/oak)**, a project of its own, and every job that needs it downloads the release the Makefile pins._
 
-### Caching
-
-| What | How |
-| --- | --- |
-| Packages | One pacman cache per job, keyed by its package list and the week. The ordinary run is an exact hit and writes nothing back |
-| The tarball | Built once, downloaded by `ISO` and by `Release` |
-| The image | Built once, downloaded by `Boot test` and by `Release` |
-| Provenance | Signed in the run that made the file, not in the one that publishes it |
-
 ## Doing the Work
 
 ```
 make check            # everything that has to pass before a commit
 make run              # both modules on this machine, MODULE=recovery for one outright
+make run ARGS=--debug # ...without touching the machine
+make inspect          # load both modules and print the order they resolve to
 make build            # the release, as a machine runs it
 make tarball          # the release, as a stock Arch ISO downloads it
 make iso              # the release, as a bootable image
@@ -158,12 +128,10 @@ dist/
 │   ├── oak.yaml                         the product
 │   └── modules/                         Installer and Recovery
 ├── arch-os-2.0.0-x86_64.tar.gz          the folder above, as one file
-├── arch-os-2.0.0-x86_64.tar.gz.sha256
-├── arch-os-2.0.0-x86_64.iso             the bootable image
-└── arch-os-2.0.0-x86_64.iso.sha256
+└── arch-os-2.0.0-x86_64.iso             the bootable image
 ```
 
-`make build` writes the folder. `make tarball` and `make iso` each turn it into one of the downloads. The folder carries the name the tarball unpacks to, so a download and the build it came from are the same thing under the same name.
+`make build` writes the folder. `make tarball` and `make iso` each turn it into one of the downloads, and each writes a `.sha256` beside itself.
 
 Install the required packages:
 
@@ -178,7 +146,7 @@ sudo pacman -S --needed make curl shellcheck shfmt yamllint actionlint \
 | `make iso` | `archiso` and root |
 | `make -C iso smoke` | `qemu-base`, `edk2-ovmf`, `tesseract`, `tesseract-data-eng` |
 
-**Note:** _Every command that runs a module downloads the Oak binary into `.oak/` once and keeps it. The release it comes from is `OAK_VERSION` in the root Makefile, written without the `v` its tag carries. After raising it, `make oak` fetches the new one._
+**Note:** _The first command that needs the runtime downloads it into `.oak/` and keeps it. The release it comes from is `OAK_VERSION` in the root Makefile, written without the `v` its tag carries. After raising it, `make oak` fetches the new one._
 
 **Note:** _CI installs the same packages and runs the same commands in an Arch container. There is no second definition of green._
 
@@ -190,26 +158,62 @@ sudo pacman -S --needed make curl shellcheck shfmt yamllint actionlint \
 - The bootable image: **[iso](../iso)**
 - The frame around all of it: **[Oak](https://github.com/murkl/oak)**, which is a repository of its own
 
-**[➜ See AGENTS.md](../AGENTS.md)** for the same ground written as rules: the layering, the task contract, what may be edited on an installed system and how everything here is written. It is meant for a coding agent and is the shortest way in for a person too.
+**[➜ See AGENTS.md](../AGENTS.md)** for the same ground written as rules. It is meant for a coding agent and is the shortest way in for a person too.
 
-## Words on Screen
+## Translating
 
-Every sentence the program shows is translatable and the English sentence is its own key, so writing one is writing the source text and the key at once. Reword it and the old translation is marked fuzzy rather than dropped.
+Everything on screen can be translated and a translation is useful long before it is finished: **the English sentence is the key**. A message no catalog answers is shown exactly as it was written, so the first line you fill in is the first line somebody reads in their own language.
 
-The catalogs are gettext `.po` files. The template a module's catalogs are filled in from is generated out of the loaded module.
+The catalogs are gettext `.po` files, the format Weblate, Crowdin, Transifex and Pontoon all read. One component per module:
+
+| Component | Template | Catalogs |
+| --- | --- | --- |
+| Installer | `modules/installer/locales/installer.pot` | `modules/installer/locales/<code>.po` |
+| Recovery | `modules/recovery/locales/recovery.pot` | `modules/recovery/locales/<code>.po` |
+
+The frame's own words — buttons, key hints, the labels on a failure report — belong to **[Oak](https://github.com/murkl/oak)** and are translated there. Both catalogs are in use at once and behave as one, with the module's laid over Oak's.
+
+**Note:** _The `.pot` files are generated out of the module itself and never edited by hand. `make locales` rewrites them._
+
+### Adding a Language
+
+Copy the template, fill in the `msgstr` lines, open a pull request:
 
 ```
-make locales   # after adding, rewording or deleting anything on screen
+cp modules/installer/locales/installer.pot modules/installer/locales/fr.po
 ```
 
-**Note:** _`make check` refuses a stale template and a translation that has lost a placeholder._
+Nothing else has to be declared anywhere. The language is offered as soon as the file exists, and a machine whose own locale matches it opens in it.
 
-**[➜ See Translating](TRANSLATING.md)**
+- `msgid "English"` is not a word on screen. Its translation is the name of your language **in your language** — `Deutsch`, `Français` — and that is what the language picker lists
+- `msgstr ""` left empty means *not translated yet*, never *translate this to nothing*. The English is shown instead, which is the right outcome
+- `#, fuzzy` means the English changed under an existing translation. It is not shown while the flag is there. Check it, correct it, remove the flag
+
+### What a Translation must keep
+
+| Element | Description |
+| --- | --- |
+| `%s`, `%d` | Values filled in when the message is printed. Every one in the English has to appear in the translation, of the same kind and in the same order |
+| `{{ARCH_OS_DISK}}` | An answer filled in by name. Leave the braces and the name exactly as they are |
+| `⏎ ↑↓ esc · …` | Keys and separators in the hint lines. Translate the words around them, keep the marks |
+| Line breaks | A blank line between two paragraphs is a blank line on screen. Line breaks inside a paragraph are rewrapped to the terminal |
+
+**Note:** _A message with a placeholder is flagged `#, c-format` and `make check` runs `msgfmt --check-format` over every catalog. A `%s` dropped or changed fails the build rather than the installation._
+
+### What the Console can draw
+
+The Installer runs on the Linux virtual console before any desktop exists, and a console font holds at most 512 glyphs. What is safe is **ASCII and the Latin-1 letters**: `äöüß`, `éèê`, `ñ`, `ç`, `å`, plus the handful of box and arrow marks the interface already uses.
+
+- Supported: German, French, Spanish, Italian, Portuguese, Dutch and the Nordic languages
+- Not supported: Polish, Czech, Turkish, Greek, Cyrillic or anything written in a script of its own
+
+**Note:** _Making those languages possible is a change to the image — a console font loaded for the chosen language — not to the catalog. Open an issue if you want to translate into one._
 
 ## Commits
 
 - Imperative mood (`Add`, `Fix`, `Refactor`), one logical change per commit
 - Commits are squashed into `main`, so the pull request title is what ends up in the history
+- After adding, rewording or deleting anything on screen, run `make locales` in the same change
 
 ## Setting the Repository up
 

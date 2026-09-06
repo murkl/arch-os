@@ -1,16 +1,13 @@
-# Build output — see /Makefile. Nothing under here is a source file: dist/ holds
-# everything a build produces, the product as a machine runs it and the files a
-# person downloads, and .dev/ is that same shape made of symlinks, for running
-# against the sources.
+# Build output — see /Makefile. dist/ holds everything a build produces, .dev/ is
+# that same shape made of symlinks, for running against the sources.
 /dist/
 /.dev/
 
 # The runtime, downloaded from its own project rather than built here.
 /.oak/
 
-# What a local run leaves beside itself, wherever it runs from. Each module
-# names its answers and its log after itself, and Oak keeps what belongs to
-# every module in one of its own.
+# What a local run leaves beside itself: Oak's own answers, and one pair per
+# module, each named after the module.
 oak.conf
 installer.conf
 installer.conf.old

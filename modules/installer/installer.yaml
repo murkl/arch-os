@@ -1,22 +1,15 @@
-# What this installer is, what it asks, and in what order it works.
+# What this installer is, what it asks, and in what order it works. Everything
+# else in this module is found by its own name — lib.sh, data/, locales/,
+# hooks/, tasks/ — and nothing points at it from here.
 #
-# Oak, the runtime beside it, knows nothing about Arch Linux. Everything else
-# in this module is found by its own name — lib.sh, data/, locales/, hooks/,
-# tasks/ — and nothing points at it from here.
-#
-# Repairing a system that is already on a disk is a module of its own, with a
-# declaration of its own: see ../recovery. What this and its neighbours are
-# called together and what they look like is ../../oak.yaml, not here.
+# Every key this file may use:
+# https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
+# The module's only name, read wherever the interface says what is happening.
 title: Arch OS Installer
 
-# The sentence under this module's row on the page that asks which to open.
+# The sentence under its row on the page that asks which module to open.
 description: Put Arch Linux on this machine.
-
-# What one run of this is called. The interface reads it out wherever it says
-# what is happening — the row that starts it, the last warning, the clock while
-# it runs. ../recovery names its own run in its own words.
-run: Installation
 
 # Read on the way out, when the installer closes and the machine keeps running.
 # There is a root shell behind it on this image — see iso/.
@@ -47,14 +40,12 @@ stages:
 # machine that has never answered anything, and every value it fills in is an
 # ordinary answer from the next page on.
 presets:
-  - id: system
-    title: Setup
+  - title: Setup
     description: Choose what kind of system to install. Every detail can still be changed afterwards.
     options:
       # Each option names every setting it has an opinion about, including the
       # ones it turns off.
-      - id: desktop
-        title: Desktop
+      - title: Desktop
         description: A GNOME desktop with drivers, codecs, fonts and everyday applications.
         values:
           ARCH_OS_DESKTOP: gnome
@@ -73,8 +64,7 @@ presets:
           ARCH_OS_BTRFS_ASSISTANT_ENABLED: true
           ARCH_OS_AUR_HELPER: paru
 
-      - id: minimal
-        title: Minimal
+      - title: Minimal
         description: Arch Linux on the console only. No desktop, no extras, nothing beyond what you choose.
         values:
           ARCH_OS_DESKTOP: none
@@ -96,8 +86,7 @@ presets:
       # Not a set of answers written out here but one fetched: a configuration
       # shared at the end of an earlier installation. A starting point like the
       # two above, so a row here rather than a page of its own.
-      - id: shared
-        title: Online (paste.rs)
+      - title: Online (paste.rs)
         description: Load every answer from a configuration shared at the end of an earlier installation.
         asks: ARCH_OS_CONFIG_SOURCE
         apply: ./tasks/share-config/import.sh
@@ -105,47 +94,13 @@ presets:
 # Everything this installer needs to know, in the order it is asked. Required and
 # unanswered is what makes the installer ask; an answer is what makes it stop.
 # Each name reaches every script as an environment variable.
-#
-# Every key a row may use — see https://github.com/murkl/oak for the full
-# rules:
-#
-#   name         the environment variable — ARCH_OS_UPPER_SNAKE_CASE
-#   title        the row's label
-#   description  the paragraph under it, on the page that asks the question
-#   group        heading over this row and the ones after it, until the next
-#   type         text (default), bool, or secret — a secret is never written
-#                to the answer file and is asked right before the run
-#   default      the value this starts with; empty means no default
-#   required     the installer keeps asking until this has a value
-#   values       a fixed list of answers, written out here
-#   command      a fixed list of answers, printed one per line by this shell —
-#                mutually exclusive with values; a single line starting with
-#                ./ or ../ names a script file instead of inline shell (same
-#                for prefill and apply below)
-#   free         label of a text box under a list of answers, for a value the
-#                list only suggests; closed sets leave this out
-#   prefill      shell that prints a suggested answer into the box — a hint,
-#                never the answer itself
-#   apply        shell that puts the answer into effect on the live system
-#                right away, for the one setting that has to take effect
-#                before anything after it can be typed
-#   pattern      a regex the answer must match
-#   error        the sentence shown when it doesn't, or when required and
-#                empty — leave out for the generic message
-#   conditions   `VAR == value` / `VAR != value`, one or a list; all must hold
-#   first        asked before everything else the program does, even the
-#                network screen — sparingly
-#   blind        keeps the filter box open from the start, since no key is
-#                known to type what it looks like before the layout loads —
-#                only meaningful together with first
 variables:
   # ─── Region ────────────────────────────────────────────────────────────────
   #
   # What the installed system is set to, not the words this installer is read in.
-  #
-  # The console keyboard is asked `first` because it is the keyboard everything
-  # after it is typed on — a passphrase typed on the wrong layout is not the
-  # passphrase. The rest follows the language on `auto`.
+  # Everything here follows the language on `auto`, except the console keyboard,
+  # which is asked `first`: a passphrase typed on the wrong layout is not the
+  # passphrase.
   - name: ARCH_OS_LOCALE_LANG
     title: Language and region
     description: |
@@ -174,7 +129,6 @@ variables:
     group: Region
     required: true
     first: true
-    blind: true
     apply: load_console_keyboard
     command: |
       # The auto row carries what auto currently comes to, so it says what it is
@@ -225,7 +179,7 @@ variables:
 
   # ─── Identity ──────────────────────────────────────────────────────────────
   - name: ARCH_OS_USERNAME
-    title: User name
+    title: Username
     description: |
       The account you will log in with. Lowercase letters, digits, hyphens and
       underscores only. It cannot start with a digit.
@@ -245,7 +199,7 @@ variables:
     required: true
 
   - name: ARCH_OS_HOSTNAME
-    title: Host name
+    title: Hostname
     description: The name this machine has on the network.
     group: Identity
     default: arch-os
@@ -620,15 +574,11 @@ variables:
 
   # ─── Sharing ───────────────────────────────────────────────────────────────
   #
-  # The two ends of one idea: an installation that says where its answers can be
-  # picked up, and a starting point that picks them up. Neither is a question
-  # here — the address is answered by the installation itself, and the code only
-  # by somebody who chose the row that asks for it.
-  #
-  # There is no switch above them either. Whether this installation goes online is
-  # asked at the end of the run, by the task that would do it: a switch set while
-  # the disk is being partitioned is consent collected before there is anything to
-  # consent to.
+  # Neither is a question on any page: the address is answered by the
+  # installation itself, the code only by somebody who chose the starting point
+  # that asks for it. Whether anything goes online at all is asked at the end of
+  # the run, by the task that would do it — a switch set while the disk is being
+  # partitioned collects consent before there is anything to consent to.
   - name: ARCH_OS_CONFIG_URL
     title: Shared at
     description: |

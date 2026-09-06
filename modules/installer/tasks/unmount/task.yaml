@@ -1,4 +1,4 @@
-name: Unmount everything
+title: Unmount everything
 stage: finish
 needs: [reboot]
 confirm: |

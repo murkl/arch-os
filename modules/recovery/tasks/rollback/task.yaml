@@ -1,4 +1,4 @@
-name: Go back to a snapshot
+title: Go back to a snapshot
 stage: repair
 conditions: ARCH_OS_RECOVERY_FILESYSTEM == btrfs
 

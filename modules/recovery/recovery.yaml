@@ -1,21 +1,15 @@
-# What this recovery is, what it asks, and in what order it works.
+# What this recovery is, what it asks, and in what order it works. Everything
+# else in this module is found by its own name — lib.sh, locales/, hooks/,
+# tasks/ — and nothing points at it from here.
 #
-# Oak, the runtime beside it, knows nothing about Arch Linux. Everything else
-# in this module is found by its own name — lib.sh, locales/, hooks/, tasks/ —
-# and nothing points at it from here.
-#
-# Putting Arch Linux on a disk is a module of its own, with a declaration of its
-# own: see ../installer. What this and its neighbours are called together and
-# what they look like is ../../oak.yaml, not here.
+# Every key this file may use:
+# https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
+# The module's only name, read wherever the interface says what is happening.
 title: Arch OS Recovery
 
-# The sentence under this module's row on the page that asks which to open.
+# The sentence under its row on the page that asks which module to open.
 description: Repair an Arch Linux system that is already on a disk.
-
-# What one run of this is called. Without it the interface would fall back to the
-# only thing an unnamed run can be, and call a repair an installation.
-run: Recovery
 
 # Read on the way out, when the recovery closes and the machine keeps running.
 # There is a root shell behind it on this image — see iso/.
@@ -40,16 +34,12 @@ stages:
 # Everything this recovery needs to know, in the order it is asked. Required and
 # unanswered is what makes it ask; an answer is what makes it stop. Each name
 # reaches every script as an environment variable.
-#
-# The keys a row may use are the installer's — see ../installer/installer.yaml
-# for the full list, and https://github.com/murkl/oak for the rules.
 variables:
   # ─── The keyboard ──────────────────────────────────────────────────────────
   #
-  # Asked `first`, before everything else this program does, because it is the
-  # keyboard the password below is typed on — and a passphrase typed on the
-  # wrong layout is not the passphrase. It is loaded on the live system the
-  # moment it is given and never written to the system being repaired.
+  # Asked `first`, because it is the keyboard the password below is typed on. It
+  # is loaded on the live system the moment it is given and never written to the
+  # system being repaired.
   - name: ARCH_OS_RECOVERY_KEYMAP
     title: Console keyboard
     description: |
@@ -58,7 +48,6 @@ variables:
     group: Region
     required: true
     first: true
-    blind: true
     command: localectl list-keymaps
     prefill: |
       # The keyboard the live image was started with. The Arch image records it
@@ -74,10 +63,10 @@ variables:
 
   # ─── The system to repair ──────────────────────────────────────────────────
   #
-  # The recovery asks for the disk and nothing else it can read for itself. The
-  # two that follow are read off that disk and open on the answer, and are still
-  # questions because behind LUKS nothing can be read until the password is
-  # given — and because a disk laid out some other way has to stay answerable.
+  # Only the disk is really asked for; the rest is read off it and opens on that
+  # answer. They stay questions because behind LUKS nothing can be read until
+  # the password is given, and a disk laid out some other way has to stay
+  # answerable by hand.
   - name: ARCH_OS_RECOVERY_DISK
     title: Disk
     description: |

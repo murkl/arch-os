@@ -1,4 +1,4 @@
-name: Open a shell in the system
+title: Open a shell in the system
 stage: repair
 needs: [kernel]
 tty: true

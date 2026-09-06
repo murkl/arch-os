@@ -18,7 +18,7 @@ timedatectl set-timezone "$ARCH_OS_TIMEZONE" || true
 # The hardware clock, set from a system clock that init put on network time.
 arch-chroot "$MNT" hwclock --systohc
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 # Language and keyboard.
 echo "LANG=${ARCH_OS_LOCALE_LANG}.UTF-8" >"${MNT}/etc/locale.conf"
@@ -48,7 +48,7 @@ fi
 
 write_vconsole
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 # Name.
 echo "$ARCH_OS_HOSTNAME" >"${MNT}/etc/hostname"
@@ -58,7 +58,7 @@ echo "$ARCH_OS_HOSTNAME" >"${MNT}/etc/hostname"
     echo '::1        localhost.localdomain  localhost'
 } >"${MNT}/etc/hosts"
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 # Swap. Compressed swap in memory: faster than a swap partition, and no SSD
 # wear. https://wiki.archlinux.org/title/Zram

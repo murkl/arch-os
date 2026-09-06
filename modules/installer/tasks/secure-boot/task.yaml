@@ -1,4 +1,4 @@
-name: Sign the boot chain
+title: Sign the boot chain
 stage: finalize
 needs: [first-login, snapshot-hook, tidy-up]
 conditions:

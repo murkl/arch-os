@@ -1,4 +1,4 @@
-name: Keep a copy of this installation
+title: Keep a copy of this installation
 stage: finish
 
 # The last thing done to the installation itself, and the moment the run says so:

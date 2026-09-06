@@ -15,7 +15,7 @@ msgstr ""
 msgid "English"
 msgstr "Deutsch"
 
-#. what this program is called
+#. what this program is called, and what one run of it is called
 #: installer.yaml
 msgid "Arch OS Installer"
 msgstr "Arch OS Installer"
@@ -24,11 +24,6 @@ msgstr "Arch OS Installer"
 #: installer.yaml
 msgid "Put Arch Linux on this machine."
 msgstr "Arch Linux auf diesen Rechner bringen."
-
-#. what one run of it is called
-#: installer.yaml
-msgid "Installation"
-msgstr "Installation"
 
 #. how to get back in, read on the way out to the console
 #: installer.yaml
@@ -46,42 +41,42 @@ msgstr ""
 "\n"
 "Alles auf diesem Datenträger wird gelöscht und das lässt sich nicht rückgängig machen. Bisher wurde nichts verändert."
 
-#. starting point system: the question
+#. a starting point: the question
 #: installer.yaml
 msgid "Setup"
 msgstr "Einrichtung"
 
-#. starting point system: what it means
+#. starting point Setup: what it means
 #: installer.yaml
 msgid "Choose what kind of system to install. Every detail can still be changed afterwards."
 msgstr "Wähle, welche Art von System installiert werden soll. Jede Einzelheit lässt sich danach noch ändern."
 
-#. starting point system, desktop: the row
+#. starting point Setup: a row
 #: installer.yaml
 msgid "Desktop"
 msgstr "Desktop"
 
-#. starting point system, desktop: what choosing it does
+#. starting point Setup, Desktop: what choosing it does
 #: installer.yaml
 msgid "A GNOME desktop with drivers, codecs, fonts and everyday applications."
 msgstr "Ein GNOME-Desktop mit Treibern, Codecs, Schriften und den Programmen für den Alltag."
 
-#. starting point system, minimal: the row
+#. starting point Setup: a row
 #: installer.yaml
 msgid "Minimal"
 msgstr "Minimal"
 
-#. starting point system, minimal: what choosing it does
+#. starting point Setup, Minimal: what choosing it does
 #: installer.yaml
 msgid "Arch Linux on the console only. No desktop, no extras, nothing beyond what you choose."
 msgstr "Arch Linux nur auf der Konsole. Kein Desktop, keine Extras, nichts Ungefragtes."
 
-#. starting point system, shared: the row
+#. starting point Setup: a row
 #: installer.yaml
 msgid "Online (paste.rs)"
 msgstr "Online (paste.rs)"
 
-#. starting point system, shared: what choosing it does
+#. starting point Setup, Online (paste.rs): what choosing it does
 #: installer.yaml
 msgid "Load every answer from a configuration shared at the end of an earlier installation."
 msgstr "Alle Antworten aus einer Konfiguration übernehmen, die am Ende einer früheren Installation geteilt wurde."
@@ -155,7 +150,7 @@ msgstr "Land eingeben"
 
 #. ARCH_OS_USERNAME: the question
 #: installer.yaml
-msgid "User name"
+msgid "Username"
 msgstr "Benutzername"
 
 #. ARCH_OS_USERNAME: what it means
@@ -185,7 +180,7 @@ msgstr "Gilt für dein Konto, für das Konto root und — bei aktiver Verschlüs
 
 #. ARCH_OS_HOSTNAME: the question
 #: installer.yaml
-msgid "Host name"
+msgid "Hostname"
 msgstr "Rechnername"
 
 #. ARCH_OS_HOSTNAME: what it means
@@ -773,6 +768,9 @@ msgstr ""
 "Das neue System aushängen und in der Live-Umgebung bleiben?\n"
 "\n"
 "Verloren geht so oder so nichts, die Installation ist fertig. Eingehängt zu lassen lohnt nur, wenn du von hier aus weiterarbeiten willst."
+
+#~ msgid "Installation"
+#~ msgstr "Installation"
 
 #~ msgid "paste.rs - Online"
 #~ msgstr "paste.rs - Online"

@@ -12,7 +12,7 @@ chroot_pacman_install "${packages[@]}"
 
 mkdir -p "${MNT}/root/.config/fastfetch" "${home}/.config/fastfetch"
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 # Aliases, for both root and the user: it is the same shell either way.
 # {{PKG}} and {{SUDO}} are the only part the answers decide - an AUR helper
@@ -28,7 +28,7 @@ fi
 sed -e "s|{{PKG}}|${pkg}|g" -e "s|{{SUDO}}|${sudo_prefix}|g" "${data}/aliases" |
     tee "${MNT}/root/.aliases" "${home}/.aliases" >/dev/null
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 # bash is always configured: it is the shell every task and hook runs in.
 #
@@ -66,7 +66,7 @@ fish)
     ;;
 esac
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 # The prompt theme is fetched rather than shipped, so it can be improved
 # without a new release of this installer. A machine that cannot reach it
@@ -80,14 +80,14 @@ if ! curl -Lf --connect-timeout 5 --max-time 30 \
 fi
 cp "${home}/.config/starship.toml" "${MNT}/root/.config/starship.toml"
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 # nanorc goes into each home rather than /etc/nanorc, which belongs to the
 # nano package and would leave a .pacnew to merge on every update.
 mkdir -p "${MNT}/root/.config/nano" "${home}/.config/nano"
 tee "${MNT}/root/.config/nano/nanorc" "${home}/.config/nano/nanorc" <"${data}/nanorc" >/dev/null
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 # Settings only reachable once a session exists.
 if [ "$ARCH_OS_DESKTOP" != "none" ]; then

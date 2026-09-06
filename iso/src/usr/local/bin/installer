@@ -3,4 +3,4 @@
 # same run arch-os starts, with the answer already given.
 set -eu
 
-exec arch-os --installer "$@"
+exec arch-os --module=installer "$@"

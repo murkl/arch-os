@@ -1,25 +1,17 @@
 # SHARED LIBRARY | Sourced by Oak before every task and every hook
 #
-# Everything here is needed by more than one script and must not be answered
-# twice - a second copy of a mount option or a partition number is a recovery
-# that puts the system back together differently from how it was taken apart.
-# Anything only one task needs stays in that task instead.
-#
-# Because this is sourced, every script here is plain shell with no preamble
-# of its own - the ERR trap that stops on the first failure belongs to Oak.
-# Nothing in this file prints for a person to read, only to the log.
-#
-# Nothing here asks anything either: the keyboard, the disk, the password and
-# the snapshot are questions in recovery.yaml, and this file is only ever
-# handed the answers.
+# Only what more than one script must agree about - a second copy of a mount
+# option or a partition number is a recovery that puts the system back together
+# differently from how it was taken apart. Anything one task needs stays in that
+# task. Nothing here prints for a person to read, only to the log.
 
 # Where the system being repaired is mounted.
 MNT=/mnt
 
-# A btrfs installation is two views of one disk: the system as it runs,
-# mounted at MNT, and the top level holding @ and the snapshots, where a
-# rollback happens. Kept out of MNT on purpose - it must not end up inside a
-# chroot, and it must survive MNT being unmounted.
+# A btrfs installation is two views of one disk: the system as it runs, mounted
+# at MNT, and the top level holding @ and the snapshots, where a rollback
+# happens. Kept out of MNT on purpose - it must not end up inside a chroot, and
+# it must survive MNT being unmounted.
 BTRFS_TOP=/run/arch-os-recovery
 
 # What the unlocked disk is called under /dev/mapper.
@@ -30,16 +22,13 @@ CRYPT=recovery
 # apart.
 BTRFS_OPTS="defaults,noatime,compress=zstd"
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 # SIMULATION
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 
 # --debug runs the recovery without touching the machine. Each task guards
-# itself with `simulating && return 0` as its first line, so a unit is only
-# ever skipped as a whole.
-#
-# DEBUG is Oak's own: every script is handed it whether the command line
-# mentioned it or not, so this never tests an empty string.
+# itself with `simulating && return 0` as its first line, so a unit is only ever
+# skipped as a whole.
 
 simulating() {
     [ "$DEBUG" = "true" ] || return 1
@@ -47,9 +36,9 @@ simulating() {
     sleep 1 # keep the step visible in the interface instead of flashing past
 }
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 # WHAT THE DISK IS CALLED
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 
 # Names a partition of a disk. Devices whose name ends in a digit (nvme0n1,
 # mmcblk0, loop0) get a p between the disk and the partition number.
@@ -79,9 +68,9 @@ root_device() {
 # offer, and again after, to check what turned up is what was answered.
 fstype() { lsblk -no FSTYPE "$1" 2>/dev/null | head -n1; }
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 # MOUNTING & CLOSING
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 
 # The installed system, mounted exactly as it mounts itself. Shared because a
 # rollback takes it apart to replace @ and then has to put it back together
@@ -99,19 +88,16 @@ mount_target() {
     mount --mkdir "$(boot_part)" "${MNT}/boot"
 }
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 # Everything under /mnt, taken back down. Nothing mounted is not an error: a
-# rollback takes the system apart with this in the middle of a run, and a second
-# attempt starts from whatever the first one left behind.
+# rollback takes the system apart with this in the middle of a run. Whatever
+# still holds it is named in the log and then killed, and the second attempt is
+# left unguarded on purpose - that one is a real failure.
 #
-# Whatever still holds the system is named in the log and then killed -
-# typically a process a chroot left running. The second attempt is left
-# unguarded on purpose: that one is a real failure.
-#
-# -M carries the whole safety of this: without it, a target that isn't
-# itself a mount point resolves to the file system containing it, which on
-# the live image is the live image itself.
+# -M carries the whole safety of this: without it a target that isn't itself a
+# mount point resolves to the file system containing it, which on the live image
+# is the live image itself.
 unmount_target() {
     mountpoint -q "$MNT" || return 0
     umount -A -R "$MNT" && return 0
@@ -126,8 +112,7 @@ unmount_target() {
 
 # The system closed for good: swap off, everything unmounted and the disk locked
 # again. Run before opening as well as after, because a second attempt starts
-# from a target the first may have left half open - and on the way out of the
-# machine.
+# from a target the first may have left half open.
 close_target() {
     swapoff -a || true
     sync

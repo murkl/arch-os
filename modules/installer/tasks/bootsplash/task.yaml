@@ -1,4 +1,4 @@
-name: Install the boot splash
+title: Install the boot splash
 stage: system
 # After the 32-bit repository, because switching that on upgrades the whole
 # system — and the theme is built from source against the packages installed.

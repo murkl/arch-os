@@ -4,4 +4,4 @@
 # of the modules beside it this is.
 set -eu
 
-exec arch-os --recovery "$@"
+exec arch-os --module=recovery "$@"

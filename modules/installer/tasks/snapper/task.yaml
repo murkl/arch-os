@@ -1,4 +1,4 @@
-name: Set up snapshots
+title: Set up snapshots
 stage: base
 needs: [services]
 conditions:

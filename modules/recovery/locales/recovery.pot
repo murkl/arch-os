@@ -18,7 +18,7 @@ msgstr ""
 msgid "English"
 msgstr ""
 
-#. what this program is called
+#. what this program is called, and what one run of it is called
 #: recovery.yaml
 msgid "Arch OS Recovery"
 msgstr ""
@@ -26,11 +26,6 @@ msgstr ""
 #. what it is, in one sentence, on the page that offers it
 #: recovery.yaml
 msgid "Repair an Arch Linux system that is already on a disk."
-msgstr ""
-
-#. what one run of it is called
-#: recovery.yaml
-msgid "Recovery"
 msgstr ""
 
 #. how to get back in, read on the way out to the console

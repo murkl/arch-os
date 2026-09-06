@@ -1,4 +1,4 @@
-name: Share files with other machines
+title: Share files with other machines
 stage: desktop
 needs: [desktop-gnome]
 conditions:

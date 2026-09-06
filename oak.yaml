@@ -1,25 +1,12 @@
-# What Arch OS is, as the runtime that draws it reads it: the product its
-# modules add up to.
+# What Arch OS is, as the runtime that draws it reads it: what no module can
+# answer for its neighbours. Which modules there are is not written down here —
+# they are whatever folders sit in modules/ beside the binary.
 #
-# It sits beside the binary rather than inside any module because no module can
-# answer for its neighbours. An installer and a recovery are two programs and
-# one product, and the wordmark on the way in, the colour on every page and the
-# name over the question of which to open are the product's.
-#
-# It is also the whole of what makes a run of Oak Arch OS rather than something
-# else. Nothing here is compiled into that binary: a different name, a different
-# colour and a different set of modules is a different product out of the same
-# one — see https://github.com/murkl/oak.
-#
-# Which modules there are is not written down here. They are whatever folders
-# sit in modules/ beside the binary, each holding its own declaration — see
-# modules. Adding one is a folder; taking one away is deleting it. What every
-# module says about itself, including the name and the sentence under it on the
-# page that offers it, it says in that declaration.
+# https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
-# Over the pages drawn before a module has been opened — the language, and the
-# question of which of them to open. Not translated: it is a name.
-name: Arch OS
+# Over the pages drawn before a module has been opened. Not translated: it is a
+# name.
+title: Arch OS
 
 # The version of this project, and the only place it is written down. The build
 # reads it, both downloads and the ISO label are named after it, and a release

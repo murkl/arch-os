@@ -1,4 +1,4 @@
-name: Share this configuration
+title: Share this configuration
 stage: finish
 needs: [copy-config]
 

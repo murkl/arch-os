@@ -1,4 +1,4 @@
-name: Enter the new system
+title: Enter the new system
 stage: finish
 needs: [share-config]
 confirm: |

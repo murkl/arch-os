@@ -1,4 +1,4 @@
-name: Restart into the new system
+title: Restart into the new system
 stage: finish
 needs: [chroot]
 confirm: |

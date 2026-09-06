@@ -1,4 +1,4 @@
-name: Install the graphics driver
+title: Install the graphics driver
 stage: desktop
 needs: [desktop-gnome]
 conditions:

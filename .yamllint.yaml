@@ -1,12 +1,9 @@
-# What counts as sound yaml here, for `make lint`.
+# What counts as sound yaml here, for `make lint`. Three of yamllint's defaults
+# are switched off, each a convention of the linter rather than a rule of the
+# format:
 #
-# Three of yamllint's defaults are switched off. Each is a convention of the
-# linter rather than a rule of the format, and each would ask for the source to
-# be rewritten for the tool's sake:
-#
-#   line-length  the modules' declarations and the translation catalogs are
-#                prose. A sentence broken at column 80 reads worse and diffs
-#                worse.
+#   line-length  the modules' declarations and the catalogs are prose, and a
+#                sentence broken at column 80 reads and diffs worse.
 #   truthy       `default: no` is an answer to an offer, not a boolean — Oak
 #                reads every scalar as the text it was written as. check-keys
 #                off because a workflow's `on:` is a key, not a value.
@@ -24,8 +21,7 @@ rules:
   comments:
     min-spaces-from-content: 1
 
-# Build output and the ISO's scratch space. Nothing under either is a source
-# file — see /Makefile and iso/build.sh.
+# Build output and the ISO's scratch space — see /Makefile and iso/build.sh.
 ignore: |
   /dist/
   /.dev/

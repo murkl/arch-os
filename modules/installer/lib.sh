@@ -1,13 +1,9 @@
 # SHARED LIBRARY | Sourced by Oak before every task and every hook
 #
-# Everything here is needed by more than one script and must not be answered
-# twice - a boot entry and a unified kernel image built from two different
-# command lines would be a system that boots one way and updates itself
-# another. Anything only one task needs stays in that task instead.
-#
-# Because this is sourced, every script here is plain shell with no preamble
-# of its own - the ERR trap that stops on the first failure belongs to Oak.
-# Nothing in this file prints for a person to read, only to the log.
+# Only what more than one script must agree about - a boot entry and a unified
+# kernel image built from two different command lines would be a system that
+# boots one way and updates itself another. Anything one task needs stays in
+# that task. Nothing here prints for a person to read, only to the log.
 
 # Where the new system is mounted while it is being built.
 MNT=/mnt
@@ -18,16 +14,13 @@ DATA="$(dirname "${BASH_SOURCE[0]}")/data"
 # The folder of the task that called it, where a unit keeps the files it ships with.
 where() { dirname "${BASH_SOURCE[1]}"; }
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 # SIMULATION & NETWORK
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 
 # --debug runs the installer without touching the machine. Each task guards
-# itself with `simulating && return 0` as its first line, so a unit is only
-# ever skipped as a whole.
-#
-# DEBUG is Oak's own: every script is handed it whether the command line
-# mentioned it or not, so this never tests an empty string.
+# itself with `simulating && return 0` as its first line, so a unit is only ever
+# skipped as a whole.
 
 simulating() {
     [ "$DEBUG" = "true" ] || return 1
@@ -35,7 +28,7 @@ simulating() {
     sleep 1 # keep the step visible in the interface instead of flashing past
 }
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 # Real HTTPS to a host the installation needs anyway, not a ping - a captive
 # portal answers pings too.
@@ -43,12 +36,12 @@ is_online() {
     curl -Lsf --connect-timeout 5 --max-time 15 https://archlinux.org >/dev/null
 }
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 # LOCALE LOOKUP & AUTO VALUES
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 
 # Keyboard, font, mirror country and timezone don't follow from the shape of a
-# locale (de_CH is not de, sv is not se), so all four are looked up in data/.
+# locale - de_CH is not de, sv is not se - so all four are looked up in data/.
 # The same tables fill the lists the question pages offer.
 
 # A column of the data/languages row for a locale: its own row if there is one,
@@ -71,17 +64,17 @@ country_field() {
     awk -F'\t' -v col="$1" -v code="${locale#*_}" '$1 == code { print $col }' "${DATA}/countries"
 }
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 # The two magic words the lists in installer.yaml share; neither ever reaches a
 # task. auto means "not answered yet, work it out"; none means "answered: empty".
 is_auto() { [ -z "$1" ] || [ "$1" = "auto" ]; }
 not_none() { [ "$1" = "none" ] || printf '%s' "$1"; }
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
-# What each list resolves to on auto. Kept as functions rather than inlined,
-# because the question page shows the same answer next to its auto row.
+# What each list resolves to on auto. Functions rather than inlined, because the
+# question page shows the same answer next to its auto row.
 auto_keymap() {
     local keymap
     keymap="$(language_field 2 "$ARCH_OS_LOCALE_LANG")"
@@ -138,9 +131,9 @@ auto_microcode() {
     fi
 }
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 # TARGET DISK & CONSOLE
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 
 # Names a partition of a disk. Devices whose name ends in a digit (nvme0n1,
 # mmcblk0, loop0) get a p between the disk and the partition number.
@@ -169,13 +162,11 @@ ARCH_OS_VCONSOLE_FONT="$(not_none "$ARCH_OS_VCONSOLE_FONT")"
 ARCH_OS_REFLECTOR_COUNTRY="$(not_none "$ARCH_OS_REFLECTOR_COUNTRY")"
 ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$(not_none "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT")"
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
-# The console keyboard and font of the new system.
-#
-# Kept as a function instead of four lines in configure-system, because it is
-# needed once before that already runs: mkinitcpio's sd-vconsole hook reads
-# this file while pacstrap builds the ram disk.
+# The console keyboard and font of the new system. A function rather than four
+# lines in configure-system, because it is needed before that runs: mkinitcpio's
+# sd-vconsole hook reads this file while pacstrap builds the ram disk.
 write_vconsole() {
     mkdir -p "${MNT}/etc"
     echo "KEYMAP=${ARCH_OS_VCONSOLE_KEYMAP}" >"${MNT}/etc/vconsole.conf"
@@ -193,9 +184,9 @@ load_console_keyboard() {
     loadkeys "$ARCH_OS_VCONSOLE_KEYMAP"
 }
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 # SECURE BOOT & KERNEL COMMAND LINE
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 
 # Whether this installation gets Secure Boot, which always means a unified
 # kernel image. The boot loader and the ram disk are both built differently
@@ -213,7 +204,7 @@ secure_boot_wanted() {
         [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && [ "$ARCH_OS_BOOTLOADER" = "systemd" ]
 }
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 # Read by both the boot entries and the unified kernel image, so the two can
 # never disagree about how this system boots.
@@ -242,9 +233,9 @@ kernel_args() {
     printf '%s' "${args[*]}"
 }
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 # INSTALLING INTO THE NEW SYSTEM
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 
 # Package installs are retried: the one thing that reliably goes wrong during
 # an installation is the network.
@@ -264,11 +255,11 @@ chroot_pacman_install() {
     return 1
 }
 
-# ---------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
-# A sudo rule in the new system, as a drop-in. /etc/sudoers belongs to the
-# sudo package, and a syntax error in it locks everybody out of root - so
-# rules go beside it instead, one file each, checked before they're trusted.
+# A sudo rule in the new system, as a drop-in. /etc/sudoers belongs to the sudo
+# package and a syntax error in it locks everybody out of root, so rules go
+# beside it instead, one file each, checked before they're trusted.
 sudoers_rule() {
     local file="${MNT}/etc/sudoers.d/${1}"
     mkdir -p "${MNT}/etc/sudoers.d"
@@ -277,10 +268,9 @@ sudoers_rule() {
     arch-chroot "$MNT" visudo -cqf "/etc/sudoers.d/${1}"
 }
 
-# Building from the AUR needs a normal user allowed to sudo without a
-# password. Granted for exactly the length of the build and taken back
-# afterwards - including when the build fails, which is why the revoke isn't
-# left to the end of the function.
+# Building from the AUR needs a normal user allowed to sudo without a password.
+# Granted for the length of the build and taken back afterwards, including when
+# the build fails.
 chroot_aur_install() {
     local repo="$1"
     local url="https://aur.archlinux.org/${repo}.git"
@@ -307,48 +297,43 @@ chroot_aur_install() {
     return "$status"
 }
 
-# Runs a command inside the new system as the account being created - what
-# makepkg insists on, and what anything writing into that home directory
-# should do anyway.
+# A command inside the new system, as the account being created - what makepkg
+# insists on, and what anything writing into that home should do anyway.
 as_user() {
     arch-chroot "$MNT" /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "$1"
 }
 
-# The new home, given back to the account it belongs to. Most of what ends up in
-# it is written from out here rather than through as_user, and everything
-# written from out here belongs to root until this has run - a home the user
-# cannot write to is a desktop that comes up broken.
+# The new home, given back to the account it belongs to. Everything written from
+# out here belongs to root until this has run, and a home the user cannot write
+# to is a desktop that comes up broken.
 own_home() {
     arch-chroot "$MNT" chown -R "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" "/home/${ARCH_OS_USERNAME}"
 }
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 # FIRST LOGIN
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 
-# Some desktop settings only live in the user's own settings database, and
-# there is no session yet to write them into. Tasks append lines here; the
-# first-login task turns them into a script that runs once at the first login
-# and then removes itself.
+# Some desktop settings only live in the user's own settings database, and there
+# is no session yet to write them into. Tasks append lines here; the first-login
+# task turns them into a script that runs once and then removes itself.
 FIRST_LOGIN="${MNT}/home/${ARCH_OS_USERNAME}/.first-login"
 
 on_first_login() { cat >>"$FIRST_LOGIN"; }
 
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 # CLOSING THE TARGET
-# ////////////////////////////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
 
 # Everything under /mnt, taken back down. Nothing mounted is not an error: this
 # runs before the first partition is made as well as after the last file is
-# written.
+# written. Whatever still holds the target is named in the log and then killed,
+# and the second attempt is left unguarded on purpose - that one is a real
+# failure.
 #
-# Whatever still holds the target is named in the log and then killed -
-# typically a process a package hook or a chroot left running. The second
-# attempt is left unguarded on purpose: that one is a real failure.
-#
-# -M carries the whole safety of this: without it, a target that isn't itself
-# a mount point resolves to the file system containing it, which on the live
-# image is the live image itself.
+# -M carries the whole safety of this: without it a target that isn't itself a
+# mount point resolves to the file system containing it, which on the live image
+# is the live image itself.
 unmount_target() {
     mountpoint -q "$MNT" || return 0
     umount -A -R "$MNT" && return 0
@@ -362,13 +347,11 @@ unmount_target() {
 }
 
 # The target closed for good: swap off, everything unmounted and the encrypted
-# volume locked again - named once here so the init task, the unmount task, the
-# restart and the shutdown can't disagree.
-#
-# Flushed before anything comes down, so a target that refuses to unmount is a
-# mount left standing rather than a file half written. The volume is closed on
-# finding it open rather than on the answer, because a previous attempt leaves
-# one open whatever this run was told.
+# volume locked again - named once so the init task, the unmount task, the
+# restart and the shutdown can't disagree. Flushed first, so a target that
+# refuses to unmount is a mount left standing rather than a file half written.
+# The volume is closed on finding it open rather than on the answer, since a
+# previous attempt leaves one open whatever this run was told.
 close_target() {
     swapoff -a || true
     sync

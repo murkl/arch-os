@@ -1,8 +1,6 @@
-# Builds a release: the Oak binary with oak.yaml and a modules folder beside it
-# — which is the only thing a machine needs.
-#
-# Everything a build produces lands in one folder. dist/ holds the product laid
-# out as a machine runs it, and beside it the files a person downloads:
+# A release is the Oak binary with oak.yaml and a modules folder beside it,
+# which is the only thing a machine needs. Everything a build produces lands in
+# dist/:
 #
 #   dist/arch-os-2.0.0/                 the product: oak, oak.yaml, modules/
 #   dist/arch-os-2.0.0-x86_64.tar.gz    that folder as one file  (+ .sha256)
@@ -15,51 +13,34 @@
 # THE PRODUCT | What a release is called and what it holds
 # ////////////////////////////////////////////////////////////////////////////
 
-# One binary, the declaration of the product it drives, and a folder per module
-# under one modules folder. In the source tree each module keeps its own
-# declaration in its own folder; a release is that laid out flat around the
-# binary, which is where it looks.
+# One binary, the declaration of the product it drives, and one folder per
+# module. Oak looks for all of it beside its own binary.
 APP         := oak
 PRODUCT     := oak.yaml
 MODULES_DIR := modules
 
-# VERSION is the single source of truth for this whole project, and it is
-# declared where everything else about the product is: `version:` in oak.yaml.
-# The build carries it into both filenames and, upper-cased, onto the ISO label.
-#
-# A release is the tag `v` + this, pushed once the version is on main — the `v`
-# belongs to the tag and to nothing else. The release workflow refuses a tag
-# that says anything other than what this line does, so the two cannot drift.
-#
-# It is Arch OS's own version. Oak carries one of its own and is a dependency of
-# this, like any other.
+# The single source of truth for this project's version, declared where
+# everything else about the product is. It becomes both filenames, the ISO label
+# and the tag `v` + this — the `v` belongs to the tag and to nothing else.
 VERSION := $(shell sed -n 's/^version:[[:space:]]*//p' $(PRODUCT))
 
 # Which modules there are is whatever folders are in modules/, so adding one is
 # a folder and nothing here has to be kept in step with it.
 MODULES := $(notdir $(wildcard $(MODULES_DIR)/*))
 
-# What of a module goes into a release: its own declaration, named after it, and
-# the parts Oak finds by name. What is not here — a Makefile, a README, a
-# linter's config — is how a module is worked on rather than part of what runs,
-# and a part a module does not have is simply not copied.
+# What of a module goes into a release: its declaration and the parts Oak finds
+# by name. What is not here — a README, a linter's config — is how the module is
+# worked on rather than part of what runs.
 MODULE_PARTS := lib.sh data locales hooks tasks
 
 # ////////////////////////////////////////////////////////////////////////////
 # OAK | The runtime this is built on
 # ////////////////////////////////////////////////////////////////////////////
 
-# The interface, the questions and the order the work happens in are not built
-# here. They are Oak, a project of its own, and what this repository holds is
-# the Arch Linux half: one declaration, two modules and the image they ship on.
-#
-# https://github.com/murkl/oak
-#
-# The binary is downloaded rather than built, so nothing here needs a Go
-# toolchain. OAK_VERSION is the release it is taken from, named outright rather
-# than followed: the runtime is a dependency, and a build of a given commit of
-# this repository is the same build tomorrow. Written without the `v` its tag
-# carries, the way every version in this project is.
+# The runtime is a project of its own — https://github.com/murkl/oak — and is
+# downloaded rather than built, so nothing here needs a Go toolchain.
+# OAK_VERSION is named outright rather than followed, so a build of a given
+# commit is the same build tomorrow. Written without the `v` its tag carries.
 OAK_REPO    := murkl/oak
 OAK_VERSION ?= 1.0.0
 OAK_ASSET   := oak-linux-amd64
@@ -73,33 +54,35 @@ OAK_URL     := https://github.com/$(OAK_REPO)/releases/download/v$(OAK_VERSION)/
 
 DIST_DIR := dist
 
-# The product, as a machine runs it, under the name it unpacks to: a download
-# and the folder it came out of are the same thing under the same name.
+# The product under the name it unpacks to, so a download and the folder it came
+# out of are the same thing under the same name.
 STEM        := arch-os-$(VERSION)
 RELEASE_DIR := $(DIST_DIR)/$(STEM)
 
-# Both downloads of a build carry the same name and differ only by extension, so
-# a release page reads as one build rather than two. Only x86_64 is built.
+# Both downloads differ only by extension, so a release page reads as one build
+# rather than two. Only x86_64 is built.
 TARBALL := $(STEM)-x86_64.tar.gz
 
-# The shape a release has, made out of the sources with nothing copied: an
-# oak.yaml with a modules folder beside it, both symlinks into the tree. It is
-# what Oak is pointed at while this is worked on, so a check reads the file
-# being edited rather than a copy of it made by the last build.
+# A release's shape made of symlinks into the tree, so every check reads the file
+# being edited rather than a copy the last build made of it.
 DEV_DIR := .dev
 
-# What `make run` opens. MODULE names one module outright, the way `oak
-# installer` does on a machine; without it the interface asks which. ARGS is
-# whatever else that run takes — `make run ARGS=--debug` for one that touches
-# nothing.
+# What `make run` opens. MODULE names one module outright, the way
+# `oak --module=installer` does on a machine; without it the interface asks
+# which. ARGS is whatever else that run takes — `make run ARGS=--debug` for one
+# that touches nothing.
 MODULE ?=
 ARGS   ?=
 
 # The shell that is not part of a module: the one command that installs this,
-# and the one that writes a workflow run's summary.
+# and the one that writes a workflow run's summary. POSIX sh, both of them.
 SCRIPTS := get.sh .github/summary.sh
 
-.PHONY: all oak build dev run tarball iso locales lint fmt check version version-check clean
+# Every script of every module. Oak sources them rather than executing them, so
+# none carries a shebang and the dialect comes from each module's .shellcheckrc.
+MODULE_SCRIPTS := $(shell find $(MODULES_DIR) -name '*.sh')
+
+.PHONY: all oak build dev run inspect tarball iso locales locales-check lint fmt check version version-check clean
 
 # build empties the release it writes, and the two targets that package it read
 # what it left. Running them at once would package a half-written folder.
@@ -124,14 +107,8 @@ oak:
 
 # The runtime, the product's declaration and a clean copy of every module. The
 # folder is emptied first, so what is in it afterwards is this build and nothing
-# else.
-#
-# The declaration is copied rather than rewritten: it already carries the
-# version, which is where the version is decided.
-#
-# The translation templates go out again with it: a .pot is the list a catalog
-# is filled in from, which is how a module is translated rather than part of
-# what it runs — the same reason a Makefile and a README are not copied either.
+# else. The templates go out again: a .pot is how a module is translated rather
+# than part of what it runs.
 build: $(OAK_BIN)
 	rm -rf $(RELEASE_DIR)
 	mkdir -p $(RELEASE_DIR)
@@ -147,11 +124,9 @@ build: $(OAK_BIN)
 	done
 	find $(RELEASE_DIR) -name '*.pot' -delete
 
-# The same shape without the build, for working on the sources. Every Makefile
-# that runs Oak points at this.
-#
-# The binary is copied rather than linked: Oak resolves its own path before
-# looking beside itself, so a symlink would send it looking in .oak/ instead.
+# The same shape without the build, for working on the sources. The binary is
+# copied rather than linked: Oak resolves its own path before looking beside
+# itself, so a symlink would send it looking in .oak/ instead.
 dev: $(OAK_BIN)
 	@mkdir -p $(DEV_DIR)
 	@ln -sfn ../$(PRODUCT) $(DEV_DIR)/$(PRODUCT)
@@ -161,11 +136,11 @@ dev: $(OAK_BIN)
 # Arch OS out of the sources, against the modules being edited rather than a
 # copy of them made by the last build.
 run: dev
-	cd $(DEV_DIR) && ./$(APP) $(MODULE) $(ARGS)
+	cd $(DEV_DIR) && ./$(APP) $(if $(MODULE),--module=$(MODULE)) $(ARGS)
 
-# The release as one file, for a stock Arch ISO: unpack it, run ./oak.
-# get.sh picks both files out of a release by extension, so renaming either one
-# is a change here and nowhere else.
+# The release as one file, for a stock Arch ISO: unpack it, run ./oak. get.sh
+# picks both downloads out of a release by extension, so renaming either one is
+# a change here and nowhere else.
 tarball: build
 	tar -czf $(DIST_DIR)/$(TARBALL) --owner=0 --group=0 --sort=name \
 		--transform 's,^,$(STEM)/,' \
@@ -177,39 +152,65 @@ tarball: build
 iso: build
 	$(MAKE) -C iso build RELEASE_DIR=../$(RELEASE_DIR) DIST_DIR=../$(DIST_DIR)
 
-# Every template and every catalog, brought up to what the modules now say.
-locales:
-	set -e; for m in $(MODULES); do $(MAKE) -C $(MODULES_DIR)/$$m locales; done
+# Both modules loaded exactly as a run loads them: every task ordered, every
+# condition resolved, every question checked against the tasks that read it —
+# and the order it all adds up to, which is the one thing nobody writes down.
+inspect: dev
+	@cd $(DEV_DIR) && ./$(APP) --inspect
+
+# Every template rewritten out of the module it belongs to, and every catalog
+# brought up to it. msgmerge keeps every translation whose source text is
+# unchanged and marks the rest fuzzy rather than dropping it.
+locales: dev
+	set -e; for m in $(MODULES); do \
+		pot=$(MODULES_DIR)/$$m/locales/$$m.pot; \
+		(cd $(DEV_DIR) && ./$(APP) --strings --module=$$m) >$$pot; \
+		for po in $(MODULES_DIR)/$$m/locales/*.po; do \
+			msgmerge --quiet --update --backup=none --no-wrap "$$po" $$pot; \
+		done; \
+	done
+
+# A question added or reworded without `make locales` being run is a question no
+# translator will ever be shown. And a translation that drops a placeholder is a
+# message that breaks where it is printed rather than where it was written.
+locales-check: dev
+	@set -e; for m in $(MODULES); do \
+		pot=$(MODULES_DIR)/$$m/locales/$$m.pot; \
+		(cd $(DEV_DIR) && ./$(APP) --strings --module=$$m) | diff -u $$pot - \
+			|| { echo "$$pot is out of date — run 'make locales'" >&2; exit 1; }; \
+		for po in $(MODULES_DIR)/$$m/locales/*.po; do \
+			printf '%s: ' "$$po"; msgfmt --check-format --statistics -o /dev/null "$$po" || exit 1; \
+		done; \
+	done
 
 # The version this build carries, for anything outside make that needs it.
 version:
 	@echo $(VERSION)
 
-# It is a release's name, both filenames and half of an ISO label, and a tag is
-# matched against it. Anything else would be found at the point where it costs
-# a release, which is the one place it must not be found.
+# A tag is matched against it, so anything but X.Y.Z would only be found at the
+# point where it costs a release.
 version-check:
 	@echo "$(VERSION)" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$$' \
 		|| { echo "$(PRODUCT) declares '$(VERSION)', which is not a version" >&2; exit 1; }
 
-# Both are POSIX sh, so they are checked as such rather than as bash: get.sh
-# runs before anything of this project has been downloaded, on whatever shell
-# the machine has, and summary.sh is one table. The yaml is checked here rather
-# than per component: one rule set over one kind of file. actionlint reads the
-# workflows again for what a yaml linter cannot see, shellcheck included, so the
-# shell inside them is held to the same rules as the shell beside them.
+# The two above are checked as POSIX sh, since get.sh runs on whatever shell the
+# machine has. A module's scripts are checked the way Oak runs them: as bash,
+# with lib.sh already in scope. actionlint reads the workflows again for what a
+# yaml linter cannot see.
 lint:
 	shellcheck -s sh -S style $(SCRIPTS)
 	shfmt -d -ln posix -i 4 $(SCRIPTS)
+	shellcheck -x $(MODULE_SCRIPTS)
+	shfmt -d -i 4 $(MODULE_SCRIPTS)
 	yamllint .
 	actionlint
 
 fmt:
 	shfmt -w -ln posix -i 4 $(SCRIPTS)
+	shfmt -w -i 4 $(MODULE_SCRIPTS)
 
 # What has to pass before anything is committed.
-check: version-check lint
-	set -e; for m in $(MODULES); do $(MAKE) -C $(MODULES_DIR)/$$m check; done
+check: version-check lint inspect locales-check
 	$(MAKE) -C iso check
 
 # The downloaded runtime stays: it is a dependency rather than build output.

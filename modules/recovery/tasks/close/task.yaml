@@ -1,4 +1,4 @@
-name: Unmount and lock the disk
+title: Unmount and lock the disk
 stage: close
 confirm: |
   Unmount the system and lock the disk again?

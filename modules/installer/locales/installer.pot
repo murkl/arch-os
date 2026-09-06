@@ -18,7 +18,7 @@ msgstr ""
 msgid "English"
 msgstr ""
 
-#. what this program is called
+#. what this program is called, and what one run of it is called
 #: installer.yaml
 msgid "Arch OS Installer"
 msgstr ""
@@ -26,11 +26,6 @@ msgstr ""
 #. what it is, in one sentence, on the page that offers it
 #: installer.yaml
 msgid "Put Arch Linux on this machine."
-msgstr ""
-
-#. what one run of it is called
-#: installer.yaml
-msgid "Installation"
 msgstr ""
 
 #. how to get back in, read on the way out to the console
@@ -46,42 +41,42 @@ msgid ""
 "Everything on that disk will be erased and this cannot be undone. Nothing has been changed so far."
 msgstr ""
 
-#. starting point system: the question
+#. a starting point: the question
 #: installer.yaml
 msgid "Setup"
 msgstr ""
 
-#. starting point system: what it means
+#. starting point Setup: what it means
 #: installer.yaml
 msgid "Choose what kind of system to install. Every detail can still be changed afterwards."
 msgstr ""
 
-#. starting point system, desktop: the row
+#. starting point Setup: a row
 #: installer.yaml
 msgid "Desktop"
 msgstr ""
 
-#. starting point system, desktop: what choosing it does
+#. starting point Setup, Desktop: what choosing it does
 #: installer.yaml
 msgid "A GNOME desktop with drivers, codecs, fonts and everyday applications."
 msgstr ""
 
-#. starting point system, minimal: the row
+#. starting point Setup: a row
 #: installer.yaml
 msgid "Minimal"
 msgstr ""
 
-#. starting point system, minimal: what choosing it does
+#. starting point Setup, Minimal: what choosing it does
 #: installer.yaml
 msgid "Arch Linux on the console only. No desktop, no extras, nothing beyond what you choose."
 msgstr ""
 
-#. starting point system, shared: the row
+#. starting point Setup: a row
 #: installer.yaml
 msgid "Online (paste.rs)"
 msgstr ""
 
-#. starting point system, shared: what choosing it does
+#. starting point Setup, Online (paste.rs): what choosing it does
 #: installer.yaml
 msgid "Load every answer from a configuration shared at the end of an earlier installation."
 msgstr ""
@@ -155,7 +150,7 @@ msgstr ""
 
 #. ARCH_OS_USERNAME: the question
 #: installer.yaml
-msgid "User name"
+msgid "Username"
 msgstr ""
 
 #. ARCH_OS_USERNAME: what it means
@@ -185,7 +180,7 @@ msgstr ""
 
 #. ARCH_OS_HOSTNAME: the question
 #: installer.yaml
-msgid "Host name"
+msgid "Hostname"
 msgstr ""
 
 #. ARCH_OS_HOSTNAME: what it means
