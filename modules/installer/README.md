@@ -5,7 +5,7 @@ Everything this Installer knows about Arch Linux. It is data — one YAML file a
 **Note:** _Repairing a system already on disk is a separate module: **[➜ Arch OS Recovery](../recovery)**_
 
 ```
-make -C ../.. check                          # load both modules and lint every script
+make -C ../.. check                               # load both modules and lint every script
 make -C ../.. run MODULE=installer ARGS=--debug   # run it without touching this machine
 ```
 

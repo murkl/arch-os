@@ -116,7 +116,7 @@ make -C iso smoke     # boot the newest image and wait for its first page
 make locales          # every translation template, and every catalog brought up to it
 make version          # what this build is called
 make oak              # fetch the runtime again, at the release OAK_VERSION names
-make clean            # all of the above, taken back
+make clean            # every build output, taken back; the runtime stays
 ```
 
 Everything a build produces lands in one folder:
