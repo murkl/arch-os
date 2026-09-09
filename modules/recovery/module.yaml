@@ -1,0 +1,121 @@
+# What this recovery is, what it asks, and in what order it works. Everything
+# else in this module is found by its own name — module.sh, locales/, tasks/ —
+# and nothing points at it from here.
+#
+# The shell below is module.sh's: every list and every suggested value is a
+# function named there, so this file stays the questions and nothing else.
+#
+# Every key this file may use:
+# https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
+
+# The module's only name, read wherever the interface says what is happening.
+title: Arch OS Recovery
+
+# The sentence under its row on the page that asks which module to open.
+description: Repair an Arch Linux system that is already on a disk.
+
+# Read on the way out, when the recovery closes and the machine keeps running.
+# There is a root shell behind it on this image — see iso/.
+console: Type recovery at the prompt to start it again.
+
+# The last thing shown before the first task runs. {{VAR}} is filled in from the
+# answers, so this names the actual disk.
+confirm: |
+  The system on {{ARCH_OS_RECOVERY_DISK}} will be unlocked and mounted at /mnt.
+
+  This does not change anything on it. Once it is open, you can roll back to a
+  snapshot, rebuild the boot files or open a shell. Each is offered separately.
+
+# The phases the work happens in, top to bottom. Each is a folder under tasks/,
+# and the steps in it are what puts them in the run and where; steps sharing a
+# stage run in the order `needs` demands.
+#
+# The stages Oak runs itself — the check that this machine can run a recovery at
+# all, the two ways out — are folders under tasks/ too, marked with @ and left
+# out here: when they run is Oak's, not this file's.
+stages:
+  - open # unlocked and mounted, as the system mounts itself
+  - repair # rolled back, made bootable again, worked in by hand
+  - close # unmounted, and the disk locked again
+
+# Everything this recovery needs to know, in the order it is asked. Required and
+# unanswered is what makes it ask; an answer is what makes it stop. Each name
+# reaches every script as an environment variable.
+variables:
+  # ─── The keyboard ──────────────────────────────────────────────────────────
+  #
+  # Asked `first`, because it is the keyboard the password below is typed on. It
+  # is loaded on the live system the moment it is given and never written to the
+  # system being repaired.
+  - name: ARCH_OS_RECOVERY_KEYMAP
+    title: Console keyboard
+    description: |
+      The keyboard you are typing on right now. It is loaded immediately, and
+      opens on the layout this live image was started with.
+    group: Region
+    required: true
+    first: true
+    command: list_keymaps
+    prefill: default_keymap
+    apply: load_console_keyboard
+
+  # ─── The system to repair ──────────────────────────────────────────────────
+  #
+  # Only the disk is really asked for; the rest is read off it and opens on that
+  # answer. They stay questions because behind LUKS nothing can be read until
+  # the password is given, and a disk laid out some other way has to stay
+  # answerable by hand.
+  - name: ARCH_OS_RECOVERY_DISK
+    title: Disk
+    description: |
+      The disk holding the Arch OS installation to repair. Opening it does not
+      change anything on it.
+    group: Storage
+    required: true
+    error: Choose a disk that exists.
+    command: list_disks
+
+  - name: ARCH_OS_RECOVERY_ENCRYPTION_ENABLED
+    title: Disk encryption
+    description: |
+      Whether that disk is encrypted with LUKS. This is read directly off the
+      disk, without needing the password. Change it only if the answer is
+      wrong.
+    group: Storage
+    type: bool
+    required: true
+    prefill: default_encryption
+
+  - name: ARCH_OS_RECOVERY_PASSWORD
+    title: Encryption password
+    description: |
+      The password that unlocks that disk. It is asked for right before the
+      recovery starts and is never written to a file.
+    group: Storage
+    type: secret
+    required: true
+    conditions: ARCH_OS_RECOVERY_ENCRYPTION_ENABLED == true
+
+  - name: ARCH_OS_RECOVERY_FILESYSTEM
+    title: File system
+    description: |
+      The file system of the system being repaired. btrfs can be rolled back to
+      a snapshot; ext4 can be opened and worked on by hand. On an encrypted
+      disk this cannot be read in advance, so please check it.
+    group: Storage
+    values: [btrfs, ext4]
+    required: true
+    prefill: default_filesystem
+
+  - name: ARCH_OS_RECOVERY_SNAPSHOT
+    title: Snapshot
+    description: |
+      The snapshot to put in place of the root subvolume. Newest first, with
+      the date it was taken and what created it.
+    group: Storage
+    required: true
+    conditions: ARCH_OS_RECOVERY_FILESYSTEM == btrfs
+    # Asked by the rollback task, which is also where the shell that lists them
+    # lives: the snapshots cannot be listed until the disk they are on is
+    # unlocked and mounted.
+    command: ./tasks/repair/rollback/snapshots.sh

@@ -1,3 +1,0 @@
-title: Set up housekeeping
-stage: system
-conditions: ARCH_OS_HOUSEKEEPING_ENABLED == true

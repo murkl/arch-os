@@ -1,0 +1,21 @@
+# Can this machine run a recovery at all?
+#
+# Every check in this stage is read-only and every one of them is a hard stop.
+# They run before the first question, because none of it can be fixed from
+# inside this program.
+#
+# The recovery asks nothing of the machine beyond being the live image: not its
+# firmware, which isn't what is being repaired, and not a network, because a
+# recovery downloads nothing - which is the whole point on a machine whose
+# network may be exactly what stopped working.
+#
+# What goes to stderr is what the user reads, so each message says what is wrong
+# and what to do about it, in that order, and nothing else.
+title: Running as root
+
+script: |
+  simulating && return 0
+
+  [ "$(id -u)" -eq 0 ] && return 0
+  echo "This has to run as root. Log in as root and start it again." >&2
+  exit 1

@@ -12,20 +12,20 @@ make -C ../.. run MODULE=installer ARGS=--debug   # run it without touching this
 ## What is where
 
 ```
-installer.yaml           what this Installer is, what it asks, what order it runs in
-tasks/<id>/task.yaml     where that step belongs: its stage, its needs, its conditions
-tasks/<id>/task.sh       what it does, plus any file it ships with, beside it
-hooks/<name>.sh          everything around the work itself
-lib.sh                   what more than one script has to agree about
-data/                    the tables a language and a country are looked up in
-locales/                 one <code>.po per language, and the template they come from
+module.yaml                     what this Installer is, what it asks, what order it runs in
+module.sh                       what more than one script has to agree about
+tasks/<stage>/<id>/task.yaml    what that step is: its needs, its conditions, its offers
+tasks/<stage>/<id>/task.sh      what it does, plus any file it ships with, beside it
+tasks/@<stage>/<id>/            a stage Oak runs itself, rather than as part of the work
+data/                           the tables a language and a country are looked up in
+locales/                        one <code>.po per language, and the template they come from
 ```
 
-**Note:** _Nothing in `installer.yaml` points at any of this — each part is found by its own name. Every key those files may use is in the **[Oak reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**._
+**Note:** _Nothing in `module.yaml` points at any of this — each part is found by its own name. Every key those files may use is in the **[Oak reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**._
 
 ## Stages
 
-Every folder under `tasks/` is a step and nothing lists them elsewhere: the folder is the list. `installer.yaml` declares the stages top to bottom, every task belongs to one, and `needs:` orders the tasks that share a stage.
+Every folder under `tasks/` is a stage and every folder in one of those is a step. Nothing lists them elsewhere: the folders are the list. `module.yaml` declares the stages top to bottom, and `needs:` orders the steps that share one.
 
 | Stage | Description |
 | --- | --- |
@@ -44,14 +44,22 @@ Three orderings matter, and each is a stage or a `needs:`:
 2. 32-bit support has to be enabled before any package that needs it is pulled in
 3. The boot chain is signed last, since signing only holds if nothing rebuilds the kernel image afterwards
 
+The four stages marked `@` are Oak's own, run at their own moment rather than as part of the work:
+
+| Stage | Description |
+| --- | --- |
+| `@preflight` | Four checks, in order, before the first question: root, the live image, UEFI with Secure Boot off, and a network |
+| `@online`, `@wlan-device`, `@wlan-networks`, `@wlan-connect` | Finding and joining a wireless network |
+| `@restart`, `@shutdown` | The two ways this machine is put down, each closing the target first |
+
 **Note:** _`make check` prints the order the whole module resolves to._
 
 ## Writing a Task
 
-A folder with `task.yaml` and `task.sh` in it. Oak **sources** the script into a shell that already carries `lib.sh` and an `ERR` trap, so it needs no shebang, no `set -e` and no error handling.
+A folder under the stage it runs in, holding `task.yaml` and `task.sh`. Oak runs the script in a shell that already carries `module.sh` and an `ERR` trap, so it needs no shebang, no `set -e` and no error handling.
 
 ```
-# tasks/thing/task.sh
+# tasks/system/thing/task.sh
 simulating && return 0
 
 chroot_pacman_install git base-devel
@@ -59,9 +67,20 @@ arch-chroot "$MNT" systemctl enable something.service
 cp "$(where)/thing.conf" "${MNT}/etc/thing.conf"
 ```
 
+A step short enough to read at a glance skips the file and writes its shell in the YAML instead, which is what the two-line ones here do:
+
+```yaml
+# tasks/system/thing/task.yaml
+title: Install the thing
+script: |
+  simulating && return 0
+
+  chroot_pacman_install thing
+```
+
 `simulating && return 0` is the first line of every task, before anything that changes the machine — that is what turns `--debug` into a simulation. `where` returns the task's own folder.
 
-`lib.sh` is deliberately small: only what several tasks must agree about, such as the mount point, the kernel command line and how a package is installed and retried. Everything else belongs in the task that does it, even when that makes the script longer.
+`module.sh` is deliberately small: only what several tasks must agree about, such as the mount point, the kernel command line and how a package is installed and retried, plus the functions `module.yaml` calls by name for its lists. Everything else belongs in the task that does it, even when that makes the script longer.
 
 **Note:** _Anything that needs a desktop session which does not exist yet — GNOME settings live in the session's own database — goes through `on_first_login`, which collects those lines into a script that runs once at the first login and then removes itself._
 
@@ -69,7 +88,7 @@ cp "$(where)/thing.conf" "${MNT}/etc/thing.conf"
 
 ## auto and none
 
-Two words shared by the lists in `installer.yaml`. `auto` means this machine works the answer out for itself, `none` means an explicit empty answer. `lib.sh` resolves both before any task runs, so nothing downstream ever tests for either word.
+Two words shared by the lists in `module.yaml`. `auto` means this machine works the answer out for itself, `none` means an explicit empty answer. `module.sh` resolves both before any task runs, so nothing downstream ever tests for either word.
 
 | On `auto` | Resolves to |
 | --- | --- |
@@ -124,13 +143,13 @@ Bash scripts Oak calls by name. One that exists gets used, one that does not tur
 
 The last two turn leaving the Installer into a choice rather than a plain exit: the ISO boots specifically to run this. Both call `close_target` first, so a machine shutting down does not take a half-written file system with it, and both do nothing under `--debug`.
 
-**Note:** _The third way out is `console:` in `installer.yaml`, which runs nothing: the Installer closes and the machine keeps running. See **[iso/](../../iso)**._
+**Note:** _The third way out is `console:` in `module.yaml`, which runs nothing: the Installer closes and the machine keeps running. See **[iso/](../../iso)**._
 
 ## Adding something
 
 | You want to add | How |
 | --- | --- |
-| An option | A row under `variables:` in `installer.yaml`. Guard any task that depends on it with `conditions:` |
+| An option | A row under `variables:` in `module.yaml`. Guard any task that depends on it with `conditions:` |
 | A step | A folder under `tasks/` with the two files in it, then `make check` |
 | A starting point | An option under `presets:`. One that fetches its answers names the question with `asks:` and the shell that turns it into more answers with `apply:` |
 | A language | **[➜ See Contributing](../../docs/CONTRIBUTING.md#adding-a-language)** |
@@ -138,7 +157,7 @@ The last two turn leaving the Installer into a choice rather than a plain exit: 
 
 ## Requirements
 
-Root, the Arch Linux live image, booted in UEFI mode with Secure Boot off, and a network connection. `hooks/preflight.sh` checks all four before the first question is asked.
+Root, the Arch Linux live image, booted in UEFI mode with Secure Boot off, and a network connection. The four steps under `tasks/@preflight/` check them in that order, before the first question is asked.
 
 ## Where the Answers go
 

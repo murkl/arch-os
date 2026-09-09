@@ -1,3 +1,0 @@
-title: Snapshot on every update
-stage: finalize
-conditions: ARCH_OS_FILESYSTEM == btrfs

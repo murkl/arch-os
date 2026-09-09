@@ -1,3 +1,0 @@
-title: Enhance the shell
-stage: system
-conditions: ARCH_OS_SHELL_ENHANCEMENT_ENABLED == true

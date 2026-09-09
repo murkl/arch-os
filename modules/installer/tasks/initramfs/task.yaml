@@ -1,3 +1,0 @@
-title: Build the initial ram disk
-stage: base
-needs: [configure-system]

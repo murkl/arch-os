@@ -128,14 +128,14 @@ Arch OS is four parts, kept deliberately apart:
 | Part | Description |
 | --- | --- |
 | [Oak](https://github.com/murkl/oak) | The runtime, a repository of its own. One binary that draws the interface, asks the questions and runs the shell scripts in order. Knows nothing about Arch Linux, disks or packages |
-| [`modules/installer/`](../modules/installer) | Everything that does the actual work: one `installer.yaml`, the questions it asks and a folder per step |
+| [`modules/installer/`](../modules/installer) | Everything that does the actual work: one `module.yaml`, the questions it asks and a folder per step |
 | [`modules/recovery/`](../modules/recovery) | The same shape again, for repairing a system already on disk |
 | [`iso/`](../iso) | Turns a build of the three into a bootable image |
 
 Installer and Recovery are modules: data, not programs. One binary runs either of them, `oak --module=installer` opens one outright, and a release is that binary with `oak.yaml` and `modules/` beside it. The build downloads the binary rather than compiling it, so nothing here needs a Go toolchain.
 
 - Adding a question is a few lines of YAML
-- Adding a step is a folder with two files
+- Adding a step is a folder under the stage it belongs to
 - Adding a module is a folder under `modules/`
 
 **[➜ See Contributing](CONTRIBUTING.md)** for branches, releases and how a commit becomes an image.

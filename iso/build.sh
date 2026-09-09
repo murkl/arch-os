@@ -84,8 +84,8 @@ trap cleanup EXIT
 echo "### Initialize Build"
 [ -x "${RELEASE_DIR}/oak" ] || { echo "Error: ${RELEASE_DIR}/oak not found - run 'make build' first" >&2 && exit 1; }
 [ -f "${RELEASE_DIR}/oak.yaml" ] || { echo "Error: ${RELEASE_DIR}/oak.yaml not found - run 'make build' first" >&2 && exit 1; }
-[ -f "${RELEASE_DIR}/modules/installer/installer.yaml" ] || { echo "Error: ${RELEASE_DIR}/modules/installer/installer.yaml not found - run 'make build' first" >&2 && exit 1; }
-[ -f "${RELEASE_DIR}/modules/recovery/recovery.yaml" ] || { echo "Error: ${RELEASE_DIR}/modules/recovery/recovery.yaml not found - run 'make build' first" >&2 && exit 1; }
+[ -f "${RELEASE_DIR}/modules/installer/module.yaml" ] || { echo "Error: ${RELEASE_DIR}/modules/installer/module.yaml not found - run 'make build' first" >&2 && exit 1; }
+[ -f "${RELEASE_DIR}/modules/recovery/module.yaml" ] || { echo "Error: ${RELEASE_DIR}/modules/recovery/module.yaml not found - run 'make build' first" >&2 && exit 1; }
 
 # The release says what it is, so the image cannot end up named after anything
 # else than what it ships.

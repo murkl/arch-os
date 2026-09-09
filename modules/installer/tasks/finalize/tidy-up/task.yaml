@@ -1,0 +1,7 @@
+title: Tidy up
+
+# Packages pulled in as dependencies of something that has since gone.
+script: |
+  simulating && return 0
+
+  arch-chroot "$MNT" bash -c 'pacman -Qtdq >/dev/null 2>&1 && pacman -Rns --noconfirm $(pacman -Qtdq) || true'

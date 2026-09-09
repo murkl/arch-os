@@ -1,3 +1,0 @@
-title: Switch on the system services
-stage: base
-needs: [user-account]

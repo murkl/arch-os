@@ -1,0 +1,5 @@
+title: Share files with other machines
+needs: [desktop-gnome]
+conditions:
+  - ARCH_OS_DESKTOP != none
+  - ARCH_OS_DESKTOP_EXTRAS_ENABLED == true

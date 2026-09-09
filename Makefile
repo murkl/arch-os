@@ -31,7 +31,8 @@ MODULES := $(notdir $(wildcard $(MODULES_DIR)/*))
 # What of a module goes into a release: its declaration and the parts Oak finds
 # by name. What is not here — a README, a linter's config — is how the module is
 # worked on rather than part of what runs.
-MODULE_PARTS := lib.sh data locales hooks tasks
+MODULE_DECL  := module.yaml
+MODULE_PARTS := module.sh data locales tasks
 
 # ////////////////////////////////////////////////////////////////////////////
 # OAK | The runtime this is built on
@@ -117,7 +118,7 @@ build: $(OAK_BIN)
 	set -e; for m in $(MODULES); do \
 		dest=$(RELEASE_DIR)/$(MODULES_DIR)/$$m; \
 		mkdir -p $$dest; \
-		cp $(MODULES_DIR)/$$m/$$m.yaml $$dest/; \
+		cp $(MODULES_DIR)/$$m/$(MODULE_DECL) $$dest/; \
 		for part in $(MODULE_PARTS); do \
 			[ -e $(MODULES_DIR)/$$m/$$part ] && cp -r $(MODULES_DIR)/$$m/$$part $$dest/ || true; \
 		done; \
@@ -195,7 +196,7 @@ version-check:
 
 # The two above are checked as POSIX sh, since get.sh runs on whatever shell the
 # machine has. A module's scripts are checked the way Oak runs them: as bash,
-# with lib.sh already in scope. actionlint reads the workflows again for what a
+# with module.sh already in scope. actionlint reads the workflows again for what a
 # yaml linter cannot see.
 lint:
 	shellcheck -s sh -S style $(SCRIPTS)

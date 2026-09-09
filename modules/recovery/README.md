@@ -12,12 +12,12 @@ make -C ../.. run MODULE=recovery ARGS=--debug   # run it without touching this 
 ## What is where
 
 ```
-recovery.yaml            what this Recovery is, what it asks, what order it runs in
-tasks/<id>/task.yaml     where that step belongs: its stage, its needs, its conditions
-tasks/<id>/task.sh       what it does, plus any file it ships with, beside it
-hooks/<name>.sh          everything around the work itself
-lib.sh                   what more than one script has to agree about
-locales/                 one <code>.po per language, and the template they come from
+module.yaml                     what this Recovery is, what it asks, what order it runs in
+module.sh                       what more than one script has to agree about
+tasks/<stage>/<id>/task.yaml    what that step is: its needs, its conditions, its offers
+tasks/<stage>/<id>/task.sh      what it does, plus any file it ships with, beside it
+tasks/@<stage>/<id>/            a stage Oak runs itself, rather than as part of the work
+locales/                        one <code>.po per language, and the template they come from
 ```
 
 **Note:** _The shape and the rules are the Installer's: **[➜ Writing a Task](../installer/README.md#writing-a-task)**. Every key these files may use is in the **[Oak reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**._
@@ -40,18 +40,18 @@ Three stages, and after the first one every step is optional. The system is open
 
 A machine that needs repairing may have a broken network as part of the problem, so this module never asks for one:
 
-- There is no `online.sh` hook, which is what turns the network screen off
+- There is no `@online` stage, which is what turns the network screen off
 - The kernel images come from the repaired system's own pacman cache rather than a mirror
 
-For the same reason `hooks/preflight.sh` checks less than the Installer's does: root and the live image, nothing about this machine's firmware, since this machine is not what is being set up.
+For the same reason `tasks/@preflight/` checks less than the Installer's does: root and the live image, nothing about this machine's firmware, since this machine is not what is being set up.
 
 ## Two Views of one Disk
 
 A btrfs installation is the running system, mounted at `/mnt`, sitting on a top level that holds `@` and the snapshots, mounted separately at `/run/arch-os-recovery`. A rollback happens through the second mount: `@` cannot be replaced while it is mounted as the root, and the top level has to stay available once `/mnt` is gone. It is kept out of the chroot on purpose.
 
-**Note:** _The mount options are written out twice — here in `lib.sh` and in the Installer's `prepare-disk` task. This module puts a file system back exactly the way the Installer laid it out, so the two must not drift apart._
+**Note:** _The mount options are written out twice — here in `module.sh` and in the Installer's `prepare-disk` task. This module puts a file system back exactly the way the Installer laid it out, so the two must not drift apart._
 
-The repair logic itself lives in the tasks, not in `lib.sh`. Unlocking, rolling back and rebuilding are each one task's whole job. What `lib.sh` holds is only what more than one task has to agree about: where the system is mounted, what its partitions are called, and those mount options.
+The repair logic itself lives in the tasks, not in `module.sh`. Unlocking, rolling back and rebuilding are each one task's whole job. What `module.sh` holds is only what more than one task has to agree about: where the system is mounted, what its partitions are called, those mount options, and the lists `module.yaml` calls by name.
 
 ## Answers
 

@@ -16,22 +16,22 @@ msgid "English"
 msgstr "Deutsch"
 
 #. what this program is called, and what one run of it is called
-#: recovery.yaml
+#: module.yaml
 msgid "Arch OS Recovery"
 msgstr "Arch OS Recovery"
 
 #. what it is, in one sentence, on the page that offers it
-#: recovery.yaml
+#: module.yaml
 msgid "Repair an Arch Linux system that is already on a disk."
 msgstr "Ein Arch-Linux-System reparieren, das schon auf einem Datenträger liegt."
 
 #. how to get back in, read on the way out to the console
-#: recovery.yaml
+#: module.yaml
 msgid "Type recovery at the prompt to start it again."
 msgstr "Mit dem Befehl recovery startest du sie wieder."
 
 #. the last thing read before the first task runs
-#: recovery.yaml
+#: module.yaml
 msgid ""
 "The system on {{ARCH_OS_RECOVERY_DISK}} will be unlocked and mounted at /mnt.\n"
 "\n"
@@ -42,92 +42,92 @@ msgstr ""
 "Daran ändert sich dadurch nichts. Ist es offen, kannst du auf einen Schnappschuss zurückgehen, die Startdateien neu bauen oder eine Shell öffnen. Jedes wird einzeln angeboten."
 
 #. ARCH_OS_RECOVERY_KEYMAP: the question
-#: recovery.yaml
+#: module.yaml
 msgid "Console keyboard"
 msgstr "Konsolentastatur"
 
 #. ARCH_OS_RECOVERY_KEYMAP: what it means
-#: recovery.yaml
+#: module.yaml
 msgid "The keyboard you are typing on right now. It is loaded immediately, and opens on the layout this live image was started with."
 msgstr "Die Tastatur, auf der du tippst. Sie wird hier und jetzt geladen und steht anfangs auf der Belegung, mit der dieses Live-Abbild gestartet wurde."
 
 #. ARCH_OS_RECOVERY_KEYMAP: the heading its row sits under
-#: recovery.yaml
+#: module.yaml
 msgid "Region"
 msgstr "Region"
 
 #. ARCH_OS_RECOVERY_DISK: the question
-#: recovery.yaml
+#: module.yaml
 msgid "Disk"
 msgstr "Datenträger"
 
 #. ARCH_OS_RECOVERY_DISK: what it means
-#: recovery.yaml
+#: module.yaml
 msgid "The disk holding the Arch OS installation to repair. Opening it does not change anything on it."
 msgstr "Der Datenträger mit der Arch-OS-Installation, die repariert werden soll. Ihn zu öffnen ändert nichts daran."
 
 #. ARCH_OS_RECOVERY_DISK: the heading its row sits under
-#: recovery.yaml
+#: module.yaml
 msgid "Storage"
 msgstr "Speicher"
 
 #. ARCH_OS_RECOVERY_DISK: what a wrong answer is told
-#: recovery.yaml
+#: module.yaml
 msgid "Choose a disk that exists."
 msgstr "Wähle einen vorhandenen Datenträger."
 
 #. ARCH_OS_RECOVERY_ENCRYPTION_ENABLED: the question
-#: recovery.yaml
+#: module.yaml
 msgid "Disk encryption"
 msgstr "Verschlüsselung"
 
 #. ARCH_OS_RECOVERY_ENCRYPTION_ENABLED: what it means
-#: recovery.yaml
+#: module.yaml
 msgid "Whether that disk is encrypted with LUKS. This is read directly off the disk, without needing the password. Change it only if the answer is wrong."
 msgstr "Ob dieser Datenträger mit LUKS verschlüsselt ist. Das wird vom Datenträger selbst gelesen, wofür kein Passwort nötig ist. Ändere es nur, wenn die Antwort nicht stimmt."
 
 #. ARCH_OS_RECOVERY_PASSWORD: the question
-#: recovery.yaml
+#: module.yaml
 msgid "Encryption password"
 msgstr "Verschlüsselungspasswort"
 
 #. ARCH_OS_RECOVERY_PASSWORD: what it means
-#: recovery.yaml
+#: module.yaml
 msgid "The password that unlocks that disk. It is asked for right before the recovery starts and is never written to a file."
 msgstr "Das Passwort, das diesen Datenträger entsperrt. Es wird unmittelbar vor dem Start der Wiederherstellung abgefragt und nie in eine Datei geschrieben."
 
 #. ARCH_OS_RECOVERY_FILESYSTEM: the question
-#: recovery.yaml
+#: module.yaml
 msgid "File system"
 msgstr "Dateisystem"
 
 #. ARCH_OS_RECOVERY_FILESYSTEM: what it means
-#: recovery.yaml
+#: module.yaml
 msgid "The file system of the system being repaired. btrfs can be rolled back to a snapshot; ext4 can be opened and worked on by hand. On an encrypted disk this cannot be read in advance, so please check it."
 msgstr "Das Dateisystem des Systems, das repariert wird. btrfs lässt sich auf einen Schnappschuss zurücksetzen, ext4 nur öffnen und von Hand bearbeiten. Auf einem verschlüsselten Datenträger lässt sich das vorher nicht auslesen — prüfe es also."
 
 #. ARCH_OS_RECOVERY_SNAPSHOT: the question
-#: recovery.yaml
+#: module.yaml
 msgid "Snapshot"
 msgstr "Schnappschuss"
 
 #. ARCH_OS_RECOVERY_SNAPSHOT: what it means
-#: recovery.yaml
+#: module.yaml
 msgid "The snapshot to put in place of the root subvolume. Newest first, with the date it was taken and what created it."
 msgstr "Der Schnappschuss, der an die Stelle des Wurzel-Subvolumes tritt. Der neueste zuerst, mit dem Zeitpunkt der Aufnahme und dem Anlass."
 
 #. the step, as the run lists it
-#: tasks/open/task.yaml
+#: tasks/open/open/task.yaml
 msgid "Unlock and mount the system"
 msgstr "System entsperren und einhängen"
 
 #. the step, as the run lists it
-#: tasks/rollback/task.yaml
+#: tasks/repair/rollback/task.yaml
 msgid "Go back to a snapshot"
 msgstr "Auf einen Schnappschuss zurückgehen"
 
 #. asked before the step runs
-#: tasks/rollback/task.yaml
+#: tasks/repair/rollback/task.yaml
 msgid ""
 "Put {{ARCH_OS_RECOVERY_SNAPSHOT}} in place of the root subvolume on {{ARCH_OS_RECOVERY_DISK}}?\n"
 "\n"
@@ -138,12 +138,12 @@ msgstr ""
 "Das System, wie es jetzt ist, wird gelöscht und durch diesen Schnappschuss ersetzt. Alles unter /home bleibt unangetastet, die übrigen Schnappschüsse ebenfalls. Du kannst wiederkommen und einen anderen wählen."
 
 #. the step, as the run lists it
-#: tasks/kernel/task.yaml
+#: tasks/repair/kernel/task.yaml
 msgid "Rebuild the boot files"
 msgstr "Startdateien neu bauen"
 
 #. asked before the step runs
-#: tasks/kernel/task.yaml
+#: tasks/repair/kernel/task.yaml
 msgid ""
 "Rebuild the kernel images and the initial ram disks?\n"
 "\n"
@@ -154,12 +154,12 @@ msgstr ""
 "Nötig, wenn der Rücksprung über ein Kernel-Update hinweg ging: Die Module im wiederhergestellten System und die Abbilder in /boot sind dann zwei verschiedene Kernel, und der Rechner startet ohne ein einziges Modul. Alles kommt aus dem Paket-Cache, ein Netzwerk braucht es dafür nicht."
 
 #. the step, as the run lists it
-#: tasks/shell/task.yaml
+#: tasks/repair/shell/task.yaml
 msgid "Open a shell in the system"
 msgstr "Eine Shell im System öffnen"
 
 #. asked before the step runs
-#: tasks/shell/task.yaml
+#: tasks/repair/shell/task.yaml
 msgid ""
 "Open a shell inside the system on {{ARCH_OS_RECOVERY_DISK}}?\n"
 "\n"
@@ -170,12 +170,12 @@ msgstr ""
 "Es ist alles eingehängt, hier wird von Hand erledigt, was die Wiederherstellung nicht selbst tut: ein Paket neu installieren, eine Konfigurationsdatei zurücklegen. Mit `exit` geht es zurück."
 
 #. the step, as the run lists it
-#: tasks/close/task.yaml
+#: tasks/close/close/task.yaml
 msgid "Unmount and lock the disk"
 msgstr "Aushängen und Datenträger sperren"
 
 #. asked before the step runs
-#: tasks/close/task.yaml
+#: tasks/close/close/task.yaml
 msgid ""
 "Unmount the system and lock the disk again?\n"
 "\n"
@@ -184,6 +184,16 @@ msgstr ""
 "Das System aushängen und den Datenträger wieder sperren?\n"
 "\n"
 "Verloren geht so oder so nichts, die Wiederherstellung ist fertig. Eingehängt zu lassen lohnt nur, wenn du von hier aus weiterarbeiten willst."
+
+#. the check, read where it is the one that failed
+#: tasks/@preflight/root/task.yaml
+msgid "Running as root"
+msgstr "Läuft als root"
+
+#. the check, read where it is the one that failed
+#: tasks/@preflight/live-image/task.yaml
+msgid "Started from the live image"
+msgstr "Vom Live-Image gestartet"
 
 #~ msgid "Recovery"
 #~ msgstr "Wiederherstellung"
