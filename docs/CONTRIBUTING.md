@@ -18,13 +18,13 @@ flowchart LR
 ```
 
 - **Branch `dev` off `main`** when there is work to do
-- Push to it as often as you like. `dev` is the one branch besides `main` that CI watches by itself, so every push runs the whole pipeline — the image and the boot test included — while there is still time to change something
+- Push to it as often as you like. CI watches `dev` by itself, just like `main`, so every push runs the whole pipeline — the image and the boot test included — while there is still time to change something
 - **Squash merge** it into `main` and delete it. The pull request title is what ends up in the history
 - Branch it again next time. Nothing carries over
 
 Anything arriving from outside branches off `main` and comes back as a pull request. That is checked and built, but not turned into an image — see [What a Push runs](#what-a-push-runs).
 
-**Note:** _Which branches are watched is one line: `branches: [main, dev]` in **[ci.yml](../.github/workflows/ci.yml)**. A name added there is under the full run, a name taken out is not._
+**Note:** _Which branches are watched is one line: `branches: [main, dev, neo]` in **[ci.yml](../.github/workflows/ci.yml)**. A name added there is under the full run, a name taken out is not._
 
 A release is a tag, not a branch that reached a state. `main` never has to *be* the released version.
 
@@ -93,7 +93,7 @@ flowchart TD
 | --- | --- | --- |
 | `Check` | every run | `make check`: every script linted, the repository scanned for secrets, both modules loaded, every catalog checked |
 | `Build` | every run | The release and the tarball, then unpacks the tarball and loads the product out of it |
-| `ISO` | `main` and `dev`, on demand | The bootable image, from the artefact `Build` produced |
+| `ISO` | every watched branch, on demand | The bootable image, from the artefact `Build` produced |
 | `Boot test` | after `ISO` | Boots that image and waits for the first page |
 | `Release` | a tag on `main` | Hangs the artefacts of that commit's run on the release page |
 

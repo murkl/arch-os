@@ -7,10 +7,11 @@ name: CI
 
 on:
   push:
-    # dev is where the work happens between releases and is watched like main,
-    # so the expensive jobs below run on it before anything is merged. Adding a
-    # branch here is the only thing that puts it under the full run.
-    branches: [main, dev]
+    # dev and neo are where the work happens between releases and are watched
+    # like main, so the expensive jobs below run on them before anything is
+    # merged. Adding a branch here is the only thing that puts it under the
+    # full run.
+    branches: [main, dev, neo]
   pull_request:
   workflow_dispatch:
 
@@ -23,8 +24,8 @@ defaults:
 
 # One run per branch, and a push that arrives while an older one is still going
 # takes its place. On main nothing is cancelled — that is the run a tag
-# publishes. A pull request off dev is the one case that runs twice, which is
-# the price of watching the branch it comes from.
+# publishes. A pull request off a watched branch is the one case that runs
+# twice, which is the price of watching the branch it comes from.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.ref_name != 'main' }}
