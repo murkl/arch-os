@@ -23,8 +23,8 @@ The [Oak](https://github.com/murkl/oak) binary with the [Installer](../modules/i
 ## What is where
 
 ```
-build.sh                                 assembles and runs mkarchiso
-smoke.sh                                 boots a built image and waits for the first page
+build.sh <release-dir>                   assembles and runs mkarchiso
+smoke.sh <image.iso>                     boots a built image and waits for the first page
 src/etc/systemd/system/arch-os.service   starts it on tty1
 src/usr/local/bin/arch-os                the entry point, sets up the console first
 src/usr/local/bin/installer              opens the Installer module directly
@@ -34,12 +34,14 @@ src/usr/local/bin/arch-os-console-theme  applies the Nord palette to the console
 
 ## Building it
 
+There is one Makefile and it is at the repository root, so both commands are run from there:
+
 ```
-make -C .. iso     # the release, then this image, beside it in ../dist
-make build         # from here, once a release already exists
+make iso       # the release, then this image, beside it in dist/
+make image     # ...only the image, out of a release that is already there
 ```
 
-**Note:** _The `*.iso` and its `.sha256` land in `../dist`, beside the release they were built from. What the image is called is read out of that release's own `oak.yaml`, so it is named after what it ships. The ISO label is that version, upper-cased, with everything a volume identifier may not hold replaced by an underscore._
+**Note:** _The `*.iso` and its `.sha256` land beside the release they were built from — the release folder is the one argument `build.sh` takes, and the image goes next to it. What the image is called is read out of that release's own `oak.yaml`, so it is named after what it ships. The ISO label is that version, upper-cased, with everything a volume identifier may not hold replaced by an underscore._
 
 The Bootsplash theme comes from a **[plymouth-theme-arch-os](https://github.com/murkl/plymouth-theme-arch-os)** checkout beside this repository if one exists, and is fetched otherwise. `PLYMOUTH_THEME_SRC` points at a different `src/`.
 
@@ -48,12 +50,12 @@ A build leaves nothing root-owned behind: `archiso/` is a fresh copy of the stoc
 ## Booting it
 
 ```
-make smoke                  # the newest image in ../dist
+make smoke                  # the newest image in dist/
 make smoke ISO=path/to.iso
 ```
 
 Boots the image under QEMU and OVMF, waits for the first page to appear on its console, then shuts the machine down. This checks what no linter can: the boot entry, the initramfs and its Plymouth hook, the systemd unit on tty1, the binary and the modules it loads.
 
-**Note:** _Needs `qemu-base`, `edk2-ovmf`, `tesseract` and `tesseract-data-eng`. The console screenshot is saved to `smoke/`, one frame on success and all of them on failure. CI runs this on every image it builds._
+**Note:** _Needs `qemu-base`, `edk2-ovmf`, `tesseract` and `tesseract-data-eng`. The console screenshot is saved beside the image it came out of, in `dist/smoke/` — one frame on success and all of them on failure. CI runs this on every image it builds._
 
-**Note:** _`make check` runs shellcheck and shfmt over every script here. `archiso` and root are only needed for `make build`, and `make clean` removes `archiso/`, `download/` and `smoke/`._
+**Note:** _`make check` runs shellcheck and shfmt over every script here. `archiso` and root are only needed to build an image — a machine without archiso is told so rather than having it installed for it — and `make clean` removes `archiso/` and `download/` here, along with everything in `dist/`._

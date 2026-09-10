@@ -4,7 +4,7 @@
 
 <h1>Arch OS</h1>
 
-<p><strong>A minimal and robust Arch Linux base, as a text console or a GNOME desktop, with an Installer and a Recovery on one bootable image.</strong></p>
+<p><strong>A minimal, robust and reproducible Arch Linux base, as a text console or a GNOME desktop, with an Installer and a Recovery on one bootable image.</strong></p>
 
 <p>
   <img src="https://img.shields.io/github/v/release/murkl/arch-os?style=for-the-badge&label=RELEASE&color=1793d1" alt="">
@@ -39,7 +39,7 @@
 - Desktop extras: codecs, fonts, printing, network protocols, everyday applications and Samba shares
 - Slim version: GNOME Core Apps only
 - Swap with zram-generator (zstd), systemd OOM, fstrim, microcode, NetworkManager and mirrors ranked by country (reflector)
-- AUR helper, 32-bit support (multilib), virtual machine support and automatic housekeeping
+- AUR helper, 32-bit support (multilib), container engine (Docker or Podman), virtual machine support and automatic housekeeping
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager and Shell Enhancement (bash, zsh or fish)
 - Arch OS Recovery on the same image, works without a network connection
 - Two starting points, Desktop or Minimal, with every question behind them still answerable

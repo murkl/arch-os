@@ -8,15 +8,19 @@
 #
 # Takes the image as its one argument; `make smoke` hands it the newest build.
 # Needs qemu, OVMF and tesseract - see README.md.
-set -e
+set -eu
 
-ISO="$1"
-[ -f "$ISO" ] || { echo "usage: $0 <image.iso>" >&2 && exit 1; }
+ISO="${1:-}"
+[ -f "$ISO" ] || {
+    echo "usage: $0 <image.iso>" >&2
+    exit 1
+}
 
-# Where the console is photographed. A failure keeps every frame, since a picture of
-# the screen is all there is to go on afterwards; a run that worked keeps the one
-# frame the interface was recognised in.
-FRAME_DIR="${FRAME_DIR:-./smoke}"
+# Where the console is photographed: beside the image it came out of, which is
+# dist/ and is taken back by `make clean` like everything else a build leaves. A
+# failure keeps every frame, since a picture of the screen is all there is to go
+# on afterwards; a run that worked keeps the one it was recognised in.
+FRAME_DIR="${FRAME_DIR:-$(dirname "$ISO")/smoke}"
 
 # The slow case is a cold boot under emulation with no KVM, which five minutes
 # covers with room to spare.
@@ -52,6 +56,7 @@ VARS="${FRAME_DIR}/vars.fd"
 cp "$OVMF_VARS" "$VARS"
 
 QEMU_PID=""
+last_shot=""
 cleanup() {
     status=$?
     set +e
@@ -133,7 +138,6 @@ echo "### Wait for the interface (up to ${TIMEOUT}s)"
 deadline=$((SECONDS + TIMEOUT))
 found=""
 frame=0
-last_shot=""
 while [ "$SECONDS" -lt "$deadline" ]; do
     sleep "$INTERVAL"
     kill -0 "$QEMU_PID" 2>/dev/null || fail "the machine stopped before the interface came up"

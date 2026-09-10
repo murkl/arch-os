@@ -7,7 +7,10 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # dev is where the work happens between releases and is watched like main,
+    # so the expensive jobs below run on it before anything is merged. Adding a
+    # branch here is the only thing that puts it under the full run.
+    branches: [main, dev]
   pull_request:
   workflow_dispatch:
 
@@ -18,16 +21,18 @@ defaults:
   run:
     shell: bash
 
-# A branch and its pull request never both run: pushes are watched on main,
-# everything else arrives as a pull request. On main nothing is cancelled —
-# that is the run a tag publishes.
+# One run per branch, and a push that arrives while an older one is still going
+# takes its place. On main nothing is cancelled — that is the run a tag
+# publishes. A pull request off dev is the one case that runs twice, which is
+# the price of watching the branch it comes from.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.ref_name != 'main' }}
 
 jobs:
-  # `make check` and nothing this file adds to it: what is checked lives in the
-  # Makefiles, so a rule that holds in CI holds at a desk.
+  # `make check` and nothing this file adds to it — the secret scan included:
+  # what is checked lives in the Makefile, so a rule that holds in CI holds at
+  # a desk.
   #
   # Nothing here needs a Go toolchain. The runtime is Oak, a project of its own,
   # and every job that needs it downloads the release the Makefile pins.
@@ -48,31 +53,9 @@ jobs:
 
       - uses: ./.github/actions/arch
         with:
-          packages: make curl shellcheck shfmt yamllint actionlint gettext diffutils
+          packages: make curl shellcheck shfmt yamllint actionlint gettext diffutils gitleaks
 
       - run: make check
-
-  security:
-    name: Security
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    container: archlinux:latest
-    permissions:
-      contents: read
-    steps:
-      - name: Make the checkout a repository
-        run: pacman -Sy --needed --noconfirm git
-
-      - uses: actions/checkout@v5
-
-      - uses: ./.github/actions/arch
-        with:
-          packages: gitleaks
-
-      # This project is installed by piping a script into a shell. A credential
-      # that reached the repository would be handed to everybody who did that.
-      - name: Secrets in the repository
-        run: gitleaks dir . --redact --no-banner
 
   # The only job that assembles anything. Everything downstream downloads this
   # artefact rather than building again.
@@ -144,12 +127,12 @@ jobs:
   # second build of the same sources.
   #
   # An archiso build is a quarter of an hour and a boot test another five
-  # minutes, which a pull request does not need: it is judged on the three jobs
-  # above. So everything that gets here is main or a run started by hand — see
-  # the trigger at the top.
+  # minutes, which a pull request does not need: it is judged on the two jobs
+  # above. So everything that gets here is a watched branch or a run started by
+  # hand — see the trigger at the top.
   iso:
     name: ISO
-    needs: [check, security, build]
+    needs: [check, build]
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -184,7 +167,9 @@ jobs:
           (cd dist && sha256sum -c ./*.sha256)
           tar -xzf dist/*.tar.gz -C dist
 
-      - run: make -C iso build
+      # The image out of the release that was just downloaded, rather than out
+      # of a second build of the same sources. `make iso` would do both.
+      - run: make image
 
       - uses: actions/upload-artifact@v7
         with:
@@ -239,7 +224,7 @@ jobs:
           name: iso
           path: dist
 
-      - run: make -C iso smoke
+      - run: make smoke
 
       # On a failure this is the only account of what the machine was showing
       # when it gave up.
@@ -247,7 +232,7 @@ jobs:
         if: always()
         run: |
           shopt -s nullglob
-          for frame in iso/smoke/*.ppm; do
+          for frame in dist/smoke/*.ppm; do
             pnmtopng "$frame" >"${frame%.ppm}.png"
           done
 
@@ -255,7 +240,7 @@ jobs:
         if: always()
         with:
           name: console
-          path: iso/smoke/*.png
+          path: dist/smoke/*.png
           if-no-files-found: ignore
           retention-days: 7
 

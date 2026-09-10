@@ -2,27 +2,33 @@
 # Turns a built release into a bootable ISO: stock Arch `releng`, patched so it
 # boots straight into the installer.
 #
-# RELEASE_DIR points at the release to ship and DIST_DIR at where the image goes;
-# the defaults are what the root Makefile uses. What the image is called is read
-# out of the release itself, so it is named after what is inside it. The finished
-# image and its checksum land in DIST_DIR.
-set -e
+#   build.sh <release-dir>
+#
+# The release to ship is the one argument - `make iso` hands it the one it just
+# built. The image and its checksum land beside that release, and what the image
+# is called is read out of the release itself, so it is named after what is
+# inside it.
+set -eu
 
 # ////////////////////////////////////////////////////////////////////////////
 # CONFIGURATION
 # ////////////////////////////////////////////////////////////////////////////
+
+# Resolved before anything moves, because everything below is relative to this
+# script rather than to wherever it was started from.
+[ "$#" -eq 1 ] || {
+    echo "usage: $0 <release-dir>" >&2
+    exit 1
+}
+RELEASE_DIR="$(realpath -m "$1")"
+DIST_DIR="$(dirname "$RELEASE_DIR")"
+cd "$(dirname "$0")"
 
 # mkarchiso has to run as root. Empty when there is nothing to elevate, which is
 # the case in CI.
 SUDO=""
 [ "$(id -u)" -eq 0 ] || SUDO="sudo"
 
-# `version:` in a product declaration - the one place this project's version is
-# written down, and what everything a build produces is named after.
-declared_version() { sed -n 's/^version:[[:space:]]*//p' "$1"; }
-
-DIST_DIR="${DIST_DIR:-../dist}"
-RELEASE_DIR="${RELEASE_DIR:-${DIST_DIR}/arch-os-$(declared_version ../oak.yaml)}"
 DOWNLOAD_DIR="./download"
 ISO_DIR="./archiso"
 ISO_CONFIG="releng" # baseline or releng
@@ -82,23 +88,32 @@ trap cleanup EXIT
 # ////////////////////////////////////////////////////////////////////////////
 
 echo "### Initialize Build"
-[ -x "${RELEASE_DIR}/oak" ] || { echo "Error: ${RELEASE_DIR}/oak not found - run 'make build' first" >&2 && exit 1; }
-[ -f "${RELEASE_DIR}/oak.yaml" ] || { echo "Error: ${RELEASE_DIR}/oak.yaml not found - run 'make build' first" >&2 && exit 1; }
-[ -f "${RELEASE_DIR}/modules/installer/module.yaml" ] || { echo "Error: ${RELEASE_DIR}/modules/installer/module.yaml not found - run 'make build' first" >&2 && exit 1; }
-[ -f "${RELEASE_DIR}/modules/recovery/module.yaml" ] || { echo "Error: ${RELEASE_DIR}/modules/recovery/module.yaml not found - run 'make build' first" >&2 && exit 1; }
+
+# What a release is, checked before an hour of mkarchiso finds out. The modules
+# are not named here: which ones there are is whatever the release holds.
+for part in oak oak.yaml modules; do
+    [ -e "${RELEASE_DIR}/${part}" ] || {
+        echo "Error: ${RELEASE_DIR} holds no ${part} - run 'make build' first" >&2
+        exit 1
+    }
+done
+
+# archiso is a package rather than something to install behind somebody's back:
+# a build that would change the machine it runs on says so instead.
+command -v mkarchiso >/dev/null || {
+    echo "Error: mkarchiso not found - install the archiso package" >&2
+    exit 1
+}
 
 # The release says what it is, so the image cannot end up named after anything
 # else than what it ships.
-: "${VERSION:=$(declared_version "${RELEASE_DIR}/oak.yaml")}"
+VERSION="$(sed -n 's/^version:[[:space:]]*//p' "${RELEASE_DIR}/oak.yaml")"
 echo "building Arch OS ${VERSION} from ${RELEASE_DIR}"
 mkdir -p "$DOWNLOAD_DIR"
 unmount_leftovers "${WORK_DIR}"
 unmount_leftovers "${ISO_DIR}"
 ${SUDO} rm -rf "${ISO_DIR}" "${WORK_DIR}"
 mkdir -p "${ISO_DIR}"
-
-# Install dependencies
-! command -v /usr/bin/mkarchiso &>/dev/null && ${SUDO} pacman -S --noconfirm archiso
 
 # Generate ISO (baseline/releng)
 cp -r "/usr/share/archiso/configs/${ISO_CONFIG}/"* "${ISO_DIR}"

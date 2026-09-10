@@ -60,8 +60,9 @@ jobs:
           ref: ${{ inputs.tag || github.ref_name }}
 
       # A tag is a name for a version that was decided in the commit, so the two
-      # have to agree. They disagree when a merge forgot to raise it, and that is
-      # worth finding here rather than on a release page.
+      # have to agree. `make tag` writes the tag out of oak.yaml and cannot get
+      # this wrong; a tag typed by hand or made on the release page can, and
+      # that is worth finding here rather than on a release page.
       - name: The tag says what the commit declares
         env:
           VERSION: ${{ steps.version.outputs.version }}

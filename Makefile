@@ -6,8 +6,20 @@
 #   dist/arch-os-2.0.0-x86_64.tar.gz    that folder as one file  (+ .sha256)
 #   dist/arch-os-2.0.0-x86_64.iso       the bootable image       (+ .sha256)
 #
-# `build` writes the first, `tarball` and `iso` each turn it into one of the
+# `build` writes the first, `tarball` and `image` each turn it into one of the
 # others. Nothing is ever assembled twice.
+#
+# This is the only task runner in the repository. What CI runs is these targets,
+# so a rule that holds at a desk holds there.
+
+# Every recipe is one bash with -e, -u and pipefail: a command that fails in the
+# middle of a line or a pipeline fails the target rather than the next one.
+SHELL       := /bin/bash
+.SHELLFLAGS := -euo pipefail -c
+
+# A file target whose recipe failed is removed rather than left half written for
+# the next run to mistake for finished work.
+.DELETE_ON_ERROR:
 
 # ////////////////////////////////////////////////////////////////////////////
 # THE PRODUCT | What a release is called and what it holds
@@ -21,7 +33,8 @@ MODULES_DIR := modules
 
 # The single source of truth for this project's version, declared where
 # everything else about the product is. It becomes both filenames, the ISO label
-# and the tag `v` + this — the `v` belongs to the tag and to nothing else.
+# and the tag `v` + this — the `v` belongs to the tag and to nothing else, and
+# `make tag` is what writes it, so the two cannot drift apart.
 VERSION := $(shell sed -n 's/^version:[[:space:]]*//p' $(PRODUCT))
 
 # Which modules there are is whatever folders are in modules/, so adding one is
@@ -75,17 +88,55 @@ DEV_DIR := .dev
 MODULE ?=
 ARGS   ?=
 
-# The shell that is not part of a module: the one command that installs this,
-# and the one that writes a workflow run's summary. POSIX sh, both of them.
-SCRIPTS := get.sh .github/summary.sh
+# ////////////////////////////////////////////////////////////////////////////
+# THE IMAGE | Stock Arch releng, patched to boot into this
+# ////////////////////////////////////////////////////////////////////////////
+
+# Two scripts rather than two targets: assembling an archiso profile is a
+# script's work, and so is booting a machine to read its console. Each takes
+# what it works on as an argument, so neither has to know where a build put it.
+ISO_DIR   := iso
+ISO_BUILD := $(ISO_DIR)/build.sh
+ISO_SMOKE := $(ISO_DIR)/smoke.sh
+
+# What `make smoke` boots: the newest image there is, so `make iso && make
+# smoke` needs no argument. Read when it is used rather than when make starts,
+# which is what lets the two run in one line.
+ISO ?= $(shell ls -t $(DIST_DIR)/*.iso 2>/dev/null | head -1)
+
+# ////////////////////////////////////////////////////////////////////////////
+# THE SCRIPTS | Everything checked, by the dialect it is written in
+# ////////////////////////////////////////////////////////////////////////////
+
+# POSIX sh, because both run on whatever shell the machine has: the one command
+# that installs this, and the one that writes a workflow run's summary.
+POSIX_SCRIPTS := get.sh .github/summary.sh
+
+# Bash: what builds and boots the image, and what the image itself runs.
+ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(wildcard $(ISO_DIR)/src/usr/local/bin/*)
 
 # Every script of every module. Oak sources them rather than executing them, so
 # none carries a shebang and the dialect comes from each module's .shellcheckrc.
-MODULE_SCRIPTS := $(shell find $(MODULES_DIR) -name '*.sh')
+# Looked up when it is used rather than when make starts, so only the two
+# targets that read it pay for the search.
+MODULE_SCRIPTS = $(shell find $(MODULES_DIR) -name '*.sh')
 
-.PHONY: all oak build dev run inspect tarball iso locales locales-check lint fmt check version version-check clean
+# ////////////////////////////////////////////////////////////////////////////
+# HOUSEKEEPING
+# ////////////////////////////////////////////////////////////////////////////
 
-# build empties the release it writes, and the two targets that package it read
+# Everything a build leaves, wherever it leaves it. The runtime in .oak/ is not
+# in here: it is a dependency rather than build output.
+BUILD_OUTPUT := $(DIST_DIR) $(DEV_DIR) $(ISO_DIR)/archiso $(ISO_DIR)/download
+
+# Empty when there is nothing to elevate, which is the case in CI. Only `clean`
+# reaches for it, and only when a plain removal was refused.
+SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
+
+.PHONY: all oak build dev run inspect tarball image iso smoke locales \
+	locales-check lint fmt check version version-check secrets-check tag clean
+
+# build empties the release it writes, and everything that packages it reads
 # what it left. Running them at once would package a half-written folder.
 .NOTPARALLEL:
 
@@ -115,7 +166,7 @@ build: $(OAK_BIN)
 	mkdir -p $(RELEASE_DIR)
 	install -m 755 $(OAK_BIN) $(RELEASE_DIR)/$(APP)
 	install -m 644 $(PRODUCT) $(RELEASE_DIR)/$(PRODUCT)
-	set -e; for m in $(MODULES); do \
+	for m in $(MODULES); do \
 		dest=$(RELEASE_DIR)/$(MODULES_DIR)/$$m; \
 		mkdir -p $$dest; \
 		cp $(MODULES_DIR)/$$m/$(MODULE_DECL) $$dest/; \
@@ -139,6 +190,12 @@ dev: $(OAK_BIN)
 run: dev
 	cd $(DEV_DIR) && ./$(APP) $(if $(MODULE),--module=$(MODULE)) $(ARGS)
 
+# Both modules loaded exactly as a run loads them: every task ordered, every
+# condition resolved, every question checked against the tasks that read it —
+# and the order it all adds up to, which is the one thing nobody writes down.
+inspect: dev
+	@cd $(DEV_DIR) && ./$(APP) --inspect
+
 # The release as one file, for a stock Arch ISO: unpack it, run ./oak. get.sh
 # picks both downloads out of a release by extension, so renaming either one is
 # a change here and nowhere else.
@@ -148,41 +205,37 @@ tarball: build
 		-C $(RELEASE_DIR) $(APP) $(PRODUCT) $(MODULES_DIR)
 	cd $(DIST_DIR) && sha256sum $(TARBALL) > $(TARBALL).sha256
 
-# The image is built out of the release beside it and named after the version
-# that release declares, so there is nothing to hand down here.
-iso: build
-	$(MAKE) -C iso build RELEASE_DIR=../$(RELEASE_DIR) DIST_DIR=../$(DIST_DIR)
+# The image, out of the release already in dist/ rather than out of a second
+# build of the same sources — which is what CI does with the tarball it
+# downloaded. What the image is called is read out of that release, so there is
+# nothing to hand down here.
+image:
+	$(ISO_BUILD) $(CURDIR)/$(RELEASE_DIR)
 
-# Both modules loaded exactly as a run loads them: every task ordered, every
-# condition resolved, every question checked against the tasks that read it —
-# and the order it all adds up to, which is the one thing nobody writes down.
-inspect: dev
-	@cd $(DEV_DIR) && ./$(APP) --inspect
+# The whole way there, for a machine that has nothing yet.
+iso: build image
+
+# Boots a built image and waits for the interface to come up in it. The frames
+# land beside the image, in dist/.
+smoke:
+	$(ISO_SMOKE) $(ISO)
 
 # Every template rewritten out of the module it belongs to, and every catalog
 # brought up to it. msgmerge keeps every translation whose source text is
 # unchanged and marks the rest fuzzy rather than dropping it.
 locales: dev
-	set -e; for m in $(MODULES); do \
+	for m in $(MODULES); do \
 		pot=$(MODULES_DIR)/$$m/locales/$$m.pot; \
 		(cd $(DEV_DIR) && ./$(APP) --strings --module=$$m) >$$pot; \
 		for po in $(MODULES_DIR)/$$m/locales/*.po; do \
+			[ -e "$$po" ] || continue; \
 			msgmerge --quiet --update --backup=none --no-wrap "$$po" $$pot; \
 		done; \
 	done
 
-# A question added or reworded without `make locales` being run is a question no
-# translator will ever be shown. And a translation that drops a placeholder is a
-# message that breaks where it is printed rather than where it was written.
-locales-check: dev
-	@set -e; for m in $(MODULES); do \
-		pot=$(MODULES_DIR)/$$m/locales/$$m.pot; \
-		(cd $(DEV_DIR) && ./$(APP) --strings --module=$$m) | diff -u $$pot - \
-			|| { echo "$$pot is out of date — run 'make locales'" >&2; exit 1; }; \
-		for po in $(MODULES_DIR)/$$m/locales/*.po; do \
-			printf '%s: ' "$$po"; msgfmt --check-format --statistics -o /dev/null "$$po" || exit 1; \
-		done; \
-	done
+# ////////////////////////////////////////////////////////////////////////////
+# CHECKS | What has to pass before anything is committed
+# ////////////////////////////////////////////////////////////////////////////
 
 # The version this build carries, for anything outside make that needs it.
 version:
@@ -194,28 +247,75 @@ version-check:
 	@echo "$(VERSION)" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$$' \
 		|| { echo "$(PRODUCT) declares '$(VERSION)', which is not a version" >&2; exit 1; }
 
-# The two above are checked as POSIX sh, since get.sh runs on whatever shell the
+# This project is installed by piping a script into a shell. A credential that
+# reached the repository would be handed to everybody who did that. What git
+# ignores is skipped, so a build in dist/ is not scanned.
+secrets-check:
+	gitleaks dir . --redact --no-banner
+
+# A question added or reworded without `make locales` being run is a question no
+# translator will ever be shown. And a translation that drops a placeholder is a
+# message that breaks where it is printed rather than where it was written.
+locales-check: dev
+	@for m in $(MODULES); do \
+		pot=$(MODULES_DIR)/$$m/locales/$$m.pot; \
+		(cd $(DEV_DIR) && ./$(APP) --strings --module=$$m) | diff -u $$pot - \
+			|| { echo "$$pot is out of date — run 'make locales'" >&2; exit 1; }; \
+		for po in $(MODULES_DIR)/$$m/locales/*.po; do \
+			[ -e "$$po" ] || continue; \
+			printf '%s: ' "$$po"; msgfmt --check-format --statistics -o /dev/null "$$po" || exit 1; \
+		done; \
+	done
+
+# The two POSIX scripts are checked as sh, since they run on whatever shell the
 # machine has. A module's scripts are checked the way Oak runs them: as bash,
-# with module.sh already in scope. actionlint reads the workflows again for what a
-# yaml linter cannot see.
+# with module.sh already in scope. actionlint reads the workflows again for what
+# a yaml linter cannot see.
 lint:
-	shellcheck -s sh -S style $(SCRIPTS)
-	shfmt -d -ln posix -i 4 $(SCRIPTS)
-	shellcheck -x $(MODULE_SCRIPTS)
-	shfmt -d -i 4 $(MODULE_SCRIPTS)
+	shellcheck -s sh -S style $(POSIX_SCRIPTS)
+	shellcheck -S style $(ISO_SCRIPTS)
+	shellcheck -x -S style $(MODULE_SCRIPTS)
+	shfmt -d -ln posix -i 4 $(POSIX_SCRIPTS)
+	shfmt -d -i 4 $(ISO_SCRIPTS) $(MODULE_SCRIPTS)
 	yamllint .
 	actionlint
 
 fmt:
-	shfmt -w -ln posix -i 4 $(SCRIPTS)
-	shfmt -w -i 4 $(MODULE_SCRIPTS)
+	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)
+	shfmt -w -i 4 $(ISO_SCRIPTS) $(MODULE_SCRIPTS)
 
-# What has to pass before anything is committed.
-check: version-check lint inspect locales-check
-	$(MAKE) -C iso check
+# The whole gate, cheapest and loudest first. CI runs this and nothing it adds
+# to it, so there is no second definition of green.
+check: version-check secrets-check lint inspect locales-check
+
+# ////////////////////////////////////////////////////////////////////////////
+# RELEASING
+# ////////////////////////////////////////////////////////////////////////////
+
+# The tag that publishes a release, made out of the declared version rather than
+# typed — so a tag naming a version this commit does not declare cannot be
+# written in the first place. The release workflow refuses one anyway, for a tag
+# made on the web page, but by then it exists and has to be deleted again.
+#
+# It is created and not pushed: pushing it is what publishes, and that is a
+# second decision.
+tag: version-check
+	@[ -z "$$(git status --porcelain)" ] \
+		|| { echo "the tree has uncommitted changes — a tag names a commit, not a desk" >&2; exit 1; }
+	@git merge-base --is-ancestor HEAD origin/main 2>/dev/null \
+		|| { echo "HEAD is not on main — run 'git switch main && git pull' first" >&2; exit 1; }
+	@if git rev-parse -q --verify "refs/tags/v$(VERSION)" >/dev/null; then \
+		echo "v$(VERSION) exists already — raise version: in $(PRODUCT)" >&2; exit 1; \
+	fi
+	git tag "v$(VERSION)"
+	@echo "push it with:  git push origin v$(VERSION)"
 
 # The downloaded runtime stays: it is a dependency rather than build output.
 # `make oak` replaces it.
+#
+# mkarchiso writes as root, and a build killed before its own cleanup ran leaves
+# root-owned files behind. The plain removal is tried first, so an ordinary
+# clean never asks for a password; what survives it needs the escalation the
+# build itself used — see iso/build.sh.
 clean:
-	$(MAKE) -C iso clean
-	rm -rf $(DIST_DIR) $(DEV_DIR)
+	rm -rf $(BUILD_OUTPUT) || $(SUDO) rm -rf $(BUILD_OUTPUT)

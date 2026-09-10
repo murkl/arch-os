@@ -67,6 +67,7 @@ presets:
           ARCH_OS_SHELL_ENHANCEMENT_ENABLED: true
           ARCH_OS_SHELL_ENHANCEMENT_SHELL: zsh
           ARCH_OS_MANAGER_ENABLED: true
+          ARCH_OS_CONTAINER_ENGINE: none
           ARCH_OS_BTRFS_SNAPPER_ENABLED: true
           ARCH_OS_BTRFS_ASSISTANT_ENABLED: true
           ARCH_OS_AUR_HELPER: paru
@@ -85,6 +86,7 @@ presets:
           ARCH_OS_SHELL_ENHANCEMENT_ENABLED: false
           ARCH_OS_SHELL_ENHANCEMENT_SHELL: bash
           ARCH_OS_MANAGER_ENABLED: false
+          ARCH_OS_CONTAINER_ENGINE: none
           ARCH_OS_BTRFS_SNAPPER_ENABLED: false
           ARCH_OS_BTRFS_ASSISTANT_ENABLED: false
           ARCH_OS_DESKTOP_GRAPHICS_DRIVER: none
@@ -458,6 +460,17 @@ variables:
     group: System
     values: [paru, paru-bin, paru-git, yay, none]
     default: paru
+    required: true
+
+  - name: ARCH_OS_CONTAINER_ENGINE
+    title: Container engine
+    description: |
+      docker is what most software and documentation assumes. podman runs
+      containers without a daemon and without root, and answers to the docker
+      command as well. Both come with a compose command.
+    group: System
+    values: [docker, podman, none]
+    default: none
     required: true
 
   - name: ARCH_OS_HOUSEKEEPING_ENABLED

@@ -473,6 +473,16 @@ msgstr "AUR-Helfer"
 msgid "Installs software from the Arch User Repository just as easily as from the official repositories."
 msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen."
 
+#. ARCH_OS_CONTAINER_ENGINE: the question
+#: module.yaml
+msgid "Container engine"
+msgstr "Container-Engine"
+
+#. ARCH_OS_CONTAINER_ENGINE: what it means
+#: module.yaml
+msgid "docker is what most software and documentation assumes. podman runs containers without a daemon and without root, and answers to the docker command as well. Both come with a compose command."
+msgstr "docker ist das, wovon die meiste Software und Dokumentation ausgeht. podman führt Container ohne Daemon und ohne root aus und hört ebenso auf den Befehl docker. Beide bringen einen compose-Befehl mit."
+
 #. ARCH_OS_HOUSEKEEPING_ENABLED: the question
 #: module.yaml
 msgid "Housekeeping"
@@ -607,6 +617,11 @@ msgstr "Schnappschüsse einrichten"
 #: tasks/boot/bootloader/task.yaml
 msgid "Install the boot loader"
 msgstr "Bootloader installieren"
+
+#. the step, as the run lists it
+#: tasks/system/container-engine/task.yaml
+msgid "Install the container engine"
+msgstr "Container-Engine installieren"
 
 #. the step, as the run lists it
 #: tasks/system/enable-multilib/task.yaml

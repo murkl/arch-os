@@ -4,21 +4,27 @@ Everything here follows from one rule: **a commit is built once**. The ISO on th
 
 ## Branches
 
-One long-lived branch. Work happens on a branch off it and comes back through a pull request.
+`main` is the released line, and it is one straight line: one commit per round of work. The work itself happens on `dev`.
 
 ```mermaid
 flowchart LR
-    M["main"] -->|branch off| F["feature/*"]
-    F -->|pull request| C["CI checks it"]
-    C -->|squash merge| M2["main<br/>one commit per change"]
+    M["main"] -->|branch off| D["dev"]
+    D -->|every push| C["CI<br/>checked · built · booted"]
+    C -->|squash merge| M2["main<br/>one commit per round"]
     M2 -->|tag v2.0.0| R["Release<br/>artefacts of that commit"]
+    M2 -.->|delete dev| M
 
     style R fill:#1793d1,stroke:#1793d1,color:#fff
 ```
 
-- Branch off `main`, name it `feature/<what>`
-- Open a pull request. CI checks it
-- **Merge with squash.** One pull request is one commit, so `main` stays a straight line and its title is what ends up in the history
+- **Branch `dev` off `main`** when there is work to do
+- Push to it as often as you like. `dev` is the one branch besides `main` that CI watches by itself, so every push runs the whole pipeline — the image and the boot test included — while there is still time to change something
+- **Squash merge** it into `main` and delete it. The pull request title is what ends up in the history
+- Branch it again next time. Nothing carries over
+
+Anything arriving from outside branches off `main` and comes back as a pull request. That is checked and built, but not turned into an image — see [What a Push runs](#what-a-push-runs).
+
+**Note:** _Which branches are watched is one line: `branches: [main, dev]` in **[ci.yml](../.github/workflows/ci.yml)**. A name added there is under the full run, a name taken out is not._
 
 A release is a tag, not a branch that reached a state. `main` never has to *be* the released version.
 
@@ -34,23 +40,25 @@ A release is a tag, not a branch that reached a state. `main` never has to *be* 
 | Interface | `Arch OS 2.0.0` on every page |
 | Git tag | `v2.0.0` |
 
-**Note:** _The `v` belongs to the tag and to nothing else. `make check` refuses a version that is not `X.Y.Z`, and the Release workflow refuses a tag that says anything other than what `oak.yaml` declares._
+**Note:** _The `v` belongs to the tag and to nothing else. `make tag` writes the tag out of `oak.yaml` rather than letting anybody type it, `make check` refuses a version that is not `X.Y.Z`, and the Release workflow refuses a tag that says anything other than what the commit declares._
 
 This is what lets a tag publish without building. The version is decided in the commit, so the run that built that commit on `main` already produced files named after the release they become.
 
 ## Releasing
 
-1. **Raise `version:`** in `oak.yaml`, on the branch the work is on
-2. **Squash merge** the pull request. Name it after the version, since the title becomes the commit. The run on `main` checks, builds, boots and keeps its artefacts for 90 days — it publishes nothing
+1. **Raise `version:`** in `oak.yaml`, on `dev`
+2. **Squash merge** it into `main`. Name it after the version, since the title becomes the commit. The run on `main` checks, builds, boots and keeps its artefacts for 90 days — it publishes nothing
 3. **Push the tag:**
 
 ```
 git switch main && git pull
-git tag v2.0.0
+make tag
 git push origin v2.0.0
 ```
 
 That starts the Release workflow. It finds the run that built this commit, downloads that run's artefacts and hangs them on the release page.
+
+**Note:** _`make tag` reads the version out of `oak.yaml` and writes `v` + it, so a tag naming a version this commit does not declare cannot be made in the first place. It refuses an unclean tree, a `HEAD` that is not on `main`, and a tag that exists already. Pushing it is left as a second decision, because pushing is what publishes._
 
 | File | Description |
 | --- | --- |
@@ -68,10 +76,8 @@ Each has a `.sha256` beside it. `get.sh` picks both out of the latest release by
 ```mermaid
 flowchart TD
     P["push"] --> C["Check<br/><small>make check</small>"]
-    P --> S["Security<br/><small>gitleaks</small>"]
     P --> B["Build<br/><small>release · tarball</small>"]
     C --> I
-    S --> I
     B --> I["ISO<br/><small>archiso, from the build's artefact</small>"]
     I --> K["Boot test<br/><small>qemu + OVMF, until the first page appears</small>"]
     T["tag vX.Y.Z"] --> R["Release<br/><small>publish · nothing built</small>"]
@@ -85,18 +91,17 @@ flowchart TD
 
 | Job | Where | Description |
 | --- | --- | --- |
-| `Check` | every run | `make check`: every script linted, both modules loaded, every catalog checked |
-| `Security` | every run | A secret scan of the repository |
+| `Check` | every run | `make check`: every script linted, the repository scanned for secrets, both modules loaded, every catalog checked |
 | `Build` | every run | The release and the tarball, then unpacks the tarball and loads the product out of it |
-| `ISO` | `main`, on demand | The bootable image, from the artefact `Build` produced |
+| `ISO` | `main` and `dev`, on demand | The bootable image, from the artefact `Build` produced |
 | `Boot test` | after `ISO` | Boots that image and waits for the first page |
 | `Release` | a tag on `main` | Hangs the artefacts of that commit's run on the release page |
 
 `Build` is the only job that assembles anything, and the tarball is the only thing it hands on. `ISO` unpacks that tarball instead of assembling again, so the image holds the very file the release page offers. `Release` builds nothing at all.
 
-The dashed jobs are the expensive ones — an archiso build is a quarter of an hour — so a pull request is judged on the three above them.
+The dashed jobs are the expensive ones — an archiso build is a quarter of an hour — so a pull request is judged on the two above them.
 
-**Note:** _To build an image from any branch, run the workflow on it by hand (Actions ▸ CI ▸ Run workflow)._
+**Note:** _To build an image from a branch that is not watched, run the workflow on it by hand (Actions ▸ CI ▸ Run workflow)._
 
 **Note:** _Every artefact is listed on the run's summary page with its size and its checksum. The boot test keeps the console as a PNG there too, one frame on success and all of them on failure._
 
@@ -112,9 +117,11 @@ make inspect          # load both modules and print the order they resolve to
 make build            # the release, as a machine runs it
 make tarball          # the release, as a stock Arch ISO downloads it
 make iso              # the release, as a bootable image
-make -C iso smoke     # boot the newest image and wait for its first page
+make image            # ...only the image, out of the release already in dist/
+make smoke            # boot the newest image and wait for its first page
 make locales          # every translation template, and every catalog brought up to it
 make version          # what this build is called
+make tag              # the tag that releases it, written out of oak.yaml
 make oak              # fetch the runtime again, at the release OAK_VERSION names
 make clean            # every build output, taken back; the runtime stays
 ```
@@ -128,10 +135,11 @@ dist/
 │   ├── oak.yaml                         the product
 │   └── modules/                         Installer and Recovery
 ├── arch-os-2.0.0-x86_64.tar.gz          the folder above, as one file
-└── arch-os-2.0.0-x86_64.iso             the bootable image
+├── arch-os-2.0.0-x86_64.iso             the bootable image
+└── smoke/                               the console, as the boot test saw it
 ```
 
-`make build` writes the folder. `make tarball` and `make iso` each turn it into one of the downloads, and each writes a `.sha256` beside itself.
+`make build` writes the folder. `make tarball` and `make image` each turn it into one of the downloads, and each writes a `.sha256` beside itself. There is one Makefile and it is at the root: `iso/` holds the two scripts that assemble and boot an image, and nothing else runs from in there.
 
 Install the required packages:
 
@@ -142,11 +150,11 @@ sudo pacman -S --needed make curl shellcheck shfmt yamllint actionlint \
 
 | Command | Needs |
 | --- | --- |
-| `make check` | `curl`, `shellcheck`, `shfmt`, `yamllint`, `actionlint`, `gettext` |
+| `make check` | `curl`, `shellcheck`, `shfmt`, `yamllint`, `actionlint`, `gettext`, `gitleaks` |
 | `make iso` | `archiso` and root |
-| `make -C iso smoke` | `qemu-base`, `edk2-ovmf`, `tesseract`, `tesseract-data-eng` |
+| `make smoke` | `qemu-base`, `edk2-ovmf`, `tesseract`, `tesseract-data-eng` |
 
-**Note:** _The first command that needs the runtime downloads it into `.oak/` and keeps it. The release it comes from is `OAK_VERSION` in the root Makefile, written without the `v` its tag carries. After raising it, `make oak` fetches the new one._
+**Note:** _The first command that needs the runtime downloads it into `.oak/` and keeps it. The release it comes from is `OAK_VERSION` in the Makefile, written without the `v` its tag carries. After raising it, `make oak` fetches the new one._
 
 **Note:** _CI installs the same packages and runs the same commands in an Arch container. There is no second definition of green._
 
@@ -229,7 +237,7 @@ gh api -X PUT repos/murkl/arch-os/branches/main/protection --input - <<'EOF'
   "enforce_admins": false,
   "required_status_checks": {
     "strict": false,
-    "contexts": ["Check", "Security", "Build"]
+    "contexts": ["Check", "Build"]
   },
   "required_pull_request_reviews": null,
   "restrictions": null
@@ -241,6 +249,6 @@ gh repo edit --enable-merge-commit=false --enable-rebase-merge=false \
     --enable-squash-merge --delete-branch-on-merge
 ```
 
-**Note:** _The required checks are the three that run everywhere. `ISO` and `Boot test` do not run on a pull request, and requiring them would leave every one of them waiting for a check that never arrives._
+**Note:** _The required checks are the two that run everywhere. `ISO` and `Boot test` do not run on a pull request, and requiring them would leave every one of them waiting for a check that never arrives._
 
 **Note:** _Nothing else has to be configured. The workflows sign with the token GitHub already provides, and Dependabot opens its pull requests against the default branch._
