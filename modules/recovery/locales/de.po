@@ -15,10 +15,15 @@ msgstr ""
 msgid "English"
 msgstr "Deutsch"
 
-#. what this program is called, and what one run of it is called
+#. what this program is called, where the interface talks about it
 #: module.yaml
-msgid "Arch OS Recovery"
-msgstr "Arch OS Recovery"
+msgid "Recovery"
+msgstr "Recovery"
+
+#. what opening it does, on the row that opens it
+#: module.yaml
+msgid "Recover"
+msgstr "Wiederherstellen"
 
 #. what it is, in one sentence, on the page that offers it
 #: module.yaml
@@ -117,17 +122,17 @@ msgid "The snapshot to put in place of the root subvolume. Newest first, with th
 msgstr "Der Schnappschuss, der an die Stelle des Wurzel-Subvolumes tritt. Der neueste zuerst, mit dem Zeitpunkt der Aufnahme und dem Anlass."
 
 #. the step, as the run lists it
-#: tasks/open/task.yaml
+#: tasks/@open/open/task.yaml
 msgid "Unlock and mount the system"
 msgstr "System entsperren und einhängen"
 
 #. the step, as the run lists it
-#: tasks/rollback/task.yaml
+#: tasks/@repair/rollback/task.yaml
 msgid "Go back to a snapshot"
 msgstr "Auf einen Schnappschuss zurückgehen"
 
 #. asked before the step runs
-#: tasks/rollback/task.yaml
+#: tasks/@repair/rollback/task.yaml
 msgid ""
 "Put {{ARCH_OS_RECOVERY_SNAPSHOT}} in place of the root subvolume on {{ARCH_OS_RECOVERY_DISK}}?\n"
 "\n"
@@ -138,12 +143,12 @@ msgstr ""
 "Das System, wie es jetzt ist, wird gelöscht und durch diesen Schnappschuss ersetzt. Alles unter /home bleibt unangetastet, die übrigen Schnappschüsse ebenfalls. Du kannst wiederkommen und einen anderen wählen."
 
 #. the step, as the run lists it
-#: tasks/kernel/task.yaml
+#: tasks/@repair/kernel/task.yaml
 msgid "Rebuild the boot files"
 msgstr "Startdateien neu bauen"
 
 #. asked before the step runs
-#: tasks/kernel/task.yaml
+#: tasks/@repair/kernel/task.yaml
 msgid ""
 "Rebuild the kernel images and the initial ram disks?\n"
 "\n"
@@ -154,12 +159,12 @@ msgstr ""
 "Nötig, wenn der Rücksprung über ein Kernel-Update hinweg ging: Die Module im wiederhergestellten System und die Abbilder in /boot sind dann zwei verschiedene Kernel, und der Rechner startet ohne ein einziges Modul. Alles kommt aus dem Paket-Cache, ein Netzwerk braucht es dafür nicht."
 
 #. the step, as the run lists it
-#: tasks/shell/task.yaml
+#: tasks/@repair/shell/task.yaml
 msgid "Open a shell in the system"
 msgstr "Eine Shell im System öffnen"
 
 #. asked before the step runs
-#: tasks/shell/task.yaml
+#: tasks/@repair/shell/task.yaml
 msgid ""
 "Open a shell inside the system on {{ARCH_OS_RECOVERY_DISK}}?\n"
 "\n"
@@ -170,12 +175,12 @@ msgstr ""
 "Es ist alles eingehängt, hier wird von Hand erledigt, was die Wiederherstellung nicht selbst tut: ein Paket neu installieren, eine Konfigurationsdatei zurücklegen. Mit `exit` geht es zurück."
 
 #. the step, as the run lists it
-#: tasks/close/task.yaml
+#: tasks/@close/close/task.yaml
 msgid "Unmount and lock the disk"
 msgstr "Aushängen und Datenträger sperren"
 
 #. asked before the step runs
-#: tasks/close/task.yaml
+#: tasks/@close/close/task.yaml
 msgid ""
 "Unmount the system and lock the disk again?\n"
 "\n"
@@ -194,6 +199,3 @@ msgstr "Läuft als root"
 #: hooks/@preflight/live-image/hook.yaml
 msgid "Started from the live image"
 msgstr "Vom Live-Image gestartet"
-
-#~ msgid "Recovery"
-#~ msgstr "Wiederherstellung"

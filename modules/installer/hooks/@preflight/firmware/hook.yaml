@@ -1,7 +1,7 @@
 title: Booted in UEFI mode, with Secure Boot off
 needs: [live-image]
 
-execute: |
+script: |
   simulating && return 0
 
   if [ ! -d /sys/firmware/efi ]; then

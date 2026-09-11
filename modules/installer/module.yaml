@@ -8,10 +8,16 @@
 # Every key this file may use:
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
-# The module's only name, read wherever the interface says what is happening.
-title: Arch OS Installer
+# What this module is called, read wherever the interface talks about it rather
+# than starts it: the sentence over its settings, the report a run ends on.
+title: Installer
 
-# The sentence under its row on the page that asks which module to open.
+# And what opening it does, which is the row somebody presses enter on — on the
+# page asking which module to open, and again on the menu. A name is not a
+# button: the row says what will happen, the title says what this is.
+action: Install
+
+# The sentence under that row.
 description: Put Arch Linux on this machine.
 
 # Read on the way out, when the installer closes and the machine keeps running.
@@ -26,9 +32,10 @@ confirm: |
   Everything on that disk will be erased and this cannot be undone. Nothing
   has been changed so far.
 
-# The phases the work happens in, top to bottom. Every task under tasks/ names
-# one of them, and naming it is what puts that task in the run and where; tasks
-# sharing a stage run in the order `needs` demands.
+# The phases the work happens in, top to bottom. Each is a folder under tasks/,
+# marked — tasks/@disk/ — and lying in one is what puts a task in the run and
+# where; tasks sharing a stage run in the order `needs` demands. The `@` belongs
+# to the folder, not to the name written here.
 #
 # What Oak runs of its own accord — the check that this machine can be installed
 # onto at all, the wireless, the two ways out — is a hook, and hooks live in
@@ -52,10 +59,18 @@ presets:
     description: Choose what kind of system to install. Every detail can still be changed afterwards.
     options:
       # Each option names every setting it has an opinion about, including the
-      # ones it turns off.
+      # ones it turns off, in the order the questions below come in. What is
+      # left to ask is then only what nobody but the person at the machine can
+      # answer: the region, the account, and which disk. Everything here is a
+      # row in the settings afterwards.
       - title: Desktop
         description: A GNOME desktop with drivers, codecs, fonts and everyday applications.
         values:
+          ARCH_OS_FILESYSTEM: btrfs
+          ARCH_OS_ENCRYPTION_ENABLED: true
+          ARCH_OS_BTRFS_SNAPPER_ENABLED: true
+          ARCH_OS_BTRFS_ASSISTANT_ENABLED: true
+          ARCH_OS_BOOTLOADER: systemd
           ARCH_OS_DESKTOP: gnome
           ARCH_OS_DESKTOP_GRAPHICS_DRIVER: mesa
           ARCH_OS_DESKTOP_EXTRAS_ENABLED: true
@@ -64,34 +79,41 @@ presets:
           ARCH_OS_CORE_TWEAKS_ENABLED: true
           ARCH_OS_BOOTSPLASH_ENABLED: true
           ARCH_OS_MULTILIB_ENABLED: true
+          ARCH_OS_AUR_HELPER: paru
+          ARCH_OS_CONTAINER_ENGINE: none
           ARCH_OS_HOUSEKEEPING_ENABLED: true
           ARCH_OS_SHELL_ENHANCEMENT_ENABLED: true
           ARCH_OS_SHELL_ENHANCEMENT_SHELL: zsh
           ARCH_OS_MANAGER_ENABLED: true
-          ARCH_OS_CONTAINER_ENGINE: none
-          ARCH_OS_BTRFS_SNAPPER_ENABLED: true
-          ARCH_OS_BTRFS_ASSISTANT_ENABLED: true
-          ARCH_OS_AUR_HELPER: paru
+          ARCH_OS_VM_SUPPORT_ENABLED: true
 
+      # Everything off that can be off. The one exception is virtual machine
+      # support, which on a console system is what it takes to run one — and
+      # that is a thing a machine without a desktop is more likely to be for,
+      # not less.
       - title: Minimal
         description: Arch Linux on the console only. No desktop, no extras, nothing beyond what you choose.
         values:
+          ARCH_OS_FILESYSTEM: ext4
+          ARCH_OS_ENCRYPTION_ENABLED: false
+          ARCH_OS_BTRFS_SNAPPER_ENABLED: false
+          ARCH_OS_BTRFS_ASSISTANT_ENABLED: false
+          ARCH_OS_BOOTLOADER: systemd
           ARCH_OS_DESKTOP: none
+          ARCH_OS_DESKTOP_GRAPHICS_DRIVER: none
           ARCH_OS_DESKTOP_EXTRAS_ENABLED: false
           ARCH_OS_DESKTOP_SLIM_ENABLED: false
           ARCH_OS_SAMBA_SHARE_ENABLED: false
-          ARCH_OS_CORE_TWEAKS_ENABLED: true
+          ARCH_OS_CORE_TWEAKS_ENABLED: false
           ARCH_OS_BOOTSPLASH_ENABLED: false
           ARCH_OS_MULTILIB_ENABLED: false
+          ARCH_OS_AUR_HELPER: none
+          ARCH_OS_CONTAINER_ENGINE: none
           ARCH_OS_HOUSEKEEPING_ENABLED: false
           ARCH_OS_SHELL_ENHANCEMENT_ENABLED: false
           ARCH_OS_SHELL_ENHANCEMENT_SHELL: bash
           ARCH_OS_MANAGER_ENABLED: false
-          ARCH_OS_CONTAINER_ENGINE: none
-          ARCH_OS_BTRFS_SNAPPER_ENABLED: false
-          ARCH_OS_BTRFS_ASSISTANT_ENABLED: false
-          ARCH_OS_DESKTOP_GRAPHICS_DRIVER: none
-          ARCH_OS_AUR_HELPER: none
+          ARCH_OS_VM_SUPPORT_ENABLED: true
 
       # Not a set of answers written out here but one fetched: a configuration
       # shared at the end of an earlier installation. A starting point like the
@@ -99,7 +121,7 @@ presets:
       - title: Online (paste.rs)
         description: Load every answer from a configuration shared at the end of an earlier installation.
         asks: ARCH_OS_CONFIG_SOURCE
-        apply: ./tasks/share-config/import.sh
+        apply: ./tasks/@finish/share-config/import.sh
 
 # Everything this installer needs to know, in the order it is asked. Required and
 # unanswered is what makes the installer ask; an answer is what makes it stop.
@@ -513,8 +535,11 @@ variables:
   - name: ARCH_OS_VM_SUPPORT_ENABLED
     title: Virtual machine support
     description: |
-      Installs guest tools when this is running inside a virtual machine, so the
-      screen resizes and the clipboard is shared. Does nothing on real hardware.
+      Inside a virtual machine, the guest tools that make the screen resize and
+      the clipboard work. On real hardware there is no guest to support, so it
+      installs the other end instead: what it takes to run a virtual machine of
+      your own. Without a desktop that is the console half of it, without the
+      manager window.
     group: System
     type: bool
     default: true

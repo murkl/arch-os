@@ -27,7 +27,7 @@ locales/                        one <code>.po per language, and the template the
 
 ## Stages
 
-Every folder under `tasks/` is one task, flat. Nothing lists them elsewhere: the folders are the list. Which phase a task belongs to is the `stage:` in its `task.yaml`; `module.yaml` declares those stages top to bottom, and `needs:` orders the tasks that share one.
+Each stage is a folder under `tasks/`, marked with `@`, and each task is a folder inside the stage it runs in — `tasks/@system/manager/`. Nothing lists them elsewhere: the folders are the list. `module.yaml` declares the stages top to bottom, and `needs:` orders the tasks that share one.
 
 | Stage | Description |
 | --- | --- |
@@ -64,10 +64,10 @@ The last two turn leaving the Installer into a choice rather than a plain exit: 
 
 ## Writing a Task
 
-A folder under `tasks/`, holding `task.yaml` and `task.sh`. Oak runs the script in a shell that already carries `module.sh` and an `ERR` trap, so it needs no shebang, no `set -e` and no error handling.
+A folder under the stage it runs in, holding `task.yaml` and `task.sh`. Oak runs the script in a shell that already carries `module.sh` and an `ERR` trap, so it needs no shebang, no `set -e` and no error handling.
 
 ```
-# tasks/thing/task.sh
+# tasks/@system/thing/task.sh
 simulating && return 0
 
 chroot_pacman_install git base-devel
@@ -78,10 +78,9 @@ cp "$(where)/thing.conf" "${MNT}/etc/thing.conf"
 A step short enough to read at a glance skips the file and writes its shell in the YAML instead, which is what the two-line ones here do:
 
 ```yaml
-# tasks/thing/task.yaml
+# tasks/@system/thing/task.yaml
 title: Install the thing
-stage: system
-execute: |
+script: |
   simulating && return 0
 
   chroot_pacman_install thing
@@ -89,27 +88,35 @@ execute: |
 
 `simulating && return 0` is the first line of every task, before anything that changes the machine — that is what turns `--debug` into a simulation. `where` returns the task's own folder.
 
+A task fails on any non-zero status: a command that failed anywhere in it, or whatever it hands back at the end. So a guard as the **last** line fails it when the guard does not fire — end on the real work, on an `if` block or on an `echo`.
+
+A task that fails stops the installation there. The page it stops on is the one that says the system is installed, with the mark the other way round; behind it is the module, the task, the file and line, the command and what the tool said.
+
 `module.sh` is deliberately small: only what several tasks must agree about, such as the mount point, the kernel command line and how a package is installed and retried, plus the functions `module.yaml` calls by name for its lists. Everything else belongs in the task that does it, even when that makes the script longer.
 
 **Note:** _Anything that needs a desktop session which does not exist yet — GNOME settings live in the session's own database — goes through `on_first_login`, which collects those lines into a script that runs once at the first login and then removes itself._
 
 **[➜ See AGENTS.md](../../AGENTS.md#shell-the-task-contract)** for the whole contract.
 
-## Checking a Step
+## Testing a Step
 
 A task may also say how to tell, on the machine itself, that the work took. That is a `test.sh` beside `task.sh`, or a `test:` in the YAML for something short:
 
 ```
-# tasks/thing/test.sh
+# tasks/@system/thing/test.sh
+debugging && return 0
+
 arch-chroot "$MNT" systemctl is-enabled something.service >/dev/null
 [ -f "${MNT}/etc/thing.conf" ]
 ```
 
-It runs right after the task, and it has one rule: **it reads and nothing else**. No `simulating` guard either — a simulated run writes nothing, so Oak runs no checks at all in one.
+It runs right after the task, and it has one rule: **it reads and nothing else**. Its exit status is the answer, unlike a task's, whose final status is dropped — so `return 1` here is a verdict rather than an accident.
 
-Check the outcome, not the steps that produced it: the service is enabled, the account has a password, the loader is installed. A check that restates the script line by line is a second copy of the task, and it is the copy that goes stale.
+`debugging && return 0` is its first line, the way `simulating && return 0` is a task's: a simulated run wrote nothing, so without it every test would fail for the one reason that is not a fault. It is the predicate without the pause — a test is not a step anybody is watching.
 
-A check that disagrees does not fail the installation — the task itself already said it worked. They are collected and read once, on the page the run ends with. The switch that turns the whole of it off is in the settings.
+Test the outcome, not the steps that produced it: the service is enabled, the account has a password, the loader is installed. A test that restates the script line by line is a second copy of the task, and it is the copy that goes stale.
+
+A test that disagrees does not fail the installation — the task itself already said it worked. The count appears under the words of the page saying the system is installed, and where anything disagreed the next page lists it: choose a row and it names the module, the task, the line in its `test.sh` and what the tool said. Leaving that page carries on to the offer to share the configuration, which is where a run with nothing to report goes straight away. **Validate tasks** in the settings turns the whole of it off.
 
 ## auto and none
 

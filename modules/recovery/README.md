@@ -14,9 +14,9 @@ make -C ../.. run MODULE=recovery ARGS=--debug   # run it without touching this 
 ```
 module.yaml                     what this Recovery is, what it asks, what order it runs in
 module.sh                       what more than one script has to agree about
-tasks/<id>/task.yaml            what that step is: its stage, needs, conditions and offers
-tasks/<id>/task.sh              what it does, plus any file it ships with, beside it
-tasks/<id>/test.sh              optional: how to tell, on the machine, that it took
+tasks/@<stage>/<id>/task.yaml   what that step is: its needs, conditions and offers
+tasks/@<stage>/<id>/task.sh     what it does, plus any file it ships with, beside it
+tasks/@<stage>/<id>/test.sh     optional: how to tell, on the machine, that it took
 hooks/@<hook>/<id>/hook.yaml    a moment Oak runs itself, rather than as part of the work
 locales/                        one <code>.po per language, and the template they come from
 ```

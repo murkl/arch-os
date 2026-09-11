@@ -39,10 +39,11 @@
 - Desktop extras: codecs, fonts, printing, network protocols, everyday applications and Samba shares
 - Slim version: GNOME Core Apps only
 - Swap with zram-generator (zstd), systemd OOM, fstrim, microcode, NetworkManager and mirrors ranked by country (reflector)
-- AUR helper, 32-bit support (multilib), container engine (Docker or Podman), virtual machine support and automatic housekeeping
+- AUR helper, 32-bit support (multilib), container engine (Docker or Podman) and automatic housekeeping
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager and Shell Enhancement (bash, zsh or fish)
 - Arch OS Recovery on the same image, works without a network connection
-- Two starting points, Desktop or Minimal, with every question behind them still answerable
+- Virtual machine support both ways round: guest tools inside a VM, libvirt and QEMU on real hardware, with virt-manager only where there is a desktop to open it in
+- Two starting points, Desktop or Minimal, which answer everything but the region, the account and the disk - and every one of those answers is a row in the settings afterwards
 - English and German interface
 
 ## Installation
@@ -67,7 +68,7 @@ curl -Ls bit.ly/arch-os | bash
 
 ### 3. Boot from the USB Device
 
-The Installer starts on its own. It asks for the interface language, then whether to install a new system or repair an existing one.
+The Installer starts on its own. It opens on a welcome page that asks which language to read it in, then asks whether to install a new system or repair an existing one.
 
 <p><img src="screenshots/setup.png" alt="The page that asks which of the two to open"></p>
 
@@ -86,7 +87,7 @@ Every answer is written to `installer.conf` the moment it is given, so an interr
 
 <p><img src="screenshots/recovery.png" alt="The Recovery, opening a system already on disk"></p>
 
-To rescue an Arch OS after a crash, boot the same ISO and choose **Arch OS Recovery**.
+To rescue an Arch OS after a crash, boot the same ISO and choose **Recovery**.
 
 - Unlocks and mounts the installation at `/mnt`
 - Puts a Btrfs snapshot back in place of the root subvolume

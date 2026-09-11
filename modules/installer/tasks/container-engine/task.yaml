@@ -1,3 +1,0 @@
-title: Install the container engine
-stage: system
-conditions: ARCH_OS_CONTAINER_ENGINE != none

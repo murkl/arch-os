@@ -22,12 +22,19 @@ where() { dirname "${BASH_SOURCE[1]}"; }
 # SIMULATION & NETWORK
 # ////////////////////////////////////////////////////////////////////////////
 
-# --debug runs the installer without touching the machine. Each task guards
-# itself with `simulating && return 0` as its first line, so a unit is only ever
-# skipped as a whole.
+# --debug runs without touching the machine. Each task guards itself with
+# `simulating && return 0` as its first line, so a unit is only ever skipped as
+# a whole, and each test with `debugging && return 0` — a simulated run wrote
+# nothing, so there is nothing on the machine for it to read.
+#
+# The pause is the difference between the two: it holds a step on screen long
+# enough to be read instead of flashing past, and a test is not a step anybody
+# is watching.
+
+debugging() { [ "$DEBUG" = "true" ]; }
 
 simulating() {
-    [ "$DEBUG" = "true" ] || return 1
+    debugging || return 1
     echo "simulated" # Oak has already logged which step this is
     sleep 1          # keep the step visible in the interface instead of flashing past
 }
@@ -84,8 +91,11 @@ auto_keymap() {
     keymap="$(language_field 2 "$ARCH_OS_LOCALE_LANG")"
     # Fall back to the keyboard the live image was started with. The Arch
     # image only records it as the loadkeys command in root's shell history,
-    # so that's the one place it can be read back from.
-    : "${keymap:=$(grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null |
+    # so that's the one place it can be read back from. Finding nothing there
+    # is the ordinary case on a machine that has none, so the grep is not
+    # allowed to make a failure of it - pipefail would carry that out of the
+    # whole lookup.
+    : "${keymap:=$({ grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null || true; } |
         tail -n1 | sed 's/.*loadkeys *//' | tr -d ' ')}"
     printf '%s' "${keymap:-us}"
 }

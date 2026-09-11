@@ -15,10 +15,15 @@ msgstr ""
 msgid "English"
 msgstr "Deutsch"
 
-#. what this program is called, and what one run of it is called
+#. what this program is called, where the interface talks about it
 #: module.yaml
-msgid "Arch OS Installer"
-msgstr "Arch OS Installer"
+msgid "Installer"
+msgstr "Installer"
+
+#. what opening it does, on the row that opens it
+#: module.yaml
+msgid "Install"
+msgstr "Installieren"
 
 #. what it is, in one sentence, on the page that offers it
 #: module.yaml
@@ -530,8 +535,8 @@ msgstr "Unterstützung für virtuelle Maschinen"
 
 #. ARCH_OS_VM_SUPPORT_ENABLED: what it means
 #: module.yaml
-msgid "Installs guest tools when this is running inside a virtual machine, so the screen resizes and the clipboard is shared. Does nothing on real hardware."
-msgstr "Installiert Gasterweiterungen, wenn das hier in einer virtuellen Maschine läuft, damit sich der Bildschirm anpasst und die Zwischenablage geteilt wird. Auf echter Hardware passiert nichts."
+msgid "Inside a virtual machine, the guest tools that make the screen resize and the clipboard work. On real hardware there is no guest to support, so it installs the other end instead: what it takes to run a virtual machine of your own. Without a desktop that is the console half of it, without the manager window."
+msgstr "In einer virtuellen Maschine die Gast-Werkzeuge, mit denen sich der Bildschirm anpasst und die Zwischenablage geteilt wird. Auf echter Hardware gibt es keinen Gast, also wird das andere Ende installiert: was es braucht, um selbst eine virtuelle Maschine zu betreiben. Ohne Desktop nur die Konsolenhälfte davon, ohne das Verwaltungsfenster."
 
 #. ARCH_OS_ECN_ENABLED: the question
 #: module.yaml
@@ -569,117 +574,117 @@ msgid "A code such as aBc12, or the whole address it belongs to."
 msgstr "Ein Code wie aBc12 — oder die vollständige Adresse dazu."
 
 #. the step, as the run lists it
-#: tasks/init/task.yaml
+#: tasks/@prepare/init/task.yaml
 msgid "Prepare the installation"
 msgstr "Installation vorbereiten"
 
 #. the step, as the run lists it
-#: tasks/prepare-disk/task.yaml
+#: tasks/@disk/prepare-disk/task.yaml
 msgid "Set up the disk"
 msgstr "Datenträger einrichten"
 
 #. the step, as the run lists it
-#: tasks/pacstrap-core/task.yaml
+#: tasks/@base/pacstrap-core/task.yaml
 msgid "Install the base system"
 msgstr "Basissystem installieren"
 
 #. the step, as the run lists it
-#: tasks/configure-system/task.yaml
+#: tasks/@base/configure-system/task.yaml
 msgid "Configure the system"
 msgstr "System konfigurieren"
 
 #. the step, as the run lists it
-#: tasks/core-tweaks/task.yaml
+#: tasks/@base/core-tweaks/task.yaml
 msgid "Apply the core tweaks"
 msgstr "Systemfeinschliff anwenden"
 
 #. the step, as the run lists it
-#: tasks/user-account/task.yaml
+#: tasks/@base/user-account/task.yaml
 msgid "Create your account"
 msgstr "Benutzerkonto anlegen"
 
 #. the step, as the run lists it
-#: tasks/bootloader/task.yaml
+#: tasks/@boot/bootloader/task.yaml
 msgid "Install the boot loader"
 msgstr "Bootloader installieren"
 
 #. the step, as the run lists it
-#: tasks/container-engine/task.yaml
+#: tasks/@system/container-engine/task.yaml
 msgid "Install the container engine"
 msgstr "Container-Engine installieren"
 
 #. the step, as the run lists it
-#: tasks/enable-multilib/task.yaml
+#: tasks/@system/enable-multilib/task.yaml
 msgid "Enable 32-bit support"
 msgstr "32-Bit-Unterstützung einschalten"
 
 #. the step, as the run lists it
-#: tasks/aur-helper/task.yaml
+#: tasks/@system/aur-helper/task.yaml
 msgid "Install the AUR helper"
 msgstr "AUR-Helfer installieren"
 
 #. the step, as the run lists it
-#: tasks/bootsplash/task.yaml
+#: tasks/@system/bootsplash/task.yaml
 msgid "Install the boot splash"
 msgstr "Startbildschirm installieren"
 
 #. the step, as the run lists it
-#: tasks/housekeeping/task.yaml
+#: tasks/@system/housekeeping/task.yaml
 msgid "Set up housekeeping"
 msgstr "Systempflege einrichten"
 
 #. the step, as the run lists it
-#: tasks/manager/task.yaml
+#: tasks/@system/manager/task.yaml
 msgid "Install Arch OS Manager"
 msgstr "Arch OS Manager installieren"
 
 #. the step, as the run lists it
-#: tasks/shell-enhancement/task.yaml
+#: tasks/@system/shell-enhancement/task.yaml
 msgid "Enhance the shell"
 msgstr "Shell verbessern"
 
 #. the step, as the run lists it
-#: tasks/vm-support/task.yaml
+#: tasks/@system/vm-support/task.yaml
 msgid "Add virtual machine support"
 msgstr "Unterstützung für virtuelle Maschinen ergänzen"
 
 #. the step, as the run lists it
-#: tasks/desktop-gnome/task.yaml
+#: tasks/@desktop/desktop-gnome/task.yaml
 msgid "Install the GNOME desktop"
 msgstr "GNOME-Desktop installieren"
 
 #. the step, as the run lists it
-#: tasks/graphics-driver/task.yaml
+#: tasks/@desktop/graphics-driver/task.yaml
 msgid "Install the graphics driver"
 msgstr "Grafiktreiber installieren"
 
 #. the step, as the run lists it
-#: tasks/samba/task.yaml
+#: tasks/@desktop/samba/task.yaml
 msgid "Share files with other machines"
 msgstr "Dateifreigabe einrichten"
 
 #. the step, as the run lists it
-#: tasks/finish-system/task.yaml
+#: tasks/@finalize/finish-system/task.yaml
 msgid "Finish the new system"
 msgstr "Das neue System abschließen"
 
 #. the step, as the run lists it
-#: tasks/snapshots/task.yaml
+#: tasks/@finalize/snapshots/task.yaml
 msgid "Set up snapshots"
 msgstr "Schnappschüsse einrichten"
 
 #. the step, as the run lists it
-#: tasks/secure-boot/task.yaml
+#: tasks/@finalize/secure-boot/task.yaml
 msgid "Sign the boot chain"
 msgstr "Boot-Kette signieren"
 
 #. the step, as the run lists it
-#: tasks/copy-config/task.yaml
+#: tasks/@finish/copy-config/task.yaml
 msgid "Keep a copy of this installation"
 msgstr "Kopie dieser Installation ablegen"
 
 #. read once the step is done, and held on until somebody has
-#: tasks/copy-config/task.yaml
+#: tasks/@finish/copy-config/task.yaml
 msgid ""
 "Arch OS is installed\n"
 "\n"
@@ -690,12 +695,12 @@ msgstr ""
 "{{ARCH_OS_HOSTNAME}} liegt auf {{ARCH_OS_DISK}} und ist startbereit. Alles Weitere ist optional."
 
 #. the step, as the run lists it
-#: tasks/share-config/task.yaml
+#: tasks/@finish/share-config/task.yaml
 msgid "Share this configuration"
 msgstr "Diese Konfiguration teilen"
 
 #. asked before the step runs
-#: tasks/share-config/task.yaml
+#: tasks/@finish/share-config/task.yaml
 msgid ""
 "Put these answers online now?\n"
 "\n"
@@ -706,7 +711,7 @@ msgstr ""
 "Jede Antwort dieser Installation geht zu paste.rs, und ihre Adresse kommt als Code zum Abscannen zurück, genug um einen weiteren Rechner genau wie diesen einzurichten. Wer diese Adresse hat, kann sie alle lesen. Das Passwort ist nicht dabei und wurde nirgends gespeichert."
 
 #. read once the step is done, and held on until somebody has
-#: tasks/share-config/task.yaml
+#: tasks/@finish/share-config/task.yaml
 msgid ""
 "Configuration shared\n"
 "\n"
@@ -717,12 +722,12 @@ msgstr ""
 "Scanne den Code — oder tippe das Wort am Ende der Adresse beim paste.rs-Startpunkt einer weiteren Installation ein."
 
 #. the step, as the run lists it
-#: tasks/chroot/task.yaml
+#: tasks/@finish/chroot/task.yaml
 msgid "Enter the new system"
 msgstr "In das neue System wechseln"
 
 #. asked before the step runs
-#: tasks/chroot/task.yaml
+#: tasks/@finish/chroot/task.yaml
 msgid ""
 "Open a shell inside the system that was just installed?\n"
 "\n"
@@ -733,12 +738,12 @@ msgstr ""
 "Es ist noch alles eingehängt — der richtige Moment, um sich umzusehen oder von Hand etwas zu richten. Mit `exit` geht es zurück."
 
 #. the step, as the run lists it
-#: tasks/reboot/task.yaml
+#: tasks/@finish/reboot/task.yaml
 msgid "Restart into the new system"
 msgstr "In das neue System neu starten"
 
 #. asked before the step runs
-#: tasks/reboot/task.yaml
+#: tasks/@finish/reboot/task.yaml
 msgid ""
 "Restart into {{ARCH_OS_HOSTNAME}} now?\n"
 "\n"
@@ -749,12 +754,12 @@ msgstr ""
 "Vorher wird alles ausgehängt. Nimm das Installationsmedium heraus, sobald der Bildschirm schwarz wird."
 
 #. the step, as the run lists it
-#: tasks/unmount/task.yaml
+#: tasks/@finish/unmount/task.yaml
 msgid "Unmount everything"
 msgstr "Alles aushängen"
 
 #. asked before the step runs
-#: tasks/unmount/task.yaml
+#: tasks/@finish/unmount/task.yaml
 msgid ""
 "Unmount the new system and stay in the live environment?\n"
 "\n"
@@ -783,6 +788,9 @@ msgstr "Im UEFI-Modus gestartet, Secure Boot aus"
 #: hooks/@preflight/network/hook.yaml
 msgid "Connected to the internet"
 msgstr "Mit dem Internet verbunden"
+
+#~ msgid "Installs guest tools when this is running inside a virtual machine, so the screen resizes and the clipboard is shared. Does nothing on real hardware."
+#~ msgstr "Installiert Gasterweiterungen, wenn das hier in einer virtuellen Maschine läuft, damit sich der Bildschirm anpasst und die Zwischenablage geteilt wird. Auf echter Hardware passiert nichts."
 
 #~ msgid "Build the initial ram disk"
 #~ msgstr "Initiale Ramdisk bauen"

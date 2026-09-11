@@ -30,12 +30,19 @@ BTRFS_OPTS="defaults,noatime,compress=zstd"
 # SIMULATION
 # ////////////////////////////////////////////////////////////////////////////
 
-# --debug runs the recovery without touching the machine. Each task guards
-# itself with `simulating && return 0` as its first line, so a unit is only ever
-# skipped as a whole.
+# --debug runs without touching the machine. Each task guards itself with
+# `simulating && return 0` as its first line, so a unit is only ever skipped as
+# a whole, and each test with `debugging && return 0` — a simulated run wrote
+# nothing, so there is nothing on the machine for it to read.
+#
+# The pause is the difference between the two: it holds a step on screen long
+# enough to be read instead of flashing past, and a test is not a step anybody
+# is watching.
+
+debugging() { [ "$DEBUG" = "true" ]; }
 
 simulating() {
-    [ "$DEBUG" = "true" ] || return 1
+    debugging || return 1
     echo "simulated" # Oak has already logged which step this is
     sleep 1          # keep the step visible in the interface instead of flashing past
 }

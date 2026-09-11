@@ -13,7 +13,7 @@
 # and what to do about it, in that order, and nothing else.
 title: Running as root
 
-execute: |
+script: |
   simulating && return 0
 
   [ "$(id -u)" -eq 0 ] && return 0

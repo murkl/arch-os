@@ -8,10 +8,16 @@
 # Every key this file may use:
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
-# The module's only name, read wherever the interface says what is happening.
-title: Arch OS Recovery
+# What this module is called, read wherever the interface talks about it rather
+# than starts it: the sentence over its settings, the report a run ends on.
+title: Recovery
 
-# The sentence under its row on the page that asks which module to open.
+# And what opening it does, which is the row somebody presses enter on — on the
+# page asking which module to open, and again on the menu. A name is not a
+# button: the row says what will happen, the title says what this is.
+action: Recover
+
+# The sentence under that row.
 description: Repair an Arch Linux system that is already on a disk.
 
 # Read on the way out, when the recovery closes and the machine keeps running.
@@ -26,9 +32,10 @@ confirm: |
   This does not change anything on it. Once it is open, you can roll back to a
   snapshot, rebuild the boot files or open a shell. Each is offered separately.
 
-# The phases the work happens in, top to bottom. Every task under tasks/ names
-# one of them, and naming it is what puts that task in the run and where; tasks
-# sharing a stage run in the order `needs` demands.
+# The phases the work happens in, top to bottom. Each is a folder under tasks/,
+# marked — tasks/@repair/ — and lying in one is what puts a task in the run and
+# where; tasks sharing a stage run in the order `needs` demands. The `@` belongs
+# to the folder, not to the name written here.
 #
 # What Oak runs of its own accord — the check that this machine can run a
 # recovery at all, the two ways out — is a hook, and hooks live in hooks/ beside
@@ -119,4 +126,4 @@ variables:
     # Asked by the rollback task, which is also where the shell that lists them
     # lives: the snapshots cannot be listed until the disk they are on is
     # unlocked and mounted.
-    command: ./tasks/rollback/snapshots.sh
+    command: ./tasks/@repair/rollback/snapshots.sh

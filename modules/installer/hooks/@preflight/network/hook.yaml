@@ -3,7 +3,7 @@ needs: [firmware]
 
 # Everything from here on downloads something, and a link that's merely slow to
 # come up after boot is common enough to be worth waiting for.
-execute: |
+script: |
   simulating && return 0
 
   for i in 1 2 3 4 5; do
