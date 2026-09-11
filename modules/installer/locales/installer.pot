@@ -757,11 +757,6 @@ msgid "Running as root"
 msgstr ""
 
 #. the check, read where it is the one that failed
-#: hooks/@preflight/live-image/hook.yaml
-msgid "Started from the live image"
-msgstr ""
-
-#. the check, read where it is the one that failed
 #: hooks/@preflight/firmware/hook.yaml
 msgid "Booted in UEFI mode, with Secure Boot off"
 msgstr ""

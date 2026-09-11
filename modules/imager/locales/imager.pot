@@ -25,7 +25,7 @@ msgstr ""
 
 #. what opening it does, on the row that opens it
 #: module.yaml
-msgid "Create"
+msgid "Create boot medium"
 msgstr ""
 
 #. what it is, in one sentence, on the page that offers it
@@ -69,11 +69,6 @@ msgstr ""
 #. the check, read where it is the one that failed
 #: hooks/@preflight/root/hook.yaml
 msgid "Running as root"
-msgstr ""
-
-#. the check, read where it is the one that failed
-#: hooks/@preflight/live-image/hook.yaml
-msgid "Running on an ordinary machine"
 msgstr ""
 
 #. the check, read where it is the one that failed

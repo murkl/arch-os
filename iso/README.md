@@ -12,7 +12,7 @@ Stock Arch `releng`, patched: boot ➜ Plymouth ➜ Arch OS. Nothing in between.
 
 The [Oak](https://github.com/murkl/oak) binary with every module beside it lives in `/opt/arch-os` and is started by a systemd unit on tty1. No autologin, no shell. It starts with no module named, so the first pages are the language and then the choice of what to open. A root shell is handed back on that console whenever it stops.
 
-**Note:** _The build copies whatever is in `modules/`, so the **[Imager](../modules/imager)** is on the image as well. Opening it there says so and stops: writing a device is the one thing this machine is not the one for, and the image it would download is two gigabytes into a file system that lives in this machine's memory._
+**Note:** _The build copies whatever is in `modules/`, so the **[Imager](../modules/imager)** is on the image as well — but it is never offered there. Its `offered:` check says this is not a machine for writing a device, so the page that asks what to open has the other two on it and nothing else._
 
 | Command | Description |
 | --- | --- |

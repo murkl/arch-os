@@ -44,7 +44,7 @@ A machine that needs repairing may have a broken network as part of the problem,
 - There is no `@online` hook, which is what turns the network screen off
 - The kernel images come from the repaired system's own pacman cache rather than a mirror
 
-For the same reason `hooks/@preflight/` checks less than the Installer's does: root and the live image, nothing about this machine's firmware, since this machine is not what is being set up.
+For the same reason `hooks/@preflight/` checks less than the Installer's does: root and nothing else — not this machine's firmware, since this machine is not what is being set up.
 
 ## Two Views of one Disk
 
@@ -71,4 +71,6 @@ The two that are read off the disk fill in with the answer they would already ha
 
 ## Requirements
 
-Root and the Arch Linux live image. Nothing else.
+A booted **Arch Linux live image**, and root on it. Nothing else.
+
+The first is `offered:` in `module.yaml`, the same rule the Installer carries: a system is repaired from outside itself, so a machine that is not a live image never sees this row. The second is the one step under `hooks/@preflight/`.

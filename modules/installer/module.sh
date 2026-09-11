@@ -19,6 +19,23 @@ DATA="$(dirname "${BASH_SOURCE[0]}")/data"
 where() { dirname "${BASH_SOURCE[1]}"; }
 
 # ////////////////////////////////////////////////////////////////////////////
+# WHAT THIS MACHINE IS
+# ////////////////////////////////////////////////////////////////////////////
+
+# Whether this is a booted Arch Linux live image, which is the only machine this
+# module belongs on - see `offered:` in module.yaml.
+#
+# Two markers for the image, because either on its own is enough and a shell
+# that lost the first still has the second: /run/archiso is what the image
+# mounts, archisobasedir is what it was booted with. And Arch itself on top of
+# them, because an image built the same way by somebody else is not the system
+# this installs.
+arch_live() {
+    { [ -d /run/archiso ] || grep -qs archisobasedir /proc/cmdline; } || return 1
+    grep -qs '^ID=arch$' /etc/os-release
+}
+
+# ////////////////////////////////////////////////////////////////////////////
 # SIMULATION & NETWORK
 # ////////////////////////////////////////////////////////////////////////////
 

@@ -22,8 +22,8 @@ msgstr "Imager"
 
 #. what opening it does, on the row that opens it
 #: module.yaml
-msgid "Create"
-msgstr "Erstellen"
+msgid "Create boot medium"
+msgstr "Bootmedium erstellen"
 
 #. what it is, in one sentence, on the page that offers it
 #: module.yaml
@@ -72,11 +72,6 @@ msgid "Running as root"
 msgstr "Läuft als root"
 
 #. the check, read where it is the one that failed
-#: hooks/@preflight/live-image/hook.yaml
-msgid "Running on an ordinary machine"
-msgstr "Läuft auf einer gewöhnlichen Maschine"
-
-#. the check, read where it is the one that failed
 #: hooks/@preflight/device/hook.yaml
 msgid "A device to write to"
 msgstr "Ein Datenträger zum Schreiben"
@@ -85,3 +80,9 @@ msgstr "Ein Datenträger zum Schreiben"
 #: hooks/@preflight/image/hook.yaml
 msgid "The image is here or can be fetched"
 msgstr "Das Abbild ist da oder erreichbar"
+
+#~ msgid "Create"
+#~ msgstr "Erstellen"
+
+#~ msgid "Running on an ordinary machine"
+#~ msgstr "Läuft auf einer gewöhnlichen Maschine"

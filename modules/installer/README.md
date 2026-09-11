@@ -54,7 +54,7 @@ Three orderings matter, and each is a stage or a `needs:`:
 
 | Hook | Description |
 | --- | --- |
-| `@preflight` | Four checks, in order, before the first question: root, the live image, UEFI with Secure Boot off, and a network |
+| `@preflight` | Three checks, in order, before the first question: root, UEFI with Secure Boot off, and a network. That this is a live image at all is decided earlier, by `offered:` — see below |
 | `@online`, `@wlan-device`, `@wlan-networks`, `@wlan-connect` | Finding and joining a wireless network |
 | `@restart`, `@shutdown` | The two ways this machine is put down, each closing the target first |
 
@@ -171,7 +171,11 @@ The upload is a `confirm:` that opens on **no**, asked immediately after the pag
 
 ## Requirements
 
-Root, the Arch Linux live image, booted in UEFI mode with Secure Boot off, and a network connection. The four steps under `hooks/@preflight/` check them in that order, before the first question is asked.
+A booted **Arch Linux live image**, and on it root, UEFI with Secure Boot off, and a network connection.
+
+The first of those is `offered:` in `module.yaml`: it decides whether this module is on the page at all, so a machine that is not a live image never sees the row and is told where to write one instead. The rest are the three steps under `hooks/@preflight/`, checked in that order once the module has been chosen — what has to be true about a machine somebody has already picked.
+
+**Note:** _A run started with `--debug` is offered every module whatever they say about the machine, and simulates its work._
 
 ## Where the Answers go
 

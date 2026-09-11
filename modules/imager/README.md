@@ -42,18 +42,19 @@ It is downloaded beside the program, where Oak keeps the answers and the log, so
 
 ## Where it runs
 
-An Arch image is a hybrid ISO: it already carries the partition table and both boot paths a firmware looks for, so writing it is one raw copy and nothing else. What this module needs is therefore only a machine that is allowed to do that, and `hooks/@preflight/` is where that is decided:
+`offered:` in `module.yaml` is what decides whether this row is on the page at all, and it is the division between the three modules: the Installer and the Recovery belong **only** on a booted Arch Linux live image, because that is where there is a machine to work on. This one belongs **only** anywhere else, because this is the machine that makes that image — and because downloading two gigabytes into a live system means downloading them into its memory.
+
+So on an ordinary desktop this is the only module on offer, and Oak opens it on the way in without a list of one row. A run started with `--debug` is offered every module whatever they say, and simulates.
+
+**Note:** _Each module carries that rule itself. Nothing anywhere lists which module belongs on which machine, which is what makes adding a fourth one a folder and nothing else._
+
+An Arch image is a hybrid ISO: it already carries the partition table and both boot paths a firmware looks for, so writing it is one raw copy and nothing else. What is left for `hooks/@preflight/` is what has to be true once this module has been chosen:
 
 | Check | Why |
 | --- | --- |
 | `root` | Writing a block device needs it, and nothing here can ask for it later |
-| `live-image` | The other way round from the other two modules — see below |
 | `device` | A machine with nothing plugged in cannot be helped by any answer |
 | `image` | Either the image is already here or GitHub can be reached. Not "is there internet": an image already on this machine is written without one |
-
-`live-image` is the division between the three modules. The Installer and the Recovery run **only** from the Arch live image, because that is where there is a machine to work on. This one runs **only** anywhere else, because this is the machine that makes that image — and because downloading two gigabytes into a live system means downloading them into its memory.
-
-**Note:** _Each module carries that rule itself, in its own `hooks/@preflight/`. Nothing anywhere lists which module belongs on which machine, which is what makes adding a fourth one a folder and nothing else._
 
 ## Answers
 

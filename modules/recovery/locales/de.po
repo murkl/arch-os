@@ -195,7 +195,5 @@ msgstr ""
 msgid "Running as root"
 msgstr "Läuft als root"
 
-#. the check, read where it is the one that failed
-#: hooks/@preflight/live-image/hook.yaml
-msgid "Started from the live image"
-msgstr "Vom Live-Image gestartet"
+#~ msgid "Started from the live image"
+#~ msgstr "Vom Live-Image gestartet"

@@ -14,8 +14,21 @@ title: Imager
 
 # And what opening it does, which is the row somebody presses enter on — on the
 # page asking which module to open, and again on the menu. A name is not a
-# button: the row says what will happen, the title says what this is.
-action: Create
+# button: the row says what will happen, the title says what this is — and what
+# will happen here is a device somebody can boot a machine from, which is worth
+# more than one word.
+action: Create boot medium
+
+# Whether this machine is one this module belongs on at all, asked before it is
+# even offered. The other way round from the Installer and the Recovery, which is
+# the whole division between the three: they work on the machine the image
+# booted, this one makes that image.
+#
+# A run started with --debug is offered every module, whatever this says.
+offered: |
+  on_live_image || return 0
+  echo "Create boot medium writes a device from an ordinary Linux machine. On the live image there is a machine to work on instead - open the Installer or the Recovery." >&2
+  exit 1
 
 # The sentence under that row.
 description: Write Arch OS to a USB device to boot another machine from.

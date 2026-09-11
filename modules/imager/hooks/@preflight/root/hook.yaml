@@ -4,10 +4,9 @@
 # They run before the first question, because none of it can be fixed from
 # inside this program.
 #
-# Together they are also what says where this module belongs: on an ordinary
-# Linux machine with a stick in it, which is exactly the machine the other two
-# modules refuse to run on. Each module carries that rule itself, so adding one
-# is adding a folder and nothing has to be told about it.
+# Which machines this module belongs on is not among them: that is `offered:` in
+# module.yaml, and it is what decides whether this row is on the page at all.
+# What is left for this stage is what has to be true once it has been chosen.
 #
 # What goes to stderr is what the user reads, so each message says what is wrong
 # and what to do about it, in that order, and nothing else.

@@ -20,6 +20,17 @@ action: Recover
 # The sentence under that row.
 description: Repair an Arch Linux system that is already on a disk.
 
+# Whether this machine is one this module belongs on at all, asked before it is
+# even offered. The same rule the Installer carries, for the same reason: a
+# system is repaired from outside itself, which means from a booted Arch Linux
+# live image and from nowhere else.
+#
+# A run started with --debug is offered every module, whatever this says.
+offered: |
+  arch_live && return 0
+  echo "The Recovery runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there." >&2
+  exit 1
+
 # Read on the way out, when the recovery closes and the machine keeps running.
 # There is a root shell behind it on this image — see iso/.
 console: Type recovery at the prompt to start it again.

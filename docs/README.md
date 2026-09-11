@@ -16,7 +16,7 @@
 
 <p>Boot the latest <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and the Installer starts on its own. No keyboard layout to load, no network to configure, no command to type.</p>
 
-<p>Or run this one command on any Linux machine. It fetches Arch OS and starts it, and what opens is decided by the machine it opened on: an ordinary desktop writes that ISO to a USB device, a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> installs or repairs.</p>
+<p>Or run this one command on any Linux machine. It fetches Arch OS and starts it, and what it offers is decided by the machine it opened on: an ordinary desktop writes that ISO to a USB device, a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> installs or repairs.</p>
 
 **`curl -Ls bit.ly/arch-os | sudo bash`**
 
@@ -54,7 +54,7 @@ An internet connection is required: most packages are downloaded during the inst
 ### 1. Prepare a bootable USB Device
 
 - Download the latest ISO from **[the release page](https://github.com/murkl/arch-os/releases/latest)** and write it with **[Ventoy](https://www.ventoy.net/en/download.html)** or any ISO writer
-- Or let the **Imager** download, verify and write it for you, on any Linux machine:
+- Or let **Create boot medium** download, verify and write it for you, on any Linux machine:
 
 ```
 curl -Ls bit.ly/arch-os | sudo bash
@@ -137,7 +137,7 @@ Arch OS is five parts, kept deliberately apart:
 
 They are modules: data, not programs. One binary runs any of them, `oak --module=installer` opens one outright, and a release is that binary with `oak.yaml` and `modules/` beside it. The build downloads the binary rather than compiling it, so nothing here needs a Go toolchain.
 
-Which module a machine can open is the module's own business: each carries the checks that say so in its own `hooks/@preflight/`, and nothing anywhere holds a list of them. That is what leaves **[`get.sh`](../get.sh)** with nothing to decide — it fetches, checks, unpacks and starts, and that is all of it.
+Which module a machine can open is the module's own business: each says so in its own `offered:`, and nothing anywhere holds a list of them. A booted Arch live image offers the Installer and the Recovery; anything else offers the Imager alone and opens it on the way in, with no list of one row on it. That is what leaves **[`get.sh`](../get.sh)** with nothing to decide — it fetches, checks, unpacks and starts, and that is all of it.
 
 - Adding a question is a few lines of YAML
 - Adding a step is a folder under the stage it belongs to

@@ -4,10 +4,14 @@
 # They run before the first question, because none of it can be fixed from
 # inside this program.
 #
-# The recovery asks nothing of the machine beyond being the live image: not its
-# firmware, which isn't what is being repaired, and not a network, because a
-# recovery downloads nothing - which is the whole point on a machine whose
-# network may be exactly what stopped working.
+# That it is the live image at all is not asked here but by `offered:` in
+# module.yaml, which is what decides whether this module is on offer on this
+# machine in the first place. What is left for this stage is what the machine has
+# to be ready for once it has been chosen.
+#
+# Which is root and nothing else: not the firmware, which isn't what is being
+# repaired, and not a network, because a recovery downloads nothing - the whole
+# point on a machine whose network may be exactly what stopped working.
 #
 # What goes to stderr is what the user reads, so each message says what is wrong
 # and what to do about it, in that order, and nothing else.

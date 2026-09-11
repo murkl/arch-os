@@ -20,6 +20,20 @@ action: Install
 # The sentence under that row.
 description: Put Arch Linux on this machine.
 
+# Whether this machine is one this module belongs on at all, asked before it is
+# even offered. A machine that is not a booted Arch Linux live image never sees
+# this row: there is nothing here to install onto, and the module that writes the
+# image it would be booted from is the one that belongs there instead.
+#
+# It is here rather than in hooks/@preflight/ because the two answer different
+# questions: this one decides whether the row exists, and preflight decides
+# whether the machine behind the row is ready. A run started with --debug is
+# offered every module, whatever this says.
+offered: |
+  arch_live && return 0
+  echo "The Installer runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there." >&2
+  exit 1
+
 # Read on the way out, when the installer closes and the machine keeps running.
 # There is a root shell behind it on this image — see iso/.
 console: Type installer at the prompt to start it again.

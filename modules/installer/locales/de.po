@@ -775,11 +775,6 @@ msgid "Running as root"
 msgstr "Läuft als root"
 
 #. the check, read where it is the one that failed
-#: hooks/@preflight/live-image/hook.yaml
-msgid "Started from the live image"
-msgstr "Vom Live-Image gestartet"
-
-#. the check, read where it is the one that failed
 #: hooks/@preflight/firmware/hook.yaml
 msgid "Booted in UEFI mode, with Secure Boot off"
 msgstr "Im UEFI-Modus gestartet, Secure Boot aus"
@@ -788,6 +783,9 @@ msgstr "Im UEFI-Modus gestartet, Secure Boot aus"
 #: hooks/@preflight/network/hook.yaml
 msgid "Connected to the internet"
 msgstr "Mit dem Internet verbunden"
+
+#~ msgid "Started from the live image"
+#~ msgstr "Vom Live-Image gestartet"
 
 #~ msgid "Installs software from the Arch User Repository just as easily as from the official repositories. paru-bin is the same program as a ready-made binary; paru is that program built here, which means a Rust toolchain downloaded, compiled with and thrown away again."
 #~ msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen. paru-bin ist das fertige Binary, paru dasselbe Programm hier gebaut — dafür wird eine Rust-Toolchain geladen, benutzt und wieder weggeworfen."

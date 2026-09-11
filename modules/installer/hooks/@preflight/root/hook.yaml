@@ -1,9 +1,13 @@
-# Can this machine be installed onto at all?
+# Is this machine ready to be installed onto?
 #
-# Every check in this stage is read-only and every one of them is a hard stop.
-# They run before the first question, so a wrong firmware setting is caught up
-# front instead of after twenty answers — and because none of it can be fixed
-# from inside this program anyway.
+# Whether it is a machine to install onto at all is asked earlier and elsewhere:
+# `offered:` in module.yaml decides whether this module is on offer here. What
+# is left for this stage is what has to be true once it has been chosen.
+#
+# Every check in it is read-only and every one of them is a hard stop. They run
+# before the first question, so a wrong firmware setting is caught up front
+# instead of after twenty answers — and because none of it can be fixed from
+# inside this program anyway.
 #
 # What goes to stderr is what the user reads, so each message says what is wrong
 # and what to do about it, in that order, and nothing else.

@@ -10,6 +10,21 @@
 # checked. Nothing here prints for a person to read, only to the log.
 
 # ////////////////////////////////////////////////////////////////////////////
+# WHAT THIS MACHINE IS
+# ////////////////////////////////////////////////////////////////////////////
+
+# Whether this machine is running from a booted live image, which is the one
+# machine this module does not belong on - see `offered:` in module.yaml.
+#
+# Not "is it Arch", the way the other two ask: a device is written from any
+# Linux at all. What is asked here is only whether this machine is the one that
+# was booted from such a device, because that is the machine with something else
+# to be doing.
+on_live_image() {
+    [ -d /run/archiso ] || grep -qs archisobasedir /proc/cmdline
+}
+
+# ////////////////////////////////////////////////////////////////////////////
 # SIMULATION
 # ////////////////////////////////////////////////////////////////////////////
 

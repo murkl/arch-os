@@ -1,5 +1,5 @@
 title: Booted in UEFI mode, with Secure Boot off
-needs: [live-image]
+needs: [root]
 
 script: |
   simulating && return 0
