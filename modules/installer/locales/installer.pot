@@ -475,7 +475,7 @@ msgstr ""
 
 #. ARCH_OS_AUR_HELPER: what it means
 #: module.yaml
-msgid "Installs software from the Arch User Repository just as easily as from the official repositories. paru-bin is the same program as a ready-made binary; paru is that program built here, which means a Rust toolchain downloaded, compiled with and thrown away again."
+msgid "Installs software from the Arch User Repository just as easily as from the official repositories. paru is built here against the pacman this machine has, which takes about a quarter of an hour. The -bin packages are the same program ready-made and install in seconds, but they are linked against the pacman of the day they were published: the first time Arch moves libalpm to a new version, they stop starting at all."
 msgstr ""
 
 #. ARCH_OS_CONTAINER_ENGINE: the question

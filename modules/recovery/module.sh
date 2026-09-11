@@ -185,19 +185,25 @@ mount_target() {
 # still holds it is named in the log and then killed, and the second attempt is
 # left unguarded on purpose - that one is a real failure.
 #
-# -M carries the whole safety of this: without it a target that isn't itself a
-# mount point resolves to the file system containing it, which on the live image
-# is the live image itself.
+# -R and not -A: -A reads the target as "every mount point of this file system,
+# wherever it is", and the top level below is a second mount of the same disk.
+# A rollback unmounts the system it is about to replace - with -A that took the
+# snapshots it copies from down with it, and the rollback failed on the next
+# line every single time.
+#
+# -M carries the whole safety of the two fuser lines: without it a target that
+# isn't itself a mount point resolves to the file system containing it, which on
+# the live image is the live image itself.
 unmount_target() {
     mountpoint -q "$MNT" || return 0
-    umount -A -R "$MNT" && return 0
+    umount -R "$MNT" && return 0
 
     echo "the target did not unmount, what is holding it:"
     fuser -Mvm "$MNT" || true
     fuser -Mkm "$MNT" || true
     sleep 2 # the kernel needs a moment to actually let go of the files
 
-    umount -A -R "$MNT"
+    umount -R "$MNT"
 }
 
 # The system closed for good: swap off, everything unmounted and the disk locked

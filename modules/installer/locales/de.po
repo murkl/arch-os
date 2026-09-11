@@ -475,8 +475,8 @@ msgstr "AUR-Helfer"
 
 #. ARCH_OS_AUR_HELPER: what it means
 #: module.yaml
-msgid "Installs software from the Arch User Repository just as easily as from the official repositories. paru-bin is the same program as a ready-made binary; paru is that program built here, which means a Rust toolchain downloaded, compiled with and thrown away again."
-msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen. paru-bin ist das fertige Binary, paru dasselbe Programm hier gebaut — dafür wird eine Rust-Toolchain geladen, benutzt und wieder weggeworfen."
+msgid "Installs software from the Arch User Repository just as easily as from the official repositories. paru is built here against the pacman this machine has, which takes about a quarter of an hour. The -bin packages are the same program ready-made and install in seconds, but they are linked against the pacman of the day they were published: the first time Arch moves libalpm to a new version, they stop starting at all."
+msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen. paru wird hier gegen das pacman dieser Maschine gebaut, was rund eine Viertelstunde dauert. Die -bin-Pakete sind dasselbe Programm fertig gebaut und in Sekunden installiert — aber gegen das pacman des Tages gelinkt, an dem sie veröffentlicht wurden: sobald Arch libalpm eine Version weiterzieht, starten sie gar nicht mehr."
 
 #. ARCH_OS_CONTAINER_ENGINE: the question
 #: module.yaml
@@ -788,6 +788,9 @@ msgstr "Im UEFI-Modus gestartet, Secure Boot aus"
 #: hooks/@preflight/network/hook.yaml
 msgid "Connected to the internet"
 msgstr "Mit dem Internet verbunden"
+
+#~ msgid "Installs software from the Arch User Repository just as easily as from the official repositories. paru-bin is the same program as a ready-made binary; paru is that program built here, which means a Rust toolchain downloaded, compiled with and thrown away again."
+#~ msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen. paru-bin ist das fertige Binary, paru dasselbe Programm hier gebaut — dafür wird eine Rust-Toolchain geladen, benutzt und wieder weggeworfen."
 
 #~ msgid "Installs software from the Arch User Repository just as easily as from the official repositories."
 #~ msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen."

@@ -13,8 +13,13 @@ simulating && return 0
 # The newest cached package for a kernel, or nothing. A module directory is named
 # after the package version with the release joined on, so what stands before the
 # first hyphen is what the file name carries.
+#
+# The signature beside each package is excluded outright: it ends in .pkg.tar.zst
+# .sig, so it matches the same pattern and sorts after the package it belongs to
+# - and the newest match was then a file bsdtar cannot read at all.
 kernel_cached() {
-    { find "${MNT}/var/cache/pacman/pkg" -maxdepth 1 -name "${1}-${2%%-*}*.pkg.tar.*" 2>/dev/null || true; } |
+    { find "${MNT}/var/cache/pacman/pkg" -maxdepth 1 \
+        -name "${1}-${2%%-*}*.pkg.tar.*" ! -name '*.sig' 2>/dev/null || true; } |
         sort -V | tail -n1
 }
 

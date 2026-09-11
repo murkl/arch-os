@@ -15,6 +15,10 @@ simulating && return 0
     echo "Leave it again with 'exit'."
     echo
 
+    # HOME, because a service has none and the shell that opens would then read
+    # root's own configuration against an empty one: an error line about a file
+    # at /, and none of the aliases or the prompt the account actually has.
+    #
     # Never fatal: the shell exits with the status of the last command typed in it.
-    arch-chroot "$MNT" || true
+    HOME=/root arch-chroot "$MNT" || true
 } <>/dev/tty >&0 2>&0

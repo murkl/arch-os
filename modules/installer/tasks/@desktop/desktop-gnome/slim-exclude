@@ -21,3 +21,7 @@ loupe
 decibels
 showtime
 papers
+
+# Not an application anybody opens but the dialog GNOME greets a new account
+# with, over a desktop this installer has just finished setting up.
+gnome-tour
