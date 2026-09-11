@@ -15,24 +15,30 @@ arch-chroot "$MNT" bash -c 'pacman -Qtdq >/dev/null 2>&1 && pacman -Rns --noconf
 # script that runs once at the first login and removes itself.
 [ -s "$FIRST_LOGIN" ] || return 0
 
-home="${MNT}/home/${ARCH_OS_USERNAME}"
-mkdir -p "${home}/.arch-os" "${home}/.config/autostart"
+mkdir -p "$(dirname "$FIRST_LOGIN_SCRIPT")" "${HOME_DIR}/${FIRST_LOGIN_LOG%/*}" "$(dirname "$FIRST_LOGIN_ENTRY")"
 {
     echo '#!/usr/bin/env bash'
     echo '# Written by the Arch OS Installer. Runs once, at the first login.'
     cat "$FIRST_LOGIN"
     echo
-    echo '# Nothing here is worth doing twice.'
-    echo "rm -f \"\${HOME}/.config/autostart/arch-os-first-login.desktop\""
+    echo '# Nothing here is worth doing twice: the entry that started this is what'
+    echo '# makes it run, so dropping it is what makes it a first login.'
+    echo "rm -f \"\${HOME}/${FIRST_LOGIN_ENTRY#"${HOME_DIR}"/}\""
     echo "echo \"\$(date '+%Y-%m-%d %H:%M:%S') | first login done\""
-} >"${home}/.arch-os/first-login.sh"
+} >"$FIRST_LOGIN_SCRIPT"
 rm -f "$FIRST_LOGIN"
-arch-chroot "$MNT" chmod +x "/home/${ARCH_OS_USERNAME}/.arch-os/first-login.sh"
+chmod +x "$FIRST_LOGIN_SCRIPT"
 
+# The desktop entry every desktop reads at login, and the one thing here a
+# person might want to look at afterwards: what the script made of it.
 {
     echo '[Desktop Entry]'
     echo 'Type=Application'
     echo 'Name=Arch OS Setup'
     echo 'Icon=preferences-system'
-    echo "Exec=bash -c '\${HOME}/.arch-os/first-login.sh > \${HOME}/.arch-os/first-login.log 2>&1'"
-} >"${home}/.config/autostart/arch-os-first-login.desktop"
+    echo "Exec=bash -c '\"\${HOME}/${FIRST_LOGIN_SCRIPT#"${HOME_DIR}"/}\" >\"\${HOME}/${FIRST_LOGIN_LOG}\" 2>&1'"
+} >"$FIRST_LOGIN_ENTRY"
+
+# Everything above was written as root into somebody else's home, and a first
+# login that cannot write its own log is one that reports nothing.
+own_home

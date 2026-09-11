@@ -79,7 +79,7 @@ presets:
           ARCH_OS_CORE_TWEAKS_ENABLED: true
           ARCH_OS_BOOTSPLASH_ENABLED: true
           ARCH_OS_MULTILIB_ENABLED: true
-          ARCH_OS_AUR_HELPER: paru
+          ARCH_OS_AUR_HELPER: paru-bin
           ARCH_OS_CONTAINER_ENGINE: none
           ARCH_OS_HOUSEKEEPING_ENABLED: true
           ARCH_OS_SHELL_ENHANCEMENT_ENABLED: true
@@ -479,10 +479,12 @@ variables:
     title: AUR helper
     description: |
       Installs software from the Arch User Repository just as easily as from
-      the official repositories.
+      the official repositories. paru-bin is the same program as a ready-made
+      binary; paru is that program built here, which means a Rust toolchain
+      downloaded, compiled with and thrown away again.
     group: System
-    values: [paru, paru-bin, paru-git, yay, none]
-    default: paru
+    values: [paru-bin, paru, paru-git, yay, none]
+    default: paru-bin
     required: true
 
   - name: ARCH_OS_CONTAINER_ENGINE

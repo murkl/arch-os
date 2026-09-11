@@ -1,4 +1,4 @@
 # The scripts here are sourced by Oak, never executed, so none carries a shebang
-# for shellcheck to read the dialect from. lib.sh is sourced in front of every
+# for shellcheck to read the dialect from. module.sh is sourced in front of every
 # one of them, and every answer arrives as an environment variable.
 shell=bash

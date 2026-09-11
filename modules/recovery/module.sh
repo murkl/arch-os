@@ -131,6 +131,34 @@ default_filesystem() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
+# THE KERNELS ON THE DISK
+# ////////////////////////////////////////////////////////////////////////////
+
+# Which package a module directory belongs to: 6.12.4-arch1-1 is the stock
+# kernel, anything carrying zen, lts or hardened is that one. Here rather than
+# in the task, because the task puts the image back under this name and its
+# test reads it back by the same one - two answers to that would be a repair
+# that checks a file it did not write.
+kernel_package() {
+    case "$1" in
+    *zen*) echo linux-zen ;;
+    *lts*) echo linux-lts ;;
+    *hardened*) echo linux-hardened ;;
+    *) echo linux ;;
+    esac
+}
+
+# Every kernel whose modules are in the system being repaired. A folder with no
+# modules under it is what an interrupted removal leaves, not a kernel.
+installed_kernels() {
+    local dir
+    for dir in "${MNT}/usr/lib/modules/"*/; do
+        [ -e "${dir}kernel" ] || continue
+        basename "$dir"
+    done
+}
+
+# ////////////////////////////////////////////////////////////////////////////
 # MOUNTING & CLOSING
 # ////////////////////////////////////////////////////////////////////////////
 

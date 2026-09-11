@@ -373,6 +373,16 @@ kernel_args() {
         args+=(quiet splash vt.global_cursor_default=0 loglevel=3 rd.udev.log_level=3 systemd.show_status=auto)
     fi
 
+    # Plymouth forces its text plugin the moment it finds a serial console, and
+    # never looks for a screen at all after that: no splash, and the passphrase
+    # asked in plain type. A virtual machine is handed one without asking - OVMF
+    # appends console=uart,io,0x3f8 through an SMBIOS string - and so is any
+    # machine administered over a serial line. Nothing is lost by ignoring them
+    # here: systemd goes on writing to every console it was given either way.
+    if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
+        args+=(plymouth.ignore-serial-consoles)
+    fi
+
     [ -n "$ARCH_OS_KERNEL_ARGS" ] && args+=("$ARCH_OS_KERNEL_ARGS")
     printf '%s' "${args[*]}"
 }
@@ -470,7 +480,28 @@ has_command() { [ -x "${MNT}/usr/bin/${1}" ]; }
 # Some desktop settings only live in the user's own settings database, and there
 # is no session yet to write them into. Tasks append lines here; the first-login
 # task turns them into a script that runs once and then removes itself.
-FIRST_LOGIN="${MNT}/home/${ARCH_OS_USERNAME}/.first-login"
+#
+# Where the three pieces of that end up follows the XDG base directory
+# specification, which is also what keeps them clear of ~/.arch-os - that
+# folder belongs to the manager, and a file of ours among its bin, config and
+# database is a file it may one day tidy away.
+#   https://specifications.freedesktop.org/basedir-spec/latest/
+#   https://specifications.freedesktop.org/autostart-spec/latest/
+HOME_DIR="${MNT}/home/${ARCH_OS_USERNAME}"
+
+# Only while the run is on; the finish-system task turns it into the three
+# below, which is what the finished system keeps.
+FIRST_LOGIN="${HOME_DIR}/.first-login"
+
+# Shellcheck reads this file on its own and cannot see that Oak sources it in
+# front of every task and every test, so each of the three looks unused here.
+# shellcheck disable=SC2034
+FIRST_LOGIN_SCRIPT="${HOME_DIR}/.local/share/arch-os/first-login.sh"
+# Relative, because it is the account itself that writes it, from its own home.
+# shellcheck disable=SC2034
+FIRST_LOGIN_LOG=".local/state/arch-os/first-login.log"
+# shellcheck disable=SC2034
+FIRST_LOGIN_ENTRY="${HOME_DIR}/.config/autostart/arch-os-first-login.desktop"
 
 on_first_login() { cat >>"$FIRST_LOGIN"; }
 

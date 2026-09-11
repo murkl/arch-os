@@ -1,4 +1,7 @@
-# Build the AUR helper from source, which is the only way it can be installed.
+# The AUR helper, built the way everything from the AUR is built. The -bin
+# package builds in seconds because its PKGBUILD unpacks a released binary;
+# the plain one compiles the program here, which pulls a Rust toolchain in and
+# takes about a quarter of an hour.
 
 simulating && return 0
 

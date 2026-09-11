@@ -10,17 +10,6 @@
 
 simulating && return 0
 
-# Which package a module directory belongs to: 6.12.4-arch1-1 is the stock
-# kernel, anything carrying zen, lts or hardened is that one.
-kernel_package() {
-    case "$1" in
-    *zen*) echo linux-zen ;;
-    *lts*) echo linux-lts ;;
-    *hardened*) echo linux-hardened ;;
-    *) echo linux ;;
-    esac
-}
-
 # The newest cached package for a kernel, or nothing. A module directory is named
 # after the package version with the release joined on, so what stands before the
 # first hyphen is what the file name carries.
@@ -29,10 +18,7 @@ kernel_cached() {
         sort -V | tail -n1
 }
 
-for dir in "${MNT}/usr/lib/modules/"*/; do
-    # A leftover folder with no modules in it is not a kernel.
-    [ -e "${dir}kernel" ] || continue
-    version="$(basename "$dir")"
+while read -r version; do
     kind="$(kernel_package "$version")"
     package="$(kernel_cached "$kind" "$version")"
     if [ -z "$package" ]; then
@@ -41,7 +27,7 @@ for dir in "${MNT}/usr/lib/modules/"*/; do
     fi
     bsdtar -xOf "$package" "usr/lib/modules/${version}/vmlinuz" >"${MNT}/boot/vmlinuz-${kind}"
     echo "restored vmlinuz-${kind} from $(basename "$package")"
-done
+done < <(installed_kernels)
 
 # The presets are the one place that knows whether this system boots a plain ram
 # disk or a signed unified image.

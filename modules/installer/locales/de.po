@@ -475,8 +475,8 @@ msgstr "AUR-Helfer"
 
 #. ARCH_OS_AUR_HELPER: what it means
 #: module.yaml
-msgid "Installs software from the Arch User Repository just as easily as from the official repositories."
-msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen."
+msgid "Installs software from the Arch User Repository just as easily as from the official repositories. paru-bin is the same program as a ready-made binary; paru is that program built here, which means a Rust toolchain downloaded, compiled with and thrown away again."
+msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen. paru-bin ist das fertige Binary, paru dasselbe Programm hier gebaut — dafür wird eine Rust-Toolchain geladen, benutzt und wieder weggeworfen."
 
 #. ARCH_OS_CONTAINER_ENGINE: the question
 #: module.yaml
@@ -788,6 +788,9 @@ msgstr "Im UEFI-Modus gestartet, Secure Boot aus"
 #: hooks/@preflight/network/hook.yaml
 msgid "Connected to the internet"
 msgstr "Mit dem Internet verbunden"
+
+#~ msgid "Installs software from the Arch User Repository just as easily as from the official repositories."
+#~ msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen."
 
 #~ msgid "Installs guest tools when this is running inside a virtual machine, so the screen resizes and the clipboard is shared. Does nothing on real hardware."
 #~ msgstr "Installiert Gasterweiterungen, wenn das hier in einer virtuellen Maschine läuft, damit sich der Bildschirm anpasst und die Zwischenablage geteilt wird. Auf echter Hardware passiert nichts."
