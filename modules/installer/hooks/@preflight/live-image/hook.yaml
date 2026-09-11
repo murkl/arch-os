@@ -1,0 +1,9 @@
+title: Started from the live image
+needs: [root]
+
+execute: |
+  simulating && return 0
+
+  [ "$(cat /proc/sys/kernel/hostname)" = "archiso" ] && return 0
+  echo "This only runs from the Arch Linux live image. Boot that image and start it from there." >&2
+  exit 1

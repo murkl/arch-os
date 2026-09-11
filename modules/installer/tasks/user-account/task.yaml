@@ -1,0 +1,3 @@
+title: Create your account
+stage: base
+needs: [pacstrap-core]

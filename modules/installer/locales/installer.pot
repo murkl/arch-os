@@ -569,137 +569,117 @@ msgid "A code such as aBc12, or the whole address it belongs to."
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/prepare/init/task.yaml
+#: tasks/init/task.yaml
 msgid "Prepare the installation"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/disk/prepare-disk/task.yaml
+#: tasks/prepare-disk/task.yaml
 msgid "Set up the disk"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/base/pacstrap-core/task.yaml
+#: tasks/pacstrap-core/task.yaml
 msgid "Install the base system"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/base/configure-system/task.yaml
+#: tasks/configure-system/task.yaml
 msgid "Configure the system"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/base/core-tweaks/task.yaml
+#: tasks/core-tweaks/task.yaml
 msgid "Apply the core tweaks"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/base/initramfs/task.yaml
-msgid "Build the initial ram disk"
-msgstr ""
-
-#. the step, as the run lists it
-#: tasks/base/user-account/task.yaml
+#: tasks/user-account/task.yaml
 msgid "Create your account"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/base/services/task.yaml
-msgid "Switch on the system services"
-msgstr ""
-
-#. the step, as the run lists it
-#: tasks/base/snapper/task.yaml
-msgid "Set up snapshots"
-msgstr ""
-
-#. the step, as the run lists it
-#: tasks/boot/bootloader/task.yaml
+#: tasks/bootloader/task.yaml
 msgid "Install the boot loader"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/system/container-engine/task.yaml
+#: tasks/container-engine/task.yaml
 msgid "Install the container engine"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/system/enable-multilib/task.yaml
+#: tasks/enable-multilib/task.yaml
 msgid "Enable 32-bit support"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/system/aur-helper/task.yaml
+#: tasks/aur-helper/task.yaml
 msgid "Install the AUR helper"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/system/bootsplash/task.yaml
+#: tasks/bootsplash/task.yaml
 msgid "Install the boot splash"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/system/housekeeping/task.yaml
+#: tasks/housekeeping/task.yaml
 msgid "Set up housekeeping"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/system/shell-enhancement/task.yaml
-msgid "Enhance the shell"
-msgstr ""
-
-#. the step, as the run lists it
-#: tasks/system/vm-support/task.yaml
-msgid "Add virtual machine support"
-msgstr ""
-
-#. the step, as the run lists it
-#: tasks/desktop/desktop-gnome/task.yaml
-msgid "Install the GNOME desktop"
-msgstr ""
-
-#. the step, as the run lists it
-#: tasks/desktop/graphics-driver/task.yaml
-msgid "Install the graphics driver"
-msgstr ""
-
-#. the step, as the run lists it
-#: tasks/desktop/manager/task.yaml
+#: tasks/manager/task.yaml
 msgid "Install Arch OS Manager"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/desktop/samba/task.yaml
+#: tasks/shell-enhancement/task.yaml
+msgid "Enhance the shell"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/vm-support/task.yaml
+msgid "Add virtual machine support"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/desktop-gnome/task.yaml
+msgid "Install the GNOME desktop"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/graphics-driver/task.yaml
+msgid "Install the graphics driver"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/samba/task.yaml
 msgid "Share files with other machines"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/finalize/first-login/task.yaml
-msgid "Prepare the first login"
+#: tasks/finish-system/task.yaml
+msgid "Finish the new system"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/finalize/snapshot-hook/task.yaml
-msgid "Snapshot on every update"
+#: tasks/snapshots/task.yaml
+msgid "Set up snapshots"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/finalize/tidy-up/task.yaml
-msgid "Tidy up"
-msgstr ""
-
-#. the step, as the run lists it
-#: tasks/finalize/secure-boot/task.yaml
+#: tasks/secure-boot/task.yaml
 msgid "Sign the boot chain"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/finish/copy-config/task.yaml
+#: tasks/copy-config/task.yaml
 msgid "Keep a copy of this installation"
 msgstr ""
 
 #. read once the step is done, and held on until somebody has
-#: tasks/finish/copy-config/task.yaml
+#: tasks/copy-config/task.yaml
 msgid ""
 "Arch OS is installed\n"
 "\n"
@@ -707,12 +687,12 @@ msgid ""
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/finish/share-config/task.yaml
+#: tasks/share-config/task.yaml
 msgid "Share this configuration"
 msgstr ""
 
 #. asked before the step runs
-#: tasks/finish/share-config/task.yaml
+#: tasks/share-config/task.yaml
 msgid ""
 "Put these answers online now?\n"
 "\n"
@@ -720,7 +700,7 @@ msgid ""
 msgstr ""
 
 #. read once the step is done, and held on until somebody has
-#: tasks/finish/share-config/task.yaml
+#: tasks/share-config/task.yaml
 msgid ""
 "Configuration shared\n"
 "\n"
@@ -728,12 +708,12 @@ msgid ""
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/finish/chroot/task.yaml
+#: tasks/chroot/task.yaml
 msgid "Enter the new system"
 msgstr ""
 
 #. asked before the step runs
-#: tasks/finish/chroot/task.yaml
+#: tasks/chroot/task.yaml
 msgid ""
 "Open a shell inside the system that was just installed?\n"
 "\n"
@@ -741,12 +721,12 @@ msgid ""
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/finish/reboot/task.yaml
+#: tasks/reboot/task.yaml
 msgid "Restart into the new system"
 msgstr ""
 
 #. asked before the step runs
-#: tasks/finish/reboot/task.yaml
+#: tasks/reboot/task.yaml
 msgid ""
 "Restart into {{ARCH_OS_HOSTNAME}} now?\n"
 "\n"
@@ -754,12 +734,12 @@ msgid ""
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/finish/unmount/task.yaml
+#: tasks/unmount/task.yaml
 msgid "Unmount everything"
 msgstr ""
 
 #. asked before the step runs
-#: tasks/finish/unmount/task.yaml
+#: tasks/unmount/task.yaml
 msgid ""
 "Unmount the new system and stay in the live environment?\n"
 "\n"
@@ -767,21 +747,21 @@ msgid ""
 msgstr ""
 
 #. the check, read where it is the one that failed
-#: tasks/@preflight/root/task.yaml
+#: hooks/@preflight/root/hook.yaml
 msgid "Running as root"
 msgstr ""
 
 #. the check, read where it is the one that failed
-#: tasks/@preflight/live-image/task.yaml
+#: hooks/@preflight/live-image/hook.yaml
 msgid "Started from the live image"
 msgstr ""
 
 #. the check, read where it is the one that failed
-#: tasks/@preflight/firmware/task.yaml
+#: hooks/@preflight/firmware/hook.yaml
 msgid "Booted in UEFI mode, with Secure Boot off"
 msgstr ""
 
 #. the check, read where it is the one that failed
-#: tasks/@preflight/network/task.yaml
+#: hooks/@preflight/network/hook.yaml
 msgid "Connected to the internet"
 msgstr ""

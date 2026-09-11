@@ -117,17 +117,17 @@ msgid "The snapshot to put in place of the root subvolume. Newest first, with th
 msgstr "Der Schnappschuss, der an die Stelle des Wurzel-Subvolumes tritt. Der neueste zuerst, mit dem Zeitpunkt der Aufnahme und dem Anlass."
 
 #. the step, as the run lists it
-#: tasks/open/open/task.yaml
+#: tasks/open/task.yaml
 msgid "Unlock and mount the system"
 msgstr "System entsperren und einhängen"
 
 #. the step, as the run lists it
-#: tasks/repair/rollback/task.yaml
+#: tasks/rollback/task.yaml
 msgid "Go back to a snapshot"
 msgstr "Auf einen Schnappschuss zurückgehen"
 
 #. asked before the step runs
-#: tasks/repair/rollback/task.yaml
+#: tasks/rollback/task.yaml
 msgid ""
 "Put {{ARCH_OS_RECOVERY_SNAPSHOT}} in place of the root subvolume on {{ARCH_OS_RECOVERY_DISK}}?\n"
 "\n"
@@ -138,12 +138,12 @@ msgstr ""
 "Das System, wie es jetzt ist, wird gelöscht und durch diesen Schnappschuss ersetzt. Alles unter /home bleibt unangetastet, die übrigen Schnappschüsse ebenfalls. Du kannst wiederkommen und einen anderen wählen."
 
 #. the step, as the run lists it
-#: tasks/repair/kernel/task.yaml
+#: tasks/kernel/task.yaml
 msgid "Rebuild the boot files"
 msgstr "Startdateien neu bauen"
 
 #. asked before the step runs
-#: tasks/repair/kernel/task.yaml
+#: tasks/kernel/task.yaml
 msgid ""
 "Rebuild the kernel images and the initial ram disks?\n"
 "\n"
@@ -154,12 +154,12 @@ msgstr ""
 "Nötig, wenn der Rücksprung über ein Kernel-Update hinweg ging: Die Module im wiederhergestellten System und die Abbilder in /boot sind dann zwei verschiedene Kernel, und der Rechner startet ohne ein einziges Modul. Alles kommt aus dem Paket-Cache, ein Netzwerk braucht es dafür nicht."
 
 #. the step, as the run lists it
-#: tasks/repair/shell/task.yaml
+#: tasks/shell/task.yaml
 msgid "Open a shell in the system"
 msgstr "Eine Shell im System öffnen"
 
 #. asked before the step runs
-#: tasks/repair/shell/task.yaml
+#: tasks/shell/task.yaml
 msgid ""
 "Open a shell inside the system on {{ARCH_OS_RECOVERY_DISK}}?\n"
 "\n"
@@ -170,12 +170,12 @@ msgstr ""
 "Es ist alles eingehängt, hier wird von Hand erledigt, was die Wiederherstellung nicht selbst tut: ein Paket neu installieren, eine Konfigurationsdatei zurücklegen. Mit `exit` geht es zurück."
 
 #. the step, as the run lists it
-#: tasks/close/close/task.yaml
+#: tasks/close/task.yaml
 msgid "Unmount and lock the disk"
 msgstr "Aushängen und Datenträger sperren"
 
 #. asked before the step runs
-#: tasks/close/close/task.yaml
+#: tasks/close/task.yaml
 msgid ""
 "Unmount the system and lock the disk again?\n"
 "\n"
@@ -186,12 +186,12 @@ msgstr ""
 "Verloren geht so oder so nichts, die Wiederherstellung ist fertig. Eingehängt zu lassen lohnt nur, wenn du von hier aus weiterarbeiten willst."
 
 #. the check, read where it is the one that failed
-#: tasks/@preflight/root/task.yaml
+#: hooks/@preflight/root/hook.yaml
 msgid "Running as root"
 msgstr "Läuft als root"
 
 #. the check, read where it is the one that failed
-#: tasks/@preflight/live-image/task.yaml
+#: hooks/@preflight/live-image/hook.yaml
 msgid "Started from the live image"
 msgstr "Vom Live-Image gestartet"
 

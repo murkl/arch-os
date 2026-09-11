@@ -14,9 +14,11 @@ make -C ../.. run MODULE=installer ARGS=--debug   # run it without touching this
 ```
 module.yaml                     what this Installer is, what it asks, what order it runs in
 module.sh                       what more than one script has to agree about
-tasks/<stage>/<id>/task.yaml    what that step is: its needs, its conditions, its offers
-tasks/<stage>/<id>/task.sh      what it does, plus any file it ships with, beside it
-tasks/@<stage>/<id>/            a stage Oak runs itself, rather than as part of the work
+tasks/<id>/task.yaml            what that step is: its stage, needs, conditions and offers
+tasks/<id>/task.sh              what it does, plus any file it ships with, beside it
+tasks/<id>/test.sh              optional: how to tell, on the machine, that it took
+hooks/@<hook>/<id>/hook.yaml    a moment Oak runs itself, rather than as part of the work
+hooks/@<hook>/<id>/hook.sh      what that step does, where its yaml does not say so itself
 data/                           the tables a language and a country are looked up in
 locales/                        one <code>.po per language, and the template they come from
 ```
@@ -25,7 +27,7 @@ locales/                        one <code>.po per language, and the template the
 
 ## Stages
 
-Every folder under `tasks/` is a stage and every folder in one of those is a step. Nothing lists them elsewhere: the folders are the list. `module.yaml` declares the stages top to bottom, and `needs:` orders the steps that share one.
+Every folder under `tasks/` is one task, flat. Nothing lists them elsewhere: the folders are the list. Which phase a task belongs to is the `stage:` in its `task.yaml`; `module.yaml` declares those stages top to bottom, and `needs:` orders the tasks that share one.
 
 | Stage | Description |
 | --- | --- |
@@ -44,22 +46,28 @@ Three orderings matter, and each is a stage or a `needs:`:
 2. 32-bit support has to be enabled before any package that needs it is pulled in
 3. The boot chain is signed last, since signing only holds if nothing rebuilds the kernel image afterwards
 
-The four stages marked `@` are Oak's own, run at their own moment rather than as part of the work:
+**Note:** _`make check` prints the order the whole module resolves to._
 
-| Stage | Description |
+## Hooks
+
+`hooks/` is the module's other half, and a folder of its own because it answers to something else: a task is this Installer's work — listed, ordered, guarded — while a hook is its answer to a question Oak asks at a moment of Oak's choosing. One folder per hook, one per step inside it, `hook.yaml` and `hook.sh`.
+
+| Hook | Description |
 | --- | --- |
 | `@preflight` | Four checks, in order, before the first question: root, the live image, UEFI with Secure Boot off, and a network |
 | `@online`, `@wlan-device`, `@wlan-networks`, `@wlan-connect` | Finding and joining a wireless network |
 | `@restart`, `@shutdown` | The two ways this machine is put down, each closing the target first |
 
-**Note:** _`make check` prints the order the whole module resolves to._
+The last two turn leaving the Installer into a choice rather than a plain exit: the ISO boots specifically to run this. Both call `close_target` first, so a machine shutting down does not take a half-written file system with it, and both do nothing under `--debug`.
+
+**Note:** _The third way out is `console:` in `module.yaml`, which runs nothing: the Installer closes and the machine keeps running. See **[iso/](../../iso)**._
 
 ## Writing a Task
 
-A folder under the stage it runs in, holding `task.yaml` and `task.sh`. Oak runs the script in a shell that already carries `module.sh` and an `ERR` trap, so it needs no shebang, no `set -e` and no error handling.
+A folder under `tasks/`, holding `task.yaml` and `task.sh`. Oak runs the script in a shell that already carries `module.sh` and an `ERR` trap, so it needs no shebang, no `set -e` and no error handling.
 
 ```
-# tasks/system/thing/task.sh
+# tasks/thing/task.sh
 simulating && return 0
 
 chroot_pacman_install git base-devel
@@ -70,9 +78,10 @@ cp "$(where)/thing.conf" "${MNT}/etc/thing.conf"
 A step short enough to read at a glance skips the file and writes its shell in the YAML instead, which is what the two-line ones here do:
 
 ```yaml
-# tasks/system/thing/task.yaml
+# tasks/thing/task.yaml
 title: Install the thing
-script: |
+stage: system
+execute: |
   simulating && return 0
 
   chroot_pacman_install thing
@@ -85,6 +94,22 @@ script: |
 **Note:** _Anything that needs a desktop session which does not exist yet — GNOME settings live in the session's own database — goes through `on_first_login`, which collects those lines into a script that runs once at the first login and then removes itself._
 
 **[➜ See AGENTS.md](../../AGENTS.md#shell-the-task-contract)** for the whole contract.
+
+## Checking a Step
+
+A task may also say how to tell, on the machine itself, that the work took. That is a `test.sh` beside `task.sh`, or a `test:` in the YAML for something short:
+
+```
+# tasks/thing/test.sh
+arch-chroot "$MNT" systemctl is-enabled something.service >/dev/null
+[ -f "${MNT}/etc/thing.conf" ]
+```
+
+It runs right after the task, and it has one rule: **it reads and nothing else**. No `simulating` guard either — a simulated run writes nothing, so Oak runs no checks at all in one.
+
+Check the outcome, not the steps that produced it: the service is enabled, the account has a password, the loader is installed. A check that restates the script line by line is a second copy of the task, and it is the copy that goes stale.
+
+A check that disagrees does not fail the installation — the task itself already said it worked. They are collected and read once, on the page the run ends with. The switch that turns the whole of it off is in the settings.
 
 ## auto and none
 
@@ -127,37 +152,19 @@ The upload is a `confirm:` that opens on **no**, asked immediately after the pag
 
 **Note:** _What is uploaded is the answer file without its `ARCH_OS_CONFIG_*` lines. The password is not in it, but the hostname, username, disk and language are. **Anyone holding the address can read it.**_
 
-## Hooks
-
-Bash scripts Oak calls by name. One that exists gets used, one that does not turns off that part of the interface.
-
-| Hook | Description |
-| --- | --- |
-| `preflight.sh` | Checks root, the live image, UEFI, Secure Boot off and a network connection |
-| `online.sh` | Whether there is internet |
-| `wlan-device.sh` | Which wireless device to use |
-| `wlan-networks.sh` | Scans and prints one SSID per line |
-| `wlan-connect.sh` | Joins one, with `WLAN_DEVICE`, `WLAN_SSID` and `WLAN_PASSPHRASE` in the environment |
-| `restart.sh` | Close the target system and reboot |
-| `shutdown.sh` | Close the target system and power off |
-
-The last two turn leaving the Installer into a choice rather than a plain exit: the ISO boots specifically to run this. Both call `close_target` first, so a machine shutting down does not take a half-written file system with it, and both do nothing under `--debug`.
-
-**Note:** _The third way out is `console:` in `module.yaml`, which runs nothing: the Installer closes and the machine keeps running. See **[iso/](../../iso)**._
-
 ## Adding something
 
 | You want to add | How |
 | --- | --- |
 | An option | A row under `variables:` in `module.yaml`. Guard any task that depends on it with `conditions:` |
-| A step | A folder under `tasks/` with the two files in it, then `make check` |
+| A step | A folder under `tasks/` with `task.yaml` and `task.sh` in it — and a `test.sh` where there is something to read back — then `make check` |
 | A starting point | An option under `presets:`. One that fetches its answers names the question with `asks:` and the shell that turns it into more answers with `apply:` |
 | A language | **[➜ See Contributing](../../docs/CONTRIBUTING.md#adding-a-language)** |
 | Something in the Recovery | **[➜ Arch OS Recovery](../recovery)**, none of it lives here |
 
 ## Requirements
 
-Root, the Arch Linux live image, booted in UEFI mode with Secure Boot off, and a network connection. The four steps under `tasks/@preflight/` check them in that order, before the first question is asked.
+Root, the Arch Linux live image, booted in UEFI mode with Secure Boot off, and a network connection. The four steps under `hooks/@preflight/` check them in that order, before the first question is asked.
 
 ## Where the Answers go
 

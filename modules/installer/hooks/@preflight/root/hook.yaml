@@ -1,0 +1,17 @@
+# Can this machine be installed onto at all?
+#
+# Every check in this stage is read-only and every one of them is a hard stop.
+# They run before the first question, so a wrong firmware setting is caught up
+# front instead of after twenty answers — and because none of it can be fixed
+# from inside this program anyway.
+#
+# What goes to stderr is what the user reads, so each message says what is wrong
+# and what to do about it, in that order, and nothing else.
+title: Running as root
+
+execute: |
+  simulating && return 0
+
+  [ "$(id -u)" -eq 0 ] && return 0
+  echo "This has to run as root. Log in as root and start it again." >&2
+  exit 1

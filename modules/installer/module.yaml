@@ -26,13 +26,14 @@ confirm: |
   Everything on that disk will be erased and this cannot be undone. Nothing
   has been changed so far.
 
-# The phases the work happens in, top to bottom. Each is a folder under tasks/,
-# and the steps in it are what puts them in the run and where; steps sharing a
-# stage run in the order `needs` demands.
+# The phases the work happens in, top to bottom. Every task under tasks/ names
+# one of them, and naming it is what puts that task in the run and where; tasks
+# sharing a stage run in the order `needs` demands.
 #
-# The stages Oak runs itself — the check that this machine can be installed onto
-# at all, the wireless, the two ways out — are folders under tasks/ too, marked
-# with @ and left out here: when they run is Oak's, not this file's.
+# What Oak runs of its own accord — the check that this machine can be installed
+# onto at all, the wireless, the two ways out — is a hook, and hooks live in
+# hooks/ beside tasks/. They are left out here because when a hook runs is Oak's
+# business and not this file's.
 stages:
   - prepare # the live system, made ready to install from
   - disk # partitioned, encrypted, formatted, mounted
@@ -98,7 +99,7 @@ presets:
       - title: Online (paste.rs)
         description: Load every answer from a configuration shared at the end of an earlier installation.
         asks: ARCH_OS_CONFIG_SOURCE
-        apply: ./tasks/finish/share-config/import.sh
+        apply: ./tasks/share-config/import.sh
 
 # Everything this installer needs to know, in the order it is asked. Required and
 # unanswered is what makes the installer ask; an answer is what makes it stop.

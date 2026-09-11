@@ -1,0 +1,11 @@
+title: Keep a copy of this installation
+stage: finish
+
+# The last thing done to the installation itself, and the moment the run says so:
+# everything after it is an offer. Short on purpose — the page is one fact, and
+# the questions under it are what it makes room for.
+report: |
+  Arch OS is installed
+
+  {{ARCH_OS_HOSTNAME}} is on {{ARCH_OS_DISK}} and ready to start. Everything
+  from here on is optional.

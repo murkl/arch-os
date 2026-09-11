@@ -1,0 +1,14 @@
+title: Unmount and lock the disk
+stage: close
+confirm: |
+  Unmount the system and lock the disk again?
+
+  Nothing is lost either way, the recovery is finished. Leaving it mounted
+  is only useful if you want to keep working on it from here.
+
+# Everything the recovery mounted, taken back down, and the encrypted volume
+# locked again.
+execute: |
+  simulating && return 0
+
+  close_target

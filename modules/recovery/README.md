@@ -14,9 +14,10 @@ make -C ../.. run MODULE=recovery ARGS=--debug   # run it without touching this 
 ```
 module.yaml                     what this Recovery is, what it asks, what order it runs in
 module.sh                       what more than one script has to agree about
-tasks/<stage>/<id>/task.yaml    what that step is: its needs, its conditions, its offers
-tasks/<stage>/<id>/task.sh      what it does, plus any file it ships with, beside it
-tasks/@<stage>/<id>/            a stage Oak runs itself, rather than as part of the work
+tasks/<id>/task.yaml            what that step is: its stage, needs, conditions and offers
+tasks/<id>/task.sh              what it does, plus any file it ships with, beside it
+tasks/<id>/test.sh              optional: how to tell, on the machine, that it took
+hooks/@<hook>/<id>/hook.yaml    a moment Oak runs itself, rather than as part of the work
 locales/                        one <code>.po per language, and the template they come from
 ```
 
@@ -40,10 +41,10 @@ Three stages, and after the first one every step is optional. The system is open
 
 A machine that needs repairing may have a broken network as part of the problem, so this module never asks for one:
 
-- There is no `@online` stage, which is what turns the network screen off
+- There is no `@online` hook, which is what turns the network screen off
 - The kernel images come from the repaired system's own pacman cache rather than a mirror
 
-For the same reason `tasks/@preflight/` checks less than the Installer's does: root and the live image, nothing about this machine's firmware, since this machine is not what is being set up.
+For the same reason `hooks/@preflight/` checks less than the Installer's does: root and the live image, nothing about this machine's firmware, since this machine is not what is being set up.
 
 ## Two Views of one Disk
 

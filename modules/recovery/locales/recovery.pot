@@ -117,17 +117,17 @@ msgid "The snapshot to put in place of the root subvolume. Newest first, with th
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/open/open/task.yaml
+#: tasks/open/task.yaml
 msgid "Unlock and mount the system"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/repair/rollback/task.yaml
+#: tasks/rollback/task.yaml
 msgid "Go back to a snapshot"
 msgstr ""
 
 #. asked before the step runs
-#: tasks/repair/rollback/task.yaml
+#: tasks/rollback/task.yaml
 msgid ""
 "Put {{ARCH_OS_RECOVERY_SNAPSHOT}} in place of the root subvolume on {{ARCH_OS_RECOVERY_DISK}}?\n"
 "\n"
@@ -135,12 +135,12 @@ msgid ""
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/repair/kernel/task.yaml
+#: tasks/kernel/task.yaml
 msgid "Rebuild the boot files"
 msgstr ""
 
 #. asked before the step runs
-#: tasks/repair/kernel/task.yaml
+#: tasks/kernel/task.yaml
 msgid ""
 "Rebuild the kernel images and the initial ram disks?\n"
 "\n"
@@ -148,12 +148,12 @@ msgid ""
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/repair/shell/task.yaml
+#: tasks/shell/task.yaml
 msgid "Open a shell in the system"
 msgstr ""
 
 #. asked before the step runs
-#: tasks/repair/shell/task.yaml
+#: tasks/shell/task.yaml
 msgid ""
 "Open a shell inside the system on {{ARCH_OS_RECOVERY_DISK}}?\n"
 "\n"
@@ -161,12 +161,12 @@ msgid ""
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/close/close/task.yaml
+#: tasks/close/task.yaml
 msgid "Unmount and lock the disk"
 msgstr ""
 
 #. asked before the step runs
-#: tasks/close/close/task.yaml
+#: tasks/close/task.yaml
 msgid ""
 "Unmount the system and lock the disk again?\n"
 "\n"
@@ -174,11 +174,11 @@ msgid ""
 msgstr ""
 
 #. the check, read where it is the one that failed
-#: tasks/@preflight/root/task.yaml
+#: hooks/@preflight/root/hook.yaml
 msgid "Running as root"
 msgstr ""
 
 #. the check, read where it is the one that failed
-#: tasks/@preflight/live-image/task.yaml
+#: hooks/@preflight/live-image/hook.yaml
 msgid "Started from the live image"
 msgstr ""

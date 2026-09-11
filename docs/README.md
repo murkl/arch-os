@@ -58,12 +58,12 @@ An internet connection is required: most packages are downloaded during the inst
 curl -Ls bit.ly/arch-os | bash
 ```
 
-**Note:** _Downloads are kept in `~/Downloads` and reused, so a second run costs no bandwidth. `DOWNLOAD_DIR` points somewhere else, `DEBUG=true` writes no device, and `MODE=install` or `MODE=create` picks the half by hand instead of by where the command runs: `curl -Ls bit.ly/arch-os | DEBUG=true bash`_
+**Note:** _The ISO is kept in `~/Downloads` and reused, so a second run costs no bandwidth. `DEBUG=true` writes no device; the rest is in `curl -Ls bit.ly/arch-os | bash -s -- --help`._
 
 ### 2. Set the Firmware up
 
 - Boot mode: UEFI
-- Secure Boot: off, the Installer sets it up again for you afterwards
+- Secure Boot: off, the Installer sets it up again for you afterwards. Same with Windows already on the disk: its boot entry stays, and Microsoft's keys are kept alongside the new ones
 
 ### 3. Boot from the USB Device
 

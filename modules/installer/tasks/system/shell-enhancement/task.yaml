@@ -1,2 +1,0 @@
-title: Enhance the shell
-conditions: ARCH_OS_SHELL_ENHANCEMENT_ENABLED == true

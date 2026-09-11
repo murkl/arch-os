@@ -1,2 +1,0 @@
-title: Install the GNOME desktop
-conditions: ARCH_OS_DESKTOP == gnome

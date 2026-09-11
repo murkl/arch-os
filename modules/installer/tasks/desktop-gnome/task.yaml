@@ -1,0 +1,3 @@
+title: Install the GNOME desktop
+stage: desktop
+conditions: ARCH_OS_DESKTOP == gnome

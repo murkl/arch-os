@@ -45,7 +45,7 @@ MODULES := $(notdir $(wildcard $(MODULES_DIR)/*))
 # by name. What is not here — a README, a linter's config — is how the module is
 # worked on rather than part of what runs.
 MODULE_DECL  := module.yaml
-MODULE_PARTS := module.sh data locales tasks
+MODULE_PARTS := module.sh data locales tasks hooks
 
 # ////////////////////////////////////////////////////////////////////////////
 # OAK | The runtime this is built on
@@ -56,7 +56,7 @@ MODULE_PARTS := module.sh data locales tasks
 # OAK_VERSION is named outright rather than followed, so a build of a given
 # commit is the same build tomorrow. Written without the `v` its tag carries.
 OAK_REPO    := murkl/oak
-OAK_VERSION ?= 1.0.0
+OAK_VERSION ?= 2.0.0
 OAK_ASSET   := oak-linux-amd64
 OAK_DIR     := .oak
 OAK_BIN     := $(OAK_DIR)/oak
