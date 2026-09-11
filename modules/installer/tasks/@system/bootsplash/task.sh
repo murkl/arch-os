@@ -21,23 +21,3 @@ chroot_aur_install plymouth-theme-arch-os
 # on `exit 0` whatever mkinitcpio made of the rebuild.
 arch-chroot "$MNT" plymouth-set-default-theme arch-os
 arch-chroot "$MNT" mkinitcpio -P
-
-# And what was built rather than what was asked for: plymouth's build hook says
-# so and gives up when it cannot find the theme's plugin or font, and mkinitcpio
-# finishes the image without it. That image boots perfectly well, without a
-# splash.
-#
-# What it built is a signed unified image where the boot chain is signed, and a
-# bare ram disk where it is not.
-if secure_boot_wanted; then
-    images=("/boot/EFI/Linux/arch-${ARCH_OS_KERNEL}.efi" "/boot/EFI/Linux/arch-${ARCH_OS_KERNEL}-fallback.efi")
-else
-    images=("/boot/initramfs-${ARCH_OS_KERNEL}.img" "/boot/initramfs-${ARCH_OS_KERNEL}-fallback.img")
-fi
-
-for image in "${images[@]}"; do
-    if ! arch-chroot "$MNT" lsinitcpio "$image" | grep -q 'plymouthd'; then
-        echo "plymouth is missing from ${image}" >&2
-        exit 1
-    fi
-done

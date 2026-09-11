@@ -26,7 +26,11 @@ close_target
 
 # An LVM group the live image activated on its own, off whatever was on the disk
 # before. Nothing here creates one; an active one holds the partition open.
-vgchange -an || true
+#
+# Oak's error channel is closed for it: lvm warns about every file descriptor it
+# was handed and prints the whole of what opened it, which puts a page of Oak's
+# own trap in the log for nothing.
+vgchange -an 3>&- || true
 
 rm -f /var/lib/pacman/db.lck
 

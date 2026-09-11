@@ -121,6 +121,10 @@ ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(wildcard $(ISO_DIR)/src/usr/local/bin
 # targets that read it pay for the search.
 MODULE_SCRIPTS = $(shell find $(MODULES_DIR) -name '*.sh')
 
+# Every module's yaml as well, for the check that reads both: a task may write
+# its script into the declaration instead of beside it.
+MODULE_YAML = $(shell find $(MODULES_DIR) -name '*.yaml')
+
 # ////////////////////////////////////////////////////////////////////////////
 # HOUSEKEEPING
 # ////////////////////////////////////////////////////////////////////////////
@@ -271,6 +275,12 @@ locales-check: dev
 # machine has. A module's scripts are checked the way Oak runs them: as bash,
 # with module.sh already in scope. actionlint reads the workflows again for what
 # a yaml linter cannot see.
+#
+# The grep at the end is for the one mistake no linter here can see, because it
+# is valid shell that only fails on a machine being installed: arch-chroot execs
+# what it is given, so a shell builtin handed to it exists nowhere. `command -v`
+# is the one that gets written, and it cost two silent test failures in a live
+# run before it was found.
 lint:
 	shellcheck -s sh -S style $(POSIX_SCRIPTS)
 	shellcheck -S style $(ISO_SCRIPTS)
@@ -279,6 +289,9 @@ lint:
 	shfmt -d -i 4 $(ISO_SCRIPTS) $(MODULE_SCRIPTS)
 	yamllint .
 	actionlint
+	@! grep -nE 'arch-chroot [^|&;]*[[:space:]](command|type|hash|source|alias)[[:space:]]' \
+		$(MODULE_SCRIPTS) $(MODULE_YAML) \
+		|| { echo "a shell builtin cannot be run through arch-chroot - see has_command" >&2; exit 1; }
 
 fmt:
 	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)

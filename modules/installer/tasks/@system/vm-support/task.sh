@@ -13,8 +13,16 @@ case "$(systemd-detect-virt || true)" in
 
 kvm)
     echo "detected KVM"
-    chroot_pacman_install spice spice-vdagent spice-protocol spice-gtk qemu-guest-agent
-    arch-chroot "$MNT" systemctl enable qemu-guest-agent
+    # The guest halves alone: spice-vdagent resizes the screen and shares the
+    # clipboard, qemu-guest-agent lets the host read and steer this machine. The
+    # spice server, its GTK client and the protocol headers are the host's half
+    # and drag a desktop's worth of libraries into a guest that has no use for
+    # them.
+    #
+    # Neither is switched on here: both units are static and started by udev
+    # when their virtio port turns up, and `systemctl enable` on a static unit
+    # is a line that does nothing and says it worked.
+    chroot_pacman_install spice-vdagent qemu-guest-agent
     ;;
 
 vmware)

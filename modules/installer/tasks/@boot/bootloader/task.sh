@@ -9,14 +9,21 @@ cmdline="$(kernel_args)"
 btrfs_hook=""
 [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BOOTLOADER" = "grub" ] && btrfs_hook=" grub-btrfs-overlayfs"
 
-# No kms hook on purpose. With it, the card is handed from the firmware
-# framebuffer to the real driver while plymouth is already drawing, and the
-# console takes the screen back: no splash, and the passphrase asked in plain
-# text. Without it the handover happens after the root file system is mounted.
 encrypt_hook=""
 [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && encrypt_hook=" sd-encrypt"
 
-hooks="base systemd keyboard autodetect microcode modconf sd-vconsole block${encrypt_hook} filesystems fsck${btrfs_hook}"
+# kms is what puts the card's own driver in the ram disk, and it is in Arch's
+# default HOOKS for a reason: plymouth will not draw on the firmware
+# framebuffer. It only ever uses the simpledrm device when UseSimpledrm is set,
+# which Arch's plymouthd.defaults does not set, so with no real driver in here
+# it waits out its device timeout and falls back to text - no splash at all,
+# and on an encrypted disk the passphrase asked in plain type on the console,
+# because that question is asked from inside this ram disk.
+#
+# keyboard comes before autodetect on purpose, so every keyboard driver is in
+# the image rather than only the one plugged in while installing: that
+# passphrase has to be typeable on whatever the machine has later.
+hooks="base systemd keyboard autodetect microcode modconf kms sd-vconsole block${encrypt_hook} filesystems fsck${btrfs_hook}"
 
 # As a drop-in, not as an edit of /etc/mkinitcpio.conf: that file belongs to the
 # mkinitcpio package and editing it would leave a .pacnew to merge every time

@@ -333,6 +333,23 @@ secure_boot_wanted() {
 
 # ----------------------------------------------------------------------------
 
+# The images the firmware actually starts: the signed unified pair where the
+# boot chain is signed, the plain ram disks where it is not. Named once because
+# the boot loader writes them, the boot splash rebuilds them, and three tests
+# read them back - and a check against the image this machine does not start
+# from is a check of nothing.
+boot_images() {
+    if secure_boot_wanted; then
+        printf '/boot/EFI/Linux/arch-%s.efi\n/boot/EFI/Linux/arch-%s-fallback.efi\n' \
+            "$ARCH_OS_KERNEL" "$ARCH_OS_KERNEL"
+    else
+        printf '/boot/initramfs-%s.img\n/boot/initramfs-%s-fallback.img\n' \
+            "$ARCH_OS_KERNEL" "$ARCH_OS_KERNEL"
+    fi
+}
+
+# ----------------------------------------------------------------------------
+
 # Read by both the boot entries and the unified kernel image, so the two can
 # never disagree about how this system boots.
 kernel_args() {
@@ -436,6 +453,15 @@ as_user() {
 own_home() {
     arch-chroot "$MNT" chown -R "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" "/home/${ARCH_OS_USERNAME}"
 }
+
+# ----------------------------------------------------------------------------
+
+# Whether the new system has a command, which is what a test asks after
+# installing one. Read off the mounted tree rather than looked up inside it:
+# `command -v` is a shell builtin and arch-chroot execs a binary, so that lookup
+# ends in "chroot: failed to run command 'command'" whatever is installed. Arch
+# puts every binary in /usr/bin - /bin, /sbin and /usr/sbin are symlinks to it.
+has_command() { [ -x "${MNT}/usr/bin/${1}" ]; }
 
 # ////////////////////////////////////////////////////////////////////////////
 # FIRST LOGIN
