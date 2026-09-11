@@ -178,16 +178,16 @@ jobs:
         run: |
           notes="$(mktemp)"
           cat >"$notes" <<NOTES
-          Boot the ISO on the machine to install, or run this from a booted Arch Linux live image:
+          Boot the ISO on the machine to install, or run this on any Linux machine — what opens is decided by the machine it opened on:
 
           \`\`\`
-          curl -Ls bit.ly/arch-os | bash
+          curl -Ls bit.ly/arch-os | sudo bash
           \`\`\`
 
           | File | Description |
           | --- | --- |
           | \`arch-os-${VERSION}-x86_64.iso\` | The bootable image: Installer and Recovery, started on its own |
-          | \`arch-os-${VERSION}-x86_64.tar.gz\` | The same program without the image, for a stock Arch live ISO: unpack it and run \`./oak\` |
+          | \`arch-os-${VERSION}-x86_64.tar.gz\` | The same program without the image: unpack it and run \`./oak\`. On a live image it installs or repairs, anywhere else the Imager writes the device above to a USB stick |
 
           Each file has a \`.sha256\` beside it, and both carry signed build provenance:
 

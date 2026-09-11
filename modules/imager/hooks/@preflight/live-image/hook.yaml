@@ -1,0 +1,14 @@
+title: Running on an ordinary machine
+needs: [root]
+
+# The other way round from the Installer and the Recovery, which is the whole
+# division between the three: they work on the machine the image booted, this
+# one makes that image. Writing it from the live system would also mean
+# downloading two gigabytes into a file system that lives in this machine's
+# memory.
+script: |
+  simulating && return 0
+
+  [ "$(cat /proc/sys/kernel/hostname)" = "archiso" ] || return 0
+  echo "This writes a device from an ordinary Linux machine. On the live image there is a machine to work on instead - open the Installer or the Recovery." >&2
+  exit 1

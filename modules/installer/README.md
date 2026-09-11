@@ -2,10 +2,10 @@
 
 Everything this Installer knows about Arch Linux. It is data — one YAML file and the folders beside it — and it does not run on its own: [Oak](https://github.com/murkl/oak) draws the interface, asks the questions and runs the tasks in order.
 
-**Note:** _Repairing a system already on disk is a separate module: **[➜ Arch OS Recovery](../recovery)**_
+**Note:** _Repairing a system already on disk and writing the device this boots from are separate modules: **[➜ Arch OS Recovery](../recovery)** · **[➜ Arch OS Imager](../imager)**_
 
 ```
-make -C ../.. check                               # load both modules and lint every script
+make -C ../.. check                               # load every module and lint every script
 make -C ../.. run MODULE=installer ARGS=--debug   # run it without touching this machine
 ```
 

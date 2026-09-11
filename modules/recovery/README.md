@@ -2,10 +2,10 @@
 
 Everything this Recovery knows about Arch Linux. It is data — one YAML file and the folders beside it — and it does not run on its own: [Oak](https://github.com/murkl/oak) draws the interface, asks the questions and runs the tasks in order.
 
-**Note:** _Putting Arch Linux on disk is a separate module: **[➜ Arch OS Installer](../installer)**_
+**Note:** _Putting Arch Linux on disk and writing the device this boots from are separate modules: **[➜ Arch OS Installer](../installer)** · **[➜ Arch OS Imager](../imager)**_
 
 ```
-make -C ../.. check                              # load both modules and lint every script
+make -C ../.. check                              # load every module and lint every script
 make -C ../.. run MODULE=recovery ARGS=--debug   # run it without touching this machine
 ```
 

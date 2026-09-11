@@ -63,9 +63,9 @@ That starts the Release workflow. It finds the run that built this commit, downl
 | File | Description |
 | --- | --- |
 | `arch-os-2.0.0-x86_64.iso` | The bootable image |
-| `arch-os-2.0.0-x86_64.tar.gz` | The Oak binary, `oak.yaml` and both modules, for a stock Arch live ISO |
+| `arch-os-2.0.0-x86_64.tar.gz` | The Oak binary, `oak.yaml` and every module, for any Linux machine |
 
-Each has a `.sha256` beside it. `get.sh` picks both out of the latest release by extension.
+Each has a `.sha256` beside it. `get.sh` picks the archive out of the latest release by what its name ends in, and the Imager picks the image out of the release its own version names — so renaming either download stays a change to the Makefile.
 
 **Note:** _A release can be written on the web page instead. Publishing it creates the tag, and the workflow starts on that._
 
@@ -91,7 +91,7 @@ flowchart TD
 
 | Job | Where | Description |
 | --- | --- | --- |
-| `Check` | every run | `make check`: every script linted, the repository scanned for secrets, both modules loaded, every catalog checked |
+| `Check` | every run | `make check`: every script linted, the repository scanned for secrets, every module loaded, every catalog checked |
 | `Build` | every run | The release and the tarball, then unpacks the tarball and loads the product out of it |
 | `ISO` | every watched branch, on demand | The bootable image, from the artefact `Build` produced |
 | `Boot test` | after `ISO` | Boots that image and waits for the first page |
@@ -111,9 +111,9 @@ The dashed jobs are the expensive ones — an archiso build is a quarter of an h
 
 ```
 make check            # everything that has to pass before a commit
-make run              # both modules on this machine, MODULE=recovery for one outright
+make run              # every module on this machine, MODULE=recovery for one outright
 make run ARGS=--debug # ...without touching the machine
-make inspect          # load both modules and print the order they resolve to
+make inspect          # load every module and print the order they resolve to
 make build            # the release, as a machine runs it
 make tarball          # the release, as a stock Arch ISO downloads it
 make iso              # the release, as a bootable image
@@ -133,7 +133,7 @@ dist/
 ├── arch-os-2.0.0/                       Arch OS as a machine runs it
 │   ├── oak                              the runtime
 │   ├── oak.yaml                         the product
-│   └── modules/                         Installer and Recovery
+│   └── modules/                         Installer, Recovery and Imager
 ├── arch-os-2.0.0-x86_64.tar.gz          the folder above, as one file
 ├── arch-os-2.0.0-x86_64.iso             the bootable image
 └── smoke/                               the console, as the boot test saw it

@@ -1,0 +1,54 @@
+# What this Imager is, what it asks, and in what order it works. Everything else
+# in this module is found by its own name — module.sh, locales/, tasks/ — and
+# nothing points at it from here.
+#
+# The shell below is module.sh's: every list and every suggested value is a
+# function named there, so this file stays the questions and nothing else.
+#
+# Every key this file may use:
+# https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
+
+# What this module is called, read wherever the interface talks about it rather
+# than starts it: the sentence over its settings, the report a run ends on.
+title: Imager
+
+# And what opening it does, which is the row somebody presses enter on — on the
+# page asking which module to open, and again on the menu. A name is not a
+# button: the row says what will happen, the title says what this is.
+action: Create
+
+# The sentence under that row.
+description: Write Arch OS to a USB device to boot another machine from.
+
+# The last thing shown before the first task runs. {{VAR}} is filled in from the
+# answers, so this names the actual device.
+confirm: |
+  Arch OS will be written to {{ARCH_OS_IMAGE_DEVICE}}.
+
+  Everything on that device will be erased and this cannot be undone. Nothing
+  has been changed so far.
+
+# The phases the work happens in, top to bottom. Each is a folder under tasks/,
+# marked — tasks/@write/ — and lying in one is what puts a task in the run and
+# where.
+#
+# What Oak runs of its own accord — the check that this machine can write a
+# device at all — is a hook, and hooks live in hooks/ beside tasks/.
+stages:
+  - fetch # the image, on this machine and checked
+  - write # the device, written from it
+
+# Everything this Imager needs to know. The image is not among them: which one
+# belongs to this program is not a matter of opinion, it is the version beside
+# the binary — see module.sh.
+variables:
+  - name: ARCH_OS_IMAGE_DEVICE
+    title: Device
+    description: |
+      The USB device to write to. Everything on it will be erased. Only disks
+      on a USB bus are offered, so the disk this machine boots from cannot be
+      chosen by accident.
+    group: Device
+    required: true
+    error: Choose a device that exists.
+    command: list_devices

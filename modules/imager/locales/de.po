@@ -1,0 +1,87 @@
+# German translation of imager.
+# This file is distributed under the same license as the arch-os package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: imager\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. the name of this language in the language itself — "Deutsch", not
+#. "German". A list of languages is read by the people who speak them.
+msgid "English"
+msgstr "Deutsch"
+
+#. what this program is called, where the interface talks about it
+#: module.yaml
+msgid "Imager"
+msgstr "Imager"
+
+#. what opening it does, on the row that opens it
+#: module.yaml
+msgid "Create"
+msgstr "Erstellen"
+
+#. what it is, in one sentence, on the page that offers it
+#: module.yaml
+msgid "Write Arch OS to a USB device to boot another machine from."
+msgstr "Arch OS auf einen USB-Datenträger schreiben, um eine andere Maschine davon zu starten."
+
+#. the last thing read before the first task runs
+#: module.yaml
+msgid ""
+"Arch OS will be written to {{ARCH_OS_IMAGE_DEVICE}}.\n"
+"\n"
+"Everything on that device will be erased and this cannot be undone. Nothing has been changed so far."
+msgstr ""
+"Arch OS wird auf {{ARCH_OS_IMAGE_DEVICE}} geschrieben.\n"
+"\n"
+"Alles auf diesem Datenträger wird gelöscht, und das lässt sich nicht rückgängig machen. Bisher wurde nichts verändert."
+
+#. ARCH_OS_IMAGE_DEVICE: the question
+#: module.yaml
+msgid "Device"
+msgstr "Datenträger"
+
+#. ARCH_OS_IMAGE_DEVICE: what it means
+#: module.yaml
+msgid "The USB device to write to. Everything on it will be erased. Only disks on a USB bus are offered, so the disk this machine boots from cannot be chosen by accident."
+msgstr "Der USB-Datenträger, auf den geschrieben wird. Alles darauf wird gelöscht. Angeboten werden nur Datenträger am USB-Bus, damit die Platte, von der diese Maschine startet, nicht versehentlich getroffen wird."
+
+#. ARCH_OS_IMAGE_DEVICE: what a wrong answer is told
+#: module.yaml
+msgid "Choose a device that exists."
+msgstr "Wähle einen vorhandenen Datenträger."
+
+#. the step, as the run lists it
+#: tasks/@fetch/image/task.yaml
+msgid "Fetch the image"
+msgstr "Abbild holen"
+
+#. the step, as the run lists it
+#: tasks/@write/device/task.yaml
+msgid "Write the device"
+msgstr "Datenträger schreiben"
+
+#. the check, read where it is the one that failed
+#: hooks/@preflight/root/hook.yaml
+msgid "Running as root"
+msgstr "Läuft als root"
+
+#. the check, read where it is the one that failed
+#: hooks/@preflight/live-image/hook.yaml
+msgid "Running on an ordinary machine"
+msgstr "Läuft auf einer gewöhnlichen Maschine"
+
+#. the check, read where it is the one that failed
+#: hooks/@preflight/device/hook.yaml
+msgid "A device to write to"
+msgstr "Ein Datenträger zum Schreiben"
+
+#. the check, read where it is the one that failed
+#: hooks/@preflight/image/hook.yaml
+msgid "The image is here or can be fetched"
+msgstr "Das Abbild ist da oder erreichbar"

@@ -16,9 +16,9 @@
 
 <p>Boot the latest <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and the Installer starts on its own. No keyboard layout to load, no network to configure, no command to type.</p>
 
-<p>Or run this on any Linux machine to write that ISO to a USB device. From a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> the same command starts the Installer instead:</p>
+<p>Or run this one command on any Linux machine. It fetches Arch OS and starts it, and what opens is decided by the machine it opened on: an ordinary desktop writes that ISO to a USB device, a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> installs or repairs.</p>
 
-**`curl -Ls bit.ly/arch-os | bash`**
+**`curl -Ls bit.ly/arch-os | sudo bash`**
 
 <p><b>
 
@@ -42,6 +42,7 @@
 - AUR helper, 32-bit support (multilib), container engine (Docker or Podman) and automatic housekeeping
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager and Shell Enhancement (bash, zsh or fish)
 - Arch OS Recovery on the same image, works without a network connection
+- Arch OS Imager on any Linux machine: downloads the image this program belongs to, checks it and writes the USB device that boots it
 - Virtual machine support both ways round: guest tools inside a VM, libvirt and QEMU on real hardware, with virt-manager only where there is a desktop to open it in
 - Two starting points, Desktop or Minimal, which answer everything but the region, the account and the disk - and every one of those answers is a row in the settings afterwards
 - English and German interface
@@ -53,13 +54,13 @@ An internet connection is required: most packages are downloaded during the inst
 ### 1. Prepare a bootable USB Device
 
 - Download the latest ISO from **[the release page](https://github.com/murkl/arch-os/releases/latest)** and write it with **[Ventoy](https://www.ventoy.net/en/download.html)** or any ISO writer
-- Or let this download, verify and write it for you, on any Linux machine:
+- Or let the **Imager** download, verify and write it for you, on any Linux machine:
 
 ```
-curl -Ls bit.ly/arch-os | bash
+curl -Ls bit.ly/arch-os | sudo bash
 ```
 
-**Note:** _The ISO is kept in `~/Downloads` and reused, so a second run costs no bandwidth. `DEBUG=true` writes no device; the rest is in `curl -Ls bit.ly/arch-os | bash -s -- --help`._
+**Note:** _Both downloads are kept beside the program in `/root/Downloads` and reused, so a second run costs no bandwidth — `DOWNLOAD_DIR=<dir>` puts them somewhere else. Anything after `bash -s --` goes to the program itself, so `bash -s -- --debug` is a run that writes nothing._
 
 ### 2. Set the Firmware up
 
@@ -124,16 +125,19 @@ After installing with the default starting point, most of it happens on its own 
 
 ## Development
 
-Arch OS is four parts, kept deliberately apart:
+Arch OS is five parts, kept deliberately apart:
 
 | Part | Description |
 | --- | --- |
 | [Oak](https://github.com/murkl/oak) | The runtime, a repository of its own. One binary that draws the interface, asks the questions and runs the shell scripts in order. Knows nothing about Arch Linux, disks or packages |
 | [`modules/installer/`](../modules/installer) | Everything that does the actual work: one `module.yaml`, the questions it asks and a folder per step |
 | [`modules/recovery/`](../modules/recovery) | The same shape again, for repairing a system already on disk |
-| [`iso/`](../iso) | Turns a build of the three into a bootable image |
+| [`modules/imager/`](../modules/imager) | And again, for writing the device the other two are booted from |
+| [`iso/`](../iso) | Turns a build of those into a bootable image |
 
-Installer and Recovery are modules: data, not programs. One binary runs either of them, `oak --module=installer` opens one outright, and a release is that binary with `oak.yaml` and `modules/` beside it. The build downloads the binary rather than compiling it, so nothing here needs a Go toolchain.
+They are modules: data, not programs. One binary runs any of them, `oak --module=installer` opens one outright, and a release is that binary with `oak.yaml` and `modules/` beside it. The build downloads the binary rather than compiling it, so nothing here needs a Go toolchain.
+
+Which module a machine can open is the module's own business: each carries the checks that say so in its own `hooks/@preflight/`, and nothing anywhere holds a list of them. That is what leaves **[`get.sh`](../get.sh)** with nothing to decide — it fetches, checks, unpacks and starts, and that is all of it.
 
 - Adding a question is a few lines of YAML
 - Adding a step is a folder under the stage it belongs to

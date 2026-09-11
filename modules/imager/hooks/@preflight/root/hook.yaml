@@ -1,0 +1,21 @@
+# Can this machine write a bootable device at all?
+#
+# Every check in this stage is read-only and every one of them is a hard stop.
+# They run before the first question, because none of it can be fixed from
+# inside this program.
+#
+# Together they are also what says where this module belongs: on an ordinary
+# Linux machine with a stick in it, which is exactly the machine the other two
+# modules refuse to run on. Each module carries that rule itself, so adding one
+# is adding a folder and nothing has to be told about it.
+#
+# What goes to stderr is what the user reads, so each message says what is wrong
+# and what to do about it, in that order, and nothing else.
+title: Running as root
+
+script: |
+  simulating && return 0
+
+  [ "$(id -u)" -eq 0 ] && return 0
+  echo "Writing a device needs root. Start this again with sudo." >&2
+  exit 1

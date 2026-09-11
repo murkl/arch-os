@@ -1,0 +1,14 @@
+title: The image is here or can be fetched
+needs: [device]
+
+# Not "is there internet": an image already on this machine is written without
+# one, and refusing that would be refusing the one case where a network is the
+# thing that is missing. What has to be true is that the image can be got at
+# all, which is either of the two.
+script: |
+  simulating && return 0
+
+  [ -f "$(image)" ] && return 0
+  [ -n "$(asset_url .iso)" ] && return 0
+  echo "The image for ${TAG} is not on this machine and GitHub cannot be reached. Connect this machine to the network and start this again." >&2
+  exit 1
