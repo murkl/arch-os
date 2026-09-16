@@ -46,12 +46,29 @@ simulating() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
+# ROOT, WHERE IT IS NEEDED
+# ////////////////////////////////////////////////////////////////////////////
+
+# This module runs as whoever started it, and that is the difference between it
+# and the other two: they run on a booted live image, where everything is root
+# already and there is no home to leave anything in. This one runs on somebody's
+# own machine, where a root process leaves two gigabytes in their home that only
+# root can delete again - and the program's own answers and log beside them.
+#
+# So only what cannot do without it is escalated: writing a block device,
+# unmounting what the desktop mounted, and making the kernel read the new
+# partition table. Everything else, the downloads included, is done as the
+# person at the machine. Empty when that person is root already.
+as_root() {
+    if [ "$(id -u)" -eq 0 ]; then "$@"; else sudo "$@"; fi
+}
+
+# ////////////////////////////////////////////////////////////////////////////
 # THE IMAGE THIS PROGRAM BELONGS TO
 # ////////////////////////////////////////////////////////////////////////////
 
-# Where the program was started, which is where Oak keeps the answers and the
-# log. The image lands beside them, so a second run finds it again and a folder
-# removed takes all of it with it.
+# Where the program was started, which is where Oak keeps the answers, the log
+# and the oak.yaml that says which version this is.
 HERE="$(dirname "$MODULE_CONF")"
 
 # Not the newest release but the one this program came out of: a binary from
@@ -61,11 +78,23 @@ HERE="$(dirname "$MODULE_CONF")"
 VERSION="$(sed -n 's/^version:[[:space:]]*//p' "${HERE}/oak.yaml")"
 TAG="v${VERSION}"
 
-# The release the tag names, asked once and read by everything below. Empty
-# when this machine cannot reach GitHub, which is not an error on its own: an
-# image already here needs no release at all.
+# Every request this module makes. https even after a redirect, because -L would
+# otherwise follow a 302 into plain http, where the answer can be anybody's -
+# and a connect timeout, so a machine behind a black hole says so rather than
+# hanging on the page before the first question.
+fetch_url() {
+    curl -Lf --proto '=https' --proto-redir '=https' --connect-timeout 10 "$@"
+}
+
+# The release the tag names, asked once per script: two questions about the same
+# release are one request. Empty when this machine cannot reach GitHub, which is
+# not an error on its own - an image already here needs no release at all - and
+# an unanswered question stays unanswered for that script rather than being
+# asked again at every turn.
 release() {
-    curl -Lfs "https://api.github.com/repos/murkl/arch-os/releases/tags/${TAG}" || true
+    [ -n "${RELEASE_JSON+set}" ] ||
+        RELEASE_JSON="$(fetch_url -s --max-time 20 "https://api.github.com/repos/murkl/arch-os/releases/tags/${TAG}" || true)"
+    printf '%s\n' "$RELEASE_JSON"
 }
 
 # The address of the one asset of that release whose name ends the given way.
@@ -86,10 +115,24 @@ asset_url() {
         }'
 }
 
-# What the image is called on this machine. Named after the version rather than
-# read out of the release, so the hook that checks whether it is already here
-# needs no network to answer.
-image() { printf '%s/arch-os-%s-x86_64.iso' "$HERE" "$VERSION"; }
+# ////////////////////////////////////////////////////////////////////////////
+# WHAT IS KEPT, AND WHERE
+# ////////////////////////////////////////////////////////////////////////////
+
+# The folder both downloads go in. The answer, and before there is one - the
+# preflight check reads it before the first question - the folder the program
+# was started in, which is also what that question suggests: `prefill:` in
+# module.yaml calls this, so where it defaults to is said in one place.
+download_dir() { printf '%s' "${ARCH_OS_DOWNLOAD_DIR:-$HERE}"; }
+
+# What the image is called there. Named after the version rather than read out
+# of the release, so the hook that checks whether it is already here needs no
+# network to answer.
+image() { printf '%s/arch-os-%s-x86_64.iso' "$(download_dir)" "$VERSION"; }
+
+# And the checksum published beside it, which carries the image's own name - so
+# `sha256sum -c` in that folder is the check anybody would run by hand.
+checksum() { printf '%s.sha256' "$(image)"; }
 
 # ////////////////////////////////////////////////////////////////////////////
 # THE DEVICE
@@ -102,6 +145,9 @@ image() { printf '%s/arch-os-%s-x86_64.iso' "$HERE" "$VERSION"; }
 # By transport rather than by anything read off the partitions: a disk this
 # machine boots from is not on a USB bus, so it cannot turn up in this list at
 # all - which is the one mistake here that cannot be taken back.
+#
+# Read again by the task that writes, because the answer outlives the machine's
+# view of its own disks: /dev/sdb is a path, not a stick.
 list_devices() {
     lsblk -dn -o PATH,TRAN,SIZE,MODEL |
         awk '$2 == "usb" { path = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); sub(/ +$/, ""); print path "\t" path "  " $0 }'

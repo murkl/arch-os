@@ -27,8 +27,13 @@ locales/                        one <code>.po per language, and the template the
 
 | Task | Stage | Description |
 | --- | --- | --- |
-| `image` | `fetch` | Downloads the image this program belongs to and checks it against the checksum published beside it |
-| `device` | `write` | Unmounts whatever the desktop mounted, copies the image onto the device and waits for the drive to take it |
+| `image` | `download` | Fetches the image this program belongs to and the checksum published beside it, whichever of the two is missing |
+| `checksum` | `verify` | Reads the image back and compares it against that checksum, discarding both files if they disagree |
+| `device` | `write` | Checks that the answer still names a USB device big enough, unmounts whatever the desktop mounted and copies the image onto it |
+
+Three steps rather than one, because each of them can fail on its own and says something different when it does: nothing arrived, what arrived is broken, or it could not be written. The middle one is also the only wait in the run with no progress to show — two gigabytes read back — and a step somebody is watching is a step they can be told the reason for.
+
+**Note:** _`checksum` is the one task here with no `test.sh`. What a test would read is the image against the checksum, which is that task line for line, and a second copy of a task is the copy that goes stale._
 
 ## The Image is not a Question
 
@@ -38,7 +43,9 @@ A binary from last month writing this month's image would be two versions on one
 
 **Note:** _The asset is picked out of that release by what its name ends in, so renaming a download stays a change to the **[Makefile](../../Makefile)** that builds it and nothing here._
 
-It is downloaded beside the program, where Oak keeps the answers and the log, so a second run — a wrong device, a stick pulled out halfway — costs the download only the first time. A file that fails its checksum is thrown away rather than kept, so the next run fetches it again instead of finding the broken one and skipping the download.
+Where it lands **is** a question: **Download folder**, suggested as the folder the program was started in, where Oak already keeps the answers and the log — so everything one run leaves behind is removed with one folder. Both files are reused, so a second run — a wrong device, a stick pulled out halfway — costs the download only the first time. A pair that fails the checksum is thrown away rather than kept, so the next run fetches it again instead of finding the broken one and skipping the download.
+
+The checksum ships in the same release as the image, so what it catches is a download that went wrong on the way and not a release that was wrong to begin with. Every request the module makes is HTTPS and stays HTTPS after a redirect, so the answer cannot be swapped for somebody else's on the way.
 
 ## Where it runs
 
@@ -52,9 +59,27 @@ An Arch image is a hybrid ISO: it already carries the partition table and both b
 
 | Check | Why |
 | --- | --- |
-| `root` | Writing a block device needs it, and nothing here can ask for it later |
+| `escalation` | There is a way to become root for the write — either this already is root, or there is a `sudo` to ask |
 | `device` | A machine with nothing plugged in cannot be helped by any answer |
 | `image` | Either the image is already here or GitHub can be reached. Not "is there internet": an image already on this machine is written without one |
+
+## Root, and only where it is Needed
+
+This module runs as whoever started it. That is what separates it from the other two: they run on a booted live image, where everything is root already and there is no home to leave anything in, while this one runs on somebody's own machine — and a root process there leaves two gigabytes in their home that only root can delete again, with the program's own answers and log beside them.
+
+So `as_root` in `module.sh` wraps the three commands that cannot do without it, and nothing else:
+
+| Command | Why |
+| --- | --- |
+| `umount` | Releasing what the desktop mounted from the device |
+| `dd` | Writing a block device |
+| `partprobe` | Making the kernel read the new partition table |
+
+Everything else — listing the disks, reading their size, both downloads, checking the checksum and reading the label back afterwards — is done as the person at the machine. The test uses `lsblk` rather than `blkid` for exactly that reason: it reads what udev already recorded, so nothing has to ask for a password where nobody is typing.
+
+The write task is the one step with `tty: true`. `sudo` draws its prompt on the terminal and reads the password from it, and `dd` reports its progress on stderr, which Oak otherwise collects into the log — so the interface steps aside for the length of it and the script takes `/dev/tty` explicitly.
+
+**Note:** _Whether this particular person may use `sudo` is not part of `@preflight/`: asking means asking for their password, and that stage runs before anybody has said they want to write anything. `sudo` answers it itself, on the terminal, at the moment it is needed._
 
 ## Answers
 
@@ -62,8 +87,13 @@ An Arch image is a hybrid ISO: it already carries the partition table and both b
 
 | Variable | Description |
 | --- | --- |
+| `ARCH_OS_DOWNLOAD_DIR` | Where the image and its checksum are kept, created if it is not there. Defaults to the folder the program was started in |
 | `ARCH_OS_IMAGE_DEVICE` | The USB device to write to. Only disks on a USB bus are offered, so the disk this machine boots from cannot be chosen by accident |
+
+The device is read back out of `lsblk` again by the task that writes, immediately before it does: `/dev/sdb` is a path and not a stick, and an answer kept from an earlier run can name a disk that is no longer the one it was chosen as.
 
 ## Requirements
 
-Root, a Linux machine that is not the live image, a USB device, and either the image already beside the program or a network to fetch it over.
+A Linux machine that is not the live image, a USB device big enough for the image, and either the image already in the download folder or a network to fetch it over. Root only for the write itself, asked for when that step comes.
+
+Everything it calls comes from `coreutils`, `util-linux` and `curl`, which any Linux machine already has.

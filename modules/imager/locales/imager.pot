@@ -41,6 +41,26 @@ msgid ""
 "Everything on that device will be erased and this cannot be undone. Nothing has been changed so far."
 msgstr ""
 
+#. ARCH_OS_DOWNLOAD_DIR: the question
+#: module.yaml
+msgid "Download folder"
+msgstr ""
+
+#. ARCH_OS_DOWNLOAD_DIR: what it means
+#: module.yaml
+msgid "Where the image and the checksum beside it are kept. Both are reused, so a second run costs no bandwidth. The folder is created if it is not there, and the image needs about two gigabytes."
+msgstr ""
+
+#. ARCH_OS_DOWNLOAD_DIR: the heading its row sits under
+#: module.yaml
+msgid "Image"
+msgstr ""
+
+#. ARCH_OS_DOWNLOAD_DIR: what a wrong answer is told
+#: module.yaml
+msgid "Type the full path of a folder, starting with a slash."
+msgstr ""
+
 #. ARCH_OS_IMAGE_DEVICE: the question
 #: module.yaml
 msgid "Device"
@@ -57,8 +77,13 @@ msgid "Choose a device that exists."
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@fetch/image/task.yaml
-msgid "Fetch the image"
+#: tasks/@download/image/task.yaml
+msgid "Download the image"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@verify/checksum/task.yaml
+msgid "Verify the checksum"
 msgstr ""
 
 #. the step, as the run lists it
@@ -66,9 +91,17 @@ msgstr ""
 msgid "Write the device"
 msgstr ""
 
+#. read once the step is done, and held on until somebody has
+#: tasks/@write/device/task.yaml
+msgid ""
+"The device is ready\n"
+"\n"
+"{{ARCH_OS_IMAGE_DEVICE}} now starts Arch OS. Unplug it, plug it into the machine to install, and start that machine from it."
+msgstr ""
+
 #. the check, read where it is the one that failed
-#: hooks/@preflight/root/hook.yaml
-msgid "Running as root"
+#: hooks/@preflight/escalation/hook.yaml
+msgid "Root for the write"
 msgstr ""
 
 #. the check, read where it is the one that failed

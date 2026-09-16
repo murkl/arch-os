@@ -4,7 +4,9 @@
 #
 # The label is what the image carries and what the boot loader on it searches
 # for, so a device answering with the image's own label is a device that holds
-# that image.
+# that image. lsblk rather than blkid, because lsblk reads what udev already
+# recorded and needs no more rights than listing the disks did - a test that has
+# to ask for a password is a test that hangs where nobody is typing.
 debugging && return 0
 
 label="$(blkid -o value -s LABEL "$(image)")"
@@ -12,7 +14,7 @@ label="$(blkid -o value -s LABEL "$(image)")"
 
 # The kernel may still be re-reading the table this write replaced.
 for _ in $(seq 50); do
-    [ "$(blkid -o value -s LABEL "$ARCH_OS_IMAGE_DEVICE")" = "$label" ] && return 0
+    [ "$(lsblk -dno LABEL "$ARCH_OS_IMAGE_DEVICE")" = "$label" ] && return 0
     sleep 0.2
 done
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Arch OS, from one command:
 #
-#   curl -Ls bit.ly/arch-os | sudo bash
+#   curl -Ls bit.ly/arch-os | bash
 #
 # Fetches the latest release, checks it, unpacks it and starts it. That is the
 # whole of this script: what this machine is good for is not decided here but by
@@ -23,6 +23,12 @@ REPO="murkl/arch-os"
 # program keeps its answers, its log and the image beside its own binary, so
 # starting it a second time picks up where it left off and downloads nothing
 # twice.
+#
+# No sudo anywhere in here, and none wanted on the left of the pipe: on a live
+# image whoever runs this is root already, and on an ordinary machine the module
+# that opens there needs root for one command and asks for it itself. Escalating
+# the whole run instead would leave every one of those files owned by root in
+# somebody's own home.
 DOWNLOAD_DIR="${DOWNLOAD_DIR:-${HOME}/Downloads}"
 
 info() { printf ':: %s\n' "$1"; }

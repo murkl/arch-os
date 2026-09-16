@@ -1,0 +1,10 @@
+title: Verify the checksum
+
+# Its own step, because a download that arrived and a download that is intact
+# are two different claims, and only the second one is worth writing to a
+# device. It is also the only step here that reads all two gigabytes back, which
+# is a wait somebody should be able to see the reason for.
+#
+# No test.sh beside it: what a test would read is the image against the
+# checksum, which is this task line for line. A second copy of a task is the
+# copy that goes stale.

@@ -48,13 +48,26 @@ confirm: |
 # What Oak runs of its own accord — the check that this machine can write a
 # device at all — is a hook, and hooks live in hooks/ beside tasks/.
 stages:
-  - fetch # the image, on this machine and checked
-  - write # the device, written from it
+  - download # the image and the checksum published beside it, onto this machine
+  - verify # the image, against that checksum, before anything is written
+  - write # the image, onto the device
 
-# Everything this Imager needs to know. The image is not among them: which one
-# belongs to this program is not a matter of opinion, it is the version beside
-# the binary — see module.sh.
+# Everything this Imager needs to know, in the order the run needs it. Which
+# image gets written is not among them: that is not a matter of opinion, it is
+# the version beside the binary — see module.sh.
 variables:
+  - name: ARCH_OS_DOWNLOAD_DIR
+    title: Download folder
+    description: |
+      Where the image and the checksum beside it are kept. Both are reused, so
+      a second run costs no bandwidth. The folder is created if it is not
+      there, and the image needs about two gigabytes.
+    group: Image
+    required: true
+    prefill: download_dir
+    pattern: '^/.+$'
+    error: Type the full path of a folder, starting with a slash.
+
   - name: ARCH_OS_IMAGE_DEVICE
     title: Device
     description: |

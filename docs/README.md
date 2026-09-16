@@ -18,7 +18,7 @@
 
 <p>Or run this one command on any Linux machine. It fetches Arch OS and starts it, and what it offers is decided by the machine it opened on: an ordinary desktop writes that ISO to a USB device, a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> installs or repairs.</p>
 
-**`curl -Ls bit.ly/arch-os | sudo bash`**
+**`curl -Ls bit.ly/arch-os | bash`**
 
 <p><b>
 
@@ -42,7 +42,7 @@
 - AUR helper, 32-bit support (multilib), container engine (Docker or Podman) and automatic housekeeping
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager and Shell Enhancement (bash, zsh or fish)
 - Arch OS Recovery on the same image, works without a network connection
-- Arch OS Imager on any Linux machine: downloads the image this program belongs to, checks it and writes the USB device that boots it
+- Arch OS Imager on any Linux machine: downloads the image this program belongs to, verifies its checksum and writes the USB device that boots it, in three steps that each say what went wrong — as you, not as root, with a password asked for only at the write itself
 - Virtual machine support both ways round: guest tools inside a VM, libvirt and QEMU on real hardware, with virt-manager only where there is a desktop to open it in
 - Two starting points, Desktop or Minimal, which answer everything but the region, the account and the disk - and every one of those answers is a row in the settings afterwards
 - English and German interface
@@ -57,10 +57,10 @@ An internet connection is required: most packages are downloaded during the inst
 - Or let **Create boot medium** download, verify and write it for you, on any Linux machine:
 
 ```
-curl -Ls bit.ly/arch-os | sudo bash
+curl -Ls bit.ly/arch-os | bash
 ```
 
-**Note:** _Both downloads are kept beside the program in `/root/Downloads` and reused, so a second run costs no bandwidth — `DOWNLOAD_DIR=<dir>` puts them somewhere else. Anything after `bash -s --` goes to the program itself, so `bash -s -- --debug` is a run that writes nothing._
+**Note:** _No `sudo` on the left of the pipe: **Create boot medium** runs as you, so nothing it downloads or writes beside itself belongs to root in your home, and only the write to the device asks for a password. On the live image you are root already and the same command installs. `DOWNLOAD_DIR=<dir>` says where the program is unpacked, `~/Downloads` by default; where the image lands is a setting, suggested as that same folder and reused, so a second run costs no bandwidth. Anything after `bash -s --` goes to the program itself, so `bash -s -- --debug` is a run that writes nothing._
 
 ### 2. Set the Firmware up
 

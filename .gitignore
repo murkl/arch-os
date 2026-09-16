@@ -9,6 +9,10 @@
 # What a local run leaves beside itself: Oak's own answers, and one pair per
 # module, each named after the module.
 oak.conf
+imager.conf
+imager.conf.old
+imager.log
+imager.log.old
 installer.conf
 installer.conf.old
 installer.log
