@@ -357,8 +357,14 @@ variables:
       Extra parameters passed to the kernel at boot, separated by spaces.
       Leave empty unless you know you need one.
     group: Boot
-    pattern: '^[^,&\\]*$'
-    error: Commas, ampersands and backslashes cannot be used here.
+    # What is left out is what GRUB's own file cannot hold: it keeps the command
+    # line as a quoted shell assignment and sources it, so a quote, a backslash,
+    # a dollar or a backtick in here would be read as shell rather than as a
+    # parameter. A comma and an ampersand used to be refused too, and that was
+    # about how the line was written rather than about the line — see the boot
+    # loader task.
+    pattern: '^[^"\\`$]*$'
+    error: Quotes, backslashes, dollar signs and backticks cannot be used here.
 
   - name: ARCH_OS_MICROCODE
     title: Processor firmware

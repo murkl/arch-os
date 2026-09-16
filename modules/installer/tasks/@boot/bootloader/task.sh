@@ -127,12 +127,16 @@ fi
 
 if [ "$ARCH_OS_BOOTLOADER" = "grub" ]; then
 
-    # Appended inside the empty quotes of GRUB_CMDLINE_LINUX. The comma is the
-    # substitution delimiter, which is why the answers refuse to contain one.
+    # The line is dropped and written again rather than spliced into: it is a
+    # shell assignment in a file grub-mkconfig sources, so writing it whole is
+    # both what it is and the only way a comma or an ampersand in the answers
+    # survives - spliced in with sed, both are characters that mean something to
+    # sed instead.
     #
     # grub-mkconfig reads /etc/default/grub and nothing beside it, so every line
     # below is an edit of a file the grub package owns.
-    sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&${cmdline}," "${MNT}/etc/default/grub"
+    sed -i '/^GRUB_CMDLINE_LINUX=/d' "${MNT}/etc/default/grub"
+    printf 'GRUB_CMDLINE_LINUX="%s"\n' "$cmdline" >>"${MNT}/etc/default/grub"
 
     arch-chroot "$MNT" grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
 

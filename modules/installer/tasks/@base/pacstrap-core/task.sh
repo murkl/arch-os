@@ -4,7 +4,29 @@ simulating && return 0
 
 # sudo is named outright: it comes with base-devel, which only an installation
 # that builds from the AUR needs, and the wheel rule is written either way.
-packages=("$ARCH_OS_KERNEL" base sudo linux-firmware wireless-regdb zram-generator networkmanager)
+packages=("$ARCH_OS_KERNEL" base sudo zram-generator networkmanager)
+
+# Firmware is for hardware, and a guest has none: every device a virtual machine
+# shows is virtio or emulated and its driver is in the kernel already. Measured
+# on an installation of this image, linux-firmware is 398 MiB of the 736 MiB this
+# step downloads and 430 MiB on the disk afterwards - over half of the base
+# system, for files nothing in a guest ever opens.
+#
+# The exception is a card handed through to a guest, and the graphics answer is
+# where that is said: a driver named by make is a card the machine really has.
+needs_firmware() {
+    [ "$(systemd-detect-virt || true)" = "none" ] && return 0
+    case "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" in
+    nvidia | amd | ati | intel_i915) return 0 ;;
+    esac
+    return 1
+}
+
+if needs_firmware; then
+    packages+=(linux-firmware wireless-regdb)
+else
+    echo "a virtual machine with no card of its own: leaving out linux-firmware"
+fi
 
 # `base` ships no editor, no manuals and no ssh, so a console-only installation
 # cannot edit its own configuration, look anything up or reach another machine.
@@ -30,12 +52,15 @@ fi
 # hook that puts a keyboard layout in it reads this file, see write_vconsole.
 write_vconsole
 
-# Retried, and with the download timeout off: this is the longest download of
-# the installation and the one most likely to meet a slow mirror.
+# Retried: this is the longest download of the installation and the one most
+# likely to meet a mirror that stops answering halfway. pacman's own download
+# timeout is left on for exactly that - it gives up on a transfer that has
+# stalled, which is what turns a dead mirror into a retry against another one
+# instead of an installation that sits there for ever.
 installed=false
 for ((i = 1; i <= RETRIES; i++)); do
     [ "$i" -gt 1 ] && echo "retry ${i}/${RETRIES}: pacstrap"
-    if pacstrap -K "$MNT" "${packages[@]}" --disable-download-timeout; then
+    if pacstrap -K "$MNT" "${packages[@]}"; then
         installed=true
         break
     fi

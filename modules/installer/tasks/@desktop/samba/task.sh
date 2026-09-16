@@ -1,35 +1,29 @@
 # File sharing the rest of the network can see, and the two discovery services
 # that make this machine appear in it.
 #
-# The task that switches a service on is the task that installs it: wsdd is what
-# Windows browses with, and it otherwise only arrives as a dependency of a GNOME
-# package that could be left out tomorrow.
+# The whole task is what the file sharing question turns on and off - see
+# task.yaml. Samba answering on the network with nothing shared is a daemon
+# somebody said no to, and wsdd beside it is the other half of the same answer:
+# it is what Windows browses with, and it otherwise only arrives as a dependency
+# of a GNOME package that could be left out tomorrow.
 
 simulating && return 0
 
 chroot_pacman_install samba wsdd
 
-data="$(where)"
-
 mkdir -p "${MNT}/etc/samba"
-cp "${data}/smb.conf" "${MNT}/etc/samba/smb.conf"
-
-if [ "$ARCH_OS_SAMBA_SHARE_ENABLED" = "true" ]; then
-    cat "${data}/smb-shares.conf" >>"${MNT}/etc/samba/smb.conf"
-fi
+cp "$(where)/smb.conf" "${MNT}/etc/samba/smb.conf"
 
 # Samba refuses to start on a broken file, so it is checked first.
 arch-chroot "$MNT" testparm -s /etc/samba/smb.conf
 
-if [ "$ARCH_OS_SAMBA_SHARE_ENABLED" = "true" ]; then
-    arch-chroot "$MNT" mkdir -p /srv/samba/public
-    arch-chroot "$MNT" chmod 777 /srv/samba/public
-    arch-chroot "$MNT" chown -R nobody:users /srv/samba/public
+arch-chroot "$MNT" mkdir -p /srv/samba/public
+arch-chroot "$MNT" chmod 777 /srv/samba/public
+arch-chroot "$MNT" chown -R nobody:users /srv/samba/public
 
-    # Samba keeps its own password database, set to the same password.
-    printf '%s\n%s\n' "$ARCH_OS_PASSWORD" "$ARCH_OS_PASSWORD" |
-        arch-chroot "$MNT" smbpasswd -s -a "$ARCH_OS_USERNAME"
-fi
+# Samba keeps its own password database, set to the same password.
+printf '%s\n%s\n' "$ARCH_OS_PASSWORD" "$ARCH_OS_PASSWORD" |
+    arch-chroot "$MNT" smbpasswd -s -a "$ARCH_OS_USERNAME"
 
 # Windows finds the machine faster over IPv4 alone, and wsdd tries IPv6 first.
 # A systemd drop-in rather than an edit of /etc/conf.d/wsdd, which belongs to

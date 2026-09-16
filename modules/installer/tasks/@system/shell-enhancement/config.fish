@@ -15,8 +15,10 @@ test -f "$HOME/.aliases" && source "$HOME/.aliases"
 
 command -v zoxide &>/dev/null && zoxide init fish | source
 
-# The prompt, outside a text console where the font can draw it.
-if not tty | string match -q "/dev/tty*"
+# The prompt, outside a text console where the font can draw it. The same test
+# the other two shells make, spelled the same way: anchored on a number, so
+# /dev/tty itself and every serial line stay on the other side of it.
+if not string match -qr '^/dev/tty[0-9]+$' -- (tty 2>/dev/null)
     and command -v starship >/dev/null
     starship init fish | source
 end

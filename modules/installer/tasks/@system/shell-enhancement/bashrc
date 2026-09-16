@@ -34,5 +34,11 @@ export HISTTIMEFORMAT="%F %T "
 export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q:c"
 
 # {{SHELL_HANDOVER}}
-[[ ! $(tty) =~ /dev/tty[0-9]* ]] && command -v starship &>/dev/null && eval "$(starship init bash)"
+# Anchored: unanchored, /dev/tty[0-9]* also matches /dev/tty itself and every
+# serial line, and the prompt then goes missing wherever this shell is opened
+# with the terminal handed to it directly. A shell with no terminal to name at
+# all is not a text console either, and says so on its own error channel rather
+# than on the screen - which is what a shell opened inside a chroot does, where
+# the terminal it is on belongs to a devpts that chroot cannot see.
+[[ ! $(tty 2>/dev/null) =~ ^/dev/tty[0-9]+$ ]] && command -v starship &>/dev/null && eval "$(starship init bash)"
 command -v zoxide &>/dev/null && eval "$(zoxide init bash)"

@@ -162,11 +162,10 @@ sudo pacman -S --needed make curl shellcheck shfmt yamllint actionlint \
 
 - Packages, tasks and questions: **[modules/installer](../modules/installer)**
 - Repairing a system already on disk: **[modules/recovery](../modules/recovery)**
+- Writing the device the other two are booted from: **[modules/imager](../modules/imager)**
 - What the whole thing is called, what it looks like and which version it is: **[oak.yaml](../oak.yaml)**
 - The bootable image: **[iso](../iso)**
 - The frame around all of it: **[Oak](https://github.com/murkl/oak)**, which is a repository of its own
-
-**[➜ See AGENTS.md](../AGENTS.md)** for the same ground written as rules. It is meant for a coding agent and is the shortest way in for a person too.
 
 ## Translating
 
@@ -178,6 +177,7 @@ The catalogs are gettext `.po` files, the format Weblate, Crowdin, Transifex and
 | --- | --- | --- |
 | Installer | `modules/installer/locales/installer.pot` | `modules/installer/locales/<code>.po` |
 | Recovery | `modules/recovery/locales/recovery.pot` | `modules/recovery/locales/<code>.po` |
+| Imager | `modules/imager/locales/imager.pot` | `modules/imager/locales/<code>.po` |
 
 The frame's own words — buttons, key hints, the labels on a failure report — belong to **[Oak](https://github.com/murkl/oak)** and are translated there. Both catalogs are in use at once and behave as one, with the module's laid over Oak's.
 

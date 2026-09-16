@@ -18,7 +18,7 @@
 
 <p>Or run this one command on any Linux machine. It fetches Arch OS and starts it, and what it offers is decided by the machine it opened on: an ordinary desktop writes that ISO to a USB device, a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> installs or repairs.</p>
 
-**`curl -Ls bit.ly/arch-os | bash`**
+**`curl -Ls https://bit.ly/arch-os | bash`**
 
 <p><b>
 
@@ -57,7 +57,7 @@ An internet connection is required: most packages are downloaded during the inst
 - Or let **Create boot medium** download, verify and write it for you, on any Linux machine:
 
 ```
-curl -Ls bit.ly/arch-os | bash
+curl -Ls https://bit.ly/arch-os | bash
 ```
 
 **Note:** _No `sudo` on the left of the pipe: **Create boot medium** runs as you, so nothing it downloads or writes beside itself belongs to root in your home, and only the write to the device asks for a password. On the live image you are root already and the same command installs. `DOWNLOAD_DIR=<dir>` says where the program is unpacked, `~/Downloads` by default; where the image lands is a setting, suggested as that same folder and reused, so a second run costs no bandwidth. Anything after `bash -s --` goes to the program itself, so `bash -s -- --debug` is a run that writes nothing._

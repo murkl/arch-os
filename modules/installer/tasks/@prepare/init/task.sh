@@ -1,16 +1,52 @@
 # Make the live system ready to install from. Nothing here touches the target
-# disk: it undoes what a previous attempt left mounted, waits for the mirror
-# ranking to finish and brings the keyring up to date.
+# disk: it ranks the mirrors everything after this downloads from, undoes what a
+# previous attempt left mounted and brings the keyring up to date.
 
 simulating && return 0
 
-# The live image ranks mirrors at boot and that list is copied into the new
-# system. Starting early means installing from whatever was there first.
-echo "waiting for reflector"
-if ! timeout 180 bash -c 'while pgrep -x reflector >/dev/null; do sleep 1; done'; then
-    echo "reflector is still running after 180 seconds" >&2
-    exit 1
-fi
+# What this machine is, in one line, before anything else is written down. Every
+# failure after this is read out of the same log, and almost every question
+# asked of one - was there memory, was there room, is this a guest - is answered
+# here instead of guessed at afterwards.
+printf 'machine: %s cores, %s memory, %s on %s, virtualisation %s\n' \
+    "$(nproc)" \
+    "$(awk '/^MemTotal:/ { printf "%.1f GiB", $2 / 1048576 }' /proc/meminfo)" \
+    "$(lsblk -bdno SIZE "$ARCH_OS_DISK" | numfmt --to=iec)" \
+    "$ARCH_OS_DISK" \
+    "$(systemd-detect-virt || true)"
+
+# The mirrors, ranked once, here. The Arch live image ships reflector but runs it
+# nowhere: its mirrorlist is the stock worldwide one, four hundred servers in no
+# order, and pacstrap copies that file into the new system - so without this both
+# the installation and every update afterwards download from whatever server
+# happens to be first. This is also what makes the mirror country a real answer
+# rather than a setting only a weekly timer ever reads.
+#
+# Written to a file of its own and moved into place only when it worked: a
+# ranking that times out or finds no mirror in that country must leave the list
+# it was given, and reflector writes its output as it goes. Never fatal - a slow
+# mirror installs, no mirror list at all does not.
+rank_mirrors() {
+    command -v reflector >/dev/null || {
+        echo "this image has no reflector, installing from the list it shipped" >&2
+        return 0
+    }
+
+    local ranked args=(--protocol https --age 12 --latest 10 --sort rate)
+    [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && args+=(--country "$ARCH_OS_REFLECTOR_COUNTRY")
+    ranked="$(mktemp)"
+
+    if timeout 120 reflector "${args[@]}" --save "$ranked" && [ -s "$ranked" ]; then
+        install -m 644 "$ranked" /etc/pacman.d/mirrorlist
+        echo "installing from $(grep -c '^Server' /etc/pacman.d/mirrorlist) ranked mirrors"
+    else
+        echo "the mirrors could not be ranked, installing from the list the image shipped" >&2
+    fi
+    rm -f "$ranked"
+}
+
+echo "ranking mirrors"
+rank_mirrors
 
 timedatectl set-ntp true
 

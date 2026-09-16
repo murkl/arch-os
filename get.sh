@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Arch OS, from one command:
 #
-#   curl -Ls bit.ly/arch-os | bash
+#   curl -Ls https://bit.ly/arch-os | bash
 #
 # Fetches the latest release, checks it, unpacks it and starts it. That is the
 # whole of this script: what this machine is good for is not decided here but by
@@ -41,6 +41,13 @@ for command_name in curl tar sha256sum; do
     command -v "$command_name" >/dev/null || fail "Missing dependency: ${command_name}"
 done
 
+# Every request this script makes. https even after a redirect: -L on its own
+# would follow a 302 into plain http, where the answer is whoever is on the wire
+# - and the answer here is the program that goes on to write a disk. One place
+# rather than a flag repeated at each call, which is a flag that gets forgotten
+# at one of them.
+fetch() { curl --proto '=https' --proto-redir '=https' --connect-timeout 10 "$@"; }
+
 # Said here rather than left to the exec at the end, where a machine of another
 # shape learns it as "cannot execute binary file".
 [ "$(uname -m)" = "x86_64" ] || fail "Arch OS is x86_64 only, and this machine is $(uname -m)"
@@ -56,7 +63,7 @@ printf '\n\033[34m// Arch OS\033[0m\n'
 
 # The asset is picked by what its name ends in rather than by the name itself,
 # so renaming a download stays a change to the build and nothing here.
-url="$(curl -Lfs "https://api.github.com/repos/${REPO}/releases/latest" |
+url="$(fetch -Lfs "https://api.github.com/repos/${REPO}/releases/latest" |
     sed -n 's/.*"browser_download_url": *"\(.*\.tar\.gz\)".*/\1/p' | head -n1)" ||
     fail "Cannot reach GitHub"
 [ -n "$url" ] || fail "The latest release holds no program"
@@ -68,14 +75,14 @@ if [ -f "$name" ]; then
     info "Present: ${name}"
 else
     info "Fetching: ${name}"
-    curl -Lf --progress-bar "$url" -o "${name}.part" || fail "Download failed: ${name}"
+    fetch -Lf --progress-bar "$url" -o "${name}.part" || fail "Download failed: ${name}"
     mv "${name}.part" "$name"
 fi
 
 # The checksum ships beside the archive and names the file itself, so this is
 # the check anybody would run by hand. A file that fails is thrown away rather
 # than kept, so the next run fetches it again instead of skipping a broken one.
-curl -Lfs "${url}.sha256" -o "${name}.sha256" || fail "Download failed: ${name}.sha256"
+fetch -Lfs "${url}.sha256" -o "${name}.sha256" || fail "Download failed: ${name}.sha256"
 if ! sha256sum -c "${name}.sha256" >/dev/null 2>&1; then
     rm -f "$name" "${name}.sha256"
     fail "Checksum mismatch: ${name} was discarded, please run this again"

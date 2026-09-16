@@ -3,7 +3,7 @@
 
 simulating && return 0
 
-chroot_pacman_install git base-devel pacman-contrib
+chroot_pacman_install pacman-contrib
 chroot_aur_install arch-os-manager
 
 # The binaries the manager draws itself with, fetched now rather than on the

@@ -22,12 +22,14 @@ alias ..="cd .."
 alias ...="cd ../.."
 
 # Packages
+# The four that change the system carry {{SUDO}}; the ones that only read do
+# not. An AUR helper asks for the password itself and leaves it empty.
 alias paci='{{SUDO}}{{PKG}} -S'    # install
 alias pacu='{{SUDO}}{{PKG}} -Syu'  # update everything
-alias pacr='{{PKG}} -Rns'  # remove
-alias pacs='{{PKG}} -Ss'   # search the repositories
-alias pacls='{{PKG}} -Qs'  # search what is installed
-alias pacl='{{PKG}} -Qe'   # list what was asked for
-alias pacla='{{PKG}} -Qm'  # list what came from the AUR
-alias pacli='{{PKG}} -Qi'  # show a package
-alias pacrc='{{PKG}} -Scc' # clear the download cache
+alias pacr='{{SUDO}}{{PKG}} -Rns'  # remove
+alias pacrc='{{SUDO}}{{PKG}} -Scc' # clear the download cache
+alias pacs='{{PKG}} -Ss'           # search the repositories
+alias pacls='{{PKG}} -Qs'          # search what is installed
+alias pacl='{{PKG}} -Qe'           # list what was asked for
+alias pacla='{{PKG}} -Qm'          # list what came from the AUR
+alias pacli='{{PKG}} -Qi'          # show a package

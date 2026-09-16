@@ -413,11 +413,16 @@ kernel_args() {
 RETRIES=5
 RETRY_WAIT=10
 
+# pacman's own download timeout is left on. It gives up on a transfer that has
+# stopped moving, which is what turns a mirror that went away into a retry
+# against the next one instead of an installation that sits there for ever -
+# and sitting there for ever is indistinguishable, from the outside, from a
+# program that has crashed.
 chroot_pacman_install() {
     local i
     for ((i = 1; i <= RETRIES; i++)); do
         [ "$i" -gt 1 ] && echo "retry ${i}/${RETRIES}: pacman -S $*"
-        if arch-chroot "$MNT" pacman -S --noconfirm --needed --disable-download-timeout "$@"; then
+        if arch-chroot "$MNT" pacman -S --noconfirm --needed "$@"; then
             return 0
         fi
         sleep "$RETRY_WAIT"
@@ -439,23 +444,68 @@ sudoers_rule() {
     arch-chroot "$MNT" visudo -cqf "/etc/sudoers.d/${1}"
 }
 
+# How long one attempt at an AUR build may take, and how often it is tried. A
+# build is retried because the parts of it that fail are downloads - the clone,
+# the sources, the crates - and those come back. A build that runs into the
+# limit is not retried: it was not failing, it was stuck, and a second three
+# quarters of an hour of the same says nothing new.
+AUR_RETRIES=3
+AUR_TIMEOUT=2700
+
+# How many compile jobs a build may run at once: one per gigabyte this machine
+# has, and never more than it has cores. A live image is routinely given two
+# gigabytes and every core of the host, and a build that takes the cores at
+# their word is what runs such a machine out of memory. What the kernel kills
+# then is whatever is largest, which is as easily this program as the compiler -
+# and an interface that disappears and comes back at the first page is read, by
+# the person in front of it, as the machine having restarted.
+#
+# make and cargo are named separately because neither reads the other: makepkg
+# passes MAKEFLAGS on, and cargo counts cores on its own.
+build_jobs() {
+    local gigabytes cores
+    gigabytes=$(($(awk '/^MemTotal:/ { print $2 }' /proc/meminfo) / 1048576))
+    cores="$(nproc)"
+    [ "$gigabytes" -lt 1 ] && gigabytes=1
+    [ "$gigabytes" -lt "$cores" ] && cores="$gigabytes"
+    printf '%s' "$cores"
+}
+
 # Building from the AUR needs a normal user allowed to sudo without a password.
 # Granted for the length of the build and taken back afterwards, including when
 # the build fails.
+#
+# The build tools are installed here rather than by each task that builds: three
+# tasks build from the AUR and every one of them used to ask for the same two
+# packages first.
+#
+# The whole build is one command inside the target so that one timeout covers
+# it. timeout signals the process group it started, so a makepkg that is waiting
+# on a source nobody is serving any more takes its compiler down with it.
 chroot_aur_install() {
     local repo="$1"
     local url="https://aur.archlinux.org/${repo}.git"
-    local dir status=1 i
+    local dir jobs build status=1 i
+
+    chroot_pacman_install git base-devel
+
+    jobs="$(build_jobs)"
     dir="$(mktemp -u "/home/${ARCH_OS_USERNAME}/.aur-${repo}.XXXX")"
+    build="rm -rf ${dir} && git clone --depth 1 ${url} ${dir} && cd ${dir}"
+    build="${build} && printf '\noptions=(\"!debug\")\n' >>PKGBUILD"
+    build="${build} && MAKEFLAGS=-j${jobs} CARGO_BUILD_JOBS=${jobs} makepkg -si --noconfirm --needed"
 
     sudoers_rule 99-aur-build '%wheel ALL=(ALL:ALL) NOPASSWD: ALL'
 
-    for ((i = 1; i <= RETRIES; i++)); do
-        [ "$i" -gt 1 ] && echo "retry ${i}/${RETRIES}: building ${repo} from the AUR"
-        if as_user "rm -rf ${dir} && git clone ${url} ${dir}" &&
-            as_user "cd ${dir} && printf '\noptions=(\"!debug\")\n' >>PKGBUILD" &&
-            as_user "cd ${dir} && makepkg -si --noconfirm --needed"; then
-            status=0
+    echo "building ${repo} from the AUR with ${jobs} job(s)"
+    for ((i = 1; i <= AUR_RETRIES; i++)); do
+        [ "$i" -gt 1 ] && echo "retry ${i}/${AUR_RETRIES}: building ${repo} from the AUR"
+        status=0
+        arch-chroot "$MNT" timeout "$AUR_TIMEOUT" \
+            /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "$build" || status=$?
+        [ "$status" -eq 0 ] && break
+        if [ "$status" -eq 124 ]; then
+            echo "building ${repo} from the AUR was still running after $((AUR_TIMEOUT / 60)) minutes and was stopped" >&2
             break
         fi
         sleep "$RETRY_WAIT"
@@ -464,7 +514,7 @@ chroot_aur_install() {
     as_user "rm -rf ${dir}"
     rm -f "${MNT}/etc/sudoers.d/99-aur-build"
 
-    [ "$status" -eq 0 ] || echo "building ${repo} from the AUR failed after ${RETRIES} attempts" >&2
+    [ "$status" -eq 0 ] || echo "building ${repo} from the AUR did not finish" >&2
     return "$status"
 }
 

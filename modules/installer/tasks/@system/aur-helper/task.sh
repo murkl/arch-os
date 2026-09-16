@@ -5,7 +5,6 @@
 
 simulating && return 0
 
-chroot_pacman_install git base-devel
 chroot_aur_install "$ARCH_OS_AUR_HELPER"
 
 # paru shows the newest results last, next to the prompt, and asks for the sudo

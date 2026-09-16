@@ -181,7 +181,7 @@ jobs:
           Boot the ISO on the machine to install, or run this on any Linux machine — what opens is decided by the machine it opened on:
 
           \`\`\`
-          curl -Ls bit.ly/arch-os | bash
+          curl -Ls https://bit.ly/arch-os | bash
           \`\`\`
 
           | File | Description |

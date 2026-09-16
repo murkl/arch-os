@@ -335,8 +335,8 @@ msgstr "Zusätzliche Parameter, die dem Kernel beim Start übergeben werden, dur
 
 #. ARCH_OS_KERNEL_ARGS: what a wrong answer is told
 #: module.yaml
-msgid "Commas, ampersands and backslashes cannot be used here."
-msgstr "Die Zeichen Komma, Und-Zeichen und Backslash sind hier nicht möglich."
+msgid "Quotes, backslashes, dollar signs and backticks cannot be used here."
+msgstr "Anführungszeichen, Backslash, Dollarzeichen und Backtick sind hier nicht möglich."
 
 #. ARCH_OS_MICROCODE: the question
 #: module.yaml

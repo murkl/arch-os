@@ -96,8 +96,6 @@ A task that fails stops the installation there. The page it stops on is the one 
 
 **Note:** _Anything that needs a desktop session which does not exist yet — GNOME settings live in the session's own database — goes through `on_first_login`, which collects those lines into a script that runs once at the first login and then removes itself._
 
-**[➜ See AGENTS.md](../../AGENTS.md#shell-the-task-contract)** for the whole contract.
-
 ## Testing a Step
 
 A task may also say how to tell, on the machine itself, that the work took. That is a `test.sh` beside `task.sh`, or a `test:` in the YAML for something short:

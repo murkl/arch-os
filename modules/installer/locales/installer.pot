@@ -335,7 +335,7 @@ msgstr ""
 
 #. ARCH_OS_KERNEL_ARGS: what a wrong answer is told
 #: module.yaml
-msgid "Commas, ampersands and backslashes cannot be used here."
+msgid "Quotes, backslashes, dollar signs and backticks cannot be used here."
 msgstr ""
 
 #. ARCH_OS_MICROCODE: the question

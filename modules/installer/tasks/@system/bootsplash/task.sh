@@ -2,7 +2,7 @@
 
 simulating && return 0
 
-chroot_pacman_install plymouth git base-devel
+chroot_pacman_install plymouth
 
 # The hook goes directly behind the init hook, which is early enough to have a
 # screen to draw on. mkinitcpio concatenates its own configuration and every

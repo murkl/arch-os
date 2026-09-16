@@ -1,5 +1,11 @@
 title: Share files with other machines
 needs: [desktop-gnome]
+
+# The same three the question carries, so this is never installed for an
+# answer that said no: a Samba server and a WSD responder on the network are
+# exactly what file sharing means, and a machine that declined it should not be
+# running either.
 conditions:
   - ARCH_OS_DESKTOP != none
   - ARCH_OS_DESKTOP_EXTRAS_ENABLED == true
+  - ARCH_OS_SAMBA_SHARE_ENABLED == true
