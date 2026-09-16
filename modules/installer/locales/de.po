@@ -25,6 +25,11 @@ msgstr "Installer"
 msgid "Install"
 msgstr "Installieren"
 
+#. what a run of it is called, read while it runs and when it ends
+#: module.yaml
+msgid "Installation"
+msgstr "Installation"
+
 #. what it is, in one sentence, on the page that offers it
 #: module.yaml
 msgid "Put Arch Linux on this machine."
@@ -440,8 +445,8 @@ msgstr "System-Feinschliff"
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: what it means
 #: module.yaml
-msgid "Small adjustments that do not change what is installed: parallel package downloads, a quieter boot, password feedback in the terminal."
-msgstr "Kleine Anpassungen, die nichts an den installierten Paketen ändern: parallele Downloads, ein ruhigerer Start, Rückmeldung bei der Passworteingabe im Terminal."
+msgid "Small adjustments that do not change what is installed: parallel package downloads, a quieter boot, password feedback in the terminal, and the memory, disk and log settings a desktop runs better on."
+msgstr "Kleine Anpassungen, die nichts an den installierten Paketen ändern: parallele Downloads, ein ruhigerer Start, Rückmeldung bei der Passworteingabe im Terminal und die Einstellungen für Speicher, Platte und Protokolle, mit denen ein Desktop besser läuft."
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: the heading its row sits under
 #: module.yaml
@@ -810,9 +815,6 @@ msgstr "Mit dem Internet verbunden"
 
 #~ msgid "Tidy up"
 #~ msgstr "Aufräumen"
-
-#~ msgid "Installation"
-#~ msgstr "Installation"
 
 #~ msgid "paste.rs - Online"
 #~ msgstr "paste.rs - Online"

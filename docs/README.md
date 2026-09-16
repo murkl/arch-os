@@ -34,11 +34,12 @@
 - File system btrfs or ext4, boot loader systemd-boot or GRUB, dual boot aware partitioning
 - Disk encryption (LUKS2) and Secure Boot with own keys, signed again on every kernel update
 - One password for encryption, root and user, and automatic login behind an encrypted disk
-- Btrfs snapshots taken before every package change (Snapper), restored from the desktop (Btrfs Assistant)
+- Btrfs snapshots taken before every package change (Snapper), restored from the desktop (Btrfs Assistant), with the logs and the package cache on subvolumes of their own, so a rollback keeps both
 - GNOME, Wayland optimized, with graphics driver (Mesa, Intel i915, NVIDIA, AMD or ATI), or a text console with nothing graphical on it
 - Desktop extras: codecs, fonts, printing, network protocols, everyday applications and Samba shares
 - Slim version: GNOME Core Apps only
 - Swap with zram-generator (zstd), systemd OOM, fstrim, microcode, NetworkManager and mirrors ranked by country (reflector)
+- Tuned rather than left at the defaults: write-back and cache limits that keep the desktop moving under load, the I/O scheduler each kind of disk is served best by, a journal that stops at 200 MB and a shutdown that does not wait a minute and a half on a stuck service
 - AUR helper, 32-bit support (multilib), container engine (Docker or Podman) and automatic housekeeping
 - [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager and Shell Enhancement (bash, zsh or fish)
 - Arch OS Recovery on the same image, works without a network connection

@@ -329,6 +329,41 @@ load_console_keyboard() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
+# THE BTRFS LAYOUT
+# ////////////////////////////////////////////////////////////////////////////
+
+# How this project mounts btrfs. The recovery mounts what this lays down and has
+# the same line in its own module.sh, and the two must not drift apart.
+#
+# Shellcheck reads this file on its own and cannot see that Oak sources it in
+# front of every task and every test, so it looks unused here.
+# shellcheck disable=SC2034
+BTRFS_OPTS="defaults,noatime,compress=zstd"
+
+# And what it lays down: one subvolume per thing that is rolled back, kept or
+# thrown away on its own, and where each is mounted. Subvolume first, mount
+# point after a tab; @ is the root, so its mount point is the target itself.
+#
+# The three under /var are separate because a snapshot of @ does not reach into
+# them. That keeps the package cache out of every snapshot - on a rolling
+# release it is the largest thing on the disk that nothing ever reads back - and
+# it keeps the logs, which is the part that matters: they say why a rollback was
+# needed, and a rollback that takes them with it erases its own reason.
+#
+# The recovery carries the same table, and mounts whichever of these an
+# installation actually has: one laid out by an earlier version has only the
+# first three.
+btrfs_subvolumes() {
+    printf '%s\t%s\n' \
+        @ / \
+        @home /home \
+        @snapshots /.snapshots \
+        @log /var/log \
+        @cache /var/cache \
+        @tmp /var/tmp
+}
+
+# ////////////////////////////////////////////////////////////////////////////
 # SECURE BOOT & KERNEL COMMAND LINE
 # ////////////////////////////////////////////////////////////////////////////
 
@@ -539,6 +574,33 @@ own_home() {
 # ends in "chroot: failed to run command 'command'" whatever is installed. Arch
 # puts every binary in /usr/bin - /bin, /sbin and /usr/sbin are symlinks to it.
 has_command() { [ -x "${MNT}/usr/bin/${1}" ]; }
+
+# Whether every setting in a sysctl drop-in names a knob that exists, which is
+# the other thing a test asks after writing one. sysctl makes no complaint about
+# a key it has never heard of - a misspelled or long-renamed one is simply a
+# line that does nothing, on a file that looks right - so the keys are read back
+# out of the file itself and each is looked for under /proc/sys. That is this
+# kernel rather than the installed one, which is what makes it worth asking: the
+# knobs here are the ones every kernel in the list has.
+sysctl_keys_exist() {
+    local keys key
+    keys="$(sed -n 's/^[[:space:]]*\([a-z][a-z0-9._-]*\)[[:space:]]*=.*/\1/p' "$1")"
+
+    # A file that is missing, empty or all comment reads as no keys, and a loop
+    # over no keys is a check that passes without having looked at anything -
+    # which is the failure this exists to catch, arriving as a pass.
+    [ -n "$keys" ] || {
+        echo "${1} sets nothing at all" >&2
+        return 1
+    }
+
+    while read -r key; do
+        [ -e "/proc/sys/${key//.//}" ] || {
+            echo "${1} sets ${key}, which this kernel does not have" >&2
+            return 1
+        }
+    done <<<"$keys"
+}
 
 # ////////////////////////////////////////////////////////////////////////////
 # FIRST LOGIN

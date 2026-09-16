@@ -9,13 +9,19 @@
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
 # What this module is called, read wherever the interface talks about it rather
-# than starts it: the sentence over its settings, the report a run ends on.
+# than starts it: the sentence over its settings, the trail across the top. What
+# a run of it is called is `run:` below — a program and the work it does are two
+# names, and the one a failure has to say is the work.
 title: Recovery
 
 # And what opening it does, which is the row somebody presses enter on — on the
 # page asking which module to open, and again on the menu. A name is not a
 # button: the row says what will happen, the title says what this is.
 action: Recover
+
+# And what a run of it is called: the work, not the program doing it — read on
+# the row that starts it, on the clock while it works and on the line it ends on.
+run: Repair
 
 # The sentence under that row.
 description: Repair an Arch Linux system that is already on a disk.

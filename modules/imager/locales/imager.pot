@@ -28,6 +28,11 @@ msgstr ""
 msgid "Create boot medium"
 msgstr ""
 
+#. what a run of it is called, read while it runs and when it ends
+#: module.yaml
+msgid "Writing"
+msgstr ""
+
 #. what it is, in one sentence, on the page that offers it
 #: module.yaml
 msgid "Write Arch OS to a USB device to boot another machine from."

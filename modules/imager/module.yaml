@@ -9,7 +9,9 @@
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
 # What this module is called, read wherever the interface talks about it rather
-# than starts it: the sentence over its settings, the report a run ends on.
+# than starts it: the sentence over its settings, the trail across the top. What
+# a run of it is called is `run:` below — a program and the work it does are two
+# names, and the one a failure has to say is the work.
 title: Imager
 
 # And what opening it does, which is the row somebody presses enter on — on the
@@ -18,6 +20,12 @@ title: Imager
 # will happen here is a device somebody can boot a machine from, which is worth
 # more than one word.
 action: Create boot medium
+
+# And what a run of it is called: the work, not the program doing it — read on
+# the row that starts it, on the clock while it works and on the line it ends on.
+# One word, because all three are sentences the runtime builds around it, and
+# the page they sit on has already said which device is being written.
+run: Writing
 
 # Whether this machine is one this module belongs on at all, asked before it is
 # even offered. The other way round from the Installer and the Recovery, which is

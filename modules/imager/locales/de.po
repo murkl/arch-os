@@ -25,6 +25,11 @@ msgstr "Imager"
 msgid "Create boot medium"
 msgstr "Bootmedium erstellen"
 
+#. what a run of it is called, read while it runs and when it ends
+#: module.yaml
+msgid "Writing"
+msgstr "Schreibvorgang"
+
 #. what it is, in one sentence, on the page that offers it
 #: module.yaml
 msgid "Write Arch OS to a USB device to boot another machine from."
@@ -116,6 +121,10 @@ msgstr "Ein Datenträger zum Schreiben"
 #: hooks/@preflight/image/hook.yaml
 msgid "The image is here or can be fetched"
 msgstr "Das Abbild ist da oder erreichbar"
+
+#, fuzzy
+#~ msgid "Writing the device"
+#~ msgstr "Datenträger schreiben"
 
 #~ msgid "Running as root"
 #~ msgstr "Läuft als root"

@@ -28,6 +28,11 @@ msgstr ""
 msgid "Recover"
 msgstr ""
 
+#. what a run of it is called, read while it runs and when it ends
+#: module.yaml
+msgid "Repair"
+msgstr ""
+
 #. what it is, in one sentence, on the page that offers it
 #: module.yaml
 msgid "Repair an Arch Linux system that is already on a disk."

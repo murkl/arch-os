@@ -26,6 +26,23 @@ CRYPT=recovery
 # apart.
 BTRFS_OPTS="defaults,noatime,compress=zstd"
 
+# And what it laid down: subvolume, then a tab, then where it is mounted. The
+# same table as the installer's, for the same reason as the line above.
+#
+# Which of them a given system actually has is read off the disk rather than
+# assumed - see mount_target. An installation from an earlier version has only
+# the first three, and a recovery that insists on the rest would refuse to open
+# exactly the systems it exists for.
+btrfs_subvolumes() {
+    printf '%s\t%s\n' \
+        @ / \
+        @home /home \
+        @snapshots /.snapshots \
+        @log /var/log \
+        @cache /var/cache \
+        @tmp /var/tmp
+}
+
 # ////////////////////////////////////////////////////////////////////////////
 # WHAT THIS MACHINE IS
 # ////////////////////////////////////////////////////////////////////////////
@@ -183,12 +200,28 @@ installed_kernels() {
 # rollback takes it apart to replace @ and then has to put it back together
 # exactly as open left it.
 mount_target() {
-    local target
+    local target present subvolume path
     target="$(root_device)"
     if [ "$ARCH_OS_RECOVERY_FILESYSTEM" = "btrfs" ]; then
+        # @ first: it is the root the rest are directories in, and it is the one
+        # subvolume every installation has, so a missing one is a failure here
+        # rather than a line in the log.
         mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=@" "$target" "$MNT"
-        mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=@home" "$target" "${MNT}/home"
-        mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=@snapshots" "$target" "${MNT}/.snapshots"
+
+        # What this particular disk holds, named from the top level whichever
+        # subvolume is mounted. The rest of the table is matched against it, so
+        # an older layout is opened as far as it goes instead of refused.
+        present="$(btrfs subvolume list "$MNT" | awk '{ print $NF }')"
+
+        while IFS=$'\t' read -r subvolume path; do
+            [ "$subvolume" = "@" ] && continue
+            if ! printf '%s\n' "$present" | grep -qxF "$subvolume"; then
+                echo "no ${subvolume} on this installation, leaving ${path} inside @"
+                continue
+            fi
+            mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=${subvolume}" \
+                "$target" "${MNT}${path}"
+        done < <(btrfs_subvolumes)
     else
         mount --mkdir "$target" "$MNT"
     fi

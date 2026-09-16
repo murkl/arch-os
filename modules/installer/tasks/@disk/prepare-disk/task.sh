@@ -3,10 +3,6 @@
 
 simulating && return 0
 
-# How this project mounts btrfs. The recovery mounts what this lays down and has
-# the same line in its own module.sh, and the two must not drift apart.
-BTRFS_OPTS="defaults,noatime,compress=zstd"
-
 # Dual boot keeps the disk as it is: the other system's partitions, its EFI
 # partition and its boot entries all stay.
 if [ "$ARCH_OS_DUAL_BOOT_ENABLED" != "true" ]; then
@@ -40,16 +36,23 @@ if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
     mkfs.btrfs -f -L BTRFS "$root_device"
     mount -v "$root_device" "$MNT"
 
-    # The system, the home directories and the snapshots are separate things to
-    # roll back or keep.
-    btrfs subvolume create "${MNT}/@"
-    btrfs subvolume create "${MNT}/@home"
-    btrfs subvolume create "${MNT}/@snapshots"
+    # One per thing that is rolled back, kept or thrown away on its own - see
+    # btrfs_subvolumes, which the recovery reads the same layout out of.
+    while read -r subvolume _; do
+        btrfs subvolume create "${MNT}/${subvolume}"
+    done < <(btrfs_subvolumes)
     umount -R "$MNT"
 
-    mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=@" "$root_device" "$MNT"
-    mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=@home" "$root_device" "${MNT}/home"
-    mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=@snapshots" "$root_device" "${MNT}/.snapshots"
+    # @ first, since every other mount point is a directory inside it.
+    while IFS=$'\t' read -r subvolume path; do
+        mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=${subvolume}" \
+            "$root_device" "${MNT}${path%/}"
+    done < <(btrfs_subvolumes)
+
+    # A fresh subvolume is root's alone, and /var/tmp is where anything on the
+    # machine may write. systemd-tmpfiles would set this at the first boot; the
+    # installation writes there before there is one.
+    chmod 1777 "${MNT}/var/tmp"
 
     # systemd would otherwise make subvolumes of these on first boot, which show
     # up in every snapshot listing as noise.

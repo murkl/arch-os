@@ -46,9 +46,22 @@ nvidia) # https://wiki.archlinux.org/title/NVIDIA#Installation
     chroot_pacman_install "${packages[@]}"
 
     # Kernel mode setting, without which Wayland does not start on this driver.
+    # And what the card is holding when the machine suspends: this driver frees
+    # video memory rather than saving it, unless told otherwise, and what comes
+    # back is a desktop drawn over whatever is in that memory now. The three
+    # units are what do the saving - nvidia-utils ships them switched off, so
+    # the setting on its own would only make the driver wait for something that
+    # never runs.
     # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
+    # https://wiki.archlinux.org/title/NVIDIA/Tips_and_tricks#Preserve_video_memory_after_suspend
     mkdir -p "${MNT}/etc/modprobe.d"
-    echo 'options nvidia_drm modeset=1 fbdev=1' >"${MNT}/etc/modprobe.d/nvidia.conf"
+    {
+        echo '# Written by the Arch OS Installer.'
+        echo 'options nvidia_drm modeset=1 fbdev=1'
+        echo 'options nvidia NVreg_PreserveVideoMemoryAllocations=1'
+    } >"${MNT}/etc/modprobe.d/nvidia.conf"
+    arch-chroot "$MNT" systemctl enable \
+        nvidia-suspend.service nvidia-hibernate.service nvidia-resume.service
     early_modules nvidia nvidia_modeset nvidia_uvm nvidia_drm
 
     # The modules live in the ram disk, so it is rebuilt whenever the driver or

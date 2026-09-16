@@ -9,13 +9,22 @@
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
 # What this module is called, read wherever the interface talks about it rather
-# than starts it: the sentence over its settings, the report a run ends on.
+# than starts it: the sentence over its settings, the trail across the top. What
+# a run of it is called is `run:` below — a program and the work it does are two
+# names, and the one a failure has to say is the work.
 title: Installer
 
 # And what opening it does, which is the row somebody presses enter on — on the
 # page asking which module to open, and again on the menu. A name is not a
 # button: the row says what will happen, the title says what this is.
 action: Install
+
+# And what a run of it is called: the work, not the program doing it. It is read
+# on the row that starts it, on the clock while the tasks go by, and on the line
+# the run ends on — where an installation that stopped has to say the
+# installation failed. "The Installer failed" says the program is broken, which
+# is the one thing that page almost never means.
+run: Installation
 
 # The sentence under that row.
 description: Put Arch Linux on this machine.
@@ -476,7 +485,8 @@ variables:
     title: System tweaks
     description: |
       Small adjustments that do not change what is installed: parallel package
-      downloads, a quieter boot, password feedback in the terminal.
+      downloads, a quieter boot, password feedback in the terminal, and the
+      memory, disk and log settings a desktop runs better on.
     group: System
     type: bool
     default: true
