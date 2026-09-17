@@ -1,5 +1,5 @@
-# A terminal that is pleasant on the first login. Everything it writes is a
-# file beside this one, copied into place.
+# A terminal that is pleasant on the first login. Everything it writes is a file
+# beside this one, copied into place.
 
 simulating && return 0
 
@@ -14,10 +14,9 @@ mkdir -p "${MNT}/root/.config/fastfetch" "${home}/.config/fastfetch"
 
 # ----------------------------------------------------------------------------
 
-# Aliases, for both root and the user: it is the same shell either way.
-# {{PKG}} and {{SUDO}} are the only part the answers decide - an AUR helper
-# covers both repositories and asks for the password itself, where pacman
-# needs sudo.
+# For both root and the user: it is the same shell either way. An AUR helper
+# covers both repositories and asks for the password itself, where pacman needs
+# sudo.
 pkg="pacman"
 sudo_prefix="sudo "
 if [ "$ARCH_OS_AUR_HELPER" != "none" ]; then
@@ -30,13 +29,10 @@ sed -e "s|{{PKG}}|${pkg}|g" -e "s|{{SUDO}}|${sudo_prefix}|g" "${data}/aliases" |
 
 # ----------------------------------------------------------------------------
 
-# bash is always configured: it is the shell every task and hook runs in.
-#
-# zsh becomes the login shell outright, so everything that starts one (a
-# terminal, ssh, a service) gets it. fish cannot: it is not a POSIX shell,
-# and a login shell that cannot read a POSIX profile breaks things well
-# outside the terminal. So .bashrc hands over to it instead, see
-# shell-handover.
+# bash is always configured: it is the shell every task and hook runs in. zsh
+# becomes the login shell outright; fish cannot, because it is not a POSIX shell
+# and a login shell that cannot read a POSIX profile breaks things well outside
+# the terminal - so .bashrc hands over to it instead.
 shell="$ARCH_OS_SHELL_ENHANCEMENT_SHELL"
 
 marker=$'# {{SHELL_HANDOVER}}\n'
@@ -68,9 +64,8 @@ esac
 
 # ----------------------------------------------------------------------------
 
-# The prompt theme is fetched rather than shipped, so it can be improved
-# without a new release of this installer. A machine that cannot reach it
-# gets a fallback preset from starship instead.
+# Fetched rather than shipped, so it can be improved without a new release of
+# this installer. A machine that cannot reach it gets a starship preset.
 mkdir -p "${MNT}/root/.config"
 if ! curl -Lf --connect-timeout 5 --max-time 30 \
     https://raw.githubusercontent.com/murkl/starship-theme-arch-os/refs/heads/main/starship.toml \

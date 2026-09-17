@@ -1,8 +1,9 @@
-# Put the chosen snapshot in place of the root subvolume, and mount what came out
-# of it in place of what was there.
+# The chosen snapshot put in place of the root subvolume, and what came out of
+# it mounted in place of what was there.
 #
 # The new @ is built before the old one is touched, so a rollback that dies
 # halfway leaves the system as it found it rather than with no root at all.
+# https://wiki.archlinux.org/title/Btrfs#Restoring_a_snapshot
 
 simulating && return 0
 
@@ -14,9 +15,7 @@ if [ ! -d "${BTRFS_TOP}/${snapshot}" ]; then
 fi
 
 # @ cannot be replaced while it is the root that is mounted. Anything still
-# holding it open is named in the log and killed first - a rollback that stops
-# here leaves the machine exactly as it found it, but it should not stop for a
-# process nobody is using.
+# holding it open is named in the log and killed first.
 unmount_target
 
 btrfs subvolume delete --recursive "${BTRFS_TOP}/@.new" 2>/dev/null || true

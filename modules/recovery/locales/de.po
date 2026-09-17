@@ -76,15 +76,15 @@ msgstr "Speicher"
 msgid "Choose a disk that exists."
 msgstr "Wähle einen vorhandenen Datenträger."
 
-#. ARCH_OS_RECOVERY_ENCRYPTION_ENABLED: the question
+#. ARCH_OS_RECOVERY_ENCRYPTED: the question
 #: module.yaml
 msgid "Disk encryption"
 msgstr "Verschlüsselung"
 
-#. ARCH_OS_RECOVERY_ENCRYPTION_ENABLED: what it means
+#. ARCH_OS_RECOVERY_ENCRYPTED: what it means
 #: module.yaml
-msgid "Whether that disk is encrypted with LUKS. This is read directly off the disk, without needing the password. Change it only if the answer is wrong."
-msgstr "Ob dieser Datenträger mit LUKS verschlüsselt ist. Das wird vom Datenträger selbst gelesen, wofür kein Passwort nötig ist. Ändere es nur, wenn die Antwort nicht stimmt."
+msgid "Whether that disk is encrypted with LUKS."
+msgstr "Ob dieser Datenträger mit LUKS verschlüsselt ist."
 
 #. ARCH_OS_RECOVERY_PASSWORD: the question
 #: module.yaml
@@ -95,16 +95,6 @@ msgstr "Verschlüsselungspasswort"
 #: module.yaml
 msgid "The password that unlocks that disk. It is asked for right before the recovery starts and is never written to a file."
 msgstr "Das Passwort, das diesen Datenträger entsperrt. Es wird unmittelbar vor dem Start der Wiederherstellung abgefragt und nie in eine Datei geschrieben."
-
-#. ARCH_OS_RECOVERY_FILESYSTEM: the question
-#: module.yaml
-msgid "File system"
-msgstr "Dateisystem"
-
-#. ARCH_OS_RECOVERY_FILESYSTEM: what it means
-#: module.yaml
-msgid "The file system of the system being repaired. btrfs can be rolled back to a snapshot; ext4 can be opened and worked on by hand. On an encrypted disk this cannot be read in advance, so please check it."
-msgstr "Das Dateisystem des Systems, das repariert wird. btrfs lässt sich auf einen Schnappschuss zurücksetzen, ext4 nur öffnen und von Hand bearbeiten. Auf einem verschlüsselten Datenträger lässt sich das vorher nicht auslesen — prüfe es also."
 
 #. ARCH_OS_RECOVERY_SNAPSHOT: the question
 #: module.yaml
@@ -147,11 +137,11 @@ msgstr "Startdateien neu bauen"
 msgid ""
 "Rebuild the kernel images and the initial ram disks?\n"
 "\n"
-"Needed when the rollback goes back past a kernel update: the modules in the restored system and the images in /boot would then belong to different kernels, and the machine would come up without a single module. Everything is taken from the package cache, so this needs no network."
+"Needed after a rollback that goes back past a kernel update: the modules in the restored system and the images in /boot would then belong to different kernels, and the machine would come up without a single module. Everything is taken from the package cache, so this needs no network."
 msgstr ""
 "Die Kernel-Abbilder und die Initial-RAM-Disks neu bauen?\n"
 "\n"
-"Nötig, wenn der Rücksprung über ein Kernel-Update hinweg ging: Die Module im wiederhergestellten System und die Abbilder in /boot sind dann zwei verschiedene Kernel, und der Rechner startet ohne ein einziges Modul. Alles kommt aus dem Paket-Cache, ein Netzwerk braucht es dafür nicht."
+"Nötig nach einem Rücksprung über ein Kernel-Update hinweg: Die Module im wiederhergestellten System und die Abbilder in /boot sind dann zwei verschiedene Kernel, und der Rechner startet ohne ein einziges Modul. Alles kommt aus dem Paket-Cache, ein Netzwerk braucht es dafür nicht."
 
 #. the step, as the run lists it
 #: tasks/@repair/shell/task.yaml
@@ -189,6 +179,15 @@ msgstr ""
 #: hooks/@preflight/root/hook.yaml
 msgid "Running as root"
 msgstr "Läuft als root"
+
+#~ msgid "Whether that disk is encrypted with LUKS. This is read directly off the disk, without needing the password. Change it only if the answer is wrong."
+#~ msgstr "Ob dieser Datenträger mit LUKS verschlüsselt ist. Das wird vom Datenträger selbst gelesen, wofür kein Passwort nötig ist. Ändere es nur, wenn die Antwort nicht stimmt."
+
+#~ msgid "File system"
+#~ msgstr "Dateisystem"
+
+#~ msgid "The file system of the system being repaired. btrfs can be rolled back to a snapshot; ext4 can be opened and worked on by hand. On an encrypted disk this cannot be read in advance, so please check it."
+#~ msgstr "Das Dateisystem des Systems, das repariert wird. btrfs lässt sich auf einen Schnappschuss zurücksetzen, ext4 nur öffnen und von Hand bearbeiten. Auf einem verschlüsselten Datenträger lässt sich das vorher nicht auslesen — prüfe es also."
 
 #~ msgid "Recover"
 #~ msgstr "Wiederherstellen"

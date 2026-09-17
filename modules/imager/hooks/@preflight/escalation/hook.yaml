@@ -1,13 +1,8 @@
-# Can this machine write a bootable device at all?
+# Can this machine write a bootable device at all? Every check in this stage is
+# read-only and every one of them is a hard stop, run before the first question
+# because none of it can be fixed from inside this program.
 #
-# Every check in this stage is read-only and every one of them is a hard stop.
-# They run before the first question, because none of it can be fixed from
-# inside this program.
-#
-# Which machines this module belongs on is not among them: that is `requires:` in
-# module.yaml, and it is what decides whether this row is on the page at all.
-# What is left for this stage is what has to be true once it has been chosen.
-#
-# What goes to stderr is what the user reads, so each message says what is wrong
-# and what to do about it, in that order, and nothing else.
+# Whether the image can be got at is deliberately not here: where it is kept is
+# an answer, and this stage runs before there is one. The download task says so
+# instead, and says it about the folder that was actually chosen.
 title: Root for the write

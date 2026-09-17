@@ -1,9 +1,6 @@
-# The loader the firmware starts, and how it is told to start this system.
-#
-# Its own task beside the GRUB one rather than a branch inside a shared one: the
-# two write different files in different places, and which of them runs is an
-# answer the yaml can declare - so a run that installs GRUB never even lists
-# this step.
+# The loader the firmware starts, and how it is told to start this system. Its
+# own task beside the GRUB one, so a run that installs the other never even
+# lists this step. https://wiki.archlinux.org/title/Systemd-boot
 
 simulating && return 0
 
@@ -16,8 +13,8 @@ timeout=0
 [ "$ARCH_OS_DUAL_BOOT_ENABLED" = "true" ] && timeout=5
 
 # A unified image needs no entry: systemd-boot finds every EFI binary under
-# EFI/Linux. The editor is switched off with it too: an editable command line
-# hands any bystander a root shell via init=/bin/sh, straight past Secure Boot.
+# EFI/Linux. The editor goes with it - an editable command line hands any
+# bystander a root shell through init=/bin/sh, straight past Secure Boot.
 default=main.conf
 editor=yes
 if secure_boot_wanted; then
@@ -32,9 +29,8 @@ fi
     echo "editor ${editor}"
 } >"${MNT}/boot/loader/loader.conf"
 
-# Read from module.sh rather than written here, so the entries below and the
-# command line built into a unified image can never disagree about how this
-# system boots.
+# From module.sh, so these entries and the command line built into a unified
+# image cannot disagree about how this system boots.
 if ! secure_boot_wanted; then
     cmdline="$(kernel_args)"
 

@@ -1,4 +1,4 @@
-# Is this machine ready to be installed onto? — see the hook.yaml beside this.
+# See the hook.yaml beside this.
 
 simulating && return 0
 

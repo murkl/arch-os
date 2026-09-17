@@ -1,13 +1,9 @@
-# A configuration somebody shared, taken as the answers to this installation.
-# The other end of task.sh beside it.
+# A configuration somebody shared, taken as the answers to this installation -
+# the other end of task.sh beside it. Run by the starting point that asks for a
+# code, and the row is not passed until it succeeds.
 #
-# Run by the starting point that asks for a code, the moment the code is
-# given, and the row is not passed until it succeeds. What Oak owns
-# is left alone: the interface language and the mode are settings of the
-# program in front of you, not of somebody else's machine.
-#
-# This one is allowed to fail, and says why: it runs while somebody is
-# looking at the box they typed the code into.
+# This one is allowed to fail and says why: it runs while somebody is looking at
+# the box they typed the code into.
 
 # The address, from whatever somebody has in front of them: the whole link,
 # or just the code at the end of it.
@@ -28,6 +24,6 @@ if [ -z "$body" ]; then
     exit 1
 fi
 
-# Appended to the answer file, which Oak reads back. That file is how
-# a script answers questions, and there is no second way in.
+# Appended to the answer file, which Oak reads back. That file is how a script
+# answers questions, and there is no second way in.
 printf '%s\n' "$body" >>"$MODULE_CONF"

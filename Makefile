@@ -1,6 +1,5 @@
-# A release is the Oak binary with oak.yaml and a modules folder beside it,
-# which is the only thing a machine needs. Everything a build produces lands in
-# dist/:
+# The only task runner in the repository. What CI runs is these targets, so a
+# rule that holds at a desk holds there.
 #
 #   dist/arch-os-2.0.0/                 the product: oak, oak.yaml, modules/
 #   dist/arch-os-2.0.0-x86_64.tar.gz    that folder as one file  (+ .sha256)
@@ -8,17 +7,12 @@
 #
 # `build` writes the first, `tarball` and `image` each turn it into one of the
 # others. Nothing is ever assembled twice.
-#
-# This is the only task runner in the repository. What CI runs is these targets,
-# so a rule that holds at a desk holds there.
 
-# Every recipe is one bash with -e, -u and pipefail: a command that fails in the
-# middle of a line or a pipeline fails the target rather than the next one.
+# Every recipe is one bash with -e, -u and pipefail, so a command that fails in
+# the middle of a line fails the target rather than the next one. A file target
+# whose recipe failed is removed rather than left half written.
 SHELL       := /bin/bash
 .SHELLFLAGS := -euo pipefail -c
-
-# A file target whose recipe failed is removed rather than left half written for
-# the next run to mistake for finished work.
 .DELETE_ON_ERROR:
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -31,19 +25,18 @@ APP         := oak
 PRODUCT     := oak.yaml
 MODULES_DIR := modules
 
-# The single source of truth for this project's version, declared where
-# everything else about the product is. It becomes both filenames, the ISO label
-# and the tag `v` + this — the `v` belongs to the tag and to nothing else, and
-# `make tag` is what writes it, so the two cannot drift apart.
+# The single source of truth for this project's version. It becomes both
+# filenames, the ISO label and the tag `v` + this - the `v` belongs to the tag
+# and to nothing else, and `make tag` is what writes it.
 VERSION := $(shell sed -n 's/^version:[[:space:]]*//p' $(PRODUCT))
 
-# Which modules there are is whatever folders are in modules/, so adding one is
-# a folder and nothing here has to be kept in step with it.
+# Whatever folders are in modules/, so adding one is a folder and nothing here
+# has to be kept in step with it.
 MODULES := $(notdir $(wildcard $(MODULES_DIR)/*))
 
 # What of a module goes into a release: its declaration and the parts Oak finds
-# by name. What is not here — a README, a linter's config — is how the module is
-# worked on rather than part of what runs.
+# by name. A README and a linter's config are how it is worked on, not part of
+# what runs.
 MODULE_DECL  := module.yaml
 MODULE_PARTS := module.sh data locales tasks hooks
 
@@ -51,10 +44,10 @@ MODULE_PARTS := module.sh data locales tasks hooks
 # OAK | The runtime this is built on
 # ////////////////////////////////////////////////////////////////////////////
 
-# The runtime is a project of its own — https://github.com/murkl/oak — and is
-# downloaded rather than built, so nothing here needs a Go toolchain.
-# OAK_VERSION is named outright rather than followed, so a build of a given
-# commit is the same build tomorrow. Written without the `v` its tag carries.
+# A project of its own - https://github.com/murkl/oak - downloaded rather than
+# built, so nothing here needs a Go toolchain. The version is named outright
+# rather than followed, so a build of a given commit is the same build tomorrow.
+# Written without the `v` its tag carries.
 OAK_REPO    := murkl/oak
 OAK_VERSION ?= 0.3.0
 OAK_ASSET   := oak-linux-amd64
@@ -69,22 +62,17 @@ OAK_URL     := https://github.com/$(OAK_REPO)/releases/download/v$(OAK_VERSION)/
 DIST_DIR := dist
 
 # The product under the name it unpacks to, so a download and the folder it came
-# out of are the same thing under the same name.
+# out of are the same thing under the same name. Only x86_64 is built.
 STEM        := arch-os-$(VERSION)
 RELEASE_DIR := $(DIST_DIR)/$(STEM)
-
-# Both downloads differ only by extension, so a release page reads as one build
-# rather than two. Only x86_64 is built.
-TARBALL := $(STEM)-x86_64.tar.gz
+TARBALL     := $(STEM)-x86_64.tar.gz
 
 # A release's shape made of symlinks into the tree, so every check reads the file
 # being edited rather than a copy the last build made of it.
 DEV_DIR := .dev
 
-# What `make run` opens. MODULE names one module outright, the way
-# `oak --module=installer` does on a machine; without it the interface asks
-# which. ARGS is whatever else that run takes — `make run ARGS=--debug` for one
-# that touches nothing.
+# What `make run` opens. MODULE names one outright, the way
+# `oak --module=installer` does on a machine; ARGS is whatever else it takes.
 MODULE ?=
 ARGS   ?=
 
@@ -94,47 +82,40 @@ ARGS   ?=
 
 # Two scripts rather than two targets: assembling an archiso profile is a
 # script's work, and so is booting a machine to read its console. Each takes
-# what it works on as an argument, so neither has to know where a build put it.
+# what it works on as an argument.
 ISO_DIR   := iso
 ISO_BUILD := $(ISO_DIR)/build.sh
 ISO_SMOKE := $(ISO_DIR)/smoke.sh
 
-# What `make smoke` boots: the newest image there is, so `make iso && make
-# smoke` needs no argument. Read when it is used rather than when make starts,
-# which is what lets the two run in one line.
+# The newest image there is, so `make iso && make smoke` needs no argument. Read
+# when it is used rather than when make starts, which is what lets the two run
+# in one line.
 ISO ?= $(shell ls -t $(DIST_DIR)/*.iso 2>/dev/null | head -1)
 
 # ////////////////////////////////////////////////////////////////////////////
 # THE SCRIPTS | Everything checked, by the dialect it is written in
 # ////////////////////////////////////////////////////////////////////////////
 
-# POSIX sh, because both run on whatever shell the machine has: the one command
-# that installs this, and the one that writes a workflow run's summary.
+# POSIX sh, because both run on whatever shell the machine has.
 POSIX_SCRIPTS := get.sh .github/summary.sh
 
 # Bash: what builds and boots the image, and what the image itself runs.
 ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(wildcard $(ISO_DIR)/src/usr/local/bin/*)
 
-# Every script of every module. Oak sources them rather than executing them, so
-# none carries a shebang and the dialect comes from each module's .shellcheckrc.
-# Looked up when it is used rather than when make starts, so only the two
-# targets that read it pay for the search.
+# Every script of every module, and every yaml for the check that reads both.
+# Looked up when they are used, so only the targets that read them pay for it.
 MODULE_SCRIPTS = $(shell find $(MODULES_DIR) -name '*.sh')
-
-# Every module's yaml as well, for the check that reads both: a task may write
-# its script into the declaration instead of beside it.
-MODULE_YAML = $(shell find $(MODULES_DIR) -name '*.yaml')
+MODULE_YAML    = $(shell find $(MODULES_DIR) -name '*.yaml')
 
 # ////////////////////////////////////////////////////////////////////////////
 # HOUSEKEEPING
 # ////////////////////////////////////////////////////////////////////////////
 
-# Everything a build leaves, wherever it leaves it. The runtime in .oak/ is not
-# in here: it is a dependency rather than build output.
+# Everything a build leaves. The runtime in .oak/ is not in here: it is a
+# dependency rather than build output.
 BUILD_OUTPUT := $(DIST_DIR) $(DEV_DIR) $(ISO_DIR)/archiso $(ISO_DIR)/download
 
-# Empty when there is nothing to elevate, which is the case in CI. Only `clean`
-# reaches for it, and only when a plain removal was refused.
+# Empty when there is nothing to elevate, which is the case in CI.
 SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 
 .PHONY: all oak build dev run inspect tarball image iso smoke locales \
@@ -146,9 +127,8 @@ SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 
 all: build
 
-# Fetches the runtime and checks it against the checksum published beside it.
-# Downloaded once and kept: `make oak` fetches it again after OAK_VERSION was
-# raised, and `make clean` leaves it alone.
+# Downloaded once and kept, checked against the checksum published beside it.
+# `make oak` fetches it again after OAK_VERSION was raised.
 $(OAK_BIN):
 	@mkdir -p $(OAK_DIR)
 	curl -Lf --progress-bar $(OAK_URL) -o $(OAK_DIR)/$(OAK_ASSET)
@@ -189,20 +169,17 @@ dev: $(OAK_BIN)
 	@ln -sfn ../$(MODULES_DIR) $(DEV_DIR)/$(MODULES_DIR)
 	@install -m 755 $(OAK_BIN) $(DEV_DIR)/$(APP)
 
-# Arch OS out of the sources, against the modules being edited rather than a
-# copy of them made by the last build.
+# Arch OS out of the sources, against the modules being edited.
 run: dev
 	cd $(DEV_DIR) && ./$(APP) $(if $(MODULE),--module=$(MODULE)) $(ARGS)
 
-# Both modules loaded exactly as a run loads them: every task ordered, every
-# condition resolved, every question checked against the tasks that read it —
+# Every module loaded exactly as a run loads it: every task ordered, every
+# condition resolved, every question checked against the tasks that read it -
 # and the order it all adds up to, which is the one thing nobody writes down.
 inspect: dev
 	@cd $(DEV_DIR) && ./$(APP) --inspect
 
-# The release as one file, for a stock Arch ISO: unpack it, run ./oak. get.sh
-# picks both downloads out of a release by extension, so renaming either one is
-# a change here and nowhere else.
+# The release as one file, for a stock Arch ISO: unpack it, run ./oak.
 tarball: build
 	tar -czf $(DIST_DIR)/$(TARBALL) --owner=0 --group=0 --sort=name \
 		--transform 's,^,$(STEM)/,' \
@@ -210,9 +187,7 @@ tarball: build
 	cd $(DIST_DIR) && sha256sum $(TARBALL) > $(TARBALL).sha256
 
 # The image, out of the release already in dist/ rather than out of a second
-# build of the same sources — which is what CI does with the tarball it
-# downloaded. What the image is called is read out of that release, so there is
-# nothing to hand down here.
+# build of the same sources. What it is called is read out of that release.
 image:
 	$(ISO_BUILD) $(CURDIR)/$(RELEASE_DIR)
 
@@ -251,14 +226,13 @@ version-check:
 	@echo "$(VERSION)" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$$' \
 		|| { echo "$(PRODUCT) declares '$(VERSION)', which is not a version" >&2; exit 1; }
 
-# This project is installed by piping a script into a shell. A credential that
-# reached the repository would be handed to everybody who did that. What git
-# ignores is skipped, so a build in dist/ is not scanned.
+# This project is installed by piping a script into a shell, so a credential
+# that reached the repository would be handed to everybody who did that.
 secrets-check:
 	gitleaks dir . --redact --no-banner
 
-# A question added or reworded without `make locales` being run is a question no
-# translator will ever be shown. And a translation that drops a placeholder is a
+# A question reworded without `make locales` being run is a question no
+# translator will ever be shown, and a translation that drops a placeholder is a
 # message that breaks where it is printed rather than where it was written.
 locales-check: dev
 	@for m in $(MODULES); do \
@@ -271,26 +245,22 @@ locales-check: dev
 		done; \
 	done
 
-# The two POSIX scripts are checked as sh, since they run on whatever shell the
-# machine has. A module's scripts are checked the way Oak runs them: as bash,
-# with module.sh already in scope. actionlint reads the workflows again for what
-# a yaml linter cannot see.
+# The two POSIX scripts are checked as sh; a module's are checked the way Oak
+# runs them, as bash with module.sh already in scope. actionlint reads the
+# workflows again for what a yaml linter cannot see.
 #
 # The first grep is for the one mistake no linter here can see, because it is
 # valid shell that only fails on a machine being installed: arch-chroot execs
-# what it is given, so a shell builtin handed to it exists nowhere. `command -v`
-# is the one that gets written, and it cost two silent test failures in a live
-# run before it was found.
+# what it is given, so a shell builtin handed to it exists nowhere. It cost two
+# silent test failures in a live run before it was found.
 #
-# The second is what keeps the first one honest. Everything above reads *.sh and
-# nothing reads shell written into a yaml, so a block scalar is the one place a
-# script can go unchecked — and a failure in one names the command instead of a
-# file and a line, because there is no file. A single line calling a function by
-# name is still fine: that function is in module.sh, where it is checked.
-#
-# `requires:` is deliberately not on that list. It is what the module says about
-# the machine it belongs on, it is read before anything else in the folder is,
-# and it belongs in the declaration where somebody looking for it looks.
+# The second keeps the first honest. Everything above reads *.sh and nothing
+# reads shell written into a yaml, so a block scalar is the one place a script
+# can go unchecked - and a failure in one names the command instead of a file
+# and a line. A single line calling a function by name is still fine: that
+# function is in module.sh, where it is checked. `requires:` is deliberately not
+# on that list - it is what the module says about the machine it belongs on, and
+# it belongs in the declaration where somebody looking for it looks.
 lint:
 	shellcheck -s sh -S style $(POSIX_SCRIPTS)
 	shellcheck -S style $(ISO_SCRIPTS)
@@ -302,7 +272,7 @@ lint:
 	@! grep -nE 'arch-chroot [^|&;]*[[:space:]](command|type|hash|source|alias)[[:space:]]' \
 		$(MODULE_SCRIPTS) $(MODULE_YAML) \
 		|| { echo "a shell builtin cannot be run through arch-chroot - see has_command" >&2; exit 1; }
-	@! grep -nE '^[[:space:]]*(script|test|command|prefill|apply):[[:space:]]*[|>]' $(MODULE_YAML) \
+	@! grep -nE '^[[:space:]]*(script|test|command|prefill|apply|answer):[[:space:]]*[|>]' $(MODULE_YAML) \
 		|| { echo "a task's or hook's shell is linted by nothing inside a yaml and gives a failure no line to point at - put it in the .sh file beside it" >&2; exit 1; }
 
 fmt:
@@ -318,12 +288,9 @@ check: version-check secrets-check lint inspect locales-check
 # ////////////////////////////////////////////////////////////////////////////
 
 # The tag that publishes a release, made out of the declared version rather than
-# typed — so a tag naming a version this commit does not declare cannot be
-# written in the first place. The release workflow refuses one anyway, for a tag
-# made on the web page, but by then it exists and has to be deleted again.
-#
-# It is created and not pushed: pushing it is what publishes, and that is a
-# second decision.
+# typed - so a tag naming a version this commit does not declare cannot be
+# written in the first place. It is created and not pushed: pushing it is what
+# publishes, and that is a second decision.
 tag: version-check
 	@[ -z "$$(git status --porcelain)" ] \
 		|| { echo "the tree has uncommitted changes — a tag names a commit, not a desk" >&2; exit 1; }
@@ -336,11 +303,9 @@ tag: version-check
 	@echo "push it with:  git push origin v$(VERSION)"
 
 # The downloaded runtime stays: it is a dependency rather than build output.
-# `make oak` replaces it.
 #
 # mkarchiso writes as root, and a build killed before its own cleanup ran leaves
 # root-owned files behind. The plain removal is tried first, so an ordinary
-# clean never asks for a password; what survives it needs the escalation the
-# build itself used — see iso/build.sh.
+# clean never asks for a password.
 clean:
 	rm -rf $(BUILD_OUTPUT) || $(SUDO) rm -rf $(BUILD_OUTPUT)

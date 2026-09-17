@@ -1,6 +1,5 @@
 # Read off btrfs rather than off the fact that nothing failed: a run that gave
 # up halfway and left the old @ standing looks exactly the same from out here.
-#
 # A snapshot carries the identity of what it was taken from, so the parent of @
 # is the one thing that says which snapshot it now holds.
 debugging && return 0

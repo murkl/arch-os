@@ -1,11 +1,10 @@
-# The two mount points every later task writes through. Checking them here is
-# what turns "the disk was set up" into something read off the machine.
+# The two mount points every later task writes through, and on btrfs that each
+# subvolume is mounted where the layout says rather than only created.
 #
-# And on btrfs, that each subvolume is mounted where the layout says rather than
-# only created: one that was made and not mounted leaves an ordinary directory
-# inside @ at that path, which fills up, rides along in every snapshot and comes
-# back with every rollback. Nothing after this step would notice, because a
-# directory answers every question a mount point does.
+# A subvolume made and not mounted leaves an ordinary directory inside @ at that
+# path, which fills up, rides along in every snapshot and comes back with every
+# rollback - and nothing after this would notice, because a directory answers
+# every question a mount point does.
 debugging && return 0
 
 mountpoint -q "$MNT"

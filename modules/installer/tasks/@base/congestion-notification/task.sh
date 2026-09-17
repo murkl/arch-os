@@ -1,9 +1,7 @@
 # Some old routers drop connections that use explicit congestion notification,
-# which shows up as a download stalling halfway through.
-#
-# The live system gets the same setting before the first download - see the init
-# task - and the installed one needs it as well: a router that drops these
-# connections goes on dropping them after the machine is restarted.
+# which shows up as a download stalling halfway through. The live system gets
+# the same setting before the first download - see the init task - and a router
+# that drops these connections goes on dropping them after a restart.
 # https://wiki.archlinux.org/title/Sysctl
 
 simulating && return 0

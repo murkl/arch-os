@@ -1,5 +1,3 @@
-# Can this machine run a recovery at all? — see the hook.yaml beside this.
-
 simulating && return 0
 
 [ "$(id -u)" -eq 0 ] && return 0

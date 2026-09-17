@@ -1,6 +1,5 @@
-# Asked before anything is offered rather than in the middle of the run: a
-# machine with nothing plugged in cannot be helped by any answer, and a question
-# listing nothing is worse than being told why.
+# A machine with nothing plugged in cannot be helped by any answer, and a
+# question listing nothing is worse than being told why.
 
 simulating && return 0
 

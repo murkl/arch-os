@@ -1,9 +1,7 @@
 # Settings that live in the user's own database, which needs a session that does
 # not exist yet. Earlier tasks appended their lines to one file; here it becomes
 # a script that runs once at the first login and removes itself.
-#
-# See on_first_login in module.sh for the other end, and FIRST_LOGIN beside it
-# for where the three pieces of this land.
+# See on_first_login in module.sh for the other end.
 
 simulating && return 0
 
@@ -25,8 +23,7 @@ mkdir -p "$(dirname "$FIRST_LOGIN_SCRIPT")" "${HOME_DIR}/${FIRST_LOGIN_LOG%/*}" 
 rm -f "$FIRST_LOGIN"
 chmod +x "$FIRST_LOGIN_SCRIPT"
 
-# The desktop entry every desktop reads at login, and the one thing here a
-# person might want to look at afterwards: what the script made of it.
+# The desktop entry every desktop reads at login.
 {
     echo '[Desktop Entry]'
     echo 'Type=Application'
@@ -35,6 +32,6 @@ chmod +x "$FIRST_LOGIN_SCRIPT"
     echo "Exec=bash -c '\"\${HOME}/${FIRST_LOGIN_SCRIPT#"${HOME_DIR}"/}\" >\"\${HOME}/${FIRST_LOGIN_LOG}\" 2>&1'"
 } >"$FIRST_LOGIN_ENTRY"
 
-# Everything above was written as root into somebody else's home, and a first
-# login that cannot write its own log is one that reports nothing.
+# Written as root into somebody else's home, and a first login that cannot write
+# its own log reports nothing.
 own_home

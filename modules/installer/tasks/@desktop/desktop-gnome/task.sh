@@ -14,17 +14,14 @@ apps="${home}/.local/share/applications"
 # One transaction rather than several: packages that replace each other
 # (pipewire-jack and jack2) can only be resolved when pacman sees them together.
 
-# Named outright rather than left to the group, because services are switched
-# on for them below - the audio stack included. The group only ever pulls
-# pipewire in as somebody else's dependency, which leaves the session manager
-# out and the pulse replacement to whichever provider pacman picks: three units
-# switched on at the end of this task that are not there.
+# Named outright rather than left to the group, because services are switched on
+# for them below. The group pulls pipewire in only as somebody else's
+# dependency, which leaves the session manager out.
 # https://wiki.archlinux.org/title/PipeWire#Installation
 packages=(git bluez bluez-utils avahi pipewire pipewire-pulse wireplumber)
 
-# The group, filtered, rather than the group and a round of removals: what the
-# slim desktop leaves out is never downloaded, and a member another member
-# really depends on still arrives as a dependency.
+# The group filtered rather than installed and then trimmed: what the slim
+# desktop leaves out is never downloaded.
 mapfile -t desktop < <(arch-chroot "$MNT" pacman -Sgq gnome)
 [ "${#desktop[@]}" -gt 0 ] || {
     echo "the gnome package group is empty" >&2
@@ -39,26 +36,21 @@ packages+=("${desktop[@]}")
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     packages+=(gnome-browser-connector gnome-themes-extra tuned-ppd cups)
 
-    # Portals, for flatpaks and screen sharing on Wayland. The GNOME portal
-    # itself is in the group; the GTK one is the fallback for what it does not
-    # implement.
+    # For flatpaks and screen sharing on Wayland. The GNOME portal is in the
+    # group; the GTK one is the fallback for what it does not implement.
     packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk)
 
-    # What the audio stack above needs to stand in for the two APIs older
-    # software still opens, and the firmware many laptop codecs will not play
-    # a sound without.
+    # What the audio stack needs to stand in for the two APIs older software
+    # still opens, and the firmware many laptop codecs need.
     packages+=(pipewire-alsa pipewire-jack sof-firmware)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
 
-    # Reaching other machines, and letting them reach this one. The gvfs back
-    # ends are in the group, and NetworkManager speaks WireGuard by itself, so
-    # OpenVPN is the one protocol still worth a plug-in nobody has to look for.
-    # The rest of the VPN plug-ins are a package away for whoever needs them.
+    # NetworkManager speaks WireGuard by itself, so OpenVPN is the one protocol
+    # still worth a plug-in nobody has to look for.
     packages+=(rsync networkmanager-openvpn)
 
-    # base-devel is what builds from the AUR; the rest opens a drive or an
-    # archive from anywhere else. The file systems are the ones a stick or an
-    # external drive actually turns up formatted as.
+    # base-devel builds from the AUR; the rest opens a drive or an archive from
+    # anywhere else.
     packages+=(base-devel fwupd bash-completion inetutils
         dosfstools ntfs-3g exfatprogs btrfs-progs nfs-utils
         7zip zip unzip unrar wget jq zenity)
@@ -68,13 +60,12 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
         gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss webp-pixbuf-loader)
 
     # gamemode alone: the SDL compatibility libraries arrive as dependencies of
-    # the games that need them, and only gamemode is shipped 32 bit anyway.
+    # the games that need them.
     packages+=(gamemode)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
 
-    # One family that covers every script the web has, one that draws emoji,
-    # two metric-compatible with what documents ask for, and the terminal font
-    # the prompt is drawn with.
+    # One family for every script the web has, one for emoji, two metric-
+    # compatible with what documents ask for, and the terminal font.
     packages+=(noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation ttf-dejavu
         ttf-firacode-nerd)
 
@@ -98,11 +89,9 @@ arch-chroot "$MNT" usermod -aG adm,audio,video,optical,input,tty,plugdev "$ARCH_
 # LOGIN SCREEN
 # ////////////////////////////////////////////////////////////////////////////
 
-# Only written where there is something to say. /etc/gdm/custom.conf belongs
-# to the gdm package, so a copy of it that only repeats gdm's own defaults
-# (Wayland on, debugging off) would just be a file to merge after every
-# update, for nothing gained. GDM unlocks the login keyring from the password
-# it was given itself, so there's nothing to arrange for that either.
+# Only written where there is something to say: /etc/gdm/custom.conf belongs to
+# the gdm package, and a copy repeating its defaults is a file to merge after
+# every update for nothing gained.
 if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
     mkdir -p "${MNT}/etc/gdm"
     {
@@ -113,31 +102,23 @@ if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
     } >"${MNT}/etc/gdm/custom.conf"
 fi
 
-# Under automatic login GDM never sees a password, so PAM has none to unlock
-# the login keyring with - except on an encrypted disk, where it takes the LUKS
-# passphrase instead: systemd-cryptsetup leaves it in the kernel keyring,
-# pam_gdm hands it on, and pam_gnome_keyring unlocks the login keyring with it,
-# or creates it with it at the first login. That wants the systemd hook, a
-# rd.luks.name command line and a hardware clock in UTC, which is how this
-# installer builds a system anyway, so there is nothing to arrange for it.
+# Under automatic login GDM never sees a password, so PAM has none to unlock the
+# login keyring with - except on an encrypted disk, where systemd-cryptsetup
+# leaves the LUKS passphrase in the kernel keyring and pam_gdm hands it on. That
+# is how this installer builds a system anyway.
 # https://wiki.archlinux.org/title/GNOME/Keyring#PAM_step
 #
-# Without encryption there is no passphrase to hand on, and GNOME's own answer
-# is a login keyring with no password at all: the daemon opens it at the start
-# of the session and nothing ever asks. Its contents are then stored
-# unencrypted, which is the trade a machine that logs itself in has made
-# already.
-#
-# Created from here rather than from the first-login script, which would race
-# GDM's own PAM hook on that same login.
+# Without encryption there is nothing to hand on, and GNOME's own answer is a
+# login keyring with no password at all - the trade a machine that logs itself
+# in has already made. Created from here rather than from the first-login
+# script, which would race GDM's own PAM hook on that same login.
 if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ] && [ "$ARCH_OS_ENCRYPTION_ENABLED" != "true" ]; then
     keyring="/home/${ARCH_OS_USERNAME}/.local/share/keyrings/login.keyring"
 
-    # A session bus, which a chroot has as little as it has a session. The
-    # daemon makes its own socket directory and needs nothing else.
+    # A session bus, which a chroot has as little as it has a session.
     as_user 'dbus-run-session -- gnome-keyring-daemon --unlock <<< ""' || true
 
-    # It forks before it has written the keyring, and stays behind once it has -
+    # It forks before it has written the keyring and stays behind once it has,
     # and a process of the target still running is a mount that will not come
     # down at the end.
     for _ in $(seq 50); do
@@ -167,6 +148,7 @@ as_user 'git config --global credential.helper /usr/lib/git-core/git-credential-
 
 # X11 applications read this file, Wayland the setting written at first login.
 # Both are needed, and both say the same thing.
+# https://wiki.archlinux.org/title/Xorg/Keyboard_configuration
 mkdir -p "${MNT}/etc/X11/xorg.conf.d"
 {
     echo 'Section "InputClass"'
@@ -197,8 +179,8 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     arch-chroot "$MNT" systemctl enable cups.socket # printing
 fi
 
-# For every user rather than for this one: --global writes to /etc/systemd/user
-# and keeps working when a unit is renamed. The sockets follow through Also=.
+# --global writes to /etc/systemd/user, so it holds for every account and keeps
+# working when a unit is renamed. The sockets follow through Also=.
 arch-chroot "$MNT" systemctl --global enable pipewire.service pipewire-pulse.service wireplumber.service gcr-ssh-agent.socket
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -217,8 +199,8 @@ while read -r scope name; do
     hide "$name"
 done <"${data}/hidden-apps"
 
-# The snapshot browser under a name that says what it's for. A file of the
-# same name in the user's own applications folder wins over the one in /usr.
+# The snapshot browser under a name that says what it is for. A file of the same
+# name in the user's own applications folder wins over the one in /usr.
 if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_ASSISTANT_ENABLED" = "true" ]; then
     {
         echo '[Desktop Entry]'
@@ -233,8 +215,8 @@ if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_ASSISTANT_ENABLED" =
     } >"${apps}/btrfs-assistant.desktop"
 fi
 
-# Let flatpaks read the desktop theme, so they don't stand out as light
-# windows on a dark desktop.
+# So flatpaks read the desktop theme rather than standing out as light windows
+# on a dark desktop.
 arch-chroot "$MNT" flatpak override --filesystem=xdg-config/gtk-3.0
 arch-chroot "$MNT" flatpak override --filesystem=xdg-config/gtk-4.0
 

@@ -1,10 +1,12 @@
 # Create boot medium
 
-Everything this module knows about making a bootable device. It is data — one YAML file and the folders beside it — and it does not run on its own: [Oak](https://github.com/murkl/oak) draws the interface, asks the questions and runs the tasks in order.
+Everything this module knows about making a bootable device. It is data - one YAML file and the folders beside it - and it does not run on its own: [Oak](https://github.com/murkl/oak) draws the interface, asks the questions and runs the tasks in order.
 
-**Note:** _The folder is `imager`, which is what `--module=imager` opens and what `imager.conf` and `imager.log` are named after. **Create boot medium** is its `title:`, and what the row a person presses says._
+**Note:** _The folder is `imager`, named after **Create boot medium**, its `title:`._
 
-**Note:** _Putting Arch Linux on disk is a separate module: **[➜ Arch OS Installer](../installer)**_
+**Note:** _Putting Arch Linux on disk and repairing one already there are separate modules: **[➜ Installer](../installer)** · **[➜ Recovery](../recovery)**_
+
+**Note:** _What it writes and why: **[➜ Arch OS Reference](../../docs/REFERENCE.md#the-boot-medium)**. The task contract: **[➜ AGENTS.md](../../AGENTS.md)**._
 
 ```
 make -C ../.. check                            # load every module and lint every script
@@ -23,65 +25,57 @@ hooks/@<hook>/<id>/hook.yaml    a moment Oak runs itself, rather than as part of
 locales/                        one <code>.po per language, and the template they come from
 ```
 
-**Note:** _The shape and the rules are the Installer's: **[➜ Writing a Task](../installer/README.md#writing-a-task)**. Every key these files may use is in the **[Oak reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**._
-
 ## What it does
 
 | Task | Stage | Description |
 | --- | --- | --- |
-| `image` | `download` | Fetches the image this program belongs to and the checksum published beside it, whichever of the two is missing |
-| `checksum` | `verify` | Reads the image back and compares it against that checksum, discarding both files if they disagree |
-| `device` | `write` | Checks that the answer still names a USB device big enough, unmounts whatever the desktop mounted and copies the image onto it |
+| `image` | `download` | Fetches the image and its checksum, whichever is missing |
+| `checksum` | `verify` | Compares image against checksum, discards both if they disagree |
+| `device` | `write` | Checks the device, unmounts it, copies the image on |
 
-Three steps rather than one, because each of them can fail on its own and says something different when it does: nothing arrived, what arrived is broken, or it could not be written. The middle one is also the only wait in the run with no progress to show — two gigabytes read back — and a step somebody is watching is a step they can be told the reason for.
+Three steps, three distinct failures: nothing arrived, what arrived is broken, or it could not be written.
 
-**Note:** _`checksum` is the one task here with no `test.sh`. What a test would read is the image against the checksum, which is that task line for line, and a second copy of a task is the copy that goes stale._
+**Note:** _`checksum` has no `test.sh` - the task itself already is the test, line for line._
 
 ## The Image is not a Question
 
-Which image gets written is not asked, because it is not a matter of opinion: it is the one this program came out of. `version:` in `oak.yaml` beside the binary is the only place that is written down, and the release it names is where the image is fetched from.
+Which image gets written is not asked: it is the one this program came from. `version:` in `oak.yaml` says which, and where it fetches from.
 
-A binary from last month writing this month's image would be two versions on one machine, and only one of those pairs was ever tested together.
+**Note:** _The asset is picked by what its name ends in, so renaming a download only touches the **[Makefile](../../Makefile)**._
 
-**Note:** _The asset is picked out of that release by what its name ends in, so renaming a download stays a change to the **[Makefile](../../Makefile)** that builds it and nothing here._
+### Where it lands
 
-Where it lands **is** a question: **Download folder**, suggested as the folder the program was started in, where Oak already keeps the answers and the log — so everything one run leaves behind is removed with one folder. Both files are reused, so a second run — a wrong device, a stick pulled out halfway — costs the download only the first time. A pair that fails the checksum is thrown away rather than kept, so the next run fetches it again instead of finding the broken one and skipping the download.
+**Download folder**, suggested as `XDG_DOWNLOAD_DIR` or `~/Downloads`. Both files are kept, so a second run costs no bandwidth.
 
-The checksum ships in the same release as the image, so what it catches is a download that went wrong on the way and not a release that was wrong to begin with. Every request the module makes is HTTPS and stays HTTPS after a redirect, so the answer cannot be swapped for somebody else's on the way.
+A folder already holding `arch-os-<version>-x86_64.iso` **and** its `.sha256` needs no network, no release - an image built by hand works, and a stick can be written offline.
+
+- A checksum mismatch discards both files rather than keeping a broken one
+- Every request is HTTPS, redirects included
 
 ## Where it runs
 
-`requires:` in `module.yaml` is what decides whether this row is on the page at all, and it is the division between the three modules: the Installer and the Recovery belong **only** on a booted Arch Linux live image, because that is where there is a machine to work on. This one belongs **only** anywhere else, because this is the machine that makes that image — and because downloading two gigabytes into a live system means downloading them into its memory.
+`requires:` splits the three modules: Installer and Recovery need a booted live image to work on; this one needs anywhere else - it is the machine that *makes* that image. So it is the only module offered on an ordinary desktop.
 
-So on an ordinary desktop this is the only module on offer, and Oak opens it on the way in without a list of one row. A run started with `--debug` is offered every module whatever they say, and simulates.
-
-**Note:** _Each module carries that rule itself. Nothing anywhere lists which module belongs on which machine, which is what makes adding a fourth one a folder and nothing else._
-
-An Arch image is a hybrid ISO: it already carries the partition table and both boot paths a firmware looks for, so writing it is one raw copy and nothing else. What is left for `hooks/@preflight/` is what has to be true once this module has been chosen:
+`hooks/@preflight/`:
 
 | Check | Why |
 | --- | --- |
-| `escalation` | There is a way to become root for the write — either this already is root, or there is a `sudo` to ask |
-| `device` | A machine with nothing plugged in cannot be helped by any answer |
-| `image` | Either the image is already here or GitHub can be reached. Not "is there internet": an image already on this machine is written without one |
+| `escalation` | A way to become root for the write - already root, or `sudo` exists |
+| `device` | Nothing plugged in, no answer can help |
+
+**Note:** _Whether the image can be fetched is not checked here - it depends on the download folder, which is not yet answered when `@preflight` runs. The download task says so instead._
 
 ## Root, and only where it is Needed
 
-This module runs as whoever started it. That is what separates it from the other two: they run on a booted live image, where everything is root already and there is no home to leave anything in, while this one runs on somebody's own machine — and a root process there leaves two gigabytes in their home that only root can delete again, with the program's own answers and log beside them.
-
-So `as_root` lives in the write task, the one step that cannot do without it, and wraps three commands there and nothing else:
+This module runs as you, not root - unlike the other two, which run on an already-root live image. `as_root` lives only in the write task and wraps three commands:
 
 | Command | Why |
 | --- | --- |
-| `umount` | Releasing what the desktop mounted from the device |
-| `dd` | Writing a block device |
-| `partprobe` | Making the kernel read the new partition table |
+| `umount` | Releasing what the desktop mounted |
+| `dd` | Writing the block device |
+| `partprobe` | Re-reading the partition table |
 
-Everything else — listing the disks, reading their size, both downloads, checking the checksum and reading the label back afterwards — is done as the person at the machine. The test uses `lsblk` rather than `blkid` for exactly that reason: it reads what udev already recorded, so nothing has to ask for a password where nobody is typing.
-
-The write task is the one step with `tty: true`. `sudo` draws its prompt on the terminal and reads the password from it, and `dd` reports its progress on stderr, which Oak otherwise collects into the log — so the interface steps aside for the length of it and the script takes `/dev/tty` explicitly.
-
-**Note:** _Whether this particular person may use `sudo` is not part of `@preflight/`: asking means asking for their password, and that stage runs before anybody has said they want to write anything. `sudo` answers it itself, on the terminal, at the moment it is needed._
+Everything else - listing, downloading, checksumming - runs as you. `tty: true` on the write task hands `sudo` and `dd` the real terminal.
 
 ## Answers
 
@@ -89,13 +83,11 @@ The write task is the one step with `tty: true`. `sudo` draws its prompt on the 
 
 | Variable | Description |
 | --- | --- |
-| `ARCH_OS_DOWNLOAD_DIR` | Where the image and its checksum are kept, created if it is not there. Defaults to the folder the program was started in |
-| `ARCH_OS_IMAGE_DEVICE` | The USB device to write to. Only disks on a USB bus are offered, so the disk this machine boots from cannot be chosen by accident |
+| `ARCH_OS_DOWNLOAD_DIR` | Where image and checksum live. Suggested as `XDG_DOWNLOAD_DIR`, or `~/Downloads` |
+| `ARCH_OS_IMAGE_DEVICE` | The USB device to write. Only USB disks are offered |
 
-The device is read back out of `lsblk` again by the task that writes, immediately before it does: `/dev/sdb` is a path and not a stick, and an answer kept from an earlier run can name a disk that is no longer the one it was chosen as.
+**Note:** _The device is read back from `lsblk` immediately before writing - `/dev/sdb` is a path, not a stick._
 
 ## Requirements
 
-A Linux machine that is not the live image, a USB device big enough for the image, and either the image already in the download folder or a network to fetch it over. Root only for the write itself, asked for when that step comes.
-
-Everything it calls comes from `coreutils`, `util-linux` and `curl`, which any Linux machine already has.
+A Linux machine that is not the live image, a big enough USB device, and either the image already downloaded or a network. Root only for the write. Needs `coreutils`, `util-linux`, `curl` - any Linux machine already has them.

@@ -1,6 +1,5 @@
-# UEFI, and Secure Boot off — the two firmware settings an installation cannot
-# be started without. The installer sets Secure Boot up again at the end, with
-# keys of this machine's own.
+# The two firmware settings an installation cannot be started without. Secure
+# Boot is set up again at the end, with keys of this machine's own.
 
 simulating && return 0
 

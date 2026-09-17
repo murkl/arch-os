@@ -58,17 +58,17 @@ msgstr ""
 
 #. starting point Setup, Desktop: what choosing it does
 #: module.yaml
-msgid "A GNOME desktop with drivers, codecs, fonts and everyday applications."
+msgid "The Core, with a GNOME desktop on top of it - drivers, codecs, fonts and everyday applications."
 msgstr ""
 
 #. starting point Setup: a row
 #: module.yaml
-msgid "Minimal"
+msgid "Core"
 msgstr ""
 
-#. starting point Setup, Minimal: what choosing it does
+#. starting point Setup, Core: what choosing it does
 #: module.yaml
-msgid "Arch Linux on the console only. No desktop, no extras, nothing beyond what you choose."
+msgid "A minimal Arch Linux on the text console, with nothing graphical on it and nothing beyond what you choose."
 msgstr ""
 
 #. starting point Setup: a row
@@ -79,6 +79,51 @@ msgstr ""
 #. starting point Setup, Online (paste.rs): what choosing it does
 #: module.yaml
 msgid "Load every answer from a configuration shared at the end of an earlier installation."
+msgstr ""
+
+#. ARCH_OS_USERNAME: the question
+#: module.yaml
+msgid "Username"
+msgstr ""
+
+#. ARCH_OS_USERNAME: what it means
+#: module.yaml
+msgid "The account you will log in with. Lowercase letters, digits, hyphens and underscores only. It cannot start with a digit."
+msgstr ""
+
+#. ARCH_OS_USERNAME: the heading its row sits under
+#: module.yaml
+msgid "Identity"
+msgstr ""
+
+#. ARCH_OS_USERNAME: what a wrong answer is told
+#: module.yaml
+msgid "Lowercase letters, digits, hyphens and underscores only, up to 32 characters. It cannot start with a digit."
+msgstr ""
+
+#. ARCH_OS_PASSWORD: the question
+#: module.yaml
+msgid "Password"
+msgstr ""
+
+#. ARCH_OS_PASSWORD: what it means
+#: module.yaml
+msgid "Used for your account, the root account, and — if disk encryption is on — to unlock the disk at boot. It is asked for right before installation starts and is never written to a file."
+msgstr ""
+
+#. ARCH_OS_HOSTNAME: the question
+#: module.yaml
+msgid "Hostname"
+msgstr ""
+
+#. ARCH_OS_HOSTNAME: what it means
+#: module.yaml
+msgid "The name this machine has on the network."
+msgstr ""
+
+#. ARCH_OS_HOSTNAME: what a wrong answer is told
+#: module.yaml
+msgid "Lowercase letters, digits and hyphens only, up to 63 characters. It cannot start or end with a hyphen."
 msgstr ""
 
 #. ARCH_OS_LOCALE_LANG: the question
@@ -146,51 +191,6 @@ msgstr ""
 #. one's own
 #: module.yaml
 msgid "Type a country"
-msgstr ""
-
-#. ARCH_OS_USERNAME: the question
-#: module.yaml
-msgid "Username"
-msgstr ""
-
-#. ARCH_OS_USERNAME: what it means
-#: module.yaml
-msgid "The account you will log in with. Lowercase letters, digits, hyphens and underscores only. It cannot start with a digit."
-msgstr ""
-
-#. ARCH_OS_USERNAME: the heading its row sits under
-#: module.yaml
-msgid "Identity"
-msgstr ""
-
-#. ARCH_OS_USERNAME: what a wrong answer is told
-#: module.yaml
-msgid "Lowercase letters, digits, hyphens and underscores only, up to 32 characters. It cannot start with a digit."
-msgstr ""
-
-#. ARCH_OS_PASSWORD: the question
-#: module.yaml
-msgid "Password"
-msgstr ""
-
-#. ARCH_OS_PASSWORD: what it means
-#: module.yaml
-msgid "Used for your account, the root account, and — if disk encryption is on — to unlock the disk at boot. It is asked for right before installation starts and is never written to a file."
-msgstr ""
-
-#. ARCH_OS_HOSTNAME: the question
-#: module.yaml
-msgid "Hostname"
-msgstr ""
-
-#. ARCH_OS_HOSTNAME: what it means
-#: module.yaml
-msgid "The name this machine has on the network."
-msgstr ""
-
-#. ARCH_OS_HOSTNAME: what a wrong answer is told
-#: module.yaml
-msgid "Lowercase letters, digits and hyphens only, up to 63 characters. It cannot start or end with a hyphen."
 msgstr ""
 
 #. ARCH_OS_DISK: the question
@@ -430,12 +430,12 @@ msgstr ""
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: the question
 #: module.yaml
-msgid "System tweaks"
+msgid "Core tweaks"
 msgstr ""
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: what it means
 #: module.yaml
-msgid "Small adjustments that do not change what is installed: parallel package downloads, a quieter boot, password feedback in the terminal, and the memory, disk and log settings a desktop runs better on."
+msgid "Small adjustments to the Core that do not change what is installed: parallel package downloads, a quieter boot, password feedback in the terminal, and the memory, disk and log settings the system runs better on."
 msgstr ""
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: the heading its row sits under

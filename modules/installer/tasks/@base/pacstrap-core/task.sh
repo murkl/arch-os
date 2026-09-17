@@ -1,4 +1,7 @@
-# Install the packages the system is made of, and write the file system table.
+# The packages the system is made of, and the file system table.
+# https://wiki.archlinux.org/title/Installation_guide#Install_essential_packages
+#
+# What is here and what is not: docs/REFERENCE.md
 
 simulating && return 0
 
@@ -6,14 +9,8 @@ simulating && return 0
 # that builds from the AUR needs, and the wheel rule is written either way.
 packages=("$ARCH_OS_KERNEL" base sudo zram-generator networkmanager)
 
-# Firmware is for hardware, and a guest has none: every device a virtual machine
-# shows is virtio or emulated and its driver is in the kernel already. Measured
-# on an installation of this image, linux-firmware is 398 MiB of the 736 MiB this
-# step downloads and 430 MiB on the disk afterwards - over half of the base
-# system, for files nothing in a guest ever opens.
-#
-# The exception is a card handed through to a guest, and the graphics answer is
-# where that is said: a driver named by make is a card the machine really has.
+# Firmware is for hardware, and a guest has none. The exception is a card handed
+# through to one, and the graphics answer is where that is said.
 needs_firmware() {
     [ "$(systemd-detect-virt || true)" = "none" ] && return 0
     case "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" in
@@ -30,7 +27,6 @@ fi
 
 # `base` ships no editor, no manuals and no ssh, so a console-only installation
 # cannot edit its own configuration, look anything up or reach another machine.
-# Four packages, no service switched on by any of them.
 packages+=(nano man-db man-pages openssh)
 
 [ "$ARCH_OS_MICROCODE" != "none" ] && packages+=("$ARCH_OS_MICROCODE")
@@ -48,15 +44,12 @@ if [ "$ARCH_OS_BOOTLOADER" = "grub" ]; then
     [ "$ARCH_OS_DUAL_BOOT_ENABLED" = "true" ] && packages+=(os-prober)
 fi
 
-# Before the packages, because installing the kernel builds a ram disk, and the
-# hook that puts a keyboard layout in it reads this file, see write_vconsole.
+# Before the packages, because installing the kernel builds a ram disk and the
+# hook that puts a keyboard layout in it reads this file.
 write_vconsole
 
-# Retried: this is the longest download of the installation and the one most
-# likely to meet a mirror that stops answering halfway. pacman's own download
-# timeout is left on for exactly that - it gives up on a transfer that has
-# stalled, which is what turns a dead mirror into a retry against another one
-# instead of an installation that sits there for ever.
+# The longest download of the installation, and the one most likely to meet a
+# mirror that stops answering halfway.
 installed=false
 for ((i = 1; i <= RETRIES; i++)); do
     [ "$i" -gt 1 ] && echo "retry ${i}/${RETRIES}: pacstrap"
@@ -74,5 +67,5 @@ fi
 genfstab -U "$MNT" >>"${MNT}/etc/fstab"
 
 # The EFI partition holds the kernel and, with Secure Boot, the signed image.
-# Neither is anyone's business but root's.
+# Neither is anybody's business but root's.
 sed -i '/\/boot/ {s/fmask=[0-9]\+/fmask=0077/g; s/dmask=[0-9]\+/dmask=0077/g}' "${MNT}/etc/fstab"

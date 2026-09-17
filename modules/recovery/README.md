@@ -1,8 +1,10 @@
 # Arch OS Recovery
 
-Everything this Recovery knows about Arch Linux. It is data — one YAML file and the folders beside it — and it does not run on its own: [Oak](https://github.com/murkl/oak) draws the interface, asks the questions and runs the tasks in order.
+Everything this Recovery knows about Arch Linux. It is data - one YAML file and the folders beside it - and it does not run on its own: [Oak](https://github.com/murkl/oak) draws the interface, asks the questions and runs the tasks in order.
 
-**Note:** _Putting Arch Linux on disk and writing the device this boots from are separate modules: **[➜ Arch OS Installer](../installer)** · **[➜ Arch OS Imager](../imager)**_
+**Note:** _Putting Arch Linux on disk and writing the device this boots from are separate modules: **[➜ Installer](../installer)** · **[➜ Create boot medium](../imager)**_
+
+**Note:** _What it reads and repairs: **[➜ Arch OS Reference](../../docs/REFERENCE.md#the-recovery)**. The task contract: **[➜ AGENTS.md](../../AGENTS.md)**._
 
 ```
 make -C ../.. check                              # load every module and lint every script
@@ -21,56 +23,59 @@ hooks/@<hook>/<id>/hook.yaml    a moment Oak runs itself, rather than as part of
 locales/                        one <code>.po per language, and the template they come from
 ```
 
-**Note:** _The shape and the rules are the Installer's: **[➜ Writing a Task](../installer/README.md#writing-a-task)**. Every key these files may use is in the **[Oak reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**._
-
 ## What it does
 
-Three stages, and after the first one every step is optional. The system is opened first, and what to repair is then a decision made with the disk right in front of you.
+Three stages; after the first, every step is optional.
 
 | Task | Stage | Description |
 | --- | --- | --- |
 | `open` | `open` | Unlocks and mounts at `/mnt`, the same way the system mounts itself |
-| `rollback` | `repair` | Puts a snapshot in place of the root subvolume, btrfs only |
-| `kernel` | `repair` | Rebuilds the kernel images and initramfs from the package cache, and re-signs them where the boot chain is signed |
-| `shell` | `repair` | `arch-chroot`s into the repaired system, with the terminal handed over |
+| `rollback` | `repair` | Puts a snapshot in place of the root subvolume. Skipped where there are none |
+| `kernel` | `repair` | Rebuilds kernel images and initramfs from the package cache, re-signs if needed |
+| `shell` | `repair` | `arch-chroot`s into the repaired system |
 | `close` | `close` | Unmounts everything and locks the disk again |
 
-**Note:** _Each of the three under `repair` has its own `confirm:`, so a run can stop after any of them. `needs:` is what puts them in that order — a shell is worth having once the boot files are back, not before._
+**Note:** _Each of the three under `repair` has its own `confirm:`, so a run can stop after any. `needs:` orders them - a shell is worth having once the boot files are back._
 
 ## Nothing is downloaded
 
-A machine that needs repairing may have a broken network as part of the problem, so this module never asks for one:
+A broken network may be the problem, so this module never asks for one: no `@online` hook, and kernel images come from the local pacman cache. `hooks/@preflight/` checks only root - not firmware, since this machine is not what is being set up.
 
-- There is no `@online` hook, which is what turns the network screen off
-- The kernel images come from the repaired system's own pacman cache rather than a mirror
+## Two Questions, and no more
 
-For the same reason `hooks/@preflight/` checks less than the Installer's does: root and nothing else — not this machine's firmware, since this machine is not what is being set up.
+Everything else about the disk is read, not asked:
+
+| Read | How | When |
+| --- | --- | --- |
+| Encryption | LUKS header, no password needed | Before the run, as an `answer:` |
+| File system | `lsblk` on the unlocked device | Once open |
+| Subvolumes | `btrfs subvolume list` | While mounting - an older layout opens as far as it goes |
+| Snapshots | `@snapshots` on the btrfs top level | Mid-run, once mounted |
+
+None to offer means the step is skipped, not asked about.
+
+**Note:** _A derived answer is never asked, on the settings page or written to `recovery.conf` - the next run reads it again. See `answer:` in the **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**._
 
 ## Two Views of one Disk
 
-A btrfs installation is the running system, mounted at `/mnt`, sitting on a top level that holds `@` and the snapshots, mounted separately at `/run/arch-os-recovery`. A rollback happens through the second mount: `@` cannot be replaced while it is mounted as the root, and the top level has to stay available once `/mnt` is gone. It is kept out of the chroot on purpose.
+The running system, mounted at `/mnt`, sits on a top level holding `@` and the snapshots, mounted separately at `/run/arch-os-recovery` - a rollback needs `@` replaceable while `/mnt` stays gone.
 
-**Note:** _The mount options are written out twice — here in `module.sh` and in the Installer's `prepare-disk` task. This module puts a file system back exactly the way the Installer laid it out, so the two must not drift apart._
-
-The repair logic itself lives in the tasks, not in `module.sh`. Unlocking, rolling back and rebuilding are each one task's whole job. What `module.sh` holds is only what more than one task has to agree about: where the system is mounted, what its partitions are called, those mount options, and the lists `module.yaml` calls by name.
+**Note:** _Subvolume table and mount options are written out twice - here and in the Installer's - and must not drift apart. **[➜ Btrfs Subvolumes](../../docs/REFERENCE.md#btrfs-subvolumes)**_
 
 ## Answers
 
-`recovery.conf`, beside wherever the Recovery was started. Its own file, never the Installer's, so a repair leaves no trace in a configuration that later gets copied into an installed system.
+`recovery.conf`, beside wherever the Recovery was started - its own file, never the Installer's.
 
 | Variable | Description |
 | --- | --- |
-| `ARCH_OS_RECOVERY_KEYMAP` | The console keyboard, asked `first` and loaded immediately. The password below is typed on it |
+| `ARCH_OS_RECOVERY_KEYMAP` | The console keyboard, asked `first` |
 | `ARCH_OS_RECOVERY_DISK` | The disk holding the installation to repair |
-| `ARCH_OS_RECOVERY_ENCRYPTION_ENABLED` | Whether it is LUKS-encrypted. Read directly off the disk, no password needed |
-| `ARCH_OS_RECOVERY_PASSWORD` | What unlocks it, asked right before the run starts and never written to a file |
-| `ARCH_OS_RECOVERY_FILESYSTEM` | `btrfs` supports rollback, `ext4` is opened and worked on by hand |
-| `ARCH_OS_RECOVERY_SNAPSHOT` | Asked mid-run by the rollback task, since nothing can list snapshots before the disk is open |
+| `ARCH_OS_RECOVERY_ENCRYPTED` | LUKS or not - read, never asked |
+| `ARCH_OS_RECOVERY_PASSWORD` | Asked right before the run, never written |
+| `ARCH_OS_RECOVERY_SNAPSHOT` | Asked mid-run by the rollback task |
 
-The two that are read off the disk fill in with the answer they would already have and stay questions anyway: behind LUKS nothing can be read until the password is given, and a disk laid out differently still has to be answerable by hand.
+Only keyboard and disk are ever a question.
 
 ## Requirements
 
-A booted **Arch Linux live image**, and root on it. Nothing else.
-
-The first is `requires:` in `module.yaml`, the same rule the Installer carries: a system is repaired from outside itself, so a machine that is not a live image never sees this row. The second is the one step under `hooks/@preflight/`.
+A booted **Arch Linux live image** - `requires:` in `module.yaml`. Root on it - `hooks/@preflight/`. Nothing else.

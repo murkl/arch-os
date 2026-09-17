@@ -14,15 +14,15 @@
 
 <img src="screenshots/installer.png" alt="The Installer, asking what kind of system to put on this machine">
 
-<p>Boot the latest <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and the Installer starts on its own. No keyboard layout to load, no network to configure, no command to type.</p>
+<p>Boot the latest <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and the Installer starts on its own.</p>
 
-<p>Or run this one command on any Linux machine. It fetches Arch OS and starts it, and what it offers is decided by the machine it opened on: an ordinary desktop writes that ISO to a USB device, a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> installs or repairs.</p>
+<p>Or run this on any Linux machine. An ordinary desktop writes the ISO to a USB device; a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> installs or repairs.</p>
 
 **`curl -Ls https://bit.ly/arch-os | bash`**
 
 <p><b>
 
-[➜ Step by Step](#installation) · [➜ Screenshots](#screenshots) · [➜ Contributing](CONTRIBUTING.md) · [➜ t.me/archos_community](https://t.me/archos_community)
+[➜ Installation](#installation) · [➜ Screenshots](#screenshots) · [➜ Reference](REFERENCE.md) · [➜ Contributing](CONTRIBUTING.md) · [➜ t.me/archos_community](https://t.me/archos_community)
 
 </b></p>
 
@@ -30,83 +30,104 @@
 
 ## Features
 
-- Minimal Arch Linux base, UEFI only, with linux-zen, linux, linux-lts or linux-hardened
-- File system btrfs or ext4, boot loader systemd-boot or GRUB, dual boot aware partitioning
-- Disk encryption (LUKS2) and Secure Boot with own keys, signed again on every kernel update
-- One password for encryption, root and user, and automatic login behind an encrypted disk
-- Btrfs snapshots taken before every package change (Snapper), restored from the desktop (Btrfs Assistant), with the logs and the package cache on subvolumes of their own, so a rollback keeps both
-- GNOME, Wayland optimized, with graphics driver (Mesa, Intel i915, NVIDIA, AMD or ATI), or a text console with nothing graphical on it
-- Desktop extras: codecs, fonts, printing, network protocols, everyday applications and Samba shares
-- Slim version: GNOME Core Apps only
-- Swap with zram-generator (zstd), systemd OOM, fstrim, microcode, NetworkManager and mirrors ranked by country (reflector)
-- Tuned rather than left at the defaults: write-back and cache limits that keep the desktop moving under load, the I/O scheduler each kind of disk is served best by, a journal that stops at 200 MB and a shutdown that does not wait a minute and a half on a stuck service
-- AUR helper, 32-bit support (multilib), container engine (Docker or Podman) and automatic housekeeping
-- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager and Shell Enhancement (bash, zsh or fish)
-- Arch OS Recovery on the same image, works without a network connection
-- Create boot medium on any Linux machine: downloads the image this program belongs to, verifies its checksum and writes the USB device that boots it, in three steps that each say what went wrong — as you, not as root, with a password asked for only at the write itself
-- Virtual machine support both ways round: guest tools inside a VM, libvirt and QEMU on real hardware, with virt-manager only where there is a desktop to open it in
-- Two starting points, Desktop or Minimal, which answer everything but the region, the account and the disk - and every one of those answers is a row in the settings afterwards
+- Minimal Arch Linux base, UEFI only: linux-zen, linux, linux-lts or linux-hardened
+- btrfs or ext4, systemd-boot or GRUB, dual boot aware
+- Disk encryption (LUKS2) and Secure Boot with your own keys
+- One password for encryption, root and user; automatic login behind an encrypted disk
+- Btrfs snapshots before every package change (Snapper), restored from the desktop (Btrfs Assistant)
+- GNOME on Wayland, or a bare text console; graphics driver for Mesa, Intel, NVIDIA, AMD or ATI
+- Desktop extras: codecs, fonts, printing, Samba; or a slim install with GNOME core apps only
+- Zram swap, fstrim, microcode, NetworkManager, mirrors ranked by country
+- Tuned rather than left at the defaults - see the **[➜ Reference](REFERENCE.md)**
+- AUR helper, 32-bit support, container engine, automatic housekeeping
+- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager, Shell Enhancement (bash, zsh or fish)
+- Recovery on the same image, works without a network
+- Create boot medium: writes the USB device from any Linux machine, no root needed but for the write itself
+- Virtual machine support both ways: guest tools inside a VM, libvirt and QEMU on real hardware
+- Two starting points, **Core** and **Desktop** - everything else stays a row in the settings
 - English and German interface
 
 ## Installation
 
-An internet connection is required: most packages are downloaded during the installation.
+An internet connection is required.
 
-### 1. Prepare a bootable USB Device
+### 1. Prepare a bootable USB device
 
 - Download the latest ISO from **[the release page](https://github.com/murkl/arch-os/releases/latest)** and write it with **[Ventoy](https://www.ventoy.net/en/download.html)** or any ISO writer
-- Or let **Create boot medium** download, verify and write it for you, on any Linux machine:
+- Or let **Create boot medium** do it, on any Linux machine:
 
 ```
 curl -Ls https://bit.ly/arch-os | bash
 ```
 
-**Note:** _No `sudo` on the left of the pipe: **Create boot medium** runs as you, so nothing it downloads or writes beside itself belongs to root in your home, and only the write to the device asks for a password. On the live image you are root already and the same command installs. `DOWNLOAD_DIR=<dir>` says where the program is unpacked, `~/Downloads` by default; where the image lands is a setting, suggested as that same folder and reused, so a second run costs no bandwidth. Anything after `bash -s --` goes to the program itself, so `bash -s -- --debug` is a run that writes nothing._
+**Note:** _Runs as you, not root - only the write itself asks for a password. `DOWNLOAD_DIR=<dir>` changes where it lands (`~/Downloads` by default), and a folder that already holds the ISO and its `.sha256` is used without a network._
 
-### 2. Set the Firmware up
+### 2. Set the firmware up
 
 - Boot mode: UEFI
-- Secure Boot: off, the Installer sets it up again for you afterwards. Same with Windows already on the disk: its boot entry stays, and Microsoft's keys are kept alongside the new ones
+- Secure Boot: off for now - the Installer prepares it, switching it on is **[step 5](#5-switch-secure-boot-on)**
 
-### 3. Boot from the USB Device
+### 3. Boot from the USB device
 
-The Installer starts on its own. It opens on a welcome page that asks which language to read it in, then asks whether to install a new system or repair an existing one.
+The Installer starts on its own: language, then Installer or Recovery.
 
 <p><img src="screenshots/setup.png" alt="The page that asks which of the two to open"></p>
 
-**Note:** _From a booted official **[Arch Linux ISO](https://archlinux.org/download/)** the same command downloads the latest release and starts it here instead of writing a device._
+Then a starting point:
 
-### 4. Reuse your Answers
+| Starting point | What it is |
+| --- | --- |
+| **Core** | A minimal Arch Linux on the text console, nothing graphical |
+| **Desktop** | The Core, with GNOME on top |
 
-Every answer is written to `installer.conf` the moment it is given, so an interrupted run picks up where it left off. The password is not: it is asked right before the installation starts and never reaches disk.
+Every value it sets is an ordinary answer, changeable afterwards. What is left to ask: account, region, disk.
 
-- **Share it:** at the end of a run the answers can be uploaded to **[paste.rs](https://paste.rs)**. What comes back is a short code, shown as a QR code and as the address it belongs to. The next installation offers a starting point that asks for exactly that code
-- **Copy it:** put `installer.conf` next to the Installer on another machine and every question it answers is skipped
+**Note:** _From an official **[Arch Linux ISO](https://archlinux.org/download/)** the same command downloads Arch OS and starts it here instead._
 
-**Note:** _Nothing leaves the machine until you say so, and every imported answer can still be changed afterwards._
+### 4. Reuse your answers
+
+Every answer lands in `installer.conf` as it is given, so an interrupted run resumes. The password never does.
+
+- **Share it:** upload to **[paste.rs](https://paste.rs)** at the end of a run, get a code back. The next installation can start from it
+- **Copy it:** put `installer.conf` beside the Installer on another machine
+
+### 5. Switch Secure Boot on
+
+Only if you left it on. The Installer signs the boot chain with keys of its own; switching Secure Boot on is the one step only the firmware can take.
+
+```
+sbctl status
+```
+
+| It says | Do |
+| --- | --- |
+| `Installed: ✓ sbctl` | Restart, switch Secure Boot on in the firmware |
+| `Installed: ✗ sbctl` | Clear the Secure Boot keys in the firmware (setup mode), then `sudo sbctl enroll-keys -m`, restart, switch it on |
+
+**Note:** _The system boots exactly as before until you do this - nothing here can leave it unbootable._
 
 ## Recovery
 
 <p><img src="screenshots/recovery.png" alt="The Recovery, opening a system already on disk"></p>
 
-To rescue an Arch OS after a crash, boot the same ISO and choose **Recovery**.
+Boot the same ISO and choose **Recovery** to rescue an installation after a crash:
 
-- Unlocks and mounts the installation at `/mnt`
-- Puts a Btrfs snapshot back in place of the root subvolume
-- Rebuilds the kernel images and initramfs from the local package cache
-- Opens a shell inside the repaired system
+- Unlocks and mounts it at `/mnt`
+- Rolls back to a Btrfs snapshot
+- Rebuilds the kernel images from the local package cache
+- Opens a shell inside it
 
-**Note:** _The Recovery downloads nothing and needs no network connection, because a broken network may be part of the problem._
+Two questions - keyboard and disk - the rest is read off the machine. No network needed.
 
 ## Maintenance
 
 <p><img src="screenshots/manager_menu.png" alt="The Arch OS System Manager"></p>
 
-After installing with the default starting point, most of it happens on its own through the preinstalled **Arch OS System Manager**: package and Flatpak updates, `pacdiff` and Snapper housekeeping. What is left to do by hand:
+Mostly automatic through the preinstalled **Arch OS System Manager**. By hand:
 
-- Read the **[Arch Linux News](https://www.archlinux.org/news)**, preferably before upgrading
+- Read the **[Arch Linux News](https://www.archlinux.org/news)** before upgrading
 - Roll back with **Btrfs Assistant** or `snapper` if an update breaks something
-- Consult the **[Arch Linux Wiki](https://wiki.archlinux.org)** if you need help
+- Consult the **[Arch Linux Wiki](https://wiki.archlinux.org)**
 
 <details>
 
@@ -126,33 +147,25 @@ After installing with the default starting point, most of it happens on its own 
 
 ## Development
 
-Arch OS is five parts, kept deliberately apart:
+Five parts, kept apart:
 
 | Part | Description |
 | --- | --- |
-| [Oak](https://github.com/murkl/oak) | The runtime, a repository of its own. One binary that draws the interface, asks the questions and runs the shell scripts in order. Knows nothing about Arch Linux, disks or packages |
-| [`modules/installer/`](../modules/installer) | Everything that does the actual work: one `module.yaml`, the questions it asks and a folder per step |
-| [`modules/recovery/`](../modules/recovery) | The same shape again, for repairing a system already on disk |
-| [`modules/imager/`](../modules/imager) | And again, for writing the device the other two are booted from |
+| [Oak](https://github.com/murkl/oak) | The runtime, a repository of its own. Draws the interface, asks the questions, runs the shell. Knows nothing about Arch Linux |
+| [`modules/installer/`](../modules/installer) | Installs Arch Linux |
+| [`modules/recovery/`](../modules/recovery) | Repairs an installation already on disk |
+| [`modules/imager/`](../modules/imager) | Writes the device the other two boot from |
 | [`iso/`](../iso) | Turns a build of those into a bootable image |
 
-They are modules: data, not programs. One binary runs any of them, `oak --module=installer` opens one outright, and a release is that binary with `oak.yaml` and `modules/` beside it. The build downloads the binary rather than compiling it, so nothing here needs a Go toolchain.
+Modules are data, not programs. A release is Oak with `oak.yaml` and `modules/` beside it. Which module a machine can open is that module's own `requires:` - nothing else holds a list.
 
-Which module a machine can open is the module's own business: each says so in its own `requires:`, and nothing anywhere holds a list of them. A booted Arch live image offers the Installer and the Recovery; anything else offers Create boot medium alone and opens it on the way in, with no list of one row on it. That is what leaves **[`get.sh`](../get.sh)** with nothing to decide — it fetches, checks, unpacks and starts, and that is all of it.
-
-- Adding a question is a few lines of YAML
-- Adding a step is a folder under the stage it belongs to
-- Adding a module is a folder under `modules/`
-
-**[➜ See Contributing](CONTRIBUTING.md)** for branches, releases and how a commit becomes an image.
+**[➜ Reference](REFERENCE.md)** for what is put on the disk and why. **[➜ Contributing](CONTRIBUTING.md)** for branches, releases, how a commit becomes an image.
 
 ## License
 
 GPL-3.0. See **[LICENSE](../LICENSE)**.
 
 ## Credits
-
-Many thanks to these projects and the people behind them!
 
 - **[Arch Linux](https://archlinux.org)**
 - **[GNOME](https://www.gnome.org)**

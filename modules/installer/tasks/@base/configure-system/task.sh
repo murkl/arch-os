@@ -1,9 +1,8 @@
-# Everything that makes the installed packages into this particular machine:
-# clock, language, keyboard, name, swap - and the units that keep them running.
+# What makes the installed packages into this particular machine: clock,
+# language, keyboard, name, swap, and the units that keep them running.
 #
-# All of it unconditional. What only some machines get is a task of its own with
-# the answer that decides it written into its yaml, so a run lists the step it
-# is actually taking - see the congestion notification and the scrub beside it.
+# All of it unconditional. What only some machines get is a task of its own,
+# with the answer that decides it written into its yaml.
 
 simulating && return 0
 
@@ -28,12 +27,10 @@ arch-chroot "$MNT" hwclock --systohc
 echo "LANG=${ARCH_OS_LOCALE_LANG}.UTF-8" >"${MNT}/etc/locale.conf"
 
 # Every line of /etc/locale.gen belonging to the chosen language, plus English
-# as a fallback. locale.gen already lists every locale, commented out; each is
-# matched by its beginning alone, because the file pads entries with trailing
-# spaces.
-#
-# The file belongs to glibc and locale-gen reads no other, so this is an edit
-# rather than a drop-in, and one of the few places a .pacnew is still possible.
+# as a fallback. Matched by its beginning alone, because the file pads entries
+# with trailing spaces. An edit rather than a drop-in: the file belongs to glibc
+# and locale-gen reads no other.
+# https://wiki.archlinux.org/title/Locale
 {
     sed "/^#${ARCH_OS_LOCALE_LANG}/s/^#//" /etc/locale.gen | grep "^${ARCH_OS_LOCALE_LANG}" || true
     echo 'en_US.UTF-8 UTF-8'
@@ -44,7 +41,7 @@ done
 arch-chroot "$MNT" locale-gen
 
 # locale-gen is happy to generate nothing, and a system whose LANG names a
-# locale that was never built warns at every program and falls back to English.
+# locale that was never built warns at every program.
 if ! arch-chroot "$MNT" locale -a | grep -qxF "${ARCH_OS_LOCALE_LANG}.utf8"; then
     echo "the locale ${ARCH_OS_LOCALE_LANG}.UTF-8 was not generated" >&2
     exit 1
@@ -64,19 +61,11 @@ echo "$ARCH_OS_HOSTNAME" >"${MNT}/etc/hostname"
 
 # ----------------------------------------------------------------------------
 
-# The editor everything that asks for one gets. pam_env reads this file at every
-# login there is - a text console, ssh, the desktop - and systemd hands the same
-# file to the user manager as 99-environment.conf, so a graphical program sees
-# it too.
-#
-# Here rather than in each shell's own configuration: sudoedit, git and
-# systemctl edit are not shells, they read $EDITOR, and what they fall back on
-# without one is vi, which `base` does not ship. The shell enhancement is also a
-# thing somebody can turn off, and an editor is not.
-#
-# An edit rather than a drop-in, because pam_env reads this one file and no
-# directory beside it. It belongs to the filesystem package, which ships it
-# holding nothing but comments.
+# The editor everything that asks for one gets. Here rather than in a shell's
+# own configuration, because sudoedit, git and systemctl edit are not shells:
+# they read $EDITOR, and without one they fall back on vi, which `base` does not
+# ship. pam_env reads this one file and no directory beside it, so it is an edit.
+# https://wiki.archlinux.org/title/Environment_variables
 {
     echo '# Written by the Arch OS Installer.'
     echo 'EDITOR=nano'
@@ -85,8 +74,8 @@ echo "$ARCH_OS_HOSTNAME" >"${MNT}/etc/hostname"
 
 # ----------------------------------------------------------------------------
 
-# Swap. Compressed swap in memory: faster than a swap partition, and no SSD
-# wear. https://wiki.archlinux.org/title/Zram
+# Compressed swap in memory: faster than a swap partition, and no SSD wear.
+# https://wiki.archlinux.org/title/Zram
 {
     echo '[zram0]'
     echo 'zram-size = min(ram / 2, 8192)'

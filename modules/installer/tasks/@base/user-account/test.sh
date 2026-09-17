@@ -1,5 +1,5 @@
-# The account exists, may sudo, and has a password - the last of which is the
-# one thing here nothing else would ever show, since passwd prints nothing.
+# The account exists, may sudo and has a password - the last of which nothing
+# else would ever show, since passwd prints nothing.
 
 debugging && return 0
 

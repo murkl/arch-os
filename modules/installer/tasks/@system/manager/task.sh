@@ -1,5 +1,5 @@
 # A menu for updating, cleaning up and repairing the system after this installer
-# is gone.
+# is gone. https://github.com/murkl/arch-os-manager
 
 simulating && return 0
 
@@ -8,22 +8,15 @@ chroot_aur_install arch-os-manager
 
 # The binaries the manager draws itself with, fetched now rather than on the
 # machine. GUM is unset because it would point the manager at whatever copy this
-# environment holds.
-#
-# setsid, because --init asks a question when it finds something it does not
-# like, and the prompt it asks with opens /dev/tty rather than reading stdin -
-# closing stdin does not reach it. With no controlling terminal there is no
-# /dev/tty to open, so the question answers itself and the run carries on.
-# Without it this sat out the whole timeout below on every single installation.
+# environment holds, and setsid because --init asks its question on /dev/tty
+# rather than on stdin - with no controlling terminal it answers itself.
 #
 # The status is read into a variable rather than with `$?` inside an `if !`,
-# where bash reports the negation and every outcome reads as 0 - which is how a
-# run that was killed after five minutes still reported success. --init ends on
-# 2 rather than 0 when it worked, and the timeout is the last line of defence.
+# where bash reports the negation and every outcome reads as 0. --init ends on 2
+# rather than 0 when it worked.
 #
 # Nothing here may fail the installation: this is a head start, and the manager
-# fetches the same binaries itself the first time it is opened. What became of
-# it is said in the log instead.
+# fetches the same binaries itself the first time it is opened.
 status=0
 as_user 'unset GUM; timeout 300 setsid --wait /usr/bin/arch-os --init' </dev/null || status=$?
 case "$status" in

@@ -1,13 +1,11 @@
 #!/bin/bash
-# Turns a built release into a bootable ISO: stock Arch `releng`, patched so it
-# boots straight into the installer.
+# A built release turned into a bootable ISO: stock Arch `releng`, patched so it
+# boots straight into the interface.
 #
 #   build.sh <release-dir>
 #
-# The release to ship is the one argument - `make iso` hands it the one it just
-# built. The image and its checksum land beside that release, and what the image
-# is called is read out of the release itself, so it is named after what is
-# inside it.
+# The image and its checksum land beside that release, and what the image is
+# called is read out of the release itself.
 set -eu
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -60,13 +58,10 @@ unmount_leftovers() {
     done
 }
 
-# What a build leaves behind, and what it does not.
-#
 # mkarchiso writes as root, and a root-owned file inside a checkout breaks
 # everything that walks it afterwards, so nothing root-owned survives this
-# script. ISO_DIR is a fresh copy of the stock profile every run, so a build that
-# worked takes it with it; a build that failed keeps it - there is nothing else
-# to read a failure out of - but hands it back. DOWNLOAD_DIR stays either way.
+# script. A build that worked takes the profile with it; one that failed keeps
+# it - there is nothing else to read a failure out of - but hands it back.
 cleanup() {
     status=$?
     set +e
@@ -121,8 +116,7 @@ cp -r "/usr/share/archiso/configs/${ISO_CONFIG}/"* "${ISO_DIR}"
 # Copy sources (the systemd unit and the console theme)
 cp -rf src/* "${ISO_DIR}/airootfs/"
 
-# The stock package list outlives the repositories it names: a package dropped
-# from Arch stays in the profile until the next archiso release, and pacstrap
+# The stock package list outlives the repositories it names, and pacstrap
 # refuses the whole list over the one name it cannot find. What is gone is taken
 # out here and said out loud, so the image is one package short rather than
 # missing.
@@ -209,11 +203,9 @@ done
 sed -i 's/^timeout.*/timeout 0/' "${ISO_DIR}/efiboot/loader/loader.conf"
 
 # A prompt on this image is reached by leaving Arch OS or by it failing, and
-# either way the first question is how to get back to it, which Arch's own motd,
-# a wall of text about an installation guide, does not answer.
-#
-# Both files, because they are shown at different moments: /etc/issue before the
-# login, /etc/motd after it.
+# either way the first question is how to get back to it. Both files, because
+# they are shown at different moments: /etc/issue before the login, /etc/motd
+# after it.
 cat >"${ISO_DIR}/airootfs/etc/issue" <<'EOF'
 Arch OS live environment. Type installer or recovery to start again.
 
@@ -249,10 +241,9 @@ sed -i "s|^airootfs_image_tool_options=.*|airootfs_image_tool_options=('-comp' '
 # replaced - rewriting its first line leaves the rest behind as a syntax error.
 sed -i "/^bootmodes=(/,/)$/c\\bootmodes=('uefi.systemd-boot')" "${ISO_DIR}/profiledef.sh"
 
-# The label is how the kernel finds the medium it booted from - the boot line
-# carries it as archisolabel - and a volume identifier is upper case letters,
-# digits and underscores, at most 32 of them. A version is none of that once it
-# is a tag, so anything else in it becomes an underscore.
+# How the kernel finds the medium it booted from. A volume identifier is upper
+# case letters, digits and underscores, at most 32 of them, so anything else in
+# the version becomes an underscore.
 ISO_LABEL="$(printf 'ARCH_OS_%s' "$VERSION" | tr -c '[:alnum:]' '_' | tr '[:lower:]' '[:upper:]' | cut -c1-32)"
 
 set_key_value "${ISO_DIR}/profiledef.sh" iso_name "arch-os"

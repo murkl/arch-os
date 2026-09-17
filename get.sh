@@ -3,33 +3,25 @@
 #
 #   curl -Ls https://bit.ly/arch-os | bash
 #
-# Fetches the latest release, checks it, unpacks it and starts it. That is the
-# whole of this script: what this machine is good for is not decided here but by
-# the program itself — each of its modules carries the checks that say whether
-# this is a machine it can run on, so an Arch live image opens the Installer and
-# the Recovery, and an ordinary desktop writes the device that boots one.
+# Fetches the latest release, checks it, unpacks it and starts it. What this
+# machine is good for is not decided here but by the program itself: each module
+# carries the check that says whether this is a machine it can run on.
 #
 # Whatever is passed on the right of the pipe goes straight to the program, so
-# `bash -s -- --debug` is a run that changes nothing.
-#
-# POSIX sh, because this runs before anything of the project is on the machine,
-# on whatever shell that machine happens to have. Only x86_64 is built: it is
-# the only architecture Arch OS installs to.
+# `bash -s -- --debug` is a run that changes nothing. POSIX sh, because this
+# runs before anything of the project is on the machine.
 set -eu
 
 REPO="murkl/arch-os"
 
 # Where the release is unpacked, and where the next run finds it again. The
-# program keeps its answers, its log and the image beside its own binary, so
-# starting it a second time picks up where it left off and downloads nothing
-# twice.
+# program keeps its answers and its log beside its own binary, so a second run
+# picks up where the first left off.
 #
 # No sudo anywhere in here, and none wanted on the left of the pipe: on a live
 # image whoever runs this is root already, and on an ordinary machine the module
-# that opens there needs root for one command and asks for it itself. Escalating
-# the whole run instead would leave every one of those files owned by root in
-# somebody's own home.
-DOWNLOAD_DIR="${DOWNLOAD_DIR:-${HOME}/Downloads}"
+# that opens there asks for root itself, for the one command that needs it.
+DOWNLOAD_DIR="${DOWNLOAD_DIR:-${XDG_DOWNLOAD_DIR:-${HOME}/Downloads}}"
 
 info() { printf ':: %s\n' "$1"; }
 fail() {
@@ -41,11 +33,9 @@ for command_name in curl tar sha256sum; do
     command -v "$command_name" >/dev/null || fail "Missing dependency: ${command_name}"
 done
 
-# Every request this script makes. https even after a redirect: -L on its own
-# would follow a 302 into plain http, where the answer is whoever is on the wire
-# - and the answer here is the program that goes on to write a disk. One place
-# rather than a flag repeated at each call, which is a flag that gets forgotten
-# at one of them.
+# https even after a redirect: -L on its own would follow a 302 into plain http,
+# where the answer is whoever is on the wire - and the answer here is the program
+# that goes on to write a disk.
 fetch() { curl --proto '=https' --proto-redir '=https' --connect-timeout 10 "$@"; }
 
 # Said here rather than left to the exec at the end, where a machine of another
@@ -61,8 +51,8 @@ cd "$DOWNLOAD_DIR"
 
 printf '\n\033[34m// Arch OS\033[0m\n'
 
-# The asset is picked by what its name ends in rather than by the name itself,
-# so renaming a download stays a change to the build and nothing here.
+# Picked by what its name ends in rather than by the name itself, so renaming a
+# download stays a change to the build and nothing here.
 url="$(fetch -Lfs "https://api.github.com/repos/${REPO}/releases/latest" |
     sed -n 's/.*"browser_download_url": *"\(.*\.tar\.gz\)".*/\1/p' | head -n1)" ||
     fail "Cannot reach GitHub"
@@ -79,9 +69,8 @@ else
     mv "${name}.part" "$name"
 fi
 
-# The checksum ships beside the archive and names the file itself, so this is
-# the check anybody would run by hand. A file that fails is thrown away rather
-# than kept, so the next run fetches it again instead of skipping a broken one.
+# The checksum names the file itself, so this is the check anybody would run by
+# hand. A file that fails is thrown away rather than kept.
 fetch -Lfs "${url}.sha256" -o "${name}.sha256" || fail "Download failed: ${name}.sha256"
 if ! sha256sum -c "${name}.sha256" >/dev/null 2>&1; then
     rm -f "$name" "${name}.sha256"
@@ -89,16 +78,15 @@ if ! sha256sum -c "${name}.sha256" >/dev/null 2>&1; then
 fi
 info "Checksum is correct"
 
-# The folder is named by the archive rather than by this script: it carries the
-# version, and which version that is belongs to the build. awk rather than
-# `head -n1`, which closes the pipe on tar and leaves a write error in the
-# output of a run that worked.
+# Named by the archive rather than by this script: it carries the version, and
+# which version that is belongs to the build. awk rather than `head -n1`, which
+# closes the pipe on tar and leaves a write error behind.
 tar -xzf "$name" || fail "Cannot unpack ${name}"
 dir="$(tar -tzf "$name" | awk -F/ 'NR == 1 { print $1 }')"
 [ -x "${dir}/oak" ] || fail "No program in ${name}"
 info "Unpacked: ${DOWNLOAD_DIR}/${dir}"
 
-# Started out of its own folder, because the program reads the oak.yaml beside
-# its binary and keeps everything it writes there too.
+# Out of its own folder, because the program reads the oak.yaml beside its
+# binary and keeps everything it writes there too.
 cd "$dir"
 exec ./oak "$@" </dev/tty

@@ -1,11 +1,6 @@
-# File sharing the rest of the network can see, and the two discovery services
-# that make this machine appear in it.
-#
-# The whole task is what the file sharing question turns on and off - see
-# task.yaml. Samba answering on the network with nothing shared is a daemon
-# somebody said no to, and wsdd beside it is the other half of the same answer:
-# it is what Windows browses with, and it otherwise only arrives as a dependency
-# of a GNOME package that could be left out tomorrow.
+# File sharing the rest of the network can see, and the discovery wsdd gives it
+# so that Windows finds this machine at all.
+# https://wiki.archlinux.org/title/Samba
 
 simulating && return 0
 
@@ -26,9 +21,7 @@ printf '%s\n%s\n' "$ARCH_OS_PASSWORD" "$ARCH_OS_PASSWORD" |
     arch-chroot "$MNT" smbpasswd -s -a "$ARCH_OS_USERNAME"
 
 # Windows finds the machine faster over IPv4 alone, and wsdd tries IPv6 first.
-# A systemd drop-in rather than an edit of /etc/conf.d/wsdd, which belongs to
-# the wsdd package: a drop-in is read after the unit's own environment file, so
-# it wins, and there is nothing left to merge after an update.
+# A drop-in is read after the unit's own environment file, so it wins.
 # https://wiki.archlinux.org/title/Samba#Windows_1709_or_up_does_not_discover_the_samba_server_in_Network_view
 mkdir -p "${MNT}/etc/systemd/system/wsdd.service.d"
 {

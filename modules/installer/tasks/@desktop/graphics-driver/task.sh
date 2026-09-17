@@ -1,13 +1,12 @@
-# The graphics driver, and whatever else the card needs to start with the desktop
-# rather than after it. Every branch rebuilds the ram disk directly rather than
-# through pacman, which is why the Secure Boot signing comes after this one.
+# The graphics driver, and whatever else the card needs to start with the
+# desktop rather than after it. Every branch rebuilds the ram disk directly
+# rather than through pacman, which is why the Secure Boot signing comes after
+# this one.
 
 simulating && return 0
 
-# The modules this card needs in the ram disk. A drop-in rather than an edit of
-# /etc/mkinitcpio.conf, which belongs to the mkinitcpio package: it is read
-# after the hooks the initramfs task set, and leaves nothing to merge after an
-# update.
+# The modules this card needs in the ram disk, as a drop-in read after the hooks
+# the initramfs task set.
 early_modules() {
     mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
     {
@@ -46,12 +45,9 @@ nvidia) # https://wiki.archlinux.org/title/NVIDIA#Installation
     chroot_pacman_install "${packages[@]}"
 
     # Kernel mode setting, without which Wayland does not start on this driver.
-    # And what the card is holding when the machine suspends: this driver frees
-    # video memory rather than saving it, unless told otherwise, and what comes
-    # back is a desktop drawn over whatever is in that memory now. The three
-    # units are what do the saving - nvidia-utils ships them switched off, so
-    # the setting on its own would only make the driver wait for something that
-    # never runs.
+    # And the video memory the card holds over a suspend, which this driver
+    # frees rather than saves unless told otherwise - the three units are what
+    # do the saving, and nvidia-utils ships them switched off.
     # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
     # https://wiki.archlinux.org/title/NVIDIA/Tips_and_tricks#Preserve_video_memory_after_suspend
     mkdir -p "${MNT}/etc/modprobe.d"
@@ -65,7 +61,7 @@ nvidia) # https://wiki.archlinux.org/title/NVIDIA#Installation
     early_modules nvidia nvidia_modeset nvidia_uvm nvidia_drm
 
     # The modules live in the ram disk, so it is rebuilt whenever the driver or
-    # the kernel changes: once per batch, not once per package.
+    # the kernel changes - once per batch, not once per package.
     # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
     mkdir -p "${MNT}/etc/pacman.d/hooks"
     {

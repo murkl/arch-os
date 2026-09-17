@@ -3,4 +3,4 @@
 debugging && return 0
 
 ! mountpoint -q "$MNT"
-[ "$ARCH_OS_RECOVERY_ENCRYPTION_ENABLED" != "true" ] || [ ! -e "/dev/mapper/${CRYPT}" ]
+[ "$ARCH_OS_RECOVERY_ENCRYPTED" != "true" ] || [ ! -e "/dev/mapper/${CRYPT}" ]

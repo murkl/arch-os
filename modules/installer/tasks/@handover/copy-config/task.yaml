@@ -1,8 +1,7 @@
 title: Keep a copy of this installation
 
-# The last thing done to the installation itself, and the moment the run says so:
-# everything after it is an offer. Short on purpose — the page is one fact, and
-# the questions under it are what it makes room for.
+# The last thing done to the installation itself, and the moment the run says
+# so: everything after it is an offer.
 report: |
   Arch OS is installed
 

@@ -1,10 +1,5 @@
-# Without snapper there is still a file system that can snapshot itself, so a
-# bad update can still be undone: one dated read-only snapshot per package
-# transaction, and nothing cleaning up after it.
-#
-# Its own task beside the snapper one rather than a branch inside a shared one:
-# the two are different answers to one question, and which of them runs is
-# written in the yaml rather than read out of shell.
+# Without snapper the file system can still snapshot itself: one dated read-only
+# snapshot per package transaction, and nothing cleaning up after it.
 
 simulating && return 0
 

@@ -1,18 +1,8 @@
-# Can this machine run a recovery at all?
+# Can this machine run a recovery at all? Every check in this stage is read-only
+# and every one of them is a hard stop, run before the first question because
+# none of it can be fixed from inside this program.
 #
-# Every check in this stage is read-only and every one of them is a hard stop.
-# They run before the first question, because none of it can be fixed from
-# inside this program.
-#
-# That it is the live image at all is not asked here but by `requires:` in
-# module.yaml, which is what decides whether this module is on offer on this
-# machine in the first place. What is left for this stage is what the machine has
-# to be ready for once it has been chosen.
-#
-# Which is root and nothing else: not the firmware, which isn't what is being
+# Which is root and nothing else: not the firmware, which is not what is being
 # repaired, and not a network, because a recovery downloads nothing - the whole
 # point on a machine whose network may be exactly what stopped working.
-#
-# What goes to stderr is what the user reads, so each message says what is wrong
-# and what to do about it, in that order, and nothing else.
 title: Running as root

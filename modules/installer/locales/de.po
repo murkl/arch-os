@@ -58,18 +58,18 @@ msgstr "Desktop"
 
 #. starting point Setup, Desktop: what choosing it does
 #: module.yaml
-msgid "A GNOME desktop with drivers, codecs, fonts and everyday applications."
-msgstr "Ein GNOME-Desktop mit Treibern, Codecs, Schriften und den Programmen für den Alltag."
+msgid "The Core, with a GNOME desktop on top of it - drivers, codecs, fonts and everyday applications."
+msgstr "Der Core, mit einem GNOME-Desktop darauf - Treiber, Codecs, Schriften und die Programme für den Alltag."
 
 #. starting point Setup: a row
 #: module.yaml
-msgid "Minimal"
-msgstr "Minimal"
+msgid "Core"
+msgstr "Core"
 
-#. starting point Setup, Minimal: what choosing it does
+#. starting point Setup, Core: what choosing it does
 #: module.yaml
-msgid "Arch Linux on the console only. No desktop, no extras, nothing beyond what you choose."
-msgstr "Arch Linux nur auf der Konsole. Kein Desktop, keine Extras, nichts Ungefragtes."
+msgid "A minimal Arch Linux on the text console, with nothing graphical on it and nothing beyond what you choose."
+msgstr "Ein minimales Arch Linux auf der Textkonsole, ohne alles Grafische und ohne alles, was du nicht selbst wählst."
 
 #. starting point Setup: a row
 #: module.yaml
@@ -80,6 +80,51 @@ msgstr "Online (paste.rs)"
 #: module.yaml
 msgid "Load every answer from a configuration shared at the end of an earlier installation."
 msgstr "Alle Antworten aus einer Konfiguration übernehmen, die am Ende einer früheren Installation geteilt wurde."
+
+#. ARCH_OS_USERNAME: the question
+#: module.yaml
+msgid "Username"
+msgstr "Benutzername"
+
+#. ARCH_OS_USERNAME: what it means
+#: module.yaml
+msgid "The account you will log in with. Lowercase letters, digits, hyphens and underscores only. It cannot start with a digit."
+msgstr "Das Konto, mit dem du dich anmeldest. Kleinbuchstaben, Ziffern, Bindestrich und Unterstrich. Darf nicht mit einer Ziffer beginnen."
+
+#. ARCH_OS_USERNAME: the heading its row sits under
+#: module.yaml
+msgid "Identity"
+msgstr "Identität"
+
+#. ARCH_OS_USERNAME: what a wrong answer is told
+#: module.yaml
+msgid "Lowercase letters, digits, hyphens and underscores only, up to 32 characters. It cannot start with a digit."
+msgstr "Nur Kleinbuchstaben, Ziffern, Bindestrich und Unterstrich, höchstens 32 Zeichen. Darf nicht mit einer Ziffer beginnen."
+
+#. ARCH_OS_PASSWORD: the question
+#: module.yaml
+msgid "Password"
+msgstr "Passwort"
+
+#. ARCH_OS_PASSWORD: what it means
+#: module.yaml
+msgid "Used for your account, the root account, and — if disk encryption is on — to unlock the disk at boot. It is asked for right before installation starts and is never written to a file."
+msgstr "Gilt für dein Konto, für das Konto root und — bei aktiver Verschlüsselung — zum Entsperren des Datenträgers beim Start. Es wird unmittelbar vor dem Start der Installation abgefragt und nie in eine Datei geschrieben."
+
+#. ARCH_OS_HOSTNAME: the question
+#: module.yaml
+msgid "Hostname"
+msgstr "Rechnername"
+
+#. ARCH_OS_HOSTNAME: what it means
+#: module.yaml
+msgid "The name this machine has on the network."
+msgstr "Der Name, unter dem dieser Rechner im Netzwerk erscheint."
+
+#. ARCH_OS_HOSTNAME: what a wrong answer is told
+#: module.yaml
+msgid "Lowercase letters, digits and hyphens only, up to 63 characters. It cannot start or end with a hyphen."
+msgstr "Nur Kleinbuchstaben, Ziffern und Bindestrich, höchstens 63 Zeichen. Darf nicht mit einem Bindestrich beginnen oder enden."
 
 #. ARCH_OS_LOCALE_LANG: the question
 #: module.yaml
@@ -147,51 +192,6 @@ msgstr "Woher Pakete geladen werden. auto ist das Land, zu dem die gewählte Spr
 #: module.yaml
 msgid "Type a country"
 msgstr "Land eingeben"
-
-#. ARCH_OS_USERNAME: the question
-#: module.yaml
-msgid "Username"
-msgstr "Benutzername"
-
-#. ARCH_OS_USERNAME: what it means
-#: module.yaml
-msgid "The account you will log in with. Lowercase letters, digits, hyphens and underscores only. It cannot start with a digit."
-msgstr "Das Konto, mit dem du dich anmeldest. Kleinbuchstaben, Ziffern, Bindestrich und Unterstrich. Darf nicht mit einer Ziffer beginnen."
-
-#. ARCH_OS_USERNAME: the heading its row sits under
-#: module.yaml
-msgid "Identity"
-msgstr "Identität"
-
-#. ARCH_OS_USERNAME: what a wrong answer is told
-#: module.yaml
-msgid "Lowercase letters, digits, hyphens and underscores only, up to 32 characters. It cannot start with a digit."
-msgstr "Nur Kleinbuchstaben, Ziffern, Bindestrich und Unterstrich, höchstens 32 Zeichen. Darf nicht mit einer Ziffer beginnen."
-
-#. ARCH_OS_PASSWORD: the question
-#: module.yaml
-msgid "Password"
-msgstr "Passwort"
-
-#. ARCH_OS_PASSWORD: what it means
-#: module.yaml
-msgid "Used for your account, the root account, and — if disk encryption is on — to unlock the disk at boot. It is never written to a file."
-msgstr "Gilt für dein Konto, für das Konto root und — bei aktiver Verschlüsselung — zum Entsperren des Datenträgers beim Start. Es wird nie in eine Datei geschrieben."
-
-#. ARCH_OS_HOSTNAME: the question
-#: module.yaml
-msgid "Hostname"
-msgstr "Rechnername"
-
-#. ARCH_OS_HOSTNAME: what it means
-#: module.yaml
-msgid "The name this machine has on the network."
-msgstr "Der Name, unter dem dieser Rechner im Netzwerk erscheint."
-
-#. ARCH_OS_HOSTNAME: what a wrong answer is told
-#: module.yaml
-msgid "Lowercase letters, digits and hyphens only, up to 63 characters. It cannot start or end with a hyphen."
-msgstr "Nur Kleinbuchstaben, Ziffern und Bindestrich, höchstens 63 Zeichen. Darf nicht mit einem Bindestrich beginnen oder enden."
 
 #. ARCH_OS_DISK: the question
 #: module.yaml
@@ -430,13 +430,13 @@ msgstr "Gibt dein Benutzerverzeichnis und einen öffentlichen Ordner im lokalen 
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: the question
 #: module.yaml
-msgid "System tweaks"
-msgstr "System-Feinschliff"
+msgid "Core tweaks"
+msgstr "Core-Feinschliff"
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: what it means
 #: module.yaml
-msgid "Small adjustments that do not change what is installed: parallel package downloads, a quieter boot, password feedback in the terminal, and the memory, disk and log settings a desktop runs better on."
-msgstr "Kleine Anpassungen, die nichts an den installierten Paketen ändern: parallele Downloads, ein ruhigerer Start, Rückmeldung bei der Passworteingabe im Terminal und die Einstellungen für Speicher, Platte und Protokolle, mit denen ein Desktop besser läuft."
+msgid "Small adjustments to the Core that do not change what is installed: parallel package downloads, a quieter boot, password feedback in the terminal, and the memory, disk and log settings the system runs better on."
+msgstr "Kleine Anpassungen am Core, die nichts an den installierten Paketen ändern: parallele Downloads, ein ruhigerer Start, Rückmeldung bei der Passworteingabe im Terminal und die Einstellungen für Speicher, Platte und Protokolle, mit denen das System besser läuft."
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: the heading its row sits under
 #: module.yaml
@@ -808,6 +808,9 @@ msgstr "Im UEFI-Modus gestartet, Secure Boot aus"
 #: hooks/@preflight/network/hook.yaml
 msgid "Connected to the internet"
 msgstr "Mit dem Internet verbunden"
+
+#~ msgid "Minimal"
+#~ msgstr "Minimal"
 
 #~ msgid "Installation"
 #~ msgstr "Installation"

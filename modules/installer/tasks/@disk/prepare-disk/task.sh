@@ -1,5 +1,8 @@
 # Partition, encrypt, format and mount the target. The only stage that destroys
 # data: everything before it is reversible by walking away.
+# https://wiki.archlinux.org/title/Installation_guide#Partition_the_disks
+#
+# The layout and the subvolumes: docs/REFERENCE.md
 
 simulating && return 0
 
@@ -36,8 +39,7 @@ if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
     mkfs.btrfs -f -L BTRFS "$root_device"
     mount -v "$root_device" "$MNT"
 
-    # One per thing that is rolled back, kept or thrown away on its own - see
-    # btrfs_subvolumes, which the recovery reads the same layout out of.
+    # One per thing that is rolled back, kept or thrown away on its own.
     while read -r subvolume _; do
         btrfs subvolume create "${MNT}/${subvolume}"
     done < <(btrfs_subvolumes)

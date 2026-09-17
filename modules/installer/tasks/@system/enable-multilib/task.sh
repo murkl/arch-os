@@ -1,9 +1,7 @@
-# The 32-bit repository, switched on before anything that needs it is installed:
-# the desktop and the graphics driver both pull lib32 packages.
-#
-# The change goes into pacman.conf itself, because a repository is a section of
-# that one file and pacman reads no drop-in directory - the section is already
-# there, commented out.
+# Switched on before anything that needs it is installed: the desktop and the
+# graphics driver both pull lib32 packages. A repository is a section of
+# pacman.conf and pacman reads no drop-in directory, so this is an edit.
+# https://wiki.archlinux.org/title/Official_repositories#multilib
 
 simulating && return 0
 

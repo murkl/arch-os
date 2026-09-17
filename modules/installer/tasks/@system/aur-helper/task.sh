@@ -1,19 +1,12 @@
-# The AUR helper, built the way everything from the AUR is built. The -bin
-# package builds in seconds because its PKGBUILD unpacks a released binary;
-# the plain one compiles the program here, which pulls a Rust toolchain in and
-# takes about a quarter of an hour.
+# The AUR helper, built the way everything from the AUR is built - see
+# chroot_aur_install in module.sh. https://wiki.archlinux.org/title/AUR_helpers
 
 simulating && return 0
 
 chroot_aur_install "$ARCH_OS_AUR_HELPER"
 
-# paru shows the newest results last, next to the prompt, and asks for the sudo
-# password once for a whole batch of builds rather than once per package.
-#
-# Written to the user's own configuration, not /etc/paru.conf: that file
-# belongs to the paru package, so editing it would leave a .pacnew to merge on
-# every paru update. And how one person likes to be asked for a password is
-# theirs to change, not the system's.
+# Written to the user's own configuration rather than /etc/paru.conf: how one
+# person likes to be asked for a password is theirs to change.
 case "$ARCH_OS_AUR_HELPER" in
 paru | paru-bin | paru-git)
     config="${MNT}/home/${ARCH_OS_USERNAME}/.config/paru"

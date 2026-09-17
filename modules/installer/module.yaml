@@ -1,59 +1,32 @@
-# What this installer is, what it asks, and in what order it works. Everything
-# else in this module is found by its own name — module.sh, data/, locales/,
-# tasks/ — and nothing points at it from here.
+# What this module is, what it asks and in what order it works. Everything else
+# in it is found by its own name, and every list and suggestion below is a
+# function in module.sh.
 #
-# The shell below is module.sh's: every list and every suggested value is a
-# function named there, so this file stays the questions and nothing else.
-#
-# Every key this file may use:
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
-# The one name this module has: the row that opens it, the trail across the top
-# of every page once it is open, and every sentence the interface writes about
-# it. The rows inside are named after what they do — Start, Settings — so this
-# name is never read twice on one screen.
 title: Installer
-
-# The sentence under that row.
 description: Install Arch Linux on this machine.
 
 # What a machine has to be for this module to be offered on it at all, asked
-# before the row even exists. A machine that is not a booted Arch Linux live
-# image never sees it: there is nothing here to install onto, and the module
-# that writes the image it would be booted from is the one that belongs there
-# instead.
-#
-# It is here rather than in hooks/@preflight/ because the two answer different
-# questions: this one decides whether the row exists, and preflight decides
-# whether the machine behind the row is ready. What goes to stderr is what
-# somebody reads who named this module outright with --module=. A run started
-# with --debug is offered every module, whatever this says.
+# before the row even exists. `requires:` decides whether the row exists;
+# hooks/@preflight/ decides whether the machine behind it is ready.
 requires: |
   arch_live && return 0
   echo "The Installer runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there." >&2
   exit 1
 
 # Read on the way out, when the installer closes and the machine keeps running.
-# There is a root shell behind it on this image — see iso/.
 console: Type installer at the prompt to start it again.
 
-# The last thing shown before the first task runs. {{VAR}} is filled in from the
-# answers, so this names the actual disk.
 confirm: |
   Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.
 
   Everything on that disk will be erased and this cannot be undone. Nothing
   has been changed so far.
 
-# The phases the work happens in, top to bottom. Each is a folder under tasks/,
-# marked — tasks/@disk/ — and lying in one is what puts a task in the run and
-# where; tasks sharing a stage run in the order `needs` demands. The `@` belongs
-# to the folder, not to the name written here.
-#
-# What Oak runs of its own accord — the check that this machine can be installed
-# onto at all, the wireless, the two ways out — is a hook, and hooks live in
-# hooks/ beside tasks/. They are left out here because when a hook runs is Oak's
-# business and not this file's.
+# Each is a folder under tasks/, marked - tasks/@disk/ - and lying in one is
+# what puts a task in the run and where; tasks sharing a stage run in the order
+# `needs` demands.
 stages:
   - prepare # the live system, made ready to install from
   - disk # partitioned, encrypted, formatted, mounted
@@ -71,13 +44,13 @@ presets:
   - title: Setup
     description: Choose what kind of system to install. Every detail can still be changed afterwards.
     options:
-      # Each option names every setting it has an opinion about, including the
-      # ones it turns off, in the order the questions below come in. What is
-      # left to ask is then only what nobody but the person at the machine can
-      # answer: the region, the account, and which disk. Everything here is a
-      # row in the settings afterwards.
+      # Two starting points, and the second is the first without the desktop:
+      # Core is what Arch OS is, Desktop is Core with GNOME built on top of it.
+      # Each names every setting it has an opinion about, including the ones it
+      # turns off, so what is left to ask is only what nobody but the person at
+      # the machine can answer: the account, the region, the disk.
       - title: Desktop
-        description: A GNOME desktop with drivers, codecs, fonts and everyday applications.
+        description: The Core, with a GNOME desktop on top of it - drivers, codecs, fonts and everyday applications.
         values:
           ARCH_OS_FILESYSTEM: btrfs
           ARCH_OS_ENCRYPTION_ENABLED: true
@@ -100,12 +73,11 @@ presets:
           ARCH_OS_MANAGER_ENABLED: true
           ARCH_OS_VM_SUPPORT_ENABLED: true
 
-      # Everything off that can be off. The one exception is virtual machine
-      # support, which on a console system is what it takes to run one — and
-      # that is a thing a machine without a desktop is more likely to be for,
-      # not less.
-      - title: Minimal
-        description: Arch Linux on the console only. No desktop, no extras, nothing beyond what you choose.
+      # Everything off that can be off. The exception is virtual machine
+      # support: on a console system that is what it takes to run one, which a
+      # machine without a desktop is more likely to be for, not less.
+      - title: Core
+        description: A minimal Arch Linux on the text console, with nothing graphical on it and nothing beyond what you choose.
         values:
           ARCH_OS_FILESYSTEM: ext4
           ARCH_OS_ENCRYPTION_ENABLED: false
@@ -129,23 +101,56 @@ presets:
           ARCH_OS_VM_SUPPORT_ENABLED: true
 
       # Not a set of answers written out here but one fetched: a configuration
-      # shared at the end of an earlier installation. A starting point like the
-      # two above, so a row here rather than a page of its own.
+      # shared at the end of an earlier installation.
       - title: Online (paste.rs)
         description: Load every answer from a configuration shared at the end of an earlier installation.
         asks: ARCH_OS_CONFIG_SOURCE
         apply: ./tasks/@handover/share-config/import.sh
 
-# Everything this installer needs to know, in the order it is asked. Required and
-# unanswered is what makes the installer ask; an answer is what makes it stop.
-# Each name reaches every script as an environment variable.
+# Everything this installer needs to know, in the order it is asked. Each name
+# reaches every script as an environment variable.
 variables:
+  # ─── Identity ──────────────────────────────────────────────────────────────
+  #
+  # Who this machine is for, asked first because it is the one thing nobody but
+  # the person at it can answer. The password is a secret: it is asked for
+  # immediately before the installation starts, never written down, and never a
+  # row on the settings page.
+  - name: ARCH_OS_USERNAME
+    title: Username
+    description: |
+      The account you will log in with. Lowercase letters, digits, hyphens and
+      underscores only. It cannot start with a digit.
+    group: Identity
+    required: true
+    pattern: '^[a-z_][a-z0-9_-]{0,31}$'
+    error: Lowercase letters, digits, hyphens and underscores only, up to 32 characters. It cannot start with a digit.
+
+  - name: ARCH_OS_PASSWORD
+    title: Password
+    description: |
+      Used for your account, the root account, and — if disk encryption is on
+      — to unlock the disk at boot. It is asked for right before installation
+      starts and is never written to a file.
+    group: Identity
+    type: secret
+    required: true
+
+  - name: ARCH_OS_HOSTNAME
+    title: Hostname
+    description: The name this machine has on the network.
+    group: Identity
+    default: arch-os
+    required: true
+    pattern: '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$'
+    error: Lowercase letters, digits and hyphens only, up to 63 characters. It cannot start or end with a hyphen.
+
   # ─── Region ────────────────────────────────────────────────────────────────
   #
-  # What the installed system is set to, not the words this installer is read in.
-  # Everything here follows the language on `auto`, except the console keyboard,
-  # which is asked `first`: a passphrase typed on the wrong layout is not the
-  # passphrase.
+  # What the installed system is set to, not the words this installer is read
+  # in. Everything here follows the language on `auto`, except the console
+  # keyboard, which is asked before all of it: a password typed on the wrong
+  # layout is not the password.
   - name: ARCH_OS_LOCALE_LANG
     title: Language and region
     description: |
@@ -204,36 +209,6 @@ variables:
     free: Type a country
     command: list_countries
 
-  # ─── Identity ──────────────────────────────────────────────────────────────
-  - name: ARCH_OS_USERNAME
-    title: Username
-    description: |
-      The account you will log in with. Lowercase letters, digits, hyphens and
-      underscores only. It cannot start with a digit.
-    group: Identity
-    required: true
-    pattern: '^[a-z_][a-z0-9_-]{0,31}$'
-    error: Lowercase letters, digits, hyphens and underscores only, up to 32 characters. It cannot start with a digit.
-
-  - name: ARCH_OS_PASSWORD
-    title: Password
-    description: |
-      Used for your account, the root account, and — if disk encryption is on
-      — to unlock the disk at boot. It is asked for right before installation
-      starts and is never written to a file.
-    group: Identity
-    type: secret
-    required: true
-
-  - name: ARCH_OS_HOSTNAME
-    title: Hostname
-    description: The name this machine has on the network.
-    group: Identity
-    default: arch-os
-    required: true
-    pattern: '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$'
-    error: Lowercase letters, digits and hyphens only, up to 63 characters. It cannot start or end with a hyphen.
-
   # ─── Storage ───────────────────────────────────────────────────────────────
   - name: ARCH_OS_DISK
     title: Disk
@@ -280,8 +255,7 @@ variables:
     type: bool
     default: true
     # The desktop among them because it is a desktop application, and the
-    # desktop task is what installs it: without one there would be a row here
-    # nothing in the run could keep.
+    # desktop task is what installs it.
     conditions:
       - ARCH_OS_FILESYSTEM == btrfs
       - ARCH_OS_BTRFS_SNAPPER_ENABLED == true
@@ -356,12 +330,8 @@ variables:
       Extra parameters passed to the kernel at boot, separated by spaces.
       Leave empty unless you know you need one.
     group: Boot
-    # What is left out is what GRUB's own file cannot hold: it keeps the command
-    # line as a quoted shell assignment and sources it, so a quote, a backslash,
-    # a dollar or a backtick in here would be read as shell rather than as a
-    # parameter. A comma and an ampersand used to be refused too, and that was
-    # about how the line was written rather than about the line — see the boot
-    # loader task.
+    # What GRUB's own file cannot hold: it keeps the command line as a quoted
+    # shell assignment and sources it, so any of these would be read as shell.
     pattern: '^[^"\\`$]*$'
     error: Quotes, backslashes, dollar signs and backticks cannot be used here.
 
@@ -472,11 +442,12 @@ variables:
 
   # ─── System ────────────────────────────────────────────────────────────────
   - name: ARCH_OS_CORE_TWEAKS_ENABLED
-    title: System tweaks
+    title: Core tweaks
     description: |
-      Small adjustments that do not change what is installed: parallel package
-      downloads, a quieter boot, password feedback in the terminal, and the
-      memory, disk and log settings a desktop runs better on.
+      Small adjustments to the Core that do not change what is installed:
+      parallel package downloads, a quieter boot, password feedback in the
+      terminal, and the memory, disk and log settings the system runs better
+      on.
     group: System
     type: bool
     default: true
@@ -582,8 +553,7 @@ variables:
   # Neither is a question on any page: the address is answered by the
   # installation itself, the code only by somebody who chose the starting point
   # that asks for it. Whether anything goes online at all is asked at the end of
-  # the run, by the task that would do it — a switch set while the disk is being
-  # partitioned collects consent before there is anything to consent to.
+  # the run, by the task that would do it.
   - name: ARCH_OS_CONFIG_URL
     title: Shared at
     description: |

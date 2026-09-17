@@ -43,8 +43,8 @@ msgstr "Download-Ordner"
 
 #. ARCH_OS_DOWNLOAD_DIR: what it means
 #: module.yaml
-msgid "Where the image and the checksum beside it are kept. Both are reused, so a second run costs no bandwidth. The folder is created if it is not there, and the image needs about two gigabytes."
-msgstr "Wo das Abbild und die Prüfsumme daneben liegen. Beide werden wiederverwendet, ein zweiter Lauf kostet also keine Bandbreite. Der Ordner wird angelegt, falls es ihn noch nicht gibt, und das Abbild braucht rund zwei Gigabyte."
+msgid "Where the image and the checksum beside it are kept. Both are reused, so a second run costs no bandwidth, and an image already there is written without a network. The folder is created if it is not there, and the image needs about two gigabytes."
+msgstr "Wo das Abbild und die Prüfsumme daneben liegen. Beide werden wiederverwendet, ein zweiter Lauf kostet also keine Bandbreite, und ein Abbild, das schon dort liegt, wird ohne Netzwerk geschrieben. Der Ordner wird angelegt, falls es ihn noch nicht gibt, und das Abbild braucht rund zwei Gigabyte."
 
 #. ARCH_OS_DOWNLOAD_DIR: the heading its row sits under
 #: module.yaml
@@ -107,10 +107,8 @@ msgstr "Root zum Schreiben"
 msgid "A device to write to"
 msgstr "Ein Datenträger zum Schreiben"
 
-#. the check, read where it is the one that failed
-#: hooks/@preflight/image/hook.yaml
-msgid "The image is here or can be fetched"
-msgstr "Das Abbild ist da oder erreichbar"
+#~ msgid "The image is here or can be fetched"
+#~ msgstr "Das Abbild ist da oder erreichbar"
 
 #~ msgid "Imager"
 #~ msgstr "Imager"

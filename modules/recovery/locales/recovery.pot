@@ -76,14 +76,14 @@ msgstr ""
 msgid "Choose a disk that exists."
 msgstr ""
 
-#. ARCH_OS_RECOVERY_ENCRYPTION_ENABLED: the question
+#. ARCH_OS_RECOVERY_ENCRYPTED: the question
 #: module.yaml
 msgid "Disk encryption"
 msgstr ""
 
-#. ARCH_OS_RECOVERY_ENCRYPTION_ENABLED: what it means
+#. ARCH_OS_RECOVERY_ENCRYPTED: what it means
 #: module.yaml
-msgid "Whether that disk is encrypted with LUKS. This is read directly off the disk, without needing the password. Change it only if the answer is wrong."
+msgid "Whether that disk is encrypted with LUKS."
 msgstr ""
 
 #. ARCH_OS_RECOVERY_PASSWORD: the question
@@ -94,16 +94,6 @@ msgstr ""
 #. ARCH_OS_RECOVERY_PASSWORD: what it means
 #: module.yaml
 msgid "The password that unlocks that disk. It is asked for right before the recovery starts and is never written to a file."
-msgstr ""
-
-#. ARCH_OS_RECOVERY_FILESYSTEM: the question
-#: module.yaml
-msgid "File system"
-msgstr ""
-
-#. ARCH_OS_RECOVERY_FILESYSTEM: what it means
-#: module.yaml
-msgid "The file system of the system being repaired. btrfs can be rolled back to a snapshot; ext4 can be opened and worked on by hand. On an encrypted disk this cannot be read in advance, so please check it."
 msgstr ""
 
 #. ARCH_OS_RECOVERY_SNAPSHOT: the question
@@ -144,7 +134,7 @@ msgstr ""
 msgid ""
 "Rebuild the kernel images and the initial ram disks?\n"
 "\n"
-"Needed when the rollback goes back past a kernel update: the modules in the restored system and the images in /boot would then belong to different kernels, and the machine would come up without a single module. Everything is taken from the package cache, so this needs no network."
+"Needed after a rollback that goes back past a kernel update: the modules in the restored system and the images in /boot would then belong to different kernels, and the machine would come up without a single module. Everything is taken from the package cache, so this needs no network."
 msgstr ""
 
 #. the step, as the run lists it

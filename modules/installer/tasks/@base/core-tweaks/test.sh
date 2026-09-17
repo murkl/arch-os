@@ -1,12 +1,9 @@
-# The two that would be noticed if they silently stopped being written - the
-# drop-in sudo reads and the setting pacman ships switched off - and then the
-# four files nothing would report on at all. sysctl passes over a key the kernel
-# does not have, systemd never looks in a directory that is not one of its
-# drop-in directories, udev throws away a whole rule file that fails to parse,
-# and tmpfiles skips a line it cannot read. Each of those writes cleanly, looks
-# right afterwards, and simply never takes effect - so each is read back through
-# the tool that will act on it rather than compared against a value repeated
-# here, which is the copy that goes stale.
+# Four of these write cleanly, look right afterwards and simply never take
+# effect: sysctl passes over a key the kernel does not have, systemd never looks
+# outside its own drop-in directories, udev throws away a whole rule file that
+# fails to parse, and tmpfiles skips a line it cannot read. So each is read back
+# through the tool that will act on it rather than compared against a value
+# repeated here, which is the copy that goes stale.
 debugging && return 0
 
 [ -f "${MNT}/etc/sudoers.d/20-pwfeedback" ]
@@ -26,6 +23,6 @@ done
 udevadm verify --resolve-names=never --no-style --no-summary \
     "${MNT}/etc/udev/rules.d/60-arch-os-ioschedulers.rules"
 
-# --dry-run, because the line in there writes to /sys and the /sys this is
-# running against belongs to the live image, not to the system being installed.
+# --dry-run, because the line in there writes to /sys, and the /sys this runs
+# against belongs to the live image rather than to the system being installed.
 systemd-tmpfiles --dry-run --create "${MNT}/etc/tmpfiles.d/arch-os-hugepages.conf"

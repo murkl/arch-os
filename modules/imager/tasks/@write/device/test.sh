@@ -1,12 +1,11 @@
 # Read the device rather than trust that dd said nothing: a stick that reports a
-# finished write and keeps none of it is the failure this is here for, and it is
-# invisible until somebody tries to boot from it.
+# finished write and keeps none of it is invisible until somebody tries to boot
+# from it. The label is what the image carries and what the boot loader on it
+# searches for.
 #
-# The label is what the image carries and what the boot loader on it searches
-# for, so a device answering with the image's own label is a device that holds
-# that image. lsblk rather than blkid, because lsblk reads what udev already
-# recorded and needs no more rights than listing the disks did - a test that has
-# to ask for a password is a test that hangs where nobody is typing.
+# lsblk rather than blkid, because lsblk reads what udev already recorded and
+# needs no more rights than listing the disks did - a test that has to ask for a
+# password is a test that hangs where nobody is typing.
 debugging && return 0
 
 label="$(blkid -o value -s LABEL "$(image)")"

@@ -18,9 +18,8 @@ docker)
     # never. A container declared restart:always wants docker.service instead.
     arch-chroot "$MNT" systemctl enable docker.socket
 
-    # The Wiki calls membership equivalent to root, and it is - but this
-    # account is already in wheel and may sudo, so it gains nothing it did not
-    # have. Without it every docker command asks for a password.
+    # Equivalent to root, as the Wiki says - but this account is already in
+    # wheel and may sudo, so it gains nothing it did not have.
     arch-chroot "$MNT" usermod -aG docker "$ARCH_OS_USERNAME"
     ;;
 

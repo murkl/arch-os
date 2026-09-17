@@ -1,14 +1,11 @@
 title: Write the device
 
-# The one step here that needs root, and the one that talks to the person in
-# front of it: sudo asks for a password and dd reports how far it has got, and
-# neither can be drawn over the interface. So the interface steps aside for the
-# length of it - see task.sh.
+# sudo asks for a password and dd reports how far it has got, and neither can be
+# drawn over the interface - so it steps aside for the length of this one.
 tty: true
 
-# The run stops afterwards rather than sliding straight into the page that says
-# it is over: what is left to do is on the machine in front of somebody, and a
-# device written but still plugged in is a boot that does not happen.
+# The run stops here rather than sliding into the page that says it is over:
+# a device written but still plugged in is a boot that does not happen.
 report: |
   The device is ready
 

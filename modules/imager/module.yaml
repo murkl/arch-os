@@ -1,67 +1,46 @@
-# What this Imager is, what it asks, and in what order it works. Everything else
-# in this module is found by its own name — module.sh, locales/, tasks/ — and
-# nothing points at it from here.
+# What this module is, what it asks and in what order it works. Everything else
+# in it is found by its own name, and every list and suggestion below is a
+# function in module.sh.
 #
-# The shell below is module.sh's: every list and every suggested value is a
-# function named there, so this file stays the questions and nothing else.
-#
-# Every key this file may use:
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
-# The one name this module has: the row that opens it, the trail across the top
-# of every page once it is open, and every sentence the interface writes about
-# it. It is what will happen rather than what the program is called, because
-# that is what the row asking which module to open is read as — and a device
-# somebody can boot a machine from is worth more than one word. The folder it
-# lives in stays `imager`, which is what its answers and its log are named
-# after.
+# What will happen, not what the program is called: this row is read as the
+# thing somebody is about to do. The folder stays `imager`, which is what its
+# answers and its log are named after.
 title: Create boot medium
-
-# The sentence under that row.
 description: Write Arch OS to a USB device to boot another machine from.
 
-# What a machine has to be for this module to be offered on it at all, asked
-# before the row even exists. The other way round from the Installer and the
-# Recovery, which is the whole division between the three: they work on the
-# machine the image booted, this one makes that image.
-#
-# What goes to stderr is what somebody reads who named this module outright with
-# --module=. A run started with --debug is offered every module, whatever this
-# says.
+# The other way round from the Installer and the Recovery, which is the whole
+# division between the three: they work on the machine the image booted, this
+# one makes that image.
 requires: |
   on_live_image || return 0
   echo "Create boot medium writes a device from an ordinary Linux machine. On the live image there is a machine to work on instead - open the Installer or the Recovery." >&2
   exit 1
 
-# The last thing shown before the first task runs. {{VAR}} is filled in from the
-# answers, so this names the actual device.
 confirm: |
   Arch OS will be written to {{ARCH_OS_IMAGE_DEVICE}}.
 
   Everything on that device will be erased and this cannot be undone. Nothing
   has been changed so far.
 
-# The phases the work happens in, top to bottom. Each is a folder under tasks/,
-# marked — tasks/@write/ — and lying in one is what puts a task in the run and
-# where.
-#
-# What Oak runs of its own accord — the check that this machine can write a
-# device at all — is a hook, and hooks live in hooks/ beside tasks/.
+# Each is a folder under tasks/, marked - tasks/@write/ - and lying in one is
+# what puts a task in the run and where.
 stages:
-  - download # the image and the checksum published beside it, onto this machine
-  - verify # the image, against that checksum, before anything is written
-  - write # the image, onto the device
+  - download # the image and the checksum published beside it
+  - verify # the image against that checksum, before anything is written
+  - write # the image onto the device
 
-# Everything this Imager needs to know, in the order the run needs it. Which
-# image gets written is not among them: that is not a matter of opinion, it is
-# the version beside the binary — see module.sh.
+# Which image gets written is not among them: that is not a matter of opinion,
+# it is the version beside the binary - see module.sh.
 variables:
   - name: ARCH_OS_DOWNLOAD_DIR
     title: Download folder
     description: |
       Where the image and the checksum beside it are kept. Both are reused, so
-      a second run costs no bandwidth. The folder is created if it is not
-      there, and the image needs about two gigabytes.
+      a second run costs no bandwidth, and an image already there is written
+      without a network. The folder is created if it is not there, and the
+      image needs about two gigabytes.
     group: Image
     required: true
     prefill: download_dir

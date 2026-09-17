@@ -1,10 +1,6 @@
-# The image, against the checksum published beside it. The checksum names the
+# The image against the checksum published beside it. The checksum names the
 # image itself, so run from the folder both are in this is the check anybody
 # would run by hand.
-#
-# It is integrity and not provenance: both files come out of the same release,
-# so what this catches is a download that went wrong on the way, not a release
-# that was wrong to begin with.
 
 simulating && return 0
 
