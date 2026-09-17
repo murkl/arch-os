@@ -20,6 +20,10 @@ apps="${home}/.local/share/applications"
 # https://wiki.archlinux.org/title/PipeWire#Installation
 packages=(git bluez bluez-utils avahi pipewire pipewire-pulse wireplumber)
 
+# gnome-software only recommends it, so the group never pulls it in - and the
+# theme override further down needs the binary regardless of extras.
+packages+=(flatpak)
+
 # The group filtered rather than installed and then trimmed: what the slim
 # desktop leaves out is never downloaded.
 mapfile -t desktop < <(arch-chroot "$MNT" pacman -Sgq gnome)
