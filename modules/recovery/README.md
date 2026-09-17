@@ -60,6 +60,13 @@ None to offer means the step is skipped, not asked about.
 
 The running system, mounted at `/mnt`, sits on a top level holding `@` and the snapshots, mounted separately at `/run/arch-os-recovery` - a rollback needs `@` replaceable while `/mnt` stays gone.
 
+```mermaid
+flowchart LR
+    D["one btrfs disk"] -->|"subvol=@"| M["/mnt<br/>the running system"]
+    D -->|"subvolid=5"| T["/run/arch-os-recovery<br/>@ and the snapshots"]
+    T -.->|"rollback replaces @"| M
+```
+
 **Note:** _Subvolume table and mount options are written out twice - here and in the Installer's - and must not drift apart. **[➜ Btrfs Subvolumes](../../docs/REFERENCE.md#btrfs-subvolumes)**_
 
 ## Answers

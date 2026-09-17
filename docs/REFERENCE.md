@@ -66,6 +66,14 @@ Offered only with **disk encryption** and **systemd-boot**:
 
 Signed **last**: the graphics driver and boot splash rebuild the kernel image afterwards, bypassing pacman and `sbctl`'s hook. Every signed file is recorded, so the hook catches the next rebuild.
 
+```mermaid
+flowchart LR
+    B["boot loader installed"] --> D["graphics driver<br/>+ boot splash"]
+    D -->|rebuild the kernel image| S["Secure Boot<br/>signs, last"]
+
+    style S fill:#1793d1,stroke:#1793d1,color:#fff
+```
+
 Keys enroll only in **setup mode** - "Secure Boot disabled" is not that. `-m` keeps Microsoft's certificates. A failure here is only logged: the machine still boots.
 
 **Note:** _A unified image switches the boot loader's editor off - an editable command line is a root shell past Secure Boot._
