@@ -14,7 +14,7 @@
 # ////////////////////////////////////////////////////////////////////////////
 
 # Whether this machine is running from a booted live image, which is the one
-# machine this module does not belong on - see requires.sh beside module.yaml.
+# machine this module does not belong on - see `requires:` in module.yaml.
 #
 # Not "is it Arch", the way the other two ask: a device is written from any
 # Linux at all. What is asked here is only whether this machine is the one that

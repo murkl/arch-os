@@ -14,7 +14,6 @@ make -C ../.. run MODULE=installer ARGS=--debug   # run it without touching this
 ```
 module.yaml                     what this Installer is, what it asks, what order it runs in
 module.sh                       what more than one script has to agree about
-requires.sh                     what a machine has to be for this module to be offered on it
 tasks/@<stage>/<id>/task.yaml   what that step is: its needs, conditions and offers
 tasks/@<stage>/<id>/task.sh     what it does, plus any file it ships with, beside it
 tasks/@<stage>/<id>/test.sh     optional: how to tell, on the machine, that it took
@@ -56,7 +55,7 @@ Three orderings matter, and each is a stage or a `needs:`:
 
 | Hook | Description |
 | --- | --- |
-| `@preflight` | Three checks, in order, before the first question: root, UEFI with Secure Boot off, and a network. That this is a live image at all is decided earlier, by `requires.sh` — see below |
+| `@preflight` | Three checks, in order, before the first question: root, UEFI with Secure Boot off, and a network. That this is a live image at all is decided earlier, by `requires:` — see below |
 | `@online`, `@wlan-device`, `@wlan-networks`, `@wlan-connect` | Finding and joining a wireless network |
 | `@restart`, `@shutdown` | The two ways this machine is put down, each closing the target first |
 
@@ -77,7 +76,7 @@ arch-chroot "$MNT" systemctl enable something.service
 cp "$(where)/thing.conf" "${MNT}/etc/thing.conf"
 ```
 
-The YAML says what the task **is** — its title, what it needs, the answers that decide whether it runs at all. What it **does** is the script beside it, however short that script is: shell written into a YAML is linted by nothing, formatted by nothing, and a failure in it names the command instead of a file and a line. `make check` refuses a block scalar under `script:`, `test:` or `requires:` for exactly that reason. A single line naming a function is still fine — that function is in `module.sh`, where it is checked.
+The YAML says what the task **is** — its title, what it needs, the answers that decide whether it runs at all. What it **does** is the script beside it, however short that script is: shell written into a YAML is linted by nothing, formatted by nothing, and a failure in it names the command instead of a file and a line. `make check` refuses a block scalar under `script:` or `test:` for exactly that reason. `requires:` is the exception, and the only shell left in a declaration: it is what the module says about the machine it belongs on, read before anything else in the folder is. A single line naming a function is still fine — that function is in `module.sh`, where it is checked.
 
 `simulating && return 0` is the first line of every task, before anything that changes the machine — that is what turns `--debug` into a simulation. `where` returns the task's own folder.
 
@@ -164,7 +163,7 @@ The upload is a `confirm:` that opens on **no**, asked immediately after the pag
 
 A booted **Arch Linux live image**, and on it root, UEFI with Secure Boot off, and a network connection.
 
-The first of those is `requires.sh`, beside `module.yaml`: it decides whether this module is on the page at all, so a machine that is not a live image never sees the row and is told where to write one instead. The rest are the three steps under `hooks/@preflight/`, checked in that order once the module has been chosen — what has to be true about a machine somebody has already picked.
+The first of those is `requires:` in `module.yaml`: it decides whether this module is on the page at all, so a machine that is not a live image never sees the row and is told where to write one instead. The rest are the three steps under `hooks/@preflight/`, checked in that order once the module has been chosen — what has to be true about a machine somebody has already picked.
 
 **Note:** _A run started with `--debug` is offered every module whatever they say about the machine, and simulates its work._
 

@@ -287,6 +287,10 @@ locales-check: dev
 # script can go unchecked — and a failure in one names the command instead of a
 # file and a line, because there is no file. A single line calling a function by
 # name is still fine: that function is in module.sh, where it is checked.
+#
+# `requires:` is deliberately not on that list. It is what the module says about
+# the machine it belongs on, it is read before anything else in the folder is,
+# and it belongs in the declaration where somebody looking for it looks.
 lint:
 	shellcheck -s sh -S style $(POSIX_SCRIPTS)
 	shellcheck -S style $(ISO_SCRIPTS)
@@ -298,8 +302,8 @@ lint:
 	@! grep -nE 'arch-chroot [^|&;]*[[:space:]](command|type|hash|source|alias)[[:space:]]' \
 		$(MODULE_SCRIPTS) $(MODULE_YAML) \
 		|| { echo "a shell builtin cannot be run through arch-chroot - see has_command" >&2; exit 1; }
-	@! grep -nE '^[[:space:]]*(script|test|requires|command|prefill|apply):[[:space:]]*[|>]' $(MODULE_YAML) \
-		|| { echo "shell written into a yaml is linted by nothing and gives a failure no line to point at - put it in a .sh file beside it" >&2; exit 1; }
+	@! grep -nE '^[[:space:]]*(script|test|command|prefill|apply):[[:space:]]*[|>]' $(MODULE_YAML) \
+		|| { echo "a task's or hook's shell is linted by nothing inside a yaml and gives a failure no line to point at - put it in the .sh file beside it" >&2; exit 1; }
 
 fmt:
 	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)

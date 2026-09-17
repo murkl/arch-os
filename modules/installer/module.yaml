@@ -1,6 +1,6 @@
 # What this installer is, what it asks, and in what order it works. Everything
-# else in this module is found by its own name — module.sh, requires.sh, data/,
-# locales/, tasks/ — and nothing points at it from here.
+# else in this module is found by its own name — module.sh, data/, locales/,
+# tasks/ — and nothing points at it from here.
 #
 # The shell below is module.sh's: every list and every suggested value is a
 # function named there, so this file stays the questions and nothing else.
@@ -16,6 +16,22 @@ title: Installer
 
 # The sentence under that row.
 description: Put Arch Linux on this machine.
+
+# What a machine has to be for this module to be offered on it at all, asked
+# before the row even exists. A machine that is not a booted Arch Linux live
+# image never sees it: there is nothing here to install onto, and the module
+# that writes the image it would be booted from is the one that belongs there
+# instead.
+#
+# It is here rather than in hooks/@preflight/ because the two answer different
+# questions: this one decides whether the row exists, and preflight decides
+# whether the machine behind the row is ready. What goes to stderr is what
+# somebody reads who named this module outright with --module=. A run started
+# with --debug is offered every module, whatever this says.
+requires: |
+  arch_live && return 0
+  echo "The Installer runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there." >&2
+  exit 1
 
 # Read on the way out, when the installer closes and the machine keeps running.
 # There is a root shell behind it on this image — see iso/.

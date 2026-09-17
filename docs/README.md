@@ -138,7 +138,7 @@ Arch OS is five parts, kept deliberately apart:
 
 They are modules: data, not programs. One binary runs any of them, `oak --module=installer` opens one outright, and a release is that binary with `oak.yaml` and `modules/` beside it. The build downloads the binary rather than compiling it, so nothing here needs a Go toolchain.
 
-Which module a machine can open is the module's own business: each says so in its own `requires.sh`, and nothing anywhere holds a list of them. A booted Arch live image offers the Installer and the Recovery; anything else offers Create boot medium alone and opens it on the way in, with no list of one row on it. That is what leaves **[`get.sh`](../get.sh)** with nothing to decide — it fetches, checks, unpacks and starts, and that is all of it.
+Which module a machine can open is the module's own business: each says so in its own `requires:`, and nothing anywhere holds a list of them. A booted Arch live image offers the Installer and the Recovery; anything else offers Create boot medium alone and opens it on the way in, with no list of one row on it. That is what leaves **[`get.sh`](../get.sh)** with nothing to decide — it fetches, checks, unpacks and starts, and that is all of it.
 
 - Adding a question is a few lines of YAML
 - Adding a step is a folder under the stage it belongs to

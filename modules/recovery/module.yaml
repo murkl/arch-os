@@ -1,6 +1,6 @@
 # What this recovery is, what it asks, and in what order it works. Everything
-# else in this module is found by its own name — module.sh, requires.sh,
-# locales/, tasks/ — and nothing points at it from here.
+# else in this module is found by its own name — module.sh, locales/, tasks/ —
+# and nothing points at it from here.
 #
 # The shell below is module.sh's: every list and every suggested value is a
 # function named there, so this file stays the questions and nothing else.
@@ -16,6 +16,19 @@ title: Recovery
 
 # The sentence under that row.
 description: Repair an Arch Linux system that is already on a disk.
+
+# What a machine has to be for this module to be offered on it at all, asked
+# before the row even exists. The same rule the Installer carries, for the same
+# reason: a system is repaired from outside itself, which means from a booted
+# Arch Linux live image and from nowhere else.
+#
+# What goes to stderr is what somebody reads who named this module outright with
+# --module=. A run started with --debug is offered every module, whatever this
+# says.
+requires: |
+  arch_live && return 0
+  echo "The Recovery runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there." >&2
+  exit 1
 
 # Read on the way out, when the recovery closes and the machine keeps running.
 # There is a root shell behind it on this image — see iso/.

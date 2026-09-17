@@ -48,7 +48,7 @@ btrfs_subvolumes() {
 # ////////////////////////////////////////////////////////////////////////////
 
 # Whether this is a booted Arch Linux live image, which is the only machine this
-# module belongs on - see requires.sh beside module.yaml.
+# module belongs on - see `requires:` in module.yaml.
 #
 # Two markers for the image, because either on its own is enough and a shell
 # that lost the first still has the second: /run/archiso is what the image

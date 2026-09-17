@@ -4,8 +4,8 @@
 # They run before the first question, because none of it can be fixed from
 # inside this program.
 #
-# Which machines this module belongs on is not among them: that is requires.sh
-# beside module.yaml, and it is what decides whether this row is on the page.
+# Which machines this module belongs on is not among them: that is `requires:` in
+# module.yaml, and it is what decides whether this row is on the page at all.
 # What is left for this stage is what has to be true once it has been chosen.
 #
 # What goes to stderr is what the user reads, so each message says what is wrong

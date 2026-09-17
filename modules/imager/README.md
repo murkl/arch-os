@@ -16,7 +16,6 @@ make -C ../.. run MODULE=imager ARGS=--debug   # run it without touching this ma
 ```
 module.yaml                     what this module is, what it asks, what order it runs in
 module.sh                       what more than one script has to agree about
-requires.sh                     what a machine has to be for this module to be offered on it
 tasks/@<stage>/<id>/task.yaml   what that step is: its needs, conditions and offers
 tasks/@<stage>/<id>/task.sh     what it does
 tasks/@<stage>/<id>/test.sh     how to tell, on the machine, that it took
@@ -52,7 +51,7 @@ The checksum ships in the same release as the image, so what it catches is a dow
 
 ## Where it runs
 
-`requires.sh`, beside `module.yaml`, is what decides whether this row is on the page at all, and it is the division between the three modules: the Installer and the Recovery belong **only** on a booted Arch Linux live image, because that is where there is a machine to work on. This one belongs **only** anywhere else, because this is the machine that makes that image — and because downloading two gigabytes into a live system means downloading them into its memory.
+`requires:` in `module.yaml` is what decides whether this row is on the page at all, and it is the division between the three modules: the Installer and the Recovery belong **only** on a booted Arch Linux live image, because that is where there is a machine to work on. This one belongs **only** anywhere else, because this is the machine that makes that image — and because downloading two gigabytes into a live system means downloading them into its memory.
 
 So on an ordinary desktop this is the only module on offer, and Oak opens it on the way in without a list of one row. A run started with `--debug` is offered every module whatever they say, and simulates.
 
