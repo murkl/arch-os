@@ -22,8 +22,8 @@ msgstr "Bootmedium erstellen"
 
 #. what it is, in one sentence, on the page that offers it
 #: module.yaml
-msgid "Write Arch OS to a USB device to boot another machine from."
-msgstr "Arch OS auf einen USB-Datenträger schreiben, um eine andere Maschine davon zu starten."
+msgid "Write Arch OS to a USB device to boot another or this machine from."
+msgstr "Arch OS auf einen USB-Datenträger schreiben, um eine andere oder diese Maschine davon zu starten."
 
 #. the last thing read before the first task runs
 #: module.yaml
