@@ -15,7 +15,7 @@
 title: Installer
 
 # The sentence under that row.
-description: Put Arch Linux on this machine.
+description: Install Arch Linux on this machine.
 
 # What a machine has to be for this module to be offered on it at all, asked
 # before the row even exists. A machine that is not a booted Arch Linux live

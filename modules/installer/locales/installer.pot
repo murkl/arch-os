@@ -25,7 +25,7 @@ msgstr ""
 
 #. what it is, in one sentence, on the page that offers it
 #: module.yaml
-msgid "Put Arch Linux on this machine."
+msgid "Install Arch Linux on this machine."
 msgstr ""
 
 #. how to get back in, read on the way out to the console

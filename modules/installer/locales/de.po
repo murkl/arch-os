@@ -22,13 +22,13 @@ msgstr "Installer"
 
 #. what it is, in one sentence, on the page that offers it
 #: module.yaml
-msgid "Put Arch Linux on this machine."
-msgstr "Arch Linux auf diesen Rechner bringen."
+msgid "Install Arch Linux on this machine."
+msgstr "Arch Linux auf diesen Rechner installieren."
 
 #. how to get back in, read on the way out to the console
 #: module.yaml
 msgid "Type installer at the prompt to start it again."
-msgstr "Mit dem Befehl installer startest du ihn wieder."
+msgstr "Mit dem Befehl installer startest du den Installer wieder."
 
 #. the last thing read before the first task runs
 #: module.yaml
@@ -175,8 +175,8 @@ msgstr "Passwort"
 
 #. ARCH_OS_PASSWORD: what it means
 #: module.yaml
-msgid "Used for your account, the root account, and — if disk encryption is on — to unlock the disk at boot. It is asked for right before installation starts and is never written to a file."
-msgstr "Gilt für dein Konto, für das Konto root und — bei aktiver Verschlüsselung — zum Entsperren des Datenträgers beim Start. Es wird unmittelbar vor der Installation abgefragt und nie in eine Datei geschrieben."
+msgid "Used for your account, the root account, and — if disk encryption is on — to unlock the disk at boot. It is never written to a file."
+msgstr "Gilt für dein Konto, für das Konto root und — bei aktiver Verschlüsselung — zum Entsperren des Datenträgers beim Start. Es wird nie in eine Datei geschrieben."
 
 #. ARCH_OS_HOSTNAME: the question
 #: module.yaml
