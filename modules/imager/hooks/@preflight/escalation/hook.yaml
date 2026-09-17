@@ -4,26 +4,10 @@
 # They run before the first question, because none of it can be fixed from
 # inside this program.
 #
-# Which machines this module belongs on is not among them: that is `offered:` in
-# module.yaml, and it is what decides whether this row is on the page at all.
+# Which machines this module belongs on is not among them: that is requires.sh
+# beside module.yaml, and it is what decides whether this row is on the page.
 # What is left for this stage is what has to be true once it has been chosen.
 #
 # What goes to stderr is what the user reads, so each message says what is wrong
 # and what to do about it, in that order, and nothing else.
 title: Root for the write
-
-# Not "are we root": this module deliberately is not - see as_root in module.sh.
-# What has to exist is a way to become it for the one step that cannot do
-# without it.
-#
-# Whether this particular person is allowed to is not asked here, because asking
-# means asking for their password, and this stage runs before anybody has said
-# they want to write anything. sudo says so itself, on the terminal the write
-# step is handed, at the moment it is actually needed.
-script: |
-  simulating && return 0
-
-  [ "$(id -u)" -eq 0 ] && return 0
-  command -v sudo >/dev/null && return 0
-  echo "Writing a device needs root, and this machine has no sudo to ask for it. Start this again as root." >&2
-  exit 1

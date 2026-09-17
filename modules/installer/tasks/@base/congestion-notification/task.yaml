@@ -1,0 +1,8 @@
+title: Turn congestion notification off
+needs: [pacstrap-core]
+
+# Its own task rather than a branch inside configure-system, because it is the
+# one network setting here that is an answer rather than a default: written down
+# as a condition, the run lists this step only on the machines it is for, and
+# nothing has to read shell to find out which those are.
+conditions: ARCH_OS_ECN_ENABLED == false

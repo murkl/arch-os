@@ -1,6 +1,6 @@
 # What this installer is, what it asks, and in what order it works. Everything
-# else in this module is found by its own name — module.sh, data/, locales/,
-# tasks/ — and nothing points at it from here.
+# else in this module is found by its own name — module.sh, requires.sh, data/,
+# locales/, tasks/ — and nothing points at it from here.
 #
 # The shell below is module.sh's: every list and every suggested value is a
 # function named there, so this file stays the questions and nothing else.
@@ -8,40 +8,14 @@
 # Every key this file may use:
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
-# What this module is called, read wherever the interface talks about it rather
-# than starts it: the sentence over its settings, the trail across the top. What
-# a run of it is called is `run:` below — a program and the work it does are two
-# names, and the one a failure has to say is the work.
+# The one name this module has: the row that opens it, the trail across the top
+# of every page once it is open, and every sentence the interface writes about
+# it. The rows inside are named after what they do — Start, Settings — so this
+# name is never read twice on one screen.
 title: Installer
-
-# And what opening it does, which is the row somebody presses enter on — on the
-# page asking which module to open, and again on the menu. A name is not a
-# button: the row says what will happen, the title says what this is.
-action: Install
-
-# And what a run of it is called: the work, not the program doing it. It is read
-# on the row that starts it, on the clock while the tasks go by, and on the line
-# the run ends on — where an installation that stopped has to say the
-# installation failed. "The Installer failed" says the program is broken, which
-# is the one thing that page almost never means.
-run: Installation
 
 # The sentence under that row.
 description: Put Arch Linux on this machine.
-
-# Whether this machine is one this module belongs on at all, asked before it is
-# even offered. A machine that is not a booted Arch Linux live image never sees
-# this row: there is nothing here to install onto, and the module that writes the
-# image it would be booted from is the one that belongs there instead.
-#
-# It is here rather than in hooks/@preflight/ because the two answer different
-# questions: this one decides whether the row exists, and preflight decides
-# whether the machine behind the row is ready. A run started with --debug is
-# offered every module, whatever this says.
-offered: |
-  arch_live && return 0
-  echo "The Installer runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there." >&2
-  exit 1
 
 # Read on the way out, when the installer closes and the machine keeps running.
 # There is a root shell behind it on this image — see iso/.
@@ -72,7 +46,7 @@ stages:
   - system # everything that is switched on rather than installed
   - desktop # the chosen desktop, its driver, and what belongs to it
   - finalize # the last things done to the new system
-  - finish # what is offered once it is installed
+  - handover # what is offered once it is installed, and the ways out
 
 # A set of answers, not a state the installer stays in: offered once, on a
 # machine that has never answered anything, and every value it fills in is an
@@ -144,7 +118,7 @@ presets:
       - title: Online (paste.rs)
         description: Load every answer from a configuration shared at the end of an earlier installation.
         asks: ARCH_OS_CONFIG_SOURCE
-        apply: ./tasks/@finish/share-config/import.sh
+        apply: ./tasks/@handover/share-config/import.sh
 
 # Everything this installer needs to know, in the order it is asked. Required and
 # unanswered is what makes the installer ask; an answer is what makes it stop.

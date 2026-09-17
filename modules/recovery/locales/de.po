@@ -15,20 +15,10 @@ msgstr ""
 msgid "English"
 msgstr "Deutsch"
 
-#. what this program is called, where the interface talks about it
+#. what this module is called, wherever the interface names it
 #: module.yaml
 msgid "Recovery"
 msgstr "Recovery"
-
-#. what opening it does, on the row that opens it
-#: module.yaml
-msgid "Recover"
-msgstr "Wiederherstellen"
-
-#. what a run of it is called, read while it runs and when it ends
-#: module.yaml
-msgid "Repair"
-msgstr "Reparatur"
 
 #. what it is, in one sentence, on the page that offers it
 #: module.yaml
@@ -199,6 +189,12 @@ msgstr ""
 #: hooks/@preflight/root/hook.yaml
 msgid "Running as root"
 msgstr "Läuft als root"
+
+#~ msgid "Recover"
+#~ msgstr "Wiederherstellen"
+
+#~ msgid "Repair"
+#~ msgstr "Reparatur"
 
 #~ msgid "Started from the live image"
 #~ msgstr "Vom Live-Image gestartet"

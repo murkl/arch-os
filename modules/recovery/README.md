@@ -14,6 +14,7 @@ make -C ../.. run MODULE=recovery ARGS=--debug   # run it without touching this 
 ```
 module.yaml                     what this Recovery is, what it asks, what order it runs in
 module.sh                       what more than one script has to agree about
+requires.sh                     what a machine has to be for this module to be offered on it
 tasks/@<stage>/<id>/task.yaml   what that step is: its needs, conditions and offers
 tasks/@<stage>/<id>/task.sh     what it does, plus any file it ships with, beside it
 tasks/@<stage>/<id>/test.sh     optional: how to tell, on the machine, that it took
@@ -73,4 +74,4 @@ The two that are read off the disk fill in with the answer they would already ha
 
 A booted **Arch Linux live image**, and root on it. Nothing else.
 
-The first is `offered:` in `module.yaml`, the same rule the Installer carries: a system is repaired from outside itself, so a machine that is not a live image never sees this row. The second is the one step under `hooks/@preflight/`.
+The first is `requires.sh`, the same rule the Installer carries: a system is repaired from outside itself, so a machine that is not a live image never sees this row. The second is the one step under `hooks/@preflight/`.

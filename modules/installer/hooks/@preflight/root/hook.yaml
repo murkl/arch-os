@@ -1,7 +1,7 @@
 # Is this machine ready to be installed onto?
 #
 # Whether it is a machine to install onto at all is asked earlier and elsewhere:
-# `offered:` in module.yaml decides whether this module is on offer here. What
+# requires.sh beside module.yaml decides whether this module is on offer here. What
 # is left for this stage is what has to be true once it has been chosen.
 #
 # Every check in it is read-only and every one of them is a hard stop. They run
@@ -12,10 +12,3 @@
 # What goes to stderr is what the user reads, so each message says what is wrong
 # and what to do about it, in that order, and nothing else.
 title: Running as root
-
-script: |
-  simulating && return 0
-
-  [ "$(id -u)" -eq 0 ] && return 0
-  echo "This has to run as root. Log in as root and start it again." >&2
-  exit 1

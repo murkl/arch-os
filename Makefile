@@ -56,7 +56,7 @@ MODULE_PARTS := module.sh data locales tasks hooks
 # OAK_VERSION is named outright rather than followed, so a build of a given
 # commit is the same build tomorrow. Written without the `v` its tag carries.
 OAK_REPO    := murkl/oak
-OAK_VERSION ?= 0.2.1
+OAK_VERSION ?= 0.3.0
 OAK_ASSET   := oak-linux-amd64
 OAK_DIR     := .oak
 OAK_BIN     := $(OAK_DIR)/oak
@@ -276,11 +276,17 @@ locales-check: dev
 # with module.sh already in scope. actionlint reads the workflows again for what
 # a yaml linter cannot see.
 #
-# The grep at the end is for the one mistake no linter here can see, because it
-# is valid shell that only fails on a machine being installed: arch-chroot execs
+# The first grep is for the one mistake no linter here can see, because it is
+# valid shell that only fails on a machine being installed: arch-chroot execs
 # what it is given, so a shell builtin handed to it exists nowhere. `command -v`
 # is the one that gets written, and it cost two silent test failures in a live
 # run before it was found.
+#
+# The second is what keeps the first one honest. Everything above reads *.sh and
+# nothing reads shell written into a yaml, so a block scalar is the one place a
+# script can go unchecked — and a failure in one names the command instead of a
+# file and a line, because there is no file. A single line calling a function by
+# name is still fine: that function is in module.sh, where it is checked.
 lint:
 	shellcheck -s sh -S style $(POSIX_SCRIPTS)
 	shellcheck -S style $(ISO_SCRIPTS)
@@ -292,6 +298,8 @@ lint:
 	@! grep -nE 'arch-chroot [^|&;]*[[:space:]](command|type|hash|source|alias)[[:space:]]' \
 		$(MODULE_SCRIPTS) $(MODULE_YAML) \
 		|| { echo "a shell builtin cannot be run through arch-chroot - see has_command" >&2; exit 1; }
+	@! grep -nE '^[[:space:]]*(script|test|requires|command|prefill|apply):[[:space:]]*[|>]' $(MODULE_YAML) \
+		|| { echo "shell written into a yaml is linted by nothing and gives a failure no line to point at - put it in a .sh file beside it" >&2; exit 1; }
 
 fmt:
 	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)

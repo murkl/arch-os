@@ -29,7 +29,7 @@ arch-chroot "$MNT" sbctl sign -s "/boot/EFI/Linux/arch-${ARCH_OS_KERNEL}.efi" ||
 arch-chroot "$MNT" sbctl sign -s "/boot/EFI/Linux/arch-${ARCH_OS_KERNEL}-fallback.efi" || echo "signing the fallback image failed"
 
 # Puts the now signed loader on the EFI partition, over the unsigned one the
-# boot loader task left there.
+# systemd-boot task left there.
 arch-chroot "$MNT" bootctl --esp-path=/boot install || echo "reinstalling the signed systemd-boot failed"
 
 # Enrolling replaces the firmware's key hierarchy and is only allowed in setup

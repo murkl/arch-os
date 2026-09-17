@@ -1,5 +1,9 @@
 # Everything that makes the installed packages into this particular machine:
 # clock, language, keyboard, name, swap - and the units that keep them running.
+#
+# All of it unconditional. What only some machines get is a task of its own with
+# the answer that decides it written into its yaml, so a run lists the step it
+# is actually taking - see the congestion notification and the scrub beside it.
 
 simulating && return 0
 
@@ -60,6 +64,27 @@ echo "$ARCH_OS_HOSTNAME" >"${MNT}/etc/hostname"
 
 # ----------------------------------------------------------------------------
 
+# The editor everything that asks for one gets. pam_env reads this file at every
+# login there is - a text console, ssh, the desktop - and systemd hands the same
+# file to the user manager as 99-environment.conf, so a graphical program sees
+# it too.
+#
+# Here rather than in each shell's own configuration: sudoedit, git and
+# systemctl edit are not shells, they read $EDITOR, and what they fall back on
+# without one is vi, which `base` does not ship. The shell enhancement is also a
+# thing somebody can turn off, and an editor is not.
+#
+# An edit rather than a drop-in, because pam_env reads this one file and no
+# directory beside it. It belongs to the filesystem package, which ships it
+# holding nothing but comments.
+{
+    echo '# Written by the Arch OS Installer.'
+    echo 'EDITOR=nano'
+    echo 'VISUAL=nano'
+} >>"${MNT}/etc/environment"
+
+# ----------------------------------------------------------------------------
+
 # Swap. Compressed swap in memory: faster than a swap partition, and no SSD
 # wear. https://wiki.archlinux.org/title/Zram
 {
@@ -78,20 +103,6 @@ echo "$ARCH_OS_HOSTNAME" >"${MNT}/etc/hostname"
 
 # ----------------------------------------------------------------------------
 
-# The one network setting that is an answer rather than a default. It is set on
-# the live system too, before the first download - see the init task - and it
-# belongs here as well: a router that drops these connections goes on dropping
-# them after the machine is restarted.
-# https://wiki.archlinux.org/title/Sysctl
-if [ "$ARCH_OS_ECN_ENABLED" = "false" ]; then
-    {
-        echo '# Written by the Arch OS Installer.'
-        echo 'net.ipv4.tcp_ecn = 0'
-    } >"${MNT}/etc/sysctl.d/99-arch-os-ecn.conf"
-fi
-
-# ----------------------------------------------------------------------------
-
 # The services a working system runs, switched on so the first boot comes up
 # with a network, a clock and the swap set up above.
 arch-chroot "$MNT" systemctl enable NetworkManager
@@ -99,9 +110,3 @@ arch-chroot "$MNT" systemctl enable fstrim.timer                     # keeps an 
 arch-chroot "$MNT" systemctl enable systemd-zram-setup@zram0.service # the swap set up above
 arch-chroot "$MNT" systemctl enable systemd-oomd.service             # kills a runaway before the machine locks up
 arch-chroot "$MNT" systemctl enable systemd-timesyncd.service
-
-# One timer, not one per subvolume: a scrub verifies the whole file system, so
-# the subvolumes would only be three passes over the same disk.
-if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
-    arch-chroot "$MNT" systemctl enable btrfs-scrub@-.timer
-fi

@@ -18,19 +18,9 @@ msgstr ""
 msgid "English"
 msgstr ""
 
-#. what this program is called, where the interface talks about it
+#. what this module is called, wherever the interface names it
 #: module.yaml
 msgid "Installer"
-msgstr ""
-
-#. what opening it does, on the row that opens it
-#: module.yaml
-msgid "Install"
-msgstr ""
-
-#. what a run of it is called, read while it runs and when it ends
-#: module.yaml
-msgid "Installation"
 msgstr ""
 
 #. what it is, in one sentence, on the page that offers it
@@ -599,6 +589,11 @@ msgid "Configure the system"
 msgstr ""
 
 #. the step, as the run lists it
+#: tasks/@base/congestion-notification/task.yaml
+msgid "Turn congestion notification off"
+msgstr ""
+
+#. the step, as the run lists it
 #: tasks/@base/core-tweaks/task.yaml
 msgid "Apply the core tweaks"
 msgstr ""
@@ -609,8 +604,23 @@ msgid "Create your account"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@boot/bootloader/task.yaml
-msgid "Install the boot loader"
+#: tasks/@boot/initramfs/task.yaml
+msgid "Build the boot images"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@boot/grub/task.yaml
+msgid "Install GRUB"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@boot/systemd-boot/task.yaml
+msgid "Install systemd-boot"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@system/btrfs-scrub/task.yaml
+msgid "Check the file system regularly"
 msgstr ""
 
 #. the step, as the run lists it
@@ -669,13 +679,23 @@ msgid "Share files with other machines"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@finalize/finish-system/task.yaml
-msgid "Finish the new system"
+#: tasks/@finalize/first-login/task.yaml
+msgid "Prepare the first login"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@finalize/snapshots/task.yaml
-msgid "Set up snapshots"
+#: tasks/@finalize/remove-orphans/task.yaml
+msgid "Remove orphaned packages"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@finalize/snapper/task.yaml
+msgid "Set up Snapper"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@finalize/snapshot-hook/task.yaml
+msgid "Snapshot before every package change"
 msgstr ""
 
 #. the step, as the run lists it
@@ -684,12 +704,12 @@ msgid "Sign the boot chain"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@finish/copy-config/task.yaml
+#: tasks/@handover/copy-config/task.yaml
 msgid "Keep a copy of this installation"
 msgstr ""
 
 #. read once the step is done, and held on until somebody has
-#: tasks/@finish/copy-config/task.yaml
+#: tasks/@handover/copy-config/task.yaml
 msgid ""
 "Arch OS is installed\n"
 "\n"
@@ -697,12 +717,12 @@ msgid ""
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@finish/share-config/task.yaml
+#: tasks/@handover/share-config/task.yaml
 msgid "Share this configuration"
 msgstr ""
 
 #. asked before the step runs
-#: tasks/@finish/share-config/task.yaml
+#: tasks/@handover/share-config/task.yaml
 msgid ""
 "Put these answers online now?\n"
 "\n"
@@ -710,7 +730,7 @@ msgid ""
 msgstr ""
 
 #. read once the step is done, and held on until somebody has
-#: tasks/@finish/share-config/task.yaml
+#: tasks/@handover/share-config/task.yaml
 msgid ""
 "Configuration shared\n"
 "\n"
@@ -718,12 +738,12 @@ msgid ""
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@finish/chroot/task.yaml
+#: tasks/@handover/chroot/task.yaml
 msgid "Enter the new system"
 msgstr ""
 
 #. asked before the step runs
-#: tasks/@finish/chroot/task.yaml
+#: tasks/@handover/chroot/task.yaml
 msgid ""
 "Open a shell inside the system that was just installed?\n"
 "\n"
@@ -731,12 +751,12 @@ msgid ""
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@finish/reboot/task.yaml
+#: tasks/@handover/reboot/task.yaml
 msgid "Restart into the new system"
 msgstr ""
 
 #. asked before the step runs
-#: tasks/@finish/reboot/task.yaml
+#: tasks/@handover/reboot/task.yaml
 msgid ""
 "Restart into {{ARCH_OS_HOSTNAME}} now?\n"
 "\n"
@@ -744,12 +764,12 @@ msgid ""
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@finish/unmount/task.yaml
+#: tasks/@handover/unmount/task.yaml
 msgid "Unmount everything"
 msgstr ""
 
 #. asked before the step runs
-#: tasks/@finish/unmount/task.yaml
+#: tasks/@handover/unmount/task.yaml
 msgid ""
 "Unmount the new system and stay in the live environment?\n"
 "\n"

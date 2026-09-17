@@ -1,6 +1,6 @@
 # What this Imager is, what it asks, and in what order it works. Everything else
-# in this module is found by its own name — module.sh, locales/, tasks/ — and
-# nothing points at it from here.
+# in this module is found by its own name — module.sh, requires.sh, locales/,
+# tasks/ — and nothing points at it from here.
 #
 # The shell below is module.sh's: every list and every suggested value is a
 # function named there, so this file stays the questions and nothing else.
@@ -8,35 +8,14 @@
 # Every key this file may use:
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
-# What this module is called, read wherever the interface talks about it rather
-# than starts it: the sentence over its settings, the trail across the top. What
-# a run of it is called is `run:` below — a program and the work it does are two
-# names, and the one a failure has to say is the work.
-title: Imager
-
-# And what opening it does, which is the row somebody presses enter on — on the
-# page asking which module to open, and again on the menu. A name is not a
-# button: the row says what will happen, the title says what this is — and what
-# will happen here is a device somebody can boot a machine from, which is worth
-# more than one word.
-action: Create boot medium
-
-# And what a run of it is called: the work, not the program doing it — read on
-# the row that starts it, on the clock while it works and on the line it ends on.
-# One word, because all three are sentences the runtime builds around it, and
-# the page they sit on has already said which device is being written.
-run: Writing
-
-# Whether this machine is one this module belongs on at all, asked before it is
-# even offered. The other way round from the Installer and the Recovery, which is
-# the whole division between the three: they work on the machine the image
-# booted, this one makes that image.
-#
-# A run started with --debug is offered every module, whatever this says.
-offered: |
-  on_live_image || return 0
-  echo "Create boot medium writes a device from an ordinary Linux machine. On the live image there is a machine to work on instead - open the Installer or the Recovery." >&2
-  exit 1
+# The one name this module has: the row that opens it, the trail across the top
+# of every page once it is open, and every sentence the interface writes about
+# it. It is what will happen rather than what the program is called, because
+# that is what the row asking which module to open is read as — and a device
+# somebody can boot a machine from is worth more than one word. The folder it
+# lives in stays `imager`, which is what its answers and its log are named
+# after.
+title: Create boot medium
 
 # The sentence under that row.
 description: Write Arch OS to a USB device to boot another machine from.

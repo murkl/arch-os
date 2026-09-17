@@ -1,6 +1,6 @@
 # What this recovery is, what it asks, and in what order it works. Everything
-# else in this module is found by its own name — module.sh, locales/, tasks/ —
-# and nothing points at it from here.
+# else in this module is found by its own name — module.sh, requires.sh,
+# locales/, tasks/ — and nothing points at it from here.
 #
 # The shell below is module.sh's: every list and every suggested value is a
 # function named there, so this file stays the questions and nothing else.
@@ -8,34 +8,14 @@
 # Every key this file may use:
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
-# What this module is called, read wherever the interface talks about it rather
-# than starts it: the sentence over its settings, the trail across the top. What
-# a run of it is called is `run:` below — a program and the work it does are two
-# names, and the one a failure has to say is the work.
+# The one name this module has: the row that opens it, the trail across the top
+# of every page once it is open, and every sentence the interface writes about
+# it. The rows inside are named after what they do — Start, Settings — so this
+# name is never read twice on one screen.
 title: Recovery
-
-# And what opening it does, which is the row somebody presses enter on — on the
-# page asking which module to open, and again on the menu. A name is not a
-# button: the row says what will happen, the title says what this is.
-action: Recover
-
-# And what a run of it is called: the work, not the program doing it — read on
-# the row that starts it, on the clock while it works and on the line it ends on.
-run: Repair
 
 # The sentence under that row.
 description: Repair an Arch Linux system that is already on a disk.
-
-# Whether this machine is one this module belongs on at all, asked before it is
-# even offered. The same rule the Installer carries, for the same reason: a
-# system is repaired from outside itself, which means from a booted Arch Linux
-# live image and from nowhere else.
-#
-# A run started with --debug is offered every module, whatever this says.
-offered: |
-  arch_live && return 0
-  echo "The Recovery runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there." >&2
-  exit 1
 
 # Read on the way out, when the recovery closes and the machine keeps running.
 # There is a root shell behind it on this image — see iso/.

@@ -1,31 +1,12 @@
-# Snapshots of the system, and something that takes one before every package
-# transaction - so an update that goes wrong can be rolled back from the boot
-# menu.
+# Snapshots of the system, taken before every package transaction and cleaned up
+# on a timer - so an update that goes wrong can be rolled back from the boot
+# menu without the disk filling up over the months.
 #
-# With snapper that is a rolling set cleaned up on a timer; without it, a plain
-# dated snapshot per transaction and nothing to tidy up after it.
+# Its own task beside the plain hook rather than a branch inside a shared one:
+# the two are different answers to one question, and which of them runs is
+# written in the yaml rather than read out of shell.
 
 simulating && return 0
-
-if [ "$ARCH_OS_BTRFS_SNAPPER_ENABLED" != "true" ]; then
-    # Without snapper there is still a file system that can snapshot: by date, and
-    # with nothing cleaning up after it.
-    mkdir -p "${MNT}/etc/pacman.d/hooks"
-    {
-        echo '[Trigger]'
-        echo 'Operation = Install'
-        echo 'Operation = Upgrade'
-        echo 'Operation = Remove'
-        echo 'Type = Package'
-        echo 'Target = *'
-        echo
-        echo '[Action]'
-        echo 'Description = Creating a snapshot before this transaction'
-        echo 'When = PreTransaction'
-        echo "Exec = /bin/sh -c '/usr/bin/btrfs subvolume snapshot -r / /.snapshots/\"\$(date \"+%Y-%m-%d_%H-%M-%S\")\"'"
-    } >"${MNT}/etc/pacman.d/hooks/50-btrfs-snapshot.hook"
-    return 0
-fi
 
 # snapper insists on creating /.snapshots itself, so the subvolume mounted there
 # is taken away and put back around it.

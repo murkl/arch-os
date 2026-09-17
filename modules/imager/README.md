@@ -1,6 +1,8 @@
-# Arch OS Imager
+# Create boot medium
 
-Everything this Imager knows about making a bootable device. It is data — one YAML file and the folders beside it — and it does not run on its own: [Oak](https://github.com/murkl/oak) draws the interface, asks the questions and runs the tasks in order.
+Everything this module knows about making a bootable device. It is data — one YAML file and the folders beside it — and it does not run on its own: [Oak](https://github.com/murkl/oak) draws the interface, asks the questions and runs the tasks in order.
+
+**Note:** _The folder is `imager`, which is what `--module=imager` opens and what `imager.conf` and `imager.log` are named after. **Create boot medium** is its `title:`, and what the row a person presses says._
 
 **Note:** _Putting Arch Linux on disk is a separate module: **[➜ Arch OS Installer](../installer)**_
 
@@ -12,8 +14,9 @@ make -C ../.. run MODULE=imager ARGS=--debug   # run it without touching this ma
 ## What is where
 
 ```
-module.yaml                     what this Imager is, what it asks, what order it runs in
+module.yaml                     what this module is, what it asks, what order it runs in
 module.sh                       what more than one script has to agree about
+requires.sh                     what a machine has to be for this module to be offered on it
 tasks/@<stage>/<id>/task.yaml   what that step is: its needs, conditions and offers
 tasks/@<stage>/<id>/task.sh     what it does
 tasks/@<stage>/<id>/test.sh     how to tell, on the machine, that it took
@@ -49,7 +52,7 @@ The checksum ships in the same release as the image, so what it catches is a dow
 
 ## Where it runs
 
-`offered:` in `module.yaml` is what decides whether this row is on the page at all, and it is the division between the three modules: the Installer and the Recovery belong **only** on a booted Arch Linux live image, because that is where there is a machine to work on. This one belongs **only** anywhere else, because this is the machine that makes that image — and because downloading two gigabytes into a live system means downloading them into its memory.
+`requires.sh`, beside `module.yaml`, is what decides whether this row is on the page at all, and it is the division between the three modules: the Installer and the Recovery belong **only** on a booted Arch Linux live image, because that is where there is a machine to work on. This one belongs **only** anywhere else, because this is the machine that makes that image — and because downloading two gigabytes into a live system means downloading them into its memory.
 
 So on an ordinary desktop this is the only module on offer, and Oak opens it on the way in without a list of one row. A run started with `--debug` is offered every module whatever they say, and simulates.
 
@@ -67,7 +70,7 @@ An Arch image is a hybrid ISO: it already carries the partition table and both b
 
 This module runs as whoever started it. That is what separates it from the other two: they run on a booted live image, where everything is root already and there is no home to leave anything in, while this one runs on somebody's own machine — and a root process there leaves two gigabytes in their home that only root can delete again, with the program's own answers and log beside them.
 
-So `as_root` in `module.sh` wraps the three commands that cannot do without it, and nothing else:
+So `as_root` lives in the write task, the one step that cannot do without it, and wraps three commands there and nothing else:
 
 | Command | Why |
 | --- | --- |
@@ -83,7 +86,7 @@ The write task is the one step with `tty: true`. `sudo` draws its prompt on the 
 
 ## Answers
 
-`imager.conf`, beside wherever the Imager was started.
+`imager.conf`, beside wherever the program was started.
 
 | Variable | Description |
 | --- | --- |

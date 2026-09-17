@@ -14,9 +14,10 @@ make -C ../.. run MODULE=installer ARGS=--debug   # run it without touching this
 ```
 module.yaml                     what this Installer is, what it asks, what order it runs in
 module.sh                       what more than one script has to agree about
-tasks/<id>/task.yaml            what that step is: its stage, needs, conditions and offers
-tasks/<id>/task.sh              what it does, plus any file it ships with, beside it
-tasks/<id>/test.sh              optional: how to tell, on the machine, that it took
+requires.sh                     what a machine has to be for this module to be offered on it
+tasks/@<stage>/<id>/task.yaml   what that step is: its needs, conditions and offers
+tasks/@<stage>/<id>/task.sh     what it does, plus any file it ships with, beside it
+tasks/@<stage>/<id>/test.sh     optional: how to tell, on the machine, that it took
 hooks/@<hook>/<id>/hook.yaml    a moment Oak runs itself, rather than as part of the work
 hooks/@<hook>/<id>/hook.sh      what that step does, where its yaml does not say so itself
 data/                           the tables a language and a country are looked up in
@@ -34,17 +35,18 @@ Each stage is a folder under `tasks/`, marked with `@`, and each task is a folde
 | `prepare` | The live system, made ready to install from |
 | `disk` | Partitioned, encrypted, formatted, mounted. The only stage that destroys anything |
 | `base` | The system on disk, configured, with an account created |
-| `boot` | The boot loader and the kernel command line |
+| `boot` | The images the firmware starts, and the loader that starts them |
 | `system` | Everything that gets switched on rather than installed |
 | `desktop` | GNOME, its driver and whatever belongs to it |
 | `finalize` | The last steps on the new system |
-| `finish` | What is offered once the installation is complete |
+| `handover` | What is offered once the installation is complete, and the ways out |
 
 Three orderings matter, and each is a stage or a `needs:`:
 
 1. The disk has to exist before anything is installed onto it
 2. 32-bit support has to be enabled before any package that needs it is pulled in
-3. The boot chain is signed last, since signing only holds if nothing rebuilds the kernel image afterwards
+3. The boot loader comes after the images it starts, which is what `needs: [initramfs]` says in both of them
+4. The boot chain is signed last, since signing only holds if nothing rebuilds a boot image afterwards — which is why `secure-boot` names every other task of its stage
 
 **Note:** _`make check` prints the order the whole module resolves to._
 
@@ -54,7 +56,7 @@ Three orderings matter, and each is a stage or a `needs:`:
 
 | Hook | Description |
 | --- | --- |
-| `@preflight` | Three checks, in order, before the first question: root, UEFI with Secure Boot off, and a network. That this is a live image at all is decided earlier, by `offered:` — see below |
+| `@preflight` | Three checks, in order, before the first question: root, UEFI with Secure Boot off, and a network. That this is a live image at all is decided earlier, by `requires.sh` — see below |
 | `@online`, `@wlan-device`, `@wlan-networks`, `@wlan-connect` | Finding and joining a wireless network |
 | `@restart`, `@shutdown` | The two ways this machine is put down, each closing the target first |
 
@@ -75,16 +77,7 @@ arch-chroot "$MNT" systemctl enable something.service
 cp "$(where)/thing.conf" "${MNT}/etc/thing.conf"
 ```
 
-A step short enough to read at a glance skips the file and writes its shell in the YAML instead, which is what the two-line ones here do:
-
-```yaml
-# tasks/@system/thing/task.yaml
-title: Install the thing
-script: |
-  simulating && return 0
-
-  chroot_pacman_install thing
-```
+The YAML says what the task **is** — its title, what it needs, the answers that decide whether it runs at all. What it **does** is the script beside it, however short that script is: shell written into a YAML is linted by nothing, formatted by nothing, and a failure in it names the command instead of a file and a line. `make check` refuses a block scalar under `script:`, `test:` or `requires:` for exactly that reason. A single line naming a function is still fine — that function is in `module.sh`, where it is checked.
 
 `simulating && return 0` is the first line of every task, before anything that changes the machine — that is what turns `--debug` into a simulation. `where` returns the task's own folder.
 
@@ -92,13 +85,13 @@ A task fails on any non-zero status: a command that failed anywhere in it, or wh
 
 A task that fails stops the installation there. The page it stops on is the one that says the system is installed, with the mark the other way round; behind it is the module, the task, the file and line, the command and what the tool said.
 
-`module.sh` is deliberately small: only what several tasks must agree about, such as the mount point, the kernel command line and how a package is installed and retried, plus the functions `module.yaml` calls by name for its lists. Everything else belongs in the task that does it, even when that makes the script longer.
+`module.sh` is deliberately small: only what **several** tasks must agree about, such as the mount point, the kernel command line and how a package is installed and retried, plus the functions `module.yaml` calls by name for its lists. One caller is not agreement — a helper with a single task behind it belongs in that task, even when that makes the script longer. A task should be readable in one file, and that file is `task.sh`.
 
 **Note:** _Anything that needs a desktop session which does not exist yet — GNOME settings live in the session's own database — goes through `on_first_login`, which collects those lines into a script that runs once at the first login and then removes itself._
 
 ## Testing a Step
 
-A task may also say how to tell, on the machine itself, that the work took. That is a `test.sh` beside `task.sh`, or a `test:` in the YAML for something short:
+A task may also say how to tell, on the machine itself, that the work took. That is a `test.sh` beside `task.sh`:
 
 ```
 # tasks/@system/thing/test.sh
@@ -162,7 +155,7 @@ The upload is a `confirm:` that opens on **no**, asked immediately after the pag
 | You want to add | How |
 | --- | --- |
 | An option | A row under `variables:` in `module.yaml`. Guard any task that depends on it with `conditions:` |
-| A step | A folder under `tasks/` with `task.yaml` and `task.sh` in it — and a `test.sh` where there is something to read back — then `make check` |
+| A step | A folder under the stage it belongs to, with `task.yaml` and `task.sh` in it — and a `test.sh` where there is something to read back — then `make check`. A step that only some machines get says so in `conditions:` rather than in an `if` inside the script |
 | A starting point | An option under `presets:`. One that fetches its answers names the question with `asks:` and the shell that turns it into more answers with `apply:` |
 | A language | **[➜ See Contributing](../../docs/CONTRIBUTING.md#adding-a-language)** |
 | Something in the Recovery | **[➜ Arch OS Recovery](../recovery)**, none of it lives here |
@@ -171,7 +164,7 @@ The upload is a `confirm:` that opens on **no**, asked immediately after the pag
 
 A booted **Arch Linux live image**, and on it root, UEFI with Secure Boot off, and a network connection.
 
-The first of those is `offered:` in `module.yaml`: it decides whether this module is on the page at all, so a machine that is not a live image never sees the row and is told where to write one instead. The rest are the three steps under `hooks/@preflight/`, checked in that order once the module has been chosen — what has to be true about a machine somebody has already picked.
+The first of those is `requires.sh`, beside `module.yaml`: it decides whether this module is on the page at all, so a machine that is not a live image never sees the row and is told where to write one instead. The rest are the three steps under `hooks/@preflight/`, checked in that order once the module has been chosen — what has to be true about a machine somebody has already picked.
 
 **Note:** _A run started with `--debug` is offered every module whatever they say about the machine, and simulates its work._
 

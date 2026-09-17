@@ -18,19 +18,9 @@ msgstr ""
 msgid "English"
 msgstr ""
 
-#. what this program is called, where the interface talks about it
-#: module.yaml
-msgid "Imager"
-msgstr ""
-
-#. what opening it does, on the row that opens it
+#. what this module is called, wherever the interface names it
 #: module.yaml
 msgid "Create boot medium"
-msgstr ""
-
-#. what a run of it is called, read while it runs and when it ends
-#: module.yaml
-msgid "Writing"
 msgstr ""
 
 #. what it is, in one sentence, on the page that offers it

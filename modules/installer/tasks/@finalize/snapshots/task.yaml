@@ -1,2 +1,0 @@
-title: Set up snapshots
-conditions: ARCH_OS_FILESYSTEM == btrfs

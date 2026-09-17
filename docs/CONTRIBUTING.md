@@ -65,7 +65,7 @@ That starts the Release workflow. It finds the run that built this commit, downl
 | `arch-os-2.0.0-x86_64.iso` | The bootable image |
 | `arch-os-2.0.0-x86_64.tar.gz` | The Oak binary, `oak.yaml` and every module, for any Linux machine |
 
-Each has a `.sha256` beside it. `get.sh` picks the archive out of the latest release by what its name ends in, and the Imager picks the image out of the release its own version names — so renaming either download stays a change to the Makefile.
+Each has a `.sha256` beside it. `get.sh` picks the archive out of the latest release by what its name ends in, and the imager module picks the image out of the release its own version names — so renaming either download stays a change to the Makefile.
 
 **Note:** _A release can be written on the web page instead. Publishing it creates the tag, and the workflow starts on that._
 

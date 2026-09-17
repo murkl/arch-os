@@ -6,8 +6,9 @@
 #
 # Only what more than one script must agree about belongs in it: a boot entry
 # and a unified kernel image built from two different command lines would be a
-# system that boots one way and updates itself another. Anything one task needs
-# stays in that task. Nothing here prints for a person to read, only to the log.
+# system that boots one way and updates itself another. One caller is not
+# agreement - anything a single task needs stays in that task, so a task can be
+# read in one file. Nothing here prints for a person to read, only to the log.
 
 # Where the new system is mounted while it is being built.
 MNT=/mnt
@@ -23,7 +24,7 @@ where() { dirname "${BASH_SOURCE[1]}"; }
 # ////////////////////////////////////////////////////////////////////////////
 
 # Whether this is a booted Arch Linux live image, which is the only machine this
-# module belongs on - see `offered:` in module.yaml.
+# module belongs on - see requires.sh beside module.yaml.
 #
 # Two markers for the image, because either on its own is enough and a shell
 # that lost the first still has the second: /run/archiso is what the image
@@ -387,7 +388,7 @@ secure_boot_wanted() {
 
 # The images the firmware actually starts: the signed unified pair where the
 # boot chain is signed, the plain ram disks where it is not. Named once because
-# the boot loader writes them, the boot splash rebuilds them, and three tests
+# the initramfs task writes them, the boot splash rebuilds them, and two tests
 # read them back - and a check against the image this machine does not start
 # from is a check of nothing.
 boot_images() {
@@ -402,8 +403,9 @@ boot_images() {
 
 # ----------------------------------------------------------------------------
 
-# Read by both the boot entries and the unified kernel image, so the two can
-# never disagree about how this system boots.
+# Read by the unified kernel image, by systemd-boot's entries and by GRUB's
+# command line - three tasks, one answer, so no two of them can disagree about
+# how this system boots.
 kernel_args() {
     local args=(rw init=/usr/lib/systemd/systemd)
 
@@ -618,7 +620,7 @@ sysctl_keys_exist() {
 #   https://specifications.freedesktop.org/autostart-spec/latest/
 HOME_DIR="${MNT}/home/${ARCH_OS_USERNAME}"
 
-# Only while the run is on; the finish-system task turns it into the three
+# Only while the run is on; the first-login task turns it into the three
 # below, which is what the finished system keeps.
 FIRST_LOGIN="${HOME_DIR}/.first-login"
 

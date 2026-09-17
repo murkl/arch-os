@@ -1,0 +1,6 @@
+title: Check the file system regularly
+
+# Its own task rather than a branch inside configure-system: what it switches on
+# belongs to one file system and nothing else, and written down as a condition
+# the run lists this step only where it applies.
+conditions: ARCH_OS_FILESYSTEM == btrfs

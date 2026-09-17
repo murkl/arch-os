@@ -10,6 +10,21 @@
 
 simulating && return 0
 
+# This module runs as whoever started it, and that is the difference between it
+# and the other two: they run on a booted live image, where everything is root
+# already and there is no home to leave anything in. This one runs on somebody's
+# own machine, where a root process leaves two gigabytes in their home that only
+# root can delete again - and the program's own answers and log beside them.
+#
+# So the escalation lives here, in the one task that cannot do without it:
+# writing a block device, unmounting what the desktop mounted, and making the
+# kernel read the new partition table. Everything else this module does, the
+# downloads included, is done as the person at the machine. Empty when that
+# person is root already.
+as_root() {
+    if [ "$(id -u)" -eq 0 ]; then "$@"; else sudo "$@"; fi
+}
+
 device="$ARCH_OS_IMAGE_DEVICE"
 target="$(image)"
 

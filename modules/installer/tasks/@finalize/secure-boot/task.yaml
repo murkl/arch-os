@@ -1,5 +1,10 @@
 title: Sign the boot chain
-needs: [finish-system, snapshots]
+
+# After everything else in this stage, and that is the whole of why it names
+# them: signing holds only as long as nothing rebuilds a boot image afterwards,
+# and every one of these installs or removes packages, which is where a
+# mkinitcpio hook comes from. A task added to this stage belongs on this line.
+needs: [first-login, remove-orphans, snapper, snapshot-hook]
 conditions:
   - ARCH_OS_SECURE_BOOT_ENABLED == true
   - ARCH_OS_ENCRYPTION_ENABLED == true

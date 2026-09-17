@@ -14,7 +14,7 @@
 # ////////////////////////////////////////////////////////////////////////////
 
 # Whether this machine is running from a booted live image, which is the one
-# machine this module does not belong on - see `offered:` in module.yaml.
+# machine this module does not belong on - see requires.sh beside module.yaml.
 #
 # Not "is it Arch", the way the other two ask: a device is written from any
 # Linux at all. What is asked here is only whether this machine is the one that
@@ -43,24 +43,6 @@ simulating() {
     debugging || return 1
     echo "simulated" # Oak has already logged which step this is
     sleep 1          # keep the step visible in the interface instead of flashing past
-}
-
-# ////////////////////////////////////////////////////////////////////////////
-# ROOT, WHERE IT IS NEEDED
-# ////////////////////////////////////////////////////////////////////////////
-
-# This module runs as whoever started it, and that is the difference between it
-# and the other two: they run on a booted live image, where everything is root
-# already and there is no home to leave anything in. This one runs on somebody's
-# own machine, where a root process leaves two gigabytes in their home that only
-# root can delete again - and the program's own answers and log beside them.
-#
-# So only what cannot do without it is escalated: writing a block device,
-# unmounting what the desktop mounted, and making the kernel read the new
-# partition table. Everything else, the downloads included, is done as the
-# person at the machine. Empty when that person is root already.
-as_root() {
-    if [ "$(id -u)" -eq 0 ]; then "$@"; else sudo "$@"; fi
 }
 
 # ////////////////////////////////////////////////////////////////////////////
