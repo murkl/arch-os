@@ -21,7 +21,7 @@ flowchart LR
 - **Squash merge** into `main` and delete `dev`. The pull request title becomes the commit
 - A pull request from outside is checked and built, not turned into an image
 
-**Note:** _Watched branches: `branches: [main, dev, neo]` in **[ci.yml](../.github/workflows/ci.yml)**._
+**Note:** _Watched branches: `branches: [main, dev, oak]` in **[ci.yml](../.github/workflows/ci.yml)**._
 
 ## The Version
 

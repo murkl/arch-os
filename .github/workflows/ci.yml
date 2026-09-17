@@ -7,11 +7,11 @@ name: CI
 
 on:
   push:
-    # dev and neo are where the work happens between releases and are watched
+    # dev and oak are where the work happens between releases and are watched
     # like main, so the expensive jobs below run on them before anything is
     # merged. Adding a branch here is the only thing that puts it under the
     # full run.
-    branches: [main, dev, neo]
+    branches: [main, dev, oak]
   pull_request:
   workflow_dispatch:
 
