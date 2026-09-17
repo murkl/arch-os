@@ -6,9 +6,9 @@ simulating && return 0
 chroot_aur_install "$ARCH_OS_AUR_HELPER"
 
 # Written to the user's own configuration rather than /etc/paru.conf: how one
-# person likes to be asked for a password is theirs to change.
-case "$ARCH_OS_AUR_HELPER" in
-paru | paru-bin | paru-git)
+# person likes to be asked for a password is theirs to change. yay has no
+# per-user config file to write.
+if [ "$ARCH_OS_AUR_HELPER" = "paru" ]; then
     config="${MNT}/home/${ARCH_OS_USERNAME}/.config/paru"
     mkdir -p "$config"
     {
@@ -31,5 +31,4 @@ paru | paru-bin | paru-git)
         echo 'SudoLoop'
     } >"${config}/paru.conf"
     own_home
-    ;;
-esac
+fi

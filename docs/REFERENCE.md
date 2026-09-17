@@ -129,7 +129,7 @@ Enough for a usable install, little enough that nothing needs looking after.
 
 One `timeout` around the whole build; passwordless `sudo` granted for its length and revoked after.
 
-**Note:** _`paru` is built here, against this machine's pacman. `-bin` packages break the day Arch moves `libalpm`._
+**Note:** _Only `paru` and `yay`, both built from source against this machine's pacman. A `-bin` package is linked against the pacman of the day it was published and stops starting the day Arch moves `libalpm` - not offered here._
 
 ## Snapshots
 

@@ -470,22 +470,19 @@ variables:
     title: AUR helper
     description: |
       Installs software from the Arch User Repository just as easily as from
-      the official repositories. paru is built here against the pacman this
-      machine has, which takes about a quarter of an hour. The -bin packages
-      are the same program ready-made and install in seconds, but they are
-      linked against the pacman of the day they were published: the first time
-      Arch moves libalpm to a new version, they stop starting at all.
+      the official repositories. Built here, against the pacman this machine
+      has, which takes about a quarter of an hour.
     group: System
-    values: [paru, paru-bin, paru-git, yay, none]
+    values: [paru, yay, none]
     default: paru
     required: true
 
   - name: ARCH_OS_CONTAINER_ENGINE
     title: Container engine
     description: |
-      docker is what most software and documentation assumes. podman runs
-      containers without a daemon and without root, and answers to the docker
-      command as well. Both come with a compose command.
+      docker needs a daemon running as root, which is what most software and
+      documentation assumes. podman has neither and still answers to the
+      docker command. Both bring a compose command.
     group: System
     values: [docker, podman, none]
     default: none

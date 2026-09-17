@@ -470,7 +470,7 @@ msgstr ""
 
 #. ARCH_OS_AUR_HELPER: what it means
 #: module.yaml
-msgid "Installs software from the Arch User Repository just as easily as from the official repositories. paru is built here against the pacman this machine has, which takes about a quarter of an hour. The -bin packages are the same program ready-made and install in seconds, but they are linked against the pacman of the day they were published: the first time Arch moves libalpm to a new version, they stop starting at all."
+msgid "Installs software from the Arch User Repository just as easily as from the official repositories. Built here, against the pacman this machine has, which takes about a quarter of an hour."
 msgstr ""
 
 #. ARCH_OS_CONTAINER_ENGINE: the question
@@ -480,7 +480,7 @@ msgstr ""
 
 #. ARCH_OS_CONTAINER_ENGINE: what it means
 #: module.yaml
-msgid "docker is what most software and documentation assumes. podman runs containers without a daemon and without root, and answers to the docker command as well. Both come with a compose command."
+msgid "docker needs a daemon running as root, which is what most software and documentation assumes. podman has neither and still answers to the docker command. Both bring a compose command."
 msgstr ""
 
 #. ARCH_OS_HOUSEKEEPING_ENABLED: the question

@@ -345,8 +345,8 @@ msgstr "Firmware-Aktualisierungen, die beim Start geladen werden. auto ist das, 
 
 #. ARCH_OS_DESKTOP: what it means
 #: module.yaml
-msgid "gnome installs the GNOME desktop. none leaves the system on a text console, with nothing graphical installed."
-msgstr "gnome installiert den GNOME-Desktop. none belässt das System bei einer Textkonsole, ohne dass etwas Grafisches installiert wird."
+msgid "Install the GNOME desktop or leave the system on a text console (tty), with nothing graphical installed."
+msgstr "Installiere den GNOME-Desktop oder belasse das System bei einer Textkonsole (tty), ohne dass etwas Grafisches installiert wird."
 
 #. ARCH_OS_DESKTOP_GRAPHICS_DRIVER: the question
 #: module.yaml
@@ -355,8 +355,8 @@ msgstr "Grafiktreiber"
 
 #. ARCH_OS_DESKTOP_GRAPHICS_DRIVER: what it means
 #: module.yaml
-msgid "mesa is the open driver and fits almost every machine. Pick one matching your card only if you know you need it."
-msgstr "mesa ist der offene Treiber und passt auf fast jeden Rechner. Wähle nur dann einen zu deiner Karte passenden, wenn du weißt, dass du ihn brauchst."
+msgid "Mesa is the open driver and fits almost every machine. Pick one matching your card only if you know you need it."
+msgstr "Mesa ist der offene Treiber und passt auf fast jeden Rechner. Wähle nur dann einen zu deiner Karte passenden, wenn du weißt, dass du ihn brauchst."
 
 #. ARCH_OS_DESKTOP_KEYBOARD_LAYOUT: the question
 #: module.yaml
@@ -365,8 +365,8 @@ msgstr "Desktop-Tastatur"
 
 #. ARCH_OS_DESKTOP_KEYBOARD_LAYOUT: what it means
 #: module.yaml
-msgid "The keyboard layout the desktop starts with. auto matches the console keyboard, using the desktop's own naming: de-latin1 and de are the same layout."
-msgstr "Die Tastaturbelegung, mit der der Desktop startet. auto ist dieselbe Wahl wie bei der Konsolentastatur, nur in den Namen des Desktops: de-latin1 und de sind dieselbe Belegung."
+msgid "The keyboard layout the desktop starts with. auto matches the console keyboard."
+msgstr "Die Tastaturbelegung, mit der der Desktop startet. auto ist dieselbe Wahl wie bei der Konsolentastatur."
 
 #. ARCH_OS_DESKTOP_KEYBOARD_VARIANT: the question
 #: module.yaml
@@ -461,7 +461,7 @@ msgstr "32-Bit-Unterstützung"
 #. ARCH_OS_MULTILIB_ENABLED: what it means
 #: module.yaml
 msgid "Needed by Steam, Wine and other software that is still 32-bit."
-msgstr "Wird von Steam, Wine und anderer Software gebraucht, die noch 32-bittig ist."
+msgstr "Wird von Steam, Wine und anderer Software gebraucht, die noch 32-bit benötigen."
 
 #. ARCH_OS_AUR_HELPER: the question
 #: module.yaml
@@ -470,8 +470,8 @@ msgstr "AUR-Helfer"
 
 #. ARCH_OS_AUR_HELPER: what it means
 #: module.yaml
-msgid "Installs software from the Arch User Repository just as easily as from the official repositories. paru is built here against the pacman this machine has, which takes about a quarter of an hour. The -bin packages are the same program ready-made and install in seconds, but they are linked against the pacman of the day they were published: the first time Arch moves libalpm to a new version, they stop starting at all."
-msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen. paru wird hier gegen das pacman dieser Maschine gebaut, was rund eine Viertelstunde dauert. Die -bin-Pakete sind dasselbe Programm fertig gebaut und in Sekunden installiert — aber gegen das pacman des Tages gelinkt, an dem sie veröffentlicht wurden: sobald Arch libalpm eine Version weiterzieht, starten sie gar nicht mehr."
+msgid "Installs software from the Arch User Repository (AUR) just as easily as from the official repositories. Built here, against the pacman this machine has, which takes about a quarter of an hour."
+msgstr "Installiert Software aus dem Arch User Repository (AUR) so einfach wie aus dem offiziellen. Wird hier gebaut, gegen das pacman dieser Maschine, was rund eine Viertelstunde dauert."
 
 #. ARCH_OS_CONTAINER_ENGINE: the question
 #: module.yaml
@@ -480,8 +480,8 @@ msgstr "Container-Engine"
 
 #. ARCH_OS_CONTAINER_ENGINE: what it means
 #: module.yaml
-msgid "docker is what most software and documentation assumes. podman runs containers without a daemon and without root, and answers to the docker command as well. Both come with a compose command."
-msgstr "docker ist das, wovon die meiste Software und Dokumentation ausgeht. podman führt Container ohne Daemon und ohne root aus und hört ebenso auf den Befehl docker. Beide bringen einen compose-Befehl mit."
+msgid "Docker needs a daemon running as root, which is what most software and documentation assumes. Podman has neither and still answers to the docker command. Both bring a compose command."
+msgstr "Docker braucht einen Daemon, der als root läuft — wovon die meiste Software und Dokumentation ausgeht. Podman hat beides nicht und hört trotzdem auf den Befehl docker. Beide bringen einen compose-Befehl mit."
 
 #. ARCH_OS_HOUSEKEEPING_ENABLED: the question
 #: module.yaml
@@ -496,7 +496,7 @@ msgstr "Zeitgesteuerte Aufgaben, die das System von selbst in Ordnung halten: Sp
 #. ARCH_OS_SHELL_ENHANCEMENT_ENABLED: the question
 #: module.yaml
 msgid "Shell enhancement"
-msgstr "Bessere Shell"
+msgstr "Shell Verbesserungen"
 
 #. ARCH_OS_SHELL_ENHANCEMENT_ENABLED: what it means
 #: module.yaml
@@ -520,8 +520,8 @@ msgstr "Arch OS Manager"
 
 #. ARCH_OS_MANAGER_ENABLED: what it means
 #: module.yaml
-msgid "A menu for updating, cleaning up and repairing the system after installation."
-msgstr "Ein Menü zum Aktualisieren, Aufräumen und Reparieren des Systems nach der Installation."
+msgid "A system app with TUI for updating, cleaning up and repairing the system after installation."
+msgstr "Eine System App mit TUI zum Aktualisieren, Aufräumen und Reparieren des Systems nach der Installation."
 
 #. ARCH_OS_VM_SUPPORT_ENABLED: the question
 #: module.yaml
@@ -809,6 +809,9 @@ msgstr "Im UEFI-Modus gestartet, Secure Boot aus"
 msgid "Connected to the internet"
 msgstr "Mit dem Internet verbunden"
 
+#~ msgid "Installs software from the Arch User Repository just as easily as from the official repositories. paru is built here against the pacman this machine has, which takes about a quarter of an hour. The -bin packages are the same program ready-made and install in seconds, but they are linked against the pacman of the day they were published: the first time Arch moves libalpm to a new version, they stop starting at all."
+#~ msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen. paru wird hier gegen das pacman dieser Maschine gebaut, was rund eine Viertelstunde dauert. Die -bin-Pakete sind dasselbe Programm fertig gebaut und in Sekunden installiert — aber gegen das pacman des Tages gelinkt, an dem sie veröffentlicht wurden: sobald Arch libalpm eine Version weiterzieht, starten sie gar nicht mehr."
+
 #~ msgid "Minimal"
 #~ msgstr "Minimal"
 
@@ -826,9 +829,6 @@ msgstr "Mit dem Internet verbunden"
 
 #~ msgid "Installs software from the Arch User Repository just as easily as from the official repositories. paru-bin is the same program as a ready-made binary; paru is that program built here, which means a Rust toolchain downloaded, compiled with and thrown away again."
 #~ msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen. paru-bin ist das fertige Binary, paru dasselbe Programm hier gebaut — dafür wird eine Rust-Toolchain geladen, benutzt und wieder weggeworfen."
-
-#~ msgid "Installs software from the Arch User Repository just as easily as from the official repositories."
-#~ msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen."
 
 #~ msgid "Installs guest tools when this is running inside a virtual machine, so the screen resizes and the clipboard is shared. Does nothing on real hardware."
 #~ msgstr "Installiert Gasterweiterungen, wenn das hier in einer virtuellen Maschine läuft, damit sich der Bildschirm anpasst und die Zwischenablage geteilt wird. Auf echter Hardware passiert nichts."
