@@ -25,7 +25,7 @@
         press: enter
       - page: Username
         press: [tux, enter]
-      # No / first: a list this long carries its narrowing box open.
+      # No / first: this question declares its narrowing box open.
       - page: Language and region
         press: [en_US, enter]
       - page: Time zone

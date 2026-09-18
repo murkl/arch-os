@@ -90,4 +90,5 @@ variables:
       the date it was taken and what created it.
     group: Storage
     required: true
+    filter: open
     command: ./tasks/@repair/rollback/snapshots.sh

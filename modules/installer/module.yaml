@@ -162,6 +162,7 @@ variables:
     group: Region
     required: true
     apply: load_console_keyboard
+    filter: open
     command: list_locales
 
   - name: ARCH_OS_VCONSOLE_KEYMAP
@@ -185,6 +186,7 @@ variables:
     default: auto
     required: true
     free: Type a font name
+    filter: open
     command: list_fonts
 
   - name: ARCH_OS_TIMEZONE
@@ -194,6 +196,7 @@ variables:
       opens on the time zone for the chosen country.
     group: Region
     required: true
+    filter: open
     command: list_timezones
     prefill: auto_timezone
 
@@ -207,6 +210,7 @@ variables:
     default: auto
     required: true
     free: Type a country
+    filter: open
     command: list_countries
 
   # ─── Storage ───────────────────────────────────────────────────────────────
@@ -376,6 +380,7 @@ variables:
     default: auto
     required: true
     conditions: ARCH_OS_DESKTOP != none
+    filter: open
     command: list_layouts
 
   - name: ARCH_OS_DESKTOP_KEYBOARD_VARIANT
@@ -387,6 +392,9 @@ variables:
     default: none
     required: true
     conditions: ARCH_OS_DESKTOP != none
+    # Three rows under one layout and forty under the next: the box is up on
+    # every machine rather than on some of them.
+    filter: open
     command: list_variants
 
   - name: ARCH_OS_DESKTOP_KEYBOARD_MODEL
