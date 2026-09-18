@@ -279,10 +279,11 @@ version-check:
 changelog-check:
 	@$(CHANGELOG_SH) $(CHANGELOG) $(VERSION) >/dev/null
 
-# A change that says nothing about itself, as a warning rather than a refusal:
-# the points can be written any time before the tag, and half of them are
-# written the day it goes out. It rides along in `check` so that nobody has to
-# remember to ask.
+# The file falling behind the work, as a warning rather than a refusal: work
+# that landed with no section open for it, or a change that wrote nothing into
+# the one that is. The points can be written any time before the tag, and half
+# of them are written the day it goes out, so neither stops anything. It rides
+# along in `check` so that nobody has to remember to ask.
 changelog-warn:
 	@$(CHANGELOG_WARN) $(CHANGELOG)
 

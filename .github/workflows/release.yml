@@ -181,13 +181,15 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           # What this release changed, read out of the changelog rather than
-          # written here a second time — a version with nothing under it stops
-          # the release here — and under it the two downloads and how to check
-          # where they came from.
+          # written here a second time, and under it the two downloads and how
+          # to check where they came from.
           notes="$(mktemp)"
-          {
-            make -s notes
-            cat <<NOTES
+          if ! make -s notes >"$notes"; then
+            echo "::error::docs/CHANGELOG.md has no section for ${VERSION} - write it on main, delete this tag and push it again"
+            exit 1
+          fi
+
+          cat >>"$notes" <<NOTES
 
           ---
 
@@ -210,7 +212,6 @@ jobs:
 
           Without \`gh\`, GitHub prints each download's SHA-256 beside it on this page, which says only that the file arrived whole.
           NOTES
-          } >"$notes"
 
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" dist/* --clobber

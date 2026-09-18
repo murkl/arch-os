@@ -43,7 +43,7 @@ flowchart LR
 - The section on top is the next release and may sit above the version `oak.yaml` still declares. Raising `version:` is what turns it into the one being released
 - The date is the day it goes out, so it is the one thing to look at again before tagging
 - `make check` holds the shape, the order, that no version stands there twice, and that the declared version has something under it
-- A change that never touched the file is a **warning** on the run and at the desk, never a refusal - the lines may be written retrospectively, up to the tag
+- Two **warnings** on the run and at the desk, never a refusal: work that landed with no section open for it, and a change that wrote nothing into the one that is - the lines may be written retrospectively, up to the tag
 
 ## Releasing
 
