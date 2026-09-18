@@ -15,6 +15,11 @@ if [ "$ARCH_OS_DUAL_BOOT_ENABLED" != "true" ]; then
     sgdisk -n 1:0:+1G -t 1:ef00 -c 1:boot --align-end "$ARCH_OS_DISK"
     sgdisk -n 2:0:0 -t 2:8300 -c 2:root --align-end "$ARCH_OS_DISK"
     partprobe "$ARCH_OS_DISK"
+
+    # partprobe tells the kernel to re-read the table; the device nodes under
+    # it are udev's, and it makes them a moment later. Without the wait the
+    # format below runs against a path that is not there yet.
+    udevadm settle
 fi
 
 # On stdin, so the passphrase never reaches an argument list that /proc shows.

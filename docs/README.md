@@ -30,7 +30,7 @@
 - One password for encryption, root and user; automatic login behind an encrypted disk
 - Btrfs snapshots before every package change (Snapper), restored from the desktop (Btrfs Assistant)
 - GNOME on Wayland, or a bare text console; graphics driver for Mesa, Intel, NVIDIA, AMD or ATI
-- Desktop extras: codecs, fonts, printing, Samba; or a slim install with GNOME core apps only
+- Desktop extras: codecs, fonts, printing, Samba and `.local` discovery; or a slim install with GNOME core apps only
 - Zram swap, fstrim, microcode, NetworkManager, mirrors ranked by country
 - Tuned rather than left at the defaults - see the **[➜ Reference](REFERENCE.md)**
 - AUR helper, 32-bit support, container engine, automatic housekeeping

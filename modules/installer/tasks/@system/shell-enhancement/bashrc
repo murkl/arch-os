@@ -2,7 +2,13 @@
 [[ $- != *i* ]] && return
 
 # Export the systemd user environment on a text console, where nothing else has.
-[[ ${SHLVL} == 1 ]] && [ -z "${DISPLAY}" ] && export $(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator | xargs)
+# A line at a time, because xargs splits a value that holds a space into two.
+if [[ ${SHLVL} == 1 && -z ${DISPLAY} ]]; then
+    while IFS= read -r line; do
+        [[ $line == *=* ]] || continue
+        export "${line%%=*}=${line#*=}"
+    done < <(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator)
+fi
 
 source "${HOME}/.aliases"
 

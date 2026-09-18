@@ -15,7 +15,11 @@ alias logs="systemctl --failed; echo; journalctl -p 3 -b"
 alias q="exit"
 alias c="clear"
 command -v fastfetch &>/dev/null && alias fetch="fastfetch"
-command -v meld &>/dev/null && alias pacnew="sudo DIFFPROG=meld pacdiff"
+# The .pacnew files an update left to merge. Run as you, not through sudo:
+# pacdiff -s reaches for sudoedit itself where it needs to, so the editor it
+# opens is yours rather than root's.
+alias pacnew="env DIFFPROG=\$EDITOR pacdiff -s"
+command -v meld &>/dev/null && alias pacnew="env DIFFPROG=meld pacdiff -s"
 command -v xdg-open &>/dev/null && alias open="xdg-open"
 alias myip="curl ipv4.icanhazip.com"
 alias ..="cd .."

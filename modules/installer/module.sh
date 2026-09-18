@@ -267,7 +267,14 @@ sudoers_rule() {
     mkdir -p "${MNT}/etc/sudoers.d"
     printf '# Written by the Arch OS Installer.\n%s\n' "$2" >"$file"
     chmod 0440 "$file"
-    arch-chroot "$MNT" visudo -cqf "/etc/sudoers.d/${1}"
+
+    # A rule sudo will not parse is taken back out rather than left lying
+    # there: one unreadable file in that directory is enough to refuse every
+    # sudo on the machine, and a rule that failed is better gone than kept.
+    arch-chroot "$MNT" visudo -cqf "/etc/sudoers.d/${1}" && return 0
+    rm -f "$file"
+    echo "the sudo rule ${1} was rejected and was removed again" >&2
+    return 1
 }
 
 # How long one attempt at an AUR build may take and how often it is tried. A
@@ -317,8 +324,11 @@ chroot_aur_install() {
         sleep "$RETRY_WAIT"
     done
 
-    as_user "rm -rf ${dir}"
+    # Taken back first, before anything that can fail: a cleanup that dies on
+    # a root-owned file the build left behind would otherwise leave passwordless
+    # sudo standing in the installed system.
     rm -f "${MNT}/etc/sudoers.d/99-aur-build"
+    as_user "rm -rf ${dir}" || echo "the build directory ${dir} could not be removed" >&2
 
     [ "$status" -eq 0 ] || echo "building ${repo} from the AUR did not finish" >&2
     return "$status"

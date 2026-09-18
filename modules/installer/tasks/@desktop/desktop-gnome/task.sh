@@ -18,7 +18,7 @@ apps="${home}/.local/share/applications"
 # for them below. The group pulls pipewire in only as somebody else's
 # dependency, which leaves the session manager out.
 # https://wiki.archlinux.org/title/PipeWire#Installation
-packages=(git bluez bluez-utils avahi pipewire pipewire-pulse wireplumber)
+packages=(git bluez bluez-utils avahi nss-mdns pipewire pipewire-pulse wireplumber)
 
 # gnome-software only recommends it, so the group never pulls it in - and the
 # theme override further down needs the binary regardless of extras.
@@ -88,6 +88,26 @@ chroot_pacman_install "${packages[@]}"
 arch-chroot "$MNT" groupadd -f plugdev
 arch-chroot "$MNT" usermod -aG adm,audio,video,optical,input,tty,plugdev "$ARCH_OS_USERNAME"
 [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && arch-chroot "$MNT" gpasswd -a "$ARCH_OS_USERNAME" gamemode
+
+# ////////////////////////////////////////////////////////////////////////////
+# NAME RESOLUTION
+# ////////////////////////////////////////////////////////////////////////////
+
+# The avahi daemon switched on further down announces this machine and finds
+# the others, and without this nothing on the system can then reach any of them
+# by the name they answer to: a printer, a share and another machine are all
+# <name>.local. The module goes in front of the resolver that would answer
+# NOTFOUND for that suffix and end the lookup there.
+#
+# An edit rather than a drop-in: the hosts line is one line of one file, glibc
+# reads no directory beside it, and the file belongs to the filesystem package.
+# https://wiki.archlinux.org/title/Avahi#Hostname_resolution
+nsswitch="${MNT}/etc/nsswitch.conf"
+if ! grep -q 'mdns_minimal' "$nsswitch"; then
+    sed -i '/^hosts:/ s/\bresolve\b/mdns_minimal [NOTFOUND=return] resolve/' "$nsswitch"
+    grep -q 'mdns_minimal' "$nsswitch" ||
+        echo "the hosts line in /etc/nsswitch.conf is not the one this Arch ships, .local names will not resolve" >&2
+fi
 
 # ////////////////////////////////////////////////////////////////////////////
 # LOGIN SCREEN

@@ -27,6 +27,7 @@ The [Oak](https://github.com/murkl/oak) binary with every module beside it lives
 ```
 build.sh <release-dir>                   assembles and runs mkarchiso
 smoke.sh <image.iso>                     boots a built image and waits for the first page
+glyphs.sh <file>...                      reads those files against the console font below
 src/etc/systemd/system/arch-os.service   starts it on tty1
 src/usr/local/bin/arch-os                the entry point, sets up the console first
 src/usr/local/bin/installer              opens the Installer directly
@@ -60,4 +61,12 @@ Boots under QEMU and OVMF, waits for the first page, shuts down. Checks the boot
 
 **Note:** _Needs `qemu-base`, `edk2-ovmf`, `tesseract`, `tesseract-data-eng`. Screenshots land in `dist/smoke/` - one frame on success, all of them on failure._
 
-**Note:** _`make check` lints every script here. `make clean` removes `archiso/` and `download/` along with `dist/`._
+## What the Console can draw
+
+The font this image loads has one table of glyphs, so a character outside it is a box on the screen - in whichever language it happens to be in. `glyphs.sh` reads the font name out of the launcher that loads it and checks files against its table; `make check` points it at every module.
+
+```
+make glyphs-check
+```
+
+**Note:** _`make check` lints every script here and runs the check above. `make clean` removes `archiso/` and `download/` along with `dist/`._

@@ -54,7 +54,7 @@ jobs:
 
       - uses: ./.github/actions/arch
         with:
-          packages: make curl shellcheck shfmt yamllint actionlint gettext diffutils gitleaks
+          packages: make curl shellcheck shfmt yamllint actionlint gettext diffutils gitleaks kbd
 
       - run: make check
 

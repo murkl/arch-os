@@ -80,12 +80,13 @@ ARGS   ?=
 # THE IMAGE | Stock Arch releng, patched to boot into this
 # ////////////////////////////////////////////////////////////////////////////
 
-# Two scripts rather than two targets: assembling an archiso profile is a
-# script's work, and so is booting a machine to read its console. Each takes
-# what it works on as an argument.
-ISO_DIR   := iso
-ISO_BUILD := $(ISO_DIR)/build.sh
-ISO_SMOKE := $(ISO_DIR)/smoke.sh
+# Scripts rather than targets: assembling an archiso profile is a script's work,
+# and so is booting a machine to read its console or reading a font's glyph
+# table. Each takes what it works on as an argument.
+ISO_DIR    := iso
+ISO_BUILD  := $(ISO_DIR)/build.sh
+ISO_SMOKE  := $(ISO_DIR)/smoke.sh
+ISO_GLYPHS := $(ISO_DIR)/glyphs.sh
 
 # The newest image there is, so `make iso && make smoke` needs no argument. Read
 # when it is used rather than when make starts, which is what lets the two run
@@ -100,12 +101,23 @@ ISO ?= $(shell ls -t $(DIST_DIR)/*.iso 2>/dev/null | head -1)
 POSIX_SCRIPTS := get.sh .github/summary.sh
 
 # Bash: what builds and boots the image, and what the image itself runs.
-ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(wildcard $(ISO_DIR)/src/usr/local/bin/*)
+ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_GLYPHS) $(wildcard $(ISO_DIR)/src/usr/local/bin/*)
 
 # Every script of every module, and every yaml for the check that reads both.
 # Looked up when they are used, so only the targets that read them pay for it.
 MODULE_SCRIPTS = $(shell find $(MODULES_DIR) -name '*.sh')
 MODULE_YAML    = $(shell find $(MODULES_DIR) -name '*.yaml')
+
+# The shell a module ships as a file of somebody's home rather than as a task.
+# Found by the name it lands under, since a .bashrc carries no extension. The
+# other three in that folder are out: zsh and fish are not dialects shellcheck
+# reads, and the handover fragment is placeholders rather than shell.
+MODULE_SHELL = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/bashrc $(MODULES_DIR)/*/tasks/@*/*/aliases)
+
+# Everything a module can put on a screen: the declarations, the scripts, the
+# tables and every catalog. The READMEs are the one thing here nobody reads on
+# a console.
+MODULE_TEXT = $(shell find $(MODULES_DIR) -type f ! -name '*.md')
 
 # ////////////////////////////////////////////////////////////////////////////
 # HOUSEKEEPING
@@ -132,8 +144,8 @@ BANNER_TAGLINE := A minimal, robust and reproducible Arch Linux base. Installer 
 BANNER_CELL    := 9
 
 .PHONY: all oak build dev run inspect tarball image iso smoke locales \
-	locales-check lint fmt check version version-check secrets-check tag \
-	screenshots banner docs clean
+	locales-check glyphs-check lint fmt check version version-check \
+	secrets-check tag screenshots banner docs clean
 
 # build empties the release it writes, and everything that packages it reads
 # what it left. Running them at once would package a half-written folder.
@@ -279,8 +291,9 @@ lint:
 	shellcheck -s sh -S style $(POSIX_SCRIPTS)
 	shellcheck -S style $(ISO_SCRIPTS)
 	shellcheck -x -S style $(MODULE_SCRIPTS)
+	shellcheck -s bash -S style -e SC1091 $(MODULE_SHELL)
 	shfmt -d -ln posix -i 4 $(POSIX_SCRIPTS)
-	shfmt -d -i 4 $(ISO_SCRIPTS) $(MODULE_SCRIPTS)
+	shfmt -d -i 4 $(ISO_SCRIPTS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
 	yamllint .
 	actionlint
 	@! grep -nE 'arch-chroot [^|&;]*[[:space:]](command|type|hash|source|alias)[[:space:]]' \
@@ -291,11 +304,18 @@ lint:
 
 fmt:
 	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)
-	shfmt -w -i 4 $(ISO_SCRIPTS) $(MODULE_SCRIPTS)
+	shfmt -w -i 4 $(ISO_SCRIPTS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
+
+# A virtual console holds one font and that font holds one table of glyphs, so a
+# character outside it is a box on the screen - in whichever language it happens
+# to be in, which is not the one whoever wrote it reads. After locales-check,
+# which is what makes the catalogs it reads the current ones.
+glyphs-check:
+	@$(ISO_GLYPHS) $(MODULE_TEXT)
 
 # The whole gate, cheapest and loudest first. CI runs this and nothing it adds
 # to it, so there is no second definition of green.
-check: version-check secrets-check lint inspect locales-check
+check: version-check secrets-check lint inspect locales-check glyphs-check
 
 # ////////////////////////////////////////////////////////////////////////////
 # RELEASING

@@ -88,6 +88,7 @@ make iso               # the release, as a bootable image
 make image             # ...only the image, out of a release already in dist/
 make smoke             # boot the newest image and wait for its first page
 make locales           # every translation template, brought up to date
+make glyphs-check      # every module against the glyph table of the console font
 make tag               # the release tag, written out of oak.yaml
 make oak               # fetch the runtime again, at the release OAK_VERSION names
 make clean             # every build output, taken back; the runtime stays
@@ -95,7 +96,7 @@ make clean             # every build output, taken back; the runtime stays
 
 ```
 sudo pacman -S --needed make curl shellcheck shfmt yamllint actionlint \
-    gettext gitleaks archiso qemu-base edk2-ovmf tesseract tesseract-data-eng
+    gettext gitleaks kbd archiso qemu-base edk2-ovmf tesseract tesseract-data-eng
 ```
 
 **Note:** _CI installs the same packages and runs the same commands in an Arch container. No second definition of green._
@@ -143,12 +144,14 @@ Keep as-is: `%s`/`%d` (order and kind), `{{ARCH_OS_DISK}}` (braces and name), `�
 
 ### What the Console can draw
 
-Before any desktop exists, a console font holds at most 512 glyphs: **ASCII and Latin-1** only (`äöüß éèê ñ ç å`).
+Before any desktop exists there is one console font, and it holds one table of glyphs: in practice **ASCII and Latin-1** (`äöüß éèê ñ ç å`).
 
 - Supported: German, French, Spanish, Italian, Portuguese, Dutch, the Nordics
 - Not: Polish, Czech, Turkish, Greek, Cyrillic, or any script of its own
 
-**Note:** _Supporting those needs a console font shipped on the image, not a catalog change. Open an issue._
+**Note:** _`make check` reads every module against that table rather than against a list written down anywhere, so a character that would be a box says so at a desk. The font is the one **[iso/src/usr/local/bin/arch-os](../iso/src/usr/local/bin/arch-os)** loads._
+
+**Note:** _Supporting a script the font has no glyphs for needs another console font shipped on the image, not a catalog change. Open an issue._
 
 ## Pictures in the Docs
 

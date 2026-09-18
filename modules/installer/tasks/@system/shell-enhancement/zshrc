@@ -4,7 +4,8 @@
 # Export the systemd user environment on a text console, where nothing else has.
 if [[ ${SHLVL} == 1 && -z ${DISPLAY} ]]; then
     while IFS= read -r line; do
-        [[ $line == *=* ]] && export "$line"
+        [[ $line == *=* ]] || continue
+        export "${line%%=*}=${line#*=}"
     done < <(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator)
 fi
 
@@ -93,5 +94,8 @@ fi
 
 command -v zoxide &>/dev/null && eval "$(zoxide init zsh)"
 
-# The prompt, outside a text console where the font can draw it.
-[[ $TTY != /dev/tty[0-9]* ]] && command -v starship &>/dev/null && eval "$(starship init zsh)"
+# The prompt, outside a text console where the font can draw it. The same test
+# the other two shells make, spelled the same way: anchored on a number, so
+# /dev/tty itself and every serial line stay on the other side of it. $TTY is
+# zsh's own, so this costs no `tty` process at every start.
+[[ ! $TTY =~ "^/dev/tty[0-9]+$" ]] && command -v starship &>/dev/null && eval "$(starship init zsh)"
