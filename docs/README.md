@@ -47,8 +47,8 @@ An internet connection is required.
 
 ### 1. Prepare a bootable USB device
 
-- Download the latest ISO from **[the release page](https://github.com/murkl/arch-os/releases/latest)** and write it with **[Ventoy](https://www.ventoy.net/en/download.html)** or any ISO writer
-- Or let **Create boot medium** do it, on any Linux machine:
+- Download the latest ISO from **[the release page](https://github.com/murkl/arch-os/releases/latest)** and write it with **[Ventoy](https://www.ventoy.net/en/download.html)** or any ISO writer. Every file there has a `.sha256` beside it and carries signed build provenance — both commands are in the release notes
+- Or let **Create boot medium** do it, on any Linux machine. It checks what it downloaded against the published checksum before it unpacks anything:
 
 ```
 curl -Ls https://bit.ly/arch-os | bash

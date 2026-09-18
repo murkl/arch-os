@@ -55,6 +55,11 @@ OAK_DIR     := .oak
 OAK_BIN     := $(OAK_DIR)/oak
 OAK_URL     := https://github.com/$(OAK_REPO)/releases/download/v$(OAK_VERSION)/$(OAK_ASSET)
 
+# https even after a redirect, the same flags get.sh fetches with: -L on its own
+# would follow a 302 into plain http, where the answer is whoever is on the wire
+# — and the answer here is the program that goes on to write a disk.
+CURL := curl --proto '=https' --proto-redir '=https' -Lf --progress-bar
+
 # ////////////////////////////////////////////////////////////////////////////
 # BUILD OUTPUT | One folder, everything a build leaves
 # ////////////////////////////////////////////////////////////////////////////
@@ -157,8 +162,8 @@ all: build
 # `make oak` fetches it again after OAK_VERSION was raised.
 $(OAK_BIN):
 	@mkdir -p $(OAK_DIR)
-	curl -Lf --progress-bar $(OAK_URL) -o $(OAK_DIR)/$(OAK_ASSET)
-	curl -Lf --progress-bar $(OAK_URL).sha256 -o $(OAK_DIR)/$(OAK_ASSET).sha256
+	$(CURL) $(OAK_URL) -o $(OAK_DIR)/$(OAK_ASSET)
+	$(CURL) $(OAK_URL).sha256 -o $(OAK_DIR)/$(OAK_ASSET).sha256
 	cd $(OAK_DIR) && sha256sum -c $(OAK_ASSET).sha256
 	install -m 755 $(OAK_DIR)/$(OAK_ASSET) $@
 	@echo "oak $$($@ --version)"
