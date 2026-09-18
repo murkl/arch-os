@@ -93,8 +93,8 @@ sbctl status
 
 | It says | Do |
 | --- | --- |
-| `Installed: ✓` | Restart, switch Secure Boot on in the firmware |
-| `Installed: ✗` | Clear the Secure Boot keys in the firmware (setup mode), then `sudo sbctl enroll-keys -m`, restart, switch it on |
+| `✓` | Restart, switch Secure Boot on in the firmware |
+| `✗` | Clear the Secure Boot keys in the firmware (setup mode), then `sudo sbctl enroll-keys -m`, restart, switch it on |
 
 **Note:** _The system boots exactly as before until you do this - nothing here can leave it unbootable._
 
