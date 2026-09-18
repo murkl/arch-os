@@ -143,7 +143,7 @@ Five parts, kept apart:
 
 | Part | What it does |
 | --- | --- |
-| **[Oak](https://github.com/murkl/oak)** | Draws the interface, asks the questions, runs the shell |
+| **[`oak`](https://github.com/murkl/oak)** | Draws the interface, asks the questions, runs the shell |
 | **[`modules/installer`](../modules/installer)** | Installs Arch Linux |
 | **[`modules/recovery`](../modules/recovery)** | Repairs an installation already on disk |
 | **[`modules/imager´`](../modules/imager)** | Writes the device the other two boot from |
