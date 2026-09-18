@@ -30,6 +30,13 @@ MODULES_DIR := modules
 # and to nothing else, and `make tag` is what writes it.
 VERSION := $(shell sed -n 's/^version:[[:space:]]*//p' $(PRODUCT))
 
+# Every release and what it changed, and the script that reads it. The entries
+# under a version are what its release page is made of, so they are written
+# there once rather than typed a second time onto the page.
+CHANGELOG      := docs/CHANGELOG.md
+CHANGELOG_SH   := docs/changelog.sh
+CHANGELOG_WARN := docs/changelog-warn.sh
+
 # Whatever folders are in modules/, so adding one is a folder and nothing here
 # has to be kept in step with it.
 MODULES := $(notdir $(wildcard $(MODULES_DIR)/*))
@@ -103,8 +110,9 @@ ISO ?= $(shell ls -t $(DIST_DIR)/*.iso 2>/dev/null | head -1)
 # THE SCRIPTS | Everything checked, by the dialect it is written in
 # ////////////////////////////////////////////////////////////////////////////
 
-# POSIX sh, because both run on whatever shell the machine has.
-POSIX_SCRIPTS := get.sh .github/summary.sh
+# POSIX sh: get.sh runs on whatever shell the machine downloading it has, and
+# the rest are one job each rather than a program.
+POSIX_SCRIPTS := get.sh .github/summary.sh $(CHANGELOG_SH) $(CHANGELOG_WARN)
 
 # Bash: what builds and boots the image, and what the image itself runs.
 ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_GLYPHS) $(wildcard $(ISO_DIR)/src/usr/local/bin/*)
@@ -151,7 +159,7 @@ BANNER_CELL    := 9
 
 .PHONY: all oak build dev run inspect tarball image iso smoke locales \
 	locales-check glyphs-check lint fmt check version version-check \
-	secrets-check tag screenshots banner docs clean
+	changelog-check changelog-warn notes secrets-check tag screenshots banner docs clean
 
 # build empties the release it writes, and everything that packages it reads
 # what it left. Running them at once would package a half-written folder.
@@ -263,6 +271,21 @@ version-check:
 	@echo "$(VERSION)" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$$' \
 		|| { echo "$(PRODUCT) declares '$(VERSION)', which is not a version" >&2; exit 1; }
 
+# What this version says it changed, which is also what the release page will
+# carry. A version raised in oak.yaml with nothing written under it here would
+# reach that page as a bare heading, so it fails at the desk that raised it. The
+# section for the next release sits above it in the meantime, which is where the
+# points are collected.
+changelog-check:
+	@$(CHANGELOG_SH) $(CHANGELOG) $(VERSION) >/dev/null
+
+# A change that says nothing about itself, as a warning rather than a refusal:
+# the points can be written any time before the tag, and half of them are
+# written the day it goes out. It rides along in `check` so that nobody has to
+# remember to ask.
+changelog-warn:
+	@$(CHANGELOG_WARN) $(CHANGELOG)
+
 # This project is installed by piping a script into a shell, so a credential
 # that reached the repository would be handed to everybody who did that.
 secrets-check:
@@ -326,17 +349,22 @@ glyphs-check:
 
 # The whole gate, cheapest and loudest first. CI runs this and nothing it adds
 # to it, so there is no second definition of green.
-check: version-check secrets-check lint inspect locales-check glyphs-check
+check: version-check changelog-check changelog-warn secrets-check lint inspect locales-check glyphs-check
 
 # ////////////////////////////////////////////////////////////////////////////
 # RELEASING
 # ////////////////////////////////////////////////////////////////////////////
 
+# The entries a release is published with. The Release workflow reads them from
+# here, so what the page says is what the commit says.
+notes:
+	@$(CHANGELOG_SH) $(CHANGELOG) $(VERSION)
+
 # The tag that publishes a release, made out of the declared version rather than
 # typed - so a tag naming a version this commit does not declare cannot be
 # written in the first place. It is created and not pushed: pushing it is what
 # publishes, and that is a second decision.
-tag: version-check
+tag: version-check changelog-check
 	@[ -z "$$(git status --porcelain)" ] \
 		|| { echo "the tree has uncommitted changes — a tag names a commit, not a desk" >&2; exit 1; }
 	@git merge-base --is-ancestor HEAD origin/main 2>/dev/null \

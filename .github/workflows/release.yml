@@ -79,7 +79,7 @@ jobs:
           fi
 
       # A release is a tag on main. Anywhere else there is no run whose artefacts
-      # could be published, and no history the notes could be generated from.
+      # could be published.
       - name: The commit is on main
         id: commit
         run: |
@@ -180,8 +180,17 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
+          # What this release changed, read out of the changelog rather than
+          # written here a second time — a version with nothing under it stops
+          # the release here — and under it the two downloads and how to check
+          # where they came from.
           notes="$(mktemp)"
-          cat >"$notes" <<NOTES
+          {
+            make -s notes
+            cat <<NOTES
+
+          ---
+
           Boot the ISO on the machine to install, or run this on any Linux machine — what opens is decided by the machine it opened on:
 
           \`\`\`
@@ -201,14 +210,14 @@ jobs:
 
           Without \`gh\`, GitHub prints each download's SHA-256 beside it on this page, which says only that the file arrived whole.
           NOTES
+          } >"$notes"
 
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" dist/* --clobber
           else
             gh release create "$TAG" dist/* \
               --title "Arch OS ${VERSION}" \
-              --notes-file "$notes" \
-              --generate-notes
+              --notes-file "$notes"
           fi
 
       - name: What was published

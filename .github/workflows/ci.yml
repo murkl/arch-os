@@ -58,6 +58,10 @@ jobs:
 
       - uses: actions/checkout@v7
         with:
+          # The whole history and its tags: the changelog warning asks what
+          # this change did to the file against main, and whether the version
+          # at the top of it has already gone out.
+          fetch-depth: 0
           persist-credentials: false
 
       - uses: ./.github/actions/arch

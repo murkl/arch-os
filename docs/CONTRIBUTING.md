@@ -25,13 +25,29 @@ flowchart LR
 
 ## The Version
 
-`version:` in **[oak.yaml](../oak.yaml)** is the only place it is written. Everything else is named after it: `dist/arch-os-2.0.0/`, `arch-os-2.0.0-x86_64.iso`, ISO label `ARCH_OS_2_0_0`, tag `v2.0.0`.
+`version:` in **[oak.yaml](../oak.yaml)** is the only place it is written. Everything else is named after it: `dist/arch-os-2.0.0/`, `arch-os-2.0.0-x86_64.iso`, ISO label `ARCH_OS_2_0_0`, tag `v2.0.0`, and the section of **[CHANGELOG.md](CHANGELOG.md)** a release publishes.
 
-**Note:** _`make tag` writes the tag out of `oak.yaml`. `make check` refuses a version that is not `X.Y.Z`. The Release workflow refuses a tag that disagrees with the commit._
+**Note:** _`make tag` writes the tag out of `oak.yaml`. `make check` refuses a version that is not `X.Y.Z` and one the changelog says nothing about. The Release workflow refuses a tag that disagrees with the commit._
+
+## The Changelog
+
+**[CHANGELOG.md](CHANGELOG.md)** is kept as the work happens, not written at the tag. Open a section for the release being worked towards, and append one line per change under it:
+
+```
+## 2.1.0 - 2026-02-14
+
+- Recovery repairs a system whose kernel no longer boots
+```
+
+- Newest first, `## X.Y.Z - YYYY-MM-DD`, one short line per change somebody installing or repairing a machine would notice
+- The section on top is the next release and may sit above the version `oak.yaml` still declares. Raising `version:` is what turns it into the one being released
+- The date is the day it goes out, so it is the one thing to look at again before tagging
+- `make check` holds the shape, the order, that no version stands there twice, and that the declared version has something under it
+- A change that never touched the file is a **warning** on the run and at the desk, never a refusal - the lines may be written retrospectively, up to the tag
 
 ## Releasing
 
-1. Raise `version:` in `oak.yaml`, on `dev`
+1. Raise `version:` in `oak.yaml` to the version the changelog's top section names, on `dev`. What stands under it is what the release page will say
 2. Squash merge into `main` - it checks, builds, boots, keeps artefacts 90 days
 3. Push the tag:
 
@@ -41,7 +57,7 @@ make tag
 git push origin v2.0.0
 ```
 
-The Release workflow finds that commit's run and hangs its artefacts on the release page - `arch-os-2.0.0-x86_64.iso` and `.tar.gz`. GitHub prints each one's SHA-256 beside it there, so the release carries no checksum file of its own.
+The Release workflow finds that commit's run and hangs its artefacts on the release page - `arch-os-2.0.0-x86_64.iso` and `.tar.gz`, under that version's entries. GitHub prints each one's SHA-256 beside it there, so the release carries no checksum file of its own.
 
 **Note:** _Nothing is built from a tag. `make tag` refuses an unclean tree, `HEAD` off `main`, or a tag that exists already. A release can also be written on the web page._
 
@@ -89,6 +105,7 @@ make image             # ...only the image, out of a release already in dist/
 make smoke             # boot the newest image and wait for its first page
 make locales           # every translation template, brought up to date
 make glyphs-check      # every module against the glyph table of the console font
+make notes             # what the release page will say, out of the changelog
 make tag               # the release tag, written out of oak.yaml
 make oak               # fetch the runtime again, at the release OAK_VERSION names
 make clean             # every build output, taken back; the runtime stays
@@ -109,6 +126,7 @@ sudo pacman -S --needed make curl shellcheck shfmt yamllint actionlint \
 - Repairing a system: **[modules/recovery](../modules/recovery)**
 - Writing the boot device: **[modules/imager](../modules/imager)**
 - Product name, version, look: **[oak.yaml](../oak.yaml)**
+- What a release changed: **[CHANGELOG.md](CHANGELOG.md)**
 - The bootable image: **[iso](../iso)**
 - The interface itself: **[Oak](https://github.com/murkl/oak)**, its own repository
 
