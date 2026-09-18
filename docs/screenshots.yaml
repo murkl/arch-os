@@ -1,0 +1,74 @@
+# The rendered pictures in docs/screenshots/, and the way to each - see
+# screenshots.py. The rest of that folder is photographs of a running system,
+# taken by hand and left alone here.
+#
+# One block is one take: a start of the program from a pristine copy of the
+# product, with --debug, so nothing on this machine is touched. One step is one
+# page: wait for `page:`, photograph it as `shot:`, press on.
+#
+# Every answer is given here rather than left to the machine rendering it: a
+# locale, a keyboard and a time zone all default to something read off it. The
+# disk cannot be, which is why no page showing one is photographed.
+#
+# A take names its `module:`: under --debug all three are offered, including the
+# one that never stands beside the other two on a real machine.
+
+# The Installer: the starting points, every value it will use, and the run.
+- module: installer
+  steps:
+      - page: Please choose the language
+        press: enter
+      - page: Console keyboard  # auto, the layout of the live image
+        press: enter
+      - page: [Setup, Desktop, Core]
+        shot: setup
+        press: enter
+      - page: Username
+        press: [tux, enter]
+      - page: Language and region
+        press: ["/", en_US, enter]
+      - page: Time zone
+        press: ["/", UTC, enter]
+      - page: Disk
+        press: enter
+
+      # Also the page the banner is collaged from - see BANNER_CARDS in /Makefile.
+      - page: [Start, Settings]
+        press: [down, enter]
+      - page: Every used value
+        shot: installer
+        press: esc
+
+      # Back on the hub the cursor still sits on Settings, so Start is one up.
+      - page: [Start, Settings]
+        press: [up, enter]
+      - page: Ready to start
+        press: enter
+
+      # Asked here rather than with the other answers, and written to no file.
+      - page: Password
+        press: [tuxpass, enter]
+      - page: Repeat
+        press: [tuxpass, enter]
+
+      - page: Arch OS is installed
+        shot: installing
+        frame: running
+
+# The Recovery, which unlocks a system and then offers the repairs one at a
+# time. It stops at the first of those offers, one task in.
+- module: recovery
+  steps:
+      - page: Please choose the language
+        press: enter
+      - page: Console keyboard
+        press: enter
+      - page: Disk
+        press: enter
+      - page: [Start, Settings]
+        press: enter
+      - page: Ready to start
+        press: enter
+      - page: in place of the root subvolume
+        shot: recovery
+        frame: running

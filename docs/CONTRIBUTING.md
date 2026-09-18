@@ -152,17 +152,21 @@ Before any desktop exists, a console font holds at most 512 glyphs: **ASCII and 
 
 ## Pictures in the Docs
 
-The banner is generated. It collages two screenshots under the wordmark, which is read out of `oak.yaml` rather than redrawn, so the name and the accent on it cannot drift from the ones the Installer draws.
+Both are generated, so neither can quietly outlive the interface it shows. The screenshots are taken from the Installer and the Recovery driven on a real terminal; the banner collages two of them under the wordmark, which is read out of `oak.yaml` rather than redrawn, so the name and the accent on it cannot drift from the ones a run draws.
 
 ```
+make screenshots   # after any visible change to a page
 make banner        # after the screenshots, the wordmark or the accent changed
+make docs          # both, in that order
 ```
 
-It needs `chromium` and `imagemagick`, neither of which a build needs.
+They need `chromium`, `imagemagick`, `python-pyte` and `python-yaml`, none of which a build or `make check` needs.
 
-The screenshots are not generated. Taking one means driving the Installer or the Recovery, and those partition disks, unmount and reboot for real. Take them from a machine booted off the ISO or from QEMU, never from a working desktop.
+Every run is started with `--debug`, which hands every script `DEBUG=true`: no disk is partitioned, nothing is mounted and nothing restarts. Which pages are taken is `docs/screenshots.yaml`, and every answer is given there rather than left to the machine rendering it.
 
-**Note:** _Oak renders its own set from its example - see `tools/docs/screenshots.py` there. It cannot be pointed at these modules, because loading one means loading the scripts it would run._
+**Note:** _Only `setup.png`, `installer.png`, `installing.png` and `recovery.png` are drawn by the interface. The boot splash, the shell, the fetch and the System Manager are photographs of a running system, taken by hand and left alone by `make screenshots`._
+
+**Note:** _`installing.png` and `recovery.png` catch a run while it is still going, so which task the frame lands on differs from run to run. The others come out the same every time._
 
 ## Commits
 

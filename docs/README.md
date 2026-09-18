@@ -63,11 +63,9 @@ curl -Ls https://bit.ly/arch-os | bash
 
 ### 3. Boot from the USB device
 
-The Installer starts on its own: language, then Installer or Recovery.
+The Installer starts on its own: language, then Installer or Recovery. Then a starting point:
 
-<p><img src="screenshots/setup.png" alt="The page that asks which of the two to open"></p>
-
-Then a starting point:
+<p><img src="screenshots/setup.png" alt="The page that offers the starting points"></p>
 
 | Starting point | What it is |
 | --- | --- |
@@ -146,7 +144,7 @@ Five parts, kept apart:
 | **[`oak`](https://github.com/murkl/oak)** | Draws the interface, asks the questions, runs the shell |
 | **[`modules/installer`](../modules/installer)** | Installs Arch Linux |
 | **[`modules/recovery`](../modules/recovery)** | Repairs an installation already on disk |
-| **[`modules/imager´`](../modules/imager)** | Writes the device the other two boot from |
+| **[`modules/imager`](../modules/imager)** | Writes the device the other two boot from |
 | **[`iso`](../iso)** | Turns a build of those into a bootable image |
 
 Oak is the runtime, a repository of its own, and knows nothing about Arch Linux. Modules are data, not programs. A release is Oak with `oak.yaml` and `modules/` beside it. Which module a machine can open is that module's own `requires:` - nothing else holds a list.

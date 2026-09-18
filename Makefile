@@ -49,7 +49,7 @@ MODULE_PARTS := module.sh data locales tasks hooks
 # rather than followed, so a build of a given commit is the same build tomorrow.
 # Written without the `v` its tag carries.
 OAK_REPO    := murkl/oak
-OAK_VERSION ?= 0.3.0
+OAK_VERSION ?= 0.3.1
 OAK_ASSET   := oak-linux-amd64
 OAK_DIR     := .oak
 OAK_BIN     := $(OAK_DIR)/oak
@@ -118,24 +118,22 @@ BUILD_OUTPUT := $(DIST_DIR) $(DEV_DIR) $(ISO_DIR)/archiso $(ISO_DIR)/download
 # Empty when there is nothing to elevate, which is the case in CI.
 SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 
-# The picture the README opens on, collaged out of two screenshots under the
-# wordmark read from oak.yaml. Generated rather than drawn, so the name, the
-# accent and the wordmark cannot drift from what the Installer actually shows.
+# The pictures in docs/, both generated so neither can drift from what a run
+# shows: the screenshots by driving the modules on a pty, the banner by
+# collaging two of them under the wordmark read from oak.yaml.
 #
-# It needs chromium and imagemagick, which a build does not, so it stays out of
-# `check` and is run by hand after the screenshots or the wordmark change.
+# Which pages are taken is docs/screenshots.yaml, and every run is started with
+# --debug: no disk is partitioned, nothing is mounted, nothing restarts.
 #
-# The screenshots themselves are not generated here. Regenerating a page means
-# driving the Installer, and these modules partition disks and reboot: see
-# docs/CONTRIBUTING.md.
-DOCS           := tools/docs
+# They need chromium, imagemagick, python-pyte and python-yaml, which a build
+# does not, so they stay out of `check` and are run by hand.
 BANNER_CARDS   := docs/screenshots/installer.png docs/screenshots/installing.png
 BANNER_TAGLINE := A minimal, robust and reproducible Arch Linux base. Installer and Recovery on one image.
 BANNER_CELL    := 9
 
 .PHONY: all oak build dev run inspect tarball image iso smoke locales \
 	locales-check lint fmt check version version-check secrets-check tag \
-	banner clean
+	screenshots banner docs clean
 
 # build empties the release it writes, and everything that packages it reads
 # what it left. Running them at once would package a half-written folder.
@@ -318,18 +316,29 @@ tag: version-check
 	git tag "v$(VERSION)"
 	@echo "push it with:  git push origin v$(VERSION)"
 
-# The downloaded runtime stays: it is a dependency rather than build output.
-#
-# mkarchiso writes as root, and a build killed before its own cleanup ran leaves
-# root-owned files behind. The plain removal is tried first, so an ordinary
-# clean never asks for a password.
+# ////////////////////////////////////////////////////////////////////////////
+# DOCUMENTATION | The pictures the README is made of
+# ////////////////////////////////////////////////////////////////////////////
+
+screenshots: dev
+	python3 docs/screenshots.py --product $(DEV_DIR)
+
 banner:
-	python3 $(DOCS)/banner.py \
+	python3 docs/banner.py \
 		--product $(PRODUCT) \
 		--logo docs/logo.svg \
 		$(foreach c,$(BANNER_CARDS),--card $(c)) \
 		--tagline "$(BANNER_TAGLINE)" \
 		--cell $(BANNER_CELL)
 
+# The banner collages the screenshots, so it comes after them - which is what
+# .NOTPARALLEL above holds, whatever -j says.
+docs: screenshots banner
+
+# The downloaded runtime stays: it is a dependency rather than build output.
+#
+# mkarchiso writes as root, and a build killed before its own cleanup ran leaves
+# root-owned files behind. The plain removal is tried first, so an ordinary
+# clean never asks for a password.
 clean:
 	rm -rf $(BUILD_OUTPUT) || $(SUDO) rm -rf $(BUILD_OUTPUT)
