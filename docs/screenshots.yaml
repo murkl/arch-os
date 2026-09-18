@@ -13,6 +13,13 @@
 # A take names its `module:`: under --debug all three are offered, including the
 # one that never stands beside the other two on a real machine.
 
+# The page every run opens on, before a module has been named: what this is,
+# where the rest of it is, and the words the rest of the run is read in. Taken
+# from a start that names no module, because that is the start the ISO makes.
+- steps:
+      - page: Please choose the language
+        shot: welcome
+
 # The Installer: the starting points, every value it will use, and the run.
 - module: installer
   steps:

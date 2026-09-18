@@ -4,7 +4,7 @@ Stock Arch `releng`, patched: boot ➜ Plymouth ➜ Arch OS. Nothing in between.
 
 - Installer and Recovery on the same image
 - Arch OS Bootsplash (Plymouth)
-- Nord palette and console font applied before the interface draws
+- Nord palette and a console font that can draw every mark the interface uses, applied before it draws
 - Networking exactly as the Arch ISO ships it (iwd, systemd-networkd)
 - UEFI only, squashfs/zstd
 
@@ -63,7 +63,9 @@ Boots under QEMU and OVMF, waits for the first page, shuts down. Checks the boot
 
 ## What the Console can draw
 
-The font this image loads has one table of glyphs, so a character outside it is a box on the screen - in whichever language it happens to be in. `glyphs.sh` reads the font name out of the launcher that loads it and checks files against its table; `make check` points it at every module.
+The font this image loads has one table of glyphs, so a character outside it is a box on the screen - in whichever language it happens to be in. `glyphs.sh` reads the font name out of the launcher that loads it and checks two things against its table: the files it is handed, which `make check` points at every module, and the marks the interface draws itself - the rules, the cursor, and the three cells a QR code and the mark over a finished run are built from.
+
+That last set is why the font is `eurlatgr` rather than something prettier: it is the one in `kbd` whose table holds all of it. Terminus has the full block and neither half of it.
 
 ```
 make glyphs-check

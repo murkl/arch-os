@@ -47,6 +47,20 @@ CARD, TEXT = "#2e3440", "#d8dee9"
 # interface marks a selected row with comes out as a big filled one.
 FONT = '"FiraCode Nerd Font Mono", monospace'
 
+# The cells a terminal fills rather than draws, and how each is painted: a whole
+# cell of ink, its two halves, and a cell of nothing but its background.
+#
+# Painted as boxes here for the same reason a terminal paints them. A glyph is
+# drawn inside the font's own box, which is shorter than the line it sits on, so
+# two of them stacked leave a seam of card between them - visible in a tick and
+# fatal in a QR code, which is not a picture of anything and reads as nothing
+# once it has stripes through it.
+PAINT = {
+    "\u2588": "{ink}",
+    "\u2580": "linear-gradient(to bottom, {ink} 50%, {field} 50%)",
+    "\u2584": "linear-gradient(to bottom, {field} 50%, {ink} 50%)",
+}
+
 # A product, as Oak reads it. Copied part by part, so an answer file or a log an
 # earlier run left beside them cannot decide what a page says.
 PRODUCT = ("oak", "oak.yaml", "modules")
@@ -210,6 +224,20 @@ def colour(value, fallback):
     return f"#{value}" if ok else value
 
 
+def painted(char, bg):
+    """How a cell is filled rather than lettered, or None where it is neither.
+
+    A cell of background with nothing in it counts: it is the quiet field a
+    code is read against, and it has to reach the edges of its line like the
+    ink beside it does.
+    """
+    if char in PAINT:
+        return PAINT[char]
+    if char in (" ", "") and bg:
+        return "{field}"
+    return None
+
+
 def markup(screen):
     """One span a run of same-looking cells, not one a character."""
     rows = []
@@ -220,19 +248,29 @@ def markup(screen):
             fg, bg = colour(c.fg, TEXT), colour(c.bg, None)
             if c.reverse:
                 fg, bg = bg or CARD, fg
-            now = (fg, bg, c.bold)
+            now = (fg, bg, c.bold, painted(c.data, bg))
             if now != style and run:
                 line.append((style, run))
                 run = ""
             style, run = now, run + (c.data or " ")
         if run:
             line.append((style, run))
-        rows.append("".join(
-            '<span style="color:{};{}{}">{}</span>'.format(
-                f, f"background:{b};" if b else "",
-                "font-weight:700" if w else "", html.escape(t))
-            for (f, b, w), t in line))
+        rows.append("".join(cell(style, text) for style, text in line))
     return "\n".join(rows)
+
+
+def cell(style, text):
+    """One run of cells, as writing or as a filled box."""
+    fg, bg, bold, fill = style
+    if fill:
+        # Its own box, exactly one line tall, so what is painted meets what is
+        # painted on the line above it.
+        return ('<span style="display:inline-block;vertical-align:top;'
+                'height:{}px;background:{}">{}</span>').format(
+                    LINE_PX, fill.format(ink=fg, field=bg or CARD), " " * len(text))
+    return '<span style="color:{};{}{}">{}</span>'.format(
+        fg, f"background:{bg};" if bg else "",
+        "font-weight:700" if bold else "", html.escape(text))
 
 
 def card(stream, out):

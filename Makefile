@@ -56,10 +56,16 @@ MODULE_PARTS := module.sh data locales tasks hooks
 # rather than followed, so a build of a given commit is the same build tomorrow.
 # Written without the `v` its tag carries.
 OAK_REPO    := murkl/oak
-OAK_VERSION ?= 0.3.2
+OAK_VERSION ?= 0.4.0
 OAK_ASSET   := oak-linux-amd64
 OAK_DIR     := .oak
-OAK_BIN     := $(OAK_DIR)/oak
+
+# Named after the version it is, so raising OAK_VERSION names a file that is not
+# there and the next build fetches it. A single `oak` here would be a binary
+# make has no reason to touch again, and everything after it - the checks, the
+# screenshots, the image - would go on being run against the runtime the last
+# release pinned.
+OAK_BIN     := $(OAK_DIR)/oak-$(OAK_VERSION)
 OAK_URL     := https://github.com/$(OAK_REPO)/releases/download/v$(OAK_VERSION)/$(OAK_ASSET)
 OAK_API     := https://api.github.com/repos/$(OAK_REPO)/releases/tags/v$(OAK_VERSION)
 
@@ -157,7 +163,7 @@ BANNER_CARDS   := docs/screenshots/installer.png docs/screenshots/installing.png
 BANNER_TAGLINE := A minimal, robust and reproducible Arch Linux base. Installer and Recovery on one image.
 BANNER_CELL    := 9
 
-.PHONY: all oak build dev run inspect tarball image iso smoke locales \
+.PHONY: all oak oak-check build dev run inspect tarball image iso smoke locales \
 	locales-check glyphs-check lint fmt check version version-check \
 	changelog-check changelog-warn notes secrets-check tag screenshots banner docs clean
 
@@ -169,8 +175,7 @@ all: build
 
 # Downloaded once and kept, checked against the checksum GitHub publishes for
 # that asset - the release carries no checksum file of its own, and the digest
-# below is what the release page prints under the download. `make oak` fetches
-# it again after OAK_VERSION was raised.
+# below is what the release page prints under the download.
 $(OAK_BIN):
 	@mkdir -p $(OAK_DIR)
 	$(CURL) $(OAK_URL) -o $(OAK_DIR)/$(OAK_ASSET)
@@ -181,17 +186,29 @@ $(OAK_BIN):
 		|| { echo "$(OAK_REPO) publishes no checksum for $(OAK_ASSET) at v$(OAK_VERSION)" >&2; exit 1; }; \
 	echo "$$digest  $(OAK_DIR)/$(OAK_ASSET)" | sha256sum -c -
 	install -m 755 $(OAK_DIR)/$(OAK_ASSET) $@
-	@echo "oak $$($@ --version)"
 
+# What the pin promises, asked of the binary rather than of the file name.
+# Everything downstream - what `make run` opens, what the checks read, what goes
+# into the image - is whatever is in $(OAK_DIR), and nothing else ever looks at
+# it again. A binary put there by hand is the way a release ships a runtime
+# older than it says: the image then refuses its own modules at boot and the
+# console falls back to a login prompt, which is a thing nobody sees until they
+# boot the finished ISO.
+oak-check: $(OAK_BIN)
+	@got="$$($(OAK_BIN) --version)"; [ "$$got" = "$(OAK_VERSION)" ] \
+		|| { echo "$(OAK_BIN) answers to '$$got', not $(OAK_VERSION) - run 'make oak'" >&2; exit 1; }
+
+# Everything downloaded thrown away and fetched again, for the one case the
+# versioned name above does not cover: the same tag republished.
 oak:
 	rm -rf $(OAK_DIR)
-	$(MAKE) $(OAK_BIN)
+	$(MAKE) oak-check
 
 # The runtime, the product's declaration and a clean copy of every module. The
 # folder is emptied first, so what is in it afterwards is this build and nothing
 # else. The templates go out again: a .pot is how a module is translated rather
 # than part of what it runs.
-build: $(OAK_BIN)
+build: oak-check
 	rm -rf $(RELEASE_DIR)
 	mkdir -p $(RELEASE_DIR)
 	install -m 755 $(OAK_BIN) $(RELEASE_DIR)/$(APP)
@@ -209,7 +226,7 @@ build: $(OAK_BIN)
 # The same shape without the build, for working on the sources. The binary is
 # copied rather than linked: Oak resolves its own path before looking beside
 # itself, so a symlink would send it looking in .oak/ instead.
-dev: $(OAK_BIN)
+dev: oak-check
 	@mkdir -p $(DEV_DIR)
 	@ln -sfn ../$(PRODUCT) $(DEV_DIR)/$(PRODUCT)
 	@ln -sfn ../$(MODULES_DIR) $(DEV_DIR)/$(MODULES_DIR)

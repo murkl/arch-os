@@ -26,34 +26,45 @@ mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
 } >"${MNT}/etc/mkinitcpio.conf.d/10-arch-os.conf"
 
 # A unified kernel image packs kernel, ram disk and command line into one EFI
-# binary that is signed as a whole.
+# binary that is signed as a whole; without Secure Boot the same two images are
+# plain ram disks the boot loader points at.
+key=image
 if secure_boot_wanted; then
+    key=uki
+    mkdir -p "${MNT}/boot/EFI/Linux" "${MNT}/etc/kernel"
+
     # The command line moves into the image, so it has to exist first: without
     # this file mkinitcpio falls back to /proc/cmdline, which inside the chroot
     # is the live image's.
-    mkdir -p "${MNT}/etc/kernel"
     kernel_args >"${MNT}/etc/kernel/cmdline"
+fi
 
-    # Written whole rather than patched: mkinitcpio creates a preset from a
-    # template only when it is missing, so this file is ours from here on.
-    {
-        echo "# Written by the Arch OS Installer: a signed unified kernel image"
-        echo "# instead of a bare initramfs, for Secure Boot."
-        echo "ALL_kver=\"/boot/vmlinuz-${ARCH_OS_KERNEL}\""
+# Both names come out of boot_images, so what is built and what is read back
+# afterwards cannot come apart.
+mapfile -t images < <(boot_images)
+
+# Written whole rather than patched, and on both paths rather than only the
+# signed one: mkinitcpio writes its own template only where there is no preset,
+# and that template builds the default image alone. Left to it, the fallback -
+# the image that boots a machine its autodetect has stopped being true for -
+# would quietly not exist while the boot entry pointing at it stayed.
+{
+    echo "# Written by the Arch OS Installer."
+    echo "ALL_kver=\"/boot/vmlinuz-${ARCH_OS_KERNEL}\""
+    if secure_boot_wanted; then
         # Named outright: mkinitcpio's last resort is /proc/cmdline.
         echo "ALL_cmdline=\"/etc/kernel/cmdline\""
-        echo "PRESETS=('default' 'fallback')"
-        echo "default_uki=\"/boot/EFI/Linux/arch-${ARCH_OS_KERNEL}.efi\""
-        echo "fallback_uki=\"/boot/EFI/Linux/arch-${ARCH_OS_KERNEL}-fallback.efi\""
-        echo "fallback_options=\"-S autodetect\""
-    } >"${MNT}/etc/mkinitcpio.d/${ARCH_OS_KERNEL}.preset"
-    mkdir -p "${MNT}/boot/EFI/Linux"
-fi
+    fi
+    echo "PRESETS=('default' 'fallback')"
+    echo "default_${key}=\"${images[0]}\""
+    echo "fallback_${key}=\"${images[1]}\""
+    echo "fallback_options=\"-S autodetect\""
+} >"${MNT}/etc/mkinitcpio.d/${ARCH_OS_KERNEL}.preset"
 
 arch-chroot "$MNT" mkinitcpio -P
 
-# Installing the kernel already built a pair of plain ram disks from the preset
-# the package ships. With the preset above they are never written again, and an
+# Installing the kernel already built a plain ram disk from the preset the
+# package shipped. With the preset above it is never written again, and an
 # initramfs nothing updates is what the unified image does away with.
 if secure_boot_wanted; then
     rm -f "${MNT}/boot/initramfs-${ARCH_OS_KERNEL}.img" "${MNT}/boot/initramfs-${ARCH_OS_KERNEL}-fallback.img"

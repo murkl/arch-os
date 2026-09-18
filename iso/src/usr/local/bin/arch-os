@@ -8,13 +8,24 @@
 # console and setfont finds nothing to load into. Neither is worth refusing to
 # start over, so both may fail.
 #
+# Which font is not a matter of taste, and `make glyphs-check` is what holds it
+# to that: of everything in `kbd` this is the one whose table holds every
+# character this image can put on the console - the interface's own marks, the
+# three cells a QR code and the mark over a finished run are built from, and
+# every letter the two catalogs are written in. Terminus, which stood here
+# before, has the full block and neither half of it.
+#
+# It is also the font the installer writes into the new system for a Latin
+# language - see modules/installer/data/languages - so the console looks the
+# same before and after.
+#
 # Oak looks for oak.yaml and the modules folder beside its own binary, so it is
 # started out of the folder it was installed into - every answer file and log
 # then lands beside them, and starting it again from any prompt picks up where it
 # left off.
 set -eu
 
-setfont Lat2-Terminus16 || true
+setfont eurlatgr || true
 arch-os-console-theme || true
 
 cd /opt/arch-os

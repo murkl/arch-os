@@ -118,6 +118,8 @@ sudo pacman -S --needed make curl shellcheck shfmt yamllint actionlint \
 
 **Note:** _CI installs the same packages and runs the same commands in an Arch container. No second definition of green._
 
+**Note:** _The runtime is kept under the version it is - `.oak/oak-X.Y.Z` - so raising `OAK_VERSION` names a file that is not there and the next build fetches it. Every build then asks the binary what it is before using it: a runtime older than the pin refuses the modules at boot, and an image that does that is only found by booting it._
+
 ### Where a Change belongs
 
 **Note:** _What Arch OS puts on a disk and why: **[➜ Reference](REFERENCE.md)**._
