@@ -104,6 +104,8 @@ Behind **Core tweaks**, changes behaviour, never what is installed. **[➜ Sysct
 | `DefaultLimitNOFILE=1024:2097152` | Only the ceiling moves - Wine/Electron raise their own soft limit against it |
 | `SystemMaxUse=200M` | The default keeps the journal forever on a modern disk |
 | I/O schedulers | `bfq` for spinning disks, `mq-deadline` for SATA/eMMC, NVMe untouched - **[➜ wiki](https://wiki.archlinux.org/title/Improving_performance#Changing_I/O_scheduler)** |
+| `vm.max_map_count=2147483642` | The default of 65530 mapped regions is too low for some games and emulators, which crash rather than fall back - **[➜ wiki](https://wiki.archlinux.org/title/Gaming#Increase_vm.max_map_count)** |
+| `tcp_congestion_control=bbr`, `default_qdisc=fq` | `cubic` reads any packet loss as congestion; wifi and long-distance links lose packets without being full. `bbr` measures delay instead |
 
 Swap is **zram** always, tweaks or not. **[➜ Zram](https://wiki.archlinux.org/title/Zram)**
 
@@ -132,6 +134,8 @@ Enough for a usable install, little enough that nothing needs looking after.
 | Compile jobs | 1/GiB, capped at core count | More would run a live image out of memory |
 
 One `timeout` around the whole build; passwordless `sudo` granted for its length and revoked after.
+
+**Note:** _`/etc/makepkg.conf.d/arch-os.conf` adds `-march=native` to `CFLAGS`/`CXXFLAGS`. A distro repository builds one binary for every CPU and has to pick a low baseline; a package built here never leaves this machine, so it is compiled for the CPU actually running it._
 
 **Note:** _Only `paru` and `yay`, both built from source against this machine's pacman. A `-bin` package is linked against the pacman of the day it was published and stops starting the day Arch moves `libalpm` - not offered here._
 

@@ -10,6 +10,17 @@ simulating && return 0
 grep -q '^ParallelDownloads' "${MNT}/etc/pacman.conf"
 
 sysctl_keys_exist "${MNT}/etc/sysctl.d/99-arch-os-memory.conf"
+sysctl_keys_exist "${MNT}/etc/sysctl.d/99-arch-os-mmap.conf"
+sysctl_keys_exist "${MNT}/etc/sysctl.d/99-arch-os-bbr.conf"
+
+# The same two files makepkg itself sources, in the order it sources them, so
+# a typo in the drop-in shows up here rather than in the middle of a build.
+# shellcheck disable=SC2016  # makepkg's own config loader expands this, not us
+arch-chroot "$MNT" bash -c '
+    source /usr/share/makepkg/util/config.sh
+    load_makepkg_config
+    [[ $CFLAGS == *"-march=native"* && $CXXFLAGS == *"-march=native"* ]]
+'
 
 # systemd prints the files it would load and in what order, so a drop-in that is
 # not in that list is one it is never going to read.

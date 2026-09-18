@@ -19,11 +19,16 @@ mkdir -p "${MNT}/etc/modprobe.d"
     echo 'blacklist iTCO_wdt'
 } >"${MNT}/etc/modprobe.d/blacklist-watchdog.conf"
 
-# Debug packages nobody asked for, built alongside every AUR package.
+# Debug packages nobody asked for, built alongside every AUR package. A distro
+# repository cannot compile for one CPU without breaking every other, which is
+# why it ships a baseline; a package built here never leaves this machine, so
+# it may as well be built for the CPU that is actually running it.
 mkdir -p "${MNT}/etc/makepkg.conf.d"
 {
     echo '# Written by the Arch OS Installer.'
     echo 'OPTIONS+=(!debug)'
+    echo 'CFLAGS+=" -march=native"'
+    echo 'CXXFLAGS+=" -march=native"'
 } >"${MNT}/etc/makepkg.conf.d/arch-os.conf"
 
 # ----------------------------------------------------------------------------
@@ -38,6 +43,25 @@ mkdir -p "${MNT}/etc/makepkg.conf.d"
     echo 'vm.dirty_writeback_centisecs = 1500'
     echo 'vm.vfs_cache_pressure = 50'
 } >"${MNT}/etc/sysctl.d/99-arch-os-memory.conf"
+
+# The default caps a process at 65530 mapped memory regions. Fine for most
+# software, too low for some games and emulators, which crash outright rather
+# than fall back to fewer, larger ones.
+# https://wiki.archlinux.org/title/Gaming#Increase_vm.max_map_count
+{
+    echo '# Written by the Arch OS Installer.'
+    echo 'vm.max_map_count = 2147483642'
+} >"${MNT}/etc/sysctl.d/99-arch-os-mmap.conf"
+
+# cubic backs off on any packet loss, which congested wifi and long-distance
+# links produce without actually being full. bbr judges the path by the delay
+# it measures instead, so it keeps sending.
+# https://wiki.archlinux.org/title/Sysctl#TCP_congestion_algorithm
+{
+    echo '# Written by the Arch OS Installer.'
+    echo 'net.core.default_qdisc = fq'
+    echo 'net.ipv4.tcp_congestion_control = bbr'
+} >"${MNT}/etc/sysctl.d/99-arch-os-bbr.conf"
 
 # Transparent huge pages are worth having; stopping a program to produce one is
 # not. https://docs.kernel.org/admin-guide/mm/transhuge.html
