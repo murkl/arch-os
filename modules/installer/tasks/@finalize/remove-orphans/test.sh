@@ -1,5 +1,5 @@
 # Nothing is left that nothing asked for: a removal that half worked leaves
 # exactly this list.
-debugging && return 0
+simulating && return 0
 
 ! arch-chroot "$MNT" pacman -Qtdq >/dev/null 2>&1

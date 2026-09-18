@@ -17,9 +17,16 @@ where() { dirname "${BASH_SOURCE[1]}"; }
 # SIMULATION
 # ////////////////////////////////////////////////////////////////////////////
 
-# --debug runs without touching the machine: a task opens with `simulating &&
-# return 0`, a test with `debugging && return 0`. The pause is the difference —
-# it holds a step on screen, and a test is not a step anybody is watching.
+# --debug runs without touching the machine. Every task and every test opens on
+# `simulating && return 0`: a task because there is nothing it may change, a
+# test because a simulated run wrote nothing for it to read back.
+#
+# The pause holds each step on screen long enough to be read, which is what
+# makes a simulated run something to watch — and what docs/screenshots.py
+# photographs a run in the middle of.
+#
+# debugging is the bare question, for the few places that ask it without being
+# a step: an answer applied to this machine, a list a page opens on.
 
 debugging() { [ "$DEBUG" = "true" ]; }
 
@@ -460,7 +467,7 @@ is_online() {
 # language or the keyboard is answered: until then, everything typed after it is
 # typed on a layout nobody chose. A simulated run is on somebody's own machine.
 load_console_keyboard() {
-    [ "$DEBUG" = "true" ] && return 0
+    debugging && return 0
     loadkeys "$ARCH_OS_VCONSOLE_KEYMAP"
 }
 

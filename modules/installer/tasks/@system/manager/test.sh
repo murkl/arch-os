@@ -1,3 +1,3 @@
-debugging && return 0
+simulating && return 0
 
 has_command arch-os

@@ -46,9 +46,11 @@ jobs:
       contents: read
     steps:
       # Before the checkout: without git, actions/checkout falls back to a
-      # tarball, and a tarball is not a repository.
+      # tarball, and a tarball is not a repository. A full upgrade rather than
+      # a refresh, because installing against a database newer than the system
+      # is the one thing Arch does not carry.
       - name: Make the checkout a repository
-        run: pacman -Sy --needed --noconfirm git
+        run: pacman -Syu --needed --noconfirm git
 
       - uses: actions/checkout@v5
 
@@ -73,7 +75,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - name: Make the checkout a repository
-        run: pacman -Sy --needed --noconfirm git
+        run: pacman -Syu --needed --noconfirm git
 
       - uses: actions/checkout@v5
 
@@ -147,7 +149,7 @@ jobs:
       attestations: write
     steps:
       - name: Make the checkout a repository
-        run: pacman -Sy --needed --noconfirm git
+        run: pacman -Syu --needed --noconfirm git
 
       - uses: actions/checkout@v5
 
@@ -210,7 +212,7 @@ jobs:
       TIMEOUT: 600
     steps:
       - name: Make the checkout a repository
-        run: pacman -Sy --needed --noconfirm git
+        run: pacman -Syu --needed --noconfirm git
 
       - uses: actions/checkout@v5
 

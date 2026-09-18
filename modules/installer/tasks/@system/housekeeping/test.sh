@@ -1,5 +1,5 @@
 # The timers are the whole point: the packages are only what they run.
-debugging && return 0
+simulating && return 0
 
 for timer in reflector.timer paccache.timer pkgfile-update.timer; do
     arch-chroot "$MNT" systemctl is-enabled "$timer" >/dev/null

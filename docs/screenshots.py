@@ -69,8 +69,9 @@ KEY = {
 STEP_KEYS = {"page", "shot", "frame", "press"}
 FRAMES = ("settled", "running")
 
-# How long a page is given to arrive. Generous - forty simulated tasks hold the
-# page after them for a minute - but an upper bound, so a stray step says so.
+# How long a page is given to arrive. Generous - sixty simulated tasks and tests
+# hold the page after them for a minute - but an upper bound, so a stray step
+# says so.
 WAIT = 180.0
 
 

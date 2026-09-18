@@ -1,7 +1,7 @@
 # The account exists, may sudo and has a password - the last of which nothing
 # else would ever show, since passwd prints nothing.
 
-debugging && return 0
+simulating && return 0
 
 arch-chroot "$MNT" id -nG "$ARCH_OS_USERNAME" | grep -qw wheel
 arch-chroot "$MNT" passwd -S "$ARCH_OS_USERNAME" | awk '{ exit $2 != "P" }'

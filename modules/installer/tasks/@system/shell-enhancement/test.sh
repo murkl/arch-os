@@ -1,6 +1,6 @@
 # Every shell gets the prompt through .bashrc; zsh additionally becomes the one
 # that opens.
-debugging && return 0
+simulating && return 0
 
 [ -f "${MNT}/home/${ARCH_OS_USERNAME}/.bashrc" ]
 [ "$ARCH_OS_SHELL_ENHANCEMENT_SHELL" != "zsh" ] ||

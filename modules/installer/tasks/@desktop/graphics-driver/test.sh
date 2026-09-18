@@ -1,7 +1,7 @@
 # What was installed depends on the card, so this asks the same question the
 # task did. Vulkan is the one thing every branch but nvidia installs under the
 # same name; nvidia is checked by the files and units that make it work at all.
-debugging && return 0
+simulating && return 0
 
 case "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" in
 nvidia)

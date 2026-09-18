@@ -1,7 +1,7 @@
 # An autostart entry pointing at a script that is not there does nothing and
 # says so nowhere, so the two are checked together: either both or neither.
 # Nothing left to do is an ordinary outcome rather than a failure.
-debugging && return 0
+simulating && return 0
 
 [ -f "$FIRST_LOGIN_ENTRY" ] || return 0
 

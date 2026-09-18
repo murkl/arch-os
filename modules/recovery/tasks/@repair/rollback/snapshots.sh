@@ -8,7 +8,7 @@
 
 # Simulated, so the page that asks is worth looking at while this module is
 # being worked on.
-if [ "$DEBUG" = "true" ]; then
+if debugging; then
     printf '@snapshots/2/snapshot\t2   2026-08-30 21:04   after a system update\n'
     printf '@snapshots/1/snapshot\t1   2026-08-29 09:12   first root filesystem\n'
     exit 0

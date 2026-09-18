@@ -15,29 +15,18 @@ inputs:
 runs:
   using: composite
   steps:
-    # The key is the package list and the week, so the ordinary run is an exact
-    # hit and writes no cache at all — the two restore-keys below are what a
-    # fresh week or a changed list falls back to, and it then saves once. For
-    # the ISO job the interesting packages are the ones pacstrap fetches *during*
-    # the build, which only that save ever sees, so a week is also how long the
-    # image's own downloads are kept.
-    - id: cache-key
-      shell: bash
-      env:
-        PACKAGES: ${{ inputs.packages }}
-      run: |
-        {
-          echo "packages=$(printf '%s' "$PACKAGES" | sha256sum | cut -c1-12)"
-          echo "week=$(date -u +%G-%V)"
-        } >>"$GITHUB_OUTPUT"
-
+    # A key nothing can hit, over a prefix that almost always does: the restore
+    # takes the newest cache this job wrote and the save at the end writes a
+    # fresh one. On a rolling distribution that is the whole point — a key that
+    # hits exactly writes nothing back, and the cache then stands still while
+    # the repositories move out from under it. The ISO job pays most for that:
+    # mkarchiso hands pacstrap the system cache, so a whole live system is
+    # downloaded through this one path.
     - uses: actions/cache@v6
       with:
         path: /var/cache/pacman/pkg
-        key: pacman-${{ github.job }}-${{ steps.cache-key.outputs.packages }}-${{ steps.cache-key.outputs.week }}
-        restore-keys: |
-          pacman-${{ github.job }}-${{ steps.cache-key.outputs.packages }}-
-          pacman-${{ github.job }}-
+        key: pacman-${{ github.job }}-${{ github.run_id }}
+        restore-keys: pacman-${{ github.job }}-
 
     - shell: bash
       env:

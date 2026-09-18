@@ -2,7 +2,7 @@
 # up halfway and left the old @ standing looks exactly the same from out here.
 # A snapshot carries the identity of what it was taken from, so the parent of @
 # is the one thing that says which snapshot it now holds.
-debugging && return 0
+simulating && return 0
 
 # One field of `btrfs subvolume show`, which prints them one per line as
 # "<name>:<tab><value>". Anchored on the name, so UUID does not also answer for

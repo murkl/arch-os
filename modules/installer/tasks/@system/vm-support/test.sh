@@ -1,7 +1,7 @@
 # What was installed depends on which side of the switch this machine is on, so
 # this asks the same question the task did. In a guest the units are static, so
 # there is no `is-enabled` that says anything about them.
-debugging && return 0
+simulating && return 0
 
 case "$(systemd-detect-virt || true)" in
 kvm)

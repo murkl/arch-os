@@ -3,7 +3,7 @@
 # that image to boot. A vmlinuz from one kernel next to the modules of another
 # is a machine that comes up without a single module, and it is invisible until
 # that machine is restarted.
-debugging && return 0
+simulating && return 0
 
 while read -r version; do
     kind="$(kernel_package "$version")"
