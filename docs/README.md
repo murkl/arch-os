@@ -141,15 +141,15 @@ Mostly automatic through the preinstalled **Arch OS System Manager**. By hand:
 
 Five parts, kept apart:
 
-| Part | Description |
+| Part | What it does |
 | --- | --- |
-| [Oak](https://github.com/murkl/oak) | The runtime, a repository of its own. Draws the interface, asks the questions, runs the shell. Knows nothing about Arch Linux |
-| [`modules/installer/`](../modules/installer) | Installs Arch Linux |
-| [`modules/recovery/`](../modules/recovery) | Repairs an installation already on disk |
-| [`modules/imager/`](../modules/imager) | Writes the device the other two boot from |
-| [`iso/`](../iso) | Turns a build of those into a bootable image |
+| **[Oak](https://github.com/murkl/oak)** | Draws the interface, asks the questions, runs the shell |
+| **[`modules/installer`](../modules/installer)** | Installs Arch Linux |
+| **[`modules/recovery`](../modules/recovery)** | Repairs an installation already on disk |
+| **[`modules/imager´`](../modules/imager)** | Writes the device the other two boot from |
+| **[`iso`](../iso)** | Turns a build of those into a bootable image |
 
-Modules are data, not programs. A release is Oak with `oak.yaml` and `modules/` beside it. Which module a machine can open is that module's own `requires:` - nothing else holds a list.
+Oak is the runtime, a repository of its own, and knows nothing about Arch Linux. Modules are data, not programs. A release is Oak with `oak.yaml` and `modules/` beside it. Which module a machine can open is that module's own `requires:` - nothing else holds a list.
 
 **[➜ Reference](REFERENCE.md)** for what is put on the disk and why. **[➜ Contributing](CONTRIBUTING.md)** for branches, releases, how a commit becomes an image.
 
@@ -162,4 +162,3 @@ GPL-3.0. See **[LICENSE](../LICENSE)**.
 - **[Arch Linux](https://archlinux.org)**
 - **[GNOME](https://www.gnome.org)**
 - **[Oak](https://github.com/murkl/oak)**
-- **[Bubble Tea](https://github.com/charmbracelet/bubbletea)** by charm
