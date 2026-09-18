@@ -176,10 +176,27 @@ all: build
 # Downloaded once and kept, checked against the checksum GitHub publishes for
 # that asset - the release carries no checksum file of its own, and the digest
 # below is what the release page prints under the download.
+#
+# The download is a file server and the checksum is the API, and only the second
+# counts calls: sixty an hour from an address that does not say who it is, which
+# on a runner is one address for everybody on that machine. So the call carries
+# whatever token the environment already holds, and goes without where there is
+# none - which is what a desk looks like.
+#
+# Read into a variable of its own rather than straight into the pipe, because a
+# reader that fails and a release that publishes no checksum are two different
+# things to be told, and under -e an assignment that fails ends the recipe
+# before anything below it can say which happened.
 $(OAK_BIN):
 	@mkdir -p $(OAK_DIR)
 	$(CURL) $(OAK_URL) -o $(OAK_DIR)/$(OAK_ASSET)
-	digest="$$($(CURL) -s $(OAK_API) | awk -v asset='"name": "$(OAK_ASSET)"' \
+	@auth=(); \
+	if [ -n "$${GITHUB_TOKEN:-}" ]; then auth=(--header "Authorization: Bearer $${GITHUB_TOKEN}"); fi; \
+	release="$$($(CURL) -s "$${auth[@]}" $(OAK_API))" || { \
+		echo "$(OAK_API) could not be read. A call that does not say who it is gets 60 an hour per address, and one GitHub will not accept gets none - set or correct GITHUB_TOKEN." >&2; \
+		exit 1; \
+	}; \
+	digest="$$(printf '%s' "$$release" | awk -v asset='"name": "$(OAK_ASSET)"' \
 		'index($$0, asset) { want = 1 } \
 		 want && !seen && /"digest": *"sha256:/ { seen = 1; sub(/.*sha256:/, ""); sub(/".*/, ""); print }')"; \
 	[ -n "$$digest" ] \

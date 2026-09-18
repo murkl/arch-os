@@ -68,7 +68,13 @@ jobs:
         with:
           packages: make curl shellcheck shfmt yamllint actionlint gettext diffutils gitleaks kbd
 
+      # The runtime's checksum is a call to the API, and sixty an hour is what
+      # an address that does not say who it is gets - one address for every
+      # runner on that machine. Handed to the step that makes the call rather
+      # than to the job, so nothing else in it can read the token.
       - run: make check
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
   # The only job that assembles anything. Everything downstream downloads this
   # artefact rather than building again.
@@ -101,6 +107,8 @@ jobs:
         run: echo "version=$(make -s version)" >>"$GITHUB_OUTPUT"
 
       - run: make tarball
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       # What ships is what was checked, rather than what was checked plus
       # whatever the packaging did to it. `--inspect` loads a product the way a
