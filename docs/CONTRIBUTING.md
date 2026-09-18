@@ -41,7 +41,7 @@ make tag
 git push origin v2.0.0
 ```
 
-The Release workflow finds that commit's run and hangs its artefacts on the release page - `arch-os-2.0.0-x86_64.iso` and `.tar.gz`, each with a `.sha256`.
+The Release workflow finds that commit's run and hangs its artefacts on the release page - `arch-os-2.0.0-x86_64.iso` and `.tar.gz`. GitHub prints each one's SHA-256 beside it there, so the release carries no checksum file of its own.
 
 **Note:** _Nothing is built from a tag. `make tag` refuses an unclean tree, `HEAD` off `main`, or a tag that exists already. A release can also be written on the web page._
 
@@ -53,7 +53,7 @@ flowchart TD
     P --> B["Build<br/><small>release · tarball</small>"]
     C --> I
     B --> I["ISO<br/><small>archiso, from the build's artefact</small>"]
-    I --> K["Boot test<br/><small>qemu + OVMF, until the first page appears</small>"]
+    I --> K["Smoke test<br/><small>qemu + OVMF, until the first page appears</small>"]
     T["tag vX.Y.Z"] --> R["Release<br/><small>publish · nothing built</small>"]
     B -.->|"artefact"| R
     I -.->|"artefact"| R
@@ -68,7 +68,7 @@ flowchart TD
 | `Check` | every run | `make check` |
 | `Build` | every run | Release and tarball |
 | `ISO` | watched branches, on demand | The image, from `Build`'s artefact |
-| `Boot test` | after `ISO` | Boots it, waits for the first page |
+| `Smoke test` | after `ISO` | Boots it, waits for the first page |
 | `Release` | a tag on `main` | Hangs that commit's artefacts on the release page |
 
 `ISO` unpacks `Build`'s tarball rather than building again, so the image holds the exact file the release page offers. The dashed jobs are the expensive ones (~15 min), so a pull request is judged on the two above them.
@@ -165,7 +165,7 @@ make docs          # both, in that order
 
 They need `chromium`, `imagemagick`, `python-pyte` and `python-yaml`, none of which a build or `make check` needs.
 
-Every run is started with `--debug`, which hands every script `DEBUG=true`: no disk is partitioned, nothing is mounted and nothing restarts. Which pages are taken is `docs/screenshots.yaml`, and every answer is given there rather than left to the machine rendering it.
+Every run is started with `--debug`, which hands every script `DEBUG=true`: no disk is partitioned, nothing is mounted and nothing restarts. Which pages are taken is `docs/screenshots.yaml`, and every answer is given there rather than left to the machine rendering it; `screenshots.py` beside it is the same file in every project that renders a set this way, as is `banner.py`.
 
 **Note:** _Only `setup.png`, `installer.png`, `installing.png` and `recovery.png` are drawn by the interface. The boot splash, the shell, the fetch and the System Manager are photographs of a running system, taken by hand and left alone by `make screenshots`._
 
@@ -201,4 +201,4 @@ gh repo edit --enable-merge-commit=false --enable-rebase-merge=false \
     --enable-squash-merge --delete-branch-on-merge
 ```
 
-**Note:** _`ISO` and `Boot test` are not required checks - they never run on a pull request. Everything else (signing, Dependabot) needs no setup._
+**Note:** _`ISO` and `Smoke test` are not required checks - they never run on a pull request. Everything else (signing, Dependabot) needs no setup._

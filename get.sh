@@ -51,13 +51,28 @@ cd "$DOWNLOAD_DIR"
 
 printf '\n\033[34m// Arch OS\033[0m\n'
 
-# Picked by what its name ends in rather than by the name itself, so renaming a
-# download stays a change to the build and nothing here.
-url="$(fetch -Lfs "https://api.github.com/repos/${REPO}/releases/latest" |
-    sed -n 's/.*"browser_download_url": *"\(.*\.tar\.gz\)".*/\1/p' | head -n1)" ||
-    fail "Cannot reach GitHub"
-[ -n "$url" ] || fail "The latest release holds no program"
+# Where the latest release keeps the program and what it has to hash to, out of
+# GitHub's own description of it - the release carries no checksum file of its
+# own. Picked by what the name ends in rather than by the name itself, so
+# renaming a download stays a change to the build and nothing here.
+#
+# Each asset is weighed when the next one begins, so nothing here leans on the
+# order GitHub writes an asset's fields in.
+asset="$(fetch -Lfs "https://api.github.com/repos/${REPO}/releases/latest" | awk '
+    function weigh() {
+        if (!found && url ~ /\.tar\.gz$/) { found = 1; print url, digest }
+        url = ""; digest = ""
+    }
+    /"url": *"[^"]*\/releases\/assets\// { weigh() }
+    /"digest": *"sha256:/ { digest = $0; sub(/.*sha256:/, "", digest); sub(/".*/, "", digest) }
+    /"browser_download_url": *"/ { url = $0; sub(/.*: *"/, "", url); sub(/".*/, "", url) }
+    END { weigh() }')" || fail "Cannot reach GitHub"
+[ -n "$asset" ] || fail "The latest release holds no program"
+
+url="${asset%% *}"
+digest="${asset##* }"
 name="${url##*/}"
+[ -n "$digest" ] || fail "The latest release publishes no checksum for ${name}"
 
 # Written to a .part and moved into place afterwards, so a file that is there is
 # a file that arrived whole — which is what makes skipping it safe.
@@ -69,11 +84,12 @@ else
     mv "${name}.part" "$name"
 fi
 
-# The checksum names the file itself, so this is the check anybody would run by
-# hand. A file that fails is thrown away rather than kept.
-fetch -Lfs "${url}.sha256" -o "${name}.sha256" || fail "Download failed: ${name}.sha256"
-if ! sha256sum -c "${name}.sha256" >/dev/null 2>&1; then
-    rm -f "$name" "${name}.sha256"
+# Against what GitHub publishes beside the download, which is the check anybody
+# would run by hand off the release page. Read off the file every run, so a
+# truncated leftover from last time is caught too; one that fails is thrown away
+# rather than kept.
+if ! echo "${digest}  ${name}" | sha256sum -c - >/dev/null 2>&1; then
+    rm -f "$name"
     fail "Checksum mismatch: ${name} was discarded, please run this again"
 fi
 info "Checksum is correct"

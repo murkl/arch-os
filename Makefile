@@ -2,8 +2,8 @@
 # rule that holds at a desk holds there.
 #
 #   dist/arch-os-2.0.0/                 the product: oak, oak.yaml, modules/
-#   dist/arch-os-2.0.0-x86_64.tar.gz    that folder as one file  (+ .sha256)
-#   dist/arch-os-2.0.0-x86_64.iso       the bootable image       (+ .sha256)
+#   dist/arch-os-2.0.0-x86_64.tar.gz    that folder as one file
+#   dist/arch-os-2.0.0-x86_64.iso       the bootable image
 #
 # `build` writes the first, `tarball` and `image` each turn it into one of the
 # others. Nothing is ever assembled twice.
@@ -54,6 +54,7 @@ OAK_ASSET   := oak-linux-amd64
 OAK_DIR     := .oak
 OAK_BIN     := $(OAK_DIR)/oak
 OAK_URL     := https://github.com/$(OAK_REPO)/releases/download/v$(OAK_VERSION)/$(OAK_ASSET)
+OAK_API     := https://api.github.com/repos/$(OAK_REPO)/releases/tags/v$(OAK_VERSION)
 
 # https even after a redirect, the same flags get.sh fetches with: -L on its own
 # would follow a 302 into plain http, where the answer is whoever is on the wire
@@ -158,13 +159,19 @@ BANNER_CELL    := 9
 
 all: build
 
-# Downloaded once and kept, checked against the checksum published beside it.
-# `make oak` fetches it again after OAK_VERSION was raised.
+# Downloaded once and kept, checked against the checksum GitHub publishes for
+# that asset - the release carries no checksum file of its own, and the digest
+# below is what the release page prints under the download. `make oak` fetches
+# it again after OAK_VERSION was raised.
 $(OAK_BIN):
 	@mkdir -p $(OAK_DIR)
 	$(CURL) $(OAK_URL) -o $(OAK_DIR)/$(OAK_ASSET)
-	$(CURL) $(OAK_URL).sha256 -o $(OAK_DIR)/$(OAK_ASSET).sha256
-	cd $(OAK_DIR) && sha256sum -c $(OAK_ASSET).sha256
+	digest="$$($(CURL) -s $(OAK_API) | awk -v asset='"name": "$(OAK_ASSET)"' \
+		'index($$0, asset) { want = 1 } \
+		 want && !seen && /"digest": *"sha256:/ { seen = 1; sub(/.*sha256:/, ""); sub(/".*/, ""); print }')"; \
+	[ -n "$$digest" ] \
+		|| { echo "$(OAK_REPO) publishes no checksum for $(OAK_ASSET) at v$(OAK_VERSION)" >&2; exit 1; }; \
+	echo "$$digest  $(OAK_DIR)/$(OAK_ASSET)" | sha256sum -c -
 	install -m 755 $(OAK_DIR)/$(OAK_ASSET) $@
 	@echo "oak $$($@ --version)"
 
@@ -215,7 +222,6 @@ tarball: build
 	tar -czf $(DIST_DIR)/$(TARBALL) --owner=0 --group=0 --sort=name \
 		--transform 's,^,$(STEM)/,' \
 		-C $(RELEASE_DIR) $(APP) $(PRODUCT) $(MODULES_DIR)
-	cd $(DIST_DIR) && sha256sum $(TARBALL) > $(TARBALL).sha256
 
 # The image, out of the release already in dist/ rather than out of a second
 # build of the same sources. What it is called is read out of that release.

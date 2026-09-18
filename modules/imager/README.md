@@ -29,8 +29,8 @@ locales/                        one <code>.po per language, and the template the
 
 | Task | Stage | Description |
 | --- | --- | --- |
-| `image` | `download` | Fetches the image and its checksum, whichever is missing |
-| `checksum` | `verify` | Compares image against checksum, discards both if they disagree |
+| `image` | `download` | Fetches the image, unless the folder already holds it |
+| `checksum` | `verify` | Compares it against the checksum the release publishes, discards it if they disagree |
 | `device` | `write` | Checks the device, unmounts it, copies the image on |
 
 Three steps, three distinct failures: nothing arrived, what arrived is broken, or it could not be written.
@@ -45,11 +45,12 @@ Which image gets written is not asked: it is the one this program came from. `ve
 
 ### Where it lands
 
-**Download folder**, suggested as `XDG_DOWNLOAD_DIR` or `~/Downloads`. Both files are kept, so a second run costs no bandwidth.
+**Download folder**, suggested as `XDG_DOWNLOAD_DIR` or `~/Downloads`. The image is kept, so a second run costs no bandwidth.
 
-A folder already holding `arch-os-<version>-x86_64.iso` **and** its `.sha256` needs no network, no release - an image built by hand works, and a stick can be written offline.
+An `arch-os-<version>-x86_64.iso` already in that folder is not downloaded again. The number it is then held to is the checksum GitHub publishes for that release, so this module and the release page check the same one - and the release carries no checksum file of its own.
 
-- A checksum mismatch discards both files rather than keeping a broken one
+- A checksum mismatch discards the image rather than keeping a broken one
+- A release out of reach is a failure, not a pass: an image nothing could be compared against is never written
 - Every request is HTTPS, redirects included
 
 ## Where it runs
@@ -83,7 +84,7 @@ Everything else - listing, downloading, checksumming - runs as you. `tty: true` 
 
 | Variable | Description |
 | --- | --- |
-| `ARCH_OS_DOWNLOAD_DIR` | Where image and checksum live. Suggested as `XDG_DOWNLOAD_DIR`, or `~/Downloads` |
+| `ARCH_OS_DOWNLOAD_DIR` | Where the image lives. Suggested as `XDG_DOWNLOAD_DIR`, or `~/Downloads` |
 | `ARCH_OS_IMAGE_DEVICE` | The USB device to write. Only USB disks are offered |
 
 **Note:** _The device is read back from `lsblk` immediately before writing - `/dev/sdb` is a path, not a stick._

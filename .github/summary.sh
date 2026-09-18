@@ -4,8 +4,9 @@
 #
 #   summary.sh <heading> <file>...
 #
-# Every file is expected to have a .sha256 beside it - which is what a build
-# writes anyway, and what a download is checked against.
+# The checksum is read off each file rather than out of a file beside it: a
+# build writes none, and what a download is checked against is the digest
+# GitHub publishes for the asset once the file is on a release.
 #
 # POSIX sh, like get.sh: this is one table, not a program.
 set -eu
@@ -28,15 +29,10 @@ shift
     printf '| --- | ---: | --- |\n'
     for file in "$@"; do
         [ -f "$file" ] || continue
-        if [ -f "${file}.sha256" ]; then
-            checksum="$(cut -d' ' -f1 "${file}.sha256")"
-        else
-            checksum="none"
-        fi
         printf "| \`%s\` | %s | \`%s\` |\n" \
             "$(basename "$file")" \
             "$(LC_ALL=C numfmt --to=iec --suffix=B "$(stat -c%s "$file")")" \
-            "$checksum"
+            "$(sha256sum "$file" | cut -d' ' -f1)"
     done
     printf '\nDownload it from the artefacts listed on this run.\n\n'
 } >>"$GITHUB_STEP_SUMMARY"

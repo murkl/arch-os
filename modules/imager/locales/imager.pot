@@ -43,7 +43,7 @@ msgstr ""
 
 #. ARCH_OS_DOWNLOAD_DIR: what it means
 #: module.yaml
-msgid "Where the image and the checksum beside it are kept. Both are reused, so a second run costs no bandwidth, and an image already there is written without a network. The folder is created if it is not there, and the image needs about two gigabytes."
+msgid "Where the image is kept. It is reused, so a second run costs no bandwidth. The folder is created if it is not there, and the image needs about two gigabytes."
 msgstr ""
 
 #. ARCH_OS_DOWNLOAD_DIR: the heading its row sits under

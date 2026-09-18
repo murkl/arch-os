@@ -173,7 +173,7 @@ No network, ever - it may be what broke. Kernel images come from the package cac
 A hybrid ISO already carries its partition table and boot paths - writing it is one raw copy.
 
 - The image is **not** a question: it is the release this program came from
-- Where it lands **is**: `XDG_DOWNLOAD_DIR` or `~/Downloads`. A folder already holding the image and its `.sha256` needs no network and no release
-- A checksum mismatch discards both files rather than keeping a broken one
+- Where it lands **is**: `XDG_DOWNLOAD_DIR` or `~/Downloads`. An image already there is used rather than fetched again
+- It is checked against the checksum GitHub publishes for that release, and a mismatch discards it rather than keeping a broken one
 
 **Root only for the write.** `as_root` wraps `umount`, `dd`, `partprobe` - nothing else. Everything else runs as you, so a live image never leaves root-owned files in your home.

@@ -38,13 +38,45 @@ simulating() {
 # WHAT IS WRITTEN, AND FROM WHERE
 # ////////////////////////////////////////////////////////////////////////////
 
+# Where the release this program came out of is published.
+REPO="murkl/arch-os"
+
 # The image in the download folder, named after the version rather than read out
-# of a release: a machine with the file already here needs no network at all.
+# of a release: a machine with the file already here needs no release to name it.
 image() { printf '%s/arch-os-%s-x86_64.iso' "$(download_dir)" "$VERSION"; }
 
-# The checksum published beside it, carrying the image's own name - so
-# `sha256sum -c` in that folder is the check anybody would run by hand.
-checksum() { printf '%s.sha256' "$(image)"; }
+# https even after a redirect, because -L would otherwise follow a 302 into
+# plain http, where the answer can be anybody's - and a connect timeout, so a
+# machine behind a black hole says so rather than hanging.
+fetch_url() {
+    curl -Lf --proto '=https' --proto-redir '=https' --connect-timeout 10 "$@"
+}
+
+# The release this program came out of, as GitHub describes it: where the image
+# is and what it has to hash to, as two words. The release carries no checksum
+# file - the checksum is a field of the asset, and it is the same one the
+# release page prints under the download.
+#
+# Nothing where the release cannot be reached. The step that asked says what
+# that means for it, because it is not the same answer twice.
+#
+# The asset is picked by what its name ends in rather than by the name itself,
+# so renaming a download stays a change to the build. Each one is weighed when
+# the next begins, so nothing here leans on the order GitHub writes an asset's
+# fields in.
+image_asset() {
+    local json
+    json="$(fetch_url -s --max-time 20 "https://api.github.com/repos/${REPO}/releases/tags/v${VERSION}" || true)"
+    printf '%s\n' "$json" | awk '
+        function weigh() {
+            if (!found && url ~ /\.iso$/) { found = 1; print url, digest }
+            url = ""; digest = ""
+        }
+        /"url": *"[^"]*\/releases\/assets\// { weigh() }
+        /"digest": *"sha256:/ { digest = $0; sub(/.*sha256:/, "", digest); sub(/".*/, "", digest) }
+        /"browser_download_url": *"/ { url = $0; sub(/.*: *"/, "", url); sub(/".*/, "", url) }
+        END { weigh() }'
+}
 
 # ////////////////////////////////////////////////////////////////////////////
 # THE YAML | Every function a declaration calls by name

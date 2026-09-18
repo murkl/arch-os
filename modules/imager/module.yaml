@@ -27,8 +27,8 @@ confirm: |
 # Each is a folder under tasks/, marked - tasks/@write/ - and lying in one is
 # what puts a task in the run and where.
 stages:
-  - download # the image and the checksum published beside it
-  - verify # the image against that checksum, before anything is written
+  - download # the image of the release this program came out of
+  - verify # against the checksum that release publishes, before anything is written
   - write # the image onto the device
 
 # Which image gets written is not among them: that is not a matter of opinion,
@@ -37,10 +37,9 @@ variables:
   - name: ARCH_OS_DOWNLOAD_DIR
     title: Download folder
     description: |
-      Where the image and the checksum beside it are kept. Both are reused, so
-      a second run costs no bandwidth, and an image already there is written
-      without a network. The folder is created if it is not there, and the
-      image needs about two gigabytes.
+      Where the image is kept. It is reused, so a second run costs no
+      bandwidth. The folder is created if it is not there, and the image needs
+      about two gigabytes.
     group: Image
     required: true
     prefill: download_dir

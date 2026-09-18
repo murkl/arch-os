@@ -44,7 +44,7 @@ make iso       # the release, then this image, beside it in dist/
 make image     # ...only the image, out of a release that is already there
 ```
 
-**Note:** _Image and `.sha256` land beside the release they were built from, named after `oak.yaml`'s version. The ISO label is that version, upper-cased._
+**Note:** _The image lands beside the release it was built from, named after `oak.yaml`'s version. The ISO label is that version, upper-cased._
 
 The Bootsplash theme comes from a **[plymouth-theme-arch-os](https://github.com/murkl/plymouth-theme-arch-os)** checkout beside this repo if one exists, fetched otherwise (`PLYMOUTH_THEME_SRC` overrides).
 

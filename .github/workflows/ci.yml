@@ -30,6 +30,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.ref_name != 'main' }}
 
+# Every job names its runner rather than leaving it to `ubuntu-latest`, which
+# moves to a new Ubuntu on a date GitHub picks: a toolchain that changes under a
+# branch nobody touched is a change nobody made. It is raised here deliberately,
+# like any other dependency.
 jobs:
   # `make check` and nothing this file adds to it — the secret scan included:
   # what is checked lives in the Makefile, so a rule that holds in CI holds at
@@ -39,7 +43,7 @@ jobs:
   # and every job that needs it downloads the release the Makefile pins.
   check:
     name: Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     container: archlinux:latest
     permissions:
@@ -52,7 +56,9 @@ jobs:
       - name: Make the checkout a repository
         run: pacman -Syu --needed --noconfirm git
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: ./.github/actions/arch
         with:
@@ -64,7 +70,7 @@ jobs:
   # artefact rather than building again.
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     container: archlinux:latest
     permissions:
@@ -77,7 +83,9 @@ jobs:
       - name: Make the checkout a repository
         run: pacman -Syu --needed --noconfirm git
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: ./.github/actions/arch
         with:
@@ -101,15 +109,12 @@ jobs:
           for release in "$unpacked"/*; do
             "$release/oak" --inspect
           done
-          (cd dist && sha256sum -c ./*.sha256)
 
       # Kept long enough on main that a tag pushed weeks later still finds them.
       - uses: actions/upload-artifact@v7
         with:
           name: tarball
-          path: |
-            dist/*.tar.gz
-            dist/*.tar.gz.sha256
+          path: dist/*.tar.gz
           retention-days: ${{ github.ref_name == 'main' && 90 || 7 }}
 
       # Which commit and which run this file came out of, signed where it is
@@ -129,7 +134,7 @@ jobs:
   # An image, out of the file the release page will offer rather than out of a
   # second build of the same sources.
   #
-  # An archiso build is a quarter of an hour and a boot test another five
+  # An archiso build is a quarter of an hour and a smoke test another five
   # minutes, which a pull request does not need: it is judged on the two jobs
   # above. So everything that gets here is a watched branch or a run started by
   # hand — see the trigger at the top.
@@ -137,7 +142,7 @@ jobs:
     name: ISO
     needs: [check, build]
     if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     container:
       image: archlinux:latest
@@ -151,7 +156,9 @@ jobs:
       - name: Make the checkout a repository
         run: pacman -Syu --needed --noconfirm git
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: ./.github/actions/arch
         with:
@@ -166,9 +173,7 @@ jobs:
       # archive carries, so the command below is the one from the Makefile and
       # not a version of it adapted to CI.
       - name: Unpack the release
-        run: |
-          (cd dist && sha256sum -c ./*.sha256)
-          tar -xzf dist/*.tar.gz -C dist
+        run: tar -xzf dist/*.tar.gz -C dist
 
       # The image out of the release that was just downloaded, rather than out
       # of a second build of the same sources. `make iso` would do both.
@@ -177,9 +182,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: iso
-          path: |
-            dist/*.iso
-            dist/*.iso.sha256
+          path: dist/*.iso
           retention-days: ${{ github.ref_name == 'main' && 90 || 7 }}
 
       - name: Sign the provenance
@@ -195,9 +198,9 @@ jobs:
 
   # The only job that finds out whether the thing actually starts.
   smoke:
-    name: Boot test
+    name: Smoke test
     needs: iso
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     container:
       image: archlinux:latest
@@ -214,7 +217,9 @@ jobs:
       - name: Make the checkout a repository
         run: pacman -Syu --needed --noconfirm git
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       # netpbm turns the console into something a browser will show: a failed
       # boot is read off the picture, and nothing opens a .ppm.
@@ -242,7 +247,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: console
+          name: smoke-test
           path: dist/smoke/*.png
           if-no-files-found: ignore
           retention-days: 7
@@ -251,10 +256,10 @@ jobs:
         if: always()
         run: |
           if [ "$JOB" = success ]; then
-            said="Arch OS came up. The frame it was recognised in is the \`console\` artefact."
+            said="Arch OS came up. The frame it was recognised in is the \`smoke-test\` artefact."
           else
-            said="The interface did not come up. Every frame of the console is in the \`console\` artefact."
+            said="The interface did not come up. Every frame of the console is in the \`smoke-test\` artefact."
           fi
-          printf '## Boot test\n\n%s\n\n' "$said" >>"$GITHUB_STEP_SUMMARY"
+          printf '## Smoke test\n\n%s\n\n' "$said" >>"$GITHUB_STEP_SUMMARY"
         env:
           JOB: ${{ job.status }}

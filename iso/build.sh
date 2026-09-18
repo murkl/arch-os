@@ -4,8 +4,8 @@
 #
 #   build.sh <release-dir>
 #
-# The image and its checksum land beside that release, and what the image is
-# called is read out of the release itself.
+# The image lands beside that release, and what it is called is read out of the
+# release itself.
 set -eu
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -259,9 +259,7 @@ ${SUDO} mkarchiso -v -w "${WORK_DIR}" -o "${ISO_DIR}/out" "${ISO_DIR}"
 # SHIP
 # ////////////////////////////////////////////////////////////////////////////
 
-# The image and its checksum go to DIST_DIR, beside the tarball.
+# The image goes to DIST_DIR, beside the tarball.
 echo "### Move ISO to Dist"
 mkdir -p "${DIST_DIR}"
 cp -f "${ISO_DIR}/out/"*.iso "${DIST_DIR}/"
-echo "### Generate ISO Checksum"
-(cd "${DIST_DIR}" && for iso in *.iso; do sha256sum "$iso" >"${iso}.sha256"; done)
