@@ -16,9 +16,9 @@ version: 2.0.0
 # Arch blue, pulled towards the terminal's background so it holds on a light one.
 accent: "#1793d1"
 
-# Where the rest of Arch OS is. The welcome page writes it out and draws it
-# beside as a code to scan, because the machine reading that page has no browser
-# on it yet - and often nothing else in the room but a phone.
+# Where the rest of Arch OS is. The welcome page writes it out, because the
+# machine reading that page has no browser on it yet and whoever is in front of
+# it looks the project up somewhere else.
 url: https://github.com/murkl/arch-os
 
 # Above the blank line is the eyebrow, dimmed; below it the wordmark, in the

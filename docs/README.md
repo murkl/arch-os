@@ -63,9 +63,9 @@ curl -Ls https://bit.ly/arch-os | bash
 
 ### 3. Boot from the USB device
 
-The Installer starts on its own. The first page says where the rest of Arch OS is - the code beside it is that address, for a phone - and asks the language:
+The Installer starts on its own. The first page says where the rest of Arch OS is and asks the language:
 
-<p><img src="screenshots/welcome.png" alt="The welcome page: the project's address as writing and as a code, and the language to read the rest in"></p>
+<p><img src="screenshots/welcome.png" alt="The welcome page: the project's address, and the language to read the rest in"></p>
 
 Then Installer or Recovery, and a starting point:
 

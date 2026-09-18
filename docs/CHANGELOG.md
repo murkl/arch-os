@@ -11,7 +11,7 @@ What each release changed, newest first. The version is `version:` in **[oak.yam
 - A step that fails names the module, the task, the file, the line and the exit code, and the run says how many of its tests passed
 - CachyOS tuning for memory, systemd, the journal and the I/O schedulers, `/var` split onto its own btrfs subvolumes
 - Both boot images are declared rather than left to the kernel package, whose template stopped building the fallback - an installation without disk encryption had a fallback entry in the boot menu and no image behind it
-- The welcome page says where the project is, written out and drawn beside the languages as a code to scan - the machine reading it has no browser on it yet
+- The welcome page says where the project is, written out under the greeting - the machine reading it has no browser on it yet
 - File sharing announces itself under the hostname as it stands rather than in capitals, so a file manager on the network lists `tux-desktop` and not `TUX-DESKTOP`
 - English and German, checked against the glyph table of the font the console draws with - which now also holds the marks the interface itself draws
 - One command from anywhere: `curl -Ls https://bit.ly/arch-os | bash` installs, repairs or writes a boot device, decided by the machine it opened on

@@ -20,8 +20,8 @@ set -eu
 
 # What the interface draws on a console: the frame, the rules and the scrollbar,
 # the cursor and the marks a row carries, the shades a letter fades in through,
-# and the three cells a picture is built from - the code on the welcome page and
-# the mark over a finished run. ASCII is left out; every font has it.
+# and the three cells a picture is built from - the mark over a finished run and
+# the code an address is handed over as. ASCII is left out; every font has it.
 INTERFACE_GLYPHS='─│┌┐└┘░▒█▀▄·•»↑↓'
 
 # Code points are counted, not bytes: under the C locale bash would hand back
