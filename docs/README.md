@@ -129,8 +129,6 @@ Mostly automatic through the preinstalled **Arch OS System Manager**. By hand:
 
 <div align="center">
   <p><div><img src="screenshots/installing.png"></div><sub><i>Installer</i></sub></p>
-  <p><div><img src="screenshots/desktop_overview.jpg"></div><sub><i>Desktop</i></sub></p>
-  <p><div><img src="screenshots/desktop_apps.png"></div><sub><i>Desktop Core Apps</i></sub></p>
   <p><div><img src="screenshots/bootsplash.png"></div><sub><i>Bootsplash</i></sub></p>
   <p><div><img src="screenshots/starship.png"></div><sub><i>Shell Enhancement</i></sub></p>
   <p><div><img src="screenshots/fastfetch.png"></div><sub><i>Fetch</i></sub></p>

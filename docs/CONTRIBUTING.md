@@ -150,6 +150,20 @@ Before any desktop exists, a console font holds at most 512 glyphs: **ASCII and 
 
 **Note:** _Supporting those needs a console font shipped on the image, not a catalog change. Open an issue._
 
+## Pictures in the Docs
+
+The banner is generated. It collages two screenshots under the wordmark, which is read out of `oak.yaml` rather than redrawn, so the name and the accent on it cannot drift from the ones the Installer draws.
+
+```
+make banner        # after the screenshots, the wordmark or the accent changed
+```
+
+It needs `chromium` and `imagemagick`, neither of which a build needs.
+
+The screenshots are not generated. Taking one means driving the Installer or the Recovery, and those partition disks, unmount and reboot for real. Take them from a machine booted off the ISO or from QEMU, never from a working desktop.
+
+**Note:** _Oak renders its own set from its example - see `tools/docs/screenshots.py` there. It cannot be pointed at these modules, because loading one means loading the scripts it would run._
+
 ## Commits
 
 - Imperative mood (`Add`, `Fix`, `Refactor`), one logical change each

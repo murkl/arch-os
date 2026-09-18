@@ -118,8 +118,24 @@ BUILD_OUTPUT := $(DIST_DIR) $(DEV_DIR) $(ISO_DIR)/archiso $(ISO_DIR)/download
 # Empty when there is nothing to elevate, which is the case in CI.
 SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 
+# The picture the README opens on, collaged out of two screenshots under the
+# wordmark read from oak.yaml. Generated rather than drawn, so the name, the
+# accent and the wordmark cannot drift from what the Installer actually shows.
+#
+# It needs chromium and imagemagick, which a build does not, so it stays out of
+# `check` and is run by hand after the screenshots or the wordmark change.
+#
+# The screenshots themselves are not generated here. Regenerating a page means
+# driving the Installer, and these modules partition disks and reboot: see
+# docs/CONTRIBUTING.md.
+DOCS           := tools/docs
+BANNER_CARDS   := docs/screenshots/installer.png docs/screenshots/installing.png
+BANNER_TAGLINE := A minimal, robust and reproducible Arch Linux base. Installer and Recovery on one image.
+BANNER_CELL    := 9
+
 .PHONY: all oak build dev run inspect tarball image iso smoke locales \
-	locales-check lint fmt check version version-check secrets-check tag clean
+	locales-check lint fmt check version version-check secrets-check tag \
+	banner clean
 
 # build empties the release it writes, and everything that packages it reads
 # what it left. Running them at once would package a half-written folder.
@@ -307,5 +323,13 @@ tag: version-check
 # mkarchiso writes as root, and a build killed before its own cleanup ran leaves
 # root-owned files behind. The plain removal is tried first, so an ordinary
 # clean never asks for a password.
+banner:
+	python3 $(DOCS)/banner.py \
+		--product $(PRODUCT) \
+		--logo docs/logo.svg \
+		$(foreach c,$(BANNER_CARDS),--card $(c)) \
+		--tagline "$(BANNER_TAGLINE)" \
+		--cell $(BANNER_CELL)
+
 clean:
 	rm -rf $(BUILD_OUTPUT) || $(SUDO) rm -rf $(BUILD_OUTPUT)
