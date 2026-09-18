@@ -28,7 +28,7 @@ msgstr "Arch Linux auf diesen Rechner installieren."
 #. how to get back in, read on the way out to the console
 #: module.yaml
 msgid "Type installer at the prompt to start it again."
-msgstr "Mit dem Befehl installer startest du den Installer wieder."
+msgstr "Mit dem Befehl installer startest du ihn wieder."
 
 #. the last thing read before the first task runs
 #: module.yaml
@@ -345,8 +345,8 @@ msgstr "Firmware-Aktualisierungen, die beim Start geladen werden. auto ist das, 
 
 #. ARCH_OS_DESKTOP: what it means
 #: module.yaml
-msgid "Install the GNOME desktop or leave the system on a text console (tty), with nothing graphical installed."
-msgstr "Installiere den GNOME-Desktop oder belasse das System bei einer Textkonsole (tty), ohne dass etwas Grafisches installiert wird."
+msgid "gnome installs the GNOME desktop. none leaves the system on a text console, with nothing graphical installed."
+msgstr "gnome installiert den GNOME-Desktop. none belässt das System bei einer Textkonsole, ohne dass etwas Grafisches installiert wird."
 
 #. ARCH_OS_DESKTOP_GRAPHICS_DRIVER: the question
 #: module.yaml
@@ -355,8 +355,8 @@ msgstr "Grafiktreiber"
 
 #. ARCH_OS_DESKTOP_GRAPHICS_DRIVER: what it means
 #: module.yaml
-msgid "Mesa is the open driver and fits almost every machine. Pick one matching your card only if you know you need it."
-msgstr "Mesa ist der offene Treiber und passt auf fast jeden Rechner. Wähle nur dann einen zu deiner Karte passenden, wenn du weißt, dass du ihn brauchst."
+msgid "mesa is the open driver and fits almost every machine. Pick one matching your card only if you know you need it."
+msgstr "mesa ist der offene Treiber und passt auf fast jeden Rechner. Wähle nur dann einen zu deiner Karte passenden, wenn du weißt, dass du ihn brauchst."
 
 #. ARCH_OS_DESKTOP_KEYBOARD_LAYOUT: the question
 #: module.yaml
@@ -365,8 +365,8 @@ msgstr "Desktop-Tastatur"
 
 #. ARCH_OS_DESKTOP_KEYBOARD_LAYOUT: what it means
 #: module.yaml
-msgid "The keyboard layout the desktop starts with. auto matches the console keyboard."
-msgstr "Die Tastaturbelegung, mit der der Desktop startet. auto ist dieselbe Wahl wie bei der Konsolentastatur."
+msgid "The keyboard layout the desktop starts with. auto matches the console keyboard, using the desktop's own naming: de-latin1 and de are the same layout."
+msgstr "Die Tastaturbelegung, mit der der Desktop startet. auto folgt der Konsolentastatur, in der eigenen Schreibweise des Desktops: de-latin1 und de sind dieselbe Belegung."
 
 #. ARCH_OS_DESKTOP_KEYBOARD_VARIANT: the question
 #: module.yaml
@@ -470,8 +470,8 @@ msgstr "AUR-Helfer"
 
 #. ARCH_OS_AUR_HELPER: what it means
 #: module.yaml
-msgid "Installs software from the Arch User Repository (AUR) just as easily as from the official repositories. Built here, against the pacman this machine has, which takes about a quarter of an hour."
-msgstr "Installiert Software aus dem Arch User Repository (AUR) so einfach wie aus dem offiziellen. Wird hier gebaut, gegen das pacman dieser Maschine, was rund eine Viertelstunde dauert."
+msgid "Installs software from the Arch User Repository just as easily as from the official repositories. Built here, against the pacman this machine has, which takes about a quarter of an hour."
+msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen. Wird hier gebaut, gegen das pacman dieser Maschine, was rund eine Viertelstunde dauert."
 
 #. ARCH_OS_CONTAINER_ENGINE: the question
 #: module.yaml
@@ -480,7 +480,7 @@ msgstr "Container-Engine"
 
 #. ARCH_OS_CONTAINER_ENGINE: what it means
 #: module.yaml
-msgid "Docker needs a daemon running as root, which is what most software and documentation assumes. Podman has neither and still answers to the docker command. Both bring a compose command."
+msgid "docker needs a daemon running as root, which is what most software and documentation assumes. podman has neither and still answers to the docker command. Both bring a compose command."
 msgstr "Docker braucht einen Daemon, der als root läuft — wovon die meiste Software und Dokumentation ausgeht. Podman hat beides nicht und hört trotzdem auf den Befehl docker. Beide bringen einen compose-Befehl mit."
 
 #. ARCH_OS_HOUSEKEEPING_ENABLED: the question
@@ -520,8 +520,8 @@ msgstr "Arch OS Manager"
 
 #. ARCH_OS_MANAGER_ENABLED: what it means
 #: module.yaml
-msgid "A system app with TUI for updating, cleaning up and repairing the system after installation."
-msgstr "Eine System App mit TUI zum Aktualisieren, Aufräumen und Reparieren des Systems nach der Installation."
+msgid "A menu for updating, cleaning up and repairing the system after installation."
+msgstr "Ein Menü zum Aktualisieren, Aufräumen und Reparieren des Systems nach der Installation."
 
 #. ARCH_OS_VM_SUPPORT_ENABLED: the question
 #: module.yaml

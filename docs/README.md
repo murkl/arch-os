@@ -1,10 +1,6 @@
 <div align="center">
 
-<img src="logo.svg" width="150" alt="">
-
-<h1>Arch OS</h1>
-
-<p><strong>A minimal, robust and reproducible Arch Linux base, as a text console or a GNOME desktop, with an Installer and a Recovery on one bootable image.</strong></p>
+<img src="banner.png" alt="Arch OS - a minimal, robust and reproducible Arch Linux base, with an Installer and a Recovery on one bootable image">
 
 <p>
   <img src="https://img.shields.io/github/v/release/murkl/arch-os?style=for-the-badge&label=RELEASE&color=1793d1" alt="">
@@ -12,9 +8,7 @@
   <img src="https://img.shields.io/badge/UEFI-x86__64-2e3440?style=for-the-badge" alt="">
 </p>
 
-<img src="screenshots/installer.png" alt="The Installer, asking what kind of system to put on this machine">
-
-<p>Boot the latest <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and the Installer starts on its own.</p>
+<p>A text console or a GNOME desktop. Boot the latest <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and the Installer starts on its own.</p>
 
 <p>Or run this on any Linux machine. An ordinary desktop writes the ISO to a USB device; a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> installs or repairs.</p>
 
