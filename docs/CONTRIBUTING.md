@@ -107,6 +107,7 @@ make image             # ...only the image, out of a release already in dist/
 make smoke             # boot the newest image and wait for its first page
 make locales           # every translation template, brought up to date
 make glyphs-check      # every module against the glyph table of the console font
+make data-check        # every module's lookup tables against the system they name
 make notes             # what the release page will say, out of the changelog
 make tag               # the release tag, written out of oak.yaml
 make oak               # fetch the runtime again, at the release OAK_VERSION names

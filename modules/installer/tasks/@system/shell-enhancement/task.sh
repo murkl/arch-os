@@ -35,15 +35,20 @@ sed -e "s|{{PKG}}|${pkg}|g" -e "s|{{SUDO}}|${sudo_prefix}|g" "${data}/aliases" |
 # the terminal - so .bashrc hands over to it instead.
 shell="$ARCH_OS_SHELL_ENHANCEMENT_SHELL"
 
-marker=$'# {{SHELL_HANDOVER}}\n'
-bashrc="$(cat "${data}/bashrc")"
-if [ "$shell" = "fish" ]; then
-    handover="$(sed "s/{{SHELL}}/${shell}/g" "${data}/shell-handover")"$'\n'
-    bashrc="${bashrc/$marker/$handover}"
-else
-    bashrc="${bashrc/$marker/}"
-fi
-printf '%s\n' "$bashrc" | tee "${MNT}/root/.bashrc" "${home}/.bashrc" >/dev/null
+# The handover read in where the marker stands, and the marker line dropped -
+# sed, like the two placeholders above, rather than a bash substitution. That
+# is the wrong tool twice over here: a pattern whose first character is a # is
+# read as an anchor to the start of the string and matches nothing, and an &
+# in the replacement stands for whatever matched, which a line full of && then
+# tears apart. Both went unnoticed because the first hid the second.
+#
+# Empty for the other two shells, so the marker line simply goes.
+handover="$(mktemp)"
+[ "$shell" = "fish" ] && sed "s|{{SHELL}}|${shell}|g" "${data}/shell-handover" >"$handover"
+
+sed -e "/{{SHELL_HANDOVER}}/r ${handover}" -e "/{{SHELL_HANDOVER}}/d" "${data}/bashrc" |
+    tee "${MNT}/root/.bashrc" "${home}/.bashrc" >/dev/null
+rm -f "$handover"
 
 tee "${MNT}/root/.config/fastfetch/config.jsonc" "${home}/.config/fastfetch/config.jsonc" <"${data}/fastfetch.jsonc" >/dev/null
 

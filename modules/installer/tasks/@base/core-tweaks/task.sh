@@ -19,16 +19,13 @@ mkdir -p "${MNT}/etc/modprobe.d"
     echo 'blacklist iTCO_wdt'
 } >"${MNT}/etc/modprobe.d/blacklist-watchdog.conf"
 
-# Debug packages nobody asked for, built alongside every AUR package. A distro
-# repository cannot compile for one CPU without breaking every other, which is
-# why it ships a baseline; a package built here never leaves this machine, so
-# it may as well be built for the CPU that is actually running it.
+# Debug packages nobody asked for, built alongside every AUR package. This is
+# the one thing in here makepkg is told; the compiler flags are left as Arch
+# sets them - see docs/REFERENCE.md for why -march=native is not among them.
 mkdir -p "${MNT}/etc/makepkg.conf.d"
 {
     echo '# Written by the Arch OS Installer.'
     echo 'OPTIONS+=(!debug)'
-    echo 'CFLAGS+=" -march=native"'
-    echo 'CXXFLAGS+=" -march=native"'
 } >"${MNT}/etc/makepkg.conf.d/arch-os.conf"
 
 # ----------------------------------------------------------------------------

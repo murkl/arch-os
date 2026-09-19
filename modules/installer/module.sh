@@ -528,16 +528,38 @@ list_fonts() {
 
 list_timezones() { timedatectl list-timezones; }
 
-# The timezone the chosen country keeps, or a best guess at where this machine
-# is for a locale that names none. Only ever the value the list opens on.
+# Where the network places this machine, asked of a service that answers from
+# the address alone. Only ever for a locale that names no country - see below -
+# and only ever to fill in the row a list opens on.
 #
-# UTC where neither answers, rather than nothing: an empty suggestion opens the
-# list on its own first row, which is Africa/Abidjan, and an enter meant for the
-# page before sets the clock to it.
+# What leaves the machine is held to that: one field asked for and one field
+# returned, no redirect followed, and curl told to say nothing about itself, so
+# the request carries the address the service was already answering and nothing
+# else. The free endpoint has no HTTPS, so that one field travels in the clear -
+# it is the reason there is nothing else in it, and the answer only fills a row
+# somebody still confirms by hand. The answer is kept for the rest of the session, because where a machine
+# stands does not change while it is being installed and a page opened a second
+# time must not be a second request. A failed lookup leaves the file empty and
+# is tried again.
+GEO_TIMEZONE_CACHE="${TMPDIR:-/tmp}/arch-os-timezone"
+
+geo_timezone() {
+    [ -s "$GEO_TIMEZONE_CACHE" ] || curl -sf -A '' --connect-timeout 5 --max-time 5 \
+        "http://ip-api.com/line?fields=timezone" >"$GEO_TIMEZONE_CACHE" || true
+    cat "$GEO_TIMEZONE_CACHE" 2>/dev/null || true
+}
+
+# The timezone the chosen country keeps, the network's guess where the locale
+# names no country, and UTC where neither answers. Only ever the value the list
+# opens on.
+#
+# UTC rather than nothing: an empty suggestion opens the list on its own first
+# row, which is Africa/Abidjan, and an enter meant for the page before sets the
+# clock to it.
 auto_timezone() {
     local zone
     zone="$(country_field 3 "$ARCH_OS_LOCALE_LANG")"
-    [ -n "$zone" ] || zone="$(curl -sf --connect-timeout 5 --max-time 5 "http://ip-api.com/line?fields=timezone" || true)"
+    [ -n "$zone" ] || zone="$(geo_timezone)"
     printf '%s' "${zone:-UTC}"
 }
 

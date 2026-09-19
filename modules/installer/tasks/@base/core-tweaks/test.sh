@@ -13,13 +13,14 @@ sysctl_keys_exist "${MNT}/etc/sysctl.d/99-arch-os-memory.conf"
 sysctl_keys_exist "${MNT}/etc/sysctl.d/99-arch-os-mmap.conf"
 sysctl_keys_exist "${MNT}/etc/sysctl.d/99-arch-os-bbr.conf"
 
-# The same two files makepkg itself sources, in the order it sources them, so
-# a typo in the drop-in shows up here rather than in the middle of a build.
-# shellcheck disable=SC2016  # makepkg's own config loader expands this, not us
+# Read through makepkg's own config loader, which sources the drop-in directory
+# the same way and in the same order a build does - a file in the wrong place or
+# a key it does not know costs nothing to write and shows up nowhere else.
+# shellcheck disable=SC2016  # the loader inside the chroot expands this, not us
 arch-chroot "$MNT" bash -c '
     source /usr/share/makepkg/util/config.sh
     load_makepkg_config
-    [[ $CFLAGS == *"-march=native"* && $CXXFLAGS == *"-march=native"* ]]
+    [[ " ${OPTIONS[*]} " == *" !debug "* ]]
 '
 
 # systemd prints the files it would load and in what order, so a drop-in that is

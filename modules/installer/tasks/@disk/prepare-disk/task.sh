@@ -20,14 +20,27 @@ if [ "$ARCH_OS_DUAL_BOOT_ENABLED" = "true" ]; then
     needed=$((512 * 1024 * 1024))
     probe="$(mktemp -d)"
     free=""
+    kernels=""
     if mount -o ro "$ARCH_OS_BOOT_PARTITION" "$probe" 2>/dev/null; then
         free="$(df -B1 --output=avail "$probe" | tail -n1)"
+        kernels="$(find "$probe" -maxdepth 1 \( -name 'vmlinuz-*' -o -name 'initramfs-*' -o -name '*-ucode.img' \) -printf '%f ')"
         umount "$probe"
     fi
     rmdir "$probe"
 
+    # Boot images already there belong to the other system, and this one writes
+    # its own under the same names. pacman sees a file no package of the new
+    # root owns and refuses the whole transaction - the right answer, arriving
+    # as "conflicting files" an hour in, after the disk has been written. The
+    # systems dual boot is meant for keep their boot files to themselves, which
+    # is what Windows does.
+    if [ -n "$kernels" ]; then
+        echo "${ARCH_OS_BOOT_PARTITION} already holds another Linux system's boot images: ${kernels}- two systems cannot keep theirs in one EFI partition, and this installation would write over them. Install without dual boot, or move that system's boot images somewhere of its own." >&2
+        exit 1
+    fi
+
     if [ -z "$free" ]; then
-        echo "${ARCH_OS_BOOT_PARTITION} could not be mounted, so how much room is on it is unknown" >&2
+        echo "${ARCH_OS_BOOT_PARTITION} could not be mounted, so what is on it and how much room is left is unknown" >&2
     elif [ "$free" -lt "$needed" ]; then
         echo "${ARCH_OS_BOOT_PARTITION} has $(numfmt --to=iec "$free") free and the boot images need about $(numfmt --to=iec "$needed"). Make that EFI partition bigger, or free space on it, and start again." >&2
         exit 1

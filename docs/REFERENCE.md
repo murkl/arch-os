@@ -16,7 +16,7 @@ UEFI only, GPT, two partitions - more only with dual boot.
 Always in that order, so the Recovery finds an installation from the disk alone. `/boot` is `fmask=0077,dmask=0077`: it holds the kernel and the signed image, root's business only.
 
 - **Encryption**: LUKS2 on partition 2, opened as `cryptroot`. One password for disk, root and account
-- **Dual boot**: nothing is partitioned. The existing EFI partition is reused, only a boot entry added. It has to have **512 MiB free** - the kernel, its ram disk and the fallback one that carries every module do not fit in the 100 or 260 MB Windows makes, and that is read before the first partition is touched
+- **Dual boot**: nothing is partitioned. The existing EFI partition is reused, only a boot entry added. It has to have **512 MiB free** - the kernel, its ram disk and the fallback one that carries every module do not fit in the 100 or 260 MB Windows makes - and it must not already hold a kernel of its own. Both are read before the first partition is touched. A second Linux that keeps `vmlinuz-*` on the shared EFI partition is refused there: the names collide, and pacman would stop the installation an hour later with `conflicting files`
 
 ## Btrfs Subvolumes
 
@@ -135,7 +135,7 @@ Enough for a usable install, little enough that nothing needs looking after.
 
 One `timeout` around the whole build; passwordless `sudo` granted for its length and revoked after.
 
-**Note:** _`/etc/makepkg.conf.d/arch-os.conf` adds `-march=native` to `CFLAGS`/`CXXFLAGS`. A distro repository builds one binary for every CPU and has to pick a low baseline; a package built here never leaves this machine, so it is compiled for the CPU actually running it._
+**Note:** _`/etc/makepkg.conf.d/arch-os.conf` switches the debug package off, and nothing else: an AUR build otherwise leaves a second package beside the one that was wanted. `-march=native` is deliberately **not** there - it buys a few percent and pays for it with binaries that stop running the day the disk is moved, the image is restored onto other hardware or the CPU is replaced, and the crash that follows reads like failing memory._
 
 **Note:** _Only `paru` and `yay`, both built from source against this machine's pacman. A `-bin` package is linked against the pacman of the day it was published and stops starting the day Arch moves `libalpm` - not offered here._
 

@@ -35,11 +35,11 @@ msgstr "Mit dem Befehl installer startest du ihn wieder."
 msgid ""
 "Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.\n"
 "\n"
-"Everything on that disk will be erased and this cannot be undone. Nothing has been changed so far."
+"Everything on that disk will be erased and this cannot be undone. A dual boot erases only the partition chosen for it. Nothing has been changed so far."
 msgstr ""
 "Arch Linux wird auf {{ARCH_OS_DISK}} als {{ARCH_OS_HOSTNAME}} installiert.\n"
 "\n"
-"Alles auf diesem Datenträger wird gelöscht und das lässt sich nicht rückgängig machen. Bisher wurde nichts verändert."
+"Alles auf diesem Datenträger wird gelöscht und das lässt sich nicht rückgängig machen. Ein Dual-Boot löscht nur die dafür gewählte Partition. Bisher wurde nichts verändert."
 
 #. a starting point: the question
 #: module.yaml

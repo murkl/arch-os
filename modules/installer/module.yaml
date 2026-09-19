@@ -21,8 +21,9 @@ console: Type installer at the prompt to start it again.
 confirm: |
   Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.
 
-  Everything on that disk will be erased and this cannot be undone. Nothing
-  has been changed so far.
+  Everything on that disk will be erased and this cannot be undone. A dual
+  boot erases only the partition chosen for it. Nothing has been changed so
+  far.
 
 # Each is a folder under tasks/, marked - tasks/@disk/ - and lying in one is
 # what puts a task in the run and where; tasks sharing a stage run in the order

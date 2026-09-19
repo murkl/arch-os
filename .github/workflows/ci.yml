@@ -69,7 +69,7 @@ jobs:
 
       - uses: ./.github/actions/arch
         with:
-          packages: make curl shellcheck shfmt yamllint actionlint gettext diffutils gitleaks kbd
+          packages: make curl shellcheck shfmt yamllint actionlint gettext diffutils gitleaks kbd tzdata
 
       # The runtime's checksum is a call to the API, and sixty an hour is what
       # an address that does not say who it is gets - one address for every

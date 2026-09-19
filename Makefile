@@ -139,6 +139,11 @@ MODULE_SHELL = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/bashrc $(MODULES_DIR)/*/ta
 # a console.
 MODULE_TEXT = $(shell find $(MODULES_DIR) -type f ! -name '*.md')
 
+# A module's own check of the lookup tables it ships. Found by name rather than
+# named outright, so a module that grows tables is a folder and nothing here has
+# to be kept in step with it.
+DATA_CHECKS = $(wildcard $(MODULES_DIR)/*/data/check.sh)
+
 # ////////////////////////////////////////////////////////////////////////////
 # HOUSEKEEPING
 # ////////////////////////////////////////////////////////////////////////////
@@ -164,7 +169,7 @@ BANNER_TAGLINE := A minimal, robust and reproducible Arch Linux base. Installer 
 BANNER_CELL    := 9
 
 .PHONY: all oak oak-check build dev run inspect tarball image iso smoke locales \
-	locales-check glyphs-check lint fmt check version version-check \
+	locales-check glyphs-check data-check lint fmt check version version-check \
 	changelog-check changelog-warn notes secrets-check tag screenshots banner docs clean
 
 # build empties the release it writes, and everything that packages it reads
@@ -223,8 +228,9 @@ oak:
 
 # The runtime, the product's declaration and a clean copy of every module. The
 # folder is emptied first, so what is in it afterwards is this build and nothing
-# else. The templates go out again: a .pot is how a module is translated rather
-# than part of what it runs.
+# else. The templates and the table checks go out again: a .pot is how a module
+# is translated and a data/check.sh is how its tables are held to the system
+# they name - neither is part of what runs.
 build: oak-check
 	rm -rf $(RELEASE_DIR)
 	mkdir -p $(RELEASE_DIR)
@@ -238,7 +244,7 @@ build: oak-check
 			[ -e $(MODULES_DIR)/$$m/$$part ] && cp -r $(MODULES_DIR)/$$m/$$part $$dest/ || true; \
 		done; \
 	done
-	find $(RELEASE_DIR) -name '*.pot' -delete
+	find $(RELEASE_DIR) \( -name '*.pot' -o -name 'check.sh' \) -delete
 
 # The same shape without the build, for working on the sources. The binary is
 # copied rather than linked: Oak resolves its own path before looking beside
@@ -385,9 +391,16 @@ fmt:
 glyphs-check:
 	@$(ISO_GLYPHS) $(MODULE_TEXT)
 
+# Every name a module's tables hand to another program, against the program's
+# own list of them. A keymap loadkeys does not have, a font setfont does not
+# have and a time zone tzdata does not have all read perfectly well in the file
+# and leave the machine on something nobody chose.
+data-check:
+	@for check in $(DATA_CHECKS); do $$check || exit 1; done
+
 # The whole gate, cheapest and loudest first. CI runs this and nothing it adds
 # to it, so there is no second definition of green.
-check: version-check changelog-check changelog-warn secrets-check lint inspect locales-check glyphs-check
+check: version-check changelog-check changelog-warn secrets-check lint inspect locales-check data-check glyphs-check
 
 # ////////////////////////////////////////////////////////////////////////////
 # RELEASING
