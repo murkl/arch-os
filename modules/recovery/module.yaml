@@ -69,6 +69,9 @@ variables:
     type: bool
     answer: disk_is_encrypted
 
+  # Asked once rather than twice: this password already exists, and cryptsetup
+  # refuses a wrong one a second later and says which disk it was. The repeat
+  # is for a password being chosen, which nothing can check.
   - name: ARCH_OS_RECOVERY_PASSWORD
     title: Encryption password
     description: |
@@ -76,6 +79,7 @@ variables:
       recovery starts and is never written to a file.
     group: Storage
     type: secret
+    existing: true
     required: true
     conditions: ARCH_OS_RECOVERY_ENCRYPTED == true
 

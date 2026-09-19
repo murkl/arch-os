@@ -174,6 +174,8 @@ Two questions - keyboard, disk. Everything else is read, not asked:
 
 No network, ever - it may be what broke. Kernel images come from the package cache.
 
+The password of an encrypted disk is typed once rather than twice: it already exists, and `cryptsetup` refuses a wrong one a second later and names the partition. A second box is for a password being chosen, which nothing can check until the system it belongs to boots.
+
 **Note:** _A rollback builds the new `@` before touching the old one - a run that dies halfway leaves the system as found._
 
 ## The Boot Medium

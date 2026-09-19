@@ -8,6 +8,7 @@ What each release changed, newest first. The version is `version:` in **[oak.yam
 - Three modules on one image: the Installer, the Recovery, and Create boot medium for writing the USB device from any Linux machine
 - Two starting points, Core and Desktop — everything else stays a row in the settings
 - Every answer is kept, so an interrupted run picks up where it stopped and the next machine skips what it already knows
+- The Recovery asks for the disk password once rather than twice - it already exists, and the disk refuses a wrong one a second later
 - A wireless network is joined from the Installer itself, before the first download - the networks in range, the passphrase, and on to the install
 - The disk list is what the machine actually has, eMMC and SD cards included, and never the medium the live image is running from
 - A step that fails names the module, the task, the file, the line and the exit code, and the run says how many of its tests passed
