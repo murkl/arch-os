@@ -8,14 +8,15 @@
 # name.
 title: Arch OS
 
-# The version of this project, and the only place it is written down. The build
-# reads it, both downloads and the ISO label are named after it, and a release
-# is the tag `v` + this — see /Makefile. Nobody types it: the line between the
-# two marks is written by the run that releases, which is also why the marks are
-# around it rather than at the end of it — everything here reads this file line
+# The version of this project: what the build names everything after — both
+# downloads, the ISO label, and the tag `v` + this — see /Makefile. It says what
+# was last published rather than what is being worked on, and nobody types it:
+# the run that releases raises it here and in the release manifest together, and
+# `make check` reads the two back against each other. The marks are around the
+# line rather than at the end of it because everything here reads this file line
 # by line.
 # x-release-please-start-version
-version: 2.0.0
+version: 1.9.7
 # x-release-please-end
 
 # Arch blue, pulled towards the terminal's background so it holds on a light one.

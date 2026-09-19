@@ -51,7 +51,7 @@ A version that is chosen rather than counted - 1.9.7 straight to 2.0.0 - is a fo
 git commit --allow-empty -m "chore: release 2.0.0" -m "Release-As: 2.0.0"
 ```
 
-**Note:** _`.github/release-please-config.json` says where the version stands, `.github/.release-please-manifest.json` remembers the last one. Neither is edited by hand either._
+**Note:** _`.github/release-please-config.json` says where the version stands, `.github/.release-please-manifest.json` remembers the last one, and the release pull request raises both together. `make check` reads them back against each other, so a version typed into one of them fails at a desk rather than as a download named after a release nobody made._
 
 ## Releasing
 
@@ -212,10 +212,7 @@ gh api -X PUT repos/murkl/arch-os/branches/main/protection --input - <<'EOF'
   "allow_force_pushes": false,
   "allow_deletions": false,
   "enforce_admins": false,
-  "required_status_checks": {
-    "strict": false,
-    "contexts": ["Check", "Build"]
-  },
+  "required_status_checks": null,
   "required_pull_request_reviews": null,
   "restrictions": null
 }
@@ -225,4 +222,4 @@ gh repo edit --enable-merge-commit=false --enable-rebase-merge=false \
     --enable-squash-merge --delete-branch-on-merge
 ```
 
-**Note:** _`ISO` and `Smoke test` are not required checks - a draft and a fork never run them, and a check that never reports is one a pull request would wait on forever. Everything else (signing, Dependabot) needs no setup._
+**Note:** _No check is required here, and that is the point. `Image` is skipped on a draft and on a fork, and the release pull request starts no run at all - a required check that never reports is one a pull request waits on forever. What lands on `main` is checked on `main`, before the tag exists. Everything else (signing, Dependabot) needs no setup._

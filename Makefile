@@ -1,9 +1,9 @@
 # The only task runner in the repository. What CI runs is these targets, so a
 # rule that holds at a desk holds there.
 #
-#   dist/arch-os-2.0.0/                 the product: oak, oak.yaml, modules/
-#   dist/arch-os-2.0.0-x86_64.tar.gz    that folder as one file
-#   dist/arch-os-2.0.0-x86_64.iso       the bootable image
+#   dist/arch-os-$(VERSION)/                 the product: oak, oak.yaml, modules/
+#   dist/arch-os-$(VERSION)-x86_64.tar.gz    that folder as one file
+#   dist/arch-os-$(VERSION)-x86_64.iso       the bootable image
 #
 # `build` writes the first, `tarball` and `image` each turn it into one of the
 # others. Nothing is ever assembled twice.
@@ -25,11 +25,17 @@ APP         := oak
 PRODUCT     := oak.yaml
 MODULES_DIR := modules
 
-# The single source of truth for this project's version. It becomes both
-# filenames, the ISO label and the tag `v` + this - the `v` belongs to the tag
-# and to nothing else. Nobody writes it: the release run raises it here out of
+# Where this project's version is written, and what everything is named after:
+# both filenames, the ISO label and the tag `v` + this - the `v` belongs to the
+# tag and to nothing else. Nobody writes it: the release run raises it out of
 # what the commits since the last one say, and tags it.
 VERSION := $(shell sed -n 's/^version:[[:space:]]*//p' $(PRODUCT))
+
+# What release-please remembers it last released, which is the same number under
+# another name - it raises both in one pull request. Read back here so the two
+# cannot drift: a version only one of them knows about was typed by hand.
+MANIFEST := .github/.release-please-manifest.json
+RELEASED := $(shell sed -n 's/.*"\.":[[:space:]]*"\([^"]*\)".*/\1/p' $(MANIFEST))
 
 # Whatever folders are in modules/, so adding one is a folder and nothing here
 # has to be kept in step with it.
@@ -300,10 +306,13 @@ version:
 	@echo $(VERSION)
 
 # A tag is matched against it, so anything but X.Y.Z would only be found at the
-# point where it costs a release.
+# point where it costs a release - and a version only one of the two files
+# carries would first be seen as a download named after a release nobody made.
 version-check:
 	@echo "$(VERSION)" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$$' \
 		|| { echo "$(PRODUCT) declares '$(VERSION)', which is not a version" >&2; exit 1; }
+	@[ "$(VERSION)" = "$(RELEASED)" ] \
+		|| { echo "$(PRODUCT) says $(VERSION), $(MANIFEST) says $(RELEASED) - the release run writes both" >&2; exit 1; }
 
 # This project is installed by piping a script into a shell, so a credential
 # that reached the repository would be handed to everybody who did that.
