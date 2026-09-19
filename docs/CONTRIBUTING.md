@@ -9,19 +9,21 @@ One rule: **a commit is built once**. The ISO on the release page is not a rebui
 ```mermaid
 flowchart LR
     M["main"] -->|branch off| D["dev"]
-    D -->|every push| C["CI<br/>checked · built · booted"]
-    C -->|squash merge| M2["main<br/>one commit per round"]
+    D -->|draft pull request| C["CI<br/>checked · built"]
+    C -->|ready for review| F["CI<br/>...and booted"]
+    F -->|squash merge| M2["main<br/>one commit per round"]
     M2 -->|tag v2.0.0| R["Release<br/>artefacts of that commit"]
     M2 -.->|delete dev| M
 
     style R fill:#1793d1,stroke:#1793d1,color:#fff
 ```
 
-- **Branch `dev` off `main`**, push as often as you like - CI runs the full pipeline on every push
+- **Branch `dev` off `main`** and open the pull request at once, as a draft. Every push to it is checked and built
+- **Mark it ready** when it should be booted - leaving draft is what adds the image and the smoke test
 - **Squash merge** into `main` and delete `dev`. The pull request title becomes the commit
-- A pull request from outside is checked and built, not turned into an image
+- A pull request from outside is checked and built, never turned into an image
 
-**Note:** _Watched branches: `branches: [main, dev, oak]` in **[ci.yml](../.github/workflows/ci.yml)**._
+**Note:** _`main` is the only branch CI watches for pushes; everything else arrives as a pull request. That is what keeps a commit under one run - a branch that is watched **and** has a pull request open raises both events and is built twice. See **[ci.yml](../.github/workflows/ci.yml)**._
 
 ## The Version
 
@@ -61,11 +63,11 @@ The Release workflow finds that commit's run and hangs its artefacts on the rele
 
 **Note:** _Nothing is built from a tag. `make tag` refuses an unclean tree, `HEAD` off `main`, or a tag that exists already. A release written on the web page lands in the same place: the workflow writes its page out of the changelog either way, and a run repeated on the same tag writes it again._
 
-## What a Push runs
+## What a Run does
 
 ```mermaid
 flowchart TD
-    P["push"] --> C["Check<br/><small>make check</small>"]
+    P["push to main · pull request"] --> C["Check<br/><small>make check</small>"]
     P --> B["Build<br/><small>release · tarball</small>"]
     C --> I
     B --> I["ISO<br/><small>archiso, from the build's artefact</small>"]
@@ -83,11 +85,11 @@ flowchart TD
 | --- | --- | --- |
 | `Check` | every run | `make check` |
 | `Build` | every run | Release and tarball |
-| `ISO` | watched branches, on demand | The image, from `Build`'s artefact |
+| `ISO` | `main`, a pull request out of draft, on demand | The image, from `Build`'s artefact |
 | `Smoke test` | after `ISO` | Boots it, waits for the first page |
 | `Release` | a tag on `main` | Hangs that commit's artefacts on the release page |
 
-`ISO` unpacks `Build`'s tarball rather than building again, so the image holds the exact file the release page offers. The dashed jobs are the expensive ones (~15 min), so a pull request is judged on the two above them.
+`ISO` unpacks `Build`'s tarball rather than building again, so the image holds the exact file the release page offers. The dashed jobs are the expensive ones (~20 min together), so a draft and a pull request from a fork are judged on the two above them.
 
 **Note:** _No job needs a Go toolchain - every job that needs Oak downloads the release the Makefile pins._
 
@@ -221,4 +223,4 @@ gh repo edit --enable-merge-commit=false --enable-rebase-merge=false \
     --enable-squash-merge --delete-branch-on-merge
 ```
 
-**Note:** _`ISO` and `Smoke test` are not required checks - they never run on a pull request. Everything else (signing, Dependabot) needs no setup._
+**Note:** _`ISO` and `Smoke test` are not required checks - a draft and a fork never run them, and a check that never reports is one a pull request would wait on forever. Everything else (signing, Dependabot) needs no setup._

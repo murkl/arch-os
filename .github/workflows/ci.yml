@@ -6,13 +6,16 @@
 name: CI
 
 on:
+  # main is the only branch pushed to directly; every other branch reaches CI
+  # through its pull request. That is the one arrangement in which a commit
+  # cannot be under two runs at once — a branch listed here that is also the
+  # head of an open pull request raises both events and is built twice.
   push:
-    # dev and oak are where the work happens between releases and are watched
-    # like main, so the expensive jobs below run on them before anything is
-    # merged. Adding a branch here is the only thing that puts it under the
-    # full run.
-    branches: [main, dev, oak]
+    branches: [main]
+  # `ready_for_review` on top of the three defaults: leaving draft is what
+  # turns the fast gate into the full one below, so it has to start a run.
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 permissions: {}
@@ -22,13 +25,13 @@ defaults:
   run:
     shell: bash
 
-# One run per branch, and a push that arrives while an older one is still going
-# takes its place. On main nothing is cancelled — that is the run a tag
-# publishes. A pull request off a watched branch is the one case that runs
-# twice, which is the price of watching the branch it comes from.
+# One run per pull request and one per branch, and a push that arrives while an
+# older one is still going takes its place. Only a pull request is cancelled: a
+# run on main is the one a tag publishes, and a run started by hand was asked
+# for.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref_name != 'main' }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Every job names its runner rather than leaving it to `ubuntu-latest`, which
 # moves to a new Ubuntu on a date GitHub picks: a toolchain that changes under a
@@ -147,13 +150,18 @@ jobs:
   # second build of the same sources.
   #
   # An archiso build is a quarter of an hour and a smoke test another five
-  # minutes, which a pull request does not need: it is judged on the two jobs
-  # above. So everything that gets here is a watched branch or a run started by
-  # hand — see the trigger at the top.
+  # minutes, so it is spent on what is about to be merged rather than on every
+  # save: main, a run started by hand, and a pull request off this repository
+  # once it leaves draft. A draft and a fork are judged on the two jobs above —
+  # the first because it says itself that it is not ready, the second because a
+  # privileged container is not something an unreviewed change is handed.
   iso:
     name: ISO
     needs: [check, build]
-    if: github.event_name != 'pull_request'
+    if: >-
+      github.event_name != 'pull_request'
+      || (github.event.pull_request.draft == false
+      && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     container:
