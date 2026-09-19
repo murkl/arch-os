@@ -58,7 +58,13 @@ printf '\n\033[34m// Arch OS\033[0m\n'
 #
 # Each asset is weighed when the next one begins, so nothing here leans on the
 # order GitHub writes an asset's fields in.
-asset="$(fetch -Lfs "https://api.github.com/repos/${REPO}/releases/latest" | awk '
+#
+# Read into a variable of its own rather than straight into the pipe, because a
+# reader that fails and a release that holds no program are two different things
+# to be told - and awk is happy to read nothing and say nothing.
+release="$(fetch -Lfs "https://api.github.com/repos/${REPO}/releases/latest")" || fail "Cannot reach GitHub"
+
+asset="$(printf '%s\n' "$release" | awk '
     function weigh() {
         if (!found && url ~ /\.tar\.gz$/) { found = 1; print url, digest }
         url = ""; digest = ""
@@ -66,7 +72,7 @@ asset="$(fetch -Lfs "https://api.github.com/repos/${REPO}/releases/latest" | awk
     /"url": *"[^"]*\/releases\/assets\// { weigh() }
     /"digest": *"sha256:/ { digest = $0; sub(/.*sha256:/, "", digest); sub(/".*/, "", digest) }
     /"browser_download_url": *"/ { url = $0; sub(/.*: *"/, "", url); sub(/".*/, "", url) }
-    END { weigh() }')" || fail "Cannot reach GitHub"
+    END { weigh() }')"
 [ -n "$asset" ] || fail "The latest release holds no program"
 
 url="${asset%% *}"

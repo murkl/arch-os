@@ -7,8 +7,10 @@ simulating && return 0
 
 case "$(systemd-detect-virt || true)" in
 
-kvm)
-    echo "detected KVM"
+kvm | qemu)
+    # qemu as well as kvm: the same machine, told apart only by whether the
+    # host had hardware virtualisation to hand it. The guest is the same guest.
+    echo "detected QEMU"
     # The guest halves alone - the spice server and its GTK client are the
     # host's and drag a desktop's worth of libraries into a guest. Neither unit
     # is switched on here: both are static and started by udev when their virtio
@@ -38,7 +40,7 @@ microsoft)
     arch-chroot "$MNT" systemctl enable hv_vss_daemon
     ;;
 
-*)
+none)
     echo "no virtual machine detected, installing what it takes to run one"
 
     # libvirt, a guest firmware and dnsmasq either way. What differs is the
@@ -57,6 +59,14 @@ microsoft)
     # Without it every virsh and every virt-manager window asks for a root
     # password.
     arch-chroot "$MNT" usermod -aG libvirt "$ARCH_OS_USERNAME"
+    ;;
+
+# A hypervisor none of the above knows - Xen, Parallels, a cloud one. There are
+# no guest tools here to install for it, and what the branch above installs is
+# the other side of the switch: a machine that is already a guest has no use
+# for the means to run one.
+*)
+    echo "detected $(systemd-detect-virt || true), which has no guest tools here - nothing installed"
     ;;
 
 esac

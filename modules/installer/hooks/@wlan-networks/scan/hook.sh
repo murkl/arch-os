@@ -1,9 +1,18 @@
 # The networks in range, one SSID per line, strongest first.
 #
-# The scan is fired here rather than by Oak because iwctl returns as
-# soon as it has started one: the wait belongs beside the command that needs it.
+# The scan is fired here rather than by Oak because iwctl returns as soon as it
+# has started one: the wait belongs beside the command that needs it. And it is
+# a wait for the card rather than a fixed pause - a list read while the radio is
+# still going round the channels is short rather than wrong, and a card that has
+# finished in half a second should not cost three.
 iwctl station "$WLAN_DEVICE" scan || true
-sleep 3
+for _ in $(seq 20); do
+    sleep 0.5
+    # Into a variable first: a grep that stops reading leaves iwctl with a write
+    # error, and under pipefail that is a failed hook instead of an answer.
+    state="$(iwctl station "$WLAN_DEVICE" show | sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r//')"
+    grep -qE '^[[:space:]]*Scanning[[:space:]]+no([[:space:]]|$)' <<<"$state" && break
+done
 
 # iwctl's table is coloured, drawn for a human, and an SSID may hold spaces,
 # so the columns can't be split on whitespace. They're padded apart instead,

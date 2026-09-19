@@ -33,10 +33,14 @@ zshaddhistory() {
 }
 
 setopt AUTO_CD       # a bare directory name changes into it
-setopt CORRECT       # offer corrections for mistyped commands
 setopt EXTENDED_GLOB # extended patterns
 setopt NO_NOMATCH    # leave an unmatched glob untouched instead of erroring
 unsetopt BEEP
+
+# CORRECT is deliberately not here: it stops on a mistyped command and asks
+# before running anything, which is an interruption in the one place a shell
+# has to stay out of the way. The suggestion after a command that did not exist
+# comes from pkgfile above, and costs nothing until it is needed.
 
 bindkey -e # Emacs-style key bindings, to match bash's default
 
@@ -95,7 +99,6 @@ fi
 command -v zoxide &>/dev/null && eval "$(zoxide init zsh)"
 
 # The prompt, outside a text console where the font can draw it. The same test
-# the other two shells make, spelled the same way: anchored on a number, so
-# /dev/tty itself and every serial line stay on the other side of it. $TTY is
-# zsh's own, so this costs no `tty` process at every start.
-[[ ! $TTY =~ "^/dev/tty[0-9]+$" ]] && command -v starship &>/dev/null && eval "$(starship init zsh)"
+# the other two shells make, spelled the same way - why it is TERM and not the
+# terminal device is written out once, in .bashrc.
+[[ $TERM != linux ]] && command -v starship &>/dev/null && eval "$(starship init zsh)"

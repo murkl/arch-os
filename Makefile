@@ -350,10 +350,13 @@ locales-check: dev
 # silent test failures in a live run before it was found.
 #
 # The second keeps the first honest. Everything above reads *.sh and nothing
-# reads shell written into a yaml, so a block scalar is the one place a script
-# can go unchecked - and a failure in one names the command instead of a file
-# and a line. A single line calling a function by name is still fine: that
-# function is in module.sh, where it is checked. `requires:` is deliberately not
+# reads shell written into a yaml, so that is the one place a script can go
+# unchecked - and a failure in one names the command instead of a file and a
+# line. What is left is a bare name: the function in module.sh or the script
+# beside the yaml that Oak sources, both of which are read by shellcheck. A
+# pipeline, a redirect or a variable in there is shell, whether it is spelled
+# over one line or several - a device name read out of a coloured table with an
+# unstripped escape in it was shipped that way. `requires:` is deliberately not
 # on that list - it is what the module says about the machine it belongs on, and
 # it belongs in the declaration where somebody looking for it looks.
 lint:
@@ -368,8 +371,8 @@ lint:
 	@! grep -nE 'arch-chroot [^|&;]*[[:space:]](command|type|hash|source|alias)[[:space:]]' \
 		$(MODULE_SCRIPTS) $(MODULE_YAML) \
 		|| { echo "a shell builtin cannot be run through arch-chroot - see has_command" >&2; exit 1; }
-	@! grep -nE '^[[:space:]]*(script|test|command|prefill|apply|answer):[[:space:]]*[|>]' $(MODULE_YAML) \
-		|| { echo "a task's or hook's shell is linted by nothing inside a yaml and gives a failure no line to point at - put it in the .sh file beside it" >&2; exit 1; }
+	@! grep -nE '^[[:space:]]*(script|test|command|prefill|apply|answer):[[:space:]]*.*[|&;<>`$$]' $(MODULE_YAML) \
+		|| { echo "a task's or hook's shell is linted by nothing inside a yaml and gives a failure no line to point at - put it in the .sh file beside it and name that file here" >&2; exit 1; }
 
 fmt:
 	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)

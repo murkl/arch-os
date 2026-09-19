@@ -13,9 +13,9 @@ test -f "$HOME/.aliases" && source "$HOME/.aliases"
 command -v zoxide &>/dev/null && zoxide init fish | source
 
 # The prompt, outside a text console where the font can draw it. The same test
-# the other two shells make, spelled the same way: anchored on a number, so
-# /dev/tty itself and every serial line stay on the other side of it.
-if not string match -qr '^/dev/tty[0-9]+$' -- (tty 2>/dev/null)
+# the other two shells make, spelled the same way - why it is TERM and not the
+# terminal device is written out once, in .bashrc.
+if test "$TERM" != linux
     and command -v starship >/dev/null
     starship init fish | source
 end

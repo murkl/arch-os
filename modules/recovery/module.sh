@@ -81,8 +81,17 @@ root_device() {
     fi
 }
 
-# What a block device holds, or nothing for one that holds nothing readable.
-fstype() { lsblk -no FSTYPE "$1" 2>/dev/null | head -n1; }
+# What a block device itself holds, or nothing for one that holds nothing
+# readable.
+#
+# --nodeps is what makes it the device's own answer. Without it lsblk also
+# prints what is layered on top and puts the child first, so an unlocked LUKS
+# partition answers `btrfs` - and the question below, which the runtime asks
+# again every time an answer changes, then says the disk is not encrypted from
+# the moment it has been opened. The rollback asks for the snapshot mid-run,
+# which is such a change, and everything after it went looking for the file
+# system on the locked partition instead of on the mapper.
+fstype() { lsblk -dno FSTYPE "$1" 2>/dev/null || true; }
 
 # Whether the system being repaired can be rolled back, which is the one thing
 # here the file system decides. Read off the disk rather than answered: behind
@@ -199,10 +208,18 @@ list_keymaps() { localectl list-keymaps; }
 
 # The keyboard the live image was started with. The Arch image records it in
 # root's shell history as the loadkeys command that set it, which is the only
-# place it can be read back from.
+# place it can be read back from - and finding nothing there is the ordinary
+# case, because an image nobody ran loadkeys on is on the American layout.
+#
+# The fallback is what makes this answerable at all: with an empty suggestion
+# the list opens on its own first row, which is 3l, and an enter meant for the
+# page before it loads that. The next thing typed is the password that unlocks
+# the disk, and it fails with nothing to say why.
 default_keymap() {
-    grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null |
-        tail -n1 | sed 's/.*loadkeys *//' | tr -d ' ' || true
+    local keymap
+    keymap="$({ grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null || true; } |
+        tail -n1 | sed 's/.*loadkeys *//' | tr -d ' ')"
+    printf '%s' "${keymap:-us}"
 }
 
 # Loaded the moment it is answered. A simulated run is on somebody's own
@@ -212,12 +229,27 @@ load_console_keyboard() {
     loadkeys "$ARCH_OS_RECOVERY_KEYMAP"
 }
 
-# Whole disks only - 8 is SCSI and SATA, 259 NVMe, 254 virtual block devices.
+# The disk the live image is running from, or nothing where that cannot be read.
+# It holds no installation to repair, and unlocking and mounting the medium the
+# run is reading itself off is the one thing here that can end it.
+#
+# The same table the Installer reads, and the two must not drift apart.
+live_disk() {
+    lsblk -no PKNAME,MOUNTPOINT |
+        awk '!found && $1 != "" && $2 ~ /^\/run\/archiso/ { print "/dev/" $1; found = 1 }'
+}
+
+# Whole disks only, asked of lsblk by what a device is rather than by the major
+# number it was given: SATA, NVMe, eMMC, SD and a virtual disk are five numbers,
+# one of which the kernel hands out at random - and a system installed on the
+# eMMC is one this could not be pointed at.
+#
 # Nobody picks between /dev/sda and /dev/sdb by name, so the size and the model
 # are what it is chosen by.
 list_disks() {
-    lsblk -d -n -I 8,259,254 -o PATH,SIZE,MODEL |
-        awk '{ path = $1; $1 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
+    lsblk -dn -o PATH,TYPE,SIZE,MODEL | awk -v live="$(live_disk)" '
+        $2 != "disk" || $1 == live || $1 ~ /^\/dev\/zram/ { next }
+        { path = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
 }
 
 # A LUKS header is readable without the password, so nobody is asked this.

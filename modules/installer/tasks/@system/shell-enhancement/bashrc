@@ -37,11 +37,16 @@ export HISTTIMEFORMAT="%F %T "
 export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q:c"
 
 # {{SHELL_HANDOVER}}
-# Anchored: unanchored, /dev/tty[0-9]* also matches /dev/tty itself and every
-# serial line, and the prompt then goes missing wherever this shell is opened
-# with the terminal handed to it directly. A shell with no terminal to name at
-# all is not a text console either, and says so on its own error channel rather
-# than on the screen - which is what a shell opened inside a chroot does, where
-# the terminal it is on belongs to a devpts that chroot cannot see.
-[[ ! $(tty 2>/dev/null) =~ ^/dev/tty[0-9]+$ ]] && command -v starship &>/dev/null && eval "$(starship init bash)"
+# The prompt draws in a nerd font, and the one screen that cannot show one is
+# the text console: it has a single font with a fixed table of glyphs, and every
+# mark the prompt is made of comes out as a box. TERM is what says so and says
+# it everywhere - `linux` is the virtual console and nothing else, it survives
+# `su`, a chroot and an ssh out of one, and it costs no process at every start.
+#
+# Asking the terminal device instead was the same test until it was not: inside
+# a chroot the shell is on a pty of a devpts the chroot opened, so it answers
+# /dev/pts/0 while the screen it lands on is still the console - which is what
+# the Installer and the Recovery hand somebody when they open a shell in the
+# system they are working on.
+[[ $TERM != linux ]] && command -v starship &>/dev/null && eval "$(starship init bash)"
 command -v zoxide &>/dev/null && eval "$(zoxide init bash)"

@@ -16,7 +16,7 @@ UEFI only, GPT, two partitions - more only with dual boot.
 Always in that order, so the Recovery finds an installation from the disk alone. `/boot` is `fmask=0077,dmask=0077`: it holds the kernel and the signed image, root's business only.
 
 - **Encryption**: LUKS2 on partition 2, opened as `cryptroot`. One password for disk, root and account
-- **Dual boot**: nothing is partitioned. The existing EFI partition is reused, only a boot entry added
+- **Dual boot**: nothing is partitioned. The existing EFI partition is reused, only a boot entry added. It has to have **512 MiB free** - the kernel, its ram disk and the fallback one that carries every module do not fit in the 100 or 260 MB Windows makes, and that is read before the first partition is touched
 
 ## Btrfs Subvolumes
 
@@ -146,7 +146,9 @@ One `timeout` around the whole build; passwordless `sudo` granted for its length
 | Snapper | A named snapshot via `snap-pac`, cleaned up by three timers |
 | Btrfs alone | One dated read-only snapshot, nothing cleaned up |
 
-Snapper's defaults suit a slow-moving system, not a rolling release - fifty snapshots plus a year of timeline filled a disk to 70G against 35G of real system. So `NUMBER_LIMIT=10`, `NUMBER_LIMIT_IMPORTANT=5`, `TIMELINE_LIMIT_MONTHLY=2`, `TIMELINE_LIMIT_YEARLY=0`.
+Snapper's defaults suit a slow-moving system, not a rolling release - fifty snapshots plus a year of timeline filled a disk to 70G against 35G of real system. So `NUMBER_LIMIT=10`, `NUMBER_LIMIT_IMPORTANT=5`, `TIMELINE_LIMIT_MONTHLY=2`, `TIMELINE_LIMIT_YEARLY=0`, plus `ALLOW_GROUPS=wheel` and `SYNC_ACL=yes` so the group `/.snapshots` belongs to can read it - without them snapper answers nobody but root, whatever the directory says.
+
+All of it in one place, `snapper_config` in `modules/installer/module.sh`: `set-config` takes one `KEY=VALUE` per argument, writes a whole line handed to it as one into the first key, and says nothing - so the task sets them from there and its test reads them back against the same list.
 
 **Note:** _`snapper-cleanup.service` syncs on `ExecStopPost` - btrfs frees extents on its own schedule, and `df` lies until then._
 

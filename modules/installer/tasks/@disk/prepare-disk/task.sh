@@ -6,6 +6,34 @@
 
 simulating && return 0
 
+# A dual boot writes its kernel into an EFI partition somebody else made, and
+# Windows makes that one 100 or 260 MB. What goes in needs more: the kernel,
+# its ram disk, and the fallback ram disk that carries every module there is -
+# and where the boot chain is signed, the kernel is packed into both of them
+# again. Asked here, because the same question answered where the images are
+# built is answered on a disk this run has already formatted.
+#
+# Mounted read-only to ask it, and a partition that will not mount is not
+# refused: it is the other system's, and being unable to read it says nothing
+# about how much room is on it.
+if [ "$ARCH_OS_DUAL_BOOT_ENABLED" = "true" ]; then
+    needed=$((512 * 1024 * 1024))
+    probe="$(mktemp -d)"
+    free=""
+    if mount -o ro "$ARCH_OS_BOOT_PARTITION" "$probe" 2>/dev/null; then
+        free="$(df -B1 --output=avail "$probe" | tail -n1)"
+        umount "$probe"
+    fi
+    rmdir "$probe"
+
+    if [ -z "$free" ]; then
+        echo "${ARCH_OS_BOOT_PARTITION} could not be mounted, so how much room is on it is unknown" >&2
+    elif [ "$free" -lt "$needed" ]; then
+        echo "${ARCH_OS_BOOT_PARTITION} has $(numfmt --to=iec "$free") free and the boot images need about $(numfmt --to=iec "$needed"). Make that EFI partition bigger, or free space on it, and start again." >&2
+        exit 1
+    fi
+fi
+
 # Dual boot keeps the disk as it is: the other system's partitions, its EFI
 # partition and its boot entries all stay.
 if [ "$ARCH_OS_DUAL_BOOT_ENABLED" != "true" ]; then

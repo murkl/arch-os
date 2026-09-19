@@ -61,6 +61,16 @@ close_target
 # it was handed and prints the whole of what opened it.
 vgchange -an 3>&- || true
 
+# And the same for a software RAID, which udev assembles on its own off the
+# superblock a disk out of an old machine still carries: the array then holds
+# the partition open and the next stage cannot even repartition it. Nothing is
+# mounted on a live image, so there is nothing to lose by stopping every one of
+# them; an array that will not stop is left to the failure it causes later,
+# where the message names the disk.
+if command -v mdadm >/dev/null; then
+    mdadm --stop --scan || true
+fi
+
 rm -f /var/lib/pacman/db.lck
 
 # A stale keyring is the commonest reason a fresh install refuses to verify a

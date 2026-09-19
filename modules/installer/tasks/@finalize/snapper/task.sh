@@ -18,10 +18,11 @@ arch-chroot "$MNT" mount -a
 arch-chroot "$MNT" chmod 750 /.snapshots
 arch-chroot "$MNT" chown :wheel /.snapshots
 
-# Snapper's defaults are written for a system that changes slowly, and a rolling
-# release is not one - see docs/REFERENCE.md.
-arch-chroot "$MNT" snapper --no-dbus -c root set-config \
-    "NUMBER_LIMIT=10 NUMBER_LIMIT_IMPORTANT=5 TIMELINE_LIMIT_MONTHLY=2 TIMELINE_LIMIT_YEARLY=0"
+# One argument per setting, from module.sh: set-config reads each of them as
+# KEY=VALUE, and a whole line handed to it as one string lands in the first key
+# as text.
+mapfile -t settings < <(snapper_config)
+arch-chroot "$MNT" snapper --no-dbus -c root set-config "${settings[@]}"
 
 # A cleanup frees extents, but btrfs commits that on its own schedule: until it
 # does, df reports the disk as full as it was. ExecStopPost rather than

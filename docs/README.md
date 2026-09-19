@@ -36,6 +36,7 @@
 - AUR helper, 32-bit support, container engine, automatic housekeeping
 - [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager, Shell Enhancement (bash, zsh or fish)
 - Recovery on the same image, works without a network
+- Wireless network joined from the Installer itself, before the first download
 - Create boot medium: writes the USB device from any Linux machine, no root needed but for the write itself
 - Virtual machine support both ways: guest tools inside a VM, libvirt and QEMU on real hardware
 - Two starting points, **Core** and **Desktop** - everything else stays a row in the settings
@@ -43,7 +44,7 @@
 
 ## Installation
 
-An internet connection is required.
+An internet connection is required. Without a cable, the Installer offers the wireless networks in range and joins one.
 
 ### 1. Prepare a bootable USB device
 

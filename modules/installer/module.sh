@@ -183,6 +183,26 @@ btrfs_subvolumes() {
         @tmp /var/tmp
 }
 
+# What snapper's own defaults have to become here, one setting per line. Its
+# defaults are written for a system that changes slowly and a rolling release
+# is not one - why these numbers: docs/REFERENCE.md. The last two are what makes
+# the group /.snapshots belongs to able to read it: without them snapper answers
+# nobody but root, whatever the directory says.
+#
+# Named once because the task sets them and its test reads them back, and
+# because set-config takes one KEY=VALUE per argument - handed the four as one
+# string it writes the whole line into the first key, sets nothing else, and
+# says nothing about it.
+snapper_config() {
+    printf '%s\n' \
+        NUMBER_LIMIT=10 \
+        NUMBER_LIMIT_IMPORTANT=5 \
+        TIMELINE_LIMIT_MONTHLY=2 \
+        TIMELINE_LIMIT_YEARLY=0 \
+        ALLOW_GROUPS=wheel \
+        SYNC_ACL=yes
+}
+
 # ////////////////////////////////////////////////////////////////////////////
 # SECURE BOOT & KERNEL COMMAND LINE
 # ////////////////////////////////////////////////////////////////////////////
@@ -484,6 +504,16 @@ list_locales() {
         <(sed -n 's/^#\? *\([a-zA-Z_]*\)[. ].*/\1/p' /etc/locale.gen | sort -u)
 }
 
+# The row that list opens on, which on a list sorted by name would otherwise be
+# Afar as spoken in Djibouti - an answer nobody means and the one an enter meant
+# for the page before gives. Nothing on this machine says better: the console
+# keyboard answered a page earlier names a language and not a country, and a
+# keymap like `es` is four of them; asking a geolocation service where the
+# machine stands is not a call an installer makes unasked. So it opens on the
+# one locale this installer generates either way, and the list is filtered from
+# there.
+default_locale() { printf 'en_US'; }
+
 list_keymaps() {
     printf 'auto\tauto — %s\n' "$(auto_keymap)"
     localectl list-keymaps
@@ -500,11 +530,15 @@ list_timezones() { timedatectl list-timezones; }
 
 # The timezone the chosen country keeps, or a best guess at where this machine
 # is for a locale that names none. Only ever the value the list opens on.
+#
+# UTC where neither answers, rather than nothing: an empty suggestion opens the
+# list on its own first row, which is Africa/Abidjan, and an enter meant for the
+# page before sets the clock to it.
 auto_timezone() {
     local zone
     zone="$(country_field 3 "$ARCH_OS_LOCALE_LANG")"
     [ -n "$zone" ] || zone="$(curl -sf --connect-timeout 5 --max-time 5 "http://ip-api.com/line?fields=timezone" || true)"
-    printf '%s' "$zone"
+    printf '%s' "${zone:-UTC}"
 }
 
 list_countries() {
@@ -514,12 +548,30 @@ list_countries() {
     awk -F'\t' '!/^#/ && $2 != "-" { print $2 }' "${DATA}/countries"
 }
 
-# Whole disks only - 8 is SCSI and SATA, 259 NVMe, 254 virtual block devices.
+# The disk the live image is running from, or nothing where that cannot be read.
+# Every part of the image is reached through it for as long as the run lasts, so
+# it is the one disk an installation must not be written to - and the failure is
+# a machine that is already half installed. Read off the mount table rather than
+# off the boot medium's name, because that is also how an image booted through
+# Ventoy says which disk it came from.
+#
+# The same table the Recovery reads, and the two must not drift apart.
+live_disk() {
+    lsblk -no PKNAME,MOUNTPOINT |
+        awk '!found && $1 != "" && $2 ~ /^\/run\/archiso/ { print "/dev/" $1; found = 1 }'
+}
+
+# Whole disks only, asked of lsblk by what a device is rather than by the major
+# number it was given: SATA, NVMe, eMMC, SD and a virtual disk are five numbers,
+# one of which the kernel hands out at random - and an installer that cannot see
+# the eMMC is an installer half the small machines cannot be installed on.
+#
 # Nobody picks between /dev/sda and /dev/sdb by name, so the size and the model
 # are what it is chosen by.
 list_disks() {
-    lsblk -d -n -I 8,259,254 -o PATH,SIZE,MODEL |
-        awk '{ path = $1; $1 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
+    lsblk -dn -o PATH,TYPE,SIZE,MODEL | awk -v live="$(live_disk)" '
+        $2 != "disk" || $1 == live || $1 ~ /^\/dev\/zram/ { next }
+        { path = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
 }
 
 # The partitions of the chosen disk, for a dual boot laid out by somebody else.
@@ -531,15 +583,18 @@ list_partitions() {
 }
 
 # The first vfat partition is almost always the one the other system boots from.
+# The match is remembered rather than exited on, here and below: a filter that
+# stops reading leaves lsblk with a write error, which under pipefail is a
+# failed lookup rather than an answer.
 default_boot_partition() {
-    lsblk -n -o PATH,FSTYPE "$ARCH_OS_DISK" | awk '$2 == "vfat" { print $1; exit }'
+    lsblk -n -o PATH,FSTYPE "$ARCH_OS_DISK" | awk '!found && $2 == "vfat" { print $1; found = 1 }'
 }
 
 # The largest partition that is not the EFI one: the likeliest candidate for
 # space freed up to install into.
 default_root_partition() {
     lsblk -bn -o PATH,SIZE,FSTYPE "$ARCH_OS_DISK" | tail -n +2 |
-        awk '$3 != "vfat" { print $2, $1 }' | sort -rn | head -n1 | awk '{ print $2 }'
+        awk '$3 != "vfat" { print $2, $1 }' | sort -rn | awk 'NR == 1 { print $2 }'
 }
 
 # Read again at install time, so answers carried to another machine still fit it.

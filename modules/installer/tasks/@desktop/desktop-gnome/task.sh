@@ -45,8 +45,11 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk)
 
     # What the audio stack needs to stand in for the two APIs older software
-    # still opens, and the firmware many laptop codecs need.
-    packages+=(pipewire-alsa pipewire-jack sof-firmware)
+    # still opens, and the firmware many laptop codecs need. rtkit is what hands
+    # pipewire the realtime priority it asks for, and the portal the desktop
+    # offers it through - without it both say so at every login and the audio
+    # thread runs at ordinary priority.
+    packages+=(pipewire-alsa pipewire-jack sof-firmware rtkit)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
 
     # NetworkManager speaks WireGuard by itself, so OpenVPN is the one protocol
