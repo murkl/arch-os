@@ -1,13 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "release-type": "simple",
+  "bootstrap-sha": "654815504b2e3d6f4a2fac8240bb2bc81fa75426",
   "packages": {
     ".": {
       "extra-files": [
         {
-          "type": "yaml",
-          "path": "oak.yaml",
-          "jsonpath": "$.version"
+          "type": "generic",
+          "path": "oak.yaml"
         }
       ]
     }

@@ -38,7 +38,7 @@ The title of a pull request is read by a machine, so it is written for one - [Co
 | `docs:` `refactor:` `test:` `build:` `ci:` `chore:` | Nothing. Work nobody installing or repairing a machine would notice |
 
 - `!` marks a change somebody has to act on; the reason goes in the body as `BREAKING CHANGE: …`
-- The gate refuses a title that opens on no type, because a title nothing can read releases nothing
+- A check of its own refuses a title that opens on no type, because a title nothing can read releases nothing. It is the one check that reads the title again when it is corrected - everything else waits for a commit
 - Everything else - the body, and the commits inside the branch - is written for whoever reads the change
 
 ## The Version and the Changelog
@@ -85,6 +85,7 @@ flowchart TD
 
 | Job | Where | Description |
 | --- | --- | --- |
+| `Title` | a pull request opened or renamed | The line the next version is read out of. Its own workflow, so a rename re-reads it and rebuilds nothing |
 | `Gate` | every run | What the rest of the run does, decided once |
 | `Check` | every run | `make check` |
 | `Image` | a pull request out of draft, a release, on demand | The release, the image out of it, and the boot that proves it comes up |

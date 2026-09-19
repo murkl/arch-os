@@ -53,20 +53,8 @@ jobs:
       run: ${{ steps.decide.outputs.run }}
       image: ${{ steps.decide.outputs.image }}
     steps:
-      # A squash merge makes the pull request's title the commit on main, and
-      # the next version is read out of that line. A title that names no kind of
-      # change releases nothing, which is worth finding while the title can
-      # still be edited.
-      - name: The title says what kind of change this is
-        if: github.event_name == 'pull_request'
-        env:
-          TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          if ! grep -qE '^(feat|fix|perf|refactor|docs|test|build|ci|chore|revert)(\([^)]+\))?!?: .' <<<"$TITLE"; then
-            echo "::error::'${TITLE}' opens on no type — feat:, fix:, feat!: … see docs/CONTRIBUTING.md"
-            exit 1
-          fi
-
+      # The title a version is read out of is checked by title.yml, which is
+      # the one thing that has to run again when a title is corrected.
       - name: What this run does
         id: decide
         env:
