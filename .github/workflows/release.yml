@@ -78,6 +78,18 @@ jobs:
             exit 1
           fi
 
+      # Before the wait below rather than after it: a version nothing was written
+      # under cannot be published, and that is not worth three quarters of an
+      # hour of waiting for the run that built it.
+      - name: What this release changed
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if ! make -s notes >"${RUNNER_TEMP}/notes.md"; then
+            echo "::error::docs/CHANGELOG.md has no section for ${VERSION} — write it on main, delete this tag and push it again"
+            exit 1
+          fi
+
       # A release is a tag on main. Anywhere else there is no run whose artefacts
       # could be published.
       - name: The commit is on main
@@ -173,21 +185,16 @@ jobs:
           done
 
       # Two ways in, one outcome. A tag pushed from a terminal has no release
-      # yet, so this writes one; a release published from the web page has the
-      # tag and the notes already, so this only hangs the files on it. Either
-      # way the step can be run again on a half-finished run.
+      # yet, so this writes one; a release that is already there — made on the
+      # web page, or by a run of this that had to be repeated — has its page
+      # written again out of the changelog, which is where what it says is kept.
       - name: Publish the release
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          # What this release changed, read out of the changelog rather than
-          # written here a second time, and under it the two downloads and how
-          # to check where they came from.
-          notes="$(mktemp)"
-          if ! make -s notes >"$notes"; then
-            echo "::error::docs/CHANGELOG.md has no section for ${VERSION} - write it on main, delete this tag and push it again"
-            exit 1
-          fi
+          # The entries read out of the changelog before the wait, and under
+          # them the two downloads and how to check where they came from.
+          notes="${RUNNER_TEMP}/notes.md"
 
           cat >>"$notes" <<NOTES
 
@@ -214,6 +221,7 @@ jobs:
           NOTES
 
           if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --notes-file "$notes"
             gh release upload "$TAG" dist/* --clobber
           else
             gh release create "$TAG" dist/* \

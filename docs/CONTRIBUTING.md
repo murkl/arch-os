@@ -59,7 +59,7 @@ git push origin v2.0.0
 
 The Release workflow finds that commit's run and hangs its artefacts on the release page - `arch-os-2.0.0-x86_64.iso` and `.tar.gz`, under that version's entries. GitHub prints each one's SHA-256 beside it there, so the release carries no checksum file of its own.
 
-**Note:** _Nothing is built from a tag. `make tag` refuses an unclean tree, `HEAD` off `main`, or a tag that exists already. A release can also be written on the web page._
+**Note:** _Nothing is built from a tag. `make tag` refuses an unclean tree, `HEAD` off `main`, or a tag that exists already. A release written on the web page lands in the same place: the workflow writes its page out of the changelog either way, and a run repeated on the same tag writes it again._
 
 ## What a Push runs
 
