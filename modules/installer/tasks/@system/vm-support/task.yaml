@@ -1,0 +1,2 @@
+title: Add virtual machine support
+conditions: ARCH_OS_VM_SUPPORT_ENABLED == true

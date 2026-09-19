@@ -1,0 +1,52 @@
+# If not running interactively, do nothing.
+[[ $- != *i* ]] && return
+
+# Export the systemd user environment on a text console, where nothing else has.
+# A line at a time, because xargs splits a value that holds a space into two.
+if [[ ${SHLVL} == 1 && -z ${DISPLAY} ]]; then
+    while IFS= read -r line; do
+        [[ $line == *=* ]] || continue
+        export "${line%%=*}=${line#*=}"
+    done < <(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator)
+fi
+
+source "${HOME}/.aliases"
+
+# Suggest the package a missing command lives in.
+[ -f /usr/share/doc/pkgfile/command-not-found.bash ] && source /usr/share/doc/pkgfile/command-not-found.bash
+
+shopt -s autocd                  # a bare directory name changes into it
+shopt -s cdspell                 # correct small typos in a path
+shopt -s checkwinsize            # notice the terminal being resized
+shopt -s histappend              # add to the history file rather than replacing it
+shopt -s cmdhist                 # keep a multi-line command as one entry
+shopt -s extglob                 # extended patterns
+shopt -s no_empty_cmd_completion # do not list every command on an empty line
+shopt -s expand_aliases
+
+bind "set completion-ignore-case on"
+
+# Colourful man pages.
+command -v bat &>/dev/null && export MANPAGER="sh -c \"col -bx | bat -l man -p\""
+command -v bat &>/dev/null && export MANROFFOPT="-c"
+
+export HISTSIZE=1000
+export HISTFILESIZE=${HISTSIZE}
+export HISTCONTROL=ignoredups:erasedups
+export HISTTIMEFORMAT="%F %T "
+export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q:c"
+
+# {{SHELL_HANDOVER}}
+# The prompt draws in a nerd font, and the one screen that cannot show one is
+# the text console: it has a single font with a fixed table of glyphs, and every
+# mark the prompt is made of comes out as a box. TERM is what says so and says
+# it everywhere - `linux` is the virtual console and nothing else, it survives
+# `su`, a chroot and an ssh out of one, and it costs no process at every start.
+#
+# Asking the terminal device instead was the same test until it was not: inside
+# a chroot the shell is on a pty of a devpts the chroot opened, so it answers
+# /dev/pts/0 while the screen it lands on is still the console - which is what
+# the Installer and the Recovery hand somebody when they open a shell in the
+# system they are working on.
+[[ $TERM != linux ]] && command -v starship &>/dev/null && eval "$(starship init bash)"
+command -v zoxide &>/dev/null && eval "$(zoxide init bash)"

@@ -1,165 +1,168 @@
-<h1 align="center">
-  <img src="./logo.svg" width="150" height="150">
-  <p>Arch OS</p>
-</h1>
-
 <div align="center">
 
-<p><strong>Boot from latest <a target="_blank" href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a> to launch the Installer automatically.</strong></p>
-
- <p>Alternatively boot from official <a target="_blank" href="https://archlinux.org/download/">Arch Linux ISO</a> and run:</p>
-
-**`curl -Ls bit.ly/arch-os | bash`**
-
-<p><b>
-
-[➜ Step by Step Installation Guide](#arch-os-installation)
-
-</b></p>
-
-<p><img src="./screenshots/installer.png"></p>
-
-<p><b>
-
-[➜ More Screenshots](#screenshots)
-
-</b></p>
-
-<p>Optimized for <b>Gaming, Emulation, Audio & Development</b></p>
+<img src="banner.png" alt="Arch OS - a minimal, robust and reproducible Arch Linux base, with an Installer and a Recovery on one bootable image">
 
 <p>
-This project aims to provide a mostly automized, minimal and robust Arch Linux base (minimal tty core or desktop), along with an easy-to-use and fast properties-file-based installer with error handling. Install a minimal Arch Linux core with optional features such as GNOME Desktop with Graphics Driver, Automatic Housekeeping, Zen Kernel, Fancy Shell Enhancement, preinstalled Paru as AUR Helper, enabled MultiLib, Bootsplash, System Manager and some more...</p>
-
-## More Information
-
-<p>
-  <img src="https://img.shields.io/badge/MAINTAINED-YES-green?style=for-the-badge">
-  <img src="https://img.shields.io/badge/License-GPL_3.0-blue?style=for-the-badge">
+  <img src="https://img.shields.io/github/v/release/murkl/arch-os?style=for-the-badge&label=RELEASE&color=1793d1" alt="">
+  <img src="https://img.shields.io/badge/License-GPL_3.0-blue?style=for-the-badge" alt="">
+  <img src="https://img.shields.io/badge/UEFI-x86__64-2e3440?style=for-the-badge" alt="">
 </p>
 
-**[➜ Arch OS Documentation](DOCS.md)**<br>
-<b><a about="_blank" href="https://t.me/archos_community">➜ t.me/archos_community</a></b>
+<p>A text console or a GNOME desktop. Boot the latest <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and the Installer starts on its own.</p>
 
-<p><sub>100% shellcheck approved</sub></p>
+<p>Or run this on any Linux machine. An ordinary desktop writes the ISO to a USB device; a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> installs or repairs.</p>
+
+**`curl -Ls https://bit.ly/arch-os | bash`**
+
+<p><b>
+
+[➜ Installation](#installation) · [➜ Screenshots](#screenshots) · [➜ Reference](REFERENCE.md) · [➜ Contributing](CONTRIBUTING.md) · [➜ t.me/archos_community](https://t.me/archos_community)
+
+</b></p>
 
 </div>
 
-## Core Features
+## Features
 
-- [Minimal Arch Linux](DOCS.md#minimal-installation) (~150 packages)
-- [Zen Kernel](DOCS.md#advanced-installation) (configurable)
-- [Swap](DOCS.md#swap) with zram-generator (zstd)
-- [Sole OS](DOCS.md#partitions-layout)
-- BTRFS Snapshot Support (Snapper, OverlayFS)
-- All-in-One password (encryption, root & user)
-- Multilingual Support
-- Filesystem btrfs or ext4
-- Bootloader: grub or systemd (auto updated)
-- Silent Boot (optional)
-- Systemd OOM (out-of-memory killer)
-- Pacman parallel downloads & eyecandy (optional)
-- Network Manager
-- SSD Support (fstrim)
-- Microcode Support (Intel & AMD)
-- Disabled Watchdog (optional)
-- UEFI only supported
-- [More Information...](DOCS.md#technical-information)
+- Minimal Arch Linux base, UEFI only: linux-zen, linux, linux-lts or linux-hardened
+- btrfs or ext4, systemd-boot or GRUB, dual boot aware
+- Disk encryption (LUKS2) and Secure Boot with your own keys
+- One password for encryption, root and user; automatic login behind an encrypted disk
+- Btrfs snapshots before every package change (Snapper), restored from the desktop (Btrfs Assistant)
+- GNOME on Wayland, or a bare text console; graphics driver for Mesa, Intel, NVIDIA, AMD or ATI
+- Desktop extras: codecs, fonts, printing, Samba and `.local` discovery; or a slim install with GNOME core apps only
+- Zram swap, fstrim, microcode, NetworkManager, mirrors ranked by country
+- Tuned rather than left at the defaults - see the **[➜ Reference](REFERENCE.md)**
+- AUR helper, 32-bit support, container engine, automatic housekeeping
+- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager, Shell Enhancement (bash, zsh or fish)
+- Recovery on the same image, works without a network
+- Wireless network joined from the Installer itself, before the first download
+- Create boot medium: writes the USB device from any Linux machine, no root needed but for the write itself
+- Virtual machine support both ways: guest tools inside a VM, libvirt and QEMU on real hardware
+- Two starting points, **Core** and **Desktop** - everything else stays a row in the settings
+- English and German interface
 
-## Desktop Features
+## Installation
 
-- [GNOME Desktop Environment](DOCS.md#recommendation) (optional with additional packages)
-- [Arch OS Slim Version](DOCS.md#example-installerconf) (GNOME Core Apps only)
-- [Graphics Driver](DOCS.md#install-graphics-driver-manually) (Mesa, Intel i915, NVIDIA, AMD, ATI)
-- [Pipewire Audio](DOCS.md#for-audiophiles) (Dolby Atmos supported)
-- Flatpak Support + Auto Update (GNOME Software)
-- Samba, Networking Protocol Libs, Git, Utils & Codecs included
-- GNOME Power Profiles Support (tuned-ppd)
-- VPN Support
-- Basic Fonts
-- Wayland optimized
-- Auto GNOME Login (follows Disk Encryption by default, one password prompt total)
-- Printer Support (cups)
-- SSH Agent (gcr)
-- Gamemode preinstalled
-- No Xorg included
+An internet connection is required. Without a cable, the Installer offers the wireless networks in range and joins one.
 
-## Additional Features
+### 1. Prepare a bootable USB device
 
-- [Arch OS Core Tweaks](DOCS.md#core-tweaks)
-- [Arch OS Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)
-- [Arch OS System Manager](DOCS.md#arch-os-manager)
-- [Arch OS Shell Enhancement](DOCS.md#shell-enhancement)
-- [Arch OS Starship Theme](https://github.com/murkl/starship-theme-arch-os)
-- [Arch OS Automatic Housekeeping](DOCS.md#housekeeping)
-- [AUR Helper](DOCS.md#advanced-installation) (configurable)
-- [VM Support](DOCS.md#vm-support) (optional)
-- 32 Bit Support (Multilib)
-- Disk Encryption (LUKS2)
-
-## Arch OS Installation
-
-To install Arch OS, an internet connection is required, as many packages will be downloaded during the installation process.
-
-### 1. Prepare bootable USB Device
-
-- Download latest Arch OS ISO from **[GitHub](https://github.com/murkl/arch-os/releases/latest)**
-    - Alternatively, download the official Arch Linux ISO from **[archlinux.org](https://www.archlinux.org/download)** or **[archlinux.de](https://www.archlinux.de/download)** and start the Installer manually
-- Use **[Ventoy](https://www.ventoy.net/en/download.html)** or your prefered iso writer tool to create a bootable USB device
-- Alternatively (Linux only): **[➜ Arch OS Creator](https://github.com/murkl/arch-os-creator)**
-
-### 2. Configure BIOS / UEFI Settings
-
-- Disable Secure Boot
-- Set Boot Mode to UEFI
-
-### 3. Boot from USB Device
-
-**Note:** _If the <a target="_blank" href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a> is used, all of the following steps are unnecessary and the Installer will start at this point._
-
-- Load prefered keyboard layout (optional): `loadkeys de`
-- Connect to WLAN (optional): `iwctl station wlan0 connect 'SSID'`
-
-#### 3.1. Run Arch OS Installer
+- Download the latest ISO from **[the release page](https://github.com/murkl/arch-os/releases/latest)** and write it with **[Ventoy](https://www.ventoy.net/en/download.html)** or any ISO writer. GitHub prints each file's SHA-256 beside it there, and both carry signed build provenance — the command is in the release notes
+- Or let **Create boot medium** do it, on any Linux machine. It checks what it downloaded against the published checksum before it unpacks anything:
 
 ```
-curl -Ls bit.ly/arch-os | bash
+curl -Ls https://bit.ly/arch-os | bash
 ```
 
-**Note:** _Cancel the Arch OS Installer with `Ctrl + c`. The properties will be restored upon the next execution._
+**Note:** _Runs as you, not root - only the write itself asks for a password. `DOWNLOAD_DIR=<dir>` changes where it lands (`~/Downloads` by default), and an ISO already there is used rather than fetched again._
 
-**[➜ See Advanced Installation](DOCS.md#advanced-installation)**
+### 2. Set the firmware up
 
-## System Maintenance
+- Boot mode: UEFI
+- Secure Boot: off for now - the Installer prepares it, switching it on is **[step 5](#5-switch-secure-boot-on)**
 
-<p><img src="./screenshots/manager_menu.png"></p>
+### 3. Boot from the USB device
 
-After installing Arch OS with the default properties preset, most maintenance tasks are performed automatically. However, the following steps must be executed manually on a regular basis:
+The Installer starts on its own. The first page says where the rest of Arch OS is and asks the language:
 
-- Regularly upgrade your system packages (Pacman/AUR & Flatpak)
-- Regularly read the **[Arch Linux News](https://www.archlinux.org/news)** (preferably before upgrading your system)
-- Regularly check & merge new configurations with `pacdiff` (preferably after each system upgrade)
-- Consult the **[Arch Linux Wiki](https://wiki.archlinux.org)** (if you need help)
+<p><img src="screenshots/welcome.png" alt="The welcome page: the project's address, and the language to read the rest in"></p>
 
-To streamline this process, you can use the preinstalled **[➜ Arch OS System Manager](https://github.com/murkl/arch-os-manager)**
+Then Installer or Recovery, and a starting point:
 
-If you need to rescue your Arch OS in case of a crash, boot from an **[Arch ISO Device](#1-prepare-bootable-usb-device)** and choose `Recovery` from Arch OS ISO or start **[➜ Arch OS Recovery](https://github.com/murkl/arch-os-recovery)** from official Arch ISO manually with:
+<p><img src="screenshots/setup.png" alt="The page that offers the starting points"></p>
+
+| Starting point | What it is |
+| --- | --- |
+| **Core** | A minimal Arch Linux on the text console, nothing graphical |
+| **Desktop** | The Core, with GNOME on top |
+
+Every value it sets is an ordinary answer, changeable afterwards. What is left to ask: account, region, disk.
+
+**Note:** _From an official **[Arch Linux ISO](https://archlinux.org/download/)** the same command downloads Arch OS and starts it here instead._
+
+### 4. Reuse your answers
+
+Every answer lands in `installer.conf` as it is given, so an interrupted run resumes. The password never does.
+
+- **Share it:** upload to **[paste.rs](https://paste.rs)** at the end of a run, get a code back. The next installation can start from it
+- **Copy it:** put `installer.conf` beside the Installer on another machine
+
+### 5. Switch Secure Boot on
+
+Only if you left it on. The Installer signs the boot chain with keys of its own; switching Secure Boot on is the one step only the firmware can take.
 
 ```
-curl -Ls bit.ly/arch-os-recovery | bash
+sbctl status
 ```
+
+| It says | Do |
+| --- | --- |
+| `✓` | Restart, switch Secure Boot on in the firmware |
+| `✗` | Clear the Secure Boot keys in the firmware (setup mode), then `sudo sbctl enroll-keys -m`, restart, switch it on |
+
+**Note:** _The system boots exactly as before until you do this - nothing here can leave it unbootable._
+
+## Recovery
+
+<p><img src="screenshots/recovery.png" alt="The Recovery, opening a system already on disk"></p>
+
+Boot the same ISO and choose **Recovery** to rescue an installation after a crash:
+
+- Unlocks and mounts it at `/mnt`
+- Rolls back to a Btrfs snapshot
+- Rebuilds the kernel images from the local package cache
+- Opens a shell inside it
+
+Two questions - keyboard and disk - the rest is read off the machine. No network needed.
+
+## Maintenance
+
+<p><img src="screenshots/manager_menu.png" alt="The Arch OS System Manager"></p>
+
+Mostly automatic through the preinstalled **Arch OS System Manager**. By hand:
+
+- Read the **[Arch Linux News](https://www.archlinux.org/news)** before upgrading
+- Roll back with **Btrfs Assistant** or `snapper` if an update breaks something
+- Consult the **[Arch Linux Wiki](https://wiki.archlinux.org)**
 
 <details>
 
 <summary><h2 style="display: inline;" id="screenshots">Screenshots</h2></summary>
 
 <div align="center">
-  <p><div><img src="./screenshots/desktop_overview.jpg"></div><sub><i>Desktop Demo</i></sub></p>
-  <p><div><img src="./screenshots/bootsplash.png"></div><sub><i>Bootsplash Demo</i></sub></p>
-  <p><div><img src="./screenshots/starship.png"></div><sub><i>Starship Demo</i></sub></p>
-  <p><div><img src="./screenshots/fastfetch.png"></div><sub><i>Fetch Demo</i></sub></p>
-  <p><div><img src="./screenshots/desktop_apps.png"></div><sub><i>Desktop Core Apps Demo</i></sub></p>
-  <p><div><img src="./screenshots/manager_dashboard.png"></div><sub><i>System Manager Demo</i></sub></p>
-  <p><div><img src="./screenshots/recovery.png"></div><sub><i>BTRFS Recovery Demo</i></sub></p>
+  <p><div><img src="screenshots/welcome.png"></div><sub><i>Welcome</i></sub></p>
+  <p><div><img src="screenshots/installing.png"></div><sub><i>Installer</i></sub></p>
+  <p><div><img src="screenshots/bootsplash.png"></div><sub><i>Bootsplash</i></sub></p>
+  <p><div><img src="screenshots/starship.png"></div><sub><i>Shell Enhancement</i></sub></p>
+  <p><div><img src="screenshots/fastfetch.png"></div><sub><i>Fetch</i></sub></p>
+  <p><div><img src="screenshots/manager_dashboard.png"></div><sub><i>System Manager</i></sub></p>
 </div>
 
 </details>
+
+## Development
+
+Five parts, kept apart:
+
+| Part | What it does |
+| --- | --- |
+| **[`oak`](https://github.com/murkl/oak)** | Draws the interface, asks the questions, runs the shell |
+| **[`modules/installer`](../modules/installer)** | Installs Arch Linux |
+| **[`modules/recovery`](../modules/recovery)** | Repairs an installation already on disk |
+| **[`modules/imager`](../modules/imager)** | Writes the device the other two boot from |
+| **[`iso`](../iso)** | Turns a build of those into a bootable image |
+
+Oak is the runtime, a repository of its own, and knows nothing about Arch Linux. Modules are data, not programs. A release is Oak with `oak.yaml` and `modules/` beside it. Which module a machine can open is that module's own `requires:` - nothing else holds a list.
+
+**[➜ Reference](REFERENCE.md)** for what is put on the disk and why. **[➜ Changelog](../CHANGELOG.md)** for what each release changed. **[➜ Contributing](CONTRIBUTING.md)** for branches, releases, how a commit becomes an image.
+
+## License
+
+GPL-3.0. See **[LICENSE](../LICENSE)**.
+
+## Credits
+
+- **[Arch Linux](https://archlinux.org)**
+- **[GNOME](https://www.gnome.org)**
+- **[Oak](https://github.com/murkl/oak)**

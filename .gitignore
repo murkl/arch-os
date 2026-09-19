@@ -1,12 +1,27 @@
-# Ignore temp dir
-.tmp.*
+# Build output — see /Makefile. dist/ holds everything a build produces, .dev/ is
+# that same shape made of symlinks, for running against the sources.
+/dist/
+/.dev/
 
-# Ignore gum binary
-gum
+# The runtime, downloaded from its own project rather than built here.
+/.oak/
 
-# Ignore installer files
+# What a local run leaves beside itself: Oak's own answers, and one pair per
+# module, each named after the module.
+oak.conf
+imager.conf
+imager.conf.old
+imager.log
+imager.log.old
 installer.conf
 installer.conf.old
-installer.conf.new
 installer.log
 installer.log.old
+recovery.conf
+recovery.conf.old
+recovery.log
+recovery.log.old
+
+# Editors / OS noise
+*.swp
+.DS_Store

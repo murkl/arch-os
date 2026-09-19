@@ -1,0 +1,44 @@
+# The toolchain every job runs on, and the cache that keeps fetching it cheap.
+#
+# Everything runs on Arch: it is what this project builds, and every tool it
+# checks itself with is a package. CI ends up running the literal commands from
+# the Makefiles rather than an approximation assembled out of setup actions.
+
+name: Arch toolchain
+description: An Arch container with the given packages, from cache where possible.
+
+inputs:
+  packages:
+    description: Packages to install, separated by spaces.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # A key nothing can hit, over a prefix that almost always does: the restore
+    # takes the newest cache this job wrote and the save at the end writes a
+    # fresh one. On a rolling distribution that is the whole point — a key that
+    # hits exactly writes nothing back, and the cache then stands still while
+    # the repositories move out from under it. The ISO job pays most for that:
+    # mkarchiso hands pacstrap the system cache, so a whole live system is
+    # downloaded through this one path.
+    - uses: actions/cache@v6
+      with:
+        path: /var/cache/pacman/pkg
+        key: pacman-${{ github.job }}-${{ github.run_id }}
+        restore-keys: pacman-${{ github.job }}-
+
+    - shell: bash
+      env:
+        PACKAGES: ${{ inputs.packages }}
+      run: |
+        read -ra packages <<<"$PACKAGES"
+        pacman -Syu --needed --noconfirm pacman-contrib "${packages[@]}"
+
+        # Two versions of each package is plenty to restore from, and keeps a
+        # cache written on every run from growing without end.
+        paccache -rk2 -q
+
+        # The checkout belongs to the runner's user and this container is root,
+        # which git reads as somebody else's repository.
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"

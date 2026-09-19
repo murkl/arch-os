@@ -1,0 +1,51 @@
+[Unit]
+Description=Arch OS
+# Plymouth owns the console until it is told to go; starting before it does
+# means drawing underneath the splash.
+After=plymouth-quit-wait.service systemd-user-sessions.service
+# It needs tty1 to itself. Conflicting with the getty is what takes it, rather
+# than fighting a login prompt for the same terminal.
+Conflicts=getty@tty1.service
+After=getty@tty1.service
+
+# Whatever becomes of it, this console is handed back to a login shell rather
+# than left as the blank screen it was drawing on. On success that is somebody
+# choosing to leave, with /etc/motd saying how to get back; on failure it is a
+# root prompt for reading the log and trying again. A machine that answers
+# nothing is the one outcome this image must not have.
+OnSuccess=getty@tty1.service
+OnFailure=getty@tty1.service
+
+# Three goes inside a minute, then the console goes to the getty above: without a
+# bound, a program that dies at once would restart for ever and never reach
+# OnFailure.
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+# idle keeps the first frame from being drawn over by the tail of the boot log.
+Type=idle
+# The same command `installer` and `recovery` run, with no module named — which
+# is what makes the language and then the question of which to open the first
+# two pages. A run started by this machine and one started by hand are the same
+# run.
+ExecStart=/usr/local/bin/arch-os
+Restart=on-failure
+RestartSec=2
+
+StandardInput=tty-force
+StandardOutput=tty
+StandardError=journal
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+
+# This is the reason the machine booted, and stopping it is a decision rather
+# than an accident.
+KillMode=process
+IgnoreSIGPIPE=no
+SendSIGHUP=yes
+
+[Install]
+WantedBy=multi-user.target

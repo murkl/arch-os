@@ -1,0 +1,27 @@
+# GNOME applications the slim desktop leaves out. One name per line; anything
+# another member of the group actually depends on still arrives as a dependency.
+gnome-calendar
+gnome-maps
+gnome-contacts
+gnome-font-viewer
+gnome-characters
+gnome-clocks
+gnome-connections
+gnome-music
+gnome-weather
+gnome-calculator
+gnome-logs
+gnome-text-editor
+gnome-disk-utility
+simple-scan
+baobab
+snapshot
+epiphany
+loupe
+decibels
+showtime
+papers
+
+# Not an application anybody opens but the dialog GNOME greets a new account
+# with, over a desktop this installer has just finished setting up.
+gnome-tour
