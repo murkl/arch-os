@@ -1,9 +1,10 @@
 # Changelog
 
-What each release changed, newest first. The version is `version:` in **[oak.yaml](../oak.yaml)**, and a release is the tag `v` + it. Releases before 2.0.0 are on the **[release page](https://github.com/murkl/arch-os/releases)**.
+What each release changed, newest first. Written by the run that publishes it, out of what landed on `main` since the release before — never by hand. Releases before 2.0.0 are on the **[release page](https://github.com/murkl/arch-os/releases)**.
 
 ## 2.0.0 - 2026-09-18
 
+- A release is what lands on `main`: the version, the changelog and the tag are written by the run rather than typed at a desk
 - Rebuilt on **[Oak](https://github.com/murkl/oak)**: the interface is a runtime of its own, and everything in this repository is a module beside it
 - Create boot medium asks rather than giving up where no checksum is published for the image, so one built by hand can still be written
 - Three modules on one image: the Installer, the Recovery, and Create boot medium for writing the USB device from any Linux machine

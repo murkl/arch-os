@@ -4,92 +4,94 @@ One rule: **a commit is built once**. The ISO on the release page is not a rebui
 
 ## Branches
 
-`main` is the released line, one commit per round. Work happens on `dev`.
+`main` is the released line. Work happens on `dev`.
 
 ```mermaid
 flowchart LR
     M["main"] -->|branch off| D["dev"]
-    D -->|draft pull request| C["CI<br/>checked · built"]
-    C -->|ready for review| F["CI<br/>...and booted"]
-    F -->|squash merge| M2["main<br/>one commit per round"]
-    M2 -->|tag v2.0.0| R["Release<br/>artefacts of that commit"]
-    M2 -.->|delete dev| M
+    D -->|push| C["CI<br/>checked"]
+    C -->|ready for review| F["CI<br/>...built and booted"]
+    F -->|squash merge| M2["main"]
+    M2 --> P["Release pull request<br/>version · changelog"]
+    P -->|squash merge| R["Release<br/>tag · image · page"]
 
     style R fill:#1793d1,stroke:#1793d1,color:#fff
 ```
 
-- **Branch `dev` off `main`** and open the pull request at once, as a draft. Every push to it is checked and built
+- **Branch `dev` off `main`.** Every push to it is checked, with or without a pull request open
+- **Open the pull request** when there is something to read, as a draft while there is not
 - **Mark it ready** when it should be booted - leaving draft is what adds the image and the smoke test
-- **Squash merge** into `main` and delete `dev`. The pull request title becomes the commit
-- A pull request from outside is checked and built, never turned into an image
+- **Squash merge** into `main` and delete `dev`. The pull request's title becomes the commit, and everything below is read out of that one line
+- A pull request from outside is checked, never turned into an image: a privileged container is not something an unreviewed change is handed
 
-**Note:** _`main` is the only branch CI watches for pushes; everything else arrives as a pull request. That is what keeps a commit under one run - a branch that is watched **and** has a pull request open raises both events and is built twice. See **[ci.yml](../.github/workflows/ci.yml)**._
+**Note:** _A commit is under one run and never two: while a pull request is open, a push to its branch is left to the run that pull request already has. See **[ci.yml](../.github/workflows/ci.yml)**._
 
-## The Version
+## The Title
 
-`version:` in **[oak.yaml](../oak.yaml)** is the only place it is written. Everything else is named after it: `dist/arch-os-2.0.0/`, `arch-os-2.0.0-x86_64.iso`, ISO label `ARCH_OS_2_0_0`, tag `v2.0.0`, and the section of **[CHANGELOG.md](CHANGELOG.md)** a release publishes.
+The title of a pull request is read by a machine, so it is written for one - [Conventional Commits](https://www.conventionalcommits.org): a type, a colon, and what changed.
 
-**Note:** _`make tag` writes the tag out of `oak.yaml`. `make check` refuses a version that is not `X.Y.Z` and one the changelog says nothing about. The Release workflow refuses a tag that disagrees with the commit._
+| A title that reads | Does |
+| --- | --- |
+| `fix: the Recovery finds a kernel on a separate /boot` | 2.0.0 → 2.0.1, on the page under **Bug Fixes** |
+| `feat: join a wireless network before the first download` | 2.0.0 → 2.1.0, under **Features** |
+| `feat!: one answer file per module` | 2.0.0 → 3.0.0, and says on the page what to do about it |
+| `docs:` `refactor:` `test:` `build:` `ci:` `chore:` | Nothing. Work nobody installing or repairing a machine would notice |
 
-## The Changelog
+- `!` marks a change somebody has to act on; the reason goes in the body as `BREAKING CHANGE: …`
+- The gate refuses a title that opens on no type, because a title nothing can read releases nothing
+- Everything else - the body, and the commits inside the branch - is written for whoever reads the change
 
-**[CHANGELOG.md](CHANGELOG.md)** is kept as the work happens, not written at the tag. Open a section for the release being worked towards, and append one line per change under it:
+## The Version and the Changelog
+
+Neither is written by hand. `version:` in **[oak.yaml](../oak.yaml)** and **[CHANGELOG.md](../CHANGELOG.md)** are both written by the release run out of the titles that landed since the last release, and everything is named after that version: `dist/arch-os-2.1.0/`, `arch-os-2.1.0-x86_64.iso`, the ISO label `ARCH_OS_2_1_0`, the tag `v2.1.0`.
+
+A version that is chosen rather than counted - 1.9.7 straight to 2.0.0 - is a footer on the commit that decides it:
 
 ```
-## 2.1.0 - 2026-02-14
-
-- Recovery repairs a system whose kernel no longer boots
+git commit --allow-empty -m "chore: release 2.0.0" -m "Release-As: 2.0.0"
 ```
 
-- Newest first, `## X.Y.Z - YYYY-MM-DD`, one short line per change somebody installing or repairing a machine would notice
-- The section on top is the next release and may sit above the version `oak.yaml` still declares. Raising `version:` is what turns it into the one being released
-- The date is the day it goes out, so it is the one thing to look at again before tagging
-- `make check` holds the shape, the order, that no version stands there twice, and that the declared version has something under it
-- Two **warnings** on the run and at the desk, never a refusal: work that landed with no section open for it, and a change that wrote nothing into the one that is - the lines may be written retrospectively, up to the tag
+**Note:** _`.github/release-please-config.json` says where the version stands, `.github/.release-please-manifest.json` remembers the last one. Neither is edited by hand either._
 
 ## Releasing
 
-1. Raise `version:` in `oak.yaml` to the version the changelog's top section names, on `dev`. What stands under it is what the release page will say
-2. Squash merge into `main` - it checks, builds, boots, keeps artefacts 90 days
-3. Push the tag:
+Two merges, both of them ordinary, and nothing typed:
 
-```
-git switch main && git pull
-make tag
-git push origin v2.0.0
-```
+1. **Squash merge the work into `main`.** The run checks it and opens - or updates - a pull request called `chore(main): release 2.1.0`, which raises `version:` and writes that version's section of the changelog
+2. **Merge that pull request.** The run on `main` tags `v2.1.0`, writes the release page out of the changelog, builds the release and the image, boots it, and hangs both files on that page
 
-The Release workflow finds that commit's run and hangs its artefacts on the release page - `arch-os-2.0.0-x86_64.iso` and `.tar.gz`, under that version's entries. GitHub prints each one's SHA-256 beside it there, so the release carries no checksum file of its own.
+Several merges collect in the one release pull request until it is merged, and a merge that releases nothing - `docs:`, `chore:` - opens none at all.
 
-**Note:** _Nothing is built from a tag. `make tag` refuses an unclean tree, `HEAD` off `main`, or a tag that exists already. A release written on the web page lands in the same place: the workflow writes its page out of the changelog either way, and a run repeated on the same tag writes it again._
+The page carries `arch-os-2.1.0-x86_64.iso` and `.tar.gz`, both under signed build provenance, and GitHub prints each one's SHA-256 beside it, so the release carries no checksum file of its own.
+
+**Note:** _The page is written before the files are on it: the image is half an hour, and the tag is what the run builds from. A run that fails there leaves a release to be re-run rather than a version to be taken back - `Publish` on its own, once the reason is gone._
+
+**Note:** _No run starts on the release pull request: GitHub starts none for what its own token opened. It needs none - the merge of it is checked on `main` before the tag exists, which is also why `main` must not require a check that never starts there. For that pull request to be opened at all, **Settings → Actions → General → Allow GitHub Actions to create and approve pull requests** has to be on._
 
 ## What a Run does
 
 ```mermaid
 flowchart TD
-    P["push to main · pull request"] --> C["Check<br/><small>make check</small>"]
-    P --> B["Build<br/><small>release · tarball</small>"]
-    C --> I
-    B --> I["ISO<br/><small>archiso, from the build's artefact</small>"]
-    I --> K["Smoke test<br/><small>qemu + OVMF, until the first page appears</small>"]
-    T["tag vX.Y.Z"] --> R["Release<br/><small>publish · nothing built</small>"]
-    B -.->|"artefact"| R
-    I -.->|"artefact"| R
+    G["Gate<br/><small>what this run does</small>"] --> C["Check<br/><small>make check</small>"]
+    C --> I["Image<br/><small>release, archiso, qemu + OVMF</small>"]
+    C --> R["Release<br/><small>version · changelog · tag</small>"]
+    R -.->|released| I
+    I --> P["Publish<br/><small>signs them, hangs them up</small>"]
+    R --> P
 
     style I stroke-dasharray: 4 4
-    style K stroke-dasharray: 4 4
-    style R fill:#1793d1,stroke:#1793d1,color:#fff
+    style P fill:#1793d1,stroke:#1793d1,color:#fff
 ```
 
 | Job | Where | Description |
 | --- | --- | --- |
+| `Gate` | every run | What the rest of the run does, decided once |
 | `Check` | every run | `make check` |
-| `Build` | every run | Release and tarball |
-| `ISO` | `main`, a pull request out of draft, on demand | The image, from `Build`'s artefact |
-| `Smoke test` | after `ISO` | Boots it, waits for the first page |
-| `Release` | a tag on `main` | Hangs that commit's artefacts on the release page |
+| `Image` | a pull request out of draft, a release, on demand | The release, the image out of it, and the boot that proves it comes up |
+| `Release` | a push to `main` | The version, the changelog and the tag - or the pull request that will carry them |
+| `Publish` | a release | Hangs that run's two files on the release page |
 
-`ISO` unpacks `Build`'s tarball rather than building again, so the image holds the exact file the release page offers. The dashed jobs are the expensive ones (~20 min together), so a draft and a pull request from a fork are judged on the two above them.
+`Image` builds, packs and boots in one job rather than three: the file between those steps is a gigabyte, and handing it from job to job costs more than making it. It is half an hour, which is why the gate decides who gets one.
 
 **Note:** _No job needs a Go toolchain - every job that needs Oak downloads the release the Makefile pins._
 
@@ -108,8 +110,6 @@ make smoke             # boot the newest image and wait for its first page
 make locales           # every translation template, brought up to date
 make glyphs-check      # every module against the glyph table of the console font
 make data-check        # every module's lookup tables against the system they name
-make notes             # what the release page will say, out of the changelog
-make tag               # the release tag, written out of oak.yaml
 make oak               # fetch the runtime again, at the release OAK_VERSION names
 make clean             # every build output, taken back; the runtime stays
 ```
@@ -131,7 +131,7 @@ sudo pacman -S --needed make curl shellcheck shfmt yamllint actionlint \
 - Repairing a system: **[modules/recovery](../modules/recovery)**
 - Writing the boot device: **[modules/imager](../modules/imager)**
 - Product name, version, look: **[oak.yaml](../oak.yaml)**
-- What a release changed: **[CHANGELOG.md](CHANGELOG.md)**
+- What a release changed: **[CHANGELOG.md](../CHANGELOG.md)**
 - The bootable image: **[iso](../iso)**
 - The interface itself: **[Oak](https://github.com/murkl/oak)**, its own repository
 
