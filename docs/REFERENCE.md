@@ -185,5 +185,6 @@ A hybrid ISO already carries its partition table and boot paths - writing it is 
 - The image is **not** a question: it is the release this program came from
 - Where it lands **is**: `XDG_DOWNLOAD_DIR` or `~/Downloads`. An image already there is used rather than fetched again
 - It is checked against the checksum GitHub publishes for that release, and a mismatch discards it rather than keeping a broken one
+- Where that release publishes no checksum, the run stops and asks before anything is written - an image built here is the one that arrives this way
 
 **Root only for the write.** `as_root` wraps `umount`, `dd`, `partprobe` - nothing else. Everything else runs as you, so a live image never leaves root-owned files in your home.

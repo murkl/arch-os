@@ -105,6 +105,22 @@ download_dir() {
     printf '%s/Downloads' "${HOME:-$HERE}"
 }
 
+# The two ways on from an image nothing can be held against, and nothing at all
+# where the release publishes a checksum: a list that comes back empty is a
+# question with nothing to decide, and Oak skips the step that asked it. So an
+# ordinary run never sees this page - only one where the release cannot be
+# reached, or does not exist yet, which is what an image built here is.
+#
+# A simulated run shows it either way and asks nothing of the network: this is
+# the one page of this module that is otherwise never looked at.
+unverified_choices() {
+    if ! debugging && [ -n "$(image_asset | cut -d' ' -f2)" ]; then
+        return 0
+    fi
+    printf 'false\tStop and write nothing\n'
+    printf 'true\tWrite it without verifying\n'
+}
+
 # The USB disks this machine has: the device path, a tab, and what a person
 # picks it by. By transport rather than by anything read off the partitions - a
 # disk this machine boots from is not on a USB bus, so it cannot turn up here at

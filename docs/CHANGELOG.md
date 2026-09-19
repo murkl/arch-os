@@ -5,6 +5,7 @@ What each release changed, newest first. The version is `version:` in **[oak.yam
 ## 2.0.0 - 2026-09-18
 
 - Rebuilt on **[Oak](https://github.com/murkl/oak)**: the interface is a runtime of its own, and everything in this repository is a module beside it
+- Create boot medium asks rather than giving up where no checksum is published for the image, so one built by hand can still be written
 - Three modules on one image: the Installer, the Recovery, and Create boot medium for writing the USB device from any Linux machine
 - Two starting points, Core and Desktop — everything else stays a row in the settings
 - Every answer is kept, so an interrupted run picks up where it stopped and the next machine skips what it already knows

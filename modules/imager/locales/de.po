@@ -56,6 +56,22 @@ msgstr "Abbild"
 msgid "Type the full path of a folder, starting with a slash."
 msgstr "Gib den vollständigen Pfad eines Ordners an, beginnend mit einem Schrägstrich."
 
+#. ARCH_OS_IMAGE_UNVERIFIED: the question
+#: module.yaml
+msgid "Unverified image"
+msgstr "Ungeprüftes Abbild"
+
+#. ARCH_OS_IMAGE_UNVERIFIED: what it means
+#: module.yaml
+msgid ""
+"There is no checksum to hold this image to: either the release publishes none yet or it cannot be reached. So nothing here can tell whether the file is whole, or whether it is the image it says it is.\n"
+"\n"
+"An image built rather than downloaded is the usual reason to go on. Stopping leaves the device untouched."
+msgstr ""
+"Es gibt keine Prüfsumme, an der sich dieses Abbild messen ließe: Entweder veröffentlicht das Release noch keine, oder es ist nicht erreichbar. Damit lässt sich hier nicht sagen, ob die Datei vollständig ist und ob sie das Abbild ist, das sie zu sein behauptet.\n"
+"\n"
+"Ein selbst gebautes statt heruntergeladenes Abbild ist der übliche Grund weiterzumachen. Beim Abbrechen bleibt der Datenträger unberührt."
+
 #. ARCH_OS_IMAGE_DEVICE: the question
 #: module.yaml
 msgid "Device"
@@ -78,8 +94,8 @@ msgstr "Abbild herunterladen"
 
 #. the step, as the run lists it
 #: tasks/@verify/checksum/task.yaml
-msgid "Verify the checksum"
-msgstr "Prüfsumme abgleichen"
+msgid "Check the image"
+msgstr "Abbild prüfen"
 
 #. the step, as the run lists it
 #: tasks/@write/device/task.yaml
@@ -106,6 +122,9 @@ msgstr "Root zum Schreiben"
 #: hooks/@preflight/device/hook.yaml
 msgid "A device to write to"
 msgstr "Ein Datenträger zum Schreiben"
+
+#~ msgid "Verify the checksum"
+#~ msgstr "Prüfsumme abgleichen"
 
 #~ msgid "The image is here or can be fetched"
 #~ msgstr "Das Abbild ist da oder erreichbar"

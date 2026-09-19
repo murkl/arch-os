@@ -30,7 +30,7 @@ locales/                        one <code>.po per language, and the template the
 | Task | Stage | Description |
 | --- | --- | --- |
 | `image` | `download` | Fetches the image, unless the folder already holds it |
-| `checksum` | `verify` | Compares it against the checksum the release publishes, discards it if they disagree |
+| `checksum` | `verify` | Compares it against the checksum the release publishes, discards it if they disagree. Where there is none to compare against, it asks |
 | `device` | `write` | Checks the device, unmounts it, copies the image on |
 
 Three steps, three distinct failures: nothing arrived, what arrived is broken, or it could not be written.
@@ -50,7 +50,7 @@ Which image gets written is not asked: it is the one this program came from. `ve
 An `arch-os-<version>-x86_64.iso` already in that folder is not downloaded again. The number it is then held to is the checksum GitHub publishes for that release, so this module and the release page check the same one - and the release carries no checksum file of its own.
 
 - A checksum mismatch discards the image rather than keeping a broken one
-- A release out of reach is a failure, not a pass: an image nothing could be compared against is never written
+- Where no checksum can be fetched - the release is not out yet, or it cannot be reached - the run stops and asks, and only a yes writes the image. That is how an image built here rather than downloaded reaches a device
 - Every request is HTTPS, redirects included
 
 ## Where it runs
@@ -86,6 +86,7 @@ Everything else - listing, downloading, checksumming - runs as you. `tty: true` 
 | --- | --- |
 | `ARCH_OS_DOWNLOAD_DIR` | Where the image lives. Suggested as `XDG_DOWNLOAD_DIR`, or `~/Downloads` |
 | `ARCH_OS_IMAGE_DEVICE` | The USB device to write. Only USB disks are offered |
+| `ARCH_OS_IMAGE_UNVERIFIED` | Whether to write an image no checksum could be fetched for. Asked mid-run, and only then |
 
 **Note:** _The device is read back from `lsblk` immediately before writing - `/dev/sdb` is a path, not a stick._
 
