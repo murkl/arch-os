@@ -1,0 +1,118 @@
+# Translation template for imager.
+#
+# One catalog per language beside this file, named by its code: de.po, fr.po.
+# The msgid is the English source text and the key at once, so a message no
+# catalog has anything to say about is shown exactly as it stands here — which
+# is what makes a half-finished translation useful from its first line.
+#
+# Generated. See the Makefile.
+msgid ""
+msgstr ""
+"Project-Id-Version: imager\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. the name of this language in the language itself — "Deutsch", not
+#. "German". A list of languages is read by the people who speak them.
+msgid "English"
+msgstr ""
+
+#. what this module is called, wherever the interface names it
+#: module.yaml
+msgid "Create boot medium"
+msgstr ""
+
+#. what it is, in one sentence, on the page that offers it
+#: module.yaml
+msgid "Write Arch OS to a USB device to boot another machine from."
+msgstr ""
+
+#. the last thing read before the first task runs
+#: module.yaml
+msgid ""
+"Arch OS will be written to {{ARCH_OS_IMAGE_DEVICE}}.\n"
+"\n"
+"Everything on that device will be erased and this cannot be undone. Nothing has been changed so far."
+msgstr ""
+
+#. ARCH_OS_DOWNLOAD_DIR: the question
+#: module.yaml
+msgid "Download folder"
+msgstr ""
+
+#. ARCH_OS_DOWNLOAD_DIR: what it means
+#: module.yaml
+msgid "Where the image is kept. It is reused, so a second run costs no bandwidth. The folder is created if it is not there, and the image needs about two gigabytes."
+msgstr ""
+
+#. ARCH_OS_DOWNLOAD_DIR: the heading its row sits under
+#: module.yaml
+msgid "Image"
+msgstr ""
+
+#. ARCH_OS_DOWNLOAD_DIR: what a wrong answer is told
+#: module.yaml
+msgid "Type the full path of a folder, starting with a slash."
+msgstr ""
+
+#. ARCH_OS_IMAGE_UNVERIFIED: the question
+#: module.yaml
+msgid "Unverified image"
+msgstr ""
+
+#. ARCH_OS_IMAGE_UNVERIFIED: what it means
+#: module.yaml
+msgid ""
+"There is no checksum to hold this image to: either the release publishes none yet or it cannot be reached. So nothing here can tell whether the file is whole, or whether it is the image it says it is.\n"
+"\n"
+"An image built rather than downloaded is the usual reason to go on. Stopping leaves the device untouched."
+msgstr ""
+
+#. ARCH_OS_IMAGE_DEVICE: the question
+#: module.yaml
+msgid "Device"
+msgstr ""
+
+#. ARCH_OS_IMAGE_DEVICE: what it means
+#: module.yaml
+msgid "The USB device to write to. Everything on it will be erased. Only disks on a USB bus are offered, so the disk this machine boots from cannot be chosen by accident."
+msgstr ""
+
+#. ARCH_OS_IMAGE_DEVICE: what a wrong answer is told
+#: module.yaml
+msgid "Choose a device that exists."
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@download/image/task.yaml
+msgid "Download the image"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@verify/checksum/task.yaml
+msgid "Check the image"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@write/device/task.yaml
+msgid "Write the device"
+msgstr ""
+
+#. read once the step is done, and held on until somebody has
+#: tasks/@write/device/task.yaml
+msgid ""
+"The device is ready\n"
+"\n"
+"{{ARCH_OS_IMAGE_DEVICE}} now starts Arch OS. Unplug it, plug it into the machine to install, and start that machine from it."
+msgstr ""
+
+#. the check, read where it is the one that failed
+#: hooks/@preflight/escalation/hook.yaml
+msgid "Root for the write"
+msgstr ""
+
+#. the check, read where it is the one that failed
+#: hooks/@preflight/device/hook.yaml
+msgid "A device to write to"
+msgstr ""

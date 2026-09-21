@@ -1,0 +1,149 @@
+# German translation of imager.
+# This file is distributed under the same license as the arch-os package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: imager\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. the name of this language in the language itself — "Deutsch", not
+#. "German". A list of languages is read by the people who speak them.
+msgid "English"
+msgstr "Deutsch"
+
+#. what this module is called, wherever the interface names it
+#: module.yaml
+msgid "Create boot medium"
+msgstr "Bootmedium erstellen"
+
+#. what it is, in one sentence, on the page that offers it
+#: module.yaml
+msgid "Write Arch OS to a USB device to boot another machine from."
+msgstr "Arch OS auf einen USB-Datenträger schreiben, um eine andere Maschine davon zu starten."
+
+#. the last thing read before the first task runs
+#: module.yaml
+msgid ""
+"Arch OS will be written to {{ARCH_OS_IMAGE_DEVICE}}.\n"
+"\n"
+"Everything on that device will be erased and this cannot be undone. Nothing has been changed so far."
+msgstr ""
+"Arch OS wird auf {{ARCH_OS_IMAGE_DEVICE}} geschrieben.\n"
+"\n"
+"Alles auf diesem Datenträger wird gelöscht, und das lässt sich nicht rückgängig machen. Bisher wurde nichts verändert."
+
+#. ARCH_OS_DOWNLOAD_DIR: the question
+#: module.yaml
+msgid "Download folder"
+msgstr "Download-Ordner"
+
+#. ARCH_OS_DOWNLOAD_DIR: what it means
+#: module.yaml
+msgid "Where the image is kept. It is reused, so a second run costs no bandwidth. The folder is created if it is not there, and the image needs about two gigabytes."
+msgstr "Wo das Abbild liegt. Es wird wiederverwendet, ein zweiter Lauf kostet also keine Bandbreite. Der Ordner wird angelegt, falls es ihn noch nicht gibt, und das Abbild braucht rund zwei Gigabyte."
+
+#. ARCH_OS_DOWNLOAD_DIR: the heading its row sits under
+#: module.yaml
+msgid "Image"
+msgstr "Abbild"
+
+#. ARCH_OS_DOWNLOAD_DIR: what a wrong answer is told
+#: module.yaml
+msgid "Type the full path of a folder, starting with a slash."
+msgstr "Gib den vollständigen Pfad eines Ordners an, beginnend mit einem Schrägstrich."
+
+#. ARCH_OS_IMAGE_UNVERIFIED: the question
+#: module.yaml
+msgid "Unverified image"
+msgstr "Ungeprüftes Abbild"
+
+#. ARCH_OS_IMAGE_UNVERIFIED: what it means
+#: module.yaml
+msgid ""
+"There is no checksum to hold this image to: either the release publishes none yet or it cannot be reached. So nothing here can tell whether the file is whole, or whether it is the image it says it is.\n"
+"\n"
+"An image built rather than downloaded is the usual reason to go on. Stopping leaves the device untouched."
+msgstr ""
+"Es gibt keine Prüfsumme, an der sich dieses Abbild messen ließe: Entweder veröffentlicht das Release noch keine, oder es ist nicht erreichbar. Damit lässt sich hier nicht sagen, ob die Datei vollständig ist und ob sie das Abbild ist, das sie zu sein behauptet.\n"
+"\n"
+"Ein selbst gebautes statt heruntergeladenes Abbild ist der übliche Grund weiterzumachen. Beim Abbrechen bleibt der Datenträger unberührt."
+
+#. ARCH_OS_IMAGE_DEVICE: the question
+#: module.yaml
+msgid "Device"
+msgstr "Datenträger"
+
+#. ARCH_OS_IMAGE_DEVICE: what it means
+#: module.yaml
+msgid "The USB device to write to. Everything on it will be erased. Only disks on a USB bus are offered, so the disk this machine boots from cannot be chosen by accident."
+msgstr "Der USB-Datenträger, auf den geschrieben wird. Alles darauf wird gelöscht. Angeboten werden nur Datenträger am USB-Bus, damit die Platte, von der diese Maschine startet, nicht versehentlich getroffen wird."
+
+#. ARCH_OS_IMAGE_DEVICE: what a wrong answer is told
+#: module.yaml
+msgid "Choose a device that exists."
+msgstr "Wähle einen vorhandenen Datenträger."
+
+#. the step, as the run lists it
+#: tasks/@download/image/task.yaml
+msgid "Download the image"
+msgstr "Abbild herunterladen"
+
+#. the step, as the run lists it
+#: tasks/@verify/checksum/task.yaml
+msgid "Check the image"
+msgstr "Abbild prüfen"
+
+#. the step, as the run lists it
+#: tasks/@write/device/task.yaml
+msgid "Write the device"
+msgstr "Datenträger schreiben"
+
+#. read once the step is done, and held on until somebody has
+#: tasks/@write/device/task.yaml
+msgid ""
+"The device is ready\n"
+"\n"
+"{{ARCH_OS_IMAGE_DEVICE}} now starts Arch OS. Unplug it, plug it into the machine to install, and start that machine from it."
+msgstr ""
+"Der Datenträger ist fertig\n"
+"\n"
+"{{ARCH_OS_IMAGE_DEVICE}} startet jetzt Arch OS. Zieh ihn ab, steck ihn in die Maschine, die installiert werden soll, und starte sie davon."
+
+#. the check, read where it is the one that failed
+#: hooks/@preflight/escalation/hook.yaml
+msgid "Root for the write"
+msgstr "Root zum Schreiben"
+
+#. the check, read where it is the one that failed
+#: hooks/@preflight/device/hook.yaml
+msgid "A device to write to"
+msgstr "Ein Datenträger zum Schreiben"
+
+#~ msgid "Verify the checksum"
+#~ msgstr "Prüfsumme abgleichen"
+
+#~ msgid "The image is here or can be fetched"
+#~ msgstr "Das Abbild ist da oder erreichbar"
+
+#~ msgid "Imager"
+#~ msgstr "Imager"
+
+#~ msgid "Writing"
+#~ msgstr "Schreibvorgang"
+
+#, fuzzy
+#~ msgid "Writing the device"
+#~ msgstr "Datenträger schreiben"
+
+#~ msgid "Running as root"
+#~ msgstr "Läuft als root"
+
+#~ msgid "Create"
+#~ msgstr "Erstellen"
+
+#~ msgid "Running on an ordinary machine"
+#~ msgstr "Läuft auf einer gewöhnlichen Maschine"

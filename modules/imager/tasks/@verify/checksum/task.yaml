@@ -1,0 +1,12 @@
+title: Check the image
+
+# Its own step, because a download that arrived and a download that is intact
+# are two different claims, and only the second is worth writing to a device.
+#
+# Whether there is a checksum to compare against at all is read off the network
+# at this moment rather than declared as a guard, so the choice is put here: the
+# list is empty wherever the release publishes one, and nothing is asked.
+asks: ARCH_OS_IMAGE_UNVERIFIED
+
+# No test.sh beside it: what a test would read is the image against the
+# checksum, which is this task line for line.

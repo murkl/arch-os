@@ -1,0 +1,13 @@
+title: Write the device
+
+# sudo asks for a password and dd reports how far it has got, and neither can be
+# drawn over the interface - so it steps aside for the length of this one.
+tty: true
+
+# The run stops here rather than sliding into the page that says it is over:
+# a device written but still plugged in is a boot that does not happen.
+report: |
+  The device is ready
+
+  {{ARCH_OS_IMAGE_DEVICE}} now starts Arch OS. Unplug it, plug it into the
+  machine to install, and start that machine from it.
