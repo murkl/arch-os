@@ -135,7 +135,7 @@ jobs:
       version: ${{ steps.please.outputs.version }}
       notes: ${{ steps.please.outputs.body }}
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         id: please
         with:
           config-file: .github/release-please-config.json
