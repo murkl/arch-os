@@ -13,8 +13,12 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    commit-message:
+      prefix: "ci"
 
   - package-ecosystem: github-actions
     directory: /.github/actions/arch
     schedule:
       interval: weekly
+    commit-message:
+      prefix: "ci"
