@@ -1,0 +1,3 @@
+title: Apply the core tweaks
+needs: [pacstrap-core]
+conditions: ARCH_OS_CORE_TWEAKS_ENABLED == true
