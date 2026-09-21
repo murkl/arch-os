@@ -1,0 +1,2 @@
+title: Enable 32-bit support
+conditions: ARCH_OS_MULTILIB_ENABLED == true

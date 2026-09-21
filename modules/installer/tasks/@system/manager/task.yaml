@@ -1,0 +1,3 @@
+title: Install Arch OS Manager
+needs: [enable-multilib]
+conditions: ARCH_OS_MANAGER_ENABLED == true

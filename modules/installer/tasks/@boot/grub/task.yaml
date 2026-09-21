@@ -1,0 +1,3 @@
+title: Install GRUB
+needs: [initramfs]
+conditions: ARCH_OS_BOOTLOADER == grub

@@ -1,0 +1,8 @@
+# Can this machine run a recovery at all? Every check in this stage is read-only
+# and every one of them is a hard stop, run before the first question because
+# none of it can be fixed from inside this program.
+#
+# Which is root and nothing else: not the firmware, which is not what is being
+# repaired, and not a network, because a recovery downloads nothing - the whole
+# point on a machine whose network may be exactly what stopped working.
+title: Running as root

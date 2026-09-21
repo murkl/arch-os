@@ -1,0 +1,4 @@
+title: Check the file system regularly
+
+# Written down as a condition, so the run lists this step only where it applies.
+conditions: ARCH_OS_FILESYSTEM == btrfs

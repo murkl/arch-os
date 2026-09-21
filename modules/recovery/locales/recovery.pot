@@ -1,0 +1,169 @@
+# Translation template for recovery.
+#
+# One catalog per language beside this file, named by its code: de.po, fr.po.
+# The msgid is the English source text and the key at once, so a message no
+# catalog has anything to say about is shown exactly as it stands here — which
+# is what makes a half-finished translation useful from its first line.
+#
+# Generated. See the Makefile.
+msgid ""
+msgstr ""
+"Project-Id-Version: recovery\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. the name of this language in the language itself — "Deutsch", not
+#. "German". A list of languages is read by the people who speak them.
+msgid "English"
+msgstr ""
+
+#. what this module is called, wherever the interface names it
+#: module.yaml
+msgid "Recovery"
+msgstr ""
+
+#. what it is, in one sentence, on the page that offers it
+#: module.yaml
+msgid "Repair an Arch Linux system that is already on a disk."
+msgstr ""
+
+#. how to get back in, read on the way out to the console
+#: module.yaml
+msgid "Type recovery at the prompt to start it again."
+msgstr ""
+
+#. the last thing read before the first task runs
+#: module.yaml
+msgid ""
+"The system on {{ARCH_OS_RECOVERY_DISK}} will be unlocked and mounted at /mnt.\n"
+"\n"
+"This does not change anything on it. Once it is open, you can roll back to a snapshot, rebuild the boot files or open a shell. Each is offered separately."
+msgstr ""
+
+#. ARCH_OS_RECOVERY_KEYMAP: the question
+#: module.yaml
+msgid "Console keyboard"
+msgstr ""
+
+#. ARCH_OS_RECOVERY_KEYMAP: what it means
+#: module.yaml
+msgid "The keyboard you are typing on right now. It is loaded immediately, and opens on the layout this live image was started with."
+msgstr ""
+
+#. ARCH_OS_RECOVERY_KEYMAP: the heading its row sits under
+#: module.yaml
+msgid "Region"
+msgstr ""
+
+#. ARCH_OS_RECOVERY_DISK: the question
+#: module.yaml
+msgid "Disk"
+msgstr ""
+
+#. ARCH_OS_RECOVERY_DISK: what it means
+#: module.yaml
+msgid "The disk holding the Arch OS installation to repair. Opening it does not change anything on it."
+msgstr ""
+
+#. ARCH_OS_RECOVERY_DISK: the heading its row sits under
+#: module.yaml
+msgid "Storage"
+msgstr ""
+
+#. ARCH_OS_RECOVERY_DISK: what a wrong answer is told
+#: module.yaml
+msgid "Choose a disk that exists."
+msgstr ""
+
+#. ARCH_OS_RECOVERY_ENCRYPTED: the question
+#: module.yaml
+msgid "Disk encryption"
+msgstr ""
+
+#. ARCH_OS_RECOVERY_ENCRYPTED: what it means
+#: module.yaml
+msgid "Whether that disk is encrypted with LUKS."
+msgstr ""
+
+#. ARCH_OS_RECOVERY_PASSWORD: the question
+#: module.yaml
+msgid "Encryption password"
+msgstr ""
+
+#. ARCH_OS_RECOVERY_PASSWORD: what it means
+#: module.yaml
+msgid "The password that unlocks that disk. It is asked for right before the recovery starts and is never written to a file."
+msgstr ""
+
+#. ARCH_OS_RECOVERY_SNAPSHOT: the question
+#: module.yaml
+msgid "Snapshot"
+msgstr ""
+
+#. ARCH_OS_RECOVERY_SNAPSHOT: what it means
+#: module.yaml
+msgid "The snapshot to put in place of the root subvolume. Newest first, with the date it was taken and what created it."
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@open/open/task.yaml
+msgid "Unlock and mount the system"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@repair/rollback/task.yaml
+msgid "Go back to a snapshot"
+msgstr ""
+
+#. asked before the step runs
+#: tasks/@repair/rollback/task.yaml
+msgid ""
+"Put {{ARCH_OS_RECOVERY_SNAPSHOT}} in place of the root subvolume on {{ARCH_OS_RECOVERY_DISK}}?\n"
+"\n"
+"The system as it is now is deleted and replaced by that snapshot. Everything under /home is untouched, and so are the other snapshots. You can come back and choose a different one."
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@repair/kernel/task.yaml
+msgid "Rebuild the boot files"
+msgstr ""
+
+#. asked before the step runs
+#: tasks/@repair/kernel/task.yaml
+msgid ""
+"Rebuild the kernel images and the initial ram disks?\n"
+"\n"
+"Needed after a rollback that goes back past a kernel update: the modules in the restored system and the images in /boot would then belong to different kernels, and the machine would come up without a single module. Everything is taken from the package cache, so this needs no network."
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@repair/shell/task.yaml
+msgid "Open a shell in the system"
+msgstr ""
+
+#. asked before the step runs
+#: tasks/@repair/shell/task.yaml
+msgid ""
+"Open a shell inside the system on {{ARCH_OS_RECOVERY_DISK}}?\n"
+"\n"
+"Everything is mounted, so this is where anything the recovery does not handle on its own can be fixed by hand: a package reinstalled, a config file put back. Leave the shell with `exit`."
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@close/close/task.yaml
+msgid "Unmount and lock the disk"
+msgstr ""
+
+#. asked before the step runs
+#: tasks/@close/close/task.yaml
+msgid ""
+"Unmount the system and lock the disk again?\n"
+"\n"
+"Nothing is lost either way, the recovery is finished. Leaving it mounted is only useful if you want to keep working on it from here."
+msgstr ""
+
+#. the check, read where it is the one that failed
+#: hooks/@preflight/root/hook.yaml
+msgid "Running as root"
+msgstr ""
