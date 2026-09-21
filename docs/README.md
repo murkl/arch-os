@@ -12,7 +12,7 @@
 
 <p>Or run this on any Linux machine. An ordinary desktop writes the ISO to a USB device; a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> installs or repairs.</p>
 
-**`curl -Ls https://bit.ly/arch-os | bash`**
+**`curl -Ls https://bit.ly/archos | bash`**
 
 <p><b>
 
@@ -52,7 +52,7 @@ An internet connection is required. Without a cable, the Installer offers the wi
 - Or let **Create boot medium** do it, on any Linux machine. It checks what it downloaded against the published checksum before it unpacks anything:
 
 ```
-curl -Ls https://bit.ly/arch-os | bash
+curl -Ls https://bit.ly/archos | bash
 ```
 
 **Note:** _Runs as you, not root - only the write itself asks for a password. `DOWNLOAD_DIR=<dir>` changes where it lands (`~/Downloads` by default), and an ISO already there is used rather than fetched again._

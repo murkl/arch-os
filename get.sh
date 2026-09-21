@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Arch OS, from one command:
 #
-#   curl -Ls https://bit.ly/arch-os | bash
+#   curl -Ls https://bit.ly/archos | bash
 #
 # Fetches the latest release, checks it, unpacks it and starts it. What this
 # machine is good for is not decided here but by the program itself: each module
