@@ -1,0 +1,3 @@
+title: Install systemd-boot
+needs: [initramfs]
+conditions: ARCH_OS_BOOTLOADER == systemd

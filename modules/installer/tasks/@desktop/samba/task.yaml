@@ -1,0 +1,9 @@
+title: Share files with other machines
+needs: [desktop-gnome]
+
+# The same three the question carries, so a Samba server and a WSD responder are
+# never left running on a machine that declined file sharing.
+conditions:
+  - ARCH_OS_DESKTOP != none
+  - ARCH_OS_DESKTOP_EXTRAS_ENABLED == true
+  - ARCH_OS_SAMBA_SHARE_ENABLED == true

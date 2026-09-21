@@ -1,0 +1,2 @@
+title: Set up housekeeping
+conditions: ARCH_OS_HOUSEKEEPING_ENABLED == true

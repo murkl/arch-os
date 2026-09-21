@@ -1,0 +1,8 @@
+# Is this machine ready to be installed onto? Every check in this stage is
+# read-only and every one of them is a hard stop, run before the first question
+# because none of it can be fixed from inside this program.
+#
+# Whether this is a machine to install onto at all is `requires:` in module.yaml,
+# and is asked earlier. What goes to stderr is what the user reads, so each
+# message says what is wrong and what to do about it, in that order.
+title: Running as root

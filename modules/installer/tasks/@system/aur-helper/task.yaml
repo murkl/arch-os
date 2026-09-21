@@ -1,0 +1,3 @@
+title: Install the AUR helper
+needs: [enable-multilib]
+conditions: ARCH_OS_AUR_HELPER != none

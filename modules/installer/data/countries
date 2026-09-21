@@ -1,0 +1,89 @@
+# code	country	time zone
+#
+# What a country's ISO territory code implies: where Arch's mirror list calls
+# it, and the time zone it keeps. code is what a locale ends in (de_DE -> DE).
+# country is spelled exactly as reflector spells it — a "-" means Arch has no
+# mirror there, so only the time zone is of use. time zone is a suggestion,
+# not an answer: the row the time zone question opens on, one per country
+# even where it keeps several.
+#
+# Validate against: reflector --list-countries, /usr/share/zoneinfo
+AE	United Arab Emirates	Asia/Dubai
+AL	Albania	Europe/Tirane
+AM	Armenia	Asia/Yerevan
+AR	Argentina	America/Argentina/Buenos_Aires
+AT	Austria	Europe/Vienna
+AU	Australia	Australia/Sydney
+AZ	Azerbaijan	Asia/Baku
+BD	Bangladesh	Asia/Dhaka
+BE	Belgium	Europe/Brussels
+BG	Bulgaria	Europe/Sofia
+BR	Brazil	America/Sao_Paulo
+BY	Belarus	Europe/Minsk
+CA	Canada	America/Toronto
+CH	Switzerland	Europe/Zurich
+CL	Chile	America/Santiago
+CN	China	Asia/Shanghai
+CO	Colombia	America/Bogota
+CZ	Czechia	Europe/Prague
+DE	Germany	Europe/Berlin
+DK	Denmark	Europe/Copenhagen
+EC	Ecuador	America/Guayaquil
+EE	Estonia	Europe/Tallinn
+ES	Spain	Europe/Madrid
+FI	Finland	Europe/Helsinki
+FR	France	Europe/Paris
+GB	United Kingdom	Europe/London
+GE	Georgia	Asia/Tbilisi
+GR	Greece	Europe/Athens
+HK	Hong Kong	Asia/Hong_Kong
+HR	Croatia	Europe/Zagreb
+HU	Hungary	Europe/Budapest
+ID	Indonesia	Asia/Jakarta
+IE	-	Europe/Dublin
+IL	Israel	Asia/Jerusalem
+IN	India	Asia/Kolkata
+IR	Iran	Asia/Tehran
+IS	Iceland	Atlantic/Reykjavik
+IT	Italy	Europe/Rome
+JP	Japan	Asia/Tokyo
+KE	Kenya	Africa/Nairobi
+KH	Cambodia	Asia/Phnom_Penh
+KR	South Korea	Asia/Seoul
+KZ	Kazakhstan	Asia/Almaty
+LT	Lithuania	Europe/Vilnius
+LU	Luxembourg	Europe/Luxembourg
+LV	Latvia	Europe/Riga
+MA	Morocco	Africa/Casablanca
+MD	Moldova	Europe/Chisinau
+MK	North Macedonia	Europe/Skopje
+MU	Mauritius	Indian/Mauritius
+MX	Mexico	America/Mexico_City
+MY	Malaysia	Asia/Kuala_Lumpur
+NC	New Caledonia	Pacific/Noumea
+NL	Netherlands	Europe/Amsterdam
+NO	Norway	Europe/Oslo
+NP	Nepal	Asia/Kathmandu
+NZ	New Zealand	Pacific/Auckland
+PH	Philippines	Asia/Manila
+PL	Poland	Europe/Warsaw
+PT	Portugal	Europe/Lisbon
+PY	Paraguay	America/Asuncion
+RE	Réunion	Indian/Reunion
+RO	Romania	Europe/Bucharest
+RS	Serbia	Europe/Belgrade
+RU	Russia	Europe/Moscow
+SA	Saudi Arabia	Asia/Riyadh
+SE	Sweden	Europe/Stockholm
+SG	Singapore	Asia/Singapore
+SI	Slovenia	Europe/Ljubljana
+SK	Slovakia	Europe/Bratislava
+TH	Thailand	Asia/Bangkok
+TN	Tunisia	Africa/Tunis
+TR	Türkiye	Europe/Istanbul
+TW	Taiwan	Asia/Taipei
+UA	Ukraine	Europe/Kyiv
+US	United States	America/New_York
+UZ	Uzbekistan	Asia/Tashkent
+VN	Vietnam	Asia/Ho_Chi_Minh
+ZA	South Africa	Africa/Johannesburg
