@@ -1,0 +1,40 @@
+# The one thing a machine reads a pull request for: its title becomes the commit
+# on main under a squash merge, and the next version and the changelog are read
+# out of that line. A title that names no kind of change releases nothing, and
+# nothing would say so.
+#
+# A file of its own because it is the only check that has to run again when the
+# title changes - and the only one that must not. Renaming a pull request would
+# otherwise rebuild it, and correcting the title would start nothing at all.
+
+name: Title
+
+on:
+  pull_request:
+    types: [opened, reopened, edited]
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  title:
+    name: Title
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: The title says what kind of change this is
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if ! grep -qE '^(feat|fix|perf|refactor|docs|test|build|ci|chore|revert)(\([^)]+\))?!?: .' <<<"$TITLE"; then
+            echo "::error::'${TITLE}' opens on no type — feat:, fix:, feat!: … see docs/CONTRIBUTING.md"
+            exit 1
+          fi
+          printf 'This title reads as a release line:\n\n    %s\n' "$TITLE" >>"$GITHUB_STEP_SUMMARY"
