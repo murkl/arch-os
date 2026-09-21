@@ -1,0 +1,98 @@
+# What this module is, what it asks and in what order it works. Everything else
+# in it is found by its own name, and every list, suggestion and derived answer
+# below is a function in module.sh.
+#
+# https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
+
+title: Recovery
+description: Repair an Arch Linux system that is already on a disk.
+
+# The same rule the Installer carries, for the same reason: a system is repaired
+# from outside itself, which means from a booted Arch Linux live image.
+requires: |
+  arch_live && return 0
+  echo "The Recovery runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there." >&2
+  exit 1
+
+# Read on the way out, when the recovery closes and the machine keeps running.
+console: Type recovery at the prompt to start it again.
+
+confirm: |
+  The system on {{ARCH_OS_RECOVERY_DISK}} will be unlocked and mounted at /mnt.
+
+  This does not change anything on it. Once it is open, you can roll back to a
+  snapshot, rebuild the boot files or open a shell. Each is offered separately.
+
+# Each is a folder under tasks/, marked - tasks/@repair/ - and lying in one is
+# what puts a task in the run and where.
+stages:
+  - open # unlocked and mounted, as the system mounts itself
+  - repair # rolled back, made bootable again, worked in by hand
+  - close # unmounted, and the disk locked again
+
+# Two questions and nothing else. What kind of disk it is and what is on it are
+# facts rather than opinions, so they are read off the machine instead - see
+# module.sh - and the file system is never even a value: it is read at the
+# moment it can be, which is once the disk is open.
+variables:
+  # Asked first, because it is the keyboard the password below is typed on. It
+  # is loaded on the live system and never written to the system being repaired.
+  - name: ARCH_OS_RECOVERY_KEYMAP
+    title: Console keyboard
+    description: |
+      The keyboard you are typing on right now. It is loaded immediately, and
+      opens on the layout this live image was started with.
+    group: Region
+    required: true
+    first: true
+    command: list_keymaps
+    prefill: default_keymap
+    apply: load_console_keyboard
+
+  - name: ARCH_OS_RECOVERY_DISK
+    title: Disk
+    description: |
+      The disk holding the Arch OS installation to repair. Opening it does not
+      change anything on it.
+    group: Storage
+    required: true
+    error: Choose a disk that exists.
+    command: list_disks
+
+  # Not asked: a LUKS header is readable without the password, so this is a
+  # thing the machine can see. It decides whether there is a password to ask
+  # for at all.
+  - name: ARCH_OS_RECOVERY_ENCRYPTED
+    title: Disk encryption
+    description: Whether that disk is encrypted with LUKS.
+    group: Storage
+    type: bool
+    answer: disk_is_encrypted
+
+  # Asked once rather than twice: this password already exists, and cryptsetup
+  # refuses a wrong one a second later and says which disk it was. The repeat
+  # is for a password being chosen, which nothing can check.
+  - name: ARCH_OS_RECOVERY_PASSWORD
+    title: Encryption password
+    description: |
+      The password that unlocks that disk. It is asked for right before the
+      recovery starts and is never written to a file.
+    group: Storage
+    type: secret
+    existing: true
+    required: true
+    conditions: ARCH_OS_RECOVERY_ENCRYPTED == true
+
+  # Asked by the rollback task, which is also where the shell that lists them
+  # lives: the snapshots cannot be listed until the disk is unlocked and
+  # mounted. A system that has none leaves that list empty, and the step is
+  # skipped.
+  - name: ARCH_OS_RECOVERY_SNAPSHOT
+    title: Snapshot
+    description: |
+      The snapshot to put in place of the root subvolume. Newest first, with
+      the date it was taken and what created it.
+    group: Storage
+    required: true
+    filter: open
+    command: ./tasks/@repair/rollback/snapshots.sh
