@@ -431,7 +431,7 @@ msgstr "Gibt dein Benutzerverzeichnis und einen öffentlichen Ordner im lokalen 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: the question
 #: module.yaml
 msgid "Core tweaks"
-msgstr "Core-Feinschliff"
+msgstr "Core Optimierungen"
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: what it means
 #: module.yaml
@@ -496,7 +496,7 @@ msgstr "Zeitgesteuerte Aufgaben, die das System von selbst in Ordnung halten: Sp
 #. ARCH_OS_SHELL_ENHANCEMENT_ENABLED: the question
 #: module.yaml
 msgid "Shell enhancement"
-msgstr "Shell Verbesserungen"
+msgstr "Shell Optimierungen"
 
 #. ARCH_OS_SHELL_ENHANCEMENT_ENABLED: what it means
 #: module.yaml
@@ -596,7 +596,7 @@ msgstr "Überlastungsanzeige abschalten"
 #. the step, as the run lists it
 #: tasks/@base/core-tweaks/task.yaml
 msgid "Apply the core tweaks"
-msgstr "Systemfeinschliff anwenden"
+msgstr "Core Optimierungen anwenden"
 
 #. the step, as the run lists it
 #: tasks/@base/user-account/task.yaml
@@ -656,7 +656,7 @@ msgstr "Arch OS Manager installieren"
 #. the step, as the run lists it
 #: tasks/@system/shell-enhancement/task.yaml
 msgid "Enhance the shell"
-msgstr "Shell verbessern"
+msgstr "Shell optimieren"
 
 #. the step, as the run lists it
 #: tasks/@system/vm-support/task.yaml
