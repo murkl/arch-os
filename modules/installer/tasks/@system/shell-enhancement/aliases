@@ -1,9 +1,12 @@
-# Listing
-alias ls="ls -h --color=always --group-directories-first"
-command -v eza &>/dev/null && alias ls="eza --icons --color=always --group-directories-first"
+# Listing. Colour only on a terminal, so `ls | grep` reads plain names. The icons
+# are nerd font glyphs, which the text console has no font for; the tree view
+# is eza's alone, since GNU ls has no such thing.
+alias ls="ls -h --color=auto --group-directories-first"
+command -v eza &>/dev/null && alias ls="eza --color=auto --group-directories-first"
+command -v eza &>/dev/null && [ "$TERM" != linux ] && alias ls="eza --icons=auto --color=auto --group-directories-first"
+command -v eza &>/dev/null && alias lt="ls -Tal"
 alias ll="ls -l"
 alias la="ls -la"
-alias lt="ls -Tal"
 
 # Colour
 alias diff="diff --color=auto"
@@ -21,7 +24,7 @@ command -v fastfetch &>/dev/null && alias fetch="fastfetch"
 alias pacnew="env DIFFPROG=\$EDITOR pacdiff -s"
 command -v meld &>/dev/null && alias pacnew="env DIFFPROG=meld pacdiff -s"
 command -v xdg-open &>/dev/null && alias open="xdg-open"
-alias myip="curl ipv4.icanhazip.com"
+alias myip="curl https://ipv4.icanhazip.com"
 alias ..="cd .."
 alias ...="cd ../.."
 

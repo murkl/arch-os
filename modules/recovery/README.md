@@ -67,7 +67,7 @@ flowchart LR
     T -.->|"rollback replaces @"| M
 ```
 
-**Note:** _Subvolume table and mount options are written out twice - here and in the Installer's - and must not drift apart. **[➜ Btrfs Subvolumes](../../docs/REFERENCE.md#btrfs-subvolumes)**_
+**Note:** _Subvolume table and mount options are the Installer's own, from `oak.sh` at the root, which both modules are given. **[➜ Btrfs Subvolumes](../../docs/REFERENCE.md#btrfs-subvolumes)**_
 
 ## Answers
 

@@ -86,7 +86,7 @@ echo "### Initialize Build"
 
 # What a release is, checked before an hour of mkarchiso finds out. The modules
 # are not named here: which ones there are is whatever the release holds.
-for part in oak oak.yaml modules; do
+for part in oak oak.yaml oak.sh modules; do
     [ -e "${RELEASE_DIR}/${part}" ] || {
         echo "Error: ${RELEASE_DIR} holds no ${part} - run 'make build' first" >&2
         exit 1
@@ -130,7 +130,7 @@ if [ -n "$DROPPED" ]; then
     grep -vxF "$DROPPED" "$ISO_PACKAGES" >"${TEMP_DIR}/packages" && mv "${TEMP_DIR}/packages" "$ISO_PACKAGES"
 fi
 
-# The Oak binary with oak.yaml and the modules folder beside it - the only place
+# The Oak binary with oak.yaml, oak.sh and the modules folder beside it - the only place
 # it looks. /opt/arch-os is what the systemd unit below starts, and what the
 # three launchers on the path run out of.
 echo "### Install Arch OS"

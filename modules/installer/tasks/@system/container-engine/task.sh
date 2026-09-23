@@ -6,8 +6,6 @@
 # https://wiki.archlinux.org/title/Docker
 # https://wiki.archlinux.org/title/Podman
 
-simulating && return 0
-
 case "$ARCH_OS_CONTAINER_ENGINE" in
 
 docker)

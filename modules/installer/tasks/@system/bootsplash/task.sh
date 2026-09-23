@@ -1,8 +1,6 @@
 # A logo while the system starts instead of a wall of kernel messages.
 # https://wiki.archlinux.org/title/Plymouth
 
-simulating && return 0
-
 chroot_pacman_install plymouth
 
 # Directly behind the init hook, which is early enough to have a screen to draw

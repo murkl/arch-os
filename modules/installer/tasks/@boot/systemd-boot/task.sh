@@ -2,8 +2,6 @@
 # own task beside the GRUB one, so a run that installs the other never even
 # lists this step. https://wiki.archlinux.org/title/Systemd-boot
 
-simulating && return 0
-
 data="$(where)"
 
 # Adds an entry and never overwrites another system's loader - a Windows Boot

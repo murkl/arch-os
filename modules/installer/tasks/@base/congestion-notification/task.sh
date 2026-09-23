@@ -4,6 +4,4 @@
 # that drops these connections goes on dropping them after a restart.
 # https://wiki.archlinux.org/title/Sysctl
 
-simulating && return 0
-
 render "$(where)/99-arch-os-ecn.conf" >"${MNT}/etc/sysctl.d/99-arch-os-ecn.conf"

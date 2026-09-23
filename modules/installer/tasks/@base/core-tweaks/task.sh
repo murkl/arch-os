@@ -1,8 +1,6 @@
 # Small adjustments that change how the system behaves, never what is installed.
 # Why each of these numbers and not the defaults: docs/REFERENCE.md
 
-simulating && return 0
-
 data="$(where)"
 
 # Stars while typing a sudo password, so a terminal does not look frozen.
@@ -27,12 +25,6 @@ render "${data}/makepkg.conf" >"${MNT}/etc/makepkg.conf.d/arch-os.conf"
 # how eagerly directory and inode entries are reclaimed.
 # https://wiki.archlinux.org/title/Sysctl
 render "${data}/99-arch-os-memory.conf" >"${MNT}/etc/sysctl.d/99-arch-os-memory.conf"
-
-# The default caps a process at 65530 mapped memory regions. Fine for most
-# software, too low for some games and emulators, which crash outright rather
-# than fall back to fewer, larger ones.
-# https://wiki.archlinux.org/title/Gaming#Increase_vm.max_map_count
-render "${data}/99-arch-os-mmap.conf" >"${MNT}/etc/sysctl.d/99-arch-os-mmap.conf"
 
 # cubic backs off on any packet loss, which congested wifi and long-distance
 # links produce without actually being full. bbr judges the path by the delay

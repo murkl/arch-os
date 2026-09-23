@@ -6,8 +6,6 @@
 # the answer given a moment ago decides. That is the one way an image this
 # project never published - one built here - reaches a device.
 
-simulating && return 0
-
 digest="$(image_asset | cut -d' ' -f2)"
 if [ -z "$digest" ]; then
     if [ "$ARCH_OS_IMAGE_UNVERIFIED" = true ]; then

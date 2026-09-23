@@ -1,5 +1,4 @@
 # A desktop nobody can log in to is not a desktop.
-simulating && return 0
 
 arch-chroot "$MNT" systemctl is-enabled gdm.service >/dev/null
 

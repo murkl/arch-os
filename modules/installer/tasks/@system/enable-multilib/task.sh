@@ -3,7 +3,5 @@
 # that pacman.conf includes - see pacman_include in module.sh.
 # https://wiki.archlinux.org/title/Official_repositories#multilib
 
-simulating && return 0
-
 pacman_include "$(where)/arch-os-multilib.conf"
 arch-chroot "$MNT" pacman -Syu --noconfirm

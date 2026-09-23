@@ -1,6 +1,10 @@
 title: Share this configuration
 needs: [copy-config]
 
+# Run under --debug as well, where it fills in an example address rather than
+# uploading anything - see task.sh.
+simulates: true
+
 # Asked here rather than among the settings an hour earlier, and opening on no:
 # nothing leaves the machine until somebody in front of it has said so. This is
 # the only task in this module that sends anything anywhere.

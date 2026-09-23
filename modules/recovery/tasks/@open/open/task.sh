@@ -1,8 +1,6 @@
 # The installation being repaired: unlocked where the disk is encrypted, and
 # mounted at /mnt the way that system mounts itself.
 
-simulating && return 0
-
 # A second attempt starts from whatever the first one left behind.
 close_target
 

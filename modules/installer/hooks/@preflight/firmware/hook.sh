@@ -1,8 +1,6 @@
 # The two firmware settings an installation cannot be started without. Secure
 # Boot is set up again at the end, with keys of this machine's own.
 
-simulating && return 0
-
 if [ ! -d /sys/firmware/efi ]; then
     echo "This machine booted in BIOS mode, which Arch OS does not install to. Set the boot mode to UEFI in the firmware settings and start again." >&2
     exit 1

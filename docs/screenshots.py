@@ -62,8 +62,10 @@ PAINT = {
 }
 
 # A product, as Oak reads it. Copied part by part, so an answer file or a log an
-# earlier run left beside them cannot decide what a page says.
+# earlier run left beside them cannot decide what a page says. The shell the
+# modules share is a part only some products have.
 PRODUCT = ("oak", "oak.yaml", "modules")
+OPTIONAL = ("oak.sh",)
 
 # Where the copy is driven. A failure page prints the log's path, so this ends up
 # inside a published picture: short and neutral for that reason alone.
@@ -367,9 +369,11 @@ def pristine(source):
     """A copy of the product, in the folder every take is driven in."""
     shutil.rmtree(WORK, ignore_errors=True)
     WORK.mkdir(parents=True)
-    for part in PRODUCT:
+    for part in PRODUCT + OPTIONAL:
         origin = source / part
         if not origin.exists():
+            if part in OPTIONAL:
+                continue
             raise SystemExit(f"{source}: no {part} - is this a built product?")
         if origin.is_dir():
             shutil.copytree(origin, WORK / part)

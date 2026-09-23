@@ -7,7 +7,6 @@
 # this has to open. What would go unnoticed is the other case - a subvolume that
 # is there and was not mounted, where the repair then works on the empty
 # directory inside @ instead of on the logs or the cache actually in use.
-simulating && return 0
 
 mountpoint -q "$MNT"
 [ -f "${MNT}/etc/os-release" ]

@@ -1,6 +1,5 @@
 # The command is there, and so is what the first container needs: something to
 # start the engine, and somewhere to look for an image named without a registry.
-simulating && return 0
 
 has_command "$ARCH_OS_CONTAINER_ENGINE"
 

@@ -1,8 +1,6 @@
 # A menu for updating, cleaning up and repairing the system after this installer
 # is gone. https://github.com/murkl/arch-os-manager
 
-simulating && return 0
-
 chroot_pacman_install pacman-contrib
 chroot_aur_install arch-os-manager
 

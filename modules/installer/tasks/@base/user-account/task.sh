@@ -1,7 +1,5 @@
 # Create the account and set the passwords.
 
-simulating && return 0
-
 arch-chroot "$MNT" useradd -m -G wheel -s /bin/bash "$ARCH_OS_USERNAME"
 mkdir -p "${MNT}/home/${ARCH_OS_USERNAME}/.config" "${MNT}/home/${ARCH_OS_USERNAME}/.local/share"
 own_home

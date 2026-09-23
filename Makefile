@@ -1,7 +1,7 @@
 # The only task runner in the repository. What CI runs is these targets, so a
 # rule that holds at a desk holds there.
 #
-#   dist/arch-os-$(VERSION)/                 the product: oak, oak.yaml, modules/
+#   dist/arch-os-$(VERSION)/                 the product: oak, oak.yaml, oak.sh, modules/
 #   dist/arch-os-$(VERSION)-x86_64.tar.gz    that folder as one file
 #   dist/arch-os-$(VERSION)-x86_64.iso       the bootable image
 #
@@ -19,11 +19,13 @@ SHELL       := /bin/bash
 # THE PRODUCT | What a release is called and what it holds
 # ////////////////////////////////////////////////////////////////////////////
 
-# One binary, the declaration of the product it drives, and one folder per
-# module. Oak looks for all of it beside its own binary.
-APP         := oak
-PRODUCT     := oak.yaml
-MODULES_DIR := modules
+# One binary, the declaration of the product it drives, the shell every module
+# of it shares, and one folder per module. Oak looks for all of it beside its
+# own binary.
+APP           := oak
+PRODUCT       := oak.yaml
+PRODUCT_SHELL := oak.sh
+MODULES_DIR   := modules
 
 # Where this project's version is written, and what everything is named after:
 # both filenames, the ISO label and the tag `v` + this - the `v` belongs to the
@@ -56,7 +58,7 @@ MODULE_PARTS := module.sh data locales tasks hooks
 # rather than followed, so a build of a given commit is the same build tomorrow.
 # Written without the `v` its tag carries.
 OAK_REPO    := murkl/oak
-OAK_VERSION ?= 0.5.0
+OAK_VERSION ?= 0.6.0
 OAK_ASSET   := oak-linux-amd64
 OAK_DIR     := .oak
 
@@ -123,9 +125,10 @@ POSIX_SCRIPTS := get.sh .github/summary.sh
 # Bash: what builds and boots the image, and what the image itself runs.
 ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_GLYPHS) $(wildcard $(ISO_DIR)/src/usr/local/bin/*)
 
-# Every script of every module, and every yaml for the check that reads both.
-# Looked up when they are used, so only the targets that read them pay for it.
-MODULE_SCRIPTS = $(shell find $(MODULES_DIR) -name '*.sh')
+# Every script of every module and the shell they all share, and every yaml for
+# the check that reads both. Looked up when they are used, so only the targets
+# that read them pay for it.
+MODULE_SCRIPTS = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -name '*.sh')
 MODULE_YAML    = $(shell find $(MODULES_DIR) -name '*.yaml')
 
 # The shell a module ships as a file of somebody's home rather than as a task.
@@ -134,10 +137,12 @@ MODULE_YAML    = $(shell find $(MODULES_DIR) -name '*.yaml')
 # reads, and the handover fragment is placeholders rather than shell.
 MODULE_SHELL = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/bashrc $(MODULES_DIR)/*/tasks/@*/*/aliases)
 
-# Everything a module can put on a screen: the declarations, the scripts, the
-# tables and every catalog. The READMEs are the one thing here nobody reads on
-# a console.
-MODULE_TEXT = $(shell find $(MODULES_DIR) -type f ! -name '*.md')
+# Everything a module can put on a screen: the declarations, the scripts and
+# the shell they share, the tables and every catalog. The READMEs are the one
+# thing here nobody reads on a console, and fastfetch's config is a picture for
+# a graphical terminal: the Arch logo it draws is made of block quadrants no
+# console font has either.
+MODULE_TEXT = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -type f ! -name '*.md' ! -name fastfetch.jsonc)
 
 # A module's own check of the lookup tables it ships. Found by name rather than
 # named outright, so a module that grows tables is a folder and nothing here has
@@ -236,6 +241,7 @@ build: oak-check
 	mkdir -p $(RELEASE_DIR)
 	install -m 755 $(OAK_BIN) $(RELEASE_DIR)/$(APP)
 	install -m 644 $(PRODUCT) $(RELEASE_DIR)/$(PRODUCT)
+	install -m 644 $(PRODUCT_SHELL) $(RELEASE_DIR)/$(PRODUCT_SHELL)
 	for m in $(MODULES); do \
 		dest=$(RELEASE_DIR)/$(MODULES_DIR)/$$m; \
 		mkdir -p $$dest; \
@@ -252,6 +258,7 @@ build: oak-check
 dev: oak-check
 	@mkdir -p $(DEV_DIR)
 	@ln -sfn ../$(PRODUCT) $(DEV_DIR)/$(PRODUCT)
+	@ln -sfn ../$(PRODUCT_SHELL) $(DEV_DIR)/$(PRODUCT_SHELL)
 	@ln -sfn ../$(MODULES_DIR) $(DEV_DIR)/$(MODULES_DIR)
 	@install -m 755 $(OAK_BIN) $(DEV_DIR)/$(APP)
 
@@ -269,7 +276,7 @@ inspect: dev
 tarball: build
 	tar -czf $(DIST_DIR)/$(TARBALL) --owner=0 --group=0 --sort=name \
 		--transform 's,^,$(STEM)/,' \
-		-C $(RELEASE_DIR) $(APP) $(PRODUCT) $(MODULES_DIR)
+		-C $(RELEASE_DIR) $(APP) $(PRODUCT) $(PRODUCT_SHELL) $(MODULES_DIR)
 
 # The image, out of the release already in dist/ rather than out of a second
 # build of the same sources. What it is called is read out of that release.
@@ -376,9 +383,10 @@ fmt:
 # A virtual console holds one font and that font holds one table of glyphs, so a
 # character outside it is a box on the screen - in whichever language it happens
 # to be in, which is not the one whoever wrote it reads. After locales-check,
-# which is what makes the catalogs it reads the current ones.
-glyphs-check:
-	@$(ISO_GLYPHS) $(MODULE_TEXT)
+# which is what makes the catalogs it reads the current ones. What the interface
+# itself draws there is asked of the runtime, which is the one thing that knows.
+glyphs-check: oak-check
+	@$(ISO_GLYPHS) $(OAK_BIN) $(MODULE_TEXT)
 
 # Every name a module's tables hand to another program, against the program's
 # own list of them. A keymap loadkeys does not have, a font setfont does not

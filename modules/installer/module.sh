@@ -77,29 +77,6 @@ render() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
-# SIMULATION
-# ////////////////////////////////////////////////////////////////////////////
-
-# --debug runs without touching the machine. Every task and every test opens on
-# `simulating && return 0`: a task because there is nothing it may change, a
-# test because a simulated run wrote nothing for it to read back.
-#
-# The pause holds each step on screen long enough to be read, which is what
-# makes a simulated run something to watch — and what docs/screenshots.py
-# photographs a run in the middle of.
-#
-# debugging is the bare question, for the few places that ask it without being
-# a step: an answer applied to this machine, a list a page opens on.
-
-debugging() { [ "$DEBUG" = "true" ]; }
-
-simulating() {
-    debugging || return 1
-    echo "simulated"
-    sleep 1
-}
-
-# ////////////////////////////////////////////////////////////////////////////
 # LOCALE LOOKUP
 # ////////////////////////////////////////////////////////////////////////////
 
@@ -136,13 +113,8 @@ not_none() { [ "$1" = "none" ] || printf '%s' "$1"; }
 auto_keymap() {
     local keymap
     keymap="$(language_field 2 "$ARCH_OS_LOCALE_LANG")"
-    # Otherwise the keyboard the live image was started with, which the Arch
-    # image records only as the loadkeys command in root's shell history.
-    # Finding nothing there is the ordinary case, so the grep must not make a
-    # failure of it - pipefail would carry that out of the whole lookup.
-    : "${keymap:=$({ grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null || true; } |
-        tail -n1 | sed 's/.*loadkeys *//' | tr -d ' ')}"
-    printf '%s' "${keymap:-us}"
+    # Otherwise the keyboard the live image was started with.
+    printf '%s' "${keymap:-$(live_keymap)}"
 }
 
 auto_layout() {
@@ -184,14 +156,6 @@ auto_microcode() {
 # THE ANSWERS, RESOLVED
 # ////////////////////////////////////////////////////////////////////////////
 
-# Names a partition of a disk. Devices whose name ends in a digit (nvme0n1,
-# mmcblk0, loop0) get a p between the disk and the partition number.
-part_of() {
-    local sep=""
-    [[ "$1" =~ [0-9]$ ]] && sep="p"
-    printf '%s%s%s' "$1" "$sep" "$2"
-}
-
 # Resolved once here instead of in a task, so every task sees the same answer
 # regardless of how it was arrived at.
 : "${ARCH_OS_BOOT_PARTITION:=$(part_of "$ARCH_OS_DISK" 1)}"
@@ -222,29 +186,8 @@ write_vconsole() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
-# THE BTRFS LAYOUT
+# SNAPPER
 # ////////////////////////////////////////////////////////////////////////////
-
-# How this project mounts btrfs, and what it lays down: subvolume, a tab, then
-# where it belongs. The recovery carries the same table and mounts whichever of
-# them an installation actually has - the two must not drift apart.
-#
-# Why the three under /var are separate: docs/REFERENCE.md
-#
-# Shellcheck reads this file on its own and cannot see that Oak sources it in
-# front of every task, so the option string looks unused here.
-# shellcheck disable=SC2034
-BTRFS_OPTS="defaults,noatime,compress=zstd"
-
-btrfs_subvolumes() {
-    printf '%s\t%s\n' \
-        @ / \
-        @home /home \
-        @snapshots /.snapshots \
-        @log /var/log \
-        @cache /var/cache \
-        @tmp /var/tmp
-}
 
 # What snapper's own defaults have to become here, one setting per line. Its
 # defaults are written for a system that changes slowly and a rolling release
@@ -544,20 +487,10 @@ close_target() {
 # so every list a question offers, every value one opens on and every check a
 # declaration makes is a function here.
 
-# Whether this is a booted Arch Linux live image, which is the only machine this
-# module belongs on. Two markers, because either on its own is enough:
-# /run/archiso is what the image mounts, archisobasedir is what it was booted
-# with. And Arch on top of them, because an image built the same way by somebody
-# else is not the system this installs.
-arch_live() {
-    { [ -d /run/archiso ] || grep -qs archisobasedir /proc/cmdline; } || return 1
-    grep -qs '^ID=arch$' /etc/os-release
-}
-
 # Real HTTPS to a host the installation needs anyway, not a ping - a captive
 # portal answers pings too.
 is_online() {
-    curl -Lsf --connect-timeout 5 --max-time 15 https://archlinux.org >/dev/null
+    fetch_url -s --connect-timeout 5 --max-time 15 https://archlinux.org >/dev/null
 }
 
 # The keyboard on the machine the installer runs on, loaded the moment the
@@ -645,32 +578,6 @@ list_countries() {
     echo none
     # A "-" marks a country Arch has no mirror in.
     awk -F'\t' '!/^#/ && $2 != "-" { print $2 }' "${DATA}/countries"
-}
-
-# The disk the live image is running from, or nothing where that cannot be read.
-# Every part of the image is reached through it for as long as the run lasts, so
-# it is the one disk an installation must not be written to - and the failure is
-# a machine that is already half installed. Read off the mount table rather than
-# off the boot medium's name, because that is also how an image booted through
-# Ventoy says which disk it came from.
-#
-# The same table the Recovery reads, and the two must not drift apart.
-live_disk() {
-    lsblk -no PKNAME,MOUNTPOINT |
-        awk '!found && $1 != "" && $2 ~ /^\/run\/archiso/ { print "/dev/" $1; found = 1 }'
-}
-
-# Whole disks only, asked of lsblk by what a device is rather than by the major
-# number it was given: SATA, NVMe, eMMC, SD and a virtual disk are five numbers,
-# one of which the kernel hands out at random - and an installer that cannot see
-# the eMMC is an installer half the small machines cannot be installed on.
-#
-# Nobody picks between /dev/sda and /dev/sdb by name, so the size and the model
-# are what it is chosen by.
-list_disks() {
-    lsblk -dn -o PATH,TYPE,SIZE,MODEL | awk -v live="$(live_disk)" '
-        $2 != "disk" || $1 == live || $1 ~ /^\/dev\/zram/ { next }
-        { path = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
 }
 
 # The partitions of the chosen disk, for a dual boot laid out by somebody else.

@@ -31,7 +31,7 @@ Always in that order, so the Recovery finds an installation from the disk alone.
 
 A snapshot of `@` skips a subvolume mounted inside it, so a rollback keeps all six untouched.
 
-Mounted `defaults,noatime,compress=zstd`. Written once in `modules/installer/module.sh` and once in `modules/recovery/module.sh` - **the two must not drift apart**. The Recovery mounts whichever a disk actually has, so an older layout still opens.
+Mounted `defaults,noatime,compress=zstd`. Written once, in `oak.sh`, which both modules are given. The Recovery mounts whichever a disk actually has, so an older layout still opens.
 
 **Note:** _`/var/tmp` is `chmod 1777` right after it is made, before systemd-tmpfiles would get to it._
 
@@ -64,11 +64,11 @@ Offered only with **disk encryption** and **systemd-boot**:
 - A unified image signs kernel, initramfs and command line **as one**. Kernel-only leaves a forgeable initramfs on the unencrypted partition
 - GRUB's binary would need re-signing on every update, and nothing does that
 
-Signed **last**: the graphics driver and boot splash rebuild the kernel image afterwards, bypassing pacman and `sbctl`'s hook. Every signed file is recorded, so the hook catches the next rebuild.
+Signed **last**: the NVIDIA driver and the boot splash rebuild the kernel image afterwards, bypassing pacman and `sbctl`'s hook. Every signed file is recorded, so the hook catches the next rebuild.
 
 ```mermaid
 flowchart LR
-    B["boot loader installed"] --> D["graphics driver<br/>+ boot splash"]
+    B["boot loader installed"] --> D["NVIDIA driver<br/>+ boot splash"]
     D -->|rebuild the kernel image| S["Secure Boot<br/>signs, last"]
 
     style S fill:#1793d1,stroke:#1793d1,color:#fff
@@ -89,7 +89,7 @@ base systemd keyboard autodetect microcode modconf kms sd-vconsole block [sd-enc
 - `kms` gives Plymouth a driver to draw on - without it, no splash
 - `keyboard` before `autodetect`: every layout ships, not just the one plugged in while installing
 
-**Note:** _`/etc/mkinitcpio.conf.d/10-arch-os.conf`. Drop-ins after it build on it: the boot splash (`20-`), the graphics driver (`30-`)._
+**Note:** _`/etc/mkinitcpio.conf.d/10-arch-os.conf`. Drop-ins after it build on it: the boot splash (`20-`), the NVIDIA driver (`30-`). The open drivers need none: the `kms` hook already puts them in the image._
 
 ## Tuning
 
@@ -104,7 +104,6 @@ Behind **Core tweaks**, changes behaviour, never what is installed. **[➜ Sysct
 | `DefaultLimitNOFILE=1024:2097152` | Only the ceiling moves - Wine/Electron raise their own soft limit against it |
 | `SystemMaxUse=200M` | The default keeps the journal forever on a modern disk |
 | I/O schedulers | `bfq` for spinning disks, `mq-deadline` for SATA/eMMC, NVMe untouched - **[➜ wiki](https://wiki.archlinux.org/title/Improving_performance#Changing_I/O_scheduler)** |
-| `vm.max_map_count=2147483642` | The default of 65530 mapped regions is too low for some games and emulators, which crash rather than fall back - **[➜ wiki](https://wiki.archlinux.org/title/Gaming#Increase_vm.max_map_count)** |
 | `tcp_congestion_control=bbr`, `default_qdisc=fq` | `cubic` reads any packet loss as congestion; wifi and long-distance links lose packets without being full. `bbr` measures delay instead |
 
 Swap is **zram** always, tweaks or not. **[➜ Zram](https://wiki.archlinux.org/title/Zram)**
@@ -124,6 +123,8 @@ Enough for a usable install, little enough that nothing needs looking after.
 **A desktop also gets `nss-mdns`** and the `mdns_minimal` module in front of the resolver in `/etc/nsswitch.conf`. Avahi announces this machine and finds the others either way; without that line nothing on the system can reach any of them by the `.local` name they answer to - a printer, a share and another machine are all `.local`. **[➜ Avahi](https://wiki.archlinux.org/title/Avahi#Hostname_resolution)**
 
 **Note:** _File sharing announces itself under the hostname as it stands - `mdns name = mdns` in `smb.conf`. Samba's default is the NetBIOS name, which is the hostname in capitals, so the machine would be the one entry in a file manager's network list that shouts._
+
+**Note:** _The public share is readable by any guest and writable only by the account the machine was installed with. A guest who may write is a folder anybody on the same network - a café's wifi included - can fill._
 
 ### Building from the AUR
 

@@ -3,8 +3,6 @@
 #
 # What is here and what is not: docs/REFERENCE.md
 
-simulating && return 0
-
 # sudo is named outright: it comes with base-devel, which only an installation
 # that builds from the AUR needs, and the wheel rule is written either way.
 packages=("$ARCH_OS_KERNEL" base sudo zram-generator networkmanager)

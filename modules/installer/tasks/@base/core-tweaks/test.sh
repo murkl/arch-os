@@ -4,13 +4,11 @@
 # fails to parse, and tmpfiles skips a line it cannot read. So each is read back
 # through the tool that will act on it rather than compared against a value
 # repeated here, which is the copy that goes stale.
-simulating && return 0
 
 [ -f "${MNT}/etc/sudoers.d/20-pwfeedback" ]
 arch-chroot "$MNT" pacman-conf Color | grep -qx Color
 
 sysctl_keys_exist "${MNT}/etc/sysctl.d/99-arch-os-memory.conf"
-sysctl_keys_exist "${MNT}/etc/sysctl.d/99-arch-os-mmap.conf"
 sysctl_keys_exist "${MNT}/etc/sysctl.d/99-arch-os-bbr.conf"
 
 # Read through makepkg's own config loader, which sources the drop-in directory

@@ -1,7 +1,6 @@
 # Every shell gets the prompt through .bashrc. zsh additionally becomes the one
 # that opens; fish cannot be a login shell, so .bashrc hands over to it, and
 # that line has to be in there or fish is installed and never seen.
-simulating && return 0
 
 home="${MNT}/home/${ARCH_OS_USERNAME}"
 
@@ -9,6 +8,10 @@ home="${MNT}/home/${ARCH_OS_USERNAME}"
     arch-chroot "$MNT" getent passwd "$ARCH_OS_USERNAME" | grep -q ':/usr/bin/zsh$'
 [ "$ARCH_OS_SHELL_ENHANCEMENT_SHELL" != "fish" ] ||
     grep -q 'exec fish' "${home}/.bashrc"
+# And its colours, which fish keeps in a file of its own rather than in the one
+# written here.
+[ "$ARCH_OS_SHELL_ENHANCEMENT_SHELL" != "fish" ] ||
+    grep -q '^SETUVAR fish_color_command:' "${home}/.config/fish/fish_variables"
 
 # Every rendered file, on two counts. A placeholder that survives is a comment
 # or a word that reads perfectly well and does nothing it stood for, and whoever

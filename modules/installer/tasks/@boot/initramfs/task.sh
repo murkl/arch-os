@@ -6,8 +6,6 @@
 # inside the installed one. Why these hooks and in this order: docs/REFERENCE.md
 # https://wiki.archlinux.org/title/Mkinitcpio#Common_hooks
 
-simulating && return 0
-
 data="$(where)"
 
 btrfs_hook=""

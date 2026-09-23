@@ -2,14 +2,12 @@
 # so that Windows finds this machine at all.
 # https://wiki.archlinux.org/title/Samba
 
-simulating && return 0
-
 data="$(where)"
 
 chroot_pacman_install samba wsdd
 
 mkdir -p "${MNT}/etc/samba"
-render "${data}/smb.conf" >"${MNT}/etc/samba/smb.conf"
+render "${data}/smb.conf" USERNAME="$ARCH_OS_USERNAME" >"${MNT}/etc/samba/smb.conf"
 
 # Samba refuses to start on a broken file, so it is checked first.
 arch-chroot "$MNT" testparm -s /etc/samba/smb.conf

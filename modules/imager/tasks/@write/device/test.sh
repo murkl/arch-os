@@ -6,7 +6,6 @@
 # lsblk rather than blkid, because lsblk reads what udev already recorded and
 # needs no more rights than listing the disks did - a test that has to ask for a
 # password is a test that hangs where nobody is typing.
-simulating && return 0
 
 label="$(blkid -o value -s LABEL "$(image)")"
 [ -n "$label" ]

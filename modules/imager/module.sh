@@ -11,29 +11,6 @@ HERE="$(dirname "$MODULE_CONF")"
 VERSION="$(sed -n 's/^version:[[:space:]]*//p' "${HERE}/oak.yaml")"
 
 # ////////////////////////////////////////////////////////////////////////////
-# SIMULATION
-# ////////////////////////////////////////////////////////////////////////////
-
-# --debug runs without touching the machine. Every task and every test opens on
-# `simulating && return 0`: a task because there is nothing it may change, a
-# test because a simulated run wrote nothing for it to read back.
-#
-# The pause holds each step on screen long enough to be read, which is what
-# makes a simulated run something to watch — and what docs/screenshots.py
-# photographs a run in the middle of.
-#
-# debugging is the bare question, for the few places that ask it without being
-# a step: an answer applied to this machine, a list a page opens on.
-
-debugging() { [ "$DEBUG" = "true" ]; }
-
-simulating() {
-    debugging || return 1
-    echo "simulated"
-    sleep 1
-}
-
-# ////////////////////////////////////////////////////////////////////////////
 # WHAT IS WRITTEN, AND FROM WHERE
 # ////////////////////////////////////////////////////////////////////////////
 
@@ -43,13 +20,6 @@ REPO="murkl/arch-os"
 # The image in the download folder, named after the version rather than read out
 # of a release: a machine with the file already here needs no release to name it.
 image() { printf '%s/arch-os-%s-x86_64.iso' "$(download_dir)" "$VERSION"; }
-
-# https even after a redirect, because -L would otherwise follow a 302 into
-# plain http, where the answer can be anybody's - and a connect timeout, so a
-# machine behind a black hole says so rather than hanging.
-fetch_url() {
-    curl -Lf --proto '=https' --proto-redir '=https' --connect-timeout 10 "$@"
-}
 
 # That release, as GitHub describes it: where the image
 # is and what it has to hash to, as two words. The release carries no checksum
@@ -80,13 +50,6 @@ image_asset() {
 # ////////////////////////////////////////////////////////////////////////////
 # THE YAML | Every function a declaration calls by name
 # ////////////////////////////////////////////////////////////////////////////
-
-# Whether this machine is running from a booted live image, which is the one
-# machine this module does not belong on. Not "is it Arch": a device is written
-# from any Linux at all.
-on_live_image() {
-    [ -d /run/archiso ] || grep -qs archisobasedir /proc/cmdline
-}
 
 # Where both downloads go, before there is an answer and as the value the
 # question opens on: the folder this session keeps downloads in, or the one

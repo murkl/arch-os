@@ -5,8 +5,6 @@
 # Its own task beside the plain hook: the two are different answers to one
 # question, and which runs is written in the yaml rather than read out of shell.
 
-simulating && return 0
-
 # snapper insists on creating /.snapshots itself, so the subvolume mounted there
 # is taken away and put back around it.
 arch-chroot "$MNT" umount /.snapshots

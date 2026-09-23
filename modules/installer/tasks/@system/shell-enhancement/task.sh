@@ -1,8 +1,6 @@
 # A terminal that is pleasant on the first login. Everything it writes is a file
 # beside this one, put in place through render.
 
-simulating && return 0
-
 home="${MNT}/home/${ARCH_OS_USERNAME}"
 data="$(where)"
 
@@ -66,6 +64,11 @@ fish)
     chroot_pacman_install fish
     mkdir -p "${MNT}/root/.config/fish" "${home}/.config/fish"
     render "${data}/config.fish" | tee "${MNT}/root/.config/fish/config.fish" "${home}/.config/fish/config.fish" >/dev/null
+    own_home
+    # The colours zsh gets from its .zshrc. fish keeps them as universal
+    # variables in the account's own file, which needs no session to write, and
+    # asks before overwriting a theme it finds there.
+    as_user "echo y | fish -c 'fish_config theme save Nord'"
     ;;
 esac
 
@@ -74,7 +77,7 @@ esac
 # Fetched rather than shipped, so it can be improved without a new release of
 # this installer. A machine that cannot reach it gets a starship preset.
 mkdir -p "${MNT}/root/.config"
-if ! curl -Lf --connect-timeout 5 --max-time 30 \
+if ! fetch_url --connect-timeout 5 --max-time 30 \
     https://raw.githubusercontent.com/murkl/starship-theme-arch-os/refs/heads/main/starship.toml \
     >"${home}/.config/starship.toml" || [ ! -s "${home}/.config/starship.toml" ]; then
     echo "the Arch OS prompt theme could not be fetched, falling back to a built-in one"
@@ -96,12 +99,6 @@ if [ "$ARCH_OS_DESKTOP" != "none" ]; then
     on_first_login <<'FIRST'
 # The terminal font, which has to match the one the prompt draws with.
 gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 11'
-FIRST
-fi
-
-if [ "$shell" = "fish" ] && [ "$ARCH_OS_DESKTOP" != "none" ]; then
-    on_first_login <<'FIRST'
-fish -c 'fish_config theme choose Nord && echo y | fish_config theme save'
 FIRST
 fi
 

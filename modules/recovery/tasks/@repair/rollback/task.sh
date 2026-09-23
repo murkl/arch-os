@@ -5,8 +5,6 @@
 # halfway leaves the system as it found it rather than with no root at all.
 # https://wiki.archlinux.org/title/Btrfs#Restoring_a_snapshot
 
-simulating && return 0
-
 snapshot="$ARCH_OS_RECOVERY_SNAPSHOT"
 
 if [ ! -d "${BTRFS_TOP}/${snapshot}" ]; then

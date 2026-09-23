@@ -1,8 +1,6 @@
 # The GNOME desktop: the packages, the login screen, the keyboard, and the
 # settings that only the first login can apply.
 
-simulating && return 0
-
 home="${MNT}/home/${ARCH_OS_USERNAME}"
 data="$(where)"
 apps="${home}/.local/share/applications"

@@ -4,8 +4,6 @@
 #
 # The layout and the subvolumes: docs/REFERENCE.md
 
-simulating && return 0
-
 # A dual boot writes its kernel into an EFI partition somebody else made, and
 # Windows makes that one 100 or 260 MB. What goes in needs more: the kernel,
 # its ram disk, and the fallback ram disk that carries every module there is -

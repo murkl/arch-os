@@ -6,15 +6,15 @@
 # the machine comes up without a single module. Everything is taken from the
 # system's own package cache rather than off a network it may not have.
 
-simulating && return 0
-
 # The newest cached package for a kernel, or nothing. A module directory is
 # named after the package version with the release joined on, so what stands
-# before the first hyphen is what the file name carries. The signature beside
-# each package matches the same pattern and sorts after it, so it is excluded.
+# before the first hyphen is what the file name carries - followed by the dot
+# or the hyphen that ends it, or modules of 6.16.1 would take the image of
+# 6.16.12 from the same cache. The signature beside each package matches the
+# same pattern and sorts after it, so it is excluded.
 kernel_cached() {
     { find "${MNT}/var/cache/pacman/pkg" -maxdepth 1 \
-        -name "${1}-${2%%-*}*.pkg.tar.*" ! -name '*.sig' 2>/dev/null || true; } |
+        -name "${1}-${2%%-*}[.-]*.pkg.tar.*" ! -name '*.sig' 2>/dev/null || true; } |
         sort -V | tail -n1
 }
 

@@ -2,8 +2,6 @@
 # disk: it ranks the mirrors everything after this downloads from, undoes what a
 # previous attempt left mounted and brings the keyring up to date.
 
-simulating && return 0
-
 # What this machine is, in one line, before anything else is written down. Every
 # question asked of the log afterwards - was there memory, was there room, is
 # this a guest - is answered here instead of guessed at.

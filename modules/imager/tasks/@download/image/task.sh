@@ -5,8 +5,6 @@
 # that already holds it is left alone here - what the file is held to is the
 # next step's business, not where it came from.
 
-simulating && return 0
-
 dir="$(download_dir)"
 mkdir -p "$dir" || {
     echo "${dir} cannot be created" >&2

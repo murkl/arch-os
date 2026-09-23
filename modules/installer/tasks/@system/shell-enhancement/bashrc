@@ -27,14 +27,28 @@ shopt -s expand_aliases
 bind "set completion-ignore-case on"
 
 # Colourful man pages.
-command -v bat &>/dev/null && export MANPAGER="sh -c \"col -bx | bat -l man -p\""
-command -v bat &>/dev/null && export MANROFFOPT="-c"
+if command -v bat &>/dev/null; then
+    export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+    export MANROFFOPT="-c"
+fi
 
-export HISTSIZE=1000
+# The same size and the same ignore list as zsh keeps.
+export HISTSIZE=100000
 export HISTFILESIZE=${HISTSIZE}
-export HISTCONTROL=ignoredups:erasedups
+export HISTCONTROL=ignoreboth:erasedups
 export HISTTIMEFORMAT="%F %T "
-export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:q:c"
+export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:fetch:q:c"
+
+# The stock colours without their backgrounds, which paint every world-writable
+# directory green. Terminal colour numbers, so the terminal's palette decides.
+export LS_COLORS="di=1;34:ln=36:so=35:pi=33:ex=32:bd=33;1:cd=33;1:su=31:sg=31:tw=34:ow=34"
+
+# Ctrl+R searches the history, Ctrl+T picks a file, Alt+C changes into a folder.
+[ -f /usr/share/fzf/key-bindings.bash ] && source /usr/share/fzf/key-bindings.bash
+[ -f /usr/share/fzf/completion.bash ] && source /usr/share/fzf/completion.bash
+
+# Tells GNOME Console the current folder, so a new tab opens in it.
+[ -f /etc/profile.d/vte.sh ] && source /etc/profile.d/vte.sh
 
 # {{SHELL_HANDOVER}}
 # The prompt draws in a nerd font, and the one screen that cannot show one is

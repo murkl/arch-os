@@ -1,7 +1,5 @@
 # Timers that keep the system tidy without anybody remembering to.
 
-simulating && return 0
-
 chroot_pacman_install pacman-contrib reflector pkgfile smartmontools
 
 # reflector.service names this exact path on its command line and in its

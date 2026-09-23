@@ -4,8 +4,6 @@
 # All of it unconditional. What only some machines get is a task of its own,
 # with the answer that decides it written into its yaml.
 
-simulating && return 0
-
 # Clock. ln makes the link whether or not it points at anything, so a
 # dangling /etc/localtime would be a system that quietly runs in UTC.
 if [ ! -f "${MNT}/usr/share/zoneinfo/${ARCH_OS_TIMEZONE}" ]; then

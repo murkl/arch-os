@@ -5,7 +5,6 @@
 # path, which fills up, rides along in every snapshot and comes back with every
 # rollback - and nothing after this would notice, because a directory answers
 # every question a mount point does.
-simulating && return 0
 
 mountpoint -q "$MNT"
 mountpoint -q "${MNT}/boot"

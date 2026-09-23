@@ -5,8 +5,6 @@
 # grub-mkconfig sources /etc/default/grub and then every drop-in under
 # /etc/default/grub.d, so the file the grub package owns stays as it shipped.
 
-simulating && return 0
-
 data="$(where)"
 
 arch-chroot "$MNT" grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB

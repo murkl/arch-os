@@ -1,18 +1,11 @@
 # The graphics driver, and whatever else the card needs to start with the
-# desktop rather than after it. Every branch rebuilds the ram disk directly
-# rather than through pacman, which is why the Secure Boot signing comes after
-# this one.
-
-simulating && return 0
+# desktop rather than after it. The open drivers need nothing in the ram disk
+# beyond what the kms hook already puts there; NVIDIA's modules are not in the
+# kernel tree that hook reads, so that branch rebuilds the ram disk itself -
+# which is why the Secure Boot signing comes after this one.
+# https://wiki.archlinux.org/title/Kernel_mode_setting#Early_KMS_start
 
 data="$(where)"
-
-# The modules this card needs in the ram disk, as a drop-in read after the hooks
-# the initramfs task set.
-early_modules() {
-    mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
-    render "${data}/30-graphics.conf" MODULES="$*" >"${MNT}/etc/mkinitcpio.conf.d/30-graphics.conf"
-}
 
 case "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" in
 
@@ -26,8 +19,6 @@ intel_i915) # https://wiki.archlinux.org/title/Intel_graphics#Installation
     packages=(vulkan-intel vkd3d intel-media-driver vulkan-tools)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-vulkan-intel lib32-vkd3d)
     chroot_pacman_install "${packages[@]}"
-    early_modules i915
-    arch-chroot "$MNT" mkinitcpio -P
     ;;
 
 nvidia) # https://wiki.archlinux.org/title/NVIDIA#Installation
@@ -43,17 +34,16 @@ nvidia) # https://wiki.archlinux.org/title/NVIDIA#Installation
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-nvidia-utils lib32-opencl-nvidia lib32-vkd3d)
     chroot_pacman_install "${packages[@]}"
 
-    # Kernel mode setting, without which Wayland does not start on this driver.
-    # And the video memory the card holds over a suspend, which this driver
-    # frees rather than saves unless told otherwise - the three units are what
-    # do the saving, and nvidia-utils ships them switched off.
-    # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
-    # https://wiki.archlinux.org/title/NVIDIA/Tips_and_tricks#Preserve_video_memory_after_suspend
-    mkdir -p "${MNT}/etc/modprobe.d"
-    render "${data}/nvidia.conf" >"${MNT}/etc/modprobe.d/nvidia.conf"
-    arch-chroot "$MNT" systemctl enable \
-        nvidia-suspend.service nvidia-hibernate.service nvidia-resume.service
-    early_modules nvidia nvidia_modeset nvidia_uvm nvidia_drm
+    # Kernel mode setting and keeping video memory over a suspend need nothing
+    # from here any more. nvidia-utils sets modeset and fbdev itself, and turns
+    # on the kernel's suspend notifiers in its own modprobe.d file - which is
+    # why its upgrade switches the three nvidia-suspend units off again rather
+    # than on. What is left is early loading, so the display manager never
+    # starts on the firmware's framebuffer before the card has a driver.
+    # https://wiki.archlinux.org/title/NVIDIA#Early_loading
+    mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
+    render "${data}/30-graphics.conf" MODULES="nvidia nvidia_modeset nvidia_uvm nvidia_drm" \
+        >"${MNT}/etc/mkinitcpio.conf.d/30-graphics.conf"
 
     # The modules live in the ram disk, so it is rebuilt whenever the driver or
     # the kernel changes - once per batch, not once per package.
@@ -74,8 +64,6 @@ amd) # https://wiki.archlinux.org/title/AMDGPU#Installation
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] &&
         packages+=(lib32-mesa lib32-vulkan-radeon lib32-vkd3d lib32-vulkan-mesa-layers lib32-opencl-mesa)
     chroot_pacman_install "${packages[@]}"
-    early_modules amdgpu
-    arch-chroot "$MNT" mkinitcpio -P
     ;;
 
 ati) # https://wiki.archlinux.org/title/ATI#Installation
@@ -83,8 +71,6 @@ ati) # https://wiki.archlinux.org/title/ATI#Installation
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] &&
         packages+=(lib32-mesa lib32-vkd3d lib32-vulkan-mesa-layers lib32-opencl-mesa)
     chroot_pacman_install "${packages[@]}"
-    early_modules radeon
-    arch-chroot "$MNT" mkinitcpio -P
     ;;
 
 *)

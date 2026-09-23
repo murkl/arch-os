@@ -19,9 +19,10 @@ answer() {
     mv -f "$tmp" "$MODULE_CONF"
 }
 
-# Simulated, this still answers with an address: the page at the end of a run is
-# the one most worth looking at while this module is being worked on.
-simulating && {
+# Simulated, this still answers with an address - it is why task.yaml says it
+# simulates itself: the page at the end of a run is the one most worth looking
+# at while this module is being worked on.
+debugging && {
     answer ARCH_OS_CONFIG_URL "${service}/demo"
     return 0
 }

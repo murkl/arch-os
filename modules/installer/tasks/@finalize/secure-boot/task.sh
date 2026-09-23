@@ -5,8 +5,6 @@
 # Why it runs last and why the keys are only enrolled in setup mode:
 # docs/REFERENCE.md and https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot
 
-simulating && return 0
-
 if ! arch-chroot "$MNT" sbctl create-keys; then
     echo "Secure Boot: creating the keys failed, skipping"
     return 0

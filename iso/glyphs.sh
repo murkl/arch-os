@@ -2,7 +2,7 @@
 # Every character that reaches the virtual console, against the font this image
 # loads before the interface draws on it.
 #
-#   glyphs.sh <file>...
+#   glyphs.sh <oak> <file>...
 #
 # A Linux console has one font and that font has a fixed table of glyphs, so a
 # character outside it is a box on the screen - in whichever language it happens
@@ -10,28 +10,29 @@
 # the launcher that loads it, so the two cannot come to name different ones.
 #
 # Two things reach that console and only one of them is in the files handed in.
-# The other is Oak's own interface, which is compiled into the binary and has no
-# file here to read it out of, so the marks it draws are spelled out below -
-# identically to the set its own suite holds itself to, with the reason stated
-# there:
+# The other is Oak's own interface, which is compiled into the binary, so the
+# binary is asked what it draws there rather than a copy of that being kept here.
 #
 #   https://github.com/murkl/oak/blob/main/docs/REFERENCE.md#translations
 set -eu
-
-# What the interface draws on a console: the frame, the rules and the scrollbar,
-# the cursor and the marks a row carries, the shades a letter fades in through,
-# and the three cells a picture is built from - the mark over a finished run and
-# the code an address is handed over as. ASCII is left out; every font has it.
-INTERFACE_GLYPHS='─│┌┐└┘░▒█▀▄·•»↑↓'
 
 # Code points are counted, not bytes: under the C locale bash would hand back
 # the first byte of a multi-byte character instead.
 export LC_ALL=C.UTF-8
 
-[ "$#" -ge 1 ] || {
-    echo "usage: $0 <file>..." >&2
+[ "$#" -ge 2 ] || {
+    echo "usage: $0 <oak> <file>..." >&2
     exit 1
 }
+
+# Read before anything else is, so a runtime that cannot answer stops this here
+# rather than letting every file pass against an empty list.
+INTERFACE_GLYPHS="$("$1" --glyphs)"
+[ -n "$INTERFACE_GLYPHS" ] || {
+    echo "Error: $1 --glyphs named nothing" >&2
+    exit 1
+}
+shift
 
 # Not a cd, so the paths handed in stay the ones the caller named and the
 # failures below point at files somebody can open.

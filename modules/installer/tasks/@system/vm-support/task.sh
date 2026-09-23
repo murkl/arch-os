@@ -3,8 +3,6 @@
 # is no guest to support, so it installs what it takes to run one instead.
 # https://wiki.archlinux.org/title/Libvirt
 
-simulating && return 0
-
 case "$(systemd-detect-virt || true)" in
 
 kvm | qemu)
