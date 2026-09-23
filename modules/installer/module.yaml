@@ -62,12 +62,15 @@ presets:
           ARCH_OS_DESKTOP_GRAPHICS_DRIVER: mesa
           ARCH_OS_DESKTOP_EXTRAS_ENABLED: true
           ARCH_OS_DESKTOP_SLIM_ENABLED: true
+          ARCH_OS_FLATPAK_ENABLED: true
           ARCH_OS_SAMBA_SHARE_ENABLED: true
           ARCH_OS_CORE_TWEAKS_ENABLED: true
           ARCH_OS_BOOTSPLASH_ENABLED: true
           ARCH_OS_MULTILIB_ENABLED: true
           ARCH_OS_AUR_HELPER: paru
           ARCH_OS_CONTAINER_ENGINE: none
+          ARCH_OS_FIREWALL_ENABLED: true
+          ARCH_OS_SSH_SERVER_ENABLED: false
           ARCH_OS_HOUSEKEEPING_ENABLED: true
           ARCH_OS_SHELL_ENHANCEMENT_ENABLED: true
           ARCH_OS_SHELL_ENHANCEMENT_SHELL: zsh
@@ -89,12 +92,15 @@ presets:
           ARCH_OS_DESKTOP_GRAPHICS_DRIVER: none
           ARCH_OS_DESKTOP_EXTRAS_ENABLED: false
           ARCH_OS_DESKTOP_SLIM_ENABLED: false
+          ARCH_OS_FLATPAK_ENABLED: false
           ARCH_OS_SAMBA_SHARE_ENABLED: false
           ARCH_OS_CORE_TWEAKS_ENABLED: false
           ARCH_OS_BOOTSPLASH_ENABLED: false
           ARCH_OS_MULTILIB_ENABLED: false
           ARCH_OS_AUR_HELPER: none
           ARCH_OS_CONTAINER_ENGINE: none
+          ARCH_OS_FIREWALL_ENABLED: false
+          ARCH_OS_SSH_SERVER_ENABLED: false
           ARCH_OS_HOUSEKEEPING_ENABLED: false
           ARCH_OS_SHELL_ENHANCEMENT_ENABLED: false
           ARCH_OS_SHELL_ENHANCEMENT_SHELL: bash
@@ -444,6 +450,16 @@ variables:
     required: true
     conditions: ARCH_OS_DESKTOP != none
 
+  - name: ARCH_OS_FLATPAK_ENABLED
+    title: Flatpak
+    description: |
+      Applications from Flathub, installed and updated through Software
+      alongside everything else.
+    group: Desktop
+    type: bool
+    default: true
+    conditions: ARCH_OS_DESKTOP != none
+
   - name: ARCH_OS_SAMBA_SHARE_ENABLED
     title: File sharing
     description: |
@@ -505,6 +521,25 @@ variables:
     values: [docker, podman, none]
     default: none
     required: true
+
+  - name: ARCH_OS_FIREWALL_ENABLED
+    title: Firewall
+    description: |
+      Blocks incoming connections except the ones something on this machine
+      is set up to answer: SSH, file sharing and finding printers. On a
+      desktop the rules can be changed in the Firewall application.
+    group: System
+    type: bool
+    default: true
+
+  - name: ARCH_OS_SSH_SERVER_ENABLED
+    title: SSH server
+    description: |
+      Lets you log in to this machine from another one over the network, with
+      your account and password. Root cannot log in this way.
+    group: System
+    type: bool
+    default: false
 
   - name: ARCH_OS_HOUSEKEEPING_ENABLED
     title: Housekeeping

@@ -31,9 +31,10 @@
 - Btrfs snapshots before every package change (Snapper), restored from the desktop (Btrfs Assistant)
 - GNOME on Wayland, or a bare text console; graphics driver for Mesa, Intel, NVIDIA, AMD or ATI
 - Desktop extras: codecs, fonts, printing, Samba and `.local` discovery; or a slim install with GNOME core apps only
+- Flatpak with Flathub, managed from GNOME Software
 - Zram swap, fstrim, microcode, NetworkManager, mirrors ranked by country
 - Tuned rather than left at the defaults - see the **[➜ Reference](REFERENCE.md)**
-- AUR helper, 32-bit support, container engine, automatic housekeeping, the text editor of your choice
+- AUR helper, 32-bit support, container engine, firewall, SSH server, automatic housekeeping, the text editor of your choice
 - [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager, Shell Enhancement (bash, zsh or fish)
 - Recovery on the same image, works without a network
 - Wireless network joined from the Installer itself, before the first download

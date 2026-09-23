@@ -418,6 +418,16 @@ msgstr "Automatisch anmelden"
 msgid "Skips the login screen. auto follows disk encryption: a disk already unlocked at boot gains nothing from a second password, while without encryption the login screen is the only protection left."
 msgstr "Überspringt die Anmeldemaske. auto folgt der Verschlüsselung: ein beim Start schon entsperrter Datenträger gewinnt durch ein zweites Passwort nichts, ohne Verschlüsselung ist die Anmeldemaske der einzige Schutz."
 
+#. ARCH_OS_FLATPAK_ENABLED: the question
+#: module.yaml
+msgid "Flatpak"
+msgstr "Flatpak"
+
+#. ARCH_OS_FLATPAK_ENABLED: what it means
+#: module.yaml
+msgid "Applications from Flathub, installed and updated through Software alongside everything else."
+msgstr "Anwendungen von Flathub, installiert und aktualisiert über Software wie alles andere."
+
 #. ARCH_OS_SAMBA_SHARE_ENABLED: the question
 #: module.yaml
 msgid "File sharing"
@@ -482,6 +492,26 @@ msgstr "Container-Engine"
 #: module.yaml
 msgid "docker needs a daemon running as root, which is what most software and documentation assumes. podman has neither and still answers to the docker command. Both bring a compose command."
 msgstr "Docker braucht einen Daemon, der als root läuft — wovon die meiste Software und Dokumentation ausgeht. Podman hat beides nicht und hört trotzdem auf den Befehl docker. Beide bringen einen compose-Befehl mit."
+
+#. ARCH_OS_FIREWALL_ENABLED: the question
+#: module.yaml
+msgid "Firewall"
+msgstr "Firewall"
+
+#. ARCH_OS_FIREWALL_ENABLED: what it means
+#: module.yaml
+msgid "Blocks incoming connections except the ones something on this machine is set up to answer: SSH, file sharing and finding printers. On a desktop the rules can be changed in the Firewall application."
+msgstr "Blockiert eingehende Verbindungen außer denen, die etwas auf diesem Rechner beantworten soll: SSH, Dateifreigabe und die Suche nach Druckern. Auf einem Desktop lassen sich die Regeln in der Anwendung Firewall ändern."
+
+#. ARCH_OS_SSH_SERVER_ENABLED: the question
+#: module.yaml
+msgid "SSH server"
+msgstr "SSH-Server"
+
+#. ARCH_OS_SSH_SERVER_ENABLED: what it means
+#: module.yaml
+msgid "Lets you log in to this machine from another one over the network, with your account and password. Root cannot log in this way."
+msgstr "Erlaubt die Anmeldung an diesem Rechner von einem anderen über das Netzwerk, mit deinem Konto und Passwort. Root kann sich so nicht anmelden."
 
 #. ARCH_OS_HOUSEKEEPING_ENABLED: the question
 #: module.yaml
@@ -654,6 +684,11 @@ msgid "Install the boot splash"
 msgstr "Startbildschirm installieren"
 
 #. the step, as the run lists it
+#: tasks/@system/firewall/task.yaml
+msgid "Install the firewall"
+msgstr "Firewall installieren"
+
+#. the step, as the run lists it
 #: tasks/@system/housekeeping/task.yaml
 msgid "Set up housekeeping"
 msgstr "Systempflege einrichten"
@@ -669,6 +704,11 @@ msgid "Enhance the shell"
 msgstr "Shell optimieren"
 
 #. the step, as the run lists it
+#: tasks/@system/ssh-server/task.yaml
+msgid "Start the SSH server"
+msgstr "SSH-Server einschalten"
+
+#. the step, as the run lists it
 #: tasks/@system/vm-support/task.yaml
 msgid "Add virtual machine support"
 msgstr "Unterstützung für virtuelle Maschinen ergänzen"
@@ -677,6 +717,11 @@ msgstr "Unterstützung für virtuelle Maschinen ergänzen"
 #: tasks/@desktop/desktop-gnome/task.yaml
 msgid "Install the GNOME desktop"
 msgstr "GNOME-Desktop installieren"
+
+#. the step, as the run lists it
+#: tasks/@desktop/flatpak/task.yaml
+msgid "Set up Flatpak"
+msgstr "Flatpak einrichten"
 
 #. the step, as the run lists it
 #: tasks/@desktop/graphics-driver/task.yaml

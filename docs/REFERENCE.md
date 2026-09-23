@@ -126,6 +126,21 @@ Enough for a usable install, little enough that nothing needs looking after.
 
 **Note:** _The public share is readable by any guest and writable only by the account the machine was installed with. A guest who may write is a folder anybody on the same network - a café's wifi included - can fill._
 
+### The Firewall
+
+`firewalld` rather than `ufw`: NetworkManager hands it a zone per connection, and libvirt, docker and podman each open their own ports in it. On a desktop `firewall-config` comes with it, the window the rules are kept in. **[➜ firewalld](https://wiki.archlinux.org/title/Firewalld)**
+
+The default zone `public` lets in `ssh` and `dhcpv6-client`. Everything else is opened by the task that makes something listen:
+
+| Service | Opened by | Why |
+| --- | --- | --- |
+| `mdns` | the desktop | Avahi's answers arrive as multicast, which no connection tracking matches to the question. Printers and shares stay invisible without it |
+| `samba`, `ws-discovery-host` | file sharing | The share itself, and `wsdd`, without which Windows does not list the machine |
+
+**Note:** _The SSH server changes nothing in `sshd_config`. Arch already refuses root a password login, and the account made here keeps one because it has no key yet._
+
+**Note:** _Flatpak adds no remote: the package ships Flathub in `/usr/share/flatpak/remotes.d/`._
+
 ### Building from the AUR
 
 | Limit | Value | Why |

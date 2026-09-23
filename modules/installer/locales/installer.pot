@@ -418,6 +418,16 @@ msgstr ""
 msgid "Skips the login screen. auto follows disk encryption: a disk already unlocked at boot gains nothing from a second password, while without encryption the login screen is the only protection left."
 msgstr ""
 
+#. ARCH_OS_FLATPAK_ENABLED: the question
+#: module.yaml
+msgid "Flatpak"
+msgstr ""
+
+#. ARCH_OS_FLATPAK_ENABLED: what it means
+#: module.yaml
+msgid "Applications from Flathub, installed and updated through Software alongside everything else."
+msgstr ""
+
 #. ARCH_OS_SAMBA_SHARE_ENABLED: the question
 #: module.yaml
 msgid "File sharing"
@@ -481,6 +491,26 @@ msgstr ""
 #. ARCH_OS_CONTAINER_ENGINE: what it means
 #: module.yaml
 msgid "docker needs a daemon running as root, which is what most software and documentation assumes. podman has neither and still answers to the docker command. Both bring a compose command."
+msgstr ""
+
+#. ARCH_OS_FIREWALL_ENABLED: the question
+#: module.yaml
+msgid "Firewall"
+msgstr ""
+
+#. ARCH_OS_FIREWALL_ENABLED: what it means
+#: module.yaml
+msgid "Blocks incoming connections except the ones something on this machine is set up to answer: SSH, file sharing and finding printers. On a desktop the rules can be changed in the Firewall application."
+msgstr ""
+
+#. ARCH_OS_SSH_SERVER_ENABLED: the question
+#: module.yaml
+msgid "SSH server"
+msgstr ""
+
+#. ARCH_OS_SSH_SERVER_ENABLED: what it means
+#: module.yaml
+msgid "Lets you log in to this machine from another one over the network, with your account and password. Root cannot log in this way."
 msgstr ""
 
 #. ARCH_OS_HOUSEKEEPING_ENABLED: the question
@@ -654,6 +684,11 @@ msgid "Install the boot splash"
 msgstr ""
 
 #. the step, as the run lists it
+#: tasks/@system/firewall/task.yaml
+msgid "Install the firewall"
+msgstr ""
+
+#. the step, as the run lists it
 #: tasks/@system/housekeeping/task.yaml
 msgid "Set up housekeeping"
 msgstr ""
@@ -669,6 +704,11 @@ msgid "Enhance the shell"
 msgstr ""
 
 #. the step, as the run lists it
+#: tasks/@system/ssh-server/task.yaml
+msgid "Start the SSH server"
+msgstr ""
+
+#. the step, as the run lists it
 #: tasks/@system/vm-support/task.yaml
 msgid "Add virtual machine support"
 msgstr ""
@@ -676,6 +716,11 @@ msgstr ""
 #. the step, as the run lists it
 #: tasks/@desktop/desktop-gnome/task.yaml
 msgid "Install the GNOME desktop"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@desktop/flatpak/task.yaml
+msgid "Set up Flatpak"
 msgstr ""
 
 #. the step, as the run lists it

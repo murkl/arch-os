@@ -18,10 +18,6 @@ apps="${home}/.local/share/applications"
 # https://wiki.archlinux.org/title/PipeWire#Installation
 packages=(git bluez bluez-utils avahi nss-mdns pipewire pipewire-pulse wireplumber)
 
-# gnome-software only recommends it, so the group never pulls it in - and the
-# theme override further down needs the binary regardless of extras.
-packages+=(flatpak)
-
 # The group filtered rather than installed and then trimmed: what the slim
 # desktop leaves out is never downloaded.
 mapfile -t desktop < <(arch-chroot "$MNT" pacman -Sgq gnome)
@@ -190,6 +186,13 @@ arch-chroot "$MNT" systemctl enable gdm.service
 arch-chroot "$MNT" systemctl enable bluetooth.service
 arch-chroot "$MNT" systemctl enable avahi-daemon
 
+# The answers avahi asks for arrive as multicast on its own port, which the
+# firewall cannot match to the question that went out. Without this the printers
+# and shares it looks for never show up.
+if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
+    arch-chroot "$MNT" firewall-offline-cmd --add-service=mdns
+fi
+
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     arch-chroot "$MNT" systemctl enable tuned-ppd   # power profiles
     arch-chroot "$MNT" systemctl enable cups.socket # printing
@@ -220,11 +223,6 @@ done <"${data}/hidden-apps"
 if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_ASSISTANT_ENABLED" = "true" ]; then
     render "${data}/btrfs-assistant.desktop" >"${apps}/btrfs-assistant.desktop"
 fi
-
-# So flatpaks read the desktop theme rather than standing out as light windows
-# on a dark desktop.
-arch-chroot "$MNT" flatpak override --filesystem=xdg-config/gtk-3.0
-arch-chroot "$MNT" flatpak override --filesystem=xdg-config/gtk-4.0
 
 # ////////////////////////////////////////////////////////////////////////////
 # WHAT ONLY THE FIRST LOGIN CAN DO
