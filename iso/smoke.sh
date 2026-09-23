@@ -34,9 +34,9 @@ OVMF_VARS="${OVMF_VARS:-/usr/share/edk2/x64/OVMF_VARS.4m.fd}"
 # anything of its own modules is. Several strings rather than one, because OCR
 # over a console font loses a letter now and again - and it loses them in the
 # same places every time, so what is looked for is the part it reads cleanly.
-# "Arch OS" is not on the list: tesseract reads the capital O beside the S as a
-# zero.
-EXPECT='Welcome|English|Deutsch'
+# Neither "Arch OS" nor "Welcome" is on the list: in LatGrkCyr-8x16 tesseract
+# reads the capital O beside the S as a zero and the capital W as a small one.
+EXPECT='English|Deutsch'
 
 # A machine that got this far and no further says so in plain words, and there is
 # no reason to sit out the timeout for it.

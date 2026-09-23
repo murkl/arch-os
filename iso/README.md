@@ -65,7 +65,7 @@ Boots under QEMU and OVMF, waits for the first page, shuts down. Checks the boot
 
 The font this image loads has one table of glyphs, so a character outside it is a box on the screen - in whichever language it happens to be in. `glyphs.sh` reads the font name out of the launcher that loads it and checks two things against its table: the files it is handed, which `make check` points at every module, and the marks the interface draws itself - the rules, the cursor, and the three cells a QR code and the mark over a finished run are built from.
 
-That last set is why the font is `eurlatgr` rather than something prettier: it is the one in `kbd` whose table holds all of it. Terminus has the full block and neither half of it.
+That last set is why the font is `LatGrkCyr-8x16` rather than something prettier: of the fonts in `kbd` whose table holds all of it, it is the one that also holds Greek and Cyrillic. Terminus has the full block and neither half of it; `eurlatgr` has no Cyrillic.
 
 ```
 make glyphs-check

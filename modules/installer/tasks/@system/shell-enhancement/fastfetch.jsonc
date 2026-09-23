@@ -32,7 +32,7 @@
     "break",
     {
       "type": "custom",
-      "format": "{#red}●    {#green}●    {#yellow}●    {#blue}●    {#magenta}●    {#cyan}●    {#white}●    {#default}●"
+      "format": "{#red}•    {#green}•    {#yellow}•    {#blue}•    {#magenta}•    {#cyan}•    {#white}•    {#default}•"
     }
   ]
 }

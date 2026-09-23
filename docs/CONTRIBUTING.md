@@ -156,7 +156,7 @@ The frame's own words (buttons, key hints) belong to **[Oak](https://github.com/
 cp modules/installer/locales/installer.pot modules/installer/locales/fr.po
 ```
 
-Fill in the `msgstr` lines, open a pull request. Nothing else to declare.
+Fill in the `msgstr` lines, open a pull request. Nothing else to declare: the language shows up in the picker as soon as one catalog of it exists.
 
 - `msgid "English"` translates to your language's own name: `Deutsch`, `Français`
 - `msgstr ""` means not translated yet, not "translate to nothing" - the English shows instead
@@ -164,18 +164,20 @@ Fill in the `msgstr` lines, open a pull request. Nothing else to declare.
 
 Keep as-is: `%s`/`%d` (order and kind), `{{ARCH_OS_DISK}}` (braces and name), `⏎ ↑↓ esc` marks in hints, and blank lines between paragraphs.
 
+**Note:** _A language with catalogs here and none in [Oak](https://github.com/murkl/oak/tree/main/locales) is offered all the same. Its pages are translated and the frame around them - buttons, key hints, the settings - stays English until Oak has a catalog too._
+
 **Note:** _`make check` runs `msgfmt --check-format` - a dropped `%s` fails the build, not the installation._
 
 ### What the Console can draw
 
-Before any desktop exists there is one console font, and it holds one table of glyphs: in practice **ASCII and Latin-1** (`äöüß éèê ñ ç å`).
+Before any desktop exists there is one console font, and it holds one table of at most 512 glyphs: **Latin with its accents, Greek and Cyrillic**.
 
-- Supported: German, French, Spanish, Italian, Portuguese, Dutch, the Nordics
-- Not: Polish, Czech, Turkish, Greek, Cyrillic, or any script of its own
+- Supported: every language written in those - German, French, Polish, Czech, Turkish, Romanian, the Baltics, Greek, Russian, Ukrainian, Bulgarian, Serbian and the like
+- Not: Arabic, Hebrew, Chinese, Japanese, Korean, Vietnamese or any Indic script. The console has no glyphs for them, and for the first two it could not write right to left anyway
 
 **Note:** _`make check` reads every module against that table rather than against a list written down anywhere, so a character that would be a box says so at a desk. The font is the one **[iso/src/usr/local/bin/arch-os](../iso/src/usr/local/bin/arch-os)** loads._
 
-**Note:** _Supporting a script the font has no glyphs for needs another console font shipped on the image, not a catalog change. Open an issue._
+**Note:** _A script outside that table cannot be drawn on a Linux virtual console at all, so no font shipped on the image would help. Open an issue first._
 
 ## Pictures in the Docs
 
