@@ -366,6 +366,8 @@ lint:
 		|| { echo "a shell builtin cannot be run through arch-chroot - see has_command" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*(script|test|command|prefill|apply|answer):[[:space:]]*.*[|&;<>`$$]' $(MODULE_YAML) \
 		|| { echo "a task's or hook's shell is linted by nothing inside a yaml and gives a failure no line to point at - put it in the .sh file beside it and name that file here" >&2; exit 1; }
+	@! grep -nE '^[[:space:]]*\}[[:space:]]*>>?[[:space:]]*"\$$\{MNT\}' $(MODULE_SCRIPTS) \
+		|| { echo "a file written into the new system is a template beside its task, put in place with render - see module.sh" >&2; exit 1; }
 
 fmt:
 	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)

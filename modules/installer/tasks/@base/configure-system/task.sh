@@ -24,7 +24,7 @@ arch-chroot "$MNT" hwclock --systohc
 # ----------------------------------------------------------------------------
 
 # Language and keyboard.
-echo "LANG=${ARCH_OS_LOCALE_LANG}.UTF-8" >"${MNT}/etc/locale.conf"
+render "$(where)/locale.conf" LOCALE="$ARCH_OS_LOCALE_LANG" >"${MNT}/etc/locale.conf"
 
 # Every line of /etc/locale.gen belonging to the chosen language, plus English
 # as a fallback. Matched by its beginning alone, because the file pads entries
@@ -51,13 +51,10 @@ write_vconsole
 
 # ----------------------------------------------------------------------------
 
-# Name.
+# Name. /etc/hosts is left as the filesystem package ships it: localhost is in
+# there already, and nss-myhostname answers for the name set here.
+# https://wiki.archlinux.org/title/Network_configuration#Local_hostname_resolution
 echo "$ARCH_OS_HOSTNAME" >"${MNT}/etc/hostname"
-{
-    echo '# <ip>     <hostname.domain.org>  <hostname>'
-    echo '127.0.0.1  localhost.localdomain  localhost'
-    echo '::1        localhost.localdomain  localhost'
-} >"${MNT}/etc/hosts"
 
 # ----------------------------------------------------------------------------
 
@@ -66,29 +63,18 @@ echo "$ARCH_OS_HOSTNAME" >"${MNT}/etc/hostname"
 # they read $EDITOR, and without one they fall back on vi, which `base` does not
 # ship. pam_env reads this one file and no directory beside it, so it is an edit.
 # https://wiki.archlinux.org/title/Environment_variables
-{
-    echo '# Written by the Arch OS Installer.'
-    echo 'EDITOR=nano'
-    echo 'VISUAL=nano'
-} >>"${MNT}/etc/environment"
+render "$(where)/environment" >>"${MNT}/etc/environment"
 
 # ----------------------------------------------------------------------------
 
 # Compressed swap in memory: faster than a swap partition, and no SSD wear.
-# https://wiki.archlinux.org/title/Zram
-{
-    echo '[zram0]'
-    echo 'zram-size = min(ram / 2, 8192)'
-    echo 'compression-algorithm = zstd'
-} >"${MNT}/etc/systemd/zram-generator.conf"
+# As a drop-in, which leaves /etc/systemd/zram-generator.conf to whoever owns
+# the machine. https://wiki.archlinux.org/title/Zram
+mkdir -p "${MNT}/etc/systemd/zram-generator.conf.d"
+render "$(where)/zram-generator.conf" >"${MNT}/etc/systemd/zram-generator.conf.d/10-arch-os.conf"
 
 # https://wiki.archlinux.org/title/Zram#Optimizing_swap_on_zram
-{
-    echo 'vm.swappiness = 180'
-    echo 'vm.watermark_boost_factor = 0'
-    echo 'vm.watermark_scale_factor = 125'
-    echo 'vm.page-cluster = 0'
-} >"${MNT}/etc/sysctl.d/99-vm-zram-parameters.conf"
+render "$(where)/99-vm-zram-parameters.conf" >"${MNT}/etc/sysctl.d/99-vm-zram-parameters.conf"
 
 # ----------------------------------------------------------------------------
 

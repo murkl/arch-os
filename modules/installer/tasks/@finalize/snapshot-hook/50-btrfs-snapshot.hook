@@ -1,0 +1,11 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Package
+Target = *
+
+[Action]
+Description = Creating a snapshot before this transaction
+When = PreTransaction
+Exec = /bin/sh -c '/usr/bin/btrfs subvolume snapshot -r / /.snapshots/"$(date "+%Y-%m-%d_%H-%M-%S")"'

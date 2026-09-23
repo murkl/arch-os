@@ -4,18 +4,14 @@ simulating && return 0
 
 chroot_pacman_install pacman-contrib reflector pkgfile smartmontools
 
-# reflector.service names this exact path on its command line, so a drop-in
-# could only override it by restating the whole command - which would then be
-# ours to keep in step with the unit.
-{
-    echo "# Written by the Arch OS Installer, read by reflector.service."
-    echo "--save /etc/pacman.d/mirrorlist"
-    [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}"
-    echo "--protocol https"
-    echo "--age 12"
-    echo "--latest 10"
-    echo "--sort rate"
-} >"${MNT}/etc/xdg/reflector/reflector.conf"
+# reflector.service names this exact path on its command line and in its
+# sandbox, so a drop-in could only move it by restating both - which would then
+# be ours to keep in step with the unit, and leave the file the Wiki points at
+# read by nothing. The country is a line of its own or none at all.
+render "$(where)/reflector.conf" >"${MNT}/etc/xdg/reflector/reflector.conf"
+if [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ]; then
+    echo "--country ${ARCH_OS_REFLECTOR_COUNTRY}" >>"${MNT}/etc/xdg/reflector/reflector.conf"
+fi
 
 arch-chroot "$MNT" systemctl enable reflector.timer      # rank mirrors weekly
 arch-chroot "$MNT" systemctl enable paccache.timer       # trim the package cache

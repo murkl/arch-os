@@ -7,7 +7,7 @@
 simulating && return 0
 
 [ -f "${MNT}/etc/sudoers.d/20-pwfeedback" ]
-grep -q '^ParallelDownloads' "${MNT}/etc/pacman.conf"
+arch-chroot "$MNT" pacman-conf Color | grep -qx Color
 
 sysctl_keys_exist "${MNT}/etc/sysctl.d/99-arch-os-memory.conf"
 sysctl_keys_exist "${MNT}/etc/sysctl.d/99-arch-os-mmap.conf"

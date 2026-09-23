@@ -6,7 +6,4 @@
 
 simulating && return 0
 
-{
-    echo '# Written by the Arch OS Installer.'
-    echo 'net.ipv4.tcp_ecn = 0'
-} >"${MNT}/etc/sysctl.d/99-arch-os-ecn.conf"
+render "$(where)/99-arch-os-ecn.conf" >"${MNT}/etc/sysctl.d/99-arch-os-ecn.conf"

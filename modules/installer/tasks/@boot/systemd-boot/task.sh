@@ -4,6 +4,8 @@
 
 simulating && return 0
 
+data="$(where)"
+
 # Adds an entry and never overwrites another system's loader - a Windows Boot
 # Manager already there is picked up on its own.
 arch-chroot "$MNT" bootctl --esp-path=/boot install
@@ -22,31 +24,17 @@ if secure_boot_wanted; then
     editor=no
 fi
 
-{
-    echo "default ${default}"
-    echo 'console-mode auto'
-    echo "timeout ${timeout}"
-    echo "editor ${editor}"
-} >"${MNT}/boot/loader/loader.conf"
+render "${data}/loader.conf" DEFAULT="$default" TIMEOUT="$timeout" EDITOR="$editor" \
+    >"${MNT}/boot/loader/loader.conf"
 
 # From module.sh, so these entries and the command line built into a unified
 # image cannot disagree about how this system boots.
 if ! secure_boot_wanted; then
     cmdline="$(kernel_args)"
-
-    {
-        echo 'title   Arch OS'
-        echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
-        echo "initrd  /initramfs-${ARCH_OS_KERNEL}.img"
-        echo "options ${cmdline}"
-    } >"${MNT}/boot/loader/entries/main.conf"
-
-    {
-        echo 'title   Arch OS (fallback)'
-        echo "linux   /vmlinuz-${ARCH_OS_KERNEL}"
-        echo "initrd  /initramfs-${ARCH_OS_KERNEL}-fallback.img"
-        echo "options ${cmdline}"
-    } >"${MNT}/boot/loader/entries/main-fallback.conf"
+    for entry in main main-fallback; do
+        render "${data}/${entry}.conf" KERNEL="$ARCH_OS_KERNEL" CMDLINE="$cmdline" \
+            >"${MNT}/boot/loader/entries/${entry}.conf"
+    done
 fi
 
 arch-chroot "$MNT" systemctl enable systemd-boot-update.service

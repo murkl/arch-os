@@ -121,12 +121,7 @@ fi
 # every update for nothing gained.
 if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
     mkdir -p "${MNT}/etc/gdm"
-    {
-        echo '# Written by the Arch OS Installer.'
-        echo '[daemon]'
-        echo 'AutomaticLoginEnable=True'
-        echo "AutomaticLogin=${ARCH_OS_USERNAME}"
-    } >"${MNT}/etc/gdm/custom.conf"
+    render "${data}/custom.conf" USERNAME="$ARCH_OS_USERNAME" >"${MNT}/etc/gdm/custom.conf"
 fi
 
 # Under automatic login GDM never sees a password, so PAM has none to unlock the
@@ -163,8 +158,8 @@ fi
 # ////////////////////////////////////////////////////////////////////////////
 
 mkdir -p "${home}/.config/environment.d" "${home}/.gnupg" "${apps}"
-cp "${data}/environment.conf" "${home}/.config/environment.d/00-arch.conf"
-echo 'pinentry-program /usr/bin/pinentry-gnome3' >"${home}/.gnupg/gpg-agent.conf"
+render "${data}/environment.conf" >"${home}/.config/environment.d/00-arch.conf"
+render "${data}/gpg-agent.conf" >"${home}/.gnupg/gpg-agent.conf"
 
 # Git passwords in the keyring rather than in a file.
 as_user 'git config --global credential.helper /usr/lib/git-core/git-credential-libsecret'
@@ -177,15 +172,11 @@ as_user 'git config --global credential.helper /usr/lib/git-core/git-credential-
 # Both are needed, and both say the same thing.
 # https://wiki.archlinux.org/title/Xorg/Keyboard_configuration
 mkdir -p "${MNT}/etc/X11/xorg.conf.d"
-{
-    echo 'Section "InputClass"'
-    echo '    Identifier "system-keyboard"'
-    echo '    MatchIsKeyboard "yes"'
-    echo "    Option \"XkbLayout\" \"${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}\""
-    echo "    Option \"XkbModel\" \"${ARCH_OS_DESKTOP_KEYBOARD_MODEL}\""
-    echo "    Option \"XkbVariant\" \"${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}\""
-    echo 'EndSection'
-} >"${MNT}/etc/X11/xorg.conf.d/00-keyboard.conf"
+render "${data}/00-keyboard.conf" \
+    LAYOUT="$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" \
+    MODEL="$ARCH_OS_DESKTOP_KEYBOARD_MODEL" \
+    VARIANT="$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" \
+    >"${MNT}/etc/X11/xorg.conf.d/00-keyboard.conf"
 
 keyboard="$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
 [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && keyboard="${keyboard}+${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}"
@@ -215,7 +206,7 @@ arch-chroot "$MNT" systemctl --global enable pipewire.service pipewire-pulse.ser
 # ////////////////////////////////////////////////////////////////////////////
 
 hide() {
-    printf '[Desktop Entry]\nType=Application\nHidden=true\n' >"${apps}/${1}.desktop"
+    render "${data}/hidden.desktop" >"${apps}/${1}.desktop"
 }
 while read -r scope name; do
     case "$scope" in '' | \#*) continue ;; esac
@@ -229,17 +220,7 @@ done <"${data}/hidden-apps"
 # The snapshot browser under a name that says what it is for. A file of the same
 # name in the user's own applications folder wins over the one in /usr.
 if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_ASSISTANT_ENABLED" = "true" ]; then
-    {
-        echo '[Desktop Entry]'
-        echo 'Name=Snapshots'
-        echo 'Comment=Browse and restore system snapshots'
-        echo 'Exec=btrfs-assistant-launcher'
-        echo 'Terminal=false'
-        echo 'Type=Application'
-        echo 'Icon=btrfs-assistant'
-        echo 'Categories=System'
-        echo 'NoDisplay=false'
-    } >"${apps}/btrfs-assistant.desktop"
+    render "${data}/btrfs-assistant.desktop" >"${apps}/btrfs-assistant.desktop"
 fi
 
 # So flatpaks read the desktop theme rather than standing out as light windows

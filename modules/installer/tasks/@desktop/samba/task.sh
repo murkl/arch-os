@@ -4,10 +4,12 @@
 
 simulating && return 0
 
+data="$(where)"
+
 chroot_pacman_install samba wsdd
 
 mkdir -p "${MNT}/etc/samba"
-cp "$(where)/smb.conf" "${MNT}/etc/samba/smb.conf"
+render "${data}/smb.conf" >"${MNT}/etc/samba/smb.conf"
 
 # Samba refuses to start on a broken file, so it is checked first.
 arch-chroot "$MNT" testparm -s /etc/samba/smb.conf
@@ -27,11 +29,7 @@ printf '%s\n%s\n' "$ARCH_OS_PASSWORD" "$ARCH_OS_PASSWORD" |
 # the only reason dropping it is safe.
 # https://wiki.archlinux.org/title/Samba#Windows_1709_or_up_does_not_discover_the_samba_server_in_Network_view
 mkdir -p "${MNT}/etc/systemd/system/wsdd.service.d"
-{
-    echo '# Written by the Arch OS Installer.'
-    echo '[Service]'
-    echo 'Environment=WSDD_PARAMS=-4'
-} >"${MNT}/etc/systemd/system/wsdd.service.d/ipv4.conf"
+render "${data}/ipv4.conf" >"${MNT}/etc/systemd/system/wsdd.service.d/ipv4.conf"
 
 arch-chroot "$MNT" systemctl enable smb.service
 arch-chroot "$MNT" systemctl enable wsdd.service

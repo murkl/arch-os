@@ -11,24 +11,6 @@ chroot_aur_install "$ARCH_OS_AUR_HELPER"
 if [ "$ARCH_OS_AUR_HELPER" = "paru" ]; then
     config="${MNT}/home/${ARCH_OS_USERNAME}/.config/paru"
     mkdir -p "$config"
-    {
-        echo '# Written by the Arch OS Installer. Yours to change.'
-        echo '#'
-        echo '# paru reads the first configuration it finds and stops, so this one stands'
-        echo '# in place of /etc/paru.conf rather than adding to it, which is why the'
-        echo "# package's own defaults are repeated here."
-        echo '# See paru.conf(5).'
-        echo
-        echo '[options]'
-        echo 'PgpFetch'
-        echo 'Devel'
-        echo 'Provides'
-        echo 'DevelSuffixes = -git -cvs -svn -bzr -darcs -always -hg -fossil'
-        echo
-        echo '# The newest results last, next to the prompt.'
-        echo 'BottomUp'
-        echo '# One password for a whole batch of builds, not one per package.'
-        echo 'SudoLoop'
-    } >"${config}/paru.conf"
+    render "$(where)/paru.conf" >"${config}/paru.conf"
     own_home
 fi

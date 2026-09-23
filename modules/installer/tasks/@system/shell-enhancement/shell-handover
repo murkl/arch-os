@@ -1,8 +1,8 @@
-# Hand over to {{SHELL}} outside a text console, where its extras are worth
+# Hand over to {{HANDOVER}} outside a text console, where its extras are worth
 # having and where the font can draw the prompt.
 # https://wiki.archlinux.org/title/Fish#Modify_.bashrc_to_drop_into_fish
-if [[ $TERM != linux ]] && command -v {{SHELL}} &>/dev/null && [[ $(ps --no-header --pid=$PPID --format=comm) != "{{SHELL}}" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then
+if [[ $TERM != linux ]] && command -v {{HANDOVER}} &>/dev/null && [[ $(ps --no-header --pid=$PPID --format=comm) != "{{HANDOVER}}" && -z ${BASH_EXECUTION_STRING} && ${SHLVL} == 1 ]]; then
     shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""
-    exec {{SHELL}} $LOGIN_OPTION
+    exec {{HANDOVER}} $LOGIN_OPTION
     return
 fi

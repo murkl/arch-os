@@ -8,6 +8,8 @@
 
 simulating && return 0
 
+data="$(where)"
+
 btrfs_hook=""
 [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BOOTLOADER" = "grub" ] && btrfs_hook=" grub-btrfs-overlayfs"
 
@@ -20,14 +22,12 @@ hooks="base systemd keyboard autodetect microcode modconf kms sd-vconsole block$
 # in name order, so the boot splash (20-) and the graphics driver (30-) build on
 # this one.
 mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
-{
-    echo '# Written by the Arch OS Installer.'
-    echo "HOOKS=(${hooks})"
-} >"${MNT}/etc/mkinitcpio.conf.d/10-arch-os.conf"
+render "${data}/10-arch-os.conf" HOOKS="$hooks" >"${MNT}/etc/mkinitcpio.conf.d/10-arch-os.conf"
 
 # A unified kernel image packs kernel, ram disk and command line into one EFI
 # binary that is signed as a whole; without Secure Boot the same two images are
-# plain ram disks the boot loader points at.
+# plain ram disks the boot loader points at. The same word picks the preset
+# written below.
 key=image
 if secure_boot_wanted; then
     key=uki
@@ -47,19 +47,10 @@ mapfile -t images < <(boot_images)
 # signed one: mkinitcpio writes its own template only where there is no preset,
 # and that template builds the default image alone. Left to it, the fallback -
 # the image that boots a machine its autodetect has stopped being true for -
-# would quietly not exist while the boot entry pointing at it stayed.
-{
-    echo "# Written by the Arch OS Installer."
-    echo "ALL_kver=\"/boot/vmlinuz-${ARCH_OS_KERNEL}\""
-    if secure_boot_wanted; then
-        # Named outright: mkinitcpio's last resort is /proc/cmdline.
-        echo "ALL_cmdline=\"/etc/kernel/cmdline\""
-    fi
-    echo "PRESETS=('default' 'fallback')"
-    echo "default_${key}=\"${images[0]}\""
-    echo "fallback_${key}=\"${images[1]}\""
-    echo "fallback_options=\"-S autodetect\""
-} >"${MNT}/etc/mkinitcpio.d/${ARCH_OS_KERNEL}.preset"
+# would quietly not exist while the boot entry pointing at it stayed. The signed
+# one names its command line outright: mkinitcpio's last resort is /proc/cmdline.
+render "${data}/${key}.preset" KERNEL="$ARCH_OS_KERNEL" DEFAULT="${images[0]}" FALLBACK="${images[1]}" \
+    >"${MNT}/etc/mkinitcpio.d/${ARCH_OS_KERNEL}.preset"
 
 arch-chroot "$MNT" mkinitcpio -P
 

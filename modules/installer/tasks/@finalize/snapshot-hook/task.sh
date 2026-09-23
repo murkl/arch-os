@@ -4,16 +4,4 @@
 simulating && return 0
 
 mkdir -p "${MNT}/etc/pacman.d/hooks"
-{
-    echo '[Trigger]'
-    echo 'Operation = Install'
-    echo 'Operation = Upgrade'
-    echo 'Operation = Remove'
-    echo 'Type = Package'
-    echo 'Target = *'
-    echo
-    echo '[Action]'
-    echo 'Description = Creating a snapshot before this transaction'
-    echo 'When = PreTransaction'
-    echo "Exec = /bin/sh -c '/usr/bin/btrfs subvolume snapshot -r / /.snapshots/\"\$(date \"+%Y-%m-%d_%H-%M-%S\")\"'"
-} >"${MNT}/etc/pacman.d/hooks/50-btrfs-snapshot.hook"
+render "$(where)/50-btrfs-snapshot.hook" >"${MNT}/etc/pacman.d/hooks/50-btrfs-snapshot.hook"

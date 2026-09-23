@@ -3,3 +3,7 @@
 simulating && return 0
 
 [ -f "${MNT}/boot/grub/grub.cfg" ]
+
+# The drop-in directory is recent, and a drop-in grub-mkconfig never sourced
+# leaves a menu that boots with the stock command line instead of this one.
+grep -qF -- "$(kernel_args)" "${MNT}/boot/grub/grub.cfg"

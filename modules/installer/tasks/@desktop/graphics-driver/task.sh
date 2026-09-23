@@ -5,14 +5,13 @@
 
 simulating && return 0
 
+data="$(where)"
+
 # The modules this card needs in the ram disk, as a drop-in read after the hooks
 # the initramfs task set.
 early_modules() {
     mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
-    {
-        echo '# Written by the Arch OS Installer.'
-        echo "MODULES=($*)"
-    } >"${MNT}/etc/mkinitcpio.conf.d/30-graphics.conf"
+    render "${data}/30-graphics.conf" MODULES="$*" >"${MNT}/etc/mkinitcpio.conf.d/30-graphics.conf"
 }
 
 case "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" in
@@ -51,11 +50,7 @@ nvidia) # https://wiki.archlinux.org/title/NVIDIA#Installation
     # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
     # https://wiki.archlinux.org/title/NVIDIA/Tips_and_tricks#Preserve_video_memory_after_suspend
     mkdir -p "${MNT}/etc/modprobe.d"
-    {
-        echo '# Written by the Arch OS Installer.'
-        echo 'options nvidia_drm modeset=1 fbdev=1'
-        echo 'options nvidia NVreg_PreserveVideoMemoryAllocations=1'
-    } >"${MNT}/etc/modprobe.d/nvidia.conf"
+    render "${data}/nvidia.conf" >"${MNT}/etc/modprobe.d/nvidia.conf"
     arch-chroot "$MNT" systemctl enable \
         nvidia-suspend.service nvidia-hibernate.service nvidia-resume.service
     early_modules nvidia nvidia_modeset nvidia_uvm nvidia_drm
@@ -64,22 +59,7 @@ nvidia) # https://wiki.archlinux.org/title/NVIDIA#Installation
     # the kernel changes - once per batch, not once per package.
     # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
     mkdir -p "${MNT}/etc/pacman.d/hooks"
-    {
-        echo '[Trigger]'
-        echo 'Operation=Install'
-        echo 'Operation=Upgrade'
-        echo 'Operation=Remove'
-        echo 'Type=Package'
-        echo "Target=${driver}"
-        echo "Target=${ARCH_OS_KERNEL}"
-        echo
-        echo '[Action]'
-        echo 'Description=Update the NVIDIA module in the initramfs'
-        echo 'Depends=mkinitcpio'
-        echo 'When=PostTransaction'
-        echo 'NeedsTargets'
-        echo "Exec=/bin/sh -c 'while read -r trg; do case \$trg in linux*) exit 0; esac; done; /usr/bin/mkinitcpio -P'"
-    } >"${MNT}/etc/pacman.d/hooks/nvidia.hook"
+    render "${data}/nvidia.hook" DRIVER="$driver" KERNEL="$ARCH_OS_KERNEL" >"${MNT}/etc/pacman.d/hooks/nvidia.hook"
 
     # GDM refuses Wayland on this driver by default; the empty rule overrides it.
     # https://wiki.archlinux.org/title/GDM#Wayland_and_the_proprietary_NVIDIA_driver

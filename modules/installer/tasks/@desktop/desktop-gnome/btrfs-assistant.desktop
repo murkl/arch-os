@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Snapshots
+Comment=Browse and restore system snapshots
+Exec=btrfs-assistant-launcher
+Terminal=false
+Type=Application
+Icon=btrfs-assistant
+Categories=System
+NoDisplay=false

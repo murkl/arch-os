@@ -28,12 +28,7 @@ arch-chroot "$MNT" snapper --no-dbus -c root set-config "${settings[@]}"
 # does, df reports the disk as full as it was. ExecStopPost rather than
 # ExecStartPost, because the unit is Type=simple.
 mkdir -p "${MNT}/etc/systemd/system/snapper-cleanup.service.d"
-{
-    echo "# Written by the Arch OS Installer."
-    echo "[Service]"
-    echo "ExecStopPost=/usr/bin/sync"
-    echo "ExecStopPost=/usr/bin/btrfs filesystem sync /"
-} >"${MNT}/etc/systemd/system/snapper-cleanup.service.d/sync.conf"
+render "$(where)/sync.conf" >"${MNT}/etc/systemd/system/snapper-cleanup.service.d/sync.conf"
 
 arch-chroot "$MNT" systemctl enable snapper-timeline.timer
 arch-chroot "$MNT" systemctl enable snapper-cleanup.timer

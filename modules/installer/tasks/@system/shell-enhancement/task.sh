@@ -1,5 +1,5 @@
 # A terminal that is pleasant on the first login. Everything it writes is a file
-# beside this one, copied into place.
+# beside this one, put in place through render.
 
 simulating && return 0
 
@@ -24,7 +24,7 @@ if [ "$ARCH_OS_AUR_HELPER" != "none" ]; then
     sudo_prefix=""
 fi
 
-sed -e "s|{{PKG}}|${pkg}|g" -e "s|{{SUDO}}|${sudo_prefix}|g" "${data}/aliases" |
+render "${data}/aliases" PKG="$pkg" SUDO="$sudo_prefix" |
     tee "${MNT}/root/.aliases" "${home}/.aliases" >/dev/null
 
 # ----------------------------------------------------------------------------
@@ -35,27 +35,29 @@ sed -e "s|{{PKG}}|${pkg}|g" -e "s|{{SUDO}}|${sudo_prefix}|g" "${data}/aliases" |
 # the terminal - so .bashrc hands over to it instead.
 shell="$ARCH_OS_SHELL_ENHANCEMENT_SHELL"
 
-# The handover read in where the marker stands, and the marker line dropped -
-# sed, like the two placeholders above, rather than a bash substitution. That
-# is the wrong tool twice over here: a pattern whose first character is a # is
-# read as an anchor to the start of the string and matches nothing, and an &
-# in the replacement stands for whatever matched, which a line full of && then
-# tears apart. Both went unnoticed because the first hid the second.
+# The handover read in where the marker stands, and the marker line dropped.
+# render fills a value into a line; this is a block that takes the place of one,
+# and the marker is a comment so that .bashrc stays shell shellcheck can read.
+# sed's r rather than a bash substitution, which is the wrong tool twice over
+# here: a pattern whose first character is a # is read as an anchor to the start
+# of the string and matches nothing, and an & in the replacement stands for
+# whatever matched, which a line full of && then tears apart. Both went
+# unnoticed because the first hid the second.
 #
 # Empty for the other two shells, so the marker line simply goes.
 handover="$(mktemp)"
-[ "$shell" = "fish" ] && sed "s|{{SHELL}}|${shell}|g" "${data}/shell-handover" >"$handover"
+[ "$shell" = "fish" ] && render "${data}/shell-handover" HANDOVER="$shell" >"$handover"
 
 sed -e "/{{SHELL_HANDOVER}}/r ${handover}" -e "/{{SHELL_HANDOVER}}/d" "${data}/bashrc" |
     tee "${MNT}/root/.bashrc" "${home}/.bashrc" >/dev/null
 rm -f "$handover"
 
-tee "${MNT}/root/.config/fastfetch/config.jsonc" "${home}/.config/fastfetch/config.jsonc" <"${data}/fastfetch.jsonc" >/dev/null
+render "${data}/fastfetch.jsonc" | tee "${MNT}/root/.config/fastfetch/config.jsonc" "${home}/.config/fastfetch/config.jsonc" >/dev/null
 
 case "$shell" in
 zsh)
     chroot_pacman_install zsh zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search
-    tee "${MNT}/root/.zshrc" "${home}/.zshrc" <"${data}/zshrc" >/dev/null
+    render "${data}/zshrc" | tee "${MNT}/root/.zshrc" "${home}/.zshrc" >/dev/null
     # /etc/shells already lists it, which is what chsh checks against.
     arch-chroot "$MNT" chsh -s /usr/bin/zsh root
     arch-chroot "$MNT" chsh -s /usr/bin/zsh "$ARCH_OS_USERNAME"
@@ -63,7 +65,7 @@ zsh)
 fish)
     chroot_pacman_install fish
     mkdir -p "${MNT}/root/.config/fish" "${home}/.config/fish"
-    tee "${MNT}/root/.config/fish/config.fish" "${home}/.config/fish/config.fish" <"${data}/config.fish" >/dev/null
+    render "${data}/config.fish" | tee "${MNT}/root/.config/fish/config.fish" "${home}/.config/fish/config.fish" >/dev/null
     ;;
 esac
 
@@ -85,7 +87,7 @@ cp "${home}/.config/starship.toml" "${MNT}/root/.config/starship.toml"
 # nanorc goes into each home rather than /etc/nanorc, which belongs to the
 # nano package and would leave a .pacnew to merge on every update.
 mkdir -p "${MNT}/root/.config/nano" "${home}/.config/nano"
-tee "${MNT}/root/.config/nano/nanorc" "${home}/.config/nano/nanorc" <"${data}/nanorc" >/dev/null
+render "${data}/nanorc" | tee "${MNT}/root/.config/nano/nanorc" "${home}/.config/nano/nanorc" >/dev/null
 
 # ----------------------------------------------------------------------------
 

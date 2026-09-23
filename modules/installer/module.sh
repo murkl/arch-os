@@ -14,6 +14,69 @@ DATA="$(dirname "${BASH_SOURCE[0]}")/data"
 where() { dirname "${BASH_SOURCE[1]}"; }
 
 # ////////////////////////////////////////////////////////////////////////////
+# FILES A TASK SHIPS
+# ////////////////////////////////////////////////////////////////////////////
+
+# Every file a task writes into the new system lies beside it and comes out
+# through here, on stdout. {{NAME}} is replaced by what was handed over as
+# NAME=value; everything else is left as it stands, so ${HOME}, $trg or $(date)
+# reach the shell, systemd or pacman that reads the file later untouched.
+#
+# Both sides are checked: a placeholder nobody filled and a value nothing asks
+# for are each a failure, because either writes a file that reads perfectly well
+# and does not say what it was meant to. Why not envsubst: docs/REFERENCE.md
+render() {
+    local template="$1" open='{{' close='}}' text rendered="" name pair
+    local -A values=() used=()
+    shift
+
+    [ -f "$template" ] || {
+        echo "there is no template ${template}" >&2
+        return 1
+    }
+
+    for pair in "$@"; do
+        name="${pair%%=*}"
+        [[ $pair == *=* && $name =~ ^[A-Z][A-Z0-9_]*$ ]] || {
+            echo "${pair} is not a NAME=value for ${template}" >&2
+            return 1
+        }
+        values["$name"]="${pair#*=}"
+    done
+
+    # Whole, trailing newlines included, which $(<file) would strip.
+    IFS= read -r -d '' text <"$template" || true
+
+    # Left to right and once, so a value that happens to hold {{ is never read
+    # as a placeholder of its own.
+    while [[ $text == *"$open"* ]]; do
+        rendered+="${text%%"$open"*}"
+        text="${text#*"$open"}"
+        name="${text%%"$close"*}"
+        if [[ $text != *"$close"* || ! $name =~ ^[A-Z][A-Z0-9_]*$ ]]; then
+            echo "${template} has a ${open} that opens no placeholder" >&2
+            return 1
+        fi
+        if [[ ! -v values[$name] ]]; then
+            echo "${template} asks for ${open}${name}${close}, which nobody handed over" >&2
+            return 1
+        fi
+        rendered+="${values[$name]}"
+        used["$name"]=1
+        text="${text#*"$close"}"
+    done
+
+    for name in "${!values[@]}"; do
+        [[ -v used[$name] ]] || {
+            echo "${name} was handed to ${template}, which never asks for it" >&2
+            return 1
+        }
+    done
+
+    printf '%s' "${rendered}${text}"
+}
+
+# ////////////////////////////////////////////////////////////////////////////
 # SIMULATION
 # ////////////////////////////////////////////////////////////////////////////
 
@@ -286,13 +349,13 @@ chroot_pacman_install() {
     return 1
 }
 
-# A sudo rule in the new system, as a drop-in and checked before it is trusted:
-# a syntax error in /etc/sudoers locks everybody out of root.
-# https://wiki.archlinux.org/title/Sudo
+# A sudo rule in the new system, read from stdin, as a drop-in and checked
+# before it is trusted: a syntax error in /etc/sudoers locks everybody out of
+# root. https://wiki.archlinux.org/title/Sudo
 sudoers_rule() {
     local file="${MNT}/etc/sudoers.d/${1}"
     mkdir -p "${MNT}/etc/sudoers.d"
-    printf '# Written by the Arch OS Installer.\n%s\n' "$2" >"$file"
+    cat >"$file"
     chmod 0440 "$file"
 
     # A rule sudo will not parse is taken back out rather than left lying
@@ -302,6 +365,20 @@ sudoers_rule() {
     rm -f "$file"
     echo "the sudo rule ${1} was rejected and was removed again" >&2
     return 1
+}
+
+# pacman reads no drop-in directory, but it follows an Include from any section
+# of its one file. So each setting made here is a file of its own under
+# /etc/pacman.d, and pacman.conf gains one line naming it - the one edit a
+# .pacnew then asks to carry over. Named outright rather than by a glob, because
+# a glob that matches nothing stops pacman altogether.
+# https://man.archlinux.org/man/pacman.conf.5
+pacman_include() {
+    local file
+    file="/etc/pacman.d/$(basename "$1")"
+    render "$1" >"${MNT}${file}"
+    grep -qxF "Include = ${file}" "${MNT}/etc/pacman.conf" ||
+        echo "Include = ${file}" >>"${MNT}/etc/pacman.conf"
 }
 
 # How long one attempt at an AUR build may take and how often it is tried. A
@@ -335,7 +412,7 @@ chroot_aur_install() {
     # make and cargo are named separately because neither reads the other.
     build="${build} && MAKEFLAGS=-j${jobs} CARGO_BUILD_JOBS=${jobs} makepkg -si --noconfirm --needed"
 
-    sudoers_rule 99-aur-build '%wheel ALL=(ALL:ALL) NOPASSWD: ALL'
+    echo '%wheel ALL=(ALL:ALL) NOPASSWD: ALL' | sudoers_rule 99-aur-build
 
     echo "building ${repo} from the AUR with ${jobs} job(s)"
     for ((i = 1; i <= AUR_RETRIES; i++)); do

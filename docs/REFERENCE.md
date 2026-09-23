@@ -160,6 +160,42 @@ All of it in one place, `snapper_config` in `modules/installer/module.sh`: `set-
 - `fuser -M` - without it, a non-mountpoint target resolves to the live image itself
 - Whatever holds it is logged, then killed; the second unmount is left to fail for real
 
+## Files a Task Ships
+
+Every file a task writes into the new system lies beside `task.sh`, named after the file it becomes, and is put in place with `render` from `module.sh`.
+
+```
+render "$(where)/nvidia.hook" DRIVER="$driver" KERNEL="$ARCH_OS_KERNEL" >"${MNT}/etc/pacman.d/hooks/nvidia.hook"
+```
+
+- `{{NAME}}` is the only placeholder. It is filled from `NAME=value` handed to `render`, never from the environment
+- `${HOME}`, `$trg`, `$(date …)` and every other `$` stay as they are, for the shell, systemd or pacman that reads the file later. Nothing has to be escaped
+- A placeholder nobody filled, a value nothing asks for and a `{{` that opens no placeholder each fail the task
+- Filled left to right and once: a value that holds `{{` is written as it is
+- A file with nothing to fill goes through `render` as well, so a placeholder added later cannot reach a disk unfilled
+
+Why not `envsubst`: it reads the environment, so every task-local value would have to be exported under a name somebody else may already read. It fills a variable that is not set with nothing and says nothing. And without a list of names it fills every `${…}`, including the ones that must stay; that list is a second copy of the template that nothing checks.
+
+**Note:** _`make lint` refuses a `{ … } >"${MNT}/…"` block in any script, which is how these files were written before._
+
+### Where there is no Drop-in
+
+Where the program reads a directory, the file goes there. Four files have none, and are edited:
+
+| File | Why |
+| --- | --- |
+| `/etc/pacman.conf` | One `Include =` line per file under `/etc/pacman.d/`, see `pacman_include`. A glob would stop pacman once it matched nothing |
+| `/etc/locale.gen` | `locale-gen` reads nothing else, and a glibc update runs it again |
+| `/etc/environment` | `pam_env` reads nothing else, and `sudo` takes its environment from there: `sudo visudo` then opens nano rather than a vi nobody installed |
+| `/etc/nsswitch.conf` | glibc reads nothing else |
+
+Two are written whole:
+
+- `/etc/gdm/custom.conf`, only with autologin. GDM reads nothing else
+- `/etc/xdg/reflector/reflector.conf`. `reflector.service` names it on its command line and in its sandbox, so moving it means restating both
+
+**Note:** _`/etc/hosts` is not written. `filesystem` ships `localhost`, and `nss-myhostname` answers for the hostname._
+
 ## The Recovery
 
 Two questions - keyboard, disk. Everything else is read, not asked:

@@ -47,7 +47,7 @@ podman)
     # podman stops to ask a question no script is there to answer. Docker has
     # this built into the daemon and needs nothing.
     mkdir -p "${MNT}/etc/containers/registries.conf.d"
-    echo 'unqualified-search-registries = ["docker.io"]' \
+    render "$(where)/10-unqualified-search-registries.conf" \
         >"${MNT}/etc/containers/registries.conf.d/10-unqualified-search-registries.conf"
 
     # Podman announces itself twice on the way through: once from the docker
@@ -57,7 +57,7 @@ podman)
     # would and nothing else.
     touch "${MNT}/etc/containers/nodocker"
     mkdir -p "${MNT}/etc/containers/containers.conf.d"
-    printf '[engine]\ncompose_warning_logs = false\n' \
+    render "$(where)/10-compose-warning-logs.conf" \
         >"${MNT}/etc/containers/containers.conf.d/10-compose-warning-logs.conf"
 
     # The range of user ids a rootless container maps its own root onto, and

@@ -1,0 +1,3 @@
+# Written by the Arch OS Installer.
+EDITOR=nano
+VISUAL=nano
