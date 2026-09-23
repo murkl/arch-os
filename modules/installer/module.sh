@@ -9,9 +9,10 @@
 MNT=/mnt
 DATA="$(dirname "${BASH_SOURCE[0]}")/data"
 
-# The folder of the task that called it, where a unit keeps the files it ships
-# with.
-where() { dirname "${BASH_SOURCE[1]}"; }
+# Where the task that called it keeps the files it ships with: data/ beside its
+# task.sh, so the folder a task is and the files it writes are told apart at a
+# glance.
+where() { printf '%s/data' "$(dirname "${BASH_SOURCE[1]}")"; }
 
 # ////////////////////////////////////////////////////////////////////////////
 # FILES A TASK SHIPS

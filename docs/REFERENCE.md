@@ -163,7 +163,7 @@ All of it in one place, `snapper_config` in `modules/installer/module.sh`: `set-
 
 ## Files a Task Ships
 
-Every file a task writes into the new system lies beside `task.sh`, named after the file it becomes, and is put in place with `render` from `module.sh`.
+Every file a task writes into the new system lies in `data/` beside `task.sh`, named after the file it becomes, and is put in place with `render` from `module.sh` - `where` is that folder.
 
 ```
 render "$(where)/nvidia.hook" DRIVER="$driver" KERNEL="$ARCH_OS_KERNEL" >"${MNT}/etc/pacman.d/hooks/nvidia.hook"

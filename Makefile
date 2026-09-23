@@ -135,7 +135,7 @@ MODULE_YAML    = $(shell find $(MODULES_DIR) -name '*.yaml')
 # Found by the name it lands under, since a .bashrc carries no extension. The
 # other three in that folder are out: zsh and fish are not dialects shellcheck
 # reads, and the handover fragment is placeholders rather than shell.
-MODULE_SHELL = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/bashrc $(MODULES_DIR)/*/tasks/@*/*/aliases)
+MODULE_SHELL = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/data/bashrc $(MODULES_DIR)/*/tasks/@*/*/data/aliases)
 
 # Everything a module can put on a screen: the declarations, the scripts and
 # the shell they share, the tables and every catalog. The READMEs are the one

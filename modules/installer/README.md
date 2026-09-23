@@ -18,8 +18,8 @@ module.yaml                     what this Installer is, what it asks, what order
 module.sh                       what more than one script has to agree about
 tasks/@<stage>/<id>/task.yaml   what that step is: its needs, conditions and offers
 tasks/@<stage>/<id>/task.sh     what it does
-tasks/@<stage>/<id>/<file>      a file it writes into the new system, named after it, filled by render
 tasks/@<stage>/<id>/test.sh     optional: how to tell, on the machine, that it took
+tasks/@<stage>/<id>/data/       every file it writes into the new system, named after it, filled by render
 hooks/@<hook>/<id>/hook.yaml    a moment Oak runs itself, rather than as part of the work
 data/                           the tables a language and a country are looked up in
 locales/                        one <code>.po per language, and the template they come from
