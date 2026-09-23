@@ -5,7 +5,7 @@ home="${MNT}/home/${ARCH_OS_USERNAME}"
 data="$(where)"
 
 packages=(git starship eza bat zoxide fd fzf fastfetch mc btop
-    bash-completion nano-syntax-highlighting ttf-firacode-nerd)
+    bash-completion ttf-firacode-nerd)
 chroot_pacman_install "${packages[@]}"
 
 mkdir -p "${MNT}/root/.config/fastfetch" "${home}/.config/fastfetch"
@@ -87,10 +87,15 @@ cp "${home}/.config/starship.toml" "${MNT}/root/.config/starship.toml"
 
 # ----------------------------------------------------------------------------
 
-# nanorc goes into each home rather than /etc/nanorc, which belongs to the
-# nano package and would leave a .pacnew to merge on every update.
-mkdir -p "${MNT}/root/.config/nano" "${home}/.config/nano"
-render "${data}/nanorc" | tee "${MNT}/root/.config/nano/nanorc" "${home}/.config/nano/nanorc" >/dev/null
+# Only for nano: the highlighting depends on it and would bring it back onto a
+# machine whose editor is another one. nanorc goes into each home rather than
+# /etc/nanorc, which belongs to the nano package and would leave a .pacnew to
+# merge on every update.
+if [ "$ARCH_OS_EDITOR" = "nano" ]; then
+    chroot_pacman_install nano-syntax-highlighting
+    mkdir -p "${MNT}/root/.config/nano" "${home}/.config/nano"
+    render "${data}/nanorc" | tee "${MNT}/root/.config/nano/nanorc" "${home}/.config/nano/nanorc" >/dev/null
+fi
 
 # ----------------------------------------------------------------------------
 

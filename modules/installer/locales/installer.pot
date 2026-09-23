@@ -493,6 +493,16 @@ msgstr ""
 msgid "Timers that keep the system tidy automatically: mirrors ranked weekly, the package cache trimmed, and disk health checked."
 msgstr ""
 
+#. ARCH_OS_EDITOR: the question
+#: module.yaml
+msgid "Text editor"
+msgstr ""
+
+#. ARCH_OS_EDITOR: what it means
+#: module.yaml
+msgid "The editor that opens wherever a command asks for one: sudoedit, git, systemctl edit. nano and micro are typed into straight away, micro with the shortcuts of a desktop editor. vim, neovim and helix are modal: typing and commands are separate modes."
+msgstr ""
+
 #. ARCH_OS_SHELL_ENHANCEMENT_ENABLED: the question
 #: module.yaml
 msgid "Shell enhancement"

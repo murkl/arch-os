@@ -515,6 +515,18 @@ variables:
     type: bool
     default: true
 
+  - name: ARCH_OS_EDITOR
+    title: Text editor
+    description: |
+      The editor that opens wherever a command asks for one: sudoedit, git,
+      systemctl edit. nano and micro are typed into straight away, micro with
+      the shortcuts of a desktop editor. vim, neovim and helix are modal:
+      typing and commands are separate modes.
+    group: System
+    values: [nano, vim, neovim, micro, helix]
+    default: nano
+    required: true
+
   - name: ARCH_OS_SHELL_ENHANCEMENT_ENABLED
     title: Shell enhancement
     description: |

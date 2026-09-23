@@ -113,7 +113,7 @@ Swap is **zram** always, tweaks or not. **[➜ Zram](https://wiki.archlinux.org/
 Enough for a usable install, little enough that nothing needs looking after.
 
 - `base`, the chosen kernel, `sudo`, `zram-generator`, `networkmanager`
-- `nano`, `man-db`, `man-pages`, `openssh` - `base` ships none of them
+- The chosen editor (`nano` unless another was picked), `man-db`, `man-pages`, `openssh` - `base` ships none of them
 - Everything else follows an answer: the task that enables a service installs its package
 
 **Firmware is skipped in a VM** - a guest's drivers are already in the kernel, and `linux-firmware` is over half the base install. Skipped unless a card is passed through.
@@ -187,7 +187,7 @@ Where the program reads a directory, the file goes there. Four files have none, 
 | --- | --- |
 | `/etc/pacman.conf` | One `Include =` line per file under `/etc/pacman.d/`, see `pacman_include`. A glob would stop pacman once it matched nothing |
 | `/etc/locale.gen` | `locale-gen` reads nothing else, and a glibc update runs it again |
-| `/etc/environment` | `pam_env` reads nothing else, and `sudo` takes its environment from there: `sudo visudo` then opens nano rather than a vi nobody installed |
+| `/etc/environment` | `pam_env` reads nothing else, and `sudo` takes its environment from there: `sudo visudo` then opens the chosen editor rather than a vi nobody installed |
 | `/etc/nsswitch.conf` | glibc reads nothing else |
 
 Two are written whole:

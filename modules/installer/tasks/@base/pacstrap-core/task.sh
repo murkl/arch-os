@@ -25,7 +25,7 @@ fi
 
 # `base` ships no editor, no manuals and no ssh, so a console-only installation
 # cannot edit its own configuration, look anything up or reach another machine.
-packages+=(nano man-db man-pages openssh)
+packages+=("$ARCH_OS_EDITOR" man-db man-pages openssh)
 
 [ "$ARCH_OS_MICROCODE" != "none" ] && packages+=("$ARCH_OS_MICROCODE")
 [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(btrfs-progs)
