@@ -95,7 +95,7 @@ jobs:
     name: Check
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    container: archlinux:latest
+    container: archlinux:latest # zizmor: ignore[unpinned-images] - see the top of this file
     permissions:
       contents: read
     steps:
@@ -112,7 +112,7 @@ jobs:
 
       - uses: ./.github/actions/arch
         with:
-          packages: make curl shellcheck shfmt yamllint actionlint gettext diffutils gitleaks kbd tzdata
+          packages: make curl shellcheck shfmt yamllint actionlint zizmor gettext diffutils gitleaks kbd tzdata
 
       # The runtime's checksum is a call to the API, and sixty an hour is what
       # an address that does not say who it is gets - one address for every
@@ -163,7 +163,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     container:
-      image: archlinux:latest
+      image: archlinux:latest # zizmor: ignore[unpinned-images] - see the top of this file
       # pacstrap mounts /proc and /sys inside the airootfs it is filling, and
       # qemu without the device falls back to emulation, which the timeout
       # below would not sit through.
@@ -266,7 +266,7 @@ jobs:
     permissions:
       contents: write # the assets and the page they hang on
       id-token: write # the provenance below is signed
-      attestations: write
+      attestations: write # and stored beside the release
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}

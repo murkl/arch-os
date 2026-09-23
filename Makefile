@@ -342,7 +342,9 @@ locales-check: dev
 
 # The two POSIX scripts are checked as sh; a module's are checked the way Oak
 # runs them, as bash with module.sh already in scope. actionlint reads the
-# workflows again for what a yaml linter cannot see.
+# workflows again for what a yaml linter cannot see, and zizmor for what makes
+# one unsafe - offline, so a finding is always about a change here rather than
+# news from somewhere else. What it is told to leave alone is .github/zizmor.yml.
 #
 # The first grep is for the one mistake no linter here can see, because it is
 # valid shell that only fails on a machine being installed: arch-chroot execs
@@ -368,6 +370,7 @@ lint:
 	shfmt -d -i 4 $(ISO_SCRIPTS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
 	yamllint .
 	actionlint
+	zizmor --offline --persona auditor .github
 	@! grep -nE 'arch-chroot [^|&;]*[[:space:]](command|type|hash|source|alias)[[:space:]]' \
 		$(MODULE_SCRIPTS) $(MODULE_YAML) \
 		|| { echo "a shell builtin cannot be run through arch-chroot - see has_command" >&2; exit 1; }

@@ -6,6 +6,9 @@
 
 version: 2
 
+# A week before any release is taken: a compromised one is usually pulled again
+# within days, and one taken the hour it appears is the one that gets in.
+
 updates:
   # The workflows, and the composite action they all run on. Dependabot reads
   # one folder per entry, and an action outside .github/workflows is its own.
@@ -13,6 +16,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "ci"
 
@@ -20,5 +25,7 @@ updates:
     directory: /.github/actions/arch
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "ci"
