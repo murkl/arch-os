@@ -81,7 +81,7 @@ flowchart LR
 | `ARCH_OS_RECOVERY_PASSWORD` | Asked right before the run, never written |
 | `ARCH_OS_RECOVERY_SNAPSHOT` | Asked mid-run by the rollback task |
 
-Only keyboard and disk are ever a question.
+Only keyboard and disk are asked up front. The password follows right before the run, the snapshot only if a rollback is chosen.
 
 ## Requirements
 

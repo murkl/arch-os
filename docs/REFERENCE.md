@@ -50,7 +50,7 @@ Mounted `defaults,noatime,compress=zstd`. Written once in `modules/installer/mod
 | `zswap.enabled=0` | Interferes with zram |
 | `rd.luks.name=…=cryptroot` | Opens the disk in `sd-encrypt` |
 | `rootflags=subvol=@ rootfstype=btrfs` | Which subvolume is root |
-| `nowatchdog` | Unused, delays shutdown |
+| `nowatchdog` | With Core tweaks: unused, delays shutdown |
 | `quiet splash loglevel=3 …` | **[➜ Silent boot](https://wiki.archlinux.org/title/Silent_boot)** |
 | `plymouth.ignore-serial-consoles` | A serial console makes Plymouth fall back to text, taking the passphrase prompt with it - every VM gets one unasked |
 
@@ -135,7 +135,7 @@ Enough for a usable install, little enough that nothing needs looking after.
 
 One `timeout` around the whole build; passwordless `sudo` granted for its length and revoked after.
 
-**Note:** _`/etc/makepkg.conf.d/arch-os.conf` switches the debug package off, and nothing else: an AUR build otherwise leaves a second package beside the one that was wanted. `-march=native` is deliberately **not** there - it buys a few percent and pays for it with binaries that stop running the day the disk is moved, the image is restored onto other hardware or the CPU is replaced, and the crash that follows reads like failing memory._
+**Note:** _With Core tweaks, `/etc/makepkg.conf.d/arch-os.conf` switches the debug package off, and nothing else: an AUR build otherwise leaves a second package beside the one that was wanted. `-march=native` is deliberately **not** there - it buys a few percent and pays for it with binaries that stop running the day the disk is moved, the image is restored onto other hardware or the CPU is replaced, and the crash that follows reads like failing memory._
 
 **Note:** _Only `paru` and `yay`, both built from source against this machine's pacman. A `-bin` package is linked against the pacman of the day it was published and stops starting the day Arch moves `libalpm` - not offered here._
 
@@ -218,8 +218,8 @@ The password of an encrypted disk is typed once rather than twice: it already ex
 
 A hybrid ISO already carries its partition table and boot paths - writing it is one raw copy.
 
-- The image is **not** a question: it is the release this program came from
-- Where it lands **is**: `XDG_DOWNLOAD_DIR` or `~/Downloads`. An image already there is used rather than fetched again
+- The image is the release `version:` in `oak.yaml` names
+- Where it lands is asked: `XDG_DOWNLOAD_DIR` or `~/Downloads`. An image already there is used rather than fetched again
 - It is checked against the checksum GitHub publishes for that release, and a mismatch discards it rather than keeping a broken one
 - Where that release publishes no checksum, the run stops and asks before anything is written - an image built here is the one that arrives this way
 

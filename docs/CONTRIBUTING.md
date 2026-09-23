@@ -39,7 +39,7 @@ The title of a pull request is read by a machine, so it is written for one - [Co
 
 - `!` marks a change somebody has to act on; the reason goes in the body as `BREAKING CHANGE: …`
 - A check of its own refuses a title that opens on no type, because a title nothing can read releases nothing. It is the one check that reads the title again when it is corrected - everything else waits for a commit
-- Everything else - the body, and the commits inside the branch - is written for whoever reads the change
+- The body and the commits inside the branch are written for whoever reads the change, in the same form - see **[Commits](#commits)**
 
 ## The Version and the Changelog
 
@@ -100,6 +100,7 @@ flowchart TD
 
 ```
 make check             # everything that has to pass before a commit
+make fmt               # every script formatted, by shfmt
 make run               # every module, MODULE=recovery for one outright
 make run ARGS=--debug  # ...without touching the machine
 make inspect           # load every module and print the order they resolve to
@@ -181,7 +182,7 @@ Before any desktop exists there is one console font, and it holds one table of a
 
 ## Pictures in the Docs
 
-Both are generated, so neither can quietly outlive the interface it shows. The screenshots are taken from the Installer and the Recovery driven on a real terminal; the banner collages two of them under the wordmark, which is read out of `oak.yaml` rather than redrawn, so the name and the accent on it cannot drift from the ones a run draws.
+Both are generated, so neither can quietly outlive the interface it shows. The screenshots are taken from the welcome page, the Installer and the Recovery driven on a real terminal; the banner collages two of them under the wordmark, which is read out of `oak.yaml` rather than redrawn, so the name and the accent on it cannot drift from the ones a run draws.
 
 ```
 make screenshots   # after any visible change to a page
@@ -193,14 +194,15 @@ They need `chromium`, `imagemagick`, `python-pyte` and `python-yaml`, none of wh
 
 Every run is started with `--debug`, which hands every script `DEBUG=true`: no disk is partitioned, nothing is mounted and nothing restarts. Which pages are taken is `docs/screenshots.yaml`, and every answer is given there rather than left to the machine rendering it; `screenshots.py` beside it is the same file in every project that renders a set this way, as is `banner.py`.
 
-**Note:** _Only `setup.png`, `installer.png`, `installing.png` and `recovery.png` are drawn by the interface. The boot splash, the shell, the fetch and the System Manager are photographs of a running system, taken by hand and left alone by `make screenshots`._
+**Note:** _Only `welcome.png`, `setup.png`, `installer.png`, `installing.png` and `recovery.png` are drawn by the interface. The boot splash, the shell, the fetch and the System Manager are photographs of a running system, taken by hand and left alone by `make screenshots`._
 
 **Note:** _`installing.png` and `recovery.png` catch a run while it is still going, so which task the frame lands on differs from run to run. The others come out the same every time._
 
 ## Commits
 
-- Imperative mood (`Add`, `Fix`, `Refactor`), one logical change each
-- Squashed into `main` - the pull request title is what remains
+- **[Conventional Commits](https://www.conventionalcommits.org)** in the imperative, the same types as a title: `feat: add …`, `fix: …`, `refactor: …`, a `!` for a change somebody has to act on
+- One logical change each, and no trailer
+- Squashed into `main` - the pull request title is what remains, so that is the line **[The Title](#the-title)** holds to its rules
 - `make locales` in the same change, after anything on screen changes
 
 ## Setting the Repository up

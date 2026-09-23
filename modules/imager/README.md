@@ -37,9 +37,9 @@ Three steps, three distinct failures: nothing arrived, what arrived is broken, o
 
 **Note:** _`checksum` has no `test.sh` - the task itself already is the test, line for line._
 
-## The Image is not a Question
+## The Image
 
-Which image gets written is not asked: it is the one this program came from. `version:` in `oak.yaml` says which, and where it fetches from.
+The ISO written is the one of the release `version:` in `oak.yaml` names, downloaded from its release page.
 
 **Note:** _The asset is picked by what its name ends in, so renaming a download only touches the **[Makefile](../../Makefile)**._
 

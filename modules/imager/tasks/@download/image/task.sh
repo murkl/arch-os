@@ -1,4 +1,4 @@
-# The image this program belongs to, into the download folder. Whether it is any
+# The image of the release oak.yaml names, into the download folder. Whether it is any
 # good is the next step.
 #
 # It is kept, so a second run costs the download only the first time. A folder

@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/badge/UEFI-x86__64-2e3440?style=for-the-badge" alt="">
 </p>
 
-<p>A text console or a GNOME desktop. Boot the latest <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and the Installer starts on its own.</p>
+<p>A text console or a GNOME desktop. Boot the latest <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and Arch OS starts on its own.</p>
 
 <p>Or run this on any Linux machine. An ordinary desktop writes the ISO to a USB device; a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> installs or repairs.</p>
 
@@ -49,13 +49,13 @@ An internet connection is required. Without a cable, the Installer offers the wi
 ### 1. Prepare a bootable USB device
 
 - Download the latest ISO from **[the release page](https://github.com/murkl/arch-os/releases/latest)** and write it with **[Ventoy](https://www.ventoy.net/en/download.html)** or any ISO writer. GitHub prints each file's SHA-256 beside it there, and both carry signed build provenance — the command is in the release notes
-- Or let **Create boot medium** do it, on any Linux machine. It checks what it downloaded against the published checksum before it unpacks anything:
+- Or let **Create boot medium** do it, on any Linux machine. It checks the ISO against the published checksum before it writes anything:
 
 ```
 curl -Ls https://bit.ly/archos | bash
 ```
 
-**Note:** _Runs as you, not root - only the write itself asks for a password. `DOWNLOAD_DIR=<dir>` changes where it lands (`~/Downloads` by default), and an ISO already there is used rather than fetched again._
+**Note:** _Runs as you, not root - only the write itself asks for a password. The program lands in `XDG_DOWNLOAD_DIR` or `~/Downloads` (`… | DOWNLOAD_DIR=<dir> bash` for another), the ISO wherever you answer, and an ISO already there is used rather than fetched again._
 
 ### 2. Set the firmware up
 
@@ -64,7 +64,7 @@ curl -Ls https://bit.ly/archos | bash
 
 ### 3. Boot from the USB device
 
-The Installer starts on its own. The first page says where the rest of Arch OS is and asks the language:
+Arch OS starts on its own. The first page says where the rest of Arch OS is and asks the language:
 
 <p><img src="screenshots/welcome.png" alt="The welcome page: the project's address, and the language to read the rest in"></p>
 

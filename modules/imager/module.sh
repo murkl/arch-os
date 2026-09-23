@@ -6,9 +6,8 @@
 # and the oak.yaml that says which version this is.
 HERE="$(dirname "$MODULE_CONF")"
 
-# Not the newest release but the one this program came out of: a binary from
-# last month writing this month's image is two versions on one machine, and only
-# one of them was ever tested together.
+# The release whose image is written: the version in oak.yaml rather than the
+# newest one, so the binary and the image are the pair that was tested together.
 VERSION="$(sed -n 's/^version:[[:space:]]*//p' "${HERE}/oak.yaml")"
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -38,7 +37,7 @@ simulating() {
 # WHAT IS WRITTEN, AND FROM WHERE
 # ////////////////////////////////////////////////////////////////////////////
 
-# Where the release this program came out of is published.
+# Where that release is published.
 REPO="murkl/arch-os"
 
 # The image in the download folder, named after the version rather than read out
@@ -52,7 +51,7 @@ fetch_url() {
     curl -Lf --proto '=https' --proto-redir '=https' --connect-timeout 10 "$@"
 }
 
-# The release this program came out of, as GitHub describes it: where the image
+# That release, as GitHub describes it: where the image
 # is and what it has to hash to, as two words. The release carries no checksum
 # file - the checksum is a field of the asset, and it is the same one the
 # release page prints under the download.
