@@ -42,6 +42,15 @@ concurrency:
 # moves to a new Ubuntu on a date GitHub picks: a toolchain that changes under a
 # branch nobody touched is a change nobody made. It is raised here deliberately,
 # like any other dependency.
+#
+# Every action is named by the commit it is, with its version beside it: a tag
+# is whatever its owner points it at next, and some of these run with the right
+# to write a release. Dependabot raises both together.
+#
+# The container is the one moving name here, on purpose. Every job upgrades it
+# to today's Arch before doing anything else - that is what this is checked
+# against - so a pinned image would only be an older starting point, and one
+# whose keyring stops trusting the packages it is upgrading to.
 jobs:
   # The one place that decides what the rest of the file does.
   gate:
@@ -97,7 +106,7 @@ jobs:
       - name: Make the checkout a repository
         run: pacman -Syu --needed --noconfirm git
 
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -135,7 +144,7 @@ jobs:
       version: ${{ steps.please.outputs.version }}
       notes: ${{ steps.please.outputs.body }}
     steps:
-      - uses: googleapis/release-please-action@v5
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: please
         with:
           config-file: .github/release-please-config.json
@@ -169,7 +178,7 @@ jobs:
       - name: Make the checkout a repository
         run: pacman -Syu --needed --noconfirm git
 
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -211,7 +220,7 @@ jobs:
             pnmtopng "$frame" >"${frame%.ppm}.png"
           done
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: smoke-test
@@ -223,7 +232,7 @@ jobs:
       # reviewing the change can boot for themselves. Kept even when the boot
       # failed, because that is when somebody wants to boot it by hand. On a
       # release the job below takes them from here.
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ !cancelled() }}
         with:
           if-no-files-found: ignore
@@ -264,11 +273,11 @@ jobs:
       TAG: ${{ needs.release.outputs.tag }}
       VERSION: ${{ needs.release.outputs.version }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: arch-os
           path: dist
@@ -287,7 +296,7 @@ jobs:
       # Which commit and which run these files came out of, signed by the run
       # that made them — the only one that can say so truthfully.
       - name: Sign the provenance
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: |
             dist/*.tar.gz
