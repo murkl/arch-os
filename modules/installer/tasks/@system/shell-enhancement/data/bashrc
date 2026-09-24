@@ -12,11 +12,7 @@ fi
 
 source "${HOME}/.aliases"
 
-# Suggest the package a missing command lives in.
-[ -f /usr/share/doc/pkgfile/command-not-found.bash ] && source /usr/share/doc/pkgfile/command-not-found.bash
-
 shopt -s autocd                  # a bare directory name changes into it
-shopt -s cdspell                 # correct small typos in a path
 shopt -s checkwinsize            # notice the terminal being resized
 shopt -s histappend              # add to the history file rather than replacing it
 shopt -s cmdhist                 # keep a multi-line command as one entry
@@ -50,7 +46,6 @@ export LS_COLORS="di=1;34:ln=36:so=35:pi=33:ex=32:bd=33;1:cd=33;1:su=31:sg=31:tw
 # Tells GNOME Console the current folder, so a new tab opens in it.
 [ -f /etc/profile.d/vte.sh ] && source /etc/profile.d/vte.sh
 
-# {{SHELL_HANDOVER}}
 # The prompt draws in a nerd font, and the one screen that cannot show one is
 # the text console: it has a single font with a fixed table of glyphs, and every
 # mark the prompt is made of comes out as a box. TERM is what says so and says

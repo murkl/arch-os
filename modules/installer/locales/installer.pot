@@ -213,16 +213,6 @@ msgstr ""
 msgid "Choose a disk that exists."
 msgstr ""
 
-#. ARCH_OS_FILESYSTEM: the question
-#: module.yaml
-msgid "File system"
-msgstr ""
-
-#. ARCH_OS_FILESYSTEM: what it means
-#: module.yaml
-msgid "btrfs supports snapshots, so a system update can be rolled back. ext4 is simpler, but does not support that."
-msgstr ""
-
 #. ARCH_OS_ENCRYPTION_ENABLED: the question
 #: module.yaml
 msgid "Disk encryption"
@@ -231,41 +221,6 @@ msgstr ""
 #. ARCH_OS_ENCRYPTION_ENABLED: what it means
 #: module.yaml
 msgid "Encrypts the whole system with your password, so the data cannot be read by removing the disk. The password is then required at every boot."
-msgstr ""
-
-#. ARCH_OS_BTRFS_SNAPPER_ENABLED: the question
-#: module.yaml
-msgid "Snapshots"
-msgstr ""
-
-#. ARCH_OS_BTRFS_SNAPPER_ENABLED: what it means
-#: module.yaml
-msgid "Takes a snapshot before every package change and cleans up old ones automatically, so a bad update can be undone."
-msgstr ""
-
-#. ARCH_OS_BTRFS_ASSISTANT_ENABLED: the question
-#: module.yaml
-msgid "Snapshot manager"
-msgstr ""
-
-#. ARCH_OS_BTRFS_ASSISTANT_ENABLED: what it means
-#: module.yaml
-msgid "A desktop application for browsing and restoring snapshots."
-msgstr ""
-
-#. ARCH_OS_BOOTLOADER: the question
-#: module.yaml
-msgid "Boot loader"
-msgstr ""
-
-#. ARCH_OS_BOOTLOADER: what it means
-#: module.yaml
-msgid "systemd-boot is small and needs no maintenance. GRUB can show a menu of btrfs snapshots to boot into."
-msgstr ""
-
-#. ARCH_OS_BOOTLOADER: the heading its row sits under
-#: module.yaml
-msgid "Boot"
 msgstr ""
 
 #. ARCH_OS_SECURE_BOOT_ENABLED: the question
@@ -278,14 +233,9 @@ msgstr ""
 msgid "Signs the kernel and boot loader with keys generated for this machine, so the firmware starts nothing else. In firmware setup mode the keys are enrolled automatically and you only need to turn Secure Boot on afterwards. Otherwise everything is signed and enrolling the keys is left to you."
 msgstr ""
 
-#. ARCH_OS_KERNEL: the question
+#. ARCH_OS_SECURE_BOOT_ENABLED: the heading its row sits under
 #: module.yaml
-msgid "Kernel"
-msgstr ""
-
-#. ARCH_OS_KERNEL: what it means
-#: module.yaml
-msgid "linux-zen is tuned for desktop responsiveness. linux is the stock kernel, linux-lts a long-term one, linux-hardened a security-focused one."
+msgid "Boot"
 msgstr ""
 
 #. ARCH_OS_KERNEL_ARGS: the question
@@ -298,34 +248,9 @@ msgstr ""
 msgid "Extra parameters passed to the kernel at boot, separated by spaces. Leave empty unless you know you need one."
 msgstr ""
 
-#. ARCH_OS_KERNEL_ARGS: what a wrong answer is told
-#: module.yaml
-msgid "Quotes, backslashes, dollar signs and backticks cannot be used here."
-msgstr ""
-
-#. ARCH_OS_MICROCODE: the question
-#: module.yaml
-msgid "Processor firmware"
-msgstr ""
-
-#. ARCH_OS_MICROCODE: what it means
-#: module.yaml
-msgid "Firmware updates loaded at boot. auto detects the processor automatically — the right choice unless you are preparing this image for a different machine."
-msgstr ""
-
 #. ARCH_OS_DESKTOP: what it means
 #: module.yaml
 msgid "gnome installs the GNOME desktop. none leaves the system on a text console, with nothing graphical installed."
-msgstr ""
-
-#. ARCH_OS_DESKTOP_GRAPHICS_DRIVER: the question
-#: module.yaml
-msgid "Graphics driver"
-msgstr ""
-
-#. ARCH_OS_DESKTOP_GRAPHICS_DRIVER: what it means
-#: module.yaml
-msgid "mesa is the open driver and fits almost every machine. Pick one matching your card only if you know you need it. nvidia is NVIDIA's own open kernel module and needs a GTX 16 series card or newer - Arch ships no driver at all for the ones before it, and those run on mesa."
 msgstr ""
 
 #. ARCH_OS_DESKTOP_KEYBOARD_LAYOUT: the question
@@ -378,16 +303,6 @@ msgstr ""
 msgid "Removes the GNOME applications that come with the desktop and are rarely used."
 msgstr ""
 
-#. ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED: the question
-#: module.yaml
-msgid "Log in automatically"
-msgstr ""
-
-#. ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED: what it means
-#: module.yaml
-msgid "Skips the login screen. auto follows disk encryption: a disk already unlocked at boot gains nothing from a second password, while without encryption the login screen is the only protection left."
-msgstr ""
-
 #. ARCH_OS_FLATPAK_ENABLED: the question
 #: module.yaml
 msgid "Flatpak"
@@ -405,7 +320,7 @@ msgstr ""
 
 #. ARCH_OS_SAMBA_SHARE_ENABLED: what it means
 #: module.yaml
-msgid "Shares your home folder and a public folder on the local network, readable by Windows and macOS."
+msgid "Shares your home folder and a public folder on the local network, readable by Windows and macOS. Anyone on the same network can try your password against it, so turn it on only on a network you trust."
 msgstr ""
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: the question
@@ -510,17 +425,7 @@ msgstr ""
 
 #. ARCH_OS_SHELL_ENHANCEMENT_ENABLED: what it means
 #: module.yaml
-msgid "A better terminal out of the box: a prompt showing git state, colourful listings, fuzzy search, useful aliases."
-msgstr ""
-
-#. ARCH_OS_SHELL_ENHANCEMENT_SHELL: the question
-#: module.yaml
-msgid "Shell"
-msgstr ""
-
-#. ARCH_OS_SHELL_ENHANCEMENT_SHELL: what it means
-#: module.yaml
-msgid "bash is always set up; zsh or fish add completion and suggestions as you type and become the shell that opens instead."
+msgid "A better terminal out of the box: zsh with completion and suggestions as you type, a prompt showing git state, colourful listings, fuzzy search, useful aliases."
 msgstr ""
 
 #. ARCH_OS_MANAGER_ENABLED: the question
@@ -533,24 +438,24 @@ msgstr ""
 msgid "A menu for updating, cleaning up and repairing the system after installation."
 msgstr ""
 
-#. ARCH_OS_VM_SUPPORT_ENABLED: the question
+#. ARCH_OS_VIRTUAL_MACHINE: the question
 #: module.yaml
-msgid "Virtual machine support"
+msgid "Virtual machine"
 msgstr ""
 
-#. ARCH_OS_VM_SUPPORT_ENABLED: what it means
+#. ARCH_OS_VIRTUAL_MACHINE: what it means
 #: module.yaml
-msgid "Inside a virtual machine, the guest tools that make the screen resize and the clipboard work. On real hardware there is no guest to support, so it installs the other end instead: what it takes to run a virtual machine of your own. Without a desktop that is the console half of it, without the manager window."
+msgid "Whether this machine is itself a virtual one."
 msgstr ""
 
-#. ARCH_OS_ECN_ENABLED: the question
+#. ARCH_OS_VM_HOST_ENABLED: the question
 #: module.yaml
-msgid "Explicit congestion notification"
+msgid "Virtual machines"
 msgstr ""
 
-#. ARCH_OS_ECN_ENABLED: what it means
+#. ARCH_OS_VM_HOST_ENABLED: what it means
 #: module.yaml
-msgid "Leave on. Turning it off helps only behind old routers that drop connections which use it."
+msgid "Runs virtual machines on this computer: QEMU and libvirt, and on a desktop the Virtual Machine Manager window. Inside a virtual machine this is not offered - the guest tools that make the screen resize and the clipboard work are installed there on their own."
 msgstr ""
 
 #. ARCH_OS_CONFIG_URL: the question
@@ -599,11 +504,6 @@ msgid "Configure the system"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@base/congestion-notification/task.yaml
-msgid "Turn congestion notification off"
-msgstr ""
-
-#. the step, as the run lists it
 #: tasks/@base/core-tweaks/task.yaml
 msgid "Apply the core tweaks"
 msgstr ""
@@ -616,11 +516,6 @@ msgstr ""
 #. the step, as the run lists it
 #: tasks/@boot/initramfs/task.yaml
 msgid "Build the boot images"
-msgstr ""
-
-#. the step, as the run lists it
-#: tasks/@boot/grub/task.yaml
-msgid "Install GRUB"
 msgstr ""
 
 #. the step, as the run lists it
@@ -679,8 +574,13 @@ msgid "Start the SSH server"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@system/vm-support/task.yaml
-msgid "Add virtual machine support"
+#: tasks/@system/vm-guest/task.yaml
+msgid "Add the virtual machine guest tools"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@system/vm-host/task.yaml
+msgid "Set up virtual machines"
 msgstr ""
 
 #. the step, as the run lists it
@@ -716,11 +616,6 @@ msgstr ""
 #. the step, as the run lists it
 #: tasks/@finalize/snapper/task.yaml
 msgid "Set up Snapper"
-msgstr ""
-
-#. the step, as the run lists it
-#: tasks/@finalize/snapshot-hook/task.yaml
-msgid "Snapshot before every package change"
 msgstr ""
 
 #. the step, as the run lists it

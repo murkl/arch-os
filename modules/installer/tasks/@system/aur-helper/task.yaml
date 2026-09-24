@@ -1,3 +1,7 @@
 title: Install the AUR helper
 needs: [enable-multilib]
 conditions: ARCH_OS_AUR_HELPER != none
+
+# Built from the AUR, which can be out of reach for days. Nothing else in the
+# system needs it, and it can be built again once the AUR answers.
+optional: true

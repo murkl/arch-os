@@ -73,8 +73,6 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     packages+=(adw-gtk-theme)
 fi
 
-[ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_ASSISTANT_ENABLED" = "true" ] && packages+=(btrfs-assistant)
-
 chroot_pacman_install "${packages[@]}"
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -113,41 +111,21 @@ fi
 # LOGIN SCREEN
 # ////////////////////////////////////////////////////////////////////////////
 
+# Automatic login behind an encrypted disk, and nowhere else: the password at
+# boot already stands in front of the desktop, and without encryption the login
+# screen is the only protection there is.
+#
+# GDM then never sees a password, and PAM would have none to unlock the login
+# keyring with - except that systemd-cryptsetup leaves the LUKS passphrase in
+# the kernel keyring and pam_gdm hands it on.
+# https://wiki.archlinux.org/title/GNOME/Keyring#PAM_step
+#
 # Only written where there is something to say: /etc/gdm/custom.conf belongs to
 # the gdm package, and a copy repeating its defaults is a file to merge after
 # every update for nothing gained.
-if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
+if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
     mkdir -p "${MNT}/etc/gdm"
     render "${data}/custom.conf" USERNAME="$ARCH_OS_USERNAME" >"${MNT}/etc/gdm/custom.conf"
-fi
-
-# Under automatic login GDM never sees a password, so PAM has none to unlock the
-# login keyring with - except on an encrypted disk, where systemd-cryptsetup
-# leaves the LUKS passphrase in the kernel keyring and pam_gdm hands it on. That
-# is how this installer builds a system anyway.
-# https://wiki.archlinux.org/title/GNOME/Keyring#PAM_step
-#
-# Without encryption there is nothing to hand on, and GNOME's own answer is a
-# login keyring with no password at all - the trade a machine that logs itself
-# in has already made. Created from here rather than from the first-login
-# script, which would race GDM's own PAM hook on that same login.
-if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ] && [ "$ARCH_OS_ENCRYPTION_ENABLED" != "true" ]; then
-    keyring="/home/${ARCH_OS_USERNAME}/.local/share/keyrings/login.keyring"
-
-    # A session bus, which a chroot has as little as it has a session.
-    as_user 'dbus-run-session -- gnome-keyring-daemon --unlock <<< ""' || true
-
-    # It forks before it has written the keyring and stays behind once it has,
-    # and a process of the target still running is a mount that will not come
-    # down at the end.
-    for _ in $(seq 50); do
-        [ -s "${MNT}${keyring}" ] && break
-        sleep 0.1
-    done
-    arch-chroot "$MNT" pkill -u "$ARCH_OS_USERNAME" -x gnome-keyring-d || true
-
-    [ -s "${MNT}${keyring}" ] ||
-        echo "no passwordless login keyring was created, the desktop will ask for one on first use" >&2
 fi
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -201,13 +179,11 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     arch-chroot "$MNT" systemctl enable cups.socket # printing
 fi
 
-# --global writes to /etc/systemd/user, so it holds for every account and keeps
-# working when a unit is renamed. The sockets rather than the services, as
-# PipeWire itself sets it up: the sound server starts with the first program
-# that plays or records, wireplumber with it, and neither in a session that has
-# nothing to play - root's on the console, where the service would be turned
-# away and take its session manager down with it, in the journal every time.
-arch-chroot "$MNT" systemctl --global enable pipewire.socket pipewire-pulse.socket wireplumber.service gcr-ssh-agent.socket
+# The keyring's ssh agent, which gcr ships switched off. PipeWire and
+# WirePlumber switch themselves on when they are installed. --global writes to
+# /etc/systemd/user, so it holds for every account.
+# https://wiki.archlinux.org/title/GNOME/Keyring#SSH_keys
+arch-chroot "$MNT" systemctl --global enable gcr-ssh-agent.socket
 
 # ////////////////////////////////////////////////////////////////////////////
 # APPLICATION LIST
@@ -224,12 +200,6 @@ while read -r scope name; do
     esac
     hide "$name"
 done <"${data}/hidden-apps"
-
-# The snapshot browser under a name that says what it is for. A file of the same
-# name in the user's own applications folder wins over the one in /usr.
-if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_ASSISTANT_ENABLED" = "true" ]; then
-    render "${data}/btrfs-assistant.desktop" >"${apps}/btrfs-assistant.desktop"
-fi
 
 # ////////////////////////////////////////////////////////////////////////////
 # WHAT ONLY THE FIRST LOGIN CAN DO

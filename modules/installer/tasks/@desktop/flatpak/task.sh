@@ -4,8 +4,3 @@
 
 # gnome-software only recommends it, so the group never pulls it in.
 chroot_pacman_install flatpak
-
-# So flatpaks read the desktop theme rather than standing out as light windows
-# on a dark desktop.
-arch-chroot "$MNT" flatpak override --filesystem=xdg-config/gtk-3.0
-arch-chroot "$MNT" flatpak override --filesystem=xdg-config/gtk-4.0

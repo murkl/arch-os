@@ -1,7 +1,5 @@
-# Two sides of one switch, and which applies is detected rather than asked.
-# Inside a virtual machine this installs the guest tools; on real hardware there
-# is no guest to support, so it installs what it takes to run one instead.
-# https://wiki.archlinux.org/title/Libvirt
+# The guest half of a virtual machine, for whichever hypervisor this one runs
+# under. Running virtual machines of its own is the vm-host task.
 
 case "$(systemd-detect-virt || true)" in
 
@@ -38,31 +36,8 @@ microsoft)
     arch-chroot "$MNT" systemctl enable hv_vss_daemon
     ;;
 
-none)
-    echo "no virtual machine detected, installing what it takes to run one"
-
-    # libvirt, a guest firmware and dnsmasq either way. What differs is the
-    # console: qemu-desktop and virt-manager where there is a desktop to open
-    # them in, qemu-base and virsh where there is not.
-    if [ "$ARCH_OS_DESKTOP" = "none" ]; then
-        chroot_pacman_install qemu-base libvirt virt-install dnsmasq edk2-ovmf
-    else
-        chroot_pacman_install qemu-desktop libvirt virt-install virt-manager dnsmasq edk2-ovmf
-    fi
-
-    # The socket rather than the service: the daemon starts with the first
-    # command that speaks to it.
-    arch-chroot "$MNT" systemctl enable libvirtd.socket
-
-    # Without it every virsh and every virt-manager window asks for a root
-    # password.
-    arch-chroot "$MNT" usermod -aG libvirt "$ARCH_OS_USERNAME"
-    ;;
-
 # A hypervisor none of the above knows - Xen, Parallels, a cloud one. There are
-# no guest tools here to install for it, and what the branch above installs is
-# the other side of the switch: a machine that is already a guest has no use
-# for the means to run one.
+# no guest tools here to install for it.
 *)
     echo "detected $(systemd-detect-virt || true), which has no guest tools here - nothing installed"
     ;;

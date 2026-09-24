@@ -5,19 +5,11 @@
 
 # sudo is named outright: it comes with base-devel, which only an installation
 # that builds from the AUR needs, and the wheel rule is written either way.
-packages=("$ARCH_OS_KERNEL" base sudo zram-generator networkmanager)
+packages=("$KERNEL" base sudo zram-generator networkmanager btrfs-progs snapper)
 
 # Firmware is for hardware, and a guest has none. The exception is a card handed
-# through to one, and the graphics answer is where that is said.
-needs_firmware() {
-    [ "$(systemd-detect-virt || true)" = "none" ] && return 0
-    case "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" in
-    nvidia | amd | ati | intel_i915) return 0 ;;
-    esac
-    return 1
-}
-
-if needs_firmware; then
+# through to one.
+if [ "$ARCH_OS_VIRTUAL_MACHINE" = "false" ] || [ -n "$(graphics_cards)" ]; then
     packages+=(linux-firmware wireless-regdb)
 else
     echo "a virtual machine with no card of its own: leaving out linux-firmware"
@@ -27,18 +19,9 @@ fi
 # cannot edit its own configuration, look anything up or reach another machine.
 packages+=("$ARCH_OS_EDITOR" man-db man-pages openssh)
 
-[ "$ARCH_OS_MICROCODE" != "none" ] && packages+=("$ARCH_OS_MICROCODE")
-[ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(btrfs-progs)
-[ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_SNAPPER_ENABLED" = "true" ] && packages+=(snapper)
+ucode="$(microcode)"
+[ -n "$ucode" ] && packages+=("$ucode")
 secure_boot_wanted && packages+=(sbctl)
-
-# grub-install writes the firmware boot entry through efibootmgr; bootctl talks
-# to efivarfs itself and needs neither. grub-btrfsd watches the snapshot
-# directory with inotify.
-if [ "$ARCH_OS_BOOTLOADER" = "grub" ]; then
-    packages+=(grub efibootmgr)
-    [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(grub-btrfs inotify-tools)
-fi
 
 # Before the packages, because installing the kernel builds a ram disk and the
 # hook that puts a keyboard layout in it reads this file.

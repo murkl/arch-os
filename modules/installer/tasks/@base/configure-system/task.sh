@@ -67,7 +67,8 @@ render "$(where)/environment" EDITOR="$editor" >>"${MNT}/etc/environment"
 
 # Compressed swap in memory: faster than a swap partition, and no SSD wear.
 # As a drop-in, which leaves /etc/systemd/zram-generator.conf to whoever owns
-# the machine. https://wiki.archlinux.org/title/Zram
+# the machine. The generator sets the device up at every boot on its own, so
+# there is no unit to switch on. https://wiki.archlinux.org/title/Zram
 mkdir -p "${MNT}/etc/systemd/zram-generator.conf.d"
 render "$(where)/zram-generator.conf" >"${MNT}/etc/systemd/zram-generator.conf.d/10-arch-os.conf"
 
@@ -77,9 +78,7 @@ render "$(where)/99-vm-zram-parameters.conf" >"${MNT}/etc/sysctl.d/99-vm-zram-pa
 # ----------------------------------------------------------------------------
 
 # The services a working system runs, switched on so the first boot comes up
-# with a network, a clock and the swap set up above.
+# with a network and a clock.
 arch-chroot "$MNT" systemctl enable NetworkManager
-arch-chroot "$MNT" systemctl enable fstrim.timer                     # keeps an SSD fast
-arch-chroot "$MNT" systemctl enable systemd-zram-setup@zram0.service # the swap set up above
-arch-chroot "$MNT" systemctl enable systemd-oomd.service             # kills a runaway before the machine locks up
+arch-chroot "$MNT" systemctl enable fstrim.timer # keeps an SSD fast
 arch-chroot "$MNT" systemctl enable systemd-timesyncd.service

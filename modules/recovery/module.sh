@@ -19,8 +19,9 @@ BTRFS_TOP=/run/arch-os-recovery
 
 # The partition the installation is on: the second, where the Installer puts
 # it. Taken for it only while it holds what the Installer makes of it - a LUKS
-# container, or a file system labelled ROOT (ext4) or BTRFS - so a disk that is
-# something else is turned away before anything on it is opened. /boot is read
+# container, or a file system labelled BTRFS, or ROOT for the ext4 an earlier
+# Installer offered - so a disk that is something else is turned away before
+# anything on it is opened. /boot is read
 # out of the installation's own fstab once it is open - see mount_target.
 #
 # Raw output with a single space between columns, so a column left empty stays
@@ -65,7 +66,8 @@ on_btrfs() { [ "$(fstype "$(root_device)")" = "btrfs" ]; }
 # ////////////////////////////////////////////////////////////////////////////
 
 # Which package a module directory belongs to: 6.12.4-arch1-1 is the stock
-# kernel, anything carrying zen, lts or hardened is that one. Here because the
+# kernel, anything carrying zen, lts or hardened is that one. The Installer puts
+# linux-zen on every disk now; an earlier one offered all four. Here because the
 # repair puts the image back under this name and its test reads it back by the
 # same one.
 kernel_package() {

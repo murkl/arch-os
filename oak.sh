@@ -110,7 +110,7 @@ part_of() {
 # How Arch OS mounts btrfs, and what it lays down: subvolume, a tab, then where
 # it belongs. The Installer creates every one of them; the Recovery mounts
 # whichever of them an installation actually has, since an older one may have
-# fewer. Why the three under /var are separate: docs/REFERENCE.md
+# fewer. Why the four under /var are separate: docs/REFERENCE.md
 #
 # Read by the modules' scripts, which shellcheck reads one at a time, so the
 # option string looks unused here.
@@ -124,5 +124,6 @@ btrfs_subvolumes() {
         @snapshots /.snapshots \
         @log /var/log \
         @cache /var/cache \
-        @tmp /var/tmp
+        @tmp /var/tmp \
+        @libvirt /var/lib/libvirt/images
 }

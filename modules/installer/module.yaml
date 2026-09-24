@@ -52,17 +52,12 @@ presets:
       - title: Desktop
         description: The Core, with a GNOME desktop on top of it - drivers, codecs, fonts and everyday applications.
         values:
-          ARCH_OS_FILESYSTEM: btrfs
           ARCH_OS_ENCRYPTION_ENABLED: true
-          ARCH_OS_BTRFS_SNAPPER_ENABLED: true
-          ARCH_OS_BTRFS_ASSISTANT_ENABLED: true
-          ARCH_OS_BOOTLOADER: systemd
           ARCH_OS_DESKTOP: gnome
-          ARCH_OS_DESKTOP_GRAPHICS_DRIVER: mesa
           ARCH_OS_DESKTOP_EXTRAS_ENABLED: true
           ARCH_OS_DESKTOP_SLIM_ENABLED: true
           ARCH_OS_FLATPAK_ENABLED: true
-          ARCH_OS_SAMBA_SHARE_ENABLED: true
+          ARCH_OS_SAMBA_SHARE_ENABLED: false
           ARCH_OS_CORE_TWEAKS_ENABLED: true
           ARCH_OS_BOOTSPLASH_ENABLED: true
           ARCH_OS_MULTILIB_ENABLED: true
@@ -72,23 +67,15 @@ presets:
           ARCH_OS_SSH_SERVER_ENABLED: false
           ARCH_OS_HOUSEKEEPING_ENABLED: true
           ARCH_OS_SHELL_ENHANCEMENT_ENABLED: true
-          ARCH_OS_SHELL_ENHANCEMENT_SHELL: zsh
           ARCH_OS_MANAGER_ENABLED: true
-          ARCH_OS_VM_SUPPORT_ENABLED: true
+          ARCH_OS_VM_HOST_ENABLED: false
 
-      # Everything off that can be off. The exception is virtual machine
-      # support: on a console system that is what it takes to run one, which a
-      # machine without a desktop is more likely to be for, not less.
+      # Everything off that can be off.
       - title: Core
         description: A minimal Arch Linux on the text console, with nothing graphical on it and nothing beyond what you choose.
         values:
-          ARCH_OS_FILESYSTEM: ext4
           ARCH_OS_ENCRYPTION_ENABLED: false
-          ARCH_OS_BTRFS_SNAPPER_ENABLED: false
-          ARCH_OS_BTRFS_ASSISTANT_ENABLED: false
-          ARCH_OS_BOOTLOADER: systemd
           ARCH_OS_DESKTOP: none
-          ARCH_OS_DESKTOP_GRAPHICS_DRIVER: none
           ARCH_OS_DESKTOP_EXTRAS_ENABLED: false
           ARCH_OS_DESKTOP_SLIM_ENABLED: false
           ARCH_OS_FLATPAK_ENABLED: false
@@ -102,9 +89,8 @@ presets:
           ARCH_OS_SSH_SERVER_ENABLED: false
           ARCH_OS_HOUSEKEEPING_ENABLED: false
           ARCH_OS_SHELL_ENHANCEMENT_ENABLED: false
-          ARCH_OS_SHELL_ENHANCEMENT_SHELL: bash
           ARCH_OS_MANAGER_ENABLED: false
-          ARCH_OS_VM_SUPPORT_ENABLED: true
+          ARCH_OS_VM_HOST_ENABLED: false
 
       # Not a set of answers written out here but one fetched: a configuration
       # shared at the end of an earlier installation.
@@ -250,15 +236,6 @@ variables:
     command: list_disks
     pattern: '^/dev/[A-Za-z0-9_-]+$'
 
-  - name: ARCH_OS_FILESYSTEM
-    title: File system
-    description: |
-      btrfs supports snapshots, so a system update can be rolled back. ext4 is
-      simpler, but does not support that.
-    group: Storage
-    values: [btrfs, ext4]
-    required: true
-
   - name: ARCH_OS_ENCRYPTION_ENABLED
     title: Disk encryption
     description: |
@@ -268,39 +245,7 @@ variables:
     type: bool
     required: true
 
-  - name: ARCH_OS_BTRFS_SNAPPER_ENABLED
-    title: Snapshots
-    description: |
-      Takes a snapshot before every package change and cleans up old ones
-      automatically, so a bad update can be undone.
-    group: Storage
-    type: bool
-    default: true
-    conditions: ARCH_OS_FILESYSTEM == btrfs
-
-  - name: ARCH_OS_BTRFS_ASSISTANT_ENABLED
-    title: Snapshot manager
-    description: A desktop application for browsing and restoring snapshots.
-    group: Storage
-    type: bool
-    default: true
-    # The desktop among them because it is a desktop application, and the
-    # desktop task is what installs it.
-    conditions:
-      - ARCH_OS_FILESYSTEM == btrfs
-      - ARCH_OS_BTRFS_SNAPPER_ENABLED == true
-      - ARCH_OS_DESKTOP != none
-
   # ─── Boot ──────────────────────────────────────────────────────────────────
-  - name: ARCH_OS_BOOTLOADER
-    title: Boot loader
-    description: |
-      systemd-boot is small and needs no maintenance. GRUB can show a menu of
-      btrfs snapshots to boot into.
-    group: Boot
-    values: [systemd, grub]
-    required: true
-
   - name: ARCH_OS_SECURE_BOOT_ENABLED
     title: Secure Boot
     description: |
@@ -312,19 +257,7 @@ variables:
     group: Boot
     type: bool
     default: true
-    conditions:
-      - ARCH_OS_ENCRYPTION_ENABLED == true
-      - ARCH_OS_BOOTLOADER == systemd
-
-  - name: ARCH_OS_KERNEL
-    title: Kernel
-    description: |
-      linux-zen is tuned for desktop responsiveness. linux is the stock kernel,
-      linux-lts a long-term one, linux-hardened a security-focused one.
-    group: Boot
-    values: [linux-zen, linux, linux-lts, linux-hardened]
-    default: linux-zen
-    required: true
+    conditions: ARCH_OS_ENCRYPTION_ENABLED == true
 
   - name: ARCH_OS_KERNEL_ARGS
     title: Kernel parameters
@@ -332,22 +265,6 @@ variables:
       Extra parameters passed to the kernel at boot, separated by spaces.
       Leave empty unless you know you need one.
     group: Boot
-    # What GRUB's own file cannot hold: it keeps the command line as a quoted
-    # shell assignment and sources it, so any of these would be read as shell.
-    pattern: '^[^"\\`$]*$'
-    error: Quotes, backslashes, dollar signs and backticks cannot be used here.
-
-  - name: ARCH_OS_MICROCODE
-    title: Processor firmware
-    description: |
-      Firmware updates loaded at boot. auto detects the processor automatically
-      — the right choice unless you are preparing this image for a different
-      machine.
-    group: Boot
-    default: auto
-    required: true
-    command: list_microcode
-    pattern: '^[a-z][a-z-]*$'
 
   # ─── Desktop ───────────────────────────────────────────────────────────────
   - name: ARCH_OS_DESKTOP
@@ -358,18 +275,6 @@ variables:
     group: Desktop
     values: [gnome, none]
     required: true
-
-  - name: ARCH_OS_DESKTOP_GRAPHICS_DRIVER
-    title: Graphics driver
-    description: |
-      mesa is the open driver and fits almost every machine. Pick one matching
-      your card only if you know you need it. nvidia is NVIDIA's own open
-      kernel module and needs a GTX 16 series card or newer - Arch ships no
-      driver at all for the ones before it, and those run on mesa.
-    group: Desktop
-    values: [mesa, intel_i915, nvidia, amd, ati, none]
-    required: true
-    conditions: ARCH_OS_DESKTOP != none
 
   - name: ARCH_OS_DESKTOP_KEYBOARD_LAYOUT
     title: Desktop keyboard
@@ -426,18 +331,6 @@ variables:
     default: true
     conditions: ARCH_OS_DESKTOP != none
 
-  - name: ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED
-    title: Log in automatically
-    description: |
-      Skips the login screen. auto follows disk encryption: a disk already
-      unlocked at boot gains nothing from a second password, while without
-      encryption the login screen is the only protection left.
-    group: Desktop
-    values: [auto, true, false]
-    default: auto
-    required: true
-    conditions: ARCH_OS_DESKTOP != none
-
   - name: ARCH_OS_FLATPAK_ENABLED
     title: Flatpak
     description: |
@@ -452,10 +345,11 @@ variables:
     title: File sharing
     description: |
       Shares your home folder and a public folder on the local network, readable
-      by Windows and macOS.
+      by Windows and macOS. Anyone on the same network can try your password
+      against it, so turn it on only on a network you trust.
     group: Desktop
     type: bool
-    default: true
+    default: false
     # The same two the task that shares carries, so this is never a row that is
     # answered and then never acted on.
     conditions:
@@ -495,7 +389,7 @@ variables:
       the official repositories. Built here, against the pacman this machine
       has, which takes about a quarter of an hour.
     group: System
-    values: [paru, yay, none]
+    values: [paru, none]
     default: paru
     required: true
 
@@ -553,22 +447,12 @@ variables:
   - name: ARCH_OS_SHELL_ENHANCEMENT_ENABLED
     title: Shell enhancement
     description: |
-      A better terminal out of the box: a prompt showing git state, colourful
-      listings, fuzzy search, useful aliases.
+      A better terminal out of the box: zsh with completion and suggestions as
+      you type, a prompt showing git state, colourful listings, fuzzy search,
+      useful aliases.
     group: System
     type: bool
     default: true
-
-  - name: ARCH_OS_SHELL_ENHANCEMENT_SHELL
-    title: Shell
-    description: |
-      bash is always set up; zsh or fish add completion and suggestions as you
-      type and become the shell that opens instead.
-    group: System
-    values: [bash, zsh, fish]
-    default: zsh
-    required: true
-    conditions: ARCH_OS_SHELL_ENHANCEMENT_ENABLED == true
 
   - name: ARCH_OS_MANAGER_ENABLED
     title: Arch OS Manager
@@ -577,26 +461,27 @@ variables:
     type: bool
     default: true
 
-  - name: ARCH_OS_VM_SUPPORT_ENABLED
-    title: Virtual machine support
-    description: |
-      Inside a virtual machine, the guest tools that make the screen resize and
-      the clipboard work. On real hardware there is no guest to support, so it
-      installs the other end instead: what it takes to run a virtual machine of
-      your own. Without a desktop that is the console half of it, without the
-      manager window.
+  # Not asked: whether this machine is a virtual one is a fact about it. Inside
+  # one, the guest tools are installed without a question; on real hardware,
+  # running virtual machines of one's own is the question below.
+  - name: ARCH_OS_VIRTUAL_MACHINE
+    title: Virtual machine
+    description: Whether this machine is itself a virtual one.
     group: System
     type: bool
-    default: true
+    answer: in_virtual_machine
 
-  - name: ARCH_OS_ECN_ENABLED
-    title: Explicit congestion notification
+  - name: ARCH_OS_VM_HOST_ENABLED
+    title: Virtual machines
     description: |
-      Leave on. Turning it off helps only behind old routers that drop
-      connections which use it.
+      Runs virtual machines on this computer: QEMU and libvirt, and on a
+      desktop the Virtual Machine Manager window. Inside a virtual machine this
+      is not offered - the guest tools that make the screen resize and the
+      clipboard work are installed there on their own.
     group: System
     type: bool
-    default: true
+    default: false
+    conditions: ARCH_OS_VIRTUAL_MACHINE == false
 
   # ─── Sharing ───────────────────────────────────────────────────────────────
   #

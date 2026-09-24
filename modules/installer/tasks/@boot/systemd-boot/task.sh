@@ -1,6 +1,5 @@
-# The loader the firmware starts, and how it is told to start this system. Its
-# own task beside the GRUB one, so a run that installs the other never even
-# lists this step. https://wiki.archlinux.org/title/Systemd-boot
+# The loader the firmware starts, and how it is told to start this system.
+# https://wiki.archlinux.org/title/Systemd-boot
 
 data="$(where)"
 
@@ -16,7 +15,7 @@ bootctl --root="$MNT" --esp-path=/boot --variables=yes install
 # EFI/Linux.
 default=main.conf
 if secure_boot_wanted; then
-    default="arch-${ARCH_OS_KERNEL}.efi"
+    default="arch-${KERNEL}.efi"
 fi
 
 render "${data}/loader.conf" DEFAULT="$default" >"${MNT}/boot/loader/loader.conf"
@@ -26,7 +25,7 @@ render "${data}/loader.conf" DEFAULT="$default" >"${MNT}/boot/loader/loader.conf
 if ! secure_boot_wanted; then
     cmdline="$(kernel_args)"
     for entry in main main-fallback; do
-        render "${data}/${entry}.conf" KERNEL="$ARCH_OS_KERNEL" CMDLINE="$cmdline" \
+        render "${data}/${entry}.conf" KERNEL="$KERNEL" CMDLINE="$cmdline" \
             >"${MNT}/boot/loader/entries/${entry}.conf"
     done
 fi

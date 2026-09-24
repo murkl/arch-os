@@ -3,3 +3,7 @@ title: Install the boot splash
 # system — and the theme is built from source against the packages installed.
 needs: [enable-multilib]
 conditions: ARCH_OS_BOOTSPLASH_ENABLED == true
+
+# The theme is built from the AUR, which can be out of reach for days. The
+# system starts without it, behind Plymouth's own logo - see task.sh.
+optional: true

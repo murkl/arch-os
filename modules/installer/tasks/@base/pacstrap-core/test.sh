@@ -1,7 +1,7 @@
 # A system on the disk is a package database and a kernel to boot.
 
 [ -x "${MNT}/usr/bin/pacman" ]
-[ -f "${MNT}/boot/vmlinuz-${ARCH_OS_KERNEL}" ]
+[ -f "${MNT}/boot/vmlinuz-${KERNEL}" ]
 
 # And a file system table, read by the tool that will read it at boot rather
 # than looked at. genfstab writes what happened to be mounted when it ran, so a

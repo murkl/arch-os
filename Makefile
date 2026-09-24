@@ -58,7 +58,7 @@ MODULE_PARTS := module.sh data locales tasks hooks
 # rather than followed, so a build of a given commit is the same build tomorrow.
 # Written without the `v` its tag carries.
 OAK_REPO    := murkl/oak
-OAK_VERSION ?= 0.7.0
+OAK_VERSION ?= 0.8.0
 OAK_ASSET   := oak-linux-amd64
 OAK_DIR     := .oak
 
@@ -132,12 +132,10 @@ MODULE_SCRIPTS = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -name '*.sh')
 MODULE_YAML    = $(shell find $(MODULES_DIR) -name '*.yaml')
 
 # The shell a module ships as a file of somebody's home rather than as a task.
-# Found by the name it lands under, since a .bashrc carries no extension. zsh
-# and fish are not dialects shellcheck reads, so those two are read by their own
-# shells instead; the handover fragment is placeholders rather than shell.
+# Found by the name it lands under, since a .bashrc carries no extension. zsh is
+# not a dialect shellcheck reads, so it is read by its own shell instead.
 MODULE_SHELL = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/data/bashrc $(MODULES_DIR)/*/tasks/@*/*/data/aliases)
 MODULE_ZSH   = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/data/zshrc)
-MODULE_FISH  = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/data/config.fish)
 
 # Everything a module can put on a screen: the declarations, the scripts and
 # the shell they share, the tables and every catalog. The READMEs are the one
@@ -376,7 +374,6 @@ lint:
 	shellcheck -x -S style $(MODULE_SCRIPTS)
 	shellcheck -s bash -S style -e SC1091 $(MODULE_SHELL)
 	for file in $(MODULE_ZSH); do zsh -n "$$file"; done
-	for file in $(MODULE_FISH); do fish --no-execute "$$file"; done
 	shfmt -d -ln posix -i 4 $(POSIX_SCRIPTS)
 	shfmt -d -i 4 $(ISO_SCRIPTS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
 	yamllint .

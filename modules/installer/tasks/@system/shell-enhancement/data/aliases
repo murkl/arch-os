@@ -34,15 +34,27 @@ alias ...="cd ../.."
 # this is here to replace.
 alias sv="sudoedit"
 
-# Packages
-# The four that change the system carry {{SUDO}}; the ones that only read do
-# not. An AUR helper asks for the password itself and leaves it empty.
-alias paci='{{SUDO}}{{PKG}} -S'    # install
-alias pacu='{{SUDO}}{{PKG}} -Syu'  # update everything
-alias pacr='{{SUDO}}{{PKG}} -Rns'  # remove
-alias pacrc='{{SUDO}}{{PKG}} -Scc' # clear the download cache
-alias pacs='{{PKG}} -Ss'           # search the repositories
-alias pacls='{{PKG}} -Qs'          # search what is installed
-alias pacl='{{PKG}} -Qe'           # list what was asked for
-alias pacla='{{PKG}} -Qm'          # list what came from the AUR
-alias pacli='{{PKG}} -Qi'          # show a package
+# Packages. paru covers the AUR as well and asks for the password itself;
+# without it, the ones that change the system go through sudo. Asked here rather
+# than decided at installation, so the aliases follow paru arriving or leaving.
+if command -v paru &>/dev/null; then
+    alias paci='paru -S'   # install
+    alias pacu='paru -Syu' # update everything
+    alias pacr='paru -Rns' # remove
+    alias pacs='paru -Ss'  # search the repositories and the AUR
+else
+    alias paci='sudo pacman -S'
+    alias pacu='sudo pacman -Syu'
+    alias pacr='sudo pacman -Rns'
+    alias pacs='pacman -Ss'
+fi
+alias pacls='pacman -Qs' # search what is installed
+alias pacl='pacman -Qe'  # list what was asked for
+alias pacla='pacman -Qm' # list what came from the AUR
+alias pacli='pacman -Qi' # show a package
+
+# The download cache trimmed to the last three versions of what is installed,
+# and emptied of what is not. The versions before the current one are what the
+# Recovery puts a kernel back from after a rollback, so it is never emptied
+# outright. paccache asks for sudo itself.
+command -v paccache &>/dev/null && alias pacrc="paccache -r && paccache -ruk0"

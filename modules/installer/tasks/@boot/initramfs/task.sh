@@ -1,20 +1,17 @@
 # The images the firmware starts: the initial ram disk, or - where the boot chain
 # is signed - the unified kernel image that replaces it.
 #
-# Before the boot loader, because both loaders point at what this leaves behind,
+# Before the boot loader, because the loader points at what this leaves behind,
 # and after the base system, because building a ram disk is mkinitcpio running
 # inside the installed one. Why these hooks and in this order: docs/REFERENCE.md
 # https://wiki.archlinux.org/title/Mkinitcpio#Common_hooks
 
 data="$(where)"
 
-btrfs_hook=""
-[ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BOOTLOADER" = "grub" ] && btrfs_hook=" grub-btrfs-overlayfs"
-
 encrypt_hook=""
 [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && encrypt_hook=" sd-encrypt"
 
-hooks="base systemd keyboard autodetect microcode modconf kms sd-vconsole block${encrypt_hook} filesystems fsck${btrfs_hook}"
+hooks="base systemd keyboard autodetect microcode modconf kms sd-vconsole block${encrypt_hook} filesystems"
 
 # As a drop-in: mkinitcpio reads its own file first and every drop-in after it
 # in name order, so the boot splash (20-) and the graphics driver (30-) build on
@@ -54,8 +51,8 @@ mapfile -t images < <(boot_images)
 # the image that boots a machine its autodetect has stopped being true for -
 # would quietly not exist while the boot entry pointing at it stayed. The signed
 # one names its command line outright: mkinitcpio's last resort is /proc/cmdline.
-render "${data}/${key}.preset" KERNEL="$ARCH_OS_KERNEL" DEFAULT="${images[0]}" FALLBACK="${images[1]}" \
-    >"${MNT}/etc/mkinitcpio.d/${ARCH_OS_KERNEL}.preset"
+render "${data}/${key}.preset" KERNEL="$KERNEL" DEFAULT="${images[0]}" FALLBACK="${images[1]}" \
+    >"${MNT}/etc/mkinitcpio.d/${KERNEL}.preset"
 
 arch-chroot "$MNT" mkinitcpio -P
 
@@ -63,5 +60,5 @@ arch-chroot "$MNT" mkinitcpio -P
 # package shipped. With the preset above it is never written again, and an
 # initramfs nothing updates is what the unified image does away with.
 if secure_boot_wanted; then
-    rm -f "${MNT}/boot/initramfs-${ARCH_OS_KERNEL}.img" "${MNT}/boot/initramfs-${ARCH_OS_KERNEL}-fallback.img"
+    rm -f "${MNT}/boot/initramfs-${KERNEL}.img" "${MNT}/boot/initramfs-${KERNEL}-fallback.img"
 fi

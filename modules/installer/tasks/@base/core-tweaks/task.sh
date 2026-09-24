@@ -37,9 +37,7 @@ render "${data}/99-arch-os-bbr.conf" >"${MNT}/etc/sysctl.d/99-arch-os-bbr.conf"
 mkdir -p "${MNT}/etc/tmpfiles.d"
 render "${data}/arch-os-hugepages.conf" >"${MNT}/etc/tmpfiles.d/arch-os-hugepages.conf"
 
-# How long a service gets to stop, and how many files anything may open. Both
-# numbers of the limit are written out: given one, systemd moves the soft limit
-# to it as well, which is the change this is deliberately not making.
+# How long a service gets to stop.
 for scope in system user; do
     mkdir -p "${MNT}/etc/systemd/${scope}.conf.d"
     render "${data}/manager.conf" >"${MNT}/etc/systemd/${scope}.conf.d/10-arch-os.conf"

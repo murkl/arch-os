@@ -57,10 +57,6 @@ rank_mirrors
 
 timedatectl set-ntp true
 
-# Some old routers drop connections that use it, which shows up as an install
-# stalling partway through a download.
-[ "$ARCH_OS_ECN_ENABLED" = "false" ] && sysctl net.ipv4.tcp_ecn=0
-
 # What a previous attempt left behind. A target that will not come down is a
 # failure here, because the next stage partitions the disk under it.
 close_target

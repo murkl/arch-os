@@ -13,8 +13,8 @@
 # when systemd-boot-update.service copies the new unsigned binary over it.
 stub=/usr/lib/systemd/boot/efi/systemd-bootx64.efi
 arch-chroot "$MNT" sbctl sign -s -o "${stub}.signed" "$stub" || echo "signing systemd-boot failed"
-arch-chroot "$MNT" sbctl sign -s "/boot/EFI/Linux/arch-${ARCH_OS_KERNEL}.efi" || echo "signing the kernel image failed"
-arch-chroot "$MNT" sbctl sign -s "/boot/EFI/Linux/arch-${ARCH_OS_KERNEL}-fallback.efi" || echo "signing the fallback image failed"
+arch-chroot "$MNT" sbctl sign -s "/boot/EFI/Linux/arch-${KERNEL}.efi" || echo "signing the kernel image failed"
+arch-chroot "$MNT" sbctl sign -s "/boot/EFI/Linux/arch-${KERNEL}-fallback.efi" || echo "signing the fallback image failed"
 
 # Puts the now signed loader on the EFI partition, over the unsigned one the
 # systemd-boot task left there.

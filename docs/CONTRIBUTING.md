@@ -117,7 +117,7 @@ make clean             # every build output, taken back; the runtime stays
 ```
 
 ```
-sudo pacman -S --needed make curl shellcheck shfmt zsh fish yamllint actionlint zizmor \
+sudo pacman -S --needed make curl shellcheck shfmt zsh yamllint actionlint zizmor \
     gettext gitleaks kbd archiso qemu-base edk2-ovmf tesseract tesseract-data-eng
 ```
 

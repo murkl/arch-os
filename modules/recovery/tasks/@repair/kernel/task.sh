@@ -39,8 +39,9 @@ if [ -x "${MNT}/usr/bin/sbctl" ]; then
     arch-chroot "$MNT" sbctl sign-all || echo "signing the boot chain again failed - enroll or sign by hand before switching Secure Boot back on" >&2
 fi
 
-# GRUB lists the snapshots it can boot from the file system, so its menu is
-# stale the moment @ changes. systemd-boot has nothing to regenerate.
+# GRUB, which an earlier Installer offered, lists the snapshots it can boot from
+# the file system, so its menu is stale the moment @ changes. systemd-boot has
+# nothing to regenerate.
 [ -f "${MNT}/boot/grub/grub.cfg" ] && arch-chroot "$MNT" grub-mkconfig -o /boot/grub/grub.cfg
 
 echo "boot rebuilt"

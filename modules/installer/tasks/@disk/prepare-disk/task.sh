@@ -70,45 +70,47 @@ if [ -n "$old_parts" ]; then
 fi
 
 # On stdin, so the passphrase never reaches an argument list that /proc shows.
+#
+# Discards are let through, and --persistent keeps that in the LUKS2 header:
+# dm-crypt drops them otherwise, and fstrim then trims nothing. What that gives
+# away is which blocks are free, not what is in them.
+# https://wiki.archlinux.org/title/Dm-crypt/Specialties#Discard/TRIM_support_for_solid_state_drives_(SSD)
 root_device="$ROOT_PART"
 if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
     echo "encrypting ${ROOT_PART}"
     printf '%s' "$ARCH_OS_PASSWORD" | cryptsetup luksFormat "$ROOT_PART"
-    printf '%s' "$ARCH_OS_PASSWORD" | cryptsetup open "$ROOT_PART" cryptroot
+    printf '%s' "$ARCH_OS_PASSWORD" | cryptsetup open --allow-discards --persistent "$ROOT_PART" cryptroot
     root_device=/dev/mapper/cryptroot
 fi
 
 mkfs.fat -F 32 -n BOOT "$BOOT_PART"
+mkfs.btrfs -f -L BTRFS "$root_device"
+mount -v "$root_device" "$MNT"
 
-if [ "$ARCH_OS_FILESYSTEM" = "ext4" ]; then
-    mkfs.ext4 -F -L ROOT "$root_device"
-    mount -v "$root_device" "$MNT"
-fi
+# One per thing that is rolled back, kept or thrown away on its own.
+while read -r subvolume _; do
+    btrfs subvolume create "${MNT}/${subvolume}"
+done < <(btrfs_subvolumes)
+umount -R "$MNT"
 
-if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ]; then
-    mkfs.btrfs -f -L BTRFS "$root_device"
-    mount -v "$root_device" "$MNT"
+# @ first, since every other mount point is a directory inside it.
+while IFS=$'\t' read -r subvolume path; do
+    mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=${subvolume}" \
+        "$root_device" "${MNT}${path%/}"
+done < <(btrfs_subvolumes)
 
-    # One per thing that is rolled back, kept or thrown away on its own.
-    while read -r subvolume _; do
-        btrfs subvolume create "${MNT}/${subvolume}"
-    done < <(btrfs_subvolumes)
-    umount -R "$MNT"
+# A fresh subvolume is root's alone, and /var/tmp is where anything on the
+# machine may write. systemd-tmpfiles would set this at the first boot; the
+# installation writes there before there is one.
+chmod 1777 "${MNT}/var/tmp"
 
-    # @ first, since every other mount point is a directory inside it.
-    while IFS=$'\t' read -r subvolume path; do
-        mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=${subvolume}" \
-            "$root_device" "${MNT}${path%/}"
-    done < <(btrfs_subvolumes)
+# Disk images are rewritten in place all the time, and copy-on-write breaks
+# each of them into countless fragments. Set on the empty folder, so every
+# image made in it inherits it. https://wiki.archlinux.org/title/Btrfs#Disabling_CoW
+chattr +C "${MNT}/var/lib/libvirt/images"
 
-    # A fresh subvolume is root's alone, and /var/tmp is where anything on the
-    # machine may write. systemd-tmpfiles would set this at the first boot; the
-    # installation writes there before there is one.
-    chmod 1777 "${MNT}/var/tmp"
-
-    # systemd would otherwise make subvolumes of these on first boot, which show
-    # up in every snapshot listing as noise.
-    mkdir -p "${MNT}/var/lib/portables" "${MNT}/var/lib/machines"
-fi
+# systemd would otherwise make subvolumes of these on first boot, which show
+# up in every snapshot listing as noise.
+mkdir -p "${MNT}/var/lib/portables" "${MNT}/var/lib/machines"
 
 mount -v --mkdir "$BOOT_PART" "${MNT}/boot"

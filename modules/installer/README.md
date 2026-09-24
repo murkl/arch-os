@@ -64,8 +64,17 @@ Two words the lists in `module.yaml` share. `auto`: worked out by `module.sh` be
 | `ARCH_OS_DESKTOP_KEYBOARD_LAYOUT` | The same, in xkb's naming |
 | `ARCH_OS_VCONSOLE_FONT` | A font that can draw the chosen script |
 | `ARCH_OS_REFLECTOR_COUNTRY` | The country of the chosen time zone |
-| `ARCH_OS_MICROCODE` | `/proc/cpuinfo` |
-| `ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED` | Follows disk encryption |
+
+## Read, not asked
+
+What the machine can say for itself is never a question.
+
+| What | Read from |
+| --- | --- |
+| `ARCH_OS_VIRTUAL_MACHINE` | `systemd-detect-virt`: guest tools inside a virtual machine, the question about running them outside one |
+| Microcode | `/proc/cpuinfo` |
+| Graphics driver | Every graphics card in sysfs - see **[➜ Packages](../../docs/REFERENCE.md#packages)** |
+| Automatic login | Disk encryption: on behind it, off without it |
 
 ## Language
 

@@ -11,9 +11,6 @@ fi
 
 source "${HOME}/.aliases"
 
-# Suggest the package a missing command lives in.
-[[ -f /usr/share/doc/pkgfile/command-not-found.zsh ]] && source /usr/share/doc/pkgfile/command-not-found.zsh
-
 HISTFILE="${HOME}/.zsh_history"
 HISTSIZE=100000
 SAVEHIST=${HISTSIZE}
@@ -41,8 +38,8 @@ unsetopt BEEP
 
 # CORRECT is deliberately not here: it stops on a mistyped command and asks
 # before running anything, which is an interruption in the one place a shell
-# has to stay out of the way. The suggestion after a command that did not exist
-# comes from pkgfile above, and costs nothing until it is needed.
+# has to stay out of the way. A command that does not exist says so and nothing
+# more, for the same reason.
 
 bindkey -e # Emacs-style key bindings, to match bash's default
 
@@ -195,6 +192,6 @@ command -v zoxide &>/dev/null && eval "$(zoxide init zsh)"
 [[ -f /etc/profile.d/vte.sh ]] && source /etc/profile.d/vte.sh
 
 # The prompt, outside a text console where the font can draw it. The same test
-# the other two shells make, spelled the same way - why it is TERM and not the
-# terminal device is written out once, in .bashrc.
+# .bashrc makes, spelled the same way - why it is TERM and not the terminal
+# device is written out once, there.
 [[ $TERM != linux ]] && command -v starship &>/dev/null && eval "$(starship init zsh)"

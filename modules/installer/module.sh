@@ -150,16 +150,6 @@ auto_country() {
     printf '%s' "${country:-none}"
 }
 
-auto_microcode() {
-    if grep -q GenuineIntel /proc/cpuinfo; then
-        echo intel-ucode
-    elif grep -q AuthenticAMD /proc/cpuinfo; then
-        echo amd-ucode
-    else
-        echo none
-    fi
-}
-
 # ////////////////////////////////////////////////////////////////////////////
 # THE ANSWERS, RESOLVED
 # ////////////////////////////////////////////////////////////////////////////
@@ -175,11 +165,6 @@ is_auto "$ARCH_OS_VCONSOLE_KEYMAP" && ARCH_OS_VCONSOLE_KEYMAP="$(auto_keymap)"
 is_auto "$ARCH_OS_VCONSOLE_FONT" && ARCH_OS_VCONSOLE_FONT="$(auto_font)"
 is_auto "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" && ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$(auto_layout)"
 is_auto "$ARCH_OS_REFLECTOR_COUNTRY" && ARCH_OS_REFLECTOR_COUNTRY="$(auto_country)"
-is_auto "$ARCH_OS_MICROCODE" && ARCH_OS_MICROCODE="$(auto_microcode)"
-
-# Autologin follows disk encryption: a disk already unlocked by a password at
-# boot gains nothing from a second one at the login screen.
-is_auto "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" && ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED="${ARCH_OS_ENCRYPTION_ENABLED:-false}"
 
 ARCH_OS_VCONSOLE_FONT="$(not_none "$ARCH_OS_VCONSOLE_FONT")"
 ARCH_OS_REFLECTOR_COUNTRY="$(not_none "$ARCH_OS_REFLECTOR_COUNTRY")"
@@ -196,14 +181,50 @@ write_vconsole() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
+# THE MACHINE
+# ////////////////////////////////////////////////////////////////////////////
+
+# The one kernel Arch OS installs.
+KERNEL=linux-zen
+
+# The processor's microcode package, or nothing for a processor neither vendor
+# ships one for.
+microcode() {
+    if grep -q GenuineIntel /proc/cpuinfo; then
+        echo intel-ucode
+    elif grep -q AuthenticAMD /proc/cpuinfo; then
+        echo amd-ucode
+    fi
+}
+
+# The graphics cards in this machine, one line each: the vendor as the driver
+# packages name it, a tab, and the PCI device ID. Read off sysfs, where lspci
+# reads them too, rather than out of the table lspci draws for a person. A
+# virtual machine's own display adapter belongs to none of the three and is left
+# out, so a guest lists a card only where a real one was passed through to it.
+graphics_cards() {
+    local dev vendor
+    for dev in /sys/bus/pci/devices/*; do
+        [[ $(<"${dev}/class") == 0x03* ]] || continue
+        case "$(<"${dev}/vendor")" in
+        0x8086) vendor=intel ;;
+        0x1002) vendor=amd ;;
+        0x10de) vendor=nvidia ;;
+        *) continue ;;
+        esac
+        printf '%s\t%s\n' "$vendor" "$(<"${dev}/device")"
+    done
+}
+
+# ////////////////////////////////////////////////////////////////////////////
 # SNAPPER
 # ////////////////////////////////////////////////////////////////////////////
 
 # What snapper's own defaults have to become here, one setting per line. Its
 # defaults are written for a system that changes slowly and a rolling release
-# is not one - why these numbers: docs/REFERENCE.md. The last two are what makes
-# the group /.snapshots belongs to able to read it: without them snapper answers
-# nobody but root, whatever the directory says.
+# is not one - why these numbers, and why no timeline: docs/REFERENCE.md. The
+# last two are what makes the group /.snapshots belongs to able to read it:
+# without them snapper answers nobody but root, whatever the directory says.
 #
 # Named once because the task sets them and its test reads them back, and
 # because set-config takes one KEY=VALUE per argument - handed the four as one
@@ -213,8 +234,7 @@ snapper_config() {
     printf '%s\n' \
         NUMBER_LIMIT=10 \
         NUMBER_LIMIT_IMPORTANT=5 \
-        TIMELINE_LIMIT_MONTHLY=2 \
-        TIMELINE_LIMIT_YEARLY=0 \
+        TIMELINE_CREATE=no \
         ALLOW_GROUPS=wheel \
         SYNC_ACL=yes
 }
@@ -228,8 +248,7 @@ snapper_config() {
 # a signed boot chain, so the rule is named once instead of repeated.
 # https://wiki.archlinux.org/title/Unified_kernel_image
 secure_boot_wanted() {
-    [ "$ARCH_OS_SECURE_BOOT_ENABLED" = "true" ] &&
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && [ "$ARCH_OS_BOOTLOADER" = "systemd" ]
+    [ "$ARCH_OS_SECURE_BOOT_ENABLED" = "true" ] && [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]
 }
 
 # The images the firmware actually starts. Named once because the initramfs task
@@ -237,11 +256,9 @@ secure_boot_wanted() {
 # a check against the image this machine does not start from checks nothing.
 boot_images() {
     if secure_boot_wanted; then
-        printf '/boot/EFI/Linux/arch-%s.efi\n/boot/EFI/Linux/arch-%s-fallback.efi\n' \
-            "$ARCH_OS_KERNEL" "$ARCH_OS_KERNEL"
+        printf '/boot/EFI/Linux/arch-%s.efi\n/boot/EFI/Linux/arch-%s-fallback.efi\n' "$KERNEL" "$KERNEL"
     else
-        printf '/boot/initramfs-%s.img\n/boot/initramfs-%s-fallback.img\n' \
-            "$ARCH_OS_KERNEL" "$ARCH_OS_KERNEL"
+        printf '/boot/initramfs-%s.img\n/boot/initramfs-%s-fallback.img\n' "$KERNEL" "$KERNEL"
     fi
 }
 
@@ -249,33 +266,16 @@ boot_images() {
 # entries - one answer, so no two of them can disagree about how this system
 # boots. Why each parameter is here: docs/REFERENCE.md
 kernel_args() {
-    printf '%s %s' "$(root_args)" "$(kernel_options)"
-}
-
-# Where the root file system is and how it is mounted. GRUB works this out for
-# itself and writes it into every entry it generates, so a second copy on its
-# command line would be two root= for one boot, and GRUB reads kernel_options
-# alone.
-root_args() {
     local args=(rw)
 
     if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
-        args+=(root=/dev/mapper/cryptroot)
+        args+=(root=/dev/mapper/cryptroot "rd.luks.name=$(blkid -s UUID -o value "$ROOT_PART")=cryptroot")
     else
         args+=("root=PARTUUID=$(lsblk -dno PARTUUID "$ROOT_PART")")
     fi
 
-    [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && args+=(rootflags=subvol=@ rootfstype=btrfs)
-    printf '%s' "${args[*]}"
-}
-
-# Everything else, which every boot loader needs from here.
-kernel_options() {
-    local args=(zswap.enabled=0) # pointless next to zram, and the two interfere
-
-    if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
-        args+=("rd.luks.name=$(blkid -s UUID -o value "$ROOT_PART")=cryptroot")
-    fi
+    args+=(rootflags=subvol=@ rootfstype=btrfs)
+    args+=(zswap.enabled=0) # pointless next to zram, and the two interfere
 
     [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && args+=(nowatchdog)
 
@@ -377,16 +377,15 @@ chroot_aur_install() {
 
     dir="$(mktemp -u "/home/${ARCH_OS_USERNAME}/.aur-${repo}.XXXX")"
     build="rm -rf ${dir} && git clone --depth 1 ${url} ${dir} && cd ${dir}"
-    # Added to the options the PKGBUILD sets rather than put in their place:
-    # yay's says !lto, and a line that replaced it would build what its author
-    # ruled out.
+    # Added to the options the PKGBUILD sets rather than put in their place: one
+    # that says !lto would otherwise be built with what its author ruled out.
     build="${build} && printf '\noptions+=(\"!debug\")\n' >>PKGBUILD"
     # make and cargo are named separately because neither reads the other. The
-    # caches cargo and go fill are kept inside the build directory, so they go
-    # with it: otherwise paru's crate registry or yay's build cache, each well
-    # over a hundred megabytes, stays in the new home for good.
+    # caches cargo fills are kept inside the build directory, so they go with
+    # it: otherwise paru's crate registry, well over a hundred megabytes, stays
+    # in the new home for good.
     build="${build} && MAKEFLAGS=-j${jobs} CARGO_BUILD_JOBS=${jobs}"
-    build="${build} CARGO_HOME=${dir}/.cargo GOPATH=${dir}/go XDG_CACHE_HOME=${dir}/.cache"
+    build="${build} CARGO_HOME=${dir}/.cargo XDG_CACHE_HOME=${dir}/.cache"
     build="${build} makepkg -si --noconfirm --needed"
 
     echo '%wheel ALL=(ALL:ALL) NOPASSWD: ALL' | sudoers_rule 99-aur-build
@@ -409,7 +408,6 @@ chroot_aur_install() {
     # a root-owned file the build left behind would otherwise leave passwordless
     # sudo standing in the installed system.
     rm -f "${MNT}/etc/sudoers.d/99-aur-build"
-    # As root, which go's read-only module cache does not stop.
     rm -rf "${MNT}${dir}" || echo "the build directory ${dir} could not be removed" >&2
 
     [ "$status" -eq 0 ] || echo "building ${repo} from the AUR did not finish" >&2
@@ -528,6 +526,13 @@ is_online() {
     fetch_url -s --connect-timeout 5 --max-time 15 https://archlinux.org >/dev/null
 }
 
+# Whether this machine is itself a virtual one: the guest tools go in without a
+# question there, and running virtual machines of its own is asked only where
+# it is not.
+in_virtual_machine() {
+    if systemd-detect-virt -q; then echo true; else echo false; fi
+}
+
 # The keyboard on the machine the installer runs on, loaded the moment the
 # language or the keyboard is answered: until then, everything typed after it is
 # typed on a layout nobody chose. A simulated run is on somebody's own machine.
@@ -573,30 +578,8 @@ list_fonts() {
 
 list_timezones() { timedatectl list-timezones; }
 
-# Where the network places this machine, asked of a service that answers from
-# the address alone. Only ever for a locale that names no country - see below -
-# and only ever to fill in the row a list opens on.
-#
-# What leaves the machine is held to that: one field asked for and one field
-# returned, no redirect followed, and curl told to say nothing about itself, so
-# the request carries the address the service was already answering and nothing
-# else. The free endpoint has no HTTPS, so that one field travels in the clear -
-# it is the reason there is nothing else in it, and the answer only fills a row
-# somebody still confirms by hand. The answer is kept for the rest of the session, because where a machine
-# stands does not change while it is being installed and a page opened a second
-# time must not be a second request. A failed lookup leaves the file empty and
-# is tried again.
-GEO_TIMEZONE_CACHE="${TMPDIR:-/tmp}/arch-os-timezone"
-
-geo_timezone() {
-    [ -s "$GEO_TIMEZONE_CACHE" ] || curl -sf -A '' --connect-timeout 5 --max-time 5 \
-        "http://ip-api.com/line?fields=timezone" >"$GEO_TIMEZONE_CACHE" || true
-    cat "$GEO_TIMEZONE_CACHE" 2>/dev/null || true
-}
-
-# The timezone the chosen country keeps, the network's guess where the locale
-# names no country, and UTC where neither answers. Only ever the value the list
-# opens on.
+# The timezone the chosen country keeps, and UTC where the locale names no
+# country. Only ever the value the list opens on.
 #
 # UTC rather than nothing: an empty suggestion opens the list on its own first
 # row, which is Africa/Abidjan, and an enter meant for the page before sets the
@@ -605,7 +588,6 @@ auto_timezone() {
     local locale="${ARCH_OS_LOCALE_LANG%%.*}" territory="" zone
     [[ $locale == *_* ]] && territory="${locale#*_}"
     zone="$(country_field 3 "$territory")"
-    [ -n "$zone" ] || zone="$(geo_timezone)"
     printf '%s' "${zone:-UTC}"
 }
 
@@ -614,14 +596,6 @@ list_countries() {
     echo none
     # A "-" marks a country Arch has no mirror in.
     awk -F'\t' '!/^#/ && $2 != "-" { print $2 }' "${DATA}/countries"
-}
-
-# Read again at install time, so answers carried to another machine still fit it.
-list_microcode() {
-    printf 'auto\tauto — %s\n' "$(auto_microcode)"
-    echo intel-ucode
-    echo amd-ucode
-    echo none
 }
 
 # The desktop keyboard is asked of the running system where it can answer and

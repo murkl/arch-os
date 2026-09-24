@@ -24,22 +24,21 @@
 
 ## Features
 
-- Minimal Arch Linux base, UEFI only: linux-zen, linux, linux-lts or linux-hardened
-- btrfs or ext4, systemd-boot or GRUB, on a disk of its own
+- Minimal Arch Linux base, UEFI only: linux-zen, btrfs and systemd-boot on a disk of its own - the same on every machine
 - Disk encryption (LUKS2) and Secure Boot with your own keys
 - One password for encryption, root and user; automatic login behind an encrypted disk
-- Btrfs snapshots before every package change (Snapper), restored from the desktop (Btrfs Assistant)
-- GNOME on Wayland, or a bare text console; graphics driver for Mesa, Intel, NVIDIA, AMD or ATI
+- Btrfs snapshots before every package change (Snapper), rolled back with the Recovery
+- GNOME on Wayland, or a bare text console; the graphics driver for every Intel, AMD and NVIDIA card is detected
 - Desktop extras: codecs, fonts, printing, Samba and `.local` discovery; or a slim install with GNOME core apps only
 - Flatpak with Flathub, managed from GNOME Software
 - Zram swap, fstrim, microcode, NetworkManager, mirrors ranked by country
 - Tuned rather than left at the defaults - see the **[➜ Reference](REFERENCE.md)**
 - AUR helper, 32-bit support, container engine, firewall, SSH server, automatic housekeeping, the text editor of your choice
-- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager, Shell Enhancement (bash, zsh or fish)
+- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager, Shell Enhancement (zsh)
 - Recovery on the same image, works without a network
 - Wireless network joined from the Installer itself, before the first download
 - Create boot medium: writes the USB device from any Linux machine, no root needed but for the write itself
-- Virtual machine support both ways: guest tools inside a VM, libvirt and QEMU on real hardware
+- Virtual machines both ways: guest tools inside a VM on their own, libvirt and QEMU on real hardware if you want them
 - Two starting points, **Core** and **Desktop** - everything else stays a row in the settings
 - English and German interface
 
@@ -128,7 +127,7 @@ Two questions - keyboard and disk - the rest is read off the machine. No network
 Mostly automatic through the preinstalled **Arch OS System Manager**. By hand:
 
 - Read the **[Arch Linux News](https://www.archlinux.org/news)** before upgrading
-- Roll back with **Btrfs Assistant** or `snapper` if an update breaks something
+- Roll back with the **[Recovery](#recovery)** if an update breaks something - see **[➜ Rolling Back](REFERENCE.md#rolling-back)** for why only there
 - Consult the **[Arch Linux Wiki](https://wiki.archlinux.org)**
 
 <details>
