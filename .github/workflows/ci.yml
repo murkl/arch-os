@@ -294,18 +294,26 @@ jobs:
 
   # The one check of this file a pull request has to pass before it can be
   # merged - see .github/settings/ruleset.json. One name for all of them, so a
-  # job listed here is required from the moment it is, and one skipped on a
-  # draft counts as what it is rather than as missing.
+  # job listed here is required from the moment it is.
+  #
+  # A draft is refused on purpose. Its run skips what a draft does not get, and
+  # leaving draft starts the full run on the same commit - whose Ready is only
+  # written once everything before it is done. Until then GitHub reads the one
+  # it already has, and a draft that passed would open the merge for the length
+  # of that run. The refusal leaves the run itself green: it is the check, not a
+  # failure anybody has to hear about.
   ready:
     name: Ready
     needs: [gate, check, image]
     if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+    continue-on-error: ${{ github.event.pull_request.draft }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Every job this pull request needed came out well
         env:
           RESULTS: ${{ join(needs.*.result, ' ') }}
+          DRAFT: ${{ github.event.pull_request.draft }}
         run: |
           for result in $RESULTS; do
             case "$result" in
@@ -316,6 +324,10 @@ jobs:
               ;;
             esac
           done
+          if [ "$DRAFT" = true ]; then
+            echo "::error::a draft is not ready to merge - mark it ready for review, and the full run decides"
+            exit 1
+          fi
 
   # Nothing is built here. The two files this run made and booted are hung on
   # the release the job above wrote as a draft, under the version it decided,

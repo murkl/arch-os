@@ -222,4 +222,4 @@ make github
 
 Run it again after changing one of them - every call sets the whole state, so a second run changes nothing. No workflow does it: a workflow's token may not change the rules it is itself held to. The files and the script are the same in every project released this way.
 
-**Note:** _`Ready` passes a draft, whose `Image` is skipped - a draft cannot be merged anyway, and leaving draft starts the run that decides it. The release pull request starts no run, and the release run reports both checks on it itself - see **[Releasing](#releasing)**. Everything else (signing, Dependabot) needs no setup._
+**Note:** _`Ready` refuses a draft on purpose. Its run skips `Image`, and leaving draft starts the full run on the same commit, whose `Ready` is written only at its end - until then GitHub reads the one it has, and a draft that passed would open the merge for half an hour. The run of a draft stays green: the refusal is the check, not a failure. The release pull request starts no run, and the release run reports both checks on it itself - see **[Releasing](#releasing)**. Everything else (signing, Dependabot) needs no setup._
