@@ -6,8 +6,6 @@
 # https://wiki.archlinux.org/title/Docker
 # https://wiki.archlinux.org/title/Podman
 
-simulating && return 0
-
 case "$ARCH_OS_CONTAINER_ENGINE" in
 
 docker)
@@ -47,7 +45,7 @@ podman)
     # podman stops to ask a question no script is there to answer. Docker has
     # this built into the daemon and needs nothing.
     mkdir -p "${MNT}/etc/containers/registries.conf.d"
-    echo 'unqualified-search-registries = ["docker.io"]' \
+    render "$(where)/10-unqualified-search-registries.conf" \
         >"${MNT}/etc/containers/registries.conf.d/10-unqualified-search-registries.conf"
 
     # Podman announces itself twice on the way through: once from the docker
@@ -57,18 +55,8 @@ podman)
     # would and nothing else.
     touch "${MNT}/etc/containers/nodocker"
     mkdir -p "${MNT}/etc/containers/containers.conf.d"
-    printf '[engine]\ncompose_warning_logs = false\n' \
+    render "$(where)/10-compose-warning-logs.conf" \
         >"${MNT}/etc/containers/containers.conf.d/10-compose-warning-logs.conf"
-
-    # The range of user ids a rootless container maps its own root onto, and
-    # without one podman starts no container at all. useradd has written one
-    # since shadow 4.11.1-3, so this is for an account that arrived some other
-    # way - and only where there is none yet, so a second range is never
-    # appended to a user who already has theirs.
-    if ! grep -qs "^${ARCH_OS_USERNAME}:" "${MNT}/etc/subuid"; then
-        arch-chroot "$MNT" usermod \
-            --add-subuids 100000-165535 --add-subgids 100000-165535 "$ARCH_OS_USERNAME"
-    fi
     ;;
 
 esac

@@ -7,8 +7,6 @@
 # checks reads the machine as an ordinary user - nothing is escalated before
 # there is a reason to.
 
-simulating && return 0
-
 # This module runs as whoever started it, on somebody's own machine, where a
 # root process leaves two gigabytes in their home that only root can delete
 # again. So the escalation lives in the one task that cannot do without it.
@@ -22,7 +20,8 @@ target="$(image)"
 # /dev/sdb is a path, not a stick: by the next run an internal disk can be
 # sitting at it. So the answer is checked against the same list it was chosen
 # from, immediately before anything is written.
-if ! list_devices | cut -f1 | grep -qxF "$device"; then
+devices="$(list_devices | cut -f1)"
+if ! grep -qxF "$device" <<<"$devices"; then
     echo "${device} is not a USB device on this machine. Plug the stick back in and choose it again." >&2
     exit 1
 fi
@@ -36,33 +35,31 @@ if [ "$have" -lt "$need" ]; then
     exit 1
 fi
 
-# From here on the terminal itself: sudo draws its prompt on /dev/tty, and dd
-# reports progress on stderr, which Oak otherwise collects into the log.
-# Inherited, the password would be asked where nobody can see it.
-{
-    echo "Writing ${target##*/} to ${device}."
-    echo
+echo "Writing ${target##*/} to ${device}."
+echo
 
-    # A mounted partition would be written out from under its own file system.
-    # umount -l is the fallback: a file manager still holding the stick open is
-    # the usual reason a plain umount refuses.
-    while read -r mountpoint; do
-        [ -n "$mountpoint" ] || continue
-        echo "Unmounting ${mountpoint}"
-        as_root umount "$mountpoint" || as_root umount -l "$mountpoint"
-    done < <(lsblk -nro MOUNTPOINT "$device")
+# A mounted partition would be written out from under its own file system.
+# umount -l is the fallback: a file manager still holding the stick open is
+# the usual reason a plain umount refuses.
+while read -r mountpoint; do
+    [ -n "$mountpoint" ] || continue
+    echo "Unmounting ${mountpoint}"
+    as_root umount "$mountpoint" || as_root umount -l "$mountpoint"
+done < <(lsblk -nro MOUNTPOINT "$device")
 
-    if lsblk -nro MOUNTPOINT "$device" | grep -q .; then
-        echo "${device} still has something mounted from it" >&2
-        exit 1
-    fi
+mounted="$(lsblk -nro MOUNTPOINT "$device")"
+if grep -q . <<<"$mounted"; then
+    echo "${device} still has something mounted from it" >&2
+    exit 1
+fi
 
-    # oflag=sync rather than a sync afterwards: dd then reports progress the
-    # drive has actually taken, so a stick pulled out when the bar ends is a
-    # stick that was finished.
-    as_root dd if="$target" of="$device" bs=4M status=progress oflag=sync
-    sync
+# The flags the Wiki gives. oflag=direct bypasses the page cache, so the
+# progress dd reports is what the drive has actually taken, and conv=fsync
+# flushes the rest before dd returns - a stick pulled out when the bar ends
+# is a stick that was finished.
+as_root dd if="$target" of="$device" bs=4M status=progress conv=fsync oflag=direct
 
-    # Nothing reads the new partition table until the kernel is told to look.
-    as_root partprobe "$device" 2>/dev/null || true
-} <>/dev/tty >&0 2>&0
+# Nothing reads the new partition table until the kernel is told to look.
+# blockdev rather than partprobe: it is util-linux, which every Linux has, and
+# parted, which partprobe comes with, is missing from many.
+as_root blockdev --rereadpt "$device" 2>/dev/null || true

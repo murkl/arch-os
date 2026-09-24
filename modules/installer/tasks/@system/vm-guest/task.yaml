@@ -1,0 +1,5 @@
+title: Add the virtual machine guest tools
+
+# Not asked: inside a virtual machine the tools that make the screen resize and
+# the clipboard work are what anyone would answer.
+conditions: ARCH_OS_VIRTUAL_MACHINE == true

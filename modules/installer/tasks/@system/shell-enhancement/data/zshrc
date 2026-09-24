@@ -1,0 +1,197 @@
+# If not running interactively, do nothing.
+[[ $- != *i* ]] && return
+
+# Export the systemd user environment on a text console, where nothing else has.
+if [[ ${SHLVL} == 1 && -z ${DISPLAY} ]]; then
+    while IFS= read -r line; do
+        [[ $line == *=* ]] || continue
+        export "${line%%=*}=${line#*=}"
+    done < <(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator)
+fi
+
+source "${HOME}/.aliases"
+
+HISTFILE="${HOME}/.zsh_history"
+HISTSIZE=100000
+SAVEHIST=${HISTSIZE}
+setopt SHARE_HISTORY         # every open shell reads and adds to the one history
+setopt HIST_IGNORE_ALL_DUPS  # drop older duplicates when a command is added
+setopt HIST_IGNORE_SPACE     # do not record commands that start with a space
+setopt HIST_REDUCE_BLANKS    # strip superfluous whitespace before recording
+setopt HIST_FIND_NO_DUPS     # step over duplicates while searching
+setopt HIST_VERIFY           # load !-expansions into the line instead of running them
+setopt EXTENDED_HISTORY      # store a timestamp with each command
+
+# Skip noisy commands from the history entirely.
+zshaddhistory() {
+    emulate -L zsh
+    case ${1%%$'\n'} in
+    ls | ll | la | cd | exit | clear | history | fetch | q | c) return 1 ;;
+    esac
+    return 0
+}
+
+setopt AUTO_CD       # a bare directory name changes into it
+setopt EXTENDED_GLOB # extended patterns
+setopt NO_NOMATCH    # leave an unmatched glob untouched instead of erroring
+unsetopt BEEP
+
+# CORRECT is deliberately not here: it stops on a mistyped command and asks
+# before running anything, which is an interruption in the one place a shell
+# has to stay out of the way. A command that does not exist says so and nothing
+# more, for the same reason.
+
+bindkey -e # Emacs-style key bindings, to match bash's default
+
+# zsh binds none of Home, End, Delete or the word jumps, and prints the escape
+# sequence of each key instead. Read off terminfo, which only holds while the
+# terminal is in application mode, so the line editor switches it on.
+# https://wiki.archlinux.org/title/Zsh#Key_bindings
+typeset -g -A key
+key[Home]="${terminfo[khome]}"
+key[End]="${terminfo[kend]}"
+key[Insert]="${terminfo[kich1]}"
+key[Delete]="${terminfo[kdch1]}"
+key[Up]="${terminfo[kcuu1]}"
+key[Down]="${terminfo[kcud1]}"
+key[Left]="${terminfo[kcub1]}"
+key[Right]="${terminfo[kcuf1]}"
+key[PageUp]="${terminfo[kpp]}"
+key[PageDown]="${terminfo[knp]}"
+key[Shift-Tab]="${terminfo[kcbt]}"
+key[Control-Left]="${terminfo[kLFT5]}"
+key[Control-Right]="${terminfo[kRIT5]}"
+
+[[ -n ${key[Home]} ]] && bindkey -- "${key[Home]}" beginning-of-line
+[[ -n ${key[End]} ]] && bindkey -- "${key[End]}" end-of-line
+[[ -n ${key[Insert]} ]] && bindkey -- "${key[Insert]}" overwrite-mode
+[[ -n ${key[Delete]} ]] && bindkey -- "${key[Delete]}" delete-char
+[[ -n ${key[Up]} ]] && bindkey -- "${key[Up]}" up-line-or-history
+[[ -n ${key[Down]} ]] && bindkey -- "${key[Down]}" down-line-or-history
+[[ -n ${key[Left]} ]] && bindkey -- "${key[Left]}" backward-char
+[[ -n ${key[Right]} ]] && bindkey -- "${key[Right]}" forward-char
+[[ -n ${key[PageUp]} ]] && bindkey -- "${key[PageUp]}" beginning-of-buffer-or-history
+[[ -n ${key[PageDown]} ]] && bindkey -- "${key[PageDown]}" end-of-buffer-or-history
+[[ -n ${key[Shift-Tab]} ]] && bindkey -- "${key[Shift-Tab]}" reverse-menu-complete
+[[ -n ${key[Control-Left]} ]] && bindkey -- "${key[Control-Left]}" backward-word
+[[ -n ${key[Control-Right]} ]] && bindkey -- "${key[Control-Right]}" forward-word
+
+if ((${+terminfo[smkx]} && ${+terminfo[rmkx]})); then
+    autoload -Uz add-zle-hook-widget
+    zle_application_mode_start() { echoti smkx; }
+    zle_application_mode_stop() { echoti rmkx; }
+    add-zle-hook-widget -Uz zle-line-init zle_application_mode_start
+    add-zle-hook-widget -Uz zle-line-finish zle_application_mode_stop
+fi
+
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+zstyle ':completion:*' menu select
+# A long list scrolls in place instead of asking whether to show all of it.
+zstyle ':completion:*' list-prompt '%S%p%s'
+zstyle ':completion:*' select-prompt '%S%p%s'
+
+autoload -Uz compinit
+() {
+    local dump="${HOME}/.cache/zsh/zcompdump"
+    [[ -d ${dump:h} ]] || mkdir -p "${dump:h}"
+    # Rebuild the dump (and run the security audit) at most once every 24h;
+    # otherwise load it as-is with -C, which skips the audit and speeds up startup.
+    if [[ -f $dump && -z $dump(#qN.mh+24) ]]; then
+        compinit -C -d "$dump"
+    else
+        compinit -d "$dump"
+    fi
+}
+
+# Colourful man pages.
+if command -v bat &>/dev/null; then
+    export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+    export MANROFFOPT="-c"
+fi
+
+# The same as in .bashrc, where the reason is written.
+export LS_COLORS="di=1;34:ln=36:so=35:pi=33:ex=32:bd=33;1:cd=33;1:su=31:sg=31:tw=34:ow=34"
+
+# Faded inline suggestions from history as you type.
+if [[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+    source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+    # Upstream bug: _zsh_autosuggest_highlight_reset drops the old suggestion
+    # highlight via ${region_highlight:#$style} but runs without `emulate`, so
+    # EXTENDED_GLOB above turns the `#` in a true-colour style into a glob
+    # quantifier. The pattern then no longer matches, the stale highlight
+    # survives and bleeds onto commands recalled from history. Wrap the
+    # function to neutralise EXTENDED_GLOB for that match.
+    if (($+functions[_zsh_autosuggest_highlight_reset])); then
+        functions[_zsh_autosuggest_highlight_reset_orig]=$functions[_zsh_autosuggest_highlight_reset]
+        _zsh_autosuggest_highlight_reset() {
+            emulate -L zsh
+            _zsh_autosuggest_highlight_reset_orig "$@"
+        }
+    fi
+fi
+
+# Ctrl+R searches the history, Ctrl+T picks a file, Alt+C changes into a folder.
+# Before the syntax highlighting, which has to wrap these widgets too.
+[[ -f /usr/share/fzf/key-bindings.zsh ]] && source /usr/share/fzf/key-bindings.zsh
+[[ -f /usr/share/fzf/completion.zsh ]] && source /usr/share/fzf/completion.zsh
+
+# Syntax highlighting on the command line. Must be sourced after every other
+# widget-defining plugin, with the sole exception of history-substring-search
+# below, which requires it to be sourced *after* highlighting.
+[[ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] &&
+    source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+# Substring history search: type a fragment, press Up/Down to step through
+# every matching past command (fish-style).
+if [[ -f /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh ]]; then
+    source /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
+    bindkey '^[[A' history-substring-search-up
+    bindkey '^[[B' history-substring-search-down
+    [[ -n ${key[Up]} ]] && bindkey -- "${key[Up]}" history-substring-search-up
+    [[ -n ${key[Down]} ]] && bindkey -- "${key[Down]}" history-substring-search-down
+    # Otherwise the faded suggestion stays on the line a search recalled.
+    ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down)
+fi
+
+# The colours the three plugins draw the command line in: Nord, in true colour,
+# so it looks the same whatever palette the terminal has. Only what carries a
+# meaning is set; everything else keeps the plugin's default. The hex is lower
+# case because zsh stores it that way, and zsh-autosuggestions finds its old
+# highlight again by exact comparison.
+() {
+    local -A nord=(
+        red '#bf616a'
+        green '#a3be8c'
+        yellow '#ebcb8b'
+        blue '#88c0d0'
+        gray '#4c566a'
+    )
+
+    typeset -gA ZSH_HIGHLIGHT_STYLES
+    ZSH_HIGHLIGHT_STYLES[command]="fg=$nord[green]"
+    ZSH_HIGHLIGHT_STYLES[builtin]="fg=$nord[green]"
+    ZSH_HIGHLIGHT_STYLES[function]="fg=$nord[green]"
+    ZSH_HIGHLIGHT_STYLES[alias]="fg=$nord[green]"
+    ZSH_HIGHLIGHT_STYLES[precommand]="fg=$nord[green]"
+    ZSH_HIGHLIGHT_STYLES[unknown-token]="fg=$nord[red]"
+    ZSH_HIGHLIGHT_STYLES[single-hyphen-option]="fg=$nord[yellow]"
+    ZSH_HIGHLIGHT_STYLES[double-hyphen-option]="fg=$nord[yellow]"
+    ZSH_HIGHLIGHT_STYLES[path]="fg=$nord[blue]"
+
+    # A recalled command keeps the highlighting it would have if typed, and a
+    # search with nothing left to find turns the query red.
+    HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND=''
+    HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_NOT_FOUND="fg=$nord[red]"
+
+    ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=$nord[gray]"
+}
+
+command -v zoxide &>/dev/null && eval "$(zoxide init zsh)"
+
+# The same as in .bashrc: GNOME Console opens a new tab in the current folder.
+[[ -f /etc/profile.d/vte.sh ]] && source /etc/profile.d/vte.sh
+
+# The prompt, outside a text console where the font can draw it. The same test
+# .bashrc makes, spelled the same way - why it is TERM and not the terminal
+# device is written out once, there.
+[[ $TERM != linux ]] && command -v starship &>/dev/null && eval "$(starship init zsh)"

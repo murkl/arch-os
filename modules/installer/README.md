@@ -4,7 +4,7 @@ Everything this Installer knows about Arch Linux. It is data - one YAML file and
 
 **Note:** _Repairing a system already on disk and writing the device this boots from are separate modules: **[➜ Recovery](../recovery)** · **[➜ Create boot medium](../imager)**_
 
-**Note:** _What this puts on a disk and why: **[➜ Arch OS Reference](../../docs/REFERENCE.md)**. What a declaration may contain: **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**. The task contract every `.sh` here follows: **[➜ AGENTS.md](../../AGENTS.md)**._
+**Note:** _What this puts on a disk and why: **[➜ Arch OS Reference](../../docs/REFERENCE.md)**. What a declaration may contain, and the contract every `.sh` here follows: **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**._
 
 ```
 make -C ../.. check                               # load every module and lint every script
@@ -17,8 +17,9 @@ make -C ../.. run MODULE=installer ARGS=--debug   # run it without touching this
 module.yaml                     what this Installer is, what it asks, what order it runs in
 module.sh                       what more than one script has to agree about
 tasks/@<stage>/<id>/task.yaml   what that step is: its needs, conditions and offers
-tasks/@<stage>/<id>/task.sh     what it does, plus any file it ships with, beside it
+tasks/@<stage>/<id>/task.sh     what it does
 tasks/@<stage>/<id>/test.sh     optional: how to tell, on the machine, that it took
+tasks/@<stage>/<id>/data/       every file it writes into the new system, named after it, filled by render
 hooks/@<hook>/<id>/hook.yaml    a moment Oak runs itself, rather than as part of the work
 data/                           the tables a language and a country are looked up in
 locales/                        one <code>.po per language, and the template they come from
@@ -62,22 +63,29 @@ Two words the lists in `module.yaml` share. `auto`: worked out by `module.sh` be
 | `ARCH_OS_VCONSOLE_KEYMAP` | The chosen language's keyboard, then the live image's own, then `us` |
 | `ARCH_OS_DESKTOP_KEYBOARD_LAYOUT` | The same, in xkb's naming |
 | `ARCH_OS_VCONSOLE_FONT` | A font that can draw the chosen script |
-| `ARCH_OS_REFLECTOR_COUNTRY` | The locale's territory |
-| `ARCH_OS_MICROCODE` | `/proc/cpuinfo` |
-| `ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED` | Follows disk encryption |
+| `ARCH_OS_REFLECTOR_COUNTRY` | The country of the chosen time zone |
 
-**Note:** _The boot and root partitions are worked out from the disk the same way._
+## Read, not asked
+
+What the machine can say for itself is never a question.
+
+| What | Read from |
+| --- | --- |
+| `ARCH_OS_VIRTUAL_MACHINE` | `systemd-detect-virt`: guest tools inside a virtual machine, the question about running them outside one |
+| Microcode | `/proc/cpuinfo` |
+| Graphics driver | Every graphics card in sysfs - see **[➜ Packages](../../docs/REFERENCE.md#packages)** |
+| Automatic login | Disk encryption: on behind it, off without it |
 
 ## Language
 
-One answer, `ARCH_OS_LOCALE_LANG`, settles keyboard, console font, mirror country and time zone - none of which follow from the locale code itself (`de_CH` is not `de`), so each is looked up in `data/` and stays overridable.
+One answer, `ARCH_OS_LOCALE_LANG`, settles keyboard, console font and time zone - none of which follow from the locale code itself (`de_CH` is not `de`), so each is looked up in `data/` and stays overridable. The mirror country follows the time zone rather than the language: `en_US` is typed on every continent, and the time zone is the one answer that says where the machine stands.
 
 | Table | Keyed by | Provides |
 | --- | --- | --- |
 | `data/languages` | Language, or locale where it differs | Keymap, xkb layout, console font |
-| `data/countries` | The locale's territory | Mirror country, time zone |
+| `data/countries` | The locale's territory, or the time zone's in `zone.tab` | Time zone, mirror country |
 
-**Note:** _`data/x11-layouts` and `data/x11-variants` are a fallback only - the live image ships no xkeyboard-config._
+**Note:** _`data/x11-layouts` and `data/x11-variants` are a fallback only - the official Arch live image ships no xkeyboard-config._
 
 The console keyboard is asked `first` and takes effect immediately: a password typed on the wrong layout is not the password.
 
@@ -85,7 +93,7 @@ The console keyboard is asked `first` and takes effect immediately: a password t
 
 `installer.conf` can be uploaded to **[paste.rs](https://paste.rs)** and comes back as a scannable code - the `share-config` task (`task.sh` uploads, `import.sh` fetches). Opens on **no**, right after the installation is done.
 
-**Note:** _Uploaded without its `ARCH_OS_CONFIG_*` lines. No password, but hostname, username, disk and language are in it - **anyone holding the address can read it**._
+**Note:** _Uploaded without its `ARCH_OS_CONFIG_*` lines. No password, but hostname, username, disk and language are in it - **anyone holding the address can read it**. The disk is left out when it is fetched again: it names a path on the machine it was answered on, so the next one asks for its own._
 
 ## Adding something
 

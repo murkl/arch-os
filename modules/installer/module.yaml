@@ -21,9 +21,8 @@ console: Type installer at the prompt to start it again.
 confirm: |
   Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.
 
-  Everything on that disk will be erased and this cannot be undone. A dual
-  boot erases only the partition chosen for it. Nothing has been changed so
-  far.
+  Everything on that disk will be erased and this cannot be undone. Nothing
+  has been changed so far.
 
 # Each is a folder under tasks/, marked - tasks/@disk/ - and lying in one is
 # what puts a task in the run and where; tasks sharing a stage run in the order
@@ -53,53 +52,45 @@ presets:
       - title: Desktop
         description: The Core, with a GNOME desktop on top of it - drivers, codecs, fonts and everyday applications.
         values:
-          ARCH_OS_FILESYSTEM: btrfs
           ARCH_OS_ENCRYPTION_ENABLED: true
-          ARCH_OS_BTRFS_SNAPPER_ENABLED: true
-          ARCH_OS_BTRFS_ASSISTANT_ENABLED: true
-          ARCH_OS_BOOTLOADER: systemd
           ARCH_OS_DESKTOP: gnome
-          ARCH_OS_DESKTOP_GRAPHICS_DRIVER: mesa
           ARCH_OS_DESKTOP_EXTRAS_ENABLED: true
           ARCH_OS_DESKTOP_SLIM_ENABLED: true
-          ARCH_OS_SAMBA_SHARE_ENABLED: true
+          ARCH_OS_FLATPAK_ENABLED: true
+          ARCH_OS_SAMBA_SHARE_ENABLED: false
           ARCH_OS_CORE_TWEAKS_ENABLED: true
           ARCH_OS_BOOTSPLASH_ENABLED: true
           ARCH_OS_MULTILIB_ENABLED: true
           ARCH_OS_AUR_HELPER: paru
           ARCH_OS_CONTAINER_ENGINE: none
+          ARCH_OS_FIREWALL_ENABLED: true
+          ARCH_OS_SSH_SERVER_ENABLED: false
           ARCH_OS_HOUSEKEEPING_ENABLED: true
           ARCH_OS_SHELL_ENHANCEMENT_ENABLED: true
-          ARCH_OS_SHELL_ENHANCEMENT_SHELL: zsh
           ARCH_OS_MANAGER_ENABLED: true
-          ARCH_OS_VM_SUPPORT_ENABLED: true
+          ARCH_OS_VM_HOST_ENABLED: false
 
-      # Everything off that can be off. The exception is virtual machine
-      # support: on a console system that is what it takes to run one, which a
-      # machine without a desktop is more likely to be for, not less.
+      # Everything off that can be off.
       - title: Core
         description: A minimal Arch Linux on the text console, with nothing graphical on it and nothing beyond what you choose.
         values:
-          ARCH_OS_FILESYSTEM: ext4
           ARCH_OS_ENCRYPTION_ENABLED: false
-          ARCH_OS_BTRFS_SNAPPER_ENABLED: false
-          ARCH_OS_BTRFS_ASSISTANT_ENABLED: false
-          ARCH_OS_BOOTLOADER: systemd
           ARCH_OS_DESKTOP: none
-          ARCH_OS_DESKTOP_GRAPHICS_DRIVER: none
           ARCH_OS_DESKTOP_EXTRAS_ENABLED: false
           ARCH_OS_DESKTOP_SLIM_ENABLED: false
+          ARCH_OS_FLATPAK_ENABLED: false
           ARCH_OS_SAMBA_SHARE_ENABLED: false
           ARCH_OS_CORE_TWEAKS_ENABLED: false
           ARCH_OS_BOOTSPLASH_ENABLED: false
           ARCH_OS_MULTILIB_ENABLED: false
           ARCH_OS_AUR_HELPER: none
           ARCH_OS_CONTAINER_ENGINE: none
+          ARCH_OS_FIREWALL_ENABLED: false
+          ARCH_OS_SSH_SERVER_ENABLED: false
           ARCH_OS_HOUSEKEEPING_ENABLED: false
           ARCH_OS_SHELL_ENHANCEMENT_ENABLED: false
-          ARCH_OS_SHELL_ENHANCEMENT_SHELL: bash
           ARCH_OS_MANAGER_ENABLED: false
-          ARCH_OS_VM_SUPPORT_ENABLED: true
+          ARCH_OS_VM_HOST_ENABLED: false
 
       # Not a set of answers written out here but one fetched: a configuration
       # shared at the end of an earlier installation.
@@ -110,6 +101,11 @@ presets:
 
 # Everything this installer needs to know, in the order it is asked. Each name
 # reaches every script as an environment variable.
+#
+# A list vouches only for the rows it offers: an answer file copied or fetched
+# from somewhere else hands its values over as they stand, and they reach the
+# shell. So every list whose answer does says with `pattern:` what its values
+# look like, and a value that does not fit is asked again.
 variables:
   # ─── Identity ──────────────────────────────────────────────────────────────
   #
@@ -151,20 +147,23 @@ variables:
   # What the installed system is set to, not the words this installer is read
   # in. Everything here follows the language on `auto`, except the console
   # keyboard, which is asked before all of it: a password typed on the wrong
-  # layout is not the password.
+  # layout is not the password. The mirror country follows the language only by
+  # way of the time zone, which is the one answer that says where the machine
+  # is.
   - name: ARCH_OS_LOCALE_LANG
     title: Language and region
     description: |
       The locale this system is set up for, for example de_DE for German as
       used in Germany. It sets the system language and the format for dates,
       numbers and currency, and on auto also the keyboard layout, console
-      font, time zone and mirror country. English is always installed as a
-      fallback, and the list opens on it.
+      font and time zone. English is always installed as a fallback, and the
+      list opens on it.
     group: Region
     required: true
     apply: load_console_keyboard
     filter: open
     command: list_locales
+    pattern: '^[a-z]{2,3}(_[A-Z]{2})?$'
     # Not a default, which would take the question off the page - and not the
     # first row of a list that starts at Afar, which is what an enter meant for
     # the page before would otherwise answer with. Everything in this group
@@ -183,6 +182,7 @@ variables:
     first: true
     apply: load_console_keyboard
     command: list_keymaps
+    pattern: '^[A-Za-z0-9_.-]+$'
 
   - name: ARCH_OS_VCONSOLE_FONT
     title: Console font
@@ -195,6 +195,7 @@ variables:
     free: Type a font name
     filter: open
     command: list_fonts
+    pattern: '^[A-Za-z0-9_.+-]+$'
 
   - name: ARCH_OS_TIMEZONE
     title: Time zone
@@ -205,41 +206,35 @@ variables:
     required: true
     filter: open
     command: list_timezones
+    pattern: '^[A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+)*$'
     prefill: auto_timezone
 
   - name: ARCH_OS_REFLECTOR_COUNTRY
     title: Mirror country
     description: |
-      Where package downloads come from. auto uses the country for the chosen
-      language, none ranks every mirror worldwide by speed. auto falls back to
-      none when Arch has no mirror for that country.
+      Where package downloads come from. auto uses the country of the chosen
+      time zone, none ranks every mirror worldwide by speed. auto falls back to
+      none when the time zone names no country or Arch has no mirror there.
     group: Region
     default: auto
     required: true
     free: Type a country
     filter: open
     command: list_countries
+    # What reflector cannot read inside the quotes its file holds the country in.
+    pattern: '^[^"\\]*$'
 
   # ─── Storage ───────────────────────────────────────────────────────────────
   - name: ARCH_OS_DISK
     title: Disk
     description: |
-      The disk Arch Linux will be installed on. Unless dual boot is enabled,
-      everything on it will be erased. The medium this live image is running
-      from is not offered.
+      The disk Arch Linux will be installed on. Everything on it will be
+      erased. The medium this live image is running from is not offered.
     group: Storage
     required: true
     error: Choose a disk that exists.
     command: list_disks
-
-  - name: ARCH_OS_FILESYSTEM
-    title: File system
-    description: |
-      btrfs supports snapshots, so a system update can be rolled back. ext4 is
-      simpler, but does not support that.
-    group: Storage
-    values: [btrfs, ext4]
-    required: true
+    pattern: '^/dev/[A-Za-z0-9_-]+$'
 
   - name: ARCH_OS_ENCRYPTION_ENABLED
     title: Disk encryption
@@ -250,67 +245,7 @@ variables:
     type: bool
     required: true
 
-  - name: ARCH_OS_BTRFS_SNAPPER_ENABLED
-    title: Snapshots
-    description: |
-      Takes a snapshot before every package change and cleans up old ones
-      automatically, so a bad update can be undone.
-    group: Storage
-    type: bool
-    default: true
-    conditions: ARCH_OS_FILESYSTEM == btrfs
-
-  - name: ARCH_OS_BTRFS_ASSISTANT_ENABLED
-    title: Snapshot manager
-    description: A desktop application for browsing and restoring snapshots.
-    group: Storage
-    type: bool
-    default: true
-    # The desktop among them because it is a desktop application, and the
-    # desktop task is what installs it.
-    conditions:
-      - ARCH_OS_FILESYSTEM == btrfs
-      - ARCH_OS_BTRFS_SNAPPER_ENABLED == true
-      - ARCH_OS_DESKTOP != none
-
-  - name: ARCH_OS_DUAL_BOOT_ENABLED
-    title: Dual boot
-    description: |
-      Install alongside a system already on this disk. Nothing is partitioned
-      or erased, the existing EFI partition is reused and only a boot entry is
-      added. Both partitions have to be chosen by you.
-    group: Storage
-    type: bool
-    default: false
-
-  - name: ARCH_OS_BOOT_PARTITION
-    title: Boot partition
-    description: The existing EFI partition to add a boot entry to. It will not be formatted.
-    group: Storage
-    required: true
-    conditions: ARCH_OS_DUAL_BOOT_ENABLED == true
-    prefill: default_boot_partition
-    command: list_partitions
-
-  - name: ARCH_OS_ROOT_PARTITION
-    title: Root partition
-    description: The partition Arch Linux will be installed on. It will be formatted, and everything on it will be lost.
-    group: Storage
-    required: true
-    conditions: ARCH_OS_DUAL_BOOT_ENABLED == true
-    prefill: default_root_partition
-    command: list_partitions
-
   # ─── Boot ──────────────────────────────────────────────────────────────────
-  - name: ARCH_OS_BOOTLOADER
-    title: Boot loader
-    description: |
-      systemd-boot is small and needs no maintenance. GRUB can show a menu of
-      btrfs snapshots to boot into.
-    group: Boot
-    values: [systemd, grub]
-    required: true
-
   - name: ARCH_OS_SECURE_BOOT_ENABLED
     title: Secure Boot
     description: |
@@ -322,19 +257,7 @@ variables:
     group: Boot
     type: bool
     default: true
-    conditions:
-      - ARCH_OS_ENCRYPTION_ENABLED == true
-      - ARCH_OS_BOOTLOADER == systemd
-
-  - name: ARCH_OS_KERNEL
-    title: Kernel
-    description: |
-      linux-zen is tuned for desktop responsiveness. linux is the stock kernel,
-      linux-lts a long-term one, linux-hardened a security-focused one.
-    group: Boot
-    values: [linux-zen, linux, linux-lts, linux-hardened]
-    default: linux-zen
-    required: true
+    conditions: ARCH_OS_ENCRYPTION_ENABLED == true
 
   - name: ARCH_OS_KERNEL_ARGS
     title: Kernel parameters
@@ -342,21 +265,6 @@ variables:
       Extra parameters passed to the kernel at boot, separated by spaces.
       Leave empty unless you know you need one.
     group: Boot
-    # What GRUB's own file cannot hold: it keeps the command line as a quoted
-    # shell assignment and sources it, so any of these would be read as shell.
-    pattern: '^[^"\\`$]*$'
-    error: Quotes, backslashes, dollar signs and backticks cannot be used here.
-
-  - name: ARCH_OS_MICROCODE
-    title: Processor firmware
-    description: |
-      Firmware updates loaded at boot. auto detects the processor automatically
-      — the right choice unless you are preparing this image for a different
-      machine.
-    group: Boot
-    default: auto
-    required: true
-    command: list_microcode
 
   # ─── Desktop ───────────────────────────────────────────────────────────────
   - name: ARCH_OS_DESKTOP
@@ -367,18 +275,6 @@ variables:
     group: Desktop
     values: [gnome, none]
     required: true
-
-  - name: ARCH_OS_DESKTOP_GRAPHICS_DRIVER
-    title: Graphics driver
-    description: |
-      mesa is the open driver and fits almost every machine. Pick one matching
-      your card only if you know you need it. nvidia is NVIDIA's own open
-      kernel module and needs a GTX 16 series card or newer - Arch ships no
-      driver at all for the ones before it, and those run on mesa.
-    group: Desktop
-    values: [mesa, intel_i915, nvidia, amd, ati, none]
-    required: true
-    conditions: ARCH_OS_DESKTOP != none
 
   - name: ARCH_OS_DESKTOP_KEYBOARD_LAYOUT
     title: Desktop keyboard
@@ -392,6 +288,7 @@ variables:
     conditions: ARCH_OS_DESKTOP != none
     filter: open
     command: list_layouts
+    pattern: '^[A-Za-z0-9_-]+$'
 
   - name: ARCH_OS_DESKTOP_KEYBOARD_VARIANT
     title: Keyboard variant
@@ -406,6 +303,7 @@ variables:
     # every machine rather than on some of them.
     filter: open
     command: list_variants
+    pattern: '^[A-Za-z0-9_-]+$'
 
   - name: ARCH_OS_DESKTOP_KEYBOARD_MODEL
     title: Keyboard model
@@ -413,6 +311,7 @@ variables:
     group: Desktop
     default: pc105
     conditions: ARCH_OS_DESKTOP != none
+    pattern: '^[A-Za-z0-9_-]+$'
 
   - name: ARCH_OS_DESKTOP_EXTRAS_ENABLED
     title: Desktop extras
@@ -432,26 +331,25 @@ variables:
     default: true
     conditions: ARCH_OS_DESKTOP != none
 
-  - name: ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED
-    title: Log in automatically
+  - name: ARCH_OS_FLATPAK_ENABLED
+    title: Flatpak
     description: |
-      Skips the login screen. auto follows disk encryption: a disk already
-      unlocked at boot gains nothing from a second password, while without
-      encryption the login screen is the only protection left.
+      Applications from Flathub, installed and updated through Software
+      alongside everything else.
     group: Desktop
-    values: [auto, true, false]
-    default: auto
-    required: true
+    type: bool
+    default: true
     conditions: ARCH_OS_DESKTOP != none
 
   - name: ARCH_OS_SAMBA_SHARE_ENABLED
     title: File sharing
     description: |
       Shares your home folder and a public folder on the local network, readable
-      by Windows and macOS.
+      by Windows and macOS. Anyone on the same network can try your password
+      against it, so turn it on only on a network you trust.
     group: Desktop
     type: bool
-    default: true
+    default: false
     # The same two the task that shares carries, so this is never a row that is
     # answered and then never acted on.
     conditions:
@@ -491,7 +389,7 @@ variables:
       the official repositories. Built here, against the pacman this machine
       has, which takes about a quarter of an hour.
     group: System
-    values: [paru, yay, none]
+    values: [paru, none]
     default: paru
     required: true
 
@@ -506,6 +404,25 @@ variables:
     default: none
     required: true
 
+  - name: ARCH_OS_FIREWALL_ENABLED
+    title: Firewall
+    description: |
+      Blocks incoming connections except the ones something on this machine
+      is set up to answer: SSH, file sharing and finding printers. On a
+      desktop the rules can be changed in the Firewall application.
+    group: System
+    type: bool
+    default: true
+
+  - name: ARCH_OS_SSH_SERVER_ENABLED
+    title: SSH server
+    description: |
+      Lets you log in to this machine from another one over the network, with
+      your account and password. Root cannot log in this way.
+    group: System
+    type: bool
+    default: false
+
   - name: ARCH_OS_HOUSEKEEPING_ENABLED
     title: Housekeeping
     description: |
@@ -515,25 +432,27 @@ variables:
     type: bool
     default: true
 
+  - name: ARCH_OS_EDITOR
+    title: Text editor
+    description: |
+      The editor that opens wherever a command asks for one: sudoedit, git,
+      systemctl edit. nano and micro are typed into straight away, micro with
+      the shortcuts of a desktop editor. vim, neovim and helix are modal:
+      typing and commands are separate modes.
+    group: System
+    values: [nano, vim, neovim, micro, helix]
+    default: nano
+    required: true
+
   - name: ARCH_OS_SHELL_ENHANCEMENT_ENABLED
     title: Shell enhancement
     description: |
-      A better terminal out of the box: a prompt showing git state, colourful
-      listings, fuzzy search, useful aliases.
+      A better terminal out of the box: zsh with completion and suggestions as
+      you type, a prompt showing git state, colourful listings, fuzzy search,
+      useful aliases.
     group: System
     type: bool
     default: true
-
-  - name: ARCH_OS_SHELL_ENHANCEMENT_SHELL
-    title: Shell
-    description: |
-      bash is always set up; zsh or fish add completion and suggestions as you
-      type and become the shell that opens instead.
-    group: System
-    values: [bash, zsh, fish]
-    default: zsh
-    required: true
-    conditions: ARCH_OS_SHELL_ENHANCEMENT_ENABLED == true
 
   - name: ARCH_OS_MANAGER_ENABLED
     title: Arch OS Manager
@@ -542,26 +461,27 @@ variables:
     type: bool
     default: true
 
-  - name: ARCH_OS_VM_SUPPORT_ENABLED
-    title: Virtual machine support
-    description: |
-      Inside a virtual machine, the guest tools that make the screen resize and
-      the clipboard work. On real hardware there is no guest to support, so it
-      installs the other end instead: what it takes to run a virtual machine of
-      your own. Without a desktop that is the console half of it, without the
-      manager window.
+  # Not asked: whether this machine is a virtual one is a fact about it. Inside
+  # one, the guest tools are installed without a question; on real hardware,
+  # running virtual machines of one's own is the question below.
+  - name: ARCH_OS_VIRTUAL_MACHINE
+    title: Virtual machine
+    description: Whether this machine is itself a virtual one.
     group: System
     type: bool
-    default: true
+    answer: in_virtual_machine
 
-  - name: ARCH_OS_ECN_ENABLED
-    title: Explicit congestion notification
+  - name: ARCH_OS_VM_HOST_ENABLED
+    title: Virtual machines
     description: |
-      Leave on. Turning it off helps only behind old routers that drop
-      connections which use it.
+      Runs virtual machines on this computer: QEMU and libvirt, and on a
+      desktop the Virtual Machine Manager window. Inside a virtual machine this
+      is not offered - the guest tools that make the screen resize and the
+      clipboard work are installed there on their own.
     group: System
     type: bool
-    default: true
+    default: false
+    conditions: ARCH_OS_VIRTUAL_MACHINE == false
 
   # ─── Sharing ───────────────────────────────────────────────────────────────
   #

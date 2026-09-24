@@ -4,6 +4,4 @@
 # how a systemd unit spells the mount point /.
 # https://wiki.archlinux.org/title/Btrfs#Scrub
 
-simulating && return 0
-
 arch-chroot "$MNT" systemctl enable btrfs-scrub@-.timer

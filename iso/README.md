@@ -27,7 +27,7 @@ The [Oak](https://github.com/murkl/oak) binary with every module beside it lives
 ```
 build.sh <release-dir>                   assembles and runs mkarchiso
 smoke.sh <image.iso>                     boots a built image and waits for the first page
-glyphs.sh <file>...                      reads those files against the console font below
+glyphs.sh <oak> <file>...                reads those files, and what that oak draws, against the font below
 src/etc/systemd/system/arch-os.service   starts it on tty1
 src/usr/local/bin/arch-os                the entry point, sets up the console first
 src/usr/local/bin/installer              opens the Installer directly
@@ -46,7 +46,7 @@ make image     # ...only the image, out of a release that is already there
 
 **Note:** _The image lands beside the release it was built from, named after `oak.yaml`'s version. The ISO label is that version, upper-cased._
 
-The Bootsplash theme comes from a **[plymouth-theme-arch-os](https://github.com/murkl/plymouth-theme-arch-os)** checkout beside this repo if one exists, fetched otherwise (`PLYMOUTH_THEME_SRC` overrides).
+The Bootsplash theme is **[plymouth-theme-arch-os](https://github.com/murkl/plymouth-theme-arch-os)** at the commit `PLYMOUTH_THEME_REF` in `build.sh` names, fetched once and kept in `download/` - raised by hand, like `OAK_VERSION`. `PLYMOUTH_THEME_SRC=/path/to/theme/src` builds with a theme folder of your own instead.
 
 A build leaves nothing root-owned behind: `archiso/` is removed on success, kept on failure; `download/` stays either way and lets the next build skip the network.
 
@@ -63,9 +63,9 @@ Boots under QEMU and OVMF, waits for the first page, shuts down. Checks the boot
 
 ## What the Console can draw
 
-The font this image loads has one table of glyphs, so a character outside it is a box on the screen - in whichever language it happens to be in. `glyphs.sh` reads the font name out of the launcher that loads it and checks two things against its table: the files it is handed, which `make check` points at every module, and the marks the interface draws itself - the rules, the cursor, and the three cells a QR code and the mark over a finished run are built from.
+The font this image loads has one table of glyphs, so a character outside it is a box on the screen - in whichever language it happens to be in. `glyphs.sh` reads the font name out of the launcher that loads it and checks two things against its table: the files it is handed, which `make check` points at every module except fastfetch's config (a picture for a graphical terminal), and the marks the interface draws itself - the rules, the cursor, the three cells a QR code and the mark over a finished run are built from, and Oak's own words. Those are asked of the binary with `oak --glyphs` rather than copied here.
 
-That last set is why the font is `eurlatgr` rather than something prettier: it is the one in `kbd` whose table holds all of it. Terminus has the full block and neither half of it.
+That last set is why the font is `LatGrkCyr-8x16` rather than something prettier: of the fonts in `kbd` whose table holds all of it, it is the one that also holds Greek and Cyrillic. Terminus has the full block and neither half of it; `eurlatgr` has no Cyrillic.
 
 ```
 make glyphs-check

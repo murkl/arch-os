@@ -27,12 +27,10 @@ confirm: |
 # Each is a folder under tasks/, marked - tasks/@write/ - and lying in one is
 # what puts a task in the run and where.
 stages:
-  - download # the image of the release this program came out of
+  - download # the image of the release oak.yaml names
   - verify # against the checksum that release publishes, before anything is written
   - write # the image onto the device
 
-# Which image gets written is not among them: that is not a matter of opinion,
-# it is the version beside the binary - see module.sh.
 variables:
   - name: ARCH_OS_DOWNLOAD_DIR
     title: Download folder
@@ -65,9 +63,9 @@ variables:
   - name: ARCH_OS_IMAGE_DEVICE
     title: Device
     description: |
-      The USB device to write to. Everything on it will be erased. Only disks
-      on a USB bus are offered, so the disk this machine boots from cannot be
-      chosen by accident.
+      The USB device to write to. Everything on it will be erased. Only USB
+      disks are offered, and none this system is running from, so it cannot
+      be chosen by accident.
     group: Device
     required: true
     error: Choose a device that exists.

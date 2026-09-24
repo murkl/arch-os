@@ -37,6 +37,10 @@ stages:
 variables:
   # Asked first, because it is the keyboard the password below is typed on. It
   # is loaded on the live system and never written to the system being repaired.
+  #
+  # It opens on a layout rather than on the list's first row, which is 3l: an
+  # enter meant for the page before would load that, and the password typed
+  # next would fail with nothing to say why.
   - name: ARCH_OS_RECOVERY_KEYMAP
     title: Console keyboard
     description: |
@@ -46,7 +50,7 @@ variables:
     required: true
     first: true
     command: list_keymaps
-    prefill: default_keymap
+    prefill: live_keymap
     apply: load_console_keyboard
 
   - name: ARCH_OS_RECOVERY_DISK

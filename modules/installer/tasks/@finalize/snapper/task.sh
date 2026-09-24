@@ -1,11 +1,6 @@
 # Snapshots taken before every package transaction and cleaned up on a timer, so
 # an update that goes wrong can be rolled back without the disk filling up.
 # https://wiki.archlinux.org/title/Snapper
-#
-# Its own task beside the plain hook: the two are different answers to one
-# question, and which runs is written in the yaml rather than read out of shell.
-
-simulating && return 0
 
 # snapper insists on creating /.snapshots itself, so the subvolume mounted there
 # is taken away and put back around it.
@@ -28,16 +23,12 @@ arch-chroot "$MNT" snapper --no-dbus -c root set-config "${settings[@]}"
 # does, df reports the disk as full as it was. ExecStopPost rather than
 # ExecStartPost, because the unit is Type=simple.
 mkdir -p "${MNT}/etc/systemd/system/snapper-cleanup.service.d"
-{
-    echo "# Written by the Arch OS Installer."
-    echo "[Service]"
-    echo "ExecStopPost=/usr/bin/sync"
-    echo "ExecStopPost=/usr/bin/btrfs filesystem sync /"
-} >"${MNT}/etc/systemd/system/snapper-cleanup.service.d/sync.conf"
+render "$(where)/sync.conf" >"${MNT}/etc/systemd/system/snapper-cleanup.service.d/sync.conf"
 
-arch-chroot "$MNT" systemctl enable snapper-timeline.timer
+# No timeline and no snapshot at every boot: between two package transactions
+# the system changes only where a snapshot of it should not follow - disk
+# images, containers, databases - and those would be held in every one of them.
 arch-chroot "$MNT" systemctl enable snapper-cleanup.timer
-arch-chroot "$MNT" systemctl enable snapper-boot.timer
 
-# snapper's own hook: named snapshots, cleaned up by the timers above.
+# snapper's own hook: named snapshots, cleaned up by the timer above.
 chroot_pacman_install snap-pac

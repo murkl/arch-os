@@ -1,8 +1,6 @@
 # The GNOME desktop: the packages, the login screen, the keyboard, and the
 # settings that only the first login can apply.
 
-simulating && return 0
-
 home="${MNT}/home/${ARCH_OS_USERNAME}"
 data="$(where)"
 apps="${home}/.local/share/applications"
@@ -19,10 +17,6 @@ apps="${home}/.local/share/applications"
 # dependency, which leaves the session manager out.
 # https://wiki.archlinux.org/title/PipeWire#Installation
 packages=(git bluez bluez-utils avahi nss-mdns pipewire pipewire-pulse wireplumber)
-
-# gnome-software only recommends it, so the group never pulls it in - and the
-# theme override further down needs the binary regardless of extras.
-packages+=(flatpak)
 
 # The group filtered rather than installed and then trimmed: what the slim
 # desktop leaves out is never downloaded.
@@ -79,17 +73,18 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     packages+=(adw-gtk-theme)
 fi
 
-[ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_ASSISTANT_ENABLED" = "true" ] && packages+=(btrfs-assistant)
-
 chroot_pacman_install "${packages[@]}"
 
 # ////////////////////////////////////////////////////////////////////////////
 # GROUPS
 # ////////////////////////////////////////////////////////////////////////////
 
-# https://wiki.archlinux.org/title/Users_and_groups#User_groups
-arch-chroot "$MNT" groupadd -f plugdev
-arch-chroot "$MNT" usermod -aG adm,audio,video,optical,input,tty,plugdev "$ARCH_OS_USERNAME"
+# Only gamemode, whose limits are granted to the group. Sound, video, drives and
+# input devices are handed to whoever sits at the seat by logind, and the groups
+# that used to grant them do harm now: audio lets one session hold the sound card
+# against the next, input reads every keystroke on the machine, tty writes to
+# every other terminal. The journal is readable by wheel already.
+# https://wiki.archlinux.org/title/Users_and_groups#Pre-systemd_groups
 [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && arch-chroot "$MNT" gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -116,46 +111,21 @@ fi
 # LOGIN SCREEN
 # ////////////////////////////////////////////////////////////////////////////
 
+# Automatic login behind an encrypted disk, and nowhere else: the password at
+# boot already stands in front of the desktop, and without encryption the login
+# screen is the only protection there is.
+#
+# GDM then never sees a password, and PAM would have none to unlock the login
+# keyring with - except that systemd-cryptsetup leaves the LUKS passphrase in
+# the kernel keyring and pam_gdm hands it on.
+# https://wiki.archlinux.org/title/GNOME/Keyring#PAM_step
+#
 # Only written where there is something to say: /etc/gdm/custom.conf belongs to
 # the gdm package, and a copy repeating its defaults is a file to merge after
 # every update for nothing gained.
-if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ]; then
+if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
     mkdir -p "${MNT}/etc/gdm"
-    {
-        echo '# Written by the Arch OS Installer.'
-        echo '[daemon]'
-        echo 'AutomaticLoginEnable=True'
-        echo "AutomaticLogin=${ARCH_OS_USERNAME}"
-    } >"${MNT}/etc/gdm/custom.conf"
-fi
-
-# Under automatic login GDM never sees a password, so PAM has none to unlock the
-# login keyring with - except on an encrypted disk, where systemd-cryptsetup
-# leaves the LUKS passphrase in the kernel keyring and pam_gdm hands it on. That
-# is how this installer builds a system anyway.
-# https://wiki.archlinux.org/title/GNOME/Keyring#PAM_step
-#
-# Without encryption there is nothing to hand on, and GNOME's own answer is a
-# login keyring with no password at all - the trade a machine that logs itself
-# in has already made. Created from here rather than from the first-login
-# script, which would race GDM's own PAM hook on that same login.
-if [ "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" = "true" ] && [ "$ARCH_OS_ENCRYPTION_ENABLED" != "true" ]; then
-    keyring="/home/${ARCH_OS_USERNAME}/.local/share/keyrings/login.keyring"
-
-    # A session bus, which a chroot has as little as it has a session.
-    as_user 'dbus-run-session -- gnome-keyring-daemon --unlock <<< ""' || true
-
-    # It forks before it has written the keyring and stays behind once it has,
-    # and a process of the target still running is a mount that will not come
-    # down at the end.
-    for _ in $(seq 50); do
-        [ -s "${MNT}${keyring}" ] && break
-        sleep 0.1
-    done
-    arch-chroot "$MNT" pkill -u "$ARCH_OS_USERNAME" -x gnome-keyring-d || true
-
-    [ -s "${MNT}${keyring}" ] ||
-        echo "no passwordless login keyring was created, the desktop will ask for one on first use" >&2
+    render "${data}/custom.conf" USERNAME="$ARCH_OS_USERNAME" >"${MNT}/etc/gdm/custom.conf"
 fi
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -163,8 +133,8 @@ fi
 # ////////////////////////////////////////////////////////////////////////////
 
 mkdir -p "${home}/.config/environment.d" "${home}/.gnupg" "${apps}"
-cp "${data}/environment.conf" "${home}/.config/environment.d/00-arch.conf"
-echo 'pinentry-program /usr/bin/pinentry-gnome3' >"${home}/.gnupg/gpg-agent.conf"
+render "${data}/environment.conf" >"${home}/.config/environment.d/00-arch.conf"
+render "${data}/gpg-agent.conf" >"${home}/.gnupg/gpg-agent.conf"
 
 # Git passwords in the keyring rather than in a file.
 as_user 'git config --global credential.helper /usr/lib/git-core/git-credential-libsecret'
@@ -177,15 +147,11 @@ as_user 'git config --global credential.helper /usr/lib/git-core/git-credential-
 # Both are needed, and both say the same thing.
 # https://wiki.archlinux.org/title/Xorg/Keyboard_configuration
 mkdir -p "${MNT}/etc/X11/xorg.conf.d"
-{
-    echo 'Section "InputClass"'
-    echo '    Identifier "system-keyboard"'
-    echo '    MatchIsKeyboard "yes"'
-    echo "    Option \"XkbLayout\" \"${ARCH_OS_DESKTOP_KEYBOARD_LAYOUT}\""
-    echo "    Option \"XkbModel\" \"${ARCH_OS_DESKTOP_KEYBOARD_MODEL}\""
-    echo "    Option \"XkbVariant\" \"${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}\""
-    echo 'EndSection'
-} >"${MNT}/etc/X11/xorg.conf.d/00-keyboard.conf"
+render "${data}/00-keyboard.conf" \
+    LAYOUT="$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" \
+    MODEL="$ARCH_OS_DESKTOP_KEYBOARD_MODEL" \
+    VARIANT="$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" \
+    >"${MNT}/etc/X11/xorg.conf.d/00-keyboard.conf"
 
 keyboard="$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
 [ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && keyboard="${keyboard}+${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}"
@@ -201,21 +167,30 @@ arch-chroot "$MNT" systemctl enable gdm.service
 arch-chroot "$MNT" systemctl enable bluetooth.service
 arch-chroot "$MNT" systemctl enable avahi-daemon
 
+# The answers avahi asks for arrive as multicast on its own port, which the
+# firewall cannot match to the question that went out. Without this the printers
+# and shares it looks for never show up.
+if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
+    arch-chroot "$MNT" firewall-offline-cmd --add-service=mdns
+fi
+
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     arch-chroot "$MNT" systemctl enable tuned-ppd   # power profiles
     arch-chroot "$MNT" systemctl enable cups.socket # printing
 fi
 
-# --global writes to /etc/systemd/user, so it holds for every account and keeps
-# working when a unit is renamed. The sockets follow through Also=.
-arch-chroot "$MNT" systemctl --global enable pipewire.service pipewire-pulse.service wireplumber.service gcr-ssh-agent.socket
+# The keyring's ssh agent, which gcr ships switched off. PipeWire and
+# WirePlumber switch themselves on when they are installed. --global writes to
+# /etc/systemd/user, so it holds for every account.
+# https://wiki.archlinux.org/title/GNOME/Keyring#SSH_keys
+arch-chroot "$MNT" systemctl --global enable gcr-ssh-agent.socket
 
 # ////////////////////////////////////////////////////////////////////////////
 # APPLICATION LIST
 # ////////////////////////////////////////////////////////////////////////////
 
 hide() {
-    printf '[Desktop Entry]\nType=Application\nHidden=true\n' >"${apps}/${1}.desktop"
+    render "${data}/hidden.desktop" >"${apps}/${1}.desktop"
 }
 while read -r scope name; do
     case "$scope" in '' | \#*) continue ;; esac
@@ -225,27 +200,6 @@ while read -r scope name; do
     esac
     hide "$name"
 done <"${data}/hidden-apps"
-
-# The snapshot browser under a name that says what it is for. A file of the same
-# name in the user's own applications folder wins over the one in /usr.
-if [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && [ "$ARCH_OS_BTRFS_ASSISTANT_ENABLED" = "true" ]; then
-    {
-        echo '[Desktop Entry]'
-        echo 'Name=Snapshots'
-        echo 'Comment=Browse and restore system snapshots'
-        echo 'Exec=btrfs-assistant-launcher'
-        echo 'Terminal=false'
-        echo 'Type=Application'
-        echo 'Icon=btrfs-assistant'
-        echo 'Categories=System'
-        echo 'NoDisplay=false'
-    } >"${apps}/btrfs-assistant.desktop"
-fi
-
-# So flatpaks read the desktop theme rather than standing out as light windows
-# on a dark desktop.
-arch-chroot "$MNT" flatpak override --filesystem=xdg-config/gtk-3.0
-arch-chroot "$MNT" flatpak override --filesystem=xdg-config/gtk-4.0
 
 # ////////////////////////////////////////////////////////////////////////////
 # WHAT ONLY THE FIRST LOGIN CAN DO

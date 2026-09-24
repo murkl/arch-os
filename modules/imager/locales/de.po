@@ -79,8 +79,8 @@ msgstr "Datenträger"
 
 #. ARCH_OS_IMAGE_DEVICE: what it means
 #: module.yaml
-msgid "The USB device to write to. Everything on it will be erased. Only disks on a USB bus are offered, so the disk this machine boots from cannot be chosen by accident."
-msgstr "Der USB-Datenträger, auf den geschrieben wird. Alles darauf wird gelöscht. Angeboten werden nur Datenträger am USB-Bus, damit die Platte, von der diese Maschine startet, nicht versehentlich getroffen wird."
+msgid "The USB device to write to. Everything on it will be erased. Only USB disks are offered, and none this system is running from, so it cannot be chosen by accident."
+msgstr "Der USB-Datenträger, auf den geschrieben wird. Alles darauf wird gelöscht. Angeboten werden nur USB-Datenträger und keiner, von dem dieses System läuft, damit er nicht versehentlich getroffen wird."
 
 #. ARCH_OS_IMAGE_DEVICE: what a wrong answer is told
 #: module.yaml
@@ -91,6 +91,11 @@ msgstr "Wähle einen vorhandenen Datenträger."
 #: tasks/@download/image/task.yaml
 msgid "Download the image"
 msgstr "Abbild herunterladen"
+
+#. the step, as the run lists it
+#: tasks/@verify/unverified/task.yaml
+msgid "Decide about an unchecked image"
+msgstr "Über ein ungeprüftes Abbild entscheiden"
 
 #. the step, as the run lists it
 #: tasks/@verify/checksum/task.yaml
@@ -122,28 +127,3 @@ msgstr "Root zum Schreiben"
 #: hooks/@preflight/device/hook.yaml
 msgid "A device to write to"
 msgstr "Ein Datenträger zum Schreiben"
-
-#~ msgid "Verify the checksum"
-#~ msgstr "Prüfsumme abgleichen"
-
-#~ msgid "The image is here or can be fetched"
-#~ msgstr "Das Abbild ist da oder erreichbar"
-
-#~ msgid "Imager"
-#~ msgstr "Imager"
-
-#~ msgid "Writing"
-#~ msgstr "Schreibvorgang"
-
-#, fuzzy
-#~ msgid "Writing the device"
-#~ msgstr "Datenträger schreiben"
-
-#~ msgid "Running as root"
-#~ msgstr "Läuft als root"
-
-#~ msgid "Create"
-#~ msgstr "Erstellen"
-
-#~ msgid "Running on an ordinary machine"
-#~ msgstr "Läuft auf einer gewöhnlichen Maschine"

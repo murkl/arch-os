@@ -3,8 +3,6 @@
 # a script that runs once at the first login and removes itself.
 # See on_first_login in module.sh for the other end.
 
-simulating && return 0
-
 # Nothing to do is an ordinary outcome: a console system with no desktop has no
 # session to wait for and nothing to put in one.
 [ -s "$FIRST_LOGIN" ] || return 0
@@ -24,13 +22,8 @@ rm -f "$FIRST_LOGIN"
 chmod +x "$FIRST_LOGIN_SCRIPT"
 
 # The desktop entry every desktop reads at login.
-{
-    echo '[Desktop Entry]'
-    echo 'Type=Application'
-    echo 'Name=Arch OS Setup'
-    echo 'Icon=preferences-system'
-    echo "Exec=bash -c '\"\${HOME}/${FIRST_LOGIN_SCRIPT#"${HOME_DIR}"/}\" >\"\${HOME}/${FIRST_LOGIN_LOG}\" 2>&1'"
-} >"$FIRST_LOGIN_ENTRY"
+render "$(where)/arch-os-first-login.desktop" \
+    SCRIPT="${FIRST_LOGIN_SCRIPT#"${HOME_DIR}"/}" LOG="$FIRST_LOGIN_LOG" >"$FIRST_LOGIN_ENTRY"
 
 # Written as root into somebody else's home, and a first login that cannot write
 # its own log reports nothing.

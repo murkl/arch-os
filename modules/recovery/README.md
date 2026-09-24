@@ -4,7 +4,7 @@ Everything this Recovery knows about Arch Linux. It is data - one YAML file and 
 
 **Note:** _Putting Arch Linux on disk and writing the device this boots from are separate modules: **[➜ Installer](../installer)** · **[➜ Create boot medium](../imager)**_
 
-**Note:** _What it reads and repairs: **[➜ Arch OS Reference](../../docs/REFERENCE.md#the-recovery)**. The task contract: **[➜ AGENTS.md](../../AGENTS.md)**._
+**Note:** _What it reads and repairs: **[➜ Arch OS Reference](../../docs/REFERENCE.md#the-recovery)**. The task contract: **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md#what-a-script-receives)**._
 
 ```
 make -C ../.. check                              # load every module and lint every script
@@ -47,12 +47,16 @@ Everything else about the disk is read, not asked:
 
 | Read | How | When |
 | --- | --- | --- |
+| Root partition | The disk's second partition, when it is a LUKS container or a btrfs labelled `BTRFS` | Before the run |
 | Encryption | LUKS header, no password needed | Before the run, as an `answer:` |
-| File system | `lsblk` on the unlocked device | Once open |
-| Subvolumes | `btrfs subvolume list` | While mounting - an older layout opens as far as it goes |
+| File system | `lsblk` on the unlocked device - btrfs, or it is turned away | Once open |
+| Subvolumes | `btrfs subvolume list` on the top level - every one the Installer lays down, or it is turned away | Once open |
+| `/boot` | The installation's own `fstab` | While mounting |
 | Snapshots | `@snapshots` on the btrfs top level | Mid-run, once mounted |
 
 None to offer means the step is skipped, not asked about.
+
+**Note:** _Only what the Installer of the same release makes is opened. An installation from an earlier release is turned away with the reason - its own release's Recovery opens it._
 
 **Note:** _A derived answer is never asked, on the settings page or written to `recovery.conf` - the next run reads it again. See `answer:` in the **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**._
 
@@ -67,7 +71,7 @@ flowchart LR
     T -.->|"rollback replaces @"| M
 ```
 
-**Note:** _Subvolume table and mount options are written out twice - here and in the Installer's - and must not drift apart. **[➜ Btrfs Subvolumes](../../docs/REFERENCE.md#btrfs-subvolumes)**_
+**Note:** _Subvolume table and mount options are the Installer's own, from `oak.sh` at the root, which both modules are given. **[➜ Btrfs Subvolumes](../../docs/REFERENCE.md#btrfs-subvolumes)**_
 
 ## Answers
 
@@ -81,7 +85,7 @@ flowchart LR
 | `ARCH_OS_RECOVERY_PASSWORD` | Asked right before the run, never written |
 | `ARCH_OS_RECOVERY_SNAPSHOT` | Asked mid-run by the rollback task |
 
-Only keyboard and disk are ever a question.
+Only keyboard and disk are asked up front. The password follows right before the run, the snapshot only if a rollback is chosen.
 
 ## Requirements
 

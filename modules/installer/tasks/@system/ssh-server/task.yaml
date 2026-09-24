@@ -1,0 +1,2 @@
+title: Start the SSH server
+conditions: ARCH_OS_SSH_SERVER_ENABLED == true

@@ -1,17 +1,28 @@
-# What was installed depends on the card, so this asks the same question the
-# task did. Vulkan is the one thing every branch but nvidia installs under the
-# same name; nvidia is checked by the files and units that make it work at all.
-simulating && return 0
+# What was installed depends on the cards, so this asks the same question the
+# task did. Every driver is checked by what an application finds: the Vulkan
+# driver's manifest, and for NVIDIA the module in the image the firmware starts.
 
-case "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" in
-nvidia)
-    has_command nvidia-smi
-    [ -f "${MNT}/etc/modprobe.d/nvidia.conf" ]
-    [ -f "${MNT}/etc/pacman.d/hooks/nvidia.hook" ]
-    arch-chroot "$MNT" systemctl is-enabled \
-        nvidia-suspend.service nvidia-hibernate.service nvidia-resume.service >/dev/null
-    ;;
-*)
-    has_command vulkaninfo
-    ;;
-esac
+[ -n "$(arch-chroot "$MNT" pacman -Qq mesa)" ]
+has_command glxinfo
+has_command vulkaninfo
+
+while IFS=$'\t' read -r vendor device; do
+    case "$vendor" in
+    intel) [ -f "${MNT}/usr/share/vulkan/icd.d/intel_icd.json" ] ;;
+    amd) [ -f "${MNT}/usr/share/vulkan/icd.d/radeon_icd.json" ] ;;
+    nvidia)
+        if ((device < 0x1e00)); then
+            [ -f "${MNT}/usr/share/vulkan/icd.d/nouveau_icd.json" ]
+            continue
+        fi
+        has_command nvidia-smi
+        # The listing is read whole: grep stops at the first match, and
+        # lsinitcpio, still writing, would die of that and fail the test under
+        # pipefail.
+        while read -r image; do
+            contents="$(arch-chroot "$MNT" lsinitcpio "$image")"
+            grep -q '/nvidia-drm\.ko' <<<"$contents"
+        done < <(boot_images)
+        ;;
+    esac
+done < <(graphics_cards)

@@ -22,6 +22,18 @@ on:
   # the fast gate into the full one.
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+    # Not the release pull request, which touches nothing but these three - in
+    # oak.yaml the version line. It is opened with the workflow's own token, and
+    # since June 2026 GitHub holds every run such a pull request starts until
+    # somebody approves it - one nobody does fails the moment it is merged. The
+    # release run reports its checks instead, and its merge is checked on main.
+    # Any other pull request that changes nothing but oak.yaml starts no run
+    # either, so main holds it back - see docs/CONTRIBUTING.md.
+    # https://github.com/orgs/community/discussions/199292
+    paths-ignore:
+      - CHANGELOG.md
+      - .github/.release-please-manifest.json
+      - oak.yaml
   workflow_dispatch:
 
 permissions: {}
@@ -42,6 +54,15 @@ concurrency:
 # moves to a new Ubuntu on a date GitHub picks: a toolchain that changes under a
 # branch nobody touched is a change nobody made. It is raised here deliberately,
 # like any other dependency.
+#
+# Every action is named by the commit it is, with its version beside it: a tag
+# is whatever its owner points it at next, and some of these run with the right
+# to write a release. Dependabot raises both together.
+#
+# The container is the one moving name here, on purpose. Every job upgrades it
+# to today's Arch before doing anything else - that is what this is checked
+# against - so a pinned image would only be an older starting point, and one
+# whose keyring stops trusting the packages it is upgrading to.
 jobs:
   # The one place that decides what the rest of the file does.
   gate:
@@ -86,7 +107,7 @@ jobs:
     name: Check
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    container: archlinux:latest
+    container: archlinux:latest # zizmor: ignore[unpinned-images] - see the top of this file
     permissions:
       contents: read
     steps:
@@ -97,13 +118,13 @@ jobs:
       - name: Make the checkout a repository
         run: pacman -Syu --needed --noconfirm git
 
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - uses: ./.github/actions/arch
         with:
-          packages: make curl shellcheck shfmt yamllint actionlint gettext diffutils gitleaks kbd tzdata
+          packages: make curl shellcheck shfmt zsh yamllint actionlint zizmor gettext diffutils gitleaks kbd tzdata
 
       # The runtime's checksum is a call to the API, and sixty an hour is what
       # an address that does not say who it is gets - one address for every
@@ -129,17 +150,42 @@ jobs:
     permissions:
       contents: write # the tag and the release page
       pull-requests: write # the release pull request
+      statuses: write # the two checks it is cleared by
     outputs:
       created: ${{ steps.please.outputs.release_created }}
       tag: ${{ steps.please.outputs.tag_name }}
       version: ${{ steps.please.outputs.version }}
       notes: ${{ steps.please.outputs.body }}
     steps:
-      - uses: googleapis/release-please-action@v5
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: please
         with:
           config-file: .github/release-please-config.json
           manifest-file: .github/.release-please-manifest.json
+
+      # The release pull request starts no run - see pull_request above - so
+      # nothing would ever report the two checks main asks of a pull request,
+      # and it could never be merged. It needs neither: it holds what a run like
+      # this one wrote out of a main that was checked a moment before, and its
+      # merge is checked again on main before a tag exists. This says so, on the
+      # commit it stands on.
+      #
+      # Found by the label release-please keeps on it rather than out of the
+      # action's outputs, which leave the pull request empty whenever it stayed
+      # as it was - and reported on every run, so a run that missed it is
+      # made good by the next.
+      - name: The release pull request is cleared to merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh pr list --state open --label "autorelease: pending" --json headRefOid --jq '.[].headRefOid' |
+            while read -r sha; do
+              for check in Ready Title; do
+                gh api --silent "repos/${GH_REPO}/statuses/${sha}" -f state=success -f context="$check" \
+                  -f description="Release pull request - checked on main once merged"
+              done
+            done
 
   # The image, and the one job that finds out whether the thing starts. Both in
   # one job rather than three: the file between them is a gigabyte, and handing
@@ -154,7 +200,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     container:
-      image: archlinux:latest
+      image: archlinux:latest # zizmor: ignore[unpinned-images] - see the top of this file
       # pacstrap mounts /proc and /sys inside the airootfs it is filling, and
       # qemu without the device falls back to emulation, which the timeout
       # below would not sit through.
@@ -169,7 +215,7 @@ jobs:
       - name: Make the checkout a repository
         run: pacman -Syu --needed --noconfirm git
 
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -211,7 +257,7 @@ jobs:
             pnmtopng "$frame" >"${frame%.ppm}.png"
           done
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: smoke-test
@@ -223,7 +269,7 @@ jobs:
       # reviewing the change can boot for themselves. Kept even when the boot
       # failed, because that is when somebody wants to boot it by hand. On a
       # release the job below takes them from here.
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ !cancelled() }}
         with:
           if-no-files-found: ignore
@@ -246,8 +292,36 @@ jobs:
           fi
           printf '## Smoke test\n\n%s\n\n' "$said" >>"$GITHUB_STEP_SUMMARY"
 
+  # The one check of this file a pull request has to pass before it can be
+  # merged - see .github/settings/ruleset.json. One name for all of them, so a
+  # job listed here is required from the moment it is, and one skipped on a
+  # draft counts as what it is rather than as missing.
+  ready:
+    name: Ready
+    needs: [gate, check, image]
+    if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Every job this pull request needed came out well
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for result in $RESULTS; do
+            case "$result" in
+            success | skipped) ;;
+            *)
+              echo "::error::a job this pull request needs ended as ${result}"
+              exit 1
+              ;;
+            esac
+          done
+
   # Nothing is built here. The two files this run made and booted are hung on
-  # the release the job above wrote, under the version it decided.
+  # the release the job above wrote as a draft, under the version it decided,
+  # and the draft is made public last - once both are on it. A run that fails
+  # before that leaves a draft to re-run, never a release that every download
+  # link already points at and that holds nothing.
   publish:
     name: Publish
     needs: [release, image]
@@ -257,18 +331,18 @@ jobs:
     permissions:
       contents: write # the assets and the page they hang on
       id-token: write # the provenance below is signed
-      attestations: write
+      attestations: write # and stored beside the release
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       TAG: ${{ needs.release.outputs.tag }}
       VERSION: ${{ needs.release.outputs.version }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: arch-os
           path: dist
@@ -287,7 +361,7 @@ jobs:
       # Which commit and which run these files came out of, signed by the run
       # that made them — the only one that can say so truthfully.
       - name: Sign the provenance
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: |
             dist/*.tar.gz
@@ -333,7 +407,7 @@ jobs:
           FOOTER
 
           gh release upload "$TAG" dist/*.tar.gz dist/*.iso --clobber
-          gh release edit "$TAG" --notes-file "$notes"
+          gh release edit "$TAG" --notes-file "$notes" --draft=false --latest
 
       - name: What was published
         run: |

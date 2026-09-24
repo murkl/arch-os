@@ -1,8 +1,6 @@
 # The answers and the log kept in the new system: what was installed, and what
 # it said while doing it. The answers hold no password.
 
-simulating && return 0
-
 home="${MNT}/home/${ARCH_OS_USERNAME}"
 
 # The share-config task appends to this same file once there is an address to

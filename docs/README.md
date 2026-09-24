@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/badge/UEFI-x86__64-2e3440?style=for-the-badge" alt="">
 </p>
 
-<p>A text console or a GNOME desktop. Boot the latest <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and the Installer starts on its own.</p>
+<p>A text console or a GNOME desktop. Boot the latest <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and Arch OS starts on its own.</p>
 
 <p>Or run this on any Linux machine. An ordinary desktop writes the ISO to a USB device; a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> installs or repairs.</p>
 
@@ -24,21 +24,21 @@
 
 ## Features
 
-- Minimal Arch Linux base, UEFI only: linux-zen, linux, linux-lts or linux-hardened
-- btrfs or ext4, systemd-boot or GRUB, dual boot aware
+- Minimal Arch Linux base, UEFI only: linux-zen, btrfs and systemd-boot on a disk of its own - the same on every machine
 - Disk encryption (LUKS2) and Secure Boot with your own keys
 - One password for encryption, root and user; automatic login behind an encrypted disk
-- Btrfs snapshots before every package change (Snapper), restored from the desktop (Btrfs Assistant)
-- GNOME on Wayland, or a bare text console; graphics driver for Mesa, Intel, NVIDIA, AMD or ATI
+- Btrfs snapshots before every package change (Snapper), rolled back with the Recovery
+- GNOME on Wayland, or a bare text console; the graphics driver for every Intel, AMD and NVIDIA card is detected
 - Desktop extras: codecs, fonts, printing, Samba and `.local` discovery; or a slim install with GNOME core apps only
+- Flatpak with Flathub, managed from GNOME Software
 - Zram swap, fstrim, microcode, NetworkManager, mirrors ranked by country
 - Tuned rather than left at the defaults - see the **[➜ Reference](REFERENCE.md)**
-- AUR helper, 32-bit support, container engine, automatic housekeeping
-- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager, Shell Enhancement (bash, zsh or fish)
+- AUR helper, 32-bit support, container engine, firewall, SSH server, automatic housekeeping, the text editor of your choice
+- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager, Shell Enhancement (zsh)
 - Recovery on the same image, works without a network
 - Wireless network joined from the Installer itself, before the first download
 - Create boot medium: writes the USB device from any Linux machine, no root needed but for the write itself
-- Virtual machine support both ways: guest tools inside a VM, libvirt and QEMU on real hardware
+- Virtual machines both ways: guest tools inside a VM on their own, libvirt and QEMU on real hardware if you want them
 - Two starting points, **Core** and **Desktop** - everything else stays a row in the settings
 - English and German interface
 
@@ -49,13 +49,13 @@ An internet connection is required. Without a cable, the Installer offers the wi
 ### 1. Prepare a bootable USB device
 
 - Download the latest ISO from **[the release page](https://github.com/murkl/arch-os/releases/latest)** and write it with **[Ventoy](https://www.ventoy.net/en/download.html)** or any ISO writer. GitHub prints each file's SHA-256 beside it there, and both carry signed build provenance — the command is in the release notes
-- Or let **Create boot medium** do it, on any Linux machine. It checks what it downloaded against the published checksum before it unpacks anything:
+- Or let **Create boot medium** do it, on any Linux machine. It checks the ISO against the published checksum before it writes anything:
 
 ```
 curl -Ls https://bit.ly/archos | bash
 ```
 
-**Note:** _Runs as you, not root - only the write itself asks for a password. `DOWNLOAD_DIR=<dir>` changes where it lands (`~/Downloads` by default), and an ISO already there is used rather than fetched again._
+**Note:** _Runs as you, not root - only the write itself asks for a password. The program lands in `XDG_DOWNLOAD_DIR` or `~/Downloads` (`… | DOWNLOAD_DIR=<dir> bash` for another), the ISO wherever you answer, and an ISO already there is used rather than fetched again._
 
 ### 2. Set the firmware up
 
@@ -64,7 +64,7 @@ curl -Ls https://bit.ly/archos | bash
 
 ### 3. Boot from the USB device
 
-The Installer starts on its own. The first page says where the rest of Arch OS is and asks the language:
+Arch OS starts on its own. The first page says where the rest of Arch OS is and asks the language:
 
 <p><img src="screenshots/welcome.png" alt="The welcome page: the project's address, and the language to read the rest in"></p>
 
@@ -85,8 +85,8 @@ Every value it sets is an ordinary answer, changeable afterwards. What is left t
 
 Every answer lands in `installer.conf` as it is given, so an interrupted run resumes. The password never does.
 
-- **Share it:** upload to **[paste.rs](https://paste.rs)** at the end of a run, get a code back. The next installation can start from it
-- **Copy it:** put `installer.conf` beside the Installer on another machine
+- **Share it:** upload to **[paste.rs](https://paste.rs)** at the end of a run, get a code back. The next installation can start from it, and asks only for its disk
+- **Copy it:** put `installer.conf` beside the Installer on another machine. The disk it names is checked against that machine's own before anything is written
 
 ### 5. Switch Secure Boot on
 
@@ -103,6 +103,8 @@ sbctl status
 
 **Note:** _The system boots exactly as before until you do this - nothing here can leave it unbootable._
 
+**Note:** _`sbctl verify` lists `/boot/vmlinuz-*` as not signed. That is on purpose - see **[➜ Secure Boot](REFERENCE.md#secure-boot)**._
+
 ## Recovery
 
 <p><img src="screenshots/recovery.png" alt="The Recovery, opening a system already on disk"></p>
@@ -116,6 +118,8 @@ Boot the same ISO and choose **Recovery** to rescue an installation after a cras
 
 Two questions - keyboard and disk - the rest is read off the machine. No network needed.
 
+**Note:** _With Secure Boot on, switch it off in the firmware to start the image, and on again afterwards - the Recovery signs what it rebuilds with the machine's own keys._
+
 ## Maintenance
 
 <p><img src="screenshots/manager_menu.png" alt="The Arch OS System Manager"></p>
@@ -123,7 +127,7 @@ Two questions - keyboard and disk - the rest is read off the machine. No network
 Mostly automatic through the preinstalled **Arch OS System Manager**. By hand:
 
 - Read the **[Arch Linux News](https://www.archlinux.org/news)** before upgrading
-- Roll back with **Btrfs Assistant** or `snapper` if an update breaks something
+- Roll back with the **[Recovery](#recovery)** if an update breaks something - see **[➜ Rolling Back](REFERENCE.md#rolling-back)** for why only there
 - Consult the **[Arch Linux Wiki](https://wiki.archlinux.org)**
 
 <details>

@@ -6,7 +6,7 @@ Everything this module knows about making a bootable device. It is data - one YA
 
 **Note:** _Putting Arch Linux on disk and repairing one already there are separate modules: **[➜ Installer](../installer)** · **[➜ Recovery](../recovery)**_
 
-**Note:** _What it writes and why: **[➜ Arch OS Reference](../../docs/REFERENCE.md#the-boot-medium)**. The task contract: **[➜ AGENTS.md](../../AGENTS.md)**._
+**Note:** _What it writes and why: **[➜ Arch OS Reference](../../docs/REFERENCE.md#the-boot-medium)**. The task contract: **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md#what-a-script-receives)**._
 
 ```
 make -C ../.. check                            # load every module and lint every script
@@ -29,17 +29,20 @@ locales/                        one <code>.po per language, and the template the
 
 | Task | Stage | Description |
 | --- | --- | --- |
-| `image` | `download` | Fetches the image, unless the folder already holds it |
-| `checksum` | `verify` | Compares it against the checksum the release publishes, discards it if they disagree. Where there is none to compare against, it asks |
+| `image` | `download` | Fetches the image, unless the folder already holds it, and puts the checksum the release publishes beside it. Its progress bar is shown under the step while it runs (`progress: true`) |
+| `unverified` | `verify` | Asks whether to go on, and only where there is no checksum to compare against |
+| `checksum` | `verify` | Compares the image against that checksum, discards it if they disagree |
 | `device` | `write` | Checks the device, unmounts it, copies the image on |
 
-Three steps, three distinct failures: nothing arrived, what arrived is broken, or it could not be written.
+Three distinct failures: nothing arrived, what arrived is broken, or it could not be written.
+
+**Note:** _The question is a step of its own because Oak skips a step whose `asks:` list comes back empty - and it is empty exactly where there is a checksum. Asked by the check itself, the check would be the step skipped._
 
 **Note:** _`checksum` has no `test.sh` - the task itself already is the test, line for line._
 
-## The Image is not a Question
+## The Image
 
-Which image gets written is not asked: it is the one this program came from. `version:` in `oak.yaml` says which, and where it fetches from.
+The ISO written is the one of the release `version:` in `oak.yaml` names, downloaded from its release page.
 
 **Note:** _The asset is picked by what its name ends in, so renaming a download only touches the **[Makefile](../../Makefile)**._
 
@@ -47,7 +50,7 @@ Which image gets written is not asked: it is the one this program came from. `ve
 
 **Download folder**, suggested as `XDG_DOWNLOAD_DIR` or `~/Downloads`. The image is kept, so a second run costs no bandwidth.
 
-An `arch-os-<version>-x86_64.iso` already in that folder is not downloaded again. The number it is then held to is the checksum GitHub publishes for that release, so this module and the release page check the same one - and the release carries no checksum file of its own.
+An `arch-os-<version>-x86_64.iso` already in that folder is not downloaded again. The number it is then held to is the checksum GitHub publishes for that release, so this module and the release page check the same one - and the release carries no checksum file of its own. It is read once per run and written beside the image as `arch-os-<version>-x86_64.iso.sha256`, which `sha256sum -c` reads as well.
 
 - A checksum mismatch discards the image rather than keeping a broken one
 - Where no checksum can be fetched - the release is not out yet, or it cannot be reached - the run stops and asks, and only a yes writes the image. That is how an image built here rather than downloaded reaches a device
@@ -85,7 +88,7 @@ Everything else - listing, downloading, checksumming - runs as you. `tty: true` 
 | Variable | Description |
 | --- | --- |
 | `ARCH_OS_DOWNLOAD_DIR` | Where the image lives. Suggested as `XDG_DOWNLOAD_DIR`, or `~/Downloads` |
-| `ARCH_OS_IMAGE_DEVICE` | The USB device to write. Only USB disks are offered |
+| `ARCH_OS_IMAGE_DEVICE` | The USB device to write. Only USB disks are offered, and none the running system has mounted outside `/run/media`, `/media` or `/mnt` |
 | `ARCH_OS_IMAGE_UNVERIFIED` | Whether to write an image no checksum could be fetched for. Asked mid-run, and only then |
 
 **Note:** _The device is read back from `lsblk` immediately before writing - `/dev/sdb` is a path, not a stick._

@@ -1,7 +1,6 @@
 # What has to be readable back off the new system: its own name, its language, a
 # clock that points somewhere, an editor that exists, a network to come up on,
 # and swap settings the kernel will actually act on.
-simulating && return 0
 
 grep -qx "$ARCH_OS_HOSTNAME" "${MNT}/etc/hostname"
 grep -qx "LANG=${ARCH_OS_LOCALE_LANG}.UTF-8" "${MNT}/etc/locale.conf"

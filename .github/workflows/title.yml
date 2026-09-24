@@ -10,8 +10,22 @@
 name: Title
 
 on:
+  # synchronize as well: main asks for this check on the commit a pull request
+  # ends on, and a result belongs to the commit it was read on.
   pull_request:
-    types: [opened, reopened, edited]
+    types: [opened, synchronize, reopened, edited]
+    # Not the release pull request, which touches nothing but these three - in
+    # oak.yaml the version line. It is opened with the workflow's own token, and
+    # since June 2026 GitHub holds every run such a pull request starts until
+    # somebody approves it - one nobody does fails the moment it is merged. The
+    # release run reports its checks instead, and its merge is checked on main.
+    # Any other pull request that changes nothing but oak.yaml starts no run
+    # either, so main holds it back - see docs/CONTRIBUTING.md.
+    # https://github.com/orgs/community/discussions/199292
+    paths-ignore:
+      - CHANGELOG.md
+      - .github/.release-please-manifest.json
+      - oak.yaml
 
 permissions: {}
 

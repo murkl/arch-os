@@ -1,7 +1,7 @@
 # The only task runner in the repository. What CI runs is these targets, so a
 # rule that holds at a desk holds there.
 #
-#   dist/arch-os-$(VERSION)/                 the product: oak, oak.yaml, modules/
+#   dist/arch-os-$(VERSION)/                 the product: oak, oak.yaml, oak.sh, modules/
 #   dist/arch-os-$(VERSION)-x86_64.tar.gz    that folder as one file
 #   dist/arch-os-$(VERSION)-x86_64.iso       the bootable image
 #
@@ -19,11 +19,13 @@ SHELL       := /bin/bash
 # THE PRODUCT | What a release is called and what it holds
 # ////////////////////////////////////////////////////////////////////////////
 
-# One binary, the declaration of the product it drives, and one folder per
-# module. Oak looks for all of it beside its own binary.
-APP         := oak
-PRODUCT     := oak.yaml
-MODULES_DIR := modules
+# One binary, the declaration of the product it drives, the shell every module
+# of it shares, and one folder per module. Oak looks for all of it beside its
+# own binary.
+APP           := oak
+PRODUCT       := oak.yaml
+PRODUCT_SHELL := oak.sh
+MODULES_DIR   := modules
 
 # Where this project's version is written, and what everything is named after:
 # both filenames, the ISO label and the tag `v` + this - the `v` belongs to the
@@ -56,7 +58,7 @@ MODULE_PARTS := module.sh data locales tasks hooks
 # rather than followed, so a build of a given commit is the same build tomorrow.
 # Written without the `v` its tag carries.
 OAK_REPO    := murkl/oak
-OAK_VERSION ?= 0.5.0
+OAK_VERSION ?= 0.8.0
 OAK_ASSET   := oak-linux-amd64
 OAK_DIR     := .oak
 
@@ -118,26 +120,29 @@ ISO ?= $(shell ls -t $(DIST_DIR)/*.iso 2>/dev/null | head -1)
 
 # POSIX sh: get.sh runs on whatever shell the machine downloading it has, and
 # the rest are one job each rather than a program.
-POSIX_SCRIPTS := get.sh .github/summary.sh
+POSIX_SCRIPTS := get.sh .github/summary.sh .github/settings.sh
 
 # Bash: what builds and boots the image, and what the image itself runs.
 ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_GLYPHS) $(wildcard $(ISO_DIR)/src/usr/local/bin/*)
 
-# Every script of every module, and every yaml for the check that reads both.
-# Looked up when they are used, so only the targets that read them pay for it.
-MODULE_SCRIPTS = $(shell find $(MODULES_DIR) -name '*.sh')
+# Every script of every module and the shell they all share, and every yaml for
+# the check that reads both. Looked up when they are used, so only the targets
+# that read them pay for it.
+MODULE_SCRIPTS = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -name '*.sh')
 MODULE_YAML    = $(shell find $(MODULES_DIR) -name '*.yaml')
 
 # The shell a module ships as a file of somebody's home rather than as a task.
-# Found by the name it lands under, since a .bashrc carries no extension. The
-# other three in that folder are out: zsh and fish are not dialects shellcheck
-# reads, and the handover fragment is placeholders rather than shell.
-MODULE_SHELL = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/bashrc $(MODULES_DIR)/*/tasks/@*/*/aliases)
+# Found by the name it lands under, since a .bashrc carries no extension. zsh is
+# not a dialect shellcheck reads, so it is read by its own shell instead.
+MODULE_SHELL = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/data/bashrc $(MODULES_DIR)/*/tasks/@*/*/data/aliases)
+MODULE_ZSH   = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/data/zshrc)
 
-# Everything a module can put on a screen: the declarations, the scripts, the
-# tables and every catalog. The READMEs are the one thing here nobody reads on
-# a console.
-MODULE_TEXT = $(shell find $(MODULES_DIR) -type f ! -name '*.md')
+# Everything a module can put on a screen: the declarations, the scripts and
+# the shell they share, the tables and every catalog. The READMEs are the one
+# thing here nobody reads on a console, and fastfetch's config is a picture for
+# a graphical terminal: the Arch logo it draws is made of block quadrants no
+# console font has either.
+MODULE_TEXT = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -type f ! -name '*.md' ! -name fastfetch.jsonc)
 
 # A module's own check of the lookup tables it ships. Found by name rather than
 # named outright, so a module that grows tables is a folder and nothing here has
@@ -170,7 +175,7 @@ BANNER_CELL    := 9
 
 .PHONY: all oak oak-check build dev run inspect tarball image iso smoke locales \
 	locales-check glyphs-check data-check lint fmt check version version-check \
-	secrets-check screenshots banner docs clean
+	secrets-check github screenshots banner docs clean
 
 # build empties the release it writes, and everything that packages it reads
 # what it left. Running them at once would package a half-written folder.
@@ -236,6 +241,7 @@ build: oak-check
 	mkdir -p $(RELEASE_DIR)
 	install -m 755 $(OAK_BIN) $(RELEASE_DIR)/$(APP)
 	install -m 644 $(PRODUCT) $(RELEASE_DIR)/$(PRODUCT)
+	install -m 644 $(PRODUCT_SHELL) $(RELEASE_DIR)/$(PRODUCT_SHELL)
 	for m in $(MODULES); do \
 		dest=$(RELEASE_DIR)/$(MODULES_DIR)/$$m; \
 		mkdir -p $$dest; \
@@ -252,6 +258,7 @@ build: oak-check
 dev: oak-check
 	@mkdir -p $(DEV_DIR)
 	@ln -sfn ../$(PRODUCT) $(DEV_DIR)/$(PRODUCT)
+	@ln -sfn ../$(PRODUCT_SHELL) $(DEV_DIR)/$(PRODUCT_SHELL)
 	@ln -sfn ../$(MODULES_DIR) $(DEV_DIR)/$(MODULES_DIR)
 	@install -m 755 $(OAK_BIN) $(DEV_DIR)/$(APP)
 
@@ -269,7 +276,7 @@ inspect: dev
 tarball: build
 	tar -czf $(DIST_DIR)/$(TARBALL) --owner=0 --group=0 --sort=name \
 		--transform 's,^,$(STEM)/,' \
-		-C $(RELEASE_DIR) $(APP) $(PRODUCT) $(MODULES_DIR)
+		-C $(RELEASE_DIR) $(APP) $(PRODUCT) $(PRODUCT_SHELL) $(MODULES_DIR)
 
 # The image, out of the release already in dist/ rather than out of a second
 # build of the same sources. What it is called is read out of that release.
@@ -286,7 +293,8 @@ smoke:
 
 # Every template rewritten out of the module it belongs to, and every catalog
 # brought up to it. msgmerge keeps every translation whose source text is
-# unchanged and marks the rest fuzzy rather than dropping it.
+# unchanged and marks the rest fuzzy rather than dropping it. A text no source
+# holds any more is dropped, so what was taken out leaves no translation behind.
 locales: dev
 	for m in $(MODULES); do \
 		pot=$(MODULES_DIR)/$$m/locales/$$m.pot; \
@@ -294,6 +302,7 @@ locales: dev
 		for po in $(MODULES_DIR)/$$m/locales/*.po; do \
 			[ -e "$$po" ] || continue; \
 			msgmerge --quiet --update --backup=none --no-wrap "$$po" $$pot; \
+			msgattrib --no-obsolete --no-wrap -o "$$po" "$$po"; \
 		done; \
 	done
 
@@ -335,7 +344,9 @@ locales-check: dev
 
 # The two POSIX scripts are checked as sh; a module's are checked the way Oak
 # runs them, as bash with module.sh already in scope. actionlint reads the
-# workflows again for what a yaml linter cannot see.
+# workflows again for what a yaml linter cannot see, and zizmor for what makes
+# one unsafe - offline, so a finding is always about a change here rather than
+# news from somewhere else. What it is told to leave alone is .github/zizmor.yml.
 #
 # The first grep is for the one mistake no linter here can see, because it is
 # valid shell that only fails on a machine being installed: arch-chroot execs
@@ -352,20 +363,31 @@ locales-check: dev
 # unstripped escape in it was shipped that way. `requires:` is deliberately not
 # on that list - it is what the module says about the machine it belongs on, and
 # it belongs in the declaration where somebody looking for it looks.
+#
+# The last one is for a check that cannot fail. Oak runs every script under an ERR
+# trap and without -e, and bash never fires that trap for a command inverted
+# with `!`: such a line fails the script only while it happens to be the last,
+# and two tests passed that way while checking nothing.
 lint:
 	shellcheck -s sh -S style $(POSIX_SCRIPTS)
 	shellcheck -S style $(ISO_SCRIPTS)
 	shellcheck -x -S style $(MODULE_SCRIPTS)
 	shellcheck -s bash -S style -e SC1091 $(MODULE_SHELL)
+	for file in $(MODULE_ZSH); do zsh -n "$$file"; done
 	shfmt -d -ln posix -i 4 $(POSIX_SCRIPTS)
 	shfmt -d -i 4 $(ISO_SCRIPTS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
 	yamllint .
 	actionlint
+	zizmor --offline --persona auditor .github
 	@! grep -nE 'arch-chroot [^|&;]*[[:space:]](command|type|hash|source|alias)[[:space:]]' \
 		$(MODULE_SCRIPTS) $(MODULE_YAML) \
 		|| { echo "a shell builtin cannot be run through arch-chroot - see has_command" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*(script|test|command|prefill|apply|answer):[[:space:]]*.*[|&;<>`$$]' $(MODULE_YAML) \
 		|| { echo "a task's or hook's shell is linted by nothing inside a yaml and gives a failure no line to point at - put it in the .sh file beside it and name that file here" >&2; exit 1; }
+	@! grep -nE '^[[:space:]]*\}[[:space:]]*>>?[[:space:]]*"\$$\{MNT\}' $(MODULE_SCRIPTS) \
+		|| { echo "a file written into the new system is a template beside its task, put in place with render - see module.sh" >&2; exit 1; }
+	@! grep -nE '^[[:space:]]*![[:space:]]' $(MODULE_SCRIPTS) \
+		|| { echo "a command inverted with ! fails nothing under the ERR trap a script runs in - write it as an if that exits" >&2; exit 1; }
 
 fmt:
 	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)
@@ -374,9 +396,10 @@ fmt:
 # A virtual console holds one font and that font holds one table of glyphs, so a
 # character outside it is a box on the screen - in whichever language it happens
 # to be in, which is not the one whoever wrote it reads. After locales-check,
-# which is what makes the catalogs it reads the current ones.
-glyphs-check:
-	@$(ISO_GLYPHS) $(MODULE_TEXT)
+# which is what makes the catalogs it reads the current ones. What the interface
+# itself draws there is asked of the runtime, which is the one thing that knows.
+glyphs-check: oak-check
+	@$(ISO_GLYPHS) $(OAK_BIN) $(MODULE_TEXT)
 
 # Every name a module's tables hand to another program, against the program's
 # own list of them. A keymap loadkeys does not have, a font setfont does not
@@ -388,6 +411,13 @@ data-check:
 # The whole gate, cheapest and loudest first. CI runs this and nothing it adds
 # to it, so there is no second definition of green.
 check: version-check secrets-check lint inspect locales-check data-check glyphs-check
+
+# The repository's settings on GitHub - how a pull request is merged, what main
+# holds one to, what a workflow's token may do - out of .github/settings/. Run
+# by hand after one of them changes, as an admin logged in with gh: no workflow
+# can, since a workflow's token may not change the rules it is held to itself.
+github:
+	.github/settings.sh
 
 # ////////////////////////////////////////////////////////////////////////////
 # DOCUMENTATION | The pictures the README is made of

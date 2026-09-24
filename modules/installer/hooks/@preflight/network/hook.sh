@@ -1,8 +1,6 @@
 # Everything from here on downloads something, and a link that is merely slow to
 # come up after boot is common enough to be worth waiting for.
 
-simulating && return 0
-
 for i in 1 2 3 4 5; do
     [ "$i" -gt 1 ] && echo "retry ${i}/5: waiting for the network" && sleep 5
     is_online && return 0

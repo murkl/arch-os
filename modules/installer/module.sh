@@ -9,39 +9,82 @@
 MNT=/mnt
 DATA="$(dirname "${BASH_SOURCE[0]}")/data"
 
-# The folder of the task that called it, where a unit keeps the files it ships
-# with.
-where() { dirname "${BASH_SOURCE[1]}"; }
+# Where the task that called it keeps the files it ships with: data/ beside its
+# task.sh, so the folder a task is and the files it writes are told apart at a
+# glance.
+where() { printf '%s/data' "$(dirname "${BASH_SOURCE[1]}")"; }
 
 # ////////////////////////////////////////////////////////////////////////////
-# SIMULATION
+# FILES A TASK SHIPS
 # ////////////////////////////////////////////////////////////////////////////
 
-# --debug runs without touching the machine. Every task and every test opens on
-# `simulating && return 0`: a task because there is nothing it may change, a
-# test because a simulated run wrote nothing for it to read back.
+# Every file a task writes into the new system lies beside it and comes out
+# through here, on stdout. {{NAME}} is replaced by what was handed over as
+# NAME=value; everything else is left as it stands, so ${HOME}, $trg or $(date)
+# reach the shell, systemd or pacman that reads the file later untouched.
 #
-# The pause holds each step on screen long enough to be read, which is what
-# makes a simulated run something to watch — and what docs/screenshots.py
-# photographs a run in the middle of.
-#
-# debugging is the bare question, for the few places that ask it without being
-# a step: an answer applied to this machine, a list a page opens on.
+# Both sides are checked: a placeholder nobody filled and a value nothing asks
+# for are each a failure, because either writes a file that reads perfectly well
+# and does not say what it was meant to. Why not envsubst: docs/REFERENCE.md
+render() {
+    local template="$1" open='{{' close='}}' text rendered="" name pair
+    local -A values=() used=()
+    shift
 
-debugging() { [ "$DEBUG" = "true" ]; }
+    [ -f "$template" ] || {
+        echo "there is no template ${template}" >&2
+        return 1
+    }
 
-simulating() {
-    debugging || return 1
-    echo "simulated"
-    sleep 1
+    for pair in "$@"; do
+        name="${pair%%=*}"
+        [[ $pair == *=* && $name =~ ^[A-Z][A-Z0-9_]*$ ]] || {
+            echo "${pair} is not a NAME=value for ${template}" >&2
+            return 1
+        }
+        values["$name"]="${pair#*=}"
+    done
+
+    # Whole, trailing newlines included, which $(<file) would strip.
+    IFS= read -r -d '' text <"$template" || true
+
+    # Left to right and once, so a value that happens to hold {{ is never read
+    # as a placeholder of its own.
+    while [[ $text == *"$open"* ]]; do
+        rendered+="${text%%"$open"*}"
+        text="${text#*"$open"}"
+        name="${text%%"$close"*}"
+        if [[ $text != *"$close"* || ! $name =~ ^[A-Z][A-Z0-9_]*$ ]]; then
+            echo "${template} has a ${open} that opens no placeholder" >&2
+            return 1
+        fi
+        if [[ ! -v values[$name] ]]; then
+            echo "${template} asks for ${open}${name}${close}, which nobody handed over" >&2
+            return 1
+        fi
+        rendered+="${values[$name]}"
+        used["$name"]=1
+        text="${text#*"$close"}"
+    done
+
+    for name in "${!values[@]}"; do
+        [[ -v used[$name] ]] || {
+            echo "${name} was handed to ${template}, which never asks for it" >&2
+            return 1
+        }
+    done
+
+    printf '%s' "${rendered}${text}"
 }
 
 # ////////////////////////////////////////////////////////////////////////////
 # LOCALE LOOKUP
 # ////////////////////////////////////////////////////////////////////////////
 
-# Keyboard, font, mirror country and timezone do not follow from the shape of a
-# locale - de_CH is not de, sv is not se - so all four are looked up in data/.
+# Keyboard, font and timezone do not follow from the shape of a locale - de_CH
+# is not de, sv is not se - so all three are looked up in data/. The mirror
+# country is looked up there too, but follows the time zone rather than the
+# language: see auto_country.
 
 # A column of the data/languages row for a locale: its own row if there is one,
 # otherwise its language's row.
@@ -55,12 +98,11 @@ language_field() {
     ' "${DATA}/languages"
 }
 
-# A column of the data/countries row for the territory a locale ends in. Empty
-# for a locale that names none.
+# A column of the data/countries row for a territory code: the two capitals a
+# locale ends in, and the ones tzdata files a zone under. Empty for a code it has
+# no row for, and for no code at all.
 country_field() {
-    local locale="${2%%.*}"
-    [ "${locale#*_}" != "$locale" ] || return 0
-    awk -F'\t' -v col="$1" -v code="${locale#*_}" '$1 == code { print $col }' "${DATA}/countries"
+    awk -F'\t' -v col="$1" -v code="$2" 'code != "" && $1 == code { print $col }' "${DATA}/countries"
 }
 
 # The two magic words the lists share; neither ever reaches a task. auto means
@@ -73,13 +115,8 @@ not_none() { [ "$1" = "none" ] || printf '%s' "$1"; }
 auto_keymap() {
     local keymap
     keymap="$(language_field 2 "$ARCH_OS_LOCALE_LANG")"
-    # Otherwise the keyboard the live image was started with, which the Arch
-    # image records only as the loadkeys command in root's shell history.
-    # Finding nothing there is the ordinary case, so the grep must not make a
-    # failure of it - pipefail would carry that out of the whole lookup.
-    : "${keymap:=$({ grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null || true; } |
-        tail -n1 | sed 's/.*loadkeys *//' | tr -d ' ')}"
-    printf '%s' "${keymap:-us}"
+    # Otherwise the keyboard the live image was started with.
+    printf '%s' "${keymap:-$(live_keymap)}"
 }
 
 auto_layout() {
@@ -100,49 +137,34 @@ auto_font() {
     printf '%s' "${font:-none}"
 }
 
+# The country the chosen time zone lies in, as tzdata files it, rather than the
+# one the language names: en_US is typed on every continent, and a mirror an
+# ocean away is not only slow but cannot even be rated within reflector's own
+# timeout.
 auto_country() {
-    local country
-    country="$(country_field 2 "$ARCH_OS_LOCALE_LANG")"
+    local territory country
+    territory="$(awk -F'\t' -v zone="$ARCH_OS_TIMEZONE" \
+        '!/^#/ && zone != "" && $3 == zone { print $1 }' /usr/share/zoneinfo/zone.tab)"
+    country="$(country_field 2 "$territory")"
     [ "$country" = "-" ] && country="" # a country Arch has no mirror in
     printf '%s' "${country:-none}"
-}
-
-auto_microcode() {
-    if grep -q GenuineIntel /proc/cpuinfo; then
-        echo intel-ucode
-    elif grep -q AuthenticAMD /proc/cpuinfo; then
-        echo amd-ucode
-    else
-        echo none
-    fi
 }
 
 # ////////////////////////////////////////////////////////////////////////////
 # THE ANSWERS, RESOLVED
 # ////////////////////////////////////////////////////////////////////////////
 
-# Names a partition of a disk. Devices whose name ends in a digit (nvme0n1,
-# mmcblk0, loop0) get a p between the disk and the partition number.
-part_of() {
-    local sep=""
-    [[ "$1" =~ [0-9]$ ]] && sep="p"
-    printf '%s%s%s' "$1" "$sep" "$2"
-}
-
-# Resolved once here instead of in a task, so every task sees the same answer
-# regardless of how it was arrived at.
-: "${ARCH_OS_BOOT_PARTITION:=$(part_of "$ARCH_OS_DISK" 1)}"
-: "${ARCH_OS_ROOT_PARTITION:=$(part_of "$ARCH_OS_DISK" 2)}"
+# The two partitions the disk is laid out into, named once here so every task
+# means the same devices. Only the tasks use the first, and shellcheck reads
+# this file without them.
+# shellcheck disable=SC2034
+BOOT_PART="$(part_of "$ARCH_OS_DISK" 1)"
+ROOT_PART="$(part_of "$ARCH_OS_DISK" 2)"
 
 is_auto "$ARCH_OS_VCONSOLE_KEYMAP" && ARCH_OS_VCONSOLE_KEYMAP="$(auto_keymap)"
 is_auto "$ARCH_OS_VCONSOLE_FONT" && ARCH_OS_VCONSOLE_FONT="$(auto_font)"
 is_auto "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" && ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$(auto_layout)"
 is_auto "$ARCH_OS_REFLECTOR_COUNTRY" && ARCH_OS_REFLECTOR_COUNTRY="$(auto_country)"
-is_auto "$ARCH_OS_MICROCODE" && ARCH_OS_MICROCODE="$(auto_microcode)"
-
-# Autologin follows disk encryption: a disk already unlocked by a password at
-# boot gains nothing from a second one at the login screen.
-is_auto "$ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED" && ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED="${ARCH_OS_ENCRYPTION_ENABLED:-false}"
 
 ARCH_OS_VCONSOLE_FONT="$(not_none "$ARCH_OS_VCONSOLE_FONT")"
 ARCH_OS_REFLECTOR_COUNTRY="$(not_none "$ARCH_OS_REFLECTOR_COUNTRY")"
@@ -159,35 +181,47 @@ write_vconsole() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
-# THE BTRFS LAYOUT
+# THE MACHINE
 # ////////////////////////////////////////////////////////////////////////////
 
-# How this project mounts btrfs, and what it lays down: subvolume, a tab, then
-# where it belongs. The recovery carries the same table and mounts whichever of
-# them an installation actually has - the two must not drift apart.
-#
-# Why the three under /var are separate: docs/REFERENCE.md
-#
-# Shellcheck reads this file on its own and cannot see that Oak sources it in
-# front of every task, so the option string looks unused here.
-# shellcheck disable=SC2034
-BTRFS_OPTS="defaults,noatime,compress=zstd"
-
-btrfs_subvolumes() {
-    printf '%s\t%s\n' \
-        @ / \
-        @home /home \
-        @snapshots /.snapshots \
-        @log /var/log \
-        @cache /var/cache \
-        @tmp /var/tmp
+# The processor's microcode package, or nothing for a processor neither vendor
+# ships one for.
+microcode() {
+    if grep -q GenuineIntel /proc/cpuinfo; then
+        echo intel-ucode
+    elif grep -q AuthenticAMD /proc/cpuinfo; then
+        echo amd-ucode
+    fi
 }
+
+# The graphics cards in this machine, one line each: the vendor as the driver
+# packages name it, a tab, and the PCI device ID. Read off sysfs, where lspci
+# reads them too, rather than out of the table lspci draws for a person. A
+# virtual machine's own display adapter belongs to none of the three and is left
+# out, so a guest lists a card only where a real one was passed through to it.
+graphics_cards() {
+    local dev vendor
+    for dev in /sys/bus/pci/devices/*; do
+        [[ $(<"${dev}/class") == 0x03* ]] || continue
+        case "$(<"${dev}/vendor")" in
+        0x8086) vendor=intel ;;
+        0x1002) vendor=amd ;;
+        0x10de) vendor=nvidia ;;
+        *) continue ;;
+        esac
+        printf '%s\t%s\n' "$vendor" "$(<"${dev}/device")"
+    done
+}
+
+# ////////////////////////////////////////////////////////////////////////////
+# SNAPPER
+# ////////////////////////////////////////////////////////////////////////////
 
 # What snapper's own defaults have to become here, one setting per line. Its
 # defaults are written for a system that changes slowly and a rolling release
-# is not one - why these numbers: docs/REFERENCE.md. The last two are what makes
-# the group /.snapshots belongs to able to read it: without them snapper answers
-# nobody but root, whatever the directory says.
+# is not one - why these numbers, and why no timeline: docs/REFERENCE.md. The
+# last two are what makes the group /.snapshots belongs to able to read it:
+# without them snapper answers nobody but root, whatever the directory says.
 #
 # Named once because the task sets them and its test reads them back, and
 # because set-config takes one KEY=VALUE per argument - handed the four as one
@@ -197,8 +231,7 @@ snapper_config() {
     printf '%s\n' \
         NUMBER_LIMIT=10 \
         NUMBER_LIMIT_IMPORTANT=5 \
-        TIMELINE_LIMIT_MONTHLY=2 \
-        TIMELINE_LIMIT_YEARLY=0 \
+        TIMELINE_CREATE=no \
         ALLOW_GROUPS=wheel \
         SYNC_ACL=yes
 }
@@ -212,8 +245,7 @@ snapper_config() {
 # a signed boot chain, so the rule is named once instead of repeated.
 # https://wiki.archlinux.org/title/Unified_kernel_image
 secure_boot_wanted() {
-    [ "$ARCH_OS_SECURE_BOOT_ENABLED" = "true" ] &&
-        [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && [ "$ARCH_OS_BOOTLOADER" = "systemd" ]
+    [ "$ARCH_OS_SECURE_BOOT_ENABLED" = "true" ] && [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]
 }
 
 # The images the firmware actually starts. Named once because the initramfs task
@@ -221,30 +253,27 @@ secure_boot_wanted() {
 # a check against the image this machine does not start from checks nothing.
 boot_images() {
     if secure_boot_wanted; then
-        printf '/boot/EFI/Linux/arch-%s.efi\n/boot/EFI/Linux/arch-%s-fallback.efi\n' \
-            "$ARCH_OS_KERNEL" "$ARCH_OS_KERNEL"
+        printf '/boot/EFI/Linux/arch-%s.efi\n/boot/EFI/Linux/arch-%s-fallback.efi\n' "$KERNEL" "$KERNEL"
     else
-        printf '/boot/initramfs-%s.img\n/boot/initramfs-%s-fallback.img\n' \
-            "$ARCH_OS_KERNEL" "$ARCH_OS_KERNEL"
+        printf '/boot/initramfs-%s.img\n/boot/initramfs-%s-fallback.img\n' "$KERNEL" "$KERNEL"
     fi
 }
 
-# Read by the unified kernel image, by systemd-boot's entries and by GRUB's
-# command line - three tasks, one answer, so no two of them can disagree about
-# how this system boots. Why each parameter is here: docs/REFERENCE.md
+# The kernel command line, read by the unified kernel image and by systemd-boot's
+# entries - one answer, so no two of them can disagree about how this system
+# boots. Why each parameter is here: docs/REFERENCE.md
 kernel_args() {
-    local args=(rw init=/usr/lib/systemd/systemd)
-
-    args+=(zswap.enabled=0) # pointless next to zram, and the two interfere
+    local args=(rw)
 
     if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
-        args+=("rd.luks.name=$(blkid -s UUID -o value "$ARCH_OS_ROOT_PARTITION")=cryptroot")
-        args+=(root=/dev/mapper/cryptroot)
+        args+=(root=/dev/mapper/cryptroot "rd.luks.name=$(blkid -s UUID -o value "$ROOT_PART")=cryptroot")
     else
-        args+=("root=PARTUUID=$(lsblk -dno PARTUUID "$ARCH_OS_ROOT_PARTITION")")
+        args+=("root=PARTUUID=$(lsblk -dno PARTUUID "$ROOT_PART")")
     fi
 
-    [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && args+=(rootflags=subvol=@ rootfstype=btrfs)
+    args+=(rootflags=subvol=@ rootfstype=btrfs)
+    args+=(zswap.enabled=0) # pointless next to zram, and the two interfere
+
     [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && args+=(nowatchdog)
 
     # https://wiki.archlinux.org/title/Silent_boot
@@ -286,13 +315,13 @@ chroot_pacman_install() {
     return 1
 }
 
-# A sudo rule in the new system, as a drop-in and checked before it is trusted:
-# a syntax error in /etc/sudoers locks everybody out of root.
-# https://wiki.archlinux.org/title/Sudo
+# A sudo rule in the new system, read from stdin, as a drop-in and checked
+# before it is trusted: a syntax error in /etc/sudoers locks everybody out of
+# root. https://wiki.archlinux.org/title/Sudo
 sudoers_rule() {
     local file="${MNT}/etc/sudoers.d/${1}"
     mkdir -p "${MNT}/etc/sudoers.d"
-    printf '# Written by the Arch OS Installer.\n%s\n' "$2" >"$file"
+    cat >"$file"
     chmod 0440 "$file"
 
     # A rule sudo will not parse is taken back out rather than left lying
@@ -302,6 +331,20 @@ sudoers_rule() {
     rm -f "$file"
     echo "the sudo rule ${1} was rejected and was removed again" >&2
     return 1
+}
+
+# pacman reads no drop-in directory, but it follows an Include from any section
+# of its one file. So each setting made here is a file of its own under
+# /etc/pacman.d, and pacman.conf gains one line naming it - the one edit a
+# .pacnew then asks to carry over. Named outright rather than by a glob, because
+# a glob that matches nothing stops pacman altogether.
+# https://man.archlinux.org/man/pacman.conf.5
+pacman_include() {
+    local file
+    file="/etc/pacman.d/$(basename "$1")"
+    render "$1" >"${MNT}${file}"
+    grep -qxF "Include = ${file}" "${MNT}/etc/pacman.conf" ||
+        echo "Include = ${file}" >>"${MNT}/etc/pacman.conf"
 }
 
 # How long one attempt at an AUR build may take and how often it is tried. A
@@ -331,11 +374,18 @@ chroot_aur_install() {
 
     dir="$(mktemp -u "/home/${ARCH_OS_USERNAME}/.aur-${repo}.XXXX")"
     build="rm -rf ${dir} && git clone --depth 1 ${url} ${dir} && cd ${dir}"
-    build="${build} && printf '\noptions=(\"!debug\")\n' >>PKGBUILD"
-    # make and cargo are named separately because neither reads the other.
-    build="${build} && MAKEFLAGS=-j${jobs} CARGO_BUILD_JOBS=${jobs} makepkg -si --noconfirm --needed"
+    # Added to the options the PKGBUILD sets rather than put in their place: one
+    # that says !lto would otherwise be built with what its author ruled out.
+    build="${build} && printf '\noptions+=(\"!debug\")\n' >>PKGBUILD"
+    # make and cargo are named separately because neither reads the other. The
+    # caches cargo fills are kept inside the build directory, so they go with
+    # it: otherwise paru's crate registry, well over a hundred megabytes, stays
+    # in the new home for good.
+    build="${build} && MAKEFLAGS=-j${jobs} CARGO_BUILD_JOBS=${jobs}"
+    build="${build} CARGO_HOME=${dir}/.cargo XDG_CACHE_HOME=${dir}/.cache"
+    build="${build} makepkg -si --noconfirm --needed"
 
-    sudoers_rule 99-aur-build '%wheel ALL=(ALL:ALL) NOPASSWD: ALL'
+    echo '%wheel ALL=(ALL:ALL) NOPASSWD: ALL' | sudoers_rule 99-aur-build
 
     echo "building ${repo} from the AUR with ${jobs} job(s)"
     for ((i = 1; i <= AUR_RETRIES; i++)); do
@@ -355,7 +405,7 @@ chroot_aur_install() {
     # a root-owned file the build left behind would otherwise leave passwordless
     # sudo standing in the installed system.
     rm -f "${MNT}/etc/sudoers.d/99-aur-build"
-    as_user "rm -rf ${dir}" || echo "the build directory ${dir} could not be removed" >&2
+    rm -rf "${MNT}${dir}" || echo "the build directory ${dir} could not be removed" >&2
 
     [ "$status" -eq 0 ] || echo "building ${repo} from the AUR did not finish" >&2
     return "$status"
@@ -467,20 +517,17 @@ close_target() {
 # so every list a question offers, every value one opens on and every check a
 # declaration makes is a function here.
 
-# Whether this is a booted Arch Linux live image, which is the only machine this
-# module belongs on. Two markers, because either on its own is enough:
-# /run/archiso is what the image mounts, archisobasedir is what it was booted
-# with. And Arch on top of them, because an image built the same way by somebody
-# else is not the system this installs.
-arch_live() {
-    { [ -d /run/archiso ] || grep -qs archisobasedir /proc/cmdline; } || return 1
-    grep -qs '^ID=arch$' /etc/os-release
-}
-
 # Real HTTPS to a host the installation needs anyway, not a ping - a captive
 # portal answers pings too.
 is_online() {
-    curl -Lsf --connect-timeout 5 --max-time 15 https://archlinux.org >/dev/null
+    fetch_url -s --connect-timeout 5 --max-time 15 https://archlinux.org >/dev/null
+}
+
+# Whether this machine is itself a virtual one: the guest tools go in without a
+# question there, and running virtual machines of its own is asked only where
+# it is not.
+in_virtual_machine() {
+    if systemd-detect-virt -q; then echo true; else echo false; fi
 }
 
 # The keyboard on the machine the installer runs on, loaded the moment the
@@ -528,38 +575,16 @@ list_fonts() {
 
 list_timezones() { timedatectl list-timezones; }
 
-# Where the network places this machine, asked of a service that answers from
-# the address alone. Only ever for a locale that names no country - see below -
-# and only ever to fill in the row a list opens on.
-#
-# What leaves the machine is held to that: one field asked for and one field
-# returned, no redirect followed, and curl told to say nothing about itself, so
-# the request carries the address the service was already answering and nothing
-# else. The free endpoint has no HTTPS, so that one field travels in the clear -
-# it is the reason there is nothing else in it, and the answer only fills a row
-# somebody still confirms by hand. The answer is kept for the rest of the session, because where a machine
-# stands does not change while it is being installed and a page opened a second
-# time must not be a second request. A failed lookup leaves the file empty and
-# is tried again.
-GEO_TIMEZONE_CACHE="${TMPDIR:-/tmp}/arch-os-timezone"
-
-geo_timezone() {
-    [ -s "$GEO_TIMEZONE_CACHE" ] || curl -sf -A '' --connect-timeout 5 --max-time 5 \
-        "http://ip-api.com/line?fields=timezone" >"$GEO_TIMEZONE_CACHE" || true
-    cat "$GEO_TIMEZONE_CACHE" 2>/dev/null || true
-}
-
-# The timezone the chosen country keeps, the network's guess where the locale
-# names no country, and UTC where neither answers. Only ever the value the list
-# opens on.
+# The timezone the chosen country keeps, and UTC where the locale names no
+# country. Only ever the value the list opens on.
 #
 # UTC rather than nothing: an empty suggestion opens the list on its own first
 # row, which is Africa/Abidjan, and an enter meant for the page before sets the
 # clock to it.
 auto_timezone() {
-    local zone
-    zone="$(country_field 3 "$ARCH_OS_LOCALE_LANG")"
-    [ -n "$zone" ] || zone="$(geo_timezone)"
+    local locale="${ARCH_OS_LOCALE_LANG%%.*}" territory="" zone
+    [[ $locale == *_* ]] && territory="${locale#*_}"
+    zone="$(country_field 3 "$territory")"
     printf '%s' "${zone:-UTC}"
 }
 
@@ -570,70 +595,14 @@ list_countries() {
     awk -F'\t' '!/^#/ && $2 != "-" { print $2 }' "${DATA}/countries"
 }
 
-# The disk the live image is running from, or nothing where that cannot be read.
-# Every part of the image is reached through it for as long as the run lasts, so
-# it is the one disk an installation must not be written to - and the failure is
-# a machine that is already half installed. Read off the mount table rather than
-# off the boot medium's name, because that is also how an image booted through
-# Ventoy says which disk it came from.
-#
-# The same table the Recovery reads, and the two must not drift apart.
-live_disk() {
-    lsblk -no PKNAME,MOUNTPOINT |
-        awk '!found && $1 != "" && $2 ~ /^\/run\/archiso/ { print "/dev/" $1; found = 1 }'
-}
-
-# Whole disks only, asked of lsblk by what a device is rather than by the major
-# number it was given: SATA, NVMe, eMMC, SD and a virtual disk are five numbers,
-# one of which the kernel hands out at random - and an installer that cannot see
-# the eMMC is an installer half the small machines cannot be installed on.
-#
-# Nobody picks between /dev/sda and /dev/sdb by name, so the size and the model
-# are what it is chosen by.
-list_disks() {
-    lsblk -dn -o PATH,TYPE,SIZE,MODEL | awk -v live="$(live_disk)" '
-        $2 != "disk" || $1 == live || $1 ~ /^\/dev\/zram/ { next }
-        { path = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
-}
-
-# The partitions of the chosen disk, for a dual boot laid out by somebody else.
-# The size, file system and label are what tell the EFI partition apart from the
-# one the other operating system lives on.
-list_partitions() {
-    lsblk -n -o PATH,SIZE,FSTYPE,LABEL "$ARCH_OS_DISK" | tail -n +2 |
-        awk '{ path = $1; $1 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
-}
-
-# The first vfat partition is almost always the one the other system boots from.
-# The match is remembered rather than exited on, here and below: a filter that
-# stops reading leaves lsblk with a write error, which under pipefail is a
-# failed lookup rather than an answer.
-default_boot_partition() {
-    lsblk -n -o PATH,FSTYPE "$ARCH_OS_DISK" | awk '!found && $2 == "vfat" { print $1; found = 1 }'
-}
-
-# The largest partition that is not the EFI one: the likeliest candidate for
-# space freed up to install into.
-default_root_partition() {
-    lsblk -bn -o PATH,SIZE,FSTYPE "$ARCH_OS_DISK" | tail -n +2 |
-        awk '$3 != "vfat" { print $2, $1 }' | sort -rn | awk 'NR == 1 { print $2 }'
-}
-
-# Read again at install time, so answers carried to another machine still fit it.
-list_microcode() {
-    printf 'auto\tauto — %s\n' "$(auto_microcode)"
-    echo intel-ucode
-    echo amd-ucode
-    echo none
-}
-
 # The desktop keyboard is asked of the running system where it can answer and
-# read from data/ where it cannot: the Arch live image ships no xkeyboard-config.
+# read from data/ where it cannot: the official Arch live image ships no
+# xkeyboard-config, and localectl then fails rather than printing nothing.
 list_layouts() {
     printf 'auto\tauto — %s\n' "$(auto_layout)"
 
     local layouts
-    layouts="$(localectl list-x11-keymap-layouts 2>/dev/null)"
+    layouts="$(localectl list-x11-keymap-layouts 2>/dev/null || true)"
     if [ -n "$layouts" ]; then
         echo "$layouts"
         return 0
@@ -649,10 +618,11 @@ list_variants() {
 
     echo none
 
-    variants="$(localectl list-x11-keymap-variants "$layout" 2>/dev/null)"
+    variants="$(localectl list-x11-keymap-variants "$layout" 2>/dev/null || true)"
     if [ -n "$variants" ]; then
         echo "$variants"
         return 0
     fi
-    grep "^${layout} " "${DATA}/x11-variants" | cut -d' ' -f2- | tr ' ' '\n'
+    # A layout without variants has no line there, which is not a failure.
+    { grep "^${layout} " "${DATA}/x11-variants" || true; } | cut -d' ' -f2- | tr ' ' '\n'
 }

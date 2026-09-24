@@ -19,9 +19,10 @@ answer() {
     mv -f "$tmp" "$MODULE_CONF"
 }
 
-# Simulated, this still answers with an address: the page at the end of a run is
-# the one most worth looking at while this module is being worked on.
-simulating && {
+# Simulated, this still answers with an address - it is why task.yaml says it
+# simulates itself: the page at the end of a run is the one most worth looking
+# at while this module is being worked on.
+debugging && {
     answer ARCH_OS_CONFIG_URL "${service}/demo"
     return 0
 }
@@ -29,7 +30,7 @@ simulating && {
 # Without the lines about the sharing itself: a configuration naming where an
 # earlier copy went would send whoever opened it somewhere else again.
 if ! url="$(grep -v '^ARCH_OS_CONFIG_' "$MODULE_CONF" |
-    curl -sf --connect-timeout 10 --max-time 30 --data-binary @- "${service}/")"; then
+    fetch_url -s --max-time 30 --data-binary @- "${service}/")"; then
     echo "the configuration could not be shared" >&2
     return 0
 fi

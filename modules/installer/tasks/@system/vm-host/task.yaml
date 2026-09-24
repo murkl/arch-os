@@ -1,0 +1,2 @@
+title: Set up virtual machines
+conditions: ARCH_OS_VM_HOST_ENABLED == true

@@ -1,13 +1,11 @@
 # The installation being repaired: unlocked where the disk is encrypted, and
 # mounted at /mnt the way that system mounts itself.
 
-simulating && return 0
-
 # A second attempt starts from whatever the first one left behind.
 close_target
 
-if [ ! -b "$ROOT_PART" ]; then
-    echo "There is no partition at ${ROOT_PART}. That disk does not hold an Arch OS installation." >&2
+if [ -z "$ROOT_PART" ]; then
+    echo "${ARCH_OS_RECOVERY_DISK} holds no Arch OS installation: its second partition is neither a LUKS container nor a btrfs labelled BTRFS." >&2
     exit 1
 fi
 
@@ -20,19 +18,23 @@ if [ "$ARCH_OS_RECOVERY_ENCRYPTED" = "true" ]; then
     fi
 fi
 
-# What is on it, now that it can be seen. Nothing readable here is a disk this
+# What is on it, now that it can be seen. Anything but btrfs is a disk this
 # recovery has no business mounting.
-found="$(fstype "$(root_device)")"
-if [ -z "$found" ]; then
-    echo "There is no file system on $(root_device) that this machine recognises." >&2
+if [ "$(fstype "$(root_device)")" != "btrfs" ]; then
+    echo "There is no btrfs on $(root_device), so it holds no Arch OS installation." >&2
     return 1
 fi
 
-# The top level first, where a rollback does its work, and only then the system
-# as it runs.
-if on_btrfs; then
-    mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvolid=5" "$(root_device)" "$BTRFS_TOP"
+# The top level first, where a rollback does its work and where the layout can
+# be read, and only then the system as it runs. Every subvolume the Installer
+# lays down has to be there: a disk short of one was installed by an earlier
+# release, and is opened by that release's Recovery.
+mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvolid=5" "$(root_device)" "$BTRFS_TOP"
+missing="$(missing_subvolumes)"
+if [ -n "$missing" ]; then
+    echo "${ARCH_OS_RECOVERY_DISK} was installed by an earlier release of Arch OS and has no $(paste -sd ' ' <<<"$missing"). Open it with the Recovery of the release it was installed with." >&2
+    return 1
 fi
 mount_target
 
-echo "opened ${ARCH_OS_RECOVERY_DISK} at ${MNT} (${found})"
+echo "opened ${ARCH_OS_RECOVERY_DISK} at ${MNT}"

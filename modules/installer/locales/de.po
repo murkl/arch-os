@@ -35,11 +35,11 @@ msgstr "Mit dem Befehl installer startest du ihn wieder."
 msgid ""
 "Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.\n"
 "\n"
-"Everything on that disk will be erased and this cannot be undone. A dual boot erases only the partition chosen for it. Nothing has been changed so far."
+"Everything on that disk will be erased and this cannot be undone. Nothing has been changed so far."
 msgstr ""
 "Arch Linux wird auf {{ARCH_OS_DISK}} als {{ARCH_OS_HOSTNAME}} installiert.\n"
 "\n"
-"Alles auf diesem Datenträger wird gelöscht und das lässt sich nicht rückgängig machen. Ein Dual-Boot löscht nur die dafür gewählte Partition. Bisher wurde nichts verändert."
+"Alles auf diesem Datenträger wird gelöscht und das lässt sich nicht rückgängig machen. Bisher wurde nichts verändert."
 
 #. a starting point: the question
 #: module.yaml
@@ -133,8 +133,8 @@ msgstr "Sprache und Region"
 
 #. ARCH_OS_LOCALE_LANG: what it means
 #: module.yaml
-msgid "The locale this system is set up for, for example de_DE for German as used in Germany. It sets the system language and the format for dates, numbers and currency, and on auto also the keyboard layout, console font, time zone and mirror country. English is always installed as a fallback, and the list opens on it."
-msgstr "Die Locale, für die dieses System eingerichtet wird, zum Beispiel de_DE für Deutsch, wie es in Deutschland geschrieben wird. Sie legt die Systemsprache und die Formate für Datum, Zahlen und Währung fest, auf auto außerdem Tastaturbelegung, Konsolenschrift, Zeitzone und Spiegelserver-Land. Englisch wird immer als Rückfallebene installiert, und die Liste öffnet darauf."
+msgid "The locale this system is set up for, for example de_DE for German as used in Germany. It sets the system language and the format for dates, numbers and currency, and on auto also the keyboard layout, console font and time zone. English is always installed as a fallback, and the list opens on it."
+msgstr "Die Locale, für die dieses System eingerichtet wird, zum Beispiel de_DE für Deutsch, wie es in Deutschland geschrieben wird. Sie legt die Systemsprache und die Formate für Datum, Zahlen und Währung fest, auf auto außerdem Tastaturbelegung, Konsolenschrift und Zeitzone. Englisch wird immer als Rückfallebene installiert, und die Liste öffnet darauf."
 
 #. ARCH_OS_LOCALE_LANG: the heading its row sits under
 #: module.yaml
@@ -184,8 +184,8 @@ msgstr "Spiegelserver-Land"
 
 #. ARCH_OS_REFLECTOR_COUNTRY: what it means
 #: module.yaml
-msgid "Where package downloads come from. auto uses the country for the chosen language, none ranks every mirror worldwide by speed. auto falls back to none when Arch has no mirror for that country."
-msgstr "Woher Pakete geladen werden. auto ist das Land, zu dem die gewählte Sprache gehört, none sortiert weltweit alle Spiegelserver nach Geschwindigkeit. auto fällt auf none zurück, wo Arch keinen Spiegelserver hat."
+msgid "Where package downloads come from. auto uses the country of the chosen time zone, none ranks every mirror worldwide by speed. auto falls back to none when the time zone names no country or Arch has no mirror there."
+msgstr "Woher Pakete geladen werden. auto ist das Land der gewählten Zeitzone, none sortiert weltweit alle Spiegelserver nach Geschwindigkeit. auto fällt auf none zurück, wo die Zeitzone kein Land nennt oder Arch dort keinen Spiegelserver hat."
 
 #. ARCH_OS_REFLECTOR_COUNTRY: the row that opens a box for an answer of
 #. one's own
@@ -200,8 +200,8 @@ msgstr "Datenträger"
 
 #. ARCH_OS_DISK: what it means
 #: module.yaml
-msgid "The disk Arch Linux will be installed on. Unless dual boot is enabled, everything on it will be erased. The medium this live image is running from is not offered."
-msgstr "Der Datenträger, auf dem Arch Linux installiert wird. Ohne Dual-Boot wird alles darauf gelöscht. Der Datenträger, von dem dieses Live-Abbild läuft, wird nicht angeboten."
+msgid "The disk Arch Linux will be installed on. Everything on it will be erased. The medium this live image is running from is not offered."
+msgstr "Der Datenträger, auf dem Arch Linux installiert wird. Alles darauf wird gelöscht. Der Datenträger, von dem dieses Live-Abbild läuft, wird nicht angeboten."
 
 #. ARCH_OS_DISK: the heading its row sits under
 #: module.yaml
@@ -213,16 +213,6 @@ msgstr "Speicher"
 msgid "Choose a disk that exists."
 msgstr "Wähle einen vorhandenen Datenträger."
 
-#. ARCH_OS_FILESYSTEM: the question
-#: module.yaml
-msgid "File system"
-msgstr "Dateisystem"
-
-#. ARCH_OS_FILESYSTEM: what it means
-#: module.yaml
-msgid "btrfs supports snapshots, so a system update can be rolled back. ext4 is simpler, but does not support that."
-msgstr "btrfs beherrscht Schnappschüsse, ein Update lässt sich damit zurücknehmen. ext4 ist einfacher und kann das nicht."
-
 #. ARCH_OS_ENCRYPTION_ENABLED: the question
 #: module.yaml
 msgid "Disk encryption"
@@ -232,71 +222,6 @@ msgstr "Verschlüsselung"
 #: module.yaml
 msgid "Encrypts the whole system with your password, so the data cannot be read by removing the disk. The password is then required at every boot."
 msgstr "Verschlüsselt das gesamte System mit deinem Passwort, sodass die Daten durch Ausbau des Datenträgers nicht lesbar sind. Das Passwort wird dann bei jedem Start abgefragt."
-
-#. ARCH_OS_BTRFS_SNAPPER_ENABLED: the question
-#: module.yaml
-msgid "Snapshots"
-msgstr "Schnappschüsse"
-
-#. ARCH_OS_BTRFS_SNAPPER_ENABLED: what it means
-#: module.yaml
-msgid "Takes a snapshot before every package change and cleans up old ones automatically, so a bad update can be undone."
-msgstr "Legt vor jeder Paketänderung einen Schnappschuss an und räumt alte automatisch auf, sodass sich ein misslungenes Update zurücknehmen lässt."
-
-#. ARCH_OS_BTRFS_ASSISTANT_ENABLED: the question
-#: module.yaml
-msgid "Snapshot manager"
-msgstr "Schnappschuss-Verwaltung"
-
-#. ARCH_OS_BTRFS_ASSISTANT_ENABLED: what it means
-#: module.yaml
-msgid "A desktop application for browsing and restoring snapshots."
-msgstr "Ein Desktop-Programm zum Durchsehen und Wiederherstellen von Schnappschüssen."
-
-#. ARCH_OS_DUAL_BOOT_ENABLED: the question
-#: module.yaml
-msgid "Dual boot"
-msgstr "Dual-Boot"
-
-#. ARCH_OS_DUAL_BOOT_ENABLED: what it means
-#: module.yaml
-msgid "Install alongside a system already on this disk. Nothing is partitioned or erased, the existing EFI partition is reused and only a boot entry is added. Both partitions have to be chosen by you."
-msgstr "Neben einem System installieren, das schon auf diesem Datenträger liegt. Es wird nicht partitioniert und nichts gelöscht, die vorhandene EFI-Partition wird weiterverwendet und nur ein Starteintrag ergänzt. Beide Partitionen wählst du dann selbst."
-
-#. ARCH_OS_BOOT_PARTITION: the question
-#: module.yaml
-msgid "Boot partition"
-msgstr "Boot-Partition"
-
-#. ARCH_OS_BOOT_PARTITION: what it means
-#: module.yaml
-msgid "The existing EFI partition to add a boot entry to. It will not be formatted."
-msgstr "Die vorhandene EFI-Partition, die einen Starteintrag bekommt. Sie wird nicht formatiert."
-
-#. ARCH_OS_ROOT_PARTITION: the question
-#: module.yaml
-msgid "Root partition"
-msgstr "System-Partition"
-
-#. ARCH_OS_ROOT_PARTITION: what it means
-#: module.yaml
-msgid "The partition Arch Linux will be installed on. It will be formatted, and everything on it will be lost."
-msgstr "Die Partition, in die Arch Linux installiert wird. Sie wird formatiert, alles darauf geht verloren."
-
-#. ARCH_OS_BOOTLOADER: the question
-#: module.yaml
-msgid "Boot loader"
-msgstr "Bootloader"
-
-#. ARCH_OS_BOOTLOADER: what it means
-#: module.yaml
-msgid "systemd-boot is small and needs no maintenance. GRUB can show a menu of btrfs snapshots to boot into."
-msgstr "systemd-boot ist klein und wartungsfrei. GRUB kann ein Menü mit btrfs-Schnappschüssen zum Starten anzeigen."
-
-#. ARCH_OS_BOOTLOADER: the heading its row sits under
-#: module.yaml
-msgid "Boot"
-msgstr "Start"
 
 #. ARCH_OS_SECURE_BOOT_ENABLED: the question
 #: module.yaml
@@ -308,15 +233,10 @@ msgstr "Secure Boot"
 msgid "Signs the kernel and boot loader with keys generated for this machine, so the firmware starts nothing else. In firmware setup mode the keys are enrolled automatically and you only need to turn Secure Boot on afterwards. Otherwise everything is signed and enrolling the keys is left to you."
 msgstr "Signiert Kernel und Bootloader mit Schlüsseln, die für diesen Rechner erzeugt werden, sodass die Firmware nichts anderes startet. Im Setup-Modus der Firmware werden die Schlüssel gleich hinterlegt und Secure Boot muss danach nur noch eingeschaltet werden. Sonst ist alles signiert und das Hinterlegen bleibt dir überlassen."
 
-#. ARCH_OS_KERNEL: the question
+#. ARCH_OS_SECURE_BOOT_ENABLED: the heading its row sits under
 #: module.yaml
-msgid "Kernel"
-msgstr "Kernel"
-
-#. ARCH_OS_KERNEL: what it means
-#: module.yaml
-msgid "linux-zen is tuned for desktop responsiveness. linux is the stock kernel, linux-lts a long-term one, linux-hardened a security-focused one."
-msgstr "linux-zen ist auf einen reaktionsschnellen Desktop abgestimmt. linux ist der Standardkernel, linux-lts der langfristig gepflegte, linux-hardened der sicherheitsgehärtete."
+msgid "Boot"
+msgstr "Start"
 
 #. ARCH_OS_KERNEL_ARGS: the question
 #: module.yaml
@@ -328,35 +248,10 @@ msgstr "Kernel-Parameter"
 msgid "Extra parameters passed to the kernel at boot, separated by spaces. Leave empty unless you know you need one."
 msgstr "Zusätzliche Parameter, die dem Kernel beim Start übergeben werden, durch Leerzeichen getrennt. Leer lassen, solange du keinen brauchst."
 
-#. ARCH_OS_KERNEL_ARGS: what a wrong answer is told
-#: module.yaml
-msgid "Quotes, backslashes, dollar signs and backticks cannot be used here."
-msgstr "Anführungszeichen, Backslash, Dollarzeichen und Backtick sind hier nicht möglich."
-
-#. ARCH_OS_MICROCODE: the question
-#: module.yaml
-msgid "Processor firmware"
-msgstr "Prozessor-Firmware"
-
-#. ARCH_OS_MICROCODE: what it means
-#: module.yaml
-msgid "Firmware updates loaded at boot. auto detects the processor automatically — the right choice unless you are preparing this image for a different machine."
-msgstr "Firmware-Aktualisierungen, die beim Start geladen werden. auto ist das, was dieser Prozessor tatsächlich ist — also die Antwort auf jedem Rechner, der nicht für einen anderen vorbereitet wird."
-
 #. ARCH_OS_DESKTOP: what it means
 #: module.yaml
 msgid "gnome installs the GNOME desktop. none leaves the system on a text console, with nothing graphical installed."
 msgstr "gnome installiert den GNOME-Desktop. none belässt das System bei einer Textkonsole, ohne dass etwas Grafisches installiert wird."
-
-#. ARCH_OS_DESKTOP_GRAPHICS_DRIVER: the question
-#: module.yaml
-msgid "Graphics driver"
-msgstr "Grafiktreiber"
-
-#. ARCH_OS_DESKTOP_GRAPHICS_DRIVER: what it means
-#: module.yaml
-msgid "mesa is the open driver and fits almost every machine. Pick one matching your card only if you know you need it. nvidia is NVIDIA's own open kernel module and needs a GTX 16 series card or newer - Arch ships no driver at all for the ones before it, and those run on mesa."
-msgstr "mesa ist der offene Treiber und passt auf fast jede Maschine. Wähle einen zu deiner Karte passenden nur, wenn du weißt, dass du ihn brauchst. nvidia ist NVIDIAs eigenes offenes Kernelmodul und setzt eine Karte der GTX-16-Reihe oder neuer voraus - für die älteren liefert Arch gar keinen Treiber mehr, und die laufen auf mesa."
 
 #. ARCH_OS_DESKTOP_KEYBOARD_LAYOUT: the question
 #: module.yaml
@@ -408,15 +303,15 @@ msgstr "Schlanker Desktop"
 msgid "Removes the GNOME applications that come with the desktop and are rarely used."
 msgstr "Entfernt die GNOME-Programme, die mit dem Desktop kommen und selten benutzt werden."
 
-#. ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED: the question
+#. ARCH_OS_FLATPAK_ENABLED: the question
 #: module.yaml
-msgid "Log in automatically"
-msgstr "Automatisch anmelden"
+msgid "Flatpak"
+msgstr "Flatpak"
 
-#. ARCH_OS_DESKTOP_AUTOLOGIN_ENABLED: what it means
+#. ARCH_OS_FLATPAK_ENABLED: what it means
 #: module.yaml
-msgid "Skips the login screen. auto follows disk encryption: a disk already unlocked at boot gains nothing from a second password, while without encryption the login screen is the only protection left."
-msgstr "Überspringt die Anmeldemaske. auto folgt der Verschlüsselung: ein beim Start schon entsperrter Datenträger gewinnt durch ein zweites Passwort nichts, ohne Verschlüsselung ist die Anmeldemaske der einzige Schutz."
+msgid "Applications from Flathub, installed and updated through Software alongside everything else."
+msgstr "Anwendungen von Flathub, installiert und aktualisiert über Software wie alles andere."
 
 #. ARCH_OS_SAMBA_SHARE_ENABLED: the question
 #: module.yaml
@@ -425,13 +320,13 @@ msgstr "Dateifreigabe"
 
 #. ARCH_OS_SAMBA_SHARE_ENABLED: what it means
 #: module.yaml
-msgid "Shares your home folder and a public folder on the local network, readable by Windows and macOS."
-msgstr "Gibt dein Benutzerverzeichnis und einen öffentlichen Ordner im lokalen Netz frei, lesbar von Windows und macOS."
+msgid "Shares your home folder and a public folder on the local network, readable by Windows and macOS. Anyone on the same network can try your password against it, so turn it on only on a network you trust."
+msgstr "Gibt dein Benutzerverzeichnis und einen öffentlichen Ordner im lokalen Netz frei, lesbar von Windows und macOS. Jeder im selben Netz kann dort dein Passwort ausprobieren, schalte es daher nur in einem Netz ein, dem du vertraust."
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: the question
 #: module.yaml
 msgid "Core tweaks"
-msgstr "Core-Feinschliff"
+msgstr "Core Optimierungen"
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: what it means
 #: module.yaml
@@ -483,6 +378,26 @@ msgstr "Container-Engine"
 msgid "docker needs a daemon running as root, which is what most software and documentation assumes. podman has neither and still answers to the docker command. Both bring a compose command."
 msgstr "Docker braucht einen Daemon, der als root läuft — wovon die meiste Software und Dokumentation ausgeht. Podman hat beides nicht und hört trotzdem auf den Befehl docker. Beide bringen einen compose-Befehl mit."
 
+#. ARCH_OS_FIREWALL_ENABLED: the question
+#: module.yaml
+msgid "Firewall"
+msgstr "Firewall"
+
+#. ARCH_OS_FIREWALL_ENABLED: what it means
+#: module.yaml
+msgid "Blocks incoming connections except the ones something on this machine is set up to answer: SSH, file sharing and finding printers. On a desktop the rules can be changed in the Firewall application."
+msgstr "Blockiert eingehende Verbindungen außer denen, die etwas auf diesem Rechner beantworten soll: SSH, Dateifreigabe und die Suche nach Druckern. Auf einem Desktop lassen sich die Regeln in der Anwendung Firewall ändern."
+
+#. ARCH_OS_SSH_SERVER_ENABLED: the question
+#: module.yaml
+msgid "SSH server"
+msgstr "SSH-Server"
+
+#. ARCH_OS_SSH_SERVER_ENABLED: what it means
+#: module.yaml
+msgid "Lets you log in to this machine from another one over the network, with your account and password. Root cannot log in this way."
+msgstr "Erlaubt die Anmeldung an diesem Rechner von einem anderen über das Netzwerk, mit deinem Konto und Passwort. Root kann sich so nicht anmelden."
+
 #. ARCH_OS_HOUSEKEEPING_ENABLED: the question
 #: module.yaml
 msgid "Housekeeping"
@@ -493,25 +408,25 @@ msgstr "Systempflege"
 msgid "Timers that keep the system tidy automatically: mirrors ranked weekly, the package cache trimmed, and disk health checked."
 msgstr "Zeitgesteuerte Aufgaben, die das System von selbst in Ordnung halten: Spiegelserver werden wöchentlich sortiert, der Paketzwischenspeicher geleert, die Laufwerksgesundheit überwacht."
 
+#. ARCH_OS_EDITOR: the question
+#: module.yaml
+msgid "Text editor"
+msgstr "Texteditor"
+
+#. ARCH_OS_EDITOR: what it means
+#: module.yaml
+msgid "The editor that opens wherever a command asks for one: sudoedit, git, systemctl edit. nano and micro are typed into straight away, micro with the shortcuts of a desktop editor. vim, neovim and helix are modal: typing and commands are separate modes."
+msgstr "Der Editor, der sich öffnet, wo ein Befehl nach einem fragt: sudoedit, git, systemctl edit. In nano und micro wird sofort geschrieben, in micro mit den Tastenkürzeln eines Desktop-Editors. vim, neovim und helix arbeiten mit Modi: Schreiben und Befehle sind getrennt."
+
 #. ARCH_OS_SHELL_ENHANCEMENT_ENABLED: the question
 #: module.yaml
 msgid "Shell enhancement"
-msgstr "Shell Verbesserungen"
+msgstr "Shell Optimierungen"
 
 #. ARCH_OS_SHELL_ENHANCEMENT_ENABLED: what it means
 #: module.yaml
-msgid "A better terminal out of the box: a prompt showing git state, colourful listings, fuzzy search, useful aliases."
-msgstr "Ein besseres Terminal ohne Nacharbeit: eine Eingabezeile mit Git-Status, farbige Auflistungen, unscharfe Suche, sinnvolle Kurzbefehle."
-
-#. ARCH_OS_SHELL_ENHANCEMENT_SHELL: the question
-#: module.yaml
-msgid "Shell"
-msgstr "Shell"
-
-#. ARCH_OS_SHELL_ENHANCEMENT_SHELL: what it means
-#: module.yaml
-msgid "bash is always set up; zsh or fish add completion and suggestions as you type and become the shell that opens instead."
-msgstr "bash wird immer eingerichtet; zsh oder fish ergänzen Vervollständigung und Vorschläge beim Tippen und werden zur Shell, die stattdessen geöffnet wird."
+msgid "A better terminal out of the box: zsh with completion and suggestions as you type, a prompt showing git state, colourful listings, fuzzy search, useful aliases."
+msgstr "Ein besseres Terminal ohne Nacharbeit: zsh mit Vervollständigung und Vorschlägen beim Tippen, eine Eingabezeile mit Git-Status, farbige Auflistungen, unscharfe Suche, sinnvolle Kurzbefehle."
 
 #. ARCH_OS_MANAGER_ENABLED: the question
 #: module.yaml
@@ -523,25 +438,25 @@ msgstr "Arch OS Manager"
 msgid "A menu for updating, cleaning up and repairing the system after installation."
 msgstr "Ein Menü zum Aktualisieren, Aufräumen und Reparieren des Systems nach der Installation."
 
-#. ARCH_OS_VM_SUPPORT_ENABLED: the question
+#. ARCH_OS_VIRTUAL_MACHINE: the question
 #: module.yaml
-msgid "Virtual machine support"
-msgstr "Unterstützung für virtuelle Maschinen"
+msgid "Virtual machine"
+msgstr "Virtuelle Maschine"
 
-#. ARCH_OS_VM_SUPPORT_ENABLED: what it means
+#. ARCH_OS_VIRTUAL_MACHINE: what it means
 #: module.yaml
-msgid "Inside a virtual machine, the guest tools that make the screen resize and the clipboard work. On real hardware there is no guest to support, so it installs the other end instead: what it takes to run a virtual machine of your own. Without a desktop that is the console half of it, without the manager window."
-msgstr "In einer virtuellen Maschine die Gast-Werkzeuge, mit denen sich der Bildschirm anpasst und die Zwischenablage geteilt wird. Auf echter Hardware gibt es keinen Gast, also wird das andere Ende installiert: was es braucht, um selbst eine virtuelle Maschine zu betreiben. Ohne Desktop nur die Konsolenhälfte davon, ohne das Verwaltungsfenster."
+msgid "Whether this machine is itself a virtual one."
+msgstr "Ob dieser Rechner selbst eine virtuelle Maschine ist."
 
-#. ARCH_OS_ECN_ENABLED: the question
+#. ARCH_OS_VM_HOST_ENABLED: the question
 #: module.yaml
-msgid "Explicit congestion notification"
-msgstr "ECN-Überlastungsanzeige"
+msgid "Virtual machines"
+msgstr "Virtuelle Maschinen"
 
-#. ARCH_OS_ECN_ENABLED: what it means
+#. ARCH_OS_VM_HOST_ENABLED: what it means
 #: module.yaml
-msgid "Leave on. Turning it off helps only behind old routers that drop connections which use it."
-msgstr "Eingeschaltet lassen. Ausschalten hilft nur hinter alten Routern, die Verbindungen damit abbrechen."
+msgid "Runs virtual machines on this computer: QEMU and libvirt, and on a desktop the Virtual Machine Manager window. Inside a virtual machine this is not offered - the guest tools that make the screen resize and the clipboard work are installed there on their own."
+msgstr "Betreibt virtuelle Maschinen auf diesem Rechner: QEMU und libvirt, auf einem Desktop mit dem Fenster Virtual Machine Manager. In einer virtuellen Maschine wird das nicht angeboten - dort werden die Gastwerkzeuge, mit denen sich die Bildschirmgröße anpasst und die Zwischenablage funktioniert, von selbst installiert."
 
 #. ARCH_OS_CONFIG_URL: the question
 #: module.yaml
@@ -589,14 +504,9 @@ msgid "Configure the system"
 msgstr "System konfigurieren"
 
 #. the step, as the run lists it
-#: tasks/@base/congestion-notification/task.yaml
-msgid "Turn congestion notification off"
-msgstr "Überlastungsanzeige abschalten"
-
-#. the step, as the run lists it
 #: tasks/@base/core-tweaks/task.yaml
 msgid "Apply the core tweaks"
-msgstr "Systemfeinschliff anwenden"
+msgstr "Core Optimierungen anwenden"
 
 #. the step, as the run lists it
 #: tasks/@base/user-account/task.yaml
@@ -607,11 +517,6 @@ msgstr "Benutzerkonto anlegen"
 #: tasks/@boot/initramfs/task.yaml
 msgid "Build the boot images"
 msgstr "Boot-Abbilder bauen"
-
-#. the step, as the run lists it
-#: tasks/@boot/grub/task.yaml
-msgid "Install GRUB"
-msgstr "GRUB installieren"
 
 #. the step, as the run lists it
 #: tasks/@boot/systemd-boot/task.yaml
@@ -644,6 +549,11 @@ msgid "Install the boot splash"
 msgstr "Startbildschirm installieren"
 
 #. the step, as the run lists it
+#: tasks/@system/firewall/task.yaml
+msgid "Install the firewall"
+msgstr "Firewall installieren"
+
+#. the step, as the run lists it
 #: tasks/@system/housekeeping/task.yaml
 msgid "Set up housekeeping"
 msgstr "Systempflege einrichten"
@@ -656,17 +566,32 @@ msgstr "Arch OS Manager installieren"
 #. the step, as the run lists it
 #: tasks/@system/shell-enhancement/task.yaml
 msgid "Enhance the shell"
-msgstr "Shell verbessern"
+msgstr "Shell optimieren"
 
 #. the step, as the run lists it
-#: tasks/@system/vm-support/task.yaml
-msgid "Add virtual machine support"
-msgstr "Unterstützung für virtuelle Maschinen ergänzen"
+#: tasks/@system/ssh-server/task.yaml
+msgid "Start the SSH server"
+msgstr "SSH-Server einschalten"
+
+#. the step, as the run lists it
+#: tasks/@system/vm-guest/task.yaml
+msgid "Add the virtual machine guest tools"
+msgstr "Gastwerkzeuge für die virtuelle Maschine installieren"
+
+#. the step, as the run lists it
+#: tasks/@system/vm-host/task.yaml
+msgid "Set up virtual machines"
+msgstr "Virtuelle Maschinen einrichten"
 
 #. the step, as the run lists it
 #: tasks/@desktop/desktop-gnome/task.yaml
 msgid "Install the GNOME desktop"
 msgstr "GNOME-Desktop installieren"
+
+#. the step, as the run lists it
+#: tasks/@desktop/flatpak/task.yaml
+msgid "Set up Flatpak"
+msgstr "Flatpak einrichten"
 
 #. the step, as the run lists it
 #: tasks/@desktop/graphics-driver/task.yaml
@@ -692,11 +617,6 @@ msgstr "Verwaiste Pakete entfernen"
 #: tasks/@finalize/snapper/task.yaml
 msgid "Set up Snapper"
 msgstr "Snapper einrichten"
-
-#. the step, as the run lists it
-#: tasks/@finalize/snapshot-hook/task.yaml
-msgid "Snapshot before every package change"
-msgstr "Schnappschuss vor jeder Paketänderung"
 
 #. the step, as the run lists it
 #: tasks/@finalize/secure-boot/task.yaml
@@ -808,42 +728,3 @@ msgstr "Im UEFI-Modus gestartet, Secure Boot aus"
 #: hooks/@preflight/network/hook.yaml
 msgid "Connected to the internet"
 msgstr "Mit dem Internet verbunden"
-
-#~ msgid "mesa is the open driver and fits almost every machine. Pick one matching your card only if you know you need it."
-#~ msgstr "mesa ist der offene Treiber und passt auf fast jeden Rechner. Wähle nur dann einen zu deiner Karte passenden, wenn du weißt, dass du ihn brauchst."
-
-#~ msgid "Installs software from the Arch User Repository just as easily as from the official repositories. paru is built here against the pacman this machine has, which takes about a quarter of an hour. The -bin packages are the same program ready-made and install in seconds, but they are linked against the pacman of the day they were published: the first time Arch moves libalpm to a new version, they stop starting at all."
-#~ msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen. paru wird hier gegen das pacman dieser Maschine gebaut, was rund eine Viertelstunde dauert. Die -bin-Pakete sind dasselbe Programm fertig gebaut und in Sekunden installiert — aber gegen das pacman des Tages gelinkt, an dem sie veröffentlicht wurden: sobald Arch libalpm eine Version weiterzieht, starten sie gar nicht mehr."
-
-#~ msgid "Minimal"
-#~ msgstr "Minimal"
-
-#~ msgid "Installation"
-#~ msgstr "Installation"
-
-#~ msgid "Install the boot loader"
-#~ msgstr "Bootloader installieren"
-
-#~ msgid "Finish the new system"
-#~ msgstr "Das neue System abschließen"
-
-#~ msgid "Started from the live image"
-#~ msgstr "Vom Live-Image gestartet"
-
-#~ msgid "Installs software from the Arch User Repository just as easily as from the official repositories. paru-bin is the same program as a ready-made binary; paru is that program built here, which means a Rust toolchain downloaded, compiled with and thrown away again."
-#~ msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen. paru-bin ist das fertige Binary, paru dasselbe Programm hier gebaut — dafür wird eine Rust-Toolchain geladen, benutzt und wieder weggeworfen."
-
-#~ msgid "Installs guest tools when this is running inside a virtual machine, so the screen resizes and the clipboard is shared. Does nothing on real hardware."
-#~ msgstr "Installiert Gasterweiterungen, wenn das hier in einer virtuellen Maschine läuft, damit sich der Bildschirm anpasst und die Zwischenablage geteilt wird. Auf echter Hardware passiert nichts."
-
-#~ msgid "Build the initial ram disk"
-#~ msgstr "Initiale Ramdisk bauen"
-
-#~ msgid "Switch on the system services"
-#~ msgstr "Systemdienste einschalten"
-
-#~ msgid "Tidy up"
-#~ msgstr "Aufräumen"
-
-#~ msgid "paste.rs - Online"
-#~ msgstr "paste.rs - Online"

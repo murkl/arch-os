@@ -1,114 +1,77 @@
-# The graphics driver, and whatever else the card needs to start with the
-# desktop rather than after it. Every branch rebuilds the ram disk directly
-# rather than through pacman, which is why the Secure Boot signing comes after
-# this one.
+# The driver for every graphics card in this machine, read off the machine rather
+# than asked: Mesa for all of them, for each vendor its Vulkan driver and video
+# decoding, and OpenCL for AMD and NVIDIA. A laptop with two cards gets both
+# drivers. Beside them what games reach for: vkd3d for Direct3D 12 under Wine,
+# and glxinfo and vulkaninfo to see which card a program ended up on.
+# https://wiki.archlinux.org/title/Xorg#Driver_installation
+# https://wiki.archlinux.org/title/Hardware_video_acceleration
 
-simulating && return 0
+packages=(mesa mesa-utils vulkan-tools vkd3d)
+lib32=(lib32-mesa lib32-mesa-utils lib32-vkd3d)
+nvidia=false
+other=false
 
-# The modules this card needs in the ram disk, as a drop-in read after the hooks
-# the initramfs task set.
-early_modules() {
-    mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
-    {
-        echo '# Written by the Arch OS Installer.'
-        echo "MODULES=($*)"
-    } >"${MNT}/etc/mkinitcpio.conf.d/30-graphics.conf"
-}
+while IFS=$'\t' read -r vendor device; do
+    case "$vendor" in
+    intel)
+        other=true
+        packages+=(vulkan-intel intel-media-driver)
+        lib32+=(lib32-vulkan-intel)
+        ;;
+    amd)
+        # Video decoding for AMD is part of mesa.
+        other=true
+        packages+=(vulkan-radeon vulkan-mesa-layers opencl-mesa)
+        lib32+=(lib32-vulkan-radeon lib32-vulkan-mesa-layers lib32-opencl-mesa)
+        ;;
+    nvidia)
+        # NVIDIA's open module drives Turing and every generation after it -
+        # the GTX 16 and RTX cards, device IDs from 0x1e00 on. Arch ships no
+        # NVIDIA driver for the ones before, which run on nouveau, part of Mesa.
+        # https://wiki.archlinux.org/title/NVIDIA#Installation
+        if ((device >= 0x1e00)); then
+            nvidia=true
+        else
+            packages+=(vulkan-nouveau)
+            lib32+=(lib32-vulkan-nouveau)
+        fi
+        ;;
+    esac
+done < <(graphics_cards)
 
-case "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" in
+if [ "$nvidia" = "true" ]; then
+    # Built by DKMS against the headers: the prebuilt module exists for the stock
+    # kernel alone.
+    packages+=(nvidia-open-dkms "${KERNEL}-headers" nvidia-utils nvidia-settings opencl-nvidia libva-nvidia-driver)
+    lib32+=(lib32-nvidia-utils lib32-opencl-nvidia)
 
-mesa) # https://wiki.archlinux.org/title/OpenGL#Installation
-    packages=(mesa mesa-utils vkd3d vulkan-tools)
-    [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-mesa lib32-mesa-utils lib32-vkd3d)
-    chroot_pacman_install "${packages[@]}"
-    ;;
+    # Beside another card, that one drives the screen and prime-run hands a
+    # program to the NVIDIA card. https://wiki.archlinux.org/title/PRIME
+    [ "$other" = "true" ] && packages+=(nvidia-prime)
+fi
 
-intel_i915) # https://wiki.archlinux.org/title/Intel_graphics#Installation
-    packages=(vulkan-intel vkd3d intel-media-driver vulkan-tools)
-    [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-vulkan-intel lib32-vkd3d)
-    chroot_pacman_install "${packages[@]}"
-    early_modules i915
-    arch-chroot "$MNT" mkinitcpio -P
-    ;;
+[ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("${lib32[@]}")
 
-nvidia) # https://wiki.archlinux.org/title/NVIDIA#Installation
-    # Arch dropped the closed driver. The precompiled nvidia-open exists for the
-    # stock kernel alone; every other one needs the dkms package.
-    driver=nvidia-open-dkms
-    packages=("${ARCH_OS_KERNEL}-headers" nvidia-settings nvidia-utils opencl-nvidia vkd3d vulkan-tools)
-    if [ "$ARCH_OS_KERNEL" = "linux" ]; then
-        driver=nvidia-open
-        packages=(nvidia-settings nvidia-utils opencl-nvidia vkd3d vulkan-tools)
-    fi
-    packages+=("$driver")
-    [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-nvidia-utils lib32-opencl-nvidia lib32-vkd3d)
-    chroot_pacman_install "${packages[@]}"
+# Two cards of one vendor name the same packages twice.
+mapfile -t packages < <(printf '%s\n' "${packages[@]}" | sort -u)
+chroot_pacman_install "${packages[@]}"
 
-    # Kernel mode setting, without which Wayland does not start on this driver.
-    # And the video memory the card holds over a suspend, which this driver
-    # frees rather than saves unless told otherwise - the three units are what
-    # do the saving, and nvidia-utils ships them switched off.
-    # https://wiki.archlinux.org/title/NVIDIA#DRM_kernel_mode_setting
-    # https://wiki.archlinux.org/title/NVIDIA/Tips_and_tricks#Preserve_video_memory_after_suspend
-    mkdir -p "${MNT}/etc/modprobe.d"
-    {
-        echo '# Written by the Arch OS Installer.'
-        echo 'options nvidia_drm modeset=1 fbdev=1'
-        echo 'options nvidia NVreg_PreserveVideoMemoryAllocations=1'
-    } >"${MNT}/etc/modprobe.d/nvidia.conf"
-    arch-chroot "$MNT" systemctl enable \
-        nvidia-suspend.service nvidia-hibernate.service nvidia-resume.service
-    early_modules nvidia nvidia_modeset nvidia_uvm nvidia_drm
+[ "$nvidia" = "true" ] || return 0
 
-    # The modules live in the ram disk, so it is rebuilt whenever the driver or
-    # the kernel changes - once per batch, not once per package.
-    # https://wiki.archlinux.org/title/NVIDIA#pacman_hook
-    mkdir -p "${MNT}/etc/pacman.d/hooks"
-    {
-        echo '[Trigger]'
-        echo 'Operation=Install'
-        echo 'Operation=Upgrade'
-        echo 'Operation=Remove'
-        echo 'Type=Package'
-        echo "Target=${driver}"
-        echo "Target=${ARCH_OS_KERNEL}"
-        echo
-        echo '[Action]'
-        echo 'Description=Update the NVIDIA module in the initramfs'
-        echo 'Depends=mkinitcpio'
-        echo 'When=PostTransaction'
-        echo 'NeedsTargets'
-        echo "Exec=/bin/sh -c 'while read -r trg; do case \$trg in linux*) exit 0; esac; done; /usr/bin/mkinitcpio -P'"
-    } >"${MNT}/etc/pacman.d/hooks/nvidia.hook"
+# Kernel mode setting and keeping video memory over a suspend need nothing from
+# here any more. nvidia-utils sets modeset and fbdev itself, and turns on the
+# kernel's suspend notifiers in its own modprobe.d file. What is left is early
+# loading, so the display manager never starts on the firmware's framebuffer
+# before the card has a driver. mkinitcpio rebuilds the image on its own
+# whenever the driver or the kernel changes.
+# https://wiki.archlinux.org/title/NVIDIA#Early_loading
+mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
+render "$(where)/30-graphics.conf" MODULES="nvidia nvidia_modeset nvidia_uvm nvidia_drm" \
+    >"${MNT}/etc/mkinitcpio.conf.d/30-graphics.conf"
 
-    # GDM refuses Wayland on this driver by default; the empty rule overrides it.
-    # https://wiki.archlinux.org/title/GDM#Wayland_and_the_proprietary_NVIDIA_driver
-    mkdir -p "${MNT}/etc/udev/rules.d"
-    [ -f "${MNT}/etc/udev/rules.d/61-gdm.rules" ] || ln -s /dev/null "${MNT}/etc/udev/rules.d/61-gdm.rules"
+# GDM refuses Wayland on this driver by default; the empty rule overrides it.
+# https://wiki.archlinux.org/title/GDM#Wayland_and_the_proprietary_NVIDIA_driver
+mkdir -p "${MNT}/etc/udev/rules.d"
+[ -f "${MNT}/etc/udev/rules.d/61-gdm.rules" ] || ln -s /dev/null "${MNT}/etc/udev/rules.d/61-gdm.rules"
 
-    arch-chroot "$MNT" mkinitcpio -P
-    ;;
-
-amd) # https://wiki.archlinux.org/title/AMDGPU#Installation
-    packages=(mesa mesa-utils vulkan-radeon vkd3d vulkan-tools vulkan-mesa-layers opencl-mesa)
-    [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] &&
-        packages+=(lib32-mesa lib32-vulkan-radeon lib32-vkd3d lib32-vulkan-mesa-layers lib32-opencl-mesa)
-    chroot_pacman_install "${packages[@]}"
-    early_modules amdgpu
-    arch-chroot "$MNT" mkinitcpio -P
-    ;;
-
-ati) # https://wiki.archlinux.org/title/ATI#Installation
-    packages=(mesa mesa-utils vkd3d vulkan-tools vulkan-mesa-layers opencl-mesa)
-    [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] &&
-        packages+=(lib32-mesa lib32-vkd3d lib32-vulkan-mesa-layers lib32-opencl-mesa)
-    chroot_pacman_install "${packages[@]}"
-    early_modules radeon
-    arch-chroot "$MNT" mkinitcpio -P
-    ;;
-
-*)
-    echo "unknown graphics driver: ${ARCH_OS_DESKTOP_GRAPHICS_DRIVER}" >&2
-    exit 1
-    ;;
-esac
+arch-chroot "$MNT" mkinitcpio -P

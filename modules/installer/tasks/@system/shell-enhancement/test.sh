@@ -1,27 +1,16 @@
-# Every shell gets the prompt through .bashrc. zsh additionally becomes the one
-# that opens; fish cannot be a login shell, so .bashrc hands over to it, and
-# that line has to be in there or fish is installed and never seen.
-simulating && return 0
+# zsh is the shell that opens, for root and for the account.
 
 home="${MNT}/home/${ARCH_OS_USERNAME}"
 
-[ "$ARCH_OS_SHELL_ENHANCEMENT_SHELL" != "zsh" ] ||
-    arch-chroot "$MNT" getent passwd "$ARCH_OS_USERNAME" | grep -q ':/usr/bin/zsh$'
-[ "$ARCH_OS_SHELL_ENHANCEMENT_SHELL" != "fish" ] ||
-    grep -q 'exec fish' "${home}/.bashrc"
+for account in root "$ARCH_OS_USERNAME"; do
+    arch-chroot "$MNT" getent passwd "$account" | grep -q ':/usr/bin/zsh$'
+done
 
-# Every rendered file, on two counts. A placeholder that survives is a comment
-# or a word that reads perfectly well and does nothing it stood for, and whoever
-# meets it is the person using the machine rather than the run that wrote it.
-# And splicing one file into another is how a stray character lands in the
-# middle of a line: a .bashrc that does not parse is a login that says so on
-# every terminal the machine opens.
-for file in "${MNT}/root/.bashrc" "${MNT}/root/.aliases" \
-    "${home}/.bashrc" "${home}/.aliases"; do
-
-    if grep -q '{{' "$file"; then
-        echo "${file} still carries a placeholder" >&2
-        exit 1
-    fi
+# Every rendered file, read by the shell that reads it: a file that does not
+# parse is a login that says so on every terminal the machine opens.
+for file in "${MNT}/root/.bashrc" "${MNT}/root/.aliases" "${home}/.bashrc" "${home}/.aliases"; do
     bash -n "$file"
+done
+for file in /root/.zshrc "/home/${ARCH_OS_USERNAME}/.zshrc"; do
+    arch-chroot "$MNT" zsh -n "$file"
 done

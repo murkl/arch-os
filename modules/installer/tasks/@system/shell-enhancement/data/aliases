@@ -1,0 +1,60 @@
+# Listing. Colour only on a terminal, so `ls | grep` reads plain names. The icons
+# are nerd font glyphs, which the text console has no font for; the tree view
+# is eza's alone, since GNU ls has no such thing.
+alias ls="ls -h --color=auto --group-directories-first"
+command -v eza &>/dev/null && alias ls="eza --color=auto --group-directories-first"
+command -v eza &>/dev/null && [ "$TERM" != linux ] && alias ls="eza --icons=auto --color=auto --group-directories-first"
+command -v eza &>/dev/null && alias lt="ls -Tal"
+alias ll="ls -l"
+alias la="ls -la"
+
+# Colour
+alias diff="diff --color=auto"
+alias grep="grep --color=auto"
+alias ip="ip -color=auto"
+
+# Everyday
+alias logs="systemctl --failed; echo; journalctl -p 3 -b"
+alias q="exit"
+alias c="clear"
+command -v fastfetch &>/dev/null && alias fetch="fastfetch"
+# The .pacnew files an update left to merge. Run as you, not through sudo:
+# pacdiff -s reaches for sudoedit itself where it needs to, so the editor it
+# opens is yours rather than root's.
+alias pacnew="env DIFFPROG=\$EDITOR pacdiff -s"
+command -v meld &>/dev/null && alias pacnew="env DIFFPROG=meld pacdiff -s"
+command -v xdg-open &>/dev/null && alias open="xdg-open"
+alias myip="curl https://ipv4.icanhazip.com"
+alias ..="cd .."
+alias ...="cd ../.."
+
+# Editing a file that belongs to root, without running the editor as root:
+# sudoedit copies it out, opens it as you - your $EDITOR, your configuration -
+# and copies it back as root afterwards. `sudo nano /etc/fstab` is the habit
+# this is here to replace.
+alias sv="sudoedit"
+
+# Packages. paru covers the AUR as well and asks for the password itself;
+# without it, the ones that change the system go through sudo. Asked here rather
+# than decided at installation, so the aliases follow paru arriving or leaving.
+if command -v paru &>/dev/null; then
+    alias paci='paru -S'   # install
+    alias pacu='paru -Syu' # update everything
+    alias pacr='paru -Rns' # remove
+    alias pacs='paru -Ss'  # search the repositories and the AUR
+else
+    alias paci='sudo pacman -S'
+    alias pacu='sudo pacman -Syu'
+    alias pacr='sudo pacman -Rns'
+    alias pacs='pacman -Ss'
+fi
+alias pacls='pacman -Qs' # search what is installed
+alias pacl='pacman -Qe'  # list what was asked for
+alias pacla='pacman -Qm' # list what came from the AUR
+alias pacli='pacman -Qi' # show a package
+
+# The download cache trimmed to the last three versions of what is installed,
+# and emptied of what is not. The versions before the current one are what the
+# Recovery puts a kernel back from after a rollback, so it is never emptied
+# outright. paccache asks for sudo itself.
+command -v paccache &>/dev/null && alias pacrc="paccache -r && paccache -ruk0"

@@ -6,14 +6,16 @@
 # lsblk rather than blkid, because lsblk reads what udev already recorded and
 # needs no more rights than listing the disks did - a test that has to ask for a
 # password is a test that hangs where nobody is typing.
-simulating && return 0
 
 label="$(blkid -o value -s LABEL "$(image)")"
 [ -n "$label" ]
 
-# The kernel may still be re-reading the table this write replaced.
+# The kernel may still be re-reading the table this write replaced. The device
+# and its partitions are all asked: udev files the label of a hybrid image under
+# the partition it lies in, and the disk itself carries none.
 for _ in $(seq 50); do
-    [ "$(lsblk -dno LABEL "$ARCH_OS_IMAGE_DEVICE")" = "$label" ] && return 0
+    labels="$(lsblk -no LABEL "$ARCH_OS_IMAGE_DEVICE")"
+    grep -qxF "$label" <<<"$labels" && return 0
     sleep 0.2
 done
 

@@ -6,53 +6,29 @@
 # and the oak.yaml that says which version this is.
 HERE="$(dirname "$MODULE_CONF")"
 
-# Not the newest release but the one this program came out of: a binary from
-# last month writing this month's image is two versions on one machine, and only
-# one of them was ever tested together.
+# The release whose image is written: the version in oak.yaml rather than the
+# newest one, so the binary and the image are the pair that was tested together.
 VERSION="$(sed -n 's/^version:[[:space:]]*//p' "${HERE}/oak.yaml")"
-
-# ////////////////////////////////////////////////////////////////////////////
-# SIMULATION
-# ////////////////////////////////////////////////////////////////////////////
-
-# --debug runs without touching the machine. Every task and every test opens on
-# `simulating && return 0`: a task because there is nothing it may change, a
-# test because a simulated run wrote nothing for it to read back.
-#
-# The pause holds each step on screen long enough to be read, which is what
-# makes a simulated run something to watch — and what docs/screenshots.py
-# photographs a run in the middle of.
-#
-# debugging is the bare question, for the few places that ask it without being
-# a step: an answer applied to this machine, a list a page opens on.
-
-debugging() { [ "$DEBUG" = "true" ]; }
-
-simulating() {
-    debugging || return 1
-    echo "simulated"
-    sleep 1
-}
 
 # ////////////////////////////////////////////////////////////////////////////
 # WHAT IS WRITTEN, AND FROM WHERE
 # ////////////////////////////////////////////////////////////////////////////
 
-# Where the release this program came out of is published.
+# Where that release is published.
 REPO="murkl/arch-os"
 
 # The image in the download folder, named after the version rather than read out
 # of a release: a machine with the file already here needs no release to name it.
 image() { printf '%s/arch-os-%s-x86_64.iso' "$(download_dir)" "$VERSION"; }
 
-# https even after a redirect, because -L would otherwise follow a 302 into
-# plain http, where the answer can be anybody's - and a connect timeout, so a
-# machine behind a black hole says so rather than hanging.
-fetch_url() {
-    curl -Lf --proto '=https' --proto-redir '=https' --connect-timeout 10 "$@"
-}
+# What that release publishes the image has to hash to, beside it in the form
+# `sha256sum -c` reads. The download writes it, or takes it away where there is
+# none to be had, and the steps after it go by this file alone: the network is
+# read once, so the question whether to go on unchecked and the check itself
+# cannot disagree about whether there was a checksum.
+checksum() { printf '%s.sha256' "$(image)"; }
 
-# The release this program came out of, as GitHub describes it: where the image
+# That release, as GitHub describes it: where the image
 # is and what it has to hash to, as two words. The release carries no checksum
 # file - the checksum is a field of the asset, and it is the same one the
 # release page prints under the download.
@@ -82,13 +58,6 @@ image_asset() {
 # THE YAML | Every function a declaration calls by name
 # ////////////////////////////////////////////////////////////////////////////
 
-# Whether this machine is running from a booted live image, which is the one
-# machine this module does not belong on. Not "is it Arch": a device is written
-# from any Linux at all.
-on_live_image() {
-    [ -d /run/archiso ] || grep -qs archisobasedir /proc/cmdline
-}
-
 # Where both downloads go, before there is an answer and as the value the
 # question opens on: the folder this session keeps downloads in, or the one
 # every desktop falls back to.
@@ -107,14 +76,15 @@ download_dir() {
 
 # The two ways on from an image nothing can be held against, and nothing at all
 # where the release publishes a checksum: a list that comes back empty is a
-# question with nothing to decide, and Oak skips the step that asked it. So an
-# ordinary run never sees this page - only one where the release cannot be
+# question with nothing to decide, and Oak skips the step that asked it - which
+# is why that step does nothing but ask, and the check is the one after it. So
+# an ordinary run never sees this page - only one where the release cannot be
 # reached, or does not exist yet, which is what an image built here is.
 #
-# A simulated run shows it either way and asks nothing of the network: this is
-# the one page of this module that is otherwise never looked at.
+# A simulated run shows it either way: this is the one page of this module that
+# is otherwise never looked at.
 unverified_choices() {
-    if ! debugging && [ -n "$(image_asset | cut -d' ' -f2)" ]; then
+    if ! debugging && [ -s "$(checksum)" ]; then
         return 0
     fi
     printf 'false\tStop and write nothing\n'
@@ -122,10 +92,25 @@ unverified_choices() {
 }
 
 # The USB disks this machine has: the device path, a tab, and what a person
-# picks it by. By transport rather than by anything read off the partitions - a
-# disk this machine boots from is not on a USB bus, so it cannot turn up here at
-# all, which is the one mistake that cannot be taken back.
+# picks it by. By transport rather than by anything read off the partitions, and
+# without the ones the running system is on - a system can live on a USB disk
+# too, and writing over it is the one mistake that cannot be taken back.
 list_devices() {
-    lsblk -dn -o PATH,TRAN,SIZE,MODEL |
-        awk '$2 == "usb" { path = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); sub(/ +$/, ""); print path "\t" path "  " $0 }'
+    local path shown
+    while IFS=$'\t' read -r path shown; do
+        in_system_use "$path" && continue
+        printf '%s\t%s\n' "$path" "$shown"
+    done < <(lsblk -dn -o PATH,TRAN,SIZE,MODEL |
+        awk '$2 == "usb" { path = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); sub(/ +$/, ""); print path "\t" path "  " $0 }')
+}
+
+# Whether the running system has something on that disk: swap, or a file system
+# mounted anywhere but where a stick is put - under /run/media by the desktop,
+# under /media or /mnt by hand. Raw output, where a partition mounted twice has
+# its mount points joined by an escaped newline.
+in_system_use() {
+    lsblk -nro MOUNTPOINTS "$1" | awk '
+        { n = split($0, mounts, /\\x0a/) }
+        { for (i = 1; i <= n; i++) if (mounts[i] != "" && mounts[i] !~ /^\/(run\/media|media|mnt)(\/|$)/) found = 1 }
+        END { exit !found }'
 }

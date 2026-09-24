@@ -76,7 +76,7 @@ msgstr ""
 
 #. ARCH_OS_IMAGE_DEVICE: what it means
 #: module.yaml
-msgid "The USB device to write to. Everything on it will be erased. Only disks on a USB bus are offered, so the disk this machine boots from cannot be chosen by accident."
+msgid "The USB device to write to. Everything on it will be erased. Only USB disks are offered, and none this system is running from, so it cannot be chosen by accident."
 msgstr ""
 
 #. ARCH_OS_IMAGE_DEVICE: what a wrong answer is told
@@ -87,6 +87,11 @@ msgstr ""
 #. the step, as the run lists it
 #: tasks/@download/image/task.yaml
 msgid "Download the image"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@verify/unverified/task.yaml
+msgid "Decide about an unchecked image"
 msgstr ""
 
 #. the step, as the run lists it

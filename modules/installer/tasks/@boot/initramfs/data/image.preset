@@ -1,0 +1,6 @@
+# Written by the Arch OS Installer.
+ALL_kver="/boot/vmlinuz-{{KERNEL}}"
+PRESETS=('default' 'fallback')
+default_image="{{DEFAULT}}"
+fallback_image="{{FALLBACK}}"
+fallback_options="-S autodetect"

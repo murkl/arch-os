@@ -1,1 +1,6 @@
 title: Download the image
+
+# Two gigabytes over a home connection take as long as they take, and curl's bar
+# is the one line worth watching while they do. Everything else it prints stays
+# in the log.
+progress: true

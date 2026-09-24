@@ -2,7 +2,6 @@
 # up in plain text without saying so: the theme it was told to draw, the daemon
 # inside the image the firmware starts, and a card driver for it to draw on.
 # Each has failed quietly before - see docs/REFERENCE.md.
-simulating && return 0
 
 grep -qx 'Theme=arch-os' "${MNT}/etc/plymouth/plymouthd.conf"
 

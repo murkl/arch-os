@@ -2,8 +2,6 @@
 # disk: it ranks the mirrors everything after this downloads from, undoes what a
 # previous attempt left mounted and brings the keyring up to date.
 
-simulating && return 0
-
 # What this machine is, in one line, before anything else is written down. Every
 # question asked of the log afterwards - was there memory, was there room, is
 # this a guest - is answered here instead of guessed at.
@@ -29,27 +27,35 @@ rank_mirrors() {
         return 0
     }
 
-    local ranked args=(--protocol https --age 12 --latest 10 --sort rate)
+    local ranked warnings servers unrated args=(--protocol https --age 12 --latest 10 --sort rate)
     [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && args+=(--country "$ARCH_OS_REFLECTOR_COUNTRY")
     ranked="$(mktemp)"
+    warnings="$(mktemp)"
 
-    if timeout 120 reflector "${args[@]}" --save "$ranked" && [ -s "$ranked" ]; then
-        install -m 644 "$ranked" /etc/pacman.d/mirrorlist
-        echo "installing from $(grep -c '^Server' /etc/pacman.d/mirrorlist) ranked mirrors"
+    # A mirror that does not answer within reflector's own timeout is kept rather
+    # than dropped, with one warning for it - and a list where every one timed
+    # out is still written, in no order, with exit 0. That list is worse than the
+    # one the image shipped, which opens on Arch's own CDN.
+    if timeout 120 reflector "${args[@]}" --save "$ranked" 2>"$warnings" && [ -s "$ranked" ]; then
+        servers="$(grep -c '^Server' "$ranked" || true)"
+        unrated="$(grep -c 'failed to rate' "$warnings" || true)"
+        if [ "$servers" -gt "$unrated" ]; then
+            install -m 644 "$ranked" /etc/pacman.d/mirrorlist
+            echo "installing from ${servers} ranked mirrors"
+        else
+            echo "none of the ${servers} mirrors answered in time to be ranked, installing from the list the image shipped" >&2
+        fi
     else
         echo "the mirrors could not be ranked, installing from the list the image shipped" >&2
     fi
-    rm -f "$ranked"
+    cat "$warnings" >&2
+    rm -f "$ranked" "$warnings"
 }
 
 echo "ranking mirrors"
 rank_mirrors
 
 timedatectl set-ntp true
-
-# Some old routers drop connections that use it, which shows up as an install
-# stalling partway through a download.
-[ "$ARCH_OS_ECN_ENABLED" = "false" ] && sysctl net.ipv4.tcp_ecn=0
 
 # What a previous attempt left behind. A target that will not come down is a
 # failure here, because the next stage partitions the disk under it.
