@@ -1,4 +1,4 @@
-title: Sign the boot chain
+title: Sign the boot files with sbctl
 
 # Signing holds only as long as nothing rebuilds a boot image afterwards, and
 # every one of these installs or removes packages. A task added to this stage

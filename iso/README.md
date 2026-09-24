@@ -15,11 +15,11 @@ The [Oak](https://github.com/murkl/oak) binary with every module beside it lives
 
 **Note:** _The build copies whatever is in `modules/`, so **[Create boot medium](../modules/imager)** ships too but is never offered - its `requires:` says this is not that machine._
 
-**Note:** _The Recovery image starts the same way, with the same unit and launchers, and only the Recovery beside Oak - one module on offer, so it opens right after the language._
+**Note:** _The Recovery image starts with the same unit and launchers, and only the Recovery beside Oak, but as a kiosk: a drop-in starts `arch-os-kiosk` instead, which hands the Recovery what the Installer left on the EFI partition and runs Oak with `--kiosk`. It opens straight on its menu, leaving it is Reset, the unit starts it again whenever it ends, and there is no login on any console - **[➜ The Recovery Partition](../docs/REFERENCE.md#the-recovery-partition)**._
 
 | Command | Description |
 | --- | --- |
-| `installer` | Opens the Installer directly |
+| `installer` | Opens the Installer directly - `installer --language=de` skips the first page too |
 | `recovery` | Opens the Recovery directly |
 | `iwctl` | Join a wireless network |
 
@@ -36,7 +36,7 @@ src/usr/local/bin/arch-os                the entry point, sets up the console fi
 src/usr/local/bin/installer              opens the Installer directly, on the ISO only
 src/usr/local/bin/recovery               opens the Recovery directly
 src/usr/local/bin/arch-os-console-theme  applies the Nord palette to the console
-recovery/                                what the Recovery image adds to `baseline`: its packages, its motd, a root prompt on tty1
+recovery/                                what the Recovery image adds to `baseline`: its packages, and the kiosk it starts as
 ```
 
 ## Building it
@@ -48,7 +48,7 @@ make iso       # the release, then both images, beside it in dist/
 make image     # ...only the images, out of a release that is already there
 ```
 
-**Note:** _The images land beside the release they were built from, named after `oak.yaml`'s version: the ISO, and the Recovery as a folder and as a `.tar` for the release page. The ISO label is that version, upper-cased. Needs `archiso` and `systemd-ukify`._
+**Note:** _The images land beside the release they were built from, named after `oak.yaml`'s version: the ISO, and the Recovery as a folder and as a `.tar` for the release page. The ISO label is that version, upper-cased. Needs `archiso`, `systemd-ukify` and `erofs-utils`._
 
 The Bootsplash theme is **[plymouth-theme-arch-os](https://github.com/murkl/plymouth-theme-arch-os)** at the commit `PLYMOUTH_THEME_REF` in `build.sh` names, fetched once for both images and kept in `download/` - raised by hand, like `OAK_VERSION`. `PLYMOUTH_THEME_SRC=/path/to/theme/src` builds with a theme folder of your own instead.
 

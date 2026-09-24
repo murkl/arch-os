@@ -1,2 +1,2 @@
-title: Create your account
+title: Create the user account
 needs: [pacstrap-core]

@@ -1,0 +1,33 @@
+# Members of the gnome group that are never downloaded, one per line with the
+# condition they are left out under. Anything another member actually depends
+# on still arrives as a dependency.
+#
+# always   every desktop install
+# slim     only with the slim desktop
+#
+# GNOME Software manages nothing here: Arch advises against the PackageKit it
+# would need for pacman, so all it could show is Flatpaks, which Bazaar handles,
+# and firmware, which GNOME Firmware handles.
+# https://wiki.archlinux.org/title/PackageKit
+always gnome-software
+slim gnome-calendar
+slim gnome-maps
+slim gnome-contacts
+slim gnome-font-viewer
+slim gnome-characters
+slim gnome-clocks
+slim gnome-connections
+slim gnome-music
+slim gnome-weather
+slim gnome-calculator
+slim gnome-logs
+slim gnome-text-editor
+slim gnome-disk-utility
+slim simple-scan
+slim baobab
+slim snapshot
+slim epiphany
+slim loupe
+slim decibels
+slim showtime
+slim papers

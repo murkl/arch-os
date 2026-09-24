@@ -1,2 +1,2 @@
-title: Configure the system
+title: Set locale, time zone and hostname
 needs: [pacstrap-core]

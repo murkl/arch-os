@@ -1,4 +1,4 @@
-title: Share files with other machines
+title: Set up Samba
 needs: [desktop-gnome]
 
 # The same three the question carries, so a Samba server and a WSD responder are

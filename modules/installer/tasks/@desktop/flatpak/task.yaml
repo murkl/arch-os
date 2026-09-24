@@ -1,4 +1,4 @@
-title: Set up Flatpak
+title: Install Flatpak and Bazaar
 needs: [desktop-gnome]
 conditions:
   - ARCH_OS_DESKTOP != none

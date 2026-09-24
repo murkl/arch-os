@@ -16,9 +16,9 @@ image() { printf '%s/arch-os-%s-x86_64.iso' "$(download_dir)" "$VERSION"; }
 
 # What that release publishes the image has to hash to, beside it in the form
 # `sha256sum -c` reads. The download writes it, or takes it away where there is
-# none to be had, and the steps after it go by this file alone: the network is
-# read once, so the question whether to go on unchecked and the check itself
-# cannot disagree about whether there was a checksum.
+# none to be had, and the check after it goes by this file alone: the network
+# is read once, so the download and the check cannot disagree about whether
+# there was a checksum.
 checksum() { printf '%s.sha256' "$(image)"; }
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -39,23 +39,6 @@ download_dir() {
         return 0
     }
     printf '%s/Downloads' "${HOME:-$HERE}"
-}
-
-# The two ways on from an image nothing can be held against, and nothing at all
-# where the release publishes a checksum: a list that comes back empty is a
-# question with nothing to decide, and Oak skips the step that asked it - which
-# is why that step does nothing but ask, and the check is the one after it. So
-# an ordinary run never sees this page - only one where the release cannot be
-# reached, or does not exist yet, which is what an image built here is.
-#
-# A simulated run shows it either way: this is the one page of this module that
-# is otherwise never looked at.
-unverified_choices() {
-    if ! debugging && [ -s "$(checksum)" ]; then
-        return 0
-    fi
-    printf 'false\tStop and write nothing\n'
-    printf 'true\tWrite it without verifying\n'
 }
 
 # The USB disks this machine has: the device path, a tab, and what a person

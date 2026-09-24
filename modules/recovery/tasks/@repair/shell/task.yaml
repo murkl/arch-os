@@ -7,3 +7,7 @@ confirm: |
   Everything is mounted, so this is where anything the recovery does not
   handle on its own can be fixed by hand: a package reinstalled, a config
   file put back. Leave the shell with `exit`.
+
+# Opening on no: the steps before it are what repairs a machine, and an enter
+# meant for one of them must not land in a root shell.
+default: no

@@ -239,7 +239,8 @@ rm -rf "${RECOVERY_PROFILE}/airootfs/etc/systemd/system" \
     "${RECOVERY_PROFILE}/airootfs/etc/systemd/resolved.conf.d" \
     "${RECOVERY_PROFILE}/airootfs/etc/ssh"
 
-# Its packages, and a root prompt on tty1 once it stops.
+# Its packages, and what makes it a kiosk: the Recovery on tty1, started again
+# whenever it ends, with what the Installer left it and no login anywhere.
 cp -r recovery/. "$RECOVERY_PROFILE"
 
 install_arch_os "$RECOVERY_PROFILE" "${RELEASE_DIR}/modules/recovery"

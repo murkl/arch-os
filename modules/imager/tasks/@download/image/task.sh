@@ -3,7 +3,8 @@
 #
 # It is kept, so a second run costs the download only the first time. A folder
 # that already holds it is left alone here - what the file is held to is the
-# next step's business, not where it came from.
+# next step's business, not where it came from. Unchecked, the image already
+# here is all there is to it, and the release is not even asked.
 
 dir="$(download_dir)"
 mkdir -p "$dir" || {
@@ -14,6 +15,11 @@ mkdir -p "$dir" || {
     echo "${dir} cannot be written to" >&2
     exit 1
 }
+
+if [ "$ARCH_OS_IMAGE_VERIFY" != "true" ] && [ -f "$(image)" ]; then
+    echo "$(image) is already here, and goes to the device unchecked"
+    return 0
+fi
 
 # Where the release keeps the image and what it hashes to, asked once. The
 # checksum goes beside the image whether or not the image is fetched now, and an

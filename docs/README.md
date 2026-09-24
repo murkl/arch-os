@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="banner.png" alt="Arch OS - a minimal, robust and reproducible Arch Linux base, with an Installer and a Recovery on one bootable image">
+<img src="banner.png" alt="Arch OS - install Arch Linux with ease, as a desktop or a TTY system, with an Installer and a Recovery on one bootable image">
 
 <p>
   <img src="https://img.shields.io/github/v/release/murkl/arch-os?style=for-the-badge&label=RELEASE&color=1793d1" alt="">
@@ -8,7 +8,9 @@
   <img src="https://img.shields.io/badge/UEFI-x86__64-2e3440?style=for-the-badge" alt="">
 </p>
 
-<p>A text console or a GNOME desktop. Boot the latest <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and Arch OS starts on its own.</p>
+<p><b>Install Arch Linux with ease — as a desktop or a TTY system.</b></p>
+
+<p>A GNOME desktop or a bare text console, the same minimal base underneath. Boot the latest <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and Arch OS starts on its own.</p>
 
 <p>Or run this on any Linux machine. An ordinary desktop writes the ISO to a USB device; a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> installs or repairs.</p>
 
@@ -29,18 +31,18 @@
 - One password for encryption, root and user; automatic login behind an encrypted disk
 - Btrfs snapshots before every package change (Snapper), rolled back with the Recovery
 - GNOME on Wayland, or a bare text console; the graphics driver for every Intel, AMD and NVIDIA card is detected
-- Desktop extras: codecs, fonts, printing, Samba and `.local` discovery; or a slim install with GNOME core apps only
-- Flatpak with Flathub, managed from GNOME Software
+- Desktop extras: codecs, fonts, printing, Samba and `.local` discovery, Extension Manager and GNOME Firmware; or a slim install with GNOME core apps only
+- Flatpak with Flathub, managed from Bazaar
 - Zram swap, fstrim, microcode, NetworkManager, mirrors ranked by country
 - Tuned rather than left at the defaults - see the **[➜ Reference](REFERENCE.md)**
 - AUR helper, 32-bit support, container engine, firewall, SSH server, automatic housekeeping, the text editor of your choice
 - [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager, Shell Enhancement (zsh)
-- Recovery in the boot menu and on the same image, works without a network
+- Recovery in the boot menu and on the same image, works without a network - and opens straight on its menu, in your language
 - Wireless network joined from the Installer itself, before the first download
 - Create boot medium: writes the USB device from any Linux machine, no root needed but for the write itself
 - Virtual machines both ways: guest tools inside a VM on their own, libvirt and QEMU on real hardware if you want them
 - Two starting points, **Core** and **Desktop** - everything else stays a row in the settings
-- English and German interface
+- English and German interface, chosen on the first page or named outright: `installer --language=de`
 
 ## Installation
 
@@ -64,9 +66,9 @@ curl -Ls https://bit.ly/archos | bash
 
 ### 3. Boot from the USB device
 
-Arch OS starts on its own. The first page says where the rest of Arch OS is and asks the language:
+Arch OS starts on its own and asks the language first:
 
-<p><img src="screenshots/welcome.png" alt="The welcome page: the project's address, and the language to read the rest in"></p>
+<p><img src="screenshots/welcome.png" alt="The welcome page, asking the language to read the rest in"></p>
 
 Then Installer or Recovery, and a starting point:
 
@@ -79,7 +81,7 @@ Then Installer or Recovery, and a starting point:
 
 Every value it sets is an ordinary answer, changeable afterwards. What is left to ask: account, region, disk.
 
-**Note:** _From an official **[Arch Linux ISO](https://archlinux.org/download/)** the same command downloads Arch OS and starts it here instead._
+**Note:** _From an official **[Arch Linux ISO](https://archlinux.org/download/)** the same command downloads Arch OS and starts it here instead. `… | bash -s -- --language=de` skips the first page, and so does `installer --language=de` from the prompt of the Arch OS ISO._
 
 ### 4. Reuse your answers
 
@@ -114,7 +116,9 @@ Every installation carries it on a small partition of its own. Hold **space** wh
 - Rebuilds the kernel images from the local package cache
 - Opens a shell inside it
 
-Two questions - keyboard and disk - the rest is read off the machine. No network needed.
+From the ISO it asks two questions - keyboard and disk - and reads the rest off the machine. From its partition it asks none: it starts in the language and on the keyboard the system was installed with, on the disk it was started from, straight on its menu. No network needed either way.
+
+There it is the only thing the machine runs, and there is no prompt behind it. Leaving it offers **Reset** where the ISO offers **Exit**: every answer is forgotten and the Recovery starts over. The shell inside the repaired system stays one of its steps, opening on **no**.
 
 **Note:** _The one on the disk starts with Secure Boot on. For the ISO, switch it off in the firmware and on again afterwards - the Recovery signs what it rebuilds with the machine's own keys._
 

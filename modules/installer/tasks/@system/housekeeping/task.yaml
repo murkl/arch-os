@@ -1,2 +1,2 @@
-title: Set up housekeeping
+title: Enable the maintenance timers
 conditions: ARCH_OS_HOUSEKEEPING_ENABLED == true

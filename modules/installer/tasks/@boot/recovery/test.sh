@@ -9,3 +9,7 @@ cmp "${RECOVERY_IMAGE}/recovery.efi" "${MNT}${RECOVERY_EFI}"
 uuid="$(blkid -p -s UUID -o value "$RECOVERY_PART")"
 [ -n "$uuid" ]
 arch-chroot "$MNT" bootctl --esp-path=/boot list --json=short | grep -qF "archisodevice=UUID=${uuid}"
+
+# And it starts on the keyboard this installation was typed on, in the one line
+# of the Recovery's answers it is handed.
+grep -qxF "ARCH_OS_RECOVERY_KEYMAP='${ARCH_OS_VCONSOLE_KEYMAP}'" "${MNT}${RECOVERY_SEED}/recovery.conf"

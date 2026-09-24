@@ -1,4 +1,4 @@
-title: Share this configuration
+title: Upload the answers to paste.rs
 needs: [copy-config]
 
 # Run under --debug as well, where it fills in an example address rather than

@@ -274,102 +274,19 @@ variables:
     type: bool
     default: true
 
+  - name: ARCH_OS_BOOTSPLASH_ENABLED
+    title: Boot splash
+    description: Shows a logo while the system starts instead of a wall of text.
+    group: Boot
+    type: bool
+    default: true
+
   - name: ARCH_OS_KERNEL_ARGS
     title: Kernel parameters
     description: |
       Extra parameters passed to the kernel at boot, separated by spaces.
       Leave empty unless you know you need one.
     group: Boot
-
-  # ─── Desktop ───────────────────────────────────────────────────────────────
-  - name: ARCH_OS_DESKTOP
-    title: Desktop
-    description: |
-      gnome installs the GNOME desktop. none leaves the system on a text
-      console, with nothing graphical installed.
-    group: Desktop
-    values: [gnome, none]
-    required: true
-
-  - name: ARCH_OS_DESKTOP_KEYBOARD_LAYOUT
-    title: Desktop keyboard
-    description: |
-      The keyboard layout the desktop starts with. auto matches the console
-      keyboard, using the desktop's own naming: de-latin1 and de are the same
-      layout.
-    group: Desktop
-    default: auto
-    required: true
-    conditions: ARCH_OS_DESKTOP != none
-    filter: open
-    command: list_layouts
-    pattern: '^[A-Za-z0-9_-]+$'
-
-  - name: ARCH_OS_DESKTOP_KEYBOARD_VARIANT
-    title: Keyboard variant
-    description: |
-      A variation of that layout, such as dead keys or a different
-      punctuation arrangement. none is the standard one.
-    group: Desktop
-    default: none
-    required: true
-    conditions: ARCH_OS_DESKTOP != none
-    # Three rows under one layout and forty under the next: the box is up on
-    # every machine rather than on some of them.
-    filter: open
-    command: list_variants
-    pattern: '^[A-Za-z0-9_-]+$'
-
-  - name: ARCH_OS_DESKTOP_KEYBOARD_MODEL
-    title: Keyboard model
-    description: The physical shape of the keyboard. pc105 fits almost every keyboard sold.
-    group: Desktop
-    default: pc105
-    conditions: ARCH_OS_DESKTOP != none
-    pattern: '^[A-Za-z0-9_-]+$'
-
-  - name: ARCH_OS_DESKTOP_EXTRAS_ENABLED
-    title: Desktop extras
-    description: |
-      Codecs, fonts, printing, network protocols, development tools and the
-      applications that make the desktop usable straight away.
-    group: Desktop
-    type: bool
-    default: true
-    conditions: ARCH_OS_DESKTOP != none
-
-  - name: ARCH_OS_DESKTOP_SLIM_ENABLED
-    title: Slim desktop
-    description: Removes the GNOME applications that come with the desktop and are rarely used.
-    group: Desktop
-    type: bool
-    default: true
-    conditions: ARCH_OS_DESKTOP != none
-
-  - name: ARCH_OS_FLATPAK_ENABLED
-    title: Flatpak
-    description: |
-      Applications from Flathub, installed and updated through Software
-      alongside everything else.
-    group: Desktop
-    type: bool
-    default: true
-    conditions: ARCH_OS_DESKTOP != none
-
-  - name: ARCH_OS_SAMBA_SHARE_ENABLED
-    title: File sharing
-    description: |
-      Shares your home folder and a public folder with Windows and macOS, on
-      networks marked as home. Anyone on such a network can try your password
-      against it. Without the firewall, every network reaches it.
-    group: Desktop
-    type: bool
-    default: false
-    # The same two the task that shares carries, so this is never a row that is
-    # answered and then never acted on.
-    conditions:
-      - ARCH_OS_DESKTOP != none
-      - ARCH_OS_DESKTOP_EXTRAS_ENABLED == true
 
   # ─── System ────────────────────────────────────────────────────────────────
   - name: ARCH_OS_CORE_TWEAKS_ENABLED
@@ -379,13 +296,6 @@ variables:
       parallel package downloads, a quieter boot, password feedback in the
       terminal, and the memory, disk and log settings the system runs better
       on.
-    group: System
-    type: bool
-    default: true
-
-  - name: ARCH_OS_BOOTSPLASH_ENABLED
-    title: Boot splash
-    description: Shows a logo while the system starts instead of a wall of text.
     group: System
     type: bool
     default: true
@@ -499,6 +409,96 @@ variables:
     default: false
     conditions: ARCH_OS_VIRTUAL_MACHINE == false
 
+  # ─── Desktop ───────────────────────────────────────────────────────────────
+  - name: ARCH_OS_DESKTOP
+    title: Environment
+    description: |
+      gnome installs the GNOME desktop environment. none leaves the system on
+      a text console, with nothing graphical installed.
+    group: Desktop
+    values: [gnome, none]
+    required: true
+
+  - name: ARCH_OS_DESKTOP_KEYBOARD_LAYOUT
+    title: Desktop keyboard
+    description: |
+      The keyboard layout the desktop starts with. auto matches the console
+      keyboard, using the desktop's own naming: de-latin1 and de are the same
+      layout.
+    group: Desktop
+    default: auto
+    required: true
+    conditions: ARCH_OS_DESKTOP != none
+    filter: open
+    command: list_layouts
+    pattern: '^[A-Za-z0-9_-]+$'
+
+  - name: ARCH_OS_DESKTOP_KEYBOARD_VARIANT
+    title: Keyboard variant
+    description: |
+      A variation of that layout, such as dead keys or a different
+      punctuation arrangement. none is the standard one.
+    group: Desktop
+    default: none
+    required: true
+    conditions: ARCH_OS_DESKTOP != none
+    # Three rows under one layout and forty under the next: the box is up on
+    # every machine rather than on some of them.
+    filter: open
+    command: list_variants
+    pattern: '^[A-Za-z0-9_-]+$'
+
+  - name: ARCH_OS_DESKTOP_KEYBOARD_MODEL
+    title: Keyboard model
+    description: The physical shape of the keyboard. pc105 fits almost every keyboard sold.
+    group: Desktop
+    default: pc105
+    conditions: ARCH_OS_DESKTOP != none
+    pattern: '^[A-Za-z0-9_-]+$'
+
+  - name: ARCH_OS_DESKTOP_EXTRAS_ENABLED
+    title: Desktop extras
+    description: |
+      Codecs, fonts, printing, network protocols, development tools and the
+      applications that make the desktop usable straight away.
+    group: Desktop
+    type: bool
+    default: true
+    conditions: ARCH_OS_DESKTOP != none
+
+  - name: ARCH_OS_DESKTOP_SLIM_ENABLED
+    title: Slim desktop
+    description: Removes the GNOME applications that come with the desktop and are rarely used.
+    group: Desktop
+    type: bool
+    default: true
+    conditions: ARCH_OS_DESKTOP != none
+
+  - name: ARCH_OS_FLATPAK_ENABLED
+    title: Flatpak
+    description: |
+      Applications from Flathub, installed and updated through Bazaar, a store
+      made for them.
+    group: Desktop
+    type: bool
+    default: true
+    conditions: ARCH_OS_DESKTOP != none
+
+  - name: ARCH_OS_SAMBA_SHARE_ENABLED
+    title: File sharing
+    description: |
+      Shares your home folder and a public folder with Windows and macOS, on
+      networks marked as home. Anyone on such a network can try your password
+      against it. Without the firewall, every network reaches it.
+    group: Desktop
+    type: bool
+    default: false
+    # The same two the task that shares carries, so this is never a row that is
+    # answered and then never acted on.
+    conditions:
+      - ARCH_OS_DESKTOP != none
+      - ARCH_OS_DESKTOP_EXTRAS_ENABLED == true
+
   # ─── Sharing ───────────────────────────────────────────────────────────────
   #
   # Neither is a question on any page: the address is answered by the
@@ -511,7 +511,6 @@ variables:
       Where this installation's answers ended up. Nothing is uploaded until
       you accept the offer at the end of the run. The installation then fills
       this in itself and shows it as a code to scan.
-    group: System
 
   - name: ARCH_OS_CONFIG_SOURCE
     title: Configuration code
@@ -519,7 +518,6 @@ variables:
       The code of a shared configuration: the short word at the end of a
       paste.rs address, or the whole address. Every answer it contains can
       still be changed afterwards.
-    group: System
     required: true
     pattern: '^[A-Za-z0-9][A-Za-z0-9:/._-]*$'
     error: A code such as aBc12, or the whole address it belongs to.

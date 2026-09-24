@@ -44,21 +44,19 @@ variables:
     pattern: '^/.+$'
     error: Type the full path of a folder, starting with a slash.
 
-  # Asked in the middle of the run, and only where there is something to
-  # decide: a release that publishes a checksum leaves this list empty, and a
-  # question with nothing to choose from is a step Oak skips - see module.sh.
-  - name: ARCH_OS_IMAGE_UNVERIFIED
-    title: Unverified image
+  # A setting rather than a question in the middle of the run, so it reads in
+  # the interface's language like every other one and is decided before the
+  # run starts rather than halfway through it.
+  - name: ARCH_OS_IMAGE_VERIFY
+    title: Verify checksum
     description: |
-      There is no checksum to hold this image to: either the release publishes
-      none yet or it cannot be reached. So nothing here can tell whether the
-      file is whole, or whether it is the image it says it is.
-
-      An image built rather than downloaded is the usual reason to go on.
-      Stopping leaves the device untouched.
+      Holds the image to the checksum its release publishes before anything
+      is written, and throws it away where the two disagree. Turned off, the
+      image in the download folder goes to the device as it is - an image
+      built rather than downloaded is the usual reason.
     group: Image
-    required: true
-    command: unverified_choices
+    type: bool
+    default: true
 
   - name: ARCH_OS_IMAGE_DEVICE
     title: Device

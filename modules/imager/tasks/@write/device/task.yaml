@@ -1,4 +1,4 @@
-title: Write the device
+title: Write the image to the device
 
 # sudo asks for a password and dd reports how far it has got, and neither can be
 # drawn over the interface - so it steps aside for the length of this one.

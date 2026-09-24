@@ -1,4 +1,4 @@
-title: Start the SSH server
+title: Enable sshd
 # After the firewall, which closes ssh in public until something listens there.
 needs: [firewall]
 conditions: ARCH_OS_SSH_SERVER_ENABLED == true

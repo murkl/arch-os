@@ -236,7 +236,7 @@ msgstr "Signiert Kernel und Bootloader mit Schlüsseln, die für diesen Rechner 
 #. ARCH_OS_SECURE_BOOT_ENABLED: the heading its row sits under
 #: module.yaml
 msgid "Boot"
-msgstr "Start"
+msgstr "Boot"
 
 #. ARCH_OS_RECOVERY_ENABLED: the question
 #: module.yaml
@@ -248,6 +248,16 @@ msgstr "Recovery"
 msgid "Puts the Recovery on a small partition of its own and into the boot menu, so a system that no longer starts is repaired without a USB stick. Hold space while the machine starts to reach the menu. The Arch OS ISO carries it; any other live image downloads it first."
 msgstr "Legt die Recovery auf eine kleine eigene Partition und ins Bootmenü, damit sich ein System, das nicht mehr startet, ohne USB-Stick reparieren lässt. Für das Menü beim Start des Rechners die Leertaste gedrückt halten. Das Arch-OS-ISO bringt sie mit, jedes andere Live-Abbild lädt sie vorher herunter."
 
+#. ARCH_OS_BOOTSPLASH_ENABLED: the question
+#: module.yaml
+msgid "Boot splash"
+msgstr "Bootsplash"
+
+#. ARCH_OS_BOOTSPLASH_ENABLED: what it means
+#: module.yaml
+msgid "Shows a logo while the system starts instead of a wall of text."
+msgstr "Zeigt beim Start ein Logo statt einer Textwand."
+
 #. ARCH_OS_KERNEL_ARGS: the question
 #: module.yaml
 msgid "Kernel parameters"
@@ -257,81 +267,6 @@ msgstr "Kernel-Parameter"
 #: module.yaml
 msgid "Extra parameters passed to the kernel at boot, separated by spaces. Leave empty unless you know you need one."
 msgstr "Zusätzliche Parameter, die dem Kernel beim Start übergeben werden, durch Leerzeichen getrennt. Leer lassen, solange du keinen brauchst."
-
-#. ARCH_OS_DESKTOP: what it means
-#: module.yaml
-msgid "gnome installs the GNOME desktop. none leaves the system on a text console, with nothing graphical installed."
-msgstr "gnome installiert den GNOME-Desktop. none belässt das System bei einer Textkonsole, ohne dass etwas Grafisches installiert wird."
-
-#. ARCH_OS_DESKTOP_KEYBOARD_LAYOUT: the question
-#: module.yaml
-msgid "Desktop keyboard"
-msgstr "Desktop-Tastatur"
-
-#. ARCH_OS_DESKTOP_KEYBOARD_LAYOUT: what it means
-#: module.yaml
-msgid "The keyboard layout the desktop starts with. auto matches the console keyboard, using the desktop's own naming: de-latin1 and de are the same layout."
-msgstr "Die Tastaturbelegung, mit der der Desktop startet. auto folgt der Konsolentastatur, in der eigenen Schreibweise des Desktops: de-latin1 und de sind dieselbe Belegung."
-
-#. ARCH_OS_DESKTOP_KEYBOARD_VARIANT: the question
-#: module.yaml
-msgid "Keyboard variant"
-msgstr "Tastaturvariante"
-
-#. ARCH_OS_DESKTOP_KEYBOARD_VARIANT: what it means
-#: module.yaml
-msgid "A variation of that layout, such as dead keys or a different punctuation arrangement. none is the standard one."
-msgstr "Eine Abwandlung dieser Belegung, etwa tote Tasten oder eine andere Anordnung der Satzzeichen. none ist die Standardvariante."
-
-#. ARCH_OS_DESKTOP_KEYBOARD_MODEL: the question
-#: module.yaml
-msgid "Keyboard model"
-msgstr "Tastaturmodell"
-
-#. ARCH_OS_DESKTOP_KEYBOARD_MODEL: what it means
-#: module.yaml
-msgid "The physical shape of the keyboard. pc105 fits almost every keyboard sold."
-msgstr "Die Bauform der Tastatur. pc105 passt auf fast jede erhältliche Tastatur."
-
-#. ARCH_OS_DESKTOP_EXTRAS_ENABLED: the question
-#: module.yaml
-msgid "Desktop extras"
-msgstr "Desktop-Extras"
-
-#. ARCH_OS_DESKTOP_EXTRAS_ENABLED: what it means
-#: module.yaml
-msgid "Codecs, fonts, printing, network protocols, development tools and the applications that make the desktop usable straight away."
-msgstr "Codecs, Schriften, Druck, Netzwerkprotokolle, Entwicklungswerkzeuge und die Programme, die den Desktop sofort brauchbar machen."
-
-#. ARCH_OS_DESKTOP_SLIM_ENABLED: the question
-#: module.yaml
-msgid "Slim desktop"
-msgstr "Schlanker Desktop"
-
-#. ARCH_OS_DESKTOP_SLIM_ENABLED: what it means
-#: module.yaml
-msgid "Removes the GNOME applications that come with the desktop and are rarely used."
-msgstr "Entfernt die GNOME-Programme, die mit dem Desktop kommen und selten benutzt werden."
-
-#. ARCH_OS_FLATPAK_ENABLED: the question
-#: module.yaml
-msgid "Flatpak"
-msgstr "Flatpak"
-
-#. ARCH_OS_FLATPAK_ENABLED: what it means
-#: module.yaml
-msgid "Applications from Flathub, installed and updated through Software alongside everything else."
-msgstr "Anwendungen von Flathub, installiert und aktualisiert über Software wie alles andere."
-
-#. ARCH_OS_SAMBA_SHARE_ENABLED: the question
-#: module.yaml
-msgid "File sharing"
-msgstr "Dateifreigabe"
-
-#. ARCH_OS_SAMBA_SHARE_ENABLED: what it means
-#: module.yaml
-msgid "Shares your home folder and a public folder with Windows and macOS, on networks marked as home. Anyone on such a network can try your password against it. Without the firewall, every network reaches it."
-msgstr "Gibt dein Benutzerverzeichnis und einen öffentlichen Ordner für Windows und macOS frei, in Netzen, die als Heimnetz markiert sind. Jeder in einem solchen Netz kann dort dein Passwort ausprobieren. Ohne Firewall erreicht sie jedes Netz."
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: the question
 #: module.yaml
@@ -347,16 +282,6 @@ msgstr "Kleine Anpassungen am Core, die nichts an den installierten Paketen änd
 #: module.yaml
 msgid "System"
 msgstr "System"
-
-#. ARCH_OS_BOOTSPLASH_ENABLED: the question
-#: module.yaml
-msgid "Boot splash"
-msgstr "Startbildschirm"
-
-#. ARCH_OS_BOOTSPLASH_ENABLED: what it means
-#: module.yaml
-msgid "Shows a logo while the system starts instead of a wall of text."
-msgstr "Zeigt beim Start ein Logo statt einer Textwand."
 
 #. ARCH_OS_MULTILIB_ENABLED: the question
 #: module.yaml
@@ -468,6 +393,86 @@ msgstr "Virtuelle Maschinen"
 msgid "Runs virtual machines on this computer: QEMU and libvirt, and on a desktop the Virtual Machine Manager window. Inside a virtual machine this is not offered - the guest tools that make the screen resize and the clipboard work are installed there on their own."
 msgstr "Betreibt virtuelle Maschinen auf diesem Rechner: QEMU und libvirt, auf einem Desktop mit dem Fenster Virtual Machine Manager. In einer virtuellen Maschine wird das nicht angeboten - dort werden die Gastwerkzeuge, mit denen sich die Bildschirmgröße anpasst und die Zwischenablage funktioniert, von selbst installiert."
 
+#. ARCH_OS_DESKTOP: the question
+#: module.yaml
+msgid "Environment"
+msgstr "Umgebung"
+
+#. ARCH_OS_DESKTOP: what it means
+#: module.yaml
+msgid "gnome installs the GNOME desktop environment. none leaves the system on a text console, with nothing graphical installed."
+msgstr "gnome installiert die Desktop-Umgebung GNOME. none belässt das System bei einer Textkonsole, ohne dass etwas Grafisches installiert wird."
+
+#. ARCH_OS_DESKTOP_KEYBOARD_LAYOUT: the question
+#: module.yaml
+msgid "Desktop keyboard"
+msgstr "Desktop-Tastatur"
+
+#. ARCH_OS_DESKTOP_KEYBOARD_LAYOUT: what it means
+#: module.yaml
+msgid "The keyboard layout the desktop starts with. auto matches the console keyboard, using the desktop's own naming: de-latin1 and de are the same layout."
+msgstr "Die Tastaturbelegung, mit der der Desktop startet. auto folgt der Konsolentastatur, in der eigenen Schreibweise des Desktops: de-latin1 und de sind dieselbe Belegung."
+
+#. ARCH_OS_DESKTOP_KEYBOARD_VARIANT: the question
+#: module.yaml
+msgid "Keyboard variant"
+msgstr "Tastaturvariante"
+
+#. ARCH_OS_DESKTOP_KEYBOARD_VARIANT: what it means
+#: module.yaml
+msgid "A variation of that layout, such as dead keys or a different punctuation arrangement. none is the standard one."
+msgstr "Eine Abwandlung dieser Belegung, etwa tote Tasten oder eine andere Anordnung der Satzzeichen. none ist die Standardvariante."
+
+#. ARCH_OS_DESKTOP_KEYBOARD_MODEL: the question
+#: module.yaml
+msgid "Keyboard model"
+msgstr "Tastaturmodell"
+
+#. ARCH_OS_DESKTOP_KEYBOARD_MODEL: what it means
+#: module.yaml
+msgid "The physical shape of the keyboard. pc105 fits almost every keyboard sold."
+msgstr "Die Bauform der Tastatur. pc105 passt auf fast jede erhältliche Tastatur."
+
+#. ARCH_OS_DESKTOP_EXTRAS_ENABLED: the question
+#: module.yaml
+msgid "Desktop extras"
+msgstr "Desktop-Extras"
+
+#. ARCH_OS_DESKTOP_EXTRAS_ENABLED: what it means
+#: module.yaml
+msgid "Codecs, fonts, printing, network protocols, development tools and the applications that make the desktop usable straight away."
+msgstr "Codecs, Schriften, Druck, Netzwerkprotokolle, Entwicklungswerkzeuge und die Programme, die den Desktop sofort brauchbar machen."
+
+#. ARCH_OS_DESKTOP_SLIM_ENABLED: the question
+#: module.yaml
+msgid "Slim desktop"
+msgstr "Schlanker Desktop"
+
+#. ARCH_OS_DESKTOP_SLIM_ENABLED: what it means
+#: module.yaml
+msgid "Removes the GNOME applications that come with the desktop and are rarely used."
+msgstr "Entfernt die GNOME-Programme, die mit dem Desktop kommen und selten benutzt werden."
+
+#. ARCH_OS_FLATPAK_ENABLED: the question
+#: module.yaml
+msgid "Flatpak"
+msgstr "Flatpak"
+
+#. ARCH_OS_FLATPAK_ENABLED: what it means
+#: module.yaml
+msgid "Applications from Flathub, installed and updated through Bazaar, a store made for them."
+msgstr "Anwendungen von Flathub, installiert und aktualisiert über Bazaar, einen Store eigens dafür."
+
+#. ARCH_OS_SAMBA_SHARE_ENABLED: the question
+#: module.yaml
+msgid "File sharing"
+msgstr "Dateifreigabe"
+
+#. ARCH_OS_SAMBA_SHARE_ENABLED: what it means
+#: module.yaml
+msgid "Shares your home folder and a public folder with Windows and macOS, on networks marked as home. Anyone on such a network can try your password against it. Without the firewall, every network reaches it."
+msgstr "Gibt dein Benutzerverzeichnis und einen öffentlichen Ordner für Windows und macOS frei, in Netzen, die als Heimnetz markiert sind. Jeder in einem solchen Netz kann dort dein Passwort ausprobieren. Ohne Firewall erreicht sie jedes Netz."
+
 #. ARCH_OS_CONFIG_URL: the question
 #: module.yaml
 msgid "Shared at"
@@ -495,18 +500,18 @@ msgstr "Ein Code wie aBc12 — oder die vollständige Adresse dazu."
 
 #. the step, as the run lists it
 #: tasks/@prepare/init/task.yaml
-msgid "Prepare the installation"
-msgstr "Installation vorbereiten"
+msgid "Rank mirrors and refresh the keyring"
+msgstr "Mirrors sortieren, Keyring aktualisieren"
 
 #. the step, as the run lists it
 #: tasks/@prepare/recovery-image/task.yaml
-msgid "Get the Recovery"
-msgstr "Recovery bereitstellen"
+msgid "Provide the Recovery image"
+msgstr "Recovery-Abbild bereitstellen"
 
 #. the step, as the run lists it
 #: tasks/@disk/prepare-disk/task.yaml
-msgid "Set up the disk"
-msgstr "Datenträger einrichten"
+msgid "Partition and format the disk"
+msgstr "Datenträger partitionieren und formatieren"
 
 #. the step, as the run lists it
 #: tasks/@base/pacstrap-core/task.yaml
@@ -515,8 +520,8 @@ msgstr "Basissystem installieren"
 
 #. the step, as the run lists it
 #: tasks/@base/configure-system/task.yaml
-msgid "Configure the system"
-msgstr "System konfigurieren"
+msgid "Set locale, time zone and hostname"
+msgstr "Locale, Zeitzone und Hostname setzen"
 
 #. the step, as the run lists it
 #: tasks/@base/core-tweaks/task.yaml
@@ -525,18 +530,18 @@ msgstr "Core Optimierungen anwenden"
 
 #. the step, as the run lists it
 #: tasks/@base/user-account/task.yaml
-msgid "Create your account"
+msgid "Create the user account"
 msgstr "Benutzerkonto anlegen"
 
 #. the step, as the run lists it
 #: tasks/@boot/initramfs/task.yaml
-msgid "Build the boot images"
-msgstr "Boot-Abbilder bauen"
+msgid "Build the initramfs"
+msgstr "Initramfs bauen"
 
 #. the step, as the run lists it
 #: tasks/@boot/recovery/task.yaml
-msgid "Install the Recovery"
-msgstr "Recovery installieren"
+msgid "Write the Recovery partition"
+msgstr "Recovery-Partition schreiben"
 
 #. the step, as the run lists it
 #: tasks/@boot/systemd-boot/task.yaml
@@ -545,8 +550,8 @@ msgstr "systemd-boot installieren"
 
 #. the step, as the run lists it
 #: tasks/@system/btrfs-scrub/task.yaml
-msgid "Check the file system regularly"
-msgstr "Das Dateisystem regelmäßig prüfen"
+msgid "Enable the monthly Btrfs scrub"
+msgstr "Monatlichen Btrfs-Scrub aktivieren"
 
 #. the step, as the run lists it
 #: tasks/@system/container-engine/task.yaml
@@ -555,8 +560,8 @@ msgstr "Container-Engine installieren"
 
 #. the step, as the run lists it
 #: tasks/@system/enable-multilib/task.yaml
-msgid "Enable 32-bit support"
-msgstr "32-Bit-Unterstützung einschalten"
+msgid "Enable the multilib repository"
+msgstr "Multilib-Repository aktivieren"
 
 #. the step, as the run lists it
 #: tasks/@system/aur-helper/task.yaml
@@ -565,18 +570,18 @@ msgstr "AUR-Helfer installieren"
 
 #. the step, as the run lists it
 #: tasks/@system/bootsplash/task.yaml
-msgid "Install the boot splash"
-msgstr "Startbildschirm installieren"
+msgid "Install Plymouth"
+msgstr "Plymouth installieren"
 
 #. the step, as the run lists it
 #: tasks/@system/firewall/task.yaml
-msgid "Install the firewall"
-msgstr "Firewall installieren"
+msgid "Set up firewalld"
+msgstr "firewalld einrichten"
 
 #. the step, as the run lists it
 #: tasks/@system/housekeeping/task.yaml
-msgid "Set up housekeeping"
-msgstr "Systempflege einrichten"
+msgid "Enable the maintenance timers"
+msgstr "Wartungs-Timer aktivieren"
 
 #. the step, as the run lists it
 #: tasks/@system/manager/task.yaml
@@ -585,43 +590,43 @@ msgstr "Arch OS Manager installieren"
 
 #. the step, as the run lists it
 #: tasks/@system/shell-enhancement/task.yaml
-msgid "Enhance the shell"
-msgstr "Shell optimieren"
+msgid "Set up zsh and the shell tools"
+msgstr "zsh und Shell-Tools einrichten"
 
 #. the step, as the run lists it
 #: tasks/@system/ssh-server/task.yaml
-msgid "Start the SSH server"
-msgstr "SSH-Server einschalten"
+msgid "Enable sshd"
+msgstr "sshd aktivieren"
 
 #. the step, as the run lists it
 #: tasks/@system/vm-guest/task.yaml
-msgid "Add the virtual machine guest tools"
-msgstr "Gastwerkzeuge für die virtuelle Maschine installieren"
+msgid "Install the VM guest tools"
+msgstr "VM-Gasttools installieren"
 
 #. the step, as the run lists it
 #: tasks/@system/vm-host/task.yaml
-msgid "Set up virtual machines"
-msgstr "Virtuelle Maschinen einrichten"
+msgid "Install QEMU and libvirt"
+msgstr "QEMU und libvirt installieren"
 
 #. the step, as the run lists it
 #: tasks/@desktop/desktop-gnome/task.yaml
-msgid "Install the GNOME desktop"
-msgstr "GNOME-Desktop installieren"
+msgid "Install GNOME"
+msgstr "GNOME installieren"
 
 #. the step, as the run lists it
 #: tasks/@desktop/flatpak/task.yaml
-msgid "Set up Flatpak"
-msgstr "Flatpak einrichten"
+msgid "Install Flatpak and Bazaar"
+msgstr "Flatpak und Bazaar installieren"
 
 #. the step, as the run lists it
 #: tasks/@desktop/graphics-driver/task.yaml
-msgid "Install the graphics driver"
+msgid "Install the graphics drivers"
 msgstr "Grafiktreiber installieren"
 
 #. the step, as the run lists it
 #: tasks/@desktop/samba/task.yaml
-msgid "Share files with other machines"
-msgstr "Dateifreigabe einrichten"
+msgid "Set up Samba"
+msgstr "Samba einrichten"
 
 #. the step, as the run lists it
 #: tasks/@finalize/first-login/task.yaml
@@ -640,13 +645,13 @@ msgstr "Snapper einrichten"
 
 #. the step, as the run lists it
 #: tasks/@finalize/secure-boot/task.yaml
-msgid "Sign the boot chain"
-msgstr "Boot-Kette signieren"
+msgid "Sign the boot files with sbctl"
+msgstr "Boot-Dateien mit sbctl signieren"
 
 #. the step, as the run lists it
 #: tasks/@handover/copy-config/task.yaml
-msgid "Keep a copy of this installation"
-msgstr "Kopie dieser Installation ablegen"
+msgid "Copy the answers and the log into the system"
+msgstr "Antworten und Log ins System kopieren"
 
 #. read once the step is done, and held on until somebody has
 #: tasks/@handover/copy-config/task.yaml
@@ -661,8 +666,8 @@ msgstr ""
 
 #. the step, as the run lists it
 #: tasks/@handover/share-config/task.yaml
-msgid "Share this configuration"
-msgstr "Diese Konfiguration teilen"
+msgid "Upload the answers to paste.rs"
+msgstr "Antworten auf paste.rs hochladen"
 
 #. asked before the step runs
 #: tasks/@handover/share-config/task.yaml
@@ -688,8 +693,8 @@ msgstr ""
 
 #. the step, as the run lists it
 #: tasks/@handover/chroot/task.yaml
-msgid "Enter the new system"
-msgstr "In das neue System wechseln"
+msgid "Open a shell in the new system"
+msgstr "Shell im neuen System öffnen"
 
 #. asked before the step runs
 #: tasks/@handover/chroot/task.yaml
@@ -720,8 +725,8 @@ msgstr ""
 
 #. the step, as the run lists it
 #: tasks/@handover/unmount/task.yaml
-msgid "Unmount everything"
-msgstr "Alles aushängen"
+msgid "Unmount and lock the disk"
+msgstr "Datenträger aushängen und sperren"
 
 #. asked before the step runs
 #: tasks/@handover/unmount/task.yaml

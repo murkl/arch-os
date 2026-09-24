@@ -1,4 +1,4 @@
-title: Enter the new system
+title: Open a shell in the new system
 needs: [share-config]
 confirm: |
   Open a shell inside the system that was just installed?

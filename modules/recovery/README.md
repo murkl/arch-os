@@ -35,7 +35,7 @@ Three stages; after the first, every step is optional.
 | `shell` | `repair` | `arch-chroot`s into the repaired system |
 | `close` | `close` | Unmounts everything and locks the disk again |
 
-**Note:** _Each of the three under `repair` has its own `confirm:`, so a run can stop after any. `needs:` orders them - a shell is worth having once the boot files are back._
+**Note:** _Each of the three under `repair` has its own `confirm:`, so a run can stop after any. `needs:` orders them - a shell is worth having once the boot files are back. The shell opens on **no**: an enter meant for the step before must not land in a root shell._
 
 ## Nothing is downloaded
 
@@ -86,6 +86,8 @@ flowchart LR
 | `ARCH_OS_RECOVERY_SNAPSHOT` | Asked mid-run by the rollback task |
 
 Only keyboard and disk are asked up front. The password follows right before the run, the snapshot only if a rollback is chosen.
+
+On its own partition neither is asked: the Installer leaves the keyboard it was typed on, together with the language it was read in, and the disk is the one the Recovery was started from - **[➜ The Recovery Partition](../../docs/REFERENCE.md#the-recovery-partition)**. Both values are held to their `pattern:` and to the list they come from, like any answer read from a file.
 
 ## Requirements
 

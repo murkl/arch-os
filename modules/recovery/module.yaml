@@ -41,6 +41,10 @@ variables:
   # It opens on a layout rather than on the list's first row, which is 3l: an
   # enter meant for the page before would load that, and the password typed
   # next would fail with nothing to say why.
+  #
+  # On its own partition the Recovery finds both questions answered: the
+  # Installer leaves it the keyboard it was typed on, and the disk is the one
+  # it was started from - see iso/recovery/.
   - name: ARCH_OS_RECOVERY_KEYMAP
     title: Console keyboard
     description: |
@@ -52,6 +56,7 @@ variables:
     command: list_keymaps
     prefill: live_keymap
     apply: load_console_keyboard
+    pattern: '^[A-Za-z0-9_.-]+$'
 
   - name: ARCH_OS_RECOVERY_DISK
     title: Disk
@@ -62,6 +67,7 @@ variables:
     required: true
     error: Choose a disk that exists.
     command: list_disks
+    pattern: '^/dev/[A-Za-z0-9_-]+$'
 
   # Not asked: a LUKS header is readable without the password, so this is a
   # thing the machine can see. It decides whether there is a password to ask
