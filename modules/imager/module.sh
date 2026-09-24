@@ -22,6 +22,31 @@ image() { printf '%s/arch-os-%s-x86_64.iso' "$(download_dir)" "$VERSION"; }
 checksum() { printf '%s.sha256' "$(image)"; }
 
 # ////////////////////////////////////////////////////////////////////////////
+# ROOT, FOR THE WRITE
+# ////////////////////////////////////////////////////////////////////////////
+
+# This module runs as whoever started it, on somebody's own machine, where a
+# root process leaves two gigabytes in their home that only root can delete
+# again. So root is taken for one command at a time, and only in the step that
+# writes the device.
+#
+# Where sudo wants a password, it is the one typed into the interface, handed to
+# sudo on stdin, so the screen is never handed over for a prompt. -k asks for it
+# every time rather than leaning on a credential sudo may have forgotten since,
+# and -p '' keeps the prompt it no longer needs out of the log. The commands
+# this wraps read nothing from stdin, which is left holding the rest of the pipe.
+# Where it wants none, -n makes sure it never stops to ask.
+as_root() {
+    if [ "$(id -u)" -eq 0 ]; then
+        "$@"
+    elif [ "$ARCH_OS_IMAGE_SUDO" = "true" ]; then
+        printf '%s\n' "$ARCH_OS_IMAGE_PASSWORD" | sudo -S -k -p '' -- "$@"
+    else
+        sudo -n -- "$@"
+    fi
+}
+
+# ////////////////////////////////////////////////////////////////////////////
 # THE YAML | Every function a declaration calls by name
 # ////////////////////////////////////////////////////////////////////////////
 
@@ -63,4 +88,20 @@ in_system_use() {
         { n = split($0, mounts, /\\x0a/) }
         { for (i = 1; i <= n; i++) if (mounts[i] != "" && mounts[i] !~ /^\/(run\/media|media|mnt)(\/|$)/) found = 1 }
         END { exit !found }'
+}
+
+# Whether writing the device needs a password: not as root, and not where a sudo
+# rule lets this account do without one. -k leaves out a password sudo still
+# remembers from a terminal a minute ago - it will have forgotten it by the time
+# the download is done.
+needs_password() {
+    if [ "$(id -u)" -eq 0 ] || sudo -nk true 2>/dev/null; then echo false; else echo true; fi
+}
+
+# The password, tried on sudo before it is taken: a command that does nothing,
+# as root. A simulated run is on somebody's own machine, whose sudo is not ours
+# to try.
+sudo_accepts() {
+    debugging && return 0
+    as_root true
 }

@@ -1,6 +1,7 @@
-# What the Recovery runs on, and nothing else: no firmware, no network, no
-# editor - see the Recovery Partition in docs/REFERENCE.md. base brings what its
-# tasks call beyond these: cryptsetup, fuser, file, bsdtar, the keymaps.
+# What the Recovery runs on, and nothing else: no editor, and no firmware but
+# the wireless cards' - see the Recovery Partition in docs/REFERENCE.md. base
+# brings what its tasks call beyond these: cryptsetup, fuser, file, bsdtar, the
+# keymaps, and the network daemons iwd leans on.
 arch-install-scripts
 base
 btrfs-progs
@@ -8,3 +9,15 @@ linux
 mkinitcpio
 mkinitcpio-archiso
 plymouth
+
+# A wireless network, joined from the menu when somebody asks for one. Nothing
+# of it starts on its own - see network_up in oak.sh. The firmware is the
+# wireless cards' of the default set, and pacman.conf leaves out what in those
+# packages belongs to anything else.
+iwd
+wireless-regdb
+linux-firmware-atheros
+linux-firmware-broadcom
+linux-firmware-intel
+linux-firmware-mediatek
+linux-firmware-realtek

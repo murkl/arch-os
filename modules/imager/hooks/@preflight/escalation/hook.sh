@@ -3,7 +3,7 @@
 #
 # Whether this particular person may use sudo is not asked, because asking means
 # asking for their password before anybody has said they want to write anything.
-# sudo answers that itself, on the terminal, when the moment comes.
+# That is settled right before the run, where the password is typed and tried.
 
 [ "$(id -u)" -eq 0 ] && return 0
 command -v sudo >/dev/null && return 0

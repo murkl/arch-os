@@ -498,6 +498,16 @@ msgstr ""
 msgid "A code such as aBc12, or the whole address it belongs to."
 msgstr ""
 
+#. the header's status, while its check says yes
+#: ../../oak.yaml
+msgid "Online"
+msgstr ""
+
+#. the header's status, while its check says no
+#: ../../oak.yaml
+msgid "Offline"
+msgstr ""
+
 #. the step, as the run lists it
 #: tasks/@prepare/init/task.yaml
 msgid "Rank mirrors and refresh the keyring"
@@ -556,6 +566,11 @@ msgstr ""
 #. the step, as the run lists it
 #: tasks/@system/container-engine/task.yaml
 msgid "Install the container engine"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@system/editor/task.yaml
+msgid "Set up the text editor"
 msgstr ""
 
 #. the step, as the run lists it

@@ -1,0 +1,19 @@
+# Written by the Arch OS Installer: Nord, the palette the console and the prompt
+# are drawn in, and the mode it is in written on the cursor and the status line.
+# `:help` names everything that can go here, and `hx --tutor` teaches the keys.
+theme = "nord"
+
+[editor]
+cursorline = true
+color-modes = true
+bufferline = "multiple"
+
+[editor.cursor-shape]
+insert = "bar"
+select = "underline"
+
+[editor.indent-guides]
+render = true
+
+[editor.soft-wrap]
+enable = true

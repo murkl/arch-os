@@ -1,0 +1,8 @@
+{
+    "colorscheme": "atom-dark",
+    "diffgutter": true,
+    "mkparents": true,
+    "savecursor": true,
+    "saveundo": true,
+    "tabstospaces": true
+}

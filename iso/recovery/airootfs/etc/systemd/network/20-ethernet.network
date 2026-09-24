@@ -1,0 +1,7 @@
+# And for a cable, which comes up with the same request.
+[Match]
+Type=ether
+Kind=!*
+
+[Network]
+DHCP=yes

@@ -96,6 +96,11 @@ msgstr "Verschlüsselungspasswort"
 msgid "The password that unlocks that disk. It is asked for right before the recovery starts and is never written to a file."
 msgstr "Das Passwort, das diesen Datenträger entsperrt. Es wird unmittelbar vor dem Start der Wiederherstellung abgefragt und nie in eine Datei geschrieben."
 
+#. ARCH_OS_RECOVERY_PASSWORD: what a wrong answer is told
+#: module.yaml
+msgid "That password does not unlock this disk."
+msgstr "Dieses Passwort entsperrt diesen Datenträger nicht."
+
 #. ARCH_OS_RECOVERY_SNAPSHOT: the question
 #: module.yaml
 msgid "Snapshot"
@@ -105,6 +110,16 @@ msgstr "Schnappschuss"
 #: module.yaml
 msgid "The snapshot to put in place of the root subvolume. Newest first, with the date it was taken and what created it."
 msgstr "Der Schnappschuss, der an die Stelle des Wurzel-Subvolumes tritt. Der neueste zuerst, mit dem Zeitpunkt der Aufnahme und dem Anlass."
+
+#. the header's status, while its check says yes
+#: ../../oak.yaml
+msgid "Online"
+msgstr "Online"
+
+#. the header's status, while its check says no
+#: ../../oak.yaml
+msgid "Offline"
+msgstr "Offline"
 
 #. the step, as the run lists it
 #: tasks/@open/open/task.yaml

@@ -60,7 +60,7 @@ MODULE_PARTS := module.sh data locales tasks hooks
 # rather than followed, so a build of a given commit is the same build tomorrow.
 # Written without the `v` its tag carries.
 OAK_REPO    := murkl/oak
-OAK_VERSION ?= 0.9.0
+OAK_VERSION ?= 0.10.0
 OAK_ASSET   := oak-linux-amd64
 OAK_DIR     := .oak
 

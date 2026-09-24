@@ -143,6 +143,16 @@ load_console_keyboard() {
     loadkeys "$ARCH_OS_RECOVERY_KEYMAP"
 }
 
+# The password, tried on the disk before it is taken. --test-passphrase opens
+# nothing, it only asks the keyslots, and it takes the password on stdin the way
+# the step that opens the disk does - never on a command line, which /proc would
+# show. A simulated run is on somebody's own machine, whose disks are not ours
+# to try.
+unlocks_disk() {
+    debugging && return 0
+    printf '%s' "$ARCH_OS_RECOVERY_PASSWORD" | cryptsetup open --test-passphrase "$ROOT_PART"
+}
+
 # A LUKS header is readable without the password, so nobody is asked this.
 disk_is_encrypted() {
     [ "$(fstype "$ROOT_PART")" = "crypto_LUKS" ] && echo true || echo false

@@ -41,9 +41,8 @@ OVMF_VARS="${OVMF_VARS:-/usr/share/edk2/x64/OVMF_VARS.4m.fd}"
 # The first page, as the console spells it: the welcome, which Oak draws before
 # anything of its own modules is. Several strings rather than one, because OCR
 # over a console font loses a letter now and again - and it loses them in the
-# same places every time, so what is looked for is the part it reads cleanly.
-# Neither "Arch OS" nor "Welcome" is on the list: in LatGrkCyr-8x16 tesseract
-# reads the capital O beside the S as a zero and the capital W as a small one.
+# same places every time, so what is looked for is the part it reads cleanly:
+# the languages. The wordmark over them is drawn in blocks rather than letters.
 EXPECT='English|Deutsch'
 
 # A machine that got this far and no further says so in plain words, and there is

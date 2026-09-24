@@ -5,14 +5,7 @@
 #
 # Everything before the copy is a reason not to make it, and every one of those
 # checks reads the machine as an ordinary user - nothing is escalated before
-# there is a reason to.
-
-# This module runs as whoever started it, on somebody's own machine, where a
-# root process leaves two gigabytes in their home that only root can delete
-# again. So the escalation lives in the one task that cannot do without it.
-as_root() {
-    if [ "$(id -u)" -eq 0 ]; then "$@"; else sudo "$@"; fi
-}
+# there is a reason to. What is, goes through as_root - see module.sh.
 
 device="$ARCH_OS_IMAGE_DEVICE"
 target="$(image)"

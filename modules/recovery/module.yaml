@@ -79,9 +79,10 @@ variables:
     type: bool
     answer: disk_is_encrypted
 
-  # Asked once rather than twice: this password already exists, and cryptsetup
-  # refuses a wrong one a second later and says which disk it was. The repeat
-  # is for a password being chosen, which nothing can check.
+  # Asked once rather than twice: this password already exists, and it is tried
+  # on the disk right where it is typed, so a wrong one is refused on that page
+  # rather than by the first step of the run. The repeat is for a password
+  # being chosen, which nothing can check.
   - name: ARCH_OS_RECOVERY_PASSWORD
     title: Encryption password
     description: |
@@ -91,6 +92,8 @@ variables:
     type: secret
     existing: true
     required: true
+    check: unlocks_disk
+    error: That password does not unlock this disk.
     conditions: ARCH_OS_RECOVERY_ENCRYPTED == true
 
   # Asked by the rollback task, which is also where the shell that lists them

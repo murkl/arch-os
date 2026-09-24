@@ -446,6 +446,12 @@ as_user() {
     arch-chroot "$MNT" /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "$1"
 }
 
+# The command the chosen editor is started with, which is also the name of the
+# folder it keeps its configuration in: the package is neovim, the command nvim.
+editor_command() {
+    if [ "$ARCH_OS_EDITOR" = "neovim" ]; then echo nvim; else echo "$ARCH_OS_EDITOR"; fi
+}
+
 # The new home given back to the account it belongs to. Everything written from
 # out here belongs to root until this has run, and a home the user cannot write
 # to is a desktop that comes up broken.
@@ -545,12 +551,6 @@ close_target() {
 # A page of awk inside a yaml scalar is read by nobody and checked by nothing,
 # so every list a question offers, every value one opens on and every check a
 # declaration makes is a function here.
-
-# Real HTTPS to a host the installation needs anyway, not a ping - a captive
-# portal answers pings too.
-is_online() {
-    fetch_url -s --connect-timeout 5 --max-time 15 https://archlinux.org >/dev/null
-}
 
 # Whether this machine is itself a virtual one: the guest tools go in without a
 # question there, and running virtual machines of its own is asked only where

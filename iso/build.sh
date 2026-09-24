@@ -235,9 +235,10 @@ echo "### Build the Recovery"
 cp -r /usr/share/archiso/configs/baseline/. "$RECOVERY_PROFILE"
 
 # baseline is made to be a guest in somebody's cloud, and switches on ssh, a
-# network and the agents of four hypervisors. The Recovery never goes near a
-# network - it may be what broke - so everything baseline starts goes, and it
-# starts nothing but itself.
+# network and the agents of four hypervisors. The Recovery goes near a network
+# only when somebody asks it to - the network may be what broke - so everything
+# baseline starts goes, and it starts nothing but itself. What it brings up on
+# request is in recovery/.
 rm -rf "${RECOVERY_PROFILE}/airootfs/etc/systemd/system" \
     "${RECOVERY_PROFILE}/airootfs/etc/systemd/network" \
     "${RECOVERY_PROFILE}/airootfs/etc/systemd/networkd.conf.d" \

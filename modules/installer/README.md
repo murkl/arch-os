@@ -44,12 +44,12 @@ One folder per stage under `tasks/`, marked with `@`; `module.yaml` orders them,
 
 ## Hooks
 
-Oak's own moments, not this module's work: one folder per hook, one per step, `hook.yaml` and `hook.sh`.
+Oak's own moments, not this module's work: one folder per hook, one per step, `hook.yaml` and, where the yaml does not name a function, `hook.sh`.
 
 | Hook | Description |
 | --- | --- |
 | `@preflight` | root, then UEFI with Secure Boot off, then a network |
-| `@online`, `@wlan-device`, `@wlan-networks`, `@wlan-connect` | Finding and joining a wireless network |
+| `@online`, `@wlan-device`, `@wlan-networks`, `@wlan-connect` | Finding and joining a wireless network, on the way in wherever there is no internet. The shell is **[oak.sh](../../oak.sh)**'s, which the Recovery joins one with too |
 | `@restart`, `@shutdown` | The two ways this machine is put down, each closing the target first |
 
 **Note:** _The third way out is `console:` in `module.yaml`: the Installer closes, the machine keeps running. See **[iso/](../../iso)**._

@@ -1,0 +1,8 @@
+# An address for the wireless card once iwd has joined a network, the way the
+# Arch ISO gets one. Read only once systemd-networkd runs, which is when
+# somebody asks the Recovery for a network - see network_up in oak.sh.
+[Match]
+Type=wlan
+
+[Network]
+DHCP=yes
