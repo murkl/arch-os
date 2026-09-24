@@ -3,6 +3,8 @@
 # driver's manifest, and for NVIDIA the module in the image the firmware starts.
 
 [ -n "$(arch-chroot "$MNT" pacman -Qq mesa)" ]
+has_command glxinfo
+has_command vulkaninfo
 
 while IFS=$'\t' read -r vendor device; do
     case "$vendor" in

@@ -66,7 +66,7 @@ The page carries `arch-os-2.1.0-x86_64.iso` and `.tar.gz`, both under signed bui
 
 **Note:** _The page is written before the files are on it: the image is half an hour, and the tag is what the run builds from. A run that fails there leaves a release to be re-run rather than a version to be taken back - `Publish` on its own, once the reason is gone._
 
-**Note:** _No run starts on the release pull request: GitHub starts none for what its own token opened. It needs none - the merge of it is checked on `main` before the tag exists, which is also why `main` must not require a check that never starts there. For that pull request to be opened at all, **Settings → Actions → General → Allow GitHub Actions to create and approve pull requests** has to be on._
+**Note:** _No run starts on the release pull request: it touches only `CHANGELOG.md`, the release manifest and the version line in `oak.yaml`, and both workflows leave a pull request of nothing else out with `paths-ignore`. GitHub itself starts runs for what its own token opened since June 2026, and holds each for an approval - one nobody gives fails the moment the pull request is merged. A pull request that changes nothing but `oak.yaml` is left out the same way and checked on `main`. It needs none - the merge of it is checked on `main` before the tag exists, which is also why `main` must not require a check that never starts there. For that pull request to be opened at all, **Settings → Actions → General → Allow GitHub Actions to create and approve pull requests** has to be on._
 
 ## What a Run does
 

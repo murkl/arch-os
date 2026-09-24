@@ -47,14 +47,16 @@ Everything else about the disk is read, not asked:
 
 | Read | How | When |
 | --- | --- | --- |
-| Root partition | The disk's second partition, when it is a LUKS container or a file system labelled `ROOT` or `BTRFS` | Before the run |
+| Root partition | The disk's second partition, when it is a LUKS container or a btrfs labelled `BTRFS` | Before the run |
 | Encryption | LUKS header, no password needed | Before the run, as an `answer:` |
-| File system | `lsblk` on the unlocked device | Once open |
-| Subvolumes | `btrfs subvolume list` | While mounting - an older layout opens as far as it goes |
+| File system | `lsblk` on the unlocked device - btrfs, or it is turned away | Once open |
+| Subvolumes | `btrfs subvolume list` on the top level - every one the Installer lays down, or it is turned away | Once open |
 | `/boot` | The installation's own `fstab` | While mounting |
 | Snapshots | `@snapshots` on the btrfs top level | Mid-run, once mounted |
 
 None to offer means the step is skipped, not asked about.
+
+**Note:** _Only what the Installer of the same release makes is opened. An installation from an earlier release is turned away with the reason - its own release's Recovery opens it._
 
 **Note:** _A derived answer is never asked, on the settings page or written to `recovery.conf` - the next run reads it again. See `answer:` in the **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**._
 

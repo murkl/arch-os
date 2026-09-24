@@ -184,9 +184,6 @@ write_vconsole() {
 # THE MACHINE
 # ////////////////////////////////////////////////////////////////////////////
 
-# The one kernel Arch OS installs.
-KERNEL=linux-zen
-
 # The processor's microcode package, or nothing for a processor neither vendor
 # ships one for.
 microcode() {

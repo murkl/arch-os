@@ -22,6 +22,17 @@ on:
   # the fast gate into the full one.
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+    # Not the release pull request, which touches nothing but these three - in
+    # oak.yaml the version line. It is opened with the workflow's own token, and
+    # since June 2026 GitHub holds every run such a pull request starts until
+    # somebody approves it - one nobody does fails the moment it is merged, and
+    # the release on main goes ahead regardless. What it changes is checked where
+    # it lands, on main, and so is any other pull request that changes nothing
+    # but oak.yaml. https://github.com/orgs/community/discussions/199292
+    paths-ignore:
+      - CHANGELOG.md
+      - .github/.release-please-manifest.json
+      - oak.yaml
   workflow_dispatch:
 
 permissions: {}

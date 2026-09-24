@@ -1,11 +1,13 @@
 # The driver for every graphics card in this machine, read off the machine rather
-# than asked: Mesa for all of them, and for each vendor its Vulkan driver and
-# video decoding. A laptop with two cards gets both drivers.
+# than asked: Mesa for all of them, for each vendor its Vulkan driver and video
+# decoding, and OpenCL for AMD and NVIDIA. A laptop with two cards gets both
+# drivers. Beside them what games reach for: vkd3d for Direct3D 12 under Wine,
+# and glxinfo and vulkaninfo to see which card a program ended up on.
 # https://wiki.archlinux.org/title/Xorg#Driver_installation
 # https://wiki.archlinux.org/title/Hardware_video_acceleration
 
-packages=(mesa)
-lib32=(lib32-mesa)
+packages=(mesa mesa-utils vulkan-tools vkd3d)
+lib32=(lib32-mesa lib32-mesa-utils lib32-vkd3d)
 nvidia=false
 other=false
 
@@ -19,8 +21,8 @@ while IFS=$'\t' read -r vendor device; do
     amd)
         # Video decoding for AMD is part of mesa.
         other=true
-        packages+=(vulkan-radeon)
-        lib32+=(lib32-vulkan-radeon)
+        packages+=(vulkan-radeon vulkan-mesa-layers opencl-mesa)
+        lib32+=(lib32-vulkan-radeon lib32-vulkan-mesa-layers lib32-opencl-mesa)
         ;;
     nvidia)
         # NVIDIA's open module drives Turing and every generation after it -
@@ -40,8 +42,8 @@ done < <(graphics_cards)
 if [ "$nvidia" = "true" ]; then
     # Built by DKMS against the headers: the prebuilt module exists for the stock
     # kernel alone.
-    packages+=(nvidia-open-dkms "${KERNEL}-headers" nvidia-utils libva-nvidia-driver)
-    lib32+=(lib32-nvidia-utils)
+    packages+=(nvidia-open-dkms "${KERNEL}-headers" nvidia-utils nvidia-settings opencl-nvidia libva-nvidia-driver)
+    lib32+=(lib32-nvidia-utils lib32-opencl-nvidia)
 
     # Beside another card, that one drives the screen and prime-run hands a
     # program to the NVIDIA card. https://wiki.archlinux.org/title/PRIME

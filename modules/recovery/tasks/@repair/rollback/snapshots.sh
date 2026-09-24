@@ -14,8 +14,6 @@ if debugging; then
     exit 0
 fi
 
-[ -d "${BTRFS_TOP}/@snapshots" ] || exit 0
-
 # One snapshot as it reads in a list. Unreadable info leaves the number standing
 # on its own: a snapshot that cannot describe itself is still one to go back to.
 label() {

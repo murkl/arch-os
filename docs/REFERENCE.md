@@ -32,7 +32,7 @@ Always in that order, and always btrfs. `/boot` is `fmask=0077,dmask=0077`: it h
 
 A snapshot of `@` skips a subvolume mounted inside it, so a rollback keeps all seven untouched. Every installation gets the same layout, whether it runs virtual machines or not.
 
-Mounted `defaults,noatime,compress=zstd`. Written once, in `oak.sh`, which both modules are given. The Recovery mounts whichever a disk actually has, so an older layout still opens.
+Mounted `defaults,noatime,compress=zstd`. Written once, in `oak.sh`, which both modules are given: the Installer lays every one of them down, and the Recovery opens only a disk that has every one of them.
 
 **Note:** _`/var/tmp` is `chmod 1777` right after it is made, before systemd-tmpfiles would get to it. `/var/lib/libvirt/images` is `chattr +C` while it is still empty, so every disk image made there inherits it: copy-on-write breaks a file rewritten in place into countless fragments. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Btrfs#Disabling_CoW)**_
 
@@ -125,13 +125,13 @@ Enough for a usable install, little enough that nothing needs looking after.
 
 **Firmware is skipped in a VM** - a guest's drivers are already in the kernel, and `linux-firmware` is over half the base install. Skipped unless a card is passed through.
 
-**The graphics driver is read off the machine**, card by card, from sysfs - nothing to choose. Mesa always, and per vendor its Vulkan driver and video decoding. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Hardware_video_acceleration)**
+**The graphics driver is read off the machine**, card by card, from sysfs - nothing to choose. Mesa always, and beside it what games reach for: `vkd3d` for Direct3D 12 under Wine, `mesa-utils` and `vulkan-tools` to see which card a program ended up on. Per vendor its Vulkan driver and video decoding. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Hardware_video_acceleration)**
 
 | Card | Packages |
 | --- | --- |
 | Intel | `vulkan-intel`, `intel-media-driver` |
-| AMD | `vulkan-radeon` - video decoding is part of Mesa |
-| NVIDIA from Turing on (device ID `0x1e00` and up) | `nvidia-open-dkms` with the kernel headers, `nvidia-utils`, `libva-nvidia-driver`; `nvidia-prime` beside another card |
+| AMD | `vulkan-radeon`, `vulkan-mesa-layers`, `opencl-mesa` - video decoding is part of Mesa |
+| NVIDIA from Turing on (device ID `0x1e00` and up) | `nvidia-open-dkms` with the kernel headers, `nvidia-utils`, `nvidia-settings`, `opencl-nvidia`, `libva-nvidia-driver`; `nvidia-prime` beside another card |
 | NVIDIA before Turing | `vulkan-nouveau` - Arch ships no NVIDIA driver for those |
 | A virtual machine's own adapter | Mesa alone |
 
@@ -242,17 +242,17 @@ Two questions - keyboard, disk. Everything else is read, not asked:
 
 | Read | How | When |
 | --- | --- | --- |
-| Root partition | Partition 2, when it is a LUKS container or a file system labelled `BTRFS` - what the Installer makes of it - or `ROOT`, the ext4 an earlier Installer offered | Before the run |
+| Root partition | Partition 2, when it is a LUKS container or a btrfs labelled `BTRFS` - what the Installer makes of it | Before the run |
 | Encryption | The LUKS header, no password needed | Before the run |
-| File system | `lsblk` on the unlocked device | Once open |
-| Subvolumes | `btrfs subvolume list` | While mounting |
+| File system | `lsblk` on the unlocked device - btrfs, or it is turned away | Once open |
+| Subvolumes | `btrfs subvolume list` on the top level - every one of the layout, or it is turned away | Once open |
 | `/boot` | The installation's own `fstab` | While mounting |
 | Kernels | `/usr/lib/modules/*/` | While rebuilding boot |
 | Snapshots | `@snapshots` on the btrfs top level | Mid-run; none means the rollback step is skipped |
 
 No network, ever - it may be what broke. Kernel images come from the package cache.
 
-It repairs what earlier versions of the Installer made as well: another kernel, ext4, GRUB. What it finds on the disk is what it works with.
+It repairs what the Installer of the same release makes, and nothing older: `linux-zen`, btrfs with the whole subvolume layout, systemd-boot. A disk installed by an earlier release - one short of a subvolume, on ext4 - is turned away with the reason, and opened by the Recovery of the release it was installed with. Every release stays on **[the release page](https://github.com/murkl/arch-os/releases)**.
 
 The password of an encrypted disk is typed once rather than twice: it already exists, and `cryptsetup` refuses a wrong one a second later and names the partition. A second box is for a password being chosen, which nothing can check until the system it belongs to boots.
 

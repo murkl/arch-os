@@ -7,8 +7,8 @@
 MNT=/mnt
 CRYPT=recovery
 
-# A btrfs installation is two views of one disk: the system as it runs, mounted
-# at MNT, and the top level holding @ and the snapshots, where a rollback
+# An installation is two views of one disk: the system as it runs, mounted at
+# MNT, and the btrfs top level holding @ and the snapshots, where a rollback
 # happens. Kept out of MNT on purpose - it must not end up inside a chroot, and
 # it must survive MNT being unmounted.
 BTRFS_TOP=/run/arch-os-recovery
@@ -19,10 +19,9 @@ BTRFS_TOP=/run/arch-os-recovery
 
 # The partition the installation is on: the second, where the Installer puts
 # it. Taken for it only while it holds what the Installer makes of it - a LUKS
-# container, or a file system labelled BTRFS, or ROOT for the ext4 an earlier
-# Installer offered - so a disk that is something else is turned away before
-# anything on it is opened. /boot is read
-# out of the installation's own fstab once it is open - see mount_target.
+# container, or a btrfs labelled BTRFS - so a disk that is something else is
+# turned away before anything on it is opened. /boot is read out of the
+# installation's own fstab once it is open - see mount_target.
 #
 # Raw output with a single space between columns, so a column left empty stays
 # a column.
@@ -30,7 +29,7 @@ root_partition() {
     local part
     part="$(part_of "$ARCH_OS_RECOVERY_DISK" 2)"
     lsblk -dnro FSTYPE,LABEL "$part" 2>/dev/null | awk -F'[ ]' -v part="$part" '
-        $1 == "crypto_LUKS" || ($1 == "ext4" && $2 == "ROOT") || ($1 == "btrfs" && $2 == "BTRFS") { print part }'
+        $1 == "crypto_LUKS" || ($1 == "btrfs" && $2 == "BTRFS") { print part }'
 }
 ROOT_PART="$(root_partition)"
 
@@ -56,28 +55,20 @@ root_device() {
 # system on the locked partition instead of on the mapper.
 fstype() { lsblk -dno FSTYPE "$1" 2>/dev/null || true; }
 
-# Whether the system being repaired can be rolled back, which is the one thing
-# here the file system decides. Read off the disk rather than answered: behind
-# LUKS nothing can be seen until it is open, and every caller runs after that.
-on_btrfs() { [ "$(fstype "$(root_device)")" = "btrfs" ]; }
+# Every subvolume of the layout the top level lacks, one per line, and nothing
+# where it has them all - the answer to whether this is an installation this
+# release of the Recovery knows how to open.
+missing_subvolumes() {
+    local present subvolume
+    present="$(btrfs subvolume list "$BTRFS_TOP" | awk '{ print $NF }')"
+    while read -r subvolume _; do
+        grep -qxF "$subvolume" <<<"$present" || echo "$subvolume"
+    done < <(btrfs_subvolumes)
+}
 
 # ////////////////////////////////////////////////////////////////////////////
 # THE KERNELS ON THE DISK
 # ////////////////////////////////////////////////////////////////////////////
-
-# Which package a module directory belongs to: 6.12.4-arch1-1 is the stock
-# kernel, anything carrying zen, lts or hardened is that one. The Installer puts
-# linux-zen on every disk now; an earlier one offered all four. Here because the
-# repair puts the image back under this name and its test reads it back by the
-# same one.
-kernel_package() {
-    case "$1" in
-    *zen*) echo linux-zen ;;
-    *lts*) echo linux-lts ;;
-    *hardened*) echo linux-hardened ;;
-    *) echo linux ;;
-    esac
-}
 
 # Every kernel whose modules are in the system being repaired. A folder with no
 # modules under it is what an interrupted removal leaves, not a kernel.
@@ -96,29 +87,12 @@ installed_kernels() {
 # The installed system, mounted exactly as it mounts itself. Shared because a
 # rollback takes it apart to replace @ and has to put it back as open left it.
 mount_target() {
-    local target present subvolume path
-    target="$(root_device)"
+    local subvolume path
 
-    if on_btrfs; then
-        # @ first: it is the root the rest are directories in, and the one
-        # subvolume every installation has, so a missing one is a failure here.
-        mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=@" "$target" "$MNT"
-
-        # What this particular disk holds, named from the top level whichever
-        # subvolume is mounted. The table is matched against it, so an older
-        # layout is opened as far as it goes instead of refused.
-        present="$(btrfs subvolume list "$MNT" | awk '{ print $NF }')"
-        while IFS=$'\t' read -r subvolume path; do
-            [ "$subvolume" = "@" ] && continue
-            if ! printf '%s\n' "$present" | grep -qxF "$subvolume"; then
-                echo "no ${subvolume} on this installation, leaving ${path} inside @"
-                continue
-            fi
-            mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=${subvolume}" "$target" "${MNT}${path}"
-        done < <(btrfs_subvolumes)
-    else
-        mount --mkdir "$target" "$MNT"
-    fi
+    # @ first, since every other mount point is a directory inside it.
+    while IFS=$'\t' read -r subvolume path; do
+        mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=${subvolume}" "$(root_device)" "${MNT}${path%/}"
+    done < <(btrfs_subvolumes)
 
     # As the system mounts it itself, with the options its own table gives it.
     mount --fstab "${MNT}/etc/fstab" --target-prefix "$MNT" --mkdir /boot

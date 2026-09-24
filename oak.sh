@@ -73,6 +73,14 @@ list_disks() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
+# THE KERNEL
+# ////////////////////////////////////////////////////////////////////////////
+
+# The one kernel Arch OS installs, and so the one the Recovery puts back.
+# shellcheck disable=SC2034
+KERNEL=linux-zen
+
+# ////////////////////////////////////////////////////////////////////////////
 # THE SIGNED BOOT CHAIN
 # ////////////////////////////////////////////////////////////////////////////
 
@@ -108,9 +116,8 @@ part_of() {
 }
 
 # How Arch OS mounts btrfs, and what it lays down: subvolume, a tab, then where
-# it belongs. The Installer creates every one of them; the Recovery mounts
-# whichever of them an installation actually has, since an older one may have
-# fewer. Why the four under /var are separate: docs/REFERENCE.md
+# it belongs. The Installer creates every one of them and the Recovery mounts
+# every one of them. Why the four under /var are separate: docs/REFERENCE.md
 #
 # Read by the modules' scripts, which shellcheck reads one at a time, so the
 # option string looks unused here.

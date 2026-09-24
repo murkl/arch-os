@@ -57,16 +57,6 @@ podman)
     mkdir -p "${MNT}/etc/containers/containers.conf.d"
     render "$(where)/10-compose-warning-logs.conf" \
         >"${MNT}/etc/containers/containers.conf.d/10-compose-warning-logs.conf"
-
-    # The range of user ids a rootless container maps its own root onto, and
-    # without one podman starts no container at all. useradd has written one
-    # since shadow 4.11.1-3, so this is for an account that arrived some other
-    # way - and only where there is none yet, so a second range is never
-    # appended to a user who already has theirs.
-    if ! grep -qs "^${ARCH_OS_USERNAME}:" "${MNT}/etc/subuid"; then
-        arch-chroot "$MNT" usermod \
-            --add-subuids 100000-165535 --add-subgids 100000-165535 "$ARCH_OS_USERNAME"
-    fi
     ;;
 
 esac

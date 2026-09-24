@@ -2,8 +2,8 @@ title: Go back to a snapshot
 
 # The snapshots are on the disk this run has only just unlocked, so the question
 # is asked here, in the middle of the run, and the offer names what was chosen.
-# A system with none - ext4, or btrfs without snapshots - leaves that list
-# empty, and the step is skipped rather than asked about.
+# A system with none yet leaves that list empty, and the step is skipped rather
+# than asked about.
 asks: ARCH_OS_RECOVERY_SNAPSHOT
 confirm: |
   Put {{ARCH_OS_RECOVERY_SNAPSHOT}} in place of the root subvolume on {{ARCH_OS_RECOVERY_DISK}}?
