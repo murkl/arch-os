@@ -19,7 +19,7 @@ mkdir -p "$dir" || {
 # checksum goes beside the image whether or not the image is fetched now, and an
 # old one is taken away first: what the image is held to is what the release
 # publishes at this moment, not what it published when an earlier run fetched it.
-read -r url digest <<<"$(image_asset)"
+read -r url digest <<<"$(release_asset .iso)"
 rm -f "$(checksum)"
 if [ -n "$digest" ]; then
     printf '%s  %s\n' "$digest" "$(basename "$(image)")" >"$(checksum)"

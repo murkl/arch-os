@@ -154,12 +154,14 @@ auto_country() {
 # THE ANSWERS, RESOLVED
 # ////////////////////////////////////////////////////////////////////////////
 
-# The two partitions the disk is laid out into, named once here so every task
-# means the same devices. Only the tasks use the first, and shellcheck reads
-# this file without them.
+# The partitions the disk is laid out into, named once here so every task means
+# the same devices. The third is there only with the Recovery. Only the tasks
+# use the first and the third, and shellcheck reads this file without them.
 # shellcheck disable=SC2034
 BOOT_PART="$(part_of "$ARCH_OS_DISK" 1)"
 ROOT_PART="$(part_of "$ARCH_OS_DISK" 2)"
+# shellcheck disable=SC2034
+RECOVERY_PART="$(part_of "$ARCH_OS_DISK" 3)"
 
 is_auto "$ARCH_OS_VCONSOLE_KEYMAP" && ARCH_OS_VCONSOLE_KEYMAP="$(auto_keymap)"
 is_auto "$ARCH_OS_VCONSOLE_FONT" && ARCH_OS_VCONSOLE_FONT="$(auto_font)"
@@ -291,6 +293,25 @@ kernel_args() {
     [ -n "$ARCH_OS_KERNEL_ARGS" ] && args+=("$ARCH_OS_KERNEL_ARGS")
     printf '%s' "${args[*]}"
 }
+
+# ////////////////////////////////////////////////////////////////////////////
+# THE RECOVERY PARTITION
+# ////////////////////////////////////////////////////////////////////////////
+
+# Where the Recovery image is: the partition as it is written, and the image the
+# boot loader starts it with. The Arch OS ISO carries it ready-made - iso/build.sh
+# puts it there. Any other live image fetches it from the release first, into
+# /tmp: its own writable layer holds a few hundred MiB at most, and this is
+# more. Read off what the live image was booted with, so every script of the
+# run agrees on it before the fetch and after. How it boots: docs/REFERENCE.md
+RECOVERY_IMAGE=/opt/arch-os-recovery
+[ -d "$RECOVERY_IMAGE" ] || RECOVERY_IMAGE=/tmp/arch-os-recovery
+
+# Where that image lands on the EFI partition: under EFI/Linux, where
+# systemd-boot lists every image by itself, so no entry has to point at it.
+# Named once because the Recovery task puts it there and Secure Boot signs it.
+# shellcheck disable=SC2034
+RECOVERY_EFI=/boot/EFI/Linux/arch-os-recovery.efi
 
 # ////////////////////////////////////////////////////////////////////////////
 # INSTALLING INTO THE NEW SYSTEM

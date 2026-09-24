@@ -40,7 +40,19 @@ wipefs -af "$ARCH_OS_DISK"
 sgdisk --zap-all "$ARCH_OS_DISK"
 sgdisk -o "$ARCH_OS_DISK"
 sgdisk -n 1:0:+1G -t 1:ef00 -c 1:boot --align-end "$ARCH_OS_DISK"
-sgdisk -n 2:0:0 -t 2:8300 -c 2:root --align-end "$ARCH_OS_DISK"
+
+# The Recovery at the very end, as large as its image. The root stops that far
+# short of the end and two MiB further: the last sectors of a disk hold the
+# backup of the partition table, and the root's end is aligned down to a MiB -
+# measured on 512-byte and 4K sectors, the Recovery keeps between one and two
+# MiB to spare.
+if [ "$ARCH_OS_RECOVERY_ENABLED" = "true" ]; then
+    recovery_mib=$((($(stat -c %s "${RECOVERY_IMAGE}/recovery.img") + 1048575) / 1048576 + 2))
+    sgdisk -n "2:0:-${recovery_mib}M" -t 2:8300 -c 2:root --align-end "$ARCH_OS_DISK"
+    sgdisk -n 3:0:0 -t 3:8300 -c 3:recovery "$ARCH_OS_DISK"
+else
+    sgdisk -n 2:0:0 -t 2:8300 -c 2:root --align-end "$ARCH_OS_DISK"
+fi
 partprobe "$ARCH_OS_DISK"
 
 # partprobe tells the kernel to re-read the table; the device nodes under it are

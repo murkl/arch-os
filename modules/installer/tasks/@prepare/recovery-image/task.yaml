@@ -1,0 +1,6 @@
+title: Get the Recovery
+conditions: ARCH_OS_RECOVERY_ENABLED == true
+
+# A few hundred megabytes where the live image does not carry them, and curl's
+# bar is the one line worth watching while they arrive.
+progress: true

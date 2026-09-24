@@ -10,7 +10,7 @@ arch-chroot "$MNT" systemctl --global is-enabled pipewire.socket pipewire-pulse.
 # and the daemon looks like it is working the whole time.
 grep -q 'mdns_minimal' "${MNT}/etc/nsswitch.conf"
 
-# And the firewall lets avahi's answers in, which arrive as multicast nothing
-# matches to the question that went out.
+# And the firewall lets avahi's answers in on every network, which arrive as
+# multicast nothing matches to the question that went out.
 [ "$ARCH_OS_FIREWALL_ENABLED" != "true" ] ||
-    arch-chroot "$MNT" firewall-offline-cmd --query-service=mdns >/dev/null
+    arch-chroot "$MNT" firewall-offline-cmd --zone=public --query-service=mdns >/dev/null

@@ -6,21 +6,29 @@
 # boot entry, the initramfs and its plymouth hook, the systemd unit on tty1, the
 # Oak binary, and the modules it loads.
 #
-# Takes the image as its one argument; `make smoke` hands it the newest build.
-# Needs qemu, OVMF and tesseract - see README.md.
+# Takes the image as its one argument: the ISO, or the Recovery's folder, whose
+# boot image is started the way the firmware starts it off the EFI partition,
+# with its partition as the machine's only disk - which it has to find by
+# itself, check and copy to memory before anything is drawn. `make smoke` hands
+# it the newest build of each. Needs qemu, OVMF and tesseract - see README.md.
 set -eu
 
-ISO="${1:-}"
-[ -f "$ISO" ] || {
-    echo "usage: $0 <image.iso>" >&2
+IMAGE="${1:-}"
+if [ -f "$IMAGE" ]; then
+    BOOT=(-drive "media=cdrom,readonly=on,file=${IMAGE}" -boot order=d)
+elif [ -f "${IMAGE}/recovery.efi" ]; then
+    BOOT=(-kernel "${IMAGE}/recovery.efi" -drive "if=virtio,format=raw,readonly=on,file=${IMAGE}/recovery.img")
+else
+    echo "usage: $0 <image.iso | recovery-dir>" >&2
     exit 1
-}
+fi
 
 # Where the console is photographed: beside the image it came out of, which is
-# dist/ and is taken back by `make clean` like everything else a build leaves. A
-# failure keeps every frame, since a picture of the screen is all there is to go
-# on afterwards; a run that worked keeps the one it was recognised in.
-FRAME_DIR="${FRAME_DIR:-$(dirname "$ISO")/smoke}"
+# dist/ and is taken back by `make clean` like everything else a build leaves,
+# in a folder named after it. A failure keeps every frame, since a picture of
+# the screen is all there is to go on afterwards; a run that worked keeps the
+# one it was recognised in.
+FRAME_DIR="${FRAME_DIR:-$(dirname "$IMAGE")/smoke/$(basename "$IMAGE" .iso)}"
 
 # The slow case is a cold boot under emulation with no KVM, which five minutes
 # covers with room to spare.
@@ -74,7 +82,7 @@ while [ "$port" -eq 0 ]; do
     (exec 3<>"/dev/tcp/127.0.0.1/${candidate}") 2>/dev/null || port=$candidate
 done
 
-echo "### Boot $(basename "$ISO")"
+echo "### Boot $(basename "$IMAGE")"
 qemu-system-x86_64 \
     -machine q35,accel=kvm:tcg \
     -cpu max \
@@ -82,8 +90,7 @@ qemu-system-x86_64 \
     -m 4096 \
     -drive "if=pflash,format=raw,unit=0,readonly=on,file=${OVMF_CODE}" \
     -drive "if=pflash,format=raw,unit=1,file=${VARS}" \
-    -drive "media=cdrom,readonly=on,file=${ISO}" \
-    -boot order=d \
+    "${BOOT[@]}" \
     -nic user,model=virtio-net-pci \
     -display none \
     -monitor "tcp:127.0.0.1:${port},server,nowait" &

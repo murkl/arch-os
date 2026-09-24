@@ -1,14 +1,15 @@
-# firewalld rather than ufw: NetworkManager hands it a zone per connection, and
-# libvirt, docker and podman each open their own ports in it. Its default zone
-# lets in ssh and DHCPv6 and nothing else; the task that adds a service which
-# listens on the network opens that service's port itself.
+# firewalld rather than ufw: NetworkManager hands it the zone of every
+# connection, and libvirt, docker and podman each open their own ports in it.
+# Two zones carry the whole policy, and the task that makes something listen
+# opens its port in the zone it belongs in. Which zone lets in what and why:
+# docs/REFERENCE.md
 # https://wiki.archlinux.org/title/Firewalld
 
-packages=(firewalld)
-
-# The window the rules are kept in, packaged apart from the daemon because it
-# needs GTK.
-[ "$ARCH_OS_DESKTOP" != "none" ] && packages+=(firewall-config)
-
-chroot_pacman_install "${packages[@]}"
+chroot_pacman_install firewalld
 arch-chroot "$MNT" systemctl enable firewalld.service
+
+# public is the default zone, where every network lands that nobody has marked
+# as home - a café's wifi as much as the one at home. firewalld lets ssh in
+# there whether anything answers or not; the SSH server opens it again itself.
+# --remove-service is the lokkit spelling, which refuses a zone.
+arch-chroot "$MNT" firewall-offline-cmd --zone=public --remove-service-from-zone=ssh

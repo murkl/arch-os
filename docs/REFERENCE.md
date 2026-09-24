@@ -6,14 +6,15 @@ What Arch OS puts on a disk, and why. The scripts say *what*; this says *why*, s
 
 ## Partitions
 
-UEFI only, GPT, the whole disk in two partitions: Arch OS is the only system on it.
+UEFI only, GPT, the whole disk for Arch OS: it is the only system on it.
 
 | Partition | Size | Type | Label | Mounted |
 | --- | --- | --- | --- | --- |
 | 1 | 1 GiB | EFI system (`ef00`) | `BOOT` | `/boot` |
 | 2 | the rest | Linux (`8300`) | `BTRFS` | `/` |
+| 3 | its image, about 270 MiB | Linux (`8300`) | - | never - see **[The Recovery Partition](#the-recovery-partition)** |
 
-Always in that order, and always btrfs. `/boot` is `fmask=0077,dmask=0077`: it holds the kernel and the signed image, root's business only.
+Always in that order, and always btrfs. The third is there with **Recovery**, at the end of the disk, so the root is the second on every installation. `/boot` is `fmask=0077,dmask=0077`: it holds the kernel and the signed image, root's business only.
 
 - **Encryption**: LUKS2 on partition 2, opened as `cryptroot`. One password for disk, root and account
 - **TRIM**: discards pass through the encryption, kept as a flag in the LUKS2 header (`--allow-discards --persistent`) rather than on the command line, so every opening passes them. dm-crypt drops them otherwise, and `fstrim.timer` trims nothing. What it gives away is which blocks are free, not what is in them. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Dm-crypt/Specialties#Discard/TRIM_support_for_solid_state_drives_(SSD))**
@@ -42,7 +43,9 @@ Mounted `defaults,noatime,compress=zstd`. Written once, in `oak.sh`, which both 
 
 ## The Boot Chain
 
-systemd-boot, `bootctl install`, one entry and one fallback. With **Secure Boot**, a **unified kernel image** per preset instead, signed with keys made for this machine.
+systemd-boot, `bootctl install`, one entry and one fallback, and the Recovery beside them. With **Secure Boot**, a **unified kernel image** per preset instead, signed with keys made for this machine.
+
+The menu stays hidden: holding space while the machine starts brings it up. The entries carry `sort-key arch`, the key the signed images take from `os-release`, so they come before the Recovery, which carries its own.
 
 `kernel_args` in `module.sh` is the one source of the command line - the unified image and systemd-boot read it whole.
 
@@ -66,7 +69,7 @@ Offered only with **disk encryption**:
 - No encryption, no point - the drive is readable either way
 - A unified image signs kernel, initramfs and command line **as one**. Kernel-only leaves a forgeable initramfs on the unencrypted partition
 
-Signed **last**: the NVIDIA driver and the boot splash rebuild the kernel image afterwards, bypassing pacman and `sbctl`'s hook. Every signed file is recorded, so the hook catches the next rebuild.
+Signed **last**: the NVIDIA driver and the boot splash rebuild the kernel image afterwards, bypassing pacman and `sbctl`'s hook. Every signed file is recorded, so the hook catches the next rebuild. The Recovery's image is signed with them, so it starts with Secure Boot on.
 
 The keys are made **first**, with the boot images - before anything takes a snapshot. `/var/lib/sbctl` lives in `@`, so a snapshot from before the keys comes back unable to sign what it rebuilds, and with Secure Boot on the next kernel update would not start. The Recovery carries the keys over a rollback for the same reason: they belong to the firmware they are enrolled in, not to a point in time.
 
@@ -145,18 +148,30 @@ The `lib32-` half of each comes with 32-bit support. NVIDIA's module is loaded e
 
 **Note:** _File sharing announces itself under the hostname as it stands - `mdns name = mdns` in `smb.conf`. Samba's default is the NetBIOS name, which is the hostname in capitals, so the machine would be the one entry in a file manager's network list that shouts._
 
-**Note:** _The public share is readable by any guest and writable only by the account the machine was installed with. A guest who may write is a folder anybody on the same network - a café's wifi included - can fill._
+**Note:** _The public share is readable by any guest and writable only by the account the machine was installed with. A guest who may write is a folder anybody on the same network can fill._
 
 ### The Firewall
 
-`firewalld` rather than `ufw`: NetworkManager hands it a zone per connection, and libvirt, docker and podman each open their own ports in it. On a desktop `firewall-config` comes with it, the window the rules are kept in. **[➜ firewalld](https://wiki.archlinux.org/title/Firewalld)**
+`firewalld` rather than `ufw`: NetworkManager hands it the zone of every connection, and libvirt, docker and podman each open their own ports in it. Nothing to look after: two zones carry the whole policy, and nothing is installed to change it - `firewall-config` or any other front end goes on top if wanted. **[➜ firewalld](https://wiki.archlinux.org/title/Firewalld)**
 
-The default zone `public` lets in `ssh` and `dhcpv6-client`. Everything else is opened by the task that makes something listen:
+| Zone | Where | Lets in |
+| --- | --- | --- |
+| `public` | Every network nobody has marked - the default zone | `dhcpv6-client`; `mdns` on a desktop; `ssh` with the SSH server |
+| `home` | A network marked as trusted | What firewalld ships it with (`ssh`, `mdns`, `samba-client`, `dhcpv6-client`); `samba` and `ws-discovery-host` with file sharing |
+
+No machine can tell a café's wifi from the one at home, so no network is trusted until somebody says so - once per network, and NetworkManager remembers it:
+
+```
+nmcli connection modify <name> connection.zone home
+```
+
+At home the router already stands between this machine and the internet, and what is left to keep out is the neighbours - which is why `home` may let in what a café's wifi must not reach. Everything is opened by the task that makes something listen, in the zone it belongs in:
 
 | Service | Opened by | Why |
 | --- | --- | --- |
-| `mdns` | the desktop | Avahi's answers arrive as multicast, which no connection tracking matches to the question. Printers and shares stay invisible without it |
-| `samba`, `ws-discovery-host` | file sharing | The share itself, and `wsdd`, without which Windows does not list the machine |
+| `mdns` | the desktop, in `public` | Avahi's answers arrive as multicast, which no connection tracking matches to the question. Printers and shares stay invisible without it. It gives away nothing avahi does not announce by itself |
+| `ssh` | the SSH server, in `public` | Logging in from another machine is what was asked for, wherever that machine is. firewalld's own `public` lets it in whether anything listens or not |
+| `samba`, `ws-discovery-host` | file sharing, in `home` | The share itself, and `wsdd`, without which Windows does not list the machine. A share on a café's wifi is a password anybody there can try |
 
 **Note:** _The SSH server changes nothing in `sshd_config`. Arch already refuses root a password login, and the account made here keeps one because it has no key yet._
 
@@ -257,6 +272,29 @@ It repairs what the Installer of the same release makes, and nothing older: `lin
 The password of an encrypted disk is typed once rather than twice: it already exists, and `cryptsetup` refuses a wrong one a second later and names the partition. A second box is for a password being chosen, which nothing can check until the system it belongs to boots.
 
 **Note:** _A rollback builds the new `@` before touching the old one - a run that dies halfway leaves the system as found._
+
+### The Recovery Partition
+
+The Recovery of the release that installed the system, on a partition of its own at the end of the disk and in the boot menu as **Arch OS Recovery**. It is the one that knows this layout, and it needs neither a USB stick nor a network to start. With **Recovery** off there is none - the ISO opens the system all the same.
+
+It is built with the release rather than on the machine, out of Arch's own minimal profile `baseline`: the kernel, `base`, `btrfs-progs`, `arch-install-scripts`, Plymouth and the Recovery module. No firmware, no network, no editor, and nothing it starts but the Recovery; manuals, translations, headers and the graphics drivers are left out as the packages go in. The ISO carries it ready-made. Any other live image fetches it from the release the Installer belongs to - `arch-os-X.Y.Z-recovery-x86_64.tar`, held to the checksum GitHub publishes for it - into `/tmp`, before the disk is touched. Either way the Installer only writes it:
+
+| File | Goes to | What it is |
+| --- | --- | --- |
+| `recovery.efi` | `/boot/EFI/Linux/arch-os-recovery.efi` | Kernel, ram disk and command line as one image. systemd-boot lists it by itself, under the name its `os-release` gives it |
+| `recovery.img` | partition 3, byte for byte | A read-only erofs holding the root file system and its signature. The running system never mounts it, and nothing can write to it |
+
+How it starts:
+
+1. The boot loader starts the image - with Secure Boot, signed with the machine's own keys like the system's own
+2. The ram disk finds the partition by the UUID its command line names, made for each build, so no other disk is taken for it
+3. It checks the root file system against a certificate it carries itself. The key that signed it was made for the build and thrown away with it, so nothing on the partition starts that the build did not make, and a damaged one stops at a prompt that says so. Valid from 1970 to 9999: a machine whose clock battery died is still one to repair
+4. It copies the root file system to memory, so nothing of the disk is held while the Recovery works on it, and starts it
+5. Plymouth on the screen the firmware set up - `nomodeset`, so no graphics driver and no firmware for one - and the Recovery on tty1
+
+**Note:** _It is never updated: it repairs what the Installer of the same release makes, which is what the disk holds. `systemctl reboot --boot-loader-entry=arch-os-recovery.efi` starts it once from the running system._
+
+**Note:** _Without disk encryption, whoever sits at the machine can open the system from it - as from any USB stick, or by taking the disk out. Encryption is what closes that: the Recovery asks for the password like everything else._
 
 ## The Boot Medium
 

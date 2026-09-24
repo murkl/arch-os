@@ -2,20 +2,13 @@
 # front of every one of them. Anything a single script needs stays in that
 # script; the functions a declaration calls by name are at the bottom.
 
-# Where the program was started, which is where Oak keeps the answers, the log
-# and the oak.yaml that says which version this is.
+# Where the program was started, which is where Oak keeps the answers and the
+# log. Which release this is, and where it is published, is oak.sh's.
 HERE="$(dirname "$MODULE_CONF")"
-
-# The release whose image is written: the version in oak.yaml rather than the
-# newest one, so the binary and the image are the pair that was tested together.
-VERSION="$(sed -n 's/^version:[[:space:]]*//p' "${HERE}/oak.yaml")"
 
 # ////////////////////////////////////////////////////////////////////////////
 # WHAT IS WRITTEN, AND FROM WHERE
 # ////////////////////////////////////////////////////////////////////////////
-
-# Where that release is published.
-REPO="murkl/arch-os"
 
 # The image in the download folder, named after the version rather than read out
 # of a release: a machine with the file already here needs no release to name it.
@@ -27,32 +20,6 @@ image() { printf '%s/arch-os-%s-x86_64.iso' "$(download_dir)" "$VERSION"; }
 # read once, so the question whether to go on unchecked and the check itself
 # cannot disagree about whether there was a checksum.
 checksum() { printf '%s.sha256' "$(image)"; }
-
-# That release, as GitHub describes it: where the image
-# is and what it has to hash to, as two words. The release carries no checksum
-# file - the checksum is a field of the asset, and it is the same one the
-# release page prints under the download.
-#
-# Nothing where the release cannot be reached. The step that asked says what
-# that means for it, because it is not the same answer twice.
-#
-# The asset is picked by what its name ends in rather than by the name itself,
-# so renaming a download stays a change to the build. Each one is weighed when
-# the next begins, so nothing here leans on the order GitHub writes an asset's
-# fields in.
-image_asset() {
-    local json
-    json="$(fetch_url -s --max-time 20 "https://api.github.com/repos/${REPO}/releases/tags/v${VERSION}" || true)"
-    printf '%s\n' "$json" | awk '
-        function weigh() {
-            if (!found && url ~ /\.iso$/) { found = 1; print url, digest }
-            url = ""; digest = ""
-        }
-        /"url": *"[^"]*\/releases\/assets\// { weigh() }
-        /"digest": *"sha256:/ { digest = $0; sub(/.*sha256:/, "", digest); sub(/".*/, "", digest) }
-        /"browser_download_url": *"/ { url = $0; sub(/.*: *"/, "", url); sub(/".*/, "", url) }
-        END { weigh() }'
-}
 
 # ////////////////////////////////////////////////////////////////////////////
 # THE YAML | Every function a declaration calls by name

@@ -16,6 +16,12 @@ arch-chroot "$MNT" sbctl sign -s -o "${stub}.signed" "$stub" || echo "signing sy
 arch-chroot "$MNT" sbctl sign -s "/boot/EFI/Linux/arch-${KERNEL}.efi" || echo "signing the kernel image failed"
 arch-chroot "$MNT" sbctl sign -s "/boot/EFI/Linux/arch-${KERNEL}-fallback.efi" || echo "signing the fallback image failed"
 
+# The Recovery starts from the same menu, so it is signed with the same keys -
+# and then starts with Secure Boot on, where the ISO needs it switched off.
+if [ -f "${MNT}${RECOVERY_EFI}" ]; then
+    arch-chroot "$MNT" sbctl sign -s "$RECOVERY_EFI" || echo "signing the Recovery failed"
+fi
+
 # Puts the now signed loader on the EFI partition, over the unsigned one the
 # systemd-boot task left there.
 arch-chroot "$MNT" bootctl --esp-path=/boot install || echo "reinstalling the signed systemd-boot failed"

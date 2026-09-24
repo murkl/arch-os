@@ -32,7 +32,9 @@ render "${data}/ipv4.conf" >"${MNT}/etc/systemd/system/wsdd.service.d/ipv4.conf"
 arch-chroot "$MNT" systemctl enable smb.service
 arch-chroot "$MNT" systemctl enable wsdd.service
 
-# The share, and the discovery that makes Windows list this machine.
+# The share, and the discovery that makes Windows list this machine - on
+# networks marked as home and nowhere else: a share on a café's wifi is a
+# password anybody there can try.
 if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
-    arch-chroot "$MNT" firewall-offline-cmd --add-service=samba --add-service=ws-discovery-host
+    arch-chroot "$MNT" firewall-offline-cmd --zone=home --add-service=samba --add-service=ws-discovery-host
 fi
