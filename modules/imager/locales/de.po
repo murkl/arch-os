@@ -81,6 +81,41 @@ msgstr "Der USB-Datenträger, auf den geschrieben wird. Alles darauf wird gelös
 msgid "Choose a device that exists."
 msgstr "Wähle einen vorhandenen Datenträger."
 
+#. ARCH_OS_IMAGE_SUDO: the question
+#: module.yaml
+msgid "Password for the write"
+msgstr "Passwort zum Schreiben"
+
+#. ARCH_OS_IMAGE_SUDO: what it means
+#: module.yaml
+msgid "Whether writing the device asks for your password."
+msgstr "Ob das Schreiben des Datenträgers nach deinem Passwort fragt."
+
+#. ARCH_OS_IMAGE_PASSWORD: the question
+#: module.yaml
+msgid "Your password"
+msgstr "Dein Passwort"
+
+#. ARCH_OS_IMAGE_PASSWORD: what it means
+#: module.yaml
+msgid "Writing the device needs root, and sudo asks for your password to allow it. It is asked for right before the run starts and is never written to a file."
+msgstr "Das Schreiben des Datenträgers braucht Root-Rechte, und sudo fragt dafür nach deinem Passwort. Es wird unmittelbar vor dem Start abgefragt und nie in eine Datei geschrieben."
+
+#. ARCH_OS_IMAGE_PASSWORD: what a wrong answer is told
+#: module.yaml
+msgid "That is not your password, or this account may not use sudo."
+msgstr "Das ist nicht dein Passwort, oder dieses Konto darf sudo nicht verwenden."
+
+#. the header's status, while its check says yes
+#: ../../oak.yaml
+msgid "Online"
+msgstr "Online"
+
+#. the header's status, while its check says no
+#: ../../oak.yaml
+msgid "Offline"
+msgstr "Offline"
+
 #. the step, as the run lists it
 #: tasks/@download/image/task.yaml
 msgid "Download the image"

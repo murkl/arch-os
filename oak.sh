@@ -19,6 +19,130 @@ fetch_url() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
+# THE NETWORK
+# ////////////////////////////////////////////////////////////////////////////
+
+# Real HTTPS to a host every module needs anyway, not a ping - a captive portal
+# answers pings too. Only the headers: it is asked every few seconds for the
+# line in the header, and the answer is whether it came, not what it said.
+is_online() {
+    fetch_url -sI --connect-timeout 5 --max-time 10 https://archlinux.org >/dev/null
+}
+
+# The line in the header - see status: in oak.yaml. A simulated run shows what a
+# connected machine shows rather than whatever the desk it is read on happens
+# to be, so the pictures of it come out the same on every run.
+header_online() { debugging || is_online; }
+
+# Everything a wireless network needs, started where it is not running yet: the
+# Recovery's own partition starts none of it on its own, since what it repairs
+# may be the network, and brings it up the moment somebody asks for one. The
+# Arch ISO runs all of it from boot, and anywhere else is not ours to start.
+# networkd answers DHCP on the card and on a cable, resolved answers names.
+network_up() {
+    on_live_image || return 0
+    systemctl is-active -q iwd && return 0
+    systemctl start systemd-networkd systemd-resolved iwd
+}
+
+# The first station is taken rather than asked for: a machine with two wireless
+# cards is rare enough that a prompt would cost everyone else a question. A
+# daemon started just now has not found the card yet, so it is given a few
+# seconds to.
+#
+# iwctl draws a table for a human: it is coloured, and it puts the reset
+# sequence at the start of the line that follows a coloured one - which is the
+# first device row. Read as it comes, the first column of that row is the escape
+# and not a name, and a machine with one card, which is every laptop, hands the
+# whole of the wireless flow a device called "\e[0m". So the colours come off
+# first, exactly as they do in the scan below.
+#
+# The match is remembered rather than exited on: a filter that closes the pipe
+# leaves iwctl with a write error, and under pipefail that is a failed hook
+# instead of an answer.
+wlan_station() {
+    local station=""
+    network_up
+    for _ in $(seq 10); do
+        station="$(iwctl device list |
+            sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r//' |
+            awk '!found && $NF == "station" { print $1; found = 1 }')"
+        [ -n "$station" ] && break
+        sleep 0.5
+    done
+    printf '%s' "$station"
+}
+
+# The networks in range, one SSID per line, strongest first.
+#
+# The scan is fired here rather than by Oak because iwctl returns as soon as it
+# has started one: the wait belongs beside the command that needs it. And it is
+# a wait for the card rather than a fixed pause - a list read while the radio is
+# still going round the channels is short rather than wrong, and a card that has
+# finished in half a second should not cost three.
+wlan_networks() {
+    local state
+    iwctl station "$WLAN_DEVICE" scan || true
+    for _ in $(seq 20); do
+        sleep 0.5
+        # Into a variable first: a grep that stops reading leaves iwctl with a
+        # write error, and under pipefail that is a failed hook instead of an
+        # answer.
+        state="$(iwctl station "$WLAN_DEVICE" show | sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r//')"
+        grep -qE '^[[:space:]]*Scanning[[:space:]]+no([[:space:]]|$)' <<<"$state" && break
+    done
+
+    # iwctl's table is coloured, drawn for a human, and an SSID may hold
+    # spaces, so the columns can't be split on whitespace. They're padded apart
+    # instead, which makes "two or more spaces" the only separator that doesn't
+    # corrupt a name like "Coffee Bar Free".
+    iwctl station "$WLAN_DEVICE" get-networks |
+        sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r//' |
+        awk '
+            # iwctl brackets its header with two rules; the networks come after.
+            /^[[:space:]]*-+[[:space:]]*$/ { rules++; next }
+            rules < 2 { next }
+            {
+                line = $0
+                # The connected network is marked with ">"; it is still a choice.
+                sub(/^[[:space:]]*>?[[:space:]]*/, "", line)
+                sub(/[[:space:]]+$/, "", line)
+                if (line == "") next
+                # Columns are padded apart: name, security, signal.
+                split(line, col, /[[:space:]][[:space:]]+/)
+                name = col[1]
+                if (name == "" || seen[name]++) next
+                print name
+            }
+        '
+}
+
+# The one place here a secret reaches a command line, and iwctl's only way in
+# without one: unasked, it puts the question to an agent on the terminal the
+# interface is drawing on. A live image with one account, for one second, for a
+# passphrase that is written down nowhere and is not the disk password.
+#
+# Where there is nothing to ask whether it carries traffic yet, the join waits
+# for that here: a card that has joined still needs its address, and the line in
+# the header is read again the moment this returns.
+wlan_join() {
+    if ! iwctl --passphrase "$WLAN_PASSPHRASE" station "$WLAN_DEVICE" connect "$WLAN_SSID"; then
+        # What iwctl says when it refuses is a row of its own table and goes to
+        # stdout, which here is the hook's answer rather than anything anybody
+        # reads. So the reason is said once, in a sentence, on the channel a
+        # failure is read from - and it names the passphrase, which is what it
+        # is nearly every time.
+        echo "${WLAN_SSID} did not accept that passphrase, or it is no longer in range." >&2
+        return 1
+    fi
+    for _ in $(seq 20); do
+        is_online && return 0
+        sleep 0.5
+    done
+    return 0
+}
+
+# ////////////////////////////////////////////////////////////////////////////
 # THE RELEASE
 # ////////////////////////////////////////////////////////////////////////////
 

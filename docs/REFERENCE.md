@@ -123,7 +123,7 @@ Enough for a usable install, little enough that nothing needs looking after.
 
 - `base`, `linux-zen`, `sudo`, `zram-generator`, `networkmanager`, `btrfs-progs`, `snapper`
 - The processor's microcode, `intel-ucode` or `amd-ucode`, read off `/proc/cpuinfo`
-- The chosen editor (`nano` unless another was picked), `man-db`, `man-pages`, `openssh` - `base` ships none of them
+- The chosen editor (`nano` unless another was picked), `man-db`, `man-pages`, `openssh` - `base` ships none of them. The editor gets a configuration of its own - see [The Text Editor](#the-text-editor)
 - Everything else follows an answer: the task that enables a service installs its package
 
 **Firmware is skipped in a VM** - a guest's drivers are already in the kernel, and `linux-firmware` is over half the base install. Skipped unless a card is passed through.
@@ -194,6 +194,20 @@ Everything built from the AUR is **optional** in the run: `paru`, the boot splas
 **Note:** _With Core tweaks, `/etc/makepkg.conf.d/arch-os.conf` switches the debug package off, and nothing else: an AUR build otherwise leaves a second package beside the one that was wanted. `-march=native` is deliberately **not** there - it buys a few percent and pays for it with binaries that stop running the day the disk is moved, the image is restored onto other hardware or the CPU is replaced, and the crash that follows reads like failing memory._
 
 **Note:** _Only `paru`, built from source against this machine's pacman. A `-bin` package is linked against the pacman of the day it was published and stops starting the day Arch moves `libalpm` - not offered here._
+
+### The Text Editor
+
+Whichever is chosen gets a small configuration in root's home and in the account's - never in `/etc`, which belongs to the package. What the editor ships with and nothing else: no plugins, no plugin manager, nothing to update but the package.
+
+| Editor | File | Theme | Beyond its own defaults |
+| --- | --- | --- | --- |
+| `nano` | `~/.config/nano/nanorc` | The terminal's own palette, Arch blue on the bar | Line numbers, the minibar and a scroll indicator, the mouse, auto-indent, tabs of 4, erasing what is marked, soft wrap at a word, the cursor where it was left. Highlighting from `nano-syntax-highlighting` |
+| `vim` | `~/.vim/vimrc` | `habamax`, Vim's own | `defaults.vim` kept, line numbers, a status line, 4 spaces for a tab, smart-case search lit where it matched |
+| `neovim` | `~/.config/nvim/init.lua` | Neovim's own default | Line numbers, 4 spaces for a tab, smart-case search, an undo that survives closing the file |
+| `micro` | `~/.config/micro/settings.json` | `atom-dark` | 4 spaces for a tab, changes marked in the gutter, the cursor and the undo kept, folders created on save |
+| `helix` | `~/.config/helix/config.toml` | `nord`, the palette the console and the prompt are drawn in | The current line and the mode shown in colour, a bar cursor while typing, open files as tabs, indent guides, soft wrap |
+
+**Note:** _`~/.vim/vimrc` rather than `~/.config/vim/vimrc`: Vim reads the second only where `XDG_CONFIG_HOME` is set, which a desktop leaves to the user._
 
 ## Snapshots
 
@@ -267,11 +281,13 @@ Two questions - keyboard, disk - and on its own partition not even those, see be
 | Kernels | `/usr/lib/modules/*/` | While rebuilding boot |
 | Snapshots | `@snapshots` on the btrfs top level | Mid-run; none means the rollback step is skipped |
 
-No network, ever - it may be what broke. Kernel images come from the package cache.
+Nothing it does needs a network - the network may be what broke, and kernel images come from the package cache. **Wireless network** on its menu joins one all the same, for whatever somebody wants to fetch in the shell. Nothing of the network starts before that, on its own partition or anywhere else.
 
 It repairs what the Installer of the same release makes, and nothing older: `linux-zen`, btrfs with the whole subvolume layout, systemd-boot. A disk installed by an earlier release - one short of a subvolume, on ext4 - is turned away with the reason, and opened by the Recovery of the release it was installed with. Every release stays on **[the release page](https://github.com/murkl/arch-os/releases)**.
 
-The password of an encrypted disk is typed once rather than twice: it already exists, and `cryptsetup` refuses a wrong one a second later and names the partition. A second box is for a password being chosen, which nothing can check until the system it belongs to boots.
+The password of an encrypted disk is typed once rather than twice: it already exists, and it is tried on the disk right where it is typed - `cryptsetup open --test-passphrase`, which opens nothing - so a wrong one is refused on that page. A second box is for a password being chosen, which nothing can check until the system it belongs to boots.
+
+What the Recovery starts with on its own partition is put in force before the first page: the keyboard is loaded, and one that will not load is asked for again rather than left standing, since the password is typed next.
 
 **Note:** _A rollback builds the new `@` before touching the old one - a run that dies halfway leaves the system as found._
 
@@ -279,7 +295,7 @@ The password of an encrypted disk is typed once rather than twice: it already ex
 
 The Recovery of the release that installed the system, on a partition of its own at the end of the disk and in the boot menu as **Arch OS Recovery**. It is the one that knows this layout, and it needs neither a USB stick nor a network to start. With **Recovery** off there is none - the ISO opens the system all the same.
 
-It is built with the release rather than on the machine, out of Arch's own minimal profile `baseline`: the kernel, `base`, `btrfs-progs`, `arch-install-scripts`, Plymouth and the Recovery module. No firmware, no network, no editor, and nothing it starts but the Recovery; manuals, translations, headers and the graphics drivers are left out as the packages go in. The ISO carries it ready-made. Any other live image fetches it from the release the Installer belongs to - `arch-os-X.Y.Z-recovery-x86_64.tar`, held to the checksum GitHub publishes for it - into `/tmp`, before the disk is touched. Either way the Installer only writes it:
+It is built with the release rather than on the machine, out of Arch's own minimal profile `baseline`: the kernel, `base`, `btrfs-progs`, `arch-install-scripts`, Plymouth and the Recovery module, and `iwd` with the firmware of the wireless cards. No editor, and nothing it starts but the Recovery - the network comes up only when **Wireless network** is chosen; manuals, translations, headers, the graphics drivers and whatever the firmware packages carry for graphics, cameras and Bluetooth are left out as the packages go in. The ISO carries it ready-made. Any other live image fetches it from the release the Installer belongs to - `arch-os-X.Y.Z-recovery-x86_64.tar`, held to the checksum GitHub publishes for it - into `/tmp`, before the disk is touched. Either way the Installer only writes it:
 
 | File | Goes to | What it is |
 | --- | --- | --- |
@@ -312,4 +328,4 @@ A hybrid ISO already carries its partition table and boot paths - writing it is 
 - It is checked against the checksum GitHub publishes for that release, and a mismatch discards it rather than keeping a broken one. The checksum is read once, when the image is fetched or found, and kept beside it as `.sha256`
 - Where that release publishes no checksum, nothing is written. **Verify checksum** off in the settings writes the image in the folder as it is, without asking the release anything - an image built here is the one that arrives this way
 
-**Root only for the write.** `as_root` wraps `umount`, `dd`, `partprobe` - nothing else. Everything else runs as you, so a live image never leaves root-owned files in your home.
+**Root only for the write.** `as_root` wraps `umount`, `dd`, `blockdev` - nothing else. Everything else runs as you, so a live image never leaves root-owned files in your home. Where `sudo` wants a password, it is asked in the interface right before the run, tried with `sudo` there, and handed to it on stdin - the screen is never handed to a prompt, and the write shows how far `dd` has got under its step.

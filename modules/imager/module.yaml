@@ -68,3 +68,31 @@ variables:
     required: true
     error: Choose a device that exists.
     command: list_devices
+
+  # Not asked: whether writing the device needs a password is a fact about this
+  # machine. Root needs none, and a sudo rule may say this account needs none
+  # either.
+  - name: ARCH_OS_IMAGE_SUDO
+    title: Password for the write
+    description: Whether writing the device asks for your password.
+    group: Device
+    type: bool
+    answer: needs_password
+
+  # Asked in the interface rather than by sudo on the terminal, so the screen
+  # stays where it is. Once, since it already exists, and tried with sudo right
+  # where it is typed: a wrong one is refused on that page rather than after a
+  # download of two gigabytes.
+  - name: ARCH_OS_IMAGE_PASSWORD
+    title: Your password
+    description: |
+      Writing the device needs root, and sudo asks for your password to allow
+      it. It is asked for right before the run starts and is never written to
+      a file.
+    group: Device
+    type: secret
+    existing: true
+    required: true
+    check: sudo_accepts
+    error: That is not your password, or this account may not use sudo.
+    conditions: ARCH_OS_IMAGE_SUDO == true

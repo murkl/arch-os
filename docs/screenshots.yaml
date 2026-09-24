@@ -13,17 +13,17 @@
 # A take names its `module:`: under --debug all three are offered, including the
 # one that never stands beside the other two on a real machine.
 
-# The page every run opens on, before a module has been named: the greeting,
-# and the words the rest of the run is read in. Taken from a start that names
-# no module, because that is the start the ISO makes.
+# The page every run opens on, before a module has been named: the wordmark,
+# and under it the words the rest of the run is read in. Taken from a start
+# that names no module, because that is the start the ISO makes.
 - steps:
-      - page: please choose your language
+      - page: Please choose your language
         shot: welcome
 
 # The Installer: the starting points, every value it will use, and the run.
 - module: installer
   steps:
-      - page: please choose your language
+      - page: Please choose your language
         press: enter
       - page: Console keyboard  # auto, the layout of the live image
         press: enter
@@ -67,7 +67,7 @@
 # time. It stops at the first of those offers, one task in.
 - module: recovery
   steps:
-      - page: please choose your language
+      - page: Please choose your language
         press: enter
       - page: Console keyboard
         press: enter

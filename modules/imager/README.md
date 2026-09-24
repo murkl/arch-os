@@ -69,15 +69,17 @@ An `arch-os-<version>-x86_64.iso` already in that folder is not downloaded again
 
 ## Root, and only where it is Needed
 
-This module runs as you, not root - unlike the other two, which run on an already-root live image. `as_root` lives only in the write task and wraps three commands:
+This module runs as you, not root - unlike the other two, which run on an already-root live image. `as_root` is in `module.sh`, and only the write task calls it, for three commands:
 
 | Command | Why |
 | --- | --- |
 | `umount` | Releasing what the desktop mounted |
 | `dd` | Writing the block device |
-| `partprobe` | Re-reading the partition table |
+| `blockdev` | Re-reading the partition table |
 
-Everything else - listing, downloading, checksumming - runs as you. `tty: true` on the write task hands `sudo` and `dd` the real terminal.
+Everything else - listing, downloading, checksumming - runs as you.
+
+The interface keeps the screen throughout. Whether `sudo` wants a password is read off the machine (`ARCH_OS_IMAGE_SUDO`, from `sudo -nk true`), and where it does, **Your password** is asked right before the run like any password that already exists: once, never written down, and tried with `sudo` on the page it was typed on - a wrong one is refused there rather than after the download. `as_root` hands it to `sudo -S` on stdin. How far `dd` has got is its last line, shown under the step (`progress: true`).
 
 ## Answers
 
@@ -88,6 +90,8 @@ Everything else - listing, downloading, checksumming - runs as you. `tty: true` 
 | `ARCH_OS_DOWNLOAD_DIR` | Where the image lives. Suggested as `XDG_DOWNLOAD_DIR`, or `~/Downloads` |
 | `ARCH_OS_IMAGE_DEVICE` | The USB device to write. Only USB disks are offered, and none the running system has mounted outside `/run/media`, `/media` or `/mnt` |
 | `ARCH_OS_IMAGE_VERIFY` | Whether the image is held to the checksum its release publishes before it is written. On unless turned off |
+| `ARCH_OS_IMAGE_SUDO` | Read, not asked: whether writing the device needs a password - not as root, and not where a sudo rule says so |
+| `ARCH_OS_IMAGE_PASSWORD` | Your password for `sudo`, only where it wants one. Asked right before the run and never written to the file |
 
 **Note:** _The device is read back from `lsblk` immediately before writing - `/dev/sdb` is a path, not a stick._
 

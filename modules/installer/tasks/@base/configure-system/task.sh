@@ -59,9 +59,7 @@ echo "$ARCH_OS_HOSTNAME" >"${MNT}/etc/hostname"
 # they read $EDITOR, and without one they fall back on vi, which `base` does not
 # ship. pam_env reads this one file and no directory beside it, so it is an edit.
 # https://wiki.archlinux.org/title/Environment_variables
-editor="$ARCH_OS_EDITOR"
-[ "$editor" = "neovim" ] && editor="nvim" # the package is neovim, the command nvim
-render "$(where)/environment" EDITOR="$editor" >>"${MNT}/etc/environment"
+render "$(where)/environment" EDITOR="$(editor_command)" >>"${MNT}/etc/environment"
 
 # ----------------------------------------------------------------------------
 

@@ -81,6 +81,41 @@ msgstr ""
 msgid "Choose a device that exists."
 msgstr ""
 
+#. ARCH_OS_IMAGE_SUDO: the question
+#: module.yaml
+msgid "Password for the write"
+msgstr ""
+
+#. ARCH_OS_IMAGE_SUDO: what it means
+#: module.yaml
+msgid "Whether writing the device asks for your password."
+msgstr ""
+
+#. ARCH_OS_IMAGE_PASSWORD: the question
+#: module.yaml
+msgid "Your password"
+msgstr ""
+
+#. ARCH_OS_IMAGE_PASSWORD: what it means
+#: module.yaml
+msgid "Writing the device needs root, and sudo asks for your password to allow it. It is asked for right before the run starts and is never written to a file."
+msgstr ""
+
+#. ARCH_OS_IMAGE_PASSWORD: what a wrong answer is told
+#: module.yaml
+msgid "That is not your password, or this account may not use sudo."
+msgstr ""
+
+#. the header's status, while its check says yes
+#: ../../oak.yaml
+msgid "Online"
+msgstr ""
+
+#. the header's status, while its check says no
+#: ../../oak.yaml
+msgid "Offline"
+msgstr ""
+
 #. the step, as the run lists it
 #: tasks/@download/image/task.yaml
 msgid "Download the image"

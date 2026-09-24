@@ -22,6 +22,14 @@ version: 2.0.0
 # Arch blue, pulled towards the terminal's background so it holds on a light one.
 accent: "#1793d1"
 
+# Opposite the name on every page: whether this machine reaches the internet.
+# The Installer cannot do without it, the Recovery only for what somebody wants
+# to fetch by hand, and Create boot medium downloads the image. See oak.sh.
+status:
+  script: header_online
+  pass: Online
+  fail: Offline
+
 # Above the blank line is the eyebrow, dimmed; below it the wordmark, in the
 # accent.
 logo: |

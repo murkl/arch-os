@@ -41,6 +41,8 @@ Three stages; after the first, every step is optional.
 
 A broken network may be the problem, so this module never asks for one: no `@online` hook, and kernel images come from the local pacman cache. `hooks/@preflight/` checks only root - not firmware, since this machine is not what is being set up.
 
+It can join one all the same, for whatever somebody wants to fetch in the shell: `@wlan-device`, `@wlan-networks` and `@wlan-connect` put **Wireless network** on its menu, with the shell the Installer joins one with - **[oak.sh](../../oak.sh)**. On its own partition that is also what starts the network: nothing of it runs before.
+
 ## Two Questions, and no more
 
 Everything else about the disk is read, not asked:
@@ -82,12 +84,12 @@ flowchart LR
 | `ARCH_OS_RECOVERY_KEYMAP` | The console keyboard, asked `first` |
 | `ARCH_OS_RECOVERY_DISK` | The disk holding the installation to repair |
 | `ARCH_OS_RECOVERY_ENCRYPTED` | LUKS or not - read, never asked |
-| `ARCH_OS_RECOVERY_PASSWORD` | Asked right before the run, never written |
+| `ARCH_OS_RECOVERY_PASSWORD` | Asked right before the run, tried on the disk where it is typed, never written |
 | `ARCH_OS_RECOVERY_SNAPSHOT` | Asked mid-run by the rollback task |
 
 Only keyboard and disk are asked up front. The password follows right before the run, the snapshot only if a rollback is chosen.
 
-On its own partition neither is asked: the Installer leaves the keyboard it was typed on, together with the language it was read in, and the disk is the one the Recovery was started from - **[➜ The Recovery Partition](../../docs/REFERENCE.md#the-recovery-partition)**. Both values are held to their `pattern:` and to the list they come from, like any answer read from a file.
+On its own partition neither is asked: the Installer leaves the keyboard it was typed on, together with the language it was read in, and the disk is the one the Recovery was started from - **[➜ The Recovery Partition](../../docs/REFERENCE.md#the-recovery-partition)**. Both values are held to their `pattern:` and to the list they come from, like any answer read from a file, and the keyboard is loaded before the first page is drawn - one that will not load is asked for again rather than left standing, since the password is typed on it next.
 
 ## Requirements
 

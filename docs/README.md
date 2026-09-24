@@ -35,11 +35,12 @@
 - Flatpak with Flathub, managed from Bazaar
 - Zram swap, fstrim, microcode, NetworkManager, mirrors ranked by country
 - Tuned rather than left at the defaults - see the **[➜ Reference](REFERENCE.md)**
-- AUR helper, 32-bit support, container engine, firewall, SSH server, automatic housekeeping, the text editor of your choice
+- AUR helper, 32-bit support, container engine, firewall, SSH server, automatic housekeeping
+- The text editor of your choice - nano, vim, neovim, micro or helix - with a small configuration of its own: a theme close to the system's palette, line numbers, the mouse, and tabs of four spaces
 - [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager, Shell Enhancement (zsh)
-- Recovery in the boot menu and on the same image, works without a network - and opens straight on its menu, in your language
-- Wireless network joined from the Installer itself, before the first download
-- Create boot medium: writes the USB device from any Linux machine, no root needed but for the write itself
+- Recovery in the boot menu and on the same image, works without a network - and opens straight on its menu, in your language, where a wireless network can be joined whenever something has to be fetched
+- Wireless network joined from the Installer itself, before the first download, and whether this machine is online always in the corner of the screen
+- Create boot medium: writes the USB device from any Linux machine, no root needed but for the write itself - and the password for that is typed into the interface like any other
 - Virtual machines both ways: guest tools inside a VM on their own, libvirt and QEMU on real hardware if you want them
 - Two starting points, **Core** and **Desktop** - everything else stays a row in the settings
 - English and German interface, chosen on the first page or named outright: `installer --language=de`
@@ -116,7 +117,7 @@ Every installation carries it on a small partition of its own. Hold **space** wh
 - Rebuilds the kernel images from the local package cache
 - Opens a shell inside it
 
-From the ISO it asks two questions - keyboard and disk - and reads the rest off the machine. From its partition it asks none: it starts in the language and on the keyboard the system was installed with, on the disk it was started from, straight on its menu. No network needed either way.
+From the ISO it asks two questions - keyboard and disk - and reads the rest off the machine. From its partition it asks none: it starts in the language and on the keyboard the system was installed with, on the disk it was started from, straight on its menu. No network needed either way - one can be joined from its menu for whatever is to be fetched.
 
 There it is the only thing the machine runs, and there is no prompt behind it. Leaving it offers **Reset** where the ISO offers **Exit**: every answer is forgotten and the Recovery starts over. The shell inside the repaired system stays one of its steps, opening on **no**.
 

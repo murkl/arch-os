@@ -498,6 +498,16 @@ msgstr "Der Code einer geteilten Konfiguration: das kurze Wort am Ende einer pas
 msgid "A code such as aBc12, or the whole address it belongs to."
 msgstr "Ein Code wie aBc12 — oder die vollständige Adresse dazu."
 
+#. the header's status, while its check says yes
+#: ../../oak.yaml
+msgid "Online"
+msgstr "Online"
+
+#. the header's status, while its check says no
+#: ../../oak.yaml
+msgid "Offline"
+msgstr "Offline"
+
 #. the step, as the run lists it
 #: tasks/@prepare/init/task.yaml
 msgid "Rank mirrors and refresh the keyring"
@@ -557,6 +567,11 @@ msgstr "Monatlichen Btrfs-Scrub aktivieren"
 #: tasks/@system/container-engine/task.yaml
 msgid "Install the container engine"
 msgstr "Container-Engine installieren"
+
+#. the step, as the run lists it
+#: tasks/@system/editor/task.yaml
+msgid "Set up the text editor"
+msgstr "Texteditor einrichten"
 
 #. the step, as the run lists it
 #: tasks/@system/enable-multilib/task.yaml

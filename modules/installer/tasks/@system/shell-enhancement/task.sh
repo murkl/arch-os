@@ -38,18 +38,6 @@ cp "${home}/.config/starship.toml" "${MNT}/root/.config/starship.toml"
 
 # ----------------------------------------------------------------------------
 
-# Only for nano: the highlighting depends on it and would bring it back onto a
-# machine whose editor is another one. nanorc goes into each home rather than
-# /etc/nanorc, which belongs to the nano package and would leave a .pacnew to
-# merge on every update.
-if [ "$ARCH_OS_EDITOR" = "nano" ]; then
-    chroot_pacman_install nano-syntax-highlighting
-    mkdir -p "${MNT}/root/.config/nano" "${home}/.config/nano"
-    render "${data}/nanorc" | tee "${MNT}/root/.config/nano/nanorc" "${home}/.config/nano/nanorc" >/dev/null
-fi
-
-# ----------------------------------------------------------------------------
-
 # Settings only reachable once a session exists.
 if [ "$ARCH_OS_DESKTOP" != "none" ]; then
     on_first_login <<'FIRST'

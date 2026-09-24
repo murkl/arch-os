@@ -96,6 +96,11 @@ msgstr ""
 msgid "The password that unlocks that disk. It is asked for right before the recovery starts and is never written to a file."
 msgstr ""
 
+#. ARCH_OS_RECOVERY_PASSWORD: what a wrong answer is told
+#: module.yaml
+msgid "That password does not unlock this disk."
+msgstr ""
+
 #. ARCH_OS_RECOVERY_SNAPSHOT: the question
 #: module.yaml
 msgid "Snapshot"
@@ -104,6 +109,16 @@ msgstr ""
 #. ARCH_OS_RECOVERY_SNAPSHOT: what it means
 #: module.yaml
 msgid "The snapshot to put in place of the root subvolume. Newest first, with the date it was taken and what created it."
+msgstr ""
+
+#. the header's status, while its check says yes
+#: ../../oak.yaml
+msgid "Online"
+msgstr ""
+
+#. the header's status, while its check says no
+#: ../../oak.yaml
+msgid "Offline"
 msgstr ""
 
 #. the step, as the run lists it
