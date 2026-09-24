@@ -165,22 +165,27 @@ jobs:
 
       # The release pull request starts no run - see pull_request above - so
       # nothing would ever report the two checks main asks of a pull request,
-      # and it could never be merged. It needs neither: it holds what this very
-      # run wrote out of a main that was checked a moment ago, and its merge is
-      # checked again on main before a tag exists. This says so, on the commit it
-      # was written in.
+      # and it could never be merged. It needs neither: it holds what a run like
+      # this one wrote out of a main that was checked a moment before, and its
+      # merge is checked again on main before a tag exists. This says so, on the
+      # commit it stands on.
+      #
+      # Found by the label release-please keeps on it rather than out of the
+      # action's outputs, which leave the pull request empty whenever it stayed
+      # as it was - and reported on every run, so a run that missed it is
+      # made good by the next.
       - name: The release pull request is cleared to merge
-        if: steps.please.outputs.prs_created == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          BRANCH: ${{ fromJSON(steps.please.outputs.pr).headBranchName }}
         run: |
-          sha="$(gh api "repos/${GH_REPO}/branches/${BRANCH}" --jq .commit.sha)"
-          for check in Ready Title; do
-            gh api --silent "repos/${GH_REPO}/statuses/${sha}" -f state=success -f context="$check" \
-              -f description="Release pull request - checked on main once merged"
-          done
+          gh pr list --state open --label "autorelease: pending" --json headRefOid --jq '.[].headRefOid' |
+            while read -r sha; do
+              for check in Ready Title; do
+                gh api --silent "repos/${GH_REPO}/statuses/${sha}" -f state=success -f context="$check" \
+                  -f description="Release pull request - checked on main once merged"
+              done
+            done
 
   # The image, and the one job that finds out whether the thing starts. Both in
   # one job rather than three: the file between them is a gigabyte, and handing
