@@ -44,7 +44,7 @@ Mounted `defaults,noatime,compress=zstd`. Written once, in `oak.sh`, which both 
 
 `kernel_args` in `module.sh` is the one source of the command line - the unified image and systemd-boot read it whole. GRUB reads `kernel_options`, the same line without where root is: `grub-mkconfig` writes that into every entry itself, and a second copy would be two `root=` for one boot. The package's own `GRUB_CMDLINE_LINUX_DEFAULT` is emptied, so the same answers boot the same way under either loader.
 
-Both loaders get a boot entry in the firmware, first in its order. `bootctl` writes that one from the live system rather than from inside the new one: in a chroot it leaves the EFI variables alone, or, told to write them, cannot see the partition and writes an entry that points nowhere. Without an entry the firmware finds the loader only at `\EFI\BOOT\BOOTX64.EFI`, after every entry it already lists has been tried.
+Both loaders get a boot entry in the firmware, first in its order. `bootctl` writes that one from the live system rather than from inside the new one: in a chroot it leaves the EFI variables alone, or, told to write them, cannot see the partition and writes an entry that points nowhere. Without an entry the firmware finds the loader only at `\EFI\BOOT\BOOTX64.EFI`, after every entry it already lists has been tried. The entries it still keeps for what the disk held before - a Windows Boot Manager, an earlier installation - are removed along with the old partitions; an entry for another disk stays.
 
 The ram disk carries the processor's microcode itself (the `microcode` hook), so GRUB is told not to load `/boot/*-ucode.img` in front of it a second time.
 

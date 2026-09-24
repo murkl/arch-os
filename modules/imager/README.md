@@ -29,7 +29,7 @@ locales/                        one <code>.po per language, and the template the
 
 | Task | Stage | Description |
 | --- | --- | --- |
-| `image` | `download` | Fetches the image, unless the folder already holds it, and puts the checksum the release publishes beside it |
+| `image` | `download` | Fetches the image, unless the folder already holds it, and puts the checksum the release publishes beside it. Its progress bar is shown under the step while it runs (`progress: true`) |
 | `unverified` | `verify` | Asks whether to go on, and only where there is no checksum to compare against |
 | `checksum` | `verify` | Compares the image against that checksum, discards it if they disagree |
 | `device` | `write` | Checks the device, unmounts it, copies the image on |

@@ -31,6 +31,11 @@ if [ -n "$held" ]; then
     exit 1
 fi
 
+# Which partitions the disk holds now, asked before the table is wiped: once it
+# is gone, nothing says any more which of the firmware's boot entries were
+# pointing at this disk.
+old_parts="$(lsblk -nro PARTUUID "$ARCH_OS_DISK" | awk 'NF { printf "%s ", tolower($1) }')"
+
 wipefs -af "$ARCH_OS_DISK"
 sgdisk --zap-all "$ARCH_OS_DISK"
 sgdisk -o "$ARCH_OS_DISK"
@@ -42,6 +47,27 @@ partprobe "$ARCH_OS_DISK"
 # udev's, and it makes them a moment later. Without the wait the format below
 # runs against a path that is not there yet.
 udevadm settle
+
+# The firmware's entries for what was on the disk - a Windows Boot Manager, an
+# earlier installation - now point at partitions that are gone, and its boot
+# menu would go on offering them. An entry naming another disk is left alone.
+# Not fatal: one left behind costs a line in a menu, not the installation.
+# https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface#efibootmgr
+if [ -n "$old_parts" ]; then
+    if entries="$(efibootmgr)"; then
+        while read -r entry; do
+            echo "removing boot entry ${entry}, which pointed at a partition that is gone"
+            efibootmgr -q -b "$entry" -B || echo "boot entry ${entry} could not be removed" >&2
+        done < <(awk -v parts="$old_parts" '
+            BEGIN { n = split(parts, part, " ") }
+            /^Boot[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][* ]/ {
+                line = tolower($0)
+                for (i = 1; i <= n; i++) if (index(line, part[i])) { print substr($1, 5, 4); break }
+            }' <<<"$entries")
+    else
+        echo "the firmware's boot entries could not be read, so the old ones are still listed" >&2
+    fi
+fi
 
 # On stdin, so the passphrase never reaches an argument list that /proc shows.
 root_device="$ROOT_PART"
