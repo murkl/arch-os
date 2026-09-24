@@ -120,7 +120,7 @@ ISO ?= $(shell ls -t $(DIST_DIR)/*.iso 2>/dev/null | head -1)
 
 # POSIX sh: get.sh runs on whatever shell the machine downloading it has, and
 # the rest are one job each rather than a program.
-POSIX_SCRIPTS := get.sh .github/summary.sh
+POSIX_SCRIPTS := get.sh .github/summary.sh .github/settings.sh
 
 # Bash: what builds and boots the image, and what the image itself runs.
 ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_GLYPHS) $(wildcard $(ISO_DIR)/src/usr/local/bin/*)
@@ -175,7 +175,7 @@ BANNER_CELL    := 9
 
 .PHONY: all oak oak-check build dev run inspect tarball image iso smoke locales \
 	locales-check glyphs-check data-check lint fmt check version version-check \
-	secrets-check screenshots banner docs clean
+	secrets-check github screenshots banner docs clean
 
 # build empties the release it writes, and everything that packages it reads
 # what it left. Running them at once would package a half-written folder.
@@ -411,6 +411,13 @@ data-check:
 # The whole gate, cheapest and loudest first. CI runs this and nothing it adds
 # to it, so there is no second definition of green.
 check: version-check secrets-check lint inspect locales-check data-check glyphs-check
+
+# The repository's settings on GitHub - how a pull request is merged, what main
+# holds one to, what a workflow's token may do - out of .github/settings/. Run
+# by hand after one of them changes, as an admin logged in with gh: no workflow
+# can, since a workflow's token may not change the rules it is held to itself.
+github:
+	.github/settings.sh
 
 # ////////////////////////////////////////////////////////////////////////////
 # DOCUMENTATION | The pictures the README is made of

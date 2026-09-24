@@ -21,7 +21,7 @@ flowchart LR
 - **Branch `dev` off `main`.** A push checks nothing on its own - `main` is the only branch a push checks directly
 - **Open the pull request right away, as a draft** while there is nothing to read yet. From here every push to `dev` is checked through it
 - **Mark it ready** when it should be booted - leaving draft is what adds the image and the smoke test
-- **Squash merge** into `main` and delete `dev`. The pull request's title becomes the commit, and everything below is read out of that one line
+- **Squash merge** into `main`, which takes it only once `Ready` and `Title` have passed - or switch on auto-merge, and it squashes itself in the moment they have. `dev` is deleted with the merge. The pull request's title becomes the commit, and everything below is read out of that one line
 - A pull request from outside is checked, never turned into an image: a privileged container is not something an unreviewed change is handed
 
 **Note:** _A commit is under one run and never two: `main` is the only branch a push triggers a run on, so a run never starts twice for the same commit - once for the push, once for the pull request it sits under. See **[ci.yml](../.github/workflows/ci.yml)**._
@@ -64,9 +64,9 @@ Several merges collect in the one release pull request until it is merged, and a
 
 The page carries `arch-os-2.1.0-x86_64.iso` and `.tar.gz`, both under signed build provenance, and GitHub prints each one's SHA-256 beside it, so the release carries no checksum file of its own.
 
-**Note:** _The page is written before the files are on it: the image is half an hour, and the tag is what the run builds from. A run that fails there leaves a release to be re-run rather than a version to be taken back - `Publish` on its own, once the reason is gone._
+**Note:** _The page is written as a draft before the files are on it: the image is half an hour, and the tag is what the run builds from. `Publish` makes it public last, once both files hang on it, so `curl … | bash` and every link to the latest release keep pointing at the one before until then. A run that fails on the way leaves a draft to re-run rather than a version to be taken back - `Image` and `Publish`, once the reason is gone._
 
-**Note:** _No run starts on the release pull request: it touches only `CHANGELOG.md`, the release manifest and the version line in `oak.yaml`, and both workflows leave a pull request of nothing else out with `paths-ignore`. GitHub itself starts runs for what its own token opened since June 2026, and holds each for an approval - one nobody gives fails the moment the pull request is merged. A pull request that changes nothing but `oak.yaml` is left out the same way and checked on `main`. It needs none - the merge of it is checked on `main` before the tag exists, which is also why `main` must not require a check that never starts there. For that pull request to be opened at all, **Settings → Actions → General → Allow GitHub Actions to create and approve pull requests** has to be on._
+**Note:** _No run starts on the release pull request: it touches only `CHANGELOG.md`, the release manifest and the version line in `oak.yaml`, and both workflows leave a pull request of nothing else out with `paths-ignore`. GitHub itself starts runs for what its own token opened since June 2026, and holds each for an approval - one nobody gives fails the moment the pull request is merged. It needs none - it holds what the release run wrote out of a `main` checked a moment before, and its merge is checked on `main` before the tag exists. So the release run itself reports `Ready` and `Title` on the commit it wrote, which is what lets `main` require both of every other pull request. A pull request of anybody else's that changes nothing but `oak.yaml` starts no run either, and is held back by the same two checks - it goes through once it touches one more file, or not at all._
 
 ## What a Run does
 
@@ -85,12 +85,13 @@ flowchart TD
 
 | Job | Where | Description |
 | --- | --- | --- |
-| `Title` | a pull request opened or renamed | The line the next version is read out of. Its own workflow, so a rename re-reads it and rebuilds nothing |
+| `Title` | a pull request opened, pushed to or renamed | The line the next version is read out of. Its own workflow, so a rename re-reads it and rebuilds nothing |
 | `Gate` | every run | What the rest of the run does, decided once |
 | `Check` | every run | `make check` |
 | `Image` | a pull request out of draft, a release, on demand | The release, the image out of it, and the boot that proves it comes up |
+| `Ready` | a pull request | Every job above it needed has passed. Together with `Title`, what `main` requires before a merge |
 | `Release` | a push to `main` | The version, the changelog and the tag - or the pull request that will carry them |
-| `Publish` | a release | Hangs that run's two files on the release page |
+| `Publish` | a release | Hangs that run's two files on the release page and makes the page public |
 
 `Image` builds, packs and boots in one job rather than three: the file between those steps is a gigabyte, and handing it from job to job costs more than making it. It is half an hour, which is why the gate decides who gets one.
 
@@ -207,23 +208,18 @@ Every run is started with `--debug`, under which Oak starts no task: no disk is 
 
 ## Setting the Repository up
 
-Once, with the `gh` CLI:
+What GitHub holds this repository to is kept in **[.github/settings/](../.github/settings)** rather than clicked, and applied with one command by an admin logged in with `gh`:
 
 ```
-gh api -X PUT repos/murkl/arch-os/branches/main/protection --input - <<'EOF'
-{
-  "required_linear_history": true,
-  "allow_force_pushes": false,
-  "allow_deletions": false,
-  "enforce_admins": false,
-  "required_status_checks": null,
-  "required_pull_request_reviews": null,
-  "restrictions": null
-}
-EOF
-
-gh repo edit --enable-merge-commit=false --enable-rebase-merge=false \
-    --enable-squash-merge --delete-branch-on-merge
+make github
 ```
 
-**Note:** _No check is required here, and that is the point. `Image` is skipped on a draft and on a fork, and the release pull request starts no run at all - a required check that never reports is one a pull request waits on forever. What lands on `main` is checked on `main`, before the tag exists. Everything else (signing, Dependabot) needs no setup._
+| File | Says |
+| --- | --- |
+| `repository.json` | Squash merges only, under the pull request's title and body; auto-merge on; a merged branch is deleted |
+| `ruleset.json` | `main` takes nothing but a pull request, squashed, once `Ready` and `Title` have passed; no force push, no deletion |
+| `actions.json` | A workflow's token reads unless it says otherwise, and may open the release pull request |
+
+Run it again after changing one of them - every call sets the whole state, so a second run changes nothing. No workflow does it: a workflow's token may not change the rules it is itself held to. The files and the script are the same in every project released this way.
+
+**Note:** _`Ready` passes a draft, whose `Image` is skipped - a draft cannot be merged anyway, and leaving draft starts the run that decides it. The release pull request starts no run, and the release run reports both checks on it itself - see **[Releasing](#releasing)**. Everything else (signing, Dependabot) needs no setup._

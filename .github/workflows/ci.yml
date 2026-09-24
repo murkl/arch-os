@@ -25,10 +25,11 @@ on:
     # Not the release pull request, which touches nothing but these three - in
     # oak.yaml the version line. It is opened with the workflow's own token, and
     # since June 2026 GitHub holds every run such a pull request starts until
-    # somebody approves it - one nobody does fails the moment it is merged, and
-    # the release on main goes ahead regardless. What it changes is checked where
-    # it lands, on main, and so is any other pull request that changes nothing
-    # but oak.yaml. https://github.com/orgs/community/discussions/199292
+    # somebody approves it - one nobody does fails the moment it is merged. The
+    # release run reports its checks instead, and its merge is checked on main.
+    # Any other pull request that changes nothing but oak.yaml starts no run
+    # either, so main holds it back - see docs/CONTRIBUTING.md.
+    # https://github.com/orgs/community/discussions/199292
     paths-ignore:
       - CHANGELOG.md
       - .github/.release-please-manifest.json
@@ -149,6 +150,7 @@ jobs:
     permissions:
       contents: write # the tag and the release page
       pull-requests: write # the release pull request
+      statuses: write # the two checks it is cleared by
     outputs:
       created: ${{ steps.please.outputs.release_created }}
       tag: ${{ steps.please.outputs.tag_name }}
@@ -160,6 +162,25 @@ jobs:
         with:
           config-file: .github/release-please-config.json
           manifest-file: .github/.release-please-manifest.json
+
+      # The release pull request starts no run - see pull_request above - so
+      # nothing would ever report the two checks main asks of a pull request,
+      # and it could never be merged. It needs neither: it holds what this very
+      # run wrote out of a main that was checked a moment ago, and its merge is
+      # checked again on main before a tag exists. This says so, on the commit it
+      # was written in.
+      - name: The release pull request is cleared to merge
+        if: steps.please.outputs.prs_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BRANCH: ${{ fromJSON(steps.please.outputs.pr).headBranchName }}
+        run: |
+          sha="$(gh api "repos/${GH_REPO}/branches/${BRANCH}" --jq .commit.sha)"
+          for check in Ready Title; do
+            gh api --silent "repos/${GH_REPO}/statuses/${sha}" -f state=success -f context="$check" \
+              -f description="Release pull request - checked on main once merged"
+          done
 
   # The image, and the one job that finds out whether the thing starts. Both in
   # one job rather than three: the file between them is a gigabyte, and handing
@@ -266,8 +287,36 @@ jobs:
           fi
           printf '## Smoke test\n\n%s\n\n' "$said" >>"$GITHUB_STEP_SUMMARY"
 
+  # The one check of this file a pull request has to pass before it can be
+  # merged - see .github/settings/ruleset.json. One name for all of them, so a
+  # job listed here is required from the moment it is, and one skipped on a
+  # draft counts as what it is rather than as missing.
+  ready:
+    name: Ready
+    needs: [gate, check, image]
+    if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Every job this pull request needed came out well
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for result in $RESULTS; do
+            case "$result" in
+            success | skipped) ;;
+            *)
+              echo "::error::a job this pull request needs ended as ${result}"
+              exit 1
+              ;;
+            esac
+          done
+
   # Nothing is built here. The two files this run made and booted are hung on
-  # the release the job above wrote, under the version it decided.
+  # the release the job above wrote as a draft, under the version it decided,
+  # and the draft is made public last - once both are on it. A run that fails
+  # before that leaves a draft to re-run, never a release that every download
+  # link already points at and that holds nothing.
   publish:
     name: Publish
     needs: [release, image]
@@ -353,7 +402,7 @@ jobs:
           FOOTER
 
           gh release upload "$TAG" dist/*.tar.gz dist/*.iso --clobber
-          gh release edit "$TAG" --notes-file "$notes"
+          gh release edit "$TAG" --notes-file "$notes" --draft=false --latest
 
       - name: What was published
         run: |
