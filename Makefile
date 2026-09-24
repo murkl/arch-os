@@ -60,7 +60,7 @@ MODULE_PARTS := module.sh data locales tasks hooks
 # rather than followed, so a build of a given commit is the same build tomorrow.
 # Written without the `v` its tag carries.
 OAK_REPO    := murkl/oak
-OAK_VERSION ?= 0.8.0
+OAK_VERSION ?= 0.9.0
 OAK_ASSET   := oak-linux-amd64
 OAK_DIR     := .oak
 
@@ -131,8 +131,9 @@ RECOVERY ?= $(shell ls -td $(DIST_DIR)/*-recovery 2>/dev/null | head -1)
 # the rest are one job each rather than a program.
 POSIX_SCRIPTS := get.sh .github/summary.sh .github/settings.sh
 
-# Bash: what builds and boots the image, and what the image itself runs.
-ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_GLYPHS) $(wildcard $(ISO_DIR)/src/usr/local/bin/*)
+# Bash: what builds and boots the image, and what the images themselves run -
+# both launchers, and the one only the Recovery's own image starts with.
+ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_GLYPHS) $(wildcard $(ISO_DIR)/src/usr/local/bin/* $(ISO_DIR)/recovery/airootfs/usr/local/bin/*)
 
 # Every script of every module and the shell they all share, and every yaml for
 # the check that reads both. Looked up when they are used, so only the targets
@@ -179,7 +180,7 @@ SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 # They need chromium, imagemagick, python-pyte and python-yaml, which a build
 # does not, so they stay out of `check` and are run by hand.
 BANNER_CARDS   := docs/screenshots/installer.png docs/screenshots/installing.png
-BANNER_TAGLINE := A minimal, robust and reproducible Arch Linux base. Installer and Recovery on one image.
+BANNER_TAGLINE := Install Arch Linux with ease — as a desktop or a TTY system. Installer and Recovery on one image.
 BANNER_CELL    := 9
 
 .PHONY: all oak oak-check build dev run inspect tarball image iso smoke locales \

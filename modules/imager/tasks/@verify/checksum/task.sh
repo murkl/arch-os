@@ -2,15 +2,12 @@
 # one the release page prints under the download, so this is the check anybody
 # would run by hand. The download put it beside the image.
 #
-# Where that release publishes none, the step before this one has asked, and
-# only a yes gets this far. That is the one way an image this project never
-# published - one built here - reaches a device.
+# Where that release publishes none, nothing is written. Verify checksum off
+# in the settings is the one way an image this project never published - one
+# built here - reaches a device, and this step is then not run at all.
 
 if [ ! -s "$(checksum)" ]; then
-    if [ "$ARCH_OS_IMAGE_UNVERIFIED" = true ]; then
-        return 0
-    fi
-    echo "There is no published checksum for v${VERSION} to hold $(basename "$(image)") to, and it was not written." >&2
+    echo "There is no published checksum for v${VERSION} to hold $(basename "$(image)") to, and it was not written. Turn Verify checksum off in the settings to write it unchecked." >&2
     exit 1
 fi
 

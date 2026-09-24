@@ -114,3 +114,5 @@ A booted **Arch Linux live image** - `requires:` in `module.yaml`. On it: root, 
 ## Answers
 
 `installer.conf`, beside wherever the Installer was started, copied into the new system at the end. The password is never in it, and never on the settings page.
+
+The Recovery on its partition is handed two of them to start with: the language this run was read in, as Oak recorded it in `oak.conf`, and the console keyboard - `RECOVERY_SEED` in `module.sh`.

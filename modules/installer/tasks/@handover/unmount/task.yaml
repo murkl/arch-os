@@ -1,4 +1,4 @@
-title: Unmount everything
+title: Unmount and lock the disk
 needs: [reboot]
 confirm: |
   Unmount the new system and stay in the live environment?

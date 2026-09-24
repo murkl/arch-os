@@ -10,16 +10,17 @@ chroot_pacman_install "${packages[@]}"
 
 mkdir -p "${MNT}/root/.config/fastfetch" "${home}/.config/fastfetch"
 
-# For both root and the user: it is the same shell either way. bash is set up
-# as well as zsh, because it is the shell every task and hook runs in and the
-# one a script started by hand reaches for.
-for file in aliases bashrc zshrc; do
+# bash is set up for both, because it is the shell every task and hook runs in
+# and the one a script started by hand reaches for. zsh only for the account:
+# root keeps bash, so the emergency shell a broken boot ends in does not also
+# depend on zsh and its plugins.
+for file in aliases bashrc; do
     render "${data}/${file}" | tee "${MNT}/root/.${file}" "${home}/.${file}" >/dev/null
 done
+render "${data}/zshrc" >"${home}/.zshrc"
 render "${data}/fastfetch.jsonc" | tee "${MNT}/root/.config/fastfetch/config.jsonc" "${home}/.config/fastfetch/config.jsonc" >/dev/null
 
 # /etc/shells already lists it, which is what chsh checks against.
-arch-chroot "$MNT" chsh -s /usr/bin/zsh root
 arch-chroot "$MNT" chsh -s /usr/bin/zsh "$ARCH_OS_USERNAME"
 
 # ----------------------------------------------------------------------------

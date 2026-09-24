@@ -1,7 +1,0 @@
-title: Decide about an unchecked image
-
-# Asked in the middle of the run, and only where there is something to decide:
-# the list is empty wherever the release publishes a checksum, and Oak then
-# skips this step whole - which is why it does nothing but ask, and the check
-# is a step of its own after it.
-asks: ARCH_OS_IMAGE_UNVERIFIED

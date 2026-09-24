@@ -56,17 +56,14 @@ msgstr ""
 msgid "Type the full path of a folder, starting with a slash."
 msgstr ""
 
-#. ARCH_OS_IMAGE_UNVERIFIED: the question
+#. ARCH_OS_IMAGE_VERIFY: the question
 #: module.yaml
-msgid "Unverified image"
+msgid "Verify checksum"
 msgstr ""
 
-#. ARCH_OS_IMAGE_UNVERIFIED: what it means
+#. ARCH_OS_IMAGE_VERIFY: what it means
 #: module.yaml
-msgid ""
-"There is no checksum to hold this image to: either the release publishes none yet or it cannot be reached. So nothing here can tell whether the file is whole, or whether it is the image it says it is.\n"
-"\n"
-"An image built rather than downloaded is the usual reason to go on. Stopping leaves the device untouched."
+msgid "Holds the image to the checksum its release publishes before anything is written, and throws it away where the two disagree. Turned off, the image in the download folder goes to the device as it is - an image built rather than downloaded is the usual reason."
 msgstr ""
 
 #. ARCH_OS_IMAGE_DEVICE: the question
@@ -90,18 +87,13 @@ msgid "Download the image"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@verify/unverified/task.yaml
-msgid "Decide about an unchecked image"
-msgstr ""
-
-#. the step, as the run lists it
 #: tasks/@verify/checksum/task.yaml
-msgid "Check the image"
+msgid "Verify the checksum"
 msgstr ""
 
 #. the step, as the run lists it
 #: tasks/@write/device/task.yaml
-msgid "Write the device"
+msgid "Write the image to the device"
 msgstr ""
 
 #. read once the step is done, and held on until somebody has

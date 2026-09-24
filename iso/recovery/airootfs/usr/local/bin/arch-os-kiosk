@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# The Recovery on its own partition, started the way that partition is meant to
+# be used: as the only thing on the machine, in the language the system was
+# installed in, on the keyboard it was typed on and on the disk it was started
+# from. So it opens on its menu rather than on three questions, and leaving it
+# is Reset, which the systemd unit answers by running this again.
+#
+# Every start is a first one: the answers of the last are dropped and handed
+# over afresh, which is what Reset promises. What cannot be read is asked the
+# ordinary way instead, and said in the journal.
+set -eu
+
+OPT=/opt/arch-os
+
+# What the Installer leaves on the EFI partition: Oak's own answers and the
+# Recovery's. modules/installer/module.sh spells the same path as RECOVERY_SEED.
+SEED=EFI/arch-os-recovery
+
+# The partition this was started from, found the way the ram disk found it: by
+# the UUID its command line names. Empty where it was started some other way.
+booted_partition() {
+    local uuid part
+    uuid="$(sed -n 's/.*archisodevice=UUID=\([^ ]*\).*/\1/p' /proc/cmdline)"
+    [ -n "$uuid" ] || return 0
+    part="$(readlink -f "/dev/disk/by-uuid/${uuid}")"
+    [ ! -b "$part" ] || printf '%s' "$part"
+}
+
+# The disk that partition lies on, which is the disk holding the system to
+# repair. Empty for an image that is a whole disk of its own, which is how the
+# smoke test starts it.
+booted_disk() {
+    local part parent
+    part="$(booted_partition)"
+    [ -n "$part" ] || return 0
+    parent="$(lsblk -dno PKNAME "$part")"
+    [ -z "$parent" ] || printf '/dev/%s' "$parent"
+}
+
+# The EFI partition on that disk, by its type rather than its number. Read to
+# the end rather than left at the first, so lsblk is never cut off mid-line.
+efi_partition() {
+    lsblk -rno PATH,PARTTYPE "$1" |
+        awk '!found && $2 == "c12a7328-f81f-11d2-ba4b-00a0c93ec93b" { print $1; found = 1 }'
+}
+
+rm -f "${OPT}/oak.conf" "${OPT}/recovery.conf"
+
+disk="$(booted_disk)"
+esp=""
+[ -z "$disk" ] || esp="$(efi_partition "$disk")"
+
+# Read-only and only for as long as it takes: the Recovery may yet have to
+# write to this partition, and it must find it as the system left it.
+if [ -n "$esp" ]; then
+    mnt="$(mktemp -d)"
+    if mount -o ro "$esp" "$mnt"; then
+        for file in oak.conf recovery.conf; do
+            [ ! -f "${mnt}/${SEED}/${file}" ] || cp "${mnt}/${SEED}/${file}" "${OPT}/${file}"
+        done
+        umount "$mnt"
+    else
+        echo "the EFI partition ${esp} could not be read, the Recovery asks instead" >&2
+    fi
+    rmdir "$mnt"
+else
+    echo "started from no partition of a disk, the Recovery asks for its disk" >&2
+fi
+
+# The disk is not handed over but worked out here: a name like /dev/sda is only
+# what one boot called it.
+[ -z "$disk" ] || printf "ARCH_OS_RECOVERY_DISK='%s'\n" "$disk" >>"${OPT}/recovery.conf"
+
+# The language goes on the command line, which is what takes the welcome page
+# away. Only a value that looks like one, since the EFI partition is not signed.
+args=(--kiosk)
+if [ -f "${OPT}/oak.conf" ]; then
+    language="$(sed -n "s/^OAK_LANG='\([A-Za-z_-]*\)'.*$/\1/p" "${OPT}/oak.conf")"
+    [ -z "$language" ] || args+=("--language=${language}")
+fi
+
+exec arch-os "${args[@]}"

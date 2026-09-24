@@ -18,21 +18,28 @@ apps="${home}/.local/share/applications"
 # https://wiki.archlinux.org/title/PipeWire#Installation
 packages=(git bluez bluez-utils avahi nss-mdns pipewire pipewire-pulse wireplumber)
 
-# The group filtered rather than installed and then trimmed: what the slim
-# desktop leaves out is never downloaded.
+# The group filtered rather than installed and then trimmed: what this desktop
+# leaves out is never downloaded.
 mapfile -t desktop < <(arch-chroot "$MNT" pacman -Sgq gnome)
 [ "${#desktop[@]}" -gt 0 ] || {
     echo "the gnome package group is empty" >&2
     exit 1
 }
-if [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "true" ]; then
-    mapfile -t desktop < <(printf '%s\n' "${desktop[@]}" |
-        grep -vxF -f <(grep -vE '^(#|[[:space:]]*$)' "${data}/slim-exclude"))
-fi
+left_out=()
+while read -r scope name; do
+    case "$scope" in '' | \#*) continue ;; esac
+    case "$scope" in
+    slim) [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "true" ] || continue ;;
+    esac
+    left_out+=("$name")
+done <"${data}/left-out"
+mapfile -t desktop < <(printf '%s\n' "${desktop[@]}" | grep -vxF -f <(printf '%s\n' "${left_out[@]}"))
 packages+=("${desktop[@]}")
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-    packages+=(gnome-browser-connector gnome-themes-extra tuned-ppd cups)
+    # Extensions browsed, installed and updated in one window, in place of the
+    # Extensions app gnome-shell brings, which only switches them on and off.
+    packages+=(extension-manager gnome-themes-extra tuned-ppd cups)
 
     # For flatpaks and screen sharing on Wayland. The GNOME portal is in the
     # group; the GTK one is the fallback for what it does not implement.
@@ -50,9 +57,9 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     # still worth a plug-in nobody has to look for.
     packages+=(rsync networkmanager-openvpn)
 
-    # base-devel builds from the AUR; the rest opens a drive or an archive from
-    # anywhere else.
-    packages+=(base-devel fwupd bash-completion inetutils
+    # base-devel builds from the AUR, and GNOME Firmware is fwupd's window; the
+    # rest opens a drive or an archive from anywhere else.
+    packages+=(base-devel fwupd gnome-firmware bash-completion inetutils
         dosfstools ntfs-3g exfatprogs btrfs-progs nfs-utils
         7zip zip unzip unrar wget jq zenity)
 
@@ -208,7 +215,10 @@ done <"${data}/hidden-apps"
 # ////////////////////////////////////////////////////////////////////////////
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-    favorites="'org.gnome.Console.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Software.desktop', 'org.gnome.Settings.desktop'"
+    # The store is Bazaar, and only with Flatpak - see the flatpak task.
+    favorites="'org.gnome.Console.desktop', 'org.gnome.Nautilus.desktop'"
+    [ "$ARCH_OS_FLATPAK_ENABLED" = "true" ] && favorites="${favorites}, 'io.github.kolunmi.Bazaar.desktop'"
+    favorites="${favorites}, 'org.gnome.Settings.desktop'"
     [ "$ARCH_OS_MANAGER_ENABLED" = "true" ] && favorites="'arch-os.desktop', ${favorites}"
     on_first_login <<FIRST
 gsettings set org.gnome.shell favorite-apps "[${favorites}]"

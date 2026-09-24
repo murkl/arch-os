@@ -1,2 +1,2 @@
-title: Enhance the shell
+title: Set up zsh and the shell tools
 conditions: ARCH_OS_SHELL_ENHANCEMENT_ENABLED == true

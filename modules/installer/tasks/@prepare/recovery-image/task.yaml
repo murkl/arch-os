@@ -1,4 +1,4 @@
-title: Get the Recovery
+title: Provide the Recovery image
 conditions: ARCH_OS_RECOVERY_ENABLED == true
 
 # A few hundred megabytes where the live image does not carry them, and curl's

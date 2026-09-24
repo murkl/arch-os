@@ -1,2 +1,2 @@
-title: Set up virtual machines
+title: Install QEMU and libvirt
 conditions: ARCH_OS_VM_HOST_ENABLED == true

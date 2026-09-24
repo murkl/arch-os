@@ -1,2 +1,2 @@
-title: Install the Recovery
+title: Write the Recovery partition
 conditions: ARCH_OS_RECOVERY_ENABLED == true

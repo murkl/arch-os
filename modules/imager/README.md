@@ -30,13 +30,10 @@ locales/                        one <code>.po per language, and the template the
 | Task | Stage | Description |
 | --- | --- | --- |
 | `image` | `download` | Fetches the image, unless the folder already holds it, and puts the checksum the release publishes beside it. Its progress bar is shown under the step while it runs (`progress: true`) |
-| `unverified` | `verify` | Asks whether to go on, and only where there is no checksum to compare against |
-| `checksum` | `verify` | Compares the image against that checksum, discards it if they disagree |
+| `checksum` | `verify` | Compares the image against that checksum, discards it if they disagree. Only with **Verify checksum** on |
 | `device` | `write` | Checks the device, unmounts it, copies the image on |
 
 Three distinct failures: nothing arrived, what arrived is broken, or it could not be written.
-
-**Note:** _The question is a step of its own because Oak skips a step whose `asks:` list comes back empty - and it is empty exactly where there is a checksum. Asked by the check itself, the check would be the step skipped._
 
 **Note:** _`checksum` has no `test.sh` - the task itself already is the test, line for line._
 
@@ -53,7 +50,8 @@ The ISO written is the one of the release `version:` in `oak.yaml` names, downlo
 An `arch-os-<version>-x86_64.iso` already in that folder is not downloaded again. The number it is then held to is the checksum GitHub publishes for that release, so this module and the release page check the same one - and the release carries no checksum file of its own. It is read once per run and written beside the image as `arch-os-<version>-x86_64.iso.sha256`, which `sha256sum -c` reads as well.
 
 - A checksum mismatch discards the image rather than keeping a broken one
-- Where no checksum can be fetched - the release is not out yet, or it cannot be reached - the run stops and asks, and only a yes writes the image. That is how an image built here rather than downloaded reaches a device
+- Where no checksum can be fetched - the release is not out yet, or it cannot be reached - nothing is written, and the failure says which setting lets it through
+- **Verify checksum** off writes the image in the folder as it is, without asking the release anything. That is how an image built here rather than downloaded reaches a device. On by default, and a setting rather than a question in the middle of the run, so it is read in the interface's language
 - Every request is HTTPS, redirects included
 
 ## Where it runs
@@ -89,7 +87,7 @@ Everything else - listing, downloading, checksumming - runs as you. `tty: true` 
 | --- | --- |
 | `ARCH_OS_DOWNLOAD_DIR` | Where the image lives. Suggested as `XDG_DOWNLOAD_DIR`, or `~/Downloads` |
 | `ARCH_OS_IMAGE_DEVICE` | The USB device to write. Only USB disks are offered, and none the running system has mounted outside `/run/media`, `/media` or `/mnt` |
-| `ARCH_OS_IMAGE_UNVERIFIED` | Whether to write an image no checksum could be fetched for. Asked mid-run, and only then |
+| `ARCH_OS_IMAGE_VERIFY` | Whether the image is held to the checksum its release publishes before it is written. On unless turned off |
 
 **Note:** _The device is read back from `lsblk` immediately before writing - `/dev/sdb` is a path, not a stick._
 

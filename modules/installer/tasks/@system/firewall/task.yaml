@@ -1,2 +1,2 @@
-title: Install the firewall
+title: Set up firewalld
 conditions: ARCH_OS_FIREWALL_ENABLED == true

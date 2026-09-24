@@ -37,19 +37,19 @@ render "${data}/99-arch-os-bbr.conf" >"${MNT}/etc/sysctl.d/99-arch-os-bbr.conf"
 mkdir -p "${MNT}/etc/tmpfiles.d"
 render "${data}/arch-os-hugepages.conf" >"${MNT}/etc/tmpfiles.d/arch-os-hugepages.conf"
 
-# How long a service gets to stop.
-for scope in system user; do
-    mkdir -p "${MNT}/etc/systemd/${scope}.conf.d"
-    render "${data}/manager.conf" >"${MNT}/etc/systemd/${scope}.conf.d/10-arch-os.conf"
-done
+# How long a service of the session gets to stop. Only the session's: a system
+# service that takes its time - a database, a container, a virtual machine - is
+# writing something down, and cutting it short is what loses it.
+mkdir -p "${MNT}/etc/systemd/user.conf.d"
+render "${data}/manager.conf" >"${MNT}/etc/systemd/user.conf.d/10-arch-os.conf"
 
 # What the journal may take.
 mkdir -p "${MNT}/etc/systemd/journald.conf.d"
 render "${data}/journald.conf" >"${MNT}/etc/systemd/journald.conf.d/10-arch-os.conf"
 
-# The queueing each kind of disk is served best by. The kernel picks by how a
-# device is attached and not by what is behind it, and NVMe is left as it found
-# it - it has hardware queues of its own.
+# A spinning disk served by bfq, which keeps a desktop responsive while it
+# seeks. Everything else is left to the kernel: mq-deadline for a disk with one
+# queue, none for NVMe, which has hardware queues of its own.
 # https://wiki.archlinux.org/title/Improving_performance#Changing_I/O_scheduler
 mkdir -p "${MNT}/etc/udev/rules.d"
 render "${data}/60-arch-os-ioschedulers.rules" >"${MNT}/etc/udev/rules.d/60-arch-os-ioschedulers.rules"

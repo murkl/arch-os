@@ -23,7 +23,7 @@ arch-chroot "$MNT" bash -c '
 
 # systemd prints the files it would load and in what order, so a drop-in that is
 # not in that list is one it is never going to read.
-for config in system user journald; do
+for config in user journald; do
     systemd-analyze --root="$MNT" cat-config "systemd/${config}.conf" |
         grep -q "^# .*/${config}\.conf\.d/10-arch-os\.conf$"
 done

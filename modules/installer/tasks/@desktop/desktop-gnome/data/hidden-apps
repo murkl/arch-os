@@ -13,5 +13,6 @@ always qvidcap
 always lstopo
 always org.gnome.Evince
 extras cups
+extras org.gnome.Extensions
 extras tuned-gui
 shell btop

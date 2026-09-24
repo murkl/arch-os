@@ -313,6 +313,14 @@ RECOVERY_IMAGE=/opt/arch-os-recovery
 # shellcheck disable=SC2034
 RECOVERY_EFI=/boot/EFI/Linux/arch-os-recovery.efi
 
+# What that Recovery starts with instead of asking: Oak's own answers and its
+# own, in the folder its partition image copies them out of when it starts -
+# iso/recovery/ spells the same path. On the EFI partition, because it is the
+# one part of an encrypted disk that is readable before the password is typed,
+# and the keyboard is what the password is typed on.
+# shellcheck disable=SC2034
+RECOVERY_SEED=/boot/EFI/arch-os-recovery
+
 # ////////////////////////////////////////////////////////////////////////////
 # INSTALLING INTO THE NEW SYSTEM
 # ////////////////////////////////////////////////////////////////////////////

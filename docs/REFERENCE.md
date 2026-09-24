@@ -110,9 +110,9 @@ Behind **Core tweaks**, changes behaviour, never what is installed. **[➜ Sysct
 | `vm.dirty_bytes=256M`, `_background_bytes=64M` | The default is a share of memory - gigabytes leaving in one burst. Bytes cap it to what the disk keeps up with |
 | `vm.vfs_cache_pressure=50` | Directory/inode entries are cheap to keep, costly to look up again |
 | `transparent_hugepage/defrag=defer+madvise` | Hands out pages immediately, defragments in the background |
-| `DefaultTimeoutStopSec=15s` | The default 90s wait *is* what a hung shutdown looks like |
+| `DefaultTimeoutStopSec=15s`, for the session's own services | The default 90s wait *is* what a hung logout looks like. System services keep systemd's default: a database, a container or a virtual machine that takes its time is writing something down, and cutting it short is what loses it |
 | `SystemMaxUse=200M` | The default keeps the journal forever on a modern disk |
-| I/O schedulers | `bfq` for spinning disks, `mq-deadline` for SATA/eMMC, NVMe untouched - **[➜ wiki](https://wiki.archlinux.org/title/Improving_performance#Changing_I/O_scheduler)** |
+| I/O scheduler | `bfq` for spinning disks, which keeps a desktop responsive while one seeks. Everything else as the kernel picks it: `mq-deadline` for a single queue, none for NVMe - **[➜ wiki](https://wiki.archlinux.org/title/Improving_performance#Changing_I/O_scheduler)** |
 | `tcp_congestion_control=bbr`, `default_qdisc=fq` | `cubic` reads any packet loss as congestion; wifi and long-distance links lose packets without being full. `bbr` measures delay instead |
 
 Swap is **zram** always, tweaks or not. **[➜ Zram](https://wiki.archlinux.org/title/Zram)**
@@ -142,7 +142,9 @@ The `lib32-` half of each comes with 32-bit support. NVIDIA's module is loaded e
 
 **Virtual machines, both ways.** Inside one, the guest tools for its hypervisor are installed without a question. On real hardware, running virtual machines is a question of its own: libvirt, QEMU and a guest firmware, with the Virtual Machine Manager on a desktop. **[➜ Libvirt](https://wiki.archlinux.org/title/Libvirt)**
 
-**Note:** _The GNOME group is filtered, not installed and trimmed: what the slim desktop drops is never downloaded._
+**Note:** _The GNOME group is filtered, not installed and trimmed: what the slim desktop drops is never downloaded. GNOME Software is dropped always - without PackageKit, which Arch advises against, it has nothing to manage but Flatpaks and firmware. Flatpaks go through **Bazaar**, installed with Flatpak, and firmware through **GNOME Firmware**, with the desktop extras. **[➜ PackageKit](https://wiki.archlinux.org/title/PackageKit)**_
+
+**Note:** _The desktop extras bring **Extension Manager** in place of the Extensions app `gnome-shell` ships, which is hidden: it browses, installs and updates extensions in one window, so no browser connector is needed._
 
 **A desktop also gets `nss-mdns`** and the `mdns_minimal` module in front of the resolver in `/etc/nsswitch.conf`. Avahi announces this machine and finds the others either way; without that line nothing on the system can reach any of them by the `.local` name they answer to - a printer, a share and another machine are all `.local`. **[➜ Avahi](https://wiki.archlinux.org/title/Avahi#Hostname_resolution)**
 
@@ -253,7 +255,7 @@ Two are written whole:
 
 ## The Recovery
 
-Two questions - keyboard, disk. Everything else is read, not asked:
+Two questions - keyboard, disk - and on its own partition not even those, see below. Everything else is read, not asked:
 
 | Read | How | When |
 | --- | --- | --- |
@@ -290,7 +292,12 @@ How it starts:
 2. The ram disk finds the partition by the UUID its command line names, made for each build, so no other disk is taken for it
 3. It checks the root file system against a certificate it carries itself. The key that signed it was made for the build and thrown away with it, so nothing on the partition starts that the build did not make, and a damaged one stops at a prompt that says so. Valid from 1970 to 9999: a machine whose clock battery died is still one to repair
 4. It copies the root file system to memory, so nothing of the disk is held while the Recovery works on it, and starts it
-5. Plymouth on the screen the firmware set up - `nomodeset`, so no graphics driver and no firmware for one - and the Recovery on tty1
+5. Plymouth on the screen the firmware set up - `nomodeset`, so no graphics driver and no firmware for one, and `plymouth.ignore-serial-consoles` like the system's own - and the Recovery on tty1
+6. The Recovery reads what the Installer left it on the EFI partition - `EFI/arch-os-recovery/`, read-only and unmounted again at once - and works out its disk as the one holding the partition it was started from. So it opens straight on its menu, in the language the Installer was read in and on the keyboard it was typed on
+
+It is a kiosk: the Recovery is the only thing the machine runs, and nothing leads to a prompt. Its unit holds tty1 and never hands it back, and no other console has a login. Leaving it offers **Reset** in place of the ISO's **Exit** - every answer is forgotten and the program ends, and its systemd unit starts it again, fresh, with what the Installer left. A crash is started again the same way: the first thing a run does is close whatever the last one left open. The shell inside the repaired system stays one of its steps, behind the disk's password where there is one, and opens on **no**.
+
+**Note:** _The EFI partition is not signed, so what the Recovery reads there is held to the same patterns and lists as any answer read from a file - the worst a changed file can do is ask a question again._
 
 **Note:** _It is never updated: it repairs what the Installer of the same release makes, which is what the disk holds. `systemctl reboot --boot-loader-entry=arch-os-recovery.efi` starts it once from the running system._
 
@@ -303,6 +310,6 @@ A hybrid ISO already carries its partition table and boot paths - writing it is 
 - The image is the release `version:` in `oak.yaml` names
 - Where it lands is asked: `XDG_DOWNLOAD_DIR` or `~/Downloads`. An image already there is used rather than fetched again
 - It is checked against the checksum GitHub publishes for that release, and a mismatch discards it rather than keeping a broken one. The checksum is read once, when the image is fetched or found, and kept beside it as `.sha256`
-- Where that release publishes no checksum, the run stops and asks before anything is written - an image built here is the one that arrives this way
+- Where that release publishes no checksum, nothing is written. **Verify checksum** off in the settings writes the image in the folder as it is, without asking the release anything - an image built here is the one that arrives this way
 
 **Root only for the write.** `as_root` wraps `umount`, `dd`, `partprobe` - nothing else. Everything else runs as you, so a live image never leaves root-owned files in your home.

@@ -56,7 +56,12 @@ PLYMOUTH_THEME_REF="17edba09e8e62b7e77b282e238fe4426f9d2d1e2"
 
 # `splash` tells plymouth to show itself; the rest is the boot log getting out of
 # its way. https://wiki.archlinux.org/title/Silent_boot
-BOOT_ARGS='quiet splash loglevel=3 rd.udev.log_level=3 vt.global_cursor_default=0 systemd.show_status=auto'
+#
+# Plymouth forces its text plugin the moment it finds a serial console and never
+# looks for a screen again, and a virtual machine is handed one without asking -
+# the installed system's kernel_args says the same. Measured under QEMU: without
+# it the Recovery boots as a wall of text.
+BOOT_ARGS='quiet splash loglevel=3 rd.udev.log_level=3 vt.global_cursor_default=0 systemd.show_status=auto plymouth.ignore-serial-consoles'
 
 TEMP_DIR="$(mktemp -d)"
 
@@ -239,7 +244,8 @@ rm -rf "${RECOVERY_PROFILE}/airootfs/etc/systemd/system" \
     "${RECOVERY_PROFILE}/airootfs/etc/systemd/resolved.conf.d" \
     "${RECOVERY_PROFILE}/airootfs/etc/ssh"
 
-# Its packages, and a root prompt on tty1 once it stops.
+# Its packages, and what makes it a kiosk: the Recovery on tty1, started again
+# whenever it ends, with what the Installer left it and no login anywhere.
 cp -r recovery/. "$RECOVERY_PROFILE"
 
 install_arch_os "$RECOVERY_PROFILE" "${RELEASE_DIR}/modules/recovery"
@@ -281,7 +287,9 @@ mkfs.erofs --quiet --all-root -U "$uuid" "${RECOVERY_DIR}/recovery.img" "${TEMP_
 # The image the boot loader starts it with. copytoram, so nothing of the disk is
 # held while the Recovery works on it. nomodeset, so the screen the firmware set
 # up is the one it draws on: no graphics driver, and no firmware on the image
-# for one to need. What the boot menu calls it is its os-release.
+# for one to need - and plymouth draws on that screen at once, where it would
+# otherwise wait for a driver that never comes. What the boot menu calls it is
+# its os-release.
 cat >"${TEMP_DIR}/os-release" <<EOF
 NAME="Arch OS Recovery"
 PRETTY_NAME="Arch OS Recovery"
@@ -291,7 +299,7 @@ EOF
 ukify build \
     --linux="${netboot}/boot/x86_64/vmlinuz-linux" \
     --initrd="${netboot}/boot/x86_64/initramfs-linux.img" \
-    --cmdline="archisobasedir=arch archisodevice=UUID=${uuid} copytoram=y cms_verify=y nomodeset plymouth.use-simpledrm ${BOOT_ARGS}" \
+    --cmdline="archisobasedir=arch archisodevice=UUID=${uuid} copytoram=y cms_verify=y nomodeset ${BOOT_ARGS}" \
     --os-release="@${TEMP_DIR}/os-release" \
     --output="${RECOVERY_DIR}/recovery.efi"
 
@@ -352,7 +360,8 @@ Arch OS live environment
   recovery     repair an Arch Linux system already on a disk
   iwctl        join a wireless network
 
-Add --debug to either for a run that changes nothing.
+Add --debug to either for a run that changes nothing, and --language=de to
+skip the first page.
 
 Both keep their answers in /opt/arch-os, so starting either again picks up where
 it left off. What they did is in /opt/arch-os/installer.log and

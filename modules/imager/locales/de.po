@@ -56,21 +56,15 @@ msgstr "Abbild"
 msgid "Type the full path of a folder, starting with a slash."
 msgstr "Gib den vollständigen Pfad eines Ordners an, beginnend mit einem Schrägstrich."
 
-#. ARCH_OS_IMAGE_UNVERIFIED: the question
+#. ARCH_OS_IMAGE_VERIFY: the question
 #: module.yaml
-msgid "Unverified image"
-msgstr "Ungeprüftes Abbild"
+msgid "Verify checksum"
+msgstr "Prüfsumme prüfen"
 
-#. ARCH_OS_IMAGE_UNVERIFIED: what it means
+#. ARCH_OS_IMAGE_VERIFY: what it means
 #: module.yaml
-msgid ""
-"There is no checksum to hold this image to: either the release publishes none yet or it cannot be reached. So nothing here can tell whether the file is whole, or whether it is the image it says it is.\n"
-"\n"
-"An image built rather than downloaded is the usual reason to go on. Stopping leaves the device untouched."
-msgstr ""
-"Es gibt keine Prüfsumme, an der sich dieses Abbild messen ließe: Entweder veröffentlicht das Release noch keine, oder es ist nicht erreichbar. Damit lässt sich hier nicht sagen, ob die Datei vollständig ist und ob sie das Abbild ist, das sie zu sein behauptet.\n"
-"\n"
-"Ein selbst gebautes statt heruntergeladenes Abbild ist der übliche Grund weiterzumachen. Beim Abbrechen bleibt der Datenträger unberührt."
+msgid "Holds the image to the checksum its release publishes before anything is written, and throws it away where the two disagree. Turned off, the image in the download folder goes to the device as it is - an image built rather than downloaded is the usual reason."
+msgstr "Gleicht das Abbild vor dem Schreiben mit der Prüfsumme ab, die sein Release veröffentlicht, und verwirft es, wenn beide nicht übereinstimmen. Ausgeschaltet geht das Abbild aus dem Download-Ordner unverändert auf das Gerät - der übliche Grund ist ein selbst gebautes statt heruntergeladenes Abbild."
 
 #. ARCH_OS_IMAGE_DEVICE: the question
 #: module.yaml
@@ -93,19 +87,14 @@ msgid "Download the image"
 msgstr "Abbild herunterladen"
 
 #. the step, as the run lists it
-#: tasks/@verify/unverified/task.yaml
-msgid "Decide about an unchecked image"
-msgstr "Über ein ungeprüftes Abbild entscheiden"
-
-#. the step, as the run lists it
 #: tasks/@verify/checksum/task.yaml
-msgid "Check the image"
-msgstr "Abbild prüfen"
+msgid "Verify the checksum"
+msgstr "Prüfsumme prüfen"
 
 #. the step, as the run lists it
 #: tasks/@write/device/task.yaml
-msgid "Write the device"
-msgstr "Datenträger schreiben"
+msgid "Write the image to the device"
+msgstr "Abbild auf das Gerät schreiben"
 
 #. read once the step is done, and held on until somebody has
 #: tasks/@write/device/task.yaml
