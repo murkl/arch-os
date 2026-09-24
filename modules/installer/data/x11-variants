@@ -1,6 +1,6 @@
 # layout  variant  variant ...
 #
-# Kept here because the Arch live image ships no xkeyboard-config to ask.
+# Kept here because the official Arch live image ships no xkeyboard-config to ask.
 # "legacy" and "olpc" variants are left out on purpose — obscure keyboards
 # nobody is offered a question for.
 #

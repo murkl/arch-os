@@ -21,6 +21,13 @@ REPO="murkl/arch-os"
 # of a release: a machine with the file already here needs no release to name it.
 image() { printf '%s/arch-os-%s-x86_64.iso' "$(download_dir)" "$VERSION"; }
 
+# What that release publishes the image has to hash to, beside it in the form
+# `sha256sum -c` reads. The download writes it, or takes it away where there is
+# none to be had, and the steps after it go by this file alone: the network is
+# read once, so the question whether to go on unchecked and the check itself
+# cannot disagree about whether there was a checksum.
+checksum() { printf '%s.sha256' "$(image)"; }
+
 # That release, as GitHub describes it: where the image
 # is and what it has to hash to, as two words. The release carries no checksum
 # file - the checksum is a field of the asset, and it is the same one the
@@ -69,14 +76,15 @@ download_dir() {
 
 # The two ways on from an image nothing can be held against, and nothing at all
 # where the release publishes a checksum: a list that comes back empty is a
-# question with nothing to decide, and Oak skips the step that asked it. So an
-# ordinary run never sees this page - only one where the release cannot be
+# question with nothing to decide, and Oak skips the step that asked it - which
+# is why that step does nothing but ask, and the check is the one after it. So
+# an ordinary run never sees this page - only one where the release cannot be
 # reached, or does not exist yet, which is what an image built here is.
 #
-# A simulated run shows it either way and asks nothing of the network: this is
-# the one page of this module that is otherwise never looked at.
+# A simulated run shows it either way: this is the one page of this module that
+# is otherwise never looked at.
 unverified_choices() {
-    if ! debugging && [ -n "$(image_asset | cut -d' ' -f2)" ]; then
+    if ! debugging && [ -s "$(checksum)" ]; then
         return 0
     fi
     printf 'false\tStop and write nothing\n'
@@ -84,10 +92,25 @@ unverified_choices() {
 }
 
 # The USB disks this machine has: the device path, a tab, and what a person
-# picks it by. By transport rather than by anything read off the partitions - a
-# disk this machine boots from is not on a USB bus, so it cannot turn up here at
-# all, which is the one mistake that cannot be taken back.
+# picks it by. By transport rather than by anything read off the partitions, and
+# without the ones the running system is on - a system can live on a USB disk
+# too, and writing over it is the one mistake that cannot be taken back.
 list_devices() {
-    lsblk -dn -o PATH,TRAN,SIZE,MODEL |
-        awk '$2 == "usb" { path = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); sub(/ +$/, ""); print path "\t" path "  " $0 }'
+    local path shown
+    while IFS=$'\t' read -r path shown; do
+        in_system_use "$path" && continue
+        printf '%s\t%s\n' "$path" "$shown"
+    done < <(lsblk -dn -o PATH,TRAN,SIZE,MODEL |
+        awk '$2 == "usb" { path = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); sub(/ +$/, ""); print path "\t" path "  " $0 }')
+}
+
+# Whether the running system has something on that disk: swap, or a file system
+# mounted anywhere but where a stick is put - under /run/media by the desktop,
+# under /media or /mnt by hand. Raw output, where a partition mounted twice has
+# its mount points joined by an escaped newline.
+in_system_use() {
+    lsblk -nro MOUNTPOINTS "$1" | awk '
+        { n = split($0, mounts, /\\x0a/) }
+        { for (i = 1; i <= n; i++) if (mounts[i] != "" && mounts[i] !~ /^\/(run\/media|media|mnt)(\/|$)/) found = 1 }
+        END { exit !found }'
 }

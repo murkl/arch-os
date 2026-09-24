@@ -1,7 +1,8 @@
 # code	country	time zone
 #
 # What a country's ISO territory code implies: where Arch's mirror list calls
-# it, and the time zone it keeps. code is what a locale ends in (de_DE -> DE).
+# it, and the time zone it keeps. code is what a locale ends in (de_DE -> DE),
+# and what tzdata's zone.tab files a time zone under (Europe/Berlin -> DE).
 # country is spelled exactly as reflector spells it — a "-" means Arch has no
 # mirror there, so only the time zone is of use. time zone is a suggestion,
 # not an answer: the row the time zone question opens on, one per country

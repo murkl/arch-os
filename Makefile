@@ -132,10 +132,12 @@ MODULE_SCRIPTS = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -name '*.sh')
 MODULE_YAML    = $(shell find $(MODULES_DIR) -name '*.yaml')
 
 # The shell a module ships as a file of somebody's home rather than as a task.
-# Found by the name it lands under, since a .bashrc carries no extension. The
-# other three in that folder are out: zsh and fish are not dialects shellcheck
-# reads, and the handover fragment is placeholders rather than shell.
+# Found by the name it lands under, since a .bashrc carries no extension. zsh
+# and fish are not dialects shellcheck reads, so those two are read by their own
+# shells instead; the handover fragment is placeholders rather than shell.
 MODULE_SHELL = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/data/bashrc $(MODULES_DIR)/*/tasks/@*/*/data/aliases)
+MODULE_ZSH   = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/data/zshrc)
+MODULE_FISH  = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/data/config.fish)
 
 # Everything a module can put on a screen: the declarations, the scripts and
 # the shell they share, the tables and every catalog. The READMEs are the one
@@ -293,7 +295,8 @@ smoke:
 
 # Every template rewritten out of the module it belongs to, and every catalog
 # brought up to it. msgmerge keeps every translation whose source text is
-# unchanged and marks the rest fuzzy rather than dropping it.
+# unchanged and marks the rest fuzzy rather than dropping it. A text no source
+# holds any more is dropped, so what was taken out leaves no translation behind.
 locales: dev
 	for m in $(MODULES); do \
 		pot=$(MODULES_DIR)/$$m/locales/$$m.pot; \
@@ -301,6 +304,7 @@ locales: dev
 		for po in $(MODULES_DIR)/$$m/locales/*.po; do \
 			[ -e "$$po" ] || continue; \
 			msgmerge --quiet --update --backup=none --no-wrap "$$po" $$pot; \
+			msgattrib --no-obsolete --no-wrap -o "$$po" "$$po"; \
 		done; \
 	done
 
@@ -361,11 +365,18 @@ locales-check: dev
 # unstripped escape in it was shipped that way. `requires:` is deliberately not
 # on that list - it is what the module says about the machine it belongs on, and
 # it belongs in the declaration where somebody looking for it looks.
+#
+# The last one is for a check that cannot fail. Oak runs every script under an ERR
+# trap and without -e, and bash never fires that trap for a command inverted
+# with `!`: such a line fails the script only while it happens to be the last,
+# and two tests passed that way while checking nothing.
 lint:
 	shellcheck -s sh -S style $(POSIX_SCRIPTS)
 	shellcheck -S style $(ISO_SCRIPTS)
 	shellcheck -x -S style $(MODULE_SCRIPTS)
 	shellcheck -s bash -S style -e SC1091 $(MODULE_SHELL)
+	for file in $(MODULE_ZSH); do zsh -n "$$file"; done
+	for file in $(MODULE_FISH); do fish --no-execute "$$file"; done
 	shfmt -d -ln posix -i 4 $(POSIX_SCRIPTS)
 	shfmt -d -i 4 $(ISO_SCRIPTS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
 	yamllint .
@@ -378,6 +389,8 @@ lint:
 		|| { echo "a task's or hook's shell is linted by nothing inside a yaml and gives a failure no line to point at - put it in the .sh file beside it and name that file here" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*\}[[:space:]]*>>?[[:space:]]*"\$$\{MNT\}' $(MODULE_SCRIPTS) \
 		|| { echo "a file written into the new system is a template beside its task, put in place with render - see module.sh" >&2; exit 1; }
+	@! grep -nE '^[[:space:]]*![[:space:]]' $(MODULE_SCRIPTS) \
+		|| { echo "a command inverted with ! fails nothing under the ERR trap a script runs in - write it as an if that exits" >&2; exit 1; }
 
 fmt:
 	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)

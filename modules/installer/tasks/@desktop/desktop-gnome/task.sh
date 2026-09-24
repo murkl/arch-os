@@ -81,9 +81,12 @@ chroot_pacman_install "${packages[@]}"
 # GROUPS
 # ////////////////////////////////////////////////////////////////////////////
 
-# https://wiki.archlinux.org/title/Users_and_groups#User_groups
-arch-chroot "$MNT" groupadd -f plugdev
-arch-chroot "$MNT" usermod -aG adm,audio,video,optical,input,tty,plugdev "$ARCH_OS_USERNAME"
+# Only gamemode, whose limits are granted to the group. Sound, video, drives and
+# input devices are handed to whoever sits at the seat by logind, and the groups
+# that used to grant them do harm now: audio lets one session hold the sound card
+# against the next, input reads every keystroke on the machine, tty writes to
+# every other terminal. The journal is readable by wheel already.
+# https://wiki.archlinux.org/title/Users_and_groups#Pre-systemd_groups
 [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && arch-chroot "$MNT" gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -199,8 +202,12 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
 fi
 
 # --global writes to /etc/systemd/user, so it holds for every account and keeps
-# working when a unit is renamed. The sockets follow through Also=.
-arch-chroot "$MNT" systemctl --global enable pipewire.service pipewire-pulse.service wireplumber.service gcr-ssh-agent.socket
+# working when a unit is renamed. The sockets rather than the services, as
+# PipeWire itself sets it up: the sound server starts with the first program
+# that plays or records, wireplumber with it, and neither in a session that has
+# nothing to play - root's on the console, where the service would be turned
+# away and take its session manager down with it, in the journal every time.
+arch-chroot "$MNT" systemctl --global enable pipewire.socket pipewire-pulse.socket wireplumber.service gcr-ssh-agent.socket
 
 # ////////////////////////////////////////////////////////////////////////////
 # APPLICATION LIST

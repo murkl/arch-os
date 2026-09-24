@@ -17,10 +17,21 @@ BTRFS_TOP=/run/arch-os-recovery
 # WHAT THE DISK IS
 # ////////////////////////////////////////////////////////////////////////////
 
-# The installation on the chosen disk, found by the layout Arch OS always lays
-# down - see part_of.
-BOOT_PART="$(part_of "$ARCH_OS_RECOVERY_DISK" 1)"
-ROOT_PART="$(part_of "$ARCH_OS_RECOVERY_DISK" 2)"
+# The partition the installation is on: the second, where the Installer puts
+# it. Taken for it only while it holds what the Installer makes of it - a LUKS
+# container, or a file system labelled ROOT (ext4) or BTRFS - so a disk that is
+# something else is turned away before anything on it is opened. /boot is read
+# out of the installation's own fstab once it is open - see mount_target.
+#
+# Raw output with a single space between columns, so a column left empty stays
+# a column.
+root_partition() {
+    local part
+    part="$(part_of "$ARCH_OS_RECOVERY_DISK" 2)"
+    lsblk -dnro FSTYPE,LABEL "$part" 2>/dev/null | awk -F'[ ]' -v part="$part" '
+        $1 == "crypto_LUKS" || ($1 == "ext4" && $2 == "ROOT") || ($1 == "btrfs" && $2 == "BTRFS") { print part }'
+}
+ROOT_PART="$(root_partition)"
 
 # What holds the file system: the unlocked mapper device where the disk is
 # encrypted, the root partition itself where it is not.
@@ -107,7 +118,8 @@ mount_target() {
         mount --mkdir "$target" "$MNT"
     fi
 
-    mount --mkdir "$BOOT_PART" "${MNT}/boot"
+    # As the system mounts it itself, with the options its own table gives it.
+    mount --fstab "${MNT}/etc/fstab" --target-prefix "$MNT" --mkdir /boot
 }
 
 # Everything under /mnt, taken back down. Nothing mounted is not an error: a

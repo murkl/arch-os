@@ -81,8 +81,10 @@ render() {
 # LOCALE LOOKUP
 # ////////////////////////////////////////////////////////////////////////////
 
-# Keyboard, font, mirror country and timezone do not follow from the shape of a
-# locale - de_CH is not de, sv is not se - so all four are looked up in data/.
+# Keyboard, font and timezone do not follow from the shape of a locale - de_CH
+# is not de, sv is not se - so all three are looked up in data/. The mirror
+# country is looked up there too, but follows the time zone rather than the
+# language: see auto_country.
 
 # A column of the data/languages row for a locale: its own row if there is one,
 # otherwise its language's row.
@@ -96,12 +98,11 @@ language_field() {
     ' "${DATA}/languages"
 }
 
-# A column of the data/countries row for the territory a locale ends in. Empty
-# for a locale that names none.
+# A column of the data/countries row for a territory code: the two capitals a
+# locale ends in, and the ones tzdata files a zone under. Empty for a code it has
+# no row for, and for no code at all.
 country_field() {
-    local locale="${2%%.*}"
-    [ "${locale#*_}" != "$locale" ] || return 0
-    awk -F'\t' -v col="$1" -v code="${locale#*_}" '$1 == code { print $col }' "${DATA}/countries"
+    awk -F'\t' -v col="$1" -v code="$2" 'code != "" && $1 == code { print $col }' "${DATA}/countries"
 }
 
 # The two magic words the lists share; neither ever reaches a task. auto means
@@ -136,9 +137,15 @@ auto_font() {
     printf '%s' "${font:-none}"
 }
 
+# The country the chosen time zone lies in, as tzdata files it, rather than the
+# one the language names: en_US is typed on every continent, and a mirror an
+# ocean away is not only slow but cannot even be rated within reflector's own
+# timeout.
 auto_country() {
-    local country
-    country="$(country_field 2 "$ARCH_OS_LOCALE_LANG")"
+    local territory country
+    territory="$(awk -F'\t' -v zone="$ARCH_OS_TIMEZONE" \
+        '!/^#/ && zone != "" && $3 == zone { print $1 }' /usr/share/zoneinfo/zone.tab)"
+    country="$(country_field 2 "$territory")"
     [ "$country" = "-" ] && country="" # a country Arch has no mirror in
     printf '%s' "${country:-none}"
 }
@@ -157,10 +164,12 @@ auto_microcode() {
 # THE ANSWERS, RESOLVED
 # ////////////////////////////////////////////////////////////////////////////
 
-# Resolved once here instead of in a task, so every task sees the same answer
-# regardless of how it was arrived at.
-: "${ARCH_OS_BOOT_PARTITION:=$(part_of "$ARCH_OS_DISK" 1)}"
-: "${ARCH_OS_ROOT_PARTITION:=$(part_of "$ARCH_OS_DISK" 2)}"
+# The two partitions the disk is laid out into, named once here so every task
+# means the same devices. Only the tasks use the first, and shellcheck reads
+# this file without them.
+# shellcheck disable=SC2034
+BOOT_PART="$(part_of "$ARCH_OS_DISK" 1)"
+ROOT_PART="$(part_of "$ARCH_OS_DISK" 2)"
 
 is_auto "$ARCH_OS_VCONSOLE_KEYMAP" && ARCH_OS_VCONSOLE_KEYMAP="$(auto_keymap)"
 is_auto "$ARCH_OS_VCONSOLE_FONT" && ARCH_OS_VCONSOLE_FONT="$(auto_font)"
@@ -236,22 +245,38 @@ boot_images() {
     fi
 }
 
-# Read by the unified kernel image, by systemd-boot's entries and by GRUB's
-# command line - three tasks, one answer, so no two of them can disagree about
-# how this system boots. Why each parameter is here: docs/REFERENCE.md
+# The kernel command line, read by the unified kernel image and by systemd-boot's
+# entries - one answer, so no two of them can disagree about how this system
+# boots. Why each parameter is here: docs/REFERENCE.md
 kernel_args() {
-    local args=(rw init=/usr/lib/systemd/systemd)
+    printf '%s %s' "$(root_args)" "$(kernel_options)"
+}
 
-    args+=(zswap.enabled=0) # pointless next to zram, and the two interfere
+# Where the root file system is and how it is mounted. GRUB works this out for
+# itself and writes it into every entry it generates, so a second copy on its
+# command line would be two root= for one boot, and GRUB reads kernel_options
+# alone.
+root_args() {
+    local args=(rw)
 
     if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
-        args+=("rd.luks.name=$(blkid -s UUID -o value "$ARCH_OS_ROOT_PARTITION")=cryptroot")
         args+=(root=/dev/mapper/cryptroot)
     else
-        args+=("root=PARTUUID=$(lsblk -dno PARTUUID "$ARCH_OS_ROOT_PARTITION")")
+        args+=("root=PARTUUID=$(lsblk -dno PARTUUID "$ROOT_PART")")
     fi
 
     [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && args+=(rootflags=subvol=@ rootfstype=btrfs)
+    printf '%s' "${args[*]}"
+}
+
+# Everything else, which every boot loader needs from here.
+kernel_options() {
+    local args=(zswap.enabled=0) # pointless next to zram, and the two interfere
+
+    if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
+        args+=("rd.luks.name=$(blkid -s UUID -o value "$ROOT_PART")=cryptroot")
+    fi
+
     [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && args+=(nowatchdog)
 
     # https://wiki.archlinux.org/title/Silent_boot
@@ -352,9 +377,17 @@ chroot_aur_install() {
 
     dir="$(mktemp -u "/home/${ARCH_OS_USERNAME}/.aur-${repo}.XXXX")"
     build="rm -rf ${dir} && git clone --depth 1 ${url} ${dir} && cd ${dir}"
-    build="${build} && printf '\noptions=(\"!debug\")\n' >>PKGBUILD"
-    # make and cargo are named separately because neither reads the other.
-    build="${build} && MAKEFLAGS=-j${jobs} CARGO_BUILD_JOBS=${jobs} makepkg -si --noconfirm --needed"
+    # Added to the options the PKGBUILD sets rather than put in their place:
+    # yay's says !lto, and a line that replaced it would build what its author
+    # ruled out.
+    build="${build} && printf '\noptions+=(\"!debug\")\n' >>PKGBUILD"
+    # make and cargo are named separately because neither reads the other. The
+    # caches cargo and go fill are kept inside the build directory, so they go
+    # with it: otherwise paru's crate registry or yay's build cache, each well
+    # over a hundred megabytes, stays in the new home for good.
+    build="${build} && MAKEFLAGS=-j${jobs} CARGO_BUILD_JOBS=${jobs}"
+    build="${build} CARGO_HOME=${dir}/.cargo GOPATH=${dir}/go XDG_CACHE_HOME=${dir}/.cache"
+    build="${build} makepkg -si --noconfirm --needed"
 
     echo '%wheel ALL=(ALL:ALL) NOPASSWD: ALL' | sudoers_rule 99-aur-build
 
@@ -376,7 +409,8 @@ chroot_aur_install() {
     # a root-owned file the build left behind would otherwise leave passwordless
     # sudo standing in the installed system.
     rm -f "${MNT}/etc/sudoers.d/99-aur-build"
-    as_user "rm -rf ${dir}" || echo "the build directory ${dir} could not be removed" >&2
+    # As root, which go's read-only module cache does not stop.
+    rm -rf "${MNT}${dir}" || echo "the build directory ${dir} could not be removed" >&2
 
     [ "$status" -eq 0 ] || echo "building ${repo} from the AUR did not finish" >&2
     return "$status"
@@ -568,8 +602,9 @@ geo_timezone() {
 # row, which is Africa/Abidjan, and an enter meant for the page before sets the
 # clock to it.
 auto_timezone() {
-    local zone
-    zone="$(country_field 3 "$ARCH_OS_LOCALE_LANG")"
+    local locale="${ARCH_OS_LOCALE_LANG%%.*}" territory="" zone
+    [[ $locale == *_* ]] && territory="${locale#*_}"
+    zone="$(country_field 3 "$territory")"
     [ -n "$zone" ] || zone="$(geo_timezone)"
     printf '%s' "${zone:-UTC}"
 }
@@ -581,29 +616,6 @@ list_countries() {
     awk -F'\t' '!/^#/ && $2 != "-" { print $2 }' "${DATA}/countries"
 }
 
-# The partitions of the chosen disk, for a dual boot laid out by somebody else.
-# The size, file system and label are what tell the EFI partition apart from the
-# one the other operating system lives on.
-list_partitions() {
-    lsblk -n -o PATH,SIZE,FSTYPE,LABEL "$ARCH_OS_DISK" | tail -n +2 |
-        awk '{ path = $1; $1 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
-}
-
-# The first vfat partition is almost always the one the other system boots from.
-# The match is remembered rather than exited on, here and below: a filter that
-# stops reading leaves lsblk with a write error, which under pipefail is a
-# failed lookup rather than an answer.
-default_boot_partition() {
-    lsblk -n -o PATH,FSTYPE "$ARCH_OS_DISK" | awk '!found && $2 == "vfat" { print $1; found = 1 }'
-}
-
-# The largest partition that is not the EFI one: the likeliest candidate for
-# space freed up to install into.
-default_root_partition() {
-    lsblk -bn -o PATH,SIZE,FSTYPE "$ARCH_OS_DISK" | tail -n +2 |
-        awk '$3 != "vfat" { print $2, $1 }' | sort -rn | awk 'NR == 1 { print $2 }'
-}
-
 # Read again at install time, so answers carried to another machine still fit it.
 list_microcode() {
     printf 'auto\tauto — %s\n' "$(auto_microcode)"
@@ -613,12 +625,13 @@ list_microcode() {
 }
 
 # The desktop keyboard is asked of the running system where it can answer and
-# read from data/ where it cannot: the Arch live image ships no xkeyboard-config.
+# read from data/ where it cannot: the official Arch live image ships no
+# xkeyboard-config, and localectl then fails rather than printing nothing.
 list_layouts() {
     printf 'auto\tauto — %s\n' "$(auto_layout)"
 
     local layouts
-    layouts="$(localectl list-x11-keymap-layouts 2>/dev/null)"
+    layouts="$(localectl list-x11-keymap-layouts 2>/dev/null || true)"
     if [ -n "$layouts" ]; then
         echo "$layouts"
         return 0
@@ -634,10 +647,11 @@ list_variants() {
 
     echo none
 
-    variants="$(localectl list-x11-keymap-variants "$layout" 2>/dev/null)"
+    variants="$(localectl list-x11-keymap-variants "$layout" 2>/dev/null || true)"
     if [ -n "$variants" ]; then
         echo "$variants"
         return 0
     fi
-    grep "^${layout} " "${DATA}/x11-variants" | cut -d' ' -f2- | tr ' ' '\n'
+    # A layout without variants has no line there, which is not a failure.
+    { grep "^${layout} " "${DATA}/x11-variants" || true; } | cut -d' ' -f2- | tr ' ' '\n'
 }

@@ -11,3 +11,9 @@ arch-chroot "$MNT" systemctl is-enabled smb.service >/dev/null
 # And the public share takes writes only from the account: a guest who may write
 # is a folder anybody on the same network can fill.
 [ "$(arch-chroot "$MNT" testparm -s --section-name=public --parameter-name='read only' 2>/dev/null)" = Yes ]
+
+# The share and the discovery that makes Windows list this machine, both let in.
+if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
+    arch-chroot "$MNT" firewall-offline-cmd --query-service=samba >/dev/null
+    arch-chroot "$MNT" firewall-offline-cmd --query-service=ws-discovery-host >/dev/null
+fi

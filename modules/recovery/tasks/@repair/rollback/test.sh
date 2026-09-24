@@ -5,9 +5,10 @@
 
 # One field of `btrfs subvolume show`, which prints them one per line as
 # "<name>:<tab><value>". Anchored on the name, so UUID does not also answer for
-# the parent.
+# the parent, and ended at the first match by sed itself, which still reads to
+# the end rather than leaving btrfs writing into a closed pipe.
 subvolume_field() {
-    btrfs subvolume show "$1" | sed -n "s/^[[:space:]]*${2}:[[:space:]]*//p" | head -n1
+    btrfs subvolume show "$1" | sed -n "0,/^[[:space:]]*${2}:/s/^[[:space:]]*${2}:[[:space:]]*//p"
 }
 
 mountpoint -q "$MNT"

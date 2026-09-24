@@ -30,7 +30,7 @@ debugging && {
 # Without the lines about the sharing itself: a configuration naming where an
 # earlier copy went would send whoever opened it somewhere else again.
 if ! url="$(grep -v '^ARCH_OS_CONFIG_' "$MODULE_CONF" |
-    curl -sf --connect-timeout 10 --max-time 30 --data-binary @- "${service}/")"; then
+    fetch_url -s --max-time 30 --data-binary @- "${service}/")"; then
     echo "the configuration could not be shared" >&2
     return 0
 fi

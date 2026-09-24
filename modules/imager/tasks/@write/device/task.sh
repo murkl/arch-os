@@ -20,7 +20,8 @@ target="$(image)"
 # /dev/sdb is a path, not a stick: by the next run an internal disk can be
 # sitting at it. So the answer is checked against the same list it was chosen
 # from, immediately before anything is written.
-if ! list_devices | cut -f1 | grep -qxF "$device"; then
+devices="$(list_devices | cut -f1)"
+if ! grep -qxF "$device" <<<"$devices"; then
     echo "${device} is not a USB device on this machine. Plug the stick back in and choose it again." >&2
     exit 1
 fi
@@ -46,7 +47,8 @@ while read -r mountpoint; do
     as_root umount "$mountpoint" || as_root umount -l "$mountpoint"
 done < <(lsblk -nro MOUNTPOINT "$device")
 
-if lsblk -nro MOUNTPOINT "$device" | grep -q .; then
+mounted="$(lsblk -nro MOUNTPOINT "$device")"
+if grep -q . <<<"$mounted"; then
     echo "${device} still has something mounted from it" >&2
     exit 1
 fi
@@ -58,4 +60,6 @@ fi
 as_root dd if="$target" of="$device" bs=4M status=progress conv=fsync oflag=direct
 
 # Nothing reads the new partition table until the kernel is told to look.
-as_root partprobe "$device" 2>/dev/null || true
+# blockdev rather than partprobe: it is util-linux, which every Linux has, and
+# parted, which partprobe comes with, is missing from many.
+as_root blockdev --rereadpt "$device" 2>/dev/null || true

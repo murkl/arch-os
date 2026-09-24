@@ -63,9 +63,9 @@ variables:
   - name: ARCH_OS_IMAGE_DEVICE
     title: Device
     description: |
-      The USB device to write to. Everything on it will be erased. Only disks
-      on a USB bus are offered, so the disk this machine boots from cannot be
-      chosen by accident.
+      The USB device to write to. Everything on it will be erased. Only USB
+      disks are offered, and none this system is running from, so it cannot
+      be chosen by accident.
     group: Device
     required: true
     error: Choose a device that exists.

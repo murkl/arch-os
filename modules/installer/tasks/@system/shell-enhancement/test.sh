@@ -28,3 +28,18 @@ for file in "${MNT}/root/.bashrc" "${MNT}/root/.aliases" \
     fi
     bash -n "$file"
 done
+
+# And the shell that opens instead of bash reads its own file without a parse
+# error, asked of that shell as it is installed here.
+case "$ARCH_OS_SHELL_ENHANCEMENT_SHELL" in
+zsh)
+    for file in /root/.zshrc "/home/${ARCH_OS_USERNAME}/.zshrc"; do
+        arch-chroot "$MNT" zsh -n "$file"
+    done
+    ;;
+fish)
+    for file in /root/.config/fish/config.fish "/home/${ARCH_OS_USERNAME}/.config/fish/config.fish"; do
+        arch-chroot "$MNT" fish --no-execute "$file"
+    done
+    ;;
+esac

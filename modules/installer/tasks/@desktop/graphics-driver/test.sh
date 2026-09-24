@@ -6,9 +6,12 @@ case "$ARCH_OS_DESKTOP_GRAPHICS_DRIVER" in
 nvidia)
     has_command nvidia-smi
     [ -f "${MNT}/etc/pacman.d/hooks/nvidia.hook" ]
-    # In the image the firmware starts, which is what early loading means.
+    # In the image the firmware starts, which is what early loading means. The
+    # listing is read whole: grep stops at the first match, and lsinitcpio,
+    # still writing, would die of that and fail the test under pipefail.
     while read -r image; do
-        arch-chroot "$MNT" lsinitcpio "$image" | grep -q '/nvidia-drm\.ko'
+        contents="$(arch-chroot "$MNT" lsinitcpio "$image")"
+        grep -q '/nvidia-drm\.ko' <<<"$contents"
     done < <(boot_images)
     ;;
 *)

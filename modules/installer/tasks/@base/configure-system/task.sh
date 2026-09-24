@@ -24,23 +24,21 @@ arch-chroot "$MNT" hwclock --systohc
 # Language and keyboard.
 render "$(where)/locale.conf" LOCALE="$ARCH_OS_LOCALE_LANG" >"${MNT}/etc/locale.conf"
 
-# Every line of /etc/locale.gen belonging to the chosen language, plus English
-# as a fallback. Matched by its beginning alone, because the file pads entries
-# with trailing spaces. An edit rather than a drop-in: the file belongs to glibc
-# and locale-gen reads no other.
+# The chosen language and English beside it as a fallback, in UTF-8 alone: that
+# is what locale.conf names, and the older encodings the file lists beside it
+# would be built again at every glibc update for nobody. A locale that only
+# comes in UTF-8 carries no suffix there. An edit rather than a drop-in: the
+# file belongs to glibc and locale-gen reads no other.
 # https://wiki.archlinux.org/title/Locale
-{
-    sed "/^#${ARCH_OS_LOCALE_LANG}/s/^#//" /etc/locale.gen | grep "^${ARCH_OS_LOCALE_LANG}" || true
-    echo 'en_US.UTF-8 UTF-8'
-} | while read -r line; do
-    [ -n "$line" ] || continue
-    sed -i "s|^#${line}|${line}|" "${MNT}/etc/locale.gen"
+for locale in "$ARCH_OS_LOCALE_LANG" en_US; do
+    sed -i -E "s/^#(${locale}(\.UTF-8)? UTF-8)/\1/" "${MNT}/etc/locale.gen"
 done
 arch-chroot "$MNT" locale-gen
 
 # locale-gen is happy to generate nothing, and a system whose LANG names a
 # locale that was never built warns at every program.
-if ! arch-chroot "$MNT" locale -a | grep -qxF "${ARCH_OS_LOCALE_LANG}.utf8"; then
+locales="$(arch-chroot "$MNT" locale -a)"
+if ! grep -qxF "${ARCH_OS_LOCALE_LANG}.utf8" <<<"$locales"; then
     echo "the locale ${ARCH_OS_LOCALE_LANG}.UTF-8 was not generated" >&2
     exit 1
 fi

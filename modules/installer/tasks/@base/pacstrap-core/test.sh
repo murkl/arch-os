@@ -8,4 +8,9 @@
 # table missing either of these is a machine that comes up in an emergency
 # shell - and nothing between here and the first restart would notice.
 findmnt --fstab --tab-file "${MNT}/etc/fstab" / >/dev/null
-findmnt --fstab --tab-file "${MNT}/etc/fstab" /boot >/dev/null
+
+# And /boot as root's alone. The sed that sets it matches the options genfstab
+# writes today, and says nothing the day they are spelled another way.
+boot_options="$(findmnt --fstab --tab-file "${MNT}/etc/fstab" -no OPTIONS /boot)"
+grep -qE '(^|,)fmask=0077(,|$)' <<<"$boot_options"
+grep -qE '(^|,)dmask=0077(,|$)' <<<"$boot_options"

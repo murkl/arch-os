@@ -38,10 +38,13 @@ WORK_DIR="$(realpath -m "${WORK_DIR:-/var/tmp/arch-os-iso-work}")"
 
 AIRFS_OPT="${ISO_DIR}/airootfs/opt/arch-os"
 
-# The bootsplash theme, vendored into the ISO. A checkout beside this repo is
-# used when there is one; CI has none and fetches it instead.
+# The bootsplash theme, vendored into the ISO at the commit named here rather
+# than at whatever its default branch holds on the day of the build, so a desk
+# and CI build the same image. Raised by hand, like OAK_VERSION in the Makefile.
+# PLYMOUTH_THEME_SRC points at a theme folder of one's own instead, for working
+# on the theme itself.
 PLYMOUTH_THEME_REPO="https://github.com/murkl/plymouth-theme-arch-os"
-: "${PLYMOUTH_THEME_SRC:=../../plymouth-theme-arch-os/src}"
+PLYMOUTH_THEME_REF="17edba09e8e62b7e77b282e238fe4426f9d2d1e2"
 
 TEMP_DIR="$(mktemp -d)"
 
@@ -152,11 +155,18 @@ add_permission /usr/local/bin/arch-os-console-theme
 echo "### Install Plymouth"
 grep -qxF "plymouth" "${ISO_DIR}/packages.x86_64" || echo "plymouth" >>"${ISO_DIR}/packages.x86_64"
 
-if [ ! -d "${PLYMOUTH_THEME_SRC}" ]; then
-    echo "### Fetching Plymouth theme"
-    rm -rf "${DOWNLOAD_DIR}/plymouth-theme"
-    git clone --depth 1 "${PLYMOUTH_THEME_REPO}" "${DOWNLOAD_DIR}/plymouth-theme"
-    PLYMOUTH_THEME_SRC="${DOWNLOAD_DIR}/plymouth-theme/src"
+# That one commit and nothing around it. A checkout left in download/ by an
+# earlier build is reused only while it is still that commit.
+if [ -z "${PLYMOUTH_THEME_SRC:-}" ]; then
+    theme="${DOWNLOAD_DIR}/plymouth-theme"
+    if [ "$(git -C "$theme" rev-parse HEAD 2>/dev/null)" != "$PLYMOUTH_THEME_REF" ]; then
+        echo "### Fetching Plymouth theme ${PLYMOUTH_THEME_REF}"
+        rm -rf "$theme"
+        git init -q "$theme"
+        git -C "$theme" fetch -q --depth 1 "$PLYMOUTH_THEME_REPO" "$PLYMOUTH_THEME_REF"
+        git -C "$theme" checkout -q --detach FETCH_HEAD
+    fi
+    PLYMOUTH_THEME_SRC="${theme}/src"
 fi
 [ -d "${PLYMOUTH_THEME_SRC}" ] || { echo "Error: plymouth theme not found in '${PLYMOUTH_THEME_SRC}'" && exit 1; }
 # The .plymouth file names the theme; without it plymouthd has nothing to load.

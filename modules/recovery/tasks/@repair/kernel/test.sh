@@ -14,3 +14,7 @@ while read -r version; do
     [ -f "${MNT}/boot/initramfs-${kind}.img" ] ||
         [ -f "${MNT}/boot/EFI/Linux/arch-${kind}.efi" ]
 done < <(installed_kernels)
+
+# And where the boot chain is signed, everything rebuilt is signed again: the
+# firmware refuses an unsigned image the moment Secure Boot is on.
+[ ! -x "${MNT}/usr/bin/sbctl" ] || boot_chain_signed "$MNT"

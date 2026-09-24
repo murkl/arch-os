@@ -25,7 +25,7 @@
 ## Features
 
 - Minimal Arch Linux base, UEFI only: linux-zen, linux, linux-lts or linux-hardened
-- btrfs or ext4, systemd-boot or GRUB, dual boot aware
+- btrfs or ext4, systemd-boot or GRUB, on a disk of its own
 - Disk encryption (LUKS2) and Secure Boot with your own keys
 - One password for encryption, root and user; automatic login behind an encrypted disk
 - Btrfs snapshots before every package change (Snapper), restored from the desktop (Btrfs Assistant)
@@ -86,8 +86,8 @@ Every value it sets is an ordinary answer, changeable afterwards. What is left t
 
 Every answer lands in `installer.conf` as it is given, so an interrupted run resumes. The password never does.
 
-- **Share it:** upload to **[paste.rs](https://paste.rs)** at the end of a run, get a code back. The next installation can start from it
-- **Copy it:** put `installer.conf` beside the Installer on another machine
+- **Share it:** upload to **[paste.rs](https://paste.rs)** at the end of a run, get a code back. The next installation can start from it, and asks only for its disk
+- **Copy it:** put `installer.conf` beside the Installer on another machine. The disk it names is checked against that machine's own before anything is written
 
 ### 5. Switch Secure Boot on
 
@@ -104,6 +104,8 @@ sbctl status
 
 **Note:** _The system boots exactly as before until you do this - nothing here can leave it unbootable._
 
+**Note:** _`sbctl verify` lists `/boot/vmlinuz-*` as not signed. That is on purpose - see **[➜ Secure Boot](REFERENCE.md#secure-boot)**._
+
 ## Recovery
 
 <p><img src="screenshots/recovery.png" alt="The Recovery, opening a system already on disk"></p>
@@ -116,6 +118,8 @@ Boot the same ISO and choose **Recovery** to rescue an installation after a cras
 - Opens a shell inside it
 
 Two questions - keyboard and disk - the rest is read off the machine. No network needed.
+
+**Note:** _With Secure Boot on, switch it off in the firmware to start the image, and on again afterwards - the Recovery signs what it rebuilds with the machine's own keys._
 
 ## Maintenance
 

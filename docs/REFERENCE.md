@@ -6,17 +6,16 @@ What Arch OS puts on a disk, and why. The scripts say *what*; this says *why*, s
 
 ## Partitions
 
-UEFI only, GPT, two partitions - more only with dual boot.
+UEFI only, GPT, the whole disk in two partitions: Arch OS is the only system on it.
 
 | Partition | Size | Type | Label | Mounted |
 | --- | --- | --- | --- | --- |
 | 1 | 1 GiB | EFI system (`ef00`) | `BOOT` | `/boot` |
 | 2 | the rest | Linux (`8300`) | `ROOT` / `BTRFS` | `/` |
 
-Always in that order, so the Recovery finds an installation from the disk alone. `/boot` is `fmask=0077,dmask=0077`: it holds the kernel and the signed image, root's business only.
+Always in that order. `/boot` is `fmask=0077,dmask=0077`: it holds the kernel and the signed image, root's business only.
 
 - **Encryption**: LUKS2 on partition 2, opened as `cryptroot`. One password for disk, root and account
-- **Dual boot**: nothing is partitioned. The existing EFI partition is reused, only a boot entry added. It has to have **512 MiB free** - the kernel, its ram disk and the fallback one that carries every module do not fit in the 100 or 260 MB Windows makes - and it must not already hold a kernel of its own. Both are read before the first partition is touched. A second Linux that keeps `vmlinuz-*` on the shared EFI partition is refused there: the names collide, and pacman would stop the installation an hour later with `conflicting files`
 
 ## Btrfs Subvolumes
 
@@ -43,7 +42,11 @@ Mounted `defaults,noatime,compress=zstd`. Written once, in `oak.sh`, which both 
 | GRUB | `grub-install` + `grub-mkconfig`, `grub-btrfsd` on btrfs |
 | Secure Boot | A **unified kernel image** per preset, signed with keys made for this machine |
 
-`kernel_args` in `module.sh` is the one source of the command line - the unified image, systemd-boot and GRUB all read it.
+`kernel_args` in `module.sh` is the one source of the command line - the unified image and systemd-boot read it whole. GRUB reads `kernel_options`, the same line without where root is: `grub-mkconfig` writes that into every entry itself, and a second copy would be two `root=` for one boot. The package's own `GRUB_CMDLINE_LINUX_DEFAULT` is emptied, so the same answers boot the same way under either loader.
+
+Both loaders get a boot entry in the firmware, first in its order. `bootctl` writes that one from the live system rather than from inside the new one: in a chroot it leaves the EFI variables alone, or, told to write them, cannot see the partition and writes an entry that points nowhere. Without an entry the firmware finds the loader only at `\EFI\BOOT\BOOTX64.EFI`, after every entry it already lists has been tried.
+
+The ram disk carries the processor's microcode itself (the `microcode` hook), so GRUB is told not to load `/boot/*-ucode.img` in front of it a second time.
 
 | Parameter | Why |
 | --- | --- |
@@ -66,6 +69,8 @@ Offered only with **disk encryption** and **systemd-boot**:
 
 Signed **last**: the NVIDIA driver and the boot splash rebuild the kernel image afterwards, bypassing pacman and `sbctl`'s hook. Every signed file is recorded, so the hook catches the next rebuild.
 
+The keys are made **first**, with the boot images - before anything takes a snapshot. `/var/lib/sbctl` lives in `@`, so a snapshot from before the keys comes back unable to sign what it rebuilds, and with Secure Boot on the next kernel update would not start. The Recovery carries the keys over a rollback for the same reason: they belong to the firmware they are enrolled in, not to a point in time.
+
 ```mermaid
 flowchart LR
     B["boot loader installed"] --> D["NVIDIA driver<br/>+ boot splash"]
@@ -74,9 +79,11 @@ flowchart LR
     style S fill:#1793d1,stroke:#1793d1,color:#fff
 ```
 
+`sbctl verify` lists `/boot/vmlinuz-*` as not signed, and that is how it is meant to be: the kernel reaches the firmware only inside the unified image. Signed on its own it would start from any entry somebody writes onto the unencrypted EFI partition, with a ram disk and a command line of their choosing.
+
 Keys enroll only in **setup mode** - "Secure Boot disabled" is not that. `-m` keeps Microsoft's certificates. A failure here is only logged: the machine still boots.
 
-**Note:** _A unified image switches the boot loader's editor off - an editable command line is a root shell past Secure Boot._
+**Note:** _systemd-boot's editor is off on every installation, signed or not - an editable command line is a root shell for whoever sits at the machine, past the password and past Secure Boot. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Systemd-boot#Loader_configuration)**_
 
 **Note:** _Switching Secure Boot on is the firmware's own step - **[➜ installation step 5](README.md#5-switch-secure-boot-on)**._
 
@@ -149,7 +156,7 @@ The default zone `public` lets in `ssh` and `dhcpv6-client`. Everything else is 
 | Timeout | 45 min | Past this it is stuck, not slow |
 | Compile jobs | 1/GiB, capped at core count | More would run a live image out of memory |
 
-One `timeout` around the whole build; passwordless `sudo` granted for its length and revoked after.
+One `timeout` around the whole build; passwordless `sudo` granted for its length and revoked after. What cargo and go download and cache lives in the build directory and is removed with it, rather than left in the new home. `!debug` is added to a PKGBUILD's own `options`, never put in their place - yay's says `!lto`.
 
 **Note:** _With Core tweaks, `/etc/makepkg.conf.d/arch-os.conf` switches the debug package off, and nothing else: an AUR build otherwise leaves a second package beside the one that was wanted. `-march=native` is deliberately **not** there - it buys a few percent and pays for it with binaries that stop running the day the disk is moved, the image is restored onto other hardware or the CPU is replaced, and the crash that follows reads like failing memory._
 
@@ -218,9 +225,11 @@ Two questions - keyboard, disk. Everything else is read, not asked:
 
 | Read | How | When |
 | --- | --- | --- |
+| Root partition | Partition 2, when it is a LUKS container or a file system labelled `ROOT` or `BTRFS` - what the Installer makes of it | Before the run |
 | Encryption | The LUKS header, no password needed | Before the run |
 | File system | `lsblk` on the unlocked device | Once open |
 | Subvolumes | `btrfs subvolume list` | While mounting |
+| `/boot` | The installation's own `fstab` | While mounting |
 | Kernels | `/usr/lib/modules/*/` | While rebuilding boot |
 | Snapshots | `@snapshots` on the btrfs top level | Mid-run; none means the rollback step is skipped |
 
@@ -236,7 +245,7 @@ A hybrid ISO already carries its partition table and boot paths - writing it is 
 
 - The image is the release `version:` in `oak.yaml` names
 - Where it lands is asked: `XDG_DOWNLOAD_DIR` or `~/Downloads`. An image already there is used rather than fetched again
-- It is checked against the checksum GitHub publishes for that release, and a mismatch discards it rather than keeping a broken one
+- It is checked against the checksum GitHub publishes for that release, and a mismatch discards it rather than keeping a broken one. The checksum is read once, when the image is fetched or found, and kept beside it as `.sha256`
 - Where that release publishes no checksum, the run stops and asks before anything is written - an image built here is the one that arrives this way
 
 **Root only for the write.** `as_root` wraps `umount`, `dd`, `partprobe` - nothing else. Everything else runs as you, so a live image never leaves root-owned files in your home.

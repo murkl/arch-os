@@ -73,13 +73,34 @@ list_disks() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
+# THE SIGNED BOOT CHAIN
+# ////////////////////////////////////////////////////////////////////////////
+
+# Whether every file sbctl keeps in the system mounted at $1 is signed, and
+# there is a file at all - what the Installer signs and the Recovery signs again
+# after a rebuild. Read out of sbctl's own list, because `sbctl verify` answers
+# 0 whatever it found, and `sbctl sign-all` over an empty database signs nothing
+# without a word. Either leaves a machine that Secure Boot refuses to start.
+boot_chain_signed() {
+    local files
+    files="$(arch-chroot "$1" sbctl list-files --json)" || return 1
+    if ! grep -q '"is_signed": true' <<<"$files"; then
+        echo "sbctl keeps no signed file" >&2
+        return 1
+    fi
+    if grep -q '"is_signed": false' <<<"$files"; then
+        echo "sbctl keeps files that are not signed: ${files}" >&2
+        return 1
+    fi
+}
+
+# ////////////////////////////////////////////////////////////////////////////
 # THE DISK LAYOUT
 # ////////////////////////////////////////////////////////////////////////////
 
-# Names a partition of a disk. Arch OS always puts the EFI system partition
-# first and the root second, which is what lets the Recovery find an
-# installation from the disk alone. Devices whose name ends in a digit
-# (nvme0n1, mmcblk0, loop0) get a p between the disk and the partition number.
+# Names a partition of a disk as the Installer lays it out: the EFI system
+# partition first, the root second - see docs/REFERENCE.md. A disk whose name
+# ends in a digit (nvme0n1, mmcblk0, loop0) gets a p between it and the number.
 part_of() {
     local sep=""
     [[ "$1" =~ [0-9]$ ]] && sep="p"

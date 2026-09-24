@@ -4,7 +4,7 @@ Everything this Recovery knows about Arch Linux. It is data - one YAML file and 
 
 **Note:** _Putting Arch Linux on disk and writing the device this boots from are separate modules: **[➜ Installer](../installer)** · **[➜ Create boot medium](../imager)**_
 
-**Note:** _What it reads and repairs: **[➜ Arch OS Reference](../../docs/REFERENCE.md#the-recovery)**. The task contract: **[➜ AGENTS.md](../../AGENTS.md)**._
+**Note:** _What it reads and repairs: **[➜ Arch OS Reference](../../docs/REFERENCE.md#the-recovery)**. The task contract: **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md#what-a-script-receives)**._
 
 ```
 make -C ../.. check                              # load every module and lint every script
@@ -47,9 +47,11 @@ Everything else about the disk is read, not asked:
 
 | Read | How | When |
 | --- | --- | --- |
+| Root partition | The disk's second partition, when it is a LUKS container or a file system labelled `ROOT` or `BTRFS` | Before the run |
 | Encryption | LUKS header, no password needed | Before the run, as an `answer:` |
 | File system | `lsblk` on the unlocked device | Once open |
 | Subvolumes | `btrfs subvolume list` | While mounting - an older layout opens as far as it goes |
+| `/boot` | The installation's own `fstab` | While mounting |
 | Snapshots | `@snapshots` on the btrfs top level | Mid-run, once mounted |
 
 None to offer means the step is skipped, not asked about.

@@ -46,7 +46,7 @@ make image     # ...only the image, out of a release that is already there
 
 **Note:** _The image lands beside the release it was built from, named after `oak.yaml`'s version. The ISO label is that version, upper-cased._
 
-The Bootsplash theme comes from a **[plymouth-theme-arch-os](https://github.com/murkl/plymouth-theme-arch-os)** checkout beside this repo if one exists, fetched otherwise (`PLYMOUTH_THEME_SRC` overrides).
+The Bootsplash theme is **[plymouth-theme-arch-os](https://github.com/murkl/plymouth-theme-arch-os)** at the commit `PLYMOUTH_THEME_REF` in `build.sh` names, fetched once and kept in `download/` - raised by hand, like `OAK_VERSION`. `PLYMOUTH_THEME_SRC=/path/to/theme/src` builds with a theme folder of your own instead.
 
 A build leaves nothing root-owned behind: `archiso/` is removed on success, kept on failure; `download/` stays either way and lets the next build skip the network.
 

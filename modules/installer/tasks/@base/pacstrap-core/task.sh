@@ -38,8 +38,6 @@ secure_boot_wanted && packages+=(sbctl)
 if [ "$ARCH_OS_BOOTLOADER" = "grub" ]; then
     packages+=(grub efibootmgr)
     [ "$ARCH_OS_FILESYSTEM" = "btrfs" ] && packages+=(grub-btrfs inotify-tools)
-    # Finds the other system so GRUB can offer it.
-    [ "$ARCH_OS_DUAL_BOOT_ENABLED" = "true" ] && packages+=(os-prober)
 fi
 
 # Before the packages, because installing the kernel builds a ram disk and the

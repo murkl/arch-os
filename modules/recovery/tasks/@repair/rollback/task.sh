@@ -18,6 +18,16 @@ unmount_target
 
 btrfs subvolume delete --recursive "${BTRFS_TOP}/@.new" 2>/dev/null || true
 btrfs subvolume snapshot "${BTRFS_TOP}/${snapshot}" "${BTRFS_TOP}/@.new"
+
+# The Secure Boot keys belong to the firmware they are enrolled in, not to a
+# point in time: a snapshot from before they were made - an installation's
+# first one is - would come back without them, and nothing it rebuilds could
+# be signed or started again. So they come over from the system being replaced.
+if [ -d "${BTRFS_TOP}/@/var/lib/sbctl" ]; then
+    rm -rf "${BTRFS_TOP}/@.new/var/lib/sbctl"
+    cp -a "${BTRFS_TOP}/@/var/lib/sbctl" "${BTRFS_TOP}/@.new/var/lib/sbctl"
+fi
+
 btrfs subvolume delete --recursive "${BTRFS_TOP}/@"
 mv "${BTRFS_TOP}/@.new" "${BTRFS_TOP}/@"
 

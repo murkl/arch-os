@@ -16,7 +16,12 @@ if ! body="$(fetch_url -s --connect-timeout 10 --max-time 30 "$url")"; then
     exit 1
 fi
 
-body="$(printf '%s\n' "$body" | grep '^ARCH_OS_[A-Z0-9_]*=' | grep -v '^ARCH_OS_CONFIG_' || true)"
+# Everything but the sharing itself and the disk: a disk is a path on the
+# machine the answers were given on, and here another disk - or this very
+# medium - may sit at it. The disk is asked again, which is the one question a
+# starting point leaves to the person at the machine anyway.
+body="$(printf '%s\n' "$body" | grep '^ARCH_OS_[A-Z0-9_]*=' |
+    grep -vE '^ARCH_OS_(CONFIG_[A-Z_]*|DISK)=' || true)"
 if [ -z "$body" ]; then
     echo "What is kept at ${url} is not an Arch OS configuration" >&2
     exit 1

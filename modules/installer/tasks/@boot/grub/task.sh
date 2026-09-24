@@ -9,14 +9,12 @@ data="$(where)"
 
 arch-chroot "$MNT" grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
 
-# What the command line says comes from module.sh.
+# What the command line says comes from module.sh, less where root is: GRUB
+# writes that into every entry itself. Nothing of the package's own defaults on
+# top, so an answer boots the same under either loader. And no microcode image
+# in front of the ram disk, which carries it already - see the initramfs task.
 mkdir -p "${MNT}/etc/default/grub.d"
-render "${data}/10-arch-os.cfg" CMDLINE="$(kernel_args)" >"${MNT}/etc/default/grub.d/10-arch-os.cfg"
-
-# Off by default since GRUB 2.06, and the only way the other system appears.
-if [ "$ARCH_OS_DUAL_BOOT_ENABLED" = "true" ]; then
-    render "${data}/20-os-prober.cfg" >"${MNT}/etc/default/grub.d/20-os-prober.cfg"
-fi
+render "${data}/10-arch-os.cfg" CMDLINE="$(kernel_options)" >"${MNT}/etc/default/grub.d/10-arch-os.cfg"
 
 arch-chroot "$MNT" grub-mkconfig -o /boot/grub/grub.cfg
 

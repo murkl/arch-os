@@ -35,6 +35,13 @@ if secure_boot_wanted; then
     # this file mkinitcpio falls back to /proc/cmdline, which inside the chroot
     # is the live image's.
     kernel_args >"${MNT}/etc/kernel/cmdline"
+
+    # The keys the chain is signed with, made here rather than with the signing
+    # at the end: before anything takes a snapshot of this system. A snapshot
+    # without them comes back unable to sign what it rebuilds, and with Secure
+    # Boot on, nothing rebuilt would start again. From here on sbctl's own hook
+    # signs every image mkinitcpio writes. Never fatal, like the signing.
+    arch-chroot "$MNT" sbctl create-keys || echo "Secure Boot: creating the keys failed, nothing will be signed" >&2
 fi
 
 # Both names come out of boot_images, so what is built and what is read back

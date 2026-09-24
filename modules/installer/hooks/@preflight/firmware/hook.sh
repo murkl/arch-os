@@ -6,7 +6,9 @@ if [ ! -d /sys/firmware/efi ]; then
     exit 1
 fi
 
-if ! bootctl status 2>/dev/null | grep -q "Secure Boot: disabled"; then
+# Read whole before it is searched: grep stops at the first match, and bootctl,
+# still writing, would die of that - which pipefail reports as Secure Boot on.
+if ! grep -q "Secure Boot: disabled" <<<"$(bootctl status 2>/dev/null)"; then
     echo "Secure Boot is switched on. Turn it off in the firmware settings and start again - the installer can set it up again for you afterwards." >&2
     exit 1
 fi

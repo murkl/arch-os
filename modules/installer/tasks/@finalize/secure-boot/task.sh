@@ -1,14 +1,9 @@
-# Our own keys, and every part of the boot chain signed with them. The last
-# thing that happens to the new system, and never fatal - a machine without
-# Secure Boot boots perfectly well.
+# Every part of the boot chain signed with this machine's own keys, which the
+# initramfs task made. The last thing that happens to the new system, and never
+# fatal - a machine without Secure Boot boots perfectly well.
 #
 # Why it runs last and why the keys are only enrolled in setup mode:
 # docs/REFERENCE.md and https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot
-
-if ! arch-chroot "$MNT" sbctl create-keys; then
-    echo "Secure Boot: creating the keys failed, skipping"
-    return 0
-fi
 
 # -s records each file in sbctl's database, and its pacman hook re-signs
 # everything in there on each kernel or systemd update.

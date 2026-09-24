@@ -27,17 +27,29 @@ rank_mirrors() {
         return 0
     }
 
-    local ranked args=(--protocol https --age 12 --latest 10 --sort rate)
+    local ranked warnings servers unrated args=(--protocol https --age 12 --latest 10 --sort rate)
     [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && args+=(--country "$ARCH_OS_REFLECTOR_COUNTRY")
     ranked="$(mktemp)"
+    warnings="$(mktemp)"
 
-    if timeout 120 reflector "${args[@]}" --save "$ranked" && [ -s "$ranked" ]; then
-        install -m 644 "$ranked" /etc/pacman.d/mirrorlist
-        echo "installing from $(grep -c '^Server' /etc/pacman.d/mirrorlist) ranked mirrors"
+    # A mirror that does not answer within reflector's own timeout is kept rather
+    # than dropped, with one warning for it - and a list where every one timed
+    # out is still written, in no order, with exit 0. That list is worse than the
+    # one the image shipped, which opens on Arch's own CDN.
+    if timeout 120 reflector "${args[@]}" --save "$ranked" 2>"$warnings" && [ -s "$ranked" ]; then
+        servers="$(grep -c '^Server' "$ranked" || true)"
+        unrated="$(grep -c 'failed to rate' "$warnings" || true)"
+        if [ "$servers" -gt "$unrated" ]; then
+            install -m 644 "$ranked" /etc/pacman.d/mirrorlist
+            echo "installing from ${servers} ranked mirrors"
+        else
+            echo "none of the ${servers} mirrors answered in time to be ranked, installing from the list the image shipped" >&2
+        fi
     else
         echo "the mirrors could not be ranked, installing from the list the image shipped" >&2
     fi
-    rm -f "$ranked"
+    cat "$warnings" >&2
+    rm -f "$ranked" "$warnings"
 }
 
 echo "ranking mirrors"

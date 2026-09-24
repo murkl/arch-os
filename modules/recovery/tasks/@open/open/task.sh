@@ -4,8 +4,8 @@
 # A second attempt starts from whatever the first one left behind.
 close_target
 
-if [ ! -b "$ROOT_PART" ]; then
-    echo "There is no partition at ${ROOT_PART}. That disk does not hold an Arch OS installation." >&2
+if [ -z "$ROOT_PART" ]; then
+    echo "${ARCH_OS_RECOVERY_DISK} holds no Arch OS installation: its second partition is neither a LUKS container nor a file system labelled ROOT or BTRFS." >&2
     exit 1
 fi
 
