@@ -169,9 +169,11 @@ arch-chroot "$MNT" systemctl enable avahi-daemon
 
 # The answers avahi asks for arrive as multicast on its own port, which the
 # firewall cannot match to the question that went out. Without this the printers
-# and shares it looks for never show up.
+# and shares it looks for never show up. In public, so on every network: it
+# gives away nothing avahi does not announce by itself, and home lets it in as
+# firewalld ships it.
 if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
-    arch-chroot "$MNT" firewall-offline-cmd --add-service=mdns
+    arch-chroot "$MNT" firewall-offline-cmd --zone=public --add-service=mdns
 fi
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then

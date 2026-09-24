@@ -3,7 +3,10 @@
 arch-chroot "$MNT" systemctl is-enabled firewalld.service >/dev/null
 arch-chroot "$MNT" firewall-offline-cmd --check-config >/dev/null
 
-# The SSH server opens no port of its own: it relies on the default zone letting
-# ssh in, which is firewalld's default rather than anything set here.
-[ "$ARCH_OS_SSH_SERVER_ENABLED" != "true" ] ||
-    arch-chroot "$MNT" firewall-offline-cmd --query-service=ssh >/dev/null
+# Every network nobody has marked lands in public, and public lets in nothing
+# that nothing here answers yet.
+[ "$(arch-chroot "$MNT" firewall-offline-cmd --get-default-zone)" = public ]
+if arch-chroot "$MNT" firewall-offline-cmd --zone=public --query-service=ssh >/dev/null; then
+    echo "public lets ssh in, and nothing listens there yet" >&2
+    exit 1
+fi

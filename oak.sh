@@ -19,6 +19,40 @@ fetch_url() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
+# THE RELEASE
+# ////////////////////////////////////////////////////////////////////////////
+
+# Where this project is published, and which release this program is: the
+# version in the oak.yaml beside it rather than the newest one, so what a module
+# fetches is what was tested together with it. Oak keeps the answer file beside
+# oak.yaml, which is how a script finds it.
+REPO="murkl/arch-os"
+VERSION="$(sed -n 's/^version:[[:space:]]*//p' "$(dirname "$MODULE_CONF")/oak.yaml")"
+
+# A download of that release as GitHub describes it: where it is and what it has
+# to hash to, as two words - and nothing where the release cannot be reached.
+# The release carries no checksum file: the checksum is a field of the asset,
+# the same one the release page prints under the download. The step that asked
+# says what nothing means for it, because it is not the same answer twice.
+#
+# Picked by what its name ends in rather than by the name itself, so renaming a
+# download stays a change to the build. Each asset is weighed when the next
+# begins, so nothing here leans on the order GitHub writes an asset's fields in.
+release_asset() {
+    local json
+    json="$(fetch_url -s --max-time 20 "https://api.github.com/repos/${REPO}/releases/tags/v${VERSION}" || true)"
+    printf '%s\n' "$json" | awk -v suffix="$1" '
+        function weigh() {
+            if (!found && url != "" && substr(url, length(url) - length(suffix) + 1) == suffix) { found = 1; print url, digest }
+            url = ""; digest = ""
+        }
+        /"url": *"[^"]*\/releases\/assets\// { weigh() }
+        /"digest": *"sha256:/ { digest = $0; sub(/.*sha256:/, "", digest); sub(/".*/, "", digest) }
+        /"browser_download_url": *"/ { url = $0; sub(/.*: *"/, "", url); sub(/".*/, "", url) }
+        END { weigh() }'
+}
+
+# ////////////////////////////////////////////////////////////////////////////
 # THE LIVE IMAGE
 # ////////////////////////////////////////////////////////////////////////////
 

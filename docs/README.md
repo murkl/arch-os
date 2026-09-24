@@ -35,7 +35,7 @@
 - Tuned rather than left at the defaults - see the **[➜ Reference](REFERENCE.md)**
 - AUR helper, 32-bit support, container engine, firewall, SSH server, automatic housekeeping, the text editor of your choice
 - [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager, Shell Enhancement (zsh)
-- Recovery on the same image, works without a network
+- Recovery in the boot menu and on the same image, works without a network
 - Wireless network joined from the Installer itself, before the first download
 - Create boot medium: writes the USB device from any Linux machine, no root needed but for the write itself
 - Virtual machines both ways: guest tools inside a VM on their own, libvirt and QEMU on real hardware if you want them
@@ -101,15 +101,13 @@ sbctl status
 | `✓` | Restart, switch Secure Boot on in the firmware |
 | `✗` | Clear the Secure Boot keys in the firmware (setup mode), then `sudo sbctl enroll-keys -m`, restart, switch it on |
 
-**Note:** _The system boots exactly as before until you do this - nothing here can leave it unbootable._
-
-**Note:** _`sbctl verify` lists `/boot/vmlinuz-*` as not signed. That is on purpose - see **[➜ Secure Boot](REFERENCE.md#secure-boot)**._
+**Note:** _Until then the system boots as before. `sbctl verify` lists `/boot/vmlinuz-*` as not signed on purpose - **[➜ Secure Boot](REFERENCE.md#secure-boot)**._
 
 ## Recovery
 
 <p><img src="screenshots/recovery.png" alt="The Recovery, opening a system already on disk"></p>
 
-Boot the same ISO and choose **Recovery** to rescue an installation after a crash:
+Every installation carries it on a small partition of its own. Hold **space** while the machine starts and choose **Arch OS Recovery** - or boot the ISO and choose **Recovery**:
 
 - Unlocks and mounts it at `/mnt`
 - Rolls back to a Btrfs snapshot
@@ -118,7 +116,7 @@ Boot the same ISO and choose **Recovery** to rescue an installation after a cras
 
 Two questions - keyboard and disk - the rest is read off the machine. No network needed.
 
-**Note:** _With Secure Boot on, switch it off in the firmware to start the image, and on again afterwards - the Recovery signs what it rebuilds with the machine's own keys._
+**Note:** _The one on the disk starts with Secure Boot on. For the ISO, switch it off in the firmware and on again afterwards - the Recovery signs what it rebuilds with the machine's own keys._
 
 ## Maintenance
 
@@ -155,7 +153,7 @@ Five parts, kept apart:
 | **[`modules/installer`](../modules/installer)** | Installs Arch Linux |
 | **[`modules/recovery`](../modules/recovery)** | Repairs an installation already on disk |
 | **[`modules/imager`](../modules/imager)** | Writes the device the other two boot from |
-| **[`iso`](../iso)** | Turns a build of those into a bootable image |
+| **[`iso`](../iso)** | Turns a build of those into the bootable images: the ISO, and the Recovery the Installer writes beside the system |
 
 Oak is the runtime, a repository of its own, and knows nothing about Arch Linux. Modules are data, not programs. A release is Oak with `oak.yaml` and `modules/` beside it. Which module a machine can open is that module's own `requires:` - nothing else holds a list.
 

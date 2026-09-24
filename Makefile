@@ -1,12 +1,14 @@
 # The only task runner in the repository. What CI runs is these targets, so a
 # rule that holds at a desk holds there.
 #
-#   dist/arch-os-$(VERSION)/                 the product: oak, oak.yaml, oak.sh, modules/
-#   dist/arch-os-$(VERSION)-x86_64.tar.gz    that folder as one file
-#   dist/arch-os-$(VERSION)-x86_64.iso       the bootable image
+#   dist/arch-os-$(VERSION)/                       the product: oak, oak.yaml, oak.sh, modules/
+#   dist/arch-os-$(VERSION)-x86_64.tar.gz          that folder as one file
+#   dist/arch-os-$(VERSION)-recovery/              the Recovery image: recovery.efi, recovery.img
+#   dist/arch-os-$(VERSION)-recovery-x86_64.tar    that folder as one file
+#   dist/arch-os-$(VERSION)-x86_64.iso             the bootable image, the Recovery on it
 #
-# `build` writes the first, `tarball` and `image` each turn it into one of the
-# others. Nothing is ever assembled twice.
+# `build` writes the first, `tarball` turns it into the second and `image` into
+# the other three. Nothing is ever assembled twice.
 
 # Every recipe is one bash with -e, -u and pipefail, so a command that fails in
 # the middle of a line fails the target rather than the next one. A file target
@@ -88,6 +90,12 @@ STEM        := arch-os-$(VERSION)
 RELEASE_DIR := $(DIST_DIR)/$(STEM)
 TARBALL     := $(STEM)-x86_64.tar.gz
 
+# The Recovery image the ISO build leaves beside the release, and the same as
+# one file for the release page. A tar and nothing more: both files in it are
+# compressed already.
+RECOVERY_DIR := $(STEM)-recovery
+RECOVERY_TAR := $(STEM)-recovery-x86_64.tar
+
 # A release's shape made of symlinks into the tree, so every check reads the file
 # being edited rather than a copy the last build made of it.
 DEV_DIR := .dev
@@ -98,7 +106,7 @@ MODULE ?=
 ARGS   ?=
 
 # ////////////////////////////////////////////////////////////////////////////
-# THE IMAGE | Stock Arch releng, patched to boot into this
+# THE IMAGES | Stock Arch profiles, patched to boot into this
 # ////////////////////////////////////////////////////////////////////////////
 
 # Scripts rather than targets: assembling an archiso profile is a script's work,
@@ -109,10 +117,11 @@ ISO_BUILD  := $(ISO_DIR)/build.sh
 ISO_SMOKE  := $(ISO_DIR)/smoke.sh
 ISO_GLYPHS := $(ISO_DIR)/glyphs.sh
 
-# The newest image there is, so `make iso && make smoke` needs no argument. Read
-# when it is used rather than when make starts, which is what lets the two run
-# in one line.
-ISO ?= $(shell ls -t $(DIST_DIR)/*.iso 2>/dev/null | head -1)
+# The newest images there are, so `make iso && make smoke` needs no argument.
+# Read when they are used rather than when make starts, which is what lets the
+# two run in one line.
+ISO      ?= $(shell ls -t $(DIST_DIR)/*.iso 2>/dev/null | head -1)
+RECOVERY ?= $(shell ls -td $(DIST_DIR)/*-recovery 2>/dev/null | head -1)
 
 # ////////////////////////////////////////////////////////////////////////////
 # THE SCRIPTS | Everything checked, by the dialect it is written in
@@ -278,18 +287,22 @@ tarball: build
 		--transform 's,^,$(STEM)/,' \
 		-C $(RELEASE_DIR) $(APP) $(PRODUCT) $(PRODUCT_SHELL) $(MODULES_DIR)
 
-# The image, out of the release already in dist/ rather than out of a second
-# build of the same sources. What it is called is read out of that release.
+# The images, out of the release already in dist/ rather than out of a second
+# build of the same sources: the Recovery, and the ISO that carries it. What
+# they are called is read out of that release.
 image:
 	$(ISO_BUILD) $(CURDIR)/$(RELEASE_DIR)
+	tar -cf $(DIST_DIR)/$(RECOVERY_TAR) --owner=0 --group=0 --sort=name \
+		-C $(DIST_DIR) $(RECOVERY_DIR)
 
 # The whole way there, for a machine that has nothing yet.
 iso: build image
 
-# Boots a built image and waits for the interface to come up in it. The frames
-# land beside the image, in dist/.
+# Boots both built images and waits for the interface to come up in each. The
+# frames land beside them, in dist/.
 smoke:
 	$(ISO_SMOKE) $(ISO)
+	$(ISO_SMOKE) $(RECOVERY)
 
 # Every template rewritten out of the module it belongs to, and every catalog
 # brought up to it. msgmerge keeps every translation whose source text is

@@ -1,0 +1,12 @@
+Arch OS Recovery
+
+  recovery    repair the Arch OS system on this machine
+
+Add --debug for a run that changes nothing.
+
+It keeps its answers in /opt/arch-os, so starting it again picks up where it
+left off. What it did is in /opt/arch-os/recovery.log.
+
+Reaching this prompt without asking for it means the Recovery stopped on its
+own: journalctl -b -u arch-os says why.
+

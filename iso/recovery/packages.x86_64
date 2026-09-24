@@ -1,0 +1,10 @@
+# What the Recovery runs on, and nothing else: no firmware, no network, no
+# editor - see the Recovery Partition in docs/REFERENCE.md. base brings what its
+# tasks call beyond these: cryptsetup, fuser, file, bsdtar, the keymaps.
+arch-install-scripts
+base
+btrfs-progs
+linux
+mkinitcpio
+mkinitcpio-archiso
+plymouth

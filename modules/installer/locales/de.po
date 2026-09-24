@@ -238,6 +238,16 @@ msgstr "Signiert Kernel und Bootloader mit Schlüsseln, die für diesen Rechner 
 msgid "Boot"
 msgstr "Start"
 
+#. ARCH_OS_RECOVERY_ENABLED: the question
+#: module.yaml
+msgid "Recovery"
+msgstr "Recovery"
+
+#. ARCH_OS_RECOVERY_ENABLED: what it means
+#: module.yaml
+msgid "Puts the Recovery on a small partition of its own and into the boot menu, so a system that no longer starts is repaired without a USB stick. Hold space while the machine starts to reach the menu. The Arch OS ISO carries it; any other live image downloads it first."
+msgstr "Legt die Recovery auf eine kleine eigene Partition und ins Bootmenü, damit sich ein System, das nicht mehr startet, ohne USB-Stick reparieren lässt. Für das Menü beim Start des Rechners die Leertaste gedrückt halten. Das Arch-OS-ISO bringt sie mit, jedes andere Live-Abbild lädt sie vorher herunter."
+
 #. ARCH_OS_KERNEL_ARGS: the question
 #: module.yaml
 msgid "Kernel parameters"
@@ -320,8 +330,8 @@ msgstr "Dateifreigabe"
 
 #. ARCH_OS_SAMBA_SHARE_ENABLED: what it means
 #: module.yaml
-msgid "Shares your home folder and a public folder on the local network, readable by Windows and macOS. Anyone on the same network can try your password against it, so turn it on only on a network you trust."
-msgstr "Gibt dein Benutzerverzeichnis und einen öffentlichen Ordner im lokalen Netz frei, lesbar von Windows und macOS. Jeder im selben Netz kann dort dein Passwort ausprobieren, schalte es daher nur in einem Netz ein, dem du vertraust."
+msgid "Shares your home folder and a public folder with Windows and macOS, on networks marked as home. Anyone on such a network can try your password against it. Without the firewall, every network reaches it."
+msgstr "Gibt dein Benutzerverzeichnis und einen öffentlichen Ordner für Windows und macOS frei, in Netzen, die als Heimnetz markiert sind. Jeder in einem solchen Netz kann dort dein Passwort ausprobieren. Ohne Firewall erreicht sie jedes Netz."
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: the question
 #: module.yaml
@@ -385,8 +395,8 @@ msgstr "Firewall"
 
 #. ARCH_OS_FIREWALL_ENABLED: what it means
 #: module.yaml
-msgid "Blocks incoming connections except the ones something on this machine is set up to answer: SSH, file sharing and finding printers. On a desktop the rules can be changed in the Firewall application."
-msgstr "Blockiert eingehende Verbindungen außer denen, die etwas auf diesem Rechner beantworten soll: SSH, Dateifreigabe und die Suche nach Druckern. Auf einem Desktop lassen sich die Regeln in der Anwendung Firewall ändern."
+msgid "Blocks incoming connections. Every network counts as public, a café's wifi included, and lets in only what this machine is set up to answer: SSH and finding printers. A network marked as home also reaches file sharing: nmcli connection modify <name> connection.zone home"
+msgstr "Blockiert eingehende Verbindungen. Jedes Netz gilt als öffentlich, auch das WLAN im Café, und lässt nur herein, was dieser Rechner beantworten soll: SSH und die Suche nach Druckern. Ein als Heimnetz markiertes Netz erreicht auch die Dateifreigabe: nmcli connection modify <name> connection.zone home"
 
 #. ARCH_OS_SSH_SERVER_ENABLED: the question
 #: module.yaml
@@ -489,6 +499,11 @@ msgid "Prepare the installation"
 msgstr "Installation vorbereiten"
 
 #. the step, as the run lists it
+#: tasks/@prepare/recovery-image/task.yaml
+msgid "Get the Recovery"
+msgstr "Recovery bereitstellen"
+
+#. the step, as the run lists it
 #: tasks/@disk/prepare-disk/task.yaml
 msgid "Set up the disk"
 msgstr "Datenträger einrichten"
@@ -517,6 +532,11 @@ msgstr "Benutzerkonto anlegen"
 #: tasks/@boot/initramfs/task.yaml
 msgid "Build the boot images"
 msgstr "Boot-Abbilder bauen"
+
+#. the step, as the run lists it
+#: tasks/@boot/recovery/task.yaml
+msgid "Install the Recovery"
+msgstr "Recovery installieren"
 
 #. the step, as the run lists it
 #: tasks/@boot/systemd-boot/task.yaml

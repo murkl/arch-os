@@ -90,3 +90,5 @@ Only keyboard and disk are asked up front. The password follows right before the
 ## Requirements
 
 A booted **Arch Linux live image** - `requires:` in `module.yaml`. Root on it - `hooks/@preflight/`. Nothing else.
+
+**Note:** _Two images are one: the ISO, and the Recovery image the Installer writes to a partition of its own, where this module is the only one - **[➜ The Recovery Partition](../../docs/REFERENCE.md#the-recovery-partition)**. It copies itself to memory before it starts, so the disk it came from is free to be opened like any other._

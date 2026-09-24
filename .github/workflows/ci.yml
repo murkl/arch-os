@@ -223,7 +223,7 @@ jobs:
       # boot is read off the picture, and nothing opens a .ppm.
       - uses: ./.github/actions/arch
         with:
-          packages: make curl archiso qemu-base edk2-ovmf tesseract tesseract-data-eng netpbm
+          packages: make curl archiso systemd-ukify qemu-base edk2-ovmf tesseract tesseract-data-eng netpbm
 
       - run: make tarball
         env:
@@ -241,8 +241,9 @@ jobs:
             "$release/oak" --inspect
           done
 
-      # The image out of the release that was just packed, rather than out of a
-      # second build of the same sources. `make iso` would do both.
+      # The images out of the release that was just packed, rather than out of
+      # a second build of the same sources: the Recovery, and the ISO that
+      # carries it. `make iso` would do both.
       - run: make image
 
       - run: make smoke
@@ -253,7 +254,7 @@ jobs:
         if: always()
         run: |
           shopt -s nullglob
-          for frame in dist/smoke/*.ppm; do
+          for frame in dist/smoke/*/*.ppm; do
             pnmtopng "$frame" >"${frame%.ppm}.png"
           done
 
@@ -261,11 +262,11 @@ jobs:
         if: always()
         with:
           name: smoke-test
-          path: dist/smoke/*.png
+          path: dist/smoke/*/*.png
           if-no-files-found: ignore
           retention-days: 7
 
-      # Both downloads under one name: what a release offers, and what somebody
+      # Every download under one name: what a release offers, and what somebody
       # reviewing the change can boot for themselves. Kept even when the boot
       # failed, because that is when somebody wants to boot it by hand. On a
       # release the job below takes them from here.
@@ -276,6 +277,7 @@ jobs:
           name: arch-os
           path: |
             dist/*.tar.gz
+            dist/*.tar
             dist/*.iso
           retention-days: 7
 
@@ -284,7 +286,7 @@ jobs:
         env:
           JOB: ${{ job.status }}
         run: |
-          .github/summary.sh "Arch OS $(make -s version)" dist/*.tar.gz dist/*.iso
+          .github/summary.sh "Arch OS $(make -s version)" dist/*.tar.gz dist/*.tar dist/*.iso
           if [ "$JOB" = success ]; then
             said="Arch OS came up. The frame it was recognised in is the \`smoke-test\` artefact."
           else
@@ -329,11 +331,11 @@ jobs:
             exit 1
           fi
 
-  # Nothing is built here. The two files this run made and booted are hung on
+  # Nothing is built here. The three files this run made and booted are hung on
   # the release the job above wrote as a draft, under the version it decided,
-  # and the draft is made public last - once both are on it. A run that fails
-  # before that leaves a draft to re-run, never a release that every download
-  # link already points at and that holds nothing.
+  # and the draft is made public last - once all of them are on it. A run that
+  # fails before that leaves a draft to re-run, never a release that every
+  # download link already points at and that holds nothing.
   publish:
     name: Publish
     needs: [release, image]
@@ -362,7 +364,7 @@ jobs:
       # The last chance to notice that these are not the files this tag names.
       - name: The files are the ones this tag names
         run: |
-          for file in "arch-os-${VERSION}-x86_64.tar.gz" "arch-os-${VERSION}-x86_64.iso"; do
+          for file in "arch-os-${VERSION}-x86_64.tar.gz" "arch-os-${VERSION}-recovery-x86_64.tar" "arch-os-${VERSION}-x86_64.iso"; do
             if [ ! -f "dist/${file}" ]; then
               echo "::error::${file} is not among what this run built"
               ls -1 dist
@@ -377,6 +379,7 @@ jobs:
         with:
           subject-path: |
             dist/*.tar.gz
+            dist/*.tar
             dist/*.iso
 
       - name: Publish the release
@@ -408,8 +411,9 @@ jobs:
           | --- | --- |
           | \`arch-os-${VERSION}-x86_64.iso\` | The bootable image: Installer and Recovery, started on its own |
           | \`arch-os-${VERSION}-x86_64.tar.gz\` | The same program without the image: unpack it and run \`./oak\`. On a live image it installs or repairs, anywhere else the Imager writes the device above to a USB stick |
+          | \`arch-os-${VERSION}-recovery-x86_64.tar\` | The Recovery the Installer writes to a partition of its own - carried by the ISO, and fetched from here on any other live image |
 
-          Both carry signed build provenance — which repository the file came out of, and which run built it:
+          All three carry signed build provenance — which repository the file came out of, and which run built it:
 
           \`\`\`
           gh attestation verify arch-os-${VERSION}-x86_64.iso -R ${GH_REPO}
@@ -418,10 +422,10 @@ jobs:
           Without \`gh\`, GitHub prints each download's SHA-256 beside it on this page, which says only that the file arrived whole.
           FOOTER
 
-          gh release upload "$TAG" dist/*.tar.gz dist/*.iso --clobber
+          gh release upload "$TAG" dist/*.tar.gz dist/*.tar dist/*.iso --clobber
           gh release edit "$TAG" --notes-file "$notes" --draft=false --latest
 
       - name: What was published
         run: |
-          .github/summary.sh "Arch OS ${VERSION} published" dist/*.tar.gz dist/*.iso
+          .github/summary.sh "Arch OS ${VERSION} published" dist/*.tar.gz dist/*.tar dist/*.iso
           printf 'https://github.com/%s/releases/tag/%s\n' "$GH_REPO" "$TAG" >>"$GITHUB_STEP_SUMMARY"

@@ -58,13 +58,13 @@ git commit --allow-empty -m "chore: release 2.0.0" -m "Release-As: 2.0.0"
 Two merges, both of them ordinary, and nothing typed:
 
 1. **Squash merge the work into `main`.** The run checks it and opens - or updates - a pull request called `chore(main): release 2.1.0`, which raises `version:` and writes that version's section of the changelog
-2. **Merge that pull request.** The run on `main` tags `v2.1.0`, writes the release page out of the changelog, builds the release and the image, boots it, and hangs both files on that page
+2. **Merge that pull request.** The run on `main` tags `v2.1.0`, writes the release page out of the changelog, builds the release and the images, boots them, and hangs every file on that page
 
 Several merges collect in the one release pull request until it is merged, and a merge that releases nothing - `docs:`, `chore:` - opens none at all.
 
-The page carries `arch-os-2.1.0-x86_64.iso` and `.tar.gz`, both under signed build provenance, and GitHub prints each one's SHA-256 beside it, so the release carries no checksum file of its own.
+The page carries `arch-os-2.1.0-x86_64.iso`, `.tar.gz` and the Recovery image as `arch-os-2.1.0-recovery-x86_64.tar`, all under signed build provenance, and GitHub prints each one's SHA-256 beside it, so the release carries no checksum file of its own.
 
-**Note:** _The page is written as a draft before the files are on it: the image is half an hour, and the tag is what the run builds from. `Publish` makes it public last, once both files hang on it, so `curl … | bash` and every link to the latest release keep pointing at the one before until then. A run that fails on the way leaves a draft to re-run rather than a version to be taken back - `Image` and `Publish`, once the reason is gone._
+**Note:** _The page is written as a draft before the files are on it: the image is half an hour, and the tag is what the run builds from. `Publish` makes it public last, once every file hangs on it, so `curl … | bash` and every link to the latest release keep pointing at the one before until then. A run that fails on the way leaves a draft to re-run rather than a version to be taken back - `Image` and `Publish`, once the reason is gone._
 
 **Note:** _No run starts on the release pull request: it touches only `CHANGELOG.md`, the release manifest and the version line in `oak.yaml`, and both workflows leave a pull request of nothing else out with `paths-ignore`. GitHub itself starts runs for what its own token opened since June 2026, and holds each for an approval - one nobody gives fails the moment the pull request is merged. It needs none - it holds what the release run wrote out of a `main` checked a moment before, and its merge is checked on `main` before the tag exists. So the release run itself reports `Ready` and `Title` on the commit it wrote, which is what lets `main` require both of every other pull request. A pull request of anybody else's that changes nothing but `oak.yaml` starts no run either, and is held back by the same two checks - it goes through once it touches one more file, or not at all._
 
@@ -88,10 +88,10 @@ flowchart TD
 | `Title` | a pull request opened, pushed to or renamed | The line the next version is read out of. Its own workflow, so a rename re-reads it and rebuilds nothing |
 | `Gate` | every run | What the rest of the run does, decided once |
 | `Check` | every run | `make check` |
-| `Image` | a pull request out of draft, a release, on demand | The release, the image out of it, and the boot that proves it comes up |
+| `Image` | a pull request out of draft, a release, on demand | The release, the Recovery image and the ISO out of it, and the boots that prove both come up |
 | `Ready` | a pull request | Every job above it needed has passed. Together with `Title`, what `main` requires before a merge |
 | `Release` | a push to `main` | The version, the changelog and the tag - or the pull request that will carry them |
-| `Publish` | a release | Hangs that run's two files on the release page and makes the page public |
+| `Publish` | a release | Hangs that run's three files on the release page and makes the page public |
 
 `Image` builds, packs and boots in one job rather than three: the file between those steps is a gigabyte, and handing it from job to job costs more than making it. It is half an hour, which is why the gate decides who gets one.
 
@@ -107,9 +107,9 @@ make run ARGS=--debug  # ...without touching the machine
 make inspect           # load every module and print the order they resolve to
 make build             # the release, as a machine runs it
 make tarball           # the release, as a stock Arch ISO downloads it
-make iso               # the release, as a bootable image
-make image             # ...only the image, out of a release already in dist/
-make smoke             # boot the newest image and wait for its first page
+make iso               # the release, as the Recovery image and the ISO that carries it
+make image             # ...only the images, out of a release already in dist/
+make smoke             # boot the newest of both and wait for their first page
 make locales           # every translation template, brought up to date
 make glyphs-check      # every module against the glyph table of the console font
 make data-check        # every module's lookup tables against the system they name
@@ -119,7 +119,7 @@ make clean             # every build output, taken back; the runtime stays
 
 ```
 sudo pacman -S --needed make curl shellcheck shfmt zsh yamllint actionlint zizmor \
-    gettext gitleaks kbd archiso qemu-base edk2-ovmf tesseract tesseract-data-eng
+    gettext gitleaks kbd archiso systemd-ukify qemu-base edk2-ovmf tesseract tesseract-data-eng
 ```
 
 **Note:** _CI installs the same packages and runs the same commands in an Arch container. No second definition of green._
@@ -135,7 +135,7 @@ sudo pacman -S --needed make curl shellcheck shfmt zsh yamllint actionlint zizmo
 - Writing the boot device: **[modules/imager](../modules/imager)**
 - Product name, version, look: **[oak.yaml](../oak.yaml)**
 - What a release changed: **[CHANGELOG.md](../CHANGELOG.md)**
-- The bootable image: **[iso](../iso)**
+- The bootable images, the ISO and the Recovery: **[iso](../iso)**
 - The interface itself: **[Oak](https://github.com/murkl/oak)**, its own repository
 
 ## Translating

@@ -31,10 +31,10 @@ One folder per stage under `tasks/`, marked with `@`; `module.yaml` orders them,
 
 | Stage | Description |
 | --- | --- |
-| `prepare` | The live system, made ready to install from |
+| `prepare` | The live system, made ready to install from, the Recovery image at hand |
 | `disk` | Partitioned, encrypted, formatted, mounted - the only stage that destroys anything |
 | `base` | The system on disk, configured, with an account |
-| `boot` | The images the firmware starts, and the loader |
+| `boot` | The images the firmware starts, the loader, and the Recovery beside them |
 | `system` | Everything switched on rather than installed |
 | `desktop` | GNOME, its driver, whatever belongs to it |
 | `finalize` | The last steps on the new system |
