@@ -28,6 +28,11 @@ msgstr ""
 msgid "Write Arch OS to a USB device to boot another machine from."
 msgstr ""
 
+#. the row that starts the work, and the button on the page before it
+#: module.yaml
+msgid "Create"
+msgstr ""
+
 #. the last thing read before the first task runs
 #: module.yaml
 msgid ""

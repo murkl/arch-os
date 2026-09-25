@@ -25,6 +25,11 @@ msgstr "Recovery"
 msgid "Repair an Arch Linux system that is already on a disk."
 msgstr "Ein Arch-Linux-System reparieren, das schon auf einem Datenträger liegt."
 
+#. the row that starts the work, and the button on the page before it
+#: module.yaml
+msgid "Repair"
+msgstr "Reparieren"
+
 #. how to get back in, read on the way out to the console
 #: module.yaml
 msgid "Type recovery at the prompt to start it again."

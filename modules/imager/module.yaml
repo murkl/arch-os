@@ -10,6 +10,11 @@
 title: Create boot medium
 description: Write Arch OS to a USB device to boot another machine from.
 
+# What starting the work is called: the first row of the menu, and the button on
+# the last page before the device is written. Shorter than the title, which
+# stands over both in the header and would only be read twice.
+action: Create
+
 # The other way round from the Installer and the Recovery, which is the whole
 # division between the three: they work on the machine the image booted, this
 # one makes that image.
