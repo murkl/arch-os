@@ -7,6 +7,10 @@
 title: Recovery
 description: Repair an Arch Linux system that is already on a disk.
 
+# What starting the work is called: the first row of the menu, and the button on
+# the last page before the disk is opened.
+action: Repair
+
 # The same rule the Installer carries, for the same reason: a system is repaired
 # from outside itself, which means from a booted Arch Linux live image.
 requires: |

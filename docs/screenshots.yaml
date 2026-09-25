@@ -41,14 +41,14 @@
         press: enter
 
       # Also the page the banner is collaged from - see BANNER_CARDS in /Makefile.
-      - page: [Start, Settings]
+      - page: [Install, Settings]
         press: [down, enter]
       - page: Every used value
         shot: installer
         press: esc
 
-      # Back on the hub the cursor still sits on Settings, so Start is one up.
-      - page: [Start, Settings]
+      # Back on the hub the cursor still sits on Settings, so Install is one up.
+      - page: [Install, Settings]
         press: [up, enter]
       - page: Ready to start
         press: enter
@@ -73,7 +73,7 @@
         press: enter
       - page: Disk
         press: enter
-      - page: [Start, Settings]
+      - page: [Repair, Settings]
         press: enter
       - page: Ready to start
         press: enter

@@ -7,6 +7,10 @@
 title: Installer
 description: Install Arch Linux on this machine.
 
+# What starting the work is called: the first row of the menu, and the button on
+# the last page before anything is changed.
+action: Install
+
 # What a machine has to be for this module to be offered on it at all, asked
 # before the row even exists. `requires:` decides whether the row exists;
 # hooks/@preflight/ decides whether the machine behind it is ready.

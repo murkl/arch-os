@@ -71,7 +71,7 @@ Arch OS starts on its own and asks the language first:
 
 <p><img src="screenshots/welcome.png" alt="The welcome page, asking the language to read the rest in"></p>
 
-Then Installer or Recovery, and a starting point:
+Then, under the same wordmark, Installer or Recovery - and a starting point:
 
 <p><img src="screenshots/setup.png" alt="The page that offers the starting points"></p>
 
