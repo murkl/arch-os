@@ -459,10 +459,12 @@ own_home() {
     arch-chroot "$MNT" chown -R "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" "/home/${ARCH_OS_USERNAME}"
 }
 
-# Whether the new system has a command. Read off the mounted tree rather than
-# looked up inside it: `command -v` is a shell builtin and arch-chroot execs a
-# binary. Arch puts every binary in /usr/bin.
-has_command() { [ -x "${MNT}/usr/bin/${1}" ]; }
+# Whether the new system has a command, asked of that system: a file in its
+# /usr/bin may be a link to an absolute path - helix's is /usr/lib/helix/hx -
+# and read off the mounted tree that path is the live system's, where there is
+# nothing. test is a binary, so it can be run in there; the shell's own lookup
+# cannot - see lint in /Makefile. Arch puts every binary in /usr/bin.
+has_command() { arch-chroot "$MNT" test -x "/usr/bin/${1}"; }
 
 # Whether every setting in a sysctl drop-in names a knob that exists. sysctl
 # makes no complaint about a key it has never heard of, so a misspelled or
