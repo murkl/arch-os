@@ -1,6 +1,6 @@
-# Applications from Flathub, installed and updated through Bazaar, a store made
-# for Flatpak. The package brings Flathub as a remote of its own, so nothing is
-# added, and Bazaar is started over D-Bus when it is first needed.
+# Applications from Flathub, installed and updated through Software. The package
+# brings Flathub as a remote of its own, so nothing is added.
 # https://wiki.archlinux.org/title/Flatpak
 
-chroot_pacman_install flatpak bazaar
+# gnome-software only recommends it, so the group never pulls it in.
+chroot_pacman_install flatpak

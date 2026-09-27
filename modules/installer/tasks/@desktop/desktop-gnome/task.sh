@@ -36,10 +36,17 @@ done <"${data}/left-out"
 mapfile -t desktop < <(printf '%s\n' "${desktop[@]}" | grep -vxF -f <(printf '%s\n' "${left_out[@]}"))
 packages+=("${desktop[@]}")
 
+# GNOME Software comes with the group and installs Flatpaks and firmware
+# updates, not packages: Arch builds it with its PackageKit plugin off
+# (-D packagekit=false in the PKGBUILD) and the wiki advises against PackageKit.
+# So there is no packagekit here, and pacman stays the one thing that changes
+# the system. https://wiki.archlinux.org/title/Pacman/Tips_and_tricks#Graphical
+
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-    # Extensions browsed, installed and updated in one window, in place of the
-    # Extensions app gnome-shell brings, which only switches them on and off.
-    packages+=(extension-manager gnome-themes-extra tuned-ppd cups)
+    # Extensions installed from extensions.gnome.org in the browser, GNOME's own
+    # way; the Extensions app gnome-shell brings switches them on and off.
+    # https://wiki.archlinux.org/title/GNOME#Extensions
+    packages+=(gnome-browser-connector gnome-themes-extra tuned-ppd cups)
 
     # For flatpaks and screen sharing on Wayland. The GNOME portal is in the
     # group; the GTK one is the fallback for what it does not implement.
@@ -57,9 +64,10 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     # still worth a plug-in nobody has to look for.
     packages+=(rsync networkmanager-openvpn)
 
-    # base-devel builds from the AUR, and GNOME Firmware is fwupd's window; the
-    # rest opens a drive or an archive from anywhere else.
-    packages+=(base-devel fwupd gnome-firmware bash-completion inetutils
+    # base-devel builds from the AUR, and fwupd is where Software finds firmware
+    # updates and Settings the device security; the rest opens a drive or an
+    # archive from anywhere else.
+    packages+=(base-devel fwupd bash-completion inetutils
         dosfstools ntfs-3g exfatprogs btrfs-progs nfs-utils
         7zip zip unzip unrar wget jq zenity)
 
@@ -215,10 +223,7 @@ done <"${data}/hidden-apps"
 # ////////////////////////////////////////////////////////////////////////////
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-    # The store is Bazaar, and only with Flatpak - see the flatpak task.
-    favorites="'org.gnome.Console.desktop', 'org.gnome.Nautilus.desktop'"
-    [ "$ARCH_OS_FLATPAK_ENABLED" = "true" ] && favorites="${favorites}, 'io.github.kolunmi.Bazaar.desktop'"
-    favorites="${favorites}, 'org.gnome.Settings.desktop'"
+    favorites="'org.gnome.Console.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Software.desktop', 'org.gnome.Settings.desktop'"
     [ "$ARCH_OS_MANAGER_ENABLED" = "true" ] && favorites="'arch-os.desktop', ${favorites}"
     on_first_login <<FIRST
 gsettings set org.gnome.shell favorite-apps "[${favorites}]"

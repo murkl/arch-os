@@ -465,7 +465,7 @@ msgstr ""
 
 #. ARCH_OS_FLATPAK_ENABLED: what it means
 #: module.yaml
-msgid "Applications from Flathub, installed and updated through Bazaar, a store made for them."
+msgid "Applications from Flathub, installed and updated through Software."
 msgstr ""
 
 #. ARCH_OS_SAMBA_SHARE_ENABLED: the question
@@ -635,7 +635,7 @@ msgstr ""
 
 #. the step, as the run lists it
 #: tasks/@desktop/flatpak/task.yaml
-msgid "Install Flatpak and Bazaar"
+msgid "Set up Flatpak"
 msgstr ""
 
 #. the step, as the run lists it

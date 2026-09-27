@@ -31,8 +31,8 @@
 - One password for encryption, root and user; automatic login behind an encrypted disk
 - Btrfs snapshots before every package change (Snapper), rolled back with the Recovery
 - GNOME on Wayland, or a bare text console; the graphics driver for every Intel, AMD and NVIDIA card is detected
-- Desktop extras: codecs, fonts, printing, Samba and `.local` discovery, Extension Manager and GNOME Firmware; or a slim install with GNOME core apps only
-- Flatpak with Flathub, managed from Bazaar
+- Desktop extras: codecs, fonts, printing, Samba and `.local` discovery, extensions from extensions.gnome.org and firmware updates; or a slim install with GNOME core apps only
+- Flatpak with Flathub, managed from GNOME Software
 - Zram swap, fstrim, microcode, NetworkManager, mirrors ranked by country
 - Tuned rather than left at the defaults - see the **[➜ Reference](REFERENCE.md)**
 - AUR helper, 32-bit support, container engine, firewall, SSH server, automatic housekeeping
