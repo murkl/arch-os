@@ -48,8 +48,10 @@ Oak's own moments, not this module's work: one folder per hook, one per step, `h
 
 | Hook | Description |
 | --- | --- |
-| `@preflight` | root, then UEFI with Secure Boot off, then a network |
-| `@online`, `@wlan-device`, `@wlan-networks`, `@wlan-connect` | Finding and joining a wireless network, on the way in wherever there is no internet. The shell is **[oak.sh](../../oak.sh)**'s, which the Recovery joins one with too |
+| `@preflight` | root, then UEFI with Secure Boot off |
+| `@online`, `@wlan-device`, `@wlan-networks`, `@wlan-connect` | Whether there is internet, and joining a wireless network. The shell is **[oak.sh](../../oak.sh)**'s, which the Recovery joins one with too |
+
+**Note:** _`network:` in `module.yaml` is what puts them to work: `internet: required` holds the work on the Internet page until `@online` says yes - the wireless networks in range on it where there is a card, and a cable otherwise - and `wlan: true` puts **Wireless network** in the settings, under the language, wherever there is a card._
 | `@restart`, `@shutdown` | The two ways this machine is put down, each closing the target first |
 
 **Note:** _The third way out is `console:` in `module.yaml`: the Installer closes, the machine keeps running. See **[iso/](../../iso)**._
@@ -107,7 +109,7 @@ The console keyboard is asked `first` and takes effect immediately: a password t
 
 ## Requirements
 
-A booted **Arch Linux live image** - `requires:` in `module.yaml`. On it: root, UEFI with Secure Boot off, a network - `hooks/@preflight/`, in that order.
+A booted **Arch Linux live image** - `requires:` in `module.yaml`. On it: root, then UEFI with Secure Boot off - `hooks/@preflight/`, in that order - and the internet, which the Internet page in front of the work waits for - `network:` in `module.yaml`.
 
 **Note:** _`--debug` offers every module and simulates its work._
 

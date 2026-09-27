@@ -1,0 +1,4 @@
+# Is there internet? Asked of a wireless network just joined and of nothing
+# else: the Recovery waits for no network - see network: in module.yaml.
+title: Reach the network
+script: is_online

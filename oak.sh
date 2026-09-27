@@ -7,8 +7,8 @@
 
 # Whether this run only pretends to work. Oak starts no task under --debug, so
 # this is for the few places that still run there and must not touch the
-# machine: an answer applied to it, a list a page opens on, a task that
-# simulates itself.
+# machine: an answer applied to it, a list a page opens on, the network, a task
+# that simulates itself.
 debugging() { [ "$DEBUG" = "true" ]; }
 
 # Everything a module downloads, https even after a redirect: -L on its own
@@ -24,27 +24,32 @@ fetch_url() {
 
 # Real HTTPS to a host every module needs anyway, not a ping - a captive portal
 # answers pings too. Only the headers: it is asked every few seconds for the
-# line in the header, and the answer is whether it came, not what it said.
+# line in the header, and the answer is whether it came, not what it said. The
+# same answer is what the Installer waits for before its work and what a
+# wireless network just joined is held to - see network: in the modules.
+#
+# A simulated run shows what a connected machine shows rather than whatever the
+# desk it is read on happens to be, so the pictures of it come out the same on
+# every run.
 is_online() {
+    debugging && return 0
     fetch_url -sI --connect-timeout 5 --max-time 10 https://archlinux.org >/dev/null
 }
 
-# The line in the header - see status: in oak.yaml. A simulated run shows what a
-# connected machine shows rather than whatever the desk it is read on happens
-# to be, so the pictures of it come out the same on every run.
-header_online() { debugging || is_online; }
-
-# Everything a wireless network needs, started where it is not running yet: the
-# Recovery's own partition starts none of it on its own, since what it repairs
-# may be the network, and brings it up the moment somebody asks for one. The
-# Arch ISO runs all of it from boot, and anywhere else is not ours to start.
-# networkd answers DHCP on the card and on a cable, resolved answers names.
-network_up() {
+# iwd, where it is not running yet. The Arch ISO runs it from boot and anywhere
+# else is not ours to start; the Recovery's own partition brings up a cable at
+# boot and starts iwd once a card is there to be asked for - see iso/recovery/.
+# It joins nothing on its own: it knows no network yet.
+wlan_up() {
     on_live_image || return 0
     systemctl is-active -q iwd && return 0
-    systemctl start systemd-networkd systemd-resolved iwd
+    systemctl start iwd
 }
 
+# The wireless card, or nothing where this machine has none. Whether there is
+# one is read off the kernel before anything is started, so a machine without a
+# card starts nothing for it and is simply not offered a wireless network.
+#
 # The first station is taken rather than asked for: a machine with two wireless
 # cards is rare enough that a prompt would cost everyone else a question. A
 # daemon started just now has not found the card yet, so it is given a few
@@ -62,7 +67,13 @@ network_up() {
 # instead of an answer.
 wlan_station() {
     local station=""
-    network_up
+    # A simulated run shows a machine with a card, whatever the desk has.
+    if debugging; then
+        printf 'wlan0'
+        return 0
+    fi
+    compgen -G '/sys/class/ieee80211/*' >/dev/null || return 0
+    wlan_up
     for _ in $(seq 10); do
         station="$(iwctl device list |
             sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r//' |
@@ -82,6 +93,10 @@ wlan_station() {
 # finished in half a second should not cost three.
 wlan_networks() {
     local state
+    if debugging; then
+        printf '%s\n' Home "Coffee Bar Free"
+        return 0
+    fi
     iwctl station "$WLAN_DEVICE" scan || true
     for _ in $(seq 20); do
         sleep 0.5
@@ -122,10 +137,10 @@ wlan_networks() {
 # interface is drawing on. A live image with one account, for one second, for a
 # passphrase that is written down nowhere and is not the disk password.
 #
-# Where there is nothing to ask whether it carries traffic yet, the join waits
-# for that here: a card that has joined still needs its address, and the line in
-# the header is read again the moment this returns.
+# Whether the network carries anything is not waited for here: Oak asks
+# is_online for that once this returns - see @online in the modules.
 wlan_join() {
+    debugging && return 0
     if ! iwctl --passphrase "$WLAN_PASSPHRASE" station "$WLAN_DEVICE" connect "$WLAN_SSID"; then
         # What iwctl says when it refuses is a row of its own table and goes to
         # stdout, which here is the hook's answer rather than anything anybody
@@ -135,11 +150,6 @@ wlan_join() {
         echo "${WLAN_SSID} did not accept that passphrase, or it is no longer in range." >&2
         return 1
     fi
-    for _ in $(seq 20); do
-        is_online && return 0
-        sleep 0.5
-    done
-    return 0
 }
 
 # ////////////////////////////////////////////////////////////////////////////

@@ -768,8 +768,3 @@ msgstr "Läuft als root"
 #: hooks/@preflight/firmware/hook.yaml
 msgid "Booted in UEFI mode, with Secure Boot off"
 msgstr "Im UEFI-Modus gestartet, Secure Boot aus"
-
-#. the check, read where it is the one that failed
-#: hooks/@preflight/network/hook.yaml
-msgid "Connected to the internet"
-msgstr "Mit dem Internet verbunden"

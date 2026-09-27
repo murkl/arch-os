@@ -26,7 +26,7 @@ accent: "#1793d1"
 # The Installer cannot do without it, the Recovery only for what somebody wants
 # to fetch by hand, and Create boot medium downloads the image. See oak.sh.
 status:
-  script: header_online
+  script: is_online
   pass: Online
   fail: Offline
 

@@ -19,6 +19,14 @@ requires: |
   echo "The Installer runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there." >&2
   exit 1
 
+# Everything that gets installed is downloaded, so the work waits for the
+# internet - after the keyboard, which a wireless passphrase is typed on - and a
+# wireless network can be joined there and later in the settings. How is
+# hooks/@online and hooks/@wlan-*, with the shell of oak.sh.
+network:
+  wlan: true
+  internet: required
+
 # Read on the way out, when the installer closes and the machine keeps running.
 console: Type installer at the prompt to start it again.
 

@@ -39,9 +39,9 @@ Three stages; after the first, every step is optional.
 
 ## Nothing is downloaded
 
-A broken network may be the problem, so this module never asks for one: no `@online` hook, and kernel images come from the local pacman cache. `hooks/@preflight/` checks only root - not firmware, since this machine is not what is being set up.
+A broken network may be the problem, so this module never waits for one - `internet: optional` in `module.yaml` - and kernel images come from the local pacman cache. `hooks/@preflight/` checks only root - not firmware, since this machine is not what is being set up.
 
-It can join one all the same, for whatever somebody wants to fetch in the shell: `@wlan-device`, `@wlan-networks` and `@wlan-connect` put **Wireless network** on its menu, with the shell the Installer joins one with - **[oak.sh](../../oak.sh)**. On its own partition that is also what starts the network: nothing of it runs before.
+It can join one all the same, for whatever somebody wants to fetch in the shell: `wlan: true` puts **Wireless network** in its settings, under the language, wherever there is a card. `@wlan-device`, `@wlan-networks` and `@wlan-connect` join it, with the shell the Installer joins one with - **[oak.sh](../../oak.sh)** - and `@online` says whether it carries anything. On its own partition a cable comes up at boot, and the wireless daemon starts once there is a card to ask it about.
 
 ## Two Questions, and no more
 
