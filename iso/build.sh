@@ -234,11 +234,11 @@ fetch_theme
 echo "### Build the Recovery"
 cp -r /usr/share/archiso/configs/baseline/. "$RECOVERY_PROFILE"
 
-# baseline is made to be a guest in somebody's cloud, and switches on ssh, a
-# network and the agents of four hypervisors. The Recovery goes near a network
-# only when somebody asks it to - the network may be what broke - so everything
-# baseline starts goes, and it starts nothing but itself. What it brings up on
-# request is in recovery/.
+# baseline is made to be a guest in somebody's cloud, and switches on ssh,
+# cloud-init, a network and the agents of four hypervisors. Everything it starts
+# goes, and the Recovery starts itself and a cable's network, which recovery/
+# switches on again: a cable plugged in is a network asked for. The wireless
+# daemon waits for a card to be asked about - see wlan_up in oak.sh.
 rm -rf "${RECOVERY_PROFILE}/airootfs/etc/systemd/system" \
     "${RECOVERY_PROFILE}/airootfs/etc/systemd/network" \
     "${RECOVERY_PROFILE}/airootfs/etc/systemd/networkd.conf.d" \
@@ -337,8 +337,8 @@ install_bootsplash "$ISO_PROFILE"
 start_on_tty1 "$ISO_PROFILE"
 
 # Networking is left as the Arch ISO ships it: iwd and systemd-networkd, already
-# enabled. A machine with no link is refused by the installer's own preflight
-# check, which says to use iwctl.
+# enabled. A machine with no link is held on the Installer's Internet page until
+# it has one.
 
 for entry in "${ISO_PROFILE}"/efiboot/loader/entries/01-archiso-linux*.conf; do
     grep -q 'splash' "$entry" || sed -i "/^options / s/\$/ ${BOOT_ARGS}/" "$entry"

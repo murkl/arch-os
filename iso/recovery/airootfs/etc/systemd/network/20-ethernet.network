@@ -1,4 +1,6 @@
-# And for a cable, which comes up with the same request.
+# And for a cable, which comes up at boot: a cable plugged in is a network asked
+# for. systemd-networkd and systemd-resolved are switched on beside this, in
+# ../system/.
 [Match]
 Type=ether
 Kind=!*

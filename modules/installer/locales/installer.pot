@@ -750,8 +750,3 @@ msgstr ""
 #: hooks/@preflight/firmware/hook.yaml
 msgid "Booted in UEFI mode, with Secure Boot off"
 msgstr ""
-
-#. the check, read where it is the one that failed
-#: hooks/@preflight/network/hook.yaml
-msgid "Connected to the internet"
-msgstr ""
