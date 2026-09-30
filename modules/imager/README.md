@@ -21,7 +21,7 @@ module.sh                       what more than one script has to agree about
 tasks/@<stage>/<id>/task.yaml   what that step is: its needs, conditions and offers
 tasks/@<stage>/<id>/task.sh     what it does
 tasks/@<stage>/<id>/test.sh     how to tell, on the machine, that it took
-hooks/@<hook>/<id>/hook.yaml    a moment Oak runs itself, rather than as part of the work
+options/<id>/option.yaml        what is opened rather than run as part of the work
 locales/                        one <code>.po per language, and the template they come from
 ```
 
@@ -58,14 +58,14 @@ An `arch-os-<version>-x86_64.iso` already in that folder is not downloaded again
 
 `requires:` splits the three modules: Installer and Recovery need a booted live image to work on; this one needs anywhere else - it is the machine that *makes* that image. So it is the only module offered on an ordinary desktop.
 
-`hooks/@preflight/`:
+What the work waits for, under `options/`:
 
-| Check | Why |
+| Option | Why |
 | --- | --- |
-| `escalation` | A way to become root for the write - already root, or `sudo` exists |
-| `device` | Nothing plugged in, no answer can help |
+| `access` | A way to become root for the write - already root, or `sudo` exists |
+| `device` | Nothing plugged in, no answer can help. A stick plugged in carries on by itself |
 
-**Note:** _Whether the image can be fetched is not checked here - it depends on the download folder, which is not yet answered when `@preflight` runs. The download task says so instead._
+**Note:** _Whether the image can be fetched is not checked here - it depends on the download folder, which is not yet answered when these are looked at. The download task says so instead._
 
 ## Root, and only where it is Needed
 

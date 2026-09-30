@@ -1,0 +1,4 @@
+# Something to write to, looked at again every few seconds: a stick plugged in
+# carries on by itself.
+title: A device to write to
+start: ./start.sh

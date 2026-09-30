@@ -11,6 +11,15 @@
 # that simulates itself.
 debugging() { [ "$DEBUG" = "true" ]; }
 
+# Whether this runs as root - which the Installer and the Recovery are started
+# as on the live image, and which nothing inside this program can fix. See
+# options/root in both.
+is_root() {
+    [ "$(id -u)" -eq 0 ] && return 0
+    echo "This has to run as root. Log in as root and start it again." >&2
+    return 1
+}
+
 # Everything a module downloads, https even after a redirect: -L on its own
 # would follow a 302 into plain http, where the answer is whoever is on the wire.
 # A connect timeout, so a machine behind a black hole says so rather than hangs.
@@ -26,7 +35,11 @@ fetch_url() {
 # answers pings too. Only the headers: it is asked every few seconds for the
 # line in the header, and the answer is whether it came, not what it said. The
 # same answer is what the Installer waits for before its work and what a
-# wireless network just joined is held to - see network: in the modules.
+# wireless network just joined is held to - see options/wlan in the modules.
+#
+# A cable is not asked about anywhere: it comes up by itself and is preferred
+# over a wireless network while both are up, by the route metrics the live
+# image and the Recovery's partition give each - see iso/recovery/.
 #
 # A simulated run shows what a connected machine shows rather than whatever the
 # desk it is read on happens to be, so the pictures of it come out the same on
@@ -46,9 +59,12 @@ wlan_up() {
     systemctl start iwd
 }
 
-# The wireless card, or nothing where this machine has none. Whether there is
-# one is read off the kernel before anything is started, so a machine without a
-# card starts nothing for it and is simply not offered a wireless network.
+# Whether this machine has a wireless card, read off the kernel before anything
+# is started: a machine without one starts nothing for it and is simply not
+# offered a wireless network.
+wlan_card() { compgen -G '/sys/class/ieee80211/*' >/dev/null; }
+
+# The wireless card's station, or nothing where this machine has none.
 #
 # The first station is taken rather than asked for: a machine with two wireless
 # cards is rare enough that a prompt would cost everyone else a question. A
@@ -63,16 +79,11 @@ wlan_up() {
 # first, exactly as they do in the scan below.
 #
 # The match is remembered rather than exited on: a filter that closes the pipe
-# leaves iwctl with a write error, and under pipefail that is a failed hook
+# leaves iwctl with a write error, and under pipefail that is a failed lookup
 # instead of an answer.
 wlan_station() {
     local station=""
-    # A simulated run shows a machine with a card, whatever the desk has.
-    if debugging; then
-        printf 'wlan0'
-        return 0
-    fi
-    compgen -G '/sys/class/ieee80211/*' >/dev/null || return 0
+    wlan_card || return 0
     wlan_up
     for _ in $(seq 10); do
         station="$(iwctl device list |
@@ -92,18 +103,21 @@ wlan_station() {
 # still going round the channels is short rather than wrong, and a card that has
 # finished in half a second should not cost three.
 wlan_networks() {
-    local state
+    local device state
+    # A simulated run shows a machine with networks in range, whatever the desk
+    # has.
     if debugging; then
         printf '%s\n' Home "Coffee Bar Free"
         return 0
     fi
-    iwctl station "$WLAN_DEVICE" scan || true
+    device="$(wlan_station)"
+    iwctl station "$device" scan || true
     for _ in $(seq 20); do
         sleep 0.5
         # Into a variable first: a grep that stops reading leaves iwctl with a
-        # write error, and under pipefail that is a failed hook instead of an
+        # write error, and under pipefail that is a failed list instead of an
         # answer.
-        state="$(iwctl station "$WLAN_DEVICE" show | sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r//')"
+        state="$(iwctl station "$device" show | sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r//')"
         grep -qE '^[[:space:]]*Scanning[[:space:]]+no([[:space:]]|$)' <<<"$state" && break
     done
 
@@ -111,7 +125,7 @@ wlan_networks() {
     # spaces, so the columns can't be split on whitespace. They're padded apart
     # instead, which makes "two or more spaces" the only separator that doesn't
     # corrupt a name like "Coffee Bar Free".
-    iwctl station "$WLAN_DEVICE" get-networks |
+    iwctl station "$device" get-networks |
         sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r//' |
         awk '
             # iwctl brackets its header with two rules; the networks come after.
@@ -137,19 +151,27 @@ wlan_networks() {
 # interface is drawing on. A live image with one account, for one second, for a
 # passphrase that is written down nowhere and is not the disk password.
 #
-# Whether the network carries anything is not waited for here: Oak asks
-# is_online for that once this returns - see @online in the modules.
+# Joined is not yet online: an address comes after it, and a passphrase some
+# cards take without a word may still be wrong. So it waits for is_online, a
+# few seconds and no longer, and says so where it never comes.
 wlan_join() {
-    debugging && return 0
-    if ! iwctl --passphrase "$WLAN_PASSPHRASE" station "$WLAN_DEVICE" connect "$WLAN_SSID"; then
+    local device
+    device="$(wlan_station)"
+    if ! iwctl --passphrase "$ARCH_OS_WLAN_PASSPHRASE" station "$device" connect "$ARCH_OS_WLAN_SSID"; then
         # What iwctl says when it refuses is a row of its own table and goes to
-        # stdout, which here is the hook's answer rather than anything anybody
-        # reads. So the reason is said once, in a sentence, on the channel a
-        # failure is read from - and it names the passphrase, which is what it
-        # is nearly every time.
-        echo "${WLAN_SSID} did not accept that passphrase, or it is no longer in range." >&2
+        # stdout, which is the log rather than anything anybody reads. So the
+        # reason is said once, in a sentence, on the channel a failure is read
+        # from - and it names the passphrase, which is what it is nearly every
+        # time.
+        echo "${ARCH_OS_WLAN_SSID} did not accept that passphrase, or it is no longer in range." >&2
         return 1
     fi
+    for _ in $(seq 6); do
+        is_online && return 0
+        sleep 2
+    done
+    echo "${ARCH_OS_WLAN_SSID} was joined, but there is still no internet." >&2
+    return 1
 }
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -203,6 +225,15 @@ on_live_image() {
 arch_live() {
     on_live_image || return 1
     grep -qs '^ID=arch$' /etc/os-release
+}
+
+# What the Installer and the Recovery ask of a machine before they are offered
+# on it: a system is installed and repaired from outside itself, which means
+# from a booted Arch Linux live image. $1 is the module saying so.
+from_live_image() {
+    arch_live && return 0
+    echo "$1 runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there." >&2
+    return 1
 }
 
 # The keyboard the live image was started with. The Arch image records it only

@@ -19,7 +19,7 @@ module.sh                       what more than one script has to agree about
 tasks/@<stage>/<id>/task.yaml   what that step is: its needs, conditions and offers
 tasks/@<stage>/<id>/task.sh     what it does, plus any file it ships with, beside it
 tasks/@<stage>/<id>/test.sh     optional: how to tell, on the machine, that it took
-hooks/@<hook>/<id>/hook.yaml    a moment Oak runs itself, rather than as part of the work
+options/<id>/option.yaml        what is opened rather than run as part of the work
 locales/                        one <code>.po per language, and the template they come from
 ```
 
@@ -39,9 +39,9 @@ Three stages; after the first, every step is optional.
 
 ## Nothing is downloaded
 
-A broken network may be the problem, so this module never waits for one - `internet: optional` in `module.yaml` - and kernel images come from the local pacman cache. `hooks/@preflight/` checks only root - not firmware, since this machine is not what is being set up.
+A broken network may be the problem, so this module never waits for one, and kernel images come from the local pacman cache. `options/root` is all the work waits for - not firmware, since this machine is not what is being set up.
 
-It can join one all the same, for whatever somebody wants to fetch in the shell: `wlan: true` puts **Wireless network** in its settings, under the language, wherever there is a card. `@wlan-device`, `@wlan-networks` and `@wlan-connect` join it, with the shell the Installer joins one with - **[oak.sh](../../oak.sh)** - and `@online` says whether it carries anything. On its own partition a cable comes up at boot, and the wireless daemon starts once there is a card to ask it about.
+It can join one all the same, for whatever somebody wants to fetch in the shell: `options/wlan` puts **Wireless network** on its menu wherever there is a card, and joins it with the shell the Installer joins one with - **[oak.sh](../../oak.sh)**. On its own partition a cable comes up at boot and is preferred while both are up, and the wireless daemon starts once there is a card to ask it about. `options/restart` and `options/shutdown` are the ways out.
 
 ## Two Questions, and no more
 
@@ -93,6 +93,6 @@ On its own partition neither is asked: the Installer leaves the keyboard it was 
 
 ## Requirements
 
-A booted **Arch Linux live image** - `requires:` in `module.yaml`. Root on it - `hooks/@preflight/`. Nothing else.
+A booted **Arch Linux live image** - `requires:` in `module.yaml`. Root on it - `options/root`. Nothing else.
 
 **Note:** _Two images are one: the ISO, and the Recovery image the Installer writes to a partition of its own, where this module is the only one - **[➜ The Recovery Partition](../../docs/REFERENCE.md#the-recovery-partition)**. It copies itself to memory before it starts, so the disk it came from is free to be opened like any other._

@@ -13,19 +13,7 @@ action: Repair
 
 # The same rule the Installer carries, for the same reason: a system is repaired
 # from outside itself, which means from a booted Arch Linux live image.
-requires: |
-  arch_live && return 0
-  echo "The Recovery runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there." >&2
-  exit 1
-
-# A repair downloads nothing - the network may be what broke, and kernel images
-# come from the package cache - so nothing waits for the internet. A wireless
-# network can still be joined in the settings, for whatever somebody wants to
-# fetch in the shell. How is hooks/@online and hooks/@wlan-*, with the shell
-# of oak.sh.
-network:
-  wlan: true
-  internet: optional
+requires: from_live_image "The Recovery"
 
 # Read on the way out, when the recovery closes and the machine keeps running.
 console: Type recovery at the prompt to start it again.

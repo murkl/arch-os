@@ -23,7 +23,7 @@ msgstr ""
 msgid "Installer"
 msgstr ""
 
-#. what it is, in one sentence, on the page that offers it
+#. what it is, in one sentence, under the row that starts the work
 #: module.yaml
 msgid "Install Arch Linux on this machine."
 msgstr ""
@@ -741,12 +741,57 @@ msgid ""
 "Nothing is lost either way, the installation is finished. Leaving it mounted is only useful if you want to keep working on it from here."
 msgstr ""
 
-#. the check, read where it is the one that failed
-#: hooks/@preflight/root/hook.yaml
+#. an option: its row, and the heading over its pages
+#: options/restart/option.yaml
+msgid "Restart"
+msgstr ""
+
+#. an option: what it does, under its row
+#: options/restart/option.yaml
+msgid "Close this machine down and start it again."
+msgstr ""
+
+#. an option: its row, and the heading over its pages
+#: options/root/option.yaml
 msgid "Running as root"
 msgstr ""
 
-#. the check, read where it is the one that failed
-#: hooks/@preflight/firmware/hook.yaml
+#. an option: its row, and the heading over its pages
+#: options/shutdown/option.yaml
+msgid "Shut down"
+msgstr ""
+
+#. an option: what it does, under its row
+#: options/shutdown/option.yaml
+msgid "Switch this machine off."
+msgstr ""
+
+#. an option: its row, and the heading over its pages
+#: options/uefi/option.yaml
 msgid "Booted in UEFI mode, with Secure Boot off"
+msgstr ""
+
+#. an option: its row, and the heading over its pages
+#: options/wlan/option.yaml
+msgid "Wireless network"
+msgstr ""
+
+#. an option: what it does, under its row
+#: options/wlan/option.yaml
+msgid "Join a wireless network."
+msgstr ""
+
+#. ARCH_OS_WLAN_SSID: a page of the option
+#: options/wlan/option.yaml
+msgid "Network"
+msgstr ""
+
+#. ARCH_OS_WLAN_PASSPHRASE: a page of the option
+#: options/wlan/option.yaml
+msgid "Passphrase"
+msgstr ""
+
+#. ARCH_OS_WLAN_PASSPHRASE: what it means
+#: options/wlan/option.yaml
+msgid "Left empty for an open network."
 msgstr ""

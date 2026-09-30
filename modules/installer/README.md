@@ -20,7 +20,7 @@ tasks/@<stage>/<id>/task.yaml   what that step is: its needs, conditions and off
 tasks/@<stage>/<id>/task.sh     what it does
 tasks/@<stage>/<id>/test.sh     optional: how to tell, on the machine, that it took
 tasks/@<stage>/<id>/data/       every file it writes into the new system, named after it, filled by render
-hooks/@<hook>/<id>/hook.yaml    a moment Oak runs itself, rather than as part of the work
+options/<id>/option.yaml        what is opened rather than run as part of the work
 data/                           the tables a language and a country are looked up in
 locales/                        one <code>.po per language, and the template they come from
 ```
@@ -42,19 +42,18 @@ One folder per stage under `tasks/`, marked with `@`; `module.yaml` orders them,
 
 **Note:** _`make inspect` prints the order the whole module resolves to._
 
-## Hooks
+## Options
 
-Oak's own moments, not this module's work: one folder per hook, one per step, `hook.yaml` and, where the yaml does not name a function, `hook.sh`.
+What is opened rather than run as part of the work: one folder each under `options/`, `option.yaml` and, where the yaml does not name a function, `option.sh`. The ones with a `start:` are what the work waits for, in the order their folders sort.
 
-| Hook | Description |
+| Option | Description |
 | --- | --- |
-| `@preflight` | root, then UEFI with Secure Boot off |
-| `@online`, `@wlan-device`, `@wlan-networks`, `@wlan-connect` | Whether there is internet, and joining a wireless network. The shell is **[oak.sh](../../oak.sh)**'s, which the Recovery joins one with too |
+| `root` | Waits for root |
+| `uefi` | Waits for UEFI with Secure Boot off |
+| `wlan` | **Wireless network** on the menu wherever there is a card, and waited for until there is internet: the networks in range where there is a card, a cable otherwise. The shell is **[oak.sh](../../oak.sh)**'s, which the Recovery joins one with too |
+| `restart`, `shutdown` | The two ways this machine is put down on the way out, each closing the target first |
 
-**Note:** _`network:` in `module.yaml` is what puts them to work: `internet: required` holds the work on the Internet page until `@online` says yes - the wireless networks in range on it where there is a card, and a cable otherwise - and `wlan: true` puts **Wireless network** in the settings, under the language, wherever there is a card._
-| `@restart`, `@shutdown` | The two ways this machine is put down, each closing the target first |
-
-**Note:** _The third way out is `console:` in `module.yaml`: the Installer closes, the machine keeps running. See **[iso/](../../iso)**._
+**Note:** _A cable needs no option: it comes up by itself and is preferred over a wireless network while both are up. The third way out is `console:` in `module.yaml`: the Installer closes, the machine keeps running. See **[iso/](../../iso)**._
 
 ## auto and none
 
@@ -109,7 +108,7 @@ The console keyboard is asked `first` and takes effect immediately: a password t
 
 ## Requirements
 
-A booted **Arch Linux live image** - `requires:` in `module.yaml`. On it: root, then UEFI with Secure Boot off - `hooks/@preflight/`, in that order - and the internet, which the Internet page in front of the work waits for - `network:` in `module.yaml`.
+A booted **Arch Linux live image** - `requires:` in `module.yaml`. On it: root, then UEFI with Secure Boot off, then the internet - `options/root`, `options/uefi` and `options/wlan`, which the work waits for in that order.
 
 **Note:** _`--debug` offers every module and simulates its work._
 

@@ -18,10 +18,7 @@ action: Create
 # The other way round from the Installer and the Recovery, which is the whole
 # division between the three: they work on the machine the image booted, this
 # one makes that image.
-requires: |
-  on_live_image || return 0
-  echo "Create boot medium writes a device from an ordinary Linux machine. On the live image there is a machine to work on instead - open the Installer or the Recovery." >&2
-  exit 1
+requires: off_live_image
 
 confirm: |
   Arch OS will be written to {{ARCH_OS_IMAGE_DEVICE}}.

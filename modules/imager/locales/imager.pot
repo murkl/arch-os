@@ -23,7 +23,7 @@ msgstr ""
 msgid "Create boot medium"
 msgstr ""
 
-#. what it is, in one sentence, on the page that offers it
+#. what it is, in one sentence, under the row that starts the work
 #: module.yaml
 msgid "Write Arch OS to a USB device to boot another machine from."
 msgstr ""
@@ -144,12 +144,12 @@ msgid ""
 "{{ARCH_OS_IMAGE_DEVICE}} now starts Arch OS. Unplug it, plug it into the machine to install, and start that machine from it."
 msgstr ""
 
-#. the check, read where it is the one that failed
-#: hooks/@preflight/escalation/hook.yaml
+#. an option: its row, and the heading over its pages
+#: options/access/option.yaml
 msgid "Root for the write"
 msgstr ""
 
-#. the check, read where it is the one that failed
-#: hooks/@preflight/device/hook.yaml
+#. an option: its row, and the heading over its pages
+#: options/device/option.yaml
 msgid "A device to write to"
 msgstr ""

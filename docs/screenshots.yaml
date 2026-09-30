@@ -4,7 +4,8 @@
 #
 # One block is one take: a start of the program from a pristine copy of the
 # product, with --debug, so nothing on this machine is touched. One step is one
-# page: wait for `page:`, photograph it as `shot:`, press on.
+# page: wait for `page:`, photograph it as `shot:`, put the cursor on the row
+# called `choose:`, press on.
 #
 # Every answer is given here rather than left to the machine rendering it: a
 # locale, a keyboard and a time zone all default to something read off it. The
@@ -42,14 +43,15 @@
 
       # Also the page the banner is collaged from - see BANNER_CARDS in /Makefile.
       - page: [Install, Settings]
-        press: [down, enter]
+        choose: Settings
+        press: enter
       - page: Every used value
         shot: installer
         press: esc
 
-      # Back on the hub the cursor still sits on Settings, so Install is one up.
       - page: [Install, Settings]
-        press: [up, enter]
+        choose: Install
+        press: enter
       - page: Ready to start
         press: enter
 

@@ -1,0 +1,21 @@
+# A wireless network, joined with the shell the Recovery joins one with - see
+# THE NETWORK in oak.sh. On the menu wherever this machine has a card, and in
+# front of the work while there is no internet: everything that gets installed
+# is downloaded. After the keyboard, which the passphrase is typed on.
+title: Wireless network
+description: Join a wireless network.
+menu: main
+requires: wlan_card
+start: internet_ready
+script: wlan_join
+
+variables:
+  - name: ARCH_OS_WLAN_SSID
+    title: Network
+    required: true
+    command: wlan_networks
+  - name: ARCH_OS_WLAN_PASSPHRASE
+    title: Passphrase
+    description: Left empty for an open network.
+    type: secret
+    existing: true

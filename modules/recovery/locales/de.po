@@ -20,7 +20,7 @@ msgstr "Deutsch"
 msgid "Recovery"
 msgstr "Recovery"
 
-#. what it is, in one sentence, on the page that offers it
+#. what it is, in one sentence, under the row that starts the work
 #: module.yaml
 msgid "Repair an Arch Linux system that is already on a disk."
 msgstr "Ein Arch-Linux-System reparieren, das schon auf einem Datenträger liegt."
@@ -195,7 +195,52 @@ msgstr ""
 "\n"
 "Verloren geht so oder so nichts, die Wiederherstellung ist fertig. Eingehängt zu lassen lohnt nur, wenn du von hier aus weiterarbeiten willst."
 
-#. the check, read where it is the one that failed
-#: hooks/@preflight/root/hook.yaml
+#. an option: its row, and the heading over its pages
+#: options/restart/option.yaml
+msgid "Restart"
+msgstr "Neu starten"
+
+#. an option: what it does, under its row
+#: options/restart/option.yaml
+msgid "Close this machine down and start it again."
+msgstr "Den Rechner herunterfahren und neu starten."
+
+#. an option: its row, and the heading over its pages
+#: options/root/option.yaml
 msgid "Running as root"
 msgstr "Läuft als root"
+
+#. an option: its row, and the heading over its pages
+#: options/shutdown/option.yaml
+msgid "Shut down"
+msgstr "Herunterfahren"
+
+#. an option: what it does, under its row
+#: options/shutdown/option.yaml
+msgid "Switch this machine off."
+msgstr "Den Rechner ausschalten."
+
+#. an option: its row, and the heading over its pages
+#: options/wlan/option.yaml
+msgid "Wireless network"
+msgstr "WLAN"
+
+#. an option: what it does, under its row
+#: options/wlan/option.yaml
+msgid "Join a wireless network."
+msgstr "Mit einem WLAN verbinden."
+
+#. ARCH_OS_WLAN_SSID: a page of the option
+#: options/wlan/option.yaml
+msgid "Network"
+msgstr "Netzwerk"
+
+#. ARCH_OS_WLAN_PASSPHRASE: a page of the option
+#: options/wlan/option.yaml
+msgid "Passphrase"
+msgstr "Passwort"
+
+#. ARCH_OS_WLAN_PASSPHRASE: what it means
+#: options/wlan/option.yaml
+msgid "Left empty for an open network."
+msgstr "Bei einem offenen Netzwerk leer lassen."

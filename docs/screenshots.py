@@ -82,7 +82,10 @@ KEY = {
     "left": b"\x1bOD",
 }
 
-STEP_KEYS = {"page", "shot", "frame", "press"}
+# The mark the interface puts in front of the row under the cursor.
+CURSOR = "\u25b8"
+
+STEP_KEYS = {"page", "shot", "frame", "choose", "press"}
 FRAMES = ("settled", "running")
 
 # How long a page is given to arrive. Generous - a run of simulated steps holds
@@ -129,6 +132,22 @@ class Session:
             os.write(self.fd, KEY.get(key, key.encode()))
             self.pump(settle)
         return self
+
+    def choose(self, row, tries=40):
+        """Put the cursor on a row by its name, not by how many rows stand
+        above it: a list is reordered the day a row is added to it. Up first,
+        as far as it goes, then down."""
+        for key in ("up", "down"):
+            last = None
+            for _ in range(tries):
+                marked = [line for line in grid(self._buf).display if CURSOR in line]
+                if any(row in line for line in marked):
+                    return self
+                if marked == last:
+                    break
+                last = marked
+                self.press([key])
+        raise SystemExit(f"no row called {row!r} to put the cursor on")
 
     def until(self, wants, timeout=WAIT):
         """Wait for a page, not for a length of time."""
@@ -349,6 +368,8 @@ def storyboard(path):
                 raise SystemExit(f"{at}: page: says which page this step is about")
             step["page"] = lines(step["page"], at, "page:")
             step["press"] = lines(step["press"], at, "press:") if "press" in step else []
+            if "choose" in step and len(lines(step["choose"], at, "choose:")) != 1:
+                raise SystemExit(f"{at}: choose: is the one row to put the cursor on")
             if step.get("frame", FRAMES[0]) not in FRAMES:
                 raise SystemExit(f"{at}: frame: is one of {', '.join(FRAMES)}")
             if "frame" in step and "shot" not in step:
@@ -406,6 +427,8 @@ def play(takes, source, out):
                     card(frame, out / f"{step['shot']}.png")
                     print(f"  {step['shot']}", flush=True)
                 since = len(session.frames)
+                if "choose" in step:
+                    session.choose(step["choose"])
                 session.press(step["press"])
         finally:
             session.close()
