@@ -9,7 +9,7 @@
 # repository. Every call sets a whole state, so running it again changes
 # nothing. The same file in every project that is released this way.
 #
-# POSIX sh: this is three calls, not a program.
+# POSIX sh: this is four calls, not a program.
 set -eu
 
 command -v gh >/dev/null || {
@@ -19,15 +19,20 @@ command -v gh >/dev/null || {
 
 dir="$(dirname "$0")/settings"
 
-# How a pull request is merged: squashed under its own title and body, which is
-# the line a version is read out of; its branch deleted afterwards; and merged
-# on its own once the checks main asks for have passed, where somebody asked
-# for that.
+# How a pull request is merged: squashed under its title alone, which is the
+# line a version is read out of. A body would be read too, and every line in it
+# that opens on `feat:` or `fix:` would be one more entry in the changelog. Its
+# branch deleted afterwards, and merged on its own once the checks main asks for
+# have passed, where somebody asked for that.
 gh api --silent -X PATCH 'repos/{owner}/{repo}' --input "${dir}/repository.json"
 
 # What a workflow's own token may do unless the workflow says otherwise: read,
 # and open the release pull request.
 gh api --silent -X PUT 'repos/{owner}/{repo}/actions/permissions/workflow' --input "${dir}/actions.json"
+
+# CodeQL as GitHub sets it up by default: every language it finds, on every
+# pull request, every push to main and once a week, without a workflow here.
+gh api --silent -X PATCH 'repos/{owner}/{repo}/code-scanning/default-setup' --input "${dir}/code-scanning.json"
 
 # What main is held to. Updated where it exists already, so it stays one ruleset
 # rather than one more per run.
