@@ -31,7 +31,8 @@ done
 # --no-style, so a style rule a later systemd adds cannot fail an installation
 # over a rule that works.
 udevadm verify --resolve-names=never --no-style --no-summary \
-    "${MNT}/etc/udev/rules.d/60-arch-os-ioschedulers.rules"
+    "${MNT}/etc/udev/rules.d/60-arch-os-ioschedulers.rules" \
+    "${MNT}/etc/udev/rules.d/70-arch-os-usb-writeback.rules"
 
 # --dry-run, because the line in there writes to /sys, and the /sys this runs
 # against belongs to the live image rather than to the system being installed.
