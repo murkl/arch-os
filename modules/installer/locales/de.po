@@ -465,8 +465,8 @@ msgstr "Flatpak"
 
 #. ARCH_OS_FLATPAK_ENABLED: what it means
 #: module.yaml
-msgid "Applications from Flathub, installed and updated through Bazaar, a store made for them."
-msgstr "Anwendungen von Flathub, installiert und aktualisiert über Bazaar, einen Store eigens dafür."
+msgid "Applications from Flathub, installed and updated through Software."
+msgstr "Anwendungen von Flathub, installiert und aktualisiert über Software."
 
 #. ARCH_OS_SAMBA_SHARE_ENABLED: the question
 #: module.yaml
@@ -635,8 +635,8 @@ msgstr "GNOME installieren"
 
 #. the step, as the run lists it
 #: tasks/@desktop/flatpak/task.yaml
-msgid "Install Flatpak and Bazaar"
-msgstr "Flatpak und Bazaar installieren"
+msgid "Set up Flatpak"
+msgstr "Flatpak einrichten"
 
 #. the step, as the run lists it
 #: tasks/@desktop/graphics-driver/task.yaml

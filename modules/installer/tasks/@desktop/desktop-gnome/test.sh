@@ -2,6 +2,9 @@
 
 arch-chroot "$MNT" systemctl is-enabled gdm.service >/dev/null
 
+# The store is GNOME's own, which the group brings.
+has_command gnome-software
+
 # And sound, which only starts where these sockets are there to be spoken to.
 arch-chroot "$MNT" systemctl --global is-enabled pipewire.socket pipewire-pulse.socket wireplumber.service >/dev/null
 

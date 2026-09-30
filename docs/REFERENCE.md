@@ -142,9 +142,9 @@ The `lib32-` half of each comes with 32-bit support. NVIDIA's module is loaded e
 
 **Virtual machines, both ways.** Inside one, the guest tools for its hypervisor are installed without a question. On real hardware, running virtual machines is a question of its own: libvirt, QEMU and a guest firmware, with the Virtual Machine Manager on a desktop. **[➜ Libvirt](https://wiki.archlinux.org/title/Libvirt)**
 
-**Note:** _The GNOME group is filtered, not installed and trimmed: what the slim desktop drops is never downloaded. GNOME Software is dropped always - without PackageKit, which Arch advises against, it has nothing to manage but Flatpaks and firmware. Flatpaks go through **Bazaar**, installed with Flatpak, and firmware through **GNOME Firmware**, with the desktop extras. **[➜ PackageKit](https://wiki.archlinux.org/title/PackageKit)**_
+**Note:** _The GNOME group is filtered, not installed and trimmed: what the slim desktop drops is never downloaded. **GNOME Software** stays in every desktop and installs Flatpaks and, with `fwupd` from the desktop extras, firmware updates - not packages: Arch builds it with its PackageKit plugin switched off, and PackageKit is [not recommended](https://wiki.archlinux.org/title/Pacman/Tips_and_tricks#Graphical), so none is installed and pacman stays the one thing that changes the system._
 
-**Note:** _The desktop extras bring **Extension Manager** in place of the Extensions app `gnome-shell` ships, which is hidden: it browses, installs and updates extensions in one window, so no browser connector is needed._
+**Note:** _Extensions are GNOME's own way: installed from **[extensions.gnome.org](https://extensions.gnome.org)** in the browser through `gnome-browser-connector`, which the desktop extras bring, and switched on and off in the **Extensions** app `gnome-shell` ships. **[➜ Extensions](https://wiki.archlinux.org/title/GNOME#Extensions)**_
 
 **A desktop also gets `nss-mdns`** and the `mdns_minimal` module in front of the resolver in `/etc/nsswitch.conf`. Avahi announces this machine and finds the others either way; without that line nothing on the system can reach any of them by the `.local` name they answer to - a printer, a share and another machine are all `.local`. **[➜ Avahi](https://wiki.archlinux.org/title/Avahi#Hostname_resolution)**
 

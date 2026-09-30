@@ -3,6 +3,3 @@
 
 remotes="$(arch-chroot "$MNT" flatpak remotes --system --columns=name)"
 grep -qx flathub <<<"$remotes"
-
-# And the store to install them with.
-has_command bazaar

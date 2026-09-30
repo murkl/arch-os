@@ -489,8 +489,7 @@ variables:
   - name: ARCH_OS_FLATPAK_ENABLED
     title: Flatpak
     description: |
-      Applications from Flathub, installed and updated through Bazaar, a store
-      made for them.
+      Applications from Flathub, installed and updated through Software.
     group: Desktop
     type: bool
     default: true
