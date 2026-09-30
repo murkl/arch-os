@@ -24,7 +24,7 @@ on:
     # https://github.com/orgs/community/discussions/199292
     paths-ignore:
       - CHANGELOG.md
-      - .github/.release-please-manifest.json
+      - .release-please-manifest.json
       - oak.yaml
 
 permissions: {}

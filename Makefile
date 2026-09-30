@@ -38,7 +38,7 @@ VERSION := $(shell sed -n 's/^version:[[:space:]]*//p' $(PRODUCT))
 # What release-please remembers it last released, which is the same number under
 # another name - it raises both in one pull request. Read back here so the two
 # cannot drift: a version only one of them knows about was typed by hand.
-MANIFEST := .github/.release-please-manifest.json
+MANIFEST := .release-please-manifest.json
 RELEASED := $(shell sed -n 's/.*"\.":[[:space:]]*"\([^"]*\)".*/\1/p' $(MANIFEST))
 
 # Whatever folders are in modules/, so adding one is a folder and nothing here
@@ -129,7 +129,7 @@ RECOVERY ?= $(shell ls -td $(DIST_DIR)/*-recovery 2>/dev/null | head -1)
 
 # POSIX sh: get.sh runs on whatever shell the machine downloading it has, and
 # the rest are one job each rather than a program.
-POSIX_SCRIPTS := get.sh .github/summary.sh .github/settings.sh
+POSIX_SCRIPTS := get.sh .github/settings.sh
 
 # Bash: what builds and boots the image, and what the images themselves run -
 # both launchers, and the one only the Recovery's own image starts with.
@@ -184,7 +184,7 @@ BANNER_TAGLINE := Install Arch Linux with ease — as a desktop or a TTY system.
 BANNER_CELL    := 9
 
 .PHONY: all oak oak-check build dev run inspect tarball image iso smoke locales \
-	locales-check glyphs-check data-check lint fmt check version version-check \
+	locales-check glyphs-check data-check lint fmt check version-check \
 	secrets-check github screenshots banner docs clean
 
 # build empties the release it writes, and everything that packages it reads
@@ -323,10 +323,6 @@ locales: dev
 # ////////////////////////////////////////////////////////////////////////////
 # CHECKS | What has to pass before anything is committed
 # ////////////////////////////////////////////////////////////////////////////
-
-# The version this build carries, for anything outside make that needs it.
-version:
-	@echo $(VERSION)
 
 # A tag is matched against it, so anything but X.Y.Z would only be found at the
 # point where it costs a release - and a version only one of the two files
