@@ -13,18 +13,13 @@ description: Write Arch OS to a USB device to boot another machine from.
 # What starting the work is called: the first row of the menu, and the button on
 # the last page before the device is written. Shorter than the title, which
 # stands over both in the header and would only be read twice.
-action: Create
+start: Create
 
-# The other way round from the Installer and the Recovery, which is the whole
-# division between the three: they work on the machine the image booted, this
-# one makes that image.
-requires: off_live_image
-
-confirm: |
-  Arch OS will be written to {{ARCH_OS_IMAGE_DEVICE}}.
-
-  Everything on that device will be erased and this cannot be undone. Nothing
-  has been changed so far.
+# Where it runs its actions, each a folder under actions/: on any machine but
+# the live image, with a way to become root and something to write to.
+offered: [ordinary-machine]
+requires: [access, device]
+failure: [share-log]
 
 # Each is a folder under tasks/, marked - tasks/@write/ - and lying in one is
 # what puts a task in the run and where.
@@ -98,3 +93,9 @@ variables:
     check: sudo_accepts
     error: That is not your password, or this account may not use sudo.
     conditions: ARCH_OS_IMAGE_SUDO == true
+
+  # Not a question on any page: the address a failed run's log was put at,
+  # answered by actions/share-log where somebody chose to share it.
+  - name: ARCH_OS_LOG_URL
+    title: Shared log
+    description: Where the log of a run that failed was put online.

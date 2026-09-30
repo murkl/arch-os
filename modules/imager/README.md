@@ -21,7 +21,7 @@ module.sh                       what more than one script has to agree about
 tasks/@<stage>/<id>/task.yaml   what that step is: its needs, conditions and offers
 tasks/@<stage>/<id>/task.sh     what it does
 tasks/@<stage>/<id>/test.sh     how to tell, on the machine, that it took
-options/<id>/option.yaml        what is opened rather than run as part of the work
+actions/<id>/action.yaml        a script run outside the work, where module.yaml names it
 locales/                        one <code>.po per language, and the template they come from
 ```
 
@@ -56,11 +56,11 @@ An `arch-os-<version>-x86_64.iso` already in that folder is not downloaded again
 
 ## Where it runs
 
-`requires:` splits the three modules: Installer and Recovery need a booted live image to work on; this one needs anywhere else - it is the machine that *makes* that image. So it is the only module offered on an ordinary desktop.
+`offered:` splits the three modules: Installer and Recovery need a booted live image to work on; this one needs anywhere else - `actions/ordinary-machine` - since it is the machine that *makes* that image. So it is the only module offered on an ordinary desktop.
 
-What the work waits for, under `options/`:
+What the work requires, under `actions/`:
 
-| Option | Why |
+| Action | Why |
 | --- | --- |
 | `access` | A way to become root for the write - already root, or `sudo` exists |
 | `device` | Nothing plugged in, no answer can help. A stick plugged in carries on by itself |

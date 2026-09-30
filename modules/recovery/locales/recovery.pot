@@ -33,19 +33,6 @@ msgstr ""
 msgid "Repair"
 msgstr ""
 
-#. how to get back in, read on the way out to the console
-#: module.yaml
-msgid "Type recovery at the prompt to start it again."
-msgstr ""
-
-#. the last thing read before the first task runs
-#: module.yaml
-msgid ""
-"The system on {{ARCH_OS_RECOVERY_DISK}} will be unlocked and mounted at /mnt.\n"
-"\n"
-"This does not change anything on it. Once it is open, you can roll back to a snapshot, rebuild the boot files or open a shell. Each is offered separately."
-msgstr ""
-
 #. ARCH_OS_RECOVERY_KEYMAP: the question
 #: module.yaml
 msgid "Console keyboard"
@@ -116,6 +103,16 @@ msgstr ""
 msgid "The snapshot to put in place of the root subvolume. Newest first, with the date it was taken and what created it."
 msgstr ""
 
+#. ARCH_OS_LOG_URL: the question
+#: module.yaml
+msgid "Shared log"
+msgstr ""
+
+#. ARCH_OS_LOG_URL: what it means
+#: module.yaml
+msgid "Where the log of a run that failed was put online."
+msgstr ""
+
 #. the header's status, while its check says yes
 #: ../../oak.yaml
 msgid "Online"
@@ -183,52 +180,88 @@ msgid ""
 "Nothing is lost either way, the recovery is finished. Leaving it mounted is only useful if you want to keep working on it from here."
 msgstr ""
 
-#. an option: its row, and the heading over its pages
-#: options/restart/option.yaml
+#. an action: its row, and the heading over its pages
+#: actions/live-image/action.yaml
+msgid "An Arch Linux live image"
+msgstr ""
+
+#. an action: its row, and the heading over its pages
+#: actions/restart/action.yaml
 msgid "Restart"
 msgstr ""
 
-#. an option: what it does, under its row
-#: options/restart/option.yaml
+#. an action: what it does, under its row
+#: actions/restart/action.yaml
 msgid "Close this machine down and start it again."
 msgstr ""
 
-#. an option: its row, and the heading over its pages
-#: options/root/option.yaml
+#. an action: its row, and the heading over its pages
+#: actions/root/action.yaml
 msgid "Running as root"
 msgstr ""
 
-#. an option: its row, and the heading over its pages
-#: options/shutdown/option.yaml
+#. an action: its row, and the heading over its pages
+#: actions/share-log/action.yaml
+msgid "Share the log"
+msgstr ""
+
+#. an action: what it does, under its row
+#: actions/share-log/action.yaml
+msgid "Put the log of this run online, for whoever is helping."
+msgstr ""
+
+#. asked before the action runs
+#: actions/share-log/action.yaml
+msgid ""
+"Put the log of this run online?\n"
+"\n"
+"It goes to paste.rs, and its address comes back as a code to scan. Anyone holding that address can read it. It holds every answer but the passwords, which were never written down anywhere."
+msgstr ""
+
+#. read once the action is done, and held on until somebody has
+#: actions/share-log/action.yaml
+msgid ""
+"Log shared\n"
+"\n"
+"Scan the code, or read the address under it, and hand it to whoever is helping."
+msgstr ""
+
+#. an action: its row, and the heading over its pages
+#: actions/shutdown/action.yaml
 msgid "Shut down"
 msgstr ""
 
-#. an option: what it does, under its row
-#: options/shutdown/option.yaml
+#. an action: what it does, under its row
+#: actions/shutdown/action.yaml
 msgid "Switch this machine off."
 msgstr ""
 
-#. an option: its row, and the heading over its pages
-#: options/wlan/option.yaml
+#. an action: its row, and the heading over its pages
+#: actions/wlan/action.yaml
 msgid "Wireless network"
 msgstr ""
 
-#. an option: what it does, under its row
-#: options/wlan/option.yaml
+#. an action: what it does, under its row
+#: actions/wlan/action.yaml
 msgid "Join a wireless network."
 msgstr ""
 
-#. ARCH_OS_WLAN_SSID: a page of the option
-#: options/wlan/option.yaml
+#. ARCH_OS_WLAN_SSID: a page of the action
+#: actions/wlan/action.yaml
 msgid "Network"
 msgstr ""
 
-#. ARCH_OS_WLAN_PASSPHRASE: a page of the option
-#: options/wlan/option.yaml
+#. ARCH_OS_WLAN_PASSPHRASE: a page of the action
+#: actions/wlan/action.yaml
 msgid "Passphrase"
 msgstr ""
 
 #. ARCH_OS_WLAN_PASSPHRASE: what it means
-#: options/wlan/option.yaml
+#: actions/wlan/action.yaml
 msgid "Left empty for an open network."
+msgstr ""
+
+#. an action: its row, and the heading over its pages
+#: actions/wlan-card/action.yaml
+msgid "A wireless card"
 msgstr ""

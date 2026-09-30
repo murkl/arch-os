@@ -1,0 +1,4 @@
+# Named under leave: the machine booted to run this, and there is nothing
+# behind the program to quit into.
+title: Restart
+description: Close this machine down and start it again.

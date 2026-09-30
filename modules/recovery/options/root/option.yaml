@@ -1,5 +1,0 @@
-# Nothing to open: only something the work waits for, and none of it can be
-# fixed from inside this program. What is_root says on stderr is the page -
-# see oak.sh.
-title: Running as root
-start: is_root

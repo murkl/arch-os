@@ -1,0 +1,4 @@
+# Required by the wireless network: a machine without a card is not offered
+# one. Read off the kernel, before anything is started - see oak.sh.
+title: A wireless card
+script: wlan_card

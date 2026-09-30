@@ -13,7 +13,7 @@ debugging() { [ "$DEBUG" = "true" ]; }
 
 # Whether this runs as root - which the Installer and the Recovery are started
 # as on the live image, and which nothing inside this program can fix. See
-# options/root in both.
+# actions/root in both.
 is_root() {
     [ "$(id -u)" -eq 0 ] && return 0
     echo "This has to run as root. Log in as root and start it again." >&2
@@ -35,7 +35,8 @@ fetch_url() {
 # answers pings too. Only the headers: it is asked every few seconds for the
 # line in the header, and the answer is whether it came, not what it said. The
 # same answer is what the Installer waits for before its work and what a
-# wireless network just joined is held to - see options/wlan in the modules.
+# wireless network just joined is held to - see actions/internet and
+# actions/wlan in the modules.
 #
 # A cable is not asked about anywhere: it comes up by itself and is preferred
 # over a wireless network while both are up, by the route metrics the live
@@ -172,6 +173,49 @@ wlan_join() {
     done
     echo "${ARCH_OS_WLAN_SSID} was joined, but there is still no internet." >&2
     return 1
+}
+
+# ////////////////////////////////////////////////////////////////////////////
+# THE SHARING
+# ////////////////////////////////////////////////////////////////////////////
+
+# paste.rs takes a file over an ordinary POST, answers with the address it now
+# lives at, and serves it back as plain text. No account, no key. Where the
+# Installer shares its answers and every module its log, and the one place a
+# shared configuration is ever read back from.
+PASTE="https://paste.rs"
+
+# Whatever arrives on stdin, put online, and the address it now lives at.
+paste_online() {
+    fetch_url -s --max-time 30 --data-binary @- "${PASTE}/" | tr -d '[:space:]'
+}
+
+# An answer, appended to the file Oak keeps them in and reads back. Any earlier
+# line for the same name is dropped, and the file is written whole and moved
+# into place.
+answer() {
+    local tmp="${MODULE_CONF}.answer"
+    grep -v "^${1}=" "$MODULE_CONF" >"$tmp" 2>/dev/null || : >>"$tmp"
+    printf "%s='%s'\n" "$1" "$(printf '%s' "$2" | sed "s/'/'\\\\''/g")" >>"$tmp"
+    mv -f "$tmp" "$MODULE_CONF"
+}
+
+# The log of this run, put online for whoever is helping, and its address kept
+# as an answer the page after it draws as a code - see actions/share-log in
+# every module. Oak keeps the log beside the answer file, under the module's
+# name. Simulated, it answers with an address all the same, so that page can be
+# looked at.
+share_log() {
+    local url
+    if debugging; then
+        answer ARCH_OS_LOG_URL "${PASTE}/demo"
+        return 0
+    fi
+    if ! url="$(paste_online <"${MODULE_CONF%.conf}.log")" || [ -z "$url" ]; then
+        echo "The log could not be put online. Is this machine online?" >&2
+        return 1
+    fi
+    answer ARCH_OS_LOG_URL "$url"
 }
 
 # ////////////////////////////////////////////////////////////////////////////

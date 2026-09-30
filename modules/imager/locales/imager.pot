@@ -33,14 +33,6 @@ msgstr ""
 msgid "Create"
 msgstr ""
 
-#. the last thing read before the first task runs
-#: module.yaml
-msgid ""
-"Arch OS will be written to {{ARCH_OS_IMAGE_DEVICE}}.\n"
-"\n"
-"Everything on that device will be erased and this cannot be undone. Nothing has been changed so far."
-msgstr ""
-
 #. ARCH_OS_DOWNLOAD_DIR: the question
 #: module.yaml
 msgid "Download folder"
@@ -111,6 +103,16 @@ msgstr ""
 msgid "That is not your password, or this account may not use sudo."
 msgstr ""
 
+#. ARCH_OS_LOG_URL: the question
+#: module.yaml
+msgid "Shared log"
+msgstr ""
+
+#. ARCH_OS_LOG_URL: what it means
+#: module.yaml
+msgid "Where the log of a run that failed was put online."
+msgstr ""
+
 #. the header's status, while its check says yes
 #: ../../oak.yaml
 msgid "Online"
@@ -144,12 +146,43 @@ msgid ""
 "{{ARCH_OS_IMAGE_DEVICE}} now starts Arch OS. Unplug it, plug it into the machine to install, and start that machine from it."
 msgstr ""
 
-#. an option: its row, and the heading over its pages
-#: options/access/option.yaml
+#. an action: its row, and the heading over its pages
+#: actions/access/action.yaml
 msgid "Root for the write"
 msgstr ""
 
-#. an option: its row, and the heading over its pages
-#: options/device/option.yaml
+#. an action: its row, and the heading over its pages
+#: actions/device/action.yaml
 msgid "A device to write to"
+msgstr ""
+
+#. an action: its row, and the heading over its pages
+#: actions/ordinary-machine/action.yaml
+msgid "An ordinary Linux machine"
+msgstr ""
+
+#. an action: its row, and the heading over its pages
+#: actions/share-log/action.yaml
+msgid "Share the log"
+msgstr ""
+
+#. an action: what it does, under its row
+#: actions/share-log/action.yaml
+msgid "Put the log of this run online, for whoever is helping."
+msgstr ""
+
+#. asked before the action runs
+#: actions/share-log/action.yaml
+msgid ""
+"Put the log of this run online?\n"
+"\n"
+"It goes to paste.rs, and its address comes back as a code to scan. Anyone holding that address can read it. It holds every answer but the passwords, which were never written down anywhere."
+msgstr ""
+
+#. read once the action is done, and held on until somebody has
+#: actions/share-log/action.yaml
+msgid ""
+"Log shared\n"
+"\n"
+"Scan the code, or read the address under it, and hand it to whoever is helping."
 msgstr ""

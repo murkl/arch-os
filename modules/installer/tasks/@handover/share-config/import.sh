@@ -9,7 +9,7 @@
 # just the code at the end of it. Only the code is kept and always asked of
 # paste.rs over https, which is the one place task.sh ever shares to.
 ref="$(printf '%s' "$ARCH_OS_CONFIG_SOURCE" | tr -d '[:space:]')"
-url="https://paste.rs/${ref##*/}"
+url="${PASTE}/${ref##*/}"
 
 if ! body="$(fetch_url -s --connect-timeout 10 --max-time 30 "$url")"; then
     echo "Nothing could be read at ${url}" >&2

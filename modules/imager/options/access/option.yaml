@@ -1,8 +1,0 @@
-# Can this machine write a bootable device at all? Looked at before the first
-# question, because none of it can be fixed from inside this program.
-#
-# Whether the image can be got at is deliberately not here: where it is kept is
-# an answer, and this runs before there is one. The download task says so
-# instead, and says it about the folder that was actually chosen.
-title: Root for the write
-start: ./start.sh

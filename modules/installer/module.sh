@@ -556,7 +556,7 @@ close_target() {
 
 # What the work waits for: everything that gets installed is downloaded. The
 # sentence is the page it waits on, and it offers a wireless network only
-# where there is a card to join one with - see options/wlan.
+# where there is a card to join one with - see actions/internet.
 internet_ready() {
     is_online && return 0
     if wlan_card; then

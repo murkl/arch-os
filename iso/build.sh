@@ -339,7 +339,7 @@ start_on_tty1 "$ISO_PROFILE"
 # Networking is left as the Arch ISO ships it: iwd and systemd-networkd, already
 # enabled, and a cable weighed above a wireless network. A machine with no link
 # is held in front of the Installer's work until it has one - see
-# options/wlan in the Installer.
+# actions/internet in the Installer.
 
 for entry in "${ISO_PROFILE}"/efiboot/loader/entries/01-archiso-linux*.conf; do
     grep -q 'splash' "$entry" || sed -i "/^options / s/\$/ ${BOOT_ARGS}/" "$entry"

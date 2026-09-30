@@ -1,0 +1,18 @@
+# Named under menu, and the Installer's fallback where there is no internet: a
+# wireless network, joined with the shell every module joins one with - see
+# THE NETWORK in oak.sh. Offered wherever this machine has a card.
+title: Wireless network
+description: Join a wireless network.
+requires: [wlan-card]
+script: wlan_join
+
+variables:
+  - name: ARCH_OS_WLAN_SSID
+    title: Network
+    required: true
+    command: wlan_networks
+  - name: ARCH_OS_WLAN_PASSPHRASE
+    title: Passphrase
+    description: Left empty for an open network.
+    type: secret
+    existing: true

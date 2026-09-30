@@ -49,7 +49,7 @@ MODULES := $(notdir $(wildcard $(MODULES_DIR)/*))
 # by name. A README and a linter's config are how it is worked on, not part of
 # what runs.
 MODULE_DECL  := module.yaml
-MODULE_PARTS := module.sh data locales tasks options
+MODULE_PARTS := module.sh data locales tasks actions
 
 # ////////////////////////////////////////////////////////////////////////////
 # OAK | The runtime this is built on
@@ -392,7 +392,7 @@ lint:
 	@! grep -nE 'arch-chroot [^|&;]*[[:space:]](command|type|hash|source|alias)[[:space:]]' \
 		$(MODULE_SCRIPTS) $(MODULE_YAML) \
 		|| { echo "a shell builtin cannot be run through arch-chroot - see has_command" >&2; exit 1; }
-	@! grep -nE '^[[:space:]]*(script|test|command|prefill|apply|answer|requires|start):[[:space:]]*.*[|&;<>`$$]' $(MODULE_YAML) \
+	@! grep -nE '^[[:space:]]*(script|test|command|prefill|apply|answer):[[:space:]]*.*[|&;<>`$$]' $(MODULE_YAML) \
 		|| { echo "shell inside a yaml is linted by nothing and gives a failure no line to point at - put it in the .sh file beside it, or a function in module.sh, and name that here" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*\}[[:space:]]*>>?[[:space:]]*"\$$\{MNT\}' $(MODULE_SCRIPTS) \
 		|| { echo "a file written into the new system is a template beside its task, put in place with render - see module.sh" >&2; exit 1; }

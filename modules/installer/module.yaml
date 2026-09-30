@@ -9,22 +9,17 @@ description: Install Arch Linux on this machine.
 
 # What starting the work is called: the first row of the menu, and the button on
 # the last page before anything is changed.
-action: Install
+start: Install
 
-# What a machine has to be for this module to be offered on it at all, asked
-# before the row even exists. `requires:` decides whether the row exists; the
-# options the work waits for - options/root, options/uefi and options/wlan -
-# decide whether the machine behind it is ready.
-requires: from_live_image "The Installer"
-
-# Read on the way out, when the installer closes and the machine keeps running.
-console: Type installer at the prompt to start it again.
-
-confirm: |
-  Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.
-
-  Everything on that disk will be erased and this cannot be undone. Nothing
-  has been changed so far.
+# Where it runs its actions, each a folder under actions/. `offered:` decides
+# whether the row exists at all; `requires:` whether the machine behind it is
+# ready, in that order - the internet last, after the keyboard a passphrase is
+# typed on.
+offered: [live-image]
+requires: [root, uefi, internet]
+menu: [wlan]
+leave: [restart, shutdown]
+failure: [share-log]
 
 # Each is a folder under tasks/, marked - tasks/@disk/ - and lying in one is
 # what puts a task in the run and where; tasks sharing a stage run in the order
@@ -522,3 +517,9 @@ variables:
     required: true
     pattern: '^[A-Za-z0-9][A-Za-z0-9:/._-]*$'
     error: A code such as aBc12, or the whole address it belongs to.
+
+  # Not a question on any page: the address a failed run's log was put at,
+  # answered by actions/share-log where somebody chose to share it.
+  - name: ARCH_OS_LOG_URL
+    title: Shared log
+    description: Where the log of a run that failed was put online.

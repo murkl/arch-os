@@ -30,22 +30,6 @@ msgstr "Ein Arch-Linux-System reparieren, das schon auf einem Datenträger liegt
 msgid "Repair"
 msgstr "Reparieren"
 
-#. how to get back in, read on the way out to the console
-#: module.yaml
-msgid "Type recovery at the prompt to start it again."
-msgstr "Mit dem Befehl recovery startest du sie wieder."
-
-#. the last thing read before the first task runs
-#: module.yaml
-msgid ""
-"The system on {{ARCH_OS_RECOVERY_DISK}} will be unlocked and mounted at /mnt.\n"
-"\n"
-"This does not change anything on it. Once it is open, you can roll back to a snapshot, rebuild the boot files or open a shell. Each is offered separately."
-msgstr ""
-"Das System auf {{ARCH_OS_RECOVERY_DISK}} wird entsperrt und unter /mnt eingehängt.\n"
-"\n"
-"Daran ändert sich dadurch nichts. Ist es offen, kannst du auf einen Schnappschuss zurückgehen, die Startdateien neu bauen oder eine Shell öffnen. Jedes wird einzeln angeboten."
-
 #. ARCH_OS_RECOVERY_KEYMAP: the question
 #: module.yaml
 msgid "Console keyboard"
@@ -115,6 +99,16 @@ msgstr "Schnappschuss"
 #: module.yaml
 msgid "The snapshot to put in place of the root subvolume. Newest first, with the date it was taken and what created it."
 msgstr "Der Schnappschuss, der an die Stelle des Wurzel-Subvolumes tritt. Der neueste zuerst, mit dem Zeitpunkt der Aufnahme und dem Anlass."
+
+#. ARCH_OS_LOG_URL: the question
+#: module.yaml
+msgid "Shared log"
+msgstr "Geteiltes Log"
+
+#. ARCH_OS_LOG_URL: what it means
+#: module.yaml
+msgid "Where the log of a run that failed was put online."
+msgstr "Wo das Log eines gescheiterten Laufs online steht."
 
 #. the header's status, while its check says yes
 #: ../../oak.yaml
@@ -195,52 +189,94 @@ msgstr ""
 "\n"
 "Verloren geht so oder so nichts, die Wiederherstellung ist fertig. Eingehängt zu lassen lohnt nur, wenn du von hier aus weiterarbeiten willst."
 
-#. an option: its row, and the heading over its pages
-#: options/restart/option.yaml
+#. an action: its row, and the heading over its pages
+#: actions/live-image/action.yaml
+msgid "An Arch Linux live image"
+msgstr "Ein Arch-Linux-Live-Image"
+
+#. an action: its row, and the heading over its pages
+#: actions/restart/action.yaml
 msgid "Restart"
 msgstr "Neu starten"
 
-#. an option: what it does, under its row
-#: options/restart/option.yaml
+#. an action: what it does, under its row
+#: actions/restart/action.yaml
 msgid "Close this machine down and start it again."
 msgstr "Den Rechner herunterfahren und neu starten."
 
-#. an option: its row, and the heading over its pages
-#: options/root/option.yaml
+#. an action: its row, and the heading over its pages
+#: actions/root/action.yaml
 msgid "Running as root"
 msgstr "Läuft als root"
 
-#. an option: its row, and the heading over its pages
-#: options/shutdown/option.yaml
+#. an action: its row, and the heading over its pages
+#: actions/share-log/action.yaml
+msgid "Share the log"
+msgstr "Log teilen"
+
+#. an action: what it does, under its row
+#: actions/share-log/action.yaml
+msgid "Put the log of this run online, for whoever is helping."
+msgstr "Das Log dieses Laufs online stellen, für alle, die helfen."
+
+#. asked before the action runs
+#: actions/share-log/action.yaml
+msgid ""
+"Put the log of this run online?\n"
+"\n"
+"It goes to paste.rs, and its address comes back as a code to scan. Anyone holding that address can read it. It holds every answer but the passwords, which were never written down anywhere."
+msgstr ""
+"Das Log dieses Laufs online stellen?\n"
+"\n"
+"Es geht an paste.rs, und seine Adresse kommt als Code zum Scannen zurück. Wer diese Adresse hat, kann es lesen. Es enthält jede Antwort außer den Passwörtern, die nirgends aufgeschrieben wurden."
+
+#. read once the action is done, and held on until somebody has
+#: actions/share-log/action.yaml
+msgid ""
+"Log shared\n"
+"\n"
+"Scan the code, or read the address under it, and hand it to whoever is helping."
+msgstr ""
+"Log geteilt\n"
+"\n"
+"Scanne den Code oder lies die Adresse darunter und gib sie an die Person, die dir hilft."
+
+#. an action: its row, and the heading over its pages
+#: actions/shutdown/action.yaml
 msgid "Shut down"
 msgstr "Herunterfahren"
 
-#. an option: what it does, under its row
-#: options/shutdown/option.yaml
+#. an action: what it does, under its row
+#: actions/shutdown/action.yaml
 msgid "Switch this machine off."
 msgstr "Den Rechner ausschalten."
 
-#. an option: its row, and the heading over its pages
-#: options/wlan/option.yaml
+#. an action: its row, and the heading over its pages
+#: actions/wlan/action.yaml
 msgid "Wireless network"
 msgstr "WLAN"
 
-#. an option: what it does, under its row
-#: options/wlan/option.yaml
+#. an action: what it does, under its row
+#: actions/wlan/action.yaml
 msgid "Join a wireless network."
 msgstr "Mit einem WLAN verbinden."
 
-#. ARCH_OS_WLAN_SSID: a page of the option
-#: options/wlan/option.yaml
+#. ARCH_OS_WLAN_SSID: a page of the action
+#: actions/wlan/action.yaml
 msgid "Network"
 msgstr "Netzwerk"
 
-#. ARCH_OS_WLAN_PASSPHRASE: a page of the option
-#: options/wlan/option.yaml
+#. ARCH_OS_WLAN_PASSPHRASE: a page of the action
+#: actions/wlan/action.yaml
 msgid "Passphrase"
 msgstr "Passwort"
 
 #. ARCH_OS_WLAN_PASSPHRASE: what it means
-#: options/wlan/option.yaml
+#: actions/wlan/action.yaml
 msgid "Left empty for an open network."
 msgstr "Bei einem offenen Netzwerk leer lassen."
+
+#. an action: its row, and the heading over its pages
+#: actions/wlan-card/action.yaml
+msgid "A wireless card"
+msgstr "Eine WLAN-Karte"
