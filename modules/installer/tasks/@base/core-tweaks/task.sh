@@ -53,3 +53,9 @@ render "${data}/journald.conf" >"${MNT}/etc/systemd/journald.conf.d/10-arch-os.c
 # https://wiki.archlinux.org/title/Improving_performance#Changing_I/O_scheduler
 mkdir -p "${MNT}/etc/udev/rules.d"
 render "${data}/60-arch-os-ioschedulers.rules" >"${MNT}/etc/udev/rules.d/60-arch-os-ioschedulers.rules"
+
+# A USB drive held to a tenth of the dirty limit above from its first byte, so a
+# copy runs at the drive's pace instead of finishing into memory and leaving the
+# rest to the eject. 70, because ID_BUS is only set by 60-persistent-storage.
+# https://docs.kernel.org/admin-guide/abi-testing.html#abi-sys-class-bdi-bdi-strict-limit
+render "${data}/70-arch-os-usb-writeback.rules" >"${MNT}/etc/udev/rules.d/70-arch-os-usb-writeback.rules"
