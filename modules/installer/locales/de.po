@@ -20,7 +20,7 @@ msgstr "Deutsch"
 msgid "Installer"
 msgstr "Installer"
 
-#. what it is, in one sentence, on the page that offers it
+#. what it is, in one sentence, under the row that starts the work
 #: module.yaml
 msgid "Install Arch Linux on this machine."
 msgstr "Arch Linux auf diesen Rechner installieren."

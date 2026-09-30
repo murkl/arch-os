@@ -20,7 +20,7 @@ msgstr "Deutsch"
 msgid "Recovery"
 msgstr "Recovery"
 
-#. what it is, in one sentence, on the page that offers it
+#. what it is, in one sentence, under the row that starts the work
 #: module.yaml
 msgid "Repair an Arch Linux system that is already on a disk."
 msgstr "Ein Arch-Linux-System reparieren, das schon auf einem Datenträger liegt."

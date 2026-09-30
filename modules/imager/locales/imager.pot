@@ -23,7 +23,7 @@ msgstr ""
 msgid "Create boot medium"
 msgstr ""
 
-#. what it is, in one sentence, on the page that offers it
+#. what it is, in one sentence, under the row that starts the work
 #: module.yaml
 msgid "Write Arch OS to a USB device to boot another machine from."
 msgstr ""
