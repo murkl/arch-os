@@ -1,20 +1,13 @@
-# Read off btrfs rather than off the fact that nothing failed: a run that gave
-# up halfway and left the old @ standing looks exactly the same from out here.
-# A snapshot carries the identity of what it was taken from, so the parent of @
-# is the one thing that says which snapshot it now holds.
+# Read off btrfs: a run that gave up and left the old @ looks the same from out
+# here. A snapshot carries its origin's UUID as the parent of @.
 
-# One field of `btrfs subvolume show`, which prints them one per line as
-# "<name>:<tab><value>". Anchored on the name, so UUID does not also answer for
-# the parent, and ended at the first match by sed itself, which still reads to
-# the end rather than leaving btrfs writing into a closed pipe.
+# One field of `btrfs subvolume show`, anchored so UUID does not answer for the
+# parent; sed ends at the first match and still reads to the end.
 subvolume_field() {
     btrfs subvolume show "$1" | sed -n "0,/^[[:space:]]*${2}:/s/^[[:space:]]*${2}:[[:space:]]*//p"
 }
 
 mountpoint -q "$MNT"
-
-# The half-built subvolume is gone, so a second rollback starts from a clean top
-# level rather than from what this one left lying there.
 [ ! -e "${BTRFS_TOP}/@.new" ]
 
 parent="$(subvolume_field "${BTRFS_TOP}/@" "Parent UUID")"

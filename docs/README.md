@@ -90,7 +90,7 @@ Every value it sets is an ordinary answer, changeable afterwards. What is left t
 
 Every answer lands in `installer.conf` as it is given, so an interrupted run resumes. The password never does.
 
-- **Share it:** upload to **[paste.rs](https://paste.rs)** at the end of a run, get a code back. The next installation can start from it, and asks only for its disk
+- **Share it:** upload to **[paste.rs](https://paste.rs)** from the page a finished run ends on, get a code back. The next installation can start from it, and asks only for its disk
 - **Copy it:** put `installer.conf` beside the Installer on another machine. The disk it names is checked against that machine's own before anything is written
 
 ### 5. Switch Secure Boot on
@@ -112,16 +112,16 @@ sbctl status
 
 <p><img src="screenshots/recovery.png" alt="The Recovery, opening a system already on disk"></p>
 
-Every installation carries it on a small partition of its own. Hold **space** while the machine starts and choose **Arch OS Recovery**, open **Restart into Recovery** among the applications of a desktop - or boot the ISO and choose **Recovery**:
+Every installation carries it on a small partition of its own. Hold **space** while the machine starts and choose **Arch OS Recovery**, open **Recovery** among the applications of a desktop and say yes to restarting into it - or boot the ISO and choose **Recovery**:
 
 - Unlocks and mounts it at `/mnt`
 - Rolls back to a Btrfs snapshot
 - Rebuilds the kernel images from the local package cache
-- Opens a shell inside it
+- Opens a shell inside it, from the page the repair ends on
 
 From the ISO it asks two questions - keyboard and disk - and reads the rest off the machine. From its partition it asks none: it starts in the language and on the keyboard the system was installed with, on the disk it was started from, straight on its menu. No network needed either way - one can be joined from its settings for whatever is to be fetched.
 
-There it is the only thing the machine runs, and there is no prompt behind it. Leaving it offers **Reset** where the ISO offers **Exit**: every answer is forgotten and the Recovery starts over. The shell inside the repaired system stays one of its steps, opening on **no**.
+There it is the only thing the machine runs, and there is no prompt behind it. Leaving it offers **Reset** where the ISO offers **Exit**: every answer is forgotten and the Recovery starts over.
 
 **Note:** _The one on the disk starts with Secure Boot on. For the ISO, switch it off in the firmware and on again afterwards - the Recovery signs what it rebuilds with the machine's own keys._
 
@@ -162,7 +162,7 @@ Five parts, kept apart:
 | **[`modules/imager`](../modules/imager)** | Writes the device the other two boot from |
 | **[`iso`](../iso)** | Turns a build of those into the bootable images: the ISO, and the Recovery the Installer writes beside the system |
 
-Oak is the runtime, a repository of its own, and knows nothing about Arch Linux. Modules are data, not programs. A release is Oak with `oak.yaml` and `modules/` beside it. Which module a machine can open is that module's own `offered:` - nothing else holds a list.
+Oak is the runtime, a repository of its own, and knows nothing about Arch Linux. Modules are data, not programs. A release is Oak with `oak.yaml`, `oak.sh`, `actions/` and `modules/` beside it. Which module a machine can open is that module's own `offered:` - nothing else holds a list.
 
 **[➜ Reference](REFERENCE.md)** for what is put on the disk and why. **[➜ Changelog](../CHANGELOG.md)** for what each release changed. **[➜ Contributing](CONTRIBUTING.md)** for branches, releases, how a commit becomes an image.
 

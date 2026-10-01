@@ -1,5 +1,5 @@
 # An address for the wireless card once iwd has joined a network, the way the
-# Arch ISO gets one - see wlan_up in oak.sh. Weighed above a cable, as there.
+# Arch ISO gets one - see wifi_station in oak.sh. Weighed above a cable, as there.
 [Match]
 Type=wlan
 

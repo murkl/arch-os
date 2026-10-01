@@ -1,28 +1,21 @@
-# The chosen snapshot put in place of the root subvolume, and what came out of
-# it mounted in place of what was there.
-#
-# The new @ is built before the old one is touched, so a rollback that dies
-# halfway leaves the system as it found it rather than with no root at all.
+# The snapshot in place of @. The new @ is built before the old one is touched,
+# so a rollback that dies halfway leaves the system as it was.
 # https://wiki.archlinux.org/title/Btrfs#Restoring_a_snapshot
 
 snapshot="$ARCH_OS_RECOVERY_SNAPSHOT"
-
 if [ ! -d "${BTRFS_TOP}/${snapshot}" ]; then
     echo "There is no snapshot at ${snapshot}." >&2
     return 1
 fi
 
-# @ cannot be replaced while it is the root that is mounted. Anything still
-# holding it open is named in the log and killed first.
+# @ cannot be replaced while it is the mounted root.
 unmount_target
 
 btrfs subvolume delete --recursive "${BTRFS_TOP}/@.new" 2>/dev/null || true
 btrfs subvolume snapshot "${BTRFS_TOP}/${snapshot}" "${BTRFS_TOP}/@.new"
 
-# The Secure Boot keys belong to the firmware they are enrolled in, not to a
-# point in time: a snapshot from before they were made - an installation's
-# first one is - would come back without them, and nothing it rebuilds could
-# be signed or started again. So they come over from the system being replaced.
+# The Secure Boot keys belong to the firmware, not to a point in time: a
+# snapshot from before them could sign nothing it rebuilds.
 if [ -d "${BTRFS_TOP}/@/var/lib/sbctl" ]; then
     rm -rf "${BTRFS_TOP}/@.new/var/lib/sbctl"
     cp -a "${BTRFS_TOP}/@/var/lib/sbctl" "${BTRFS_TOP}/@.new/var/lib/sbctl"
@@ -30,11 +23,9 @@ fi
 
 btrfs subvolume delete --recursive "${BTRFS_TOP}/@"
 mv "${BTRFS_TOP}/@.new" "${BTRFS_TOP}/@"
-
 mount_target
 
-# A lock left behind by the transaction that broke this system would stop the
-# recovered one from being repaired further.
+# The lock of the transaction that broke it would stop further repairs.
 rm -f "${MNT}/var/lib/pacman/db.lck"
 
 echo "@ is now ${snapshot}"

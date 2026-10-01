@@ -1,51 +1,35 @@
-# What this module is, what it asks and in what order it works. Everything else
-# in it is found by its own name, and every list and suggestion below is a
-# function in module.sh.
-#
+# What the Installer is, what it asks and the order it works in. Every list
+# and suggestion below is a function in module.sh.
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
 title: Installer
 description: Install Arch Linux on this machine.
-
-# What starting the work is called: the first row of the menu, and the button on
-# the last page before anything is changed.
 start: Install
 
-# Where it runs its actions, each a folder under actions/. `offered:` decides
-# whether the row exists at all; `requires:` whether the machine behind it is
-# ready, in that order - the internet last, after the keyboard a passphrase is
-# typed on.
+# Actions, each a folder under actions/ - this module's or the product's. The
+# internet last, after the keyboard a passphrase is typed on.
 offered: [live-image]
-requires: [root, uefi, internet]
-menu: [wlan]
+requires: [root, uefi, secure-boot-off, internet]
+menu: [wifi]
 leave: [restart, shutdown]
 failure: [share-log]
+success: [chroot, share-config]
 
-# Each is a folder under tasks/, marked - tasks/@disk/ - and lying in one is
-# what puts a task in the run and where; tasks sharing a stage run in the order
-# `needs` demands.
+# Each a folder under tasks/, marked: tasks/@system/.
 stages:
-  - prepare # the live system, made ready to install from
-  - disk # partitioned, encrypted, formatted, mounted
-  - base # the system on the disk, configured, with an account on it
-  - boot # the boot loader
-  - system # everything that is switched on rather than installed
-  - desktop # the chosen desktop, its driver, and what belongs to it
-  - finalize # the last things done to the new system
-  - handover # what is offered once it is installed, and the ways out
+  - prepare # the live system made ready, the disk partitioned and mounted
+  - system # the base system, configured and bootable
+  - features # what the settings switch on
+  - desktop # the desktop and what belongs to it
+  - finish # the last things done to the new system
 
-# A set of answers, not a state the installer stays in: offered once, on a
-# machine that has never answered anything, and every value it fills in is an
-# ordinary answer from the next page on.
+# Starting points, offered once on a machine that has answered nothing. Each
+# names every setting it has an opinion about, so what is left to ask is only
+# what nobody but the person at the machine can answer.
 presets:
   - title: Setup
     description: Choose what kind of system to install. Every detail can still be changed afterwards.
     options:
-      # Two starting points, and the second is the first without the desktop:
-      # Core is what Arch OS is, Desktop is Core with GNOME built on top of it.
-      # Each names every setting it has an opinion about, including the ones it
-      # turns off, so what is left to ask is only what nobody but the person at
-      # the machine can answer: the account, the region, the disk.
       - title: Desktop
         description: The Core, with a GNOME desktop on top of it - drivers, codecs, fonts and everyday applications.
         values:
@@ -72,9 +56,6 @@ presets:
           ARCH_OS_MANAGER_ENABLED: true
           ARCH_OS_VM_HOST_ENABLED: false
 
-      # Everything off that can be off, but the Recovery: it is how a machine
-      # that no longer starts comes back, on a console no less than on a
-      # desktop.
       - title: Core
         description: A minimal Arch Linux on the text console, with nothing graphical on it and nothing beyond what you choose.
         values:
@@ -101,27 +82,15 @@ presets:
           ARCH_OS_MANAGER_ENABLED: false
           ARCH_OS_VM_HOST_ENABLED: false
 
-      # Not a set of answers written out here but one fetched: a configuration
-      # shared at the end of an earlier installation.
       - title: Online (paste.rs)
         description: Load every answer from a configuration shared at the end of an earlier installation.
-        asks: ARCH_OS_CONFIG_SOURCE
-        apply: ./tasks/@handover/share-config/import.sh
+        action: import-config
 
-# Everything this installer needs to know, in the order it is asked. Each name
-# reaches every script as an environment variable.
-#
-# A list vouches only for the rows it offers: an answer file copied or fetched
-# from somewhere else hands its values over as they stand, and they reach the
-# shell. So every list whose answer does says with `pattern:` what its values
-# look like, and a value that does not fit is asked again.
+# Asked in this order; each name reaches every script as an environment
+# variable. A list whose answer reaches the shell says with pattern what its
+# values look like, since an answer file can hand over anything.
 variables:
   # ─── Identity ──────────────────────────────────────────────────────────────
-  #
-  # Who this machine is for, asked first because it is the one thing nobody but
-  # the person at it can answer. The password is a secret: it is asked for
-  # immediately before the installation starts, never written down, and never a
-  # row on the settings page.
   - name: ARCH_OS_USERNAME
     title: Username
     description: |
@@ -153,12 +122,9 @@ variables:
 
   # ─── Region ────────────────────────────────────────────────────────────────
   #
-  # What the installed system is set to, not the words this installer is read
-  # in. Everything here follows the language on `auto`, except the console
-  # keyboard, which is asked before all of it: a password typed on the wrong
-  # layout is not the password. The mirror country follows the language only by
-  # way of the time zone, which is the one answer that says where the machine
-  # is.
+  # What the installed system is set to; on auto everything follows the
+  # language, the mirrors by way of the time zone. The keyboard comes first: a
+  # password typed on the wrong layout is not the password.
   - name: ARCH_OS_LOCALE_LANG
     title: Language and region
     description: |
@@ -173,11 +139,7 @@ variables:
     filter: open
     command: list_locales
     pattern: '^[a-z]{2,3}(_[A-Z]{2})?$'
-    # Not a default, which would take the question off the page - and not the
-    # first row of a list that starts at Afar, which is what an enter meant for
-    # the page before would otherwise answer with. Everything in this group
-    # follows this one, so the row it opens on has to be one somebody could
-    # have meant.
+    # Opens on a row somebody could have meant, not on Afar.
     prefill: default_locale
 
   - name: ARCH_OS_VCONSOLE_KEYMAP
@@ -230,7 +192,6 @@ variables:
     free: Type a country
     filter: open
     command: list_countries
-    # What reflector cannot read inside the quotes its file holds the country in.
     pattern: '^[^"\\]*$'
 
   # ─── Storage ───────────────────────────────────────────────────────────────
@@ -392,9 +353,7 @@ variables:
     type: bool
     default: true
 
-  # Not asked: whether this machine is a virtual one is a fact about it. Inside
-  # one, the guest tools are installed without a question; on real hardware,
-  # running virtual machines of one's own is the question below.
+  # Not asked: whether this machine is a virtual one is a fact about it.
   - name: ARCH_OS_VIRTUAL_MACHINE
     title: Virtual machine
     description: Whether this machine is itself a virtual one.
@@ -447,8 +406,6 @@ variables:
     default: none
     required: true
     conditions: ARCH_OS_DESKTOP != none
-    # Three rows under one layout and forty under the next: the box is up on
-    # every machine rather than on some of them.
     filter: open
     command: list_variants
     pattern: '^[A-Za-z0-9_-]+$'
@@ -530,8 +487,6 @@ variables:
     group: Desktop
     type: bool
     default: true
-    # The two the desktop reads it under, so this is never a row that is
-    # answered and then never acted on.
     conditions:
       - ARCH_OS_DESKTOP != none
       - ARCH_OS_FLATPAK_ENABLED == true
@@ -545,37 +500,6 @@ variables:
     group: Desktop
     type: bool
     default: false
-    # The same two the task that shares carries, so this is never a row that is
-    # answered and then never acted on.
     conditions:
       - ARCH_OS_DESKTOP != none
       - ARCH_OS_DESKTOP_EXTRAS_ENABLED == true
-
-  # ─── Sharing ───────────────────────────────────────────────────────────────
-  #
-  # Neither is a question on any page: the address is answered by the
-  # installation itself, the code only by somebody who chose the starting point
-  # that asks for it. Whether anything goes online at all is asked at the end of
-  # the run, by the task that would do it.
-  - name: ARCH_OS_CONFIG_URL
-    title: Shared at
-    description: |
-      Where this installation's answers ended up. Nothing is uploaded until
-      you accept the offer at the end of the run. The installation then fills
-      this in itself and shows it as a code to scan.
-
-  - name: ARCH_OS_CONFIG_SOURCE
-    title: Configuration code
-    description: |
-      The code of a shared configuration: the short word at the end of a
-      paste.rs address, or the whole address. Every answer it contains can
-      still be changed afterwards.
-    required: true
-    pattern: '^[A-Za-z0-9][A-Za-z0-9:/._-]*$'
-    error: A code such as aBc12, or the whole address it belongs to.
-
-  # Not a question on any page: the address a failed run's log was put at,
-  # answered by actions/share-log where somebody chose to share it.
-  - name: ARCH_OS_LOG_URL
-    title: Shared log
-    description: Where the log of a run that failed was put online.

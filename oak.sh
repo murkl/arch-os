@@ -1,177 +1,59 @@
 # shellcheck shell=bash
-# What the modules of Arch OS have to agree about with each other, loaded by Oak
-# in front of every script of every one of them and before that module's own
-# module.sh. What only one module needs stays in that module.
-#
+# What several modules of Arch OS share, loaded in front of every module.sh.
+# What one task or one action needs stays in its own folder.
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
-# Whether this run only pretends to work. Oak starts no task under --debug, so
-# this is for the few places that still run there and must not touch the
-# machine: an answer applied to it, a list a page opens on, the network, a task
-# that simulates itself.
+# Under --debug only what reads still runs: a page's list, an answer applied.
 debugging() { [ "$DEBUG" = "true" ]; }
 
-# Whether this runs as root - which the Installer and the Recovery are started
-# as on the live image, and which nothing inside this program can fix. See
-# actions/root in both.
-is_root() {
-    [ "$(id -u)" -eq 0 ] && return 0
-    echo "This has to run as root. Log in as root and start it again." >&2
-    return 1
-}
-
-# Everything a module downloads, https even after a redirect: -L on its own
-# would follow a 302 into plain http, where the answer is whoever is on the wire.
-# A connect timeout, so a machine behind a black hole says so rather than hangs.
+# https even after a redirect, and a connect timeout instead of a hang.
 fetch_url() {
     curl -Lf --proto '=https' --proto-redir '=https' --connect-timeout 10 "$@"
 }
+
+# Where the Installer builds the system and the Recovery opens it.
+# shellcheck disable=SC2034
+MNT=/mnt
 
 # ////////////////////////////////////////////////////////////////////////////
 # THE NETWORK
 # ////////////////////////////////////////////////////////////////////////////
 
-# Real HTTPS to a host every module needs anyway, not a ping - a captive portal
-# answers pings too. Only the headers: it is asked every few seconds for the
-# line in the header, and the answer is whether it came, not what it said. The
-# same answer is what the Installer waits for before its work and what a
-# wireless network just joined is held to - see actions/internet and
-# actions/wlan in the modules.
-#
-# A cable is not asked about anywhere: it comes up by itself and is preferred
-# over a wireless network while both are up, by the route metrics the live
-# image and the Recovery's partition give each - see iso/recovery/.
-#
-# A simulated run shows what a connected machine shows rather than whatever the
-# desk it is read on happens to be, so the pictures of it come out the same on
-# every run.
+# Real HTTPS rather than a ping, which a captive portal answers too. Simulated,
+# it is online, so the pictures of a run come out the same on every desk.
 is_online() {
     debugging && return 0
     fetch_url -sI --connect-timeout 5 --max-time 10 https://archlinux.org >/dev/null
 }
 
-# iwd, where it is not running yet. The Arch ISO runs it from boot and anywhere
-# else is not ours to start; the Recovery's own partition brings up a cable at
-# boot and starts iwd once a card is there to be asked for - see iso/recovery/.
-# It joins nothing on its own: it knows no network yet.
-wlan_up() {
-    on_live_image || return 0
-    systemctl is-active -q iwd && return 0
-    systemctl start iwd
-}
-
-# Whether this machine has a wireless card, read off the kernel before anything
-# is started: a machine without one starts nothing for it and is simply not
-# offered a wireless network.
-wlan_card() { compgen -G '/sys/class/ieee80211/*' >/dev/null; }
-
-# The wireless card's station, or nothing where this machine has none.
+# The wireless card's station, or nothing where there is no card. iwd is started
+# only on the live image; anywhere else it is not ours to start.
 #
-# The first station is taken rather than asked for: a machine with two wireless
-# cards is rare enough that a prompt would cost everyone else a question. A
-# daemon started just now has not found the card yet, so it is given a few
-# seconds to.
-#
-# iwctl draws a table for a human: it is coloured, and it puts the reset
-# sequence at the start of the line that follows a coloured one - which is the
-# first device row. Read as it comes, the first column of that row is the escape
-# and not a name, and a machine with one card, which is every laptop, hands the
-# whole of the wireless flow a device called "\e[0m". So the colours come off
-# first, exactly as they do in the scan below.
-#
-# The match is remembered rather than exited on: a filter that closes the pipe
-# leaves iwctl with a write error, and under pipefail that is a failed lookup
-# instead of an answer.
-wlan_station() {
+# iwctl colours its table and puts the reset code at the start of the first
+# device row, so the colours come off before the first column is read. The
+# match is remembered rather than exited on: a closed pipe fails under pipefail.
+wifi_station() {
     local station=""
-    wlan_card || return 0
-    wlan_up
+    compgen -G '/sys/class/ieee80211/*' >/dev/null || return 0
+    if on_live_image && ! systemctl is-active -q iwd; then
+        systemctl start iwd
+    fi
     for _ in $(seq 10); do
         station="$(iwctl device list |
             sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r//' |
             awk '!found && $NF == "station" { print $1; found = 1 }')"
         [ -n "$station" ] && break
-        sleep 0.5
+        sleep 0.5 # a daemon started just now has not found the card yet
     done
     printf '%s' "$station"
 }
 
-# The networks in range, one SSID per line, strongest first.
-#
-# The scan is fired here rather than by Oak because iwctl returns as soon as it
-# has started one: the wait belongs beside the command that needs it. And it is
-# a wait for the card rather than a fixed pause - a list read while the radio is
-# still going round the channels is short rather than wrong, and a card that has
-# finished in half a second should not cost three.
-wlan_networks() {
-    local device state
-    # A simulated run shows a machine with networks in range, whatever the desk
-    # has.
-    if debugging; then
-        printf '%s\n' Home "Coffee Bar Free"
-        return 0
-    fi
-    device="$(wlan_station)"
-    iwctl station "$device" scan || true
-    for _ in $(seq 20); do
-        sleep 0.5
-        # Into a variable first: a grep that stops reading leaves iwctl with a
-        # write error, and under pipefail that is a failed list instead of an
-        # answer.
-        state="$(iwctl station "$device" show | sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r//')"
-        grep -qE '^[[:space:]]*Scanning[[:space:]]+no([[:space:]]|$)' <<<"$state" && break
-    done
-
-    # iwctl's table is coloured, drawn for a human, and an SSID may hold
-    # spaces, so the columns can't be split on whitespace. They're padded apart
-    # instead, which makes "two or more spaces" the only separator that doesn't
-    # corrupt a name like "Coffee Bar Free".
-    iwctl station "$device" get-networks |
-        sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r//' |
-        awk '
-            # iwctl brackets its header with two rules; the networks come after.
-            /^[[:space:]]*-+[[:space:]]*$/ { rules++; next }
-            rules < 2 { next }
-            {
-                line = $0
-                # The connected network is marked with ">"; it is still a choice.
-                sub(/^[[:space:]]*>?[[:space:]]*/, "", line)
-                sub(/[[:space:]]+$/, "", line)
-                if (line == "") next
-                # Columns are padded apart: name, security, signal.
-                split(line, col, /[[:space:]][[:space:]]+/)
-                name = col[1]
-                if (name == "" || seen[name]++) next
-                print name
-            }
-        '
-}
-
-# The one place here a secret reaches a command line, and iwctl's only way in
-# without one: unasked, it puts the question to an agent on the terminal the
-# interface is drawing on. A live image with one account, for one second, for a
-# passphrase that is written down nowhere and is not the disk password.
-#
-# Joined is not yet online: an address comes after it, and a passphrase some
-# cards take without a word may still be wrong. So it waits for is_online, a
-# few seconds and no longer, and says so where it never comes.
-wlan_join() {
-    local device
-    device="$(wlan_station)"
-    if ! iwctl --passphrase "$ARCH_OS_WLAN_PASSPHRASE" station "$device" connect "$ARCH_OS_WLAN_SSID"; then
-        # What iwctl says when it refuses is a row of its own table and goes to
-        # stdout, which is the log rather than anything anybody reads. So the
-        # reason is said once, in a sentence, on the channel a failure is read
-        # from - and it names the passphrase, which is what it is nearly every
-        # time.
-        echo "${ARCH_OS_WLAN_SSID} did not accept that passphrase, or it is no longer in range." >&2
-        return 1
-    fi
+# Joined is not yet online: the address comes a few seconds later.
+wifi_online() {
     for _ in $(seq 6); do
         is_online && return 0
         sleep 2
     done
-    echo "${ARCH_OS_WLAN_SSID} was joined, but there is still no internet." >&2
     return 1
 }
 
@@ -179,20 +61,14 @@ wlan_join() {
 # THE SHARING
 # ////////////////////////////////////////////////////////////////////////////
 
-# paste.rs takes a file over an ordinary POST, answers with the address it now
-# lives at, and serves it back as plain text. No account, no key. Where the
-# Installer shares its answers and every module its log, and the one place a
-# shared configuration is ever read back from.
+# No account and no key: a POST in, the address it lives at out.
 PASTE="https://paste.rs"
 
-# Whatever arrives on stdin, put online, and the address it now lives at.
 paste_online() {
     fetch_url -s --max-time 30 --data-binary @- "${PASTE}/" | tr -d '[:space:]'
 }
 
-# An answer, appended to the file Oak keeps them in and reads back. Any earlier
-# line for the same name is dropped, and the file is written whole and moved
-# into place.
+# An answer written back into the file Oak reads, replacing an earlier one.
 answer() {
     local tmp="${MODULE_CONF}.answer"
     grep -v "^${1}=" "$MODULE_CONF" >"$tmp" 2>/dev/null || : >>"$tmp"
@@ -200,44 +76,18 @@ answer() {
     mv -f "$tmp" "$MODULE_CONF"
 }
 
-# The log of this run, put online for whoever is helping, and its address kept
-# as an answer the page after it draws as a code - see actions/share-log in
-# every module. Oak keeps the log beside the answer file, under the module's
-# name. Simulated, it answers with an address all the same, so that page can be
-# looked at.
-share_log() {
-    local url
-    if debugging; then
-        answer ARCH_OS_LOG_URL "${PASTE}/demo"
-        return 0
-    fi
-    if ! url="$(paste_online <"${MODULE_CONF%.conf}.log")" || [ -z "$url" ]; then
-        echo "The log could not be put online. Is this machine online?" >&2
-        return 1
-    fi
-    answer ARCH_OS_LOG_URL "$url"
-}
-
 # ////////////////////////////////////////////////////////////////////////////
 # THE RELEASE
 # ////////////////////////////////////////////////////////////////////////////
 
-# Where this project is published, and which release this program is: the
-# version in the oak.yaml beside it rather than the newest one, so what a module
-# fetches is what was tested together with it. Oak keeps the answer file beside
-# oak.yaml, which is how a script finds it.
+# The release this program is, read from the oak.yaml beside the answer file:
+# what a module fetches is what was tested with it.
 REPO="murkl/arch-os"
 VERSION="$(sed -n 's/^version:[[:space:]]*//p' "$(dirname "$MODULE_CONF")/oak.yaml")"
 
-# A download of that release as GitHub describes it: where it is and what it has
-# to hash to, as two words - and nothing where the release cannot be reached.
-# The release carries no checksum file: the checksum is a field of the asset,
-# the same one the release page prints under the download. The step that asked
-# says what nothing means for it, because it is not the same answer twice.
-#
-# Picked by what its name ends in rather than by the name itself, so renaming a
-# download stays a change to the build. Each asset is weighed when the next
-# begins, so nothing here leans on the order GitHub writes an asset's fields in.
+# The download of that release whose name ends in $1, and the sha256 GitHub
+# publishes for it, as two words - nothing where the release is out of reach.
+# Each asset is weighed when the next begins, so the field order does not matter.
 release_asset() {
     local json
     json="$(fetch_url -s --max-time 20 "https://api.github.com/repos/${REPO}/releases/tags/v${VERSION}" || true)"
@@ -256,35 +106,13 @@ release_asset() {
 # THE LIVE IMAGE
 # ////////////////////////////////////////////////////////////////////////////
 
-# Whether this is a booted Arch Linux live image, which the Installer and the
-# Recovery belong on and Create boot medium does not. Two markers, because
-# either on its own is enough: /run/archiso is what the image mounts,
-# archisobasedir is what it was booted with.
+# Either marker is enough: what the image mounts, or what it was booted with.
 on_live_image() {
     [ -d /run/archiso ] || grep -qs archisobasedir /proc/cmdline
 }
 
-# And Arch on top of them, because an image built the same way by somebody else
-# is not the system Arch OS installs or repairs.
-arch_live() {
-    on_live_image || return 1
-    grep -qs '^ID=arch$' /etc/os-release
-}
-
-# What the Installer and the Recovery ask of a machine before they are offered
-# on it: a system is installed and repaired from outside itself, which means
-# from a booted Arch Linux live image. $1 is the module saying so.
-from_live_image() {
-    arch_live && return 0
-    echo "$1 runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there." >&2
-    return 1
-}
-
-# The keyboard the live image was started with. The Arch image records it only
-# as the loadkeys command in root's shell history, and finding nothing there is
-# the ordinary case - an image nobody ran loadkeys on is on the American
-# layout - so the grep must not make a failure of it: pipefail would carry that
-# out of the whole lookup.
+# The keyboard the live image was started with, which the Arch image records only
+# as a loadkeys line in root's history. None there is the ordinary case.
 live_keymap() {
     local keymap
     keymap="$({ grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null || true; } |
@@ -292,23 +120,14 @@ live_keymap() {
     printf '%s' "${keymap:-us}"
 }
 
-# The disk the live image is running from, or nothing where that cannot be read.
-# Every part of the image is reached through it for as long as the run lasts, so
-# it is the one disk no module may write to or open. Read off the mount table
-# rather than off the boot medium's name, because that is also how an image
-# booted through Ventoy says which disk it came from.
+# The disk the live image runs from - also through Ventoy - which no module may
+# write to.
 live_disk() {
     lsblk -no PKNAME,MOUNTPOINT |
         awk '!found && $1 != "" && $2 ~ /^\/run\/archiso/ { print "/dev/" $1; found = 1 }'
 }
 
-# Whole disks only, asked of lsblk by what a device is rather than by the major
-# number it was given: SATA, NVMe, eMMC, SD and a virtual disk are five numbers,
-# one of which the kernel hands out at random - and a disk nobody can choose is
-# a machine nobody can install onto or repair.
-#
-# Nobody picks between /dev/sda and /dev/sdb by name, so the size and the model
-# are what it is chosen by.
+# Whole disks by type rather than by major number, chosen by size and model.
 list_disks() {
     lsblk -dn -o PATH,TYPE,SIZE,MODEL | awk -v live="$(live_disk)" '
         $2 != "disk" || $1 == live || $1 ~ /^\/dev\/zram/ { next }
@@ -316,22 +135,15 @@ list_disks() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
-# THE KERNEL
+# THE SYSTEM ON THE DISK
 # ////////////////////////////////////////////////////////////////////////////
 
 # The one kernel Arch OS installs, and so the one the Recovery puts back.
 # shellcheck disable=SC2034
 KERNEL=linux-zen
 
-# ////////////////////////////////////////////////////////////////////////////
-# THE SIGNED BOOT CHAIN
-# ////////////////////////////////////////////////////////////////////////////
-
-# Whether every file sbctl keeps in the system mounted at $1 is signed, and
-# there is a file at all - what the Installer signs and the Recovery signs again
-# after a rebuild. Read out of sbctl's own list, because `sbctl verify` answers
-# 0 whatever it found, and `sbctl sign-all` over an empty database signs nothing
-# without a word. Either leaves a machine that Secure Boot refuses to start.
+# Every file sbctl keeps is signed, and there is one. Read off its list, because
+# `sbctl verify` answers 0 whatever it found.
 boot_chain_signed() {
     local files
     files="$(arch-chroot "$1" sbctl list-files --json)" || return 1
@@ -345,25 +157,14 @@ boot_chain_signed() {
     fi
 }
 
-# ////////////////////////////////////////////////////////////////////////////
-# THE DISK LAYOUT
-# ////////////////////////////////////////////////////////////////////////////
-
-# Names a partition of a disk as the Installer lays it out: the EFI system
-# partition first, the root second - see docs/REFERENCE.md. A disk whose name
-# ends in a digit (nvme0n1, mmcblk0, loop0) gets a p between it and the number.
+# A partition of a disk as the Installer lays it out: nvme0n1 gets a p.
 part_of() {
     local sep=""
     [[ "$1" =~ [0-9]$ ]] && sep="p"
     printf '%s%s%s' "$1" "$sep" "$2"
 }
 
-# How Arch OS mounts btrfs, and what it lays down: subvolume, a tab, then where
-# it belongs. The Installer creates every one of them and the Recovery mounts
-# every one of them. Why the four under /var are separate: docs/REFERENCE.md
-#
-# Read by the modules' scripts, which shellcheck reads one at a time, so the
-# option string looks unused here.
+# The btrfs layout, subvolume and mount point - see docs/REFERENCE.md.
 # shellcheck disable=SC2034
 BTRFS_OPTS="defaults,noatime,compress=zstd"
 

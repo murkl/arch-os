@@ -1,5 +1,5 @@
 title: Install the web browser
-needs: [desktop-gnome]
+needs: [gnome]
 conditions:
   - ARCH_OS_DESKTOP != none
   - ARCH_OS_BROWSER != none

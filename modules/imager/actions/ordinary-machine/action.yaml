@@ -1,5 +1,0 @@
-# Named under offered: the other way round from the Installer and the Recovery,
-# which is the whole division between the three - they work on the machine the
-# image booted, this one makes that image.
-title: An ordinary Linux machine
-script: off_live_image

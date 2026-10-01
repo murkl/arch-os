@@ -1,8 +1,7 @@
 title: Set up Samba
-needs: [desktop-gnome]
+needs: [gnome]
 
-# The same three the question carries, so a Samba server and a WSD responder are
-# never left running on a machine that declined file sharing.
+# The question's own conditions, so no server runs where sharing was declined.
 conditions:
   - ARCH_OS_DESKTOP != none
   - ARCH_OS_DESKTOP_EXTRAS_ENABLED == true

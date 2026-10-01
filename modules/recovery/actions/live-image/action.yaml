@@ -1,4 +1,0 @@
-# Named under offered: a system is repaired from outside itself, which means
-# from a booted Arch Linux live image - see oak.sh.
-title: An Arch Linux live image
-script: from_live_image "The Recovery"

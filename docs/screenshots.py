@@ -62,10 +62,10 @@ PAINT = {
 }
 
 # A product, as Oak reads it. Copied part by part, so an answer file or a log an
-# earlier run left beside them cannot decide what a page says. The shell the
-# modules share is a part only some products have.
+# earlier run left beside them cannot decide what a page says. The shell and
+# the actions the modules share are parts only some products have.
 PRODUCT = ("oak", "oak.yaml", "modules")
-OPTIONAL = ("oak.sh",)
+OPTIONAL = ("oak.sh", "actions")
 
 # Where the copy is driven. A failure page prints the log's path, so this ends up
 # inside a published picture: short and neutral for that reason alone.

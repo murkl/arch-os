@@ -13,7 +13,7 @@ set -eu
 OPT=/opt/arch-os
 
 # What the Installer leaves on the EFI partition: Oak's own answers and the
-# Recovery's. modules/installer/module.sh spells the same path as RECOVERY_SEED.
+# Recovery's. modules/installer/tasks/@system/recovery spells the same path.
 SEED=EFI/arch-os-recovery
 
 # The partition this was started from, found the way the ram disk found it: by

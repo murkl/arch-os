@@ -17,25 +17,28 @@ make -C ../.. run MODULE=imager ARGS=--debug   # run it without touching this ma
 
 ```
 module.yaml                     what this module is, what it asks, what order it runs in
-module.sh                       what more than one script has to agree about
-tasks/@<stage>/<id>/task.yaml   what that step is: its needs, conditions and offers
-tasks/@<stage>/<id>/task.sh     what it does
-tasks/@<stage>/<id>/test.sh     how to tell, on the machine, that it took
-actions/<id>/action.yaml        a script run outside the work, where module.yaml names it
+module.sh                       what several of its scripts share, and every function the yaml calls
+tasks/@write/<id>/task.yaml     what that step is: its needs, conditions and offers
+tasks/@write/<id>/task.sh       what it does
+tasks/@write/<id>/test.sh       how to tell, on the machine, that it took
+actions/<id>/action.yaml        a check run before the work: what it is, and what a no means
+actions/<id>/action.sh          the check itself
 locales/                        one <code>.po per language, and the template they come from
 ```
 
 ## What it does
 
-| Task | Stage | Description |
-| --- | --- | --- |
-| `image` | `download` | Fetches the image, unless the folder already holds it, and puts the checksum the release publishes beside it. Its progress bar is shown under the step while it runs (`progress: true`) |
-| `checksum` | `verify` | Compares the image against that checksum, discards it if they disagree. Only with **Verify checksum** on |
-| `device` | `write` | Checks the device, unmounts it, copies the image on |
+One stage, `write`, in the order `needs:` sets.
+
+| Task | Description |
+| --- | --- |
+| `download` | Fetches the image, unless the folder already holds it, and puts the checksum the release publishes beside it. Its progress bar is shown under the step while it runs (`progress: true`) |
+| `verify` | Compares the image against that checksum, discards it if they disagree. Only with **Verify checksum** on |
+| `device` | Checks the device, unmounts it, copies the image on |
 
 Three distinct failures: nothing arrived, what arrived is broken, or it could not be written.
 
-**Note:** _`checksum` has no `test.sh` - the task itself already is the test, line for line._
+**Note:** _`verify` has no `test.sh` - the task itself already is the test, line for line._
 
 ## The Image
 
@@ -56,14 +59,16 @@ An `arch-os-<version>-x86_64.iso` already in that folder is not downloaded again
 
 ## Where it runs
 
-`offered:` splits the three modules: Installer and Recovery need a booted live image to work on; this one needs anywhere else - `actions/ordinary-machine` - since it is the machine that *makes* that image. So it is the only module offered on an ordinary desktop.
+`offered:` splits the three modules: Installer and Recovery need a booted live image to work on; this one needs anywhere else - `actions/installed-system` - since it is the machine that *makes* that image. So it is the only module offered on an ordinary desktop.
 
 What the work requires, under `actions/`:
 
 | Action | Why |
 | --- | --- |
-| `access` | A way to become root for the write - already root, or `sudo` exists |
-| `device` | Nothing plugged in, no answer can help. A stick plugged in carries on by itself |
+| `sudo` | A way to become root for the write - already root, or `sudo` exists |
+| `usb` | Nothing plugged in, no answer can help. A stick plugged in carries on by itself |
+
+Each says only yes or no; what a no means is its `fail:`, read in the interface's language. `share-log`, under `failure:`, is the product's, beside `oak.yaml`.
 
 **Note:** _Whether the image can be fetched is not checked here - it depends on the download folder, which is not yet answered when these are looked at. The download task says so instead._
 

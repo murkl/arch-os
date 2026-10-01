@@ -1,5 +1,5 @@
 title: Install the backup application
-needs: [desktop-gnome]
+needs: [gnome]
 conditions:
   - ARCH_OS_DESKTOP != none
   - ARCH_OS_BACKUP != none

@@ -100,16 +100,6 @@ msgstr "Schnappschuss"
 msgid "The snapshot to put in place of the root subvolume. Newest first, with the date it was taken and what created it."
 msgstr "Der Schnappschuss, der an die Stelle des Wurzel-Subvolumes tritt. Der neueste zuerst, mit dem Zeitpunkt der Aufnahme und dem Anlass."
 
-#. ARCH_OS_LOG_URL: the question
-#: module.yaml
-msgid "Shared log"
-msgstr "Geteiltes Log"
-
-#. ARCH_OS_LOG_URL: what it means
-#: module.yaml
-msgid "Where the log of a run that failed was put online."
-msgstr "Wo das Log eines gescheiterten Laufs online steht."
-
 #. the header's status, while its check says yes
 #: ../../oak.yaml
 msgid "Online"
@@ -121,7 +111,7 @@ msgid "Offline"
 msgstr "Offline"
 
 #. the step, as the run lists it
-#: tasks/@open/open/task.yaml
+#: tasks/@repair/open/task.yaml
 msgid "Unlock and mount the system"
 msgstr "System entsperren und einhängen"
 
@@ -157,81 +147,63 @@ msgstr ""
 "\n"
 "Nötig nach einem Rücksprung über ein Kernel-Update hinweg: Die Module im wiederhergestellten System und die Abbilder in /boot sind dann zwei verschiedene Kernel, und der Rechner startet ohne ein einziges Modul. Alles kommt aus dem Paket-Cache, ein Netzwerk braucht es dafür nicht."
 
-#. the step, as the run lists it
-#: tasks/@repair/shell/task.yaml
-msgid "Open a shell in the system"
-msgstr "Eine Shell im System öffnen"
+#. an action: its row, and the heading over its page
+#: ../../actions/chroot/action.yaml
+msgid "Open a shell"
+msgstr "Shell öffnen"
 
-#. asked before the step runs
-#: tasks/@repair/shell/task.yaml
-msgid ""
-"Open a shell inside the system on {{ARCH_OS_RECOVERY_DISK}}?\n"
-"\n"
-"Everything is mounted, so this is where anything the recovery does not handle on its own can be fixed by hand: a package reinstalled, a config file put back. Leave the shell with `exit`."
-msgstr ""
-"Eine Shell in dem System auf {{ARCH_OS_RECOVERY_DISK}} öffnen?\n"
-"\n"
-"Es ist alles eingehängt, hier wird von Hand erledigt, was die Wiederherstellung nicht selbst tut: ein Paket neu installieren, eine Konfigurationsdatei zurücklegen. Mit `exit` geht es zurück."
+#. an action: what it does, under its row
+#: ../../actions/chroot/action.yaml
+msgid "Inside the system on the disk, to look around or fix something by hand. Leave it with exit."
+msgstr "Im System auf dem Datenträger, um dich umzusehen oder etwas von Hand zu reparieren. Verlassen mit exit."
 
-#. the step, as the run lists it
-#: tasks/@close/close/task.yaml
-msgid "Unmount and lock the disk"
-msgstr "Aushängen und Datenträger sperren"
-
-#. asked before the step runs
-#: tasks/@close/close/task.yaml
-msgid ""
-"Unmount the system and lock the disk again?\n"
-"\n"
-"Nothing is lost either way, the recovery is finished. Leaving it mounted is only useful if you want to keep working on it from here."
-msgstr ""
-"Das System aushängen und den Datenträger wieder sperren?\n"
-"\n"
-"Verloren geht so oder so nichts, die Wiederherstellung ist fertig. Eingehängt zu lassen lohnt nur, wenn du von hier aus weiterarbeiten willst."
-
-#. an action: its row, and the heading over its pages
-#: actions/live-image/action.yaml
+#. an action: its row, and the heading over its page
+#: ../../actions/live-image/action.yaml
 msgid "An Arch Linux live image"
 msgstr "Ein Arch-Linux-Live-Image"
 
-#. an action: its row, and the heading over its pages
-#: actions/restart/action.yaml
+#. an action: what a no from it means
+#: ../../actions/live-image/action.yaml
+msgid "This runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there."
+msgstr "Das läuft auf einem gestarteten Arch-Linux-Live-Image. Schreib eins mit Bootmedium erstellen, starte die Maschine davon und öffne es dort."
+
+#. an action: its row, and the heading over its page
+#: ../../actions/restart/action.yaml
 msgid "Restart"
 msgstr "Neu starten"
 
 #. an action: what it does, under its row
-#: actions/restart/action.yaml
+#: ../../actions/restart/action.yaml
 msgid "Close this machine down and start it again."
 msgstr "Den Rechner herunterfahren und neu starten."
 
-#. an action: its row, and the heading over its pages
-#: actions/root/action.yaml
+#. an action: its row, and the heading over its page
+#: ../../actions/root/action.yaml
 msgid "Running as root"
 msgstr "Läuft als root"
 
-#. an action: its row, and the heading over its pages
-#: actions/share-log/action.yaml
+#. an action: what a no from it means
+#: ../../actions/root/action.yaml
+msgid "This has to run as root. Log in as root and start it again."
+msgstr "Das muss als root laufen. Melde dich als root an und starte es erneut."
+
+#. an action: its row, and the heading over its page
+#: ../../actions/share-log/action.yaml
 msgid "Share the log"
 msgstr "Log teilen"
 
 #. an action: what it does, under its row
-#: actions/share-log/action.yaml
-msgid "Put the log of this run online, for whoever is helping."
-msgstr "Das Log dieses Laufs online stellen, für alle, die helfen."
+#: ../../actions/share-log/action.yaml
+msgid "Put the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it; passwords are never in it."
+msgstr "Stellt das Log dieses Laufs auf paste.rs online, für die Person, die dir hilft. Jede Person mit der Adresse kann es lesen; Passwörter stehen nie darin."
 
-#. asked before the action runs
-#: actions/share-log/action.yaml
-msgid ""
-"Put the log of this run online?\n"
-"\n"
-"It goes to paste.rs, and its address comes back as a code to scan. Anyone holding that address can read it. It holds every answer but the passwords, which were never written down anywhere."
-msgstr ""
-"Das Log dieses Laufs online stellen?\n"
-"\n"
-"Es geht an paste.rs, und seine Adresse kommt als Code zum Scannen zurück. Wer diese Adresse hat, kann es lesen. Es enthält jede Antwort außer den Passwörtern, die nirgends aufgeschrieben wurden."
+#. an action: what a no from it means
+#: ../../actions/share-log/action.yaml
+msgid "The log could not be put online. Is this machine online?"
+msgstr "Das Log ließ sich nicht online stellen. Ist diese Maschine online?"
 
 #. read once the action is done, and held on until somebody has
-#: actions/share-log/action.yaml
+#: ../../actions/share-log/action.yaml
 msgid ""
 "Log shared\n"
 "\n"
@@ -241,42 +213,42 @@ msgstr ""
 "\n"
 "Scanne den Code oder lies die Adresse darunter und gib sie an die Person, die dir hilft."
 
-#. an action: its row, and the heading over its pages
-#: actions/shutdown/action.yaml
+#. an action: its row, and the heading over its page
+#: ../../actions/shutdown/action.yaml
 msgid "Shut down"
 msgstr "Herunterfahren"
 
 #. an action: what it does, under its row
-#: actions/shutdown/action.yaml
+#: ../../actions/shutdown/action.yaml
 msgid "Switch this machine off."
 msgstr "Den Rechner ausschalten."
 
-#. an action: its row, and the heading over its pages
-#: actions/wlan/action.yaml
+#. an action: its row, and the heading over its page
+#: ../../actions/wifi/action.yaml ../../actions/wifi-passphrase/action.yaml
 msgid "Wireless network"
 msgstr "WLAN"
 
 #. an action: what it does, under its row
-#: actions/wlan/action.yaml
+#: ../../actions/wifi/action.yaml
 msgid "Join a wireless network."
 msgstr "Mit einem WLAN verbinden."
 
-#. ARCH_OS_WLAN_SSID: a page of the action
-#: actions/wlan/action.yaml
+#. ARCH_OS_WIFI_SSID: the page of the action
+#: ../../actions/wifi/action.yaml
 msgid "Network"
 msgstr "Netzwerk"
 
-#. ARCH_OS_WLAN_PASSPHRASE: a page of the action
-#: actions/wlan/action.yaml
-msgid "Passphrase"
-msgstr "Passwort"
-
-#. ARCH_OS_WLAN_PASSPHRASE: what it means
-#: actions/wlan/action.yaml
-msgid "Left empty for an open network."
-msgstr "Bei einem offenen Netzwerk leer lassen."
-
-#. an action: its row, and the heading over its pages
-#: actions/wlan-card/action.yaml
+#. an action: its row, and the heading over its page
+#: ../../actions/wifi-card/action.yaml
 msgid "A wireless card"
 msgstr "Eine WLAN-Karte"
+
+#. an action: what a no from it means
+#: ../../actions/wifi-passphrase/action.yaml
+msgid "{{ARCH_OS_WIFI_SSID}} did not accept that passphrase, or it is out of range."
+msgstr "{{ARCH_OS_WIFI_SSID}} hat dieses Passwort nicht angenommen oder ist außer Reichweite."
+
+#. ARCH_OS_WIFI_PASSPHRASE: the page of the action
+#: ../../actions/wifi-passphrase/action.yaml
+msgid "Passphrase"
+msgstr "Passwort"

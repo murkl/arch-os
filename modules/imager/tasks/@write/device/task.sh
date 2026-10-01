@@ -1,26 +1,19 @@
-# The image onto the device, as one raw copy. An Arch image is a hybrid ISO: it
-# already carries the partition table and both boot paths a firmware looks for,
-# so anything done here beyond copying would undo what the image was built as.
+# The image onto the device as one raw copy: a hybrid ISO already carries the
+# partition table and both boot paths. Root only for the commands that need it,
+# through as_root in module.sh.
 # https://wiki.archlinux.org/title/USB_flash_installation_medium
-#
-# Everything before the copy is a reason not to make it, and every one of those
-# checks reads the machine as an ordinary user - nothing is escalated before
-# there is a reason to. What is, goes through as_root - see module.sh.
 
 device="$ARCH_OS_IMAGE_DEVICE"
 target="$(image)"
 
-# /dev/sdb is a path, not a stick: by the next run an internal disk can be
-# sitting at it. So the answer is checked against the same list it was chosen
-# from, immediately before anything is written.
+# By the next run an internal disk can sit at that path, so it is held to the
+# list it was chosen from right before it is written.
 devices="$(list_devices | cut -f1)"
 if ! grep -qxF "$device" <<<"$devices"; then
     echo "${device} is not a USB device on this machine. Plug the stick back in and choose it again." >&2
     exit 1
 fi
 
-# A device smaller than the image takes the first part of it and dd stops at the
-# end. Caught here, because by then it has been overwritten for nothing.
 have="$(lsblk -bdno SIZE "$device")"
 need="$(stat -c %s "$target")"
 if [ "$have" -lt "$need" ]; then
@@ -31,9 +24,7 @@ fi
 echo "Writing ${target##*/} to ${device}."
 echo
 
-# A mounted partition would be written out from under its own file system.
-# umount -l is the fallback: a file manager still holding the stick open is
-# the usual reason a plain umount refuses.
+# A file manager still holding the stick open is why a plain umount refuses.
 while read -r mountpoint; do
     [ -n "$mountpoint" ] || continue
     echo "Unmounting ${mountpoint}"
@@ -46,13 +37,9 @@ if grep -q . <<<"$mounted"; then
     exit 1
 fi
 
-# The flags the Wiki gives. oflag=direct bypasses the page cache, so the
-# progress dd reports is what the drive has actually taken, and conv=fsync
-# flushes the rest before dd returns - a stick pulled out when the bar ends
-# is a stick that was finished.
+# The Wiki's flags: oflag=direct makes the progress what the drive has taken,
+# conv=fsync flushes the rest before dd returns.
 as_root dd if="$target" of="$device" bs=4M status=progress conv=fsync oflag=direct
 
-# Nothing reads the new partition table until the kernel is told to look.
-# blockdev rather than partprobe: it is util-linux, which every Linux has, and
-# parted, which partprobe comes with, is missing from many.
+# blockdev rather than partprobe: util-linux is everywhere, parted is not.
 as_root blockdev --rereadpt "$device" 2>/dev/null || true

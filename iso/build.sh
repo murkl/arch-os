@@ -108,8 +108,8 @@ trap cleanup EXIT
 
 set_key_value() { grep -q "^$2=" "$1" && sed -i "s|^$2=.*|$2=\"$3\"|" "$1" || echo "$2=$3" >>"$1"; }
 
-# The Oak binary with oak.yaml, oak.sh and the modules handed over beside it -
-# the only place it looks. /opt/arch-os is what the systemd unit in src/
+# The Oak binary with oak.yaml, oak.sh, the shared actions and the modules
+# handed over beside it - the only place it looks. /opt/arch-os is what the systemd unit in src/
 # starts, and what the launchers on the path beside it run out of.
 install_arch_os() {
     local profile="$1" opt="$1/airootfs/opt/arch-os"
@@ -117,6 +117,7 @@ install_arch_os() {
     cp -rf src/* "${profile}/airootfs/"
     mkdir -p "${opt}/modules"
     cp "${RELEASE_DIR}/oak" "${RELEASE_DIR}/oak.yaml" "${RELEASE_DIR}/oak.sh" "$opt"
+    cp -r "${RELEASE_DIR}/actions" "$opt"
     cp -r "$@" "${opt}/modules/"
 }
 
@@ -192,7 +193,7 @@ echo "### Initialize Build"
 
 # What a release is, checked before an hour of mkarchiso finds out. The modules
 # are not named here: which ones there are is whatever the release holds.
-for part in oak oak.yaml oak.sh modules modules/recovery; do
+for part in oak oak.yaml oak.sh actions modules modules/recovery; do
     [ -e "${RELEASE_DIR}/${part}" ] || {
         echo "Error: ${RELEASE_DIR} holds no ${part} - run 'make build' first" >&2
         exit 1
@@ -238,7 +239,7 @@ cp -r /usr/share/archiso/configs/baseline/. "$RECOVERY_PROFILE"
 # cloud-init, a network and the agents of four hypervisors. Everything it starts
 # goes, and the Recovery starts itself and a cable's network, which recovery/
 # switches on again: a cable plugged in is a network asked for. The wireless
-# daemon waits for a card to be asked about - see wlan_up in oak.sh.
+# daemon waits for a card to be asked about - see wifi_station in oak.sh.
 rm -rf "${RECOVERY_PROFILE}/airootfs/etc/systemd/system" \
     "${RECOVERY_PROFILE}/airootfs/etc/systemd/network" \
     "${RECOVERY_PROFILE}/airootfs/etc/systemd/networkd.conf.d" \

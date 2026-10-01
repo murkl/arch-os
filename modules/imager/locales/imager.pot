@@ -103,16 +103,6 @@ msgstr ""
 msgid "That is not your password, or this account may not use sudo."
 msgstr ""
 
-#. ARCH_OS_LOG_URL: the question
-#: module.yaml
-msgid "Shared log"
-msgstr ""
-
-#. ARCH_OS_LOG_URL: what it means
-#: module.yaml
-msgid "Where the log of a run that failed was put online."
-msgstr ""
-
 #. the header's status, while its check says yes
 #: ../../oak.yaml
 msgid "Online"
@@ -124,12 +114,12 @@ msgid "Offline"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@download/image/task.yaml
+#: tasks/@write/download/task.yaml
 msgid "Download the image"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@verify/checksum/task.yaml
+#: tasks/@write/verify/task.yaml
 msgid "Verify the checksum"
 msgstr ""
 
@@ -146,41 +136,53 @@ msgid ""
 "{{ARCH_OS_IMAGE_DEVICE}} now starts Arch OS. Unplug it, plug it into the machine to install, and start that machine from it."
 msgstr ""
 
-#. an action: its row, and the heading over its pages
-#: actions/access/action.yaml
+#. an action: its row, and the heading over its page
+#: actions/installed-system/action.yaml
+msgid "An installed Linux system"
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/installed-system/action.yaml
+msgid "Create boot medium writes a device from an installed Linux system. On the live image there is a machine to work on instead - open the Installer or the Recovery."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/sudo/action.yaml
 msgid "Root for the write"
 msgstr ""
 
-#. an action: its row, and the heading over its pages
-#: actions/device/action.yaml
-msgid "A device to write to"
+#. an action: what a no from it means
+#: actions/sudo/action.yaml
+msgid "Writing a device needs root, and this machine has no sudo to ask for it. Start this again as root."
 msgstr ""
 
-#. an action: its row, and the heading over its pages
-#: actions/ordinary-machine/action.yaml
-msgid "An ordinary Linux machine"
+#. an action: its row, and the heading over its page
+#: actions/usb/action.yaml
+msgid "A USB device to write to"
 msgstr ""
 
-#. an action: its row, and the heading over its pages
-#: actions/share-log/action.yaml
+#. an action: what a no from it means
+#: actions/usb/action.yaml
+msgid "No USB device found. Plug a stick in and this carries on by itself."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: ../../actions/share-log/action.yaml
 msgid "Share the log"
 msgstr ""
 
 #. an action: what it does, under its row
-#: actions/share-log/action.yaml
-msgid "Put the log of this run online, for whoever is helping."
+#: ../../actions/share-log/action.yaml
+msgid "Put the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it; passwords are never in it."
 msgstr ""
 
-#. asked before the action runs
-#: actions/share-log/action.yaml
-msgid ""
-"Put the log of this run online?\n"
-"\n"
-"It goes to paste.rs, and its address comes back as a code to scan. Anyone holding that address can read it. It holds every answer but the passwords, which were never written down anywhere."
+#. an action: what a no from it means
+#: ../../actions/share-log/action.yaml
+msgid "The log could not be put online. Is this machine online?"
 msgstr ""
 
 #. read once the action is done, and held on until somebody has
-#: actions/share-log/action.yaml
+#: ../../actions/share-log/action.yaml
 msgid ""
 "Log shared\n"
 "\n"

@@ -47,7 +47,7 @@ systemd-boot, `bootctl install`, one entry and one fallback, and the Recovery be
 
 The menu stays hidden: holding space while the machine starts brings it up. The entries carry `sort-key arch`, the key the signed images take from `os-release`, so they come before the Recovery, which carries its own.
 
-`kernel_args` in `module.sh` is the one source of the command line - the unified image and systemd-boot read it whole.
+`kernel_args` in the loader task is the one source of the command line - the unified image and systemd-boot read it whole.
 
 The loader gets a boot entry in the firmware, first in its order. `bootctl` writes that one from the live system rather than from inside the new one: in a chroot it leaves the EFI variables alone, or, told to write them, cannot see the partition and writes an entry that points nowhere. Without an entry the firmware finds the loader only at `\EFI\BOOT\BOOTX64.EFI`, after every entry it already lists has been tried. The entries it still keeps for what the disk held before - a Windows Boot Manager, an earlier installation - are removed along with the old partitions; an entry for another disk stays.
 
@@ -218,7 +218,7 @@ Snapper on every installation: a snapshot before and after every package transac
 
 Snapper's defaults suit a slow-moving system, not a rolling release - fifty snapshots plus a year of timeline filled a disk to 70G against 35G of real system. So `NUMBER_LIMIT=10`, `NUMBER_LIMIT_IMPORTANT=5`, `TIMELINE_CREATE=no`, plus `ALLOW_GROUPS=wheel` and `SYNC_ACL=yes` so the group `/.snapshots` belongs to can read it - without them snapper answers nobody but root, whatever the directory says.
 
-All of it in one place, `snapper_config` in `modules/installer/module.sh`: `set-config` takes one `KEY=VALUE` per argument, writes a whole line handed to it as one into the first key, and says nothing - so the task sets them from there and its test reads them back against the same list.
+All of it in one place, `data/settings` beside the snapper task: `set-config` takes one `KEY=VALUE` per argument, writes a whole line handed to it as one into the first key, and says nothing - so the task sets them from there and its test reads them back against the same list.
 
 **Note:** _`snapper-cleanup.service` syncs on `ExecStopPost` - btrfs frees extents on its own schedule, and `df` lies until then._
 
@@ -228,7 +228,7 @@ All of it in one place, `snapper_config` in `modules/installer/module.sh`: `set-
 
 ## Closing the Target
 
-`close_target`, shared by Installer and Recovery: swap off, sync, unmount, lock.
+Swap off, sync, unmount, lock: in the Installer before the disk is partitioned, in the Recovery before it is opened - a second attempt starts from whatever the first left. A restart or a shutdown leaves it to systemd, which unmounts and locks on the way down.
 
 - `umount -R`, never `-A` - `-A` reaches beyond the target, and in the Recovery takes the rollback's snapshots with it
 - `fuser -M` - without it, a non-mountpoint target resolves to the live image itself
@@ -314,11 +314,11 @@ How it starts:
 5. Plymouth on the screen the firmware set up - `nomodeset`, so no graphics driver and no firmware for one, and `plymouth.ignore-serial-consoles` like the system's own - and the Recovery on tty1
 6. The Recovery reads what the Installer left it on the EFI partition - `EFI/arch-os-recovery/`, read-only and unmounted again at once - and works out its disk as the one holding the partition it was started from. So it opens straight on its menu, in the language the Installer was read in and on the keyboard it was typed on
 
-It is a kiosk: the Recovery is the only thing the machine runs, and nothing leads to a prompt. Its unit holds tty1 and never hands it back, and no other console has a login. Leaving it offers **Reset** in place of the ISO's **Exit** - every answer is forgotten and the program ends, and its systemd unit starts it again, fresh, with what the Installer left. A crash is started again the same way: the first thing a run does is close whatever the last one left open. The shell inside the repaired system stays one of its steps, behind the disk's password where there is one, and opens on **no**.
+It is a kiosk: the Recovery is the only thing the machine runs, and nothing leads to a prompt. Its unit holds tty1 and never hands it back, and no other console has a login. Leaving it offers **Reset** in place of the ISO's **Exit** - every answer is forgotten and the program ends, and its systemd unit starts it again, fresh, with what the Installer left. A crash is started again the same way: the first thing a run does is close whatever the last one left open. The shell inside the repaired system is a row on the page the repair ends on, behind the disk's password where there is one.
 
 **Note:** _The EFI partition is not signed, so what the Recovery reads there is held to the same patterns and lists as any answer read from a file - the worst a changed file can do is ask a question again._
 
-**Note:** _It is never updated: it repairs what the Installer of the same release makes, which is what the disk holds. `systemctl reboot --boot-loader-entry=arch-os-recovery.efi` starts it once from the running system. On a desktop that is **Restart into Recovery** among the applications, after one question, and logind lets whoever sits at the machine do it without a password. Its name is translated in the desktop entry, which heads the question; the question and its buttons are zenity's own, in the system's language._
+**Note:** _It is never updated: it repairs what the Installer of the same release makes, which is what the disk holds. `systemctl reboot --boot-loader-entry=arch-os-recovery.efi` starts it once from the running system. On a desktop that is **Recovery** among the applications: one yes or no, then the restart, and logind lets whoever sits at the machine do it without a password. The question is the launcher's own, in English or German by the session's language; its buttons are zenity's._
 
 **Note:** _Without disk encryption, whoever sits at the machine can open the system from it - as from any USB stick, or by taking the disk out. Encryption is what closes that: the Recovery asks for the password like everything else._
 

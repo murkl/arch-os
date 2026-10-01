@@ -1,31 +1,20 @@
-# What more than one script of this module has to agree about, sourced by Oak in
-# front of every one of them. Anything a single script needs stays in that
-# script; the functions a declaration calls by name are at the bottom.
-#
-# Why it looks the way it does: docs/REFERENCE.md
+# What several scripts of the Installer share, sourced in front of each after
+# oak.sh. What one task needs stays in its folder; the functions the yaml calls
+# by name are at the bottom. Why it looks the way it does: docs/REFERENCE.md
 
-# Where the new system is mounted while it is being built, and the lookup tables
-# next to this file.
-MNT=/mnt
+# The lookup tables beside this file.
 DATA="$(dirname "${BASH_SOURCE[0]}")/data"
 
-# Where the task that called it keeps the files it ships with: data/ beside its
-# task.sh, so the folder a task is and the files it writes are told apart at a
-# glance.
+# The data/ folder beside the task.sh or test.sh that called it.
 where() { printf '%s/data' "$(dirname "${BASH_SOURCE[1]}")"; }
 
 # ////////////////////////////////////////////////////////////////////////////
 # FILES A TASK SHIPS
 # ////////////////////////////////////////////////////////////////////////////
 
-# Every file a task writes into the new system lies beside it and comes out
-# through here, on stdout. {{NAME}} is replaced by what was handed over as
-# NAME=value; everything else is left as it stands, so ${HOME}, $trg or $(date)
-# reach the shell, systemd or pacman that reads the file later untouched.
-#
-# Both sides are checked: a placeholder nobody filled and a value nothing asks
-# for are each a failure, because either writes a file that reads perfectly well
-# and does not say what it was meant to. Why not envsubst: docs/REFERENCE.md
+# A template from a task's data/ on stdout: {{NAME}} filled from NAME=value,
+# every $ left for whoever reads the file later. A placeholder nobody filled and
+# a value nothing asks for both fail. Why not envsubst: docs/REFERENCE.md
 render() {
     local template="$1" open='{{' close='}}' text rendered="" name pair
     local -A values=() used=()
@@ -81,13 +70,10 @@ render() {
 # LOCALE LOOKUP
 # ////////////////////////////////////////////////////////////////////////////
 
-# Keyboard, font and timezone do not follow from the shape of a locale - de_CH
-# is not de, sv is not se - so all three are looked up in data/. The mirror
-# country is looked up there too, but follows the time zone rather than the
-# language: see auto_country.
+# Keyboard, font and time zone do not follow from the shape of a locale - de_CH
+# is not de - so they are looked up in data/.
 
-# A column of the data/languages row for a locale: its own row if there is one,
-# otherwise its language's row.
+# A column of data/languages for a locale: its own row, else its language's.
 language_field() {
     awk -v col="$1" -v locale="${2%%.*}" '
         BEGIN { lang = locale; sub(/_.*/, "", lang) }
@@ -98,20 +84,17 @@ language_field() {
     ' "${DATA}/languages"
 }
 
-# A column of the data/countries row for a territory code: the two capitals a
-# locale ends in, and the ones tzdata files a zone under. Empty for a code it has
-# no row for, and for no code at all.
+# A column of data/countries for a territory code; empty for none.
 country_field() {
     awk -F'\t' -v col="$1" -v code="$2" 'code != "" && $1 == code { print $col }' "${DATA}/countries"
 }
 
-# The two magic words the lists share; neither ever reaches a task. auto means
-# "not answered yet, work it out"; none means "answered: empty".
+# auto: not answered yet, work it out. none: answered, empty.
 is_auto() { [ -z "$1" ] || [ "$1" = "auto" ]; }
 not_none() { [ "$1" = "none" ] || printf '%s' "$1"; }
 
-# What each list resolves to on auto. Functions rather than inlined, because the
-# question page shows the same answer next to its auto row.
+# What each list resolves to on auto - functions, because the page shows the
+# same answer beside its auto row.
 auto_keymap() {
     local keymap
     keymap="$(language_field 2 "$ARCH_OS_LOCALE_LANG")"
@@ -129,18 +112,15 @@ auto_layout() {
     printf '%s' "$layout"
 }
 
-# Both fall back to none rather than to empty: no font means the console keeps
-# its own, no country means every mirror ranked by speed.
+# none rather than empty: the console keeps its font, every mirror is ranked.
 auto_font() {
     local font
     font="$(language_field 4 "$ARCH_OS_LOCALE_LANG")"
     printf '%s' "${font:-none}"
 }
 
-# The country the chosen time zone lies in, as tzdata files it, rather than the
-# one the language names: en_US is typed on every continent, and a mirror an
-# ocean away is not only slow but cannot even be rated within reflector's own
-# timeout.
+# The country of the time zone rather than the language: en_US is typed on
+# every continent, and a mirror an ocean away cannot be rated in time.
 auto_country() {
     local territory country
     territory="$(awk -F'\t' -v zone="$ARCH_OS_TIMEZONE" \
@@ -154,11 +134,11 @@ auto_country() {
 # THE ANSWERS, RESOLVED
 # ////////////////////////////////////////////////////////////////////////////
 
-# The partitions the disk is laid out into, named once here so every task means
-# the same devices. The third is there only with the Recovery. Only the tasks
-# use the first and the third, and shellcheck reads this file without them.
+# The partitions the disk is laid out into; the third only with the Recovery.
+# Read by the tasks, which shellcheck reads one at a time.
 # shellcheck disable=SC2034
 BOOT_PART="$(part_of "$ARCH_OS_DISK" 1)"
+# shellcheck disable=SC2034
 ROOT_PART="$(part_of "$ARCH_OS_DISK" 2)"
 # shellcheck disable=SC2034
 RECOVERY_PART="$(part_of "$ARCH_OS_DISK" 3)"
@@ -172,22 +152,11 @@ ARCH_OS_VCONSOLE_FONT="$(not_none "$ARCH_OS_VCONSOLE_FONT")"
 ARCH_OS_REFLECTOR_COUNTRY="$(not_none "$ARCH_OS_REFLECTOR_COUNTRY")"
 ARCH_OS_DESKTOP_KEYBOARD_VARIANT="$(not_none "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT")"
 
-# The console keyboard and font of the new system. A function rather than four
-# lines in configure-system, because it is needed before that runs: mkinitcpio's
-# sd-vconsole hook reads this file while pacstrap builds the ram disk.
-write_vconsole() {
-    mkdir -p "${MNT}/etc"
-    echo "KEYMAP=${ARCH_OS_VCONSOLE_KEYMAP}" >"${MNT}/etc/vconsole.conf"
-    [ -n "$ARCH_OS_VCONSOLE_FONT" ] && echo "FONT=${ARCH_OS_VCONSOLE_FONT}" >>"${MNT}/etc/vconsole.conf"
-    return 0
-}
-
 # ////////////////////////////////////////////////////////////////////////////
 # THE MACHINE
 # ////////////////////////////////////////////////////////////////////////////
 
-# The processor's microcode package, or nothing for a processor neither vendor
-# ships one for.
+# The processor's microcode package, or nothing.
 microcode() {
     if grep -q GenuineIntel /proc/cpuinfo; then
         echo intel-ucode
@@ -196,11 +165,9 @@ microcode() {
     fi
 }
 
-# The graphics cards in this machine, one line each: the vendor as the driver
-# packages name it, a tab, and the PCI device ID. Read off sysfs, where lspci
-# reads them too, rather than out of the table lspci draws for a person. A
-# virtual machine's own display adapter belongs to none of the three and is left
-# out, so a guest lists a card only where a real one was passed through to it.
+# Each graphics card: the vendor as the driver packages name it, a tab, the PCI
+# device ID - off sysfs rather than lspci's table. A virtual machine's own
+# adapter is none of the three and is left out.
 graphics_cards() {
     local dev vendor
     for dev in /sys/bus/pci/devices/*; do
@@ -216,43 +183,16 @@ graphics_cards() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
-# SNAPPER
+# THE BOOT CHAIN
 # ////////////////////////////////////////////////////////////////////////////
 
-# What snapper's own defaults have to become here, one setting per line. Its
-# defaults are written for a system that changes slowly and a rolling release
-# is not one - why these numbers, and why no timeline: docs/REFERENCE.md. The
-# last two are what makes the group /.snapshots belongs to able to read it:
-# without them snapper answers nobody but root, whatever the directory says.
-#
-# Named once because the task sets them and its test reads them back, and
-# because set-config takes one KEY=VALUE per argument - handed the four as one
-# string it writes the whole line into the first key, sets nothing else, and
-# says nothing about it.
-snapper_config() {
-    printf '%s\n' \
-        NUMBER_LIMIT=10 \
-        NUMBER_LIMIT_IMPORTANT=5 \
-        TIMELINE_CREATE=no \
-        ALLOW_GROUPS=wheel \
-        SYNC_ACL=yes
-}
-
-# ////////////////////////////////////////////////////////////////////////////
-# SECURE BOOT & KERNEL COMMAND LINE
-# ////////////////////////////////////////////////////////////////////////////
-
-# Whether this installation gets Secure Boot, which always means a unified
-# kernel image. The boot loader and the ram disk are both built differently for
-# a signed boot chain, so the rule is named once instead of repeated.
+# Secure Boot always means a unified kernel image.
 # https://wiki.archlinux.org/title/Unified_kernel_image
 secure_boot_wanted() {
     [ "$ARCH_OS_SECURE_BOOT_ENABLED" = "true" ] && [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]
 }
 
-# The images the firmware actually starts. Named once because the initramfs task
-# writes them, the boot splash rebuilds them and two tests read them back - and
-# a check against the image this machine does not start from checks nothing.
+# The images the firmware starts - a check against the other two checks nothing.
 boot_images() {
     if secure_boot_wanted; then
         printf '/boot/EFI/Linux/arch-%s.efi\n/boot/EFI/Linux/arch-%s-fallback.efi\n' "$KERNEL" "$KERNEL"
@@ -261,78 +201,21 @@ boot_images() {
     fi
 }
 
-# The kernel command line, read by the unified kernel image and by systemd-boot's
-# entries - one answer, so no two of them can disagree about how this system
-# boots. Why each parameter is here: docs/REFERENCE.md
-kernel_args() {
-    local args=(rw)
-
-    if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
-        args+=(root=/dev/mapper/cryptroot "rd.luks.name=$(blkid -s UUID -o value "$ROOT_PART")=cryptroot")
-    else
-        args+=("root=PARTUUID=$(lsblk -dno PARTUUID "$ROOT_PART")")
-    fi
-
-    args+=(rootflags=subvol=@ rootfstype=btrfs)
-    args+=(zswap.enabled=0) # pointless next to zram, and the two interfere
-
-    [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && args+=(nowatchdog)
-
-    # https://wiki.archlinux.org/title/Silent_boot
-    if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ]; then
-        args+=(quiet splash vt.global_cursor_default=0 loglevel=3 rd.udev.log_level=3 systemd.show_status=auto)
-    fi
-
-    # Plymouth forces its text plugin the moment it finds a serial console and
-    # never looks for a screen again: no splash, and the passphrase asked in
-    # plain type. A virtual machine is handed one without asking.
-    if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
-        args+=(plymouth.ignore-serial-consoles)
-    fi
-
-    [ -n "$ARCH_OS_KERNEL_ARGS" ] && args+=("$ARCH_OS_KERNEL_ARGS")
-    printf '%s' "${args[*]}"
-}
-
-# ////////////////////////////////////////////////////////////////////////////
-# THE RECOVERY PARTITION
-# ////////////////////////////////////////////////////////////////////////////
-
-# Where the Recovery image is: the partition as it is written, and the image the
-# boot loader starts it with. The Arch OS ISO carries it ready-made - iso/build.sh
-# puts it there. Any other live image fetches it from the release first, into
-# /tmp: its own writable layer holds a few hundred MiB at most, and this is
-# more. Read off what the live image was booted with, so every script of the
-# run agrees on it before the fetch and after. How it boots: docs/REFERENCE.md
+# The Recovery image: on the Arch OS ISO already, else fetched into /tmp, which
+# holds more than the image's writable layer. How it boots: docs/REFERENCE.md
 RECOVERY_IMAGE=/opt/arch-os-recovery
 [ -d "$RECOVERY_IMAGE" ] || RECOVERY_IMAGE=/tmp/arch-os-recovery
 
-# Where that image lands on the EFI partition: under EFI/Linux, where
-# systemd-boot lists every image by itself, so no entry has to point at it.
-# Named once because the Recovery task puts it there and Secure Boot signs it.
+# Where it lands on the EFI partition, listed by systemd-boot on its own.
 # shellcheck disable=SC2034
 RECOVERY_EFI=/boot/EFI/Linux/arch-os-recovery.efi
-
-# What that Recovery starts with instead of asking: Oak's own answers and its
-# own, in the folder its partition image copies them out of when it starts -
-# iso/recovery/ spells the same path. On the EFI partition, because it is the
-# one part of an encrypted disk that is readable before the password is typed,
-# and the keyboard is what the password is typed on.
-# shellcheck disable=SC2034
-RECOVERY_SEED=/boot/EFI/arch-os-recovery
-
-# The desktop's way into it, among the applications. Named once because the
-# task writes it and its test reads it back.
-# shellcheck disable=SC2034
-RECOVERY_LAUNCHER=/usr/local/share/applications/arch-os-recovery.desktop
 
 # ////////////////////////////////////////////////////////////////////////////
 # INSTALLING INTO THE NEW SYSTEM
 # ////////////////////////////////////////////////////////////////////////////
 
-# Package installs are retried: the one thing that reliably goes wrong during an
-# installation is the network. pacman's own download timeout is left on, which
-# is what turns a mirror that went away into a retry against the next one.
+# Retried: the network is what reliably goes wrong. pacman's own timeout stays,
+# which turns a mirror gone away into a retry against the next.
 RETRIES=5
 RETRY_WAIT=10
 
@@ -349,9 +232,8 @@ chroot_pacman_install() {
     return 1
 }
 
-# A sudo rule in the new system, read from stdin, as a drop-in and checked
-# before it is trusted: a syntax error in /etc/sudoers locks everybody out of
-# root. https://wiki.archlinux.org/title/Sudo
+# A sudo rule from stdin as a drop-in, taken back out where visudo refuses it:
+# one unreadable file there refuses every sudo. https://wiki.archlinux.org/title/Sudo
 sudoers_rule() {
     local file="${MNT}/etc/sudoers.d/${1}"
     mkdir -p "${MNT}/etc/sudoers.d"
@@ -367,11 +249,9 @@ sudoers_rule() {
     return 1
 }
 
-# pacman reads no drop-in directory, but it follows an Include from any section
-# of its one file. So each setting made here is a file of its own under
-# /etc/pacman.d, and pacman.conf gains one line naming it - the one edit a
-# .pacnew then asks to carry over. Named outright rather than by a glob, because
-# a glob that matches nothing stops pacman altogether.
+# pacman reads no drop-in directory but follows an Include, so each setting is a
+# file under /etc/pacman.d named by one line - the one edit a .pacnew carries.
+# Named outright: a glob matching nothing stops pacman.
 # https://man.archlinux.org/man/pacman.conf.5
 pacman_include() {
     local file
@@ -381,19 +261,13 @@ pacman_include() {
         echo "Include = ${file}" >>"${MNT}/etc/pacman.conf"
 }
 
-# How long one attempt at an AUR build may take and how often it is tried. A
-# build is retried because what fails in one is downloads; a build that runs
-# into the limit is not, because it was stuck rather than failing.
+# One attempt's time limit, and how often a build is tried: downloads fail, a
+# build that hits the limit was stuck.
 AUR_RETRIES=3
 AUR_TIMEOUT=2700
 
-# Building from the AUR needs a normal user allowed to sudo without a password,
-# granted for the length of the build and taken back afterwards. The build tools
-# are installed here rather than by each of the three tasks that build.
-#
-# One command inside the target so that one timeout covers the whole build, and
-# one compile job per gigabyte of memory - see docs/REFERENCE.md for why a live
-# image that takes its cores at their word runs itself out of memory.
+# A package from the AUR, built as the account with passwordless sudo granted
+# for the build alone. One compile job per GiB of memory - see docs/REFERENCE.md.
 chroot_aur_install() {
     local repo="$1"
     local url="https://aur.archlinux.org/${repo}.git"
@@ -445,29 +319,12 @@ chroot_aur_install() {
     return "$status"
 }
 
-# A command inside the new system as the account being created - what makepkg
-# insists on, and what anything writing into that home should do anyway.
+# A command inside the new system as the account, which makepkg insists on.
 as_user() {
     arch-chroot "$MNT" /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "$1"
 }
 
-# The command the chosen editor is started with, which is also the name of the
-# folder it keeps its configuration in: the package is neovim, the command nvim.
-editor_command() {
-    if [ "$ARCH_OS_EDITOR" = "neovim" ]; then echo nvim; else echo "$ARCH_OS_EDITOR"; fi
-}
-
-# Whether Bazaar takes GNOME Software's place, which it only can where there is
-# Flatpak for it to manage. Named once because the desktop leaves Software out
-# on it, puts the store on the dock by it, and its test reads it back.
-bazaar_wanted() {
-    [ "$ARCH_OS_FLATPAK_ENABLED" = "true" ] && [ "$ARCH_OS_BAZAAR_ENABLED" = "true" ]
-}
-
-# The desktop entry the chosen browser is started from, which is not its
-# package's name for two of them. Named once because the browser task makes it
-# the default, the desktop puts it on the dock, and a name that is no file
-# would be a dock with a gap and links that open nowhere.
+# The chosen browser's desktop entry - not its package's name for two of them.
 browser_entry() {
     case "$ARCH_OS_BROWSER" in
     epiphany) echo org.gnome.Epiphany.desktop ;;
@@ -476,27 +333,16 @@ browser_entry() {
     esac
 }
 
-# What that browser is made the default for: web addresses, and pages saved as
-# files. Named once because the task sets each and its test reads each back.
-browser_types() { printf '%s\n' x-scheme-handler/http x-scheme-handler/https text/html; }
-
-# The new home given back to the account it belongs to. Everything written from
-# out here belongs to root until this has run, and a home the user cannot write
-# to is a desktop that comes up broken.
+# The new home given back to its account: what root wrote is root's until then.
 own_home() {
     arch-chroot "$MNT" chown -R "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" "/home/${ARCH_OS_USERNAME}"
 }
 
-# Whether the new system has a command, asked of that system: a file in its
-# /usr/bin may be a link to an absolute path - helix's is /usr/lib/helix/hx -
-# and read off the mounted tree that path is the live system's, where there is
-# nothing. test is a binary, so it can be run in there; the shell's own lookup
-# cannot - see lint in /Makefile. Arch puts every binary in /usr/bin.
+# Asked of the new system: a link in its /usr/bin may be absolute, which out
+# here points into the live system. Arch puts every binary in /usr/bin.
 has_command() { arch-chroot "$MNT" test -x "/usr/bin/${1}"; }
 
-# Whether every setting in a sysctl drop-in names a knob that exists. sysctl
-# makes no complaint about a key it has never heard of, so a misspelled or
-# long-renamed one is a line that does nothing on a file that looks right.
+# sysctl says nothing about a key it does not have, so each is looked for.
 sysctl_keys_exist() {
     local keys key
     keys="$(sed -n 's/^[[:space:]]*\([a-z][a-z0-9._-]*\)[[:space:]]*=.*/\1/p' "$1")"
@@ -520,117 +366,37 @@ sysctl_keys_exist() {
 # FIRST LOGIN
 # ////////////////////////////////////////////////////////////////////////////
 
-# Some desktop settings only live in the user's own database, and there is no
-# session yet to write them into. Tasks append lines here; the first-login task
-# turns them into a script that runs once and then removes itself.
-#
-# Where the three pieces land follows the XDG base directory specification,
-# which also keeps them clear of ~/.arch-os - that folder belongs to the manager.
-# https://specifications.freedesktop.org/basedir-spec/latest/
+# Settings only a session can take: tasks append lines here, and the
+# first-login task turns them into a script that runs once.
 HOME_DIR="${MNT}/home/${ARCH_OS_USERNAME}"
-
-# Only while the run is on; the first-login task turns it into the three below.
 FIRST_LOGIN="${HOME_DIR}/.first-login"
 
-# Shellcheck reads this file on its own and cannot see that Oak sources it in
-# front of every task, so each of the three looks unused here.
-# shellcheck disable=SC2034
-FIRST_LOGIN_SCRIPT="${HOME_DIR}/.local/share/arch-os/first-login.sh"
-# Relative, because the account itself writes it, from its own home.
-# shellcheck disable=SC2034
-FIRST_LOGIN_LOG=".local/state/arch-os/first-login.log"
-# shellcheck disable=SC2034
-FIRST_LOGIN_ENTRY="${HOME_DIR}/.config/autostart/arch-os-first-login.desktop"
-
 on_first_login() { cat >>"$FIRST_LOGIN"; }
-
-# ////////////////////////////////////////////////////////////////////////////
-# CLOSING THE TARGET
-# ////////////////////////////////////////////////////////////////////////////
-
-# The target closed for good: swap off, everything unmounted and the encrypted
-# volume locked again - named once so the init task, the unmount task, the
-# restart and the shutdown cannot disagree about what closing is.
-#
-# Nothing mounted is not an error: this runs before the first partition is made
-# as well as after the last file is written. Whatever still holds the target is
-# named in the log and then killed, and the second umount is left unguarded on
-# purpose - that one is a real failure.
-#
-# -R and not -A, and -M on both fuser lines: see docs/REFERENCE.md.
-close_target() {
-    swapoff -a || true
-    sync
-
-    if mountpoint -q "$MNT" && ! umount -R "$MNT"; then
-        echo "the target did not unmount, what is holding it:"
-        fuser -Mvm "$MNT" || true
-        fuser -Mkm "$MNT" || true
-        sleep 2 # the kernel needs a moment to actually let go of the files
-        umount -R "$MNT"
-    fi
-
-    [ -e /dev/mapper/cryptroot ] && cryptsetup close cryptroot
-    echo "closed ${MNT}"
-}
 
 # ////////////////////////////////////////////////////////////////////////////
 # THE YAML | Every function a declaration calls by name
 # ////////////////////////////////////////////////////////////////////////////
 
-# A page of awk inside a yaml scalar is read by nobody and checked by nothing,
-# so every list a question offers, every value one opens on and every check a
-# declaration makes is a function here.
-
-# What the work waits for: everything that gets installed is downloaded. The
-# sentence is the page it waits on, and it offers a wireless network only
-# where there is a card to join one with - see actions/internet.
-internet_ready() {
-    is_online && return 0
-    if wlan_card; then
-        echo "There is no internet connection. Plug in a cable and it carries on by itself, or join a wireless network." >&2
-    else
-        echo "There is no internet connection. Plug in a cable and it carries on by itself." >&2
-    fi
-    return 1
-}
-
-# Whether this machine is itself a virtual one: the guest tools go in without a
-# question there, and running virtual machines of its own is asked only where
-# it is not.
 in_virtual_machine() {
     if systemd-detect-virt -q; then echo true; else echo false; fi
 }
 
-# The keyboard on the machine the installer runs on, loaded the moment the
-# language or the keyboard is answered: until then, everything typed after it is
-# typed on a layout nobody chose. A simulated run is on somebody's own machine.
+# Loaded the moment it is answered, so what is typed next is typed on it.
 load_console_keyboard() {
     debugging && return 0
     loadkeys "$ARCH_OS_VCONSOLE_KEYMAP"
 }
 
-# A list may hand back a value and the text it is chosen by on one line,
-# separated by a tab: everything before the tab is stored, everything after it
-# is read. That is how an auto row says what auto currently comes to.
+# A list may print a value and the text it is chosen by, with a tab between.
 
-# Every locale the C library ships that /etc/locale.gen also knows about: one
-# that cannot be generated cannot be used. The @-suffixed variants are the same
-# language in another script or currency, and double a long list.
+# Every locale glibc ships that locale.gen knows; @-variants double the list.
 list_locales() {
     comm -12 \
         <(basename -a /usr/share/i18n/locales/* | grep -v '@' | sort -u) \
         <(sed -n 's/^#\? *\([a-zA-Z_]*\)[. ].*/\1/p' /etc/locale.gen | sort -u)
 }
 
-# The row that list opens on, which on a list sorted by name would otherwise be
-# Afar as spoken in Djibouti - an answer nobody means and the one an enter meant
-# for the page before gives. Nothing on this machine says better: the console
-# keyboard answered a page earlier names a language and not a country, and a
-# keymap like `es` is four of them; asking a geolocation service where the
-# machine stands is not a call an installer makes unasked. So it opens on the
-# one locale this installer generates either way, and the list is filtered from
-# there.
+# Not Afar, the first row: the one locale this installer generates either way.
 default_locale() { printf 'en_US'; }
 
 list_keymaps() {
@@ -647,12 +413,7 @@ list_fonts() {
 
 list_timezones() { timedatectl list-timezones; }
 
-# The timezone the chosen country keeps, and UTC where the locale names no
-# country. Only ever the value the list opens on.
-#
-# UTC rather than nothing: an empty suggestion opens the list on its own first
-# row, which is Africa/Abidjan, and an enter meant for the page before sets the
-# clock to it.
+# The zone of the chosen country, and UTC rather than Africa/Abidjan for none.
 auto_timezone() {
     local locale="${ARCH_OS_LOCALE_LANG%%.*}" territory="" zone
     [[ $locale == *_* ]] && territory="${locale#*_}"
@@ -667,9 +428,8 @@ list_countries() {
     awk -F'\t' '!/^#/ && $2 != "-" { print $2 }' "${DATA}/countries"
 }
 
-# The desktop keyboard is asked of the running system where it can answer and
-# read from data/ where it cannot: the official Arch live image ships no
-# xkeyboard-config, and localectl then fails rather than printing nothing.
+# Asked of the running system where it can answer; the Arch ISO ships no
+# xkeyboard-config, and then data/ answers.
 list_layouts() {
     printf 'auto\tauto — %s\n' "$(auto_layout)"
 
@@ -682,8 +442,6 @@ list_layouts() {
     grep -v '^#' "${DATA}/x11-layouts"
 }
 
-# The layout is already resolved by the time this is asked - auto became a real
-# one before it ran.
 list_variants() {
     local layout="$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" variants
     [ -n "$layout" ] || return 0
