@@ -1,5 +1,0 @@
-# Under a run that finished, in the Installer and the Recovery: the system is
-# still mounted there.
-title: Open a shell
-description: Inside the system on the disk, to look around or fix something by hand. Leave it with exit.
-tty: true

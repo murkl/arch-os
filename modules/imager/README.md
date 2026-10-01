@@ -16,15 +16,16 @@ make -C ../.. run MODULE=imager ARGS=--debug   # run it without touching this ma
 ## What is where
 
 ```
-module.yaml                     what this module is, what it asks, what order it runs in
-module.sh                       what several of its scripts share, and every function the yaml calls
+module.yaml                     what this module is, what it asks, what order it runs in, its rules
 tasks/@write/<id>/task.yaml     what that step is: its needs, conditions and offers
 tasks/@write/<id>/task.sh       what it does
 tasks/@write/<id>/test.sh       how to tell, on the machine, that it took
-actions/<id>/action.yaml        a check run before the work: what it is, and what a no means
-actions/<id>/action.sh          the check itself
+actions/<id>/action.yaml        an action: one page at most, and what a no means
+actions/<id>/action.sh          what it does, and nothing else
 locales/                        one <code>.po per language, and the template they come from
 ```
+
+**Note:** _What several scripts share, and every function the yaml calls, is in **[oak.sh](../../oak.sh)** beside `oak.yaml`._
 
 ## What it does
 
@@ -59,22 +60,22 @@ An `arch-os-<version>-x86_64.iso` already in that folder is not downloaded again
 
 ## Where it runs
 
-`offered:` splits the three modules: Installer and Recovery need a booted live image to work on; this one needs anywhere else - `actions/installed-system` - since it is the machine that *makes* that image. So it is the only module offered on an ordinary desktop.
+`rules: offer-if` splits the three modules: Installer and Recovery need a booted live image to work on; this one needs anywhere else - `actions/installed-system` - since it is the machine that *makes* that image. So it is the only module offered on an ordinary desktop.
 
-What the work requires, under `actions/`:
+What the work starts if, under `rules: start-if`:
 
 | Action | Why |
 | --- | --- |
 | `sudo` | A way to become root for the write - already root, or `sudo` exists |
 | `usb` | Nothing plugged in, no answer can help. A stick plugged in carries on by itself |
 
-Each says only yes or no; what a no means is its `fail:`, read in the interface's language. `share-log`, under `failure:`, is the product's, beside `oak.yaml`.
+Each says only yes or no; what a no means is its `fail:`, read in the interface's language. `share-log`, under `rules: on-failure`, is the same as the Installer's and the Recovery's: its `action.sh` calls `share_log` in `oak.sh`.
 
 **Note:** _Whether the image can be fetched is not checked here - it depends on the download folder, which is not yet answered when these are looked at. The download task says so instead._
 
 ## Root, and only where it is Needed
 
-This module runs as you, not root - unlike the other two, which run on an already-root live image. `as_root` is in `module.sh`, and only the write task calls it, for three commands:
+This module runs as you, not root - unlike the other two, which run on an already-root live image. `as_root` is in `oak.sh`, and only the write task calls it, for three commands:
 
 | Command | Why |
 | --- | --- |

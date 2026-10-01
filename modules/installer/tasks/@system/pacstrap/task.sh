@@ -22,9 +22,10 @@ secure_boot_wanted && packages+=(sbctl)
 # Before the packages: installing the kernel builds a ram disk, and its
 # sd-vconsole hook reads this file.
 mkdir -p "${MNT}/etc"
-echo "KEYMAP=${ARCH_OS_VCONSOLE_KEYMAP}" >"${MNT}/etc/vconsole.conf"
-if [ -n "$ARCH_OS_VCONSOLE_FONT" ]; then
-    echo "FONT=${ARCH_OS_VCONSOLE_FONT}" >>"${MNT}/etc/vconsole.conf"
+echo "KEYMAP=$(vconsole_keymap)" >"${MNT}/etc/vconsole.conf"
+font="$(vconsole_font)"
+if [ -n "$font" ]; then
+    echo "FONT=${font}" >>"${MNT}/etc/vconsole.conf"
 fi
 
 # The longest download, and the one most likely to meet a mirror that stops.

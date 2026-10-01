@@ -1,0 +1,5 @@
+# Under rules: on-success: the system is still mounted at the end of the run.
+# The shell is open_shell in oak.sh.
+title: Open a shell
+description: Inside the system on the disk, to look around or fix something by hand. Leave it with exit.
+tty: true

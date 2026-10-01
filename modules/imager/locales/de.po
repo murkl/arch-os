@@ -147,6 +147,32 @@ msgid "Create boot medium writes a device from an installed Linux system. On the
 msgstr "Bootmedium erstellen schreibt einen Datenträger von einem installierten Linux-System aus. Auf dem Live-Image gibt es stattdessen eine Maschine zu bearbeiten - öffne den Installer oder die Recovery."
 
 #. an action: its row, and the heading over its page
+#: actions/share-log/action.yaml
+msgid "Share the log"
+msgstr "Log teilen"
+
+#. an action: what it does, under its row
+#: actions/share-log/action.yaml
+msgid "Put the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it; passwords are never in it."
+msgstr "Stellt das Log dieses Laufs auf paste.rs online, für die Person, die dir hilft. Jede Person mit der Adresse kann es lesen; Passwörter stehen nie darin."
+
+#. an action: what a no from it means
+#: actions/share-log/action.yaml
+msgid "The log could not be put online. Is this machine online?"
+msgstr "Das Log ließ sich nicht online stellen. Ist diese Maschine online?"
+
+#. read once the action is done, and held on until somebody has
+#: actions/share-log/action.yaml
+msgid ""
+"Log shared\n"
+"\n"
+"Scan the code, or read the address under it, and hand it to whoever is helping."
+msgstr ""
+"Log geteilt\n"
+"\n"
+"Scanne den Code oder lies die Adresse darunter und gib sie an die Person, die dir hilft."
+
+#. an action: its row, and the heading over its page
 #: actions/sudo/action.yaml
 msgid "Root for the write"
 msgstr "Root zum Schreiben"
@@ -165,29 +191,3 @@ msgstr "Ein USB-Datenträger zum Schreiben"
 #: actions/usb/action.yaml
 msgid "No USB device found. Plug a stick in and this carries on by itself."
 msgstr "Kein USB-Datenträger gefunden. Steck einen Stick ein, dann geht es von selbst weiter."
-
-#. an action: its row, and the heading over its page
-#: ../../actions/share-log/action.yaml
-msgid "Share the log"
-msgstr "Log teilen"
-
-#. an action: what it does, under its row
-#: ../../actions/share-log/action.yaml
-msgid "Put the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it; passwords are never in it."
-msgstr "Stellt das Log dieses Laufs auf paste.rs online, für die Person, die dir hilft. Jede Person mit der Adresse kann es lesen; Passwörter stehen nie darin."
-
-#. an action: what a no from it means
-#: ../../actions/share-log/action.yaml
-msgid "The log could not be put online. Is this machine online?"
-msgstr "Das Log ließ sich nicht online stellen. Ist diese Maschine online?"
-
-#. read once the action is done, and held on until somebody has
-#: ../../actions/share-log/action.yaml
-msgid ""
-"Log shared\n"
-"\n"
-"Scan the code, or read the address under it, and hand it to whoever is helping."
-msgstr ""
-"Log geteilt\n"
-"\n"
-"Scanne den Code oder lies die Adresse darunter und gib sie an die Person, die dir hilft."

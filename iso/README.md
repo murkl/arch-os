@@ -13,7 +13,7 @@ Stock Arch `releng`, patched: boot ➜ Plymouth ➜ Arch OS. Nothing in between.
 
 The [Oak](https://github.com/murkl/oak) binary with every module beside it lives in `/opt/arch-os`, started by a systemd unit on tty1 - no autologin, no shell. No module named, so it opens on language, then the choice of what to open, both under the wordmark. A root shell is handed back whenever it stops, and nothing starts it again by itself: an interface that came back on its own would be indistinguishable from one that was never away, over a run that may have written half a disk. A crash therefore ends at the prompt, with the reason in `journalctl -b -u arch-os`.
 
-**Note:** _The build copies whatever is in `modules/`, so **[Create boot medium](../modules/imager)** ships too but is never offered - its `offered:` says this is not that machine._
+**Note:** _The build copies whatever is in `modules/`, so **[Create boot medium](../modules/imager)** ships too but is never offered - its `rules: offer-if` says this is not that machine._
 
 **Note:** _The Recovery image starts with the same unit and launchers, and only the Recovery beside Oak, but as a kiosk: a drop-in starts `arch-os-kiosk` instead, which hands the Recovery what the Installer left on the EFI partition and runs Oak with `--kiosk`. It opens straight on its menu, leaving it is Reset, the unit starts it again whenever it ends, and there is no login on any console - **[➜ The Recovery Partition](../docs/REFERENCE.md#the-recovery-partition)**._
 

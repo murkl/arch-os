@@ -1,1 +1,1 @@
-[ "$(id -u)" -eq 0 ] || command -v sudo >/dev/null
+is_root || command -v sudo >/dev/null

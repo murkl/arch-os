@@ -147,6 +147,29 @@ msgid "Create boot medium writes a device from an installed Linux system. On the
 msgstr ""
 
 #. an action: its row, and the heading over its page
+#: actions/share-log/action.yaml
+msgid "Share the log"
+msgstr ""
+
+#. an action: what it does, under its row
+#: actions/share-log/action.yaml
+msgid "Put the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it; passwords are never in it."
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/share-log/action.yaml
+msgid "The log could not be put online. Is this machine online?"
+msgstr ""
+
+#. read once the action is done, and held on until somebody has
+#: actions/share-log/action.yaml
+msgid ""
+"Log shared\n"
+"\n"
+"Scan the code, or read the address under it, and hand it to whoever is helping."
+msgstr ""
+
+#. an action: its row, and the heading over its page
 #: actions/sudo/action.yaml
 msgid "Root for the write"
 msgstr ""
@@ -164,27 +187,4 @@ msgstr ""
 #. an action: what a no from it means
 #: actions/usb/action.yaml
 msgid "No USB device found. Plug a stick in and this carries on by itself."
-msgstr ""
-
-#. an action: its row, and the heading over its page
-#: ../../actions/share-log/action.yaml
-msgid "Share the log"
-msgstr ""
-
-#. an action: what it does, under its row
-#: ../../actions/share-log/action.yaml
-msgid "Put the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it; passwords are never in it."
-msgstr ""
-
-#. an action: what a no from it means
-#: ../../actions/share-log/action.yaml
-msgid "The log could not be put online. Is this machine online?"
-msgstr ""
-
-#. read once the action is done, and held on until somebody has
-#: ../../actions/share-log/action.yaml
-msgid ""
-"Log shared\n"
-"\n"
-"Scan the code, or read the address under it, and hand it to whoever is helping."
 msgstr ""

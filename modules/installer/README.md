@@ -14,19 +14,18 @@ make -C ../.. run MODULE=installer ARGS=--debug   # run it without touching this
 ## What is where
 
 ```
-module.yaml                     what this Installer is, what it asks, what order it runs in
-module.sh                       what several of its scripts share, and every function the yaml calls
+module.yaml                     what this Installer is, what it asks, what order it runs in, its rules
 tasks/@<stage>/<id>/task.yaml   what that step is: its needs, conditions and offers
 tasks/@<stage>/<id>/task.sh     what it does - everything only it needs is in here
 tasks/@<stage>/<id>/test.sh     optional: how to tell, on the machine, that it took
 tasks/@<stage>/<id>/data/       every file it writes into the new system, named after it, filled by render
-actions/<id>/action.yaml        an action of this module's own: one page at most, and what a no means
+actions/<id>/action.yaml        an action: one page at most, and what a no means
 actions/<id>/action.sh          what it does, and nothing else
 data/                           the tables a language and a country are looked up in
 locales/                        one <code>.po per language, and the template they come from
 ```
 
-**Note:** _The actions the Recovery and Create boot medium name too - the wireless network, the ways out, sharing the log, the shell - are one folder each in **[actions/](../../actions)** beside `oak.yaml`._
+**Note:** _What several scripts share, here or in another module, and every function the yaml calls, is in **[oak.sh](../../oak.sh)** beside `oak.yaml`. An action the Recovery has too - the wireless network, the ways out, sharing the log, the shell - is a folder in each, and its `action.sh` calls the same function there._
 
 ## Stages
 
@@ -35,7 +34,7 @@ One folder per stage under `tasks/`, marked with `@`; `module.yaml` orders them,
 | Stage | Tasks |
 | --- | --- |
 | `prepare` | `mirrors`, `recovery-image`, then `partition` - the one task that destroys anything, once everything that can fail first has |
-| `system` | `pacstrap`, `config`, `user`, `tweaks`, then `loader` and `recovery`: the system on disk, configured and bootable |
+| `system` | `pacstrap`, `config`, `user`, `tweaks`, then `bootloader` and `recovery`: the system on disk, configured and bootable |
 | `features` | One task per setting that switches something on: `multilib`, `aur`, `bootsplash`, `containers`, `editor`, `firewall`, `housekeeping`, `manager`, `shell`, `ssh`, `vm-guest`, `vm-host` |
 | `desktop` | `gnome` first, then `graphics`, `browser`, `backup`, `flatpak`, `recovery-app`, `samba` |
 | `finish` | `first-login`, `orphans`, `snapper`, `secure-boot`, and `copy-config` last, which says the system is installed |
@@ -44,23 +43,24 @@ One folder per stage under `tasks/`, marked with `@`; `module.yaml` orders them,
 
 ## Actions
 
-Scripts run outside the work, one page at most each: `action.yaml` says how it behaves, `action.sh` only does it. `module.yaml` names each where it runs; a name without a folder here is one of the product's.
+Scripts run outside the work, one page at most each: `action.yaml` says how it behaves, `action.sh` only does it. `module.yaml` names each under the rule it runs by.
 
-| Named in | Actions |
+| Rule | Actions |
 | --- | --- |
-| `offered` | `live-image`: a booted Arch Linux live image |
-| `requires` | `root`, `uefi`, `secure-boot-off`, then `internet`, which falls back on `wifi` where there is a card and waits for a cable otherwise |
-| `menu` | `wifi`: **Wireless network**, wherever `wifi-card` finds a card. An open or known network joins as it is chosen; one that wants a passphrase falls back on `wifi-passphrase` |
-| `leave` | `restart`, `shutdown`: the two ways this machine is put down |
-| `failure` | `share-log`: the log of a run that failed, put online and drawn as a code |
-| `success` | `chroot`, `share-config`: a shell in the new system, and its answers put online - rows on the page a finished run ends on, which opens on **Continue** |
-| `presets` | `import-config`: the online starting point |
+| `offer-if` | `live-image`: a booted Arch Linux live image |
+| `start-if` | `root`, `uefi`, `secure-boot-off`, then `internet`, which opens `wifi` on failure where there is a card and waits for a cable otherwise |
+| `menu` | `wifi`: **Wireless network**, offered if `wifi-card` finds a card. An open or known network joins as it is chosen; one that wants a passphrase opens `wifi-passphrase` on failure |
+| `on-leave` | `restart`, `shutdown`: the two ways this machine is put down |
+| `on-failure` | `share-log`: the log of a run that failed, put online and drawn as a code |
+| `on-success` | `chroot`, `share-config`: a shell in the new system, and its answers put online - rows on the page a finished run ends on, which opens on **Continue** |
+
+The online starting point under `presets:` names `import-config`, which fetches the answers.
 
 **Note:** _A cable needs no action: it comes up by itself and is preferred over a wireless network while both are up. The third way out is Oak's own **Exit**: the Installer closes, the machine keeps running. See **[iso/](../../iso)**._
 
 ## auto and none
 
-Two words the lists in `module.yaml` share. `auto`: worked out by `module.sh` before any task runs. `none`: an explicit empty answer.
+Two words the lists in `module.yaml` share. `auto`: worked out in `oak.sh` where a task reads the answer - `vconsole_keymap` and its neighbours. `none`: an explicit empty answer.
 
 | On `auto` | Resolves to |
 | --- | --- |
@@ -105,14 +105,14 @@ The console keyboard is asked `first` and takes effect immediately: a password t
 | --- | --- |
 | An option | A row under `variables:`. Guard dependent tasks with `conditions:` |
 | A step | A folder under its stage, `task.yaml` + `task.sh`, a `test.sh` where there is something to read back |
-| A check, a row or a way out | A folder under `actions/` - or under `../../actions/` where another module names it too - named in `module.yaml` |
-| A starting point | An option under `presets:`. A fetched one names the action that fetches it with `action:` |
+| A check, a row or a way out | A folder under `actions/`, named under `rules:` in `module.yaml`. What another module does alike is a function in `oak.sh` both call |
+| A starting point | An entry under `presets:`. A fetched one names the action that fetches it with `action:` |
 | A language | **[➜ Contributing](../../docs/CONTRIBUTING.md#adding-a-language)** |
 | Something in the Recovery | **[➜ Recovery](../recovery)**, none of it lives here |
 
 ## Requirements
 
-A booted **Arch Linux live image** - `offered:` in `module.yaml`. On it: root, then UEFI with Secure Boot off, then the internet - `requires:`, in that order.
+A booted **Arch Linux live image** - `rules: offer-if` in `module.yaml`. On it: root, then UEFI with Secure Boot off, then the internet - `rules: start-if`, in that order.
 
 **Note:** _`--debug` offers every module and simulates its work._
 

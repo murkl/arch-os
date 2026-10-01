@@ -4,26 +4,29 @@
 # Where the pieces land follows the XDG base directories, clear of ~/.arch-os,
 # which belongs to the manager. https://specifications.freedesktop.org/basedir-spec/latest/
 
+home="$(user_home)"
+pending="${home}/.first-login"
+
 # A console system has no session to wait for.
-[ -s "$FIRST_LOGIN" ] || return 0
+[ -s "$pending" ] || return 0
 
 script=.local/share/arch-os/first-login.sh
 log=.local/state/arch-os/first-login.log
 entry=.config/autostart/arch-os-first-login.desktop
 
-mkdir -p "${HOME_DIR}/${script%/*}" "${HOME_DIR}/${log%/*}" "${HOME_DIR}/${entry%/*}"
+mkdir -p "${home}/${script%/*}" "${home}/${log%/*}" "${home}/${entry%/*}"
 {
     echo '#!/usr/bin/env bash'
     echo '# Written by the Arch OS Installer. Runs once, at the first login.'
-    cat "$FIRST_LOGIN"
+    cat "$pending"
     echo
     echo "rm -f \"\${HOME}/${entry}\""
     echo "echo \"\$(date '+%Y-%m-%d %H:%M:%S') | first login done\""
-} >"${HOME_DIR}/${script}"
-rm -f "$FIRST_LOGIN"
-chmod +x "${HOME_DIR}/${script}"
+} >"${home}/${script}"
+rm -f "$pending"
+chmod +x "${home}/${script}"
 
-render "$(where)/arch-os-first-login.desktop" SCRIPT="$script" LOG="$log" >"${HOME_DIR}/${entry}"
+render "$(where)/arch-os-first-login.desktop" SCRIPT="$script" LOG="$log" >"${home}/${entry}"
 
 # Written as root into somebody else's home.
 own_home

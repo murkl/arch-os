@@ -9,6 +9,8 @@ if ! grep -qxF "$ARCH_OS_DISK" <<<"$disks"; then
     echo "${ARCH_OS_DISK} is not one of the disks this machine can be installed on. Choose the disk again in the settings." >&2
     exit 1
 fi
+boot_part="$(boot_partition "$ARCH_OS_DISK")"
+system_part="$(system_partition "$ARCH_OS_DISK")"
 
 # What an earlier attempt left mounted, closed for good. -M keeps fuser on the
 # target: without it, a target that is no mount point resolves to the live
@@ -59,7 +61,7 @@ sgdisk -n 1:0:+1G -t 1:ef00 -c 1:boot --align-end "$ARCH_OS_DISK"
 # The Recovery at the very end, as large as its image plus two MiB: the last
 # sectors hold the backup table, and the root's end is aligned down to a MiB.
 if [ "$ARCH_OS_RECOVERY_ENABLED" = "true" ]; then
-    recovery_mib=$((($(stat -c %s "${RECOVERY_IMAGE}/recovery.img") + 1048575) / 1048576 + 2))
+    recovery_mib=$((($(stat -c %s "$(recovery_image)/recovery.img") + 1048575) / 1048576 + 2))
     sgdisk -n "2:0:-${recovery_mib}M" -t 2:8300 -c 2:root --align-end "$ARCH_OS_DISK"
     sgdisk -n 3:0:0 -t 3:8300 -c 3:recovery "$ARCH_OS_DISK"
 else
@@ -92,15 +94,15 @@ fi
 # The passphrase on stdin, never in an argument list /proc shows. Discards are
 # let through and kept in the header, or fstrim trims nothing.
 # https://wiki.archlinux.org/title/Dm-crypt/Specialties#Discard/TRIM_support_for_solid_state_drives_(SSD)
-root_device="$ROOT_PART"
+root_device="$system_part"
 if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
-    echo "encrypting ${ROOT_PART}"
-    printf '%s' "$ARCH_OS_PASSWORD" | cryptsetup luksFormat "$ROOT_PART"
-    printf '%s' "$ARCH_OS_PASSWORD" | cryptsetup open --allow-discards --persistent "$ROOT_PART" cryptroot
+    echo "encrypting ${system_part}"
+    printf '%s' "$ARCH_OS_PASSWORD" | cryptsetup luksFormat "$system_part"
+    printf '%s' "$ARCH_OS_PASSWORD" | cryptsetup open --allow-discards --persistent "$system_part" cryptroot
     root_device=/dev/mapper/cryptroot
 fi
 
-mkfs.fat -F 32 -n BOOT "$BOOT_PART"
+mkfs.fat -F 32 -n BOOT "$boot_part"
 mkfs.btrfs -f -L BTRFS "$root_device"
 mount -v "$root_device" "$MNT"
 while read -r subvolume _; do
@@ -125,4 +127,4 @@ chattr +C "${MNT}/var/lib/libvirt/images"
 # systemd would make subvolumes of these on first boot, noise in every listing.
 mkdir -p "${MNT}/var/lib/portables" "${MNT}/var/lib/machines"
 
-mount -v --mkdir "$BOOT_PART" "${MNT}/boot"
+mount -v --mkdir "$boot_part" "${MNT}/boot"

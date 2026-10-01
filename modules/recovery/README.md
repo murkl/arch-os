@@ -14,15 +14,16 @@ make -C ../.. run MODULE=recovery ARGS=--debug   # run it without touching this 
 ## What is where
 
 ```
-module.yaml                     what this Recovery is, what it asks, what order it runs in
-module.sh                       what several of its scripts share, and every function the yaml calls
+module.yaml                     what this Recovery is, what it asks, what order it runs in, its rules
 tasks/@repair/<id>/task.yaml    what that step is: its needs, conditions and offers
 tasks/@repair/<id>/task.sh      what it does, plus any file it ships with, beside it
 tasks/@repair/<id>/test.sh      optional: how to tell, on the machine, that it took
+actions/<id>/action.yaml        an action: one page at most, and what a no means
+actions/<id>/action.sh          what it does, and nothing else
 locales/                        one <code>.po per language, and the template they come from
 ```
 
-**Note:** _It has no actions of its own: the ones it names - the live image, root, the wireless network, the ways out, sharing the log, the shell - are the product's, in **[actions/](../../actions)** beside `oak.yaml`._
+**Note:** _What several scripts share, and every function the yaml calls, is in **[oak.sh](../../oak.sh)** beside `oak.yaml`. Its actions - the live image, root, the wireless network, the ways out, sharing the log, the shell - are the Installer's too, and each `action.sh` calls the same function there._
 
 ## What it does
 
@@ -40,7 +41,7 @@ One stage, `repair`; after the first task, every step is optional.
 
 A broken network may be the problem, so this module never waits for one, and kernel images come from the local pacman cache. `root` is all the work requires - not firmware, since this machine is not what is being set up.
 
-It can join one all the same, for whatever somebody wants to fetch in the shell: `wifi` puts **Wireless network** on its menu wherever there is a card - the same action the Installer names. On its own partition a cable comes up at boot and is preferred while both are up, and the wireless daemon starts once there is a card to ask it about. `restart` and `shutdown` are the ways out, and `share-log` puts the log of a repair that failed online for whoever is helping.
+It can join one all the same, for whatever somebody wants to fetch in the shell: `wifi` puts **Wireless network** on its menu wherever there is a card - the same action the Installer has. On its own partition a cable comes up at boot and is preferred while both are up, and the wireless daemon starts once there is a card to ask it about. `restart` and `shutdown` are the ways out, and `share-log` puts the log of a repair that failed online for whoever is helping.
 
 ## Two Questions, and no more
 
@@ -92,6 +93,6 @@ On its own partition neither is asked: the Installer leaves the keyboard it was 
 
 ## Requirements
 
-A booted **Arch Linux live image** - `offered:` in `module.yaml`. Root on it - `requires:`. Nothing else.
+A booted **Arch Linux live image** - `rules: offer-if` in `module.yaml`. Root on it - `rules: start-if`. Nothing else.
 
 **Note:** _Two images are one: the ISO, and the Recovery image the Installer writes to a partition of its own, where this module is the only one - **[➜ The Recovery Partition](../../docs/REFERENCE.md#the-recovery-partition)**. It copies itself to memory before it starts, so the disk it came from is free to be opened like any other._

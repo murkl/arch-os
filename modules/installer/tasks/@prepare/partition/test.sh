@@ -5,10 +5,11 @@ mountpoint -q "${MNT}/boot"
 
 # Encrypted, the system goes onto the opened volume, not the partition under it.
 if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
+    system_part="$(system_partition "$ARCH_OS_DISK")"
     root_source="$(findmnt -no SOURCE "$MNT")"
     [[ $root_source == /dev/mapper/cryptroot* ]]
-    [ "$(cryptsetup status cryptroot | awk '$1 == "device:" { print $2 }')" = "$ROOT_PART" ]
-    cryptsetup luksDump "$ROOT_PART" | grep -qE '^Flags:.*allow-discards'
+    [ "$(cryptsetup status cryptroot | awk '$1 == "device:" { print $2 }')" = "$system_part" ]
+    cryptsetup luksDump "$system_part" | grep -qE '^Flags:.*allow-discards'
 fi
 
 while IFS=$'\t' read -r subvolume path; do
