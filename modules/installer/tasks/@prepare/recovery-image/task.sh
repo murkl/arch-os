@@ -1,9 +1,5 @@
-# The Recovery image at hand before the disk stage sizes a partition after it.
-# The Arch OS ISO carries it; any other live image fetches it from the release
-# this Installer belongs to, held to the checksum GitHub publishes for it. Here
-# rather than beside the partition: a download that fails should fail while
-# the disk is still untouched.
-
+# Here rather than beside the partition: a download that fails should fail
+# while the disk is still untouched. The Arch OS ISO carries the image already.
 if [ -f "${RECOVERY_IMAGE}/recovery.img" ] && [ -f "${RECOVERY_IMAGE}/recovery.efi" ]; then
     echo "the Recovery image is at ${RECOVERY_IMAGE}"
     return 0
@@ -28,9 +24,8 @@ if ! echo "${digest}  ${download}" | sha256sum -c - >/dev/null; then
     exit 1
 fi
 
-# Unpacked beside and moved into place whole, so what lies at RECOVERY_IMAGE is
-# always a Recovery that arrived and matched - which is what lets a second run
-# take it as it finds it.
+# Unpacked beside and moved into place whole, so what lies there is always a
+# Recovery that arrived and matched, which a second run takes as it finds it.
 rm -rf "${RECOVERY_IMAGE}.part"
 mkdir -p "${RECOVERY_IMAGE}.part"
 tar -xf "$download" -C "${RECOVERY_IMAGE}.part" --strip-components=1

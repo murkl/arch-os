@@ -1,12 +1,10 @@
 title: Write the image to the device
+needs: [verify]
 
-# How far dd has got is its last line, redrawn in place, and it is shown under
-# the step while it runs. The password sudo wants was typed into the interface
-# before the run, so nothing here needs the terminal.
+# dd's progress, redrawn in place, under the step while it runs.
 progress: true
 
-# The run stops here rather than sliding into the page that says it is over:
-# a device written but still plugged in is a boot that does not happen.
+# A device written and still plugged in is a boot that does not happen.
 report: |
   The device is ready
 

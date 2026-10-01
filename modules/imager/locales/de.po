@@ -100,16 +100,6 @@ msgstr "Das Schreiben des Datenträgers braucht Root-Rechte, und sudo fragt daf�
 msgid "That is not your password, or this account may not use sudo."
 msgstr "Das ist nicht dein Passwort, oder dieses Konto darf sudo nicht verwenden."
 
-#. ARCH_OS_LOG_URL: the question
-#: module.yaml
-msgid "Shared log"
-msgstr "Geteiltes Log"
-
-#. ARCH_OS_LOG_URL: what it means
-#: module.yaml
-msgid "Where the log of a run that failed was put online."
-msgstr "Wo das Log eines gescheiterten Laufs online steht."
-
 #. the header's status, while its check says yes
 #: ../../oak.yaml
 msgid "Online"
@@ -121,12 +111,12 @@ msgid "Offline"
 msgstr "Offline"
 
 #. the step, as the run lists it
-#: tasks/@download/image/task.yaml
+#: tasks/@write/download/task.yaml
 msgid "Download the image"
 msgstr "Abbild herunterladen"
 
 #. the step, as the run lists it
-#: tasks/@verify/checksum/task.yaml
+#: tasks/@write/verify/task.yaml
 msgid "Verify the checksum"
 msgstr "Prüfsumme prüfen"
 
@@ -146,44 +136,53 @@ msgstr ""
 "\n"
 "{{ARCH_OS_IMAGE_DEVICE}} startet jetzt Arch OS. Zieh ihn ab, steck ihn in die Maschine, die installiert werden soll, und starte sie davon."
 
-#. an action: its row, and the heading over its pages
-#: actions/access/action.yaml
+#. an action: its row, and the heading over its page
+#: actions/installed-system/action.yaml
+msgid "An installed Linux system"
+msgstr "Ein installiertes Linux-System"
+
+#. an action: what a no from it means
+#: actions/installed-system/action.yaml
+msgid "Create boot medium writes a device from an installed Linux system. On the live image there is a machine to work on instead - open the Installer or the Recovery."
+msgstr "Bootmedium erstellen schreibt einen Datenträger von einem installierten Linux-System aus. Auf dem Live-Image gibt es stattdessen eine Maschine zu bearbeiten - öffne den Installer oder die Recovery."
+
+#. an action: its row, and the heading over its page
+#: actions/sudo/action.yaml
 msgid "Root for the write"
 msgstr "Root zum Schreiben"
 
-#. an action: its row, and the heading over its pages
-#: actions/device/action.yaml
-msgid "A device to write to"
-msgstr "Ein Datenträger zum Schreiben"
+#. an action: what a no from it means
+#: actions/sudo/action.yaml
+msgid "Writing a device needs root, and this machine has no sudo to ask for it. Start this again as root."
+msgstr "Einen Datenträger zu schreiben braucht root, und diese Maschine hat kein sudo, um danach zu fragen. Starte es erneut als root."
 
-#. an action: its row, and the heading over its pages
-#: actions/ordinary-machine/action.yaml
-msgid "An ordinary Linux machine"
-msgstr "Ein gewöhnlicher Linux-Rechner"
+#. an action: its row, and the heading over its page
+#: actions/usb/action.yaml
+msgid "A USB device to write to"
+msgstr "Ein USB-Datenträger zum Schreiben"
 
-#. an action: its row, and the heading over its pages
-#: actions/share-log/action.yaml
+#. an action: what a no from it means
+#: actions/usb/action.yaml
+msgid "No USB device found. Plug a stick in and this carries on by itself."
+msgstr "Kein USB-Datenträger gefunden. Steck einen Stick ein, dann geht es von selbst weiter."
+
+#. an action: its row, and the heading over its page
+#: ../../actions/share-log/action.yaml
 msgid "Share the log"
 msgstr "Log teilen"
 
 #. an action: what it does, under its row
-#: actions/share-log/action.yaml
-msgid "Put the log of this run online, for whoever is helping."
-msgstr "Das Log dieses Laufs online stellen, für alle, die helfen."
+#: ../../actions/share-log/action.yaml
+msgid "Put the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it; passwords are never in it."
+msgstr "Stellt das Log dieses Laufs auf paste.rs online, für die Person, die dir hilft. Jede Person mit der Adresse kann es lesen; Passwörter stehen nie darin."
 
-#. asked before the action runs
-#: actions/share-log/action.yaml
-msgid ""
-"Put the log of this run online?\n"
-"\n"
-"It goes to paste.rs, and its address comes back as a code to scan. Anyone holding that address can read it. It holds every answer but the passwords, which were never written down anywhere."
-msgstr ""
-"Das Log dieses Laufs online stellen?\n"
-"\n"
-"Es geht an paste.rs, und seine Adresse kommt als Code zum Scannen zurück. Wer diese Adresse hat, kann es lesen. Es enthält jede Antwort außer den Passwörtern, die nirgends aufgeschrieben wurden."
+#. an action: what a no from it means
+#: ../../actions/share-log/action.yaml
+msgid "The log could not be put online. Is this machine online?"
+msgstr "Das Log ließ sich nicht online stellen. Ist diese Maschine online?"
 
 #. read once the action is done, and held on until somebody has
-#: actions/share-log/action.yaml
+#: ../../actions/share-log/action.yaml
 msgid ""
 "Log shared\n"
 "\n"

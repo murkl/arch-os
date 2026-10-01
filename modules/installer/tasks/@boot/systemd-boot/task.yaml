@@ -1,2 +1,0 @@
-title: Install systemd-boot
-needs: [initramfs]

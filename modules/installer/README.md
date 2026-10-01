@@ -15,44 +15,46 @@ make -C ../.. run MODULE=installer ARGS=--debug   # run it without touching this
 
 ```
 module.yaml                     what this Installer is, what it asks, what order it runs in
-module.sh                       what more than one script has to agree about
+module.sh                       what several of its scripts share, and every function the yaml calls
 tasks/@<stage>/<id>/task.yaml   what that step is: its needs, conditions and offers
-tasks/@<stage>/<id>/task.sh     what it does
+tasks/@<stage>/<id>/task.sh     what it does - everything only it needs is in here
 tasks/@<stage>/<id>/test.sh     optional: how to tell, on the machine, that it took
 tasks/@<stage>/<id>/data/       every file it writes into the new system, named after it, filled by render
-actions/<id>/action.yaml        a script run outside the work, where module.yaml names it
+actions/<id>/action.yaml        an action of this module's own: one page at most, and what a no means
+actions/<id>/action.sh          what it does, and nothing else
 data/                           the tables a language and a country are looked up in
 locales/                        one <code>.po per language, and the template they come from
 ```
+
+**Note:** _The actions the Recovery and Create boot medium name too - the wireless network, the ways out, sharing the log, the shell - are one folder each in **[actions/](../../actions)** beside `oak.yaml`._
 
 ## Stages
 
 One folder per stage under `tasks/`, marked with `@`; `module.yaml` orders them, `needs:` orders the tasks sharing one.
 
-| Stage | Description |
+| Stage | Tasks |
 | --- | --- |
-| `prepare` | The live system, made ready to install from, the Recovery image at hand |
-| `disk` | Partitioned, encrypted, formatted, mounted - the only stage that destroys anything |
-| `base` | The system on disk, configured, with an account |
-| `boot` | The images the firmware starts, the loader, and the Recovery beside them |
-| `system` | Everything switched on rather than installed |
-| `desktop` | GNOME, its driver, whatever belongs to it |
-| `finalize` | The last steps on the new system |
-| `handover` | What is offered once installed, and the ways out |
+| `prepare` | `mirrors`, `recovery-image`, then `partition` - the one task that destroys anything, once everything that can fail first has |
+| `system` | `pacstrap`, `config`, `user`, `tweaks`, then `loader` and `recovery`: the system on disk, configured and bootable |
+| `features` | One task per setting that switches something on: `multilib`, `aur`, `bootsplash`, `containers`, `editor`, `firewall`, `housekeeping`, `manager`, `shell`, `ssh`, `vm-guest`, `vm-host` |
+| `desktop` | `gnome` first, then `graphics`, `browser`, `backup`, `flatpak`, `recovery-app`, `samba` |
+| `finish` | `first-login`, `orphans`, `snapper`, `secure-boot`, and `copy-config` last, which says the system is installed |
 
 **Note:** _`make inspect` prints the order the whole module resolves to._
 
 ## Actions
 
-Scripts run outside the work: one folder each under `actions/`, `action.yaml` and, where the yaml does not name a function, `action.sh`. `module.yaml` names each where it runs.
+Scripts run outside the work, one page at most each: `action.yaml` says how it behaves, `action.sh` only does it. `module.yaml` names each where it runs; a name without a folder here is one of the product's.
 
 | Named in | Actions |
 | --- | --- |
 | `offered` | `live-image`: a booted Arch Linux live image |
-| `requires` | `root`, then `uefi` - UEFI with Secure Boot off - then `internet`, which falls back on `wlan` where there is a card and waits for a cable otherwise |
-| `menu` | `wlan`: **Wireless network**, wherever `wlan-card` finds a card. The shell is **[oak.sh](../../oak.sh)**'s, which the Recovery joins one with too |
-| `leave` | `restart`, `shutdown`: the two ways this machine is put down, each closing the target first |
-| `failure` | `share-log`: the log of a run that failed, put online and drawn as a code - asked first, opening on no |
+| `requires` | `root`, `uefi`, `secure-boot-off`, then `internet`, which falls back on `wifi` where there is a card and waits for a cable otherwise |
+| `menu` | `wifi`: **Wireless network**, wherever `wifi-card` finds a card. An open or known network joins as it is chosen; one that wants a passphrase falls back on `wifi-passphrase` |
+| `leave` | `restart`, `shutdown`: the two ways this machine is put down |
+| `failure` | `share-log`: the log of a run that failed, put online and drawn as a code |
+| `success` | `chroot`, `share-config`: a shell in the new system, and its answers put online - rows on the page a finished run ends on, which opens on **Continue** |
+| `presets` | `import-config`: the online starting point |
 
 **Note:** _A cable needs no action: it comes up by itself and is preferred over a wireless network while both are up. The third way out is Oak's own **Exit**: the Installer closes, the machine keeps running. See **[iso/](../../iso)**._
 
@@ -93,7 +95,7 @@ The console keyboard is asked `first` and takes effect immediately: a password t
 
 ## Sharing a Configuration
 
-`installer.conf` can be uploaded to **[paste.rs](https://paste.rs)** and comes back as a scannable code - the `share-config` task (`task.sh` uploads, `import.sh` fetches). Opens on **no**, right after the installation is done.
+`installer.conf` can be uploaded to **[paste.rs](https://paste.rs)** and comes back as a scannable code: `actions/share-config` on the page a finished run ends on uploads it, `actions/import-config` behind the online starting point fetches it.
 
 **Note:** _Uploaded without its `ARCH_OS_CONFIG_*` lines. No password, but hostname, username, disk and language are in it - **anyone holding the address can read it**. The disk is left out when it is fetched again: it names a path on the machine it was answered on, so the next one asks for its own._
 
@@ -103,7 +105,8 @@ The console keyboard is asked `first` and takes effect immediately: a password t
 | --- | --- |
 | An option | A row under `variables:`. Guard dependent tasks with `conditions:` |
 | A step | A folder under its stage, `task.yaml` + `task.sh`, a `test.sh` where there is something to read back |
-| A starting point | An option under `presets:`. Fetched ones name their question with `asks:` and their shell with `apply:` |
+| A check, a row or a way out | A folder under `actions/` - or under `../../actions/` where another module names it too - named in `module.yaml` |
+| A starting point | An option under `presets:`. A fetched one names the action that fetches it with `action:` |
 | A language | **[➜ Contributing](../../docs/CONTRIBUTING.md#adding-a-language)** |
 | Something in the Recovery | **[➜ Recovery](../recovery)**, none of it lives here |
 
@@ -117,4 +120,4 @@ A booted **Arch Linux live image** - `offered:` in `module.yaml`. On it: root, t
 
 `installer.conf`, beside wherever the Installer was started, copied into the new system at the end. The password is never in it, and never on the settings page.
 
-The Recovery on its partition is handed two of them to start with: the language this run was read in, as Oak recorded it in `oak.conf`, and the console keyboard - `RECOVERY_SEED` in `module.sh`.
+The Recovery on its partition is handed two of them to start with: the language this run was read in, as Oak recorded it in `oak.conf`, and the console keyboard - see `tasks/@system/recovery`.

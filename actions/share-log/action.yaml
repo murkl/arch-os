@@ -1,0 +1,13 @@
+# Under a run that failed. Choosing the row is the consent, so its description
+# says what leaves the machine.
+title: Share the log
+description: Put the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it; passwords are never in it.
+fail: The log could not be put online. Is this machine online?
+simulates: true
+
+report: |
+  Log shared
+
+  Scan the code, or read the address under it, and hand it to whoever is
+  helping.
+shows: ARCH_OS_LOG_URL

@@ -1,0 +1,5 @@
+title: Install the boot loader
+
+# The ram disk takes in every modprobe.d file and the console keyboard, so it is
+# built once everything it reads is written.
+needs: [config, tweaks]

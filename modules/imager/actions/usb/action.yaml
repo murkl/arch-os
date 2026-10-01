@@ -1,0 +1,3 @@
+# Asked again every few seconds: a stick plugged in carries on by itself.
+title: A USB device to write to
+fail: No USB device found. Plug a stick in and this carries on by itself.

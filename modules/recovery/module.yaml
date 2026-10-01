@@ -1,47 +1,28 @@
-# What this module is, what it asks and in what order it works. Everything else
-# in it is found by its own name, and every list, suggestion and derived answer
-# below is a function in module.sh.
-#
+# What the Recovery is, what it asks and the order it works in. Every list and
+# derived answer below is a function in module.sh.
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
 title: Recovery
 description: Repair an Arch Linux system that is already on a disk.
-
-# What starting the work is called: the first row of the menu, and the button on
-# the last page before the disk is opened.
 start: Repair
 
-# Where it runs its actions, each a folder under actions/. The same live image
-# the Installer is offered on, and nothing waits for a network: a repair
-# downloads nothing, and the network may be what broke.
+# Nothing waits for a network: a repair downloads nothing, and the network may
+# be what broke.
 offered: [live-image]
 requires: [root]
-menu: [wlan]
+menu: [wifi]
 leave: [restart, shutdown]
 failure: [share-log]
+success: [chroot]
 
-# Each is a folder under tasks/, marked - tasks/@repair/ - and lying in one is
-# what puts a task in the run and where.
 stages:
-  - open # unlocked and mounted, as the system mounts itself
-  - repair # rolled back, made bootable again, worked in by hand
-  - close # unmounted, and the disk locked again
+  - repair # opened, rolled back, made bootable again
 
-# Two questions and nothing else. What kind of disk it is and what is on it are
-# facts rather than opinions, so they are read off the machine instead - see
-# module.sh - and the file system is never even a value: it is read at the
-# moment it can be, which is once the disk is open.
+# Two questions. What kind of disk it is, is read off the machine. On its own
+# partition both are answered already - see iso/recovery/.
 variables:
-  # Asked first, because it is the keyboard the password below is typed on. It
-  # is loaded on the live system and never written to the system being repaired.
-  #
-  # It opens on a layout rather than on the list's first row, which is 3l: an
-  # enter meant for the page before would load that, and the password typed
-  # next would fail with nothing to say why.
-  #
-  # On its own partition the Recovery finds both questions answered: the
-  # Installer leaves it the keyboard it was typed on, and the disk is the one
-  # it was started from - see iso/recovery/.
+  # First, because the password below is typed on it. Loaded on the live system
+  # and never written to the one being repaired.
   - name: ARCH_OS_RECOVERY_KEYMAP
     title: Console keyboard
     description: |
@@ -66,9 +47,7 @@ variables:
     command: list_disks
     pattern: '^/dev/[A-Za-z0-9_-]+$'
 
-  # Not asked: a LUKS header is readable without the password, so this is a
-  # thing the machine can see. It decides whether there is a password to ask
-  # for at all.
+  # Not asked: a LUKS header is readable without the password.
   - name: ARCH_OS_RECOVERY_ENCRYPTED
     title: Disk encryption
     description: Whether that disk is encrypted with LUKS.
@@ -76,10 +55,7 @@ variables:
     type: bool
     answer: disk_is_encrypted
 
-  # Asked once rather than twice: this password already exists, and it is tried
-  # on the disk right where it is typed, so a wrong one is refused on that page
-  # rather than by the first step of the run. The repeat is for a password
-  # being chosen, which nothing can check.
+  # Asked once: it already exists, and it is tried on the disk where it is typed.
   - name: ARCH_OS_RECOVERY_PASSWORD
     title: Encryption password
     description: |
@@ -93,10 +69,7 @@ variables:
     error: That password does not unlock this disk.
     conditions: ARCH_OS_RECOVERY_ENCRYPTED == true
 
-  # Asked by the rollback task, which is also where the shell that lists them
-  # lives: the snapshots cannot be listed until the disk is unlocked and
-  # mounted. A system that has none leaves that list empty, and the step is
-  # skipped.
+  # Asked by the rollback in the middle of the run, once the disk is open.
   - name: ARCH_OS_RECOVERY_SNAPSHOT
     title: Snapshot
     description: |
@@ -106,9 +79,3 @@ variables:
     required: true
     filter: open
     command: ./tasks/@repair/rollback/snapshots.sh
-
-  # Not a question on any page: the address a failed run's log was put at,
-  # answered by actions/share-log where somebody chose to share it.
-  - name: ARCH_OS_LOG_URL
-    title: Shared log
-    description: Where the log of a run that failed was put online.

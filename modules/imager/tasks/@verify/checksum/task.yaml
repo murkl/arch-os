@@ -1,8 +1,0 @@
-title: Verify the checksum
-
-# Its own step, because a download that arrived and a download that is intact
-# are two different claims, and only the second is worth writing to a device.
-conditions: ARCH_OS_IMAGE_VERIFY == true
-
-# No test.sh beside it: what a test would read is the image against the
-# checksum, which is this task line for line.

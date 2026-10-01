@@ -1,6 +1,3 @@
-# Applications from Flathub, installed and updated through Bazaar or Software.
-# The package brings Flathub as a remote of its own, so nothing is added.
+# The package brings Flathub as its remote; GNOME Software only recommends it.
 # https://wiki.archlinux.org/title/Flatpak
-
-# gnome-software only recommends it, so the group never pulls it in.
 chroot_pacman_install flatpak

@@ -1,7 +1,5 @@
-# Named under requires: everything that gets installed is downloaded, so the
-# work waits for the internet - after the keyboard, which a passphrase is typed
-# on. A cable needs nothing: it comes up by itself and carries on. Where the
-# machine has a card, the wireless network is what puts it right.
+# Everything that gets installed is downloaded. A cable comes up by itself and
+# carries on; the wireless network is the fallback where there is a card.
 title: Internet
-fallback: wlan
-script: internet_ready
+fail: There is no internet connection. Plug in a cable and it carries on by itself.
+fallback: wifi

@@ -15,33 +15,32 @@ make -C ../.. run MODULE=recovery ARGS=--debug   # run it without touching this 
 
 ```
 module.yaml                     what this Recovery is, what it asks, what order it runs in
-module.sh                       what more than one script has to agree about
-tasks/@<stage>/<id>/task.yaml   what that step is: its needs, conditions and offers
-tasks/@<stage>/<id>/task.sh     what it does, plus any file it ships with, beside it
-tasks/@<stage>/<id>/test.sh     optional: how to tell, on the machine, that it took
-actions/<id>/action.yaml        a script run outside the work, where module.yaml names it
+module.sh                       what several of its scripts share, and every function the yaml calls
+tasks/@repair/<id>/task.yaml    what that step is: its needs, conditions and offers
+tasks/@repair/<id>/task.sh      what it does, plus any file it ships with, beside it
+tasks/@repair/<id>/test.sh      optional: how to tell, on the machine, that it took
 locales/                        one <code>.po per language, and the template they come from
 ```
 
+**Note:** _It has no actions of its own: the ones it names - the live image, root, the wireless network, the ways out, sharing the log, the shell - are the product's, in **[actions/](../../actions)** beside `oak.yaml`._
+
 ## What it does
 
-Three stages; after the first, every step is optional.
+One stage, `repair`; after the first task, every step is optional.
 
-| Task | Stage | Description |
-| --- | --- | --- |
-| `open` | `open` | Unlocks and mounts at `/mnt`, the same way the system mounts itself |
-| `rollback` | `repair` | Puts a snapshot in place of the root subvolume. Skipped where there are none |
-| `kernel` | `repair` | Rebuilds kernel images and initramfs from the package cache, re-signs if needed |
-| `shell` | `repair` | `arch-chroot`s into the repaired system |
-| `close` | `close` | Unmounts everything and locks the disk again |
+| Task | Description |
+| --- | --- |
+| `open` | Unlocks and mounts at `/mnt`, the same way the system mounts itself - after closing whatever an earlier attempt left |
+| `rollback` | Puts a snapshot in place of the root subvolume. Skipped where there are none |
+| `kernel` | Rebuilds kernel images and initramfs from the package cache, re-signs if needed |
 
-**Note:** _Each of the three under `repair` has its own `confirm:`, so a run can stop after any. `needs:` orders them - a shell is worth having once the boot files are back. The shell opens on **no**: an enter meant for the step before must not land in a root shell._
+**Note:** _`rollback` and `kernel` each ask first, so a run can stop after any. The page the repair ends on offers **Open a shell** in the repaired system and opens on **Continue**. A restart or a shutdown leaves unmounting and locking to systemd._
 
 ## Nothing is downloaded
 
-A broken network may be the problem, so this module never waits for one, and kernel images come from the local pacman cache. `actions/root` is all the work requires - not firmware, since this machine is not what is being set up.
+A broken network may be the problem, so this module never waits for one, and kernel images come from the local pacman cache. `root` is all the work requires - not firmware, since this machine is not what is being set up.
 
-It can join one all the same, for whatever somebody wants to fetch in the shell: `actions/wlan` puts **Wireless network** on its menu wherever there is a card, and joins it with the shell the Installer joins one with - **[oak.sh](../../oak.sh)**. On its own partition a cable comes up at boot and is preferred while both are up, and the wireless daemon starts once there is a card to ask it about. `actions/restart` and `actions/shutdown` are the ways out, and `actions/share-log` puts the log of a repair that failed online for whoever is helping.
+It can join one all the same, for whatever somebody wants to fetch in the shell: `wifi` puts **Wireless network** on its menu wherever there is a card - the same action the Installer names. On its own partition a cable comes up at boot and is preferred while both are up, and the wireless daemon starts once there is a card to ask it about. `restart` and `shutdown` are the ways out, and `share-log` puts the log of a repair that failed online for whoever is helping.
 
 ## Two Questions, and no more
 

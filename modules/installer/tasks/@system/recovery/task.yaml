@@ -1,0 +1,3 @@
+title: Write the Recovery partition
+needs: [loader]
+conditions: ARCH_OS_RECOVERY_ENABLED == true

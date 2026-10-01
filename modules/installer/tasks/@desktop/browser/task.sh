@@ -1,8 +1,6 @@
-# The browser chosen, in the language this system is set up in, and the one
-# every link opens in. Only what a browser does not bring itself is added here:
-# on this desktop each of them already runs on Wayland, decodes video on the
-# card where the driver can - Chromium's own since 140 and 143, with no flag -
-# and keeps its passwords in the keyring GNOME unlocks at login.
+# The browser chosen, in this system's language, and the one every link opens
+# in. Each already runs on Wayland, decodes video on the card and keeps its
+# passwords in the GNOME keyring; only what it does not bring is added.
 # https://wiki.archlinux.org/title/Firefox
 # https://wiki.archlinux.org/title/Chromium
 # https://wiki.archlinux.org/title/Vivaldi
@@ -15,12 +13,8 @@ territory="${territory,,}"
 
 packages=("$ARCH_OS_BROWSER")
 
-# The first of these names the repositories hold a package for. A language pack
-# or a dictionary exists for many languages but not for every one, so finding
-# none is said in the log and the browser stays in English there. A name another
-# package provides counts, so hunspell-fr finds one of French's three spellings.
-# Not found is told apart from a pacman that could not answer at all, which
-# stops the run instead.
+# The first of these the repositories hold. None is said in the log and the
+# browser stays in English; a pacman that cannot answer stops the run.
 add_first_of() {
     local name out
     for name in "$@"; do
@@ -36,40 +30,30 @@ add_first_of() {
     echo "none of $* is in the repositories, ${locale} goes without it"
 }
 
-# Spelling checked in the system's language, by both browsers that read
-# hunspell's dictionaries rather than fetching their own.
 add_dictionary() {
     add_first_of "hunspell-${language}_${territory}" "hunspell-${language}" "hunspell-${language}_any"
 }
 
 case "$ARCH_OS_BROWSER" in
 epiphany)
-    # WebKit plays media through GStreamer, which decodes nothing without its
-    # plugins, and checks spelling through enchant, which reaches the
-    # dictionaries only with hunspell beside it. The desktop extras bring the
-    # same plugins; a browser has to play a video without them.
+    # WebKit plays media through GStreamer and checks spelling through enchant.
     packages+=(gst-plugins-good gst-plugins-bad gst-libav hunspell)
     add_dictionary
     ;;
 firefox)
-    # Arch's Firefox is set to follow the system language and to read the
-    # system's dictionaries (vendor.js in its PKGBUILD), and never asks to be
-    # the default. Both only have to be there.
+    # Arch's build follows the system language and dictionaries by itself.
     add_first_of "firefox-i18n-${language}-${territory}" "firefox-i18n-${language}"
     add_dictionary
     ;;
 vivaldi)
-    # The codecs for H.264 and AAC from the repositories, rather than the
-    # library Vivaldi otherwise downloads into the home on its first start.
+    # The codecs from the repositories, not a download into the home.
     packages+=(vivaldi-ffmpeg-codecs)
     ;;
 esac
 
-# Chromium follows the system language and fetches its own dictionaries, so it
-# needs nothing beside its package.
 chroot_pacman_install "${packages[@]}"
 
 # Written where GNOME reads it, by GLib's own tool.
 while read -r type; do
     as_user "gio mime ${type} $(browser_entry)"
-done < <(browser_types)
+done <"$(where)/types"

@@ -1,0 +1,12 @@
+# On the menu, and the fallback of internet. An open or known network is joined
+# as it is chosen; one that wants a passphrase says no, and its fallback asks.
+title: Wireless network
+description: Join a wireless network.
+requires: [wifi-card]
+fallback: wifi-passphrase
+
+variable:
+  name: ARCH_OS_WIFI_SSID
+  title: Network
+  required: true
+  command: ./networks.sh

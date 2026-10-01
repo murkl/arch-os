@@ -11,7 +11,7 @@ mkinitcpio-archiso
 plymouth
 
 # A wireless network, joined from the settings when somebody asks for one. iwd
-# starts once there is a card to ask it about - see wlan_up in oak.sh. The
+# starts once there is a card to ask it about - see wifi_station in oak.sh. The
 # firmware is the wireless cards' of the default set, and pacman.conf leaves out
 # what in those packages belongs to anything else.
 iwd

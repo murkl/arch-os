@@ -1,32 +1,19 @@
-# What this module is, what it asks and in what order it works. Everything else
-# in it is found by its own name, and every list and suggestion below is a
-# function in module.sh.
-#
+# What Create boot medium is, what it asks and the order it works in. Every
+# list and suggestion below is a function in module.sh.
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
-# What will happen, not what the program is called: this row is read as the
-# thing somebody is about to do. The folder stays `imager`, which is what its
-# answers and its log are named after.
+# What will happen rather than the program's name: the row is read as the thing
+# about to be done. The folder stays imager, which its files are named after.
 title: Create boot medium
 description: Write Arch OS to a USB device to boot another machine from.
-
-# What starting the work is called: the first row of the menu, and the button on
-# the last page before the device is written. Shorter than the title, which
-# stands over both in the header and would only be read twice.
 start: Create
 
-# Where it runs its actions, each a folder under actions/: on any machine but
-# the live image, with a way to become root and something to write to.
-offered: [ordinary-machine]
-requires: [access, device]
+offered: [installed-system]
+requires: [sudo, usb]
 failure: [share-log]
 
-# Each is a folder under tasks/, marked - tasks/@write/ - and lying in one is
-# what puts a task in the run and where.
 stages:
-  - download # the image of the release oak.yaml names
-  - verify # against the checksum that release publishes, before anything is written
-  - write # the image onto the device
+  - write # the image downloaded, verified and written to the device
 
 variables:
   - name: ARCH_OS_DOWNLOAD_DIR
@@ -41,9 +28,6 @@ variables:
     pattern: '^/.+$'
     error: Type the full path of a folder, starting with a slash.
 
-  # A setting rather than a question in the middle of the run, so it reads in
-  # the interface's language like every other one and is decided before the
-  # run starts rather than halfway through it.
   - name: ARCH_OS_IMAGE_VERIFY
     title: Verify checksum
     description: |
@@ -66,9 +50,8 @@ variables:
     error: Choose a device that exists.
     command: list_devices
 
-  # Not asked: whether writing the device needs a password is a fact about this
-  # machine. Root needs none, and a sudo rule may say this account needs none
-  # either.
+  # Not asked: root needs no password, and a sudo rule may say this account
+  # needs none either.
   - name: ARCH_OS_IMAGE_SUDO
     title: Password for the write
     description: Whether writing the device asks for your password.
@@ -76,10 +59,8 @@ variables:
     type: bool
     answer: needs_password
 
-  # Asked in the interface rather than by sudo on the terminal, so the screen
-  # stays where it is. Once, since it already exists, and tried with sudo right
-  # where it is typed: a wrong one is refused on that page rather than after a
-  # download of two gigabytes.
+  # Typed into the interface rather than into sudo on the terminal, and tried
+  # where it is typed, not after a download of two gigabytes.
   - name: ARCH_OS_IMAGE_PASSWORD
     title: Your password
     description: |
@@ -93,9 +74,3 @@ variables:
     check: sudo_accepts
     error: That is not your password, or this account may not use sudo.
     conditions: ARCH_OS_IMAGE_SUDO == true
-
-  # Not a question on any page: the address a failed run's log was put at,
-  # answered by actions/share-log where somebody chose to share it.
-  - name: ARCH_OS_LOG_URL
-    title: Shared log
-    description: Where the log of a run that failed was put online.

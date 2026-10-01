@@ -64,7 +64,7 @@ msgid "A minimal Arch Linux on the text console, with nothing graphical on it an
 msgstr ""
 
 #. starting point Setup: a row
-#: module.yaml
+#: module.yaml actions/import-config/action.yaml
 msgid "Online (paste.rs)"
 msgstr ""
 
@@ -505,41 +505,6 @@ msgstr ""
 msgid "Shares your home folder and a public folder with Windows and macOS, on networks marked as home. Anyone on such a network can try your password against it. Without the firewall, every network reaches it."
 msgstr ""
 
-#. ARCH_OS_CONFIG_URL: the question
-#: module.yaml
-msgid "Shared at"
-msgstr ""
-
-#. ARCH_OS_CONFIG_URL: what it means
-#: module.yaml
-msgid "Where this installation's answers ended up. Nothing is uploaded until you accept the offer at the end of the run. The installation then fills this in itself and shows it as a code to scan."
-msgstr ""
-
-#. ARCH_OS_CONFIG_SOURCE: the question
-#: module.yaml
-msgid "Configuration code"
-msgstr ""
-
-#. ARCH_OS_CONFIG_SOURCE: what it means
-#: module.yaml
-msgid "The code of a shared configuration: the short word at the end of a paste.rs address, or the whole address. Every answer it contains can still be changed afterwards."
-msgstr ""
-
-#. ARCH_OS_CONFIG_SOURCE: what a wrong answer is told
-#: module.yaml
-msgid "A code such as aBc12, or the whole address it belongs to."
-msgstr ""
-
-#. ARCH_OS_LOG_URL: the question
-#: module.yaml
-msgid "Shared log"
-msgstr ""
-
-#. ARCH_OS_LOG_URL: what it means
-#: module.yaml
-msgid "Where the log of a run that failed was put online."
-msgstr ""
-
 #. the header's status, while its check says yes
 #: ../../oak.yaml
 msgid "Online"
@@ -551,7 +516,7 @@ msgid "Offline"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@prepare/init/task.yaml
+#: tasks/@prepare/mirrors/task.yaml
 msgid "Rank mirrors and refresh the keyring"
 msgstr ""
 
@@ -561,112 +526,102 @@ msgid "Provide the Recovery image"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@disk/prepare-disk/task.yaml
+#: tasks/@prepare/partition/task.yaml
 msgid "Partition and format the disk"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@base/pacstrap-core/task.yaml
+#: tasks/@system/pacstrap/task.yaml
 msgid "Install the base system"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@base/configure-system/task.yaml
+#: tasks/@system/config/task.yaml
 msgid "Set locale, time zone and hostname"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@base/core-tweaks/task.yaml
+#: tasks/@system/tweaks/task.yaml
 msgid "Apply the core tweaks"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@base/user-account/task.yaml
-msgid "Create the user account"
+#: tasks/@system/loader/task.yaml
+msgid "Install the boot loader"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@boot/initramfs/task.yaml
-msgid "Build the initramfs"
-msgstr ""
-
-#. the step, as the run lists it
-#: tasks/@boot/recovery/task.yaml
+#: tasks/@system/recovery/task.yaml
 msgid "Write the Recovery partition"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@boot/systemd-boot/task.yaml
-msgid "Install systemd-boot"
+#: tasks/@system/user/task.yaml
+msgid "Create the user account"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@system/btrfs-scrub/task.yaml
-msgid "Enable the monthly Btrfs scrub"
-msgstr ""
-
-#. the step, as the run lists it
-#: tasks/@system/container-engine/task.yaml
+#: tasks/@features/containers/task.yaml
 msgid "Install the container engine"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@system/editor/task.yaml
+#: tasks/@features/editor/task.yaml
 msgid "Set up the text editor"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@system/enable-multilib/task.yaml
-msgid "Enable the multilib repository"
-msgstr ""
-
-#. the step, as the run lists it
-#: tasks/@system/aur-helper/task.yaml
-msgid "Install the AUR helper"
-msgstr ""
-
-#. the step, as the run lists it
-#: tasks/@system/bootsplash/task.yaml
-msgid "Install Plymouth"
-msgstr ""
-
-#. the step, as the run lists it
-#: tasks/@system/firewall/task.yaml
+#: tasks/@features/firewall/task.yaml
 msgid "Set up firewalld"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@system/housekeeping/task.yaml
+#: tasks/@features/housekeeping/task.yaml
 msgid "Enable the maintenance timers"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@system/manager/task.yaml
+#: tasks/@features/multilib/task.yaml
+msgid "Enable the multilib repository"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@features/aur/task.yaml
+msgid "Install the AUR helper"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@features/bootsplash/task.yaml
+msgid "Install Plymouth"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@features/manager/task.yaml
 msgid "Install Arch OS Manager"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@system/shell-enhancement/task.yaml
+#: tasks/@features/shell/task.yaml
 msgid "Set up zsh and the shell tools"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@system/ssh-server/task.yaml
+#: tasks/@features/ssh/task.yaml
 msgid "Enable sshd"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@system/vm-guest/task.yaml
+#: tasks/@features/vm-guest/task.yaml
 msgid "Install the VM guest tools"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@system/vm-host/task.yaml
+#: tasks/@features/vm-host/task.yaml
 msgid "Install QEMU and libvirt"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@desktop/desktop-gnome/task.yaml
+#: tasks/@desktop/gnome/task.yaml
 msgid "Install GNOME"
 msgstr ""
 
@@ -686,12 +641,12 @@ msgid "Set up Flatpak"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@desktop/graphics-driver/task.yaml
+#: tasks/@desktop/graphics/task.yaml
 msgid "Install the graphics drivers"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@desktop/recovery-launcher/task.yaml
+#: tasks/@desktop/recovery-app/task.yaml
 msgid "Add the Recovery to the applications"
 msgstr ""
 
@@ -701,190 +656,210 @@ msgid "Set up Samba"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@finalize/first-login/task.yaml
+#: tasks/@finish/first-login/task.yaml
 msgid "Prepare the first login"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@finalize/remove-orphans/task.yaml
+#: tasks/@finish/orphans/task.yaml
 msgid "Remove orphaned packages"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@finalize/snapper/task.yaml
+#: tasks/@finish/snapper/task.yaml
 msgid "Set up Snapper"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@finalize/secure-boot/task.yaml
+#: tasks/@finish/secure-boot/task.yaml
 msgid "Sign the boot files with sbctl"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@handover/copy-config/task.yaml
+#: tasks/@finish/copy-config/task.yaml
 msgid "Copy the answers and the log into the system"
 msgstr ""
 
 #. read once the step is done, and held on until somebody has
-#: tasks/@handover/copy-config/task.yaml
+#: tasks/@finish/copy-config/task.yaml
 msgid ""
 "Arch OS is installed\n"
 "\n"
-"{{ARCH_OS_HOSTNAME}} is on {{ARCH_OS_DISK}} and ready to start. Everything from here on is optional."
+"{{ARCH_OS_HOSTNAME}} is on {{ARCH_OS_DISK}} and ready to start."
 msgstr ""
 
-#. the step, as the run lists it
-#: tasks/@handover/share-config/task.yaml
-msgid "Upload the answers to paste.rs"
+#. an action: what a no from it means
+#: actions/import-config/action.yaml
+msgid "No Arch OS configuration could be loaded from {{ARCH_OS_CONFIG_SOURCE}}. Check the code, and that this machine is online."
 msgstr ""
 
-#. asked before the step runs
-#: tasks/@handover/share-config/task.yaml
-msgid ""
-"Put these answers online now?\n"
-"\n"
-"Every answer from this installation goes to paste.rs, and its address comes back as a code to scan, enough to set up another machine exactly like this one. Anyone holding that address can read them. The password is not among them and was never written down anywhere."
+#. ARCH_OS_CONFIG_SOURCE: the page of the action
+#: actions/import-config/action.yaml
+msgid "Configuration code"
 msgstr ""
 
-#. read once the step is done, and held on until somebody has
-#: tasks/@handover/share-config/task.yaml
+#. ARCH_OS_CONFIG_SOURCE: what it means
+#: actions/import-config/action.yaml
+msgid "The code of a shared configuration: the short word at the end of a paste.rs address, or the whole address. Every answer it contains can still be changed afterwards."
+msgstr ""
+
+#. ARCH_OS_CONFIG_SOURCE: what a wrong answer is told
+#: actions/import-config/action.yaml
+msgid "A code such as aBc12, or the whole address it belongs to."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/internet/action.yaml
+msgid "Internet"
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/internet/action.yaml
+msgid "There is no internet connection. Plug in a cable and it carries on by itself."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/secure-boot-off/action.yaml
+msgid "Secure Boot off"
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/secure-boot-off/action.yaml
+msgid "Secure Boot is switched on. Turn it off in the firmware settings and start again - the installer can set it up again for you afterwards."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/share-config/action.yaml
+msgid "Share the configuration"
+msgstr ""
+
+#. an action: what it does, under its row
+#: actions/share-config/action.yaml
+msgid "Put these answers online at paste.rs, to set up another machine exactly like this one. Anyone with the address can read them; the password is not among them."
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/share-config/action.yaml
+msgid "The configuration could not be put online. Is this machine online?"
+msgstr ""
+
+#. read once the action is done, and held on until somebody has
+#: actions/share-config/action.yaml
 msgid ""
 "Configuration shared\n"
 "\n"
 "Scan the code, or type the word at the end of the address into the online starting point of another installation."
 msgstr ""
 
-#. the step, as the run lists it
-#: tasks/@handover/chroot/task.yaml
-msgid "Open a shell in the new system"
+#. an action: its row, and the heading over its page
+#: actions/uefi/action.yaml
+msgid "Booted in UEFI mode"
 msgstr ""
 
-#. asked before the step runs
-#: tasks/@handover/chroot/task.yaml
-msgid ""
-"Open a shell inside the system that was just installed?\n"
-"\n"
-"Everything is still mounted, so this is a good time to look around or fix something by hand. Leave the shell with `exit`."
+#. an action: what a no from it means
+#: actions/uefi/action.yaml
+msgid "This machine booted in BIOS mode, which Arch OS does not install to. Set the boot mode to UEFI in the firmware settings and start again."
 msgstr ""
 
-#. the step, as the run lists it
-#: tasks/@handover/reboot/task.yaml
-msgid "Restart into the new system"
+#. an action: its row, and the heading over its page
+#: ../../actions/chroot/action.yaml
+msgid "Open a shell"
 msgstr ""
 
-#. asked before the step runs
-#: tasks/@handover/reboot/task.yaml
-msgid ""
-"Restart into {{ARCH_OS_HOSTNAME}} now?\n"
-"\n"
-"Everything is unmounted first. Remove the installation media once the screen goes blank."
+#. an action: what it does, under its row
+#: ../../actions/chroot/action.yaml
+msgid "Inside the system on the disk, to look around or fix something by hand. Leave it with exit."
 msgstr ""
 
-#. the step, as the run lists it
-#: tasks/@handover/unmount/task.yaml
-msgid "Unmount and lock the disk"
-msgstr ""
-
-#. asked before the step runs
-#: tasks/@handover/unmount/task.yaml
-msgid ""
-"Unmount the new system and stay in the live environment?\n"
-"\n"
-"Nothing is lost either way, the installation is finished. Leaving it mounted is only useful if you want to keep working on it from here."
-msgstr ""
-
-#. an action: its row, and the heading over its pages
-#: actions/internet/action.yaml
-msgid "Internet"
-msgstr ""
-
-#. an action: its row, and the heading over its pages
-#: actions/live-image/action.yaml
+#. an action: its row, and the heading over its page
+#: ../../actions/live-image/action.yaml
 msgid "An Arch Linux live image"
 msgstr ""
 
-#. an action: its row, and the heading over its pages
-#: actions/restart/action.yaml
+#. an action: what a no from it means
+#: ../../actions/live-image/action.yaml
+msgid "This runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: ../../actions/restart/action.yaml
 msgid "Restart"
 msgstr ""
 
 #. an action: what it does, under its row
-#: actions/restart/action.yaml
+#: ../../actions/restart/action.yaml
 msgid "Close this machine down and start it again."
 msgstr ""
 
-#. an action: its row, and the heading over its pages
-#: actions/root/action.yaml
+#. an action: its row, and the heading over its page
+#: ../../actions/root/action.yaml
 msgid "Running as root"
 msgstr ""
 
-#. an action: its row, and the heading over its pages
-#: actions/share-log/action.yaml
+#. an action: what a no from it means
+#: ../../actions/root/action.yaml
+msgid "This has to run as root. Log in as root and start it again."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: ../../actions/share-log/action.yaml
 msgid "Share the log"
 msgstr ""
 
 #. an action: what it does, under its row
-#: actions/share-log/action.yaml
-msgid "Put the log of this run online, for whoever is helping."
+#: ../../actions/share-log/action.yaml
+msgid "Put the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it; passwords are never in it."
 msgstr ""
 
-#. asked before the action runs
-#: actions/share-log/action.yaml
-msgid ""
-"Put the log of this run online?\n"
-"\n"
-"It goes to paste.rs, and its address comes back as a code to scan. Anyone holding that address can read it. It holds every answer but the passwords, which were never written down anywhere."
+#. an action: what a no from it means
+#: ../../actions/share-log/action.yaml
+msgid "The log could not be put online. Is this machine online?"
 msgstr ""
 
 #. read once the action is done, and held on until somebody has
-#: actions/share-log/action.yaml
+#: ../../actions/share-log/action.yaml
 msgid ""
 "Log shared\n"
 "\n"
 "Scan the code, or read the address under it, and hand it to whoever is helping."
 msgstr ""
 
-#. an action: its row, and the heading over its pages
-#: actions/shutdown/action.yaml
+#. an action: its row, and the heading over its page
+#: ../../actions/shutdown/action.yaml
 msgid "Shut down"
 msgstr ""
 
 #. an action: what it does, under its row
-#: actions/shutdown/action.yaml
+#: ../../actions/shutdown/action.yaml
 msgid "Switch this machine off."
 msgstr ""
 
-#. an action: its row, and the heading over its pages
-#: actions/uefi/action.yaml
-msgid "Booted in UEFI mode, with Secure Boot off"
-msgstr ""
-
-#. an action: its row, and the heading over its pages
-#: actions/wlan/action.yaml
+#. an action: its row, and the heading over its page
+#: ../../actions/wifi/action.yaml ../../actions/wifi-passphrase/action.yaml
 msgid "Wireless network"
 msgstr ""
 
 #. an action: what it does, under its row
-#: actions/wlan/action.yaml
+#: ../../actions/wifi/action.yaml
 msgid "Join a wireless network."
 msgstr ""
 
-#. ARCH_OS_WLAN_SSID: a page of the action
-#: actions/wlan/action.yaml
+#. ARCH_OS_WIFI_SSID: the page of the action
+#: ../../actions/wifi/action.yaml
 msgid "Network"
 msgstr ""
 
-#. ARCH_OS_WLAN_PASSPHRASE: a page of the action
-#: actions/wlan/action.yaml
-msgid "Passphrase"
-msgstr ""
-
-#. ARCH_OS_WLAN_PASSPHRASE: what it means
-#: actions/wlan/action.yaml
-msgid "Left empty for an open network."
-msgstr ""
-
-#. an action: its row, and the heading over its pages
-#: actions/wlan-card/action.yaml
+#. an action: its row, and the heading over its page
+#: ../../actions/wifi-card/action.yaml
 msgid "A wireless card"
+msgstr ""
+
+#. an action: what a no from it means
+#: ../../actions/wifi-passphrase/action.yaml
+msgid "{{ARCH_OS_WIFI_SSID}} did not accept that passphrase, or it is out of range."
+msgstr ""
+
+#. ARCH_OS_WIFI_PASSPHRASE: the page of the action
+#: ../../actions/wifi-passphrase/action.yaml
+msgid "Passphrase"
 msgstr ""

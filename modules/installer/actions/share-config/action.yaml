@@ -1,0 +1,13 @@
+# Under a run that finished: the answers, for setting up another machine the
+# same way. Choosing the row is the consent.
+title: Share the configuration
+description: Put these answers online at paste.rs, to set up another machine exactly like this one. Anyone with the address can read them; the password is not among them.
+fail: The configuration could not be put online. Is this machine online?
+simulates: true
+
+report: |
+  Configuration shared
+
+  Scan the code, or type the word at the end of the address into the online
+  starting point of another installation.
+shows: ARCH_OS_CONFIG_URL

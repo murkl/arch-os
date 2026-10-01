@@ -1,0 +1,1 @@
+[ -n "$(list_devices)" ]

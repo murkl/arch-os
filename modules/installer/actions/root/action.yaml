@@ -1,4 +1,0 @@
-# Named under requires: the work waits for it, and nothing inside this program
-# can put it right. What is_root says on stderr is the page - see oak.sh.
-title: Running as root
-script: is_root

@@ -1,41 +1,20 @@
-# What more than one script of this module has to agree about, sourced by Oak in
-# front of every one of them. Anything a single script needs stays in that
-# script; the functions a declaration calls by name are at the bottom.
+# What several scripts of Create boot medium share, sourced in front of each
+# after oak.sh. The functions the yaml calls by name are at the bottom.
 
-# Where the program was started, which is where Oak keeps the answers and the
-# log. Which release this is, and where it is published, is oak.sh's.
+# Where the program was started, which is where Oak keeps the answers.
 HERE="$(dirname "$MODULE_CONF")"
 
-# ////////////////////////////////////////////////////////////////////////////
-# WHAT IS WRITTEN, AND FROM WHERE
-# ////////////////////////////////////////////////////////////////////////////
-
-# The image in the download folder, named after the version rather than read out
-# of a release: a machine with the file already here needs no release to name it.
+# The image, named after the version: a machine that has it needs no release.
 image() { printf '%s/arch-os-%s-x86_64.iso' "$(download_dir)" "$VERSION"; }
 
-# What that release publishes the image has to hash to, beside it in the form
-# `sha256sum -c` reads. The download writes it, or takes it away where there is
-# none to be had, and the check after it goes by this file alone: the network
-# is read once, so the download and the check cannot disagree about whether
-# there was a checksum.
+# The checksum beside it, as `sha256sum -c` reads it. The download writes it or
+# takes it away, so the network is read once.
 checksum() { printf '%s.sha256' "$(image)"; }
 
-# ////////////////////////////////////////////////////////////////////////////
-# ROOT, FOR THE WRITE
-# ////////////////////////////////////////////////////////////////////////////
-
-# This module runs as whoever started it, on somebody's own machine, where a
-# root process leaves two gigabytes in their home that only root can delete
-# again. So root is taken for one command at a time, and only in the step that
-# writes the device.
-#
-# Where sudo wants a password, it is the one typed into the interface, handed to
-# sudo on stdin, so the screen is never handed over for a prompt. -k asks for it
-# every time rather than leaning on a credential sudo may have forgotten since,
-# and -p '' keeps the prompt it no longer needs out of the log. The commands
-# this wraps read nothing from stdin, which is left holding the rest of the pipe.
-# Where it wants none, -n makes sure it never stops to ask.
+# Root for one command, only in the step that writes: a root process would
+# leave two gigabytes in somebody's home that only root can delete. The password
+# typed into the interface goes to sudo on stdin; -k asks every time, -p '' keeps
+# the prompt out of the log, and -n makes sure a sudo that needs none never asks.
 as_root() {
     if [ "$(id -u)" -eq 0 ]; then
         "$@"
@@ -50,17 +29,7 @@ as_root() {
 # THE YAML | Every function a declaration calls by name
 # ////////////////////////////////////////////////////////////////////////////
 
-# Offered anywhere but on the live image: this writes the image the other two
-# are booted from, and on the live image there is a machine to work on instead.
-off_live_image() {
-    on_live_image || return 0
-    echo "Create boot medium writes a device from an ordinary Linux machine. On the live image there is a machine to work on instead - open the Installer or the Recovery." >&2
-    return 1
-}
-
-# Where both downloads go, before there is an answer and as the value the
-# question opens on: the folder this session keeps downloads in, or the one
-# every desktop falls back to.
+# This session's download folder, or the one every desktop falls back to.
 # https://specifications.freedesktop.org/basedir-spec/latest/
 download_dir() {
     [ -n "$ARCH_OS_DOWNLOAD_DIR" ] && {
@@ -74,10 +43,8 @@ download_dir() {
     printf '%s/Downloads' "${HOME:-$HERE}"
 }
 
-# The USB disks this machine has: the device path, a tab, and what a person
-# picks it by. By transport rather than by anything read off the partitions, and
-# without the ones the running system is on - a system can live on a USB disk
-# too, and writing over it is the one mistake that cannot be taken back.
+# The USB disks, by transport, without the ones the running system is on: a
+# system can live on a USB disk too, and writing over it cannot be taken back.
 list_devices() {
     local path shown
     while IFS=$'\t' read -r path shown; do
@@ -87,10 +54,8 @@ list_devices() {
         awk '$2 == "usb" { path = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); sub(/ +$/, ""); print path "\t" path "  " $0 }')
 }
 
-# Whether the running system has something on that disk: swap, or a file system
-# mounted anywhere but where a stick is put - under /run/media by the desktop,
-# under /media or /mnt by hand. Raw output, where a partition mounted twice has
-# its mount points joined by an escaped newline.
+# Something of the running system on that disk: swap, or a mount anywhere but
+# where a stick is put. Raw output joins two mount points with an escaped newline.
 in_system_use() {
     lsblk -nro MOUNTPOINTS "$1" | awk '
         { n = split($0, mounts, /\\x0a/) }
@@ -98,17 +63,13 @@ in_system_use() {
         END { exit !found }'
 }
 
-# Whether writing the device needs a password: not as root, and not where a sudo
-# rule lets this account do without one. -k leaves out a password sudo still
-# remembers from a terminal a minute ago - it will have forgotten it by the time
-# the download is done.
+# Whether the write needs a password: not as root, nor where a sudo rule says so.
+# -k ignores a password sudo remembers now and will have forgotten by the write.
 needs_password() {
     if [ "$(id -u)" -eq 0 ] || sudo -nk true 2>/dev/null; then echo false; else echo true; fi
 }
 
-# The password, tried on sudo before it is taken: a command that does nothing,
-# as root. A simulated run is on somebody's own machine, whose sudo is not ours
-# to try.
+# The password tried on sudo before it is taken: a command that does nothing.
 sudo_accepts() {
     debugging && return 0
     as_root true

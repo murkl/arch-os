@@ -1,0 +1,15 @@
+# The online starting point: every answer of a configuration shared at the end
+# of an earlier installation, but the disk, which is this machine's own.
+title: Online (paste.rs)
+fail: No Arch OS configuration could be loaded from {{ARCH_OS_CONFIG_SOURCE}}. Check the code, and that this machine is online.
+
+variable:
+  name: ARCH_OS_CONFIG_SOURCE
+  title: Configuration code
+  description: |
+    The code of a shared configuration: the short word at the end of a
+    paste.rs address, or the whole address. Every answer it contains can
+    still be changed afterwards.
+  required: true
+  pattern: '^[A-Za-z0-9][A-Za-z0-9:/._-]*$'
+  error: A code such as aBc12, or the whole address it belongs to.

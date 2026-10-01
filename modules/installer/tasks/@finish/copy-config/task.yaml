@@ -1,0 +1,8 @@
+title: Copy the answers and the log into the system
+
+# Last, so the log holds everything; the run says here that the work is done.
+needs: [first-login, orphans, snapper, secure-boot]
+report: |
+  Arch OS is installed
+
+  {{ARCH_OS_HOSTNAME}} is on {{ARCH_OS_DISK}} and ready to start.

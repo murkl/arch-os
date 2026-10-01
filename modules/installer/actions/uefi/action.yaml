@@ -1,5 +1,2 @@
-# Named under requires: the two firmware settings an installation cannot be
-# started without, looked at before anything is asked. Neither can be fixed
-# from inside this program - what action.sh says on stderr is the page, and
-# what it says to do.
-title: Booted in UEFI mode, with Secure Boot off
+title: Booted in UEFI mode
+fail: This machine booted in BIOS mode, which Arch OS does not install to. Set the boot mode to UEFI in the firmware settings and start again.

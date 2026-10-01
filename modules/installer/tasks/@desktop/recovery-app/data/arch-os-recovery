@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Written by the Arch OS Installer: one question, then a restart into the
+# Recovery. systemd-boot starts that entry once; the next boot is the system.
+
+case "${LC_ALL:-${LC_MESSAGES:-$LANG}}" in
+de*) question="In die Recovery neu starten?" ;;
+*) question="Restart into the Recovery?" ;;
+esac
+
+zenity --question --title=Recovery --text="$question" || exit 0
+systemctl reboot --boot-loader-entry="{{ENTRY}}"

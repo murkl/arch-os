@@ -21,13 +21,14 @@ SHELL       := /bin/bash
 # THE PRODUCT | What a release is called and what it holds
 # ////////////////////////////////////////////////////////////////////////////
 
-# One binary, the declaration of the product it drives, the shell every module
-# of it shares, and one folder per module. Oak looks for all of it beside its
-# own binary.
-APP           := oak
-PRODUCT       := oak.yaml
-PRODUCT_SHELL := oak.sh
-MODULES_DIR   := modules
+# One binary, the declaration of the product it drives, the shell and the
+# actions its modules share, and one folder per module. Oak looks for all of it
+# beside its own binary.
+APP             := oak
+PRODUCT         := oak.yaml
+PRODUCT_SHELL   := oak.sh
+PRODUCT_ACTIONS := actions
+MODULES_DIR     := modules
 
 # Where this project's version is written, and what everything is named after:
 # both filenames, the ISO label and the tag `v` + this - the `v` belongs to the
@@ -60,7 +61,7 @@ MODULE_PARTS := module.sh data locales tasks actions
 # rather than followed, so a build of a given commit is the same build tomorrow.
 # Written without the `v` its tag carries.
 OAK_REPO    := murkl/oak
-OAK_VERSION ?= 0.13.0
+OAK_VERSION ?= 0.14.0
 OAK_ASSET   := oak-linux-amd64
 OAK_DIR     := .oak
 
@@ -138,8 +139,8 @@ ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_GLYPHS) $(wildcard $(ISO_DIR)/src
 # Every script of every module and the shell they all share, and every yaml for
 # the check that reads both. Looked up when they are used, so only the targets
 # that read them pay for it.
-MODULE_SCRIPTS = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -name '*.sh')
-MODULE_YAML    = $(shell find $(MODULES_DIR) -name '*.yaml')
+MODULE_SCRIPTS = $(PRODUCT_SHELL) $(shell find $(PRODUCT_ACTIONS) $(MODULES_DIR) -name '*.sh')
+MODULE_YAML    = $(shell find $(PRODUCT_ACTIONS) $(MODULES_DIR) -name '*.yaml')
 
 # The shell a module ships as a file of somebody's home rather than as a task.
 # Found by the name it lands under, since a .bashrc carries no extension. zsh is
@@ -147,12 +148,16 @@ MODULE_YAML    = $(shell find $(MODULES_DIR) -name '*.yaml')
 MODULE_SHELL = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/data/bashrc $(MODULES_DIR)/*/tasks/@*/*/data/aliases)
 MODULE_ZSH   = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/data/zshrc)
 
+# A program a module ships into the new system, named outright: it carries the
+# name it lands under, and no extension a search would find it by.
+MODULE_PROGRAMS := $(MODULES_DIR)/installer/tasks/@desktop/recovery-app/data/arch-os-recovery
+
 # Everything a module can put on a screen: the declarations, the scripts and
 # the shell they share, the tables and every catalog. The READMEs are the one
 # thing here nobody reads on a console, and fastfetch's config is a picture for
 # a graphical terminal: the Arch logo it draws is made of block quadrants no
 # console font has either.
-MODULE_TEXT = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -type f ! -name '*.md' ! -name fastfetch.jsonc)
+MODULE_TEXT = $(PRODUCT_SHELL) $(shell find $(PRODUCT_ACTIONS) $(MODULES_DIR) -type f ! -name '*.md' ! -name fastfetch.jsonc)
 
 # A module's own check of the lookup tables it ships. Found by name rather than
 # named outright, so a module that grows tables is a folder and nothing here has
@@ -243,15 +248,17 @@ oak:
 
 # The runtime, the product's declaration and a clean copy of every module. The
 # folder is emptied first, so what is in it afterwards is this build and nothing
-# else. The templates and the table checks go out again: a .pot is how a module
-# is translated and a data/check.sh is how its tables are held to the system
-# they name - neither is part of what runs.
+# else. The templates, the table checks and the linter's config go out again: a
+# .pot is how a module is translated, a data/check.sh how its tables are held to
+# the system they name, a .shellcheckrc how its shell is read - none of them is
+# part of what runs.
 build: oak-check
 	rm -rf $(RELEASE_DIR)
 	mkdir -p $(RELEASE_DIR)
 	install -m 755 $(OAK_BIN) $(RELEASE_DIR)/$(APP)
 	install -m 644 $(PRODUCT) $(RELEASE_DIR)/$(PRODUCT)
 	install -m 644 $(PRODUCT_SHELL) $(RELEASE_DIR)/$(PRODUCT_SHELL)
+	cp -r $(PRODUCT_ACTIONS) $(RELEASE_DIR)/$(PRODUCT_ACTIONS)
 	for m in $(MODULES); do \
 		dest=$(RELEASE_DIR)/$(MODULES_DIR)/$$m; \
 		mkdir -p $$dest; \
@@ -260,7 +267,7 @@ build: oak-check
 			[ -e $(MODULES_DIR)/$$m/$$part ] && cp -r $(MODULES_DIR)/$$m/$$part $$dest/ || true; \
 		done; \
 	done
-	find $(RELEASE_DIR) \( -name '*.pot' -o -name 'check.sh' \) -delete
+	find $(RELEASE_DIR) \( -name '*.pot' -o -name 'check.sh' -o -name .shellcheckrc \) -delete
 
 # The same shape without the build, for working on the sources. The binary is
 # copied rather than linked: Oak resolves its own path before looking beside
@@ -269,6 +276,7 @@ dev: oak-check
 	@mkdir -p $(DEV_DIR)
 	@ln -sfn ../$(PRODUCT) $(DEV_DIR)/$(PRODUCT)
 	@ln -sfn ../$(PRODUCT_SHELL) $(DEV_DIR)/$(PRODUCT_SHELL)
+	@ln -sfn ../$(PRODUCT_ACTIONS) $(DEV_DIR)/$(PRODUCT_ACTIONS)
 	@ln -sfn ../$(MODULES_DIR) $(DEV_DIR)/$(MODULES_DIR)
 	@install -m 755 $(OAK_BIN) $(DEV_DIR)/$(APP)
 
@@ -286,7 +294,7 @@ inspect: dev
 tarball: build
 	tar -czf $(DIST_DIR)/$(TARBALL) --owner=0 --group=0 --sort=name \
 		--transform 's,^,$(STEM)/,' \
-		-C $(RELEASE_DIR) $(APP) $(PRODUCT) $(PRODUCT_SHELL) $(MODULES_DIR)
+		-C $(RELEASE_DIR) $(APP) $(PRODUCT) $(PRODUCT_SHELL) $(PRODUCT_ACTIONS) $(MODULES_DIR)
 
 # The images, out of the release already in dist/ rather than out of a second
 # build of the same sources: the Recovery, and the ISO that carries it. What
@@ -380,19 +388,19 @@ locales-check: dev
 # and two tests passed that way while checking nothing.
 lint:
 	shellcheck -s sh -S style $(POSIX_SCRIPTS)
-	shellcheck -S style $(ISO_SCRIPTS)
+	shellcheck -S style $(ISO_SCRIPTS) $(MODULE_PROGRAMS)
 	shellcheck -x -S style $(MODULE_SCRIPTS)
 	shellcheck -s bash -S style -e SC1091 $(MODULE_SHELL)
 	for file in $(MODULE_ZSH); do zsh -n "$$file"; done
 	shfmt -d -ln posix -i 4 $(POSIX_SCRIPTS)
-	shfmt -d -i 4 $(ISO_SCRIPTS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
+	shfmt -d -i 4 $(ISO_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
 	yamllint .
 	actionlint
 	zizmor --offline --persona auditor .github
 	@! grep -nE 'arch-chroot [^|&;]*[[:space:]](command|type|hash|source|alias)[[:space:]]' \
 		$(MODULE_SCRIPTS) $(MODULE_YAML) \
 		|| { echo "a shell builtin cannot be run through arch-chroot - see has_command" >&2; exit 1; }
-	@! grep -nE '^[[:space:]]*(script|test|command|prefill|apply|answer):[[:space:]]*.*[|&;<>`$$]' $(MODULE_YAML) \
+	@! grep -nE '^[[:space:]]*(script|command|prefill|apply|answer|check):[[:space:]]*.*[|&;<>`$$]' $(MODULE_YAML) \
 		|| { echo "shell inside a yaml is linted by nothing and gives a failure no line to point at - put it in the .sh file beside it, or a function in module.sh, and name that here" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*\}[[:space:]]*>>?[[:space:]]*"\$$\{MNT\}' $(MODULE_SCRIPTS) \
 		|| { echo "a file written into the new system is a template beside its task, put in place with render - see module.sh" >&2; exit 1; }
@@ -401,7 +409,7 @@ lint:
 
 fmt:
 	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)
-	shfmt -w -i 4 $(ISO_SCRIPTS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
+	shfmt -w -i 4 $(ISO_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
 
 # A virtual console holds one font and that font holds one table of glyphs, so a
 # character outside it is a box on the screen - in whichever language it happens
