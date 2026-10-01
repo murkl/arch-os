@@ -9,32 +9,16 @@ description: Repair an Arch Linux system that is already on a disk.
 
 # What starting the work is called: the first row of the menu, and the button on
 # the last page before the disk is opened.
-action: Repair
+start: Repair
 
-# The same rule the Installer carries, for the same reason: a system is repaired
-# from outside itself, which means from a booted Arch Linux live image.
-requires: |
-  arch_live && return 0
-  echo "The Recovery runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there." >&2
-  exit 1
-
-# A repair downloads nothing - the network may be what broke, and kernel images
-# come from the package cache - so nothing waits for the internet. A wireless
-# network can still be joined in the settings, for whatever somebody wants to
-# fetch in the shell. How is hooks/@online and hooks/@wlan-*, with the shell
-# of oak.sh.
-network:
-  wlan: true
-  internet: optional
-
-# Read on the way out, when the recovery closes and the machine keeps running.
-console: Type recovery at the prompt to start it again.
-
-confirm: |
-  The system on {{ARCH_OS_RECOVERY_DISK}} will be unlocked and mounted at /mnt.
-
-  This does not change anything on it. Once it is open, you can roll back to a
-  snapshot, rebuild the boot files or open a shell. Each is offered separately.
+# Where it runs its actions, each a folder under actions/. The same live image
+# the Installer is offered on, and nothing waits for a network: a repair
+# downloads nothing, and the network may be what broke.
+offered: [live-image]
+requires: [root]
+menu: [wlan]
+leave: [restart, shutdown]
+failure: [share-log]
 
 # Each is a folder under tasks/, marked - tasks/@repair/ - and lying in one is
 # what puts a task in the run and where.
@@ -122,3 +106,9 @@ variables:
     required: true
     filter: open
     command: ./tasks/@repair/rollback/snapshots.sh
+
+  # Not a question on any page: the address a failed run's log was put at,
+  # answered by actions/share-log where somebody chose to share it.
+  - name: ARCH_OS_LOG_URL
+    title: Shared log
+    description: Where the log of a run that failed was put online.

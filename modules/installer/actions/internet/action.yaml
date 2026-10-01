@@ -1,0 +1,7 @@
+# Named under requires: everything that gets installed is downloaded, so the
+# work waits for the internet - after the keyboard, which a passphrase is typed
+# on. A cable needs nothing: it comes up by itself and carries on. Where the
+# machine has a card, the wireless network is what puts it right.
+title: Internet
+fallback: wlan
+script: internet_ready

@@ -5,37 +5,23 @@
 # Nothing here may fail the installation: the system on the disk is finished by
 # the time this is offered, and an unreachable pastebin says nothing about it.
 
-# paste.rs takes a file over an ordinary POST, answers with the address it now
-# lives at, and serves it back as plain text. No account, no key.
-service="https://paste.rs"
-
-# An answer, appended to the file Oak keeps them in and reads back. Any earlier
-# line for the same name is dropped, and the file is written whole and moved
-# into place.
-answer() {
-    local tmp="${MODULE_CONF}.answer"
-    grep -v "^${1}=" "$MODULE_CONF" >"$tmp" 2>/dev/null || : >>"$tmp"
-    printf "%s='%s'\n" "$1" "$(printf '%s' "$2" | sed "s/'/'\\\\''/g")" >>"$tmp"
-    mv -f "$tmp" "$MODULE_CONF"
-}
+# Where it goes and how an answer is written back are THE SHARING in oak.sh,
+# which every module shares its log with too.
 
 # Simulated, this still answers with an address - it is why task.yaml says it
 # simulates itself: the page at the end of a run is the one most worth looking
 # at while this module is being worked on.
 debugging && {
-    answer ARCH_OS_CONFIG_URL "${service}/demo"
+    answer ARCH_OS_CONFIG_URL "${PASTE}/demo"
     return 0
 }
 
 # Without the lines about the sharing itself: a configuration naming where an
 # earlier copy went would send whoever opened it somewhere else again.
-if ! url="$(grep -v '^ARCH_OS_CONFIG_' "$MODULE_CONF" |
-    fetch_url -s --max-time 30 --data-binary @- "${service}/")"; then
+if ! url="$(grep -v '^ARCH_OS_CONFIG_' "$MODULE_CONF" | paste_online)"; then
     echo "the configuration could not be shared" >&2
     return 0
 fi
-
-url="$(printf '%s' "$url" | tr -d '[:space:]')"
 [ -n "$url" ] || return 0
 
 # An answer of its own, which is what puts it on the page the run stops on next.

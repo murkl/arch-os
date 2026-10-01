@@ -50,6 +50,14 @@ as_root() {
 # THE YAML | Every function a declaration calls by name
 # ////////////////////////////////////////////////////////////////////////////
 
+# Offered anywhere but on the live image: this writes the image the other two
+# are booted from, and on the live image there is a machine to work on instead.
+off_live_image() {
+    on_live_image || return 0
+    echo "Create boot medium writes a device from an ordinary Linux machine. On the live image there is a machine to work on instead - open the Installer or the Recovery." >&2
+    return 1
+}
+
 # Where both downloads go, before there is an answer and as the value the
 # question opens on: the folder this session keeps downloads in, or the one
 # every desktop falls back to.

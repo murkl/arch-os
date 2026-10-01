@@ -554,6 +554,19 @@ close_target() {
 # so every list a question offers, every value one opens on and every check a
 # declaration makes is a function here.
 
+# What the work waits for: everything that gets installed is downloaded. The
+# sentence is the page it waits on, and it offers a wireless network only
+# where there is a card to join one with - see actions/internet.
+internet_ready() {
+    is_online && return 0
+    if wlan_card; then
+        echo "There is no internet connection. Plug in a cable and it carries on by itself, or join a wireless network." >&2
+    else
+        echo "There is no internet connection. Plug in a cable and it carries on by itself." >&2
+    fi
+    return 1
+}
+
 # Whether this machine is itself a virtual one: the guest tools go in without a
 # question there, and running virtual machines of its own is asked only where
 # it is not.

@@ -49,7 +49,7 @@ MODULES := $(notdir $(wildcard $(MODULES_DIR)/*))
 # by name. A README and a linter's config are how it is worked on, not part of
 # what runs.
 MODULE_DECL  := module.yaml
-MODULE_PARTS := module.sh data locales tasks hooks
+MODULE_PARTS := module.sh data locales tasks actions
 
 # ////////////////////////////////////////////////////////////////////////////
 # OAK | The runtime this is built on
@@ -60,7 +60,7 @@ MODULE_PARTS := module.sh data locales tasks hooks
 # rather than followed, so a build of a given commit is the same build tomorrow.
 # Written without the `v` its tag carries.
 OAK_REPO    := murkl/oak
-OAK_VERSION ?= 0.12.0
+OAK_VERSION ?= 0.13.0
 OAK_ASSET   := oak-linux-amd64
 OAK_DIR     := .oak
 
@@ -393,7 +393,7 @@ lint:
 		$(MODULE_SCRIPTS) $(MODULE_YAML) \
 		|| { echo "a shell builtin cannot be run through arch-chroot - see has_command" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*(script|test|command|prefill|apply|answer):[[:space:]]*.*[|&;<>`$$]' $(MODULE_YAML) \
-		|| { echo "a task's or hook's shell is linted by nothing inside a yaml and gives a failure no line to point at - put it in the .sh file beside it and name that file here" >&2; exit 1; }
+		|| { echo "shell inside a yaml is linted by nothing and gives a failure no line to point at - put it in the .sh file beside it, or a function in module.sh, and name that here" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*\}[[:space:]]*>>?[[:space:]]*"\$$\{MNT\}' $(MODULE_SCRIPTS) \
 		|| { echo "a file written into the new system is a template beside its task, put in place with render - see module.sh" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*![[:space:]]' $(MODULE_SCRIPTS) \

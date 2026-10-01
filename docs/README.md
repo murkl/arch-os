@@ -38,8 +38,8 @@
 - AUR helper, 32-bit support, container engine, firewall, SSH server, automatic housekeeping
 - The text editor of your choice - nano, vim, neovim, micro or helix - with a small configuration of its own: a theme close to the system's palette, line numbers, the mouse, and tabs of four spaces
 - [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager, Shell Enhancement (zsh)
-- Recovery in the boot menu and on the same image, works without a network - and opens straight on its menu, in your language, with a wireless network in its settings whenever something has to be fetched
-- Wireless network joined from the Installer itself, before the first download and later in its settings - offered only where there is a card - and whether this machine is online always in the corner of the screen
+- Recovery in the boot menu and on the same image, works without a network - and opens straight on its menu, in your language, with a wireless network on it whenever something has to be fetched
+- Wireless network joined from the Installer itself, before the first download and later from its menu - offered only where there is a card, and a cable always preferred - and whether this machine is online always in the corner of the screen
 - Create boot medium: writes the USB device from any Linux machine, no root needed but for the write itself - and the password for that is typed into the interface like any other
 - Virtual machines both ways: guest tools inside a VM on their own, libvirt and QEMU on real hardware if you want them
 - Two starting points, **Core** and **Desktop** - everything else stays a row in the settings
@@ -160,7 +160,7 @@ Five parts, kept apart:
 | **[`modules/imager`](../modules/imager)** | Writes the device the other two boot from |
 | **[`iso`](../iso)** | Turns a build of those into the bootable images: the ISO, and the Recovery the Installer writes beside the system |
 
-Oak is the runtime, a repository of its own, and knows nothing about Arch Linux. Modules are data, not programs. A release is Oak with `oak.yaml` and `modules/` beside it. Which module a machine can open is that module's own `requires:` - nothing else holds a list.
+Oak is the runtime, a repository of its own, and knows nothing about Arch Linux. Modules are data, not programs. A release is Oak with `oak.yaml` and `modules/` beside it. Which module a machine can open is that module's own `offered:` - nothing else holds a list.
 
 **[➜ Reference](REFERENCE.md)** for what is put on the disk and why. **[➜ Changelog](../CHANGELOG.md)** for what each release changed. **[➜ Contributing](CONTRIBUTING.md)** for branches, releases, how a commit becomes an image.
 

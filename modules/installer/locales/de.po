@@ -20,7 +20,7 @@ msgstr "Deutsch"
 msgid "Installer"
 msgstr "Installer"
 
-#. what it is, in one sentence, on the page that offers it
+#. what it is, in one sentence, under the row that starts the work
 #: module.yaml
 msgid "Install Arch Linux on this machine."
 msgstr "Arch Linux auf diesen Rechner installieren."
@@ -29,22 +29,6 @@ msgstr "Arch Linux auf diesen Rechner installieren."
 #: module.yaml
 msgid "Install"
 msgstr "Installieren"
-
-#. how to get back in, read on the way out to the console
-#: module.yaml
-msgid "Type installer at the prompt to start it again."
-msgstr "Mit dem Befehl installer startest du ihn wieder."
-
-#. the last thing read before the first task runs
-#: module.yaml
-msgid ""
-"Arch Linux will be installed on {{ARCH_OS_DISK}} as {{ARCH_OS_HOSTNAME}}.\n"
-"\n"
-"Everything on that disk will be erased and this cannot be undone. Nothing has been changed so far."
-msgstr ""
-"Arch Linux wird auf {{ARCH_OS_DISK}} als {{ARCH_OS_HOSTNAME}} installiert.\n"
-"\n"
-"Alles auf diesem Datenträger wird gelöscht und das lässt sich nicht rückgängig machen. Bisher wurde nichts verändert."
 
 #. a starting point: the question
 #: module.yaml
@@ -503,6 +487,16 @@ msgstr "Der Code einer geteilten Konfiguration: das kurze Wort am Ende einer pas
 msgid "A code such as aBc12, or the whole address it belongs to."
 msgstr "Ein Code wie aBc12 — oder die vollständige Adresse dazu."
 
+#. ARCH_OS_LOG_URL: the question
+#: module.yaml
+msgid "Shared log"
+msgstr "Geteiltes Log"
+
+#. ARCH_OS_LOG_URL: what it means
+#: module.yaml
+msgid "Where the log of a run that failed was put online."
+msgstr "Wo das Log eines gescheiterten Laufs online steht."
+
 #. the header's status, while its check says yes
 #: ../../oak.yaml
 msgid "Online"
@@ -759,12 +753,104 @@ msgstr ""
 "\n"
 "Verloren geht so oder so nichts, die Installation ist fertig. Eingehängt zu lassen lohnt nur, wenn du von hier aus weiterarbeiten willst."
 
-#. the check, read where it is the one that failed
-#: hooks/@preflight/root/hook.yaml
+#. an action: its row, and the heading over its pages
+#: actions/internet/action.yaml
+msgid "Internet"
+msgstr "Internet"
+
+#. an action: its row, and the heading over its pages
+#: actions/live-image/action.yaml
+msgid "An Arch Linux live image"
+msgstr "Ein Arch-Linux-Live-Image"
+
+#. an action: its row, and the heading over its pages
+#: actions/restart/action.yaml
+msgid "Restart"
+msgstr "Neu starten"
+
+#. an action: what it does, under its row
+#: actions/restart/action.yaml
+msgid "Close this machine down and start it again."
+msgstr "Den Rechner herunterfahren und neu starten."
+
+#. an action: its row, and the heading over its pages
+#: actions/root/action.yaml
 msgid "Running as root"
 msgstr "Läuft als root"
 
-#. the check, read where it is the one that failed
-#: hooks/@preflight/firmware/hook.yaml
+#. an action: its row, and the heading over its pages
+#: actions/share-log/action.yaml
+msgid "Share the log"
+msgstr "Log teilen"
+
+#. an action: what it does, under its row
+#: actions/share-log/action.yaml
+msgid "Put the log of this run online, for whoever is helping."
+msgstr "Das Log dieses Laufs online stellen, für alle, die helfen."
+
+#. asked before the action runs
+#: actions/share-log/action.yaml
+msgid ""
+"Put the log of this run online?\n"
+"\n"
+"It goes to paste.rs, and its address comes back as a code to scan. Anyone holding that address can read it. It holds every answer but the passwords, which were never written down anywhere."
+msgstr ""
+"Das Log dieses Laufs online stellen?\n"
+"\n"
+"Es geht an paste.rs, und seine Adresse kommt als Code zum Scannen zurück. Wer diese Adresse hat, kann es lesen. Es enthält jede Antwort außer den Passwörtern, die nirgends aufgeschrieben wurden."
+
+#. read once the action is done, and held on until somebody has
+#: actions/share-log/action.yaml
+msgid ""
+"Log shared\n"
+"\n"
+"Scan the code, or read the address under it, and hand it to whoever is helping."
+msgstr ""
+"Log geteilt\n"
+"\n"
+"Scanne den Code oder lies die Adresse darunter und gib sie an die Person, die dir hilft."
+
+#. an action: its row, and the heading over its pages
+#: actions/shutdown/action.yaml
+msgid "Shut down"
+msgstr "Herunterfahren"
+
+#. an action: what it does, under its row
+#: actions/shutdown/action.yaml
+msgid "Switch this machine off."
+msgstr "Den Rechner ausschalten."
+
+#. an action: its row, and the heading over its pages
+#: actions/uefi/action.yaml
 msgid "Booted in UEFI mode, with Secure Boot off"
 msgstr "Im UEFI-Modus gestartet, Secure Boot aus"
+
+#. an action: its row, and the heading over its pages
+#: actions/wlan/action.yaml
+msgid "Wireless network"
+msgstr "WLAN"
+
+#. an action: what it does, under its row
+#: actions/wlan/action.yaml
+msgid "Join a wireless network."
+msgstr "Mit einem WLAN verbinden."
+
+#. ARCH_OS_WLAN_SSID: a page of the action
+#: actions/wlan/action.yaml
+msgid "Network"
+msgstr "Netzwerk"
+
+#. ARCH_OS_WLAN_PASSPHRASE: a page of the action
+#: actions/wlan/action.yaml
+msgid "Passphrase"
+msgstr "Passwort"
+
+#. ARCH_OS_WLAN_PASSPHRASE: what it means
+#: actions/wlan/action.yaml
+msgid "Left empty for an open network."
+msgstr "Bei einem offenen Netzwerk leer lassen."
+
+#. an action: its row, and the heading over its pages
+#: actions/wlan-card/action.yaml
+msgid "A wireless card"
+msgstr "Eine WLAN-Karte"
