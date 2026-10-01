@@ -1,19 +1,20 @@
 # What the Recovery is, what it asks and the order it works in. Every list and
-# derived answer below is a function in module.sh.
+# derived answer below is a function in oak.sh.
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
 title: Recovery
 description: Repair an Arch Linux system that is already on a disk.
-start: Repair
+start-title: Repair
 
 # Nothing waits for a network: a repair downloads nothing, and the network may
 # be what broke.
-offered: [live-image]
-requires: [root]
-menu: [wifi]
-leave: [restart, shutdown]
-failure: [share-log]
-success: [chroot]
+rules:
+  offer-if: [live-image]
+  start-if: [root]
+  menu: [wifi]
+  on-leave: [restart, shutdown]
+  on-failure: [share-log]
+  on-success: [chroot]
 
 stages:
   - repair # opened, rolled back, made bootable again
@@ -33,7 +34,7 @@ variables:
     first: true
     command: list_keymaps
     prefill: live_keymap
-    apply: load_console_keyboard
+    apply: load_recovery_keymap
     pattern: '^[A-Za-z0-9_.-]+$'
 
   - name: ARCH_OS_RECOVERY_DISK

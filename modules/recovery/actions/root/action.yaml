@@ -1,0 +1,2 @@
+title: Running as root
+fail: This has to run as root. Log in as root and start it again.

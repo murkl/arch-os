@@ -1,6 +1,6 @@
 title: Install the AUR helper
 needs: [multilib]
-conditions: ARCH_OS_AUR_HELPER != none
+conditions: ARCH_OS_AUR_HELPER_ENABLED == true
 
 # The AUR can be out of reach for days, and nothing else needs the helper.
 optional: true

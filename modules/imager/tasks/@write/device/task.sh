@@ -1,6 +1,6 @@
 # The image onto the device as one raw copy: a hybrid ISO already carries the
 # partition table and both boot paths. Root only for the commands that need it,
-# through as_root in module.sh.
+# through as_root in oak.sh.
 # https://wiki.archlinux.org/title/USB_flash_installation_medium
 
 device="$ARCH_OS_IMAGE_DEVICE"

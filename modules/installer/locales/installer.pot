@@ -33,42 +33,32 @@ msgstr ""
 msgid "Install"
 msgstr ""
 
-#. a starting point: the question
-#: module.yaml
-msgid "Setup"
-msgstr ""
-
-#. starting point Setup: what it means
-#: module.yaml
-msgid "Choose what kind of system to install. Every detail can still be changed afterwards."
-msgstr ""
-
-#. starting point Setup: a row
+#. a starting point: its row
 #: module.yaml
 msgid "Desktop"
 msgstr ""
 
-#. starting point Setup, Desktop: what choosing it does
+#. starting point Desktop: what choosing it does
 #: module.yaml
 msgid "The Core, with a GNOME desktop on top of it - drivers, codecs, fonts and everyday applications."
 msgstr ""
 
-#. starting point Setup: a row
+#. a starting point: its row
 #: module.yaml
 msgid "Core"
 msgstr ""
 
-#. starting point Setup, Core: what choosing it does
+#. starting point Core: what choosing it does
 #: module.yaml
 msgid "A minimal Arch Linux on the text console, with nothing graphical on it and nothing beyond what you choose."
 msgstr ""
 
-#. starting point Setup: a row
+#. a starting point: its row
 #: module.yaml actions/import-config/action.yaml
 msgid "Online (paste.rs)"
 msgstr ""
 
-#. starting point Setup, Online (paste.rs): what choosing it does
+#. starting point Online (paste.rs): what choosing it does
 #: module.yaml
 msgid "Load every answer from a configuration shared at the end of an earlier installation."
 msgstr ""
@@ -285,14 +275,14 @@ msgstr ""
 msgid "Needed by Steam, Wine and other software that is still 32-bit."
 msgstr ""
 
-#. ARCH_OS_AUR_HELPER: the question
+#. ARCH_OS_AUR_HELPER_ENABLED: the question
 #: module.yaml
 msgid "AUR helper"
 msgstr ""
 
-#. ARCH_OS_AUR_HELPER: what it means
+#. ARCH_OS_AUR_HELPER_ENABLED: what it means
 #: module.yaml
-msgid "Installs software from the Arch User Repository just as easily as from the official repositories. Built here, against the pacman this machine has, which takes about a quarter of an hour."
+msgid "Installs paru, which gets software from the Arch User Repository just as easily as from the official repositories. Built here, against the pacman this machine has, which takes about a quarter of an hour."
 msgstr ""
 
 #. ARCH_OS_CONTAINER_ENGINE: the question
@@ -546,7 +536,7 @@ msgid "Apply the core tweaks"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@system/loader/task.yaml
+#: tasks/@system/bootloader/task.yaml
 msgid "Install the boot loader"
 msgstr ""
 
@@ -688,6 +678,16 @@ msgid ""
 "{{ARCH_OS_HOSTNAME}} is on {{ARCH_OS_DISK}} and ready to start."
 msgstr ""
 
+#. an action: its row, and the heading over its page
+#: actions/chroot/action.yaml
+msgid "Open a shell"
+msgstr ""
+
+#. an action: what it does, under its row
+#: actions/chroot/action.yaml
+msgid "Inside the system on the disk, to look around or fix something by hand. Leave it with exit."
+msgstr ""
+
 #. an action: what a no from it means
 #: actions/import-config/action.yaml
 msgid "No Arch OS configuration could be loaded from {{ARCH_OS_CONFIG_SOURCE}}. Check the code, and that this machine is online."
@@ -716,6 +716,36 @@ msgstr ""
 #. an action: what a no from it means
 #: actions/internet/action.yaml
 msgid "There is no internet connection. Plug in a cable and it carries on by itself."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/live-image/action.yaml
+msgid "An Arch Linux live image"
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/live-image/action.yaml
+msgid "This runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/restart/action.yaml
+msgid "Restart"
+msgstr ""
+
+#. an action: what it does, under its row
+#: actions/restart/action.yaml
+msgid "Close this machine down and start it again."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/root/action.yaml
+msgid "Running as root"
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/root/action.yaml
+msgid "This has to run as root. Log in as root and start it again."
 msgstr ""
 
 #. an action: its row, and the heading over its page
@@ -752,6 +782,39 @@ msgid ""
 msgstr ""
 
 #. an action: its row, and the heading over its page
+#: actions/share-log/action.yaml
+msgid "Share the log"
+msgstr ""
+
+#. an action: what it does, under its row
+#: actions/share-log/action.yaml
+msgid "Put the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it; passwords are never in it."
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/share-log/action.yaml
+msgid "The log could not be put online. Is this machine online?"
+msgstr ""
+
+#. read once the action is done, and held on until somebody has
+#: actions/share-log/action.yaml
+msgid ""
+"Log shared\n"
+"\n"
+"Scan the code, or read the address under it, and hand it to whoever is helping."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/shutdown/action.yaml
+msgid "Shut down"
+msgstr ""
+
+#. an action: what it does, under its row
+#: actions/shutdown/action.yaml
+msgid "Switch this machine off."
+msgstr ""
+
+#. an action: its row, and the heading over its page
 #: actions/uefi/action.yaml
 msgid "Booted in UEFI mode"
 msgstr ""
@@ -762,104 +825,31 @@ msgid "This machine booted in BIOS mode, which Arch OS does not install to. Set 
 msgstr ""
 
 #. an action: its row, and the heading over its page
-#: ../../actions/chroot/action.yaml
-msgid "Open a shell"
-msgstr ""
-
-#. an action: what it does, under its row
-#: ../../actions/chroot/action.yaml
-msgid "Inside the system on the disk, to look around or fix something by hand. Leave it with exit."
-msgstr ""
-
-#. an action: its row, and the heading over its page
-#: ../../actions/live-image/action.yaml
-msgid "An Arch Linux live image"
-msgstr ""
-
-#. an action: what a no from it means
-#: ../../actions/live-image/action.yaml
-msgid "This runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there."
-msgstr ""
-
-#. an action: its row, and the heading over its page
-#: ../../actions/restart/action.yaml
-msgid "Restart"
-msgstr ""
-
-#. an action: what it does, under its row
-#: ../../actions/restart/action.yaml
-msgid "Close this machine down and start it again."
-msgstr ""
-
-#. an action: its row, and the heading over its page
-#: ../../actions/root/action.yaml
-msgid "Running as root"
-msgstr ""
-
-#. an action: what a no from it means
-#: ../../actions/root/action.yaml
-msgid "This has to run as root. Log in as root and start it again."
-msgstr ""
-
-#. an action: its row, and the heading over its page
-#: ../../actions/share-log/action.yaml
-msgid "Share the log"
-msgstr ""
-
-#. an action: what it does, under its row
-#: ../../actions/share-log/action.yaml
-msgid "Put the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it; passwords are never in it."
-msgstr ""
-
-#. an action: what a no from it means
-#: ../../actions/share-log/action.yaml
-msgid "The log could not be put online. Is this machine online?"
-msgstr ""
-
-#. read once the action is done, and held on until somebody has
-#: ../../actions/share-log/action.yaml
-msgid ""
-"Log shared\n"
-"\n"
-"Scan the code, or read the address under it, and hand it to whoever is helping."
-msgstr ""
-
-#. an action: its row, and the heading over its page
-#: ../../actions/shutdown/action.yaml
-msgid "Shut down"
-msgstr ""
-
-#. an action: what it does, under its row
-#: ../../actions/shutdown/action.yaml
-msgid "Switch this machine off."
-msgstr ""
-
-#. an action: its row, and the heading over its page
-#: ../../actions/wifi/action.yaml ../../actions/wifi-passphrase/action.yaml
+#: actions/wifi/action.yaml actions/wifi-passphrase/action.yaml
 msgid "Wireless network"
 msgstr ""
 
 #. an action: what it does, under its row
-#: ../../actions/wifi/action.yaml
+#: actions/wifi/action.yaml
 msgid "Join a wireless network."
 msgstr ""
 
 #. ARCH_OS_WIFI_SSID: the page of the action
-#: ../../actions/wifi/action.yaml
+#: actions/wifi/action.yaml
 msgid "Network"
 msgstr ""
 
 #. an action: its row, and the heading over its page
-#: ../../actions/wifi-card/action.yaml
+#: actions/wifi-card/action.yaml
 msgid "A wireless card"
 msgstr ""
 
 #. an action: what a no from it means
-#: ../../actions/wifi-passphrase/action.yaml
+#: actions/wifi-passphrase/action.yaml
 msgid "{{ARCH_OS_WIFI_SSID}} did not accept that passphrase, or it is out of range."
 msgstr ""
 
 #. ARCH_OS_WIFI_PASSPHRASE: the page of the action
-#: ../../actions/wifi-passphrase/action.yaml
+#: actions/wifi-passphrase/action.yaml
 msgid "Passphrase"
 msgstr ""

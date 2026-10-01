@@ -47,7 +47,7 @@ systemd-boot, `bootctl install`, one entry and one fallback, and the Recovery be
 
 The menu stays hidden: holding space while the machine starts brings it up. The entries carry `sort-key arch`, the key the signed images take from `os-release`, so they come before the Recovery, which carries its own.
 
-`kernel_args` in the loader task is the one source of the command line - the unified image and systemd-boot read it whole.
+`kernel_args` in the bootloader task is the one source of the command line - the unified image and systemd-boot read it whole.
 
 The loader gets a boot entry in the firmware, first in its order. `bootctl` writes that one from the live system rather than from inside the new one: in a chroot it leaves the EFI variables alone, or, told to write them, cannot see the partition and writes an entry that points nowhere. Without an entry the firmware finds the loader only at `\EFI\BOOT\BOOTX64.EFI`, after every entry it already lists has been tried. The entries it still keeps for what the disk held before - a Windows Boot Manager, an earlier installation - are removed along with the old partitions; an entry for another disk stays.
 
@@ -236,7 +236,7 @@ Swap off, sync, unmount, lock: in the Installer before the disk is partitioned, 
 
 ## Files a Task Ships
 
-Every file a task writes into the new system lies in `data/` beside `task.sh`, named after the file it becomes, and is put in place with `render` from `module.sh` - `where` is that folder.
+Every file a task writes into the new system lies in `data/` beside `task.sh`, named after the file it becomes, and is put in place with `render` from `oak.sh` - `where` is that folder.
 
 ```
 render "$(where)/main.conf" KERNEL="$KERNEL" CMDLINE="$cmdline" >"${MNT}/boot/loader/entries/main.conf"

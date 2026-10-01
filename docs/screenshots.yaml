@@ -28,7 +28,7 @@
         press: enter
       - page: Console keyboard  # auto, the layout of the live image
         press: enter
-      - page: [Setup, Desktop, Core]
+      - page: [Starting point, Desktop, Core]
         shot: setup
         press: enter
       - page: Username

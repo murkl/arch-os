@@ -30,42 +30,32 @@ msgstr "Arch Linux auf diesen Rechner installieren."
 msgid "Install"
 msgstr "Installieren"
 
-#. a starting point: the question
-#: module.yaml
-msgid "Setup"
-msgstr "Einrichtung"
-
-#. starting point Setup: what it means
-#: module.yaml
-msgid "Choose what kind of system to install. Every detail can still be changed afterwards."
-msgstr "Wähle, welche Art von System installiert werden soll. Jede Einzelheit lässt sich danach noch ändern."
-
-#. starting point Setup: a row
+#. a starting point: its row
 #: module.yaml
 msgid "Desktop"
 msgstr "Desktop"
 
-#. starting point Setup, Desktop: what choosing it does
+#. starting point Desktop: what choosing it does
 #: module.yaml
 msgid "The Core, with a GNOME desktop on top of it - drivers, codecs, fonts and everyday applications."
 msgstr "Der Core, mit einem GNOME-Desktop darauf - Treiber, Codecs, Schriften und die Programme für den Alltag."
 
-#. starting point Setup: a row
+#. a starting point: its row
 #: module.yaml
 msgid "Core"
 msgstr "Core"
 
-#. starting point Setup, Core: what choosing it does
+#. starting point Core: what choosing it does
 #: module.yaml
 msgid "A minimal Arch Linux on the text console, with nothing graphical on it and nothing beyond what you choose."
 msgstr "Ein minimales Arch Linux auf der Textkonsole, ohne alles Grafische und ohne alles, was du nicht selbst wählst."
 
-#. starting point Setup: a row
+#. a starting point: its row
 #: module.yaml actions/import-config/action.yaml
 msgid "Online (paste.rs)"
 msgstr "Online (paste.rs)"
 
-#. starting point Setup, Online (paste.rs): what choosing it does
+#. starting point Online (paste.rs): what choosing it does
 #: module.yaml
 msgid "Load every answer from a configuration shared at the end of an earlier installation."
 msgstr "Alle Antworten aus einer Konfiguration übernehmen, die am Ende einer früheren Installation geteilt wurde."
@@ -282,15 +272,15 @@ msgstr "32-Bit-Unterstützung"
 msgid "Needed by Steam, Wine and other software that is still 32-bit."
 msgstr "Wird von Steam, Wine und anderer Software gebraucht, die noch 32-bit benötigen."
 
-#. ARCH_OS_AUR_HELPER: the question
+#. ARCH_OS_AUR_HELPER_ENABLED: the question
 #: module.yaml
 msgid "AUR helper"
 msgstr "AUR-Helfer"
 
-#. ARCH_OS_AUR_HELPER: what it means
+#. ARCH_OS_AUR_HELPER_ENABLED: what it means
 #: module.yaml
-msgid "Installs software from the Arch User Repository just as easily as from the official repositories. Built here, against the pacman this machine has, which takes about a quarter of an hour."
-msgstr "Installiert Software aus dem Arch User Repository so einfach wie aus dem offiziellen. Wird hier gebaut, gegen das pacman dieser Maschine, was rund eine Viertelstunde dauert."
+msgid "Installs paru, which gets software from the Arch User Repository just as easily as from the official repositories. Built here, against the pacman this machine has, which takes about a quarter of an hour."
+msgstr "Installiert paru, das Software aus dem Arch User Repository genauso einfach holt wie aus den offiziellen. Wird hier gebaut, gegen das pacman dieser Maschine, was rund eine Viertelstunde dauert."
 
 #. ARCH_OS_CONTAINER_ENGINE: the question
 #: module.yaml
@@ -543,7 +533,7 @@ msgid "Apply the core tweaks"
 msgstr "Core Optimierungen anwenden"
 
 #. the step, as the run lists it
-#: tasks/@system/loader/task.yaml
+#: tasks/@system/bootloader/task.yaml
 msgid "Install the boot loader"
 msgstr "Bootloader installieren"
 
@@ -688,6 +678,16 @@ msgstr ""
 "\n"
 "{{ARCH_OS_HOSTNAME}} liegt auf {{ARCH_OS_DISK}} und ist startbereit. Alles Weitere ist optional."
 
+#. an action: its row, and the heading over its page
+#: actions/chroot/action.yaml
+msgid "Open a shell"
+msgstr "Shell öffnen"
+
+#. an action: what it does, under its row
+#: actions/chroot/action.yaml
+msgid "Inside the system on the disk, to look around or fix something by hand. Leave it with exit."
+msgstr "Im System auf dem Datenträger, um dich umzusehen oder etwas von Hand zu reparieren. Verlassen mit exit."
+
 #. an action: what a no from it means
 #: actions/import-config/action.yaml
 msgid "No Arch OS configuration could be loaded from {{ARCH_OS_CONFIG_SOURCE}}. Check the code, and that this machine is online."
@@ -717,6 +717,36 @@ msgstr "Internet"
 #: actions/internet/action.yaml
 msgid "There is no internet connection. Plug in a cable and it carries on by itself."
 msgstr "Es gibt keine Internetverbindung. Steck ein Kabel ein, dann geht es von selbst weiter."
+
+#. an action: its row, and the heading over its page
+#: actions/live-image/action.yaml
+msgid "An Arch Linux live image"
+msgstr "Ein Arch-Linux-Live-Image"
+
+#. an action: what a no from it means
+#: actions/live-image/action.yaml
+msgid "This runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there."
+msgstr "Das läuft auf einem gestarteten Arch-Linux-Live-Image. Schreib eins mit Bootmedium erstellen, starte die Maschine davon und öffne es dort."
+
+#. an action: its row, and the heading over its page
+#: actions/restart/action.yaml
+msgid "Restart"
+msgstr "Neu starten"
+
+#. an action: what it does, under its row
+#: actions/restart/action.yaml
+msgid "Close this machine down and start it again."
+msgstr "Den Rechner herunterfahren und neu starten."
+
+#. an action: its row, and the heading over its page
+#: actions/root/action.yaml
+msgid "Running as root"
+msgstr "Läuft als root"
+
+#. an action: what a no from it means
+#: actions/root/action.yaml
+msgid "This has to run as root. Log in as root and start it again."
+msgstr "Das muss als root laufen. Melde dich als root an und starte es erneut."
 
 #. an action: its row, and the heading over its page
 #: actions/secure-boot-off/action.yaml
@@ -755,72 +785,22 @@ msgstr ""
 "Scanne den Code — oder tippe das Wort am Ende der Adresse beim paste.rs-Startpunkt einer weiteren Installation ein."
 
 #. an action: its row, and the heading over its page
-#: actions/uefi/action.yaml
-msgid "Booted in UEFI mode"
-msgstr "Im UEFI-Modus gestartet"
-
-#. an action: what a no from it means
-#: actions/uefi/action.yaml
-msgid "This machine booted in BIOS mode, which Arch OS does not install to. Set the boot mode to UEFI in the firmware settings and start again."
-msgstr "Diese Maschine ist im BIOS-Modus gestartet, in den Arch OS nicht installiert. Stelle den Startmodus in den Firmware-Einstellungen auf UEFI und starte neu."
-
-#. an action: its row, and the heading over its page
-#: ../../actions/chroot/action.yaml
-msgid "Open a shell"
-msgstr "Shell öffnen"
-
-#. an action: what it does, under its row
-#: ../../actions/chroot/action.yaml
-msgid "Inside the system on the disk, to look around or fix something by hand. Leave it with exit."
-msgstr "Im System auf dem Datenträger, um dich umzusehen oder etwas von Hand zu reparieren. Verlassen mit exit."
-
-#. an action: its row, and the heading over its page
-#: ../../actions/live-image/action.yaml
-msgid "An Arch Linux live image"
-msgstr "Ein Arch-Linux-Live-Image"
-
-#. an action: what a no from it means
-#: ../../actions/live-image/action.yaml
-msgid "This runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there."
-msgstr "Das läuft auf einem gestarteten Arch-Linux-Live-Image. Schreib eins mit Bootmedium erstellen, starte die Maschine davon und öffne es dort."
-
-#. an action: its row, and the heading over its page
-#: ../../actions/restart/action.yaml
-msgid "Restart"
-msgstr "Neu starten"
-
-#. an action: what it does, under its row
-#: ../../actions/restart/action.yaml
-msgid "Close this machine down and start it again."
-msgstr "Den Rechner herunterfahren und neu starten."
-
-#. an action: its row, and the heading over its page
-#: ../../actions/root/action.yaml
-msgid "Running as root"
-msgstr "Läuft als root"
-
-#. an action: what a no from it means
-#: ../../actions/root/action.yaml
-msgid "This has to run as root. Log in as root and start it again."
-msgstr "Das muss als root laufen. Melde dich als root an und starte es erneut."
-
-#. an action: its row, and the heading over its page
-#: ../../actions/share-log/action.yaml
+#: actions/share-log/action.yaml
 msgid "Share the log"
 msgstr "Log teilen"
 
 #. an action: what it does, under its row
-#: ../../actions/share-log/action.yaml
+#: actions/share-log/action.yaml
 msgid "Put the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it; passwords are never in it."
 msgstr "Stellt das Log dieses Laufs auf paste.rs online, für die Person, die dir hilft. Jede Person mit der Adresse kann es lesen; Passwörter stehen nie darin."
 
 #. an action: what a no from it means
-#: ../../actions/share-log/action.yaml
+#: actions/share-log/action.yaml
 msgid "The log could not be put online. Is this machine online?"
 msgstr "Das Log ließ sich nicht online stellen. Ist diese Maschine online?"
 
 #. read once the action is done, and held on until somebody has
-#: ../../actions/share-log/action.yaml
+#: actions/share-log/action.yaml
 msgid ""
 "Log shared\n"
 "\n"
@@ -831,41 +811,51 @@ msgstr ""
 "Scanne den Code oder lies die Adresse darunter und gib sie an die Person, die dir hilft."
 
 #. an action: its row, and the heading over its page
-#: ../../actions/shutdown/action.yaml
+#: actions/shutdown/action.yaml
 msgid "Shut down"
 msgstr "Herunterfahren"
 
 #. an action: what it does, under its row
-#: ../../actions/shutdown/action.yaml
+#: actions/shutdown/action.yaml
 msgid "Switch this machine off."
 msgstr "Den Rechner ausschalten."
 
 #. an action: its row, and the heading over its page
-#: ../../actions/wifi/action.yaml ../../actions/wifi-passphrase/action.yaml
+#: actions/uefi/action.yaml
+msgid "Booted in UEFI mode"
+msgstr "Im UEFI-Modus gestartet"
+
+#. an action: what a no from it means
+#: actions/uefi/action.yaml
+msgid "This machine booted in BIOS mode, which Arch OS does not install to. Set the boot mode to UEFI in the firmware settings and start again."
+msgstr "Diese Maschine ist im BIOS-Modus gestartet, in den Arch OS nicht installiert. Stelle den Startmodus in den Firmware-Einstellungen auf UEFI und starte neu."
+
+#. an action: its row, and the heading over its page
+#: actions/wifi/action.yaml actions/wifi-passphrase/action.yaml
 msgid "Wireless network"
 msgstr "WLAN"
 
 #. an action: what it does, under its row
-#: ../../actions/wifi/action.yaml
+#: actions/wifi/action.yaml
 msgid "Join a wireless network."
 msgstr "Mit einem WLAN verbinden."
 
 #. ARCH_OS_WIFI_SSID: the page of the action
-#: ../../actions/wifi/action.yaml
+#: actions/wifi/action.yaml
 msgid "Network"
 msgstr "Netzwerk"
 
 #. an action: its row, and the heading over its page
-#: ../../actions/wifi-card/action.yaml
+#: actions/wifi-card/action.yaml
 msgid "A wireless card"
 msgstr "Eine WLAN-Karte"
 
 #. an action: what a no from it means
-#: ../../actions/wifi-passphrase/action.yaml
+#: actions/wifi-passphrase/action.yaml
 msgid "{{ARCH_OS_WIFI_SSID}} did not accept that passphrase, or it is out of range."
 msgstr "{{ARCH_OS_WIFI_SSID}} hat dieses Passwort nicht angenommen oder ist außer Reichweite."
 
 #. ARCH_OS_WIFI_PASSPHRASE: the page of the action
-#: ../../actions/wifi-passphrase/action.yaml
+#: actions/wifi-passphrase/action.yaml
 msgid "Passphrase"
 msgstr "Passwort"

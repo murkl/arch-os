@@ -1,0 +1,15 @@
+# On the menu, and opened when there is no internet. An open or known network
+# is joined as it is chosen; one that wants a passphrase says no, and the
+# passphrase is asked next.
+title: Wireless network
+description: Join a wireless network.
+
+rules:
+  offer-if: [wifi-card]
+  on-failure: wifi-passphrase
+
+variable:
+  name: ARCH_OS_WIFI_SSID
+  title: Network
+  required: true
+  command: list_wifi_networks

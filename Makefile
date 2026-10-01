@@ -21,14 +21,13 @@ SHELL       := /bin/bash
 # THE PRODUCT | What a release is called and what it holds
 # ////////////////////////////////////////////////////////////////////////////
 
-# One binary, the declaration of the product it drives, the shell and the
-# actions its modules share, and one folder per module. Oak looks for all of it
-# beside its own binary.
-APP             := oak
-PRODUCT         := oak.yaml
-PRODUCT_SHELL   := oak.sh
-PRODUCT_ACTIONS := actions
-MODULES_DIR     := modules
+# One binary, the declaration of the product it drives, the library its modules
+# share, and one folder per module. Oak looks for all of it beside its own
+# binary.
+APP           := oak
+PRODUCT       := oak.yaml
+PRODUCT_SHELL := oak.sh
+MODULES_DIR   := modules
 
 # Where this project's version is written, and what everything is named after:
 # both filenames, the ISO label and the tag `v` + this - the `v` belongs to the
@@ -50,7 +49,7 @@ MODULES := $(notdir $(wildcard $(MODULES_DIR)/*))
 # by name. A README and a linter's config are how it is worked on, not part of
 # what runs.
 MODULE_DECL  := module.yaml
-MODULE_PARTS := module.sh data locales tasks actions
+MODULE_PARTS := data locales tasks actions
 
 # ////////////////////////////////////////////////////////////////////////////
 # OAK | The runtime this is built on
@@ -61,7 +60,7 @@ MODULE_PARTS := module.sh data locales tasks actions
 # rather than followed, so a build of a given commit is the same build tomorrow.
 # Written without the `v` its tag carries.
 OAK_REPO    := murkl/oak
-OAK_VERSION ?= 0.14.0
+OAK_VERSION ?= 0.15.0
 OAK_ASSET   := oak-linux-amd64
 OAK_DIR     := .oak
 
@@ -136,11 +135,11 @@ POSIX_SCRIPTS := get.sh .github/settings.sh
 # both launchers, and the one only the Recovery's own image starts with.
 ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_GLYPHS) $(wildcard $(ISO_DIR)/src/usr/local/bin/* $(ISO_DIR)/recovery/airootfs/usr/local/bin/*)
 
-# Every script of every module and the shell they all share, and every yaml for
-# the check that reads both. Looked up when they are used, so only the targets
-# that read them pay for it.
-MODULE_SCRIPTS = $(PRODUCT_SHELL) $(shell find $(PRODUCT_ACTIONS) $(MODULES_DIR) -name '*.sh')
-MODULE_YAML    = $(shell find $(PRODUCT_ACTIONS) $(MODULES_DIR) -name '*.yaml')
+# Every script of every module and the library they all share, and every yaml
+# for the check that reads both. Looked up when they are used, so only the
+# targets that read them pay for it.
+MODULE_SCRIPTS = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -name '*.sh')
+MODULE_YAML    = $(shell find $(MODULES_DIR) -name '*.yaml')
 
 # The shell a module ships as a file of somebody's home rather than as a task.
 # Found by the name it lands under, since a .bashrc carries no extension. zsh is
@@ -153,11 +152,11 @@ MODULE_ZSH   = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/data/zshrc)
 MODULE_PROGRAMS := $(MODULES_DIR)/installer/tasks/@desktop/recovery-app/data/arch-os-recovery
 
 # Everything a module can put on a screen: the declarations, the scripts and
-# the shell they share, the tables and every catalog. The READMEs are the one
+# the library they share, the tables and every catalog. The READMEs are the one
 # thing here nobody reads on a console, and fastfetch's config is a picture for
 # a graphical terminal: the Arch logo it draws is made of block quadrants no
 # console font has either.
-MODULE_TEXT = $(PRODUCT_SHELL) $(shell find $(PRODUCT_ACTIONS) $(MODULES_DIR) -type f ! -name '*.md' ! -name fastfetch.jsonc)
+MODULE_TEXT = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -type f ! -name '*.md' ! -name fastfetch.jsonc)
 
 # A module's own check of the lookup tables it ships. Found by name rather than
 # named outright, so a module that grows tables is a folder and nothing here has
@@ -258,7 +257,6 @@ build: oak-check
 	install -m 755 $(OAK_BIN) $(RELEASE_DIR)/$(APP)
 	install -m 644 $(PRODUCT) $(RELEASE_DIR)/$(PRODUCT)
 	install -m 644 $(PRODUCT_SHELL) $(RELEASE_DIR)/$(PRODUCT_SHELL)
-	cp -r $(PRODUCT_ACTIONS) $(RELEASE_DIR)/$(PRODUCT_ACTIONS)
 	for m in $(MODULES); do \
 		dest=$(RELEASE_DIR)/$(MODULES_DIR)/$$m; \
 		mkdir -p $$dest; \
@@ -276,7 +274,6 @@ dev: oak-check
 	@mkdir -p $(DEV_DIR)
 	@ln -sfn ../$(PRODUCT) $(DEV_DIR)/$(PRODUCT)
 	@ln -sfn ../$(PRODUCT_SHELL) $(DEV_DIR)/$(PRODUCT_SHELL)
-	@ln -sfn ../$(PRODUCT_ACTIONS) $(DEV_DIR)/$(PRODUCT_ACTIONS)
 	@ln -sfn ../$(MODULES_DIR) $(DEV_DIR)/$(MODULES_DIR)
 	@install -m 755 $(OAK_BIN) $(DEV_DIR)/$(APP)
 
@@ -294,7 +291,7 @@ inspect: dev
 tarball: build
 	tar -czf $(DIST_DIR)/$(TARBALL) --owner=0 --group=0 --sort=name \
 		--transform 's,^,$(STEM)/,' \
-		-C $(RELEASE_DIR) $(APP) $(PRODUCT) $(PRODUCT_SHELL) $(PRODUCT_ACTIONS) $(MODULES_DIR)
+		-C $(RELEASE_DIR) $(APP) $(PRODUCT) $(PRODUCT_SHELL) $(MODULES_DIR)
 
 # The images, out of the release already in dist/ rather than out of a second
 # build of the same sources: the Recovery, and the ISO that carries it. What
@@ -361,7 +358,7 @@ locales-check: dev
 	done
 
 # The two POSIX scripts are checked as sh; a module's are checked the way Oak
-# runs them, as bash with module.sh already in scope. actionlint reads the
+# runs them, as bash with oak.sh already in scope. actionlint reads the
 # workflows again for what a yaml linter cannot see, and zizmor for what makes
 # one unsafe - offline, so a finding is always about a change here rather than
 # news from somewhere else. What it is told to leave alone is .github/zizmor.yml.
@@ -374,13 +371,11 @@ locales-check: dev
 # The second keeps the first honest. Everything above reads *.sh and nothing
 # reads shell written into a yaml, so that is the one place a script can go
 # unchecked - and a failure in one names the command instead of a file and a
-# line. What is left is a bare name: the function in module.sh or the script
+# line. What is left is a bare name: the function in oak.sh or the script
 # beside the yaml that Oak sources, both of which are read by shellcheck. A
 # pipeline, a redirect or a variable in there is shell, whether it is spelled
 # over one line or several - a device name read out of a coloured table with an
-# unstripped escape in it was shipped that way. `requires:` is deliberately not
-# on that list - it is what the module says about the machine it belongs on, and
-# it belongs in the declaration where somebody looking for it looks.
+# unstripped escape in it was shipped that way.
 #
 # The last one is for a check that cannot fail. Oak runs every script under an ERR
 # trap and without -e, and bash never fires that trap for a command inverted
@@ -401,9 +396,9 @@ lint:
 		$(MODULE_SCRIPTS) $(MODULE_YAML) \
 		|| { echo "a shell builtin cannot be run through arch-chroot - see has_command" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*(script|command|prefill|apply|answer|check):[[:space:]]*.*[|&;<>`$$]' $(MODULE_YAML) \
-		|| { echo "shell inside a yaml is linted by nothing and gives a failure no line to point at - put it in the .sh file beside it, or a function in module.sh, and name that here" >&2; exit 1; }
+		|| { echo "shell inside a yaml is linted by nothing and gives a failure no line to point at - put it in the .sh file beside it, or a function in oak.sh, and name that here" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*\}[[:space:]]*>>?[[:space:]]*"\$$\{MNT\}' $(MODULE_SCRIPTS) \
-		|| { echo "a file written into the new system is a template beside its task, put in place with render - see module.sh" >&2; exit 1; }
+		|| { echo "a file written into the new system is a template beside its task, put in place with render - see oak.sh" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*![[:space:]]' $(MODULE_SCRIPTS) \
 		|| { echo "a command inverted with ! fails nothing under the ERR trap a script runs in - write it as an if that exits" >&2; exit 1; }
 

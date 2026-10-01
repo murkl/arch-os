@@ -1,16 +1,17 @@
 # What Create boot medium is, what it asks and the order it works in. Every
-# list and suggestion below is a function in module.sh.
+# list and suggestion below is a function in oak.sh.
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
 # What will happen rather than the program's name: the row is read as the thing
 # about to be done. The folder stays imager, which its files are named after.
 title: Create boot medium
 description: Write Arch OS to a USB device to boot another machine from.
-start: Create
+start-title: Create
 
-offered: [installed-system]
-requires: [sudo, usb]
-failure: [share-log]
+rules:
+  offer-if: [installed-system]
+  start-if: [sudo, usb]
+  on-failure: [share-log]
 
 stages:
   - write # the image downloaded, verified and written to the device

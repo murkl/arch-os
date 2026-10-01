@@ -1,6 +1,6 @@
 [ -x "${MNT}/usr/bin/pacman" ]
 [ -f "${MNT}/boot/vmlinuz-${KERNEL}" ]
-grep -qx "KEYMAP=${ARCH_OS_VCONSOLE_KEYMAP}" "${MNT}/etc/vconsole.conf"
+grep -qx "KEYMAP=$(vconsole_keymap)" "${MNT}/etc/vconsole.conf"
 
 # The table read by the tool that reads it at boot: one missing either is a
 # machine that comes up in an emergency shell.

@@ -1,7 +1,8 @@
 # Here rather than beside the partition: a download that fails should fail
 # while the disk is still untouched. The Arch OS ISO carries the image already.
-if [ -f "${RECOVERY_IMAGE}/recovery.img" ] && [ -f "${RECOVERY_IMAGE}/recovery.efi" ]; then
-    echo "the Recovery image is at ${RECOVERY_IMAGE}"
+image="$(recovery_image)"
+if [ -f "${image}/recovery.img" ] && [ -f "${image}/recovery.efi" ]; then
+    echo "the Recovery image is at ${image}"
     return 0
 fi
 
@@ -11,7 +12,7 @@ if [ -z "$url" ] || [ -z "$digest" ]; then
     exit 1
 fi
 
-download="${RECOVERY_IMAGE}.tar"
+download="${image}.tar"
 echo "fetching ${url##*/}"
 if ! fetch_url --progress-bar --retry 3 --retry-delay 2 "$url" -o "$download"; then
     rm -f "$download"
@@ -26,10 +27,10 @@ fi
 
 # Unpacked beside and moved into place whole, so what lies there is always a
 # Recovery that arrived and matched, which a second run takes as it finds it.
-rm -rf "${RECOVERY_IMAGE}.part"
-mkdir -p "${RECOVERY_IMAGE}.part"
-tar -xf "$download" -C "${RECOVERY_IMAGE}.part" --strip-components=1
+rm -rf "${image}.part"
+mkdir -p "${image}.part"
+tar -xf "$download" -C "${image}.part" --strip-components=1
 rm -f "$download"
-rm -rf "$RECOVERY_IMAGE"
-mv "${RECOVERY_IMAGE}.part" "$RECOVERY_IMAGE"
-echo "the Recovery image is at ${RECOVERY_IMAGE}"
+rm -rf "$image"
+mv "${image}.part" "$image"
+echo "the Recovery image is at ${image}"

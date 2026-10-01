@@ -15,8 +15,9 @@ rank_mirrors() {
         return 0
     }
 
-    local ranked warnings servers unrated args=(--protocol https --age 12 --latest 10 --sort rate)
-    [ -n "$ARCH_OS_REFLECTOR_COUNTRY" ] && args+=(--country "$ARCH_OS_REFLECTOR_COUNTRY")
+    local ranked warnings servers unrated country args=(--protocol https --age 12 --latest 10 --sort rate)
+    country="$(mirror_country)"
+    [ -n "$country" ] && args+=(--country "$country")
     ranked="$(mktemp)"
     warnings="$(mktemp)"
 

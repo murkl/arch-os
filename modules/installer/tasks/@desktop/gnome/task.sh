@@ -119,15 +119,17 @@ as_user 'git config --global credential.helper /usr/lib/git-core/git-credential-
 #
 # X11 reads this file, Wayland the setting of the first login; both say the same.
 # https://wiki.archlinux.org/title/Xorg/Keyboard_configuration
+layout="$(desktop_layout)"
+variant="$(desktop_variant)"
 mkdir -p "${MNT}/etc/X11/xorg.conf.d"
 render "${data}/00-keyboard.conf" \
-    LAYOUT="$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" \
+    LAYOUT="$layout" \
     MODEL="$ARCH_OS_DESKTOP_KEYBOARD_MODEL" \
-    VARIANT="$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" \
+    VARIANT="$variant" \
     >"${MNT}/etc/X11/xorg.conf.d/00-keyboard.conf"
 
-keyboard="$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT"
-[ -n "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" ] && keyboard="${keyboard}+${ARCH_OS_DESKTOP_KEYBOARD_VARIANT}"
+keyboard="$layout"
+[ -n "$variant" ] && keyboard="${keyboard}+${variant}"
 on_first_login <<FIRST
 gsettings set org.gnome.desktop.input-sources sources "[('xkb', '${keyboard}')]"
 FIRST
