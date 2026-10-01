@@ -30,6 +30,7 @@ while read -r scope name; do
     case "$scope" in '' | \#*) continue ;; esac
     case "$scope" in
     slim) [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "true" ] || continue ;;
+    bazaar) bazaar_wanted || continue ;;
     esac
     left_out+=("$name")
 done <"${data}/left-out"
@@ -41,10 +42,19 @@ packages+=("${desktop[@]}")
 # (-D packagekit=false in the PKGBUILD) and the wiki advises against PackageKit.
 # So there is no packagekit here, and pacman stays the one thing that changes
 # the system. https://wiki.archlinux.org/title/Pacman/Tips_and_tricks#Graphical
+#
+# Bazaar takes its place where it is wanted: a store made for Flathub, started
+# over D-Bus when it is first needed. It brings flatpak with it.
+bazaar_wanted && packages+=(bazaar)
+
+# Extensions found, installed and updated in one window, in place of the
+# Extensions app gnome-shell brings, which is hidden further down.
+[ "$ARCH_OS_EXTENSION_MANAGER_ENABLED" = "true" ] && packages+=(extension-manager)
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     # Extensions installed from extensions.gnome.org in the browser, GNOME's own
-    # way; the Extensions app gnome-shell brings switches them on and off.
+    # way, and switched on and off in the Extensions app gnome-shell brings - or
+    # in Extension Manager, where it takes that app's place.
     # https://wiki.archlinux.org/title/GNOME#Extensions
     packages+=(gnome-browser-connector gnome-themes-extra tuned-ppd cups)
 
@@ -70,6 +80,10 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     packages+=(base-devel fwupd bash-completion inetutils
         dosfstools ntfs-3g exfatprogs btrfs-progs nfs-utils
         7zip zip unzip unrar wget jq zenity)
+
+    # Bazaar shows no firmware, so where it stands in for Software, GNOME
+    # Firmware is fwupd's window.
+    bazaar_wanted && packages+=(gnome-firmware)
 
     # Codecs. https://wiki.archlinux.org/title/Codecs_and_containers
     packages+=(ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire
@@ -214,6 +228,7 @@ while read -r scope name; do
     case "$scope" in
     extras) [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] || continue ;;
     shell) [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ] || continue ;;
+    extension-manager) [ "$ARCH_OS_EXTENSION_MANAGER_ENABLED" = "true" ] || continue ;;
     esac
     hide "$name"
 done <"${data}/hidden-apps"
@@ -223,8 +238,19 @@ done <"${data}/hidden-apps"
 # ////////////////////////////////////////////////////////////////////////////
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-    favorites="'org.gnome.Console.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Software.desktop', 'org.gnome.Settings.desktop'"
-    [ "$ARCH_OS_MANAGER_ENABLED" = "true" ] && favorites="'arch-os.desktop', ${favorites}"
+    dock=()
+    [ "$ARCH_OS_MANAGER_ENABLED" = "true" ] && dock+=(arch-os.desktop)
+    dock+=(org.gnome.Console.desktop)
+    [ "$ARCH_OS_BROWSER" != "none" ] && dock+=("$(browser_entry)")
+    dock+=(org.gnome.Nautilus.desktop)
+    if bazaar_wanted; then
+        dock+=(io.github.kolunmi.Bazaar.desktop)
+    else
+        dock+=(org.gnome.Software.desktop)
+    fi
+    dock+=(org.gnome.Settings.desktop)
+    favorites="$(printf "'%s', " "${dock[@]}")"
+    favorites="${favorites%, }"
     on_first_login <<FIRST
 gsettings set org.gnome.shell favorite-apps "[${favorites}]"
 dconf reset -f /org/gnome/desktop/app-folders/

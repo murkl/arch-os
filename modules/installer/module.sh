@@ -321,6 +321,11 @@ RECOVERY_EFI=/boot/EFI/Linux/arch-os-recovery.efi
 # shellcheck disable=SC2034
 RECOVERY_SEED=/boot/EFI/arch-os-recovery
 
+# The desktop's way into it, among the applications. Named once because the
+# task writes it and its test reads it back.
+# shellcheck disable=SC2034
+RECOVERY_LAUNCHER=/usr/local/share/applications/arch-os-recovery.desktop
+
 # ////////////////////////////////////////////////////////////////////////////
 # INSTALLING INTO THE NEW SYSTEM
 # ////////////////////////////////////////////////////////////////////////////
@@ -451,6 +456,29 @@ as_user() {
 editor_command() {
     if [ "$ARCH_OS_EDITOR" = "neovim" ]; then echo nvim; else echo "$ARCH_OS_EDITOR"; fi
 }
+
+# Whether Bazaar takes GNOME Software's place, which it only can where there is
+# Flatpak for it to manage. Named once because the desktop leaves Software out
+# on it, puts the store on the dock by it, and its test reads it back.
+bazaar_wanted() {
+    [ "$ARCH_OS_FLATPAK_ENABLED" = "true" ] && [ "$ARCH_OS_BAZAAR_ENABLED" = "true" ]
+}
+
+# The desktop entry the chosen browser is started from, which is not its
+# package's name for two of them. Named once because the browser task makes it
+# the default, the desktop puts it on the dock, and a name that is no file
+# would be a dock with a gap and links that open nowhere.
+browser_entry() {
+    case "$ARCH_OS_BROWSER" in
+    epiphany) echo org.gnome.Epiphany.desktop ;;
+    vivaldi) echo vivaldi-stable.desktop ;;
+    *) echo "${ARCH_OS_BROWSER}.desktop" ;;
+    esac
+}
+
+# What that browser is made the default for: web addresses, and pages saved as
+# files. Named once because the task sets each and its test reads each back.
+browser_types() { printf '%s\n' x-scheme-handler/http x-scheme-handler/https text/html; }
 
 # The new home given back to the account it belongs to. Everything written from
 # out here belongs to root until this has run, and a home the user cannot write

@@ -2,8 +2,23 @@
 
 arch-chroot "$MNT" systemctl is-enabled gdm.service >/dev/null
 
-# The store is GNOME's own, which the group brings.
-has_command gnome-software
+# The store is the one that was chosen, and only that one: Bazaar where it takes
+# Software's place, otherwise GNOME's own, which the group brings.
+if bazaar_wanted; then
+    has_command bazaar
+    if has_command gnome-software; then
+        echo "GNOME Software is installed beside Bazaar" >&2
+        exit 1
+    fi
+else
+    has_command gnome-software
+fi
+
+# Extension Manager stands in for the Extensions app, which is no longer listed.
+if [ "$ARCH_OS_EXTENSION_MANAGER_ENABLED" = "true" ]; then
+    has_command extension-manager
+    grep -qx 'Hidden=true' "${MNT}/home/${ARCH_OS_USERNAME}/.local/share/applications/org.gnome.Extensions.desktop"
+fi
 
 # And sound, which only starts where these sockets are there to be spoken to.
 arch-chroot "$MNT" systemctl --global is-enabled pipewire.socket pipewire-pulse.socket wireplumber.service >/dev/null

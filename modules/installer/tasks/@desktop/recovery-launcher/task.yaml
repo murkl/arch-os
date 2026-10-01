@@ -1,0 +1,5 @@
+title: Add the Recovery to the applications
+needs: [desktop-gnome]
+conditions:
+  - ARCH_OS_DESKTOP != none
+  - ARCH_OS_RECOVERY_ENABLED == true
