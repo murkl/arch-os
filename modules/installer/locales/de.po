@@ -442,6 +442,36 @@ msgstr "Schlanker Desktop"
 msgid "Removes the GNOME applications that come with the desktop and are rarely used."
 msgstr "Entfernt die GNOME-Programme, die mit dem Desktop kommen und selten benutzt werden."
 
+#. ARCH_OS_EXTENSION_MANAGER_ENABLED: the question
+#: module.yaml
+msgid "Extension Manager"
+msgstr "Extension Manager"
+
+#. ARCH_OS_EXTENSION_MANAGER_ENABLED: what it means
+#: module.yaml
+msgid "Finds, installs and updates GNOME extensions in one window, in place of the Extensions app GNOME ships, which only switches them on and off."
+msgstr "Sucht, installiert und aktualisiert GNOME-Erweiterungen in einem Fenster, anstelle der Erweiterungen-App von GNOME, die sie nur ein- und ausschaltet."
+
+#. ARCH_OS_BROWSER: the question
+#: module.yaml
+msgid "Web browser"
+msgstr "Webbrowser"
+
+#. ARCH_OS_BROWSER: what it means
+#: module.yaml
+msgid "Installed in the language of this system and opened for every link. epiphany is GNOME Web, the desktop's own. vivaldi comes with the codecs for proprietary video. none installs no browser."
+msgstr "Wird in der Sprache dieses Systems installiert und öffnet jeden Link. epiphany ist GNOME Web, der Browser des Desktops. vivaldi bringt die Codecs für proprietäre Videoformate mit. none installiert keinen Browser."
+
+#. ARCH_OS_BACKUP: the question
+#: module.yaml
+msgid "Backup"
+msgstr "Datensicherung"
+
+#. ARCH_OS_BACKUP: what it means
+#: module.yaml
+msgid "An application that backs up your files on a schedule, to an external drive or a server, and restores them. none installs neither."
+msgstr "Ein Programm, das deine Dateien regelmäßig auf ein externes Laufwerk oder einen Server sichert und sie wiederherstellt. none installiert keines von beiden."
+
 #. ARCH_OS_FLATPAK_ENABLED: the question
 #: module.yaml
 msgid "Flatpak"
@@ -449,8 +479,18 @@ msgstr "Flatpak"
 
 #. ARCH_OS_FLATPAK_ENABLED: what it means
 #: module.yaml
-msgid "Applications from Flathub, installed and updated through Software."
-msgstr "Anwendungen von Flathub, installiert und aktualisiert über Software."
+msgid "Applications from Flathub, installed and updated through Bazaar or Software."
+msgstr "Anwendungen von Flathub, installiert und aktualisiert über Bazaar oder Software."
+
+#. ARCH_OS_BAZAAR_ENABLED: the question
+#: module.yaml
+msgid "Bazaar"
+msgstr "Bazaar"
+
+#. ARCH_OS_BAZAAR_ENABLED: what it means
+#: module.yaml
+msgid "A store made for Flathub, in place of GNOME Software. With the desktop extras, firmware updates then come from GNOME Firmware."
+msgstr "Ein Store eigens für Flathub, anstelle von GNOME Software. Mit den Desktop-Extras kommen Firmware-Updates dann aus GNOME Firmware."
 
 #. ARCH_OS_SAMBA_SHARE_ENABLED: the question
 #: module.yaml
@@ -628,6 +668,16 @@ msgid "Install GNOME"
 msgstr "GNOME installieren"
 
 #. the step, as the run lists it
+#: tasks/@desktop/backup/task.yaml
+msgid "Install the backup application"
+msgstr "Datensicherung installieren"
+
+#. the step, as the run lists it
+#: tasks/@desktop/browser/task.yaml
+msgid "Install the web browser"
+msgstr "Webbrowser installieren"
+
+#. the step, as the run lists it
 #: tasks/@desktop/flatpak/task.yaml
 msgid "Set up Flatpak"
 msgstr "Flatpak einrichten"
@@ -636,6 +686,11 @@ msgstr "Flatpak einrichten"
 #: tasks/@desktop/graphics-driver/task.yaml
 msgid "Install the graphics drivers"
 msgstr "Grafiktreiber installieren"
+
+#. the step, as the run lists it
+#: tasks/@desktop/recovery-launcher/task.yaml
+msgid "Add the Recovery to the applications"
+msgstr "Recovery zu den Anwendungen hinzufügen"
 
 #. the step, as the run lists it
 #: tasks/@desktop/samba/task.yaml

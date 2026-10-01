@@ -54,7 +54,11 @@ presets:
           ARCH_OS_DESKTOP: gnome
           ARCH_OS_DESKTOP_EXTRAS_ENABLED: true
           ARCH_OS_DESKTOP_SLIM_ENABLED: true
+          ARCH_OS_EXTENSION_MANAGER_ENABLED: true
+          ARCH_OS_BROWSER: epiphany
+          ARCH_OS_BACKUP: pika-backup
           ARCH_OS_FLATPAK_ENABLED: true
+          ARCH_OS_BAZAAR_ENABLED: true
           ARCH_OS_SAMBA_SHARE_ENABLED: false
           ARCH_OS_CORE_TWEAKS_ENABLED: true
           ARCH_OS_BOOTSPLASH_ENABLED: true
@@ -79,7 +83,11 @@ presets:
           ARCH_OS_DESKTOP: none
           ARCH_OS_DESKTOP_EXTRAS_ENABLED: false
           ARCH_OS_DESKTOP_SLIM_ENABLED: false
+          ARCH_OS_EXTENSION_MANAGER_ENABLED: false
+          ARCH_OS_BROWSER: none
+          ARCH_OS_BACKUP: none
           ARCH_OS_FLATPAK_ENABLED: false
+          ARCH_OS_BAZAAR_ENABLED: false
           ARCH_OS_SAMBA_SHARE_ENABLED: false
           ARCH_OS_CORE_TWEAKS_ENABLED: false
           ARCH_OS_BOOTSPLASH_ENABLED: false
@@ -471,14 +479,62 @@ variables:
     default: true
     conditions: ARCH_OS_DESKTOP != none
 
+  - name: ARCH_OS_EXTENSION_MANAGER_ENABLED
+    title: Extension Manager
+    description: |
+      Finds, installs and updates GNOME extensions in one window, in place of
+      the Extensions app GNOME ships, which only switches them on and off.
+    group: Desktop
+    type: bool
+    default: true
+    conditions: ARCH_OS_DESKTOP == gnome
+
+  - name: ARCH_OS_BROWSER
+    title: Web browser
+    description: |
+      Installed in the language of this system and opened for every link.
+      epiphany is GNOME Web, the desktop's own. vivaldi comes with the codecs
+      for proprietary video. none installs no browser.
+    group: Desktop
+    values: [epiphany, firefox, chromium, vivaldi, none]
+    default: epiphany
+    required: true
+    conditions: ARCH_OS_DESKTOP != none
+
+  - name: ARCH_OS_BACKUP
+    title: Backup
+    description: |
+      An application that backs up your files on a schedule, to an external
+      drive or a server, and restores them. none installs neither.
+    group: Desktop
+    values: [pika-backup, deja-dup, none]
+    default: pika-backup
+    required: true
+    conditions: ARCH_OS_DESKTOP != none
+
   - name: ARCH_OS_FLATPAK_ENABLED
     title: Flatpak
     description: |
-      Applications from Flathub, installed and updated through Software.
+      Applications from Flathub, installed and updated through Bazaar or
+      Software.
     group: Desktop
     type: bool
     default: true
     conditions: ARCH_OS_DESKTOP != none
+
+  - name: ARCH_OS_BAZAAR_ENABLED
+    title: Bazaar
+    description: |
+      A store made for Flathub, in place of GNOME Software. With the desktop
+      extras, firmware updates then come from GNOME Firmware.
+    group: Desktop
+    type: bool
+    default: true
+    # The two the desktop reads it under, so this is never a row that is
+    # answered and then never acted on.
+    conditions:
+      - ARCH_OS_DESKTOP != none
+      - ARCH_OS_FLATPAK_ENABLED == true
 
   - name: ARCH_OS_SAMBA_SHARE_ENABLED
     title: File sharing

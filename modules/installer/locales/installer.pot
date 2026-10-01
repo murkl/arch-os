@@ -445,6 +445,36 @@ msgstr ""
 msgid "Removes the GNOME applications that come with the desktop and are rarely used."
 msgstr ""
 
+#. ARCH_OS_EXTENSION_MANAGER_ENABLED: the question
+#: module.yaml
+msgid "Extension Manager"
+msgstr ""
+
+#. ARCH_OS_EXTENSION_MANAGER_ENABLED: what it means
+#: module.yaml
+msgid "Finds, installs and updates GNOME extensions in one window, in place of the Extensions app GNOME ships, which only switches them on and off."
+msgstr ""
+
+#. ARCH_OS_BROWSER: the question
+#: module.yaml
+msgid "Web browser"
+msgstr ""
+
+#. ARCH_OS_BROWSER: what it means
+#: module.yaml
+msgid "Installed in the language of this system and opened for every link. epiphany is GNOME Web, the desktop's own. vivaldi comes with the codecs for proprietary video. none installs no browser."
+msgstr ""
+
+#. ARCH_OS_BACKUP: the question
+#: module.yaml
+msgid "Backup"
+msgstr ""
+
+#. ARCH_OS_BACKUP: what it means
+#: module.yaml
+msgid "An application that backs up your files on a schedule, to an external drive or a server, and restores them. none installs neither."
+msgstr ""
+
 #. ARCH_OS_FLATPAK_ENABLED: the question
 #: module.yaml
 msgid "Flatpak"
@@ -452,7 +482,17 @@ msgstr ""
 
 #. ARCH_OS_FLATPAK_ENABLED: what it means
 #: module.yaml
-msgid "Applications from Flathub, installed and updated through Software."
+msgid "Applications from Flathub, installed and updated through Bazaar or Software."
+msgstr ""
+
+#. ARCH_OS_BAZAAR_ENABLED: the question
+#: module.yaml
+msgid "Bazaar"
+msgstr ""
+
+#. ARCH_OS_BAZAAR_ENABLED: what it means
+#: module.yaml
+msgid "A store made for Flathub, in place of GNOME Software. With the desktop extras, firmware updates then come from GNOME Firmware."
 msgstr ""
 
 #. ARCH_OS_SAMBA_SHARE_ENABLED: the question
@@ -631,6 +671,16 @@ msgid "Install GNOME"
 msgstr ""
 
 #. the step, as the run lists it
+#: tasks/@desktop/backup/task.yaml
+msgid "Install the backup application"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@desktop/browser/task.yaml
+msgid "Install the web browser"
+msgstr ""
+
+#. the step, as the run lists it
 #: tasks/@desktop/flatpak/task.yaml
 msgid "Set up Flatpak"
 msgstr ""
@@ -638,6 +688,11 @@ msgstr ""
 #. the step, as the run lists it
 #: tasks/@desktop/graphics-driver/task.yaml
 msgid "Install the graphics drivers"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@desktop/recovery-launcher/task.yaml
+msgid "Add the Recovery to the applications"
 msgstr ""
 
 #. the step, as the run lists it
