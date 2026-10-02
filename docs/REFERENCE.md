@@ -12,7 +12,7 @@ UEFI only, GPT, the whole disk for Arch OS: it is the only system on it.
 | --- | --- | --- | --- | --- |
 | 1 | 1 GiB | EFI system (`ef00`) | `BOOT` | `/boot` |
 | 2 | the rest | Linux (`8300`) | `BTRFS` | `/` |
-| 3 | its image, about 270 MiB | Linux (`8300`) | - | never - see **[The Recovery Partition](#the-recovery-partition)** |
+| 3 | its image, about 500 MiB | Linux (`8300`) | - | never - see **[The Recovery Partition](#the-recovery-partition)** |
 
 Always in that order, and always btrfs. The third is there with **Recovery**, at the end of the disk, so the root is the second on every installation. `/boot` is `fmask=0077,dmask=0077`: it holds the kernel and the signed image, root's business only.
 
@@ -122,7 +122,7 @@ Swap is **zram** always, tweaks or not. **[➜ Zram](https://wiki.archlinux.org/
 
 Enough for a usable install, little enough that nothing needs looking after.
 
-- `base`, `linux-zen`, `sudo`, `zram-generator`, `networkmanager`, `btrfs-progs`, `snapper`
+- `base`, `linux-zen`, `mkinitcpio`, `sudo`, `zram-generator`, `networkmanager`, `btrfs-progs`, `snapper`
 - The processor's microcode, `intel-ucode` or `amd-ucode`, read off `/proc/cpuinfo`
 - The chosen editor (`nano` unless another was picked), `man-db`, `man-pages`, `openssh` - `base` ships none of them. The editor gets a configuration of its own - see [The Text Editor](#the-text-editor)
 - Everything else follows an answer: the task that enables a service installs its package

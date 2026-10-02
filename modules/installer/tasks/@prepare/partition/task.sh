@@ -30,8 +30,8 @@ fi
 
 # An LVM group or a software RAID the live image assembled on its own off the
 # old contents holds the partitions open. lvm warns about every descriptor it
-# inherits, so Oak's error channel is closed for it.
-vgchange -an 3>&- || true
+# inherits, Oak's error channel among them.
+LVM_SUPPRESS_FD_WARNINGS=1 vgchange -an || true
 if command -v mdadm >/dev/null; then
     mdadm --stop --scan || true
 fi
