@@ -90,6 +90,7 @@ ARGS   ?=
 ISO_DIR    := iso
 ISO_BUILD  := $(ISO_DIR)/build.sh
 ISO_SMOKE  := $(ISO_DIR)/smoke.sh
+ISO_E2E    := $(ISO_DIR)/e2e.sh
 ISO_GLYPHS := $(ISO_DIR)/glyphs.sh
 
 # The newest images, read when used, so `make iso && make smoke` needs no
@@ -105,7 +106,7 @@ RECOVERY ?= $(shell ls -td $(DIST_DIR)/*-recovery 2>/dev/null | head -1)
 POSIX_SCRIPTS := get.sh .github/settings.sh
 
 # Bash: what builds and boots the images, and what they run.
-ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_GLYPHS) $(wildcard $(ISO_DIR)/src/usr/local/bin/* $(ISO_DIR)/recovery/airootfs/usr/local/bin/*)
+ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_E2E) $(ISO_GLYPHS) $(wildcard $(ISO_DIR)/src/usr/local/bin/* $(ISO_DIR)/recovery/airootfs/usr/local/bin/*)
 
 # Every module script with the library they share, and every module yaml.
 MODULE_SCRIPTS = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -name '*.sh')
@@ -144,7 +145,7 @@ BANNER_CARDS   := docs/screenshots/installer.png docs/screenshots/installing.png
 BANNER_TAGLINE := Install Arch Linux with ease — as a desktop or a TTY system. Installer and Recovery on one image.
 BANNER_CELL    := 9
 
-.PHONY: all oak oak-check build dev run inspect tarball image iso smoke locales \
+.PHONY: all oak oak-check build dev run inspect tarball image iso smoke e2e locales \
 	locales-check glyphs-check data-check actions-check lint fmt check version-check \
 	secrets-check github screenshots banner docs clean
 
@@ -240,6 +241,11 @@ iso: build image
 smoke:
 	$(ISO_SMOKE) $(ISO)
 	$(ISO_SMOKE) $(RECOVERY)
+
+# Installs the newest ISO onto a disk, boots it, repairs it with the Recovery
+# and boots it again. The logs land in dist/e2e/.
+e2e:
+	$(ISO_E2E) $(ISO)
 
 # Every template rewritten and every catalog brought up to it: a changed text
 # turns fuzzy, a removed one is dropped.
