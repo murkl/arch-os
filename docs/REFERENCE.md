@@ -329,6 +329,6 @@ A hybrid ISO already carries its partition table and boot paths - writing it is 
 - The image is the release `version:` in `oak.yaml` names
 - Where it lands is asked: `XDG_DOWNLOAD_DIR` or `~/Downloads`. An image already there is used rather than fetched again
 - It is checked against the checksum GitHub publishes for that release, and a mismatch discards it rather than keeping a broken one. The checksum is read once, when the image is fetched or found, and kept beside it as `.sha256`
-- Where that release publishes no checksum, nothing is written. **Verify checksum** off in the settings writes the image in the folder as it is, without asking the release anything - an image built here is the one that arrives this way
+- Where that release publishes no checksum, nothing is written. **Verify checksum** off in the **Configuration** writes the image in the folder as it is, without asking the release anything - an image built here is the one that arrives this way
 
 **Root only for the write.** `as_root` wraps `umount`, `dd`, `blockdev` - nothing else. Everything else runs as you, so a live image never leaves root-owned files in your home. Where `sudo` wants a password, it is asked in the interface right before the run, tried with `sudo` there, and handed to it on stdin - the screen is never handed to a prompt, and the write shows how far `dd` has got under its step.
