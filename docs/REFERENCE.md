@@ -303,7 +303,7 @@ It is built with the release rather than on the machine, out of Arch's own minim
 | File | Goes to | What it is |
 | --- | --- | --- |
 | `recovery.efi` | `/boot/EFI/Linux/arch-os-recovery.efi` | Kernel, ram disk and command line as one image. systemd-boot lists it by itself, under the name its `os-release` gives it |
-| `recovery.img` | partition 3, byte for byte | A read-only erofs holding the root file system and its signature. The running system never mounts it, and nothing can write to it |
+| `recovery.img` | partition 3, byte for byte | A read-only erofs holding the root file system and its signature. The running system never mounts it, nothing can write to it, and the file manager does not list it |
 
 How it starts:
 
