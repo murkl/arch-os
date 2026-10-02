@@ -841,9 +841,9 @@ msgid "This machine booted in BIOS mode, which Arch OS does not install to. Set 
 msgstr "Diese Maschine ist im BIOS-Modus gestartet, in den Arch OS nicht installiert. Stelle den Startmodus in den Firmware-Einstellungen auf UEFI und starte neu."
 
 #. an action: its row, and the heading over its page
-#: actions/wifi/action.yaml actions/wifi-passphrase/action.yaml
-msgid "Wireless network"
-msgstr "WLAN"
+#: actions/wifi/action.yaml
+msgid "Configure the wireless network"
+msgstr "WLAN konfigurieren"
 
 #. an action: what it does, under its row
 #: actions/wifi/action.yaml
@@ -859,6 +859,11 @@ msgstr "Netzwerk"
 #: actions/wifi-card/action.yaml
 msgid "A wireless card"
 msgstr "Eine WLAN-Karte"
+
+#. an action: its row, and the heading over its page
+#: actions/wifi-passphrase/action.yaml
+msgid "Wireless network"
+msgstr "WLAN"
 
 #. an action: what a no from it means
 #: actions/wifi-passphrase/action.yaml
