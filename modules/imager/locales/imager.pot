@@ -33,6 +33,11 @@ msgstr ""
 msgid "Create"
 msgstr ""
 
+#. the row that opens every answer, and the heading over that page
+#: module.yaml
+msgid "Configuration"
+msgstr ""
+
 #. ARCH_OS_DOWNLOAD_DIR: the question
 #: module.yaml
 msgid "Download folder"

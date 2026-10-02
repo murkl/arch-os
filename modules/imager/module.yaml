@@ -7,6 +7,7 @@
 title: Create boot medium
 description: Write Arch OS to a USB device to boot another machine from.
 start-title: Create
+settings-title: Configuration
 
 rules:
   offer-if: [installed-system]

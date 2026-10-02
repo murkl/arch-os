@@ -30,6 +30,11 @@ msgstr "Arch OS auf einen USB-Datenträger schreiben, um einen anderen Rechner d
 msgid "Create"
 msgstr "Erstellen"
 
+#. the row that opens every answer, and the heading over that page
+#: module.yaml
+msgid "Configuration"
+msgstr "Konfiguration"
+
 #. ARCH_OS_DOWNLOAD_DIR: the question
 #: module.yaml
 msgid "Download folder"
