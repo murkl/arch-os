@@ -18,6 +18,10 @@ arch-chroot "$MNT" chown :wheel /.snapshots
 mapfile -t settings <"$(where)/settings"
 arch-chroot "$MNT" snapper --no-dbus -c root set-config "${settings[@]}"
 
+# create-config switched the timeline timer on for the template's timeline, and
+# set-config leaves it on.
+arch-chroot "$MNT" systemctl disable snapper-timeline.timer
+
 # btrfs commits freed extents on its own schedule, and df shows the disk full
 # until it does. ExecStopPost, since the unit is Type=simple.
 mkdir -p "${MNT}/etc/systemd/system/snapper-cleanup.service.d"

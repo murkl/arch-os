@@ -118,7 +118,7 @@ msgstr "Sprache und Region"
 #. ARCH_OS_LOCALE_LANG: what it means
 #: module.yaml
 msgid "The system language and the format of dates, numbers and currency, such as de_DE. On auto the keyboard, console font and time zone follow it. English is always installed as a fallback."
-msgstr "Die Systemsprache und das Format von Datum, Zahlen und Währung, etwa de_DE. Auf auto folgen ihr Tastatur, Konsolenschrift und Zeitzone. Englisch wird immer als Rückfall installiert."
+msgstr "Die Systemsprache und das Format von Datum, Zahlen und Währung, etwa de_DE. Auf auto folgen ihr Tastatur, Konsolenschrift und Zeitzone. Englisch wird immer als Ausweichsprache installiert."
 
 #. ARCH_OS_LOCALE_LANG: the heading its row sits under
 #: module.yaml
@@ -255,7 +255,7 @@ msgstr "Zusätzliche Kernel-Parameter, durch Leerzeichen getrennt. Leer lassen, 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: the question
 #: module.yaml
 msgid "Core tweaks"
-msgstr "Core Optimierungen"
+msgstr "Core-Optimierungen"
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: what it means
 #: module.yaml
@@ -275,7 +275,7 @@ msgstr "32-Bit-Unterstützung"
 #. ARCH_OS_MULTILIB_ENABLED: what it means
 #: module.yaml
 msgid "Needed by Steam, Wine and other software that is still 32-bit."
-msgstr "Wird von Steam, Wine und anderer Software gebraucht, die noch 32-bit benötigen."
+msgstr "Wird von Steam, Wine und anderer Software gebraucht, die noch 32-Bit ist."
 
 #. ARCH_OS_AUR_HELPER_ENABLED: the question
 #: module.yaml
@@ -340,7 +340,7 @@ msgstr "Öffnet sich, wo ein Befehl nach einem Editor fragt: sudoedit, git, syst
 #. ARCH_OS_SHELL_ENHANCEMENT_ENABLED: the question
 #: module.yaml
 msgid "Shell enhancement"
-msgstr "Shell Optimierungen"
+msgstr "Shell-Optimierungen"
 
 #. ARCH_OS_SHELL_ENHANCEMENT_ENABLED: what it means
 #: module.yaml
@@ -510,12 +510,12 @@ msgstr "Offline"
 #. the step, as the run lists it
 #: tasks/@prepare/mirrors/task.yaml
 msgid "Rank mirrors and refresh the keyring"
-msgstr "Mirrors sortieren, Keyring aktualisieren"
+msgstr "Spiegelserver sortieren und Keyring aktualisieren"
 
 #. the step, as the run lists it
 #: tasks/@prepare/recovery-image/task.yaml
 msgid "Provide the Recovery image"
-msgstr "Recovery-Abbild bereitstellen"
+msgstr "Recovery-Image bereitstellen"
 
 #. the step, as the run lists it
 #: tasks/@prepare/partition/task.yaml
@@ -530,12 +530,12 @@ msgstr "Basissystem installieren"
 #. the step, as the run lists it
 #: tasks/@system/config/task.yaml
 msgid "Set locale, time zone and hostname"
-msgstr "Locale, Zeitzone und Hostname setzen"
+msgstr "Sprache, Zeitzone und Rechnernamen setzen"
 
 #. the step, as the run lists it
 #: tasks/@system/tweaks/task.yaml
 msgid "Apply the core tweaks"
-msgstr "Core Optimierungen anwenden"
+msgstr "Core-Optimierungen anwenden"
 
 #. the step, as the run lists it
 #: tasks/@system/bootloader/task.yaml
@@ -681,7 +681,7 @@ msgid ""
 msgstr ""
 "Arch OS ist installiert\n"
 "\n"
-"{{ARCH_OS_HOSTNAME}} liegt auf {{ARCH_OS_DISK}} und ist startbereit. Alles Weitere ist optional."
+"{{ARCH_OS_HOSTNAME}} liegt auf {{ARCH_OS_DISK}} und ist startbereit."
 
 #. an action: its row, and the heading over its page
 #: actions/chroot/action.yaml
@@ -696,7 +696,7 @@ msgstr "Im System auf dem Datenträger, um dich umzusehen oder etwas von Hand zu
 #. an action: what a no from it means
 #: actions/import-config/action.yaml
 msgid "No Arch OS configuration could be loaded from {{ARCH_OS_CONFIG_SOURCE}}. Check the code, and that this machine is online."
-msgstr "Unter {{ARCH_OS_CONFIG_SOURCE}} ließ sich keine Arch-OS-Konfiguration laden. Prüfe den Code und ob diese Maschine online ist."
+msgstr "Unter {{ARCH_OS_CONFIG_SOURCE}} ließ sich keine Arch-OS-Konfiguration laden. Prüfe den Code und ob dieser Rechner online ist."
 
 #. ARCH_OS_CONFIG_SOURCE: the page of the action
 #: actions/import-config/action.yaml
@@ -711,7 +711,7 @@ msgstr "Der Code am Ende einer paste.rs-Adresse oder die ganze Adresse. Jede Ant
 #. ARCH_OS_CONFIG_SOURCE: what a wrong answer is told
 #: actions/import-config/action.yaml
 msgid "A code such as aBc12, or the whole address it belongs to."
-msgstr "Ein Code wie aBc12 — oder die vollständige Adresse dazu."
+msgstr "Ein Code wie aBc12 oder die vollständige Adresse dazu."
 
 #. an action: its row, and the heading over its page
 #: actions/internet/action.yaml
@@ -731,7 +731,7 @@ msgstr "Ein Arch-Linux-Live-Image"
 #. an action: what a no from it means
 #: actions/live-image/action.yaml
 msgid "This runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there."
-msgstr "Das läuft auf einem gestarteten Arch-Linux-Live-Image. Schreib eins mit Bootmedium erstellen, starte die Maschine davon und öffne es dort."
+msgstr "Das läuft auf einem gestarteten Arch-Linux-Live-Image. Schreib eins mit Bootmedium erstellen, starte den Rechner davon und öffne es dort."
 
 #. an action: its row, and the heading over its page
 #: actions/no-cable/action.yaml
@@ -776,7 +776,7 @@ msgstr "Konfiguration teilen"
 #. an action: what it does, under its row
 #: actions/share-config/action.yaml
 msgid "Put these answers online at paste.rs, to set up another machine exactly like this one. Anyone with the address can read them; the password is not among them."
-msgstr "Stellt diese Antworten auf paste.rs online, um eine weitere Maschine genauso einzurichten. Jede Person mit der Adresse kann sie lesen; das Passwort ist nicht darunter."
+msgstr "Stellt diese Antworten auf paste.rs online, um einen weiteren Rechner genauso einzurichten. Jede Person mit der Adresse kann sie lesen; das Passwort ist nicht darunter."
 
 #. an action: what a no from it means
 #: actions/share-config/action.yaml
@@ -792,7 +792,7 @@ msgid ""
 msgstr ""
 "Konfiguration geteilt\n"
 "\n"
-"Scanne den Code — oder tippe das Wort am Ende der Adresse beim paste.rs-Startpunkt einer weiteren Installation ein."
+"Scanne den Code oder tippe das Wort am Ende der Adresse beim paste.rs-Startpunkt einer weiteren Installation ein."
 
 #. an action: its row, and the heading over its page
 #: actions/share-log/action.yaml
@@ -838,7 +838,7 @@ msgstr "Im UEFI-Modus gestartet"
 #. an action: what a no from it means
 #: actions/uefi/action.yaml
 msgid "This machine booted in BIOS mode, which Arch OS does not install to. Set the boot mode to UEFI in the firmware settings and start again."
-msgstr "Diese Maschine ist im BIOS-Modus gestartet, in den Arch OS nicht installiert. Stelle den Startmodus in den Firmware-Einstellungen auf UEFI und starte neu."
+msgstr "Dieser Rechner ist im BIOS-Modus gestartet, in den Arch OS nicht installiert. Stelle den Startmodus in den Firmware-Einstellungen auf UEFI und starte neu."
 
 #. an action: its row, and the heading over its page
 #: actions/wifi/action.yaml

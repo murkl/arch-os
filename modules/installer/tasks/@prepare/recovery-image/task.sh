@@ -8,7 +8,7 @@ fi
 
 read -r url digest <<<"$(release_asset -recovery-x86_64.tar)"
 if [ -z "$url" ] || [ -z "$digest" ]; then
-    echo "The release v$(release_version) is out of reach or holds no Recovery image with a checksum. Connect this machine, or turn Recovery off in the settings." >&2
+    echo "The release v$(release_version) is out of reach or holds no Recovery image with a checksum. Connect this machine, or turn Recovery off in the Configuration." >&2
     exit 1
 fi
 
@@ -16,7 +16,7 @@ download="${image}.tar"
 echo "fetching ${url##*/}"
 if ! fetch_url --progress-bar --retry 3 --retry-delay 2 "$url" -o "$download"; then
     rm -f "$download"
-    echo "Downloading ${url##*/} failed. Start the installation again, or turn Recovery off in the settings." >&2
+    echo "Downloading ${url##*/} failed. Start the installation again, or turn Recovery off in the Configuration." >&2
     exit 1
 fi
 if ! echo "${digest}  ${download}" | sha256sum -c - >/dev/null; then

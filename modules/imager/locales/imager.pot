@@ -33,6 +33,11 @@ msgstr ""
 msgid "Create"
 msgstr ""
 
+#. the row that opens every answer, and the heading over that page
+#: module.yaml
+msgid "Configuration"
+msgstr ""
+
 #. ARCH_OS_DOWNLOAD_DIR: the question
 #: module.yaml
 msgid "Download folder"
@@ -71,6 +76,11 @@ msgstr ""
 #. ARCH_OS_IMAGE_DEVICE: what it means
 #: module.yaml
 msgid "The USB device to write to. Everything on it is erased. A device the running system is on is not offered."
+msgstr ""
+
+#. ARCH_OS_IMAGE_DEVICE: the heading its row sits under
+#: module.yaml
+msgid "Target"
 msgstr ""
 
 #. ARCH_OS_IMAGE_DEVICE: what a wrong answer is told

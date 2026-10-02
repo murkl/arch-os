@@ -43,7 +43,7 @@ msgstr "Konsolentastatur"
 #. ARCH_OS_RECOVERY_KEYMAP: what it means
 #: module.yaml
 msgid "The keyboard you are typing on right now, loaded at once. Opens on the one the live image started with."
-msgstr "Die Tastatur, auf der du gerade tippst, sofort geladen. Öffnet auf der, mit der das Live-Abbild gestartet wurde."
+msgstr "Die Tastatur, auf der du gerade tippst, sofort geladen. Öffnet auf der, mit der das Live-Image gestartet wurde."
 
 #. ARCH_OS_RECOVERY_KEYMAP: the heading its row sits under
 #: module.yaml
@@ -148,7 +148,7 @@ msgid ""
 "\n"
 "Needed after a rollback past a kernel update, or the system starts without its modules. Everything comes from the package cache, so no network is needed."
 msgstr ""
-"Die Kernel-Abbilder und die Initial-RAM-Disks neu bauen?\n"
+"Die Kernel-Images und die Initial-RAM-Disks neu bauen?\n"
 "\n"
 "Nötig nach einem Rücksprung über ein Kernel-Update hinweg, sonst startet das System ohne seine Module. Alles kommt aus dem Paket-Cache, ein Netzwerk braucht es nicht."
 
@@ -170,7 +170,7 @@ msgstr "Ein Arch-Linux-Live-Image"
 #. an action: what a no from it means
 #: actions/live-image/action.yaml
 msgid "This runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there."
-msgstr "Das läuft auf einem gestarteten Arch-Linux-Live-Image. Schreib eins mit Bootmedium erstellen, starte die Maschine davon und öffne es dort."
+msgstr "Das läuft auf einem gestarteten Arch-Linux-Live-Image. Schreib eins mit Bootmedium erstellen, starte den Rechner davon und öffne es dort."
 
 #. an action: its row, and the heading over its page
 #: actions/no-cable/action.yaml

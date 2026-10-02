@@ -3,6 +3,10 @@
 mountpoint -q "$MNT"
 mountpoint -q "${MNT}/boot"
 
+# One signature on the system partition: one left from what the disk held
+# before is ambivalent to blkid, and mount may read that one instead.
+blkid -p "$(system_partition "$ARCH_OS_DISK")" >/dev/null
+
 # Encrypted, the system goes onto the opened volume, not the partition under it.
 if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
     system_part="$(system_partition "$ARCH_OS_DISK")"

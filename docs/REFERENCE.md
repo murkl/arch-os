@@ -12,7 +12,7 @@ UEFI only, GPT, the whole disk for Arch OS: it is the only system on it.
 | --- | --- | --- | --- | --- |
 | 1 | 1 GiB | EFI system (`ef00`) | `BOOT` | `/boot` |
 | 2 | the rest | Linux (`8300`) | `BTRFS` | `/` |
-| 3 | its image, about 270 MiB | Linux (`8300`) | - | never - see **[The Recovery Partition](#the-recovery-partition)** |
+| 3 | its image, about 500 MiB | Linux (`8300`) | - | never - see **[The Recovery Partition](#the-recovery-partition)** |
 
 Always in that order, and always btrfs. The third is there with **Recovery**, at the end of the disk, so the root is the second on every installation. `/boot` is `fmask=0077,dmask=0077`: it holds the kernel and the signed image, root's business only.
 
@@ -122,7 +122,7 @@ Swap is **zram** always, tweaks or not. **[➜ Zram](https://wiki.archlinux.org/
 
 Enough for a usable install, little enough that nothing needs looking after.
 
-- `base`, `linux-zen`, `sudo`, `zram-generator`, `networkmanager`, `btrfs-progs`, `snapper`
+- `base`, `linux-zen`, `mkinitcpio`, `sudo`, `zram-generator`, `networkmanager`, `btrfs-progs`, `snapper`
 - The processor's microcode, `intel-ucode` or `amd-ucode`, read off `/proc/cpuinfo`
 - The chosen editor (`nano` unless another was picked), `man-db`, `man-pages`, `openssh` - `base` ships none of them. The editor gets a configuration of its own - see [The Text Editor](#the-text-editor)
 - Everything else follows an answer: the task that enables a service installs its package
@@ -280,7 +280,7 @@ Two questions - keyboard, disk - and on its own partition not even those, see be
 | Encryption | The LUKS header, no password needed | Before the run |
 | File system | `lsblk` on the unlocked device - btrfs, or it is turned away | Once open |
 | Subvolumes | `btrfs subvolume list` on the top level - every one of the layout, or it is turned away | Once open |
-| `/boot` | The installation's own `fstab` | While mounting |
+| `/boot` | Partition 1, as the Installer lays it out - not the `fstab`, which may be what broke | While mounting |
 | Kernels | `/usr/lib/modules/*/` | While rebuilding boot |
 | Snapshots | `@snapshots` on the btrfs top level | Mid-run; none means the rollback step is skipped |
 
@@ -292,7 +292,7 @@ The password of an encrypted disk is typed once rather than twice: it already ex
 
 What the Recovery starts with on its own partition is put in force before the first page: the keyboard is loaded, and one that will not load is asked for again rather than left standing, since the password is typed next.
 
-**Note:** _A rollback builds the new `@` before touching the old one - a run that dies halfway leaves the system as found._
+**Note:** _A rollback builds the new `@` before touching the old one, and the next run finishes one cut short between the two - a run that dies halfway never leaves a system without `@`._
 
 ### The Recovery Partition
 
@@ -303,7 +303,7 @@ It is built with the release rather than on the machine, out of Arch's own minim
 | File | Goes to | What it is |
 | --- | --- | --- |
 | `recovery.efi` | `/boot/EFI/Linux/arch-os-recovery.efi` | Kernel, ram disk and command line as one image. systemd-boot lists it by itself, under the name its `os-release` gives it |
-| `recovery.img` | partition 3, byte for byte | A read-only erofs holding the root file system and its signature. The running system never mounts it, and nothing can write to it |
+| `recovery.img` | partition 3, byte for byte | A read-only erofs holding the root file system and its signature. The running system never mounts it, nothing can write to it, and the file manager does not list it |
 
 How it starts:
 
@@ -329,6 +329,6 @@ A hybrid ISO already carries its partition table and boot paths - writing it is 
 - The image is the release `version:` in `oak.yaml` names
 - Where it lands is asked: `XDG_DOWNLOAD_DIR` or `~/Downloads`. An image already there is used rather than fetched again
 - It is checked against the checksum GitHub publishes for that release, and a mismatch discards it rather than keeping a broken one. The checksum is read once, when the image is fetched or found, and kept beside it as `.sha256`
-- Where that release publishes no checksum, nothing is written. **Verify checksum** off in the settings writes the image in the folder as it is, without asking the release anything - an image built here is the one that arrives this way
+- Where that release publishes no checksum, nothing is written. **Verify checksum** off in the **Configuration** writes the image in the folder as it is, without asking the release anything - an image built here is the one that arrives this way
 
 **Root only for the write.** `as_root` wraps `umount`, `dd`, `blockdev` - nothing else. Everything else runs as you, so a live image never leaves root-owned files in your home. Where `sudo` wants a password, it is asked in the interface right before the run, tried with `sudo` there, and handed to it on stdin - the screen is never handed to a prompt, and the write shows how far `dd` has got under its step.

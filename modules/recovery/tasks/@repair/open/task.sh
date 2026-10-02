@@ -38,6 +38,13 @@ fi
 # short of a subvolume was installed by an earlier release, and is opened by
 # that release's Recovery.
 mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvolid=5" "$device" "$BTRFS_TOP"
+
+# A rollback stopped between taking the old @ away and moving the new one in.
+if [ ! -e "${BTRFS_TOP}/@" ] && [ -d "${BTRFS_TOP}/@.new" ]; then
+    mv "${BTRFS_TOP}/@.new" "${BTRFS_TOP}/@"
+    echo "finished the rollback an earlier run left halfway"
+fi
+
 present="$(btrfs subvolume list "$BTRFS_TOP" | awk '{ print $NF }')"
 missing=()
 while read -r subvolume _; do

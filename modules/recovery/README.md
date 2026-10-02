@@ -53,7 +53,7 @@ Everything else about the disk is read, not asked:
 | Encryption | LUKS header, no password needed | Before the run, as a `value-from:` |
 | File system | `lsblk` on the unlocked device - btrfs, or it is turned away | Once open |
 | Subvolumes | `btrfs subvolume list` on the top level - every one the Installer lays down, or it is turned away | Once open |
-| `/boot` | The installation's own `fstab` | While mounting |
+| `/boot` | Partition 1, as the Installer lays it out - not the `fstab`, which may be what broke | While mounting |
 | Snapshots | `@snapshots` on the btrfs top level | Mid-run, once mounted, as `type: deferred` |
 
 None to offer means the step is skipped, not asked about.

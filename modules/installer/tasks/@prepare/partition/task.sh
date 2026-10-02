@@ -6,7 +6,7 @@
 # the disk is held to the list it is chosen from right before it is written.
 disks="$(list_disks | cut -f1)"
 if ! grep -qxF "$ARCH_OS_DISK" <<<"$disks"; then
-    echo "${ARCH_OS_DISK} is not one of the disks this machine can be installed on. Choose the disk again in the settings." >&2
+    echo "${ARCH_OS_DISK} is not one of the disks this machine can be installed on. Choose the disk again in the Configuration." >&2
     exit 1
 fi
 boot_part="$(boot_partition "$ARCH_OS_DISK")"
@@ -30,8 +30,8 @@ fi
 
 # An LVM group or a software RAID the live image assembled on its own off the
 # old contents holds the partitions open. lvm warns about every descriptor it
-# inherits, so Oak's error channel is closed for it.
-vgchange -an 3>&- || true
+# inherits, Oak's error channel among them.
+LVM_SUPPRESS_FD_WARNINGS=1 vgchange -an || true
 if command -v mdadm >/dev/null; then
     mdadm --stop --scan || true
 fi
@@ -72,6 +72,10 @@ partprobe "$ARCH_OS_DISK"
 # udev makes the new device nodes a moment after partprobe returns.
 udevadm settle
 
+# The new partitions start where the old ones did, and so do their signatures:
+# a LUKS header left under a fresh btrfs is what mount then reads.
+wipefs -af "$boot_part" "$system_part"
+
 # The firmware's entries for partitions that are now gone. One left behind
 # costs a line in a menu, so this is never fatal.
 # https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface#efibootmgr
@@ -104,7 +108,7 @@ fi
 
 mkfs.fat -F 32 -n BOOT "$boot_part"
 mkfs.btrfs -f -L BTRFS "$root_device"
-mount -v "$root_device" "$MNT"
+mount -v -t btrfs "$root_device" "$MNT"
 while read -r subvolume _; do
     btrfs subvolume create "${MNT}/${subvolume}"
 done < <(btrfs_subvolumes)
@@ -127,4 +131,4 @@ chattr +C "${MNT}/var/lib/libvirt/images"
 # systemd would make subvolumes of these on first boot, noise in every listing.
 mkdir -p "${MNT}/var/lib/portables" "${MNT}/var/lib/machines"
 
-mount -v --mkdir "$boot_part" "${MNT}/boot"
+mount -v --mkdir -t vfat "$boot_part" "${MNT}/boot"

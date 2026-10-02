@@ -1,0 +1,2 @@
+# Written by the Arch OS Installer: the Recovery's partition, out of the file manager.
+ENV{ID_FS_UUID}=="{{UUID}}", ENV{UDISKS_IGNORE}="1"

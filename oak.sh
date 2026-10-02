@@ -607,15 +607,15 @@ target_device() {
 # btrfs, from the layer on top.
 fstype() { lsblk -dno FSTYPE "$1" 2>/dev/null || true; }
 
-# The system mounted the way it mounts itself: @ first, then /boot by its own
-# fstab.
+# The system mounted by the layout the Installer lays out: @ first, then /boot
+# from partition 1. Not by its fstab, which may be what broke.
 mount_target() {
     local device subvolume path
     device="$(target_device)"
     while IFS=$'\t' read -r subvolume path; do
         mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=${subvolume}" "$device" "${MNT}${path%/}"
     done < <(btrfs_subvolumes)
-    mount --fstab "${MNT}/etc/fstab" --target-prefix "$MNT" --mkdir /boot
+    mount --mkdir -t vfat "$(boot_partition "$ARCH_OS_RECOVERY_DISK")" "${MNT}/boot"
 }
 
 # Everything under /mnt taken down. Whatever still holds it is logged and
@@ -729,11 +729,10 @@ load_vconsole_keymap() {
     loadkeys "$(vconsole_keymap)"
 }
 
-# Every locale glibc ships that locale.gen knows, without @-variants.
+# Every UTF-8 locale glibc supports, without @-variants. SUPPORTED rather than
+# locale.gen, which cloud-init and hand edits rewrite.
 list_locales() {
-    comm -12 \
-        <(basename -a /usr/share/i18n/locales/* | grep -v '@' | sort -u) \
-        <(sed -n 's/^#\? *\([a-zA-Z_]*\)[. ].*/\1/p' /etc/locale.gen | sort -u)
+    sed -n 's/^\([a-z]\{2,3\}\(_[A-Z]\{2\}\)\{0,1\}\)\(\.UTF-8\)\{0,1\} UTF-8$/\1/p' /usr/share/i18n/SUPPORTED | sort -u
 }
 
 # Not Afar, the first row: the one locale generated either way.

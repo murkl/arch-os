@@ -7,6 +7,7 @@
 title: Create boot medium
 description: Write Arch OS to a USB device to boot another machine from.
 start-title: Create
+settings-title: Configuration
 
 rules:
   offer-if: [installed-system]
@@ -41,7 +42,7 @@ variables:
     description: |
       The USB device to write to. Everything on it is erased. A device the
       running system is on is not offered.
-    group: Device
+    group: Target
     required: true
     error: Choose a device that exists.
     options-from: list_devices()
@@ -51,7 +52,7 @@ variables:
   - name: ARCH_OS_IMAGE_SUDO
     title: Password for the write
     description: Whether writing the device asks for your password.
-    group: Device
+    group: Target
     type: bool
     value-from: needs_password()
 
@@ -59,7 +60,7 @@ variables:
   - name: ARCH_OS_IMAGE_PASSWORD
     title: Your password
     description: Writing the device needs root, and sudo asks for your password. Asked right before the run and never written to a file.
-    group: Device
+    group: Target
     type: secret
     existing: true
     required: true
