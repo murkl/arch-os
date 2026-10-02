@@ -52,15 +52,17 @@
       - page: [Install, Configuration]
         choose: Install
         press: enter
-      - page: Do you want to continue?
-        choose: "Yes"
-        press: enter
 
       # Asked here rather than with the other answers, and written to no file.
       - page: Password
         press: [tuxpass, enter]
       - page: Repeat
         press: [tuxpass, enter]
+
+      # The last page, after the password: what is about to be erased.
+      - page: and install Arch Linux?
+        choose: "Yes"
+        press: enter
 
       - page: Arch OS is installed
         shot: installing
@@ -78,7 +80,7 @@
         press: enter
       - page: [Repair, Configuration]
         press: enter
-      - page: Do you want to continue?
+      - page: Open the system on
         choose: "Yes"
         press: enter
       - page: in place of the system

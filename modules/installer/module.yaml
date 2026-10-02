@@ -4,8 +4,15 @@
 
 title: Installer
 description: Install Arch Linux on this machine.
-start-title: Install
-settings-title: Configuration
+
+# The last page comes after the password, and names the disk it erases.
+text:
+  start: Install
+  settings: Configuration
+  confirm: |
+    Erase {{ARCH_OS_DISK}} and install Arch Linux?
+
+    Everything on it is lost.
 
 # Each a folder under actions/. The internet comes last, after the keyboard a
 # passphrase is typed on.

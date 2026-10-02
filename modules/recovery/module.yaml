@@ -4,8 +4,15 @@
 
 title: Recovery
 description: Repair an Arch Linux system that is already on a disk.
-start-title: Repair
-settings-title: Configuration
+
+# Opening changes nothing, and the steps that do ask on their own.
+text:
+  start: Repair
+  settings: Configuration
+  confirm: |
+    Open the system on {{ARCH_OS_RECOVERY_DISK}}?
+
+    Opening it changes nothing. Every step that does asks first.
 
 # Nothing waits for a network: a repair downloads nothing, and the network may
 # be what broke.

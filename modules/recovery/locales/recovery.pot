@@ -38,6 +38,14 @@ msgstr ""
 msgid "Configuration"
 msgstr ""
 
+#. the last page before the work, after every password
+#: module.yaml
+msgid ""
+"Open the system on {{ARCH_OS_RECOVERY_DISK}}?\n"
+"\n"
+"Opening it changes nothing. Every step that does asks first."
+msgstr ""
+
 #. ARCH_OS_RECOVERY_KEYMAP: the question
 #: module.yaml
 msgid "Console keyboard"

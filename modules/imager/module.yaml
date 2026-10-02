@@ -6,8 +6,14 @@
 # The folder stays imager, which its files are named after.
 title: Create boot medium
 description: Write Arch OS to a USB device to boot another machine from.
-start-title: Create
-settings-title: Configuration
+
+text:
+  start: Create
+  settings: Configuration
+  confirm: |
+    Erase {{ARCH_OS_IMAGE_DEVICE}} and write Arch OS to it?
+
+    Everything on it is lost.
 
 rules:
   offer-if: [installed-system]

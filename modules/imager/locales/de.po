@@ -35,6 +35,17 @@ msgstr "Erstellen"
 msgid "Configuration"
 msgstr "Konfiguration"
 
+#. the last page before the work, after every password
+#: module.yaml
+msgid ""
+"Erase {{ARCH_OS_IMAGE_DEVICE}} and write Arch OS to it?\n"
+"\n"
+"Everything on it is lost."
+msgstr ""
+"{{ARCH_OS_IMAGE_DEVICE}} löschen und Arch OS darauf schreiben?\n"
+"\n"
+"Alles darauf geht verloren."
+
 #. ARCH_OS_DOWNLOAD_DIR: the question
 #: module.yaml
 msgid "Download folder"

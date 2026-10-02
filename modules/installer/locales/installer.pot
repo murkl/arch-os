@@ -38,6 +38,14 @@ msgstr ""
 msgid "Configuration"
 msgstr ""
 
+#. the last page before the work, after every password
+#: module.yaml
+msgid ""
+"Erase {{ARCH_OS_DISK}} and install Arch Linux?\n"
+"\n"
+"Everything on it is lost."
+msgstr ""
+
 #. a starting point: its row
 #: module.yaml
 msgid "Desktop"
