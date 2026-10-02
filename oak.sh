@@ -1,12 +1,9 @@
 # shellcheck shell=bash
-# The library of Arch OS. Oak loads it in front of every task, test and action
-# of every module and in front of the shell a module.yaml runs, so it is the one
-# place they share code: what one script needs stays in that script's folder. A
-# value the scripts read is exported, and loading runs nothing else. Why it looks
-# the way it does: docs/REFERENCE.md
+# The one library of Arch OS, loaded in front of every script of every module.
+# It defines and exports, and runs nothing while it loads.
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
-# Under --debug only what reads still runs: a page's list, an answer applied.
+# Under --debug only what reads still runs.
 debugging() { [ "$DEBUG" = "true" ]; }
 
 is_root() { [ "$(id -u)" -eq 0 ]; }
@@ -16,7 +13,7 @@ fetch_url() {
     curl -Lf --proto '=https' --proto-redir '=https' --connect-timeout 10 "$@"
 }
 
-# An answer written back into the file Oak reads, replacing an earlier one.
+# An answer written back into the file Oak reads, in place of an earlier one.
 answer() {
     local tmp="${MODULE_CONF}.answer"
     grep -v "^${1}=" "$MODULE_CONF" >"$tmp" 2>/dev/null || : >>"$tmp"
@@ -31,18 +28,19 @@ where() { printf '%s/data' "$(dirname "${BASH_SOURCE[1]}")"; }
 # THE RELEASE
 # ////////////////////////////////////////////////////////////////////////////
 
-# The release this program is, read from the oak.yaml beside the answer file:
-# what a module fetches is what was tested with it.
 REPO="murkl/arch-os"
-VERSION="$(sed -n 's/^version:[[:space:]]*//p' "$(dirname "$MODULE_CONF")/oak.yaml")"
-export VERSION
 
-# The download of that release whose name ends in $1, and the sha256 GitHub
-# publishes for it, as two words - nothing where the release is out of reach.
-# Each asset is weighed when the next begins, so the field order does not matter.
+# The folder oak.sh and oak.yaml lie in.
+product_dir() { dirname "${BASH_SOURCE[0]}"; }
+
+# The release this program is: what a module fetches is what was tested with it.
+release_version() { sed -n 's/^version:[[:space:]]*//p' "$(product_dir)/oak.yaml"; }
+
+# The download of that release whose name ends in $1 and its sha256, as two
+# words, or nothing where the release is out of reach.
 release_asset() {
     local json
-    json="$(fetch_url -s --max-time 20 "https://api.github.com/repos/${REPO}/releases/tags/v${VERSION}" || true)"
+    json="$(fetch_url -s --max-time 20 "https://api.github.com/repos/${REPO}/releases/tags/v$(release_version)" || true)"
     printf '%s\n' "$json" | awk -v suffix="$1" '
         function weigh() {
             if (!found && url != "" && substr(url, length(url) - length(suffix) + 1) == suffix) { found = 1; print url, digest }
@@ -59,7 +57,7 @@ release_asset() {
 # ////////////////////////////////////////////////////////////////////////////
 
 # Real HTTPS rather than a ping, which a captive portal answers too. Simulated,
-# it is online, so the pictures of a run come out the same on every desk.
+# it is online, so screenshots come out the same on every desk.
 is_online() {
     debugging && return 0
     fetch_url -sI --connect-timeout 5 --max-time 10 https://archlinux.org >/dev/null
@@ -67,9 +65,9 @@ is_online() {
 
 has_wifi_card() { compgen -G '/sys/class/ieee80211/*' >/dev/null; }
 
-# Online, and not over the air: the default route leaves by an interface with
-# no wireless card behind it. A route lookup sends nothing, and the address is
-# one set aside for documentation, which only the default route claims.
+# Online, and not over the air: the default route leaves by an interface with no
+# wireless card. The address is reserved for documentation; looking up its route
+# sends nothing.
 online_by_cable() {
     local route device
     is_online || return 1
@@ -78,12 +76,9 @@ online_by_cable() {
     [ -n "$device" ] && [ ! -e "/sys/class/net/${device}/phy80211" ]
 }
 
-# The wireless card's station, or nothing where there is no card. iwd is started
-# only on the live image; anywhere else it is not ours to start.
-#
-# iwctl colours its table and puts the reset code at the start of the first
-# device row, so the colours come off before the first column is read. The
-# match is remembered rather than exited on: a closed pipe fails under pipefail.
+# The wireless card's station, or nothing. iwd is started only on the live image.
+# iwctl colours its table, so the colours come off before a column is read, and
+# the match is remembered rather than exited on: a closed pipe fails pipefail.
 wifi_station() {
     local station=""
     has_wifi_card || return 0
@@ -109,16 +104,15 @@ wifi_online() {
     return 1
 }
 
-# Without --dont-ask, iwctl asks for a passphrase on the terminal the interface
-# is drawn on. Online is waited for, not required: the page behind says so.
+# Without --dont-ask, iwctl asks for a passphrase on the interface's terminal.
 join_wifi() {
     iwctl --dont-ask station "$(wifi_station)" connect "$ARCH_OS_WIFI_SSID"
     wifi_online || true
 }
 
 # The one place a secret reaches a command line: iwctl takes it no other way
-# without an agent on the terminal. A live image, one account, one second. Some
-# cards take a wrong passphrase without a word; no address is the tell.
+# without an agent. Some cards take a wrong passphrase silently; no address is
+# the tell.
 join_wifi_with_passphrase() {
     iwctl --passphrase "$ARCH_OS_WIFI_PASSPHRASE" station "$(wifi_station)" connect "$ARCH_OS_WIFI_SSID"
     wifi_online
@@ -131,12 +125,13 @@ join_wifi_with_passphrase() {
 # No account and no key: a POST in, the address it lives at out.
 export PASTE="https://paste.rs"
 
+# Retried, since paste.rs answers a busy moment with an error, and -S puts the
+# status it answered with on the page that says it failed.
 paste_online() {
-    fetch_url -s --max-time 30 --data-binary @- "${PASTE}/" | tr -d '[:space:]'
+    fetch_url -sS --max-time 30 --retry 3 --retry-delay 2 --data-binary @- "${PASTE}/" | tr -d '[:space:]'
 }
 
-# Simulated, an address all the same, so the page can be looked at. Oak keeps
-# the log beside the answer file, under the module's name.
+# Simulated, an address all the same. Oak keeps the log beside the answer file.
 share_log() {
     local url
     if debugging; then
@@ -162,8 +157,8 @@ on_arch_live_image() {
     on_live_image && grep -qs '^ID=arch$' /etc/os-release
 }
 
-# The keyboard the live image was started with, which the Arch image records only
-# as a loadkeys line in root's history. None there is the ordinary case.
+# The keyboard the live image was started with: the Arch image records it only as
+# a loadkeys line in root's history.
 live_keymap() {
     local keymap
     keymap="$({ grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null || true; } |
@@ -171,8 +166,7 @@ live_keymap() {
     printf '%s' "${keymap:-us}"
 }
 
-# The disk the live image runs from - also through Ventoy - which no module may
-# write to.
+# The disk the live image runs from, also through Ventoy. No module writes to it.
 live_disk() {
     lsblk -no PKNAME,MOUNTPOINT |
         awk '!found && $1 != "" && $2 ~ /^\/run\/archiso/ { print "/dev/" $1; found = 1 }'
@@ -188,8 +182,8 @@ export MNT=/mnt
 # The one kernel Arch OS installs, and so the one the Recovery puts back.
 export KERNEL=linux-zen
 
-# The partitions the Installer lays a disk out into and the Recovery finds again
-# by number: nvme0n1 gets a p.
+# The partitions the Installer lays out and the Recovery finds again. nvme0n1
+# gets a p.
 part_of() {
     local sep=""
     [[ "$1" =~ [0-9]$ ]] && sep="p"
@@ -213,8 +207,8 @@ btrfs_subvolumes() {
         @libvirt /var/lib/libvirt/images
 }
 
-# Every file sbctl keeps is signed, and there is one. Read off its list, because
-# `sbctl verify` answers 0 whatever it found.
+# Every file sbctl keeps is signed, and there is one. `sbctl verify` answers 0
+# whatever it found, so its list is read.
 boot_chain_signed() {
     local files
     files="$(arch-chroot "$1" sbctl list-files --json)" || return 1
@@ -228,8 +222,8 @@ boot_chain_signed() {
     fi
 }
 
-# A shell inside the system, for a terminal handed over by Oak. HOME, because a
-# service has none. The shell exits with whatever was typed last.
+# A shell inside the system, on the terminal Oak hands over. HOME, because a
+# service has none; the shell's own exit is whoever typed in it.
 open_shell() {
     clear
     echo "You are now inside the system at ${MNT}."
@@ -243,8 +237,8 @@ open_shell() {
 # ////////////////////////////////////////////////////////////////////////////
 
 # A template from a task's data/ on stdout: {{NAME}} filled from NAME=value,
-# every $ left for whoever reads the file later. A placeholder nobody filled and
-# a value nothing asks for both fail. Why not envsubst: docs/REFERENCE.md
+# every $ left alone. A placeholder nobody filled and a value nothing asks for
+# both fail. Why not envsubst: docs/REFERENCE.md
 render() {
     local template="$1" open='{{' close='}}' text rendered="" name pair
     local -A values=() used=()
@@ -267,8 +261,7 @@ render() {
     # Whole, trailing newlines included, which $(<file) would strip.
     IFS= read -r -d '' text <"$template" || true
 
-    # Left to right and once, so a value that happens to hold {{ is never read
-    # as a placeholder of its own.
+    # Left to right and once: a value holding {{ is never read as a placeholder.
     while [[ $text == *"$open"* ]]; do
         rendered+="${text%%"$open"*}"
         text="${text#*"$open"}"
@@ -302,7 +295,7 @@ render() {
 
 # Keyboard, font and time zone do not follow from the shape of a locale - de_CH
 # is not de - so they are looked up in the Installer's data/.
-INSTALLER_DATA="$(dirname "${BASH_SOURCE[0]}")/modules/installer/data"
+installer_data() { printf '%s/modules/installer/data' "$(product_dir)"; }
 
 # A column of data/languages for a locale: its own row, else its language's.
 language_field() {
@@ -312,16 +305,15 @@ language_field() {
         $1 == locale { hit = $0; exit }
         $1 == lang && fallback == "" { fallback = $0 }
         END { split(hit != "" ? hit : fallback, f); print f[col] }
-    ' "${INSTALLER_DATA}/languages"
+    ' "$(installer_data)/languages"
 }
 
 # A column of data/countries for a territory code; empty for none.
 country_field() {
-    awk -F'\t' -v col="$1" -v code="$2" 'code != "" && $1 == code { print $col }' "${INSTALLER_DATA}/countries"
+    awk -F'\t' -v col="$1" -v code="$2" 'code != "" && $1 == code { print $col }' "$(installer_data)/countries"
 }
 
-# What each list resolves to on auto - functions, because the page shows the
-# same answer beside its auto row.
+# What auto resolves to, also shown beside the auto row of each list.
 auto_keymap() {
     local keymap
     keymap="$(language_field 2 "$ARCH_OS_LOCALE_LANG")"
@@ -346,8 +338,8 @@ auto_font() {
     printf '%s' "${font:-none}"
 }
 
-# The country of the time zone rather than the language: en_US is typed on
-# every continent, and a mirror an ocean away cannot be rated in time.
+# The country of the time zone rather than of the language: en_US is typed on
+# every continent.
 auto_country() {
     local territory country
     territory="$(awk -F'\t' -v zone="$ARCH_OS_TIMEZONE" \
@@ -360,8 +352,8 @@ auto_country() {
 # none is answered, and stands for nothing set.
 not_none() { [ "$1" = "none" ] || printf '%s' "$1"; }
 
-# An answer as the new system is set to it, with auto worked out by the
-# function named second.
+# An answer as the new system is set to it, auto worked out by the function
+# named second.
 resolved() {
     local value="$1"
     if [ -z "$value" ] || [ "$value" = "auto" ]; then
@@ -389,9 +381,8 @@ microcode() {
     fi
 }
 
-# Each graphics card: the vendor as the driver packages name it, a tab, the PCI
-# device ID - off sysfs rather than lspci's table. A virtual machine's own
-# adapter is none of the three and is left out.
+# Each graphics card as vendor, a tab and the PCI device ID, off sysfs. A
+# virtual machine's own adapter is none of the three.
 graphics_cards() {
     local dev vendor
     for dev in /sys/bus/pci/devices/*; do
@@ -421,8 +412,8 @@ boot_images() {
     fi
 }
 
-# The Recovery image: on the Arch OS ISO already, else fetched into /tmp, which
-# holds more than the image's writable layer. How it boots: docs/REFERENCE.md
+# The Recovery image: on the Arch OS ISO already, else fetched into /tmp. How it
+# boots: docs/REFERENCE.md
 recovery_image() {
     if [ -d /opt/arch-os-recovery ]; then
         echo /opt/arch-os-recovery
@@ -438,8 +429,8 @@ export RECOVERY_EFI=/boot/EFI/Linux/arch-os-recovery.efi
 # INSTALLING | Into the new system
 # ////////////////////////////////////////////////////////////////////////////
 
-# Retried: the network is what reliably goes wrong. pacman's own timeout stays,
-# which turns a mirror gone away into a retry against the next.
+# Retried, since the network is what goes wrong. pacman's own timeout turns a
+# mirror gone away into a retry against the next.
 export RETRIES=5
 export RETRY_WAIT=10
 
@@ -463,10 +454,6 @@ sudoers_rule() {
     mkdir -p "${MNT}/etc/sudoers.d"
     cat >"$file"
     chmod 0440 "$file"
-
-    # A rule sudo will not parse is taken back out rather than left lying
-    # there: one unreadable file in that directory is enough to refuse every
-    # sudo on the machine, and a rule that failed is better gone than kept.
     arch-chroot "$MNT" visudo -cqf "/etc/sudoers.d/${1}" && return 0
     rm -f "$file"
     echo "the sudo rule ${1} was rejected and was removed again" >&2
@@ -474,8 +461,8 @@ sudoers_rule() {
 }
 
 # pacman reads no drop-in directory but follows an Include, so each setting is a
-# file under /etc/pacman.d named by one line - the one edit a .pacnew carries.
-# Named outright: a glob matching nothing stops pacman.
+# file under /etc/pacman.d named by one line. Named outright: a glob matching
+# nothing stops pacman.
 # https://man.archlinux.org/man/pacman.conf.5
 pacman_include() {
     local file
@@ -485,8 +472,8 @@ pacman_include() {
         echo "Include = ${file}" >>"${MNT}/etc/pacman.conf"
 }
 
-# One attempt's time limit, and how often a build is tried: downloads fail, a
-# build that hits the limit was stuck.
+# How often a build is tried, and one attempt's limit: one that hits it was
+# stuck.
 AUR_RETRIES=3
 AUR_TIMEOUT=2700
 
@@ -506,13 +493,10 @@ chroot_aur_install() {
 
     dir="$(mktemp -u "/home/${ARCH_OS_USERNAME}/.aur-${repo}.XXXX")"
     build="rm -rf ${dir} && git clone --depth 1 ${url} ${dir} && cd ${dir}"
-    # Added to the options the PKGBUILD sets rather than put in their place: one
-    # that says !lto would otherwise be built with what its author ruled out.
+    # Added to the PKGBUILD's options, so one that says !lto keeps it.
     build="${build} && printf '\noptions+=(\"!debug\")\n' >>PKGBUILD"
-    # make and cargo are named separately because neither reads the other. The
-    # caches cargo fills are kept inside the build directory, so they go with
-    # it: otherwise paru's crate registry, well over a hundred megabytes, stays
-    # in the new home for good.
+    # make and cargo read their own variables. cargo's caches stay in the build
+    # directory and go with it, rather than a hundred megabytes in the new home.
     build="${build} && MAKEFLAGS=-j${jobs} CARGO_BUILD_JOBS=${jobs}"
     build="${build} CARGO_HOME=${dir}/.cargo XDG_CACHE_HOME=${dir}/.cache"
     build="${build} makepkg -si --noconfirm --needed"
@@ -533,9 +517,7 @@ chroot_aur_install() {
         sleep "$RETRY_WAIT"
     done
 
-    # Taken back first, before anything that can fail: a cleanup that dies on
-    # a root-owned file the build left behind would otherwise leave passwordless
-    # sudo standing in the installed system.
+    # Taken back before anything that can fail, or passwordless sudo stays.
     rm -f "${MNT}/etc/sudoers.d/99-aur-build"
     rm -rf "${MNT}${dir}" || echo "the build directory ${dir} could not be removed" >&2
 
@@ -565,12 +547,12 @@ own_home() {
     arch-chroot "$MNT" chown -R "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" "/home/${ARCH_OS_USERNAME}"
 }
 
-# Settings only a session can take: tasks append lines here, and the
-# first-login task turns them into a script that runs once.
+# Settings only a session can take: tasks append lines here, and first-login
+# turns them into a script that runs once.
 on_first_login() { cat >>"$(user_home)/.first-login"; }
 
-# Asked of the new system: a link in its /usr/bin may be absolute, which out
-# here points into the live system. Arch puts every binary in /usr/bin.
+# Asked of the new system: an absolute link in its /usr/bin points into the
+# live system from out here.
 has_command() { arch-chroot "$MNT" test -x "/usr/bin/${1}"; }
 
 # sysctl says nothing about a key it does not have, so each is looked for.
@@ -578,8 +560,7 @@ sysctl_keys_exist() {
     local keys key
     keys="$(sed -n 's/^[[:space:]]*\([a-z][a-z0-9._-]*\)[[:space:]]*=.*/\1/p' "$1")"
 
-    # No keys at all would be a loop over nothing, which is a check that passes
-    # without having looked - the failure this exists to catch, arriving as a pass.
+    # No keys at all would pass without having looked.
     [ -n "$keys" ] || {
         echo "${1} sets nothing at all" >&2
         return 1
@@ -600,12 +581,12 @@ sysctl_keys_exist() {
 # The name of the unlocked disk under /dev/mapper.
 export CRYPT=recovery
 
-# The btrfs top level, where @ and the snapshots are and a rollback happens.
-# Outside MNT, so it never ends up in a chroot and outlives an unmount there.
+# The btrfs top level, where a rollback happens. Outside MNT, so it is in no
+# chroot and outlives an unmount there.
 export BTRFS_TOP=/run/arch-os-recovery
 
-# The system partition of the disk, taken only while it is a LUKS container or
-# a btrfs labelled BTRFS. Raw output, so an empty column stays a column.
+# The system partition, while it is LUKS or a btrfs labelled BTRFS. Raw output
+# keeps an empty column a column.
 target_partition() {
     local part
     part="$(system_partition "$ARCH_OS_RECOVERY_DISK")"
@@ -622,13 +603,12 @@ target_device() {
     fi
 }
 
-# The device's own file system, --nodeps: without it an unlocked LUKS partition
-# answers btrfs, from the layer on top.
+# The device's own file system: without -d an unlocked LUKS partition answers
+# btrfs, from the layer on top.
 fstype() { lsblk -dno FSTYPE "$1" 2>/dev/null || true; }
 
-# The system mounted the way it mounts itself: @ first, since every other mount
-# point is a directory inside it, then /boot with the options its own table
-# gives it.
+# The system mounted the way it mounts itself: @ first, then /boot by its own
+# fstab.
 mount_target() {
     local device subvolume path
     device="$(target_device)"
@@ -638,9 +618,9 @@ mount_target() {
     mount --fstab "${MNT}/etc/fstab" --target-prefix "$MNT" --mkdir /boot
 }
 
-# Everything under /mnt taken down. Whatever still holds it is named in the log
-# and killed; the second umount is meant to fail loudly. -R, not -A: the top
-# level is a second mount of the same disk. -M keeps fuser on the target.
+# Everything under /mnt taken down. Whatever still holds it is logged and
+# killed, and a second failure is loud. -R, not -A: the top level is a second
+# mount of the same disk.
 unmount_target() {
     mountpoint -q "$MNT" || return 0
     umount -R "$MNT" && return 0
@@ -658,16 +638,14 @@ unmount_target() {
 # ////////////////////////////////////////////////////////////////////////////
 
 # The image, named after the version: a machine that has it needs no release.
-image() { printf '%s/arch-os-%s-x86_64.iso' "$(download_dir)" "$VERSION"; }
+image() { printf '%s/arch-os-%s-x86_64.iso' "$(download_dir)" "$(release_version)"; }
 
-# The checksum beside it, as `sha256sum -c` reads it. The download writes it or
-# takes it away, so the network is read once.
+# The checksum beside it, as `sha256sum -c` reads it.
 checksum() { printf '%s.sha256' "$(image)"; }
 
-# Root for one command, only in the step that writes: a root process would
-# leave two gigabytes in somebody's home that only root can delete. The password
-# typed into the interface goes to sudo on stdin; -k asks every time, -p '' keeps
-# the prompt out of the log, and -n makes sure a sudo that needs none never asks.
+# Root for one command, only where it writes: a root process would leave two
+# gigabytes only root can delete. The password goes to sudo on stdin; -k asks
+# every time, -p '' keeps the prompt out of the log, -n never asks.
 as_root() {
     if is_root; then
         "$@"
@@ -679,7 +657,7 @@ as_root() {
 }
 
 # Something of the running system on that disk: swap, or a mount anywhere but
-# where a stick is put. Raw output joins two mount points with an escaped newline.
+# where a stick is put.
 in_system_use() {
     lsblk -nro MOUNTPOINTS "$1" | awk '
         { n = split($0, mounts, /\\x0a/) }
@@ -688,12 +666,12 @@ in_system_use() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
-# THE YAML | Every function a declaration calls by name
+# THE YAML | Every function a declaration calls as name()
 # ////////////////////////////////////////////////////////////////////////////
 
 # A list may print a value and the text it is chosen by, with a tab between.
 
-# Whole disks by type rather than by major number, chosen by size and model.
+# Whole disks, by size and model.
 list_disks() {
     lsblk -dn -o PATH,TYPE,SIZE,MODEL | awk -v live="$(live_disk)" '
         $2 != "disk" || $1 == live || $1 ~ /^\/dev\/zram/ { next }
@@ -702,16 +680,10 @@ list_disks() {
 
 list_keymaps() { localectl list-keymaps; }
 
-# The networks in range for the page, one SSID per line, strongest first.
-# Simulated, a machine with networks in range, whatever the desk has.
-#
-# iwctl returns as soon as a scan has started, so the list is read once the
-# card says it is done rather than after a fixed pause. Into a variable first:
-# a grep that stops reading fails the pipe under pipefail.
-#
-# Columns are padded apart and an SSID may hold spaces, so two or more spaces is
-# the only separator that keeps "Coffee Bar Free" whole. The connected one is
-# marked with ">" and is still a choice.
+# The networks in range, strongest first. iwctl returns as soon as a scan has
+# started, so the list is read once the card says it is done. An SSID may hold
+# spaces, so only two or more separate columns. The connected one, marked ">",
+# is still a choice.
 list_wifi_networks() {
     local device state
     if debugging; then
@@ -757,14 +729,14 @@ load_vconsole_keymap() {
     loadkeys "$(vconsole_keymap)"
 }
 
-# Every locale glibc ships that locale.gen knows; @-variants double the list.
+# Every locale glibc ships that locale.gen knows, without @-variants.
 list_locales() {
     comm -12 \
         <(basename -a /usr/share/i18n/locales/* | grep -v '@' | sort -u) \
         <(sed -n 's/^#\? *\([a-zA-Z_]*\)[. ].*/\1/p' /etc/locale.gen | sort -u)
 }
 
-# Not Afar, the first row: the one locale this installer generates either way.
+# Not Afar, the first row: the one locale generated either way.
 default_locale() { printf 'en_US'; }
 
 list_vconsole_keymaps() {
@@ -793,11 +765,10 @@ list_countries() {
     printf 'auto\tauto — %s\n' "$(auto_country)"
     echo none
     # A "-" marks a country Arch has no mirror in.
-    awk -F'\t' '!/^#/ && $2 != "-" { print $2 }' "${INSTALLER_DATA}/countries"
+    awk -F'\t' '!/^#/ && $2 != "-" { print $2 }' "$(installer_data)/countries"
 }
 
-# Asked of the running system where it can answer; the Arch ISO ships no
-# xkeyboard-config, and then data/ answers.
+# The Arch ISO ships no xkeyboard-config, and then data/ answers.
 list_layouts() {
     printf 'auto\tauto — %s\n' "$(auto_layout)"
 
@@ -807,7 +778,7 @@ list_layouts() {
         echo "$layouts"
         return 0
     fi
-    grep -v '^#' "${INSTALLER_DATA}/x11-layouts"
+    grep -v '^#' "$(installer_data)/x11-layouts"
 }
 
 list_variants() {
@@ -822,34 +793,33 @@ list_variants() {
         echo "$variants"
         return 0
     fi
-    # A layout without variants has no line there, which is not a failure.
-    { grep "^${layout} " "${INSTALLER_DATA}/x11-variants" || true; } | cut -d' ' -f2- | tr ' ' '\n'
+    # A layout without variants has no line there.
+    { grep "^${layout} " "$(installer_data)/x11-variants" || true; } | cut -d' ' -f2- | tr ' ' '\n'
 }
 
 # ─── The Recovery ───────────────────────────────────────────────────────────
 
-# Loaded the moment it is answered; a simulated run leaves the desk's alone.
+# Loaded the moment it is answered.
 load_recovery_keymap() {
     debugging && return 0
     loadkeys "$ARCH_OS_RECOVERY_KEYMAP"
 }
 
-# Tried on the disk before it is taken, on stdin: --test-passphrase opens
-# nothing, it only asks the keyslots.
+# --test-passphrase opens nothing, it only asks the keyslots.
 unlocks_disk() {
     debugging && return 0
     printf '%s' "$ARCH_OS_RECOVERY_PASSWORD" | cryptsetup open --test-passphrase "$(target_partition)"
 }
 
-# A LUKS header is readable without the password, so nobody is asked this.
+# A LUKS header is readable without the password.
 disk_is_encrypted() {
     [ "$(fstype "$(target_partition)")" = "crypto_LUKS" ] && echo true || echo false
 }
 
 # ─── Create boot medium ─────────────────────────────────────────────────────
 
-# This session's download folder, or the one every desktop falls back to.
-# https://specifications.freedesktop.org/basedir-spec/latest/
+# The answer, the session's download folder, or the one every desktop falls
+# back to. https://specifications.freedesktop.org/basedir-spec/latest/
 download_dir() {
     [ -n "$ARCH_OS_DOWNLOAD_DIR" ] && {
         printf '%s' "$ARCH_OS_DOWNLOAD_DIR"
@@ -862,8 +832,8 @@ download_dir() {
     printf '%s/Downloads' "${HOME:-$(dirname "$MODULE_CONF")}"
 }
 
-# The USB disks, by transport, without the ones the running system is on: a
-# system can live on a USB disk too, and writing over it cannot be taken back.
+# The USB disks, without the ones the running system is on: a system can live
+# on a USB disk too.
 list_devices() {
     local path shown
     while IFS=$'\t' read -r path shown; do
@@ -873,13 +843,13 @@ list_devices() {
         awk '$2 == "usb" { path = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); sub(/ +$/, ""); print path "\t" path "  " $0 }')
 }
 
-# Whether the write needs a password: not as root, nor where a sudo rule says so.
-# -k ignores a password sudo remembers now and will have forgotten by the write.
+# Whether the write needs a password. -k ignores one sudo remembers now and will
+# have forgotten by the write.
 needs_password() {
     if is_root || sudo -nk true 2>/dev/null; then echo false; else echo true; fi
 }
 
-# The password tried on sudo before it is taken: a command that does nothing.
+# The password tried on sudo with a command that does nothing.
 sudo_accepts() {
     debugging && return 0
     as_root true

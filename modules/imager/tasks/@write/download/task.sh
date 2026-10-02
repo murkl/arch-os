@@ -30,7 +30,7 @@ if [ -f "$(image)" ]; then
 fi
 
 if [ -z "$url" ]; then
-    echo "The release v${VERSION} is out of reach and ${dir} holds no image. Connect this machine, or put arch-os-${VERSION}-x86_64.iso there yourself." >&2
+    echo "The release v$(release_version) is out of reach and ${dir} holds no image. Connect this machine, or put arch-os-$(release_version)-x86_64.iso there yourself." >&2
     exit 1
 fi
 

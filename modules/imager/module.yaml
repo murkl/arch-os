@@ -1,9 +1,9 @@
-# What Create boot medium is, what it asks and the order it works in. Every
-# list and suggestion below is a function in oak.sh.
+# Create boot medium: what it asks and the order it works in. Every name() is a
+# function in oak.sh.
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
-# What will happen rather than the program's name: the row is read as the thing
-# about to be done. The folder stays imager, which its files are named after.
+# Named after what it does, since its row is read as the thing about to happen.
+# The folder stays imager, which its files are named after.
 title: Create boot medium
 description: Write Arch OS to a USB device to boot another machine from.
 start-title: Create
@@ -19,23 +19,19 @@ stages:
 variables:
   - name: ARCH_OS_DOWNLOAD_DIR
     title: Download folder
-    description: |
-      Where the image is kept. It is reused, so a second run costs no
-      bandwidth. The folder is created if it is not there, and the image needs
-      about two gigabytes.
+    description: Where the image is kept, so a second run costs no download. It needs about two gigabytes.
     group: Image
     required: true
-    prefill: download_dir
+    prefill: download_dir()
     pattern: '^/.+$'
     error: Type the full path of a folder, starting with a slash.
 
   - name: ARCH_OS_IMAGE_VERIFY
     title: Verify checksum
     description: |
-      Holds the image to the checksum its release publishes before anything
-      is written, and throws it away where the two disagree. Turned off, the
-      image in the download folder goes to the device as it is - an image
-      built rather than downloaded is the usual reason.
+      Checks the image against the checksum of its release before anything is
+      written. Off, the image in the download folder is written as it is, such
+      as one you built yourself.
     group: Image
     type: bool
     default: true
@@ -43,13 +39,12 @@ variables:
   - name: ARCH_OS_IMAGE_DEVICE
     title: Device
     description: |
-      The USB device to write to. Everything on it will be erased. Only USB
-      disks are offered, and none this system is running from, so it cannot
-      be chosen by accident.
+      The USB device to write to. Everything on it is erased. A device the
+      running system is on is not offered.
     group: Device
     required: true
     error: Choose a device that exists.
-    command: list_devices
+    options-from: list_devices()
 
   # Not asked: root needs no password, and a sudo rule may say this account
   # needs none either.
@@ -58,20 +53,16 @@ variables:
     description: Whether writing the device asks for your password.
     group: Device
     type: bool
-    answer: needs_password
+    value-from: needs_password()
 
-  # Typed into the interface rather than into sudo on the terminal, and tried
-  # where it is typed, not after a download of two gigabytes.
+  # Tried where it is typed, not after a download of two gigabytes.
   - name: ARCH_OS_IMAGE_PASSWORD
     title: Your password
-    description: |
-      Writing the device needs root, and sudo asks for your password to allow
-      it. It is asked for right before the run starts and is never written to
-      a file.
+    description: Writing the device needs root, and sudo asks for your password. Asked right before the run and never written to a file.
     group: Device
     type: secret
     existing: true
     required: true
-    check: sudo_accepts
+    check: sudo_accepts()
     error: That is not your password, or this account may not use sudo.
     conditions: ARCH_OS_IMAGE_SUDO == true

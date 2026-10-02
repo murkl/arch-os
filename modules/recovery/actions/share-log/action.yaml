@@ -1,8 +1,7 @@
-# Under rules: on-failure. Choosing the row is the consent, so its description
-# says what leaves the machine.
+# Under on-failure. Choosing the row is the consent, so it says what leaves.
 title: Share the log
 description: Put the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it; passwords are never in it.
-fail: The log could not be put online. Is this machine online?
+error: paste.rs did not take the log. Try again in a moment.
 simulates: true
 
 report: |

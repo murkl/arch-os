@@ -8,11 +8,9 @@
   <img src="https://img.shields.io/badge/UEFI-x86__64-2e3440?style=for-the-badge" alt="">
 </p>
 
-<p><b>Install Arch Linux with ease — as a desktop or a TTY system.</b></p>
+<p><b>Install Arch Linux with ease - as a desktop or a TTY system.</b></p>
 
-<p>A GNOME desktop or a bare text console, the same minimal base underneath. Boot the latest <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and Arch OS starts on its own.</p>
-
-<p>Or run this on any Linux machine. An ordinary desktop writes the ISO to a USB device; a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> installs or repairs.</p>
+<p>Boot the latest <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and Arch OS starts on its own. Or run this on a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> to install or repair, and on any other Linux machine to write the ISO to a USB device.</p>
 
 **`curl -Ls https://bit.ly/archos | bash`**
 
@@ -26,76 +24,74 @@
 
 ## Features
 
-- Minimal Arch Linux base, UEFI only: linux-zen, btrfs and systemd-boot on a disk of its own - the same on every machine
+- Minimal Arch Linux base, UEFI only: linux-zen, btrfs, systemd-boot
 - Disk encryption (LUKS2) and Secure Boot with your own keys
-- One password for encryption, root and user; automatic login behind an encrypted disk
-- Btrfs snapshots before every package change (Snapper), rolled back with the Recovery
-- GNOME on Wayland, or a bare text console; the graphics driver for every Intel, AMD and NVIDIA card is detected
-- Desktop extras: codecs, fonts, printing, Samba and `.local` discovery, extensions from extensions.gnome.org and firmware updates; or a slim install with GNOME core apps only
-- Flatpak with Flathub, managed from Bazaar - or from GNOME Software, if you would rather
-- The browser of your choice - Firefox, GNOME Web, Chromium or Vivaldi - in your language, with its dictionary and codecs, and opened for every link
-- Pika Backup or Déjà Dup for backups, and Extension Manager in place of the Extensions app
-- Zram swap, fstrim, microcode, NetworkManager, mirrors ranked by country
-- Tuned rather than left at the defaults - see the **[➜ Reference](REFERENCE.md)**
-- AUR helper, 32-bit support, container engine, firewall, SSH server, automatic housekeeping
-- The text editor of your choice - nano, vim, neovim, micro or helix - with a small configuration of its own: a theme close to the system's palette, line numbers, the mouse, and tabs of four spaces
+- One password for encryption, root and user
+- Btrfs snapshots before every package change, rolled back with the Recovery
+- GNOME on Wayland or a bare text console, graphics drivers detected
+- Desktop extras or a slim GNOME, Flatpak with Bazaar
+- Browser and backup app of your choice
+- Zram, fstrim, microcode, NetworkManager, mirrors ranked by country
+- AUR helper, 32-bit support, containers, firewall, SSH, housekeeping
+- Text editor of your choice: nano, vim, neovim, micro or helix
 - [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager, Shell Enhancement (zsh)
-- Recovery in the boot menu, among the desktop's applications and on the same image, works without a network - and opens straight on its menu, in your language, with a wireless network on it whenever something has to be fetched
-- Wireless network joined from the Installer itself, right after the keyboard where there is no internet and later from its **Configuration** - offered only where there is a card and no cable is online, and a cable always preferred - and whether this machine is online always in the corner of the screen
-- Create boot medium: writes the USB device from any Linux machine, no root needed but for the write itself - and the password for that is typed into the interface like any other
-- Virtual machines both ways: guest tools inside a VM on their own, libvirt and QEMU on real hardware if you want them
-- Two starting points, **Core** and **Desktop** - everything else stays a row in the **Configuration**
-- English and German interface, chosen on the first page or named outright: `installer --language=de`
+- Recovery in the boot menu and on the ISO
+- Create boot medium on any Linux machine
+- Wireless network in the Installer and the Recovery
+- Virtual machine guest tools, or QEMU and libvirt on hardware
+- Starting points **Core** and **Desktop**, or a shared configuration
+- English and German interface
+- Tuned defaults - see the **[➜ Reference](REFERENCE.md)**
 
 ## Installation
 
-An internet connection is required. The Installer waits for one before its work and carries on by itself once a cable is plugged in - or opens the wireless networks in range straight away and joins one.
+An internet connection is required: a cable, or a wireless network joined in the Installer.
 
-### 1. Prepare a bootable USB device
+### 1. Prepare a USB Device
 
-- Download the latest ISO from **[the release page](https://github.com/murkl/arch-os/releases/latest)** and write it with **[Ventoy](https://www.ventoy.net/en/download.html)** or any ISO writer. GitHub prints each file's SHA-256 beside it there, and both carry signed build provenance — the command is in the release notes
-- Or let **Create boot medium** do it, on any Linux machine. It checks the ISO against the published checksum before it writes anything:
+- Download the latest ISO from **[the release page](https://github.com/murkl/arch-os/releases/latest)** and write it with **[Ventoy](https://www.ventoy.net/en/download.html)** or any ISO writer
+- Or let **Create boot medium** do it on any Linux machine. It checks the ISO against the published checksum first:
 
 ```
 curl -Ls https://bit.ly/archos | bash
 ```
 
-**Note:** _Runs as you, not root - only the write itself asks for a password. The program lands in `XDG_DOWNLOAD_DIR` or `~/Downloads` (`… | DOWNLOAD_DIR=<dir> bash` for another), the ISO wherever you answer, and an ISO already there is used rather than fetched again._
+**Note:** _Runs as you, not root: only the write asks for a password. It lands in `XDG_DOWNLOAD_DIR` or `~/Downloads`, `… | DOWNLOAD_DIR=<dir> bash` for another._
 
-### 2. Set the firmware up
+### 2. Set the Firmware Up
 
 - Boot mode: UEFI
-- Secure Boot: off for now - the Installer prepares it, switching it on is **[step 5](#5-switch-secure-boot-on)**
+- Secure Boot: off for now, see **[step 5](#5-switch-secure-boot-on)**
 
-### 3. Boot from the USB device
+### 3. Boot from the USB Device
 
 Arch OS starts on its own and asks the language first:
 
 <p><img src="screenshots/welcome.png" alt="The welcome page, asking the language to read the rest in"></p>
 
-Then, under the same wordmark, Installer or Recovery - and a starting point:
+Then Installer or Recovery, and a starting point:
 
 <p><img src="screenshots/setup.png" alt="The page that offers the starting points"></p>
 
 | Starting point | What it is |
 | --- | --- |
-| **Core** | A minimal Arch Linux on the text console, nothing graphical |
-| **Desktop** | The Core, with GNOME on top |
+| **Core** | A minimal Arch Linux on the text console |
+| **Desktop** | The Core with GNOME |
 
-Every value it sets is an ordinary answer, changeable afterwards. What is left to ask: account, region, disk.
+Every value stays changeable in the **Configuration**. Left to ask: account, region, disk.
 
-**Note:** _From an official **[Arch Linux ISO](https://archlinux.org/download/)** the same command downloads Arch OS and starts it here instead. `… | bash -s -- --language=de` skips the first page, and so does `installer --language=de` from the prompt of the Arch OS ISO._
+**Note:** _From an official **[Arch Linux ISO](https://archlinux.org/download/)** the same `curl` command starts Arch OS. `--language=de` skips the first page: `… | bash -s -- --language=de`, or `installer --language=de` on the Arch OS ISO._
 
-### 4. Reuse your answers
+### 4. Reuse Your Answers
 
 Every answer lands in `installer.conf` as it is given, so an interrupted run resumes. The password never does.
 
-- **Share it:** upload to **[paste.rs](https://paste.rs)** from the page a finished run ends on, get a code back. The next installation can start from it, and asks only for its disk
-- **Copy it:** put `installer.conf` beside the Installer on another machine. The disk it names is checked against that machine's own before anything is written
+- **Share it:** from the page a finished run ends on, to **[paste.rs](https://paste.rs)**. The next installation starts from its code and asks only for the disk
+- **Copy it:** put `installer.conf` beside the Installer on another machine
 
-### 5. Switch Secure Boot on
+### 5. Switch Secure Boot On
 
-Only if you left it on. The Installer signs the boot chain with keys of its own; switching Secure Boot on is the one step only the firmware can take.
+Only if you left it on in the Configuration:
 
 ```
 sbctl status
@@ -106,33 +102,31 @@ sbctl status
 | `✓` | Restart, switch Secure Boot on in the firmware |
 | `✗` | Clear the Secure Boot keys in the firmware (setup mode), then `sudo sbctl enroll-keys -m`, restart, switch it on |
 
-**Note:** _Until then the system boots as before. `sbctl verify` lists `/boot/vmlinuz-*` as not signed on purpose - **[➜ Secure Boot](REFERENCE.md#secure-boot)**._
+**Note:** _`sbctl verify` lists `/boot/vmlinuz-*` as not signed on purpose - **[➜ Secure Boot](REFERENCE.md#secure-boot)**._
 
 ## Recovery
 
 <p><img src="screenshots/recovery.png" alt="The Recovery, opening a system already on disk"></p>
 
-Every installation carries it on a small partition of its own. Hold **space** while the machine starts and choose **Arch OS Recovery**, open **Recovery** among the applications of a desktop and say yes to restarting into it - or boot the ISO and choose **Recovery**:
+On a partition of every installation. Hold **space** while the machine starts and choose **Arch OS Recovery**, open **Recovery** among the applications, or boot the ISO:
 
-- Unlocks and mounts it at `/mnt`
+- Unlocks and mounts the system at `/mnt`
 - Rolls back to a Btrfs snapshot
-- Rebuilds the kernel images from the local package cache
-- Opens a shell inside it, from the page the repair ends on
+- Rebuilds the kernel images from the package cache
+- Opens a shell inside it
 
-From the ISO it asks two questions - keyboard and disk - and reads the rest off the machine. From its partition it asks none: it starts in the language and on the keyboard the system was installed with, on the disk it was started from, straight on its menu. No network needed either way - one can be joined from its **Configuration** for whatever is to be fetched.
+No network needed. On its own partition it opens straight on its menu, in your language; leaving it offers **Reset** instead of **Exit**.
 
-There it is the only thing the machine runs, and there is no prompt behind it. Leaving it offers **Reset** where the ISO offers **Exit**: every answer is forgotten and the Recovery starts over.
-
-**Note:** _The one on the disk starts with Secure Boot on. For the ISO, switch it off in the firmware and on again afterwards - the Recovery signs what it rebuilds with the machine's own keys._
+**Note:** _The partition starts with Secure Boot on. For the ISO, switch it off and on again afterwards._
 
 ## Maintenance
 
 <p><img src="screenshots/manager_menu.png" alt="The Arch OS System Manager"></p>
 
-Mostly automatic through the preinstalled **Arch OS System Manager**. By hand:
+Mostly automatic through the **Arch OS System Manager**. By hand:
 
 - Read the **[Arch Linux News](https://www.archlinux.org/news)** before upgrading
-- Roll back with the **[Recovery](#recovery)** if an update breaks something - see **[➜ Rolling Back](REFERENCE.md#rolling-back)** for why only there
+- Roll back with the **[Recovery](#recovery)** - **[➜ Rolling Back](REFERENCE.md#rolling-back)**
 - Consult the **[Arch Linux Wiki](https://wiki.archlinux.org)**
 
 <details>
@@ -152,19 +146,17 @@ Mostly automatic through the preinstalled **Arch OS System Manager**. By hand:
 
 ## Development
 
-Five parts, kept apart:
-
 | Part | What it does |
 | --- | --- |
-| **[`oak`](https://github.com/murkl/oak)** | Draws the interface, asks the questions, runs the shell |
+| **[`oak`](https://github.com/murkl/oak)** | The runtime: draws, asks, runs the shell |
 | **[`modules/installer`](../modules/installer)** | Installs Arch Linux |
-| **[`modules/recovery`](../modules/recovery)** | Repairs an installation already on disk |
-| **[`modules/imager`](../modules/imager)** | Writes the device the other two boot from |
-| **[`iso`](../iso)** | Turns a build of those into the bootable images: the ISO, and the Recovery the Installer writes beside the system |
+| **[`modules/recovery`](../modules/recovery)** | Repairs an installation |
+| **[`modules/imager`](../modules/imager)** | Writes the boot medium |
+| **[`iso`](../iso)** | Builds the ISO and the Recovery image |
 
-Oak is the runtime, a repository of its own, and knows nothing about Arch Linux. Modules are data, not programs. A release is Oak with `oak.yaml`, `oak.sh` and `modules/` beside it - `oak.sh` the one library every module's scripts share. Which module a machine can open is that module's own `rules: offer-if` - nothing else holds a list.
+Oak knows nothing about Arch Linux. Modules are data: YAML, and shell beside it in `oak.sh`.
 
-**[➜ Reference](REFERENCE.md)** for what is put on the disk and why. **[➜ Changelog](../CHANGELOG.md)** for what each release changed. **[➜ Contributing](CONTRIBUTING.md)** for branches, releases, how a commit becomes an image.
+**[➜ Reference](REFERENCE.md)** · **[➜ Changelog](../CHANGELOG.md)** · **[➜ Contributing](CONTRIBUTING.md)**
 
 ## License
 

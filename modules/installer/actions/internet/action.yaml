@@ -1,7 +1,7 @@
-# Everything that gets installed is downloaded. A cable comes up by itself and
-# carries on; where there is a card, the wireless network opens straight away.
+# Everything installed is downloaded. A cable carries on by itself; with a card
+# the wireless network opens straight away.
 title: Internet
-fail: There is no internet connection. Plug in a cable and it carries on by itself.
+error: There is no internet connection. Plug in a cable and it carries on by itself.
 
 rules:
   on-failure: wifi

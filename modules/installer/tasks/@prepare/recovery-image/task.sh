@@ -8,7 +8,7 @@ fi
 
 read -r url digest <<<"$(release_asset -recovery-x86_64.tar)"
 if [ -z "$url" ] || [ -z "$digest" ]; then
-    echo "The release v${VERSION} is out of reach or holds no Recovery image with a checksum. Connect this machine, or turn Recovery off in the settings." >&2
+    echo "The release v$(release_version) is out of reach or holds no Recovery image with a checksum. Connect this machine, or turn Recovery off in the settings." >&2
     exit 1
 fi
 

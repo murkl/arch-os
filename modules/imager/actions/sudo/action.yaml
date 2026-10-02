@@ -1,4 +1,4 @@
-# Not "are we root": root is taken for the one step that writes. Whether this
-# account may use sudo is settled where its password is typed and tried.
+# Root only for the one step that writes. Whether this account may use sudo is
+# settled where its password is typed.
 title: Root for the write
-fail: Writing a device needs root, and this machine has no sudo to ask for it. Start this again as root.
+error: Writing a device needs root, and this machine has no sudo to ask for it. Start this again as root.

@@ -69,7 +69,7 @@ What the work starts if, under `rules: start-if`:
 | `sudo` | A way to become root for the write - already root, or `sudo` exists |
 | `usb` | Nothing plugged in, no answer can help. A stick plugged in carries on by itself |
 
-Each says only yes or no; what a no means is its `fail:`, read in the interface's language. `share-log`, under `rules: on-failure`, is the same as the Installer's and the Recovery's: its `action.sh` calls `share_log` in `oak.sh`.
+Each says only yes or no; what a no means is its `error:`, read in the interface's language. `share-log`, under `rules: on-failure`, is the same as the Installer's and the Recovery's: its `action.sh` calls `share_log` in `oak.sh`.
 
 **Note:** _Whether the image can be fetched is not checked here - it depends on the download folder, which is not yet answered when these are looked at. The download task says so instead._
 

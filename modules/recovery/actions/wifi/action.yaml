@@ -1,6 +1,6 @@
-# In the configuration, and opened when there is no internet. An open or known
-# network is joined as it is chosen; one that wants a passphrase says no, and
-# the passphrase is asked next.
+# On the settings page, and opened without internet. An open or known network
+# is joined as it is chosen; one that wants a passphrase says no, and that is
+# asked next.
 title: Configure the wireless network
 description: Join a wireless network.
 
@@ -12,4 +12,4 @@ variable:
   name: ARCH_OS_WIFI_SSID
   title: Network
   required: true
-  command: list_wifi_networks
+  options-from: list_wifi_networks()

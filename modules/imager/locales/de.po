@@ -37,8 +37,8 @@ msgstr "Download-Ordner"
 
 #. ARCH_OS_DOWNLOAD_DIR: what it means
 #: module.yaml
-msgid "Where the image is kept. It is reused, so a second run costs no bandwidth. The folder is created if it is not there, and the image needs about two gigabytes."
-msgstr "Wo das Abbild liegt. Es wird wiederverwendet, ein zweiter Lauf kostet also keine Bandbreite. Der Ordner wird angelegt, falls es ihn noch nicht gibt, und das Abbild braucht rund zwei Gigabyte."
+msgid "Where the image is kept, so a second run costs no download. It needs about two gigabytes."
+msgstr "Wo das Abbild liegt, damit ein zweiter Lauf nichts herunterladen muss. Es braucht rund zwei Gigabyte."
 
 #. ARCH_OS_DOWNLOAD_DIR: the heading its row sits under
 #: module.yaml
@@ -57,8 +57,8 @@ msgstr "Prüfsumme prüfen"
 
 #. ARCH_OS_IMAGE_VERIFY: what it means
 #: module.yaml
-msgid "Holds the image to the checksum its release publishes before anything is written, and throws it away where the two disagree. Turned off, the image in the download folder goes to the device as it is - an image built rather than downloaded is the usual reason."
-msgstr "Gleicht das Abbild vor dem Schreiben mit der Prüfsumme ab, die sein Release veröffentlicht, und verwirft es, wenn beide nicht übereinstimmen. Ausgeschaltet geht das Abbild aus dem Download-Ordner unverändert auf das Gerät - der übliche Grund ist ein selbst gebautes statt heruntergeladenes Abbild."
+msgid "Checks the image against the checksum of its release before anything is written. Off, the image in the download folder is written as it is, such as one you built yourself."
+msgstr "Prüft das Abbild vor dem Schreiben gegen die Prüfsumme seines Releases. Ausgeschaltet wird das Abbild im Download-Ordner geschrieben, wie es ist, etwa ein selbst gebautes."
 
 #. ARCH_OS_IMAGE_DEVICE: the question
 #: module.yaml
@@ -67,8 +67,8 @@ msgstr "Datenträger"
 
 #. ARCH_OS_IMAGE_DEVICE: what it means
 #: module.yaml
-msgid "The USB device to write to. Everything on it will be erased. Only USB disks are offered, and none this system is running from, so it cannot be chosen by accident."
-msgstr "Der USB-Datenträger, auf den geschrieben wird. Alles darauf wird gelöscht. Angeboten werden nur USB-Datenträger und keiner, von dem dieses System läuft, damit er nicht versehentlich getroffen wird."
+msgid "The USB device to write to. Everything on it is erased. A device the running system is on is not offered."
+msgstr "Der USB-Datenträger, auf den geschrieben wird. Alles darauf wird gelöscht. Einer, von dem das laufende System kommt, wird nicht angeboten."
 
 #. ARCH_OS_IMAGE_DEVICE: what a wrong answer is told
 #: module.yaml
@@ -92,8 +92,8 @@ msgstr "Dein Passwort"
 
 #. ARCH_OS_IMAGE_PASSWORD: what it means
 #: module.yaml
-msgid "Writing the device needs root, and sudo asks for your password to allow it. It is asked for right before the run starts and is never written to a file."
-msgstr "Das Schreiben des Datenträgers braucht Root-Rechte, und sudo fragt dafür nach deinem Passwort. Es wird unmittelbar vor dem Start abgefragt und nie in eine Datei geschrieben."
+msgid "Writing the device needs root, and sudo asks for your password. Asked right before the run and never written to a file."
+msgstr "Das Schreiben braucht Root-Rechte, und sudo fragt dafür nach deinem Passwort. Es wird direkt vor dem Start abgefragt und nie in eine Datei geschrieben."
 
 #. ARCH_OS_IMAGE_PASSWORD: what a wrong answer is told
 #: module.yaml
@@ -158,8 +158,8 @@ msgstr "Stellt das Log dieses Laufs auf paste.rs online, für die Person, die di
 
 #. an action: what a no from it means
 #: actions/share-log/action.yaml
-msgid "The log could not be put online. Is this machine online?"
-msgstr "Das Log ließ sich nicht online stellen. Ist diese Maschine online?"
+msgid "paste.rs did not take the log. Try again in a moment."
+msgstr "paste.rs hat das Log nicht angenommen. Versuch es gleich noch einmal."
 
 #. read once the action is done, and held on until somebody has
 #: actions/share-log/action.yaml

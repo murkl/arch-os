@@ -1,5 +1,5 @@
-# What the Recovery is, what it asks and the order it works in. Every list and
-# derived answer below is a function in oak.sh.
+# The Recovery: what it asks and the order it works in. Every name() is a
+# function in oak.sh.
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
 title: Recovery
@@ -8,11 +8,11 @@ start-title: Repair
 settings-title: Configuration
 
 # Nothing waits for a network: a repair downloads nothing, and the network may
-# be what broke. One can be joined from the configuration all the same.
+# be what broke.
 rules:
   offer-if: [live-image]
   start-if: [root]
-  settings: [wifi]
+  on-settings: [wifi]
   on-leave: [restart, shutdown]
   on-failure: [share-log]
   on-success: [chroot]
@@ -20,33 +20,28 @@ rules:
 stages:
   - repair # opened, rolled back, made bootable again
 
-# Two questions. What kind of disk it is, is read off the machine. On its own
-# partition both are answered already - see iso/recovery/.
+# On its own partition both questions are answered already - see iso/recovery/.
 variables:
-  # First, because the password below is typed on it. Loaded on the live system
-  # and never written to the one being repaired.
+  # First, because the password below is typed on it. Never written to the
+  # system being repaired.
   - name: ARCH_OS_RECOVERY_KEYMAP
     title: Console keyboard
-    description: |
-      The keyboard you are typing on right now. It is loaded immediately, and
-      opens on the layout this live image was started with.
+    description: The keyboard you are typing on right now, loaded at once. Opens on the one the live image started with.
     group: Region
     required: true
     first: true
-    command: list_keymaps
-    prefill: live_keymap
-    apply: load_recovery_keymap
+    options-from: list_keymaps()
+    prefill: live_keymap()
+    apply: load_recovery_keymap()
     pattern: '^[A-Za-z0-9_.-]+$'
 
   - name: ARCH_OS_RECOVERY_DISK
     title: Disk
-    description: |
-      The disk holding the Arch OS installation to repair. Opening it does not
-      change anything on it.
+    description: The disk with the Arch OS installation to repair. Opening it changes nothing.
     group: Storage
     required: true
     error: Choose a disk that exists.
-    command: list_disks
+    options-from: list_disks()
     pattern: '^/dev/[A-Za-z0-9_-]+$'
 
   # Not asked: a LUKS header is readable without the password.
@@ -55,29 +50,25 @@ variables:
     description: Whether that disk is encrypted with LUKS.
     group: Storage
     type: bool
-    answer: disk_is_encrypted
+    value-from: disk_is_encrypted()
 
-  # Asked once: it already exists, and it is tried on the disk where it is typed.
+  # Typed once and tried on the disk where it is typed.
   - name: ARCH_OS_RECOVERY_PASSWORD
     title: Encryption password
-    description: |
-      The password that unlocks that disk. It is asked for right before the
-      recovery starts and is never written to a file.
+    description: The password that unlocks that disk. Asked right before the repair and never written to a file.
     group: Storage
     type: secret
     existing: true
     required: true
-    check: unlocks_disk
+    check: unlocks_disk()
     error: That password does not unlock this disk.
     conditions: ARCH_OS_RECOVERY_ENCRYPTED == true
 
-  # Asked by the rollback in the middle of the run, once the disk is open.
+  # Asked by the rollback, once the disk is open.
   - name: ARCH_OS_RECOVERY_SNAPSHOT
     title: Snapshot
-    description: |
-      The snapshot to put in place of the root subvolume. Newest first, with
-      the date it was taken and what created it.
+    description: The snapshot to put in place of the system. Newest first, with its date and what took it.
     type: deferred
     required: true
     filter: open
-    command: ./tasks/@repair/rollback/snapshots.sh
+    options-from: ./tasks/@repair/rollback/snapshots.sh

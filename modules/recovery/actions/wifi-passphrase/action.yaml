@@ -1,6 +1,6 @@
-# Opened when the wireless network wants a passphrase.
+# Opened where the network wants a passphrase.
 title: Wireless network
-fail: "{{ARCH_OS_WIFI_SSID}} did not accept that passphrase, or it is out of range."
+error: "{{ARCH_OS_WIFI_SSID}} did not accept that passphrase, or it is out of range."
 
 variable:
   name: ARCH_OS_WIFI_PASSPHRASE

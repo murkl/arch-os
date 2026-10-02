@@ -45,7 +45,7 @@ msgstr ""
 
 #. starting point Desktop: what choosing it does
 #: module.yaml
-msgid "The Core, with a GNOME desktop on top of it - drivers, codecs, fonts and everyday applications."
+msgid "The Core with GNOME, drivers, codecs and everyday applications."
 msgstr ""
 
 #. a starting point: its row
@@ -55,7 +55,7 @@ msgstr ""
 
 #. starting point Core: what choosing it does
 #: module.yaml
-msgid "A minimal Arch Linux on the text console, with nothing graphical on it and nothing beyond what you choose."
+msgid "A minimal Arch Linux on the text console."
 msgstr ""
 
 #. a starting point: its row
@@ -65,7 +65,7 @@ msgstr ""
 
 #. starting point Online (paste.rs): what choosing it does
 #: module.yaml
-msgid "Load every answer from a configuration shared at the end of an earlier installation."
+msgid "Every answer of a configuration shared at the end of another installation."
 msgstr ""
 
 #. ARCH_OS_USERNAME: the question
@@ -75,7 +75,7 @@ msgstr ""
 
 #. ARCH_OS_USERNAME: what it means
 #: module.yaml
-msgid "The account you will log in with. Lowercase letters, digits, hyphens and underscores only. It cannot start with a digit."
+msgid "The account you log in with."
 msgstr ""
 
 #. ARCH_OS_USERNAME: the heading its row sits under
@@ -95,7 +95,7 @@ msgstr ""
 
 #. ARCH_OS_PASSWORD: what it means
 #: module.yaml
-msgid "Used for your account, the root account, and — if disk encryption is on — to unlock the disk at boot. It is asked for right before installation starts and is never written to a file."
+msgid "For your account, for root and, with disk encryption, to unlock the disk at boot. Asked right before the installation and never written to a file."
 msgstr ""
 
 #. ARCH_OS_HOSTNAME: the question
@@ -120,7 +120,7 @@ msgstr ""
 
 #. ARCH_OS_LOCALE_LANG: what it means
 #: module.yaml
-msgid "The locale this system is set up for, for example de_DE for German as used in Germany. It sets the system language and the format for dates, numbers and currency, and on auto also the keyboard layout, console font and time zone. English is always installed as a fallback, and the list opens on it."
+msgid "The system language and the format of dates, numbers and currency, such as de_DE. On auto the keyboard, console font and time zone follow it. English is always installed as a fallback."
 msgstr ""
 
 #. ARCH_OS_LOCALE_LANG: the heading its row sits under
@@ -135,7 +135,7 @@ msgstr ""
 
 #. ARCH_OS_VCONSOLE_KEYMAP: what it means
 #: module.yaml
-msgid "The keyboard you are typing on right now. It is loaded immediately, and used by the new system on the text console. auto uses the layout for the system language chosen further down."
+msgid "The keyboard you are typing on right now, loaded at once and used on the text console. auto follows the system language."
 msgstr ""
 
 #. ARCH_OS_VCONSOLE_FONT: the question
@@ -145,7 +145,7 @@ msgstr ""
 
 #. ARCH_OS_VCONSOLE_FONT: what it means
 #: module.yaml
-msgid "The font used on the text console. auto picks one that can display the chosen language; a larger font helps on a high-resolution screen."
+msgid "The font of the text console. auto picks one for the language; a larger one helps on a high-resolution screen."
 msgstr ""
 
 #. ARCH_OS_VCONSOLE_FONT: the row that opens a box for an answer of one's
@@ -161,7 +161,7 @@ msgstr ""
 
 #. ARCH_OS_TIMEZONE: what it means
 #: module.yaml
-msgid "Where this machine is located, so the clock is set correctly. The list opens on the time zone for the chosen country."
+msgid "Where this machine is, so the clock is right. Opens on the zone of the chosen country."
 msgstr ""
 
 #. ARCH_OS_REFLECTOR_COUNTRY: the question
@@ -171,7 +171,7 @@ msgstr ""
 
 #. ARCH_OS_REFLECTOR_COUNTRY: what it means
 #: module.yaml
-msgid "Where package downloads come from. auto uses the country of the chosen time zone, none ranks every mirror worldwide by speed. auto falls back to none when the time zone names no country or Arch has no mirror there."
+msgid "Where packages are downloaded from. auto follows the time zone, none ranks every mirror worldwide."
 msgstr ""
 
 #. ARCH_OS_REFLECTOR_COUNTRY: the row that opens a box for an answer of
@@ -187,7 +187,7 @@ msgstr ""
 
 #. ARCH_OS_DISK: what it means
 #: module.yaml
-msgid "The disk Arch Linux will be installed on. Everything on it will be erased. The medium this live image is running from is not offered."
+msgid "The disk Arch Linux is installed on. Everything on it is erased. The medium this runs from is not offered."
 msgstr ""
 
 #. ARCH_OS_DISK: the heading its row sits under
@@ -207,7 +207,7 @@ msgstr ""
 
 #. ARCH_OS_ENCRYPTION_ENABLED: what it means
 #: module.yaml
-msgid "Encrypts the whole system with your password, so the data cannot be read by removing the disk. The password is then required at every boot."
+msgid "Encrypts the system with your password, so the disk cannot be read without it. It is asked at every boot."
 msgstr ""
 
 #. ARCH_OS_SECURE_BOOT_ENABLED: the question
@@ -217,7 +217,7 @@ msgstr ""
 
 #. ARCH_OS_SECURE_BOOT_ENABLED: what it means
 #: module.yaml
-msgid "Signs the kernel and boot loader with keys generated for this machine, so the firmware starts nothing else. In firmware setup mode the keys are enrolled automatically and you only need to turn Secure Boot on afterwards. Otherwise everything is signed and enrolling the keys is left to you."
+msgid "Signs the kernel and boot loader with keys of this machine. In setup mode the keys are enrolled for you; turn Secure Boot on afterwards."
 msgstr ""
 
 #. ARCH_OS_SECURE_BOOT_ENABLED: the heading its row sits under
@@ -232,7 +232,7 @@ msgstr ""
 
 #. ARCH_OS_RECOVERY_ENABLED: what it means
 #: module.yaml
-msgid "Puts the Recovery on a small partition of its own and into the boot menu, so a system that no longer starts is repaired without a USB stick. Hold space while the machine starts to reach the menu. The Arch OS ISO carries it; any other live image downloads it first."
+msgid "Repairs a system that no longer starts, without a USB stick: on a partition of its own, in the boot menu behind the space key."
 msgstr ""
 
 #. ARCH_OS_BOOTSPLASH_ENABLED: the question
@@ -252,7 +252,7 @@ msgstr ""
 
 #. ARCH_OS_KERNEL_ARGS: what it means
 #: module.yaml
-msgid "Extra parameters passed to the kernel at boot, separated by spaces. Leave empty unless you know you need one."
+msgid "Extra kernel parameters, separated by spaces. Leave empty unless you need one."
 msgstr ""
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: the question
@@ -262,7 +262,7 @@ msgstr ""
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: what it means
 #: module.yaml
-msgid "Small adjustments to the Core that do not change what is installed: parallel package downloads, a quieter boot, password feedback in the terminal, and the memory, disk and log settings the system runs better on."
+msgid "Parallel downloads, a quiet boot, password feedback and tuned memory, disk and log settings. Nothing extra is installed."
 msgstr ""
 
 #. ARCH_OS_CORE_TWEAKS_ENABLED: the heading its row sits under
@@ -287,7 +287,7 @@ msgstr ""
 
 #. ARCH_OS_AUR_HELPER_ENABLED: what it means
 #: module.yaml
-msgid "Installs paru, which gets software from the Arch User Repository just as easily as from the official repositories. Built here, against the pacman this machine has, which takes about a quarter of an hour."
+msgid "paru, for software from the Arch User Repository. Built on this machine, which takes about a quarter of an hour."
 msgstr ""
 
 #. ARCH_OS_CONTAINER_ENGINE: the question
@@ -297,7 +297,7 @@ msgstr ""
 
 #. ARCH_OS_CONTAINER_ENGINE: what it means
 #: module.yaml
-msgid "docker needs a daemon running as root, which is what most software and documentation assumes. podman has neither and still answers to the docker command. Both bring a compose command."
+msgid "docker runs a daemon as root, which most documentation assumes. podman runs none and answers to the docker command. Both bring compose."
 msgstr ""
 
 #. ARCH_OS_FIREWALL_ENABLED: the question
@@ -307,7 +307,7 @@ msgstr ""
 
 #. ARCH_OS_FIREWALL_ENABLED: what it means
 #: module.yaml
-msgid "Blocks incoming connections. Every network counts as public, a café's wifi included, and lets in only what this machine is set up to answer: SSH and finding printers. A network marked as home also reaches file sharing: nmcli connection modify <name> connection.zone home"
+msgid "Blocks incoming connections but SSH and printer discovery. A network marked home also reaches file sharing: nmcli connection modify <name> connection.zone home"
 msgstr ""
 
 #. ARCH_OS_SSH_SERVER_ENABLED: the question
@@ -317,7 +317,7 @@ msgstr ""
 
 #. ARCH_OS_SSH_SERVER_ENABLED: what it means
 #: module.yaml
-msgid "Lets you log in to this machine from another one over the network, with your account and password. Root cannot log in this way."
+msgid "Log in to this machine from another one with your account. Not as root."
 msgstr ""
 
 #. ARCH_OS_HOUSEKEEPING_ENABLED: the question
@@ -327,7 +327,7 @@ msgstr ""
 
 #. ARCH_OS_HOUSEKEEPING_ENABLED: what it means
 #: module.yaml
-msgid "Timers that keep the system tidy automatically: mirrors ranked weekly, the package cache trimmed, and disk health checked."
+msgid "Timers that rank the mirrors weekly, trim the package cache and check disk health."
 msgstr ""
 
 #. ARCH_OS_EDITOR: the question
@@ -337,7 +337,7 @@ msgstr ""
 
 #. ARCH_OS_EDITOR: what it means
 #: module.yaml
-msgid "The editor that opens wherever a command asks for one: sudoedit, git, systemctl edit. nano and micro are typed into straight away, micro with the shortcuts of a desktop editor. vim, neovim and helix are modal: typing and commands are separate modes."
+msgid "Opens wherever a command asks for an editor: sudoedit, git, systemctl edit. nano and micro type straight away; vim, neovim and helix are modal."
 msgstr ""
 
 #. ARCH_OS_SHELL_ENHANCEMENT_ENABLED: the question
@@ -347,7 +347,7 @@ msgstr ""
 
 #. ARCH_OS_SHELL_ENHANCEMENT_ENABLED: what it means
 #: module.yaml
-msgid "A better terminal out of the box: zsh with completion and suggestions as you type, a prompt showing git state, colourful listings, fuzzy search, useful aliases."
+msgid "zsh with completion and suggestions, a prompt with git state, colourful listings, fuzzy search and aliases."
 msgstr ""
 
 #. ARCH_OS_MANAGER_ENABLED: the question
@@ -377,7 +377,7 @@ msgstr ""
 
 #. ARCH_OS_VM_HOST_ENABLED: what it means
 #: module.yaml
-msgid "Runs virtual machines on this computer: QEMU and libvirt, and on a desktop the Virtual Machine Manager window. Inside a virtual machine this is not offered - the guest tools that make the screen resize and the clipboard work are installed there on their own."
+msgid "QEMU and libvirt, and on a desktop the Virtual Machine Manager. Inside a virtual machine its guest tools are installed instead."
 msgstr ""
 
 #. ARCH_OS_DESKTOP: the question
@@ -387,7 +387,7 @@ msgstr ""
 
 #. ARCH_OS_DESKTOP: what it means
 #: module.yaml
-msgid "gnome installs the GNOME desktop environment. none leaves the system on a text console, with nothing graphical installed."
+msgid "gnome installs the GNOME desktop, none stays on the text console."
 msgstr ""
 
 #. ARCH_OS_DESKTOP_KEYBOARD_LAYOUT: the question
@@ -397,7 +397,7 @@ msgstr ""
 
 #. ARCH_OS_DESKTOP_KEYBOARD_LAYOUT: what it means
 #: module.yaml
-msgid "The keyboard layout the desktop starts with. auto matches the console keyboard, using the desktop's own naming: de-latin1 and de are the same layout."
+msgid "The keyboard layout of the desktop. auto matches the console keyboard."
 msgstr ""
 
 #. ARCH_OS_DESKTOP_KEYBOARD_VARIANT: the question
@@ -407,7 +407,7 @@ msgstr ""
 
 #. ARCH_OS_DESKTOP_KEYBOARD_VARIANT: what it means
 #: module.yaml
-msgid "A variation of that layout, such as dead keys or a different punctuation arrangement. none is the standard one."
+msgid "A variation of that layout, such as dead keys. none is the standard one."
 msgstr ""
 
 #. ARCH_OS_DESKTOP_KEYBOARD_MODEL: the question
@@ -427,7 +427,7 @@ msgstr ""
 
 #. ARCH_OS_DESKTOP_EXTRAS_ENABLED: what it means
 #: module.yaml
-msgid "Codecs, fonts, printing, network protocols, development tools and the applications that make the desktop usable straight away."
+msgid "Codecs, fonts, printing, network protocols, development tools and everyday applications."
 msgstr ""
 
 #. ARCH_OS_DESKTOP_SLIM_ENABLED: the question
@@ -447,7 +447,7 @@ msgstr ""
 
 #. ARCH_OS_EXTENSION_MANAGER_ENABLED: what it means
 #: module.yaml
-msgid "Finds, installs and updates GNOME extensions in one window, in place of the Extensions app GNOME ships, which only switches them on and off."
+msgid "Finds, installs and updates GNOME extensions, in place of the Extensions app."
 msgstr ""
 
 #. ARCH_OS_BROWSER: the question
@@ -457,7 +457,7 @@ msgstr ""
 
 #. ARCH_OS_BROWSER: what it means
 #: module.yaml
-msgid "Installed in the language of this system and opened for every link. epiphany is GNOME Web, the desktop's own. vivaldi comes with the codecs for proprietary video. none installs no browser."
+msgid "In the system language and opened for every link. epiphany is GNOME Web, vivaldi brings the codecs for proprietary video."
 msgstr ""
 
 #. ARCH_OS_BACKUP: the question
@@ -467,7 +467,7 @@ msgstr ""
 
 #. ARCH_OS_BACKUP: what it means
 #: module.yaml
-msgid "An application that backs up your files on a schedule, to an external drive or a server, and restores them. none installs neither."
+msgid "Backs up your files on a schedule, to a drive or a server."
 msgstr ""
 
 #. ARCH_OS_FLATPAK_ENABLED: the question
@@ -487,7 +487,7 @@ msgstr ""
 
 #. ARCH_OS_BAZAAR_ENABLED: what it means
 #: module.yaml
-msgid "A store made for Flathub, in place of GNOME Software. With the desktop extras, firmware updates then come from GNOME Firmware."
+msgid "A store made for Flathub, in place of GNOME Software. With the desktop extras, firmware updates come from GNOME Firmware."
 msgstr ""
 
 #. ARCH_OS_SAMBA_SHARE_ENABLED: the question
@@ -497,7 +497,7 @@ msgstr ""
 
 #. ARCH_OS_SAMBA_SHARE_ENABLED: what it means
 #: module.yaml
-msgid "Shares your home folder and a public folder with Windows and macOS, on networks marked as home. Anyone on such a network can try your password against it. Without the firewall, every network reaches it."
+msgid "Shares your home and a public folder with Windows and macOS on networks marked home, or on every network without the firewall. Anyone there can try your password against it."
 msgstr ""
 
 #. the header's status, while its check says yes
@@ -705,7 +705,7 @@ msgstr ""
 
 #. ARCH_OS_CONFIG_SOURCE: what it means
 #: actions/import-config/action.yaml
-msgid "The code of a shared configuration: the short word at the end of a paste.rs address, or the whole address. Every answer it contains can still be changed afterwards."
+msgid "The code at the end of a paste.rs address, or the whole address. Every answer can still be changed afterwards."
 msgstr ""
 
 #. ARCH_OS_CONFIG_SOURCE: what a wrong answer is told
@@ -780,7 +780,7 @@ msgstr ""
 
 #. an action: what a no from it means
 #: actions/share-config/action.yaml
-msgid "The configuration could not be put online. Is this machine online?"
+msgid "paste.rs did not take the configuration. Try again in a moment."
 msgstr ""
 
 #. read once the action is done, and held on until somebody has
@@ -803,7 +803,7 @@ msgstr ""
 
 #. an action: what a no from it means
 #: actions/share-log/action.yaml
-msgid "The log could not be put online. Is this machine online?"
+msgid "paste.rs did not take the log. Try again in a moment."
 msgstr ""
 
 #. read once the action is done, and held on until somebody has

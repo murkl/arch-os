@@ -81,6 +81,6 @@
       - page: Do you want to continue?
         choose: "Yes"
         press: enter
-      - page: in place of the root subvolume
+      - page: in place of the system
         shot: recovery
         frame: running
