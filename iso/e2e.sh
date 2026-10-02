@@ -210,12 +210,16 @@ shows() {
     sleep 1
 }
 
-# Waits for a module's run to end and holds it to its own tests.
+# Waits for a module's run to end and holds it to its own tests. A task's
+# report holds the run on a page of its own until somebody reads it.
 finished() {
     local module="$1" seconds="$2" deadline result
     deadline=$((SECONDS + seconds))
-    until result="$(live grep -m1 -E '\| (INFO \| run: ok|ERROR \|)' "/opt/arch-os/${module}.log" 2>/dev/null)"; do
+    until result="$(live "grep -m1 -E '\\| (INFO \\| run: ok|ERROR \\|)' /opt/arch-os/${module}.log" 2>/dev/null)"; do
         [ "$SECONDS" -lt "$deadline" ] || fail "the ${module} did not finish within ${seconds}s"
+        if pane | grep -qF -- "⏎ continue"; then
+            keys Enter
+        fi
         sleep 10
     done
     live cat "/opt/arch-os/${module}.log" >"${WORK}/${module}.log" || true
