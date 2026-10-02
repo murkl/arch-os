@@ -5,13 +5,14 @@
 title: Recovery
 description: Repair an Arch Linux system that is already on a disk.
 start-title: Repair
+settings-title: Configuration
 
 # Nothing waits for a network: a repair downloads nothing, and the network may
-# be what broke.
+# be what broke. One can be joined from the configuration all the same.
 rules:
   offer-if: [live-image]
   start-if: [root]
-  menu: [wifi]
+  settings: [wifi]
   on-leave: [restart, shutdown]
   on-failure: [share-log]
   on-success: [chroot]
@@ -76,7 +77,7 @@ variables:
     description: |
       The snapshot to put in place of the root subvolume. Newest first, with
       the date it was taken and what created it.
-    group: Storage
+    type: deferred
     required: true
     filter: open
     command: ./tasks/@repair/rollback/snapshots.sh

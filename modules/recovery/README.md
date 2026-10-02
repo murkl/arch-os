@@ -41,7 +41,7 @@ One stage, `repair`; after the first task, every step is optional.
 
 A broken network may be the problem, so this module never waits for one, and kernel images come from the local pacman cache. `root` is all the work requires - not firmware, since this machine is not what is being set up.
 
-It can join one all the same, for whatever somebody wants to fetch in the shell: `wifi` puts **Wireless network** on its menu wherever there is a card - the same action the Installer has. On its own partition a cable comes up at boot and is preferred while both are up, and the wireless daemon starts once there is a card to ask it about. `restart` and `shutdown` are the ways out, and `share-log` puts the log of a repair that failed online for whoever is helping.
+It can join one all the same, for whatever somebody wants to fetch in the shell: `wifi` puts **Wireless network** into its **Configuration** wherever there is a card and no internet over a cable - the same action the Installer has. On its own partition a cable comes up at boot and is preferred while both are up, and the wireless daemon starts once there is a card to ask it about. `restart` and `shutdown` are the ways out, and `share-log` puts the log of a repair that failed online for whoever is helping.
 
 ## Two Questions, and no more
 
@@ -54,13 +54,13 @@ Everything else about the disk is read, not asked:
 | File system | `lsblk` on the unlocked device - btrfs, or it is turned away | Once open |
 | Subvolumes | `btrfs subvolume list` on the top level - every one the Installer lays down, or it is turned away | Once open |
 | `/boot` | The installation's own `fstab` | While mounting |
-| Snapshots | `@snapshots` on the btrfs top level | Mid-run, once mounted |
+| Snapshots | `@snapshots` on the btrfs top level | Mid-run, once mounted, as `type: deferred` |
 
 None to offer means the step is skipped, not asked about.
 
 **Note:** _Only what the Installer of the same release makes is opened. An installation from an earlier release is turned away with the reason - its own release's Recovery opens it._
 
-**Note:** _A derived answer is never asked, on the settings page or written to `recovery.conf` - the next run reads it again. See `answer:` in the **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**._
+**Note:** _A derived answer is never asked, in the **Configuration** or written to `recovery.conf` - the next run reads it again. See `answer:` in the **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**._
 
 ## Two Views of one Disk
 

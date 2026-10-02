@@ -25,7 +25,7 @@ msgstr "Bootmedium erstellen"
 msgid "Write Arch OS to a USB device to boot another machine from."
 msgstr "Arch OS auf einen USB-Datenträger schreiben, um eine andere Maschine davon zu starten."
 
-#. the row that starts the work, and the button on the page before it
+#. the row that starts the work
 #: module.yaml
 msgid "Create"
 msgstr "Erstellen"

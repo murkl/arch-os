@@ -48,8 +48,8 @@ Scripts run outside the work, one page at most each: `action.yaml` says how it b
 | Rule | Actions |
 | --- | --- |
 | `offer-if` | `live-image`: a booted Arch Linux live image |
-| `start-if` | `root`, `uefi`, `secure-boot-off`, then `internet`, which opens `wifi` on failure where there is a card and waits for a cable otherwise |
-| `menu` | `wifi`: **Wireless network**, offered if `wifi-card` finds a card. An open or known network joins as it is chosen; one that wants a passphrase opens `wifi-passphrase` on failure |
+| `start-if` | `root`, `uefi`, `secure-boot-off`, then `internet`, which opens `wifi` straight away where there is a card and waits for a cable otherwise |
+| `settings` | `wifi`: **Wireless network** in the **Configuration**, offered if `wifi-card` finds a card and `no-cable` finds no internet over a cable. An open or known network joins as it is chosen; one that wants a passphrase opens `wifi-passphrase` on failure |
 | `on-leave` | `restart`, `shutdown`: the two ways this machine is put down |
 | `on-failure` | `share-log`: the log of a run that failed, put online and drawn as a code |
 | `on-success` | `chroot`, `share-config`: a shell in the new system, and its answers put online - rows on the page a finished run ends on, which opens on **Continue** |
@@ -118,6 +118,6 @@ A booted **Arch Linux live image** - `rules: offer-if` in `module.yaml`. On it: 
 
 ## Answers
 
-`installer.conf`, beside wherever the Installer was started, copied into the new system at the end. The password is never in it, and never on the settings page.
+`installer.conf`, beside wherever the Installer was started, copied into the new system at the end. The password is never in it, and never in the **Configuration**.
 
 The Recovery on its partition is handed two of them to start with: the language this run was read in, as Oak recorded it in `oak.conf`, and the console keyboard - see `tasks/@system/recovery`.

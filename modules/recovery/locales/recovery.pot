@@ -28,9 +28,14 @@ msgstr ""
 msgid "Repair an Arch Linux system that is already on a disk."
 msgstr ""
 
-#. the row that starts the work, and the button on the page before it
+#. the row that starts the work
 #: module.yaml
 msgid "Repair"
+msgstr ""
+
+#. the row that opens every answer, and the heading over that page
+#: module.yaml
+msgid "Configuration"
 msgstr ""
 
 #. ARCH_OS_RECOVERY_KEYMAP: the question
@@ -162,6 +167,11 @@ msgstr ""
 #. an action: what a no from it means
 #: actions/live-image/action.yaml
 msgid "This runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/no-cable/action.yaml
+msgid "No internet over a cable"
 msgstr ""
 
 #. an action: its row, and the heading over its page
