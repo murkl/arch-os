@@ -24,6 +24,7 @@ flowchart LR
 - The commits inside the branch are yours to shape. Only the title reaches `main`
 - A draft never passes `Ready`, so nothing is merged before it was booted
 - A pull request from a fork is checked, never booted: an image needs a privileged container
+- A pull request that changes nothing but `oak.yaml`, `CHANGELOG.md` or the release manifest starts no run and is never merged: those three are the release pull request's. Change something else with it
 
 ## The Title
 
@@ -64,7 +65,7 @@ Nothing is typed and nothing is tagged by hand.
 
 **Note:** _The release pull request starts no run. The release run that wrote it reports `Ready` and `Title` on it, and its merge is checked on `main` before the tag exists. See **[ci.yml](../.github/workflows/ci.yml)**._
 
-## What CI runs
+## What CI Runs
 
 | Job | When | Does |
 | --- | --- | --- |
@@ -102,7 +103,7 @@ sudo pacman -S --needed make curl shellcheck shfmt zsh yamllint actionlint zizmo
 
 **Note:** _CI installs the same packages and runs the same commands in an Arch container. There is no second definition of green._
 
-### Where a Change belongs
+### Where a Change Belongs
 
 - Packages, tasks, questions: **[modules/installer](../modules/installer)**
 - Repairing a system: **[modules/recovery](../modules/recovery)**
@@ -141,7 +142,7 @@ Fill in the `msgstr` lines and open a pull request. The language shows up in the
 
 Keep as-is: `%s`/`%d` (order and kind), `{{ARCH_OS_DISK}}` (braces and name), `⏎ ↑↓ esc` marks in hints, and blank lines between paragraphs.
 
-### What the Console can draw
+### What the Console Can Draw
 
 Before any desktop exists there is one console font with at most 512 glyphs: **Latin with its accents, Greek and Cyrillic**. Arabic, Hebrew, Chinese, Japanese, Korean, Vietnamese and the Indic scripts cannot be drawn on a Linux virtual console at all, so open an issue before starting on one.
 
