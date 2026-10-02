@@ -328,9 +328,10 @@ typed "$PASSWORD"
 keys Enter
 shows "Open the system on"
 keys Up Enter
-shows "Go back to a snapshot"
+# Each text is one only its page shows: the run page lists every step's title.
+shows "Newest first"
 keys Enter
-shows "in place of the system"
+shows "in place of the system on ${DISK}?"
 keys Up Enter
 shows "Rebuild the kernel images"
 keys Up Enter
