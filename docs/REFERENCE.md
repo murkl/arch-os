@@ -192,7 +192,7 @@ At home the router already stands between this machine and the internet, and wha
 
 One `timeout` around the whole build; passwordless `sudo` granted for its length and revoked after. What cargo downloads and caches lives in the build directory and is removed with it, rather than left in the new home. `!debug` is added to a PKGBUILD's own `options`, never put in their place - one that says `!lto` would otherwise be built without it.
 
-Everything built from the AUR is **optional** in the run: `paru`, the boot splash theme and the Manager. The AUR can be out of reach for days, and nothing else in the system needs them - a failure is marked in the run and listed on the page it ends on rather than stopping it. Without its theme the boot splash draws Plymouth's own logo. **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md#tasks)**
+Everything built from the AUR is `allow-failure` in the run: `paru`, the boot splash theme and the Manager. The AUR can be out of reach for days, and nothing else in the system needs them - a failure is counted and listed under **Test results** rather than stopping the run. Without its theme the boot splash draws Plymouth's own logo. **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md#tasks)**
 
 **Note:** _With Core tweaks, `/etc/makepkg.conf.d/arch-os.conf` switches the debug package off, and nothing else: an AUR build otherwise leaves a second package beside the one that was wanted. `-march=native` is deliberately **not** there - it buys a few percent and pays for it with binaries that stop running the day the disk is moved, the image is restored onto other hardware or the CPU is replaced, and the crash that follows reads like failing memory._
 

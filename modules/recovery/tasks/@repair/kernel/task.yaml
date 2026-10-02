@@ -3,7 +3,5 @@ needs: [rollback]
 confirm: |
   Rebuild the kernel images and the initial ram disks?
 
-  Needed after a rollback that goes back past a kernel update: the modules in
-  the restored system and the images in /boot would then belong to different
-  kernels, and the machine would come up without a single module. Everything
-  is taken from the package cache, so this needs no network.
+  Needed after a rollback past a kernel update, or the system starts without
+  its modules. Everything comes from the package cache, so no network is needed.

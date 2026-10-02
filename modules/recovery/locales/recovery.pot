@@ -45,7 +45,7 @@ msgstr ""
 
 #. ARCH_OS_RECOVERY_KEYMAP: what it means
 #: module.yaml
-msgid "The keyboard you are typing on right now. It is loaded immediately, and opens on the layout this live image was started with."
+msgid "The keyboard you are typing on right now, loaded at once. Opens on the one the live image started with."
 msgstr ""
 
 #. ARCH_OS_RECOVERY_KEYMAP: the heading its row sits under
@@ -60,7 +60,7 @@ msgstr ""
 
 #. ARCH_OS_RECOVERY_DISK: what it means
 #: module.yaml
-msgid "The disk holding the Arch OS installation to repair. Opening it does not change anything on it."
+msgid "The disk with the Arch OS installation to repair. Opening it changes nothing."
 msgstr ""
 
 #. ARCH_OS_RECOVERY_DISK: the heading its row sits under
@@ -90,7 +90,7 @@ msgstr ""
 
 #. ARCH_OS_RECOVERY_PASSWORD: what it means
 #: module.yaml
-msgid "The password that unlocks that disk. It is asked for right before the recovery starts and is never written to a file."
+msgid "The password that unlocks that disk. Asked right before the repair and never written to a file."
 msgstr ""
 
 #. ARCH_OS_RECOVERY_PASSWORD: what a wrong answer is told
@@ -105,7 +105,7 @@ msgstr ""
 
 #. ARCH_OS_RECOVERY_SNAPSHOT: what it means
 #: module.yaml
-msgid "The snapshot to put in place of the root subvolume. Newest first, with the date it was taken and what created it."
+msgid "The snapshot to put in place of the system. Newest first, with its date and what took it."
 msgstr ""
 
 #. the header's status, while its check says yes
@@ -131,9 +131,9 @@ msgstr ""
 #. asked before the step runs
 #: tasks/@repair/rollback/task.yaml
 msgid ""
-"Put {{ARCH_OS_RECOVERY_SNAPSHOT}} in place of the root subvolume on {{ARCH_OS_RECOVERY_DISK}}?\n"
+"Put {{ARCH_OS_RECOVERY_SNAPSHOT}} in place of the system on {{ARCH_OS_RECOVERY_DISK}}?\n"
 "\n"
-"The system as it is now is deleted and replaced by that snapshot. Everything under /home is untouched, and so are the other snapshots. You can come back and choose a different one."
+"The system as it is now is replaced by that snapshot. /home and the other snapshots stay as they are, so you can come back and choose another."
 msgstr ""
 
 #. the step, as the run lists it
@@ -146,7 +146,7 @@ msgstr ""
 msgid ""
 "Rebuild the kernel images and the initial ram disks?\n"
 "\n"
-"Needed after a rollback that goes back past a kernel update: the modules in the restored system and the images in /boot would then belong to different kernels, and the machine would come up without a single module. Everything is taken from the package cache, so this needs no network."
+"Needed after a rollback past a kernel update, or the system starts without its modules. Everything comes from the package cache, so no network is needed."
 msgstr ""
 
 #. an action: its row, and the heading over its page
@@ -206,7 +206,7 @@ msgstr ""
 
 #. an action: what a no from it means
 #: actions/share-log/action.yaml
-msgid "The log could not be put online. Is this machine online?"
+msgid "paste.rs did not take the log. Try again in a moment."
 msgstr ""
 
 #. read once the action is done, and held on until somebody has

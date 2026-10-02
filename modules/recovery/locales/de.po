@@ -42,8 +42,8 @@ msgstr "Konsolentastatur"
 
 #. ARCH_OS_RECOVERY_KEYMAP: what it means
 #: module.yaml
-msgid "The keyboard you are typing on right now. It is loaded immediately, and opens on the layout this live image was started with."
-msgstr "Die Tastatur, auf der du tippst. Sie wird hier und jetzt geladen und steht anfangs auf der Belegung, mit der dieses Live-Abbild gestartet wurde."
+msgid "The keyboard you are typing on right now, loaded at once. Opens on the one the live image started with."
+msgstr "Die Tastatur, auf der du gerade tippst, sofort geladen. Öffnet auf der, mit der das Live-Abbild gestartet wurde."
 
 #. ARCH_OS_RECOVERY_KEYMAP: the heading its row sits under
 #: module.yaml
@@ -57,8 +57,8 @@ msgstr "Datenträger"
 
 #. ARCH_OS_RECOVERY_DISK: what it means
 #: module.yaml
-msgid "The disk holding the Arch OS installation to repair. Opening it does not change anything on it."
-msgstr "Der Datenträger mit der Arch-OS-Installation, die repariert werden soll. Ihn zu öffnen ändert nichts daran."
+msgid "The disk with the Arch OS installation to repair. Opening it changes nothing."
+msgstr "Der Datenträger mit der Arch-OS-Installation, die repariert werden soll. Ihn zu öffnen ändert nichts."
 
 #. ARCH_OS_RECOVERY_DISK: the heading its row sits under
 #: module.yaml
@@ -87,8 +87,8 @@ msgstr "Verschlüsselungspasswort"
 
 #. ARCH_OS_RECOVERY_PASSWORD: what it means
 #: module.yaml
-msgid "The password that unlocks that disk. It is asked for right before the recovery starts and is never written to a file."
-msgstr "Das Passwort, das diesen Datenträger entsperrt. Es wird unmittelbar vor dem Start der Wiederherstellung abgefragt und nie in eine Datei geschrieben."
+msgid "The password that unlocks that disk. Asked right before the repair and never written to a file."
+msgstr "Das Passwort, das diesen Datenträger entsperrt. Es wird direkt vor der Reparatur abgefragt und nie in eine Datei geschrieben."
 
 #. ARCH_OS_RECOVERY_PASSWORD: what a wrong answer is told
 #: module.yaml
@@ -102,8 +102,8 @@ msgstr "Schnappschuss"
 
 #. ARCH_OS_RECOVERY_SNAPSHOT: what it means
 #: module.yaml
-msgid "The snapshot to put in place of the root subvolume. Newest first, with the date it was taken and what created it."
-msgstr "Der Schnappschuss, der an die Stelle des Wurzel-Subvolumes tritt. Der neueste zuerst, mit dem Zeitpunkt der Aufnahme und dem Anlass."
+msgid "The snapshot to put in place of the system. Newest first, with its date and what took it."
+msgstr "Der Schnappschuss, der an die Stelle des Systems tritt. Der neueste zuerst, mit Datum und Anlass."
 
 #. the header's status, while its check says yes
 #: ../../oak.yaml
@@ -128,13 +128,13 @@ msgstr "Auf einen Schnappschuss zurückgehen"
 #. asked before the step runs
 #: tasks/@repair/rollback/task.yaml
 msgid ""
-"Put {{ARCH_OS_RECOVERY_SNAPSHOT}} in place of the root subvolume on {{ARCH_OS_RECOVERY_DISK}}?\n"
+"Put {{ARCH_OS_RECOVERY_SNAPSHOT}} in place of the system on {{ARCH_OS_RECOVERY_DISK}}?\n"
 "\n"
-"The system as it is now is deleted and replaced by that snapshot. Everything under /home is untouched, and so are the other snapshots. You can come back and choose a different one."
+"The system as it is now is replaced by that snapshot. /home and the other snapshots stay as they are, so you can come back and choose another."
 msgstr ""
-"{{ARCH_OS_RECOVERY_SNAPSHOT}} an die Stelle des Wurzel-Subvolumes auf {{ARCH_OS_RECOVERY_DISK}} setzen?\n"
+"{{ARCH_OS_RECOVERY_SNAPSHOT}} an die Stelle des Systems auf {{ARCH_OS_RECOVERY_DISK}} setzen?\n"
 "\n"
-"Das System, wie es jetzt ist, wird gelöscht und durch diesen Schnappschuss ersetzt. Alles unter /home bleibt unangetastet, die übrigen Schnappschüsse ebenfalls. Du kannst wiederkommen und einen anderen wählen."
+"Das System, wie es jetzt ist, wird durch diesen Schnappschuss ersetzt. /home und die übrigen Schnappschüsse bleiben, wie sie sind, du kannst also wiederkommen und einen anderen wählen."
 
 #. the step, as the run lists it
 #: tasks/@repair/kernel/task.yaml
@@ -146,11 +146,11 @@ msgstr "Startdateien neu bauen"
 msgid ""
 "Rebuild the kernel images and the initial ram disks?\n"
 "\n"
-"Needed after a rollback that goes back past a kernel update: the modules in the restored system and the images in /boot would then belong to different kernels, and the machine would come up without a single module. Everything is taken from the package cache, so this needs no network."
+"Needed after a rollback past a kernel update, or the system starts without its modules. Everything comes from the package cache, so no network is needed."
 msgstr ""
 "Die Kernel-Abbilder und die Initial-RAM-Disks neu bauen?\n"
 "\n"
-"Nötig nach einem Rücksprung über ein Kernel-Update hinweg: Die Module im wiederhergestellten System und die Abbilder in /boot sind dann zwei verschiedene Kernel, und der Rechner startet ohne ein einziges Modul. Alles kommt aus dem Paket-Cache, ein Netzwerk braucht es dafür nicht."
+"Nötig nach einem Rücksprung über ein Kernel-Update hinweg, sonst startet das System ohne seine Module. Alles kommt aus dem Paket-Cache, ein Netzwerk braucht es nicht."
 
 #. an action: its row, and the heading over its page
 #: actions/chroot/action.yaml
@@ -209,8 +209,8 @@ msgstr "Stellt das Log dieses Laufs auf paste.rs online, für die Person, die di
 
 #. an action: what a no from it means
 #: actions/share-log/action.yaml
-msgid "The log could not be put online. Is this machine online?"
-msgstr "Das Log ließ sich nicht online stellen. Ist diese Maschine online?"
+msgid "paste.rs did not take the log. Try again in a moment."
+msgstr "paste.rs hat das Log nicht angenommen. Versuch es gleich noch einmal."
 
 #. read once the action is done, and held on until somebody has
 #: actions/share-log/action.yaml

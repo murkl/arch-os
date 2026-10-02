@@ -2,7 +2,7 @@
 # and always asked of paste.rs over https.
 ref="$(printf '%s' "$ARCH_OS_CONFIG_SOURCE" | tr -d '[:space:]')"
 url="${PASTE}/${ref##*/}"
-body="$(fetch_url -s --connect-timeout 10 --max-time 30 "$url")"
+body="$(fetch_url -sS --max-time 30 --retry 3 --retry-delay 2 "$url")"
 
 # Everything but the sharing itself and the disk: a disk is a path on the
 # machine the answers were given on, and here another disk may sit at it.

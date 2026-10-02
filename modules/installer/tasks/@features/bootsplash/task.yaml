@@ -5,4 +5,4 @@ needs: [multilib]
 conditions: ARCH_OS_BOOTSPLASH_ENABLED == true
 
 # The theme comes from the AUR; without it Plymouth draws its own logo.
-optional: true
+allow-failure: true

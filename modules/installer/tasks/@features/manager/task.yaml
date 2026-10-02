@@ -3,4 +3,4 @@ needs: [multilib]
 conditions: ARCH_OS_MANAGER_ENABLED == true
 
 # The AUR can be out of reach for days, and nothing else needs the manager.
-optional: true
+allow-failure: true

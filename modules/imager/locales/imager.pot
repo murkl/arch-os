@@ -40,7 +40,7 @@ msgstr ""
 
 #. ARCH_OS_DOWNLOAD_DIR: what it means
 #: module.yaml
-msgid "Where the image is kept. It is reused, so a second run costs no bandwidth. The folder is created if it is not there, and the image needs about two gigabytes."
+msgid "Where the image is kept, so a second run costs no download. It needs about two gigabytes."
 msgstr ""
 
 #. ARCH_OS_DOWNLOAD_DIR: the heading its row sits under
@@ -60,7 +60,7 @@ msgstr ""
 
 #. ARCH_OS_IMAGE_VERIFY: what it means
 #: module.yaml
-msgid "Holds the image to the checksum its release publishes before anything is written, and throws it away where the two disagree. Turned off, the image in the download folder goes to the device as it is - an image built rather than downloaded is the usual reason."
+msgid "Checks the image against the checksum of its release before anything is written. Off, the image in the download folder is written as it is, such as one you built yourself."
 msgstr ""
 
 #. ARCH_OS_IMAGE_DEVICE: the question
@@ -70,7 +70,7 @@ msgstr ""
 
 #. ARCH_OS_IMAGE_DEVICE: what it means
 #: module.yaml
-msgid "The USB device to write to. Everything on it will be erased. Only USB disks are offered, and none this system is running from, so it cannot be chosen by accident."
+msgid "The USB device to write to. Everything on it is erased. A device the running system is on is not offered."
 msgstr ""
 
 #. ARCH_OS_IMAGE_DEVICE: what a wrong answer is told
@@ -95,7 +95,7 @@ msgstr ""
 
 #. ARCH_OS_IMAGE_PASSWORD: what it means
 #: module.yaml
-msgid "Writing the device needs root, and sudo asks for your password to allow it. It is asked for right before the run starts and is never written to a file."
+msgid "Writing the device needs root, and sudo asks for your password. Asked right before the run and never written to a file."
 msgstr ""
 
 #. ARCH_OS_IMAGE_PASSWORD: what a wrong answer is told
@@ -158,7 +158,7 @@ msgstr ""
 
 #. an action: what a no from it means
 #: actions/share-log/action.yaml
-msgid "The log could not be put online. Is this machine online?"
+msgid "paste.rs did not take the log. Try again in a moment."
 msgstr ""
 
 #. read once the action is done, and held on until somebody has
