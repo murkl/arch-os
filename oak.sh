@@ -67,6 +67,17 @@ is_online() {
 
 has_wifi_card() { compgen -G '/sys/class/ieee80211/*' >/dev/null; }
 
+# Online, and not over the air: the default route leaves by an interface with
+# no wireless card behind it. A route lookup sends nothing, and the address is
+# one set aside for documentation, which only the default route claims.
+online_by_cable() {
+    local route device
+    is_online || return 1
+    route="$(ip -o route get 192.0.2.1)" || return 1
+    device="$(awk '{ for (i = 1; i < NF; i++) if ($i == "dev") print $(i + 1) }' <<<"$route")"
+    [ -n "$device" ] && [ ! -e "/sys/class/net/${device}/phy80211" ]
+}
+
 # The wireless card's station, or nothing where there is no card. iwd is started
 # only on the live image; anywhere else it is not ours to start.
 #

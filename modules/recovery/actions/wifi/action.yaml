@@ -1,11 +1,11 @@
-# On the menu, and opened when there is no internet. An open or known network
-# is joined as it is chosen; one that wants a passphrase says no, and the
-# passphrase is asked next.
+# In the configuration, and opened when there is no internet. An open or known
+# network is joined as it is chosen; one that wants a passphrase says no, and
+# the passphrase is asked next.
 title: Wireless network
 description: Join a wireless network.
 
 rules:
-  offer-if: [wifi-card]
+  offer-if: [wifi-card, no-cable]
   on-failure: wifi-passphrase
 
 variable:

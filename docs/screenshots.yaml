@@ -42,17 +42,18 @@
         press: enter
 
       # Also the page the banner is collaged from - see BANNER_CARDS in /Makefile.
-      - page: [Install, Settings]
-        choose: Settings
+      - page: [Install, Configuration]
+        choose: Configuration
         press: enter
       - page: Every used value
         shot: installer
         press: esc
 
-      - page: [Install, Settings]
+      - page: [Install, Configuration]
         choose: Install
         press: enter
-      - page: Ready to start
+      - page: Do you want to continue?
+        choose: "Yes"
         press: enter
 
       # Asked here rather than with the other answers, and written to no file.
@@ -75,9 +76,10 @@
         press: enter
       - page: Disk
         press: enter
-      - page: [Repair, Settings]
+      - page: [Repair, Configuration]
         press: enter
-      - page: Ready to start
+      - page: Do you want to continue?
+        choose: "Yes"
         press: enter
       - page: in place of the root subvolume
         shot: recovery

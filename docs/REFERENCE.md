@@ -284,7 +284,7 @@ Two questions - keyboard, disk - and on its own partition not even those, see be
 | Kernels | `/usr/lib/modules/*/` | While rebuilding boot |
 | Snapshots | `@snapshots` on the btrfs top level | Mid-run; none means the rollback step is skipped |
 
-Nothing it does needs a network - the network may be what broke, and kernel images come from the package cache. **Wireless network** on its menu joins one all the same, for whatever somebody wants to fetch in the shell, wherever the machine has a card. On its own partition a cable comes up at boot and is preferred while both are up, and the wireless daemon starts once there is a card to ask it about; nothing else of the network runs.
+Nothing it does needs a network - the network may be what broke, and kernel images come from the package cache. **Wireless network** in its **Configuration** joins one all the same, for whatever somebody wants to fetch in the shell, wherever the machine has a card and no internet over a cable. On its own partition a cable comes up at boot and is preferred while both are up, and the wireless daemon starts once there is a card to ask it about; nothing else of the network runs.
 
 It repairs what the Installer of the same release makes, and nothing older: `linux-zen`, btrfs with the whole subvolume layout, systemd-boot. A disk installed by an earlier release - one short of a subvolume, on ext4 - is turned away with the reason, and opened by the Recovery of the release it was installed with. Every release stays on **[the release page](https://github.com/murkl/arch-os/releases)**.
 
