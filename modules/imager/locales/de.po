@@ -23,7 +23,7 @@ msgstr "Bootmedium erstellen"
 #. what it is, in one sentence, under the row that starts the work
 #: module.yaml
 msgid "Write Arch OS to a USB device to boot another machine from."
-msgstr "Arch OS auf einen USB-Datenträger schreiben, um eine andere Maschine davon zu starten."
+msgstr "Arch OS auf einen USB-Datenträger schreiben, um einen anderen Rechner davon zu starten."
 
 #. the row that starts the work
 #: module.yaml
@@ -38,12 +38,12 @@ msgstr "Download-Ordner"
 #. ARCH_OS_DOWNLOAD_DIR: what it means
 #: module.yaml
 msgid "Where the image is kept, so a second run costs no download. It needs about two gigabytes."
-msgstr "Wo das Abbild liegt, damit ein zweiter Lauf nichts herunterladen muss. Es braucht rund zwei Gigabyte."
+msgstr "Wo das Image liegt, damit ein zweiter Lauf nichts herunterladen muss. Es braucht rund zwei Gigabyte."
 
 #. ARCH_OS_DOWNLOAD_DIR: the heading its row sits under
 #: module.yaml
 msgid "Image"
-msgstr "Abbild"
+msgstr "Image"
 
 #. ARCH_OS_DOWNLOAD_DIR: what a wrong answer is told
 #: module.yaml
@@ -53,12 +53,12 @@ msgstr "Gib den vollständigen Pfad eines Ordners an, beginnend mit einem Schrä
 #. ARCH_OS_IMAGE_VERIFY: the question
 #: module.yaml
 msgid "Verify checksum"
-msgstr "Prüfsumme prüfen"
+msgstr "Prüfsumme abgleichen"
 
 #. ARCH_OS_IMAGE_VERIFY: what it means
 #: module.yaml
 msgid "Checks the image against the checksum of its release before anything is written. Off, the image in the download folder is written as it is, such as one you built yourself."
-msgstr "Prüft das Abbild vor dem Schreiben gegen die Prüfsumme seines Releases. Ausgeschaltet wird das Abbild im Download-Ordner geschrieben, wie es ist, etwa ein selbst gebautes."
+msgstr "Prüft das Image vor dem Schreiben gegen die Prüfsumme seines Releases. Ausgeschaltet wird das Image im Download-Ordner geschrieben, wie es ist, etwa ein selbst gebautes."
 
 #. ARCH_OS_IMAGE_DEVICE: the question
 #: module.yaml
@@ -68,7 +68,7 @@ msgstr "Datenträger"
 #. ARCH_OS_IMAGE_DEVICE: what it means
 #: module.yaml
 msgid "The USB device to write to. Everything on it is erased. A device the running system is on is not offered."
-msgstr "Der USB-Datenträger, auf den geschrieben wird. Alles darauf wird gelöscht. Einer, von dem das laufende System kommt, wird nicht angeboten."
+msgstr "Der USB-Datenträger, auf den geschrieben wird. Alles darauf wird gelöscht. Ein Datenträger mit dem laufenden System wird nicht angeboten."
 
 #. ARCH_OS_IMAGE_DEVICE: what a wrong answer is told
 #: module.yaml
@@ -113,17 +113,17 @@ msgstr "Offline"
 #. the step, as the run lists it
 #: tasks/@write/download/task.yaml
 msgid "Download the image"
-msgstr "Abbild herunterladen"
+msgstr "Image herunterladen"
 
 #. the step, as the run lists it
 #: tasks/@write/verify/task.yaml
 msgid "Verify the checksum"
-msgstr "Prüfsumme prüfen"
+msgstr "Prüfsumme abgleichen"
 
 #. the step, as the run lists it
 #: tasks/@write/device/task.yaml
 msgid "Write the image to the device"
-msgstr "Abbild auf das Gerät schreiben"
+msgstr "Image auf den Datenträger schreiben"
 
 #. read once the step is done, and held on until somebody has
 #: tasks/@write/device/task.yaml
@@ -134,7 +134,7 @@ msgid ""
 msgstr ""
 "Der Datenträger ist fertig\n"
 "\n"
-"{{ARCH_OS_IMAGE_DEVICE}} startet jetzt Arch OS. Zieh ihn ab, steck ihn in die Maschine, die installiert werden soll, und starte sie davon."
+"{{ARCH_OS_IMAGE_DEVICE}} startet jetzt Arch OS. Zieh ihn ab, steck ihn in den Rechner, auf dem installiert werden soll, und starte ihn davon."
 
 #. an action: its row, and the heading over its page
 #: actions/installed-system/action.yaml
@@ -144,7 +144,7 @@ msgstr "Ein installiertes Linux-System"
 #. an action: what a no from it means
 #: actions/installed-system/action.yaml
 msgid "Create boot medium writes a device from an installed Linux system. On the live image there is a machine to work on instead - open the Installer or the Recovery."
-msgstr "Bootmedium erstellen schreibt einen Datenträger von einem installierten Linux-System aus. Auf dem Live-Image gibt es stattdessen eine Maschine zu bearbeiten - öffne den Installer oder die Recovery."
+msgstr "Bootmedium erstellen schreibt einen Datenträger von einem installierten Linux-System aus. Auf dem Live-Image gibt es stattdessen einen Rechner zu bearbeiten - öffne den Installer oder die Recovery."
 
 #. an action: its row, and the heading over its page
 #: actions/share-log/action.yaml
@@ -180,7 +180,7 @@ msgstr "Root zum Schreiben"
 #. an action: what a no from it means
 #: actions/sudo/action.yaml
 msgid "Writing a device needs root, and this machine has no sudo to ask for it. Start this again as root."
-msgstr "Einen Datenträger zu schreiben braucht root, und diese Maschine hat kein sudo, um danach zu fragen. Starte es erneut als root."
+msgstr "Einen Datenträger zu schreiben braucht root, und dieser Rechner hat kein sudo, um danach zu fragen. Starte es erneut als root."
 
 #. an action: its row, and the heading over its page
 #: actions/usb/action.yaml
