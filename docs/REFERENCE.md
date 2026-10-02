@@ -280,7 +280,7 @@ Two questions - keyboard, disk - and on its own partition not even those, see be
 | Encryption | The LUKS header, no password needed | Before the run |
 | File system | `lsblk` on the unlocked device - btrfs, or it is turned away | Once open |
 | Subvolumes | `btrfs subvolume list` on the top level - every one of the layout, or it is turned away | Once open |
-| `/boot` | The installation's own `fstab` | While mounting |
+| `/boot` | Partition 1, as the Installer lays it out - not the `fstab`, which may be what broke | While mounting |
 | Kernels | `/usr/lib/modules/*/` | While rebuilding boot |
 | Snapshots | `@snapshots` on the btrfs top level | Mid-run; none means the rollback step is skipped |
 
@@ -292,7 +292,7 @@ The password of an encrypted disk is typed once rather than twice: it already ex
 
 What the Recovery starts with on its own partition is put in force before the first page: the keyboard is loaded, and one that will not load is asked for again rather than left standing, since the password is typed next.
 
-**Note:** _A rollback builds the new `@` before touching the old one - a run that dies halfway leaves the system as found._
+**Note:** _A rollback builds the new `@` before touching the old one, and the next run finishes one cut short between the two - a run that dies halfway never leaves a system without `@`._
 
 ### The Recovery Partition
 

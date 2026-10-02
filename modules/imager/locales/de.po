@@ -70,6 +70,11 @@ msgstr "Datenträger"
 msgid "The USB device to write to. Everything on it is erased. A device the running system is on is not offered."
 msgstr "Der USB-Datenträger, auf den geschrieben wird. Alles darauf wird gelöscht. Ein Datenträger mit dem laufenden System wird nicht angeboten."
 
+#. ARCH_OS_IMAGE_DEVICE: the heading its row sits under
+#: module.yaml
+msgid "Target"
+msgstr "Ziel"
+
 #. ARCH_OS_IMAGE_DEVICE: what a wrong answer is told
 #: module.yaml
 msgid "Choose a device that exists."
