@@ -615,7 +615,7 @@ mount_target() {
     while IFS=$'\t' read -r subvolume path; do
         mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=${subvolume}" "$device" "${MNT}${path%/}"
     done < <(btrfs_subvolumes)
-    mount --mkdir "$(boot_partition "$ARCH_OS_RECOVERY_DISK")" "${MNT}/boot"
+    mount --mkdir -t vfat "$(boot_partition "$ARCH_OS_RECOVERY_DISK")" "${MNT}/boot"
 }
 
 # Everything under /mnt taken down. Whatever still holds it is logged and

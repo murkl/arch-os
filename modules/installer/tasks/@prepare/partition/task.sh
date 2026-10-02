@@ -72,6 +72,10 @@ partprobe "$ARCH_OS_DISK"
 # udev makes the new device nodes a moment after partprobe returns.
 udevadm settle
 
+# The new partitions start where the old ones did, and so do their signatures:
+# a LUKS header left under a fresh btrfs is what mount then reads.
+wipefs -af "$boot_part" "$system_part"
+
 # The firmware's entries for partitions that are now gone. One left behind
 # costs a line in a menu, so this is never fatal.
 # https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface#efibootmgr
@@ -104,7 +108,7 @@ fi
 
 mkfs.fat -F 32 -n BOOT "$boot_part"
 mkfs.btrfs -f -L BTRFS "$root_device"
-mount -v "$root_device" "$MNT"
+mount -v -t btrfs "$root_device" "$MNT"
 while read -r subvolume _; do
     btrfs subvolume create "${MNT}/${subvolume}"
 done < <(btrfs_subvolumes)
@@ -127,4 +131,4 @@ chattr +C "${MNT}/var/lib/libvirt/images"
 # systemd would make subvolumes of these on first boot, noise in every listing.
 mkdir -p "${MNT}/var/lib/portables" "${MNT}/var/lib/machines"
 
-mount -v --mkdir "$boot_part" "${MNT}/boot"
+mount -v --mkdir -t vfat "$boot_part" "${MNT}/boot"
