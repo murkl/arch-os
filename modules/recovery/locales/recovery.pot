@@ -228,8 +228,8 @@ msgid "Switch this machine off."
 msgstr ""
 
 #. an action: its row, and the heading over its page
-#: actions/wifi/action.yaml actions/wifi-passphrase/action.yaml
-msgid "Wireless network"
+#: actions/wifi/action.yaml
+msgid "Configure the wireless network"
 msgstr ""
 
 #. an action: what it does, under its row
@@ -245,6 +245,11 @@ msgstr ""
 #. an action: its row, and the heading over its page
 #: actions/wifi-card/action.yaml
 msgid "A wireless card"
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/wifi-passphrase/action.yaml
+msgid "Wireless network"
 msgstr ""
 
 #. an action: what a no from it means
