@@ -32,50 +32,51 @@ variables:
   # First, because the password below is typed on it. Never written to the
   # system being repaired.
   - name: ARCH_OS_RECOVERY_KEYMAP
+    type: list
     title: Console keyboard
     description: The keyboard you are typing on right now, loaded at once. Opens on the one the live image started with.
     group: Region
     required: true
     first: true
-    options-from: list_keymaps()
-    prefill: live_keymap()
-    apply: load_recovery_keymap()
+    options-from: options_keymaps()
+    prefill: prefill_live_keymap()
+    apply: apply_recovery_keymap()
     pattern: '^[A-Za-z0-9_.-]+$'
 
   - name: ARCH_OS_RECOVERY_DISK
+    type: list
     title: Disk
     description: The disk with the Arch OS installation to repair. Opening it changes nothing.
     group: Storage
     required: true
     error: Choose a disk that exists.
-    options-from: list_disks()
+    options-from: options_disks()
     pattern: '^/dev/[A-Za-z0-9_-]+$'
 
   # Not asked: a LUKS header is readable without the password.
   - name: ARCH_OS_RECOVERY_ENCRYPTED
+    type: bool
     title: Disk encryption
     description: Whether that disk is encrypted with LUKS.
     group: Storage
-    type: bool
-    value-from: disk_is_encrypted()
+    value-from: value_disk_encrypted()
 
   # Typed once and tried on the disk where it is typed.
   - name: ARCH_OS_RECOVERY_PASSWORD
+    type: password
     title: Encryption password
     description: The password that unlocks that disk. Asked right before the repair and never written to a file.
     group: Storage
-    type: secret
-    existing: true
     required: true
-    check: unlocks_disk()
+    check: check_disk_password()
     error: That password does not unlock this disk.
     conditions: ARCH_OS_RECOVERY_ENCRYPTED == true
 
   # Asked by the rollback, once the disk is open.
   - name: ARCH_OS_RECOVERY_SNAPSHOT
+    type: deferred
     title: Snapshot
     description: The snapshot to put in place of the system. Newest first, with its date and what took it.
-    type: deferred
     required: true
     filter: open
     options-from: ./tasks/@repair/rollback/snapshots.sh

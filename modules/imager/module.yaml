@@ -25,25 +25,27 @@ stages:
 
 variables:
   - name: ARCH_OS_DOWNLOAD_DIR
+    type: text
     title: Download folder
     description: Where the image is kept, so a second run costs no download. It needs about two gigabytes.
     group: Image
     required: true
-    prefill: download_dir()
+    prefill: prefill_download_dir()
     pattern: '^/.+$'
     error: Type the full path of a folder, starting with a slash.
 
   - name: ARCH_OS_IMAGE_VERIFY
+    type: bool
     title: Verify checksum
     description: |
       Checks the image against the checksum of its release before anything is
       written. Off, the image in the download folder is written as it is, such
       as one you built yourself.
     group: Image
-    type: bool
     default: true
 
   - name: ARCH_OS_IMAGE_DEVICE
+    type: list
     title: Device
     description: |
       The USB device to write to. Everything on it is erased. A device the
@@ -51,25 +53,24 @@ variables:
     group: Target
     required: true
     error: Choose a device that exists.
-    options-from: list_devices()
+    options-from: options_devices()
 
   # Not asked: root needs no password, and a sudo rule may say this account
   # needs none either.
   - name: ARCH_OS_IMAGE_SUDO
+    type: bool
     title: Password for the write
     description: Whether writing the device asks for your password.
     group: Target
-    type: bool
-    value-from: needs_password()
+    value-from: value_needs_password()
 
   # Tried where it is typed, not after a download of two gigabytes.
   - name: ARCH_OS_IMAGE_PASSWORD
+    type: password
     title: Your password
     description: Writing the device needs root, and sudo asks for your password. Asked right before the run and never written to a file.
     group: Target
-    type: secret
-    existing: true
     required: true
-    check: sudo_accepts()
+    check: check_sudo_password()
     error: That is not your password, or this account may not use sudo.
     conditions: ARCH_OS_IMAGE_SUDO == true

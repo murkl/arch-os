@@ -15,7 +15,7 @@ accent: "#1793d1"
 
 # Whether this machine is online, opposite the name on every page.
 status:
-  check: is_online()
+  check: check_online()
   pass: Online
   fail: Offline
 

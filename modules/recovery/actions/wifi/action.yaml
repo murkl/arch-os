@@ -6,10 +6,11 @@ description: Join a wireless network.
 
 rules:
   offer-if: [wifi-card, no-cable]
-  on-failure: wifi-passphrase
+  on-failure: [wifi-passphrase]
 
-variable:
-  name: ARCH_OS_WIFI_SSID
-  title: Network
-  required: true
-  options-from: list_wifi_networks()
+variables:
+  - name: ARCH_OS_WIFI_SSID
+    type: list
+    title: Network
+    required: true
+    options-from: options_wifi_networks()

@@ -245,7 +245,7 @@ msgstr ""
 msgid "Join a wireless network."
 msgstr ""
 
-#. ARCH_OS_WIFI_SSID: the page of the action
+#. ARCH_OS_WIFI_SSID: a page of the action
 #: actions/wifi/action.yaml
 msgid "Network"
 msgstr ""
@@ -265,7 +265,7 @@ msgstr ""
 msgid "{{ARCH_OS_WIFI_SSID}} did not accept that passphrase, or it is out of range."
 msgstr ""
 
-#. ARCH_OS_WIFI_PASSPHRASE: the page of the action
+#. ARCH_OS_WIFI_PASSPHRASE: a page of the action
 #: actions/wifi-passphrase/action.yaml
 msgid "Passphrase"
 msgstr ""

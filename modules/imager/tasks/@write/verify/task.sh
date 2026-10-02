@@ -6,7 +6,7 @@ if [ ! -s "$(checksum)" ]; then
     exit 1
 fi
 
-if (cd "$(download_dir)" && sha256sum -c "$(basename "$(checksum)")"); then
+if (cd "$ARCH_OS_DOWNLOAD_DIR" && sha256sum -c "$(basename "$(checksum)")"); then
     echo "checksum is correct"
     return 0
 fi

@@ -8,7 +8,7 @@ target="$(image)"
 
 # By the next run an internal disk can sit at that path, so it is held to the
 # list it was chosen from right before it is written.
-devices="$(list_devices | cut -f1)"
+devices="$(options_devices | cut -f1)"
 if ! grep -qxF "$device" <<<"$devices"; then
     echo "${device} is not a USB device on this machine. Plug the stick back in and choose it again." >&2
     exit 1
