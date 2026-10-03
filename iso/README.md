@@ -5,7 +5,7 @@ Stock Arch `releng`, patched: boot ➜ Plymouth ➜ Arch OS. Nothing in between.
 - Installer and Recovery on the same image
 - The Recovery image beside them, built first out of Arch's minimal `baseline`, for the Installer to write to the disk - **[➜ The Recovery Partition](../docs/REFERENCE.md#the-recovery-partition)**
 - Arch OS Bootsplash (Plymouth)
-- Nord palette and a console font that can draw every mark the interface uses, applied before it draws
+- Nord palette and Terminus Bold, applied before the interface draws
 - Networking exactly as the Arch ISO ships it (iwd, systemd-networkd)
 - UEFI only, squashfs/zstd
 
@@ -31,7 +31,8 @@ The [Oak](https://github.com/murkl/oak) binary with every module beside it lives
 build.sh <release-dir>                   builds the Recovery image, then the ISO that carries it
 smoke.sh <image.iso | recovery-dir>      boots a built image and waits for the first page
 e2e.sh <image.iso>                       installs it onto a disk, boots, repairs and boots again
-glyphs.sh <oak> <file>...                reads those files, and what that oak draws, against the font below
+font.sh <out-dir>                        builds the console fonts: Terminus Bold, in every size the launcher picks from
+glyphs.sh <oak> <file>...                reads those files, and what that oak draws, against those fonts
 src/etc/systemd/system/arch-os.service   starts it on tty1, on both images
 src/usr/local/bin/arch-os                the entry point, sets up the console first
 src/usr/local/bin/installer              opens the Installer directly, on the ISO only
@@ -49,7 +50,7 @@ make iso       # the release, then both images, beside it in dist/
 make image     # ...only the images, out of a release that is already there
 ```
 
-**Note:** _The images land beside the release they were built from, named after `oak.yaml`'s version: the ISO, and the Recovery as a folder and as a `.tar` for the release page. The ISO label is that version, upper-cased. Needs `archiso`, `systemd-ukify` and `erofs-utils`._
+**Note:** _The images land beside the release they were built from, named after `oak.yaml`'s version: the ISO, and the Recovery as a folder and as a `.tar` for the release page. The ISO label is that version, upper-cased. Needs `archiso`, `systemd-ukify`, `erofs-utils`, `kbd` and `terminus-font`._
 
 The Bootsplash theme is **[plymouth-theme-arch-os](https://github.com/murkl/plymouth-theme-arch-os)** at the commit `PLYMOUTH_THEME_REF` in `build.sh` names, fetched once for both images and kept in `download/` - raised by hand, like `OAK_VERSION`. `PLYMOUTH_THEME_SRC=/path/to/theme/src` builds with a theme folder of your own instead.
 
@@ -86,9 +87,9 @@ Walks the ISO the way a person does, unattended:
 
 ## What the Console can draw
 
-The font this image loads has one table of glyphs, so a character outside it is a box on the screen - in whichever language it happens to be in. `glyphs.sh` reads the font name out of the launcher that loads it and checks two things against its table: the files it is handed, which `make check` points at every module except fastfetch's config (a picture for a graphical terminal), and the marks the interface draws itself - the rules, the cursor, the three cells a QR code and the mark over a finished run are built from, and Oak's own words. Those are asked of the binary with `oak --glyphs` rather than copied here.
+Each font this image loads has one table of glyphs, so a character outside it is a box on the screen - in whichever language it happens to be in. `glyphs.sh` builds the fonts as `build.sh` does and checks two things against every table: the files it is handed, which `make check` points at every module except fastfetch's config (a picture for a graphical terminal), and the marks the interface draws itself - the rules, the cursor, the three cells a QR code and the mark over a finished run are built from, and Oak's own words. Those are asked of the binary with `oak --glyphs` rather than copied here.
 
-That last set is why the font is `LatGrkCyr-8x16` rather than something prettier: of the fonts in `kbd` whose table holds all of it, it is the one that also holds Greek and Cyrillic. Terminus has the full block and neither half of it; `eurlatgr` has no Cyrillic.
+The font is Terminus Bold, in the largest of three sizes that leaves the interface 100 columns by 30 rows. Of the fonts in `kbd` and `terminus-font` it is the clean bold one with Latin with its accents, Greek and Cyrillic. It has neither ▀ nor ▄, which a QR code is drawn from, so `font.sh` puts them in the two slots of its table that nothing draws.
 
 ```
 make glyphs-check

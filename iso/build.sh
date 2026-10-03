@@ -115,6 +115,7 @@ install_arch_os() {
     local profile="$1" opt="$1/airootfs/opt/arch-os"
     shift
     cp -rf src/* "${profile}/airootfs/"
+    ./font.sh "${profile}/airootfs/usr/share/kbd/consolefonts"
     mkdir -p "${opt}/modules"
     cp "${RELEASE_DIR}/oak" "${RELEASE_DIR}/oak.yaml" "${RELEASE_DIR}/oak.sh" "$opt"
     cp -r "$@" "${opt}/modules/"
