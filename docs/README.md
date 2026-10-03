@@ -108,7 +108,7 @@ sbctl status
 
 <p><img src="screenshots/recovery.png" alt="The Recovery, opening a system already on disk"></p>
 
-On a partition of every installation. Hold **space** while the machine starts and choose **Arch OS Recovery**, open **Recovery** among the applications, or boot the ISO:
+On a partition of every installation. Hold **space** while the machine starts and choose **Arch OS Recovery**, open **Recovery** among the applications, or boot the ISO and type `recovery` on another console (**Ctrl+Alt+F2**):
 
 - Unlocks and mounts the system at `/mnt`
 - Rolls back to a Btrfs snapshot
