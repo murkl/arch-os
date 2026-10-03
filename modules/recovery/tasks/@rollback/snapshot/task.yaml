@@ -1,0 +1,10 @@
+title: Go back to a snapshot
+
+# The snapshots are on the disk this run has just opened. Without any, the list
+# is empty and the step is skipped.
+asks: ARCH_OS_RECOVERY_SNAPSHOT
+confirm: |
+  Put {{ARCH_OS_RECOVERY_SNAPSHOT}} in place of the system on {{ARCH_OS_RECOVERY_DISK}}?
+
+  The system as it is now is replaced by that snapshot. /home and the other
+  snapshots stay as they are, so you can come back and choose another.

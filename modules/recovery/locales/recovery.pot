@@ -1,0 +1,271 @@
+# Translation template for recovery.
+#
+# One catalog per language beside this file, named by its code: de.po, fr.po.
+# The msgid is the English source text and the key at once, so a message no
+# catalog has anything to say about is shown exactly as it stands here — which
+# is what makes a half-finished translation useful from its first line.
+#
+# Generated. See the Makefile.
+msgid ""
+msgstr ""
+"Project-Id-Version: recovery\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. the name of this language in the language itself — "Deutsch", not
+#. "German". A list of languages is read by the people who speak them.
+msgid "English"
+msgstr ""
+
+#. what this module is called, wherever the interface names it
+#: module.yaml
+msgid "Recovery"
+msgstr ""
+
+#. what it is, in one sentence, under the row that starts the work
+#: module.yaml
+msgid "Repair an Arch Linux system that is already on a disk."
+msgstr ""
+
+#. the row that starts the work
+#: module.yaml
+msgid "Repair"
+msgstr ""
+
+#. the row that opens every answer, and the heading over that page
+#: module.yaml
+msgid "Configuration"
+msgstr ""
+
+#. the last page before the work, after every password
+#: module.yaml
+msgid ""
+"Open the system on {{ARCH_OS_RECOVERY_DISK}}?\n"
+"\n"
+"Opening it changes nothing. Every step that does asks first."
+msgstr ""
+
+#. ARCH_OS_RECOVERY_KEYMAP: the question
+#: module.yaml
+msgid "Console keyboard"
+msgstr ""
+
+#. ARCH_OS_RECOVERY_KEYMAP: what it means
+#: module.yaml
+msgid "The keyboard you are typing on right now, loaded at once. Opens on the one the live image started with."
+msgstr ""
+
+#. ARCH_OS_RECOVERY_KEYMAP: the heading its row sits under
+#: module.yaml
+msgid "Region"
+msgstr ""
+
+#. ARCH_OS_RECOVERY_DISK: the question
+#: module.yaml
+msgid "Disk"
+msgstr ""
+
+#. ARCH_OS_RECOVERY_DISK: what it means
+#: module.yaml
+msgid "The disk with the Arch OS installation to repair. Opening it changes nothing."
+msgstr ""
+
+#. ARCH_OS_RECOVERY_DISK: the heading its row sits under
+#: module.yaml
+msgid "Storage"
+msgstr ""
+
+#. ARCH_OS_RECOVERY_DISK: what a wrong answer is told
+#: module.yaml
+msgid "Choose a disk that exists."
+msgstr ""
+
+#. ARCH_OS_RECOVERY_ENCRYPTED: the question
+#: module.yaml
+msgid "Disk encryption"
+msgstr ""
+
+#. ARCH_OS_RECOVERY_ENCRYPTED: what it means
+#: module.yaml
+msgid "Whether that disk is encrypted with LUKS."
+msgstr ""
+
+#. ARCH_OS_RECOVERY_PASSWORD: the question
+#: module.yaml
+msgid "Encryption password"
+msgstr ""
+
+#. ARCH_OS_RECOVERY_PASSWORD: what it means
+#: module.yaml
+msgid "The password that unlocks that disk. Asked right before the repair and never written to a file."
+msgstr ""
+
+#. ARCH_OS_RECOVERY_PASSWORD: what a wrong answer is told
+#: module.yaml
+msgid "That password does not unlock this disk."
+msgstr ""
+
+#. ARCH_OS_RECOVERY_SNAPSHOT: the question
+#: module.yaml
+msgid "Snapshot"
+msgstr ""
+
+#. ARCH_OS_RECOVERY_SNAPSHOT: what it means
+#: module.yaml
+msgid "The snapshot to put in place of the system. Newest first, with its date and what took it."
+msgstr ""
+
+#. the header's status, while its check says yes
+#: ../../oak.yaml
+msgid "Online"
+msgstr ""
+
+#. the header's status, while its check says no
+#: ../../oak.yaml
+msgid "Offline"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@open/system/task.yaml
+msgid "Unlock and mount the system"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@rollback/snapshot/task.yaml
+msgid "Go back to a snapshot"
+msgstr ""
+
+#. asked before the step runs
+#: tasks/@rollback/snapshot/task.yaml
+msgid ""
+"Put {{ARCH_OS_RECOVERY_SNAPSHOT}} in place of the system on {{ARCH_OS_RECOVERY_DISK}}?\n"
+"\n"
+"The system as it is now is replaced by that snapshot. /home and the other snapshots stay as they are, so you can come back and choose another."
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@rebuild/boot/task.yaml
+msgid "Rebuild the boot files"
+msgstr ""
+
+#. asked before the step runs
+#: tasks/@rebuild/boot/task.yaml
+msgid ""
+"Rebuild the kernel images and the initial ram disks?\n"
+"\n"
+"Needed after a rollback past a kernel update, or the system starts without its modules. Everything comes from the package cache, so no network is needed."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/chroot/action.yaml
+msgid "Open a shell"
+msgstr ""
+
+#. an action: what it does, under its row
+#: actions/chroot/action.yaml
+msgid "Inside the system on the disk, to look around or fix something by hand. Leave it with exit."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/live-image/action.yaml
+msgid "An Arch Linux live image"
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/live-image/action.yaml
+msgid "This runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/no-cable/action.yaml
+msgid "No internet over a cable"
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/restart/action.yaml
+msgid "Restart"
+msgstr ""
+
+#. an action: what it does, under its row
+#: actions/restart/action.yaml
+msgid "Close this machine down and start it again."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/root/action.yaml
+msgid "Running as root"
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/root/action.yaml
+msgid "This has to run as root. Log in as root and start it again."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/share-log/action.yaml
+msgid "Share the log"
+msgstr ""
+
+#. an action: what it does, under its row
+#: actions/share-log/action.yaml
+msgid "Put the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it; passwords are never in it."
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/share-log/action.yaml
+msgid "paste.rs did not take the log. Try again in a moment."
+msgstr ""
+
+#. read once the action is done, and held on until somebody has
+#: actions/share-log/action.yaml
+msgid ""
+"Log shared\n"
+"\n"
+"Scan the code, or read the address under it, and hand it to whoever is helping."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/shutdown/action.yaml
+msgid "Shut down"
+msgstr ""
+
+#. an action: what it does, under its row
+#: actions/shutdown/action.yaml
+msgid "Switch this machine off."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/wifi/action.yaml
+msgid "Configure the wireless network"
+msgstr ""
+
+#. an action: what it does, under its row
+#: actions/wifi/action.yaml
+msgid "Join a wireless network."
+msgstr ""
+
+#. ARCH_OS_WIFI_SSID: a page of the action
+#: actions/wifi/action.yaml
+msgid "Network"
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/wifi-card/action.yaml
+msgid "A wireless card"
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/wifi-passphrase/action.yaml
+msgid "Wireless network"
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/wifi-passphrase/action.yaml
+msgid "{{ARCH_OS_WIFI_SSID}} did not accept that passphrase, or it is out of range."
+msgstr ""
+
+#. ARCH_OS_WIFI_PASSPHRASE: a page of the action
+#: actions/wifi-passphrase/action.yaml
+msgid "Passphrase"
+msgstr ""

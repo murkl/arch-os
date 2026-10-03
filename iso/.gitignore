@@ -1,5 +1,3 @@
-release
-download
-archiso
-work
-out
+# Everything build.sh creates or downloads while assembling the ISO.
+download/
+archiso/

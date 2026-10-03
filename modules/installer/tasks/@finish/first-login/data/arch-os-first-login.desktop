@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Arch OS Setup
+Icon=preferences-system
+Exec=bash -c '"${HOME}/{{SCRIPT}}" >"${HOME}/{{LOG}}" 2>&1'

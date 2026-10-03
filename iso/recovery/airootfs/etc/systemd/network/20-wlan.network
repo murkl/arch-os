@@ -1,0 +1,13 @@
+# An address for the wireless card once iwd has joined a network, the way the
+# Arch ISO gets one - see wifi_station in oak.sh. Weighed above a cable, as there.
+[Match]
+Type=wlan
+
+[Network]
+DHCP=yes
+
+[DHCPv4]
+RouteMetric=600
+
+[IPv6AcceptRA]
+RouteMetric=600

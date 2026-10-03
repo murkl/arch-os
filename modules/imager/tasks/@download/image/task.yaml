@@ -1,0 +1,4 @@
+title: Download the image
+
+# Two gigabytes take as long as they take; curl's bar is the line to watch.
+progress: true

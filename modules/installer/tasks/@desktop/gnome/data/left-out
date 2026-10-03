@@ -1,0 +1,32 @@
+# Members of the gnome group that are never downloaded, one per line with the
+# condition they are left out under. Anything another member actually depends
+# on still arrives as a dependency.
+#
+# always   every desktop install
+# slim     only with the slim desktop
+# bazaar   only where Bazaar takes GNOME Software's place
+#
+# The browser is a question of its own, and the browser task installs the one
+# that was chosen - GNOME Web among them.
+always epiphany
+bazaar gnome-software
+slim gnome-calendar
+slim gnome-maps
+slim gnome-contacts
+slim gnome-font-viewer
+slim gnome-characters
+slim gnome-clocks
+slim gnome-connections
+slim gnome-music
+slim gnome-weather
+slim gnome-calculator
+slim gnome-logs
+slim gnome-text-editor
+slim gnome-disk-utility
+slim simple-scan
+slim baobab
+slim snapshot
+slim loupe
+slim decibels
+slim showtime
+slim papers

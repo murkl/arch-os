@@ -1,0 +1,8 @@
+title: Install Plymouth
+
+# After multilib, which upgrades the system the theme is built against.
+needs: [multilib]
+conditions: ARCH_OS_BOOTSPLASH_ENABLED == true
+
+# The theme comes from the AUR; without it Plymouth draws its own logo.
+allow-failure: true

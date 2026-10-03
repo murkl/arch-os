@@ -1,0 +1,6 @@
+title: Rebuild the boot files
+confirm: |
+  Rebuild the kernel images and the initial ram disks?
+
+  Needed after a rollback past a kernel update, or the system starts without
+  its modules. Everything comes from the package cache, so no network is needed.

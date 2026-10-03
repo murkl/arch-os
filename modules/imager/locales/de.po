@@ -1,0 +1,214 @@
+# German translation of imager.
+# This file is distributed under the same license as the arch-os package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: imager\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. the name of this language in the language itself — "Deutsch", not
+#. "German". A list of languages is read by the people who speak them.
+msgid "English"
+msgstr "Deutsch"
+
+#. what this module is called, wherever the interface names it
+#: module.yaml
+msgid "Create boot medium"
+msgstr "Bootmedium erstellen"
+
+#. what it is, in one sentence, under the row that starts the work
+#: module.yaml
+msgid "Write Arch OS to a USB device to boot another machine from."
+msgstr "Arch OS auf einen USB-Datenträger schreiben, um einen anderen Rechner davon zu starten."
+
+#. the row that starts the work
+#: module.yaml
+msgid "Create"
+msgstr "Erstellen"
+
+#. the row that opens every answer, and the heading over that page
+#: module.yaml
+msgid "Configuration"
+msgstr "Konfiguration"
+
+#. the last page before the work, after every password
+#: module.yaml
+msgid ""
+"Erase {{ARCH_OS_IMAGE_DEVICE}} and write Arch OS to it?\n"
+"\n"
+"Everything on it is lost."
+msgstr ""
+"{{ARCH_OS_IMAGE_DEVICE}} löschen und Arch OS darauf schreiben?\n"
+"\n"
+"Alles darauf geht verloren."
+
+#. ARCH_OS_DOWNLOAD_DIR: the question
+#: module.yaml
+msgid "Download folder"
+msgstr "Download-Ordner"
+
+#. ARCH_OS_DOWNLOAD_DIR: what it means
+#: module.yaml
+msgid "Where the image is kept, so a second run costs no download. It needs about two gigabytes."
+msgstr "Wo das Image liegt, damit ein zweiter Lauf nichts herunterladen muss. Es braucht rund zwei Gigabyte."
+
+#. ARCH_OS_DOWNLOAD_DIR: the heading its row sits under
+#: module.yaml
+msgid "Image"
+msgstr "Image"
+
+#. ARCH_OS_DOWNLOAD_DIR: what a wrong answer is told
+#: module.yaml
+msgid "Type the full path of a folder, starting with a slash."
+msgstr "Gib den vollständigen Pfad eines Ordners an, beginnend mit einem Schrägstrich."
+
+#. ARCH_OS_IMAGE_VERIFY: the question
+#: module.yaml
+msgid "Verify checksum"
+msgstr "Prüfsumme abgleichen"
+
+#. ARCH_OS_IMAGE_VERIFY: what it means
+#: module.yaml
+msgid "Checks the image against the checksum of its release before anything is written. Off, the image in the download folder is written as it is, such as one you built yourself."
+msgstr "Prüft das Image vor dem Schreiben gegen die Prüfsumme seines Releases. Ausgeschaltet wird das Image im Download-Ordner geschrieben, wie es ist, etwa ein selbst gebautes."
+
+#. ARCH_OS_IMAGE_DEVICE: the question
+#: module.yaml
+msgid "Device"
+msgstr "Datenträger"
+
+#. ARCH_OS_IMAGE_DEVICE: what it means
+#: module.yaml
+msgid "The USB device to write to. Everything on it is erased. A device the running system is on is not offered."
+msgstr "Der USB-Datenträger, auf den geschrieben wird. Alles darauf wird gelöscht. Ein Datenträger mit dem laufenden System wird nicht angeboten."
+
+#. ARCH_OS_IMAGE_DEVICE: the heading its row sits under
+#: module.yaml
+msgid "Target"
+msgstr "Ziel"
+
+#. ARCH_OS_IMAGE_DEVICE: what a wrong answer is told
+#: module.yaml
+msgid "Choose a device that exists."
+msgstr "Wähle einen vorhandenen Datenträger."
+
+#. ARCH_OS_IMAGE_SUDO: the question
+#: module.yaml
+msgid "Password for the write"
+msgstr "Passwort zum Schreiben"
+
+#. ARCH_OS_IMAGE_SUDO: what it means
+#: module.yaml
+msgid "Whether writing the device asks for your password."
+msgstr "Ob das Schreiben des Datenträgers nach deinem Passwort fragt."
+
+#. ARCH_OS_IMAGE_PASSWORD: the question
+#: module.yaml
+msgid "Your password"
+msgstr "Dein Passwort"
+
+#. ARCH_OS_IMAGE_PASSWORD: what it means
+#: module.yaml
+msgid "Writing the device needs root, and sudo asks for your password. Asked right before the run and never written to a file."
+msgstr "Das Schreiben braucht Root-Rechte, und sudo fragt dafür nach deinem Passwort. Es wird direkt vor dem Start abgefragt und nie in eine Datei geschrieben."
+
+#. ARCH_OS_IMAGE_PASSWORD: what a wrong answer is told
+#: module.yaml
+msgid "That is not your password, or this account may not use sudo."
+msgstr "Das ist nicht dein Passwort, oder dieses Konto darf sudo nicht verwenden."
+
+#. the header's status, while its check says yes
+#: ../../oak.yaml
+msgid "Online"
+msgstr "Online"
+
+#. the header's status, while its check says no
+#: ../../oak.yaml
+msgid "Offline"
+msgstr "Offline"
+
+#. the step, as the run lists it
+#: tasks/@download/image/task.yaml
+msgid "Download the image"
+msgstr "Image herunterladen"
+
+#. the step, as the run lists it
+#: tasks/@verify/checksum/task.yaml
+msgid "Verify the checksum"
+msgstr "Prüfsumme abgleichen"
+
+#. the step, as the run lists it
+#: tasks/@write/device/task.yaml
+msgid "Write the image to the device"
+msgstr "Image auf den Datenträger schreiben"
+
+#. read once the step is done, and held on until somebody has
+#: tasks/@write/device/task.yaml
+msgid ""
+"The device is ready\n"
+"\n"
+"{{ARCH_OS_IMAGE_DEVICE}} now starts Arch OS. Unplug it, plug it into the machine to install, and start that machine from it."
+msgstr ""
+"Der Datenträger ist fertig\n"
+"\n"
+"{{ARCH_OS_IMAGE_DEVICE}} startet jetzt Arch OS. Zieh ihn ab, steck ihn in den Rechner, auf dem installiert werden soll, und starte ihn davon."
+
+#. an action: its row, and the heading over its page
+#: actions/installed-system/action.yaml
+msgid "An installed Linux system"
+msgstr "Ein installiertes Linux-System"
+
+#. an action: what a no from it means
+#: actions/installed-system/action.yaml
+msgid "Create boot medium writes a device from an installed Linux system. On the live image there is a machine to work on instead - open the Installer or the Recovery."
+msgstr "Bootmedium erstellen schreibt einen Datenträger von einem installierten Linux-System aus. Auf dem Live-Image gibt es stattdessen einen Rechner zu bearbeiten - öffne den Installer oder die Recovery."
+
+#. an action: its row, and the heading over its page
+#: actions/share-log/action.yaml
+msgid "Share the log"
+msgstr "Log teilen"
+
+#. an action: what it does, under its row
+#: actions/share-log/action.yaml
+msgid "Put the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it; passwords are never in it."
+msgstr "Stellt das Log dieses Laufs auf paste.rs online, für die Person, die dir hilft. Jede Person mit der Adresse kann es lesen; Passwörter stehen nie darin."
+
+#. an action: what a no from it means
+#: actions/share-log/action.yaml
+msgid "paste.rs did not take the log. Try again in a moment."
+msgstr "paste.rs hat das Log nicht angenommen. Versuch es gleich noch einmal."
+
+#. read once the action is done, and held on until somebody has
+#: actions/share-log/action.yaml
+msgid ""
+"Log shared\n"
+"\n"
+"Scan the code, or read the address under it, and hand it to whoever is helping."
+msgstr ""
+"Log geteilt\n"
+"\n"
+"Scanne den Code oder lies die Adresse darunter und gib sie an die Person, die dir hilft."
+
+#. an action: its row, and the heading over its page
+#: actions/sudo/action.yaml
+msgid "Root for the write"
+msgstr "Root zum Schreiben"
+
+#. an action: what a no from it means
+#: actions/sudo/action.yaml
+msgid "Writing a device needs root, and this machine has no sudo to ask for it. Start this again as root."
+msgstr "Einen Datenträger zu schreiben braucht root, und dieser Rechner hat kein sudo, um danach zu fragen. Starte es erneut als root."
+
+#. an action: its row, and the heading over its page
+#: actions/usb/action.yaml
+msgid "A USB device to write to"
+msgstr "Ein USB-Datenträger zum Schreiben"
+
+#. an action: what a no from it means
+#: actions/usb/action.yaml
+msgid "No USB device found. Plug a stick in and this carries on by itself."
+msgstr "Kein USB-Datenträger gefunden. Steck einen Stick ein, dann geht es von selbst weiter."

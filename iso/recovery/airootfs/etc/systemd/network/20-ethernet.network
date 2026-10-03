@@ -1,0 +1,17 @@
+# And for a cable, which comes up at boot: a cable plugged in is a network asked
+# for. systemd-networkd and systemd-resolved are switched on beside this, in
+# ../system/. Its routes weigh less than a wireless network's, so a cable is
+# what carries the traffic wherever both are up - the metrics the Arch ISO
+# gives the two.
+[Match]
+Type=ether
+Kind=!*
+
+[Network]
+DHCP=yes
+
+[DHCPv4]
+RouteMetric=100
+
+[IPv6AcceptRA]
+RouteMetric=100

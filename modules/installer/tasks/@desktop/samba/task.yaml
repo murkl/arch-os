@@ -1,0 +1,8 @@
+title: Set up Samba
+needs: [gnome]
+
+# The question's own conditions, so no server runs where sharing was declined.
+conditions:
+  - ARCH_OS_DESKTOP != none
+  - ARCH_OS_DESKTOP_EXTRAS_ENABLED == true
+  - ARCH_OS_SAMBA_SHARE_ENABLED == true

@@ -1,0 +1,388 @@
+# One workflow, and a commit is under exactly one run of it.
+#
+# A pull request is checked, and one out of draft is also built and booted. A
+# push to main — the only branch push triggers on — is checked and handed to
+# release-please, and the merge of its pull request is built, booted and
+# published by that same run. Every job says for itself when it runs.
+#
+# A commit is built once. What this run assembles is what its own jobs boot and
+# what the release page offers — nothing downstream ever builds again. See
+# docs/CONTRIBUTING.md.
+
+name: CI
+
+on:
+  # main only: a tag here is written by the release below, out of a commit that
+  # has already been through this file, and every other branch is checked
+  # through its pull request instead — one trigger, one run, no branch left to
+  # exclude by name.
+  push:
+    branches: [main]
+  # `ready_for_review` on top of the three defaults: leaving draft is what turns
+  # the fast gate into the full one.
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    # Not the release pull request, which touches nothing but these three - in
+    # oak.yaml the version line. It is opened with the workflow's own token, and
+    # since June 2026 GitHub holds every run such a pull request starts until
+    # somebody approves it - one nobody does fails the moment it is merged. The
+    # release run reports its checks instead, and its merge is checked on main.
+    # Any other pull request that changes nothing but oak.yaml starts no run
+    # either, so main holds it back - see docs/CONTRIBUTING.md.
+    # https://github.com/orgs/community/discussions/199292
+    paths-ignore:
+      - CHANGELOG.md
+      - .release-please-manifest.json
+      - oak.yaml
+  workflow_dispatch:
+
+permissions: {}
+
+# -o pipefail on every step: a failure in the middle of a pipeline is a failure.
+defaults:
+  run:
+    shell: bash
+
+# One run per pull request, and one per ref for everything else — main's
+# pushes and a run somebody asked for by hand. main is never cancelled — it is
+# the run that releases — and neither is a run started by hand.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' && github.ref_name != 'main' }}
+
+# Every job names its runner rather than leaving it to `ubuntu-latest`, which
+# moves to a new Ubuntu on a date GitHub picks: a toolchain that changes under a
+# branch nobody touched is a change nobody made. It is raised here deliberately,
+# like any other dependency.
+#
+# Every action is named by the commit it is, with its version beside it: a tag
+# is whatever its owner points it at next, and some of these run with the right
+# to write a release. Dependabot raises both together.
+#
+# The container is the one moving name here, on purpose. Every job upgrades it
+# to today's Arch before doing anything else - that is what this is checked
+# against - so a pinned image would only be an older starting point, and one
+# whose keyring stops trusting the packages it is upgrading to.
+jobs:
+  # `make check` and nothing this file adds to it — the secret scan included:
+  # what is checked lives in the Makefile, so a rule that holds in CI holds at
+  # a desk.
+  #
+  # Nothing here needs a Go toolchain. The runtime is Oak, a project of its own,
+  # and every job that needs it downloads the release the Makefile pins.
+  check:
+    name: Check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    container: archlinux:latest # zizmor: ignore[unpinned-images] - see the top of this file
+    permissions:
+      contents: read
+    steps:
+      # Before the checkout: without git, actions/checkout falls back to a
+      # tarball, and a tarball is not a repository. A full upgrade rather than
+      # a refresh, because installing against a database newer than the system
+      # is the one thing Arch does not carry.
+      - name: Make the checkout a repository
+        run: pacman -Syu --needed --noconfirm git
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/arch
+        with:
+          packages: make curl shellcheck shfmt zsh yamllint actionlint zizmor gettext diffutils gitleaks kbd tzdata
+
+      # The runtime's checksum is a call to the API, and sixty an hour is what
+      # an address that does not say who it is gets - one address for every
+      # runner on that machine. Handed to the step that makes the call rather
+      # than to the job, so nothing else in it can read the token.
+      - run: make check
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+  # The version, out of the commits since the last release: a `fix:` is a patch,
+  # a `feat:` a minor, a `!` a major. Nothing here is typed, and nothing is
+  # pushed to main — this opens a pull request like anybody else.
+  #
+  # Which of its two outcomes this is depends on what just landed: an ordinary
+  # merge updates that pull request, and the merge of that pull request is what
+  # writes the tag, the changelog and the release page the job below fills.
+  release:
+    name: Release
+    needs: check
+    if: github.event_name == 'push' && github.ref_name == 'main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write # the tag and the release page
+      pull-requests: write # the release pull request
+      statuses: write # the two checks it is cleared by
+    outputs:
+      created: ${{ steps.please.outputs.release_created }}
+      tag: ${{ steps.please.outputs.tag_name }}
+      version: ${{ steps.please.outputs.version }}
+      notes: ${{ steps.please.outputs.body }}
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: please
+
+      # The release pull request starts no run - see pull_request above - so
+      # nothing would ever report the two checks main asks of a pull request,
+      # and it could never be merged. It needs neither: it holds what a run like
+      # this one wrote out of a main that was checked a moment before, and its
+      # merge is checked again on main before a tag exists. This says so, on
+      # every run, so a run that missed it is made good by the next.
+      #
+      # The commit is read off the branch release-please has just written, not
+      # off the pull request: that one follows a few seconds later, and the
+      # checks would land on the commit before and leave the merge blocked.
+      - name: The release pull request is cleared to merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh pr list --state open --label "autorelease: pending" --json headRefName --jq '.[].headRefName' |
+            while read -r branch; do
+              sha="$(gh api "repos/${GH_REPO}/git/ref/heads/${branch}" --jq .object.sha)"
+              for check in Ready Title; do
+                gh api --silent "repos/${GH_REPO}/statuses/${sha}" -f state=success -f context="$check" \
+                  -f description="Release pull request - checked on main once merged"
+              done
+            done
+
+  # The image, and the one job that finds out whether the thing starts. Both in
+  # one job rather than three: the file between them is a gigabyte, and handing
+  # it from job to job costs more than making it.
+  #
+  # Half an hour, so it is spent on what is about to be merged or released. A
+  # draft says itself that it is not ready, and a fork is not handed a
+  # privileged container.
+  image:
+    name: Image
+    needs: [check, release]
+    if: >-
+      ${{ !cancelled() && needs.check.result == 'success' && (
+        needs.release.outputs.created == 'true'
+        || github.event_name == 'workflow_dispatch'
+        || (github.event_name == 'pull_request'
+          && !github.event.pull_request.draft
+          && github.event.pull_request.head.repo.full_name == github.repository)
+      ) }}
+    runs-on: ubuntu-24.04
+    # An installation downloads a whole system, on top of building two images.
+    timeout-minutes: 120
+    container:
+      image: archlinux:latest # zizmor: ignore[unpinned-images] - see the top of this file
+      # pacstrap mounts /proc and /sys inside the airootfs it is filling, and
+      # qemu without the device falls back to emulation, which the timeout
+      # below would not sit through.
+      options: --privileged --device /dev/kvm
+    permissions:
+      contents: read
+    env:
+      # Generous on purpose: a slow boot is not a failed boot, and a run that
+      # passes never waits this long.
+      TIMEOUT: 600
+    steps:
+      - name: Make the checkout a repository
+        run: pacman -Syu --needed --noconfirm git
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # netpbm turns the console into something a browser will show: a failed
+      # boot is read off the picture, and nothing opens a .ppm.
+      - uses: ./.github/actions/arch
+        with:
+          packages: make curl archiso systemd-ukify qemu-base edk2-ovmf tesseract tesseract-data-eng netpbm openssh libisoburn
+
+      - run: make tarball
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      # What ships is what was checked, rather than what was checked plus
+      # whatever the packaging did to it. `--inspect` loads a product the way a
+      # run does, so this asks of the unpacked release what `make check` asks of
+      # the tree it was built from.
+      - name: The tarball holds a working release
+        run: |
+          unpacked="$(mktemp -d)"
+          tar -xzf dist/*.tar.gz -C "$unpacked"
+          for release in "$unpacked"/*; do
+            "$release/oak" --inspect
+          done
+
+      # The images out of the release that was just packed, rather than out of
+      # a second build of the same sources: the Recovery, and the ISO that
+      # carries it. `make iso` would do both.
+      - run: make image
+
+      - run: make smoke
+
+      # The ISO installed, booted, repaired and booted again.
+      - run: make e2e
+
+      # On a failure this is the only account of what the machine was showing
+      # when it gave up.
+      - name: The console, as a picture
+        if: always()
+        run: |
+          shopt -s nullglob
+          for frame in dist/smoke/*/*.ppm dist/e2e/*.ppm; do
+            pnmtopng "$frame" >"${frame%.ppm}.png"
+          done
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: boot-tests
+          path: |
+            dist/smoke/*/*.png
+            dist/e2e/*.png
+            dist/e2e/*.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+      # Every download under one name: what a release offers, and what somebody
+      # reviewing the change can boot for themselves. Kept even when the boot
+      # failed, because that is when somebody wants to boot it by hand. On a
+      # release the job below takes them from here.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ !cancelled() }}
+        with:
+          if-no-files-found: ignore
+          name: arch-os
+          path: |
+            dist/*.tar.gz
+            dist/*.tar
+            dist/*.iso
+          retention-days: 7
+
+  # The one check of this file a pull request has to pass before it can be
+  # merged - see .github/settings/ruleset.json. One name for all of them, so a
+  # job listed here is required from the moment it is.
+  #
+  # A draft is refused on purpose. Its run skips what a draft does not get, and
+  # leaving draft starts the full run on the same commit - whose Ready is only
+  # written once everything before it is done. Until then GitHub reads the one
+  # it already has, and a draft that passed would open the merge for the length
+  # of that run. The refusal leaves the run itself green: it is the check, not a
+  # failure anybody has to hear about.
+  ready:
+    name: Ready
+    needs: [check, image]
+    if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+    continue-on-error: ${{ github.event.pull_request.draft }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Every job this pull request needed came out well
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+          DRAFT: ${{ github.event.pull_request.draft }}
+        run: |
+          for result in $RESULTS; do
+            case "$result" in
+            success | skipped) ;;
+            *)
+              echo "::error::a job this pull request needs ended as ${result}"
+              exit 1
+              ;;
+            esac
+          done
+          if [ "$DRAFT" = true ]; then
+            echo "::error::a draft is not ready to merge - mark it ready for review, and the full run decides"
+            exit 1
+          fi
+
+  # Nothing is built here. The three files this run made and booted are hung on
+  # the release the job above wrote as a draft, under the version it decided,
+  # and the draft is made public last - once all of them are on it. A run that
+  # fails before that leaves a draft to re-run, never a release that every
+  # download link already points at and that holds nothing.
+  publish:
+    name: Publish
+    needs: [release, image]
+    if: needs.release.outputs.created == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write # the assets and the page they hang on
+      id-token: write # the provenance below is signed
+      attestations: write # and stored beside the release
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ needs.release.outputs.tag }}
+      VERSION: ${{ needs.release.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: arch-os
+          path: dist
+
+      # The last chance to notice that these are not the files this tag names.
+      - name: The files are the ones this tag names
+        run: |
+          for file in "arch-os-${VERSION}-x86_64.tar.gz" "arch-os-${VERSION}-recovery-x86_64.tar" "arch-os-${VERSION}-x86_64.iso"; do
+            if [ ! -f "dist/${file}" ]; then
+              echo "::error::${file} is not among what this run built"
+              ls -1 dist
+              exit 1
+            fi
+          done
+
+      # Which commit and which run these files came out of, signed by the run
+      # that made them — the only one that can say so truthfully.
+      - name: Sign the provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            dist/*.tar.gz
+            dist/*.tar
+            dist/*.iso
+
+      - name: Publish the release
+        env:
+          NOTES: ${{ needs.release.outputs.notes }}
+        run: |
+          # What the release changed, as the changelog says it, and under it the
+          # downloads and how to check where they came from. Written whole
+          # rather than appended, so a run repeated on the same tag leaves the
+          # page saying the same thing.
+          [ -n "$NOTES" ] || {
+            echo "::error::${TAG} was released with nothing written under it"
+            exit 1
+          }
+
+          notes="${RUNNER_TEMP}/notes.md"
+          printf '%s\n' "$NOTES" >"$notes"
+          cat >>"$notes" <<FOOTER
+
+          ---
+
+          Boot the ISO on the machine to install, or run this on any Linux machine — what opens is decided by the machine it opened on:
+
+          \`\`\`
+          curl -Ls https://bit.ly/archos | bash
+          \`\`\`
+
+          | File | Description |
+          | --- | --- |
+          | \`arch-os-${VERSION}-x86_64.iso\` | The bootable image: Installer and Recovery, started on its own |
+          | \`arch-os-${VERSION}-x86_64.tar.gz\` | The same program without the image: unpack it and run \`./oak\`. On a live image it installs or repairs, anywhere else the Imager writes the device above to a USB stick |
+          | \`arch-os-${VERSION}-recovery-x86_64.tar\` | The Recovery the Installer writes to a partition of its own - carried by the ISO, and fetched from here on any other live image |
+
+          All three carry signed build provenance — which repository the file came out of, and which run built it:
+
+          \`\`\`
+          gh attestation verify arch-os-${VERSION}-x86_64.iso -R ${GH_REPO}
+          \`\`\`
+
+          Without \`gh\`, GitHub prints each download's SHA-256 beside it on this page, which says only that the file arrived whole.
+          FOOTER
+
+          gh release upload "$TAG" dist/*.tar.gz dist/*.tar dist/*.iso --clobber
+          gh release edit "$TAG" --notes-file "$notes" --draft=false --latest

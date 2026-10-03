@@ -1,0 +1,9 @@
+# Opened where the network wants a passphrase.
+title: Wireless network
+error: "{{ARCH_OS_WIFI_SSID}} did not accept that passphrase, or it is out of range."
+
+variables:
+  - name: ARCH_OS_WIFI_PASSPHRASE
+    type: password
+    title: Passphrase
+    required: true

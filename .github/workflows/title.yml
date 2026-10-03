@@ -1,0 +1,54 @@
+# The one thing a machine reads a pull request for: its title becomes the commit
+# on main under a squash merge, and the next version and the changelog are read
+# out of that line. A title that names no kind of change releases nothing, and
+# nothing would say so.
+#
+# A file of its own because it is the only check that has to run again when the
+# title changes - and the only one that must not. Renaming a pull request would
+# otherwise rebuild it, and correcting the title would start nothing at all.
+
+name: Title
+
+on:
+  # synchronize as well: main asks for this check on the commit a pull request
+  # ends on, and a result belongs to the commit it was read on.
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    # Not the release pull request, which touches nothing but these three - in
+    # oak.yaml the version line. It is opened with the workflow's own token, and
+    # since June 2026 GitHub holds every run such a pull request starts until
+    # somebody approves it - one nobody does fails the moment it is merged. The
+    # release run reports its checks instead, and its merge is checked on main.
+    # Any other pull request that changes nothing but oak.yaml starts no run
+    # either, so main holds it back - see docs/CONTRIBUTING.md.
+    # https://github.com/orgs/community/discussions/199292
+    paths-ignore:
+      - CHANGELOG.md
+      - .release-please-manifest.json
+      - oak.yaml
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  title:
+    name: Title
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: The title says what kind of change this is
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if ! grep -qE '^(feat|fix|perf|refactor|docs|test|build|ci|chore|revert)(\([^)]+\))?!?: .' <<<"$TITLE"; then
+            echo "::error::'${TITLE}' opens on no type — feat:, fix:, feat!: … see docs/CONTRIBUTING.md"
+            exit 1
+          fi
+          printf 'This title reads as a release line:\n\n    %s\n' "$TITLE" >>"$GITHUB_STEP_SUMMARY"

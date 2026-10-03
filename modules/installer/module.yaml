@@ -1,0 +1,476 @@
+# The Installer: what it asks and the order it works in. Every name() is a
+# function in oak.sh.
+# https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
+
+title: Installer
+description: Install Arch Linux on this machine.
+
+# The last page comes after the password, and names the disk it erases.
+text:
+  start: Install
+  settings: Configuration
+  confirm: |
+    Erase {{ARCH_OS_DISK}} and install Arch Linux?
+
+    Everything on it is lost.
+
+# Each a folder under actions/. The internet comes last, after the keyboard a
+# passphrase is typed on.
+rules:
+  offer-if: [live-image]
+  start-if: [root, uefi, secure-boot-off, internet]
+  on-settings: [wifi]
+  on-leave: [restart, shutdown]
+  on-failure: [share-log]
+  on-success: [chroot, share-config]
+
+# Each a folder under tasks/, marked: tasks/@system/.
+stages:
+  - prepare # the live system ready, the disk partitioned and mounted
+  - system # the base system, configured and bootable
+  - features # what the settings switch on
+  - desktop # the desktop and what belongs to it
+  - finish # the last touches to the new system
+
+# Each names every setting it has an opinion about, so only what nobody but the
+# person at the machine can answer is left to ask.
+presets:
+  - title: Desktop
+    description: The Core with GNOME, drivers, codecs and everyday applications.
+    values:
+      ARCH_OS_ENCRYPTION_ENABLED: true
+      ARCH_OS_RECOVERY_ENABLED: true
+      ARCH_OS_DESKTOP: gnome
+      ARCH_OS_DESKTOP_EXTRAS_ENABLED: true
+      ARCH_OS_DESKTOP_SLIM_ENABLED: true
+      ARCH_OS_EXTENSION_MANAGER_ENABLED: true
+      ARCH_OS_BROWSER: firefox
+      ARCH_OS_BACKUP: pika-backup
+      ARCH_OS_FLATPAK_ENABLED: true
+      ARCH_OS_BAZAAR_ENABLED: true
+      ARCH_OS_SAMBA_SHARE_ENABLED: false
+      ARCH_OS_CORE_TWEAKS_ENABLED: true
+      ARCH_OS_BOOTSPLASH_ENABLED: true
+      ARCH_OS_MULTILIB_ENABLED: true
+      ARCH_OS_AUR_HELPER_ENABLED: true
+      ARCH_OS_CONTAINER_ENGINE: none
+      ARCH_OS_FIREWALL_ENABLED: true
+      ARCH_OS_SSH_SERVER_ENABLED: false
+      ARCH_OS_HOUSEKEEPING_ENABLED: true
+      ARCH_OS_SHELL_ENHANCEMENT_ENABLED: true
+      ARCH_OS_MANAGER_ENABLED: true
+      ARCH_OS_VM_HOST_ENABLED: false
+
+  - title: Core
+    description: A minimal Arch Linux on the text console.
+    values:
+      ARCH_OS_ENCRYPTION_ENABLED: true
+      ARCH_OS_RECOVERY_ENABLED: true
+      ARCH_OS_DESKTOP: none
+      ARCH_OS_DESKTOP_EXTRAS_ENABLED: false
+      ARCH_OS_DESKTOP_SLIM_ENABLED: false
+      ARCH_OS_EXTENSION_MANAGER_ENABLED: false
+      ARCH_OS_BROWSER: none
+      ARCH_OS_BACKUP: none
+      ARCH_OS_FLATPAK_ENABLED: false
+      ARCH_OS_BAZAAR_ENABLED: false
+      ARCH_OS_SAMBA_SHARE_ENABLED: false
+      ARCH_OS_CORE_TWEAKS_ENABLED: true
+      ARCH_OS_BOOTSPLASH_ENABLED: false
+      ARCH_OS_MULTILIB_ENABLED: false
+      ARCH_OS_AUR_HELPER_ENABLED: false
+      ARCH_OS_CONTAINER_ENGINE: none
+      ARCH_OS_FIREWALL_ENABLED: false
+      ARCH_OS_SSH_SERVER_ENABLED: false
+      ARCH_OS_HOUSEKEEPING_ENABLED: false
+      ARCH_OS_SHELL_ENHANCEMENT_ENABLED: false
+      ARCH_OS_MANAGER_ENABLED: false
+      ARCH_OS_VM_HOST_ENABLED: false
+
+  - title: Online (paste.rs)
+    description: Every answer of a configuration shared at the end of another installation.
+    action: import-config
+
+# Asked in this order. A list whose answer reaches the shell says with pattern
+# what its values look like, since an answer file can hand over anything.
+variables:
+  # ─── Identity ──────────────────────────────────────────────────────────────
+  - name: ARCH_OS_USERNAME
+    type: text
+    title: Username
+    description: The account you log in with.
+    group: Identity
+    required: true
+    pattern: '^[a-z_][a-z0-9_-]{0,31}$'
+    error: Lowercase letters, digits, hyphens and underscores only, up to 32 characters. It cannot start with a digit.
+
+  - name: ARCH_OS_PASSWORD
+    type: new-password
+    title: Password
+    description: |
+      For your account, for root and, with disk encryption, to unlock the disk
+      at boot. Asked right before the installation and never written to a file.
+    group: Identity
+    required: true
+
+  - name: ARCH_OS_HOSTNAME
+    type: text
+    title: Hostname
+    description: The name this machine has on the network.
+    group: Identity
+    default: arch-os
+    required: true
+    pattern: '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$'
+    error: Lowercase letters, digits and hyphens only, up to 63 characters. It cannot start or end with a hyphen.
+
+  # ─── Region ────────────────────────────────────────────────────────────────
+  #
+  # On auto everything follows the language, the mirrors by way of the time
+  # zone. The keyboard comes first: a password typed on the wrong layout is not
+  # the password.
+  - name: ARCH_OS_LOCALE_LANG
+    type: list
+    title: Language and region
+    description: |
+      The system language and the format of dates, numbers and currency, such
+      as de_DE. On auto the keyboard, console font and time zone follow it.
+      English is always installed as a fallback.
+    group: Region
+    required: true
+    apply: apply_vconsole_keymap()
+    filter: open
+    options-from: options_locales()
+    pattern: '^[a-z]{2,3}(_[A-Z]{2})?$'
+    prefill: prefill_locale()
+
+  - name: ARCH_OS_VCONSOLE_KEYMAP
+    type: list
+    title: Console keyboard
+    description: |
+      The keyboard you are typing on right now, loaded at once and used on the
+      text console. auto follows the system language.
+    group: Region
+    required: true
+    first: true
+    apply: apply_vconsole_keymap()
+    options-from: options_vconsole_keymaps()
+    pattern: '^[A-Za-z0-9_.-]+$'
+
+  - name: ARCH_OS_VCONSOLE_FONT
+    type: open-list
+    title: Console font
+    description: |
+      The font of the text console. auto picks one for the language; a larger
+      one helps on a high-resolution screen.
+    group: Region
+    default: auto
+    required: true
+    filter: open
+    options-from: options_fonts()
+    pattern: '^[A-Za-z0-9_.+-]+$'
+
+  - name: ARCH_OS_TIMEZONE
+    type: list
+    title: Time zone
+    description: Where this machine is, so the clock is right. Opens on the zone of the chosen country.
+    group: Region
+    required: true
+    filter: open
+    options-from: options_timezones()
+    pattern: '^[A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+)*$'
+    prefill: prefill_timezone()
+
+  - name: ARCH_OS_REFLECTOR_COUNTRY
+    type: open-list
+    title: Mirror country
+    description: |
+      Where packages are downloaded from. auto follows the time zone, none
+      ranks every mirror worldwide.
+    group: Region
+    default: auto
+    required: true
+    filter: open
+    options-from: options_countries()
+    pattern: '^[^"\\]*$'
+
+  # ─── Storage ───────────────────────────────────────────────────────────────
+  - name: ARCH_OS_DISK
+    type: list
+    title: Disk
+    description: |
+      The disk Arch Linux is installed on. Everything on it is erased. The
+      medium this runs from is not offered.
+    group: Storage
+    required: true
+    error: Choose a disk that exists.
+    options-from: options_disks()
+    pattern: '^/dev/[A-Za-z0-9_-]+$'
+
+  - name: ARCH_OS_ENCRYPTION_ENABLED
+    type: bool
+    title: Disk encryption
+    description: |
+      Encrypts the system with your password, so the disk cannot be read
+      without it. It is asked at every boot.
+    group: Storage
+    required: true
+
+  # ─── Boot ──────────────────────────────────────────────────────────────────
+  - name: ARCH_OS_SECURE_BOOT_ENABLED
+    type: bool
+    title: Secure Boot
+    description: |
+      Signs the kernel and boot loader with keys of this machine. In setup
+      mode the keys are enrolled for you; turn Secure Boot on afterwards.
+    group: Boot
+    default: true
+    conditions: ARCH_OS_ENCRYPTION_ENABLED == true
+
+  - name: ARCH_OS_RECOVERY_ENABLED
+    type: bool
+    title: Recovery
+    description: |
+      Repairs a system that no longer starts, without a USB stick: on a
+      partition of its own, in the boot menu behind the space key.
+    group: Boot
+    default: true
+
+  - name: ARCH_OS_BOOTSPLASH_ENABLED
+    type: bool
+    title: Boot splash
+    description: Shows a logo while the system starts instead of a wall of text.
+    group: Boot
+    default: true
+
+  - name: ARCH_OS_KERNEL_ARGS
+    type: text
+    title: Kernel parameters
+    description: Extra kernel parameters, separated by spaces. Leave empty unless you need one.
+    group: Boot
+
+  # ─── System ────────────────────────────────────────────────────────────────
+  - name: ARCH_OS_CORE_TWEAKS_ENABLED
+    type: bool
+    title: Core tweaks
+    description: |
+      Parallel downloads, a quiet boot, password feedback and tuned memory,
+      disk and log settings. Nothing extra is installed.
+    group: System
+    default: true
+
+  - name: ARCH_OS_MULTILIB_ENABLED
+    type: bool
+    title: 32-bit support
+    description: Needed by Steam, Wine and other software that is still 32-bit.
+    group: System
+    default: true
+
+  - name: ARCH_OS_AUR_HELPER_ENABLED
+    type: bool
+    title: AUR helper
+    description: |
+      paru, for software from the Arch User Repository. Built on this machine,
+      which takes about a quarter of an hour.
+    group: System
+    default: true
+
+  - name: ARCH_OS_CONTAINER_ENGINE
+    type: list
+    title: Container engine
+    description: |
+      docker runs a daemon as root, which most documentation assumes. podman
+      runs none and answers to the docker command. Both bring compose.
+    group: System
+    options: [docker, podman, none]
+    default: none
+    required: true
+
+  - name: ARCH_OS_FIREWALL_ENABLED
+    type: bool
+    title: Firewall
+    description: |
+      Blocks incoming connections but SSH and printer discovery. A network
+      marked home also reaches file sharing: nmcli connection modify <name>
+      connection.zone home
+    group: System
+    default: true
+
+  - name: ARCH_OS_SSH_SERVER_ENABLED
+    type: bool
+    title: SSH server
+    description: Log in to this machine from another one with your account. Not as root.
+    group: System
+    default: false
+
+  - name: ARCH_OS_HOUSEKEEPING_ENABLED
+    type: bool
+    title: Housekeeping
+    description: Timers that rank the mirrors weekly, trim the package cache and check disk health.
+    group: System
+    default: true
+
+  - name: ARCH_OS_EDITOR
+    type: list
+    title: Text editor
+    description: |
+      Opens wherever a command asks for an editor: sudoedit, git, systemctl
+      edit. nano and micro type straight away; vim, neovim and helix are modal.
+    group: System
+    options: [nano, vim, neovim, micro, helix]
+    default: nano
+    required: true
+
+  - name: ARCH_OS_SHELL_ENHANCEMENT_ENABLED
+    type: bool
+    title: Shell enhancement
+    description: |
+      zsh with completion and suggestions, a prompt with git state, colourful
+      listings, fuzzy search and aliases.
+    group: System
+    default: true
+
+  - name: ARCH_OS_MANAGER_ENABLED
+    type: bool
+    title: Arch OS Manager
+    description: A menu for updating, cleaning up and repairing the system after installation.
+    group: System
+    default: true
+
+  # Not asked: whether this machine is a virtual one is a fact about it.
+  - name: ARCH_OS_VIRTUAL_MACHINE
+    type: bool
+    title: Virtual machine
+    description: Whether this machine is itself a virtual one.
+    group: System
+    value-from: value_virtual_machine()
+
+  - name: ARCH_OS_VM_HOST_ENABLED
+    type: bool
+    title: Virtual machines
+    description: |
+      QEMU and libvirt, and on a desktop the Virtual Machine Manager. Inside a
+      virtual machine its guest tools are installed instead.
+    group: System
+    default: false
+    conditions: ARCH_OS_VIRTUAL_MACHINE == false
+
+  # ─── Desktop ───────────────────────────────────────────────────────────────
+  - name: ARCH_OS_DESKTOP
+    type: list
+    title: Environment
+    description: gnome installs the GNOME desktop, none stays on the text console.
+    group: Desktop
+    options: [gnome, none]
+    required: true
+
+  - name: ARCH_OS_DESKTOP_KEYBOARD_LAYOUT
+    type: list
+    title: Desktop keyboard
+    description: The keyboard layout of the desktop. auto matches the console keyboard.
+    group: Desktop
+    default: auto
+    required: true
+    conditions: ARCH_OS_DESKTOP != none
+    filter: open
+    options-from: options_layouts()
+    pattern: '^[A-Za-z0-9_-]+$'
+
+  - name: ARCH_OS_DESKTOP_KEYBOARD_VARIANT
+    type: list
+    title: Keyboard variant
+    description: A variation of that layout, such as dead keys. none is the standard one.
+    group: Desktop
+    default: none
+    required: true
+    conditions: ARCH_OS_DESKTOP != none
+    filter: open
+    options-from: options_variants()
+    pattern: '^[A-Za-z0-9_-]+$'
+
+  - name: ARCH_OS_DESKTOP_KEYBOARD_MODEL
+    type: text
+    title: Keyboard model
+    description: The physical shape of the keyboard. pc105 fits almost every keyboard sold.
+    group: Desktop
+    default: pc105
+    conditions: ARCH_OS_DESKTOP != none
+    pattern: '^[A-Za-z0-9_-]+$'
+
+  - name: ARCH_OS_DESKTOP_EXTRAS_ENABLED
+    type: bool
+    title: Desktop extras
+    description: Codecs, fonts, printing, network protocols, development tools and everyday applications.
+    group: Desktop
+    default: true
+    conditions: ARCH_OS_DESKTOP != none
+
+  - name: ARCH_OS_DESKTOP_SLIM_ENABLED
+    type: bool
+    title: Slim desktop
+    description: Removes the GNOME applications that come with the desktop and are rarely used.
+    group: Desktop
+    default: true
+    conditions: ARCH_OS_DESKTOP != none
+
+  - name: ARCH_OS_EXTENSION_MANAGER_ENABLED
+    type: bool
+    title: Extension Manager
+    description: Finds, installs and updates GNOME extensions, in place of the Extensions app.
+    group: Desktop
+    default: true
+    conditions: ARCH_OS_DESKTOP == gnome
+
+  - name: ARCH_OS_BROWSER
+    type: list
+    title: Web browser
+    description: |
+      In the system language and opened for every link. epiphany is GNOME Web,
+      vivaldi brings the codecs for proprietary video.
+    group: Desktop
+    options: [epiphany, firefox, chromium, vivaldi, none]
+    default: firefox
+    required: true
+    conditions: ARCH_OS_DESKTOP != none
+
+  - name: ARCH_OS_BACKUP
+    type: list
+    title: Backup
+    description: Backs up your files on a schedule, to a drive or a server.
+    group: Desktop
+    options: [pika-backup, deja-dup, none]
+    default: pika-backup
+    required: true
+    conditions: ARCH_OS_DESKTOP != none
+
+  - name: ARCH_OS_FLATPAK_ENABLED
+    type: bool
+    title: Flatpak
+    description: Applications from Flathub, installed and updated through Bazaar or Software.
+    group: Desktop
+    default: true
+    conditions: ARCH_OS_DESKTOP != none
+
+  - name: ARCH_OS_BAZAAR_ENABLED
+    type: bool
+    title: Bazaar
+    description: |
+      A store made for Flathub, in place of GNOME Software. With the desktop
+      extras, firmware updates come from GNOME Firmware.
+    group: Desktop
+    default: true
+    conditions:
+      - ARCH_OS_DESKTOP != none
+      - ARCH_OS_FLATPAK_ENABLED == true
+
+  - name: ARCH_OS_SAMBA_SHARE_ENABLED
+    type: bool
+    title: File sharing
+    description: |
+      Shares your home and a public folder with Windows and macOS on networks
+      marked home, or on every network without the firewall. Anyone there can
+      try your password against it.
+    group: Desktop
+    default: false
+    conditions:
+      - ARCH_OS_DESKTOP != none
+      - ARCH_OS_DESKTOP_EXTRAS_ENABLED == true
