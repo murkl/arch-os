@@ -35,7 +35,7 @@ One stage, `repair`; after the first task, every step is optional.
 | `rollback` | Puts a snapshot in place of the root subvolume. Skipped where there are none |
 | `kernel` | Rebuilds kernel images and initramfs from the package cache, re-signs if needed |
 
-**Note:** _`rollback` and `kernel` each ask first, so a run can stop after any. The page the repair ends on offers **Open a shell** in the repaired system and opens on **Continue**. A restart or a shutdown leaves unmounting and locking to systemd._
+**Note:** _`rollback` and `kernel` each ask first and open on No, so a run can stop after any. The page the repair ends on offers **Open a shell** in the repaired system and opens on **Continue**. A restart or a shutdown leaves unmounting and locking to systemd._
 
 ## Nothing is downloaded
 

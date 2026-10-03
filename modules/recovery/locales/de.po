@@ -35,6 +35,17 @@ msgstr "Reparieren"
 msgid "Configuration"
 msgstr "Konfiguration"
 
+#. the last page before the work, after every password
+#: module.yaml
+msgid ""
+"Open the system on {{ARCH_OS_RECOVERY_DISK}}?\n"
+"\n"
+"Opening it changes nothing. Every step that does asks first."
+msgstr ""
+"Das System auf {{ARCH_OS_RECOVERY_DISK}} öffnen?\n"
+"\n"
+"Das Öffnen ändert nichts. Jeder Schritt, der etwas ändert, fragt vorher."
+
 #. ARCH_OS_RECOVERY_KEYMAP: the question
 #: module.yaml
 msgid "Console keyboard"
@@ -243,7 +254,7 @@ msgstr "WLAN konfigurieren"
 msgid "Join a wireless network."
 msgstr "Mit einem WLAN verbinden."
 
-#. ARCH_OS_WIFI_SSID: the page of the action
+#. ARCH_OS_WIFI_SSID: a page of the action
 #: actions/wifi/action.yaml
 msgid "Network"
 msgstr "Netzwerk"
@@ -263,7 +274,7 @@ msgstr "WLAN"
 msgid "{{ARCH_OS_WIFI_SSID}} did not accept that passphrase, or it is out of range."
 msgstr "{{ARCH_OS_WIFI_SSID}} hat dieses Passwort nicht angenommen oder ist außer Reichweite."
 
-#. ARCH_OS_WIFI_PASSPHRASE: the page of the action
+#. ARCH_OS_WIFI_PASSPHRASE: a page of the action
 #: actions/wifi-passphrase/action.yaml
 msgid "Passphrase"
 msgstr "Passwort"

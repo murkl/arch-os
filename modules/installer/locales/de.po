@@ -35,6 +35,17 @@ msgstr "Installieren"
 msgid "Configuration"
 msgstr "Konfiguration"
 
+#. the last page before the work, after every password
+#: module.yaml
+msgid ""
+"Erase {{ARCH_OS_DISK}} and install Arch Linux?\n"
+"\n"
+"Everything on it is lost."
+msgstr ""
+"{{ARCH_OS_DISK}} löschen und Arch Linux installieren?\n"
+"\n"
+"Alles darauf geht verloren."
+
 #. a starting point: its row
 #: module.yaml
 msgid "Desktop"
@@ -145,12 +156,6 @@ msgstr "Konsolenschrift"
 msgid "The font of the text console. auto picks one for the language; a larger one helps on a high-resolution screen."
 msgstr "Die Schrift der Textkonsole. auto wählt eine für die Sprache; eine größere hilft auf einem hochauflösenden Bildschirm."
 
-#. ARCH_OS_VCONSOLE_FONT: the row that opens a box for an answer of one's
-#. own
-#: module.yaml
-msgid "Type a font name"
-msgstr "Schriftnamen eingeben"
-
 #. ARCH_OS_TIMEZONE: the question
 #: module.yaml
 msgid "Time zone"
@@ -170,12 +175,6 @@ msgstr "Spiegelserver-Land"
 #: module.yaml
 msgid "Where packages are downloaded from. auto follows the time zone, none ranks every mirror worldwide."
 msgstr "Woher Pakete geladen werden. auto folgt der Zeitzone, none sortiert alle Spiegelserver weltweit."
-
-#. ARCH_OS_REFLECTOR_COUNTRY: the row that opens a box for an answer of
-#. one's own
-#: module.yaml
-msgid "Type a country"
-msgstr "Land eingeben"
 
 #. ARCH_OS_DISK: the question
 #: module.yaml
@@ -698,7 +697,7 @@ msgstr "Im System auf dem Datenträger, um dich umzusehen oder etwas von Hand zu
 msgid "No Arch OS configuration could be loaded from {{ARCH_OS_CONFIG_SOURCE}}. Check the code, and that this machine is online."
 msgstr "Unter {{ARCH_OS_CONFIG_SOURCE}} ließ sich keine Arch-OS-Konfiguration laden. Prüfe den Code und ob dieser Rechner online ist."
 
-#. ARCH_OS_CONFIG_SOURCE: the page of the action
+#. ARCH_OS_CONFIG_SOURCE: a page of the action
 #: actions/import-config/action.yaml
 msgid "Configuration code"
 msgstr "Konfigurations-Code"
@@ -850,7 +849,7 @@ msgstr "WLAN konfigurieren"
 msgid "Join a wireless network."
 msgstr "Mit einem WLAN verbinden."
 
-#. ARCH_OS_WIFI_SSID: the page of the action
+#. ARCH_OS_WIFI_SSID: a page of the action
 #: actions/wifi/action.yaml
 msgid "Network"
 msgstr "Netzwerk"
@@ -870,7 +869,7 @@ msgstr "WLAN"
 msgid "{{ARCH_OS_WIFI_SSID}} did not accept that passphrase, or it is out of range."
 msgstr "{{ARCH_OS_WIFI_SSID}} hat dieses Passwort nicht angenommen oder ist außer Reichweite."
 
-#. ARCH_OS_WIFI_PASSPHRASE: the page of the action
+#. ARCH_OS_WIFI_PASSPHRASE: a page of the action
 #: actions/wifi-passphrase/action.yaml
 msgid "Passphrase"
 msgstr "Passwort"

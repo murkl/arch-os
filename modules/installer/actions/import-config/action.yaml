@@ -3,10 +3,11 @@
 title: Online (paste.rs)
 error: No Arch OS configuration could be loaded from {{ARCH_OS_CONFIG_SOURCE}}. Check the code, and that this machine is online.
 
-variable:
-  name: ARCH_OS_CONFIG_SOURCE
-  title: Configuration code
-  description: The code at the end of a paste.rs address, or the whole address. Every answer can still be changed afterwards.
-  required: true
-  pattern: '^[A-Za-z0-9][A-Za-z0-9:/._-]*$'
-  error: A code such as aBc12, or the whole address it belongs to.
+variables:
+  - name: ARCH_OS_CONFIG_SOURCE
+    type: text
+    title: Configuration code
+    description: The code at the end of a paste.rs address, or the whole address. Every answer can still be changed afterwards.
+    required: true
+    pattern: '^[A-Za-z0-9][A-Za-z0-9:/._-]*$'
+    error: A code such as aBc12, or the whole address it belongs to.

@@ -58,7 +58,7 @@ release_asset() {
 
 # Real HTTPS rather than a ping, which a captive portal answers too. Simulated,
 # it is online, so screenshots come out the same on every desk.
-is_online() {
+check_online() {
     debugging && return 0
     fetch_url -sI --connect-timeout 5 --max-time 10 https://archlinux.org >/dev/null
 }
@@ -70,7 +70,7 @@ has_wifi_card() { compgen -G '/sys/class/ieee80211/*' >/dev/null; }
 # sends nothing.
 online_by_cable() {
     local route device
-    is_online || return 1
+    check_online || return 1
     route="$(ip -o route get 192.0.2.1)" || return 1
     device="$(awk '{ for (i = 1; i < NF; i++) if ($i == "dev") print $(i + 1) }' <<<"$route")"
     [ -n "$device" ] && [ ! -e "/sys/class/net/${device}/phy80211" ]
@@ -98,7 +98,7 @@ wifi_station() {
 # Joined is not yet online: the address comes a few seconds later.
 wifi_online() {
     for _ in $(seq 6); do
-        is_online && return 0
+        check_online && return 0
         sleep 2
     done
     return 1
@@ -155,15 +155,6 @@ on_live_image() {
 # Arch on top: an image built the same way by somebody else is another system.
 on_arch_live_image() {
     on_live_image && grep -qs '^ID=arch$' /etc/os-release
-}
-
-# The keyboard the live image was started with: the Arch image records it only as
-# a loadkeys line in root's history.
-live_keymap() {
-    local keymap
-    keymap="$({ grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null || true; } |
-        tail -n1 | sed 's/.*loadkeys *//' | tr -d ' ')"
-    printf '%s' "${keymap:-us}"
 }
 
 # The disk the live image runs from, also through Ventoy. No module writes to it.
@@ -318,7 +309,7 @@ auto_keymap() {
     local keymap
     keymap="$(language_field 2 "$ARCH_OS_LOCALE_LANG")"
     # Otherwise the keyboard the live image was started with.
-    printf '%s' "${keymap:-$(live_keymap)}"
+    printf '%s' "${keymap:-$(prefill_live_keymap)}"
 }
 
 auto_layout() {
@@ -638,7 +629,7 @@ unmount_target() {
 # ////////////////////////////////////////////////////////////////////////////
 
 # The image, named after the version: a machine that has it needs no release.
-image() { printf '%s/arch-os-%s-x86_64.iso' "$(download_dir)" "$(release_version)"; }
+image() { printf '%s/arch-os-%s-x86_64.iso' "$ARCH_OS_DOWNLOAD_DIR" "$(release_version)"; }
 
 # The checksum beside it, as `sha256sum -c` reads it.
 checksum() { printf '%s.sha256' "$(image)"; }
@@ -666,25 +657,25 @@ in_system_use() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
-# THE YAML | Every function a declaration calls as name()
+# THE YAML | Functions a declaration calls as name(), named after the key
 # ////////////////////////////////////////////////////////////////////////////
 
 # A list may print a value and the text it is chosen by, with a tab between.
 
 # Whole disks, by size and model.
-list_disks() {
+options_disks() {
     lsblk -dn -o PATH,TYPE,SIZE,MODEL | awk -v live="$(live_disk)" '
         $2 != "disk" || $1 == live || $1 ~ /^\/dev\/zram/ { next }
         { path = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
 }
 
-list_keymaps() { localectl list-keymaps; }
+options_keymaps() { localectl list-keymaps; }
 
 # The networks in range, strongest first. iwctl returns as soon as a scan has
 # started, so the list is read once the card says it is done. An SSID may hold
 # spaces, so only two or more separate columns. The connected one, marked ">",
 # is still a choice.
-list_wifi_networks() {
+options_wifi_networks() {
     local device state
     if debugging; then
         printf '%s\n' Home "Coffee Bar Free"
@@ -719,48 +710,48 @@ list_wifi_networks() {
 
 # ─── The Installer ──────────────────────────────────────────────────────────
 
-in_virtual_machine() {
+value_virtual_machine() {
     if systemd-detect-virt -q; then echo true; else echo false; fi
 }
 
 # Loaded the moment it is answered, so what is typed next is typed on it.
-load_vconsole_keymap() {
+apply_vconsole_keymap() {
     debugging && return 0
     loadkeys "$(vconsole_keymap)"
 }
 
 # Every UTF-8 locale glibc supports, without @-variants. SUPPORTED rather than
 # locale.gen, which cloud-init and hand edits rewrite.
-list_locales() {
+options_locales() {
     sed -n 's/^\([a-z]\{2,3\}\(_[A-Z]\{2\}\)\{0,1\}\)\(\.UTF-8\)\{0,1\} UTF-8$/\1/p' /usr/share/i18n/SUPPORTED | sort -u
 }
 
 # Not Afar, the first row: the one locale generated either way.
-default_locale() { printf 'en_US'; }
+prefill_locale() { printf 'en_US'; }
 
-list_vconsole_keymaps() {
+options_vconsole_keymaps() {
     printf 'auto\tauto — %s\n' "$(auto_keymap)"
-    list_keymaps
+    options_keymaps
 }
 
-list_fonts() {
+options_fonts() {
     printf 'auto\tauto — %s\n' "$(auto_font)"
     echo none
     find /usr/share/kbd/consolefonts -name '*.psf*' -printf '%f\n' 2>/dev/null |
         sed 's/\.psfu\?\(\.gz\)\?$//' | sort -u
 }
 
-list_timezones() { timedatectl list-timezones; }
+options_timezones() { timedatectl list-timezones; }
 
 # The zone of the chosen country, and UTC rather than Africa/Abidjan for none.
-auto_timezone() {
+prefill_timezone() {
     local locale="${ARCH_OS_LOCALE_LANG%%.*}" territory="" zone
     [[ $locale == *_* ]] && territory="${locale#*_}"
     zone="$(country_field 3 "$territory")"
     printf '%s' "${zone:-UTC}"
 }
 
-list_countries() {
+options_countries() {
     printf 'auto\tauto — %s\n' "$(auto_country)"
     echo none
     # A "-" marks a country Arch has no mirror in.
@@ -768,7 +759,7 @@ list_countries() {
 }
 
 # The Arch ISO ships no xkeyboard-config, and then data/ answers.
-list_layouts() {
+options_layouts() {
     printf 'auto\tauto — %s\n' "$(auto_layout)"
 
     local layouts
@@ -780,7 +771,7 @@ list_layouts() {
     grep -v '^#' "$(installer_data)/x11-layouts"
 }
 
-list_variants() {
+options_variants() {
     local layout variants
     layout="$(desktop_layout)"
     [ -n "$layout" ] || return 0
@@ -798,32 +789,37 @@ list_variants() {
 
 # ─── The Recovery ───────────────────────────────────────────────────────────
 
+# The keyboard the live image was started with: the Arch image records it only as
+# a loadkeys line in root's history.
+prefill_live_keymap() {
+    local keymap
+    keymap="$({ grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null || true; } |
+        tail -n1 | sed 's/.*loadkeys *//' | tr -d ' ')"
+    printf '%s' "${keymap:-us}"
+}
+
 # Loaded the moment it is answered.
-load_recovery_keymap() {
+apply_recovery_keymap() {
     debugging && return 0
     loadkeys "$ARCH_OS_RECOVERY_KEYMAP"
 }
 
 # --test-passphrase opens nothing, it only asks the keyslots.
-unlocks_disk() {
+check_disk_password() {
     debugging && return 0
     printf '%s' "$ARCH_OS_RECOVERY_PASSWORD" | cryptsetup open --test-passphrase "$(target_partition)"
 }
 
 # A LUKS header is readable without the password.
-disk_is_encrypted() {
+value_disk_encrypted() {
     [ "$(fstype "$(target_partition)")" = "crypto_LUKS" ] && echo true || echo false
 }
 
 # ─── Create boot medium ─────────────────────────────────────────────────────
 
-# The answer, the session's download folder, or the one every desktop falls
-# back to. https://specifications.freedesktop.org/basedir-spec/latest/
-download_dir() {
-    [ -n "$ARCH_OS_DOWNLOAD_DIR" ] && {
-        printf '%s' "$ARCH_OS_DOWNLOAD_DIR"
-        return 0
-    }
+# The session's download folder, or the one every desktop falls back to.
+# https://specifications.freedesktop.org/basedir-spec/latest/
+prefill_download_dir() {
     [ -n "${XDG_DOWNLOAD_DIR:-}" ] && {
         printf '%s' "$XDG_DOWNLOAD_DIR"
         return 0
@@ -833,7 +829,7 @@ download_dir() {
 
 # The USB disks, without the ones the running system is on: a system can live
 # on a USB disk too.
-list_devices() {
+options_devices() {
     local path shown
     while IFS=$'\t' read -r path shown; do
         in_system_use "$path" && continue
@@ -844,12 +840,12 @@ list_devices() {
 
 # Whether the write needs a password. -k ignores one sudo remembers now and will
 # have forgotten by the write.
-needs_password() {
+value_needs_password() {
     if is_root || sudo -nk true 2>/dev/null; then echo false; else echo true; fi
 }
 
 # The password tried on sudo with a command that does nothing.
-sudo_accepts() {
+check_sudo_password() {
     debugging && return 0
     as_root true
 }

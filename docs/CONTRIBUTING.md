@@ -8,7 +8,7 @@
 flowchart LR
     M["main"] -->|branch off| B["feat/…"]
     B -->|draft pull request| C["Check"]
-    C -->|ready for review| I["Check · Image · Boot"]
+    C -->|ready for review| I["Check · Image · Boot · Install"]
     I -->|squash merge| M2["main"]
     M2 --> P["Release pull request<br/>version · changelog"]
     P -->|merge| R["Release<br/>tag · images · page"]
@@ -18,7 +18,7 @@ flowchart LR
 
 1. **Branch off `main`.** Name it after what it does: `feat/wireless-settings`, `fix/helix-test`. Nothing reads the name
 2. **Open a draft pull request right away.** A branch is checked through its pull request, never on its own
-3. **Mark it ready for review** once it should be booted. That adds the image and the boot test, about half an hour
+3. **Mark it ready for review** once it should be booted. That adds the image, the boot test and an installation, about an hour
 4. **Squash merge**, or switch on auto-merge. `main` takes the pull request once `Ready` and `Title` have passed, as one commit under its title, and deletes the branch
 
 - The commits inside the branch are yours to shape. Only the title reaches `main`
@@ -71,7 +71,7 @@ Nothing is typed and nothing is tagged by hand.
 | --- | --- | --- |
 | `Title` | a pull request opened, pushed to or edited | Reads the title |
 | `Check` | every run | `make check` |
-| `Image` | a pull request out of draft, a release, on demand | Builds the release, the Recovery image and the ISO, and boots both |
+| `Image` | a pull request out of draft, a release, on demand | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO |
 | `Ready` | a pull request | Every job it needed has passed, and it is no draft |
 | `Release` | a push to `main` | The release pull request, or once that is merged, the tag and the draft page |
 | `Publish` | a release | Hangs the files of that run on the page and publishes it |
@@ -91,6 +91,7 @@ make tarball           # the release, as a stock Arch ISO downloads it
 make iso               # the release, as the Recovery image and the ISO that carries it
 make image             # ...only the images, out of a release already in dist/
 make smoke             # boot the newest of both and wait for their first page
+make e2e               # install the newest ISO, boot it, repair it and boot it again
 make locales           # every translation template, brought up to date
 make oak               # fetch the runtime again, at the release OAK_VERSION names
 make clean             # every build output, taken back; the runtime stays
@@ -98,7 +99,7 @@ make clean             # every build output, taken back; the runtime stays
 
 ```
 sudo pacman -S --needed make curl shellcheck shfmt zsh yamllint actionlint zizmor \
-    gettext gitleaks kbd archiso systemd-ukify qemu-base edk2-ovmf tesseract tesseract-data-eng
+    gettext gitleaks kbd archiso systemd-ukify qemu-base edk2-ovmf tesseract tesseract-data-eng openssh libisoburn
 ```
 
 **Note:** _CI installs the same packages and runs the same commands in an Arch container. There is no second definition of green._

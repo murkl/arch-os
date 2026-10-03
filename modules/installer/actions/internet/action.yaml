@@ -4,4 +4,4 @@ title: Internet
 error: There is no internet connection. Plug in a cable and it carries on by itself.
 
 rules:
-  on-failure: wifi
+  on-failure: [wifi]

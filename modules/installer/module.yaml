@@ -4,8 +4,15 @@
 
 title: Installer
 description: Install Arch Linux on this machine.
-start-title: Install
-settings-title: Configuration
+
+# The last page comes after the password, and names the disk it erases.
+text:
+  start: Install
+  settings: Configuration
+  confirm: |
+    Erase {{ARCH_OS_DISK}} and install Arch Linux?
+
+    Everything on it is lost.
 
 # Each a folder under actions/. The internet comes last, after the keyboard a
 # passphrase is typed on.
@@ -89,6 +96,7 @@ presets:
 variables:
   # ─── Identity ──────────────────────────────────────────────────────────────
   - name: ARCH_OS_USERNAME
+    type: text
     title: Username
     description: The account you log in with.
     group: Identity
@@ -97,15 +105,16 @@ variables:
     error: Lowercase letters, digits, hyphens and underscores only, up to 32 characters. It cannot start with a digit.
 
   - name: ARCH_OS_PASSWORD
+    type: new-password
     title: Password
     description: |
       For your account, for root and, with disk encryption, to unlock the disk
       at boot. Asked right before the installation and never written to a file.
     group: Identity
-    type: secret
     required: true
 
   - name: ARCH_OS_HOSTNAME
+    type: text
     title: Hostname
     description: The name this machine has on the network.
     group: Identity
@@ -120,6 +129,7 @@ variables:
   # zone. The keyboard comes first: a password typed on the wrong layout is not
   # the password.
   - name: ARCH_OS_LOCALE_LANG
+    type: list
     title: Language and region
     description: |
       The system language and the format of dates, numbers and currency, such
@@ -127,13 +137,14 @@ variables:
       English is always installed as a fallback.
     group: Region
     required: true
-    apply: load_vconsole_keymap()
+    apply: apply_vconsole_keymap()
     filter: open
-    options-from: list_locales()
+    options-from: options_locales()
     pattern: '^[a-z]{2,3}(_[A-Z]{2})?$'
-    prefill: default_locale()
+    prefill: prefill_locale()
 
   - name: ARCH_OS_VCONSOLE_KEYMAP
+    type: list
     title: Console keyboard
     description: |
       The keyboard you are typing on right now, loaded at once and used on the
@@ -141,11 +152,12 @@ variables:
     group: Region
     required: true
     first: true
-    apply: load_vconsole_keymap()
-    options-from: list_vconsole_keymaps()
+    apply: apply_vconsole_keymap()
+    options-from: options_vconsole_keymaps()
     pattern: '^[A-Za-z0-9_.-]+$'
 
   - name: ARCH_OS_VCONSOLE_FONT
+    type: open-list
     title: Console font
     description: |
       The font of the text console. auto picks one for the language; a larger
@@ -153,22 +165,23 @@ variables:
     group: Region
     default: auto
     required: true
-    free: Type a font name
     filter: open
-    options-from: list_fonts()
+    options-from: options_fonts()
     pattern: '^[A-Za-z0-9_.+-]+$'
 
   - name: ARCH_OS_TIMEZONE
+    type: list
     title: Time zone
     description: Where this machine is, so the clock is right. Opens on the zone of the chosen country.
     group: Region
     required: true
     filter: open
-    options-from: list_timezones()
+    options-from: options_timezones()
     pattern: '^[A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+)*$'
-    prefill: auto_timezone()
+    prefill: prefill_timezone()
 
   - name: ARCH_OS_REFLECTOR_COUNTRY
+    type: open-list
     title: Mirror country
     description: |
       Where packages are downloaded from. auto follows the time zone, none
@@ -176,13 +189,13 @@ variables:
     group: Region
     default: auto
     required: true
-    free: Type a country
     filter: open
-    options-from: list_countries()
+    options-from: options_countries()
     pattern: '^[^"\\]*$'
 
   # ─── Storage ───────────────────────────────────────────────────────────────
   - name: ARCH_OS_DISK
+    type: list
     title: Disk
     description: |
       The disk Arch Linux is installed on. Everything on it is erased. The
@@ -190,77 +203,79 @@ variables:
     group: Storage
     required: true
     error: Choose a disk that exists.
-    options-from: list_disks()
+    options-from: options_disks()
     pattern: '^/dev/[A-Za-z0-9_-]+$'
 
   - name: ARCH_OS_ENCRYPTION_ENABLED
+    type: bool
     title: Disk encryption
     description: |
       Encrypts the system with your password, so the disk cannot be read
       without it. It is asked at every boot.
     group: Storage
-    type: bool
     required: true
 
   # ─── Boot ──────────────────────────────────────────────────────────────────
   - name: ARCH_OS_SECURE_BOOT_ENABLED
+    type: bool
     title: Secure Boot
     description: |
       Signs the kernel and boot loader with keys of this machine. In setup
       mode the keys are enrolled for you; turn Secure Boot on afterwards.
     group: Boot
-    type: bool
     default: true
     conditions: ARCH_OS_ENCRYPTION_ENABLED == true
 
   - name: ARCH_OS_RECOVERY_ENABLED
+    type: bool
     title: Recovery
     description: |
       Repairs a system that no longer starts, without a USB stick: on a
       partition of its own, in the boot menu behind the space key.
     group: Boot
-    type: bool
     default: true
 
   - name: ARCH_OS_BOOTSPLASH_ENABLED
+    type: bool
     title: Boot splash
     description: Shows a logo while the system starts instead of a wall of text.
     group: Boot
-    type: bool
     default: true
 
   - name: ARCH_OS_KERNEL_ARGS
+    type: text
     title: Kernel parameters
     description: Extra kernel parameters, separated by spaces. Leave empty unless you need one.
     group: Boot
 
   # ─── System ────────────────────────────────────────────────────────────────
   - name: ARCH_OS_CORE_TWEAKS_ENABLED
+    type: bool
     title: Core tweaks
     description: |
       Parallel downloads, a quiet boot, password feedback and tuned memory,
       disk and log settings. Nothing extra is installed.
     group: System
-    type: bool
     default: true
 
   - name: ARCH_OS_MULTILIB_ENABLED
+    type: bool
     title: 32-bit support
     description: Needed by Steam, Wine and other software that is still 32-bit.
     group: System
-    type: bool
     default: true
 
   - name: ARCH_OS_AUR_HELPER_ENABLED
+    type: bool
     title: AUR helper
     description: |
       paru, for software from the Arch User Repository. Built on this machine,
       which takes about a quarter of an hour.
     group: System
-    type: bool
     default: true
 
   - name: ARCH_OS_CONTAINER_ENGINE
+    type: list
     title: Container engine
     description: |
       docker runs a daemon as root, which most documentation assumes. podman
@@ -271,30 +286,31 @@ variables:
     required: true
 
   - name: ARCH_OS_FIREWALL_ENABLED
+    type: bool
     title: Firewall
     description: |
       Blocks incoming connections but SSH and printer discovery. A network
       marked home also reaches file sharing: nmcli connection modify <name>
       connection.zone home
     group: System
-    type: bool
     default: true
 
   - name: ARCH_OS_SSH_SERVER_ENABLED
+    type: bool
     title: SSH server
     description: Log in to this machine from another one with your account. Not as root.
     group: System
-    type: bool
     default: false
 
   - name: ARCH_OS_HOUSEKEEPING_ENABLED
+    type: bool
     title: Housekeeping
     description: Timers that rank the mirrors weekly, trim the package cache and check disk health.
     group: System
-    type: bool
     default: true
 
   - name: ARCH_OS_EDITOR
+    type: list
     title: Text editor
     description: |
       Opens wherever a command asks for an editor: sudoedit, git, systemctl
@@ -305,41 +321,42 @@ variables:
     required: true
 
   - name: ARCH_OS_SHELL_ENHANCEMENT_ENABLED
+    type: bool
     title: Shell enhancement
     description: |
       zsh with completion and suggestions, a prompt with git state, colourful
       listings, fuzzy search and aliases.
     group: System
-    type: bool
     default: true
 
   - name: ARCH_OS_MANAGER_ENABLED
+    type: bool
     title: Arch OS Manager
     description: A menu for updating, cleaning up and repairing the system after installation.
     group: System
-    type: bool
     default: true
 
   # Not asked: whether this machine is a virtual one is a fact about it.
   - name: ARCH_OS_VIRTUAL_MACHINE
+    type: bool
     title: Virtual machine
     description: Whether this machine is itself a virtual one.
     group: System
-    type: bool
-    value-from: in_virtual_machine()
+    value-from: value_virtual_machine()
 
   - name: ARCH_OS_VM_HOST_ENABLED
+    type: bool
     title: Virtual machines
     description: |
       QEMU and libvirt, and on a desktop the Virtual Machine Manager. Inside a
       virtual machine its guest tools are installed instead.
     group: System
-    type: bool
     default: false
     conditions: ARCH_OS_VIRTUAL_MACHINE == false
 
   # ─── Desktop ───────────────────────────────────────────────────────────────
   - name: ARCH_OS_DESKTOP
+    type: list
     title: Environment
     description: gnome installs the GNOME desktop, none stays on the text console.
     group: Desktop
@@ -347,6 +364,7 @@ variables:
     required: true
 
   - name: ARCH_OS_DESKTOP_KEYBOARD_LAYOUT
+    type: list
     title: Desktop keyboard
     description: The keyboard layout of the desktop. auto matches the console keyboard.
     group: Desktop
@@ -354,10 +372,11 @@ variables:
     required: true
     conditions: ARCH_OS_DESKTOP != none
     filter: open
-    options-from: list_layouts()
+    options-from: options_layouts()
     pattern: '^[A-Za-z0-9_-]+$'
 
   - name: ARCH_OS_DESKTOP_KEYBOARD_VARIANT
+    type: list
     title: Keyboard variant
     description: A variation of that layout, such as dead keys. none is the standard one.
     group: Desktop
@@ -365,10 +384,11 @@ variables:
     required: true
     conditions: ARCH_OS_DESKTOP != none
     filter: open
-    options-from: list_variants()
+    options-from: options_variants()
     pattern: '^[A-Za-z0-9_-]+$'
 
   - name: ARCH_OS_DESKTOP_KEYBOARD_MODEL
+    type: text
     title: Keyboard model
     description: The physical shape of the keyboard. pc105 fits almost every keyboard sold.
     group: Desktop
@@ -377,30 +397,31 @@ variables:
     pattern: '^[A-Za-z0-9_-]+$'
 
   - name: ARCH_OS_DESKTOP_EXTRAS_ENABLED
+    type: bool
     title: Desktop extras
     description: Codecs, fonts, printing, network protocols, development tools and everyday applications.
     group: Desktop
-    type: bool
     default: true
     conditions: ARCH_OS_DESKTOP != none
 
   - name: ARCH_OS_DESKTOP_SLIM_ENABLED
+    type: bool
     title: Slim desktop
     description: Removes the GNOME applications that come with the desktop and are rarely used.
     group: Desktop
-    type: bool
     default: true
     conditions: ARCH_OS_DESKTOP != none
 
   - name: ARCH_OS_EXTENSION_MANAGER_ENABLED
+    type: bool
     title: Extension Manager
     description: Finds, installs and updates GNOME extensions, in place of the Extensions app.
     group: Desktop
-    type: bool
     default: true
     conditions: ARCH_OS_DESKTOP == gnome
 
   - name: ARCH_OS_BROWSER
+    type: list
     title: Web browser
     description: |
       In the system language and opened for every link. epiphany is GNOME Web,
@@ -412,6 +433,7 @@ variables:
     conditions: ARCH_OS_DESKTOP != none
 
   - name: ARCH_OS_BACKUP
+    type: list
     title: Backup
     description: Backs up your files on a schedule, to a drive or a server.
     group: Desktop
@@ -421,33 +443,33 @@ variables:
     conditions: ARCH_OS_DESKTOP != none
 
   - name: ARCH_OS_FLATPAK_ENABLED
+    type: bool
     title: Flatpak
     description: Applications from Flathub, installed and updated through Bazaar or Software.
     group: Desktop
-    type: bool
     default: true
     conditions: ARCH_OS_DESKTOP != none
 
   - name: ARCH_OS_BAZAAR_ENABLED
+    type: bool
     title: Bazaar
     description: |
       A store made for Flathub, in place of GNOME Software. With the desktop
       extras, firmware updates come from GNOME Firmware.
     group: Desktop
-    type: bool
     default: true
     conditions:
       - ARCH_OS_DESKTOP != none
       - ARCH_OS_FLATPAK_ENABLED == true
 
   - name: ARCH_OS_SAMBA_SHARE_ENABLED
+    type: bool
     title: File sharing
     description: |
       Shares your home and a public folder with Windows and macOS on networks
       marked home, or on every network without the firewall. Anyone there can
       try your password against it.
     group: Desktop
-    type: bool
     default: false
     conditions:
       - ARCH_OS_DESKTOP != none

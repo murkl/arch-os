@@ -4,7 +4,7 @@
 
 # An answer file from another machine names whatever sat at that path there, so
 # the disk is held to the list it is chosen from right before it is written.
-disks="$(list_disks | cut -f1)"
+disks="$(options_disks | cut -f1)"
 if ! grep -qxF "$ARCH_OS_DISK" <<<"$disks"; then
     echo "${ARCH_OS_DISK} is not one of the disks this machine can be installed on. Choose the disk again in the Configuration." >&2
     exit 1

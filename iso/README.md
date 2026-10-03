@@ -30,6 +30,7 @@ The [Oak](https://github.com/murkl/oak) binary with every module beside it lives
 ```
 build.sh <release-dir>                   builds the Recovery image, then the ISO that carries it
 smoke.sh <image.iso | recovery-dir>      boots a built image and waits for the first page
+e2e.sh <image.iso>                       installs it onto a disk, boots, repairs and boots again
 glyphs.sh <oak> <file>...                reads those files, and what that oak draws, against the font below
 src/etc/systemd/system/arch-os.service   starts it on tty1, on both images
 src/usr/local/bin/arch-os                the entry point, sets up the console first
@@ -64,6 +65,24 @@ make smoke ISO=path/to.iso RECOVERY=path/to/recovery-dir
 Boots each under QEMU and OVMF, waits for the first page, shuts down. Checks the boot entry, initramfs, Plymouth hook, systemd unit and the modules it loads. The Recovery's boot image is started the way the firmware starts it off the EFI partition, with its partition as the only disk: finding it, checking its signature and copying it to memory are all on the way to that page.
 
 **Note:** _Needs `qemu-base`, `edk2-ovmf`, `tesseract`, `tesseract-data-eng`. Screenshots land in `dist/smoke/`, a folder per image - one frame on success, all of them on failure._
+
+```
+make e2e                    # the newest ISO in dist/
+make e2e ISO=path/to.iso
+```
+
+Walks the ISO the way a person does, unattended:
+
+1. Installs a Core with disk encryption, Secure Boot and the Recovery partition, the firmware in setup mode
+2. Boots it with Secure Boot enforced and holds it to `systemctl is-system-running`
+3. Starts the ISO again, rolls the system back to its newest snapshot with the Recovery and rebuilds the boot files
+4. Boots it once more, signed and running
+
+- The live image is reached over ssh through its cloud-init, and the interface runs in tmux there, driven by its keys and read off its pane
+- Both runs have to end with every test passed
+- The installed system unlocks its disk from a systemd credential, and is asked over ssh as the account it was installed with
+
+**Note:** _Needs `qemu-base`, `edk2-ovmf`, `openssh` and `libisoburn`, and a network: the installation downloads its packages. The logs land in `dist/e2e/`, with a picture of the console where it stopped._
 
 ## What the Console can draw
 

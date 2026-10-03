@@ -1,1 +1,1 @@
-[ -n "$(list_devices)" ]
+[ -n "$(options_devices)" ]

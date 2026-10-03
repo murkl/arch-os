@@ -2,9 +2,8 @@
 title: Wireless network
 error: "{{ARCH_OS_WIFI_SSID}} did not accept that passphrase, or it is out of range."
 
-variable:
-  name: ARCH_OS_WIFI_PASSPHRASE
-  title: Passphrase
-  type: secret
-  existing: true
-  required: true
+variables:
+  - name: ARCH_OS_WIFI_PASSPHRASE
+    type: password
+    title: Passphrase
+    required: true
