@@ -45,5 +45,13 @@ rank_mirrors
 timedatectl set-ntp true
 rm -f /var/lib/pacman/db.lck
 
+# The live image makes its keyring once the clock is set from network time,
+# and pacman refuses every package until then. A start waits for a running one
+# and returns at once for a finished one.
+timeout 300 systemctl start pacman-init.service || {
+    echo "The live image had no pacman keyring after 5 minutes. It makes one once its clock is set from network time - check that this machine reaches an NTP server." >&2
+    exit 1
+}
+
 # A stale keyring is the commonest reason a fresh install refuses a package.
 pacman -Sy --noconfirm archlinux-keyring
