@@ -92,6 +92,7 @@ ISO_BUILD  := $(ISO_DIR)/build.sh
 ISO_SMOKE  := $(ISO_DIR)/smoke.sh
 ISO_E2E    := $(ISO_DIR)/e2e.sh
 ISO_GLYPHS := $(ISO_DIR)/glyphs.sh
+ISO_FONT   := $(ISO_DIR)/font.sh
 
 # The newest images, read when used, so `make iso && make smoke` needs no
 # argument.
@@ -106,7 +107,7 @@ RECOVERY ?= $(shell ls -td $(DIST_DIR)/*-recovery 2>/dev/null | head -1)
 POSIX_SCRIPTS := get.sh .github/settings.sh
 
 # Bash: what builds and boots the images, and what they run.
-ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_E2E) $(ISO_GLYPHS) $(wildcard $(ISO_DIR)/src/usr/local/bin/* $(ISO_DIR)/recovery/airootfs/usr/local/bin/*)
+ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_E2E) $(ISO_GLYPHS) $(ISO_FONT) $(wildcard $(ISO_DIR)/src/usr/local/bin/* $(ISO_DIR)/recovery/airootfs/usr/local/bin/*)
 
 # Every module script with the library they share, and every module yaml.
 MODULE_SCRIPTS = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -name '*.sh')

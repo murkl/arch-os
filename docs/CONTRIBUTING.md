@@ -99,7 +99,7 @@ make clean             # every build output, taken back; the runtime stays
 
 ```
 sudo pacman -S --needed make curl shellcheck shfmt zsh yamllint actionlint zizmor \
-    gettext gitleaks kbd archiso systemd-ukify qemu-base edk2-ovmf tesseract tesseract-data-eng openssh libisoburn
+    gettext gitleaks kbd terminus-font archiso systemd-ukify qemu-base edk2-ovmf tesseract tesseract-data-eng openssh libisoburn
 ```
 
 **Note:** _CI installs the same packages and runs the same commands in an Arch container. There is no second definition of green._
@@ -147,7 +147,7 @@ Keep as-is: `%s`/`%d` (order and kind), `{{ARCH_OS_DISK}}` (braces and name), `â
 
 Before any desktop exists there is one console font with at most 512 glyphs: **Latin with its accents, Greek and Cyrillic**. Arabic, Hebrew, Chinese, Japanese, Korean, Vietnamese and the Indic scripts cannot be drawn on a Linux virtual console at all, so open an issue before starting on one.
 
-**Note:** _`make check` reads every module against the glyph table of the font **[iso/src/usr/local/bin/arch-os](../iso/src/usr/local/bin/arch-os)** loads, so a character that would be a box fails at a desk._
+**Note:** _`make check` reads every module against the glyph tables of the fonts **[iso/font.sh](../iso/font.sh)** builds, so a character that would be a box fails at a desk._
 
 ## Pictures in the Docs
 

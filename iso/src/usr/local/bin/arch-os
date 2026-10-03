@@ -8,13 +8,10 @@
 # console and setfont finds nothing to load into. Neither is worth refusing to
 # start over, so both may fail.
 #
-# Which font is not a matter of taste, and `make glyphs-check` is what holds it
-# to that: of everything in `kbd` this is the one whose table holds every
-# character this image can put on the console - the interface's own marks, the
-# three cells a QR code and the mark over a finished run are built from - and
-# besides them the most languages: Latin with its accents, Greek and Cyrillic.
-# So a catalog in any of those needs nothing else on the image. Terminus has the
-# full block and neither half of it; eurlatgr has no Cyrillic.
+# The font is Terminus Bold, built by iso/font.sh, in the largest of these sizes
+# that leaves the interface 100 columns by 30 rows, and in the smallest where
+# none does. `make glyphs-check` holds every one to what this image puts on the
+# console.
 #
 # Oak looks for oak.yaml and the modules folder beside its own binary, so it is
 # started out of the folder it was installed into - every answer file and log
@@ -22,7 +19,31 @@
 # left off.
 set -eu
 
-setfont LatGrkCyr-8x16 || true
+SIZES="32 24 20"
+
+# Only on a console: a terminal in a window has its font already. fbcon takes the
+# console over on the first character drawn on it, and until then there is none
+# for setfont to load into, so one is drawn - a space is no change on a blank
+# screen - and the load is tried for two seconds.
+if [[ "$(tty)" == /dev/tty[0-9]* ]]; then
+    read -ra sizes <<<"$SIZES"
+    width=0 height=0
+    IFS=, read -r width height </sys/class/graphics/fb0/virtual_size || true
+    for size in "${sizes[@]}"; do
+        [ $((width / (size / 2))) -ge 100 ] && [ $((height / size)) -ge 30 ] && break
+    done
+
+    printf .
+    loaded=false
+    for _ in $(seq 20); do
+        if error="$(setfont "arch-os-${size}" 2>&1)"; then
+            loaded=true
+            break
+        fi
+        sleep 0.1
+    done
+    "$loaded" || echo "$error" >&2
+fi
 arch-os-console-theme || true
 
 cd /opt/arch-os

@@ -91,7 +91,7 @@ jobs:
 
       - uses: ./.github/actions/arch
         with:
-          packages: make curl shellcheck shfmt zsh yamllint actionlint zizmor gettext diffutils gitleaks kbd tzdata
+          packages: make curl shellcheck shfmt zsh yamllint actionlint zizmor gettext diffutils gitleaks kbd terminus-font tzdata
 
       # The runtime's checksum is a call to the API, and sixty an hour is what
       # an address that does not say who it is gets - one address for every
@@ -196,7 +196,7 @@ jobs:
       # boot is read off the picture, and nothing opens a .ppm.
       - uses: ./.github/actions/arch
         with:
-          packages: make curl archiso systemd-ukify qemu-base edk2-ovmf tesseract tesseract-data-eng netpbm openssh libisoburn
+          packages: make curl archiso systemd-ukify kbd terminus-font qemu-base edk2-ovmf tesseract tesseract-data-eng netpbm openssh libisoburn
 
       - run: make tarball
         env:
