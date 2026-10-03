@@ -25,11 +25,10 @@ OnFailure=getty@tty1.service
 [Service]
 # idle keeps the first frame from being drawn over by the tail of the boot log.
 Type=idle
-# The same command `installer` and `recovery` run, with no module named — which
-# is what makes the language and then the question of which to open the first
-# two pages. A run started by this machine and one started by hand are the same
-# run.
-ExecStart=/usr/local/bin/arch-os
+# The Installer is what this image is for; the Recovery is on every installed
+# system, and `recovery` on another console starts it here too. A run started
+# by this machine and one started by hand are the same run.
+ExecStart=/usr/local/bin/installer
 
 StandardInput=tty-force
 StandardOutput=tty

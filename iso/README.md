@@ -5,13 +5,13 @@ Stock Arch `releng`, patched: boot ➜ Plymouth ➜ Arch OS. Nothing in between.
 - Installer and Recovery on the same image
 - The Recovery image beside them, built first out of Arch's minimal `baseline`, for the Installer to write to the disk - **[➜ The Recovery Partition](../docs/REFERENCE.md#the-recovery-partition)**
 - Arch OS Bootsplash (Plymouth)
-- Nord palette and Terminus Bold, applied before the interface draws
+- Nord palette and Terminus Bold, sized to the screen, applied before the interface draws
 - Networking exactly as the Arch ISO ships it (iwd, systemd-networkd)
 - UEFI only, squashfs/zstd
 
 ## How it starts
 
-The [Oak](https://github.com/murkl/oak) binary with every module beside it lives in `/opt/arch-os`, started by a systemd unit on tty1 - no autologin, no shell. No module named, so it opens on language, then the choice of what to open, both under the wordmark. A root shell is handed back whenever it stops, and nothing starts it again by itself: an interface that came back on its own would be indistinguishable from one that was never away, over a run that may have written half a disk. A crash therefore ends at the prompt, with the reason in `journalctl -b -u arch-os`.
+The [Oak](https://github.com/murkl/oak) binary with every module beside it lives in `/opt/arch-os`, started by a systemd unit on tty1 - no autologin, no shell. The Installer, named outright, so it opens on the language and then on the Installer itself, under the wordmark. The Recovery is one console away: log in as root on another one (**Ctrl+Alt+F2**) and type `recovery`. A root shell is handed back whenever it stops, and nothing starts it again by itself: an interface that came back on its own would be indistinguishable from one that was never away, over a run that may have written half a disk. A crash therefore ends at the prompt, with the reason in `journalctl -b -u arch-os`.
 
 **Note:** _The build copies whatever is in `modules/`, so **[Create boot medium](../modules/imager)** ships too but is never offered - its `rules: offer-if` says this is not that machine._
 
@@ -19,8 +19,8 @@ The [Oak](https://github.com/murkl/oak) binary with every module beside it lives
 
 | Command | Description |
 | --- | --- |
-| `installer` | Opens the Installer directly - `installer --language=de` skips the first page too |
-| `recovery` | Opens the Recovery directly |
+| `installer` | Opens the Installer, what tty1 starts by itself - `installer --language=de` skips the first page |
+| `recovery` | Opens the Recovery, which the ISO does not start by itself |
 | `iwctl` | Join a wireless network |
 
 **Note:** _Both keep their answers in `/opt/arch-os`, so a second run resumes. `/etc/motd` and `/etc/issue` say so._
@@ -89,7 +89,7 @@ Walks the ISO the way a person does, unattended:
 
 Each font this image loads has one table of glyphs, so a character outside it is a box on the screen - in whichever language it happens to be in. `glyphs.sh` builds the fonts as `build.sh` does and checks two things against every table: the files it is handed, which `make check` points at every module except fastfetch's config (a picture for a graphical terminal), and the marks the interface draws itself - the rules, the cursor, the three cells a QR code and the mark over a finished run are built from, and Oak's own words. Those are asked of the binary with `oak --glyphs` rather than copied here.
 
-The font is Terminus Bold, in the largest of three sizes that leaves the interface 100 columns by 30 rows. Of the fonts in `kbd` and `terminus-font` it is the clean bold one with Latin with its accents, Greek and Cyrillic. It has neither ▀ nor ▄, which a QR code is drawn from, so `font.sh` puts them in the two slots of its table that nothing draws.
+The font is Terminus Bold, in the largest of four sizes that leaves the interface no more than 1/φ of the screen each way: it is 95 columns by 25 rows, so the screen has to hold 154 by 40 cells, and the smallest size stands where none does. A full HD screen gets 24, which fills 59% of its width, and a screen four times as large gets 32. Of the fonts in `kbd` and `terminus-font` it is the clean bold one with Latin with its accents, Greek and Cyrillic. It has neither ▀ nor ▄, which a QR code is drawn from, so `font.sh` puts them in the two slots of its table that nothing draws.
 
 ```
 make glyphs-check

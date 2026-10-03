@@ -46,7 +46,7 @@ MODULE_PARTS := data locales tasks actions
 # https://github.com/murkl/oak, downloaded rather than built, and pinned so a
 # commit builds the same tomorrow. Written without the `v` of its tag.
 OAK_REPO    := murkl/oak
-OAK_VERSION ?= 0.18.1
+OAK_VERSION ?= 0.19.0
 OAK_ASSET   := oak-linux-amd64
 OAK_DIR     := .oak
 
@@ -180,7 +180,7 @@ $(OAK_BIN):
 # .oak/ by hand would otherwise ship, and the image would refuse its own
 # modules at boot.
 oak-check: $(OAK_BIN)
-	@got="$$($(OAK_BIN) --version)"; [ "$$got" = "$(OAK_VERSION)" ] \
+	@got="$$($(OAK_BIN) --version | sed -n 's/^runtime: //p')"; [ "$$got" = "$(OAK_VERSION)" ] \
 		|| { echo "$(OAK_BIN) answers to '$$got', not $(OAK_VERSION) - run 'make oak'" >&2; exit 1; }
 
 # Fetched again, for the same tag republished.

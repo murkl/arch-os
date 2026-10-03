@@ -170,8 +170,7 @@ install_bootsplash() {
 }
 
 # One systemd unit on tty1 replaces autologin, a shell profile and a menu script:
-# there is exactly one thing this machine booted to do, and which module that
-# turns out to be is a page of the interface's own.
+# there is exactly one thing this machine booted to do.
 start_on_tty1() {
     mkdir -p "$1/airootfs/etc/systemd/system/multi-user.target.wants"
     ln -sf /etc/systemd/system/arch-os.service \
