@@ -246,7 +246,7 @@ msgstr "Den Rechner ausschalten."
 
 #. an action: its row, and the heading over its page
 #: actions/wifi/action.yaml
-msgid "Configure the wireless network"
+msgid "Configure Wi-Fi"
 msgstr "WLAN konfigurieren"
 
 #. an action: what it does, under its row

@@ -1,7 +1,7 @@
 # On the settings page, and opened without internet. An open or known network
 # is joined as it is chosen; one that wants a passphrase says no, and that is
 # asked next.
-title: Configure the wireless network
+title: Configure Wi-Fi
 description: Join a wireless network.
 
 rules:
