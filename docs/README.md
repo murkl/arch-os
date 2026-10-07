@@ -29,7 +29,7 @@
 - One password for disk and account, or a disk password of its own for a shared machine
 - Btrfs snapshots before every package change, rolled back with the Recovery
 - GNOME on Wayland or a bare text console, graphics drivers detected
-- Desktop extras or a slim GNOME, Flatpak with Bazaar
+- Desktop extras or a slim GNOME, Flatpak
 - Browser and backup app of your choice
 - Zram, fstrim, microcode, NetworkManager, mirrors ranked by country
 - AUR helper, 32-bit support, containers, firewall, SSH, housekeeping
