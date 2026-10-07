@@ -223,11 +223,15 @@ run: dev
 inspect: dev
 	@cd $(DEV_DIR) && ./$(APP) --inspect
 
-# The release as one file, for a stock Arch ISO: unpack it, run ./oak.
+# The release as one file, for a stock Arch ISO: unpack it, run ./oak. Loaded
+# again out of the file, so what ships is what was checked.
 tarball: build
 	tar -czf $(DIST_DIR)/$(TARBALL) --owner=0 --group=0 --sort=name \
 		--transform 's,^,$(STEM)/,' \
 		-C $(RELEASE_DIR) $(APP) $(PRODUCT) $(PRODUCT_SHELL) $(MODULES_DIR)
+	unpacked="$$(mktemp -d)"; trap 'rm -rf "$$unpacked"' EXIT; \
+	tar -xzf $(DIST_DIR)/$(TARBALL) -C "$$unpacked"; \
+	"$$unpacked/$(STEM)/$(APP)" --inspect >/dev/null
 
 # The images, out of the release already in dist/.
 image:

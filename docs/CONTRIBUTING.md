@@ -7,8 +7,7 @@
 ```mermaid
 flowchart LR
     M["main"] -->|branch off| B["feat/…"]
-    B -->|draft pull request| C["Check"]
-    C -->|ready for review| I["Check · Image · Boot · Install"]
+    B -->|pull request| I["Check · Image · Boot · Install"]
     I -->|squash merge| M2["main"]
     M2 --> P["Release pull request<br/>version · changelog"]
     P -->|merge| R["Release<br/>tag · images · page"]
@@ -17,12 +16,12 @@ flowchart LR
 ```
 
 1. **Branch off `main`.** Name it after what it does: `feat/wireless-settings`, `fix/helix-test`. Nothing reads the name
-2. **Open a draft pull request right away.** A branch is checked through its pull request, never on its own
-3. **Mark it ready for review** once it should be booted. That adds the image, the boot test and an installation, about an hour
-4. **Squash merge**, or switch on auto-merge. `main` takes the pull request once `Ready` and `Title` have passed, as one commit under its title, and deletes the branch
+2. **Open a pull request right away**, as a draft while it is not done. A branch is checked through its pull request, never on its own, and every push is built, booted and installed, about 20 minutes
+3. **Squash merge**, or switch on auto-merge. `main` takes the pull request once `Ready` and `Title` have passed, as one commit under its title, and deletes the branch
 
 - The commits inside the branch are yours to shape. Only the title reaches `main`
-- A draft never passes `Ready`, so nothing is merged before it was booted
+- A draft gets the same run and cannot be merged. Marking it ready starts nothing, since it changes no code
+- A pull request that changes nothing but `docs/`, Markdown or `LICENSE` is checked, never built: none of it reaches an image
 - A pull request from a fork is checked, never booted: an image needs a privileged container
 - A pull request that changes nothing but `oak.yaml`, `CHANGELOG.md` or the release manifest starts no run and is never merged: those three are the release pull request's. Change something else with it
 
@@ -71,8 +70,8 @@ Nothing is typed and nothing is tagged by hand.
 | --- | --- | --- |
 | `Title` | a pull request opened, pushed to or edited | Reads the title |
 | `Check` | every run | `make check` |
-| `Image` | a pull request out of draft, a release, on demand | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO |
-| `Ready` | a pull request | Every job it needed has passed, and it is no draft |
+| `Image` | a pull request that reaches the image, a release, on demand | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO |
+| `Ready` | a pull request | Every job it needed has passed |
 | `Release` | a push to `main` | The release pull request, or once that is merged, the tag and the draft page |
 | `Publish` | a release | Hangs the files of that run on the page and publishes it |
 
@@ -177,6 +176,6 @@ make github
 | `repository.json` | Squash merges only, under the pull request's title alone; auto-merge on; a merged branch is deleted |
 | `ruleset.json` | `main` takes nothing but a pull request, squashed, once `Ready` and `Title` have passed; no force push, no deletion |
 | `actions.json` | A workflow's token reads unless it says otherwise, and may open the release pull request |
-| `code-scanning.json` | CodeQL as GitHub sets it up by default: every language it finds, on pull requests, on `main` and weekly |
+| `code-scanning.json` | No CodeQL: the one language it finds here is the workflows, which are zizmor's, in `make check` |
 
-Run it again after changing one of them. Every call sets the whole state, so a second run changes nothing. The files and the script are the same in every project released this way.
+Run it again after changing one of them. Every call sets the whole state, so a second run changes nothing. The script is the same in every project released this way, and so is every file but `code-scanning.json`.

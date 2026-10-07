@@ -30,8 +30,8 @@ gh api --silent -X PATCH 'repos/{owner}/{repo}' --input "${dir}/repository.json"
 # and open the release pull request.
 gh api --silent -X PUT 'repos/{owner}/{repo}/actions/permissions/workflow' --input "${dir}/actions.json"
 
-# CodeQL as GitHub sets it up by default: every language it finds, on every
-# pull request, every push to main and once a week, without a workflow here.
+# CodeQL's default setup, for the languages code-scanning.json names: those no
+# check in the Makefile reads already.
 gh api --silent -X PATCH 'repos/{owner}/{repo}/code-scanning/default-setup' --input "${dir}/code-scanning.json"
 
 # What main is held to. Updated where it exists already, so it stays one ruleset
