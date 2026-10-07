@@ -23,9 +23,9 @@ msgstr ""
 msgid "Create boot medium"
 msgstr ""
 
-#. what it is, in one sentence, under the row that starts the work
+#. what it is and what its menu offers, over the menu's rows
 #: module.yaml
-msgid "Write Arch OS to a USB device to boot another machine from."
+msgid "Ready to write Arch OS to a USB device to boot from. Start writing, or review every value first."
 msgstr ""
 
 #. the row that starts the work

@@ -19,6 +19,7 @@ Needs: chromium, imagemagick.
 import argparse
 import base64
 import pathlib
+import re
 import subprocess
 import sys
 from collections import defaultdict
@@ -137,9 +138,15 @@ def wordmark(block, colour, cell):
 
 
 def logo_block(product):
-    """The `logo: |` block, without a yaml parser for one field."""
+    """The `logo: |` block, without a yaml parser for one field, or what the
+    function of oak.sh it names prints."""
     lines = product.read_text().split("\n")
     start = next(i for i, l in enumerate(lines) if l.startswith("logo:"))
+    call = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)\(\)", lines[start].split(":", 1)[1].strip())
+    if call:
+        shell = product.parent / "oak.sh"
+        return subprocess.run(["bash", "-c", f'source "$1" && {call[1]}', "logo", shell],
+                              capture_output=True, text=True, check=True).stdout
     body = []
     for line in lines[start + 1:]:
         if line and not line.startswith("  "):

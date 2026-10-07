@@ -20,10 +20,10 @@ msgstr "Deutsch"
 msgid "Installer"
 msgstr "Installer"
 
-#. what it is, in one sentence, under the row that starts the work
+#. what it is and what its menu offers, over the menu's rows
 #: module.yaml
-msgid "Install Arch Linux on this machine."
-msgstr "Arch Linux auf diesen Rechner installieren."
+msgid "Ready to install Arch Linux on this machine. Start the installation, or review every value first."
+msgstr "Bereit, Arch Linux auf diesem Rechner zu installieren. Starte die Installation oder prüfe vorher alle Werte."
 
 #. the row that starts the work
 #: module.yaml

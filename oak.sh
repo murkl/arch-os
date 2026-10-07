@@ -660,6 +660,29 @@ in_system_use() {
 # THE YAML | Functions a declaration calls as name(), named after the key
 # ////////////////////////////////////////////////////////////////////////////
 
+# The wordmark the interface comes up out of, the eyebrow over the blank line.
+logo_arch_os() {
+    cat <<'EOF'
+Arch Linux
+
+ █████  ██████   ██████ ██   ██      ██████  ███████
+██   ██ ██   ██ ██      ██   ██     ██    ██ ██
+███████ ██████  ██      ███████     ██    ██ ███████
+██   ██ ██   ██ ██      ██   ██     ██    ██      ██
+██   ██ ██   ██  ██████ ██   ██      ██████  ███████
+EOF
+}
+
+# The Arch Linux mark beside the words over every module's menu.
+icon_arch_linux() {
+    cat <<'EOF'
+    ▄█▄
+   ▄███▄
+  ███▀███
+▄██▀   ▀██▄
+EOF
+}
+
 # A list may print a value and the text it is chosen by, with a tab between.
 
 # Whole disks, by size and model.
