@@ -16,7 +16,7 @@ UEFI only, GPT, the whole disk for Arch OS: it is the only system on it.
 
 Always in that order, and always btrfs. The third is there with **Recovery**, at the end of the disk, so the root is the second on every installation. `/boot` is `fmask=0077,dmask=0077`: it holds the kernel and the signed image, root's business only.
 
-- **Encryption**: LUKS2 on partition 2, opened as `cryptroot`. One password for disk, root and account
+- **Encryption**: LUKS2 on partition 2, opened as `cryptroot`. The account's password, or with **Separate disk password** one of its own - see **[Accounts](#accounts)**
 - **TRIM**: discards pass through the encryption, kept as a flag in the LUKS2 header (`--allow-discards --persistent`) rather than on the command line, so every opening passes them. dm-crypt drops them otherwise, and `fstrim.timer` trims nothing. What it gives away is which blocks are free, not what is in them. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Dm-crypt/Specialties#Discard/TRIM_support_for_solid_state_drives_(SSD))**
 
 ## Btrfs Subvolumes
@@ -117,6 +117,12 @@ Behind **Core tweaks**, changes behaviour, never what is installed. **[➜ Sysct
 | `tcp_congestion_control=bbr`, `default_qdisc=fq` | `cubic` reads any packet loss as congestion; wifi and long-distance links lose packets without being full. `bbr` measures delay instead |
 
 Swap is **zram** always, tweaks or not. **[➜ Zram](https://wiki.archlinux.org/title/Zram)**
+
+## Accounts
+
+One account, in `wheel`, with `sudo`. Root keeps the `*` Arch ships, so nothing logs in as root: a password for it would only be a second way to the same rights. systemd's emergency shell does not open without one either, and the **[Recovery](#the-recovery)** is the way into a system that no longer starts.
+
+Automatic login only behind disk encryption with one password. `pam_gdm` hands the passphrase typed at boot to the keyring, so the keyring has to carry the disk password, and only with one password is that the account's as well. With **Separate disk password** the login asks, and the keyring carries the account password. How to put it right after a change: **[➜ The Keyring](README.md#the-keyring)**. **[➜ Arch Wiki](https://wiki.archlinux.org/title/GNOME/Keyring#PAM_step)**
 
 ## Packages
 
@@ -265,7 +271,7 @@ Where the program reads a directory, the file goes there. Four files have none, 
 
 Two are written whole:
 
-- `/etc/gdm/custom.conf`, only with autologin - which is behind disk encryption and nowhere else. GDM reads nothing else
+- `/etc/gdm/custom.conf`, only with autologin - which is behind disk encryption with one password and nowhere else. GDM reads nothing else
 - `/etc/xdg/reflector/reflector.conf`. `reflector.service` names it on its command line and in its sandbox, so moving it means restating both
 
 **Note:** _`/etc/hosts` is not written. `filesystem` ships `localhost`, and `nss-myhostname` answers for the hostname._

@@ -78,7 +78,7 @@ What the machine can say for itself is never a question.
 | `ARCH_OS_VIRTUAL_MACHINE` | `systemd-detect-virt`: guest tools inside a virtual machine, the question about running them outside one |
 | Microcode | `/proc/cpuinfo` |
 | Graphics driver | Every graphics card in sysfs - see **[➜ Packages](../../docs/REFERENCE.md#packages)** |
-| Automatic login | Disk encryption: on behind it, off without it |
+| Automatic login | Disk encryption with one password: on behind it, off otherwise |
 
 ## Language
 

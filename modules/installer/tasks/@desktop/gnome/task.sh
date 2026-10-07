@@ -17,6 +17,10 @@ bazaar_wanted() { [ "$ARCH_OS_FLATPAK_ENABLED" = "true" ] && [ "$ARCH_OS_BAZAAR_
 # https://wiki.archlinux.org/title/PipeWire#Installation
 packages=(git bluez bluez-utils avahi nss-mdns pipewire pipewire-pulse wireplumber)
 
+# Passwords and Keys, where the keyring's password is put right after a login
+# password changed: docs/README.md#the-keyring
+packages+=(seahorse)
+
 # The group filtered before the download rather than trimmed after it.
 mapfile -t desktop < <(arch-chroot "$MNT" pacman -Sgq gnome)
 [ "${#desktop[@]}" -gt 0 ] || {
@@ -98,10 +102,11 @@ fi
 
 # ─── Login screen ──────────────────────────────────────────────────────────
 #
-# Automatic login behind an encrypted disk only, where the boot password stands
-# in front; pam_gdm hands the LUKS passphrase on to the keyring. Written only
-# then: the file belongs to gdm. https://wiki.archlinux.org/title/GNOME/Keyring#PAM_step
-if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
+# Automatic login behind an encrypted disk with one password only, where the
+# boot password stands in front; pam_gdm hands the LUKS passphrase on to the
+# keyring. Written only then: the file belongs to gdm.
+# https://wiki.archlinux.org/title/GNOME/Keyring#PAM_step
+if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && [ "$ARCH_OS_DISK_PASSWORD_ENABLED" != "true" ]; then
     mkdir -p "${MNT}/etc/gdm"
     render "${data}/custom.conf" USERNAME="$ARCH_OS_USERNAME" >"${MNT}/etc/gdm/custom.conf"
 fi

@@ -103,8 +103,8 @@ msgstr "Passwort"
 
 #. ARCH_OS_PASSWORD: what it means
 #: module.yaml
-msgid "For your account, for root and, with disk encryption, to unlock the disk at boot. Asked right before the installation and never written to a file."
-msgstr "Für dein Konto, für root und, mit Verschlüsselung, zum Entsperren des Datenträgers beim Start. Es wird direkt vor der Installation abgefragt und nie in eine Datei geschrieben."
+msgid "For your account and, with disk encryption, to unlock the disk at boot unless it has a password of its own. Asked right before the installation and never written to a file."
+msgstr "Für dein Konto und, mit Verschlüsselung, zum Entsperren des Datenträgers beim Start, sofern er kein eigenes Passwort hat. Es wird direkt vor der Installation abgefragt und nie in eine Datei geschrieben."
 
 #. ARCH_OS_HOSTNAME: the question
 #: module.yaml
@@ -203,8 +203,28 @@ msgstr "Verschlüsselung"
 
 #. ARCH_OS_ENCRYPTION_ENABLED: what it means
 #: module.yaml
-msgid "Encrypts the system with your password, so the disk cannot be read without it. It is asked at every boot."
-msgstr "Verschlüsselt das System mit deinem Passwort, sodass der Datenträger ohne es nicht lesbar ist. Es wird bei jedem Start abgefragt."
+msgid "Encrypts the system, so the disk cannot be read without its password. That is yours unless it has one of its own, and it is asked at every boot."
+msgstr "Verschlüsselt das System, sodass der Datenträger ohne sein Passwort nicht lesbar ist. Das ist deines, sofern er kein eigenes hat, und es wird bei jedem Start abgefragt."
+
+#. ARCH_OS_DISK_PASSWORD_ENABLED: the question
+#: module.yaml
+msgid "Separate disk password"
+msgstr "Eigenes Datenträgerpasswort"
+
+#. ARCH_OS_DISK_PASSWORD_ENABLED: what it means
+#: module.yaml
+msgid "The disk asks for a password of its own, and the login screen for yours. For a machine several people share."
+msgstr "Der Datenträger fragt nach einem eigenen Passwort und die Anmeldung nach deinem. Für einen Rechner, den sich mehrere teilen."
+
+#. ARCH_OS_DISK_PASSWORD: the question
+#: module.yaml
+msgid "Disk password"
+msgstr "Datenträgerpasswort"
+
+#. ARCH_OS_DISK_PASSWORD: what it means
+#: module.yaml
+msgid "Unlocks the disk at every boot. Asked right before the installation and never written to a file."
+msgstr "Entsperrt den Datenträger bei jedem Start. Es wird direkt vor der Installation abgefragt und nie in eine Datei geschrieben."
 
 #. ARCH_OS_SECURE_BOOT_ENABLED: the question
 #: module.yaml

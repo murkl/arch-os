@@ -100,9 +100,12 @@ fi
 # https://wiki.archlinux.org/title/Dm-crypt/Specialties#Discard/TRIM_support_for_solid_state_drives_(SSD)
 root_device="$system_part"
 if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
+    # The disk's own password where it has one, otherwise the account's.
+    passphrase="$ARCH_OS_PASSWORD"
+    [ "$ARCH_OS_DISK_PASSWORD_ENABLED" = "true" ] && passphrase="$ARCH_OS_DISK_PASSWORD"
     echo "encrypting ${system_part}"
-    printf '%s' "$ARCH_OS_PASSWORD" | cryptsetup luksFormat "$system_part"
-    printf '%s' "$ARCH_OS_PASSWORD" | cryptsetup open --allow-discards --persistent "$system_part" cryptroot
+    printf '%s' "$passphrase" | cryptsetup luksFormat "$system_part"
+    printf '%s' "$passphrase" | cryptsetup open --allow-discards --persistent "$system_part" cryptroot
     root_device=/dev/mapper/cryptroot
 fi
 
