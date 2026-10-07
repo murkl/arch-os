@@ -110,7 +110,7 @@ done
 # The monitor answers on the same connection, and nothing here reads those
 # answers: a screendump is judged by the file it leaves.
 screendump() {
-    printf 'screendump %s\n' "$1" >&3
+    printf 'screendump %s -f png\n' "$1" >&3
     for _ in $(seq 25); do
         sleep 0.2
         [ -s "$1" ] && return 0
@@ -149,7 +149,7 @@ while [ "$SECONDS" -lt "$deadline" ]; do
     kill -0 "$QEMU_PID" 2>/dev/null || fail "the machine stopped before the interface came up"
 
     frame=$((frame + 1))
-    shot="$(printf '%s/frame-%02d.ppm' "$FRAME_DIR" "$frame")"
+    shot="$(printf '%s/frame-%02d.png' "$FRAME_DIR" "$frame")"
     screendump "$shot" || continue
     last_shot="$shot"
 
@@ -164,6 +164,6 @@ done
 [ -n "$found" ] || fail "the interface did not come up within ${TIMEOUT}s"
 
 # The one frame worth keeping is the one it was recognised in.
-mv "$found" "${FRAME_DIR}/arch-os.ppm"
-rm -f "${FRAME_DIR}"/frame-*.ppm
-echo "### Arch OS is up: ${FRAME_DIR}/arch-os.ppm"
+mv "$found" "${FRAME_DIR}/arch-os.png"
+rm -f "${FRAME_DIR}"/frame-*.png
+echo "### Arch OS is up: ${FRAME_DIR}/arch-os.png"

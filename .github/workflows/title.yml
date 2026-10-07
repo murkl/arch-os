@@ -1,27 +1,14 @@
-# The one thing a machine reads a pull request for: its title becomes the commit
-# on main under a squash merge, and the next version and the changelog are read
-# out of that line. A title that names no kind of change releases nothing, and
-# nothing would say so.
-#
-# A file of its own because it is the only check that has to run again when the
-# title changes - and the only one that must not. Renaming a pull request would
-# otherwise rebuild it, and correcting the title would start nothing at all.
+# The title becomes the commit on main, and the version and the changelog are
+# read out of it. A file of its own, so renaming a pull request reads the title
+# again and builds nothing.
 
 name: Title
 
 on:
-  # synchronize as well: main asks for this check on the commit a pull request
-  # ends on, and a result belongs to the commit it was read on.
+  # synchronize too: main asks for this check on the commit a pull request
+  # ends on. Not the release pull request - see ci.yml.
   pull_request:
     types: [opened, synchronize, reopened, edited]
-    # Not the release pull request, which touches nothing but these three - in
-    # oak.yaml the version line. It is opened with the workflow's own token, and
-    # since June 2026 GitHub holds every run such a pull request starts until
-    # somebody approves it - one nobody does fails the moment it is merged. The
-    # release run reports its checks instead, and its merge is checked on main.
-    # Any other pull request that changes nothing but oak.yaml starts no run
-    # either, so main holds it back - see docs/CONTRIBUTING.md.
-    # https://github.com/orgs/community/discussions/199292
     paths-ignore:
       - CHANGELOG.md
       - .release-please-manifest.json

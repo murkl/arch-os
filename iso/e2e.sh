@@ -60,8 +60,8 @@ say() { printf '### %s\n' "$*"; }
 fail() {
     echo "Error: $1" >&2
     if [ -n "$QEMU_PID" ] && kill -0 "$QEMU_PID" 2>/dev/null; then
-        printf 'screendump %s\n' "${WORK}/console.ppm" >&3 && sleep 2 &&
-            echo "the console is in ${WORK}/console.ppm" >&2
+        printf 'screendump %s -f png\n' "${WORK}/console.png" >&3 && sleep 2 &&
+            echo "the console is in ${WORK}/console.png" >&2
     fi
     for log in "$WORK"/*.log; do
         [ -f "$log" ] || continue
