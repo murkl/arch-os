@@ -108,8 +108,9 @@ variables:
     type: new-password
     title: Password
     description: |
-      For your account, for root and, with disk encryption, to unlock the disk
-      at boot. Asked right before the installation and never written to a file.
+      For your account and, with disk encryption, to unlock the disk at boot
+      unless it has a password of its own. Asked right before the installation
+      and never written to a file.
     group: Identity
     required: true
 
@@ -210,10 +211,33 @@ variables:
     type: bool
     title: Disk encryption
     description: |
-      Encrypts the system with your password, so the disk cannot be read
-      without it. It is asked at every boot.
+      Encrypts the system, so the disk cannot be read without its password.
+      That is yours unless it has one of its own, and it is asked at every
+      boot.
     group: Storage
     required: true
+
+  # Automatic login hands the disk password to the keyring, so it goes with
+  # one password: docs/REFERENCE.md#accounts
+  - name: ARCH_OS_DISK_PASSWORD_ENABLED
+    type: bool
+    title: Separate disk password
+    description: |
+      The disk asks for a password of its own, and the login screen for
+      yours. For a machine several people share.
+    group: Storage
+    default: false
+    conditions: ARCH_OS_ENCRYPTION_ENABLED == true
+
+  - name: ARCH_OS_DISK_PASSWORD
+    type: new-password
+    title: Disk password
+    description: Unlocks the disk at every boot. Asked right before the installation and never written to a file.
+    group: Storage
+    required: true
+    conditions:
+      - ARCH_OS_ENCRYPTION_ENABLED == true
+      - ARCH_OS_DISK_PASSWORD_ENABLED == true
 
   # ─── Boot ──────────────────────────────────────────────────────────────────
   - name: ARCH_OS_SECURE_BOOT_ENABLED
