@@ -2,11 +2,12 @@
 # Start Arch OS. The systemd unit on tty1 runs this, and so do `installer` and
 # `recovery` beside it, which are the same run with the module already named.
 #
-# The console is dressed right before the interface draws on it: the font decides
-# which glyphs exist, the palette what the sixteen colour slots look like. Not in
-# the unit, because an ExecStartPre runs while the boot splash still holds the
-# console and setfont finds nothing to load into. Neither is worth refusing to
-# start over, so both may fail.
+# The console is dressed right before the interface draws on it: the palette
+# decides what the sixteen colour slots look like, and goes first so the console
+# comes up in the colour the boot splash left; the font decides which glyphs
+# exist. Not in the unit, because an ExecStartPre runs while the boot splash
+# still holds the console and setfont finds nothing to load into. Neither is
+# worth refusing to start over, so both may fail.
 #
 # The font is Terminus Bold, built by iso/font.sh, in the largest of these sizes
 # that leaves the interface no more than 1/φ of the screen each way, and in the
@@ -24,10 +25,12 @@ SIZES="32 24 20 18"
 # The interface is 95 columns by 25 rows; times φ, that is the screen it needs.
 COLS=154 ROWS=40
 
+arch-os-console-theme || true
+
 # Only on a console: a terminal in a window has its font already. fbcon takes the
-# console over on the first character drawn on it, and until then there is none
-# for setfont to load into, so one is drawn - a space is no change on a blank
-# screen - and the load is tried for two seconds.
+# console over on the first character drawn on it that is not a space, and until
+# then there is none for setfont to load into. So a dot is drawn and taken back
+# at once, and the load is tried for two seconds.
 if [[ "$(tty)" == /dev/tty[0-9]* ]]; then
     read -ra sizes <<<"$SIZES"
     width=0 height=0
@@ -36,7 +39,7 @@ if [[ "$(tty)" == /dev/tty[0-9]* ]]; then
         [ $((width / (size / 2))) -ge "$COLS" ] && [ $((height / size)) -ge "$ROWS" ] && break
     done
 
-    printf .
+    printf '.\b \b'
     loaded=false
     for _ in $(seq 20); do
         if error="$(setfont "arch-os-${size}" 2>&1)"; then
@@ -47,7 +50,6 @@ if [[ "$(tty)" == /dev/tty[0-9]* ]]; then
     done
     "$loaded" || echo "$error" >&2
 fi
-arch-os-console-theme || true
 
 cd /opt/arch-os
 exec ./oak "$@"

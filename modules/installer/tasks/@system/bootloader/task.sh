@@ -6,6 +6,10 @@
 
 data="$(where)"
 
+# The boot without its log, with the splash or without it.
+# https://wiki.archlinux.org/title/Silent_boot
+silent_boot() { [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ]; }
+
 # The kernel command line, one answer for the image and the entries alike.
 # Why each parameter is here: docs/REFERENCE.md#the-boot-chain
 kernel_args() {
@@ -23,8 +27,7 @@ kernel_args() {
 
     [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && args+=(nowatchdog)
 
-    # https://wiki.archlinux.org/title/Silent_boot
-    if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ]; then
+    if silent_boot; then
         args+=(quiet splash vt.global_cursor_default=0 loglevel=3 rd.udev.log_level=3 systemd.show_status=auto)
     fi
 
@@ -89,3 +92,10 @@ if ! secure_boot_wanted; then
 fi
 
 arch-chroot "$MNT" systemctl enable systemd-boot-update.service
+
+# The quiet boot hides the cursor on every console, and agetty reads \e as an
+# escape: this shows it again before each login.
+if silent_boot; then
+    mkdir -p "${MNT}/etc/issue.d"
+    render "${data}/cursor.issue" >"${MNT}/etc/issue.d/cursor.issue"
+fi
