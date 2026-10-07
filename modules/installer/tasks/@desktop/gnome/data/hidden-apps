@@ -5,7 +5,6 @@
 # always              every desktop install
 # extras              only with the desktop extras
 # shell               only with the shell enhancement
-# extension-manager   only where Extension Manager takes the Extensions app's place
 always bssh
 always bvnc
 always avahi-discover
@@ -16,4 +15,3 @@ always org.gnome.Evince
 extras cups
 extras tuned-gui
 shell btop
-extension-manager org.gnome.Extensions

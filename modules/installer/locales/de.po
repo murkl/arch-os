@@ -456,16 +456,6 @@ msgstr "Schlanker Desktop"
 msgid "Removes the GNOME applications that come with the desktop and are rarely used."
 msgstr "Entfernt die GNOME-Programme, die mit dem Desktop kommen und selten benutzt werden."
 
-#. ARCH_OS_EXTENSION_MANAGER_ENABLED: the question
-#: module.yaml
-msgid "Extension Manager"
-msgstr "Extension Manager"
-
-#. ARCH_OS_EXTENSION_MANAGER_ENABLED: what it means
-#: module.yaml
-msgid "Finds, installs and updates GNOME extensions, in place of the Extensions app."
-msgstr "Sucht, installiert und aktualisiert GNOME-Erweiterungen, anstelle der Erweiterungen-App."
-
 #. ARCH_OS_BROWSER: the question
 #: module.yaml
 msgid "Web browser"
@@ -493,18 +483,8 @@ msgstr "Flatpak"
 
 #. ARCH_OS_FLATPAK_ENABLED: what it means
 #: module.yaml
-msgid "Applications from Flathub, installed and updated through Bazaar or Software."
-msgstr "Anwendungen von Flathub, installiert und aktualisiert über Bazaar oder Software."
-
-#. ARCH_OS_BAZAAR_ENABLED: the question
-#: module.yaml
-msgid "Bazaar"
-msgstr "Bazaar"
-
-#. ARCH_OS_BAZAAR_ENABLED: what it means
-#: module.yaml
-msgid "A store made for Flathub, in place of GNOME Software. With the desktop extras, firmware updates come from GNOME Firmware."
-msgstr "Ein Store eigens für Flathub, anstelle von GNOME Software. Mit den Desktop-Extras kommen Firmware-Updates aus GNOME Firmware."
+msgid "Applications from Flathub, installed and updated through GNOME Software."
+msgstr "Anwendungen von Flathub, installiert und aktualisiert über GNOME Software."
 
 #. ARCH_OS_SAMBA_SHARE_ENABLED: the question
 #: module.yaml

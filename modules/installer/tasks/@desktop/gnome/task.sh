@@ -5,9 +5,6 @@ home="${MNT}/home/${ARCH_OS_USERNAME}"
 data="$(where)"
 apps="${home}/.local/share/applications"
 
-# Bazaar takes GNOME Software's place only where there is Flatpak to manage.
-bazaar_wanted() { [ "$ARCH_OS_FLATPAK_ENABLED" = "true" ] && [ "$ARCH_OS_BAZAAR_ENABLED" = "true" ]; }
-
 # ─── Packages ──────────────────────────────────────────────────────────────
 #
 # One transaction: packages that replace each other (pipewire-jack and jack2)
@@ -32,17 +29,14 @@ while read -r scope name; do
     case "$scope" in '' | \#*) continue ;; esac
     case "$scope" in
     slim) [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "true" ] || continue ;;
-    bazaar) bazaar_wanted || continue ;;
     esac
     left_out+=("$name")
 done <"${data}/left-out"
 mapfile -t desktop < <(printf '%s\n' "${desktop[@]}" | grep -vxF -f <(printf '%s\n' "${left_out[@]}"))
+# GNOME Software and the Extensions app come with it. No PackageKit: Arch builds
+# Software without it and pacman stays the one thing that changes the system.
+# https://wiki.archlinux.org/title/Pacman/Tips_and_tricks#Graphical
 packages+=("${desktop[@]}")
-
-# No PackageKit: Arch builds Software without it and pacman stays the one thing
-# that changes the system. https://wiki.archlinux.org/title/Pacman/Tips_and_tricks#Graphical
-bazaar_wanted && packages+=(bazaar)
-[ "$ARCH_OS_EXTENSION_MANAGER_ENABLED" = "true" ] && packages+=(extension-manager)
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     # https://wiki.archlinux.org/title/GNOME#Extensions
@@ -63,9 +57,6 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     packages+=(base-devel fwupd bash-completion inetutils
         dosfstools ntfs-3g exfatprogs btrfs-progs nfs-utils
         7zip zip unzip unrar wget jq zenity)
-
-    # Bazaar shows no firmware, so GNOME Firmware is fwupd's window there.
-    bazaar_wanted && packages+=(gnome-firmware)
 
     # https://wiki.archlinux.org/title/Codecs_and_containers
     packages+=(ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire
@@ -167,7 +158,6 @@ while read -r scope name; do
     case "$scope" in
     extras) [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] || continue ;;
     shell) [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ] || continue ;;
-    extension-manager) [ "$ARCH_OS_EXTENSION_MANAGER_ENABLED" = "true" ] || continue ;;
     esac
     render "${data}/hidden.desktop" >"${apps}/${name}.desktop"
 done <"${data}/hidden-apps"
@@ -179,13 +169,7 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     [ "$ARCH_OS_MANAGER_ENABLED" = "true" ] && dock+=(arch-os.desktop)
     dock+=(org.gnome.Console.desktop)
     [ "$ARCH_OS_BROWSER" != "none" ] && dock+=("$(browser_entry)")
-    dock+=(org.gnome.Nautilus.desktop)
-    if bazaar_wanted; then
-        dock+=(io.github.kolunmi.Bazaar.desktop)
-    else
-        dock+=(org.gnome.Software.desktop)
-    fi
-    dock+=(org.gnome.Settings.desktop)
+    dock+=(org.gnome.Nautilus.desktop org.gnome.Software.desktop org.gnome.Settings.desktop)
     favorites="$(printf "'%s', " "${dock[@]}")"
     favorites="${favorites%, }"
     on_first_login <<FIRST

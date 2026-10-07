@@ -43,11 +43,9 @@ presets:
       ARCH_OS_DESKTOP: gnome
       ARCH_OS_DESKTOP_EXTRAS_ENABLED: true
       ARCH_OS_DESKTOP_SLIM_ENABLED: true
-      ARCH_OS_EXTENSION_MANAGER_ENABLED: true
       ARCH_OS_BROWSER: firefox
       ARCH_OS_BACKUP: pika-backup
       ARCH_OS_FLATPAK_ENABLED: true
-      ARCH_OS_BAZAAR_ENABLED: true
       ARCH_OS_SAMBA_SHARE_ENABLED: false
       ARCH_OS_CORE_TWEAKS_ENABLED: true
       ARCH_OS_BOOTSPLASH_ENABLED: true
@@ -69,11 +67,9 @@ presets:
       ARCH_OS_DESKTOP: none
       ARCH_OS_DESKTOP_EXTRAS_ENABLED: false
       ARCH_OS_DESKTOP_SLIM_ENABLED: false
-      ARCH_OS_EXTENSION_MANAGER_ENABLED: false
       ARCH_OS_BROWSER: none
       ARCH_OS_BACKUP: none
       ARCH_OS_FLATPAK_ENABLED: false
-      ARCH_OS_BAZAAR_ENABLED: false
       ARCH_OS_SAMBA_SHARE_ENABLED: false
       ARCH_OS_CORE_TWEAKS_ENABLED: true
       ARCH_OS_BOOTSPLASH_ENABLED: false
@@ -436,14 +432,6 @@ variables:
     default: true
     conditions: ARCH_OS_DESKTOP != none
 
-  - name: ARCH_OS_EXTENSION_MANAGER_ENABLED
-    type: bool
-    title: Extension Manager
-    description: Finds, installs and updates GNOME extensions, in place of the Extensions app.
-    group: Desktop
-    default: true
-    conditions: ARCH_OS_DESKTOP == gnome
-
   - name: ARCH_OS_BROWSER
     type: list
     title: Web browser
@@ -469,22 +457,10 @@ variables:
   - name: ARCH_OS_FLATPAK_ENABLED
     type: bool
     title: Flatpak
-    description: Applications from Flathub, installed and updated through Bazaar or Software.
+    description: Applications from Flathub, installed and updated through GNOME Software.
     group: Desktop
     default: true
     conditions: ARCH_OS_DESKTOP != none
-
-  - name: ARCH_OS_BAZAAR_ENABLED
-    type: bool
-    title: Bazaar
-    description: |
-      A store made for Flathub, in place of GNOME Software. With the desktop
-      extras, firmware updates come from GNOME Firmware.
-    group: Desktop
-    default: true
-    conditions:
-      - ARCH_OS_DESKTOP != none
-      - ARCH_OS_FLATPAK_ENABLED == true
 
   - name: ARCH_OS_SAMBA_SHARE_ENABLED
     type: bool
