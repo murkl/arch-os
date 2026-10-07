@@ -59,7 +59,7 @@ The ram disk carries the processor's microcode itself (the `microcode` hook). Wh
 | `rd.luks.name=…=cryptroot` | Opens the disk in `sd-encrypt` |
 | `rootflags=subvol=@ rootfstype=btrfs` | Which subvolume is root |
 | `nowatchdog` | With Core tweaks: unused, delays shutdown |
-| `quiet splash loglevel=3 …` | **[➜ Silent boot](https://wiki.archlinux.org/title/Silent_boot)** |
+| `quiet splash loglevel=3 …` | **[➜ Silent boot](https://wiki.archlinux.org/title/Silent_boot)**. `vt.global_cursor_default=0` hides the cursor on every console, so `/etc/issue.d/cursor.issue` shows it again before each login |
 | `plymouth.ignore-serial-consoles` | A serial console makes Plymouth fall back to text, taking the passphrase prompt with it - every VM gets one unasked |
 
 ### Secure Boot

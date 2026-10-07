@@ -17,3 +17,8 @@ efibootmgr | awk -v uuid="$partuuid" '
     { line = tolower($0) }
     index(line, tolower(uuid)) && index(line, "\\efi\\systemd\\systemd-bootx64.efi") { found = 1 }
     END { exit !found }'
+
+# A console whose cursor the boot hides gets it back at the login.
+if grep -qs 'vt.global_cursor_default=0' "${MNT}/etc/kernel/cmdline" "${MNT}/boot/loader/entries/main.conf"; then
+    grep -qF '\e[?25h' "${MNT}/etc/issue.d/cursor.issue"
+fi

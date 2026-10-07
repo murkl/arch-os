@@ -350,8 +350,12 @@ sed -i 's/^timeout.*/timeout 0/' "${ISO_PROFILE}/efiboot/loader/loader.conf"
 # either way the first question is how to get back to it. Both files, because
 # they are shown at different moments: /etc/issue before the login, /etc/motd
 # after it.
+#
+# The boot hides the cursor on every console, and agetty reads \e as an escape:
+# the issue shows it again before each login.
+# https://wiki.archlinux.org/title/Silent_boot
 cat >"${ISO_PROFILE}/airootfs/etc/issue" <<'EOF'
-Arch OS live environment. Type installer or recovery to start again.
+\e[?25hArch OS live environment. Type installer or recovery to start again.
 
 EOF
 
