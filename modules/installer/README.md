@@ -49,7 +49,7 @@ Scripts run outside the work, one page at most each: `action.yaml` says how it b
 | --- | --- |
 | `offer-if` | `live-image`: a booted Arch Linux live image |
 | `start-if` | `root`, `uefi`, `secure-boot-off`, then `internet`, which opens `wifi` straight away where there is a card and waits for a cable otherwise |
-| `on-settings` | `wifi`: **Configure the wireless network** in the **Configuration**, offered if `wifi-card` finds a card and `no-cable` finds no internet over a cable. An open or known network joins as it is chosen; one that wants a passphrase opens `wifi-passphrase` on failure |
+| `on-settings` | `wifi`: **Configure Wi-Fi** in the **Configuration**, offered if `wifi-card` finds a card and `no-cable` finds no internet over a cable. An open or known network joins as it is chosen; one that wants a passphrase opens `wifi-passphrase` on failure |
 | `on-leave` | `restart`, `shutdown`: the two ways this machine is put down |
 | `on-failure` | `share-log`: the log of a run that failed, put online and drawn as a code |
 | `on-success` | `chroot`, `share-config`: a shell in the new system, and its answers put online - rows on the page a finished run ends on, which opens on **Continue** |

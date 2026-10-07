@@ -41,7 +41,7 @@ Every step after the first is optional.
 
 A broken network may be the problem, so this module never waits for one, and kernel images come from the local pacman cache. `root` is all the work requires - not firmware, since this machine is not what is being set up.
 
-It can join one all the same, for whatever somebody wants to fetch in the shell: `wifi` puts **Configure the wireless network** into its **Configuration** wherever there is a card and no internet over a cable - the same action the Installer has. On its own partition a cable comes up at boot and is preferred while both are up, and the wireless daemon starts once there is a card to ask it about. `restart` and `shutdown` are the ways out, and `share-log` puts the log of a repair that failed online for whoever is helping.
+It can join one all the same, for whatever somebody wants to fetch in the shell: `wifi` puts **Configure Wi-Fi** into its **Configuration** wherever there is a card and no internet over a cable - the same action the Installer has. On its own partition a cable comes up at boot and is preferred while both are up, and the wireless daemon starts once there is a card to ask it about. `restart` and `shutdown` are the ways out, and `share-log` puts the log of a repair that failed online for whoever is helping.
 
 ## Two Questions, and no more
 

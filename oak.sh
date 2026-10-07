@@ -726,8 +726,19 @@ options_locales() {
     sed -n 's/^\([a-z]\{2,3\}\(_[A-Z]\{2\}\)\{0,1\}\)\(\.UTF-8\)\{0,1\} UTF-8$/\1/p' /usr/share/i18n/SUPPORTED | sort -u
 }
 
-# Not Afar, the first row: the one locale generated either way.
-prefill_locale() { printf 'en_US'; }
+# The language the interface was set to, as the locale of its own country, read
+# from Oak's file beside the answers: de reads de_DE. Otherwise not Afar, the
+# first row, but the one locale generated either way.
+prefill_locale() {
+    local conf lang=""
+    conf="$(dirname "$MODULE_CONF")/oak.conf"
+    [ ! -f "$conf" ] || lang="$(sed -n "s/^OAK_LANG='\([a-z]\{2,3\}\)'.*/\1/p" "$conf")"
+    if [ -n "$lang" ] && grep -q "^${lang}_${lang^^}\(\.UTF-8\)\{0,1\} UTF-8$" /usr/share/i18n/SUPPORTED; then
+        printf '%s_%s' "$lang" "${lang^^}"
+        return 0
+    fi
+    printf 'en_US'
+}
 
 options_vconsole_keymaps() {
     printf 'auto\tauto — %s\n' "$(auto_keymap)"
