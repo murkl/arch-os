@@ -1,4 +1,4 @@
-# One workflow, and a commit is under exactly one run of it. Which job runs
+# One workflow, and a change is under exactly one run of it. Which job runs
 # when is the table in docs/CONTRIBUTING.md.
 
 name: CI
@@ -16,6 +16,10 @@ on:
       - .release-please-manifest.json
       - oak.yaml
   workflow_dispatch:
+  # Arch moves every day: the images are built, booted and installed on that
+  # Monday's packages, so a change upstream fails a run before a release.
+  schedule:
+    - cron: "23 4 * * 1"
 
 permissions: {}
 
@@ -169,6 +173,7 @@ jobs:
       ${{ !cancelled() && needs.check.result == 'success' && (
         needs.release.outputs.created == 'true'
         || github.event_name == 'workflow_dispatch'
+        || github.event_name == 'schedule'
         || (needs.check.outputs.image == 'true'
           && github.event.pull_request.head.repo.full_name == github.repository)
       ) }}
