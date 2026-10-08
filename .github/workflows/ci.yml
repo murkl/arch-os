@@ -262,7 +262,11 @@ jobs:
   desktop:
     name: Desktop
     needs: image
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    # !cancelled(), since the plain success() also asks of the release job
+    # behind the image, which these events skip.
+    if: >-
+      ${{ !cancelled() && needs.image.result == 'success'
+        && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-24.04
     # Above the install's own limit, so it fails first and says why.
     timeout-minutes: 150
