@@ -1,15 +1,17 @@
 #!/bin/bash
 # Walks a built ISO the whole way a person does, unattended: installs Arch OS
-# onto an empty disk, boots it, rolls it back with the Recovery and boots it
-# again. What smoke.sh proves up to the first page, this proves past it.
+# onto an empty disk, boots it, rolls it back with the Recovery, boots it again
+# and starts the Recovery on its own partition. What smoke.sh proves up to the
+# first page, this proves past it.
 #
 #   e2e.sh <image.iso>
 #
 # The live image is reached over ssh, by the cloud-init the Arch ISO carries;
 # the interface runs in tmux there, driven by its keys and read off its pane.
 # The installed system unlocks its disk from a systemd credential and is asked
-# over ssh, as the account the answers name. Needs qemu, OVMF, openssh and
-# xorriso - see README.md.
+# over ssh, as the account the answers name, and the Recovery on its partition
+# is read off the screen. Needs qemu, OVMF, openssh, xorriso and tesseract - see
+# README.md.
 set -eu
 
 ISO="${1:-}"
@@ -37,7 +39,7 @@ USERNAME=tux
 PASSWORD=e2e-arch-os
 DISK=/dev/vda
 
-for tool in qemu-system-x86_64 qemu-img ssh ssh-keygen xorriso setsid; do
+for tool in qemu-system-x86_64 qemu-img ssh ssh-keygen xorriso setsid tesseract; do
     command -v "$tool" >/dev/null || { echo "Error: ${tool} not found - see README.md" >&2 && exit 1; }
 done
 [ -f "$OVMF_CODE" ] || { echo "Error: no OVMF firmware at ${OVMF_CODE} - install edk2-ovmf" >&2 && exit 1; }
@@ -257,6 +259,25 @@ shutdown_installed() {
     stopped
 }
 
+# The Recovery on its partition, started the way its launcher on the desktop
+# starts it. It has to pass Secure Boot with this machine's keys, find and check
+# its partition and open on its menu, in the language the Installer was read in.
+recovery_menu() {
+    local deadline=$((SECONDS + BOOT_TIMEOUT)) shot="${WORK}/recovery.png"
+    as_root systemctl reboot --boot-loader-entry=arch-os-recovery.efi || true
+    rm -f "$shot"
+    until [ -s "$shot" ] && tesseract "$shot" - --psm 6 2>/dev/null | grep -qE 'Setup|Start'; do
+        kill -0 "$QEMU_PID" 2>/dev/null || fail "the machine stopped before the Recovery came up"
+        [ "$SECONDS" -lt "$deadline" ] || fail "the Recovery on its partition did not open on its menu within ${BOOT_TIMEOUT}s"
+        rm -f "$shot"
+        printf 'screendump %s -f png\n' "$shot" >&3
+        sleep 10
+    done
+    say "Recovery: started from its partition, on its menu"
+    printf 'quit\n' >&3
+    stopped
+}
+
 # ////////////////////////////////////////////////////////////////////////////
 # THE RUN
 # ////////////////////////////////////////////////////////////////////////////
@@ -340,6 +361,6 @@ stopped
 
 start disk
 healthy
-shutdown_installed
+recovery_menu
 
-say "Arch OS installs, boots, repairs and boots again"
+say "Arch OS installs, boots, repairs, boots again and starts its Recovery"

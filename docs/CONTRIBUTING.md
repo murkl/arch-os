@@ -72,7 +72,7 @@ Nothing is typed and nothing is tagged by hand.
 | --- | --- | --- |
 | `Title` | a pull request opened, pushed to or edited | Reads the title |
 | `Check` | every run | `make check` |
-| `Image` | a pull request that reaches the image, a release, on demand | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO |
+| `Image` | a pull request that reaches the image, a release, on demand | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO, then starts its Recovery |
 | `Ready` | a pull request | Every job it needed has passed. Clears the pictures' commit, which starts no run |
 | `Release` | a push to `main` | The release pull request, cleared to merge, or once that is merged, the tag and the draft page |
 | `Pictures` | a pull request | Renders the pictures in the docs onto its branch, at the release it leads to, where it changes what they show or that release |
@@ -93,7 +93,7 @@ make tarball           # the release, as a stock Arch ISO downloads it
 make iso               # the release, as the Recovery image and the ISO that carries it
 make image             # ...only the images, out of a release already in dist/
 make smoke             # boot the newest of both and wait for their first page
-make e2e               # install the newest ISO, boot it, repair it and boot it again
+make e2e               # install the newest ISO, boot it, repair it, boot it again and start its Recovery
 make locales           # every translation template, brought up to date
 make oak               # fetch the runtime again, at the release OAK_VERSION names
 make clean             # every build output, taken back; the runtime stays
