@@ -459,7 +459,7 @@ variables:
   - name: ARCH_OS_FLATPAK_ENABLED
     type: bool
     title: Flatpak
-    description: Applications from Flathub, installed and updated through GNOME Software.
+    description: Applications from Flathub, installed and updated through GNOME Software. Parental Controls need it.
     group: Desktop
     default: true
     conditions: ARCH_OS_DESKTOP != none

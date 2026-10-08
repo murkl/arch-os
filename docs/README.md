@@ -137,7 +137,7 @@ sudo cryptsetup luksChangeKey /dev/<partition>
 ### More Accounts
 
 - **At installation:** **Separate disk password**. There is no automatic login, and the login screen lists every account
-- **Afterwards:** **Settings ➜ System ➜ Users ➜ Add User**. **Parental Controls** there limits what a standard account may use
+- **Afterwards:** **Settings ➜ System ➜ Users ➜ Add User**. **Parental Controls** there limits what a standard account may use. It comes with **Flatpak**, which it needs
 - **On the text console:** `sudo useradd -m <name>`, then `sudo passwd <name>`
 
 **Note:** _On a shared machine with one password, switch automatic login off in **Settings ➜ System ➜ Users**. What Arch OS sets up at the first login is for the account it installed._

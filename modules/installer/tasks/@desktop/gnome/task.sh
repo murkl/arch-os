@@ -29,6 +29,7 @@ while read -r scope name; do
     case "$scope" in '' | \#*) continue ;; esac
     case "$scope" in
     slim) [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "true" ] || continue ;;
+    no-flatpak) [ "$ARCH_OS_FLATPAK_ENABLED" != "true" ] || continue ;;
     esac
     left_out+=("$name")
 done <"${data}/left-out"

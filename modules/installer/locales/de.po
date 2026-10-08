@@ -483,8 +483,8 @@ msgstr "Flatpak"
 
 #. ARCH_OS_FLATPAK_ENABLED: what it means
 #: module.yaml
-msgid "Applications from Flathub, installed and updated through GNOME Software."
-msgstr "Anwendungen von Flathub, installiert und aktualisiert über GNOME Software."
+msgid "Applications from Flathub, installed and updated through GNOME Software. Parental Controls need it."
+msgstr "Anwendungen von Flathub, installiert und aktualisiert über GNOME Software. Der Jugendschutz setzt es voraus."
 
 #. ARCH_OS_SAMBA_SHARE_ENABLED: the question
 #: module.yaml

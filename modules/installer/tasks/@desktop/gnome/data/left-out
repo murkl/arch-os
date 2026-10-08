@@ -2,12 +2,14 @@
 # condition they are left out under. Anything another member actually depends
 # on still arrives as a dependency.
 #
-# always   every desktop install
-# slim     only with the slim desktop
+# always      every desktop install
+# slim        only with the slim desktop
+# no-flatpak  only without Flatpak, which it depends on
 #
 # The browser is a question of its own, and the browser task installs the one
 # that was chosen - GNOME Web among them.
 always epiphany
+no-flatpak malcontent
 slim gnome-calendar
 slim gnome-maps
 slim gnome-contacts
