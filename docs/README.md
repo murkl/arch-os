@@ -34,7 +34,7 @@
 - Zram, fstrim, microcode, NetworkManager, mirrors ranked by country
 - AUR helper, 32-bit support, containers, firewall, SSH, housekeeping
 - Text editor of your choice: nano, vim, neovim, micro or helix
-- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), System Manager, Shell Enhancement (zsh)
+- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), [Arch OS Manager](https://github.com/murkl/arch-os-manager), Shell Enhancement (zsh)
 - Recovery in the boot menu and on the ISO
 - Create boot medium on any Linux machine
 - Wireless network in the Installer and the Recovery
@@ -97,9 +97,9 @@ On a partition of every installation. Hold **space** while the machine starts an
 
 ## Maintenance
 
-<p><img src="screenshots/manager_menu.png" alt="The Arch OS System Manager"></p>
+<p><img src="screenshots/manager_menu.png" alt="The Arch OS Manager"></p>
 
-Mostly automatic through the **Arch OS System Manager**. By hand:
+Mostly automatic through the **[Arch OS Manager](https://github.com/murkl/arch-os-manager)**. By hand:
 
 - Read the **[Arch Linux News](https://www.archlinux.org/news)** before upgrading
 - Roll back with the **[Recovery](#recovery)** - **[➜ Rolling Back](REFERENCE.md#rolling-back)**
@@ -115,7 +115,7 @@ Mostly automatic through the **Arch OS System Manager**. By hand:
   <p><div><img src="screenshots/bootsplash.png"></div><sub><i>Bootsplash</i></sub></p>
   <p><div><img src="screenshots/starship.png"></div><sub><i>Shell Enhancement</i></sub></p>
   <p><div><img src="screenshots/fastfetch.png"></div><sub><i>Fetch</i></sub></p>
-  <p><div><img src="screenshots/manager_dashboard.png"></div><sub><i>System Manager</i></sub></p>
+  <p><div><img src="screenshots/manager_dashboard.png"></div><sub><i>Arch OS Manager</i></sub></p>
 </div>
 
 </details>

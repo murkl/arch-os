@@ -2,7 +2,7 @@
 # the default branch, like every other change.
 #
 # The runtime is not a dependency Dependabot can see: it is downloaded from its
-# own project at build time — see the root Makefile.
+# own project at build time - see the root Makefile.
 
 version: 2
 

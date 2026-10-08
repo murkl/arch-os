@@ -35,7 +35,7 @@ jobs:
           TITLE: ${{ github.event.pull_request.title }}
         run: |
           if ! grep -qE '^(feat|fix|perf|refactor|docs|test|build|ci|chore|revert)(\([^)]+\))?!?: .' <<<"$TITLE"; then
-            echo "::error::'${TITLE}' opens on no type — feat:, fix:, feat!: … see docs/CONTRIBUTING.md"
+            echo "::error::'${TITLE}' opens on no type - feat:, fix:, feat!: … see docs/CONTRIBUTING.md"
             exit 1
           fi
           printf 'This title reads as a release line:\n\n    %s\n' "$TITLE" >>"$GITHUB_STEP_SUMMARY"

@@ -164,7 +164,7 @@ make banner        # the banner, out of two of them
 - They need `chromium`, `imagemagick`, `python-pyte`, `python-yaml` and `ttf-firacode-nerd`, none of which a build or `make check` needs, and systemd as PID 1, which `localectl` and `timedatectl` ask. CI renders in an Arch container booted with systemd: **[pictures.sh](../.github/pictures.sh)**
 - A pull request's title raises the release the pictures name: a `feat:` on top of pending fixes renders the next minor
 - Every run is started with `--debug`, so nothing is partitioned, mounted or restarted. Which pages are taken and every answer given is **[screenshots.yaml](screenshots.yaml)**
-- Only `welcome.png`, `setup.png`, `installer.png`, `installing.png` and `recovery.png` are drawn this way. The boot splash, the shell, the fetch and the System Manager are photographs of a running system, taken by hand
+- Only `welcome.png`, `setup.png`, `installer.png`, `installing.png` and `recovery.png` are drawn this way. The boot splash, the shell, the fetch and the Arch OS Manager are photographs of a running system, taken by hand
 - `installing.png` and `recovery.png` catch a run while it is going, so they differ from run to run
 
 ## The Repository
