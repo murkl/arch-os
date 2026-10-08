@@ -37,11 +37,12 @@ product_dir() { dirname "${BASH_SOURCE[0]}"; }
 release_version() { sed -n 's/^version:[[:space:]]*//p' "$(product_dir)/oak.yaml"; }
 
 # The download of that release whose name ends in $1 and its sha256, as two
-# words, or nothing where the release is out of reach.
+# words, or nothing where the release is out of reach. One field to a line,
+# however GitHub lays the JSON out.
 release_asset() {
     local json
     json="$(fetch_url -s --max-time 20 "https://api.github.com/repos/${REPO}/releases/tags/v$(release_version)" || true)"
-    printf '%s\n' "$json" | awk -v suffix="$1" '
+    printf '%s\n' "$json" | tr ',' '\n' | awk -v suffix="$1" '
         function weigh() {
             if (!found && url != "" && substr(url, length(url) - length(suffix) + 1) == suffix) { found = 1; print url, digest }
             url = ""; digest = ""

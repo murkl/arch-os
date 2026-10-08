@@ -47,9 +47,9 @@ printf '\n\033[34m// Arch OS\033[0m\n'
 # unreachable GitHub and a release without a program say different things.
 release="$(fetch -Lfs "https://api.github.com/repos/${REPO}/releases/latest")" || fail "Cannot reach GitHub"
 
-# Each asset is weighed when the next one begins, whatever order its fields
-# come in.
-asset="$(printf '%s\n' "$release" | awk '
+# One field to a line, however GitHub lays the JSON out, and each asset weighed
+# when the next one begins, whatever order its fields come in.
+asset="$(printf '%s\n' "$release" | tr ',' '\n' | awk '
     function weigh() {
         if (!found && url ~ /\.tar\.gz$/) { found = 1; print url, digest }
         url = ""; digest = ""
