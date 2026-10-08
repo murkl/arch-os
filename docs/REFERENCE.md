@@ -4,6 +4,24 @@ What Arch OS puts on a disk, and why. The scripts say *what*; this says *why*, s
 
 **Note:** _What a module's YAML may declare is the **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**. This file is about Arch Linux._
 
+## Starting Arch OS
+
+| From | How |
+| --- | --- |
+| The Arch OS ISO | Starts on its own. `installer` or `recovery` on another console (**Ctrl+Alt+F2**) |
+| An official **[Arch Linux ISO](https://archlinux.org/download/)** | `curl -Ls https://bit.ly/archos \| bash` |
+| Any other Linux | The same command, for **Create boot medium** |
+
+- `--language=de` skips the language page: `… | bash -s -- --language=de`, or `installer --language=de`
+- The release unpacks to `XDG_DOWNLOAD_DIR` or `~/Downloads`, `… | DOWNLOAD_DIR=<dir> bash` for another
+
+### Reusing Answers
+
+Every answer lands in `installer.conf` as it is given, so an interrupted run resumes. A password never does.
+
+- **Share:** from the page a finished run ends on, to **[paste.rs](https://paste.rs)**. The next installation starts from its code and asks only for the disk
+- **Copy:** put `installer.conf` beside the Installer on another machine
+
 ## Partitions
 
 UEFI only, GPT, the whole disk for Arch OS: it is the only system on it.
@@ -87,7 +105,14 @@ Keys enroll only in **setup mode** - "Secure Boot disabled" is not that. `-m` ke
 
 **Note:** _systemd-boot's editor is off on every installation, signed or not - an editable command line is a root shell for whoever sits at the machine, past the password and past Secure Boot. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Systemd-boot#Loader_configuration)**_
 
-**Note:** _Switching Secure Boot on is the firmware's own step - **[➜ installation step 5](README.md#5-switch-secure-boot-on)**._
+#### Switching It On
+
+After the first start, where it was left on in **Setup**:
+
+| `sbctl status` says | Do |
+| --- | --- |
+| `✓` | Restart, switch Secure Boot on in the firmware |
+| `✗` | Clear the Secure Boot keys in the firmware (setup mode), then `sudo sbctl enroll-keys -m`, restart, switch it on |
 
 ### The Initial Ram Disk
 
@@ -122,7 +147,31 @@ Swap is **zram** always, tweaks or not. **[➜ Zram](https://wiki.archlinux.org/
 
 One account, in `wheel`, with `sudo`. Root keeps the `*` Arch ships, so nothing logs in as root: a password for it would only be a second way to the same rights. systemd's emergency shell does not open without one either, and the **[Recovery](#the-recovery)** is the way into a system that no longer starts.
 
-Automatic login only behind disk encryption with one password. `pam_gdm` hands the passphrase typed at boot to the keyring, so the keyring has to carry the disk password, and only with one password is that the account's as well. With **Separate disk password** the login asks, and the keyring carries the account password. How to put it right after a change: **[➜ The Keyring](README.md#the-keyring)**. **[➜ Arch Wiki](https://wiki.archlinux.org/title/GNOME/Keyring#PAM_step)**
+- **One password** unlocks the disk and logs you in
+- **Separate disk password** gives the disk one of its own. The login screen asks for yours, and every account has its own: the setup for a shared machine
+
+Automatic login only behind disk encryption with one password. `pam_gdm` hands the passphrase typed at boot to the keyring, so the keyring has to carry the disk password, and only with one password is that the account's as well. With **Separate disk password** the login asks, and the keyring carries the account password. **[➜ Arch Wiki](https://wiki.archlinux.org/title/GNOME/Keyring#PAM_step)**
+
+### The Keyring
+
+Where the keyring's password and the login's differ, it asks after the login. **Passwords and Keys** puts it right: **Login** ➜ **Change Password**.
+
+| After | Set the keyring's password to |
+| --- | --- |
+| Changing the disk password, with automatic login | The new disk password |
+| Changing the account password, logging in with it | The new account password |
+| Switching automatic login on, with a separate disk password | The disk password |
+| Switching automatic login off, with two different passwords | The account password |
+
+The disk password belongs to the partition `lsblk -f` lists as `crypto_LUKS`: `sudo cryptsetup luksChangeKey /dev/<partition>`.
+
+### More Accounts
+
+- **At installation:** **Separate disk password**. No automatic login, and the login screen lists every account
+- **Afterwards:** **Settings ➜ System ➜ Users ➜ Add User**. **Parental Controls** there limits a standard account, and comes with **Flatpak**
+- **On the text console:** `sudo useradd -m <name>`, then `sudo passwd <name>`
+
+**Note:** _On a shared machine with one password, switch automatic login off in **Settings ➜ System ➜ Users**. What Arch OS sets up at the first login is for the account it installed._
 
 ## Packages
 
@@ -277,6 +326,9 @@ Two are written whole:
 **Note:** _`/etc/hosts` is not written. `filesystem` ships `localhost`, and `nss-myhostname` answers for the hostname._
 
 ## The Recovery
+
+- From its partition: **Arch OS Recovery** in the boot menu, or **Recovery** among the applications. It starts with Secure Boot on
+- From the ISO: `recovery` on another console (**Ctrl+Alt+F2**). Secure Boot off to boot it, on again afterwards
 
 Two questions - keyboard, disk - and on its own partition not even those, see below. Everything else is read, not asked:
 
