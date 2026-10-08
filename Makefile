@@ -109,6 +109,9 @@ POSIX_SCRIPTS := get.sh .github/settings.sh
 # Bash: what builds and boots the images, and what they run.
 ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_E2E) $(ISO_GLYPHS) $(ISO_FONT) $(wildcard $(ISO_DIR)/src/usr/local/bin/* $(ISO_DIR)/recovery/airootfs/usr/local/bin/*)
 
+# Bash: what renders the pictures in docs/.
+DOCS_RENDER := docs/render.sh
+
 # Every module script with the library they share, and every module yaml.
 MODULE_SCRIPTS = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -name '*.sh')
 MODULE_YAML    = $(shell find $(MODULES_DIR) -name '*.yaml')
@@ -140,8 +143,9 @@ SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 
 # The pictures in docs/, generated so they cannot drift: the screenshots by
 # driving the modules with --debug, the banner out of two of them. Which pages
-# is docs/screenshots.yaml. They need chromium, imagemagick, python-pyte and
-# python-yaml, so they stay out of `check`.
+# is docs/screenshots.yaml. On this machine they need chromium, imagemagick,
+# python-pyte and python-yaml, so they stay out of `check`. The release pull
+# request renders them at the version it raises.
 BANNER_CARDS   := docs/screenshots/installer.png docs/screenshots/installing.png
 BANNER_TAGLINE := Install Arch Linux with ease — as a desktop or a TTY system. Installer and Recovery on one image.
 BANNER_CELL    := 9
@@ -303,12 +307,12 @@ locales-check: dev
 #     checks nothing
 lint:
 	shellcheck -s sh -S style $(POSIX_SCRIPTS)
-	shellcheck -S style $(ISO_SCRIPTS) $(MODULE_PROGRAMS)
+	shellcheck -S style $(ISO_SCRIPTS) $(DOCS_RENDER) $(MODULE_PROGRAMS)
 	shellcheck -x -S style $(MODULE_SCRIPTS)
 	shellcheck -s bash -S style -e SC1091 $(MODULE_SHELL)
 	for file in $(MODULE_ZSH); do zsh -n "$$file"; done
 	shfmt -d -ln posix -i 4 $(POSIX_SCRIPTS)
-	shfmt -d -i 4 $(ISO_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
+	shfmt -d -i 4 $(ISO_SCRIPTS) $(DOCS_RENDER) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
 	yamllint .
 	actionlint
 	zizmor --offline --persona auditor .github
@@ -322,7 +326,7 @@ lint:
 
 fmt:
 	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)
-	shfmt -w -i 4 $(ISO_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
+	shfmt -w -i 4 $(ISO_SCRIPTS) $(DOCS_RENDER) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
 
 # A console font holds one table of glyphs, and a character outside it is a box
 # on screen. Asked of the runtime, after locales-check.
@@ -367,8 +371,10 @@ banner:
 		--tagline "$(BANNER_TAGLINE)" \
 		--cell $(BANNER_CELL)
 
-# The banner collages the screenshots, so it comes after them.
-docs: screenshots banner
+# Both, the banner after the screenshots it collages, in an Arch container as
+# the release renders them. Needs docker.
+docs:
+	$(DOCS_RENDER) $(CURDIR)
 
 # mkarchiso writes as root. The plain removal comes first, so an ordinary clean
 # asks for no password.
