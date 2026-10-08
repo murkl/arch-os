@@ -23,14 +23,30 @@ PRODUCT       := oak.yaml
 PRODUCT_SHELL := oak.sh
 MODULES_DIR   := modules
 
-# This project's version, which everything is named after. The release run
-# raises it; nobody writes it.
-VERSION := $(shell sed -n 's/^version:[[:space:]]*//p' $(PRODUCT))
+# The last release. The release run raises it; nobody writes it.
+RELEASED := $(shell sed -n 's/^version:[[:space:]]*//p' $(PRODUCT))
 
 # The same number as release-please remembers it, read back so the two cannot
 # drift.
-MANIFEST := .release-please-manifest.json
-RELEASED := $(shell sed -n 's/.*"\.":[[:space:]]*"\([^"]*\)".*/\1/p' $(MANIFEST))
+MANIFEST   := .release-please-manifest.json
+REMEMBERED := $(shell sed -n 's/.*"\.":[[:space:]]*"\([^"]*\)".*/\1/p' $(MANIFEST))
+
+# The next release: the one the open release pull request raises to, as origin
+# was last fetched, or the smallest after the last. A release branch no newer
+# than the last release is one already merged.
+RELEASE_BRANCH := origin/release-please--branches--main
+PENDING := $(shell git show $(RELEASE_BRANCH):$(MANIFEST) 2>/dev/null | sed -n 's/.*"\.":[[:space:]]*"\([^"]*\)".*/\1/p')
+NEXT    := $(shell printf '%s\n' '$(RELEASED)' '$(PENDING)' | sort -V | tail -n1)
+ifeq ($(NEXT),$(RELEASED))
+NEXT := $(shell echo '$(RELEASED)' | awk -F. '{ print $$1 "." $$2 "." $$3 + 1 }')
+endif
+
+# What a build is named after: the release it is, which the run that tags it
+# hands in as `VERSION=`, or the next release as a pre-release of it. Never a
+# release's own number on anything else. Only the command line sets it.
+ifneq ($(origin VERSION),command line)
+VERSION := $(NEXT)-dev
+endif
 
 # The folders in modules/: adding a module is adding a folder.
 MODULES := $(notdir $(wildcard $(MODULES_DIR)/*))
@@ -109,8 +125,7 @@ POSIX_SCRIPTS := get.sh .github/settings.sh
 # Bash: what builds and boots the images, and what they run.
 ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_E2E) $(ISO_GLYPHS) $(ISO_FONT) $(wildcard $(ISO_DIR)/src/usr/local/bin/* $(ISO_DIR)/recovery/airootfs/usr/local/bin/*)
 
-# Bash: what renders the pictures in docs/, and what hands them to a release.
-DOCS_RENDER      := docs/render.sh
+# Bash: what renders the pictures in docs/ onto a branch.
 RELEASE_PICTURES := .github/pictures.sh
 
 # Every module script with the library they share, and every module yaml.
@@ -145,14 +160,14 @@ SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 # The pictures in docs/, generated so they cannot drift: the screenshots by
 # driving the modules with --debug, the banner out of two of them. Which pages
 # is docs/screenshots.yaml. On this machine they need chromium, imagemagick,
-# python-pyte and python-yaml, so they stay out of `check`. The release pull
-# request renders them at the version it raises.
+# python-pyte and python-yaml, so they stay out of `check`. CI renders the ones
+# committed, onto the branch they describe - see .github/pictures.sh.
 BANNER_CARDS   := docs/screenshots/installer.png docs/screenshots/installing.png
 BANNER_TAGLINE := Install Arch Linux with ease — as a desktop or a TTY system. Installer and Recovery on one image.
 BANNER_CELL    := 9
 
 .PHONY: all oak oak-check build dev run inspect tarball image iso smoke e2e locales \
-	locales-check glyphs-check data-check actions-check lint fmt check version-check \
+	locales-check glyphs-check data-check actions-check lint fmt check version-check version-name \
 	secrets-check github screenshots banner docs clean
 
 # build empties the release that everything packaging it reads.
@@ -193,13 +208,29 @@ oak:
 	rm -rf $(OAK_DIR)
 	$(MAKE) oak-check
 
+# oak.yaml under the name this build goes by, written beside and moved over
+# whatever lies there, so a link in its place is replaced rather than written
+# through to the source.
+define stamp
+sed 's/^version:.*/version: $(VERSION)/' $(PRODUCT) >$(1)/$(PRODUCT).part
+grep -qx 'version: $(VERSION)' $(1)/$(PRODUCT).part
+mv -f $(1)/$(PRODUCT).part $(1)/$(PRODUCT)
+endef
+
+# A name handed in is a version, and a release's number only on that release.
+version-name:
+	@echo "$(VERSION)" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$$' \
+		|| { echo "'$(VERSION)' is not a version" >&2; exit 1; }
+	@case "$(VERSION)" in *-*|$(RELEASED)) ;; *) \
+		echo "$(VERSION) is a release's number, and this is $(RELEASED) - a build is named after its own release or a pre-release of the next" >&2; exit 1 ;; esac
+
 # The runtime, the product and a clean copy of every module. Templates, table
 # checks and linter configs go out again: none of them runs.
-build: oak-check
+build: oak-check version-name
 	rm -rf $(RELEASE_DIR)
 	mkdir -p $(RELEASE_DIR)
 	install -m 755 $(OAK_BIN) $(RELEASE_DIR)/$(APP)
-	install -m 644 $(PRODUCT) $(RELEASE_DIR)/$(PRODUCT)
+	$(call stamp,$(RELEASE_DIR))
 	install -m 644 $(PRODUCT_SHELL) $(RELEASE_DIR)/$(PRODUCT_SHELL)
 	for m in $(MODULES); do \
 		dest=$(RELEASE_DIR)/$(MODULES_DIR)/$$m; \
@@ -215,7 +246,7 @@ build: oak-check
 # resolves its own path before looking beside itself.
 dev: oak-check
 	@mkdir -p $(DEV_DIR)
-	@ln -sfn ../$(PRODUCT) $(DEV_DIR)/$(PRODUCT)
+	@$(call stamp,$(DEV_DIR))
 	@ln -sfn ../$(PRODUCT_SHELL) $(DEV_DIR)/$(PRODUCT_SHELL)
 	@ln -sfn ../$(MODULES_DIR) $(DEV_DIR)/$(MODULES_DIR)
 	@install -m 755 $(OAK_BIN) $(DEV_DIR)/$(APP)
@@ -277,10 +308,10 @@ locales: dev
 # A tag is matched against the version, so anything but X.Y.Z, or two files
 # that disagree, is refused here rather than at a release.
 version-check:
-	@echo "$(VERSION)" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$$' \
-		|| { echo "$(PRODUCT) declares '$(VERSION)', which is not a version" >&2; exit 1; }
-	@[ "$(VERSION)" = "$(RELEASED)" ] \
-		|| { echo "$(PRODUCT) says $(VERSION), $(MANIFEST) says $(RELEASED) - the release run writes both" >&2; exit 1; }
+	@echo "$(RELEASED)" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$$' \
+		|| { echo "$(PRODUCT) declares '$(RELEASED)', which is not a version" >&2; exit 1; }
+	@[ "$(RELEASED)" = "$(REMEMBERED)" ] \
+		|| { echo "$(PRODUCT) says $(RELEASED), $(MANIFEST) says $(REMEMBERED) - the release run writes both" >&2; exit 1; }
 
 # This is installed by piping a script into a shell.
 secrets-check:
@@ -308,12 +339,12 @@ locales-check: dev
 #     checks nothing
 lint:
 	shellcheck -s sh -S style $(POSIX_SCRIPTS)
-	shellcheck -S style $(ISO_SCRIPTS) $(DOCS_RENDER) $(RELEASE_PICTURES) $(MODULE_PROGRAMS)
+	shellcheck -S style $(ISO_SCRIPTS) $(RELEASE_PICTURES) $(MODULE_PROGRAMS)
 	shellcheck -x -S style $(MODULE_SCRIPTS)
 	shellcheck -s bash -S style -e SC1091 $(MODULE_SHELL)
 	for file in $(MODULE_ZSH); do zsh -n "$$file"; done
 	shfmt -d -ln posix -i 4 $(POSIX_SCRIPTS)
-	shfmt -d -i 4 $(ISO_SCRIPTS) $(DOCS_RENDER) $(RELEASE_PICTURES) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
+	shfmt -d -i 4 $(ISO_SCRIPTS) $(RELEASE_PICTURES) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
 	yamllint .
 	actionlint
 	zizmor --offline --persona auditor .github
@@ -327,7 +358,7 @@ lint:
 
 fmt:
 	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)
-	shfmt -w -i 4 $(ISO_SCRIPTS) $(DOCS_RENDER) $(RELEASE_PICTURES) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
+	shfmt -w -i 4 $(ISO_SCRIPTS) $(RELEASE_PICTURES) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
 
 # A console font holds one table of glyphs, and a character outside it is a box
 # on screen. Asked of the runtime, after locales-check.
@@ -372,10 +403,10 @@ banner:
 		--tagline "$(BANNER_TAGLINE)" \
 		--cell $(BANNER_CELL)
 
-# Both, the banner after the screenshots it collages, in an Arch container as
-# the release renders them. Needs docker.
+# The banner collages the screenshots, so it comes after them.
 docs:
-	$(DOCS_RENDER) $(CURDIR)
+	$(MAKE) screenshots
+	$(MAKE) banner
 
 # mkarchiso writes as root. The plain removal comes first, so an ordinary clean
 # asks for no password.

@@ -27,6 +27,17 @@ from collections import defaultdict
 W, H = 1280, 640
 SCALE = 2
 
+# The banner's own size, 16:9 like the screen it is shown on, and that screen's
+# width on the page. The monitor and its stand are measured around it.
+SW, SH = 1120, 630
+SCREEN = 864
+BEZEL = 11
+RIM = 2
+MONITOR_TOP = 30
+NECK, NECK_W = 58, 150
+FOOT = 236
+
+STAGE = "#15181d"
 BACK = "#232830"  # a shade under Nord polar night, so the cards lift off it
 TEXT = "#d8dee9"
 MUTED = "rgba(216,222,233,.42)"
@@ -169,6 +180,10 @@ def data_uri(path):
 
 
 # --- the page ------------------------------------------------------------
+#
+# The banner is the screen of a monitor standing on a dark stage. It is laid
+# out at a 16:9 size of its own and scaled onto the screen, so the wordmark
+# keeps the cell size the project passes in.
 
 
 def page(args):
@@ -177,14 +192,76 @@ def page(args):
     accent = field(args.product, "accent")
     mark = args.logo.read_text().split("-->", 1)[-1].strip()
     back, front = (data_uri(p) for p in args.card)
+
+    frame = BEZEL + RIM
+    screen_h = SCREEN * SH // SW
+    mw, mh = SCREEN + 2 * frame, screen_h + 2 * frame
+    mx, my = (W - mw) // 2, MONITOR_TOP
+    neck_top = my + mh - 8
+    foot_top = neck_top + NECK
     return f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>
   * {{ margin:0; padding:0; box-sizing:border-box; }}
   html,body {{ width:{W}px; height:{H}px; overflow:hidden; }}
   body {{
-    background:{BACK};
+    background:{STAGE};
     font-family:"FiraCode Nerd Font Mono", ui-monospace, monospace;
     position:relative;
+  }}
+
+  /* The stage, lit only by the screen's glow on the wall behind it. */
+  .stage {{
+    position:absolute; inset:0;
+    background:radial-gradient(46% 58% at 50% 44%, {accent}22, transparent 72%);
+  }}
+
+  /* The stand: an aluminium arm, narrower where it leans back, on a thin foot
+     with its shadow on the floor. */
+  .floor {{
+    position:absolute; left:{(W - FOOT * 1.7) / 2}px; top:{foot_top - 4}px;
+    width:{FOOT * 1.7}px; height:34px;
+    background:radial-gradient(closest-side, rgba(0,0,0,.62), transparent);
+  }}
+  .neck {{
+    position:absolute; left:{(W - NECK_W) / 2}px; top:{neck_top}px;
+    width:{NECK_W}px; height:{NECK + 2}px;
+    clip-path:polygon(7% 0, 93% 0, 100% 100%, 0 100%);
+    background:linear-gradient(180deg, #4a4e55 0%, #8e939a 34%, #c4c8cd 100%);
+  }}
+  .foot {{
+    position:absolute; left:{(W - FOOT) / 2}px; top:{foot_top}px;
+    width:{FOOT}px; height:10px; border-radius:3px;
+    background:linear-gradient(180deg, #f2f3f5 0 1px, #c9cdd2 1px 40%, #8a8f96 100%);
+    box-shadow:0 8px 14px -6px rgba(0,0,0,.7);
+  }}
+
+  /* The monitor: a hairline of aluminium around black glass, lifted off the
+     stage by two shadows, a near one and a far one. */
+  .monitor {{
+    position:absolute; left:{mx}px; top:{my}px; width:{mw}px; height:{mh}px;
+    padding:{RIM}px; border-radius:16px;
+    background:linear-gradient(180deg, #e6e8eb, #9fa4ab);
+    box-shadow:0 46px 80px -30px rgba(0,0,0,.8), 0 16px 28px -14px rgba(0,0,0,.6);
+  }}
+  .glass {{
+    position:relative; width:100%; height:100%; padding:{BEZEL}px;
+    border-radius:{16 - RIM}px; background:#0a0b0d;
+  }}
+  .camera {{
+    position:absolute; left:50%; top:{(BEZEL - 4) / 2}px;
+    width:4px; height:4px; margin-left:-2px; border-radius:50%;
+    background:#1b1e24; box-shadow:inset 0 0 0 1px #2b3038;
+  }}
+  .screen {{
+    position:relative; width:{SCREEN}px; height:{screen_h}px;
+    overflow:hidden; border-radius:3px;
+  }}
+
+  /* The banner on the screen. */
+  .banner {{
+    position:absolute; left:0; top:0; width:{SW}px; height:{SH}px;
+    transform:scale({SCREEN / SW}); transform-origin:0 0;
+    background:{BACK};
   }}
 
   /* The field: a faint grid, a glow behind the cards, a vignette. No scan
@@ -210,8 +287,8 @@ def page(args):
 
   /* the name */
   .said {{
-    position:absolute; left:76px; top:50%; transform:translateY(-50%);
-    width:560px; z-index:5;
+    position:absolute; left:64px; top:50%; transform:translateY(-50%);
+    width:480px; z-index:5;
   }}
   .mark, .mark svg {{ width:64px; height:64px; display:block; }}
   /* a selector, so a mark drawn in currentColor takes the product's accent
@@ -225,7 +302,7 @@ def page(args):
   .rule {{ width:52px; height:3px; background:{accent}; margin-top:28px; }}
   .tag {{
     margin-top:22px; font-size:17px; line-height:1.62; color:{TEXT};
-    max-width:500px; letter-spacing:-.005em;
+    max-width:470px; letter-spacing:-.005em;
   }}
 
   /* the collage */
@@ -234,28 +311,39 @@ def page(args):
     position:absolute; display:block; border-radius:12px;
     box-shadow:0 26px 60px rgba(0,0,0,.55), 0 0 0 1px {accent}2e;
   }}
-  .back  {{ width:596px; left:700px; top:26px; opacity:.66; }}
-  .front {{ width:648px; left:664px; top:274px; }}
+  .back  {{ width:520px; left:612px; top:26px; opacity:.66; }}
+  .front {{ width:566px; left:584px; top:258px; }}
   .fade {{
     position:absolute; inset:0; z-index:3; pointer-events:none;
-    background:linear-gradient(90deg, {BACK} 0 26%, {BACK}00 52%);
+    background:linear-gradient(90deg, {BACK} 0 30%, {BACK}00 56%);
   }}
 </style></head><body>
-  <div class="glow"></div>
-  <div class="grid"></div>
-  <div class="cards">
-    <img class="back" src="{back}" alt="">
-    <img class="front" src="{front}" alt="">
-  </div>
-  <div class="fade"></div>
-  <div class="vig"></div>
-  <div class="said">
-    <span class="mark">{mark}</span>
-    <div class="eyebrow">{eyebrow.strip()}</div>
-    {wordmark(art.rstrip(), accent, args.cell)}
-    <div class="rule"></div>
-    <div class="tag">{args.tagline}</div>
-  </div>
+  <div class="stage"></div>
+  <div class="floor"></div>
+  <div class="neck"></div>
+  <div class="foot"></div>
+  <div class="monitor"><div class="glass">
+    <span class="camera"></span>
+    <div class="screen">
+      <div class="banner">
+        <div class="glow"></div>
+        <div class="grid"></div>
+        <div class="cards">
+          <img class="back" src="{back}" alt="">
+          <img class="front" src="{front}" alt="">
+        </div>
+        <div class="fade"></div>
+        <div class="vig"></div>
+        <div class="said">
+          <span class="mark">{mark}</span>
+          <div class="eyebrow">{eyebrow.strip()}</div>
+          {wordmark(art.rstrip(), accent, args.cell)}
+          <div class="rule"></div>
+          <div class="tag">{args.tagline}</div>
+        </div>
+      </div>
+    </div>
+  </div></div>
 </body></html>"""
 
 
@@ -291,11 +379,11 @@ def main():
         html.unlink(missing_ok=True)
 
     # The banner is opaque and its gradients survive a 256-colour palette:
-    # measured at RMSE 0.002, with no banding under a contrast stretch, for a
+    # measured at RMSE 0.0024 at most against the full-colour render, for a
     # quarter of the bytes. An alpha channel it never uses costs the rest.
     subprocess.run([
         "magick", str(out),
-        "-background", BACK, "-alpha", "remove", "-alpha", "off",
+        "-background", STAGE, "-alpha", "remove", "-alpha", "off",
         "-dither", "None", "-colors", "256",
         "-strip", "-define", "png:compression-level=9", str(out),
     ], check=True)

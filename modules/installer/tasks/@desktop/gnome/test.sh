@@ -11,10 +11,20 @@ grep -q 'mdns_minimal' "${MNT}/etc/nsswitch.conf"
 
 has_command seahorse
 
-# Automatic login hands the keyring the disk password, which only one password
-# makes the account's too.
-if [ "$ARCH_OS_DISK_PASSWORD_ENABLED" = "true" ] && grep -qs 'AutomaticLoginEnable=True' "${MNT}/etc/gdm/custom.conf"; then
+# Automatic login exactly where the boot password stands in front and is the
+# account's too: docs/REFERENCE.md#accounts
+autologin=false
+grep -qs '^AutomaticLoginEnable=True' "${MNT}/etc/gdm/custom.conf" && autologin=true
+if [ "$autologin" = "true" ] && [ "$ARCH_OS_ENCRYPTION_ENABLED" != "true" ]; then
+    echo "the disk is not encrypted and the login is automatic" >&2
+    exit 1
+fi
+if [ "$autologin" = "true" ] && [ "$ARCH_OS_DISK_PASSWORD_ENABLED" = "true" ]; then
     echo "the disk has a password of its own and the login is automatic" >&2
+    exit 1
+fi
+if [ "$autologin" = "false" ] && [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && [ "$ARCH_OS_DISK_PASSWORD_ENABLED" != "true" ]; then
+    echo "one password unlocks the disk and the login is not automatic" >&2
     exit 1
 fi
 
