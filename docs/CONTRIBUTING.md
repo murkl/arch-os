@@ -23,7 +23,7 @@ flowchart LR
 - A draft gets the same run and cannot be merged. Marking it ready starts nothing, since it changes no code
 - A pull request that changes nothing but `docs/`, Markdown or `LICENSE` is checked, never built: none of it reaches an image
 - A pull request from a fork is checked, never booted: an image needs a privileged container
-- Where a pull request changes what the pictures in the docs show, CI renders them onto its branch as a commit of its own. Pull before pushing again
+- Where a pull request changes what the pictures in the docs show, CI renders them onto its branch as a commit of its own, on top of the merge with `main` it checked. Pull before pushing again
 - A pull request that changes nothing but `oak.yaml`, `CHANGELOG.md` or the release manifest starts no run and is never merged: those three are the release pull request's. Change something else with it
 
 ## The Title
@@ -54,7 +54,7 @@ END_COMMIT_OVERRIDE
 
 Nothing is typed and nothing is tagged by hand.
 
-1. **Every merge that releases something** opens or updates the pull request `chore(main): release 2.1.0`. It raises `version:` in **[oak.yaml](../oak.yaml)**, writes that version's section of **[CHANGELOG.md](../CHANGELOG.md)** and renders the pictures in the docs at that version
+1. **Every merge that releases something** opens or updates the pull request `chore(main): release 2.1.0`. It raises `version:` in **[oak.yaml](../oak.yaml)** and writes that version's section of **[CHANGELOG.md](../CHANGELOG.md)**
 2. **Merging it is the release.** The run on `main` tags `v2.1.0`, builds and boots the images, hangs them on the release page and publishes it
 
 - Merges collect in the release pull request until it is merged. When to release is a decision, not a schedule
@@ -64,7 +64,7 @@ Nothing is typed and nothing is tagged by hand.
 
 **Note:** _The page stays a draft until every file hangs on it, so every link to the latest release points at the one before until then. A run that fails on the way leaves a draft: re-run its failed jobs._
 
-**Note:** _The release pull request starts no run. The run that wrote it renders its pictures and reports `Ready` and `Title` on it, and its merge is checked on `main` before the tag exists. See **[ci.yml](../.github/workflows/ci.yml)**._
+**Note:** _The release pull request starts no run. The run that wrote it reports `Ready` and `Title` on it, and its merge is checked on `main` before the tag exists. See **[ci.yml](../.github/workflows/ci.yml)**._
 
 ## What CI Runs
 
@@ -74,8 +74,8 @@ Nothing is typed and nothing is tagged by hand.
 | `Check` | every run | `make check` |
 | `Image` | a pull request that reaches the image, a release, on demand | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO |
 | `Ready` | a pull request | Every job it needed has passed. Clears the pictures' commit, which starts no run |
-| `Release` | a push to `main` | The release pull request, or once that is merged, the tag and the draft page |
-| `Pictures` | a pull request, a push to `main` that leaves a release pull request | Renders the pictures in the docs onto the branch: a pull request's at the release it leads to, where it changes what they show; the release pull request's at its version, and clears it to merge |
+| `Release` | a push to `main` | The release pull request, cleared to merge, or once that is merged, the tag and the draft page |
+| `Pictures` | a pull request | Renders the pictures in the docs onto its branch, at the release it leads to, where it changes what they show or that release |
 | `Publish` | a release | Hangs the files of that run on the page and publishes it |
 
 **Note:** _A commit is built once. The files on the release page are the ones its run booted, never a rebuild._
@@ -153,7 +153,7 @@ Before any desktop exists there is one console font with at most 512 glyphs: **L
 
 ## Pictures in the Docs
 
-Both are generated, so neither outlives the interface it shows. CI renders them onto the branch of a pull request that changes what they show, at the release it leads to, so `main` shows the code it holds. The release pull request renders them again at its version. The commands show them on this machine:
+Both are generated, so neither outlives the interface it shows. CI renders them onto the branch of a pull request that changes what they show, at the release it leads to, so `main` shows the code it holds and the release it heads for. The commands show them on this machine:
 
 ```
 make docs          # both

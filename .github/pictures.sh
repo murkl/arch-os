@@ -1,22 +1,18 @@
 #!/usr/bin/env bash
-# The pictures in docs/, rendered from this checkout and pushed onto a branch.
+# The pictures in docs/ for a pull request, at the release it leads to, where it
+# changes what they show or that release.
 #
-#   .github/pictures.sh pull-request <branch> <commit>
-#   .github/pictures.sh release <branch>
+#   .github/pictures.sh <branch>
 #
-# A pull request's at the release it leads to, onto the commit its run checked,
-# and only where it changes what they show or the release it leads to. The
-# release pull request's at the release it raises: its branch may sit on an
-# older main, since a merge that releases nothing leaves it alone, so it gives
-# the version and nothing else. The checkout is what the branch merges into
-# main as: a pull request's merge commit, two deep, or main.
+# The checkout is the pull request's merge commit, two deep: the one its run
+# checked. The pictures are committed on top of it and pushed onto the branch,
+# a fast-forward that takes main along, so they cannot conflict with main's.
 #
 # TITLE is the pull request's. GH_TOKEN pushes, GITHUB_TOKEN fetches the
 # runtime. The commit pushed goes to GITHUB_OUTPUT as sha.
 set -euo pipefail
 
-mode="$1"
-branch="$2"
+branch="$1"
 
 RELEASE_BRANCH=release-please--branches--main
 
@@ -66,49 +62,32 @@ pending() {
     esac
 }
 
-case "$mode" in
-pull-request)
-    base="$3"
-    last="$(version_of <oak.yaml)"
-    next="$(pending)"
-    [ -n "$next" ] && [ "$(above "$last" "$next")" -gt 0 ] || next="$last"
+head="$(git rev-parse HEAD^2)"
+last="$(version_of <oak.yaml)"
+next="$(pending)"
+[ -n "$next" ] && [ "$(above "$last" "$next")" -gt 0 ] || next="$last"
 
-    # main's pictures show the next release, and this pull request may raise it.
-    version="$next"
-    own="$(title_level "${TITLE:?}")"
-    [ "$own" -le "$(above "$last" "$next")" ] || version="$(raise "$last" "$own")"
+# main's pictures show the next release, and this pull request may raise it.
+version="$next"
+own="$(title_level "${TITLE:?}")"
+[ "$own" -le "$(above "$last" "$next")" ] || version="$(raise "$last" "$own")"
 
-    # What the pages and the banner are drawn from.
-    status=0
-    git diff --quiet HEAD^1 HEAD -- oak.yaml oak.sh Makefile \
-        docs/banner.py docs/screenshots.py docs/screenshots.yaml docs/logo.svg \
-        ':(glob)modules/*/module.yaml' ':(glob)modules/*/locales/*.po' \
-        ':(glob)modules/*/tasks/**/task.yaml' ':(glob)modules/*/actions/*/action.yaml' || status=$?
-    case "$status" in
-    0)
-        if [ "$version" = "$next" ]; then
-            echo "This pull request changes nothing the pictures show, and leaves the next release at ${next}"
-            exit 0
-        fi
-        ;;
-    1) ;;
-    *) exit "$status" ;;
-    esac
+# What the pages and the banner are drawn from.
+status=0
+git diff --quiet HEAD^1 HEAD -- oak.yaml oak.sh Makefile \
+    docs/banner.py docs/screenshots.py docs/screenshots.yaml docs/logo.svg \
+    ':(glob)modules/*/module.yaml' ':(glob)modules/*/locales/*.po' \
+    ':(glob)modules/*/tasks/**/task.yaml' ':(glob)modules/*/actions/*/action.yaml' || status=$?
+case "$status" in
+0)
+    if [ "$version" = "$next" ]; then
+        echo "This pull request changes nothing the pictures show, and leaves the next release at ${next}"
+        exit 0
+    fi
     ;;
-release)
-    git fetch -q --depth=1 origin "$branch"
-    base="$(git rev-parse FETCH_HEAD)"
-    version="$(git show "${base}:oak.yaml" | version_of)"
-    ;;
-*)
-    echo "usage: $0 pull-request <branch> <commit> | release <branch>" >&2
-    exit 1
-    ;;
+1) ;;
+*) exit "$status" ;;
 esac
-[ -n "$version" ] || {
-    echo "no version to render the pictures at" >&2
-    exit 1
-}
 echo "Rendering the pictures for ${branch} at ${version}"
 
 # An Arch container booted with systemd: the pages list what localectl and
@@ -152,18 +131,12 @@ docker exec "${as_owner[@]}" "$container" sh -c 'mkdir -p ~/.config && echo --no
 
 docker exec "${as_owner[@]}" --env GITHUB_TOKEN "$container" make docs VERSION="$version"
 
-worktree="$(mktemp -d)"
-git fetch -q --depth=1 origin "$base"
-git worktree add -q --detach "$worktree" "$base"
-cp docs/banner.png "${worktree}/docs/"
-cp docs/screenshots/*.png "${worktree}/docs/screenshots/"
-
-cd "$worktree"
-git add docs
+git add docs/banner.png docs/screenshots/*.png
 if git diff --cached --quiet; then
-    echo "The pictures on ${branch} are these already"
+    echo "The pictures are these already"
     exit 0
 fi
+
 # A bot's push opens runs that wait for an approval; [skip ci] opens none, and
 # the commit is cleared by the run that pushed it.
 git -c user.name='github-actions[bot]' \
@@ -177,7 +150,7 @@ if ! GIT_CONFIG_COUNT=1 \
     GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "${GH_TOKEN:?}" | base64 -w0)" \
     git push origin "HEAD:refs/heads/${branch}"; then
     now="$(git ls-remote origin "refs/heads/${branch}" | cut -f1)"
-    [ "$now" != "$base" ] || exit 1
+    [ "$now" != "$head" ] || exit 1
     echo "${branch} moved on to ${now}, whose run renders its own pictures"
     exit 0
 fi
