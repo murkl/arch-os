@@ -74,6 +74,7 @@ Boots each under QEMU and OVMF, waits for the first page, shuts down. Checks the
 ```
 make e2e                    # the newest ISO in dist/
 make e2e ISO=path/to.iso
+make e2e START=desktop      # a Desktop, installed and booted to its login screen
 ```
 
 Walks the ISO the way a person does, unattended:
@@ -87,6 +88,7 @@ Walks the ISO the way a person does, unattended:
 - The live image is reached over ssh through its cloud-init, and the interface runs in tmux there, driven by its keys and read off its pane
 - Both runs have to end with every test passed
 - The installed system unlocks its disk from a systemd credential, and is asked over ssh as the account it was installed with
+- `START=desktop` installs the Desktop starting point with the SSH server on, boots it like step 2 and holds it to a running login screen; the repair is the Core's
 
 **Note:** _Needs `qemu-base`, `edk2-ovmf`, `openssh`, `libisoburn`, `tesseract` and `tesseract-data-eng`, and a network: the installation downloads its packages. The logs land in `dist/e2e/`, with a picture of the console where it stopped._
 
