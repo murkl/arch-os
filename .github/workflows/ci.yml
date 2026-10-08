@@ -7,10 +7,9 @@ on:
   # Other branches are checked through their pull request.
   push:
     branches: [main]
-  # Not the release pull request, which touches these three and the pictures
-  # rendered for it: it starts no run, and the pictures job below reports its
-  # checks instead. A pull request that changes only these three is held back
-  # for the same reason.
+  # Not the release pull request, which touches these three alone: it starts
+  # no run, and the release job below reports its checks instead. A pull
+  # request that changes only these three is held back for the same reason.
   pull_request:
     paths-ignore:
       - CHANGELOG.md
@@ -80,7 +79,8 @@ jobs:
 
   # The version out of the commits since the last release. An ordinary merge
   # updates the release pull request, and merging that one writes the tag and
-  # a draft release page.
+  # a draft release page. The release pull request starts no run, so this
+  # reports the two checks main asks of it; its merge is checked on main.
   release:
     name: Release
     needs: check
@@ -90,12 +90,12 @@ jobs:
     permissions:
       contents: write # the tag and the release page
       pull-requests: write # the release pull request
+      statuses: write # the two checks it is cleared by
     outputs:
       created: ${{ steps.please.outputs.release_created }}
       tag: ${{ steps.please.outputs.tag_name }}
       version: ${{ steps.please.outputs.version }}
       notes: ${{ steps.please.outputs.body }}
-      pending: ${{ steps.pending.outputs.branch }}
     steps:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: please
@@ -113,65 +113,51 @@ jobs:
             --jq '[.[] | select(any(.labels[]; .name == "autorelease: pending")) | .headRefName] | first // empty')"
           echo "branch=${branch}" >>"$GITHUB_OUTPUT"
 
-  # The pictures in the docs, rendered onto the branch they describe: a pull
-  # request's at the release it leads to, the release pull request's at the
-  # release it raises. Neither push starts a run, so this reports the two
-  # checks main asks of the release pull request, whose merge is checked on
-  # main, and Ready those of a pull request's commit. A fork's branch is not
-  # ours to push to.
-  #
-  # On the runner itself: the pictures need an Arch container booted with
-  # systemd, which a job container is not. See .github/pictures.sh.
-  pictures:
-    name: Pictures
-    needs: [check, release]
-    if: >-
-      ${{ !cancelled() && needs.check.result == 'success' && (
-        (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
-        || needs.release.outputs.pending != ''
-      ) }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    permissions:
-      contents: write # the pictures, onto the branch
-      statuses: write # the two checks the release pull request is cleared by
-    outputs:
-      sha: ${{ steps.render.outputs.sha }}
-    env:
-      BRANCH: ${{ github.head_ref || needs.release.outputs.pending }}
-    steps:
-      # Two deep: a pull request's merge commit and the main it lands on.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 2
-          persist-credentials: false
-
-      - id: render
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GITHUB_TOKEN: ${{ github.token }}
-          CHECKED: ${{ github.event.pull_request.head.sha }}
-          TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
-            .github/pictures.sh pull-request "$BRANCH" "$CHECKED"
-          else
-            .github/pictures.sh release "$BRANCH"
-          fi
-
       # On the commit the branch ends on now, read off the branch rather than
       # the pull request, which follows a few seconds later.
       - name: The release pull request is cleared to merge
-        if: github.event_name == 'push'
+        if: steps.pending.outputs.branch != ''
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          BRANCH: ${{ steps.pending.outputs.branch }}
         run: |
           sha="$(gh api "repos/${GH_REPO}/git/ref/heads/${BRANCH}" --jq .object.sha)"
           for check in Ready Title; do
             gh api --silent "repos/${GH_REPO}/statuses/${sha}" -f state=success -f context="$check" \
               -f description="Release pull request - checked on main once merged"
           done
+
+  # The pictures in the docs, rendered onto a pull request's branch at the
+  # release it leads to. The push starts no run, so Ready clears the commit it
+  # pushes. A fork's branch is not ours to push to.
+  #
+  # On the runner itself: the pictures need an Arch container booted with
+  # systemd, which a job container is not. See .github/pictures.sh.
+  pictures:
+    name: Pictures
+    needs: check
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write # the pictures, onto the branch
+    outputs:
+      sha: ${{ steps.render.outputs.sha }}
+    steps:
+      # Two deep: the merge commit this run checks and the main it lands on.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - id: render
+        run: .github/pictures.sh "$BRANCH"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.head_ref }}
+          TITLE: ${{ github.event.pull_request.title }}
 
   # The images, booted and installed: one job, because the gigabyte between
   # building and booting costs more to hand on than to make. A fork is not
@@ -288,9 +274,9 @@ jobs:
             esac
           done
 
-      # The pictures' commit starts no run and differs from the one checked in
-      # its pictures alone, so it carries this run's Ready and the title's
-      # check on the commit before it.
+      # The pictures' commit starts no run and sits on the merge commit this
+      # run checked, so it carries this run's Ready and the title's check on
+      # the pull request's head.
       - name: The pictures' commit is cleared to merge
         if: needs.pictures.outputs.sha != ''
         env:
@@ -309,7 +295,7 @@ jobs:
           fi
           for check in "${checks[@]}"; do
             gh api --silent "repos/${GH_REPO}/statuses/${SHA}" -f state=success -f context="$check" \
-              -f description="Pictures on ${CHECKED:0:7}, which this run checked"
+              -f description="Pictures on the merge of ${CHECKED:0:7} this run checked"
           done
 
   # The files this run built and booted, hung on the draft page under the
