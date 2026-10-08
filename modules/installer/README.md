@@ -34,9 +34,9 @@ One folder per stage under `tasks/`, marked with `@`; `module.yaml` orders them,
 | Stage | Tasks |
 | --- | --- |
 | `prepare` | `mirrors`, `recovery-image`, then `partition` - the one task that destroys anything, once everything that can fail first has |
-| `system` | `pacstrap`, `config`, `user`, `tweaks`, then `bootloader` and `recovery`: the system on disk, configured and bootable |
+| `system` | `pacstrap`, then `config`, `tweaks`, `bootloader`, `recovery` and `user`: the system on disk, configured and bootable |
 | `features` | One task per setting that switches something on: `multilib`, `aur`, `bootsplash`, `containers`, `editor`, `firewall`, `housekeeping`, `manager`, `shell`, `ssh`, `vm-guest`, `vm-host` |
-| `desktop` | `gnome` first, then `graphics`, `browser`, `backup`, `flatpak`, `recovery-app`, `samba` |
+| `desktop` | `gnome` first, then `backup`, `browser`, `flatpak`, `graphics`, `recovery-app`, `samba` |
 | `finish` | `first-login`, `orphans`, `snapper`, `secure-boot`, and `copy-config` last, which says the system is installed |
 
 **Note:** _`make inspect` prints the order the whole module resolves to._

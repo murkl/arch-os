@@ -357,7 +357,7 @@ jobs:
 
           ---
 
-          Boot the ISO on the machine to install, or run this on any Linux machine — what opens is decided by the machine it opened on:
+          Boot the ISO on the machine to install, or run this on any Linux machine - what opens is decided by the machine it opened on:
 
           \`\`\`
           curl -Ls https://bit.ly/archos | bash
@@ -369,7 +369,7 @@ jobs:
           | \`arch-os-${VERSION}-x86_64.tar.gz\` | The same program without the image: unpack it and run \`./oak\`. On a live image it installs or repairs, anywhere else the Imager writes the device above to a USB stick |
           | \`arch-os-${VERSION}-recovery-x86_64.tar\` | The Recovery the Installer writes to a partition of its own - carried by the ISO, and fetched from here on any other live image |
 
-          All three carry signed build provenance — which repository the file came out of, and which run built it:
+          All three carry signed build provenance: which repository the file came out of, and which run built it:
 
           \`\`\`
           gh attestation verify arch-os-${VERSION}-x86_64.iso -R ${GH_REPO}

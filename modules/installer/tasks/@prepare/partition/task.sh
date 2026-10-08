@@ -12,18 +12,11 @@ fi
 boot_part="$(boot_partition "$ARCH_OS_DISK")"
 system_part="$(system_partition "$ARCH_OS_DISK")"
 
-# What an earlier attempt left mounted, closed for good. -M keeps fuser on the
-# target: without it, a target that is no mount point resolves to the live
-# image. See docs/REFERENCE.md#closing-the-target
+# What an earlier attempt left mounted or open, closed for good.
+# docs/REFERENCE.md#closing-the-target
 swapoff -a || true
 sync
-if mountpoint -q "$MNT" && ! umount -R "$MNT"; then
-    echo "the target did not unmount, what is holding it:"
-    fuser -Mvm "$MNT" || true
-    fuser -Mkm "$MNT" || true
-    sleep 2 # the kernel needs a moment to let go of the files
-    umount -R "$MNT"
-fi
+unmount_target
 if [ -e /dev/mapper/cryptroot ]; then
     cryptsetup close cryptroot
 fi

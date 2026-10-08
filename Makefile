@@ -322,7 +322,7 @@ locales-check: dev
 	@for m in $(MODULES); do \
 		pot=$(MODULES_DIR)/$$m/locales/$$m.pot; \
 		(cd $(DEV_DIR) && ./$(APP) --strings --module=$$m) | diff -u $$pot - \
-			|| { echo "$$pot is out of date — run 'make locales'" >&2; exit 1; }; \
+			|| { echo "$$pot is out of date - run 'make locales'" >&2; exit 1; }; \
 		for po in $(MODULES_DIR)/$$m/locales/*.po; do \
 			[ -e "$$po" ] || continue; \
 			printf '%s: ' "$$po"; msgfmt --check-format --statistics -o /dev/null "$$po" || exit 1; \
