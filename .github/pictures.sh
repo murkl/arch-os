@@ -164,9 +164,11 @@ if git diff --cached --quiet; then
     echo "The pictures on ${branch} are these already"
     exit 0
 fi
+# A bot's push opens runs that wait for an approval; [skip ci] opens none, and
+# the commit is cleared by the run that pushed it.
 git -c user.name='github-actions[bot]' \
     -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
-    commit -q -m "docs: the pictures at ${version}"
+    commit -q -m "docs: the pictures at ${version}" -m "[skip ci]"
 
 # The token reaches git through its environment, never its command line. A
 # branch that moved on meanwhile has a newer run, which renders its own.
