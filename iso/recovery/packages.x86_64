@@ -1,14 +1,18 @@
 # What the Recovery runs on, and nothing else: no editor, and no firmware but
-# the wireless cards' - see the Recovery Partition in docs/REFERENCE.md. base
-# brings what its tasks call beyond these: cryptsetup, fuser, file, bsdtar, the
-# keymaps, and the network daemons iwd leans on.
+# the wireless cards' - see the Recovery Partition in docs/REFERENCE.md. What its
+# scripts call is named rather than left to base, and build.sh checks it is there.
 arch-install-scripts
 base
 btrfs-progs
+cryptsetup
+curl
+iproute2
+kbd
 linux
 mkinitcpio
 mkinitcpio-archiso
 plymouth
+psmisc
 
 # A wireless network, joined from the configuration when somebody asks for one. iwd
 # starts once there is a card to ask it about - see wifi_station in oak.sh. The

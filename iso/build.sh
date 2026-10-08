@@ -106,7 +106,15 @@ trap cleanup EXIT
 
 # Each takes the profile it patches as its first argument.
 
-set_key_value() { grep -q "^$2=" "$1" && sed -i "s|^$2=.*|$2=\"$3\"|" "$1" || echo "$2=$3" >>"$1"; }
+# profiledef.sh is bash that mkarchiso sources, so a line appended to it wins
+# over the stock assignment, whatever shape that one has. On a line of its own,
+# even where the file does not end on one.
+profiledef() {
+    local profile="$1"
+    shift
+    printf '\n%s' "$@" >>"${profile}/profiledef.sh"
+    echo >>"${profile}/profiledef.sh"
+}
 
 # The Oak binary with oak.yaml, oak.sh and the modules handed over beside it -
 # the only place it looks. /opt/arch-os is what the systemd unit in src/
@@ -125,11 +133,9 @@ install_arch_os() {
 # executable in the image is named in profiledef.sh: the Oak binary and every
 # launcher on the path. Run once the profile holds all of them.
 make_executable() {
-    local file path
+    local file
     for file in "$1/airootfs/opt/arch-os/oak" "$1/airootfs/usr/local/bin/"*; do
-        path="${file#"$1/airootfs"}"
-        grep -q "\[\"${path}\"\]" "$1/profiledef.sh" ||
-            sed -i "/^file_permissions=(/a\\  [\"${path}\"]=\"0:0:755\"" "$1/profiledef.sh"
+        profiledef "$1" "file_permissions+=([\"${file#"$1/airootfs"}\"]=\"0:0:755\")"
     done
 }
 
@@ -167,6 +173,7 @@ install_bootsplash() {
     # the console before anything else prints to it.
     [ -f "$hooks" ] || { echo "Error: archiso mkinitcpio config not found at '${hooks}'" && exit 1; }
     grep -q 'plymouth' "$hooks" || sed -i 's/^HOOKS=(\(base [a-z]*\)/HOOKS=(\1 plymouth/' "$hooks"
+    grep -q 'plymouth' "$hooks" || { echo "Error: no HOOKS=(base ...) line in '${hooks}' to add plymouth to" && exit 1; }
 }
 
 # One systemd unit on tty1 replaces autologin, a shell profile and a menu script:
@@ -179,10 +186,7 @@ start_on_tty1() {
 
 # The name and the version the image goes by, which its os-release carries as
 # well.
-name_image() {
-    set_key_value "$1/profiledef.sh" iso_name "$2"
-    set_key_value "$1/profiledef.sh" iso_version "$VERSION"
-}
+name_image() { profiledef "$1" "iso_name=\"$2\"" "iso_version=\"${VERSION}\""; }
 
 # ////////////////////////////////////////////////////////////////////////////
 # BUILD
@@ -257,6 +261,11 @@ install_bootsplash "$RECOVERY_PROFILE"
 start_on_tty1 "$RECOVERY_PROFILE"
 name_image "$RECOVERY_PROFILE" arch-os-recovery
 
+# The partition below is built out of an erofs, whatever baseline turns to.
+# Without baseline's ztailpacking: erofs-utils 1.9.4 wrote ten of linux 7.2.9's
+# modules corrupt with it, as the read-back below found.
+profiledef "$RECOVERY_PROFILE" 'airootfs_image_type="erofs"' "airootfs_image_tool_options=('-zlzma,109')"
+
 # The root file system is signed with a key made for this build and thrown away
 # with it, and the certificate goes into the ram disk - which the boot loader
 # starts as one image with the kernel and the command line, signed with the
@@ -274,6 +283,45 @@ openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes \
 ${SUDO} mkarchiso -v -m netboot -c "${TEMP_DIR}/recovery.crt ${TEMP_DIR}/recovery.key" \
     -w "${WORK_DIR}/recovery" -o "${PROFILES_DIR}/out/recovery" "$RECOVERY_PROFILE"
 netboot="${PROFILES_DIR}/out/recovery/arch"
+
+# The Recovery as it ships, before anything is made of it. Its erofs reads back
+# as what went in: the signature signs whatever mkfs.erofs wrote.
+recovery_root="${WORK_DIR}/recovery/x86_64/airootfs"
+[ -d "${recovery_root}/usr/lib/modules" ] || { echo "Error: mkarchiso left no root file system at ${recovery_root}" >&2 && exit 1; }
+readback="${WORK_DIR}/recovery-readback"
+${SUDO} fsck.erofs --extract="$readback" "${netboot}/x86_64/airootfs.erofs" >/dev/null
+if ! differs="$(${SUDO} diff -rq --no-dereference "$recovery_root" "$readback")"; then
+    printf "Error: the Recovery's erofs does not read back as what was put into it:\n%s\n" "$differs" >&2
+    exit 1
+fi
+${SUDO} rm -rf "$readback"
+
+# Every command its scripts call is on it, and recovery/pacman.conf took nothing
+# from the kernel that more than graphics passthrough, a camera or an
+# accelerator needs.
+for command in arch-chroot btrfs cryptsetup curl fuser ip iwctl loadkeys localectl lsblk mount mountpoint setfont setvtrgb swapoff umount; do
+    [ -x "${recovery_root}/usr/bin/${command}" ] || { echo "Error: the Recovery has no ${command}" >&2 && exit 1; }
+done
+modules="$(find "${recovery_root}/usr/lib/modules" -name '*.ko*')"
+deps="$(while read -r module; do
+    depends="$(modinfo -F depends "$module")" || { echo "Error: modinfo cannot read ${module}" >&2 && exit 1; }
+    printf '%s\t%s\n' "$module" "$depends"
+done <<<"$modules")"
+grep -q $'\t.' <<<"$deps" || { echo "Error: modinfo read no dependencies off ${recovery_root}" >&2 && exit 1; }
+lost="$(awk -F'\t' '
+    NR == FNR { have[$1] = 1; next }
+    {
+        n = split($2, dep, ",")
+        for (i = 1; i <= n; i++) {
+            name = dep[i]; gsub(/-/, "_", name)
+            if (name != "" && !(name in have)) { sub(/.*\/kernel\//, "kernel/", $1); print $1 " needs " dep[i]; break }
+        }
+    }' <(printf '%s\n' "$modules" | sed 's|.*/||; s/\.ko.*//; s/-/_/g') <(printf '%s\n' "$deps"))"
+unexpected="$(grep -vE '^kernel/drivers/(accel|media|vfio)/' <<<"$lost" || true)"
+if [ -n "$unexpected" ]; then
+    printf 'Error: recovery/pacman.conf leaves out what these need:\n%s\n' "$unexpected" >&2
+    exit 1
+fi
 
 # The partition: a read-only file system holding the root file system and its
 # signature where the ram disk looks for them, found by a UUID made for this
@@ -342,9 +390,13 @@ start_on_tty1 "$ISO_PROFILE"
 # actions/internet in the Installer.
 
 for entry in "${ISO_PROFILE}"/efiboot/loader/entries/01-archiso-linux*.conf; do
+    [ -f "$entry" ] || { echo "Error: releng has no boot entry 01-archiso-linux*.conf to add the boot arguments to" && exit 1; }
     grep -q 'splash' "$entry" || sed -i "/^options / s/\$/ ${BOOT_ARGS}/" "$entry"
+    grep -q 'splash' "$entry" || { echo "Error: ${entry} has no options line to add the boot arguments to" && exit 1; }
 done
-sed -i 's/^timeout.*/timeout 0/' "${ISO_PROFILE}/efiboot/loader/loader.conf"
+loader="${ISO_PROFILE}/efiboot/loader/loader.conf"
+sed -i '/^timeout/d' "$loader"
+printf '\ntimeout 0\n' >>"$loader"
 
 # A prompt on this image is reached by leaving Arch OS or by it failing, and
 # either way the first question is how to get back to it. Both files, because
@@ -379,26 +431,22 @@ journalctl -b -u arch-os says why.
 EOF
 
 name_image "$ISO_PROFILE" arch-os
-set_key_value "${ISO_PROFILE}/profiledef.sh" iso_application "Arch OS ISO"
+profiledef "$ISO_PROFILE" 'iso_application="Arch OS ISO"'
 
 # zstd instead of xz: xz squeezes out a little more and spends minutes of build
 # time and seconds of every boot doing it.
-set_key_value "${ISO_PROFILE}/profiledef.sh" airootfs_image_type "squashfs"
-sed -i "s|^airootfs_image_tool_options=.*|airootfs_image_tool_options=('-comp' 'zstd' '-Xcompression-level' '19' '-b' '1M')|" \
-    "${ISO_PROFILE}/profiledef.sh"
+profiledef "$ISO_PROFILE" 'airootfs_image_type="squashfs"' \
+    "airootfs_image_tool_options=('-comp' 'zstd' '-Xcompression-level' '19' '-b' '1M')"
 
 # UEFI only: the installer's preflight refuses anything else, so a BIOS boot path
 # would only offer a boot that ends in a refusal.
-#
-# bootmodes is a multi-line array in the stock profile, so the whole block is
-# replaced - rewriting its first line leaves the rest behind as a syntax error.
-sed -i "/^bootmodes=(/,/)$/c\\bootmodes=('uefi.systemd-boot')" "${ISO_PROFILE}/profiledef.sh"
+profiledef "$ISO_PROFILE" "bootmodes=('uefi.systemd-boot')"
 
 # How the kernel finds the medium it booted from. A volume identifier is upper
 # case letters, digits and underscores, at most 32 of them, so anything else in
 # the version becomes an underscore.
 ISO_LABEL="$(printf 'ARCH_OS_%s' "$VERSION" | tr -c '[:alnum:]' '_' | tr '[:lower:]' '[:upper:]' | cut -c1-32)"
-set_key_value "${ISO_PROFILE}/profiledef.sh" iso_label "$ISO_LABEL"
+profiledef "$ISO_PROFILE" "iso_label=\"${ISO_LABEL}\""
 
 echo "### Make Arch OS ISO"
 ${SUDO} mkarchiso -v -w "${WORK_DIR}/iso" -o "${PROFILES_DIR}/out/iso" "$ISO_PROFILE"

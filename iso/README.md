@@ -54,6 +54,10 @@ make image     # ...only the images, out of a release that is already there
 
 The Bootsplash theme is **[plymouth-theme-arch-os](https://github.com/murkl/plymouth-theme-arch-os)** at the commit `PLYMOUTH_THEME_REF` in `build.sh` names, fetched once for both images and kept in `download/` - raised by hand, like `OAK_VERSION`. `PLYMOUTH_THEME_SRC=/path/to/theme/src` builds with a theme folder of your own instead.
 
+What the stock profiles say is overridden by lines appended to their `profiledef.sh`, never edited in place, so a profile archiso reshapes still gets them. Every other patch fails the build where it finds nothing to patch.
+
+Before the ISO, the Recovery is held to what it has to do: its erofs reads back as what went into it, every command its scripts call is on it, and no kernel module a repair may load lost a dependency to what `recovery/pacman.conf` leaves out.
+
 A build leaves nothing root-owned behind: `archiso/` holds both profiles and is removed on success, kept on failure; `download/` stays either way and lets the next build skip the network. The key the Recovery is signed with goes either way.
 
 ## Booting it
