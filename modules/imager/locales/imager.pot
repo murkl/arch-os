@@ -23,29 +23,6 @@ msgstr ""
 msgid "Create boot medium"
 msgstr ""
 
-#. what it is and what its menu offers, over the menu's rows
-#: module.yaml
-msgid "Ready to write Arch OS to a USB device to boot from. Start writing, or review every value first."
-msgstr ""
-
-#. the row that starts the work
-#: module.yaml
-msgid "Create"
-msgstr ""
-
-#. the row that opens every answer, and the heading over that page
-#: module.yaml
-msgid "Configuration"
-msgstr ""
-
-#. the last page before the work, after every password
-#: module.yaml
-msgid ""
-"Erase {{ARCH_OS_IMAGE_DEVICE}} and write Arch OS to it?\n"
-"\n"
-"Everything on it is lost."
-msgstr ""
-
 #. ARCH_OS_DOWNLOAD_DIR: the question
 #: module.yaml
 msgid "Download folder"

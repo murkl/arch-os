@@ -20,32 +20,6 @@ msgstr "Deutsch"
 msgid "Installer"
 msgstr "Installer"
 
-#. what it is and what its menu offers, over the menu's rows
-#: module.yaml
-msgid "Ready to install Arch Linux on this machine. Start the installation, or review every value first."
-msgstr "Bereit, Arch Linux auf diesem Rechner zu installieren. Starte die Installation oder prüfe vorher alle Werte."
-
-#. the row that starts the work
-#: module.yaml
-msgid "Install"
-msgstr "Installieren"
-
-#. the row that opens every answer, and the heading over that page
-#: module.yaml
-msgid "Configuration"
-msgstr "Konfiguration"
-
-#. the last page before the work, after every password
-#: module.yaml
-msgid ""
-"Erase {{ARCH_OS_DISK}} and install Arch Linux?\n"
-"\n"
-"Everything on it is lost."
-msgstr ""
-"{{ARCH_OS_DISK}} löschen und Arch Linux installieren?\n"
-"\n"
-"Alles darauf geht verloren."
-
 #. a starting point: its row
 #: module.yaml
 msgid "Desktop"

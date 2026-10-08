@@ -3,18 +3,9 @@
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
 title: Installer
-description: |
-  Ready to install Arch Linux on this machine. Start the installation, or
-  review every value first.
 
-# The last page comes after the password, and names the disk it erases.
-text:
-  start: Install
-  settings: Configuration
-  confirm: |
-    Erase {{ARCH_OS_DISK}} and install Arch Linux?
-
-    Everything on it is lost.
+# A yes before the work, after the password: it erases a disk.
+confirm: true
 
 # Each a folder under actions/. The internet comes last, after the keyboard a
 # passphrase is typed on.

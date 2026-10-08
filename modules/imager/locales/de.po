@@ -20,32 +20,6 @@ msgstr "Deutsch"
 msgid "Create boot medium"
 msgstr "Bootmedium erstellen"
 
-#. what it is and what its menu offers, over the menu's rows
-#: module.yaml
-msgid "Ready to write Arch OS to a USB device to boot from. Start writing, or review every value first."
-msgstr "Bereit, Arch OS auf einen USB-Datenträger zu schreiben, um davon zu starten. Starte das Schreiben oder prüfe vorher alle Werte."
-
-#. the row that starts the work
-#: module.yaml
-msgid "Create"
-msgstr "Erstellen"
-
-#. the row that opens every answer, and the heading over that page
-#: module.yaml
-msgid "Configuration"
-msgstr "Konfiguration"
-
-#. the last page before the work, after every password
-#: module.yaml
-msgid ""
-"Erase {{ARCH_OS_IMAGE_DEVICE}} and write Arch OS to it?\n"
-"\n"
-"Everything on it is lost."
-msgstr ""
-"{{ARCH_OS_IMAGE_DEVICE}} löschen und Arch OS darauf schreiben?\n"
-"\n"
-"Alles darauf geht verloren."
-
 #. ARCH_OS_DOWNLOAD_DIR: the question
 #: module.yaml
 msgid "Download folder"

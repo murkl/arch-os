@@ -35,13 +35,13 @@ Every step after the first is optional.
 | `rollback` | `snapshot` | Puts a snapshot in place of the root subvolume. Skipped where there are none |
 | `rebuild` | `boot` | Rebuilds kernel images and initramfs from the package cache, re-signs if needed |
 
-**Note:** _`snapshot` and `boot` each ask first and open on No, so a run can stop after any. The page the repair ends on offers **Open a shell** in the repaired system and opens on **Continue**. A restart or a shutdown leaves unmounting and locking to systemd._
+**Note:** _`snapshot` and `boot` each ask first, so a run can stop after any. Both open on No, `boot` on Yes once a snapshot was put in place. The page the repair ends on offers **Open a shell** in the repaired system and opens on **Continue**. A restart or a shutdown leaves unmounting and locking to systemd._
 
 ## Nothing is downloaded
 
 A broken network may be the problem, so this module never waits for one, and kernel images come from the local pacman cache. `root` is all the work requires - not firmware, since this machine is not what is being set up.
 
-It can join one all the same, for whatever somebody wants to fetch in the shell: `wifi` puts **Configure Wi-Fi** into its **Configuration** wherever there is a card and no internet over a cable - the same action the Installer has. On its own partition a cable comes up at boot and is preferred while both are up, and the wireless daemon starts once there is a card to ask it about. `restart` and `shutdown` are the ways out, and `share-log` puts the log of a repair that failed online for whoever is helping.
+It can join one all the same, for whatever somebody wants to fetch in the shell: `wifi` puts **Configure Wi-Fi** into its **Setup** wherever there is a card and no internet over a cable - the same action the Installer has. On its own partition a cable comes up at boot and is preferred while both are up, and the wireless daemon starts once there is a card to ask it about. `restart` and `shutdown` are the ways out, and `share-log` puts the log of a repair that failed online for whoever is helping.
 
 ## Two Questions, and no more
 
@@ -60,7 +60,7 @@ None to offer means the step is skipped, not asked about.
 
 **Note:** _Only what the Installer of the same release makes is opened._
 
-**Note:** _A derived answer is never asked, in the **Configuration** or written to `recovery.conf` - the next run reads it again. See `value-from:` in the **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**._
+**Note:** _A derived answer is never asked, in **Setup** or written to `recovery.conf` - the next run reads it again. See `value-from:` in the **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**._
 
 ## Two Views of one Disk
 

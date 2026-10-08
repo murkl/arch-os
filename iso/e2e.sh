@@ -294,7 +294,7 @@ EOF
 live "tmux new-session -d -s e2e -x 120 -y 40 'installer --language=en'"
 
 say "Install"
-shows "Ready to install Arch Linux on this machine."
+shows "Setup"
 keys Enter
 shows "Password"
 typed "$PASSWORD"
@@ -302,7 +302,7 @@ keys Enter
 shows "Repeat"
 typed "$PASSWORD"
 keys Enter
-shows "and install Arch Linux?"
+shows "Do you really want to start?"
 keys Up Enter
 finished installer "$INSTALL_TIMEOUT"
 live systemctl poweroff || true
@@ -321,20 +321,19 @@ live "printf \"ARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\"
 live "tmux new-session -d -s e2e -x 120 -y 40 'recovery --language=en'"
 
 say "Repair: go back to the newest snapshot and rebuild the boot files"
-shows "Ready to repair the Arch Linux system"
+shows "Setup"
 keys Enter
 shows "Encryption password"
 typed "$PASSWORD"
 keys Enter
-shows "Open the system on"
-keys Up Enter
 # Each text is one only its page shows: the run page lists every step's title.
 shows "Newest first"
 keys Enter
 shows "in place of the system on ${DISK}?"
 keys Up Enter
+# Opens on Yes after the rollback.
 shows "Rebuild the kernel images"
-keys Up Enter
+keys Enter
 finished recovery "$REPAIR_TIMEOUT"
 live systemctl poweroff || true
 stopped

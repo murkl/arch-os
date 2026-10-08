@@ -78,7 +78,7 @@ Then Installer or Recovery, and a starting point:
 | **Core** | A minimal Arch Linux on the text console |
 | **Desktop** | The Core with GNOME |
 
-Every value stays changeable in the **Configuration**. Left to ask: account, region, disk.
+Every value stays changeable in **Setup**. Left to ask: account, region, disk.
 
 **Note:** _From an official **[Arch Linux ISO](https://archlinux.org/download/)** the same `curl` command starts Arch OS. `--language=de` skips the first page: `… | bash -s -- --language=de`, or `installer --language=de` on the Arch OS ISO._
 
@@ -91,7 +91,7 @@ Every answer lands in `installer.conf` as it is given, so an interrupted run res
 
 ### 5. Switch Secure Boot On
 
-Only if you left it on in the Configuration:
+Only if you left it on in Setup:
 
 ```
 sbctl status
@@ -108,7 +108,7 @@ sbctl status
 
 One password unlocks the disk and logs you in, and behind disk encryption GNOME logs in by itself. Root stays locked: `sudo` is the way to it.
 
-**Separate disk password** in the **Configuration** gives the disk a password of its own. The login screen then asks for yours, and every account has its own. That is the setup for a machine several people share.
+**Separate disk password** in **Setup** gives the disk a password of its own. The login screen then asks for yours, and every account has its own. That is the setup for a machine several people share.
 
 ### The Keyring
 

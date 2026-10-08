@@ -20,32 +20,6 @@ msgstr "Deutsch"
 msgid "Recovery"
 msgstr "Recovery"
 
-#. what it is and what its menu offers, over the menu's rows
-#: module.yaml
-msgid "Ready to repair the Arch Linux system on the chosen disk. Start the repair, or review every value first."
-msgstr "Bereit, das Arch-Linux-System auf dem gewählten Datenträger zu reparieren. Starte die Reparatur oder prüfe vorher alle Werte."
-
-#. the row that starts the work
-#: module.yaml
-msgid "Repair"
-msgstr "Reparieren"
-
-#. the row that opens every answer, and the heading over that page
-#: module.yaml
-msgid "Configuration"
-msgstr "Konfiguration"
-
-#. the last page before the work, after every password
-#: module.yaml
-msgid ""
-"Open the system on {{ARCH_OS_RECOVERY_DISK}}?\n"
-"\n"
-"Opening it changes nothing. Every step that does asks first."
-msgstr ""
-"Das System auf {{ARCH_OS_RECOVERY_DISK}} öffnen?\n"
-"\n"
-"Das Öffnen ändert nichts. Jeder Schritt, der etwas ändert, fragt vorher."
-
 #. ARCH_OS_RECOVERY_KEYMAP: the question
 #: module.yaml
 msgid "Console keyboard"
