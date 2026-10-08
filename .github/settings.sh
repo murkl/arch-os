@@ -9,7 +9,7 @@
 # repository. Every call sets a whole state, so running it again changes
 # nothing. The same file in every project that is released this way.
 #
-# POSIX sh: this is four calls, not a program.
+# POSIX sh: this is a handful of calls, not a program.
 set -eu
 
 command -v gh >/dev/null || {
@@ -41,6 +41,19 @@ if [ -n "$id" ]; then
     gh api --silent -X PUT "repos/{owner}/{repo}/rulesets/${id}" --input "${dir}/ruleset.json"
 else
     gh api --silent -X POST 'repos/{owner}/{repo}/rulesets' --input "${dir}/ruleset.json"
+fi
+
+# The ruleset is the one protection: a classic one beside it is a second truth
+# nobody declares. A 404 says there is none.
+branch="$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)"
+if ! out="$(gh api --silent -X DELETE "repos/{owner}/{repo}/branches/${branch}/protection" 2>&1)"; then
+    case "$out" in
+    *"HTTP 404"*) ;;
+    *)
+        echo "$out" >&2
+        exit 1
+        ;;
+    esac
 fi
 
 echo "applied to $(gh repo view --json nameWithOwner --jq .nameWithOwner): .github/settings/"
