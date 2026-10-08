@@ -284,8 +284,9 @@ smoke:
 	$(ISO_SMOKE) $(ISO)
 	$(ISO_SMOKE) $(RECOVERY)
 
-# Installs the newest ISO onto a disk, boots it, repairs it with the Recovery
-# and boots it again. The logs land in dist/e2e/.
+# Installs the newest ISO onto a disk, boots it, repairs it with the Recovery,
+# boots it again and starts the Recovery on its partition. The logs land in
+# dist/e2e/.
 e2e:
 	$(ISO_E2E) $(ISO)
 
