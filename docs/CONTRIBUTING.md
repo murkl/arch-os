@@ -72,7 +72,7 @@ Nothing is typed and nothing is tagged by hand.
 | --- | --- | --- |
 | `Title` | a pull request opened, pushed to or edited | Reads the title |
 | `Check` | every run | `make check` |
-| `Image` | a pull request that reaches the image, a release, on demand | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO |
+| `Image` | a pull request that reaches the image, a release, on demand, every Monday | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO |
 | `Ready` | a pull request | Every job it needed has passed. Clears the pictures' commit, which starts no run |
 | `Release` | a push to `main` | The release pull request, cleared to merge, or once that is merged, the tag and the draft page |
 | `Pictures` | a pull request | Renders the pictures in the docs onto its branch, at the release it leads to, where it changes what they show or that release |
