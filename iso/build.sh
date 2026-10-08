@@ -205,7 +205,7 @@ done
 
 # The tools are packages rather than something to install behind somebody's
 # back: a build that would change the machine it runs on says so instead.
-for tool in mkarchiso:archiso ukify:systemd-ukify mkfs.erofs:erofs-utils; do
+for tool in mkarchiso:archiso ukify:systemd-ukify mkfs.erofs:erofs-utils diff:diffutils modinfo:kmod; do
     command -v "${tool%%:*}" >/dev/null || {
         echo "Error: ${tool%%:*} not found - install the ${tool#*:} package" >&2
         exit 1
@@ -290,10 +290,19 @@ recovery_root="${WORK_DIR}/recovery/x86_64/airootfs"
 [ -d "${recovery_root}/usr/lib/modules" ] || { echo "Error: mkarchiso left no root file system at ${recovery_root}" >&2 && exit 1; }
 readback="${WORK_DIR}/recovery-readback"
 ${SUDO} fsck.erofs --extract="$readback" "${netboot}/x86_64/airootfs.erofs" >/dev/null
-if ! differs="$(${SUDO} diff -rq --no-dereference "$recovery_root" "$readback")"; then
+compared=0
+differs="$(${SUDO} diff -rq --no-dereference "$recovery_root" "$readback")" || compared=$?
+case "$compared" in
+0) ;;
+1)
     printf "Error: the Recovery's erofs does not read back as what was put into it:\n%s\n" "$differs" >&2
     exit 1
-fi
+    ;;
+*)
+    echo "Error: diff could not compare the Recovery's erofs with what was put into it" >&2
+    exit 1
+    ;;
+esac
 ${SUDO} rm -rf "$readback"
 
 # Every command its scripts call is on it, and recovery/pacman.conf took nothing

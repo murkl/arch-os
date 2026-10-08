@@ -50,7 +50,7 @@ make iso       # the release, then both images, beside it in dist/
 make image     # ...only the images, out of a release that is already there
 ```
 
-**Note:** _The images land beside the release they were built from, named after `oak.yaml`'s version: the ISO, and the Recovery as a folder and as a `.tar` for the release page. The ISO label is that version, upper-cased. Needs `archiso`, `systemd-ukify`, `erofs-utils`, `kbd` and `terminus-font`._
+**Note:** _The images land beside the release they were built from, named after `oak.yaml`'s version: the ISO, and the Recovery as a folder and as a `.tar` for the release page. The ISO label is that version, upper-cased. Needs `archiso`, `systemd-ukify`, `erofs-utils`, `diffutils`, `kbd` and `terminus-font`._
 
 The Bootsplash theme is **[plymouth-theme-arch-os](https://github.com/murkl/plymouth-theme-arch-os)** at the commit `PLYMOUTH_THEME_REF` in `build.sh` names, fetched once for both images and kept in `download/` - raised by hand, like `OAK_VERSION`. `PLYMOUTH_THEME_SRC=/path/to/theme/src` builds with a theme folder of your own instead.
 
