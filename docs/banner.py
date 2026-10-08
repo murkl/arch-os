@@ -37,8 +37,7 @@ MONITOR_TOP = 30
 NECK, NECK_W = 58, 150
 FOOT = 236
 
-STAGE = "#15181d"
-BACK = "#232830"  # a shade under Nord polar night, so the cards lift off it
+BACK ="#232830"  # a shade under Nord polar night, so the cards lift off it
 TEXT = "#d8dee9"
 MUTED = "rgba(216,222,233,.42)"
 
@@ -181,9 +180,11 @@ def data_uri(path):
 
 # --- the page ------------------------------------------------------------
 #
-# The banner is the screen of a monitor standing on a dark stage. It is laid
-# out at a 16:9 size of its own and scaled onto the screen, so the wordmark
-# keeps the cell size the project passes in.
+# The banner is the screen of a monitor, cut out: nothing around the monitor
+# and its stand is painted, so it sits on whatever page shows it. Its shadows
+# lift the light rim off a light page and vanish on a dark one. The banner is
+# laid out at a 16:9 size of its own and scaled onto the screen, so the
+# wordmark keeps the cell size the project passes in.
 
 
 def page(args):
@@ -204,44 +205,40 @@ def page(args):
   * {{ margin:0; padding:0; box-sizing:border-box; }}
   html,body {{ width:{W}px; height:{H}px; overflow:hidden; }}
   body {{
-    background:{STAGE};
     font-family:"FiraCode Nerd Font Mono", ui-monospace, monospace;
     position:relative;
   }}
 
-  /* The stage, lit only by the screen's glow on the wall behind it. */
-  .stage {{
-    position:absolute; inset:0;
-    background:radial-gradient(46% 58% at 50% 44%, {accent}22, transparent 72%);
-  }}
-
-  /* The stand: an aluminium arm, narrower where it leans back, on a thin foot
-     with its shadow on the floor. */
+  /* The stand: an aluminium arm, narrower where it leans back and darker at
+     its edges, on a thin foot with a contact shadow under it. */
   .floor {{
-    position:absolute; left:{(W - FOOT * 1.7) / 2}px; top:{foot_top - 4}px;
-    width:{FOOT * 1.7}px; height:34px;
-    background:radial-gradient(closest-side, rgba(0,0,0,.62), transparent);
+    position:absolute; left:{(W - FOOT * 1.5) / 2}px; top:{foot_top + 2}px;
+    width:{FOOT * 1.5}px; height:20px;
+    background:radial-gradient(closest-side, rgba(0,0,0,.22), transparent);
   }}
   .neck {{
     position:absolute; left:{(W - NECK_W) / 2}px; top:{neck_top}px;
     width:{NECK_W}px; height:{NECK + 2}px;
     clip-path:polygon(7% 0, 93% 0, 100% 100%, 0 100%);
-    background:linear-gradient(180deg, #4a4e55 0%, #8e939a 34%, #c4c8cd 100%);
+    background:
+      linear-gradient(90deg, rgba(0,0,0,.16), transparent 14% 86%, rgba(0,0,0,.16)),
+      linear-gradient(180deg, #4a4e55 0%, #8e939a 34%, #c4c8cd 100%);
   }}
   .foot {{
     position:absolute; left:{(W - FOOT) / 2}px; top:{foot_top}px;
     width:{FOOT}px; height:10px; border-radius:3px;
     background:linear-gradient(180deg, #f2f3f5 0 1px, #c9cdd2 1px 40%, #8a8f96 100%);
-    box-shadow:0 8px 14px -6px rgba(0,0,0,.7);
+    box-shadow:0 0 0 1px rgba(0,0,0,.06), 0 4px 8px -4px rgba(0,0,0,.3);
   }}
 
-  /* The monitor: a hairline of aluminium around black glass, lifted off the
-     stage by two shadows, a near one and a far one. */
+  /* The monitor: a hairline of aluminium around black glass. A faint edge and
+     a soft shadow below it set the rim off a light page. */
   .monitor {{
     position:absolute; left:{mx}px; top:{my}px; width:{mw}px; height:{mh}px;
     padding:{RIM}px; border-radius:16px;
     background:linear-gradient(180deg, #e6e8eb, #9fa4ab);
-    box-shadow:0 46px 80px -30px rgba(0,0,0,.8), 0 16px 28px -14px rgba(0,0,0,.6);
+    box-shadow:0 0 0 1px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.06),
+      0 30px 60px -28px rgba(0,0,0,.34);
   }}
   .glass {{
     position:relative; width:100%; height:100%; padding:{BEZEL}px;
@@ -318,7 +315,6 @@ def page(args):
     background:linear-gradient(90deg, {BACK} 0 30%, {BACK}00 56%);
   }}
 </style></head><body>
-  <div class="stage"></div>
   <div class="floor"></div>
   <div class="neck"></div>
   <div class="foot"></div>
@@ -378,14 +374,17 @@ def main():
     finally:
         html.unlink(missing_ok=True)
 
-    # The banner is opaque and its gradients survive a 256-colour palette:
-    # measured at RMSE 0.0024 at most against the full-colour render, for a
-    # quarter of the bytes. An alpha channel it never uses costs the rest.
+    # The colours go down to 256 and the alpha stays whole: the screen's
+    # gradients survive a palette, the fading shadows band in one. Measured at
+    # RMSE 0.0022 at most against the full render, on a white and on a dark
+    # page, for under 40% of the bytes. The sub filter packs it smallest.
     subprocess.run([
         "magick", str(out),
-        "-background", STAGE, "-alpha", "remove", "-alpha", "off",
-        "-dither", "None", "-colors", "256",
-        "-strip", "-define", "png:compression-level=9", str(out),
+        "(", "+clone", "-alpha", "off", "-dither", "None", "-colors", "256", ")",
+        "+swap", "-compose", "CopyOpacity", "-composite",
+        "-strip", "-define", "png:compression-level=9",
+        "-define", "png:compression-filter=1", "-define", "png:compression-strategy=0",
+        str(out),
     ], check=True)
     print(f"{out}  {out.stat().st_size} bytes")
 
