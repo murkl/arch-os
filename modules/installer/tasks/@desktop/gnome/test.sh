@@ -17,3 +17,10 @@ if [ "$ARCH_OS_DISK_PASSWORD_ENABLED" = "true" ] && grep -qs 'AutomaticLoginEnab
     echo "the disk has a password of its own and the login is automatic" >&2
     exit 1
 fi
+
+# Flatpak off means none at all: a member of the group that depends on it would
+# bring it and Flathub along.
+if [ "$ARCH_OS_FLATPAK_ENABLED" != "true" ] && has_command flatpak; then
+    echo "Flatpak is off and flatpak was installed all the same" >&2
+    exit 1
+fi
