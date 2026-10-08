@@ -72,7 +72,7 @@ Nothing is typed and nothing is tagged by hand.
 | --- | --- | --- |
 | `Title` | a pull request opened, pushed to or edited | Reads the title |
 | `Check` | every run | `make check` |
-| `Image` | a pull request that reaches the image, a release, on demand | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO, then starts its Recovery |
+| `Image` | a pull request that reaches the image, a release, on demand, every Monday | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO, then starts its Recovery |
 | `Ready` | a pull request | Every job it needed has passed. Clears the pictures' commit, which starts no run |
 | `Release` | a push to `main` | The release pull request, cleared to merge, or once that is merged, the tag and the draft page |
 | `Pictures` | a pull request | Renders the pictures in the docs onto its branch, at the release it leads to, where it changes what they show or that release |
@@ -178,7 +178,7 @@ make github
 | File | Says |
 | --- | --- |
 | `repository.json` | Squash merges only, under the pull request's title alone; auto-merge on; a merged branch is deleted |
-| `ruleset.json` | `main` takes nothing but a pull request, squashed, once `Ready` and `Title` have passed; no force push, no deletion |
+| `ruleset.json` | `main` takes nothing but a pull request, squashed, once `Ready` and `Title` have passed; no force push, no deletion. The only protection: a classic one is removed |
 | `actions.json` | A workflow's token reads unless it says otherwise, and may open the release pull request |
 | `code-scanning.json` | No CodeQL: the one language it finds here is the workflows, which are zizmor's, in `make check` |
 

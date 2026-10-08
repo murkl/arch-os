@@ -178,7 +178,8 @@ all: build
 # Downloaded once, checked against the digest GitHub publishes for the asset.
 # The API allows sixty calls an hour per address without a token, so the call
 # carries GITHUB_TOKEN where there is one. Read into a variable first, so a
-# failed read and a missing checksum say different things.
+# failed read and a missing checksum say different things, and one field to a
+# line, however GitHub lays the JSON out.
 $(OAK_BIN):
 	@mkdir -p $(OAK_DIR)
 	$(CURL) $(OAK_URL) -o $(OAK_DIR)/$(OAK_ASSET)
@@ -188,8 +189,8 @@ $(OAK_BIN):
 		echo "$(OAK_API) could not be read. A call that does not say who it is gets 60 an hour per address, and one GitHub will not accept gets none - set or correct GITHUB_TOKEN." >&2; \
 		exit 1; \
 	}; \
-	digest="$$(printf '%s' "$$release" | awk -v asset='"name": "$(OAK_ASSET)"' \
-		'index($$0, asset) { want = 1 } \
+	digest="$$(printf '%s' "$$release" | tr ',' '\n' | awk -v asset='$(OAK_ASSET)' \
+		'$$0 ~ "\"name\": *\"" asset "\"" { want = 1 } \
 		 want && !seen && /"digest": *"sha256:/ { seen = 1; sub(/.*sha256:/, ""); sub(/".*/, ""); print }')"; \
 	[ -n "$$digest" ] \
 		|| { echo "$(OAK_REPO) publishes no checksum for $(OAK_ASSET) at v$(OAK_VERSION)" >&2; exit 1; }; \
@@ -366,9 +367,9 @@ fmt:
 glyphs-check: oak-check
 	@$(ISO_GLYPHS) $(OAK_BIN) $(MODULE_TEXT)
 
-# Every name a module's tables hand to another program, against that program's
-# own list. A wrong keymap, font or time zone reads fine and is silently
-# ignored.
+# Every name a module hands to another program, against that program's own
+# list: a wrong keymap, font or time zone reads fine and is silently ignored,
+# and a package Arch dropped fails somebody's installation.
 data-check:
 	@for check in $(DATA_CHECKS); do $$check || exit 1; done
 
