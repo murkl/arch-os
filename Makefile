@@ -365,9 +365,9 @@ fmt:
 glyphs-check: oak-check
 	@$(ISO_GLYPHS) $(OAK_BIN) $(MODULE_TEXT)
 
-# Every name a module's tables hand to another program, against that program's
-# own list. A wrong keymap, font or time zone reads fine and is silently
-# ignored.
+# Every name a module hands to another program, against that program's own
+# list: a wrong keymap, font or time zone reads fine and is silently ignored,
+# and a package Arch dropped fails somebody's installation.
 data-check:
 	@for check in $(DATA_CHECKS); do $$check || exit 1; done
 

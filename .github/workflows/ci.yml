@@ -56,6 +56,10 @@ jobs:
           fetch-depth: 2
           persist-credentials: false
 
+      # The Installer's package names are held to the repositories, lib32's too.
+      - name: Let pacman sync multilib
+        run: printf '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n' >>/etc/pacman.conf
+
       - uses: ./.github/actions/arch
         with:
           packages: make curl shellcheck shfmt zsh yamllint actionlint zizmor gettext diffutils gitleaks kbd terminus-font tzdata
