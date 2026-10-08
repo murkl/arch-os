@@ -23,6 +23,7 @@ flowchart LR
 - A draft gets the same run and cannot be merged. Marking it ready starts nothing, since it changes no code
 - A pull request that changes nothing but `docs/`, Markdown or `LICENSE` is checked, never built: none of it reaches an image
 - A pull request from a fork is checked, never booted: an image needs a privileged container
+- Where a pull request changes what the pictures in the docs show, CI renders them onto its branch as a commit of its own. Pull before pushing again
 - A pull request that changes nothing but `oak.yaml`, `CHANGELOG.md` or the release manifest starts no run and is never merged: those three are the release pull request's. Change something else with it
 
 ## The Title
@@ -58,6 +59,7 @@ Nothing is typed and nothing is tagged by hand.
 
 - Merges collect in the release pull request until it is merged. When to release is a decision, not a schedule
 - The page carries `arch-os-2.1.0-x86_64.iso`, `arch-os-2.1.0-x86_64.tar.gz` and `arch-os-2.1.0-recovery-x86_64.tar`, all under signed build provenance
+- Every other build is named after the next release: `arch-os-2.1.0-dev-x86_64.iso`, as the open release pull request names it, or the next patch where none is open. `make tarball VERSION=2.1.0` names a build after its release, and only on that release's commit
 - Neither the version nor the changelog is edited by hand. `make check` fails when `oak.yaml` and the release manifest disagree
 
 **Note:** _The page stays a draft until every file hangs on it, so every link to the latest release points at the one before until then. A run that fails on the way leaves a draft: re-run its failed jobs._
@@ -71,9 +73,9 @@ Nothing is typed and nothing is tagged by hand.
 | `Title` | a pull request opened, pushed to or edited | Reads the title |
 | `Check` | every run | `make check` |
 | `Image` | a pull request that reaches the image, a release, on demand | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO |
-| `Ready` | a pull request | Every job it needed has passed |
+| `Ready` | a pull request | Every job it needed has passed. Clears the pictures' commit, which starts no run |
 | `Release` | a push to `main` | The release pull request, or once that is merged, the tag and the draft page |
-| `Pictures` | a push to `main` that leaves a release pull request | Renders the pictures in the docs on it, at its version, and clears it to merge |
+| `Pictures` | a pull request, a push to `main` that leaves a release pull request | Renders the pictures in the docs onto the branch: a pull request's at the release it leads to, where it changes what they show; the release pull request's at its version, and clears it to merge |
 | `Publish` | a release | Hangs the files of that run on the page and publishes it |
 
 **Note:** _A commit is built once. The files on the release page are the ones its run booted, never a rebuild._
@@ -151,15 +153,16 @@ Before any desktop exists there is one console font with at most 512 glyphs: **L
 
 ## Pictures in the Docs
 
-Both are generated, so neither outlives the interface it shows. The release pull request renders them at the version it raises, so the ones on `main` name the release they came with. The commands show them before that:
+Both are generated, so neither outlives the interface it shows. CI renders them onto the branch of a pull request that changes what they show, at the release it leads to, so `main` shows the code it holds. The release pull request renders them again at its version. The commands show them on this machine:
 
 ```
-make docs          # both, in an Arch container, as the release renders them
-make screenshots   # every page in screenshots.yaml, on this machine
-make banner        # the banner, out of two of them, on this machine
+make docs          # both
+make screenshots   # every page in screenshots.yaml
+make banner        # the banner, out of two of them
 ```
 
-- `make docs` needs `docker`. The other two need `chromium`, `imagemagick`, `python-pyte` and `python-yaml`, none of which a build or `make check` needs
+- They need `chromium`, `imagemagick`, `python-pyte`, `python-yaml` and `ttf-firacode-nerd`, none of which a build or `make check` needs, and systemd as PID 1, which `localectl` and `timedatectl` ask. CI renders in an Arch container booted with systemd: **[pictures.sh](../.github/pictures.sh)**
+- A pull request's title raises the release the pictures name: a `feat:` on top of pending fixes renders the next minor
 - Every run is started with `--debug`, so nothing is partitioned, mounted or restarted. Which pages are taken and every answer given is **[screenshots.yaml](screenshots.yaml)**
 - Only `welcome.png`, `setup.png`, `installer.png`, `installing.png` and `recovery.png` are drawn this way. The boot splash, the shell, the fetch and the System Manager are photographs of a running system, taken by hand
 - `installing.png` and `recovery.png` catch a run while it is going, so they differ from run to run

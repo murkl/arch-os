@@ -162,7 +162,7 @@ class Session:
             + text(self._buf))
 
     def still(self, checks=3, step=0.12, timeout=8.0):
-        """Wait until the screen stops changing: the interface fades in."""
+        """Wait until the screen stops changing: the wordmark sweeps in."""
         last, same, end = None, 0, time.time() + timeout
         while time.time() < end:
             now = markup(grid(self._buf))

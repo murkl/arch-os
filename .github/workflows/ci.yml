@@ -113,37 +113,56 @@ jobs:
             --jq '[.[] | select(any(.labels[]; .name == "autorelease: pending")) | .headRefName] | first // empty')"
           echo "branch=${branch}" >>"$GITHUB_OUTPUT"
 
-  # The pictures in the README, rendered on the release pull request at the
-  # version it raises, so they reach main with that release and name no other.
-  # The release pull request starts no run, so this then reports the two checks
-  # main asks of it; its merge is checked on main.
+  # The pictures in the docs, rendered onto the branch they describe: a pull
+  # request's at the release it leads to, the release pull request's at the
+  # release it raises. Neither push starts a run, so this reports the two
+  # checks main asks of the release pull request, whose merge is checked on
+  # main, and Ready those of a pull request's commit. A fork's branch is not
+  # ours to push to.
   #
-  # On the runner itself: `make docs` boots its own Arch container, with the
-  # systemd a job container does not have. See .github/pictures.sh.
+  # On the runner itself: the pictures need an Arch container booted with
+  # systemd, which a job container is not. See .github/pictures.sh.
   pictures:
     name: Pictures
-    needs: release
-    if: needs.release.outputs.pending != ''
+    needs: [check, release]
+    if: >-
+      ${{ !cancelled() && needs.check.result == 'success' && (
+        (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+        || needs.release.outputs.pending != ''
+      ) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
-      contents: write # the pictures, onto the release branch
-      statuses: write # the two checks it is cleared by
+      contents: write # the pictures, onto the branch
+      statuses: write # the two checks the release pull request is cleared by
+    outputs:
+      sha: ${{ steps.render.outputs.sha }}
     env:
-      BRANCH: ${{ needs.release.outputs.pending }}
+      BRANCH: ${{ github.head_ref || needs.release.outputs.pending }}
     steps:
+      # Two deep: a pull request's merge commit and the main it lands on.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 2
           persist-credentials: false
 
-      - run: .github/pictures.sh "$BRANCH"
+      - id: render
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_TOKEN: ${{ github.token }}
+          CHECKED: ${{ github.event.pull_request.head.sha }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            .github/pictures.sh pull-request "$BRANCH" "$CHECKED"
+          else
+            .github/pictures.sh release "$BRANCH"
+          fi
 
       # On the commit the branch ends on now, read off the branch rather than
       # the pull request, which follows a few seconds later.
       - name: The release pull request is cleared to merge
+        if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -191,9 +210,25 @@ jobs:
         with:
           packages: make curl archiso systemd-ukify kbd terminus-font qemu-base edk2-ovmf tesseract tesseract-data-eng openssh libisoburn
 
-      - run: make tarball
+      # Anything but a release is named after the next one, which the open
+      # release pull request names.
+      - name: The release pull request's version
+        env:
+          BRANCH: release-please--branches--main
+        run: |
+          status=0
+          git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null || status=$?
+          case "$status" in
+          0) git fetch --depth=1 origin "+refs/heads/${BRANCH}:refs/remotes/origin/${BRANCH}" ;;
+          2) echo "No release pull request is open" ;;
+          *) exit "$status" ;;
+          esac
+
+      # A release under its own number, which its run hands in.
+      - run: make tarball ${RELEASED:+VERSION="$RELEASED"}
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          RELEASED: ${{ needs.release.outputs.version }}
 
       # Out of the release just packed, not a second build of it.
       - run: make image
@@ -231,10 +266,13 @@ jobs:
   # required the moment it is listed here.
   ready:
     name: Ready
-    needs: [check, image]
+    needs: [check, image, pictures]
     if: ${{ !cancelled() && github.event_name == 'pull_request' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    permissions:
+      checks: read # the title's check on the commit this run checked
+      statuses: write # Ready and Title on the pictures' commit
     steps:
       - name: Every job this pull request needed came out well
         env:
@@ -248,6 +286,30 @@ jobs:
               exit 1
               ;;
             esac
+          done
+
+      # The pictures' commit starts no run and differs from the one checked in
+      # its pictures alone, so it carries this run's Ready and the title's
+      # check on the commit before it.
+      - name: The pictures' commit is cleared to merge
+        if: needs.pictures.outputs.sha != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ needs.pictures.outputs.sha }}
+          CHECKED: ${{ github.event.pull_request.head.sha }}
+        run: |
+          checks=(Ready)
+          title="$(gh api "repos/${GH_REPO}/commits/${CHECKED}/check-runs?check_name=Title" \
+            --jq '[.check_runs[] | select(.conclusion == "success")] | length')"
+          if [ "$title" -gt 0 ]; then
+            checks+=(Title)
+          else
+            echo "::warning::Title has not passed on ${CHECKED}, so ${SHA} waits for it - edit the title to check it again"
+          fi
+          for check in "${checks[@]}"; do
+            gh api --silent "repos/${GH_REPO}/statuses/${SHA}" -f state=success -f context="$check" \
+              -f description="Pictures on ${CHECKED:0:7}, which this run checked"
           done
 
   # The files this run built and booted, hung on the draft page under the
