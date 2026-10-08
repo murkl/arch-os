@@ -101,7 +101,7 @@ make clean             # every build output, taken back; the runtime stays
 
 ```
 sudo pacman -S --needed make curl shellcheck shfmt zsh yamllint actionlint zizmor \
-    gettext gitleaks kbd terminus-font archiso systemd-ukify qemu-base edk2-ovmf tesseract tesseract-data-eng openssh libisoburn
+    gettext diffutils gitleaks kbd terminus-font archiso systemd-ukify qemu-base edk2-ovmf tesseract tesseract-data-eng openssh libisoburn
 ```
 
 **Note:** _CI installs the same packages and runs the same commands in an Arch container. There is no second definition of green._

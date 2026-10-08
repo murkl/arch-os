@@ -203,7 +203,7 @@ jobs:
 
       - uses: ./.github/actions/arch
         with:
-          packages: make curl archiso systemd-ukify kbd terminus-font qemu-base edk2-ovmf tesseract tesseract-data-eng openssh libisoburn
+          packages: make curl archiso systemd-ukify diffutils kbd terminus-font qemu-base edk2-ovmf tesseract tesseract-data-eng openssh libisoburn
 
       # Anything but a release is named after the next one, which the open
       # release pull request names.
