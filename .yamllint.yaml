@@ -18,7 +18,7 @@ rules:
   comments:
     min-spaces-from-content: 1
 
-# Build output and the ISO's scratch space — see /Makefile and iso/build.sh.
+# Build output and the ISO's scratch space - see /Makefile and iso/build.sh.
 ignore: |
   /dist/
   /.dev/

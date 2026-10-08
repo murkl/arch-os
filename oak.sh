@@ -198,6 +198,20 @@ btrfs_subvolumes() {
         @libvirt /var/lib/libvirt/images
 }
 
+# Everything under /mnt taken down, and whatever still holds it logged and
+# killed. Why -R and -M: docs/REFERENCE.md#closing-the-target
+unmount_target() {
+    mountpoint -q "$MNT" || return 0
+    umount -R "$MNT" && return 0
+
+    echo "the target did not unmount, what is holding it:"
+    fuser -Mvm "$MNT" || true
+    fuser -Mkm "$MNT" || true
+    sleep 2 # the kernel needs a moment to actually let go of the files
+
+    umount -R "$MNT"
+}
+
 # Every file sbctl keeps is signed, and there is one. `sbctl verify` answers 0
 # whatever it found, so its list is read.
 boot_chain_signed() {
@@ -607,21 +621,6 @@ mount_target() {
         mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=${subvolume}" "$device" "${MNT}${path%/}"
     done < <(btrfs_subvolumes)
     mount --mkdir -t vfat "$(boot_partition "$ARCH_OS_RECOVERY_DISK")" "${MNT}/boot"
-}
-
-# Everything under /mnt taken down. Whatever still holds it is logged and
-# killed, and a second failure is loud. -R, not -A: the top level is a second
-# mount of the same disk.
-unmount_target() {
-    mountpoint -q "$MNT" || return 0
-    umount -R "$MNT" && return 0
-
-    echo "the target did not unmount, what is holding it:"
-    fuser -Mvm "$MNT" || true
-    fuser -Mkm "$MNT" || true
-    sleep 2 # the kernel needs a moment to actually let go of the files
-
-    umount -R "$MNT"
 }
 
 # ////////////////////////////////////////////////////////////////////////////

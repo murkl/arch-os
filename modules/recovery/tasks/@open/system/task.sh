@@ -17,7 +17,7 @@ echo "closed ${MNT}"
 part="$(target_partition)"
 if [ -z "$part" ]; then
     echo "${ARCH_OS_RECOVERY_DISK} holds no Arch OS installation: its second partition is neither a LUKS container nor a btrfs labelled BTRFS." >&2
-    exit 1
+    return 1
 fi
 
 # On stdin, never on a command line /proc shows.

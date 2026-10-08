@@ -1,4 +1,4 @@
-# Build output — see /Makefile. dist/ holds everything a build produces, .dev/ is
+# Build output - see /Makefile. dist/ holds everything a build produces, .dev/ is
 # that same shape made of symlinks, for running against the sources.
 /dist/
 /.dev/
