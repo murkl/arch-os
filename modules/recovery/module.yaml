@@ -3,18 +3,6 @@
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
 title: Recovery
-description: |
-  Ready to repair the Arch Linux system on the chosen disk. Start the repair,
-  or review every value first.
-
-# Opening changes nothing, and the steps that do ask on their own.
-text:
-  start: Repair
-  settings: Configuration
-  confirm: |
-    Open the system on {{ARCH_OS_RECOVERY_DISK}}?
-
-    Opening it changes nothing. Every step that does asks first.
 
 # Nothing waits for a network: a repair downloads nothing, and the network may
 # be what broke.

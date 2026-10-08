@@ -6,7 +6,7 @@
 # the disk is held to the list it is chosen from right before it is written.
 disks="$(options_disks | cut -f1)"
 if ! grep -qxF "$ARCH_OS_DISK" <<<"$disks"; then
-    echo "${ARCH_OS_DISK} is not one of the disks this machine can be installed on. Choose the disk again in the Configuration." >&2
+    echo "${ARCH_OS_DISK} is not one of the disks this machine can be installed on. Choose the disk again in Setup." >&2
     exit 1
 fi
 boot_part="$(boot_partition "$ARCH_OS_DISK")"

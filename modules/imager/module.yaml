@@ -5,17 +5,9 @@
 # Named after what it does, since its row is read as the thing about to happen.
 # The folder stays imager, which its files are named after.
 title: Create boot medium
-description: |
-  Ready to write Arch OS to a USB device to boot from. Start writing, or review
-  every value first.
 
-text:
-  start: Create
-  settings: Configuration
-  confirm: |
-    Erase {{ARCH_OS_IMAGE_DEVICE}} and write Arch OS to it?
-
-    Everything on it is lost.
+# A yes before the work: it erases a device.
+confirm: true
 
 rules:
   offer-if: [installed-system]

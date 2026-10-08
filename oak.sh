@@ -673,12 +673,14 @@ Arch Linux
 EOF
 }
 
-# The Arch Linux mark beside the words over every module's menu.
+# The Arch Linux mark over every module's menu. Five rows stand to the blank
+# line and the two rows under it in the golden ratio.
 icon_arch_linux() {
     cat <<'EOF'
     ▄█▄
    ▄███▄
-  ███▀███
+  ▄█████▄
+ ▄██▀ ▀██▄
 ▄██▀   ▀██▄
 EOF
 }

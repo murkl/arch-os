@@ -42,15 +42,15 @@
         press: enter
 
       # Also the page the banner is collaged from - see BANNER_CARDS in /Makefile.
-      - page: [Install, Configuration]
-        choose: Configuration
+      - page: [Start, Setup]
+        choose: Setup
         press: enter
-      - page: Every used value
+      - page: [Setup, Username]
         shot: installer
         press: esc
 
-      - page: [Install, Configuration]
-        choose: Install
+      - page: [Start, Setup]
+        choose: Start
         press: enter
 
       # Asked here rather than with the other answers, and written to no file.
@@ -59,8 +59,8 @@
       - page: Repeat
         press: [tuxpass, enter]
 
-      # The last page, after the password: what is about to be erased.
-      - page: and install Arch Linux?
+      # The last page, after the password.
+      - page: Do you really want to start?
         choose: "Yes"
         press: enter
 
@@ -78,10 +78,7 @@
         press: enter
       - page: Disk
         press: enter
-      - page: [Repair, Configuration]
-        press: enter
-      - page: Open the system on
-        choose: "Yes"
+      - page: [Start, Setup]
         press: enter
       - page: in place of the system
         shot: recovery
