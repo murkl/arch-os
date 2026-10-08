@@ -214,15 +214,15 @@ unmount_target() {
 }
 
 # Every file sbctl keeps is signed, and there is one. `sbctl verify` answers 0
-# whatever it found, so its list is read.
+# whatever it found, so its list is read, however it spaces its JSON.
 boot_chain_signed() {
     local files
     files="$(arch-chroot "$1" sbctl list-files --json)" || return 1
-    if ! grep -q '"is_signed": true' <<<"$files"; then
+    if ! grep -qE '"is_signed": *true' <<<"$files"; then
         echo "sbctl keeps no signed file" >&2
         return 1
     fi
-    if grep -q '"is_signed": false' <<<"$files"; then
+    if grep -qE '"is_signed": *false' <<<"$files"; then
         echo "sbctl keeps files that are not signed: ${files}" >&2
         return 1
     fi
