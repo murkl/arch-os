@@ -53,7 +53,7 @@ END_COMMIT_OVERRIDE
 
 Nothing is typed and nothing is tagged by hand.
 
-1. **Every merge that releases something** opens or updates the pull request `chore(main): release 2.1.0`. It raises `version:` in **[oak.yaml](../oak.yaml)** and writes that version's section of **[CHANGELOG.md](../CHANGELOG.md)**
+1. **Every merge that releases something** opens or updates the pull request `chore(main): release 2.1.0`. It raises `version:` in **[oak.yaml](../oak.yaml)**, writes that version's section of **[CHANGELOG.md](../CHANGELOG.md)** and renders the pictures in the docs at that version
 2. **Merging it is the release.** The run on `main` tags `v2.1.0`, builds and boots the images, hangs them on the release page and publishes it
 
 - Merges collect in the release pull request until it is merged. When to release is a decision, not a schedule
@@ -62,7 +62,7 @@ Nothing is typed and nothing is tagged by hand.
 
 **Note:** _The page stays a draft until every file hangs on it, so every link to the latest release points at the one before until then. A run that fails on the way leaves a draft: re-run its failed jobs._
 
-**Note:** _The release pull request starts no run. The release run that wrote it reports `Ready` and `Title` on it, and its merge is checked on `main` before the tag exists. See **[ci.yml](../.github/workflows/ci.yml)**._
+**Note:** _The release pull request starts no run. The run that wrote it renders its pictures and reports `Ready` and `Title` on it, and its merge is checked on `main` before the tag exists. See **[ci.yml](../.github/workflows/ci.yml)**._
 
 ## What CI Runs
 
@@ -73,6 +73,7 @@ Nothing is typed and nothing is tagged by hand.
 | `Image` | a pull request that reaches the image, a release, on demand | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO |
 | `Ready` | a pull request | Every job it needed has passed |
 | `Release` | a push to `main` | The release pull request, or once that is merged, the tag and the draft page |
+| `Pictures` | a push to `main` that leaves a release pull request | Renders the pictures in the docs on it, at its version, and clears it to merge |
 | `Publish` | a release | Hangs the files of that run on the page and publishes it |
 
 **Note:** _A commit is built once. The files on the release page are the ones its run booted, never a rebuild._
@@ -150,15 +151,15 @@ Before any desktop exists there is one console font with at most 512 glyphs: **L
 
 ## Pictures in the Docs
 
-Both are generated, so neither outlives the interface it shows.
+Both are generated, so neither outlives the interface it shows. The release pull request renders them at the version it raises, so the ones on `main` name the release they came with. The commands show them before that:
 
 ```
-make screenshots   # after any visible change to a page
-make banner        # after the screenshots, the wordmark or the accent changed
-make docs          # both, in that order
+make docs          # both, in an Arch container, as the release renders them
+make screenshots   # every page in screenshots.yaml, on this machine
+make banner        # the banner, out of two of them, on this machine
 ```
 
-- They need `chromium`, `imagemagick`, `python-pyte` and `python-yaml`, none of which a build or `make check` needs
+- `make docs` needs `docker`. The other two need `chromium`, `imagemagick`, `python-pyte` and `python-yaml`, none of which a build or `make check` needs
 - Every run is started with `--debug`, so nothing is partitioned, mounted or restarted. Which pages are taken and every answer given is **[screenshots.yaml](screenshots.yaml)**
 - Only `welcome.png`, `setup.png`, `installer.png`, `installing.png` and `recovery.png` are drawn this way. The boot splash, the shell, the fetch and the System Manager are photographs of a running system, taken by hand
 - `installing.png` and `recovery.png` catch a run while it is going, so they differ from run to run

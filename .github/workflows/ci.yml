@@ -7,9 +7,10 @@ on:
   # Other branches are checked through their pull request.
   push:
     branches: [main]
-  # Not the release pull request, which touches nothing but these three: it
-  # starts no run, and the release job below reports its checks instead. A
-  # pull request that changes only these is held back for the same reason.
+  # Not the release pull request, which touches these three and the pictures
+  # rendered for it: it starts no run, and the pictures job below reports its
+  # checks instead. A pull request that changes only these three is held back
+  # for the same reason.
   pull_request:
     paths-ignore:
       - CHANGELOG.md
@@ -89,34 +90,87 @@ jobs:
     permissions:
       contents: write # the tag and the release page
       pull-requests: write # the release pull request
-      statuses: write # the two checks it is cleared by
     outputs:
       created: ${{ steps.please.outputs.release_created }}
       tag: ${{ steps.please.outputs.tag_name }}
       version: ${{ steps.please.outputs.version }}
       notes: ${{ steps.please.outputs.body }}
+      pending: ${{ steps.pending.outputs.branch }}
     steps:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: please
 
-      # The release pull request starts no run, so this reports the two checks
-      # main asks of it; its merge is checked on main. Read off the branch, not
-      # the pull request, which follows a few seconds later, and the label off
-      # the list, since a search lags the label this run has just set.
+      # The branch of the release pull request this run left open, if any. The
+      # label is read off the list, since a search lags the label this run has
+      # just set.
+      - name: The release pull request
+        id: pending
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          branch="$(gh pr list --state open --json headRefName,labels \
+            --jq '[.[] | select(any(.labels[]; .name == "autorelease: pending")) | .headRefName] | first // empty')"
+          echo "branch=${branch}" >>"$GITHUB_OUTPUT"
+
+  # The pictures in the README, rendered on the release pull request at the
+  # version it raises, so they reach main with that release and name no other.
+  # The release pull request starts no run, so this then reports the two checks
+  # main asks of it; its merge is checked on main.
+  #
+  # On the runner itself: `make docs` boots its own Arch container, with the
+  # systemd a job container does not have.
+  pictures:
+    name: Pictures
+    needs: release
+    if: needs.release.outputs.pending != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write # the pictures, onto the release branch
+      statuses: write # the two checks it is cleared by
+    env:
+      BRANCH: ${{ needs.release.outputs.pending }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.release.outputs.pending }}
+          persist-credentials: false
+
+      - run: make docs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      # The token reaches git through its environment, never its command line.
+      - name: Push them to the release pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add docs
+          if git diff --cached --quiet; then
+            echo "The pictures are the ones on ${BRANCH} already"
+          else
+            git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit -m "docs: the pictures at $(sed -n 's/^version:[[:space:]]*//p' oak.yaml)"
+            GIT_CONFIG_COUNT=1 \
+              GIT_CONFIG_KEY_0=http.https://github.com/.extraheader \
+              GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" \
+              git push origin "HEAD:${BRANCH}"
+          fi
+
+      # On the commit the branch ends on now, not the pull request, which
+      # follows a few seconds later.
       - name: The release pull request is cleared to merge
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          gh pr list --state open --json headRefName,labels \
-            --jq '.[] | select(any(.labels[]; .name == "autorelease: pending")) | .headRefName' |
-            while read -r branch; do
-              sha="$(gh api "repos/${GH_REPO}/git/ref/heads/${branch}" --jq .object.sha)"
-              for check in Ready Title; do
-                gh api --silent "repos/${GH_REPO}/statuses/${sha}" -f state=success -f context="$check" \
-                  -f description="Release pull request - checked on main once merged"
-              done
-            done
+          sha="$(git rev-parse HEAD)"
+          for check in Ready Title; do
+            gh api --silent "repos/${GH_REPO}/statuses/${sha}" -f state=success -f context="$check" \
+              -f description="Release pull request - checked on main once merged"
+          done
 
   # The images, booted and installed: one job, because the gigabyte between
   # building and booting costs more to hand on than to make. A fork is not
