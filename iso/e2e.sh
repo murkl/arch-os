@@ -2,9 +2,9 @@
 # Walks a built ISO the whole way a person does, unattended: installs Arch OS
 # onto an empty disk, boots it, rolls it back with the Recovery, boots it again
 # and starts the Recovery on its own partition. What smoke.sh proves up to the
-# first page, this proves past it.
+# first page, this proves past it. A Desktop is installed and booted only.
 #
-#   e2e.sh <image.iso>
+#   e2e.sh <image.iso> [core|desktop]
 #
 # The live image is reached over ssh, by the cloud-init the Arch ISO carries;
 # the interface runs in tmux there, driven by its keys and read off its pane.
@@ -15,8 +15,9 @@
 set -eu
 
 ISO="${1:-}"
-[ -f "$ISO" ] || {
-    echo "usage: $0 <image.iso>" >&2
+START="${2:-core}"
+[ -f "$ISO" ] && [[ $START =~ ^(core|desktop)$ ]] || {
+    echo "usage: $0 <image.iso> [core|desktop]" >&2
     exit 1
 }
 
@@ -24,15 +25,16 @@ ISO="${1:-}"
 # phase keeps a picture of the console it ended on.
 WORK="${WORK:-$(dirname "$ISO")/e2e}"
 
-# A cold run on a busy runner, with every package downloaded.
-INSTALL_TIMEOUT="${INSTALL_TIMEOUT:-2700}"
+# A cold run on a busy runner, with every package downloaded, and for a Desktop
+# three builds from the AUR on top.
+INSTALL_TIMEOUT="${INSTALL_TIMEOUT:-$([ "$START" = desktop ] && echo 5400 || echo 2700)}"
 BOOT_TIMEOUT="${BOOT_TIMEOUT:-300}"
 REPAIR_TIMEOUT="${REPAIR_TIMEOUT:-600}"
 
 OVMF_CODE="${OVMF_CODE:-/usr/share/edk2/x64/OVMF_CODE.secboot.4m.fd}"
 OVMF_VARS="${OVMF_VARS:-/usr/share/edk2/x64/OVMF_VARS.4m.fd}"
 
-# The answers a Core installation takes, with everything the Recovery works on:
+# What every installation here is given, with everything the Recovery works on:
 # an encrypted disk, the chain signed, and its partition. The firmware starts in
 # setup mode, so the Installer enrolls the keys and the next boot enforces them.
 USERNAME=tux
@@ -282,10 +284,10 @@ recovery_menu() {
 # THE RUN
 # ////////////////////////////////////////////////////////////////////////////
 
-start install
-until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
-live systemctl stop arch-os
-live "cat >/opt/arch-os/installer.conf" <<EOF
+# The answers, shared and then the starting point's own: the Desktop is its
+# preset with the SSH server on, which is how this run reaches it.
+answers() {
+    cat <<EOF
 ARCH_OS_USERNAME='${USERNAME}'
 ARCH_OS_HOSTNAME='arch-os-e2e'
 ARCH_OS_LOCALE_LANG='en_US'
@@ -297,21 +299,49 @@ ARCH_OS_DISK='${DISK}'
 ARCH_OS_ENCRYPTION_ENABLED='true'
 ARCH_OS_SECURE_BOOT_ENABLED='true'
 ARCH_OS_RECOVERY_ENABLED='true'
-ARCH_OS_BOOTSPLASH_ENABLED='false'
 ARCH_OS_KERNEL_ARGS=''
 ARCH_OS_CORE_TWEAKS_ENABLED='true'
-ARCH_OS_MULTILIB_ENABLED='false'
-ARCH_OS_AUR_HELPER_ENABLED='false'
 ARCH_OS_CONTAINER_ENGINE='none'
 ARCH_OS_FIREWALL_ENABLED='true'
 ARCH_OS_SSH_SERVER_ENABLED='true'
 ARCH_OS_HOUSEKEEPING_ENABLED='true'
 ARCH_OS_EDITOR='nano'
+ARCH_OS_VM_HOST_ENABLED='false'
+EOF
+    case "$START" in
+    core)
+        cat <<EOF
+ARCH_OS_BOOTSPLASH_ENABLED='false'
+ARCH_OS_MULTILIB_ENABLED='false'
+ARCH_OS_AUR_HELPER_ENABLED='false'
 ARCH_OS_SHELL_ENHANCEMENT_ENABLED='false'
 ARCH_OS_MANAGER_ENABLED='false'
-ARCH_OS_VM_HOST_ENABLED='false'
 ARCH_OS_DESKTOP='none'
 EOF
+        ;;
+    desktop)
+        cat <<EOF
+ARCH_OS_BOOTSPLASH_ENABLED='true'
+ARCH_OS_MULTILIB_ENABLED='true'
+ARCH_OS_AUR_HELPER_ENABLED='true'
+ARCH_OS_SHELL_ENHANCEMENT_ENABLED='true'
+ARCH_OS_MANAGER_ENABLED='true'
+ARCH_OS_DESKTOP='gnome'
+ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
+ARCH_OS_DESKTOP_SLIM_ENABLED='true'
+ARCH_OS_BROWSER='firefox'
+ARCH_OS_BACKUP='pika-backup'
+ARCH_OS_FLATPAK_ENABLED='true'
+ARCH_OS_SAMBA_SHARE_ENABLED='false'
+EOF
+        ;;
+    esac
+}
+
+start install
+until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
+live systemctl stop arch-os
+answers | live "cat >/opt/arch-os/installer.conf"
 live "tmux new-session -d -s e2e -x 120 -y 40 'installer --language=en'"
 
 say "Install"
@@ -331,6 +361,16 @@ stopped
 
 start disk
 healthy
+
+# A Desktop is held to its login screen; the repair is the Core's to prove.
+if [ "$START" = desktop ]; then
+    [ "$(installed systemctl is-active gdm || true)" = active ] || fail "the login screen of the Desktop is not running"
+    say "Desktop: the login screen is up"
+    shutdown_installed
+    say "Arch OS installs a Desktop and boots it to its login screen"
+    exit 0
+fi
+
 snapshots="$(as_root snapper --csvout --no-headers list | wc -l)"
 [ "$snapshots" -gt 1 ] || fail "the installed system holds no snapshot to go back to"
 shutdown_installed

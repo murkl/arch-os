@@ -110,6 +110,9 @@ ISO_E2E    := $(ISO_DIR)/e2e.sh
 ISO_GLYPHS := $(ISO_DIR)/glyphs.sh
 ISO_FONT   := $(ISO_DIR)/font.sh
 
+# What `make e2e` installs: core or desktop.
+START ?= core
+
 # The newest images, read when used, so `make iso && make smoke` needs no
 # argument.
 ISO      ?= $(shell ls -t $(DIST_DIR)/*.iso 2>/dev/null | head -1)
@@ -285,10 +288,11 @@ smoke:
 	$(ISO_SMOKE) $(RECOVERY)
 
 # Installs the newest ISO onto a disk, boots it, repairs it with the Recovery,
-# boots it again and starts the Recovery on its partition. The logs land in
+# boots it again and starts the Recovery on its partition; START=desktop
+# installs a Desktop and boots it to its login screen. The logs land in
 # dist/e2e/.
 e2e:
-	$(ISO_E2E) $(ISO)
+	$(ISO_E2E) $(ISO) $(START)
 
 # Every template rewritten and every catalog brought up to it: a changed text
 # turns fuzzy, a removed one is dropped.
