@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# The two lookup tables beside this file, against the system they name.
+# The names this Installer hands to other programs, against those programs' own
+# lists: the two lookup tables beside this file, and the packages its tasks
+# install.
 #
 #   check.sh
 #
@@ -83,5 +85,35 @@ while IFS=$'\t' read -r code country zone extra; do
         complain "countries: ${code} names the time zone ${zone}, which tzdata does not have"
 done <countries
 
-[ "$status" -eq 0 ] && echo "every name in languages and countries is one this system has"
+# Every package a task names outright, and every list answer that is one,
+# against the repositories this system syncs: a name Arch dropped fails here
+# rather than in somebody's installation. Names put together at run time are
+# looked up by their task, which says so where one is missing.
+tasks=../tasks
+repos="$(pacman-conf --repo-list)"
+packages="$(
+    awk '
+        { sub(/#.*/, "") }
+        /(^|[[:space:]])(packages|lib32)\+?=\(/ { list = 1; sub(/.*(packages|lib32)\+?=\(/, "") }
+        /chroot_pacman_install / { sub(/.*chroot_pacman_install /, ""); print; next }
+        list { line = $0; if (sub(/\).*/, "", line)) list = 0; print line }
+    ' "$tasks"/@*/*/task.sh
+    awk '/^  - name: ARCH_OS_(EDITOR|BROWSER|BACKUP)$/ { want = 1 } want && /^    options:/ { gsub(/.*\[|\].*/, ""); print; want = 0 }' ../module.yaml
+    sed -n 's/^export KERNEL=\(.*\)/\1 \1-headers/p; s/^[[:space:]]*echo \([a-z]*-ucode\)$/\1/p' ../../../oak.sh
+)"
+packages="$(tr ', ' '\n' <<<"$packages" | grep -E '^[a-z0-9][a-z0-9@._+-]*$' | grep -vx none | sort -u)"
+if ! grep -qx multilib <<<"$repos"; then
+    echo "packages: multilib is not synced here, so $(grep -c '^lib32-' <<<"$packages") lib32 names went unchecked"
+    packages="$(grep -v '^lib32-' <<<"$packages")"
+fi
+mapfile -t names <<<"$packages"
+if ! said="$(pacman -Sp --print-format %n "${names[@]}" 2>&1 >/dev/null)"; then
+    missing="$(sed -n 's/^error: target not found: //p' <<<"$said")"
+    [ -n "$missing" ] || complain "packages: pacman could not be asked - ${said}"
+    while read -r name; do
+        [ -z "$name" ] || complain "packages: ${name} is in no repository this system syncs"
+    done <<<"$missing"
+fi
+
+[ "$status" -eq 0 ] && echo "every name in languages and countries is one this system has, and $(wc -l <<<"$packages") packages are in the repositories"
 exit "$status"
