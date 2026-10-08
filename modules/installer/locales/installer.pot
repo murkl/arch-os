@@ -23,9 +23,9 @@ msgstr ""
 msgid "Installer"
 msgstr ""
 
-#. what it is, in one sentence, under the row that starts the work
+#. what it is and what its menu offers, over the menu's rows
 #: module.yaml
-msgid "Install Arch Linux on this machine."
+msgid "Ready to install Arch Linux on this machine. Start the installation, or review every value first."
 msgstr ""
 
 #. the row that starts the work

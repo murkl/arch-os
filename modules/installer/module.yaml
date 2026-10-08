@@ -3,7 +3,9 @@
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
 
 title: Installer
-description: Install Arch Linux on this machine.
+description: |
+  Ready to install Arch Linux on this machine. Start the installation, or
+  review every value first.
 
 # The last page comes after the password, and names the disk it erases.
 text:

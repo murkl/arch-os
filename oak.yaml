@@ -19,12 +19,6 @@ status:
   pass: Online
   fail: Offline
 
-# Above the blank line the eyebrow, below it the wordmark.
-logo: |
-  Arch Linux
-
-   █████  ██████   ██████ ██   ██      ██████  ███████
-  ██   ██ ██   ██ ██      ██   ██     ██    ██ ██
-  ███████ ██████  ██      ███████     ██    ██ ███████
-  ██   ██ ██   ██ ██      ██   ██     ██    ██      ██
-  ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
+# Pictures, printed by functions in oak.sh.
+logo: logo_arch_os()
+icon: icon_arch_linux()

@@ -294,7 +294,7 @@ EOF
 live "tmux new-session -d -s e2e -x 120 -y 40 'installer --language=en'"
 
 say "Install"
-shows "Install Arch Linux on this machine."
+shows "Ready to install Arch Linux on this machine."
 keys Enter
 shows "Password"
 typed "$PASSWORD"
@@ -321,7 +321,7 @@ live "printf \"ARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\"
 live "tmux new-session -d -s e2e -x 120 -y 40 'recovery --language=en'"
 
 say "Repair: go back to the newest snapshot and rebuild the boot files"
-shows "Repair an Arch Linux system"
+shows "Ready to repair the Arch Linux system"
 keys Enter
 shows "Encryption password"
 typed "$PASSWORD"

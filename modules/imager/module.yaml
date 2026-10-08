@@ -5,7 +5,9 @@
 # Named after what it does, since its row is read as the thing about to happen.
 # The folder stays imager, which its files are named after.
 title: Create boot medium
-description: Write Arch OS to a USB device to boot another machine from.
+description: |
+  Ready to write Arch OS to a USB device to boot from. Start writing, or review
+  every value first.
 
 text:
   start: Create

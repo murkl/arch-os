@@ -20,10 +20,10 @@ msgstr "Deutsch"
 msgid "Recovery"
 msgstr "Recovery"
 
-#. what it is, in one sentence, under the row that starts the work
+#. what it is and what its menu offers, over the menu's rows
 #: module.yaml
-msgid "Repair an Arch Linux system that is already on a disk."
-msgstr "Ein Arch-Linux-System reparieren, das schon auf einem Datenträger liegt."
+msgid "Ready to repair the Arch Linux system on the chosen disk. Start the repair, or review every value first."
+msgstr "Bereit, das Arch-Linux-System auf dem gewählten Datenträger zu reparieren. Starte die Reparatur oder prüfe vorher alle Werte."
 
 #. the row that starts the work
 #: module.yaml

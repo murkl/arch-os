@@ -23,9 +23,9 @@ msgstr ""
 msgid "Recovery"
 msgstr ""
 
-#. what it is, in one sentence, under the row that starts the work
+#. what it is and what its menu offers, over the menu's rows
 #: module.yaml
-msgid "Repair an Arch Linux system that is already on a disk."
+msgid "Ready to repair the Arch Linux system on the chosen disk. Start the repair, or review every value first."
 msgstr ""
 
 #. the row that starts the work
