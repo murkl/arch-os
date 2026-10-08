@@ -163,7 +163,7 @@ SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 # python-pyte and python-yaml, so they stay out of `check`. CI renders the ones
 # committed, onto the branch they describe - see .github/pictures.sh.
 BANNER_CARDS   := docs/screenshots/installer.png docs/screenshots/installing.png
-BANNER_TAGLINE := Install Arch Linux with ease — as a desktop or a TTY system. Installer and Recovery on one image.
+BANNER_TAGLINE := Install Arch Linux with ease - as a desktop or a TTY system. Installer and Recovery on one image.
 BANNER_CELL    := 9
 
 .PHONY: all oak oak-check build dev run inspect tarball image iso smoke e2e locales \

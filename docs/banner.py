@@ -180,11 +180,10 @@ def data_uri(path):
 
 # --- the page ------------------------------------------------------------
 #
-# The banner is the screen of a monitor, cut out: nothing around the monitor
-# and its stand is painted, so it sits on whatever page shows it. Its shadows
-# lift the light rim off a light page and vanish on a dark one. The banner is
-# laid out at a 16:9 size of its own and scaled onto the screen, so the
-# wordmark keeps the cell size the project passes in.
+# The banner is the screen of a monitor cut out of its page, with shadows that
+# lift it off a light one and vanish on a dark one. It is laid out at a 16:9
+# size of its own and scaled onto the screen, so the wordmark keeps the cell
+# size the project passes in.
 
 
 def page(args):
@@ -374,10 +373,10 @@ def main():
     finally:
         html.unlink(missing_ok=True)
 
-    # The colours go down to 256 and the alpha stays whole: the screen's
-    # gradients survive a palette, the fading shadows band in one. Measured at
-    # RMSE 0.0022 at most against the full render, on a white and on a dark
-    # page, for under 40% of the bytes. The sub filter packs it smallest.
+    # 256 colours and the whole alpha: the screen's gradients survive a palette,
+    # the fading shadows band in one. Measured at RMSE 0.0022 at most against the
+    # full render on a white and a dark page, for under 40% of the bytes with the
+    # sub filter.
     subprocess.run([
         "magick", str(out),
         "(", "+clone", "-alpha", "off", "-dither", "None", "-colors", "256", ")",
