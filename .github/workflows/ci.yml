@@ -119,7 +119,7 @@ jobs:
   # main asks of it; its merge is checked on main.
   #
   # On the runner itself: `make docs` boots its own Arch container, with the
-  # systemd a job container does not have.
+  # systemd a job container does not have. See .github/pictures.sh.
   pictures:
     name: Pictures
     needs: release
@@ -134,39 +134,21 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.release.outputs.pending }}
           persist-credentials: false
 
-      - run: make docs
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
-      # The token reaches git through its environment, never its command line.
-      - name: Push them to the release pull request
+      - run: .github/pictures.sh "$BRANCH"
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          git add docs
-          if git diff --cached --quiet; then
-            echo "The pictures are the ones on ${BRANCH} already"
-          else
-            git -c user.name='github-actions[bot]' \
-              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
-              commit -m "docs: the pictures at $(sed -n 's/^version:[[:space:]]*//p' oak.yaml)"
-            GIT_CONFIG_COUNT=1 \
-              GIT_CONFIG_KEY_0=http.https://github.com/.extraheader \
-              GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" \
-              git push origin "HEAD:${BRANCH}"
-          fi
+          GITHUB_TOKEN: ${{ github.token }}
 
-      # On the commit the branch ends on now, not the pull request, which
-      # follows a few seconds later.
+      # On the commit the branch ends on now, read off the branch rather than
+      # the pull request, which follows a few seconds later.
       - name: The release pull request is cleared to merge
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          sha="$(git rev-parse HEAD)"
+          sha="$(gh api "repos/${GH_REPO}/git/ref/heads/${BRANCH}" --jq .object.sha)"
           for check in Ready Title; do
             gh api --silent "repos/${GH_REPO}/statuses/${sha}" -f state=success -f context="$check" \
               -f description="Release pull request - checked on main once merged"
