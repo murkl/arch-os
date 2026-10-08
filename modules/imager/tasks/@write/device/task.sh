@@ -25,8 +25,10 @@ echo "Writing ${target##*/} to ${device}."
 echo
 
 # A file manager still holding the stick open is why a plain umount refuses.
+# Raw output writes a space in a stick's label as \x20.
 while read -r mountpoint; do
     [ -n "$mountpoint" ] || continue
+    mountpoint="$(printf '%b' "$mountpoint")"
     echo "Unmounting ${mountpoint}"
     as_root umount "$mountpoint" || as_root umount -l "$mountpoint"
 done < <(lsblk -nro MOUNTPOINT "$device")
