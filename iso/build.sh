@@ -196,6 +196,13 @@ install_bootsplash() {
     [ -f "$hooks" ] || { echo "Error: archiso mkinitcpio config not found at '${hooks}'" && exit 1; }
     grep -q 'plymouth' "$hooks" || sed -i 's/^HOOKS=(\(base [a-z]*\)/HOOKS=(\1 plymouth/' "$hooks"
     grep -q 'plymouth' "$hooks" || { echo "Error: no HOOKS=(base ...) line in '${hooks}' to add plymouth to" && exit 1; }
+
+    # A live image counts every boot as its first, so systemd-firstboot runs in
+    # the middle of the splash and resets the console under it, which blinks the
+    # splash out. Measured under QEMU, with the console there from the start. It
+    # asks nothing here, since the image comes configured.
+    mkdir -p "${profile}/airootfs/etc/systemd/system"
+    ln -sf /dev/null "${profile}/airootfs/etc/systemd/system/systemd-firstboot.service"
 }
 
 # One systemd unit on tty1 replaces autologin, a shell profile and a menu script:
