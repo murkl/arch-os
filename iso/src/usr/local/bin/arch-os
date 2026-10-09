@@ -7,8 +7,8 @@
 # decides which glyphs exist. Not worth refusing to start over, so it may fail.
 #
 # The font is Terminus Bold, built by iso/font.sh, in the largest of these sizes
-# that leaves the interface no more than 1/φ of the screen each way, and in the
-# smallest where none does - see iso/README.md. `make glyphs-check` holds every
+# that leaves the interface no more than half of the screen each way, and in
+# the smallest where none does - see iso/README.md. `make glyphs-check` holds every
 # one to what this image puts on the console.
 #
 # Oak looks for oak.yaml and the modules folder beside its own binary, so it is
@@ -17,10 +17,11 @@
 # left off.
 set -eu
 
-SIZES="32 24 20 18"
+SIZES="32 24 20 16"
 
-# The interface is 95 columns by 25 rows; times φ, that is the screen it needs.
-COLS=154 ROWS=40
+# The interface is 95 columns by 25 rows; twice that is the screen it needs.
+# iso/font.sh holds every size to being twice as tall as it is wide.
+COLS=190 ROWS=50
 
 # Only on a console: a terminal in a window has its font already.
 if [[ "$(tty)" == /dev/tty[0-9]* ]]; then

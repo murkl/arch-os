@@ -47,8 +47,22 @@ for size in $SIZES; do
     gzip -cd "$source" >"$WORK/font"
     psfgettable "$WORK/font" >"$WORK/table"
 
-    # Where the glyphs start in a PSF2 file, and how many bytes each takes.
-    read -r offset _ _ bytes < <(od -An -tu4 --endian=little -j8 -N16 "$WORK/font")
+    # Where the glyphs start, how many bytes each takes, and its cell. PSF2 says
+    # so in its header; PSF1, which the sizes 8 pixels wide come in, has a
+    # header of 4 bytes and a byte a row.
+    case "$(od -An -tx1 -N2 "$WORK/font" | tr -d ' ')" in
+    72b5) read -r offset _ _ bytes height width < <(od -An -tu4 -w24 --endian=little -j8 -N24 "$WORK/font") ;;
+    3604) offset=4 bytes="$(od -An -tu1 -j3 -N1 "$WORK/font" | tr -d ' ')" height="$bytes" width=8 ;;
+    *)
+        echo "Error: ${source} is no PSF font" >&2
+        exit 1
+        ;;
+    esac
+    # The launcher takes every size to be twice as tall as it is wide.
+    [ "$height" -eq "$size" ] && [ "$((width * 2))" -eq "$size" ] || {
+        echo "Error: ${source} is ${width} by ${height}, which the launcher reads as $((size / 2)) by ${size}" >&2
+        exit 1
+    }
     head -c "$((bytes / 2))" /dev/zero >"$WORK/empty"
     tr '\0' '\377' <"$WORK/empty" >"$WORK/solid"
 
