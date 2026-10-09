@@ -2,9 +2,9 @@
 Type=Application
 Name=Recovery
 Comment=Restart into the Recovery to repair this system
-Comment[de]=In die Recovery neu starten, um dieses System zu reparieren
+Comment[de]=In das Recovery neu starten, um dieses System zu reparieren
 Keywords=Arch OS;Recovery;Repair;Rescue;Rollback;Snapshot;
 Keywords[de]=Arch OS;Recovery;Reparieren;Rettung;Zurücksetzen;Snapshot;
-Icon=applications-system
+Icon=arch-os-recovery
 Categories=System;
 Exec=/usr/local/bin/arch-os-recovery

@@ -139,7 +139,7 @@ msgstr "Ein installiertes Linux-System"
 #. an action: what a no from it means
 #: actions/installed-system/action.yaml
 msgid "Create boot medium writes a device from an installed Linux system. On the live image there is a machine to work on instead - open the Installer or the Recovery."
-msgstr "Bootmedium erstellen schreibt einen Datenträger von einem installierten Linux-System aus. Auf dem Live-Image gibt es stattdessen einen Rechner zu bearbeiten - öffne den Installer oder die Recovery."
+msgstr "Bootmedium erstellen schreibt einen Datenträger von einem installierten Linux-System aus. Auf dem Live-Image gibt es stattdessen einen Rechner zu bearbeiten - öffne den Installer oder das Recovery."
 
 #. an action: its row, and the heading over its page
 #: actions/share-log/action.yaml
