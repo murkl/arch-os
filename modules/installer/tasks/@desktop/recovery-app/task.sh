@@ -4,10 +4,12 @@
 # The desktop extras bring zenity, a desktop without them does not.
 chroot_pacman_install zenity
 
-mkdir -p "${MNT}/usr/local/bin" "${MNT}/usr/local/share/applications"
+icons="${MNT}/usr/local/share/icons/hicolor/scalable/apps"
+mkdir -p "${MNT}/usr/local/bin" "${MNT}/usr/local/share/applications" "$icons"
 render "$(where)/arch-os-recovery" ENTRY="$(basename "$RECOVERY_EFI")" >"${MNT}/usr/local/bin/arch-os-recovery"
 chmod 755 "${MNT}/usr/local/bin/arch-os-recovery"
 render "$(where)/arch-os-recovery.desktop" >"${MNT}/usr/local/share/applications/arch-os-recovery.desktop"
+render "$(where)/arch-os-recovery.svg" >"${icons}/arch-os-recovery.svg"
 
 # Its partition is no drive to open: the file manager would list it as one.
 mkdir -p "${MNT}/etc/udev/rules.d"
