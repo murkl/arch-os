@@ -52,7 +52,7 @@ WORK_DIR="$(realpath -m "${WORK_DIR:-/var/tmp/arch-os-iso-work}")"
 # Makefile. PLYMOUTH_THEME_SRC points at a theme folder of one's own instead,
 # for working on the theme itself.
 PLYMOUTH_THEME_REPO="https://github.com/murkl/plymouth-theme-arch-os"
-PLYMOUTH_THEME_REF="17edba09e8e62b7e77b282e238fe4426f9d2d1e2"
+PLYMOUTH_THEME_REF="147e3c97d710db4606025b3829f076ca5d8ecc3b"
 
 # `splash` tells plymouth to show itself; the rest is the boot log getting out of
 # its way. https://wiki.archlinux.org/title/Silent_boot
