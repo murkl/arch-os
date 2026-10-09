@@ -83,7 +83,8 @@ PLYMOUTH_THEME_REF="147e3c97d710db4606025b3829f076ca5d8ecc3b"
 CONSOLE_RED=46,191,163,235,129,180,136,216,174,191,163,235,69,180,143,236
 CONSOLE_GRN=52,97,190,203,161,142,192,222,181,97,190,203,169,142,188,239
 CONSOLE_BLU=64,106,140,139,193,173,208,233,195,106,140,139,218,173,187,244
-BOOT_ARGS="quiet splash loglevel=3 rd.udev.log_level=3 vt.global_cursor_default=0 systemd.show_status=auto plymouth.ignore-serial-consoles fbcon=nodefer vt.default_red=${CONSOLE_RED} vt.default_grn=${CONSOLE_GRN} vt.default_blu=${CONSOLE_BLU}"
+CONSOLE_ARGS="fbcon=nodefer vt.default_red=${CONSOLE_RED} vt.default_grn=${CONSOLE_GRN} vt.default_blu=${CONSOLE_BLU}"
+BOOT_ARGS="quiet splash loglevel=3 rd.udev.log_level=3 vt.global_cursor_default=0 systemd.show_status=auto plymouth.ignore-serial-consoles ${CONSOLE_ARGS}"
 
 TEMP_DIR="$(mktemp -d)"
 
@@ -427,10 +428,16 @@ start_on_tty1 "$ISO_PROFILE"
 # is held in front of the Installer's work until it has one - see
 # actions/internet in the Installer.
 
-for entry in "${ISO_PROFILE}"/efiboot/loader/entries/01-archiso-linux*.conf; do
-    [ -f "$entry" ] || { echo "Error: releng has no boot entry 01-archiso-linux*.conf to add the boot arguments to" && exit 1; }
-    grep -q 'splash' "$entry" || sed -i "/^options / s/\$/ ${BOOT_ARGS}/" "$entry"
-    grep -q 'splash' "$entry" || { echo "Error: ${entry} has no options line to add the boot arguments to" && exit 1; }
+# The splash and a quiet boot on the entry that starts by itself, the console's
+# palette and font on every entry that starts Linux - the screen reader's too.
+entries="${ISO_PROFILE}/efiboot/loader/entries"
+grep -qs '^linux ' "$entries"/01-archiso-linux*.conf || { echo "Error: releng has no boot entry 01-archiso-linux*.conf to add the boot arguments to" && exit 1; }
+for entry in "$entries"/*.conf; do
+    grep -q '^linux ' "$entry" || continue
+    args="$CONSOLE_ARGS"
+    case "${entry##*/}" in 01-archiso-linux*) args="$BOOT_ARGS" ;; esac
+    grep -q 'fbcon=nodefer' "$entry" || sed -i "/^options / s/\$/ ${args}/" "$entry"
+    grep -q 'fbcon=nodefer' "$entry" || { echo "Error: ${entry} has no options line to add the boot arguments to" && exit 1; }
 done
 loader="${ISO_PROFILE}/efiboot/loader/loader.conf"
 sed -i '/^timeout/d' "$loader"
