@@ -93,7 +93,7 @@ make build             # the release, as a machine runs it
 make tarball           # the release, as a stock Arch ISO downloads it
 make iso               # the release, as the Recovery image and the ISO that carries it
 make image             # ...only the images, out of a release already in dist/
-make smoke             # boot the newest of both and wait for their first page
+make smoke             # boot the newest of both and work their first page with the keyboard
 make e2e               # install the newest ISO, boot it, repair it, boot it again and start its Recovery
 make e2e START=desktop # ...a Desktop, booted to its login screen
 make locales           # every translation template, brought up to date

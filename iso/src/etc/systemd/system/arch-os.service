@@ -1,11 +1,10 @@
 [Unit]
 Description=Arch OS
-# It ends the boot splash itself, the way gdm.service does, so the splash stays
-# up until the interface is about to draw: plymouth-quit.service would end it
-# first and leave a black screen in between. The ordering is what that unit
-# would have waited for.
-Conflicts=plymouth-quit.service
-After=plymouth-quit.service rc-local.service plymouth-start.service systemd-user-sessions.service
+# After the boot splash has ended, as getty@.service starts: Plymouth locks the
+# console's settings while it holds it and hands it back unlocked once it is
+# gone. A unit that resets tty1 under it leaves the lock behind, and no key
+# reaches the interface.
+After=systemd-user-sessions.service plymouth-quit-wait.service rc-local.service
 # It needs tty1 to itself. Conflicting with the getty is what takes it, rather
 # than fighting a login prompt for the same terminal.
 Conflicts=getty@tty1.service
@@ -14,11 +13,10 @@ After=getty@tty1.service
 # Whatever becomes of it, this console is handed back to a login shell rather
 # than left as the blank screen it was drawing on. On success that is somebody
 # choosing to leave, with /etc/motd saying how to get back; on failure it is a
-# root prompt for reading the log and trying again, behind a splash that is
-# ended for it. A machine that answers nothing is the one outcome this image
-# must not have.
+# root prompt for reading the log and trying again. A machine that answers
+# nothing is the one outcome this image must not have.
 OnSuccess=getty@tty1.service
-OnFailure=getty@tty1.service plymouth-quit.service
+OnFailure=getty@tty1.service
 
 # On the first failure, not after a few tries at starting over. An interface
 # that comes back by itself cannot be told from one that was never away, so a
@@ -27,12 +25,9 @@ OnFailure=getty@tty1.service plymouth-quit.service
 # instead, and `journalctl -b -u arch-os` says what happened.
 
 [Service]
-# Not idle: idle waits up to five seconds for the other jobs, among them the
-# gettys' plymouth-quit-wait.service, which waits for the line below. Measured
-# under QEMU, that was five seconds of black screen.
+# Not idle: idle holds the interface back until the rest of the boot is
+# dispatched, up to five seconds of an empty screen.
 Type=simple
-# Its last frame stays on screen until the console draws over it.
-ExecStartPre=-/usr/bin/plymouth quit --retain-splash
 # The Installer is what this image is for; the Recovery is on every installed
 # system, and `recovery` on another console starts it here too. A run started
 # by this machine and one started by hand are the same run.

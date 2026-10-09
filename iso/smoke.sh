@@ -1,10 +1,12 @@
 #!/bin/bash
-# Boots a built Arch OS image and waits for the interface to come up in it.
+# Boots a built Arch OS image and waits for the interface to come up in it and
+# answer a key.
 #
-# Nothing is installed: the machine is switched off the moment the first page is
-# recognised on its console. That proves the whole chain no linter can see: the
-# boot entry, the initramfs and its plymouth hook, the systemd unit on tty1, the
-# Oak binary, and the modules it loads.
+# Nothing is installed: the machine is switched off the moment the page after
+# the first is recognised on its console. That proves the whole chain no linter
+# can see: the boot entry, the initramfs and its plymouth hook, the systemd unit
+# on tty1, the Oak binary, the modules it loads, and a console that hands the
+# keys on.
 #
 # Takes the image as its one argument: the ISO, or the Recovery's folder, whose
 # boot image is started the way the firmware starts it off the EFI partition,
@@ -44,6 +46,12 @@ OVMF_VARS="${OVMF_VARS:-/usr/share/edk2/x64/OVMF_VARS.4m.fd}"
 # same places every time, so what is looked for is the part it reads cleanly:
 # the languages. The wordmark over them is drawn in blocks rather than letters.
 EXPECT='English|Deutsch'
+
+# A page on the screen is not yet one that listens: a console the splash left
+# locked shows every key rather than handing it on. Deutsch is chosen with the
+# keys a person presses, and both images go on to the console keyboard, in
+# German, with a list that says how to move through it.
+ANSWER='Tastatur|bewegen'
 
 # A machine that got this far and no further says so in plain words, and there is
 # no reason to sit out the timeout for it.
@@ -140,30 +148,47 @@ fail() {
     exit 1
 }
 
-echo "### Wait for the interface (up to ${TIMEOUT}s)"
-deadline=$((SECONDS + TIMEOUT))
+# Photographs the console every INTERVAL seconds until it reads the pattern,
+# for up to TIMEOUT, and keeps the frame it matched in as $found.
 found=""
 frame=0
-while [ "$SECONDS" -lt "$deadline" ]; do
-    sleep "$INTERVAL"
-    kill -0 "$QEMU_PID" 2>/dev/null || fail "the machine stopped before the interface came up"
+await() {
+    local pattern="$1" deadline=$((SECONDS + TIMEOUT)) shot text
+    found=""
+    while [ "$SECONDS" -lt "$deadline" ]; do
+        sleep "$INTERVAL"
+        kill -0 "$QEMU_PID" 2>/dev/null || fail "the machine stopped before the interface came up"
 
-    frame=$((frame + 1))
-    shot="$(printf '%s/frame-%02d.png' "$FRAME_DIR" "$frame")"
-    screendump "$shot" || continue
-    last_shot="$shot"
+        frame=$((frame + 1))
+        shot="$(printf '%s/frame-%02d.png' "$FRAME_DIR" "$frame")"
+        screendump "$shot" || continue
+        last_shot="$shot"
 
-    text="$(console_text "$shot")"
-    grep -qE "$PANIC" <<<"$text" && fail "the machine did not finish booting"
-    if grep -qE "$EXPECT" <<<"$text"; then
-        found="$shot"
-        break
-    fi
-done
+        text="$(console_text "$shot")"
+        grep -qE "$PANIC" <<<"$text" && fail "the machine did not finish booting"
+        if grep -qE "$pattern" <<<"$text"; then
+            found="$shot"
+            return 0
+        fi
+    done
+    return 1
+}
 
-[ -n "$found" ] || fail "the interface did not come up within ${TIMEOUT}s"
+# A key as the keyboard sends it, with a moment for the interface to draw.
+press() {
+    printf 'sendkey %s\n' "$1" >&3
+    sleep 1
+}
 
-# The one frame worth keeping is the one it was recognised in.
+echo "### Wait for the interface (up to ${TIMEOUT}s)"
+await "$EXPECT" || fail "the interface did not come up within ${TIMEOUT}s"
+
+echo "### Choose Deutsch with the keyboard"
+press down
+press ret
+await "$ANSWER" || fail "the interface did not answer the keyboard within ${TIMEOUT}s"
+
+# The one frame worth keeping is the one the answer was recognised in.
 mv "$found" "${FRAME_DIR}/arch-os.png"
 rm -f "${FRAME_DIR}"/frame-*.png
-echo "### Arch OS is up: ${FRAME_DIR}/arch-os.png"
+echo "### Arch OS is up and answers: ${FRAME_DIR}/arch-os.png"
