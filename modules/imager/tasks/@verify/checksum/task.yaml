@@ -1,0 +1,4 @@
+title: Verify the checksum
+
+# Arrived and intact are two claims, and only the second is worth writing.
+conditions: ARCH_OS_IMAGE_VERIFY == true

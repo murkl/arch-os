@@ -1,0 +1,4 @@
+title: Partition and format the disk
+
+# The one step that destroys data, so everything that can fail first has.
+needs: [mirrors, recovery-image]

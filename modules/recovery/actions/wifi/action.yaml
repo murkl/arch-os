@@ -1,0 +1,16 @@
+# On the settings page, and opened without internet. An open or known network
+# is joined as it is chosen; one that wants a passphrase says no, and that is
+# asked next.
+title: Configure Wi-Fi
+description: Join a wireless network.
+
+rules:
+  offer-if: [wifi-card, no-cable]
+  on-failure: [wifi-passphrase]
+
+variables:
+  - name: ARCH_OS_WIFI_SSID
+    type: list
+    title: Network
+    required: true
+    options-from: options_wifi_networks()

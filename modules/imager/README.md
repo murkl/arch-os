@@ -1,0 +1,104 @@
+# Create boot medium
+
+Everything this module knows about making a bootable device. It is data - one YAML file and the folders beside it - and it does not run on its own: [Oak](https://github.com/murkl/oak) draws the interface, asks the questions and runs the tasks in order.
+
+**Note:** _The folder is `imager`, named after **Create boot medium**, its `title:`._
+
+**Note:** _Putting Arch Linux on disk and repairing one already there are separate modules: **[➜ Installer](../installer)** · **[➜ Recovery](../recovery)**_
+
+**Note:** _What it writes and why: **[➜ Arch OS Reference](../../docs/REFERENCE.md#the-boot-medium)**. The task contract: **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md#what-a-script-receives)**._
+
+```
+make -C ../.. check                            # load every module and lint every script
+make -C ../.. run MODULE=imager ARGS=--debug   # run it without touching this machine
+```
+
+## What is where
+
+```
+module.yaml                       what this module is, what it asks, what order it runs in, its rules
+tasks/@<stage>/<id>/task.yaml     what that step is: its conditions and pages
+tasks/@<stage>/<id>/task.sh       what it does
+tasks/@<stage>/<id>/test.sh       how to tell, on the machine, that it took
+actions/<id>/action.yaml          an action: one page at most, and what a no means
+actions/<id>/action.sh            what it does, and nothing else
+locales/                          one <code>.po per language, and the template they come from
+```
+
+**Note:** _What several scripts share, and every function the yaml calls, is in **[oak.sh](../../oak.sh)** beside `oak.yaml`._
+
+## Stages
+
+| Stage | Task | Description |
+| --- | --- | --- |
+| `download` | `image` | Fetches the image, unless the folder already holds it, and puts the checksum the release publishes beside it. Its progress bar is shown under the step while it runs (`progress: true`) |
+| `verify` | `checksum` | Compares the image against that checksum, discards it if they disagree. Only with **Verify checksum** on |
+| `write` | `device` | Checks the device, unmounts it, copies the image on |
+
+Three distinct failures: nothing arrived, what arrived is broken, or it could not be written.
+
+**Note:** _`checksum` has no `test.sh` - the task itself already is the test, line for line._
+
+## The Image
+
+The ISO written is the one of the release `version:` in `oak.yaml` names, downloaded from its release page.
+
+**Note:** _The asset is picked by what its name ends in, so renaming a download only touches the **[Makefile](../../Makefile)**._
+
+### Where it lands
+
+**Download folder**, suggested as `XDG_DOWNLOAD_DIR` or `~/Downloads`. The image is kept, so a second run costs no bandwidth.
+
+An `arch-os-<version>-x86_64.iso` already in that folder is not downloaded again. The number it is then held to is the checksum GitHub publishes for that release, so this module and the release page check the same one - and the release carries no checksum file of its own. It is read once per run and written beside the image as `arch-os-<version>-x86_64.iso.sha256`, which `sha256sum -c` reads as well.
+
+- A checksum mismatch discards the image rather than keeping a broken one
+- Where no checksum can be fetched - the release is not out yet, or it cannot be reached - nothing is written, and the failure says which setting lets it through
+- **Verify checksum** off writes the image in the folder as it is, without asking the release anything. That is how an image built here rather than downloaded reaches a device. On by default, and a setting rather than a question in the middle of the run, so it is read in the interface's language
+- Every request is HTTPS, redirects included
+
+## Where it runs
+
+`rules: offer-if` splits the three modules: Installer and Recovery need a booted live image to work on; this one needs anywhere else - `actions/installed-system` - since it is the machine that *makes* that image. So it is the only module offered on an ordinary desktop.
+
+What the work starts if, under `rules: start-if`:
+
+| Action | Why |
+| --- | --- |
+| `sudo` | A way to become root for the write - already root, or `sudo` exists |
+| `usb` | Nothing plugged in, no answer can help. A stick plugged in carries on by itself |
+
+Each says only yes or no; what a no means is its `error:`, read in the interface's language. `share-log`, under `rules: on-failure`, is the same as the Installer's and the Recovery's: its `action.sh` calls `share_log` in `oak.sh`.
+
+**Note:** _Whether the image can be fetched is not checked here - it depends on the download folder, which is not yet answered when these are looked at. The download task says so instead._
+
+## Root, and only where it is Needed
+
+This module runs as you, not root - unlike the other two, which run on an already-root live image. `as_root` is in `oak.sh`, and only the write task calls it, for three commands:
+
+| Command | Why |
+| --- | --- |
+| `umount` | Releasing what the desktop mounted |
+| `dd` | Writing the block device |
+| `blockdev` | Re-reading the partition table |
+
+Everything else - listing, downloading, checksumming - runs as you.
+
+The interface keeps the screen throughout. Whether `sudo` wants a password is read off the machine (`ARCH_OS_IMAGE_SUDO`, from `sudo -nk true`), and where it does, **Your password** is asked right before the run like any password that already exists: once, never written down, and tried with `sudo` on the page it was typed on - a wrong one is refused there rather than after the download. `as_root` hands it to `sudo -S` on stdin. How far `dd` has got is its last line, shown under the step (`progress: true`).
+
+## Answers
+
+`imager.conf`, beside wherever the program was started.
+
+| Variable | Description |
+| --- | --- |
+| `ARCH_OS_DOWNLOAD_DIR` | Where the image lives. Suggested as `XDG_DOWNLOAD_DIR`, or `~/Downloads` |
+| `ARCH_OS_IMAGE_DEVICE` | The USB device to write. Only USB disks are offered, and none the running system has mounted outside `/run/media`, `/media` or `/mnt` |
+| `ARCH_OS_IMAGE_VERIFY` | Whether the image is held to the checksum its release publishes before it is written. On unless turned off |
+| `ARCH_OS_IMAGE_SUDO` | Read, not asked: whether writing the device needs a password - not as root, and not where a sudo rule says so |
+| `ARCH_OS_IMAGE_PASSWORD` | Your password for `sudo`, only where it wants one. Asked right before the run and never written to the file |
+
+**Note:** _The device is read back from `lsblk` immediately before writing - `/dev/sdb` is a path, not a stick._
+
+## Requirements
+
+A Linux machine that is not the live image, a big enough USB device, and either the image already downloaded or a network. Root only for the write. Needs `coreutils`, `util-linux`, `curl` - any Linux machine already has them.

@@ -1,0 +1,3 @@
+# The Installer signs the boot chain itself, see tasks/@finish/secure-boot.
+title: Secure Boot off
+error: Secure Boot is switched on. Turn it off in the firmware settings and start again - the installer can set it up again for you afterwards.

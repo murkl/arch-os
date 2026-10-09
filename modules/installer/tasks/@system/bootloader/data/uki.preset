@@ -1,0 +1,7 @@
+# Written by the Arch OS Installer.
+ALL_kver="/boot/vmlinuz-{{KERNEL}}"
+ALL_cmdline="/etc/kernel/cmdline"
+PRESETS=('default' 'fallback')
+default_uki="{{DEFAULT}}"
+fallback_uki="{{FALLBACK}}"
+fallback_options="-S autodetect"

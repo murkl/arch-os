@@ -1,0 +1,7 @@
+# Everything installed is downloaded. A cable carries on by itself; with a card
+# the wireless network opens straight away.
+title: Internet
+error: There is no internet connection. Plug in a cable and it carries on by itself.
+
+rules:
+  on-failure: [wifi]

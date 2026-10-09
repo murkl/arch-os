@@ -1,0 +1,185 @@
+# Translation template for imager.
+#
+# One catalog per language beside this file, named by its code: de.po, fr.po.
+# The msgid is the English source text and the key at once, so a message no
+# catalog has anything to say about is shown exactly as it stands here - which
+# is what makes a half-finished translation useful from its first line.
+#
+# Generated. See the Makefile.
+msgid ""
+msgstr ""
+"Project-Id-Version: imager\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. the name of this language in the language itself - "Deutsch", not
+#. "German". A list of languages is read by the people who speak them.
+msgid "English"
+msgstr ""
+
+#. what this module is called, wherever the interface names it
+#: module.yaml
+msgid "Create boot medium"
+msgstr ""
+
+#. ARCH_OS_DOWNLOAD_DIR: the question
+#: module.yaml
+msgid "Download folder"
+msgstr ""
+
+#. ARCH_OS_DOWNLOAD_DIR: what it means
+#: module.yaml
+msgid "Where the image is kept, so a second run costs no download. It needs about two gigabytes."
+msgstr ""
+
+#. ARCH_OS_DOWNLOAD_DIR: the heading its row sits under
+#: module.yaml
+msgid "Image"
+msgstr ""
+
+#. ARCH_OS_DOWNLOAD_DIR: what a wrong answer is told
+#: module.yaml
+msgid "Type the full path of a folder, starting with a slash."
+msgstr ""
+
+#. ARCH_OS_IMAGE_VERIFY: the question
+#: module.yaml
+msgid "Verify checksum"
+msgstr ""
+
+#. ARCH_OS_IMAGE_VERIFY: what it means
+#: module.yaml
+msgid "Checks the image against the checksum of its release before anything is written. Off, the image in the download folder is written as it is, such as one you built yourself."
+msgstr ""
+
+#. ARCH_OS_IMAGE_DEVICE: the question
+#: module.yaml
+msgid "Device"
+msgstr ""
+
+#. ARCH_OS_IMAGE_DEVICE: what it means
+#: module.yaml
+msgid "The USB device to write to. Everything on it is erased. A device the running system is on is not offered."
+msgstr ""
+
+#. ARCH_OS_IMAGE_DEVICE: the heading its row sits under
+#: module.yaml
+msgid "Target"
+msgstr ""
+
+#. ARCH_OS_IMAGE_DEVICE: what a wrong answer is told
+#: module.yaml
+msgid "Choose a device that exists."
+msgstr ""
+
+#. ARCH_OS_IMAGE_SUDO: the question
+#: module.yaml
+msgid "Password for the write"
+msgstr ""
+
+#. ARCH_OS_IMAGE_SUDO: what it means
+#: module.yaml
+msgid "Whether writing the device asks for your password."
+msgstr ""
+
+#. ARCH_OS_IMAGE_PASSWORD: the question
+#: module.yaml
+msgid "Your password"
+msgstr ""
+
+#. ARCH_OS_IMAGE_PASSWORD: what it means
+#: module.yaml
+msgid "Writing the device needs root, and sudo asks for your password. Asked right before the run and never written to a file."
+msgstr ""
+
+#. ARCH_OS_IMAGE_PASSWORD: what a wrong answer is told
+#: module.yaml
+msgid "That is not your password, or this account may not use sudo."
+msgstr ""
+
+#. the header's status, while its check says yes
+#: ../../oak.yaml
+msgid "Online"
+msgstr ""
+
+#. the header's status, while its check says no
+#: ../../oak.yaml
+msgid "Offline"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@download/image/task.yaml
+msgid "Download the image"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@verify/checksum/task.yaml
+msgid "Verify the checksum"
+msgstr ""
+
+#. the step, as the run lists it
+#: tasks/@write/device/task.yaml
+msgid "Write the image to the device"
+msgstr ""
+
+#. read once the step is done, and held on until somebody has
+#: tasks/@write/device/task.yaml
+msgid ""
+"The device is ready\n"
+"\n"
+"{{ARCH_OS_IMAGE_DEVICE}} now starts Arch OS. Unplug it, plug it into the machine to install, and start that machine from it."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/installed-system/action.yaml
+msgid "An installed Linux system"
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/installed-system/action.yaml
+msgid "Create boot medium writes a device from an installed Linux system. On the live image there is a machine to work on instead - open the Installer or the Recovery."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/share-log/action.yaml
+msgid "Share the log"
+msgstr ""
+
+#. an action: what it does, under its row
+#: actions/share-log/action.yaml
+msgid "Put the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it; passwords are never in it."
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/share-log/action.yaml
+msgid "paste.rs did not take the log. Try again in a moment."
+msgstr ""
+
+#. read once the action is done, and held on until somebody has
+#: actions/share-log/action.yaml
+msgid ""
+"Log shared\n"
+"\n"
+"Scan the code, or read the address under it, and hand it to whoever is helping."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/sudo/action.yaml
+msgid "Root for the write"
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/sudo/action.yaml
+msgid "Writing a device needs root, and this machine has no sudo to ask for it. Start this again as root."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/usb/action.yaml
+msgid "A USB device to write to"
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/usb/action.yaml
+msgid "No USB device found. Plug a stick in and this carries on by itself."
+msgstr ""

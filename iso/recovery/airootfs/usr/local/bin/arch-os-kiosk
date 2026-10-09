@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# The Recovery on its own partition, started the way that partition is meant to
+# be used: as the only thing on the machine, on the answers arch-os-seed handed
+# over. So it opens on its menu rather than on three questions, and leaving it
+# is Exit, which the systemd unit answers by running this again with every
+# answer kept.
+set -eu
+
+OPT=/opt/arch-os
+
+# The language goes on the command line, which is what takes the welcome page
+# away. Only a value that looks like one, since the EFI partition is not signed.
+args=(--kiosk)
+if [ -f "${OPT}/oak.conf" ]; then
+    language="$(sed -n "s/^OAK_LANG='\([A-Za-z_-]*\)'.*$/\1/p" "${OPT}/oak.conf")"
+    [ -z "$language" ] || args+=("--language=${language}")
+fi
+
+exec arch-os "${args[@]}"

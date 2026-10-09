@@ -1,0 +1,11 @@
+title: Write the image to the device
+
+# dd's progress, redrawn in place, under the step while it runs.
+progress: true
+
+# A device written and still plugged in is a boot that does not happen.
+report: |
+  The device is ready
+
+  {{ARCH_OS_IMAGE_DEVICE}} now starts Arch OS. Unplug it, plug it into the
+  machine to install, and start that machine from it.
