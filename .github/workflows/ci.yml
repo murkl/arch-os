@@ -435,5 +435,9 @@ jobs:
           Without \`gh\`, GitHub prints each download's SHA-256 beside it on this page, which says only that the file arrived whole.
           FOOTER
 
-          gh release upload "$TAG" dist/*.tar.gz dist/*.tar dist/*.iso --clobber
+          # One at a time: gh sends up to five at once, and with the ISO beside
+          # it the Recovery's tar timed out (HTTP 408) on two attempts of 2.0.0.
+          for file in dist/*.tar.gz dist/*.tar dist/*.iso; do
+            gh release upload "$TAG" "$file" --clobber
+          done
           gh release edit "$TAG" --notes-file "$notes" --draft=false --latest
