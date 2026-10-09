@@ -2,7 +2,7 @@
 #
 # One catalog per language beside this file, named by its code: de.po, fr.po.
 # The msgid is the English source text and the key at once, so a message no
-# catalog has anything to say about is shown exactly as it stands here — which
+# catalog has anything to say about is shown exactly as it stands here - which
 # is what makes a half-finished translation useful from its first line.
 #
 # Generated. See the Makefile.
@@ -13,7 +13,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#. the name of this language in the language itself — "Deutsch", not
+#. the name of this language in the language itself - "Deutsch", not
 #. "German". A list of languages is read by the people who speak them.
 msgid "English"
 msgstr ""
