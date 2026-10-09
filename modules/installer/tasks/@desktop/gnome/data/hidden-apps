@@ -3,6 +3,7 @@
 # per line, with the condition it is hidden under.
 #
 # always              every desktop install
+# slim                only with the slim desktop
 # extras              only with the desktop extras
 # shell               only with the shell enhancement
 always bssh
@@ -11,7 +12,8 @@ always avahi-discover
 always qv4l2
 always qvidcap
 always lstopo
-always org.gnome.Evince
+# Left out of the group, and still a dependency of sushi's previews.
+slim org.gnome.Papers
 extras cups
 extras tuned-gui
 shell btop

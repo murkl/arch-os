@@ -30,10 +30,13 @@ while read -r scope name; do
     left_out+=("$name")
 done <"${data}/left-out"
 mapfile -t desktop < <(printf '%s\n' "${desktop[@]}" | grep -vxF -f <(printf '%s\n' "${left_out[@]}"))
-# GNOME Software and the Extensions app come with it. No PackageKit: Arch builds
-# Software without it and pacman stays the one thing that changes the system.
+# GNOME Software comes with it. No PackageKit: Arch builds Software without it
+# and pacman stays the one thing that changes the system.
 # https://wiki.archlinux.org/title/Pacman/Tips_and_tricks#Graphical
 packages+=("${desktop[@]}")
+
+# The Extensions app, a package outside the group since GNOME 51.
+packages+=(gnome-extensions-app)
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     # https://wiki.archlinux.org/title/GNOME#Extensions
@@ -153,6 +156,7 @@ arch-chroot "$MNT" systemctl --global enable gcr-ssh-agent.socket
 while read -r scope name; do
     case "$scope" in '' | \#*) continue ;; esac
     case "$scope" in
+    slim) [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "true" ] || continue ;;
     extras) [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] || continue ;;
     shell) [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ] || continue ;;
     esac
