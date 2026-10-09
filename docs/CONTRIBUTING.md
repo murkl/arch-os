@@ -62,7 +62,11 @@ Nothing is typed and nothing is tagged by hand.
 - Every other build is named after the next release: `arch-os-2.1.0-dev-x86_64.iso`, as the open release pull request names it, or the next patch where none is open. `make tarball VERSION=2.1.0` names a build after its release, and only on that release's commit
 - Neither the version nor the changelog is edited by hand. `make check` fails when `oak.yaml` and the release manifest disagree
 
-**Note:** _The page stays a draft until every file hangs on it, so every link to the latest release points at the one before until then. A run that fails on the way leaves a draft: re-run its failed jobs. A re-run keeps the workflow it started with, so a fault in the workflow itself is fixed on `main` instead: delete the draft and its tag, label the release pull request `autorelease: pending` again, and the fix's run releases._
+**Note:** _The page stays a draft until every file hangs on it, so every link to the latest release points at the one before until then. A run that fails on the way leaves a draft: re-run its failed jobs. A re-run keeps the workflow it started with, so a fault in the workflow itself is fixed on `main` instead. The run's token cannot tag a commit whose workflow differs from `main`'s, so the tag is pushed by hand:_
+
+1. _Delete the draft, push the tag onto the release commit, label the release pull request `autorelease: pending` again_
+2. _Merge the fix with `force-tag-creation` off in **[release-please-config.json](../release-please-config.json)**. Its run releases_
+3. _Switch it on again: a draft has no tag of its own, and without one the next release does not find this one_
 
 **Note:** _The release pull request starts no run. The run that wrote it reports `Ready` and `Title` on it, and its merge is checked on `main` before the tag exists. See **[ci.yml](../.github/workflows/ci.yml)**._
 
