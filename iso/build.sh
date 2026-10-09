@@ -63,9 +63,9 @@ PLYMOUTH_THEME_REF="17edba09e8e62b7e77b282e238fe4426f9d2d1e2"
 # it the Recovery boots as a wall of text.
 #
 # fbcon=nodefer puts the console on the screen as it boots, not once the first
-# character is drawn on it. Taken over that late, it is there only after the
-# interface has started, and udev runs systemd-vconsole-setup on it while the
-# interface sets the console up - as the journal under QEMU shows.
+# character is drawn on it. Taken over that late, it appears only once the
+# interface starts, and udev then runs systemd-vconsole-setup on it while the
+# interface is setting it up - as the journal under QEMU shows.
 #
 # The console's sixteen colour slots are the kernel's default palette, so every
 # console is drawn in Nord from the first frame, and Plymouth hands back the
