@@ -1,6 +1,7 @@
 arch-chroot "$MNT" systemctl is-enabled gdm.service >/dev/null
 
 has_command gnome-software
+has_command gnome-extensions-app
 
 arch-chroot "$MNT" systemctl --global is-enabled pipewire.socket pipewire-pulse.socket wireplumber.service >/dev/null
 
