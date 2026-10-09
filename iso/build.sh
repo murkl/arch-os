@@ -61,7 +61,29 @@ PLYMOUTH_THEME_REF="17edba09e8e62b7e77b282e238fe4426f9d2d1e2"
 # looks for a screen again, and a virtual machine is handed one without asking -
 # the installed system's kernel_args says the same. Measured under QEMU: without
 # it the Recovery boots as a wall of text.
-BOOT_ARGS='quiet splash loglevel=3 rd.udev.log_level=3 vt.global_cursor_default=0 systemd.show_status=auto plymouth.ignore-serial-consoles'
+#
+# fbcon=nodefer puts the console on the screen as it boots, not once the first
+# character is drawn on it. Taken over that late, it is there only after the
+# interface has started, and udev runs systemd-vconsole-setup on it while the
+# interface sets the console up - as the journal under QEMU shows.
+#
+# The console's sixteen colour slots are the kernel's default palette, so every
+# console is drawn in Nord from the first frame, and Plymouth hands back the
+# palette it found: the splash and the interface share one field. The interface
+# works in slots, and these decide what the slots look like
+# (https://www.nordtheme.com):
+#
+#   slot  0     1   2     3      4    5       6    7     8    9    10     11      12     13       14    15
+#   role  bezel red green yellow blue magenta cyan white grey red+ green+ yellow+ blue+  magenta+ cyan+ white+
+#   nord  0     11  14    13     9    15      8    4     dim  11   14     13      accent 15       7     6
+#
+# The bezel is nord0, the splash's background. Grey is the interface's own dim
+# (#aeb5c3), since nord3 cannot be read on nord0, and bright blue its accent, Arch
+# blue lightened to read on nord0 (#45a9da).
+CONSOLE_RED=46,191,163,235,129,180,136,216,174,191,163,235,69,180,143,236
+CONSOLE_GRN=52,97,190,203,161,142,192,222,181,97,190,203,169,142,188,239
+CONSOLE_BLU=64,106,140,139,193,173,208,233,195,106,140,139,218,173,187,244
+BOOT_ARGS="quiet splash loglevel=3 rd.udev.log_level=3 vt.global_cursor_default=0 systemd.show_status=auto plymouth.ignore-serial-consoles fbcon=nodefer vt.default_red=${CONSOLE_RED} vt.default_grn=${CONSOLE_GRN} vt.default_blu=${CONSOLE_BLU}"
 
 TEMP_DIR="$(mktemp -d)"
 
@@ -308,7 +330,7 @@ ${SUDO} rm -rf "$readback"
 # Every command its scripts call is on it, and recovery/pacman.conf took nothing
 # from the kernel that more than graphics passthrough, a camera or an
 # accelerator needs.
-for command in arch-chroot btrfs cryptsetup curl fuser ip iwctl loadkeys localectl lsblk mount mountpoint setfont setvtrgb swapoff umount; do
+for command in arch-chroot btrfs cryptsetup curl fuser ip iwctl loadkeys localectl lsblk mount mountpoint setfont swapoff umount; do
     [ -x "${recovery_root}/usr/bin/${command}" ] || { echo "Error: the Recovery has no ${command}" >&2 && exit 1; }
 done
 modules="$(find "${recovery_root}/usr/lib/modules" -name '*.ko*')"

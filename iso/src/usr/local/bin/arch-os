@@ -2,12 +2,9 @@
 # Start Arch OS. The systemd unit on tty1 runs this, and so do `installer` and
 # `recovery` beside it, which are the same run with the module already named.
 #
-# The console is dressed right before the interface draws on it: the palette
-# decides what the sixteen colour slots look like, and goes first so the console
-# comes up in the colour the boot splash left; the font decides which glyphs
-# exist. Not in the unit, because an ExecStartPre runs while the boot splash
-# still holds the console and setfont finds nothing to load into. Neither is
-# worth refusing to start over, so both may fail.
+# The console's palette is the kernel's, set on the command line in
+# iso/build.sh. The font is set here, right before the interface draws: it
+# decides which glyphs exist. Not worth refusing to start over, so it may fail.
 #
 # The font is Terminus Bold, built by iso/font.sh, in the largest of these sizes
 # that leaves the interface no more than 1/φ of the screen each way, and in the
@@ -25,12 +22,7 @@ SIZES="32 24 20 18"
 # The interface is 95 columns by 25 rows; times φ, that is the screen it needs.
 COLS=154 ROWS=40
 
-arch-os-console-theme || true
-
-# Only on a console: a terminal in a window has its font already. fbcon takes the
-# console over on the first character drawn on it that is not a space, and until
-# then there is none for setfont to load into. So a dot is drawn and taken back
-# at once, and the load is tried for two seconds.
+# Only on a console: a terminal in a window has its font already.
 if [[ "$(tty)" == /dev/tty[0-9]* ]]; then
     read -ra sizes <<<"$SIZES"
     width=0 height=0
@@ -38,17 +30,20 @@ if [[ "$(tty)" == /dev/tty[0-9]* ]]; then
     for size in "${sizes[@]}"; do
         [ $((width / (size / 2))) -ge "$COLS" ] && [ $((height / size)) -ge "$ROWS" ] && break
     done
+    setfont "arch-os-${size}" || true
+fi
 
-    printf '.\b \b'
-    loaded=false
-    for _ in $(seq 20); do
-        if error="$(setfont "arch-os-${size}" 2>&1)"; then
-            loaded=true
-            break
-        fi
-        sleep 0.1
-    done
-    "$loaded" || echo "$error" >&2
+# Plymouth locks a console's settings while it holds it, and a lock left behind
+# keeps every key on the screen rather than handing it on. stty reads its change
+# back, so a locked terminal ends here instead of in an interface that cannot be
+# worked.
+if [ -t 0 ]; then
+    saved="$(stty -g)"
+    stty raw -echo || {
+        echo "Error: this terminal's settings are locked, so no key would reach Arch OS" >&2
+        exit 1
+    }
+    stty "$saved"
 fi
 
 cd /opt/arch-os

@@ -5,13 +5,13 @@ Stock Arch `releng`, patched: boot ➜ Plymouth ➜ Arch OS. Nothing in between.
 - Installer and Recovery on the same image
 - The Recovery image beside them, built first out of Arch's minimal `baseline`, for the Installer to write to the disk - **[➜ The Recovery Partition](../docs/REFERENCE.md#the-recovery-partition)**
 - Arch OS Bootsplash (Plymouth)
-- Nord palette and Terminus Bold, sized to the screen, applied before the interface draws
+- Nord palette on every console from the first frame, Terminus Bold sized to the screen
 - Networking exactly as the Arch ISO ships it (iwd, systemd-networkd)
 - UEFI only, squashfs/zstd
 
 ## How it starts
 
-The [Oak](https://github.com/murkl/oak) binary with every module beside it lives in `/opt/arch-os`, started by a systemd unit on tty1 - no autologin, no shell. The unit ends the boot splash itself, as `gdm.service` does, so the splash stays up until the interface draws. The Installer, named outright, so it opens on the language and then on the Installer itself, under the wordmark. The Recovery is one console away: log in as root on another one (**Ctrl+Alt+F2**) and type `recovery`. A root shell is handed back whenever it stops, and nothing starts it again by itself: an interface that came back on its own would be indistinguishable from one that was never away, over a run that may have written half a disk. A crash therefore ends at the prompt, with the reason in `journalctl -b -u arch-os`.
+The [Oak](https://github.com/murkl/oak) binary with every module beside it lives in `/opt/arch-os`, started by a systemd unit on tty1 - no autologin, no shell. The unit starts once the boot splash has ended, as `getty@.service` does, on a console the kernel already draws in the splash's colour, so one gives way to the other without a change of colour. The Installer, named outright, so it opens on the language and then on the Installer itself, under the wordmark. The Recovery is one console away: log in as root on another one (**Ctrl+Alt+F2**) and type `recovery`. A root shell is handed back whenever it stops, and nothing starts it again by itself: an interface that came back on its own would be indistinguishable from one that was never away, over a run that may have written half a disk. A crash therefore ends at the prompt, with the reason in `journalctl -b -u arch-os`.
 
 **Note:** _The build copies whatever is in `modules/`, so **[Create boot medium](../modules/imager)** ships too but is never offered - its `rules: offer-if` says this is not that machine._
 
@@ -29,15 +29,14 @@ The [Oak](https://github.com/murkl/oak) binary with every module beside it lives
 
 ```
 build.sh <release-dir>                   builds the Recovery image, then the ISO that carries it
-smoke.sh <image.iso | recovery-dir>      boots a built image and waits for the first page
+smoke.sh <image.iso | recovery-dir>      boots a built image and works its first page with the keyboard
 e2e.sh <image.iso>                       installs it onto a disk, boots, repairs, boots again and starts its Recovery
 font.sh <out-dir>                        builds the console fonts: Terminus Bold, in every size the launcher picks from
 glyphs.sh <oak> <file>...                reads those files, and what that oak draws, against those fonts
 src/etc/systemd/system/arch-os.service   starts it on tty1, on both images
-src/usr/local/bin/arch-os                the entry point, sets up the console first
+src/usr/local/bin/arch-os                the entry point, sizes the console's font first
 src/usr/local/bin/installer              opens the Installer directly, on the ISO only
 src/usr/local/bin/recovery               opens the Recovery directly
-src/usr/local/bin/arch-os-console-theme  applies the Nord palette to the console
 recovery/                                what the Recovery image adds to `baseline`: its packages, and the kiosk it starts as
 ```
 
@@ -67,7 +66,7 @@ make smoke                  # the newest ISO and Recovery in dist/
 make smoke ISO=path/to.iso RECOVERY=path/to/recovery-dir
 ```
 
-Boots each under QEMU and OVMF, waits for the first page, shuts down. Checks the boot entry, initramfs, Plymouth hook, systemd unit and the modules it loads. The Recovery's boot image is started the way the firmware starts it off the EFI partition, with its partition as the only disk: finding it, checking its signature and copying it to memory are all on the way to that page.
+Boots each under QEMU and OVMF, waits for the first page, chooses Deutsch on it with the keyboard and waits for the page after it, shuts down. Checks the boot entry, initramfs, Plymouth hook, systemd unit, the modules it loads and a console that hands the keys on. The Recovery's boot image is started the way the firmware starts it off the EFI partition, with its partition as the only disk: finding it, checking its signature and copying it to memory are all on the way to that page.
 
 **Note:** _Needs `qemu-base`, `edk2-ovmf`, `tesseract`, `tesseract-data-eng`. Screenshots land in `dist/smoke/`, a folder per image - one frame on success, all of them on failure._
 
