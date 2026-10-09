@@ -4,6 +4,11 @@ arch-chroot "$MNT" desktop-file-validate /usr/local/share/applications/arch-os-r
 bash -n "${MNT}/usr/local/bin/arch-os-recovery"
 [ -x "${MNT}/usr/local/bin/arch-os-recovery" ]
 
+# The icon the entry names is in place, and the question shows the same one.
+icon="$(sed -n 's/^Icon=//p' "${MNT}/usr/local/share/applications/arch-os-recovery.desktop")"
+[ -s "${MNT}/usr/local/share/icons/hicolor/scalable/apps/${icon}.svg" ]
+grep -qF -- "--icon=${icon} " "${MNT}/usr/local/bin/arch-os-recovery"
+
 entry="$(basename "$RECOVERY_EFI")"
 grep -qF -- "--boot-loader-entry=\"${entry}\"" "${MNT}/usr/local/bin/arch-os-recovery"
 entries="$(arch-chroot "$MNT" bootctl --esp-path=/boot list --json=short)"
