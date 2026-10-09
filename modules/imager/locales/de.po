@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#. the name of this language in the language itself — "Deutsch", not
+#. the name of this language in the language itself - "Deutsch", not
 #. "German". A list of languages is read by the people who speak them.
 msgid "English"
 msgstr "Deutsch"

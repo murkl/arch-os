@@ -15,7 +15,7 @@ The [Oak](https://github.com/murkl/oak) binary with every module beside it lives
 
 **Note:** _The build copies whatever is in `modules/`, so **[Create boot medium](../modules/imager)** ships too but is never offered - its `rules: offer-if` says this is not that machine._
 
-**Note:** _The Recovery image starts with the same unit and launchers, and only the Recovery beside Oak, but as a kiosk: a drop-in starts `arch-os-kiosk` instead, which hands the Recovery what the Installer left on the EFI partition and runs Oak with `--kiosk`. It opens straight on its menu, leaving it is Reset, the unit starts it again whenever it ends, and there is no login on any console - **[➜ The Recovery Partition](../docs/REFERENCE.md#the-recovery-partition)**._
+**Note:** _The Recovery image starts with the same unit and launchers, and only the Recovery beside Oak, but as a kiosk: a drop-in starts `arch-os-kiosk` instead, which runs Oak with `--kiosk` on what `arch-os-seed` handed over from the EFI partition once a boot. It opens straight on its menu, leaving it is Exit, the unit starts it again on every answer it had whenever it ends, and there is no login on any console - **[➜ The Recovery Partition](../docs/REFERENCE.md#the-recovery-partition)**._
 
 | Command | Description |
 | --- | --- |

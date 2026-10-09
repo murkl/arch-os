@@ -1,0 +1,9 @@
+# What the Installer left on the EFI partition, handed to the Recovery once a
+# boot - see arch-os-seed. The kiosk's unit pulls it in and starts after it.
+[Unit]
+Description=Arch OS Recovery answers
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/arch-os-seed
