@@ -1,0 +1,8 @@
+# What zizmor is told to leave alone, and why. Everything else it finds fails
+# `make check`.
+
+rules:
+  # `uses: $/…` is the better form and the one to move to, but actionlint does
+  # not read it yet and refuses the workflow. Lifted once actionlint does.
+  self-repository:
+    disable: true

@@ -1,0 +1,3 @@
+# Under offer-if: a system is installed and repaired from outside itself.
+title: An Arch Linux live image
+error: This runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there.

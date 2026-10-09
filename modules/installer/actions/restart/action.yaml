@@ -1,0 +1,3 @@
+# systemd unmounts the target and locks the disk on the way down.
+title: Restart
+description: Close this machine down and start it again.

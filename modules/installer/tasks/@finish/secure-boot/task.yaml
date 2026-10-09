@@ -1,0 +1,8 @@
+title: Sign the boot files with sbctl
+
+# A signature holds only until a boot image is rebuilt, and each of these
+# installs or removes packages. A task added to this stage belongs here too.
+needs: [first-login, orphans, snapper]
+conditions:
+  - ARCH_OS_SECURE_BOOT_ENABLED == true
+  - ARCH_OS_ENCRYPTION_ENABLED == true

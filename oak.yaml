@@ -1,0 +1,24 @@
+# Arch OS as Oak reads it: what no module can answer for its neighbours. The
+# modules are the folders in modules/.
+# https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
+
+title: Arch OS
+
+# What everything is named after. The release run raises it here and in the
+# manifest; the markers are around the line because it is read line by line.
+# x-release-please-start-version
+version: 1.9.7
+# x-release-please-end
+
+# Arch blue, pulled towards the background so it holds on a light one.
+accent: "#1793d1"
+
+# Whether this machine is online, opposite the name on every page.
+status:
+  check: check_online()
+  pass: Online
+  fail: Offline
+
+# Pictures, printed by functions in oak.sh.
+logo: logo_arch_os()
+icon: icon_arch_linux()

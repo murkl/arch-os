@@ -1,0 +1,72 @@
+# Create boot medium: what it asks and the order it works in. Every name() is a
+# function in oak.sh.
+# https://github.com/murkl/oak/blob/main/docs/REFERENCE.md
+
+# Named after what it does, since its row is read as the thing about to happen.
+# The folder stays imager, which its files are named after.
+title: Create boot medium
+
+# A yes before the work: it erases a device.
+confirm: true
+
+rules:
+  offer-if: [installed-system]
+  start-if: [sudo, usb]
+  on-failure: [share-log]
+
+stages:
+  - download # the image and its checksum, kept in the download folder
+  - verify # the image held to that checksum
+  - write # the image on the device
+
+variables:
+  - name: ARCH_OS_DOWNLOAD_DIR
+    type: text
+    title: Download folder
+    description: Where the image is kept, so a second run costs no download. It needs about two gigabytes.
+    group: Image
+    required: true
+    prefill: prefill_download_dir()
+    pattern: '^/.+$'
+    error: Type the full path of a folder, starting with a slash.
+
+  - name: ARCH_OS_IMAGE_VERIFY
+    type: bool
+    title: Verify checksum
+    description: |
+      Checks the image against the checksum of its release before anything is
+      written. Off, the image in the download folder is written as it is, such
+      as one you built yourself.
+    group: Image
+    default: true
+
+  - name: ARCH_OS_IMAGE_DEVICE
+    type: list
+    title: Device
+    description: |
+      The USB device to write to. Everything on it is erased. A device the
+      running system is on is not offered.
+    group: Target
+    required: true
+    error: Choose a device that exists.
+    options-from: options_devices()
+
+  # Not asked: root needs no password, and a sudo rule may say this account
+  # needs none either.
+  - name: ARCH_OS_IMAGE_SUDO
+    type: bool
+    title: Password for the write
+    description: Whether writing the device asks for your password.
+    group: Target
+    value-from: value_needs_password()
+
+  # Tried where it is typed, not after a download of two gigabytes.
+  - name: ARCH_OS_IMAGE_PASSWORD
+    type: password
+    title: Your password
+    description: Writing the device needs root, and sudo asks for your password. Asked right before the run and never written to a file.
+    group: Target
+    required: true
+    check: check_sudo_password()
+    error: That is not your password, or this account may not use sudo.
+    conditions: ARCH_OS_IMAGE_SUDO == true

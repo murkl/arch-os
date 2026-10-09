@@ -1,0 +1,2 @@
+title: Booted in UEFI mode
+error: This machine booted in BIOS mode, which Arch OS does not install to. Set the boot mode to UEFI in the firmware settings and start again.

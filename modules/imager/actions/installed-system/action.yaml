@@ -1,0 +1,4 @@
+# The other way round from the Installer and the Recovery: this makes the image
+# they boot from.
+title: An installed Linux system
+error: Create boot medium writes a device from an installed Linux system. On the live image there is a machine to work on instead - open the Installer or the Recovery.
