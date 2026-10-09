@@ -193,6 +193,9 @@ jobs:
     env:
       # A slow boot is not a failed boot.
       TIMEOUT: 600
+      # A release under its own number, which its run hands in to every make
+      # that names the build.
+      RELEASED: ${{ needs.release.outputs.version }}
     steps:
       - name: Make the checkout a repository
         run: pacman -Syu --needed --noconfirm git
@@ -219,14 +222,12 @@ jobs:
           *) exit "$status" ;;
           esac
 
-      # A release under its own number, which its run hands in.
       - run: make tarball ${RELEASED:+VERSION="$RELEASED"}
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          RELEASED: ${{ needs.release.outputs.version }}
 
       # Out of the release just packed, not a second build of it.
-      - run: make image
+      - run: make image ${RELEASED:+VERSION="$RELEASED"}
 
       - run: make smoke
 
