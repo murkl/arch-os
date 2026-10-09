@@ -154,7 +154,7 @@ Automatic login only behind disk encryption with one password. `pam_gdm` hands t
 
 ### The Keyring
 
-Where the keyring's password and the login's differ, it asks after the login. **Passwords and Keys** puts it right: **Login** ➜ **Change Password**.
+Where the keyring's password and the login's differ, it asks after the login. **Passwords and Keys** puts it right, once installed with `sudo pacman -S seahorse`: **Login** ➜ **Change Password**.
 
 | After | Set the keyring's password to |
 | --- | --- |
