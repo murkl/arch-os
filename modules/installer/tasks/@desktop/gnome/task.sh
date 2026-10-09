@@ -14,10 +14,6 @@ apps="${home}/.local/share/applications"
 # https://wiki.archlinux.org/title/PipeWire#Installation
 packages=(git bluez bluez-utils avahi nss-mdns pipewire pipewire-pulse wireplumber)
 
-# Passwords and Keys, where the keyring's password is put right after a login
-# password changed: docs/REFERENCE.md#the-keyring
-packages+=(seahorse)
-
 # The group filtered before the download rather than trimmed after it.
 mapfile -t desktop < <(arch-chroot "$MNT" pacman -Sgq gnome)
 [ "${#desktop[@]}" -gt 0 ] || {

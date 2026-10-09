@@ -9,8 +9,6 @@ grep -q 'mdns_minimal' "${MNT}/etc/nsswitch.conf"
 [ "$ARCH_OS_FIREWALL_ENABLED" != "true" ] ||
     arch-chroot "$MNT" firewall-offline-cmd --zone=public --query-service=mdns >/dev/null
 
-has_command seahorse
-
 # Automatic login exactly where the boot password stands in front and is the
 # account's too: docs/REFERENCE.md#accounts
 autologin=false
