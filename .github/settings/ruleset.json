@@ -8,20 +8,19 @@
       "exclude": []
     }
   },
-  "bypass_actors": [],
+  "bypass_actors": [
+    { "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "pull_request" }
+  ],
   "rules": [
     { "type": "deletion" },
     { "type": "non_fast_forward" },
-    { "type": "required_linear_history" },
     {
       "type": "pull_request",
       "parameters": {
-        "allowed_merge_methods": ["squash"],
         "required_approving_review_count": 0,
         "dismiss_stale_reviews_on_push": false,
         "require_code_owner_review": false,
         "require_last_push_approval": false,
-        "require_extra_approval_for_unattributed_changes": true,
         "required_review_thread_resolution": false
       }
     },
@@ -30,7 +29,11 @@
       "parameters": {
         "strict_required_status_checks_policy": false,
         "do_not_enforce_on_create": false,
-        "required_status_checks": [{ "context": "Ready" }, { "context": "Title" }]
+        "required_status_checks": [
+          { "context": "Check", "integration_id": 15368 },
+          { "context": "Image", "integration_id": 15368 },
+          { "context": "Title", "integration_id": 15368 }
+        ]
       }
     }
   ]

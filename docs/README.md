@@ -56,6 +56,8 @@ An internet connection is required: a cable, or a wireless network joined in the
 curl -Ls https://bit.ly/archos | bash
 ```
 
+**Note:** _`gh attestation verify arch-os-<version>-x86_64.iso -R murkl/arch-os` shows which run built a download._
+
 ### 2. Set the Firmware Up
 
 - Boot mode: UEFI
