@@ -1,24 +1,14 @@
-# The title becomes the commit on main, and the version and the changelog are
-# read out of it. A file of its own, so renaming a pull request reads the title
-# again and builds nothing.
+# The title becomes the squash commit on main, which release-please reads. A
+# workflow of its own, so editing a title reruns only this.
 
 name: Title
 
 on:
-  # synchronize too: main asks for this check on the commit a pull request
-  # ends on. Not the release pull request - see ci.yml.
+  # synchronize: main asks for this check on a pull request's newest commit.
   pull_request:
-    types: [opened, synchronize, reopened, edited]
-    paths-ignore:
-      - CHANGELOG.md
-      - .release-please-manifest.json
-      - oak.yaml
+    types: [opened, edited, synchronize, reopened]
 
 permissions: {}
-
-defaults:
-  run:
-    shell: bash
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
@@ -30,12 +20,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: The title says what kind of change this is
-        env:
+      - env:
           TITLE: ${{ github.event.pull_request.title }}
         run: |
-          if ! grep -qE '^(feat|fix|perf|refactor|docs|test|build|ci|chore|revert)(\([^)]+\))?!?: .' <<<"$TITLE"; then
-            echo "::error::'${TITLE}' opens on no type - feat:, fix:, feat!: … see docs/CONTRIBUTING.md"
+          grep -qE '^(feat|fix|perf|refactor|docs|test|build|ci|chore|revert)(\([^)]+\))?!?: .' <<<"$TITLE" || {
+            echo "::error::'${TITLE}' opens on no type: feat:, fix:, feat!: … see docs/CONTRIBUTING.md"
             exit 1
-          fi
-          printf 'This title reads as a release line:\n\n    %s\n' "$TITLE" >>"$GITHUB_STEP_SUMMARY"
+          }

@@ -23,30 +23,12 @@ PRODUCT       := oak.yaml
 PRODUCT_SHELL := oak.sh
 MODULES_DIR   := modules
 
-# The last release. The release run raises it; nobody writes it.
-RELEASED := $(shell sed -n 's/^version:[[:space:]]*//p' $(PRODUCT))
+# The last release, as release-please keeps it.
+RELEASED := $(shell sed -n 's/.*"\.":[[:space:]]*"\([^"]*\)".*/\1/p' .release-please-manifest.json)
 
-# The same number as release-please remembers it, read back so the two cannot
-# drift.
-MANIFEST   := .release-please-manifest.json
-REMEMBERED := $(shell sed -n 's/.*"\.":[[:space:]]*"\([^"]*\)".*/\1/p' $(MANIFEST))
-
-# The next release: the one the open release pull request raises to, as origin
-# was last fetched, or the smallest after the last. A release branch no newer
-# than the last release is one already merged.
-RELEASE_BRANCH := origin/release-please--branches--main
-PENDING := $(shell git show $(RELEASE_BRANCH):$(MANIFEST) 2>/dev/null | sed -n 's/.*"\.":[[:space:]]*"\([^"]*\)".*/\1/p')
-NEXT    := $(shell printf '%s\n' '$(RELEASED)' '$(PENDING)' | sort -V | tail -n1)
-ifeq ($(NEXT),$(RELEASED))
-NEXT := $(shell echo '$(RELEASED)' | awk -F. '{ print $$1 "." $$2 "." $$3 + 1 }')
-endif
-
-# What a build is named after: the release it is, which the run that tags it
-# hands in as `VERSION=`, or the next release as a pre-release of it. Never a
-# release's own number on anything else. Only the command line sets it.
-ifneq ($(origin VERSION),command line)
-VERSION := $(NEXT)-dev
-endif
+# What a build is named after: the release its run hands in as `VERSION=`, or
+# the version a picture is to show, otherwise a pre-release of the next patch.
+VERSION := $(shell echo '$(RELEASED)' | awk -F. '{ print $$1 "." $$2 "." $$3 + 1 "-dev" }')
 
 # The folders in modules/: adding a module is adding a folder.
 MODULES := $(notdir $(wildcard $(MODULES_DIR)/*))
@@ -128,8 +110,8 @@ POSIX_SCRIPTS := get.sh .github/settings.sh
 # Bash: what builds and boots the images, and what they run.
 ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_E2E) $(ISO_GLYPHS) $(ISO_FONT) $(wildcard $(ISO_DIR)/src/usr/local/bin/* $(ISO_DIR)/recovery/airootfs/usr/local/bin/*)
 
-# Bash: what renders the pictures in docs/ onto a branch.
-RELEASE_PICTURES := .github/pictures.sh
+# Bash: the helpers in docs/, run by hand.
+DOCS_SCRIPTS := $(wildcard docs/*.sh)
 
 # Every module script with the library they share, and every module yaml.
 MODULE_SCRIPTS = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -name '*.sh')
@@ -160,18 +142,9 @@ BUILD_OUTPUT := $(DIST_DIR) $(DEV_DIR) $(ISO_DIR)/archiso $(ISO_DIR)/download
 # Empty when there is nothing to elevate, which is the case in CI.
 SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 
-# The pictures in docs/, generated so they cannot drift: the screenshots by
-# driving the modules with --debug, the banner out of two of them. Which pages
-# is docs/screenshots.yaml. On this machine they need chromium, imagemagick,
-# python-pyte and python-yaml, so they stay out of `check`. CI renders the ones
-# committed, onto the branch they describe - see .github/pictures.sh.
-BANNER_CARDS   := docs/screenshots/installer.png docs/screenshots/installing.png
-BANNER_TAGLINE := Install Arch Linux with ease - as a desktop or a TTY system. Installer and Recovery on one image.
-BANNER_CELL    := 9
-
 .PHONY: all oak oak-check build dev run inspect tarball image iso smoke e2e locales \
-	locales-check glyphs-check data-check actions-check lint fmt check version-check version-name \
-	secrets-check github screenshots banner docs clean
+	locales-check glyphs-check data-check actions-check lint fmt check version-name \
+	secrets-check github clean
 
 # build empties the release that everything packaging it reads.
 .NOTPARALLEL:
@@ -216,17 +189,14 @@ oak:
 # whatever lies there, so a link in its place is replaced rather than written
 # through to the source.
 define stamp
-sed 's/^version:.*/version: $(VERSION)/' $(PRODUCT) >$(1)/$(PRODUCT).part
-grep -qx 'version: $(VERSION)' $(1)/$(PRODUCT).part
+{ cat $(PRODUCT); echo 'version: $(VERSION)'; } >$(1)/$(PRODUCT).part
 mv -f $(1)/$(PRODUCT).part $(1)/$(PRODUCT)
 endef
 
-# A name handed in is a version, and a release's number only on that release.
+# A name handed in is a version.
 version-name:
-	@echo "$(VERSION)" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$$' \
+	@[[ '$(VERSION)' =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$$ ]] \
 		|| { echo "'$(VERSION)' is not a version" >&2; exit 1; }
-	@case "$(VERSION)" in *-*|$(RELEASED)) ;; *) \
-		echo "$(VERSION) is a release's number, and this is $(RELEASED) - a build is named after its own release or a pre-release of the next" >&2; exit 1 ;; esac
 
 # The runtime, the product and a clean copy of every module. Templates, table
 # checks and linter configs go out again: none of them runs.
@@ -248,7 +218,7 @@ build: oak-check version-name
 
 # The same shape without the build. The binary is copied, not linked: Oak
 # resolves its own path before looking beside itself.
-dev: oak-check
+dev: oak-check version-name
 	@mkdir -p $(DEV_DIR)
 	@$(call stamp,$(DEV_DIR))
 	@ln -sfn ../$(PRODUCT_SHELL) $(DEV_DIR)/$(PRODUCT_SHELL)
@@ -311,14 +281,6 @@ locales: dev
 # CHECKS | What has to pass before anything is committed
 # ////////////////////////////////////////////////////////////////////////////
 
-# A tag is matched against the version, so anything but X.Y.Z, or two files
-# that disagree, is refused here rather than at a release.
-version-check:
-	@echo "$(RELEASED)" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$$' \
-		|| { echo "$(PRODUCT) declares '$(RELEASED)', which is not a version" >&2; exit 1; }
-	@[ "$(RELEASED)" = "$(REMEMBERED)" ] \
-		|| { echo "$(PRODUCT) says $(RELEASED), $(MANIFEST) says $(REMEMBERED) - the release run writes both" >&2; exit 1; }
-
 # This is installed by piping a script into a shell.
 secrets-check:
 	gitleaks dir . --redact --no-banner
@@ -345,12 +307,12 @@ locales-check: dev
 #     checks nothing
 lint:
 	shellcheck -s sh -S style $(POSIX_SCRIPTS)
-	shellcheck -S style $(ISO_SCRIPTS) $(RELEASE_PICTURES) $(MODULE_PROGRAMS)
+	shellcheck -S style $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS)
 	shellcheck -x -S style $(MODULE_SCRIPTS)
 	shellcheck -s bash -S style -e SC1091 $(MODULE_SHELL)
 	for file in $(MODULE_ZSH); do zsh -n "$$file"; done
 	shfmt -d -ln posix -i 4 $(POSIX_SCRIPTS)
-	shfmt -d -i 4 $(ISO_SCRIPTS) $(RELEASE_PICTURES) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
+	shfmt -d -i 4 $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
 	yamllint .
 	actionlint
 	zizmor --offline --persona auditor .github
@@ -364,7 +326,7 @@ lint:
 
 fmt:
 	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)
-	shfmt -w -i 4 $(ISO_SCRIPTS) $(RELEASE_PICTURES) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
+	shfmt -w -i 4 $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
 
 # A console font holds one table of glyphs, and a character outside it is a box
 # on screen. Asked of the runtime, after locales-check.
@@ -387,32 +349,12 @@ actions-check:
 	done
 
 # The whole gate, cheapest and loudest first. CI runs exactly this.
-check: version-check secrets-check lint inspect actions-check locales-check data-check glyphs-check
+check: secrets-check lint inspect actions-check locales-check data-check glyphs-check
 
 # The repository's settings on GitHub, out of .github/settings/. Run by hand as
 # an admin: a workflow may not change the rules it is held to.
 github:
 	.github/settings.sh
-
-# ////////////////////////////////////////////////////////////////////////////
-# DOCUMENTATION | The pictures the README is made of
-# ////////////////////////////////////////////////////////////////////////////
-
-screenshots: dev
-	python3 docs/screenshots.py --product $(DEV_DIR)
-
-banner:
-	python3 docs/banner.py \
-		--product $(PRODUCT) \
-		--logo docs/logo.svg \
-		$(foreach c,$(BANNER_CARDS),--card $(c)) \
-		--tagline "$(BANNER_TAGLINE)" \
-		--cell $(BANNER_CELL)
-
-# The banner collages the screenshots, so it comes after them.
-docs:
-	$(MAKE) screenshots
-	$(MAKE) banner
 
 # mkarchiso writes as root. The plain removal comes first, so an ordinary clean
 # asks for no password.

@@ -1,17 +1,10 @@
-# Actions kept current without anybody remembering to. The pull requests go to
-# the default branch, like every other change.
-#
-# The runtime is not a dependency Dependabot can see: it is downloaded from its
-# own project at build time - see the root Makefile.
+# One pull request a week, titled as title.yml demands. A release is taken
+# after a week: a compromised one is usually pulled by then. Oak is pinned in
+# the Makefile, not here.
 
 version: 2
 
-# A week before any release is taken: a compromised one is usually pulled again
-# within days, and one taken the hour it appears is the one that gets in.
-
 updates:
-  # The workflows, and the composite action they all run on. Dependabot reads
-  # one folder per entry, and an action outside .github/workflows is its own.
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -19,13 +12,7 @@ updates:
     cooldown:
       default-days: 7
     commit-message:
-      prefix: "ci"
-
-  - package-ecosystem: github-actions
-    directory: /.github/actions/arch
-    schedule:
-      interval: weekly
-    cooldown:
-      default-days: 7
-    commit-message:
-      prefix: "ci"
+      prefix: ci
+    groups:
+      actions:
+        patterns: ["*"]

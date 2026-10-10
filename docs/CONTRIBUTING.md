@@ -17,14 +17,11 @@ flowchart LR
 
 1. **Branch off `main`.** Name it after what it does: `feat/wireless-settings`, `fix/helix-test`. Nothing reads the name
 2. **Open a pull request right away**, as a draft while it is not done. A branch is checked through its pull request, never on its own, and every push is built, booted and installed, about 20 minutes
-3. **Squash merge**, or switch on auto-merge. `main` takes the pull request once `Ready` and `Title` have passed, as one commit under its title, and deletes the branch
+3. **Squash merge**, or switch on auto-merge. `main` takes the pull request once `Check`, `Image` and `Title` have passed, as one commit under its title, and deletes the branch
 
 - The commits inside the branch are yours to shape. Only the title reaches `main`
 - A draft gets the same run and cannot be merged. Marking it ready starts nothing, since it changes no code
 - A pull request that changes nothing but `docs/`, Markdown or `LICENSE` is checked, never built: none of it reaches an image
-- A pull request from a fork is checked, never booted: an image needs a privileged container
-- Where a pull request changes what the pictures in the docs show, CI renders them onto its branch as a commit of its own, on top of the merge with `main` it checked. Pull before pushing again
-- A pull request that changes nothing but `oak.yaml`, `CHANGELOG.md` or the release manifest starts no run and is never merged: those three are the release pull request's. Change something else with it
 
 ## The Title
 
@@ -54,32 +51,28 @@ END_COMMIT_OVERRIDE
 
 Nothing is typed and nothing is tagged by hand.
 
-1. **Every merge that releases something** opens or updates the pull request `chore(main): release 2.1.0`. It raises `version:` in **[oak.yaml](../oak.yaml)** and writes that version's section of **[CHANGELOG.md](../CHANGELOG.md)**
-2. **Merging it is the release.** The run on `main` tags `v2.1.0`, builds and boots the images, hangs them on the release page and publishes it
+1. **Every merge that releases something** opens or updates the pull request `chore(main): release 2.1.0`. It raises the version in `.release-please-manifest.json` and writes that version's section of **[CHANGELOG.md](../CHANGELOG.md)**
+2. **Merging it is the release.** It starts no run of its own, so an admin merges it past the checks: `gh pr merge <number> --squash --admin`. The run on `main` tags `v2.1.0`, checks, builds and boots the images as that version, hangs them on the release page and publishes it
 
 - Merges collect in the release pull request until it is merged. When to release is a decision, not a schedule
 - The page carries `arch-os-2.1.0-x86_64.iso`, `arch-os-2.1.0-x86_64.tar.gz` and `arch-os-2.1.0-recovery-x86_64.tar`, all under signed build provenance
-- Every other build is named after the next release: `arch-os-2.1.0-dev-x86_64.iso`, as the open release pull request names it, or the next patch where none is open. `make tarball VERSION=2.1.0` names a build after its release, and only on that release's commit
-- Neither the version nor the changelog is edited by hand. `make check` fails when `oak.yaml` and the release manifest disagree
+- Every other build is named after a pre-release of the next patch: `arch-os-2.0.1-dev-x86_64.iso`. `make build VERSION=2.1.0` names one after any version, which the build stamps into `oak.yaml`
+- Neither the version nor the changelog is edited by hand
 
-**Note:** _The page stays a draft until every file hangs on it, so every link to the latest release points at the one before until then. A run that fails on the way leaves a draft: re-run its failed jobs._
-
-**Note:** _The release pull request starts no run. The run that wrote it reports `Ready` and `Title` on it, and its merge is checked on `main` before the tag exists. See **[ci.yml](../.github/workflows/ci.yml)**._
+**Note:** _The page stays a draft until every file hangs on it. A run that fails on the way leaves a draft: re-run its failed jobs._
 
 ## What CI Runs
 
 | Job | When | Does |
 | --- | --- | --- |
 | `Title` | a pull request opened, pushed to or edited | Reads the title |
-| `Check` | every run | `make check` |
-| `Image` | a pull request that reaches the image, a release, on demand, every Monday | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO, then starts its Recovery |
-| `Desktop` | every Monday, on demand | Installs a Desktop from that ISO and boots it to its login screen |
-| `Ready` | a pull request | Every job it needed has passed. Clears the pictures' commit, which starts no run |
-| `Release` | a push to `main` | The release pull request, cleared to merge, or once that is merged, the tag and the draft page |
-| `Pictures` | a pull request | Renders the pictures in the docs onto its branch, at the release it leads to, where it changes what they show or that release |
-| `Publish` | a release | Hangs the files of that run on the page and publishes it |
+| `Check` | a pull request, a release, every Monday, on demand | `make check` |
+| `Image` | as `Check`, where the change reaches the image | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO, then starts its Recovery. Every Monday and on demand also a Desktop, booted to its login screen |
+| `Release` | a push to `main` | The release pull request, or once that is merged, the tag and the draft page |
+| `Publish` | a release | Hangs the files `Image` booted on the page, signed, and publishes it |
 
-**Note:** _A commit is built once. The files on the release page are the ones its run booted, never a rebuild._
+- A merge into `main` runs `Release` alone: its pull request has passed `Check` and `Image` already
+- A run started by hand offers its images for download: `gh workflow run CI --ref <branch>`
 
 ## Doing the Work
 
@@ -155,16 +148,15 @@ Before any desktop exists there is one console font with at most 512 glyphs: **L
 
 ## Pictures in the Docs
 
-Both are generated, so neither outlives the interface it shows. CI renders them onto the branch of a pull request that changes what they show, at the release it leads to, so `main` shows the code it holds and the release it heads for. The commands show them on this machine:
+Both are generated, so neither outlives the interface it shows. CI never renders them: they are run by hand and committed with the change.
 
 ```
-make docs          # both
-make screenshots   # every page in screenshots.yaml
-make banner        # the banner, out of two of them
+docs/screenshots.sh 2.1.0   # every page in screenshots.yaml, showing that version
+docs/banner.sh              # the banner, out of two of them
 ```
 
-- They need `chromium`, `imagemagick`, `python-pyte`, `python-yaml` and `ttf-firacode-nerd`, none of which a build or `make check` needs, and systemd as PID 1, which `localectl` and `timedatectl` ask. CI renders in an Arch container booted with systemd: **[pictures.sh](../.github/pictures.sh)**
-- A pull request's title raises the release the pictures name: a `feat:` on top of pending fixes renders the next minor
+- The version defaults to the next patch's pre-release. Name the release the change heads for, so `main` shows it
+- They need `chromium`, `imagemagick`, `python-pyte`, `python-yaml` and `ttf-firacode-nerd`, none of which a build or `make check` needs, and systemd as PID 1, which `localectl` and `timedatectl` ask
 - Every run is started with `--debug`, so nothing is partitioned, mounted or restarted. Which pages are taken and every answer given is **[screenshots.yaml](screenshots.yaml)**
 - Only `welcome.png`, `setup.png`, `installer.png`, `installing.png` and `recovery.png` are drawn this way. The boot splash, the shell, the fetch and the Arch OS Manager are photographs of a running system, taken by hand
 - `installing.png` and `recovery.png` catch a run while it is going, so they differ from run to run
@@ -179,9 +171,8 @@ make github
 
 | File | Says |
 | --- | --- |
-| `repository.json` | Squash merges only, under the pull request's title alone; auto-merge on; a merged branch is deleted |
-| `ruleset.json` | `main` takes nothing but a pull request, squashed, once `Ready` and `Title` have passed; no force push, no deletion. The only protection: a classic one is removed |
+| `repository.json` | Squash merges only, under the pull request's title alone; auto-merge allowed; a merged branch is deleted |
+| `ruleset.json` | `main` takes nothing but a pull request once `Check`, `Image` and `Title` have passed; an admin may merge one past them, which the release pull request needs. No force push, no deletion |
 | `actions.json` | A workflow's token reads unless it says otherwise, and may open the release pull request |
-| `code-scanning.json` | No CodeQL: the one language it finds here is the workflows, which are zizmor's, in `make check` |
 
-Run it again after changing one of them. Every call sets the whole state, so a second run changes nothing. The script is the same in every project released this way, and so is every file but `code-scanning.json`.
+Run it again after changing one of them. The script is the same in every project released this way; `ruleset.json` names each project's checks. No CodeQL: the one language it finds here is the workflows, which are zizmor's, in `make check`.

@@ -4,13 +4,6 @@
   "draft": true,
   "force-tag-creation": true,
   "packages": {
-    ".": {
-      "extra-files": [
-        {
-          "type": "generic",
-          "path": "oak.yaml"
-        }
-      ]
-    }
+    ".": {}
   }
 }
