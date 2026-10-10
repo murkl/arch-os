@@ -14,6 +14,7 @@ What Arch OS puts on a disk, and why. The scripts say *what*; this says *why*, s
 
 - `--language=de` skips the language page: `… | bash -s -- --language=de`, or `installer --language=de`
 - The release unpacks to `XDG_DOWNLOAD_DIR` or `~/Downloads`, `… | DOWNLOAD_DIR=<dir> bash` for another
+- The live system takes the console keyboard and the time zone as they are answered, so what is typed and the log's times are right from there on. Only its `/etc/localtime` changes; the hardware clock is left alone
 
 ### Reusing Answers
 
@@ -30,7 +31,7 @@ UEFI only, GPT, the whole disk for Arch OS: it is the only system on it.
 | --- | --- | --- | --- | --- |
 | 1 | 1 GiB | EFI system (`ef00`) | `BOOT` | `/boot` |
 | 2 | the rest | Linux (`8300`) | `BTRFS` | `/` |
-| 3 | its image, about 500 MiB | Linux (`8300`) | - | never - see **[The Recovery Partition](#the-recovery-partition)** |
+| 3 | 1 GiB, twice its image, so an update has room | Linux (`8300`) | - | never - see **[The Recovery Partition](#the-recovery-partition)** |
 
 Always in that order, and always btrfs. The third is there with **Recovery**, at the end of the disk, so the root is the second on every installation. `/boot` is `fmask=0077,dmask=0077`: it holds the kernel and the signed image, root's business only.
 
@@ -181,6 +182,8 @@ Enough for a usable install, little enough that nothing needs looking after.
 - The processor's microcode, `intel-ucode` or `amd-ucode`, read off `/proc/cpuinfo`
 - The chosen editor (`nano` unless another was picked), `man-db`, `man-pages`, `openssh` - `base` ships none of them. The editor gets a configuration of its own - see [The Text Editor](#the-text-editor)
 - Everything else follows an answer: the task that enables a service installs its package
+
+**A wireless network joined in the Installer comes along.** Each one iwd knows on the live system becomes a NetworkManager connection, so the first boot is online. A network with 802.1X is joined again on the new system.
 
 **Firmware is skipped in a VM** - a guest's drivers are already in the kernel, and `linux-firmware` is over half the base install. Skipped unless a card is passed through.
 
@@ -342,9 +345,9 @@ Two questions - keyboard, disk - and on its own partition not even those, see be
 | Kernels | `/usr/lib/modules/*/` | While rebuilding boot |
 | Snapshots | `@snapshots` on the btrfs top level | Mid-run; none means the rollback step is skipped |
 
-Nothing it does needs a network - the network may be what broke, and kernel images come from the package cache. **Configure Wi-Fi** in its **Setup** joins one all the same, for whatever somebody wants to fetch in the shell, wherever the machine has a card and no internet over a cable. On its own partition a cable comes up at boot and is preferred while both are up, and the wireless daemon starts once there is a card to ask it about; nothing else of the network runs.
+No repair needs a network - the network may be what broke, and kernel images come from the package cache. **Configure Wi-Fi** in its **Setup** joins one all the same, for an update of the Recovery or whatever somebody wants to fetch in the shell, wherever the machine has a card and no internet over a cable. On its own partition a cable comes up at boot and is preferred while both are up, and the wireless daemon starts once there is a card to ask it about; nothing else of the network runs.
 
-It repairs what the Installer of the same release makes: `linux-zen`, btrfs with the whole subvolume layout, systemd-boot.
+It repairs what the Installer of its release series makes: `linux-zen`, btrfs with the whole subvolume layout, systemd-boot.
 
 The password of an encrypted disk is typed once rather than twice: it already exists, and it is tried on the disk right where it is typed - `cryptsetup open --test-passphrase`, which opens nothing - so a wrong one is refused on that page. A second box is for a password being chosen, which nothing can check until the system it belongs to boots.
 
@@ -354,14 +357,14 @@ What the Recovery starts with on its own partition is put in force before the fi
 
 ### The Recovery Partition
 
-The Recovery of the release that installed the system, on a partition of its own at the end of the disk and in the boot menu as **Arch OS Recovery**. It is the one that knows this layout, and it needs neither a USB stick nor a network to start. With **Recovery** off there is none - the ISO opens the system all the same.
+The Recovery of the release that installed the system, or a newer one of its series, on a partition of its own at the end of the disk and in the boot menu as **Arch OS Recovery**. It is the one that knows this layout, and it needs neither a USB stick nor a network to start. With **Recovery** off there is none - the ISO opens the system all the same.
 
-It is built with the release rather than on the machine, out of Arch's own minimal profile `baseline`: the kernel, `base`, `btrfs-progs`, `arch-install-scripts`, Plymouth and the Recovery module, and `iwd` with the firmware of the wireless cards. No editor, and nothing it starts but the Recovery and a cable's network - the wireless daemon only once there is a card; manuals, translations, headers, the graphics drivers and whatever the firmware packages carry for graphics, cameras and Bluetooth are left out as the packages go in. The ISO carries it ready-made. Any other live image fetches it from the release the Installer belongs to - `arch-os-X.Y.Z-recovery-x86_64.tar`, held to the checksum GitHub publishes for it - into `/tmp`, before the disk is touched. Either way the Installer only writes it:
+It is built with the release rather than on the machine, out of Arch's own minimal profile `baseline`: the kernel, `base`, `btrfs-progs`, `arch-install-scripts`, Plymouth and the Recovery module, and `iwd` with the firmware of the wireless cards. No editor, and nothing it starts but the Recovery and a cable's network - the wireless daemon only once there is a card; manuals, translations, headers, the graphics drivers and whatever the firmware packages carry for graphics, cameras and Bluetooth are left out as the packages go in. A pre-release ISO carries it ready-made. A release's ISO leaves it out, which keeps the ISO under the 2 GiB GitHub takes for a file, and its Installer fetches it like every other live image does: from the release the Installer belongs to - `arch-os-X.Y.Z-recovery-x86_64.tar`, held to the checksum GitHub publishes for it - into `/tmp`, before the disk is touched. Either way the Installer only writes it:
 
 | File | Goes to | What it is |
 | --- | --- | --- |
 | `recovery.efi` | `/boot/EFI/Linux/arch-os-recovery.efi` | Kernel, ram disk and command line as one image. systemd-boot lists it by itself, under the name its `os-release` gives it |
-| `recovery.img` | partition 3, byte for byte | A read-only erofs holding the root file system and its signature. The running system never mounts it, nothing can write to it, and the file manager does not list it |
+| `recovery.img` | partition 3, byte for byte | A read-only erofs holding the root file system and its signature. The running system never mounts it, nothing but an update writes to it, and the file manager does not list it |
 
 How it starts:
 
@@ -376,7 +379,16 @@ It is a kiosk: the Recovery is the only thing the machine runs, and nothing lead
 
 **Note:** _The EFI partition is not signed, so what the Recovery reads there is held to the same patterns and lists as any answer read from a file - the worst a changed file can do is ask a question again._
 
-**Note:** _It is never updated: it repairs what the Installer of the same release makes, which is what the disk holds. `systemctl reboot --boot-loader-entry=arch-os-recovery.efi` starts it once from the running system. On a desktop that is **Recovery** among the applications: one yes or no, then the restart, and logind lets whoever sits at the machine do it without a password. The question is the launcher's own, in English or German by the session's language; its buttons are zenity's._
+**Note:** _`systemctl reboot --boot-loader-entry=arch-os-recovery.efi` starts it once from the running system. On a desktop that is **Recovery** among the applications: one yes or no, then the restart, and logind lets whoever sits at the machine do it without a password. The question is the launcher's own, in English or German by the session's language; its buttons are zenity's._
+
+#### Updating It
+
+**Update the Recovery** in its **Setup**, on its partition only. It looks at the latest release on GitHub first and says so where there is nothing newer; a newer one is installed after a question that opens on No.
+
+- Only within the release series: 2.0.0 takes 2.4.1, never 3.0.0. A new major version may lay a system down differently, which its Recovery would not repair
+- Everything that can fail comes before the partition is touched: the download held to the checksum GitHub publishes, its size to the partition, and with Secure Boot on the image the loader starts signed with the system's own keys. Those lie in the opened system, so the disk's password is asked for that
+- Then the partition, read back against the download, and the boot image moved over the old one. The two disagree only for the length of the write: a machine that loses power right then starts the system as before, and its Recovery only once the partition is written again
+- The partition is the same one: the file manager keeps passing over it, by its partition UUID, which the update leaves alone
 
 **Note:** _Without disk encryption, whoever sits at the machine can open the system from it - as from any USB stick, or by taking the disk out. Encryption is what closes that: the Recovery asks for the password like everything else._
 
@@ -386,6 +398,7 @@ A hybrid ISO already carries its partition table and boot paths - writing it is 
 
 - The image is the release `version:` in `oak.yaml` names
 - Where it lands is asked: `XDG_DOWNLOAD_DIR` or `~/Downloads`. An image already there is used rather than fetched again
+- The device is asked each time **Start** is chosen, before the password, and never kept: a path like `/dev/sdb` only names a stick while it is plugged in
 - It is checked against the checksum GitHub publishes for that release, and a mismatch discards it rather than keeping a broken one. The checksum is read once, when the image is fetched or found, and kept beside it as `.sha256`
 - Where that release publishes no checksum, nothing is written. **Verify checksum** off in **Setup** writes the image in the folder as it is, without asking the release anything - an image built here is the one that arrives this way
 

@@ -51,11 +51,10 @@ sgdisk --zap-all "$ARCH_OS_DISK"
 sgdisk -o "$ARCH_OS_DISK"
 sgdisk -n 1:0:+1G -t 1:ef00 -c 1:boot --align-end "$ARCH_OS_DISK"
 
-# The Recovery at the very end, as large as its image plus two MiB: the last
-# sectors hold the backup table, and the root's end is aligned down to a MiB.
+# The Recovery at the very end, RECOVERY_MIB plus two: the last sectors hold
+# the backup table, and the root's end is aligned down to a MiB.
 if [ "$ARCH_OS_RECOVERY_ENABLED" = "true" ]; then
-    recovery_mib=$((($(stat -c %s "$(recovery_image)/recovery.img") + 1048575) / 1048576 + 2))
-    sgdisk -n "2:0:-${recovery_mib}M" -t 2:8300 -c 2:root --align-end "$ARCH_OS_DISK"
+    sgdisk -n "2:0:-$((RECOVERY_MIB + 2))M" -t 2:8300 -c 2:root --align-end "$ARCH_OS_DISK"
     sgdisk -n 3:0:0 -t 3:8300 -c 3:recovery "$ARCH_OS_DISK"
 else
     sgdisk -n 2:0:0 -t 2:8300 -c 2:root --align-end "$ARCH_OS_DISK"

@@ -6,10 +6,9 @@
 # iso/build.sh. The font is set here, right before the interface draws: it
 # decides which glyphs exist. Not worth refusing to start over, so it may fail.
 #
-# The font is Terminus Bold, built by iso/font.sh, in the largest of these sizes
-# that leaves the interface no more than half of the screen each way, and in
-# the smallest where none does - see iso/README.md. `make glyphs-check` holds every
-# one to what this image puts on the console.
+# The font is Terminus Bold, built by iso/font.sh, in the size the kernel picks
+# for its own font, as a stock Arch ISO shows it - see iso/README.md.
+# `make glyphs-check` holds every one to what this image puts on the console.
 #
 # Oak looks for oak.yaml and the modules folder beside its own binary, so it is
 # started out of the folder it was installed into - every answer file and log
@@ -17,20 +16,19 @@
 # left off.
 set -eu
 
-SIZES="32 24 20 16"
+SIZES="32 16"
 
-# The interface is 95 columns by 25 rows; twice that is the screen it needs.
-# iso/font.sh holds every size to being twice as tall as it is wide.
-COLS=190 ROWS=50
-
-# Only on a console: a terminal in a window has its font already.
+# Only on a console: a terminal in a window has its font already. 8 by 16, and
+# 16 by 32 where 8 by 16 would leave 22,000 cells or more: the kernel's rule
+# between the two fonts Arch builds it with (lib/fonts/fonts.c).
 if [[ "$(tty)" == /dev/tty[0-9]* ]]; then
-    read -ra sizes <<<"$SIZES"
+    read -r large size <<<"$SIZES"
     width=0 height=0
     IFS=, read -r width height </sys/class/graphics/fb0/virtual_size || true
-    for size in "${sizes[@]}"; do
-        [ $((width / (size / 2))) -ge "$COLS" ] && [ $((height / size)) -ge "$ROWS" ] && break
-    done
+    cols=$((width / 8)) rows=$((height / 16))
+    if [ $((cols * rows)) -ge 22000 ]; then
+        size="$large"
+    fi
     setfont "arch-os-${size}" || true
 fi
 

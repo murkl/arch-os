@@ -44,7 +44,7 @@ MODULE_PARTS := data locales tasks actions
 # https://github.com/murkl/oak, downloaded rather than built, and pinned so a
 # commit builds the same tomorrow. Written without the `v` of its tag.
 OAK_REPO    := murkl/oak
-OAK_VERSION ?= 0.24.0
+OAK_VERSION ?= 0.25.0
 OAK_ASSET   := oak-linux-amd64
 OAK_DIR     := .oak
 
@@ -94,6 +94,11 @@ ISO_FONT   := $(ISO_DIR)/font.sh
 
 # What `make e2e` installs: core or desktop.
 START ?= core
+
+# The Recovery inside the ISO, or left for the Installer to fetch from the
+# release page: a pre-release has no release page, and a release's ISO stays
+# under GitHub's 2 GiB a file. `make iso ISO_RECOVERY=true` decides by hand.
+ISO_RECOVERY ?= $(if $(findstring -,$(VERSION)),true,false)
 
 # The newest images, read when used, so `make iso && make smoke` needs no
 # argument.
@@ -245,7 +250,7 @@ tarball: build
 
 # The images, out of the release already in dist/.
 image:
-	$(ISO_BUILD) $(CURDIR)/$(RELEASE_DIR)
+	ISO_RECOVERY=$(ISO_RECOVERY) $(ISO_BUILD) $(CURDIR)/$(RELEASE_DIR)
 	tar -cf $(DIST_DIR)/$(RECOVERY_TAR) --owner=0 --group=0 --sort=name \
 		-C $(DIST_DIR) $(RECOVERY_DIR)
 

@@ -18,7 +18,7 @@ module.yaml                       what this Recovery is, what it asks, what orde
 tasks/@<stage>/<id>/task.yaml     what that step is: its questions and pages
 tasks/@<stage>/<id>/task.sh       what it does, plus any file it ships with, beside it
 tasks/@<stage>/<id>/test.sh       optional: how to tell, on the machine, that it took
-actions/<id>/action.yaml          an action: one page at most, and what a no means
+actions/<id>/action.yaml          an action: its pages, and what a no means
 actions/<id>/action.sh            what it does, and nothing else
 locales/                          one <code>.po per language, and the template they come from
 ```
@@ -37,11 +37,15 @@ Every step after the first is optional.
 
 **Note:** _`snapshot` and `boot` each ask first, so a run can stop after any. Both open on No, `boot` on Yes once a snapshot was put in place. The page the repair ends on offers **Open a shell** in the repaired system and opens on **Continue**. A restart or a shutdown leaves unmounting and locking to systemd._
 
-## Nothing is downloaded
+## Nothing is downloaded for a Repair
 
 A broken network may be the problem, so this module never waits for one, and kernel images come from the local pacman cache. `root` is all the work requires - not firmware, since this machine is not what is being set up.
 
-It can join one all the same, for whatever somebody wants to fetch in the shell: `wifi` puts **Configure Wi-Fi** into its **Setup** wherever there is a card and no internet over a cable - the same action the Installer has. On its own partition a cable comes up at boot and is preferred while both are up, and the wireless daemon starts once there is a card to ask it about. `restart` and `shutdown` are the ways out, and `share-log` puts the log of a repair that failed online for whoever is helping.
+It can join one all the same, for an update or whatever somebody wants to fetch in the shell: `wifi` puts **Configure Wi-Fi** into its **Setup** wherever there is a card and no internet over a cable - the same action the Installer has. On its own partition a cable comes up at boot and is preferred while both are up, and the wireless daemon starts once there is a card to ask it about. `restart` and `shutdown` are the ways out, and `share-log` puts the log of a repair that failed online for whoever is helping.
+
+## Updating Itself
+
+On its own partition, `update` puts **Update the Recovery** into its **Setup** - `own-partition` says so when the UUID on its command line is that of the third partition of its disk. Choosing it looks at the latest release on GitHub and ends on a page saying there is nothing newer, or, where the release is newer and of the same major version, opens `update-install`: with Secure Boot on, the disk's password for the system's signing keys, then a question that opens on No, then the update - **[➜ Updating It](../../docs/REFERENCE.md#updating-it)**. `update-install` needs `online`; without a network, `update`'s own no says how to get one.
 
 ## Two Questions, and no more
 
@@ -86,6 +90,8 @@ flowchart LR
 | `ARCH_OS_RECOVERY_ENCRYPTED` | LUKS or not - read, never asked |
 | `ARCH_OS_RECOVERY_PASSWORD` | Asked right before the run, tried on the disk where it is typed, never written |
 | `ARCH_OS_RECOVERY_SNAPSHOT` | Asked mid-run by the rollback task |
+| `ARCH_OS_RECOVERY_SECURE_BOOT` | Whether the firmware starts only signed images - read, never asked |
+| `ARCH_OS_RECOVERY_KEYS_PASSWORD` | Asked by an update with Secure Boot on, tried on the disk, never written |
 
 Only keyboard and disk are asked up front. The password follows right before the run, the snapshot only if a rollback is chosen.
 

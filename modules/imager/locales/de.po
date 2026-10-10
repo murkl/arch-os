@@ -60,15 +60,10 @@ msgstr "Datenträger"
 msgid "The USB device to write to. Everything on it is erased. A device the running system is on is not offered."
 msgstr "Der USB-Datenträger, auf den geschrieben wird. Alles darauf wird gelöscht. Ein Datenträger mit dem laufenden System wird nicht angeboten."
 
-#. ARCH_OS_IMAGE_DEVICE: the heading its row sits under
-#: module.yaml
-msgid "Target"
-msgstr "Ziel"
-
 #. ARCH_OS_IMAGE_DEVICE: what a wrong answer is told
 #: module.yaml
-msgid "Choose a device that exists."
-msgstr "Wähle einen vorhandenen Datenträger."
+msgid "No USB device found. Plug a stick in and choose Start again."
+msgstr "Kein USB-Datenträger gefunden. Steck einen Stick ein und wähle erneut Start."
 
 #. ARCH_OS_IMAGE_SUDO: the question
 #: module.yaml
@@ -79,6 +74,11 @@ msgstr "Passwort zum Schreiben"
 #: module.yaml
 msgid "Whether writing the device asks for your password."
 msgstr "Ob das Schreiben des Datenträgers nach deinem Passwort fragt."
+
+#. ARCH_OS_IMAGE_SUDO: the heading its row sits under
+#: module.yaml
+msgid "Target"
+msgstr "Ziel"
 
 #. ARCH_OS_IMAGE_PASSWORD: the question
 #: module.yaml

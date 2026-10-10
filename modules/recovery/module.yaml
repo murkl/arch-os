@@ -9,7 +9,7 @@ title: Recovery
 rules:
   offer-if: [live-image]
   start-if: [root]
-  on-settings: [wifi]
+  on-settings: [wifi, update]
   on-leave: [restart, shutdown]
   on-failure: [share-log]
   on-success: [chroot]
@@ -52,6 +52,15 @@ variables:
     description: Whether that disk is encrypted with LUKS.
     group: Storage
     value-from: value_disk_encrypted()
+
+  # Not asked: whether the firmware starts only what is signed, so an updated
+  # Recovery has to be.
+  - name: ARCH_OS_RECOVERY_SECURE_BOOT
+    type: bool
+    title: Secure Boot
+    description: Whether the firmware starts only signed images.
+    group: Storage
+    value-from: value_secure_boot()
 
   # Typed once and tried on the disk where it is typed.
   - name: ARCH_OS_RECOVERY_PASSWORD

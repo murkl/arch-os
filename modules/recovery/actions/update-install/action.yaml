@@ -1,0 +1,30 @@
+# Opened where update found a newer Recovery. With Secure Boot on, the new one
+# is signed with the system's keys, which lie behind the disk's password.
+title: Install the newer Recovery
+error: Installing the newer Recovery failed. Until it has run through, the Recovery may not start from its partition - the log says how far it got.
+
+rules:
+  offer-if: [online]
+
+variables:
+  - name: ARCH_OS_RECOVERY_KEYS_PASSWORD
+    type: password
+    title: Encryption password
+    description: Secure Boot starts only a Recovery signed with this system's keys, and they are on the encrypted disk. Asked right before the update and never written to a file.
+    required: true
+    check: check_keys_password()
+    error: That password does not unlock this disk.
+    conditions:
+      - ARCH_OS_RECOVERY_SECURE_BOOT == true
+      - ARCH_OS_RECOVERY_ENCRYPTED == true
+
+confirm: |
+  Install the newer Recovery over this one?
+
+  It is downloaded, held to the checksum of its release and written to the
+  Recovery's partition. The new one starts with the next restart.
+
+report: |
+  Recovery updated
+
+  The new one starts with the next restart.

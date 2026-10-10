@@ -1,17 +1,7 @@
 # The installation unlocked and mounted at /mnt the way it mounts itself.
 
-# A second attempt starts from whatever the first left half open: the system
-# closed for good, before opening as after. A system still standing cannot be
-# locked either.
-swapoff -a || true
-sync
-unmount_target
-if mountpoint -q "$BTRFS_TOP"; then
-    umount -R "$BTRFS_TOP"
-fi
-if [ -e "/dev/mapper/${CRYPT}" ]; then
-    cryptsetup close "$CRYPT"
-fi
+# A second attempt starts from whatever the first left half open.
+close_target
 echo "closed ${MNT}"
 
 part="$(target_partition)"
