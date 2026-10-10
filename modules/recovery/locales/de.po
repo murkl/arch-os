@@ -65,8 +65,18 @@ msgstr "Verschlüsselung"
 msgid "Whether that disk is encrypted with LUKS."
 msgstr "Ob dieser Datenträger mit LUKS verschlüsselt ist."
 
-#. ARCH_OS_RECOVERY_PASSWORD: the question
+#. ARCH_OS_RECOVERY_SECURE_BOOT: the question
 #: module.yaml
+msgid "Secure Boot"
+msgstr "Secure Boot"
+
+#. ARCH_OS_RECOVERY_SECURE_BOOT: what it means
+#: module.yaml
+msgid "Whether the firmware starts only signed images."
+msgstr "Ob die Firmware nur signierte Images startet."
+
+#. ARCH_OS_RECOVERY_PASSWORD: the question
+#: module.yaml actions/update-install/action.yaml
 msgid "Encryption password"
 msgstr "Verschlüsselungspasswort"
 
@@ -76,7 +86,7 @@ msgid "The password that unlocks that disk. Asked right before the repair and ne
 msgstr "Das Passwort, das diesen Datenträger entsperrt. Es wird direkt vor der Reparatur abgefragt und nie in eine Datei geschrieben."
 
 #. ARCH_OS_RECOVERY_PASSWORD: what a wrong answer is told
-#: module.yaml
+#: module.yaml actions/update-install/action.yaml
 msgid "That password does not unlock this disk."
 msgstr "Dieses Passwort entsperrt diesen Datenträger nicht."
 
@@ -163,6 +173,16 @@ msgid "No internet over a cable"
 msgstr "Kein Internet über ein Kabel"
 
 #. an action: its row, and the heading over its page
+#: actions/online/action.yaml
+msgid "Internet"
+msgstr "Internet"
+
+#. an action: its row, and the heading over its page
+#: actions/own-partition/action.yaml
+msgid "The Recovery's own partition"
+msgstr "Die eigene Partition des Recovery"
+
+#. an action: its row, and the heading over its page
 #: actions/restart/action.yaml
 msgid "Restart"
 msgstr "Neu starten"
@@ -217,6 +237,69 @@ msgstr "Herunterfahren"
 #: actions/shutdown/action.yaml
 msgid "Switch this machine off."
 msgstr "Den Rechner ausschalten."
+
+#. an action: its row, and the heading over its page
+#: actions/update/action.yaml
+msgid "Update the Recovery"
+msgstr "Recovery aktualisieren"
+
+#. an action: what it does, under its row
+#: actions/update/action.yaml
+msgid "Look for a newer Recovery of this release series, and install it after asking."
+msgstr "Nach einem neueren Recovery dieser Release-Reihe suchen und es nach Rückfrage installieren."
+
+#. an action: what a no from it means
+#: actions/update/action.yaml
+msgid "There is no internet connection to look for a newer Recovery. Join a network with Configure Wi-Fi above, or plug in a cable."
+msgstr "Ohne Internetverbindung lässt sich nicht nach einem neueren Recovery suchen. Verbinde dich oben über „WLAN konfigurieren“ oder steck ein Kabel ein."
+
+#. read once the action is done, and held on until somebody has
+#: actions/update/action.yaml
+msgid ""
+"Nothing to update\n"
+"\n"
+"There is no newer Recovery for the release series this system was installed with."
+msgstr ""
+"Nichts zu aktualisieren\n"
+"\n"
+"Für die Release-Reihe, mit der dieses System installiert wurde, gibt es kein neueres Recovery."
+
+#. an action: its row, and the heading over its page
+#: actions/update-install/action.yaml
+msgid "Install the newer Recovery"
+msgstr "Neueres Recovery installieren"
+
+#. an action: what a no from it means
+#: actions/update-install/action.yaml
+msgid "Installing the newer Recovery failed. Until it has run through, the Recovery may not start from its partition - the log says how far it got."
+msgstr "Das neuere Recovery konnte nicht installiert werden. Bis die Installation durchgelaufen ist, startet das Recovery womöglich nicht von seiner Partition - das Log zeigt, wie weit sie kam."
+
+#. asked before the action does its work
+#: actions/update-install/action.yaml
+msgid ""
+"Install the newer Recovery over this one?\n"
+"\n"
+"It is downloaded, held to the checksum of its release and written to the Recovery's partition. The new one starts with the next restart."
+msgstr ""
+"Das neuere Recovery über dieses installieren?\n"
+"\n"
+"Es wird heruntergeladen, mit der Prüfsumme seines Releases abgeglichen und auf die Partition des Recovery geschrieben. Das neue startet beim nächsten Neustart."
+
+#. read once the action is done, and held on until somebody has
+#: actions/update-install/action.yaml
+msgid ""
+"Recovery updated\n"
+"\n"
+"The new one starts with the next restart."
+msgstr ""
+"Recovery aktualisiert\n"
+"\n"
+"Das neue startet beim nächsten Neustart."
+
+#. ARCH_OS_RECOVERY_KEYS_PASSWORD: what it means
+#: actions/update-install/action.yaml
+msgid "Secure Boot starts only a Recovery signed with this system's keys, and they are on the encrypted disk. Asked right before the update and never written to a file."
+msgstr "Secure Boot startet nur ein Recovery, das mit den Schlüsseln dieses Systems signiert ist, und die liegen auf dem verschlüsselten Datenträger. Es wird direkt vor der Aktualisierung abgefragt und nie in eine Datei geschrieben."
 
 #. an action: its row, and the heading over its page
 #: actions/wifi/action.yaml

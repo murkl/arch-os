@@ -6,7 +6,9 @@
 # The folder stays imager, which its files are named after.
 title: Create boot medium
 
-# A yes before the work: it erases a device.
+# The device is chosen each time the work starts, before the password, and the
+# yes before the work comes last: it erases that device.
+asks: [ARCH_OS_IMAGE_DEVICE]
 confirm: true
 
 rules:
@@ -40,15 +42,16 @@ variables:
     group: Image
     default: true
 
+  # Asked after Start and never kept: a stick is only the stick until it is
+  # pulled out.
   - name: ARCH_OS_IMAGE_DEVICE
-    type: list
+    type: deferred
     title: Device
     description: |
       The USB device to write to. Everything on it is erased. A device the
       running system is on is not offered.
-    group: Target
     required: true
-    error: Choose a device that exists.
+    error: No USB device found. Plug a stick in and choose Start again.
     options-from: options_devices()
 
   # Not asked: root needs no password, and a sudo rule may say this account

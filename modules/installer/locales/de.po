@@ -537,8 +537,8 @@ msgstr "Texteditor einrichten"
 
 #. the step, as the run lists it
 #: tasks/@features/firewall/task.yaml
-msgid "Set up firewalld"
-msgstr "firewalld einrichten"
+msgid "Set up the firewall"
+msgstr "Firewall einrichten"
 
 #. the step, as the run lists it
 #: tasks/@features/housekeeping/task.yaml
@@ -567,13 +567,13 @@ msgstr "Arch OS Manager installieren"
 
 #. the step, as the run lists it
 #: tasks/@features/shell/task.yaml
-msgid "Set up zsh and the shell tools"
-msgstr "zsh und Shell-Tools einrichten"
+msgid "Set up Zsh and the shell tools"
+msgstr "Zsh und Shell-Tools einrichten"
 
 #. the step, as the run lists it
 #: tasks/@features/ssh/task.yaml
-msgid "Enable sshd"
-msgstr "sshd aktivieren"
+msgid "Enable the SSH server"
+msgstr "SSH-Server aktivieren"
 
 #. the step, as the run lists it
 #: tasks/@features/vm-guest/task.yaml

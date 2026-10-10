@@ -1,0 +1,15 @@
+# On the settings page of the Recovery on its partition. Choosing the row looks;
+# what is found is installed only after update-install asks.
+title: Update the Recovery
+description: Look for a newer Recovery of this release series, and install it after asking.
+error: There is no internet connection to look for a newer Recovery. Join a network with Configure Wi-Fi above, or plug in a cable.
+
+rules:
+  offer-if: [own-partition]
+  on-failure: [update-install]
+
+report: |
+  Nothing to update
+
+  There is no newer Recovery for the release series this system was installed
+  with.

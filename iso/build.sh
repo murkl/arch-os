@@ -5,10 +5,10 @@
 #   the Recovery   `baseline` and what recovery/ adds to it: the smallest Arch
 #                  there is, with nothing on it but the Recovery. Two files,
 #                  which the Installer writes to the disk it installs to
-#   the ISO        `releng`, the Arch live image, with every module on it and
-#                  the Recovery beside them
+#   the ISO        `releng`, the Arch live image, with every module on it and,
+#                  with ISO_RECOVERY=true, the Recovery beside them
 #
-#   build.sh <release-dir>
+#   ISO_RECOVERY=true|false build.sh <release-dir>
 #
 # Both land beside that release, and what they are called is read out of the
 # release itself.
@@ -182,10 +182,22 @@ fetch_theme() {
 
 install_bootsplash() {
     local profile="$1" hooks="$1/airootfs/etc/mkinitcpio.conf.d/archiso.conf"
+    local theme="$1/airootfs/usr/share/plymouth/themes/arch-os"
     grep -qxF "plymouth" "${profile}/packages.x86_64" || echo "plymouth" >>"${profile}/packages.x86_64"
 
     mkdir -p "${profile}/airootfs/usr/share/plymouth/themes"
-    cp -rT "${PLYMOUTH_THEME_SRC}" "${profile}/airootfs/usr/share/plymouth/themes/arch-os"
+    cp -rT "${PLYMOUTH_THEME_SRC}" "$theme"
+
+    # What is starting, as a line under the spinner: two-step draws a mode's
+    # SubTitle on every screen it finds, at TitleVerticalAlignment. Moved under
+    # the spinner, which only the modes with a progress bar, never shown here,
+    # would mind.
+    sed -i -e 's/^TitleVerticalAlignment=.*/TitleVerticalAlignment=.8/' \
+        -e "/^\[boot-up\]$/a SubTitle=$2" "${theme}/arch-os.plymouth"
+    if ! grep -qxF "SubTitle=$2" "${theme}/arch-os.plymouth" || ! grep -qxF "TitleVerticalAlignment=.8" "${theme}/arch-os.plymouth"; then
+        echo "Error: the theme's arch-os.plymouth has no [boot-up] or TitleVerticalAlignment to put the line under the spinner" >&2
+        exit 1
+    fi
 
     # plymouth-set-default-theme would theme the build host, so the config is
     # written and the hook added by hand - which is all that command does.
@@ -223,6 +235,12 @@ name_image() { profiledef "$1" "iso_name=\"$2\"" "iso_version=\"${VERSION}\""; }
 # ////////////////////////////////////////////////////////////////////////////
 
 echo "### Initialize Build"
+
+# Asked outright, so a build never guesses: see ISO_RECOVERY in the Makefile.
+[[ ${ISO_RECOVERY:-} =~ ^(true|false)$ ]] || {
+    echo "Error: ISO_RECOVERY is '${ISO_RECOVERY:-}', not true or false - see the Makefile" >&2
+    exit 1
+}
 
 # What a release is, checked before an hour of mkarchiso finds out. The modules
 # are not named here: which ones there are is whatever the release holds.
@@ -287,7 +305,7 @@ install_arch_os "$RECOVERY_PROFILE" "${RELEASE_DIR}/modules/recovery"
 # The Installer is not on this image, so neither is the command that opens it.
 rm "${RECOVERY_PROFILE}/airootfs/usr/local/bin/installer"
 make_executable "$RECOVERY_PROFILE"
-install_bootsplash "$RECOVERY_PROFILE"
+install_bootsplash "$RECOVERY_PROFILE" "Booting Recovery..."
 start_on_tty1 "$RECOVERY_PROFILE"
 name_image "$RECOVERY_PROFILE" arch-os-recovery
 
@@ -338,7 +356,7 @@ ${SUDO} rm -rf "$readback"
 # Every command its scripts call is on it, and recovery/pacman.conf took nothing
 # from the kernel that more than graphics passthrough, a camera or an
 # accelerator needs.
-for command in arch-chroot btrfs cryptsetup curl fuser ip iwctl loadkeys localectl lsblk mount mountpoint setfont swapoff umount; do
+for command in arch-chroot blkid blockdev btrfs cryptsetup curl fuser ip iwctl loadkeys localectl lsblk mount mountpoint setfont sha256sum swapoff tar umount; do
     [ -x "${recovery_root}/usr/bin/${command}" ] || { echo "Error: the Recovery has no ${command}" >&2 && exit 1; }
 done
 modules="$(find "${recovery_root}/usr/lib/modules" -name '*.ko*')"
@@ -414,13 +432,16 @@ if [ -n "$DROPPED" ]; then
     grep -vxF "$DROPPED" "$ISO_PACKAGES" >"${TEMP_DIR}/packages" && mv "${TEMP_DIR}/packages" "$ISO_PACKAGES"
 fi
 
-# Every module the release holds, and the Recovery beside them as the Installer
-# writes it - see recovery_image in oak.sh.
+# Every module the release holds, and where asked the Recovery beside them as
+# the Installer writes it - see recovery_image in oak.sh. Without it the
+# Installer fetches the Recovery of its release.
 install_arch_os "$ISO_PROFILE" "${RELEASE_DIR}/modules/"*
-mkdir -p "${ISO_PROFILE}/airootfs/opt/arch-os-recovery"
-cp "${RECOVERY_DIR}/recovery.img" "${RECOVERY_DIR}/recovery.efi" "${ISO_PROFILE}/airootfs/opt/arch-os-recovery/"
+if [ "$ISO_RECOVERY" = "true" ]; then
+    mkdir -p "${ISO_PROFILE}/airootfs/opt/arch-os-recovery"
+    cp "${RECOVERY_DIR}/recovery.img" "${RECOVERY_DIR}/recovery.efi" "${ISO_PROFILE}/airootfs/opt/arch-os-recovery/"
+fi
 make_executable "$ISO_PROFILE"
-install_bootsplash "$ISO_PROFILE"
+install_bootsplash "$ISO_PROFILE" "Booting Installer..."
 start_on_tty1 "$ISO_PROFILE"
 
 # Networking is left as the Arch ISO ships it: iwd and systemd-networkd, already

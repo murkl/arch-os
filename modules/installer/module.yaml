@@ -166,6 +166,7 @@ variables:
     group: Region
     required: true
     filter: open
+    apply: apply_timezone()
     options-from: options_timezones()
     pattern: '^[A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+)*$'
     prefill: prefill_timezone()

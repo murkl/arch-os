@@ -45,9 +45,12 @@ recovery/                                what the Recovery image adds to `baseli
 From the repository root:
 
 ```
-make iso       # the release, then both images, beside it in dist/
-make image     # ...only the images, out of a release that is already there
+make iso                     # the release, then both images, beside it in dist/
+make image                   # ...only the images, out of a release that is already there
+make iso ISO_RECOVERY=false  # ...the ISO as a release builds it, without the Recovery
 ```
+
+**Note:** _A pre-release's ISO carries the Recovery, since there is no release page to fetch it from; a release's ISO does not, which keeps it under GitHub's 2 GiB a file. `ISO_RECOVERY` decides by hand. `e2e.sh` hands an ISO without it the Recovery built beside it, where its Installer would otherwise download it._
 
 **Note:** _The images land beside the release they were built from, named after `oak.yaml`'s version: the ISO, and the Recovery as a folder and as a `.tar` for the release page. The ISO label is that version, upper-cased. Needs `archiso`, `systemd-ukify`, `erofs-utils`, `diffutils`, `kbd` and `terminus-font`._
 
@@ -95,7 +98,7 @@ Walks the ISO the way a person does, unattended:
 
 Each font this image loads has one table of glyphs, so a character outside it is a box on the screen - in whichever language it happens to be in. `glyphs.sh` builds the fonts as `build.sh` does and checks two things against every table: the files it is handed, which `make check` points at every module except fastfetch's config (a picture for a graphical terminal), and the marks the interface draws itself - the rules, the cursor, the three cells a QR code and the mark over a finished run are built from, and Oak's own words. Those are asked of the binary with `oak --glyphs` rather than copied here.
 
-The font is Terminus Bold, in the largest of four sizes that leaves the interface no more than half of the screen each way: it is 95 columns by 25 rows, so the screen has to hold 190 by 50 cells, and the smallest size, 8 by 16 like the kernel's own, stands where none does. A full HD screen gets 20, which fills 49% of its width, and a screen four times as large gets 32. Of the fonts in `kbd` and `terminus-font` it is the clean bold one with Latin with its accents, Greek and Cyrillic. It has neither ▀ nor ▄, which a QR code is drawn from, so `font.sh` puts them in the two slots of its table that nothing draws.
+The font is Terminus Bold, in the size the kernel picks for its own font, as a stock Arch ISO shows it: 8 by 16, and 16 by 32 where 8 by 16 would leave 22,000 cells or more. A full HD screen gets 16, a screen four times as large 32. Of the fonts in `kbd` and `terminus-font` it is the clean bold one with Latin with its accents, Greek and Cyrillic. It has neither ▀ nor ▄, which a QR code is drawn from, so `font.sh` puts them in the two slots of its table that nothing draws.
 
 ```
 make glyphs-check

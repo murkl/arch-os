@@ -19,8 +19,7 @@ make -C ../.. run MODULE=imager ARGS=--debug   # run it without touching this ma
 module.yaml                       what this module is, what it asks, what order it runs in, its rules
 tasks/@<stage>/<id>/task.yaml     what that step is: its conditions and pages
 tasks/@<stage>/<id>/task.sh       what it does
-tasks/@<stage>/<id>/test.sh       how to tell, on the machine, that it took
-actions/<id>/action.yaml          an action: one page at most, and what a no means
+actions/<id>/action.yaml          an action: its pages, and what a no means
 actions/<id>/action.sh            what it does, and nothing else
 locales/                          one <code>.po per language, and the template they come from
 ```
@@ -37,7 +36,7 @@ locales/                          one <code>.po per language, and the template t
 
 Three distinct failures: nothing arrived, what arrived is broken, or it could not be written.
 
-**Note:** _`checksum` has no `test.sh` - the task itself already is the test, line for line._
+**Note:** _No task has a `test.sh`, so **Verify steps** is not offered here: the checksum is the download's test, and the boot from the device is the write's._
 
 ## The Image
 
@@ -92,7 +91,7 @@ The interface keeps the screen throughout. Whether `sudo` wants a password is re
 | Variable | Description |
 | --- | --- |
 | `ARCH_OS_DOWNLOAD_DIR` | Where the image lives. Suggested as `XDG_DOWNLOAD_DIR`, or `~/Downloads` |
-| `ARCH_OS_IMAGE_DEVICE` | The USB device to write. Only USB disks are offered, and none the running system has mounted outside `/run/media`, `/media` or `/mnt` |
+| `ARCH_OS_IMAGE_DEVICE` | The USB device to write. Asked each time **Start** is chosen, before the password, and never written to the file. Only USB disks are offered, and none the running system has mounted outside `/run/media`, `/media` or `/mnt` |
 | `ARCH_OS_IMAGE_VERIFY` | Whether the image is held to the checksum its release publishes before it is written. On unless turned off |
 | `ARCH_OS_IMAGE_SUDO` | Read, not asked: whether writing the device needs a password - not as root, and not where a sudo rule says so |
 | `ARCH_OS_IMAGE_PASSWORD` | Your password for `sudo`, only where it wants one. Asked right before the run and never written to the file |

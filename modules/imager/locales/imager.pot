@@ -63,14 +63,9 @@ msgstr ""
 msgid "The USB device to write to. Everything on it is erased. A device the running system is on is not offered."
 msgstr ""
 
-#. ARCH_OS_IMAGE_DEVICE: the heading its row sits under
-#: module.yaml
-msgid "Target"
-msgstr ""
-
 #. ARCH_OS_IMAGE_DEVICE: what a wrong answer is told
 #: module.yaml
-msgid "Choose a device that exists."
+msgid "No USB device found. Plug a stick in and choose Start again."
 msgstr ""
 
 #. ARCH_OS_IMAGE_SUDO: the question
@@ -81,6 +76,11 @@ msgstr ""
 #. ARCH_OS_IMAGE_SUDO: what it means
 #: module.yaml
 msgid "Whether writing the device asks for your password."
+msgstr ""
+
+#. ARCH_OS_IMAGE_SUDO: the heading its row sits under
+#: module.yaml
+msgid "Target"
 msgstr ""
 
 #. ARCH_OS_IMAGE_PASSWORD: the question

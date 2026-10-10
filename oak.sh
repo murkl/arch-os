@@ -36,13 +36,16 @@ product_dir() { dirname "${BASH_SOURCE[0]}"; }
 # The release this program is: what a module fetches is what was tested with it.
 release_version() { sed -n 's/^version:[[:space:]]*//p' "$(product_dir)/oak.yaml"; }
 
-# The download of that release whose name ends in $1 and its sha256, as two
-# words, or nothing where the release is out of reach. One field to a line,
-# however GitHub lays the JSON out.
-release_asset() {
-    local json
-    json="$(fetch_url -s --max-time 20 "https://api.github.com/repos/${REPO}/releases/tags/v$(release_version)" || true)"
-    printf '%s\n' "$json" | tr ',' '\n' | awk -v suffix="$1" '
+# A release as GitHub describes it: tags/v1.2.3 or latest. Fails where it is out
+# of reach.
+release_json() {
+    fetch_url -sS --max-time 20 "https://api.github.com/repos/${REPO}/releases/$1"
+}
+
+# The download in a release's JSON on stdin whose name ends in $1 and its
+# sha256, as two words. One field to a line, however GitHub lays the JSON out.
+asset_in() {
+    tr ',' '\n' | awk -v suffix="$1" '
         function weigh() {
             if (!found && url != "" && substr(url, length(url) - length(suffix) + 1) == suffix) { found = 1; print url, digest }
             url = ""; digest = ""
@@ -51,6 +54,24 @@ release_asset() {
         /"digest": *"sha256:/ { digest = $0; sub(/.*sha256:/, "", digest); sub(/".*/, "", digest) }
         /"browser_download_url": *"/ { url = $0; sub(/.*: *"/, "", url); sub(/".*/, "", url) }
         END { weigh() }'
+}
+
+# The download of this release whose name ends in $1 and its sha256, or nothing
+# where the release is out of reach.
+release_asset() {
+    local json
+    json="$(release_json "tags/v$(release_version)" 2>/dev/null || true)"
+    asset_in "$1" <<<"$json"
+}
+
+# The version a release's JSON on stdin names, without the v of its tag.
+version_in() {
+    tr ',' '\n' | awk '!found && /"tag_name": *"/ { sub(/.*"tag_name": *"v?/, ""); sub(/".*/, ""); print; found = 1 }'
+}
+
+# Whether version $1 comes after $2.
+newer() {
+    [ "$1" != "$2" ] && [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n1)" = "$1" ]
 }
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -431,6 +452,9 @@ recovery_image() {
 # Where it lands on the EFI partition, listed by systemd-boot on its own.
 export RECOVERY_EFI=/boot/EFI/Linux/arch-os-recovery.efi
 
+# Its partition: twice what its image takes, so an update has room to grow.
+export RECOVERY_MIB=1024
+
 # ////////////////////////////////////////////////////////////////////////////
 # INSTALLING | Into the new system
 # ////////////////////////////////////////////////////////////////////////////
@@ -624,6 +648,135 @@ mount_target() {
     mount --mkdir -t vfat "$(boot_partition "$ARCH_OS_RECOVERY_DISK")" "${MNT}/boot"
 }
 
+# The system closed for good, whatever an earlier run left open: a system still
+# standing cannot be locked either.
+close_target() {
+    swapoff -a || true
+    sync
+    unmount_target
+    if mountpoint -q "$BTRFS_TOP"; then
+        umount -R "$BTRFS_TOP"
+    fi
+    if [ -e "/dev/mapper/${CRYPT}" ]; then
+        cryptsetup close "$CRYPT"
+    fi
+}
+
+# ////////////////////////////////////////////////////////////////////////////
+# REPAIRING | The Recovery, updated on its partition
+# ////////////////////////////////////////////////////////////////////////////
+
+# Started from its partition on the disk it repairs: the UUID its command line
+# names is that disk's third partition.
+on_recovery_partition() {
+    local uuid
+    uuid="$(sed -n 's/.*archisodevice=UUID=\([^ ]*\).*/\1/p' /proc/cmdline)"
+    [ -n "$uuid" ] && [ -n "$ARCH_OS_RECOVERY_DISK" ] &&
+        [ "$(blkid -p -s UUID -o value "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")" 2>/dev/null)" = "$uuid" ]
+}
+
+# The newest release, where it follows this one within its major version, as
+# its version, the Recovery's download and that file's sha256 - nothing where
+# there is none. A new major version may lay a system down differently, which
+# this Recovery's successor would not repair. Fails where GitHub cannot be read.
+newer_recovery() {
+    local json version url digest
+    json="$(release_json latest)"
+    version="$(version_in <<<"$json")"
+    if [ -z "$version" ]; then
+        echo "GitHub names no latest release of ${REPO}" >&2
+        return 1
+    fi
+    newer "$version" "$(release_version)" || return 0
+    [ "${version%%.*}" = "$(release_version | cut -d. -f1)" ] || return 0
+    read -r url digest <<<"$(asset_in -recovery-x86_64.tar <<<"$json")"
+    if [ -n "$url" ] && [ -n "$digest" ]; then
+        printf '%s %s %s\n' "$version" "$url" "$digest"
+    fi
+}
+
+# Where the EFI partition is mounted while the Recovery is updated without the
+# system.
+export ESP_MNT=/run/arch-os-esp
+
+# The newer Recovery over this one. Everything that can fail is done before the
+# partition is touched: the download held to its checksum, its size to the
+# partition, and with Secure Boot on the boot image signed with the system's
+# own keys, which only the opened system holds. Then the partition, read back,
+# and the boot image moved over the old one, so the two disagree only for the
+# length of the write.
+update_recovery() {
+    local found version url digest tar=/tmp/arch-os-recovery-update.tar stem part size room esp efi want have
+    found="$(newer_recovery)"
+    if [ -z "$found" ]; then
+        echo "there is no newer Recovery to install" >&2
+        return 1
+    fi
+    read -r version url digest <<<"$found"
+
+    echo "fetching ${url##*/}"
+    if ! fetch_url --progress-bar --retry 3 --retry-delay 2 "$url" -o "${tar}.part"; then
+        rm -f "${tar}.part"
+        echo "downloading ${url##*/} failed" >&2
+        return 1
+    fi
+    if ! echo "${digest}  ${tar}.part" | sha256sum -c - >/dev/null; then
+        rm -f "${tar}.part"
+        echo "${url##*/} does not match the checksum its release publishes and was thrown away" >&2
+        return 1
+    fi
+    mv -f "${tar}.part" "$tar"
+
+    stem="arch-os-${version}-recovery"
+    part="$(recovery_partition "$ARCH_OS_RECOVERY_DISK")"
+    size="$(tar -tvf "$tar" "${stem}/recovery.img" | awk '{ print $3 }')"
+    room="$(blockdev --getsize64 "$part")"
+    if [ -z "$size" ] || [ "$size" -gt "$room" ]; then
+        echo "the Recovery ${version} takes ${size:-?} bytes, and its partition ${part} holds ${room}" >&2
+        return 1
+    fi
+
+    # The system's own EFI partition, through the opened system where it signs.
+    # What an earlier attempt left mounted goes first.
+    close_target
+    if mountpoint -q "$ESP_MNT"; then
+        umount "$ESP_MNT"
+    fi
+    if [ "$ARCH_OS_RECOVERY_SECURE_BOOT" = "true" ]; then
+        if [ "$ARCH_OS_RECOVERY_ENCRYPTED" = "true" ]; then
+            printf '%s' "$ARCH_OS_RECOVERY_KEYS_PASSWORD" | cryptsetup open "$(target_partition)" "$CRYPT"
+        fi
+        mount_target
+        esp="${MNT}/boot"
+    else
+        mount --mkdir -t vfat "$(boot_partition "$ARCH_OS_RECOVERY_DISK")" "$ESP_MNT"
+        esp="$ESP_MNT"
+    fi
+    efi="${esp}/EFI/Linux/$(basename "$RECOVERY_EFI")"
+    tar -xOf "$tar" "${stem}/recovery.efi" >"${efi}.new"
+    if [ "$ARCH_OS_RECOVERY_SECURE_BOOT" = "true" ]; then
+        arch-chroot "$MNT" sbctl sign -o "${RECOVERY_EFI}.signed" "${RECOVERY_EFI}.new"
+        mv -f "${efi}.signed" "${efi}.new"
+    fi
+
+    echo "writing the Recovery ${version} to ${part}"
+    tar -xOf "$tar" "${stem}/recovery.img" | dd of="$part" bs=4M conv=fsync status=none
+    want="$(tar -xOf "$tar" "${stem}/recovery.img" | sha256sum)"
+    have="$(head -c "$size" "$part" | sha256sum)"
+    if [ "$have" != "$want" ]; then
+        echo "${part} does not read back as the Recovery ${version}" >&2
+        return 1
+    fi
+    mv -f "${efi}.new" "$efi"
+    sync
+    if [ "$esp" = "$ESP_MNT" ]; then
+        umount "$ESP_MNT"
+    fi
+    close_target
+    rm -f "$tar"
+    echo "the Recovery is now ${version}"
+}
+
 # ////////////////////////////////////////////////////////////////////////////
 # WRITING | The image Create boot medium puts on a device
 # ////////////////////////////////////////////////////////////////////////////
@@ -779,6 +932,14 @@ options_fonts() {
 
 options_timezones() { timedatectl list-timezones; }
 
+# The live system's clock follows at once, so the log reads in the zone of the
+# machine being installed. Only the live system's /etc/localtime changes; the
+# hardware clock is not written.
+apply_timezone() {
+    debugging && return 0
+    timedatectl set-timezone "$ARCH_OS_TIMEZONE"
+}
+
 # The zone of the chosen country, and UTC rather than Africa/Abidjan for none.
 prefill_timezone() {
     local locale="${ARCH_OS_LOCALE_LANG%%.*}" territory="" zone
@@ -841,9 +1002,23 @@ apply_recovery_keymap() {
 }
 
 # --test-passphrase opens nothing, it only asks the keyslots.
+unlocks() { printf '%s' "$1" | cryptsetup open --test-passphrase "$(target_partition)"; }
+
 check_disk_password() {
     debugging && return 0
-    printf '%s' "$ARCH_OS_RECOVERY_PASSWORD" | cryptsetup open --test-passphrase "$(target_partition)"
+    unlocks "$ARCH_OS_RECOVERY_PASSWORD"
+}
+
+check_keys_password() {
+    debugging && return 0
+    unlocks "$ARCH_OS_RECOVERY_KEYS_PASSWORD"
+}
+
+# The firmware's own word, the fifth byte of its variable: what it starts now
+# has to be signed.
+value_secure_boot() {
+    local var=/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c
+    [ "$(od -An -t u1 -j 4 -N 1 "$var" 2>/dev/null | tr -d ' ')" = "1" ] && echo true || echo false
 }
 
 # A LUKS header is readable without the password.

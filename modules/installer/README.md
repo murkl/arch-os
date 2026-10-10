@@ -19,7 +19,7 @@ tasks/@<stage>/<id>/task.yaml   what that step is: its needs, conditions and off
 tasks/@<stage>/<id>/task.sh     what it does - everything only it needs is in here
 tasks/@<stage>/<id>/test.sh     optional: how to tell, on the machine, that it took
 tasks/@<stage>/<id>/data/       every file it writes into the new system, named after it, filled by render
-actions/<id>/action.yaml        an action: one page at most, and what a no means
+actions/<id>/action.yaml        an action: its pages, and what a no means
 actions/<id>/action.sh          what it does, and nothing else
 data/                           the tables a language and a country are looked up in
 locales/                        one <code>.po per language, and the template they come from
@@ -43,7 +43,7 @@ One folder per stage under `tasks/`, marked with `@`; `module.yaml` orders them,
 
 ## Actions
 
-Scripts run outside the work, one page at most each: `action.yaml` says how it behaves, `action.sh` only does it. `module.yaml` names each under the rule it runs by.
+Scripts run outside the work, each with its own pages: `action.yaml` says how it behaves, `action.sh` only does it. `module.yaml` names each under the rule it runs by.
 
 | Rule | Actions |
 | --- | --- |

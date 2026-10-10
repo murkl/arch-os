@@ -1,7 +1,18 @@
 # Here rather than beside the partition: a download that fails should fail
 # while the disk is still untouched. The Arch OS ISO carries the image already.
 image="$(recovery_image)"
+
+# Held to its partition before the disk is touched.
+fits() {
+    local size
+    size="$(stat -c %s "${image}/recovery.img")"
+    [ "$size" -le $((RECOVERY_MIB * 1048576)) ] && return 0
+    echo "The Recovery image takes $((size / 1048576)) MiB, more than the ${RECOVERY_MIB} MiB of its partition." >&2
+    return 1
+}
+
 if [ -f "${image}/recovery.img" ] && [ -f "${image}/recovery.efi" ]; then
+    fits
     echo "the Recovery image is at ${image}"
     return 0
 fi
@@ -33,4 +44,5 @@ tar -xf "$download" -C "${image}.part" --strip-components=1
 rm -f "$download"
 rm -rf "$image"
 mv "${image}.part" "$image"
+fits
 echo "the Recovery image is at ${image}"

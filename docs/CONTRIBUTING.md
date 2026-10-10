@@ -55,7 +55,7 @@ Nothing is typed and nothing is tagged by hand.
 2. **Merging it is the release.** It starts no run of its own, so an admin merges it past the checks: `gh pr merge <number> --squash --admin`. The run on `main` tags `v2.1.0`, checks, builds and boots the images as that version, hangs them on the release page and publishes it
 
 - Merges collect in the release pull request until it is merged. When to release is a decision, not a schedule
-- The page carries `arch-os-2.1.0-x86_64.iso`, `arch-os-2.1.0-x86_64.tar.gz` and `arch-os-2.1.0-recovery-x86_64.tar`, all under signed build provenance
+- The page carries `arch-os-2.1.0-x86_64.iso`, `arch-os-2.1.0-x86_64.tar.gz` and `arch-os-2.1.0-recovery-x86_64.tar`, all under signed build provenance. The ISO leaves the Recovery out, which keeps it under GitHub's 2 GiB a file: its Installer fetches the `.tar`, and an installed Recovery updates itself from it
 - Every other build is named after a pre-release of the next patch: `arch-os-2.0.1-dev-x86_64.iso`. `make build VERSION=2.1.0` names one after any version, which the build stamps into `oak.yaml`
 - Neither the version nor the changelog is edited by hand
 
@@ -77,21 +77,22 @@ Nothing is typed and nothing is tagged by hand.
 ## Doing the Work
 
 ```
-make check             # the whole gate, as CI runs it
-make fmt               # every script formatted, by shfmt
-make run               # every module, MODULE=recovery for one outright
-make run ARGS=--debug  # ...without touching the machine
-make inspect           # load every module and print the order they resolve to
-make build             # the release, as a machine runs it
-make tarball           # the release, as a stock Arch ISO downloads it
-make iso               # the release, as the Recovery image and the ISO that carries it
-make image             # ...only the images, out of a release already in dist/
-make smoke             # boot the newest of both and work their first page with the keyboard
-make e2e               # install the newest ISO, boot it, repair it, boot it again and start its Recovery
-make e2e START=desktop # ...a Desktop, booted to its login screen
-make locales           # every translation template, brought up to date
-make oak               # fetch the runtime again, at the release OAK_VERSION names
-make clean             # every build output, taken back; the runtime stays
+make check                  # the whole gate, as CI runs it
+make fmt                    # every script formatted, by shfmt
+make run                    # every module, MODULE=recovery for one outright
+make run ARGS=--debug       # ...without touching the machine
+make inspect                # load every module and print the order they resolve to
+make build                  # the release, as a machine runs it
+make tarball                # the release, as a stock Arch ISO downloads it
+make iso                    # the release, as the Recovery image and the ISO that carries it
+make iso ISO_RECOVERY=false # ...the ISO as a release builds it, which fetches the Recovery
+make image                  # ...only the images, out of a release already in dist/
+make smoke                  # boot the newest of both and work their first page with the keyboard
+make e2e                    # install the newest ISO, boot it, repair it, boot it again and start its Recovery
+make e2e START=desktop      # ...a Desktop, booted to its login screen
+make locales                # every translation template, brought up to date
+make oak                    # fetch the runtime again, at the release OAK_VERSION names
+make clean                  # every build output, taken back; the runtime stays
 ```
 
 ```

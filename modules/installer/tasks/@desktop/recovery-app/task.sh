@@ -12,6 +12,7 @@ render "$(where)/arch-os-recovery.desktop" >"${MNT}/usr/local/share/applications
 render "$(where)/arch-os-recovery.svg" >"${icons}/arch-os-recovery.svg"
 
 # Its partition is no drive to open: the file manager would list it as one.
+# Known by the partition's own UUID, which an update of the Recovery keeps.
 mkdir -p "${MNT}/etc/udev/rules.d"
-render "$(where)/90-arch-os-recovery.rules" UUID="$(blkid -p -s UUID -o value "$(recovery_partition "$ARCH_OS_DISK")")" \
+render "$(where)/90-arch-os-recovery.rules" PARTUUID="$(blkid -p -s PART_ENTRY_UUID -o value "$(recovery_partition "$ARCH_OS_DISK")")" \
     >"${MNT}/etc/udev/rules.d/90-arch-os-recovery.rules"

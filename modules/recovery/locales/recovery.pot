@@ -68,8 +68,18 @@ msgstr ""
 msgid "Whether that disk is encrypted with LUKS."
 msgstr ""
 
-#. ARCH_OS_RECOVERY_PASSWORD: the question
+#. ARCH_OS_RECOVERY_SECURE_BOOT: the question
 #: module.yaml
+msgid "Secure Boot"
+msgstr ""
+
+#. ARCH_OS_RECOVERY_SECURE_BOOT: what it means
+#: module.yaml
+msgid "Whether the firmware starts only signed images."
+msgstr ""
+
+#. ARCH_OS_RECOVERY_PASSWORD: the question
+#: module.yaml actions/update-install/action.yaml
 msgid "Encryption password"
 msgstr ""
 
@@ -79,7 +89,7 @@ msgid "The password that unlocks that disk. Asked right before the repair and ne
 msgstr ""
 
 #. ARCH_OS_RECOVERY_PASSWORD: what a wrong answer is told
-#: module.yaml
+#: module.yaml actions/update-install/action.yaml
 msgid "That password does not unlock this disk."
 msgstr ""
 
@@ -160,6 +170,16 @@ msgid "No internet over a cable"
 msgstr ""
 
 #. an action: its row, and the heading over its page
+#: actions/online/action.yaml
+msgid "Internet"
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/own-partition/action.yaml
+msgid "The Recovery's own partition"
+msgstr ""
+
+#. an action: its row, and the heading over its page
 #: actions/restart/action.yaml
 msgid "Restart"
 msgstr ""
@@ -210,6 +230,60 @@ msgstr ""
 #. an action: what it does, under its row
 #: actions/shutdown/action.yaml
 msgid "Switch this machine off."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/update/action.yaml
+msgid "Update the Recovery"
+msgstr ""
+
+#. an action: what it does, under its row
+#: actions/update/action.yaml
+msgid "Look for a newer Recovery of this release series, and install it after asking."
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/update/action.yaml
+msgid "There is no internet connection to look for a newer Recovery. Join a network with Configure Wi-Fi above, or plug in a cable."
+msgstr ""
+
+#. read once the action is done, and held on until somebody has
+#: actions/update/action.yaml
+msgid ""
+"Nothing to update\n"
+"\n"
+"There is no newer Recovery for the release series this system was installed with."
+msgstr ""
+
+#. an action: its row, and the heading over its page
+#: actions/update-install/action.yaml
+msgid "Install the newer Recovery"
+msgstr ""
+
+#. an action: what a no from it means
+#: actions/update-install/action.yaml
+msgid "Installing the newer Recovery failed. Until it has run through, the Recovery may not start from its partition - the log says how far it got."
+msgstr ""
+
+#. asked before the action does its work
+#: actions/update-install/action.yaml
+msgid ""
+"Install the newer Recovery over this one?\n"
+"\n"
+"It is downloaded, held to the checksum of its release and written to the Recovery's partition. The new one starts with the next restart."
+msgstr ""
+
+#. read once the action is done, and held on until somebody has
+#: actions/update-install/action.yaml
+msgid ""
+"Recovery updated\n"
+"\n"
+"The new one starts with the next restart."
+msgstr ""
+
+#. ARCH_OS_RECOVERY_KEYS_PASSWORD: what it means
+#: actions/update-install/action.yaml
+msgid "Secure Boot starts only a Recovery signed with this system's keys, and they are on the encrypted disk. Asked right before the update and never written to a file."
 msgstr ""
 
 #. an action: its row, and the heading over its page
