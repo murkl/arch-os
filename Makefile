@@ -137,6 +137,9 @@ MODULE_TEXT = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -type f ! -name '*.md
 # Each module's own check of the lookup tables it ships.
 DATA_CHECKS = $(wildcard $(MODULES_DIR)/*/data/check.sh)
 
+# A task's check of the zshrc it ships: keys typed into the shell reading it.
+ZSH_CHECKS = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/check.zsh)
+
 # ////////////////////////////////////////////////////////////////////////////
 # HOUSEKEEPING
 # ////////////////////////////////////////////////////////////////////////////
@@ -148,7 +151,7 @@ BUILD_OUTPUT := $(DIST_DIR) $(DEV_DIR) $(ISO_DIR)/archiso $(ISO_DIR)/download
 SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 
 .PHONY: all oak oak-check build dev run inspect tarball image iso smoke e2e locales \
-	locales-check glyphs-check data-check actions-check lint fmt check version-name \
+	locales-check glyphs-check data-check zsh-check actions-check lint fmt check version-name \
 	secrets-check github clean
 
 # build empties the release that everything packaging it reads.
@@ -219,7 +222,7 @@ build: oak-check version-name
 			[ -e $(MODULES_DIR)/$$m/$$part ] && cp -r $(MODULES_DIR)/$$m/$$part $$dest/ || true; \
 		done; \
 	done
-	find $(RELEASE_DIR) \( -name '*.pot' -o -name 'check.sh' -o -name .shellcheckrc \) -delete
+	find $(RELEASE_DIR) \( -name '*.pot' -o -name 'check.sh' -o -name 'check.zsh' -o -name .shellcheckrc \) -delete
 
 # The same shape without the build. The binary is copied, not linked: Oak
 # resolves its own path before looking beside itself.
@@ -315,7 +318,7 @@ lint:
 	shellcheck -S style $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS)
 	shellcheck -x -S style $(MODULE_SCRIPTS)
 	shellcheck -s bash -S style -e SC1091 $(MODULE_SHELL)
-	for file in $(MODULE_ZSH); do zsh -n "$$file"; done
+	for file in $(MODULE_ZSH) $(ZSH_CHECKS); do zsh -n "$$file"; done
 	shfmt -d -ln posix -i 4 $(POSIX_SCRIPTS)
 	shfmt -d -i 4 $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
 	yamllint .
@@ -344,6 +347,9 @@ glyphs-check: oak-check
 data-check:
 	@for check in $(DATA_CHECKS); do $$check || exit 1; done
 
+zsh-check:
+	@for check in $(ZSH_CHECKS); do zsh "$$check" "$$(dirname "$$check")/data/zshrc" || exit 1; done
+
 # An action two modules share is a folder in each, the same file for file.
 actions-check:
 	@for name in $$(basename -a $(MODULES_DIR)/*/actions/*/ | sort | uniq -d); do \
@@ -354,7 +360,7 @@ actions-check:
 	done
 
 # The whole gate, cheapest and loudest first. CI runs exactly this.
-check: secrets-check lint inspect actions-check locales-check data-check glyphs-check
+check: secrets-check lint inspect actions-check locales-check data-check zsh-check glyphs-check
 
 # The repository's settings on GitHub, out of .github/settings/. Run by hand as
 # an admin: a workflow may not change the rules it is held to.

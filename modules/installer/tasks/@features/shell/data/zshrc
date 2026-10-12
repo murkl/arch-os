@@ -43,6 +43,10 @@ unsetopt BEEP
 
 bindkey -e # Emacs-style key bindings, to match bash's default
 
+# Words are letters and digits only, so every word key stops at - _ . / = : and
+# the like: gnome-extensions-app is three words, not one.
+WORDCHARS=''
+
 # zsh binds none of Home, End, Delete or the word jumps, and prints the escape
 # sequence of each key instead. Read off terminfo, which only holds while the
 # terminal is in application mode, so the line editor switches it on.
@@ -61,6 +65,7 @@ key[PageDown]="${terminfo[knp]}"
 key[Shift-Tab]="${terminfo[kcbt]}"
 key[Control-Left]="${terminfo[kLFT5]}"
 key[Control-Right]="${terminfo[kRIT5]}"
+key[Control-Delete]="${terminfo[kDC5]}"
 
 [[ -n ${key[Home]} ]] && bindkey -- "${key[Home]}" beginning-of-line
 [[ -n ${key[End]} ]] && bindkey -- "${key[End]}" end-of-line
@@ -75,6 +80,11 @@ key[Control-Right]="${terminfo[kRIT5]}"
 [[ -n ${key[Shift-Tab]} ]] && bindkey -- "${key[Shift-Tab]}" reverse-menu-complete
 [[ -n ${key[Control-Left]} ]] && bindkey -- "${key[Control-Left]}" backward-word
 [[ -n ${key[Control-Right]} ]] && bindkey -- "${key[Control-Right]}" forward-word
+[[ -n ${key[Control-Delete]} ]] && bindkey -- "${key[Control-Delete]}" kill-word
+
+# Ctrl+Backspace and Ctrl+Delete delete word-wise, as Alt+Backspace already
+# does. Terminals send ^H for Ctrl+Backspace where Backspace itself sends ^?.
+[[ ${terminfo[kbs]} != $'\b' ]] && bindkey '^H' backward-kill-word
 
 if ((${+terminfo[smkx]} && ${+terminfo[rmkx]})); then
     autoload -Uz add-zle-hook-widget
