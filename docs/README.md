@@ -33,12 +33,12 @@
 - Browser and backup app of your choice
 - Zram, fstrim, microcode, NetworkManager, mirrors ranked by country
 - AUR helper, 32-bit support, containers, firewall, SSH, housekeeping
+- Runs offline for good: no timer fails without internet
 - Text editor of your choice: nano, vim, neovim, micro or helix
 - [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), [Arch OS Manager](https://github.com/murkl/arch-os-manager), Shell Enhancement (zsh)
 - Recovery in the boot menu and on the ISO
 - Create boot medium on any Linux machine
 - Wireless network in the Installer and the Recovery
-- Runs offline for good: no timer fails without internet
 - Virtual machine guest tools, or QEMU and libvirt on hardware
 - Starting points **Core** and **Desktop**, or a shared configuration
 - English and German interface
