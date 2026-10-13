@@ -290,7 +290,8 @@ used_up() {
 
 # The installation as 2.0 left it, with the disk open in the live image: its
 # unified images in EFI/Linux, started as the loader's default, and no entry
-# counting its tries. The repair has to lay it out as this release does.
+# counting its tries. The repair has to lay it out as this release does. sbctl
+# keeps no record of the images: mkinitcpio's hook signs them as it builds.
 as_2_0() {
     live bash -s <<EOF
 set -euo pipefail
@@ -300,8 +301,6 @@ mount -t vfat ${DISK}1 /mnt/boot
 sed -i 's|/boot/EFI/arch-os/|/boot/EFI/Linux/|' /mnt/etc/mkinitcpio.d/linux-zen.preset
 for name in arch-linux-zen arch-linux-zen-fallback; do
     mv "/mnt/boot/EFI/arch-os/\${name}.efi" "/mnt/boot/EFI/Linux/\${name}.efi"
-    arch-chroot /mnt sbctl remove-file "/boot/EFI/arch-os/\${name}.efi"
-    arch-chroot /mnt sbctl sign -s "/boot/EFI/Linux/\${name}.efi"
 done
 rm -f /mnt/boot/loader/entries/main*.conf
 printf 'default arch-linux-zen.efi\nconsole-mode auto\ntimeout 0\neditor no\n' >/mnt/boot/loader/loader.conf
