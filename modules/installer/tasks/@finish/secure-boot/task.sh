@@ -7,8 +7,9 @@
 # systemd-boot is signed at its source, which systemd-boot-update copies from.
 stub=/usr/lib/systemd/boot/efi/systemd-bootx64.efi
 arch-chroot "$MNT" sbctl sign -s -o "${stub}.signed" "$stub" || echo "signing systemd-boot failed" >&2
-arch-chroot "$MNT" sbctl sign -s "/boot/EFI/Linux/arch-${KERNEL}.efi" || echo "signing the kernel image failed" >&2
-arch-chroot "$MNT" sbctl sign -s "/boot/EFI/Linux/arch-${KERNEL}-fallback.efi" || echo "signing the fallback image failed" >&2
+while read -r image; do
+    arch-chroot "$MNT" sbctl sign -s "$image" || echo "signing ${image} failed" >&2
+done < <(boot_images)
 
 # The Recovery starts from the same menu, so it carries the same keys.
 if [ -f "${MNT}${RECOVERY_EFI}" ]; then

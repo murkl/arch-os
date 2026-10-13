@@ -63,11 +63,26 @@ Mounted `defaults,noatime,compress=zstd`. Written once, in `oak.sh`, which both 
 
 ## The Boot Chain
 
-systemd-boot, `bootctl install`, one entry and one fallback, and the Recovery beside them. With **Secure Boot**, a **unified kernel image** per preset instead, signed with keys made for this machine.
+systemd-boot, `bootctl install`, one entry and one fallback, and the Recovery beside them. With **Secure Boot** the entries start a **unified kernel image** per preset instead, signed with keys made for this machine and kept in `/boot/EFI/arch-os/`: in `EFI/Linux` the loader would list each a second time, beside the entry that counts its tries.
 
-The menu stays hidden: holding space while the machine starts brings it up. systemd-boot looks for a key only for a moment, and a firmware that hands no held key on - a laptop keyboard it starts late - never shows it; tapping space from the moment the machine is switched on works on more of them, and the Recovery has an entry of its own in the firmware's boot menu besides. The entries carry `sort-key arch`, the key the signed images take from `os-release`, so they come before the Recovery, which carries its own.
+The menu stays hidden: holding space while the machine starts brings it up. systemd-boot looks for a key only for a moment, and a firmware that hands no held key on - a laptop keyboard it starts late - never shows it; tapping space from the moment the machine is switched on works on more of them, and the Recovery has an entry of its own in the firmware's boot menu besides. The entries carry `sort-key arch` and `arch-fallback`, so they come in that order and before the Recovery, which sorts by its own `os-release` ID.
 
 `kernel_args` in the bootloader task is the one source of the command line - the unified image and systemd-boot read it whole.
+
+### When the System Does Not Start
+
+The loader tries each entry of the system three times before the next: the system, its fallback, then the Recovery. Three starts that fail bring up the fallback image, which carries every module; three more bring up the Recovery, without a key, a stick or a network. **[➜ Automatic Boot Assessment](https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/)**
+
+| Step | What happens |
+| --- | --- |
+| Start | systemd-boot takes a try off the entry it starts: `main+3.conf` becomes `main+2-1.conf` |
+| A start that worked | Once the system has unlocked and mounted its disk (`boot-complete.target`), `systemd-bless-boot` marks the entry good and `arch-os-boot-tries.service` gives both entries their three tries back |
+| Tries used up | `main+0-3.conf` sorts behind every other entry, and the loader starts the next one |
+| The Recovery | Gives both entries their tries back as it starts, so the next start tries the system again |
+
+- No `default` in `loader.conf`: the loader starts a default however often it failed. The Installer and the Recovery clear one an earlier system left in the firmware
+- A start cut short counts as one that failed: switched off at the password prompt three times, the next start is the fallback's, and three more the Recovery's. Leaving the Recovery hands the system its tries back
+- An installation of 2.0 starts its image as the loader's default and counts nothing. **Rebuild the boot files** in the Recovery lays it out as this release does: the images moved to `/boot/EFI/arch-os/` and signed there, the entries written, the default dropped, the old images removed last
 
 The loader gets a boot entry in the firmware, first in its order. `bootctl` writes that one from the live system rather than from inside the new one: in a chroot it leaves the EFI variables alone, or, told to write them, cannot see the partition and writes an entry that points nowhere. Without an entry the firmware finds the loader only at `\EFI\BOOT\BOOTX64.EFI`, after every entry it already lists has been tried. The entries it still keeps for what the disk held before - a Windows Boot Manager, an earlier installation - are removed along with the old partitions; an entry for another disk stays.
 
@@ -316,6 +331,7 @@ render "$(where)/main.conf" KERNEL="$KERNEL" CMDLINE="$cmdline" >"${MNT}/boot/lo
 - A placeholder nobody filled, a value nothing asks for and a `{{` that opens no placeholder each fail the task
 - Filled left to right and once: a value that holds `{{` is written as it is
 - A file with nothing to fill goes through `render` as well, so a placeholder added later cannot reach a disk unfilled
+- The boot entries are the one exception: the Installer writes them and the Recovery lays them down again, so their templates lie in `modules/recovery/data/boot/`, which every image carries, and `boot_entries` in `oak.sh` writes them
 
 Why not `envsubst`: it reads the environment, so every task-local value would have to be exported under a name somebody else may already read. It fills a variable that is not set with nothing and says nothing. And without a list of names it fills every `${…}`, including the ones that must stay; that list is a second copy of the template that nothing checks.
 

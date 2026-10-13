@@ -33,7 +33,7 @@ Every step after the first is optional.
 | --- | --- | --- |
 | `open` | `system` | Unlocks and mounts at `/mnt`, the same way the system mounts itself - after closing whatever an earlier attempt left |
 | `rollback` | `snapshot` | Puts a snapshot in place of the root subvolume. Skipped where there are none |
-| `rebuild` | `boot` | Rebuilds kernel images and initramfs from the package cache, re-signs if needed |
+| `rebuild` | `boot` | Rebuilds kernel images and initramfs from the package cache, lays the boot entries down as this release does, re-signs if needed |
 
 **Note:** _`snapshot` and `boot` each ask first, so a run can stop after any. Both open on No, `boot` on Yes once a snapshot was put in place. The page the repair ends on offers **Open a shell** in the repaired system and opens on **Continue**. A restart or a shutdown leaves unmounting and locking to systemd._
 

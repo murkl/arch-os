@@ -1,4 +1,4 @@
-# Written by the Arch OS Installer.
+# Written by Arch OS.
 ALL_kver="/boot/vmlinuz-{{KERNEL}}"
 PRESETS=('default' 'fallback')
 default_image="{{DEFAULT}}"

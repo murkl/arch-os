@@ -3,7 +3,8 @@
 # system was installed in, the keyboard it was typed on and the disk it was
 # started from. Once a boot, by arch-os-seed.service, so every later start of
 # the Recovery finds the answers as the last one left them. What cannot be read
-# is asked the ordinary way instead, and said in the journal.
+# is asked the ordinary way instead, and said in the journal. On the way, the
+# system's boot entries get their tries back.
 set -eu
 
 OPT=/opt/arch-os
@@ -46,17 +47,23 @@ disk="$(booted_disk)"
 esp=""
 [ -z "$disk" ] || esp="$(efi_partition "$disk")"
 
-# Read-only and only for as long as it takes: the Recovery may yet have to
-# write to this partition, and it must find it as the system left it.
+# Only for as long as it takes: the Recovery may yet have to write to this
+# partition itself. The system's entries get their tries back, so the next
+# start tries the system again, whether the Recovery was chosen or came up
+# because the system had used up every try.
 if [ -n "$esp" ]; then
     mnt="$(mktemp -d)"
-    if mount -o ro "$esp" "$mnt"; then
+    if mount -t vfat "$esp" "$mnt"; then
         for file in oak.conf recovery.conf; do
             [ ! -f "${mnt}/${SEED}/${file}" ] || cp "${mnt}/${SEED}/${file}" "${OPT}/${file}"
         done
+        tries="$(bash -c 'source "$1" && printf "%s" "$BOOT_TRIES"' _ "${OPT}/oak.sh" || true)"
+        if [ -z "$tries" ] || ! bash "${OPT}/modules/recovery/data/boot/boot-tries.sh" "$mnt" "$tries"; then
+            echo "the system's boot entries could not be given their tries back" >&2
+        fi
         umount "$mnt"
     else
-        echo "the EFI partition ${esp} could not be read, the Recovery asks instead" >&2
+        echo "the EFI partition ${esp} could not be mounted, the Recovery asks instead" >&2
     fi
     rmdir "$mnt"
 else

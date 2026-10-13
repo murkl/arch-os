@@ -18,7 +18,21 @@ efibootmgr | awk -v uuid="$partuuid" '
     index(line, tolower(uuid)) && index(line, "\\efi\\systemd\\systemd-bootx64.efi") { found = 1 }
     END { exit !found }'
 
+# The system's two entries, each with its tries, and no default the loader
+# would start however often it failed.
+entries="${MNT}/boot/loader/entries"
+[ -f "${entries}/main+${BOOT_TRIES}.conf" ]
+[ -f "${entries}/main-fallback+${BOOT_TRIES}.conf" ]
+if grep -q '^default' "${MNT}/boot/loader/loader.conf"; then
+    echo "loader.conf names a default, which is started however often it fails" >&2
+    exit 1
+fi
+listed="$(arch-chroot "$MNT" bootctl --esp-path=/boot list --json=short)"
+grep -qF '"id":"main.conf"' <<<"$listed"
+grep -qF '"id":"main-fallback.conf"' <<<"$listed"
+arch-chroot "$MNT" systemctl is-enabled arch-os-boot-tries.service >/dev/null
+
 # A console whose cursor the boot hides gets it back at the login.
-if grep -qs 'vt.global_cursor_default=0' "${MNT}/etc/kernel/cmdline" "${MNT}/boot/loader/entries/main.conf"; then
+if grep -qs 'vt.global_cursor_default=0' "${MNT}/etc/kernel/cmdline" "${entries}/main+${BOOT_TRIES}.conf"; then
     grep -qF '\e[?25h' "${MNT}/etc/issue.d/cursor.issue"
 fi

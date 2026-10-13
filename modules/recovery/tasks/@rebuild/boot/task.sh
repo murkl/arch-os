@@ -34,12 +34,57 @@ for dir in "${MNT}/usr/lib/modules/"*/; do
     echo "restored vmlinuz-${KERNEL} from ${package}"
 done
 
-# The presets know whether this system boots a ram disk or a unified image.
+# Unified images where the system's preset builds them, ram disks otherwise.
+kind=image
+grep -qs '^default_uki=' "${MNT}/etc/mkinitcpio.d/${KERNEL}.preset" && kind=uki
+
+# The command line a ram disk's entry starts it with, read off the entry it
+# has, under whatever count it carries. A unified image carries its own.
+cmdline=""
+if [ "$kind" = image ]; then
+    for entry in "${MNT}/boot/loader/entries/main.conf" "${MNT}/boot/loader/entries/main+"*.conf; do
+        [ -e "$entry" ] || continue
+        cmdline="$(awk '!found && sub(/^options[[:space:]]+/, "") { print; found = 1 }' "$entry")"
+        [ -z "$cmdline" ] || break
+    done
+    if [ -z "$cmdline" ]; then
+        echo "no boot entry of the system names the command line it starts with" >&2
+        exit 1
+    fi
+fi
+
+# The layout of this release, so an installation from before it gets the
+# entries that fall back to the Recovery: the preset first, since mkinitcpio
+# builds where it says.
+boot_preset "$MNT" "$kind"
+[ "$kind" = image ] || mkdir -p "${MNT}${UKI_DIR}"
 arch-chroot "$MNT" mkinitcpio -P
 
-# A rebuilt unified image is unsigned, and Secure Boot refuses it.
+# A rebuilt unified image is unsigned, and Secure Boot refuses it. One that
+# moved is signed where it is now before an entry points at it.
 if [ -x "${MNT}/usr/bin/sbctl" ]; then
+    if [ "$kind" = uki ]; then
+        while read -r image; do
+            arch-chroot "$MNT" sbctl sign -s "$image"
+        done < <(images_of uki)
+    fi
     arch-chroot "$MNT" sbctl sign-all || echo "signing the boot chain again failed - enroll or sign by hand before switching Secure Boot back on" >&2
 fi
 
+boot_entries "$MNT" "$kind" "$cmdline"
+
+# Where the unified images were before this release: the loader lists them on
+# its own there, beside the entries that count.
+signed="$([ ! -x "${MNT}/usr/bin/sbctl" ] || arch-chroot "$MNT" sbctl list-files --json)"
+for old in "/boot/EFI/Linux/arch-${KERNEL}.efi" "/boot/EFI/Linux/arch-${KERNEL}-fallback.efi"; do
+    if grep -qF "\"${old}\"" <<<"$signed"; then
+        arch-chroot "$MNT" sbctl remove-file "$old"
+    fi
+    if [ -e "${MNT}${old}" ]; then
+        rm -f "${MNT}${old}"
+        echo "removed ${old}, which the entries replace"
+    fi
+done
+
+clear_loader_default
 echo "boot rebuilt"
