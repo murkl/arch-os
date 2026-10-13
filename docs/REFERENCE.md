@@ -48,13 +48,14 @@ Always in that order, and always btrfs. The third is there with **Recovery**, at
 | `@log` | `/var/log` | Says *why* a rollback was needed |
 | `@cache` | `/var/cache` | The package cache - large, and nothing reads it back |
 | `@tmp` | `/var/tmp` | Scratch space, not worth restoring |
-| `@libvirt` | `/var/lib/libvirt/images` | Virtual machine disks - rewritten all the time, so a snapshot would hold every old version of them, and a rollback would take them back |
 
-A snapshot of `@` skips a subvolume mounted inside it, so a rollback keeps all seven untouched. Every installation gets the same layout, whether it runs virtual machines or not.
+A snapshot of `@` skips a subvolume mounted inside it, so a rollback keeps all six untouched.
 
 Mounted `defaults,noatime,compress=zstd`. Written once, in `oak.sh`, which both modules are given: the Installer lays every one of them down, and the Recovery opens only a disk that has every one of them.
 
-**Note:** _`/var/tmp` is `chmod 1777` right after it is made, before systemd-tmpfiles would get to it. `/var/lib/libvirt/images` is `chattr +C` while it is still empty, so every disk image made there inherits it: copy-on-write breaks a file rewritten in place into countless fragments. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Btrfs#Disabling_CoW)**_
+**Note:** _`/var/tmp` is `chmod 1777` right after it is made, before systemd-tmpfiles would get to it._
+
+**Note:** _An installation of 2.0 also has `@libvirt` at `/var/lib/libvirt/images`. The Recovery opens it all the same: it asks for every subvolume of this layout, and a further one is left alone._
 
 ## The Kernel
 
@@ -199,7 +200,7 @@ Enough for a usable install, little enough that nothing needs looking after.
 
 The `lib32-` half of each comes with 32-bit support. NVIDIA's module is loaded early from the ram disk, and GDM's rule that turns Wayland off on it is overridden. **[➜ NVIDIA](https://wiki.archlinux.org/title/NVIDIA)**
 
-**Virtual machines, both ways.** Inside one, the guest tools for its hypervisor are installed without a question. On real hardware, running virtual machines is a question of its own: libvirt, QEMU and a guest firmware, with the Virtual Machine Manager on a desktop. **[➜ Libvirt](https://wiki.archlinux.org/title/Libvirt)**
+**Virtual machines.** Inside one, the guest tools for its hypervisor are installed without a question. On a desktop, **GNOME Boxes** works once it is installed, from GNOME Software or with `sudo pacman -S gnome-boxes`, and nothing of it is there before. It runs its machines as the account, through libvirt's session: no daemon, no group, no subvolume. KVM is open to every account by systemd's own rule, PipeWire's JACK is already there for the sound of `qemu-desktop`, and the disks live in the home, out of every snapshot, where libvirt switches copy-on-write off for them by itself. **[➜ GNOME Boxes](https://apps.gnome.org/Boxes/)** · **[➜ libvirt on btrfs](https://libvirt.org/formatstorage.html)**
 
 **Note:** _The GNOME group is filtered, not installed and trimmed: what the slim desktop drops is never downloaded, and GNOME Web is never taken from it - it is one answer to the browser question. What a member it keeps still needs arrives all the same and stays out of the app grid: Papers, behind the previews in Files. **GNOME Software** installs Flatpaks and, with `fwupd` from the desktop extras, firmware updates. It installs no packages: Arch builds Software with its PackageKit plugin switched off, and PackageKit is [not recommended](https://wiki.archlinux.org/title/Pacman/Tips_and_tricks#Graphical), so none is installed and pacman stays the one thing that changes the system._
 

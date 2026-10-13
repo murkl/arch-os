@@ -50,7 +50,6 @@ presets:
       ARCH_OS_HOUSEKEEPING_ENABLED: true
       ARCH_OS_SHELL_ENHANCEMENT_ENABLED: true
       ARCH_OS_MANAGER_ENABLED: true
-      ARCH_OS_VM_HOST_ENABLED: false
 
   - title: Core
     description: A minimal Arch Linux on the text console.
@@ -74,7 +73,6 @@ presets:
       ARCH_OS_HOUSEKEEPING_ENABLED: false
       ARCH_OS_SHELL_ENHANCEMENT_ENABLED: false
       ARCH_OS_MANAGER_ENABLED: false
-      ARCH_OS_VM_HOST_ENABLED: false
 
   - title: Online (paste.rs)
     description: Every answer of a configuration shared at the end of another installation.
@@ -357,16 +355,6 @@ variables:
     description: Whether this machine is itself a virtual one.
     group: System
     value-from: value_virtual_machine()
-
-  - name: ARCH_OS_VM_HOST_ENABLED
-    type: bool
-    title: Virtual machines
-    description: |
-      QEMU and libvirt, and on a desktop the Virtual Machine Manager. Inside a
-      virtual machine its guest tools are installed instead.
-    group: System
-    default: false
-    conditions: ARCH_OS_VIRTUAL_MACHINE == false
 
   # ─── Desktop ───────────────────────────────────────────────────────────────
   - name: ARCH_OS_DESKTOP

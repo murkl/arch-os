@@ -216,8 +216,7 @@ btrfs_subvolumes() {
         @snapshots /.snapshots \
         @log /var/log \
         @cache /var/cache \
-        @tmp /var/tmp \
-        @libvirt /var/lib/libvirt/images
+        @tmp /var/tmp
 }
 
 # Everything under /mnt taken down, and whatever still holds it logged and

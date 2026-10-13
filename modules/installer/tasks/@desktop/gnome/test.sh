@@ -33,3 +33,12 @@ if [ "$ARCH_OS_FLATPAK_ENABLED" != "true" ] && has_command flatpak; then
     echo "Flatpak is off and flatpak was installed all the same" >&2
     exit 1
 fi
+
+# GNOME Boxes works once installed, as it runs its machines as the account:
+# KVM is open to every account, and its packages bring no second JACK.
+grep -qsE '^KERNEL=="kvm".*MODE="0666"' "$MNT"/usr/lib/udev/rules.d/*.rules
+boxes="$(arch-chroot "$MNT" pacman -Sp --noconfirm gnome-boxes)"
+if grep -q '/jack2-' <<<"$boxes"; then
+    echo "installing GNOME Boxes would bring jack2 beside PipeWire's JACK" >&2
+    exit 1
+fi

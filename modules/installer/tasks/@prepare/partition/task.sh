@@ -119,10 +119,6 @@ done < <(btrfs_subvolumes)
 # before systemd-tmpfiles could set it.
 chmod 1777 "${MNT}/var/tmp"
 
-# No copy-on-write for disk images, set on the empty folder so each inherits it.
-# https://wiki.archlinux.org/title/Btrfs#Disabling_CoW
-chattr +C "${MNT}/var/lib/libvirt/images"
-
 # systemd would make subvolumes of these on first boot, noise in every listing.
 mkdir -p "${MNT}/var/lib/portables" "${MNT}/var/lib/machines"
 
