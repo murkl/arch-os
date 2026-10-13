@@ -42,6 +42,7 @@ for ((i = 1; i <= RETRIES; i++)); do
 done
 if [ "$installed" != "true" ]; then
     echo "installing the base system failed after ${RETRIES} attempts" >&2
+    check_online || exit "$EXIT_OFFLINE"
     exit 1
 fi
 

@@ -303,6 +303,17 @@ Swap off, sync, unmount, lock: in the Installer before the disk is partitioned, 
 - `fuser -M` - without it, a non-mountpoint target resolves to the live image itself
 - Whatever holds it is logged, then killed; the second unmount is left to fail for real
 
+## When Something Goes Wrong
+
+Two kinds, told apart by how the script stopped:
+
+| Kind | Example | On the page |
+| --- | --- | --- |
+| Seen coming | No internet, the wrong disk, a damaged download, a USB stick pulled out | A headline and what to do, in the interface's language. Nothing to share: the words are the help |
+| A script that broke | A package Arch renamed, a tool that changed its output | Module, task, script and line, the command and what it said, and **Share the log** for whoever fixes the script |
+
+A script stops itself on what it sees coming with `exit` and a status, and the yaml says what it means: `3` no internet, `4` GitHub not answering, `5` the AUR not answering, under `errors:` in each `module.yaml`; `10` and up in the yaml beside the task or action that has them. A failed command is never one of them, whatever its status. **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md#stopping-on-purpose)**
+
 ## Files a Task Ships
 
 Every file a task writes into the new system lies in `data/` beside `task.sh`, named after the file it becomes, and is put in place with `render` from `oak.sh` - `where` is that folder.

@@ -16,6 +16,20 @@ rules:
   start-if: [sudo, usb]
   on-failure: [share-log]
 
+# What any of its scripts means by stopping itself, the statuses oak.sh names.
+errors:
+  3: |
+    No internet connection
+
+    The image and its checksum come from the release page. Connect this
+    machine and choose Start again.
+  4: |
+    The release page does not answer
+
+    GitHub does not hand out this release right now: try again in a few
+    minutes. An image you built yourself is written with Verify checksum off in
+    Setup.
+
 stages:
   - download # the image and its checksum, kept in the download folder
   - verify # the image held to that checksum

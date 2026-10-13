@@ -25,6 +25,18 @@ answer() {
 where() { printf '%s/data' "$(dirname "${BASH_SOURCE[1]}")"; }
 
 # ////////////////////////////////////////////////////////////////////////////
+# THE ERRORS
+# ////////////////////////////////////////////////////////////////////////////
+
+# What a script stops itself with where it sees why it cannot go on, put into
+# words under errors: in each module.yaml. A unit's own statuses start at 10,
+# in the yaml beside it. Any other failure shows where the script broke.
+# https://github.com/murkl/oak/blob/main/docs/REFERENCE.md#stopping-on-purpose
+export EXIT_OFFLINE=3     # the internet is out of reach
+export EXIT_UNREACHABLE=4 # the internet works, the release page does not answer
+export EXIT_AUR=5         # the internet works, the AUR does not answer
+
+# ////////////////////////////////////////////////////////////////////////////
 # THE RELEASE
 # ////////////////////////////////////////////////////////////////////////////
 
@@ -54,14 +66,6 @@ asset_in() {
         /"digest": *"sha256:/ { digest = $0; sub(/.*sha256:/, "", digest); sub(/".*/, "", digest) }
         /"browser_download_url": *"/ { url = $0; sub(/.*: *"/, "", url); sub(/".*/, "", url) }
         END { weigh() }'
-}
-
-# The download of this release whose name ends in $1 and its sha256, or nothing
-# where the release is out of reach.
-release_asset() {
-    local json
-    json="$(release_json "tags/v$(release_version)" 2>/dev/null || true)"
-    asset_in "$1" <<<"$json"
 }
 
 # The version a release's JSON on stdin names, without the v of its tag.
@@ -473,6 +477,7 @@ chroot_pacman_install() {
         sleep "$RETRY_WAIT"
     done
     echo "pacman failed after ${RETRIES} attempts: $*" >&2
+    check_online || exit "$EXIT_OFFLINE"
     return 1
 }
 
@@ -550,7 +555,10 @@ chroot_aur_install() {
     rm -f "${MNT}/etc/sudoers.d/99-aur-build"
     rm -rf "${MNT}${dir}" || echo "the build directory ${dir} could not be removed" >&2
 
-    [ "$status" -eq 0 ] || echo "building ${repo} from the AUR did not finish" >&2
+    [ "$status" -eq 0 ] && return 0
+    echo "building ${repo} from the AUR did not finish" >&2
+    check_online || exit "$EXIT_OFFLINE"
+    fetch_url -sI --max-time 20 https://aur.archlinux.org >/dev/null || exit "$EXIT_AUR"
     return "$status"
 }
 
@@ -674,13 +682,14 @@ on_recovery_partition() {
         [ "$(blkid -p -s UUID -o value "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")" 2>/dev/null)" = "$uuid" ]
 }
 
-# The newest release, where it follows this one within its major version, as
-# its version, the Recovery's download and that file's sha256 - nothing where
-# there is none. A new major version may lay a system down differently, which
-# this Recovery's successor would not repair. Fails where GitHub cannot be read.
+# The newest release in the JSON of the latest one on stdin, where it follows
+# this one within its major version, as its version, the Recovery's download
+# and that file's sha256 - nothing where there is none. A new major version may
+# lay a system down differently, which this Recovery's successor would not
+# repair.
 newer_recovery() {
     local json version url digest
-    json="$(release_json latest)"
+    json="$(cat)"
     version="$(version_in <<<"$json")"
     if [ -z "$version" ]; then
         echo "GitHub names no latest release of ${REPO}" >&2
@@ -692,88 +701,6 @@ newer_recovery() {
     if [ -n "$url" ] && [ -n "$digest" ]; then
         printf '%s %s %s\n' "$version" "$url" "$digest"
     fi
-}
-
-# Where the EFI partition is mounted while the Recovery is updated without the
-# system.
-export ESP_MNT=/run/arch-os-esp
-
-# The newer Recovery over this one. Everything that can fail is done before the
-# partition is touched: the download held to its checksum, its size to the
-# partition, and with Secure Boot on the boot image signed with the system's
-# own keys, which only the opened system holds. Then the partition, read back,
-# and the boot image moved over the old one, so the two disagree only for the
-# length of the write.
-update_recovery() {
-    local found version url digest tar=/tmp/arch-os-recovery-update.tar stem part size room esp efi want have
-    found="$(newer_recovery)"
-    if [ -z "$found" ]; then
-        echo "there is no newer Recovery to install" >&2
-        return 1
-    fi
-    read -r version url digest <<<"$found"
-
-    echo "fetching ${url##*/}"
-    if ! fetch_url --progress-bar --retry 3 --retry-delay 2 "$url" -o "${tar}.part"; then
-        rm -f "${tar}.part"
-        echo "downloading ${url##*/} failed" >&2
-        return 1
-    fi
-    if ! echo "${digest}  ${tar}.part" | sha256sum -c - >/dev/null; then
-        rm -f "${tar}.part"
-        echo "${url##*/} does not match the checksum its release publishes and was thrown away" >&2
-        return 1
-    fi
-    mv -f "${tar}.part" "$tar"
-
-    stem="arch-os-${version}-recovery"
-    part="$(recovery_partition "$ARCH_OS_RECOVERY_DISK")"
-    size="$(tar -tvf "$tar" "${stem}/recovery.img" | awk '{ print $3 }')"
-    room="$(blockdev --getsize64 "$part")"
-    if [ -z "$size" ] || [ "$size" -gt "$room" ]; then
-        echo "the Recovery ${version} takes ${size:-?} bytes, and its partition ${part} holds ${room}" >&2
-        return 1
-    fi
-
-    # The system's own EFI partition, through the opened system where it signs.
-    # What an earlier attempt left mounted goes first.
-    close_target
-    if mountpoint -q "$ESP_MNT"; then
-        umount "$ESP_MNT"
-    fi
-    if [ "$ARCH_OS_RECOVERY_SECURE_BOOT" = "true" ]; then
-        if [ "$ARCH_OS_RECOVERY_ENCRYPTED" = "true" ]; then
-            printf '%s' "$ARCH_OS_RECOVERY_KEYS_PASSWORD" | cryptsetup open "$(target_partition)" "$CRYPT"
-        fi
-        mount_target
-        esp="${MNT}/boot"
-    else
-        mount --mkdir -t vfat "$(boot_partition "$ARCH_OS_RECOVERY_DISK")" "$ESP_MNT"
-        esp="$ESP_MNT"
-    fi
-    efi="${esp}/EFI/Linux/$(basename "$RECOVERY_EFI")"
-    tar -xOf "$tar" "${stem}/recovery.efi" >"${efi}.new"
-    if [ "$ARCH_OS_RECOVERY_SECURE_BOOT" = "true" ]; then
-        arch-chroot "$MNT" sbctl sign -o "${RECOVERY_EFI}.signed" "${RECOVERY_EFI}.new"
-        mv -f "${efi}.signed" "${efi}.new"
-    fi
-
-    echo "writing the Recovery ${version} to ${part}"
-    tar -xOf "$tar" "${stem}/recovery.img" | dd of="$part" bs=4M conv=fsync status=none
-    want="$(tar -xOf "$tar" "${stem}/recovery.img" | sha256sum)"
-    have="$(head -c "$size" "$part" | sha256sum)"
-    if [ "$have" != "$want" ]; then
-        echo "${part} does not read back as the Recovery ${version}" >&2
-        return 1
-    fi
-    mv -f "${efi}.new" "$efi"
-    sync
-    if [ "$esp" = "$ESP_MNT" ]; then
-        umount "$ESP_MNT"
-    fi
-    close_target
-    rm -f "$tar"
-    echo "the Recovery is now ${version}"
 }
 
 # ////////////////////////////////////////////////////////////////////////////

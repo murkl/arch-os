@@ -51,7 +51,7 @@ Scripts run outside the work, each with its own pages: `action.yaml` says how it
 | `start-if` | `root`, `uefi`, `secure-boot-off`, then `internet`, which opens `wifi` straight away where there is a card and waits for a cable otherwise |
 | `on-settings` | `wifi`: **Configure Wi-Fi** in **Setup**, offered if `wifi-card` finds a card and `no-cable` finds no internet over a cable. An open or known network joins as it is chosen; one that wants a passphrase opens `wifi-passphrase` on failure |
 | `on-leave` | `restart`, `shutdown`: the two ways this machine is put down |
-| `on-failure` | `share-log`: the log of a run that failed, put online and drawn as a code |
+| `on-failure` | `share-log`: the log of a run whose script broke, put online and drawn as a code. A run stopped in plain words - see **[errors](../../docs/REFERENCE.md#when-something-goes-wrong)** - offers none |
 | `on-success` | `chroot`, `share-config`: a shell in the new system, and its answers put online - rows on the page a finished run ends on, which opens on **Continue** |
 
 The online starting point under `presets:` names `import-config`, which fetches the answers.

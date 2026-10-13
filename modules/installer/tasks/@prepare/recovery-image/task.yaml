@@ -3,3 +3,17 @@ conditions: ARCH_OS_RECOVERY_ENABLED == true
 
 # A few hundred megabytes where the live image does not carry them.
 progress: true
+
+# What task.sh stops itself with, before the disk is touched. No internet and
+# no GitHub are the module's.
+errors:
+  10: |
+    The Recovery's download broke off
+
+    The release page stopped sending it. Nothing was written to the disk:
+    choose Start again, or turn Recovery off in Setup.
+  11: |
+    The Recovery's download is damaged
+
+    It does not match the checksum of its release and was deleted. Nothing was
+    written to the disk: choose Start again.

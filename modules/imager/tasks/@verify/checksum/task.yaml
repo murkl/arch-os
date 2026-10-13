@@ -2,3 +2,16 @@ title: Verify the checksum
 
 # Arrived and intact are two claims, and only the second is worth writing.
 conditions: ARCH_OS_IMAGE_VERIFY == true
+
+# What task.sh stops itself with.
+errors:
+  10: |
+    There is no checksum to check the image against
+
+    Its release publishes none, and the image was not written. Turn Verify
+    checksum off in Setup to write it unchecked.
+  11: |
+    The image is damaged
+
+    It does not match the checksum of its release and was deleted. Choose Start
+    again to download it anew.

@@ -103,6 +103,24 @@ msgstr ""
 msgid "The snapshot to put in place of the system. Newest first, with its date and what took it."
 msgstr ""
 
+#. told where a script stops itself with exit 3 and its own yaml has no
+#. words for it
+#: module.yaml
+msgid ""
+"No internet connection\n"
+"\n"
+"Join a network with Configure Wi-Fi in Setup, or plug in a cable, and try again. A repair needs none."
+msgstr ""
+
+#. told where a script stops itself with exit 4 and its own yaml has no
+#. words for it
+#: module.yaml
+msgid ""
+"The release page does not answer\n"
+"\n"
+"The internet works, but GitHub, where Arch OS keeps its releases, does not answer. Try again in a few minutes."
+msgstr ""
+
 #. the header's status, while its check says yes
 #: ../../oak.yaml
 msgid "Online"
@@ -116,6 +134,22 @@ msgstr ""
 #. the step, as the run lists it
 #: tasks/@open/system/task.yaml
 msgid "Unlock and mount the system"
+msgstr ""
+
+#. told where the step stops itself with exit 10
+#: tasks/@open/system/task.yaml
+msgid ""
+"There is no Arch OS on this disk\n"
+"\n"
+"{{ARCH_OS_RECOVERY_DISK}} holds no installation this Recovery can open. Choose another disk in Setup."
+msgstr ""
+
+#. told where the step stops itself with exit 11
+#: tasks/@open/system/task.yaml
+msgid ""
+"This installation is laid out differently\n"
+"\n"
+"{{ARCH_OS_RECOVERY_DISK}} lacks subvolumes this Recovery expects. Repair it with the Recovery of the release it was installed with."
 msgstr ""
 
 #. the step, as the run lists it
@@ -142,6 +176,14 @@ msgid ""
 "Rebuild the kernel images and the initial ram disks?\n"
 "\n"
 "Needed after a rollback past a kernel update, or the system starts without its modules. Everything comes from the package cache, so no network is needed."
+msgstr ""
+
+#. told where the step stops itself with exit 10
+#: tasks/@rebuild/boot/task.yaml
+msgid ""
+"The kernel is missing from the package cache\n"
+"\n"
+"The boot files are made from the package of the installed kernel, and the cache no longer holds it. Roll back to a snapshot from before the kernel was updated."
 msgstr ""
 
 #. an action: its row, and the heading over its page
@@ -244,7 +286,7 @@ msgstr ""
 
 #. an action: what a no from it means
 #: actions/update/action.yaml
-msgid "There is no internet connection to look for a newer Recovery. Join a network with Configure Wi-Fi above, or plug in a cable."
+msgid "The internet connection was lost before the newer Recovery could be installed. Join a network with Configure Wi-Fi above, or plug in a cable."
 msgstr ""
 
 #. read once the action is done, and held on until somebody has
@@ -279,6 +321,38 @@ msgid ""
 "Recovery updated\n"
 "\n"
 "The new one starts with the next restart."
+msgstr ""
+
+#. told where the action stops itself with exit 10
+#: actions/update-install/action.yaml
+msgid ""
+"The download broke off\n"
+"\n"
+"The release page stopped sending the newer Recovery. Nothing was changed; try again."
+msgstr ""
+
+#. told where the action stops itself with exit 11
+#: actions/update-install/action.yaml
+msgid ""
+"The download is damaged\n"
+"\n"
+"It does not match the checksum of its release and was deleted. Nothing was changed; try again."
+msgstr ""
+
+#. told where the action stops itself with exit 12
+#: actions/update-install/action.yaml
+msgid ""
+"The newer Recovery does not fit\n"
+"\n"
+"It is larger than its partition and was not installed. The Recovery you have stays and keeps working."
+msgstr ""
+
+#. told where the action stops itself with exit 13
+#: actions/update-install/action.yaml
+msgid ""
+"Writing the Recovery failed\n"
+"\n"
+"Its partition did not keep what was written. The system starts as before, the Recovery only once an update has gone through: try again. A disk that keeps refusing may be failing."
 msgstr ""
 
 #. ARCH_OS_RECOVERY_KEYS_PASSWORD: what it means

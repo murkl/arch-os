@@ -17,9 +17,11 @@ if [ -f "${image}/recovery.img" ] && [ -f "${image}/recovery.efi" ]; then
     return 0
 fi
 
-read -r url digest <<<"$(release_asset -recovery-x86_64.tar)"
+check_online || exit "$EXIT_OFFLINE"
+json="$(release_json "tags/v$(release_version)")" || exit "$EXIT_UNREACHABLE"
+read -r url digest <<<"$(asset_in -recovery-x86_64.tar <<<"$json")"
 if [ -z "$url" ] || [ -z "$digest" ]; then
-    echo "The release v$(release_version) is out of reach or holds no Recovery image with a checksum. Connect this machine, or turn Recovery off in Setup." >&2
+    echo "the release v$(release_version) holds no Recovery image with a checksum" >&2
     exit 1
 fi
 
@@ -27,13 +29,14 @@ download="${image}.tar"
 echo "fetching ${url##*/}"
 if ! fetch_url --progress-bar --retry 3 --retry-delay 2 "$url" -o "$download"; then
     rm -f "$download"
-    echo "Downloading ${url##*/} failed. Start the installation again, or turn Recovery off in Setup." >&2
-    exit 1
+    check_online || exit "$EXIT_OFFLINE"
+    echo "downloading ${url##*/} failed" >&2
+    exit 10
 fi
 if ! echo "${digest}  ${download}" | sha256sum -c - >/dev/null; then
     rm -f "$download"
-    echo "${url##*/} does not match the checksum its release publishes and was thrown away. Start the installation again." >&2
-    exit 1
+    echo "${url##*/} does not match the checksum its release publishes and was thrown away" >&2
+    exit 11
 fi
 
 # Unpacked beside and moved into place whole, so what lies there is always a

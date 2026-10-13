@@ -10,15 +10,15 @@ target="$(image)"
 # list it was chosen from right before it is written.
 devices="$(options_devices | cut -f1)"
 if ! grep -qxF "$device" <<<"$devices"; then
-    echo "${device} is not a USB device on this machine. Plug the stick back in and choose it again." >&2
-    exit 1
+    echo "${device} is not a USB device on this machine" >&2
+    exit 10
 fi
 
 have="$(lsblk -bdno SIZE "$device")"
 need="$(stat -c %s "$target")"
 if [ "$have" -lt "$need" ]; then
     echo "${device} holds $(numfmt --to=iec "$have") and the image needs $(numfmt --to=iec "$need")" >&2
-    exit 1
+    exit 11
 fi
 
 echo "Writing ${target##*/} to ${device}."
@@ -36,12 +36,15 @@ done < <(lsblk -nro MOUNTPOINT "$device")
 mounted="$(lsblk -nro MOUNTPOINT "$device")"
 if grep -q . <<<"$mounted"; then
     echo "${device} still has something mounted from it" >&2
-    exit 1
+    exit 12
 fi
 
 # The Wiki's flags: oflag=direct makes the progress what the drive has taken,
 # conv=fsync flushes the rest before dd returns.
-as_root dd if="$target" of="$device" bs=4M status=progress conv=fsync oflag=direct
+if ! as_root dd if="$target" of="$device" bs=4M status=progress conv=fsync oflag=direct; then
+    echo "writing ${device} failed" >&2
+    exit 13
+fi
 
 # blockdev rather than partprobe: util-linux is everywhere, parted is not.
 as_root blockdev --rereadpt "$device" 2>/dev/null || true
