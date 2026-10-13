@@ -10,3 +10,15 @@ uuid="$(blkid -p -s UUID -o value "$part")"
 arch-chroot "$MNT" bootctl --esp-path=/boot list --json=short | grep -qF "archisodevice=UUID=${uuid}"
 
 grep -qxF "ARCH_OS_RECOVERY_KEYMAP='$(vconsole_keymap)'" "${MNT}/boot/EFI/arch-os-recovery/recovery.conf"
+
+# Its firmware entry starts the image on this disk's EFI partition, and is in
+# the firmware's menu but not in its order.
+entries="$(efibootmgr)"
+esp="$(blkid -p -s PART_ENTRY_UUID -o value "$(boot_partition "$ARCH_OS_DISK")")"
+entry="$(awk -v esp="${esp,,}" -v efi="$(basename "$RECOVERY_EFI")" '
+    !found && /^Boot[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]/ && index($0, "Arch OS Recovery") && index(tolower($0), esp) && index(tolower($0), efi) {
+        print substr($1, 5, 4); found = 1
+    }' <<<"$entries")"
+[ -n "$entry" ]
+order="$(sed -n 's/^BootOrder: //p' <<<"$entries")"
+[[ ",${order}," != *",${entry},"* ]]

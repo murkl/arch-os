@@ -9,7 +9,9 @@ mkdir -p "${MNT}/usr/local/bin" "${MNT}/usr/local/share/applications" "$icons"
 render "$(where)/arch-os-recovery" ENTRY="$(basename "$RECOVERY_EFI")" >"${MNT}/usr/local/bin/arch-os-recovery"
 chmod 755 "${MNT}/usr/local/bin/arch-os-recovery"
 render "$(where)/arch-os-recovery.desktop" >"${MNT}/usr/local/share/applications/arch-os-recovery.desktop"
-render "$(where)/arch-os-recovery.svg" >"${icons}/arch-os-recovery.svg"
+# The icon theme's own restart icon, and this one where the theme has none:
+# Adwaita has it only as a symbolic icon, which an application list never draws.
+render "$(where)/system-reboot.svg" >"${icons}/system-reboot.svg"
 
 # Its partition is no drive to open: the file manager would list it as one.
 # Known by the partition's own UUID, which an update of the Recovery keeps.
