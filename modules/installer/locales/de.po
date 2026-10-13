@@ -460,6 +460,42 @@ msgstr "Dateifreigabe"
 msgid "Shares your home and a public folder with Windows and macOS on networks marked home, or on every network without the firewall. Anyone there can try your password against it."
 msgstr "Gibt dein Benutzerverzeichnis und einen öffentlichen Ordner für Windows und macOS frei, in Netzen, die als Heimnetz markiert sind, oder ohne Firewall in jedem Netz. Jeder dort kann dein Passwort daran ausprobieren."
 
+#. told where a script stops itself with exit 3 and its own yaml has no
+#. words for it
+#: module.yaml
+msgid ""
+"The internet connection was lost\n"
+"\n"
+"Arch OS is downloaded while it is installed. Connect this machine again and choose Start: the installation begins anew."
+msgstr ""
+"Die Internetverbindung ist abgebrochen\n"
+"\n"
+"Arch OS wird während der Installation heruntergeladen. Verbinde diesen Rechner wieder und wähle Start: Die Installation beginnt von vorn."
+
+#. told where a script stops itself with exit 4 and its own yaml has no
+#. words for it
+#: module.yaml
+msgid ""
+"The release page does not answer\n"
+"\n"
+"The internet works, but GitHub, where Arch OS keeps its releases, does not answer. Try again in a few minutes, or turn Recovery off in Setup."
+msgstr ""
+"Die Release-Seite antwortet nicht\n"
+"\n"
+"Das Internet funktioniert, aber GitHub, wo Arch OS seine Releases ablegt, antwortet nicht. Versuch es in ein paar Minuten erneut oder schalte Recovery im Setup aus."
+
+#. told where a script stops itself with exit 5 and its own yaml has no
+#. words for it
+#: module.yaml
+msgid ""
+"The AUR does not answer\n"
+"\n"
+"What this step builds from the Arch User Repository was left out, and the rest of the installation goes on without it. Install it later, once the AUR answers again."
+msgstr ""
+"Das AUR antwortet nicht\n"
+"\n"
+"Was dieser Schritt aus dem Arch User Repository baut, wurde ausgelassen, und die Installation läuft ohne es weiter. Installier es später, sobald das AUR wieder antwortet."
+
 #. the header's status, while its check says yes
 #: ../../oak.yaml
 msgid "Online"
@@ -475,15 +511,70 @@ msgstr "Offline"
 msgid "Rank mirrors and refresh the keyring"
 msgstr "Spiegelserver sortieren und Keyring aktualisieren"
 
+#. told where the step stops itself with exit 10
+#: tasks/@prepare/mirrors/task.yaml
+msgid ""
+"The clock could not be set\n"
+"\n"
+"The live system sets its clock from the internet before it can check a single package. Check that this machine reaches the internet, then choose Start again."
+msgstr ""
+"Die Uhr ließ sich nicht stellen\n"
+"\n"
+"Das Live-System stellt seine Uhr über das Internet, bevor es auch nur ein Paket prüfen kann. Prüf, ob dieser Rechner das Internet erreicht, und wähle dann erneut Start."
+
 #. the step, as the run lists it
 #: tasks/@prepare/recovery-image/task.yaml
 msgid "Provide the Recovery image"
 msgstr "Recovery-Image bereitstellen"
 
+#. told where the step stops itself with exit 10
+#: tasks/@prepare/recovery-image/task.yaml
+msgid ""
+"The Recovery's download broke off\n"
+"\n"
+"The release page stopped sending it. Nothing was written to the disk: choose Start again, or turn Recovery off in Setup."
+msgstr ""
+"Der Download des Recovery ist abgebrochen\n"
+"\n"
+"Die Release-Seite hat aufgehört, es zu senden. Auf den Datenträger wurde nichts geschrieben: Wähle erneut Start oder schalte Recovery im Setup aus."
+
+#. told where the step stops itself with exit 11
+#: tasks/@prepare/recovery-image/task.yaml
+msgid ""
+"The Recovery's download is damaged\n"
+"\n"
+"It does not match the checksum of its release and was deleted. Nothing was written to the disk: choose Start again."
+msgstr ""
+"Der Download des Recovery ist beschädigt\n"
+"\n"
+"Er passt nicht zur Prüfsumme seines Releases und wurde gelöscht. Auf den Datenträger wurde nichts geschrieben: Wähle erneut Start."
+
 #. the step, as the run lists it
 #: tasks/@prepare/partition/task.yaml
 msgid "Partition and format the disk"
 msgstr "Datenträger partitionieren und formatieren"
+
+#. told where the step stops itself with exit 10
+#: tasks/@prepare/partition/task.yaml
+msgid ""
+"The disk is not there\n"
+"\n"
+"{{ARCH_OS_DISK}} is not one of the disks Arch OS can be installed on here. Choose the disk again in Setup."
+msgstr ""
+"Der Datenträger ist nicht da\n"
+"\n"
+"{{ARCH_OS_DISK}} gehört nicht zu den Datenträgern, auf die Arch OS hier installiert werden kann. Wähle den Datenträger im Setup neu."
+
+#. told where the step stops itself with exit 11
+#: tasks/@prepare/partition/task.yaml
+msgid ""
+"The disk is in use\n"
+"\n"
+"Something on this machine still holds {{ARCH_OS_DISK}} open. Unmount or close it, then choose Start again."
+msgstr ""
+"Der Datenträger wird benutzt\n"
+"\n"
+"Etwas auf diesem Rechner hält {{ARCH_OS_DISK}} noch offen. Häng es aus oder schließ es und wähle dann erneut Start."
 
 #. the step, as the run lists it
 #: tasks/@system/pacstrap/task.yaml
@@ -832,27 +923,3 @@ msgstr "{{ARCH_OS_WIFI_SSID}} hat dieses Passwort nicht angenommen oder ist auß
 #: actions/wifi-passphrase/action.yaml
 msgid "Passphrase"
 msgstr "Passwort"
-
-msgid "The internet connection was lost\n\nArch OS is downloaded while it is installed. Connect this machine again and choose Start: the installation begins anew."
-msgstr "Die Internetverbindung ist abgebrochen\n\nArch OS wird während der Installation heruntergeladen. Verbinde diesen Rechner wieder und wähle Start: Die Installation beginnt von vorn."
-
-msgid "The release page does not answer\n\nThe internet works, but GitHub, where Arch OS keeps its releases, does not answer. Try again in a few minutes, or turn Recovery off in Setup."
-msgstr "Die Release-Seite antwortet nicht\n\nDas Internet funktioniert, aber GitHub, wo Arch OS seine Releases ablegt, antwortet nicht. Versuch es in ein paar Minuten erneut oder schalte Recovery im Setup aus."
-
-msgid "The AUR does not answer\n\nWhat this step builds from the Arch User Repository was left out, and the rest of the installation goes on without it. Install it later, once the AUR answers again."
-msgstr "Das AUR antwortet nicht\n\nWas dieser Schritt aus dem Arch User Repository baut, wurde ausgelassen, und die Installation läuft ohne es weiter. Installier es später, sobald das AUR wieder antwortet."
-
-msgid "The clock could not be set\n\nThe live system sets its clock from the internet before it can check a single package. Check that this machine reaches the internet, then choose Start again."
-msgstr "Die Uhr ließ sich nicht stellen\n\nDas Live-System stellt seine Uhr über das Internet, bevor es auch nur ein Paket prüfen kann. Prüf, ob dieser Rechner das Internet erreicht, und wähle dann erneut Start."
-
-msgid "The disk is not there\n\n{{ARCH_OS_DISK}} is not one of the disks Arch OS can be installed on here. Choose the disk again in Setup."
-msgstr "Der Datenträger ist nicht da\n\n{{ARCH_OS_DISK}} gehört nicht zu den Datenträgern, auf die Arch OS hier installiert werden kann. Wähle den Datenträger im Setup neu."
-
-msgid "The disk is in use\n\nSomething on this machine still holds {{ARCH_OS_DISK}} open. Unmount or close it, then choose Start again."
-msgstr "Der Datenträger wird benutzt\n\nEtwas auf diesem Rechner hält {{ARCH_OS_DISK}} noch offen. Häng es aus oder schließ es und wähle dann erneut Start."
-
-msgid "The Recovery's download broke off\n\nThe release page stopped sending it. Nothing was written to the disk: choose Start again, or turn Recovery off in Setup."
-msgstr "Der Download des Recovery ist abgebrochen\n\nDie Release-Seite hat aufgehört, es zu senden. Auf den Datenträger wurde nichts geschrieben: Wähle erneut Start oder schalte Recovery im Setup aus."
-
-msgid "The Recovery's download is damaged\n\nIt does not match the checksum of its release and was deleted. Nothing was written to the disk: choose Start again."
-msgstr "Der Download des Recovery ist beschädigt\n\nEr passt nicht zur Prüfsumme seines Releases und wurde gelöscht. Auf den Datenträger wurde nichts geschrieben: Wähle erneut Start."

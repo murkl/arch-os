@@ -463,6 +463,33 @@ msgstr ""
 msgid "Shares your home and a public folder with Windows and macOS on networks marked home, or on every network without the firewall. Anyone there can try your password against it."
 msgstr ""
 
+#. told where a script stops itself with exit 3 and its own yaml has no
+#. words for it
+#: module.yaml
+msgid ""
+"The internet connection was lost\n"
+"\n"
+"Arch OS is downloaded while it is installed. Connect this machine again and choose Start: the installation begins anew."
+msgstr ""
+
+#. told where a script stops itself with exit 4 and its own yaml has no
+#. words for it
+#: module.yaml
+msgid ""
+"The release page does not answer\n"
+"\n"
+"The internet works, but GitHub, where Arch OS keeps its releases, does not answer. Try again in a few minutes, or turn Recovery off in Setup."
+msgstr ""
+
+#. told where a script stops itself with exit 5 and its own yaml has no
+#. words for it
+#: module.yaml
+msgid ""
+"The AUR does not answer\n"
+"\n"
+"What this step builds from the Arch User Repository was left out, and the rest of the installation goes on without it. Install it later, once the AUR answers again."
+msgstr ""
+
 #. the header's status, while its check says yes
 #: ../../oak.yaml
 msgid "Online"
@@ -478,14 +505,54 @@ msgstr ""
 msgid "Rank mirrors and refresh the keyring"
 msgstr ""
 
+#. told where the step stops itself with exit 10
+#: tasks/@prepare/mirrors/task.yaml
+msgid ""
+"The clock could not be set\n"
+"\n"
+"The live system sets its clock from the internet before it can check a single package. Check that this machine reaches the internet, then choose Start again."
+msgstr ""
+
 #. the step, as the run lists it
 #: tasks/@prepare/recovery-image/task.yaml
 msgid "Provide the Recovery image"
 msgstr ""
 
+#. told where the step stops itself with exit 10
+#: tasks/@prepare/recovery-image/task.yaml
+msgid ""
+"The Recovery's download broke off\n"
+"\n"
+"The release page stopped sending it. Nothing was written to the disk: choose Start again, or turn Recovery off in Setup."
+msgstr ""
+
+#. told where the step stops itself with exit 11
+#: tasks/@prepare/recovery-image/task.yaml
+msgid ""
+"The Recovery's download is damaged\n"
+"\n"
+"It does not match the checksum of its release and was deleted. Nothing was written to the disk: choose Start again."
+msgstr ""
+
 #. the step, as the run lists it
 #: tasks/@prepare/partition/task.yaml
 msgid "Partition and format the disk"
+msgstr ""
+
+#. told where the step stops itself with exit 10
+#: tasks/@prepare/partition/task.yaml
+msgid ""
+"The disk is not there\n"
+"\n"
+"{{ARCH_OS_DISK}} is not one of the disks Arch OS can be installed on here. Choose the disk again in Setup."
+msgstr ""
+
+#. told where the step stops itself with exit 11
+#: tasks/@prepare/partition/task.yaml
+msgid ""
+"The disk is in use\n"
+"\n"
+"Something on this machine still holds {{ARCH_OS_DISK}} open. Unmount or close it, then choose Start again."
 msgstr ""
 
 #. the step, as the run lists it

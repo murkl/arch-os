@@ -100,6 +100,30 @@ msgstr "Schnappschuss"
 msgid "The snapshot to put in place of the system. Newest first, with its date and what took it."
 msgstr "Der Schnappschuss, der an die Stelle des Systems tritt. Der neueste zuerst, mit Datum und Anlass."
 
+#. told where a script stops itself with exit 3 and its own yaml has no
+#. words for it
+#: module.yaml
+msgid ""
+"No internet connection\n"
+"\n"
+"Join a network with Configure Wi-Fi in Setup, or plug in a cable, and try again. A repair needs none."
+msgstr ""
+"Keine Internetverbindung\n"
+"\n"
+"Verbinde dich im Setup über „WLAN konfigurieren“ oder steck ein Kabel ein und versuch es erneut. Eine Reparatur braucht kein Internet."
+
+#. told where a script stops itself with exit 4 and its own yaml has no
+#. words for it
+#: module.yaml
+msgid ""
+"The release page does not answer\n"
+"\n"
+"The internet works, but GitHub, where Arch OS keeps its releases, does not answer. Try again in a few minutes."
+msgstr ""
+"Die Release-Seite antwortet nicht\n"
+"\n"
+"Das Internet funktioniert, aber GitHub, wo Arch OS seine Releases ablegt, antwortet nicht. Versuch es in ein paar Minuten erneut."
+
 #. the header's status, while its check says yes
 #: ../../oak.yaml
 msgid "Online"
@@ -114,6 +138,28 @@ msgstr "Offline"
 #: tasks/@open/system/task.yaml
 msgid "Unlock and mount the system"
 msgstr "System entsperren und einhängen"
+
+#. told where the step stops itself with exit 10
+#: tasks/@open/system/task.yaml
+msgid ""
+"There is no Arch OS on this disk\n"
+"\n"
+"{{ARCH_OS_RECOVERY_DISK}} holds no installation this Recovery can open. Choose another disk in Setup."
+msgstr ""
+"Auf diesem Datenträger ist kein Arch OS\n"
+"\n"
+"{{ARCH_OS_RECOVERY_DISK}} enthält keine Installation, die dieses Recovery öffnen kann. Wähle im Setup einen anderen Datenträger."
+
+#. told where the step stops itself with exit 11
+#: tasks/@open/system/task.yaml
+msgid ""
+"This installation is laid out differently\n"
+"\n"
+"{{ARCH_OS_RECOVERY_DISK}} lacks subvolumes this Recovery expects. Repair it with the Recovery of the release it was installed with."
+msgstr ""
+"Diese Installation ist anders aufgebaut\n"
+"\n"
+"Auf {{ARCH_OS_RECOVERY_DISK}} fehlen Subvolumes, die dieses Recovery erwartet. Repariere sie mit dem Recovery des Releases, mit dem sie installiert wurde."
 
 #. the step, as the run lists it
 #: tasks/@rollback/snapshot/task.yaml
@@ -146,6 +192,17 @@ msgstr ""
 "Die Kernel-Images und die Initial-RAM-Disks neu bauen?\n"
 "\n"
 "Nötig nach einem Rücksprung über ein Kernel-Update hinweg, sonst startet das System ohne seine Module. Alles kommt aus dem Paket-Cache, ein Netzwerk braucht es nicht."
+
+#. told where the step stops itself with exit 10
+#: tasks/@rebuild/boot/task.yaml
+msgid ""
+"The kernel is missing from the package cache\n"
+"\n"
+"The boot files are made from the package of the installed kernel, and the cache no longer holds it. Roll back to a snapshot from before the kernel was updated."
+msgstr ""
+"Der Kernel fehlt im Paket-Cache\n"
+"\n"
+"Die Boot-Dateien entstehen aus dem Paket des installierten Kernels, und der Cache enthält es nicht mehr. Setz auf einen Snapshot von vor dem Kernel-Update zurück."
 
 #. an action: its row, and the heading over its page
 #: actions/chroot/action.yaml
@@ -250,8 +307,8 @@ msgstr "Nach einem neueren Recovery dieser Release-Reihe suchen und es nach Rüc
 
 #. an action: what a no from it means
 #: actions/update/action.yaml
-msgid "There is no internet connection to look for a newer Recovery. Join a network with Configure Wi-Fi above, or plug in a cable."
-msgstr "Ohne Internetverbindung lässt sich nicht nach einem neueren Recovery suchen. Verbinde dich oben über „WLAN konfigurieren“ oder steck ein Kabel ein."
+msgid "The internet connection was lost before the newer Recovery could be installed. Join a network with Configure Wi-Fi above, or plug in a cable."
+msgstr "Die Internetverbindung ist abgebrochen, bevor das neuere Recovery installiert werden konnte. Verbinde dich oben über „WLAN konfigurieren“ oder steck ein Kabel ein."
 
 #. read once the action is done, and held on until somebody has
 #: actions/update/action.yaml
@@ -296,6 +353,50 @@ msgstr ""
 "\n"
 "Das neue startet beim nächsten Neustart."
 
+#. told where the action stops itself with exit 10
+#: actions/update-install/action.yaml
+msgid ""
+"The download broke off\n"
+"\n"
+"The release page stopped sending the newer Recovery. Nothing was changed; try again."
+msgstr ""
+"Der Download ist abgebrochen\n"
+"\n"
+"Die Release-Seite hat aufgehört, das neuere Recovery zu senden. Es wurde nichts geändert; versuch es erneut."
+
+#. told where the action stops itself with exit 11
+#: actions/update-install/action.yaml
+msgid ""
+"The download is damaged\n"
+"\n"
+"It does not match the checksum of its release and was deleted. Nothing was changed; try again."
+msgstr ""
+"Der Download ist beschädigt\n"
+"\n"
+"Er passt nicht zur Prüfsumme seines Releases und wurde gelöscht. Es wurde nichts geändert; versuch es erneut."
+
+#. told where the action stops itself with exit 12
+#: actions/update-install/action.yaml
+msgid ""
+"The newer Recovery does not fit\n"
+"\n"
+"It is larger than its partition and was not installed. The Recovery you have stays and keeps working."
+msgstr ""
+"Das neuere Recovery passt nicht\n"
+"\n"
+"Es ist größer als seine Partition und wurde nicht installiert. Dein bisheriges Recovery bleibt und funktioniert weiter."
+
+#. told where the action stops itself with exit 13
+#: actions/update-install/action.yaml
+msgid ""
+"Writing the Recovery failed\n"
+"\n"
+"Its partition did not keep what was written. The system starts as before, the Recovery only once an update has gone through: try again. A disk that keeps refusing may be failing."
+msgstr ""
+"Das Recovery ließ sich nicht schreiben\n"
+"\n"
+"Seine Partition hat nicht behalten, was geschrieben wurde. Das System startet wie bisher, das Recovery erst wieder nach einem Update, das durchläuft: Versuch es erneut. Ein Datenträger, der sich immer wieder weigert, ist womöglich defekt."
+
 #. ARCH_OS_RECOVERY_KEYS_PASSWORD: what it means
 #: actions/update-install/action.yaml
 msgid "Secure Boot starts only a Recovery signed with this system's keys, and they are on the encrypted disk. Asked right before the update and never written to a file."
@@ -335,33 +436,3 @@ msgstr "{{ARCH_OS_WIFI_SSID}} hat dieses Passwort nicht angenommen oder ist auß
 #: actions/wifi-passphrase/action.yaml
 msgid "Passphrase"
 msgstr "Passwort"
-
-msgid "No internet connection\n\nJoin a network with Configure Wi-Fi in Setup, or plug in a cable, and try again. A repair needs none."
-msgstr "Keine Internetverbindung\n\nVerbinde dich im Setup über „WLAN konfigurieren“ oder steck ein Kabel ein und versuch es erneut. Eine Reparatur braucht kein Internet."
-
-msgid "The release page does not answer\n\nThe internet works, but GitHub, where Arch OS keeps its releases, does not answer. Try again in a few minutes."
-msgstr "Die Release-Seite antwortet nicht\n\nDas Internet funktioniert, aber GitHub, wo Arch OS seine Releases ablegt, antwortet nicht. Versuch es in ein paar Minuten erneut."
-
-msgid "There is no Arch OS on this disk\n\n{{ARCH_OS_RECOVERY_DISK}} holds no installation this Recovery can open. Choose another disk in Setup."
-msgstr "Auf diesem Datenträger ist kein Arch OS\n\n{{ARCH_OS_RECOVERY_DISK}} enthält keine Installation, die dieses Recovery öffnen kann. Wähle im Setup einen anderen Datenträger."
-
-msgid "This installation is laid out differently\n\n{{ARCH_OS_RECOVERY_DISK}} lacks subvolumes this Recovery expects. Repair it with the Recovery of the release it was installed with."
-msgstr "Diese Installation ist anders aufgebaut\n\nAuf {{ARCH_OS_RECOVERY_DISK}} fehlen Subvolumes, die dieses Recovery erwartet. Repariere sie mit dem Recovery des Releases, mit dem sie installiert wurde."
-
-msgid "The kernel is missing from the package cache\n\nThe boot files are made from the package of the installed kernel, and the cache no longer holds it. Roll back to a snapshot from before the kernel was updated."
-msgstr "Der Kernel fehlt im Paket-Cache\n\nDie Boot-Dateien entstehen aus dem Paket des installierten Kernels, und der Cache enthält es nicht mehr. Setz auf einen Snapshot von vor dem Kernel-Update zurück."
-
-msgid "The download broke off\n\nThe release page stopped sending the newer Recovery. Nothing was changed; try again."
-msgstr "Der Download ist abgebrochen\n\nDie Release-Seite hat aufgehört, das neuere Recovery zu senden. Es wurde nichts geändert; versuch es erneut."
-
-msgid "The download is damaged\n\nIt does not match the checksum of its release and was deleted. Nothing was changed; try again."
-msgstr "Der Download ist beschädigt\n\nEr passt nicht zur Prüfsumme seines Releases und wurde gelöscht. Es wurde nichts geändert; versuch es erneut."
-
-msgid "The newer Recovery does not fit\n\nIt is larger than its partition and was not installed. The Recovery you have stays and keeps working."
-msgstr "Das neuere Recovery passt nicht\n\nEs ist größer als seine Partition und wurde nicht installiert. Dein bisheriges Recovery bleibt und funktioniert weiter."
-
-msgid "Writing the Recovery failed\n\nIts partition did not keep what was written. The system starts as before, the Recovery only once an update has gone through: try again. A disk that keeps refusing may be failing."
-msgstr "Das Recovery ließ sich nicht schreiben\n\nSeine Partition hat nicht behalten, was geschrieben wurde. Das System startet wie bisher, das Recovery erst wieder nach einem Update, das durchläuft: Versuch es erneut. Ein Datenträger, der sich immer wieder weigert, ist womöglich defekt."
-
-msgid "The internet connection was lost before the newer Recovery could be installed. Join a network with Configure Wi-Fi above, or plug in a cable."
-msgstr "Die Internetverbindung ist abgebrochen, bevor das neuere Recovery installiert werden konnte. Verbinde dich oben über „WLAN konfigurieren“ oder steck ein Kabel ein."

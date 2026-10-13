@@ -95,6 +95,30 @@ msgstr "Das Schreiben braucht Root-Rechte, und sudo fragt dafür nach deinem Pas
 msgid "That is not your password, or this account may not use sudo."
 msgstr "Das ist nicht dein Passwort, oder dieses Konto darf sudo nicht verwenden."
 
+#. told where a script stops itself with exit 3 and its own yaml has no
+#. words for it
+#: module.yaml
+msgid ""
+"No internet connection\n"
+"\n"
+"The image and its checksum come from the release page. Connect this machine and choose Start again."
+msgstr ""
+"Keine Internetverbindung\n"
+"\n"
+"Das Image und seine Prüfsumme kommen von der Release-Seite. Verbinde diesen Rechner und wähle erneut Start."
+
+#. told where a script stops itself with exit 4 and its own yaml has no
+#. words for it
+#: module.yaml
+msgid ""
+"The release page does not answer\n"
+"\n"
+"GitHub does not hand out this release right now: try again in a few minutes. An image you built yourself is written with Verify checksum off in Setup."
+msgstr ""
+"Die Release-Seite antwortet nicht\n"
+"\n"
+"GitHub gibt dieses Release gerade nicht heraus: Versuch es in ein paar Minuten erneut. Ein selbst gebautes Image wird mit ausgeschaltetem „Prüfsumme abgleichen“ im Setup geschrieben."
+
 #. the header's status, while its check says yes
 #: ../../oak.yaml
 msgid "Online"
@@ -110,10 +134,54 @@ msgstr "Offline"
 msgid "Download the image"
 msgstr "Image herunterladen"
 
+#. told where the step stops itself with exit 10
+#: tasks/@download/image/task.yaml
+msgid ""
+"The download folder cannot be used\n"
+"\n"
+"{{ARCH_OS_DOWNLOAD_DIR}} cannot be created or written to. Choose another Download folder in Setup."
+msgstr ""
+"Der Download-Ordner ist nicht nutzbar\n"
+"\n"
+"{{ARCH_OS_DOWNLOAD_DIR}} lässt sich nicht anlegen oder beschreiben. Wähle im Setup einen anderen Download-Ordner."
+
+#. told where the step stops itself with exit 11
+#: tasks/@download/image/task.yaml
+msgid ""
+"The download broke off\n"
+"\n"
+"The release page stopped sending the image. Choose Start again to fetch it anew."
+msgstr ""
+"Der Download ist abgebrochen\n"
+"\n"
+"Die Release-Seite hat aufgehört, das Image zu senden. Wähle erneut Start, um es neu zu laden."
+
 #. the step, as the run lists it
 #: tasks/@verify/checksum/task.yaml
 msgid "Verify the checksum"
 msgstr "Prüfsumme abgleichen"
+
+#. told where the step stops itself with exit 10
+#: tasks/@verify/checksum/task.yaml
+msgid ""
+"There is no checksum to check the image against\n"
+"\n"
+"Its release publishes none, and the image was not written. Turn Verify checksum off in Setup to write it unchecked."
+msgstr ""
+"Es gibt keine Prüfsumme für das Image\n"
+"\n"
+"Sein Release veröffentlicht keine, und das Image wurde nicht geschrieben. Schalte „Prüfsumme abgleichen“ im Setup aus, um es ungeprüft zu schreiben."
+
+#. told where the step stops itself with exit 11
+#: tasks/@verify/checksum/task.yaml
+msgid ""
+"The image is damaged\n"
+"\n"
+"It does not match the checksum of its release and was deleted. Choose Start again to download it anew."
+msgstr ""
+"Das Image ist beschädigt\n"
+"\n"
+"Es passt nicht zur Prüfsumme seines Releases und wurde gelöscht. Wähle erneut Start, um es neu herunterzuladen."
 
 #. the step, as the run lists it
 #: tasks/@write/device/task.yaml
@@ -130,6 +198,50 @@ msgstr ""
 "Der Datenträger ist fertig\n"
 "\n"
 "{{ARCH_OS_IMAGE_DEVICE}} startet jetzt Arch OS. Zieh ihn ab, steck ihn in den Rechner, auf dem installiert werden soll, und starte ihn davon."
+
+#. told where the step stops itself with exit 10
+#: tasks/@write/device/task.yaml
+msgid ""
+"The USB stick is gone\n"
+"\n"
+"{{ARCH_OS_IMAGE_DEVICE}} is no longer plugged in. Plug it back in and choose Start again."
+msgstr ""
+"Der USB-Stick ist weg\n"
+"\n"
+"{{ARCH_OS_IMAGE_DEVICE}} steckt nicht mehr. Steck ihn wieder ein und wähle erneut Start."
+
+#. told where the step stops itself with exit 11
+#: tasks/@write/device/task.yaml
+msgid ""
+"The USB stick is too small\n"
+"\n"
+"The image needs more room than {{ARCH_OS_IMAGE_DEVICE}} has. Choose Start again with a larger one."
+msgstr ""
+"Der USB-Stick ist zu klein\n"
+"\n"
+"Das Image braucht mehr Platz, als {{ARCH_OS_IMAGE_DEVICE}} hat. Wähle erneut Start mit einem größeren."
+
+#. told where the step stops itself with exit 12
+#: tasks/@write/device/task.yaml
+msgid ""
+"The USB stick is still in use\n"
+"\n"
+"Something still holds {{ARCH_OS_IMAGE_DEVICE}} open. Close it, or unplug the stick and plug it in again, then choose Start again."
+msgstr ""
+"Der USB-Stick wird noch benutzt\n"
+"\n"
+"Etwas hält {{ARCH_OS_IMAGE_DEVICE}} noch offen. Schließ es oder zieh den Stick ab und steck ihn wieder ein, dann wähle erneut Start."
+
+#. told where the step stops itself with exit 13
+#: tasks/@write/device/task.yaml
+msgid ""
+"Writing the USB stick failed\n"
+"\n"
+"{{ARCH_OS_IMAGE_DEVICE}} stopped taking the image. It may be faulty or was pulled out: choose Start again, or try another stick."
+msgstr ""
+"Der USB-Stick ließ sich nicht beschreiben\n"
+"\n"
+"{{ARCH_OS_IMAGE_DEVICE}} hat aufgehört, das Image anzunehmen. Er ist womöglich defekt oder wurde abgezogen: Wähle erneut Start oder nimm einen anderen Stick."
 
 #. an action: its row, and the heading over its page
 #: actions/installed-system/action.yaml
@@ -186,33 +298,3 @@ msgstr "Ein USB-Datenträger zum Schreiben"
 #: actions/usb/action.yaml
 msgid "No USB device found. Plug a stick in and this carries on by itself."
 msgstr "Kein USB-Datenträger gefunden. Steck einen Stick ein, dann geht es von selbst weiter."
-
-msgid "No internet connection\n\nThe image and its checksum come from the release page. Connect this machine and choose Start again."
-msgstr "Keine Internetverbindung\n\nDas Image und seine Prüfsumme kommen von der Release-Seite. Verbinde diesen Rechner und wähle erneut Start."
-
-msgid "The release page does not answer\n\nGitHub does not hand out this release right now: try again in a few minutes. An image you built yourself is written with Verify checksum off in Setup."
-msgstr "Die Release-Seite antwortet nicht\n\nGitHub gibt dieses Release gerade nicht heraus: Versuch es in ein paar Minuten erneut. Ein selbst gebautes Image wird mit ausgeschaltetem „Prüfsumme abgleichen“ im Setup geschrieben."
-
-msgid "The download folder cannot be used\n\n{{ARCH_OS_DOWNLOAD_DIR}} cannot be created or written to. Choose another Download folder in Setup."
-msgstr "Der Download-Ordner ist nicht nutzbar\n\n{{ARCH_OS_DOWNLOAD_DIR}} lässt sich nicht anlegen oder beschreiben. Wähle im Setup einen anderen Download-Ordner."
-
-msgid "The download broke off\n\nThe release page stopped sending the image. Choose Start again to fetch it anew."
-msgstr "Der Download ist abgebrochen\n\nDie Release-Seite hat aufgehört, das Image zu senden. Wähle erneut Start, um es neu zu laden."
-
-msgid "There is no checksum to check the image against\n\nIts release publishes none, and the image was not written. Turn Verify checksum off in Setup to write it unchecked."
-msgstr "Es gibt keine Prüfsumme für das Image\n\nSein Release veröffentlicht keine, und das Image wurde nicht geschrieben. Schalte „Prüfsumme abgleichen“ im Setup aus, um es ungeprüft zu schreiben."
-
-msgid "The image is damaged\n\nIt does not match the checksum of its release and was deleted. Choose Start again to download it anew."
-msgstr "Das Image ist beschädigt\n\nEs passt nicht zur Prüfsumme seines Releases und wurde gelöscht. Wähle erneut Start, um es neu herunterzuladen."
-
-msgid "The USB stick is gone\n\n{{ARCH_OS_IMAGE_DEVICE}} is no longer plugged in. Plug it back in and choose Start again."
-msgstr "Der USB-Stick ist weg\n\n{{ARCH_OS_IMAGE_DEVICE}} steckt nicht mehr. Steck ihn wieder ein und wähle erneut Start."
-
-msgid "The USB stick is too small\n\nThe image needs more room than {{ARCH_OS_IMAGE_DEVICE}} has. Choose Start again with a larger one."
-msgstr "Der USB-Stick ist zu klein\n\nDas Image braucht mehr Platz, als {{ARCH_OS_IMAGE_DEVICE}} hat. Wähle erneut Start mit einem größeren."
-
-msgid "The USB stick is still in use\n\nSomething still holds {{ARCH_OS_IMAGE_DEVICE}} open. Close it, or unplug the stick and plug it in again, then choose Start again."
-msgstr "Der USB-Stick wird noch benutzt\n\nEtwas hält {{ARCH_OS_IMAGE_DEVICE}} noch offen. Schließ es oder zieh den Stick ab und steck ihn wieder ein, dann wähle erneut Start."
-
-msgid "Writing the USB stick failed\n\n{{ARCH_OS_IMAGE_DEVICE}} stopped taking the image. It may be faulty or was pulled out: choose Start again, or try another stick."
-msgstr "Der USB-Stick ließ sich nicht beschreiben\n\n{{ARCH_OS_IMAGE_DEVICE}} hat aufgehört, das Image anzunehmen. Er ist womöglich defekt oder wurde abgezogen: Wähle erneut Start oder nimm einen anderen Stick."
