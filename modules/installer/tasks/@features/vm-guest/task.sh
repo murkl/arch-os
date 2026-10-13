@@ -6,6 +6,12 @@ kvm | qemu)
     # halves; both units are static and started by udev.
     echo "detected QEMU"
     chroot_pacman_install spice-vdagent qemu-guest-agent
+    # The shared folders of GNOME Boxes, started by udev like the two above
+    # once the host offers them. It announces itself through avahi, which only
+    # a desktop runs.
+    if [ "$ARCH_OS_DESKTOP" != "none" ]; then
+        chroot_pacman_install phodav
+    fi
     ;;
 
 vmware)
