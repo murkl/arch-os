@@ -11,8 +11,8 @@ arch-chroot "$MNT" bootctl --esp-path=/boot list --json=short | grep -qF "archis
 
 grep -qxF "ARCH_OS_RECOVERY_KEYMAP='$(vconsole_keymap)'" "${MNT}/boot/EFI/arch-os-recovery/recovery.conf"
 
-# Its firmware entry starts the image on this disk's EFI partition, and is in
-# the firmware's menu but not in its order.
+# Its firmware entry starts the image on this disk's EFI partition, and is not
+# in the firmware's order.
 entries="$(efibootmgr)"
 esp="$(blkid -p -s PART_ENTRY_UUID -o value "$(boot_partition "$ARCH_OS_DISK")")"
 entry="$(awk -v esp="${esp,,}" -v efi="$(basename "$RECOVERY_EFI")" '

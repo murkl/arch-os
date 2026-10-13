@@ -9,7 +9,9 @@ cp "${image}/recovery.efi" "${MNT}${RECOVERY_EFI}"
 
 # An entry of its own in the firmware, outside its boot order: the firmware's
 # boot menu starts it on a machine whose keyboard never brings up the loader's.
-# Written from out here, like the loader's entry.
+# Not in the order, since an Insyde firmware (Dell XPS L421X) moves an entry it
+# finds there to the front of its own list and starts it every time. Written
+# from out here, like the loader's entry.
 # https://wiki.archlinux.org/title/Unified_kernel_image#Directly_from_UEFI
 loader="${RECOVERY_EFI#/boot}"
 efibootmgr --create-only --disk "$ARCH_OS_DISK" --part 1 --label "Arch OS Recovery" --loader "${loader//\//\\}"
