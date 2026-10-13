@@ -1,6 +1,5 @@
-# The images the firmware starts and the loader that starts them: a ram disk
-# with systemd-boot entries, or, where the chain is signed, a unified kernel
-# image found on its own. Why these hooks: docs/REFERENCE.md#the-boot-chain
+# The images the firmware starts and the loader that starts them. Why these
+# hooks and arguments: docs/REFERENCE.md#the-boot-chain
 # https://wiki.archlinux.org/title/Mkinitcpio#Common_hooks
 # https://wiki.archlinux.org/title/Systemd-boot
 
@@ -32,10 +31,13 @@ kernel_args() {
         args+=(quiet splash vt.global_cursor_default=0 loglevel=3 rd.udev.log_level=3 systemd.show_status=auto)
     fi
 
-    # Plymouth falls back to text for good once it finds a serial console, and
-    # a virtual machine is handed one without asking.
+    # Behind encryption the password comes first: the splash waits for the
+    # graphics driver, and up to 3 s, longer than a disk takes, for the question.
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
         args+=(plymouth.ignore-serial-consoles)
+        if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
+            args+=(plymouth.use-simpledrm=0 plymouth.splash-delay=3)
+        fi
     fi
 
     [ -n "$ARCH_OS_KERNEL_ARGS" ] && args+=("$ARCH_OS_KERNEL_ARGS")

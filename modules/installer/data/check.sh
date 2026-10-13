@@ -1,26 +1,12 @@
 #!/usr/bin/env bash
-# The names this Installer hands to other programs, against those programs' own
-# lists: the two lookup tables beside this file, and the packages its tasks
-# install.
+# The names the Installer hands to other programs, against those programs' own
+# lists: loadkeys, setfont and xkb fall back silently on a name they lack.
 #
 #   check.sh
 #
-# Every value in them is a name some other program has to recognise, and one it
-# does not costs nothing to write: loadkeys, setfont and the desktop's keyboard
-# configuration each fall back silently and leave the machine on a layout, a
-# font or a clock nobody chose. Both tables say "Validate against: ..." in their
-# own headers - this is that sentence, run.
-#
-# Keymaps are read off /usr/share/kbd/keymaps rather than out of localectl.
-# They are the same table, since that is where localectl reads them; the files
-# are the only one of the two that answers in a container, which is where this
-# also runs.
-#
-# The language column is deliberately not checked against the locales the C
-# library ships: an Arch container extracts almost none of them, so the check
-# would pass there without having looked - and a check that is green where
-# nothing could be read is worse than no check. A language nobody has spelled
-# right falls back to the American layout, which is loud enough.
+# Keymaps come from /usr/share/kbd/keymaps, which a container has where
+# localectl does not answer. Languages are not checked against glibc's locales,
+# which an Arch container leaves out, so that check would pass unread.
 set -euo pipefail
 
 # Byte comparison and A-Z meaning A-Z: a country is spelled the way reflector
@@ -80,15 +66,14 @@ while IFS=$'\t' read -r code country zone extra; do
     [[ "$code" =~ ^[A-Z][A-Z]$ ]] ||
         complain "countries: ${code} is not a two-letter territory code"
     [[ "$country" = "-" || "$country" =~ ^[A-Z] ]] ||
-        complain "countries: ${code} spells its country \"${country}\" - it is handed to reflector as it stands, so it is reflector's own spelling or a - where Arch has no mirror"
+        complain "countries: ${code} spells its country \"${country}\": reflector takes it as it stands, so it is reflector's own spelling, or - where Arch has no mirror"
     [ -f "/usr/share/zoneinfo/${zone}" ] ||
         complain "countries: ${code} names the time zone ${zone}, which tzdata does not have"
 done <countries
 
-# Every package a task names outright, and every list answer that is one,
-# against the repositories this system syncs: a name Arch dropped fails here
-# rather than in somebody's installation. Names put together at run time are
-# looked up by their task, which says so where one is missing.
+# Every package a task names outright, against the repositories: a name Arch
+# dropped fails here, not in an installation. Names built at run time are their
+# task's to look up.
 tasks=../tasks
 repos="$(pacman-conf --repo-list)"
 packages="$(

@@ -1,19 +1,8 @@
 #!/bin/bash
-# Every character that reaches the virtual console, against the fonts this image
-# loads before the interface draws on it.
+# Every character that reaches the console, in the files given and in what the
+# oak binary draws, against the fonts font.sh builds. See README.md.
 #
 #   glyphs.sh <oak> <file>...
-#
-# A Linux console has one font and that font has a fixed table of glyphs, so a
-# character outside it is a box on the screen - in whichever language it happens
-# to be in, which is not the one whoever wrote it reads. The fonts are built by
-# font.sh, as the images build them, so what is read is what ships.
-#
-# Two things reach that console and only one of them is in the files handed in.
-# The other is Oak's own interface, which is compiled into the binary, so the
-# binary is asked what it draws there rather than a copy of that being kept here.
-#
-#   https://github.com/murkl/oak/blob/main/docs/REFERENCE.md#translations
 set -eu
 
 # Code points are counted, not bytes: under the C locale bash would hand back
@@ -41,7 +30,7 @@ trap 'rm -rf "$FONTS"' EXIT
 "$(dirname "$0")/font.sh" "$FONTS"
 
 command -v psfgettable >/dev/null || {
-    echo "Error: psfgettable not found - install the kbd package" >&2
+    echo "Error: psfgettable not found: install the kbd package" >&2
     exit 1
 }
 
@@ -60,10 +49,7 @@ for font in "$FONTS"/*.psf.gz; do
         printf -v point 'u+%04x' "'${character}"
         grep -qxF "$point" <<<"$mapped" && continue
         echo "${point} ${character} is not in ${name} and would be a box on the console:" >&2
-        # Where it came from: the files that hold it, or the interface itself,
-        # which has none. Named either way, because the two are fixed in
-        # different places - a module's text is rewritten here, the font is what
-        # has to change for the interface.
+        # A module's text is fixed here, the interface's by changing the font.
         if grep -qF -- "$character" <<<"$INTERFACE_GLYPHS"; then
             echo "  the interface draws it - ${name} is the wrong font for this image" >&2
         fi

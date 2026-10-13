@@ -676,11 +676,6 @@ msgid "Set up Samba"
 msgstr ""
 
 #. the step, as the run lists it
-#: tasks/@finish/first-login/task.yaml
-msgid "Prepare the first login"
-msgstr ""
-
-#. the step, as the run lists it
 #: tasks/@finish/orphans/task.yaml
 msgid "Remove orphaned packages"
 msgstr ""
@@ -770,7 +765,7 @@ msgstr ""
 
 #. an action: what it does, under its row
 #: actions/restart/action.yaml
-msgid "Close this machine down and start it again."
+msgid "Shut this machine down and start it again."
 msgstr ""
 
 #. an action: its row, and the heading over its page
@@ -790,7 +785,7 @@ msgstr ""
 
 #. an action: what a no from it means
 #: actions/secure-boot-off/action.yaml
-msgid "Secure Boot is switched on. Turn it off in the firmware settings and start again - the installer can set it up again for you afterwards."
+msgid "Secure Boot is on. Turn it off in the firmware settings and start again. The Installer can set it up for you afterwards."
 msgstr ""
 
 #. an action: its row, and the heading over its page

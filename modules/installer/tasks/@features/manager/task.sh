@@ -3,10 +3,8 @@
 chroot_pacman_install pacman-contrib
 chroot_aur_install arch-os-manager
 
-# Its binaries fetched now rather than on first use. GUM unset so it ignores
-# this environment's copy, setsid because --init asks on /dev/tty. --init ends
-# on 2 when it worked, and nothing here may fail the installation: the manager
-# fetches the same itself when it is first opened.
+# Its binaries now rather than on first use, which fetches them all the same,
+# so nothing here fails the installation. --init ends on 2 when it worked.
 status=0
 as_user 'unset GUM; timeout 300 setsid --wait /usr/bin/arch-os --init' </dev/null || status=$?
 case "$status" in

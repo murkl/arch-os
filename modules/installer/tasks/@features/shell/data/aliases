@@ -29,7 +29,7 @@ alias ..="cd .."
 alias ...="cd ../.."
 
 # Editing a file that belongs to root, without running the editor as root:
-# sudoedit copies it out, opens it as you - your $EDITOR, your configuration -
+# sudoedit copies it out, opens it as you, with your $EDITOR and your configuration,
 # and copies it back as root afterwards. `sudo nano /etc/fstab` is the habit
 # this is here to replace.
 alias sv="sudoedit"

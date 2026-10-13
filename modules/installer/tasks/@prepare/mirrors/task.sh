@@ -22,7 +22,7 @@ rank_mirrors() {
     warnings="$(mktemp)"
 
     # reflector keeps a mirror that timed out, unranked, and exits 0 even when
-    # every one did - a list worse than the shipped one, which opens on Arch's CDN.
+    # every one did: a list worse than the shipped one, which opens on Arch's CDN.
     if timeout 120 reflector "${args[@]}" --save "$ranked" 2>"$warnings" && [ -s "$ranked" ]; then
         servers="$(grep -c '^Server' "$ranked" || true)"
         unrated="$(grep -c 'failed to rate' "$warnings" || true)"

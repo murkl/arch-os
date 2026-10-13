@@ -50,16 +50,11 @@ chroot_pacman_install "${packages[@]}"
 
 [ "$nvidia" = "true" ] || return 0
 
-# nvidia-utils sets modeset and suspend itself; what is left is early loading,
-# so GDM never starts on the firmware's framebuffer.
+# The driver sets modeset and keeps video memory over a suspend by itself; what
+# is left is early loading, so GDM never starts on the firmware's framebuffer.
 # https://wiki.archlinux.org/title/NVIDIA#Early_loading
 mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
 render "$(where)/30-graphics.conf" MODULES="nvidia nvidia_modeset nvidia_uvm nvidia_drm" \
     >"${MNT}/etc/mkinitcpio.conf.d/30-graphics.conf"
-
-# GDM refuses Wayland on this driver unless its rule is masked.
-# https://wiki.archlinux.org/title/GDM#Wayland_and_the_proprietary_NVIDIA_driver
-mkdir -p "${MNT}/etc/udev/rules.d"
-[ -f "${MNT}/etc/udev/rules.d/61-gdm.rules" ] || ln -s /dev/null "${MNT}/etc/udev/rules.d/61-gdm.rules"
 
 arch-chroot "$MNT" mkinitcpio -P

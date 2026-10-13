@@ -65,16 +65,6 @@ msgstr "Verschlüsselung"
 msgid "Whether that disk is encrypted with LUKS."
 msgstr "Ob dieser Datenträger mit LUKS verschlüsselt ist."
 
-#. ARCH_OS_RECOVERY_SECURE_BOOT: the question
-#: module.yaml
-msgid "Secure Boot"
-msgstr "Secure Boot"
-
-#. ARCH_OS_RECOVERY_SECURE_BOOT: what it means
-#: module.yaml
-msgid "Whether the firmware starts only signed images."
-msgstr "Ob die Firmware nur signierte Images startet."
-
 #. ARCH_OS_RECOVERY_PASSWORD: the question
 #: module.yaml actions/update-install/action.yaml
 msgid "Encryption password"
@@ -235,9 +225,9 @@ msgid "Internet"
 msgstr "Internet"
 
 #. an action: its row, and the heading over its page
-#: actions/own-partition/action.yaml
-msgid "The Recovery's own partition"
-msgstr "Die eigene Partition des Recovery"
+#: actions/recovery-to-update/action.yaml
+msgid "A Recovery to update"
+msgstr "Ein Recovery zum Aktualisieren"
 
 #. an action: its row, and the heading over its page
 #: actions/restart/action.yaml
@@ -246,7 +236,7 @@ msgstr "Neu starten"
 
 #. an action: what it does, under its row
 #: actions/restart/action.yaml
-msgid "Close this machine down and start it again."
+msgid "Shut this machine down and start it again."
 msgstr "Den Rechner herunterfahren und neu starten."
 
 #. an action: its row, and the heading over its page
@@ -302,13 +292,13 @@ msgstr "Recovery aktualisieren"
 
 #. an action: what it does, under its row
 #: actions/update/action.yaml
-msgid "Look for a newer Recovery of this release series, and install it after asking."
-msgstr "Nach einem neueren Recovery dieser Release-Reihe suchen und es nach Rückfrage installieren."
+msgid "Look for the newest Recovery of this release series, and install it after asking."
+msgstr "Nach dem neuesten Recovery dieser Release-Reihe suchen und es nach Rückfrage installieren."
 
 #. an action: what a no from it means
 #: actions/update/action.yaml
-msgid "The internet connection was lost before the newer Recovery could be installed. Join a network with Configure Wi-Fi above, or plug in a cable."
-msgstr "Die Internetverbindung ist abgebrochen, bevor das neuere Recovery installiert werden konnte. Verbinde dich oben über „WLAN konfigurieren“ oder steck ein Kabel ein."
+msgid "The internet connection was lost before the Recovery could be installed. Join a network with Configure Wi-Fi above, or plug in a cable."
+msgstr "Die Internetverbindung ist abgebrochen, bevor das Recovery installiert werden konnte. Verbinde dich oben über „WLAN konfigurieren“ oder steck ein Kabel ein."
 
 #. read once the action is done, and held on until somebody has
 #: actions/update/action.yaml
@@ -323,24 +313,24 @@ msgstr ""
 
 #. an action: its row, and the heading over its page
 #: actions/update-install/action.yaml
-msgid "Install the newer Recovery"
-msgstr "Neueres Recovery installieren"
+msgid "Install the newest Recovery"
+msgstr "Neuestes Recovery installieren"
 
 #. an action: what a no from it means
 #: actions/update-install/action.yaml
-msgid "Installing the newer Recovery failed. Until it has run through, the Recovery may not start from its partition - the log says how far it got."
-msgstr "Das neuere Recovery konnte nicht installiert werden. Bis die Installation durchgelaufen ist, startet das Recovery womöglich nicht von seiner Partition - das Log zeigt, wie weit sie kam."
+msgid "Installing the Recovery failed. Until it goes through, the Recovery on the disk may not start. Choose Update the Recovery again. The log shows how far it got."
+msgstr "Das Recovery konnte nicht installiert werden. Bis die Installation durchläuft, startet das Recovery auf dem Datenträger womöglich nicht. Wähle erneut „Recovery aktualisieren“. Das Log zeigt, wie weit sie kam."
 
 #. asked before the action does its work
 #: actions/update-install/action.yaml
 msgid ""
-"Install the newer Recovery over this one?\n"
+"Install the newest Recovery of this release series?\n"
 "\n"
-"It is downloaded, held to the checksum of its release and written to the Recovery's partition. The new one starts with the next restart."
+"It is downloaded, held to the checksum of its release and written to the Recovery's partition. It starts with the next restart."
 msgstr ""
-"Das neuere Recovery über dieses installieren?\n"
+"Das neueste Recovery dieser Release-Reihe installieren?\n"
 "\n"
-"Es wird heruntergeladen, mit der Prüfsumme seines Releases abgeglichen und auf die Partition des Recovery geschrieben. Das neue startet beim nächsten Neustart."
+"Es wird heruntergeladen, mit der Prüfsumme seines Releases abgeglichen und auf die Partition des Recovery geschrieben. Es startet beim nächsten Neustart."
 
 #. read once the action is done, and held on until somebody has
 #: actions/update-install/action.yaml
@@ -358,11 +348,11 @@ msgstr ""
 msgid ""
 "The download broke off\n"
 "\n"
-"The release page stopped sending the newer Recovery. Nothing was changed; try again."
+"The release page stopped sending the Recovery. Nothing was changed; try again."
 msgstr ""
 "Der Download ist abgebrochen\n"
 "\n"
-"Die Release-Seite hat aufgehört, das neuere Recovery zu senden. Es wurde nichts geändert; versuch es erneut."
+"Die Release-Seite hat aufgehört, das Recovery zu senden. Es wurde nichts geändert; versuch es erneut."
 
 #. told where the action stops itself with exit 11
 #: actions/update-install/action.yaml
@@ -378,13 +368,13 @@ msgstr ""
 #. told where the action stops itself with exit 12
 #: actions/update-install/action.yaml
 msgid ""
-"The newer Recovery does not fit\n"
+"The Recovery does not fit\n"
 "\n"
-"It is larger than its partition and was not installed. The Recovery you have stays and keeps working."
+"It is larger than its partition and was not installed. The Recovery on the disk stays as it is."
 msgstr ""
-"Das neuere Recovery passt nicht\n"
+"Das Recovery passt nicht\n"
 "\n"
-"Es ist größer als seine Partition und wurde nicht installiert. Dein bisheriges Recovery bleibt und funktioniert weiter."
+"Es ist größer als seine Partition und wurde nicht installiert. Das Recovery auf dem Datenträger bleibt, wie es ist."
 
 #. told where the action stops itself with exit 13
 #: actions/update-install/action.yaml
@@ -397,10 +387,10 @@ msgstr ""
 "\n"
 "Seine Partition hat nicht behalten, was geschrieben wurde. Das System startet wie bisher, das Recovery erst wieder nach einem Update, das durchläuft: Versuch es erneut. Ein Datenträger, der sich immer wieder weigert, ist womöglich defekt."
 
-#. ARCH_OS_RECOVERY_KEYS_PASSWORD: what it means
+#. ARCH_OS_RECOVERY_UPDATE_PASSWORD: what it means
 #: actions/update-install/action.yaml
-msgid "Secure Boot starts only a Recovery signed with this system's keys, and they are on the encrypted disk. Asked right before the update and never written to a file."
-msgstr "Secure Boot startet nur ein Recovery, das mit den Schlüsseln dieses Systems signiert ist, und die liegen auf dem verschlüsselten Datenträger. Es wird direkt vor der Aktualisierung abgefragt und nie in eine Datei geschrieben."
+msgid "Opens the system, whose own keys sign the new Recovery where it signs its boot chain. Asked right before the update and never written to a file."
+msgstr "Öffnet das System, dessen eigene Schlüssel das neue Recovery signieren, wo es seine Startkette signiert. Wird direkt vor der Aktualisierung abgefragt und nie in eine Datei geschrieben."
 
 #. an action: its row, and the heading over its page
 #: actions/wifi/action.yaml

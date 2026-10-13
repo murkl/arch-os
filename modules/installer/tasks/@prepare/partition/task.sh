@@ -29,7 +29,7 @@ if command -v mdadm >/dev/null; then
     mdadm --stop --scan || true
 fi
 
-# Anything else still holding a partition - opened by hand, swap on it - keeps
+# Anything else still holding a partition (opened by hand, swap on it) keeps
 # the kernel from reading the new table. Raw output joins two mount points of
 # one partition with an escaped newline.
 held="$(lsblk -nrpo NAME,TYPE,MOUNTPOINTS "$ARCH_OS_DISK" | awk -F'[ ]' '

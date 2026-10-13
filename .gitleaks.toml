@@ -1,0 +1,7 @@
+# What the repository holds, not what a build leaves in it: an image's binaries
+# read as keys. The folders are BUILD_OUTPUT and .oak/ in the Makefile.
+[extend]
+useDefault = true
+
+[[allowlists]]
+paths = ['''^(dist|\.dev|\.oak|iso/archiso|iso/download)/''']

@@ -1,19 +1,6 @@
 #!/usr/bin/env bash
-# Start Arch OS. The systemd unit on tty1 runs this, and so do `installer` and
-# `recovery` beside it, which are the same run with the module already named.
-#
-# The console's palette is the kernel's, set on the command line in
-# iso/build.sh. The font is set here, right before the interface draws: it
-# decides which glyphs exist. Not worth refusing to start over, so it may fail.
-#
-# The font is Terminus Bold, built by iso/font.sh, in the size the kernel picks
-# for its own font, as a stock Arch ISO shows it - see iso/README.md.
-# `make glyphs-check` holds every one to what this image puts on the console.
-#
-# Oak looks for oak.yaml and the modules folder beside its own binary, so it is
-# started out of the folder it was installed into - every answer file and log
-# then lands beside them, and starting it again from any prompt picks up where it
-# left off.
+# Starts Arch OS, for the unit on tty1 and the launchers beside this. The font
+# goes first, since it decides which glyphs exist: iso/README.md.
 set -eu
 
 SIZES="32 16"
@@ -32,10 +19,8 @@ if [[ "$(tty)" == /dev/tty[0-9]* ]]; then
     setfont "arch-os-${size}" || true
 fi
 
-# Plymouth locks a console's settings while it holds it, and a lock left behind
-# keeps every key on the screen rather than handing it on. stty reads its change
-# back, so a locked terminal ends here instead of in an interface that cannot be
-# worked.
+# A lock Plymouth left on the console keeps every key on the screen. stty reads
+# its change back, so a locked terminal ends here.
 if [ -t 0 ]; then
     saved="$(stty -g)"
     stty raw -echo || {

@@ -20,7 +20,7 @@ fi
 # the account's, never in /etc, which belongs to the package.
 src="$(where)/${command}"
 while IFS= read -r file; do
-    for home in "${MNT}/root" "${MNT}/home/${ARCH_OS_USERNAME}"; do
+    for home in "${MNT}/root" "$(user_home)"; do
         mkdir -p "$(dirname "${home}/${file}")"
         render "${src}/${file}" >"${home}/${file}"
     done

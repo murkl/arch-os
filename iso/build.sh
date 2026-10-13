@@ -1,25 +1,15 @@
 #!/bin/bash
-# A built release turned into the two images Arch OS starts from, each a stock
-# Arch profile patched so it boots straight into the interface:
-#
-#   the Recovery   `baseline` and what recovery/ adds to it: the smallest Arch
-#                  there is, with nothing on it but the Recovery. Two files,
-#                  which the Installer writes to the disk it installs to
-#   the ISO        `releng`, the Arch live image, with every module on it and,
-#                  with ISO_RECOVERY=true, the Recovery beside them
+# Builds the Recovery image from `baseline` and the ISO from `releng`, each
+# patched to boot into Arch OS, beside the release they carry. See README.md.
 #
 #   ISO_RECOVERY=true|false build.sh <release-dir>
-#
-# Both land beside that release, and what they are called is read out of the
-# release itself.
 set -eu
 
 # ////////////////////////////////////////////////////////////////////////////
 # CONFIGURATION
 # ////////////////////////////////////////////////////////////////////////////
 
-# Resolved before anything moves, because everything below is relative to this
-# script rather than to wherever it was started from.
+# Resolved before the cd: everything below is relative to this script.
 [ "$#" -eq 1 ] || {
     echo "usage: $0 <release-dir>" >&2
     exit 1
@@ -29,8 +19,7 @@ DIST_DIR="$(dirname "$RELEASE_DIR")"
 RECOVERY_DIR="${RELEASE_DIR}-recovery"
 cd "$(dirname "$0")"
 
-# mkarchiso has to run as root. Empty when there is nothing to elevate, which is
-# the case in CI.
+# mkarchiso runs as root. Empty where this already is, as in CI.
 SUDO=""
 [ "$(id -u)" -eq 0 ] || SUDO="sudo"
 
@@ -41,45 +30,17 @@ PROFILES_DIR="./archiso"
 RECOVERY_PROFILE="${PROFILES_DIR}/recovery"
 ISO_PROFILE="${PROFILES_DIR}/iso"
 
-# mkarchiso's scratch space, outside the repository: pacstrap mounts /proc and
-# /sys inside it, and anything on the desktop that walks a project folder holds
-# those open long enough for the unmount, and the build, to fail.
+# Outside the repository: a desktop indexer walking it holds pacstrap's mounts
+# open and fails the build.
 WORK_DIR="$(realpath -m "${WORK_DIR:-/var/tmp/arch-os-iso-work}")"
 
-# The bootsplash theme, vendored into both images at the commit named here
-# rather than at whatever its default branch holds on the day of the build, so a
-# desk and CI build the same images. Raised by hand, like OAK_VERSION in the
-# Makefile. PLYMOUTH_THEME_SRC points at a theme folder of one's own instead,
-# for working on the theme itself.
+# Pinned, so a desk and CI build the same images. Raised by hand, like
+# OAK_VERSION.
 PLYMOUTH_THEME_REPO="https://github.com/murkl/plymouth-theme-arch-os"
 PLYMOUTH_THEME_REF="147e3c97d710db4606025b3829f076ca5d8ecc3b"
 
-# `splash` tells plymouth to show itself; the rest is the boot log getting out of
-# its way. https://wiki.archlinux.org/title/Silent_boot
-#
-# Plymouth forces its text plugin the moment it finds a serial console and never
-# looks for a screen again, and a virtual machine is handed one without asking -
-# the installed system's kernel_args says the same. Measured under QEMU: without
-# it the Recovery boots as a wall of text.
-#
-# fbcon=nodefer puts the console on the screen as it boots, not once the first
-# character is drawn on it. Taken over that late, it appears only once the
-# interface starts, and udev then runs systemd-vconsole-setup on it while the
-# interface is setting it up - as the journal under QEMU shows.
-#
-# The console's sixteen colour slots are the kernel's default palette, so every
-# console is drawn in Nord from the first frame, and Plymouth hands back the
-# palette it found: the splash and the interface share one field. The interface
-# works in slots, and these decide what the slots look like
-# (https://www.nordtheme.com):
-#
-#   slot  0     1   2     3      4    5       6    7     8    9    10     11      12     13       14    15
-#   role  bezel red green yellow blue magenta cyan white grey red+ green+ yellow+ blue+  magenta+ cyan+ white+
-#   nord  0     11  14    13     9    15      8    4     dim  11   14     13      accent 15       7     6
-#
-# The bezel is nord0, the splash's background. Grey is the interface's own dim
-# (#aeb5c3), since nord3 cannot be read on nord0, and bright blue its accent, Arch
-# blue lightened to read on nord0 (#45a9da).
+# The console's palette, slot by slot, and why each boot argument is there:
+# README.md#the-console.
 CONSOLE_RED=46,191,163,235,129,180,136,216,174,191,163,235,69,180,143,236
 CONSOLE_GRN=52,97,190,203,161,142,192,222,181,97,190,203,169,142,188,239
 CONSOLE_BLU=64,106,140,139,193,173,208,233,195,106,140,139,218,173,187,244
@@ -92,8 +53,7 @@ TEMP_DIR="$(mktemp -d)"
 # CLEANUP
 # ////////////////////////////////////////////////////////////////////////////
 
-# A run interrupted between pacstrap's mounts and its teardown leaves them
-# behind, and every later run then fails on those. Deepest first, and lazily.
+# What an interrupted run left mounted fails every later one. Deepest first.
 unmount_leftovers() {
     findmnt -rno TARGET | grep "^$(realpath -m "$1")/" | sort -r | while read -r target; do
         echo "unmounting leftover: ${target}"
@@ -101,12 +61,8 @@ unmount_leftovers() {
     done
 }
 
-# mkarchiso writes as root, and a root-owned file inside a checkout breaks
-# everything that walks it afterwards, so nothing root-owned survives this
-# script. A build that worked takes the profiles with it; one that failed keeps
-# them - there is nothing else to read a failure out of - but hands them back.
-# The temporary folder goes either way, and with it the key the Recovery was
-# signed with.
+# Nothing root-owned stays in the checkout. A failed build keeps its profiles to
+# read, handed back; the key the Recovery was signed with goes either way.
 cleanup() {
     status=$?
     set +e
@@ -116,7 +72,7 @@ cleanup() {
     if [ "$status" -eq 0 ]; then
         ${SUDO} rm -rf "${PROFILES_DIR}"
     elif [ -d "${PROFILES_DIR}" ]; then
-        echo "build failed - the profiles are left at ${PROFILES_DIR}"
+        echo "build failed, the profiles are left at ${PROFILES_DIR}"
         ${SUDO} chown -R "$(id -u):$(id -g)" "${PROFILES_DIR}"
     fi
     exit "$status"
@@ -129,9 +85,7 @@ trap cleanup EXIT
 
 # Each takes the profile it patches as its first argument.
 
-# profiledef.sh is bash that mkarchiso sources, so a line appended to it wins
-# over the stock assignment, whatever shape that one has. On a line of its own,
-# even where the file does not end on one.
+# mkarchiso sources profiledef.sh, so an appended line wins over the stock one.
 profiledef() {
     local profile="$1"
     shift
@@ -139,9 +93,7 @@ profiledef() {
     echo >>"${profile}/profiledef.sh"
 }
 
-# The Oak binary with oak.yaml, oak.sh and the modules handed over beside it -
-# the only place it looks. /opt/arch-os is what the systemd unit in src/
-# starts, and what the launchers on the path beside it run out of.
+# Oak looks for oak.yaml, oak.sh and the modules beside its own binary.
 install_arch_os() {
     local profile="$1" opt="$1/airootfs/opt/arch-os"
     shift
@@ -152,9 +104,7 @@ install_arch_os() {
     cp -r "$@" "${opt}/modules/"
 }
 
-# mkarchiso copies the profile without its modes, so everything that has to be
-# executable in the image is named in profiledef.sh: the Oak binary and every
-# launcher on the path. Run once the profile holds all of them.
+# mkarchiso copies the profile without its modes. Run once every launcher is in.
 make_executable() {
     local file
     for file in "$1/airootfs/opt/arch-os/oak" "$1/airootfs/usr/local/bin/"*; do
@@ -162,11 +112,8 @@ make_executable() {
     done
 }
 
-# The theme is vendored rather than taken from the AUR: building an AUR package
-# needs makepkg, a build user and a network, none of which an image build should
-# need for a folder of PNGs. That one commit and nothing around it, fetched once
-# for both images. A checkout left in download/ by an earlier build is reused
-# only while it is still that commit.
+# Vendored rather than built from the AUR, which needs makepkg and a build user
+# for a folder of PNGs. An earlier checkout is reused while it is that commit.
 fetch_theme() {
     [ -z "${PLYMOUTH_THEME_SRC:-}" ] || return 0
     local theme="${DOWNLOAD_DIR}/plymouth-theme"
@@ -188,10 +135,8 @@ install_bootsplash() {
     mkdir -p "${profile}/airootfs/usr/share/plymouth/themes"
     cp -rT "${PLYMOUTH_THEME_SRC}" "$theme"
 
-    # What is starting, as a line under the spinner: two-step draws a mode's
-    # SubTitle on every screen it finds, at TitleVerticalAlignment. Moved under
-    # the spinner, which only the modes with a progress bar, never shown here,
-    # would mind.
+    # What is starting, as a line under the spinner: two-step draws the SubTitle
+    # at TitleVerticalAlignment, which only a progress bar, never shown here, uses.
     sed -i -e 's/^TitleVerticalAlignment=.*/TitleVerticalAlignment=.8/' \
         -e "/^\[boot-up\]$/a SubTitle=$2" "${theme}/arch-os.plymouth"
     if ! grep -qxF "SubTitle=$2" "${theme}/arch-os.plymouth" || ! grep -qxF "TitleVerticalAlignment=.8" "${theme}/arch-os.plymouth"; then
@@ -200,7 +145,7 @@ install_bootsplash() {
     fi
 
     # plymouth-set-default-theme would theme the build host, so the config is
-    # written and the hook added by hand - which is all that command does.
+    # written and the hook added by hand, which is all that command does.
     mkdir -p "${profile}/airootfs/etc/plymouth"
     printf '[Daemon]\nTheme=arch-os\n' >"${profile}/airootfs/etc/plymouth/plymouthd.conf"
 
@@ -210,10 +155,8 @@ install_bootsplash() {
     grep -q 'plymouth' "$hooks" || sed -i 's/^HOOKS=(\(base [a-z]*\)/HOOKS=(\1 plymouth/' "$hooks"
     grep -q 'plymouth' "$hooks" || { echo "Error: no HOOKS=(base ...) line in '${hooks}' to add plymouth to" && exit 1; }
 
-    # A live image counts every boot as its first, so systemd-firstboot runs in
-    # the middle of the splash and resets the console under it, which blinks the
-    # splash out. Measured under QEMU, with the console there from the start. It
-    # asks nothing here, since the image comes configured.
+    # On a live image every boot is the first, and systemd-firstboot resets the
+    # console under the splash. The image comes configured, so it asks nothing.
     mkdir -p "${profile}/airootfs/etc/systemd/system"
     ln -sf /dev/null "${profile}/airootfs/etc/systemd/system/systemd-firstboot.service"
 }
@@ -238,7 +181,7 @@ echo "### Initialize Build"
 
 # Asked outright, so a build never guesses: see ISO_RECOVERY in the Makefile.
 [[ ${ISO_RECOVERY:-} =~ ^(true|false)$ ]] || {
-    echo "Error: ISO_RECOVERY is '${ISO_RECOVERY:-}', not true or false - see the Makefile" >&2
+    echo "Error: ISO_RECOVERY is '${ISO_RECOVERY:-}', not true or false, see the Makefile" >&2
     exit 1
 }
 
@@ -255,7 +198,7 @@ done
 # back: a build that would change the machine it runs on says so instead.
 for tool in mkarchiso:archiso ukify:systemd-ukify mkfs.erofs:erofs-utils diff:diffutils modinfo:kmod; do
     command -v "${tool%%:*}" >/dev/null || {
-        echo "Error: ${tool%%:*} not found - install the ${tool#*:} package" >&2
+        echo "Error: ${tool%%:*} not found: install the ${tool#*:} package" >&2
         exit 1
     }
 done
@@ -286,11 +229,8 @@ fetch_theme
 echo "### Build the Recovery"
 cp -r /usr/share/archiso/configs/baseline/. "$RECOVERY_PROFILE"
 
-# baseline is made to be a guest in somebody's cloud, and switches on ssh,
-# cloud-init, a network and the agents of four hypervisors. Everything it starts
-# goes, and the Recovery starts itself and a cable's network, which recovery/
-# switches on again: a cable plugged in is a network asked for. The wireless
-# daemon waits for a card to be asked about - see wifi_station in oak.sh.
+# baseline is a cloud guest that starts ssh, cloud-init and four hypervisors'
+# agents. All of it goes; recovery/ starts the Recovery and a cable's network.
 rm -rf "${RECOVERY_PROFILE}/airootfs/etc/systemd/system" \
     "${RECOVERY_PROFILE}/airootfs/etc/systemd/network" \
     "${RECOVERY_PROFILE}/airootfs/etc/systemd/networkd.conf.d" \
@@ -309,18 +249,12 @@ install_bootsplash "$RECOVERY_PROFILE" "Booting Recovery..."
 start_on_tty1 "$RECOVERY_PROFILE"
 name_image "$RECOVERY_PROFILE" arch-os-recovery
 
-# The partition below is built out of an erofs, whatever baseline turns to.
-# Without baseline's ztailpacking: erofs-utils 1.9.4 wrote ten of linux 7.2.9's
-# modules corrupt with it, as the read-back below found.
+# Without ztailpacking: erofs-utils 1.9.4 wrote ten of linux 7.2.9's modules
+# corrupt with it, as the read-back below found.
 profiledef "$RECOVERY_PROFILE" 'airootfs_image_type="erofs"' "airootfs_image_tool_options=('-zlzma,109')"
 
-# The root file system is signed with a key made for this build and thrown away
-# with it, and the certificate goes into the ram disk - which the boot loader
-# starts as one image with the kernel and the command line, signed with the
-# machine's own keys where Secure Boot is on. So nothing on the partition starts
-# that this build did not make. From 1970 to 9999, because openssl holds a
-# signature to the clock, and a machine whose clock battery died is still one
-# to be repaired.
+# A key for this build alone, so nothing on the partition starts that it did
+# not make. Valid from 1970, for a machine whose clock battery died.
 openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes \
     -subj "/CN=Arch OS Recovery ${VERSION}" \
     -not_before 19700101000000Z -not_after 99991231235959Z \
@@ -353,9 +287,8 @@ case "$compared" in
 esac
 ${SUDO} rm -rf "$readback"
 
-# Every command its scripts call is on it, and recovery/pacman.conf took nothing
-# from the kernel that more than graphics passthrough, a camera or an
-# accelerator needs.
+# Every command its scripts call is on it, and recovery/pacman.conf took no
+# module a repair may load.
 for command in arch-chroot blkid blockdev btrfs cryptsetup curl fuser ip iwctl loadkeys localectl lsblk mount mountpoint setfont sha256sum swapoff tar umount; do
     [ -x "${recovery_root}/usr/bin/${command}" ] || { echo "Error: the Recovery has no ${command}" >&2 && exit 1; }
 done
@@ -380,9 +313,7 @@ if [ -n "$unexpected" ]; then
     exit 1
 fi
 
-# The partition: a read-only file system holding the root file system and its
-# signature where the ram disk looks for them, found by a UUID made for this
-# build - so no other disk's partition can be taken for it.
+# Found by a UUID made for this build, so no other partition is taken for it.
 uuid="$(cat /proc/sys/kernel/random/uuid)"
 mkdir -p "${TEMP_DIR}/partition/arch/x86_64"
 cp "${netboot}/x86_64/airootfs.erofs" "${netboot}/x86_64/airootfs.erofs.cms.sig" "${TEMP_DIR}/partition/arch/x86_64/"
@@ -390,12 +321,8 @@ rm -rf "$RECOVERY_DIR"
 mkdir -p "$RECOVERY_DIR"
 mkfs.erofs --quiet --all-root -U "$uuid" "${RECOVERY_DIR}/recovery.img" "${TEMP_DIR}/partition"
 
-# The image the boot loader starts it with. copytoram, so nothing of the disk is
-# held while the Recovery works on it. nomodeset, so the screen the firmware set
-# up is the one it draws on: no graphics driver, and no firmware on the image
-# for one to need - and plymouth draws on that screen at once, where it would
-# otherwise wait for a driver that never comes. What the boot menu calls it is
-# its os-release.
+# copytoram frees the disk for the repair; nomodeset draws on the firmware's
+# screen, which needs no graphics driver. The boot menu shows its os-release.
 cat >"${TEMP_DIR}/os-release" <<EOF
 NAME="Arch OS Recovery"
 PRETTY_NAME="Arch OS Recovery"
@@ -418,10 +345,8 @@ du -h "${RECOVERY_DIR}/"*
 echo "### Build the ISO"
 cp -r /usr/share/archiso/configs/releng/. "$ISO_PROFILE"
 
-# The stock package list outlives the repositories it names, and pacstrap
-# refuses the whole list over the one name it cannot find. What is gone is taken
-# out here and said out loud, so the image is one package short rather than
-# missing.
+# pacstrap refuses the whole list over one name the repositories dropped, so
+# that name goes, said out loud.
 echo "### Check Packages"
 ISO_PACKAGES="${ISO_PROFILE}/packages.x86_64"
 DROPPED="$(comm -23 \
@@ -432,9 +357,8 @@ if [ -n "$DROPPED" ]; then
     grep -vxF "$DROPPED" "$ISO_PACKAGES" >"${TEMP_DIR}/packages" && mv "${TEMP_DIR}/packages" "$ISO_PACKAGES"
 fi
 
-# Every module the release holds, and where asked the Recovery beside them as
-# the Installer writes it - see recovery_image in oak.sh. Without it the
-# Installer fetches the Recovery of its release.
+# Without the Recovery beside them, the Installer fetches it: recovery_image in
+# oak.sh.
 install_arch_os "$ISO_PROFILE" "${RELEASE_DIR}/modules/"*
 if [ "$ISO_RECOVERY" = "true" ]; then
     mkdir -p "${ISO_PROFILE}/airootfs/opt/arch-os-recovery"
@@ -444,13 +368,10 @@ make_executable "$ISO_PROFILE"
 install_bootsplash "$ISO_PROFILE" "Booting Installer..."
 start_on_tty1 "$ISO_PROFILE"
 
-# Networking is left as the Arch ISO ships it: iwd and systemd-networkd, already
-# enabled, and a cable weighed above a wireless network. A machine with no link
-# is held in front of the Installer's work until it has one - see
-# actions/internet in the Installer.
+# Networking stays as the Arch ISO ships it.
 
 # The splash and a quiet boot on the entry that starts by itself, the console's
-# palette and font on every entry that starts Linux - the screen reader's too.
+# palette and font on every entry that starts Linux, the screen reader's too.
 entries="${ISO_PROFILE}/efiboot/loader/entries"
 grep -qs '^linux ' "$entries"/01-archiso-linux*.conf || { echo "Error: releng has no boot entry 01-archiso-linux*.conf to add the boot arguments to" && exit 1; }
 for entry in "$entries"/*.conf; do
@@ -464,14 +385,8 @@ loader="${ISO_PROFILE}/efiboot/loader/loader.conf"
 sed -i '/^timeout/d' "$loader"
 printf '\ntimeout 0\n' >>"$loader"
 
-# A prompt on this image is reached by leaving Arch OS or by it failing, and
-# either way the first question is how to get back to it. Both files, because
-# they are shown at different moments: /etc/issue before the login, /etc/motd
-# after it.
-#
-# The boot hides the cursor on every console, and agetty reads \e as an escape:
-# the issue shows it again before each login.
-# https://wiki.archlinux.org/title/Silent_boot
+# Both say how to get back, before the login and after it. The issue shows the
+# cursor again, which the boot hides on every console.
 cat >"${ISO_PROFILE}/airootfs/etc/issue" <<'EOF'
 \e[?25hArch OS live environment. Type installer or recovery to start again.
 
@@ -508,9 +423,7 @@ profiledef "$ISO_PROFILE" 'airootfs_image_type="squashfs"' \
 # would only offer a boot that ends in a refusal.
 profiledef "$ISO_PROFILE" "bootmodes=('uefi.systemd-boot')"
 
-# How the kernel finds the medium it booted from. A volume identifier is upper
-# case letters, digits and underscores, at most 32 of them, so anything else in
-# the version becomes an underscore.
+# A volume identifier is at most 32 upper case letters, digits and underscores.
 ISO_LABEL="$(printf 'ARCH_OS_%s' "$VERSION" | tr -c '[:alnum:]' '_' | tr '[:lower:]' '[:upper:]' | cut -c1-32)"
 profiledef "$ISO_PROFILE" "iso_label=\"${ISO_LABEL}\""
 

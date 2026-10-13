@@ -28,9 +28,8 @@ where() { printf '%s/data' "$(dirname "${BASH_SOURCE[1]}")"; }
 # THE ERRORS
 # ////////////////////////////////////////////////////////////////////////////
 
-# What a script stops itself with where it sees why it cannot go on, put into
-# words under errors: in each module.yaml. A unit's own statuses start at 10,
-# in the yaml beside it. Any other failure shows where the script broke.
+# What a script stops itself with where it cannot go on, put into words under
+# errors: in each module.yaml. A unit's own statuses start at 10.
 # https://github.com/murkl/oak/blob/main/docs/REFERENCE.md#stopping-on-purpose
 export EXIT_OFFLINE=3     # the internet is out of reach
 export EXIT_UNREACHABLE=4 # the internet works, the release page does not answer
@@ -48,18 +47,20 @@ product_dir() { dirname "${BASH_SOURCE[0]}"; }
 # The release this program is: what a module fetches is what was tested with it.
 release_version() { sed -n 's/^version:[[:space:]]*//p' "$(product_dir)/oak.yaml"; }
 
-# A release as GitHub describes it: tags/v1.2.3 or latest. Fails where it is out
-# of reach.
+# Releases as GitHub describes them: tags/v1.2.3 for one, nothing for the
+# newest hundred. Fails where it is out of reach.
 release_json() {
-    fetch_url -sS --max-time 20 "https://api.github.com/repos/${REPO}/releases/$1"
+    local path="releases?per_page=100"
+    [ -z "${1:-}" ] || path="releases/$1"
+    fetch_url -sS --max-time 20 "https://api.github.com/repos/${REPO}/${path}"
 }
 
-# The download in a release's JSON on stdin whose name ends in $1 and its
-# sha256, as two words. One field to a line, however GitHub lays the JSON out.
+# Every download in the releases' JSON on stdin whose name ends in $1, with its
+# sha256, a line each. One field to a line, however GitHub lays the JSON out.
 asset_in() {
     tr ',' '\n' | awk -v suffix="$1" '
         function weigh() {
-            if (!found && url != "" && substr(url, length(url) - length(suffix) + 1) == suffix) { found = 1; print url, digest }
+            if (url != "" && substr(url, length(url) - length(suffix) + 1) == suffix) print url, digest
             url = ""; digest = ""
         }
         /"url": *"[^"]*\/releases\/assets\// { weigh() }
@@ -68,14 +69,18 @@ asset_in() {
         END { weigh() }'
 }
 
-# The version a release's JSON on stdin names, without the v of its tag.
-version_in() {
-    tr ',' '\n' | awk '!found && /"tag_name": *"/ { sub(/.*"tag_name": *"v?/, ""); sub(/".*/, ""); print; found = 1 }'
-}
-
-# Whether version $1 comes after $2.
+# Whether version $1 comes after $2, as semantic versioning orders them: a
+# pre-release before its release, 2.1.0-dev before 2.1.0.
 newer() {
-    [ "$1" != "$2" ] && [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n1)" = "$1" ]
+    local release1="${1%%-*}" release2="${2%%-*}"
+    if [ "$release1" != "$release2" ]; then
+        [ "$(printf '%s\n%s\n' "$release1" "$release2" | sort -V | tail -n1)" = "$release1" ]
+    elif [ "$1" = "$release1" ]; then
+        [ "$2" != "$release2" ]
+    else
+        [ "$2" != "$release2" ] && [ "$1" != "$2" ] &&
+            [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n1)" = "$1" ]
+    fi
 }
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -102,9 +107,8 @@ online_by_cable() {
     [ -n "$device" ] && [ ! -e "/sys/class/net/${device}/phy80211" ]
 }
 
-# The wireless card's station, or nothing. iwd is started only on the live image.
-# iwctl colours its table, so the colours come off before a column is read, and
-# the match is remembered rather than exited on: a closed pipe fails pipefail.
+# The Wi-Fi card's station, or nothing; iwd starts only on the live image. The
+# match is remembered rather than exited on, since a closed pipe fails pipefail.
 wifi_station() {
     local station=""
     has_wifi_card || return 0
@@ -137,8 +141,7 @@ join_wifi() {
 }
 
 # The one place a secret reaches a command line: iwctl takes it no other way
-# without an agent. Some cards take a wrong passphrase silently; no address is
-# the tell.
+# without an agent. No address is the tell for a wrong passphrase.
 join_wifi_with_passphrase() {
     iwctl --passphrase "$ARCH_OS_WIFI_PASSPHRASE" station "$(wifi_station)" connect "$ARCH_OS_WIFI_SSID"
     wifi_online
@@ -210,7 +213,7 @@ boot_partition() { part_of "$1" 1; }
 system_partition() { part_of "$1" 2; }
 recovery_partition() { part_of "$1" 3; }
 
-# The btrfs layout, subvolume and mount point - see docs/REFERENCE.md.
+# The btrfs layout, subvolume and mount point, see docs/REFERENCE.md.
 export BTRFS_OPTS="defaults,noatime,compress=zstd"
 
 btrfs_subvolumes() {
@@ -261,10 +264,9 @@ boot_preset() {
     place "$1/etc/mkinitcpio.d/${KERNEL}.preset" "$text"
 }
 
-# The system's two entries in the system at $1, the loader's configuration and
-# the unit that gives the entries their tries back. For kind $2: unified
-# images, or ram disks started with the command line $3. Each entry is in
-# place before any other name it went by is removed.
+# The system's two entries, the loader's configuration and the unit that gives
+# the entries their tries back, in the system at $1 for kind $2 and, for ram
+# disks, the command line $3. Each entry is in place before an old name goes.
 boot_entries() {
     local root="$1" kind="$2" cmdline="$3" data entries images text file old i
     local -a names=(main main-fallback) titles=("Arch OS" "Arch OS (fallback)") keys=(arch arch-fallback)
@@ -404,8 +406,8 @@ render() {
 # INSTALLING | The region, looked up and worked out
 # ////////////////////////////////////////////////////////////////////////////
 
-# Keyboard, font and time zone do not follow from the shape of a locale - de_CH
-# is not de - so they are looked up in the Installer's data/.
+# Keyboard, font and time zone do not follow from the shape of a locale (de_CH
+# is not de), so they are looked up in the Installer's data/.
 installer_data() { printf '%s/modules/installer/data' "$(product_dir)"; }
 
 # A column of data/languages for a locale: its own row, else its language's.
@@ -517,7 +519,7 @@ secure_boot_wanted() {
 # The kind of image the Installer builds.
 boot_kind() { if secure_boot_wanted; then echo uki; else echo image; fi; }
 
-# The images the firmware starts - a check against the other two checks nothing.
+# The images the firmware starts: a check against the other two checks nothing.
 boot_images() { images_of "$(boot_kind)"; }
 
 # The Recovery image: on the Arch OS ISO already, else fetched into /tmp. How it
@@ -573,8 +575,7 @@ sudoers_rule() {
 }
 
 # pacman reads no drop-in directory but follows an Include, so each setting is a
-# file under /etc/pacman.d named by one line. Named outright: a glob matching
-# nothing stops pacman.
+# file under /etc/pacman.d named outright: a glob matching nothing stops pacman.
 # https://man.archlinux.org/man/pacman.conf.5
 pacman_include() {
     local file
@@ -590,7 +591,7 @@ AUR_RETRIES=3
 AUR_TIMEOUT=2700
 
 # A package from the AUR, built as the account with passwordless sudo granted
-# for the build alone. One compile job per GiB of memory - see docs/REFERENCE.md.
+# for the build alone. One compile job per GiB of memory, see docs/REFERENCE.md.
 chroot_aur_install() {
     local repo="$1"
     local url="https://aur.archlinux.org/${repo}.git"
@@ -645,7 +646,7 @@ as_user() {
     arch-chroot "$MNT" /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "$1"
 }
 
-# The chosen browser's desktop entry - not its package's name for two of them.
+# The chosen browser's desktop entry, not its package's name for two of them.
 browser_entry() {
     case "$ARCH_OS_BROWSER" in
     epiphany) echo org.gnome.Epiphany.desktop ;;
@@ -661,10 +662,6 @@ user_home() { printf '%s/home/%s' "$MNT" "$ARCH_OS_USERNAME"; }
 own_home() {
     arch-chroot "$MNT" chown -R "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" "/home/${ARCH_OS_USERNAME}"
 }
-
-# Settings only a session can take: tasks append lines here, and first-login
-# turns them into a script that runs once.
-on_first_login() { cat >>"$(user_home)/.first-login"; }
 
 # Asked of the new system: an absolute link in its /usr/bin points into the
 # live system from out here.
@@ -748,7 +745,7 @@ close_target() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
-# REPAIRING | The Recovery, updated on its partition
+# REPAIRING | The Recovery, updated
 # ////////////////////////////////////////////////////////////////////////////
 
 # Started from its partition on the disk it repairs: the UUID its command line
@@ -760,25 +757,65 @@ on_recovery_partition() {
         [ "$(blkid -p -s UUID -o value "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")" 2>/dev/null)" = "$uuid" ]
 }
 
-# The newest release in the JSON of the latest one on stdin, where it follows
-# this one within its major version, as its version, the Recovery's download
-# and that file's sha256 - nothing where there is none. A new major version may
-# lay a system down differently, which this Recovery's successor would not
-# repair.
-newer_recovery() {
-    local json version url digest
-    json="$(cat)"
-    version="$(version_in <<<"$json")"
-    if [ -z "$version" ]; then
-        echo "GitHub names no latest release of ${REPO}" >&2
-        return 1
+# The disk has a Recovery partition: the third, under the name the Installer
+# gives it.
+has_recovery_partition() {
+    [ -n "$ARCH_OS_RECOVERY_DISK" ] &&
+        [ "$(lsblk -dno PARTLABEL "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")" 2>/dev/null)" = recovery ]
+}
+
+# Whether the disk's Recovery starts: the loader lists a boot image naming the
+# UUID its partition has, which an update cut short leaves apart.
+recovery_starts() {
+    local uuid esp mnt listed="" status=0
+    uuid="$(blkid -p -s UUID -o value "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")")" || return 1
+    esp="$(boot_partition "$ARCH_OS_RECOVERY_DISK")"
+    mnt="$({ findmnt -nro TARGET -S "$esp" || true; } | awk '!found { print; found = 1 }')"
+    if [ -n "$mnt" ]; then
+        listed="$(bootctl --esp-path="$mnt" list --json=short)" || status=$?
+    else
+        mnt="$(mktemp -d)"
+        if mount -o ro -t vfat "$esp" "$mnt"; then
+            listed="$(bootctl --esp-path="$mnt" list --json=short)" || status=$?
+            umount "$mnt"
+        else
+            status=1
+        fi
+        rmdir "$mnt"
     fi
-    newer "$version" "$(release_version)" || return 0
-    [ "${version%%.*}" = "$(release_version | cut -d. -f1)" ] || return 0
-    read -r url digest <<<"$(asset_in -recovery-x86_64.tar <<<"$json")"
-    if [ -n "$url" ] && [ -n "$digest" ]; then
-        printf '%s %s %s\n' "$version" "$url" "$digest"
+    [ "$status" -eq 0 ] && [ -n "$uuid" ] && grep -qF "archisodevice=UUID=${uuid} " <<<"$listed"
+}
+
+# The newest Recovery of this release series in the releases' JSON on stdin, as
+# version, download and sha256, without pre-releases. A new major version may
+# lay a system out differently, which this series' Recovery would not repair.
+newest_recovery() {
+    local series url digest version newest=""
+    series="$(release_version | cut -d. -f1)"
+    while read -r url digest; do
+        version="${url##*/arch-os-}"
+        version="${version%-recovery-x86_64.tar}"
+        [[ $version =~ ^${series}\.[0-9]+\.[0-9]+$ ]] && [ -n "$digest" ] || continue
+        if [ -z "$newest" ] || newer "$version" "${newest%% *}"; then
+            newest="${version} ${url} ${digest}"
+        fi
+    done < <(asset_in -recovery-x86_64.tar)
+    [ -z "$newest" ] || printf '%s\n' "$newest"
+}
+
+# What an update installs, as newest_recovery puts it, or nothing: on its own
+# partition the newest where it is newer than this one, from anywhere else the
+# newest where the disk's own does not start.
+recovery_update() {
+    local found
+    found="$(newest_recovery)"
+    [ -n "$found" ] || return 0
+    if on_recovery_partition; then
+        newer "${found%% *}" "$(release_version)" || return 0
+    elif recovery_starts; then
+        return 0
     fi
+    printf '%s\n' "$found"
 }
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -861,10 +898,8 @@ options_disks() {
 
 options_keymaps() { localectl list-keymaps; }
 
-# The networks in range, strongest first. iwctl returns as soon as a scan has
-# started, so the list is read once the card says it is done. An SSID may hold
-# spaces, so only two or more separate columns. The connected one, marked ">",
-# is still a choice.
+# The networks in range, strongest first, once the card says its scan is done.
+# Columns split on two spaces, since an SSID may hold one.
 options_wifi_networks() {
     local device state
     if debugging; then
@@ -1021,16 +1056,9 @@ check_disk_password() {
     unlocks "$ARCH_OS_RECOVERY_PASSWORD"
 }
 
-check_keys_password() {
+check_update_password() {
     debugging && return 0
-    unlocks "$ARCH_OS_RECOVERY_KEYS_PASSWORD"
-}
-
-# The firmware's own word, the fifth byte of its variable: what it starts now
-# has to be signed.
-value_secure_boot() {
-    local var=/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c
-    [ "$(od -An -t u1 -j 4 -N 1 "$var" 2>/dev/null | tr -d ' ')" = "1" ] && echo true || echo false
+    unlocks "$ARCH_OS_RECOVERY_UPDATE_PASSWORD"
 }
 
 # A LUKS header is readable without the password.

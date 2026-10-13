@@ -46,3 +46,41 @@ if grep -q '/jack2-' <<<"$boxes"; then
     echo "installing GNOME Boxes would bring jack2 beside PipeWire's JACK" >&2
     exit 1
 fi
+
+# Every default read back as an account reads it, through the profile: a key no
+# schema knows and a value it refuses are dropped without a word.
+schemas="$(as_user "gsettings list-schemas --print-paths")"
+group=""
+while IFS= read -r line; do
+    case "$line" in
+    '' | \#*) continue ;;
+    \[*\])
+        group="${line:1:-1}"
+        continue
+        ;;
+    esac
+    key="${line%%=*}"
+    schema="$(awk -v path="/${group}/" '$2 == path { print $1 }' <<<"$schemas")"
+    if [ -z "$schema" ]; then
+        echo "no schema keeps its settings at /${group}/" >&2
+        exit 1
+    fi
+    got="$(as_user "gsettings get ${schema} ${key}")"
+    if [ "$got" != "${line#*=}" ]; then
+        echo "${schema} ${key} reads ${got}, not ${line#*=}" >&2
+        exit 1
+    fi
+done < <(cat "${MNT}"/etc/dconf/db/local.d/*)
+
+# Hidden from every account as GLib looks applications up: the package's own
+# entry is masked, not only written beside it.
+for entry in "${MNT}"/usr/local/share/applications/*.desktop; do
+    grep -qx 'Hidden=true' "$entry" || continue
+    name="$(basename "$entry")"
+    [ -f "${MNT}/usr/share/applications/${name}" ] || continue
+    found="$(as_user "gjs -c \"print(imports.gi.Gio.DesktopAppInfo.new('${name}') !== null)\"")"
+    if [ "$found" != false ]; then
+        echo "${name} is still listed among the applications" >&2
+        exit 1
+    fi
+done

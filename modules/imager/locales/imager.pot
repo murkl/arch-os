@@ -220,7 +220,7 @@ msgstr ""
 
 #. an action: what a no from it means
 #: actions/installed-system/action.yaml
-msgid "Create boot medium writes a device from an installed Linux system. On the live image there is a machine to work on instead - open the Installer or the Recovery."
+msgid "Create boot medium runs on an installed Linux system. On the live image, open the Installer or the Recovery instead."
 msgstr ""
 
 #. an action: its row, and the heading over its page

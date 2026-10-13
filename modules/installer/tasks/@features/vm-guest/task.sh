@@ -36,7 +36,7 @@ microsoft)
     ;;
 
 *)
-    echo "detected $(systemd-detect-virt || true), which has no guest tools here - nothing installed"
+    echo "detected $(systemd-detect-virt || true), which has no guest tools here, nothing installed"
     ;;
 
 esac

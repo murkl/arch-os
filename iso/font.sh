@@ -29,7 +29,7 @@ SIZES="$(sed -n 's/^SIZES="\(.*\)"/\1/p' "$LAUNCHER")"
 
 for tool in psfgettable psfaddtable; do
     command -v "$tool" >/dev/null || {
-        echo "Error: ${tool} not found - install the kbd package" >&2
+        echo "Error: ${tool} not found: install the kbd package" >&2
         exit 1
     }
 done

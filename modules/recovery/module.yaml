@@ -32,7 +32,7 @@ stages:
   - rollback # a snapshot in place of the system
   - rebuild # the boot files made again from the package cache
 
-# On its own partition both questions are answered already - see iso/recovery/.
+# On its own partition both questions are answered already, see iso/recovery/.
 variables:
   # First, because the password below is typed on it. Never written to the
   # system being repaired.
@@ -65,15 +65,6 @@ variables:
     description: Whether that disk is encrypted with LUKS.
     group: Storage
     value-from: value_disk_encrypted()
-
-  # Not asked: whether the firmware starts only what is signed, so an updated
-  # Recovery has to be.
-  - name: ARCH_OS_RECOVERY_SECURE_BOOT
-    type: bool
-    title: Secure Boot
-    description: Whether the firmware starts only signed images.
-    group: Storage
-    value-from: value_secure_boot()
 
   # Typed once and tried on the disk where it is typed.
   - name: ARCH_OS_RECOVERY_PASSWORD

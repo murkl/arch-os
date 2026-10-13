@@ -68,7 +68,7 @@ if [ -x "${MNT}/usr/bin/sbctl" ]; then
             arch-chroot "$MNT" sbctl sign -s "$image"
         done < <(images_of uki)
     fi
-    arch-chroot "$MNT" sbctl sign-all || echo "signing the boot chain again failed - enroll or sign by hand before switching Secure Boot back on" >&2
+    arch-chroot "$MNT" sbctl sign-all || echo "signing the boot chain again failed: enroll or sign by hand before switching Secure Boot back on" >&2
 fi
 
 boot_entries "$MNT" "$kind" "$cmdline"

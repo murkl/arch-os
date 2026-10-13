@@ -44,10 +44,8 @@ iwd_setting() {
     ' "$1"
 }
 
-# Every wireless network the live system joined, so the first boot is online.
-# iwd names a profile after the SSID, or "=" and its hex; nmcli writes the
-# keyfile without a running daemon. A network with 802.1X is joined again by
-# hand. https://man.archlinux.org/man/iwd.network.5
+# Every Wi-Fi network the live system joined, so the first boot is online. iwd
+# names a profile after the SSID, or "=" and its hex. https://man.archlinux.org/man/iwd.network.5
 for profile in /var/lib/iwd/*.psk /var/lib/iwd/*.open; do
     [ -f "$profile" ] || continue
     name="$(basename "$profile")"
