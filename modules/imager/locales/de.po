@@ -186,3 +186,33 @@ msgstr "Ein USB-Datenträger zum Schreiben"
 #: actions/usb/action.yaml
 msgid "No USB device found. Plug a stick in and this carries on by itself."
 msgstr "Kein USB-Datenträger gefunden. Steck einen Stick ein, dann geht es von selbst weiter."
+
+msgid "No internet connection\n\nThe image and its checksum come from the release page. Connect this machine and choose Start again."
+msgstr "Keine Internetverbindung\n\nDas Image und seine Prüfsumme kommen von der Release-Seite. Verbinde diesen Rechner und wähle erneut Start."
+
+msgid "The release page does not answer\n\nGitHub does not hand out this release right now: try again in a few minutes. An image you built yourself is written with Verify checksum off in Setup."
+msgstr "Die Release-Seite antwortet nicht\n\nGitHub gibt dieses Release gerade nicht heraus: Versuch es in ein paar Minuten erneut. Ein selbst gebautes Image wird mit ausgeschaltetem „Prüfsumme abgleichen“ im Setup geschrieben."
+
+msgid "The download folder cannot be used\n\n{{ARCH_OS_DOWNLOAD_DIR}} cannot be created or written to. Choose another Download folder in Setup."
+msgstr "Der Download-Ordner ist nicht nutzbar\n\n{{ARCH_OS_DOWNLOAD_DIR}} lässt sich nicht anlegen oder beschreiben. Wähle im Setup einen anderen Download-Ordner."
+
+msgid "The download broke off\n\nThe release page stopped sending the image. Choose Start again to fetch it anew."
+msgstr "Der Download ist abgebrochen\n\nDie Release-Seite hat aufgehört, das Image zu senden. Wähle erneut Start, um es neu zu laden."
+
+msgid "There is no checksum to check the image against\n\nIts release publishes none, and the image was not written. Turn Verify checksum off in Setup to write it unchecked."
+msgstr "Es gibt keine Prüfsumme für das Image\n\nSein Release veröffentlicht keine, und das Image wurde nicht geschrieben. Schalte „Prüfsumme abgleichen“ im Setup aus, um es ungeprüft zu schreiben."
+
+msgid "The image is damaged\n\nIt does not match the checksum of its release and was deleted. Choose Start again to download it anew."
+msgstr "Das Image ist beschädigt\n\nEs passt nicht zur Prüfsumme seines Releases und wurde gelöscht. Wähle erneut Start, um es neu herunterzuladen."
+
+msgid "The USB stick is gone\n\n{{ARCH_OS_IMAGE_DEVICE}} is no longer plugged in. Plug it back in and choose Start again."
+msgstr "Der USB-Stick ist weg\n\n{{ARCH_OS_IMAGE_DEVICE}} steckt nicht mehr. Steck ihn wieder ein und wähle erneut Start."
+
+msgid "The USB stick is too small\n\nThe image needs more room than {{ARCH_OS_IMAGE_DEVICE}} has. Choose Start again with a larger one."
+msgstr "Der USB-Stick ist zu klein\n\nDas Image braucht mehr Platz, als {{ARCH_OS_IMAGE_DEVICE}} hat. Wähle erneut Start mit einem größeren."
+
+msgid "The USB stick is still in use\n\nSomething still holds {{ARCH_OS_IMAGE_DEVICE}} open. Close it, or unplug the stick and plug it in again, then choose Start again."
+msgstr "Der USB-Stick wird noch benutzt\n\nEtwas hält {{ARCH_OS_IMAGE_DEVICE}} noch offen. Schließ es oder zieh den Stick ab und steck ihn wieder ein, dann wähle erneut Start."
+
+msgid "Writing the USB stick failed\n\n{{ARCH_OS_IMAGE_DEVICE}} stopped taking the image. It may be faulty or was pulled out: choose Start again, or try another stick."
+msgstr "Der USB-Stick ließ sich nicht beschreiben\n\n{{ARCH_OS_IMAGE_DEVICE}} hat aufgehört, das Image anzunehmen. Er ist womöglich defekt oder wurde abgezogen: Wähle erneut Start oder nimm einen anderen Stick."

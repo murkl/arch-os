@@ -24,6 +24,31 @@ confirm: |
   It is downloaded, held to the checksum of its release and written to the
   Recovery's partition. The new one starts with the next restart.
 
+# The statuses action.sh stops itself with. No internet and no GitHub are the
+# module's.
+errors:
+  10: |
+    The download broke off
+
+    The release page stopped sending the newer Recovery. Nothing was changed;
+    try again.
+  11: |
+    The download is damaged
+
+    It does not match the checksum of its release and was deleted. Nothing was
+    changed; try again.
+  12: |
+    The newer Recovery does not fit
+
+    It is larger than its partition and was not installed. The Recovery you
+    have stays and keeps working.
+  13: |
+    Writing the Recovery failed
+
+    Its partition did not keep what was written. The system starts as before,
+    the Recovery only once an update has gone through: try again. A disk that
+    keeps refusing may be failing.
+
 report: |
   Recovery updated
 

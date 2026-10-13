@@ -49,9 +49,13 @@ rm -f /var/lib/pacman/db.lck
 # and pacman refuses every package until then. A start waits for a running one
 # and returns at once for a finished one.
 timeout 300 systemctl start pacman-init.service || {
-    echo "The live image had no pacman keyring after 5 minutes. It makes one once its clock is set from network time - check that this machine reaches an NTP server." >&2
-    exit 1
+    echo "the live image had no pacman keyring after 5 minutes" >&2
+    exit 10
 }
 
 # A stale keyring is the commonest reason a fresh install refuses a package.
-pacman -Sy --noconfirm archlinux-keyring
+if ! pacman -Sy --noconfirm archlinux-keyring; then
+    check_online || exit "$EXIT_OFFLINE"
+    echo "the keyring could not be brought up to date" >&2
+    exit 1
+fi

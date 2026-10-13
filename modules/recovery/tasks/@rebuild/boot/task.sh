@@ -25,7 +25,7 @@ for dir in "${MNT}/usr/lib/modules/"*/; do
     package="$(kernel_cached "$version")"
     if [ -z "$package" ]; then
         echo "There is no ${KERNEL} package for ${version} in the package cache." >&2
-        return 1
+        exit 10
     fi
     # Moved over the old image only once it is whole.
     image="${MNT}/boot/vmlinuz-${KERNEL}"

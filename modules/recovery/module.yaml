@@ -14,6 +14,19 @@ rules:
   on-failure: [share-log]
   on-success: [chroot]
 
+# What any of its scripts means by stopping itself, the statuses oak.sh names.
+errors:
+  3: |
+    No internet connection
+
+    Join a network with Configure Wi-Fi in Setup, or plug in a cable, and try
+    again. A repair needs none.
+  4: |
+    The release page does not answer
+
+    The internet works, but GitHub, where Arch OS keeps its releases, does not
+    answer. Try again in a few minutes.
+
 stages:
   - open # the system unlocked and mounted
   - rollback # a snapshot in place of the system

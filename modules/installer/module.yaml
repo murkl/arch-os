@@ -17,6 +17,25 @@ rules:
   on-failure: [share-log]
   on-success: [chroot, share-config]
 
+# What any of its scripts means by stopping itself, the statuses oak.sh names.
+errors:
+  3: |
+    The internet connection was lost
+
+    Arch OS is downloaded while it is installed. Connect this machine again
+    and choose Start: the installation begins anew.
+  4: |
+    The release page does not answer
+
+    The internet works, but GitHub, where Arch OS keeps its releases, does not
+    answer. Try again in a few minutes, or turn Recovery off in Setup.
+  5: |
+    The AUR does not answer
+
+    What this step builds from the Arch User Repository was left out, and the
+    rest of the installation goes on without it. Install it later, once the
+    AUR answers again.
+
 # Each a folder under tasks/, marked: tasks/@system/.
 stages:
   - prepare # the live system ready, the disk partitioned and mounted

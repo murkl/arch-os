@@ -2,14 +2,10 @@
 # second run costs nothing, and beside it the checksum that release publishes.
 
 folder="$(download_dir)"
-mkdir -p "$folder" || {
-    echo "${folder} cannot be created" >&2
-    exit 1
-}
-[ -w "$folder" ] || {
-    echo "${folder} cannot be written to" >&2
-    exit 1
-}
+if ! mkdir -p "$folder" || [ ! -w "$folder" ]; then
+    echo "${folder} cannot be created or written to" >&2
+    exit 10
+fi
 
 # Unchecked, the image already here is all there is to it.
 if [ "$ARCH_OS_IMAGE_VERIFY" != "true" ] && [ -f "$(image)" ]; then
@@ -18,7 +14,9 @@ if [ "$ARCH_OS_IMAGE_VERIFY" != "true" ] && [ -f "$(image)" ]; then
 fi
 
 # The checksum as the release publishes it now, not when an earlier run came.
-read -r url digest <<<"$(release_asset .iso)"
+check_online || exit "$EXIT_OFFLINE"
+json="$(release_json "tags/v$(release_version)")" || exit "$EXIT_UNREACHABLE"
+read -r url digest <<<"$(asset_in .iso <<<"$json")"
 rm -f "$(checksum)"
 if [ -n "$digest" ]; then
     printf '%s  %s\n' "$digest" "$(basename "$(image)")" >"$(checksum)"
@@ -30,7 +28,7 @@ if [ -f "$(image)" ]; then
 fi
 
 if [ -z "$url" ]; then
-    echo "The release v$(release_version) is out of reach and ${folder} holds no image. Connect this machine, or put arch-os-$(release_version)-x86_64.iso there yourself." >&2
+    echo "the release v$(release_version) holds no image" >&2
     exit 1
 fi
 
@@ -38,8 +36,9 @@ fi
 echo "fetching ${url##*/}"
 if ! fetch_url --progress-bar --retry 3 --retry-delay 2 "$url" -o "$(image).part"; then
     rm -f "$(image).part"
+    check_online || exit "$EXIT_OFFLINE"
     echo "downloading ${url##*/} into ${folder} failed" >&2
-    exit 1
+    exit 11
 fi
 mv "$(image).part" "$(image)"
 echo "$(image) is here"

@@ -7,7 +7,7 @@ echo "closed ${MNT}"
 part="$(target_partition)"
 if [ -z "$part" ]; then
     echo "${ARCH_OS_RECOVERY_DISK} holds no Arch OS installation: its second partition is neither a LUKS container nor a btrfs labelled BTRFS." >&2
-    return 1
+    exit 10
 fi
 
 # On stdin, never on a command line /proc shows.
@@ -21,7 +21,7 @@ fi
 device="$(target_device)"
 if [ "$(fstype "$device")" != "btrfs" ]; then
     echo "There is no btrfs on ${device}, so it holds no Arch OS installation." >&2
-    return 1
+    exit 10
 fi
 
 # The top level first, where a rollback works and the layout can be read.
@@ -40,7 +40,7 @@ while read -r subvolume _; do
 done < <(btrfs_subvolumes)
 if [ "${#missing[@]}" -gt 0 ]; then
     echo "${ARCH_OS_RECOVERY_DISK} has no ${missing[*]}, which the Installer of this release lays down." >&2
-    return 1
+    exit 11
 fi
 mount_target
 

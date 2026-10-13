@@ -34,7 +34,7 @@ locales/                          one <code>.po per language, and the template t
 | `verify` | `checksum` | Compares the image against that checksum, discards it if they disagree. Only with **Verify checksum** on |
 | `write` | `device` | Checks the device, unmounts it, copies the image on |
 
-Three distinct failures: nothing arrived, what arrived is broken, or it could not be written.
+What can be seen coming is said in plain words, each under `errors:` beside its task: no internet, a folder that cannot be written, a damaged image, a stick that is gone, too small or still in use. Only a script that breaks shows where, with **Share the log**.
 
 **Note:** _No task has a `test.sh`, so **Verify steps** is not offered here: the checksum is the download's test, and the boot from the device is the write's._
 
@@ -51,7 +51,7 @@ The ISO written is the one of the release `version:` in `oak.yaml` names, downlo
 An `arch-os-<version>-x86_64.iso` already in that folder is not downloaded again. The number it is then held to is the checksum GitHub publishes for that release, so this module and the release page check the same one - and the release carries no checksum file of its own. It is read once per run and written beside the image as `arch-os-<version>-x86_64.iso.sha256`, which `sha256sum -c` reads as well.
 
 - A checksum mismatch discards the image rather than keeping a broken one
-- Where no checksum can be fetched - the release is not out yet, or it cannot be reached - nothing is written, and the failure says which setting lets it through
+- Where no checksum can be fetched - the release is not out yet, or it cannot be reached - nothing is written, and the page says which setting lets it through
 - **Verify checksum** off writes the image in the folder as it is, without asking the release anything. That is how an image built here rather than downloaded reaches a device. On by default, and a setting rather than a question in the middle of the run, so it is read in the interface's language
 - Every request is HTTPS, redirects included
 

@@ -6,8 +6,8 @@
 # the disk is held to the list it is chosen from right before it is written.
 disks="$(options_disks | cut -f1)"
 if ! grep -qxF "$ARCH_OS_DISK" <<<"$disks"; then
-    echo "${ARCH_OS_DISK} is not one of the disks this machine can be installed on. Choose the disk again in Setup." >&2
-    exit 1
+    echo "${ARCH_OS_DISK} is not one of the disks this machine can be installed on" >&2
+    exit 10
 fi
 boot_part="$(boot_partition "$ARCH_OS_DISK")"
 system_part="$(system_partition "$ARCH_OS_DISK")"
@@ -38,8 +38,8 @@ held="$(lsblk -nrpo NAME,TYPE,MOUNTPOINTS "$ARCH_OS_DISK" | awk -F'[ ]' '
         printf "%s %s%s", sep, $1, ($3 == "" ? "" : " at " $3); sep = ";"
     }')"
 if [ -n "$held" ]; then
-    echo "${ARCH_OS_DISK} is still in use:${held}. Close or unmount that, then start again." >&2
-    exit 1
+    echo "${ARCH_OS_DISK} is still in use:${held}" >&2
+    exit 11
 fi
 
 # Asked before the table is wiped: afterwards nothing says which firmware
