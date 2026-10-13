@@ -41,7 +41,7 @@
       - page: Disk
         press: enter
 
-      # Also the page the banner is collaged from, see BANNER_CARDS in /Makefile.
+      # Also the page the banner is collaged from, see docs/banner.sh.
       - page: [Start, Setup]
         choose: Setup
         press: enter
