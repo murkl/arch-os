@@ -479,10 +479,32 @@ fi
 start disk
 healthy
 
-# A Desktop is held to its login screen; the repair is the Core's to prove.
+# A Desktop is held to its login screen, and a start counts as one that worked
+# only once the session in front is up: the one it logs into, then without
+# automatic login the login screen's. The repair is the Core's to prove.
 if [ "$START" = desktop ]; then
     [ "$(installed systemctl is-active gdm || true)" = active ] || fail "the login screen of the Desktop is not running"
-    say "Desktop: the login screen is up"
+    entries_ready main.conf
+    say "Desktop: the session it logs into counted the start"
+
+    # No session ever comes up: the shell masked for every account, and the
+    # wait for it shortened.
+    as_root systemctl --global mask org.gnome.Shell@.service
+    as_root "sh -c 'mkdir -p /etc/systemd/system/arch-os-session-up.service.d && printf \"[Service]\\nExecStart=\\nExecStart=/usr/local/lib/arch-os/session-up.sh 30\\n\" >/etc/systemd/system/arch-os-session-up.service.d/e2e.conf'"
+    shutdown_installed
+    start disk
+    until_ok "$BOOT_TIMEOUT" "the wait for a session to give up" as_root systemctl is-failed --quiet arch-os-session-up.service
+    left="$(as_root ls /boot/loader/entries)"
+    grep -qx 'main+2-1.conf' <<<"$left" || fail "a start without a session counted as one that worked: ${left//$'\n'/ }"
+    say "Desktop: a start without a session keeps its try taken"
+
+    as_root systemctl --global unmask org.gnome.Shell@.service
+    as_root rm -r /etc/systemd/system/arch-os-session-up.service.d /etc/gdm/custom.conf
+    shutdown_installed
+    start disk
+    healthy
+    entries_ready main.conf
+    say "Desktop: the login screen counted the start"
     shutdown_installed
     say "Arch OS installs a Desktop and boots it to its login screen"
     exit 0

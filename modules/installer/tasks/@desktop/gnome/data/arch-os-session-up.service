@@ -1,0 +1,16 @@
+# Written by Arch OS: a start counts as one that worked only once the session
+# in front, the login screen's or the one logged in by itself, is up.
+[Unit]
+Description=Arch OS start counted once the session in front is up
+Documentation=https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/
+# Without a display manager there is no session to wait for.
+ConditionPathExists=/etc/systemd/system/display-manager.service
+Before=boot-complete.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/lib/arch-os/session-up.sh 300
+
+[Install]
+RequiredBy=boot-complete.target
