@@ -363,16 +363,6 @@ msgstr ""
 msgid "Whether this machine is itself a virtual one."
 msgstr ""
 
-#. ARCH_OS_VM_HOST_ENABLED: the question
-#: module.yaml
-msgid "Virtual machines"
-msgstr ""
-
-#. ARCH_OS_VM_HOST_ENABLED: what it means
-#: module.yaml
-msgid "QEMU and libvirt, and on a desktop the Virtual Machine Manager. Inside a virtual machine its guest tools are installed instead."
-msgstr ""
-
 #. ARCH_OS_DESKTOP: the question
 #: module.yaml
 msgid "Environment"
@@ -581,11 +571,6 @@ msgstr ""
 #. the step, as the run lists it
 #: tasks/@features/vm-guest/task.yaml
 msgid "Install the VM guest tools"
-msgstr ""
-
-#. the step, as the run lists it
-#: tasks/@features/vm-host/task.yaml
-msgid "Install QEMU and libvirt"
 msgstr ""
 
 #. the step, as the run lists it

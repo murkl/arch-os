@@ -14,6 +14,10 @@ apps="${home}/.local/share/applications"
 # https://wiki.archlinux.org/title/PipeWire#Installation
 packages=(git bluez bluez-utils avahi nss-mdns pipewire pipewire-pulse wireplumber)
 
+# PipeWire's JACK, so a JACK program installed later finds one instead of
+# asking for jack2: GNOME Boxes is one, by way of qemu-desktop.
+packages+=(pipewire-jack)
+
 # The group filtered before the download rather than trimmed after it.
 mapfile -t desktop < <(arch-chroot "$MNT" pacman -Sgq gnome)
 [ "${#desktop[@]}" -gt 0 ] || {
@@ -47,7 +51,7 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
 
     # The older audio APIs, laptop codec firmware, and rtkit for pipewire's
     # realtime priority, without which it complains at every login.
-    packages+=(pipewire-alsa pipewire-jack sof-firmware rtkit)
+    packages+=(pipewire-alsa sof-firmware rtkit)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
 
     # NetworkManager speaks WireGuard itself; OpenVPN needs the plug-in.

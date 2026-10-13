@@ -360,16 +360,6 @@ msgstr "Virtuelle Maschine"
 msgid "Whether this machine is itself a virtual one."
 msgstr "Ob dieser Rechner selbst eine virtuelle Maschine ist."
 
-#. ARCH_OS_VM_HOST_ENABLED: the question
-#: module.yaml
-msgid "Virtual machines"
-msgstr "Virtuelle Maschinen"
-
-#. ARCH_OS_VM_HOST_ENABLED: what it means
-#: module.yaml
-msgid "QEMU and libvirt, and on a desktop the Virtual Machine Manager. Inside a virtual machine its guest tools are installed instead."
-msgstr "QEMU und libvirt, auf einem Desktop mit dem Virtual Machine Manager. In einer virtuellen Maschine werden stattdessen ihre Gastwerkzeuge installiert."
-
 #. ARCH_OS_DESKTOP: the question
 #: module.yaml
 msgid "Environment"
@@ -579,11 +569,6 @@ msgstr "SSH-Server aktivieren"
 #: tasks/@features/vm-guest/task.yaml
 msgid "Install the VM guest tools"
 msgstr "VM-Gasttools installieren"
-
-#. the step, as the run lists it
-#: tasks/@features/vm-host/task.yaml
-msgid "Install QEMU and libvirt"
-msgstr "QEMU und libvirt installieren"
 
 #. the step, as the run lists it
 #: tasks/@desktop/gnome/task.yaml

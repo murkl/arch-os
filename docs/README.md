@@ -38,7 +38,7 @@
 - Recovery in the boot menu and on the ISO
 - Create boot medium on any Linux machine
 - Wireless network in the Installer and the Recovery
-- Virtual machine guest tools, or QEMU and libvirt on hardware
+- Virtual machine guest tools, GNOME Boxes ready to install
 - Starting points **Core** and **Desktop**, or a shared configuration
 - English and German interface
 - Tuned defaults - see the **[➜ Reference](REFERENCE.md)**

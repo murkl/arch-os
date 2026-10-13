@@ -19,5 +19,3 @@ fi
 while IFS=$'\t' read -r subvolume path; do
     findmnt -no OPTIONS "${MNT}${path%/}" | grep -qE "(^|,)subvol=/${subvolume}(,|$)"
 done < <(btrfs_subvolumes)
-
-[[ $(lsattr -d "${MNT}/var/lib/libvirt/images" | awk '{ print $1 }') == *C* ]]

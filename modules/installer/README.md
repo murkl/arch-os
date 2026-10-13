@@ -35,7 +35,7 @@ One folder per stage under `tasks/`, marked with `@`; `module.yaml` orders them,
 | --- | --- |
 | `prepare` | `mirrors`, `recovery-image`, then `partition` - the one task that destroys anything, once everything that can fail first has |
 | `system` | `pacstrap`, then `config`, `tweaks`, `bootloader`, `recovery` and `user`: the system on disk, configured and bootable |
-| `features` | One task per setting that switches something on: `multilib`, `aur`, `bootsplash`, `containers`, `editor`, `firewall`, `housekeeping`, `manager`, `shell`, `ssh`, `vm-guest`, `vm-host` |
+| `features` | One task per setting that switches something on: `multilib`, `aur`, `bootsplash`, `containers`, `editor`, `firewall`, `housekeeping`, `manager`, `shell`, `ssh`, `vm-guest` |
 | `desktop` | `gnome` first, then `backup`, `browser`, `flatpak`, `graphics`, `recovery-app`, `samba` |
 | `finish` | `first-login`, `orphans`, `snapper`, `secure-boot`, and `copy-config` last, which says the system is installed |
 
@@ -75,7 +75,7 @@ What the machine can say for itself is never a question.
 
 | What | Read from |
 | --- | --- |
-| `ARCH_OS_VIRTUAL_MACHINE` | `systemd-detect-virt`: guest tools inside a virtual machine, the question about running them outside one |
+| `ARCH_OS_VIRTUAL_MACHINE` | `systemd-detect-virt`: guest tools inside a virtual machine |
 | Microcode | `/proc/cpuinfo` |
 | Graphics driver | Every graphics card in sysfs - see **[➜ Packages](../../docs/REFERENCE.md#packages)** |
 | Automatic login | Disk encryption with one password: on behind it, off otherwise |
