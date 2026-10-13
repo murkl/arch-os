@@ -281,6 +281,41 @@ recovery_menu() {
         sleep 10
     done
     say "Recovery: started from its partition, on its menu"
+
+    # Exit is the last row of the page q opens. The kiosk starts it again, and
+    # the console shows no login on the way: photographed for as long as the
+    # restart takes, often enough to catch one that flashes by. Back within
+    # seconds, which a reboot of the machine never is.
+    local frame=0 text menu=false
+    printf 'sendkey q\n' >&3
+    sleep 2
+    rm -f "$shot"
+    printf 'screendump %s -f png\n' "$shot" >&3
+    sleep 1
+    tesseract "$shot" - --psm 6 2>/dev/null | grep -qE 'Exit|Leave|Restart' || fail "q did not open the page with Exit, see ${shot}"
+    for key in down down ret; do
+        printf 'sendkey %s\n' "$key" >&3
+        sleep 0.3
+    done
+    deadline=$((SECONDS + 15))
+    while [ "$SECONDS" -lt "$deadline" ]; do
+        frame=$((frame + 1))
+        shot="${WORK}/recovery-exit-${frame}.png"
+        printf 'screendump %s -f png\n' "$shot" >&3
+        sleep 0.5
+        [ -s "$shot" ] || continue
+        text="$(tesseract "$shot" - --psm 6 2>/dev/null || true)"
+        grep -qi 'login' <<<"$text" && fail "leaving the Recovery showed a login, see ${shot}"
+        if grep -qE 'Setup|Start' <<<"$text"; then
+            menu=true
+            break
+        fi
+        rm -f "$shot"
+    done
+    [ "$menu" = true ] || fail "the Recovery did not come back on its menu within 15s of Exit"
+    rm -f "${WORK}"/recovery-exit-*.png
+    say "Recovery: Exit starts it again, without a login on the way"
+
     printf 'quit\n' >&3
     stopped
 }
