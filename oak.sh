@@ -783,7 +783,7 @@ recovery_starts() {
         fi
         rmdir "$mnt"
     fi
-    [ "$status" -eq 0 ] && [ -n "$uuid" ] && grep -qF "archisodevice=UUID=${uuid} " <<<"$listed"
+    [ "$status" -eq 0 ] && [ -n "$uuid" ] && grep -qE "archisodevice=UUID=${uuid}( |\")" <<<"$listed"
 }
 
 # The newest Recovery of this release series in the releases' JSON on stdin, as
