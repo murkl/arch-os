@@ -32,10 +32,10 @@ UEFI only, GPT, and the whole disk: Arch OS is the only system on it.
 | Partition | Size | Type | Label | Mounted |
 | --- | --- | --- | --- | --- |
 | 1 | 1 GiB | EFI system (`ef00`) | `BOOT` | `/boot` |
-| 2 | the rest | Linux (`8300`) | `BTRFS` | `/` |
+| 2 | the rest | Linux x86-64 root (`8304`) | `BTRFS` | `/` |
 | 3 | 1 GiB, twice its image, so an update has room | Linux (`8300`) | - | never, see **[The Recovery Partition](#the-recovery-partition)** |
 
-The order is fixed and the file system is always btrfs. The third partition exists only with **Recovery** on and sits at the end of the disk, so the root is the second partition on every installation. `/boot` is mounted with `fmask=0077,dmask=0077`: it holds the kernel and the signed images, which are for root alone.
+The order is fixed and the file system is always btrfs. The root's type is the one the **[➜ Installation guide](https://wiki.archlinux.org/title/Installation_guide#Example_layouts)** uses, so systemd's tools find it by its type. The third partition exists only with **Recovery** on and sits at the end of the disk, so the root is the second partition on every installation. `/boot` is mounted with `fmask=0077,dmask=0077`: it holds the kernel and the signed images, which are for root alone.
 
 - **Encryption:** LUKS2 on partition 2, opened as `cryptroot`. It takes the account's password, or with **Separate disk password** one of its own, see **[Accounts](#accounts)**
 - **TRIM:** discards pass through the encryption. The flag lives in the LUKS2 header (`--allow-discards --persistent`), so every unlock passes them without a kernel parameter. Without it dm-crypt drops them and `fstrim.timer` trims nothing. It reveals which blocks are free, not what is in them. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Dm-crypt/Specialties#Discard/TRIM_support_for_solid_state_drives_(SSD))**

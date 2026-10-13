@@ -48,8 +48,10 @@ if grep -q '/jack2-' <<<"$boxes"; then
 fi
 
 # Every default read back as an account reads it, through the profile: a key no
-# schema knows and a value it refuses are dropped without a word.
-schemas="$(as_user "gsettings list-schemas --print-paths")"
+# schema knows and a value it refuses are dropped without a word. The live
+# system's runtime directory is root's, so dconf is left to find its own.
+gsettings_as_user() { as_user "env -u XDG_RUNTIME_DIR gsettings $1"; }
+schemas="$(gsettings_as_user "list-schemas --print-paths")"
 group=""
 while IFS= read -r line; do
     case "$line" in
@@ -60,12 +62,15 @@ while IFS= read -r line; do
         ;;
     esac
     key="${line%%=*}"
-    schema="$(awk -v path="/${group}/" '$2 == path { print $1 }' <<<"$schemas")"
+    schema=""
+    while read -r candidate; do
+        grep -qxF "$key" <<<"$(gsettings_as_user "list-keys ${candidate}")" && schema="$candidate"
+    done < <(awk -v path="/${group}/" '$2 == path { print $1 }' <<<"$schemas")
     if [ -z "$schema" ]; then
-        echo "no schema keeps its settings at /${group}/" >&2
+        echo "no schema at /${group}/ has the key ${key}" >&2
         exit 1
     fi
-    got="$(as_user "gsettings get ${schema} ${key}")"
+    got="$(gsettings_as_user "get ${schema} ${key}")"
     if [ "$got" != "${line#*=}" ]; then
         echo "${schema} ${key} reads ${got}, not ${line#*=}" >&2
         exit 1
@@ -78,7 +83,7 @@ for entry in "${MNT}"/usr/local/share/applications/*.desktop; do
     grep -qx 'Hidden=true' "$entry" || continue
     name="$(basename "$entry")"
     [ -f "${MNT}/usr/share/applications/${name}" ] || continue
-    found="$(as_user "gjs -c \"print(imports.gi.Gio.DesktopAppInfo.new('${name}') !== null)\"")"
+    found="$(as_user "env -u XDG_RUNTIME_DIR gjs -c \"print(imports.gi.GioUnix.DesktopAppInfo.new('${name}') !== null)\"")"
     if [ "$found" != false ]; then
         echo "${name} is still listed among the applications" >&2
         exit 1
