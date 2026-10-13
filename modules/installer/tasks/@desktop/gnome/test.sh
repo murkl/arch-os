@@ -1,5 +1,9 @@
 arch-chroot "$MNT" systemctl is-enabled gdm.service >/dev/null
 
+# The start waits for the session in front before it counts as one that worked.
+arch-chroot "$MNT" systemctl is-enabled arch-os-session-up.service >/dev/null
+[ -z "$(systemd-analyze verify --root="$MNT" arch-os-session-up.service 2>&1)" ]
+
 has_command gnome-software
 has_command gnome-extensions-app
 

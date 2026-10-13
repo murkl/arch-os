@@ -137,6 +137,16 @@ FIRST
 # ─── Services ──────────────────────────────────────────────────────────────
 
 arch-chroot "$MNT" systemctl enable gdm.service
+
+# A start counts as one that worked once the login screen or the session it
+# logs into is up: a desktop that never comes up sends the next starts to the
+# fallback, then the Recovery. docs/REFERENCE.md#when-the-system-does-not-start
+mkdir -p "${MNT}/usr/local/lib/arch-os"
+render "${data}/session-up.sh" >"${MNT}/usr/local/lib/arch-os/session-up.sh"
+chmod 755 "${MNT}/usr/local/lib/arch-os/session-up.sh"
+render "${data}/arch-os-session-up.service" >"${MNT}/etc/systemd/system/arch-os-session-up.service"
+arch-chroot "$MNT" systemctl enable arch-os-session-up.service
+
 arch-chroot "$MNT" systemctl enable bluetooth.service
 arch-chroot "$MNT" systemctl enable avahi-daemon
 

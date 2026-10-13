@@ -76,13 +76,14 @@ The loader tries each entry of the system three times before the next: the syste
 | Step | What happens |
 | --- | --- |
 | Start | systemd-boot takes a try off the entry it starts: `main+3.conf` becomes `main+2-1.conf` |
-| A start that worked | Once the system has unlocked and mounted its disk (`boot-complete.target`), `systemd-bless-boot` marks the entry good and `arch-os-boot-tries.service` gives both entries their three tries back |
+| A start that worked | Once the system has unlocked and mounted its disk, and on a Desktop the login screen or the session it logs into is up (`boot-complete.target`), `systemd-bless-boot` marks the entry good and `arch-os-boot-tries.service` gives both entries their three tries back |
 | Tries used up | `main+0-3.conf` sorts behind every other entry, and the loader starts the next one |
 | The Recovery | Gives both entries their tries back as it starts, so the next start tries the system again |
 
 - No `default` in `loader.conf`: the loader starts a default however often it failed. The Installer and the Recovery clear one an earlier system left in the firmware
 - A start cut short counts as one that failed: switched off at the password prompt three times, the next start is the fallback's, and three more the Recovery's. Leaving the Recovery hands the system its tries back
 - A kernel panic restarts the machine after 10 seconds (`panic=10`), so a system that panics on every start reaches the Recovery by itself
+- On a Desktop, `arch-os-session-up.service` waits up to 5 minutes for the session in front on the screen. A start without one is not counted as one that worked, though the machine runs on: restarting it takes the next try
 - An installation of 2.0 starts its image as the loader's default and counts nothing. **Rebuild the boot files** in the Recovery lays it out as this release does: the images moved to `/boot/EFI/arch-os/` and signed there, the entries written, the default dropped, the old images removed last
 
 The loader gets a boot entry in the firmware, first in its order. `bootctl` writes that one from the live system rather than from inside the new one: in a chroot it leaves the EFI variables alone, or, told to write them, cannot see the partition and writes an entry that points nowhere. Without an entry the firmware finds the loader only at `\EFI\BOOT\BOOTX64.EFI`, after every entry it already lists has been tried. The entries it still keeps for what the disk held before - a Windows Boot Manager, an earlier installation - are removed along with the old partitions; an entry for another disk stays.
