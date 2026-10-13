@@ -40,7 +40,7 @@ msgstr ""
 
 #. ARCH_OS_DOWNLOAD_DIR: what a wrong answer is told
 #: module.yaml
-msgid "Type the full path of a folder, starting with a slash."
+msgid "Type the full path of a folder, starting with / or ~/."
 msgstr ""
 
 #. ARCH_OS_IMAGE_VERIFY: the question

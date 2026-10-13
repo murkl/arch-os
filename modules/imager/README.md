@@ -46,7 +46,7 @@ The ISO written is the one of the release `version:` in `oak.yaml` names, downlo
 
 ### Where it lands
 
-**Download folder**, suggested as `XDG_DOWNLOAD_DIR` or `~/Downloads`. The image is kept, so a second run costs no bandwidth.
+**Download folder**, `~/Downloads` unless **Setup** names another. It is not asked: the only question is the device. The image is kept, so a second run costs no bandwidth.
 
 An `arch-os-<version>-x86_64.iso` already in that folder is not downloaded again. The number it is then held to is the checksum GitHub publishes for that release, so this module and the release page check the same one - and the release carries no checksum file of its own. It is read once per run and written beside the image as `arch-os-<version>-x86_64.iso.sha256`, which `sha256sum -c` reads as well.
 
@@ -90,7 +90,7 @@ The interface keeps the screen throughout. Whether `sudo` wants a password is re
 
 | Variable | Description |
 | --- | --- |
-| `ARCH_OS_DOWNLOAD_DIR` | Where the image lives. Suggested as `XDG_DOWNLOAD_DIR`, or `~/Downloads` |
+| `ARCH_OS_DOWNLOAD_DIR` | Where the image lives. `~/Downloads` unless changed in **Setup**; `~/` stands for the home |
 | `ARCH_OS_IMAGE_DEVICE` | The USB device to write. Asked each time **Start** is chosen, before the password, and never written to the file. Only USB disks are offered, and none the running system has mounted outside `/run/media`, `/media` or `/mnt` |
 | `ARCH_OS_IMAGE_VERIFY` | Whether the image is held to the checksum its release publishes before it is written. On unless turned off |
 | `ARCH_OS_IMAGE_SUDO` | Read, not asked: whether writing the device needs a password - not as root, and not where a sudo rule says so |

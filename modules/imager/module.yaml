@@ -22,15 +22,16 @@ stages:
   - write # the image on the device
 
 variables:
+  # Not asked: every desktop has this folder, and Setup changes it.
   - name: ARCH_OS_DOWNLOAD_DIR
     type: text
     title: Download folder
     description: Where the image is kept, so a second run costs no download. It needs about two gigabytes.
     group: Image
+    default: ~/Downloads
     required: true
-    prefill: prefill_download_dir()
-    pattern: '^/.+$'
-    error: Type the full path of a folder, starting with a slash.
+    pattern: '^~?/.+$'
+    error: Type the full path of a folder, starting with / or ~/.
 
   - name: ARCH_OS_IMAGE_VERIFY
     type: bool

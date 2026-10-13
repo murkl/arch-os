@@ -781,8 +781,16 @@ update_recovery() {
 # WRITING | The image Create boot medium puts on a device
 # ////////////////////////////////////////////////////////////////////////////
 
+# The download folder, with ~ as the home it stands for.
+download_dir() {
+    case "$ARCH_OS_DOWNLOAD_DIR" in
+    \~/*) printf '%s/%s' "$HOME" "${ARCH_OS_DOWNLOAD_DIR#\~/}" ;;
+    *) printf '%s' "$ARCH_OS_DOWNLOAD_DIR" ;;
+    esac
+}
+
 # The image, named after the version: a machine that has it needs no release.
-image() { printf '%s/arch-os-%s-x86_64.iso' "$ARCH_OS_DOWNLOAD_DIR" "$(release_version)"; }
+image() { printf '%s/arch-os-%s-x86_64.iso' "$(download_dir)" "$(release_version)"; }
 
 # The checksum beside it, as `sha256sum -c` reads it.
 checksum() { printf '%s.sha256' "$(image)"; }
@@ -1027,16 +1035,6 @@ value_disk_encrypted() {
 }
 
 # ─── Create boot medium ─────────────────────────────────────────────────────
-
-# The session's download folder, or the one every desktop falls back to.
-# https://specifications.freedesktop.org/basedir-spec/latest/
-prefill_download_dir() {
-    [ -n "${XDG_DOWNLOAD_DIR:-}" ] && {
-        printf '%s' "$XDG_DOWNLOAD_DIR"
-        return 0
-    }
-    printf '%s/Downloads' "${HOME:-$(dirname "$MODULE_CONF")}"
-}
 
 # The USB disks, without the ones the running system is on: a system can live
 # on a USB disk too.
