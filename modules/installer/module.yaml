@@ -245,7 +245,8 @@ variables:
     title: Recovery
     description: |
       Repairs a system that no longer starts, without a USB stick: on a
-      partition of its own, in the boot menu behind the space key.
+      partition of its own, in the boot menu behind the space key and in the
+      firmware's boot menu.
     group: Boot
     default: true
 

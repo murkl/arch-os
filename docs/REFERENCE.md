@@ -64,7 +64,7 @@ Mounted `defaults,noatime,compress=zstd`. Written once, in `oak.sh`, which both 
 
 systemd-boot, `bootctl install`, one entry and one fallback, and the Recovery beside them. With **Secure Boot**, a **unified kernel image** per preset instead, signed with keys made for this machine.
 
-The menu stays hidden: holding space while the machine starts brings it up. The entries carry `sort-key arch`, the key the signed images take from `os-release`, so they come before the Recovery, which carries its own.
+The menu stays hidden: holding space while the machine starts brings it up. systemd-boot looks for a key only for a moment, and a firmware that hands no held key on - a laptop keyboard it starts late - never shows it; tapping space from the moment the machine is switched on works on more of them, and the Recovery has an entry of its own in the firmware's boot menu besides. The entries carry `sort-key arch`, the key the signed images take from `os-release`, so they come before the Recovery, which carries its own.
 
 `kernel_args` in the bootloader task is the one source of the command line - the unified image and systemd-boot read it whole.
 
@@ -330,7 +330,7 @@ Two are written whole:
 
 ## The Recovery
 
-- From its partition: **Arch OS Recovery** in the boot menu, or **Recovery** among the applications. It starts with Secure Boot on
+- From its partition: **Arch OS Recovery** in the boot menu, in the firmware's own boot menu (**F12** on most machines), or **Recovery** among the applications. It starts with Secure Boot on
 - From the ISO: `recovery` on another console (**Ctrl+Alt+F2**). Secure Boot off to boot it, on again afterwards
 
 Two questions - keyboard, disk - and on its own partition not even those, see below. Everything else is read, not asked:
@@ -363,7 +363,7 @@ It is built with the release rather than on the machine, out of Arch's own minim
 
 | File | Goes to | What it is |
 | --- | --- | --- |
-| `recovery.efi` | `/boot/EFI/Linux/arch-os-recovery.efi` | Kernel, ram disk and command line as one image. systemd-boot lists it by itself, under the name its `os-release` gives it |
+| `recovery.efi` | `/boot/EFI/Linux/arch-os-recovery.efi` | Kernel, ram disk and command line as one image. systemd-boot lists it by itself, under the name its `os-release` gives it, and the firmware under an entry of its own, **Arch OS Recovery**, outside its boot order |
 | `recovery.img` | partition 3, byte for byte | A read-only erofs holding the root file system and its signature. The running system never mounts it, nothing but an update writes to it, and the file manager does not list it |
 
 How it starts:

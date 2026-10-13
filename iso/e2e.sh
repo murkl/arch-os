@@ -266,12 +266,11 @@ shutdown_installed() {
     stopped
 }
 
-# The Recovery on its partition, started the way its launcher on the desktop
-# starts it. It has to pass Secure Boot with this machine's keys, find and check
-# its partition and open on its menu, in the language the Installer was read in.
-recovery_menu() {
-    local deadline=$((SECONDS + BOOT_TIMEOUT)) shot="${WORK}/recovery.png"
-    as_root systemctl reboot --boot-loader-entry=arch-os-recovery.efi || true
+# Waits for the Recovery on its partition to open on its menu. It has to pass
+# Secure Boot with this machine's keys, find and check its partition and open
+# in the language the Installer was read in.
+recovery_opens() {
+    local how="$1" deadline=$((SECONDS + BOOT_TIMEOUT)) shot="${WORK}/recovery.png"
     rm -f "$shot"
     until [ -s "$shot" ] && tesseract "$shot" - --psm 6 2>/dev/null | grep -qE 'Setup|Start'; do
         kill -0 "$QEMU_PID" 2>/dev/null || fail "the machine stopped before the Recovery came up"
@@ -280,7 +279,15 @@ recovery_menu() {
         printf 'screendump %s -f png\n' "$shot" >&3
         sleep 10
     done
-    say "Recovery: started from its partition, on its menu"
+    say "Recovery: started ${how}, on its menu"
+}
+
+# The Recovery on its partition, started the way its launcher on the desktop
+# starts it, and left with Exit.
+recovery_menu() {
+    local deadline shot="${WORK}/recovery.png"
+    as_root systemctl reboot --boot-loader-entry=arch-os-recovery.efi || true
+    recovery_opens "by the boot loader"
 
     # Exit is the last row of the page q opens. The kiosk starts it again, and
     # the console shows no login on the way: photographed for as long as the
@@ -403,8 +410,24 @@ keys Enter
 shows "Do you really want to start?"
 keys Up Enter
 finished installer "$INSTALL_TIMEOUT"
+
+# The Recovery's own firmware entry as the next boot: the way in from the
+# firmware's boot menu, where the loader's never comes up.
+if [ "$START" = core ]; then
+    entries="$(live efibootmgr)"
+    entry="$(awk '!found && /^Boot[0-9A-Fa-f]/ && index($0, "Arch OS Recovery") { print substr($1, 5, 4); found = 1 }' <<<"$entries")"
+    [ -n "$entry" ] || fail "the installation left the firmware no entry for the Recovery"
+    live efibootmgr -q --bootnext "$entry"
+fi
 live systemctl poweroff || true
 stopped
+
+if [ "$START" = core ]; then
+    start disk
+    recovery_opens "by its firmware entry"
+    printf 'quit\n' >&3
+    stopped
+fi
 
 start disk
 healthy

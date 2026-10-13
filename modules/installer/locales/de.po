@@ -222,8 +222,8 @@ msgstr "Recovery"
 
 #. ARCH_OS_RECOVERY_ENABLED: what it means
 #: module.yaml
-msgid "Repairs a system that no longer starts, without a USB stick: on a partition of its own, in the boot menu behind the space key."
-msgstr "Repariert ein System, das nicht mehr startet, ohne USB-Stick: auf einer eigenen Partition, im Bootmenü hinter der Leertaste."
+msgid "Repairs a system that no longer starts, without a USB stick: on a partition of its own, in the boot menu behind the space key and in the firmware's boot menu."
+msgstr "Repariert ein System, das nicht mehr startet, ohne USB-Stick: auf einer eigenen Partition, im Bootmenü hinter der Leertaste und im Bootmenü der Firmware."
 
 #. ARCH_OS_BOOTSPLASH_ENABLED: the question
 #: module.yaml
