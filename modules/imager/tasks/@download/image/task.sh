@@ -1,12 +1,13 @@
 # The image of the release oak.yaml names, kept in the download folder so a
 # second run costs nothing, and beside it the checksum that release publishes.
 
-mkdir -p "$ARCH_OS_DOWNLOAD_DIR" || {
-    echo "${ARCH_OS_DOWNLOAD_DIR} cannot be created" >&2
+folder="$(download_dir)"
+mkdir -p "$folder" || {
+    echo "${folder} cannot be created" >&2
     exit 1
 }
-[ -w "$ARCH_OS_DOWNLOAD_DIR" ] || {
-    echo "${ARCH_OS_DOWNLOAD_DIR} cannot be written to" >&2
+[ -w "$folder" ] || {
+    echo "${folder} cannot be written to" >&2
     exit 1
 }
 
@@ -29,7 +30,7 @@ if [ -f "$(image)" ]; then
 fi
 
 if [ -z "$url" ]; then
-    echo "The release v$(release_version) is out of reach and ${ARCH_OS_DOWNLOAD_DIR} holds no image. Connect this machine, or put arch-os-$(release_version)-x86_64.iso there yourself." >&2
+    echo "The release v$(release_version) is out of reach and ${folder} holds no image. Connect this machine, or put arch-os-$(release_version)-x86_64.iso there yourself." >&2
     exit 1
 fi
 
@@ -37,7 +38,7 @@ fi
 echo "fetching ${url##*/}"
 if ! fetch_url --progress-bar --retry 3 --retry-delay 2 "$url" -o "$(image).part"; then
     rm -f "$(image).part"
-    echo "downloading ${url##*/} into ${ARCH_OS_DOWNLOAD_DIR} failed" >&2
+    echo "downloading ${url##*/} into ${folder} failed" >&2
     exit 1
 fi
 mv "$(image).part" "$(image)"

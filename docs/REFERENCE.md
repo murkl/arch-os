@@ -398,7 +398,7 @@ It is a kiosk: the Recovery is the only thing the machine runs, and nothing lead
 A hybrid ISO already carries its partition table and boot paths - writing it is one raw copy.
 
 - The image is the release `version:` in `oak.yaml` names
-- Where it lands is asked: `XDG_DOWNLOAD_DIR` or `~/Downloads`. An image already there is used rather than fetched again
+- It lands in `~/Downloads`, another folder in **Setup**. An image already there is used rather than fetched again
 - The device is asked each time **Start** is chosen, before the password, and never kept: a path like `/dev/sdb` only names a stick while it is plugged in
 - It is checked against the checksum GitHub publishes for that release, and a mismatch discards it rather than keeping a broken one. The checksum is read once, when the image is fetched or found, and kept beside it as `.sha256`
 - Where that release publishes no checksum, nothing is written. **Verify checksum** off in **Setup** writes the image in the folder as it is, without asking the release anything - an image built here is the one that arrives this way
