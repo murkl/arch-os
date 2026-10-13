@@ -77,6 +77,11 @@ for profile in /var/lib/iwd/*.psk /var/lib/iwd/*.open; do
     echo "carried over the wireless network ${ssid}"
 done
 arch-chroot "$MNT" systemctl enable fstrim.timer
+
+# The keyring's weekly refresh, which its package switches on, asks
+# archlinux.org for every key: offline it is skipped rather than failed.
+mkdir -p "${MNT}/etc/systemd/system/archlinux-keyring-wkd-sync.service.d"
+render "$(where)/online.conf" >"${MNT}/etc/systemd/system/archlinux-keyring-wkd-sync.service.d/online.conf"
 arch-chroot "$MNT" systemctl enable systemd-timesyncd.service
 
 # A monthly scrub reads every block back against its checksum, so a disk going

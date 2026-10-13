@@ -38,6 +38,7 @@
 - Recovery in the boot menu and on the ISO
 - Create boot medium on any Linux machine
 - Wireless network in the Installer and the Recovery
+- Runs offline for good: no timer fails without internet
 - Virtual machine guest tools, or QEMU and libvirt on hardware
 - Starting points **Core** and **Desktop**, or a shared configuration
 - English and German interface

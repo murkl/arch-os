@@ -284,6 +284,16 @@ All of it in one place, `data/settings` beside the snapper task: `set-config` ta
 
 **Only through the Recovery.** The kernel and its ram disk live on the EFI partition, which is not btrfs and is in no snapshot. A snapshot from before a kernel update brings back the modules of the old kernel while `/boot` keeps starting the new one, and the machine comes up without a single module. There is no stock way around that with systemd-boot, so no tool is installed that restores from the running desktop. The Recovery puts the snapshot in place and then rebuilds the boot files from the package cache - which is also why the download cache is never emptied outright, see `pacrc`.
 
+## Offline
+
+An installed system needs no internet, for as long as it stays without one. Only an update does, when somebody starts one.
+
+- The timers that reach out are skipped while archlinux.org is out of reach, rather than failed: the weekly mirror ranking, and the keyring's own refresh, which its package switches on. `systemctl --failed` stays empty, and the system `running` rather than `degraded`
+- A drop-in beside each, `online.conf`, asks with `ExecCondition=`: a status from 1 to 254 is a skip, written to the journal
+- The Recovery repairs without a network, out of the package cache
+
+**Note:** _Back online after months, the packagers' keys may have changed in between, so the keyring goes first: `sudo pacman -Sy archlinux-keyring && sudo pacman -Su`. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Pacman/Package_signing#Upgrade_system_regularly)**_
+
 ## Closing the Target
 
 Swap off, sync, unmount, lock: in the Installer before the disk is partitioned, in the Recovery before it is opened - a second attempt starts from whatever the first left. A restart or a shutdown leaves it to systemd, which unmounts and locks on the way down.

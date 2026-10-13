@@ -12,6 +12,10 @@ arch-chroot "$MNT" systemctl enable reflector.timer # rank mirrors weekly
 arch-chroot "$MNT" systemctl enable paccache.timer  # trim the package cache
 arch-chroot "$MNT" systemctl enable smartd          # watch disk health
 
+# Offline the ranking is skipped rather than failed.
+mkdir -p "${MNT}/etc/systemd/system/reflector.service.d"
+render "$(where)/online.conf" >"${MNT}/etc/systemd/system/reflector.service.d/online.conf"
+
 # A guest's kernel refuses every affinity irqbalance sets and logs each refusal.
 # smartd stays: its unit stays down in a guest by itself.
 if [ "$ARCH_OS_VIRTUAL_MACHINE" = "false" ]; then
