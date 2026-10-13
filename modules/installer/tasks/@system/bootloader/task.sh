@@ -24,6 +24,7 @@ kernel_args() {
 
     args+=(rootflags=subvol=@ rootfstype=btrfs)
     args+=(zswap.enabled=0) # pointless next to zram, and the two interfere
+    args+=(panic=10)        # restarts, so the loader counts the start as failed
 
     [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && args+=(nowatchdog)
 

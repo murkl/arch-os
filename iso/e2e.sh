@@ -255,7 +255,9 @@ healthy() {
     }
     as_root bootctl status 2>/dev/null | grep -q 'Secure Boot: enabled' ||
         fail "the installed system did not start with Secure Boot on"
-    say "Installed system: running, Secure Boot on"
+    [ "$(installed cat /proc/sys/kernel/panic)" = 10 ] ||
+        fail "the installed system does not restart after a kernel panic"
+    say "Installed system: running, Secure Boot on, restarts after a panic"
 }
 
 # A command as root on the installed system, through sudo and the password.
