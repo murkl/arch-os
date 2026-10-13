@@ -1,4 +1,4 @@
-# Written by the Arch OS Installer.
+# Written by Arch OS.
 ALL_kver="/boot/vmlinuz-{{KERNEL}}"
 ALL_cmdline="/etc/kernel/cmdline"
 PRESETS=('default' 'fallback')

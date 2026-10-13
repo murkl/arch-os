@@ -1,0 +1,18 @@
+# Written by Arch OS: once this start counts as one that worked, every entry of
+# the system gets its tries back, the one it came from and the other alike.
+[Unit]
+Description=Arch OS boot entries given their tries again
+Documentation=https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/
+DefaultDependencies=no
+Requires=boot-complete.target
+After=local-fs.target boot-complete.target systemd-bless-boot.service
+Conflicts=shutdown.target
+Before=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/lib/arch-os/boot-tries.sh /boot {{TRIES}}
+
+[Install]
+WantedBy=basic.target

@@ -266,6 +266,52 @@ shutdown_installed() {
     stopped
 }
 
+# The installed system came from the entry named, and both its entries have
+# their tries back: a start that worked hands them back, whichever it came from.
+entries_ready() {
+    local status listed name
+    status="$(as_root bootctl status 2>/dev/null || true)"
+    grep -qE "Current Entry: ${1//./\\.}\$" <<<"$status" ||
+        fail "the installed system did not start from ${1}: $(grep 'Current Entry' <<<"$status")"
+    listed="$(as_root ls /boot/loader/entries)"
+    for name in main main-fallback; do
+        grep -qx "${name}+3.conf" <<<"$listed" || fail "${name} did not get its tries back: ${listed//$'\n'/ }"
+    done
+    say "Installed system: started from ${1}, both entries counted again"
+}
+
+# The entries named with no tries left, as three starts that failed leave them.
+used_up() {
+    local name
+    for name in "$@"; do
+        as_root mv "/boot/loader/entries/${name}+3.conf" "/boot/loader/entries/${name}+0-3.conf"
+    done
+}
+
+# The installation as 2.0 left it, with the disk open in the live image: its
+# unified images in EFI/Linux, started as the loader's default, and no entry
+# counting its tries. The repair has to lay it out as this release does. sbctl
+# keeps no record of the images: mkinitcpio's hook signs them as it builds.
+as_2_0() {
+    live bash -s <<EOF
+set -euo pipefail
+printf '%s' '${PASSWORD}' | cryptsetup open ${DISK}2 e2e-old
+mount -t btrfs -o subvol=@ /dev/mapper/e2e-old /mnt
+mount -t vfat ${DISK}1 /mnt/boot
+sed -i 's|/boot/EFI/arch-os/|/boot/EFI/Linux/|' /mnt/etc/mkinitcpio.d/linux-zen.preset
+for name in arch-linux-zen arch-linux-zen-fallback; do
+    mv "/mnt/boot/EFI/arch-os/\${name}.efi" "/mnt/boot/EFI/Linux/\${name}.efi"
+done
+rm -f /mnt/boot/loader/entries/main*.conf
+printf 'default arch-linux-zen.efi\nconsole-mode auto\ntimeout 0\neditor no\n' >/mnt/boot/loader/loader.conf
+arch-chroot /mnt systemctl disable arch-os-boot-tries.service
+rm -f /mnt/etc/systemd/system/arch-os-boot-tries.service /mnt/usr/local/lib/arch-os/boot-tries.sh
+umount -R /mnt
+cryptsetup close e2e-old
+EOF
+    say "Laid the installation out as 2.0 did"
+}
+
 # Waits for the Recovery on its partition to open on its menu. It has to pass
 # Secure Boot with this machine's keys, find and check its partition and open
 # in the language the Installer was read in.
@@ -440,13 +486,33 @@ if [ "$START" = desktop ]; then
     exit 0
 fi
 
+entries_ready main.conf
 snapshots="$(as_root snapper --csvout --no-headers list | wc -l)"
 [ "$snapshots" -gt 1 ] || fail "the installed system holds no snapshot to go back to"
+
+# Its entry used up, the system starts from its fallback.
+used_up main
+shutdown_installed
+start disk
+healthy
+entries_ready main-fallback.conf
+
+# Both used up, the Recovery comes up by itself and hands them back.
+used_up main main-fallback
+shutdown_installed
+start disk
+recovery_opens "after the system used up every try"
+printf 'quit\n' >&3
+stopped
+start disk
+healthy
+entries_ready main.conf
 shutdown_installed
 
 start repair
 until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
 live systemctl stop arch-os
+as_2_0
 live "printf \"ARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
 live "tmux new-session -d -s e2e -x 120 -y 40 'recovery --language=en'"
 
@@ -470,6 +536,12 @@ stopped
 
 start disk
 healthy
+entries_ready main.conf
+as_root test -f /boot/EFI/arch-os/arch-linux-zen.efi || fail "the repair left no unified image in /boot/EFI/arch-os"
+if as_root test -e /boot/EFI/Linux/arch-linux-zen.efi; then
+    fail "the repair left the 2.0 image in EFI/Linux, where the loader lists it twice"
+fi
+say "Repair: laid the 2.0 installation out as this release does"
 recovery_menu
 
 say "Arch OS installs, boots, repairs, boots again and starts its Recovery"

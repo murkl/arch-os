@@ -49,10 +49,9 @@ hooks="base systemd keyboard autodetect microcode modconf kms sd-vconsole block$
 mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
 render "${data}/10-arch-os.conf" HOOKS="$hooks" >"${MNT}/etc/mkinitcpio.conf.d/10-arch-os.conf"
 
-key=image
-if secure_boot_wanted; then
-    key=uki
-    mkdir -p "${MNT}/boot/EFI/Linux" "${MNT}/etc/kernel"
+kind="$(boot_kind)"
+if [ "$kind" = uki ]; then
+    mkdir -p "${MNT}${UKI_DIR}" "${MNT}/etc/kernel"
 
     # Without it mkinitcpio takes /proc/cmdline, the live image's.
     kernel_args >"${MNT}/etc/kernel/cmdline"
@@ -64,13 +63,11 @@ fi
 
 # Written whole on both paths: the template mkinitcpio writes on its own has no
 # fallback image, while a boot entry would still point at one.
-mapfile -t images < <(boot_images)
-render "${data}/${key}.preset" KERNEL="$KERNEL" DEFAULT="${images[0]}" FALLBACK="${images[1]}" \
-    >"${MNT}/etc/mkinitcpio.d/${KERNEL}.preset"
+boot_preset "$MNT" "$kind"
 arch-chroot "$MNT" mkinitcpio -P
 
 # The plain ram disks the kernel package built, which nothing updates now.
-if secure_boot_wanted; then
+if [ "$kind" = uki ]; then
     rm -f "${MNT}/boot/initramfs-${KERNEL}.img" "${MNT}/boot/initramfs-${KERNEL}-fallback.img"
 fi
 
@@ -78,18 +75,12 @@ fi
 # cannot see which partition the ESP is and writes one that points nowhere.
 bootctl --root="$MNT" --esp-path=/boot --variables=yes install
 
-# A unified image needs no entry: systemd-boot lists EFI/Linux on its own.
-default=main.conf
-secure_boot_wanted && default="arch-${KERNEL}.efi"
-render "${data}/loader.conf" DEFAULT="$default" >"${MNT}/boot/loader/loader.conf"
+# A unified image carries its command line, a ram disk's entry names it.
+cmdline=""
+[ "$kind" = uki ] || cmdline="$(kernel_args)"
+boot_entries "$MNT" "$kind" "$cmdline"
 
-if ! secure_boot_wanted; then
-    cmdline="$(kernel_args)"
-    for entry in main main-fallback; do
-        render "${data}/${entry}.conf" KERNEL="$KERNEL" CMDLINE="$cmdline" \
-            >"${MNT}/boot/loader/entries/${entry}.conf"
-    done
-fi
+clear_loader_default
 
 arch-chroot "$MNT" systemctl enable systemd-boot-update.service
 

@@ -223,6 +223,87 @@ btrfs_subvolumes() {
         @tmp /var/tmp
 }
 
+# ─── The boot entries ──────────────────────────────────────────────────────
+#
+# What the Installer writes and the Recovery lays down again, each entry of the
+# system tried BOOT_TRIES times before the next: docs/REFERENCE.md#when-the-system-does-not-start
+
+# The templates, kept with the Recovery, which every image carries.
+boot_data() { printf '%s/modules/recovery/data/boot' "$(product_dir)"; }
+
+export BOOT_TRIES=3
+
+# The unified images, outside EFI/Linux: the loader would list them there on
+# their own, beside the entries that count their tries.
+export UKI_DIR=/boot/EFI/arch-os
+
+# The images the firmware starts for kind $1, uki or image, the system's first.
+images_of() {
+    if [ "$1" = uki ]; then
+        printf '%s/arch-%s.efi\n%s/arch-%s-fallback.efi\n' "$UKI_DIR" "$KERNEL" "$UKI_DIR" "$KERNEL"
+    else
+        printf '/boot/initramfs-%s.img\n/boot/initramfs-%s-fallback.img\n' "$KERNEL" "$KERNEL"
+    fi
+}
+
+# Text written beside a file and moved over it, so whatever reads it at the
+# next start finds the old file or the new one, never half of either.
+place() {
+    printf '%s\n' "$2" >"${1}.new"
+    mv -f "${1}.new" "$1"
+}
+
+# mkinitcpio's preset in the system at $1 for kind $2.
+boot_preset() {
+    local images text
+    mapfile -t images < <(images_of "$2")
+    text="$(render "$(boot_data)/$2.preset" KERNEL="$KERNEL" DEFAULT="${images[0]}" FALLBACK="${images[1]}")"
+    place "$1/etc/mkinitcpio.d/${KERNEL}.preset" "$text"
+}
+
+# The system's two entries in the system at $1, the loader's configuration and
+# the unit that gives the entries their tries back. For kind $2: unified
+# images, or ram disks started with the command line $3. Each entry is in
+# place before any other name it went by is removed.
+boot_entries() {
+    local root="$1" kind="$2" cmdline="$3" data entries images text file old i
+    local -a names=(main main-fallback) titles=("Arch OS" "Arch OS (fallback)") keys=(arch arch-fallback)
+    data="$(boot_data)"
+    entries="${root}/boot/loader/entries"
+    mapfile -t images < <(images_of "$kind")
+    mkdir -p "$entries" "${root}/usr/local/lib/arch-os" "${root}/etc/systemd/system"
+
+    for i in 0 1; do
+        if [ "$kind" = uki ]; then
+            text="$(render "${data}/uki-entry.conf" TITLE="${titles[i]}" SORT_KEY="${keys[i]}" UKI="${images[i]#/boot}")"
+        else
+            text="$(render "${data}/entry.conf" TITLE="${titles[i]}" SORT_KEY="${keys[i]}" KERNEL="$KERNEL" \
+                INITRD="${images[i]#/boot/}" CMDLINE="$cmdline")"
+        fi
+        file="${entries}/${names[i]}+${BOOT_TRIES}.conf"
+        place "$file" "$text"
+        for old in "${entries}/${names[i]}.conf" "${entries}/${names[i]}+"*.conf; do
+            [ "$old" = "$file" ] || rm -f "$old"
+        done
+    done
+
+    text="$(render "${data}/loader.conf")"
+    place "${root}/boot/loader/loader.conf" "$text"
+    text="$(render "${data}/boot-tries.sh")"
+    place "${root}/usr/local/lib/arch-os/boot-tries.sh" "$text"
+    chmod 755 "${root}/usr/local/lib/arch-os/boot-tries.sh"
+    text="$(render "${data}/arch-os-boot-tries.service" TRIES="$BOOT_TRIES")"
+    place "${root}/etc/systemd/system/arch-os-boot-tries.service" "$text"
+    arch-chroot "$root" systemctl enable arch-os-boot-tries.service
+}
+
+# A default an earlier system left in this machine's firmware is started
+# however often it fails, so the entries' tries count for nothing past it.
+clear_loader_default() {
+    [ -e /sys/firmware/efi/efivars/LoaderEntryDefault-4a67b082-0a4c-41cf-b6c7-440b29bb8c4f ] || return 0
+    bootctl set-default '' || echo "the firmware's default boot entry could not be cleared" >&2
+}
+
 # Everything under /mnt taken down, and whatever still holds it logged and
 # killed. Why -R and -M: docs/REFERENCE.md#closing-the-target
 unmount_target() {
@@ -433,14 +514,11 @@ secure_boot_wanted() {
     [ "$ARCH_OS_SECURE_BOOT_ENABLED" = "true" ] && [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]
 }
 
+# The kind of image the Installer builds.
+boot_kind() { if secure_boot_wanted; then echo uki; else echo image; fi; }
+
 # The images the firmware starts - a check against the other two checks nothing.
-boot_images() {
-    if secure_boot_wanted; then
-        printf '/boot/EFI/Linux/arch-%s.efi\n/boot/EFI/Linux/arch-%s-fallback.efi\n' "$KERNEL" "$KERNEL"
-    else
-        printf '/boot/initramfs-%s.img\n/boot/initramfs-%s-fallback.img\n' "$KERNEL" "$KERNEL"
-    fi
-}
+boot_images() { images_of "$(boot_kind)"; }
 
 # The Recovery image: on the Arch OS ISO already, else fetched into /tmp. How it
 # boots: docs/REFERENCE.md

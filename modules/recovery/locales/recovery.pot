@@ -173,9 +173,9 @@ msgstr ""
 #. asked before the step runs
 #: tasks/@rebuild/boot/task.yaml
 msgid ""
-"Rebuild the kernel images and the initial ram disks?\n"
+"Rebuild the kernel images, the initial ram disks and the boot entries?\n"
 "\n"
-"Needed after a rollback past a kernel update, or the system starts without its modules. Everything comes from the package cache, so no network is needed."
+"Needed after a rollback past a kernel update, or the system starts without its modules. An installation from before 2.1 gets the entries that fall back to the Recovery. Everything comes from the package cache, so no network is needed."
 msgstr ""
 
 #. told where the step stops itself with exit 10
