@@ -104,7 +104,7 @@ Offered only with **disk encryption**:
 - No encryption, no point - the drive is readable either way
 - A unified image signs kernel, initramfs and command line **as one**. Kernel-only leaves a forgeable initramfs on the unencrypted partition
 
-Signed **last**: the NVIDIA driver and the boot splash rebuild the kernel image afterwards, bypassing pacman and `sbctl`'s hook. Every signed file is recorded, so the hook catches the next rebuild. The Recovery's image is signed with them, so it starts with Secure Boot on.
+Signed **last**: the NVIDIA driver and the boot splash rebuild the kernel image afterwards, bypassing pacman and `sbctl`'s hook. The unified images are signed by sbctl's mkinitcpio hook each time they are built; systemd-boot and the Recovery are recorded, so sbctl's pacman hook signs them again. The Recovery's image is signed with them, so it starts with Secure Boot on.
 
 The keys are made **first**, with the boot images - before anything takes a snapshot. `/var/lib/sbctl` lives in `@`, so a snapshot from before the keys comes back unable to sign what it rebuilds, and with Secure Boot on the next kernel update would not start. The Recovery carries the keys over a rollback for the same reason: they belong to the firmware they are enrolled in, not to a point in time.
 
