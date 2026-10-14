@@ -1,28 +1,27 @@
-# Opened where update found a newer Recovery. With Secure Boot on, the new one
-# is signed with the system's keys, which lie behind the disk's password.
-title: Install the newer Recovery
-error: Installing the newer Recovery failed. Until it has run through, the Recovery may not start from its partition - the log says how far it got.
+# Opened where update found a Recovery to install. An encrypted system is
+# opened for it, since the system's keys sign the new one where it signs its
+# boot chain.
+title: Install the newest Recovery
+error: Installing the Recovery failed. Until it goes through, the Recovery on the disk may not start. Choose Update the Recovery again. The log shows how far it got.
 
 rules:
   offer-if: [online]
 
 variables:
-  - name: ARCH_OS_RECOVERY_KEYS_PASSWORD
+  - name: ARCH_OS_RECOVERY_UPDATE_PASSWORD
     type: password
     title: Encryption password
-    description: Secure Boot starts only a Recovery signed with this system's keys, and they are on the encrypted disk. Asked right before the update and never written to a file.
+    description: Opens the system, whose own keys sign the new Recovery where it signs its boot chain. Asked right before the update and never written to a file.
     required: true
-    check: check_keys_password()
+    check: check_update_password()
     error: That password does not unlock this disk.
-    conditions:
-      - ARCH_OS_RECOVERY_SECURE_BOOT == true
-      - ARCH_OS_RECOVERY_ENCRYPTED == true
+    conditions: ARCH_OS_RECOVERY_ENCRYPTED == true
 
 confirm: |
-  Install the newer Recovery over this one?
+  Install the newest Recovery of this release series?
 
   It is downloaded, held to the checksum of its release and written to the
-  Recovery's partition. The new one starts with the next restart.
+  Recovery's partition. It starts with the next restart.
 
 # The statuses action.sh stops itself with. No internet and no GitHub are the
 # module's.
@@ -30,18 +29,18 @@ errors:
   10: |
     The download broke off
 
-    The release page stopped sending the newer Recovery. Nothing was changed;
-    try again.
+    The release page stopped sending the Recovery. Nothing was changed; try
+    again.
   11: |
     The download is damaged
 
     It does not match the checksum of its release and was deleted. Nothing was
     changed; try again.
   12: |
-    The newer Recovery does not fit
+    The Recovery does not fit
 
-    It is larger than its partition and was not installed. The Recovery you
-    have stays and keeps working.
+    It is larger than its partition and was not installed. The Recovery on the
+    disk stays as it is.
   13: |
     Writing the Recovery failed
 

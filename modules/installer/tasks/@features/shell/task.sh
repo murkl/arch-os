@@ -1,6 +1,6 @@
 # A terminal that is pleasant on the first login.
 
-home="${MNT}/home/${ARCH_OS_USERNAME}"
+home="$(user_home)"
 data="$(where)"
 
 packages=(git starship eza bat zoxide fd fzf fastfetch mc btop bash-completion ttf-firacode-nerd
@@ -27,12 +27,5 @@ if ! fetch_url --connect-timeout 5 --max-time 30 \
     arch-chroot "$MNT" /usr/bin/starship preset pure-preset -o "/home/${ARCH_OS_USERNAME}/.config/starship.toml"
 fi
 cp "${home}/.config/starship.toml" "${MNT}/root/.config/starship.toml"
-
-# The terminal font, which the prompt draws with; a setting only a session has.
-if [ "$ARCH_OS_DESKTOP" != "none" ]; then
-    on_first_login <<'FIRST'
-gsettings set org.gnome.desktop.interface monospace-font-name 'FiraCode Nerd Font 11'
-FIRST
-fi
 
 own_home

@@ -202,6 +202,6 @@ command -v zoxide &>/dev/null && eval "$(zoxide init zsh)"
 [[ -f /etc/profile.d/vte.sh ]] && source /etc/profile.d/vte.sh
 
 # The prompt, outside a text console where the font can draw it. The same test
-# .bashrc makes, spelled the same way - why it is TERM and not the terminal
+# .bashrc makes, spelled the same way; why it is TERM and not the terminal
 # device is written out once, there.
 [[ $TERM != linux ]] && command -v starship &>/dev/null && eval "$(starship init zsh)"

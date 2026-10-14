@@ -10,5 +10,5 @@ python3 docs/banner.py \
     --logo docs/logo.svg \
     --card docs/screenshots/installer.png \
     --card docs/screenshots/installing.png \
-    --tagline "Install Arch Linux with ease - as a desktop or a TTY system. Installer and Recovery on one image." \
+    --tagline "Install Arch Linux with ease, as a desktop or a TTY system. Installer and Recovery on one image." \
     --cell 9

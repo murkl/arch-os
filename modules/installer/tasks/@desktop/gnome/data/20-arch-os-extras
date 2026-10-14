@@ -1,0 +1,28 @@
+# Written by the Arch OS Installer: the dock, the look and the keys every
+# account starts with.
+[org/gnome/shell]
+favorite-apps=[{{FAVORITES}}]
+
+[org/gnome/desktop/interface]
+gtk-theme='adw-gtk3'
+accent-color='slate'
+font-hinting='slight'
+font-antialiasing='rgba'
+
+[org/gnome/desktop/input-sources]
+show-all-sources=true
+
+[org/gnome/mutter]
+center-new-windows=true
+
+[org/gtk/settings/file-chooser]
+sort-directories-first=true
+
+[org/gtk/gtk4/settings/file-chooser]
+sort-directories-first=true
+
+[org/gnome/desktop/wm/keybindings]
+close=['<Super>q']
+minimize=['<Super>h']
+show-desktop=['<Super>d']
+toggle-fullscreen=['<Super>F11']

@@ -1,4 +1,4 @@
-# The rendered pictures in docs/screenshots/, and the way to each - see
+# The rendered pictures in docs/screenshots/, and the way to each, see
 # screenshots.py. The rest of that folder is photographs of a running system,
 # taken by hand and left alone here.
 #
@@ -41,7 +41,7 @@
       - page: Disk
         press: enter
 
-      # Also the page the banner is collaged from - see BANNER_CARDS in /Makefile.
+      # Also the page the banner is collaged from, see docs/banner.sh.
       - page: [Start, Setup]
         choose: Setup
         press: enter

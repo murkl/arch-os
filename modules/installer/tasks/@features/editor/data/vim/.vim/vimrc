@@ -1,5 +1,5 @@
-" Written by the Arch OS Installer. Vim's own defaults.vim first - a vimrc of
-" one's own switches them off otherwise - and then what makes it read like any
+" Written by the Arch OS Installer. Vim's own defaults.vim first (a vimrc of
+" one's own switches them off otherwise), and then what makes it read like any
 " other editor. `:help option-list` names everything that can go here.
 unlet! skip_defaults_vim
 source $VIMRUNTIME/defaults.vim

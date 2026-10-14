@@ -1,17 +1,8 @@
 #!/bin/bash
-# Walks a built ISO the whole way a person does, unattended: installs Arch OS
-# onto an empty disk, boots it, rolls it back with the Recovery, boots it again
-# and starts the Recovery on its own partition. What smoke.sh proves up to the
-# first page, this proves past it. A Desktop is installed and booted only.
+# Walks a built ISO the whole way a person does, unattended: install, boot,
+# repair, boot again, start the Recovery and write it again. See README.md.
 #
 #   e2e.sh <image.iso> [core|desktop]
-#
-# The live image is reached over ssh, by the cloud-init the Arch ISO carries;
-# the interface runs in tmux there, driven by its keys and read off its pane.
-# The installed system unlocks its disk from a systemd credential and is asked
-# over ssh, as the account the answers name, and the Recovery on its partition
-# is read off the screen. Needs qemu, OVMF, openssh, xorriso and tesseract - see
-# README.md.
 set -eu
 
 ISO="${1:-}"
@@ -35,6 +26,8 @@ RECOVERY_DIR="${ISO%-x86_64.iso}-recovery"
 INSTALL_TIMEOUT="${INSTALL_TIMEOUT:-$([ "$START" = desktop ] && echo 5400 || echo 2700)}"
 BOOT_TIMEOUT="${BOOT_TIMEOUT:-300}"
 REPAIR_TIMEOUT="${REPAIR_TIMEOUT:-600}"
+# The Recovery's download, half a gigabyte through qemu's own network.
+UPDATE_TIMEOUT="${UPDATE_TIMEOUT:-1800}"
 
 OVMF_CODE="${OVMF_CODE:-/usr/share/edk2/x64/OVMF_CODE.secboot.4m.fd}"
 OVMF_VARS="${OVMF_VARS:-/usr/share/edk2/x64/OVMF_VARS.4m.fd}"
@@ -47,7 +40,7 @@ PASSWORD=e2e-arch-os
 DISK=/dev/vda
 
 for tool in qemu-system-x86_64 qemu-img ssh ssh-keygen xorriso setsid tesseract; do
-    command -v "$tool" >/dev/null || { echo "Error: ${tool} not found - see README.md" >&2 && exit 1; }
+    command -v "$tool" >/dev/null || { echo "Error: ${tool} not found, see README.md" >&2 && exit 1; }
 done
 [ -f "$OVMF_CODE" ] || { echo "Error: no OVMF firmware at ${OVMF_CODE} - install edk2-ovmf" >&2 && exit 1; }
 
@@ -290,10 +283,8 @@ used_up() {
     done
 }
 
-# The installation as 2.0 left it, with the disk open in the live image: its
-# unified images in EFI/Linux, started as the loader's default, and no entry
-# counting its tries. The repair has to lay it out as this release does. sbctl
-# keeps no record of the images: mkinitcpio's hook signs them as it builds.
+# The installation as 2.0 left it: unified images in EFI/Linux, started as the
+# loader's default, and no entry counting its tries.
 as_2_0() {
     live bash -s <<EOF
 set -euo pipefail
@@ -337,10 +328,8 @@ recovery_menu() {
     as_root systemctl reboot --boot-loader-entry=arch-os-recovery.efi || true
     recovery_opens "by the boot loader"
 
-    # Exit is the last row of the page q opens. The kiosk starts it again, and
-    # the console shows no login on the way: photographed for as long as the
-    # restart takes, often enough to catch one that flashes by. Back within
-    # seconds, which a reboot of the machine never is.
+    # Exit is the last row of the page q opens. Photographed often enough to
+    # catch a login that flashes by, and back within seconds, unlike a reboot.
     local frame=0 text menu=false
     printf 'sendkey q\n' >&3
     sleep 2
@@ -568,4 +557,62 @@ fi
 say "Repair: laid the 2.0 installation out as this release does"
 recovery_menu
 
-say "Arch OS installs, boots, repairs, boots again and starts its Recovery"
+# An update cut short leaves a partition whose UUID the boot image no longer
+# names. Secure Boot is off on the ISO, and the system's keys sign it all the same.
+start repair
+until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
+live systemctl stop arch-os
+live dd if=/dev/urandom of="${DISK}3" bs=1M count=8 conv=fsync status=none
+live "printf \"ARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
+live "tmux new-session -d -s e2e -x 120 -y 40 'recovery --language=en'"
+
+say "Update: write the Recovery again from the ISO"
+shows "Setup"
+keys Down Enter
+shows "Update the Recovery"
+typed "/"
+typed "Update"
+keys Enter
+deadline=$((SECONDS + 120))
+until grep -qE 'Encryption password|Nothing to update' <<<"$(pane)"; do
+    [ "$SECONDS" -lt "$deadline" ] || {
+        pane >"${WORK}/pane.log" || true
+        fail "the update looked for no Recovery within 120s"
+    }
+    sleep 2
+done
+if pane | grep -qF "Nothing to update"; then
+    # A series GitHub publishes nothing of yet, as for a new major version.
+    say "Update: skipped, no release of this series publishes a Recovery yet"
+    exit 0
+fi
+typed "$PASSWORD"
+keys Enter
+shows "Install the newest Recovery of this release series?"
+keys Up Enter
+deadline=$((SECONDS + UPDATE_TIMEOUT))
+until pane | grep -qF "Recovery updated"; do
+    [ "$SECONDS" -lt "$deadline" ] || {
+        live cat /opt/arch-os/recovery.log >"${WORK}/recovery.log" || true
+        pane >"${WORK}/pane.log" || true
+        fail "the Recovery was not written again within ${UPDATE_TIMEOUT}s"
+    }
+    sleep 10
+done
+keys Enter
+live systemctl poweroff || true
+stopped
+
+start disk
+healthy
+uuid="$(as_root blkid -p -s UUID -o value "${DISK}3")"
+as_root bootctl list --json=short | grep -qF "archisodevice=UUID=${uuid} " ||
+    fail "the Recovery's boot image does not name its partition"
+as_root sbctl verify 2>/dev/null | grep -qF "/boot/EFI/Linux/arch-os-recovery.efi is signed" ||
+    fail "the Recovery written from the ISO is not signed"
+as_root systemctl reboot --boot-loader-entry=arch-os-recovery.efi || true
+recovery_opens "after it was written again from the ISO"
+printf 'quit\n' >&3
+stopped
+
+say "Arch OS installs, boots, repairs, boots again, starts its Recovery and writes it again"

@@ -1,11 +1,12 @@
-# On the settings page of the Recovery on its partition. Choosing the row looks;
+# On the settings page of the Recovery on its partition, and of one started
+# elsewhere for a disk whose Recovery no longer starts. Choosing the row looks;
 # what is found is installed only after update-install asks.
 title: Update the Recovery
-description: Look for a newer Recovery of this release series, and install it after asking.
-error: The internet connection was lost before the newer Recovery could be installed. Join a network with Configure Wi-Fi above, or plug in a cable.
+description: Look for the newest Recovery of this release series, and install it after asking.
+error: The internet connection was lost before the Recovery could be installed. Join a network with Configure Wi-Fi above, or plug in a cable.
 
 rules:
-  offer-if: [own-partition]
+  offer-if: [recovery-to-update]
   on-failure: [update-install]
 
 report: |

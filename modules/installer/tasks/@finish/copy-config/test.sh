@@ -1,1 +1,1 @@
-[ -f "${MNT}/home/${ARCH_OS_USERNAME}/installer.conf" ]
+[ -f "$(user_home)/installer.conf" ]

@@ -9,7 +9,7 @@ url="$(grep -v '^ARCH_OS_CONFIG_' "$MODULE_CONF" | paste_online)"
 answer ARCH_OS_CONFIG_URL "$url"
 
 # And into the copy the installed system keeps, so it knows where it was shared.
-target="${MNT}/home/${ARCH_OS_USERNAME}/installer.conf"
+target="$(user_home)/installer.conf"
 if [ -f "$target" ]; then
     printf "ARCH_OS_CONFIG_URL='%s'\n" "$url" >>"$target"
 fi

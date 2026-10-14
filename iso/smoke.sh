@@ -1,18 +1,8 @@
 #!/bin/bash
-# Boots a built Arch OS image and waits for the interface to come up in it and
-# answer a key.
+# Boots a built image until its interface answers a key, which proves the boot
+# chain no linter sees. See README.md.
 #
-# Nothing is installed: the machine is switched off the moment the page after
-# the first is recognised on its console. That proves the whole chain no linter
-# can see: the boot entry, the initramfs and its plymouth hook, the systemd unit
-# on tty1, the Oak binary, the modules it loads, and a console that hands the
-# keys on.
-#
-# Takes the image as its one argument: the ISO, or the Recovery's folder, whose
-# boot image is started the way the firmware starts it off the EFI partition,
-# with its partition as the machine's only disk - which it has to find by
-# itself, check and copy to memory before anything is drawn. `make smoke` hands
-# it the newest build of each. Needs qemu, OVMF and tesseract - see README.md.
+#   smoke.sh <image.iso | recovery-dir>
 set -eu
 
 IMAGE="${1:-}"
@@ -25,11 +15,8 @@ else
     exit 1
 fi
 
-# Where the console is photographed: beside the image it came out of, which is
-# dist/ and is taken back by `make clean` like everything else a build leaves,
-# in a folder named after it. A failure keeps every frame, since a picture of
-# the screen is all there is to go on afterwards; a run that worked keeps the
-# one it was recognised in.
+# A failure keeps every frame, since the screen is all there is to go on; a run
+# that worked keeps the one it was recognised in.
 FRAME_DIR="${FRAME_DIR:-$(dirname "$IMAGE")/smoke/$(basename "$IMAGE" .iso)}"
 
 # The slow case is a cold boot under emulation with no KVM, which five minutes
@@ -40,17 +27,12 @@ INTERVAL="${INTERVAL:-15}"
 OVMF_CODE="${OVMF_CODE:-/usr/share/edk2/x64/OVMF_CODE.4m.fd}"
 OVMF_VARS="${OVMF_VARS:-/usr/share/edk2/x64/OVMF_VARS.4m.fd}"
 
-# The first page, as the console spells it: the welcome, which Oak draws before
-# anything of its own modules is. Several strings rather than one, because OCR
-# over a console font loses a letter now and again - and it loses them in the
-# same places every time, so what is looked for is the part it reads cleanly:
-# the languages. The wordmark over them is drawn in blocks rather than letters.
+# The welcome page, by the languages on it: OCR reads them cleanly, where it
+# loses letters elsewhere and the wordmark is drawn in blocks.
 EXPECT='English|Deutsch'
 
-# A page on the screen is not yet one that listens: a console the splash left
-# locked shows every key rather than handing it on. Deutsch is chosen with the
-# keys a person presses, and both images go on to the console keyboard, in
-# German, with a list that says how to move through it.
+# A page on the screen does not yet listen: a console the splash left locked
+# shows keys instead of passing them on. So Deutsch is chosen by key.
 ANSWER='Tastatur|bewegen'
 
 # A machine that got this far and no further says so in plain words, and there is
@@ -58,7 +40,7 @@ ANSWER='Tastatur|bewegen'
 PANIC='Kernel panic|Failed to start'
 
 for tool in qemu-system-x86_64 tesseract; do
-    command -v "$tool" >/dev/null || { echo "Error: ${tool} not found - see README.md" >&2 && exit 1; }
+    command -v "$tool" >/dev/null || { echo "Error: ${tool} not found, see README.md" >&2 && exit 1; }
 done
 [ -f "$OVMF_CODE" ] || { echo "Error: no OVMF firmware at ${OVMF_CODE} - install edk2-ovmf" >&2 && exit 1; }
 
@@ -132,17 +114,15 @@ console_text() {
     tesseract "$1" - --psm 6 2>/dev/null || true
 }
 
-# What the console was showing when it gave up, in the log rather than only in
-# the frames: the picture is kept, but whoever reads a failed run reads the log,
-# and a boot that ends in a login prompt and one that never leaves the splash
-# are the same message without it.
+# The console's text in the log too: a login prompt and a splash that never
+# ended are otherwise the same message.
 fail() {
     echo "Error: $1" >&2
     if [ -n "$last_shot" ]; then
         echo "the console read:" >&2
         console_text "$last_shot" | sed 's/^/  | /' >&2
     else
-        echo "the console could not be photographed at all - see the monitor above" >&2
+        echo "the console could not be photographed at all, see the monitor above" >&2
     fi
     echo "the console is in ${FRAME_DIR}" >&2
     exit 1

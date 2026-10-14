@@ -1,4 +1,4 @@
-home="${MNT}/home/${ARCH_OS_USERNAME}"
+home="$(user_home)"
 
 arch-chroot "$MNT" getent passwd "$ARCH_OS_USERNAME" | grep -q ':/usr/bin/zsh$'
 arch-chroot "$MNT" getent passwd root | grep -q ':/usr/bin/bash$'

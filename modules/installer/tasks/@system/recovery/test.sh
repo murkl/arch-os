@@ -1,7 +1,9 @@
-# The partition holds the image byte for byte, and the loader lists an entry
-# that finds it by the UUID built into the image.
+# The partition holds the image byte for byte, read off the disk rather than
+# out of the memory the write went through, and the loader lists an entry that
+# finds it by the UUID built into the image.
 part="$(recovery_partition "$ARCH_OS_DISK")"
 image="$(recovery_image)/recovery.img"
+blockdev --flushbufs "$part"
 cmp -n "$(stat -c %s "$image")" "$image" "$part"
 cmp "$(recovery_image)/recovery.efi" "${MNT}${RECOVERY_EFI}"
 

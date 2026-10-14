@@ -68,16 +68,6 @@ msgstr ""
 msgid "Whether that disk is encrypted with LUKS."
 msgstr ""
 
-#. ARCH_OS_RECOVERY_SECURE_BOOT: the question
-#: module.yaml
-msgid "Secure Boot"
-msgstr ""
-
-#. ARCH_OS_RECOVERY_SECURE_BOOT: what it means
-#: module.yaml
-msgid "Whether the firmware starts only signed images."
-msgstr ""
-
 #. ARCH_OS_RECOVERY_PASSWORD: the question
 #: module.yaml actions/update-install/action.yaml
 msgid "Encryption password"
@@ -217,8 +207,8 @@ msgid "Internet"
 msgstr ""
 
 #. an action: its row, and the heading over its page
-#: actions/own-partition/action.yaml
-msgid "The Recovery's own partition"
+#: actions/recovery-to-update/action.yaml
+msgid "A Recovery to update"
 msgstr ""
 
 #. an action: its row, and the heading over its page
@@ -228,7 +218,7 @@ msgstr ""
 
 #. an action: what it does, under its row
 #: actions/restart/action.yaml
-msgid "Close this machine down and start it again."
+msgid "Shut this machine down and start it again."
 msgstr ""
 
 #. an action: its row, and the heading over its page
@@ -281,12 +271,12 @@ msgstr ""
 
 #. an action: what it does, under its row
 #: actions/update/action.yaml
-msgid "Look for a newer Recovery of this release series, and install it after asking."
+msgid "Look for the newest Recovery of this release series, and install it after asking."
 msgstr ""
 
 #. an action: what a no from it means
 #: actions/update/action.yaml
-msgid "The internet connection was lost before the newer Recovery could be installed. Join a network with Configure Wi-Fi above, or plug in a cable."
+msgid "The internet connection was lost before the Recovery could be installed. Join a network with Configure Wi-Fi above, or plug in a cable."
 msgstr ""
 
 #. read once the action is done, and held on until somebody has
@@ -299,20 +289,20 @@ msgstr ""
 
 #. an action: its row, and the heading over its page
 #: actions/update-install/action.yaml
-msgid "Install the newer Recovery"
+msgid "Install the newest Recovery"
 msgstr ""
 
 #. an action: what a no from it means
 #: actions/update-install/action.yaml
-msgid "Installing the newer Recovery failed. Until it has run through, the Recovery may not start from its partition - the log says how far it got."
+msgid "Installing the Recovery failed. Until it goes through, the Recovery on the disk may not start. Choose Update the Recovery again. The log shows how far it got."
 msgstr ""
 
 #. asked before the action does its work
 #: actions/update-install/action.yaml
 msgid ""
-"Install the newer Recovery over this one?\n"
+"Install the newest Recovery of this release series?\n"
 "\n"
-"It is downloaded, held to the checksum of its release and written to the Recovery's partition. The new one starts with the next restart."
+"It is downloaded, held to the checksum of its release and written to the Recovery's partition. It starts with the next restart."
 msgstr ""
 
 #. read once the action is done, and held on until somebody has
@@ -328,7 +318,7 @@ msgstr ""
 msgid ""
 "The download broke off\n"
 "\n"
-"The release page stopped sending the newer Recovery. Nothing was changed; try again."
+"The release page stopped sending the Recovery. Nothing was changed; try again."
 msgstr ""
 
 #. told where the action stops itself with exit 11
@@ -342,9 +332,9 @@ msgstr ""
 #. told where the action stops itself with exit 12
 #: actions/update-install/action.yaml
 msgid ""
-"The newer Recovery does not fit\n"
+"The Recovery does not fit\n"
 "\n"
-"It is larger than its partition and was not installed. The Recovery you have stays and keeps working."
+"It is larger than its partition and was not installed. The Recovery on the disk stays as it is."
 msgstr ""
 
 #. told where the action stops itself with exit 13
@@ -355,9 +345,9 @@ msgid ""
 "Its partition did not keep what was written. The system starts as before, the Recovery only once an update has gone through: try again. A disk that keeps refusing may be failing."
 msgstr ""
 
-#. ARCH_OS_RECOVERY_KEYS_PASSWORD: what it means
+#. ARCH_OS_RECOVERY_UPDATE_PASSWORD: what it means
 #: actions/update-install/action.yaml
-msgid "Secure Boot starts only a Recovery signed with this system's keys, and they are on the encrypted disk. Asked right before the update and never written to a file."
+msgid "Opens the system, whose own keys sign the new Recovery where it signs its boot chain. Asked right before the update and never written to a file."
 msgstr ""
 
 #. an action: its row, and the heading over its page

@@ -1,4 +1,4 @@
-# Before anything that pulls lib32 packages. A file pacman.conf includes - see
+# Before anything that pulls lib32 packages. A file pacman.conf includes, see
 # pacman_include in oak.sh.
 # https://wiki.archlinux.org/title/Official_repositories#multilib
 pacman_include "$(where)/arch-os-multilib.conf"

@@ -1,9 +1,7 @@
-# The GNOME desktop: packages, login screen, keyboard, services, and what only
-# the first login can set.
+# The GNOME desktop: packages, login screen, keyboard, services, and the
+# defaults every account starts with.
 
-home="${MNT}/home/${ARCH_OS_USERNAME}"
 data="$(where)"
-apps="${home}/.local/share/applications"
 
 # ─── Packages ──────────────────────────────────────────────────────────────
 #
@@ -106,19 +104,18 @@ if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && [ "$ARCH_OS_DISK_PASSWORD_ENABL
     render "${data}/custom.conf" USERNAME="$ARCH_OS_USERNAME" >"${MNT}/etc/gdm/custom.conf"
 fi
 
-# ─── The user's environment ────────────────────────────────────────────────
+# ─── Every account's environment ───────────────────────────────────────────
 
-mkdir -p "${home}/.config/environment.d" "${home}/.gnupg" "${apps}"
-render "${data}/environment.conf" >"${home}/.config/environment.d/00-arch.conf"
-render "${data}/gpg-agent.conf" >"${home}/.gnupg/gpg-agent.conf"
+mkdir -p "${MNT}/etc/environment.d"
+render "${data}/10-arch-os.conf" >"${MNT}/etc/environment.d/10-arch-os.conf"
 
 # Git passwords in the keyring rather than in a file.
-as_user 'git config --global credential.helper /usr/lib/git-core/git-credential-libsecret'
+arch-chroot "$MNT" git config --system credential.helper /usr/lib/git-core/git-credential-libsecret
 
 # ─── Keyboard ──────────────────────────────────────────────────────────────
 #
-# X11 reads this file, Wayland the setting of the first login; both say the same.
-# https://wiki.archlinux.org/title/Xorg/Keyboard_configuration
+# The login screen reads this file through localed, the session its setting;
+# both say the same. https://wiki.archlinux.org/title/Xorg/Keyboard_configuration
 layout="$(desktop_layout)"
 variant="$(desktop_variant)"
 mkdir -p "${MNT}/etc/X11/xorg.conf.d"
@@ -127,12 +124,6 @@ render "${data}/00-keyboard.conf" \
     MODEL="$ARCH_OS_DESKTOP_KEYBOARD_MODEL" \
     VARIANT="$variant" \
     >"${MNT}/etc/X11/xorg.conf.d/00-keyboard.conf"
-
-keyboard="$layout"
-[ -n "$variant" ] && keyboard="${keyboard}+${variant}"
-on_first_login <<FIRST
-gsettings set org.gnome.desktop.input-sources sources "[('xkb', '${keyboard}')]"
-FIRST
 
 # ─── Services ──────────────────────────────────────────────────────────────
 
@@ -166,7 +157,12 @@ fi
 arch-chroot "$MNT" systemctl --global enable gcr-ssh-agent.socket
 
 # ─── Application list ──────────────────────────────────────────────────────
+#
+# Hidden for every account, from a data directory read before the packages'.
+# https://specifications.freedesktop.org/desktop-entry-spec/latest/recognized-keys.html
 
+apps="${MNT}/usr/local/share/applications"
+mkdir -p "$apps"
 while read -r scope name; do
     case "$scope" in '' | \#*) continue ;; esac
     case "$scope" in
@@ -177,7 +173,18 @@ while read -r scope name; do
     render "${data}/hidden.desktop" >"${apps}/${name}.desktop"
 done <"${data}/hidden-apps"
 
-# ─── First login ───────────────────────────────────────────────────────────
+# ─── Settings ──────────────────────────────────────────────────────────────
+#
+# Defaults every account starts with and may change, as dconf keyfiles beside
+# a profile that reads them. https://help.gnome.org/admin/system-admin-guide/stable/dconf-custom-defaults.html
+
+defaults="${MNT}/etc/dconf/db/local.d"
+mkdir -p "${MNT}/etc/dconf/profile" "$defaults"
+render "${data}/user" >"${MNT}/etc/dconf/profile/user"
+
+keyboard="$layout"
+[ -n "$variant" ] && keyboard="${keyboard}+${variant}"
+render "${data}/10-arch-os-keyboard" KEYBOARD="$keyboard" >"${defaults}/10-arch-os-keyboard"
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     dock=()
@@ -186,23 +193,12 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     [ "$ARCH_OS_BROWSER" != "none" ] && dock+=("$(browser_entry)")
     dock+=(org.gnome.Nautilus.desktop org.gnome.Software.desktop org.gnome.Settings.desktop)
     favorites="$(printf "'%s', " "${dock[@]}")"
-    favorites="${favorites%, }"
-    on_first_login <<FIRST
-gsettings set org.gnome.shell favorite-apps "[${favorites}]"
-dconf reset -f /org/gnome/desktop/app-folders/
-gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'
-gsettings set org.gnome.desktop.interface accent-color 'slate'
-gsettings set org.gnome.desktop.interface font-hinting 'slight'
-gsettings set org.gnome.desktop.interface font-antialiasing 'rgba'
-gsettings set org.gnome.desktop.input-sources show-all-sources true
-gsettings set org.gnome.mutter center-new-windows true
-gsettings set org.gtk.Settings.FileChooser sort-directories-first true
-gsettings set org.gtk.gtk4.Settings.FileChooser sort-directories-first true
-gsettings set org.gnome.desktop.wm.keybindings close "['<Super>q']"
-gsettings set org.gnome.desktop.wm.keybindings minimize "['<Super>h']"
-gsettings set org.gnome.desktop.wm.keybindings show-desktop "['<Super>d']"
-gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen "['<Super>F11']"
-FIRST
+    render "${data}/20-arch-os-extras" FAVORITES="${favorites%, }" >"${defaults}/20-arch-os-extras"
 fi
 
-own_home
+# The font the shell enhancement's prompt draws with.
+if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
+    render "${data}/30-arch-os-shell" >"${defaults}/30-arch-os-shell"
+fi
+
+arch-chroot "$MNT" dconf update

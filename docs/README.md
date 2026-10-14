@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="banner.png" alt="Arch OS - install Arch Linux with ease, as a desktop or a TTY system, with an Installer and a Recovery on one bootable image">
+<img src="banner.png" alt="Arch OS: install Arch Linux with ease, as a desktop or a TTY system, with an Installer and a Recovery on one bootable image">
 
 <p>
   <img src="https://img.shields.io/github/v/release/murkl/arch-os?style=for-the-badge&label=RELEASE&color=1793d1" alt="">
@@ -8,9 +8,9 @@
   <img src="https://img.shields.io/badge/UEFI-x86__64-2e3440?style=for-the-badge" alt="">
 </p>
 
-<p><b>Install Arch Linux with ease - as a desktop or a TTY system.</b></p>
+<p><b>Install Arch Linux with ease, as a desktop or a TTY system.</b></p>
 
-<p>Boot the latest <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and Arch OS starts on its own. Or run this on a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a> to install or repair, and on any other Linux machine to write the ISO to a USB device.</p>
+<p>Boot the <b><a href="https://github.com/murkl/arch-os/releases/latest">Arch OS ISO</a></b> and the Installer starts by itself. On a booted <a href="https://archlinux.org/download/">Arch Linux ISO</a>, the same command installs or repairs. On any other Linux, it writes the ISO to a USB device.</p>
 
 **`curl -Ls https://bit.ly/archos | bash`**
 
@@ -26,27 +26,28 @@
 
 - Minimal Arch Linux base, UEFI only: linux-zen, btrfs, systemd-boot
 - Disk encryption (LUKS2) and Secure Boot with your own keys
-- One password for disk and account, or a disk password of its own for a shared machine
-- Btrfs snapshots before every package change, rolled back with the Recovery
+- One password for disk and account, or a separate disk password for a shared machine
+- Btrfs snapshots before every package change
+- Recovery on its own partition, rollback included
+- Falls back to the previous image, then to the Recovery, when a start fails
 - GNOME on Wayland or a bare text console, graphics drivers detected
 - Desktop extras or a slim GNOME, Flatpak
 - Browser and backup app of your choice
 - Zram, fstrim, microcode, NetworkManager, mirrors ranked by country
 - AUR helper, 32-bit support, containers, firewall, SSH, housekeeping
-- Runs offline for good: no timer fails without internet
+- Works offline: no timer fails without internet
 - Text editor of your choice: nano, vim, neovim, micro or helix
 - [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), [Arch OS Manager](https://github.com/murkl/arch-os-manager), Shell Enhancement (zsh)
-- Recovery in the boot menu and on the ISO
 - Create boot medium on any Linux machine
-- Wireless network in the Installer and the Recovery
+- Wi-Fi in the Installer and the Recovery
 - Virtual machine guest tools, GNOME Boxes ready to install
 - Starting points **Core** and **Desktop**, or a shared configuration
 - English and German interface
-- Tuned defaults - see the **[➜ Reference](REFERENCE.md)**
+- Tuned defaults, see the **[➜ Reference](REFERENCE.md)**
 
 ## Installation
 
-An internet connection is required: a cable, or a wireless network joined in the Installer.
+You need an internet connection: a cable, or a Wi-Fi network joined in the Installer.
 
 ### 1. Prepare a USB Device
 
@@ -59,42 +60,43 @@ curl -Ls https://bit.ly/archos | bash
 
 **Note:** _`gh attestation verify arch-os-<version>-x86_64.iso -R murkl/arch-os` shows which run built a download._
 
-### 2. Set the Firmware Up
+### 2. Set Up the Firmware
 
 - Boot mode: UEFI
 - Secure Boot: off for now, see **[step 4](#4-switch-secure-boot-on)**
 
 ### 3. Install
 
-Boot from the USB device. Arch OS starts on its own and asks the language first:
+Boot from the USB device. Arch OS starts and asks for your language first:
 
-<p><img src="screenshots/welcome.png" alt="The welcome page, asking the language to read the rest in"></p>
+<p><img src="screenshots/welcome.png" alt="The welcome page, asking for the language"></p>
 
-Then the **Installer** and a starting point:
+Choose the **Installer** and a starting point:
 
-<p><img src="screenshots/setup.png" alt="The page that offers the starting points"></p>
+<p><img src="screenshots/setup.png" alt="The page with the starting points"></p>
 
-| Starting point | What it is |
+| Starting point | What you get |
 | --- | --- |
 | **Core** | A minimal Arch Linux on the text console |
 | **Desktop** | The Core with GNOME |
 
-Left to ask: account, region, disk. Every value stays changeable in **Setup**, and **Start** installs.
+The Installer then asks for your account, region and disk. You can change every answer in **Setup**. **Start** installs.
 
 ### 4. Switch Secure Boot On
 
-Only if you left it on in **Setup**: switch it on in the firmware after the first start. **[➜ Switching It On](REFERENCE.md#switching-it-on)**
+Only if you left **Secure Boot** on in **Setup**: switch it on in the firmware after the first start. **[➜ Switching It On](REFERENCE.md#switching-it-on)**
 
 ## Recovery
 
-<p><img src="screenshots/recovery.png" alt="The Recovery, opening a system already on disk"></p>
+<p><img src="screenshots/recovery.png" alt="The Recovery, opening an installed system"></p>
 
-On a partition of every installation. Hold **space** while the machine starts and choose **Arch OS Recovery**, or open **Recovery** among the applications:
+An installation has a Recovery on its own partition, and the ISO has one too. Hold **space** while the machine starts and choose **Arch OS Recovery**, or open **Recovery** from the applications.
 
 - Unlocks and mounts the system at `/mnt`
 - Rolls back to a Btrfs snapshot
 - Rebuilds the kernel images from the package cache
-- Opens a shell inside it
+- Opens a shell inside the system
+- Updates itself within its release series
 
 **[➜ The Recovery](REFERENCE.md#the-recovery)**
 
@@ -102,11 +104,11 @@ On a partition of every installation. Hold **space** while the machine starts an
 
 <p><img src="screenshots/manager_menu.png" alt="The Arch OS Manager"></p>
 
-Mostly automatic through the **[Arch OS Manager](https://github.com/murkl/arch-os-manager)**. By hand:
+The **[Arch OS Manager](https://github.com/murkl/arch-os-manager)** does most of it. By hand:
 
-- Read the **[Arch Linux News](https://www.archlinux.org/news)** before upgrading
-- Roll back with the **[Recovery](#recovery)** - **[➜ Rolling Back](REFERENCE.md#rolling-back)**
-- Consult the **[Arch Linux Wiki](https://wiki.archlinux.org)**
+- Read the **[Arch Linux News](https://www.archlinux.org/news)** before you upgrade
+- Roll back with the **[Recovery](#recovery)**: **[➜ Rolling Back](REFERENCE.md#rolling-back)**
+- Look things up in the **[Arch Linux Wiki](https://wiki.archlinux.org)**
 
 <details>
 
@@ -127,13 +129,13 @@ Mostly automatic through the **[Arch OS Manager](https://github.com/murkl/arch-o
 
 | Part | What it does |
 | --- | --- |
-| **[`oak`](https://github.com/murkl/oak)** | The runtime: draws, asks, runs the shell |
+| **[`oak`](https://github.com/murkl/oak)** | The runtime: draws the interface, asks, runs the shell |
 | **[`modules/installer`](../modules/installer)** | Installs Arch Linux |
 | **[`modules/recovery`](../modules/recovery)** | Repairs an installation |
 | **[`modules/imager`](../modules/imager)** | Writes the boot medium |
 | **[`iso`](../iso)** | Builds the ISO and the Recovery image |
 
-Oak knows nothing about Arch Linux. Modules are data: YAML, and shell beside it in `oak.sh`.
+Oak holds nothing specific to Arch Linux. A module is YAML, with shell scripts beside it and shared functions in `oak.sh`.
 
 **[➜ Reference](REFERENCE.md)** · **[➜ Changelog](../CHANGELOG.md)** · **[➜ Contributing](CONTRIBUTING.md)**
 

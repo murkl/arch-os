@@ -134,8 +134,12 @@ MODULE_PROGRAMS := $(MODULES_DIR)/installer/tasks/@desktop/recovery-app/data/arc
 # drawn for a graphical terminal, never reach a console.
 MODULE_TEXT = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -type f ! -name '*.md' ! -name fastfetch.jsonc)
 
-# Each module's own check of the lookup tables it ships.
+# Each module's own check of what it ships in data/: the Installer's lookup
+# tables, the Recovery's boot entries.
 DATA_CHECKS = $(wildcard $(MODULES_DIR)/*/data/check.sh)
+
+# oak.sh's own check: its functions against answers written out beside them.
+LIBRARY_CHECK := oak.check.sh
 
 # A task's check of the zshrc it ships: keys typed into the shell reading it.
 ZSH_CHECKS = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/check.zsh)
@@ -151,7 +155,7 @@ BUILD_OUTPUT := $(DIST_DIR) $(DEV_DIR) $(ISO_DIR)/archiso $(ISO_DIR)/download
 SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 
 .PHONY: all oak oak-check build dev run inspect tarball image iso smoke e2e locales \
-	locales-check glyphs-check data-check zsh-check actions-check lint fmt check version-name \
+	locales-check glyphs-check library-check data-check zsh-check actions-check lint fmt check version-name \
 	secrets-check github clean
 
 # build empties the release that everything packaging it reads.
@@ -159,18 +163,15 @@ SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 
 all: build
 
-# Downloaded once, checked against the digest GitHub publishes for the asset.
-# The API allows sixty calls an hour per address without a token, so the call
-# carries GITHUB_TOKEN where there is one. Read into a variable first, so a
-# failed read and a missing checksum say different things, and one field to a
-# line, however GitHub lays the JSON out.
+# Checked against the digest GitHub publishes. GITHUB_TOKEN where there is one:
+# without it the API allows sixty calls an hour per address.
 $(OAK_BIN):
 	@mkdir -p $(OAK_DIR)
 	$(CURL) $(OAK_URL) -o $(OAK_DIR)/$(OAK_ASSET)
 	@auth=(); \
 	if [ -n "$${GITHUB_TOKEN:-}" ]; then auth=(--header "Authorization: Bearer $${GITHUB_TOKEN}"); fi; \
 	release="$$($(CURL) -s "$${auth[@]}" $(OAK_API))" || { \
-		echo "$(OAK_API) could not be read. A call that does not say who it is gets 60 an hour per address, and one GitHub will not accept gets none - set or correct GITHUB_TOKEN." >&2; \
+		echo "$(OAK_API) could not be read. A call that does not say who it is gets 60 an hour per address, and one GitHub will not accept gets none: set or correct GITHUB_TOKEN." >&2; \
 		exit 1; \
 	}; \
 	digest="$$(printf '%s' "$$release" | tr ',' '\n' | awk -v asset='$(OAK_ASSET)' \
@@ -186,7 +187,7 @@ $(OAK_BIN):
 # modules at boot.
 oak-check: $(OAK_BIN)
 	@got="$$($(OAK_BIN) --version | sed -n 's/^runtime: //p')"; [ "$$got" = "$(OAK_VERSION)" ] \
-		|| { echo "$(OAK_BIN) answers to '$$got', not $(OAK_VERSION) - run 'make oak'" >&2; exit 1; }
+		|| { echo "$(OAK_BIN) answers to '$$got', not $(OAK_VERSION): run 'make oak'" >&2; exit 1; }
 
 # Fetched again, for the same tag republished.
 oak:
@@ -265,10 +266,8 @@ smoke:
 	$(ISO_SMOKE) $(ISO)
 	$(ISO_SMOKE) $(RECOVERY)
 
-# Installs the newest ISO onto a disk, boots it, repairs it with the Recovery,
-# boots it again and starts the Recovery on its partition; START=desktop
-# installs a Desktop and boots it to its login screen. The logs land in
-# dist/e2e/.
+# Installs the newest ISO and walks it as a person does: iso/README.md. The logs
+# land in dist/e2e/.
 e2e:
 	$(ISO_E2E) $(ISO) $(START)
 
@@ -298,43 +297,37 @@ locales-check: dev
 	@for m in $(MODULES); do \
 		pot=$(MODULES_DIR)/$$m/locales/$$m.pot; \
 		(cd $(DEV_DIR) && ./$(APP) --strings --module=$$m) | diff -u $$pot - \
-			|| { echo "$$pot is out of date - run 'make locales'" >&2; exit 1; }; \
+			|| { echo "$$pot is out of date: run 'make locales'" >&2; exit 1; }; \
 		for po in $(MODULES_DIR)/$$m/locales/*.po; do \
 			[ -e "$$po" ] || continue; \
 			printf '%s: ' "$$po"; msgfmt --check-format --statistics -o /dev/null "$$po" || exit 1; \
 		done; \
 	done
 
-# Module scripts are checked as Oak runs them: bash, with oak.sh in scope.
-# zizmor runs offline, so a finding is about a change here. The greps:
-#
-#   - arch-chroot execs what it is given, so a shell builtin handed to it
-#     exists nowhere
-#   - a file written into the new system is a template, put in place by render
-#   - bash fires no ERR trap for a command inverted with !, so such a line
-#     checks nothing
+# Module scripts are checked as Oak runs them: bash, with oak.sh in scope. Each
+# grep refuses a pattern its message explains.
 lint:
 	shellcheck -s sh -S style $(POSIX_SCRIPTS)
 	shellcheck -S style $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS)
-	shellcheck -x -S style $(MODULE_SCRIPTS)
+	shellcheck -x -S style $(MODULE_SCRIPTS) $(LIBRARY_CHECK)
 	shellcheck -s bash -S style -e SC1091 $(MODULE_SHELL)
 	for file in $(MODULE_ZSH) $(ZSH_CHECKS); do zsh -n "$$file"; done
 	shfmt -d -ln posix -i 4 $(POSIX_SCRIPTS)
-	shfmt -d -i 4 $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
+	shfmt -d -i 4 $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL) $(LIBRARY_CHECK)
 	yamllint .
 	actionlint
 	zizmor --offline --persona auditor .github
 	@! grep -nE 'arch-chroot [^|&;]*[[:space:]](command|type|hash|source|alias)[[:space:]]' \
 		$(MODULE_SCRIPTS) $(MODULE_YAML) \
-		|| { echo "a shell builtin cannot be run through arch-chroot - see has_command" >&2; exit 1; }
+		|| { echo "a shell builtin cannot run through arch-chroot, see has_command" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*\}[[:space:]]*>>?[[:space:]]*"\$$\{MNT\}' $(MODULE_SCRIPTS) \
-		|| { echo "a file written into the new system is a template beside its task, put in place with render - see oak.sh" >&2; exit 1; }
+		|| { echo "a file written into the new system is a template beside its task, put in place with render, see oak.sh" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*![[:space:]]' $(MODULE_SCRIPTS) \
-		|| { echo "a command inverted with ! fails nothing under the ERR trap a script runs in - write it as an if that exits" >&2; exit 1; }
+		|| { echo "a command inverted with ! fails nothing under the ERR trap a script runs in: write it as an if that exits" >&2; exit 1; }
 
 fmt:
 	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)
-	shfmt -w -i 4 $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL)
+	shfmt -w -i 4 $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL) $(LIBRARY_CHECK)
 
 # A console font holds one table of glyphs, and a character outside it is a box
 # on screen. Asked of the runtime, after locales-check.
@@ -346,6 +339,9 @@ glyphs-check: oak-check
 # and a package Arch dropped fails somebody's installation.
 data-check:
 	@for check in $(DATA_CHECKS); do $$check || exit 1; done
+
+library-check:
+	@./$(LIBRARY_CHECK)
 
 zsh-check:
 	@for check in $(ZSH_CHECKS); do zsh "$$check" "$$(dirname "$$check")/data/zshrc" || exit 1; done
@@ -360,7 +356,7 @@ actions-check:
 	done
 
 # The whole gate, cheapest and loudest first. CI runs exactly this.
-check: secrets-check lint inspect actions-check locales-check data-check zsh-check glyphs-check
+check: secrets-check lint inspect actions-check locales-check library-check data-check zsh-check glyphs-check
 
 # The repository's settings on GitHub, out of .github/settings/. Run by hand as
 # an admin: a workflow may not change the rules it is held to.

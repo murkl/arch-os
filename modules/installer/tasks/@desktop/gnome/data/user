@@ -1,0 +1,4 @@
+# Written by the Arch OS Installer: each account's own settings over the
+# defaults in /etc/dconf/db/local.d.
+user-db:user
+system-db:local
