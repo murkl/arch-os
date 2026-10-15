@@ -51,7 +51,7 @@ The order is fixed and the file system is always btrfs. The root's type is the o
 | `@cache` | `/var/cache` | The package cache: large, and never read back |
 | `@tmp` | `/var/tmp` | Scratch space, not worth restoring |
 
-A snapshot of `@` leaves out every subvolume mounted inside it, so a rollback keeps all six as they are.
+A snapshot of `@` leaves out every subvolume mounted inside it, so a rollback keeps all six as they are. A subvolume made inside `@` later, such as a machine of `machinectl` or a container's image, is in no snapshot either: a rollback moves it to the same place in the new `@` instead of deleting it with the old one.
 
 All are mounted with `defaults,noatime,compress=zstd`. The layout is written once, in `oak.sh`, which both modules load: the Installer creates every subvolume, and the Recovery opens only a disk that has all of them.
 

@@ -305,6 +305,21 @@ EOF
     say "Laid the installation out as 2.0 did"
 }
 
+# A subvolume made inside @ after its newest snapshot, as machinectl makes one:
+# no snapshot holds it, and a rollback has to keep it.
+nested_subvolume() {
+    live bash -s <<EOF
+set -euo pipefail
+printf '%s' '${PASSWORD}' | cryptsetup open ${DISK}2 e2e-nested
+mount -t btrfs -o subvol=@ /dev/mapper/e2e-nested /mnt
+btrfs subvolume create /mnt/var/lib/machines/e2e
+echo kept >/mnt/var/lib/machines/e2e/kept
+umount /mnt
+cryptsetup close e2e-nested
+EOF
+    say "Made a subvolume inside the system"
+}
+
 # Waits for the Recovery on its partition to open on its menu. It has to pass
 # Secure Boot with this machine's keys, find and check its partition and open
 # in the language the Installer was read in.
@@ -526,6 +541,7 @@ start repair
 until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
 live systemctl stop arch-os
 as_2_0
+nested_subvolume
 live "printf \"ARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
 live "tmux new-session -d -s e2e -x 120 -y 40 'recovery --language=en'"
 
@@ -555,6 +571,8 @@ if as_root test -e /boot/EFI/Linux/arch-linux-zen.efi; then
     fail "the repair left the 2.0 image in EFI/Linux, where the loader lists it twice"
 fi
 say "Repair: laid the 2.0 installation out as this release does"
+[ "$(as_root cat /var/lib/machines/e2e/kept)" = kept ] || fail "the rollback lost the subvolume made inside the system"
+say "Repair: kept the subvolume made inside the system"
 recovery_menu
 
 # An update cut short leaves a partition whose UUID the boot image no longer
