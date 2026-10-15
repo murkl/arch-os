@@ -257,7 +257,9 @@ healthy() {
         fail "the installed system did not start with Secure Boot on"
     [ "$(installed cat /proc/sys/kernel/panic)" = 10 ] ||
         fail "the installed system does not restart after a kernel panic"
-    say "Installed system: running, Secure Boot on, restarts after a panic"
+    as_root journalctl -b -o cat -u "'systemd-fsck@*'" | grep -q '^fsck\.fat ' ||
+        fail "the installed system did not check its EFI partition at boot"
+    say "Installed system: running, Secure Boot on, restarts after a panic, checked its EFI partition"
 }
 
 # A command as root on the installed system, through sudo and the password.

@@ -4,8 +4,10 @@
 
 # sudo outright: base-devel brings it only where the AUR is wanted. mkinitcpio
 # outright: the kernel takes whichever initramfs provider pacman lists first,
-# and the boot loader task writes mkinitcpio's configuration.
-packages=("$KERNEL" base sudo mkinitcpio zram-generator networkmanager btrfs-progs snapper)
+# and the boot loader task writes mkinitcpio's configuration. dosfstools, so
+# systemd checks the EFI partition at every boot, which the boot counting
+# writes to at every boot.
+packages=("$KERNEL" base sudo mkinitcpio zram-generator networkmanager btrfs-progs snapper dosfstools)
 
 # Firmware is for hardware; a guest has none but a card handed through to it.
 if [ "$ARCH_OS_VIRTUAL_MACHINE" = "false" ] || [ -n "$(graphics_cards)" ]; then

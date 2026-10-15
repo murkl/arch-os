@@ -204,6 +204,7 @@ Every account starts with the same desktop: the dock, the look and the hidden ap
 Enough for a usable system, little enough that nothing needs looking after.
 
 - `base`, `linux-zen`, `mkinitcpio`, `sudo`, `zram-generator`, `networkmanager`, `btrfs-progs`, `snapper`
+- `dosfstools`, so systemd checks the EFI partition at every boot and repairs what a power cut left. The boot counting writes there at every boot, and FAT keeps no journal
 - The processor's microcode, `intel-ucode` or `amd-ucode`, read from `/proc/cpuinfo`
 - The chosen editor (`nano` unless you pick another), `man-db`, `man-pages`, `openssh`. `base` ships none of them. The editor gets a small configuration, see **[The Text Editor](#the-text-editor)**
 - Everything else follows an answer: the task that enables a service installs its package

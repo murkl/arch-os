@@ -10,3 +10,7 @@ findmnt --fstab --tab-file "${MNT}/etc/fstab" / >/dev/null
 boot_options="$(findmnt --fstab --tab-file "${MNT}/etc/fstab" -no OPTIONS /boot)"
 grep -qE '(^|,)fmask=0077(,|$)' <<<"$boot_options"
 grep -qE '(^|,)dmask=0077(,|$)' <<<"$boot_options"
+
+# Checked at every boot, which needs a pass and the tool for its file system.
+[ "$(findmnt --fstab --tab-file "${MNT}/etc/fstab" -no PASSNO /boot)" -gt 0 ]
+[ -x "${MNT}/usr/bin/fsck.fat" ]
