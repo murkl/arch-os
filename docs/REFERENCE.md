@@ -164,6 +164,7 @@ Behind **Core tweaks**. They change behaviour, never what is installed. **[➜ S
 | I/O scheduler | `bfq` for spinning disks, which keeps a desktop responsive while one seeks. Everything else keeps the kernel's choice: `mq-deadline` for a single queue, none for NVMe. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Improving_performance#Changing_I/O_scheduler)** |
 | `strict_limit=1`, `max_ratio=10` for USB drives | A stick writes far slower than an internal disk. Without a limit a copy finishes into memory, the file manager shows little progress, and the eject waits for the rest. This holds a stick to a tenth of the limit, about 25M, from the first byte. A ratio, because the kernel keeps `max_bytes` as a ratio too. **[➜ Kernel](https://docs.kernel.org/admin-guide/abi-testing.html#abi-sys-class-bdi-bdi-strict-limit)** |
 | `tcp_congestion_control=bbr`, `default_qdisc=fq` | `cubic` reads any packet loss as congestion. Wi-Fi and long-distance links lose packets without being full. `bbr` measures delay instead |
+| `tcp_mtu_probing=1` | A DSL line with PPPoE or a tunnel carries less than 1500 bytes. Where a router on the way drops the message that says so, a connection stalls. Probing finds the smaller size itself |
 
 Swap is always **zram**, with or without the tweaks. **[➜ Zram](https://wiki.archlinux.org/title/Zram)**
 
@@ -291,7 +292,7 @@ One `timeout` around the whole build, and passwordless `sudo` only for its lengt
 
 Everything from the AUR is `allow-failure`: `paru`, the boot splash theme and the Manager. The AUR can be down for days, and nothing else needs these. A failure is counted and listed under **Test results** instead of stopping the run. Without its theme the boot splash draws Plymouth's own logo. **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md#tasks)**
 
-**Note:** _With Core tweaks, `/etc/makepkg.conf.d/arch-os.conf` switches the debug package off and nothing else. An AUR build would otherwise leave a second package beside the one you wanted. `-march=native` is deliberately **not** set. It buys a few percent and costs binaries that stop running the day the disk moves to other hardware, and the crash that follows looks like failing memory._
+**Note:** _With Core tweaks, `/etc/makepkg.conf.d/arch-os.conf` switches the debug package off and gives `make` one job per core. An AUR build would otherwise leave a second package beside the one you wanted, and a build that uses `make` would run on one core. `-march=native` is deliberately **not** set. It buys a few percent and costs binaries that stop running the day the disk moves to other hardware, and the crash that follows looks like failing memory._
 
 **Note:** _Only `paru`, built from source against this machine's pacman. A `-bin` package is linked against the pacman of the day it was published and stops starting the day Arch moves `libalpm`._
 

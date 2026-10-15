@@ -22,7 +22,7 @@ render "${data}/99-arch-os-memory.conf" >"${MNT}/etc/sysctl.d/99-arch-os-memory.
 
 # bbr judges a path by its delay, where cubic backs off at the first lost packet.
 # https://wiki.archlinux.org/title/Sysctl#TCP_congestion_algorithm
-render "${data}/99-arch-os-bbr.conf" >"${MNT}/etc/sysctl.d/99-arch-os-bbr.conf"
+render "${data}/99-arch-os-network.conf" >"${MNT}/etc/sysctl.d/99-arch-os-network.conf"
 
 # Huge pages, but no program stopped to make one.
 # https://docs.kernel.org/admin-guide/mm/transhuge.html

@@ -5,14 +5,14 @@
 arch-chroot "$MNT" pacman-conf Color | grep -qx Color
 
 sysctl_keys_exist "${MNT}/etc/sysctl.d/99-arch-os-memory.conf"
-sysctl_keys_exist "${MNT}/etc/sysctl.d/99-arch-os-bbr.conf"
+sysctl_keys_exist "${MNT}/etc/sysctl.d/99-arch-os-network.conf"
 
 # makepkg's own loader, which sources the drop-ins as a build does.
 # shellcheck disable=SC2016  # expanded inside the chroot
 arch-chroot "$MNT" bash -c '
     source /usr/share/makepkg/util/config.sh
     load_makepkg_config
-    [[ " ${OPTIONS[*]} " == *" !debug "* ]]
+    [[ " ${OPTIONS[*]} " == *" !debug "* && $MAKEFLAGS == "--jobs=$(nproc)" ]]
 '
 
 for config in user journald; do
