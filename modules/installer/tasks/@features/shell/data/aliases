@@ -54,7 +54,7 @@ alias pacla='pacman -Qm' # list what came from the AUR
 alias pacli='pacman -Qi' # show a package
 
 # The download cache trimmed to the last three versions of what is installed,
-# and emptied of what is not. The versions before the current one are what the
-# Recovery puts a kernel back from after a rollback, so it is never emptied
-# outright. paccache asks for sudo itself.
-command -v paccache &>/dev/null && alias pacrc="paccache -r && paccache -ruk0"
+# and emptied of what is not, except every kernel a snapshot has installed: the
+# Recovery puts a kernel back from those after a rollback. The weekly timer runs
+# the same script without the second half.
+[ -x /usr/local/lib/arch-os/paccache.sh ] && alias pacrc="sudo /usr/local/lib/arch-os/paccache.sh /.snapshots && sudo /usr/local/lib/arch-os/paccache.sh /.snapshots -uk0"

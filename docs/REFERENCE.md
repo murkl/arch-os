@@ -322,7 +322,9 @@ All of it lives in one place, `data/settings` beside the snapper task. `set-conf
 
 ### Rolling Back
 
-**Only through the Recovery.** The kernel and its initramfs live on the EFI partition, which is not btrfs and is in no snapshot. A snapshot from before a kernel update brings back the old kernel's modules while `/boot` keeps starting the new kernel, and the machine comes up without a single module. systemd-boot has no stock way around that, so no tool for rolling back from the running desktop is installed. The Recovery puts the snapshot in place and then rebuilds the boot files from the package cache. That is also why the download cache is never emptied completely.
+**Only through the Recovery.** The kernel and its initramfs live on the EFI partition, which is not btrfs and is in no snapshot. A snapshot from before a kernel update brings back the old kernel's modules while `/boot` keeps starting the new kernel, and the machine comes up without a single module. systemd-boot has no stock way around that, so no tool for rolling back from the running desktop is installed. The Recovery puts the snapshot in place and then rebuilds the boot files from the package cache.
+
+So the cache keeps every kernel package a snapshot has installed, however old: snapper keeps up to fifteen snapshots, paccache three versions of a package. The weekly `paccache.timer` and the alias `pacrc` run `/usr/local/lib/arch-os/paccache.sh`, which trims everything else as paccache does and the kernels without what a snapshot needs. A snapshot it cannot read stops the trim rather than guessing.
 
 ## Offline
 
