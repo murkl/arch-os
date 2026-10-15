@@ -9,39 +9,31 @@ OPT=/opt/arch-os
 # Recovery's. modules/installer/tasks/@system/recovery spells the same path.
 SEED=EFI/arch-os-recovery
 
-# The partition this was started from, found the way the ram disk found it: by
-# the UUID its command line names. Empty where it was started some other way.
-booted_partition() {
-    local uuid part
-    uuid="$(sed -n 's/.*archisodevice=UUID=\([^ ]*\).*/\1/p' /proc/cmdline)"
-    [ -n "$uuid" ] || return 0
-    part="$(readlink -f "/dev/disk/by-uuid/${uuid}")"
-    [ ! -b "$part" ] || printf '%s' "$part"
-}
+# Where systemd's boot loader, or the stub of an image the firmware started
+# itself, records the EFI partition it was started from.
+LOADER_DEVICE=/sys/firmware/efi/efivars/LoaderDevicePartUUID-4a67b082-0a4c-41cf-b6c7-440b29bb8c4f
 
-# The disk that partition lies on, which is the disk holding the system to
-# repair. Empty for an image that is a whole disk of its own, which is how the
-# smoke test starts it.
-booted_disk() {
-    local part parent
-    part="$(booted_partition)"
-    [ -n "$part" ] || return 0
-    parent="$(lsblk -dno PKNAME "$part")"
-    [ -z "$parent" ] || printf '/dev/%s' "$parent"
-}
-
-# The EFI partition on that disk, by its type rather than its number. Read to
-# the end rather than left at the first, so lsblk is never cut off mid-line.
-efi_partition() {
-    lsblk -rno PATH,PARTTYPE "$1" |
-        awk '!found && $2 == "c12a7328-f81f-11d2-ba4b-00a0c93ec93b" { print $1; found = 1 }'
+# The EFI partition this was started from. Not the partition the ram disk found
+# by its UUID: every installation of one release has that UUID, so with two
+# disks it may be the other one. Empty where it was started some other way, as
+# the smoke test starts it. Read to the end, so lsblk is never cut off mid-line.
+booted_esp() {
+    local uuid
+    [ -r "$LOADER_DEVICE" ] || return 0
+    uuid="$(tail -c +5 "$LOADER_DEVICE" | tr -d '\0' | tr '[:upper:]' '[:lower:]')"
+    [[ $uuid =~ ^[0-9a-f-]+$ ]] || return 0
+    lsblk -rno PATH,PARTUUID | awk -v uuid="$uuid" '!found && $2 == uuid { print $1; found = 1 }'
 }
 
 rm -f "${OPT}/oak.conf" "${OPT}/recovery.conf"
 
-disk="$(booted_disk)"
-esp=""
-[ -z "$disk" ] || esp="$(efi_partition "$disk")"
+# The disk that partition lies on holds the system to repair.
+esp="$(booted_esp)"
+disk=""
+if [ -n "$esp" ]; then
+    disk="$(lsblk -dno PKNAME "$esp")"
+    [ -z "$disk" ] || disk="/dev/${disk}"
+fi
 
 # Only briefly, since the Recovery may write to it itself. The entries get their
 # tries back, so the next start tries the system again.

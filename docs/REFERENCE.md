@@ -51,7 +51,7 @@ The order is fixed and the file system is always btrfs. The root's type is the o
 | `@cache` | `/var/cache` | The package cache: large, and never read back |
 | `@tmp` | `/var/tmp` | Scratch space, not worth restoring |
 
-A snapshot of `@` leaves out every subvolume mounted inside it, so a rollback keeps all six as they are.
+A snapshot of `@` leaves out every subvolume mounted inside it, so a rollback keeps all six as they are. A subvolume made inside `@` later, such as a machine of `machinectl` or a container's image, is in no snapshot either: a rollback moves it to the same place in the new `@` instead of deleting it with the old one.
 
 All are mounted with `defaults,noatime,compress=zstd`. The layout is written once, in `oak.sh`, which both modules load: the Installer creates every subvolume, and the Recovery opens only a disk that has all of them.
 
@@ -431,11 +431,11 @@ A pre-release ISO carries it ready-made. A release's ISO leaves it out to stay u
 How it starts:
 
 1. The boot loader starts the image. With Secure Boot it is signed with the machine's own keys, like the system's images
-2. The initramfs finds the partition by the UUID its command line names. The UUID is made for each build, so no other disk is taken for it
+2. The initramfs finds the partition by the UUID its command line names. The UUID is made for each build, so only a partition holding this very image is taken for it
 3. It checks the root file system against a certificate it carries. The key that signed it was made for the build and thrown away afterwards, so nothing on the partition starts that the build did not make, and a damaged partition stops at a prompt that says so. The certificate is valid from 1970 to 9999, because a machine whose clock battery died still needs repairing
 4. It copies the root file system to memory, so nothing of the disk stays in use while the Recovery works on it, and starts it
 5. Plymouth draws on the screen the firmware set up (`nomodeset`, so no graphics driver and no firmware for one), with `plymouth.ignore-serial-consoles` like the system. The Recovery runs on tty1
-6. The Recovery reads what the Installer left on the EFI partition, `EFI/arch-os-recovery/`, read-only and unmounted again at once. Its disk is the one with the partition it was started from. So it opens straight on its menu, in the language the Installer was read in and on the keyboard it was typed on
+6. The Recovery reads what the Installer left on the EFI partition, `EFI/arch-os-recovery/`, gives the system's entries their tries back there and unmounts it again at once. Its disk is the one whose EFI partition it was started from, as the boot loader or the firmware records it, since a second installation of the same release has a Recovery partition with the same UUID. So it opens straight on its menu, in the language the Installer was read in and on the keyboard it was typed on
 
 It is a kiosk: the Recovery is the only thing the machine runs, and nothing leads to a prompt. Its unit holds tty1 and never hands it back, and no other console has a login. You leave it with **Exit**, as on the ISO, and its systemd unit starts it again with every answer it had, straight back to starting (`RestartMode=direct`), so the ISO's login on tty1 never shows in between. What the Installer left is read once per boot. A crash restarts it the same way, and the first thing a run does is close whatever the last one left open. The shell inside the repaired system is a row on the page the repair ends on, behind the disk's password where there is one.
 
