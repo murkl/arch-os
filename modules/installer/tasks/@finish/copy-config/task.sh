@@ -4,3 +4,7 @@ home="$(user_home)"
 cp -f "$MODULE_CONF" "${home}/installer.conf" 2>/dev/null || true
 cp -f "${MODULE_CONF%.conf}.log" "${home}/installer.log" 2>/dev/null || true
 own_home
+
+# The installation on the disk before the run says it is ready to start: the
+# boot files on the FAT partition are left empty by a power cut otherwise.
+sync

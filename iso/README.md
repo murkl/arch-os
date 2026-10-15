@@ -91,7 +91,7 @@ Walks the ISO the way a person does, unattended:
 6. Overwrites the start of the Recovery partition, as an update cut short does, writes it again with the Recovery on the ISO from the newest release of its series, and starts it with Secure Boot enforced
 
 - The live system is reached over ssh through its cloud-init. The interface runs in tmux there, driven by its keys and read from its pane
-- Both runs must end with every test passed
+- Both runs must end with every test passed, and the machine is then cut off like a power cut rather than shut down, as after writing the Recovery: what a run said is done has to be on the disk
 - The installed system unlocks its disk from a systemd credential, and is reached over ssh as the account it was installed with
 - `START=desktop` installs the Desktop starting point with the SSH server on, boots it like step 2 and checks for a running login screen. The repair is the Core's
 - Step 6 is skipped, and says so, while no release of the series publishes a Recovery
