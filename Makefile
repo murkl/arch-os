@@ -135,8 +135,9 @@ MODULE_PROGRAMS := $(MODULES_DIR)/installer/tasks/@desktop/recovery-app/data/arc
 MODULE_TEXT = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -type f ! -name '*.md' ! -name fastfetch.jsonc)
 
 # Each module's own check of what it ships in data/: the Installer's lookup
-# tables, the Recovery's boot entries.
-DATA_CHECKS = $(wildcard $(MODULES_DIR)/*/data/check.sh)
+# tables, the Recovery's boot entries. And a task's check of a program it
+# ships: the cache trim that keeps the snapshots' kernels.
+DATA_CHECKS = $(wildcard $(MODULES_DIR)/*/data/check.sh $(MODULES_DIR)/*/tasks/@*/*/check.sh)
 
 # oak.sh's own check: its functions against answers written out beside them.
 LIBRARY_CHECK := oak.check.sh
