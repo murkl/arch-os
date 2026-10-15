@@ -164,6 +164,13 @@ stopped() {
     QEMU_PID=""
 }
 
+# Switches the machine off the way a power cut does, so what a run said is done
+# has to be on the disk already.
+cut_power() {
+    printf 'quit\n' >&3
+    stopped
+}
+
 # ////////////////////////////////////////////////////////////////////////////
 # TALKING TO IT
 # ////////////////////////////////////////////////////////////////////////////
@@ -360,8 +367,7 @@ recovery_menu() {
     rm -f "${WORK}"/recovery-exit-*.png
     say "Recovery: Exit starts it again, without a login on the way"
 
-    printf 'quit\n' >&3
-    stopped
+    cut_power
 }
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -455,14 +461,12 @@ if [ "$START" = core ]; then
     [ -n "$entry" ] || fail "the installation left the firmware no entry for the Recovery"
     live efibootmgr -q --bootnext "$entry"
 fi
-live systemctl poweroff || true
-stopped
+cut_power
 
 if [ "$START" = core ]; then
     start disk
     recovery_opens "by its firmware entry"
-    printf 'quit\n' >&3
-    stopped
+    cut_power
 fi
 
 start disk
@@ -515,8 +519,7 @@ used_up main main-fallback
 shutdown_installed
 start disk
 recovery_opens "after the system used up every try"
-printf 'quit\n' >&3
-stopped
+cut_power
 start disk
 healthy
 entries_ready main.conf
@@ -544,8 +547,7 @@ keys Up Enter
 shows "Rebuild the kernel images"
 keys Enter
 finished recovery "$REPAIR_TIMEOUT"
-live systemctl poweroff || true
-stopped
+cut_power
 
 start disk
 healthy
@@ -599,9 +601,7 @@ until pane | grep -qF "Recovery updated"; do
     }
     sleep 10
 done
-keys Enter
-live systemctl poweroff || true
-stopped
+cut_power
 
 start disk
 healthy
@@ -612,7 +612,6 @@ as_root sbctl verify 2>/dev/null | grep -qF "/boot/EFI/Linux/arch-os-recovery.ef
     fail "the Recovery written from the ISO is not signed"
 as_root systemctl reboot --boot-loader-entry=arch-os-recovery.efi || true
 recovery_opens "after it was written again from the ISO"
-printf 'quit\n' >&3
-stopped
+cut_power
 
 say "Arch OS installs, boots, repairs, boots again, starts its Recovery and writes it again"

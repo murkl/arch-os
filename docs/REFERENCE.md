@@ -339,6 +339,7 @@ Swap off, sync, unmount, lock: in the Installer before it partitions the disk, i
 - `umount -R`, never `-A`. `-A` reaches beyond the target, and in the Recovery would take the rollback's snapshots with it
 - `fuser -M`. Without it a target that is not a mount point resolves to the live system itself
 - Whatever still holds the target is logged, then killed. The second unmount is allowed to fail for real
+- Done means on the disk: the Installer's last task and the Recovery's rollback and rebuild end with `sync`. The EFI partition is FAT, which a power cut right after the last page would otherwise leave with empty boot files
 
 ## When Something Goes Wrong
 

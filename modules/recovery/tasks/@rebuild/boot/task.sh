@@ -87,4 +87,8 @@ for old in "/boot/EFI/Linux/arch-${KERNEL}.efi" "/boot/EFI/Linux/arch-${KERNEL}-
 done
 
 clear_loader_default
+
+# On the disk before the run says so: the EFI partition is FAT, and a power cut
+# leaves what was still in memory as empty files.
+sync
 echo "boot rebuilt"

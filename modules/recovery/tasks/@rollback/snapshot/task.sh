@@ -28,4 +28,7 @@ mount_target
 # The lock of the transaction that broke it would stop further repairs.
 rm -f "${MNT}/var/lib/pacman/db.lck"
 
+# On the disk before the run says so: btrfs commits a swap like this only on
+# its next transaction.
+sync
 echo "@ is now ${snapshot}"
