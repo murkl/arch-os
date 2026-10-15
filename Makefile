@@ -44,7 +44,7 @@ MODULE_PARTS := data locales tasks actions
 # https://github.com/murkl/oak, downloaded rather than built, and pinned so a
 # commit builds the same tomorrow. Written without the `v` of its tag.
 OAK_REPO    := murkl/oak
-OAK_VERSION ?= 0.26.0
+OAK_VERSION ?= 0.26.1
 OAK_ASSET   := oak-linux-amd64
 OAK_DIR     := .oak
 
