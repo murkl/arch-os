@@ -4,6 +4,11 @@ arch-chroot "$MNT" systemctl is-enabled gdm.service >/dev/null
 arch-chroot "$MNT" systemctl is-enabled arch-os-session-up.service >/dev/null
 [ -z "$(systemd-analyze verify --root="$MNT" arch-os-session-up.service 2>&1)" ]
 
+# systemd-oomd only acts on what its drop-ins mark, and systemd skips a key it
+# cannot read with a warning: verify prints it.
+arch-chroot "$MNT" systemctl is-enabled systemd-oomd.service >/dev/null
+[ -z "$(systemd-analyze verify --root="$MNT" -- -.slice user@.service 2>&1)" ]
+
 has_command gnome-software
 has_command gnome-extensions-app
 

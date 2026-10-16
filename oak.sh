@@ -214,7 +214,7 @@ system_partition() { part_of "$1" 2; }
 recovery_partition() { part_of "$1" 3; }
 
 # The btrfs layout, subvolume and mount point, see docs/REFERENCE.md.
-export BTRFS_OPTS="defaults,noatime,compress=zstd"
+export BTRFS_OPTS="defaults,noatime,compress=zstd:1"
 
 btrfs_subvolumes() {
     printf '%s\t%s\n' \

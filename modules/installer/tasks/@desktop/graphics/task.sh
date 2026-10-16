@@ -13,7 +13,8 @@ while IFS=$'\t' read -r vendor device; do
     case "$vendor" in
     intel)
         other=true
-        packages+=(vulkan-intel intel-media-driver)
+        # iHD decodes from Broadwell on, i965 before it; libva tries iHD first.
+        packages+=(vulkan-intel intel-media-driver libva-intel-driver)
         lib32+=(lib32-vulkan-intel)
         ;;
     amd)

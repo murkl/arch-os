@@ -152,6 +152,14 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     arch-chroot "$MNT" systemctl enable cups.socket # printing
 fi
 
+# Out of memory, one app ends instead of the desktop freezing for minutes. GNOME
+# starts each app in a scope of its own, so no more than that app is hit. Where
+# systemd-oomd(8) recommends, at Fedora's limit for the session.
+mkdir -p "${MNT}/etc/systemd/system/-.slice.d" "${MNT}/etc/systemd/system/user@.service.d"
+render "${data}/oomd-root.conf" >"${MNT}/etc/systemd/system/-.slice.d/10-arch-os.conf"
+render "${data}/oomd-user.conf" >"${MNT}/etc/systemd/system/user@.service.d/10-arch-os.conf"
+arch-chroot "$MNT" systemctl enable systemd-oomd.service
+
 # The keyring's ssh agent, which gcr ships off, for every account.
 # https://wiki.archlinux.org/title/GNOME/Keyring#SSH_keys
 arch-chroot "$MNT" systemctl --global enable gcr-ssh-agent.socket
