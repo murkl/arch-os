@@ -51,9 +51,9 @@
 
 ## Screenshots
 
-<p align="center">
-  <img src="screenshots/installer.png" width="49%" alt="Setup: every answer on one page, grouped and changeable before the start">
-  <img src="screenshots/installing.png" width="49%" alt="The installation, each step checked off as it runs">
-</p>
-
-<p align="center"><sub><b>Setup</b> · every answer before the start&emsp;&emsp;<b>Installation</b> · each step as it runs</sub></p>
+<table>
+  <tr>
+    <td width="50%" align="center"><img src="screenshots/installer.png" width="100%" alt="Setup: every answer on one page, grouped and changeable before the start"><br><sub><b>Setup</b> · every answer before the start</sub></td>
+    <td width="50%" align="center"><img src="screenshots/installing.png" width="100%" alt="The installation, each step checked off as it runs"><br><sub><b>Installation</b> · each step as it runs</sub></td>
+  </tr>
+</table>
