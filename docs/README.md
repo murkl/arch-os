@@ -9,6 +9,8 @@
 
 <p><b>Install Arch Linux with ease, as a desktop or a TTY system.</b></p>
 
+**[➜ Reference](REFERENCE.md)** · **[➜ Telegram](https://t.me/archos_community)**
+
 </div>
 
 ## Features
@@ -45,6 +47,13 @@
 3. Boot the USB device, choose the **Installer** and a starting point, then **Start**. It needs the internet, by cable or Wi-Fi
 4. After the first start, **[switch Secure Boot on](REFERENCE.md#switching-it-on)**
 
-<img src="screenshots/setup.png" width="720" alt="The Installer's starting points: Desktop, Core, or a shared configuration">
+<p align="center"><img src="screenshots/setup.png" width="720" alt="The Installer's starting points: Desktop, Core, or a shared configuration"></p>
 
-**[➜ Reference](REFERENCE.md)** · **[➜ t.me/archos_community](https://t.me/archos_community)**
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/installer.png" width="49%" alt="Setup: every answer on one page, grouped and changeable before the start">
+  <img src="screenshots/installing.png" width="49%" alt="The installation, each step checked off as it runs">
+</p>
+
+<p align="center"><sub><b>Setup</b> · every answer before the start&emsp;&emsp;<b>Installation</b> · each step as it runs</sub></p>
