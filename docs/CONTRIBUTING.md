@@ -160,8 +160,7 @@ docs/banner.sh              # the banner, from two of them
 - The version defaults to the next patch's pre-release. Name the release the change heads for, so `main` shows it
 - They need `chromium`, `imagemagick`, `python-pyte`, `python-yaml` and `ttf-firacode-nerd`, none of which a build or `make check` needs, and systemd as PID 1, which `localectl` and `timedatectl` ask
 - Every run starts with `--debug`, so nothing is partitioned, mounted or restarted. Which pages are taken and every answer given is in **[screenshots.yaml](screenshots.yaml)**
-- Only `welcome.png`, `setup.png`, `installer.png`, `installing.png` and `recovery.png` are drawn this way. The boot splash, the shell, the fetch and the Arch OS Manager are photographs of a running system, taken by hand
-- `installing.png` and `recovery.png` catch a run while it is going, so they differ from run to run
+- `installing.png` catches a run while it is going, so it differs from run to run
 
 ## The Repository
 
