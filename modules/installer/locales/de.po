@@ -447,8 +447,18 @@ msgstr "Flatpak"
 
 #. ARCH_OS_FLATPAK_ENABLED: what it means
 #: module.yaml
-msgid "Applications from Flathub, installed and updated through GNOME Software. Parental Controls need it."
-msgstr "Anwendungen von Flathub, installiert und aktualisiert über GNOME Software. Der Jugendschutz setzt es voraus."
+msgid "Applications from Flathub, installed and updated through GNOME Software or Bazaar. Parental Controls need it."
+msgstr "Anwendungen von Flathub, installiert und aktualisiert über GNOME Software oder Bazaar. Der Jugendschutz setzt es voraus."
+
+#. ARCH_OS_BAZAAR_ENABLED: the question
+#: module.yaml
+msgid "Bazaar"
+msgstr "Bazaar"
+
+#. ARCH_OS_BAZAAR_ENABLED: what it means
+#: module.yaml
+msgid "Installs Bazaar instead of GNOME Software, a store for Flatpaks only, and GNOME Firmware for firmware updates."
+msgstr "Installiert Bazaar statt GNOME Software, einen Store nur für Flatpaks, und GNOME Firmware für Firmware-Updates."
 
 #. ARCH_OS_SAMBA_SHARE_ENABLED: the question
 #: module.yaml

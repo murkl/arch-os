@@ -242,6 +242,8 @@ GNOME, filtered rather than installed and trimmed: what the slim desktop drops i
 
 **GNOME Software** installs Flatpaks and, with `fwupd` from the desktop extras, firmware updates. It installs no packages: Arch builds it without PackageKit, which is [not recommended](https://wiki.archlinux.org/title/Pacman/Tips_and_tricks#Graphical), so pacman stays the one tool that changes the system.
 
+**Bazaar** takes its place when chosen beside Flatpak. It installs Flatpaks only, so `gnome-firmware` comes with it for the firmware updates, and the dock shows Bazaar instead. **[➜ Bazaar](https://apps.gnome.org/Bazaar/)**
+
 **Out of memory, one app ends** instead of the desktop freezing for minutes: `systemd-oomd` acts before the kernel would. GNOME starts each app in a scope of its own, so nothing else is hit. The drop-ins are named `10-arch-os.conf`, where `systemd-oomd(8)` recommends. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Improving_performance#Improving_system_responsiveness_under_low-memory_conditions)**
 
 | Unit | Setting | Acts when |
