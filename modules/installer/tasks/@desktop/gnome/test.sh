@@ -9,8 +9,19 @@ arch-chroot "$MNT" systemctl is-enabled arch-os-session-up.service >/dev/null
 arch-chroot "$MNT" systemctl is-enabled systemd-oomd.service >/dev/null
 [ -z "$(systemd-analyze verify --root="$MNT" -- -.slice user@.service 2>&1)" ]
 
-has_command gnome-software
 has_command gnome-extensions-app
+
+# Bazaar takes GNOME Software's place, GNOME Firmware its firmware updates.
+if [ "$ARCH_OS_FLATPAK_ENABLED" = "true" ] && [ "$ARCH_OS_BAZAAR_ENABLED" = "true" ]; then
+    has_command bazaar
+    has_command gnome-firmware
+    if has_command gnome-software; then
+        echo "Bazaar is on and GNOME Software was installed all the same" >&2
+        exit 1
+    fi
+else
+    has_command gnome-software
+fi
 
 arch-chroot "$MNT" systemctl --global is-enabled pipewire.socket pipewire-pulse.socket wireplumber.service >/dev/null
 
