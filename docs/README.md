@@ -37,7 +37,7 @@
 - AUR helper, 32-bit support, containers, firewall, SSH, housekeeping
 - Works offline: no timer fails without internet
 - Text editor of your choice: nano, vim, neovim, micro or helix
-- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), [Arch OS Manager](https://github.com/murkl/arch-os-manager), Shell Enhancement (zsh)
+- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), [System Manager](https://github.com/murkl/arch-os-manager), Shell Enhancement (zsh)
 - Create boot medium on any Linux machine
 - Wi-Fi in the Installer and the Recovery
 - Virtual machine guest tools, GNOME Boxes ready to install
@@ -102,9 +102,9 @@ An installation has a Recovery on its own partition, and the ISO has one too. Ho
 
 ## Maintenance
 
-<p><img src="screenshots/manager_menu.png" alt="The Arch OS Manager"></p>
+<p><img src="screenshots/manager.png" alt="The System Manager: every part of the system with what it currently says"></p>
 
-The **[Arch OS Manager](https://github.com/murkl/arch-os-manager)** does most of it. By hand:
+The **[System Manager](https://github.com/murkl/arch-os-manager)** does most of it. By hand:
 
 - Read the **[Arch Linux News](https://www.archlinux.org/news)** before you upgrade
 - Roll back with the **[Recovery](#recovery)**: **[➜ Rolling Back](REFERENCE.md#rolling-back)**
@@ -120,7 +120,7 @@ The **[Arch OS Manager](https://github.com/murkl/arch-os-manager)** does most of
   <p><div><img src="screenshots/bootsplash.png"></div><sub><i>Bootsplash</i></sub></p>
   <p><div><img src="screenshots/starship.png"></div><sub><i>Shell Enhancement</i></sub></p>
   <p><div><img src="screenshots/fastfetch.png"></div><sub><i>Fetch</i></sub></p>
-  <p><div><img src="screenshots/manager_dashboard.png"></div><sub><i>Arch OS Manager</i></sub></p>
+  <p><div><img src="screenshots/manager_update.png"></div><sub><i>System Manager</i></sub></p>
 </div>
 
 </details>
