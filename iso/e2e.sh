@@ -21,6 +21,11 @@ WORK="${WORK:-$(dirname "$ISO")/e2e}"
 # It is handed to the live image where the Installer looks after a download.
 RECOVERY_DIR="${ISO%-x86_64.iso}-recovery"
 
+# The least docs/README.md asks of a machine for this starting point, so every
+# run proves it.
+MEMORY="$([ "$START" = desktop ] && echo 4096 || echo 2048)"
+DISK_SIZE="$([ "$START" = desktop ] && echo 32G || echo 16G)"
+
 # A cold run on a busy runner, with every package downloaded, and for a Desktop
 # three builds from the AUR on top.
 INSTALL_TIMEOUT="${INSTALL_TIMEOUT:-$([ "$START" = desktop ] && echo 5400 || echo 2700)}"
@@ -103,7 +108,7 @@ EOF
 printf 'instance-id: arch-os-e2e\n' >"${WORK}/seed/meta-data"
 xorriso -as mkisofs -quiet -V cidata -J -r -o "${WORK}/seed.iso" "${WORK}/seed/user-data" "${WORK}/seed/meta-data"
 
-qemu-img create -q -f qcow2 "${WORK}/disk.qcow2" 24G
+qemu-img create -q -f qcow2 "${WORK}/disk.qcow2" "$DISK_SIZE"
 
 # The machine's own firmware variables, in setup mode until the Installer
 # enrolls its keys into them.
@@ -133,7 +138,7 @@ start() {
         -machine q35,smm=on,accel=kvm:tcg \
         -cpu max \
         -smp 4 \
-        -m 4096 \
+        -m "$MEMORY" \
         -global driver=cfi.pflash01,property=secure,value=on \
         -drive "if=pflash,format=raw,unit=0,readonly=on,file=${OVMF_CODE}" \
         -drive "if=pflash,format=raw,unit=1,file=${vars}" \
@@ -264,6 +269,18 @@ healthy() {
 
 # A command as root on the installed system, through sudo and the password.
 as_root() { installed "printf '%s\n' '${PASSWORD}' | sudo -S -p '' $*"; }
+
+# systemd-oomd watches a cgroup under swap and the account's manager under
+# memory pressure, as its two drop-ins say. The sections as oomctl prints them,
+# src/oom/oomd-manager.c.
+oomd_watches() {
+    as_root oomctl | awk '
+        /^Swap Monitored CGroups:/ { section = "swap"; next }
+        /^Memory Pressure Monitored CGroups:/ { section = "pressure"; next }
+        section == "swap" && /Path: / { swap = 1 }
+        section == "pressure" && /Path: .*\/user@[0-9]+\.service$/ { pressure = 1 }
+        END { exit !(swap && pressure) }'
+}
 
 shutdown_installed() {
     as_root systemctl poweroff || true
@@ -496,6 +513,9 @@ if [ "$START" = desktop ]; then
     [ "$(installed systemctl is-active gdm || true)" = active ] || fail "the login screen of the Desktop is not running"
     entries_ready main.conf
     say "Desktop: the session it logs into counted the start"
+
+    until_ok "$BOOT_TIMEOUT" "systemd-oomd watching swap and the session" oomd_watches
+    say "Desktop: systemd-oomd watches swap and the session"
 
     # No session ever comes up: the shell masked for every account, and the
     # wait for it shortened.
