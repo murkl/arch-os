@@ -16,6 +16,11 @@ packages=(git bluez bluez-utils avahi nss-mdns pipewire pipewire-pulse wireplumb
 # asking for jack2: GNOME Boxes is one, by way of qemu-desktop.
 packages+=(pipewire-jack)
 
+# Bazaar only beside Flatpak, which it is built on: the question's own
+# conditions.
+bazaar=false
+[ "$ARCH_OS_FLATPAK_ENABLED" = "true" ] && [ "$ARCH_OS_BAZAAR_ENABLED" = "true" ] && bazaar=true
+
 # The group filtered before the download rather than trimmed after it.
 mapfile -t desktop < <(arch-chroot "$MNT" pacman -Sgq gnome)
 [ "${#desktop[@]}" -gt 0 ] || {
@@ -28,6 +33,7 @@ while read -r scope name; do
     case "$scope" in
     slim) [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "true" ] || continue ;;
     no-flatpak) [ "$ARCH_OS_FLATPAK_ENABLED" != "true" ] || continue ;;
+    bazaar) [ "$bazaar" = "true" ] || continue ;;
     esac
     left_out+=("$name")
 done <"${data}/left-out"
@@ -36,6 +42,10 @@ mapfile -t desktop < <(printf '%s\n' "${desktop[@]}" | grep -vxF -f <(printf '%s
 # and pacman stays the one thing that changes the system.
 # https://wiki.archlinux.org/title/Pacman/Tips_and_tricks#Graphical
 packages+=("${desktop[@]}")
+
+# Bazaar in its place installs Flatpaks only, so the firmware updates Software
+# offers come from GNOME Firmware.
+[ "$bazaar" = "true" ] && packages+=(bazaar gnome-firmware)
 
 # The Extensions app, a package outside the group since GNOME 51.
 packages+=(gnome-extensions-app)
@@ -152,6 +162,14 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     arch-chroot "$MNT" systemctl enable cups.socket # printing
 fi
 
+# Out of memory, one app ends instead of the desktop freezing for minutes. GNOME
+# starts each app in a scope of its own, so no more than that app is hit. Where
+# systemd-oomd(8) recommends, at Fedora's limit for the session.
+mkdir -p "${MNT}/etc/systemd/system/-.slice.d" "${MNT}/etc/systemd/system/user@.service.d"
+render "${data}/oomd-root.conf" >"${MNT}/etc/systemd/system/-.slice.d/10-arch-os.conf"
+render "${data}/oomd-user.conf" >"${MNT}/etc/systemd/system/user@.service.d/10-arch-os.conf"
+arch-chroot "$MNT" systemctl enable systemd-oomd.service
+
 # The keyring's ssh agent, which gcr ships off, for every account.
 # https://wiki.archlinux.org/title/GNOME/Keyring#SSH_keys
 arch-chroot "$MNT" systemctl --global enable gcr-ssh-agent.socket
@@ -191,7 +209,9 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     [ "$ARCH_OS_MANAGER_ENABLED" = "true" ] && dock+=(arch-os.desktop)
     dock+=(org.gnome.Console.desktop)
     [ "$ARCH_OS_BROWSER" != "none" ] && dock+=("$(browser_entry)")
-    dock+=(org.gnome.Nautilus.desktop org.gnome.Software.desktop org.gnome.Settings.desktop)
+    store=org.gnome.Software.desktop
+    [ "$bazaar" = "true" ] && store=io.github.kolunmi.Bazaar.desktop
+    dock+=(org.gnome.Nautilus.desktop "$store" org.gnome.Settings.desktop)
     favorites="$(printf "'%s', " "${dock[@]}")"
     render "${data}/20-arch-os-extras" FAVORITES="${favorites%, }" >"${defaults}/20-arch-os-extras"
 fi

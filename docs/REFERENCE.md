@@ -53,7 +53,7 @@ The order is fixed and the file system is always btrfs. The root's type is the o
 
 A snapshot of `@` leaves out every subvolume mounted inside it, so a rollback keeps all six as they are. A subvolume made inside `@` later, such as a machine of `machinectl` or a container's image, is in no snapshot either: a rollback moves it to the same place in the new `@` instead of deleting it with the old one.
 
-All are mounted with `defaults,noatime,compress=zstd`. The layout is written once, in `oak.sh`, which both modules load: the Installer creates every subvolume, and the Recovery opens only a disk that has all of them.
+All are mounted with `defaults,noatime,compress=zstd:1`. Level 1 costs an old processor far less per write than the default 3 and compresses almost as well, as Fedora mounts it. Reading is equally fast at every level. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Btrfs#Compression)** The layout is written once, in `oak.sh`, which both modules load: the Installer creates every subvolume, and the Recovery opens only a disk that has all of them.
 
 **Note:** _`/var/tmp` gets `chmod 1777` right after it is created, before systemd-tmpfiles runs._
 
@@ -218,7 +218,7 @@ Enough for a usable system, little enough that nothing needs looking after.
 
 | Card | Packages |
 | --- | --- |
-| Intel | `vulkan-intel`, `intel-media-driver` |
+| Intel | `vulkan-intel`, `intel-media-driver` from Broadwell on, `libva-intel-driver` for older cards. libva tries the first, then the second |
 | AMD | `vulkan-radeon`, `vulkan-mesa-layers`, `opencl-mesa`. Video decoding is part of Mesa |
 | NVIDIA from Turing on (device ID `0x1e00` and up) | `nvidia-open-dkms` with the kernel headers, `nvidia-utils`, `nvidia-settings`, `opencl-nvidia`, `libva-nvidia-driver`, and `nvidia-prime` beside another card |
 | NVIDIA before Turing | `vulkan-nouveau`. Arch ships no NVIDIA driver for these |
@@ -241,6 +241,15 @@ With 32-bit support each gets its `lib32-` half. NVIDIA's module loads early fro
 GNOME, filtered rather than installed and trimmed: what the slim desktop drops is never downloaded. GNOME Web is never taken from the group, since it is one answer to the browser question. Papers stays as a dependency of the previews in Files and is hidden from the applications.
 
 **GNOME Software** installs Flatpaks and, with `fwupd` from the desktop extras, firmware updates. It installs no packages: Arch builds it without PackageKit, which is [not recommended](https://wiki.archlinux.org/title/Pacman/Tips_and_tricks#Graphical), so pacman stays the one tool that changes the system.
+
+**Bazaar** takes its place when chosen beside Flatpak. It installs Flatpaks only, so `gnome-firmware` comes with it for the firmware updates, and the dock shows Bazaar instead. **[➜ Bazaar](https://apps.gnome.org/Bazaar/)**
+
+**Out of memory, one app ends** instead of the desktop freezing for minutes: `systemd-oomd` acts before the kernel would. GNOME starts each app in a scope of its own, so nothing else is hit. The drop-ins are named `10-arch-os.conf`, where `systemd-oomd(8)` recommends. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Improving_performance#Improving_system_responsiveness_under_low-memory_conditions)**
+
+| Unit | Setting | Acts when |
+| --- | --- | --- |
+| `-.slice` | `ManagedOOMSwap=kill` | Memory and swap are both over 90 %. What holds the most swap ends |
+| `user@.service` | `ManagedOOMMemoryPressure=kill`, limit `50%` | The session waits on memory half the time for 30 s. Fedora's limit: systemd's 60 % lets a desktop stall longer |
 
 What every account starts with is a system default, not a setting copied into one home. Each account can change it.
 

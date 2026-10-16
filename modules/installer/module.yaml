@@ -58,6 +58,7 @@ presets:
       ARCH_OS_BROWSER: firefox
       ARCH_OS_BACKUP: pika-backup
       ARCH_OS_FLATPAK_ENABLED: true
+      ARCH_OS_BAZAAR_ENABLED: false
       ARCH_OS_SAMBA_SHARE_ENABLED: false
       ARCH_OS_CORE_TWEAKS_ENABLED: true
       ARCH_OS_BOOTSPLASH_ENABLED: true
@@ -81,6 +82,7 @@ presets:
       ARCH_OS_BROWSER: none
       ARCH_OS_BACKUP: none
       ARCH_OS_FLATPAK_ENABLED: false
+      ARCH_OS_BAZAAR_ENABLED: false
       ARCH_OS_SAMBA_SHARE_ENABLED: false
       ARCH_OS_CORE_TWEAKS_ENABLED: true
       ARCH_OS_BOOTSPLASH_ENABLED: false
@@ -459,10 +461,20 @@ variables:
   - name: ARCH_OS_FLATPAK_ENABLED
     type: bool
     title: Flatpak
-    description: Applications from Flathub, installed and updated through GNOME Software. Parental Controls need it.
+    description: Applications from Flathub, installed and updated through GNOME Software or Bazaar. Parental Controls need it.
     group: Desktop
     default: true
     conditions: ARCH_OS_DESKTOP != none
+
+  - name: ARCH_OS_BAZAAR_ENABLED
+    type: bool
+    title: Bazaar
+    description: Installs Bazaar instead of GNOME Software, a store for Flatpaks only, and GNOME Firmware for firmware updates.
+    group: Desktop
+    default: false
+    conditions:
+      - ARCH_OS_DESKTOP != none
+      - ARCH_OS_FLATPAK_ENABLED == true
 
   - name: ARCH_OS_SAMBA_SHARE_ENABLED
     type: bool
