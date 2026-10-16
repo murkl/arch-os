@@ -114,6 +114,52 @@ sudo pacman -S --needed make curl shellcheck shfmt zsh yamllint actionlint zizmo
 
 **Note:** _What Arch OS puts on a disk and why: **[➜ Reference](REFERENCE.md)**._
 
+## Writing a Task
+
+### Files a Task Ships
+
+Every file a task writes into the new system lies in `data/` beside `task.sh`, named after the file it becomes. `render` from `oak.sh` fills it, `where` names the folder.
+
+```
+render "$(where)/main.conf" KERNEL="$KERNEL" CMDLINE="$cmdline" >"${MNT}/boot/loader/entries/main.conf"
+```
+
+- `{{NAME}}` is the only placeholder, filled from `NAME=value` and never from the environment. Every `$` stays for whatever reads the file later
+- An unfilled placeholder, an unused value and a stray `{{` fail the task. Values are filled once, left to right
+- A file without placeholders goes through `render` too, so one added later cannot reach a disk unfilled
+- Not `envsubst`: it reads the environment, fills an unset variable with nothing, and without a list of names fills every `${…}`
+- The boot entries' templates lie in `modules/recovery/data/boot/`, since the Recovery writes them again through `boot_entries`
+- `make lint` refuses a `{ … } >"${MNT}/…"` block
+
+Where a program reads a directory, the file goes there. These have none:
+
+| File | How | Why |
+| --- | --- | --- |
+| `/etc/pacman.conf` | Edited | One `Include =` per file, see `pacman_include`. A glob stops pacman once it matches nothing |
+| `/etc/locale.gen` | Edited | `locale-gen` reads nothing else, and a glibc update runs it again |
+| `/etc/environment` | Edited | `pam_env` reads nothing else, and `sudo` takes the editor from it |
+| `/etc/nsswitch.conf` | Edited | glibc reads nothing else |
+| `/etc/gdm/custom.conf` | Written whole, with automatic login only | GDM reads nothing else |
+| `/etc/xdg/reflector/reflector.conf` | Written whole | `reflector.service` names it on its command line and in its sandbox |
+
+### Closing the Target
+
+Swap off, sync, unmount, lock: in the Installer before it partitions, in the Recovery before it opens the disk. A second attempt starts from whatever the first left.
+
+- `umount -R`, never `-A`, which reaches beyond the target and in the Recovery would take the rollback's snapshots
+- `fuser -M`, without which a target that is not a mount point resolves to the live system
+- Whatever still holds the target is logged, then killed
+- Done means on the disk: the Installer's last task and the Recovery's rollback and rebuild end with `sync`, or a power cut leaves FAT with empty boot files
+
+### When Something Goes Wrong
+
+| Kind | Example | On the page |
+| --- | --- | --- |
+| Expected | No internet, a wrong disk, a damaged download | A headline and what to do, translated. Nothing to share |
+| A script that broke | A package Arch renamed, a tool that changed its output | Module, task, line, command and output, and **Share the log** |
+
+A script stops on what it expects with `exit` and a status, which `errors:` in `module.yaml` puts into words: `3` no internet, `4` GitHub not answering, `5` the AUR not answering. Statuses from `10` up belong to the task or action that uses them. **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md#stopping-on-purpose)**
+
 ## Translating
 
 **The English sentence is the key.** A catalog without a translation shows the English, so a translation is useful from its first line.

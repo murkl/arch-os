@@ -307,7 +307,7 @@ clear_loader_default() {
 }
 
 # Everything under /mnt taken down, and whatever still holds it logged and
-# killed. Why -R and -M: docs/REFERENCE.md#closing-the-target
+# killed. Why -R and -M: docs/CONTRIBUTING.md#closing-the-target
 unmount_target() {
     mountpoint -q "$MNT" || return 0
     umount -R "$MNT" && return 0
@@ -351,7 +351,7 @@ open_shell() {
 
 # A template from a task's data/ on stdout: {{NAME}} filled from NAME=value,
 # every $ left alone. A placeholder nobody filled and a value nothing asks for
-# both fail. Why not envsubst: docs/REFERENCE.md
+# both fail. Why not envsubst: docs/CONTRIBUTING.md#files-a-task-ships
 render() {
     local template="$1" open='{{' close='}}' text rendered="" name pair
     local -A values=() used=()
