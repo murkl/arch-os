@@ -188,7 +188,7 @@ render "${data}/10-arch-os-keyboard" KEYBOARD="$keyboard" >"${defaults}/10-arch-
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     dock=()
-    [ "$ARCH_OS_MANAGER_ENABLED" = "true" ] && dock+=(arch-os.desktop)
+    [ "$ARCH_OS_MANAGER_ENABLED" = "true" ] && dock+=(system-manager.desktop)
     dock+=(org.gnome.Console.desktop)
     [ "$ARCH_OS_BROWSER" != "none" ] && dock+=("$(browser_entry)")
     dock+=(org.gnome.Nautilus.desktop org.gnome.Software.desktop org.gnome.Settings.desktop)

@@ -3,12 +3,9 @@
 chroot_pacman_install pacman-contrib
 chroot_aur_install arch-os-manager
 
-# Its binaries now rather than on first use, which fetches them all the same,
-# so nothing here fails the installation. --init ends on 2 when it worked.
-status=0
-as_user 'unset GUM; timeout 300 setsid --wait /usr/bin/arch-os --init' </dev/null || status=$?
-case "$status" in
-0 | 2) ;;
-124) echo "the manager's binaries did not download in time; it will fetch them on first use" >&2 ;;
-*) echo "the manager's first start stopped with ${status}; it sets itself up again on first use" >&2 ;;
-esac
+# Its app menu entry and update notification now rather than at its first
+# start, which puts them in place all the same; so nothing here fails the
+# installation.
+if ! as_user 'system-manager init' </dev/null; then
+    echo "the manager's menu entry waits for its first start" >&2
+fi
