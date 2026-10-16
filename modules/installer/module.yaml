@@ -363,7 +363,7 @@ variables:
 
   - name: ARCH_OS_MANAGER_ENABLED
     type: bool
-    title: Arch OS Manager
+    title: System Manager
     description: A menu for updating, cleaning up and repairing the system after installation.
     group: System
     default: true
