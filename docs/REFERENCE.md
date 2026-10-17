@@ -1,10 +1,8 @@
 # Reference
 
-What Arch OS puts on a disk, and why. What a module's YAML can declare is in the **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**.
+How to start Arch OS, what it puts on a disk, and why. What a module's YAML can declare is in the **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**.
 
 ## Starting Arch OS
-
-The Arch OS ISO starts by itself. Anywhere else, one command fetches the release.
 
 | From | How |
 | --- | --- |
@@ -17,7 +15,16 @@ The Arch OS ISO starts by itself. Anywhere else, one command fetches the release
 | `--language=de` | Skips the language page: `… \| bash -s -- --language=de` or `installer --language=de` |
 | `DOWNLOAD_DIR=<dir>` | Unpacks the release there instead of `XDG_DOWNLOAD_DIR` or `~/Downloads`: `… \| DOWNLOAD_DIR=<dir> bash` |
 
-The live system takes the console keyboard and the time zone as soon as they are answered. Only its `/etc/localtime` changes, the hardware clock stays.
+### The Boot Medium
+
+A hybrid ISO carries its partition table and boot paths, so writing it is one raw copy.
+
+| Step | How |
+| --- | --- |
+| Image | The release `version:` in `oak.yaml` names, in `~/Downloads` or the folder set in **Setup**. One already there is used |
+| Device | Asked at every **Start**, never kept: `/dev/sdb` names a stick only while it is plugged in |
+| Checksum | GitHub's for that release, read once and kept as `.sha256`. A mismatch discards the image. **Verify checksum** off writes the image as it is, such as one you built |
+| Root | `umount`, `dd` and `blockdev` only, so nothing root-owned lands in your home. The password is asked before the run and handed to `sudo` on stdin |
 
 ### Reusing Answers
 
@@ -25,7 +32,7 @@ Every answer lands in `installer.conf` as it is given, so an interrupted run res
 
 | Way | How |
 | --- | --- |
-| Share | The last page uploads the answers to **[paste.rs](https://paste.rs)**. The next installation starts from that code and asks only for the disk |
+| Share | The last page uploads the answers to **[paste.rs](https://paste.rs)**. The next installation starts from that code and asks only for the disk and the passwords |
 | Copy | `installer.conf` beside the Installer on another machine |
 
 **Note:** _A shared configuration leaves out the disk and the kernel parameters. Both belong to one machine, and a stranger's kernel parameters could open a root shell at boot._
@@ -390,14 +397,3 @@ It is a kiosk: tty1 is its own, no console has a login, and **Exit** or a crash 
 - The download, its checksum, its size and the signature come before the partition is touched. An encrypted system is opened, since its own keys sign the new image
 - It writes the partition, reads it back, then moves the boot image over the old one. A power cut in between starts the system as before
 - The partition keeps its UUID, so the file manager keeps hiding it
-
-## The Boot Medium
-
-A hybrid ISO carries its partition table and boot paths, so writing it is one raw copy.
-
-| Step | How |
-| --- | --- |
-| Image | The release `version:` in `oak.yaml` names, in `~/Downloads` or the folder set in **Setup**. One already there is used |
-| Device | Asked at every **Start**, never kept: `/dev/sdb` names a stick only while it is plugged in |
-| Checksum | GitHub's for that release, read once and kept as `.sha256`. A mismatch discards the image. **Verify checksum** off writes the image as it is, such as one you built |
-| Root | `umount`, `dd` and `blockdev` only, so nothing root-owned lands in your home. The password is asked before the run and handed to `sudo` on stdin |

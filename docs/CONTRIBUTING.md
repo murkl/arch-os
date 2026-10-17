@@ -2,78 +2,6 @@
 
 `main` is the only long-lived branch. Every change branches off it and comes back as one commit, and a release is one more pull request.
 
-## Workflow
-
-```mermaid
-flowchart LR
-    M["main"] -->|branch off| B["feat/…"]
-    B -->|pull request| I["Check · Image · Boot · Install"]
-    I -->|squash merge| M2["main"]
-    M2 --> P["Release pull request<br/>version · changelog"]
-    P -->|merge| R["Release<br/>tag · images · page"]
-
-    style R fill:#1793d1,stroke:#1793d1,color:#fff
-```
-
-1. **Branch off `main`.** Name the branch after what it does: `feat/wireless-settings`, `fix/helix-test`. Nothing reads the name
-2. **Open a pull request right away**, as a draft while it is not done. A branch is checked through its pull request, never on its own. Every push is built, booted and installed, which takes about 30 minutes
-3. **Squash merge**, or switch on auto-merge. `main` takes the pull request once `Check`, `Image` and `Title` have passed, as one commit under its title, and deletes the branch
-
-- The commits inside the branch are yours to shape. Only the title reaches `main`
-- A draft gets the same run and cannot be merged. Marking it ready starts nothing, since it changes no code
-- A pull request that changes only `docs/`, Markdown or `LICENSE` is checked, never built: none of it reaches an image
-
-## The Title
-
-The title is the one line `main` keeps. The next version and the changelog are read from it, so it follows **[Conventional Commits](https://www.conventionalcommits.org)**: a type, a colon, what changed.
-
-| Title | Version | On the Release Page |
-| --- | --- | --- |
-| `fix: the Recovery finds a kernel on a separate /boot` | 2.0.0 → 2.0.1 | Bug Fixes |
-| `feat: join a wireless network before the first download` | 2.0.0 → 2.1.0 | Features |
-| `feat!: one answer file per module` | 2.0.0 → 3.0.0 | ⚠ BREAKING CHANGES |
-| `docs:` `refactor:` `test:` `build:` `ci:` `chore:` | none | nothing |
-
-- Write it for someone installing or repairing a machine. `Title` refuses a title without a type, and checks it again whenever it is edited
-- Merging shows the title and an empty description. Leave both as they are, with two exceptions typed into the description:
-  - `BREAKING CHANGE: …` tells the release page what somebody has to do
-  - `Release-As: 3.0.0` sets a version that is chosen rather than counted
-
-**Note:** _A title that turns out wrong after the merge is corrected in the description of the merged pull request. The next release run reads this instead of the commit:_
-
-```
-BEGIN_COMMIT_OVERRIDE
-fix: the corrected line
-END_COMMIT_OVERRIDE
-```
-
-## Releasing
-
-Nothing is typed and nothing is tagged by hand.
-
-1. **Every merge that releases something** opens or updates the pull request `chore(main): release 2.1.0`. It raises the version in `.release-please-manifest.json` and writes that version's section of **[CHANGELOG.md](../CHANGELOG.md)**
-2. **Merging it is the release.** It starts no run of its own, so an admin merges it past the checks: `gh pr merge <number> --squash --admin`. The run on `main` tags `v2.1.0`, checks, builds and boots the images as that version, attaches them to the release page and publishes it
-
-- Merges collect in the release pull request until it is merged. When to release is a decision, not a schedule
-- The page carries `arch-os-2.1.0-x86_64.iso`, `arch-os-2.1.0-x86_64.tar.gz` and `arch-os-2.1.0-recovery-x86_64.tar`, all with signed build provenance. The ISO leaves the Recovery out to stay under GitHub's 2 GiB per file: its Installer fetches the `.tar`, and an installed Recovery updates itself from it
-- Every other build is named after a pre-release of the next patch: `arch-os-2.0.1-dev-x86_64.iso`. `make build VERSION=2.1.0` names a build after any version, which the build stamps into `oak.yaml`
-- Neither the version nor the changelog is edited by hand
-
-**Note:** _The page stays a draft until every file is attached. A run that fails on the way leaves a draft: re-run its failed jobs._
-
-## What CI Runs
-
-| Job | When | Does |
-| --- | --- | --- |
-| `Title` | A pull request is opened, pushed to or edited | Checks the title |
-| `Check` | A pull request, a release, every Monday, on demand | `make check` |
-| `Image` | As `Check`, where the change reaches the image | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO. Then starts its Recovery and writes it again from the ISO. Every Monday and on demand also a Desktop, booted to its login screen |
-| `Release` | A push to `main` | The release pull request, or once that is merged, the tag and the draft page |
-| `Publish` | A release | Attaches the files `Image` booted to the page, signed, and publishes it |
-
-- A merge into `main` runs `Release` alone: its pull request has passed `Check` and `Image` already
-- A run started by hand offers its images for download: `gh workflow run CI --ref <branch>`
-
 ## Doing the Work
 
 ```
@@ -204,10 +132,81 @@ docs/banner.sh              # the banner, from two of them and the tagline in RE
 docs/svg.py                 # the download button and the requirements, with their text alternatives in README.md
 ```
 
-- The version defaults to the next patch's pre-release. Name the release the change heads for, so `main` shows it
+- `screenshots.sh`'s version defaults to the next patch's pre-release. Name the release the change heads for, so `main` shows it
 - They need `chromium`, `imagemagick`, `python-fonttools`, `python-pyte`, `python-yaml` and `ttf-firacode-nerd`, none of which a build or `make check` needs, and systemd as PID 1, which `localectl` and `timedatectl` ask
 - Every run starts with `--debug`, so nothing is partitioned, mounted or restarted. Which pages are taken and every answer given is in **[screenshots.yaml](screenshots.yaml)**
 - `installing.png` catches a run while it is going, so it differs from run to run
+
+## Workflow
+
+```mermaid
+flowchart LR
+    M["main"] -->|branch off| B["feat/…"]
+    B -->|pull request| I["Check · Image · Boot · Install"]
+    I -->|squash merge| M2["main"]
+    M2 --> P["Release pull request<br/>version · changelog"]
+    P -->|merge| R["Release<br/>tag · images · page"]
+
+    style R fill:#1793d1,stroke:#1793d1,color:#fff
+```
+
+1. **Branch off `main`.** Name the branch after what it does: `feat/wireless-settings`, `fix/helix-test`. Nothing reads the name
+2. **Open a pull request right away**, as a draft while it is not done. A branch is checked through its pull request, never on its own. Every push is built, booted and installed, which takes about 30 minutes
+3. **Squash merge**, or switch on auto-merge. `main` takes the pull request once `Check`, `Image` and `Title` have passed, as one commit under its title, and deletes the branch
+
+- The commits inside the branch are yours to shape. Only the title reaches `main`
+- A draft gets the same run and cannot be merged. Marking it ready starts nothing, since it changes no code
+- A pull request that changes only `docs/`, Markdown or `LICENSE` is checked, never built: none of it reaches an image
+
+## The Title
+
+The title is the one line `main` keeps. The next version and the changelog are read from it, so it follows **[Conventional Commits](https://www.conventionalcommits.org)**: a type, a colon, what changed.
+
+| Title | Version | On the Release Page |
+| --- | --- | --- |
+| `fix: the Recovery finds a kernel on a separate /boot` | 2.0.0 → 2.0.1 | Bug Fixes |
+| `feat: join a wireless network before the first download` | 2.0.0 → 2.1.0 | Features |
+| `feat!: one answer file per module` | 2.0.0 → 3.0.0 | ⚠ BREAKING CHANGES |
+| `docs:` `refactor:` `test:` `build:` `ci:` `chore:` | none | nothing |
+
+- Write it for someone installing or repairing a machine. `Title` refuses a title without a type, and checks it again whenever it is edited
+- Merging shows the title and an empty description. Leave both as they are, with two exceptions typed into the description:
+  - `BREAKING CHANGE: …` tells the release page what somebody has to do
+  - `Release-As: 3.0.0` sets a version that is chosen rather than counted
+
+**Note:** _A title that turns out wrong after the merge is corrected in the description of the merged pull request. The next release run reads this instead of the commit:_
+
+```
+BEGIN_COMMIT_OVERRIDE
+fix: the corrected line
+END_COMMIT_OVERRIDE
+```
+
+## What CI Runs
+
+| Job | When | Does |
+| --- | --- | --- |
+| `Title` | A pull request is opened, pushed to or edited | Checks the title |
+| `Check` | A pull request, a release, every Monday, on demand | `make check` |
+| `Image` | As `Check`, where the change reaches the image | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO. Then starts its Recovery and writes it again from the ISO. Every Monday and on demand also a Desktop, booted to its login screen |
+| `Release` | A push to `main` | The release pull request, or once that is merged, the tag and the draft page |
+| `Publish` | A release | Attaches the files `Image` booted to the page, signed, and publishes it |
+
+- A merge into `main` runs `Release` alone: its pull request has passed `Check` and `Image` already
+- A run started by hand offers its images for download: `gh workflow run CI --ref <branch>`
+
+## Releasing
+
+Nothing is typed and nothing is tagged by hand.
+
+1. **Every merge that releases something** opens or updates the pull request `chore(main): release 2.1.0`. It raises the version in `.release-please-manifest.json` and writes that version's section of **[CHANGELOG.md](../CHANGELOG.md)**
+2. **Merging it is the release.** It starts no run of its own, so an admin merges it past the checks: `gh pr merge <number> --squash --admin`. The run on `main` tags `v2.1.0`, checks, builds and boots the images as that version, attaches them to the release page and publishes it
+
+- Merges collect in the release pull request until it is merged. When to release is a decision, not a schedule
+- The page carries `arch-os-2.1.0-x86_64.iso`, `arch-os-2.1.0-x86_64.tar.gz` and `arch-os-2.1.0-recovery-x86_64.tar`, all with signed build provenance. The ISO leaves the Recovery out to stay under GitHub's 2 GiB per file: its Installer fetches the `.tar`, and an installed Recovery updates itself from it
+- Every other build is named after a pre-release of the next patch: `arch-os-2.0.1-dev-x86_64.iso`. `make build VERSION=2.1.0` names a build after any version, which the build stamps into `oak.yaml`
+
+**Note:** _The page stays a draft until every file is attached. A run that fails on the way leaves a draft: re-run its failed jobs._
 
 ## The Repository
 

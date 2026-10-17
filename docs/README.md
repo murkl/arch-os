@@ -11,7 +11,7 @@
   <picture><source media="(prefers-color-scheme: dark)" srcset="requirements/desktop-dark.svg"><img src="requirements/desktop-light.svg" alt="Desktop (GNOME on Wayland): 4 GiB memory, 32 GiB disk"></picture>
 </p>
 
-**[➜ Reference](REFERENCE.md)** · **[➜ Telegram](https://t.me/archos_community)**
+**[➜ Reference](REFERENCE.md)** · **[➜ Contributing](CONTRIBUTING.md)** · **[➜ Telegram](https://t.me/archos_community)**
 
 <p>
   <a href="https://github.com/murkl/arch-os/releases/latest"><img src="https://img.shields.io/github/v/release/murkl/arch-os?style=flat-square&label=release&color=5e81ac" alt="Latest release"></a>
@@ -26,7 +26,7 @@
 - Disk encryption and Secure Boot with your own keys
 - Btrfs snapshots before every package change
 - Recovery on its own partition, rollback included
-- Falls back to the previous image, then to the Recovery
+- Falls back on its own: fallback image, then the Recovery
 - GNOME on Wayland or a text console, graphics drivers detected
 - Desktop extras or a slim GNOME, Flatpak
 - Browser, backup app and text editor of your choice
@@ -43,7 +43,7 @@
    curl -Ls https://bit.ly/archos | bash
    ```
 2. Set the firmware to UEFI and switch Secure Boot off
-3. Boot the USB device, choose the **Installer** and a starting point, then **Start**. It needs the internet, by cable or Wi-Fi
+3. Boot the USB device, choose a starting point, then **Start**. It needs the internet, by cable or Wi-Fi
 4. After the first start, **[switch Secure Boot on](REFERENCE.md#switching-it-on)**
 
 <p align="center"><img src="screenshots/installer.png" width="100%" alt="Setup: every answer on one page, grouped and changeable before the start"><br><sub><b>Setup</b> · every answer prefilled and changeable</sub></p>
