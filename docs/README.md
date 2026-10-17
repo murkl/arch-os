@@ -2,7 +2,7 @@
 
 <img src="banner.png" alt="Arch OS">
 
-<h4>Install Arch Linux with ease, as a GNOME&nbsp;desktop or a TTY system, with a Recovery and a&nbsp;System&nbsp;Manager.</h4>
+<p>Install <b>Arch Linux</b> with ease, as a <b>GNOME</b>&nbsp;desktop or a <b>TTY</b> system, with a <b>Recovery</b> and a&nbsp;<b>System&nbsp;Manager</b>.</p>
 
 <p>
   <a href="https://github.com/murkl/arch-os/releases/latest"><img src="download.svg" alt="Download the latest ISO, for x86_64 with UEFI"></a>
@@ -28,12 +28,16 @@
 - Recovery on its own partition, rollback included
 - Falls back on its own: fallback image, then the Recovery
 - GNOME on Wayland or a text console, graphics drivers detected
-- GNOME with extras or slim, Flatpak
+- Guest tools detected in a virtual machine
+- GNOME with extras or slim
+- Flatpak from GNOME Software, or Bazaar with GNOME Firmware
 - Browser, backup app and text editor of your choice
 - AUR helper, 32-bit support, containers, firewall, SSH
+- File sharing with Windows and macOS
 - Zram, an out-of-memory guard and tuned defaults for older machines
 - Works offline: no timer fails without internet
-- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), [Arch OS Manager](https://github.com/murkl/arch-os-manager), Shell Enhancement
+- **[Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)**, **[System Manager](https://github.com/murkl/arch-os-manager)**, Shell Enhancement
+- Installer resumes after an interruption, answers shareable by a code
 - English and German
 
 ## Installation

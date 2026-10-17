@@ -345,7 +345,7 @@ msgstr ""
 
 #. ARCH_OS_MANAGER_ENABLED: the question
 #: module.yaml
-msgid "Arch OS Manager"
+msgid "System Manager"
 msgstr ""
 
 #. ARCH_OS_MANAGER_ENABLED: what it means
@@ -632,7 +632,7 @@ msgstr ""
 
 #. the step, as the run lists it
 #: tasks/@features/manager/task.yaml
-msgid "Install Arch OS Manager"
+msgid "Install the System Manager"
 msgstr ""
 
 #. the step, as the run lists it

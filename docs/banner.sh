@@ -5,12 +5,21 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-# The README's tagline, so the banner cannot come to say something else.
-tagline="$(sed -n 's|^<h4>\(.*\)</h4>$|\1|p' docs/README.md)"
-if [ -z "$tagline" ] || [ "$(printf '%s\n' "$tagline" | wc -l)" -ne 1 ]; then
-    echo "docs/README.md: no single <h4> line to take the tagline from" >&2
+# The README's tagline, the paragraph under its banner, so the banner cannot
+# come to say something else. Its bold stays the README's.
+tagline="$(awk '/src="banner\.png"/ { found = 1; next } found && NF { print; exit }' docs/README.md)"
+case "$tagline" in
+"<p>"*"</p>")
+    tagline="${tagline#<p>}"
+    tagline="${tagline%</p>}"
+    ;;
+*)
+    echo "docs/README.md: no <p> line under the banner to take the tagline from" >&2
     exit 1
-fi
+    ;;
+esac
+tagline="${tagline//<b>/}"
+tagline="${tagline//<\/b>/}"
 
 python3 docs/banner.py \
     --product oak.yaml \

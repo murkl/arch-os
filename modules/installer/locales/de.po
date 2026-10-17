@@ -342,8 +342,8 @@ msgstr "zsh mit Vervollständigung und Vorschlägen, eine Eingabezeile mit Git-S
 
 #. ARCH_OS_MANAGER_ENABLED: the question
 #: module.yaml
-msgid "Arch OS Manager"
-msgstr "Arch OS Manager"
+msgid "System Manager"
+msgstr "System Manager"
 
 #. ARCH_OS_MANAGER_ENABLED: what it means
 #: module.yaml
@@ -653,8 +653,8 @@ msgstr "Plymouth installieren"
 
 #. the step, as the run lists it
 #: tasks/@features/manager/task.yaml
-msgid "Install Arch OS Manager"
-msgstr "Arch OS Manager installieren"
+msgid "Install the System Manager"
+msgstr "System Manager installieren"
 
 #. the step, as the run lists it
 #: tasks/@features/shell/task.yaml
