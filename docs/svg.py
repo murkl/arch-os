@@ -136,15 +136,14 @@ def path(d, fill, opacity=None):
 def download(regular, bold, fill, w):
     """The button the README opens with, as wide as a pill.
 
-    Its title ends where a pill's text does, so whatever room is left lies
-    between it and the icon, and the title stands one golden step above the
-    line under it.
+    Its title stands as far from the icon as from the right edge, one golden
+    step above the line under it.
     """
     h, radius, chip = 72, 10, 24  # the chip as far from the top and the bottom as from the left
     cx, cy = INSET + chip, h / 2
     title = "Download ISO"
     size = 13 * PHI
-    x = w - END - bold.width(title, size)
+    x = (INSET + 2 * chip + w - bold.width(title, size)) / 2
     top = (h - (size + 6) - 18) / 2
     return svg(w + 2 * MARGIN, h + 2 * MARGIN, alt_download(), [
         f'<g transform="translate({MARGIN} {MARGIN})">',
