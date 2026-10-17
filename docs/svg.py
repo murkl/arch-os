@@ -11,6 +11,7 @@ alternatives are written into README.md from the same run.
 Needs: python-fonttools, ttf-firacode-nerd.
 """
 
+import math
 import pathlib
 import re
 import subprocess
@@ -26,7 +27,6 @@ except ImportError:
 
 DOCS = pathlib.Path(__file__).resolve().parent
 FAMILY = "FiraCode Nerd Font Mono"
-PHI = (1 + 5 ** .5) / 2
 
 ARCH = ("x86_64", "UEFI")
 SPECS = ("memory", "disk")
@@ -35,11 +35,13 @@ TIERS = (
     ("Core", "\uf489", "Text console", (2, 16)),  # nf-oct-terminal
     ("Desktop", "\U000f0379", "GNOME on Wayland", (4, 32)),  # nf-md-monitor
 )
-# The button and the pills share their edges, so stacked on a narrow screen they
-# line up: a chip this far in, text ending this far from the right, and clear
-# field around, as GitHub lets a README set no spacing of its own.
-INSET, END, MARGIN = 12, 16, 8
-CHIP, GAP = 18, 12  # a pill's chip, and its text this far after it
+# The button and the pills share their measures, each on a grid of 4, so stacked
+# on a narrow screen they line up: their heights, a chip as far from the left as
+# from the top and the bottom, the banner cards' corner, a pill's text this far
+# after its chip and from its right edge, and clear field around each, as GitHub
+# lets a README set no spacing of its own.
+BUTTON, PILL = 72, 56
+INSET, RADIUS, GAP, END, MARGIN = 12, 12, 12, 16, 8
 # GitHub's own colours for a secondary button, so a pill sits on its theme as part of the page.
 THEMES = {
     "light": {"fill": "#f6f8fa", "line": "#d1d9e0", "text": "#1f2328", "muted": "#59636e"},
@@ -136,27 +138,27 @@ def path(d, fill, opacity=None):
 def download(regular, bold, fill, w):
     """The button the README opens with, as wide as a pill.
 
-    Its title stands as far from the icon as from the right edge, one golden
-    step above the line under it.
+    Its title stands as far from the icon as from the right edge.
     """
-    h, radius, chip = 72, 10, 24  # the chip as far from the top and the bottom as from the left
-    cx, cy = INSET + chip, h / 2
+    h = BUTTON
+    cx = cy = h / 2
+    chip = h / 2 - INSET
     title = "Download ISO"
-    size = 13 * PHI
-    x = (INSET + 2 * chip + w - bold.width(title, size)) / 2
-    top = (h - (size + 6) - 18) / 2
+    x = (INSET + 2 * chip + w - bold.width(title, 20)) / 2
+    top = (h - 24 - 16) / 2
     return svg(w + 2 * MARGIN, h + 2 * MARGIN, alt_download(), [
         f'<g transform="translate({MARGIN} {MARGIN})">',
         '<defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">'
         f'<stop offset="0" stop-color="{fill}"/>'
-        f'<stop offset="1" stop-color="{mix(fill, "#000000", 0.2)}"/></linearGradient></defs>',
-        f'<rect width="{w}" height="{h}" rx="{radius}" fill="url(#fill)"/>',
-        f'<rect x=".5" y=".5" width="{w - 1}" height="{h - 1}" rx="{radius - .5}"'
+        # Deep enough at its foot that the small white line there reads at 4.5:1, as WCAG AA asks.
+        f'<stop offset="1" stop-color="{mix(fill, "#000000", .3)}"/></linearGradient></defs>',
+        f'<rect width="{w}" height="{h}" rx="{RADIUS}" fill="url(#fill)"/>',
+        f'<rect x=".5" y=".5" width="{w - 1}" height="{h - 1}" rx="{RADIUS - .5}"'
         ' fill="none" stroke="#fff" stroke-opacity=".16"/>',
-        f'<circle cx="{number(cx)}" cy="{number(cy)}" r="{chip}" fill="#fff" fill-opacity=".16"/>',
-        path(regular.icon("\U000f0120", cx, cy, 26), "#fff"),  # nf-md-tray_arrow_down
-        path(bold.text(title, x, bold.baseline(top, size, size + 6), size), "#fff"),
-        path(regular.text(" · ".join(ARCH), x, regular.baseline(top + size + 6, 13, 18), 13), "#fff", .8),
+        f'<circle cx="{number(cx)}" cy="{number(cy)}" r="{number(chip)}" fill="#fff" fill-opacity=".16"/>',
+        path(regular.icon("\U000f0120", cx, cy, chip), "#fff"),  # nf-md-tray_arrow_down
+        path(bold.text(title, x, bold.baseline(top, 20, 24), 20), "#fff"),
+        path(regular.text(" · ".join(ARCH), x, regular.baseline(top + 24, 12, 16), 12), "#fff"),
         "</g>",
     ])
 
@@ -170,27 +172,28 @@ def needs_line(needs):
 
 
 def pill_width(regular, bold):
-    """Room for the widest starting point's two lines."""
+    """Room for the widest starting point's two lines, on the grid."""
     widest = max(max(bold.width(name, 14) + regular.width(f"  {kind}", 12),
                      regular.width("".join(run for run, _ in needs_line(needs)), 12))
                  for name, _, kind, needs in TIERS)
-    return round(INSET + 2 * CHIP + GAP + widest + END)
+    return 4 * math.ceil((PILL - INSET + GAP + widest + END) / 4)
 
 
 def pill(regular, bold, theme, index, w):
     """One starting point and what it needs."""
     name, icon, kind, needs = TIERS[index]
-    h, radius = 56, 10
-    cx, cy = INSET + CHIP, h / 2
-    x = cx + CHIP + GAP
+    h = PILL
+    cx = cy = h / 2
+    chip = h / 2 - INSET
+    x = cx + chip + GAP
     top = (h - 20 - 16) / 2
     first, second = bold.baseline(top, 14, 20), regular.baseline(top + 20, 12, 16)
     body = [
         f'<g transform="translate({MARGIN} {MARGIN})">',
-        f'<rect x=".5" y=".5" width="{w - 1}" height="{h - 1}" rx="{radius - .5}" fill="{theme["fill"]}"'
+        f'<rect x=".5" y=".5" width="{w - 1}" height="{h - 1}" rx="{RADIUS - .5}" fill="{theme["fill"]}"'
         f' stroke="{theme["line"]}"/>',
-        f'<circle cx="{number(cx)}" cy="{number(cy)}" r="{CHIP}" fill="{theme["text"]}" fill-opacity=".06"/>',
-        path(regular.icon(icon, cx, cy, 16), theme["muted"]),
+        f'<circle cx="{number(cx)}" cy="{number(cy)}" r="{number(chip)}" fill="{theme["text"]}" fill-opacity=".06"/>',
+        path(regular.icon(icon, cx, cy, chip), theme["muted"]),
         path(bold.text(name, x, first, 14), theme["text"]),
         path(regular.text(f"  {kind}", x + bold.width(name, 14), first, 12), theme["muted"]),
     ]
