@@ -9,7 +9,12 @@
 
 <p><b>Install Arch Linux with ease, as a desktop or a TTY system.</b></p>
 
-<p><a href="https://github.com/murkl/arch-os/releases/latest"><img src="download.svg" alt="Download the latest ISO"></a></p>
+<p><a href="https://github.com/murkl/arch-os/releases/latest"><img src="download.svg" alt="Download the latest ISO, for x86_64 with UEFI"></a></p>
+
+<p>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="requirements/core-dark.svg"><img src="requirements/core-light.svg" alt="Core (Text console): 2 GiB memory, 16 GiB disk"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="requirements/desktop-dark.svg"><img src="requirements/desktop-light.svg" alt="Desktop (GNOME on Wayland): 4 GiB memory, 32 GiB disk"></picture>
+</p>
 
 **[➜ Reference](REFERENCE.md)** · **[➜ Telegram](https://t.me/archos_community)**
 
@@ -30,10 +35,6 @@
 - Works offline: no timer fails without internet
 - [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), [Arch OS Manager](https://github.com/murkl/arch-os-manager), Shell Enhancement
 - English and German
-
-## Requirements
-
-<p align="center"><img src="requirements.svg" alt="Core (Text console): 2 GiB memory, 16 GiB disk. Desktop (GNOME on Wayland): 4 GiB memory, 32 GiB disk. Processor for both: x86_64 with UEFI"></p>
 
 ## Installation
 
