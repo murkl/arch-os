@@ -9,8 +9,7 @@
 # locale, a keyboard and a time zone all default to something read off it. The
 # disk cannot be, which is why no page showing one is photographed.
 #
-# A take names its `module:`: under --debug all three are offered, including the
-# one that never stands beside the other two on a real machine.
+# A take names its `module:`: under --debug both are offered.
 
 # The Installer: every value it will use, and the run.
 - module: installer

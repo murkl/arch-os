@@ -1,23 +1,22 @@
 # Reference
 
-What Arch OS puts on a disk, and why. What a module's YAML can declare is in the **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**.
+How to start Arch OS, what it puts on a disk, and why. What a module's YAML can declare is in the **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**.
 
 ## Starting Arch OS
 
-The Arch OS ISO starts by itself. Anywhere else, one command fetches the release.
+The Arch OS ISO starts the Installer by itself. `installer` or `recovery` on another console (**Ctrl+Alt+F2**) opens either, `installer --language=de` without the language page.
 
-| From | How |
-| --- | --- |
-| The Arch OS ISO | Starts by itself. `installer` or `recovery` on another console (**Ctrl+Alt+F2**) |
-| An **[Arch Linux ISO](https://archlinux.org/download/)** | `curl -Ls https://bit.ly/archos \| bash` |
-| Any other Linux | The same command, for **Create boot medium** |
+### The Boot Medium
 
-| Option | Effect |
-| --- | --- |
-| `--language=de` | Skips the language page: `… \| bash -s -- --language=de` or `installer --language=de` |
-| `DOWNLOAD_DIR=<dir>` | Unpacks the release there instead of `XDG_DOWNLOAD_DIR` or `~/Downloads`: `… \| DOWNLOAD_DIR=<dir> bash` |
+A hybrid ISO carries its partition table and boot paths, so any writer takes it as it is. On Linux, one command writes the latest:
 
-The live system takes the console keyboard and the time zone as soon as they are answered. Only its `/etc/localtime` changes, the hardware clock stays.
+```
+curl -fsSL https://raw.githubusercontent.com/murkl/arch-os/main/get.sh | sh
+```
+
+- An ISO of that release in `DOWNLOAD_DIR`, `XDG_DOWNLOAD_DIR` or `~/Downloads` is used, otherwise downloaded there
+- A checksum other than GitHub's is asked about, so an ISO you built still goes on a stick
+- Only USB disks the running system leaves free are offered, checked again right before the write. Root only for `umount`, `dd` and `blockdev`
 
 ### Reusing Answers
 
@@ -25,7 +24,7 @@ Every answer lands in `installer.conf` as it is given, so an interrupted run res
 
 | Way | How |
 | --- | --- |
-| Share | The last page uploads the answers to **[paste.rs](https://paste.rs)**. The next installation starts from that code and asks only for the disk |
+| Share | The last page uploads the answers to **[paste.rs](https://paste.rs)**. The next installation starts from that code and asks only for the disk and the passwords |
 | Copy | `installer.conf` beside the Installer on another machine |
 
 **Note:** _A shared configuration leaves out the disk and the kernel parameters. Both belong to one machine, and a stranger's kernel parameters could open a root shell at boot._
@@ -79,19 +78,23 @@ systemd-boot starts the system, its fallback and the Recovery. With **Secure Boo
 
 ### When the System Does Not Start
 
-Each system entry gets three tries, then the next one starts: the system, its fallback with every kernel module, then the Recovery. No key press, USB stick or network is needed. **[➜ Automatic Boot Assessment](https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/)**
+Each entry gets three tries, then the loader starts the next. The fallback brings every kernel module. No key press, USB stick or network is needed. **[➜ Automatic Boot Assessment](https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/)**
 
-| Step | What happens |
-| --- | --- |
-| Start | systemd-boot takes a try off the entry: `main+3.conf` becomes `main+2-1.conf` |
-| A good start | The disk is mounted, and on a Desktop the login screen or session is up (`boot-complete.target`). `systemd-bless-boot` marks the entry good, `arch-os-boot-tries.service` gives both entries their tries back |
-| No tries left | `main+0-3.conf` sorts last, and the loader starts the next entry |
-| The Recovery | Gives both entries their tries back, so the next start tries the system again |
+```mermaid
+flowchart LR
+    S[System] -->|3 failed starts| F[Fallback]
+    F -->|3 failed starts| R[Recovery]
+    R -.->|tries back| S
 
+    style R fill:#1793d1,stroke:#1793d1,color:#fff
+```
+
+- A start takes a try off the entry's name: `main+3.conf` becomes `main+2-1.conf`, and `main+0-3.conf` sorts last
+- A good start: the disk is mounted, and with GNOME its login screen or session is up (`boot-complete.target`). `systemd-bless-boot` marks the entry, `arch-os-boot-tries.service` gives both entries their tries back
 - `loader.conf` sets no `default`, which would start however often it failed. The Installer and the Recovery clear one left in the firmware
 - A start cut short counts as failed, such as switching off at the password prompt
 - `panic=10` restarts after a kernel panic, so a system that panics on every start reaches the Recovery by itself
-- On a Desktop, `arch-os-session-up.service` waits up to 5 minutes for the session. Without one the start does not count
+- With GNOME, `arch-os-session-up.service` waits up to 5 minutes for the session. Without one the start does not count
 - A 2.0 installation counts nothing until **Rebuild the boot files** in the Recovery lays it out this way
 
 ### Kernel Parameters
@@ -138,7 +141,7 @@ Offered only with disk encryption. Without it the drive is readable either way, 
 
 #### Switching It On
 
-After the first start, if it was left on in **Setup**:
+After the installation and the first reboot, if it was left on in **Setup**:
 
 | `sbctl status` says | Do |
 | --- | --- |
@@ -151,7 +154,7 @@ The same base on every machine.
 
 | Part | Choice | Why |
 | --- | --- | --- |
-| Kernel | `linux-zen` on every installation | One kernel means one set of problems to know. Tuned for a desktop that stays responsive under load |
+| Kernel | `linux-zen` on every installation | One kernel means one set of problems to know. Tuned to stay responsive under load |
 | Swap | zram, always | **[➜ Arch Wiki](https://wiki.archlinux.org/title/Zram)** |
 
 ### Tuning
@@ -165,7 +168,7 @@ Behind **Core tweaks**. They change behaviour, never what is installed. **[➜ A
 | `transparent_hugepage/defrag=defer+madvise` | Pages at once, defragmented in the background |
 | `DefaultTimeoutStopSec=15s` for the session's services | 90 s is what a hung logout looks like. System services keep the default, since a database cut short loses data |
 | `SystemMaxUse=200M` | The journal otherwise grows without end |
-| `bfq` on spinning disks | Keeps a desktop responsive while the disk seeks. Others keep the kernel's choice. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Improving_performance#Changing_I/O_scheduler)** |
+| `bfq` on spinning disks | Keeps the system responsive while the disk seeks. Others keep the kernel's choice. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Improving_performance#Changing_I/O_scheduler)** |
 | `strict_limit=1`, `max_ratio=10` for USB drives | A copy no longer finishes into memory and leaves the eject waiting. **[➜ Kernel](https://docs.kernel.org/admin-guide/abi-testing.html#abi-sys-class-bdi-bdi-strict-limit)** |
 | `tcp_congestion_control=bbr`, `default_qdisc=fq` | Wi-Fi and long links lose packets without being full, which `cubic` reads as congestion |
 | `tcp_mtu_probing=1` | Finds the smaller packet size of PPPoE or a tunnel where a router drops the message that says so |
@@ -249,13 +252,13 @@ Where the keyring's password and the login's differ, GNOME asks after the login.
 
 **Note:** _The disk password: `sudo cryptsetup luksChangeKey /dev/<partition>` on the partition `lsblk -f` lists as `crypto_LUKS`._
 
-## The Desktop
+## GNOME
 
-GNOME, filtered rather than installed and trimmed: what the slim desktop drops is never downloaded.
+GNOME, filtered rather than installed and trimmed: what a slim GNOME drops is never downloaded.
 
 | Part | What |
 | --- | --- |
-| App store | GNOME Software installs Flatpaks and, with `fwupd` from the desktop extras, firmware. No PackageKit, so pacman alone changes the system. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Pacman/Tips_and_tricks#Graphical)** |
+| App store | GNOME Software installs Flatpaks and, with `fwupd` from **Desktop extras**, firmware. No PackageKit, so pacman alone changes the system. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Pacman/Tips_and_tricks#Graphical)** |
 | Bazaar | In its place when chosen beside Flatpak, with `gnome-firmware`, since it installs Flatpaks only. **[➜ Bazaar](https://apps.gnome.org/Bazaar/)** |
 | Browser | In the system language: Firefox's `firefox-i18n-<lang>`, `hunspell-<lang>` for Firefox and GNOME Web, codecs for GNOME Web and Vivaldi. Opens every web link and sits in the dock. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Firefox)** |
 | `.local` names | `nss-mdns` before the resolver in `/etc/nsswitch.conf`, so printers, shares and machines answer by name. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Avahi#Hostname_resolution)** |
@@ -265,7 +268,7 @@ GNOME, filtered rather than installed and trimmed: what the slim desktop drops i
 
 ### Out of Memory
 
-`systemd-oomd` ends one app before the desktop freezes. GNOME starts each app in its own scope, so nothing else is hit. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Improving_performance#Improving_system_responsiveness_under_low-memory_conditions)**
+`systemd-oomd` ends one app before GNOME freezes. GNOME starts each app in its own scope, so nothing else is hit. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Improving_performance#Improving_system_responsiveness_under_low-memory_conditions)**
 
 | Unit | Setting | Acts when |
 | --- | --- | --- |
@@ -289,7 +292,7 @@ Every account starts with the same defaults and may change them.
 
 | Zone | Where | Lets in |
 | --- | --- | --- |
-| `public` | Every network nobody marked | `dhcpv6-client`, `mdns` on a desktop, `ssh` with the SSH server |
+| `public` | Every network nobody marked | `dhcpv6-client`, `mdns` with GNOME, `ssh` with the SSH server |
 | `home` | A network marked as trusted | firewalld's own set, `samba` and `ws-discovery-host` with file sharing |
 
 No machine can tell a café's Wi-Fi from home, so a network is trusted once marked:
@@ -390,14 +393,3 @@ It is a kiosk: tty1 is its own, no console has a login, and **Exit** or a crash 
 - The download, its checksum, its size and the signature come before the partition is touched. An encrypted system is opened, since its own keys sign the new image
 - It writes the partition, reads it back, then moves the boot image over the old one. A power cut in between starts the system as before
 - The partition keeps its UUID, so the file manager keeps hiding it
-
-## The Boot Medium
-
-A hybrid ISO carries its partition table and boot paths, so writing it is one raw copy.
-
-| Step | How |
-| --- | --- |
-| Image | The release `version:` in `oak.yaml` names, in `~/Downloads` or the folder set in **Setup**. One already there is used |
-| Device | Asked at every **Start**, never kept: `/dev/sdb` names a stick only while it is plugged in |
-| Checksum | GitHub's for that release, read once and kept as `.sha256`. A mismatch discards the image. **Verify checksum** off writes the image as it is, such as one you built |
-| Root | `umount`, `dd` and `blockdev` only, so nothing root-owned lands in your home. The password is asked before the run and handed to `sudo` on stdin |

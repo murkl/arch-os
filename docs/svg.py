@@ -40,7 +40,7 @@ TIERS = (
 # from the top and the bottom, the banner cards' corner, a pill's text this far
 # after its chip and from its right edge, and clear field around each, as GitHub
 # lets a README set no spacing of its own.
-BUTTON, PILL = 72, 56
+BUTTON, PILL = 64, 56
 INSET, RADIUS, GAP, END, MARGIN = 12, 12, 12, 16, 8
 # GitHub's own colours for a secondary button, so a pill sits on its theme as part of the page.
 THEMES = {
@@ -136,28 +136,25 @@ def path(d, fill, opacity=None):
 
 
 def download(regular, bold, fill, w):
-    """The button the README opens with, as wide as a pill.
-
-    Its title stands as far from the icon as from the right edge.
-    """
+    """The button the README opens with, as wide as a pill."""
     h = BUTTON
     cx = cy = h / 2
     chip = h / 2 - INSET
     title = "Download ISO"
-    x = (INSET + 2 * chip + w - bold.width(title, 20)) / 2
+    x = INSET + 2 * chip + GAP + 4  # a grid step further off than a pill's, for the larger chip
     top = (h - 24 - 16) / 2
     return svg(w + 2 * MARGIN, h + 2 * MARGIN, alt_download(), [
         f'<g transform="translate({MARGIN} {MARGIN})">',
         '<defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">'
         f'<stop offset="0" stop-color="{fill}"/>'
-        # Deep enough at its foot that the small white line there reads at 4.5:1, as WCAG AA asks.
-        f'<stop offset="1" stop-color="{mix(fill, "#000000", .3)}"/></linearGradient></defs>',
+        # Deep enough at its foot that its white text reads at 4.5:1, as WCAG AA asks.
+        f'<stop offset="1" stop-color="{mix(fill, "#000000", .4)}"/></linearGradient></defs>',
         f'<rect width="{w}" height="{h}" rx="{RADIUS}" fill="url(#fill)"/>',
         f'<rect x=".5" y=".5" width="{w - 1}" height="{h - 1}" rx="{RADIUS - .5}"'
         ' fill="none" stroke="#fff" stroke-opacity=".16"/>',
         f'<circle cx="{number(cx)}" cy="{number(cy)}" r="{number(chip)}" fill="#fff" fill-opacity=".16"/>',
         path(regular.icon("\U000f0120", cx, cy, chip), "#fff"),  # nf-md-tray_arrow_down
-        path(bold.text(title, x, bold.baseline(top, 20, 24), 20), "#fff"),
+        path(bold.text(title, x, bold.baseline(top, 16, 24), 16), "#fff"),
         path(regular.text(" · ".join(ARCH), x, regular.baseline(top + 24, 12, 16), 12), "#fff"),
         "</g>",
     ])

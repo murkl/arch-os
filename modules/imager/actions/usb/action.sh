@@ -1,1 +1,0 @@
-[ -n "$(options_devices)" ]

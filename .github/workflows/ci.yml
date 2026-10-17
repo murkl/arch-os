@@ -139,7 +139,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - run: make tarball image ${RELEASE:+VERSION="$RELEASE"}
+      - run: make build image ${RELEASE:+VERSION="$RELEASE"}
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
@@ -158,7 +158,6 @@ jobs:
           name: arch-os
           path: |
             dist/*.iso
-            dist/*.tar.gz
             dist/*.tar
           if-no-files-found: error
           compression-level: 0
@@ -212,7 +211,6 @@ jobs:
       - run: |
           gh release upload "$TAG" --clobber \
             "dist/arch-os-${VERSION}-x86_64.iso" \
-            "dist/arch-os-${VERSION}-x86_64.tar.gz" \
             "dist/arch-os-${VERSION}-recovery-x86_64.tar"
           gh release edit "$TAG" --draft=false --latest
         env:

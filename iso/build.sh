@@ -434,7 +434,7 @@ ${SUDO} mkarchiso -v -w "${WORK_DIR}/iso" -o "${PROFILES_DIR}/out/iso" "$ISO_PRO
 # SHIP
 # ////////////////////////////////////////////////////////////////////////////
 
-# The image goes to DIST_DIR, beside the tarball and the Recovery.
+# The image goes to DIST_DIR, beside the release and the Recovery.
 echo "### Move ISO to Dist"
 mkdir -p "${DIST_DIR}"
 cp -f "${PROFILES_DIR}/out/iso/"*.iso "${DIST_DIR}/"
