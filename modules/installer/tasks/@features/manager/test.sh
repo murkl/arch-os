@@ -1,1 +1,1 @@
-has_command arch-os
+has_command system-manager

@@ -676,6 +676,11 @@ msgid "Install the graphics drivers"
 msgstr ""
 
 #. the step, as the run lists it
+#: tasks/@desktop/manager-app/task.yaml
+msgid "Add the System Manager to the applications"
+msgstr ""
+
+#. the step, as the run lists it
 #: tasks/@desktop/recovery-app/task.yaml
 msgid "Add the Recovery to the applications"
 msgstr ""
