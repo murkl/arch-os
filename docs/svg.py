@@ -34,6 +34,11 @@ TIERS = (
     ("Core", "\uf489", "Text console", (2, 16)),  # nf-oct-terminal
     ("Desktop", "\U000f0379", "GNOME on Wayland", (4, 32)),  # nf-md-monitor
 )
+# The button and the pills share their edges, so stacked on a narrow screen they
+# line up: a chip this far in and this large, text this far after it, room this
+# wide after the text, and clear field around, as GitHub lets a README set no
+# spacing of its own.
+INSET, CHIP, GAP, END, MARGIN = 12, 18, 12, 16, 8
 # GitHub's own colours for a secondary button, so a pill sits on its theme as part of the page.
 THEMES = {
     "light": {"fill": "#f6f8fa", "line": "#d1d9e0", "text": "#1f2328", "muted": "#59636e"},
@@ -127,30 +132,26 @@ def path(d, fill, opacity=None):
     return f'<path fill="{fill}"{alpha} d="{d}"/>'
 
 
-def download(regular, bold, fill):
-    """The button the README opens with.
-
-    Clear field above it makes the gap to the tagline as wide as the one the
-    pills keep under them, since GitHub lets a README set no spacing of its own.
-    """
-    h, radius, chip, margin = 64, 10, 20, 8
-    cx = cy = h / 2
-    x = cx + chip + 14
+def download(regular, bold, fill, w):
+    """The button the README opens with, as wide as a pill, its title set to fill it."""
+    h, radius = 72, 10
+    cx, cy = INSET + CHIP, h / 2
+    x = cx + CHIP + GAP
     title = "Download ISO"
-    w = round(x + bold.width(title, 20) + 26)
-    top = (h - 26 - 18) / 2
-    return svg(w, h + margin, alt_download(), [
-        f'<g transform="translate(0 {margin})">',
+    size = (w - x - END) / bold.width(title, 1)
+    top = (h - (size + 6) - 18) / 2
+    return svg(w + 2 * MARGIN, h + 2 * MARGIN, alt_download(), [
+        f'<g transform="translate({MARGIN} {MARGIN})">',
         '<defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">'
         f'<stop offset="0" stop-color="{fill}"/>'
         f'<stop offset="1" stop-color="{mix(fill, "#000000", 0.2)}"/></linearGradient></defs>',
         f'<rect width="{w}" height="{h}" rx="{radius}" fill="url(#fill)"/>',
         f'<rect x=".5" y=".5" width="{w - 1}" height="{h - 1}" rx="{radius - .5}"'
         ' fill="none" stroke="#fff" stroke-opacity=".16"/>',
-        f'<circle cx="{number(cx)}" cy="{number(cy)}" r="{chip}" fill="#fff" fill-opacity=".16"/>',
+        f'<circle cx="{number(cx)}" cy="{number(cy)}" r="{CHIP}" fill="#fff" fill-opacity=".16"/>',
         path(regular.icon("\U000f0120", cx, cy, 20), "#fff"),  # nf-md-tray_arrow_down
-        path(bold.text(title, x, bold.baseline(top, 20, 26), 20), "#fff"),
-        path(regular.text(" · ".join(ARCH), x, regular.baseline(top + 26, 13, 18), 13), "#fff", .8),
+        path(bold.text(title, x, bold.baseline(top, size, size + 6), size), "#fff"),
+        path(regular.text(" · ".join(ARCH), x, regular.baseline(top + size + 6, 13, 18), 13), "#fff", .8),
         "</g>",
     ])
 
@@ -163,26 +164,27 @@ def needs_line(needs):
     return runs
 
 
-def pill(regular, bold, theme, index):
-    """One starting point and what it needs, as wide as the widest of them.
+def pill_width(regular, bold):
+    """Room for the widest starting point's two lines."""
+    widest = max(max(bold.width(name, 14) + regular.width(f"  {kind}", 12),
+                     regular.width("".join(run for run, _ in needs_line(needs)), 12))
+                 for name, _, kind, needs in TIERS)
+    return round(INSET + 2 * CHIP + GAP + widest + END)
 
-    A margin of clear field around it keeps two side by side apart, and apart
-    when they wrap.
-    """
+
+def pill(regular, bold, theme, index, w):
+    """One starting point and what it needs."""
     name, icon, kind, needs = TIERS[index]
-    h, radius, chip, margin = 56, 10, 16, 8
-    cx = cy = h / 2
-    x = cx + chip + 12
-    widest = max(max(bold.width(each[0], 14) + regular.width(f"  {each[2]}", 12),
-                     regular.width("".join(run for run, _ in needs_line(each[3])), 12)) for each in TIERS)
-    w = round(x + widest + 20)
+    h, radius = 56, 10
+    cx, cy = INSET + CHIP, h / 2
+    x = cx + CHIP + GAP
     top = (h - 20 - 16) / 2
     first, second = bold.baseline(top, 14, 20), regular.baseline(top + 20, 12, 16)
     body = [
-        f'<g transform="translate({margin} {margin})">',
+        f'<g transform="translate({MARGIN} {MARGIN})">',
         f'<rect x=".5" y=".5" width="{w - 1}" height="{h - 1}" rx="{radius - .5}" fill="{theme["fill"]}"'
         f' stroke="{theme["line"]}"/>',
-        f'<circle cx="{number(cx)}" cy="{number(cy)}" r="{chip}" fill="{theme["text"]}" fill-opacity=".06"/>',
+        f'<circle cx="{number(cx)}" cy="{number(cy)}" r="{CHIP}" fill="{theme["text"]}" fill-opacity=".06"/>',
         path(regular.icon(icon, cx, cy, 16), theme["muted"]),
         path(bold.text(name, x, first, 14), theme["text"]),
         path(regular.text(f"  {kind}", x + bold.width(name, 14), first, 12), theme["muted"]),
@@ -192,7 +194,7 @@ def pill(regular, bold, theme, index):
         body.append(path(regular.text(run, at, second, 12), theme["text" if value else "muted"]))
         at += regular.width(run, 12)
     body.append("</g>")
-    return svg(w + 2 * margin, h + 2 * margin, alt_pill(index), body)
+    return svg(w + 2 * MARGIN, h + 2 * MARGIN, alt_pill(index), body)
 
 
 def alt_download():
@@ -206,12 +208,13 @@ def alt_pill(index):
 
 def main():
     regular, bold = Face("Regular"), Face("Bold")
-    (DOCS / "download.svg").write_text(download(regular, bold, accent()))
+    width = pill_width(regular, bold)
+    (DOCS / "download.svg").write_text(download(regular, bold, accent(), width))
     alts = {"download.svg": alt_download()}
     (DOCS / "requirements").mkdir(exist_ok=True)
     for index, (name, *_) in enumerate(TIERS):
         for mode, theme in THEMES.items():
-            (DOCS / "requirements" / f"{name.lower()}-{mode}.svg").write_text(pill(regular, bold, theme, index))
+            (DOCS / "requirements" / f"{name.lower()}-{mode}.svg").write_text(pill(regular, bold, theme, index, width))
         alts[f"requirements/{name.lower()}-light.svg"] = alt_pill(index)
     readme = DOCS / "README.md"
     page = readme.read_text()
