@@ -2,7 +2,7 @@
 
 <img src="banner.png" alt="Arch OS: install Arch Linux with ease, as a desktop or a TTY system, with an Installer and a Recovery on one bootable image">
 
-<h3>Install Arch Linux with ease, as a desktop or a TTY system.</h3>
+<h3>Install Arch Linux with ease, as a desktop or a TTY system, with a Recovery and a System Manager.</h3>
 
 <p>
   <a href="https://github.com/murkl/arch-os/releases/latest"><img src="download.svg" alt="Download the latest ISO, for x86_64 with UEFI"></a>
