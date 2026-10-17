@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="284" height="72" viewBox="0 0 284 72">
+<svg xmlns="http://www.w3.org/2000/svg" width="284" height="80" viewBox="0 0 284 80">
   <title>Desktop (GNOME on Wayland): 4 GiB memory, 32 GiB disk</title>
-  <g transform="translate(8 8)">
+  <g transform="translate(8 16)">
   <rect x=".5" y=".5" width="267" height="55" rx="11.5" fill="#151b23" stroke="#3d444d"/>
   <circle cx="28" cy="28" r="16" fill="#f0f6fc" fill-opacity=".06"/>
   <path fill="#9198a1" d="M34.86 31.02H21.14V21.88H34.86ZM34.86 20.38H21.14Q20.49 20.38 20.05 20.83Q19.6 21.28 19.6 21.88V31.02Q19.6 31.67 20.05 32.12Q20.49 32.56 21.14 32.56H26.46V34.11H24.95V35.62H31.02V34.11H29.54V32.56H34.86Q35.51 32.56 35.95 32.12Q36.4 31.68 36.4 31.02V21.88Q36.4 21.26 35.95 20.82Q35.51 20.38 34.86 20.38Z"/>

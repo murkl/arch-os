@@ -136,14 +136,18 @@ def path(d, fill, opacity=None):
 
 
 def download(regular, bold, fill, w):
-    """The button the README opens with, as wide as a pill."""
+    """The button the README opens with, as wide as a pill.
+
+    No clear field below it: the paragraph under it is gap enough to the
+    requirements' label.
+    """
     h = BUTTON
     cx = cy = h / 2
     chip = h / 2 - INSET
     title = "Download ISO"
     x = INSET + 2 * chip + GAP + 4  # a grid step further off than a pill's, for the larger chip
     top = (h - 24 - 16) / 2
-    return svg(w + 2 * MARGIN, h + 2 * MARGIN, alt_download(), [
+    return svg(w + 2 * MARGIN, h + MARGIN, alt_download(), [
         f'<g transform="translate({MARGIN} {MARGIN})">',
         '<defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">'
         f'<stop offset="0" stop-color="{fill}"/>'
@@ -177,7 +181,7 @@ def pill_width(regular, bold):
 
 
 def pill(regular, bold, theme, index, w):
-    """One starting point and what it needs."""
+    """One starting point and what it needs, a grid step further under the label above."""
     name, icon, kind, needs = TIERS[index]
     h = PILL
     cx = cy = h / 2
@@ -186,7 +190,7 @@ def pill(regular, bold, theme, index, w):
     top = (h - 20 - 16) / 2
     first, second = bold.baseline(top, 14, 20), regular.baseline(top + 20, 12, 16)
     body = [
-        f'<g transform="translate({MARGIN} {MARGIN})">',
+        f'<g transform="translate({MARGIN} {2 * MARGIN})">',
         f'<rect x=".5" y=".5" width="{w - 1}" height="{h - 1}" rx="{RADIUS - .5}" fill="{theme["fill"]}"'
         f' stroke="{theme["line"]}"/>',
         f'<circle cx="{number(cx)}" cy="{number(cy)}" r="{number(chip)}" fill="{theme["text"]}" fill-opacity=".06"/>',
@@ -199,7 +203,7 @@ def pill(regular, bold, theme, index, w):
         body.append(path(regular.text(run, at, second, 12), theme["text" if value else "muted"]))
         at += regular.width(run, 12)
     body.append("</g>")
-    return svg(w + 2 * MARGIN, h + 2 * MARGIN, alt_pill(index), body)
+    return svg(w + 2 * MARGIN, h + 3 * MARGIN, alt_pill(index), body)
 
 
 def alt_download():
