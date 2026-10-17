@@ -2,10 +2,12 @@
 
 <img src="banner.png" alt="Arch OS">
 
-<p>Install <b>Arch Linux</b> with ease, as a <b>GNOME</b>&nbsp;desktop or a <b>TTY</b> system, with a <b>Recovery</b> and a&nbsp;<b>System&nbsp;Manager</b>.</p>
+<p>Install <b>Arch Linux</b> with ease, as a <b>GNOME</b>&nbsp;desktop or a <b>TTY</b> system, with an optional <b>Recovery</b> and <b>System&nbsp;Manager</b>.</p>
+
+<p><a href="https://github.com/murkl/arch-os/releases/latest"><img src="download.svg" alt="Download the latest ISO, for x86_64 with UEFI"></a></p>
 
 <p>
-  <a href="https://github.com/murkl/arch-os/releases/latest"><img src="download.svg" alt="Download the latest ISO, for x86_64 with UEFI"></a>
+  <sub><b>Requirements</b></sub>
   <br>
   <picture><source media="(prefers-color-scheme: dark)" srcset="requirements/core-dark.svg"><img src="requirements/core-light.svg" alt="Core (Text console): 2 GiB memory, 16 GiB disk"></picture>
   <picture><source media="(prefers-color-scheme: dark)" srcset="requirements/desktop-dark.svg"><img src="requirements/desktop-light.svg" alt="Desktop (GNOME on Wayland): 4 GiB memory, 32 GiB disk"></picture>
@@ -36,7 +38,7 @@
 - File sharing with Windows and macOS
 - Zram, an out-of-memory guard and tuned defaults for older machines
 - Works offline: no timer fails without internet
-- **[Bootsplash](https://github.com/murkl/plymouth-theme-arch-os)**, **[System Manager](https://github.com/murkl/arch-os-manager)**, Shell Enhancement
+- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), [System Manager](https://github.com/murkl/arch-os-manager), [Shell Enhancement](https://github.com/murkl/starship-theme-arch-os)
 - Installer resumes after an interruption, answers shareable by a code
 - English and German
 
