@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="banner.png" alt="Arch OS: install Arch Linux with ease, as a desktop or a TTY system, with an Installer and a Recovery on one bootable image">
+<img src="banner.png" alt="Arch OS">
 
 <h3>Install Arch Linux with ease, as a desktop or a TTY system, with a Recovery and a System Manager.</h3>
 
@@ -46,6 +46,6 @@
 3. Boot the USB device, choose the **Installer** and a starting point, then **Start**. It needs the internet, by cable or Wi-Fi
 4. After the first start, **[switch Secure Boot on](REFERENCE.md#switching-it-on)**
 
-<p align="center"><img src="screenshots/installer.png" width="100%" alt="Setup: every answer on one page, grouped and changeable before the start"><br><sub><b>Setup</b> · every answer before the start</sub></p>
+<p align="center"><img src="screenshots/installer.png" width="100%" alt="Setup: every answer on one page, grouped and changeable before the start"><br><sub><b>Setup</b> · prefilled by the starting point, every answer can be changed before the start</sub></p>
 
 <p align="center"><img src="screenshots/installing.png" width="100%" alt="The installation, each step checked off as it runs"><br><sub><b>Installation</b> · each step as it runs</sub></p>

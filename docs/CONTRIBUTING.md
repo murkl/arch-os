@@ -200,7 +200,7 @@ All are generated, so none outlives the interface it shows. CI never renders the
 
 ```
 docs/screenshots.sh 2.1.0   # every page in screenshots.yaml, showing that version
-docs/banner.sh              # the banner, from two of them
+docs/banner.sh              # the banner, from two of them and the tagline in README.md
 docs/svg.py                 # the download button and the requirements, with their text alternatives in README.md
 ```
 

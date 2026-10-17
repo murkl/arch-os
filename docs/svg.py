@@ -26,6 +26,7 @@ except ImportError:
 
 DOCS = pathlib.Path(__file__).resolve().parent
 FAMILY = "FiraCode Nerd Font Mono"
+PHI = (1 + 5 ** .5) / 2
 
 ARCH = ("x86_64", "UEFI")
 SPECS = ("memory", "disk")
@@ -39,6 +40,7 @@ TIERS = (
 # wide after the text, and clear field around, as GitHub lets a README set no
 # spacing of its own.
 INSET, CHIP, GAP, END, MARGIN = 12, 18, 12, 16, 8
+NAME = 14  # a pill's name; the button's title stands one golden step above it
 # GitHub's own colours for a secondary button, so a pill sits on its theme as part of the page.
 THEMES = {
     "light": {"fill": "#f6f8fa", "line": "#d1d9e0", "text": "#1f2328", "muted": "#59636e"},
@@ -133,12 +135,12 @@ def path(d, fill, opacity=None):
 
 
 def download(regular, bold, fill, w):
-    """The button the README opens with, as wide as a pill, its title set to fill it."""
+    """The button the README opens with, as wide as a pill."""
     h, radius = 72, 10
     cx, cy = INSET + CHIP, h / 2
     x = cx + CHIP + GAP
     title = "Download ISO"
-    size = (w - x - END) / bold.width(title, 1)
+    size = NAME * PHI
     top = (h - (size + 6) - 18) / 2
     return svg(w + 2 * MARGIN, h + 2 * MARGIN, alt_download(), [
         f'<g transform="translate({MARGIN} {MARGIN})">',
@@ -166,28 +168,28 @@ def needs_line(needs):
 
 def pill_width(regular, bold):
     """Room for the widest starting point's two lines."""
-    widest = max(max(bold.width(name, 14) + regular.width(f"  {kind}", 12),
+    widest = max(max(bold.width(name, NAME) + regular.width(f"  {kind}", 12),
                      regular.width("".join(run for run, _ in needs_line(needs)), 12))
                  for name, _, kind, needs in TIERS)
     return round(INSET + 2 * CHIP + GAP + widest + END)
 
 
 def pill(regular, bold, theme, index, w):
-    """One starting point and what it needs."""
+    """One starting point and what it needs, what it is flush with the right edge."""
     name, icon, kind, needs = TIERS[index]
     h, radius = 56, 10
     cx, cy = INSET + CHIP, h / 2
     x = cx + CHIP + GAP
     top = (h - 20 - 16) / 2
-    first, second = bold.baseline(top, 14, 20), regular.baseline(top + 20, 12, 16)
+    first, second = bold.baseline(top, NAME, 20), regular.baseline(top + 20, 12, 16)
     body = [
         f'<g transform="translate({MARGIN} {MARGIN})">',
         f'<rect x=".5" y=".5" width="{w - 1}" height="{h - 1}" rx="{radius - .5}" fill="{theme["fill"]}"'
         f' stroke="{theme["line"]}"/>',
         f'<circle cx="{number(cx)}" cy="{number(cy)}" r="{CHIP}" fill="{theme["text"]}" fill-opacity=".06"/>',
         path(regular.icon(icon, cx, cy, 16), theme["muted"]),
-        path(bold.text(name, x, first, 14), theme["text"]),
-        path(regular.text(f"  {kind}", x + bold.width(name, 14), first, 12), theme["muted"]),
+        path(bold.text(name, x, first, NAME), theme["text"]),
+        path(regular.text(kind, w - END - regular.width(kind, 12), first, 12), theme["muted"]),
     ]
     at = x
     for run, value in needs_line(needs):
