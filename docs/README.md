@@ -33,11 +33,11 @@
 
 ## Requirements
 
-| | Core | Desktop |
-| --- | --- | --- |
-| Processor | x86_64 with UEFI | x86_64 with UEFI |
-| Memory | 2 GiB | 4 GiB |
-| Disk | 16 GiB | 32 GiB |
+<p align="center">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="requirements/core-dark.svg"><img src="requirements/core-light.svg" width="380" alt="Core (Text console): 2 GiB memory, 16 GiB disk"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="requirements/desktop-dark.svg"><img src="requirements/desktop-light.svg" width="380" alt="Desktop (GNOME on Wayland): 4 GiB memory, 32 GiB disk"></picture>
+  <br><sub><b>Processor</b> · x86_64 with UEFI, for both</sub>
+</p>
 
 ## Installation
 
@@ -49,13 +49,6 @@
 3. Boot the USB device, choose the **Installer** and a starting point, then **Start**. It needs the internet, by cable or Wi-Fi
 4. After the first start, **[switch Secure Boot on](REFERENCE.md#switching-it-on)**
 
-<p align="center"><img src="screenshots/setup.png" width="720" alt="The Installer's starting points: Desktop, Core, or a shared configuration"></p>
+<p align="center"><img src="screenshots/installer.png" width="100%" alt="Setup: every answer on one page, grouped and changeable before the start"><br><sub><b>Setup</b> · every answer before the start</sub></p>
 
-## Screenshots
-
-<table>
-  <tr>
-    <td width="50%" align="center"><img src="screenshots/installer.png" width="100%" alt="Setup: every answer on one page, grouped and changeable before the start"><br><sub><b>Setup</b> · every answer before the start</sub></td>
-    <td width="50%" align="center"><img src="screenshots/installing.png" width="100%" alt="The installation, each step checked off as it runs"><br><sub><b>Installation</b> · each step as it runs</sub></td>
-  </tr>
-</table>
+<p align="center"><img src="screenshots/installing.png" width="100%" alt="The installation, each step checked off as it runs"><br><sub><b>Installation</b> · each step as it runs</sub></p>

@@ -12,7 +12,7 @@
 # A take names its `module:`: under --debug all three are offered, including the
 # one that never stands beside the other two on a real machine.
 
-# The Installer: the starting points, every value it will use, and the run.
+# The Installer: every value it will use, and the run.
 - module: installer
   steps:
       - page: Please choose your language
@@ -20,7 +20,6 @@
       - page: Console keyboard  # auto, the layout of the live image
         press: enter
       - page: [Starting point, Desktop, Core]
-        shot: setup
         press: enter
       - page: Username
         press: [tux, enter]
