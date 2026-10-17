@@ -36,11 +36,10 @@ TIERS = (
     ("Desktop", "\U000f0379", "GNOME on Wayland", (4, 32)),  # nf-md-monitor
 )
 # The button and the pills share their edges, so stacked on a narrow screen they
-# line up: a chip this far in and this large, text this far after it, room this
-# wide after the text, and clear field around, as GitHub lets a README set no
-# spacing of its own.
-INSET, CHIP, GAP, END, MARGIN = 12, 18, 12, 16, 8
-NAME = 14  # a pill's name; the button's title stands one golden step above it
+# line up: a chip this far in, text ending this far from the right, and clear
+# field around, as GitHub lets a README set no spacing of its own.
+INSET, END, MARGIN = 12, 16, 8
+CHIP, GAP = 18, 12  # a pill's chip, and its text this far after it
 # GitHub's own colours for a secondary button, so a pill sits on its theme as part of the page.
 THEMES = {
     "light": {"fill": "#f6f8fa", "line": "#d1d9e0", "text": "#1f2328", "muted": "#59636e"},
@@ -135,12 +134,17 @@ def path(d, fill, opacity=None):
 
 
 def download(regular, bold, fill, w):
-    """The button the README opens with, as wide as a pill."""
-    h, radius = 72, 10
-    cx, cy = INSET + CHIP, h / 2
-    x = cx + CHIP + GAP
+    """The button the README opens with, as wide as a pill.
+
+    Its title ends where a pill's text does, so whatever room is left lies
+    between it and the icon, and the title stands one golden step above the
+    line under it.
+    """
+    h, radius, chip = 72, 10, 24  # the chip as far from the top and the bottom as from the left
+    cx, cy = INSET + chip, h / 2
     title = "Download ISO"
-    size = NAME * PHI
+    size = 13 * PHI
+    x = w - END - bold.width(title, size)
     top = (h - (size + 6) - 18) / 2
     return svg(w + 2 * MARGIN, h + 2 * MARGIN, alt_download(), [
         f'<g transform="translate({MARGIN} {MARGIN})">',
@@ -150,8 +154,8 @@ def download(regular, bold, fill, w):
         f'<rect width="{w}" height="{h}" rx="{radius}" fill="url(#fill)"/>',
         f'<rect x=".5" y=".5" width="{w - 1}" height="{h - 1}" rx="{radius - .5}"'
         ' fill="none" stroke="#fff" stroke-opacity=".16"/>',
-        f'<circle cx="{number(cx)}" cy="{number(cy)}" r="{CHIP}" fill="#fff" fill-opacity=".16"/>',
-        path(regular.icon("\U000f0120", cx, cy, 20), "#fff"),  # nf-md-tray_arrow_down
+        f'<circle cx="{number(cx)}" cy="{number(cy)}" r="{chip}" fill="#fff" fill-opacity=".16"/>',
+        path(regular.icon("\U000f0120", cx, cy, 26), "#fff"),  # nf-md-tray_arrow_down
         path(bold.text(title, x, bold.baseline(top, size, size + 6), size), "#fff"),
         path(regular.text(" · ".join(ARCH), x, regular.baseline(top + size + 6, 13, 18), 13), "#fff", .8),
         "</g>",
@@ -168,28 +172,28 @@ def needs_line(needs):
 
 def pill_width(regular, bold):
     """Room for the widest starting point's two lines."""
-    widest = max(max(bold.width(name, NAME) + regular.width(f"  {kind}", 12),
+    widest = max(max(bold.width(name, 14) + regular.width(f"  {kind}", 12),
                      regular.width("".join(run for run, _ in needs_line(needs)), 12))
                  for name, _, kind, needs in TIERS)
     return round(INSET + 2 * CHIP + GAP + widest + END)
 
 
 def pill(regular, bold, theme, index, w):
-    """One starting point and what it needs, what it is flush with the right edge."""
+    """One starting point and what it needs."""
     name, icon, kind, needs = TIERS[index]
     h, radius = 56, 10
     cx, cy = INSET + CHIP, h / 2
     x = cx + CHIP + GAP
     top = (h - 20 - 16) / 2
-    first, second = bold.baseline(top, NAME, 20), regular.baseline(top + 20, 12, 16)
+    first, second = bold.baseline(top, 14, 20), regular.baseline(top + 20, 12, 16)
     body = [
         f'<g transform="translate({MARGIN} {MARGIN})">',
         f'<rect x=".5" y=".5" width="{w - 1}" height="{h - 1}" rx="{radius - .5}" fill="{theme["fill"]}"'
         f' stroke="{theme["line"]}"/>',
         f'<circle cx="{number(cx)}" cy="{number(cy)}" r="{CHIP}" fill="{theme["text"]}" fill-opacity=".06"/>',
         path(regular.icon(icon, cx, cy, 16), theme["muted"]),
-        path(bold.text(name, x, first, NAME), theme["text"]),
-        path(regular.text(kind, w - END - regular.width(kind, 12), first, 12), theme["muted"]),
+        path(bold.text(name, x, first, 14), theme["text"]),
+        path(regular.text(f"  {kind}", x + bold.width(name, 14), first, 12), theme["muted"]),
     ]
     at = x
     for run, value in needs_line(needs):
