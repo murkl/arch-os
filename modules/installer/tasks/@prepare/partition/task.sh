@@ -13,7 +13,7 @@ boot_part="$(boot_partition "$ARCH_OS_DISK")"
 system_part="$(system_partition "$ARCH_OS_DISK")"
 
 # What an earlier attempt left mounted or open, closed for good.
-# docs/REFERENCE.md#closing-the-target
+# docs/CONTRIBUTING.md#closing-the-target
 swapoff -a || true
 sync
 unmount_target
