@@ -200,7 +200,7 @@ Enough for a usable system, little enough that nothing needs looking after. Ever
 
 ### Building from the AUR
 
-`paru`, the boot splash theme and the Manager come from the AUR. Each may fail without stopping the run: the AUR can be down for days, and nothing else needs them.
+`paru`, the boot splash theme and the System Manager come from the AUR. Each may fail without stopping the run: the AUR can be down for days, and nothing else needs them.
 
 | Limit | Value | Why |
 | --- | --- | --- |
