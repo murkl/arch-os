@@ -196,15 +196,16 @@ Before any desktop exists there is one console font with at most 512 glyphs: **L
 
 ## Pictures in the Docs
 
-Both are generated, so neither outlives the interface it shows. CI never renders them: you run them by hand and commit them with the change.
+All are generated, so none outlives the interface it shows. CI never renders them: you run them by hand and commit them with the change.
 
 ```
 docs/screenshots.sh 2.1.0   # every page in screenshots.yaml, showing that version
-docs/banner.sh              # the banner, from two of them
+docs/banner.sh              # the banner, from two of them and the tagline in README.md
+docs/svg.py                 # the download button and the requirements, with their text alternatives in README.md
 ```
 
 - The version defaults to the next patch's pre-release. Name the release the change heads for, so `main` shows it
-- They need `chromium`, `imagemagick`, `python-pyte`, `python-yaml` and `ttf-firacode-nerd`, none of which a build or `make check` needs, and systemd as PID 1, which `localectl` and `timedatectl` ask
+- They need `chromium`, `imagemagick`, `python-fonttools`, `python-pyte`, `python-yaml` and `ttf-firacode-nerd`, none of which a build or `make check` needs, and systemd as PID 1, which `localectl` and `timedatectl` ask
 - Every run starts with `--debug`, so nothing is partitioned, mounted or restarted. Which pages are taken and every answer given is in **[screenshots.yaml](screenshots.yaml)**
 - `installing.png` catches a run while it is going, so it differs from run to run
 
