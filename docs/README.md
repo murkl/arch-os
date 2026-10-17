@@ -9,6 +9,8 @@
 
 <p><b>Install Arch Linux with ease, as a desktop or a TTY system.</b></p>
 
+<p><a href="https://github.com/murkl/arch-os/releases/latest"><img src="download.svg" alt="Download the latest ISO"></a></p>
+
 **[➜ Reference](REFERENCE.md)** · **[➜ Telegram](https://t.me/archos_community)**
 
 </div>
