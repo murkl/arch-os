@@ -128,14 +128,19 @@ def path(d, fill, opacity=None):
 
 
 def download(regular, bold, fill):
-    """The button the README opens with."""
-    h, radius, chip = 64, 10, 20
+    """The button the README opens with.
+
+    Clear field above it makes the gap to the tagline as wide as the one the
+    pills keep under them, since GitHub lets a README set no spacing of its own.
+    """
+    h, radius, chip, margin = 64, 10, 20, 8
     cx = cy = h / 2
     x = cx + chip + 14
     title = "Download ISO"
     w = round(x + bold.width(title, 20) + 26)
     top = (h - 26 - 18) / 2
-    return svg(w, h, alt_download(), [
+    return svg(w, h + margin, alt_download(), [
+        f'<g transform="translate(0 {margin})">',
         '<defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">'
         f'<stop offset="0" stop-color="{fill}"/>'
         f'<stop offset="1" stop-color="{mix(fill, "#000000", 0.2)}"/></linearGradient></defs>',
@@ -146,6 +151,7 @@ def download(regular, bold, fill):
         path(regular.icon("\U000f0120", cx, cy, 20), "#fff"),  # nf-md-tray_arrow_down
         path(bold.text(title, x, bold.baseline(top, 20, 26), 20), "#fff"),
         path(regular.text(" · ".join(ARCH), x, regular.baseline(top + 26, 13, 18), 13), "#fff", .8),
+        "</g>",
     ])
 
 
@@ -164,7 +170,7 @@ def pill(regular, bold, theme, index):
     when they wrap.
     """
     name, icon, kind, needs = TIERS[index]
-    h, radius, chip, margin = 56, 10, 16, 4
+    h, radius, chip, margin = 56, 10, 16, 8
     cx = cy = h / 2
     x = cx + chip + 12
     widest = max(max(bold.width(each[0], 14) + regular.width(f"  {each[2]}", 12),

@@ -2,21 +2,21 @@
 
 <img src="banner.png" alt="Arch OS: install Arch Linux with ease, as a desktop or a TTY system, with an Installer and a Recovery on one bootable image">
 
-<p>
-  <img src="https://img.shields.io/github/v/release/murkl/arch-os?style=for-the-badge&label=RELEASE&color=1793d1" alt="">
-  <img src="https://img.shields.io/badge/License-GPL_3.0-blue?style=for-the-badge" alt="">
-</p>
-
-<p><b>Install Arch Linux with ease, as a desktop or a TTY system.</b></p>
-
-<p><a href="https://github.com/murkl/arch-os/releases/latest"><img src="download.svg" alt="Download the latest ISO, for x86_64 with UEFI"></a></p>
+<h3>Install Arch Linux with ease, as a desktop or a TTY system.</h3>
 
 <p>
+  <a href="https://github.com/murkl/arch-os/releases/latest"><img src="download.svg" alt="Download the latest ISO, for x86_64 with UEFI"></a>
+  <br>
   <picture><source media="(prefers-color-scheme: dark)" srcset="requirements/core-dark.svg"><img src="requirements/core-light.svg" alt="Core (Text console): 2 GiB memory, 16 GiB disk"></picture>
   <picture><source media="(prefers-color-scheme: dark)" srcset="requirements/desktop-dark.svg"><img src="requirements/desktop-light.svg" alt="Desktop (GNOME on Wayland): 4 GiB memory, 32 GiB disk"></picture>
 </p>
 
 **[➜ Reference](REFERENCE.md)** · **[➜ Telegram](https://t.me/archos_community)**
+
+<p>
+  <a href="https://github.com/murkl/arch-os/releases/latest"><img src="https://img.shields.io/github/v/release/murkl/arch-os?style=flat-square&label=release&color=5e81ac" alt="Latest release"></a>
+  <a href="../LICENSE"><img src="https://img.shields.io/github/license/murkl/arch-os?style=flat-square&color=5e81ac" alt="License"></a>
+</p>
 
 </div>
 
