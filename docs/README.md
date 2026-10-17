@@ -33,11 +33,7 @@
 
 ## Requirements
 
-<p align="center">
-  <picture><source media="(prefers-color-scheme: dark)" srcset="requirements/core-dark.svg"><img src="requirements/core-light.svg" width="380" alt="Core (Text console): 2 GiB memory, 16 GiB disk"></picture>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="requirements/desktop-dark.svg"><img src="requirements/desktop-light.svg" width="380" alt="Desktop (GNOME on Wayland): 4 GiB memory, 32 GiB disk"></picture>
-  <br><sub><b>Processor</b> · x86_64 with UEFI, for both</sub>
-</p>
+<p align="center"><img src="requirements.svg" alt="Core (Text console): 2 GiB memory, 16 GiB disk. Desktop (GNOME on Wayland): 4 GiB memory, 32 GiB disk. Processor for both: x86_64 with UEFI"></p>
 
 ## Installation
 
