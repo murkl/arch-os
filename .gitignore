@@ -10,10 +10,6 @@
 # module, each named after the module. Anchored to where a run is started, so a
 # file a task ships under the same name is not swallowed with them.
 /oak.conf
-/imager.conf
-/imager.conf.old
-/imager.log
-/imager.log.old
 /installer.conf
 /installer.conf.old
 /installer.log

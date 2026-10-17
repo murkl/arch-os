@@ -11,13 +11,12 @@ make run                    # every module, MODULE=recovery for one
 make run ARGS=--debug       # ...without touching the machine
 make inspect                # load every module and print the order they resolve to
 make build                  # the release, as a machine runs it
-make tarball                # the release, as a stock Arch ISO downloads it
 make iso                    # the release, the Recovery image and the ISO that carries it
 make iso ISO_RECOVERY=false # ...the ISO as a release builds it, which fetches the Recovery
 make image                  # ...only the images, from a release already in dist/
 make smoke                  # boot the newest of both and work their first page with the keyboard
 make e2e                    # install the newest ISO, boot, repair, boot again, start and rewrite its Recovery
-make e2e START=desktop      # ...a Desktop, booted to its login screen
+make e2e START=desktop      # ...the Desktop starting point, booted to GNOME's login screen
 make locales                # every translation template brought up to date
 make oak                    # fetch the runtime again, at the release OAK_VERSION names
 make clean                  # remove every build output; the runtime stays
@@ -34,7 +33,7 @@ sudo pacman -S --needed make curl shellcheck shfmt zsh yamllint actionlint zizmo
 
 - Packages, tasks, questions: **[modules/installer](../modules/installer)**
 - Repairing a system: **[modules/recovery](../modules/recovery)**
-- Writing the boot device: **[modules/imager](../modules/imager)**
+- Writing the boot device: **[get.sh](../get.sh)**
 - Functions several modules use: **[oak.sh](../oak.sh)**, checked by **[oak.check.sh](../oak.check.sh)**
 - Product name and look: **[oak.yaml](../oak.yaml)**
 - The bootable images, the ISO and the Recovery: **[iso](../iso)**
@@ -96,7 +95,6 @@ A script stops on what it expects with `exit` and a status, which `errors:` in `
 | --- | --- | --- |
 | Installer | `modules/installer/locales/installer.pot` | `modules/installer/locales/<code>.po` |
 | Recovery | `modules/recovery/locales/recovery.pot` | `modules/recovery/locales/<code>.po` |
-| Imager | `modules/imager/locales/imager.pot` | `modules/imager/locales/<code>.po` |
 
 - `.pot` files are generated. Run `make locales` in the same change as anything reworded on screen
 - The frame's own words (buttons, key hints, the settings) are **[Oak's](https://github.com/murkl/oak/tree/main/locales)**. Until Oak has a catalog for a language, the frame around its translated pages stays English
@@ -118,7 +116,7 @@ Keep as they are: `%s` and `%d` (order and kind), `{{ARCH_OS_DISK}}` (braces and
 
 ### What the Console Can Draw
 
-Before any desktop exists there is one console font with at most 512 glyphs: **Latin with its accents, Greek and Cyrillic**. Arabic, Hebrew, Chinese, Japanese, Korean, Vietnamese and the Indic scripts cannot be drawn on a Linux virtual console at all, so open an issue before you start on one.
+Before GNOME exists there is one console font with at most 512 glyphs: **Latin with its accents, Greek and Cyrillic**. Arabic, Hebrew, Chinese, Japanese, Korean, Vietnamese and the Indic scripts cannot be drawn on a Linux virtual console at all, so open an issue before you start on one.
 
 **Note:** _`make check` reads every module against the glyph tables of the fonts **[iso/font.sh](../iso/font.sh)** builds, so a character that would be a box fails at your desk._
 
@@ -142,7 +140,7 @@ docs/svg.py                 # the download button and the requirements, with the
 ```mermaid
 flowchart LR
     M["main"] -->|branch off| B["feat/…"]
-    B -->|pull request| I["Check · Image · Boot · Install"]
+    B -->|pull request| I["Title · Check · Image"]
     I -->|squash merge| M2["main"]
     M2 --> P["Release pull request<br/>version · changelog"]
     P -->|merge| R["Release<br/>tag · images · page"]
@@ -188,7 +186,7 @@ END_COMMIT_OVERRIDE
 | --- | --- | --- |
 | `Title` | A pull request is opened, pushed to or edited | Checks the title |
 | `Check` | A pull request, a release, every Monday, on demand | `make check` |
-| `Image` | As `Check`, where the change reaches the image | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO. Then starts its Recovery and writes it again from the ISO. Every Monday and on demand also a Desktop, booted to its login screen |
+| `Image` | As `Check`, where the change reaches the image | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO. Then starts its Recovery and writes it again from the ISO. Every Monday and on demand also the Desktop starting point, booted to GNOME's login screen |
 | `Release` | A push to `main` | The release pull request, or once that is merged, the tag and the draft page |
 | `Publish` | A release | Attaches the files `Image` booted to the page, signed, and publishes it |
 
@@ -203,7 +201,7 @@ Nothing is typed and nothing is tagged by hand.
 2. **Merging it is the release.** It starts no run of its own, so an admin merges it past the checks: `gh pr merge <number> --squash --admin`. The run on `main` tags `v2.1.0`, checks, builds and boots the images as that version, attaches them to the release page and publishes it
 
 - Merges collect in the release pull request until it is merged. When to release is a decision, not a schedule
-- The page carries `arch-os-2.1.0-x86_64.iso`, `arch-os-2.1.0-x86_64.tar.gz` and `arch-os-2.1.0-recovery-x86_64.tar`, all with signed build provenance. The ISO leaves the Recovery out to stay under GitHub's 2 GiB per file: its Installer fetches the `.tar`, and an installed Recovery updates itself from it
+- The page carries `arch-os-2.1.0-x86_64.iso` and `arch-os-2.1.0-recovery-x86_64.tar`, both with signed build provenance. The ISO leaves the Recovery out to stay under GitHub's 2 GiB per file: its Installer fetches the `.tar`, and an installed Recovery updates itself from it
 - Every other build is named after a pre-release of the next patch: `arch-os-2.0.1-dev-x86_64.iso`. `make build VERSION=2.1.0` names a build after any version, which the build stamps into `oak.yaml`
 
 **Note:** _The page stays a draft until every file is attached. A run that fails on the way leaves a draft: re-run its failed jobs._

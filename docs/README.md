@@ -2,7 +2,7 @@
 
 <img src="banner.png" alt="Arch OS">
 
-<h3>Install Arch Linux with ease, as a desktop or a TTY system, with a Recovery and a&nbsp;System&nbsp;Manager.</h3>
+<h4>Install Arch Linux with ease, as a GNOME&nbsp;desktop or a TTY system, with a Recovery and a&nbsp;System&nbsp;Manager.</h4>
 
 <p>
   <a href="https://github.com/murkl/arch-os/releases/latest"><img src="download.svg" alt="Download the latest ISO, for x86_64 with UEFI"></a>
@@ -28,7 +28,7 @@
 - Recovery on its own partition, rollback included
 - Falls back on its own: fallback image, then the Recovery
 - GNOME on Wayland or a text console, graphics drivers detected
-- Desktop extras or a slim GNOME, Flatpak
+- GNOME with extras or slim, Flatpak
 - Browser, backup app and text editor of your choice
 - AUR helper, 32-bit support, containers, firewall, SSH
 - Zram, an out-of-memory guard and tuned defaults for older machines
@@ -38,13 +38,10 @@
 
 ## Installation
 
-1. Write the **[latest ISO](https://github.com/murkl/arch-os/releases/latest)** to a USB device with any ISO writer, or on any Linux:
-   ```sh
-   curl -Ls https://bit.ly/archos | bash
-   ```
+1. Write the **[latest ISO](https://github.com/murkl/arch-os/releases/latest)** to a USB device with **[Ventoy](https://www.ventoy.net)** or **[balenaEtcher](https://etcher.balena.io)**
 2. Set the firmware to UEFI and switch Secure Boot off
-3. Boot the USB device, choose a starting point, then **Start**. It needs the internet, by cable or Wi-Fi
-4. After the first start, **[switch Secure Boot on](REFERENCE.md#switching-it-on)**
+3. Boot the USB device, choose a starting point (**Core** or **Desktop**), then **start the installation**. It needs the internet, by cable or Wi-Fi
+4. After the installation and the first reboot, **[switch Secure Boot on](REFERENCE.md#switching-it-on)**
 
 <p align="center"><img src="screenshots/installer.png" width="100%" alt="Setup: every answer on one page, grouped and changeable before the start"><br><sub><b>Setup</b> · every answer prefilled and changeable</sub></p>
 

@@ -784,8 +784,8 @@ msgstr "Ein Arch-Linux-Live-Image"
 
 #. an action: what a no from it means
 #: actions/live-image/action.yaml
-msgid "This runs from a booted Arch Linux live image. Write one with Create boot medium, start the machine from it, and open this there."
-msgstr "Das läuft auf einem gestarteten Arch-Linux-Live-Image. Schreib eins mit Bootmedium erstellen, starte den Rechner davon und öffne es dort."
+msgid "This runs from a booted Arch Linux live image. Start the machine from the Arch OS ISO and open this there."
+msgstr "Das läuft auf einem gestarteten Arch-Linux-Live-Image. Starte den Rechner vom Arch-OS-ISO und öffne es dort."
 
 #. an action: its row, and the heading over its page
 #: actions/no-cable/action.yaml

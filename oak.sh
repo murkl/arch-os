@@ -819,46 +819,6 @@ recovery_update() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
-# WRITING | The image Create boot medium puts on a device
-# ////////////////////////////////////////////////////////////////////////////
-
-# The download folder, with ~ as the home it stands for.
-download_dir() {
-    case "$ARCH_OS_DOWNLOAD_DIR" in
-    \~/*) printf '%s/%s' "$HOME" "${ARCH_OS_DOWNLOAD_DIR#\~/}" ;;
-    *) printf '%s' "$ARCH_OS_DOWNLOAD_DIR" ;;
-    esac
-}
-
-# The image, named after the version: a machine that has it needs no release.
-image() { printf '%s/arch-os-%s-x86_64.iso' "$(download_dir)" "$(release_version)"; }
-
-# The checksum beside it, as `sha256sum -c` reads it.
-checksum() { printf '%s.sha256' "$(image)"; }
-
-# Root for one command, only where it writes: a root process would leave two
-# gigabytes only root can delete. The password goes to sudo on stdin; -k asks
-# every time, -p '' keeps the prompt out of the log, -n never asks.
-as_root() {
-    if is_root; then
-        "$@"
-    elif [ "$ARCH_OS_IMAGE_SUDO" = "true" ]; then
-        printf '%s\n' "$ARCH_OS_IMAGE_PASSWORD" | sudo -S -k -p '' -- "$@"
-    else
-        sudo -n -- "$@"
-    fi
-}
-
-# Something of the running system on that disk: swap, or a mount anywhere but
-# where a stick is put.
-in_system_use() {
-    lsblk -nro MOUNTPOINTS "$1" | awk '
-        { n = split($0, mounts, /\\x0a/) }
-        { for (i = 1; i <= n; i++) if (mounts[i] != "" && mounts[i] !~ /^\/(run\/media|media|mnt)(\/|$)/) found = 1 }
-        END { exit !found }'
-}
-
-# ////////////////////////////////////////////////////////////////////////////
 # THE YAML | Functions a declaration calls as name(), named after the key
 # ////////////////////////////////////////////////////////////////////////////
 
@@ -1064,29 +1024,4 @@ check_update_password() {
 # A LUKS header is readable without the password.
 value_disk_encrypted() {
     [ "$(fstype "$(target_partition)")" = "crypto_LUKS" ] && echo true || echo false
-}
-
-# ─── Create boot medium ─────────────────────────────────────────────────────
-
-# The USB disks, without the ones the running system is on: a system can live
-# on a USB disk too.
-options_devices() {
-    local path shown
-    while IFS=$'\t' read -r path shown; do
-        in_system_use "$path" && continue
-        printf '%s\t%s\n' "$path" "$shown"
-    done < <(lsblk -dn -o PATH,TRAN,SIZE,MODEL |
-        awk '$2 == "usb" { path = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); sub(/ +$/, ""); print path "\t" path "  " $0 }')
-}
-
-# Whether the write needs a password. -k ignores one sudo remembers now and will
-# have forgotten by the write.
-value_needs_password() {
-    if is_root || sudo -nk true 2>/dev/null; then echo false; else echo true; fi
-}
-
-# The password tried on sudo with a command that does nothing.
-check_sudo_password() {
-    debugging && return 0
-    as_root true
 }

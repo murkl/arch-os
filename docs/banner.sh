@@ -6,9 +6,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # The README's tagline, so the banner cannot come to say something else.
-tagline="$(sed -n 's|^<h3>\(.*\)</h3>$|\1|p' docs/README.md)"
+tagline="$(sed -n 's|^<h4>\(.*\)</h4>$|\1|p' docs/README.md)"
 if [ -z "$tagline" ] || [ "$(printf '%s\n' "$tagline" | wc -l)" -ne 1 ]; then
-    echo "docs/README.md: no single <h3> line to take the tagline from" >&2
+    echo "docs/README.md: no single <h4> line to take the tagline from" >&2
     exit 1
 fi
 

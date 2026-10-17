@@ -2,7 +2,7 @@
 
 Repairs an Arch OS installation. The module is data: one YAML file and the folders beside it. [Oak](https://github.com/murkl/oak) draws the interface, asks the questions and runs the tasks in order.
 
-**Note:** _Installing Arch Linux and writing the boot device are separate modules: **[➜ Installer](../installer)** · **[➜ Create boot medium](../imager)**_
+**Note:** _Installing Arch Linux is a separate module: **[➜ Installer](../installer)**_
 
 **Note:** _What it reads and repairs: **[➜ Arch OS Reference](../../docs/REFERENCE.md#the-recovery)**. The task contract: **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md#what-a-script-receives)**._
 

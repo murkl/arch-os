@@ -2,7 +2,6 @@
 # there.
 #
 #   dist/arch-os-$(VERSION)/                       build: oak, oak.yaml, oak.sh, modules/
-#   dist/arch-os-$(VERSION)-x86_64.tar.gz          tarball: that folder as one file
 #   dist/arch-os-$(VERSION)-recovery/              image: recovery.efi, recovery.img
 #   dist/arch-os-$(VERSION)-recovery-x86_64.tar    image: that folder as one file
 #   dist/arch-os-$(VERSION)-x86_64.iso             image: the bootable image
@@ -53,8 +52,7 @@ OAK_BIN     := $(OAK_DIR)/oak-$(OAK_VERSION)
 OAK_URL     := https://github.com/$(OAK_REPO)/releases/download/v$(OAK_VERSION)/$(OAK_ASSET)
 OAK_API     := https://api.github.com/repos/$(OAK_REPO)/releases/tags/v$(OAK_VERSION)
 
-# https even after a redirect, as get.sh fetches: -L alone would follow a 302
-# into plain http.
+# https even after a redirect: -L alone would follow a 302 into plain http.
 CURL := curl --proto '=https' --proto-redir '=https' -Lf --progress-bar
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -66,7 +64,6 @@ DIST_DIR := dist
 # The product under the name it unpacks to. Only x86_64 is built.
 STEM        := arch-os-$(VERSION)
 RELEASE_DIR := $(DIST_DIR)/$(STEM)
-TARBALL     := $(STEM)-x86_64.tar.gz
 
 # The Recovery image beside the release, and as one tar for the release page.
 RECOVERY_DIR := $(STEM)-recovery
@@ -109,7 +106,7 @@ RECOVERY ?= $(shell ls -td $(DIST_DIR)/*-recovery 2>/dev/null | head -1)
 # THE SCRIPTS | Everything checked, by the dialect it is written in
 # ////////////////////////////////////////////////////////////////////////////
 
-# POSIX sh: get.sh runs on whatever shell the downloading machine has.
+# POSIX sh: get.sh runs on whatever shell the machine has.
 POSIX_SCRIPTS := get.sh .github/settings.sh
 
 # Bash: what builds and boots the images, and what they run.
@@ -155,7 +152,7 @@ BUILD_OUTPUT := $(DIST_DIR) $(DEV_DIR) $(ISO_DIR)/archiso $(ISO_DIR)/download
 # Empty when there is nothing to elevate, which is the case in CI.
 SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 
-.PHONY: all oak oak-check build dev run inspect tarball image iso smoke e2e locales \
+.PHONY: all oak oak-check build dev run inspect image iso smoke e2e locales \
 	locales-check glyphs-check library-check data-check zsh-check actions-check lint fmt check version-name \
 	secrets-check github clean
 
@@ -242,16 +239,6 @@ run: dev
 # Every module loaded as a run loads it, and the order it resolves to.
 inspect: dev
 	@cd $(DEV_DIR) && ./$(APP) --inspect
-
-# The release as one file, for a stock Arch ISO: unpack it, run ./oak. Loaded
-# again out of the file, so what ships is what was checked.
-tarball: build
-	tar -czf $(DIST_DIR)/$(TARBALL) --owner=0 --group=0 --sort=name \
-		--transform 's,^,$(STEM)/,' \
-		-C $(RELEASE_DIR) $(APP) $(PRODUCT) $(PRODUCT_SHELL) $(MODULES_DIR)
-	unpacked="$$(mktemp -d)"; trap 'rm -rf "$$unpacked"' EXIT; \
-	tar -xzf $(DIST_DIR)/$(TARBALL) -C "$$unpacked"; \
-	"$$unpacked/$(STEM)/$(APP)" --inspect >/dev/null
 
 # The images, out of the release already in dist/.
 image:

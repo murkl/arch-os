@@ -15,8 +15,6 @@ The [Oak](https://github.com/murkl/oak) binary and every module live in `/opt/ar
 
 The Recovery is one console away: log in as root on another console (**Ctrl+Alt+F2**) and type `recovery`. Whenever the interface stops, tty1 returns to a root login, and nothing restarts it by itself. An interface that came back on its own would look like one that never left, over a run that may have written half a disk. A crash therefore ends at the prompt, with the reason in `journalctl -b -u arch-os`.
 
-**Note:** _The build copies everything in `modules/`, so **[Create boot medium](../modules/imager)** is on the image too. It is never offered: its `rules: offer-if` refuses a live image._
-
 **Note:** _The Recovery image starts with the same unit and launchers, with only the Recovery beside Oak, but as a kiosk. A drop-in starts `arch-os-kiosk`, which runs Oak with `--kiosk` on the answers `arch-os-seed` read from the EFI partition at boot. It opens straight on its menu, **Exit** leaves it, the unit starts it again with every answer it had, and no console has a login. **[➜ The Recovery Partition](../docs/REFERENCE.md#the-recovery-partition)**_
 
 | Command | Description |
@@ -78,7 +76,7 @@ Boots each under QEMU and OVMF, waits for the first page, chooses Deutsch on it 
 ```
 make e2e                    # the newest ISO in dist/
 make e2e ISO=path/to.iso
-make e2e START=desktop      # a Desktop, installed and booted to its login screen
+make e2e START=desktop      # the Desktop starting point, installed and booted to GNOME's login screen
 ```
 
 Walks the ISO the way a person does, unattended:
@@ -94,7 +92,7 @@ Walks the ISO the way a person does, unattended:
 - The live system is reached over ssh through its cloud-init. The interface runs in tmux there, driven by its keys and read from its pane
 - Both runs must end with every test passed, and the machine is then cut off like a power cut rather than shut down, as after writing the Recovery: what a run said is done has to be on the disk
 - The installed system unlocks its disk from a systemd credential, and is reached over ssh as the account it was installed with
-- `START=desktop` installs the Desktop starting point with the SSH server on, boots it like step 2 and checks for a running login screen and a systemd-oomd that watches swap and the session. The repair is the Core's
+- `START=desktop` installs the Desktop starting point with the SSH server on, boots it like step 2 and checks for GNOME's login screen and a systemd-oomd that watches swap and the session. The repair is the Core's
 - Step 6 is skipped, and says so, while no release of the series publishes a Recovery
 
 **Note:** _Needs `qemu-base`, `edk2-ovmf`, `openssh`, `libisoburn`, `tesseract` and `tesseract-data-eng`, and a network: the installation downloads its packages and step 6 the Recovery. The logs land in `dist/e2e/`, with a picture of the console where it stopped._
