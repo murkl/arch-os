@@ -26,22 +26,22 @@
 
 - Minimal Arch Linux base: linux-zen, btrfs, systemd-boot
 - Disk encryption and Secure Boot with your own keys
+- One password unlocks the disk, logs in to GNOME and opens the keyring
 - Btrfs snapshots before every package change
-- Recovery on its own partition, rollback included
+- Recovery on its own partition, rollback included, updates itself
+- Recovery from the boot menu, the firmware and the app grid
 - Falls back on its own: fallback image, then the Recovery
-- GNOME on Wayland or a text console, graphics drivers detected
-- Guest tools detected in a virtual machine
-- GNOME with extras or slim
+- GNOME on Wayland or a text console, drivers and guest tools detected
 - Flatpak from GNOME Software, or Bazaar with GNOME Firmware
 - Browser, backup app and text editor of your choice
 - AUR helper, 32-bit support, containers, firewall, SSH
 - File sharing with Windows and macOS
-- Zram, an out-of-memory guard and tuned defaults for older machines
-- Works offline: no timer fails without internet
+- Zram, an out-of-memory guard and [tuned defaults](REFERENCE.md#tuning) for older machines
+- Mirrors ranked, package cache trimmed, disks checked, quietly offline
 - [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), [System Manager](https://github.com/murkl/arch-os-manager), [Shell Enhancement](https://github.com/murkl/starship-theme-arch-os)
+- Asks only what it cannot work out: keyboard, time zone and mirrors follow the language
 - Installer resumes after an interruption, answers shareable by a code
 - English and German, [Adding a Language](CONTRIBUTING.md#adding-a-language)
-- [Tuning](REFERENCE.md#tuning)
 
 ## Installation
 
