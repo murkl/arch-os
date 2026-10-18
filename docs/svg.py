@@ -36,10 +36,10 @@ TIERS = (
     ("Desktop", "\U000f0379", "GNOME on Wayland", (4, 32)),  # nf-md-monitor
 )
 # The button and the pills share their measures, each on a grid of 4, so stacked
-# on a narrow screen they line up: their heights, a chip as far from the left as
-# from the top and the bottom, the banner cards' corner, a pill's text this far
-# after its chip and from its right edge, and clear field around each, as GitHub
-# lets a README set no spacing of its own.
+# on a narrow screen they line up: their heights, a pill's chip as far from the
+# left as from the top and the bottom, the banner cards' corner, a pill's text
+# this far after its chip and from its right edge, and clear field around each,
+# as GitHub lets a README set no spacing of its own.
 BUTTON, PILL = 64, 56
 INSET, RADIUS, GAP, END, MARGIN = 12, 12, 12, 16, 8
 # GitHub's own colours for a secondary button, so a pill sits on its theme as part of the page.
@@ -142,13 +142,15 @@ def download(regular, bold, fill, w):
     requirements' label.
     """
     h = BUTTON
-    chip = h / 2 - INSET
-    # Two grid steps further from the left than from the top and the bottom, and
-    # three further from the text than a pill's chip, so the larger chip has room.
-    left = INSET + 8
-    cx, cy = left + chip, h / 2
-    title = "Download ISO"
-    x = left + 2 * chip + GAP + 12
+    title, line = "Download ISO", " · ".join(ARCH)
+    # An icon of 24 in a chip of 48, as on a round button.
+    icon, chip = 24, 24
+    # The chip, the text and both edges evenly apart, so the text has as much
+    # room on its left as on its right.
+    text = max(bold.width(title, 16), regular.width(line, 12))
+    gap = (w - 2 * chip - text) / 3
+    cx, cy = gap + chip, h / 2
+    x = cx + chip + gap
     top = (h - 24 - 16) / 2
     return svg(w + 2 * MARGIN, h + MARGIN, alt_download(), [
         f'<g transform="translate({MARGIN} {MARGIN})">',
@@ -160,10 +162,9 @@ def download(regular, bold, fill, w):
         f'<rect x=".5" y=".5" width="{w - 1}" height="{h - 1}" rx="{RADIUS - .5}"'
         ' fill="none" stroke="#fff" stroke-opacity=".16"/>',
         f'<circle cx="{number(cx)}" cy="{number(cy)}" r="{number(chip)}" fill="#fff" fill-opacity=".16"/>',
-        # 24 across in a chip of 40, the proportion of an icon on a round button.
-        path(regular.icon("\U000f0120", cx, cy, 24), "#fff"),  # nf-md-tray_arrow_down
+        path(regular.icon("\U000f0120", cx, cy, icon), "#fff"),  # nf-md-tray_arrow_down
         path(bold.text(title, x, bold.baseline(top, 16, 24), 16), "#fff"),
-        path(regular.text(" · ".join(ARCH), x, regular.baseline(top + 24, 12, 16), 12), "#fff"),
+        path(regular.text(line, x, regular.baseline(top + 24, 12, 16), 12), "#fff"),
         "</g>",
     ])
 
