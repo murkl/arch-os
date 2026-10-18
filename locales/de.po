@@ -158,6 +158,9 @@ msgstr "bestätigen"
 msgid "continue"
 msgstr "weiter"
 
+msgid "details"
+msgstr "Details"
+
 msgid "filter"
 msgstr "filtern"
 
@@ -166,6 +169,9 @@ msgstr "verlassen"
 
 msgid "open"
 msgstr "öffnen"
+
+msgid "overview"
+msgstr "Übersicht"
 
 msgid "quit"
 msgstr "beenden"
@@ -266,14 +272,14 @@ msgstr "Region"
 msgid "Console keyboard"
 msgstr "Konsolentastatur"
 
-msgid "The keyboard you are typing on right now, loaded at once and used on the text console. auto follows the system language."
-msgstr "Die Tastatur, auf der du gerade tippst, sofort geladen und auf der Textkonsole verwendet. auto folgt der Systemsprache."
+msgid "The keyboard you are typing on right now, loaded at once and used on the text console. On auto it follows the system language."
+msgstr "Die Tastatur, auf der du gerade tippst, sofort geladen und auf der Textkonsole verwendet. Auf auto folgt sie der Systemsprache."
 
 msgid "Console font"
 msgstr "Konsolenschrift"
 
-msgid "The font of the text console. auto picks one for the language. A larger one helps on a high-resolution screen."
-msgstr "Die Schrift der Textkonsole. auto wählt eine für die Sprache. Eine größere hilft auf einem hochauflösenden Bildschirm."
+msgid "The font of the text console. On auto one is picked for the language. A larger one helps on a high-resolution screen."
+msgstr "Die Schrift der Textkonsole. Auf auto wird eine passend zur Sprache gewählt. Eine größere hilft auf einem hochauflösenden Bildschirm."
 
 msgid "Time zone"
 msgstr "Zeitzone"
@@ -284,8 +290,8 @@ msgstr "Wo dieser Rechner steht, damit die Uhr stimmt. Öffnet auf der Zeitzone 
 msgid "Mirror country"
 msgstr "Spiegelserver-Land"
 
-msgid "Where packages are downloaded from. auto follows the time zone, none ranks every mirror worldwide."
-msgstr "Woher Pakete geladen werden. auto folgt der Zeitzone, none sortiert alle Spiegelserver weltweit."
+msgid "Where packages are downloaded from. On auto it follows the time zone, on none every mirror worldwide is ranked."
+msgstr "Woher Pakete geladen werden. Auf auto folgt es der Zeitzone, auf none werden alle Spiegelserver weltweit sortiert."
 
 msgid "Disk"
 msgstr "Datenträger"
@@ -362,14 +368,14 @@ msgstr "Wird von Steam, Wine und anderer Software gebraucht, die noch 32-Bit ist
 msgid "AUR helper"
 msgstr "AUR-Helfer"
 
-msgid "paru, for software from the Arch User Repository. Built on this machine, which takes about a quarter of an hour."
-msgstr "paru, für Software aus dem Arch User Repository. Wird auf diesem Rechner gebaut, was rund eine Viertelstunde dauert."
+msgid "Paru, for software from the Arch User Repository. Built on this machine, which takes about a quarter of an hour."
+msgstr "Paru, für Software aus dem Arch User Repository. Wird auf diesem Rechner gebaut, was rund eine Viertelstunde dauert."
 
 msgid "Container engine"
 msgstr "Container-Engine"
 
-msgid "docker runs a daemon as root, which most documentation assumes. podman runs none and answers to the docker command. Both bring compose."
-msgstr "docker betreibt einen Daemon als root, wovon die meiste Dokumentation ausgeht. podman braucht keinen und hört auf den Befehl docker. Beide bringen compose mit."
+msgid "Docker runs a daemon as root, which most documentation assumes. Podman runs none and answers to the docker command. Both bring Compose."
+msgstr "Docker betreibt einen Daemon als root, wovon die meiste Dokumentation ausgeht. Podman braucht keinen und hört auf den Befehl docker. Beide bringen Compose mit."
 
 msgid "Firewall"
 msgstr "Firewall"
@@ -392,14 +398,14 @@ msgstr "Timer, die wöchentlich die Spiegelserver sortieren, den Paket-Cache ber
 msgid "Text editor"
 msgstr "Texteditor"
 
-msgid "Opens wherever a command asks for an editor: sudoedit, git, systemctl edit. nano and micro type straight away, vim, neovim and helix are modal."
-msgstr "Öffnet sich, wo ein Befehl nach einem Editor fragt: sudoedit, git, systemctl edit. In nano und micro wird sofort geschrieben, vim, neovim und helix arbeiten mit Modi."
+msgid "Opens wherever a command asks for an editor: sudoedit, git, systemctl edit. Nano and Micro type straight away, Vim, Neovim and Helix are modal."
+msgstr "Öffnet sich, wo ein Befehl nach einem Editor fragt: sudoedit, git, systemctl edit. In Nano und Micro wird sofort geschrieben, Vim, Neovim und Helix arbeiten mit Modi."
 
 msgid "Shell enhancement"
 msgstr "Shell-Optimierungen"
 
-msgid "zsh with completion and suggestions, a prompt with git state, colourful listings, fuzzy search and aliases."
-msgstr "zsh mit Vervollständigung und Vorschlägen, ein Prompt mit Git-Status, farbige Auflistungen, Fuzzy-Suche und Aliase."
+msgid "Zsh with completion and suggestions, a prompt with Git state, colourful listings, fuzzy search and aliases."
+msgstr "Zsh mit Vervollständigung und Vorschlägen, ein Prompt mit Git-Status, farbige Auflistungen, Fuzzy-Suche und Aliase."
 
 msgid "System Manager"
 msgstr "System Manager"
@@ -416,26 +422,26 @@ msgstr "Ob dieser Rechner selbst eine virtuelle Maschine ist."
 msgid "Environment"
 msgstr "Umgebung"
 
-msgid "gnome installs the GNOME desktop, none stays on the text console."
-msgstr "gnome installiert den GNOME-Desktop, none bleibt auf der Textkonsole."
+msgid "On gnome the GNOME desktop is installed, on none the system stays on the text console."
+msgstr "Auf gnome wird der GNOME-Desktop installiert, auf none bleibt das System auf der Textkonsole."
 
 msgid "Desktop keyboard"
 msgstr "Desktop-Tastatur"
 
-msgid "The keyboard layout of the desktop. auto matches the console keyboard."
-msgstr "Die Tastaturbelegung des Desktops. auto folgt der Konsolentastatur."
+msgid "The keyboard layout of the desktop. On auto it matches the console keyboard."
+msgstr "Die Tastaturbelegung des Desktops. Auf auto folgt sie der Konsolentastatur."
 
 msgid "Keyboard variant"
 msgstr "Tastaturvariante"
 
-msgid "A variation of that layout, such as dead keys. none is the standard one."
-msgstr "Eine Abwandlung dieser Belegung, etwa tote Tasten. none ist die Standardvariante."
+msgid "A variation of that layout, such as dead keys. On none the standard one is used."
+msgstr "Eine Abwandlung dieser Belegung, etwa tote Tasten. Auf none gilt die Standardvariante."
 
 msgid "Keyboard model"
 msgstr "Tastaturmodell"
 
-msgid "The physical shape of the keyboard. pc105 fits almost every keyboard sold."
-msgstr "Die Bauform der Tastatur. pc105 passt auf fast jede erhältliche Tastatur."
+msgid "The physical shape of the keyboard. Almost every keyboard sold is a pc105."
+msgstr "Die Bauform der Tastatur. Fast jede erhältliche Tastatur ist eine pc105."
 
 msgid "Desktop extras"
 msgstr "Desktop-Extras"
@@ -452,8 +458,8 @@ msgstr "Entfernt die GNOME-Programme, die mit dem Desktop kommen und selten benu
 msgid "Web browser"
 msgstr "Webbrowser"
 
-msgid "In the system language and opened for every link. epiphany is GNOME Web, vivaldi brings the codecs for proprietary video."
-msgstr "In der Systemsprache und für jeden Link geöffnet. epiphany ist GNOME Web, vivaldi bringt die Codecs für proprietäre Videos mit."
+msgid "In the system language and opened for every link. Epiphany is GNOME Web, Vivaldi brings the codecs for proprietary video."
+msgstr "In der Systemsprache und für jeden Link geöffnet. Epiphany ist GNOME Web, Vivaldi bringt die Codecs für proprietäre Videos mit."
 
 msgid "Backup"
 msgstr "Datensicherung"
@@ -713,8 +719,8 @@ msgstr "Konfiguration teilen"
 msgid "Puts these answers online at paste.rs, to set up another machine exactly like this one. Anyone with the address can read them. The password is not among them."
 msgstr "Stellt diese Antworten auf paste.rs online, um einen weiteren Rechner genauso einzurichten. Jede Person mit der Adresse kann sie lesen. Das Passwort ist nicht darunter."
 
-msgid "paste.rs did not take the configuration. Try again in a moment."
-msgstr "paste.rs hat die Konfiguration nicht angenommen. Versuch es gleich noch einmal."
+msgid "The configuration was not taken by paste.rs. Try again in a moment."
+msgstr "Die Konfiguration wurde von paste.rs nicht angenommen. Versuch es gleich noch einmal."
 
 msgid ""
 "Configuration shared\n"
@@ -731,8 +737,8 @@ msgstr "Protokoll teilen"
 msgid "Puts the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it. Passwords are never in it."
 msgstr "Stellt das Protokoll dieses Laufs auf paste.rs online, für die Person, die dir hilft. Jede Person mit der Adresse kann es lesen. Passwörter stehen nie darin."
 
-msgid "paste.rs did not take the log. Try again in a moment."
-msgstr "paste.rs hat das Protokoll nicht angenommen. Versuch es gleich noch einmal."
+msgid "The log was not taken by paste.rs. Try again in a moment."
+msgstr "Das Protokoll wurde von paste.rs nicht angenommen. Versuch es gleich noch einmal."
 
 msgid ""
 "Log shared\n"

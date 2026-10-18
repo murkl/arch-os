@@ -162,7 +162,7 @@ settings:
     title: Console keyboard
     description: |
       The keyboard you are typing on right now, loaded at once and used on the
-      text console. auto follows the system language.
+      text console. On auto it follows the system language.
     group: Region
     required: true
     first: true
@@ -174,8 +174,8 @@ settings:
     type: open-list
     title: Console font
     description: |
-      The font of the text console. auto picks one for the language. A larger
-      one helps on a high-resolution screen.
+      The font of the text console. On auto one is picked for the language. A
+      larger one helps on a high-resolution screen.
     group: Region
     default: auto
     required: true
@@ -199,8 +199,8 @@ settings:
     type: open-list
     title: Mirror country
     description: |
-      Where packages are downloaded from. auto follows the time zone, none
-      ranks every mirror worldwide.
+      Where packages are downloaded from. On auto it follows the time zone, on
+      none every mirror worldwide is ranked.
     group: Region
     default: auto
     required: true
@@ -308,7 +308,7 @@ settings:
     type: bool
     title: AUR helper
     description: |
-      paru, for software from the Arch User Repository. Built on this machine,
+      Paru, for software from the Arch User Repository. Built on this machine,
       which takes about a quarter of an hour.
     group: System
     default: true
@@ -317,8 +317,8 @@ settings:
     type: list
     title: Container engine
     description: |
-      docker runs a daemon as root, which most documentation assumes. podman
-      runs none and answers to the docker command. Both bring compose.
+      Docker runs a daemon as root, which most documentation assumes. Podman
+      runs none and answers to the docker command. Both bring Compose.
     group: System
     options: [docker, podman, none]
     default: none
@@ -353,7 +353,8 @@ settings:
     title: Text editor
     description: |
       Opens wherever a command asks for an editor: sudoedit, git, systemctl
-      edit. nano and micro type straight away, vim, neovim and helix are modal.
+      edit. Nano and Micro type straight away, Vim, Neovim and Helix are
+      modal.
     group: System
     options: [nano, vim, neovim, micro, helix]
     default: nano
@@ -363,7 +364,7 @@ settings:
     type: bool
     title: Shell enhancement
     description: |
-      zsh with completion and suggestions, a prompt with git state, colourful
+      Zsh with completion and suggestions, a prompt with Git state, colourful
       listings, fuzzy search and aliases.
     group: System
     default: true
@@ -387,7 +388,7 @@ settings:
   - name: ARCH_OS_DESKTOP
     type: list
     title: Environment
-    description: gnome installs the GNOME desktop, none stays on the text console.
+    description: On gnome the GNOME desktop is installed, on none the system stays on the text console.
     group: Desktop
     options: [gnome, none]
     required: true
@@ -395,7 +396,7 @@ settings:
   - name: ARCH_OS_DESKTOP_KEYBOARD_LAYOUT
     type: list
     title: Desktop keyboard
-    description: The keyboard layout of the desktop. auto matches the console keyboard.
+    description: The keyboard layout of the desktop. On auto it matches the console keyboard.
     group: Desktop
     default: auto
     required: true
@@ -407,7 +408,7 @@ settings:
   - name: ARCH_OS_DESKTOP_KEYBOARD_VARIANT
     type: list
     title: Keyboard variant
-    description: A variation of that layout, such as dead keys. none is the standard one.
+    description: A variation of that layout, such as dead keys. On none the standard one is used.
     group: Desktop
     default: none
     required: true
@@ -419,7 +420,7 @@ settings:
   - name: ARCH_OS_DESKTOP_KEYBOARD_MODEL
     type: text
     title: Keyboard model
-    description: The physical shape of the keyboard. pc105 fits almost every keyboard sold.
+    description: The physical shape of the keyboard. Almost every keyboard sold is a pc105.
     group: Desktop
     default: pc105
     when: ARCH_OS_DESKTOP != none
@@ -445,8 +446,8 @@ settings:
     type: list
     title: Web browser
     description: |
-      In the system language and opened for every link. epiphany is GNOME Web,
-      vivaldi brings the codecs for proprietary video.
+      In the system language and opened for every link. Epiphany is GNOME Web,
+      Vivaldi brings the codecs for proprietary video.
     group: Desktop
     options: [epiphany, firefox, chromium, vivaldi, none]
     default: firefox

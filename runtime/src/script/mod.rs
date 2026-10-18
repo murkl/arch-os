@@ -389,7 +389,7 @@ pub mod tests {
         let deadline = std::time::Instant::now() + Duration::from_secs(10);
         while std::time::Instant::now() < deadline {
             match rx.recv_timeout(Duration::from_millis(50)) {
-                Ok(Event::Line(l)) => lines.push(l),
+                Ok(Event::Line(l) | Event::Drawn(l)) => lines.push(l),
                 Ok(Event::Exit(r)) => return (r, lines),
                 Err(_) => {}
             }
@@ -438,6 +438,22 @@ pub mod tests {
         assert_eq!(guard(&no.file, &[]).unwrap_err(), "why");
         let yes = step("return 0\n");
         assert!(guard(&yes.file, &[]).is_ok());
+    }
+
+    #[test]
+    fn a_line_redrawn_in_place_is_told_from_a_finished_one() {
+        let (tx, rx) = std::sync::mpsc::channel();
+        let body = "printf '50%%'\nsleep 0.3\nprintf '\\r100%%\\n'\n";
+        let _session = start(step(body), &[], move |e| drop(tx.send(e))).unwrap();
+        let mut seen = Vec::new();
+        loop {
+            match rx.recv_timeout(Duration::from_secs(10)).unwrap() {
+                Event::Drawn(l) => seen.push(format!("drawn {l}")),
+                Event::Line(l) => seen.push(format!("line {l}")),
+                Event::Exit(r) => break r.unwrap(),
+            }
+        }
+        assert_eq!(seen, ["drawn 50%", "line 100%"]);
     }
 
     #[test]

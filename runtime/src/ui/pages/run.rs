@@ -1,7 +1,8 @@
-//! The work: every task with a mark, filling in from the top, never a line of what they print,
-//! which goes to the log. A task that asks first or has something to report interrupts the list.
+//! The work: every task with a mark, filling in from the top, and on tab what they print, which
+//! goes to the log too. A task that asks first or has something to report interrupts the list.
 //! The page ends on what the run came to and what may follow.
 
+use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 
 use ratatui::buffer::Buffer;
@@ -14,7 +15,7 @@ use crate::i18n::{t, tf};
 use crate::script::{self, Event, Failure, Session};
 use crate::spec::Task;
 use crate::ui::detail::{Act, Block, Detail, mark, words};
-use crate::ui::draw::{cut, cut_front, put};
+use crate::ui::draw::{cut, cut_front, put, wrap};
 use crate::ui::list::Lead;
 use crate::ui::{Ctx, Data, Flow, Key, Page, Tone};
 
@@ -46,6 +47,12 @@ enum Pushed {
     Report,
 }
 
+/// A line of the text view: a task's title, or a line it printed.
+enum Out {
+    Title(String),
+    Line(String),
+}
+
 /// How a run ended: in the module's words, or where it broke.
 enum End {
     Known(String),
@@ -60,6 +67,8 @@ const SIMULATED: Duration = if cfg!(test) {
 } else {
     Duration::from_secs(1)
 };
+/// The lines the text view keeps: more than any console has rows, however they wrap.
+const KEPT: usize = 1000;
 
 pub struct RunPage {
     steps: Vec<&'static Task>,
@@ -70,6 +79,11 @@ pub struct RunPage {
     session: Option<Session>,
     /// The line the running task drew last, where it declared its output its progress.
     latest: Option<String>,
+    /// What the run printed, under the title of each task, and the line being drawn in place.
+    transcript: VecDeque<Out>,
+    drawing: Option<String>,
+    /// The text view instead of the list.
+    text: bool,
     /// Each task that declared a test and got as far as running it, with its failure.
     tests: Vec<(&'static Task, Option<Failure>)>,
     /// Each task the result stands without, with its failure.
@@ -105,6 +119,9 @@ impl RunPage {
             pushed: Pushed::None,
             session: None,
             latest: None,
+            transcript: VecDeque::new(),
+            drawing: None,
+            text: false,
             tests: Vec::new(),
             optional: Vec::new(),
             started: Instant::now(),
@@ -209,6 +226,7 @@ impl RunPage {
     /// Runs the task at the cursor in the background, or only shows it for a moment on a dry run.
     fn start(&mut self, ctx: &mut Ctx) -> Flow {
         let task = self.task();
+        self.keep(Out::Title(t(&task.title)));
         if ctx.store.dry_run() && !task.simulates {
             crate::info!("{}: simulated", task.title);
             self.simulated = Some(Instant::now() + SIMULATED);
@@ -261,6 +279,47 @@ impl RunPage {
         // Whatever a run was given is gone the moment it is over, whether it worked or not.
         ctx.store.forget();
         Flow::Stay
+    }
+
+    fn keep(&mut self, out: Out) {
+        if self.transcript.len() == KEPT {
+            self.transcript.pop_front();
+        }
+        self.transcript.push_back(out);
+    }
+
+    /// The text view: the newest rows that fit, the line being drawn last, long lines wrapped.
+    fn draw_text(&self, area: Rect, buf: &mut Buffer, ctx: &Ctx) {
+        let s = &ctx.style;
+        let width = usize::from(area.width);
+        let height = usize::from(area.height);
+        let drawing = self
+            .drawing
+            .iter()
+            .map(|l| (l, s.tone(Tone::Normal), false));
+        let lines = self
+            .transcript
+            .iter()
+            .enumerate()
+            .map(|(i, out)| match out {
+                Out::Title(title) => (title, s.bold(Tone::Accent), i > 0),
+                Out::Line(line) => (line, s.tone(Tone::Normal), false),
+            })
+            .chain(drawing);
+        let mut rows = Vec::new();
+        for (text, style, gap) in lines.rev() {
+            rows.extend(wrap(text, width).into_iter().rev().map(|r| (r, style)));
+            if gap {
+                rows.push((String::new(), style));
+            }
+            if rows.len() >= height {
+                break;
+            }
+        }
+        rows.truncate(height);
+        for (y, (row, style)) in (area.y..).zip(rows.iter().rev()) {
+            put(buf, area.x, y, row, area.width, *style);
+        }
     }
 
     fn settled(&self) -> bool {
@@ -521,16 +580,28 @@ impl Page for RunPage {
             );
             self.kick = true;
         }
-        if self.end.is_some() {
+        if self.end.is_some() && !self.text {
             self.draw_end(area, buf, ctx);
             return;
         }
         let s = ctx.style;
-        let headline = tf(
-            "Working · {{time}}",
-            &[("time", &RunPage::clock(self.started.elapsed()))],
-        );
-        put(buf, area.x, area.y, s.spinner(), 1, s.tone(Tone::Accent));
+        let (glyph, tone, headline) = match &self.end {
+            None => (
+                s.spinner(),
+                Tone::Accent,
+                tf(
+                    "Working · {{time}}",
+                    &[("time", &RunPage::clock(self.started.elapsed()))],
+                ),
+            ),
+            Some((Ok(()), _, took)) => (
+                s.glyphs.ok,
+                Tone::Accent,
+                tf("Finished in {{time}}", &[("time", &RunPage::clock(*took))]),
+            ),
+            Some((Err(_), ..)) => (s.glyphs.fail, Tone::Error, t("Failed")),
+        };
+        put(buf, area.x, area.y, glyph, 1, s.tone(tone));
         put(
             buf,
             area.x + 2,
@@ -539,56 +610,79 @@ impl Page for RunPage {
             area.width.saturating_sub(2),
             s.bold(Tone::Normal),
         );
-        let list = Rect::new(
+        let below = Rect::new(
             area.x,
             area.y + 2,
             area.width,
             area.height.saturating_sub(2),
         );
-        self.draw_list(list, buf, ctx);
+        if self.text {
+            self.draw_text(below, buf, ctx);
+        } else {
+            self.draw_list(below, buf, ctx);
+        }
     }
 
     fn hints(&self, _: &Ctx) -> Vec<(&'static str, String)> {
-        if self.end.is_some() {
-            return if self.settled() {
-                self.result.hints()
+        let view = (
+            "tab",
+            if self.text {
+                t("overview")
             } else {
-                Vec::new()
-            };
+                t("details")
+            },
+        );
+        if self.end.is_none() {
+            return vec![view, ("esc", t("leave"))];
         }
-        vec![("esc", t("leave"))]
+        if !self.settled() {
+            return Vec::new();
+        }
+        let mut hints = if self.text {
+            Vec::new()
+        } else {
+            self.result.hints()
+        };
+        hints.push(view);
+        hints
     }
 
     fn key(&mut self, key: Key, ctx: &mut Ctx) -> Flow {
-        if self.end.is_some() {
-            if !self.settled() {
-                return Flow::Stay;
-            }
-            return match self.result.key(key, ctx) {
-                Flow::Ignored
-                    if matches!(
-                        key,
-                        Key::Esc | Key::Backspace | Key::Char('q') | Key::Ctrl('c')
-                    ) =>
-                {
-                    Flow::Ignored
-                }
-                Flow::Ignored => Flow::Stay,
-                flow => flow,
-            };
+        let way_out = matches!(
+            key,
+            Key::Esc | Key::Backspace | Key::Char('q') | Key::Ctrl('c')
+        );
+        if key == Key::Tab {
+            self.text = !self.text;
+            return Flow::Stay;
+        }
+        if self.end.is_some() && !self.settled() {
+            return Flow::Stay;
         }
         // Killing a half-finished package transaction is worse than waiting for it: nothing but
-        // the way out means anything while a task runs.
-        match key {
-            Key::Esc | Key::Ctrl('c') | Key::Char('q') | Key::Backspace => Flow::Ignored,
-            _ => Flow::Stay,
+        // the way out means anything while a task runs. Over the result, the text hides the rows
+        // a key would choose.
+        if self.end.is_none() || self.text {
+            return if way_out { Flow::Ignored } else { Flow::Stay };
+        }
+        match self.result.key(key, ctx) {
+            Flow::Ignored if way_out => Flow::Ignored,
+            Flow::Ignored => Flow::Stay,
+            flow => flow,
         }
     }
 
     fn run(&mut self, event: Event, ctx: &mut Ctx) -> Flow {
         match event {
             Event::Line(line) => {
-                self.latest = Some(line);
+                self.latest = Some(line.clone());
+                self.drawing = None;
+                self.keep(Out::Line(line));
+                Flow::Stay
+            }
+            Event::Drawn(line) => {
+                self.latest = Some(line.clone());
+                self.drawing = Some(line);
                 Flow::Stay
             }
             Event::Exit(result) => {

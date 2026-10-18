@@ -1,5 +1,5 @@
-//! A script running in the background: its output to the log, its last line for a page that
-//! shows progress, and what it reported on fd 3 for the failure.
+//! A script running in the background: its output to the log and to the page that runs it, and
+//! what it reported on fd 3 for the failure.
 
 use std::io::{BufRead, BufReader, Read};
 use std::os::fd::{AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
@@ -11,8 +11,10 @@ use super::{Failure, Step};
 
 #[derive(Debug)]
 pub enum Event {
-    /// A line the script drew, finished or redrawn in place.
+    /// A line the script finished.
     Line(String),
+    /// The line the script is drawing, redrawn in place, as it stands.
+    Drawn(String),
     Exit(Result<(), Failure>),
 }
 
@@ -143,7 +145,7 @@ fn follow(
             }
             let current = drawn(&buf);
             if !current.is_empty() {
-                sink(Event::Line(current));
+                sink(Event::Drawn(current));
             }
         }
         let rest = drawn(&buf);

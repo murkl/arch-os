@@ -634,6 +634,87 @@ pub mod tests {
         );
     }
 
+    /// While the tasks run, tab shows what they print: a finished line once, the line being
+    /// redrawn as it stands, a long one wrapped. Tab again shows the list.
+    #[test]
+    fn tab_shows_what_the_running_tasks_print_and_turns_back() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, _rx) = app(false);
+        answered(&mut app);
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        let id = app.next;
+        let print = |app: &mut App, e| app.handle(Msg::Run(id, e));
+        print(&mut app, crate::script::Event::Line("first".into()));
+        print(&mut app, crate::script::Event::Drawn("50%".into()));
+        press(&mut app, &[Key::Tab]);
+        let shown = screen(&mut app, &mut term);
+        assert!(
+            shown.contains("Working")
+                && shown.contains("first")
+                && shown.contains("50%")
+                && shown.contains("tab overview"),
+            "{shown}"
+        );
+        assert!(!shown.contains("Prepare the disk"), "{shown}");
+        print(&mut app, crate::script::Event::Drawn("75%".into()));
+        print(&mut app, crate::script::Event::Line("100%".into()));
+        let long = format!("{}omega", "word ".repeat(30));
+        print(&mut app, crate::script::Event::Line(long));
+        let shown = screen(&mut app, &mut term);
+        assert!(shown.contains("100%") && shown.contains("omega"), "{shown}");
+        assert!(!shown.contains("50%") && !shown.contains("75%"), "{shown}");
+        press(&mut app, &[Key::Tab]);
+        let shown = screen(&mut app, &mut term);
+        assert!(
+            shown.contains("Prepare the disk") && shown.contains("tab details"),
+            "{shown}"
+        );
+        assert!(!shown.contains("first"), "{shown}");
+    }
+
+    /// After the run, tab shows what each task printed under its title. A key meant for the rows
+    /// it hides chooses nothing.
+    #[test]
+    fn tab_shows_what_a_finished_run_printed_under_each_task() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app(false);
+        answered(&mut app);
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Down, Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        std::thread::sleep(Duration::from_millis(650));
+        let shown = screen(&mut app, &mut term);
+        assert!(
+            shown.contains("Continue") && shown.contains("tab details"),
+            "{shown}"
+        );
+        press(&mut app, &[Key::Tab]);
+        let shown = screen(&mut app, &mut term);
+        let rows: Vec<&str> = shown.lines().map(str::trim).collect();
+        let at = rows.iter().position(|r| *r == "Go back to a snapshot");
+        assert_eq!(at.map(|at| rows[at + 1]), Some("one"), "{shown}");
+        assert!(
+            shown.contains("Finished in")
+                && shown.contains("Install the base")
+                && shown.contains("tab overview"),
+            "{shown}"
+        );
+        assert!(!shown.contains("Continue"), "{shown}");
+        press(&mut app, &[Key::Enter]);
+        assert!(!app.done(), "an enter over the text chose a row");
+        press(&mut app, &[Key::Tab]);
+        assert!(screen(&mut app, &mut term).contains("Continue"));
+    }
+
     #[test]
     fn a_task_that_stops_itself_is_told_in_the_modules_words_and_a_broken_one_in_full() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());

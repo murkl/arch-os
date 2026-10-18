@@ -138,7 +138,7 @@ settings: …
 
 The module's home. `start` on top, then every answer under its group heading, each a row that opens its question. Under them the interface language, the actions under `on: dashboard` and **Reset all answers**, which deletes the answer file after a question that opens on No. `f` narrows the rows.
 
-`start` asks what is still missing, then every password, then `confirm`, then runs the tasks: each a row, checked off as it ends, counted in the header. A task that `asks` or has a `confirm` stops the run on its page. The run ends on a page that says how it went. Under a run that finished, the actions under `on: success` and **Continue**. Under a run that failed, what failed and where, the actions under `on: failure`, and **Back to the dashboard**, asked first.
+`start` asks what is still missing, then every password, then `confirm`, then runs the tasks: each a row, checked off as it ends, counted in the header. `tab` shows what they print instead, each under its task's title, and turns back, during the run and after it. A task that `asks` or has a `confirm` stops the run on its page. The run ends on a page that says how it went. Under a run that finished, the actions under `on: success` and **Continue**. Under a run that failed, what failed and where, the actions under `on: failure`, and **Back to the dashboard**, asked first.
 
 `q` or `esc` on the dashboard leaves. A module with `on: leave`, or a kiosk, gets a page first: the actions under `on: leave`, then **Exit**, or in a kiosk **Start over**. During a run the same page says that every choice stops it.
 
@@ -378,6 +378,7 @@ Beside wherever the program was started:
 | `⇞` `⇟` `g` `G` | A page up or down, the top, the bottom |
 | `f` `/` | Narrow a list |
 | `q` `ctrl+c` | Leave |
+| `tab` | A run's list or what its tasks print |
 
 **Note:** _In a text box every letter is a character, and backspace deletes one._
 
