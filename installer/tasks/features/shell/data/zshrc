@@ -1,9 +1,8 @@
-# Export the systemd user environment on a text console, where nothing else has.
+# The same as in .bashrc, where the reason is written.
 if [[ ${SHLVL} == 1 && -z ${DISPLAY} ]]; then
-    while IFS= read -r line; do
-        [[ $line == *=* ]] || continue
-        export "${line%%=*}=${line#*=}"
-    done < <(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator)
+    set -a
+    source <(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator)
+    set +a
 fi
 
 source "${HOME}/.aliases"
