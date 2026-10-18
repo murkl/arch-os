@@ -1,8 +1,4 @@
 title: Copy the answers and the log into the system
 
-# Last, so the log holds everything. The run says here that the work is done.
+# Last, so the log holds everything.
 needs: [orphans, snapper, secure-boot]
-report: |
-  Arch OS installed
-
-  {{ARCH_OS_HOSTNAME}} on {{ARCH_OS_DISK}} is ready to boot.

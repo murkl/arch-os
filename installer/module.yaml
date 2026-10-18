@@ -11,6 +11,12 @@ confirm: |
   Everything on the disk is erased. The installation needs the internet until
   it is done.
 
+# What a finished run says, above what may follow.
+report: |
+  Arch OS installed
+
+  {{ARCH_OS_HOSTNAME}} on {{ARCH_OS_DISK}} is ready to boot.
+
 # Each a folder under actions/, checked in this order before the work. The
 # internet comes last, after the keyboard a passphrase is typed on.
 requires: [live-image, root, uefi, secure-boot-off, internet]

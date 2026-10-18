@@ -220,10 +220,8 @@ impl Page for ActionPage {
         true
     }
 
-    fn stop(&mut self) {
-        if let Some(session) = &self.session {
-            session.kill();
-        }
+    fn stop(&mut self, _: &mut Ctx) -> Option<Session> {
+        self.session.take()
     }
 
     fn animating(&self, _: &Ctx) -> bool {

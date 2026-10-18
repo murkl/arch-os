@@ -17,7 +17,7 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, OnceLock};
 use std::time::{Duration, Instant};
 
-use crate::script::{self, Failure};
+use crate::script::{self, Failure, Session};
 use crate::spec::{self, Module, Setting};
 use crate::store::Store;
 
@@ -132,6 +132,8 @@ pub enum Data {
     Unoffered(pages::dashboard::Unoffered),
     Tried(pages::password::Tried),
     Done(Result<(), Box<Failure>>),
+    /// What ran behind the page that left has stopped.
+    Halted,
 }
 
 impl From<pages::password::Tried> for Data {
@@ -253,8 +255,11 @@ pub trait Page {
     fn leaving(&self) -> bool {
         false
     }
-    /// Something runs on it that must not outlive the program.
-    fn stop(&mut self) {}
+    /// Something runs on it that must not outlive the program: the page gives it up, and its
+    /// script is handed over to be stopped.
+    fn stop(&mut self, _ctx: &mut Ctx) -> Option<Session> {
+        None
+    }
     /// On top again after the page above it closed.
     fn resumed(&mut self, _ctx: &mut Ctx) -> Flow {
         Flow::Stay
@@ -297,8 +302,11 @@ pub struct Ctx {
     pub imported: bool,
     /// A yes or no just given on a page of its own, for the page that asked.
     pub answered: Option<bool>,
-    /// Leaving became a decision: everything running is stopped.
-    pub halt: bool,
+    /// Leaving became a decision on this page: everything running behind it is stopped, and the
+    /// page is told once it has.
+    pub halt: Option<PageId>,
+    /// Something runs behind the page in front that leaving stops.
+    pub behind: bool,
     /// The status is read again as soon as this is set: an action may have changed it.
     pub recheck: std::cell::Cell<bool>,
     /// A script to hand the terminal to, which the driver does between two frames.

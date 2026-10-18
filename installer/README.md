@@ -37,7 +37,7 @@ One folder per stage under `tasks/`. `module.yaml` orders the stages, `needs:` o
 | `system` | `pacstrap`, then `config`, `tweaks`, `bootloader`, `recovery` and `user`: the system on disk, configured and bootable |
 | `features` | One task per setting that turns something on: `multilib`, `aur`, `bootsplash`, `containers`, `editor`, `firewall`, `housekeeping`, `manager`, `shell`, `ssh`, `vm-guest` |
 | `desktop` | `gnome` first, then `backup`, `browser`, `flatpak`, `graphics`, `manager-app`, `recovery-app`, `samba` |
-| `finish` | `orphans`, `snapper`, `secure-boot`, and `copy-config` last, which reports the system as installed |
+| `finish` | `orphans`, `snapper`, `secure-boot`, and `copy-config` last, so the log holds everything |
 
 **Note:** _The runtime's tests load the module as a run does and fail on a stage, a need or a condition that does not resolve._
 

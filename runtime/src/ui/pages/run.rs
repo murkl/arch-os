@@ -53,10 +53,11 @@ enum Out {
     Line(String),
 }
 
-/// How a run ended: in the module's words, or where it broke.
+/// How a run ended: in the module's words, where it broke, or stopped on the way out.
 enum End {
     Known(String),
     Broke(Failure),
+    Stopped,
 }
 
 /// The pause before a result takes keys: what was typed while waiting must not dismiss it.
@@ -91,8 +92,8 @@ pub struct RunPage {
     /// Each task the result stands without, with its failure.
     optional: Vec<(&'static Task, Option<Failure>)>,
     started: Instant,
-    /// How it ended, when, and how long it took.
-    end: Option<(Result<(), End>, Instant, Duration)>,
+    /// How it ended, with the module's words for a finished run, when, and how long it took.
+    end: Option<(Result<Option<String>, End>, Instant, Duration)>,
     /// A simulated task ends when this passes.
     simulated: Option<Instant>,
     result: Detail,
@@ -275,7 +276,10 @@ impl RunPage {
                 crate::error!("run: failed: {}", words.lines().next().unwrap_or_default())
             }
             Err(End::Broke(f)) => crate::error!("run: failed: {f}"),
+            Err(End::Stopped) => crate::warn!("run: stopped"),
         }
+        // Filled in before the answers the words may name are forgotten.
+        let result = result.map(|()| ctx.module.report.as_ref().map(|r| ctx.expand(&t(r))));
         self.end = Some((result, Instant::now(), took));
         self.session = None;
         self.simulated = None;
@@ -370,6 +374,16 @@ impl RunPage {
             .collect()
     }
 
+    /// The task the run ended at, which nothing after it followed.
+    fn stopped_at(&self, ctx: &Ctx) -> String {
+        let task = self
+            .steps
+            .get(self.at)
+            .map(|t_| t(&t_.title))
+            .unwrap_or_else(|| t(&ctx.module.title));
+        tf("Stopped at {{task}}", &[("task", &task)])
+    }
+
     fn clock(d: Duration) -> String {
         let secs = d.as_secs();
         if secs >= 3600 {
@@ -385,15 +399,16 @@ impl RunPage {
             return;
         };
         let (body, acts): (Vec<Block>, Vec<Act>) = match result {
-            Ok(()) => {
-                let mut body = vec![
-                    mark(false),
-                    Block::Blank,
-                    Block::Heading(tf(
-                        "Finished in {{time}}",
-                        &[("time", &RunPage::clock(*took))],
-                    )),
-                ];
+            Ok(report) => {
+                let mut body = vec![mark(false), Block::Blank];
+                if let Some(report) = report {
+                    body.extend(words(report));
+                    body.push(Block::Blank);
+                }
+                body.push(Block::Text(
+                    tf("Took {{time}}", &[("time", &RunPage::clock(*took))]),
+                    Tone::Muted,
+                ));
                 if let Some((note, tone)) = self.tally() {
                     body.push(Block::Text(note, tone));
                 }
@@ -418,7 +433,7 @@ impl RunPage {
                 }
                 acts.push(Act::new(t("Continue"), |ctx: &mut Ctx| {
                     if ctx.leaves() {
-                        Flow::Push(Box::new(super::leave::LeavePage::new(ctx, false, false)))
+                        Flow::Push(Box::new(super::leave::LeavePage::new(ctx, false)))
                     } else {
                         Flow::Quit
                     }
@@ -430,23 +445,21 @@ impl RunPage {
                 body.extend(words(text));
                 (body, vec![Act::new(t("Back"), |_| Flow::Home)])
             }
+            Err(End::Stopped) => (
+                vec![
+                    mark(true),
+                    Block::Blank,
+                    Block::Heading(self.stopped_at(ctx)),
+                    Block::Text(t("Nothing after it ran."), Tone::Normal),
+                ],
+                vec![Act::new(t("Back"), |_| Flow::Home)],
+            ),
             Err(End::Broke(f)) => {
-                let stopped = self
-                    .steps
-                    .get(self.at)
-                    .map(|t_| t(&t_.title))
-                    .unwrap_or_else(|| t(&ctx.module.title));
                 let mut body = vec![
                     mark(true),
                     Block::Blank,
-                    Block::Heading(t("Failed")),
-                    Block::Text(
-                        tf(
-                            "Stopped at {{task}}. Nothing after it ran.",
-                            &[("task", &stopped)],
-                        ),
-                        Tone::Normal,
-                    ),
+                    Block::Heading(self.stopped_at(ctx)),
+                    Block::Text(t("Nothing after it ran."), Tone::Normal),
                     Block::Blank,
                 ];
                 body.extend(crate::ui::detail::failure(f));
@@ -478,10 +491,8 @@ impl RunPage {
 
     fn result_len(&self) -> usize {
         match &self.end {
-            Some((Ok(()), ..)) => {
-                1 + usize::from(!self.failures().is_empty()) + self.success_rows()
-            }
-            Some((Err(End::Known(_)), ..)) => 1,
+            Some((Ok(_), ..)) => 1 + usize::from(!self.failures().is_empty()) + self.success_rows(),
+            Some((Err(End::Known(_) | End::Stopped), ..)) => 1,
             Some((Err(End::Broke(_)), ..)) => 1 + self.failure_rows(),
             None => 0,
         }
@@ -560,8 +571,14 @@ impl RunPage {
 }
 
 impl Page for RunPage {
+    /// Nothing while it runs, or once stopped on the way out, whose page it then stands under.
+    /// Otherwise what it came to: the header names the outcome.
     fn title(&self) -> String {
-        String::new()
+        match &self.end {
+            None | Some((Err(End::Stopped), ..)) => String::new(),
+            Some((Ok(_), ..)) => t("Done"),
+            Some((Err(_), ..)) => t("Failed"),
+        }
     }
 
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {
@@ -602,12 +619,12 @@ impl Page for RunPage {
                     &[("time", &RunPage::clock(self.started.elapsed()))],
                 ),
             ),
-            Some((Ok(()), _, took)) => (
+            Some((Ok(_), _, took)) => (
                 s.glyphs.ok,
                 Tone::Accent,
-                tf("Finished in {{time}}", &[("time", &RunPage::clock(*took))]),
+                tf("Took {{time}}", &[("time", &RunPage::clock(*took))]),
             ),
-            Some((Err(_), ..)) => (s.glyphs.fail, Tone::Error, t("Failed")),
+            Some((Err(_), ..)) => (s.glyphs.fail, Tone::Error, self.stopped_at(ctx)),
         };
         put(buf, area.x, area.y, glyph, 1, s.tone(tone));
         put(
@@ -681,6 +698,9 @@ impl Page for RunPage {
     }
 
     fn run(&mut self, event: Event, ctx: &mut Ctx) -> Flow {
+        if self.end.is_some() {
+            return Flow::Stay;
+        }
         match event {
             Event::Line(line) => {
                 self.latest = Some(line.clone());
@@ -727,6 +747,9 @@ impl Page for RunPage {
         let Data::Answers(answers) = data else {
             return Flow::Stay;
         };
+        if self.end.is_some() {
+            return Flow::Stay;
+        }
         let task = self.task();
         let Some(ask) = &task.asks else {
             return Flow::Stay;
@@ -743,6 +766,9 @@ impl Page for RunPage {
     }
 
     fn tick(&mut self, ctx: &mut Ctx) -> Flow {
+        if self.end.is_some() {
+            return Flow::Stay;
+        }
         if self.kick {
             self.kick = false;
             return self.step(ctx);
@@ -763,6 +789,9 @@ impl Page for RunPage {
     /// read.
     fn resumed(&mut self, ctx: &mut Ctx) -> Flow {
         let pushed = std::mem::replace(&mut self.pushed, Pushed::None);
+        if self.end.is_some() {
+            return Flow::Stay;
+        }
         match pushed {
             Pushed::None => Flow::Stay,
             Pushed::Ask => {
@@ -812,12 +841,15 @@ impl Page for RunPage {
         self.end.is_none()
     }
 
-    fn stop(&mut self) {
-        if let Some(session) = &self.session {
-            crate::warn!("run: stopped");
-            session.kill();
+    /// Ends the run where it stands. Nothing its task, an answer or a tick brings after this
+    /// moves it on.
+    fn stop(&mut self, ctx: &mut Ctx) -> Option<Session> {
+        if self.end.is_some() {
+            return None;
         }
-        self.hold = None;
+        let session = self.session.take();
+        self.finish(Err(End::Stopped), ctx);
+        session
     }
 
     fn animating(&self, _: &Ctx) -> bool {

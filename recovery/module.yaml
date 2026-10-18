@@ -11,7 +11,7 @@ requires: [live-image, root]
 # The dashboard's rows in order: its own, and each other a folder under actions/.
 # No reset: each of its two answers is changed in its own row.
 dashboard: [start, settings, wifi, update]
-language: Configuration
+language: Region
 
 # Where its other actions are offered, each a folder under actions/.
 on:
@@ -75,7 +75,7 @@ settings:
     type: list
     title: Console keyboard
     description: Your keyboard layout, active right away. The live image's is preselected.
-    group: Configuration
+    group: Region
     required: true
     first: true
     options-from: options_keymaps()

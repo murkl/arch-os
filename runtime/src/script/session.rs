@@ -6,6 +6,10 @@ use std::os::fd::{AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
 use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
+
+use rustix::io::Errno;
+use rustix::process::{Pid, Signal, kill_process_group};
 
 use unicode_width::UnicodeWidthStr;
 
@@ -26,6 +30,16 @@ pub struct Session {
 
 /// The last stderr lines a failure carries: the real message is the last thing a tool says.
 const KEEP: usize = 8;
+/// How long a stopped script has to end by itself: pacman finishes the package it unpacks, and
+/// arch-chroot takes its mounts down.
+const GRACE: Duration = if cfg!(test) {
+    Duration::from_millis(300)
+} else {
+    Duration::from_secs(10)
+};
+/// How long what was killed may take to go: a process waiting on its disk goes once it answers.
+const GONE: Duration = Duration::from_secs(5);
+const POLL: Duration = Duration::from_millis(50);
 
 impl Session {
     pub(super) fn spawn(
@@ -89,13 +103,51 @@ impl Session {
         Ok(Session { pid })
     }
 
-    /// Stops the script and everything it started. A package transaction left writing to an
-    /// unwatched disk is worse than an interrupted one.
-    pub fn kill(&self) {
-        if let Some(pid) = rustix::process::Pid::from_raw(self.pid) {
-            let _ = rustix::process::kill_process_group(pid, rustix::process::Signal::KILL);
+    /// Stops the script and everything it started, and returns once none of it runs. It is
+    /// asked first: a package transaction ends between two packages rather than halfway through
+    /// one. What stays past the grace is killed, and what outlives that is logged.
+    pub fn stop(&self) {
+        let Some(group) = Pid::from_raw(self.pid) else {
+            return;
+        };
+        for (signal, bound) in [(Signal::TERM, GRACE), (Signal::KILL, GONE)] {
+            match kill_process_group(group, signal) {
+                Ok(()) => {}
+                Err(Errno::SRCH) => return,
+                Err(e) => {
+                    crate::error!("stop: {}: {e}", self.pid);
+                    return;
+                }
+            }
+            let deadline = Instant::now() + bound;
+            while Instant::now() < deadline {
+                if running(self.pid).is_empty() {
+                    return;
+                }
+                std::thread::sleep(POLL);
+            }
         }
+        crate::error!("stop: still running: {}", running(self.pid).join(", "));
     }
+}
+
+/// Each process of a group that still runs, as pid, name and state, a D waiting on its disk.
+/// A zombie runs nothing: it waits to be collected by a parent, or by a PID 1 that may never.
+fn running(group: i32) -> Vec<String> {
+    let Ok(dir) = std::fs::read_dir("/proc") else {
+        return Vec::new();
+    };
+    let group = group.to_string();
+    dir.filter_map(|e| std::fs::read_to_string(e.ok()?.path().join("stat")).ok())
+        .filter_map(|stat| {
+            // pid (name) state ppid pgrp …, where the name may hold spaces and parentheses.
+            let (head, rest) = stat.rsplit_once(") ")?;
+            let (pid, name) = head.split_once(" (")?;
+            let mut fields = rest.split(' ');
+            let state = fields.next()?;
+            (state != "Z" && fields.nth(1)? == group).then(|| format!("{pid} {name} {state}"))
+        })
+        .collect()
 }
 
 /// Puts `fd` at 3 in the child, where the trap writes its report. Runs between fork and exec.

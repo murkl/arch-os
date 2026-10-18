@@ -1,6 +1,6 @@
 //! The way out where the module says how the machine is put down: its rows, and under them
 //! closing the program, which a kiosk starts again. Opened over what was happening, it stops
-//! nothing until a row is chosen.
+//! nothing until a row is chosen, and carries the row out once what ran has stopped.
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -11,7 +11,7 @@ use crate::spec::Action;
 use crate::ui::detail::{Detail, failure};
 use crate::ui::draw::{paragraph, waiting};
 use crate::ui::list::{List, Picked, Row};
-use crate::ui::{Ctx, Flow, Key, Page, Tone};
+use crate::ui::{Ctx, Data, Flow, Key, Page, Tone};
 
 /// What a row does: an action of the module, or closing the program.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -25,49 +25,50 @@ const KEYS: &str = "↑↓ move · ⏎ confirm · esc back";
 
 pub struct LeavePage {
     list: List<Way>,
-    /// A run goes on behind this page, which every row stops.
-    running: bool,
     /// Opened over the first page, before there is a frame: drawn like it.
     bare: bool,
-    /// The action under way: a restart takes a moment to arrive, and the page says so.
-    doing: Option<(&'static Action, Option<Session>)>,
+    /// The row chosen, and its action's script once what ran behind has stopped: a restart takes
+    /// a moment to arrive, and the page says so.
+    doing: Option<(Way, Option<Session>)>,
     failed: Option<Detail>,
 }
 
 impl LeavePage {
-    pub fn new(ctx: &Ctx, running: bool, bare: bool) -> LeavePage {
+    pub fn new(ctx: &Ctx, bare: bool) -> LeavePage {
         let mut rows: Vec<Row<Way>> = ctx
             .rows(&ctx.module.on.leave)
             .into_iter()
-            .map(|a| Row::new(Way::Action(a), t(&a.title)).describe(t(&a.description)))
+            .map(|a| {
+                Row::new(Way::Action(a), label(Way::Action(a), ctx)).describe(t(&a.description))
+            })
             .collect();
-        let (title, help) = if ctx.kiosk {
-            (
-                t("Start over"),
-                t("Restarts this program. All answers are kept."),
-            )
+        let help = if ctx.kiosk {
+            t("Restarts this program. All answers are kept.")
         } else {
-            (
-                t("Exit"),
-                t("Closes this program. The machine keeps running."),
-            )
+            t("Closes this program. The machine keeps running.")
         };
-        rows.push(Row::new(Way::Exit, title).describe(help));
+        rows.push(Row::new(Way::Exit, label(Way::Exit, ctx)).describe(help));
         let mut list = List::new(rows);
         list.described = !bare;
         LeavePage {
             list,
-            running,
             bare,
             doing: None,
             failed: None,
         }
     }
 
-    /// Does what a row stands for. From here on this is a decision rather than a question, so
-    /// whatever was running behind this page is put down first.
+    /// From here on a row is a decision rather than a question: whatever runs behind this page
+    /// is stopped first, and the row is carried out once it has.
+    fn decide(&mut self, way: Way, ctx: &mut Ctx) -> Flow {
+        self.doing = Some((way, None));
+        self.failed = None;
+        ctx.halt = Some(ctx.page_id());
+        Flow::Stay
+    }
+
+    /// Does what the row stands for, nothing running behind this page any more.
     fn carry_out(&mut self, way: Way, ctx: &mut Ctx) -> Flow {
-        ctx.halt = true;
         let Way::Action(action) = way else {
             crate::info!("exit");
             return Flow::Quit;
@@ -79,7 +80,7 @@ impl LeavePage {
         let step = ctx.step(&t(&action.title), true, action.script());
         match script::start(step, &ctx.env(), ctx.run_sink()) {
             Ok(session) => {
-                self.doing = Some((action, Some(session)));
+                self.doing = Some((way, Some(session)));
                 Flow::Stay
             }
             Err(e) => {
@@ -104,8 +105,8 @@ impl Page for LeavePage {
     }
 
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {
-        if let Some((action, _)) = &self.doing {
-            waiting(buf, area, &t(&action.title), None, ctx);
+        if let Some((way, _)) = self.doing {
+            waiting(buf, area, &label(way, ctx), None, ctx);
             return;
         }
         if self.bare && self.failed.is_none() {
@@ -120,7 +121,7 @@ impl Page for LeavePage {
             failed.draw(Rect::new(area.x, y, area.width, height), buf, ctx);
             y += height + 1;
         }
-        if self.running {
+        if ctx.behind {
             y = paragraph(
                 buf,
                 area,
@@ -149,12 +150,22 @@ impl Page for LeavePage {
             return Flow::Stay;
         }
         match self.list.key(key) {
-            Picked::Open(way) => self.carry_out(way, ctx),
+            Picked::Open(way) => self.decide(way, ctx),
             Picked::Used => Flow::Stay,
             Picked::Ignored if matches!(key, Key::Esc | Key::Backspace | Key::Char('q')) => {
                 Flow::Pop
             }
             Picked::Ignored => Flow::Ignored,
+        }
+    }
+
+    fn data(&mut self, data: Data, ctx: &mut Ctx) -> Flow {
+        match (data, &self.doing) {
+            (Data::Halted, Some((way, None))) => {
+                let way = *way;
+                self.carry_out(way, ctx)
+            }
+            _ => Flow::Stay,
         }
     }
 
@@ -177,13 +188,20 @@ impl Page for LeavePage {
         }
     }
 
-    fn stop(&mut self) {
-        if let Some((_, Some(session))) = &self.doing {
-            session.kill();
-        }
+    fn stop(&mut self, _: &mut Ctx) -> Option<Session> {
+        self.doing.as_mut().and_then(|(_, session)| session.take())
     }
 
     fn animating(&self, _: &Ctx) -> bool {
         self.doing.is_some()
+    }
+}
+
+/// A row's name, which the page also stands under while the row is carried out.
+fn label(way: Way, ctx: &Ctx) -> String {
+    match way {
+        Way::Action(action) => t(&action.title),
+        Way::Exit if ctx.kiosk => t("Start over"),
+        Way::Exit => t("Exit"),
     }
 }

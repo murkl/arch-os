@@ -47,6 +47,9 @@ msgstr "Weiter"
 msgid "Deletes all answers and their file, then starts at the first question."
 msgstr "Löscht alle Antworten samt Datei und beginnt bei der ersten Frage."
 
+msgid "Done"
+msgstr "Fertig"
+
 msgid "Exit"
 msgstr "Beenden"
 
@@ -59,14 +62,17 @@ msgstr "Fehlgeschlagen"
 msgid "Filter"
 msgstr "Filtern"
 
-msgid "Finished in {{time}}"
-msgstr "Fertig nach {{time}}"
+msgid "Took {{time}}"
+msgstr "Dauer {{time}}"
 
 msgid "Interface language"
 msgstr "Sprache der Oberfläche"
 
-msgid "Stopped at {{task}}. Nothing after it ran."
-msgstr "Abgebrochen bei {{task}}. Nichts danach wurde ausgeführt."
+msgid "Stopped at {{task}}"
+msgstr "Abgebrochen bei {{task}}"
+
+msgid "Nothing after it ran."
+msgstr "Danach wurde nichts ausgeführt."
 
 msgid "Leave"
 msgstr "Verlassen"

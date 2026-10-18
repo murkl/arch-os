@@ -224,8 +224,7 @@ shows() {
     sleep 1
 }
 
-# Waits for a module's run to end and holds it to its own tests. A task's
-# report holds the run on a page of its own until somebody reads it.
+# Waits for a module's run to end and holds it to its own tests.
 finished() {
     local module="$1" seconds="$2" deadline result
     deadline=$((SECONDS + seconds))
@@ -235,9 +234,6 @@ finished() {
             live cat "/opt/arch-os/${module}.log" >"${WORK}/${module}.log" || true
             pane >"${WORK}/pane.log" || true
             fail "the ${module} did not finish within ${seconds}s"
-        fi
-        if pane | grep -qF -- "⏎ continue"; then
-            keys Enter
         fi
         sleep 10
     done

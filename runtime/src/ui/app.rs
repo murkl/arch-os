@@ -4,13 +4,15 @@ use ratatui::Frame;
 use std::sync::Arc;
 use std::sync::mpsc::Sender;
 
-use super::{Ctx, Flow, Key, Msg, Nav, Page, PageId, Style, draw, pages};
+use super::{Ctx, Data, Flow, Key, Msg, Nav, Page, PageId, Style, draw, pages};
 use crate::cli::Start;
 use crate::store::Store;
 
 pub struct App {
     pages: Vec<(PageId, Box<dyn Page>)>,
     next: PageId,
+    /// Where a page behind another moved on, taken up once it is in front again.
+    waiting: Vec<(PageId, Flow)>,
     pub ctx: Ctx,
     quit: bool,
     /// Pokes the status check, so it reads again right after an action ran.
@@ -56,7 +58,8 @@ impl App {
             wizard: 0,
             imported: false,
             answered: None,
-            halt: false,
+            halt: None,
+            behind: false,
             recheck: Default::default(),
             cursor: Default::default(),
             handover: None,
@@ -68,6 +71,7 @@ impl App {
         let mut app = App {
             pages: Vec::new(),
             next: 0,
+            waiting: Vec::new(),
             ctx,
             quit: false,
             poke: None,
@@ -168,11 +172,11 @@ impl App {
                 };
                 self.apply(flow);
             }
+            // Every page, so what works behind the one in front goes on.
             Msg::Tick => {
-                self.ctx.page = top;
-                if let Some((_, page)) = self.pages.last_mut() {
-                    let flow = page.tick(&mut self.ctx);
-                    self.apply(flow);
+                let ids: Vec<PageId> = self.pages.iter().map(|(id, _)| *id).collect();
+                for id in ids {
+                    self.deliver(id, |page, ctx| page.tick(ctx));
                 }
             }
             Msg::Resize | Msg::Held(_) | Msg::Paste(_) => {}
@@ -189,11 +193,20 @@ impl App {
             }
             Msg::Resolved(name, value) => self.ctx.store.set(&name, &value),
         }
-        if self.ctx.halt {
-            self.ctx.halt = false;
-            for (_, page) in &mut self.pages {
-                page.stop();
-            }
+        if let Some(by) = self.ctx.halt.take() {
+            let scripts: Vec<crate::script::Session> = self
+                .pages
+                .iter_mut()
+                .filter(|(id, _)| *id != by)
+                .filter_map(|(_, page)| page.stop(&mut self.ctx))
+                .collect();
+            self.ctx.page = by;
+            self.ctx.spawn(move || {
+                for script in &scripts {
+                    script.stop();
+                }
+                Data::Halted
+            });
         }
         if self.ctx.recheck.replace(false)
             && let Some(poke) = &self.poke
@@ -202,17 +215,26 @@ impl App {
         }
     }
 
-    /// Hands a result to the page that asked. Its next step counts only while it is on top.
+    /// Hands a result to the page that asked. Where another page is in front of it, the page it
+    /// moves on to waits until it is in front again.
     fn deliver(&mut self, id: PageId, f: impl FnOnce(&mut Box<dyn Page>, &mut Ctx) -> Flow) {
         let top = self.pages.last().map(|(i, _)| *i);
         let Some((_, page)) = self.pages.iter_mut().find(|(i, _)| *i == id) else {
             return;
         };
         self.ctx.page = id;
-        let flow = f(page, &mut self.ctx);
-        if top == Some(id) {
-            self.apply(flow);
+        match f(page, &mut self.ctx) {
+            Flow::Stay | Flow::Ignored => {}
+            flow if top == Some(id) => self.apply(flow),
+            flow => self.waiting.push((id, flow)),
         }
+    }
+
+    /// What closed pages were waiting to move on to goes with them.
+    fn forget_closed(&mut self) {
+        let pages = &self.pages;
+        self.waiting
+            .retain(|(w, _)| pages.iter().any(|(id, _)| id == w));
     }
 
     /// The way out: where the module says how the machine is put down, or in a kiosk, a question.
@@ -225,11 +247,7 @@ impl App {
             return Flow::Stay;
         }
         let bare = self.pages.last().is_some_and(|(_, p)| p.bare());
-        Flow::Push(Box::new(pages::leave::LeavePage::new(
-            &self.ctx,
-            self.pages.iter().any(|(_, p)| p.holds()),
-            bare,
-        )))
+        Flow::Push(Box::new(pages::leave::LeavePage::new(&self.ctx, bare)))
     }
 
     fn apply(&mut self, flow: Flow) {
@@ -240,6 +258,7 @@ impl App {
                 if self.pages.len() > 1 {
                     self.pages.pop();
                 }
+                self.forget_closed();
                 self.push(page);
             }
             Flow::Pop => self.pop(1),
@@ -247,7 +266,9 @@ impl App {
             Flow::Home => self.pop(self.pages.len().saturating_sub(1)),
             Flow::Quit => {
                 for (_, page) in &mut self.pages {
-                    page.stop();
+                    if let Some(script) = page.stop(&mut self.ctx) {
+                        script.stop();
+                    }
                 }
                 self.quit = true;
             }
@@ -260,11 +281,16 @@ impl App {
                 self.pages.pop();
             }
         }
+        self.forget_closed();
         if n > 0
             && let Some((id, page)) = self.pages.last_mut()
         {
             self.ctx.page = *id;
-            let flow = page.resumed(&mut self.ctx);
+            // Where it moved on while behind, that comes first.
+            let flow = match self.waiting.iter().position(|(w, _)| w == id) {
+                Some(at) => self.waiting.remove(at).1,
+                None => page.resumed(&mut self.ctx),
+            };
             self.apply(flow);
         }
     }
@@ -285,6 +311,9 @@ impl App {
         // The note of the page in front, or of the page under it: a run's counter stands while it
         // asks.
         let note = self.pages.iter().rev().find_map(|(_, p)| p.note(&self.ctx));
+        self.ctx.behind = self.pages[..self.pages.len() - 1]
+            .iter()
+            .any(|(_, p)| p.holds());
         let (id, page) = self.pages.last_mut().expect("the dashboard stays");
         self.ctx.page = *id;
         self.ctx.cursor.set(None);
@@ -329,6 +358,24 @@ pub mod tests {
         app_on(&crate::spec::tests::fixture(), dry_run)
     }
 
+    /// An app on the fixture with each text replaced wherever it stands.
+    fn app_with(
+        edits: &[(&str, &str)],
+        dry_run: bool,
+    ) -> (App, Terminal<TestBackend>, Receiver<Msg>) {
+        let files: Vec<(&'static str, &'static [u8])> = crate::spec::tests::fixture()
+            .into_iter()
+            .map(|(path, body)| {
+                let text = edits.iter().fold(
+                    String::from_utf8_lossy(body).into_owned(),
+                    |text, (from, to)| text.replace(from, to),
+                );
+                (path, &*Box::leak(text.into_bytes().into_boxed_slice()))
+            })
+            .collect();
+        app_on(&files, dry_run)
+    }
+
     /// An app on the product given, with the fixture's scripts.
     fn app_on(
         files: &[(&'static str, &'static [u8])],
@@ -339,7 +386,7 @@ pub mod tests {
         let loaded: &'static crate::spec::Loaded =
             Box::leak(Box::new(crate::spec::load(files).unwrap()));
         let module = loaded.module("setup").unwrap();
-        let dir = std::env::temp_dir().join(format!("ui-test-{}-{}", std::process::id(), rand()));
+        let dir = std::env::temp_dir().join(format!("ui-test-{}", crate::script::tests::unique()));
         std::fs::create_dir_all(&dir).unwrap();
         let store = Store::new(module, &dir, dry_run);
         let ctx = Ctx {
@@ -355,7 +402,8 @@ pub mod tests {
             wizard: 0,
             imported: false,
             answered: None,
-            halt: false,
+            halt: None,
+            behind: false,
             recheck: Default::default(),
             cursor: Default::default(),
             handover: None,
@@ -367,19 +415,13 @@ pub mod tests {
         let mut app = App {
             pages: Vec::new(),
             next: 0,
+            waiting: Vec::new(),
             ctx,
             quit: false,
             poke: None,
         };
         app.push(Box::new(pages::dashboard::DashboardPage::new()));
         (app, Terminal::new(TestBackend::new(80, 30)).unwrap(), rx)
-    }
-
-    fn rand() -> u128 {
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
     }
 
     pub fn screen(app: &mut App, term: &mut Terminal<TestBackend>) -> String {
@@ -573,7 +615,7 @@ pub mod tests {
     }
 
     /// The start: the lists read again, the password twice, the module's question, then the run,
-    /// which asks mid-run, confirms, reports and ends on what follows.
+    /// which asks mid-run, confirms, reports and ends on the module's words and what follows.
     #[test]
     fn install_now_asks_the_password_confirms_and_runs_to_the_end() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -629,9 +671,14 @@ pub mod tests {
         std::thread::sleep(Duration::from_millis(650));
         let shown = screen(&mut app, &mut term);
         assert!(
-            shown.contains("Finished in") && shown.contains("1 of 1 tests passed"),
+            shown.contains("› Setup › Done")
+                && shown.contains("Set up")
+                && shown.contains("tuxbox boots.")
+                && shown.contains("Took 00:0")
+                && shown.contains("1 of 1 tests passed"),
             "{shown}"
         );
+        assert_eq!(shown.matches("Done").count(), 1, "{shown}");
         assert!(
             shown.contains("Open a shell") && shown.contains("Continue"),
             "{shown}"
@@ -725,20 +772,17 @@ pub mod tests {
     fn actions_under_answers_of_their_group_repeat_no_heading() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
         crate::i18n::set("en");
-        let files: Vec<(&'static str, &'static [u8])> = crate::spec::tests::fixture()
-            .into_iter()
-            .map(|(path, body)| {
-                let text = String::from_utf8_lossy(body)
-                    .replace(
-                        "dashboard: [start, note, settings, reset, net]",
-                        "dashboard: [start, settings, note, net, reset]",
-                    )
-                    .replace("group: Extras\n", "group: Storage\n")
-                    .replace("group: Network\n", "group: Storage\n");
-                (path, &*Box::leak(text.into_bytes().into_boxed_slice()))
-            })
-            .collect();
-        let (mut app, mut term, _rx) = app_on(&files, false);
+        let (mut app, mut term, _rx) = app_with(
+            &[
+                (
+                    "dashboard: [start, note, settings, reset, net]",
+                    "dashboard: [start, settings, note, net, reset]",
+                ),
+                ("group: Extras\n", "group: Storage\n"),
+                ("group: Network\n", "group: Storage\n"),
+            ],
+            false,
+        );
         answered(&mut app);
         app.ctx.offered.insert("net".into(), true);
         let shown = screen(&mut app, &mut term);
@@ -859,6 +903,138 @@ pub mod tests {
         assert!(!shown.contains("first"), "{shown}");
     }
 
+    /// A module without words of its own ends on the outcome in the header and how long it took.
+    #[test]
+    fn a_run_without_a_report_ends_on_its_outcome_and_its_time() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app_with(
+            &[("report: |\n  Set up\n\n  {{TUX_HOST}} boots.\n", "")],
+            false,
+        );
+        answered(&mut app);
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Down, Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        std::thread::sleep(Duration::from_millis(650));
+        let shown = screen(&mut app, &mut term);
+        assert!(
+            shown.contains("› Setup › Done")
+                && shown.contains("Took 00:0")
+                && shown.contains("Continue"),
+            "{shown}"
+        );
+        assert!(!shown.contains("boots."), "{shown}");
+    }
+
+    /// A row on the way out is carried out to its end: stopping what runs leaves its own work be.
+    #[test]
+    fn a_way_out_carries_out_its_action() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app(false);
+        answered(&mut app);
+        let leave = Box::new(pages::leave::LeavePage::new(&app.ctx, false));
+        open(&mut app, leave);
+        screen(&mut app, &mut term);
+        press(&mut app, &[Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        let shown = screen(&mut app, &mut term);
+        let dir = app.ctx.store.path().parent().unwrap().to_path_buf();
+        assert!(
+            app.done() && dir.join("restarted").exists(),
+            "Restart did not run to its end:\n{shown}"
+        );
+    }
+
+    /// Behind the way out the run goes on, from its first task. What it asks waits there until
+    /// the way out is closed, and is asked then.
+    #[test]
+    fn the_run_goes_on_behind_the_way_out_and_what_it_asks_waits() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app(false);
+        answered(&mut app);
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        screen(&mut app, &mut term);
+        press(&mut app, &[Key::Esc]);
+        settle(&mut app, &mut term, &rx);
+        let shown = screen(&mut app, &mut term);
+        assert_eq!(app.titles().last().unwrap(), "Leave", "{shown}");
+        assert!(shown.contains("2 of 3"), "the run stood still:\n{shown}");
+        press(&mut app, &[Key::Esc]);
+        settle(&mut app, &mut term, &rx);
+        let shown = screen(&mut app, &mut term);
+        assert_eq!(app.titles().last().unwrap(), "Snapshot", "{shown}");
+        assert!(shown.contains("one") && shown.contains("two"), "{shown}");
+    }
+
+    /// The way out says a run goes on behind it only while one does.
+    #[test]
+    fn the_way_out_warns_of_a_run_only_while_it_goes_on() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app_with(
+            &[
+                (
+                    "asks:\n  name: TUX_SNAPSHOT\n  title: Snapshot\n  options-from: ./snapshots.sh\nconfirm: |\n  Put {{TUX_SNAPSHOT}} in place?\n",
+                    "",
+                ),
+                ("report: |\n  Installed\n\n  {{TUX_HOST}} is ready.\n", ""),
+            ],
+            false,
+        );
+        answered(&mut app);
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        screen(&mut app, &mut term);
+        press(&mut app, &[Key::Esc]);
+        let warning = "The run continues in the background.";
+        let shown = screen(&mut app, &mut term);
+        assert!(shown.contains(warning), "{shown}");
+        settle(&mut app, &mut term, &rx);
+        let shown = screen(&mut app, &mut term);
+        assert!(!shown.contains(warning), "the run is over:\n{shown}");
+        press(&mut app, &[Key::Esc]);
+        assert!(screen(&mut app, &mut term).contains("› Setup › Done"));
+    }
+
+    /// A row on the way out stops the run first: its task is asked to end and may clean up, and
+    /// the row is carried out once it has.
+    #[test]
+    fn a_way_out_stops_the_run_gently_before_its_action() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app(false);
+        answered(&mut app);
+        app.ctx.store.set("TUX_HOST", "slow");
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        screen(&mut app, &mut term);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Esc, Key::Enter]);
+        let shown = screen(&mut app, &mut term);
+        assert!(shown.contains("› Setup › Leave"), "{shown}");
+        settle(&mut app, &mut term, &rx);
+        let shown = screen(&mut app, &mut term);
+        let dir = app.ctx.store.path().parent().unwrap().to_path_buf();
+        assert!(
+            app.done() && dir.join("restarted").exists(),
+            "Restart did not run to its end:\n{shown}"
+        );
+        assert!(
+            dir.join("stopped").exists(),
+            "the task was not asked to end"
+        );
+    }
+
     /// After the run, tab shows what each task printed under its title. A key meant for the rows
     /// it hides chooses nothing.
     #[test]
@@ -888,7 +1064,7 @@ pub mod tests {
         let at = rows.iter().position(|r| *r == "Go back to a snapshot");
         assert_eq!(at.map(|at| rows[at + 1]), Some("one"), "{shown}");
         assert!(
-            shown.contains("Finished in")
+            shown.contains("Took 00:0")
                 && shown.contains("Install the base")
                 && shown.contains("tab overview"),
             "{shown}"
@@ -923,9 +1099,12 @@ pub mod tests {
             std::thread::sleep(Duration::from_millis(650));
             let shown = screen(&mut app, &mut term);
             assert!(shown.contains(expect), "{host}: {shown}");
+            assert!(shown.contains("› Setup › Failed"), "{host}: {shown}");
+            assert_eq!(shown.matches("Failed").count(), 1, "{host}: {shown}");
             if host == "broken" {
                 assert!(
-                    shown.contains("Failed")
+                    shown.contains("Stopped at Install the base")
+                        && shown.contains("Nothing after it ran.")
                         && shown.contains("Exit code")
                         && shown.contains("Share the log")
                         && shown.contains("Back to the dashboard"),
@@ -1054,7 +1233,7 @@ pub mod tests {
         let module = crate::spec::loaded().modules.first().unwrap();
         let depth = |conf: Option<&str>| {
             let dir =
-                std::env::temp_dir().join(format!("app-new-{}-{}", std::process::id(), rand()));
+                std::env::temp_dir().join(format!("app-new-{}", crate::script::tests::unique()));
             std::fs::create_dir_all(&dir).unwrap();
             if let Some(conf) = conf {
                 std::fs::write(dir.join(format!("{}.conf", module.id)), conf).unwrap();
@@ -1203,7 +1382,7 @@ pub mod tests {
                 "1 of 2 tests passed".into(),
                 vec![("Install the base".into(), f)],
             )),
-            Box::new(pages::leave::LeavePage::new(&app.ctx, true, false)),
+            Box::new(pages::leave::LeavePage::new(&app.ctx, false)),
             Box::new(pages::run::RunPage::new(&app.ctx)),
         ]
     }

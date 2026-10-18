@@ -97,6 +97,10 @@ confirm: |
   Install Arch OS on {{ARCH_OS_DISK}}?
 
   Everything on the disk is erased.
+report: |
+  Arch OS installed
+
+  {{ARCH_OS_DISK}} is ready to boot.
 requires: [live-image, root, internet]
 dashboard: [start, settings, reset, wifi]
 language: Region
@@ -119,6 +123,7 @@ settings: …
 | `title` | **Required.** The module's name, in the breadcrumb above every page |
 | `start` | The first row of the dashboard, which starts the work. `Start` without it |
 | `confirm` | A question asked after every password and before the work, opening on No. The first paragraph is the headline |
+| `report` | The words a finished run ends on. The first paragraph is the headline |
 | `requires` | Actions checked before anything is asked, in this order. The first that returns no blocks everything with its page and is checked again every few seconds. Skipped on a dry run |
 | `dashboard` | **Required.** The dashboard's rows in order, see [The Dashboard](#the-dashboard) |
 | `language` | The group whose first row is the interface language. Refused at startup where no setting is in it |
@@ -150,9 +155,9 @@ The module's home: its rows in the order `dashboard` lists them, each name once.
 
 A blank row follows `start`, the answers and each group of actions. Right after `start`, the headings of the answers take its place.
 
-`start` asks what is still missing, then every password, then `confirm`, then runs the tasks: one row each, checked off as it ends, counted in the header. `tab` switches to their output, each under its task's title, and back, during the run and after it. While the tasks run, `systemd-inhibit` blocks shutdown and sleep, so closing the lid never suspends a run halfway. A task that `asks` or has a `confirm` pauses the run on its page. The run ends on a page with its outcome. A finished run offers the actions under `on: success` and **Continue**. A failed run shows what failed and where, the actions under `on: failure`, and **Back to the dashboard**, after a confirmation.
+`start` asks what is still missing, then every password, then `confirm`, then runs the tasks: one row each, checked off as it ends, counted in the header. `tab` switches to their output, each under its task's title, and back, during the run and after it. While the tasks run, `systemd-inhibit` blocks shutdown and sleep, so closing the lid never suspends a run halfway. A task that `asks` or has a `confirm` pauses the run on its page. The run ends on a page with its outcome, which the header names: **Done** or **Failed**. A finished run shows the module's `report` and how long it took, then the actions under `on: success` and **Continue**. A failed run shows what failed and where, the actions under `on: failure`, and **Back to the dashboard**, after a confirmation.
 
-`q` or `esc` on the dashboard leaves. A module with `on: leave`, or a kiosk, shows a page first: the actions under `on: leave`, then **Exit**, or **Start over** in a kiosk. During a run, the same page shows that every choice stops it.
+`q` or `esc` on the dashboard leaves. A module with `on: leave`, or a kiosk, shows a page first: the actions under `on: leave`, then **Exit**, or **Start over** in a kiosk. During a run, the same page shows that every choice stops it. The run goes on behind it, and what it asks waits until the page closes. A choice stops the run first: its script and everything it started get `SIGTERM`, and `SIGKILL` after 10 seconds. The choice is carried out once none of it runs.
 
 ## Settings
 

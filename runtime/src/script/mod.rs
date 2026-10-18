@@ -421,7 +421,7 @@ pub mod tests {
     /// in front of it whatever product is embedded.
     pub fn step(body: &str) -> Step {
         use_fixture();
-        let name = format!("t{}", rand());
+        let name = format!("t{}", unique());
         let rel = format!("fixture/{name}.sh");
         let file = dir().unwrap().join(&rel);
         std::fs::create_dir_all(file.parent().unwrap()).unwrap();
@@ -434,11 +434,12 @@ pub mod tests {
         }
     }
 
-    fn rand() -> u128 {
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
+    /// A name no other test gets: tests run side by side, and two may start in the same
+    /// nanosecond.
+    pub fn unique() -> String {
+        static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+        let n = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        format!("{}-{n}", std::process::id())
     }
 
     /// Runs a step to its end and returns the outcome and the lines it drew.
@@ -544,6 +545,46 @@ pub mod tests {
         assert!(guard(&yes.file, &[]).is_ok());
     }
 
+    /// A stop asks first, and a script that traps it cleans up and goes. One that stays is
+    /// killed after the grace. Either way the stop returns once nothing of the script runs.
+    #[test]
+    fn a_stop_asks_first_and_kills_what_stays() {
+        let out = std::env::temp_dir().join(format!("script-stop-{}", unique()));
+        let env = vec![("OUT".to_string(), out.display().to_string())];
+        for (body, asked) in [
+            (
+                "trap 'echo asked >\"$OUT\"' TERM\necho \"$$\"\nsleep 30 &\nwait\n",
+                true,
+            ),
+            ("trap '' TERM\necho \"$$\"\nsleep 30 &\nwait\n", false),
+        ] {
+            let _ = std::fs::remove_file(&out);
+            let (tx, rx) = std::sync::mpsc::channel();
+            let session = start(step(body), &env, move |e| drop(tx.send(e))).unwrap();
+            let group = loop {
+                if let Event::Line(l) = rx.recv_timeout(Duration::from_secs(10)).unwrap() {
+                    break l;
+                }
+            };
+            session.stop();
+            // A zombie is left out: PID 1 of a container may never collect one.
+            let ps = Command::new("ps")
+                .args(["-e", "-o", "pgid=,stat="])
+                .output()
+                .unwrap();
+            let left: Vec<String> = String::from_utf8_lossy(&ps.stdout)
+                .lines()
+                .map(str::split_whitespace)
+                .filter_map(|mut f| Some((f.next()?.to_string(), f.next()?.to_string())))
+                .filter(|(pgid, stat)| *pgid == group && !stat.starts_with('Z'))
+                .map(|(_, stat)| stat)
+                .collect();
+            assert!(left.is_empty(), "{left:?} still run: {body}");
+            assert_eq!(out.exists(), asked, "{body}");
+        }
+        let _ = std::fs::remove_file(&out);
+    }
+
     #[test]
     fn a_line_redrawn_in_place_is_told_from_a_finished_one() {
         let (tx, rx) = std::sync::mpsc::channel();
@@ -562,7 +603,7 @@ pub mod tests {
 
     #[test]
     fn a_start_removes_what_a_run_no_longer_running_left() {
-        let base = std::env::temp_dir().join(format!("script-base-{}", rand()));
+        let base = std::env::temp_dir().join(format!("script-base-{}", unique()));
         let program = env!("CARGO_PKG_NAME");
         let mut gone = Command::new("true").spawn().unwrap();
         gone.wait().unwrap();

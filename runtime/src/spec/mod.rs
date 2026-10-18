@@ -81,6 +81,8 @@ pub struct Module {
     pub start: String,
     /// Asked after every password and before the work: the question, then what happens.
     pub confirm: Option<String>,
+    /// The words a finished run ends on, the headline first.
+    pub report: Option<String>,
     /// Actions that have to say yes before the work. The first no stands a page in front.
     pub requires: Vec<String>,
     /// The dashboard's rows, in the order the module lists them.
@@ -401,6 +403,7 @@ impl Module {
         add(&self.title);
         add(&self.start);
         add(self.confirm.as_deref().unwrap_or_default());
+        add(self.report.as_deref().unwrap_or_default());
         for p in &self.presets {
             add(&p.title);
             add(&p.description);
@@ -561,6 +564,7 @@ struct ModuleFile {
     title: String,
     start: Option<String>,
     confirm: Option<String>,
+    report: Option<String>,
     #[serde(default)]
     requires: Vec<String>,
     dashboard: Vec<String>,
@@ -1220,6 +1224,10 @@ fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Modul
     if let Some(c) = &confirm {
         placeholders("confirm", c, &names).map_err(m)?;
     }
+    let report = reflow_opt(&f.report);
+    if let Some(r) = &report {
+        placeholders("report", r, &names).map_err(m)?;
+    }
     let module_errors = errors(&f.errors, &names).map_err(m)?;
 
     // Presets: named by their title and nothing else.
@@ -1425,6 +1433,7 @@ fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Modul
         start: text::reflow(f.start.as_deref().unwrap_or("Start")),
         title,
         confirm,
+        report,
         requires: f.requires,
         dashboard,
         language: f.language,
@@ -1729,9 +1738,9 @@ pub mod tests {
         vec![
             ("product.yaml", b"title: Tux\naccent: \"#8fbcbb\"\nconsole-accent: cyan\nlogo: |\n  Tux\n\n  ####\nstatus:\n  check: check_online()\n  pass: Online\n  fail: Offline\n"),
             ("lib.sh", b"check_online() { true; }\nbroken() {\n    false\n}\noptions_disks() { printf 'sda\\tsda 20G\\nsdb\\tsdb 40G\\n'; }\nprefill_host() { echo tuxbox; }\nvalue_vm() { echo false; }\napply_keymap() { true; }\n"),
-            ("setup/module.yaml", b"title: Setup\nstart: Install now\nconfirm: |\n  Install on {{TUX_DISK}}?\n\n  Everything on it is erased.\nrequires: [root]\ndashboard: [start, note, settings, reset, net]\nlanguage: Region\non:\n  leave: [restart]\n  failure: [share]\n  success: [shell]\nerrors:\n  3: |\n    No internet\n\n    Connect and start again.\nstages: [prepare, install]\npresets:\n  - title: Desktop\n    description: A desktop.\n    values:\n      TUX_DESKTOP: gnome\n  - title: Core\n    values:\n      TUX_DESKTOP: none\nsettings:\n  - name: TUX_KEYMAP\n    type: list\n    title: Keyboard\n    group: Region\n    required: true\n    first: true\n    options: [us, de]\n    apply: apply_keymap()\n  - name: TUX_HOST\n    type: text\n    title: Hostname\n    description: What the machine calls itself.\n    group: System\n    required: true\n    prefill: prefill_host()\n    pattern: '^[a-z][a-z0-9-]*$'\n    error: Lower case letters, digits and - only.\n  - name: TUX_DESKTOP\n    type: list\n    title: Desktop\n    group: System\n    required: true\n    options: [gnome, none]\n  - name: TUX_DRIVER\n    type: list\n    title: Driver\n    group: System\n    required: true\n    options: [free, none]\n    when: TUX_DESKTOP != none\n  - name: TUX_DISK\n    type: list\n    title: Disk\n    group: Storage\n    required: true\n    options-from: options_disks()\n    pattern: '^sd'\n  - name: TUX_ENCRYPT\n    type: bool\n    title: Encryption\n    group: Storage\n    default: true\n  - name: TUX_PASSWORD\n    type: new-password\n    title: Password\n    group: System\n    required: true\n  - name: TUX_VM\n    type: bool\n    title: Virtual machine\n    group: System\n    value-from: value_vm()\n"),
+            ("setup/module.yaml", b"title: Setup\nstart: Install now\nconfirm: |\n  Install on {{TUX_DISK}}?\n\n  Everything on it is erased.\nreport: |\n  Set up\n\n  {{TUX_HOST}} boots.\nrequires: [root]\ndashboard: [start, note, settings, reset, net]\nlanguage: Region\non:\n  leave: [restart]\n  failure: [share]\n  success: [shell]\nerrors:\n  3: |\n    No internet\n\n    Connect and start again.\nstages: [prepare, install]\npresets:\n  - title: Desktop\n    description: A desktop.\n    values:\n      TUX_DESKTOP: gnome\n  - title: Core\n    values:\n      TUX_DESKTOP: none\nsettings:\n  - name: TUX_KEYMAP\n    type: list\n    title: Keyboard\n    group: Region\n    required: true\n    first: true\n    options: [us, de]\n    apply: apply_keymap()\n  - name: TUX_HOST\n    type: text\n    title: Hostname\n    description: What the machine calls itself.\n    group: System\n    required: true\n    prefill: prefill_host()\n    pattern: '^[a-z][a-z0-9-]*$'\n    error: Lower case letters, digits and - only.\n  - name: TUX_DESKTOP\n    type: list\n    title: Desktop\n    group: System\n    required: true\n    options: [gnome, none]\n  - name: TUX_DRIVER\n    type: list\n    title: Driver\n    group: System\n    required: true\n    options: [free, none]\n    when: TUX_DESKTOP != none\n  - name: TUX_DISK\n    type: list\n    title: Disk\n    group: Storage\n    required: true\n    options-from: options_disks()\n    pattern: '^sd'\n  - name: TUX_ENCRYPT\n    type: bool\n    title: Encryption\n    group: Storage\n    default: true\n  - name: TUX_PASSWORD\n    type: new-password\n    title: Password\n    group: System\n    required: true\n  - name: TUX_VM\n    type: bool\n    title: Virtual machine\n    group: System\n    value-from: value_vm()\n"),
             ("setup/tasks/prepare/disk/task.yaml", b"title: Prepare the disk\nerrors:\n  10: |\n    The disk is gone\n\n    {{TUX_DISK}} is not there.\n"),
-            ("setup/tasks/prepare/disk/task.sh", b"echo \"$TUX_DISK\" >\"${MODULE_CONF%/*}/disk\"\n"),
+            ("setup/tasks/prepare/disk/task.sh", b"echo \"$TUX_DISK\" >\"${MODULE_CONF%/*}/disk\"\n[ \"$TUX_HOST\" != slow ] || { trap 'echo asked >\"${MODULE_CONF%/*}/stopped\"' TERM; sleep 30 & wait; }\n"),
             ("setup/tasks/prepare/disk/test.sh", b"[ -f \"${MODULE_CONF%/*}/disk\" ]\n"),
             ("setup/tasks/install/base/task.yaml", b"title: Install the base\nneeds: [snapshot]\nreport: |\n  Installed\n\n  {{TUX_HOST}} is ready.\nerrors:\n  10: |\n    The name is taken\n\n    {{TUX_HOST}} is on the network already.\n"),
             ("setup/tasks/install/base/task.sh", b"[ \"$TUX_HOST\" != taken ] || exit 10\n[ \"$TUX_HOST\" != broken ] || false\necho \"$TUX_HOST\" >\"${MODULE_CONF%/*}/host\"\n"),
@@ -1747,7 +1756,7 @@ pub mod tests {
             ("setup/actions/net/action.yaml", b"title: Join a network\ndescription: Joins one.\ngroup: Network\nrequires: [root]\n"),
             ("setup/actions/net/action.sh", b"true\n"),
             ("setup/actions/restart/action.yaml", b"title: Restart\ndescription: Starts the machine again.\n"),
-            ("setup/actions/restart/action.sh", b"true\n"),
+            ("setup/actions/restart/action.sh", b": >\"${MODULE_CONF%/*}/restarted\"\n"),
             ("setup/actions/share/action.yaml", b"title: Share the log\ndescription: Puts the log online.\nreport: |\n  Shared\nqr: TUX_URL\nsimulates: true\n"),
             ("setup/actions/share/action.sh", b"printf \"TUX_URL='https://x/1'\\n\" >>\"$MODULE_CONF\"\n"),
             ("setup/actions/shell/action.yaml", b"title: Open a shell\ndescription: Until exit.\ntty: true\n"),
@@ -1809,6 +1818,7 @@ pub mod tests {
             m.confirm.as_deref(),
             Some("Install on {{TUX_DISK}}?\n\nEverything on it is erased.")
         );
+        assert_eq!(m.report.as_deref(), Some("Set up\n\n{{TUX_HOST}} boots."));
         assert_eq!(
             m.setting("TUX_DRIVER").unwrap().when[0].to_string(),
             "TUX_DESKTOP != none"
@@ -1822,6 +1832,10 @@ pub mod tests {
         );
         assert!(m.declared().contains(&"TUX_URL") && m.declared().contains(&"TUX_NOTE"));
         assert!(m.texts().contains(&"Install now".to_string()));
+        assert!(
+            m.texts()
+                .contains(&"Set up\n\n{{TUX_HOST}} boots.".to_string())
+        );
         assert_eq!(
             m.dashboard,
             [
@@ -1921,6 +1935,12 @@ pub mod tests {
         refused(
             &tiny(
                 "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, settings, asks, row]\nconfirm: Erase {{NOPE}}?\n",
+            ),
+            "{{NOPE}} is not a variable",
+        );
+        refused(
+            &tiny(
+                "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, settings, asks, row]\nreport: Ready on {{NOPE}}\n",
             ),
             "{{NOPE}} is not a variable",
         );
