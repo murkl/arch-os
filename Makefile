@@ -96,7 +96,7 @@ DATA_CHECKS = $(wildcard $(addsuffix /data/check.sh,$(MODULES)) $(addsuffix /tas
 # lib.sh's own check: its functions against answers written out beside them.
 LIBRARY_CHECK := lib.check.sh
 
-# A task's check of the zshrc it ships: keys typed into the shell reading it.
+# A task's check of the zshrc it ships: keys typed and titles read in the shell reading it.
 ZSH_CHECKS = $(wildcard $(addsuffix /tasks/*/*/check.zsh,$(MODULES)))
 
 # ////////////////////////////////////////////////////////////////////////////
