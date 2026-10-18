@@ -40,7 +40,8 @@
 - Works offline: no timer fails without internet
 - [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), [System Manager](https://github.com/murkl/arch-os-manager), [Shell Enhancement](https://github.com/murkl/starship-theme-arch-os)
 - Installer resumes after an interruption, answers shareable by a code
-- English and German
+- English and German, [Adding a Language](CONTRIBUTING.md#adding-a-language)
+- [Tuning](REFERENCE.md#tuning)
 
 ## Installation
 
