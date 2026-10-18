@@ -372,7 +372,7 @@ settings:
   - name: ARCH_OS_MANAGER_ENABLED
     type: bool
     title: System Manager
-    description: A menu for updating, cleaning up and repairing the system after installation.
+    description: A terminal and desktop application for updating, maintaining, and repairing Arch Linux — all in one place.
     group: System
     default: true
 
