@@ -229,8 +229,13 @@ shows() {
 finished() {
     local module="$1" seconds="$2" deadline result
     deadline=$((SECONDS + seconds))
-    until result="$(live "grep -m1 -E ' (INFO run: ok|ERROR )' /opt/arch-os/${module}.log" 2>/dev/null)"; do
-        [ "$SECONDS" -lt "$deadline" ] || fail "the ${module} did not finish within ${seconds}s"
+    # The level is padded to five letters: INFO  run: ok.
+    until result="$(live "grep -m1 -E ' (INFO +run: ok|ERROR +)' /opt/arch-os/${module}.log" 2>/dev/null)"; do
+        if [ "$SECONDS" -ge "$deadline" ]; then
+            live cat "/opt/arch-os/${module}.log" >"${WORK}/${module}.log" || true
+            pane >"${WORK}/pane.log" || true
+            fail "the ${module} did not finish within ${seconds}s"
+        fi
         if pane | grep -qF -- "⏎ continue"; then
             keys Enter
         fi
