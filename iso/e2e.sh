@@ -353,18 +353,20 @@ EOF
 
 # Waits for the Recovery on its partition to open on its dashboard. It has to
 # pass Secure Boot with this machine's keys, find and check its partition and
-# open in the language the Installer was read in.
+# open in the language the Installer was read in. A second argument names what
+# else counts as its first page.
 recovery_opens() {
-    local how="$1" deadline=$((SECONDS + BOOT_TIMEOUT)) shot="${WORK}/recovery.png"
+    local how="$1" page="Repair now|Update the Recovery${2:+|$2}"
+    local deadline=$((SECONDS + BOOT_TIMEOUT)) shot="${WORK}/recovery.png"
     rm -f "$shot"
-    until [ -s "$shot" ] && tesseract "$shot" - --psm 6 2>/dev/null | grep -qE 'Repair now|Update the Recovery'; do
+    until [ -s "$shot" ] && tesseract "$shot" - --psm 6 2>/dev/null | grep -qE "$page"; do
         kill -0 "$QEMU_PID" 2>/dev/null || fail "the machine stopped before the Recovery came up"
-        [ "$SECONDS" -lt "$deadline" ] || fail "the Recovery on its partition did not open on its dashboard within ${BOOT_TIMEOUT}s"
+        [ "$SECONDS" -lt "$deadline" ] || fail "the Recovery on its partition did not open on its first page within ${BOOT_TIMEOUT}s"
         rm -f "$shot"
         printf 'screendump %s -f png\n' "$shot" >&3
         sleep 10
     done
-    say "Recovery: started ${how}, on its dashboard"
+    say "Recovery: started ${how}, on its first page"
 }
 
 # The Recovery on its partition, started the way its launcher on the desktop
@@ -656,7 +658,9 @@ as_root bootctl list --json=short | grep -qF "archisodevice=UUID=${uuid} " ||
 as_root sbctl verify 2>/dev/null | grep -qF "/boot/EFI/Linux/arch-os-recovery.efi is signed" ||
     fail "the Recovery written from the ISO is not signed"
 as_root systemctl reboot --boot-loader-entry=arch-os-recovery.efi || true
-recovery_opens "after it was written again from the ISO"
+# The newest published release may predate this Installer and then not read the
+# language it left: its language page, listing Deutsch, is a started Recovery too.
+recovery_opens "after it was written again from the ISO" Deutsch
 cut_power
 
 say "Arch OS installs, boots, repairs, boots again, starts its Recovery and writes it again"

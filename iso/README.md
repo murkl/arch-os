@@ -92,6 +92,7 @@ Walks the ISO the way a person does, unattended:
 - The installed system unlocks its disk from a systemd credential, and is reached over ssh as the account it was installed with
 - `START=desktop` installs the Desktop starting point with the SSH server on, boots it like step 2 and checks for GNOME's login screen and a systemd-oomd that watches swap and the session. The repair is the Core's
 - Step 6 is skipped, and says so, while no release of the series publishes a Recovery
+- Step 6 writes the newest published Recovery, which may predate the Installer. Its language page then counts as started, since it reads no language the Installer left
 
 **Note:** _Needs `qemu-base`, `edk2-ovmf`, `openssh`, `libisoburn`, `tesseract` and `tesseract-data-eng`, and a network: the installation downloads its packages and step 6 the Recovery. The logs land in `dist/e2e/`, with a picture of the console where it stopped._
 
