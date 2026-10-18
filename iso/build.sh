@@ -45,7 +45,7 @@ WORK_DIR="$(realpath -m "${WORK_DIR:-/var/tmp/arch-os-iso-work}")"
 
 # Pinned, so a desk and CI build the same images. Raised by hand.
 PLYMOUTH_THEME_REPO="https://github.com/murkl/plymouth-theme-arch-os"
-PLYMOUTH_THEME_REF="147e3c97d710db4606025b3829f076ca5d8ecc3b"
+PLYMOUTH_THEME_REF="73bd8dc5437ab14903028e308c82c39f8bfba9c4"
 
 # The console's palette, slot by slot, and why each boot argument is there:
 # README.md#the-console.
