@@ -2,8 +2,7 @@
 """Render docs/screenshots: every page of the interface, out of the product.
 
 The real program on a real pty, started with --dry-run so it touches nothing. Which
-pages, and the way to each, is docs/screenshots.yaml. This file is the same in
-every project that uses it.
+pages, and the way to each, is docs/screenshots.yaml.
 
 Needs: chromium, imagemagick, python-pyte, python-yaml.
 """
@@ -41,7 +40,24 @@ COLS, ROWS = 95, 25
 FONT_PX, LINE_PX = 15, 22
 PAD, RADIUS, SCALE = 26, 10, 2
 LEAD = (LINE_PX - FONT_PX) / 2  # room a line box keeps above and below the text
-CARD, TEXT = "#2e3440", "#d8dee9"
+
+# The console's sixteen slots as the images paint them, so a picture shows what
+# the console shows: iso/README.md#the-console.
+def console_slots():
+    build = (pathlib.Path(__file__).resolve().parent.parent / "iso/build.sh").read_text()
+    channels = []
+    for name in ("RED", "GRN", "BLU"):
+        found = re.search(rf"^CONSOLE_{name}=([0-9,]+)$", build, re.M)
+        if not found:
+            sys.exit(f"iso/build.sh names no CONSOLE_{name}")
+        channels.append([int(v) for v in found.group(1).split(",")])
+    return ["#%02x%02x%02x" % rgb for rgb in zip(*channels)]
+
+
+SLOTS = console_slots()
+# The program writes a slot as 38;5;n, which pyte answers with xterm's colour for n.
+PALETTE = dict(zip(pyte.graphics.FG_BG_256[:16], SLOTS))
+CARD, TEXT = SLOTS[0], SLOTS[7]
 
 # The `monospace` fallback is load bearing. Without it the small triangle the
 # interface marks a selected row with comes out as a big filled one.
@@ -239,8 +255,11 @@ def running(frames, wants):
 def colour(value, fallback):
     if value in (None, "default"):
         return fallback
-    ok = len(value) == 6 and all(c in "0123456789abcdefABCDEF" for c in value)
-    return f"#{value}" if ok else value
+    if value in PALETTE:
+        return PALETTE[value]
+    if len(value) == 6 and all(c in "0123456789abcdefABCDEF" for c in value):
+        return f"#{value}"
+    sys.exit(f"no colour for {value!r}")
 
 
 def painted(char, bg):
