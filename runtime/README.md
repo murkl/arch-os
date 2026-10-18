@@ -30,7 +30,7 @@ locales/<code>.po   one catalog per language
 runtime/            this program
 ```
 
-The build embeds everything but `runtime/` into the binary, so the binary is the whole program. At start it writes the scripts to `$XDG_RUNTIME_DIR/arch-os-<pid>/` and runs them there.
+The build embeds everything but `runtime/` into the binary, so the binary is the whole program. At start it writes the scripts to `$XDG_RUNTIME_DIR/arch-os-<pid>/` and runs them there. The folder goes when the program ends, and one left by a run that is no longer running goes at the next start.
 
 ### `product.yaml`
 

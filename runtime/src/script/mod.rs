@@ -25,25 +25,53 @@ pub fn dir() -> Result<&'static Path, String> {
         let base = std::env::var_os("XDG_RUNTIME_DIR")
             .map(PathBuf::from)
             .unwrap_or_else(std::env::temp_dir);
-        let dir = base.join(format!("{}-{}", env!("CARGO_PKG_NAME"), std::process::id()));
-        let _ = std::fs::remove_dir_all(&dir);
-        std::fs::DirBuilder::new()
-            .mode(0o700)
-            .create(&dir)
-            .map_err(|e| format!("{}: {e}", dir.display()))?;
-        for (name, bytes) in crate::embedded::FILES {
-            let path = dir.join(name);
-            if let Some(parent) = path.parent() {
-                std::fs::create_dir_all(parent)
-                    .map_err(|e| format!("{}: {e}", parent.display()))?;
-            }
-            std::fs::write(&path, bytes).map_err(|e| format!("{name}: {e}"))?;
-        }
-        Ok(dir)
+        create(&base)
     })
     .as_ref()
     .map(PathBuf::as_path)
     .map_err(Clone::clone)
+}
+
+fn create(base: &Path) -> Result<PathBuf, String> {
+    sweep(base);
+    let dir = base.join(format!("{}-{}", env!("CARGO_PKG_NAME"), std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::DirBuilder::new()
+        .mode(0o700)
+        .create(&dir)
+        .map_err(|e| format!("{}: {e}", dir.display()))?;
+    for (name, bytes) in crate::embedded::FILES {
+        let path = dir.join(name);
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| format!("{}: {e}", parent.display()))?;
+        }
+        std::fs::write(&path, bytes).map_err(|e| format!("{name}: {e}"))?;
+    }
+    Ok(dir)
+}
+
+/// Removes the folders of runs no longer running. A run ended by a signal leaves its own, and
+/// so does every test run, which never reaches `cleanup`.
+fn sweep(base: &Path) {
+    let prefix = concat!(env!("CARGO_PKG_NAME"), "-");
+    let Ok(entries) = std::fs::read_dir(base) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let Some(pid) = name
+            .to_str()
+            .and_then(|n| n.strip_prefix(prefix))
+            .and_then(|n| n.parse().ok())
+            .and_then(rustix::process::Pid::from_raw)
+        else {
+            continue;
+        };
+        let dead = rustix::process::test_kill_process(pid) == Err(rustix::io::Errno::SRCH);
+        if dead && entry.file_type().is_ok_and(|t| t.is_dir()) {
+            let _ = std::fs::remove_dir_all(entry.path());
+        }
+    }
 }
 
 pub fn cleanup() {
@@ -410,5 +438,23 @@ pub mod tests {
         assert_eq!(guard(&no.file, &[]).unwrap_err(), "why");
         let yes = step("return 0\n");
         assert!(guard(&yes.file, &[]).is_ok());
+    }
+
+    #[test]
+    fn a_start_removes_what_a_run_no_longer_running_left() {
+        let base = std::env::temp_dir().join(format!("script-base-{}", rand()));
+        let program = env!("CARGO_PKG_NAME");
+        let mut gone = Command::new("true").spawn().unwrap();
+        gone.wait().unwrap();
+        let left = base.join(format!("{program}-{}", gone.id()));
+        let running = base.join(format!("{program}-1"));
+        let other = base.join(format!("other-{}", gone.id()));
+        for d in [&left, &running, &other] {
+            std::fs::create_dir_all(d.join("sub")).unwrap();
+        }
+        let own = create(&base).unwrap();
+        assert!(!left.exists(), "a dead run's folder stays");
+        assert!(running.exists() && other.exists() && own.exists());
+        std::fs::remove_dir_all(&base).unwrap();
     }
 }
