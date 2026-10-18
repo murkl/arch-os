@@ -1,8 +1,13 @@
 {
+  "description": "Install Arch Linux with ease • GNOME or text console • Disk encryption • Secure Boot • Btrfs snapshots • Recovery • System Manager",
   "allow_merge_commit": false,
   "allow_rebase_merge": false,
   "squash_merge_commit_title": "PR_TITLE",
   "squash_merge_commit_message": "BLANK",
   "allow_auto_merge": true,
-  "delete_branch_on_merge": true
+  "delete_branch_on_merge": true,
+  "security_and_analysis": {
+    "secret_scanning": { "status": "enabled" },
+    "secret_scanning_push_protection": { "status": "enabled" }
+  }
 }

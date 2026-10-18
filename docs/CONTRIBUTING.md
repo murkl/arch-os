@@ -208,8 +208,9 @@ make github
 
 | File | Says |
 | --- | --- |
-| `repository.json` | Squash merges only, under the pull request's title alone. Auto-merge allowed, merged branches deleted |
-| `ruleset.json` | Only a pull request that has passed `Check`, `Image` and `Title` reaches `main`. No force push, no deletion |
+| `repository.json` | The description. Squash merges only, under the pull request's title alone. Auto-merge allowed, merged branches deleted. Secret scanning with push protection |
+| `ruleset.json` | Only a pull request that has passed `Check`, `Image` and `Title` reaches `main`, squashed. No force push, no deletion |
 | `actions.json` | A workflow's token is read-only unless the workflow grants more |
+| `topics.json` | The topics the repository is found by |
 
-Run it again after changing one of them. The script is the same in every project released this way, and `ruleset.json` names each project's checks. No CodeQL: its only language here would be the workflows, which zizmor checks in `make check`.
+Run it again after changing one of them. The script also turns on Dependabot alerts and private vulnerability reporting. It is the same in every project released this way; `ruleset.json` names each project's checks, and `topics.json` is optional. No CodeQL: its only language here would be the workflows, which zizmor checks in `make check`.

@@ -1,0 +1,24 @@
+{
+  "names": [
+    "archlinux",
+    "arch-linux",
+    "arch-os",
+    "linux",
+    "linux-distribution",
+    "installer",
+    "arch-installer",
+    "archlinux-installer",
+    "archiso",
+    "tui",
+    "uefi",
+    "systemd-boot",
+    "secure-boot",
+    "luks",
+    "full-disk-encryption",
+    "btrfs",
+    "snapper",
+    "recovery",
+    "gnome",
+    "wayland"
+  ]
+}
