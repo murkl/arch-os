@@ -127,7 +127,7 @@ arch-chroot "$MNT" git config --system credential.helper /usr/lib/git-core/git-c
 # The login screen reads this file through localed, the session its setting;
 # both say the same. https://wiki.archlinux.org/title/Xorg/Keyboard_configuration
 layout="$(desktop_layout)"
-variant="$(desktop_variant)"
+variant="$(not_none "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT")"
 mkdir -p "${MNT}/etc/X11/xorg.conf.d"
 render "${data}/00-keyboard.conf" \
     LAYOUT="$layout" \

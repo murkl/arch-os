@@ -233,18 +233,6 @@ impl Setting {
     pub fn matches(&self, value: &str) -> bool {
         self.pattern.as_ref().is_none_or(|re| re.is_match(value))
     }
-
-    /// Every answer there is, where the declaration writes them out.
-    #[allow(dead_code)]
-    fn domain(&self) -> Option<Vec<&str>> {
-        match self.kind {
-            Kind::Bool => Some(vec![TRUE, FALSE]),
-            _ if !self.options.is_empty() => {
-                Some(self.options.iter().map(String::as_str).collect())
-            }
-            _ => None,
-        }
-    }
 }
 
 /// A question a task puts mid-run, for a value only known once some work is done. Always a

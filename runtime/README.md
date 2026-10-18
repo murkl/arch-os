@@ -56,13 +56,13 @@ logo: |
 | `accent` | `#rrggbb`, the one colour the interface is built from |
 | `console-accent` | The slot that colour takes on a console of sixteen colours, see [The Console](#the-console) |
 | `surface` | `#rrggbb`, behind the row under the cursor. Dark grey without it |
-| `console-surface` | Its slot on a console: one of the first eight colours, which are all a console draws text on. Blue without it |
+| `console-surface` | Its slot on a console: `red`, `green`, `yellow`, `blue`, `magenta`, `cyan` or `white`, since a console draws text only on its first eight colours. Blue without it |
 | `status` | One line about the machine in the header. `check` is a function of `lib.sh`: exit 0 shows `pass`, anything else `fail`. Read every `every` seconds, default 10, and right after an action ran |
 | `logo` | The wordmark, drawn on the way in. Above the first blank line a dim eyebrow |
 
 ### `lib.sh`
 
-The one place scripts share code. Loaded in front of every task, test and action, and of every function the YAML calls. It defines functions and exports constants, and works nothing out while it loads.
+The one place scripts share code. Loaded in front of every task, test and action, and of everything the YAML calls. It defines functions and exports constants, and works nothing out while it loads.
 
 ### Shell in the YAML
 
@@ -73,7 +73,7 @@ A key that runs shell names it, in one of two forms:
 | `name()` | That function of `lib.sh`. Refused at startup where `lib.sh` has none by that name |
 | `./file.sh` | That file, relative to the folder of the YAML |
 
-Shell written into the YAML itself is refused: every line lives where a linter reads it and a failure can point at it. The keys are `check` of the status, and `options-from`, `value-from`, `prefill`, `apply` and `check` of a setting. A function is named after the key that calls it: `options_disks()`, `prefill_timezone()`, `apply_timezone()`, `value_virtual_machine()`, `check_online()`.
+Shell written into the YAML itself is refused: every line lives where a linter reads it and a failure can point at it. The keys are `check` of the status, and `options-from`, `value-from`, `prefill`, `apply` and `check` of a setting. Both are named after the key that calls them. A function is for what more than one declaration or script calls, `options_disks()` or `check_online()`, a file for what one declaration alone calls, `./prefill-timezone.sh` or `./apply-timezone.sh`.
 
 ## A Module
 
@@ -116,7 +116,7 @@ settings: …
 | Key | Description |
 | --- | --- |
 | `title` | **Required.** The module's name, in the trail over every page |
-| `start` | **Required.** The first row of the dashboard, which starts the work |
+| `start` | The first row of the dashboard, which starts the work. `Start` without it |
 | `confirm` | A question asked after every password and before the work, opening on No. The first paragraph is the headline |
 | `requires` | Actions checked before anything is asked, in this order. The first no stands a page in front of everything and is asked again every few seconds. Skipped on a dry run |
 | `on` | Where its other actions are offered, see [Actions](#actions) |
@@ -312,7 +312,7 @@ Where a module places an action:
 
 - A row opens the action's inputs, its `confirm`, its work and its `report` in turn. A flow of more is several actions, chained by `on: failure`
 - A module with `on: leave` says the machine booted to run it, so leaving becomes a choice
-- Refused at startup: an unknown name, an action nothing names, a ring of actions, a page beside the terminal, a page or a `confirm` on an action only run by itself, `errors` beside `tty`, a check without `error`, and an input or a `confirm` under `on: leave`
+- Refused at startup: an unknown name, an action nothing names, a ring of actions, an action that names itself under `on: failure`, a page beside the terminal, a page or a `confirm` on an action only run by itself, `errors` beside `tty`, a check without `error`, and an input or a `confirm` under `on: leave`
 
 ## What a Script Receives
 

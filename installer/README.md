@@ -15,6 +15,7 @@ make -C .. run MODULE=installer ARGS=--dry-run   # run it without touching this 
 
 ```
 module.yaml                    what the Installer is, what it asks, the order it works in, where its actions go
+<key>-<what>.sh                what one row of module.yaml runs: its list, its suggestion, its value, what it applies
 tasks/<stage>/<id>/task.yaml   a task: its needs, conditions and pages
 tasks/<stage>/<id>/task.sh     what the task does, with everything only it needs
 tasks/<stage>/<id>/test.sh     optional: how to tell on the machine that it worked
@@ -24,7 +25,7 @@ actions/<id>/action.sh         what the action does, and nothing else
 data/                          the tables languages and countries are looked up in, and data/check.sh, which checks them
 ```
 
-**Note:** _Shared code and every function the YAML calls live in **[lib.sh](../lib.sh)** beside `product.yaml`. An action the Recovery has too (Wi-Fi, the ways out, sharing the log, the shell) is a folder in each module, and both call the same function there. Every text is translated in **[locales/](../locales)**._
+**Note:** _Shared code lives in **[lib.sh](../lib.sh)** beside `product.yaml`, and what `module.yaml` alone calls in a file beside it. An action the Recovery has too (Wi-Fi, the ways out, sharing the log, the shell) is a folder in each module, and both call the same function there. Every text is translated in **[locales/](../locales)**._
 
 ## Stages
 
@@ -101,7 +102,7 @@ The console keyboard is asked `first` and loaded at once: a password typed on th
 
 | You want to add | How |
 | --- | --- |
-| An option | A row under `settings:`. Guard the tasks that depend on it with `when:` |
+| An option | A row under `settings:`, its list or suggestion a file beside `module.yaml`. Guard the tasks that depend on it with `when:` |
 | A task | A folder under its stage with `task.yaml` and `task.sh`, and a `test.sh` where there is something to read back |
 | A check, a row or a way out | A folder under `actions/`, named under `requires:` or `on:` in `module.yaml`. What another module does too is a function in `lib.sh` that both call |
 | A starting point | An entry under `presets:`. A fetched one names the action that fetches it with `action:` |

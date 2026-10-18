@@ -1,6 +1,6 @@
 # Arch OS: what no module answers for its neighbours. The modules are the
 # folders beside this file with a module.yaml, the version is the build's.
-# docs/REFERENCE.md
+# runtime/README.md
 
 title: Arch OS
 
@@ -10,9 +10,11 @@ console-accent: bright-blue
 surface: "#3b4252"
 console-surface: blue
 
-# Whether this machine is online, opposite the name on every page.
+# Whether this machine is online, opposite the name on every page. Each check
+# is a request to archlinux.org, so one every half minute.
 status:
   check: check_online()
+  every: 30
   pass: Online
   fail: Offline
 

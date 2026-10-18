@@ -165,11 +165,12 @@ fmt-check:
 	shfmt -d -i 4 $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL) $(LIBRARY_CHECK)
 
 # Module scripts are checked as the runtime runs them: bash, with lib.sh in
-# scope. Each grep refuses a pattern its message explains.
+# scope. A script that sources it is read with it, found from the script's own
+# folder. Each grep refuses a pattern its message explains.
 lint:
 	cd $(RUNTIME) && cargo clippy --all-targets --locked -- -D warnings
 	shellcheck -s sh -S style $(POSIX_SCRIPTS)
-	shellcheck -S style $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS)
+	shellcheck -x -P SCRIPTDIR -S style $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS)
 	shellcheck -x -S style $(MODULE_SCRIPTS) $(LIBRARY_CHECK)
 	shellcheck -s bash -S style -e SC1091 $(MODULE_SHELL)
 	for file in $(MODULE_ZSH) $(ZSH_CHECKS); do zsh -n "$$file"; done
@@ -191,9 +192,11 @@ test:
 	cd $(RUNTIME) && cargo test --locked
 
 # A console font holds one table of glyphs, and a character outside it is a box
-# on screen. Asked of the program, which knows what it draws itself.
-glyphs-check: build
-	@$(ISO_GLYPHS) $(BIN) $(MODULE_TEXT)
+# on screen. Asked of the program, which knows what it draws itself. A debug
+# build answers the same, without the release's link-time optimisation.
+glyphs-check:
+	cd $(RUNTIME) && cargo build --locked
+	@$(ISO_GLYPHS) $(RUNTIME)/target/debug/arch-os $(MODULE_TEXT)
 
 # Every name a module hands to another program, against that program's own
 # list: a wrong keymap, font or time zone reads fine and is silently ignored,

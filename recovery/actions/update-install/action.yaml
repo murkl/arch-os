@@ -12,7 +12,7 @@ inputs:
     title: Encryption password
     description: Opens the system, whose own keys sign the new Recovery where it signs its boot chain. Asked right before the update and never written to a file.
     required: true
-    check: check_update_password()
+    check: ./check-password.sh
     error: That password does not unlock this disk.
     when: ARCH_OS_RECOVERY_ENCRYPTED == true
 

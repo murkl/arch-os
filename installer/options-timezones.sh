@@ -1,0 +1,1 @@
+timedatectl list-timezones

@@ -247,8 +247,7 @@ install_arch_os "$RECOVERY_PROFILE"
 # The seed gives the system's boot entries their tries back with the script
 # every installed system has, as many as lib.sh gives them.
 install -D -m 755 ../recovery/data/boot/boot-tries.sh "${RECOVERY_PROFILE}/airootfs/usr/local/lib/arch-os/boot-tries.sh"
-tries="$(sed -n 's/^export BOOT_TRIES=//p' ../lib.sh)"
-[ -n "$tries" ] || { echo "Error: ../lib.sh names no BOOT_TRIES" >&2 && exit 1; }
+tries="$(. ../lib.sh && printf '%s' "$BOOT_TRIES")"
 mkdir -p "${RECOVERY_PROFILE}/airootfs/etc/systemd/system/arch-os-seed.service.d"
 printf '[Service]\nEnvironment=BOOT_TRIES=%s\n' "$tries" >"${RECOVERY_PROFILE}/airootfs/etc/systemd/system/arch-os-seed.service.d/tries.conf"
 make_executable "$RECOVERY_PROFILE"

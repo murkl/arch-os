@@ -27,7 +27,7 @@ secure_boot_wanted && packages+=(sbctl)
 # sd-vconsole hook reads this file.
 mkdir -p "${MNT}/etc"
 echo "KEYMAP=$(vconsole_keymap)" >"${MNT}/etc/vconsole.conf"
-font="$(vconsole_font)"
+font="$(resolved "$ARCH_OS_VCONSOLE_FONT" auto_font)"
 if [ -n "$font" ]; then
     echo "FONT=${font}" >>"${MNT}/etc/vconsole.conf"
 fi

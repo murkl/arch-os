@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # The one library of Arch OS, loaded in front of every script of every module.
-# It defines and exports, and runs nothing while it loads: docs/REFERENCE.md
+# It defines and exports, and runs nothing while it loads: runtime/README.md
 
 # Under --dry-run only what reads still runs.
 dry_run() { [ "$DRY_RUN" = "true" ]; }
@@ -471,9 +471,7 @@ resolved() {
 }
 
 vconsole_keymap() { resolved "$ARCH_OS_VCONSOLE_KEYMAP" auto_keymap; }
-vconsole_font() { resolved "$ARCH_OS_VCONSOLE_FONT" auto_font; }
 desktop_layout() { resolved "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" auto_layout; }
-desktop_variant() { not_none "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT"; }
 mirror_country() { resolved "$ARCH_OS_REFLECTOR_COUNTRY" auto_country; }
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -752,13 +750,6 @@ on_recovery_partition() {
         [ "$(blkid -p -s UUID -o value "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")" 2>/dev/null)" = "$uuid" ]
 }
 
-# The disk has a Recovery partition: the third, under the name the Installer
-# gives it.
-has_recovery_partition() {
-    [ -n "$ARCH_OS_RECOVERY_DISK" ] &&
-        [ "$(lsblk -dno PARTLABEL "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")" 2>/dev/null)" = recovery ]
-}
-
 # Whether the disk's Recovery starts: the loader lists a boot image naming the
 # UUID its partition has, which an update cut short leaves apart.
 recovery_starts() {
@@ -863,104 +854,6 @@ options_wifi_networks() {
         '
 }
 
-# ─── The Installer ──────────────────────────────────────────────────────────
-
-value_virtual_machine() {
-    if systemd-detect-virt -q; then echo true; else echo false; fi
-}
-
-# Loaded the moment it is answered, so what is typed next is typed on it.
-apply_vconsole_keymap() {
-    dry_run && return 0
-    loadkeys "$(vconsole_keymap)"
-}
-
-# Every UTF-8 locale glibc supports, without @-variants. SUPPORTED rather than
-# locale.gen, which cloud-init and hand edits rewrite.
-options_locales() {
-    sed -n 's/^\([a-z]\{2,3\}\(_[A-Z]\{2\}\)\{0,1\}\)\(\.UTF-8\)\{0,1\} UTF-8$/\1/p' /usr/share/i18n/SUPPORTED | sort -u
-}
-
-# The language the interface is read in, as the locale of its own country: de
-# reads de_DE. Otherwise not Afar, the first row, but the one locale generated
-# either way.
-prefill_locale() {
-    local lang="$MODULE_LANGUAGE"
-    if [[ $lang =~ ^[a-z]{2,3}$ ]] && grep -q "^${lang}_${lang^^}\(\.UTF-8\)\{0,1\} UTF-8$" /usr/share/i18n/SUPPORTED; then
-        printf '%s_%s' "$lang" "${lang^^}"
-        return 0
-    fi
-    printf 'en_US'
-}
-
-options_vconsole_keymaps() {
-    printf 'auto\tauto — %s\n' "$(auto_keymap)"
-    options_keymaps
-}
-
-options_fonts() {
-    printf 'auto\tauto — %s\n' "$(auto_font)"
-    echo none
-    find /usr/share/kbd/consolefonts -name '*.psf*' -printf '%f\n' 2>/dev/null |
-        sed 's/\.psfu\?\(\.gz\)\?$//' | sort -u
-}
-
-options_timezones() { timedatectl list-timezones; }
-
-# The live system's clock follows at once, so the log reads in the zone of the
-# machine being installed. Only the live system's /etc/localtime changes; the
-# hardware clock is not written.
-apply_timezone() {
-    dry_run && return 0
-    timedatectl set-timezone "$ARCH_OS_TIMEZONE"
-}
-
-# The zone of the chosen country, and UTC rather than Africa/Abidjan for none.
-prefill_timezone() {
-    local locale="${ARCH_OS_LOCALE_LANG%%.*}" territory="" zone
-    [[ $locale == *_* ]] && territory="${locale#*_}"
-    zone="$(country_field 3 "$territory")"
-    printf '%s' "${zone:-UTC}"
-}
-
-options_countries() {
-    printf 'auto\tauto — %s\n' "$(auto_country)"
-    echo none
-    # A "-" marks a country Arch has no mirror in.
-    awk -F'\t' '!/^#/ && $2 != "-" { print $2 }' "$(installer_data)/countries"
-}
-
-# The Arch ISO ships no xkeyboard-config, and then data/ answers.
-options_layouts() {
-    printf 'auto\tauto — %s\n' "$(auto_layout)"
-
-    local layouts
-    layouts="$(localectl list-x11-keymap-layouts 2>/dev/null || true)"
-    if [ -n "$layouts" ]; then
-        echo "$layouts"
-        return 0
-    fi
-    grep -v '^#' "$(installer_data)/x11-layouts"
-}
-
-options_variants() {
-    local layout variants
-    layout="$(desktop_layout)"
-    [ -n "$layout" ] || return 0
-
-    echo none
-
-    variants="$(localectl list-x11-keymap-variants "$layout" 2>/dev/null || true)"
-    if [ -n "$variants" ]; then
-        echo "$variants"
-        return 0
-    fi
-    # A layout without variants has no line there.
-    { grep "^${layout} " "$(installer_data)/x11-variants" || true; } | cut -d' ' -f2- | tr ' ' '\n'
-}
-
-# ─── The Recovery ───────────────────────────────────────────────────────────
-
 # The keyboard the live image was started with: the Arch image records it only as
 # a loadkeys line in root's history.
 prefill_live_keymap() {
@@ -970,26 +863,5 @@ prefill_live_keymap() {
     printf '%s' "${keymap:-us}"
 }
 
-# Loaded the moment it is answered.
-apply_recovery_keymap() {
-    dry_run && return 0
-    loadkeys "$ARCH_OS_RECOVERY_KEYMAP"
-}
-
 # --test-passphrase opens nothing, it only asks the keyslots.
 unlocks() { printf '%s' "$1" | cryptsetup open --test-passphrase "$(target_partition)"; }
-
-check_disk_password() {
-    dry_run && return 0
-    unlocks "$ARCH_OS_RECOVERY_PASSWORD"
-}
-
-check_update_password() {
-    dry_run && return 0
-    unlocks "$ARCH_OS_RECOVERY_UPDATE_PASSWORD"
-}
-
-# A LUKS header is readable without the password.
-value_disk_encrypted() {
-    [ "$(fstype "$(target_partition)")" = "crypto_LUKS" ] && echo true || echo false
-}

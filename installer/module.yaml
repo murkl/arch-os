@@ -1,5 +1,5 @@
-# The Installer: what it asks and the order it works in. Every name() is a
-# function in lib.sh: docs/REFERENCE.md
+# The Installer: what it asks and the order it works in. A name() is a function
+# of lib.sh, a ./name.sh a file beside this: runtime/README.md
 
 title: Installer
 start: Install now
@@ -151,11 +151,11 @@ settings:
       English is always installed as a fallback.
     group: Region
     required: true
-    apply: apply_vconsole_keymap()
+    apply: ./apply-vconsole-keymap.sh
     filter: open
-    options-from: options_locales()
+    options-from: ./options-locales.sh
     pattern: '^[a-z]{2,3}(_[A-Z]{2})?$'
-    prefill: prefill_locale()
+    prefill: ./prefill-locale.sh
 
   - name: ARCH_OS_VCONSOLE_KEYMAP
     type: list
@@ -166,8 +166,8 @@ settings:
     group: Region
     required: true
     first: true
-    apply: apply_vconsole_keymap()
-    options-from: options_vconsole_keymaps()
+    apply: ./apply-vconsole-keymap.sh
+    options-from: ./options-vconsole-keymaps.sh
     pattern: '^[A-Za-z0-9_.-]+$'
 
   - name: ARCH_OS_VCONSOLE_FONT
@@ -180,7 +180,7 @@ settings:
     default: auto
     required: true
     filter: open
-    options-from: options_fonts()
+    options-from: ./options-fonts.sh
     pattern: '^[A-Za-z0-9_.+-]+$'
 
   - name: ARCH_OS_TIMEZONE
@@ -190,10 +190,10 @@ settings:
     group: Region
     required: true
     filter: open
-    apply: apply_timezone()
-    options-from: options_timezones()
+    apply: ./apply-timezone.sh
+    options-from: ./options-timezones.sh
     pattern: '^[A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+)*$'
-    prefill: prefill_timezone()
+    prefill: ./prefill-timezone.sh
 
   - name: ARCH_OS_REFLECTOR_COUNTRY
     type: open-list
@@ -205,7 +205,7 @@ settings:
     default: auto
     required: true
     filter: open
-    options-from: options_countries()
+    options-from: ./options-countries.sh
     pattern: '^[^"\\]*$'
 
   # ─── Storage ───────────────────────────────────────────────────────────────
@@ -381,7 +381,7 @@ settings:
     title: Virtual machine
     description: Whether this machine is itself a virtual one.
     group: System
-    value-from: value_virtual_machine()
+    value-from: ./value-virtual-machine.sh
 
   # ─── Desktop ───────────────────────────────────────────────────────────────
   - name: ARCH_OS_DESKTOP
@@ -401,7 +401,7 @@ settings:
     required: true
     when: ARCH_OS_DESKTOP != none
     filter: open
-    options-from: options_layouts()
+    options-from: ./options-layouts.sh
     pattern: '^[A-Za-z0-9_-]+$'
 
   - name: ARCH_OS_DESKTOP_KEYBOARD_VARIANT
@@ -413,7 +413,7 @@ settings:
     required: true
     when: ARCH_OS_DESKTOP != none
     filter: open
-    options-from: options_variants()
+    options-from: ./options-variants.sh
     pattern: '^[A-Za-z0-9_-]+$'
 
   - name: ARCH_OS_DESKTOP_KEYBOARD_MODEL
