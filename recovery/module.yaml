@@ -40,20 +40,6 @@ stages:
 # On its own partition both questions are answered already, see iso/recovery/.
 # The snapshot to go back to is asked by the rollback, once the disk is open.
 settings:
-  # First, because the password below is typed on it. Never written to the
-  # system being repaired.
-  - name: ARCH_OS_RECOVERY_KEYMAP
-    type: list
-    title: Console keyboard
-    description: The keyboard you are typing on right now, loaded at once. Opens on the one the live image started with.
-    group: Region
-    required: true
-    first: true
-    options-from: options_keymaps()
-    prefill: prefill_live_keymap()
-    apply: ./apply-keymap.sh
-    pattern: '^[A-Za-z0-9_.-]+$'
-
   - name: ARCH_OS_RECOVERY_DISK
     type: list
     title: Disk
@@ -82,3 +68,17 @@ settings:
     check: ./check-disk-password.sh
     error: That password does not unlock this disk.
     when: ARCH_OS_RECOVERY_ENCRYPTED == true
+
+  # Asked first, because the disk's password is typed on it. Never written to
+  # the system being repaired.
+  - name: ARCH_OS_RECOVERY_KEYMAP
+    type: list
+    title: Console keyboard
+    description: The keyboard you are typing on right now, loaded at once. Opens on the one the live image started with.
+    group: Region
+    required: true
+    first: true
+    options-from: options_keymaps()
+    prefill: prefill_live_keymap()
+    apply: ./apply-keymap.sh
+    pattern: '^[A-Za-z0-9_.-]+$'
