@@ -189,9 +189,10 @@ END_COMMIT_OVERRIDE
 Nothing is typed and nothing is tagged by hand.
 
 1. **Every merge that releases something** opens or updates the pull request `chore(main): release 2.1.0`. It raises the version in `.release-please-manifest.json` and writes that version's section of **[CHANGELOG.md](../CHANGELOG.md)**
-2. **Merging it is the release.** It starts no run of its own, so an admin merges it past the checks: `gh pr merge <number> --squash --admin`. The run on `main` tags `v2.1.0`, checks, builds and boots the images as that version, attaches them to the release page and publishes it
+2. **Merging it is the release.** It passes the checks like any other pull request. The run on `main` tags `v2.1.0`, checks, builds and boots the images as that version, attaches them to the release page and publishes it
 
 - Merges collect in the release pull request until it is merged. When to release is a decision, not a schedule
+- The release pull request, the tag and the release page are made with the secret `RELEASE_TOKEN` of the environment `release`, which only `main` may use: a fine-grained personal access token of the account with Contents and Pull requests set to read and write. `.github/release-token.sh` stores it. The workflow's own token may not, as GitHub holds the checks of a bot's pull request until someone approves its runs. When the token expires, `Release` fails and says so
 - The page carries `arch-os-2.1.0-x86_64.iso` and `arch-os-2.1.0-recovery-x86_64.tar`, both with signed build provenance. The ISO leaves the Recovery out to stay under GitHub's 2 GiB per file: its Installer fetches the `.tar`, and an installed Recovery updates itself from it
 - Every other build is named after a pre-release of the next patch: `arch-os-2.0.1-dev-x86_64.iso`. `make build VERSION=2.1.0` names a build after any version, which it stamps into the program
 
@@ -208,7 +209,7 @@ make github
 | File | Says |
 | --- | --- |
 | `repository.json` | Squash merges only, under the pull request's title alone; auto-merge allowed; a merged branch is deleted |
-| `ruleset.json` | `main` takes only a pull request that has passed `Check`, `Image` and `Title`. An admin may merge one past them, which the release pull request needs. No force push, no deletion |
-| `actions.json` | A workflow's token can only read unless it says otherwise, and may open the release pull request |
+| `ruleset.json` | `main` takes only a pull request that has passed `Check`, `Image` and `Title`. No force push, no deletion |
+| `actions.json` | A workflow's token can only read unless it says otherwise |
 
 Run it again after changing one of them. The script is the same in every project released this way, and `ruleset.json` names each project's checks. No CodeQL: the only language it finds here is the workflows, which zizmor checks in `make check`.

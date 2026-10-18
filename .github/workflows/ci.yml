@@ -27,20 +27,30 @@ concurrency:
 
 jobs:
   # The release pull request, or once that is merged, the tag and a draft page.
+  # Done as the account, not as the workflow's bot: GitHub holds the checks of
+  # a bot's pull request until someone approves its runs.
   release:
     name: Release
     if: github.event_name == 'push'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    permissions:
-      contents: write # the release branch, the tag and the page
-      pull-requests: write # the release pull request
+    environment: release
     outputs:
       version: ${{ steps.please.outputs.version }}
       tag: ${{ steps.please.outputs.tag_name }}
     steps:
+      - env:
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          if [ -z "$RELEASE_TOKEN" ]; then
+            echo "::error::The repository has no secret RELEASE_TOKEN; docs/CONTRIBUTING.md says how to make it, then rerun this job."
+            exit 1
+          fi
+
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: please
+        with:
+          token: ${{ secrets.RELEASE_TOKEN }}
 
   # `make check` on today's Arch, as at a desk. On main only for a release: the
   # pull request checked everything else.
