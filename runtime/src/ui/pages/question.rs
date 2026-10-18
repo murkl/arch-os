@@ -197,7 +197,7 @@ impl QuestionPage {
                 format!("+ {}", t("An answer of your own")),
             ));
         }
-        let mut list = List::new(rows);
+        let mut list = List::filterable(rows);
         list.focus(&Choice::Value(current));
         if self.which.filter() == Filter::Open {
             list.open_filter();

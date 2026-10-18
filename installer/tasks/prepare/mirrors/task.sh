@@ -4,7 +4,7 @@ printf 'machine: %s cores, %s memory, %s on %s, virtualisation %s\n' \
     "$(awk '/^MemTotal:/ { printf "%.1f GiB", $2 / 1048576 }' /proc/meminfo)" \
     "$(lsblk -bdno SIZE "$ARCH_OS_DISK" | numfmt --to=iec)" \
     "$ARCH_OS_DISK" \
-    "$(systemd-detect-virt || true)"
+    "$(systemd-detect-virt || allow 1)"
 
 # The live image ships an unranked worldwide list, and pacstrap copies it into
 # the new system. Never fatal: a slow mirror installs, no list does not.
@@ -24,8 +24,8 @@ rank_mirrors() {
     # reflector keeps a mirror that timed out, unranked, and exits 0 even when
     # every one did: a list worse than the shipped one, which opens on Arch's CDN.
     if timeout 120 reflector "${args[@]}" --save "$ranked" 2>"$warnings" && [ -s "$ranked" ]; then
-        servers="$(grep -c '^Server' "$ranked" || true)"
-        unrated="$(grep -c 'failed to rate' "$warnings" || true)"
+        servers="$(grep -c '^Server' "$ranked" || allow 1)"
+        unrated="$(grep -c 'failed to rate' "$warnings" || allow 1)"
         if [ "$servers" -gt "$unrated" ]; then
             install -m 644 "$ranked" /etc/pacman.d/mirrorlist
             echo "installing from ${servers} ranked mirrors"

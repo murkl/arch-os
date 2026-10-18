@@ -79,6 +79,8 @@ pub struct RunPage {
     session: Option<Session>,
     /// The line the running task drew last, where it declared its output its progress.
     latest: Option<String>,
+    /// Shutdown and sleep held off while the tasks run.
+    hold: Option<script::Hold>,
     /// What the run printed, under the title of each task, and the line being drawn in place.
     transcript: VecDeque<Out>,
     drawing: Option<String>,
@@ -119,6 +121,7 @@ impl RunPage {
             pushed: Pushed::None,
             session: None,
             latest: None,
+            hold: None,
             transcript: VecDeque::new(),
             drawing: None,
             text: false,
@@ -276,6 +279,7 @@ impl RunPage {
         self.end = Some((result, Instant::now(), took));
         self.session = None;
         self.simulated = None;
+        self.hold = None;
         // Whatever a run was given is gone the moment it is over, whether it worked or not.
         ctx.store.forget();
         Flow::Stay
@@ -574,6 +578,10 @@ impl Page for RunPage {
             // The answers this run starts with are written out whole first: a task that copies
             // the file hands on exactly those.
             ctx.save();
+            // A test holds nothing of the machine it runs on.
+            if !ctx.store.dry_run() && !cfg!(test) {
+                self.hold = script::hold(&ctx.product_title(), &t(&ctx.module.title));
+            }
             self.rows_cache = (
                 ctx.rows(&ctx.module.on.success).len(),
                 ctx.rows(&ctx.module.on.failure).len(),
@@ -809,6 +817,7 @@ impl Page for RunPage {
             crate::warn!("run: stopped");
             session.kill();
         }
+        self.hold = None;
     }
 
     fn animating(&self, _: &Ctx) -> bool {

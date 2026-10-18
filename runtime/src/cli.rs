@@ -26,58 +26,68 @@ pub struct Start {
     pub kiosk: bool,
 }
 
-pub fn main() -> ExitCode {
-    let mut module = None;
-    let mut dry_run = false;
-    let mut kiosk = false;
-    let mut glyphs = false;
-    for arg in std::env::args().skip(1) {
+/// What the command line asks for.
+enum Ask {
+    Help,
+    Version,
+    Glyphs,
+    Run(Start),
+}
+
+/// The arguments after the program's name, or why they ask for nothing it does.
+fn parse(args: impl IntoIterator<Item = String>) -> Result<Ask, String> {
+    let (mut module, mut dry_run, mut kiosk, mut glyphs) = (None, false, false, false);
+    for arg in args {
         match arg.as_str() {
-            "-h" | "--help" => {
-                print!("{}", help());
-                return ExitCode::SUCCESS;
-            }
-            "-V" | "--version" => {
-                println!("{PROGRAM} {}", crate::version::version());
-                return ExitCode::SUCCESS;
-            }
+            "-h" | "--help" => return Ok(Ask::Help),
+            "-V" | "--version" => return Ok(Ask::Version),
             "--dry-run" => dry_run = true,
             "--kiosk" => kiosk = true,
             "glyphs" => glyphs = true,
-            a if a.starts_with('-') => {
-                eprint!("{PROGRAM}: unknown argument {a}\n\n{}", help());
-                return ExitCode::from(64);
-            }
+            a if a.starts_with('-') => return Err(format!("unknown argument {a}")),
             id => match spec::loaded().module(id) {
                 Some(m) if module.is_none() => module = Some(m),
-                Some(_) => {
-                    eprint!("{PROGRAM}: one module at a time\n\n{}", help());
-                    return ExitCode::from(64);
-                }
-                None => {
-                    eprint!("{PROGRAM}: no module called {id}\n\n{}", help());
-                    return ExitCode::from(64);
-                }
+                Some(_) => return Err("one module at a time".into()),
+                None => return Err(format!("no module called {id}")),
             },
         }
     }
     if glyphs {
-        println!("{}", crate::ui::glyphs());
-        return ExitCode::SUCCESS;
+        return Ok(Ask::Glyphs);
     }
-    let Some(module) = module else {
-        eprint!("{PROGRAM}: name a module\n\n{}", help());
-        return ExitCode::from(64);
+    let module = module.ok_or("name a module")?;
+    Ok(Ask::Run(Start {
+        module,
+        dry_run,
+        kiosk,
+    }))
+}
+
+pub fn main() -> ExitCode {
+    let start = match parse(std::env::args().skip(1)) {
+        Ok(Ask::Help) => {
+            print!("{}", help());
+            return ExitCode::SUCCESS;
+        }
+        Ok(Ask::Version) => {
+            println!("{PROGRAM} {}", crate::version::version());
+            return ExitCode::SUCCESS;
+        }
+        Ok(Ask::Glyphs) => {
+            println!("{}", crate::ui::glyphs());
+            return ExitCode::SUCCESS;
+        }
+        Ok(Ask::Run(start)) => start,
+        Err(why) => {
+            eprint!("{PROGRAM}: {why}\n\n{}", help());
+            return ExitCode::from(64);
+        }
     };
     if !std::io::stdin().is_terminal() || !std::io::stdout().is_terminal() {
         eprintln!("{PROGRAM}: needs a terminal");
         return ExitCode::FAILURE;
     }
-    let result = crate::term::run(Start {
-        module,
-        dry_run,
-        kiosk,
-    });
+    let result = crate::term::run(start);
     crate::script::cleanup();
     match result {
         Ok(()) => ExitCode::SUCCESS,
@@ -85,6 +95,46 @@ pub fn main() -> ExitCode {
             crate::error!("{e}");
             eprintln!("{PROGRAM}: {e}");
             ExitCode::FAILURE
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn ask(args: &[&str]) -> Result<Ask, String> {
+        parse(args.iter().map(|a| a.to_string()))
+    }
+
+    #[test]
+    fn the_command_line_opens_one_module_with_its_switches() {
+        let modules = &spec::loaded().modules;
+        let (one, other) = (modules[0].id.as_str(), modules[1].id.as_str());
+        let Ok(Ask::Run(start)) = ask(&[one, "--dry-run"]) else {
+            panic!("{one} --dry-run starts nothing");
+        };
+        assert_eq!(
+            (start.module.id.as_str(), start.dry_run, start.kiosk),
+            (one, true, false)
+        );
+        let Ok(Ask::Run(start)) = ask(&["--kiosk", other]) else {
+            panic!("--kiosk {other} starts nothing");
+        };
+        assert_eq!((start.module.id.as_str(), start.kiosk), (other, true));
+        assert!(matches!(ask(&["--help", "nope"]), Ok(Ask::Help)));
+        assert!(matches!(ask(&["-V"]), Ok(Ask::Version)));
+        assert!(matches!(ask(&[one, "glyphs"]), Ok(Ask::Glyphs)));
+        for (args, why) in [
+            (&[one, other][..], "one module at a time".to_string()),
+            (
+                &["--language=de"][..],
+                "unknown argument --language=de".into(),
+            ),
+            (&["nope"][..], "no module called nope".into()),
+            (&[][..], "name a module".into()),
+        ] {
+            assert_eq!(ask(args).err(), Some(why), "{args:?}");
         }
     }
 }

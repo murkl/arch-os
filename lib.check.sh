@@ -21,6 +21,17 @@ expect() {
 # A command's answer as yes or no.
 holds() { if "$@"; then echo yes; else echo no; fi; }
 
+# ─── Statuses ────────────────────────────────────────────────────────────────
+
+while read -r code want; do
+    expect "allow 1 3 after ${code}" "$(holds eval "(exit ${code}) || allow 1 3")" "$want"
+done <<'EOF'
+0 yes
+1 yes
+2 no
+3 yes
+EOF
+
 # ─── Versions ────────────────────────────────────────────────────────────────
 
 while read -r one other want; do

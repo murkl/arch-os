@@ -8,7 +8,7 @@ use ratatui::layout::Rect;
 
 use super::Then;
 use crate::i18n::t;
-use crate::ui::list::{List, Picked, Row, hints};
+use crate::ui::list::{List, Picked, Row};
 use crate::ui::{Ctx, Data, Flow, Key, Page, Tone};
 
 /// What a row opens.
@@ -78,7 +78,7 @@ fn answers(ctx: &Ctx) -> Vec<Row<Item>> {
 impl DashboardPage {
     pub fn new() -> DashboardPage {
         DashboardPage {
-            list: List::default(),
+            list: List::filterable(Vec::new()),
             opened: false,
             checking: false,
         }
@@ -186,7 +186,11 @@ impl Page for DashboardPage {
 
     fn hints(&self, _: &Ctx) -> Vec<(&'static str, String)> {
         if self.list.typing() {
-            return hints(true);
+            return vec![
+                ("↑↓", t("choose")),
+                ("⏎", t("open")),
+                ("esc", t("close filter")),
+            ];
         }
         vec![
             ("↑↓", t("choose")),

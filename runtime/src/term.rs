@@ -5,8 +5,8 @@ use std::sync::mpsc::{self, RecvTimeoutError};
 use std::time::{Duration, Instant};
 
 use ratatui::crossterm::event::{
-    self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, KeyEventKind,
-    KeyModifiers, MouseEventKind,
+    self, DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
+    Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, MouseEventKind,
 };
 
 use crate::cli::Start;
@@ -33,6 +33,7 @@ pub fn run(start: Start) -> std::io::Result<()> {
                     _ => None,
                 },
                 Event::Resize(..) => Some(Msg::Resize),
+                Event::Paste(text) => Some(Msg::Paste(text)),
                 _ => None,
             };
             if let Some(msg) = msg
@@ -112,12 +113,13 @@ fn console() -> bool {
     }
 }
 
-/// The wheel as scrolling: without it, a terminal sends the arrow keys instead.
+/// The wheel as scrolling: without it, a terminal sends the arrow keys instead. Pasted text
+/// comes as one, not as keys.
 fn mouse(capture: bool) {
     let mut out = std::io::stdout();
     let done = match capture {
-        true => ratatui::crossterm::execute!(out, EnableMouseCapture),
-        false => ratatui::crossterm::execute!(out, DisableMouseCapture),
+        true => ratatui::crossterm::execute!(out, EnableMouseCapture, EnableBracketedPaste),
+        false => ratatui::crossterm::execute!(out, DisableMouseCapture, DisableBracketedPaste),
     };
     if let Err(e) = done {
         crate::warn!("mouse capture {capture}: {e}");

@@ -1,4 +1,4 @@
-case "$(systemd-detect-virt || true)" in
+case "$(systemd-detect-virt || allow 1)" in
 kvm | qemu)
     has_command qemu-ga
     has_command spice-vdagent

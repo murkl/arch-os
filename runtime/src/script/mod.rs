@@ -10,6 +10,7 @@ mod session;
 pub use session::{Event, Session};
 
 use std::os::unix::fs::DirBuilderExt;
+use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::OnceLock;
@@ -119,14 +120,23 @@ const GUARD: &str =
     "[ -z \"$2\" ] || source \"$2\" || exit $?\neval \"rt_guard() {\n$1\n}\"\nrt_guard\nexit $?";
 
 /// A script file, under the trap that reports on fd 3 where it broke: code, file, line, command.
-/// `-e` stays off, since `source` hands back the status of a benign last line. A script that
-/// stops itself with `exit` leaves no report, which is how a chosen status is told from a broken
-/// command. The DEBUG trap remembers the script's own last line for one that hands back a
-/// status without a failing command.
+/// Within a helper of the library, the file and line are the script's that called it. `-e` stays
+/// off, since `source` hands back the status of a benign last line. A script that stops itself
+/// with `exit` leaves no report, which is how a chosen status is told from a broken command. The
+/// DEBUG trap remembers the script's own last line for one that hands back a status without a
+/// failing command.
 const FILE: &str = concat!(
     "set -Eo pipefail -T\n",
     "[ -z \"$2\" ] || source \"$2\" || exit $?\n",
-    "trap 'c=$?; s=${BASH_SOURCE[0]}; [ -n \"$s\" ] && { printf \"fail\\t%d\\t%s\\t%d\\t%s\\n\" \"$c\" \"$s\" \"$LINENO\" \"$BASH_COMMAND\" >&3; exit $c; }' ERR\n",
+    "rt_lib=$2\n",
+    "rt_failed() {\n",
+    "  local f=1 line=$2\n",
+    "  while [ \"${BASH_SOURCE[f]}\" = \"$rt_lib\" ] && [ -n \"${BASH_SOURCE[f + 1]:-}\" ]; do line=${BASH_LINENO[f]}; f=$((f + 1)); done\n",
+    "  [ -n \"${BASH_SOURCE[f]}\" ] || return 0\n",
+    "  printf \"fail\\t%d\\t%s\\t%d\\t%s\\n\" \"$1\" \"${BASH_SOURCE[f]}\" \"$line\" \"$3\" >&3\n",
+    "  exit \"$1\"\n",
+    "}\n",
+    "trap 'rt_failed $? \"$LINENO\" \"$BASH_COMMAND\"' ERR\n",
     "trap '[ \"${BASH_SOURCE[0]}\" = \"$1\" ] && { rt_line=$LINENO; rt_cmd=$BASH_COMMAND; }; :' DEBUG\n",
     "source \"$1\"\n",
     "c=$?\n",
@@ -146,6 +156,56 @@ fn bash(wrapper: &str, payload: &str, env: &[(String, String)]) -> Result<Comman
     Ok(cmd)
 }
 
+/// A session of its own for a script that runs beside the interface: no terminal to stop at,
+/// read from or draw into, and one group that is stopped whole.
+fn detached(cmd: &mut Command) -> &mut Command {
+    // SAFETY: setsid is async-signal-safe.
+    unsafe { cmd.pre_exec(|| rustix::process::setsid().map(drop).map_err(Into::into)) }
+}
+
+/// Shutdown and sleep held off through logind for as long as it lives, so a closed lid suspends
+/// no run halfway. The lock also ends with this process, should it end without dropping it.
+pub struct Hold(rustix::process::Pid);
+
+impl Drop for Hold {
+    fn drop(&mut self) {
+        let _ = rustix::process::kill_process_group(self.0, rustix::process::Signal::TERM);
+    }
+}
+
+/// A hold for `why`, or none where logind does not answer, as in a container.
+pub fn hold(who: &str, why: &str) -> Option<Hold> {
+    let quiet = || {
+        let mut cmd = Command::new("systemd-inhibit");
+        cmd.stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null());
+        cmd
+    };
+    if !quiet().arg("--list").status().is_ok_and(|s| s.success()) {
+        crate::info!("no logind to hold shutdown and sleep off");
+        return None;
+    }
+    let mut cmd = quiet();
+    cmd.args([
+        "--what=shutdown:sleep",
+        "--mode=block",
+        &format!("--who={who}"),
+        &format!("--why={why}"),
+        "tail",
+        &format!("--pid={}", std::process::id()),
+        "-f",
+        "/dev/null",
+    ]);
+    match detached(&mut cmd).spawn() {
+        Ok(child) => rustix::process::Pid::from_raw(child.id() as i32).map(Hold),
+        Err(e) => {
+            crate::warn!("systemd-inhibit: {e}");
+            None
+        }
+    }
+}
+
 /// What a snippet said on the way out: the last lines of stderr, or its status.
 fn said(out: &std::process::Output) -> String {
     let err = String::from_utf8_lossy(&out.stderr);
@@ -161,7 +221,7 @@ fn said(out: &std::process::Output) -> String {
 
 /// Runs a snippet and returns what it printed, trimmed at the end.
 pub fn run(shell: &Shell, env: &[(String, String)]) -> Result<String, String> {
-    let out = bash(SNIPPET, &piece(shell)?, env)?
+    let out = detached(&mut bash(SNIPPET, &piece(shell)?, env)?)
         .output()
         .map_err(|e| format!("bash: {e}"))?;
     if !out.status.success() {
@@ -184,7 +244,7 @@ pub fn lines(shell: &Shell, env: &[(String, String)]) -> Result<Vec<String>, Str
 /// with a no is what somebody reads.
 pub fn guard(script: &str, env: &[(String, String)]) -> Result<(), String> {
     let payload = format!("source {}", quote(&path(script)?.display().to_string()));
-    let out = bash(GUARD, &payload, env)?
+    let out = detached(&mut bash(GUARD, &payload, env)?)
         .output()
         .map_err(|e| format!("bash: {e}"))?;
     if out.status.success() {
@@ -407,6 +467,50 @@ pub mod tests {
             (f.line, f.command.as_str(), f.code, f.deliberate),
             (2, "false", 1, false)
         );
+    }
+
+    /// Held while the hold lives, released once it is dropped. Where logind does not answer, as
+    /// in a container, there is nothing to hold and nothing to check.
+    #[test]
+    fn a_hold_holds_until_it_is_dropped() {
+        let who = format!("rt-test-{}", std::process::id());
+        let listed = || {
+            Command::new("systemd-inhibit")
+                .arg("--list")
+                .output()
+                .ok()
+                .filter(|o| o.status.success())
+                .map(|o| String::from_utf8_lossy(&o.stdout).contains(&who))
+        };
+        let Some(false) = listed() else {
+            eprintln!("no logind here: nothing held, nothing checked");
+            return;
+        };
+        let until = |want: bool| {
+            let deadline = std::time::Instant::now() + Duration::from_secs(10);
+            while listed() != Some(want) {
+                assert!(std::time::Instant::now() < deadline, "never {want}");
+                std::thread::sleep(Duration::from_millis(50));
+            }
+        };
+        let held = hold(&who, "a test").expect("logind answered");
+        until(true);
+        drop(held);
+        until(false);
+    }
+
+    #[test]
+    fn a_failure_inside_a_helper_names_the_line_that_called_it() {
+        let s = step("true\nbroken\n");
+        let (tx, rx) = std::sync::mpsc::channel();
+        let _session = start(s.clone(), &[], move |e| drop(tx.send(e))).unwrap();
+        let f = loop {
+            if let Event::Exit(r) = rx.recv_timeout(Duration::from_secs(10)).unwrap() {
+                break r.unwrap_err();
+            }
+        };
+        assert_eq!((f.script.as_str(), f.line), (s.file.as_str(), 2), "{f:?}");
+        assert_eq!(f.command, "false", "{f:?}");
     }
 
     #[test]

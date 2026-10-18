@@ -1,5 +1,5 @@
 # The guest half, for whichever hypervisor this runs under.
-case "$(systemd-detect-virt || true)" in
+case "$(systemd-detect-virt || allow 1)" in
 
 kvm | qemu)
     # The same guest with or without hardware virtualisation. Only the guest
@@ -36,7 +36,7 @@ microsoft)
     ;;
 
 *)
-    echo "detected $(systemd-detect-virt || true), which has no guest tools here, nothing installed"
+    echo "detected $(systemd-detect-virt || allow 1), which has no guest tools here, nothing installed"
     ;;
 
 esac

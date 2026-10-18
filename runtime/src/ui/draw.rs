@@ -28,6 +28,10 @@ pub fn cut(s: &str, max: usize, mark: &str) -> String {
         used += w;
         out.push(c);
     }
+    // A sequence, as an emoji with its variation selector, is wider than its characters.
+    while out.width() > room {
+        out.pop();
+    }
     out + if max >= mark.width() { mark } else { "" }
 }
 
@@ -47,7 +51,11 @@ pub fn cut_front(s: &str, max: usize, mark: &str) -> String {
         used += w;
         kept.push(c);
     }
-    mark.to_string() + &kept.into_iter().rev().collect::<String>()
+    let mut kept: String = kept.into_iter().rev().collect();
+    while kept.width() > room {
+        kept.remove(0);
+    }
+    mark.to_string() + &kept
 }
 
 /// As many whole `pieces` as fit in `max` columns, joined by `sep`, those left out as `mark`.
@@ -378,6 +386,17 @@ mod tests {
             "…r › firefox"
         );
         assert_eq!(cut("kurz", 8, "…"), "kurz");
+        // A sequence, as an emoji with its variation selector, is wider than its characters.
+        for max in 1..12 {
+            assert!(
+                cut("⚠️ ⚠️ ⚠️ ⚠️ ⚠️", max, "…").width() <= max,
+                "cut to {max}"
+            );
+            assert!(
+                cut_front("⚠️ ⚠️ ⚠️ ⚠️ ⚠️", max, "…").width() <= max,
+                "cut_front to {max}"
+            );
+        }
     }
 
     #[test]

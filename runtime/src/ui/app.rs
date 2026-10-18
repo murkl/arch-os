@@ -4,7 +4,7 @@ use ratatui::Frame;
 use std::sync::Arc;
 use std::sync::mpsc::Sender;
 
-use super::{Ctx, Flow, Msg, Nav, Page, PageId, Style, draw, pages};
+use super::{Ctx, Flow, Key, Msg, Nav, Page, PageId, Style, draw, pages};
 use crate::cli::Start;
 use crate::store::Store;
 
@@ -140,6 +140,15 @@ impl App {
         let msg = match msg {
             Msg::Held(key) if key.repeats(typing) => Msg::Key(key),
             Msg::Held(_) => return,
+            // Elsewhere its letters would be keys, a q among them.
+            Msg::Paste(text) => {
+                if typing {
+                    for c in text.chars().filter(|c| !c.is_control()) {
+                        self.handle(Msg::Key(Key::Char(c)));
+                    }
+                }
+                return;
+            }
             msg => msg,
         };
         match msg {
@@ -166,7 +175,7 @@ impl App {
                     self.apply(flow);
                 }
             }
-            Msg::Resize | Msg::Held(_) => {}
+            Msg::Resize | Msg::Held(_) | Msg::Paste(_) => {}
             Msg::Data(id, data) => {
                 self.ctx
                     .pending
@@ -675,6 +684,31 @@ pub mod tests {
             [order[4], order[5]],
             [order[3] + 1, order[3] + 2],
             "the language is not first under its heading:\n{shown}"
+        );
+    }
+
+    /// A held key repeats where it moves or types: a held enter answers nothing that follows.
+    /// Pasted text is typed where a box has the keys, and is no keys anywhere else.
+    #[test]
+    fn held_keys_and_pasted_text_go_only_where_they_belong() {
+        assert!(!Key::Enter.repeats(true) && !Key::Esc.repeats(true) && !Key::Tab.repeats(true));
+        assert!(Key::Backspace.repeats(true) && Key::Char('a').repeats(true));
+        assert!(!Key::Char('a').repeats(false) && Key::Down.repeats(false));
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, _rx) = app(false);
+        answered(&mut app);
+        app.handle(Msg::Held(Key::Enter));
+        assert_eq!(app.depth(), 1, "a held enter opened {:?}", app.titles());
+        app.handle(Msg::Paste("fq".into()));
+        let shown = screen(&mut app, &mut term);
+        assert!(!app.done() && !shown.contains("Filter"), "{shown}");
+        press(&mut app, &[Key::Char('f')]);
+        app.handle(Msg::Paste("host\n".into()));
+        let shown = screen(&mut app, &mut term);
+        assert!(
+            shown.contains("Hostname") && !shown.contains("Disk"),
+            "{shown}"
         );
     }
 

@@ -83,13 +83,12 @@ impl Key {
     }
 
     /// Whether holding the key repeats it: moving and typing do, everything else happens once
-    /// per press.
+    /// per press, so a held enter answers no question that follows.
     pub fn repeats(self, typing: bool) -> bool {
-        typing
-            || matches!(
-                self.nav(false),
-                Some(Nav::Up | Nav::Down | Nav::PageUp | Nav::PageDown)
-            )
+        matches!(
+            self.nav(false),
+            Some(Nav::Up | Nav::Down | Nav::PageUp | Nav::PageDown)
+        ) || typing && matches!(self, Key::Char(_) | Key::Backspace)
     }
 }
 
@@ -181,6 +180,8 @@ pub enum Msg {
     Offered(String, bool),
     /// A value read off the machine.
     Resolved(String, String),
+    /// Text pasted into the terminal as one, typed where a text box has the keys.
+    Paste(String),
 }
 
 pub enum Flow {

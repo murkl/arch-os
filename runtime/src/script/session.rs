@@ -7,6 +7,8 @@ use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 
+use unicode_width::UnicodeWidthStr;
+
 use super::{Failure, Step};
 
 #[derive(Debug)]
@@ -36,11 +38,16 @@ impl Session {
         let raw = events_w.as_raw_fd();
         cmd.stdin(Stdio::null())
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            // A process group of its own, so stopping a step also stops what it started.
-            .process_group(0);
-        // SAFETY: attach_fd3 only calls async-signal-safe dup2 and fcntl.
-        unsafe { cmd.pre_exec(move || attach_fd3(raw)) };
+            .stderr(Stdio::piped());
+        // A session of its own: no terminal to stop at or draw into, and one group, so stopping
+        // a step also stops what it started.
+        // SAFETY: setsid, dup2 and fcntl are async-signal-safe.
+        unsafe {
+            cmd.pre_exec(move || {
+                rustix::process::setsid()?;
+                attach_fd3(raw)
+            })
+        };
         let mut child = cmd.spawn().map_err(|e| format!("bash: {e}"))?;
         drop(events_w);
         let pid = child.id() as i32;
@@ -118,8 +125,11 @@ fn follow(
         let mut chunk = [0u8; 8192];
         loop {
             let n = match r.read(&mut chunk) {
-                Ok(0) | Err(_) => break,
+                Ok(0) => break,
                 Ok(n) => n,
+                // A signal cut the read short, not the output.
+                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+                Err(_) => break,
             };
             buf.extend_from_slice(&chunk[..n]);
             while let Some(i) = buf.iter().position(|&b| b == b'\n') {
@@ -160,7 +170,8 @@ fn follow(
 }
 
 /// What a line last drew: its last redraw, as a progress bar returns to the start of its line,
-/// without escapes and control characters, which would corrupt the frame it is shown in.
+/// without escapes and control characters, which would corrupt the frame it is shown in. A tab
+/// stands as spaces to the next stop of eight, as a terminal sets it.
 fn drawn(bytes: &[u8]) -> String {
     let text = String::from_utf8_lossy(bytes);
     let last = text
@@ -189,7 +200,7 @@ fn drawn(bytes: &[u8]) -> String {
                 }
                 _ => {}
             },
-            '\t' => out.push(' '),
+            '\t' => out.extend(std::iter::repeat_n(' ', 8 - out.width() % 8)),
             c if c.is_control() => {}
             c => out.push(c),
         }
@@ -209,6 +220,12 @@ mod tests {
         );
         assert_eq!(drawn(b"( 1/2) 50%\r( 2/2) 100%"), "( 2/2) 100%");
         assert_eq!(drawn(b"( 1/2) 50%\r"), "( 1/2) 50%");
-        assert_eq!(drawn(b"\x1b]0;title\x07done\tnow"), "done now");
+        assert_eq!(drawn(b"\x1b]0;title\x07done\tnow"), "done    now");
+        assert_eq!(drawn(b"a\tb\tc"), "a       b       c");
+        assert_eq!(
+            drawn(b"one\r\r"),
+            "one",
+            "a line ended with \\r\\n by its program"
+        );
     }
 }

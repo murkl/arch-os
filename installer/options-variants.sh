@@ -10,4 +10,4 @@ if [ -n "$variants" ]; then
     return 0
 fi
 # A layout without variants has no line there.
-{ grep "^${layout} " "$(installer_data)/x11-variants" || true; } | cut -d' ' -f2- | tr ' ' '\n'
+{ grep "^${layout} " "$(installer_data)/x11-variants" || allow 1; } | cut -d' ' -f2- | tr ' ' '\n'

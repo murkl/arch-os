@@ -7,6 +7,16 @@ dry_run() { [ "$DRY_RUN" = "true" ]; }
 
 is_root() { [ "$(id -u)" -eq 0 ]; }
 
+# The status of the command before, unless it is one of the codes named, by
+# which that command says nothing went wrong: `grep x file || allow 1`.
+allow() {
+    local status=$?
+    for code; do
+        if [ "$status" -eq "$code" ]; then return 0; fi
+    done
+    return "$status"
+}
+
 # https even after a redirect, and a connect timeout instead of a hang.
 fetch_url() {
     curl -Lf --proto '=https' --proto-redir '=https' --connect-timeout 10 "$@"
@@ -756,7 +766,7 @@ recovery_starts() {
     local uuid esp mnt listed="" status=0
     uuid="$(blkid -p -s UUID -o value "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")")" || return 1
     esp="$(boot_partition "$ARCH_OS_RECOVERY_DISK")"
-    mnt="$({ findmnt -nro TARGET -S "$esp" || true; } | awk '!found { print; found = 1 }')"
+    mnt="$({ findmnt -nro TARGET -S "$esp" || allow 1; } | awk '!found { print; found = 1 }')"
     if [ -n "$mnt" ]; then
         listed="$(bootctl --esp-path="$mnt" list --json=short)" || status=$?
     else
