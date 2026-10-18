@@ -1,8 +1,12 @@
-# Build output, see /Makefile: the images in dist/, the program under
-# runtime/target/, where `make run` keeps its answers and its log too.
+# What a build leaves, BUILD_OUTPUT in the Makefile and cargo's target, where
+# `make run` keeps its answers and its log too.
 /dist/
+/iso/archiso/
+/iso/download/
 /runtime/target/
 
-# Editors / OS noise
-*.swp
-.DS_Store
+# A run started here: its answers and its log, see runtime/README.md.
+/*.conf
+/*.conf.answer
+/*.log
+/*.log.old

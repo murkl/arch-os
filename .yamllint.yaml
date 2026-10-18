@@ -18,9 +18,5 @@ rules:
   comments:
     min-spaces-from-content: 1
 
-# Build output and the ISO's scratch space, see /Makefile and iso/build.sh.
-ignore: |
-  /dist/
-  /runtime/target/
-  /iso/archiso/
-  /iso/download/
+# What git leaves out is no source either.
+ignore-from-file: .gitignore
