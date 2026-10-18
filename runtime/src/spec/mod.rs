@@ -315,6 +315,8 @@ pub struct Action {
     pub title: String,
     /// The sentence under its row. Choosing the row is the consent, so it says what leaves.
     pub description: String,
+    /// The heading its row stands under on the dashboard.
+    pub group: Option<String>,
     /// What a no from it means: the page in front of the work, the headline over a failure.
     pub error: Option<String>,
     /// Actions that have to say yes for this one to be offered at all.
@@ -426,6 +428,7 @@ impl Module {
         for a in &self.actions {
             add(&a.title);
             add(&a.description);
+            add(a.group.as_deref().unwrap_or_default());
             add(a.error.as_deref().unwrap_or_default());
             add(a.confirm.as_deref().unwrap_or_default());
             add(a.report.as_deref().unwrap_or_default());
@@ -663,6 +666,7 @@ struct AskFile {
 struct ActionFile {
     title: String,
     description: Option<String>,
+    group: Option<String>,
     error: Option<String>,
     #[serde(default)]
     requires: Vec<String>,
@@ -1399,6 +1403,11 @@ fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Modul
         if a.qr.is_some() && a.report.is_none() {
             return Err(format!("{at}: qr: there is no report for it to appear on"));
         }
+        if a.group.is_some() && !listed.contains(&a.id) {
+            return Err(format!(
+                "{at}: group: only a row of the dashboard stands under a heading, and dashboard does not list it"
+            ));
+        }
     }
     for name in &on.leave {
         let a = actions.iter().find(|a| a.id == *name).unwrap();
@@ -1695,6 +1704,7 @@ fn actions(files: &Files, dir: &str, functions: &BTreeSet<String>) -> Result<Vec
             dir: adir,
             title: text::reflow(&f.title),
             description: text::reflow(f.description.as_deref().unwrap_or_default()),
+            group: f.group,
             error: reflow_opt(&f.error),
             requires: f.requires,
             on_failure: f.on.failure,
@@ -1719,7 +1729,7 @@ pub mod tests {
         vec![
             ("product.yaml", b"title: Tux\naccent: \"#8fbcbb\"\nconsole-accent: cyan\nlogo: |\n  Tux\n\n  ####\nstatus:\n  check: check_online()\n  pass: Online\n  fail: Offline\n"),
             ("lib.sh", b"check_online() { true; }\noptions_disks() { printf 'sda\\tsda 20G\\nsdb\\tsdb 40G\\n'; }\nprefill_host() { echo tuxbox; }\nvalue_vm() { echo false; }\napply_keymap() { true; }\n"),
-            ("setup/module.yaml", b"title: Setup\nstart: Install now\nconfirm: |\n  Install on {{TUX_DISK}}?\n\n  Everything on it is erased.\nrequires: [root]\ndashboard: [start, note, settings, reset]\nlanguage: Region\non:\n  leave: [restart]\n  failure: [share]\n  success: [shell]\nerrors:\n  3: |\n    No internet\n\n    Connect and start again.\nstages: [prepare, install]\npresets:\n  - title: Desktop\n    description: A desktop.\n    values:\n      TUX_DESKTOP: gnome\n  - title: Core\n    values:\n      TUX_DESKTOP: none\nsettings:\n  - name: TUX_KEYMAP\n    type: list\n    title: Keyboard\n    group: Region\n    required: true\n    first: true\n    options: [us, de]\n    apply: apply_keymap()\n  - name: TUX_HOST\n    type: text\n    title: Hostname\n    description: What the machine calls itself.\n    group: System\n    required: true\n    prefill: prefill_host()\n    pattern: '^[a-z][a-z0-9-]*$'\n    error: Lower case letters, digits and - only.\n  - name: TUX_DESKTOP\n    type: list\n    title: Desktop\n    group: System\n    required: true\n    options: [gnome, none]\n  - name: TUX_DRIVER\n    type: list\n    title: Driver\n    group: System\n    required: true\n    options: [free, none]\n    when: TUX_DESKTOP != none\n  - name: TUX_DISK\n    type: list\n    title: Disk\n    group: Storage\n    required: true\n    options-from: options_disks()\n    pattern: '^sd'\n  - name: TUX_ENCRYPT\n    type: bool\n    title: Encryption\n    group: Storage\n    default: true\n  - name: TUX_PASSWORD\n    type: new-password\n    title: Password\n    group: System\n    required: true\n  - name: TUX_VM\n    type: bool\n    title: Virtual machine\n    group: System\n    value-from: value_vm()\n"),
+            ("setup/module.yaml", b"title: Setup\nstart: Install now\nconfirm: |\n  Install on {{TUX_DISK}}?\n\n  Everything on it is erased.\nrequires: [root]\ndashboard: [start, note, settings, reset, net]\nlanguage: Region\non:\n  leave: [restart]\n  failure: [share]\n  success: [shell]\nerrors:\n  3: |\n    No internet\n\n    Connect and start again.\nstages: [prepare, install]\npresets:\n  - title: Desktop\n    description: A desktop.\n    values:\n      TUX_DESKTOP: gnome\n  - title: Core\n    values:\n      TUX_DESKTOP: none\nsettings:\n  - name: TUX_KEYMAP\n    type: list\n    title: Keyboard\n    group: Region\n    required: true\n    first: true\n    options: [us, de]\n    apply: apply_keymap()\n  - name: TUX_HOST\n    type: text\n    title: Hostname\n    description: What the machine calls itself.\n    group: System\n    required: true\n    prefill: prefill_host()\n    pattern: '^[a-z][a-z0-9-]*$'\n    error: Lower case letters, digits and - only.\n  - name: TUX_DESKTOP\n    type: list\n    title: Desktop\n    group: System\n    required: true\n    options: [gnome, none]\n  - name: TUX_DRIVER\n    type: list\n    title: Driver\n    group: System\n    required: true\n    options: [free, none]\n    when: TUX_DESKTOP != none\n  - name: TUX_DISK\n    type: list\n    title: Disk\n    group: Storage\n    required: true\n    options-from: options_disks()\n    pattern: '^sd'\n  - name: TUX_ENCRYPT\n    type: bool\n    title: Encryption\n    group: Storage\n    default: true\n  - name: TUX_PASSWORD\n    type: new-password\n    title: Password\n    group: System\n    required: true\n  - name: TUX_VM\n    type: bool\n    title: Virtual machine\n    group: System\n    value-from: value_vm()\n"),
             ("setup/tasks/prepare/disk/task.yaml", b"title: Prepare the disk\nerrors:\n  10: |\n    The disk is gone\n\n    {{TUX_DISK}} is not there.\n"),
             ("setup/tasks/prepare/disk/task.sh", b"echo \"$TUX_DISK\" >\"${MODULE_CONF%/*}/disk\"\n"),
             ("setup/tasks/prepare/disk/test.sh", b"[ -f \"${MODULE_CONF%/*}/disk\" ]\n"),
@@ -1732,8 +1742,10 @@ pub mod tests {
             ("setup/tasks/install/snapshot/snapshots.sh", b"echo one\necho two\n"),
             ("setup/actions/root/action.yaml", b"title: Running as root\nerror: This has to run as root.\n"),
             ("setup/actions/root/action.sh", b"[ \"$(id -u)\" -eq 0 ]\n"),
-            ("setup/actions/note/action.yaml", b"title: Leave a note\ndescription: Writes a note.\ninputs:\n  - name: TUX_NOTE\n    type: text\n    title: Note\n    required: true\nreport: |\n  Noted\n\n  {{TUX_NOTE}} is written down.\n"),
+            ("setup/actions/note/action.yaml", b"title: Leave a note\ndescription: Writes a note.\ngroup: Extras\ninputs:\n  - name: TUX_NOTE\n    type: text\n    title: Note\n    required: true\nreport: |\n  Noted\n\n  {{TUX_NOTE}} is written down.\n"),
             ("setup/actions/note/action.sh", b"echo \"$TUX_NOTE\"\n"),
+            ("setup/actions/net/action.yaml", b"title: Join a network\ndescription: Joins one.\ngroup: Network\nrequires: [root]\n"),
+            ("setup/actions/net/action.sh", b"true\n"),
             ("setup/actions/restart/action.yaml", b"title: Restart\ndescription: Starts the machine again.\n"),
             ("setup/actions/restart/action.sh", b"true\n"),
             ("setup/actions/share/action.yaml", b"title: Share the log\ndescription: Puts the log online.\nreport: |\n  Shared\nqr: TUX_URL\nsimulates: true\n"),
@@ -1816,7 +1828,8 @@ pub mod tests {
                 Entry::Start,
                 Entry::Action("note".into()),
                 Entry::Settings,
-                Entry::Reset
+                Entry::Reset,
+                Entry::Action("net".into())
             ]
         );
         assert_eq!(m.language.as_deref(), Some("Region"));
@@ -1855,6 +1868,10 @@ pub mod tests {
         ] {
             refused(&tiny(module), says);
         }
+        let mut files = tiny(OK);
+        files.retain(|(path, _)| *path != "m/actions/row/action.yaml");
+        files.push(("m/actions/row/action.yaml", b"title: Row\ngroup: Ways\n"));
+        refused(&files, "group: only a row of the dashboard");
         let mut files = tiny(OK);
         files.push(("m/actions/reset/action.yaml", b"title: Reset\n"));
         files.push(("m/actions/reset/action.sh", b"true\n"));

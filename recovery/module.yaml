@@ -10,7 +10,7 @@ requires: [live-image, root]
 
 # The dashboard's rows in order: its own, and each other a folder under actions/.
 # No reset: each of its two answers is changed in its own row.
-dashboard: [start, update, wifi, settings]
+dashboard: [start, update, settings, wifi]
 language: Region
 
 # Where its other actions are offered, each a folder under actions/.

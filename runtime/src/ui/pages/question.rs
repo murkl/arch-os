@@ -181,7 +181,7 @@ impl QuestionPage {
             }
         }
         if answers.options.is_empty() {
-            let mut input = Input::new("");
+            let mut input = Input::new(&t(self.which.title()));
             input.text = current;
             self.input = Some(input);
             return;
@@ -326,7 +326,7 @@ impl Page for QuestionPage {
         match list.key(key) {
             Picked::Open(Choice::Own) => {
                 self.problem = None;
-                self.input = Some(Input::new(""));
+                self.input = Some(Input::new(&t(self.which.title())));
                 Flow::Stay
             }
             Picked::Open(Choice::Value(value)) => self.commit(value, ctx),

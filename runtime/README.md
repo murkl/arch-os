@@ -98,7 +98,7 @@ confirm: |
 
   Everything on the disk is erased.
 requires: [live-image, root, internet]
-dashboard: [start, settings, wifi, reset]
+dashboard: [start, settings, reset, wifi]
 language: Region
 on:
   leave: [restart, shutdown]
@@ -146,9 +146,9 @@ The module's home: its rows in the order `dashboard` lists them, each name once.
 | `start` | **Required.** The row `start` names, which starts the work |
 | `settings` | **Required.** Every answer under its group heading, each a row that opens its question. The interface language heads the group `language` names |
 | `reset` | **Reset all answers**, which deletes the answer file after a question that opens on No |
-| An action | Its row, wherever its `requires` say yes. An action folder may not take one of the names above |
+| An action | Its row, wherever its `requires` say yes, under the heading its `group` names. An action folder may not take one of the names above |
 
-A blank row parts `start` from what follows, unless the answers do with their headings, and the answers from what follows them.
+A blank row parts `start` from what follows, unless the answers do with their headings, and the answers and each group of actions from what follows them.
 
 `start` asks what is still missing, then every password, then `confirm`, then runs the tasks: each a row, checked off as it ends, counted in the header. `tab` shows what they print instead, each under its task's title, and turns back, during the run and after it. A task that `asks` or has a `confirm` stops the run on its page. The run ends on a page that says how it went. Under a run that finished, the actions under `on: success` and **Continue**. Under a run that failed, what failed and where, the actions under `on: failure`, and **Back to the dashboard**, asked first.
 
@@ -301,6 +301,7 @@ inputs:
 | --- | --- |
 | `title` | **Required.** Its row, and the heading over its page |
 | `description` | The sentence under its row. Choosing the row is the consent, so it says what leaves the machine |
+| `group` | The heading its row stands under on the dashboard. Refused where `dashboard` does not list it |
 | `error` | What a no means. **Required** under a module's `requires` |
 | `requires` | Actions that have to say yes before this one is offered |
 | `on: failure` | The first of these this machine offers is opened where this action says no |
@@ -392,7 +393,7 @@ Beside wherever the program was started:
 | `q` `ctrl+c` | Leave |
 | `tab` | A run's list or what its tasks print |
 
-**Note:** _In a text box every letter is a character, and backspace deletes one._
+**Note:** _An empty text box names what goes in it, the title of its question, or **Repeat** for a password typed twice. In a text box every letter is a character, and backspace deletes one._
 
 ## Translations
 

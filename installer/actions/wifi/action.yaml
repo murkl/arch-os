@@ -3,6 +3,7 @@
 # asked next.
 title: Configure Wi-Fi
 description: Joins a wireless network.
+group: Configuration
 
 requires: [wifi-card, no-cable]
 on:

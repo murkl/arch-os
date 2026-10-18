@@ -635,7 +635,8 @@ pub mod tests {
     }
 
     /// The dashboard lists its rows as the module does, a blank row under the start and under
-    /// the answers, the language first under the heading the module names.
+    /// the answers, an action under its group's heading, the language first under the heading
+    /// the module names.
     #[test]
     fn the_dashboard_keeps_the_modules_order() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -655,6 +656,7 @@ pub mod tests {
         };
         let order = [
             at("Install now"),
+            at("Extras"),
             at("Leave a note"),
             at("Region"),
             at("Interface language"),
@@ -663,12 +665,71 @@ pub mod tests {
         ];
         assert!(order.is_sorted(), "{order:?}\n{shown}");
         assert_eq!(rows[order[0] + 1], "", "no gap under the start:\n{shown}");
-        assert_eq!(rows[order[5] - 1], "", "no gap under the answers:\n{shown}");
         assert_eq!(
-            [order[3], order[4]],
-            [order[2] + 1, order[2] + 2],
+            order[2],
+            order[1] + 1,
+            "the action is not under its heading:\n{shown}"
+        );
+        assert_eq!(rows[order[6] - 1], "", "no gap under the answers:\n{shown}");
+        assert_eq!(
+            [order[4], order[5]],
+            [order[3] + 1, order[3] + 2],
             "the language is not first under its heading:\n{shown}"
         );
+    }
+
+    /// A group whose actions this machine has none of leaves no heading behind.
+    #[test]
+    fn a_group_without_a_row_has_no_heading() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, _rx) = app(false);
+        answered(&mut app);
+        app.ctx.offered.insert("net".into(), false);
+        let shown = screen(&mut app, &mut term);
+        assert!(
+            !shown.contains("Network") && !shown.contains("Join a network"),
+            "{shown}"
+        );
+        app.ctx.offered.insert("net".into(), true);
+        let shown = screen(&mut app, &mut term);
+        let rows: Vec<&str> = shown.lines().map(|l| l.trim_matches([' ', '▶'])).collect();
+        let at = rows.iter().position(|r| *r == "Join a network");
+        assert_eq!(at.map(|at| rows[at - 1]), Some("Network"), "{shown}");
+    }
+
+    /// An empty box names what goes in it: a question its title, a password its title and then
+    /// the repeat.
+    #[test]
+    fn an_empty_box_names_what_goes_in_it() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app(true);
+        answered(&mut app);
+        let boxed =
+            |shown: &str, hint: &str| shown.lines().any(|l| l.trim() == format!("› {hint}"));
+        press(&mut app, &[Key::Char('f')]);
+        type_text(&mut app, "host");
+        screen(&mut app, &mut term);
+        press(&mut app, &[Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Ctrl('u')]);
+        let shown = screen(&mut app, &mut term);
+        assert!(boxed(&shown, "Hostname"), "{shown}");
+        let password = app.ctx.module.setting("TUX_PASSWORD").unwrap();
+        open(
+            &mut app,
+            Box::new(pages::password::PasswordPage::new(
+                password,
+                pages::Then::Pop,
+            )),
+        );
+        let shown = screen(&mut app, &mut term);
+        assert!(boxed(&shown, "Password"), "{shown}");
+        type_text(&mut app, "pw");
+        press(&mut app, &[Key::Enter]);
+        let shown = screen(&mut app, &mut term);
+        assert!(boxed(&shown, "Repeat"), "{shown}");
     }
 
     /// While the tasks run, tab shows what they print: a finished line once, the line being

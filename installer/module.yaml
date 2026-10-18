@@ -16,7 +16,7 @@ confirm: |
 requires: [live-image, root, uefi, secure-boot-off, internet]
 
 # The dashboard's rows in order: its own, and each other a folder under actions/.
-dashboard: [start, settings, wifi, reset]
+dashboard: [start, settings, reset, wifi]
 language: Region
 
 # Where its other actions are offered, each a folder under actions/.

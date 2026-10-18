@@ -95,27 +95,27 @@ impl Page for PasswordPage {
         if !description.is_empty() {
             y = paragraph(buf, area, y, &description, s.tone(Tone::Muted)) + 1;
         }
-        let label = if self.first.is_some() {
+        // The box names what goes in it, the second time the repeat.
+        self.input.placeholder = if self.first.is_some() {
             t("Repeat")
         } else {
             t(&self.setting.title)
         };
-        put(buf, area.x, y, &label, area.width, s.tone(Tone::Normal));
         if self.checking {
-            put(buf, area.x, y + 1, s.spinner(), 2, s.tone(Tone::Accent));
+            put(buf, area.x, y, s.spinner(), 2, s.tone(Tone::Accent));
             put(
                 buf,
                 area.x + 2,
-                y + 1,
+                y,
                 &t("Checking"),
                 area.width.saturating_sub(2),
                 s.tone(Tone::Muted),
             );
         } else {
-            self.input.draw(buf, area.x, y + 1, area.width, ctx);
+            self.input.draw(buf, area.x, y, area.width, ctx);
         }
         if let Some(problem) = &self.problem {
-            paragraph(buf, area, y + 3, problem, s.tone(Tone::Error));
+            paragraph(buf, area, y + 2, problem, s.tone(Tone::Error));
         }
     }
 

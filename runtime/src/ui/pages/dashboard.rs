@@ -85,11 +85,14 @@ impl DashboardPage {
     }
 
     /// A blank row parts the blocks: under the start, unless the answers follow under their
-    /// headings, and under the answers.
+    /// headings, under the answers and under a group of actions. An action with a group stands
+    /// under its heading, once for the actions of one group in a row.
     fn rows(&self, ctx: &Ctx) -> Vec<Row<Item>> {
         let mut rows = Vec::new();
         let mut gap = false;
+        let mut under: Option<&str> = None;
         for entry in &ctx.module.dashboard {
+            let mut group = None;
             let block = match entry {
                 Entry::Start => vec![self.start(ctx)],
                 Entry::Settings => answers(ctx),
@@ -97,17 +100,24 @@ impl DashboardPage {
                 Entry::Action(name) => ctx
                     .rows(std::slice::from_ref(name))
                     .into_iter()
-                    .map(|a| Row::new(Item::Action(a), t(&a.title)))
+                    .map(|a| {
+                        group = a.group.as_deref();
+                        Row::new(Item::Action(a), t(&a.title))
+                    })
                     .collect(),
             };
             if block.is_empty() {
                 continue;
             }
-            if gap && *entry != Entry::Settings {
-                rows.push(Row::heading(""));
+            match group {
+                Some(g) if under != Some(g) => rows.push(Row::heading(t(g))),
+                Some(_) => {}
+                None if gap && *entry != Entry::Settings => rows.push(Row::heading("")),
+                None => {}
             }
             rows.extend(block);
-            gap = matches!(entry, Entry::Start | Entry::Settings);
+            under = group;
+            gap = group.is_some() || matches!(entry, Entry::Start | Entry::Settings);
         }
         rows
     }

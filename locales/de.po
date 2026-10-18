@@ -671,6 +671,9 @@ msgstr "Im System auf dem Datenträger, um dich umzusehen oder etwas von Hand zu
 msgid "No Arch OS configuration could be loaded from {{ARCH_OS_CONFIG_SOURCE}}. Check the code, and that this machine is online."
 msgstr "Unter {{ARCH_OS_CONFIG_SOURCE}} ließ sich keine Arch-OS-Konfiguration laden. Prüfe den Code und ob dieser Rechner online ist."
 
+msgid "Configuration"
+msgstr "Konfiguration"
+
 msgid "Configuration code"
 msgstr "Konfigurationscode"
 
