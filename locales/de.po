@@ -410,8 +410,8 @@ msgstr "Zsh mit Vervollständigung und Vorschlägen, ein Prompt mit Git-Status, 
 msgid "System Manager"
 msgstr "System Manager"
 
-msgid "A terminal and desktop application for updating, maintaining, and repairing Arch Linux — all in one place."
-msgstr "Eine Anwendung für Terminal und Desktop zum Aktualisieren, Pflegen und Reparieren von Arch Linux – alles an einem Ort."
+msgid "A terminal and desktop application for updating, maintaining, and repairing Arch Linux."
+msgstr "Eine Anwendung für Terminal und Desktop zum Aktualisieren, Pflegen und Reparieren von Arch Linux."
 
 msgid "Virtual machine"
 msgstr "Virtuelle Maschine"
