@@ -1,0 +1,960 @@
+# German translation of Arch OS.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: arch-os\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "English"
+msgstr "Deutsch"
+
+msgid "Action"
+msgstr "Aktion"
+
+msgid "An answer is required."
+msgstr "Eine Antwort ist erforderlich."
+
+msgid "An answer of your own"
+msgstr "Eine eigene Antwort"
+
+msgid "Answers. Can be edited by hand."
+msgstr "Antworten. Lassen sich von Hand ändern."
+
+msgid "Back"
+msgstr "Zurück"
+
+msgid "Back to the dashboard"
+msgstr "Zurück zum Dashboard"
+
+msgid "Back to the dashboard?"
+msgstr "Zurück zum Dashboard?"
+
+msgid "Checking"
+msgstr "Wird geprüft"
+
+msgid "Closes this program. The machine keeps running."
+msgstr "Schließt dieses Programm. Der Rechner läuft weiter."
+
+msgid "Command"
+msgstr "Befehl"
+
+msgid "Continue"
+msgstr "Weiter"
+
+msgid "Every answer is forgotten and the file they are kept in is deleted. It starts over at the first question."
+msgstr "Jede Antwort wird vergessen und die Datei, in der sie liegen, gelöscht. Es geht wieder bei der ersten Frage los."
+
+msgid "Exit"
+msgstr "Beenden"
+
+msgid "Exit code"
+msgstr "Exit-Code"
+
+msgid "Failed"
+msgstr "Fehlgeschlagen"
+
+msgid "Filter"
+msgstr "Filtern"
+
+msgid "Finished in {{time}}"
+msgstr "Fertig nach {{time}}"
+
+msgid "Interface language"
+msgstr "Sprache der Oberfläche"
+
+msgid "It stopped at {{task}}, and nothing after that has run."
+msgstr "Es brach bei {{task}} ab, und nichts danach ist gelaufen."
+
+msgid "Leave"
+msgstr "Verlassen"
+
+msgid "Module"
+msgstr "Modul"
+
+msgid "No"
+msgstr "Nein"
+
+msgid "No matches"
+msgstr "Keine Treffer"
+
+msgid "Repeat"
+msgstr "Wiederholen"
+
+msgid "Reset all answers"
+msgstr "Alle Antworten zurücksetzen"
+
+msgid "Reset all answers?"
+msgstr "Alle Antworten zurücksetzen?"
+
+msgid "Script"
+msgstr "Skript"
+
+msgid "Start over"
+msgstr "Von vorn beginnen"
+
+msgid "Starting point"
+msgstr "Startpunkt"
+
+msgid "Choose where to start from. Every answer it fills in can still be changed afterwards."
+msgstr "Wähle, womit du anfängst. Jede Antwort, die der Startpunkt ausfüllt, lässt sich danach noch ändern."
+
+msgid "Starts this program again from the beginning. Every answer is kept."
+msgstr "Startet dieses Programm neu von Anfang an. Jede Antwort bleibt erhalten."
+
+msgid "Task"
+msgstr "Schritt"
+
+msgid "Test results"
+msgstr "Testergebnisse"
+
+msgid "The failure and what this page offers are gone from the screen. The log stays."
+msgstr "Der Fehler und was diese Seite anbietet verschwinden vom Bildschirm. Das Protokoll bleibt."
+
+msgid "The full log is in {{path}}."
+msgstr "Das vollständige Protokoll liegt in {{path}}."
+
+msgid "The language of this program. It changes the words on screen and nothing else."
+msgstr "Die Sprache dieses Programms. Sie ändert die Wörter auf dem Bildschirm und sonst nichts."
+
+msgid "The run goes on behind this page. Every choice here stops it."
+msgstr "Der Lauf geht hinter dieser Seite weiter. Jede Wahl hier bricht ihn ab."
+
+msgid "The two entries do not match."
+msgstr "Die beiden Eingaben stimmen nicht überein."
+
+msgid "There is no terminal to hand over."
+msgstr "Es gibt kein Terminal zum Übergeben."
+
+msgid "This answer has the wrong format."
+msgstr "Diese Antwort hat das falsche Format."
+
+msgid "This answer is not among the ones offered here."
+msgstr "Diese Antwort gehört nicht zu den hier angebotenen."
+
+msgid "This password was not accepted."
+msgstr "Dieses Passwort wurde nicht angenommen."
+
+msgid "Working · {{time}}"
+msgstr "Läuft · {{time}}"
+
+msgid "Yes"
+msgstr "Ja"
+
+msgid "back"
+msgstr "zurück"
+
+msgid "choose"
+msgstr "wählen"
+
+msgid "close filter"
+msgstr "Filter schließen"
+
+msgid "confirm"
+msgstr "bestätigen"
+
+msgid "continue"
+msgstr "weiter"
+
+msgid "filter"
+msgstr "filtern"
+
+msgid "leave"
+msgstr "verlassen"
+
+msgid "open"
+msgstr "öffnen"
+
+msgid "quit"
+msgstr "beenden"
+
+msgid "scroll"
+msgstr "scrollen"
+
+msgid "try again"
+msgstr "erneut versuchen"
+
+msgid "use"
+msgstr "übernehmen"
+
+msgid "{{at}} of {{of}}"
+msgstr "{{at}} von {{of}}"
+
+msgid "{{n}} of {{of}} optional tasks failed"
+msgstr "{{n}} von {{of}} optionalen Schritten fehlgeschlagen"
+
+msgid "{{n}} of {{of}} tests passed"
+msgstr "{{n}} von {{of}} Tests bestanden"
+
+msgid "Online"
+msgstr "Online"
+
+msgid "Offline"
+msgstr "Offline"
+
+msgid "Installer"
+msgstr "Installer"
+
+msgid "Install now"
+msgstr "Jetzt installieren"
+
+msgid ""
+"Install Arch OS on {{ARCH_OS_DISK}}?\n"
+"\n"
+"Everything on the disk is erased. The installation downloads what it installs, so the machine stays online until it is done."
+msgstr ""
+"Arch OS auf {{ARCH_OS_DISK}} installieren?\n"
+"\n"
+"Alles auf dem Datenträger wird gelöscht. Die Installation lädt herunter, was sie installiert, der Rechner bleibt also online, bis sie fertig ist."
+
+msgid "Desktop"
+msgstr "Desktop"
+
+msgid "The Core with GNOME, drivers, codecs and everyday applications."
+msgstr "Der Core mit GNOME, Treibern, Codecs und Programmen für den Alltag."
+
+msgid "Core"
+msgstr "Core"
+
+msgid "A minimal Arch Linux on the text console."
+msgstr "Ein minimales Arch Linux auf der Textkonsole."
+
+msgid "Online (paste.rs)"
+msgstr "Online (paste.rs)"
+
+msgid "Every answer of a configuration shared at the end of another installation."
+msgstr "Alle Antworten einer Konfiguration, die am Ende einer anderen Installation geteilt wurde."
+
+msgid "Username"
+msgstr "Benutzername"
+
+msgid "The account you log in with."
+msgstr "Das Konto, mit dem du dich anmeldest."
+
+msgid "Identity"
+msgstr "Identität"
+
+msgid "Lowercase letters, digits, hyphens and underscores only, up to 32 characters. It cannot start with a digit."
+msgstr "Nur Kleinbuchstaben, Ziffern, Bindestrich und Unterstrich, höchstens 32 Zeichen. Darf nicht mit einer Ziffer beginnen."
+
+msgid "Password"
+msgstr "Passwort"
+
+msgid "For your account and, with disk encryption, to unlock the disk at boot unless it has a password of its own. Asked right before the installation and never written to a file."
+msgstr "Für dein Konto und, mit Verschlüsselung, zum Entsperren des Datenträgers beim Start, sofern er kein eigenes Passwort hat. Es wird direkt vor der Installation abgefragt und nie in eine Datei geschrieben."
+
+msgid "Hostname"
+msgstr "Rechnername"
+
+msgid "The name this machine has on the network."
+msgstr "Der Name, unter dem dieser Rechner im Netzwerk erscheint."
+
+msgid "Lowercase letters, digits and hyphens only, up to 63 characters. It cannot start or end with a hyphen."
+msgstr "Nur Kleinbuchstaben, Ziffern und Bindestrich, höchstens 63 Zeichen. Darf nicht mit einem Bindestrich beginnen oder enden."
+
+msgid "Language and region"
+msgstr "Sprache und Region"
+
+msgid "The system language and the format of dates, numbers and currency, such as de_DE. On auto the keyboard, console font and time zone follow it. English is always installed as a fallback."
+msgstr "Die Systemsprache und das Format von Datum, Zahlen und Währung, etwa de_DE. Auf auto folgen ihr Tastatur, Konsolenschrift und Zeitzone. Englisch wird immer als Fallback mitinstalliert."
+
+msgid "Region"
+msgstr "Region"
+
+msgid "Console keyboard"
+msgstr "Konsolentastatur"
+
+msgid "The keyboard you are typing on right now, loaded at once and used on the text console. auto follows the system language."
+msgstr "Die Tastatur, auf der du gerade tippst, sofort geladen und auf der Textkonsole verwendet. auto folgt der Systemsprache."
+
+msgid "Console font"
+msgstr "Konsolenschrift"
+
+msgid "The font of the text console. auto picks one for the language. A larger one helps on a high-resolution screen."
+msgstr "Die Schrift der Textkonsole. auto wählt eine für die Sprache. Eine größere hilft auf einem hochauflösenden Bildschirm."
+
+msgid "Time zone"
+msgstr "Zeitzone"
+
+msgid "Where this machine is, so the clock is right. Opens on the zone of the chosen country."
+msgstr "Wo dieser Rechner steht, damit die Uhr stimmt. Öffnet auf der Zeitzone des gewählten Landes."
+
+msgid "Mirror country"
+msgstr "Spiegelserver-Land"
+
+msgid "Where packages are downloaded from. auto follows the time zone, none ranks every mirror worldwide."
+msgstr "Woher Pakete geladen werden. auto folgt der Zeitzone, none sortiert alle Spiegelserver weltweit."
+
+msgid "Disk"
+msgstr "Datenträger"
+
+msgid "The disk Arch Linux is installed on. Everything on it is erased. The medium this runs from is not offered."
+msgstr "Der Datenträger, auf dem Arch Linux installiert wird. Alles darauf wird gelöscht. Das Medium, von dem dies läuft, wird nicht angeboten."
+
+msgid "Storage"
+msgstr "Speicher"
+
+msgid "Choose a disk that exists."
+msgstr "Wähle einen vorhandenen Datenträger."
+
+msgid "Disk encryption"
+msgstr "Verschlüsselung"
+
+msgid "Encrypts the system, so the disk cannot be read without its password. That is yours unless it has one of its own, and it is asked at every boot."
+msgstr "Verschlüsselt das System, sodass der Datenträger ohne sein Passwort nicht lesbar ist. Das ist deines, sofern er kein eigenes hat, und es wird bei jedem Start abgefragt."
+
+msgid "Separate disk password"
+msgstr "Eigenes Datenträgerpasswort"
+
+msgid "The disk asks for a password of its own, and the login screen for yours. For a machine several people share."
+msgstr "Der Datenträger fragt nach einem eigenen Passwort und die Anmeldung nach deinem. Für einen Rechner, den sich mehrere teilen."
+
+msgid "Disk password"
+msgstr "Datenträgerpasswort"
+
+msgid "Unlocks the disk at every boot. Asked right before the installation and never written to a file."
+msgstr "Entsperrt den Datenträger bei jedem Start. Es wird direkt vor der Installation abgefragt und nie in eine Datei geschrieben."
+
+msgid "Secure Boot"
+msgstr "Secure Boot"
+
+msgid "Signs the kernel and boot loader with keys of this machine. In setup mode the keys are enrolled for you. Turn Secure Boot on afterwards."
+msgstr "Signiert Kernel und Bootloader mit Schlüsseln dieses Rechners. Im Setup-Modus werden die Schlüssel für dich hinterlegt. Schalte Secure Boot danach ein."
+
+msgid "Boot"
+msgstr "Boot"
+
+msgid "Recovery"
+msgstr "Recovery"
+
+msgid "Repairs a system that no longer starts, without a USB stick: on a partition of its own, in the boot menu behind the space key and in the firmware's boot menu."
+msgstr "Repariert ein System, das nicht mehr startet, ohne USB-Stick: auf einer eigenen Partition, im Bootmenü hinter der Leertaste und im Bootmenü der Firmware."
+
+msgid "Boot splash"
+msgstr "Bootsplash"
+
+msgid "Shows a logo while the system starts instead of a wall of text."
+msgstr "Zeigt beim Start ein Logo statt einer Textwand."
+
+msgid "Kernel parameters"
+msgstr "Kernel-Parameter"
+
+msgid "Extra kernel parameters, separated by spaces. Leave empty unless you need one."
+msgstr "Zusätzliche Kernel-Parameter, durch Leerzeichen getrennt. Leer lassen, solange du keinen brauchst."
+
+msgid "Core tweaks"
+msgstr "Core-Optimierungen"
+
+msgid "Parallel downloads, a quiet boot, password feedback and tuned memory, disk and log settings. Nothing extra is installed."
+msgstr "Parallele Downloads, ein ruhiger Start, Rückmeldung bei der Passworteingabe und abgestimmte Einstellungen für Speicher, Datenträger und Protokolle. Es wird nichts zusätzlich installiert."
+
+msgid "System"
+msgstr "System"
+
+msgid "32-bit support"
+msgstr "32-Bit-Unterstützung"
+
+msgid "Needed by Steam, Wine and other software that is still 32-bit."
+msgstr "Wird von Steam, Wine und anderer Software gebraucht, die noch 32-Bit ist."
+
+msgid "AUR helper"
+msgstr "AUR-Helfer"
+
+msgid "paru, for software from the Arch User Repository. Built on this machine, which takes about a quarter of an hour."
+msgstr "paru, für Software aus dem Arch User Repository. Wird auf diesem Rechner gebaut, was rund eine Viertelstunde dauert."
+
+msgid "Container engine"
+msgstr "Container-Engine"
+
+msgid "docker runs a daemon as root, which most documentation assumes. podman runs none and answers to the docker command. Both bring compose."
+msgstr "docker betreibt einen Daemon als root, wovon die meiste Dokumentation ausgeht. podman braucht keinen und hört auf den Befehl docker. Beide bringen compose mit."
+
+msgid "Firewall"
+msgstr "Firewall"
+
+msgid "Blocks incoming connections but SSH and printer discovery. A network marked home also reaches file sharing: nmcli connection modify <name> connection.zone home"
+msgstr "Blockiert eingehende Verbindungen außer SSH und der Druckersuche. Ein als Heimnetz markiertes Netz erreicht auch die Dateifreigabe: nmcli connection modify <name> connection.zone home"
+
+msgid "SSH server"
+msgstr "SSH-Server"
+
+msgid "Log in to this machine from another one with your account. Not as root."
+msgstr "Anmeldung an diesem Rechner von einem anderen aus, mit deinem Konto. Nicht als root."
+
+msgid "Housekeeping"
+msgstr "Systempflege"
+
+msgid "Timers that rank the mirrors weekly, trim the package cache and check disk health."
+msgstr "Timer, die wöchentlich die Spiegelserver sortieren, den Paket-Cache bereinigen und die Datenträger prüfen."
+
+msgid "Text editor"
+msgstr "Texteditor"
+
+msgid "Opens wherever a command asks for an editor: sudoedit, git, systemctl edit. nano and micro type straight away, vim, neovim and helix are modal."
+msgstr "Öffnet sich, wo ein Befehl nach einem Editor fragt: sudoedit, git, systemctl edit. In nano und micro wird sofort geschrieben, vim, neovim und helix arbeiten mit Modi."
+
+msgid "Shell enhancement"
+msgstr "Shell-Optimierungen"
+
+msgid "zsh with completion and suggestions, a prompt with git state, colourful listings, fuzzy search and aliases."
+msgstr "zsh mit Vervollständigung und Vorschlägen, ein Prompt mit Git-Status, farbige Auflistungen, Fuzzy-Suche und Aliase."
+
+msgid "System Manager"
+msgstr "System Manager"
+
+msgid "A menu for updating, cleaning up and repairing the system after installation."
+msgstr "Ein Menü zum Aktualisieren, Aufräumen und Reparieren des Systems nach der Installation."
+
+msgid "Virtual machine"
+msgstr "Virtuelle Maschine"
+
+msgid "Whether this machine is itself a virtual one."
+msgstr "Ob dieser Rechner selbst eine virtuelle Maschine ist."
+
+msgid "Environment"
+msgstr "Umgebung"
+
+msgid "gnome installs the GNOME desktop, none stays on the text console."
+msgstr "gnome installiert den GNOME-Desktop, none bleibt auf der Textkonsole."
+
+msgid "Desktop keyboard"
+msgstr "Desktop-Tastatur"
+
+msgid "The keyboard layout of the desktop. auto matches the console keyboard."
+msgstr "Die Tastaturbelegung des Desktops. auto folgt der Konsolentastatur."
+
+msgid "Keyboard variant"
+msgstr "Tastaturvariante"
+
+msgid "A variation of that layout, such as dead keys. none is the standard one."
+msgstr "Eine Abwandlung dieser Belegung, etwa tote Tasten. none ist die Standardvariante."
+
+msgid "Keyboard model"
+msgstr "Tastaturmodell"
+
+msgid "The physical shape of the keyboard. pc105 fits almost every keyboard sold."
+msgstr "Die Bauform der Tastatur. pc105 passt auf fast jede erhältliche Tastatur."
+
+msgid "Desktop extras"
+msgstr "Desktop-Extras"
+
+msgid "Codecs, fonts, printing, network protocols, development tools and everyday applications."
+msgstr "Codecs, Schriften, Druck, Netzwerkprotokolle, Entwicklungswerkzeuge und Programme für den Alltag."
+
+msgid "Slim desktop"
+msgstr "Schlanker Desktop"
+
+msgid "Removes the GNOME applications that come with the desktop and are rarely used."
+msgstr "Entfernt die GNOME-Programme, die mit dem Desktop kommen und selten benutzt werden."
+
+msgid "Web browser"
+msgstr "Webbrowser"
+
+msgid "In the system language and opened for every link. epiphany is GNOME Web, vivaldi brings the codecs for proprietary video."
+msgstr "In der Systemsprache und für jeden Link geöffnet. epiphany ist GNOME Web, vivaldi bringt die Codecs für proprietäre Videos mit."
+
+msgid "Backup"
+msgstr "Datensicherung"
+
+msgid "Backs up your files on a schedule, to a drive or a server."
+msgstr "Sichert deine Dateien regelmäßig auf ein Laufwerk oder einen Server."
+
+msgid "Flatpak"
+msgstr "Flatpak"
+
+msgid "Applications from Flathub, installed and updated through GNOME Software or Bazaar. Parental Controls need it."
+msgstr "Anwendungen von Flathub, installiert und aktualisiert über GNOME Software oder Bazaar. Die Kindersicherung setzt es voraus."
+
+msgid "Bazaar"
+msgstr "Bazaar"
+
+msgid "Installs Bazaar instead of GNOME Software, a store for Flatpaks only, and GNOME Firmware for firmware updates."
+msgstr "Installiert Bazaar statt GNOME Software, einen Store nur für Flatpaks, und GNOME Firmware für Firmware-Updates."
+
+msgid "File sharing"
+msgstr "Dateifreigabe"
+
+msgid "Shares your home and a public folder with Windows and macOS on networks marked home, or on every network without the firewall. Anyone there can try your password against it."
+msgstr "Gibt dein Benutzerverzeichnis und einen öffentlichen Ordner für Windows und macOS frei, in Netzen, die als Heimnetz markiert sind, oder ohne Firewall in jedem Netz. Jeder dort kann dein Passwort daran ausprobieren."
+
+msgid ""
+"The internet connection was lost\n"
+"\n"
+"Arch OS is downloaded while it is installed. Connect this machine again and choose Install now. The installation begins anew."
+msgstr ""
+"Die Internetverbindung ist abgebrochen\n"
+"\n"
+"Arch OS wird während der Installation heruntergeladen. Verbinde diesen Rechner wieder und wähle Jetzt installieren. Die Installation beginnt von vorn."
+
+msgid ""
+"The release page does not answer\n"
+"\n"
+"The internet works, but GitHub, where Arch OS keeps its releases, does not answer. Try again in a few minutes, or turn Recovery off on the dashboard."
+msgstr ""
+"Die Release-Seite antwortet nicht\n"
+"\n"
+"Das Internet funktioniert, aber GitHub, wo Arch OS seine Releases ablegt, antwortet nicht. Versuch es in ein paar Minuten erneut oder schalte Recovery auf dem Dashboard aus."
+
+msgid ""
+"The AUR does not answer\n"
+"\n"
+"What this task builds from the Arch User Repository was left out, and the rest of the installation goes on without it. Install it later, once the AUR answers again."
+msgstr ""
+"Das AUR antwortet nicht\n"
+"\n"
+"Was dieser Schritt aus dem Arch User Repository baut, wurde ausgelassen, und die Installation läuft ohne es weiter. Installier es später, sobald das AUR wieder antwortet."
+
+msgid "Rank mirrors and refresh the keyring"
+msgstr "Spiegelserver sortieren und Schlüsselbund aktualisieren"
+
+msgid ""
+"The clock could not be set\n"
+"\n"
+"The live system sets its clock from the internet before it can check a single package. Check that this machine reaches the internet, then choose Install now again."
+msgstr ""
+"Die Uhr ließ sich nicht stellen\n"
+"\n"
+"Das Live-System stellt seine Uhr über das Internet, bevor es auch nur ein Paket prüfen kann. Prüf, ob dieser Rechner das Internet erreicht, und wähle dann erneut Jetzt installieren."
+
+msgid "Provide the Recovery image"
+msgstr "Recovery-Image bereitstellen"
+
+msgid ""
+"The Recovery's download broke off\n"
+"\n"
+"The release page stopped sending it. Nothing was written to the disk: choose Install now again, or turn Recovery off on the dashboard."
+msgstr ""
+"Der Download des Recovery ist abgebrochen\n"
+"\n"
+"Die Release-Seite hat aufgehört, es zu senden. Auf den Datenträger wurde nichts geschrieben: Wähle erneut Jetzt installieren oder schalte Recovery auf dem Dashboard aus."
+
+msgid ""
+"The Recovery's download is damaged\n"
+"\n"
+"It does not match the checksum of its release and was deleted. Nothing was written to the disk: choose Install now again."
+msgstr ""
+"Der Download des Recovery ist beschädigt\n"
+"\n"
+"Er passt nicht zur Prüfsumme seines Releases und wurde gelöscht. Auf den Datenträger wurde nichts geschrieben: Wähle erneut Jetzt installieren."
+
+msgid "Partition and format the disk"
+msgstr "Datenträger partitionieren und formatieren"
+
+msgid ""
+"The disk is not there\n"
+"\n"
+"{{ARCH_OS_DISK}} is not one of the disks Arch OS can be installed on here. Choose the disk again on the dashboard."
+msgstr ""
+"Der Datenträger ist nicht da\n"
+"\n"
+"{{ARCH_OS_DISK}} gehört nicht zu den Datenträgern, auf die Arch OS hier installiert werden kann. Wähle den Datenträger auf dem Dashboard neu."
+
+msgid ""
+"The disk is in use\n"
+"\n"
+"Something on this machine still holds {{ARCH_OS_DISK}} open. Unmount or close it, then choose Install now again."
+msgstr ""
+"Der Datenträger wird benutzt\n"
+"\n"
+"Etwas auf diesem Rechner hält {{ARCH_OS_DISK}} noch offen. Häng es aus oder schließ es und wähle dann erneut Jetzt installieren."
+
+msgid "Install the base system"
+msgstr "Basissystem installieren"
+
+msgid "Set locale, time zone and hostname"
+msgstr "Sprache, Zeitzone und Rechnernamen setzen"
+
+msgid "Apply the core tweaks"
+msgstr "Core-Optimierungen anwenden"
+
+msgid "Install the boot loader"
+msgstr "Bootloader installieren"
+
+msgid "Write the Recovery partition"
+msgstr "Recovery-Partition schreiben"
+
+msgid "Create the user account"
+msgstr "Benutzerkonto anlegen"
+
+msgid "Install the container engine"
+msgstr "Container-Engine installieren"
+
+msgid "Set up the text editor"
+msgstr "Texteditor einrichten"
+
+msgid "Set up the firewall"
+msgstr "Firewall einrichten"
+
+msgid "Enable the maintenance timers"
+msgstr "Wartungs-Timer aktivieren"
+
+msgid "Enable the multilib repository"
+msgstr "Multilib-Repository aktivieren"
+
+msgid "Install the AUR helper"
+msgstr "AUR-Helfer installieren"
+
+msgid "Install Plymouth"
+msgstr "Plymouth installieren"
+
+msgid "Install the System Manager"
+msgstr "System Manager installieren"
+
+msgid "Set up Zsh and the shell tools"
+msgstr "Zsh und Shell-Tools einrichten"
+
+msgid "Enable the SSH server"
+msgstr "SSH-Server aktivieren"
+
+msgid "Install the VM guest tools"
+msgstr "VM-Gasttools installieren"
+
+msgid "Install GNOME"
+msgstr "GNOME installieren"
+
+msgid "Install the backup application"
+msgstr "Datensicherung installieren"
+
+msgid "Install the web browser"
+msgstr "Webbrowser installieren"
+
+msgid "Set up Flatpak"
+msgstr "Flatpak einrichten"
+
+msgid "Install the graphics drivers"
+msgstr "Grafiktreiber installieren"
+
+msgid "Add the System Manager to the applications"
+msgstr "System Manager zu den Anwendungen hinzufügen"
+
+msgid "Add the Recovery to the applications"
+msgstr "Recovery zu den Anwendungen hinzufügen"
+
+msgid "Set up Samba"
+msgstr "Samba einrichten"
+
+msgid "Remove orphaned packages"
+msgstr "Verwaiste Pakete entfernen"
+
+msgid "Set up Snapper"
+msgstr "Snapper einrichten"
+
+msgid "Sign the boot files with sbctl"
+msgstr "Boot-Dateien mit sbctl signieren"
+
+msgid "Copy the answers and the log into the system"
+msgstr "Antworten und Protokoll ins System kopieren"
+
+msgid ""
+"Arch OS is installed\n"
+"\n"
+"{{ARCH_OS_HOSTNAME}} is on {{ARCH_OS_DISK}} and ready to start."
+msgstr ""
+"Arch OS ist installiert\n"
+"\n"
+"{{ARCH_OS_HOSTNAME}} liegt auf {{ARCH_OS_DISK}} und ist startbereit."
+
+msgid "Open a shell"
+msgstr "Shell öffnen"
+
+msgid "Inside the system on the disk, to look around or fix something by hand. Leave it with exit."
+msgstr "Im System auf dem Datenträger, um dich umzusehen oder etwas von Hand zu reparieren. Verlassen mit exit."
+
+msgid "No Arch OS configuration could be loaded from {{ARCH_OS_CONFIG_SOURCE}}. Check the code, and that this machine is online."
+msgstr "Unter {{ARCH_OS_CONFIG_SOURCE}} ließ sich keine Arch-OS-Konfiguration laden. Prüfe den Code und ob dieser Rechner online ist."
+
+msgid "Configuration code"
+msgstr "Konfigurationscode"
+
+msgid "The code at the end of a paste.rs address, or the whole address. Every answer can still be changed afterwards."
+msgstr "Der Code am Ende einer paste.rs-Adresse oder die ganze Adresse. Jede Antwort lässt sich danach noch ändern."
+
+msgid "A code such as aBc12, or the whole address it belongs to."
+msgstr "Ein Code wie aBc12 oder die vollständige Adresse dazu."
+
+msgid "Internet"
+msgstr "Internet"
+
+msgid "There is no internet connection. Plug in a cable and it carries on by itself."
+msgstr "Es gibt keine Internetverbindung. Steck ein Kabel ein, dann geht es von selbst weiter."
+
+msgid "An Arch Linux live image"
+msgstr "Ein Arch-Linux-Live-Image"
+
+msgid "This runs from a booted Arch Linux live image. Start the machine from the Arch OS ISO and open this there."
+msgstr "Das läuft auf einem gestarteten Arch-Linux-Live-Image. Starte den Rechner vom Arch-OS-ISO und öffne es dort."
+
+msgid "No internet over a cable"
+msgstr "Kein Internet über ein Kabel"
+
+msgid "Restart"
+msgstr "Neu starten"
+
+msgid "Shuts this machine down and starts it again."
+msgstr "Fährt den Rechner herunter und startet ihn neu."
+
+msgid "Running as root"
+msgstr "Läuft als root"
+
+msgid "This has to run as root. Log in as root and start it again."
+msgstr "Das muss als root laufen. Melde dich als root an und starte es erneut."
+
+msgid "Secure Boot off"
+msgstr "Secure Boot aus"
+
+msgid "Secure Boot is on. Turn it off in the firmware settings and start again. The Installer can set it up for you afterwards."
+msgstr "Secure Boot ist eingeschaltet. Schalte es in den Firmware-Einstellungen aus und starte neu. Der Installer kann es danach für dich einrichten."
+
+msgid "Share the configuration"
+msgstr "Konfiguration teilen"
+
+msgid "Puts these answers online at paste.rs, to set up another machine exactly like this one. Anyone with the address can read them. The password is not among them."
+msgstr "Stellt diese Antworten auf paste.rs online, um einen weiteren Rechner genauso einzurichten. Jede Person mit der Adresse kann sie lesen. Das Passwort ist nicht darunter."
+
+msgid "paste.rs did not take the configuration. Try again in a moment."
+msgstr "paste.rs hat die Konfiguration nicht angenommen. Versuch es gleich noch einmal."
+
+msgid ""
+"Configuration shared\n"
+"\n"
+"Scan the code, or type the word at the end of the address into the online starting point of another installation."
+msgstr ""
+"Konfiguration geteilt\n"
+"\n"
+"Scanne den Code oder tippe das Wort am Ende der Adresse beim Online-Startpunkt einer weiteren Installation ein."
+
+msgid "Share the log"
+msgstr "Protokoll teilen"
+
+msgid "Puts the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it. Passwords are never in it."
+msgstr "Stellt das Protokoll dieses Laufs auf paste.rs online, für die Person, die dir hilft. Jede Person mit der Adresse kann es lesen. Passwörter stehen nie darin."
+
+msgid "paste.rs did not take the log. Try again in a moment."
+msgstr "paste.rs hat das Protokoll nicht angenommen. Versuch es gleich noch einmal."
+
+msgid ""
+"Log shared\n"
+"\n"
+"Scan the code, or read the address under it, and hand it to whoever is helping."
+msgstr ""
+"Protokoll geteilt\n"
+"\n"
+"Scanne den Code oder lies die Adresse darunter und gib sie an die Person, die dir hilft."
+
+msgid "Shut down"
+msgstr "Herunterfahren"
+
+msgid "Switches this machine off."
+msgstr "Schaltet den Rechner aus."
+
+msgid "Booted in UEFI mode"
+msgstr "Im UEFI-Modus gestartet"
+
+msgid "This machine booted in BIOS mode, which Arch OS does not install to. Set the boot mode to UEFI in the firmware settings and start again."
+msgstr "Dieser Rechner ist im BIOS-Modus gestartet, in den Arch OS nicht installiert. Stelle den Startmodus in den Firmware-Einstellungen auf UEFI und starte neu."
+
+msgid "Configure Wi-Fi"
+msgstr "WLAN konfigurieren"
+
+msgid "Joins a wireless network."
+msgstr "Verbindet mit einem WLAN."
+
+msgid "Network"
+msgstr "Netzwerk"
+
+msgid "A wireless card"
+msgstr "Eine WLAN-Karte"
+
+msgid "Wireless network"
+msgstr "WLAN"
+
+msgid "{{ARCH_OS_WIFI_SSID}} did not accept that passphrase, or it is out of range."
+msgstr "{{ARCH_OS_WIFI_SSID}} hat dieses Passwort nicht angenommen oder ist außer Reichweite."
+
+msgid "Passphrase"
+msgstr "Passwort"
+
+msgid "Repair now"
+msgstr "Jetzt reparieren"
+
+msgid "The keyboard you are typing on right now, loaded at once. Opens on the one the live image started with."
+msgstr "Die Tastatur, auf der du gerade tippst, sofort geladen. Öffnet auf der, mit der das Live-Image gestartet wurde."
+
+msgid "The disk with the Arch OS installation to repair. Opening it changes nothing."
+msgstr "Der Datenträger mit der Arch-OS-Installation, die repariert werden soll. Ihn zu öffnen ändert nichts."
+
+msgid "Whether that disk is encrypted with LUKS."
+msgstr "Ob dieser Datenträger mit LUKS verschlüsselt ist."
+
+msgid "Encryption password"
+msgstr "Verschlüsselungspasswort"
+
+msgid "The password that unlocks that disk. Asked right before the repair and never written to a file."
+msgstr "Das Passwort, das diesen Datenträger entsperrt. Es wird direkt vor der Reparatur abgefragt und nie in eine Datei geschrieben."
+
+msgid "That password does not unlock this disk."
+msgstr "Dieses Passwort entsperrt diesen Datenträger nicht."
+
+msgid ""
+"No internet connection\n"
+"\n"
+"Join a network with Configure Wi-Fi on the dashboard, or plug in a cable, and try again. A repair needs none."
+msgstr ""
+"Keine Internetverbindung\n"
+"\n"
+"Verbinde dich über WLAN konfigurieren auf dem Dashboard oder steck ein Kabel ein und versuch es erneut. Eine Reparatur braucht kein Internet."
+
+msgid ""
+"The release page does not answer\n"
+"\n"
+"The internet works, but GitHub, where Arch OS keeps its releases, does not answer. Try again in a few minutes."
+msgstr ""
+"Die Release-Seite antwortet nicht\n"
+"\n"
+"Das Internet funktioniert, aber GitHub, wo Arch OS seine Releases ablegt, antwortet nicht. Versuch es in ein paar Minuten erneut."
+
+msgid "Unlock and mount the system"
+msgstr "System entsperren und einhängen"
+
+msgid ""
+"There is no Arch OS on this disk\n"
+"\n"
+"{{ARCH_OS_RECOVERY_DISK}} holds no installation this Recovery can open. Choose another disk on the dashboard."
+msgstr ""
+"Auf diesem Datenträger ist kein Arch OS\n"
+"\n"
+"{{ARCH_OS_RECOVERY_DISK}} enthält keine Installation, die dieses Recovery öffnen kann. Wähle auf dem Dashboard einen anderen Datenträger."
+
+msgid ""
+"This installation is laid out differently\n"
+"\n"
+"{{ARCH_OS_RECOVERY_DISK}} lacks subvolumes this Recovery expects. Repair it with the Recovery of the release it was installed with."
+msgstr ""
+"Diese Installation ist anders aufgebaut\n"
+"\n"
+"Auf {{ARCH_OS_RECOVERY_DISK}} fehlen Subvolumes, die dieses Recovery erwartet. Repariere sie mit dem Recovery des Releases, mit dem sie installiert wurde."
+
+msgid "Go back to a snapshot"
+msgstr "Auf einen Snapshot zurückgehen"
+
+msgid "Snapshot"
+msgstr "Snapshot"
+
+msgid "The snapshot to put in place of the system. Newest first, with its date and what took it."
+msgstr "Der Snapshot, der an die Stelle des Systems tritt. Der neueste zuerst, mit Datum und Anlass."
+
+msgid ""
+"Put {{ARCH_OS_RECOVERY_SNAPSHOT}} in place of the system on {{ARCH_OS_RECOVERY_DISK}}?\n"
+"\n"
+"The system as it is now is replaced by that snapshot. /home and the other snapshots stay as they are, so you can come back and choose another."
+msgstr ""
+"{{ARCH_OS_RECOVERY_SNAPSHOT}} an die Stelle des Systems auf {{ARCH_OS_RECOVERY_DISK}} setzen?\n"
+"\n"
+"Das System, wie es jetzt ist, wird durch diesen Snapshot ersetzt. /home und die übrigen Snapshots bleiben, wie sie sind, du kannst also wiederkommen und einen anderen wählen."
+
+msgid "Rebuild the boot files"
+msgstr "Boot-Dateien neu bauen"
+
+msgid ""
+"Rebuild the kernel images, the initial ram disks and the boot entries?\n"
+"\n"
+"Needed after a rollback past a kernel update, or the system starts without its modules. An installation from before 2.1 gets the entries that fall back to the Recovery. Everything comes from the package cache, so no network is needed."
+msgstr ""
+"Die Kernel-Images, die Initial-RAM-Disks und die Booteinträge neu bauen?\n"
+"\n"
+"Nötig nach einem Rollback über ein Kernel-Update hinweg, sonst startet das System ohne seine Module. Eine Installation von vor 2.1 bekommt die Einträge, die auf das Recovery zurückfallen. Alles kommt aus dem Paket-Cache, ein Netzwerk braucht es nicht."
+
+msgid ""
+"The kernel is missing from the package cache\n"
+"\n"
+"The boot files are made from the package of the installed kernel, and the cache no longer holds it. Roll back to a snapshot from before the kernel was updated."
+msgstr ""
+"Der Kernel fehlt im Paket-Cache\n"
+"\n"
+"Die Boot-Dateien entstehen aus dem Paket des installierten Kernels, und der Cache enthält es nicht mehr. Setz auf einen Snapshot von vor dem Kernel-Update zurück."
+
+msgid "A Recovery to update"
+msgstr "Ein Recovery zum Aktualisieren"
+
+msgid "Update the Recovery"
+msgstr "Recovery aktualisieren"
+
+msgid "Looks for the newest Recovery of this release series and installs it after asking."
+msgstr "Sucht das neueste Recovery dieser Release-Reihe und installiert es nach Rückfrage."
+
+msgid "The internet connection was lost before the Recovery could be installed. Join a network with Configure Wi-Fi on the dashboard, or plug in a cable."
+msgstr "Die Internetverbindung ist abgebrochen, bevor das Recovery installiert werden konnte. Verbinde dich über WLAN konfigurieren auf dem Dashboard oder steck ein Kabel ein."
+
+msgid ""
+"Nothing to update\n"
+"\n"
+"There is no newer Recovery for the release series this system was installed with."
+msgstr ""
+"Nichts zu aktualisieren\n"
+"\n"
+"Für die Release-Reihe, mit der dieses System installiert wurde, gibt es kein neueres Recovery."
+
+msgid "Install the newest Recovery"
+msgstr "Neuestes Recovery installieren"
+
+msgid "Installing the Recovery failed. Until it goes through, the Recovery on the disk may not start. Choose Update the Recovery again. The log shows how far it got."
+msgstr "Das Recovery konnte nicht installiert werden. Bis die Installation durchläuft, startet das Recovery auf dem Datenträger womöglich nicht. Wähle erneut Recovery aktualisieren. Das Protokoll zeigt, wie weit sie kam."
+
+msgid "Opens the system, whose own keys sign the new Recovery where it signs its boot chain. Asked right before the update and never written to a file."
+msgstr "Öffnet das System, dessen eigene Schlüssel das neue Recovery signieren, wo es seine Boot-Kette signiert. Wird direkt vor der Aktualisierung abgefragt und nie in eine Datei geschrieben."
+
+msgid ""
+"Install the newest Recovery of this release series?\n"
+"\n"
+"It is downloaded, held to the checksum of its release and written to the Recovery's partition. It starts with the next restart."
+msgstr ""
+"Das neueste Recovery dieser Release-Reihe installieren?\n"
+"\n"
+"Es wird heruntergeladen, mit der Prüfsumme seines Releases abgeglichen und auf die Partition des Recovery geschrieben. Es startet beim nächsten Neustart."
+
+msgid ""
+"The download broke off\n"
+"\n"
+"The release page stopped sending the Recovery. Nothing was changed. Try again."
+msgstr ""
+"Der Download ist abgebrochen\n"
+"\n"
+"Die Release-Seite hat aufgehört, das Recovery zu senden. Es wurde nichts geändert. Versuch es erneut."
+
+msgid ""
+"The download is damaged\n"
+"\n"
+"It does not match the checksum of its release and was deleted. Nothing was changed. Try again."
+msgstr ""
+"Der Download ist beschädigt\n"
+"\n"
+"Er passt nicht zur Prüfsumme seines Releases und wurde gelöscht. Es wurde nichts geändert. Versuch es erneut."
+
+msgid ""
+"The Recovery does not fit\n"
+"\n"
+"It is larger than its partition and was not installed. The Recovery on the disk stays as it is."
+msgstr ""
+"Das Recovery passt nicht\n"
+"\n"
+"Es ist größer als seine Partition und wurde nicht installiert. Das Recovery auf dem Datenträger bleibt, wie es ist."
+
+msgid ""
+"Writing the Recovery failed\n"
+"\n"
+"Its partition did not keep what was written. The system starts as before, the Recovery only once an update has gone through: try again. A disk that keeps refusing may be failing."
+msgstr ""
+"Das Recovery ließ sich nicht schreiben\n"
+"\n"
+"Seine Partition hat nicht behalten, was geschrieben wurde. Das System startet wie bisher, das Recovery erst wieder nach einem Update, das durchläuft: Versuch es erneut. Ein Datenträger, der sich immer wieder weigert, ist womöglich defekt."
+
+msgid ""
+"Recovery updated\n"
+"\n"
+"The new one starts with the next restart."
+msgstr ""
+"Recovery aktualisiert\n"
+"\n"
+"Das neue startet beim nächsten Neustart."

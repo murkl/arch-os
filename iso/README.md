@@ -11,16 +11,16 @@ The stock Arch `releng` profile, patched to boot straight from Plymouth into Arc
 
 ## How It Starts
 
-The [Oak](https://github.com/murkl/oak) binary and every module live in `/opt/arch-os`. A systemd unit starts the Installer on tty1: no autologin, no shell. The unit starts once the boot splash has faded out, as `getty@.service` does, on a console the kernel already draws in the splash's colour, so the switch shows no flash. It opens on the language, then on the Installer, under the wordmark.
+The program, with both modules inside it, lives in `/opt/arch-os`. A systemd unit starts the Installer on tty1: no autologin, no shell. The unit starts once the boot splash has faded out, as `getty@.service` does, on a console the kernel already draws in the splash's colour, so the switch shows no flash. It opens on the language, then on the Installer, under the wordmark.
 
-The Recovery is one console away: log in as root on another console (**Ctrl+Alt+F2**) and type `recovery`. Whenever the interface stops, tty1 returns to a root login, and nothing restarts it by itself. An interface that came back on its own would look like one that never left, over a run that may have written half a disk. A crash therefore ends at the prompt, with the reason in `journalctl -b -u arch-os`.
+The Recovery is one console away: log in as root on another console (**Ctrl+Alt+F2**) and type `arch-os recovery`. Whenever the interface stops, tty1 returns to a root login, and nothing restarts it by itself. An interface that came back on its own would look like one that never left, over a run that may have written half a disk. A crash therefore ends at the prompt, with the reason in `journalctl -b -u arch-os`.
 
-**Note:** _The Recovery image starts with the same unit and launchers, with only the Recovery beside Oak, but as a kiosk. A drop-in starts `arch-os-kiosk`, which runs Oak with `--kiosk` on the answers `arch-os-seed` read from the EFI partition at boot. It opens straight on its menu, **Exit** leaves it, the unit starts it again with every answer it had, and no console has a login. **[➜ The Recovery Partition](../docs/REFERENCE.md#the-recovery-partition)**_
+**Note:** _The Recovery image starts with the same unit and launcher, but as a kiosk. A drop-in starts `arch-os recovery --kiosk` on the answers `arch-os-seed` read from the EFI partition at boot. It opens straight on its dashboard, **Start over** closes it, the unit starts it again with every answer it had, and no console has a login. **[➜ The Recovery Partition](../docs/REFERENCE.md#the-recovery-partition)**_
 
 | Command | Description |
 | --- | --- |
-| `installer` | Opens the Installer, which tty1 starts by itself. `installer --language=de` skips the first page |
-| `recovery` | Opens the Recovery, which the ISO does not start by itself |
+| `arch-os installer` | Opens the Installer, which tty1 starts by itself |
+| `arch-os recovery` | Opens the Recovery, which the ISO does not start by itself |
 | `iwctl` | Joins a Wi-Fi network |
 
 **Note:** _Both keep their answers in `/opt/arch-os`, so a second run resumes. `/etc/motd` and `/etc/issue` say so._
@@ -28,15 +28,13 @@ The Recovery is one console away: log in as root on another console (**Ctrl+Alt+
 ## What Is Where
 
 ```
-build.sh <release-dir>                   builds the Recovery image, then the ISO that carries it
+build.sh <arch-os> <dist-dir>            builds the Recovery image, then the ISO that carries it, out of the program
 smoke.sh <image.iso | recovery-dir>      boots a built image and works its first page with the keyboard
 e2e.sh <image.iso> [core|desktop]        installs it onto a disk, boots, repairs and updates it, see below
 font.sh <out-dir>                        builds the console fonts: Terminus Bold in every size the launcher picks from
-glyphs.sh <oak> <file>...                checks those files, and what that oak draws, against those fonts
-src/etc/systemd/system/arch-os.service   starts it on tty1, on both images
-src/usr/local/bin/arch-os                the entry point, sets the console font first
-src/usr/local/bin/installer              opens the Installer directly, on the ISO only
-src/usr/local/bin/recovery               opens the Recovery directly
+glyphs.sh <arch-os> <file>...            checks those files, and what that program draws, against those fonts
+src/etc/systemd/system/arch-os.service   starts the Installer on tty1
+src/usr/local/bin/arch-os                the launcher: sets the console font, then starts the program in /opt/arch-os
 recovery/                                what the Recovery image adds to `baseline`: its packages and the kiosk it starts as
 ```
 
@@ -45,20 +43,20 @@ recovery/                                what the Recovery image adds to `baseli
 From the repository root:
 
 ```
-make iso                     # the release, then both images, beside it in dist/
-make image                   # ...only the images, from a release already there
+make iso                     # the program, then both images in dist/
+make image                   # ...only the images, from the program already built
 make iso ISO_RECOVERY=false  # ...the ISO as a release builds it, without the Recovery
 ```
 
-**Note:** _A pre-release ISO carries the Recovery, since there is no release page to fetch it from. A release ISO does not, which keeps it under GitHub's 2 GiB per file. `ISO_RECOVERY` decides by hand. `e2e.sh` hands an ISO without it the Recovery built beside it, where its Installer would otherwise download it._
+**Note:** _A pre-release ISO carries the Recovery, since there is no release page to fetch it from. A release ISO does not, which keeps it under GitHub's 2 GiB per file. `build.sh` decides by the version the program answers to, `ISO_RECOVERY` by hand. `e2e.sh` hands an ISO without it the Recovery built beside it, where its Installer would otherwise download it._
 
-**Note:** _The images land beside the release they were built from, named after the version in `oak.yaml`: the ISO, and the Recovery as a folder and as a `.tar` for the release page. The ISO label is that version in upper case. It needs `archiso`, `systemd-ukify`, `erofs-utils`, `diffutils`, `kbd` and `terminus-font`._
+**Note:** _The images are named after the version the program answers to: the ISO, and the Recovery as a folder and as a `.tar` for the release page. The ISO label is that version in upper case. It needs `archiso`, `systemd-ukify`, `erofs-utils`, `diffutils`, `kbd` and `terminus-font`._
 
-The Bootsplash theme is **[plymouth-theme-arch-os](https://github.com/murkl/plymouth-theme-arch-os)** at the commit `PLYMOUTH_THEME_REF` in `build.sh` names. It is fetched once for both images, kept in `download/`, and raised by hand like `OAK_VERSION`. `PLYMOUTH_THEME_SRC=/path/to/theme/src` builds with a theme folder of your own instead.
+The Bootsplash theme is **[plymouth-theme-arch-os](https://github.com/murkl/plymouth-theme-arch-os)** at the commit `PLYMOUTH_THEME_REF` in `build.sh` names. It is fetched once for both images, kept in `download/`, and raised by hand. `PLYMOUTH_THEME_SRC=/path/to/theme/src` builds with a theme folder of your own instead.
 
 Settings of the stock profiles are overridden by lines appended to their `profiledef.sh`, never edited in place, so they survive changes to the profile. Every other patch fails the build where it finds nothing to patch.
 
-Before the ISO, the Recovery is checked: its erofs reads back as what went into it, every command its scripts call is on it, and no kernel module a repair may load lost a dependency to what `recovery/pacman.conf` leaves out.
+Before the ISO, the Recovery is checked: its erofs reads back as what went into it, every command its scripts call is on it, and no kernel module a repair may load lost a dependency to what `recovery/pacman.conf` leaves out. The Recovery image also gets `boot-tries.sh` out of the Recovery's `data/boot/`, the script every installed system has, so `arch-os-seed` gives the system's boot entries their tries back, as many as `lib.sh` names.
 
 A build leaves nothing root-owned behind. `archiso/` holds both profiles and is removed on success, kept on failure. `download/` stays either way and saves the next build the network. The key the Recovery is signed with is deleted either way.
 
@@ -113,13 +111,13 @@ The interface works in colour slots, and the palette decides what they look like
 | Slot | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Role | bezel | red | green | yellow | blue | magenta | cyan | white | grey | red+ | green+ | yellow+ | blue+ | magenta+ | cyan+ | white+ |
-| Nord | 0 | 11 | 14 | 13 | 9 | 15 | 8 | 4 | dim | 11 | 14 | 13 | accent | 15 | 7 | 6 |
+| Nord | 0 | 11 | 14 | 13 | 10 | 15 | 8 | 4 | dim | 11 | 14 | 13 | accent | 15 | 7 | 6 |
 
-The bezel is nord0, the splash's background. Grey is the interface's own dim, `#aeb5c3`, since nord3 is unreadable on nord0. Bright blue is its accent, Arch blue lightened to read on nord0, `#45a9da`.
+The bezel is nord0, the splash's background. Grey is the interface's own dim, `#aeb5c3`, since nord3 is unreadable on nord0. Bright blue is its accent, Arch blue lightened to read on nord0, `#45a9da`, which `console-accent` in `product.yaml` names. Blue is nord10, the colour Nord keeps for the element in focus: the row under the cursor lies on it, as `console-surface` says, and a console draws text only on its first eight colours.
 
 ## What the Console Can Draw
 
-Each font this image loads has one table of glyphs, and a character outside it is a box on screen. `glyphs.sh` builds the fonts as `build.sh` does and checks two things against every table: the files it is given, which `make check` points at every module except fastfetch's config (made for a graphical terminal), and the characters the interface draws itself. Those are the rules, the cursor, the three cells a QR code and the finished-run mark are built from, and Oak's own words, all asked of the binary with `oak --glyphs`.
+Each font this image loads has one table of glyphs, and a character outside it is a box on screen. `glyphs.sh` builds the fonts as `build.sh` does and checks two things against every table: the files it is given, which `make check` points at the product, the catalogs, the library and every module file except fastfetch's config (made for a graphical terminal), and the characters the interface draws itself. Those are the rules, the cursor, the three cells a QR code and the finished-run mark are built from, and the runtime's own words, all asked of the program with `arch-os glyphs`.
 
 The font is Terminus Bold, in the size the kernel picks for its own font, as a stock Arch ISO shows it: 8 by 16, or 16 by 32 where 8 by 16 would give 22,000 cells or more. A full HD screen gets 16, a screen four times as large gets 32. Of the fonts in `kbd` and `terminus-font` it is the clean bold one with Latin, its accents, Greek and Cyrillic. It lacks ▀ and ▄, which a QR code is drawn with, so `font.sh` puts them into two slots of its table that nothing uses.
 

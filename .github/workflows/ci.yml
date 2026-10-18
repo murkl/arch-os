@@ -49,7 +49,7 @@ jobs:
     needs: release
     if: ${{ !cancelled() && (github.event_name != 'push' || needs.release.outputs.version != '') }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     container: archlinux:latest # zizmor: ignore[unpinned-images] - upgraded below
     permissions:
       contents: read
@@ -68,7 +68,7 @@ jobs:
       # checkout is the runner's user's, and git refuses it to root.
       - run: |
           printf '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n' >>/etc/pacman.conf
-          pacman -Syu --needed --noconfirm git pacman-contrib make curl shellcheck shfmt zsh yamllint \
+          pacman -Syu --needed --noconfirm git pacman-contrib make rust shellcheck shfmt zsh yamllint \
             actionlint zizmor gettext diffutils gitleaks kbd terminus-font tzdata
           paccache -rk1
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -79,11 +79,16 @@ jobs:
           fetch-depth: 2
           persist-credentials: false
 
-      # The runtime's checksum is an API call: sixty an hour per address
-      # without a token.
+      # The crates and what was compiled of them, by the lock file.
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            runtime/target
+          key: cargo-${{ hashFiles('runtime/Cargo.lock') }}
+          restore-keys: cargo-
+
       - run: make check
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
 
       # Nothing under docs/, no Markdown and no LICENSE reaches an image.
       - id: scope
@@ -105,6 +110,14 @@ jobs:
         with:
           path: /var/cache/pacman/pkg
           key: ${{ github.job }}-${{ github.run_id }}
+
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: |
+            ~/.cargo/registry
+            runtime/target
+          key: cargo-${{ hashFiles('runtime/Cargo.lock') }}
 
   # The images, built, booted and installed in one job: the gigabytes between
   # building and booting cost more to hand on than to make.
@@ -131,7 +144,7 @@ jobs:
           restore-keys: ${{ github.job }}-
 
       - run: |
-          pacman -Syu --needed --noconfirm git pacman-contrib make curl archiso systemd-ukify diffutils \
+          pacman -Syu --needed --noconfirm git pacman-contrib make rust archiso systemd-ukify diffutils \
             kbd terminus-font qemu-base edk2-ovmf tesseract tesseract-data-eng openssh libisoburn
           paccache -rk1
 
@@ -139,9 +152,15 @@ jobs:
         with:
           persist-credentials: false
 
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            runtime/target
+          key: cargo-${{ hashFiles('runtime/Cargo.lock') }}
+          restore-keys: cargo-
+
       - run: make build image ${RELEASE:+VERSION="$RELEASE"}
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
 
       # After the build, since mkarchiso fills the live systems through it.
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

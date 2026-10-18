@@ -1,3 +1,0 @@
-title: Write the Recovery partition
-needs: [bootloader]
-conditions: ARCH_OS_RECOVERY_ENABLED == true

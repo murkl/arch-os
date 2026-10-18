@@ -1,8 +1,9 @@
 #!/bin/bash
 # Builds the Recovery image from `baseline` and the ISO from `releng`, each
-# patched to boot into Arch OS, beside the release they carry. See README.md.
+# patched to boot into Arch OS, out of the program `make build` left. See
+# README.md.
 #
-#   ISO_RECOVERY=true|false build.sh <release-dir>
+#   [ISO_RECOVERY=true|false] build.sh <arch-os> <dist-dir>
 set -eu
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -10,14 +11,22 @@ set -eu
 # ////////////////////////////////////////////////////////////////////////////
 
 # Resolved before the cd: everything below is relative to this script.
-[ "$#" -eq 1 ] || {
-    echo "usage: $0 <release-dir>" >&2
+[ "$#" -eq 2 ] || {
+    echo "usage: $0 <arch-os> <dist-dir>" >&2
     exit 1
 }
-RELEASE_DIR="$(realpath -m "$1")"
-DIST_DIR="$(dirname "$RELEASE_DIR")"
-RECOVERY_DIR="${RELEASE_DIR}-recovery"
+BIN="$(realpath -m "$1")"
+DIST_DIR="$(realpath -m "$2")"
 cd "$(dirname "$0")"
+
+# The program says what it is, so neither image can end up named after anything
+# else than what it ships.
+VERSION="$("$BIN" --version 2>/dev/null | awk '$1 == "arch-os" { print $2 }')"
+[ -n "$VERSION" ] || {
+    echo "Error: ${BIN} does not answer to --version - run 'make build' first" >&2
+    exit 1
+}
+RECOVERY_DIR="${DIST_DIR}/arch-os-${VERSION}-recovery"
 
 # mkarchiso runs as root. Empty where this already is, as in CI.
 SUDO=""
@@ -34,16 +43,15 @@ ISO_PROFILE="${PROFILES_DIR}/iso"
 # open and fails the build.
 WORK_DIR="$(realpath -m "${WORK_DIR:-/var/tmp/arch-os-iso-work}")"
 
-# Pinned, so a desk and CI build the same images. Raised by hand, like
-# OAK_VERSION.
+# Pinned, so a desk and CI build the same images. Raised by hand.
 PLYMOUTH_THEME_REPO="https://github.com/murkl/plymouth-theme-arch-os"
 PLYMOUTH_THEME_REF="147e3c97d710db4606025b3829f076ca5d8ecc3b"
 
 # The console's palette, slot by slot, and why each boot argument is there:
 # README.md#the-console.
-CONSOLE_RED=46,191,163,235,129,180,136,216,174,191,163,235,69,180,143,236
-CONSOLE_GRN=52,97,190,203,161,142,192,222,181,97,190,203,169,142,188,239
-CONSOLE_BLU=64,106,140,139,193,173,208,233,195,106,140,139,218,173,187,244
+CONSOLE_RED=46,191,163,235,94,180,136,216,174,191,163,235,69,180,143,236
+CONSOLE_GRN=52,97,190,203,129,142,192,222,181,97,190,203,169,142,188,239
+CONSOLE_BLU=64,106,140,139,172,173,208,233,195,106,140,139,218,173,187,244
 CONSOLE_ARGS="fbcon=nodefer vt.default_red=${CONSOLE_RED} vt.default_grn=${CONSOLE_GRN} vt.default_blu=${CONSOLE_BLU}"
 BOOT_ARGS="quiet splash loglevel=3 rd.udev.log_level=3 vt.global_cursor_default=0 systemd.show_status=auto plymouth.ignore-serial-consoles ${CONSOLE_ARGS}"
 
@@ -93,21 +101,20 @@ profiledef() {
     echo >>"${profile}/profiledef.sh"
 }
 
-# Oak looks for oak.yaml, oak.sh and the modules beside its own binary.
+# The program is the whole product, its modules inside it. It keeps its answers
+# and its log beside itself, in /opt/arch-os.
 install_arch_os() {
-    local profile="$1" opt="$1/airootfs/opt/arch-os"
-    shift
+    local profile="$1"
     cp -rf src/* "${profile}/airootfs/"
     ./font.sh "${profile}/airootfs/usr/share/kbd/consolefonts"
-    mkdir -p "${opt}/modules"
-    cp "${RELEASE_DIR}/oak" "${RELEASE_DIR}/oak.yaml" "${RELEASE_DIR}/oak.sh" "$opt"
-    cp -r "$@" "${opt}/modules/"
+    install -D -m 755 "$BIN" "${profile}/airootfs/opt/arch-os/arch-os"
 }
 
-# mkarchiso copies the profile without its modes. Run once every launcher is in.
+# mkarchiso copies the profile without its modes. Run once every program is in.
 make_executable() {
     local file
-    for file in "$1/airootfs/opt/arch-os/oak" "$1/airootfs/usr/local/bin/"*; do
+    for file in "$1/airootfs/opt/arch-os/arch-os" "$1/airootfs/usr/local/bin/"* "$1/airootfs/usr/local/lib/arch-os/"*; do
+        [ -e "$file" ] || continue
         profiledef "$1" "file_permissions+=([\"${file#"$1/airootfs"}\"]=\"0:0:755\")"
     done
 }
@@ -179,20 +186,17 @@ name_image() { profiledef "$1" "iso_name=\"$2\"" "iso_version=\"${VERSION}\""; }
 
 echo "### Initialize Build"
 
-# Asked outright, so a build never guesses: see ISO_RECOVERY in the Makefile.
-[[ ${ISO_RECOVERY:-} =~ ^(true|false)$ ]] || {
-    echo "Error: ISO_RECOVERY is '${ISO_RECOVERY:-}', not true or false, see the Makefile" >&2
+# The Recovery inside the ISO, or left for the Installer to fetch from the
+# release page: a pre-release has no release page, and a release's ISO stays
+# under GitHub's 2 GiB a file. ISO_RECOVERY decides by hand.
+case "$VERSION" in
+*-*) ISO_RECOVERY="${ISO_RECOVERY:-true}" ;;
+*) ISO_RECOVERY="${ISO_RECOVERY:-false}" ;;
+esac
+[[ $ISO_RECOVERY =~ ^(true|false)$ ]] || {
+    echo "Error: ISO_RECOVERY is '${ISO_RECOVERY}', not true or false" >&2
     exit 1
 }
-
-# What a release is, checked before an hour of mkarchiso finds out. The modules
-# are not named here: which ones there are is whatever the release holds.
-for part in oak oak.yaml oak.sh modules modules/recovery; do
-    [ -e "${RELEASE_DIR}/${part}" ] || {
-        echo "Error: ${RELEASE_DIR} holds no ${part} - run 'make build' first" >&2
-        exit 1
-    }
-done
 
 # The tools are packages rather than something to install behind somebody's
 # back: a build that would change the machine it runs on says so instead.
@@ -203,10 +207,7 @@ for tool in mkarchiso:archiso ukify:systemd-ukify mkfs.erofs:erofs-utils diff:di
     }
 done
 
-# The release says what it is, so neither image can end up named after anything
-# else than what it ships.
-VERSION="$(sed -n 's/^version:[[:space:]]*//p' "${RELEASE_DIR}/oak.yaml")"
-echo "building Arch OS ${VERSION} from ${RELEASE_DIR}"
+echo "building Arch OS ${VERSION} from ${BIN}"
 mkdir -p "$DOWNLOAD_DIR"
 unmount_leftovers "${WORK_DIR}"
 unmount_leftovers "${PROFILES_DIR}"
@@ -241,9 +242,15 @@ rm -rf "${RECOVERY_PROFILE}/airootfs/etc/systemd/system" \
 # whenever it ends, with what the Installer left it and no login anywhere.
 cp -r recovery/. "$RECOVERY_PROFILE"
 
-install_arch_os "$RECOVERY_PROFILE" "${RELEASE_DIR}/modules/recovery"
-# The Installer is not on this image, so neither is the command that opens it.
-rm "${RECOVERY_PROFILE}/airootfs/usr/local/bin/installer"
+install_arch_os "$RECOVERY_PROFILE"
+
+# The seed gives the system's boot entries their tries back with the script
+# every installed system has, as many as lib.sh gives them.
+install -D -m 755 ../recovery/data/boot/boot-tries.sh "${RECOVERY_PROFILE}/airootfs/usr/local/lib/arch-os/boot-tries.sh"
+tries="$(sed -n 's/^export BOOT_TRIES=//p' ../lib.sh)"
+[ -n "$tries" ] || { echo "Error: ../lib.sh names no BOOT_TRIES" >&2 && exit 1; }
+mkdir -p "${RECOVERY_PROFILE}/airootfs/etc/systemd/system/arch-os-seed.service.d"
+printf '[Service]\nEnvironment=BOOT_TRIES=%s\n' "$tries" >"${RECOVERY_PROFILE}/airootfs/etc/systemd/system/arch-os-seed.service.d/tries.conf"
 make_executable "$RECOVERY_PROFILE"
 install_bootsplash "$RECOVERY_PROFILE" "Booting Recovery..."
 start_on_tty1 "$RECOVERY_PROFILE"
@@ -357,9 +364,9 @@ if [ -n "$DROPPED" ]; then
     grep -vxF "$DROPPED" "$ISO_PACKAGES" >"${TEMP_DIR}/packages" && mv "${TEMP_DIR}/packages" "$ISO_PACKAGES"
 fi
 
-# Without the Recovery beside them, the Installer fetches it: recovery_image in
-# oak.sh.
-install_arch_os "$ISO_PROFILE" "${RELEASE_DIR}/modules/"*
+# Without the Recovery beside it, the Installer fetches it: recovery_image in
+# lib.sh.
+install_arch_os "$ISO_PROFILE"
 if [ "$ISO_RECOVERY" = "true" ]; then
     mkdir -p "${ISO_PROFILE}/airootfs/opt/arch-os-recovery"
     cp "${RECOVERY_DIR}/recovery.img" "${RECOVERY_DIR}/recovery.efi" "${ISO_PROFILE}/airootfs/opt/arch-os-recovery/"
@@ -388,19 +395,18 @@ printf '\ntimeout 0\n' >>"$loader"
 # Both say how to get back, before the login and after it. The issue shows the
 # cursor again, which the boot hides on every console.
 cat >"${ISO_PROFILE}/airootfs/etc/issue" <<'EOF'
-\e[?25hArch OS live environment. Type installer or recovery to start again.
+\e[?25hArch OS live environment. Type arch-os installer or arch-os recovery to start again.
 
 EOF
 
 cat >"${ISO_PROFILE}/airootfs/etc/motd" <<'EOF'
 Arch OS live environment
 
-  installer    install Arch Linux on this machine
-  recovery     repair an Arch Linux system already on a disk
-  iwctl        join a wireless network
+  arch-os installer    install Arch Linux on this machine
+  arch-os recovery     repair an Arch Linux system already on a disk
+  iwctl                join a wireless network
 
-Add --debug to either for a run that changes nothing, and --language=de to
-skip the first page.
+Add --dry-run to either for a run that changes nothing.
 
 Both keep their answers in /opt/arch-os, so starting either again picks up where
 it left off. What they did is in /opt/arch-os/installer.log and
@@ -434,7 +440,9 @@ ${SUDO} mkarchiso -v -w "${WORK_DIR}/iso" -o "${PROFILES_DIR}/out/iso" "$ISO_PRO
 # SHIP
 # ////////////////////////////////////////////////////////////////////////////
 
-# The image goes to DIST_DIR, beside the release and the Recovery.
-echo "### Move ISO to Dist"
+# The ISO goes to DIST_DIR, beside the Recovery, which also becomes one file
+# for the release page.
+echo "### Ship"
 mkdir -p "${DIST_DIR}"
 cp -f "${PROFILES_DIR}/out/iso/"*.iso "${DIST_DIR}/"
+tar -cf "${RECOVERY_DIR}-x86_64.tar" --owner=0 --group=0 --sort=name -C "${DIST_DIR}" "${RECOVERY_DIR##*/}"

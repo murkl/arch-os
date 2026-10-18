@@ -5,25 +5,23 @@
 ## Doing the Work
 
 ```
-make check                  # the whole gate, as CI runs it
-make fmt                    # every script formatted by shfmt
-make run                    # every module, MODULE=recovery for one
-make run ARGS=--debug       # ...without touching the machine
-make inspect                # load every module and print the order they resolve to
-make build                  # the release, as a machine runs it
-make iso                    # the release, the Recovery image and the ISO that carries it
-make iso ISO_RECOVERY=false # ...the ISO as a release builds it, which fetches the Recovery
-make image                  # ...only the images, from a release already in dist/
-make smoke                  # boot the newest of both and work their first page with the keyboard
-make e2e                    # install the newest ISO, boot, repair, boot again, start and rewrite its Recovery
-make e2e START=desktop      # ...the Desktop starting point, booted to GNOME's login screen
-make locales                # every translation template brought up to date
-make oak                    # fetch the runtime again, at the release OAK_VERSION names
-make clean                  # remove every build output; the runtime stays
+make check                   # the whole gate, as CI runs it
+make fmt                     # every file formatted, by cargo fmt and shfmt
+make run                     # the Installer, out of the sources
+make run MODULE=recovery     # ...the Recovery
+make run ARGS=--dry-run      # ...without touching the machine
+make build                   # the program, with every module inside it
+make iso                     # the program, the Recovery image and the ISO that carries it
+make iso ISO_RECOVERY=false  # ...the ISO as a release builds it, which fetches the Recovery
+make image                   # ...only the images, from the program already built
+make smoke                   # boot the newest of both and work their first page with the keyboard
+make e2e                     # install the newest ISO, boot, repair, boot again, start and rewrite its Recovery
+make e2e START=desktop       # ...the Desktop starting point, booted to GNOME's login screen
+make clean                   # remove every build output
 ```
 
 ```
-sudo pacman -S --needed make curl shellcheck shfmt zsh yamllint actionlint zizmor \
+sudo pacman -S --needed make rust shellcheck shfmt zsh yamllint actionlint zizmor \
     gettext diffutils gitleaks kbd terminus-font archiso systemd-ukify qemu-base edk2-ovmf tesseract tesseract-data-eng openssh libisoburn
 ```
 
@@ -31,21 +29,22 @@ sudo pacman -S --needed make curl shellcheck shfmt zsh yamllint actionlint zizmo
 
 ### Where a Change Belongs
 
-- Packages, tasks, questions: **[modules/installer](../modules/installer)**
-- Repairing a system: **[modules/recovery](../modules/recovery)**
+- Packages, tasks, questions: **[installer](../installer)**
+- Repairing a system: **[recovery](../recovery)**
 - Writing the boot device: **[get.sh](../get.sh)**
-- Functions several modules use: **[oak.sh](../oak.sh)**, checked by **[oak.check.sh](../oak.check.sh)**
-- Product name and look: **[oak.yaml](../oak.yaml)**
+- Functions both modules use: **[lib.sh](../lib.sh)**, checked by **[lib.check.sh](../lib.check.sh)**
+- Product name and look: **[product.yaml](../product.yaml)**
+- The words on screen, in German: **[locales/de.po](../locales/de.po)**
 - The bootable images, the ISO and the Recovery: **[iso](../iso)**
-- The interface itself: **[Oak](https://github.com/murkl/oak)**, its own repository. `OAK_VERSION` in the **[Makefile](../Makefile)** names the release this project runs on
+- The interface itself: **[runtime](../runtime)**, in Rust, built into the images with everything above inside it
 
-**Note:** _What Arch OS puts on a disk and why: **[➜ Reference](REFERENCE.md)**._
+**Note:** _What Arch OS puts on a disk and why: **[➜ Reference](REFERENCE.md)**. What a module may declare and the contract its scripts follow: **[➜ Runtime](../runtime/README.md)**._
 
 ## Writing a Task
 
 ### Files a Task Ships
 
-Every file a task writes into the new system lies in `data/` beside `task.sh`, named after the file it becomes. `render` from `oak.sh` fills it, `where` names the folder.
+Every file a task writes into the new system lies in `data/` beside `task.sh`, named after the file it becomes. `render` from `lib.sh` fills it, `where` names the folder.
 
 ```
 render "$(where)/main.conf" KERNEL="$KERNEL" CMDLINE="$cmdline" >"${MNT}/boot/loader/entries/main.conf"
@@ -55,7 +54,7 @@ render "$(where)/main.conf" KERNEL="$KERNEL" CMDLINE="$cmdline" >"${MNT}/boot/lo
 - An unfilled placeholder, an unused value and a stray `{{` fail the task. Values are filled once, left to right
 - A file without placeholders goes through `render` too, so one added later cannot reach a disk unfilled
 - Not `envsubst`: it reads the environment, fills an unset variable with nothing, and without a list of names fills every `${…}`
-- The boot entries' templates lie in `modules/recovery/data/boot/`, since the Recovery writes them again through `boot_entries`
+- The boot entries' templates lie in `recovery/data/boot/`, since the Recovery writes them again through `boot_entries`
 - `make lint` refuses a `{ … } >"${MNT}/…"` block
 
 Where a program reads a directory, the file goes there. These have none:
@@ -85,40 +84,32 @@ Swap off, sync, unmount, lock: in the Installer before it partitions, in the Rec
 | Expected | No internet, a wrong disk, a damaged download | A headline and what to do, translated. Nothing to share |
 | A script that broke | A package Arch renamed, a tool that changed its output | Module, task, line, command and output, and **Share the log** |
 
-A script stops on what it expects with `exit` and a status, which `errors:` in `module.yaml` puts into words: `3` no internet, `4` GitHub not answering, `5` the AUR not answering. Statuses from `10` up belong to the task or action that uses them. **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md#stopping-on-purpose)**
+A script stops on what it expects with `exit` and a status, which `errors:` in `module.yaml` puts into words: `3` no internet, `4` GitHub not answering, `5` the AUR not answering. Statuses from `10` up belong to the task or action that uses them. **[➜ Stopping on Purpose](../runtime/README.md#stopping-on-purpose)**
 
 ## Translating
 
-**The English sentence is the key.** A catalog without a translation shows the English, so a translation is useful from its first line.
+**The English sentence is the key.** One catalog per language, `locales/<code>.po`, holds every text on screen: the runtime's and both modules'. A catalog without a translation shows the English, so a translation is useful from its first line.
 
-| Component | Template | Catalogs |
-| --- | --- | --- |
-| Installer | `modules/installer/locales/installer.pot` | `modules/installer/locales/<code>.po` |
-| Recovery | `modules/recovery/locales/recovery.pot` | `modules/recovery/locales/<code>.po` |
-
-- `.pot` files are generated. Run `make locales` in the same change as anything reworded on screen
-- The frame's own words (buttons, key hints, the settings) are **[Oak's](https://github.com/murkl/oak/tree/main/locales)**. Until Oak has a catalog for a language, the frame around its translated pages stays English
-- `make check` runs `msgfmt --check-format`, so a dropped `%s` fails at your desk instead of during an installation
+- `make check` holds every catalog to every text. A text reworded on screen, in the YAML or in the runtime, fails until its entry is reworded too, and so does an entry nothing uses any more. The failing test lists them
+- `{{ARCH_OS_DISK}}` stays as it is, braces and name, and so do the blank lines between paragraphs
+- A text of several paragraphs is one entry: `msgid ""`, then one line a paragraph, with `\n` as the file shows it
 
 ### Adding a Language
 
 ```
-cp modules/installer/locales/installer.pot modules/installer/locales/fr.po
+cp locales/de.po locales/fr.po
 ```
 
-Fill in the `msgstr` lines and open a pull request. The language shows up in the picker as soon as one catalog of it exists.
+Translate every `msgstr` and open a pull request. The language shows up on the first page as soon as its catalog exists.
 
 - `msgid "English"` translates to your language's own name: `Deutsch`, `Français`
-- `msgstr ""` means not translated yet. The English shows instead
-- `#, fuzzy` means the English changed: check, correct, remove the flag
-
-Keep as they are: `%s` and `%d` (order and kind), `{{ARCH_OS_DISK}}` (braces and name), the `⏎ ↑↓ esc` marks in hints, and blank lines between paragraphs.
+- A `msgstr` left English shows English, nothing breaks
 
 ### What the Console Can Draw
 
 Before GNOME exists there is one console font with at most 512 glyphs: **Latin with its accents, Greek and Cyrillic**. Arabic, Hebrew, Chinese, Japanese, Korean, Vietnamese and the Indic scripts cannot be drawn on a Linux virtual console at all, so open an issue before you start on one.
 
-**Note:** _`make check` reads every module against the glyph tables of the fonts **[iso/font.sh](../iso/font.sh)** builds, so a character that would be a box fails at your desk._
+**Note:** _`make check` reads the product, the catalogs, the library and every module against the glyph tables of the fonts **[iso/font.sh](../iso/font.sh)** builds, so a character that would be a box fails at your desk._
 
 ## Pictures in the Docs
 
@@ -132,7 +123,7 @@ docs/svg.py                 # the download button and the requirements, with the
 
 - `screenshots.sh`'s version defaults to the next patch's pre-release. Name the release the change heads for, so `main` shows it
 - They need `chromium`, `imagemagick`, `python-fonttools`, `python-pyte`, `python-yaml` and `ttf-firacode-nerd`, none of which a build or `make check` needs, and systemd as PID 1, which `localectl` and `timedatectl` ask
-- Every run starts with `--debug`, so nothing is partitioned, mounted or restarted. Which pages are taken and every answer given is in **[screenshots.yaml](screenshots.yaml)**
+- Every run starts with `--dry-run`, so nothing is partitioned, mounted or restarted. Which pages are taken and every answer given is in **[screenshots.yaml](screenshots.yaml)**
 - `installing.png` catches a run while it is going, so it differs from run to run
 
 ## Workflow
@@ -186,7 +177,7 @@ END_COMMIT_OVERRIDE
 | --- | --- | --- |
 | `Title` | A pull request is opened, pushed to or edited | Checks the title |
 | `Check` | A pull request, a release, every Monday, on demand | `make check` |
-| `Image` | As `Check`, where the change reaches the image | Builds the release, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO. Then starts its Recovery and writes it again from the ISO. Every Monday and on demand also the Desktop starting point, booted to GNOME's login screen |
+| `Image` | As `Check`, where the change reaches the image | Builds the program, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO. Then starts its Recovery and writes it again from the ISO. Every Monday and on demand also the Desktop starting point, booted to GNOME's login screen |
 | `Release` | A push to `main` | The release pull request, or once that is merged, the tag and the draft page |
 | `Publish` | A release | Attaches the files `Image` booted to the page, signed, and publishes it |
 
@@ -202,7 +193,7 @@ Nothing is typed and nothing is tagged by hand.
 
 - Merges collect in the release pull request until it is merged. When to release is a decision, not a schedule
 - The page carries `arch-os-2.1.0-x86_64.iso` and `arch-os-2.1.0-recovery-x86_64.tar`, both with signed build provenance. The ISO leaves the Recovery out to stay under GitHub's 2 GiB per file: its Installer fetches the `.tar`, and an installed Recovery updates itself from it
-- Every other build is named after a pre-release of the next patch: `arch-os-2.0.1-dev-x86_64.iso`. `make build VERSION=2.1.0` names a build after any version, which the build stamps into `oak.yaml`
+- Every other build is named after a pre-release of the next patch: `arch-os-2.0.1-dev-x86_64.iso`. `make build VERSION=2.1.0` names a build after any version, which it stamps into the program
 
 **Note:** _The page stays a draft until every file is attached. A run that fails on the way leaves a draft: re-run its failed jobs._
 

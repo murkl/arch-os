@@ -3,7 +3,7 @@
 
 Text is set as outlines of the banner's font, since GitHub lets an SVG shown as
 an image load no font, and the viewer's own would differ on every machine. The
-button is the accent in oak.yaml. Under it, each starting point is a quiet pill
+button is the accent in product.yaml. Under it, each starting point is a quiet pill
 of its own, so the two wrap on a narrow screen, once for each GitHub theme and
 on a ground of its own, so it reads on the other theme too. The text
 alternatives are written into README.md from the same run.
@@ -112,10 +112,10 @@ class Face:
 
 
 def accent():
-    for line in (DOCS.parent / "oak.yaml").read_text().split("\n"):
+    for line in (DOCS.parent / "product.yaml").read_text().split("\n"):
         if line.startswith("accent:"):
             return line.split(":", 1)[1].strip().strip('"')
-    sys.exit("oak.yaml: no accent:")
+    sys.exit("product.yaml: no accent:")
 
 
 def mix(a, b, share):

@@ -21,7 +21,6 @@ rules:
 # Build output and the ISO's scratch space, see /Makefile and iso/build.sh.
 ignore: |
   /dist/
-  /.dev/
-  /.oak/
+  /runtime/target/
   /iso/archiso/
   /iso/download/

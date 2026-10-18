@@ -229,7 +229,7 @@ shows() {
 finished() {
     local module="$1" seconds="$2" deadline result
     deadline=$((SECONDS + seconds))
-    until result="$(live "grep -m1 -E '\\| (INFO \\| run: ok|ERROR \\|)' /opt/arch-os/${module}.log" 2>/dev/null)"; do
+    until result="$(live "grep -m1 -E ' (INFO run: ok|ERROR )' /opt/arch-os/${module}.log" 2>/dev/null)"; do
         [ "$SECONDS" -lt "$deadline" ] || fail "the ${module} did not finish within ${seconds}s"
         if pane | grep -qF -- "⏎ continue"; then
             keys Enter
@@ -346,38 +346,38 @@ EOF
     say "Made a subvolume inside the system"
 }
 
-# Waits for the Recovery on its partition to open on its menu. It has to pass
-# Secure Boot with this machine's keys, find and check its partition and open
-# in the language the Installer was read in.
+# Waits for the Recovery on its partition to open on its dashboard. It has to
+# pass Secure Boot with this machine's keys, find and check its partition and
+# open in the language the Installer was read in.
 recovery_opens() {
     local how="$1" deadline=$((SECONDS + BOOT_TIMEOUT)) shot="${WORK}/recovery.png"
     rm -f "$shot"
-    until [ -s "$shot" ] && tesseract "$shot" - --psm 6 2>/dev/null | grep -qE 'Setup|Start'; do
+    until [ -s "$shot" ] && tesseract "$shot" - --psm 6 2>/dev/null | grep -qE 'Repair now|Update the Recovery'; do
         kill -0 "$QEMU_PID" 2>/dev/null || fail "the machine stopped before the Recovery came up"
-        [ "$SECONDS" -lt "$deadline" ] || fail "the Recovery on its partition did not open on its menu within ${BOOT_TIMEOUT}s"
+        [ "$SECONDS" -lt "$deadline" ] || fail "the Recovery on its partition did not open on its dashboard within ${BOOT_TIMEOUT}s"
         rm -f "$shot"
         printf 'screendump %s -f png\n' "$shot" >&3
         sleep 10
     done
-    say "Recovery: started ${how}, on its menu"
+    say "Recovery: started ${how}, on its dashboard"
 }
 
 # The Recovery on its partition, started the way its launcher on the desktop
-# starts it, and left with Exit.
-recovery_menu() {
+# starts it, and left with Start over.
+recovery_dashboard() {
     local deadline shot="${WORK}/recovery.png"
     as_root systemctl reboot --boot-loader-entry=arch-os-recovery.efi || true
     recovery_opens "by the boot loader"
 
-    # Exit is the last row of the page q opens. Photographed often enough to
-    # catch a login that flashes by, and back within seconds, unlike a reboot.
-    local frame=0 text menu=false
+    # Start over is the last row of the page q opens. Photographed often enough
+    # to catch a login that flashes by, and back within seconds, unlike a reboot.
+    local frame=0 text dashboard=false
     printf 'sendkey q\n' >&3
     sleep 2
     rm -f "$shot"
     printf 'screendump %s -f png\n' "$shot" >&3
     sleep 1
-    tesseract "$shot" - --psm 6 2>/dev/null | grep -qE 'Exit|Leave|Restart' || fail "q did not open the page with Exit, see ${shot}"
+    tesseract "$shot" - --psm 6 2>/dev/null | grep -qE 'Start over|Leave|Restart' || fail "q did not open the page with Start over, see ${shot}"
     for key in down down ret; do
         printf 'sendkey %s\n' "$key" >&3
         sleep 0.3
@@ -391,15 +391,15 @@ recovery_menu() {
         [ -s "$shot" ] || continue
         text="$(tesseract "$shot" - --psm 6 2>/dev/null || true)"
         grep -qi 'login' <<<"$text" && fail "leaving the Recovery showed a login, see ${shot}"
-        if grep -qE 'Setup|Start' <<<"$text"; then
-            menu=true
+        if grep -qE 'Repair now|Update the Recovery' <<<"$text"; then
+            dashboard=true
             break
         fi
         rm -f "$shot"
     done
-    [ "$menu" = true ] || fail "the Recovery did not come back on its menu within 15s of Exit"
+    [ "$dashboard" = true ] || fail "the Recovery did not come back on its dashboard within 15s of Start over"
     rm -f "${WORK}"/recovery-exit-*.png
-    say "Recovery: Exit starts it again, without a login on the way"
+    say "Recovery: Start over starts it again, without a login on the way"
 
     cut_power
 }
@@ -412,6 +412,7 @@ recovery_menu() {
 # preset with the SSH server on, which is how this run reaches it.
 answers() {
     cat <<EOF
+MODULE_LANGUAGE='en'
 ARCH_OS_USERNAME='${USERNAME}'
 ARCH_OS_HOSTNAME='arch-os-e2e'
 ARCH_OS_LOCALE_LANG='en_US'
@@ -473,10 +474,10 @@ if ! live test -d /opt/arch-os-recovery; then
         live "mkdir -p /tmp/arch-os-recovery && cat >/tmp/arch-os-recovery/${file}" <"${RECOVERY_DIR}/${file}"
     done
 fi
-live "tmux new-session -d -s e2e -x 120 -y 40 'installer --language=en'"
+live "tmux new-session -d -s e2e -x 120 -y 40 'arch-os installer'"
 
 say "Install"
-shows "Setup"
+shows "Install now"
 keys Enter
 shows "Password"
 typed "$PASSWORD"
@@ -484,8 +485,8 @@ keys Enter
 shows "Repeat"
 typed "$PASSWORD"
 keys Enter
-shows "Do you really want to start?"
-keys Up Enter
+shows "Install Arch OS on ${DISK}?"
+keys Down Enter
 finished installer "$INSTALL_TIMEOUT"
 
 # The Recovery's own firmware entry as the next boot: the way in from the
@@ -568,20 +569,20 @@ until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
 live systemctl stop arch-os
 as_2_0
 nested_subvolume
-live "printf \"ARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
-live "tmux new-session -d -s e2e -x 120 -y 40 'recovery --language=en'"
+live "printf \"MODULE_LANGUAGE='en'\nARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
+live "tmux new-session -d -s e2e -x 120 -y 40 'arch-os recovery'"
 
 say "Repair: go back to the newest snapshot and rebuild the boot files"
-shows "Setup"
+shows "Repair now"
 keys Enter
 shows "Encryption password"
 typed "$PASSWORD"
 keys Enter
-# Each text is one only its page shows: the run page lists every step's title.
+# Each text is one only its page shows: the run page lists every task's title.
 shows "Newest first"
 keys Enter
 shows "in place of the system on ${DISK}?"
-keys Up Enter
+keys Down Enter
 # Opens on Yes after the rollback.
 shows "Rebuild the kernel images"
 keys Enter
@@ -598,7 +599,7 @@ fi
 say "Repair: laid the 2.0 installation out as this release does"
 [ "$(as_root cat /var/lib/machines/e2e/kept)" = kept ] || fail "the rollback lost the subvolume made inside the system"
 say "Repair: kept the subvolume made inside the system"
-recovery_menu
+recovery_dashboard
 
 # An update cut short leaves a partition whose UUID the boot image no longer
 # names. Secure Boot is off on the ISO, and the system's keys sign it all the same.
@@ -606,14 +607,12 @@ start repair
 until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
 live systemctl stop arch-os
 live dd if=/dev/urandom of="${DISK}3" bs=1M count=8 conv=fsync status=none
-live "printf \"ARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
-live "tmux new-session -d -s e2e -x 120 -y 40 'recovery --language=en'"
+live "printf \"MODULE_LANGUAGE='en'\nARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
+live "tmux new-session -d -s e2e -x 120 -y 40 'arch-os recovery'"
 
 say "Update: write the Recovery again from the ISO"
-shows "Setup"
-keys Down Enter
 shows "Update the Recovery"
-typed "/"
+keys f
 typed "Update"
 keys Enter
 deadline=$((SECONDS + 120))
@@ -632,7 +631,7 @@ fi
 typed "$PASSWORD"
 keys Enter
 shows "Install the newest Recovery of this release series?"
-keys Up Enter
+keys Down Enter
 deadline=$((SECONDS + UPDATE_TIMEOUT))
 until pane | grep -qF "Recovery updated"; do
     [ "$SECONDS" -lt "$deadline" ] || {

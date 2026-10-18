@@ -1,85 +1,37 @@
 # The only task runner. CI runs these targets, so what holds at a desk holds
 # there.
 #
-#   dist/arch-os-$(VERSION)/                       build: oak, oak.yaml, oak.sh, modules/
-#   dist/arch-os-$(VERSION)-recovery/              image: recovery.efi, recovery.img
-#   dist/arch-os-$(VERSION)-recovery-x86_64.tar    image: that folder as one file
-#   dist/arch-os-$(VERSION)-x86_64.iso             image: the bootable image
+#   runtime/target/release/arch-os             build: the program, with every module inside it
+#   dist/arch-os-$VERSION-recovery/            image: recovery.efi, recovery.img
+#   dist/arch-os-$VERSION-recovery-x86_64.tar  image: that folder as one file
+#   dist/arch-os-$VERSION-x86_64.iso           image: the bootable image
 
 # One bash per recipe, with -e, -u and pipefail. A failed file target is
 # removed rather than left half written.
-SHELL       := /bin/bash
-.SHELLFLAGS := -euo pipefail -c
+SHELL       := bash
+.SHELLFLAGS := -eu -o pipefail -c
 .DELETE_ON_ERROR:
 
 # ////////////////////////////////////////////////////////////////////////////
-# THE PRODUCT | What a release is called and what it holds
+# THE PROGRAM | The runtime with the product embedded
 # ////////////////////////////////////////////////////////////////////////////
 
-# What a release is. Oak looks for all of it beside its own binary.
-APP           := oak
-PRODUCT       := oak.yaml
-PRODUCT_SHELL := oak.sh
-MODULES_DIR   := modules
+RUNTIME := runtime
+BIN     := $(RUNTIME)/target/release/arch-os
 
-# The last release, as release-please keeps it.
-RELEASED := $(shell sed -n 's/.*"\.":[[:space:]]*"\([^"]*\)".*/\1/p' .release-please-manifest.json)
+# What a release hands in as `VERSION=`. Without it, build.rs names a
+# pre-release of the patch after the last release.
+VERSION ?=
 
-# What a build is named after: the release its run hands in as `VERSION=`, or
-# the version a picture is to show, otherwise a pre-release of the next patch.
-VERSION := $(shell echo '$(RELEASED)' | awk -F. '{ print $$1 "." $$2 "." $$3 + 1 "-dev" }')
-
-# The folders in modules/: adding a module is adding a folder.
-MODULES := $(notdir $(wildcard $(MODULES_DIR)/*))
-
-# What of a module goes into a release. A README and a linter's config do not.
-MODULE_DECL  := module.yaml
-MODULE_PARTS := data locales tasks actions
-
-# ////////////////////////////////////////////////////////////////////////////
-# OAK | The runtime this is built on
-# ////////////////////////////////////////////////////////////////////////////
-
-# https://github.com/murkl/oak, downloaded rather than built, and pinned so a
-# commit builds the same tomorrow. Written without the `v` of its tag.
-OAK_REPO    := murkl/oak
-OAK_VERSION ?= 0.26.1
-OAK_ASSET   := oak-linux-amd64
-OAK_DIR     := .oak
-
-# Named after its version, so raising OAK_VERSION fetches the new one.
-OAK_BIN     := $(OAK_DIR)/oak-$(OAK_VERSION)
-OAK_URL     := https://github.com/$(OAK_REPO)/releases/download/v$(OAK_VERSION)/$(OAK_ASSET)
-OAK_API     := https://api.github.com/repos/$(OAK_REPO)/releases/tags/v$(OAK_VERSION)
-
-# https even after a redirect: -L alone would follow a 302 into plain http.
-CURL := curl --proto '=https' --proto-redir '=https' -Lf --progress-bar
-
-# ////////////////////////////////////////////////////////////////////////////
-# BUILD OUTPUT | One folder, everything a build leaves
-# ////////////////////////////////////////////////////////////////////////////
-
-DIST_DIR := dist
-
-# The product under the name it unpacks to. Only x86_64 is built.
-STEM        := arch-os-$(VERSION)
-RELEASE_DIR := $(DIST_DIR)/$(STEM)
-
-# The Recovery image beside the release, and as one tar for the release page.
-RECOVERY_DIR := $(STEM)-recovery
-RECOVERY_TAR := $(STEM)-recovery-x86_64.tar
-
-# A release's shape made of symlinks, so every check reads the files being
-# edited.
-DEV_DIR := .dev
-
-# What `make run` opens: MODULE names one outright, ARGS is the rest.
-MODULE ?=
+# What `make run` opens, and the rest of its command line.
+MODULE ?= installer
 ARGS   ?=
 
 # ////////////////////////////////////////////////////////////////////////////
 # THE IMAGES | Stock Arch profiles, patched to boot into this
 # ////////////////////////////////////////////////////////////////////////////
+
+DIST_DIR := dist
 
 # Scripts rather than targets, each taking what it works on as an argument.
 ISO_DIR    := iso
@@ -93,9 +45,9 @@ ISO_FONT   := $(ISO_DIR)/font.sh
 START ?= core
 
 # The Recovery inside the ISO, or left for the Installer to fetch from the
-# release page: a pre-release has no release page, and a release's ISO stays
-# under GitHub's 2 GiB a file. `make iso ISO_RECOVERY=true` decides by hand.
-ISO_RECOVERY ?= $(if $(findstring -,$(VERSION)),true,false)
+# release page. build.sh decides by the version, `make iso ISO_RECOVERY=true`
+# by hand.
+ISO_RECOVERY ?=
 
 # The newest images, read when used, so `make iso && make smoke` needs no
 # argument.
@@ -115,136 +67,68 @@ ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_E2E) $(ISO_GLYPHS) $(ISO_FONT) $(
 # Bash: the helpers in docs/, run by hand.
 DOCS_SCRIPTS := $(wildcard docs/*.sh)
 
-# Every module script with the library they share, and every module yaml.
-MODULE_SCRIPTS = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -name '*.sh')
-MODULE_YAML    = $(shell find $(MODULES_DIR) -name '*.yaml')
+# The modules: every folder with a module.yaml, as the build embeds them.
+MODULES := $(patsubst %/module.yaml,%,$(wildcard */module.yaml))
+
+# Every module script with the library they share, and every yaml.
+LIBRARY        := lib.sh
+MODULE_SCRIPTS = $(LIBRARY) $(shell find $(MODULES) -name '*.sh')
+MODULE_YAML    = product.yaml $(shell find $(MODULES) -name '*.yaml')
 
 # Shell a module ships into somebody's home, found by the name it lands under.
 # zsh is read by its own shell, since shellcheck cannot.
-MODULE_SHELL = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/data/bashrc $(MODULES_DIR)/*/tasks/@*/*/data/aliases)
-MODULE_ZSH   = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/data/zshrc)
+MODULE_SHELL = $(wildcard $(addsuffix /tasks/*/*/data/bashrc,$(MODULES)) $(addsuffix /tasks/*/*/data/aliases,$(MODULES)))
+MODULE_ZSH   = $(wildcard $(addsuffix /tasks/*/*/data/zshrc,$(MODULES)))
 
 # A program a module ships, named outright: it has no extension to find it by.
-MODULE_PROGRAMS := $(MODULES_DIR)/installer/tasks/@desktop/recovery-app/data/arch-os-recovery
+MODULE_PROGRAMS := installer/tasks/desktop/recovery-app/data/arch-os-recovery
 
-# Everything a module can put on a screen. The READMEs and fastfetch's config,
-# drawn for a graphical terminal, never reach a console.
-MODULE_TEXT = $(PRODUCT_SHELL) $(shell find $(MODULES_DIR) -type f ! -name '*.md' ! -name fastfetch.jsonc)
+# Everything that can reach a screen: the product, the catalogs, the library
+# and every module file. The READMEs and fastfetch's config, drawn for a
+# graphical terminal, never reach a console.
+MODULE_TEXT = product.yaml $(wildcard locales/*.po) $(LIBRARY) $(shell find $(MODULES) -type f ! -name '*.md' ! -name fastfetch.jsonc)
 
 # Each module's own check of what it ships in data/: the Installer's lookup
 # tables, the Recovery's boot entries. And a task's check of a program it
 # ships: the cache trim that keeps the snapshots' kernels.
-DATA_CHECKS = $(wildcard $(MODULES_DIR)/*/data/check.sh $(MODULES_DIR)/*/tasks/@*/*/check.sh)
+DATA_CHECKS = $(wildcard $(addsuffix /data/check.sh,$(MODULES)) $(addsuffix /tasks/*/*/check.sh,$(MODULES)))
 
-# oak.sh's own check: its functions against answers written out beside them.
-LIBRARY_CHECK := oak.check.sh
+# lib.sh's own check: its functions against answers written out beside them.
+LIBRARY_CHECK := lib.check.sh
 
 # A task's check of the zshrc it ships: keys typed into the shell reading it.
-ZSH_CHECKS = $(wildcard $(MODULES_DIR)/*/tasks/@*/*/check.zsh)
+ZSH_CHECKS = $(wildcard $(addsuffix /tasks/*/*/check.zsh,$(MODULES)))
 
 # ////////////////////////////////////////////////////////////////////////////
 # HOUSEKEEPING
 # ////////////////////////////////////////////////////////////////////////////
 
-# Everything a build leaves. .oak/ is a dependency, not build output.
-BUILD_OUTPUT := $(DIST_DIR) $(DEV_DIR) $(ISO_DIR)/archiso $(ISO_DIR)/download
+# Everything a build leaves outside cargo's target folder.
+BUILD_OUTPUT := $(DIST_DIR) $(ISO_DIR)/archiso $(ISO_DIR)/download
 
 # Empty when there is nothing to elevate, which is the case in CI.
 SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 
-.PHONY: all oak oak-check build dev run inspect image iso smoke e2e locales \
-	locales-check glyphs-check library-check data-check zsh-check actions-check lint fmt check version-name \
-	secrets-check github clean
-
-# build empties the release that everything packaging it reads.
-.NOTPARALLEL:
+.PHONY: all build run image iso smoke e2e check fmt fmt-check lint test \
+	secrets-check actions-check library-check data-check zsh-check glyphs-check github clean
 
 all: build
 
-# Checked against the digest GitHub publishes. GITHUB_TOKEN where there is one:
-# without it the API allows sixty calls an hour per address.
-$(OAK_BIN):
-	@mkdir -p $(OAK_DIR)
-	$(CURL) $(OAK_URL) -o $(OAK_DIR)/$(OAK_ASSET)
-	@auth=(); \
-	if [ -n "$${GITHUB_TOKEN:-}" ]; then auth=(--header "Authorization: Bearer $${GITHUB_TOKEN}"); fi; \
-	release="$$($(CURL) -s "$${auth[@]}" $(OAK_API))" || { \
-		echo "$(OAK_API) could not be read. A call that does not say who it is gets 60 an hour per address, and one GitHub will not accept gets none: set or correct GITHUB_TOKEN." >&2; \
-		exit 1; \
-	}; \
-	digest="$$(printf '%s' "$$release" | tr ',' '\n' | awk -v asset='$(OAK_ASSET)' \
-		'$$0 ~ "\"name\": *\"" asset "\"" { want = 1 } \
-		 want && !seen && /"digest": *"sha256:/ { seen = 1; sub(/.*sha256:/, ""); sub(/".*/, ""); print }')"; \
-	[ -n "$$digest" ] \
-		|| { echo "$(OAK_REPO) publishes no checksum for $(OAK_ASSET) at v$(OAK_VERSION)" >&2; exit 1; }; \
-	echo "$$digest  $(OAK_DIR)/$(OAK_ASSET)" | sha256sum -c -
-	install -m 755 $(OAK_DIR)/$(OAK_ASSET) $@
+# The program: the runtime with the product, the library, the catalogs and
+# every module inside it.
+build:
+	cd $(RUNTIME) && $(if $(VERSION),ARCH_OS_VERSION=$(VERSION)) cargo build --release --locked
 
-# The pin asked of the binary rather than of its file name: a binary put in
-# .oak/ by hand would otherwise ship, and the image would refuse its own
-# modules at boot.
-oak-check: $(OAK_BIN)
-	@got="$$($(OAK_BIN) --version | sed -n 's/^runtime: //p')"; [ "$$got" = "$(OAK_VERSION)" ] \
-		|| { echo "$(OAK_BIN) answers to '$$got', not $(OAK_VERSION): run 'make oak'" >&2; exit 1; }
+# Arch OS out of the sources, in a folder of its own, where it keeps its
+# answers and its log. `make run MODULE=recovery ARGS=--dry-run`.
+run:
+	mkdir -p $(RUNTIME)/target/run
+	cd $(RUNTIME)/target/run && cargo run --manifest-path ../../Cargo.toml -- $(MODULE) $(ARGS)
 
-# Fetched again, for the same tag republished.
-oak:
-	rm -rf $(OAK_DIR)
-	$(MAKE) oak-check
-
-# oak.yaml under the name this build goes by, written beside and moved over
-# whatever lies there, so a link in its place is replaced rather than written
-# through to the source.
-define stamp
-{ cat $(PRODUCT); echo 'version: $(VERSION)'; } >$(1)/$(PRODUCT).part
-mv -f $(1)/$(PRODUCT).part $(1)/$(PRODUCT)
-endef
-
-# A name handed in is a version.
-version-name:
-	@[[ '$(VERSION)' =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$$ ]] \
-		|| { echo "'$(VERSION)' is not a version" >&2; exit 1; }
-
-# The runtime, the product and a clean copy of every module. Templates, table
-# checks and linter configs go out again: none of them runs.
-build: oak-check version-name
-	rm -rf $(RELEASE_DIR)
-	mkdir -p $(RELEASE_DIR)
-	install -m 755 $(OAK_BIN) $(RELEASE_DIR)/$(APP)
-	$(call stamp,$(RELEASE_DIR))
-	install -m 644 $(PRODUCT_SHELL) $(RELEASE_DIR)/$(PRODUCT_SHELL)
-	for m in $(MODULES); do \
-		dest=$(RELEASE_DIR)/$(MODULES_DIR)/$$m; \
-		mkdir -p $$dest; \
-		cp $(MODULES_DIR)/$$m/$(MODULE_DECL) $$dest/; \
-		for part in $(MODULE_PARTS); do \
-			[ -e $(MODULES_DIR)/$$m/$$part ] && cp -r $(MODULES_DIR)/$$m/$$part $$dest/ || true; \
-		done; \
-	done
-	find $(RELEASE_DIR) \( -name '*.pot' -o -name 'check.sh' -o -name 'check.zsh' -o -name .shellcheckrc \) -delete
-
-# The same shape without the build. The binary is copied, not linked: Oak
-# resolves its own path before looking beside itself.
-dev: oak-check version-name
-	@mkdir -p $(DEV_DIR)
-	@$(call stamp,$(DEV_DIR))
-	@ln -sfn ../$(PRODUCT_SHELL) $(DEV_DIR)/$(PRODUCT_SHELL)
-	@ln -sfn ../$(MODULES_DIR) $(DEV_DIR)/$(MODULES_DIR)
-	@install -m 755 $(OAK_BIN) $(DEV_DIR)/$(APP)
-
-# Arch OS out of the sources.
-run: dev
-	cd $(DEV_DIR) && ./$(APP) $(if $(MODULE),--module=$(MODULE)) $(ARGS)
-
-# Every module loaded as a run loads it, and the order it resolves to.
-inspect: dev
-	@cd $(DEV_DIR) && ./$(APP) --inspect
-
-# The images, out of the release already in dist/.
+# The images, out of the program: the Recovery as a folder and as one file for
+# the release page, then the ISO that carries it.
 image:
-	ISO_RECOVERY=$(ISO_RECOVERY) $(ISO_BUILD) $(CURDIR)/$(RELEASE_DIR)
-	tar -cf $(DIST_DIR)/$(RECOVERY_TAR) --owner=0 --group=0 --sort=name \
-		-C $(DIST_DIR) $(RECOVERY_DIR)
+	$(if $(ISO_RECOVERY),ISO_RECOVERY=$(ISO_RECOVERY)) $(ISO_BUILD) $(BIN) $(DIST_DIR)
 
 # The whole way there.
 iso: build image
@@ -259,68 +143,57 @@ smoke:
 e2e:
 	$(ISO_E2E) $(ISO) $(START)
 
-# Every template rewritten and every catalog brought up to it: a changed text
-# turns fuzzy, a removed one is dropped.
-locales: dev
-	for m in $(MODULES); do \
-		pot=$(MODULES_DIR)/$$m/locales/$$m.pot; \
-		(cd $(DEV_DIR) && ./$(APP) --strings --module=$$m) >$$pot; \
-		for po in $(MODULES_DIR)/$$m/locales/*.po; do \
-			[ -e "$$po" ] || continue; \
-			msgmerge --quiet --update --backup=none --no-wrap "$$po" $$pot; \
-			msgattrib --no-obsolete --no-wrap -o "$$po" "$$po"; \
-		done; \
-	done
-
 # ////////////////////////////////////////////////////////////////////////////
 # CHECKS | What has to pass before anything is committed
 # ////////////////////////////////////////////////////////////////////////////
+
+# The whole gate, cheapest and loudest first. CI runs exactly this.
+check: secrets-check fmt-check lint test actions-check library-check data-check zsh-check glyphs-check
 
 # This is installed by piping a script into a shell.
 secrets-check:
 	gitleaks dir . --redact --no-banner
 
-# A reworded text needs `make locales`, or no translator sees it.
-locales-check: dev
-	@for m in $(MODULES); do \
-		pot=$(MODULES_DIR)/$$m/locales/$$m.pot; \
-		(cd $(DEV_DIR) && ./$(APP) --strings --module=$$m) | diff -u $$pot - \
-			|| { echo "$$pot is out of date: run 'make locales'" >&2; exit 1; }; \
-		for po in $(MODULES_DIR)/$$m/locales/*.po; do \
-			[ -e "$$po" ] || continue; \
-			printf '%s: ' "$$po"; msgfmt --check-format --statistics -o /dev/null "$$po" || exit 1; \
-		done; \
-	done
+fmt:
+	cd $(RUNTIME) && cargo fmt
+	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)
+	shfmt -w -i 4 $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL) $(LIBRARY_CHECK)
 
-# Module scripts are checked as Oak runs them: bash, with oak.sh in scope. Each
-# grep refuses a pattern its message explains.
+fmt-check:
+	cd $(RUNTIME) && cargo fmt --check
+	shfmt -d -ln posix -i 4 $(POSIX_SCRIPTS)
+	shfmt -d -i 4 $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL) $(LIBRARY_CHECK)
+
+# Module scripts are checked as the runtime runs them: bash, with lib.sh in
+# scope. Each grep refuses a pattern its message explains.
 lint:
+	cd $(RUNTIME) && cargo clippy --all-targets --locked -- -D warnings
 	shellcheck -s sh -S style $(POSIX_SCRIPTS)
 	shellcheck -S style $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS)
 	shellcheck -x -S style $(MODULE_SCRIPTS) $(LIBRARY_CHECK)
 	shellcheck -s bash -S style -e SC1091 $(MODULE_SHELL)
 	for file in $(MODULE_ZSH) $(ZSH_CHECKS); do zsh -n "$$file"; done
-	shfmt -d -ln posix -i 4 $(POSIX_SCRIPTS)
-	shfmt -d -i 4 $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL) $(LIBRARY_CHECK)
-	yamllint .
+	yamllint -s .
 	actionlint
 	zizmor --offline --persona auditor .github
+	msgfmt --check-format -o /dev/null $(wildcard locales/*.po)
 	@! grep -nE 'arch-chroot [^|&;]*[[:space:]](command|type|hash|source|alias)[[:space:]]' \
 		$(MODULE_SCRIPTS) $(MODULE_YAML) \
 		|| { echo "a shell builtin cannot run through arch-chroot, see has_command" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*\}[[:space:]]*>>?[[:space:]]*"\$$\{MNT\}' $(MODULE_SCRIPTS) \
-		|| { echo "a file written into the new system is a template beside its task, put in place with render, see oak.sh" >&2; exit 1; }
+		|| { echo "a file written into the new system is a template beside its task, put in place with render, see lib.sh" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*![[:space:]]' $(MODULE_SCRIPTS) \
 		|| { echo "a command inverted with ! fails nothing under the ERR trap a script runs in: write it as an if that exits" >&2; exit 1; }
 
-fmt:
-	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)
-	shfmt -w -i 4 $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL) $(LIBRARY_CHECK)
+# The runtime's tests load the product as a run does and hold every catalog to
+# every text.
+test:
+	cd $(RUNTIME) && cargo test --locked
 
 # A console font holds one table of glyphs, and a character outside it is a box
-# on screen. Asked of the runtime, after locales-check.
-glyphs-check: oak-check
-	@$(ISO_GLYPHS) $(OAK_BIN) $(MODULE_TEXT)
+# on screen. Asked of the program, which knows what it draws itself.
+glyphs-check: build
+	@$(ISO_GLYPHS) $(BIN) $(MODULE_TEXT)
 
 # Every name a module hands to another program, against that program's own
 # list: a wrong keymap, font or time zone reads fine and is silently ignored,
@@ -336,15 +209,12 @@ zsh-check:
 
 # An action two modules share is a folder in each, the same file for file.
 actions-check:
-	@for name in $$(basename -a $(MODULES_DIR)/*/actions/*/ | sort | uniq -d); do \
-		set -- $(MODULES_DIR)/*/actions/$$name; first=$$1; shift; \
+	@for name in $$(basename -a */actions/*/ | sort | uniq -d); do \
+		set -- */actions/$$name; first=$$1; shift; \
 		for dir in "$$@"; do \
 			diff -r $$first $$dir || { echo "$$dir differs from $$first" >&2; exit 1; }; \
 		done; \
 	done
-
-# The whole gate, cheapest and loudest first. CI runs exactly this.
-check: secrets-check lint inspect actions-check locales-check library-check data-check zsh-check glyphs-check
 
 # The repository's settings on GitHub, out of .github/settings/. Run by hand as
 # an admin: a workflow may not change the rules it is held to.
@@ -354,4 +224,5 @@ github:
 # mkarchiso writes as root. The plain removal comes first, so an ordinary clean
 # asks for no password.
 clean:
+	cd $(RUNTIME) && cargo clean
 	rm -rf $(BUILD_OUTPUT) || $(SUDO) rm -rf $(BUILD_OUTPUT)

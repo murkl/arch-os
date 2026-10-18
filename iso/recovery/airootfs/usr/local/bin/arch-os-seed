@@ -5,9 +5,14 @@ set -eu
 
 OPT=/opt/arch-os
 
-# What the Installer leaves on the EFI partition: Oak's own answers and the
-# Recovery's. modules/installer/tasks/@system/recovery spells the same path.
-SEED=EFI/arch-os-recovery
+# What the Installer leaves on the EFI partition: the Recovery's answers.
+# installer/tasks/system/recovery spells the same path.
+SEED=EFI/arch-os-recovery/recovery.conf
+
+# The script every installed system runs after a start that worked, with the
+# count build.sh read out of lib.sh into this unit's environment.
+BOOT_TRIES_SCRIPT=/usr/local/lib/arch-os/boot-tries.sh
+: "${BOOT_TRIES:?set by arch-os-seed.service.d/tries.conf}"
 
 # Where systemd's boot loader, or the stub of an image the firmware started
 # itself, records the EFI partition it was started from.
@@ -25,7 +30,7 @@ booted_esp() {
     lsblk -rno PATH,PARTUUID | awk -v uuid="$uuid" '!found && $2 == uuid { print $1; found = 1 }'
 }
 
-rm -f "${OPT}/oak.conf" "${OPT}/recovery.conf"
+rm -f "${OPT}/recovery.conf"
 
 # The disk that partition lies on holds the system to repair.
 esp="$(booted_esp)"
@@ -40,11 +45,8 @@ fi
 if [ -n "$esp" ]; then
     mnt="$(mktemp -d)"
     if mount -t vfat "$esp" "$mnt"; then
-        for file in oak.conf recovery.conf; do
-            [ ! -f "${mnt}/${SEED}/${file}" ] || cp "${mnt}/${SEED}/${file}" "${OPT}/${file}"
-        done
-        tries="$(bash -c 'source "$1" && printf "%s" "$BOOT_TRIES"' _ "${OPT}/oak.sh" || true)"
-        if [ -z "$tries" ] || ! bash "${OPT}/modules/recovery/data/boot/boot-tries.sh" "$mnt" "$tries"; then
+        [ ! -f "${mnt}/${SEED}" ] || cp "${mnt}/${SEED}" "${OPT}/recovery.conf"
+        if ! "$BOOT_TRIES_SCRIPT" "$mnt" "$BOOT_TRIES"; then
             echo "the system's boot entries could not be given their tries back" >&2
         fi
         umount "$mnt"

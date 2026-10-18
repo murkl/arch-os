@@ -1,4 +1,0 @@
-# Under on-success: the system is still mounted when the run ends.
-title: Open a shell
-description: Inside the system on the disk, to look around or fix something by hand. Leave it with exit.
-tty: true

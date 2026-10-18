@@ -1,0 +1,16 @@
+# On the dashboard of the Recovery on its partition, and of one started
+# elsewhere for a disk whose Recovery no longer starts. Choosing the row looks;
+# what is found is installed only after update-install asks.
+title: Update the Recovery
+description: Looks for the newest Recovery of this release series and installs it after asking.
+error: The internet connection was lost before the Recovery could be installed. Join a network with Configure Wi-Fi on the dashboard, or plug in a cable.
+
+requires: [recovery-to-update]
+on:
+  failure: [update-install]
+
+report: |
+  Nothing to update
+
+  There is no newer Recovery for the release series this system was installed
+  with.

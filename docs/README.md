@@ -46,9 +46,9 @@
 
 1. Write the **[latest ISO](https://github.com/murkl/arch-os/releases/latest)** to a USB device with **[Ventoy](https://www.ventoy.net)** or **[balenaEtcher](https://etcher.balena.io)**
 2. Set the firmware to UEFI and switch Secure Boot off
-3. Boot the USB device, choose a starting point (**Core** or **Desktop**), then **start the installation**. It needs the internet, by cable or Wi-Fi
+3. Boot the USB device, choose a starting point (**Core** or **Desktop**), then **Install now**. It needs the internet, by cable or Wi-Fi
 4. After the installation and the first reboot, **[switch Secure Boot on](REFERENCE.md#switching-it-on)**
 
-<p align="center"><img src="screenshots/installer.png" width="100%" alt="Setup: every answer on one page, grouped and changeable before the start"><br><sub><b>Setup</b> · every answer prefilled and changeable</sub></p>
+<p align="center"><img src="screenshots/installer.png" width="100%" alt="The dashboard: every answer on one page, grouped and changeable before the start"><br><sub><b>Dashboard</b> · every answer prefilled and changeable</sub></p>
 
 <p align="center"><img src="screenshots/installing.png" width="100%" alt="The installation, each step checked off as it runs"><br><sub><b>Installation</b> · each step as it runs</sub></p>

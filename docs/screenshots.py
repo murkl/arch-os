@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render docs/screenshots: every page of the interface, out of the product.
 
-The real binary on a real pty, started with --debug so it touches nothing. Which
+The real program on a real pty, started with --dry-run so it touches nothing. Which
 pages, and the way to each, is docs/screenshots.yaml. This file is the same in
 every project that uses it.
 
@@ -61,11 +61,9 @@ PAINT = {
     "\u2584": "linear-gradient(to bottom, {field} 50%, {ink} 50%)",
 }
 
-# A product, as Oak reads it. Copied part by part, so an answer file or a log an
-# earlier run left beside them cannot decide what a page says. The shell the
-# modules share is a part only some products have.
-PRODUCT = ("oak", "oak.yaml", "modules")
-OPTIONAL = ("oak.sh",)
+# The program, with every module inside it. Copied, so an answer file or a log
+# an earlier run left beside it cannot decide what a page says.
+PRODUCT = "arch-os"
 
 # Where the copy is driven. A failure page prints the log's path, so this ends up
 # inside a published picture: short and neutral for that reason alone.
@@ -83,7 +81,7 @@ KEY = {
 }
 
 # The mark the interface puts in front of the row under the cursor.
-CURSOR = "\u25b8"
+CURSOR = "\u25b6"
 
 STEP_KEYS = {"page", "shot", "frame", "choose", "press"}
 FRAMES = ("settled", "running")
@@ -206,7 +204,7 @@ def filled(seen):
 
 # The counter a run page carries. The lookahead keeps it off a report, where the
 # same two numbers say how many tests passed.
-COUNTER = re.compile(r"(\d+) of (\d+)(?! tests)")
+COUNTER = re.compile(r"(\d+) of (\d+)(?! (tests|optional))")
 
 
 def running(frames, wants):
@@ -281,17 +279,20 @@ def markup(screen):
 
 
 def cell(style, text):
-    """One run of cells, as writing or as a filled box."""
+    """One run of cells, as writing or as a filled box.
+
+    Every run is its own box, exactly one line tall, so what is painted meets
+    what is painted beside and above it: a row on its surface shows no seam
+    between its words, and a code none between its rows.
+    """
     fg, bg, bold, fill = style
+    box = f"display:inline-block;vertical-align:top;height:{LINE_PX}px;"
     if fill:
-        # Its own box, exactly one line tall, so what is painted meets what is
-        # painted on the line above it.
-        return ('<span style="display:inline-block;vertical-align:top;'
-                'height:{}px;background:{}">{}</span>').format(
-                    LINE_PX, fill.format(ink=fg, field=bg or CARD), " " * len(text))
-    return '<span style="color:{};{}{}">{}</span>'.format(
-        fg, f"background:{bg};" if bg else "",
-        "font-weight:700" if bold else "", html.escape(text))
+        return '<span style="{}background:{}">{}</span>'.format(
+            box, fill.format(ink=fg, field=bg or CARD), " " * len(text))
+    return '<span style="{}color:{};{}{}">{}</span>'.format(
+        box, fg, f"background:{bg};" if bg else "",
+        "font-weight:700;" if bold else "", html.escape(text))
 
 
 def card(stream, out):
@@ -356,8 +357,8 @@ def storyboard(path):
     shots = []
     for t, take in enumerate(takes, 1):
         where = f"{path}: take {t}"
-        if not isinstance(take, dict) or set(take) - {"module", "steps"}:
-            raise SystemExit(f"{where}: a take is module: (optional) and steps:")
+        if not isinstance(take, dict) or set(take) != {"module", "steps"}:
+            raise SystemExit(f"{where}: a take is module: and steps:")
         if not isinstance(take.get("steps"), list) or not take["steps"]:
             raise SystemExit(f"{where}: steps: is a list of pages")
         for s, step in enumerate(take["steps"], 1):
@@ -387,27 +388,19 @@ def storyboard(path):
 
 
 def pristine(source):
-    """A copy of the product, in the folder every take is driven in."""
+    """A copy of the program, in the folder every take is driven in."""
     shutil.rmtree(WORK, ignore_errors=True)
     WORK.mkdir(parents=True)
-    for part in PRODUCT + OPTIONAL:
-        origin = source / part
-        if not origin.exists():
-            if part in OPTIONAL:
-                continue
-            raise SystemExit(f"{source}: no {part} - is this a built product?")
-        if origin.is_dir():
-            shutil.copytree(origin, WORK / part)
-        else:
-            shutil.copy(origin, WORK / part)
-    (WORK / PRODUCT[0]).chmod(0o755)
+    if not source.is_file():
+        raise SystemExit(f"{source}: no program - run make build")
+    shutil.copy(source, WORK / PRODUCT)
+    (WORK / PRODUCT).chmod(0o755)
 
 
 def play(takes, source, out):
     for take in takes:
         pristine(source)
-        module = take.get("module")
-        argv = ["./oak", "--debug"] + ([f"--module={module}"] if module else [])
+        argv = [f"./{PRODUCT}", take["module"], "--dry-run"]
         # C.UTF-8 rather than whatever this desk is set to: the language on a
         # published picture is a decision, not a leak.
         session = Session(argv, str(WORK), env={"LANG": "C.UTF-8", "LC_ALL": "C.UTF-8"})
@@ -437,7 +430,7 @@ def play(takes, source, out):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--product", type=pathlib.Path, required=True,
-                   help="a built product: the oak binary, its oak.yaml, modules/")
+                   help="the built program, runtime/target/release/arch-os")
     p.add_argument("--pages", type=pathlib.Path,
                    default=pathlib.Path("docs/screenshots.yaml"))
     p.add_argument("--out", type=pathlib.Path,

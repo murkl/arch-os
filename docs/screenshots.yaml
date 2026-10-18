@@ -1,15 +1,13 @@
 # The pictures in docs/screenshots/, and the way to each, see screenshots.py.
 #
-# One block is one take: a start of the program from a pristine copy of the
-# product, with --debug, so nothing on this machine is touched. One step is one
-# page: wait for `page:`, photograph it as `shot:`, put the cursor on the row
-# called `choose:`, press on.
+# One block is one take: a start of the program from a pristine copy, with
+# --dry-run, so nothing on this machine is touched. One step is one page: wait
+# for `page:`, photograph it as `shot:`, put the cursor on the row called
+# `choose:`, press on.
 #
 # Every answer is given here rather than left to the machine rendering it: a
 # locale, a keyboard and a time zone all default to something read off it. The
 # disk cannot be, which is why no page showing one is photographed.
-#
-# A take names its `module:`: under --debug both are offered.
 
 # The Installer: every value it will use, and the run.
 - module: installer
@@ -22,7 +20,7 @@
         press: enter
       - page: Username
         press: [tux, enter]
-      # No / first: this question declares its narrowing box open.
+      # Its narrowing box is open, so the answer is typed.
       - page: Language and region
         press: [en_US, enter]
       - page: Time zone
@@ -30,16 +28,10 @@
       - page: Disk
         press: enter
 
-      # Also the page the banner is collaged from, see docs/banner.sh.
-      - page: [Start, Setup]
-        choose: Setup
-        press: enter
-      - page: [Setup, Username]
+      # The dashboard, also the page the banner is collaged from, see
+      # docs/banner.sh. Install now is the row the cursor opens on.
+      - page: [Install now, Username]
         shot: installer
-        press: esc
-
-      - page: [Start, Setup]
-        choose: Start
         press: enter
 
       # Asked here rather than with the other answers, and written to no file.
@@ -49,7 +41,7 @@
         press: [tuxpass, enter]
 
       # The last page, after the password.
-      - page: Do you really want to start?
+      - page: Install Arch OS on
         choose: "Yes"
         press: enter
 

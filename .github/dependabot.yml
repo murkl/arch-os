@@ -1,6 +1,6 @@
 # One pull request a week, titled as title.yml demands. A release is taken
-# after a week: a compromised one is usually pulled by then. Oak is pinned in
-# the Makefile, not here.
+# after a week: a compromised one is usually pulled by then. The crates are
+# pinned by runtime/Cargo.lock and raised by hand.
 
 version: 2
 

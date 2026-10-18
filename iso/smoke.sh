@@ -32,8 +32,9 @@ OVMF_VARS="${OVMF_VARS:-/usr/share/edk2/x64/OVMF_VARS.4m.fd}"
 EXPECT='English|Deutsch'
 
 # A page on the screen does not yet listen: a console the splash left locked
-# shows keys instead of passing them on. So Deutsch is chosen by key.
-ANSWER='Tastatur|bewegen'
+# shows keys instead of passing them on. So Deutsch is chosen by key, and the
+# first question, the keyboard, comes up in German.
+ANSWER='Tastatur|Konsole'
 
 # A machine that got this far and no further says so in plain words, and there is
 # no reason to sit out the timeout for it.

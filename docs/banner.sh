@@ -22,7 +22,7 @@ tagline="${tagline//<b>/}"
 tagline="${tagline//<\/b>/}"
 
 python3 docs/banner.py \
-    --product oak.yaml \
+    --product product.yaml \
     --logo docs/logo.svg \
     --card docs/screenshots/installer.png \
     --card docs/screenshots/installing.png \

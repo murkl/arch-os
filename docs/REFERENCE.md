@@ -1,10 +1,10 @@
 # Reference
 
-How to start Arch OS, what it puts on a disk, and why. What a module's YAML can declare is in the **[➜ Oak Reference](https://github.com/murkl/oak/blob/main/docs/REFERENCE.md)**.
+How to start Arch OS, what it puts on a disk, and why. What a module's YAML can declare, and how its scripts are run, is in the **[➜ Runtime](../runtime/README.md)**.
 
 ## Starting Arch OS
 
-The Arch OS ISO starts the Installer by itself. `installer` or `recovery` on another console (**Ctrl+Alt+F2**) opens either, `installer --language=de` without the language page.
+The Arch OS ISO starts the Installer by itself. `arch-os installer` or `arch-os recovery` on another console (**Ctrl+Alt+F2**) opens either.
 
 ### The Boot Medium
 
@@ -59,7 +59,7 @@ UEFI only, GPT, and the whole disk: Arch OS is the only system on it.
 
 - A rollback keeps all six, since a snapshot of `@` leaves out every subvolume inside it. One made inside `@` later, such as a container's image, moves to the new `@`
 - Mounted with `defaults,noatime,compress=zstd:1`. Level 1 costs an old processor far less per write than 3 and compresses almost as well, as Fedora mounts it. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Btrfs#Compression)**
-- The layout is written once, in `oak.sh`. The Installer creates every subvolume, the Recovery opens only a disk that has all of them and leaves any other alone, such as `@libvirt` of a 2.0 installation
+- The layout is written once, in `lib.sh`. The Installer creates every subvolume, the Recovery opens only a disk that has all of them and leaves any other alone, such as `@libvirt` of a 2.0 installation
 
 ## The Boot Chain
 
@@ -141,7 +141,7 @@ Offered only with disk encryption. Without it the drive is readable either way, 
 
 #### Switching It On
 
-After the installation and the first reboot, if it was left on in **Setup**:
+After the installation and the first reboot, if **Secure Boot** was left on among the answers:
 
 | `sbctl status` says | Do |
 | --- | --- |
@@ -229,7 +229,7 @@ A small configuration in your home and root's, never in `/etc`. Only what the ed
 
 One account, in `wheel`, with `sudo`. Root keeps the locked password Arch ships: `sudo` gives the same rights, and the **[Recovery](#the-recovery)** opens a system that no longer starts.
 
-| Setup | Disk | Login |
+| Answers | Disk | Login |
 | --- | --- | --- |
 | One password | Unlocked with your password | Automatic. `pam_gdm` hands the disk password to the keyring, which works only where it is the account's |
 | Separate disk password | Its own password | The login screen, listing every account. For a shared machine |
@@ -343,7 +343,7 @@ Repairs a system that no longer starts, from its own partition or from the ISO.
 | From | How |
 | --- | --- |
 | Its partition | **Arch OS Recovery** in the boot menu, in the firmware's boot menu (**F12** on most machines), or **Recovery** among the applications. Starts with Secure Boot on |
-| The ISO | `recovery` on another console (**Ctrl+Alt+F2**), with Secure Boot off |
+| The ISO | `arch-os recovery` on another console (**Ctrl+Alt+F2**), with Secure Boot off |
 
 It asks for the keyboard and the disk, on its own partition for neither. The rest is read from the disk:
 
@@ -356,7 +356,7 @@ It asks for the keyboard and the disk, on its own partition for neither. The res
 | Kernels | `/usr/lib/modules/*/`, the images rebuilt from the package cache |
 | Snapshots | `@snapshots`. None skips the rollback |
 
-- It repairs what the Installer of its release series makes, without a network. **Configure Wi-Fi** in **Setup** joins one for an update or a download in the shell
+- It repairs what the Installer of its release series makes, without a network. **Configure Wi-Fi** on the dashboard joins one for an update or a download in the shell
 - A rollback builds the new `@` before it touches the old one, and the next run finishes one cut short
 - `systemctl reboot --boot-loader-entry=arch-os-recovery.efi` starts it once. **Recovery** among the applications does the same after a question that opens on **Cancel**
 
@@ -380,13 +380,13 @@ The Recovery of the release that installed the system, built with the release fr
 | 5 | Plymouth draws on the firmware's screen (`nomodeset`). The Recovery runs on tty1 |
 | 6 | It reads `EFI/arch-os-recovery/` on the EFI partition it was started from, gives the system's entries their tries back, and opens in the Installer's language and keyboard |
 
-It is a kiosk: tty1 is its own, no console has a login, and **Exit** or a crash restarts it with every answer (`RestartMode=direct`).
+It is a kiosk: tty1 is its own, no console has a login, and **Start over** or a crash restarts it with every answer (`RestartMode=direct`).
 
 **Note:** _The EFI partition is not signed, so what the Recovery reads there is checked like any answer from a file._
 
 #### Updating It
 
-**Update the Recovery** in **Setup** checks the releases on GitHub and installs after a question that opens on **No**.
+**Update the Recovery** on the dashboard checks the releases on GitHub and installs after a question that opens on **No**.
 
 - Only within its series: 2.0.0 takes 2.4.1, never 3.0.0, whose Recovery may not repair this layout
 - From the ISO only for a disk whose Recovery no longer starts, the way back after a cut update
