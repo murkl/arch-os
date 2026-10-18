@@ -1,7 +1,8 @@
-//! The dashboard: the row that starts the work, every answer under its heading, and under those
-//! the language, what the module offers here and the reset. Every row opens a page.
+//! The dashboard: the row that starts the work, every answer under its heading, the language,
+//! what the module offers here and the reset, in the order the module lists them. Every row
+//! opens a page.
 
-use crate::spec::{Action, Setting};
+use crate::spec::{Action, Entry, Setting};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 
@@ -42,6 +43,23 @@ pub struct DashboardPage {
 /// The answers no list offers any more.
 pub struct Unoffered(Vec<String>);
 
+/// Every answer shown, under its group's heading.
+fn answers(ctx: &Ctx) -> Vec<Row<Item>> {
+    let mut rows = Vec::new();
+    let mut group = "";
+    for setting in ctx.store.visible() {
+        if setting.group != group {
+            group = &setting.group;
+            rows.push(Row::heading(t(group)));
+        }
+        rows.push(
+            Row::new(Item::Setting(setting), t(&setting.title))
+                .detail(ctx.store.display(setting), Tone::Muted),
+        );
+    }
+    rows
+}
+
 impl DashboardPage {
     pub fn new() -> DashboardPage {
         DashboardPage {
@@ -51,34 +69,45 @@ impl DashboardPage {
         }
     }
 
+    /// A blank row parts the blocks: under the start, unless the answers follow under their
+    /// headings, and under the answers.
     fn rows(&self, ctx: &Ctx) -> Vec<Row<Item>> {
-        let s = &ctx.style;
-        let mut rows = vec![Row::new(Item::Start, t(&ctx.module.start))];
-        if self.checking {
-            rows[0].detail = s.spinner().to_string();
-            rows[0].tone = Tone::Accent;
-        }
-        let mut group = "";
-        for setting in ctx.store.visible() {
-            if setting.group != group {
-                group = &setting.group;
-                rows.push(Row::heading(t(group)));
+        let mut rows = Vec::new();
+        let mut gap = false;
+        for entry in &ctx.module.dashboard {
+            let block = match entry {
+                Entry::Start => vec![self.start(ctx)],
+                Entry::Settings => answers(ctx),
+                Entry::Language => vec![
+                    Row::new(Item::Language, t("Interface language"))
+                        .detail(&crate::i18n::current().name, Tone::Muted),
+                ],
+                Entry::Reset => vec![Row::new(Item::Reset, t("Reset all answers"))],
+                Entry::Action(name) => ctx
+                    .rows(std::slice::from_ref(name))
+                    .into_iter()
+                    .map(|a| Row::new(Item::Action(a), t(&a.title)))
+                    .collect(),
+            };
+            if block.is_empty() {
+                continue;
             }
-            rows.push(
-                Row::new(Item::Setting(setting), t(&setting.title))
-                    .detail(ctx.store.display(setting), Tone::Muted),
-            );
+            if gap && *entry != Entry::Settings {
+                rows.push(Row::heading(""));
+            }
+            rows.extend(block);
+            gap = matches!(entry, Entry::Start | Entry::Settings);
         }
-        rows.push(Row::heading(""));
-        rows.push(
-            Row::new(Item::Language, t("Interface language"))
-                .detail(&crate::i18n::current().name, Tone::Muted),
-        );
-        for action in ctx.rows(&ctx.module.on.dashboard) {
-            rows.push(Row::new(Item::Action(action), t(&action.title)));
-        }
-        rows.push(Row::new(Item::Reset, t("Reset all answers")));
         rows
+    }
+
+    fn start(&self, ctx: &Ctx) -> Row<Item> {
+        let mut row = Row::new(Item::Start, t(&ctx.module.start));
+        if self.checking {
+            row.detail = ctx.style.spinner().to_string();
+            row.tone = Tone::Accent;
+        }
+        row
     }
 
     /// Reads every list an answer was chosen from once more, right before the work: an answer

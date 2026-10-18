@@ -98,8 +98,8 @@ confirm: |
 
   Everything on the disk is erased.
 requires: [live-image, root, internet]
+dashboard: [start, settings, language, wifi, reset]
 on:
-  dashboard: [wifi]
   leave: [restart, shutdown]
   failure: [share-log]
   success: [chroot]
@@ -119,6 +119,7 @@ settings: …
 | `start` | The first row of the dashboard, which starts the work. `Start` without it |
 | `confirm` | A question asked after every password and before the work, opening on No. The first paragraph is the headline |
 | `requires` | Actions checked before anything is asked, in this order. The first no stands a page in front of everything and is asked again every few seconds. Skipped on a dry run |
+| `dashboard` | **Required.** The dashboard's rows in order, see [The Dashboard](#the-dashboard) |
 | `on` | Where its other actions are offered, see [Actions](#actions) |
 | `errors` | What a status means that any of its scripts stops itself with, see [Stopping on Purpose](#stopping-on-purpose) |
 | `stages` | **Required.** The phases of the work, in order. Each is a folder `tasks/<stage>/` |
@@ -136,7 +137,17 @@ settings: …
 
 ### The Dashboard
 
-The module's home. `start` on top, then every answer under its group heading, each a row that opens its question. Under them the interface language, the actions under `on: dashboard` and **Reset all answers**, which deletes the answer file after a question that opens on No. `f` narrows the rows.
+The module's home: its rows in the order `dashboard` lists them, each name once. `f` narrows the rows.
+
+| Name | Row |
+| --- | --- |
+| `start` | **Required.** The row `start` names, which starts the work |
+| `settings` | **Required.** Every answer under its group heading, each a row that opens its question |
+| `language` | The interface language |
+| `reset` | **Reset all answers**, which deletes the answer file after a question that opens on No |
+| An action | Its row, wherever its `requires` say yes. An action folder may not take one of the names above |
+
+A blank row parts `start` from what follows, unless the answers do with their headings, and the answers from what follows them.
 
 `start` asks what is still missing, then every password, then `confirm`, then runs the tasks: each a row, checked off as it ends, counted in the header. `tab` shows what they print instead, each under its task's title, and turns back, during the run and after it. A task that `asks` or has a `confirm` stops the run on its page. The run ends on a page that says how it went. Under a run that finished, the actions under `on: success` and **Continue**. Under a run that failed, what failed and where, the actions under `on: failure`, and **Back to the dashboard**, asked first.
 
@@ -305,7 +316,7 @@ Where a module places an action:
 | Under | Offered |
 | --- | --- |
 | `requires` | Nowhere: run by itself before anything is asked, a question with no page. Its `error` stands in front of everything until it says yes |
-| `on: dashboard` | A row on the dashboard, after the answers |
+| `dashboard` | A row on the dashboard, where the list puts it |
 | `on: leave` | A row on the way out, above **Exit** |
 | `on: failure` | A row under a run that failed. None under a run [stopped on purpose](#stopping-on-purpose) |
 | `on: success` | A row under a run that finished |

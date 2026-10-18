@@ -634,6 +634,38 @@ pub mod tests {
         );
     }
 
+    /// The dashboard lists its rows as the module does, a blank row under the start and under
+    /// the answers.
+    #[test]
+    fn the_dashboard_keeps_the_modules_order() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, _rx) = app(false);
+        answered(&mut app);
+        let shown = screen(&mut app, &mut term);
+        let rows: Vec<&str> = shown
+            .lines()
+            .map(|l| l.trim_start_matches([' ', '▶']).trim_end())
+            .skip_while(|l| !l.starts_with("Install now"))
+            .collect();
+        let at = |label: &str| {
+            rows.iter()
+                .position(|r| r.starts_with(label))
+                .unwrap_or_else(|| panic!("{label} missing:\n{shown}"))
+        };
+        let order = [
+            at("Install now"),
+            at("Interface language"),
+            at("Leave a note"),
+            at("Region"),
+            at("Reset all answers"),
+        ];
+        assert!(order.is_sorted(), "{order:?}\n{shown}");
+        assert_eq!(rows[order[0] + 1], "", "no gap under the start:\n{shown}");
+        assert_eq!(rows[order[4] - 1], "", "no gap under the answers:\n{shown}");
+        assert_eq!(order[2], order[1] + 1, "a gap inside a block:\n{shown}");
+    }
+
     /// While the tasks run, tab shows what they print: a finished line once, the line being
     /// redrawn as it stands, a long one wrapped. Tab again shows the list.
     #[test]

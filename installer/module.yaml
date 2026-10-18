@@ -15,9 +15,11 @@ confirm: |
 # internet comes last, after the keyboard a passphrase is typed on.
 requires: [live-image, root, uefi, secure-boot-off, internet]
 
+# The dashboard's rows in order: its own, and each other a folder under actions/.
+dashboard: [start, settings, language, wifi, reset]
+
 # Where its other actions are offered, each a folder under actions/.
 on:
-  dashboard: [wifi]
   leave: [restart, shutdown]
   failure: [share-log]
   success: [chroot, share-config]

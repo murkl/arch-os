@@ -48,7 +48,7 @@ Scripts outside the work, each with its own pages. `action.yaml` says how it beh
 | Where | Actions |
 | --- | --- |
 | `requires` | `live-image`, `root`, `uefi`, `secure-boot-off`, then `internet`, which opens `wifi` right away where there is a card and waits for a cable otherwise |
-| `on: dashboard` | `wifi`: **Configure Wi-Fi**, offered where `wifi-card` finds a card and `no-cable` finds no internet over a cable. An open or known network is joined when chosen. One that wants a passphrase opens `wifi-passphrase` |
+| `dashboard` | `wifi`: **Configure Wi-Fi**, offered where `wifi-card` finds a card and `no-cable` finds no internet over a cable. An open or known network is joined when chosen. One that wants a passphrase opens `wifi-passphrase` |
 | `on: leave` | `restart`, `shutdown`: the two ways to put the machine down |
 | `on: failure` | `share-log`: uploads the log of a run whose script broke and shows it as a code. A run stopped in plain words offers none, see **[errors](../docs/CONTRIBUTING.md#when-something-goes-wrong)** |
 | `on: success` | `chroot`, `share-config`: a shell in the new system, and its answers uploaded. Both are rows on the page a finished run ends on, which opens on **Continue** |
