@@ -130,8 +130,8 @@ run:
 image:
 	$(if $(ISO_RECOVERY),ISO_RECOVERY=$(ISO_RECOVERY)) $(ISO_BUILD) $(BIN) $(DIST_DIR)
 
-# The whole way there.
-iso: build image
+# The whole way there, in order: the images are made of the program.
+iso: build .WAIT image
 
 # Boots both images and waits for the interface. The frames land in dist/.
 smoke:

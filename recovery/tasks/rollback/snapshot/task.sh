@@ -37,6 +37,24 @@ carry_subvolumes() {
     done <<<"$paths"
 }
 
+# The system being replaced, kept read-only under the next number as snapper
+# rollback keeps it, so the rollback can be undone from the same list.
+keep_replaced() {
+    local dir number=0
+    for dir in "${BTRFS_TOP}/@snapshots/"*/; do
+        dir="$(basename "$dir")"
+        if [[ $dir =~ ^[0-9]+$ ]] && [ "$dir" -gt "$number" ]; then
+            number="$dir"
+        fi
+    done
+    number=$((number + 1))
+    mkdir "${BTRFS_TOP}/@snapshots/${number}"
+    btrfs subvolume snapshot -r "${BTRFS_TOP}/@" "${BTRFS_TOP}/@snapshots/${number}/snapshot"
+    render "$(where)/info.xml" NUMBER="$number" DATE="$(date -u '+%F %T')" >"${BTRFS_TOP}/@snapshots/${number}/info.xml"
+    chmod 640 "${BTRFS_TOP}/@snapshots/${number}/info.xml"
+    echo "kept the replaced system as snapshot ${number}"
+}
+
 # @ cannot be replaced while it is the mounted root.
 unmount_target
 
@@ -54,6 +72,7 @@ if [ -d "${BTRFS_TOP}/@/var/lib/sbctl" ]; then
     cp -a "${BTRFS_TOP}/@/var/lib/sbctl" "${BTRFS_TOP}/@.new/var/lib/sbctl"
 fi
 
+keep_replaced
 carry_subvolumes @ @.new
 btrfs subvolume delete --recursive "${BTRFS_TOP}/@"
 mv "${BTRFS_TOP}/@.new" "${BTRFS_TOP}/@"

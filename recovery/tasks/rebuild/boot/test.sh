@@ -24,5 +24,12 @@ if compgen -G "${MNT}/boot/EFI/Linux/arch-${KERNEL}*.efi" >/dev/null; then
 fi
 arch-chroot "$MNT" systemctl is-enabled arch-os-boot-tries.service >/dev/null
 
+# The loader where the firmware's entry and its fallback path look, the signed
+# one where sbctl signs it at its source.
+loader=/usr/lib/systemd/boot/efi/systemd-bootx64.efi
+[ ! -f "${MNT}${loader}.signed" ] || loader="${loader}.signed"
+cmp "${MNT}${loader}" "${MNT}/boot/EFI/systemd/systemd-bootx64.efi"
+cmp "${MNT}${loader}" "${MNT}/boot/EFI/BOOT/BOOTX64.EFI"
+
 # Signed again where the chain is signed.
 [ ! -x "${MNT}/usr/bin/sbctl" ] || boot_chain_signed "$MNT"

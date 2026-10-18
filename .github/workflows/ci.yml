@@ -11,6 +11,11 @@ on:
 
 permissions: {}
 
+# Every step in bash with pipefail, as the Makefile runs its recipes.
+defaults:
+  run:
+    shell: bash
+
 # A new push replaces a pull request's run. On main they queue, so no release
 # is cut short.
 concurrency:
@@ -71,12 +76,17 @@ jobs:
           fetch-depth: 2
           persist-credentials: false
 
+      # The compiler comes from today's Arch and keys the cache with the lock
+      # file: a cache built by another one is rebuilt whole and never saved.
+      - id: rust
+        run: echo "version=$(rustc -V | cut -d' ' -f2)" >>"$GITHUB_OUTPUT"
+
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry
             runtime/target
-          key: cargo-${{ hashFiles('runtime/Cargo.lock') }}
+          key: cargo-${{ steps.rust.outputs.version }}-${{ hashFiles('runtime/Cargo.lock') }}
 
       - run: make check
 
@@ -120,12 +130,17 @@ jobs:
         with:
           persist-credentials: false
 
+      # The compiler comes from today's Arch and keys the cache with the lock
+      # file: a cache built by another one is rebuilt whole and never saved.
+      - id: rust
+        run: echo "version=$(rustc -V | cut -d' ' -f2)" >>"$GITHUB_OUTPUT"
+
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry
             runtime/target
-          key: cargo-${{ hashFiles('runtime/Cargo.lock') }}
+          key: cargo-${{ steps.rust.outputs.version }}-${{ hashFiles('runtime/Cargo.lock') }}
 
       - run: make build image ${RELEASE:+VERSION="$RELEASE"}
 

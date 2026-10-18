@@ -53,7 +53,7 @@ in_use() {
 # MAIN
 # ////////////////////////////////////////////////////////////////////////////
 
-for command_name in curl awk sha256sum lsblk dd; do
+for command_name in curl awk sha256sum lsblk dd blockdev head; do
     command -v "$command_name" >/dev/null || fail "Missing dependency: ${command_name}"
 done
 [ "$(id -u)" -eq 0 ] || command -v sudo >/dev/null || fail "Missing dependency: sudo"
@@ -154,6 +154,17 @@ done
 # its partition table and both boot paths.
 # https://wiki.archlinux.org/title/USB_flash_installation_medium
 as_root dd if="$name" of="$target" bs=4M status=progress conv=fsync oflag=direct || fail "Writing ${target} failed"
+
+title "Verify"
+
+# Read off the stick rather than out of memory: a fake or failing one takes the
+# write and hands back something else.
+info "Reading ${target} back"
+as_root blockdev --flushbufs "$target"
+want="$(sha256sum <"$name" | cut -d' ' -f1)"
+have="$(as_root head -c "$(wc -c <"$name")" "$target" | sha256sum | cut -d' ' -f1)"
+[ "$have" = "$want" ] || fail "${target} does not read back as ${name}. Try another stick"
+ok "The stick reads back as ${name}"
 as_root blockdev --rereadpt "$target" 2>/dev/null || true
 
 title "Finished"

@@ -70,6 +70,12 @@ if [ -x "${MNT}/usr/bin/sbctl" ]; then
     arch-chroot "$MNT" sbctl sign-all || echo "signing the boot chain again failed: enroll or sign by hand before switching Secure Boot back on" >&2
 fi
 
+# The loader too, which a full partition or a firmware that cleans up may have
+# taken. From out here, as the Installer puts it there, and signed where sbctl
+# signed it at its source. A firmware that refuses its entry still starts the
+# fallback path, which test.sh holds to the loader.
+bootctl --root="$MNT" --esp-path=/boot --variables=yes --graceful install
+
 boot_entries "$MNT" "$kind" "$cmdline"
 
 # Unified images in EFI/Linux: the loader lists them on its own there, beside

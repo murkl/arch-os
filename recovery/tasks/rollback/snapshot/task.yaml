@@ -11,5 +11,5 @@ asks:
 confirm: |
   Roll back {{ARCH_OS_RECOVERY_DISK}} to {{ARCH_OS_RECOVERY_SNAPSHOT}}?
 
-  The current system is replaced by this snapshot. /home and the other
-  snapshots stay, so another one can be chosen later.
+  The current system is replaced by this snapshot and stays as a snapshot of
+  its own, so this can be undone. /home and the other snapshots stay.

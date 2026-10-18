@@ -188,8 +188,8 @@ END_COMMIT_OVERRIDE
 
 Nothing is typed and nothing is tagged by hand.
 
-1. **Every merge that releases something** opens or updates the pull request `chore(main): release 2.1.0`. It raises the version in `.release-please-manifest.json` and writes that version's section of **[CHANGELOG.md](../CHANGELOG.md)**
-2. **Merging it is the release.** It passes the checks like any other pull request. The run on `main` tags `v2.1.0`, builds and boots the images as that version, attaches them to the release page and publishes it
+1. **Every merge that releases something** opens or updates the pull request `chore(main): release 2.1.0`. It raises the version in `.release-please-manifest.json` and in the badge of **[README.md](README.md)**, and writes that version's section of **[CHANGELOG.md](../CHANGELOG.md)**
+2. **Merging it is the release.** It passes the checks like any other pull request. The run on `main` tags `2.1.0`, builds and boots the images as that version, attaches them to the release page and publishes it
 
 - Merges collect in the release pull request until it is merged. When to release is a decision, not a schedule
 - The release pull request, the tag and the release page are made with the secret `RELEASE_TOKEN` of the environment `release`, which only `main` may use: a fine-grained personal access token of the account with Contents and Pull requests set to read and write. `.github/release-token.sh` stores it. The workflow's own token cannot do this, since GitHub holds the checks of a bot's pull request until someone approves its runs. When the token expires, `Release` fails and reports it

@@ -326,11 +326,18 @@ pub mod tests {
 
     /// An app on the fixture product, in a folder of its own, its scripts runnable.
     pub fn app(dry_run: bool) -> (App, Terminal<TestBackend>, Receiver<Msg>) {
+        app_on(&crate::spec::tests::fixture(), dry_run)
+    }
+
+    /// An app on the product given, with the fixture's scripts.
+    fn app_on(
+        files: &[(&'static str, &'static [u8])],
+        dry_run: bool,
+    ) -> (App, Terminal<TestBackend>, Receiver<Msg>) {
         crate::script::tests::use_fixture();
         let (tx, rx) = std::sync::mpsc::channel();
-        let loaded: &'static crate::spec::Loaded = Box::leak(Box::new(
-            crate::spec::load(&crate::spec::tests::fixture()).unwrap(),
-        ));
+        let loaded: &'static crate::spec::Loaded =
+            Box::leak(Box::new(crate::spec::load(files).unwrap()));
         let module = loaded.module("setup").unwrap();
         let dir = std::env::temp_dir().join(format!("ui-test-{}-{}", std::process::id(), rand()));
         std::fs::create_dir_all(&dir).unwrap();
@@ -708,6 +715,52 @@ pub mod tests {
         let shown = screen(&mut app, &mut term);
         assert!(
             shown.contains("Hostname") && !shown.contains("Disk"),
+            "{shown}"
+        );
+    }
+
+    /// Actions of the group the answers end with stand right under them, a blank row in place of
+    /// the heading, and one under the other.
+    #[test]
+    fn actions_under_answers_of_their_group_repeat_no_heading() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let files: Vec<(&'static str, &'static [u8])> = crate::spec::tests::fixture()
+            .into_iter()
+            .map(|(path, body)| {
+                let text = String::from_utf8_lossy(body)
+                    .replace(
+                        "dashboard: [start, note, settings, reset, net]",
+                        "dashboard: [start, settings, note, net, reset]",
+                    )
+                    .replace("group: Extras\n", "group: Storage\n")
+                    .replace("group: Network\n", "group: Storage\n");
+                (path, &*Box::leak(text.into_bytes().into_boxed_slice()))
+            })
+            .collect();
+        let (mut app, mut term, _rx) = app_on(&files, false);
+        answered(&mut app);
+        app.ctx.offered.insert("net".into(), true);
+        let shown = screen(&mut app, &mut term);
+        let rows: Vec<&str> = shown
+            .lines()
+            .map(|l| l.trim_start_matches([' ', '▶']).trim_end())
+            .collect();
+        let at = |label: &str| {
+            rows.iter()
+                .position(|r| r.starts_with(label))
+                .unwrap_or_else(|| panic!("{label} missing:\n{shown}"))
+        };
+        let last = at("Encryption");
+        assert_eq!(rows[last + 1], "", "{shown}");
+        assert_eq!(
+            [at("Leave a note"), at("Join a network")],
+            [last + 2, last + 3],
+            "{shown}"
+        );
+        assert_eq!(shown.matches("Storage").count(), 1, "{shown}");
+        assert!(
+            !shown.contains("Extras") && !shown.contains("Network"),
             "{shown}"
         );
     }

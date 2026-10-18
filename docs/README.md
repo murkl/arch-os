@@ -16,8 +16,8 @@
 **[➜ Reference](REFERENCE.md)** · **[➜ Contributing](CONTRIBUTING.md)** · **[➜ Telegram](https://t.me/archos_community)**
 
 <p>
-  <a href="https://github.com/murkl/arch-os/releases/latest"><img src="https://img.shields.io/github/v/release/murkl/arch-os?style=flat-square&label=release&color=5e81ac" alt="Latest release"></a>
-  <a href="../LICENSE"><img src="https://img.shields.io/github/license/murkl/arch-os?style=flat-square&color=5e81ac" alt="License"></a>
+  <a href="https://github.com/murkl/arch-os/releases/latest"><img src="https://img.shields.io/static/v1?label=release&message=2.0.0&color=5e81ac&style=flat-square" alt="Latest release"></a> <!-- x-release-please-version -->
+  <a href="../LICENSE"><img src="https://img.shields.io/static/v1?label=license&message=GPL-3.0&color=5e81ac&style=flat-square" alt="License"></a>
 </p>
 
 </div>

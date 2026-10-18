@@ -44,8 +44,9 @@ pub struct DashboardPage {
 pub struct Unoffered(Vec<String>);
 
 /// Every answer shown, under its group's heading, and the interface language first under the
-/// heading the module names, which stands even while every answer of its group is hidden.
-fn answers(ctx: &Ctx) -> Vec<Row<Item>> {
+/// heading the module names, which stands even while every answer of its group is hidden. With
+/// the group they end with.
+fn answers(ctx: &Ctx) -> (Vec<Row<Item>>, Option<&'static str>) {
     let language = || {
         Row::new(Item::Language, t("Interface language"))
             .detail(&crate::i18n::current().name, Tone::Muted)
@@ -69,10 +70,11 @@ fn answers(ctx: &Ctx) -> Vec<Row<Item>> {
         );
     }
     if let Some(home) = home.filter(|_| !placed) {
+        group = home;
         rows.push(Row::heading(t(home)));
         rows.push(language());
     }
-    rows
+    (rows, Some(group).filter(|g| !g.is_empty()))
 }
 
 impl DashboardPage {
@@ -86,30 +88,35 @@ impl DashboardPage {
 
     /// A blank row parts the blocks: under the start, unless the answers follow under their
     /// headings, under the answers and under a group of actions. An action with a group stands
-    /// under its heading, once for the actions of one group in a row.
+    /// under its heading, once for the actions of one group in a row. Right under answers that end
+    /// with its group, the blank row stands in place of the heading.
     fn rows(&self, ctx: &Ctx) -> Vec<Row<Item>> {
         let mut rows = Vec::new();
         let mut gap = false;
         let mut under: Option<&str> = None;
+        let mut ends: Option<&str> = None;
         for entry in &ctx.module.dashboard {
             let mut group = None;
-            let block = match entry {
-                Entry::Start => vec![self.start(ctx)],
+            let (block, last) = match entry {
+                Entry::Start => (vec![self.start(ctx)], None),
                 Entry::Settings => answers(ctx),
-                Entry::Reset => vec![Row::new(Item::Reset, t("Reset all answers"))],
-                Entry::Action(name) => ctx
-                    .rows(std::slice::from_ref(name))
-                    .into_iter()
-                    .map(|a| {
-                        group = a.group.as_deref();
-                        Row::new(Item::Action(a), t(&a.title))
-                    })
-                    .collect(),
+                Entry::Reset => (vec![Row::new(Item::Reset, t("Reset all answers"))], None),
+                Entry::Action(name) => (
+                    ctx.rows(std::slice::from_ref(name))
+                        .into_iter()
+                        .map(|a| {
+                            group = a.group.as_deref();
+                            Row::new(Item::Action(a), t(&a.title))
+                        })
+                        .collect(),
+                    None,
+                ),
             };
             if block.is_empty() {
                 continue;
             }
             match group {
+                Some(g) if ends == Some(g) => rows.push(Row::heading("")),
                 Some(g) if under != Some(g) => rows.push(Row::heading(t(g))),
                 Some(_) => {}
                 None if gap && *entry != Entry::Settings => rows.push(Row::heading("")),
@@ -117,6 +124,7 @@ impl DashboardPage {
             }
             rows.extend(block);
             under = group;
+            ends = last;
             gap = group.is_some() || matches!(entry, Entry::Start | Entry::Settings);
         }
         rows

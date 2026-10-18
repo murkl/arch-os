@@ -200,7 +200,7 @@ esac
 
 # The tools are packages rather than something to install behind somebody's
 # back: a build that would change the machine it runs on says so instead.
-for tool in mkarchiso:archiso ukify:systemd-ukify mkfs.erofs:erofs-utils diff:diffutils modinfo:kmod; do
+for tool in mkarchiso:archiso ukify:systemd-ukify mkfs.erofs:erofs-utils fsck.erofs:erofs-utils diff:diffutils modinfo:kmod; do
     command -v "${tool%%:*}" >/dev/null || {
         echo "Error: ${tool%%:*} not found: install the ${tool#*:} package" >&2
         exit 1
@@ -298,6 +298,11 @@ ${SUDO} rm -rf "$readback"
 for command in arch-chroot blkid blockdev btrfs cryptsetup curl fuser ip iwctl loadkeys localectl lsblk mount mountpoint setfont sha256sum swapoff tar umount; do
     [ -x "${recovery_root}/usr/bin/${command}" ] || { echo "Error: the Recovery has no ${command}" >&2 && exit 1; }
 done
+# What it starts by itself, as systemd reads the links: the Recovery, a cable's
+# network, and the clock HTTPS needs, which a dead battery sets years back.
+for unit in arch-os.service systemd-networkd.service systemd-resolved.service systemd-timesyncd.service; do
+    ${SUDO} systemctl --root="$recovery_root" is-enabled -q "$unit" || { echo "Error: the Recovery does not start ${unit}" >&2 && exit 1; }
+done
 modules="$(find "${recovery_root}/usr/lib/modules" -name '*.ko*')"
 deps="$(while read -r module; do
     depends="$(modinfo -F depends "$module")" || { echo "Error: modinfo cannot read ${module}" >&2 && exit 1; }
@@ -327,6 +332,13 @@ rm -rf "$RECOVERY_DIR"
 mkdir -p "$RECOVERY_DIR"
 mkfs.erofs --quiet --all-root -U "$uuid" "${RECOVERY_DIR}/recovery.img" "${TEMP_DIR}/partition"
 
+# Read back as what went into it, as the update writes it to the partition.
+fsck.erofs --extract="${TEMP_DIR}/partition-readback" --no-preserve "${RECOVERY_DIR}/recovery.img" >/dev/null
+diff -r "${TEMP_DIR}/partition" "${TEMP_DIR}/partition-readback" || {
+    echo "Error: recovery.img does not read back as what was put into it" >&2
+    exit 1
+}
+
 # copytoram frees the disk for the repair. nomodeset draws on the firmware's
 # screen, which needs no graphics driver. The boot menu shows its os-release.
 cat >"${TEMP_DIR}/os-release" <<EOF
@@ -335,12 +347,25 @@ PRETTY_NAME="Arch OS Recovery"
 ID=arch-os-recovery
 IMAGE_VERSION=${VERSION}
 EOF
+printf '%s' "archisobasedir=arch archisodevice=UUID=${uuid} copytoram=y cms_verify=y nomodeset ${BOOT_ARGS}" >"${TEMP_DIR}/cmdline"
 ukify build \
     --linux="${netboot}/boot/x86_64/vmlinuz-linux" \
     --initrd="${netboot}/boot/x86_64/initramfs-linux.img" \
-    --cmdline="archisobasedir=arch archisodevice=UUID=${uuid} copytoram=y cms_verify=y nomodeset ${BOOT_ARGS}" \
+    --cmdline="@${TEMP_DIR}/cmdline" \
     --os-release="@${TEMP_DIR}/os-release" \
     --output="${RECOVERY_DIR}/recovery.efi"
+
+# Each of its sections read back by its checksum, through ukify's own JSON.
+inspected="$(ukify inspect "${RECOVERY_DIR}/recovery.efi" --json=short)"
+for pair in ".linux:${netboot}/boot/x86_64/vmlinuz-linux" ".initrd:${netboot}/boot/x86_64/initramfs-linux.img" \
+    ".cmdline:${TEMP_DIR}/cmdline" ".osrel:${TEMP_DIR}/os-release"; do
+    section="${pair%%:*}" source="${pair#*:}"
+    have="$(python3 -c 'import json, sys; print(json.load(sys.stdin)[sys.argv[1]]["sha256"])' "$section" <<<"$inspected")"
+    [ "$have" = "$(sha256sum <"$source" | cut -d' ' -f1)" ] || {
+        echo "Error: the section ${section} of recovery.efi does not read back as ${source}" >&2
+        exit 1
+    }
+done
 
 du -h "${RECOVERY_DIR}/"*
 
@@ -444,3 +469,12 @@ echo "### Ship"
 mkdir -p "${DIST_DIR}"
 cp -f "${PROFILES_DIR}/out/iso/"*.iso "${DIST_DIR}/"
 tar -cf "${RECOVERY_DIR}-x86_64.tar" --owner=0 --group=0 --sort=name -C "${DIST_DIR}" "${RECOVERY_DIR##*/}"
+
+# The tar read back file by file, by the names an update extracts. Not with
+# --verify, which flags the owners --owner sets apart (tar 1.35).
+for file in recovery.img recovery.efi; do
+    tar -xOf "${RECOVERY_DIR}-x86_64.tar" "${RECOVERY_DIR##*/}/${file}" | cmp - "${RECOVERY_DIR}/${file}" || {
+        echo "Error: ${RECOVERY_DIR##*/}-x86_64.tar does not read back ${file}" >&2
+        exit 1
+    }
+done

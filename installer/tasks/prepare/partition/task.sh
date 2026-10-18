@@ -65,8 +65,14 @@ partprobe "$ARCH_OS_DISK"
 udevadm settle
 
 # The new partitions start where the old ones did, and so do their signatures:
-# a LUKS header left under a fresh btrfs is what mount then reads.
-wipefs -af "$boot_part" "$system_part"
+# a LUKS header left under a fresh btrfs is what mount then reads. The
+# Recovery's image fills its partition only in part, and a signature left past
+# its end makes its UUID ambiguous, which is how it is found.
+parts=("$boot_part" "$system_part")
+if [ "$ARCH_OS_RECOVERY_ENABLED" = "true" ]; then
+    parts+=("$(recovery_partition "$ARCH_OS_DISK")")
+fi
+wipefs -af "${parts[@]}"
 
 # The firmware's entries for partitions that are now gone. One left behind
 # costs a line in a menu, so this is never fatal.

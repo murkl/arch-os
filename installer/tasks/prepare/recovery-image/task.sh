@@ -18,10 +18,10 @@ if [ -f "${image}/recovery.img" ] && [ -f "${image}/recovery.efi" ]; then
 fi
 
 check_online || exit "$EXIT_OFFLINE"
-json="$(release_json "tags/v${MODULE_VERSION}")" || exit "$EXIT_UNREACHABLE"
+json="$(release_json "tags/${MODULE_VERSION}")" || exit "$EXIT_UNREACHABLE"
 read -r url digest <<<"$(asset_in -recovery-x86_64.tar <<<"$json")"
 if [ -z "$url" ] || [ -z "$digest" ]; then
-    echo "the release v${MODULE_VERSION} holds no Recovery image with a checksum" >&2
+    echo "the release ${MODULE_VERSION} holds no Recovery image with a checksum" >&2
     exit 1
 fi
 

@@ -146,7 +146,7 @@ The module's home: its rows in the order `dashboard` lists them, each name once.
 | `start` | **Required.** The row `start` names, which starts the work |
 | `settings` | **Required.** Every answer under its group heading, each a row that opens its question. The interface language heads the group `language` names |
 | `reset` | **Reset all answers**, which deletes the answer file after a question that opens on No |
-| An action | Its row, wherever its `requires` return yes, under the heading its `group` names. An action folder may not use one of the names above |
+| An action | Its row, wherever its `requires` return yes, under the heading its `group` names. Right under answers that end with that group, a blank row stands in place of the heading. An action folder may not use one of the names above |
 
 A blank row follows `start`, the answers and each group of actions. Right after `start`, the headings of the answers take its place.
 

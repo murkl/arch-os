@@ -16,7 +16,8 @@ curl -fsSL https://raw.githubusercontent.com/murkl/arch-os/main/get.sh | sh
 
 - An ISO of that release in `DOWNLOAD_DIR`, `XDG_DOWNLOAD_DIR` or `~/Downloads` is reused, otherwise downloaded there
 - A missing or mismatched checksum needs confirmation, so a self-built ISO can still be written
-- Only USB sticks not in use by the running system are offered, checked again right before writing. Root only for `umount`, `dd` and `blockdev`
+- Only USB sticks not in use by the running system are offered, checked again right before writing. Root only for `umount`, `dd`, `blockdev` and reading the stick back
+- The stick is read back after writing, so a fake or failing one is caught before it is booted
 
 ### Reusing Answers
 
@@ -357,7 +358,7 @@ It asks for the keyboard and the disk, on its own partition for neither. Everyth
 | Snapshots | `@snapshots`. Without any, the rollback is skipped |
 
 - It repairs what the Installer of its release series creates, without a network. **Connect to Wi-Fi** on the dashboard connects for an update or a download in the shell
-- A rollback builds the new `@` before touching the old one, and the next run completes an interrupted one
+- A rollback builds the new `@` before touching the old one and keeps the old one as a snapshot, so it can be undone. The next run completes an interrupted one
 - `systemctl reboot --boot-loader-entry=arch-os-recovery.efi` starts it once. **Recovery** among the apps does the same after a confirmation that opens on **Cancel**
 
 **Note:** _Without disk encryption anyone at the machine can open the system from the Recovery, as from any USB stick._
@@ -377,7 +378,7 @@ The Recovery of the release that installed the system, built with that release f
 | 2 | The initramfs finds the partition by a UUID unique to each build |
 | 3 | It checks the root against a certificate whose key was deleted after the build, valid from 1970 to 9999 in case of a dead clock battery |
 | 4 | It copies the root to memory, so the disk is no longer in use |
-| 5 | Plymouth uses the firmware framebuffer (`nomodeset`). The Recovery runs on tty1 |
+| 5 | Plymouth uses the firmware framebuffer (`nomodeset`). The Recovery runs on tty1 and sets its clock by network time, which HTTPS needs after a dead clock battery |
 | 6 | It reads `EFI/arch-os-recovery/` on the EFI partition it was started from, restores the tries of the system's entries and opens in the Installer's language and keyboard |
 
 It runs as a kiosk: tty1 belongs to it, no console has a login, and **Start over** or a crash restarts it with every answer kept (`RestartMode=direct`).

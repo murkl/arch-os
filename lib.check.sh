@@ -57,13 +57,13 @@ EOF
 # for another series, a pre-release, one published before GitHub kept a
 # checksum, and a label and a body that hold what the patterns look for.
 asset() {
-    printf '{"url":"https://api.github.com/repos/murkl/arch-os/releases/assets/%s","id":%s,"name":"%s","label":"%s","uploader":{"url":"https://api.github.com/users/murkl"},"size":1,"digest":%s,"browser_download_url":"https://github.com/murkl/arch-os/releases/download/v%s/%s"}' \
+    printf '{"url":"https://api.github.com/repos/murkl/arch-os/releases/assets/%s","id":%s,"name":"%s","label":"%s","uploader":{"url":"https://api.github.com/users/murkl"},"size":1,"digest":%s,"browser_download_url":"https://github.com/murkl/arch-os/releases/download/%s/%s"}' \
         "$1" "$1" "$3" "${5:-}" "$4" "$2" "$3"
 }
 release() {
     local version="$1"
     shift
-    printf '{"url":"https://api.github.com/repos/murkl/arch-os/releases/%s","assets_url":"https://api.github.com/repos/murkl/arch-os/releases/%s/assets","tag_name":"v%s","draft":false,"prerelease":%s,"assets":[%s],"tarball_url":"https://api.github.com/repos/murkl/arch-os/tarball/v%s","body":"%s"}' \
+    printf '{"url":"https://api.github.com/repos/murkl/arch-os/releases/%s","assets_url":"https://api.github.com/repos/murkl/arch-os/releases/%s/assets","tag_name":"%s","draft":false,"prerelease":%s,"assets":[%s],"tarball_url":"https://api.github.com/repos/murkl/arch-os/tarball/%s","body":"%s"}' \
         "${version//[^0-9]/}" "${version//[^0-9]/}" "$version" "$([[ $version == *-* ]] && echo true || echo false)" "$(
             IFS=,
             echo "$*"
@@ -86,14 +86,14 @@ compact="[$(
 # The same, laid out the way a person reads it, a space after every colon.
 pretty="$(sed -e 's/":/": /g' -e 's/,"/,\n  "/g' -e 's/{/{\n  /g' -e 's/}/\n}/g' <<<"$compact")"
 
-recovery() { printf 'https://github.com/murkl/arch-os/releases/download/v%s/arch-os-%s-recovery-x86_64.tar' "$1" "$1"; }
+recovery() { printf 'https://github.com/murkl/arch-os/releases/download/%s/arch-os-%s-recovery-x86_64.tar' "$1" "$1"; }
 
 for layout in compact pretty; do
     json="$compact"
     [ "$layout" = compact ] || json="$pretty"
 
     expect "asset_in .iso, ${layout}" "$(asset_in .iso <<<"$json")" \
-        "https://github.com/murkl/arch-os/releases/download/v2.1.0/arch-os-2.1.0-x86_64.iso 211"
+        "https://github.com/murkl/arch-os/releases/download/2.1.0/arch-os-2.1.0-x86_64.iso 211"
     expect "asset_in -recovery-x86_64.tar, ${layout}" "$(asset_in -recovery-x86_64.tar <<<"$json" | cut -d' ' -f2 | paste -sd' ')" \
         "30 22 212  200"
     expect "asset_in .zip, ${layout}" "$(asset_in .zip <<<"$json")" ""

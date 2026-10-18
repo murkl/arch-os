@@ -244,6 +244,10 @@ finished() {
     live cat "/opt/arch-os/${module}.log" >"${WORK}/${module}.log" || true
     pane >"${WORK}/pane.log" || true
     grep -q 'run: ok' <<<"$result" || fail "the ${module} failed"
+    # A task allowed to fail has no reason to here, online and on a clean disk.
+    if grep -q ' WARN ' "${WORK}/${module}.log"; then
+        fail "the ${module} finished with a warning, see ${WORK}/${module}.log"
+    fi
 
     local tally passed total
     tally="$(grep -oE '[0-9]+ of [0-9]+ tests passed' "${WORK}/pane.log" || true)"
@@ -349,6 +353,18 @@ umount /mnt
 cryptsetup close e2e-nested
 EOF
     say "Made a subvolume inside the system"
+}
+
+# The loader gone from the EFI partition, as a full partition or a firmware that
+# cleans up leaves it: the rebuild has to put it back.
+loader_gone() {
+    live bash -s <<EOF
+set -euo pipefail
+mount -t vfat ${DISK}1 /mnt
+rm /mnt/EFI/systemd/systemd-bootx64.efi /mnt/EFI/BOOT/BOOTX64.EFI
+umount /mnt
+EOF
+    say "Took the boot loader off the EFI partition"
 }
 
 # Waits for the Recovery on its partition to open on its dashboard. It has to
@@ -576,6 +592,7 @@ until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
 live systemctl stop arch-os
 images_in_efi_linux
 nested_subvolume
+loader_gone
 live "printf \"MODULE_LANGUAGE='en'\nARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
 live "tmux new-session -d -s e2e -x 120 -y 40 'arch-os recovery'"
 
@@ -606,6 +623,9 @@ fi
 say "Repair: laid the installation out as the Installer does"
 [ "$(as_root cat /var/lib/machines/e2e/kept)" = kept ] || fail "the rollback lost the subvolume made inside the system"
 say "Repair: kept the subvolume made inside the system"
+as_root snapper --no-headers list --columns description | grep -qx ' *rollback backup *' ||
+    fail "the rollback kept no snapshot of the system it replaced"
+say "Repair: kept the replaced system as a snapshot"
 recovery_dashboard
 
 # An update cut short leaves a partition whose UUID the boot image no longer

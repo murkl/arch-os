@@ -3,6 +3,7 @@
 # what is found is installed only after update-install asks.
 title: Update the Recovery
 description: Looks for the newest Recovery of this release series and installs it after confirmation.
+group: Configuration
 error: The update needs the internet. Choose Connect to Wi-Fi on the dashboard or plug in a cable.
 
 requires: [recovery-to-update]

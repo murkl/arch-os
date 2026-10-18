@@ -52,7 +52,7 @@ REPO="murkl/arch-os"
 # The folder lib.sh and the modules lie in.
 product_dir() { dirname "${BASH_SOURCE[0]}"; }
 
-# Releases as GitHub describes them: tags/v1.2.3 for one, nothing for the
+# Releases as GitHub describes them: tags/1.2.3 for one, nothing for the
 # newest hundred. Fails where it is out of reach.
 release_json() {
     local path="releases?per_page=100"
@@ -645,8 +645,9 @@ chroot_aur_install() {
 }
 
 # A command inside the new system as the account, which makepkg insists on.
+# Without root's runtime folder, where the account may create nothing.
 as_user() {
-    arch-chroot "$MNT" /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "$1"
+    arch-chroot "$MNT" /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- env -u XDG_RUNTIME_DIR bash -c "$1"
 }
 
 # The chosen browser's desktop entry, not its package's name for two of them.
