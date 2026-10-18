@@ -107,7 +107,7 @@ RECOVERY ?= $(shell ls -td $(DIST_DIR)/*-recovery 2>/dev/null | head -1)
 # ////////////////////////////////////////////////////////////////////////////
 
 # POSIX sh: get.sh runs on whatever shell the machine has.
-POSIX_SCRIPTS := get.sh .github/settings.sh
+POSIX_SCRIPTS := get.sh .github/settings.sh .github/release-token.sh
 
 # Bash: what builds and boots the images, and what they run.
 ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_E2E) $(ISO_GLYPHS) $(ISO_FONT) $(wildcard $(ISO_DIR)/src/usr/local/bin/* $(ISO_DIR)/recovery/airootfs/usr/local/bin/*)
