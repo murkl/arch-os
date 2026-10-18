@@ -162,6 +162,13 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     arch-chroot "$MNT" systemctl enable cups.socket # printing
 fi
 
+# fwupd ships its timer off, and without it the firmware it offers is what it
+# knew at its last look. Wherever fwupd came, with Desktop extras or beside
+# GNOME Firmware. https://wiki.archlinux.org/title/Fwupd
+if has_command fwupdmgr; then
+    arch-chroot "$MNT" systemctl enable fwupd-refresh.timer
+fi
+
 # Out of memory, one app ends instead of the desktop freezing for minutes. GNOME
 # starts each app in a scope of its own, so no more than that app is hit. Where
 # systemd-oomd(8) recommends, at Fedora's limit for the session.

@@ -264,6 +264,7 @@ GNOME, filtered rather than installed and trimmed: what a slim GNOME drops is ne
 | GNOME Boxes | Works once installed: libvirt's session, KVM open to every account, disks in your home. A guest under QEMU gets `phodav` for shared folders. **[➜ GNOME Boxes](https://apps.gnome.org/Boxes/)** |
 | Extensions | From **[extensions.gnome.org](https://extensions.gnome.org)** through `gnome-browser-connector`, switched in the **Extensions** app |
 | File sharing | Your home, and a public folder any guest reads and only you write, announced under the hostname (`mdns name = mdns`) |
+| Firmware | `fwupd-refresh.timer` keeps the catalogue current wherever `fwupd` comes, with **Desktop extras** or beside GNOME Firmware. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Fwupd)** |
 
 ### Out of Memory
 
