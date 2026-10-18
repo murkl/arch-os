@@ -143,13 +143,10 @@ def download(regular, bold, fill, w):
     """
     h = BUTTON
     title, line = "Download ISO", " · ".join(ARCH)
-    # An icon of 24 in a chip of 48, as on a round button.
-    icon, chip = 24, 24
-    # The chip, the text and both edges evenly apart, so the text has as much
-    # room on its left as on its right.
-    text = max(bold.width(title, 16), regular.width(line, 12))
-    gap = (w - 2 * chip - text) / 3
-    cx, cy = gap + chip, h / 2
+    # A chip of 48 with room around its icon, set off from the left edge and
+    # further from the text.
+    icon, chip, left, gap = 20, 24, 20, 24
+    cx, cy = left + chip, h / 2
     x = cx + chip + gap
     top = (h - 24 - 16) / 2
     return svg(w + 2 * MARGIN, h + MARGIN, alt_download(), [
