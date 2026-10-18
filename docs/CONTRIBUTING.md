@@ -175,25 +175,25 @@ END_COMMIT_OVERRIDE
 
 | Job | When | Does |
 | --- | --- | --- |
-| `Title` | A pull request is opened, pushed to or edited | Checks the title |
-| `Check` | A pull request, a release, every Monday, on demand | `make check` |
-| `Image` | As `Check`, where the change reaches the image | Builds the program, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO. Then starts its Recovery and writes it again from the ISO. Every Monday and on demand also the Desktop starting point, booted to GNOME's login screen |
+| `Title` | A pull request is opened, pushed to or edited | Checks the title and the base branch |
+| `Check` | Every pull request | `make check` |
+| `Image` | A pull request that reaches the image, and a release | Builds the program, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO. Then starts its Recovery and writes it again from the ISO |
 | `Release` | A push to `main` | The release pull request, or once that is merged, the tag and the draft page |
-| `Publish` | A release | Attaches the files `Image` booted to the page, signed, and publishes it |
+| `Publish` | A release | Attaches the files `Image` booted to the page and publishes it |
 
 - A merge into `main` runs `Release` alone: its pull request has passed `Check` and `Image` already
-- A run started by hand offers its images for download: `gh workflow run CI --ref <branch>`
+- The Desktop starting point is installed by hand: `make e2e START=desktop`
 
 ## Releasing
 
 Nothing is typed and nothing is tagged by hand.
 
 1. **Every merge that releases something** opens or updates the pull request `chore(main): release 2.1.0`. It raises the version in `.release-please-manifest.json` and writes that version's section of **[CHANGELOG.md](../CHANGELOG.md)**
-2. **Merging it is the release.** It passes the checks like any other pull request. The run on `main` tags `v2.1.0`, checks, builds and boots the images as that version, attaches them to the release page and publishes it
+2. **Merging it is the release.** It passes the checks like any other pull request. The run on `main` tags `v2.1.0`, builds and boots the images as that version, attaches them to the release page and publishes it
 
 - Merges collect in the release pull request until it is merged. When to release is a decision, not a schedule
 - The release pull request, the tag and the release page are made with the secret `RELEASE_TOKEN` of the environment `release`, which only `main` may use: a fine-grained personal access token of the account with Contents and Pull requests set to read and write. `.github/release-token.sh` stores it. The workflow's own token may not, as GitHub holds the checks of a bot's pull request until someone approves its runs. When the token expires, `Release` fails and says so
-- The page carries `arch-os-2.1.0-x86_64.iso` and `arch-os-2.1.0-recovery-x86_64.tar`, both with signed build provenance. The ISO leaves the Recovery out to stay under GitHub's 2 GiB per file: its Installer fetches the `.tar`, and an installed Recovery updates itself from it
+- The page carries `arch-os-2.1.0-x86_64.iso` and `arch-os-2.1.0-recovery-x86_64.tar`, each with the sha256 GitHub shows beside it. The ISO leaves the Recovery out to stay under GitHub's 2 GiB per file: its Installer fetches the `.tar`, and an installed Recovery updates itself from it
 - Every other build is named after a pre-release of the next patch: `arch-os-2.0.1-dev-x86_64.iso`. `make build VERSION=2.1.0` names a build after any version, which it stamps into the program
 
 **Note:** _The page stays a draft until every file is attached. A run that fails on the way leaves a draft: re-run its failed jobs._

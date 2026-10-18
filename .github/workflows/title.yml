@@ -1,10 +1,10 @@
-# The title becomes the squash commit on main, which release-please reads. A
-# workflow of its own, so editing a title reruns only this.
+# The title becomes the squash commit on main, which release-please reads, and
+# main is the only branch a change comes back to. A workflow of its own, so
+# editing a title reruns only this.
 
 name: Title
 
 on:
-  # synchronize: main asks for this check on a pull request's newest commit.
   pull_request:
     types: [opened, edited, synchronize, reopened]
 
@@ -22,8 +22,13 @@ jobs:
     steps:
       - env:
           TITLE: ${{ github.event.pull_request.title }}
+          BASE: ${{ github.base_ref }}
         run: |
+          [ "$BASE" = main ] || {
+            echo "::error::This pull request targets '${BASE}'. Every change comes back to main: edit the base branch."
+            exit 1
+          }
           grep -qE '^(feat|fix|perf|refactor|docs|test|build|ci|chore|revert)(\([^)]+\))?!?: .' <<<"$TITLE" || {
-            echo "::error::'${TITLE}' opens on no type: feat:, fix:, feat!: … see docs/CONTRIBUTING.md"
+            echo "::error::'${TITLE}' opens on no type: feat:, fix:, feat!: …"
             exit 1
           }
