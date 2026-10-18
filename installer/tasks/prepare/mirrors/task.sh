@@ -1,5 +1,5 @@
 # What this machine is, in one line, before anything else is in the log.
-printf 'machine: %s cores, %s memory, %s on %s, virtualisation %s\n' \
+printf 'machine: %s cores, %s memory, %s on %s, virtualization %s\n' \
     "$(nproc)" \
     "$(awk '/^MemTotal:/ { printf "%.1f GiB", $2 / 1048576 }' /proc/meminfo)" \
     "$(lsblk -bdno SIZE "$ARCH_OS_DISK" | numfmt --to=iec)" \

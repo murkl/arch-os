@@ -1,5 +1,5 @@
 //! A value drawn as a code to scan, for a link wanted on the phone in somebody's hand. A code
-//! slightly wrong is no code, so colours, margin and whether it is drawn at all follow what a
+//! slightly wrong is no code, so colors, margin and whether it is drawn at all follow what a
 //! scanner needs.
 
 use ratatui::style::{Color, Style as Cell};

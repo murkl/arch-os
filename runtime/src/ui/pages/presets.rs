@@ -1,4 +1,4 @@
-//! The starting points, offered once on a machine that answered nothing. A preset only fills in
+//! The profiles, offered once on a machine that answered nothing. A preset only fills in
 //! answers that stay ordinary values, so one keypress undoes nothing hard.
 
 use ratatui::buffer::Buffer;
@@ -20,7 +20,7 @@ impl PresetsPage {
         }
     }
 
-    /// What follows a starting point: its answers in force, and the next link of the opening.
+    /// What follows a profile: its answers in force, and the next link of the opening.
     fn taken(ctx: &mut Ctx) -> Flow {
         ctx.presets_seen = true;
         ctx.settle();
@@ -35,7 +35,7 @@ impl PresetsPage {
 
 impl Page for PresetsPage {
     fn title(&self) -> String {
-        t("Starting point")
+        t("Profile")
     }
 
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {
@@ -50,9 +50,7 @@ impl Page for PresetsPage {
             self.list = List::new(rows);
             self.list.described = true;
         }
-        let text = t(
-            "Choose where to start from. Every answer it fills in can still be changed afterwards.",
-        );
+        let text = t("Fills in every answer, each changeable afterwards.");
         let y = paragraph(buf, area, area.y, &text, ctx.style.tone(Tone::Muted)) + 1;
         self.list.draw(
             Rect::new(area.x, y, area.width, area.bottom().saturating_sub(y)),
@@ -69,7 +67,7 @@ impl Page for PresetsPage {
         match self.list.key(key) {
             Picked::Open(i) => {
                 let preset = &ctx.module.presets[i];
-                crate::info!("starting point: {}", preset.title);
+                crate::info!("profile: {}", preset.title);
                 match &preset.action {
                     Some(id) => {
                         let action = ctx
@@ -93,7 +91,7 @@ impl Page for PresetsPage {
         true
     }
 
-    /// Back from the action that fetches a starting point: what it wrote into the answer file is
+    /// Back from the action that fetches a profile: what it wrote into the answer file is
     /// read back over the answers held and put in force, like one written out here.
     fn resumed(&mut self, ctx: &mut Ctx) -> Flow {
         if !ctx.imported {

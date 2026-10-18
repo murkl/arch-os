@@ -1,2 +1,2 @@
 title: Running as root
-error: This has to run as root. Log in as root and start it again.
+error: Root is required. Log in as root and start again.

@@ -215,8 +215,8 @@ impl App {
         }
     }
 
-    /// The way out: where the module says how the machine is put down, or in a kiosk, a question;
-    /// otherwise the program ends.
+    /// The way out: where the module says how the machine is put down, or in a kiosk, a question.
+    /// Otherwise the program ends.
     fn exit(&mut self) -> Flow {
         if !(self.ctx.kiosk || self.ctx.module.leaves()) {
             return Flow::Quit;
@@ -426,7 +426,7 @@ pub mod tests {
         }
     }
 
-    /// Where the language page leads: through the questions asked first, the starting points
+    /// Where the language page leads: through the questions asked first, the profiles
     /// and the open questions to the dashboard.
     #[test]
     fn the_opening_asks_in_order_and_ends_on_the_dashboard() {
@@ -461,7 +461,7 @@ pub mod tests {
         settle(&mut app, &mut term, &rx);
         let shown = screen(&mut app, &mut term);
         assert!(
-            shown.contains("Starting point")
+            shown.contains("Profile")
                 && shown.contains("Desktop")
                 && shown.contains("Core")
                 && shown.contains("A desktop."),
@@ -783,7 +783,7 @@ pub mod tests {
         press(&mut app, &[Key::Tab]);
         let shown = screen(&mut app, &mut term);
         assert!(
-            shown.contains("Working")
+            shown.contains("Running")
                 && shown.contains("first")
                 && shown.contains("50%")
                 && shown.contains("tab overview"),

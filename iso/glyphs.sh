@@ -51,7 +51,7 @@ for font in "$FONTS"/*.psf.gz; do
         echo "${point} ${character} is not in ${name} and would be a box on the console:" >&2
         # A module's text is fixed here, the interface's by changing the font.
         if grep -qF -- "$character" <<<"$INTERFACE_GLYPHS"; then
-            echo "  the interface draws it - ${name} is the wrong font for this image" >&2
+            echo "  the interface draws it, so ${name} is the wrong font for this image" >&2
         fi
         grep -lF -- "$character" "$@" | sed 's/^/  /' >&2
         status=1

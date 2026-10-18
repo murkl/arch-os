@@ -50,7 +50,7 @@ done <languages
 
 # The territory code a locale ends in, where the mirror list calls that country,
 # and the time zone it keeps. A "-" for the country is a country Arch has no
-# mirror in; the time zone is still of use.
+# mirror in, the time zone is still of use.
 seen=""
 while IFS=$'\t' read -r code country zone extra; do
     case "$code" in '' | \#*) continue ;; esac

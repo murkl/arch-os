@@ -1,8 +1,8 @@
-//! The colours as styles, and the glyphs the terminal can show.
+//! The colors as styles, and the glyphs the terminal can show.
 //!
-//! Every colour but the accent is a slot of the terminal's own palette, so the interface reads on
-//! whatever the terminal is painted. The accent is the product's, and on sixteen colours the
-//! stock colour nearest it.
+//! Every color but the accent is a slot of the terminal's own palette, so the interface reads on
+//! whatever the terminal is painted. The accent is the product's, and on sixteen colors the
+//! stock color nearest it.
 
 use ratatui::style::{Color, Modifier, Style as Cell};
 
@@ -19,7 +19,7 @@ pub struct Style {
     pub warning: Color,
     pub error: Color,
     pub glyphs: &'static Glyphs,
-    /// Muted text is also dim: the console shows dark grey by a brightness bit that only the
+    /// Muted text is also dim: the console shows dark gray by a brightness bit that only the
     /// return to normal intensity clears, which a dropped dim sends.
     dim_muted: bool,
 }
@@ -128,7 +128,7 @@ pub static CONSOLE: Glyphs = Glyphs {
     spinner: &["│", "/", "─", "\\"],
 };
 
-/// The sixteen stock colours of xterm, which a console in any theme shows in its own hues.
+/// The sixteen stock colors of xterm, which a console in any theme shows in its own hues.
 const STOCK: [(Color, Rgb); 16] = [
     (Color::Black, Rgb(0, 0, 0)),
     (Color::Red, Rgb(205, 0, 0)),
@@ -148,7 +148,7 @@ const STOCK: [(Color, Rgb); 16] = [
     (Color::White, Rgb(255, 255, 255)),
 ];
 
-/// The slot nearest a colour, in plain RGB distance, where the product names none. Never black
+/// The slot nearest a color, in plain RGB distance, where the product names none. Never black
 /// or white, which a console paints its field and its text in.
 pub fn nearest(c: Rgb) -> Color {
     STOCK[1..15]
@@ -161,7 +161,7 @@ pub fn nearest(c: Rgb) -> Color {
         .unwrap_or(Color::Cyan)
 }
 
-/// A slot by the name the product writes: the seven colours, then their bright halves.
+/// A slot by the name the product writes: the seven colors, then their bright halves.
 pub fn slot(name: &str) -> Option<Color> {
     let i = crate::spec::SLOTS.iter().position(|s| *s == name)?;
     Some(STOCK[if i < 7 { i + 1 } else { i + 2 }].0)
@@ -183,7 +183,7 @@ impl Style {
                 .unwrap_or(Color::Cyan),
             (None, false) => Color::Cyan,
         };
-        // Behind text a console takes only its first eight colours: a bright one blinks or
+        // Behind text a console takes only its first eight colors: a bright one blinks or
         // vanishes. Blue, unless the product names a slot.
         let selection = match (product.surface, console) {
             (Some(rgb), false) => Color::Rgb(rgb.0, rgb.1, rgb.2),
@@ -229,7 +229,7 @@ impl Style {
         }
     }
 
-    /// Bold, except on the console, which draws bold as the bright slot: another colour.
+    /// Bold, except on the console, which draws bold as the bright slot: another color.
     pub fn bold(&self, tone: Tone) -> Cell {
         if self.dim_muted {
             return self.tone(tone);

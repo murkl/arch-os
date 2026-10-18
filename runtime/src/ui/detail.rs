@@ -292,7 +292,7 @@ pub fn failure(f: &Failure) -> Vec<Block> {
     if let Some(path) = crate::log::path() {
         b.push(Block::Blank);
         b.push(Block::Text(
-            tf("The full log is in {{path}}.", &[("path", &path.display())]),
+            tf("Full log: {{path}}", &[("path", &path.display())]),
             Tone::Muted,
         ));
     }

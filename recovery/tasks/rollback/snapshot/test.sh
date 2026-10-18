@@ -2,7 +2,7 @@
 # here. A snapshot carries its origin's UUID as the parent of @.
 
 # One field of `btrfs subvolume show`, anchored so UUID does not answer for the
-# parent; sed ends at the first match and still reads to the end.
+# parent. sed ends at the first match and still reads to the end.
 subvolume_field() {
     btrfs subvolume show "$1" | sed -n "0,/^[[:space:]]*${2}:/s/^[[:space:]]*${2}:[[:space:]]*//p"
 }

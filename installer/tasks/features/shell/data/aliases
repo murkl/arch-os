@@ -1,5 +1,5 @@
-# Listing. Colour only on a terminal, so `ls | grep` reads plain names. The icons
-# are nerd font glyphs, which the text console has no font for; the tree view
+# Listing. Color only on a terminal, so `ls | grep` reads plain names. The icons
+# are nerd font glyphs, which the text console has no font for. The tree view
 # is eza's alone, since GNU ls has no such thing.
 alias ls="ls -h --color=auto --group-directories-first"
 command -v eza &>/dev/null && alias ls="eza --color=auto --group-directories-first"
@@ -8,7 +8,7 @@ command -v eza &>/dev/null && alias lt="ls -Tal"
 alias ll="ls -l"
 alias la="ls -la"
 
-# Colour
+# Color
 alias diff="diff --color=auto"
 alias grep="grep --color=auto"
 alias ip="ip -color=auto"
@@ -34,8 +34,8 @@ alias ...="cd ../.."
 # this is here to replace.
 alias sv="sudoedit"
 
-# Packages. paru covers the AUR as well and asks for the password itself;
-# without it, the ones that change the system go through sudo. Asked here rather
+# Packages. paru covers the AUR as well and asks for the password itself.
+# Without it, the ones that change the system go through sudo. Asked here rather
 # than decided at installation, so the aliases follow paru arriving or leaving.
 if command -v paru &>/dev/null; then
     alias paci='paru -S'   # install

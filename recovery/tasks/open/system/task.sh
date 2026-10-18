@@ -6,7 +6,7 @@ echo "closed ${MNT}"
 
 part="$(target_partition)"
 if [ -z "$part" ]; then
-    echo "${ARCH_OS_RECOVERY_DISK} holds no Arch OS installation: its second partition is neither a LUKS container nor a btrfs labelled BTRFS." >&2
+    echo "${ARCH_OS_RECOVERY_DISK} holds no Arch OS installation: its second partition is neither a LUKS container nor a btrfs labeled BTRFS." >&2
     exit 10
 fi
 

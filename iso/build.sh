@@ -23,7 +23,7 @@ cd "$(dirname "$0")"
 # else than what it ships.
 VERSION="$("$BIN" --version 2>/dev/null | awk '$1 == "arch-os" { print $2 }')"
 [ -n "$VERSION" ] || {
-    echo "Error: ${BIN} does not answer to --version - run 'make build' first" >&2
+    echo "Error: ${BIN} reports no version. Run 'make build' first." >&2
     exit 1
 }
 RECOVERY_DIR="${DIST_DIR}/arch-os-${VERSION}-recovery"
@@ -70,7 +70,7 @@ unmount_leftovers() {
 }
 
 # Nothing root-owned stays in the checkout. A failed build keeps its profiles to
-# read, handed back; the key the Recovery was signed with goes either way.
+# read, handed back. The key the Recovery was signed with goes either way.
 cleanup() {
     status=$?
     set +e
@@ -218,7 +218,7 @@ mkdir -p "${PROFILES_DIR}/out" "${WORK_DIR}"
 
 fetch_theme
 [ -d "${PLYMOUTH_THEME_SRC}" ] || { echo "Error: plymouth theme not found in '${PLYMOUTH_THEME_SRC}'" && exit 1; }
-# The .plymouth file names the theme; without it plymouthd has nothing to load.
+# The .plymouth file names the theme. Without it plymouthd has nothing to load.
 [ -f "${PLYMOUTH_THEME_SRC}/arch-os.plymouth" ] || { echo "Error: '${PLYMOUTH_THEME_SRC}' is not a plymouth theme" && exit 1; }
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -231,7 +231,7 @@ echo "### Build the Recovery"
 cp -r /usr/share/archiso/configs/baseline/. "$RECOVERY_PROFILE"
 
 # baseline is a cloud guest that starts ssh, cloud-init and four hypervisors'
-# agents. All of it goes; recovery/ starts the Recovery and a cable's network.
+# agents. All of it goes, recovery/ starts the Recovery and a cable's network.
 rm -rf "${RECOVERY_PROFILE}/airootfs/etc/systemd/system" \
     "${RECOVERY_PROFILE}/airootfs/etc/systemd/network" \
     "${RECOVERY_PROFILE}/airootfs/etc/systemd/networkd.conf.d" \
@@ -327,7 +327,7 @@ rm -rf "$RECOVERY_DIR"
 mkdir -p "$RECOVERY_DIR"
 mkfs.erofs --quiet --all-root -U "$uuid" "${RECOVERY_DIR}/recovery.img" "${TEMP_DIR}/partition"
 
-# copytoram frees the disk for the repair; nomodeset draws on the firmware's
+# copytoram frees the disk for the repair. nomodeset draws on the firmware's
 # screen, which needs no graphics driver. The boot menu shows its os-release.
 cat >"${TEMP_DIR}/os-release" <<EOF
 NAME="Arch OS Recovery"
@@ -401,15 +401,14 @@ EOF
 cat >"${ISO_PROFILE}/airootfs/etc/motd" <<'EOF'
 Arch OS live environment
 
-  arch-os installer    install Arch Linux on this machine
-  arch-os recovery     repair an Arch Linux system already on a disk
-  iwctl                join a wireless network
+  arch-os installer    install Arch OS on this machine
+  arch-os recovery     repair an Arch OS installation
+  iwctl                connect to a wireless network
 
 Add --dry-run to either for a run that changes nothing.
 
-Both keep their answers in /opt/arch-os, so starting either again picks up where
-it left off. What they did is in /opt/arch-os/installer.log and
-/opt/arch-os/recovery.log.
+Both keep their answers in /opt/arch-os, so a second run resumes. Their logs
+are /opt/arch-os/installer.log and /opt/arch-os/recovery.log.
 
 Reaching this prompt without asking for it means Arch OS stopped on its own:
 journalctl -b -u arch-os says why.

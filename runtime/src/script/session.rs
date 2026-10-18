@@ -213,7 +213,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn strips_colour_and_keeps_the_last_redraw() {
+    fn strips_color_and_keeps_the_last_redraw() {
         assert_eq!(
             drawn(b"\x1b[1;32m:: \x1b[0mSynchronizing"),
             ":: Synchronizing"

@@ -1,4 +1,4 @@
-title: Install the backup application
+title: Install the backup app
 needs: [gnome]
 when:
   - ARCH_OS_DESKTOP != none

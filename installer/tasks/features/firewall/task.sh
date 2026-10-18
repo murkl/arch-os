@@ -5,6 +5,6 @@
 chroot_pacman_install firewalld
 arch-chroot "$MNT" systemctl enable firewalld.service
 
-# public, where every unmarked network lands, lets ssh in as shipped; the SSH
+# public, where every unmarked network lands, lets ssh in as shipped. The SSH
 # server task opens it again itself.
 arch-chroot "$MNT" firewall-offline-cmd --zone=public --remove-service-from-zone=ssh

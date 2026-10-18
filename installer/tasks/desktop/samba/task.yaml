@@ -1,4 +1,4 @@
-title: Set up Samba
+title: Set up file sharing
 needs: [gnome]
 
 # The question's own conditions, so no server runs where sharing was declined.

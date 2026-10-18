@@ -35,13 +35,13 @@ pub const FALSE: &str = "false";
 
 // ─── The model ───────────────────────────────────────────────────────────────
 
-/// The product: what no module answers for its neighbours.
+/// The product: what no module answers for its neighbors.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Product {
     /// The name over every page. Not translated: it is a name.
     pub title: String,
     pub accent: Option<Rgb>,
-    /// The slot of the console's sixteen colours the accent takes there, by name: the console
+    /// The slot of the console's sixteen colors the accent takes there, by name: the console
     /// shows slots, painted by whoever dressed it.
     pub console_accent: Option<String>,
     /// Behind the row under the cursor, and its slot on the console.
@@ -122,7 +122,7 @@ pub struct On {
     pub success: Vec<String>,
 }
 
-/// A starting point, offered once on a machine that has answered nothing: a set of answers, or
+/// A profile, offered once on a machine that has answered nothing: a set of answers, or
 /// the action that fetches them.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Preset {
@@ -837,7 +837,7 @@ fn opt_shell(
     }
 }
 
-/// The console's colours a product may name, black and white left out: the field and the text.
+/// The console's colors a product may name, black and white left out: the field and the text.
 pub const SLOTS: [&str; 14] = [
     "red",
     "green",
@@ -902,7 +902,7 @@ fn product(files: &Files, functions: &BTreeSet<String>) -> Result<Product, Strin
             SLOTS.join(", ")
         ));
     }
-    // Behind text a console takes only its first eight colours.
+    // Behind text a console takes only its first eight colors.
     if let Some(slot) = &f.console_surface
         && !SLOTS[..7].contains(&slot.as_str())
     {
@@ -1580,7 +1580,7 @@ fn tasks(
                 }
                 None => None,
             };
-            // Conditions are only parsed here; which settings they name is checked by the module.
+            // Conditions are only parsed here. Which settings they name is checked by the module.
             let mut when = Vec::new();
             for line in f.when.lines() {
                 if !line.trim().is_empty() {

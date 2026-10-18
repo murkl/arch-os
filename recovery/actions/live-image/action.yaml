@@ -1,3 +1,3 @@
 # Under requires: a system is installed and repaired from outside itself.
 title: An Arch Linux live image
-error: This runs from a booted Arch Linux live image. Start the machine from the Arch OS ISO and open this there.
+error: Runs only from an Arch Linux live image. Boot this machine from the Arch OS ISO.

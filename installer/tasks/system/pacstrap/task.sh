@@ -9,7 +9,7 @@
 # writes to at every boot.
 packages=("$KERNEL" base sudo mkinitcpio zram-generator networkmanager btrfs-progs snapper dosfstools)
 
-# Firmware is for hardware; a guest has none but a card handed through to it.
+# Firmware is for hardware, and a guest has none but a card handed through to it.
 if [ "$ARCH_OS_VIRTUAL_MACHINE" = "false" ] || [ -n "$(graphics_cards)" ]; then
     packages+=(linux-firmware wireless-regdb)
 else

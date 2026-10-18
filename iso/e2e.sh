@@ -21,7 +21,7 @@ WORK="${WORK:-$(dirname "$ISO")/e2e}"
 # It is handed to the live image where the Installer looks after a download.
 RECOVERY_DIR="${ISO%-x86_64.iso}-recovery"
 
-# The least docs/README.md asks of a machine for this starting point, so every
+# The least docs/README.md asks of a machine for this profile, so every
 # run proves it.
 MEMORY="$([ "$START" = desktop ] && echo 4096 || echo 2048)"
 DISK_SIZE="$([ "$START" = desktop ] && echo 32G || echo 16G)"
@@ -96,7 +96,7 @@ MONITOR="$(free_port)"
 
 ssh-keygen -q -t ed25519 -N '' -C arch-os-e2e -f "${WORK}/key"
 
-# The live image takes the key over cloud-init, from a volume labelled cidata.
+# The live image takes the key over cloud-init, from a volume labeled cidata.
 # Its locale module is switched off: it rewrites /etc/locale.gen.
 cat >"${WORK}/seed/user-data" <<EOF
 #cloud-config
@@ -415,7 +415,7 @@ recovery_dashboard() {
 # THE RUN
 # ////////////////////////////////////////////////////////////////////////////
 
-# The answers, shared and then the starting point's own: the Desktop is its
+# The answers, shared and then the profile's own: the Desktop is its
 # preset with the SSH server on, which is how this run reaches it.
 answers() {
     cat <<EOF
@@ -588,10 +588,10 @@ keys Enter
 # Each text is one only its page shows: the run page lists every task's title.
 shows "Newest first"
 keys Enter
-shows "in place of the system on ${DISK}?"
+shows "Roll back ${DISK} to"
 keys Down Enter
 # Opens on Yes after the rollback.
-shows "Rebuild the kernel images"
+shows "Rebuild kernel images"
 keys Enter
 finished recovery "$REPAIR_TIMEOUT"
 cut_power

@@ -41,14 +41,14 @@ mkdir -p "$OUT"
 for size in $SIZES; do
     source="/usr/share/kbd/consolefonts/ter-v${size}b.psf.gz"
     [ -f "$source" ] || {
-        echo "Error: no ${source} - install the terminus-font package" >&2
+        echo "Error: no ${source}. Install the terminus-font package." >&2
         exit 1
     }
     gzip -cd "$source" >"$WORK/font"
     psfgettable "$WORK/font" >"$WORK/table"
 
     # Where the glyphs start, how many bytes each takes, and its cell. PSF2 says
-    # so in its header; PSF1, which the sizes 8 pixels wide come in, has a
+    # so in its header. PSF1, which the sizes 8 pixels wide come in, has a
     # header of 4 bytes and a byte a row.
     case "$(od -An -tx1 -N2 "$WORK/font" | tr -d ' ')" in
     72b5) read -r offset _ _ bytes height width < <(od -An -tu4 -w24 --endian=little -j8 -N24 "$WORK/font") ;;

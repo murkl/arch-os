@@ -1,6 +1,6 @@
 # The browser chosen, in this system's language, and the one every link opens
 # in. Each already runs on Wayland, decodes video on the card and keeps its
-# passwords in the GNOME keyring; only what it does not bring is added.
+# passwords in the GNOME keyring. Only what it does not bring is added.
 # https://wiki.archlinux.org/title/Firefox
 # https://wiki.archlinux.org/title/Chromium
 # https://wiki.archlinux.org/title/Vivaldi
@@ -14,7 +14,7 @@ territory="${territory,,}"
 packages=("$ARCH_OS_BROWSER")
 
 # The first of these the repositories hold. None is said in the log and the
-# browser stays in English; a pacman that cannot answer stops the run.
+# browser stays in English. A pacman that cannot answer stops the run.
 add_first_of() {
     local name out
     for name in "$@"; do

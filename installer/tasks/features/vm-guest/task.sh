@@ -2,8 +2,8 @@
 case "$(systemd-detect-virt || allow 1)" in
 
 kvm | qemu)
-    # The same guest with or without hardware virtualisation. Only the guest
-    # halves; both units are static and started by udev.
+    # The same guest with or without hardware virtualization. Only the guest
+    # halves. Both units are static and started by udev.
     echo "detected QEMU"
     chroot_pacman_install spice-vdagent qemu-guest-agent
     # The shared folders of GNOME Boxes, started by udev like the two above

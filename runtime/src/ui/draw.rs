@@ -327,7 +327,7 @@ pub fn scrollbar(buf: &mut Buffer, area: Rect, lines: usize, offset: usize, ctx:
     }
 }
 
-/// Writes centred text, cut to the width.
+/// Writes centered text, cut to the width.
 pub fn center(buf: &mut Buffer, area: Rect, y: u16, text: &str, style: Cell, mark: &str) {
     let text = cut(text, area.width as usize, mark);
     let x = area.x + (area.width.saturating_sub(text.width() as u16)) / 2;

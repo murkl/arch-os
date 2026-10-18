@@ -9,7 +9,7 @@ arch-chroot "$MNT" systemctl is-enabled arch-os-session-up.service >/dev/null
 arch-chroot "$MNT" systemctl is-enabled systemd-oomd.service >/dev/null
 [ -z "$(systemd-analyze verify --root="$MNT" -- -.slice user@.service 2>&1)" ]
 
-# The firmware offered is as current as the catalogue its timer loads.
+# The firmware offered is as current as the catalog its timer loads.
 if has_command fwupdmgr; then
     arch-chroot "$MNT" systemctl is-enabled fwupd-refresh.timer >/dev/null
 fi

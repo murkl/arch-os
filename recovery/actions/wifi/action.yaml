@@ -1,8 +1,8 @@
 # On the dashboard, and opened without internet. An open or known network
-# is joined as it is chosen; one that wants a passphrase says no, and that is
+# is joined as it is chosen. One that wants a passphrase says no, and that is
 # asked next.
-title: Configure Wi-Fi
-description: Joins a wireless network.
+title: Connect to Wi-Fi
+description: Connects to a wireless network.
 group: Configuration
 
 requires: [wifi-card, no-cable]

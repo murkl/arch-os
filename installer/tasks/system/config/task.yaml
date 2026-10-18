@@ -1,2 +1,2 @@
-title: Set locale, time zone and hostname
+title: Set language, time zone and hostname
 needs: [pacstrap]

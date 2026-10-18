@@ -12,6 +12,6 @@ set laststatus=2
 set expandtab shiftwidth=4 softtabstop=4
 set ignorecase smartcase hlsearch
 
-" Vim's own dark scheme of muted greys and blues, close to the Nord the console
+" Vim's own dark scheme of muted grays and blues, close to the Nord the console
 " and the prompt are drawn in.
 colorscheme habamax

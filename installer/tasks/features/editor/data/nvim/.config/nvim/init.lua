@@ -1,5 +1,5 @@
 -- Written by the Arch OS Installer. Neovim's defaults already bring the mouse,
--- a colour scheme of its own and most of what vim needs a vimrc for, so this is
+-- a color scheme of its own and most of what vim needs a vimrc for, so this is
 -- only what they leave out. `:help option-list` names everything that can go
 -- here.
 vim.o.number = true

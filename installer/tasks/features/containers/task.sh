@@ -16,7 +16,7 @@ docker)
 
 podman)
     # podman-docker answers to `docker` and points DOCKER_HOST at the socket
-    # below; docker-compose is what `podman compose` reaches for first.
+    # below. docker-compose is what `podman compose` reaches for first.
     chroot_pacman_install podman podman-docker docker-compose
 
     # --global: there is no session yet, and it belongs to whoever logs in.

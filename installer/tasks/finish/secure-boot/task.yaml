@@ -1,4 +1,4 @@
-title: Sign the boot files with sbctl
+title: Set up Secure Boot
 
 # A signature holds only until a boot image is rebuilt, and each of these
 # installs or removes packages. A task added to this stage belongs here too.

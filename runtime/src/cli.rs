@@ -15,7 +15,7 @@ fn help() -> String {
         .collect::<Vec<_>>()
         .join(", ");
     format!(
-        "{PROGRAM} <module> [--dry-run] [--kiosk]\n{PROGRAM} glyphs\n{PROGRAM} --version\n\n<module>   {modules}\n--dry-run  show the run, start nothing\n--kiosk    the machine is only this: leaving starts it again\nglyphs     every character the interface draws on a console\n"
+        "{PROGRAM} <module> [--dry-run] [--kiosk]\n{PROGRAM} glyphs\n{PROGRAM} --version\n\n<module>   {modules}\n--dry-run  show the run, start nothing\n--kiosk    the machine's only program: leaving restarts it\nglyphs     every character the interface draws on a console\n"
     )
 }
 

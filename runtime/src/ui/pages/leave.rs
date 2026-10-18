@@ -44,7 +44,7 @@ impl LeavePage {
         let (title, help) = if ctx.kiosk {
             (
                 t("Start over"),
-                t("Starts this program again from the beginning. Every answer is kept."),
+                t("Restarts this program. All answers are kept."),
             )
         } else {
             (
@@ -125,7 +125,7 @@ impl Page for LeavePage {
                 buf,
                 area,
                 y,
-                &t("The run goes on behind this page. Every choice here stops it."),
+                &t("The run continues in the background. Any choice here stops it."),
                 ctx.style.tone(Tone::Warn),
             ) + 1;
         }

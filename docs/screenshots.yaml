@@ -16,7 +16,7 @@
         press: enter
       - page: Console keyboard  # auto, the layout of the live image
         press: enter
-      - page: [Starting point, Desktop, Core]
+      - page: [Profile, Desktop, Core]
         press: enter
       - page: Username
         press: [tux, enter]
@@ -45,6 +45,6 @@
         choose: "Yes"
         press: enter
 
-      - page: Arch OS is installed
+      - page: Arch OS installed
         shot: installing
         frame: running

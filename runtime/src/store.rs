@@ -120,7 +120,7 @@ impl Store {
     /// title. Passwords and derived values are left out: neither is an answer the next run
     /// should read back.
     pub fn save(&self) -> std::io::Result<()> {
-        let mut out = format!("# {}\n", t("Answers. Can be edited by hand."));
+        let mut out = format!("# {}\n", t("Answers, editable by hand."));
         entry(
             &mut out,
             spec::LANGUAGE,
@@ -172,7 +172,7 @@ impl Store {
         env
     }
 
-    /// Takes the values of a starting point. Nothing else about it survives: from here on every
+    /// Takes the values of a profile. Nothing else about it survives: from here on every
     /// one of them is an ordinary answer.
     pub fn apply(&mut self, preset: &Preset) {
         for (name, value) in &preset.values {
@@ -237,7 +237,7 @@ impl Store {
         {
             return Some(match &s.error {
                 Some(e) => t(e),
-                None => t("This answer is not among the ones offered here."),
+                None => t("Not one of the options."),
             });
         }
         let allowed = match s.kind {
@@ -283,7 +283,7 @@ impl Store {
 fn why(s: &Setting) -> String {
     match &s.error {
         Some(e) => t(e),
-        None if s.pattern.is_some() => t("This answer has the wrong format."),
+        None if s.pattern.is_some() => t("Invalid format."),
         None => t("An answer is required."),
     }
 }

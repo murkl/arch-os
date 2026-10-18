@@ -3,7 +3,7 @@
 
 Text is set as outlines of the banner's font, since GitHub lets an SVG shown as
 an image load no font, and the viewer's own would differ on every machine. The
-button is the accent in product.yaml. Under it, each starting point is a quiet pill
+button is the accent in product.yaml. Under it, each profile is a quiet pill
 of its own, so the two wrap on a narrow screen, once for each GitHub theme and
 on a ground of its own, so it reads on the other theme too. The text
 alternatives are written into README.md from the same run.
@@ -42,7 +42,7 @@ TIERS = (
 # as GitHub lets a README set no spacing of its own.
 BUTTON, PILL = 64, 56
 INSET, RADIUS, GAP, END, MARGIN = 12, 12, 12, 16, 8
-# GitHub's own colours for a secondary button, so a pill sits on its theme as part of the page.
+# GitHub's own colors for a secondary button, so a pill sits on its theme as part of the page.
 THEMES = {
     "light": {"fill": "#f6f8fa", "line": "#d1d9e0", "text": "#1f2328", "muted": "#59636e"},
     "dark": {"fill": "#151b23", "line": "#3d444d", "text": "#f0f6fc", "muted": "#9198a1"},
@@ -81,7 +81,7 @@ class Face:
         return len(text) * self.advance * size / self.em
 
     def baseline(self, top, size, line):
-        """Where text sits in a line box, as a browser centres it."""
+        """Where text sits in a line box, as a browser centers it."""
         scale = size / self.em
         return top + (line - (self.ascent + self.descent) * scale) / 2 + self.ascent * scale
 
@@ -95,7 +95,7 @@ class Face:
         return pen.getCommands()
 
     def icon(self, char, cx, cy, size):
-        """One icon, its ink as large as a square size pixels across, centred on (cx, cy).
+        """One icon, its ink as large as a square size pixels across, centered on (cx, cy).
 
         Measured by its ink, since the font squeezes every icon into one cell,
         and by area, so a wide one weighs as much as a square one.
@@ -167,7 +167,7 @@ def download(regular, bold, fill, w):
 
 
 def needs_line(needs):
-    """What a starting point needs, as runs of text and whether each is a value."""
+    """What a profile needs, as runs of text and whether each is a value."""
     runs = []
     for i, (need, spec) in enumerate(zip(needs, SPECS)):
         runs += [(f"{need} GiB", True), (f" {spec}" + (" · " if i < len(SPECS) - 1 else ""), False)]
@@ -175,7 +175,7 @@ def needs_line(needs):
 
 
 def pill_width(regular, bold):
-    """Room for the widest starting point's two lines, on the grid."""
+    """Room for the widest profile's two lines, on the grid."""
     widest = max(max(bold.width(name, 14) + regular.width(f"  {kind}", 12),
                      regular.width("".join(run for run, _ in needs_line(needs)), 12))
                  for name, _, kind, needs in TIERS)
@@ -183,7 +183,7 @@ def pill_width(regular, bold):
 
 
 def pill(regular, bold, theme, index, w):
-    """One starting point and what it needs, a grid step further under the label above."""
+    """One profile and what it needs, a grid step further under the label above."""
     name, icon, kind, needs = TIERS[index]
     h = PILL
     cx = cy = h / 2
@@ -214,7 +214,7 @@ def alt_download():
 
 def alt_pill(index):
     name, _, kind, needs = TIERS[index]
-    return f"{name} ({kind}): " + ", ".join(f"{need} GiB {spec}" for need, spec in zip(needs, SPECS))
+    return f"{name}: {kind}, " + ", ".join(f"{need} GiB {spec}" for need, spec in zip(needs, SPECS))
 
 
 def main():

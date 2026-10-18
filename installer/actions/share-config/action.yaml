@@ -1,12 +1,12 @@
 # Under on: success. Choosing the row is the consent, so it says what leaves.
 title: Share the configuration
-description: Puts these answers online at paste.rs, to set up another machine exactly like this one. Anyone with the address can read them. The password is not among them.
-error: The configuration was not taken by paste.rs. Try again in a moment.
+description: Uploads these answers to paste.rs to set up another machine the same way. Anyone with the address can read them. Passwords are not included.
+error: The upload to paste.rs failed. Try again in a moment.
 simulates: true
 
 report: |
   Configuration shared
 
-  Scan the code, or type the word at the end of the address into the online
-  starting point of another installation.
+  Scan the QR code, or enter the end of the address under Online (paste.rs)
+  in another installation.
 qr: ARCH_OS_CONFIG_URL

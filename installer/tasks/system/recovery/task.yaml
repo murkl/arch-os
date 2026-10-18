@@ -1,3 +1,3 @@
-title: Write the Recovery partition
+title: Install the Recovery
 needs: [bootloader]
 when: ARCH_OS_RECOVERY_ENABLED == true

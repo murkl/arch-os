@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Writes the latest Arch OS ISO to a USB device, from any Linux:
+# Writes the latest Arch OS ISO to a USB stick, from any Linux:
 #
 #   curl -fsSL https://raw.githubusercontent.com/murkl/arch-os/main/get.sh | sh
 #
@@ -64,7 +64,7 @@ title "Arch OS ISO"
 # The ISO and its sha256 out of GitHub's description of the latest release:
 # one field to a line however the JSON is laid out, and each asset weighed when
 # the next one begins, whatever order its fields come in.
-release="$(fetch -Lfs "https://api.github.com/repos/${REPO}/releases/latest")" || fail "Cannot reach GitHub"
+release="$(fetch -Lfs "https://api.github.com/repos/${REPO}/releases/latest")" || fail "GitHub unreachable"
 asset="$(printf '%s\n' "$release" | tr ',' '\n' | awk '
     function weigh() {
         if (!found && url ~ /\.iso$/) { found = 1; print url, digest }
@@ -87,7 +87,7 @@ cd "$DOWNLOAD_DIR"
 
 # Into a .part first, so a file that is there arrived whole.
 if [ -f "$name" ]; then
-    info "Present, not downloaded again"
+    info "Already downloaded"
 else
     fetch -Lf --retry 3 --progress-bar "$url" -o "${name}.part" || fail "Download failed: ${name}"
     mv "${name}.part" "$name"
@@ -100,19 +100,19 @@ title "Checksum"
 if [ -z "$digest" ]; then
     ask "The release publishes no checksum for ${name}. Write it anyway?" || fail "Nothing written"
 elif printf '%s  %s\n' "$digest" "$name" | sha256sum -c - >/dev/null 2>&1; then
-    ok "Checksum is correct"
+    ok "Checksum matches"
 else
     ask "${name} does not match its checksum. Write it anyway?" ||
         fail "Nothing written. Delete ${DOWNLOAD_DIR}/${name} to download it again"
 fi
 
-title "USB Device"
+title "USB Stick"
 
 devices=""
 for device in $(lsblk -dnpr -o NAME,TRAN | awk '$2 == "usb" { print $1 }'); do
     in_use "$device" || devices="${devices} ${device}"
 done
-[ -n "$devices" ] || fail "No USB device the running system leaves free"
+[ -n "$devices" ] || fail "No unused USB stick"
 
 i=0
 for device in $devices; do
@@ -158,4 +158,4 @@ as_root blockdev --rereadpt "$target" 2>/dev/null || true
 
 title "Finished"
 
-ok "${target} starts Arch OS, remove it or restart from it"
+ok "${target} is ready. Restart from it or remove it"

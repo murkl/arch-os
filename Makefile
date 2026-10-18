@@ -193,7 +193,7 @@ test:
 
 # A console font holds one table of glyphs, and a character outside it is a box
 # on screen. Asked of the program, which knows what it draws itself. A debug
-# build answers the same, without the release's link-time optimisation.
+# build answers the same, without the release's link-time optimization.
 glyphs-check:
 	cd $(RUNTIME) && cargo build --locked
 	@$(ISO_GLYPHS) $(RUNTIME)/target/debug/arch-os $(MODULE_TEXT)

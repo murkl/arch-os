@@ -63,7 +63,7 @@ for profile in /var/lib/iwd/*.psk /var/lib/iwd/*.open; do
     if [ "$(iwd_setting "$profile" Settings Hidden)" = "true" ]; then
         args+=(wifi.hidden yes)
     fi
-    # wpa-psk is WPA2 and WPA3 Personal alike; the processed key stands in
+    # wpa-psk is WPA2 and WPA3 Personal alike. The processed key stands in
     # where iwd kept no passphrase.
     if [[ $profile == *.psk ]]; then
         secret="$(iwd_setting "$profile" Security Passphrase)"

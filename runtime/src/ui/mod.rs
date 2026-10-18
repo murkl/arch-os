@@ -289,7 +289,7 @@ pub struct Ctx {
     pub first: bool,
     /// What the work requires has said yes this session.
     pub gated: bool,
-    /// The starting points were offered this session.
+    /// The profiles were offered this session.
     pub presets_seen: bool,
     /// How many questions the opening run of questions began with, for its counter.
     pub wizard: usize,
@@ -443,7 +443,7 @@ impl Ctx {
     }
 
     /// Puts every standing answer in force again, off the drawing thread: at the start, and after
-    /// a starting point, whose values no prompt applied one by one. One that cannot be put in
+    /// a profile, whose values no prompt applied one by one. One that cannot be put in
     /// force goes back to its default and is asked again, since nobody watched it fail.
     pub fn settle(&self) {
         let env = self.store.env();

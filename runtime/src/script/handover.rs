@@ -14,12 +14,7 @@ pub fn run(mut cmd: Command) -> Result<ExitStatus, String> {
         .read(true)
         .write(true)
         .open(TTY)
-        .map_err(|e| {
-            format!(
-                "{}: {e}",
-                crate::i18n::t("There is no terminal to hand over.")
-            )
-        })?;
+        .map_err(|e| format!("{}: {e}", crate::i18n::t("No terminal available.")))?;
     let clone = || tty.try_clone().map_err(|e| e.to_string());
     cmd.stdin(Stdio::from(clone()?))
         .stdout(Stdio::from(clone()?))

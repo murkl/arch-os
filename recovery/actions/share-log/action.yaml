@@ -1,12 +1,11 @@
 # Under on: failure. Choosing the row is the consent, so it says what leaves.
 title: Share the log
-description: Puts the log of this run online at paste.rs for whoever is helping. Anyone with the address can read it. Passwords are never in it.
-error: The log was not taken by paste.rs. Try again in a moment.
+description: Uploads the log to paste.rs for whoever helps you. Anyone with the address can read it. Passwords are not included.
+error: The upload to paste.rs failed. Try again in a moment.
 simulates: true
 
 report: |
   Log shared
 
-  Scan the code, or read the address under it, and hand it to whoever is
-  helping.
+  Scan the QR code or pass the address below to whoever helps you.
 qr: ARCH_OS_LOG_URL

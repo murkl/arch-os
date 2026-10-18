@@ -2,7 +2,7 @@
 # Written by the Arch OS Installer. The package cache trimmed as paccache trims
 # it, except for every kernel package a snapshot has installed: the Recovery
 # rebuilds a rolled back snapshot's boot files from that package, whatever its
-# age. Run as root by paccache.service and by pacrc; the options go to paccache.
+# age. Run as root by paccache.service and by pacrc, the options go to paccache.
 #
 #   paccache.sh <snapshots> [paccache options]
 set -euo pipefail
@@ -12,7 +12,7 @@ snapshots="$1"
 shift
 
 # Each kernel a snapshot has installed, as name-version-release, and its name.
-# A kernel package is one that holds a vmlinuz; all of Arch's are named linux*.
+# A kernel package is one that holds a vmlinuz. All of Arch's are named linux*.
 # One that cannot be read stops the trim, which would otherwise take it.
 keep=()
 names=()

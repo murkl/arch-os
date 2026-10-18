@@ -1,4 +1,4 @@
-title: Add the Recovery to the applications
+title: Add the Recovery to the apps
 needs: [gnome]
 when:
   - ARCH_OS_DESKTOP != none

@@ -1,5 +1,5 @@
 //! The page a run or an action holds still on when it has something to say, or when it could not
-//! go on: one page in two colours. The words are the module's, the mark and the code the runtime's.
+//! go on: one page in two colors. The words are the module's, the mark and the code the runtime's.
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;

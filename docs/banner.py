@@ -125,7 +125,7 @@ def outline(filled):
     return "".join(out)
 
 
-def wordmark(block, colour, cell):
+def wordmark(block, color, cell):
     """The yaml's block characters, set at the terminal's own cell shape."""
     filled = {
         (x, y)
@@ -139,7 +139,7 @@ def wordmark(block, colour, cell):
         f'<svg class="wordmark" viewBox="0 0 {cols} {rows}" '
         f'width="{cols * cell}" height="{rows * cell * 2}" '
         f'preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">'
-        f'<path fill="{colour}" d="{outline(filled)}"/></svg>'
+        f'<path fill="{color}" d="{outline(filled)}"/></svg>'
     )
 
 
@@ -366,7 +366,7 @@ def main():
     finally:
         html.unlink(missing_ok=True)
 
-    # 256 colours and the whole alpha: the screen's gradients survive a palette,
+    # 256 colors and the whole alpha: the screen's gradients survive a palette,
     # the fading shadows band in one. Measured at RMSE 0.0022 at most against the
     # full render on a white and a dark page, for under 40% of the bytes with the
     # sub filter.

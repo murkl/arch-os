@@ -140,8 +140,7 @@ impl Page for LangPage {
     }
 
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {
-        let text =
-            t("The language of this program. It changes the words on screen and nothing else.");
+        let text = t("Changes the language on screen and nothing else.");
         let y =
             crate::ui::draw::paragraph(buf, area, area.y, &text, ctx.style.tone(Tone::Muted)) + 1;
         self.list.draw(

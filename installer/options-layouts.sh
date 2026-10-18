@@ -1,5 +1,5 @@
 # The Arch ISO ships no xkeyboard-config, and then data/ answers.
-printf 'auto\tauto — %s\n' "$(auto_layout)"
+printf 'auto\tauto (%s)\n' "$(auto_layout)"
 
 layouts="$(localectl list-x11-keymap-layouts 2>/dev/null || true)"
 if [ -n "$layouts" ]; then

@@ -250,7 +250,7 @@ impl RunPage {
     }
 
     /// What becomes of a task whose work failed: one the result stands without is noted and
-    /// passed, without test or report; any other ends the run.
+    /// passed, without test or report. Any other ends the run.
     fn fell(&mut self, f: Failure, ctx: &mut Ctx) -> Flow {
         let task = self.task();
         if !task.allow_failure {
@@ -442,7 +442,7 @@ impl RunPage {
                     Block::Heading(t("Failed")),
                     Block::Text(
                         tf(
-                            "It stopped at {{task}}, and nothing after that has run.",
+                            "Stopped at {{task}}. Nothing after it ran.",
                             &[("task", &stopped)],
                         ),
                         Tone::Normal,
@@ -598,7 +598,7 @@ impl Page for RunPage {
                 s.spinner(),
                 Tone::Accent,
                 tf(
-                    "Working · {{time}}",
+                    "Running · {{time}}",
                     &[("time", &RunPage::clock(self.started.elapsed()))],
                 ),
             ),

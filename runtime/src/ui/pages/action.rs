@@ -65,7 +65,7 @@ pub struct ActionPage {
     action: &'static Action,
     /// The pages that go once it has worked, this one included.
     depth: usize,
-    /// It fetches a starting point, which the page below reads back.
+    /// It fetches a profile, which the page below reads back.
     fetches: bool,
     started: bool,
     session: Option<Session>,

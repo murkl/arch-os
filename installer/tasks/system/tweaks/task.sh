@@ -6,14 +6,14 @@ data="$(where)"
 # Stars while typing a sudo password, so a terminal does not look frozen.
 render "${data}/20-pwfeedback" | sudoers_rule 20-pwfeedback
 
-# Colour, which pacman ships off.
+# Color, which pacman ships off.
 pacman_include "${data}/arch-os-options.conf"
 
 # Watchdogs nothing here uses, which delay every shutdown.
 mkdir -p "${MNT}/etc/modprobe.d"
 render "${data}/blacklist-watchdog.conf" >"${MNT}/etc/modprobe.d/blacklist-watchdog.conf"
 
-# No debug packages beside every AUR build; the compiler flags stay Arch's.
+# No debug packages beside every AUR build. The compiler flags stay Arch's.
 mkdir -p "${MNT}/etc/makepkg.conf.d"
 render "${data}/makepkg.conf" >"${MNT}/etc/makepkg.conf.d/arch-os.conf"
 
@@ -29,14 +29,14 @@ render "${data}/99-arch-os-network.conf" >"${MNT}/etc/sysctl.d/99-arch-os-networ
 mkdir -p "${MNT}/etc/tmpfiles.d"
 render "${data}/arch-os-hugepages.conf" >"${MNT}/etc/tmpfiles.d/arch-os-hugepages.conf"
 
-# The session's services stop quickly; a system service may be writing.
+# The session's services stop quickly. A system service may be writing.
 mkdir -p "${MNT}/etc/systemd/user.conf.d"
 render "${data}/manager.conf" >"${MNT}/etc/systemd/user.conf.d/10-arch-os.conf"
 
 mkdir -p "${MNT}/etc/systemd/journald.conf.d"
 render "${data}/journald.conf" >"${MNT}/etc/systemd/journald.conf.d/10-arch-os.conf"
 
-# bfq for a spinning disk only; NVMe and the rest keep the kernel's choice.
+# bfq for a spinning disk only. NVMe and the rest keep the kernel's choice.
 # https://wiki.archlinux.org/title/Improving_performance#Changing_I/O_scheduler
 mkdir -p "${MNT}/etc/udev/rules.d"
 render "${data}/60-arch-os-ioschedulers.rules" >"${MNT}/etc/udev/rules.d/60-arch-os-ioschedulers.rules"

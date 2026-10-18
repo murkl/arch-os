@@ -41,7 +41,7 @@ pub fn revealed(since: Duration) -> f64 {
     (since.as_secs_f64() / SWEEP.as_secs_f64()).min(1.0)
 }
 
-/// The wordmark, line by line from `y`, centred, as far as it has swept in. Everything above the
+/// The wordmark, line by line from `y`, centered, as far as it has swept in. Everything above the
 /// first blank line is the eyebrow, in the muted tone. Returns the row after it.
 pub fn wordmark(buf: &mut Buffer, area: Rect, y: u16, revealed: f64, ctx: &Ctx) -> u16 {
     let s = &ctx.style;

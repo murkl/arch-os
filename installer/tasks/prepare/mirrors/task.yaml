@@ -1,10 +1,9 @@
-title: Rank mirrors and refresh the keyring
+title: Rank the mirrors and refresh the keyring
 
 # What task.sh stops itself with.
 errors:
   10: |
-    The clock could not be set
+    Clock not set
 
-    The live system sets its clock from the internet before it can check a
-    single package. Check that this machine reaches the internet, then choose
-    Install now again.
+    Package signatures need the correct time from the internet. Check the
+    connection, then choose Install now again.

@@ -178,7 +178,7 @@ impl Page for GatePage {
         }
         crate::info!("{} said no", self.action(ctx).id);
         self.refused = Some(said.fallback);
-        // A fallback that asks first opens at once; one that would run waits for enter, which is
+        // A fallback that asks first opens at once. One that would run waits for enter, which is
         // the consent.
         if let Some(fb) = said.fallback
             && !self.opened

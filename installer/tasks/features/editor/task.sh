@@ -11,7 +11,7 @@ command="$ARCH_OS_EDITOR"
 # https://wiki.archlinux.org/title/Environment_variables
 render "$(where)/environment" EDITOR="$command" >>"${MNT}/etc/environment"
 
-# nano's own highlighting covers a handful of languages; its nanorc reaches here.
+# nano's own highlighting covers a handful of languages. Its nanorc reaches here.
 if [ "$ARCH_OS_EDITOR" = "nano" ]; then
     chroot_pacman_install nano-syntax-highlighting
 fi

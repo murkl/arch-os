@@ -2,7 +2,7 @@
 # opened for it, since the system's keys sign the new one where it signs its
 # boot chain.
 title: Install the newest Recovery
-error: Installing the Recovery failed. Until it goes through, the Recovery on the disk may not start. Choose Update the Recovery again. The log shows how far it got.
+error: Installing the Recovery failed. Until it succeeds, the Recovery on the disk may not start. Choose Update the Recovery again.
 
 requires: [online]
 
@@ -10,44 +10,43 @@ inputs:
   - name: ARCH_OS_RECOVERY_UPDATE_PASSWORD
     type: password
     title: Encryption password
-    description: Opens the system, whose own keys sign the new Recovery where it signs its boot chain. Asked right before the update and never written to a file.
+    description: Opens the system, whose keys sign the new Recovery under Secure Boot. Asked right before the update and never saved.
     required: true
     check: ./check-password.sh
-    error: That password does not unlock this disk.
+    error: Wrong password for this disk.
     when: ARCH_OS_RECOVERY_ENCRYPTED == true
 
 confirm: |
   Install the newest Recovery of this release series?
 
-  It is downloaded, held to the checksum of its release and written to the
-  Recovery's partition. It starts with the next restart.
+  It is downloaded, verified against its checksum and written to its
+  partition. The new one runs from the next start.
 
 # The statuses action.sh stops itself with. No internet and no GitHub are the
 # module's.
 errors:
   10: |
-    The download broke off
+    Download interrupted
 
-    The release page stopped sending the Recovery. Nothing was changed. Try
-    again.
+    Nothing was changed. Try again.
   11: |
-    The download is damaged
+    Download damaged
 
-    It does not match the checksum of its release and was deleted. Nothing was
+    The checksum does not match, so the download was deleted. Nothing was
     changed. Try again.
   12: |
-    The Recovery does not fit
+    Recovery too large
 
-    It is larger than its partition and was not installed. The Recovery on the
-    disk stays as it is.
+    It does not fit its partition and was not installed. The current Recovery
+    stays.
   13: |
     Writing the Recovery failed
 
-    Its partition did not keep what was written. The system starts as before,
-    the Recovery only once an update has gone through: try again. A disk that
-    keeps refusing may be failing.
+    The check after writing failed. The system boots as before, the Recovery
+    only after a successful update. Try again. If it keeps failing, the disk
+    may be defective.
 
 report: |
   Recovery updated
 
-  The new one starts with the next restart.
+  The new one runs from the next start.

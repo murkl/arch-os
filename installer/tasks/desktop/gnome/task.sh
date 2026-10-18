@@ -54,7 +54,7 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     # https://wiki.archlinux.org/title/GNOME#Extensions
     packages+=(gnome-browser-connector gnome-themes-extra tuned-ppd cups)
 
-    # Portals for flatpaks and screen sharing; GTK's covers what GNOME's lacks.
+    # Portals for flatpaks and screen sharing. GTK's covers what GNOME's lacks.
     packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk)
 
     # The older audio APIs, laptop codec firmware, and rtkit for pipewire's
@@ -62,7 +62,7 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     packages+=(pipewire-alsa sof-firmware rtkit)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
 
-    # NetworkManager speaks WireGuard itself; OpenVPN needs the plug-in.
+    # NetworkManager speaks WireGuard itself, OpenVPN needs the plug-in.
     packages+=(rsync networkmanager-openvpn)
 
     # Building from the AUR, firmware updates, and opening any drive or archive.
@@ -106,7 +106,7 @@ fi
 # ─── Login screen ──────────────────────────────────────────────────────────
 #
 # Automatic login behind an encrypted disk with one password only, where the
-# boot password stands in front; pam_gdm hands the LUKS passphrase on to the
+# boot password stands in front. pam_gdm hands the LUKS passphrase on to the
 # keyring. Written only then: the file belongs to gdm.
 # https://wiki.archlinux.org/title/GNOME/Keyring#PAM_step
 if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && [ "$ARCH_OS_DISK_PASSWORD_ENABLED" != "true" ]; then
@@ -124,8 +124,8 @@ arch-chroot "$MNT" git config --system credential.helper /usr/lib/git-core/git-c
 
 # ─── Keyboard ──────────────────────────────────────────────────────────────
 #
-# The login screen reads this file through localed, the session its setting;
-# both say the same. https://wiki.archlinux.org/title/Xorg/Keyboard_configuration
+# The login screen reads this file through localed, the session its setting.
+# Both say the same. https://wiki.archlinux.org/title/Xorg/Keyboard_configuration
 layout="$(desktop_layout)"
 variant="$(not_none "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT")"
 mkdir -p "${MNT}/etc/X11/xorg.conf.d"
@@ -152,7 +152,7 @@ arch-chroot "$MNT" systemctl enable bluetooth.service
 arch-chroot "$MNT" systemctl enable avahi-daemon
 
 # avahi's answers arrive as multicast the firewall cannot match to the question,
-# so it is let in everywhere; it gives away nothing avahi does not announce.
+# so it is let in everywhere. It gives away nothing avahi does not announce.
 if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
     arch-chroot "$MNT" firewall-offline-cmd --zone=public --add-service=mdns
 fi

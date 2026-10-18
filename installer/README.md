@@ -1,6 +1,6 @@
 # Arch OS Installer
 
-Installs Arch Linux. The module is data: one YAML file and the folders beside it. The **[runtime](../runtime)** draws the interface, asks the questions and runs the tasks in order.
+Installs Arch OS. The module is data: one YAML file and the folders beside it. The **[runtime](../runtime)** draws the interface, asks the questions and runs the tasks in order.
 
 **Note:** _Repairing an installation is a separate module: **[➜ Recovery](../recovery)**_
 
@@ -35,31 +35,31 @@ One folder per stage under `tasks/`. `module.yaml` orders the stages, `needs:` o
 | --- | --- |
 | `prepare` | `mirrors`, `recovery-image`, then `partition`, the one task that destroys data, once everything that can fail has run |
 | `system` | `pacstrap`, then `config`, `tweaks`, `bootloader`, `recovery` and `user`: the system on disk, configured and bootable |
-| `features` | One task per setting that switches something on: `multilib`, `aur`, `bootsplash`, `containers`, `editor`, `firewall`, `housekeeping`, `manager`, `shell`, `ssh`, `vm-guest` |
+| `features` | One task per setting that turns something on: `multilib`, `aur`, `bootsplash`, `containers`, `editor`, `firewall`, `housekeeping`, `manager`, `shell`, `ssh`, `vm-guest` |
 | `desktop` | `gnome` first, then `backup`, `browser`, `flatpak`, `graphics`, `manager-app`, `recovery-app`, `samba` |
-| `finish` | `orphans`, `snapper`, `secure-boot`, and `copy-config` last, which says the system is installed |
+| `finish` | `orphans`, `snapper`, `secure-boot`, and `copy-config` last, which reports the system as installed |
 
-**Note:** _The runtime's tests load the module as a run does and refuse a stage, a need or a condition that does not resolve._
+**Note:** _The runtime's tests load the module as a run does and fail on a stage, a need or a condition that does not resolve._
 
 ## Actions
 
-Scripts outside the work, each with its own pages. `action.yaml` says how it behaves, `action.sh` only does it. `module.yaml` names each where it runs.
+Scripts outside the run, each with its own pages. `action.yaml` declares how it behaves, `action.sh` only acts. `module.yaml` names where each runs.
 
 | Where | Actions |
 | --- | --- |
 | `requires` | `live-image`, `root`, `uefi`, `secure-boot-off`, then `internet`, which opens `wifi` right away where there is a card and waits for a cable otherwise |
-| `dashboard` | `wifi`: **Configure Wi-Fi**, offered where `wifi-card` finds a card and `no-cable` finds no internet over a cable. An open or known network is joined when chosen. One that wants a passphrase opens `wifi-passphrase` |
-| `on: leave` | `restart`, `shutdown`: the two ways to put the machine down |
-| `on: failure` | `share-log`: uploads the log of a run whose script broke and shows it as a code. A run stopped in plain words offers none, see **[errors](../docs/CONTRIBUTING.md#when-something-goes-wrong)** |
+| `dashboard` | `wifi`: **Connect to Wi-Fi**, offered where `wifi-card` finds a card and `no-cable` finds no wired internet. An open or known network is joined when chosen. A network with a password opens `wifi-passphrase` |
+| `on: leave` | `restart`, `shutdown`: restarts or powers off the machine |
+| `on: failure` | `share-log`: uploads the log of a run with a broken script and shows it as a QR code. A run that stopped on purpose offers none. **[➜ When Something Goes Wrong](../docs/CONTRIBUTING.md#when-something-goes-wrong)** |
 | `on: success` | `chroot`, `share-config`: a shell in the new system, and its answers uploaded. Both are rows on the page a finished run ends on, which opens on **Continue** |
 
-The online starting point under `presets:` names `import-config`, which fetches the answers.
+The online profile under `presets:` names `import-config`, which fetches the answers.
 
-**Note:** _A cable needs no action: it comes up by itself and is preferred over Wi-Fi while both are up. The third way out is the runtime's own **Exit**: the Installer closes and the machine keeps running. See **[iso/](../iso)**._
+**Note:** _A cable needs no action: it connects automatically and is preferred over Wi-Fi while both are up. The third way out is the runtime's own **Exit**: the Installer closes and the machine keeps running. **[➜ ISO](../iso)**_
 
 ## auto and none
 
-Two values the lists in `module.yaml` share. `auto` is worked out in `lib.sh` where a task reads the answer, see `vconsole_keymap` and its neighbours. `none` is an explicit empty answer.
+Two values the lists in `module.yaml` share. `auto` is resolved in `lib.sh` where a task reads the answer, see `vconsole_keymap` and its neighbors. `none` is an explicit empty answer.
 
 | On `auto` | Resolves to |
 | --- | --- |
@@ -77,11 +77,11 @@ What can be read from the machine is never asked.
 | `ARCH_OS_VIRTUAL_MACHINE` | `systemd-detect-virt`: guest tools inside a virtual machine |
 | Microcode | `/proc/cpuinfo` |
 | Graphics driver | Every graphics card in sysfs, see **[➜ Packages](../docs/REFERENCE.md#packages)** |
-| Automatic login | Disk encryption with one password: on behind it, off otherwise |
+| Automatic login | Disk encryption with one password turns it on, otherwise off |
 
 ## Language
 
-One answer, `ARCH_OS_LOCALE_LANG`, sets keyboard, console font and time zone. None of them follows from the locale code (`de_CH` is not `de`), so each is looked up in `data/` and stays changeable. The mirror country follows the time zone, not the language: `en_US` is typed on every continent, and the time zone is the one answer that says where the machine is.
+One answer, `ARCH_OS_LOCALE_LANG`, sets keyboard, console font and time zone. None of them follows from the locale code (`de_CH` is not `de`), so each is looked up in `data/` and stays changeable. The mirror country follows the time zone, not the language: `en_US` is used on every continent, and the time zone is the one answer that says where the machine is.
 
 | Table | Keyed by | Provides |
 | --- | --- | --- |
@@ -94,7 +94,7 @@ The console keyboard is asked `first` and loaded at once: a password typed on th
 
 ## Sharing a Configuration
 
-`installer.conf` can go to **[paste.rs](https://paste.rs)** and comes back as a code you can scan. `actions/share-config`, on the page a finished run ends on, uploads it. `actions/import-config`, behind the online starting point, fetches it.
+`installer.conf` can be uploaded to **[paste.rs](https://paste.rs)** and comes back as a QR code. `actions/share-config`, on the page a finished run ends on, uploads it. `actions/import-config`, behind the online profile, fetches it.
 
 **Note:** _Uploaded without its `ARCH_OS_CONFIG_*` lines. It holds no password, but hostname, username, disk and language: **anyone with the address can read it**. The import leaves out the disk, a path on the machine it was answered on, and the kernel parameters, which nobody should take on from someone else's code._
 
@@ -105,7 +105,7 @@ The console keyboard is asked `first` and loaded at once: a password typed on th
 | An option | A row under `settings:`, its list or suggestion a file beside `module.yaml`. Guard the tasks that depend on it with `when:` |
 | A task | A folder under its stage with `task.yaml` and `task.sh`, and a `test.sh` where there is something to read back |
 | A check, a row or a way out | A folder under `actions/`, named under `requires:` or `on:` in `module.yaml`. What another module does too is a function in `lib.sh` that both call |
-| A starting point | An entry under `presets:`. A fetched one names the action that fetches it with `action:` |
+| A profile | An entry under `presets:`. A fetched one names the action that fetches it with `action:` |
 | A language | **[➜ Contributing](../docs/CONTRIBUTING.md#adding-a-language)** |
 | Something in the Recovery | **[➜ Recovery](../recovery)**, none of it lives here |
 
@@ -117,6 +117,6 @@ A booted **Arch Linux live image**, root on it, UEFI with Secure Boot off, then 
 
 ## Answers
 
-`installer.conf`, beside wherever the Installer was started, and copied into the new system at the end. The password is never in it and never shown on the dashboard.
+`installer.conf`, beside wherever the Installer was started, and copied into the new system at the end. Passwords are never in it and never shown on the dashboard.
 
 The Recovery on its partition gets two answers to start with: the language this run was read in and the console keyboard. See `tasks/system/recovery`.

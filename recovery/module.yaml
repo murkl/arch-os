@@ -24,13 +24,13 @@ errors:
   3: |
     No internet connection
 
-    Join a network with Configure Wi-Fi on the dashboard, or plug in a cable,
-    and try again. A repair needs none.
+    Choose Connect to Wi-Fi on the dashboard or plug in a cable, then try
+    again. A repair works without internet.
   4: |
-    The release page does not answer
+    GitHub unreachable
 
-    The internet works, but GitHub, where Arch OS keeps its releases, does not
-    answer. Try again in a few minutes.
+    The internet works, but GitHub, which hosts the Arch OS releases, is
+    unreachable. Try again in a few minutes.
 
 stages:
   - open # the system unlocked and mounted
@@ -43,7 +43,7 @@ settings:
   - name: ARCH_OS_RECOVERY_DISK
     type: list
     title: Disk
-    description: The disk with the Arch OS installation to repair. Opening it changes nothing.
+    description: The disk with the Arch OS to repair. Opening it changes nothing.
     group: Storage
     required: true
     error: Choose a disk that exists.
@@ -62,11 +62,11 @@ settings:
   - name: ARCH_OS_RECOVERY_PASSWORD
     type: password
     title: Encryption password
-    description: The password that unlocks that disk. Asked right before the repair and never written to a file.
+    description: Unlocks the disk. Asked right before the repair and never saved.
     group: Storage
     required: true
     check: ./check-disk-password.sh
-    error: That password does not unlock this disk.
+    error: Wrong password for this disk.
     when: ARCH_OS_RECOVERY_ENCRYPTED == true
 
   # Asked first, because the disk's password is typed on it. Never written to
@@ -74,7 +74,7 @@ settings:
   - name: ARCH_OS_RECOVERY_KEYMAP
     type: list
     title: Console keyboard
-    description: The keyboard you are typing on right now, loaded at once. Opens on the one the live image started with.
+    description: Your keyboard layout, active right away. The live image's is preselected.
     group: Region
     required: true
     first: true

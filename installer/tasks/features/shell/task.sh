@@ -18,7 +18,7 @@ render "${data}/zshrc" >"${home}/.zshrc"
 render "${data}/fastfetch.jsonc" | tee "${MNT}/root/.config/fastfetch/config.jsonc" "${home}/.config/fastfetch/config.jsonc" >/dev/null
 arch-chroot "$MNT" chsh -s /usr/bin/zsh "$ARCH_OS_USERNAME"
 
-# Fetched, so the prompt can improve without a release; a preset otherwise.
+# Fetched, so the prompt can improve without a release, a preset otherwise.
 mkdir -p "${MNT}/root/.config"
 if ! fetch_url --connect-timeout 5 --max-time 30 \
     https://raw.githubusercontent.com/murkl/starship-theme-arch-os/refs/heads/main/starship.toml \

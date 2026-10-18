@@ -8,12 +8,12 @@ progress: true
 # no GitHub are the module's.
 errors:
   10: |
-    The Recovery's download broke off
+    Recovery download interrupted
 
-    The release page stopped sending it. Nothing was written to the disk:
-    choose Install now again, or turn Recovery off on the dashboard.
+    Nothing was written to the disk. Choose Install now again or turn Recovery
+    off on the dashboard.
   11: |
-    The Recovery's download is damaged
+    Recovery download damaged
 
-    It does not match the checksum of its release and was deleted. Nothing was
-    written to the disk: choose Install now again.
+    The checksum does not match, so the download was deleted. Nothing was
+    written to the disk. Choose Install now again.

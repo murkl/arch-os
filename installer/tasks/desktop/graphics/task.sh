@@ -13,7 +13,7 @@ while IFS=$'\t' read -r vendor device; do
     case "$vendor" in
     intel)
         other=true
-        # iHD decodes from Broadwell on, i965 before it; libva tries iHD first.
+        # iHD decodes from Broadwell on, i965 before it. libva tries iHD first.
         packages+=(vulkan-intel intel-media-driver libva-intel-driver)
         lib32+=(lib32-vulkan-intel)
         ;;
@@ -23,7 +23,7 @@ while IFS=$'\t' read -r vendor device; do
         lib32+=(lib32-vulkan-radeon lib32-vulkan-mesa-layers lib32-opencl-mesa)
         ;;
     nvidia)
-        # The open module drives Turing on, device IDs from 0x1e00; older cards
+        # The open module drives Turing on, device IDs from 0x1e00. Older cards
         # run on nouveau. https://wiki.archlinux.org/title/NVIDIA#Installation
         if ((device >= 0x1e00)); then
             nvidia=true
@@ -51,7 +51,7 @@ chroot_pacman_install "${packages[@]}"
 
 [ "$nvidia" = "true" ] || return 0
 
-# The driver sets modeset and keeps video memory over a suspend by itself; what
+# The driver sets modeset and keeps video memory over a suspend by itself. What
 # is left is early loading, so GDM never starts on the firmware's framebuffer.
 # https://wiki.archlinux.org/title/NVIDIA#Early_loading
 mkdir -p "${MNT}/etc/mkinitcpio.conf.d"

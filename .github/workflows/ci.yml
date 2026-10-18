@@ -11,8 +11,8 @@ on:
 
 permissions: {}
 
-# A new push replaces a pull request's run; main queues, so no release is cut
-# short.
+# A new push replaces a pull request's run. On main they queue, so no release
+# is cut short.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -35,7 +35,7 @@ jobs:
           RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         run: |
           if [ -z "$RELEASE_TOKEN" ]; then
-            echo "::error::The repository has no secret RELEASE_TOKEN; docs/CONTRIBUTING.md says how to make it, then rerun this job."
+            echo "::error::The repository has no secret RELEASE_TOKEN. docs/CONTRIBUTING.md says how to make it, then rerun this job."
             exit 1
           fi
 

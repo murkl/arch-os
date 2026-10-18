@@ -104,8 +104,8 @@ autoload -Uz compinit
 () {
     local dump="${HOME}/.cache/zsh/zcompdump"
     [[ -d ${dump:h} ]] || mkdir -p "${dump:h}"
-    # Rebuild the dump (and run the security audit) at most once every 24h;
-    # otherwise load it as-is with -C, which skips the audit and speeds up startup.
+    # Rebuild the dump (and run the security audit) at most once every 24h.
+    # Otherwise load it as-is with -C, which skips the audit and speeds up startup.
     if [[ -f $dump && -z $dump(#qN.mh+24) ]]; then
         compinit -C -d "$dump"
     else
@@ -113,7 +113,7 @@ autoload -Uz compinit
     fi
 }
 
-# Colourful man pages.
+# Colorful man pages.
 if command -v bat &>/dev/null; then
     export MANPAGER="sh -c 'col -bx | bat -l man -p'"
     export MANROFFOPT="-c"
@@ -127,10 +127,10 @@ if [[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; 
     source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
     # Upstream bug: _zsh_autosuggest_highlight_reset drops the old suggestion
     # highlight via ${region_highlight:#$style} but runs without `emulate`, so
-    # EXTENDED_GLOB above turns the `#` in a true-colour style into a glob
+    # EXTENDED_GLOB above turns the `#` in a true-color style into a glob
     # quantifier. The pattern then no longer matches, the stale highlight
     # survives and bleeds onto commands recalled from history. Wrap the
-    # function to neutralise EXTENDED_GLOB for that match.
+    # function to neutralize EXTENDED_GLOB for that match.
     if (($+functions[_zsh_autosuggest_highlight_reset])); then
         functions[_zsh_autosuggest_highlight_reset_orig]=$functions[_zsh_autosuggest_highlight_reset]
         _zsh_autosuggest_highlight_reset() {
@@ -163,9 +163,9 @@ if [[ -f /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substri
     ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(history-substring-search-up history-substring-search-down)
 fi
 
-# The colours the three plugins draw the command line in: Nord, in true colour,
+# The colors the three plugins draw the command line in: Nord, in true color,
 # so it looks the same whatever palette the terminal has. Only what carries a
-# meaning is set; everything else keeps the plugin's default. The hex is lower
+# meaning is set, everything else keeps the plugin's default. The hex is lower
 # case because zsh stores it that way, and zsh-autosuggestions finds its old
 # highlight again by exact comparison.
 () {
@@ -202,6 +202,6 @@ command -v zoxide &>/dev/null && eval "$(zoxide init zsh)"
 [[ -f /etc/profile.d/vte.sh ]] && source /etc/profile.d/vte.sh
 
 # The prompt, outside a text console where the font can draw it. The same test
-# .bashrc makes, spelled the same way; why it is TERM and not the terminal
+# .bashrc makes, spelled the same way. Why it is TERM and not the terminal
 # device is written out once, there.
 [[ $TERM != linux ]] && command -v starship &>/dev/null && eval "$(starship init zsh)"

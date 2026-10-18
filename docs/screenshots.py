@@ -55,7 +55,7 @@ def console_slots():
 
 
 SLOTS = console_slots()
-# The program writes a slot as 38;5;n, which pyte answers with xterm's colour for n.
+# The program writes a slot as 38;5;n, which pyte answers with xterm's color for n.
 PALETTE = dict(zip(pyte.graphics.FG_BG_256[:16], SLOTS))
 CARD, TEXT = SLOTS[0], SLOTS[7]
 
@@ -68,7 +68,7 @@ FONT = '"FiraCode Nerd Font Mono", monospace'
 #
 # Painted as boxes here for the same reason a terminal paints them. A glyph is
 # drawn inside the font's own box, which is shorter than the line it sits on, so
-# two of them stacked leave a seam of card between them - visible in a tick and
+# two of them stacked leave a seam of card between them, visible in a tick and
 # fatal in a QR code, which is not a picture of anything and reads as nothing
 # once it has stripes through it.
 PAINT = {
@@ -85,7 +85,7 @@ PRODUCT = "arch-os"
 # inside a published picture: short and neutral for that reason alone.
 WORK = pathlib.Path("/tmp/product")
 
-# What a step may press by name; anything else is typed as it stands.
+# What a step may press by name. Anything else is typed as it stands.
 KEY = {
     "enter": b"\r",
     "esc": b"\x1b",
@@ -102,8 +102,8 @@ CURSOR = "\u25b6"
 STEP_KEYS = {"page", "shot", "frame", "choose", "press"}
 FRAMES = ("settled", "running")
 
-# How long a page is given to arrive. Generous - a run of simulated steps holds
-# the page after them for a minute - but an upper bound, so a stray step says so.
+# How long a page is given to arrive. Generous, as a run of simulated steps holds
+# the page after them for a minute. Still an upper bound, so a stray step says so.
 WAIT = 180.0
 
 
@@ -213,7 +213,7 @@ def text(stream):
 
 
 def filled(seen):
-    """How many lines carry text - a rule or a border carries none, so this
+    """How many lines carry text. A rule or a border carries none, so this
     measures the page rather than the frame around it."""
     return sum(1 for line in seen.split("\n") if any(c.isalnum() for c in line))
 
@@ -252,14 +252,14 @@ def running(frames, wants):
                key=lambda got: abs(got[1] - 0.5))[2]
 
 
-def colour(value, fallback):
+def color(value, fallback):
     if value in (None, "default"):
         return fallback
     if value in PALETTE:
         return PALETTE[value]
     if len(value) == 6 and all(c in "0123456789abcdefABCDEF" for c in value):
         return f"#{value}"
-    sys.exit(f"no colour for {value!r}")
+    sys.exit(f"no color for {value!r}")
 
 
 def painted(char, bg):
@@ -283,7 +283,7 @@ def markup(screen):
         line, run, style = [], "", None
         for x in range(screen.columns):
             c = screen.buffer[y][x]
-            fg, bg = colour(c.fg, TEXT), colour(c.bg, None)
+            fg, bg = color(c.fg, TEXT), color(c.bg, None)
             if c.reverse:
                 fg, bg = bg or CARD, fg
             now = (fg, bg, c.bold, painted(c.data, bg))

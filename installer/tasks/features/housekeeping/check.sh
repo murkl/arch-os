@@ -15,7 +15,7 @@ work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 mkdir -p "${work}/bin"
 
-# paccache records how it was called; a dry run names the candidates of the case.
+# paccache records how it was called. A dry run names the candidates of the case.
 cat >"${work}/bin/paccache" <<'EOF'
 #!/usr/bin/env bash
 echo "paccache $*" >>"${WORK}/calls"
@@ -45,8 +45,8 @@ pkg() { for v in "$@"; do echo "linux-zen-${v}-x86_64.pkg.tar.zst"; done; }
 sig() { echo "linux-zen-${1}-x86_64.pkg.tar.zst.sig"; }
 listed() { sort | paste -sd' '; }
 
-# The cache holding the files given, paccache offering the candidates given;
-# the answer and the files left are compared with what is wanted.
+# The cache holding the files given, paccache offering the candidates given.
+# The answer and the files left are compared with what is wanted.
 case_of() {
     local what="$1" files="$2" candidates="$3" want_status="$4" want="$5" got_status=0 got file
     rm -rf "${work}/cache" "${work}/calls"

@@ -71,9 +71,7 @@ impl YesNoPage {
             &format!(
                 "{}\n\n{}",
                 t("Reset all answers?"),
-                t(
-                    "Every answer is forgotten and the file they are kept in is deleted. It starts over at the first question."
-                )
+                t("Deletes all answers and their file, then starts at the first question.")
             ),
             false,
             Outcome::Reset,
@@ -87,7 +85,7 @@ impl YesNoPage {
             &format!(
                 "{}\n\n{}",
                 t("Back to the dashboard?"),
-                t("The failure and what this page offers are gone from the screen. The log stays.")
+                t("The error is dismissed. The log is kept.")
             ),
             false,
             Outcome::Home,

@@ -40,8 +40,8 @@ where() { printf '%s/data' "$(dirname "${BASH_SOURCE[1]}")"; }
 # What a script stops itself with where it cannot go on, put into words under
 # errors: in each module.yaml. A task's or action's own statuses start at 10.
 export EXIT_OFFLINE=3     # the internet is out of reach
-export EXIT_UNREACHABLE=4 # the internet works, the release page does not answer
-export EXIT_AUR=5         # the internet works, the AUR does not answer
+export EXIT_UNREACHABLE=4 # the internet works, GitHub is unreachable
+export EXIT_AUR=5         # the internet works, the AUR is unreachable
 
 # ////////////////////////////////////////////////////////////////////////////
 # THE RELEASE
@@ -102,7 +102,7 @@ check_online() {
 has_wifi_card() { compgen -G '/sys/class/ieee80211/*' >/dev/null; }
 
 # Online, and not over the air: the default route leaves by an interface with no
-# wireless card. The address is reserved for documentation; looking up its route
+# wireless card. The address is reserved for documentation, looking up its route
 # sends nothing.
 online_by_cable() {
     local route device
@@ -112,7 +112,7 @@ online_by_cable() {
     [ -n "$device" ] && [ ! -e "/sys/class/net/${device}/phy80211" ]
 }
 
-# The Wi-Fi card's station, or nothing; iwd starts only on the live image. The
+# The Wi-Fi card's station, or nothing. iwd starts only on the live image. The
 # match is remembered rather than exited on, since a closed pipe fails pipefail.
 wifi_station() {
     local station=""
@@ -341,7 +341,7 @@ boot_chain_signed() {
 }
 
 # A shell inside the system, on the terminal the runtime hands over. HOME, because a
-# service has none; the shell's own exit is whoever typed in it.
+# service has none. The shell's own exit is whoever typed in it.
 open_shell() {
     clear
     echo "You are now inside the system at ${MNT}."
@@ -426,7 +426,7 @@ language_field() {
     ' "$(installer_data)/languages"
 }
 
-# A column of data/countries for a territory code; empty for none.
+# A column of data/countries for a territory code, empty for none.
 country_field() {
     awk -F'\t' -v col="$1" -v code="$2" 'code != "" && $1 == code { print $col }' "$(installer_data)/countries"
 }
@@ -700,7 +700,7 @@ export CRYPT=recovery
 # chroot and outlives an unmount there.
 export BTRFS_TOP=/run/arch-os-recovery
 
-# The system partition, while it is LUKS or a btrfs labelled BTRFS. Raw output
+# The system partition, while it is LUKS or a btrfs labeled BTRFS. Raw output
 # keeps an empty column a column.
 target_partition() {
     local part

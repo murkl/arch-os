@@ -21,7 +21,7 @@ use crate::spec::Action;
 /// What follows a question once it is answered.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Then {
-    /// The opening goes on: the next question, the gate, the starting points, the dashboard.
+    /// The opening goes on: the next question, the gate, the profiles, the dashboard.
     Opening,
     /// The start of the work goes on: the next open question, the passwords, the confirmation.
     Start,
@@ -51,7 +51,7 @@ pub fn after(then: &Then, ctx: &mut Ctx) -> Flow {
 }
 
 /// The opening, one link at a time: the questions asked first, what the work requires, a
-/// starting point on a machine that answered nothing, then every open question, numbered. A link
+/// profile on a machine that answered nothing, then every open question, numbered. A link
 /// with nothing to ask hands straight on, and nothing left means the dashboard.
 pub fn next(ctx: &mut Ctx) -> Flow {
     if let Some(s) = ctx.store.upfront().first() {

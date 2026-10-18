@@ -192,10 +192,7 @@ impl QuestionPage {
             .map(|(v, l)| Row::new(Choice::Value(v.clone()), l.clone()))
             .collect();
         if self.which.kind() == Kind::OpenList {
-            rows.push(Row::new(
-                Choice::Own,
-                format!("+ {}", t("An answer of your own")),
-            ));
+            rows.push(Row::new(Choice::Own, format!("+ {}", t("Custom entry"))));
         }
         let mut list = List::filterable(rows);
         list.focus(&Choice::Value(current));
