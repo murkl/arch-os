@@ -1,0 +1,19 @@
+title: Provide the Recovery image
+when: ARCH_OS_RECOVERY_ENABLED == true
+
+# A few hundred megabytes where the live image does not carry them.
+progress: true
+
+# What task.sh stops itself with, before the disk is touched. No internet and
+# no GitHub are the module's.
+errors:
+  10: |
+    Recovery download interrupted
+
+    Nothing was written to the disk. Choose Install now again or turn Recovery
+    off on the dashboard.
+  11: |
+    Recovery download damaged
+
+    The checksum does not match, so the download was deleted. Nothing was
+    written to the disk. Choose Install now again.

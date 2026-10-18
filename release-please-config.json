@@ -3,7 +3,11 @@
   "release-type": "simple",
   "draft": true,
   "force-tag-creation": true,
+  "include-v-in-tag": false,
+  "include-v-in-release-name": false,
   "packages": {
-    ".": {}
+    ".": {
+      "extra-files": ["docs/README.md"]
+    }
   }
 }

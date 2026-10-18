@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="284" height="80" viewBox="0 0 284 80">
-  <title>Desktop (GNOME on Wayland): 4 GiB memory, 32 GiB disk</title>
+  <title>Desktop: GNOME on Wayland, 4 GiB memory, 32 GiB disk</title>
   <g transform="translate(8 16)">
   <rect x=".5" y=".5" width="267" height="55" rx="11.5" fill="#f6f8fa" stroke="#d1d9e0"/>
   <circle cx="28" cy="28" r="16" fill="#1f2328" fill-opacity=".06"/>

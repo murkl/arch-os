@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Writes the latest Arch OS ISO to a USB device, from any Linux:
+# Writes the latest Arch OS ISO to a USB stick, from any Linux:
 #
 #   curl -fsSL https://raw.githubusercontent.com/murkl/arch-os/main/get.sh | sh
 #
@@ -53,7 +53,7 @@ in_use() {
 # MAIN
 # ////////////////////////////////////////////////////////////////////////////
 
-for command_name in curl awk sha256sum lsblk dd; do
+for command_name in curl awk sha256sum lsblk dd blockdev head; do
     command -v "$command_name" >/dev/null || fail "Missing dependency: ${command_name}"
 done
 [ "$(id -u)" -eq 0 ] || command -v sudo >/dev/null || fail "Missing dependency: sudo"
@@ -64,7 +64,7 @@ title "Arch OS ISO"
 # The ISO and its sha256 out of GitHub's description of the latest release:
 # one field to a line however the JSON is laid out, and each asset weighed when
 # the next one begins, whatever order its fields come in.
-release="$(fetch -Lfs "https://api.github.com/repos/${REPO}/releases/latest")" || fail "Cannot reach GitHub"
+release="$(fetch -Lfs "https://api.github.com/repos/${REPO}/releases/latest")" || fail "GitHub unreachable"
 asset="$(printf '%s\n' "$release" | tr ',' '\n' | awk '
     function weigh() {
         if (!found && url ~ /\.iso$/) { found = 1; print url, digest }
@@ -87,7 +87,7 @@ cd "$DOWNLOAD_DIR"
 
 # Into a .part first, so a file that is there arrived whole.
 if [ -f "$name" ]; then
-    info "Present, not downloaded again"
+    info "Already downloaded"
 else
     fetch -Lf --retry 3 --progress-bar "$url" -o "${name}.part" || fail "Download failed: ${name}"
     mv "${name}.part" "$name"
@@ -100,19 +100,19 @@ title "Checksum"
 if [ -z "$digest" ]; then
     ask "The release publishes no checksum for ${name}. Write it anyway?" || fail "Nothing written"
 elif printf '%s  %s\n' "$digest" "$name" | sha256sum -c - >/dev/null 2>&1; then
-    ok "Checksum is correct"
+    ok "Checksum matches"
 else
     ask "${name} does not match its checksum. Write it anyway?" ||
         fail "Nothing written. Delete ${DOWNLOAD_DIR}/${name} to download it again"
 fi
 
-title "USB Device"
+title "USB Stick"
 
 devices=""
 for device in $(lsblk -dnpr -o NAME,TRAN | awk '$2 == "usb" { print $1 }'); do
     in_use "$device" || devices="${devices} ${device}"
 done
-[ -n "$devices" ] || fail "No USB device the running system leaves free"
+[ -n "$devices" ] || fail "No unused USB stick"
 
 i=0
 for device in $devices; do
@@ -154,8 +154,19 @@ done
 # its partition table and both boot paths.
 # https://wiki.archlinux.org/title/USB_flash_installation_medium
 as_root dd if="$name" of="$target" bs=4M status=progress conv=fsync oflag=direct || fail "Writing ${target} failed"
+
+title "Verify"
+
+# Read off the stick rather than out of memory: a fake or failing one takes the
+# write and hands back something else.
+info "Reading ${target} back"
+as_root blockdev --flushbufs "$target"
+want="$(sha256sum <"$name" | cut -d' ' -f1)"
+have="$(as_root head -c "$(wc -c <"$name")" "$target" | sha256sum | cut -d' ' -f1)"
+[ "$have" = "$want" ] || fail "${target} does not read back as ${name}. Try another stick"
+ok "The stick reads back as ${name}"
 as_root blockdev --rereadpt "$target" 2>/dev/null || true
 
 title "Finished"
 
-ok "${target} starts Arch OS, remove it or restart from it"
+ok "${target} is ready. Restart from it or remove it"

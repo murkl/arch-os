@@ -1,0 +1,12 @@
+# Under on: success. Choosing the row is the consent, so it says what leaves.
+title: Share the configuration
+description: Uploads these answers to paste.rs to set up another machine the same way. Anyone with the address can read them. Passwords are not included.
+error: The upload to paste.rs failed. Try again in a moment.
+simulates: true
+
+report: |
+  Configuration shared
+
+  Scan the QR code, or enter the end of the address under Online (paste.rs)
+  in another installation.
+qr: ARCH_OS_CONFIG_URL

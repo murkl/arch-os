@@ -1,0 +1,29 @@
+# Arch OS: what no module answers for its neighbors. The modules are the
+# folders beside this file with a module.yaml, the version is the build's.
+# runtime/README.md
+
+title: Arch OS
+
+# Arch blue, and on the console the slot the images paint it in: iso/README.md.
+accent: "#1793d1"
+console-accent: bright-blue
+surface: "#3b4252"
+console-surface: blue
+
+# Whether this machine is online, opposite the name on every page. Each check
+# is a request to archlinux.org, so one every half minute.
+status:
+  check: check_online()
+  every: 30
+  pass: Online
+  fail: Offline
+
+# Above the blank line the eyebrow, below it the wordmark.
+logo: |
+  Arch Linux
+
+   █████  ██████   ██████ ██   ██      ██████  ███████
+  ██   ██ ██   ██ ██      ██   ██     ██    ██ ██
+  ███████ ██████  ██      ███████     ██    ██ ███████
+  ██   ██ ██   ██ ██      ██   ██     ██    ██      ██
+  ██   ██ ██   ██  ██████ ██   ██      ██████  ███████

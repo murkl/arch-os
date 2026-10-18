@@ -1,0 +1,50 @@
+# Color only on a terminal, so `ls | grep` reads plain names. Icons and the tree
+# view need eza, and icons a font the text console lacks.
+alias ls="ls -h --color=auto --group-directories-first"
+command -v eza &>/dev/null && alias ls="eza --color=auto --group-directories-first"
+command -v eza &>/dev/null && [ "$TERM" != linux ] && alias ls="eza --icons=auto --color=auto --group-directories-first"
+command -v eza &>/dev/null && alias lt="ls -Tal"
+alias ll="ls -l"
+alias la="ls -la"
+
+alias diff="diff --color=auto"
+alias grep="grep --color=auto"
+alias ip="ip -color=auto"
+
+alias logs="systemctl --failed; echo; journalctl -p 3 -b"
+alias q="exit"
+alias c="clear"
+command -v fastfetch &>/dev/null && alias fetch="fastfetch"
+# Run as you: pacdiff -s calls sudoedit itself, so the editor it opens is yours.
+alias pacnew="env DIFFPROG=\$EDITOR pacdiff -s"
+command -v meld &>/dev/null && alias pacnew="env DIFFPROG=meld pacdiff -s"
+command -v xdg-open &>/dev/null && alias open="xdg-open"
+alias myip="curl https://ipv4.icanhazip.com"
+alias ..="cd .."
+alias ...="cd ../.."
+
+# sudoedit edits a copy of a root file with your editor and configuration, so
+# the editor never runs as root.
+alias sv="sudoedit"
+
+# paru covers the AUR and asks for the password itself, without it the changing
+# ones go through sudo. Asked at each start, so the aliases follow paru.
+if command -v paru &>/dev/null; then
+    alias paci='paru -S'
+    alias pacu='paru -Syu'
+    alias pacr='paru -Rns'
+    alias pacs='paru -Ss'
+else
+    alias paci='sudo pacman -S'
+    alias pacu='sudo pacman -Syu'
+    alias pacr='sudo pacman -Rns'
+    alias pacs='pacman -Ss'
+fi
+alias pacls='pacman -Qs'
+alias pacl='pacman -Qe'
+alias pacla='pacman -Qm'
+alias pacli='pacman -Qi'
+
+# Keeps three versions of what is installed and every kernel a snapshot holds,
+# which the Recovery puts back after a rollback. The weekly timer runs the first half.
+[ -x /usr/local/lib/arch-os/paccache.sh ] && alias pacrc="sudo /usr/local/lib/arch-os/paccache.sh /.snapshots && sudo /usr/local/lib/arch-os/paccache.sh /.snapshots -uk0"

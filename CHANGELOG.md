@@ -5,10 +5,6 @@ What each release changed, newest first. Written by the run that publishes it, o
 ## [2.0.0](https://github.com/murkl/arch-os/compare/1.9.7...v2.0.0) (2026-10-10)
 
 
-### ⚠ BREAKING CHANGES
-
-* rewrite Arch OS on the Oak runtime
-
 ### Features
 
 * Create boot medium asks for the device each time it starts and never keeps it ([c1daf0f](https://github.com/murkl/arch-os/commit/c1daf0f3d36f83c7b33d8cb2e7308ba0dabc20e8))

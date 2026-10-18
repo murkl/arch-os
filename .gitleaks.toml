@@ -1,7 +1,7 @@
 # What the repository holds, not what a build leaves in it: an image's binaries
-# read as keys. The folders are BUILD_OUTPUT and .oak/ in the Makefile.
+# read as keys. The folders are BUILD_OUTPUT in the Makefile and cargo's target.
 [extend]
 useDefault = true
 
 [[allowlists]]
-paths = ['''^(dist|\.dev|\.oak|iso/archiso|iso/download)/''']
+paths = ['''^(dist|runtime/target|iso/archiso|iso/download)/''']

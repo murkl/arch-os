@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Render docs/screenshots: every page of the interface, out of the product.
 
-The real binary on a real pty, started with --debug so it touches nothing. Which
-pages, and the way to each, is docs/screenshots.yaml. This file is the same in
-every project that uses it.
+The real program on a real pty, started with --dry-run so it touches nothing. Which
+pages, and the way to each, is docs/screenshots.yaml.
 
 Needs: chromium, imagemagick, python-pyte, python-yaml.
 """
@@ -41,7 +40,24 @@ COLS, ROWS = 95, 25
 FONT_PX, LINE_PX = 15, 22
 PAD, RADIUS, SCALE = 26, 10, 2
 LEAD = (LINE_PX - FONT_PX) / 2  # room a line box keeps above and below the text
-CARD, TEXT = "#2e3440", "#d8dee9"
+
+# The console's sixteen slots as the images paint them, so a picture shows what
+# the console shows: iso/README.md#the-console.
+def console_slots():
+    build = (pathlib.Path(__file__).resolve().parent.parent / "iso/build.sh").read_text()
+    channels = []
+    for name in ("RED", "GRN", "BLU"):
+        found = re.search(rf"^CONSOLE_{name}=([0-9,]+)$", build, re.M)
+        if not found:
+            sys.exit(f"iso/build.sh names no CONSOLE_{name}")
+        channels.append([int(v) for v in found.group(1).split(",")])
+    return ["#%02x%02x%02x" % rgb for rgb in zip(*channels)]
+
+
+SLOTS = console_slots()
+# The program writes a slot as 38;5;n, which pyte answers with xterm's color for n.
+PALETTE = dict(zip(pyte.graphics.FG_BG_256[:16], SLOTS))
+CARD, TEXT = SLOTS[0], SLOTS[7]
 
 # The `monospace` fallback is load bearing. Without it the small triangle the
 # interface marks a selected row with comes out as a big filled one.
@@ -52,7 +68,7 @@ FONT = '"FiraCode Nerd Font Mono", monospace'
 #
 # Painted as boxes here for the same reason a terminal paints them. A glyph is
 # drawn inside the font's own box, which is shorter than the line it sits on, so
-# two of them stacked leave a seam of card between them - visible in a tick and
+# two of them stacked leave a seam of card between them, visible in a tick and
 # fatal in a QR code, which is not a picture of anything and reads as nothing
 # once it has stripes through it.
 PAINT = {
@@ -61,17 +77,15 @@ PAINT = {
     "\u2584": "linear-gradient(to bottom, {field} 50%, {ink} 50%)",
 }
 
-# A product, as Oak reads it. Copied part by part, so an answer file or a log an
-# earlier run left beside them cannot decide what a page says. The shell the
-# modules share is a part only some products have.
-PRODUCT = ("oak", "oak.yaml", "modules")
-OPTIONAL = ("oak.sh",)
+# The program, with every module inside it. Copied, so an answer file or a log
+# an earlier run left beside it cannot decide what a page says.
+PRODUCT = "arch-os"
 
 # Where the copy is driven. A failure page prints the log's path, so this ends up
 # inside a published picture: short and neutral for that reason alone.
 WORK = pathlib.Path("/tmp/product")
 
-# What a step may press by name; anything else is typed as it stands.
+# What a step may press by name. Anything else is typed as it stands.
 KEY = {
     "enter": b"\r",
     "esc": b"\x1b",
@@ -83,13 +97,13 @@ KEY = {
 }
 
 # The mark the interface puts in front of the row under the cursor.
-CURSOR = "\u25b8"
+CURSOR = "\u25b6"
 
 STEP_KEYS = {"page", "shot", "frame", "choose", "press"}
 FRAMES = ("settled", "running")
 
-# How long a page is given to arrive. Generous - a run of simulated steps holds
-# the page after them for a minute - but an upper bound, so a stray step says so.
+# How long a page is given to arrive. Generous, as a run of simulated steps holds
+# the page after them for a minute. Still an upper bound, so a stray step says so.
 WAIT = 180.0
 
 
@@ -199,14 +213,14 @@ def text(stream):
 
 
 def filled(seen):
-    """How many lines carry text - a rule or a border carries none, so this
+    """How many lines carry text. A rule or a border carries none, so this
     measures the page rather than the frame around it."""
     return sum(1 for line in seen.split("\n") if any(c.isalnum() for c in line))
 
 
 # The counter a run page carries. The lookahead keeps it off a report, where the
 # same two numbers say how many tests passed.
-COUNTER = re.compile(r"(\d+) of (\d+)(?! tests)")
+COUNTER = re.compile(r"(\d+) of (\d+)(?! (tests|optional))")
 
 
 def running(frames, wants):
@@ -238,11 +252,14 @@ def running(frames, wants):
                key=lambda got: abs(got[1] - 0.5))[2]
 
 
-def colour(value, fallback):
+def color(value, fallback):
     if value in (None, "default"):
         return fallback
-    ok = len(value) == 6 and all(c in "0123456789abcdefABCDEF" for c in value)
-    return f"#{value}" if ok else value
+    if value in PALETTE:
+        return PALETTE[value]
+    if len(value) == 6 and all(c in "0123456789abcdefABCDEF" for c in value):
+        return f"#{value}"
+    sys.exit(f"no color for {value!r}")
 
 
 def painted(char, bg):
@@ -266,7 +283,7 @@ def markup(screen):
         line, run, style = [], "", None
         for x in range(screen.columns):
             c = screen.buffer[y][x]
-            fg, bg = colour(c.fg, TEXT), colour(c.bg, None)
+            fg, bg = color(c.fg, TEXT), color(c.bg, None)
             if c.reverse:
                 fg, bg = bg or CARD, fg
             now = (fg, bg, c.bold, painted(c.data, bg))
@@ -281,17 +298,20 @@ def markup(screen):
 
 
 def cell(style, text):
-    """One run of cells, as writing or as a filled box."""
+    """One run of cells, as writing or as a filled box.
+
+    Every run is its own box, exactly one line tall, so what is painted meets
+    what is painted beside and above it: a row on its surface shows no seam
+    between its words, and a code none between its rows.
+    """
     fg, bg, bold, fill = style
+    box = f"display:inline-block;vertical-align:top;height:{LINE_PX}px;"
     if fill:
-        # Its own box, exactly one line tall, so what is painted meets what is
-        # painted on the line above it.
-        return ('<span style="display:inline-block;vertical-align:top;'
-                'height:{}px;background:{}">{}</span>').format(
-                    LINE_PX, fill.format(ink=fg, field=bg or CARD), " " * len(text))
-    return '<span style="color:{};{}{}">{}</span>'.format(
-        fg, f"background:{bg};" if bg else "",
-        "font-weight:700" if bold else "", html.escape(text))
+        return '<span style="{}background:{}">{}</span>'.format(
+            box, fill.format(ink=fg, field=bg or CARD), " " * len(text))
+    return '<span style="{}color:{};{}{}">{}</span>'.format(
+        box, fg, f"background:{bg};" if bg else "",
+        "font-weight:700;" if bold else "", html.escape(text))
 
 
 def card(stream, out):
@@ -356,8 +376,8 @@ def storyboard(path):
     shots = []
     for t, take in enumerate(takes, 1):
         where = f"{path}: take {t}"
-        if not isinstance(take, dict) or set(take) - {"module", "steps"}:
-            raise SystemExit(f"{where}: a take is module: (optional) and steps:")
+        if not isinstance(take, dict) or set(take) != {"module", "steps"}:
+            raise SystemExit(f"{where}: a take is module: and steps:")
         if not isinstance(take.get("steps"), list) or not take["steps"]:
             raise SystemExit(f"{where}: steps: is a list of pages")
         for s, step in enumerate(take["steps"], 1):
@@ -387,27 +407,19 @@ def storyboard(path):
 
 
 def pristine(source):
-    """A copy of the product, in the folder every take is driven in."""
+    """A copy of the program, in the folder every take is driven in."""
     shutil.rmtree(WORK, ignore_errors=True)
     WORK.mkdir(parents=True)
-    for part in PRODUCT + OPTIONAL:
-        origin = source / part
-        if not origin.exists():
-            if part in OPTIONAL:
-                continue
-            raise SystemExit(f"{source}: no {part} - is this a built product?")
-        if origin.is_dir():
-            shutil.copytree(origin, WORK / part)
-        else:
-            shutil.copy(origin, WORK / part)
-    (WORK / PRODUCT[0]).chmod(0o755)
+    if not source.is_file():
+        raise SystemExit(f"{source}: no program - run make build")
+    shutil.copy(source, WORK / PRODUCT)
+    (WORK / PRODUCT).chmod(0o755)
 
 
 def play(takes, source, out):
     for take in takes:
         pristine(source)
-        module = take.get("module")
-        argv = ["./oak", "--debug"] + ([f"--module={module}"] if module else [])
+        argv = [f"./{PRODUCT}", take["module"], "--dry-run"]
         # C.UTF-8 rather than whatever this desk is set to: the language on a
         # published picture is a decision, not a leak.
         session = Session(argv, str(WORK), env={"LANG": "C.UTF-8", "LC_ALL": "C.UTF-8"})
@@ -437,7 +449,7 @@ def play(takes, source, out):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--product", type=pathlib.Path, required=True,
-                   help="a built product: the oak binary, its oak.yaml, modules/")
+                   help="the built program, runtime/target/release/arch-os")
     p.add_argument("--pages", type=pathlib.Path,
                    default=pathlib.Path("docs/screenshots.yaml"))
     p.add_argument("--out", type=pathlib.Path,

@@ -1,0 +1,14 @@
+title: Unlock and mount the system
+
+# What task.sh stops itself with: a disk that is not what the Installer makes.
+errors:
+  10: |
+    No Arch OS found
+
+    {{ARCH_OS_RECOVERY_DISK}} holds no installation this Recovery can open.
+    Choose another disk on the dashboard.
+  11: |
+    Unknown layout
+
+    {{ARCH_OS_RECOVERY_DISK}} lacks subvolumes this Recovery expects. Use the
+    Recovery of the release it was installed with.

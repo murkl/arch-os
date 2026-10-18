@@ -8,5 +8,5 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-make dev ${1:+VERSION="$1"}
-python3 docs/screenshots.py --product .dev
+make build ${1:+VERSION="$1"}
+python3 docs/screenshots.py --product runtime/target/release/arch-os

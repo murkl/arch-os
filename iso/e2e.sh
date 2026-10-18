@@ -21,7 +21,7 @@ WORK="${WORK:-$(dirname "$ISO")/e2e}"
 # It is handed to the live image where the Installer looks after a download.
 RECOVERY_DIR="${ISO%-x86_64.iso}-recovery"
 
-# The least docs/README.md asks of a machine for this starting point, so every
+# The least docs/README.md asks of a machine for this profile, so every
 # run proves it.
 MEMORY="$([ "$START" = desktop ] && echo 4096 || echo 2048)"
 DISK_SIZE="$([ "$START" = desktop ] && echo 32G || echo 16G)"
@@ -96,7 +96,7 @@ MONITOR="$(free_port)"
 
 ssh-keygen -q -t ed25519 -N '' -C arch-os-e2e -f "${WORK}/key"
 
-# The live image takes the key over cloud-init, from a volume labelled cidata.
+# The live image takes the key over cloud-init, from a volume labeled cidata.
 # Its locale module is switched off: it rewrites /etc/locale.gen.
 cat >"${WORK}/seed/user-data" <<EOF
 #cloud-config
@@ -224,21 +224,26 @@ shows() {
     sleep 1
 }
 
-# Waits for a module's run to end and holds it to its own tests. A task's
-# report holds the run on a page of its own until somebody reads it.
+# Waits for a module's run to end and holds it to its own tests.
 finished() {
     local module="$1" seconds="$2" deadline result
     deadline=$((SECONDS + seconds))
-    until result="$(live "grep -m1 -E '\\| (INFO \\| run: ok|ERROR \\|)' /opt/arch-os/${module}.log" 2>/dev/null)"; do
-        [ "$SECONDS" -lt "$deadline" ] || fail "the ${module} did not finish within ${seconds}s"
-        if pane | grep -qF -- "⏎ continue"; then
-            keys Enter
+    # The level is padded to five letters: INFO  run: ok.
+    until result="$(live "grep -m1 -E ' (INFO +run: ok|ERROR +)' /opt/arch-os/${module}.log" 2>/dev/null)"; do
+        if [ "$SECONDS" -ge "$deadline" ]; then
+            live cat "/opt/arch-os/${module}.log" >"${WORK}/${module}.log" || true
+            pane >"${WORK}/pane.log" || true
+            fail "the ${module} did not finish within ${seconds}s"
         fi
         sleep 10
     done
     live cat "/opt/arch-os/${module}.log" >"${WORK}/${module}.log" || true
     pane >"${WORK}/pane.log" || true
     grep -q 'run: ok' <<<"$result" || fail "the ${module} failed"
+    # A task allowed to fail has no reason to here, online and on a clean disk.
+    if grep -q ' WARN ' "${WORK}/${module}.log"; then
+        fail "the ${module} finished with a warning, see ${WORK}/${module}.log"
+    fi
 
     local tally passed total
     tally="$(grep -oE '[0-9]+ of [0-9]+ tests passed' "${WORK}/pane.log" || true)"
@@ -309,9 +314,9 @@ used_up() {
     done
 }
 
-# The installation as 2.0 left it: unified images in EFI/Linux, started as the
-# loader's default, and no entry counting its tries.
-as_2_0() {
+# An installation with its unified images in EFI/Linux, started as the loader's
+# default, and no entry counting its tries.
+images_in_efi_linux() {
     live bash -s <<EOF
 set -euo pipefail
 printf '%s' '${PASSWORD}' | cryptsetup open ${DISK}2 e2e-old
@@ -328,7 +333,7 @@ rm -f /mnt/etc/systemd/system/arch-os-boot-tries.service /mnt/usr/local/lib/arch
 umount -R /mnt
 cryptsetup close e2e-old
 EOF
-    say "Laid the installation out as 2.0 did"
+    say "Laid the installation out with its images in EFI/Linux"
 }
 
 # A subvolume made inside @ after its newest snapshot, as machinectl makes one:
@@ -346,38 +351,52 @@ EOF
     say "Made a subvolume inside the system"
 }
 
-# Waits for the Recovery on its partition to open on its menu. It has to pass
-# Secure Boot with this machine's keys, find and check its partition and open
-# in the language the Installer was read in.
+# The loader gone from the EFI partition, as a full partition or a firmware that
+# cleans up leaves it: the rebuild has to put it back.
+loader_gone() {
+    live bash -s <<EOF
+set -euo pipefail
+mount -t vfat ${DISK}1 /mnt
+rm /mnt/EFI/systemd/systemd-bootx64.efi /mnt/EFI/BOOT/BOOTX64.EFI
+umount /mnt
+EOF
+    say "Took the boot loader off the EFI partition"
+}
+
+# Waits for the Recovery on its partition to open on its dashboard. It has to
+# pass Secure Boot with this machine's keys, find and check its partition and
+# open in the language the Installer was read in. A second argument names what
+# else counts as its first page.
 recovery_opens() {
-    local how="$1" deadline=$((SECONDS + BOOT_TIMEOUT)) shot="${WORK}/recovery.png"
+    local how="$1" page="Repair now|Update the Recovery${2:+|$2}"
+    local deadline=$((SECONDS + BOOT_TIMEOUT)) shot="${WORK}/recovery.png"
     rm -f "$shot"
-    until [ -s "$shot" ] && tesseract "$shot" - --psm 6 2>/dev/null | grep -qE 'Setup|Start'; do
+    until [ -s "$shot" ] && tesseract "$shot" - --psm 6 2>/dev/null | grep -qE "$page"; do
         kill -0 "$QEMU_PID" 2>/dev/null || fail "the machine stopped before the Recovery came up"
-        [ "$SECONDS" -lt "$deadline" ] || fail "the Recovery on its partition did not open on its menu within ${BOOT_TIMEOUT}s"
+        [ "$SECONDS" -lt "$deadline" ] || fail "the Recovery on its partition did not open on its first page within ${BOOT_TIMEOUT}s"
         rm -f "$shot"
         printf 'screendump %s -f png\n' "$shot" >&3
         sleep 10
     done
-    say "Recovery: started ${how}, on its menu"
+    say "Recovery: started ${how}, on its first page"
 }
 
 # The Recovery on its partition, started the way its launcher on the desktop
-# starts it, and left with Exit.
-recovery_menu() {
+# starts it, and left with Start over.
+recovery_dashboard() {
     local deadline shot="${WORK}/recovery.png"
     as_root systemctl reboot --boot-loader-entry=arch-os-recovery.efi || true
     recovery_opens "by the boot loader"
 
-    # Exit is the last row of the page q opens. Photographed often enough to
-    # catch a login that flashes by, and back within seconds, unlike a reboot.
-    local frame=0 text menu=false
+    # Start over is the last row of the page q opens. Photographed often enough
+    # to catch a login that flashes by, and back within seconds, unlike a reboot.
+    local frame=0 text dashboard=false
     printf 'sendkey q\n' >&3
     sleep 2
     rm -f "$shot"
     printf 'screendump %s -f png\n' "$shot" >&3
     sleep 1
-    tesseract "$shot" - --psm 6 2>/dev/null | grep -qE 'Exit|Leave|Restart' || fail "q did not open the page with Exit, see ${shot}"
+    tesseract "$shot" - --psm 6 2>/dev/null | grep -qE 'Start over|Leave|Restart' || fail "q did not open the page with Start over, see ${shot}"
     for key in down down ret; do
         printf 'sendkey %s\n' "$key" >&3
         sleep 0.3
@@ -391,15 +410,15 @@ recovery_menu() {
         [ -s "$shot" ] || continue
         text="$(tesseract "$shot" - --psm 6 2>/dev/null || true)"
         grep -qi 'login' <<<"$text" && fail "leaving the Recovery showed a login, see ${shot}"
-        if grep -qE 'Setup|Start' <<<"$text"; then
-            menu=true
+        if grep -qE 'Repair now|Update the Recovery' <<<"$text"; then
+            dashboard=true
             break
         fi
         rm -f "$shot"
     done
-    [ "$menu" = true ] || fail "the Recovery did not come back on its menu within 15s of Exit"
+    [ "$dashboard" = true ] || fail "the Recovery did not come back on its dashboard within 15s of Start over"
     rm -f "${WORK}"/recovery-exit-*.png
-    say "Recovery: Exit starts it again, without a login on the way"
+    say "Recovery: Start over starts it again, without a login on the way"
 
     cut_power
 }
@@ -408,10 +427,11 @@ recovery_menu() {
 # THE RUN
 # ////////////////////////////////////////////////////////////////////////////
 
-# The answers, shared and then the starting point's own: the Desktop is its
+# The answers, shared and then the profile's own: the Desktop is its
 # preset with the SSH server on, which is how this run reaches it.
 answers() {
     cat <<EOF
+MODULE_LANGUAGE='en'
 ARCH_OS_USERNAME='${USERNAME}'
 ARCH_OS_HOSTNAME='arch-os-e2e'
 ARCH_OS_LOCALE_LANG='en_US'
@@ -473,10 +493,10 @@ if ! live test -d /opt/arch-os-recovery; then
         live "mkdir -p /tmp/arch-os-recovery && cat >/tmp/arch-os-recovery/${file}" <"${RECOVERY_DIR}/${file}"
     done
 fi
-live "tmux new-session -d -s e2e -x 120 -y 40 'installer --language=en'"
+live "tmux new-session -d -s e2e -x 120 -y 40 'arch-os installer'"
 
 say "Install"
-shows "Setup"
+shows "Install now"
 keys Enter
 shows "Password"
 typed "$PASSWORD"
@@ -484,8 +504,8 @@ keys Enter
 shows "Repeat"
 typed "$PASSWORD"
 keys Enter
-shows "Do you really want to start?"
-keys Up Enter
+shows "Install Arch OS on ${DISK}?"
+keys Down Enter
 finished installer "$INSTALL_TIMEOUT"
 
 # The Recovery's own firmware entry as the next boot: the way in from the
@@ -566,24 +586,25 @@ shutdown_installed
 start repair
 until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
 live systemctl stop arch-os
-as_2_0
+images_in_efi_linux
 nested_subvolume
-live "printf \"ARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
-live "tmux new-session -d -s e2e -x 120 -y 40 'recovery --language=en'"
+loader_gone
+live "printf \"MODULE_LANGUAGE='en'\nARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
+live "tmux new-session -d -s e2e -x 120 -y 40 'arch-os recovery'"
 
 say "Repair: go back to the newest snapshot and rebuild the boot files"
-shows "Setup"
+shows "Repair now"
 keys Enter
 shows "Encryption password"
 typed "$PASSWORD"
 keys Enter
-# Each text is one only its page shows: the run page lists every step's title.
+# Each text is one only its page shows: the run page lists every task's title.
 shows "Newest first"
 keys Enter
-shows "in place of the system on ${DISK}?"
-keys Up Enter
+shows "Roll back ${DISK} to"
+keys Down Enter
 # Opens on Yes after the rollback.
-shows "Rebuild the kernel images"
+shows "Rebuild kernel images"
 keys Enter
 finished recovery "$REPAIR_TIMEOUT"
 cut_power
@@ -593,12 +614,15 @@ healthy
 entries_ready main.conf
 as_root test -f /boot/EFI/arch-os/arch-linux-zen.efi || fail "the repair left no unified image in /boot/EFI/arch-os"
 if as_root test -e /boot/EFI/Linux/arch-linux-zen.efi; then
-    fail "the repair left the 2.0 image in EFI/Linux, where the loader lists it twice"
+    fail "the repair left an image in EFI/Linux, where the loader lists it twice"
 fi
-say "Repair: laid the 2.0 installation out as this release does"
+say "Repair: laid the installation out as the Installer does"
 [ "$(as_root cat /var/lib/machines/e2e/kept)" = kept ] || fail "the rollback lost the subvolume made inside the system"
 say "Repair: kept the subvolume made inside the system"
-recovery_menu
+as_root snapper --no-headers list --columns description | grep -qx ' *rollback backup *' ||
+    fail "the rollback kept no snapshot of the system it replaced"
+say "Repair: kept the replaced system as a snapshot"
+recovery_dashboard
 
 # An update cut short leaves a partition whose UUID the boot image no longer
 # names. Secure Boot is off on the ISO, and the system's keys sign it all the same.
@@ -606,14 +630,12 @@ start repair
 until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
 live systemctl stop arch-os
 live dd if=/dev/urandom of="${DISK}3" bs=1M count=8 conv=fsync status=none
-live "printf \"ARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
-live "tmux new-session -d -s e2e -x 120 -y 40 'recovery --language=en'"
+live "printf \"MODULE_LANGUAGE='en'\nARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
+live "tmux new-session -d -s e2e -x 120 -y 40 'arch-os recovery'"
 
 say "Update: write the Recovery again from the ISO"
-shows "Setup"
-keys Down Enter
 shows "Update the Recovery"
-typed "/"
+keys f
 typed "Update"
 keys Enter
 deadline=$((SECONDS + 120))
@@ -632,7 +654,7 @@ fi
 typed "$PASSWORD"
 keys Enter
 shows "Install the newest Recovery of this release series?"
-keys Up Enter
+keys Down Enter
 deadline=$((SECONDS + UPDATE_TIMEOUT))
 until pane | grep -qF "Recovery updated"; do
     [ "$SECONDS" -lt "$deadline" ] || {
@@ -652,7 +674,9 @@ as_root bootctl list --json=short | grep -qF "archisodevice=UUID=${uuid} " ||
 as_root sbctl verify 2>/dev/null | grep -qF "/boot/EFI/Linux/arch-os-recovery.efi is signed" ||
     fail "the Recovery written from the ISO is not signed"
 as_root systemctl reboot --boot-loader-entry=arch-os-recovery.efi || true
-recovery_opens "after it was written again from the ISO"
+# The newest published release may predate this Installer and then not read the
+# language it left: its language page, listing Deutsch, is a started Recovery too.
+recovery_opens "after it was written again from the ISO" Deutsch
 cut_power
 
 say "Arch OS installs, boots, repairs, boots again, starts its Recovery and writes it again"

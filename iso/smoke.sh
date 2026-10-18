@@ -15,8 +15,8 @@ else
     exit 1
 fi
 
-# A failure keeps every frame, since the screen is all there is to go on; a run
-# that worked keeps the one it was recognised in.
+# A failure keeps every frame, since the screen is all there is to go on. A run
+# that worked keeps the one it was recognized in.
 FRAME_DIR="${FRAME_DIR:-$(dirname "$IMAGE")/smoke/$(basename "$IMAGE" .iso)}"
 
 # The slow case is a cold boot under emulation with no KVM, which five minutes
@@ -32,8 +32,9 @@ OVMF_VARS="${OVMF_VARS:-/usr/share/edk2/x64/OVMF_VARS.4m.fd}"
 EXPECT='English|Deutsch'
 
 # A page on the screen does not yet listen: a console the splash left locked
-# shows keys instead of passing them on. So Deutsch is chosen by key.
-ANSWER='Tastatur|bewegen'
+# shows keys instead of passing them on. So Deutsch is chosen by key, and the
+# first question, the keyboard, comes up in German.
+ANSWER='Tastatur|Konsole'
 
 # A machine that got this far and no further says so in plain words, and there is
 # no reason to sit out the timeout for it.
@@ -168,7 +169,7 @@ press down
 press ret
 await "$ANSWER" || fail "the interface did not answer the keyboard within ${TIMEOUT}s"
 
-# The one frame worth keeping is the one the answer was recognised in.
+# The one frame worth keeping is the one the answer was recognized in.
 mv "$found" "${FRAME_DIR}/arch-os.png"
 rm -f "${FRAME_DIR}"/frame-*.png
 echo "### Arch OS is up and answers: ${FRAME_DIR}/arch-os.png"

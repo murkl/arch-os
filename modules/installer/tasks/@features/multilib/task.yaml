@@ -1,2 +1,0 @@
-title: Enable the multilib repository
-conditions: ARCH_OS_MULTILIB_ENABLED == true

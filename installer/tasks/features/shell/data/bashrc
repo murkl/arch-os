@@ -1,0 +1,50 @@
+# If not running interactively, do nothing.
+[[ $- != *i* ]] && return
+
+# Export the systemd user environment on a text console, where nothing else has.
+# The generator quotes like a shell, so source reads every value back as written.
+if [[ ${SHLVL} == 1 && -z ${DISPLAY} ]]; then
+    set -a
+    # shellcheck source=/dev/null
+    source <(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator)
+    set +a
+fi
+
+source "${HOME}/.aliases"
+
+shopt -s autocd
+shopt -s checkwinsize
+shopt -s histappend
+shopt -s cmdhist
+shopt -s extglob
+shopt -s no_empty_cmd_completion
+shopt -s expand_aliases
+
+bind "set completion-ignore-case on"
+
+if command -v bat &>/dev/null; then
+    export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+    export MANROFFOPT="-c"
+fi
+
+# The same size and the same ignore list as zsh keeps.
+export HISTSIZE=100000
+export HISTFILESIZE=${HISTSIZE}
+export HISTCONTROL=ignoreboth:erasedups
+export HISTTIMEFORMAT="%F %T "
+export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history:fetch:q:c"
+
+# The stock colors without their backgrounds, which paint every world-writable
+# directory green. Terminal color numbers, so the terminal's palette decides.
+export LS_COLORS="di=1;34:ln=36:so=35:pi=33:ex=32:bd=33;1:cd=33;1:su=31:sg=31:tw=34:ow=34"
+
+[ -f /usr/share/fzf/key-bindings.bash ] && source /usr/share/fzf/key-bindings.bash
+[ -f /usr/share/fzf/completion.bash ] && source /usr/share/fzf/completion.bash
+
+# Tells GNOME Console the current folder, so a new tab opens in it.
+[ -f /etc/profile.d/vte.sh ] && source /etc/profile.d/vte.sh
+
+# The text console (TERM=linux) has no font for the prompt's glyphs. TERM says so
+# after su, in a chroot and over ssh, where the terminal device does not.
+[[ $TERM != linux ]] && command -v starship &>/dev/null && eval "$(starship init bash)"
+command -v zoxide &>/dev/null && eval "$(zoxide init bash)"

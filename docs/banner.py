@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render docs/banner.png: the picture a README opens on.
 
-The wordmark is not drawn here. It is read out of the product's own oak.yaml -
+The wordmark is not drawn here. It is read out of the product's own product.yaml -
 the same block of characters the splash screen comes up on - so the banner and
 the program cannot come to disagree about what the product is called. The name,
 the accent and the eyebrow come from there too.
@@ -19,7 +19,6 @@ Needs: chromium, imagemagick.
 import argparse
 import base64
 import pathlib
-import re
 import subprocess
 import sys
 from collections import defaultdict
@@ -126,7 +125,7 @@ def outline(filled):
     return "".join(out)
 
 
-def wordmark(block, colour, cell):
+def wordmark(block, color, cell):
     """The yaml's block characters, set at the terminal's own cell shape."""
     filled = {
         (x, y)
@@ -140,7 +139,7 @@ def wordmark(block, colour, cell):
         f'<svg class="wordmark" viewBox="0 0 {cols} {rows}" '
         f'width="{cols * cell}" height="{rows * cell * 2}" '
         f'preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">'
-        f'<path fill="{colour}" d="{outline(filled)}"/></svg>'
+        f'<path fill="{color}" d="{outline(filled)}"/></svg>'
     )
 
 
@@ -148,15 +147,9 @@ def wordmark(block, colour, cell):
 
 
 def logo_block(product):
-    """The `logo: |` block, without a yaml parser for one field, or what the
-    function of oak.sh it names prints."""
+    """The `logo: |` block, without a yaml parser for one field."""
     lines = product.read_text().split("\n")
     start = next(i for i, l in enumerate(lines) if l.startswith("logo:"))
-    call = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)\(\)", lines[start].split(":", 1)[1].strip())
-    if call:
-        shell = product.parent / "oak.sh"
-        return subprocess.run(["bash", "-c", f'source "$1" && {call[1]}', "logo", shell],
-                              capture_output=True, text=True, check=True).stdout
     body = []
     for line in lines[start + 1:]:
         if line and not line.startswith("  "):
@@ -344,7 +337,7 @@ def page(args):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--product", type=pathlib.Path, default=pathlib.Path("oak.yaml"))
+    p.add_argument("--product", type=pathlib.Path, default=pathlib.Path("product.yaml"))
     p.add_argument("--logo", type=pathlib.Path, default=pathlib.Path("docs/logo.svg"))
     p.add_argument("--card", type=pathlib.Path, action="append", required=True,
                    help="a screenshot for the collage; give it twice, back then front")
@@ -373,7 +366,7 @@ def main():
     finally:
         html.unlink(missing_ok=True)
 
-    # 256 colours and the whole alpha: the screen's gradients survive a palette,
+    # 256 colors and the whole alpha: the screen's gradients survive a palette,
     # the fading shadows band in one. Measured at RMSE 0.0022 at most against the
     # full render on a white and a dark page, for under 40% of the bytes with the
     # sub filter.

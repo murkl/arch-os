@@ -1,0 +1,52 @@
+# Opened where update found a Recovery to install. An encrypted system is
+# opened for it, since the system's keys sign the new one where it signs its
+# boot chain.
+title: Install the newest Recovery
+error: Installing the Recovery failed. Until it succeeds, the Recovery on the disk may not start. Choose Update the Recovery again.
+
+requires: [online]
+
+inputs:
+  - name: ARCH_OS_RECOVERY_UPDATE_PASSWORD
+    type: password
+    title: Encryption password
+    description: Opens the system, whose keys sign the new Recovery under Secure Boot. Asked right before the update and never saved.
+    required: true
+    check: ./check-password.sh
+    error: Wrong password for this disk.
+    when: ARCH_OS_RECOVERY_ENCRYPTED == true
+
+confirm: |
+  Install the newest Recovery of this release series?
+
+  It is downloaded, verified against its checksum and written to its
+  partition. The new one runs from the next start.
+
+# The statuses action.sh stops itself with. No internet and no GitHub are the
+# module's.
+errors:
+  10: |
+    Download interrupted
+
+    Nothing was changed. Try again.
+  11: |
+    Download damaged
+
+    The checksum does not match, so the download was deleted. Nothing was
+    changed. Try again.
+  12: |
+    Recovery too large
+
+    It does not fit its partition and was not installed. The current Recovery
+    stays.
+  13: |
+    Writing the Recovery failed
+
+    The check after writing failed. The system boots as before, the Recovery
+    only after a successful update. Try again. If it keeps failing, the disk
+    may be defective.
+
+report: |
+  Recovery updated
+
+  The new one runs from the next start.

@@ -1,0 +1,2 @@
+title: Set up the shell enhancement
+when: ARCH_OS_SHELL_ENHANCEMENT_ENABLED == true

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Starts Arch OS, for the unit on tty1 and the launchers beside this. The font
-# goes first, since it decides which glyphs exist: iso/README.md.
+# Starts Arch OS, for the unit on tty1 and by hand: arch-os installer, arch-os
+# recovery. The font goes first, since it decides which glyphs exist: README.md.
 set -eu
 
 SIZES="32 16"
@@ -31,4 +31,4 @@ if [ -t 0 ]; then
 fi
 
 cd /opt/arch-os
-exec ./oak "$@"
+exec ./arch-os "$@"

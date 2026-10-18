@@ -1,0 +1,28 @@
+[package]
+name = "arch-os"
+edition = "2024"
+rust-version = "1.99"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/murkl/arch-os"
+publish = false
+
+# One name for the library in every project, whatever the program is called.
+[lib]
+name = "runtime"
+
+[dependencies]
+jiff = "0.2"
+libc = "0.2"
+qrcode = { version = "0.14", default-features = false }
+ratatui = { version = "0.30.2", default-features = false, features = ["crossterm"] }
+regex-lite = "0.1"
+rustix = { version = "1.1.5", features = ["fs", "pipe", "process", "stdio", "termios"] }
+serde = { version = "1", features = ["derive"] }
+serde-saphyr = "2.0.0"
+unicode-width = "0.2"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

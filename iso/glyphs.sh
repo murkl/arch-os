@@ -1,8 +1,8 @@
 #!/bin/bash
 # Every character that reaches the console, in the files given and in what the
-# oak binary draws, against the fonts font.sh builds. See README.md.
+# program draws itself, against the fonts font.sh builds. See README.md.
 #
-#   glyphs.sh <oak> <file>...
+#   glyphs.sh <arch-os> <file>...
 set -eu
 
 # Code points are counted, not bytes: under the C locale bash would hand back
@@ -10,15 +10,15 @@ set -eu
 export LC_ALL=C.UTF-8
 
 [ "$#" -ge 2 ] || {
-    echo "usage: $0 <oak> <file>..." >&2
+    echo "usage: $0 <arch-os> <file>..." >&2
     exit 1
 }
 
-# Read before anything else is, so a runtime that cannot answer stops this here
+# Read before anything else is, so a program that cannot answer stops this here
 # rather than letting every file pass against an empty list.
-INTERFACE_GLYPHS="$("$1" --glyphs)"
+INTERFACE_GLYPHS="$("$1" glyphs)"
 [ -n "$INTERFACE_GLYPHS" ] || {
-    echo "Error: $1 --glyphs named nothing" >&2
+    echo "Error: $1 glyphs named nothing" >&2
     exit 1
 }
 shift
@@ -51,7 +51,7 @@ for font in "$FONTS"/*.psf.gz; do
         echo "${point} ${character} is not in ${name} and would be a box on the console:" >&2
         # A module's text is fixed here, the interface's by changing the font.
         if grep -qF -- "$character" <<<"$INTERFACE_GLYPHS"; then
-            echo "  the interface draws it - ${name} is the wrong font for this image" >&2
+            echo "  the interface draws it, so ${name} is the wrong font for this image" >&2
         fi
         grep -lF -- "$character" "$@" | sed 's/^/  /' >&2
         status=1

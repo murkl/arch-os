@@ -1,0 +1,84 @@
+# The Recovery: what it asks and the order it works in. A name() is a function
+# of lib.sh, a ./name.sh a file beside this: runtime/README.md
+
+title: Recovery
+start: Repair now
+
+# Nothing waits for a network: a repair downloads nothing, and the network may
+# be what broke.
+requires: [live-image, root]
+
+# The dashboard's rows in order: its own, and each other a folder under actions/.
+# No reset: each of its two answers is changed in its own row.
+dashboard: [start, settings, wifi, update]
+language: Region
+
+# Where its other actions are offered, each a folder under actions/.
+on:
+  leave: [restart, shutdown]
+  failure: [share-log]
+  success: [chroot]
+
+# What any of its scripts means by stopping itself, the statuses lib.sh names.
+errors:
+  3: |
+    No internet connection
+
+    Choose Connect to Wi-Fi on the dashboard or plug in a cable, then try
+    again. A repair works without internet.
+  4: |
+    GitHub unreachable
+
+    The internet works, but GitHub, which hosts the Arch OS releases, is
+    unreachable. Try again in a few minutes.
+
+stages:
+  - open # the system unlocked and mounted
+  - rollback # a snapshot in place of the system
+  - rebuild # the boot files made again from the package cache
+
+# On its own partition both questions are answered already, see iso/recovery/.
+# The snapshot to go back to is asked by the rollback, once the disk is open.
+settings:
+  - name: ARCH_OS_RECOVERY_DISK
+    type: list
+    title: Disk
+    description: The disk with the Arch OS to repair. Opening it changes nothing.
+    group: Storage
+    required: true
+    error: Choose a disk that exists.
+    options-from: options_disks()
+    pattern: '^/dev/[A-Za-z0-9_-]+$'
+
+  # Not asked: a LUKS header is readable without the password.
+  - name: ARCH_OS_RECOVERY_ENCRYPTED
+    type: bool
+    title: Disk encryption
+    description: Whether that disk is encrypted with LUKS.
+    group: Storage
+    value-from: ./value-disk-encrypted.sh
+
+  # Typed once and tried on the disk where it is typed.
+  - name: ARCH_OS_RECOVERY_PASSWORD
+    type: password
+    title: Encryption password
+    description: Unlocks the disk. Asked right before the repair and never saved.
+    group: Storage
+    required: true
+    check: ./check-disk-password.sh
+    error: Wrong password for this disk.
+    when: ARCH_OS_RECOVERY_ENCRYPTED == true
+
+  # Asked first, because the disk's password is typed on it. Never written to
+  # the system being repaired.
+  - name: ARCH_OS_RECOVERY_KEYMAP
+    type: list
+    title: Console keyboard
+    description: Your keyboard layout, active right away. The live image's is preselected.
+    group: Region
+    required: true
+    first: true
+    options-from: options_keymaps()
+    prefill: prefill_live_keymap()
+    apply: ./apply-keymap.sh
+    pattern: '^[A-Za-z0-9_.-]+$'

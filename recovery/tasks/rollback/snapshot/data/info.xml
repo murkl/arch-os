@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<snapshot>
+  <type>single</type>
+  <num>{{NUMBER}}</num>
+  <date>{{DATE}}</date>
+  <description>rollback backup</description>
+  <cleanup>number</cleanup>
+</snapshot>

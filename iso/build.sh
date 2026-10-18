@@ -1,8 +1,9 @@
 #!/bin/bash
 # Builds the Recovery image from `baseline` and the ISO from `releng`, each
-# patched to boot into Arch OS, beside the release they carry. See README.md.
+# patched to boot into Arch OS, out of the program `make build` left. See
+# README.md.
 #
-#   ISO_RECOVERY=true|false build.sh <release-dir>
+#   [ISO_RECOVERY=true|false] build.sh <arch-os> <dist-dir>
 set -eu
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -10,14 +11,22 @@ set -eu
 # ////////////////////////////////////////////////////////////////////////////
 
 # Resolved before the cd: everything below is relative to this script.
-[ "$#" -eq 1 ] || {
-    echo "usage: $0 <release-dir>" >&2
+[ "$#" -eq 2 ] || {
+    echo "usage: $0 <arch-os> <dist-dir>" >&2
     exit 1
 }
-RELEASE_DIR="$(realpath -m "$1")"
-DIST_DIR="$(dirname "$RELEASE_DIR")"
-RECOVERY_DIR="${RELEASE_DIR}-recovery"
+BIN="$(realpath -m "$1")"
+DIST_DIR="$(realpath -m "$2")"
 cd "$(dirname "$0")"
+
+# The program says what it is, so neither image can end up named after anything
+# else than what it ships.
+VERSION="$("$BIN" --version 2>/dev/null | awk '$1 == "arch-os" { print $2 }')"
+[ -n "$VERSION" ] || {
+    echo "Error: ${BIN} reports no version. Run 'make build' first." >&2
+    exit 1
+}
+RECOVERY_DIR="${DIST_DIR}/arch-os-${VERSION}-recovery"
 
 # mkarchiso runs as root. Empty where this already is, as in CI.
 SUDO=""
@@ -34,16 +43,15 @@ ISO_PROFILE="${PROFILES_DIR}/iso"
 # open and fails the build.
 WORK_DIR="$(realpath -m "${WORK_DIR:-/var/tmp/arch-os-iso-work}")"
 
-# Pinned, so a desk and CI build the same images. Raised by hand, like
-# OAK_VERSION.
+# Pinned, so a desk and CI build the same images. Raised by hand.
 PLYMOUTH_THEME_REPO="https://github.com/murkl/plymouth-theme-arch-os"
 PLYMOUTH_THEME_REF="147e3c97d710db4606025b3829f076ca5d8ecc3b"
 
 # The console's palette, slot by slot, and why each boot argument is there:
 # README.md#the-console.
-CONSOLE_RED=46,191,163,235,129,180,136,216,174,191,163,235,69,180,143,236
-CONSOLE_GRN=52,97,190,203,161,142,192,222,181,97,190,203,169,142,188,239
-CONSOLE_BLU=64,106,140,139,193,173,208,233,195,106,140,139,218,173,187,244
+CONSOLE_RED=46,191,163,235,94,180,136,216,174,191,163,235,69,180,143,236
+CONSOLE_GRN=52,97,190,203,129,142,192,222,181,97,190,203,169,142,188,239
+CONSOLE_BLU=64,106,140,139,172,173,208,233,195,106,140,139,218,173,187,244
 CONSOLE_ARGS="fbcon=nodefer vt.default_red=${CONSOLE_RED} vt.default_grn=${CONSOLE_GRN} vt.default_blu=${CONSOLE_BLU}"
 BOOT_ARGS="quiet splash loglevel=3 rd.udev.log_level=3 vt.global_cursor_default=0 systemd.show_status=auto plymouth.ignore-serial-consoles ${CONSOLE_ARGS}"
 
@@ -62,7 +70,7 @@ unmount_leftovers() {
 }
 
 # Nothing root-owned stays in the checkout. A failed build keeps its profiles to
-# read, handed back; the key the Recovery was signed with goes either way.
+# read, handed back. The key the Recovery was signed with goes either way.
 cleanup() {
     status=$?
     set +e
@@ -93,21 +101,20 @@ profiledef() {
     echo >>"${profile}/profiledef.sh"
 }
 
-# Oak looks for oak.yaml, oak.sh and the modules beside its own binary.
+# The program is the whole product, its modules inside it. It keeps its answers
+# and its log beside itself, in /opt/arch-os.
 install_arch_os() {
-    local profile="$1" opt="$1/airootfs/opt/arch-os"
-    shift
+    local profile="$1"
     cp -rf src/* "${profile}/airootfs/"
     ./font.sh "${profile}/airootfs/usr/share/kbd/consolefonts"
-    mkdir -p "${opt}/modules"
-    cp "${RELEASE_DIR}/oak" "${RELEASE_DIR}/oak.yaml" "${RELEASE_DIR}/oak.sh" "$opt"
-    cp -r "$@" "${opt}/modules/"
+    install -D -m 755 "$BIN" "${profile}/airootfs/opt/arch-os/arch-os"
 }
 
-# mkarchiso copies the profile without its modes. Run once every launcher is in.
+# mkarchiso copies the profile without its modes. Run once every program is in.
 make_executable() {
     local file
-    for file in "$1/airootfs/opt/arch-os/oak" "$1/airootfs/usr/local/bin/"*; do
+    for file in "$1/airootfs/opt/arch-os/arch-os" "$1/airootfs/usr/local/bin/"* "$1/airootfs/usr/local/lib/arch-os/"*; do
+        [ -e "$file" ] || continue
         profiledef "$1" "file_permissions+=([\"${file#"$1/airootfs"}\"]=\"0:0:755\")"
     done
 }
@@ -179,34 +186,28 @@ name_image() { profiledef "$1" "iso_name=\"$2\"" "iso_version=\"${VERSION}\""; }
 
 echo "### Initialize Build"
 
-# Asked outright, so a build never guesses: see ISO_RECOVERY in the Makefile.
-[[ ${ISO_RECOVERY:-} =~ ^(true|false)$ ]] || {
-    echo "Error: ISO_RECOVERY is '${ISO_RECOVERY:-}', not true or false, see the Makefile" >&2
+# The Recovery inside the ISO, or left for the Installer to fetch from the
+# release page: a pre-release has no release page, and a release's ISO stays
+# under GitHub's 2 GiB a file. ISO_RECOVERY decides by hand.
+case "$VERSION" in
+*-*) ISO_RECOVERY="${ISO_RECOVERY:-true}" ;;
+*) ISO_RECOVERY="${ISO_RECOVERY:-false}" ;;
+esac
+[[ $ISO_RECOVERY =~ ^(true|false)$ ]] || {
+    echo "Error: ISO_RECOVERY is '${ISO_RECOVERY}', not true or false" >&2
     exit 1
 }
 
-# What a release is, checked before an hour of mkarchiso finds out. The modules
-# are not named here: which ones there are is whatever the release holds.
-for part in oak oak.yaml oak.sh modules modules/recovery; do
-    [ -e "${RELEASE_DIR}/${part}" ] || {
-        echo "Error: ${RELEASE_DIR} holds no ${part} - run 'make build' first" >&2
-        exit 1
-    }
-done
-
 # The tools are packages rather than something to install behind somebody's
 # back: a build that would change the machine it runs on says so instead.
-for tool in mkarchiso:archiso ukify:systemd-ukify mkfs.erofs:erofs-utils diff:diffutils modinfo:kmod; do
+for tool in mkarchiso:archiso ukify:systemd-ukify mkfs.erofs:erofs-utils fsck.erofs:erofs-utils diff:diffutils modinfo:kmod; do
     command -v "${tool%%:*}" >/dev/null || {
         echo "Error: ${tool%%:*} not found: install the ${tool#*:} package" >&2
         exit 1
     }
 done
 
-# The release says what it is, so neither image can end up named after anything
-# else than what it ships.
-VERSION="$(sed -n 's/^version:[[:space:]]*//p' "${RELEASE_DIR}/oak.yaml")"
-echo "building Arch OS ${VERSION} from ${RELEASE_DIR}"
+echo "building Arch OS ${VERSION} from ${BIN}"
 mkdir -p "$DOWNLOAD_DIR"
 unmount_leftovers "${WORK_DIR}"
 unmount_leftovers "${PROFILES_DIR}"
@@ -217,7 +218,7 @@ mkdir -p "${PROFILES_DIR}/out" "${WORK_DIR}"
 
 fetch_theme
 [ -d "${PLYMOUTH_THEME_SRC}" ] || { echo "Error: plymouth theme not found in '${PLYMOUTH_THEME_SRC}'" && exit 1; }
-# The .plymouth file names the theme; without it plymouthd has nothing to load.
+# The .plymouth file names the theme. Without it plymouthd has nothing to load.
 [ -f "${PLYMOUTH_THEME_SRC}/arch-os.plymouth" ] || { echo "Error: '${PLYMOUTH_THEME_SRC}' is not a plymouth theme" && exit 1; }
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -230,7 +231,7 @@ echo "### Build the Recovery"
 cp -r /usr/share/archiso/configs/baseline/. "$RECOVERY_PROFILE"
 
 # baseline is a cloud guest that starts ssh, cloud-init and four hypervisors'
-# agents. All of it goes; recovery/ starts the Recovery and a cable's network.
+# agents. All of it goes, recovery/ starts the Recovery and a cable's network.
 rm -rf "${RECOVERY_PROFILE}/airootfs/etc/systemd/system" \
     "${RECOVERY_PROFILE}/airootfs/etc/systemd/network" \
     "${RECOVERY_PROFILE}/airootfs/etc/systemd/networkd.conf.d" \
@@ -241,9 +242,14 @@ rm -rf "${RECOVERY_PROFILE}/airootfs/etc/systemd/system" \
 # whenever it ends, with what the Installer left it and no login anywhere.
 cp -r recovery/. "$RECOVERY_PROFILE"
 
-install_arch_os "$RECOVERY_PROFILE" "${RELEASE_DIR}/modules/recovery"
-# The Installer is not on this image, so neither is the command that opens it.
-rm "${RECOVERY_PROFILE}/airootfs/usr/local/bin/installer"
+install_arch_os "$RECOVERY_PROFILE"
+
+# The seed gives the system's boot entries their tries back with the script
+# every installed system has, as many as lib.sh gives them.
+install -D -m 755 ../recovery/data/boot/boot-tries.sh "${RECOVERY_PROFILE}/airootfs/usr/local/lib/arch-os/boot-tries.sh"
+tries="$(. ../lib.sh && printf '%s' "$BOOT_TRIES")"
+mkdir -p "${RECOVERY_PROFILE}/airootfs/etc/systemd/system/arch-os-seed.service.d"
+printf '[Service]\nEnvironment=BOOT_TRIES=%s\n' "$tries" >"${RECOVERY_PROFILE}/airootfs/etc/systemd/system/arch-os-seed.service.d/tries.conf"
 make_executable "$RECOVERY_PROFILE"
 install_bootsplash "$RECOVERY_PROFILE" "Booting Recovery..."
 start_on_tty1 "$RECOVERY_PROFILE"
@@ -292,6 +298,11 @@ ${SUDO} rm -rf "$readback"
 for command in arch-chroot blkid blockdev btrfs cryptsetup curl fuser ip iwctl loadkeys localectl lsblk mount mountpoint setfont sha256sum swapoff tar umount; do
     [ -x "${recovery_root}/usr/bin/${command}" ] || { echo "Error: the Recovery has no ${command}" >&2 && exit 1; }
 done
+# What it starts by itself, as systemd reads the links: the Recovery, a cable's
+# network, and the clock HTTPS needs, which a dead battery sets years back.
+for unit in arch-os.service systemd-networkd.service systemd-resolved.service systemd-timesyncd.service; do
+    ${SUDO} systemctl --root="$recovery_root" is-enabled -q "$unit" || { echo "Error: the Recovery does not start ${unit}" >&2 && exit 1; }
+done
 modules="$(find "${recovery_root}/usr/lib/modules" -name '*.ko*')"
 deps="$(while read -r module; do
     depends="$(modinfo -F depends "$module")" || { echo "Error: modinfo cannot read ${module}" >&2 && exit 1; }
@@ -321,7 +332,14 @@ rm -rf "$RECOVERY_DIR"
 mkdir -p "$RECOVERY_DIR"
 mkfs.erofs --quiet --all-root -U "$uuid" "${RECOVERY_DIR}/recovery.img" "${TEMP_DIR}/partition"
 
-# copytoram frees the disk for the repair; nomodeset draws on the firmware's
+# Read back as what went into it, as the update writes it to the partition.
+fsck.erofs --extract="${TEMP_DIR}/partition-readback" --no-preserve "${RECOVERY_DIR}/recovery.img" >/dev/null
+diff -r "${TEMP_DIR}/partition" "${TEMP_DIR}/partition-readback" || {
+    echo "Error: recovery.img does not read back as what was put into it" >&2
+    exit 1
+}
+
+# copytoram frees the disk for the repair. nomodeset draws on the firmware's
 # screen, which needs no graphics driver. The boot menu shows its os-release.
 cat >"${TEMP_DIR}/os-release" <<EOF
 NAME="Arch OS Recovery"
@@ -329,12 +347,25 @@ PRETTY_NAME="Arch OS Recovery"
 ID=arch-os-recovery
 IMAGE_VERSION=${VERSION}
 EOF
+printf '%s' "archisobasedir=arch archisodevice=UUID=${uuid} copytoram=y cms_verify=y nomodeset ${BOOT_ARGS}" >"${TEMP_DIR}/cmdline"
 ukify build \
     --linux="${netboot}/boot/x86_64/vmlinuz-linux" \
     --initrd="${netboot}/boot/x86_64/initramfs-linux.img" \
-    --cmdline="archisobasedir=arch archisodevice=UUID=${uuid} copytoram=y cms_verify=y nomodeset ${BOOT_ARGS}" \
+    --cmdline="@${TEMP_DIR}/cmdline" \
     --os-release="@${TEMP_DIR}/os-release" \
     --output="${RECOVERY_DIR}/recovery.efi"
+
+# Each of its sections read back by its checksum, through ukify's own JSON.
+inspected="$(ukify inspect "${RECOVERY_DIR}/recovery.efi" --json=short)"
+for pair in ".linux:${netboot}/boot/x86_64/vmlinuz-linux" ".initrd:${netboot}/boot/x86_64/initramfs-linux.img" \
+    ".cmdline:${TEMP_DIR}/cmdline" ".osrel:${TEMP_DIR}/os-release"; do
+    section="${pair%%:*}" source="${pair#*:}"
+    have="$(python3 -c 'import json, sys; print(json.load(sys.stdin)[sys.argv[1]]["sha256"])' "$section" <<<"$inspected")"
+    [ "$have" = "$(sha256sum <"$source" | cut -d' ' -f1)" ] || {
+        echo "Error: the section ${section} of recovery.efi does not read back as ${source}" >&2
+        exit 1
+    }
+done
 
 du -h "${RECOVERY_DIR}/"*
 
@@ -357,9 +388,9 @@ if [ -n "$DROPPED" ]; then
     grep -vxF "$DROPPED" "$ISO_PACKAGES" >"${TEMP_DIR}/packages" && mv "${TEMP_DIR}/packages" "$ISO_PACKAGES"
 fi
 
-# Without the Recovery beside them, the Installer fetches it: recovery_image in
-# oak.sh.
-install_arch_os "$ISO_PROFILE" "${RELEASE_DIR}/modules/"*
+# Without the Recovery beside it, the Installer fetches it: recovery_image in
+# lib.sh.
+install_arch_os "$ISO_PROFILE"
 if [ "$ISO_RECOVERY" = "true" ]; then
     mkdir -p "${ISO_PROFILE}/airootfs/opt/arch-os-recovery"
     cp "${RECOVERY_DIR}/recovery.img" "${RECOVERY_DIR}/recovery.efi" "${ISO_PROFILE}/airootfs/opt/arch-os-recovery/"
@@ -388,23 +419,21 @@ printf '\ntimeout 0\n' >>"$loader"
 # Both say how to get back, before the login and after it. The issue shows the
 # cursor again, which the boot hides on every console.
 cat >"${ISO_PROFILE}/airootfs/etc/issue" <<'EOF'
-\e[?25hArch OS live environment. Type installer or recovery to start again.
+\e[?25hArch OS live environment. Type arch-os installer or arch-os recovery to start again.
 
 EOF
 
 cat >"${ISO_PROFILE}/airootfs/etc/motd" <<'EOF'
 Arch OS live environment
 
-  installer    install Arch Linux on this machine
-  recovery     repair an Arch Linux system already on a disk
-  iwctl        join a wireless network
+  arch-os installer    install Arch OS on this machine
+  arch-os recovery     repair an Arch OS installation
+  iwctl                connect to a wireless network
 
-Add --debug to either for a run that changes nothing, and --language=de to
-skip the first page.
+Add --dry-run to either for a run that changes nothing.
 
-Both keep their answers in /opt/arch-os, so starting either again picks up where
-it left off. What they did is in /opt/arch-os/installer.log and
-/opt/arch-os/recovery.log.
+Both keep their answers in /opt/arch-os, so a second run resumes. Their logs
+are /opt/arch-os/installer.log and /opt/arch-os/recovery.log.
 
 Reaching this prompt without asking for it means Arch OS stopped on its own:
 journalctl -b -u arch-os says why.
@@ -434,7 +463,18 @@ ${SUDO} mkarchiso -v -w "${WORK_DIR}/iso" -o "${PROFILES_DIR}/out/iso" "$ISO_PRO
 # SHIP
 # ////////////////////////////////////////////////////////////////////////////
 
-# The image goes to DIST_DIR, beside the release and the Recovery.
-echo "### Move ISO to Dist"
+# The ISO goes to DIST_DIR, beside the Recovery, which also becomes one file
+# for the release page.
+echo "### Ship"
 mkdir -p "${DIST_DIR}"
 cp -f "${PROFILES_DIR}/out/iso/"*.iso "${DIST_DIR}/"
+tar -cf "${RECOVERY_DIR}-x86_64.tar" --owner=0 --group=0 --sort=name -C "${DIST_DIR}" "${RECOVERY_DIR##*/}"
+
+# The tar read back file by file, by the names an update extracts. Not with
+# --verify, which flags the owners --owner sets apart (tar 1.35).
+for file in recovery.img recovery.efi; do
+    tar -xOf "${RECOVERY_DIR}-x86_64.tar" "${RECOVERY_DIR##*/}/${file}" | cmp - "${RECOVERY_DIR}/${file}" || {
+        echo "Error: ${RECOVERY_DIR##*/}-x86_64.tar does not read back ${file}" >&2
+        exit 1
+    }
+done

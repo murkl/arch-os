@@ -11,6 +11,14 @@ dir="$(dirname "$0")/settings"
 gh api --silent -X PATCH 'repos/{owner}/{repo}' --input "${dir}/repository.json"
 gh api --silent -X PUT 'repos/{owner}/{repo}/actions/permissions/workflow' --input "${dir}/actions.json"
 
+# Alerts on vulnerable dependencies, and a private way to report a vulnerability.
+gh api --silent -X PUT 'repos/{owner}/{repo}/vulnerability-alerts'
+gh api --silent -X PUT 'repos/{owner}/{repo}/private-vulnerability-reporting'
+
+if [ -f "${dir}/topics.json" ]; then
+    gh api --silent -X PUT 'repos/{owner}/{repo}/topics' --input "${dir}/topics.json"
+fi
+
 if [ -f "${dir}/code-scanning.json" ]; then
     gh api --silent -X PATCH 'repos/{owner}/{repo}/code-scanning/default-setup' --input "${dir}/code-scanning.json"
 fi
