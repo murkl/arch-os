@@ -53,9 +53,8 @@ if [ "$kind" = image ]; then
     fi
 fi
 
-# The layout of this release, so an installation from before it gets the
-# entries that fall back to the Recovery: the preset first, since mkinitcpio
-# builds where it says.
+# The layout the Installer lays down, with the entries that fall back to the
+# Recovery: the preset first, since mkinitcpio builds where it says.
 boot_preset "$MNT" "$kind"
 [ "$kind" = image ] || mkdir -p "${MNT}${UKI_DIR}"
 arch-chroot "$MNT" mkinitcpio -P
@@ -73,8 +72,8 @@ fi
 
 boot_entries "$MNT" "$kind" "$cmdline"
 
-# Where the unified images were before this release: the loader lists them on
-# its own there, beside the entries that count.
+# Unified images in EFI/Linux: the loader lists them on its own there, beside
+# the entries that count.
 signed="$([ ! -x "${MNT}/usr/bin/sbctl" ] || arch-chroot "$MNT" sbctl list-files --json)"
 for old in "/boot/EFI/Linux/arch-${KERNEL}.efi" "/boot/EFI/Linux/arch-${KERNEL}-fallback.efi"; do
     if grep -qF "\"${old}\"" <<<"$signed"; then

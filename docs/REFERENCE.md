@@ -59,7 +59,7 @@ UEFI only, GPT, and the whole disk: Arch OS is the only system on it.
 
 - A rollback keeps all six, since a snapshot of `@` leaves out every subvolume inside it. One made inside `@` later, such as a container's image, moves to the new `@`
 - Mounted with `defaults,noatime,compress=zstd:1`. Level 1 costs an old processor far less per write than 3 and compresses almost as well, as Fedora mounts it. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Btrfs#Compression)**
-- The layout is written once, in `lib.sh`. The Installer creates every subvolume, the Recovery opens only a disk that has all of them and leaves any other alone, such as `@libvirt` of a 2.0 installation
+- The layout is written once, in `lib.sh`. The Installer creates every subvolume, the Recovery opens only a disk that has all of them and leaves any other alone
 
 ## The Boot Chain
 
@@ -95,7 +95,6 @@ flowchart LR
 - A start cut short counts as failed, such as switching off at the password prompt
 - `panic=10` restarts after a kernel panic, so a system that panics on every start reaches the Recovery by itself
 - With GNOME, `arch-os-session-up.service` waits up to 5 minutes for the session. Without one the start does not count
-- A 2.0 installation counts nothing until **Rebuild the boot files** in the Recovery lays it out this way
 
 ### Kernel Parameters
 

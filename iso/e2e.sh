@@ -314,9 +314,9 @@ used_up() {
     done
 }
 
-# The installation as 2.0 left it: unified images in EFI/Linux, started as the
-# loader's default, and no entry counting its tries.
-as_2_0() {
+# An installation with its unified images in EFI/Linux, started as the loader's
+# default, and no entry counting its tries.
+images_in_efi_linux() {
     live bash -s <<EOF
 set -euo pipefail
 printf '%s' '${PASSWORD}' | cryptsetup open ${DISK}2 e2e-old
@@ -333,7 +333,7 @@ rm -f /mnt/etc/systemd/system/arch-os-boot-tries.service /mnt/usr/local/lib/arch
 umount -R /mnt
 cryptsetup close e2e-old
 EOF
-    say "Laid the installation out as 2.0 did"
+    say "Laid the installation out with its images in EFI/Linux"
 }
 
 # A subvolume made inside @ after its newest snapshot, as machinectl makes one:
@@ -574,7 +574,7 @@ shutdown_installed
 start repair
 until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
 live systemctl stop arch-os
-as_2_0
+images_in_efi_linux
 nested_subvolume
 live "printf \"MODULE_LANGUAGE='en'\nARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
 live "tmux new-session -d -s e2e -x 120 -y 40 'arch-os recovery'"
@@ -601,9 +601,9 @@ healthy
 entries_ready main.conf
 as_root test -f /boot/EFI/arch-os/arch-linux-zen.efi || fail "the repair left no unified image in /boot/EFI/arch-os"
 if as_root test -e /boot/EFI/Linux/arch-linux-zen.efi; then
-    fail "the repair left the 2.0 image in EFI/Linux, where the loader lists it twice"
+    fail "the repair left an image in EFI/Linux, where the loader lists it twice"
 fi
-say "Repair: laid the 2.0 installation out as this release does"
+say "Repair: laid the installation out as the Installer does"
 [ "$(as_root cat /var/lib/machines/e2e/kept)" = kept ] || fail "the rollback lost the subvolume made inside the system"
 say "Repair: kept the subvolume made inside the system"
 recovery_dashboard

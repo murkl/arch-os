@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # boot/boot-tries.sh against the EFI partitions it meets: the entries as the
 # Installer writes them, as the loader and systemd-bless-boot leave them, and
-# as an installation of 2.0 has them.
+# beside a default in loader.conf.
 #
 #   check.sh
 set -euo pipefail
@@ -39,7 +39,7 @@ case_of "blessed" "main.conf main-fallback+3.conf" 0 "main+3.conf main-fallback+
 case_of "every try used" "main+0-3.conf main-fallback+0-3.conf" 0 "main+3.conf main-fallback+3.conf"
 case_of "no fallback" "main+1-2.conf" 0 "main+3.conf"
 case_of "an entry twice" "main.conf main+1-2.conf" 1 "main+1-2.conf main.conf"
-case_of "as 2.0 left it" "default main.conf" 0 "main.conf"
+case_of "a default named" "default main.conf" 0 "main.conf"
 case_of "no entries" "" 0 ""
 case_of "another entry" "main+3.conf windows.conf" 0 "main+3.conf windows.conf"
 

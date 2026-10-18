@@ -98,7 +98,8 @@ confirm: |
 
   Everything on the disk is erased.
 requires: [live-image, root, internet]
-dashboard: [start, settings, language, wifi, reset]
+dashboard: [start, settings, wifi, reset]
+language: Region
 on:
   leave: [restart, shutdown]
   failure: [share-log]
@@ -120,6 +121,7 @@ settings: …
 | `confirm` | A question asked after every password and before the work, opening on No. The first paragraph is the headline |
 | `requires` | Actions checked before anything is asked, in this order. The first no stands a page in front of everything and is asked again every few seconds. Skipped on a dry run |
 | `dashboard` | **Required.** The dashboard's rows in order, see [The Dashboard](#the-dashboard) |
+| `language` | The group the interface language stands in, as its first row. Refused at startup where no setting is in it |
 | `on` | Where its other actions are offered, see [Actions](#actions) |
 | `errors` | What a status means that any of its scripts stops itself with, see [Stopping on Purpose](#stopping-on-purpose) |
 | `stages` | **Required.** The phases of the work, in order. Each is a folder `tasks/<stage>/` |
@@ -142,8 +144,7 @@ The module's home: its rows in the order `dashboard` lists them, each name once.
 | Name | Row |
 | --- | --- |
 | `start` | **Required.** The row `start` names, which starts the work |
-| `settings` | **Required.** Every answer under its group heading, each a row that opens its question |
-| `language` | The interface language |
+| `settings` | **Required.** Every answer under its group heading, each a row that opens its question. The interface language heads the group `language` names |
 | `reset` | **Reset all answers**, which deletes the answer file after a question that opens on No |
 | An action | Its row, wherever its `requires` say yes. An action folder may not take one of the names above |
 

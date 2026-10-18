@@ -82,7 +82,7 @@ Walks the ISO the way a person does, unattended:
 1. Installs a Core with disk encryption, Secure Boot and the Recovery partition, the firmware in setup mode
 2. Boots it with Secure Boot enforced and checks `systemctl is-system-running`
 3. Uses up the entries' tries: the fallback starts, then the Recovery
-4. Starts the ISO again, makes a subvolume inside the system, rolls the system back to its newest snapshot with the Recovery, keeping that subvolume, and rebuilds the boot files of an installation laid out as 2.0
+4. Starts the ISO again, makes a subvolume inside the system, rolls the system back to its newest snapshot with the Recovery, keeping that subvolume, and rebuilds the boot files of an installation with its images in EFI/Linux and no entry counting its tries
 5. Boots it once more, signed and running, and starts the Recovery on its partition
 6. Overwrites the start of the Recovery partition, as an update cut short does, writes it again with the Recovery on the ISO from the newest release of its series, and starts it with Secure Boot enforced
 

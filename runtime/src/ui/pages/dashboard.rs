@@ -1,6 +1,6 @@
-//! The dashboard: the row that starts the work, every answer under its heading, the language,
-//! what the module offers here and the reset, in the order the module lists them. Every row
-//! opens a page.
+//! The dashboard: the row that starts the work, every answer under its heading with the language
+//! under one of them, what the module offers here and the reset, in the order the module lists
+//! them. Every row opens a page.
 
 use crate::spec::{Action, Entry, Setting};
 use ratatui::buffer::Buffer;
@@ -43,19 +43,34 @@ pub struct DashboardPage {
 /// The answers no list offers any more.
 pub struct Unoffered(Vec<String>);
 
-/// Every answer shown, under its group's heading.
+/// Every answer shown, under its group's heading, and the interface language first under the
+/// heading the module names, which stands even while every answer of its group is hidden.
 fn answers(ctx: &Ctx) -> Vec<Row<Item>> {
+    let language = || {
+        Row::new(Item::Language, t("Interface language"))
+            .detail(&crate::i18n::current().name, Tone::Muted)
+    };
+    let home = ctx.module.language.as_deref();
     let mut rows = Vec::new();
     let mut group = "";
+    let mut placed = false;
     for setting in ctx.store.visible() {
         if setting.group != group {
             group = &setting.group;
             rows.push(Row::heading(t(group)));
+            if home == Some(group) {
+                rows.push(language());
+                placed = true;
+            }
         }
         rows.push(
             Row::new(Item::Setting(setting), t(&setting.title))
                 .detail(ctx.store.display(setting), Tone::Muted),
         );
+    }
+    if let Some(home) = home.filter(|_| !placed) {
+        rows.push(Row::heading(t(home)));
+        rows.push(language());
     }
     rows
 }
@@ -78,10 +93,6 @@ impl DashboardPage {
             let block = match entry {
                 Entry::Start => vec![self.start(ctx)],
                 Entry::Settings => answers(ctx),
-                Entry::Language => vec![
-                    Row::new(Item::Language, t("Interface language"))
-                        .detail(&crate::i18n::current().name, Tone::Muted),
-                ],
                 Entry::Reset => vec![Row::new(Item::Reset, t("Reset all answers"))],
                 Entry::Action(name) => ctx
                     .rows(std::slice::from_ref(name))

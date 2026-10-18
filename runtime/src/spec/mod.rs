@@ -85,6 +85,8 @@ pub struct Module {
     pub requires: Vec<String>,
     /// The dashboard's rows, in the order the module lists them.
     pub dashboard: Vec<Entry>,
+    /// The group whose heading the interface language stands under, first.
+    pub language: Option<String>,
     pub on: On,
     /// What any of its scripts means by stopping itself with a status, the headline first.
     pub errors: BTreeMap<i32, String>,
@@ -101,16 +103,14 @@ pub struct Module {
 pub enum Entry {
     Start,
     Settings,
-    Language,
     Reset,
     Action(String),
 }
 
 /// The dashboard's own rows by the name a module lists them under. An action cannot take one.
-const ENTRIES: [(&str, Entry); 4] = [
+const ENTRIES: [(&str, Entry); 3] = [
     ("start", Entry::Start),
     ("settings", Entry::Settings),
-    ("language", Entry::Language),
     ("reset", Entry::Reset),
 ];
 
@@ -561,6 +561,7 @@ struct ModuleFile {
     #[serde(default)]
     requires: Vec<String>,
     dashboard: Vec<String>,
+    language: Option<String>,
     #[serde(default)]
     on: OnFile,
     #[serde(default)]
@@ -1248,6 +1249,11 @@ fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Modul
 
     // Which actions run how, the strictest place first, and one nothing names is refused.
     let dashboard = dashboard(&f.dashboard).map_err(m)?;
+    if let Some(group) = &f.language
+        && !settings.iter().any(|s| s.group == *group)
+    {
+        return Err(m(format!("language: no setting is in the group {group}")));
+    }
     let on = On {
         leave: f.on.leave,
         failure: f.on.failure,
@@ -1412,6 +1418,7 @@ fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Modul
         confirm,
         requires: f.requires,
         dashboard,
+        language: f.language,
         on,
         errors: module_errors,
         stages: f.stages,
@@ -1712,7 +1719,7 @@ pub mod tests {
         vec![
             ("product.yaml", b"title: Tux\naccent: \"#8fbcbb\"\nconsole-accent: cyan\nlogo: |\n  Tux\n\n  ####\nstatus:\n  check: check_online()\n  pass: Online\n  fail: Offline\n"),
             ("lib.sh", b"check_online() { true; }\noptions_disks() { printf 'sda\\tsda 20G\\nsdb\\tsdb 40G\\n'; }\nprefill_host() { echo tuxbox; }\nvalue_vm() { echo false; }\napply_keymap() { true; }\n"),
-            ("setup/module.yaml", b"title: Setup\nstart: Install now\nconfirm: |\n  Install on {{TUX_DISK}}?\n\n  Everything on it is erased.\nrequires: [root]\ndashboard: [start, language, note, settings, reset]\non:\n  leave: [restart]\n  failure: [share]\n  success: [shell]\nerrors:\n  3: |\n    No internet\n\n    Connect and start again.\nstages: [prepare, install]\npresets:\n  - title: Desktop\n    description: A desktop.\n    values:\n      TUX_DESKTOP: gnome\n  - title: Core\n    values:\n      TUX_DESKTOP: none\nsettings:\n  - name: TUX_KEYMAP\n    type: list\n    title: Keyboard\n    group: Region\n    required: true\n    first: true\n    options: [us, de]\n    apply: apply_keymap()\n  - name: TUX_HOST\n    type: text\n    title: Hostname\n    description: What the machine calls itself.\n    group: System\n    required: true\n    prefill: prefill_host()\n    pattern: '^[a-z][a-z0-9-]*$'\n    error: Lower case letters, digits and - only.\n  - name: TUX_DESKTOP\n    type: list\n    title: Desktop\n    group: System\n    required: true\n    options: [gnome, none]\n  - name: TUX_DRIVER\n    type: list\n    title: Driver\n    group: System\n    required: true\n    options: [free, none]\n    when: TUX_DESKTOP != none\n  - name: TUX_DISK\n    type: list\n    title: Disk\n    group: Storage\n    required: true\n    options-from: options_disks()\n    pattern: '^sd'\n  - name: TUX_ENCRYPT\n    type: bool\n    title: Encryption\n    group: Storage\n    default: true\n  - name: TUX_PASSWORD\n    type: new-password\n    title: Password\n    group: System\n    required: true\n  - name: TUX_VM\n    type: bool\n    title: Virtual machine\n    group: System\n    value-from: value_vm()\n"),
+            ("setup/module.yaml", b"title: Setup\nstart: Install now\nconfirm: |\n  Install on {{TUX_DISK}}?\n\n  Everything on it is erased.\nrequires: [root]\ndashboard: [start, note, settings, reset]\nlanguage: Region\non:\n  leave: [restart]\n  failure: [share]\n  success: [shell]\nerrors:\n  3: |\n    No internet\n\n    Connect and start again.\nstages: [prepare, install]\npresets:\n  - title: Desktop\n    description: A desktop.\n    values:\n      TUX_DESKTOP: gnome\n  - title: Core\n    values:\n      TUX_DESKTOP: none\nsettings:\n  - name: TUX_KEYMAP\n    type: list\n    title: Keyboard\n    group: Region\n    required: true\n    first: true\n    options: [us, de]\n    apply: apply_keymap()\n  - name: TUX_HOST\n    type: text\n    title: Hostname\n    description: What the machine calls itself.\n    group: System\n    required: true\n    prefill: prefill_host()\n    pattern: '^[a-z][a-z0-9-]*$'\n    error: Lower case letters, digits and - only.\n  - name: TUX_DESKTOP\n    type: list\n    title: Desktop\n    group: System\n    required: true\n    options: [gnome, none]\n  - name: TUX_DRIVER\n    type: list\n    title: Driver\n    group: System\n    required: true\n    options: [free, none]\n    when: TUX_DESKTOP != none\n  - name: TUX_DISK\n    type: list\n    title: Disk\n    group: Storage\n    required: true\n    options-from: options_disks()\n    pattern: '^sd'\n  - name: TUX_ENCRYPT\n    type: bool\n    title: Encryption\n    group: Storage\n    default: true\n  - name: TUX_PASSWORD\n    type: new-password\n    title: Password\n    group: System\n    required: true\n  - name: TUX_VM\n    type: bool\n    title: Virtual machine\n    group: System\n    value-from: value_vm()\n"),
             ("setup/tasks/prepare/disk/task.yaml", b"title: Prepare the disk\nerrors:\n  10: |\n    The disk is gone\n\n    {{TUX_DISK}} is not there.\n"),
             ("setup/tasks/prepare/disk/task.sh", b"echo \"$TUX_DISK\" >\"${MODULE_CONF%/*}/disk\"\n"),
             ("setup/tasks/prepare/disk/test.sh", b"[ -f \"${MODULE_CONF%/*}/disk\" ]\n"),
@@ -1807,12 +1814,12 @@ pub mod tests {
             m.dashboard,
             [
                 Entry::Start,
-                Entry::Language,
                 Entry::Action("note".into()),
                 Entry::Settings,
                 Entry::Reset
             ]
         );
+        assert_eq!(m.language.as_deref(), Some("Region"));
         assert_eq!(l.texts()[..2], ["Online", "Offline"]);
     }
 
@@ -1840,6 +1847,10 @@ pub mod tests {
             (
                 "title: M\nstages: [a]\nrequires: [root]\n",
                 "missing field `dashboard`",
+            ),
+            (
+                "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, settings, asks]\nlanguage: Nope\non:\n  leave: [row]\n",
+                "language: no setting is in the group Nope",
             ),
         ] {
             refused(&tiny(module), says);

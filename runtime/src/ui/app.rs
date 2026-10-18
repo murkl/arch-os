@@ -635,7 +635,7 @@ pub mod tests {
     }
 
     /// The dashboard lists its rows as the module does, a blank row under the start and under
-    /// the answers.
+    /// the answers, the language first under the heading the module names.
     #[test]
     fn the_dashboard_keeps_the_modules_order() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -655,15 +655,20 @@ pub mod tests {
         };
         let order = [
             at("Install now"),
-            at("Interface language"),
             at("Leave a note"),
             at("Region"),
+            at("Interface language"),
+            at("Keyboard"),
             at("Reset all answers"),
         ];
         assert!(order.is_sorted(), "{order:?}\n{shown}");
         assert_eq!(rows[order[0] + 1], "", "no gap under the start:\n{shown}");
-        assert_eq!(rows[order[4] - 1], "", "no gap under the answers:\n{shown}");
-        assert_eq!(order[2], order[1] + 1, "a gap inside a block:\n{shown}");
+        assert_eq!(rows[order[5] - 1], "", "no gap under the answers:\n{shown}");
+        assert_eq!(
+            [order[3], order[4]],
+            [order[2] + 1, order[2] + 2],
+            "the language is not first under its heading:\n{shown}"
+        );
     }
 
     /// While the tasks run, tab shows what they print: a finished line once, the line being

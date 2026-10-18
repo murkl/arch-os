@@ -3,8 +3,7 @@ confirm: |
   Rebuild the kernel images, the initial ram disks and the boot entries?
 
   Needed after a rollback past a kernel update, or the system starts without
-  its modules. An installation from before 2.1 gets the entries that fall back
-  to the Recovery. Everything comes from the package cache, so no network is
+  its modules. Everything comes from the package cache, so no network is
   needed.
 
 # A snapshot may hold other kernel modules than /boot starts.

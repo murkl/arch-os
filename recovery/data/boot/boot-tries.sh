@@ -8,8 +8,8 @@ set -eu
 
 entries="$1/loader/entries"
 
-# An installation from before counting names a default, which the loader starts
-# however often it failed: nothing here would change that.
+# A default in loader.conf starts however often it failed: nothing here would
+# change that.
 if grep -qs '^default' "$1/loader/loader.conf"; then
     exit 0
 fi
