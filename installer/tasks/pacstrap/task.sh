@@ -53,6 +53,3 @@ if [ "$installed" != "true" ]; then
 fi
 
 genfstab -U "$MNT" >>"${MNT}/etc/fstab"
-
-# The EFI partition holds the kernel and the signed image: root's alone.
-sed -i '/\/boot/ {s/fmask=[0-9]\+/fmask=0077/g; s/dmask=[0-9]\+/dmask=0077/g}' "${MNT}/etc/fstab"

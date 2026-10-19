@@ -11,7 +11,7 @@ font="$(sed -n 's/^FONT=//p' "${MNT}/etc/vconsole.conf")"
 # machine that comes up in an emergency shell.
 findmnt --fstab --tab-file "${MNT}/etc/fstab" / >/dev/null
 
-# The sed matches what genfstab writes today, and says nothing the day it changes.
+# Root's alone, as the partition task mounted it and genfstab copied it.
 boot_options="$(findmnt --fstab --tab-file "${MNT}/etc/fstab" -no OPTIONS /boot)"
 grep -qE '(^|,)fmask=0077(,|$)' <<<"$boot_options"
 grep -qE '(^|,)dmask=0077(,|$)' <<<"$boot_options"
