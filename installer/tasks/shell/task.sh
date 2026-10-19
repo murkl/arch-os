@@ -3,8 +3,12 @@
 home="$(user_home)"
 data="$(where)"
 
-packages=(git starship eza bat zoxide fd fzf fastfetch mc btop bash-completion ttf-firacode-nerd
+packages=(git starship eza bat zoxide fd fzf fastfetch mc btop bash-completion
     zsh zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search)
+
+# The font the prompt's glyphs are drawn in, by a terminal in a window. The text
+# console draws none of them, see data/bashrc.
+[ "$ARCH_OS_DESKTOP" != "none" ] && packages+=(ttf-firacode-nerd)
 chroot_pacman_install "${packages[@]}"
 
 mkdir -p "${MNT}/root/.config/fastfetch" "${home}/.config/fastfetch"
