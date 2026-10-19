@@ -16,6 +16,14 @@ fi
 
 has_command gnome-extensions-app
 
+# The shell starts its calendar server at every login and with every look at the
+# calendar, and a library it lacks fails each start.
+libraries="$(arch-chroot "$MNT" ldd /usr/lib/gnome-shell-calendar-server)"
+if grep -F 'not found' <<<"$libraries"; then
+    echo "gnome-shell-calendar-server lacks the libraries above" >&2
+    exit 1
+fi
+
 # Bazaar takes GNOME Software's place, GNOME Firmware its firmware updates.
 if [ "$ARCH_OS_FLATPAK_ENABLED" = "true" ] && [ "$ARCH_OS_BAZAAR_ENABLED" = "true" ]; then
     has_command bazaar

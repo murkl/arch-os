@@ -16,6 +16,10 @@ packages=(git bluez bluez-utils avahi nss-mdns pipewire pipewire-pulse wireplumb
 # asking for jack2: GNOME Boxes is one, by way of qemu-desktop.
 packages+=(pipewire-jack)
 
+# The shell's calendar server links against it, and Arch leaves it to the apps
+# that need it, every one of which the slim desktop leaves out.
+packages+=(evolution-data-server)
+
 # Bazaar only beside Flatpak, which it is built on: the question's own
 # conditions.
 bazaar=false
