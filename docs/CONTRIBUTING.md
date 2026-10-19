@@ -175,12 +175,12 @@ END_COMMIT_OVERRIDE
 | --- | --- | --- |
 | `Title` | A pull request is opened, pushed to or edited | Checks the title and the base branch |
 | `Check` | Every pull request | `make check` |
-| `Image` | A pull request that changes the image, and a release | Builds the program, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO. Then starts its Recovery and writes it again from the ISO |
+| `Image` | A pull request that changes the image, a release, Monday morning and by hand | Builds the program, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO. Then starts its Recovery and writes it again from the ISO. On Monday and by hand it also installs a Desktop |
 | `Release` | A push to `main` | The release pull request, or once that is merged, the tag and the draft page |
 | `Publish` | A release | Attaches the files `Image` booted to the page and publishes it |
 
 - A merge into `main` runs `Release` alone: its pull request has passed `Check` and `Image` already
-- The Desktop profile is tested by hand: `make e2e START=desktop`
+- The Desktop profile is installed on Monday's Arch and by hand, under **Run workflow** in the Actions tab, and locally with `make e2e START=desktop`
 
 ## Releasing
 
