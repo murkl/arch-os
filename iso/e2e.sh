@@ -16,11 +16,6 @@ START="${2:-core}"
 # phase keeps a picture of the console it ended on.
 WORK="${WORK:-$(dirname "$ISO")/e2e}"
 
-# The Recovery built with the ISO, which a release's ISO does not carry and its
-# Installer fetches from a release page that is not out yet while this runs.
-# It is handed to the live image where the Installer looks after a download.
-RECOVERY_DIR="${ISO%-x86_64.iso}-recovery"
-
 # The least docs/README.md asks of a machine for this profile, so every
 # run proves it.
 MEMORY="$([ "$START" = desktop ] && echo 4096 || echo 2048)"
@@ -476,13 +471,6 @@ start install
 until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
 live systemctl stop arch-os
 answers | live "cat >/opt/arch-os/installer.conf"
-if ! live test -d /opt/arch-os-recovery; then
-    say "Hand over the Recovery, which this ISO does not carry"
-    for file in recovery.img recovery.efi; do
-        [ -s "${RECOVERY_DIR}/${file}" ] || fail "no ${file} in ${RECOVERY_DIR} for an ISO without the Recovery"
-        live "mkdir -p /tmp/arch-os-recovery && cat >/tmp/arch-os-recovery/${file}" <"${RECOVERY_DIR}/${file}"
-    done
-fi
 live "tmux new-session -d -s e2e -x 120 -y 40 'arch-os installer'"
 
 say "Install"

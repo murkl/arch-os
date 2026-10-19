@@ -358,7 +358,7 @@ It asks for the keyboard and the disk, on its own partition for neither. Everyth
 
 ### The Recovery Partition
 
-The Recovery of the release that installed the system, built with that release from Arch's `baseline` profile: kernel, `base`, `btrfs-progs`, `arch-install-scripts`, Plymouth, the Recovery and `iwd` with Wi-Fi firmware. A release ISO leaves it out to stay under GitHub's 2 GiB limit. The Installer downloads `arch-os-X.Y.Z-recovery-x86_64.tar` from its release and verifies it before touching the disk.
+The Recovery of the release that installed the system, built with that release from Arch's `baseline` profile: kernel, `base`, `btrfs-progs`, `arch-install-scripts`, Plymouth, the Recovery and `iwd` with Wi-Fi firmware. The ISO carries it beside the Installer, which writes it to the disk.
 
 | File | Goes to | What it is |
 | --- | --- | --- |

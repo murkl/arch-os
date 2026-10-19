@@ -456,28 +456,10 @@ stages:
           Package signatures need the correct time from the internet. Check the
           connection, then choose Install now again.
 
-    recovery-image:
-      title: Provide the Recovery image
-      when: ARCH_OS_RECOVERY_ENABLED == true
-      # A few hundred megabytes where the live image does not carry them.
-      progress: true
-      # Before the disk is touched. No internet and no GitHub are the module's.
-      errors:
-        10: |
-          Recovery download interrupted
-
-          Nothing was written to the disk. Choose Install now again or turn
-          Recovery off on the dashboard.
-        11: |
-          Recovery download damaged
-
-          The checksum does not match, so the download was deleted. Nothing was
-          written to the disk. Choose Install now again.
-
     partition:
       title: Partition and format the disk
       # The one step that destroys data, so everything that can fail first has.
-      needs: [mirrors, recovery-image]
+      needs: [mirrors]
       # Before anything is written.
       errors:
         10: |
@@ -677,12 +659,6 @@ errors:
 
     The installation downloads everything it installs. Reconnect this machine
     and choose Install now to begin again.
-  4: |
-    GitHub unreachable
-
-    The internet works, but GitHub, which hosts the Arch OS releases, is
-    unreachable. Try again in a few minutes or turn Recovery off on the
-    dashboard.
   5: |
     AUR unreachable
 

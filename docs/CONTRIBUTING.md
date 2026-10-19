@@ -12,7 +12,6 @@ make run MODULE=recovery     # ...the Recovery
 make run ARGS=--dry-run      # ...without touching the machine
 make build                   # the program, with every module inside it
 make iso                     # the program, the Recovery image and the ISO that carries it
-make iso ISO_RECOVERY=false  # ...the ISO as a release builds it, which fetches the Recovery
 make image                   # ...only the images, from the program already built
 make smoke                   # boot the newest of both and work their first page with the keyboard
 make e2e                     # install the newest ISO, boot, repair, boot again, start and rewrite its Recovery
@@ -192,7 +191,7 @@ Nothing is typed and nothing is tagged by hand.
 
 - Merges collect in the release pull request until it is merged. When to release is a decision, not a schedule
 - The release pull request, the tag and the release page are made with the secret `RELEASE_TOKEN` of the environment `release`, which only `main` may use: a fine-grained personal access token of the account with Contents and Pull requests set to read and write. `.github/release-token.sh` stores it. The workflow's own token cannot do this, since GitHub holds the checks of a bot's pull request until someone approves its runs. When the token expires, `Release` fails and reports it
-- The page carries `arch-os-2.1.0-x86_64.iso` and `arch-os-2.1.0-recovery-x86_64.tar`, each with the sha256 GitHub shows beside it. The ISO leaves the Recovery out to stay under GitHub's 2 GiB per file: its Installer fetches the `.tar`, and an installed Recovery updates itself from it
+- The page carries `arch-os-2.1.0-x86_64.iso` and `arch-os-2.1.0-recovery-x86_64.tar`, each with the sha256 GitHub shows beside it. The ISO carries the Recovery, and an installed Recovery updates itself from the `.tar`
 - Every other build is named after a pre-release of the next patch: `arch-os-2.0.1-dev-x86_64.iso`. `make build VERSION=2.1.0` names a build after any version, which it stamps into the program
 
 **Note:** _The page stays a draft until every file is attached. A run that fails on the way leaves a draft: re-run its failed jobs._

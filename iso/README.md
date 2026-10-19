@@ -56,10 +56,9 @@ From the repository root:
 ```
 make iso                     # the program, then both images in dist/
 make image                   # ...only the images, from the program already built
-make iso ISO_RECOVERY=false  # ...the ISO as a release builds it, without the Recovery
 ```
 
-**Note:** _A pre-release ISO carries the Recovery, since there is no release page to fetch it from. A release ISO does not, which keeps it under GitHub's 2 GiB per file. `build.sh` decides by the version the program reports, `ISO_RECOVERY` by hand. For an ISO without it, `e2e.sh` provides the Recovery built beside it instead of the download._
+**Note:** _The build fails where the Recovery outgrows the partition the Installer makes for it, or a file for the release page reaches GitHub's 2 GiB per file._
 
 **Note:** _The images are named after the version the program reports: the ISO, and the Recovery as a folder and as a `.tar` for the release page. The ISO label is that version in uppercase. The build needs `archiso`, `systemd-ukify`, `erofs-utils`, `diffutils`, `kbd` and `terminus-font`._
 
