@@ -362,8 +362,8 @@ msgstr "Zusätzliche Parameter, durch Leerzeichen getrennt. Bleibt meist leer."
 msgid "Core tweaks"
 msgstr "Core-Optimierungen"
 
-msgid "Parallel downloads, a quiet boot, password asterisks and tuned memory, disk and log settings. Installs nothing."
-msgstr "Parallele Downloads, ein ruhiger Start, Sternchen bei Passwörtern und abgestimmte Einstellungen für Speicher, Datenträger und Protokolle. Installiert nichts."
+msgid "Colored pacman output, a quiet boot, password asterisks and tuned memory, disk and log settings. Installs nothing."
+msgstr "Farbige pacman-Ausgabe, ein ruhiger Start, Sternchen bei Passwörtern und abgestimmte Einstellungen für Speicher, Datenträger und Protokolle. Installiert nichts."
 
 msgid "System"
 msgstr "System"
