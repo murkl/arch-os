@@ -6,9 +6,6 @@
 # slim                only with the slim desktop
 # extras              only with the desktop extras
 # shell               only with the shell enhancement
-always bssh
-always bvnc
-always avahi-discover
 always qv4l2
 always qvidcap
 always lstopo
