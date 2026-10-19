@@ -20,7 +20,7 @@ export LC_ALL=C
 }
 OUT="$1"
 
-LAUNCHER="$(dirname "$0")/src/usr/local/bin/arch-os"
+LAUNCHER="$(dirname "$0")/airootfs/usr/local/bin/arch-os"
 SIZES="$(sed -n 's/^SIZES="\(.*\)"/\1/p' "$LAUNCHER")"
 [ -n "$SIZES" ] || {
     echo "Error: ${LAUNCHER} names no font sizes" >&2

@@ -28,14 +28,14 @@ The Recovery is one console away: log in as root on another console (**Ctrl+Alt+
 ## What Is Where
 
 ```
-build.sh <arch-os> <dist-dir>            builds the Recovery image, then the ISO that carries it, out of the program
-smoke.sh <image.iso | recovery-dir>      boots a built image and works its first page with the keyboard
-e2e.sh <image.iso> [core|desktop]        installs it onto a disk, boots, repairs and updates it, see below
-font.sh <out-dir>                        builds the console fonts: Terminus Bold in every size the launcher picks from
-glyphs.sh <arch-os> <file>...            checks those files, and what that program draws, against those fonts
-src/etc/systemd/system/arch-os.service   starts the Installer on tty1
-src/usr/local/bin/arch-os                the launcher: sets the console font, then starts the program in /opt/arch-os
-recovery/                                what the Recovery image adds to `baseline`: its packages and the kiosk it starts as
+build.sh <arch-os> <dist-dir>                 builds the Recovery image, then the ISO that carries it, out of the program
+smoke.sh <image.iso | recovery-dir>           boots a built image and works its first page with the keyboard
+e2e.sh <image.iso> [core|desktop]             installs it onto a disk, boots, repairs and updates it, see below
+font.sh <out-dir>                             builds the console fonts: Terminus Bold in every size the launcher picks from
+glyphs.sh <arch-os> <file>...                 checks those files, and what that program draws, against those fonts
+airootfs/etc/systemd/system/arch-os.service   starts the Installer on tty1
+airootfs/usr/local/bin/arch-os                the launcher: sets the console font, then starts the program in /opt/arch-os
+recovery/                                     what the Recovery image adds to `baseline`: its packages and the kiosk it starts as
 ```
 
 ## Building It
@@ -56,7 +56,7 @@ The Bootsplash theme is **[plymouth-theme-arch-os](https://github.com/murkl/plym
 
 Settings of the stock profiles are overridden by lines appended to their `profiledef.sh`, never edited in place, so they survive changes to the profile. Every other patch fails the build where it finds nothing to patch.
 
-Before the ISO, the Recovery is checked: its erofs reads back identical to its source, every command its scripts call is on it, and no kernel module a repair may load lost a dependency to what `recovery/pacman.conf` leaves out. The Recovery image also gets `boot-tries.sh` out of the Recovery's `data/boot/`, the script every installed system has, so `arch-os-seed` gives the system's boot entries their tries back, as many as `lib.sh` names.
+Before the ISO, the Recovery is checked: its erofs reads back identical to its source, every command its scripts call is on it, and no kernel module a repair may load lost a dependency to what `recovery/pacman.conf` leaves out. The Recovery image also gets `boot-tries.sh` out of the Recovery's `data/`, the script every installed system has, so `arch-os-seed` gives the system's boot entries their tries back, as many as `lib.sh` names.
 
 A build leaves nothing root-owned behind. `archiso/` holds both profiles and is removed on success, kept on failure. `download/` stays either way and saves the next build a download. The key the Recovery is signed with is deleted either way.
 

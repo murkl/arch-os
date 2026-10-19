@@ -105,7 +105,7 @@ profiledef() {
 # and its log beside itself, in /opt/arch-os.
 install_arch_os() {
     local profile="$1"
-    cp -rf src/* "${profile}/airootfs/"
+    cp -rf airootfs/* "${profile}/airootfs/"
     ./font.sh "${profile}/airootfs/usr/share/kbd/consolefonts"
     install -D -m 755 "$BIN" "${profile}/airootfs/opt/arch-os/arch-os"
 }
@@ -246,7 +246,7 @@ install_arch_os "$RECOVERY_PROFILE"
 
 # The seed gives the system's boot entries their tries back with the script
 # every installed system has, as many as lib.sh gives them.
-install -D -m 755 ../recovery/data/boot/boot-tries.sh "${RECOVERY_PROFILE}/airootfs/usr/local/lib/arch-os/boot-tries.sh"
+install -D -m 755 ../recovery/data/boot-tries.sh "${RECOVERY_PROFILE}/airootfs/usr/local/lib/arch-os/boot-tries.sh"
 tries="$(. ../lib.sh && printf '%s' "$BOOT_TRIES")"
 mkdir -p "${RECOVERY_PROFILE}/airootfs/etc/systemd/system/arch-os-seed.service.d"
 printf '[Service]\nEnvironment=BOOT_TRIES=%s\n' "$tries" >"${RECOVERY_PROFILE}/airootfs/etc/systemd/system/arch-os-seed.service.d/tries.conf"
@@ -375,6 +375,9 @@ du -h "${RECOVERY_DIR}/"*
 
 echo "### Build the ISO"
 cp -r /usr/share/archiso/configs/releng/. "$ISO_PROFILE"
+
+# The keyboard layouts the Installer offers: localectl lists them from it.
+grep -qxF xkeyboard-config "${ISO_PROFILE}/packages.x86_64" || echo xkeyboard-config >>"${ISO_PROFILE}/packages.x86_64"
 
 # pacstrap refuses the whole list over one name the repositories dropped, so
 # that name goes, said out loud.

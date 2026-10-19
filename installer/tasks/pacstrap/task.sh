@@ -16,6 +16,10 @@ else
     echo "a virtual machine with no card of its own: leaving out linux-firmware"
 fi
 
+# Interrupts spread over the cores. A guest's kernel refuses every affinity
+# irqbalance sets and logs each refusal.
+[ "$ARCH_OS_VIRTUAL_MACHINE" = "false" ] && packages+=(irqbalance)
+
 # base ships no editor, no manuals and no ssh client.
 packages+=("$ARCH_OS_EDITOR" man-db man-pages openssh)
 

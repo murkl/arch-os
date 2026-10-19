@@ -4,8 +4,8 @@
 #
 #   check.sh
 #
-# Keymaps come from /usr/share/kbd/keymaps, which a container has where
-# localectl does not answer. Languages are not checked against glibc's locales,
+# Keymaps and layouts come from kbd's and xkb's own files, which a container
+# has where localectl does not answer. Languages are not checked against glibc's locales,
 # which an Arch container leaves out, so that check would pass unread.
 set -euo pipefail
 
@@ -24,7 +24,7 @@ complain() {
 
 keymaps="$(find /usr/share/kbd/keymaps -name '*.map.gz' -printf '%f\n' | sed 's/\.map\.gz$//' | sort -u)"
 fonts="$(find /usr/share/kbd/consolefonts -name '*.psf*' -printf '%f\n' | sed 's/\.psfu\?\(\.gz\)\?$//' | sort -u)"
-layouts="$(grep -v '^#' x11-layouts | awk 'NF { print $1 }' | sort -u)"
+layouts="$(awk '/^! / { inside = ($0 == "! layout"); next } inside && NF { print $1 }' /usr/share/X11/xkb/rules/base.lst | sort -u)"
 
 # language, the keyboard it is typed on in two spellings, and the font the
 # console draws it in.
@@ -43,7 +43,7 @@ while read -r language keymap layout font extra; do
     grep -qxF "$keymap" <<<"$keymaps" ||
         complain "languages: ${language} names the keymap ${keymap}, which loadkeys does not have"
     grep -qxF "$layout" <<<"$layouts" ||
-        complain "languages: ${language} names the layout ${layout}, which x11-layouts does not have"
+        complain "languages: ${language} names the layout ${layout}, which xkb does not have"
     [ "$font" = none ] || grep -qxF "$font" <<<"$fonts" ||
         complain "languages: ${language} names the font ${font}, which setfont does not have"
 done <languages

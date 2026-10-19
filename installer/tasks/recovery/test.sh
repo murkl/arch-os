@@ -24,3 +24,9 @@ entry="$(awk -v esp="${esp,,}" -v efi="$(basename "$RECOVERY_EFI")" '
 [ -n "$entry" ]
 order="$(sed -n 's/^BootOrder: //p' <<<"$entries")"
 [[ ",${order}," != *",${entry},"* ]]
+
+# udev passes over a rule it cannot read without a word.
+partuuid="$(blkid -p -s PART_ENTRY_UUID -o value "$(recovery_partition "$ARCH_OS_DISK")")"
+[ -n "$partuuid" ]
+grep -qF "\"${partuuid}\"" "${MNT}/etc/udev/rules.d/90-arch-os-recovery.rules"
+udevadm verify --resolve-names=never --no-style --no-summary "${MNT}/etc/udev/rules.d/90-arch-os-recovery.rules"

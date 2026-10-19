@@ -12,9 +12,3 @@ render "$(where)/arch-os-recovery.desktop" >"${MNT}/usr/local/share/applications
 # The icon theme's own restart icon, and this one where the theme has none:
 # Adwaita has it only as a symbolic icon, which an application list never draws.
 render "$(where)/system-reboot.svg" >"${icons}/system-reboot.svg"
-
-# Its partition is no drive to open: the file manager would list it as one.
-# Known by the partition's own UUID, which an update of the Recovery keeps.
-mkdir -p "${MNT}/etc/udev/rules.d"
-render "$(where)/90-arch-os-recovery.rules" PARTUUID="$(blkid -p -s PART_ENTRY_UUID -o value "$(recovery_partition "$ARCH_OS_DISK")")" \
-    >"${MNT}/etc/udev/rules.d/90-arch-os-recovery.rules"

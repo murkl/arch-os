@@ -25,9 +25,7 @@ fi
 # old contents holds the partitions open. lvm warns about every descriptor it
 # inherits, the runtime's error channel among them.
 LVM_SUPPRESS_FD_WARNINGS=1 vgchange -an || true
-if command -v mdadm >/dev/null; then
-    mdadm --stop --scan || true
-fi
+mdadm --stop --scan || true
 
 # Anything else still holding a partition (opened by hand, swap on it) keeps
 # the kernel from reading the new table. Raw output joins two mount points of

@@ -22,7 +22,7 @@ make clean                   # remove every build output
 
 ```
 sudo pacman -S --needed make rust shellcheck shfmt zsh yamllint actionlint zizmor \
-    gettext diffutils gitleaks kbd terminus-font archiso systemd-ukify qemu-base edk2-ovmf tesseract tesseract-data-eng openssh libisoburn
+    gettext diffutils gitleaks kbd terminus-font xkeyboard-config archiso systemd-ukify qemu-base edk2-ovmf tesseract tesseract-data-eng openssh libisoburn
 ```
 
 **Note:** _CI installs the same packages and runs the same commands in an Arch container, so green locally means green in CI._
@@ -31,7 +31,6 @@ sudo pacman -S --needed make rust shellcheck shfmt zsh yamllint actionlint zizmo
 
 - Packages, tasks, questions: **[installer](../installer)**
 - Repairing a system: **[recovery](../recovery)**
-- Writing the boot medium: **[get.sh](../get.sh)**
 - Every function the YAML and the scripts call: **[lib.sh](../lib.sh)**, checked by **[lib.check.sh](../lib.check.sh)**
 - Product name and look: **[product.yaml](../product.yaml)**
 - The German translation: **[locales/de.po](../locales/de.po)**
@@ -54,7 +53,7 @@ render "$(where)/main.conf" KERNEL="$KERNEL" CMDLINE="$cmdline" >"${MNT}/boot/lo
 - An unfilled placeholder, an unused value and a stray `{{` fail the task. Values are filled once, left to right
 - A file without placeholders goes through `render` too, so one added later cannot reach a disk unfilled
 - Not `envsubst`: it reads the environment, fills an unset variable with nothing, and without a list of names fills every `${…}`
-- The boot entries' templates lie in `recovery/data/boot/`, since the Recovery writes them again through `boot_entries`
+- The boot entries' templates lie in `recovery/data/`, since the Recovery writes them again through `boot_entries`
 - `make lint` fails on a `{ … } >"${MNT}/…"` block
 
 Where a program reads a drop-in directory, the file goes there. These files have none:

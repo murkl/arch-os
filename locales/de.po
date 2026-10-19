@@ -578,8 +578,11 @@ msgstr ""
 msgid "Install the base system"
 msgstr "Basissystem installieren"
 
-msgid "Set language, time zone and hostname"
-msgstr "Sprache, Zeitzone und Rechnernamen festlegen"
+msgid "Set language and time zone"
+msgstr "Sprache und Zeitzone festlegen"
+
+msgid "Set up the hostname and network"
+msgstr "Rechnernamen und Netzwerk einrichten"
 
 msgid "Apply the core tweaks"
 msgstr "Core-Optimierungen anwenden"

@@ -30,7 +30,7 @@ Each stage lists its tasks under `stages:` in `module.yaml`. The stages run in o
 | Stage | Tasks |
 | --- | --- |
 | `prepare` | `mirrors`, `recovery-image`, then `partition`, the one task that destroys data, once everything that can fail has run |
-| `system` | `pacstrap`, then `config`, `tweaks`, `bootloader`, `recovery` and `user`: the system on disk, configured and bootable |
+| `system` | `pacstrap`, then `config`, `network`, `tweaks`, `bootloader`, `recovery` and `user`: the system on disk, configured and bootable |
 | `features` | One task per setting that turns something on: `multilib`, `aur`, `bootsplash`, `containers`, `editor`, `firewall`, `housekeeping`, `manager`, `shell`, `ssh`, `vm-guest` |
 | `desktop` | `gnome` first, then `backup`, `browser`, `flatpak`, `graphics`, `manager-app`, `recovery-app`, `samba` |
 | `finish` | `orphans`, `snapper`, `secure-boot`, and `copy-config` last, so the log holds everything |
@@ -83,8 +83,6 @@ One answer, `ARCH_OS_LOCALE_LANG`, sets keyboard, console font and time zone. No
 | --- | --- | --- |
 | `data/languages` | Language, or locale where it differs | Keymap, xkb layout, console font |
 | `data/countries` | The locale's territory, or the time zone's in `zone.tab` | Time zone, mirror country |
-
-**Note:** _`data/x11-layouts` and `data/x11-variants` are only a fallback: the official Arch live image ships no xkeyboard-config._
 
 The console keyboard is asked `first` and loaded at once: a password typed on the wrong layout is not the password.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# boot/boot-tries.sh against the EFI partitions it meets: the entries as the
+# boot-tries.sh against the EFI partitions it meets: the entries as the
 # Installer writes them, as the loader and systemd-bless-boot leave them, and
 # beside a default in loader.conf.
 #
@@ -25,7 +25,7 @@ case_of() {
             echo "title ${entry}" >"${esp}/loader/entries/${entry}"
         fi
     done
-    bash boot/boot-tries.sh "$esp" 3 >/dev/null 2>&1 || got_status=$?
+    bash boot-tries.sh "$esp" 3 >/dev/null 2>&1 || got_status=$?
     got="$(find "${esp}/loader/entries" -type f -printf '%f\n' | sort | paste -sd' ')"
     if [ "$got_status" != "$want_status" ] || [ "$got" != "$want" ]; then
         printf '%s\n  got:  %s %s\n  want: %s %s\n' "$what" "$got_status" "$got" "$want_status" "$want" >&2
