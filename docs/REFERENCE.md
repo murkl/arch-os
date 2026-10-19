@@ -176,7 +176,7 @@ Enough for a usable system, little enough to need no upkeep. Everything else fol
 | `base`, `linux-zen`, `mkinitcpio`, `sudo`, `zram-generator`, `networkmanager`, `btrfs-progs`, `snapper` | The system itself |
 | `dosfstools` | systemd checks the EFI partition at every boot. Boot counting writes there, and FAT keeps no journal |
 | The chosen editor, `man-db`, `man-pages`, `openssh` | `base` includes none of them |
-| `linux-firmware` | Left out in a virtual machine without a passed-through card: its drivers are in the kernel |
+| `linux-firmware`, `sof-firmware` | Left out in a virtual machine without a passed-through card: its drivers are in the kernel. `sof-firmware` is the sound of many laptops |
 
 - A Wi-Fi network joined in the Installer becomes a NetworkManager connection, so the first boot is online. An 802.1X network must be joined again
 - The graphics driver is detected in sysfs, card by card. Mesa always, with `vkd3d`, `mesa-utils` and `vulkan-tools`. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Hardware_video_acceleration)**

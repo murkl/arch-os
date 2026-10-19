@@ -10,8 +10,10 @@
 packages=("$KERNEL" base sudo mkinitcpio zram-generator networkmanager btrfs-progs snapper dosfstools)
 
 # Firmware is for hardware, and a guest has none but a card handed through to it.
+# Many laptops' sound loads its firmware from sof-firmware, which linux-firmware
+# leaves out.
 if [ "$ARCH_OS_VIRTUAL_MACHINE" = "false" ] || [ -n "$(graphics_cards)" ]; then
-    packages+=(linux-firmware wireless-regdb)
+    packages+=(linux-firmware sof-firmware wireless-regdb)
 else
     echo "a virtual machine with no card of its own: leaving out linux-firmware"
 fi

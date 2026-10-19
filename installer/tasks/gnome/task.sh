@@ -61,9 +61,9 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     # Portals for flatpaks and screen sharing. GTK's covers what GNOME's lacks.
     packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk)
 
-    # The older audio APIs, laptop codec firmware, and rtkit for pipewire's
-    # realtime priority, without which it complains at every login.
-    packages+=(pipewire-alsa sof-firmware rtkit)
+    # The older audio APIs, and rtkit for pipewire's realtime priority, without
+    # which it complains at every login.
+    packages+=(pipewire-alsa rtkit)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
 
     # NetworkManager speaks WireGuard itself, OpenVPN needs the plug-in.
