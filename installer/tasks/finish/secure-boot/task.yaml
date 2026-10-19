@@ -1,7 +1,7 @@
 title: Set up Secure Boot
 
-# A signature holds only until a boot image is rebuilt, and each of these
-# installs or removes packages. A task added to this stage belongs here too.
+# After every task that installs or removes packages, so its check sees the
+# chain the system starts with. A task added to this stage belongs here too.
 needs: [orphans, snapper]
 when:
   - ARCH_OS_SECURE_BOOT_ENABLED == true
