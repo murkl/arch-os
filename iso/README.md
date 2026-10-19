@@ -1,13 +1,14 @@
 # Arch OS ISO
 
-The stock Arch `releng` profile, patched to boot straight from Plymouth into Arch OS.
+The stock Arch `releng` profile with Arch OS's own packages, patched to boot straight from Plymouth into Arch OS.
 
 - Installer and Recovery on the same image
 - The Recovery image beside them, built first from Arch's minimal `baseline`, for the Installer to write to the disk. **[➜ The Recovery Partition](../docs/REFERENCE.md#the-recovery-partition)**
+- Only what Arch OS uses: the Recovery's packages, the Installer's tools, the Arch ISO's ways online and its screen reader
 - Arch OS Bootsplash (Plymouth), fading out into the interface
 - Nord palette on every console from the first frame, Terminus Bold sized to the screen
-- Networking exactly as the Arch ISO ships it (iwd, systemd-networkd)
-- UEFI only, squashfs with zstd
+- Networking as the Arch ISO ships it, iwd started once Wi-Fi is asked for
+- UEFI only, drawn on the firmware's screen, squashfs with zstd
 
 ## How It Starts
 
@@ -16,6 +17,14 @@ The program, with both modules inside it, lives in `/opt/arch-os`. A systemd uni
 The Recovery is one console away: log in as root on another console (**Ctrl+Alt+F2**) and type `arch-os recovery`. Whenever the interface stops, tty1 returns to a root login, and nothing restarts it by itself. An automatic restart would hide a crash, possibly in a run that has written half a disk. A crash therefore ends at the prompt, with the reason in `journalctl -b -u arch-os`.
 
 **Note:** _The Recovery image starts with the same unit and launcher, but as a kiosk. A drop-in starts `arch-os recovery --kiosk` on the answers `arch-os-seed` read from the EFI partition at boot. It opens straight on its dashboard, **Start over** closes it and the unit starts it again with every answer, and no console has a login. **[➜ The Recovery Partition](../docs/REFERENCE.md#the-recovery-partition)**_
+
+On a live image every boot is the first, so systemd starts `systemd-firstboot` and switches on what its presets name at each one. Both images mask what that costs for nothing:
+
+| Unit | Why |
+| --- | --- |
+| `systemd-firstboot` | Resets the console under the splash, and the image comes configured |
+| `systemd-nsresourced` | Holds sysinit up for the seconds its start takes at the first user lookup, and nothing here makes a user namespace |
+| `systemd-pstore` | Would move the installed system's crash records out of the firmware into memory that forgets them. The installed system collects them itself |
 
 | Command | Description |
 | --- | --- |
@@ -35,6 +44,8 @@ font.sh <out-dir>                             builds the console fonts: Terminus
 glyphs.sh <arch-os> <file>...                 checks those files, and what that program draws, against those fonts
 airootfs/etc/systemd/system/arch-os.service   starts the Installer on tty1
 airootfs/usr/local/bin/arch-os                the launcher: sets the console font, then starts the program in /opt/arch-os
+packages.x86_64                               what the ISO adds to the Recovery's packages
+pacman.conf                                   what both images leave out of every package
 recovery/                                     what the Recovery image adds to `baseline`: its packages and the kiosk it starts as
 ```
 
@@ -54,9 +65,11 @@ make iso ISO_RECOVERY=false  # ...the ISO as a release builds it, without the Re
 
 The Bootsplash theme is **[plymouth-theme-arch-os](https://github.com/murkl/plymouth-theme-arch-os)** at the commit `PLYMOUTH_THEME_REF` in `build.sh` names. It is fetched once for both images, kept in `download/`, and updated by hand. `PLYMOUTH_THEME_SRC=/path/to/theme/src` builds with a theme folder of your own instead.
 
-Settings of the stock profiles are overridden by lines appended to their `profiledef.sh`, never edited in place, so they survive changes to the profile. Every other patch fails the build where it finds nothing to patch.
+Settings of the stock profiles are overridden by lines appended to their `profiledef.sh` and to releng's `archiso.conf`, never edited in place, so they survive changes to the profile. Every other patch fails the build where it finds nothing to patch, and the ISO's hooks where releng's are not the ones it leaves out of.
 
-Before the ISO, the Recovery is checked: its erofs reads back identical to its source, every command its scripts call is on it, and no kernel module a repair may load lost a dependency to what `recovery/pacman.conf` leaves out. The Recovery image also gets `boot-tries.sh` out of the Recovery's `data/`, the script every installed system has, so `arch-os-seed` gives the system's boot entries their tries back, as many as `lib.sh` names.
+Before the ISO, the Recovery is checked: its erofs reads back identical to its source, every command its scripts call is on it, it starts and masks what it should, and no kernel module a repair may load lost a dependency to what `pacman.conf` leaves out. The Recovery image also gets `boot-tries.sh` out of the Recovery's `data/`, the script every installed system has, so `arch-os-seed` gives the system's boot entries their tries back, as many as `lib.sh` names.
+
+The ISO is checked once built: every command the Installer calls on the live system is on it, along with the data its lists come from, it starts and masks what it should, and no unit link points at a package releng had and the list left out.
 
 A build leaves nothing root-owned behind. `archiso/` holds both profiles and is removed on success, kept on failure. `download/` stays either way and saves the next build a download. The key the Recovery is signed with is deleted either way.
 
@@ -87,14 +100,14 @@ Walks the ISO the way a person does, unattended:
 6. Overwrites the start of the Recovery partition, as an interrupted update does, writes it again with the Recovery on the ISO from the newest release of its series, and starts it with Secure Boot enforced
 
 - Each run gets no more memory and disk than its profile requires. **[➜ README](../docs/README.md)**
-- The live system is reached over SSH through its cloud-init. The interface runs in tmux there, driven by its keys and read from its pane
+- The live system is reached over SSH by a key it takes as a systemd credential. The interface runs in tmux there, driven by its keys and read from its pane
 - Both runs must end with every test passed, and the machine is then powered off hard rather than shut down, as after writing the Recovery: what a run reports as done has to be on the disk
 - The installed system unlocks its disk from a systemd credential, and is reached over SSH as the account it was installed with
 - `START=desktop` installs the Desktop profile with the SSH server on, boots it like step 2 and checks for GNOME's login screen and a systemd-oomd that watches swap and the session. The repair is the Core's
 - Step 6 is skipped with a notice while no release of the series publishes a Recovery
 - Step 6 writes the newest published Recovery, which may predate the Installer. Its language page then counts as started, since it reads no language the Installer left
 
-**Note:** _Needs `qemu-base`, `edk2-ovmf`, `openssh`, `libisoburn`, `tesseract` and `tesseract-data-eng`, and a network: the installation downloads its packages and step 6 the Recovery. The logs land in `dist/e2e/`, with a screenshot of the console where it stopped._
+**Note:** _Needs `qemu-base`, `edk2-ovmf`, `openssh`, `tesseract` and `tesseract-data-eng`, and a network: the installation downloads its packages and step 6 the Recovery. The logs land in `dist/e2e/`, with a screenshot of the console where it stopped._
 
 ## The Console
 
@@ -104,6 +117,8 @@ Both images boot with the same arguments, which `build.sh` adds to every entry t
 | --- | --- |
 | `quiet splash loglevel=3 …` | Shows Plymouth instead of the boot log. **[➜ Silent boot](https://wiki.archlinux.org/title/Silent_boot)** |
 | `plymouth.ignore-serial-consoles` | Plymouth falls back to text for good on a serial console, and a virtual machine always has one. Without it the Recovery boots in text mode under QEMU |
+| `nomodeset` | Splash and interface draw on the firmware's screen, which needs no graphics driver. The ram disk carries none, and no driver can fail to bring up a screen |
+| `systemd.condition_needs_update=0` | The build ran `ldconfig`, `sysusers` and `hwdb` already, and a live image's `/usr` never changes. Without it they run again at every boot, before anything else starts. **[➜ systemd](https://www.freedesktop.org/software/systemd/man/latest/kernel-command-line.html)** |
 | `fbcon=nodefer` | The console takes over the screen at boot. Taken over later, it appears only when the interface starts, and udev then sets it up at the same time as the interface |
 | `vt.default_red=…` and its two siblings | The console's sixteen colors, so every console is Nord from the first frame. Plymouth restores the palette it found, so the splash and the interface share one background |
 

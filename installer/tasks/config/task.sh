@@ -43,6 +43,11 @@ arch-chroot "$MNT" systemctl enable systemd-timesyncd.service
 # https://wiki.archlinux.org/title/Btrfs#Scrub
 arch-chroot "$MNT" systemctl enable btrfs-scrub@-.timer
 
+# What the kernel writes to the firmware as it crashes, moved to
+# /var/lib/systemd/pstore and out of the firmware's small memory, as systemd's
+# preset has it. ISO and Recovery leave it for this system to collect.
+arch-chroot "$MNT" systemctl enable systemd-pstore.service
+
 # Wherever pacstrap installed it.
 if has_command irqbalance; then
     arch-chroot "$MNT" systemctl enable irqbalance.service

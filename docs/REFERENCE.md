@@ -148,6 +148,7 @@ The same base on every machine.
 | --- | --- | --- |
 | Kernel | `linux-zen` on every installation | One kernel means one set of problems to know. Tuned to stay responsive under load |
 | Swap | zram, always | **[➜ Arch Wiki](https://wiki.archlinux.org/title/Zram)** |
+| Crash records | `systemd-pstore` | What the kernel writes to the firmware as it crashes lands in `/var/lib/systemd/pstore`, and the firmware's small memory stays free. ISO and Recovery leave it there. **[➜ systemd-pstore](https://www.freedesktop.org/software/systemd/man/latest/systemd-pstore.service.html)** |
 
 ### Tuning
 

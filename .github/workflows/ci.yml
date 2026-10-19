@@ -124,7 +124,7 @@ jobs:
     steps:
       - run: |
           pacman -Syu --needed --noconfirm git make rust archiso systemd-ukify diffutils \
-            kbd terminus-font qemu-base edk2-ovmf tesseract tesseract-data-eng openssh libisoburn
+            kbd terminus-font qemu-base edk2-ovmf tesseract tesseract-data-eng openssh
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

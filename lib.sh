@@ -888,7 +888,7 @@ no_cable() {
 # ─── The Installer ─────────────────────────────────────────────────────────
 
 # Every UTF-8 locale glibc supports, without @-variants. SUPPORTED rather than
-# locale.gen, which cloud-init and hand edits rewrite.
+# locale.gen, which a hand edit rewrites.
 options_locales() {
     sed -n 's/^\([a-z]\{2,3\}\(_[A-Z]\{2\}\)\{0,1\}\)\(\.UTF-8\)\{0,1\} UTF-8$/\1/p' /usr/share/i18n/SUPPORTED | sort -u
 }
@@ -916,11 +916,12 @@ apply_vconsole_keymap() {
     loadkeys "$(vconsole_keymap)"
 }
 
+# kbd's fonts, which every installation has, rather than this console's folder,
+# which holds the ISO's own fonts and whatever else is installed here as well.
 options_fonts() {
     printf 'auto\tauto (%s)\n' "$(auto_font)"
     echo none
-    find /usr/share/kbd/consolefonts -name '*.psf*' -printf '%f\n' 2>/dev/null |
-        sed 's/\.psfu\?\(\.gz\)\?$//' | sort -u
+    pacman -Qlq kbd | sed -n 's|^/usr/share/kbd/consolefonts/\([^/]*\)\.psfu\{0,1\}\(\.gz\)\{0,1\}$|\1|p' | sort -u
 }
 
 options_timezones() { timedatectl list-timezones; }
