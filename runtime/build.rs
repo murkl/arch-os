@@ -3,8 +3,8 @@
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
-/// Every regular file below `dir` but dotfiles and the checks run by hand, as paths relative
-/// to the product, in name order.
+/// Every regular file below `dir` but the checks run by hand, as paths relative to the
+/// product, in name order. Dotfiles too: a task that ships a home ships `.config/`.
 fn files(dir: &Path, prefix: &str, out: &mut Vec<String>) {
     let mut entries: Vec<_> = fs::read_dir(dir)
         .unwrap_or_else(|e| panic!("{}: {e}", dir.display()))
@@ -13,8 +13,7 @@ fn files(dir: &Path, prefix: &str, out: &mut Vec<String>) {
     entries.sort_by_key(|e| e.file_name());
     for e in entries {
         let name = e.file_name().into_string().unwrap();
-        if name.starts_with('.') || ["check.sh", "check.zsh", "README.md"].contains(&name.as_str())
-        {
+        if ["check.sh", "check.zsh", "README.md"].contains(&name.as_str()) {
             continue;
         }
         let path = format!("{prefix}{name}");

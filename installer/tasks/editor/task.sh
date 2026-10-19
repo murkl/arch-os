@@ -17,13 +17,15 @@ if [ "$ARCH_OS_EDITOR" = "nano" ]; then
 fi
 
 # data/<command>/ is a home: each file lands at the same place in root's and in
-# the account's, never in /etc, which belongs to the package.
+# the account's, never in /etc, which belongs to the package. Listed before the
+# loop, so a folder that is missing fails here.
 src="$(where)/${command}"
+files="$(find "$src" -type f -printf '%P\n')"
 while IFS= read -r file; do
     for home in "${MNT}/root" "$(user_home)"; do
         mkdir -p "$(dirname "${home}/${file}")"
         render "${src}/${file}" >"${home}/${file}"
     done
-done < <(find "$src" -type f -printf '%P\n')
+done <<<"$files"
 
 own_home
