@@ -17,8 +17,7 @@ make -C .. run MODULE=recovery ARGS=--dry-run   # run it without touching this m
 module.yaml          what the Recovery is and asks, its actions, and its tasks in the order they run
 tasks/<id>/task.sh   what a task does
 tasks/<id>/test.sh   optional: how to tell on the machine that it worked
-data/boot/           the boot entries, which the Installer writes and the Recovery lays down again
-data/check.sh        checks data/boot/boot-tries.sh against the EFI partitions it meets
+data/                the boot entries, which the Installer writes and the Recovery lays down again, and data/check.sh, which checks boot-tries.sh
 ```
 
 **Note:** _Every function `module.yaml` names lives in **[lib.sh](../lib.sh)** beside `product.yaml`. The actions the Installer has too (the live image, root, Wi-Fi, the ways out, sharing the log, the shell) are declared once in **[product.yaml](../product.yaml)**. Every text is translated in **[locales/](../locales)**._

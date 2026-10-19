@@ -8,16 +8,7 @@ The Arch OS ISO starts the Installer automatically. On another console (**Ctrl+A
 
 ### The Boot Medium
 
-The ISO is hybrid: it carries its own partition table and boot paths and works with any USB writer. On Linux, one command writes the latest:
-
-```
-curl -fsSL https://raw.githubusercontent.com/murkl/arch-os/main/get.sh | sh
-```
-
-- An ISO of that release in `DOWNLOAD_DIR`, `XDG_DOWNLOAD_DIR` or `~/Downloads` is reused, otherwise downloaded there
-- A missing or mismatched checksum needs confirmation, so a self-built ISO can still be written
-- Only USB sticks not in use by the running system are offered, checked again right before writing. Root only for `umount`, `dd`, `blockdev` and reading the stick back
-- The stick is read back after writing, so a fake or failing one is caught before it is booted
+The ISO is hybrid: it carries its own partition table and boot paths and works with any USB writer. **[➜ USB flash installation medium](https://wiki.archlinux.org/title/USB_flash_installation_medium)**
 
 ### Reusing Answers
 
@@ -133,9 +124,10 @@ Offered only with disk encryption. Without it the disk is readable anyway, and o
 | When | What | Why |
 | --- | --- | --- |
 | First | The keys, with the boot images, before any snapshot | `/var/lib/sbctl` lives in `@`, and after a rollback to a snapshot without the keys nothing rebuilt could be signed. The Recovery keeps them across a rollback |
-| Last | The chain signed | The NVIDIA driver and the boot splash rebuild the images earlier, outside sbctl's hooks |
+| Last | systemd-boot and the Recovery signed, the keys enrolled | Enrolled keys refuse whatever is not signed, so everything is signed first |
 | After | sbctl's hooks | Every new image is signed, and every update re-signs systemd-boot and the Recovery |
 
+- sbctl's mkinitcpio hook signs each boot image as it is built. `sbctl list-files` does not show them: `sbctl sign -s` records no file that is signed already
 - `sbctl verify` lists `/boot/vmlinuz-*` as not signed on purpose: signed alone, the kernel would start with any initramfs written onto the EFI partition
 - Keys enroll only in **setup mode**, which differs from "Secure Boot disabled". `-m` keeps Microsoft's certificates. A failure is logged and the machine still boots
 

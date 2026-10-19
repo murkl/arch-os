@@ -1,5 +1,5 @@
-# What every installation is set to: clock, language, name, swap and the units
-# that keep them running. What only some get is a task of its own.
+# What every installation is set to: clock, language, swap and the units that
+# keep them running. What a choice adds is a task of its own.
 
 # ln links whether or not the zone exists, and a dangling one is UTC in silence.
 if [ ! -f "${MNT}/usr/share/zoneinfo/${ARCH_OS_TIMEZONE}" ]; then
@@ -25,55 +25,11 @@ if ! grep -qxF "${ARCH_OS_LOCALE_LANG}.utf8" <<<"$locales"; then
     exit 1
 fi
 
-# /etc/hosts stays as shipped: nss-myhostname answers for this name.
-# https://wiki.archlinux.org/title/Network_configuration#Local_hostname_resolution
-echo "$ARCH_OS_HOSTNAME" >"${MNT}/etc/hostname"
-
 # Compressed swap in memory, as a drop-in. https://wiki.archlinux.org/title/Zram
 mkdir -p "${MNT}/etc/systemd/zram-generator.conf.d"
 render "$(where)/zram-generator.conf" >"${MNT}/etc/systemd/zram-generator.conf.d/10-arch-os.conf"
 render "$(where)/99-vm-zram-parameters.conf" >"${MNT}/etc/sysctl.d/99-vm-zram-parameters.conf"
 
-arch-chroot "$MNT" systemctl enable NetworkManager
-
-# A key of one [section] of an iwd profile.
-iwd_setting() {
-    awk -v section="[$2]" -v key="$3" '
-        /^\[/ { inside = ($0 == section); next }
-        inside && index($0, key "=") == 1 { print substr($0, length(key) + 2); exit }
-    ' "$1"
-}
-
-# Every Wi-Fi network the live system joined, so the first boot is online. iwd
-# names a profile after the SSID, or "=" and its hex. https://man.archlinux.org/man/iwd.network.5
-for profile in /var/lib/iwd/*.psk /var/lib/iwd/*.open; do
-    [ -f "$profile" ] || continue
-    name="$(basename "$profile")"
-    name="${name%.*}"
-    ssid="$name"
-    if [[ $name == =* ]]; then
-        hex="${name#=}" escaped=""
-        while [ -n "$hex" ]; do
-            escaped+="\\x${hex:0:2}"
-            hex="${hex:2}"
-        done
-        ssid="$(printf '%b' "$escaped")"
-    fi
-    args=(type wifi con-name "$ssid" ssid "$ssid")
-    if [ "$(iwd_setting "$profile" Settings Hidden)" = "true" ]; then
-        args+=(wifi.hidden yes)
-    fi
-    # wpa-psk is WPA2 and WPA3 Personal alike. The processed key stands in
-    # where iwd kept no passphrase.
-    if [[ $profile == *.psk ]]; then
-        secret="$(iwd_setting "$profile" Security Passphrase)"
-        [ -n "$secret" ] || secret="$(iwd_setting "$profile" Security PreSharedKey)"
-        args+=(wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$secret")
-    fi
-    keyfile="${MNT}/etc/NetworkManager/system-connections/${name}.nmconnection"
-    (umask 077 && arch-chroot "$MNT" nmcli --offline connection add "${args[@]}" >"$keyfile")
-    echo "carried over the wireless network ${ssid}"
-done
 arch-chroot "$MNT" systemctl enable fstrim.timer
 
 # The keyring's weekly refresh, which its package switches on, asks
@@ -86,3 +42,8 @@ arch-chroot "$MNT" systemctl enable systemd-timesyncd.service
 # bad is noticed before a file is asked for. `-` is how a unit spells /.
 # https://wiki.archlinux.org/title/Btrfs#Scrub
 arch-chroot "$MNT" systemctl enable btrfs-scrub@-.timer
+
+# Wherever pacstrap installed it.
+if has_command irqbalance; then
+    arch-chroot "$MNT" systemctl enable irqbalance.service
+fi

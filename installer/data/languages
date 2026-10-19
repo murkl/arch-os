@@ -7,7 +7,7 @@
 # than the language: none is the honest answer for a text console with no
 # glyphs for it at all.
 #
-# Validate against: localectl list-keymaps, ./x11-layouts, /usr/share/i18n/SUPPORTED
+# Validate against: localectl list-keymaps, localectl list-x11-keymap-layouts, /usr/share/i18n/SUPPORTED
 af          us              za          eurlatgr
 ar          us              ara         latarcyrheb-sun16
 be          by              by          latarcyrheb-sun16

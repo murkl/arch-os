@@ -234,7 +234,7 @@ btrfs_subvolumes() {
 # system tried BOOT_TRIES times before the next: docs/REFERENCE.md#when-the-system-does-not-start
 
 # The templates, kept with the Recovery, which every image carries.
-boot_data() { printf '%s/recovery/data/boot' "$(product_dir)"; }
+boot_data() { printf '%s/recovery/data' "$(product_dir)"; }
 
 export BOOT_TRIES=3
 
@@ -950,34 +950,20 @@ options_countries() {
 
 value_virtual_machine() { if systemd-detect-virt -q; then echo true; else echo false; fi; }
 
-# The Arch ISO ships no xkeyboard-config, and then data/ answers.
 options_layouts() {
-    local layouts
     printf 'auto\tauto (%s)\n' "$(auto_layout)"
-
-    layouts="$(localectl list-x11-keymap-layouts 2>/dev/null || true)"
-    if [ -n "$layouts" ]; then
-        echo "$layouts"
-        return 0
-    fi
-    grep -v '^#' "$(installer_data)/x11-layouts"
+    localectl list-x11-keymap-layouts
 }
 
-# The Arch ISO ships no xkeyboard-config, and then data/ answers.
 options_variants() {
-    local layout variants
+    local layout
     layout="$(desktop_layout)"
     [ -n "$layout" ] || return 0
 
     echo none
-
-    variants="$(localectl list-x11-keymap-variants "$layout" 2>/dev/null || true)"
-    if [ -n "$variants" ]; then
-        echo "$variants"
-        return 0
-    fi
-    # A layout without variants has no line there.
-    { grep "^${layout} " "$(installer_data)/x11-variants" || allow 1; } | cut -d' ' -f2- | tr ' ' '\n'
+    # A layout without variants is an error of status 1 to localectl. The
+    # layouts were listed from the same file, so it is there.
+    localectl list-x11-keymap-variants "$layout" 2>/dev/null || allow 1
 }
 
 booted_in_uefi() { [ -d /sys/firmware/efi ]; }

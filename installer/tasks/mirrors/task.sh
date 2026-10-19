@@ -10,11 +10,6 @@ printf 'machine: %s cores, %s memory, %s on %s, virtualization %s\n' \
 # the new system. Never fatal: a slow mirror installs, no list does not.
 # https://wiki.archlinux.org/title/Reflector
 rank_mirrors() {
-    command -v reflector >/dev/null || {
-        echo "this image has no reflector, installing from the list it shipped" >&2
-        return 0
-    }
-
     local ranked warnings servers unrated country args=(--protocol https --age 12 --latest 10 --sort rate)
     country="$(mirror_country)"
     [ -n "$country" ] && args+=(--country "$country")

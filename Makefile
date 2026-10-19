@@ -58,11 +58,11 @@ RECOVERY ?= $(shell ls -td $(DIST_DIR)/*-recovery 2>/dev/null | head -1)
 # THE SCRIPTS | Everything checked, by the dialect it is written in
 # ////////////////////////////////////////////////////////////////////////////
 
-# POSIX sh: get.sh runs on whatever shell the machine has.
-POSIX_SCRIPTS := get.sh .github/settings.sh .github/release-token.sh
+# POSIX sh: the scripts in .github/, the same file in every project released this way.
+POSIX_SCRIPTS := $(wildcard .github/*.sh)
 
 # Bash: what builds and boots the images, and what they run.
-ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_E2E) $(ISO_GLYPHS) $(ISO_FONT) $(wildcard $(ISO_DIR)/src/usr/local/bin/* $(ISO_DIR)/recovery/airootfs/usr/local/bin/*)
+ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_E2E) $(ISO_GLYPHS) $(ISO_FONT) $(wildcard $(ISO_DIR)/airootfs/usr/local/bin/* $(ISO_DIR)/recovery/airootfs/usr/local/bin/*)
 
 # The modules: every folder with a module.yaml, as the build embeds them.
 MODULES := $(patsubst %/module.yaml,%,$(wildcard */module.yaml))

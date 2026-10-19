@@ -5,11 +5,10 @@
 
 # -s records each file, and sbctl's hook signs them again on every update.
 # systemd-boot is signed at its source, which systemd-boot-update copies from.
+# The boot images are left to sbctl's mkinitcpio hook, which signs each as it
+# is built. -s records no file signed already (sbctl 0.18, Sign in sbctl.go).
 stub=/usr/lib/systemd/boot/efi/systemd-bootx64.efi
 arch-chroot "$MNT" sbctl sign -s -o "${stub}.signed" "$stub" || echo "signing systemd-boot failed" >&2
-while read -r image; do
-    arch-chroot "$MNT" sbctl sign -s "$image" || echo "signing ${image} failed" >&2
-done < <(boot_images)
 
 # The Recovery starts from the same menu, so it carries the same keys.
 if [ -f "${MNT}${RECOVERY_EFI}" ]; then
