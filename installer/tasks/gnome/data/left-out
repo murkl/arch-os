@@ -23,7 +23,6 @@ slim gnome-music
 slim gnome-weather
 slim gnome-calculator
 slim gnome-logs
-slim gnome-text-editor
 slim gnome-disk-utility
 slim simple-scan
 slim baobab
