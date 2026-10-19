@@ -18,6 +18,13 @@ efibootmgr | awk -v uuid="$partuuid" '
     index(line, tolower(uuid)) && index(line, "\\efi\\systemd\\systemd-bootx64.efi") { found = 1 }
     END { exit !found }'
 
+# The loader where the firmware's entry and its fallback path look, the signed
+# one where sbctl signs it at its source.
+loader=/usr/lib/systemd/boot/efi/systemd-bootx64.efi
+[ ! -f "${MNT}${loader}.signed" ] || loader="${loader}.signed"
+cmp "${MNT}${loader}" "${MNT}/boot/EFI/systemd/systemd-bootx64.efi"
+cmp "${MNT}${loader}" "${MNT}/boot/EFI/BOOT/BOOTX64.EFI"
+
 # The system's two entries, each with its tries, and no default the loader
 # would start however often it failed.
 entries="${MNT}/boot/loader/entries"

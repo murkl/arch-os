@@ -62,6 +62,12 @@ if [ "$kind" = uki ]; then
     # Made before any snapshot: one without the keys cannot sign what it
     # rebuilds. From here sbctl's hook signs every image. Never fatal.
     arch-chroot "$MNT" sbctl create-keys || echo "Secure Boot: creating the keys failed, nothing will be signed" >&2
+
+    # systemd-boot signed at its source, which bootctl below and
+    # systemd-boot-update copy from. -s records it, so sbctl's hook signs every
+    # update of it again.
+    stub=/usr/lib/systemd/boot/efi/systemd-bootx64.efi
+    arch-chroot "$MNT" sbctl sign -s -o "${stub}.signed" "$stub" || echo "signing systemd-boot failed" >&2
 fi
 
 # Written whole on both paths: the template mkinitcpio writes on its own has no

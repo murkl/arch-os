@@ -123,8 +123,8 @@ Offered only with disk encryption. Without it the disk is readable anyway, and o
 
 | When | What | Why |
 | --- | --- | --- |
-| First | The keys, with the boot images, before any snapshot | `/var/lib/sbctl` lives in `@`, and after a rollback to a snapshot without the keys nothing rebuilt could be signed. The Recovery keeps them across a rollback |
-| Last | systemd-boot and the Recovery signed, the keys enrolled | Enrolled keys refuse whatever is not signed, so everything is signed first |
+| First | The keys, with systemd-boot and the boot images, before any snapshot | `/var/lib/sbctl` lives in `@`, and after a rollback to a snapshot without the keys nothing rebuilt could be signed. The Recovery keeps them across a rollback |
+| Last | The Recovery signed, the keys enrolled | Enrolled keys refuse whatever is not signed, so everything is signed first |
 | After | sbctl's hooks | Every new image is signed, and every update re-signs systemd-boot and the Recovery |
 
 - sbctl's mkinitcpio hook signs each boot image as it is built. `sbctl list-files` does not show them: `sbctl sign -s` records no file that is signed already
