@@ -668,6 +668,11 @@ own_home() {
 # live system from out here.
 has_command() { arch-chroot "$MNT" test -x "/usr/bin/${1}"; }
 
+# What systemd finds wrong with units of the new system, empty for none: it
+# passes over a key it cannot read with a warning and still answers 0. Their
+# manuals are not asked for, the live image carries none.
+unit_complaints() { systemd-analyze verify --man=no --root="$MNT" -- "$@" 2>&1; }
+
 # sysctl says nothing about a key it does not have, so each is looked for.
 sysctl_keys_exist() {
     local keys key

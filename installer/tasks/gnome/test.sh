@@ -2,12 +2,12 @@ arch-chroot "$MNT" systemctl is-enabled gdm.service >/dev/null
 
 # The start waits for the session in front before it counts as one that worked.
 arch-chroot "$MNT" systemctl is-enabled arch-os-session-up.service >/dev/null
-[ -z "$(systemd-analyze verify --root="$MNT" arch-os-session-up.service 2>&1)" ]
+[ -z "$(unit_complaints arch-os-session-up.service)" ]
 
 # systemd-oomd only acts on what its drop-ins mark, and systemd skips a key it
 # cannot read with a warning: verify prints it.
 arch-chroot "$MNT" systemctl is-enabled systemd-oomd.service >/dev/null
-[ -z "$(systemd-analyze verify --root="$MNT" -- -.slice user@.service 2>&1)" ]
+[ -z "$(unit_complaints -.slice user@.service)" ]
 
 # The firmware offered is as current as the catalog its timer loads.
 if has_command fwupdmgr; then
