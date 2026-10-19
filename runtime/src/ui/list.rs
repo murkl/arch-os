@@ -398,7 +398,7 @@ impl<I: Clone + PartialEq> List<I> {
                     ly,
                     s.glyphs.cursor,
                     1,
-                    s.tone(Tone::Accent),
+                    s.tone(Tone::Current),
                 );
             }
             let lead = match row.lead {
@@ -406,7 +406,7 @@ impl<I: Clone + PartialEq> List<I> {
                 other => other,
             };
             let style = match (current, row.dim) {
-                (true, _) => s.bold(Tone::Accent),
+                (true, _) => s.bold(Tone::Current),
                 (false, true) => s.tone(Tone::Muted),
                 (false, false) => s.tone(Tone::Normal),
             };

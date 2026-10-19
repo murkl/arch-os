@@ -62,7 +62,7 @@ actions:
 | `accent` | `#rrggbb`, the one color the interface is built from |
 | `console-accent` | Its slot on a 16-color console, see [The Console](#the-console) |
 | `surface` | `#rrggbb`, behind the row under the cursor. Dark gray without it |
-| `console-surface` | Its slot on a console: `red`, `green`, `yellow`, `blue`, `magenta`, `cyan` or `white`, since a console has only eight background colors. Blue without it |
+| `console-surface` | Its slot on a console: `red`, `green`, `yellow`, `blue`, `magenta`, `cyan` or `white`, since a console has only eight background colors. Blue without it. The row on it reads in white or black, whichever stands out more |
 | `status` | One line about the machine in the header. `check` is a function of `lib.sh`: exit 0 shows `pass`, anything else `fail`. Checked every `every` seconds, default 10, and right after an action ran |
 | `actions` | Actions every module may name, see [Actions](#actions). A module that names none of them has none of them |
 

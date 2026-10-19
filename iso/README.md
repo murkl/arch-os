@@ -128,7 +128,7 @@ The interface uses color slots, which the palette fills with Nord. **[➜ Nord](
 | Role | bezel | red | green | yellow | blue | magenta | cyan | white | gray | red+ | green+ | yellow+ | blue+ | magenta+ | cyan+ | white+ |
 | Nord | 0 | 11 | 14 | 13 | 10 | 15 | 8 | 4 | dim | 11 | 14 | 13 | accent | 15 | 7 | 6 |
 
-The bezel is nord0, the splash's background. Gray is the interface's own dim, `#aeb5c3`, since nord3 is unreadable on nord0. Bright blue is its accent, Arch blue lightened for nord0, `#45a9da`, as `console-accent` in `product.yaml` names it. Blue is nord10, Nord's color for the focused element: the row under the cursor sits on it, as `console-surface` says, since a console has only its first eight colors as backgrounds.
+The bezel is nord0, the splash's background. Gray is the interface's own dim, `#aeb5c3`, since nord3 is unreadable on nord0. Bright blue is its accent, Arch blue lightened for nord0, `#45a9da`, as `console-accent` in `product.yaml` names it. Blue is nord10, Nord's color for the focused element: the row under the cursor sits on it, as `console-surface` says, since a console has only its first eight colors as backgrounds. The row reads in white+ there, as the accent on blue would not.
 
 ## What the Console Can Draw
 

@@ -1281,6 +1281,11 @@ pub mod tests {
         let buffer = term.backend().buffer();
         let selection = app.ctx.style.selection;
         assert_eq!(buffer[(x, y as u16)].bg, selection, "under the label");
+        assert_eq!(
+            buffer[(x, y as u16)].fg,
+            app.ctx.style.color(crate::ui::Tone::Current),
+            "the label in the color for the surface"
+        );
         assert_eq!(buffer[(x - 2, y as u16)].bg, selection, "under the cursor");
         assert_eq!(
             buffer[(line.len() as u16 - 6, y as u16)].bg,
