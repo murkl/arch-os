@@ -112,19 +112,8 @@ fi
 # The same as in .bashrc, where the reason is written.
 export LS_COLORS="di=1;34:ln=36:so=35:pi=33:ex=32:bd=33;1:cd=33;1:su=31:sg=31:tw=34:ow=34"
 
-if [[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]]; then
+[[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]] &&
     source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
-    # Upstream bug: _zsh_autosuggest_highlight_reset matches without emulate, so
-    # EXTENDED_GLOB turns the # of a true-color style into a quantifier and the
-    # highlight bleeds onto recalled commands. The wrapper resets the options for it.
-    if (($+functions[_zsh_autosuggest_highlight_reset])); then
-        functions[_zsh_autosuggest_highlight_reset_orig]=$functions[_zsh_autosuggest_highlight_reset]
-        _zsh_autosuggest_highlight_reset() {
-            emulate -L zsh
-            _zsh_autosuggest_highlight_reset_orig "$@"
-        }
-    fi
-fi
 
 # Before the syntax highlighting, which has to wrap fzf's widgets too.
 [[ -f /usr/share/fzf/key-bindings.zsh ]] && source /usr/share/fzf/key-bindings.zsh
