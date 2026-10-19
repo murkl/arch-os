@@ -1,0 +1,40 @@
+# What the ISO adds to the Recovery's packages, which it carries as well since
+# it runs the Recovery too. What the Installer calls on the live system is
+# named, and build.sh checks it is there.
+dosfstools
+efibootmgr
+gptfdisk
+parted
+reflector
+xkeyboard-config
+
+# The processor's microcode in the ram disk, as releng loads it.
+amd-ucode
+intel-ucode
+
+# The Arch ISO's other ways online: rare Wi-Fi chips and server cards, a
+# Thunderbolt dock, an iPhone over USB and a mobile broadband modem.
+linux-firmware-other
+bolt
+usbmuxd
+modemmanager
+usb_modeswitch
+
+# root's shell and an editor on the other consoles, as releng ships them.
+zsh
+grml-zsh-config
+nano
+
+# The boot entry with speech: the screen reader, its sound and the firmware
+# that sound needs.
+alsa-utils
+brltty
+espeakup
+livecd-sounds
+sof-firmware
+linux-firmware-cirrus
+linux-firmware-ti
+
+# How e2e.sh reaches the live system and reads the interface.
+openssh
+tmux

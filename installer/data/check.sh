@@ -23,7 +23,8 @@ complain() {
 }
 
 keymaps="$(find /usr/share/kbd/keymaps -name '*.map.gz' -printf '%f\n' | sed 's/\.map\.gz$//' | sort -u)"
-fonts="$(find /usr/share/kbd/consolefonts -name '*.psf*' -printf '%f\n' | sed 's/\.psfu\?\(\.gz\)\?$//' | sort -u)"
+# kbd's own, the fonts an installation has, as options_fonts lists them.
+fonts="$(pacman -Qlq kbd | sed -n 's|^/usr/share/kbd/consolefonts/\([^/]*\)\.psfu\{0,1\}\(\.gz\)\{0,1\}$|\1|p' | sort -u)"
 layouts="$(awk '/^! / { inside = ($0 == "! layout"); next } inside && NF { print $1 }' /usr/share/X11/xkb/rules/base.lst | sort -u)"
 
 # language, the keyboard it is typed on in two spellings, and the font the

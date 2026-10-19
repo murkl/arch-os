@@ -44,13 +44,13 @@ USERNAME=tux
 PASSWORD=e2e-arch-os
 DISK=/dev/vda
 
-for tool in qemu-system-x86_64 qemu-img ssh ssh-keygen xorriso setsid tesseract; do
+for tool in qemu-system-x86_64 qemu-img ssh ssh-keygen setsid tesseract; do
     command -v "$tool" >/dev/null || { echo "Error: ${tool} not found, see README.md" >&2 && exit 1; }
 done
 [ -f "$OVMF_CODE" ] || { echo "Error: no OVMF firmware at ${OVMF_CODE} - install edk2-ovmf" >&2 && exit 1; }
 
 rm -rf "$WORK"
-mkdir -p "$WORK/seed"
+mkdir -p "$WORK"
 WORK="$(realpath "$WORK")"
 
 QEMU_PID=""
@@ -96,26 +96,16 @@ MONITOR="$(free_port)"
 
 ssh-keygen -q -t ed25519 -N '' -C arch-os-e2e -f "${WORK}/key"
 
-# The live image takes the key over cloud-init, from a volume labeled cidata.
-# Its locale module is switched off: it rewrites /etc/locale.gen.
-cat >"${WORK}/seed/user-data" <<EOF
-#cloud-config
-locale: false
-bootcmd:
-  - install -d -m 700 /root/.ssh
-  - echo '$(cat "${WORK}/key.pub")' >/root/.ssh/authorized_keys
-EOF
-printf 'instance-id: arch-os-e2e\n' >"${WORK}/seed/meta-data"
-xorriso -as mkisofs -quiet -V cidata -J -r -o "${WORK}/seed.iso" "${WORK}/seed/user-data" "${WORK}/seed/meta-data"
-
 qemu-img create -q -f qcow2 "${WORK}/disk.qcow2" "$DISK_SIZE"
 
 # The machine's own firmware variables, in setup mode until the Installer
 # enrolls its keys into them.
 cp "$OVMF_VARS" "${WORK}/vars.fd"
 
+# The live image takes the key as a systemd credential, which systemd-tmpfiles
+# writes to root's authorized_keys. https://systemd.io/CREDENTIALS/
 LIVE=(-drive "file=${ISO},if=none,id=cd,media=cdrom,readonly=on" -device "ide-cd,drive=cd,bus=ide.0,bootindex=1"
-    -drive "file=${WORK}/seed.iso,if=none,id=seed,media=cdrom,readonly=on" -device "ide-cd,drive=seed,bus=ide.1")
+    -smbios "type=11,value=io.systemd.credential:ssh.authorized_keys.root=$(cat "${WORK}/key.pub")")
 
 # Starts the machine in the background, as one of:
 #

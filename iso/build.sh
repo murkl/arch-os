@@ -48,12 +48,23 @@ PLYMOUTH_THEME_REPO="https://github.com/murkl/plymouth-theme-arch-os"
 PLYMOUTH_THEME_REF="b1b784e55b74535afb61f66b85f4c0e916497e4d"
 
 # The console's palette, slot by slot, and why each boot argument is there:
-# README.md#the-console.
+# README.md#the-console. LIVE_ARGS go on every entry that starts Linux.
 CONSOLE_RED=46,191,163,235,94,180,136,216,174,191,163,235,69,180,143,236
 CONSOLE_GRN=52,97,190,203,129,142,192,222,181,97,190,203,169,142,188,239
 CONSOLE_BLU=64,106,140,139,172,173,208,233,195,106,140,139,218,173,187,244
-CONSOLE_ARGS="fbcon=nodefer vt.default_red=${CONSOLE_RED} vt.default_grn=${CONSOLE_GRN} vt.default_blu=${CONSOLE_BLU}"
-BOOT_ARGS="quiet splash loglevel=3 rd.udev.log_level=3 vt.global_cursor_default=0 systemd.show_status=auto plymouth.ignore-serial-consoles ${CONSOLE_ARGS}"
+LIVE_ARGS="nomodeset systemd.condition_needs_update=0 fbcon=nodefer vt.default_red=${CONSOLE_RED} vt.default_grn=${CONSOLE_GRN} vt.default_blu=${CONSOLE_BLU}"
+BOOT_ARGS="quiet splash loglevel=3 rd.udev.log_level=3 vt.global_cursor_default=0 systemd.show_status=auto plymouth.ignore-serial-consoles ${LIVE_ARGS}"
+
+# On a live image every boot is the first, which starts systemd-firstboot and
+# switches on what systemd's presets name. Both images mask what that costs for
+# nothing:
+#   systemd-firstboot resets the console under the splash, and the image comes
+#     configured, so it asks nothing
+#   systemd-nsresourced answers the first user lookup and holds sysinit up for
+#     the seconds its start takes, and nothing here makes a user namespace
+#   systemd-pstore moves the installed system's crash records out of the
+#     firmware into this image's memory, which forgets them at the next start
+MASKED_UNITS="systemd-firstboot.service systemd-nsresourced.socket systemd-pstore.service"
 
 TEMP_DIR="$(mktemp -d)"
 
@@ -161,11 +172,14 @@ install_bootsplash() {
     [ -f "$hooks" ] || { echo "Error: archiso mkinitcpio config not found at '${hooks}'" && exit 1; }
     grep -q 'plymouth' "$hooks" || sed -i 's/^HOOKS=(\(base [a-z]*\)/HOOKS=(\1 plymouth/' "$hooks"
     grep -q 'plymouth' "$hooks" || { echo "Error: no HOOKS=(base ...) line in '${hooks}' to add plymouth to" && exit 1; }
+}
 
-    # On a live image every boot is the first, and systemd-firstboot resets the
-    # console under the splash. The image comes configured, so it asks nothing.
-    mkdir -p "${profile}/airootfs/etc/systemd/system"
-    ln -sf /dev/null "${profile}/airootfs/etc/systemd/system/systemd-firstboot.service"
+mask_units() {
+    local unit
+    mkdir -p "$1/airootfs/etc/systemd/system"
+    for unit in $MASKED_UNITS; do
+        ln -sf /dev/null "$1/airootfs/etc/systemd/system/${unit}"
+    done
 }
 
 # One systemd unit on tty1 replaces autologin, a shell profile and a menu script:
@@ -241,6 +255,7 @@ rm -rf "${RECOVERY_PROFILE}/airootfs/etc/systemd/system" \
 # Its packages, and what makes it a kiosk: the Recovery on tty1, started again
 # whenever it ends, with what the Installer left it and no login anywhere.
 cp -r recovery/. "$RECOVERY_PROFILE"
+cp pacman.conf "$RECOVERY_PROFILE/"
 
 install_arch_os "$RECOVERY_PROFILE"
 
@@ -252,6 +267,7 @@ mkdir -p "${RECOVERY_PROFILE}/airootfs/etc/systemd/system/arch-os-seed.service.d
 printf '[Service]\nEnvironment=BOOT_TRIES=%s\n' "$tries" >"${RECOVERY_PROFILE}/airootfs/etc/systemd/system/arch-os-seed.service.d/tries.conf"
 make_executable "$RECOVERY_PROFILE"
 install_bootsplash "$RECOVERY_PROFILE" "Booting Recovery..."
+mask_units "$RECOVERY_PROFILE"
 start_on_tty1 "$RECOVERY_PROFILE"
 name_image "$RECOVERY_PROFILE" arch-os-recovery
 
@@ -293,8 +309,9 @@ case "$compared" in
 esac
 ${SUDO} rm -rf "$readback"
 
-# Every command its scripts call is on it, and recovery/pacman.conf took no
-# module a repair may load.
+# Every command its scripts call is on it, and pacman.conf took no module a
+# repair may load. The ISO has the same kernel under the same pacman.conf, so
+# that holds for an installation too.
 for command in arch-chroot blkid blockdev btrfs cryptsetup curl fuser ip iwctl loadkeys localectl lsblk mount mountpoint setfont sha256sum swapoff tar umount; do
     [ -x "${recovery_root}/usr/bin/${command}" ] || { echo "Error: the Recovery has no ${command}" >&2 && exit 1; }
 done
@@ -302,6 +319,9 @@ done
 # network, and the clock HTTPS needs, which a dead battery sets years back.
 for unit in arch-os.service systemd-networkd.service systemd-resolved.service systemd-timesyncd.service; do
     ${SUDO} systemctl --root="$recovery_root" is-enabled -q "$unit" || { echo "Error: the Recovery does not start ${unit}" >&2 && exit 1; }
+done
+for unit in $MASKED_UNITS; do
+    [ "$(${SUDO} systemctl --root="$recovery_root" is-enabled "$unit")" = masked ] || { echo "Error: the Recovery does not mask ${unit}" >&2 && exit 1; }
 done
 modules="$(find "${recovery_root}/usr/lib/modules" -name '*.ko*')"
 deps="$(while read -r module; do
@@ -320,7 +340,7 @@ lost="$(awk -F'\t' '
     }' <(printf '%s\n' "$modules" | sed 's|.*/||; s/\.ko.*//; s/-/_/g') <(printf '%s\n' "$deps"))"
 unexpected="$(grep -vE '^kernel/drivers/(accel|media|vfio)/' <<<"$lost" || true)"
 if [ -n "$unexpected" ]; then
-    printf 'Error: recovery/pacman.conf leaves out what these need:\n%s\n' "$unexpected" >&2
+    printf 'Error: pacman.conf leaves out what these need:\n%s\n' "$unexpected" >&2
     exit 1
 fi
 
@@ -339,15 +359,14 @@ diff -r "${TEMP_DIR}/partition" "${TEMP_DIR}/partition-readback" || {
     exit 1
 }
 
-# copytoram frees the disk for the repair. nomodeset draws on the firmware's
-# screen, which needs no graphics driver. The boot menu shows its os-release.
+# copytoram frees the disk for the repair. The boot menu shows its os-release.
 cat >"${TEMP_DIR}/os-release" <<EOF
 NAME="Arch OS Recovery"
 PRETTY_NAME="Arch OS Recovery"
 ID=arch-os-recovery
 IMAGE_VERSION=${VERSION}
 EOF
-printf '%s' "archisobasedir=arch archisodevice=UUID=${uuid} copytoram=y cms_verify=y nomodeset ${BOOT_ARGS}" >"${TEMP_DIR}/cmdline"
+printf '%s' "archisobasedir=arch archisodevice=UUID=${uuid} copytoram=y cms_verify=y ${BOOT_ARGS}" >"${TEMP_DIR}/cmdline"
 ukify build \
     --linux="${netboot}/boot/x86_64/vmlinuz-linux" \
     --initrd="${netboot}/boot/x86_64/initramfs-linux.img" \
@@ -376,41 +395,55 @@ du -h "${RECOVERY_DIR}/"*
 echo "### Build the ISO"
 cp -r /usr/share/archiso/configs/releng/. "$ISO_PROFILE"
 
-# The keyboard layouts the Installer offers: localectl lists them from it.
-grep -qxF xkeyboard-config "${ISO_PROFILE}/packages.x86_64" || echo xkeyboard-config >>"${ISO_PROFILE}/packages.x86_64"
+# Arch OS's packages instead of releng's rescue kit: the Recovery's, since the
+# ISO runs it too, and what packages.x86_64 adds. Both images leave out the same.
+cat recovery/packages.x86_64 packages.x86_64 >"${ISO_PROFILE}/packages.x86_64"
+cp pacman.conf "$ISO_PROFILE/"
 
-# pacstrap refuses the whole list over one name the repositories dropped, so
-# that name goes, said out loud.
-echo "### Check Packages"
-ISO_PACKAGES="${ISO_PROFILE}/packages.x86_64"
-DROPPED="$(comm -23 \
-    <(grep -v '^[[:space:]]*\(#\|$\)' "$ISO_PACKAGES" | sort -u) \
-    <({ pacman -Slq && pacman -Sgq; } | sort -u))"
-if [ -n "$DROPPED" ]; then
-    echo "not in the repositories, dropped: $(tr '\n' ' ' <<<"$DROPPED")"
-    grep -vxF "$DROPPED" "$ISO_PACKAGES" >"${TEMP_DIR}/packages" && mv "${TEMP_DIR}/packages" "$ISO_PACKAGES"
-fi
+# What releng starts and ships for the packages left out, and its Memtest86+
+# entry. And iwd, which starts once a Wi-Fi card is asked for, as on the
+# Recovery: wifi_station in lib.sh, iwctl through D-Bus.
+airootfs="${ISO_PROFILE}/airootfs"
+rm -r "${airootfs}/etc/systemd/system/cloud-init.target.wants" \
+    "${airootfs}/etc/systemd/system/sockets.target.wants/pcscd.socket" \
+    "${airootfs}/usr/local/bin/Installation_guide" \
+    "${ISO_PROFILE}/efiboot/loader/entries/03-archiso-memtest86+x64.conf"
+for unit in hv_fcopy_daemon hv_kvp_daemon hv_vss_daemon vboxservice vmtoolsd vmware-vmblock-fuse iwd; do
+    rm "${airootfs}/etc/systemd/system/multi-user.target.wants/${unit}.service"
+done
+profiledef "$ISO_PROFILE" "unset 'file_permissions[/usr/local/bin/Installation_guide]'"
+
+# The ram disk without what a boot from a stick never uses: the graphics drivers
+# nomodeset leaves unloaded, the network boot and syslinux's memdisk. zstd at
+# -19 unpacks a second faster than xz and stays small for the firmware that reads
+# it off the stick. Written against releng's line, so a hook it adds stops here.
+hooks="${airootfs}/etc/mkinitcpio.conf.d/archiso.conf"
+grep -qxF 'HOOKS=(base udev microcode modconf kms memdisk archiso archiso_loop_mnt archiso_pxe_common archiso_pxe_nbd archiso_pxe_http archiso_pxe_nfs block filesystems keyboard)' "$hooks" || {
+    echo "Error: releng's HOOKS in ${hooks} are not the ones the ISO leaves out of" >&2
+    exit 1
+}
+printf '%s\n' 'HOOKS=(base udev microcode modconf archiso archiso_loop_mnt block filesystems keyboard)' \
+    'COMPRESSION="zstd"' 'COMPRESSION_OPTIONS=(-19)' >>"$hooks"
 
 # Without the Recovery beside it, the Installer fetches it: recovery_image in
 # lib.sh.
 install_arch_os "$ISO_PROFILE"
 if [ "$ISO_RECOVERY" = "true" ]; then
-    mkdir -p "${ISO_PROFILE}/airootfs/opt/arch-os-recovery"
-    cp "${RECOVERY_DIR}/recovery.img" "${RECOVERY_DIR}/recovery.efi" "${ISO_PROFILE}/airootfs/opt/arch-os-recovery/"
+    mkdir -p "${airootfs}/opt/arch-os-recovery"
+    cp "${RECOVERY_DIR}/recovery.img" "${RECOVERY_DIR}/recovery.efi" "${airootfs}/opt/arch-os-recovery/"
 fi
 make_executable "$ISO_PROFILE"
 install_bootsplash "$ISO_PROFILE" "Booting Installer..."
+mask_units "$ISO_PROFILE"
 start_on_tty1 "$ISO_PROFILE"
 
-# Networking stays as the Arch ISO ships it.
-
-# The splash and a quiet boot on the entry that starts by itself, the console's
-# palette and font on every entry that starts Linux, the screen reader's too.
+# The splash and a quiet boot on the entry that starts by itself, LIVE_ARGS on
+# every entry that starts Linux, the screen reader's too.
 entries="${ISO_PROFILE}/efiboot/loader/entries"
 grep -qs '^linux ' "$entries"/01-archiso-linux*.conf || { echo "Error: releng has no boot entry 01-archiso-linux*.conf to add the boot arguments to" && exit 1; }
 for entry in "$entries"/*.conf; do
     grep -q '^linux ' "$entry" || continue
-    args="$CONSOLE_ARGS"
+    args="$LIVE_ARGS"
     case "${entry##*/}" in 01-archiso-linux*) args="$BOOT_ARGS" ;; esac
     grep -q 'fbcon=nodefer' "$entry" || sed -i "/^options / s/\$/ ${args}/" "$entry"
     grep -q 'fbcon=nodefer' "$entry" || { echo "Error: ${entry} has no options line to add the boot arguments to" && exit 1; }
@@ -461,6 +494,36 @@ profiledef "$ISO_PROFILE" "iso_label=\"${ISO_LABEL}\""
 
 echo "### Make Arch OS ISO"
 ${SUDO} mkarchiso -v -w "${WORK_DIR}/iso" -o "${PROFILES_DIR}/out/iso" "$ISO_PROFILE"
+
+# Every command the Installer calls on the live system beside the Recovery's,
+# root's shell and editor on the other consoles, and the data its lists come
+# from: glibc's locales and xkb's layouts, which pacman.conf keeps. Read inside
+# the image, where xkb's absolute link points.
+iso_root="${WORK_DIR}/iso/x86_64/airootfs"
+for command in bootctl efibootmgr genfstab mkfs.btrfs mkfs.fat nano pacstrap partprobe reflector sgdisk sshd timedatectl tmux udevadm wipefs zsh; do
+    [ -x "${iso_root}/usr/bin/${command}" ] || { echo "Error: the ISO has no ${command}" >&2 && exit 1; }
+done
+for file in /usr/share/i18n/SUPPORTED /usr/share/X11/xkb/rules/base.lst; do
+    ${SUDO} chroot "$iso_root" test -s "$file" || { echo "Error: the ISO has no ${file}" >&2 && exit 1; }
+done
+# What it starts by itself: the Installer, the keyring the Installer waits for
+# with the clock that keyring needs, the network, and the ssh e2e.sh reaches it by.
+for unit in arch-os.service pacman-init.service systemd-time-wait-sync.service systemd-timesyncd.service systemd-networkd.service systemd-resolved.service sshd.service; do
+    ${SUDO} systemctl --root="$iso_root" is-enabled -q "$unit" || { echo "Error: the ISO does not start ${unit}" >&2 && exit 1; }
+done
+for unit in $MASKED_UNITS; do
+    [ "$(${SUDO} systemctl --root="$iso_root" is-enabled "$unit")" = masked ] || { echo "Error: the ISO does not mask ${unit}" >&2 && exit 1; }
+done
+# No link of releng's points at a unit of a package the list left out.
+dangling="$(find "${iso_root}/etc/systemd/system" -type l -printf '%P\t%l\n' | while IFS=$'\t' read -r link target; do
+    case "$target" in
+    /dev/null) continue ;;
+    /*) target="${iso_root}${target}" ;;
+    *) target="${iso_root}/etc/systemd/system/$(dirname "$link")/${target}" ;;
+    esac
+    [ -e "$target" ] || printf '%s ' "$link"
+done)"
+[ -z "$dangling" ] || { echo "Error: these links of the ISO point at no unit: ${dangling}" >&2 && exit 1; }
 
 # ////////////////////////////////////////////////////////////////////////////
 # SHIP

@@ -21,15 +21,10 @@ if [ -e /dev/mapper/cryptroot ]; then
     cryptsetup close cryptroot
 fi
 
-# An LVM group or a software RAID the live image assembled on its own off the
-# old contents holds the partitions open. lvm warns about every descriptor it
-# inherits, the runtime's error channel among them.
-LVM_SUPPRESS_FD_WARNINGS=1 vgchange -an || true
-mdadm --stop --scan || true
-
-# Anything else still holding a partition (opened by hand, swap on it) keeps
-# the kernel from reading the new table. Raw output joins two mount points of
-# one partition with an escaped newline.
+# Anything still holding a partition (opened by hand, swap on it) keeps the
+# kernel from reading the new table. The Arch OS ISO carries neither lvm2 nor
+# mdadm, so it assembles no old group or array off the disk by itself. Raw
+# output joins two mount points of one partition with an escaped newline.
 held="$(lsblk -nrpo NAME,TYPE,MOUNTPOINTS "$ARCH_OS_DISK" | awk -F'[ ]' '
     ($2 != "disk" && $2 != "part") || $3 != "" {
         gsub(/\\x0a/, ", ", $3)

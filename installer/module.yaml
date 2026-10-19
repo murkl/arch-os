@@ -128,7 +128,7 @@ settings:
       apply: apply_vconsole_keymap()
 
     - name: ARCH_OS_VCONSOLE_FONT
-      type: open-list
+      type: list
       title: Console font
       description: |
         The font of the text console. On auto it suits the language. Larger
