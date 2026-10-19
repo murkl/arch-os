@@ -1,22 +1,16 @@
-# The boot chain signed with this machine's own keys, which the loader task
-# made. Never fatal: a machine without Secure Boot boots perfectly well.
+# The Recovery signed with this machine's own keys, which the loader task made
+# and signed systemd-boot and the boot images with, then the keys enrolled.
+# Never fatal: a machine without Secure Boot boots perfectly well.
 # docs/REFERENCE.md#secure-boot
 # https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot
 
-# -s records each file, and sbctl's hook signs them again on every update.
-# systemd-boot is signed at its source, which systemd-boot-update copies from.
-# The boot images are left to sbctl's mkinitcpio hook, which signs each as it
-# is built. -s records no file signed already (sbctl 0.18, Sign in sbctl.go).
-stub=/usr/lib/systemd/boot/efi/systemd-bootx64.efi
-arch-chroot "$MNT" sbctl sign -s -o "${stub}.signed" "$stub" || echo "signing systemd-boot failed" >&2
-
-# The Recovery starts from the same menu, so it carries the same keys.
+# The Recovery starts from the same menu, so it carries the same keys. -s
+# records it, and sbctl's hook signs it again on every update. It records no
+# file signed already (sbctl 0.18, Sign in sbctl.go), which leaves the boot
+# images to sbctl's mkinitcpio hook, which signs each as it is built.
 if [ -f "${MNT}${RECOVERY_EFI}" ]; then
     arch-chroot "$MNT" sbctl sign -s "$RECOVERY_EFI" || echo "signing the Recovery failed" >&2
 fi
-
-# The signed loader over the unsigned one on the EFI partition.
-arch-chroot "$MNT" bootctl --esp-path=/boot install || echo "reinstalling the signed systemd-boot failed" >&2
 
 # Keys are enrolled only in setup mode, read from the UEFI variable: the first
 # four bytes are attributes, the fifth the value.

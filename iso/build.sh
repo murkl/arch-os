@@ -3,7 +3,7 @@
 # patched to boot into Arch OS, out of the program `make build` left. See
 # README.md.
 #
-#   [ISO_RECOVERY=true|false] build.sh <arch-os> <dist-dir>
+#   build.sh <arch-os> <dist-dir>
 set -eu
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -200,18 +200,6 @@ name_image() { profiledef "$1" "iso_name=\"$2\"" "iso_version=\"${VERSION}\""; }
 
 echo "### Initialize Build"
 
-# The Recovery inside the ISO, or left for the Installer to fetch from the
-# release page: a pre-release has no release page, and a release's ISO stays
-# under GitHub's 2 GiB a file. ISO_RECOVERY decides by hand.
-case "$VERSION" in
-*-*) ISO_RECOVERY="${ISO_RECOVERY:-true}" ;;
-*) ISO_RECOVERY="${ISO_RECOVERY:-false}" ;;
-esac
-[[ $ISO_RECOVERY =~ ^(true|false)$ ]] || {
-    echo "Error: ISO_RECOVERY is '${ISO_RECOVERY}', not true or false" >&2
-    exit 1
-}
-
 # The tools are packages rather than something to install behind somebody's
 # back: a build that would change the machine it runs on says so instead.
 for tool in mkarchiso:archiso ukify:systemd-ukify mkfs.erofs:erofs-utils fsck.erofs:erofs-utils diff:diffutils modinfo:kmod; do
@@ -388,6 +376,14 @@ done
 
 du -h "${RECOVERY_DIR}/"*
 
+# The partition the Installer makes for it holds it, RECOVERY_MIB in lib.sh.
+room="$(. ../lib.sh && printf '%s' "$((RECOVERY_MIB * 1048576))")"
+size="$(stat -c %s "${RECOVERY_DIR}/recovery.img")"
+[ "$size" -le "$room" ] || {
+    echo "Error: recovery.img takes ${size} bytes, more than the ${room} of the partition the Installer makes for it" >&2
+    exit 1
+}
+
 # ////////////////////////////////////////////////////////////////////////////
 # THE ISO
 # ////////////////////////////////////////////////////////////////////////////
@@ -425,13 +421,11 @@ grep -qxF 'HOOKS=(base udev microcode modconf kms memdisk archiso archiso_loop_m
 printf '%s\n' 'HOOKS=(base udev microcode modconf archiso archiso_loop_mnt block filesystems keyboard)' \
     'COMPRESSION="zstd"' 'COMPRESSION_OPTIONS=(-19)' >>"$hooks"
 
-# Without the Recovery beside it, the Installer fetches it: recovery_image in
-# lib.sh.
+# The Recovery beside the Installer, which writes it to the disk from where
+# RECOVERY_IMAGE in lib.sh names.
 install_arch_os "$ISO_PROFILE"
-if [ "$ISO_RECOVERY" = "true" ]; then
-    mkdir -p "${airootfs}/opt/arch-os-recovery"
-    cp "${RECOVERY_DIR}/recovery.img" "${RECOVERY_DIR}/recovery.efi" "${airootfs}/opt/arch-os-recovery/"
-fi
+recovery_image="$(. ../lib.sh && printf '%s' "$RECOVERY_IMAGE")"
+install -D -m 644 -t "${airootfs}${recovery_image}" "${RECOVERY_DIR}/recovery.img" "${RECOVERY_DIR}/recovery.efi"
 make_executable "$ISO_PROFILE"
 install_bootsplash "$ISO_PROFILE" "Booting Installer..."
 mask_units "$ISO_PROFILE"
@@ -541,6 +535,15 @@ tar -cf "${RECOVERY_DIR}-x86_64.tar" --owner=0 --group=0 --sort=name -C "${DIST_
 for file in recovery.img recovery.efi; do
     tar -xOf "${RECOVERY_DIR}-x86_64.tar" "${RECOVERY_DIR##*/}/${file}" | cmp - "${RECOVERY_DIR}/${file}" || {
         echo "Error: ${RECOVERY_DIR##*/}-x86_64.tar does not read back ${file}" >&2
+        exit 1
+    }
+done
+
+# Both go on the release page, which takes no file of 2 GiB or more.
+for file in "${DIST_DIR}/arch-os-${VERSION}-x86_64.iso" "${RECOVERY_DIR}-x86_64.tar"; do
+    size="$(stat -c %s "$file")"
+    [ "$size" -lt $((2 * 1024 * 1024 * 1024)) ] || {
+        echo "Error: ${file##*/} takes ${size} bytes, and GitHub takes no release file of 2 GiB or more" >&2
         exit 1
     }
 done

@@ -29,7 +29,7 @@ Each stage lists its tasks under `stages:` in `module.yaml`. The stages run in o
 
 | Stage | Tasks |
 | --- | --- |
-| `prepare` | `mirrors`, `recovery-image`, then `partition`, the one task that destroys data, once everything that can fail has run |
+| `prepare` | `mirrors`, then `partition`, the one task that destroys data, once everything that can fail has run |
 | `system` | `pacstrap`, then `config`, `network`, `tweaks`, `bootloader`, `recovery` and `user`: the system on disk, configured and bootable |
 | `features` | One task per setting that turns something on: `multilib`, `aur`, `bootsplash`, `containers`, `editor`, `firewall`, `housekeeping`, `manager`, `shell`, `ssh`, `vm-guest` |
 | `desktop` | `gnome` first, then `backup`, `browser`, `flatpak`, `graphics`, `manager-app`, `recovery-app`, `samba` |

@@ -123,8 +123,8 @@ Offered only with disk encryption. Without it the disk is readable anyway, and o
 
 | When | What | Why |
 | --- | --- | --- |
-| First | The keys, with the boot images, before any snapshot | `/var/lib/sbctl` lives in `@`, and after a rollback to a snapshot without the keys nothing rebuilt could be signed. The Recovery keeps them across a rollback |
-| Last | systemd-boot and the Recovery signed, the keys enrolled | Enrolled keys refuse whatever is not signed, so everything is signed first |
+| First | The keys, with systemd-boot and the boot images, before any snapshot | `/var/lib/sbctl` lives in `@`, and after a rollback to a snapshot without the keys nothing rebuilt could be signed. The Recovery keeps them across a rollback |
+| Last | The Recovery signed, the keys enrolled | Enrolled keys refuse whatever is not signed, so everything is signed first |
 | After | sbctl's hooks | Every new image is signed, and every update re-signs systemd-boot and the Recovery |
 
 - sbctl's mkinitcpio hook signs each boot image as it is built. `sbctl list-files` does not show them: `sbctl sign -s` records no file that is signed already
@@ -176,7 +176,7 @@ Enough for a usable system, little enough to need no upkeep. Everything else fol
 | `base`, `linux-zen`, `mkinitcpio`, `sudo`, `zram-generator`, `networkmanager`, `btrfs-progs`, `snapper` | The system itself |
 | `dosfstools` | systemd checks the EFI partition at every boot. Boot counting writes there, and FAT keeps no journal |
 | The chosen editor, `man-db`, `man-pages`, `openssh` | `base` includes none of them |
-| `linux-firmware` | Left out in a virtual machine without a passed-through card: its drivers are in the kernel |
+| `linux-firmware`, `sof-firmware` | Left out in a virtual machine without a passed-through card: its drivers are in the kernel. `sof-firmware` is the sound of many laptops |
 
 - A Wi-Fi network joined in the Installer becomes a NetworkManager connection, so the first boot is online. An 802.1X network must be joined again
 - The graphics driver is detected in sysfs, card by card. Mesa always, with `vkd3d`, `mesa-utils` and `vulkan-tools`. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Hardware_video_acceleration)**
@@ -358,7 +358,7 @@ It asks for the keyboard and the disk, on its own partition for neither. Everyth
 
 ### The Recovery Partition
 
-The Recovery of the release that installed the system, built with that release from Arch's `baseline` profile: kernel, `base`, `btrfs-progs`, `arch-install-scripts`, Plymouth, the Recovery and `iwd` with Wi-Fi firmware. A release ISO leaves it out to stay under GitHub's 2 GiB limit. The Installer downloads `arch-os-X.Y.Z-recovery-x86_64.tar` from its release and verifies it before touching the disk.
+The Recovery of the release that installed the system, built with that release from Arch's `baseline` profile: kernel, `base`, `btrfs-progs`, `arch-install-scripts`, Plymouth, the Recovery and `iwd` with Wi-Fi firmware. The ISO carries it beside the Installer, which writes it to the disk.
 
 | File | Goes to | What it is |
 | --- | --- | --- |

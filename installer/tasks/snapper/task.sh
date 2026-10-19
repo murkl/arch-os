@@ -22,10 +22,6 @@ arch-chroot "$MNT" snapper --no-dbus -c root set-config "${settings[@]}"
 # set-config leaves it on.
 arch-chroot "$MNT" systemctl disable snapper-timeline.timer
 
-# btrfs commits freed extents on its own schedule, and df shows the disk full
-# until it does. ExecStopPost, since the unit is Type=simple.
-mkdir -p "${MNT}/etc/systemd/system/snapper-cleanup.service.d"
-render "$(where)/sync.conf" >"${MNT}/etc/systemd/system/snapper-cleanup.service.d/sync.conf"
 arch-chroot "$MNT" systemctl enable snapper-cleanup.timer
 
 chroot_pacman_install snap-pac

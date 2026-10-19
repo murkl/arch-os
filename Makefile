@@ -44,11 +44,6 @@ ISO_FONT   := $(ISO_DIR)/font.sh
 # What `make e2e` installs: core or desktop.
 START ?= core
 
-# The Recovery inside the ISO, or left for the Installer to fetch from the
-# release page. build.sh decides by the version, `make iso ISO_RECOVERY=true`
-# by hand.
-ISO_RECOVERY ?=
-
 # The newest images, read when used, so `make iso && make smoke` needs no
 # argument.
 ISO      ?= $(shell ls -t $(DIST_DIR)/*.iso 2>/dev/null | head -1)
@@ -125,7 +120,7 @@ run:
 # The images, out of the program: the Recovery as a folder and as one file for
 # the release page, then the ISO that carries it.
 image:
-	$(if $(ISO_RECOVERY),ISO_RECOVERY=$(ISO_RECOVERY)) $(ISO_BUILD) $(BIN) $(DIST_DIR)
+	$(ISO_BUILD) $(BIN) $(DIST_DIR)
 
 # The whole way there, in order: the images are made of the program.
 iso: build .WAIT image

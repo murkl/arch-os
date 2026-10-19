@@ -52,10 +52,9 @@ REPO="murkl/arch-os"
 # The folder lib.sh and the modules lie in.
 product_dir() { dirname "${BASH_SOURCE[0]}"; }
 
-# Releases as GitHub describes them: the newest hundred, or the one of version
-# $1. Fails where it is out of reach.
+# The newest hundred releases as GitHub describes them. Fails where it is out of
+# reach.
 releases_json() { fetch_url -sS --max-time 20 "https://api.github.com/repos/${REPO}/releases?per_page=100"; }
-release_json() { fetch_url -sS --max-time 20 "https://api.github.com/repos/${REPO}/releases/tags/$1"; }
 
 # Every download in the releases' JSON on stdin whose name ends in $1, with its
 # sha256, a line each. One field to a line, however GitHub lays the JSON out.
@@ -522,15 +521,9 @@ boot_kind() { if secure_boot_wanted; then echo uki; else echo image; fi; }
 # The images the firmware starts: a check against the other two checks nothing.
 boot_images() { images_of "$(boot_kind)"; }
 
-# The Recovery image: on the Arch OS ISO already, else fetched into /tmp. How it
-# boots: docs/REFERENCE.md
-recovery_image() {
-    if [ -d /opt/arch-os-recovery ]; then
-        echo /opt/arch-os-recovery
-    else
-        echo /tmp/arch-os-recovery
-    fi
-}
+# The Recovery image, which the ISO carries beside the Installer. How it boots:
+# docs/REFERENCE.md
+export RECOVERY_IMAGE=/opt/arch-os-recovery
 
 # Where it lands on the EFI partition, listed by systemd-boot on its own.
 export RECOVERY_EFI=/boot/EFI/Linux/arch-os-recovery.efi
@@ -667,6 +660,11 @@ own_home() {
 # Asked of the new system: an absolute link in its /usr/bin points into the
 # live system from out here.
 has_command() { arch-chroot "$MNT" test -x "/usr/bin/${1}"; }
+
+# What systemd finds wrong with units of the new system, empty for none: it
+# passes over a key it cannot read with a warning and still answers 0. Their
+# manuals are not asked for, the live image carries none.
+unit_complaints() { systemd-analyze verify --man=no --root="$MNT" -- "$@" 2>&1; }
 
 # sysctl says nothing about a key it does not have, so each is looked for.
 sysctl_keys_exist() {

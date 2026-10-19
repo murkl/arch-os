@@ -121,4 +121,6 @@ chmod 1777 "${MNT}/var/tmp"
 # systemd would make subvolumes of these on first boot, noise in every listing.
 mkdir -p "${MNT}/var/lib/portables" "${MNT}/var/lib/machines"
 
-mount -v --mkdir -t vfat "$boot_part" "${MNT}/boot"
+# Root's alone, the kernel and the signed images on it: genfstab writes the
+# options it finds mounted.
+mount -v --mkdir -t vfat -o fmask=0077,dmask=0077 "$boot_part" "${MNT}/boot"

@@ -2,10 +2,9 @@
 # EFI/Linux, where systemd-boot lists it by itself. Nothing is built here.
 # How it boots: docs/REFERENCE.md#the-recovery-partition
 
-image="$(recovery_image)"
-dd if="${image}/recovery.img" of="$(recovery_partition "$ARCH_OS_DISK")" bs=4M conv=fsync status=none
+dd if="${RECOVERY_IMAGE}/recovery.img" of="$(recovery_partition "$ARCH_OS_DISK")" bs=4M conv=fsync status=none
 mkdir -p "${MNT}/boot/EFI/Linux"
-cp "${image}/recovery.efi" "${MNT}${RECOVERY_EFI}"
+cp "${RECOVERY_IMAGE}/recovery.efi" "${MNT}${RECOVERY_EFI}"
 
 # A firmware entry for a keyboard that never brings up the loader's menu. Not in
 # the boot order: an Insyde firmware (Dell XPS L421X) moves it to the front.

@@ -12,7 +12,6 @@ make run MODULE=recovery     # ...the Recovery
 make run ARGS=--dry-run      # ...without touching the machine
 make build                   # the program, with every module inside it
 make iso                     # the program, the Recovery image and the ISO that carries it
-make iso ISO_RECOVERY=false  # ...the ISO as a release builds it, which fetches the Recovery
 make image                   # ...only the images, from the program already built
 make smoke                   # boot the newest of both and work their first page with the keyboard
 make e2e                     # install the newest ISO, boot, repair, boot again, start and rewrite its Recovery
@@ -176,12 +175,12 @@ END_COMMIT_OVERRIDE
 | --- | --- | --- |
 | `Title` | A pull request is opened, pushed to or edited | Checks the title and the base branch |
 | `Check` | Every pull request | `make check` |
-| `Image` | A pull request that changes the image, and a release | Builds the program, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO. Then starts its Recovery and writes it again from the ISO |
+| `Image` | A pull request that changes the image, a release, Monday morning and by hand | Builds the program, the Recovery image and the ISO, boots both, and installs, repairs and boots a Core from the ISO. Then starts its Recovery and writes it again from the ISO. On Monday and by hand it also installs a Desktop |
 | `Release` | A push to `main` | The release pull request, or once that is merged, the tag and the draft page |
 | `Publish` | A release | Attaches the files `Image` booted to the page and publishes it |
 
 - A merge into `main` runs `Release` alone: its pull request has passed `Check` and `Image` already
-- The Desktop profile is tested by hand: `make e2e START=desktop`
+- The Desktop profile is installed on Monday's Arch and by hand, under **Run workflow** in the Actions tab, and locally with `make e2e START=desktop`
 
 ## Releasing
 
@@ -192,7 +191,7 @@ Nothing is typed and nothing is tagged by hand.
 
 - Merges collect in the release pull request until it is merged. When to release is a decision, not a schedule
 - The release pull request, the tag and the release page are made with the secret `RELEASE_TOKEN` of the environment `release`, which only `main` may use: a fine-grained personal access token of the account with Contents and Pull requests set to read and write. `.github/release-token.sh` stores it. The workflow's own token cannot do this, since GitHub holds the checks of a bot's pull request until someone approves its runs. When the token expires, `Release` fails and reports it
-- The page carries `arch-os-2.1.0-x86_64.iso` and `arch-os-2.1.0-recovery-x86_64.tar`, each with the sha256 GitHub shows beside it. The ISO leaves the Recovery out to stay under GitHub's 2 GiB per file: its Installer fetches the `.tar`, and an installed Recovery updates itself from it
+- The page carries `arch-os-2.1.0-x86_64.iso` and `arch-os-2.1.0-recovery-x86_64.tar`, each with the sha256 GitHub shows beside it. The ISO carries the Recovery, and an installed Recovery updates itself from the `.tar`
 - Every other build is named after a pre-release of the next patch: `arch-os-2.0.1-dev-x86_64.iso`. `make build VERSION=2.1.0` names a build after any version, which it stamps into the program
 
 **Note:** _The page stays a draft until every file is attached. A run that fails on the way leaves a draft: re-run its failed jobs._

@@ -15,6 +15,8 @@ pub struct Style {
     pub accent: Color,
     /// Behind the row under the cursor.
     pub selection: Color,
+    /// Text on the selection, Tone::Current.
+    on_selection: Color,
     pub success: Color,
     pub warning: Color,
     pub error: Color,
@@ -161,6 +163,27 @@ pub fn nearest(c: Rgb) -> Color {
         .unwrap_or(Color::Cyan)
 }
 
+/// White or black, whichever stands out more from a slot's stock color, as WCAG weighs it.
+fn contrast(slot: Color) -> Color {
+    let Some((_, Rgb(r, g, b))) = STOCK.iter().find(|(c, _)| *c == slot) else {
+        return Color::White;
+    };
+    let linear = |v: &u8| {
+        let c = f64::from(*v) / 255.0;
+        if c <= 0.04045 {
+            c / 12.92
+        } else {
+            ((c + 0.055) / 1.055).powf(2.4)
+        }
+    };
+    let lum = 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+    if (lum + 0.05) / 0.05 > 1.05 / (lum + 0.05) {
+        Color::Black
+    } else {
+        Color::White
+    }
+}
+
 /// A slot by the name the product writes: the seven colors, then their bright halves.
 pub fn slot(name: &str) -> Option<Color> {
     let i = crate::spec::SLOTS.iter().position(|s| *s == name)?;
@@ -194,10 +217,14 @@ impl Style {
                 .and_then(slot)
                 .unwrap_or(Color::Blue),
         };
+        // On a console bold is a brighter slot, and the accent's is about as bright as the
+        // surface behind it: the row under the cursor reads in white or black there.
+        let on_selection = if console { contrast(selection) } else { accent };
         Style {
             muted: Color::DarkGray,
             accent,
             selection,
+            on_selection,
             success: Color::Green,
             warning: Color::Yellow,
             error: Color::Red,
@@ -211,6 +238,7 @@ impl Style {
             Tone::Normal => Color::Reset,
             Tone::Muted => self.muted,
             Tone::Accent => self.accent,
+            Tone::Current => self.on_selection,
             Tone::Ok => self.success,
             Tone::Warn => self.warning,
             Tone::Error => self.error,
@@ -284,9 +312,21 @@ mod tests {
                 .contains(Modifier::BOLD)
         );
         assert_eq!(console.selection, Color::Blue);
+        assert_eq!(
+            console.color(Tone::Current),
+            Color::White,
+            "the accent's slot reads badly on blue"
+        );
+        assert_eq!(
+            contrast(Color::Gray),
+            Color::Black,
+            "and white on white not at all"
+        );
         let terminal = Style::new(&product(Some("bright-blue")), false);
         assert_eq!(terminal.accent, Color::Rgb(0x17, 0x93, 0xd1));
         assert_eq!(terminal.selection, Color::Rgb(0x3b, 0x42, 0x52));
+        assert_eq!(terminal.bold(Tone::Current), terminal.bold(Tone::Accent));
+        assert_eq!(terminal.tone(Tone::Current), terminal.tone(Tone::Accent));
         assert!(
             terminal
                 .bold(Tone::Normal)

@@ -205,6 +205,8 @@ pub enum Tone {
     Normal,
     Muted,
     Accent,
+    /// The row under the cursor and its mark, on the surface.
+    Current,
     Ok,
     Warn,
     Error,

@@ -56,10 +56,9 @@ From the repository root:
 ```
 make iso                     # the program, then both images in dist/
 make image                   # ...only the images, from the program already built
-make iso ISO_RECOVERY=false  # ...the ISO as a release builds it, without the Recovery
 ```
 
-**Note:** _A pre-release ISO carries the Recovery, since there is no release page to fetch it from. A release ISO does not, which keeps it under GitHub's 2 GiB per file. `build.sh` decides by the version the program reports, `ISO_RECOVERY` by hand. For an ISO without it, `e2e.sh` provides the Recovery built beside it instead of the download._
+**Note:** _The build fails where the Recovery outgrows the partition the Installer makes for it, or a file for the release page reaches GitHub's 2 GiB per file._
 
 **Note:** _The images are named after the version the program reports: the ISO, and the Recovery as a folder and as a `.tar` for the release page. The ISO label is that version in uppercase. The build needs `archiso`, `systemd-ukify`, `erofs-utils`, `diffutils`, `kbd` and `terminus-font`._
 
@@ -129,7 +128,7 @@ The interface uses color slots, which the palette fills with Nord. **[➜ Nord](
 | Role | bezel | red | green | yellow | blue | magenta | cyan | white | gray | red+ | green+ | yellow+ | blue+ | magenta+ | cyan+ | white+ |
 | Nord | 0 | 11 | 14 | 13 | 10 | 15 | 8 | 4 | dim | 11 | 14 | 13 | accent | 15 | 7 | 6 |
 
-The bezel is nord0, the splash's background. Gray is the interface's own dim, `#aeb5c3`, since nord3 is unreadable on nord0. Bright blue is its accent, Arch blue lightened for nord0, `#45a9da`, as `console-accent` in `product.yaml` names it. Blue is nord10, Nord's color for the focused element: the row under the cursor sits on it, as `console-surface` says, since a console has only its first eight colors as backgrounds.
+The bezel is nord0, the splash's background. Gray is the interface's own dim, `#aeb5c3`, since nord3 is unreadable on nord0. Bright blue is its accent, Arch blue lightened for nord0, `#45a9da`, as `console-accent` in `product.yaml` names it. Blue is nord10, Nord's color for the focused element: the row under the cursor sits on it, as `console-surface` says, since a console has only its first eight colors as backgrounds. The row reads in white+ there, as the accent on blue would not.
 
 ## What the Console Can Draw
 
