@@ -32,7 +32,7 @@ sudo pacman -S --needed make rust shellcheck shfmt zsh yamllint actionlint zizmo
 - Packages, tasks, questions: **[installer](../installer)**
 - Repairing a system: **[recovery](../recovery)**
 - Writing the boot medium: **[get.sh](../get.sh)**
-- Functions both modules use: **[lib.sh](../lib.sh)**, checked by **[lib.check.sh](../lib.check.sh)**
+- Every function the YAML and the scripts call: **[lib.sh](../lib.sh)**, checked by **[lib.check.sh](../lib.check.sh)**
 - Product name and look: **[product.yaml](../product.yaml)**
 - The German translation: **[locales/de.po](../locales/de.po)**
 - The bootable images, the ISO and the Recovery: **[iso](../iso)**
@@ -82,7 +82,7 @@ Swap off, sync, unmount, lock: in the Installer before it partitions, in the Rec
 | Kind | Example | On the page |
 | --- | --- | --- |
 | Expected | No internet, a wrong disk, a damaged download | A headline and what to do, translated. Nothing to share |
-| A broken script | A package Arch renamed, a tool that changed its output | Module, task, line, command and output, and **Share the log** |
+| A broken script | A package Arch renamed, a tool that changed its output | Module, task, line, function, command and output, and **Share the log** |
 
 A script stops on an expected problem with `exit` and a status. `errors:` in `module.yaml` puts it into words: `3` no internet, `4` GitHub unreachable, `5` the AUR unreachable. Statuses from `10` up belong to the task or action that uses them. **[➜ Stopping on Purpose](../runtime/README.md#stopping-on-purpose)**
 
@@ -113,15 +113,15 @@ The interface runs on the console, with one font of at most 512 glyphs: **Latin 
 
 ## Pictures in the Docs
 
-All are generated, so none shows an outdated interface. CI never renders them. Run the scripts by hand and commit the result with the change.
+All are generated, so none shows an outdated interface. CI never renders them. Run them by hand and commit the result with the change.
 
 ```
-docs/screenshots.sh 2.1.0   # every page in screenshots.yaml, showing that version
-docs/banner.sh              # the banner, from two of them and the tagline in README.md
-docs/svg.py                 # the download button and the requirements, with their text alternatives in README.md
+make screenshots VERSION=2.1.0   # every page in screenshots.yaml, showing that version
+make banner                      # the banner, from two of them and the tagline in README.md
+docs/svg.py                      # the download button and the requirements, with their text alternatives in README.md
 ```
 
-- `screenshots.sh`'s version defaults to the next patch's pre-release. Name the release the change targets, so `main` shows it
+- Without `VERSION`, the screenshots show the next patch's pre-release. Name the release the change targets, so `main` shows it
 - They need `chromium`, `imagemagick`, `python-fonttools`, `python-pyte`, `python-yaml` and `ttf-firacode-nerd`, none of which a build or `make check` needs, and systemd as PID 1 for `localectl` and `timedatectl`
 - Every run uses `--dry-run`, so nothing is partitioned, mounted or restarted. The pages and every answer are listed in **[screenshots.yaml](screenshots.yaml)**
 - `installing.png` captures a run in progress, so it differs every time

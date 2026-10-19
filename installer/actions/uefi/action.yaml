@@ -1,2 +1,0 @@
-title: Booted in UEFI mode
-error: "This machine booted in BIOS mode. Arch OS needs UEFI: set it in the firmware settings and start again."

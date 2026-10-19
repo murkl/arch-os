@@ -52,13 +52,10 @@ REPO="murkl/arch-os"
 # The folder lib.sh and the modules lie in.
 product_dir() { dirname "${BASH_SOURCE[0]}"; }
 
-# Releases as GitHub describes them: tags/1.2.3 for one, nothing for the
-# newest hundred. Fails where it is out of reach.
-release_json() {
-    local path="releases?per_page=100"
-    [ -z "${1:-}" ] || path="releases/$1"
-    fetch_url -sS --max-time 20 "https://api.github.com/repos/${REPO}/${path}"
-}
+# Releases as GitHub describes them: the newest hundred, or the one of version
+# $1. Fails where it is out of reach.
+releases_json() { fetch_url -sS --max-time 20 "https://api.github.com/repos/${REPO}/releases?per_page=100"; }
+release_json() { fetch_url -sS --max-time 20 "https://api.github.com/repos/${REPO}/releases/tags/$1"; }
 
 # Every download in the releases' JSON on stdin whose name ends in $1, with its
 # sha256, a line each. One field to a line, however GitHub lays the JSON out.
@@ -816,9 +813,10 @@ recovery_update() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
-# THE YAML | Functions a declaration calls as name(), named after the key
+# THE YAML | Functions a declaration calls as name()
 # ////////////////////////////////////////////////////////////////////////////
-
+#
+# A setting's function is named after its key, an action's after what it does.
 # A list may print a value and the text it is chosen by, with a tab between.
 
 # Whole disks, by size and model.
@@ -876,3 +874,323 @@ prefill_live_keymap() {
 
 # --test-passphrase opens nothing, it only asks the keyslots.
 unlocks() { printf '%s' "$1" | cryptsetup open --test-passphrase "$(target_partition)"; }
+
+restart_machine() { systemctl reboot; }
+
+shut_down_machine() { systemctl poweroff; }
+
+no_cable() {
+    if online_by_cable; then
+        return 1
+    fi
+}
+
+# ─── The Installer ─────────────────────────────────────────────────────────
+
+# Every UTF-8 locale glibc supports, without @-variants. SUPPORTED rather than
+# locale.gen, which cloud-init and hand edits rewrite.
+options_locales() {
+    sed -n 's/^\([a-z]\{2,3\}\(_[A-Z]\{2\}\)\{0,1\}\)\(\.UTF-8\)\{0,1\} UTF-8$/\1/p' /usr/share/i18n/SUPPORTED | sort -u
+}
+
+# The language the interface is read in, as the locale of its own country: de
+# reads de_DE. Otherwise not Afar, the first row, but the one locale generated
+# either way.
+prefill_locale() {
+    local lang="$MODULE_LANGUAGE"
+    if [[ $lang =~ ^[a-z]{2,3}$ ]] && grep -q "^${lang}_${lang^^}\(\.UTF-8\)\{0,1\} UTF-8$" /usr/share/i18n/SUPPORTED; then
+        printf '%s_%s' "$lang" "${lang^^}"
+        return 0
+    fi
+    printf 'en_US'
+}
+
+options_vconsole_keymaps() {
+    printf 'auto\tauto (%s)\n' "$(auto_keymap)"
+    options_keymaps
+}
+
+# Loaded the moment it is answered, so what is typed next is typed on it.
+apply_vconsole_keymap() {
+    dry_run && return 0
+    loadkeys "$(vconsole_keymap)"
+}
+
+options_fonts() {
+    printf 'auto\tauto (%s)\n' "$(auto_font)"
+    echo none
+    find /usr/share/kbd/consolefonts -name '*.psf*' -printf '%f\n' 2>/dev/null |
+        sed 's/\.psfu\?\(\.gz\)\?$//' | sort -u
+}
+
+options_timezones() { timedatectl list-timezones; }
+
+# The zone of the chosen country, and UTC rather than Africa/Abidjan for none.
+prefill_timezone() {
+    local locale="${ARCH_OS_LOCALE_LANG%%.*}" territory="" zone
+    [[ $locale == *_* ]] && territory="${locale#*_}"
+    zone="$(country_field 3 "$territory")"
+    printf '%s' "${zone:-UTC}"
+}
+
+# The live system's clock follows at once, so the log reads in the zone of the
+# machine being installed. Only the live system's /etc/localtime changes, the
+# hardware clock is not written.
+apply_timezone() {
+    dry_run && return 0
+    timedatectl set-timezone "$ARCH_OS_TIMEZONE"
+}
+
+options_countries() {
+    printf 'auto\tauto (%s)\n' "$(auto_country)"
+    echo none
+    # A "-" marks a country Arch has no mirror in.
+    awk -F'\t' '!/^#/ && $2 != "-" { print $2 }' "$(installer_data)/countries"
+}
+
+value_virtual_machine() { if systemd-detect-virt -q; then echo true; else echo false; fi; }
+
+# The Arch ISO ships no xkeyboard-config, and then data/ answers.
+options_layouts() {
+    local layouts
+    printf 'auto\tauto (%s)\n' "$(auto_layout)"
+
+    layouts="$(localectl list-x11-keymap-layouts 2>/dev/null || true)"
+    if [ -n "$layouts" ]; then
+        echo "$layouts"
+        return 0
+    fi
+    grep -v '^#' "$(installer_data)/x11-layouts"
+}
+
+# The Arch ISO ships no xkeyboard-config, and then data/ answers.
+options_variants() {
+    local layout variants
+    layout="$(desktop_layout)"
+    [ -n "$layout" ] || return 0
+
+    echo none
+
+    variants="$(localectl list-x11-keymap-variants "$layout" 2>/dev/null || true)"
+    if [ -n "$variants" ]; then
+        echo "$variants"
+        return 0
+    fi
+    # A layout without variants has no line there.
+    { grep "^${layout} " "$(installer_data)/x11-variants" || allow 1; } | cut -d' ' -f2- | tr ' ' '\n'
+}
+
+booted_in_uefi() { [ -d /sys/firmware/efi ]; }
+
+# Read whole before it is searched: grep stops at the first match, and bootctl,
+# still writing, would die of that under pipefail.
+secure_boot_off() { grep -q "Secure Boot: disabled" <<<"$(bootctl status 2>/dev/null)"; }
+
+import_config() {
+    local ref url body
+    # The code alone, from whatever was typed, the whole link or its last word,
+    # and always asked of paste.rs over https.
+    ref="$(printf '%s' "$ARCH_OS_CONFIG_SOURCE" | tr -d '[:space:]')"
+    url="${PASTE}/${ref##*/}"
+    body="$(fetch_url -sS --max-time 30 --retry 3 --retry-delay 2 "$url")"
+
+    # Everything but the sharing itself and what belongs to the machine the
+    # answers were given on: its disk, a path another disk may sit at here, and
+    # its kernel parameters, a line nobody should take on from a stranger's code.
+    body="$(printf '%s\n' "$body" | grep '^ARCH_OS_[A-Z0-9_]*=' |
+        grep -vE '^ARCH_OS_(CONFIG_[A-Z_]*|DISK|KERNEL_ARGS)=' || allow 1)"
+    [ -n "$body" ]
+
+    # Appended to the answer file, which the runtime reads back once this has worked.
+    printf '%s\n' "$body" >>"$MODULE_CONF"
+}
+
+share_config() {
+    local url target
+    # Simulated, an address all the same, so the page can be looked at.
+    if dry_run; then
+        answer ARCH_OS_CONFIG_URL "${PASTE}/demo"
+        return 0
+    fi
+
+    url="$(grep -v '^ARCH_OS_CONFIG_' "$MODULE_CONF" | paste_online)"
+    [ -n "$url" ]
+    answer ARCH_OS_CONFIG_URL "$url"
+
+    # And into the copy the installed system keeps, so it knows where it was shared.
+    target="$(user_home)/installer.conf"
+    if [ -f "$target" ]; then
+        printf "ARCH_OS_CONFIG_URL='%s'\n" "$url" >>"$target"
+    fi
+}
+
+# ─── The Recovery ──────────────────────────────────────────────────────────
+
+# A LUKS header is readable without the password.
+value_disk_encrypted() { [ "$(fstype "$(target_partition)")" = "crypto_LUKS" ] && echo true || echo false; }
+
+check_disk_password() {
+    dry_run && return 0
+    unlocks "$ARCH_OS_RECOVERY_PASSWORD"
+}
+
+# Loaded the moment it is answered.
+apply_recovery_keymap() {
+    dry_run && return 0
+    loadkeys "$ARCH_OS_RECOVERY_KEYMAP"
+}
+
+# The snapshots the rollback asks for, newest first: the path, a tab, and the
+# number, date and reason out of each one's info.xml. None is an answer: the
+# step is skipped.
+options_snapshots() {
+    local path
+    # Simulated, so the page is worth looking at.
+    if dry_run; then
+        printf '@snapshots/2/snapshot\t2   2026-08-30 21:04:17 UTC   after a system update\n'
+        printf '@snapshots/1/snapshot\t1   2026-08-29 09:12:40 UTC   first root filesystem\n'
+        return 0
+    fi
+
+    # By the number snapper counts up with, not by the order btrfs lists them in.
+    while read -r path; do
+        printf '%s\t%s\n' "$path" "$(snapshot_label "$(printf '%s' "$path" | cut -d/ -f2)")"
+    done < <(btrfs subvolume list -o "${BTRFS_TOP}/@snapshots" | awk '{ print $NF }' | sort -t/ -k2 -rn)
+}
+
+# A field at a time, so a broken file costs a column rather than the list.
+snapshot_label() {
+    local info="${BTRFS_TOP}/@snapshots/${1}/info.xml"
+    local date="" description=""
+    if [ -r "$info" ]; then
+        date="$(sed -n '0,/<date>.*<\/date>/s:.*<date>\(.*\)</date>.*:\1:p' "$info")"
+        description="$(sed -n '0,/<description>.*<\/description>/s:.*<description>\(.*\)</description>.*:\1:p' "$info")"
+    fi
+    printf '%s' "$1"
+    [ -z "$date" ] || printf '   %s UTC' "$date" # snapper records UTC
+    [ -z "$description" ] || printf '   %s' "$description"
+    echo
+}
+
+# On its own partition, or from anywhere else for a disk whose Recovery does
+# not start, as an update cut short leaves it. A Recovery partition is the
+# third, under the name the Installer gives it.
+recovery_to_update() {
+    if on_recovery_partition; then
+        return 0
+    fi
+    [ -n "$ARCH_OS_RECOVERY_DISK" ] || return 1
+    [ "$(lsblk -dno PARTLABEL "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")" 2>/dev/null)" = recovery ] && ! recovery_starts
+}
+
+# Yes where there is nothing to install. A Recovery to install is a no, and that
+# opens the install.
+recovery_up_to_date() {
+    local json found
+    check_online || exit "$EXIT_OFFLINE"
+    json="$(releases_json)" || exit "$EXIT_UNREACHABLE"
+    found="$(recovery_update <<<"$json")"
+    [ -z "$found" ]
+}
+
+check_update_password() {
+    dry_run && return 0
+    unlocks "$ARCH_OS_RECOVERY_UPDATE_PASSWORD"
+}
+
+# The Recovery recovery_update finds, over the one on the disk. Everything that
+# can fail comes before the partition is touched: the download held to its
+# checksum, its size to the partition, and where the system signs its boot
+# chain the boot image signed with the system's own keys. Then the partition,
+# read back off the disk, and the boot image moved over the old one, so the two
+# disagree only for the length of the write.
+install_recovery_update() {
+    local tar=/tmp/arch-os-recovery-update.tar
+    # Where the EFI partition is mounted while the system stays closed.
+    local esp_mnt=/run/arch-os-esp
+    local json found version url digest stem part size room esp want have
+
+    check_online || exit "$EXIT_OFFLINE"
+    json="$(releases_json)" || exit "$EXIT_UNREACHABLE"
+    found="$(recovery_update <<<"$json")"
+    if [ -z "$found" ]; then
+        echo "there is no Recovery to install" >&2
+        exit 1
+    fi
+    read -r version url digest <<<"$found"
+
+    echo "fetching ${url##*/}"
+    if ! fetch_url --progress-bar --retry 3 --retry-delay 2 "$url" -o "${tar}.part"; then
+        rm -f "${tar}.part"
+        check_online || exit "$EXIT_OFFLINE"
+        echo "downloading ${url##*/} failed" >&2
+        exit 10
+    fi
+    if ! echo "${digest}  ${tar}.part" | sha256sum -c - >/dev/null; then
+        rm -f "${tar}.part"
+        echo "${url##*/} does not match the checksum its release publishes and was thrown away" >&2
+        exit 11
+    fi
+    mv -f "${tar}.part" "$tar"
+
+    stem="arch-os-${version}-recovery"
+    part="$(recovery_partition "$ARCH_OS_RECOVERY_DISK")"
+    size="$(tar -tvf "$tar" "${stem}/recovery.img" | awk '{ print $3 }')"
+    room="$(blockdev --getsize64 "$part")"
+    if [ -z "$size" ] || [ "$size" -gt "$room" ]; then
+        echo "the Recovery ${version} takes ${size:-?} bytes, and its partition ${part} holds ${room}" >&2
+        exit 12
+    fi
+
+    # What an earlier attempt left open or mounted goes first. Arch OS signs its
+    # boot chain only behind encryption, so an encrypted system is opened, and its
+    # EFI partition is reached through it.
+    close_target
+    if mountpoint -q "$esp_mnt"; then
+        umount "$esp_mnt"
+    fi
+    if [ "$ARCH_OS_RECOVERY_ENCRYPTED" = "true" ]; then
+        printf '%s' "$ARCH_OS_RECOVERY_UPDATE_PASSWORD" | cryptsetup open "$(target_partition)" "$CRYPT"
+        mount_target
+        esp="${MNT}/boot"
+    else
+        mount --mkdir -t vfat "$(boot_partition "$ARCH_OS_RECOVERY_DISK")" "$esp_mnt"
+        esp="$esp_mnt"
+    fi
+
+    # A copy an attempt cut short left takes room the kernel images need, so it
+    # goes first, and this one goes again if anything below fails. Global, since
+    # the trap reads it once the function is left.
+    efi="${esp}${RECOVERY_EFI#/boot}"
+    rm -f "${efi}.new"
+    trap 'rm -f "${efi}.new"' EXIT
+    tar -xOf "$tar" "${stem}/recovery.efi" >"${efi}.new"
+
+    # Signed where the system has sbctl, as the boot files are rebuilt.
+    if [ "$esp" != "$esp_mnt" ] && [ -x "${MNT}/usr/bin/sbctl" ]; then
+        arch-chroot "$MNT" sbctl sign "${RECOVERY_EFI}.new"
+    fi
+
+    echo "writing the Recovery ${version} to ${part}"
+    if ! tar -xOf "$tar" "${stem}/recovery.img" | dd of="$part" bs=4M conv=fsync status=none; then
+        echo "writing ${part} failed" >&2
+        exit 13
+    fi
+
+    # Read off the disk rather than out of the memory the write went through.
+    blockdev --flushbufs "$part"
+    want="$(tar -xOf "$tar" "${stem}/recovery.img" | sha256sum)"
+    have="$(head -c "$size" "$part" | sha256sum)"
+    if [ "$have" != "$want" ]; then
+        echo "${part} does not read back as the Recovery ${version}" >&2
+        exit 13
+    fi
+    mv -f "${efi}.new" "$efi"
+    sync
+    if [ "$esp" = "$esp_mnt" ]; then
+        umount "$esp_mnt"
+    fi
+    close_target
+    rm -f "$tar"
+    echo "the Recovery is now ${version}"
+}

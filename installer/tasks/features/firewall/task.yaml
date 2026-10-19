@@ -1,2 +1,0 @@
-title: Set up the firewall
-when: ARCH_OS_FIREWALL_ENABLED == true

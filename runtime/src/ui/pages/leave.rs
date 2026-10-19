@@ -77,7 +77,7 @@ impl LeavePage {
         if ctx.store.dry_run() && !action.simulates {
             return Flow::Quit;
         }
-        let step = ctx.step(&t(&action.title), true, action.script());
+        let step = ctx.step(&t(&action.title), true, action.run.clone());
         match script::start(step, &ctx.env(), ctx.run_sink()) {
             Ok(session) => {
                 self.doing = Some((way, Some(session)));

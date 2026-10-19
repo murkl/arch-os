@@ -371,7 +371,7 @@ mod tests {
         let f = Failure {
             module: "Installer".into(),
             unit: "Partition the disk".into(),
-            script: "installer/tasks/prepare/partition/task.sh".into(),
+            script: "installer/tasks/partition/task.sh".into(),
             line: 12,
             code: 3,
             command: "sgdisk -o /dev/sda".into(),
@@ -387,7 +387,7 @@ mod tests {
             blocks[2],
             Block::Field(
                 "Script".into(),
-                "installer/tasks/prepare/partition/task.sh:12".into(),
+                "installer/tasks/partition/task.sh:12".into(),
                 Tone::Normal
             )
         );

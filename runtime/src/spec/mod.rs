@@ -2,7 +2,7 @@
 //! yaml, so nothing below it knows anything about the system being installed.
 //!
 //! A product is `product.yaml` and `lib.sh` beside the modules, each a folder with a
-//! `module.yaml`, `tasks/<stage>/<task>/` and `actions/<action>/`. A module that loads is a
+//! `module.yaml` and a folder `tasks/<task>/` for each task it declares. A module that loads is a
 //! module that runs: an authoring mistake fails the tests, never a task that silently never fires.
 
 pub mod condition;
@@ -64,8 +64,8 @@ pub struct Status {
     pub fail: String,
 }
 
-/// Shell a declaration names: a function of lib.sh written `name()`, or a file beside the yaml
-/// written `./name.sh`, held as its path in the product.
+/// Shell a step runs: a function of lib.sh, the only shell the yaml names, or a script of a
+/// task, held as its path in the product.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Shell {
     Call(String),
@@ -270,10 +270,10 @@ pub struct Ask {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Task {
-    /// The folder, which `needs` and `yes-after` name it by.
+    /// Its name under its stage, which `needs` and `yes-after` name it by.
     pub id: String,
     pub stage: String,
-    /// Its folder in the product: `installer/tasks/prepare/partition`.
+    /// Its folder in the product: `installer/tasks/partition`.
     pub dir: String,
     pub title: String,
     pub needs: Vec<String>,
@@ -297,12 +297,12 @@ pub struct Task {
 }
 
 impl Task {
-    pub fn script(&self) -> String {
-        format!("{}/task.sh", self.dir)
+    pub fn script(&self) -> Shell {
+        Shell::File(format!("{}/task.sh", self.dir))
     }
 
-    pub fn test_script(&self) -> String {
-        format!("{}/test.sh", self.dir)
+    pub fn test_script(&self) -> Shell {
+        Shell::File(format!("{}/test.sh", self.dir))
     }
 
     pub fn applies(&self, get: impl Fn(&str) -> String) -> bool {
@@ -313,7 +313,8 @@ impl Task {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Action {
     pub id: String,
-    pub dir: String,
+    /// Its work, a function of lib.sh: exit 0 is yes.
+    pub run: Shell,
     pub title: String,
     /// The sentence under its row. Choosing the row is the consent, so it says what leaves.
     pub description: String,
@@ -335,12 +336,6 @@ pub struct Action {
     pub tty: bool,
     pub simulates: bool,
     pub errors: BTreeMap<i32, String>,
-}
-
-impl Action {
-    pub fn script(&self) -> String {
-        format!("{}/action.sh", self.dir)
-    }
 }
 
 impl Module {
@@ -537,6 +532,39 @@ impl When {
     }
 }
 
+/// A map in the order it is written, since that order says something: the stages and the tasks
+/// in each.
+struct Ordered<T>(Vec<(String, T)>);
+
+impl<T> Default for Ordered<T> {
+    fn default() -> Self {
+        Ordered(Vec::new())
+    }
+}
+
+impl<'de, T: Deserialize<'de>> Deserialize<'de> for Ordered<T> {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        struct Visit<T>(std::marker::PhantomData<T>);
+        impl<'de, T: Deserialize<'de>> serde::de::Visitor<'de> for Visit<T> {
+            type Value = Ordered<T>;
+            fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                f.write_str("a map")
+            }
+            fn visit_map<A: serde::de::MapAccess<'de>>(
+                self,
+                mut map: A,
+            ) -> Result<Ordered<T>, A::Error> {
+                let mut out = Vec::new();
+                while let Some(entry) = map.next_entry()? {
+                    out.push(entry);
+                }
+                Ok(Ordered(out))
+            }
+        }
+        d.deserialize_map(Visit(std::marker::PhantomData))
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 struct ProductFile {
@@ -547,6 +575,8 @@ struct ProductFile {
     console_surface: Option<String>,
     logo: Option<String>,
     status: Option<StatusFile>,
+    #[serde(default)]
+    actions: BTreeMap<String, ActionFile>,
 }
 
 #[derive(Deserialize)]
@@ -574,11 +604,13 @@ struct ModuleFile {
     #[serde(default)]
     errors: BTreeMap<i32, String>,
     #[serde(default)]
-    stages: Vec<String>,
+    actions: BTreeMap<String, ActionFile>,
+    #[serde(default)]
+    stages: Ordered<Ordered<TaskFile>>,
     #[serde(default)]
     presets: Vec<PresetFile>,
     #[serde(default)]
-    settings: Vec<SettingFile>,
+    settings: Ordered<Vec<SettingFile>>,
 }
 
 #[derive(Deserialize, Default)]
@@ -610,7 +642,6 @@ struct SettingFile {
     kind: Option<String>,
     title: Option<String>,
     description: Option<String>,
-    group: Option<String>,
     #[serde(default)]
     required: bool,
     default: Option<Scalar>,
@@ -672,6 +703,7 @@ struct ActionFile {
     description: Option<String>,
     group: Option<String>,
     error: Option<String>,
+    run: String,
     #[serde(default)]
     requires: Vec<String>,
     #[serde(default)]
@@ -750,13 +782,22 @@ pub fn load(files: &[(&str, &[u8])]) -> Result<Loaded, String> {
     } else {
         BTreeSet::new()
     };
-    let product = product(&files, &functions)?;
+    let (product, shared) = product(&files, &functions)?;
     let mut modules = Vec::new();
     for id in files.dirs("") {
         if id == "locales" || !files.has(&format!("{id}/{MODULE}")) {
             continue;
         }
-        modules.push(module(&files, &id, &functions).map_err(|e| format!("{id}/{e}"))?);
+        modules.push(module(&files, &id, &functions, &shared)?);
+    }
+    if let Some(a) = shared
+        .iter()
+        .find(|a| modules.iter().all(|m| m.action(&a.id).is_none()))
+    {
+        return Err(format!(
+            "{PRODUCT}: actions: {}: nothing names it, so it never runs: name it under requires or on: in a {MODULE} or another action",
+            a.id
+        ));
     }
     Ok(Loaded {
         product,
@@ -792,49 +833,25 @@ fn is_name(s: &str) -> bool {
         && chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
-/// Shell a key names, settled against the folder of its yaml.
-fn shell(
-    expr: &str,
-    dir: &str,
-    files: &Files,
-    functions: &BTreeSet<String>,
-) -> Result<Shell, String> {
+/// The function of lib.sh a key names, written `name()`.
+fn shell(expr: &str, functions: &BTreeSet<String>) -> Result<Shell, String> {
     let expr = expr.trim();
-    if let Some(name) = expr.strip_suffix("()") {
-        if !is_name(name) {
-            return Err(format!("{expr:?} is no function name"));
-        }
-        if !functions.contains(name) {
-            return Err(format!("{name}() is not a function in {LIB}"));
-        }
-        return Ok(Shell::Call(name.to_string()));
-    }
-    let Some(file) = expr.strip_prefix("./") else {
-        return Err(format!(
-            "{expr:?} is neither a function of {LIB}, written name(), nor a file beside this yaml, written ./name.sh"
-        ));
+    let Some(name) = expr.strip_suffix("()").filter(|n| is_name(n)) else {
+        return Err(format!("{expr:?} is no function of {LIB}, written name()"));
     };
-    if !file.ends_with(".sh") || file.contains('/') {
-        return Err(format!(
-            "{expr:?}: a file beside this yaml is written ./name.sh"
-        ));
+    if !functions.contains(name) {
+        return Err(format!("{name}() is not a function in {LIB}"));
     }
-    let path = format!("{dir}/{file}");
-    if !files.has(&path) {
-        return Err(format!("no such script: {expr}"));
-    }
-    Ok(Shell::File(path))
+    Ok(Shell::Call(name.to_string()))
 }
 
 fn opt_shell(
     expr: &Option<String>,
     key: &str,
-    dir: &str,
-    files: &Files,
     functions: &BTreeSet<String>,
 ) -> Result<Option<Shell>, String> {
     match expr {
-        Some(e) => shell(e, dir, files, functions)
+        Some(e) => shell(e, functions)
             .map(Some)
             .map_err(|err| format!("{key}: {err}")),
         None => Ok(None),
@@ -868,7 +885,8 @@ fn parse_rgb(s: &str) -> Option<Rgb> {
     Some(Rgb(byte(0)?, byte(2)?, byte(4)?))
 }
 
-fn product(files: &Files, functions: &BTreeSet<String>) -> Result<Product, String> {
+/// The product, and the actions it declares for every module to name.
+fn product(files: &Files, functions: &BTreeSet<String>) -> Result<(Product, Vec<Action>), String> {
     if !files.has(PRODUCT) {
         return Err(format!("{PRODUCT}: no product beside the runtime"));
     }
@@ -893,11 +911,10 @@ fn product(files: &Files, functions: &BTreeSet<String>) -> Result<Product, Strin
         return Err(format!("{PRODUCT}: logo: draws nothing"));
     }
     let status = match f.status {
-        Some(s) => {
-            Some(status(s, "", files, functions).map_err(|e| format!("{PRODUCT}: status: {e}"))?)
-        }
+        Some(s) => Some(status(s, functions).map_err(|e| format!("{PRODUCT}: status: {e}"))?),
         None => None,
     };
+    let shared = actions(f.actions, PRODUCT, functions)?;
     if let Some(slot) = &f.console_accent
         && !SLOTS.contains(&slot.as_str())
     {
@@ -915,7 +932,7 @@ fn product(files: &Files, functions: &BTreeSet<String>) -> Result<Product, Strin
             SLOTS[..7].join(", ")
         ));
     }
-    Ok(Product {
+    let product = Product {
         title: f.title,
         accent,
         console_accent: f.console_accent,
@@ -923,17 +940,13 @@ fn product(files: &Files, functions: &BTreeSet<String>) -> Result<Product, Strin
         console_surface: f.console_surface,
         logo,
         status,
-    })
+    };
+    Ok((product, shared))
 }
 
-fn status(
-    s: StatusFile,
-    dir: &str,
-    files: &Files,
-    functions: &BTreeSet<String>,
-) -> Result<Status, String> {
+fn status(s: StatusFile, functions: &BTreeSet<String>) -> Result<Status, String> {
     Ok(Status {
-        check: shell(&s.check, dir, files, functions).map_err(|e| format!("check: {e}"))?,
+        check: shell(&s.check, functions).map_err(|e| format!("check: {e}"))?,
         every: Duration::from_secs(s.every.unwrap_or(10).max(1)),
         pass: text::reflow(s.pass.as_deref().unwrap_or_default()),
         fail: text::reflow(s.fail.as_deref().unwrap_or_default()),
@@ -952,13 +965,8 @@ fn reflow_opt(s: &Option<String>) -> Option<String> {
     s.as_deref().map(text::reflow).filter(|t| !t.is_empty())
 }
 
-/// A setting as written, checked over and its shell settled against `dir`.
-fn setting(
-    f: SettingFile,
-    dir: &str,
-    files: &Files,
-    functions: &BTreeSet<String>,
-) -> Result<Setting, String> {
+/// A setting as written under its heading, checked over and its shell settled.
+fn setting(f: SettingFile, group: &str, functions: &BTreeSet<String>) -> Result<Setting, String> {
     let name = f.name.clone();
     let fail = |e: String| format!("{name}: {e}");
     if !is_name(&f.name) || f.name.contains(|c: char| c.is_ascii_lowercase()) {
@@ -1056,16 +1064,15 @@ fn setting(
         kind,
         title: text::reflow(&title),
         description: text::reflow(f.description.as_deref().unwrap_or_default()),
-        group: text::reflow(f.group.as_deref().unwrap_or_default()),
+        group: text::reflow(group),
         required: f.required,
         default: f.default.as_ref().map(Scalar::text).unwrap_or_default(),
         options: f.options,
-        options_from: opt_shell(&f.options_from, "options-from", dir, files, functions)
-            .map_err(fail)?,
-        value_from: opt_shell(&f.value_from, "value-from", dir, files, functions).map_err(fail)?,
-        prefill: opt_shell(&f.prefill, "prefill", dir, files, functions).map_err(fail)?,
-        apply: opt_shell(&f.apply, "apply", dir, files, functions).map_err(fail)?,
-        check: opt_shell(&f.check, "check", dir, files, functions).map_err(fail)?,
+        options_from: opt_shell(&f.options_from, "options-from", functions).map_err(fail)?,
+        value_from: opt_shell(&f.value_from, "value-from", functions).map_err(fail)?,
+        prefill: opt_shell(&f.prefill, "prefill", functions).map_err(fail)?,
+        apply: opt_shell(&f.apply, "apply", functions).map_err(fail)?,
+        check: opt_shell(&f.check, "check", functions).map_err(fail)?,
         first: f.first,
         filter: filter(&f.filter).map_err(fail)?,
         pattern,
@@ -1126,109 +1133,57 @@ enum How {
     Opened,
 }
 
-fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Module, String> {
+fn module(
+    files: &Files,
+    id: &str,
+    functions: &BTreeSet<String>,
+    shared: &[Action],
+) -> Result<Module, String> {
     let dir = id;
-    let f: ModuleFile = yaml(files, &format!("{dir}/{MODULE}"))?;
-    let m = |e: String| format!("{MODULE}: {e}");
+    let file = format!("{dir}/{MODULE}");
+    let f: ModuleFile = yaml(files, &file)?;
+    let m = |e: String| format!("{file}: {e}");
     if f.title.trim().is_empty() {
         return Err(m("title is required".into()));
-    }
-    if f.stages.is_empty() {
-        return Err(m("stages: at least one".into()));
-    }
-    for (i, stage) in f.stages.iter().enumerate() {
-        if f.stages[..i].contains(stage) {
-            return Err(m(format!("stages: {stage} is listed twice")));
-        }
     }
 
     // The settings, then every condition once every name is known, so one may be guarded by a
     // setting declared after it.
     let mut settings = Vec::new();
-    for s in f.settings {
-        let s = setting(s, dir, files, functions).map_err(m)?;
-        if settings.iter().any(|o: &Setting| o.name == s.name) {
-            return Err(m(format!("{} is declared twice", s.name)));
+    for (group, list) in f.settings.0 {
+        if list.is_empty() {
+            return Err(m(format!("settings: {group}: no settings")));
         }
-        settings.push(s);
-    }
-    let mut tasks = tasks(files, dir, &f.stages, functions)?;
-    let mut actions = actions(files, dir, functions)?;
-
-    // Every name a script may be handed, so a sentence and a condition can be held to them.
-    let mut names: Vec<String> = settings.iter().map(|s| s.name.clone()).collect();
-    for t in &tasks {
-        if let Some(a) = &t.asks {
-            if names.contains(&a.name) {
-                return Err(format!(
-                    "tasks/{}/{}/task.yaml: asks: {} is a setting already",
-                    t.stage, t.id, a.name
-                ));
+        for s in list {
+            let s = setting(s, &group, functions).map_err(m)?;
+            if settings.iter().any(|o: &Setting| o.name == s.name) {
+                return Err(m(format!("{} is declared twice", s.name)));
             }
-            names.push(a.name.clone());
-        }
-    }
-    for a in &actions {
-        let at = format!("actions/{}/action.yaml", a.id);
-        for s in &a.inputs {
-            if names.contains(&s.name) {
-                return Err(format!("{at}: inputs: {} is declared already", s.name));
-            }
-            names.push(s.name.clone());
-        }
-        if let Some(q) = &a.qr {
-            if !is_name(q) || q.contains(|c: char| c.is_ascii_lowercase()) {
-                return Err(format!("{at}: qr: {q:?} is no variable name"));
-            }
-            if names.contains(q) {
-                return Err(format!("{at}: qr: {q} is declared already"));
-            }
-            names.push(q.clone());
+            settings.push(s);
         }
     }
     let setting_names: Vec<String> = settings.iter().map(|s| s.name.clone()).collect();
+    let stages: Vec<String> = f.stages.0.iter().map(|(s, _)| s.clone()).collect();
+    let mut tasks = tasks(files, dir, f.stages, functions)?;
 
-    // Conditions and sentences, now that every name is known: a setting may be guarded by one
-    // declared after it.
-    for s in &settings {
-        conditions(&s.when, &setting_names).map_err(|e| m(format!("{}: {e}", s.name)))?;
+    // Its own actions beside the product's, in name order.
+    let own = actions(f.actions, &file, functions)?;
+    if let Some(a) = own.iter().find(|a| shared.iter().any(|s| s.id == a.id)) {
+        return Err(m(format!(
+            "actions: {}: {PRODUCT} declares it already",
+            a.id
+        )));
     }
-    for t in &mut tasks {
-        let at = format!("tasks/{}/{}/task.yaml", t.stage, t.id);
-        conditions(&t.when, &setting_names).map_err(|e| format!("{at}: {e}"))?;
-        if let Some(c) = &t.confirm {
-            placeholders("confirm", c, &names).map_err(|e| format!("{at}: {e}"))?;
+    let mut actions: Vec<Action> = shared.iter().cloned().chain(own).collect();
+    actions.sort_by(|a, b| a.id.cmp(&b.id));
+    let is_shared = |id: &str| shared.iter().any(|s| s.id == id);
+    let at = |id: &str| {
+        if is_shared(id) {
+            format!("{PRODUCT}: actions: {id}, as {dir} runs it")
+        } else {
+            format!("{file}: actions: {id}")
         }
-        if let Some(r) = &t.report {
-            placeholders("report", r, &names).map_err(|e| format!("{at}: {e}"))?;
-        }
-        t.errors = errors(&t.errors, &names).map_err(|e| format!("{at}: {e}"))?;
-    }
-    for a in &mut actions {
-        let at = format!("actions/{}/action.yaml", a.id);
-        for s in &a.inputs {
-            conditions(&s.when, &names).map_err(|e| format!("{at}: {}: {e}", s.name))?;
-        }
-        for (key, text) in [
-            ("error", &a.error),
-            ("confirm", &a.confirm),
-            ("report", &a.report),
-        ] {
-            if let Some(t) = text {
-                placeholders(key, t, &names).map_err(|e| format!("{at}: {e}"))?;
-            }
-        }
-        a.errors = errors(&a.errors, &names).map_err(|e| format!("{at}: {e}"))?;
-    }
-    let confirm = reflow_opt(&f.confirm);
-    if let Some(c) = &confirm {
-        placeholders("confirm", c, &names).map_err(m)?;
-    }
-    let report = reflow_opt(&f.report);
-    if let Some(r) = &report {
-        placeholders("report", r, &names).map_err(m)?;
-    }
-    let module_errors = errors(&f.errors, &names).map_err(m)?;
+    };
 
     // Presets: named by their title and nothing else.
     let mut presets = Vec::new();
@@ -1259,7 +1214,8 @@ fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Modul
         });
     }
 
-    // Which actions run how, the strictest place first, and one nothing names is refused.
+    // Which actions run how, the strictest place first. One of its own that nothing names is
+    // refused, one of the product's is not this module's.
     let dashboard = dashboard(&f.dashboard).map_err(m)?;
     if let Some(group) = &f.language
         && !settings.iter().any(|s| s.group == *group)
@@ -1283,7 +1239,7 @@ fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Modul
         for name in list {
             if !actions.iter().any(|a| a.id == *name) {
                 return Err(format!(
-                    "{where_}: {key}: no such action: {name}, a folder under actions/"
+                    "{where_}: {key}: no such action: {name}, declared under actions: in {MODULE} or {PRODUCT}"
                 ));
             }
             let seen = how.contains_key(name);
@@ -1296,7 +1252,7 @@ fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Modul
         Ok(())
     };
     place(
-        MODULE,
+        &file,
         "requires",
         &f.requires,
         How::Gating,
@@ -1311,7 +1267,7 @@ fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Modul
         })
         .collect();
     place(
-        MODULE,
+        &file,
         "dashboard",
         &listed,
         How::Opened,
@@ -1319,7 +1275,7 @@ fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Modul
         &mut queue,
     )?;
     place(
-        MODULE,
+        &file,
         "on: leave",
         &on.leave,
         How::Opened,
@@ -1327,7 +1283,7 @@ fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Modul
         &mut queue,
     )?;
     place(
-        MODULE,
+        &file,
         "on: failure",
         &on.failure,
         How::Opened,
@@ -1335,7 +1291,7 @@ fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Modul
         &mut queue,
     )?;
     place(
-        MODULE,
+        &file,
         "on: success",
         &on.success,
         How::Opened,
@@ -1345,7 +1301,7 @@ fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Modul
     for p in &presets {
         if let Some(a) = &p.action {
             place(
-                MODULE,
+                &file,
                 &format!("presets: {}", p.title),
                 std::slice::from_ref(a),
                 How::Opened,
@@ -1357,7 +1313,7 @@ fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Modul
     while let Some(name) = queue.pop() {
         let a = actions.iter().find(|a| a.id == name).unwrap();
         let (requires, on_failure) = (a.requires.clone(), a.on_failure.clone());
-        let where_ = format!("actions/{name}/action.yaml");
+        let where_ = at(&name);
         place(
             &where_,
             "requires",
@@ -1375,13 +1331,92 @@ fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Modul
             &mut queue,
         )?;
     }
+    actions.retain(|a| how.contains_key(&a.id) || !is_shared(&a.id));
+    if let Some(a) = actions.iter().find(|a| !how.contains_key(&a.id)) {
+        return Err(format!(
+            "{}: nothing names it, so it never runs: name it under requires or on: in {MODULE} or another action",
+            at(&a.id)
+        ));
+    }
+
+    // Every name a script may be handed, so a sentence and a condition can be held to them.
+    let mut names = setting_names.clone();
+    for t in &tasks {
+        if let Some(a) = &t.asks {
+            if names.contains(&a.name) {
+                return Err(m(format!(
+                    "stages: {}: {}: asks: {} is a setting already",
+                    t.stage, t.id, a.name
+                )));
+            }
+            names.push(a.name.clone());
+        }
+    }
     for a in &actions {
-        let at = format!("actions/{}/action.yaml", a.id);
-        let Some(&h) = how.get(&a.id) else {
-            return Err(format!(
-                "{at}: nothing names it, so it never runs: name it under requires or on: in {MODULE} or another action"
-            ));
-        };
+        let at = at(&a.id);
+        for s in &a.inputs {
+            if names.contains(&s.name) {
+                return Err(format!("{at}: inputs: {} is declared already", s.name));
+            }
+            names.push(s.name.clone());
+        }
+        if let Some(q) = &a.qr {
+            if !is_name(q) || q.contains(|c: char| c.is_ascii_lowercase()) {
+                return Err(format!("{at}: qr: {q:?} is no variable name"));
+            }
+            if names.contains(q) {
+                return Err(format!("{at}: qr: {q} is declared already"));
+            }
+            names.push(q.clone());
+        }
+    }
+
+    // Conditions and sentences, now that every name is known: a setting may be guarded by one
+    // declared after it.
+    for s in &settings {
+        conditions(&s.when, &setting_names).map_err(|e| m(format!("{}: {e}", s.name)))?;
+    }
+    for t in &mut tasks {
+        let at = format!("{file}: stages: {}: {}", t.stage, t.id);
+        conditions(&t.when, &setting_names).map_err(|e| format!("{at}: {e}"))?;
+        if let Some(c) = &t.confirm {
+            placeholders("confirm", c, &names).map_err(|e| format!("{at}: {e}"))?;
+        }
+        if let Some(r) = &t.report {
+            placeholders("report", r, &names).map_err(|e| format!("{at}: {e}"))?;
+        }
+        t.errors = errors(&t.errors, &names).map_err(|e| format!("{at}: {e}"))?;
+    }
+    for a in &mut actions {
+        let at = at(&a.id);
+        for s in &a.inputs {
+            conditions(&s.when, &names).map_err(|e| format!("{at}: {}: {e}", s.name))?;
+        }
+        for (key, text) in [
+            ("error", &a.error),
+            ("confirm", &a.confirm),
+            ("report", &a.report),
+        ] {
+            if let Some(t) = text {
+                placeholders(key, t, &names).map_err(|e| format!("{at}: {e}"))?;
+            }
+        }
+        a.errors = errors(&a.errors, &names).map_err(|e| format!("{at}: {e}"))?;
+    }
+    let confirm = reflow_opt(&f.confirm);
+    if let Some(c) = &confirm {
+        placeholders("confirm", c, &names).map_err(m)?;
+    }
+    let report = reflow_opt(&f.report);
+    if let Some(r) = &report {
+        placeholders("report", r, &names).map_err(m)?;
+    }
+    let module_errors = errors(&f.errors, &names).map_err(m)?;
+
+    // What each action may say, by how it runs.
+    for a in &actions {
+        let at = at(&a.id);
+        let h = how[&a.id];
         let pages = !a.inputs.is_empty() || a.report.is_some();
         if a.tty && (pages || a.confirm.is_some()) {
             return Err(format!(
@@ -1424,7 +1459,7 @@ fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Modul
         }
     }
     if let Some(ring) = ring(&actions) {
-        return Err(format!("actions/: actions that wait on each other: {ring}"));
+        return Err(m(format!("actions that wait on each other: {ring}")));
     }
 
     let title = text::reflow(&f.title);
@@ -1439,7 +1474,7 @@ fn module(files: &Files, id: &str, functions: &BTreeSet<String>) -> Result<Modul
         language: f.language,
         on,
         errors: module_errors,
-        stages: f.stages,
+        stages,
         presets,
         settings,
         tasks,
@@ -1508,49 +1543,47 @@ fn ring(actions: &[Action]) -> Option<String> {
         .find_map(|a| walk(actions, &a.id, &mut Vec::new(), &mut done))
 }
 
-/// `tasks/`: a folder per stage, a folder per task in it, each with task.yaml and task.sh.
+/// The tasks under `stages:`, each with a folder `tasks/<task>/` that holds its task.sh, in the
+/// order they run: by stage, and inside a stage after its `needs`.
 fn tasks(
     files: &Files,
     dir: &str,
-    stages: &[String],
+    stages: Ordered<Ordered<TaskFile>>,
     functions: &BTreeSet<String>,
 ) -> Result<Vec<Task>, String> {
+    let file = format!("{dir}/{MODULE}");
     let base = format!("{dir}/tasks/");
-    let found = files.dirs(&base);
-    if found.is_empty() {
-        return Err("tasks/: no tasks".into());
+    if stages.0.is_empty() {
+        return Err(format!("{file}: stages: at least one"));
     }
-    if let Some(file) = files.loose(&base) {
-        return Err(format!(
-            "tasks/{file}: a task lies in the folder of its stage, tasks/<stage>/<task>/"
-        ));
-    }
-    let mut by_stage: BTreeMap<&str, Vec<Task>> = BTreeMap::new();
-    for stage in &found {
-        if !stages.contains(stage) {
-            return Err(format!(
-                "tasks/{stage}: no such stage, {MODULE} declares {}",
-                stages.join(", ")
-            ));
+    let mut by_stage: Vec<(String, Vec<Task>)> = Vec::new();
+    for (stage, group) in stages.0 {
+        if group.0.is_empty() {
+            return Err(format!("{file}: stages: {stage}: no tasks"));
         }
-        let ids = files.dirs(&format!("{base}{stage}/"));
-        if ids.is_empty() {
-            return Err(format!("tasks/{stage}: no tasks"));
-        }
-        for id in ids {
-            let tdir = format!("{base}{stage}/{id}");
-            let at = format!("tasks/{stage}/{id}");
-            let f: TaskFile = yaml(files, &format!("{tdir}/task.yaml"))
-                .map_err(|e| e.replace(&format!("{dir}/"), ""))?;
+        let mut list: Vec<Task> = Vec::new();
+        for (id, f) in group.0 {
+            let at = format!("{file}: stages: {stage}: {id}");
+            if by_stage
+                .iter()
+                .flat_map(|(_, l)| l)
+                .chain(&list)
+                .any(|t| t.id == id)
+            {
+                return Err(format!(
+                    "{at}: another task has this name, and both would be tasks/{id}/"
+                ));
+            }
+            let tdir = format!("{base}{id}");
             if !files.has(&format!("{tdir}/task.sh")) {
-                return Err(format!("{at}: no task.sh, a task does its work in one"));
+                return Err(format!("{tdir}: no task.sh, a task does its work in one"));
             }
             if f.title.trim().is_empty() {
-                return Err(format!("{at}/task.yaml: title is required"));
+                return Err(format!("{at}: title is required"));
             }
             if !f.yes_after.is_empty() && f.confirm.is_none() {
                 return Err(format!(
-                    "{at}/task.yaml: yes-after: a task without confirm is never asked"
+                    "{at}: yes-after: a task without confirm is never asked"
                 ));
             }
             let asks = match f.asks {
@@ -1561,29 +1594,20 @@ fn tasks(
                         || name.starts_with(RESERVED)
                         || name == DRY_RUN
                     {
-                        return Err(format!(
-                            "{at}/task.yaml: asks: {name:?} is no variable name"
-                        ));
+                        return Err(format!("{at}: asks: {name:?} is no variable name"));
                     }
                     if a.options.is_empty() && a.options_from.is_none() {
                         return Err(format!(
-                            "{at}/task.yaml: asks: a question takes its answers from options or options-from"
+                            "{at}: asks: a question takes its answers from options or options-from"
                         ));
                     }
                     Some(Ask {
                         title: text::reflow(&a.title),
                         description: text::reflow(a.description.as_deref().unwrap_or_default()),
-                        filter: filter(&a.filter)
-                            .map_err(|e| format!("{at}/task.yaml: asks: {e}"))?,
+                        filter: filter(&a.filter).map_err(|e| format!("{at}: asks: {e}"))?,
                         options: a.options,
-                        options_from: opt_shell(
-                            &a.options_from,
-                            "options-from",
-                            &tdir,
-                            files,
-                            functions,
-                        )
-                        .map_err(|e| format!("{at}/task.yaml: asks: {e}"))?,
+                        options_from: opt_shell(&a.options_from, "options-from", functions)
+                            .map_err(|e| format!("{at}: asks: {e}"))?,
                         name,
                     })
                 }
@@ -1593,52 +1617,59 @@ fn tasks(
             let mut when = Vec::new();
             for line in f.when.lines() {
                 if !line.trim().is_empty() {
-                    when.push(
-                        Condition::parse(line).map_err(|e| format!("{at}/task.yaml: when: {e}"))?,
-                    );
+                    when.push(Condition::parse(line).map_err(|e| format!("{at}: when: {e}"))?);
                 }
             }
-            by_stage
-                .entry(stages.iter().find(|s| *s == stage).unwrap())
-                .or_default()
-                .push(Task {
-                    id: id.clone(),
-                    stage: stage.clone(),
-                    dir: tdir.clone(),
-                    title: text::reflow(&f.title),
-                    needs: f.needs,
-                    when,
-                    asks,
-                    confirm: reflow_opt(&f.confirm),
-                    yes_after: f.yes_after,
-                    report: reflow_opt(&f.report),
-                    progress: f.progress,
-                    simulates: f.simulates,
-                    allow_failure: f.allow_failure,
-                    errors: f.errors,
-                    test: files.has(&format!("{tdir}/test.sh")),
-                });
+            list.push(Task {
+                id,
+                stage: stage.clone(),
+                test: files.has(&format!("{tdir}/test.sh")),
+                dir: tdir,
+                title: text::reflow(&f.title),
+                needs: f.needs,
+                when,
+                asks,
+                confirm: reflow_opt(&f.confirm),
+                yes_after: f.yes_after,
+                report: reflow_opt(&f.report),
+                progress: f.progress,
+                simulates: f.simulates,
+                allow_failure: f.allow_failure,
+                errors: f.errors,
+            });
+        }
+        by_stage.push((stage, list));
+    }
+    // A folder no task is named after never runs.
+    if let Some(loose) = files.loose(&base) {
+        return Err(format!(
+            "{base}{loose}: a task lies in a folder of its own, tasks/<task>/"
+        ));
+    }
+    for found in files.dirs(&base) {
+        if !by_stage.iter().flat_map(|(_, l)| l).any(|t| t.id == found) {
+            return Err(format!(
+                "{base}{found}: no task under stages: in {MODULE} is named after it"
+            ));
         }
     }
     // needs stay within a stage: the stages order the rest.
     let mut out = Vec::new();
-    for stage in stages {
-        let Some(group) = by_stage.get(stage.as_str()) else {
-            continue;
-        };
+    for (stage, group) in &by_stage {
         for t in group {
+            let at = format!("{file}: stages: {stage}: {}", t.id);
             for n in &t.needs {
                 if n == &t.id {
-                    return Err(format!("tasks/{stage}/{}: needs itself", t.id));
+                    return Err(format!("{at}: needs itself"));
                 }
                 if !group.iter().any(|o| o.id == *n) {
-                    let elsewhere = by_stage.values().flatten().find(|o| o.id == *n);
+                    let elsewhere = by_stage.iter().flat_map(|(_, l)| l).find(|o| o.id == *n);
                     return Err(match elsewhere {
                         Some(o) => format!(
-                            "tasks/{stage}/{}: needs {n}, which is in {}: needs orders tasks within one stage, the stages order the rest",
-                            t.id, o.stage
+                            "{at}: needs {n}, which is in {}: needs orders tasks within one stage, the stages order the rest",
+                            o.stage
                         ),
-                        None => format!("tasks/{stage}/{}: needs unknown task: {n}", t.id),
+                        None => format!("{at}: needs unknown task: {n}"),
                     });
                 }
             }
@@ -1647,23 +1678,16 @@ fn tasks(
             .iter()
             .map(|t| (t.id.clone(), t.needs.clone()))
             .collect();
-        let ordered = order::order(&names).map_err(|e| format!("tasks/{stage}: {e}"))?;
+        let ordered = order::order(&names).map_err(|e| format!("{file}: stages: {stage}: {e}"))?;
         out.extend(ordered.into_iter().map(|i| group[i].clone()));
     }
     for (i, t) in out.iter().enumerate() {
+        let at = format!("{file}: stages: {}: {}", t.stage, t.id);
         for name in &t.yes_after {
             match out.iter().position(|o| o.id == *name) {
-                None => {
-                    return Err(format!(
-                        "tasks/{}/{}: yes-after: no such task: {name}",
-                        t.stage, t.id
-                    ));
-                }
+                None => return Err(format!("{at}: yes-after: no such task: {name}")),
                 Some(j) if j >= i => {
-                    return Err(format!(
-                        "tasks/{}/{}: yes-after: {name} does not run before it",
-                        t.stage, t.id
-                    ));
+                    return Err(format!("{at}: yes-after: {name} does not run before it"));
                 }
                 _ => {}
             }
@@ -1672,45 +1696,41 @@ fn tasks(
     Ok(out)
 }
 
-/// `actions/`: a folder per action, each with action.yaml and action.sh.
-fn actions(files: &Files, dir: &str, functions: &BTreeSet<String>) -> Result<Vec<Action>, String> {
-    let base = format!("{dir}/actions/");
+/// The actions under `actions:` of `file`, each run by the function it names.
+fn actions(
+    map: BTreeMap<String, ActionFile>,
+    file: &str,
+    functions: &BTreeSet<String>,
+) -> Result<Vec<Action>, String> {
     let mut out = Vec::new();
-    for id in files.dirs(&base) {
-        let adir = format!("{base}{id}");
-        let at = format!("actions/{id}/action.yaml");
-        let f: ActionFile = yaml(files, &format!("{adir}/action.yaml"))
-            .map_err(|e| e.replace(&format!("{dir}/"), ""))?;
-        if !files.has(&format!("{adir}/action.sh")) {
-            return Err(format!(
-                "actions/{id}: no action.sh, an action does its work in one"
-            ));
-        }
+    for (id, f) in map {
+        let at = format!("{file}: actions: {id}");
         if ENTRIES.iter().any(|(n, _)| *n == id) {
             return Err(format!(
-                "actions/{id}: the dashboard keeps this name for a row of its own"
+                "{at}: the dashboard keeps this name for a row of its own"
             ));
         }
         if f.title.trim().is_empty() {
             return Err(format!("{at}: title is required"));
         }
+        let run = shell(&f.run, functions).map_err(|e| format!("{at}: run: {e}"))?;
         let mut inputs = Vec::new();
         for s in f.inputs {
             let name = s.name.clone();
-            if s.first || s.group.is_some() || s.value_from.is_some() {
+            if s.first || s.value_from.is_some() {
                 return Err(format!(
-                    "{at}: {name}: an input is asked when its action is opened, so it takes no first, group or value-from"
+                    "{at}: {name}: an input is asked when its action is opened, so it takes no first or value-from"
                 ));
             }
-            let s = setting(s, &adir, files, functions).map_err(|e| format!("{at}: {e}"))?;
+            let s = setting(s, "", functions).map_err(|e| format!("{at}: {e}"))?;
             if inputs.iter().any(|o: &Setting| o.name == s.name) {
                 return Err(format!("{at}: {} is declared twice", s.name));
             }
             inputs.push(s);
         }
         out.push(Action {
-            id: id.clone(),
-            dir: adir,
+            id,
+            run,
             title: text::reflow(&f.title),
             description: text::reflow(f.description.as_deref().unwrap_or_default()),
             group: f.group,
@@ -1733,34 +1753,20 @@ fn actions(files: &Files, dir: &str, functions: &BTreeSet<String>) -> Result<Vec
 pub mod tests {
     use super::*;
 
-    /// A small product in memory: a module with two stages, a question, a gate and a way out.
+    /// The fixture's module: two stages, a question, a gate and a way out.
+    const SETUP: &str = "title: Setup\nstart: Install now\nconfirm: |\n  Install on {{TUX_DISK}}?\n\n  Everything on it is erased.\nreport: |\n  Set up\n\n  {{TUX_HOST}} boots.\nrequires: [root]\ndashboard: [start, note, settings, reset, net]\nlanguage: Region\non:\n  leave: [restart]\n  failure: [share]\n  success: [shell]\nerrors:\n  3: |\n    No internet\n\n    Connect and start again.\nactions:\n  root:\n    title: Running as root\n    error: This has to run as root.\n    run: is_root()\n  note:\n    title: Leave a note\n    description: Writes a note.\n    group: Extras\n    run: note()\n    inputs:\n      - name: TUX_NOTE\n        type: text\n        title: Note\n        required: true\n    report: |\n      Noted\n\n      {{TUX_NOTE}} is written down.\n  net:\n    title: Join a network\n    description: Joins one.\n    group: Network\n    run: join()\n    requires: [root]\n  share:\n    title: Share the log\n    description: Puts the log online.\n    run: share()\n    report: |\n      Shared\n    qr: TUX_URL\n    simulates: true\nstages:\n  prepare:\n    disk:\n      title: Prepare the disk\n      errors:\n        10: |\n          The disk is gone\n\n          {{TUX_DISK}} is not there.\n  install:\n    base:\n      title: Install the base\n      needs: [snapshot]\n      report: |\n        Installed\n\n        {{TUX_HOST}} is ready.\n      errors:\n        10: |\n          The name is taken\n\n          {{TUX_HOST}} is on the network already.\n    desktop:\n      title: Install the desktop\n      needs: [base]\n      when: TUX_DESKTOP != none\n      allow-failure: true\n    snapshot:\n      title: Go back to a snapshot\n      asks:\n        name: TUX_SNAPSHOT\n        title: Snapshot\n        options-from: options_snapshots()\n      confirm: |\n        Put {{TUX_SNAPSHOT}} in place?\npresets:\n  - title: Desktop\n    description: A desktop.\n    values:\n      TUX_DESKTOP: gnome\n  - title: Core\n    values:\n      TUX_DESKTOP: none\nsettings:\n  Region:\n    - name: TUX_KEYMAP\n      type: list\n      title: Keyboard\n      required: true\n      first: true\n      options: [us, de]\n      apply: apply_keymap()\n  System:\n    - name: TUX_HOST\n      type: text\n      title: Hostname\n      description: What the machine calls itself.\n      required: true\n      prefill: prefill_host()\n      pattern: '^[a-z][a-z0-9-]*$'\n      error: Lower case letters, digits and - only.\n    - name: TUX_DESKTOP\n      type: list\n      title: Desktop\n      required: true\n      options: [gnome, none]\n    - name: TUX_DRIVER\n      type: list\n      title: Driver\n      required: true\n      options: [free, none]\n      when: TUX_DESKTOP != none\n    - name: TUX_PASSWORD\n      type: new-password\n      title: Password\n      required: true\n    - name: TUX_VM\n      type: bool\n      title: Virtual machine\n      value-from: value_vm()\n  Storage:\n    - name: TUX_DISK\n      type: list\n      title: Disk\n      required: true\n      options-from: options_disks()\n      pattern: '^sd'\n    - name: TUX_ENCRYPT\n      type: bool\n      title: Encryption\n      default: true\n";
+
+    /// A small product in memory: one module, and two actions of the product it names.
     pub fn fixture() -> Vec<(&'static str, &'static [u8])> {
         vec![
-            ("product.yaml", b"title: Tux\naccent: \"#8fbcbb\"\nconsole-accent: cyan\nlogo: |\n  Tux\n\n  ####\nstatus:\n  check: check_online()\n  pass: Online\n  fail: Offline\n"),
-            ("lib.sh", b"check_online() { true; }\nbroken() {\n    false\n}\noptions_disks() { printf 'sda\\tsda 20G\\nsdb\\tsdb 40G\\n'; }\nprefill_host() { echo tuxbox; }\nvalue_vm() { echo false; }\napply_keymap() { true; }\n"),
-            ("setup/module.yaml", b"title: Setup\nstart: Install now\nconfirm: |\n  Install on {{TUX_DISK}}?\n\n  Everything on it is erased.\nreport: |\n  Set up\n\n  {{TUX_HOST}} boots.\nrequires: [root]\ndashboard: [start, note, settings, reset, net]\nlanguage: Region\non:\n  leave: [restart]\n  failure: [share]\n  success: [shell]\nerrors:\n  3: |\n    No internet\n\n    Connect and start again.\nstages: [prepare, install]\npresets:\n  - title: Desktop\n    description: A desktop.\n    values:\n      TUX_DESKTOP: gnome\n  - title: Core\n    values:\n      TUX_DESKTOP: none\nsettings:\n  - name: TUX_KEYMAP\n    type: list\n    title: Keyboard\n    group: Region\n    required: true\n    first: true\n    options: [us, de]\n    apply: apply_keymap()\n  - name: TUX_HOST\n    type: text\n    title: Hostname\n    description: What the machine calls itself.\n    group: System\n    required: true\n    prefill: prefill_host()\n    pattern: '^[a-z][a-z0-9-]*$'\n    error: Lower case letters, digits and - only.\n  - name: TUX_DESKTOP\n    type: list\n    title: Desktop\n    group: System\n    required: true\n    options: [gnome, none]\n  - name: TUX_DRIVER\n    type: list\n    title: Driver\n    group: System\n    required: true\n    options: [free, none]\n    when: TUX_DESKTOP != none\n  - name: TUX_DISK\n    type: list\n    title: Disk\n    group: Storage\n    required: true\n    options-from: options_disks()\n    pattern: '^sd'\n  - name: TUX_ENCRYPT\n    type: bool\n    title: Encryption\n    group: Storage\n    default: true\n  - name: TUX_PASSWORD\n    type: new-password\n    title: Password\n    group: System\n    required: true\n  - name: TUX_VM\n    type: bool\n    title: Virtual machine\n    group: System\n    value-from: value_vm()\n"),
-            ("setup/tasks/prepare/disk/task.yaml", b"title: Prepare the disk\nerrors:\n  10: |\n    The disk is gone\n\n    {{TUX_DISK}} is not there.\n"),
-            ("setup/tasks/prepare/disk/task.sh", b"echo \"$TUX_DISK\" >\"${MODULE_CONF%/*}/disk\"\n[ \"$TUX_HOST\" != slow ] || { trap 'echo asked >\"${MODULE_CONF%/*}/stopped\"' TERM; sleep 30 & wait; }\n"),
-            ("setup/tasks/prepare/disk/test.sh", b"[ -f \"${MODULE_CONF%/*}/disk\" ]\n"),
-            ("setup/tasks/install/base/task.yaml", b"title: Install the base\nneeds: [snapshot]\nreport: |\n  Installed\n\n  {{TUX_HOST}} is ready.\nerrors:\n  10: |\n    The name is taken\n\n    {{TUX_HOST}} is on the network already.\n"),
-            ("setup/tasks/install/base/task.sh", b"[ \"$TUX_HOST\" != taken ] || exit 10\n[ \"$TUX_HOST\" != broken ] || false\necho \"$TUX_HOST\" >\"${MODULE_CONF%/*}/host\"\n"),
-            ("setup/tasks/install/desktop/task.yaml", b"title: Install the desktop\nneeds: [base]\nwhen: TUX_DESKTOP != none\nallow-failure: true\n"),
-            ("setup/tasks/install/desktop/task.sh", b"[ \"$TUX_DRIVER\" = free ]\n"),
-            ("setup/tasks/install/snapshot/task.yaml", b"title: Go back to a snapshot\nasks:\n  name: TUX_SNAPSHOT\n  title: Snapshot\n  options-from: ./snapshots.sh\nconfirm: |\n  Put {{TUX_SNAPSHOT}} in place?\n"),
-            ("setup/tasks/install/snapshot/task.sh", b"echo \"$TUX_SNAPSHOT\"\n"),
-            ("setup/tasks/install/snapshot/snapshots.sh", b"echo one\necho two\n"),
-            ("setup/actions/root/action.yaml", b"title: Running as root\nerror: This has to run as root.\n"),
-            ("setup/actions/root/action.sh", b"[ \"$(id -u)\" -eq 0 ]\n"),
-            ("setup/actions/note/action.yaml", b"title: Leave a note\ndescription: Writes a note.\ngroup: Extras\ninputs:\n  - name: TUX_NOTE\n    type: text\n    title: Note\n    required: true\nreport: |\n  Noted\n\n  {{TUX_NOTE}} is written down.\n"),
-            ("setup/actions/note/action.sh", b"echo \"$TUX_NOTE\"\n"),
-            ("setup/actions/net/action.yaml", b"title: Join a network\ndescription: Joins one.\ngroup: Network\nrequires: [root]\n"),
-            ("setup/actions/net/action.sh", b"true\n"),
-            ("setup/actions/restart/action.yaml", b"title: Restart\ndescription: Starts the machine again.\n"),
-            ("setup/actions/restart/action.sh", b": >\"${MODULE_CONF%/*}/restarted\"\n"),
-            ("setup/actions/share/action.yaml", b"title: Share the log\ndescription: Puts the log online.\nreport: |\n  Shared\nqr: TUX_URL\nsimulates: true\n"),
-            ("setup/actions/share/action.sh", b"printf \"TUX_URL='https://x/1'\\n\" >>\"$MODULE_CONF\"\n"),
-            ("setup/actions/shell/action.yaml", b"title: Open a shell\ndescription: Until exit.\ntty: true\n"),
-            ("setup/actions/shell/action.sh", b"true\n"),
+            ("product.yaml", b"title: Tux\naccent: \"#8fbcbb\"\nconsole-accent: cyan\nlogo: |\n  Tux\n\n  ####\nstatus:\n  check: check_online()\n  pass: Online\n  fail: Offline\nactions:\n  restart:\n    title: Restart\n    description: Starts the machine again.\n    run: restart()\n  shell:\n    title: Open a shell\n    description: Until exit.\n    run: open_shell()\n    tty: true\n"),
+            ("lib.sh", b"check_online() { true; }\nbroken() {\n    false\n}\nundecided() {\n    [ a = b ] && echo never\n}\noptions_disks() { printf 'sda\\tsda 20G\\nsdb\\tsdb 40G\\n'; }\nprefill_host() { echo tuxbox; }\nvalue_vm() { echo false; }\napply_keymap() { true; }\noptions_snapshots() { echo one; echo two; }\nis_root() { [ \"$(id -u)\" -eq 0 ]; }\nnote() { echo \"$TUX_NOTE\"; }\njoin() { true; }\nrestart() { : >\"${MODULE_CONF%/*}/restarted\"; }\nshare() { printf \"TUX_URL='https://x/1'\\n\" >>\"$MODULE_CONF\"; }\nopen_shell() { true; }\n"),
+            ("setup/module.yaml", SETUP.as_bytes()),
+            ("setup/tasks/disk/task.sh", b"echo \"$TUX_DISK\" >\"${MODULE_CONF%/*}/disk\"\n[ \"$TUX_HOST\" != slow ] || { trap 'echo asked >\"${MODULE_CONF%/*}/stopped\"' TERM; sleep 30 & wait; }\n"),
+            ("setup/tasks/disk/test.sh", b"[ -f \"${MODULE_CONF%/*}/disk\" ]\n"),
+            ("setup/tasks/base/task.sh", b"[ \"$TUX_HOST\" != taken ] || exit 10\n[ \"$TUX_HOST\" != broken ] || false\necho \"$TUX_HOST\" >\"${MODULE_CONF%/*}/host\"\n"),
+            ("setup/tasks/desktop/task.sh", b"[ \"$TUX_DRIVER\" = free ]\n"),
+            ("setup/tasks/snapshot/task.sh", b"echo \"$TUX_SNAPSHOT\"\n"),
             ("locales/de.po", b"msgid \"\"\nmsgstr \"\"\n\nmsgid \"English\"\nmsgstr \"Deutsch\"\n\nmsgid \"Hostname\"\nmsgstr \"Rechnername\"\n"),
         ]
     }
@@ -1773,23 +1779,32 @@ pub mod tests {
         files
     }
 
-    /// A product of one module whose tasks and actions name nothing, with the module.yaml given.
-    fn tiny(module: &'static str) -> Vec<(&'static str, &'static [u8])> {
+    /// The fixture with `old` in its module.yaml written as `new`.
+    fn edited(old: &str, new: &str) -> Vec<(&'static str, &'static [u8])> {
+        assert!(SETUP.contains(old), "{old:?}");
+        with("setup/module.yaml", leak(SETUP.replacen(old, new, 1)))
+    }
+
+    fn leak(s: String) -> &'static str {
+        Box::leak(s.into_boxed_str())
+    }
+
+    /// What a module of `tiny` declares after the head a test gives: three actions that name
+    /// nothing and one task.
+    const TINY: &str = "actions:\n  root:\n    title: Root\n    error: No\n    run: fn_a()\n  row:\n    title: Row\n    run: fn_a()\n  asks:\n    title: Asks\n    run: fn_a()\n    inputs:\n      - name: A_IN\n        type: text\n        title: In\nstages:\n  a:\n    one:\n      title: One\n";
+
+    /// A product of one module, with the head of its module.yaml given and `TINY` after it.
+    fn tiny(head: &str) -> Vec<(&'static str, &'static [u8])> {
+        tiny_with(head, TINY)
+    }
+
+    /// A product of one module, its module.yaml the head and the rest given.
+    fn tiny_with(head: &str, rest: &str) -> Vec<(&'static str, &'static [u8])> {
         vec![
             ("product.yaml", b"title: Tux\n"),
             ("lib.sh", b"fn_a() { true; }\n"),
-            ("m/module.yaml", module.as_bytes()),
-            ("m/tasks/a/one/task.yaml", b"title: One\n"),
-            ("m/tasks/a/one/task.sh", b"true\n"),
-            ("m/actions/root/action.yaml", b"title: Root\nerror: No\n"),
-            ("m/actions/root/action.sh", b"true\n"),
-            ("m/actions/row/action.yaml", b"title: Row\n"),
-            ("m/actions/row/action.sh", b"true\n"),
-            (
-                "m/actions/asks/action.yaml",
-                b"title: Asks\ninputs:\n  - name: A_IN\n    type: text\n    title: In\n",
-            ),
-            ("m/actions/asks/action.sh", b"true\n"),
+            ("m/module.yaml", leak(format!("{head}{rest}")).as_bytes()),
+            ("m/tasks/one/task.sh", b"true\n"),
         ]
     }
 
@@ -1809,6 +1824,8 @@ pub mod tests {
         let m = l.module("setup").unwrap();
         let order: Vec<&str> = m.tasks.iter().map(|t| t.id.as_str()).collect();
         assert_eq!(order, ["disk", "snapshot", "base", "desktop"]);
+        assert_eq!(m.stages, ["prepare", "install"]);
+        assert_eq!(m.tasks[0].dir, "setup/tasks/disk");
         assert_eq!(
             m.tasks[0].errors[&10],
             "The disk is gone\n\n{{TUX_DISK}} is not there."
@@ -1826,12 +1843,17 @@ pub mod tests {
         assert_eq!(m.setting("TUX_KEYMAP").unwrap().filter(), Filter::Open);
         assert_eq!(
             m.tasks[1].asks.as_ref().unwrap().options_from,
-            Some(Shell::File(
-                "setup/tasks/install/snapshot/snapshots.sh".into()
-            ))
+            Some(Shell::Call("options_snapshots".into()))
+        );
+        let ids: Vec<&str> = m.actions.iter().map(|a| a.id.as_str()).collect();
+        assert_eq!(ids, ["net", "note", "restart", "root", "share", "shell"]);
+        assert_eq!(
+            m.action("restart").unwrap().run,
+            Shell::Call("restart".into())
         );
         assert!(m.declared().contains(&"TUX_URL") && m.declared().contains(&"TUX_NOTE"));
         assert!(m.texts().contains(&"Install now".to_string()));
+        assert!(m.texts().contains(&"Open a shell".to_string()));
         assert!(
             m.texts()
                 .contains(&"Set up\n\n{{TUX_HOST}} boots.".to_string())
@@ -1852,182 +1874,189 @@ pub mod tests {
 
     #[test]
     fn refuses_what_cannot_run() {
-        const OK: &str = "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, settings, asks]\non:\n  leave: [row]\n";
+        const OK: &str =
+            "title: M\nrequires: [root]\ndashboard: [start, settings, asks]\non:\n  leave: [row]\n";
         assert!(load(&tiny(OK)).is_ok());
         for (module, says) in [
             (
-                "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, settings, asks, asks]\non:\n  leave: [row]\n",
+                "title: M\nrequires: [root]\ndashboard: [start, settings, asks, asks]\non:\n  leave: [row]\n",
                 "asks is listed twice",
             ),
             (
-                "title: M\nstages: [a]\nrequires: [root]\ndashboard: [settings, asks]\non:\n  leave: [row]\n",
+                "title: M\nrequires: [root]\ndashboard: [settings, asks]\non:\n  leave: [row]\n",
                 "start is missing",
             ),
             (
-                "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, asks]\non:\n  leave: [row]\n",
+                "title: M\nrequires: [root]\ndashboard: [start, asks]\non:\n  leave: [row]\n",
                 "settings is missing",
             ),
             (
-                "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, settings, asks, nope]\non:\n  leave: [row]\n",
+                "title: M\nrequires: [root]\ndashboard: [start, settings, asks, nope]\non:\n  leave: [row]\n",
                 "dashboard: no such action: nope",
             ),
+            ("title: M\nrequires: [root]\n", "missing field `dashboard`"),
             (
-                "title: M\nstages: [a]\nrequires: [root]\n",
-                "missing field `dashboard`",
+                "title: M\nrequires: [root]\ndashboard: [start, settings, asks]\nlanguage: Nope\non:\n  leave: [row]\n",
+                "language: no setting is in the group Nope",
             ),
             (
-                "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, settings, asks]\nlanguage: Nope\non:\n  leave: [row]\n",
-                "language: no setting is in the group Nope",
+                "title: M\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  System:\n    - name: lower\n      type: text\n      title: T\n",
+                "no variable name",
+            ),
+            (
+                "title: M\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  System:\n    - name: MODULE_X\n      type: text\n      title: T\n",
+                "belong to the runtime",
+            ),
+            (
+                "title: M\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  System:\n    - name: A\n      type: text\n      title: T\n      options: [x]\n",
+                "takes no options",
+            ),
+            (
+                "title: M\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  System:\n    - name: A\n      type: list\n      title: T\n",
+                "options or options-from",
+            ),
+            (
+                "title: M\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  System:\n    - name: A\n      type: text\n      title: T\n      prefill: nothing()\n",
+                "not a function in lib.sh",
+            ),
+            (
+                "title: M\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  System:\n    - name: A\n      type: text\n      title: T\n      prefill: ./prefill.sh\n",
+                "is no function of lib.sh, written name()",
+            ),
+            (
+                "title: M\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  System:\n    - name: A\n      type: text\n      title: T\n      when: B == 1\n",
+                "no such setting: B",
+            ),
+            (
+                "title: M\nrequires: [root]\ndashboard: [start, settings, asks, row]\nerrors:\n  200: Too high\n",
+                "from 1 to 125",
+            ),
+            (
+                "title: M\nrequires: [root]\ndashboard: [start, settings, asks, row]\nconfirm: Erase {{NOPE}}?\n",
+                "{{NOPE}} is not a variable",
+            ),
+            (
+                "title: M\nrequires: [root]\ndashboard: [start, settings, asks, row]\nreport: Ready on {{NOPE}}\n",
+                "{{NOPE}} is not a variable",
+            ),
+            (
+                "title: M\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  System: []\n",
+                "settings: System: no settings",
+            ),
+            (
+                "title: M\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  System:\n    - name: A\n      type: text\n      title: T\n      group: X\n",
+                "unknown field `group`",
+            ),
+            (
+                "title: M\nrequires: [nope]\ndashboard: [start, settings]\n",
+                "no such action: nope",
+            ),
+            (
+                "title: M\ndashboard: [start, settings]\n",
+                "m/module.yaml: actions: asks: nothing names it",
+            ),
+            (
+                "title: M\nrequires: [root, asks]\non:\n  leave: [row]\ndashboard: [start, settings]\n",
+                "has no page",
+            ),
+            (
+                "title: M\nrequires: [root, row]\ndashboard: [start, settings, asks]\n",
+                "read as this sentence",
+            ),
+            (
+                "title: M\nrequires: [root]\ndashboard: [start, settings, row]\non:\n  leave: [asks]\n",
+                "a way out asks nothing",
             ),
         ] {
             refused(&tiny(module), says);
         }
+        for (rest, says) in [
+            (
+                TINY.replace("    title: Row\n", "    title: Row\n    group: Ways\n"),
+                "group: only a row of the dashboard",
+            ),
+            (
+                TINY.replace("  row:\n", "  reset:\n"),
+                "m/module.yaml: actions: reset: the dashboard keeps this name",
+            ),
+            (
+                TINY.replace("    run: fn_a()\n  row:", "  row:"),
+                "missing field `run`",
+            ),
+            (
+                TINY.replace("stages:\n  a:\n    one:\n      title: One\n", ""),
+                "stages: at least one",
+            ),
+            (
+                TINY.replace("    one:\n      title: One\n", "    {}\n"),
+                "stages: a: no tasks",
+            ),
+            (
+                format!("{TINY}    two:\n      title: Two\n"),
+                "m/tasks/two: no task.sh",
+            ),
+            (
+                format!("{TINY}  b:\n    one:\n      title: One again\n"),
+                "both would be tasks/one/",
+            ),
+        ] {
+            refused(&tiny_with(OK, &rest), says);
+        }
         let mut files = tiny(OK);
-        files.retain(|(path, _)| *path != "m/actions/row/action.yaml");
-        files.push(("m/actions/row/action.yaml", b"title: Row\ngroup: Ways\n"));
-        refused(&files, "group: only a row of the dashboard");
+        files.push(("m/tasks/two/task.sh", b"true\n"));
+        refused(&files, "m/tasks/two: no task under stages:");
         let mut files = tiny(OK);
-        files.push(("m/actions/reset/action.yaml", b"title: Reset\n"));
-        files.push(("m/actions/reset/action.sh", b"true\n"));
-        refused(&files, "actions/reset: the dashboard keeps this name");
+        files.push(("m/tasks/loose.sh", b"true\n"));
+        refused(&files, "a task lies in a folder of its own");
         refused(
-            &tiny(
-                "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  - name: lower\n    type: text\n    title: T\n",
-            ),
-            "no variable name",
-        );
-        refused(
-            &tiny(
-                "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  - name: MODULE_X\n    type: text\n    title: T\n",
-            ),
-            "belong to the runtime",
-        );
-        refused(
-            &tiny(
-                "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  - name: A\n    type: text\n    title: T\n    options: [x]\n",
-            ),
-            "takes no options",
-        );
-        refused(
-            &tiny(
-                "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  - name: A\n    type: list\n    title: T\n",
-            ),
-            "options or options-from",
-        );
-        refused(
-            &tiny(
-                "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  - name: A\n    type: text\n    title: T\n    prefill: nothing()\n",
-            ),
-            "not a function in lib.sh",
-        );
-        refused(
-            &tiny(
-                "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  - name: A\n    type: text\n    title: T\n    when: B == 1\n",
-            ),
-            "no such setting: B",
-        );
-        refused(
-            &tiny(
-                "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, settings, asks, row]\nerrors:\n  200: Too high\n",
-            ),
-            "from 1 to 125",
-        );
-        refused(
-            &tiny(
-                "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, settings, asks, row]\nconfirm: Erase {{NOPE}}?\n",
-            ),
-            "{{NOPE}} is not a variable",
-        );
-        refused(
-            &tiny(
-                "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, settings, asks, row]\nreport: Ready on {{NOPE}}\n",
-            ),
-            "{{NOPE}} is not a variable",
-        );
-        refused(
-            &tiny("title: M\nstages: [a]\nrequires: [nope]\ndashboard: [start, settings]\n"),
-            "no such action: nope",
-        );
-        refused(
-            &tiny("title: M\nstages: [a]\ndashboard: [start, settings]\n"),
-            "nothing names it",
-        );
-        refused(
-            &tiny(
-                "title: M\nstages: [a]\nrequires: [root, asks]\non:\n  leave: [row]\ndashboard: [start, settings]\n",
-            ),
-            "has no page",
-        );
-        refused(
-            &tiny(
-                "title: M\nstages: [a]\nrequires: [root, row]\ndashboard: [start, settings, asks]\n",
-            ),
-            "read as this sentence",
-        );
-        refused(
-            &tiny(
-                "title: M\nstages: [a]\nrequires: [root]\ndashboard: [start, settings, row]\non:\n  leave: [asks]\n",
-            ),
-            "a way out asks nothing",
-        );
-        refused(
-            &tiny(
-                "title: M\nstages: [b]\nrequires: [root]\ndashboard: [start, settings, asks, row]\n",
-            ),
-            "no such stage",
-        );
-        refused(
-            &with(
-                "setup/tasks/install/base/task.yaml",
-                "title: B\nneeds: [disk]\n",
+            &edited(
+                "    base:\n      title: Install the base\n      needs: [snapshot]\n",
+                "    base:\n      title: Install the base\n      needs: [disk]\n",
             ),
             "which is in prepare",
         );
         refused(
-            &with(
-                "setup/tasks/install/base/task.yaml",
-                "title: B\nneeds: [desktop]\n",
-            ),
+            &edited("      needs: [snapshot]\n", "      needs: [desktop]\n"),
             "wait on each other",
         );
         refused(
-            &with(
-                "setup/tasks/install/base/task.yaml",
-                "title: B\nyes-after: [disk]\n",
+            &edited(
+                "      needs: [snapshot]\n",
+                "      needs: [snapshot]\n      yes-after: [disk]\n",
             ),
             "without confirm",
         );
         refused(
-            &with(
-                "setup/tasks/install/base/task.yaml",
-                "title: B\nunknown: 1\n",
+            &edited(
+                "      needs: [snapshot]\n",
+                "      needs: [snapshot]\n      unknown: 1\n",
             ),
             "unknown",
         );
         refused(
-            &with(
-                "setup/tasks/prepare/disk/task.yaml",
-                "title: D\nasks:\n  name: TUX_HOST\n  title: H\n  options: [a]\n",
+            &edited(
+                "      title: Prepare the disk\n",
+                "      title: Prepare the disk\n      asks:\n        name: TUX_HOST\n        title: H\n        options: [a]\n",
             ),
             "is a setting already",
         );
         refused(
-            &with(
-                "setup/actions/shell/action.yaml",
-                "title: S\ntty: true\nreport: Done\n",
-            ),
-            "terminal for its page",
-        );
-        refused(
-            &with("setup/actions/share/action.yaml", "title: S\nqr: TUX_URL\n"),
+            &edited("    report: |\n      Shared\n", ""),
             "no report for it",
         );
         refused(
-            &with(
-                "setup/actions/root/action.yaml",
-                "title: R\nerror: No\nrequires: [root]\n",
+            &edited(
+                "    error: This has to run as root.\n",
+                "    error: This has to run as root.\n    requires: [root]\n",
             ),
             "wait on each other",
+        );
+        refused(
+            &edited(
+                "  root:\n",
+                "  restart:\n    title: Again\n    run: join()\n  root:\n",
+            ),
+            "actions: restart: product.yaml declares it already",
         );
         refused(
             &with("product.yaml", "title: X\naccent: red\n"),
@@ -2041,6 +2070,31 @@ pub mod tests {
             &with("product.yaml", "title: X\nstatus:\n  check: nothing()\n"),
             "not a function",
         );
+    }
+
+    /// A product's action belongs to each module that names it, and one no module names is
+    /// refused.
+    #[test]
+    fn a_product_action_is_one_of_the_modules_that_name_it() {
+        let product = std::str::from_utf8(fixture()[0].1).unwrap().to_string();
+        let spare = leak(format!(
+            "{product}  spare:\n    title: Spare\n    run: join()\n"
+        ));
+        refused(
+            &with("product.yaml", spare),
+            "product.yaml: actions: spare: nothing names it",
+        );
+        let mut files = with("product.yaml", spare);
+        files.push((
+            "other/module.yaml",
+            b"title: Other\ndashboard: [start, settings]\non:\n  leave: [spare]\nstages:\n  a:\n    one:\n      title: One\n",
+        ));
+        files.push(("other/tasks/one/task.sh", b"true\n"));
+        let l = load(&files).unwrap();
+        assert!(l.module("setup").unwrap().action("spare").is_none());
+        let other = l.module("other").unwrap();
+        let ids: Vec<&str> = other.actions.iter().map(|a| a.id.as_str()).collect();
+        assert_eq!(ids, ["spare"]);
     }
 
     #[test]

@@ -64,9 +64,6 @@ POSIX_SCRIPTS := get.sh .github/settings.sh .github/release-token.sh
 # Bash: what builds and boots the images, and what they run.
 ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_E2E) $(ISO_GLYPHS) $(ISO_FONT) $(wildcard $(ISO_DIR)/src/usr/local/bin/* $(ISO_DIR)/recovery/airootfs/usr/local/bin/*)
 
-# Bash: the helpers in docs/, run by hand.
-DOCS_SCRIPTS := $(wildcard docs/*.sh)
-
 # The modules: every folder with a module.yaml, as the build embeds them.
 MODULES := $(patsubst %/module.yaml,%,$(wildcard */module.yaml))
 
@@ -77,11 +74,11 @@ MODULE_YAML    = product.yaml $(shell find $(MODULES) -name '*.yaml')
 
 # Shell a module ships into somebody's home, found by the name it lands under.
 # zsh is read by its own shell, since shellcheck cannot.
-MODULE_SHELL = $(wildcard $(addsuffix /tasks/*/*/data/bashrc,$(MODULES)) $(addsuffix /tasks/*/*/data/aliases,$(MODULES)))
-MODULE_ZSH   = $(wildcard $(addsuffix /tasks/*/*/data/zshrc,$(MODULES)))
+MODULE_SHELL = $(wildcard $(addsuffix /tasks/*/data/bashrc,$(MODULES)) $(addsuffix /tasks/*/data/aliases,$(MODULES)))
+MODULE_ZSH   = $(wildcard $(addsuffix /tasks/*/data/zshrc,$(MODULES)))
 
 # A program a module ships, named outright: it has no extension to find it by.
-MODULE_PROGRAMS := installer/tasks/desktop/recovery-app/data/arch-os-recovery
+MODULE_PROGRAMS := installer/tasks/recovery-app/data/arch-os-recovery
 
 # Everything that can reach a screen: the product, the catalogs, the library
 # and every module file. The READMEs and fastfetch's config, drawn for a
@@ -91,13 +88,13 @@ MODULE_TEXT = product.yaml $(wildcard locales/*.po) $(LIBRARY) $(shell find $(MO
 # Each module's own check of what it ships in data/: the Installer's lookup
 # tables, the Recovery's boot entries. And a task's check of a program it
 # ships: the cache trim that keeps the snapshots' kernels.
-DATA_CHECKS = $(wildcard $(addsuffix /data/check.sh,$(MODULES)) $(addsuffix /tasks/*/*/check.sh,$(MODULES)))
+DATA_CHECKS = $(wildcard $(addsuffix /data/check.sh,$(MODULES)) $(addsuffix /tasks/*/check.sh,$(MODULES)))
 
 # lib.sh's own check: its functions against answers written out beside them.
 LIBRARY_CHECK := lib.check.sh
 
 # A task's check of the zshrc it ships: keys typed and titles read in the shell reading it.
-ZSH_CHECKS = $(wildcard $(addsuffix /tasks/*/*/check.zsh,$(MODULES)))
+ZSH_CHECKS = $(wildcard $(addsuffix /tasks/*/check.zsh,$(MODULES)))
 
 # ////////////////////////////////////////////////////////////////////////////
 # HOUSEKEEPING
@@ -109,8 +106,8 @@ BUILD_OUTPUT := $(DIST_DIR) $(ISO_DIR)/archiso $(ISO_DIR)/download
 # Empty when there is nothing to elevate, which is the case in CI.
 SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 
-.PHONY: all build run image iso smoke e2e check fmt fmt-check lint test \
-	secrets-check actions-check library-check data-check zsh-check glyphs-check github clean
+.PHONY: all build run image iso smoke e2e screenshots banner check fmt fmt-check lint test \
+	secrets-check library-check data-check zsh-check glyphs-check github clean
 
 all: build
 
@@ -143,12 +140,27 @@ smoke:
 e2e:
 	$(ISO_E2E) $(ISO) $(START)
 
+# The pictures in docs/, by hand after a visible change: docs/CONTRIBUTING.md.
+# The pages show VERSION, so `make screenshots VERSION=2.1.0` pictures a
+# release before it exists.
+screenshots: build
+	python3 docs/screenshots.py --product $(BIN)
+
+# Out of two screenshots and the README's tagline, the paragraph under its
+# banner without the bold, so the banner cannot come to say something else.
+banner:
+	@tagline="$$(awk '/src="banner\.png"/ { found = 1; next } found && NF { print; exit }' docs/README.md | \
+		sed -n 's:^<p>\(.*\)</p>$$:\1:p' | sed 's:</\{0,1\}b>::g')"; \
+	[ -n "$$tagline" ] || { echo "docs/README.md: no <p> line under the banner to take the tagline from" >&2; exit 1; }; \
+	python3 docs/banner.py --product product.yaml --logo docs/logo.svg --cell 9 --tagline "$$tagline" \
+		--card docs/screenshots/installer.png --card docs/screenshots/installing.png
+
 # ////////////////////////////////////////////////////////////////////////////
 # CHECKS | What has to pass before anything is committed
 # ////////////////////////////////////////////////////////////////////////////
 
 # The whole gate, cheapest and loudest first. CI runs exactly this.
-check: secrets-check fmt-check lint test actions-check library-check data-check zsh-check glyphs-check
+check: secrets-check fmt-check lint test library-check data-check zsh-check glyphs-check
 
 # This is installed by piping a script into a shell.
 secrets-check:
@@ -157,12 +169,12 @@ secrets-check:
 fmt:
 	cd $(RUNTIME) && cargo fmt
 	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)
-	shfmt -w -i 4 $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL) $(LIBRARY_CHECK)
+	shfmt -w -i 4 $(ISO_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL) $(LIBRARY_CHECK)
 
 fmt-check:
 	cd $(RUNTIME) && cargo fmt --check
 	shfmt -d -ln posix -i 4 $(POSIX_SCRIPTS)
-	shfmt -d -i 4 $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL) $(LIBRARY_CHECK)
+	shfmt -d -i 4 $(ISO_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL) $(LIBRARY_CHECK)
 
 # Module scripts are checked as the runtime runs them: bash, with lib.sh in
 # scope. A script that sources it is read with it, found from the script's own
@@ -170,7 +182,7 @@ fmt-check:
 lint:
 	cd $(RUNTIME) && cargo clippy --all-targets --locked -- -D warnings
 	shellcheck -s sh -S style $(POSIX_SCRIPTS)
-	shellcheck -x -P SCRIPTDIR -S style $(ISO_SCRIPTS) $(DOCS_SCRIPTS) $(MODULE_PROGRAMS)
+	shellcheck -x -P SCRIPTDIR -S style $(ISO_SCRIPTS) $(MODULE_PROGRAMS)
 	shellcheck -x -S style $(MODULE_SCRIPTS) $(LIBRARY_CHECK)
 	shellcheck -s bash -S style -e SC1091 $(MODULE_SHELL)
 	for file in $(MODULE_ZSH) $(ZSH_CHECKS); do zsh -n "$$file"; done
@@ -209,15 +221,6 @@ library-check:
 
 zsh-check:
 	@for check in $(ZSH_CHECKS); do zsh "$$check" "$$(dirname "$$check")/data/zshrc" || exit 1; done
-
-# An action two modules share is a folder in each, the same file for file.
-actions-check:
-	@for name in $$(basename -a */actions/*/ | sort | uniq -d); do \
-		set -- */actions/$$name; first=$$1; shift; \
-		for dir in "$$@"; do \
-			diff -r $$first $$dir || { echo "$$dir differs from $$first" >&2; exit 1; }; \
-		done; \
-	done
 
 # The repository's settings on GitHub, out of .github/settings/. Run by hand as
 # an admin: a workflow may not change the rules it is held to.

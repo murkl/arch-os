@@ -62,6 +62,9 @@ msgstr "Fehlgeschlagen"
 msgid "Filter"
 msgstr "Filtern"
 
+msgid "Function"
+msgstr "Funktion"
+
 msgid "Took {{time}}"
 msgstr "Dauer {{time}}"
 

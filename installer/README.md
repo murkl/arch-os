@@ -1,6 +1,6 @@
 # Arch OS Installer
 
-Installs Arch OS. The module is data: one YAML file and the folders beside it. The **[runtime](../runtime)** draws the interface, asks the questions and runs the tasks in order.
+Installs Arch OS. The module is data: one YAML file and a folder per task. The **[runtime](../runtime)** draws the interface, asks the questions and runs the tasks in order.
 
 **Note:** _Repairing an installation is a separate module: **[➜ Recovery](../recovery)**_
 
@@ -14,22 +14,18 @@ make -C .. run MODULE=installer ARGS=--dry-run   # run it without touching this 
 ## What Is Where
 
 ```
-module.yaml                    what the Installer is, what it asks, the order it works in, where its actions go
-<key>-<what>.sh                what one row of module.yaml runs: its list, its suggestion, its value, what it applies
-tasks/<stage>/<id>/task.yaml   a task: its needs, conditions and pages
-tasks/<stage>/<id>/task.sh     what the task does, with everything only it needs
-tasks/<stage>/<id>/test.sh     optional: how to tell on the machine that it worked
-tasks/<stage>/<id>/data/       every file the task writes into the new system, named after it, filled by render
-actions/<id>/action.yaml       an action: its pages, and what a no means
-actions/<id>/action.sh         what the action does, and nothing else
-data/                          the tables languages and countries are looked up in, and data/check.sh, which checks them
+module.yaml           what the Installer is and asks, its actions, and its tasks in the order they run
+tasks/<id>/task.sh    what a task does, with everything only it needs
+tasks/<id>/test.sh    optional: how to tell on the machine that it worked
+tasks/<id>/data/      every file the task writes into the new system, named after it, filled by render
+data/                 the tables languages and countries are looked up in, and data/check.sh, which checks them
 ```
 
-**Note:** _Shared code lives in **[lib.sh](../lib.sh)** beside `product.yaml`, and what `module.yaml` alone calls in a file beside it. An action the Recovery has too (Wi-Fi, the ways out, sharing the log, the shell) is a folder in each module, and both call the same function there. Every text is translated in **[locales/](../locales)**._
+**Note:** _Every function `module.yaml` names lives in **[lib.sh](../lib.sh)** beside `product.yaml`. An action the Recovery has too (Wi-Fi, the ways out, sharing the log, the shell) is declared once in **[product.yaml](../product.yaml)**. Every text is translated in **[locales/](../locales)**._
 
 ## Stages
 
-One folder per stage under `tasks/`. `module.yaml` orders the stages, `needs:` orders the tasks within one.
+Each stage lists its tasks under `stages:` in `module.yaml`. The stages run in order, `needs:` orders the tasks within one.
 
 | Stage | Tasks |
 | --- | --- |
@@ -43,7 +39,7 @@ One folder per stage under `tasks/`. `module.yaml` orders the stages, `needs:` o
 
 ## Actions
 
-Scripts outside the run, each with its own pages. `action.yaml` declares how it behaves, `action.sh` only acts. `module.yaml` names where each runs.
+Work outside the run, each with its own pages. Its entry under `actions:` declares how it behaves, the function it names under `run:` only acts. `module.yaml` names where each runs.
 
 | Where | Actions |
 | --- | --- |
@@ -94,7 +90,7 @@ The console keyboard is asked `first` and loaded at once: a password typed on th
 
 ## Sharing a Configuration
 
-`installer.conf` can be uploaded to **[paste.rs](https://paste.rs)** and comes back as a QR code. `actions/share-config`, on the page a finished run ends on, uploads it. `actions/import-config`, behind the online profile, fetches it.
+`installer.conf` can be uploaded to **[paste.rs](https://paste.rs)** and comes back as a QR code. `share-config`, on the page a finished run ends on, uploads it. `import-config`, behind the online profile, fetches it.
 
 **Note:** _Uploaded without its `ARCH_OS_CONFIG_*` lines. It holds no password, but hostname, username, disk and language: **anyone with the address can read it**. The import leaves out the disk, a path on the machine it was answered on, and the kernel parameters, which nobody should take on from someone else's code._
 
@@ -102,9 +98,9 @@ The console keyboard is asked `first` and loaded at once: a password typed on th
 
 | You want to add | How |
 | --- | --- |
-| An option | A row under `settings:`, its list or suggestion a file beside `module.yaml`. Guard the tasks that depend on it with `when:` |
-| A task | A folder under its stage with `task.yaml` and `task.sh`, and a `test.sh` where there is something to read back |
-| A check, a row or a way out | A folder under `actions/`, named under `requires:` or `on:` in `module.yaml`. What another module does too is a function in `lib.sh` that both call |
+| An option | A row under `settings:`, its list or suggestion a function in `lib.sh`. Guard the tasks that depend on it with `when:` |
+| A task | An entry under its stage in `module.yaml` and a folder `tasks/<id>/` with `task.sh`, and a `test.sh` where there is something to read back |
+| A check, a row or a way out | An entry under `actions:` with the function of `lib.sh` it runs, named under `requires:` or `on:`. One the Recovery has too goes into `product.yaml` |
 | A profile | An entry under `presets:`. A fetched one names the action that fetches it with `action:` |
 | A language | **[➜ Contributing](../docs/CONTRIBUTING.md#adding-a-language)** |
 | Something in the Recovery | **[➜ Recovery](../recovery)**, none of it lives here |
@@ -119,4 +115,4 @@ A booted **Arch Linux live image**, root on it, UEFI with Secure Boot off, then 
 
 `installer.conf`, beside wherever the Installer was started, and copied into the new system at the end. Passwords are never in it and never shown on the dashboard.
 
-The Recovery on its partition gets two answers to start with: the language this run was read in and the console keyboard. See `tasks/system/recovery`.
+The Recovery on its partition gets two answers to start with: the language this run was read in and the console keyboard. See `tasks/recovery`.

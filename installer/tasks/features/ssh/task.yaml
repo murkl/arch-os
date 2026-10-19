@@ -1,5 +1,0 @@
-title: Enable the SSH server
-
-# After the firewall, which closes ssh in public until something listens.
-needs: [firewall]
-when: ARCH_OS_SSH_SERVER_ENABLED == true

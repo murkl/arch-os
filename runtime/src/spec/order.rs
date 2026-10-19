@@ -1,5 +1,5 @@
 //! What runs when inside one stage: a task runs after what it names in `needs`. Tasks no `needs`
-//! separates keep the order their folders sort in.
+//! separates keep the order module.yaml lists them in.
 
 /// The indices of `tasks` in the order they run, or the ring that keeps them waiting.
 pub fn order(tasks: &[(String, Vec<String>)]) -> Result<Vec<usize>, String> {

@@ -28,8 +28,8 @@
       - page: Disk
         press: enter
 
-      # The dashboard, also the page the banner is collaged from, see
-      # docs/banner.sh. Install now is the row the cursor opens on.
+      # The dashboard, also the page the banner is collaged from, see make
+      # banner. Install now is the row the cursor opens on.
       - page: [Install now, Username]
         shot: installer
         press: enter

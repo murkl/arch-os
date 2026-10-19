@@ -1,9 +1,0 @@
-# Opened where the network wants a passphrase.
-title: Wireless network
-error: "Wrong password for {{ARCH_OS_WIFI_SSID}}, or the network is out of range."
-
-inputs:
-  - name: ARCH_OS_WIFI_PASSPHRASE
-    type: password
-    title: Password
-    required: true

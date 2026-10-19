@@ -23,8 +23,8 @@ cargo test              # every module loaded as a run loads it, every catalog h
 ## The Product
 
 ```
-product.yaml        the product: its name, color and wordmark
-lib.sh              the one library every script gets
+product.yaml        the product: its name, color, wordmark and the actions every module may name
+lib.sh              the one library every script gets, with every function the YAML names
 locales/<code>.po   one catalog per language
 <module>/           one folder per module
 runtime/            this program
@@ -36,6 +36,10 @@ The build embeds everything except `runtime/` into the binary, so the binary is 
 
 ```yaml
 title: Arch OS
+logo: |
+  Arch Linux
+
+   █████  ██████   ██████ ██   ██      ██████  ███████
 accent: "#1793d1"
 console-accent: bright-blue
 surface: "#3b4252"
@@ -44,94 +48,92 @@ status:
   check: check_online()
   pass: Online
   fail: Offline
-logo: |
-  Arch Linux
-
-   █████  ██████   ██████ ██   ██      ██████  ███████
+actions:
+  restart:
+    title: Restart
+    description: Restarts this machine.
+    run: restart_machine()
 ```
 
 | Key | Description |
 | --- | --- |
 | `title` | The product's name, first in the breadcrumb above every page |
+| `logo` | The wordmark, shown on the way in. Above the first blank line, a dim eyebrow |
 | `accent` | `#rrggbb`, the one color the interface is built from |
 | `console-accent` | Its slot on a 16-color console, see [The Console](#the-console) |
 | `surface` | `#rrggbb`, behind the row under the cursor. Dark gray without it |
 | `console-surface` | Its slot on a console: `red`, `green`, `yellow`, `blue`, `magenta`, `cyan` or `white`, since a console has only eight background colors. Blue without it |
 | `status` | One line about the machine in the header. `check` is a function of `lib.sh`: exit 0 shows `pass`, anything else `fail`. Checked every `every` seconds, default 10, and right after an action ran |
-| `logo` | The wordmark, shown on the way in. Above the first blank line, a dim eyebrow |
+| `actions` | Actions every module may name, see [Actions](#actions). A module that names none of them has none of them |
 
 ### `lib.sh`
 
-The one place for shared script code. Loaded before every task, test and action, and before everything the YAML calls. It defines functions and exports constants, and computes nothing while it loads.
+The one place for script code outside the tasks. Loaded before every task, test and action, and before everything the YAML calls. It defines functions and exports constants, and computes nothing while it loads.
 
 ### Shell in the YAML
 
-A key that runs shell code names it in one of two forms:
+A key that runs shell code names a function of `lib.sh` as `name()`. One `lib.sh` has no function by that name is refused at startup, and so is shell code inside the YAML: every line lives where a linter reads it and a failure can point to it.
 
-| Form | Runs |
-| --- | --- |
-| `name()` | That function of `lib.sh`. Refused at startup where `lib.sh` has none by that name |
-| `./file.sh` | That file, relative to the folder of the YAML |
-
-Shell code inside the YAML is refused: every line lives where a linter reads it and a failure can point to it. The keys are `check` of the status, and `options-from`, `value-from`, `prefill`, `apply` and `check` of a setting. Both forms are named after the key that calls them. A function serves more than one declaration or script, such as `options_disks()` or `check_online()`. A file serves one declaration alone, such as `./prefill-timezone.sh` or `./apply-timezone.sh`.
+The keys are `check` of the status, `run` of an action, and `options-from`, `value-from`, `prefill`, `apply` and `check` of a setting. A setting's function is named after its key, such as `options_disks()` or `prefill_timezone()`. An action's is named after what it does, such as `join_wifi()`.
 
 ## A Module
 
 | Path | Description |
 | --- | --- |
-| `module.yaml` | What it is, asks and does |
-| `tasks/<stage>/<task>/task.yaml` | A task |
-| `tasks/<stage>/<task>/task.sh` | Its work |
-| `tasks/<stage>/<task>/test.sh` | Optional: checks that it worked |
-| `actions/<action>/action.yaml` | An action |
-| `actions/<action>/action.sh` | Its work |
+| `module.yaml` | What it is, asks and does, its actions and its tasks |
+| `tasks/<task>/task.sh` | A task's work |
+| `tasks/<task>/test.sh` | Optional: checks that it worked |
 
 The folder name is the module's identity: `arch-os recovery` opens it, and it writes `recovery.conf` and `recovery.log`.
+
+**Note:** _Each table of keys below lists them in the order a file writes them: the order a run meets them._
 
 ### `module.yaml`
 
 ```yaml
 title: Installer
 start: Install now
+requires: [live-image, root, internet]
+presets: …
+settings: …
+dashboard: [start, settings, reset, wifi]
+language: Region
 confirm: |
   Install Arch OS on {{ARCH_OS_DISK}}?
 
   Everything on the disk is erased.
+stages: …
 report: |
   Arch OS installed
 
   {{ARCH_OS_DISK}} is ready to boot.
-requires: [live-image, root, internet]
-dashboard: [start, settings, reset, wifi]
-language: Region
-on:
-  leave: [restart, shutdown]
-  failure: [share-log]
-  success: [chroot]
 errors:
   3: |
     No internet connection
 
     Connect this machine and choose Install now again.
-stages: [prepare, system, finish]
-presets: …
-settings: …
+on:
+  leave: [restart, shutdown]
+  failure: [share-log]
+  success: [chroot]
+actions: …
 ```
 
 | Key | Description |
 | --- | --- |
 | `title` | **Required.** The module's name, in the breadcrumb above every page |
 | `start` | The first row of the dashboard, which starts the work. `Start` without it |
-| `confirm` | A question asked after every password and before the work, opening on No. The first paragraph is the headline |
-| `report` | The words a finished run ends on. The first paragraph is the headline |
 | `requires` | Actions checked before anything is asked, in this order. The first that returns no blocks everything with its page and is checked again every few seconds. Skipped on a dry run |
-| `dashboard` | **Required.** The dashboard's rows in order, see [The Dashboard](#the-dashboard) |
-| `language` | The group whose first row is the interface language. Refused at startup where no setting is in it |
-| `on` | Where its other actions are offered, see [Actions](#actions) |
-| `errors` | The words for each status any of its scripts stops with, see [Stopping on Purpose](#stopping-on-purpose) |
-| `stages` | **Required.** The phases of the work, in order. Each is a folder `tasks/<stage>/` |
 | `presets` | The profiles, see [Presets](#presets) |
-| `settings` | The questions, see [Settings](#settings) |
+| `settings` | The questions under their headings, see [Settings](#settings) |
+| `dashboard` | **Required.** The dashboard's rows in order, see [The Dashboard](#the-dashboard) |
+| `language` | The heading the interface language stands under first. Refused at startup where no setting is under it |
+| `confirm` | A question asked after every password and before the work, opening on No. The first paragraph is the headline |
+| `stages` | **Required.** The phases of the work in order, each with its tasks, see [Tasks](#tasks) |
+| `report` | The words a finished run ends on. The first paragraph is the headline |
+| `errors` | The words for each status any of its scripts stops with, see [Stopping on Purpose](#stopping-on-purpose) |
+| `on` | Where its other actions are offered, see [Actions](#actions) |
+| `actions` | Its own actions, see [Actions](#actions) |
 
 ### The Way In
 
@@ -161,29 +163,29 @@ A blank row follows `start`, the answers and each group of actions. Right after 
 
 ## Settings
 
-One entry under `settings:` is one question and one environment variable.
+One entry under `settings:` is one question and one environment variable. The key above its list is the heading its row stands under on the dashboard, and the lists are asked in the order written.
 
 ```yaml
 settings:
-  - name: ARCH_OS_DISK
-    type: list
-    title: Disk
-    description: Everything on it is erased.
-    group: Storage
-    required: true
-    options-from: options_disks()
-    pattern: '^/dev/'
-    error: Choose a disk that exists.
+  Storage:
+    - name: ARCH_OS_DISK
+      type: list
+      title: Disk
+      description: Everything on it is erased.
+      required: true
+      options-from: options_disks()
+      pattern: '^/dev/'
+      error: Choose a disk that exists.
 ```
 
 Every setting names its type. The type sets how it is drawn and which keys apply:
 
 | `type` | Drawn as | Takes |
 | --- | --- | --- |
-| `text` | A text box | `default`, `prefill`, `pattern`, `value-from` |
+| `text` | A text box | `default`, `prefill`, `value-from`, `pattern` |
 | `bool` | Yes or No | `default`, `value-from` |
-| `list` | A list | `options` or `options-from`, `default`, `prefill`, `pattern`, `filter` |
-| `open-list` | A list, plus a row for a custom entry | `options` or `options-from`, `default`, `prefill`, `pattern`, `filter` |
+| `list` | A list | `options` or `options-from`, `filter`, `default`, `prefill`, `pattern` |
+| `open-list` | A list, plus a row for a custom entry | `options` or `options-from`, `filter`, `default`, `prefill`, `pattern` |
 | `password` | An existing password, typed once | `check` |
 | `new-password` | A new password, typed twice | |
 
@@ -193,20 +195,19 @@ Every setting names its type. The type sets how it is drawn and which keys apply
 | `type` | **Required.** One of the types above |
 | `title` | **Required.** The question, and its row on the dashboard |
 | `description` | What the value is for |
-| `group` | Its heading on the dashboard |
+| `when` | When it is asked, see [Conditions](#conditions) |
+| `first` | Asked before everything else, `requires` included, with the list's filter open |
 | `required` | Asked for while unanswered |
-| `default` | The initial answer, such as `true`, `auto` or `pc105` |
 | `options` | The answers, listed inline |
 | `options-from` | Shell that prints the answers, one per line. `value<TAB>label` stores the value and shows the label |
-| `value-from` | Shell that prints the value instead of asking. Never asked, never on the dashboard, never stored |
-| `prefill` | Shell that prints a suggestion. Still asked |
-| `apply` | Shell that applies the answer to this machine, such as a keymap |
-| `check` | Shell that tests a `password` before it is accepted |
-| `first` | Asked before everything else, `requires` included, with the list's filter open |
 | `filter` | The list's filter box: `collapsed` behind `f`, or `open` |
+| `default` | The initial answer, such as `true`, `auto` or `pc105` |
+| `prefill` | Shell that prints a suggestion. Still asked |
+| `value-from` | Shell that prints the value instead of asking. Never asked, never on the dashboard, never stored |
 | `pattern` | A regular expression the answer must match |
 | `error` | The message for a wrong answer |
-| `when` | When it is asked, see [Conditions](#conditions) |
+| `check` | Shell that tests a `password` before it is accepted |
+| `apply` | Shell that applies the answer to this machine, such as a keymap |
 
 - `true` and `false` show as Yes and No
 - A password is asked right before the run, used and forgotten
@@ -250,12 +251,17 @@ A preset lists its answers under `values` or names the action that fetches them,
 
 ## Tasks
 
-A folder under its stage: `tasks/<stage>/<task>/`. The stage is a **when**, the folder in it a **what**.
+An entry under its stage in `stages:`, and a folder `tasks/<task>/` with its `task.sh`. The stage is a **when**, the task in it a **what**.
 
 ```yaml
-title: Install the graphics drivers
-needs: [gnome]
-when: ARCH_OS_DESKTOP != none
+stages:
+  desktop:
+    gnome:
+      title: Install GNOME
+    graphics:
+      title: Install the graphics drivers
+      needs: [gnome]
+      when: ARCH_OS_DESKTOP != none
 ```
 
 | Key | Description |
@@ -263,18 +269,18 @@ when: ARCH_OS_DESKTOP != none
 | `title` | **Required.** Its row in the run |
 | `needs` | Tasks of its own stage it runs after |
 | `when` | Every condition must hold, or it is left out of the run |
-| `asks` | A question the run pauses for first: `name`, `title`, `description`, `filter` and `options` or `options-from`, read once the run reaches it. An empty list skips the task. Never stored |
+| `asks` | A question the run pauses for first: `name`, `title`, `description`, `options` or `options-from` and `filter`, read once the run reaches it. An empty list skips the task. Never stored |
 | `confirm` | A yes or no before it runs, opening on No. No skips it |
 | `yes-after` | Tasks before it: where one of them ran in this run, `confirm` opens on Yes |
-| `report` | A page the run pauses on afterwards. The first paragraph is the headline |
 | `progress` | `true`: its last printed line shows under it while it runs |
 | `simulates` | `true`: runs on a dry run too, reading `DRY_RUN` itself |
 | `allow-failure` | `true`: its failure does not stop the run |
+| `report` | A page the run pauses on afterwards. The first paragraph is the headline |
 | `errors` | The words for each status its `task.sh` stops with, see [Stopping on Purpose](#stopping-on-purpose) |
 
-- A task runs after every task of an earlier stage, and within its stage after its `needs`
+- A task runs after every task of an earlier stage, and within its stage after its `needs`, otherwise in the order listed
 - A `needs` into another stage, an unknown name and a cycle are refused
-- A folder under `tasks/` that is no declared stage is refused
+- A task without its folder, a folder under `tasks/` no task is named after, a stage without tasks and two tasks of one name are refused
 
 ### Tests
 
@@ -286,20 +292,23 @@ A `test.sh` beside `task.sh` runs right after the task, on the machine it worked
 
 ## Actions
 
-A script a module runs outside its work: `actions/<action>/action.yaml` and `action.sh`. The YAML declares how it behaves, the script only does the work: exit 0 is yes, any other status no.
+Work a module does outside its run: an entry under `actions:` in its `module.yaml`, or in `product.yaml` for an action every module may name. The entry declares how it behaves, the function `run` names only does the work: exit 0 is yes, any other status no.
 
 ```yaml
-title: Connect to Wi-Fi
-description: Connects to a wireless network.
-requires: [wifi-card, no-cable]
-on:
-  failure: [wifi-passphrase]
-inputs:
-  - name: ARCH_OS_WIFI_SSID
-    type: list
-    title: Network
-    required: true
-    options-from: options_wifi_networks()
+actions:
+  wifi:
+    title: Connect to Wi-Fi
+    description: Connects to a wireless network.
+    requires: [wifi-card, no-cable]
+    inputs:
+      - name: ARCH_OS_WIFI_SSID
+        type: list
+        title: Network
+        required: true
+        options-from: options_wifi_networks()
+    run: join_wifi()
+    on:
+      failure: [wifi-passphrase]
 ```
 
 | Key | Description |
@@ -307,16 +316,17 @@ inputs:
 | `title` | **Required.** Its row, and the heading over its page |
 | `description` | The sentence under its row. Choosing the row is the consent, so it names what leaves the machine |
 | `group` | The dashboard heading its row stands under. Refused where `dashboard` does not list the action |
-| `error` | What a no means. **Required** under a module's `requires` |
 | `requires` | Actions that must return yes before this one is offered |
-| `on: failure` | Where this action returns no, the first of these offered on this machine opens |
-| `inputs` | Its questions before it runs, a page each: settings without `first`, `group` or `value-from`. Answered for this run only, never stored |
+| `inputs` | Its questions before it runs, a page each: settings without `first` or `value-from`. Answered for this run only, never stored |
 | `confirm` | A yes or no after its inputs and before its work, opening on No. For a second consent: choosing the row agrees to the lookup, this to its result |
-| `report` | Its page after it ran. The first paragraph is the headline |
-| `qr` | A variable shown on that page as a QR code, such as an address. No setting declares it: the script appends it to `MODULE_CONF` |
+| `run` | **Required.** The function of `lib.sh` that does its work |
 | `tty` | The terminal itself is its only page |
 | `simulates` | `true`: runs on a dry run too |
-| `errors` | The words for each status its `action.sh` stops with, see [Stopping on Purpose](#stopping-on-purpose) |
+| `error` | What a no means. **Required** under a module's `requires` |
+| `errors` | The words for each status its function stops with, see [Stopping on Purpose](#stopping-on-purpose) |
+| `report` | Its page after it ran. The first paragraph is the headline |
+| `qr` | A variable shown on that page as a QR code, such as an address. No setting declares it: its function appends it to `MODULE_CONF` |
+| `on: failure` | Where this action returns no, the first of these offered on this machine opens |
 
 Where a module places an action:
 
@@ -330,7 +340,7 @@ Where a module places an action:
 
 - A row opens the action's inputs, its `confirm`, its work and its `report` in turn. A longer flow is several actions, chained by `on: failure`
 - `on: leave` declares that the machine booted to run the module, so leaving becomes a choice
-- Refused at startup: an unknown name, an action nothing names, a cycle of actions, an action that names itself under `on: failure`, a page beside the terminal, a page or a `confirm` on an action only run by itself, `errors` beside `tty`, a check without `error`, and an input or a `confirm` under `on: leave`
+- Refused at startup: an unknown name, an action nothing names, one of `product.yaml` no module names, one `module.yaml` declares again, a cycle of actions, an action that names itself under `on: failure`, a page beside the terminal, a page or a `confirm` on an action only run by itself, `errors` beside `tty`, a check without `error`, and an input or a `confirm` under `on: leave`
 
 ## What a Script Receives
 
@@ -344,14 +354,14 @@ Every declared variable under its own name, and the runtime's:
 | `MODULE_VERSION` | The version of the program |
 | `DRY_RUN` | `true` on a dry run, absent otherwise |
 
-Scripts run with `lib.sh` loaded and an `ERR` trap: no shebang, no `set -e`, no error handling. Each runs in its own session, without a terminal, unless the action has `tty: true`.
+Scripts, and the functions the YAML names, run with `lib.sh` loaded and an `ERR` trap: no shebang, no `set -e`, no error handling. Each runs in its own session, without a terminal, unless the action has `tty: true`.
 
 - **Any non-zero status is a failure**, from a failed command or from the script itself. `[ "$X" = y ] && do_it` as the last line fails where the test is false. A status that means no error is allowed by name: `grep x file || allow 1`
 - **Ask nothing.** Every question is in the YAML, unless the action has `tty: true`. A program that prompts on the terminal anyway fails at once, as there is none
 - **Print nothing for a person.** stdout and stderr go to the log
 - A `test.sh` also changes nothing
 
-A failure shows the module, the task or action, the script and its line, the command, the exit code and the tool's output. Inside a function of `lib.sh`, the line is that of the calling script.
+A failure shows the module, the task or action, the script and its line, the function where that line is in `lib.sh`, the command, the exit code and the tool's output. Inside a function of `lib.sh` a task calls, the line is the task's.
 
 ### Stopping on Purpose
 
@@ -367,7 +377,7 @@ errors:
 
 `exit 3` stops the run with these words, the first paragraph as the headline. No technical details and no `on: failure` row appear with them: the words say what to do. Every other failure is reported where the script broke, for whoever fixes it.
 
-- A task or an action declares them for its own script, the module for every script it has. The unit's own words take precedence
+- A task or an action declares them for its own work, the module for every script it has. The unit's own words take precedence
 - A status from 1 to 125: bash reserves 126 and up for a command it cannot run or find, and for signals
 - Only `exit` counts, in the script or in a function it calls. A failed command, a status from `return` or the last line, and an `exit` inside `$(…)` or `( … )` count as a broken script, whatever the status
 - A status no YAML puts into words is a failure like any other

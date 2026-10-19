@@ -6,7 +6,7 @@ set -eu
 OPT=/opt/arch-os
 
 # What the Installer leaves on the EFI partition: the Recovery's answers.
-# installer/tasks/system/recovery spells the same path.
+# installer/tasks/recovery spells the same path.
 SEED=EFI/arch-os-recovery/recovery.conf
 
 # The script every installed system runs after a start that worked, with the
