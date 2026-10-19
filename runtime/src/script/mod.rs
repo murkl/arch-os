@@ -119,39 +119,48 @@ const SNIPPET: &str = "[ -z \"$2\" ] || source \"$2\" || exit $?\neval \"$1\"";
 const GUARD: &str =
     "[ -z \"$2\" ] || source \"$2\" || exit $?\neval \"rt_guard() {\n$1\n}\"\nrt_guard\nexit $?";
 
-/// A script file, under the trap that reports on fd 3 where it broke: code, file, line, command.
-/// Within a helper of the library, the file and line are the script's that called it. `-e` stays
-/// off, since `source` hands back the status of a benign last line. A script that stops itself
-/// with `exit` leaves no report, which is how a chosen status is told from a broken command. The
-/// DEBUG trap remembers the script's own last line for one that hands back a status without a
-/// failing command.
-const FILE: &str = concat!(
+/// A step, under the trap that reports on fd 3 where it broke: code, file, line, command and the
+/// function the line is in. `$3` is the file its own lines are in: the script, or the library for
+/// a function. Within a helper of the library, the file and line are the script's that called
+/// it. `-e` stays off, since `source` hands back the status of a benign last line. A script that
+/// stops itself with `exit` leaves no report, which is how a chosen status is told from a broken
+/// command. The DEBUG trap remembers the step's own last line for one that hands back a status
+/// without a failing command.
+const STEP: &str = concat!(
     "set -Eo pipefail -T\n",
     "[ -z \"$2\" ] || source \"$2\" || exit $?\n",
-    "rt_lib=$2\n",
+    "rt_lib=$2 rt_home=$3\n",
     "rt_failed() {\n",
-    "  local f=1 line=$2\n",
+    "  local f=1 line=$2 fn=\"\"\n",
     "  while [ \"${BASH_SOURCE[f]}\" = \"$rt_lib\" ] && [ -n \"${BASH_SOURCE[f + 1]:-}\" ]; do line=${BASH_LINENO[f]}; f=$((f + 1)); done\n",
     "  [ -n \"${BASH_SOURCE[f]}\" ] || return 0\n",
-    "  printf \"fail\\t%d\\t%s\\t%d\\t%s\\n\" \"$1\" \"${BASH_SOURCE[f]}\" \"$line\" \"$3\" >&3\n",
+    "  [ \"${BASH_SOURCE[f]}\" != \"$rt_lib\" ] || fn=${FUNCNAME[f]}\n",
+    "  printf \"fail\\t%d\\t%s\\t%d\\t%s\\t%s\\n\" \"$1\" \"${BASH_SOURCE[f]}\" \"$line\" \"$3\" \"$fn\" >&3\n",
     "  exit \"$1\"\n",
     "}\n",
     "trap 'rt_failed $? \"$LINENO\" \"$BASH_COMMAND\"' ERR\n",
-    "trap '[ \"${BASH_SOURCE[0]}\" = \"$1\" ] && { rt_line=$LINENO; rt_cmd=$BASH_COMMAND; }; :' DEBUG\n",
-    "source \"$1\"\n",
+    "trap '[ \"${BASH_SOURCE[0]}\" = \"$rt_home\" ] && { rt_line=$LINENO; rt_cmd=$BASH_COMMAND; rt_fn=${FUNCNAME[0]}; }; :' DEBUG\n",
+    "eval \"$1\"\n",
     "c=$?\n",
-    "[ \"$c\" -eq 0 ] || printf \"fail\\t%d\\t%s\\t%d\\t%s\\n\" \"$c\" \"$1\" \"${rt_line:-0}\" \"$rt_cmd\" >&3\n",
+    "[ \"$rt_home\" = \"$rt_lib\" ] || rt_fn=\"\"\n",
+    "[ \"$c\" -eq 0 ] || printf \"fail\\t%d\\t%s\\t%d\\t%s\\t%s\\n\" \"$c\" \"$rt_home\" \"${rt_line:-0}\" \"$rt_cmd\" \"${rt_fn:-}\" >&3\n",
     "exit $c"
 );
 
-/// bash with a wrapper, what it runs as `$1` and the library as `$2`, and the answers.
-fn bash(wrapper: &str, payload: &str, env: &[(String, String)]) -> Result<Command, String> {
+/// bash with a wrapper, what it runs as `$1`, the library as `$2`, then `rest`, and the answers.
+fn bash(
+    wrapper: &str,
+    payload: &str,
+    rest: &[&str],
+    env: &[(String, String)],
+) -> Result<Command, String> {
     let mut cmd = Command::new("bash");
     cmd.arg("-c")
         .arg(wrapper)
         .arg("--")
         .arg(payload)
-        .arg(lib()?);
+        .arg(lib()?)
+        .args(rest);
     cmd.envs(env.iter().map(|(k, v)| (k.as_str(), v.as_str())));
     Ok(cmd)
 }
@@ -221,7 +230,7 @@ fn said(out: &std::process::Output) -> String {
 
 /// Runs a snippet and returns what it printed, trimmed at the end.
 pub fn run(shell: &Shell, env: &[(String, String)]) -> Result<String, String> {
-    let out = detached(&mut bash(SNIPPET, &piece(shell)?, env)?)
+    let out = detached(&mut bash(SNIPPET, &piece(shell)?, &[], env)?)
         .output()
         .map_err(|e| format!("bash: {e}"))?;
     if !out.status.success() {
@@ -242,9 +251,8 @@ pub fn lines(shell: &Shell, env: &[(String, String)]) -> Result<Vec<String>, Str
 
 /// Runs an action by itself, as a question with a yes or no for an answer. What it said on stderr
 /// with a no is what somebody reads.
-pub fn guard(script: &str, env: &[(String, String)]) -> Result<(), String> {
-    let payload = format!("source {}", quote(&path(script)?.display().to_string()));
-    let out = detached(&mut bash(GUARD, &payload, env)?)
+pub fn guard(shell: &Shell, env: &[(String, String)]) -> Result<(), String> {
+    let out = detached(&mut bash(GUARD, &piece(shell)?, &[], env)?)
         .output()
         .map_err(|e| format!("bash: {e}"))?;
     if out.status.success() {
@@ -253,15 +261,24 @@ pub fn guard(script: &str, env: &[(String, String)]) -> Result<(), String> {
     Err(said(&out))
 }
 
-/// One piece of a module's work as this layer takes it: the script, what a failure calls it,
+/// One piece of a module's work as this layer takes it: its shell, what a failure calls it,
 /// and whether it is an action's rather than a task's.
 #[derive(Clone, Debug)]
 pub struct Step {
     pub module: String,
     pub name: String,
     pub action: bool,
-    /// The script in the product.
-    pub file: String,
+    pub run: Shell,
+}
+
+impl Step {
+    /// The file its own lines are in, relative to the product: the library for a function.
+    fn file(&self) -> String {
+        match &self.run {
+            Shell::Call(_) => spec::LIB.to_string(),
+            Shell::File(rel) => rel.clone(),
+        }
+    }
 }
 
 /// Starts a step in the background, its output to the log and the events to `sink`.
@@ -270,22 +287,24 @@ pub fn start(
     env: &[(String, String)],
     sink: impl Fn(Event) + Send + Sync + 'static,
 ) -> Result<Session, String> {
-    let file = path(&step.file)?.display().to_string();
-    let cmd = bash(FILE, &file, env)?;
+    let home = match &step.run {
+        Shell::Call(_) => lib()?,
+        Shell::File(rel) => path(rel)?.display().to_string(),
+    };
+    let cmd = bash(STEP, &piece(&step.run)?, &[&home], env)?;
     Session::spawn(step, cmd, sink)
 }
 
 /// Runs an action on the terminal itself, in place of the interface, and waits for it. Nothing
 /// is captured or logged: its output is the terminal's.
 pub fn handover(step: &Step, env: &[(String, String)]) -> Result<(), Box<Failure>> {
-    let file = path(&step.file).map_err(|e| Box::new(Failure::new(step, e)))?;
-    let payload = format!("source {}", quote(&file.display().to_string()));
-    let cmd = bash(SNIPPET, &payload, env).map_err(|e| Box::new(Failure::new(step, e)))?;
+    let payload = piece(&step.run).map_err(|e| Box::new(Failure::new(step, e)))?;
+    let cmd = bash(SNIPPET, &payload, &[], env).map_err(|e| Box::new(Failure::new(step, e)))?;
     match handover::run(cmd) {
         Ok(status) if status.success() => Ok(()),
         Ok(status) => Err(Box::new(Failure {
             code: status.code().unwrap_or(1),
-            script: step.file.clone(),
+            script: step.file(),
             ..Failure::new(step, String::new())
         })),
         Err(e) => Err(Box::new(Failure::new(step, e))),
@@ -301,6 +320,8 @@ pub struct Failure {
     pub action: bool,
     pub script: String,
     pub line: u32,
+    /// The function of the library the line is in, where the script is the library.
+    pub function: String,
     pub code: i32,
     pub command: String,
     pub stderr: String,
@@ -326,14 +347,15 @@ impl Failure {
         let mut f = Failure::new(step, stderr);
         f.code = code.unwrap_or(1);
         match fail.map(|l| l.split('\t').collect::<Vec<_>>()) {
-            Some(fields) if fields.len() >= 5 && fields[0] == "fail" => {
+            Some(fields) if fields.len() >= 6 && fields[0] == "fail" => {
                 f.code = fields[1].parse().unwrap_or(f.code);
                 f.script = short(fields[2]);
                 f.line = fields[3].parse().unwrap_or(0);
                 f.command = fields[4].to_string();
+                f.function = fields[5].to_string();
             }
             _ => {
-                f.script = step.file.clone();
+                f.script = step.file();
                 f.deliberate = code.is_some_and(|c| c > 0);
             }
         }
@@ -361,6 +383,7 @@ impl Failure {
             };
             add(t("Script"), &where_);
         }
+        add(t("Function"), &self.function);
         add(t("Command"), &self.command);
         if self.code != 0 {
             add(t("Exit code"), &self.code.to_string());
@@ -430,7 +453,7 @@ pub mod tests {
             module: "Fixture".into(),
             name: name.clone(),
             action: false,
-            file: rel,
+            run: Shell::File(rel),
         }
     }
 
@@ -510,8 +533,45 @@ pub mod tests {
                 break r.unwrap_err();
             }
         };
-        assert_eq!((f.script.as_str(), f.line), (s.file.as_str(), 2), "{f:?}");
-        assert_eq!(f.command, "false", "{f:?}");
+        assert_eq!((f.script.clone(), f.line), (s.file(), 2), "{f:?}");
+        assert_eq!(
+            (f.command.as_str(), f.function.as_str()),
+            ("false", ""),
+            "{f:?}"
+        );
+    }
+
+    /// A step that is a function of the library is told by the library's line and the function,
+    /// a failing command and a failing last line alike.
+    #[test]
+    fn a_failing_function_names_its_line_and_itself() {
+        use_fixture();
+        for (function, line, command) in [("broken", 3, "false"), ("undecided", 6, "[ a = b ]")] {
+            let step = Step {
+                module: "Fixture".into(),
+                name: function.into(),
+                action: true,
+                run: Shell::Call(function.into()),
+            };
+            let (tx, rx) = std::sync::mpsc::channel();
+            let _session = start(step, &[], move |e| drop(tx.send(e))).unwrap();
+            let f = loop {
+                if let Event::Exit(r) = rx.recv_timeout(Duration::from_secs(10)).unwrap() {
+                    break r.unwrap_err();
+                }
+            };
+            assert_eq!(
+                (
+                    f.script.as_str(),
+                    f.line,
+                    f.function.as_str(),
+                    f.command.as_str(),
+                    f.deliberate
+                ),
+                ("fixture-lib.sh", line, function, command, false),
+                "{f:?}"
+            );
+        }
     }
 
     #[test]
@@ -538,11 +598,11 @@ pub mod tests {
     fn snippets_answer_with_their_output_or_their_reason() {
         let env: Vec<(String, String)> = vec![("X".into(), "v".into())];
         let s = step("echo \"got $X\"\n");
-        assert_eq!(run(&Shell::File(s.file.clone()), &env).unwrap(), "got v");
+        assert_eq!(run(&s.run, &env).unwrap(), "got v");
         let no = step("echo why >&2\nexit 3\n");
-        assert_eq!(guard(&no.file, &[]).unwrap_err(), "why");
+        assert_eq!(guard(&no.run, &[]).unwrap_err(), "why");
         let yes = step("return 0\n");
-        assert!(guard(&yes.file, &[]).is_ok());
+        assert!(guard(&yes.run, &[]).is_ok());
     }
 
     /// A stop asks first, and a script that traps it cleans up and goes. One that stays is

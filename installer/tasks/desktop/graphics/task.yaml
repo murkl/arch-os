@@ -1,3 +1,0 @@
-title: Install the graphics drivers
-needs: [gnome]
-when: ARCH_OS_DESKTOP != none

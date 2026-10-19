@@ -984,10 +984,13 @@ pub mod tests {
         let (mut app, mut term, rx) = app_with(
             &[
                 (
-                    "asks:\n  name: TUX_SNAPSHOT\n  title: Snapshot\n  options-from: ./snapshots.sh\nconfirm: |\n  Put {{TUX_SNAPSHOT}} in place?\n",
+                    "      asks:\n        name: TUX_SNAPSHOT\n        title: Snapshot\n        options-from: options_snapshots()\n      confirm: |\n        Put {{TUX_SNAPSHOT}} in place?\n",
                     "",
                 ),
-                ("report: |\n  Installed\n\n  {{TUX_HOST}} is ready.\n", ""),
+                (
+                    "      report: |\n        Installed\n\n        {{TUX_HOST}} is ready.\n",
+                    "",
+                ),
             ],
             false,
         );
@@ -1341,7 +1344,7 @@ pub mod tests {
         let module = app.ctx.module;
         let f = crate::script::Failure {
             unit: "Install the base".into(),
-            script: "setup/tasks/install/base/task.sh".into(),
+            script: "setup/tasks/base/task.sh".into(),
             line: 2,
             code: 1,
             command: "false".into(),

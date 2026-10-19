@@ -82,8 +82,8 @@ packages="$(
         /(^|[[:space:]])(packages|lib32)\+?=\(/ { list = 1; sub(/.*(packages|lib32)\+?=\(/, "") }
         /chroot_pacman_install / { sub(/.*chroot_pacman_install /, ""); print; next }
         list { line = $0; if (sub(/\).*/, "", line)) list = 0; print line }
-    ' "$tasks"/*/*/task.sh
-    awk '/^  - name: ARCH_OS_(EDITOR|BROWSER|BACKUP)$/ { want = 1 } want && /^    options:/ { gsub(/.*\[|\].*/, ""); print; want = 0 }' ../module.yaml
+    ' "$tasks"/*/task.sh
+    awk '/^ *- name: ARCH_OS_(EDITOR|BROWSER|BACKUP)$/ { want = 1 } want && /^ *options:/ { gsub(/.*\[|\].*/, ""); print; want = 0 }' ../module.yaml
     sed -n 's/^export KERNEL=\(.*\)/\1 \1-headers/p; s/^[[:space:]]*echo \([a-z]*-ucode\)$/\1/p' ../../lib.sh
 )"
 packages="$(tr ', ' '\n' <<<"$packages" | grep -E '^[a-z0-9][a-z0-9@._+-]*$' | grep -vx none | sort -u)"

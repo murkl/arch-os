@@ -1,6 +1,6 @@
 # Arch OS Recovery
 
-Repairs an Arch OS installation. The module is data: one YAML file and the folders beside it. The **[runtime](../runtime)** draws the interface, asks the questions and runs the tasks in order.
+Repairs an Arch OS installation. The module is data: one YAML file and a folder per task. The **[runtime](../runtime)** draws the interface, asks the questions and runs the tasks in order.
 
 **Note:** _Installing Arch OS is a separate module: **[➜ Installer](../installer)**_
 
@@ -14,18 +14,14 @@ make -C .. run MODULE=recovery ARGS=--dry-run   # run it without touching this m
 ## What Is Where
 
 ```
-module.yaml                    what the Recovery is, what it asks, the order it works in, where its actions go
-<key>-<what>.sh                what one row of module.yaml runs: its list, its check, its value, what it applies
-tasks/<stage>/<id>/task.yaml   a task: its questions and pages
-tasks/<stage>/<id>/task.sh     what the task does
-tasks/<stage>/<id>/test.sh     optional: how to tell on the machine that it worked
-actions/<id>/action.yaml       an action: its pages, and what a no means
-actions/<id>/action.sh         what the action does, and nothing else
-data/boot/                     the boot entries, which the Installer writes and the Recovery lays down again
-data/check.sh                  checks data/boot/boot-tries.sh against the EFI partitions it meets
+module.yaml          what the Recovery is and asks, its actions, and its tasks in the order they run
+tasks/<id>/task.sh   what a task does
+tasks/<id>/test.sh   optional: how to tell on the machine that it worked
+data/boot/           the boot entries, which the Installer writes and the Recovery lays down again
+data/check.sh        checks data/boot/boot-tries.sh against the EFI partitions it meets
 ```
 
-**Note:** _Shared code lives in **[lib.sh](../lib.sh)** beside `product.yaml`, and what `module.yaml` alone calls in a file beside it. The actions the Installer has too (the live image, root, Wi-Fi, the ways out, sharing the log, the shell) call the same functions there. Every text is translated in **[locales/](../locales)**._
+**Note:** _Every function `module.yaml` names lives in **[lib.sh](../lib.sh)** beside `product.yaml`. The actions the Installer has too (the live image, root, Wi-Fi, the ways out, sharing the log, the shell) are declared once in **[product.yaml](../product.yaml)**. Every text is translated in **[locales/](../locales)**._
 
 ## Stages
 

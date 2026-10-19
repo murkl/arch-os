@@ -1,1 +1,0 @@
-has_wifi_card

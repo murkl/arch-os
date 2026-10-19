@@ -1,1 +1,0 @@
-[ -d /sys/firmware/efi ]

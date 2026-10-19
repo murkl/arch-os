@@ -87,7 +87,7 @@ impl ActionPage {
 
     fn start(&mut self, ctx: &mut Ctx) {
         self.started = true;
-        let step = ctx.step(&t(&self.action.title), true, self.action.script());
+        let step = ctx.step(&t(&self.action.title), true, self.action.run.clone());
         let env = ctx.env();
         if ctx.store.dry_run() && !self.action.simulates {
             crate::info!("action {}: simulated", self.action.id);
@@ -100,7 +100,7 @@ impl ActionPage {
                 Ok(session) => self.session = Some(session),
                 Err(e) => {
                     self.outcome = Some(Err(Failure::new(
-                        &ctx.step(&t(&self.action.title), true, self.action.script()),
+                        &ctx.step(&t(&self.action.title), true, self.action.run.clone()),
                         e,
                     )))
                 }

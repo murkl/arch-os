@@ -1,4 +1,0 @@
-title: Copy the answers and the log into the system
-
-# Last, so the log holds everything.
-needs: [orphans, snapper, secure-boot]

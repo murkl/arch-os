@@ -390,11 +390,11 @@ impl Ctx {
             if action.requires.is_empty() {
                 continue;
             }
-            let checks: Vec<String> = self
+            let checks: Vec<spec::Shell> = self
                 .module
                 .named(&action.requires)
                 .iter()
-                .map(|a| a.script())
+                .map(|a| a.run.clone())
                 .collect();
             let (tx, wake, id, env) = (
                 self.tx.clone(),
@@ -491,12 +491,12 @@ impl Ctx {
     }
 
     /// A step of this module, for the shell layer.
-    pub fn step(&self, name: &str, action: bool, file: String) -> script::Step {
+    pub fn step(&self, name: &str, action: bool, run: spec::Shell) -> script::Step {
         script::Step {
             module: crate::i18n::t(&self.module.title),
             name: name.to_string(),
             action,
-            file,
+            run,
         }
     }
 

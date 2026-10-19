@@ -7,7 +7,7 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 
 use crate::i18n::t;
-use crate::spec::Action;
+use crate::spec::{Action, Shell};
 use crate::ui::draw::{paragraph, put, waiting};
 use crate::ui::{Ctx, Data, Flow, Key, Page, Tone};
 
@@ -59,7 +59,7 @@ impl GatePage {
         let round = self.round;
         let action = self.action(ctx);
         let env = ctx.env();
-        let fallbacks: Vec<(&'static Action, Vec<String>)> = ctx
+        let fallbacks: Vec<(&'static Action, Vec<Shell>)> = ctx
             .module
             .named(&action.on_failure)
             .into_iter()
@@ -69,14 +69,14 @@ impl GatePage {
                     ctx.module
                         .named(&fb.requires)
                         .iter()
-                        .map(|a| a.script())
+                        .map(|a| a.run.clone())
                         .collect(),
                 )
             })
             .collect();
-        let script = action.script();
+        let run = action.run.clone();
         ctx.spawn(move || {
-            if crate::script::guard(&script, &env).is_ok() {
+            if crate::script::guard(&run, &env).is_ok() {
                 return Said {
                     round,
                     yes: true,

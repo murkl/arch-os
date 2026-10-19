@@ -1,5 +1,0 @@
-title: Set up Flatpak
-needs: [gnome]
-when:
-  - ARCH_OS_DESKTOP != none
-  - ARCH_OS_FLATPAK_ENABLED == true

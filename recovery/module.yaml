@@ -1,84 +1,229 @@
-# The Recovery: what it asks and the order it works in. A name() is a function
-# of lib.sh, a ./name.sh a file beside this: runtime/README.md
+# The Recovery, top to bottom the way a repair goes. A name() is a function of
+# lib.sh, a task's work its tasks/<task>/task.sh: runtime/README.md
 
 title: Recovery
 start: Repair now
+
+# ─── The Way In ──────────────────────────────────────────────────────────────
 
 # Nothing waits for a network: a repair downloads nothing, and the network may
 # be what broke.
 requires: [live-image, root]
 
-# The dashboard's rows in order: its own, and each other a folder under actions/.
+# On its own partition both questions are answered already, see iso/recovery/.
+# The snapshot to go back to is asked by the rollback, once the disk is open.
+settings:
+  Storage:
+    - name: ARCH_OS_RECOVERY_DISK
+      type: list
+      title: Disk
+      description: |
+        The disk with the Arch OS to repair. Opening it changes nothing.
+      required: true
+      options-from: options_disks()
+      pattern: '^/dev/[A-Za-z0-9_-]+$'
+      error: Choose a disk that exists.
+
+    # Not asked: a LUKS header is readable without the password.
+    - name: ARCH_OS_RECOVERY_ENCRYPTED
+      type: bool
+      title: Disk encryption
+      description: Whether that disk is encrypted with LUKS.
+      value-from: value_disk_encrypted()
+
+    # Typed once and tried on the disk where it is typed.
+    - name: ARCH_OS_RECOVERY_PASSWORD
+      type: password
+      title: Encryption password
+      description: |
+        Unlocks the disk. Asked right before the repair and never saved.
+      when: ARCH_OS_RECOVERY_ENCRYPTED == true
+      required: true
+      error: Wrong password for this disk.
+      check: check_disk_password()
+
+  # Asked first, because the disk's password is typed on it. Never written to
+  # the system being repaired.
+  Region:
+    - name: ARCH_OS_RECOVERY_KEYMAP
+      type: list
+      title: Console keyboard
+      description: |
+        Your keyboard layout, active right away. The live image's is
+        preselected.
+      first: true
+      required: true
+      options-from: options_keymaps()
+      prefill: prefill_live_keymap()
+      pattern: '^[A-Za-z0-9_.-]+$'
+      apply: apply_recovery_keymap()
+
 # No reset: each of its two answers is changed in its own row.
 dashboard: [start, settings, wifi, update]
 language: Region
 
-# Where its other actions are offered, each a folder under actions/.
-on:
-  leave: [restart, shutdown]
-  failure: [share-log]
-  success: [chroot]
+# ─── The Work ────────────────────────────────────────────────────────────────
 
-# What any of its scripts means by stopping itself, the statuses lib.sh names.
+# Each stage a when, each task in it a what.
+stages:
+  # The system unlocked and mounted.
+  open:
+    system:
+      title: Unlock and mount the system
+      # A disk that is not what the Installer makes.
+      errors:
+        10: |
+          No Arch OS found
+
+          {{ARCH_OS_RECOVERY_DISK}} holds no installation this Recovery can
+          open. Choose another disk on the dashboard.
+        11: |
+          Unknown layout
+
+          {{ARCH_OS_RECOVERY_DISK}} lacks subvolumes this Recovery expects. Use
+          the Recovery of the release it was installed with.
+
+  # A snapshot in place of the system.
+  rollback:
+    snapshot:
+      title: Roll back to a snapshot
+      # The snapshots are on the disk this run has just opened, so they are
+      # asked here. Without any, the list is empty and the step is skipped.
+      asks:
+        name: ARCH_OS_RECOVERY_SNAPSHOT
+        title: Snapshot
+        description: |
+          Replaces the system. Newest first, with date and description.
+        options-from: options_snapshots()
+        filter: open
+      confirm: |
+        Roll back {{ARCH_OS_RECOVERY_DISK}} to {{ARCH_OS_RECOVERY_SNAPSHOT}}?
+
+        The current system is replaced by this snapshot and stays as a snapshot
+        of its own, so this can be undone. /home and the other snapshots stay.
+
+  # The boot files made again from the package cache.
+  rebuild:
+    boot:
+      title: Rebuild the boot files
+      confirm: |
+        Rebuild kernel images, initramfs and boot entries?
+
+        Needed after a rollback past a kernel update, otherwise the system boots
+        without its modules. Everything comes from the package cache, offline.
+      # A snapshot may hold other kernel modules than /boot starts.
+      yes-after: [snapshot]
+      # A cache that no longer holds the kernel.
+      errors:
+        10: |
+          Kernel missing from the package cache
+
+          The boot files are built from the installed kernel's package, which
+          the cache no longer holds. Roll back to a snapshot from before the
+          kernel update.
+
+# The statuses lib.sh names.
 errors:
   3: |
     No internet connection
 
-    Choose Connect to Wi-Fi on the dashboard or plug in a cable, then try
-    again. A repair works without internet.
+    Choose Connect to Wi-Fi on the dashboard or plug in a cable, then try again.
+    A repair works without internet.
   4: |
     GitHub unreachable
 
     The internet works, but GitHub, which hosts the Arch OS releases, is
     unreachable. Try again in a few minutes.
 
-stages:
-  - open # the system unlocked and mounted
-  - rollback # a snapshot in place of the system
-  - rebuild # the boot files made again from the package cache
+# ─── Around It ───────────────────────────────────────────────────────────────
 
-# On its own partition both questions are answered already, see iso/recovery/.
-# The snapshot to go back to is asked by the rollback, once the disk is open.
-settings:
-  - name: ARCH_OS_RECOVERY_DISK
-    type: list
-    title: Disk
-    description: The disk with the Arch OS to repair. Opening it changes nothing.
-    group: Storage
-    required: true
-    error: Choose a disk that exists.
-    options-from: options_disks()
-    pattern: '^/dev/[A-Za-z0-9_-]+$'
+on:
+  leave: [restart, shutdown]
+  failure: [share-log]
+  success: [chroot]
 
-  # Not asked: a LUKS header is readable without the password.
-  - name: ARCH_OS_RECOVERY_ENCRYPTED
-    type: bool
-    title: Disk encryption
-    description: Whether that disk is encrypted with LUKS.
-    group: Storage
-    value-from: ./value-disk-encrypted.sh
+actions:
+  # Under requires: without a network, the update's own no says what to do.
+  online:
+    title: Internet
+    run: check_online()
 
-  # Typed once and tried on the disk where it is typed.
-  - name: ARCH_OS_RECOVERY_PASSWORD
-    type: password
-    title: Encryption password
-    description: Unlocks the disk. Asked right before the repair and never saved.
-    group: Storage
-    required: true
-    check: ./check-disk-password.sh
-    error: Wrong password for this disk.
-    when: ARCH_OS_RECOVERY_ENCRYPTED == true
+  # Under requires: the Recovery updates itself, and from the ISO only one that
+  # no longer starts.
+  recovery-to-update:
+    title: A Recovery to update
+    run: recovery_to_update()
 
-  # Asked first, because the disk's password is typed on it. Never written to
-  # the system being repaired.
-  - name: ARCH_OS_RECOVERY_KEYMAP
-    type: list
-    title: Console keyboard
-    description: Your keyboard layout, active right away. The live image's is preselected.
-    group: Region
-    required: true
-    first: true
-    options-from: options_keymaps()
-    prefill: prefill_live_keymap()
-    apply: ./apply-keymap.sh
-    pattern: '^[A-Za-z0-9_.-]+$'
+  # On the dashboard of the Recovery on its partition, and of one started
+  # elsewhere for a disk whose Recovery no longer starts. Choosing the row
+  # looks, what is found is installed only after update-install asks.
+  update:
+    title: Update the Recovery
+    description: |
+      Looks for the newest Recovery of this release series and installs it after
+      confirmation.
+    group: Configuration
+    requires: [recovery-to-update]
+    run: recovery_up_to_date()
+    error: |
+      The update needs the internet. Choose Connect to Wi-Fi on the dashboard or
+      plug in a cable.
+    report: |
+      Nothing to update
+
+      There is no newer Recovery for the release series of this system.
+    on:
+      failure: [update-install]
+
+  # Opened where update found a Recovery to install. An encrypted system is
+  # opened for it, since the system's keys sign the new one where it signs its
+  # boot chain.
+  update-install:
+    title: Install the newest Recovery
+    requires: [online]
+    inputs:
+      - name: ARCH_OS_RECOVERY_UPDATE_PASSWORD
+        type: password
+        title: Encryption password
+        description: |
+          Opens the system, whose keys sign the new Recovery under Secure Boot.
+          Asked right before the update and never saved.
+        when: ARCH_OS_RECOVERY_ENCRYPTED == true
+        required: true
+        error: Wrong password for this disk.
+        check: check_update_password()
+    confirm: |
+      Install the newest Recovery of this release series?
+
+      It is downloaded, verified against its checksum and written to its
+      partition. The new one runs from the next start.
+    run: install_recovery_update()
+    error: |
+      Installing the Recovery failed. Until it succeeds, the Recovery on the
+      disk may not start. Choose Update the Recovery again.
+    # No internet and no GitHub are the module's.
+    errors:
+      10: |
+        Download interrupted
+
+        Nothing was changed. Try again.
+      11: |
+        Download damaged
+
+        The checksum does not match, so the download was deleted. Nothing was
+        changed. Try again.
+      12: |
+        Recovery too large
+
+        It does not fit its partition and was not installed. The current
+        Recovery stays.
+      13: |
+        Writing the Recovery failed
+
+        The check after writing failed. The system boots as before, the Recovery
+        only after a successful update. Try again. If it keeps failing, the disk
+        may be defective.
+    report: |
+      Recovery updated
+
+      The new one runs from the next start.
