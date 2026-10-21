@@ -92,6 +92,7 @@ MONITOR="$(free_port)"
 ssh-keygen -q -t ed25519 -N '' -C arch-os-e2e -f "${WORK}/key"
 
 qemu-img create -q -f qcow2 "${WORK}/disk.qcow2" "$DISK_SIZE"
+qemu-img create -q -f qcow2 "${WORK}/usb.qcow2" 64M
 
 # The machine's own firmware variables, in setup mode until the Installer
 # enrolls its keys into them.
@@ -129,6 +130,7 @@ start() {
         -drive "if=pflash,format=raw,unit=1,file=${vars}" \
         -drive "file=${WORK}/disk.qcow2,if=none,id=disk,format=qcow2" \
         -device "virtio-blk-pci,drive=disk,bootindex=2" \
+        -device qemu-xhci \
         "${boot[@]}" \
         -nic "user,model=virtio-net-pci,hostfwd=tcp:127.0.0.1:${PORT}-:22" \
         -display none \
@@ -266,6 +268,31 @@ oomd_watches() {
         section == "pressure" && /Path: .*\/user@[0-9]+\.service$/ { pressure = 1 }
         END { exit !(swap && pressure) }'
 }
+
+# A SATA disk in a USB enclosure, plugged into the port start() gives the
+# machine. ata_id reports it as ID_BUS=ata, which qemu's usb-storage cannot
+# answer, so a rule between 60 and 70 says it in its place.
+usb_writeback() {
+    local rule='SUBSYSTEM=="block", SUBSYSTEMS=="usb", ENV{ID_BUS}="ata"' disk limits
+    # In base64, so no shell on the way reads the rule's quotes.
+    as_root "sh -c 'echo $(base64 -w0 <<<"$rule") | base64 -d >/etc/udev/rules.d/65-e2e-enclosure.rules'"
+    as_root udevadm control --reload
+    printf 'drive_add 0 file=%s,if=none,id=usb,format=qcow2\n' "${WORK}/usb.qcow2" >&3
+    printf 'device_add usb-storage,drive=usb,id=usb-disk\n' >&3
+    until_ok 60 "USB disk in the installed system" usb_disk
+    disk="$(usb_disk)"
+    as_root udevadm settle --timeout=30
+    installed udevadm info --query=property --name="/dev/${disk}" | grep -qx 'ID_BUS=ata' ||
+        fail "the stand-in rule did not report the USB disk as ata"
+    limits="$(installed cat "/sys/block/${disk}/bdi/strict_limit" "/sys/block/${disk}/bdi/max_ratio")"
+    [ "$limits" = $'1\n10' ] || fail "a SATA disk in a USB enclosure keeps the kernel's writeback: ${limits//$'\n'/ }"
+    printf 'device_del usb-disk\n' >&3
+    as_root rm /etc/udev/rules.d/65-e2e-enclosure.rules
+    say "Installed system: a SATA disk in a USB enclosure writes at a tenth of the dirty limit"
+}
+
+# The disk on USB, by its name in the installed system.
+usb_disk() { installed lsblk -dno NAME,TRAN | awk '$2 == "usb" { print $1; found = 1 } END { exit !found }'; }
 
 shutdown_installed() {
     as_root systemctl poweroff || true
@@ -488,6 +515,7 @@ fi
 
 start disk
 healthy
+usb_writeback
 
 # A Desktop is held to its login screen, and a start counts as one that worked
 # only once the session in front is up: the one it logs into, then without
