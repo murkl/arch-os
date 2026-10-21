@@ -102,7 +102,7 @@ stages:
         The current system is replaced by this snapshot and stays as a snapshot
         of its own, so this can be undone. /home and the other snapshots stay.
 
-  # The boot files made again from the package cache.
+  # The boot files made again from what the system holds.
   rebuild:
     boot:
       title: Rebuild the boot files
@@ -110,17 +110,16 @@ stages:
         Rebuild kernel images, initramfs and boot entries?
 
         Needed after a rollback past a kernel update, otherwise the system boots
-        without its modules. Everything comes from the package cache, offline.
+        without its modules. Everything comes from the system itself, offline.
       # A snapshot may hold other kernel modules than /boot starts.
       yes-after: [snapshot]
-      # A cache that no longer holds the kernel.
+      # Modules without the image Arch installs beside them.
       errors:
         10: |
-          Kernel missing from the package cache
+          Kernel image missing
 
-          The boot files are built from the installed kernel's package, which
-          the cache no longer holds. Roll back to a snapshot from before the
-          kernel update.
+          The system holds modules of a kernel without the image beside them,
+          so no boot files can be built from it. Roll back to another snapshot.
 
 # The statuses lib.sh names.
 errors:

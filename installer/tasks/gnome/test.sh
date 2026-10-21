@@ -9,6 +9,11 @@ arch-chroot "$MNT" systemctl is-enabled arch-os-session-up.service >/dev/null
 arch-chroot "$MNT" systemctl is-enabled systemd-oomd.service >/dev/null
 [ -z "$(unit_complaints -.slice user@.service)" ]
 
+if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
+    arch-chroot "$MNT" systemctl is-enabled power-profiles-daemon.service >/dev/null
+    arch-chroot "$MNT" systemctl is-enabled cups.socket >/dev/null
+fi
+
 # The firmware offered is as current as the catalog its timer loads.
 if has_command fwupdmgr; then
     arch-chroot "$MNT" systemctl is-enabled fwupd-refresh.timer >/dev/null

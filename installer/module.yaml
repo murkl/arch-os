@@ -60,7 +60,7 @@ presets:
       ARCH_OS_BAZAAR_ENABLED: false
       ARCH_OS_SAMBA_SHARE_ENABLED: false
 
-  - title: Online (paste.rs)
+  - title: Shared configuration
     description: The answers another installation shared.
     action: import-config
 
@@ -684,9 +684,9 @@ actions:
       failure: [wifi]
 
   # Every answer of a shared configuration but the disk and the kernel
-  # parameters, which are this machine's own.
+  # parameters, which are this machine's own. The address is paste.rs's.
   import-config:
-    title: Online (paste.rs)
+    title: Shared configuration
     inputs:
       - name: ARCH_OS_CONFIG_SOURCE
         type: text
@@ -721,8 +721,8 @@ actions:
     report: |
       Configuration shared
 
-      Scan the QR code, or enter the end of the address under Online (paste.rs)
-      in another installation.
+      Scan the QR code, or enter the end of the address under Shared
+      configuration in another installation.
     qr: ARCH_OS_CONFIG_URL
 
   uefi:

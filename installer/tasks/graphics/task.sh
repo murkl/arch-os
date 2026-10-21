@@ -58,4 +58,12 @@ mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
 render "$(where)/30-graphics.conf" MODULES="nvidia nvidia_modeset nvidia_uvm nvidia_drm" \
     >"${MNT}/etc/mkinitcpio.conf.d/30-graphics.conf"
 
+# Alone in the machine, the kms hook goes with it, as the Wiki has it: nouveau
+# would be in the image beside the driver. Beside another card the hook stays
+# for that card's driver, which draws the panel, and nouveau stays blacklisted
+# by nvidia-utils' modprobe.d file, which modconf carries into the image.
+if [ "$other" != "true" ]; then
+    render "$(where)/31-nvidia-alone.conf" >"${MNT}/etc/mkinitcpio.conf.d/31-nvidia-alone.conf"
+fi
+
 arch-chroot "$MNT" mkinitcpio -P

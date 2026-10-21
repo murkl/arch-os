@@ -30,13 +30,13 @@ Every task after the first is optional.
 | --- | --- | --- |
 | `open` | `system` | Unlocks the system and mounts it at `/mnt`, the way it mounts itself, after closing whatever an earlier attempt left open |
 | `rollback` | `snapshot` | Replaces the root subvolume with a snapshot, keeps the old one as a snapshot and moves every subvolume made inside it to the new. Skipped without snapshots |
-| `rebuild` | `boot` | Rebuilds kernel images and initramfs from the package cache, puts the boot loader and the boot entries back as the Installer does, and signs again where needed |
+| `rebuild` | `boot` | Puts each kernel image back from beside its modules, rebuilds the initramfs, puts the boot loader and the boot entries back as the Installer does, and signs again where needed |
 
 **Note:** _`snapshot` and `boot` each ask for confirmation, so a run can stop after any task. Both open on **No**, `boot` on **Yes** after a rollback. The page the repair ends on offers **Open a shell** in the repaired system and opens on **Continue**. A restart or a shutdown leaves unmounting and locking to systemd._
 
 ## No Download for a Repair
 
-The network may be the problem, so a repair never waits for one. Kernel images come from the local pacman cache. A repair needs only `root`.
+The network may be the problem, so a repair never waits for one. The kernel image comes from beside its modules, where Arch installs it. A repair needs only `root`.
 
 `wifi` puts **Connect to Wi-Fi** on the dashboard wherever there is a card and no wired internet, for an update or a download in the shell. It is the same action the Installer has. On its own partition a cable connects at boot and is preferred while both are up, and the Wi-Fi daemon starts once a card is present. `restart` and `shutdown` are the ways out. `share-log` uploads the log of a repair with a broken script, for whoever helps.
 

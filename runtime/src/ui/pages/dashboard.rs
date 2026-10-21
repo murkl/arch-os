@@ -178,6 +178,14 @@ impl DashboardPage {
 }
 
 impl Page for DashboardPage {
+    /// The work is started, as the first row does.
+    fn unattended(&mut self, ctx: &mut Ctx) -> Result<Flow, String> {
+        if !self.checking {
+            self.begin(ctx);
+        }
+        Ok(Flow::Stay)
+    }
+
     fn title(&self) -> String {
         String::new()
     }

@@ -83,6 +83,10 @@ pub fn wordmark(buf: &mut Buffer, area: Rect, y: u16, revealed: f64, ctx: &Ctx) 
 }
 
 impl Page for SplashPage {
+    fn unattended(&mut self, _: &mut Ctx) -> Result<Flow, String> {
+        Ok(Flow::Pop)
+    }
+
     fn title(&self) -> String {
         String::new()
     }

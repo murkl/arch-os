@@ -42,6 +42,7 @@ mkdir -p "${MNT}/etc/udev/rules.d"
 render "${data}/60-arch-os-ioschedulers.rules" >"${MNT}/etc/udev/rules.d/60-arch-os-ioschedulers.rules"
 
 # A USB drive held to a tenth of the dirty limit, so a copy runs at its pace
-# instead of finishing into memory. 70, because ID_BUS is set at 60.
+# instead of finishing into memory. Found by the bus it hangs from, since ata_id
+# reports a SATA disk in an enclosure as ID_BUS=ata.
 # https://docs.kernel.org/admin-guide/abi-testing.html#abi-sys-class-bdi-bdi-strict-limit
 render "${data}/70-arch-os-usb-writeback.rules" >"${MNT}/etc/udev/rules.d/70-arch-os-usb-writeback.rules"

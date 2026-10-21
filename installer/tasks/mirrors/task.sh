@@ -34,10 +34,14 @@ rank_mirrors() {
     rm -f "$ranked" "$warnings"
 }
 
+# The clock from network time first: the mirrors answer over https, and the
+# keyring below is made once it is set.
+# https://wiki.archlinux.org/title/Installation_guide#Update_the_system_clock
+timedatectl set-ntp true
+
 echo "ranking mirrors"
 rank_mirrors
 
-timedatectl set-ntp true
 rm -f /var/lib/pacman/db.lck
 
 # The live image makes its keyring once the clock is set from network time,

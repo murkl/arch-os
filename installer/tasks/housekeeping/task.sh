@@ -12,13 +12,6 @@ arch-chroot "$MNT" systemctl enable reflector.timer # rank mirrors weekly
 arch-chroot "$MNT" systemctl enable paccache.timer  # trim the package cache
 arch-chroot "$MNT" systemctl enable smartd          # watch disk health, down by itself in a guest
 
-# The weekly trim leaves out every kernel a snapshot has installed: a rollback
-# past a kernel update needs that package to rebuild the boot files from.
-mkdir -p "${MNT}/usr/local/lib/arch-os" "${MNT}/etc/systemd/system/paccache.service.d"
-render "$(where)/paccache.sh" >"${MNT}/usr/local/lib/arch-os/paccache.sh"
-chmod 755 "${MNT}/usr/local/lib/arch-os/paccache.sh"
-render "$(where)/paccache.conf" >"${MNT}/etc/systemd/system/paccache.service.d/snapshots.conf"
-
 # Offline the ranking is skipped rather than failed.
 mkdir -p "${MNT}/etc/systemd/system/reflector.service.d"
 render "$(where)/online.conf" >"${MNT}/etc/systemd/system/reflector.service.d/online.conf"

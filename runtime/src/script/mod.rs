@@ -125,17 +125,22 @@ const GUARD: &str =
 /// it. `-e` stays off, since `source` hands back the status of a benign last line. A script that
 /// stops itself with `exit` leaves no report, which is how a chosen status is told from a broken
 /// command. The DEBUG trap remembers the step's own last line for one that hands back a status
-/// without a failing command.
+/// without a failing command. Inside `$(…)` or `( … )` the trap ends the subshell alone, and
+/// what the enclosing command makes of its status decides: a report from there would be read as
+/// the step's own. The command goes on one line, a here-document and a tab in it alike, or the
+/// report would come apart.
 const STEP: &str = concat!(
     "set -Eo pipefail -T\n",
     "[ -z \"$2\" ] || source \"$2\" || exit $?\n",
     "rt_lib=$2 rt_home=$3\n",
     "rt_failed() {\n",
-    "  local f=1 line=$2 fn=\"\"\n",
+    "  [ \"$BASH_SUBSHELL\" -eq 0 ] || exit \"$1\"\n",
+    "  local f=1 line=$2 fn=\"\" cmd=$3\n",
+    "  cmd=${cmd//[$'\\n\\t']/ }\n",
     "  while [ \"${BASH_SOURCE[f]}\" = \"$rt_lib\" ] && [ -n \"${BASH_SOURCE[f + 1]:-}\" ]; do line=${BASH_LINENO[f]}; f=$((f + 1)); done\n",
     "  [ -n \"${BASH_SOURCE[f]}\" ] || return 0\n",
     "  [ \"${BASH_SOURCE[f]}\" != \"$rt_lib\" ] || fn=${FUNCNAME[f]}\n",
-    "  printf \"fail\\t%d\\t%s\\t%d\\t%s\\t%s\\n\" \"$1\" \"${BASH_SOURCE[f]}\" \"$line\" \"$3\" \"$fn\" >&3\n",
+    "  printf \"fail\\t%d\\t%s\\t%d\\t%s\\t%s\\n\" \"$1\" \"${BASH_SOURCE[f]}\" \"$line\" \"$cmd\" \"$fn\" >&3\n",
     "  exit \"$1\"\n",
     "}\n",
     "trap 'rt_failed $? \"$LINENO\" \"$BASH_COMMAND\"' ERR\n",
@@ -143,6 +148,7 @@ const STEP: &str = concat!(
     "eval \"$1\"\n",
     "c=$?\n",
     "[ \"$rt_home\" = \"$rt_lib\" ] || rt_fn=\"\"\n",
+    "rt_cmd=${rt_cmd//[$'\\n\\t']/ }\n",
     "[ \"$c\" -eq 0 ] || printf \"fail\\t%d\\t%s\\t%d\\t%s\\t%s\\n\" \"$c\" \"$rt_home\" \"${rt_line:-0}\" \"$rt_cmd\" \"${rt_fn:-}\" >&3\n",
     "exit $c"
 );
@@ -572,6 +578,34 @@ pub mod tests {
                 "{f:?}"
             );
         }
+    }
+
+    /// A failure inside `$(…)` is the enclosing command's: an assignment fails the script at its
+    /// own line, an echo goes on, and neither leaves a report a later stop would be blamed on.
+    #[test]
+    fn a_failure_inside_a_substitution_is_the_enclosing_commands_to_tell() {
+        let (r, _) = drive("echo \"n: $(false)\"\nexit 7\n", &[]);
+        let f = r.unwrap_err();
+        assert!(f.deliberate && f.code == 7, "{f:?}");
+        let (r, _) = drive("echo \"$(false)\"\nfalse\n", &[]);
+        let f = r.unwrap_err();
+        assert_eq!(
+            (f.line, f.command.as_str(), f.deliberate),
+            (2, "false", false),
+            "{f:?}"
+        );
+        let (r, _) = drive("x=$(false)\necho never\n", &[]);
+        let f = r.unwrap_err();
+        assert_eq!((f.line, f.command.as_str()), (1, "x=$(false)"), "{f:?}");
+    }
+
+    /// A command over several lines, as one with a here-document, is reported on one.
+    #[test]
+    fn a_command_over_several_lines_is_reported_on_one() {
+        let (r, _) = drive("false <<EOF\nline\nEOF\n", &[]);
+        let f = r.unwrap_err();
+        assert_eq!((f.line, f.deliberate), (1, false), "{f:?}");
+        assert!(f.command.starts_with("false <<EOF line EOF"), "{f:?}");
     }
 
     #[test]

@@ -74,11 +74,19 @@ impl Session {
             follow(out, sink.clone(), None),
             follow(err, sink.clone(), Some(stderr_tail.clone())),
         ];
+        // Read to its end: a read end closed early would end the next report, and the script
+        // with it, by SIGPIPE.
         let fail = std::thread::spawn(move || {
-            BufReader::new(std::fs::File::from(events))
+            let mut first = None;
+            for line in BufReader::new(std::fs::File::from(events))
                 .lines()
                 .map_while(Result::ok)
-                .find(|l| l.starts_with("fail\t"))
+            {
+                if first.is_none() && line.starts_with("fail\t") {
+                    first = Some(line);
+                }
+            }
+            first
         });
         std::thread::spawn(move || {
             let status = child.wait();

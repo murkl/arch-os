@@ -43,6 +43,11 @@ impl LanguagePage {
 }
 
 impl Page for LanguagePage {
+    /// Asked only where the answer file holds no language.
+    fn unattended(&mut self, _: &mut Ctx) -> Result<Flow, String> {
+        Err(crate::i18n::t("The answer file names no language."))
+    }
+
     fn title(&self) -> String {
         String::new()
     }

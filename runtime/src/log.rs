@@ -5,8 +5,16 @@ use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 static FILE: Mutex<Option<(File, PathBuf)>> = Mutex::new(None);
+
+/// Every line on stdout as well, for a run with nobody at the screen.
+static ECHO: AtomicBool = AtomicBool::new(false);
+
+pub fn echo(on: bool) {
+    ECHO.store(on, Ordering::Relaxed);
+}
 
 /// Opens `path`, keeping the run before as `.old`. Without it every write is a no-op: losing
 /// the log is worse than not having one, but not that much worse.
@@ -32,8 +40,12 @@ pub fn write(level: &str, msg: &str) {
         return;
     };
     let now = now();
+    let echo = ECHO.load(Ordering::Relaxed);
     for line in msg.lines() {
         let _ = writeln!(file, "{now} {level:<5} {line}");
+        if echo {
+            println!("{now} {level:<5} {line}");
+        }
     }
 }
 

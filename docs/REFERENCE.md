@@ -16,8 +16,9 @@ Every answer except the passwords is saved to `installer.conf` right away, so an
 
 | Way | How |
 | --- | --- |
-| Share | **Share the configuration** on the last page uploads the answers to **[paste.rs](https://paste.rs)**. Another installation loads them with the **Online (paste.rs)** profile and asks only for the disk and the passwords |
+| Share | **Share the configuration** on the last page uploads the answers to **[paste.rs](https://paste.rs)**. Another installation loads them with the **Shared configuration** profile and asks only for the disk and the passwords |
 | Copy | `installer.conf` beside the Installer on another machine |
+| Unattended | `arch-os installer --unattended` with `installer.conf` beside it and `ARCH_OS_PASSWORD` in the environment installs with nobody at the keyboard. **[➜ Runtime](../runtime/README.md#unattended)** |
 
 **Note:** _A shared configuration leaves out the disk and the kernel parameters. Both belong to one machine, and a stranger's kernel parameters could open a root shell at boot._
 
@@ -37,6 +38,7 @@ UEFI only, GPT, and the whole disk: Arch OS is the only system on it.
 - Partition 3 exists only with **Recovery** on and sits at the end, so the root is always partition 2
 - **Encryption:** LUKS2 on partition 2, opened as `cryptroot`, with the account password or a separate one. **[➜ Accounts](#accounts)**
 - **TRIM:** `--allow-discards --persistent` in the LUKS2 header lets `fstrim.timer` work without a kernel parameter. It reveals which blocks are free, not what is in them. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Dm-crypt/Specialties#Discard/TRIM_support_for_solid_state_drives_(SSD))**
+- **Workqueues:** on a solid state drive `--perf-no_read_workqueue --perf-no_write_workqueue`, in the header as well: the requests reach the disk as they come. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Dm-crypt/Specialties#Disable_workqueue_for_increased_solid_state_drive_(SSD)_performance)**
 
 ### Btrfs Subvolumes
 
@@ -112,10 +114,10 @@ base systemd keyboard autodetect microcode modconf kms sd-vconsole block [sd-enc
 | --- | --- |
 | `keyboard` before `autodetect` | Includes every keyboard driver, not only the one in use during the installation |
 | `microcode` | The processor's microcode, `intel-ucode` or `amd-ucode` from `/proc/cpuinfo` |
-| `kms` | Plymouth needs a driver to draw on. It adds the open graphics drivers |
+| `kms` | Plymouth needs a driver to draw on. It adds the open graphics drivers. With NVIDIA alone in the machine, `31-` takes it out, or nouveau would be in the image beside the driver's own modules. **[➜ Arch Wiki](https://wiki.archlinux.org/title/NVIDIA#Early_loading)** |
 | No `fsck` | `fsck.btrfs` does nothing at boot |
 
-**Note:** _The hooks are in `/etc/mkinitcpio.conf.d/10-arch-os.conf`, the boot splash extends it with `20-` and NVIDIA with `30-`. mkinitcpio's pacman hook rebuilds the image whenever the NVIDIA module changes._
+**Note:** _The hooks are in `/etc/mkinitcpio.conf.d/10-arch-os.conf`, the boot splash extends it with `20-` and NVIDIA with `30-` and `31-`. mkinitcpio's pacman hook rebuilds the image whenever the NVIDIA module changes._
 
 ### Secure Boot
 
@@ -201,7 +203,7 @@ Enough for a usable system, little enough to need no upkeep. Everything else fol
 | Timeout | 45 min | Past this it is stuck, not slow |
 | Compile jobs | 1 per GiB of memory, at most 1 per core | More would run a live system out of memory |
 
-- Passwordless `sudo` only for the duration of the build. cargo's downloads stay in the build directory
+- Passwordless `sudo` for `pacman` alone, and only for the duration of the build. cargo's downloads stay in the build directory
 - `paru` is built from source: a `-bin` package breaks the day Arch bumps `libalpm`
 
 ### The Text Editor
@@ -309,7 +311,7 @@ An installed system needs no internet until an update is started.
 
 - Timers that need the internet, the mirror ranking and the keyring refresh, are skipped while archlinux.org is unreachable. `systemctl --failed` stays empty
 - An `online.conf` drop-in for each checks with `ExecCondition=`. A skip is logged to the journal
-- The Recovery repairs from the package cache
+- The Recovery repairs from what the system holds, nothing is downloaded
 
 **Note:** _Back online after months, update the keyring first: `sudo pacman -Sy archlinux-keyring && sudo pacman -Su`. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Pacman/Package_signing#Upgrade_system_regularly)**_
 
@@ -326,9 +328,7 @@ Snapper takes a snapshot before and after every package transaction through `sna
 
 ### Rolling Back
 
-Only with the Recovery. The kernel lies on the EFI partition, outside every snapshot, so an older snapshot would start a kernel without its modules. The Recovery puts the snapshot in place and rebuilds the boot files from the package cache.
-
-The cache therefore keeps every kernel a snapshot uses. `paccache.timer` and the alias `pacrc` run `/usr/local/lib/arch-os/paccache.sh`, which trims like paccache and keeps those kernels. An unreadable snapshot stops the trim.
+Only with the Recovery. The kernel lies on the EFI partition, outside every snapshot, so an older snapshot would start a kernel without its modules. The Recovery puts the snapshot in place and rebuilds the boot files from the kernel image Arch keeps beside the modules, under `/usr/lib/modules/`, which the snapshot holds.
 
 ## The Recovery
 
@@ -347,7 +347,7 @@ It asks for the keyboard and the disk, on its own partition for neither. Everyth
 | Encryption | The LUKS header. The password is checked as it is typed (`cryptsetup open --test-passphrase`) |
 | Subvolumes | All of the layout, or the disk is rejected |
 | `/boot` | Partition 1, not the `fstab`, which may be what broke |
-| Kernels | `/usr/lib/modules/*/`, the images rebuilt from the package cache |
+| Kernels | `/usr/lib/modules/*/`, each with the image Arch installs beside its modules, the boot files rebuilt from it |
 | Snapshots | `@snapshots`. Without any, the rollback is skipped |
 
 - It repairs what the Installer of its release series creates, without a network. **Connect to Wi-Fi** on the dashboard connects for an update or a download in the shell

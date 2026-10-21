@@ -62,8 +62,10 @@ impl PasswordPage {
                 self.problem = Some(t("The two entries do not match."));
                 Flow::Stay
             }
+            // Taken, and the page fresh again should the way back lead to it.
             _ => match &self.setting.check {
                 Some(check) => {
+                    self.first = None;
                     self.checking = true;
                     self.problem = None;
                     let mut env = ctx.env();
@@ -77,13 +79,35 @@ impl PasswordPage {
                     });
                     Flow::Stay
                 }
-                None => self.take(value, ctx),
+                None => {
+                    self.first = None;
+                    self.take(value, ctx)
+                }
             },
         }
     }
 }
 
 impl Page for PasswordPage {
+    /// From the environment, under the setting's own name, and tried on the machine as a
+    /// typed one is.
+    fn unattended(&mut self, ctx: &mut Ctx) -> Result<Flow, String> {
+        let name = self.setting.name.clone();
+        let value = std::env::var(&name).unwrap_or_default();
+        if value.is_empty() {
+            return Err(crate::i18n::tf(
+                "{{name}} is not set in the environment.",
+                &[("name", &name)],
+            ));
+        }
+        if let Some(check) = &self.setting.check {
+            let mut env = ctx.env();
+            env.push((name.clone(), value.clone()));
+            crate::script::run(check, &env).map_err(|e| format!("{name}: {e}"))?;
+        }
+        Ok(self.take(value, ctx))
+    }
+
     fn title(&self) -> String {
         t(&self.setting.title)
     }
@@ -139,7 +163,12 @@ impl Page for PasswordPage {
                 self.input = Input::masked();
                 Flow::Stay
             }
-            Key::Esc | Key::Ctrl('c') => Flow::Ignored,
+            // Backing out forgets what the chain has taken so far: the next start asks for all
+            // of it again, and none of it stays in memory meanwhile.
+            Key::Esc | Key::Ctrl('c') => {
+                ctx.store.forget();
+                Flow::Ignored
+            }
             k => {
                 if self.input.key(k) {
                     self.problem = None;

@@ -135,6 +135,11 @@ impl YesNoPage {
 }
 
 impl Page for YesNoPage {
+    /// Yes: whoever started the run unattended consented to all of it.
+    fn unattended(&mut self, ctx: &mut Ctx) -> Result<Flow, String> {
+        Ok(self.chosen(true, ctx))
+    }
+
     fn title(&self) -> String {
         self.title.clone()
     }

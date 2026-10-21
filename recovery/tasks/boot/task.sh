@@ -1,37 +1,20 @@
-# Each kernel image put back beside the modules restored with the snapshot,
-# from the system's own package cache, and everything booted from it rebuilt.
-# Read with the system's own bsdtar, which reads whatever its pacman fetched.
-
-cache=/var/cache/pacman/pkg
-
-# The cached package that holds the image of a module directory, asked of each
-# package rather than read off its name: 6.16.1 and 6.16.12, or two releases of
-# one version, share every prefix. The signatures beside them are left out.
-kernel_cached() {
-    local package found=""
-    while read -r package; do
-        [ -z "$found" ] || continue
-        if arch-chroot "$MNT" bsdtar -tf "${cache}/${package}" "usr/lib/modules/${1}/vmlinuz" >/dev/null 2>&1; then
-            found="$package"
-        fi
-    done < <({ find "${MNT}${cache}" -maxdepth 1 -name "${KERNEL}-[0-9]*.pkg.tar.*" ! -name '*.sig' -printf '%f\n' 2>/dev/null || true; } | sort -rV)
-    printf '%s' "$found"
-}
+# Each kernel image put back beside its modules, out of the folder the snapshot
+# restored them with: Arch installs the image there and copies it to /boot. Then
+# everything booted from it rebuilt.
 
 # A module folder without a kernel in it is what an interrupted removal leaves.
 for dir in "${MNT}/usr/lib/modules/"*/; do
     [ -e "${dir}kernel" ] || continue
     version="$(basename "$dir")"
-    package="$(kernel_cached "$version")"
-    if [ -z "$package" ]; then
-        echo "There is no ${KERNEL} package for ${version} in the package cache." >&2
+    if [ ! -f "${dir}vmlinuz" ]; then
+        echo "There is no kernel image beside the modules of ${version}." >&2
         exit 10
     fi
     # Moved over the old image only once it is whole.
     image="${MNT}/boot/vmlinuz-${KERNEL}"
-    arch-chroot "$MNT" bsdtar -xOf "${cache}/${package}" "usr/lib/modules/${version}/vmlinuz" >"${image}.new"
+    cp "${dir}vmlinuz" "${image}.new"
     mv -f "${image}.new" "$image"
-    echo "restored vmlinuz-${KERNEL} from ${package}"
+    echo "restored vmlinuz-${KERNEL} from the modules of ${version}"
 done
 
 # Unified images where the system's preset builds them, ram disks otherwise.

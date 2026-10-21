@@ -99,7 +99,7 @@ Walks the ISO the way a person does, unattended:
 6. Overwrites the start of the Recovery partition, as an interrupted update does, writes it again with the Recovery on the ISO from the newest release of its series, and starts it with Secure Boot enforced
 
 - Each run gets no more memory and disk than its profile requires. **[➜ README](../docs/README.md)**
-- The live system is reached over SSH by a key it takes as a systemd credential. The interface runs in tmux there, driven by its keys and read from its pane
+- The live system is reached over SSH by a key it takes as a systemd credential. The Installer and the Recovery run unattended there, with the answers in their file and the passwords in the environment. The Recovery's update, a row of its dashboard, runs in tmux, driven by its keys and read from its pane
 - Both runs must end with every test passed, and the machine is then powered off hard rather than shut down, as after writing the Recovery: what a run reports as done has to be on the disk
 - The installed system unlocks its disk from a systemd credential, and is reached over SSH as the account it was installed with
 - `START=desktop` installs the Desktop profile with the SSH server on, boots it like step 2 and checks for GNOME's login screen and a systemd-oomd that watches swap and the session. The repair is the Core's

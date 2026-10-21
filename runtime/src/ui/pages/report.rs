@@ -70,6 +70,13 @@ impl ReportPage {
 }
 
 impl Page for ReportPage {
+    /// Read, as far as a log is.
+    fn unattended(&mut self, _: &mut Ctx) -> Result<Flow, String> {
+        Ok(match &self.close {
+            Close::PopN(n) => Flow::PopN(*n),
+        })
+    }
+
     fn title(&self) -> String {
         self.title.clone()
     }
