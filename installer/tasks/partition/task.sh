@@ -86,17 +86,24 @@ if [ -n "$old_parts" ]; then
     fi
 fi
 
-# The passphrase on stdin, never in an argument list /proc shows. Discards are
-# let through and kept in the header, or fstrim trims nothing.
+# The passphrase on stdin, never in an argument list /proc shows. The options
+# are kept in the header, so every later open has them: discards let through,
+# or fstrim trims nothing, and on a solid state drive the requests handed on as
+# they come rather than through dm-crypt's queues.
 # https://wiki.archlinux.org/title/Dm-crypt/Specialties#Discard/TRIM_support_for_solid_state_drives_(SSD)
+# https://wiki.archlinux.org/title/Dm-crypt/Specialties#Disable_workqueue_for_increased_solid_state_drive_(SSD)_performance
 root_device="$system_part"
 if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
     # The disk's own password where it has one, otherwise the account's.
     passphrase="$ARCH_OS_PASSWORD"
     [ "$ARCH_OS_DISK_PASSWORD_ENABLED" = "true" ] && passphrase="$ARCH_OS_DISK_PASSWORD"
+    open_options=(--allow-discards --persistent)
+    if [ "$(lsblk -dnro ROTA "$ARCH_OS_DISK")" = "0" ]; then
+        open_options+=(--perf-no_read_workqueue --perf-no_write_workqueue)
+    fi
     echo "encrypting ${system_part}"
-    printf '%s' "$passphrase" | cryptsetup luksFormat "$system_part"
-    printf '%s' "$passphrase" | cryptsetup open --allow-discards --persistent "$system_part" cryptroot
+    printf '%s' "$passphrase" | cryptsetup -q luksFormat "$system_part"
+    printf '%s' "$passphrase" | cryptsetup open "${open_options[@]}" "$system_part" cryptroot
     root_device=/dev/mapper/cryptroot
 fi
 

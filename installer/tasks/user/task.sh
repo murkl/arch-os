@@ -4,6 +4,6 @@ own_home
 
 render "$(where)/10-wheel" | sudoers_rule 10-wheel
 
-# On stdin, twice because passwd asks twice, never in an argument or the log.
-# Root keeps the locked password Arch ships: docs/REFERENCE.md#accounts
-printf '%s\n%s' "$ARCH_OS_PASSWORD" "$ARCH_OS_PASSWORD" | arch-chroot "$MNT" passwd "$ARCH_OS_USERNAME"
+# On stdin, as chpasswd takes it, never in an argument or the log. Root keeps
+# the locked password Arch ships: docs/REFERENCE.md#accounts
+printf '%s:%s\n' "$ARCH_OS_USERNAME" "$ARCH_OS_PASSWORD" | arch-chroot "$MNT" chpasswd

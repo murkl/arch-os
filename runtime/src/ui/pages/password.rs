@@ -62,8 +62,10 @@ impl PasswordPage {
                 self.problem = Some(t("The two entries do not match."));
                 Flow::Stay
             }
+            // Taken, and the page fresh again should the way back lead to it.
             _ => match &self.setting.check {
                 Some(check) => {
+                    self.first = None;
                     self.checking = true;
                     self.problem = None;
                     let mut env = ctx.env();
@@ -77,7 +79,10 @@ impl PasswordPage {
                     });
                     Flow::Stay
                 }
-                None => self.take(value, ctx),
+                None => {
+                    self.first = None;
+                    self.take(value, ctx)
+                }
             },
         }
     }
@@ -139,7 +144,12 @@ impl Page for PasswordPage {
                 self.input = Input::masked();
                 Flow::Stay
             }
-            Key::Esc | Key::Ctrl('c') => Flow::Ignored,
+            // Backing out forgets what the chain has taken so far: the next start asks for all
+            // of it again, and none of it stays in memory meanwhile.
+            Key::Esc | Key::Ctrl('c') => {
+                ctx.store.forget();
+                Flow::Ignored
+            }
             k => {
                 if self.input.key(k) {
                     self.problem = None;

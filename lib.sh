@@ -17,9 +17,10 @@ allow() {
     return "$status"
 }
 
-# https even after a redirect, and a connect timeout instead of a hang.
+# https even after a redirect, TLS 1.2 at the least, and a connect timeout
+# instead of a hang.
 fetch_url() {
-    curl -Lf --proto '=https' --proto-redir '=https' --connect-timeout 10 "$@"
+    curl -Lf --proto '=https' --proto-redir '=https' --tlsv1.2 --connect-timeout 10 "$@"
 }
 
 # An answer written back into the answer file, in place of an earlier one.
@@ -583,8 +584,9 @@ pacman_include() {
 AUR_RETRIES=3
 AUR_TIMEOUT=2700
 
-# A package from the AUR, built as the account with passwordless sudo granted
-# for the build alone. One compile job per GiB of memory, see docs/REFERENCE.md.
+# A package from the AUR, built as the account, with passwordless sudo for
+# pacman alone and for the build alone. One compile job per GiB of memory, see
+# docs/REFERENCE.md.
 chroot_aur_install() {
     local repo="$1"
     local url="https://aur.archlinux.org/${repo}.git"
@@ -607,7 +609,9 @@ chroot_aur_install() {
     build="${build} CARGO_HOME=${dir}/.cargo XDG_CACHE_HOME=${dir}/.cache"
     build="${build} makepkg -si --noconfirm --needed"
 
-    echo '%wheel ALL=(ALL:ALL) NOPASSWD: ALL' | sudoers_rule 99-aur-build
+    # makepkg -si reaches root through sudo for pacman alone: the dependencies
+    # and the install.
+    echo '%wheel ALL=(ALL:ALL) NOPASSWD: /usr/bin/pacman' | sudoers_rule 99-aur-build
 
     echo "building ${repo} from the AUR with ${jobs} job(s)"
     for ((i = 1; i <= AUR_RETRIES; i++)); do

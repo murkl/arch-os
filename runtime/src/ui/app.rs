@@ -1079,6 +1079,103 @@ pub mod tests {
         assert!(screen(&mut app, &mut term).contains("Continue"));
     }
 
+    /// Back from a run that ended leads on as its last row does: a finished one to the way out,
+    /// a broken one to the question before the dashboard. Never to the password the run was
+    /// started through, which still stands behind it.
+    #[test]
+    fn back_from_an_ended_run_leads_on_and_never_to_the_questions_behind_it() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        for (host, expect) in [("tuxbox", "Restart"), ("broken", "Back to the dashboard?")] {
+            let (mut app, mut term, rx) = app(false);
+            answered(&mut app);
+            app.ctx.store.set("TUX_HOST", host);
+            screen(&mut app, &mut term);
+            press(&mut app, &[Key::Enter]);
+            settle(&mut app, &mut term, &rx);
+            assert_eq!(
+                app.titles().last().unwrap(),
+                "Password",
+                "{:?}",
+                app.titles()
+            );
+            for _ in 0..2 {
+                type_text(&mut app, "pw");
+                press(&mut app, &[Key::Enter]);
+            }
+            press(&mut app, &[Key::Down, Key::Enter]);
+            settle(&mut app, &mut term, &rx);
+            press(&mut app, &[Key::Enter]);
+            settle(&mut app, &mut term, &rx);
+            press(&mut app, &[Key::Down, Key::Enter]);
+            settle(&mut app, &mut term, &rx);
+            if host == "tuxbox" {
+                press(&mut app, &[Key::Enter]);
+                settle(&mut app, &mut term, &rx);
+            }
+            std::thread::sleep(Duration::from_millis(650));
+            let shown = screen(&mut app, &mut term);
+            assert!(shown.contains("› Setup › "), "{host}: {shown}");
+            press(&mut app, &[Key::Esc]);
+            let shown = screen(&mut app, &mut term);
+            assert!(shown.contains(expect), "{host}: {shown}");
+            assert_ne!(app.titles().last().unwrap(), "Password", "{host}");
+        }
+    }
+
+    /// Backing out of a password forgets the ones typed before it: the next start asks for
+    /// them again, and nothing of them stays in memory meanwhile.
+    #[test]
+    fn backing_out_of_a_password_forgets_the_ones_typed_before_it() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app_with(
+            &[(
+                "    - name: TUX_VM\n",
+                "    - name: TUX_DISK_PASSWORD\n      type: new-password\n      title: Disk password\n      required: true\n    - name: TUX_VM\n",
+            )],
+            false,
+        );
+        answered(&mut app);
+        screen(&mut app, &mut term);
+        press(&mut app, &[Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        assert_eq!(
+            app.titles().last().unwrap(),
+            "Password",
+            "{:?}",
+            app.titles()
+        );
+        for _ in 0..2 {
+            type_text(&mut app, "pw");
+            press(&mut app, &[Key::Enter]);
+        }
+        assert_eq!(
+            app.titles().last().unwrap(),
+            "Disk password",
+            "{:?}",
+            app.titles()
+        );
+        assert_eq!(app.ctx.store.get("TUX_PASSWORD"), "pw");
+        press(&mut app, &[Key::Esc]);
+        assert_eq!(
+            app.titles().last().unwrap(),
+            "Password",
+            "{:?}",
+            app.titles()
+        );
+        assert_eq!(
+            app.ctx.store.get("TUX_PASSWORD"),
+            "",
+            "forgotten on the way back"
+        );
+        press(&mut app, &[Key::Esc]);
+        assert_eq!(app.depth(), 1, "{:?}", app.titles());
+        press(&mut app, &[Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        assert_eq!(app.titles().last().unwrap(), "Password", "asked again");
+    }
+
     #[test]
     fn a_task_that_stops_itself_is_told_in_the_modules_words_and_a_broken_one_in_full() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());

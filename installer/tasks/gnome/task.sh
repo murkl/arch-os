@@ -58,11 +58,14 @@ packages+=("${desktop[@]}")
 packages+=(gnome-extensions-app)
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
+    # Extensions from the browser, the power profiles the Settings offer, as
+    # gnome-control-center names them, and printing.
     # https://wiki.archlinux.org/title/GNOME#Extensions
-    packages+=(gnome-browser-connector gnome-themes-extra tuned-ppd cups)
+    packages+=(gnome-browser-connector power-profiles-daemon cups)
 
-    # Portals for flatpaks and screen sharing. GTK's covers what GNOME's lacks.
-    packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk)
+    # xdg-open, for the shell's open alias and programs from outside GNOME. The
+    # portals come with the group's xdg-desktop-portal-gnome.
+    packages+=(xdg-utils)
 
     # The older audio APIs.
     packages+=(pipewire-alsa)
@@ -74,7 +77,7 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     # Building from the AUR, firmware updates, and opening any drive or archive.
     packages+=(base-devel fwupd bash-completion inetutils
         dosfstools ntfs-3g exfatprogs btrfs-progs nfs-utils
-        7zip zip unzip unrar wget jq zenity)
+        7zip zip unzip unrar wget jq)
 
     # https://wiki.archlinux.org/title/Codecs_and_containers
     packages+=(ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire
@@ -164,8 +167,8 @@ if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
 fi
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-    arch-chroot "$MNT" systemctl enable tuned-ppd   # power profiles
-    arch-chroot "$MNT" systemctl enable cups.socket # printing
+    arch-chroot "$MNT" systemctl enable power-profiles-daemon.service # power profiles
+    arch-chroot "$MNT" systemctl enable cups.socket                   # printing
 fi
 
 # fwupd ships its timer off, and without it the firmware it offers is what it

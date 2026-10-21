@@ -242,7 +242,7 @@ presets:
     values:
       ARCH_OS_DESKTOP: gnome
 
-  - title: Online (paste.rs)
+  - title: Shared configuration
     description: Every answer of a shared configuration.
     action: import-config
 ```
@@ -357,6 +357,7 @@ Every declared variable under its own name, and the runtime's:
 Scripts, and the functions the YAML names, run with `lib.sh` loaded and an `ERR` trap: no shebang, no `set -e`, no error handling. Each runs in its own session, without a terminal, unless the action has `tty: true`.
 
 - **Any non-zero status is a failure**, from a failed command or from the script itself. `[ "$X" = y ] && do_it` as the last line fails where the test is false. A status that means no error is allowed by name: `grep x file || allow 1`
+- Inside `$(…)` or `( … )` a failure ends the subshell alone, and what the enclosing command makes of its status decides: `x=$(cmd)` fails the script at that line, `echo "$(cmd)"` goes on
 - **Ask nothing.** Every question is in the YAML, unless the action has `tty: true`. A program that prompts on the terminal anyway fails at once, as there is none
 - **Print nothing for a person.** stdout and stderr go to the log
 - A `test.sh` also changes nothing

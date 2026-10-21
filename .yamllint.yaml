@@ -2,7 +2,7 @@
 # are relaxed, each a convention of the linter rather than a rule of the
 # format:
 #
-#   line-length     the modules' declarations and the catalogs are prose, and a
+#   line-length     the declarations and the catalogs are prose, and a
 #                   sentence broken at column 80 reads and diffs worse.
 #   document-start  every file is one document, which needs no `---`.
 #   truthy          check-keys, because a workflow's `on:` is a key, not a value.

@@ -5,6 +5,12 @@
 has_command glxinfo
 has_command vulkaninfo
 
+# Whether NVIDIA has another card beside it, as the task reads it.
+other=false
+while IFS=$'\t' read -r vendor _; do
+    [ "$vendor" = nvidia ] || other=true
+done < <(graphics_cards)
+
 while IFS=$'\t' read -r vendor device; do
     case "$vendor" in
     intel)
@@ -23,6 +29,15 @@ while IFS=$'\t' read -r vendor device; do
         while read -r image; do
             contents="$(arch-chroot "$MNT" lsinitcpio "$image")"
             grep -q '/nvidia-drm\.ko' <<<"$contents"
+            # Alone, nouveau is not in the image. Beside another card the
+            # hook that brings that card's driver may bring nouveau, and the
+            # file that keeps it from loading is in the image with it.
+            if [ "$other" = "true" ]; then
+                grep -q 'modprobe\.d/nvidia-utils\.conf' <<<"$contents"
+            elif grep -q '/nouveau\.ko' <<<"$contents"; then
+                echo "nouveau is in ${image} beside the NVIDIA driver" >&2
+                exit 1
+            fi
         done < <(boot_images)
         ;;
     esac

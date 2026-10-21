@@ -47,8 +47,3 @@ arch-chroot "$MNT" systemctl enable btrfs-scrub@-.timer
 # /var/lib/systemd/pstore and out of the firmware's small memory, as systemd's
 # preset has it. ISO and Recovery leave it for this system to collect.
 arch-chroot "$MNT" systemctl enable systemd-pstore.service
-
-# Wherever pacstrap installed it.
-if has_command irqbalance; then
-    arch-chroot "$MNT" systemctl enable irqbalance.service
-fi

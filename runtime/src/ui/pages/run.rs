@@ -336,6 +336,16 @@ impl RunPage {
             .is_some_and(|(_, at, _)| at.elapsed() >= SETTLE)
     }
 
+    /// Where the way on leads once the run ended.
+    fn way(&self) -> Option<Way> {
+        match &self.end {
+            Some((Ok(_), ..)) => Some(Way::Leave),
+            Some((Err(End::Broke(_)), ..)) => Some(Way::Ask),
+            Some((Err(_), ..)) => Some(Way::Back),
+            None => None,
+        }
+    }
+
     /// What the run has come to beyond its list: the optional tasks that failed and the tests
     /// that ran, and whether it is worth a look.
     fn tally(&self) -> Option<(String, Tone)> {
@@ -432,18 +442,17 @@ impl RunPage {
                     );
                 }
                 acts.push(Act::new(t("Continue"), |ctx: &mut Ctx| {
-                    if ctx.leaves() {
-                        Flow::Push(Box::new(super::leave::LeavePage::new(ctx, false)))
-                    } else {
-                        Flow::Quit
-                    }
+                    onward(Way::Leave, ctx)
                 }));
                 (body, acts)
             }
             Err(End::Known(text)) => {
                 let mut body = vec![mark(true), Block::Blank];
                 body.extend(words(text));
-                (body, vec![Act::new(t("Back"), |_| Flow::Home)])
+                (
+                    body,
+                    vec![Act::new(t("Back"), |ctx| onward(Way::Back, ctx))],
+                )
             }
             Err(End::Stopped) => (
                 vec![
@@ -452,7 +461,7 @@ impl RunPage {
                     Block::Heading(self.stopped_at(ctx)),
                     Block::Text(t("Nothing after it ran."), Tone::Normal),
                 ],
-                vec![Act::new(t("Back"), |_| Flow::Home)],
+                vec![Act::new(t("Back"), |ctx| onward(Way::Back, ctx))],
             ),
             Err(End::Broke(f)) => {
                 let mut body = vec![
@@ -472,8 +481,8 @@ impl RunPage {
                         .describe(t(&action.description)),
                     );
                 }
-                acts.push(Act::new(t("Back to the dashboard"), |_| {
-                    Flow::Push(Box::new(YesNoPage::home()))
+                acts.push(Act::new(t("Back to the dashboard"), |ctx| {
+                    onward(Way::Ask, ctx)
                 }));
                 (body, acts)
             }
@@ -567,6 +576,28 @@ impl RunPage {
                 y += 1;
             }
         }
+    }
+}
+
+/// Where the way on leads once a run ended, which the last row of its page offers too.
+#[derive(Clone, Copy)]
+enum Way {
+    /// A finished run: out of the module, or out of the program.
+    Leave,
+    /// A run stopped on purpose: the dashboard.
+    Back,
+    /// A broken run: the dashboard, asked first, since the failure is read on this page.
+    Ask,
+}
+
+fn onward(way: Way, ctx: &mut Ctx) -> Flow {
+    match way {
+        Way::Leave if ctx.leaves() => {
+            Flow::Push(Box::new(super::leave::LeavePage::new(ctx, false)))
+        }
+        Way::Leave => Flow::Quit,
+        Way::Back => Flow::Home,
+        Way::Ask => Flow::Push(Box::new(YesNoPage::home())),
     }
 }
 
@@ -685,9 +716,19 @@ impl Page for RunPage {
             return Flow::Stay;
         }
         // Killing a half-finished package transaction is worse than waiting for it: nothing but
-        // the way out means anything while a task runs. Over the result, the text hides the rows
-        // a key would choose.
-        if self.end.is_none() || self.text {
+        // the way out means anything while a task runs.
+        if self.end.is_none() {
+            return if way_out { Flow::Ignored } else { Flow::Stay };
+        }
+        // Back from the outcome leads on as its last row does, never to the questions the run
+        // was started through, which still stand behind it.
+        if matches!(key, Key::Esc | Key::Backspace)
+            && let Some(way) = self.way()
+        {
+            return onward(way, ctx);
+        }
+        // Over the result, the text hides the rows a key would choose.
+        if self.text {
             return if way_out { Flow::Ignored } else { Flow::Stay };
         }
         match self.result.key(key, ctx) {

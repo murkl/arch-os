@@ -1,7 +1,7 @@
 # The Recovery among the applications, beside holding space at boot. logind
 # lets whoever sits at the machine choose a boot entry without a password.
 
-# The desktop extras bring zenity, a desktop without them does not.
+# zenity, for the one question the entry asks.
 chroot_pacman_install zenity
 
 icons="${MNT}/usr/local/share/icons/hicolor/scalable/apps"

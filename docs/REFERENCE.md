@@ -16,7 +16,7 @@ Every answer except the passwords is saved to `installer.conf` right away, so an
 
 | Way | How |
 | --- | --- |
-| Share | **Share the configuration** on the last page uploads the answers to **[paste.rs](https://paste.rs)**. Another installation loads them with the **Online (paste.rs)** profile and asks only for the disk and the passwords |
+| Share | **Share the configuration** on the last page uploads the answers to **[paste.rs](https://paste.rs)**. Another installation loads them with the **Shared configuration** profile and asks only for the disk and the passwords |
 | Copy | `installer.conf` beside the Installer on another machine |
 
 **Note:** _A shared configuration leaves out the disk and the kernel parameters. Both belong to one machine, and a stranger's kernel parameters could open a root shell at boot._
@@ -37,6 +37,7 @@ UEFI only, GPT, and the whole disk: Arch OS is the only system on it.
 - Partition 3 exists only with **Recovery** on and sits at the end, so the root is always partition 2
 - **Encryption:** LUKS2 on partition 2, opened as `cryptroot`, with the account password or a separate one. **[➜ Accounts](#accounts)**
 - **TRIM:** `--allow-discards --persistent` in the LUKS2 header lets `fstrim.timer` work without a kernel parameter. It reveals which blocks are free, not what is in them. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Dm-crypt/Specialties#Discard/TRIM_support_for_solid_state_drives_(SSD))**
+- **Workqueues:** on a solid state drive `--perf-no_read_workqueue --perf-no_write_workqueue`, in the header as well: the requests reach the disk as they come. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Dm-crypt/Specialties#Disable_workqueue_for_increased_solid_state_drive_(SSD)_performance)**
 
 ### Btrfs Subvolumes
 
@@ -112,10 +113,10 @@ base systemd keyboard autodetect microcode modconf kms sd-vconsole block [sd-enc
 | --- | --- |
 | `keyboard` before `autodetect` | Includes every keyboard driver, not only the one in use during the installation |
 | `microcode` | The processor's microcode, `intel-ucode` or `amd-ucode` from `/proc/cpuinfo` |
-| `kms` | Plymouth needs a driver to draw on. It adds the open graphics drivers |
+| `kms` | Plymouth needs a driver to draw on. It adds the open graphics drivers. With NVIDIA alone in the machine, `31-` takes it out, or nouveau would be in the image beside the driver's own modules. **[➜ Arch Wiki](https://wiki.archlinux.org/title/NVIDIA#Early_loading)** |
 | No `fsck` | `fsck.btrfs` does nothing at boot |
 
-**Note:** _The hooks are in `/etc/mkinitcpio.conf.d/10-arch-os.conf`, the boot splash extends it with `20-` and NVIDIA with `30-`. mkinitcpio's pacman hook rebuilds the image whenever the NVIDIA module changes._
+**Note:** _The hooks are in `/etc/mkinitcpio.conf.d/10-arch-os.conf`, the boot splash extends it with `20-` and NVIDIA with `30-` and `31-`. mkinitcpio's pacman hook rebuilds the image whenever the NVIDIA module changes._
 
 ### Secure Boot
 
@@ -201,7 +202,7 @@ Enough for a usable system, little enough to need no upkeep. Everything else fol
 | Timeout | 45 min | Past this it is stuck, not slow |
 | Compile jobs | 1 per GiB of memory, at most 1 per core | More would run a live system out of memory |
 
-- Passwordless `sudo` only for the duration of the build. cargo's downloads stay in the build directory
+- Passwordless `sudo` for `pacman` alone, and only for the duration of the build. cargo's downloads stay in the build directory
 - `paru` is built from source: a `-bin` package breaks the day Arch bumps `libalpm`
 
 ### The Text Editor

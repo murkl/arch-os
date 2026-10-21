@@ -49,7 +49,7 @@ Work outside the run, each with its own pages. Its entry under `actions:` declar
 | `on: failure` | `share-log`: uploads the log of a run with a broken script and shows it as a QR code. A run that stopped on purpose offers none. **[➜ When Something Goes Wrong](../docs/CONTRIBUTING.md#when-something-goes-wrong)** |
 | `on: success` | `chroot`, `share-config`: a shell in the new system, and its answers uploaded. Both are rows on the page a finished run ends on, which opens on **Continue** |
 
-The online profile under `presets:` names `import-config`, which fetches the answers.
+The shared-configuration profile under `presets:` names `import-config`, which fetches the answers.
 
 **Note:** _A cable needs no action: it connects automatically and is preferred over Wi-Fi while both are up. The third way out is the runtime's own **Exit**: the Installer closes and the machine keeps running. **[➜ ISO](../iso)**_
 

@@ -128,7 +128,7 @@ start() {
         -drive "if=pflash,format=raw,unit=0,readonly=on,file=${OVMF_CODE}" \
         -drive "if=pflash,format=raw,unit=1,file=${vars}" \
         -drive "file=${WORK}/disk.qcow2,if=none,id=disk,format=qcow2" \
-        -device "virtio-blk-pci,drive=disk,bootindex=2" \
+        -device "virtio-blk-pci,drive=disk,bootindex=2,rotation_rate=1" \
         "${boot[@]}" \
         -nic "user,model=virtio-net-pci,hostfwd=tcp:127.0.0.1:${PORT}-:22" \
         -display none \

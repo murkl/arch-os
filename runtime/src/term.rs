@@ -1,7 +1,7 @@
 //! The interface in the terminal it was started from.
 
-use std::sync::Arc;
 use std::sync::mpsc::{self, RecvTimeoutError};
+use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
 use ratatui::crossterm::event::{
@@ -15,9 +15,20 @@ use crate::ui::{App, FRAME, Key, Msg};
 pub fn run(start: Start) -> std::io::Result<()> {
     let (tx, rx) = mpsc::channel();
     let keys = tx.clone();
+    let gate = Arc::new(Gate::default());
+    let pass = gate.clone();
     std::thread::spawn(move || {
         let mut last = None;
-        while let Ok(e) = event::read() {
+        loop {
+            pass.pass();
+            match event::poll(POLL) {
+                Ok(true) => {}
+                Ok(false) => continue,
+                Err(_) => break,
+            }
+            let Ok(e) = event::read() else {
+                break;
+            };
             let msg = match e {
                 Event::Key(k) if k.kind != KeyEventKind::Release => key(k).map(|key| {
                     let again = held(&mut last, key, Instant::now());
@@ -86,13 +97,17 @@ pub fn run(start: Start) -> std::io::Result<()> {
             if !app.done() && Instant::now() >= wake {
                 app.handle(Msg::Tick);
             }
-            // A script given the terminal: the interface stands down for as long as it runs.
+            // A script given the terminal: the interface stands down for as long as it runs,
+            // the key thread first. A read of the terminal from what is then a background
+            // process group would stop this process, or spin on the error it gets instead.
             if let Some(job) = app.ctx.take_handover() {
+                gate.pause();
                 mouse(false);
                 ratatui::restore();
                 let result = job();
                 terminal = ratatui::init();
                 mouse(true);
+                gate.resume();
                 app.handle(Msg::Data(app.ctx.page_id(), result.into()));
             }
             if app.done() {
@@ -103,6 +118,60 @@ pub fn run(start: Start) -> std::io::Result<()> {
     mouse(false);
     ratatui::restore();
     result
+}
+
+/// How long the key thread waits for a key before it looks whether it is to stand still.
+const POLL: Duration = Duration::from_millis(50);
+
+/// Holds the key thread still while a script has the terminal. Pausing waits until the thread
+/// stands, so no read of the terminal is under way once the script takes the foreground.
+#[derive(Default)]
+struct Gate {
+    /// Whether a pause is wanted, and whether the thread stands.
+    state: Mutex<(bool, bool)>,
+    changed: Condvar,
+}
+
+impl Gate {
+    /// Asks the key thread to stand still and waits until it does, or a moment for one that
+    /// is gone.
+    fn pause(&self) {
+        let mut s = self.state.lock().unwrap_or_else(|e| e.into_inner());
+        s.0 = true;
+        let deadline = Instant::now() + Duration::from_secs(1);
+        while !s.1 {
+            let left = deadline.saturating_duration_since(Instant::now());
+            if left.is_zero() {
+                break;
+            }
+            s = self
+                .changed
+                .wait_timeout(s, left)
+                .unwrap_or_else(|e| e.into_inner())
+                .0;
+        }
+    }
+
+    fn resume(&self) {
+        let mut s = self.state.lock().unwrap_or_else(|e| e.into_inner());
+        s.0 = false;
+        self.changed.notify_all();
+    }
+
+    /// The key thread, before each look at the terminal: stands still for as long as it is
+    /// asked to.
+    fn pass(&self) {
+        let mut s = self.state.lock().unwrap_or_else(|e| e.into_inner());
+        if !s.0 {
+            return;
+        }
+        s.1 = true;
+        self.changed.notify_all();
+        while s.0 {
+            s = self.changed.wait(s).unwrap_or_else(|e| e.into_inner());
+        }
+        s.1 = false;
+    }
 }
 
 /// The Linux console: TERM `linux`, or none or dumb, which promises nothing.
@@ -162,6 +231,31 @@ fn key(k: KeyEvent) -> Option<Key> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    /// Paused, the thread stands before the pause returns, and goes on once resumed.
+    #[test]
+    fn a_paused_gate_holds_the_thread_until_it_is_resumed() {
+        let gate = Arc::new(Gate::default());
+        let count = Arc::new(AtomicUsize::new(0));
+        let (g, c) = (gate.clone(), count.clone());
+        let thread = std::thread::spawn(move || {
+            for _ in 0..300 {
+                g.pass();
+                c.fetch_add(1, Ordering::SeqCst);
+                std::thread::sleep(Duration::from_millis(1));
+            }
+        });
+        std::thread::sleep(Duration::from_millis(20));
+        gate.pause();
+        let stood = count.load(Ordering::SeqCst);
+        std::thread::sleep(Duration::from_millis(50));
+        assert_eq!(count.load(Ordering::SeqCst), stood, "moved while paused");
+        gate.resume();
+        std::thread::sleep(Duration::from_millis(50));
+        assert!(count.load(Ordering::SeqCst) > stood, "never resumed");
+        thread.join().unwrap();
+    }
 
     #[test]
     fn a_key_coming_again_at_the_rate_of_a_keyboard_is_held() {

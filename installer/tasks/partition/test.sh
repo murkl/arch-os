@@ -13,7 +13,12 @@ if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
     root_source="$(findmnt -no SOURCE "$MNT")"
     [[ $root_source == /dev/mapper/cryptroot* ]]
     [ "$(cryptsetup status cryptroot | awk '$1 == "device:" { print $2 }')" = "$system_part" ]
-    cryptsetup luksDump "$system_part" | grep -qE '^Flags:.*allow-discards'
+    flags="$(cryptsetup luksDump "$system_part" | sed -n 's/^Flags:[[:space:]]*//p')"
+    grep -qw allow-discards <<<"$flags"
+    if [ "$(lsblk -dnro ROTA "$ARCH_OS_DISK")" = "0" ]; then
+        grep -qw no-read-workqueue <<<"$flags"
+        grep -qw no-write-workqueue <<<"$flags"
+    fi
 fi
 
 while IFS=$'\t' read -r subvolume path; do

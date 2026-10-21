@@ -12,8 +12,3 @@ status=0
 unshare --net arch-chroot "$MNT" "${condition[@]}" || status=$?
 [ "$status" -ge 1 ] && [ "$status" -le 254 ]
 arch-chroot "$MNT" "${condition[@]}"
-
-# Real hardware only, see pacstrap.
-if [ "$ARCH_OS_VIRTUAL_MACHINE" = "false" ]; then
-    arch-chroot "$MNT" systemctl is-enabled irqbalance.service >/dev/null
-fi
