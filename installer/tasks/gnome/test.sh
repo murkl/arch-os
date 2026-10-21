@@ -38,6 +38,9 @@ fi
 
 arch-chroot "$MNT" systemctl --global is-enabled pipewire.socket pipewire-pulse.socket wireplumber.service >/dev/null
 
+# PipeWire reaches rtkit by D-Bus activation, it has no service to enable.
+[ -f "${MNT}/usr/share/dbus-1/system-services/org.freedesktop.RealtimeKit1.service" ]
+
 # Without the module the daemon runs and nothing reaches a .local name.
 grep -q 'mdns_minimal' "${MNT}/etc/nsswitch.conf"
 [ "$ARCH_OS_FIREWALL_ENABLED" != "true" ] ||

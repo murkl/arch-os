@@ -16,6 +16,9 @@ packages=(git bluez bluez-utils avahi nss-mdns pipewire pipewire-pulse wireplumb
 # asking for jack2: GNOME Boxes is one, by way of qemu-desktop.
 packages+=(pipewire-jack)
 
+# PipeWire's realtime priority, without which it complains at every login.
+packages+=(rtkit)
+
 # The shell's calendar server links against it, and Arch leaves it to the apps
 # that need it, every one of which the slim desktop leaves out.
 packages+=(evolution-data-server)
@@ -61,9 +64,8 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     # Portals for flatpaks and screen sharing. GTK's covers what GNOME's lacks.
     packages+=(xdg-utils xdg-desktop-portal xdg-desktop-portal-gtk)
 
-    # The older audio APIs, and rtkit for pipewire's realtime priority, without
-    # which it complains at every login.
-    packages+=(pipewire-alsa rtkit)
+    # The older audio APIs.
+    packages+=(pipewire-alsa)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
 
     # NetworkManager speaks WireGuard itself, OpenVPN needs the plug-in.
