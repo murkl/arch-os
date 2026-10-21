@@ -1,6 +1,6 @@
 //! The interface: pages on a stack, drawn into a cell grid the terminal shows.
 
-mod app;
+pub(crate) mod app;
 mod detail;
 mod draw;
 mod input;
@@ -265,6 +265,18 @@ pub trait Page {
     /// On top again after the page above it closed.
     fn resumed(&mut self, _ctx: &mut Ctx) -> Flow {
         Flow::Stay
+    }
+    /// What the page does with nobody at the keyboard: the flow it goes on with by itself, or
+    /// what it needs a person for.
+    fn unattended(&mut self, _ctx: &mut Ctx) -> Result<Flow, String> {
+        Err(crate::i18n::tf(
+            "{{page}} needs a person at the keyboard.",
+            &[("page", &self.title())],
+        ))
+    }
+    /// What the work came to, once it has, in the words its page shows.
+    fn finished(&self, _ctx: &Ctx) -> Option<Result<String, String>> {
+        None
     }
     /// A note for the header's right, in place of the status: where a question stands in a run.
     fn note(&self, _ctx: &Ctx) -> Option<String> {

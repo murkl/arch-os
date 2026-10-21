@@ -58,17 +58,11 @@ product_dir() { dirname "${BASH_SOURCE[0]}"; }
 releases_json() { fetch_url -sS --max-time 20 "https://api.github.com/repos/${REPO}/releases?per_page=100"; }
 
 # Every download in the releases' JSON on stdin whose name ends in $1, with its
-# sha256, a line each. One field to a line, however GitHub lays the JSON out.
+# sha256, a line each. A release published before GitHub kept a checksum leaves
+# the sha256 empty.
 asset_in() {
-    tr ',' '\n' | awk -v suffix="$1" '
-        function weigh() {
-            if (url != "" && substr(url, length(url) - length(suffix) + 1) == suffix) print url, digest
-            url = ""; digest = ""
-        }
-        /"url": *"[^"]*\/releases\/assets\// { weigh() }
-        /"digest": *"sha256:/ { digest = $0; sub(/.*sha256:/, "", digest); sub(/".*/, "", digest) }
-        /"browser_download_url": *"/ { url = $0; sub(/.*: *"/, "", url); sub(/".*/, "", url) }
-        END { weigh() }'
+    jq -r --arg suffix "$1" '.[] | .assets[]? | select(.browser_download_url | endswith($suffix))
+        | "\(.browser_download_url) \(.digest // "" | ltrimstr("sha256:"))"'
 }
 
 # Whether version $1 comes after $2, as semantic versioning orders them: a

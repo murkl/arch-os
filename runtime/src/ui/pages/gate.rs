@@ -97,6 +97,15 @@ impl GatePage {
 }
 
 impl Page for GatePage {
+    /// A no is final: nobody is there to plug in a cable.
+    fn unattended(&mut self, ctx: &mut Ctx) -> Result<Flow, String> {
+        if self.refused.is_none() {
+            return Ok(Flow::Stay);
+        }
+        let action = self.action(ctx);
+        Err(ctx.expand(&t(action.error.as_deref().unwrap_or_default())))
+    }
+
     fn title(&self) -> String {
         String::new()
     }

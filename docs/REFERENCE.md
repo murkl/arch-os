@@ -18,6 +18,7 @@ Every answer except the passwords is saved to `installer.conf` right away, so an
 | --- | --- |
 | Share | **Share the configuration** on the last page uploads the answers to **[paste.rs](https://paste.rs)**. Another installation loads them with the **Shared configuration** profile and asks only for the disk and the passwords |
 | Copy | `installer.conf` beside the Installer on another machine |
+| Unattended | `arch-os installer --unattended` with `installer.conf` beside it and `ARCH_OS_PASSWORD` in the environment installs with nobody at the keyboard. **[➜ Runtime](../runtime/README.md#unattended)** |
 
 **Note:** _A shared configuration leaves out the disk and the kernel parameters. Both belong to one machine, and a stranger's kernel parameters could open a root shell at boot._
 
@@ -310,7 +311,7 @@ An installed system needs no internet until an update is started.
 
 - Timers that need the internet, the mirror ranking and the keyring refresh, are skipped while archlinux.org is unreachable. `systemctl --failed` stays empty
 - An `online.conf` drop-in for each checks with `ExecCondition=`. A skip is logged to the journal
-- The Recovery repairs from the package cache
+- The Recovery repairs from what the system holds, nothing is downloaded
 
 **Note:** _Back online after months, update the keyring first: `sudo pacman -Sy archlinux-keyring && sudo pacman -Su`. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Pacman/Package_signing#Upgrade_system_regularly)**_
 
@@ -327,9 +328,7 @@ Snapper takes a snapshot before and after every package transaction through `sna
 
 ### Rolling Back
 
-Only with the Recovery. The kernel lies on the EFI partition, outside every snapshot, so an older snapshot would start a kernel without its modules. The Recovery puts the snapshot in place and rebuilds the boot files from the package cache.
-
-The cache therefore keeps every kernel a snapshot uses. `paccache.timer` and the alias `pacrc` run `/usr/local/lib/arch-os/paccache.sh`, which trims like paccache and keeps those kernels. An unreadable snapshot stops the trim.
+Only with the Recovery. The kernel lies on the EFI partition, outside every snapshot, so an older snapshot would start a kernel without its modules. The Recovery puts the snapshot in place and rebuilds the boot files from the kernel image Arch keeps beside the modules, under `/usr/lib/modules/`, which the snapshot holds.
 
 ## The Recovery
 
@@ -348,7 +347,7 @@ It asks for the keyboard and the disk, on its own partition for neither. Everyth
 | Encryption | The LUKS header. The password is checked as it is typed (`cryptsetup open --test-passphrase`) |
 | Subvolumes | All of the layout, or the disk is rejected |
 | `/boot` | Partition 1, not the `fstab`, which may be what broke |
-| Kernels | `/usr/lib/modules/*/`, the images rebuilt from the package cache |
+| Kernels | `/usr/lib/modules/*/`, each with the image Arch installs beside its modules, the boot files rebuilt from it |
 | Snapshots | `@snapshots`. Without any, the rollback is skipped |
 
 - It repairs what the Installer of its release series creates, without a network. **Connect to Wi-Fi** on the dashboard connects for an update or a download in the shell

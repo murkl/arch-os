@@ -89,6 +89,25 @@ impl PasswordPage {
 }
 
 impl Page for PasswordPage {
+    /// From the environment, under the setting's own name, and tried on the machine as a
+    /// typed one is.
+    fn unattended(&mut self, ctx: &mut Ctx) -> Result<Flow, String> {
+        let name = self.setting.name.clone();
+        let value = std::env::var(&name).unwrap_or_default();
+        if value.is_empty() {
+            return Err(crate::i18n::tf(
+                "{{name}} is not set in the environment.",
+                &[("name", &name)],
+            ));
+        }
+        if let Some(check) = &self.setting.check {
+            let mut env = ctx.env();
+            env.push((name.clone(), value.clone()));
+            crate::script::run(check, &env).map_err(|e| format!("{name}: {e}"))?;
+        }
+        Ok(self.take(value, ctx))
+    }
+
     fn title(&self) -> String {
         t(&self.setting.title)
     }

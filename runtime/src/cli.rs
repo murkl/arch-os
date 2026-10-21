@@ -15,7 +15,7 @@ fn help() -> String {
         .collect::<Vec<_>>()
         .join(", ");
     format!(
-        "{PROGRAM} <module> [--dry-run] [--kiosk]\n{PROGRAM} glyphs\n{PROGRAM} --version\n\n<module>   {modules}\n--dry-run  show the run, start nothing\n--kiosk    the machine's only program: leaving restarts it\nglyphs     every character the interface draws on a console\n"
+        "{PROGRAM} <module> [--dry-run] [--kiosk] [--unattended]\n{PROGRAM} glyphs\n{PROGRAM} --version\n\n<module>      {modules}\n--dry-run     show the run, start nothing\n--kiosk       the machine's only program: leaving restarts it\n--unattended  the work with the answers in <module>.conf and the passwords in the environment, nobody at the keyboard\nglyphs        every character the interface draws on a console\n"
     )
 }
 
@@ -24,6 +24,8 @@ pub struct Start {
     pub module: &'static spec::Module,
     pub dry_run: bool,
     pub kiosk: bool,
+    /// Nobody at the keyboard: the answers from the file, the passwords from the environment.
+    pub unattended: bool,
 }
 
 /// What the command line asks for.
@@ -36,13 +38,15 @@ enum Ask {
 
 /// The arguments after the program's name, or why they ask for nothing it does.
 fn parse(args: impl IntoIterator<Item = String>) -> Result<Ask, String> {
-    let (mut module, mut dry_run, mut kiosk, mut glyphs) = (None, false, false, false);
+    let (mut module, mut dry_run, mut kiosk, mut unattended, mut glyphs) =
+        (None, false, false, false, false);
     for arg in args {
         match arg.as_str() {
             "-h" | "--help" => return Ok(Ask::Help),
             "-V" | "--version" => return Ok(Ask::Version),
             "--dry-run" => dry_run = true,
             "--kiosk" => kiosk = true,
+            "--unattended" => unattended = true,
             "glyphs" => glyphs = true,
             a if a.starts_with('-') => return Err(format!("unknown argument {a}")),
             id => match spec::loaded().module(id) {
@@ -56,10 +60,15 @@ fn parse(args: impl IntoIterator<Item = String>) -> Result<Ask, String> {
         return Ok(Ask::Glyphs);
     }
     let module = module.ok_or("name a module")?;
+    // A kiosk starts over when its run ends, an unattended run ends.
+    if kiosk && unattended {
+        return Err("--kiosk and --unattended do not go together".into());
+    }
     Ok(Ask::Run(Start {
         module,
         dry_run,
         kiosk,
+        unattended,
     }))
 }
 
@@ -83,6 +92,18 @@ pub fn main() -> ExitCode {
             return ExitCode::from(64);
         }
     };
+    if start.unattended {
+        let result = crate::unattended::run(start);
+        crate::script::cleanup();
+        return match result {
+            Ok(true) => ExitCode::SUCCESS,
+            Ok(false) => ExitCode::FAILURE,
+            Err(e) => {
+                eprintln!("{PROGRAM}: {e}");
+                ExitCode::FAILURE
+            }
+        };
+    }
     if !std::io::stdin().is_terminal() || !std::io::stdout().is_terminal() {
         eprintln!("{PROGRAM}: needs a terminal");
         return ExitCode::FAILURE;
@@ -122,6 +143,10 @@ mod tests {
             panic!("--kiosk {other} starts nothing");
         };
         assert_eq!((start.module.id.as_str(), start.kiosk), (other, true));
+        let Ok(Ask::Run(start)) = ask(&[one, "--unattended"]) else {
+            panic!("{one} --unattended starts nothing");
+        };
+        assert!(start.unattended && !start.kiosk);
         assert!(matches!(ask(&["--help", "nope"]), Ok(Ask::Help)));
         assert!(matches!(ask(&["-V"]), Ok(Ask::Version)));
         assert!(matches!(ask(&[one, "glyphs"]), Ok(Ask::Glyphs)));
@@ -133,6 +158,10 @@ mod tests {
             ),
             (&["nope"][..], "no module called nope".into()),
             (&[][..], "name a module".into()),
+            (
+                &["--kiosk", "--unattended", one][..],
+                "--kiosk and --unattended do not go together".into(),
+            ),
         ] {
             assert_eq!(ask(args).err(), Some(why), "{args:?}");
         }

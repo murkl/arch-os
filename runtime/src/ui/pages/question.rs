@@ -223,6 +223,35 @@ impl QuestionPage {
 }
 
 impl Page for QuestionPage {
+    /// A setting is asked only where the file holds no usable answer. A question a task asks
+    /// takes its answer from the environment, and is left unanswered where it holds none.
+    fn unattended(&mut self, ctx: &mut Ctx) -> Result<Flow, String> {
+        let Some(answers) = &self.loaded else {
+            return Ok(Flow::Stay);
+        };
+        match self.which {
+            Which::Setting(s) => Err(match &self.problem {
+                Some(why) => format!("{}: {why}", s.name),
+                None => crate::i18n::tf("{{name}} is not answered.", &[("name", &s.name)]),
+            }),
+            Which::Ask(a) => {
+                let value = std::env::var(&a.name).unwrap_or_default();
+                if value.is_empty() {
+                    crate::info!("{}: not set, so the task is skipped", a.name);
+                    ctx.store.set(&a.name, "");
+                    return Ok(Flow::Pop);
+                }
+                if !answers.options.iter().any(|(v, _)| *v == value) {
+                    return Err(crate::i18n::tf(
+                        "{{name}} is not one of the options.",
+                        &[("name", &a.name)],
+                    ));
+                }
+                Ok(self.commit(value, ctx))
+            }
+        }
+    }
+
     fn title(&self) -> String {
         t(self.which.title())
     }

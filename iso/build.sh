@@ -300,7 +300,7 @@ ${SUDO} rm -rf "$readback"
 # Every command its scripts call is on it, and pacman.conf took no module a
 # repair may load. The ISO has the same kernel under the same pacman.conf, so
 # that holds for an installation too.
-for command in arch-chroot blkid blockdev btrfs cryptsetup curl fuser ip iwctl loadkeys localectl lsblk mount mountpoint setfont sha256sum swapoff tar umount; do
+for command in arch-chroot blkid blockdev btrfs cryptsetup curl fuser ip iwctl jq loadkeys localectl lsblk mount mountpoint setfont sha256sum swapoff tar umount; do
     [ -x "${recovery_root}/usr/bin/${command}" ] || { echo "Error: the Recovery has no ${command}" >&2 && exit 1; }
 done
 # What it starts by itself, as systemd reads the links: the Recovery, a cable's

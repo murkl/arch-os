@@ -3,7 +3,7 @@
 The program behind the Installer and the Recovery. It draws the pages, asks the questions, stores the answers and runs the scripts. What it shows and does is declared in YAML, with bash scripts beside it, and all of it is compiled into one binary. Another Arch distribution swaps the YAML and the scripts and keeps the runtime.
 
 ```
-arch-os <module> [--dry-run] [--kiosk]
+arch-os <module> [--dry-run] [--kiosk] [--unattended]
 arch-os glyphs
 arch-os --version
 ```
@@ -13,6 +13,7 @@ arch-os --version
 | `<module>` | The module to open: a folder beside `runtime/` with a `module.yaml`, so `installer` or `recovery` |
 | `--dry-run` | Shows the run without doing it, see [Dry Run](#dry-run) |
 | `--kiosk` | Runs as the machine's only program: leaving restarts it with every answer kept |
+| `--unattended` | Runs the work with nobody at the keyboard, see [Unattended](#unattended) |
 | `glyphs` | Every character the interface draws on a console, for **[iso/glyphs.sh](../iso/glyphs.sh)** |
 
 ```
@@ -387,6 +388,12 @@ errors:
 ### Dry Run
 
 `--dry-run` shows a run without doing it. No task, test or action starts unless it declares `simulates: true`, and nothing under `requires` is checked. What a setting calls still runs, with `DRY_RUN=true`.
+
+### Unattended
+
+`--unattended` runs the module's work without the interface: the answers from `<module>.conf` beside the program, each password from the environment under its own name, such as `ARCH_OS_PASSWORD`, and every confirmation taken as a yes. A task that `asks` takes its answer from the environment too, and is skipped where that is not set. The log is printed as it is written, then the report or the failure and the tests' tally.
+
+The status is 0 where the work finished and 1 where it did not or could not start: a requirement said no, an answer is missing or will not do, a password is not set. Nothing is restarted or shut down afterwards.
 
 ## Files It Writes
 

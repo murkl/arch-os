@@ -21,7 +21,7 @@ make clean                   # remove every build output
 
 ```
 sudo pacman -S --needed make rust shellcheck shfmt zsh yamllint actionlint zizmor \
-    gettext diffutils gitleaks kbd terminus-font xkeyboard-config archiso systemd-ukify qemu-base edk2-ovmf tesseract tesseract-data-eng openssh
+    gettext diffutils gitleaks jq kbd terminus-font xkeyboard-config archiso systemd-ukify qemu-base edk2-ovmf tesseract tesseract-data-eng openssh
 ```
 
 **Note:** _CI installs the same packages and runs the same commands in an Arch container, so green locally means green in CI._

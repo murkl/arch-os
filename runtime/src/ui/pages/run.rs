@@ -602,6 +602,38 @@ fn onward(way: Way, ctx: &mut Ctx) -> Flow {
 }
 
 impl Page for RunPage {
+    /// The run goes on by itself.
+    fn unattended(&mut self, _: &mut Ctx) -> Result<Flow, String> {
+        Ok(Flow::Stay)
+    }
+
+    fn finished(&self, ctx: &Ctx) -> Option<Result<String, String>> {
+        if !self.settled() {
+            return None;
+        }
+        let (result, _, took) = self.end.as_ref()?;
+        let tally = self.tally().map(|(note, _)| note);
+        Some(match result {
+            Ok(report) => {
+                let mut lines = report.iter().cloned().collect::<Vec<_>>();
+                lines.push(tf("Took {{time}}", &[("time", &RunPage::clock(*took))]));
+                lines.extend(tally);
+                Ok(lines.join("\n"))
+            }
+            Err(End::Known(text)) => Err(text.clone()),
+            Err(End::Stopped) => Err(format!(
+                "{}\n{}",
+                self.stopped_at(ctx),
+                t("Nothing after it ran.")
+            )),
+            Err(End::Broke(f)) => Err(format!(
+                "{}\n{}\n{f}",
+                self.stopped_at(ctx),
+                t("Nothing after it ran.")
+            )),
+        })
+    }
+
     /// Nothing while it runs, or once stopped on the way out, whose page it then stands under.
     /// Otherwise what it came to: the header names the outcome.
     fn title(&self) -> String {
@@ -842,6 +874,13 @@ impl Page for RunPage {
                     .as_ref()
                     .map(|a| a.name.as_str())
                     .unwrap_or_default();
+                // Left unanswered, as a run with nobody at the keyboard leaves one: skipped.
+                if ctx.store.get(name).is_empty() {
+                    crate::info!("{}: skipped", task.title);
+                    self.marks[self.at] = Mark::Skipped;
+                    self.advance();
+                    return self.step(ctx);
+                }
                 crate::info!("{name}: {}", ctx.store.get(name));
                 self.step(ctx)
             }

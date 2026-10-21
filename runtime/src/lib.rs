@@ -10,6 +10,7 @@ pub mod spec;
 pub mod store;
 mod term;
 mod ui;
+mod unattended;
 pub mod version;
 
 /// The product as the build embedded it: every file by its path relative to the product.

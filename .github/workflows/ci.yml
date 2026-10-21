@@ -73,7 +73,7 @@ jobs:
       - run: |
           printf '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n' >>/etc/pacman.conf
           pacman -Syu --needed --noconfirm git make rust shellcheck shfmt zsh yamllint \
-            actionlint zizmor gettext diffutils gitleaks kbd terminus-font tzdata xkeyboard-config
+            actionlint zizmor gettext diffutils gitleaks jq kbd terminus-font tzdata xkeyboard-config
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       # Two deep: the pull request's merge commit and the main it lands on.

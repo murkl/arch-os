@@ -209,29 +209,24 @@ shows() {
     sleep 1
 }
 
-# Waits for a module's run to end and holds it to its own tests.
-finished() {
-    local module="$1" seconds="$2" deadline result
-    deadline=$((SECONDS + seconds))
-    # The level is padded to five letters: INFO  run: ok.
-    until result="$(live "grep -m1 -E ' (INFO +run: ok|ERROR +)' /opt/arch-os/${module}.log" 2>/dev/null)"; do
-        if [ "$SECONDS" -ge "$deadline" ]; then
-            live cat "/opt/arch-os/${module}.log" >"${WORK}/${module}.log" || true
-            pane >"${WORK}/pane.log" || true
-            fail "the ${module} did not finish within ${seconds}s"
-        fi
-        sleep 10
-    done
+# Runs a module's work on the live image with nobody at the keyboard, the
+# passwords handed over in its environment, and holds it to its own tests.
+unattended() {
+    local module="$1" seconds="$2" status=0 tally passed total
+    shift 2
+    timeout "$seconds" ssh "${SSH_OPTS[@]}" -i "${WORK}/key" -o BatchMode=yes root@127.0.0.1 \
+        "env $* arch-os ${module} --unattended" >"${WORK}/${module}.out" 2>&1 || status=$?
     live cat "/opt/arch-os/${module}.log" >"${WORK}/${module}.log" || true
-    pane >"${WORK}/pane.log" || true
-    grep -q 'run: ok' <<<"$result" || fail "the ${module} failed"
+    case "$status" in
+    0) ;;
+    124) fail "the ${module} did not finish within ${seconds}s" ;;
+    *) fail "the ${module} failed, see ${WORK}/${module}.out" ;;
+    esac
     # A task allowed to fail has no reason to here, online and on a clean disk.
     if grep -q ' WARN ' "${WORK}/${module}.log"; then
         fail "the ${module} finished with a warning, see ${WORK}/${module}.log"
     fi
-
-    local tally passed total
-    tally="$(grep -oE '[0-9]+ of [0-9]+ tests passed' "${WORK}/pane.log" || true)"
+    tally="$(grep -oE '[0-9]+ of [0-9]+ tests passed' "${WORK}/${module}.out" || true)"
     read -r passed _ total _ <<<"$tally"
     if [ -z "$tally" ] || [ "$passed" != "$total" ]; then
         fail "the ${module} finished with ${tally:-no tally of its tests}"
@@ -471,20 +466,9 @@ start install
 until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
 live systemctl stop arch-os
 answers | live "cat >/opt/arch-os/installer.conf"
-live "tmux new-session -d -s e2e -x 120 -y 40 'arch-os installer'"
 
 say "Install"
-shows "Install now"
-keys Enter
-shows "Password"
-typed "$PASSWORD"
-keys Enter
-shows "Repeat"
-typed "$PASSWORD"
-keys Enter
-shows "Install Arch OS on ${DISK}?"
-keys Down Enter
-finished installer "$INSTALL_TIMEOUT"
+unattended installer "$INSTALL_TIMEOUT" "ARCH_OS_PASSWORD='${PASSWORD}'"
 
 # The Recovery's own firmware entry as the next boot: the way in from the
 # firmware's boot menu, where the loader's never comes up.
@@ -542,6 +526,8 @@ fi
 entries_ready main.conf
 snapshots="$(as_root snapper --csvout --no-headers list | wc -l)"
 [ "$snapshots" -gt 1 ] || fail "the installed system holds no snapshot to go back to"
+newest="$(as_root snapper --csvout --no-headers --columns number list | tail -n1)"
+[ -n "$newest" ] || fail "the installed system names no newest snapshot"
 
 # Its entry used up, the system starts from its fallback.
 used_up main
@@ -568,23 +554,10 @@ images_in_efi_linux
 nested_subvolume
 loader_gone
 live "printf \"MODULE_LANGUAGE='en'\nARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
-live "tmux new-session -d -s e2e -x 120 -y 40 'arch-os recovery'"
 
 say "Repair: go back to the newest snapshot and rebuild the boot files"
-shows "Repair now"
-keys Enter
-shows "Encryption password"
-typed "$PASSWORD"
-keys Enter
-# Each text is one only its page shows: the run page lists every task's title.
-shows "Newest first"
-keys Enter
-shows "Roll back ${DISK} to"
-keys Down Enter
-# Opens on Yes after the rollback.
-shows "Rebuild kernel images"
-keys Enter
-finished recovery "$REPAIR_TIMEOUT"
+unattended recovery "$REPAIR_TIMEOUT" \
+    "ARCH_OS_RECOVERY_PASSWORD='${PASSWORD}' ARCH_OS_RECOVERY_SNAPSHOT='@snapshots/${newest}/snapshot'"
 cut_power
 
 start disk

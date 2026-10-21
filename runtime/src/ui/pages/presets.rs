@@ -34,6 +34,11 @@ impl PresetsPage {
 }
 
 impl Page for PresetsPage {
+    /// Offered only on a machine without an answer file.
+    fn unattended(&mut self, _: &mut Ctx) -> Result<Flow, String> {
+        Err(crate::i18n::t("There is no answer file."))
+    }
+
     fn title(&self) -> String {
         t("Profile")
     }

@@ -45,6 +45,6 @@ alias pacl='pacman -Qe'
 alias pacla='pacman -Qm'
 alias pacli='pacman -Qi'
 
-# Keeps three versions of what is installed and every kernel a snapshot holds,
-# which the Recovery puts back after a rollback. The weekly timer runs the first half.
-[ -x /usr/local/lib/arch-os/paccache.sh ] && alias pacrc="sudo /usr/local/lib/arch-os/paccache.sh /.snapshots && sudo /usr/local/lib/arch-os/paccache.sh /.snapshots -uk0"
+# Keeps three versions of what is installed and none of what is gone. The weekly
+# timer runs the first half.
+command -v paccache &>/dev/null && alias pacrc="sudo paccache -r && sudo paccache -ruk0"

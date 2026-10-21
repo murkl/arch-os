@@ -127,6 +127,21 @@ impl App {
         self.quit
     }
 
+    /// Moves the page in front on by itself, for a run with nobody at the keyboard, or says
+    /// what it needs a person for.
+    pub fn unattended(&mut self) -> Result<(), String> {
+        let (id, page) = self.pages.last_mut().expect("the dashboard stays");
+        self.ctx.page = *id;
+        let flow = page.unattended(&mut self.ctx)?;
+        self.apply(flow);
+        Ok(())
+    }
+
+    /// What the work came to, once the page in front says it has.
+    pub fn finished(&self) -> Option<Result<String, String>> {
+        self.pages.last().and_then(|(_, p)| p.finished(&self.ctx))
+    }
+
     /// When the driver wakes for a tick: on the next beat of what moves, else on the next idle one.
     pub fn wake(&self, now: std::time::Instant) -> std::time::Instant {
         let page = self.pages.last().map(|(_, p)| p);
@@ -1343,6 +1358,7 @@ pub mod tests {
                 module,
                 dry_run: true,
                 kiosk: false,
+                unattended: false,
             };
             App::new(start, &dir, tx, Arc::new(|| {}), false)
                 .unwrap()
@@ -1563,6 +1579,7 @@ pub mod tests {
                 module,
                 dry_run: true,
                 kiosk: false,
+                unattended: false,
             },
             &dir,
             tx,
