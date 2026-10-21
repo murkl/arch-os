@@ -526,7 +526,7 @@ fi
 entries_ready main.conf
 snapshots="$(as_root snapper --csvout --no-headers list | wc -l)"
 [ "$snapshots" -gt 1 ] || fail "the installed system holds no snapshot to go back to"
-newest="$(as_root snapper --csvout --no-headers --columns number list | tail -n1)"
+newest="$(as_root snapper --csvout --no-headers list --columns number | tail -n1)"
 [ -n "$newest" ] || fail "the installed system names no newest snapshot"
 
 # Its entry used up, the system starts from its fallback.
