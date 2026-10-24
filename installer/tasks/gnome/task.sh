@@ -1,34 +1,30 @@
-# The GNOME desktop: packages, login screen, keyboard, services, and the
-# defaults every account starts with.
-
 data="$(where)"
 
 # ─── Packages ──────────────────────────────────────────────────────────────
 #
-# One transaction: packages that replace each other (pipewire-jack and jack2)
-# resolve only when pacman sees them together.
+# One transaction: pacman resolves packages that replace each other, such as
+# pipewire-jack and jack2, only within one.
 
-# Named outright, since services are switched on for them below.
+# Listed explicitly, since services below are enabled for them.
 # https://wiki.archlinux.org/title/PipeWire#Installation
 packages=(git bluez bluez-utils avahi nss-mdns pipewire pipewire-pulse wireplumber)
 
-# PipeWire's JACK, so a JACK program installed later finds one instead of
-# asking for jack2: GNOME Boxes is one, by way of qemu-desktop.
+# A JACK provider, so a later install such as GNOME Boxes (via qemu-desktop)
+# pulls no jack2.
 packages+=(pipewire-jack)
 
-# PipeWire's realtime priority, without which it complains at every login.
+# Realtime priority for PipeWire, which otherwise warns at every login.
 packages+=(rtkit)
 
-# The shell's calendar server links against it, and Arch leaves it to the apps
-# that need it, every one of which the slim desktop leaves out.
+# gnome-shell's calendar server links against it, but Arch pulls it in only
+# through apps the slim desktop leaves out.
 packages+=(evolution-data-server)
 
-# Bazaar only beside Flatpak, which it is built on: the question's own
-# conditions.
+# Bazaar builds on Flatpak, the same condition as its setting.
 bazaar=false
 [ "$ARCH_OS_FLATPAK_ENABLED" = "true" ] && [ "$ARCH_OS_BAZAAR_ENABLED" = "true" ] && bazaar=true
 
-# The group filtered before the download rather than trimmed after it.
+# Filtered before the install, so left-out members are never downloaded.
 mapfile -t desktop < <(arch-chroot "$MNT" pacman -Sgq gnome)
 [ "${#desktop[@]}" -gt 0 ] || {
     echo "the gnome package group is empty" >&2
@@ -45,36 +41,34 @@ while read -r scope name; do
     left_out+=("$name")
 done <"${data}/left-out"
 mapfile -t desktop < <(printf '%s\n' "${desktop[@]}" | grep -vxF -f <(printf '%s\n' "${left_out[@]}"))
-# GNOME Software comes with it. No PackageKit: Arch builds Software without it
-# and pacman stays the one thing that changes the system.
+# No PackageKit: Arch builds GNOME Software without it, so only pacman changes
+# the system.
 # https://wiki.archlinux.org/title/Pacman/Tips_and_tricks#Graphical
 packages+=("${desktop[@]}")
 
-# Bazaar in its place installs Flatpaks only, so the firmware updates Software
-# offers come from GNOME Firmware.
+# Bazaar installs Flatpaks only, so GNOME Firmware takes over the firmware
+# updates of GNOME Software.
 [ "$bazaar" = "true" ] && packages+=(bazaar gnome-firmware)
 
-# The Extensions app, a package outside the group since GNOME 51.
+# Outside the gnome group since GNOME 51.
 packages+=(gnome-extensions-app)
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-    # Extensions from the browser, the power profiles the Settings offer, as
-    # gnome-control-center names them, and printing.
+    # Browser extensions, the power modes in Settings, printing.
     # https://wiki.archlinux.org/title/GNOME#Extensions
     packages+=(gnome-browser-connector power-profiles-daemon cups)
 
-    # xdg-open, for the shell's open alias and programs from outside GNOME. The
-    # portals come with the group's xdg-desktop-portal-gnome.
+    # xdg-open for the open alias and programs from outside GNOME. The portals
+    # come with the group's xdg-desktop-portal-gnome.
     packages+=(xdg-utils)
 
-    # The older audio APIs.
     packages+=(pipewire-alsa)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
 
-    # NetworkManager speaks WireGuard itself, OpenVPN needs the plug-in.
+    # NetworkManager handles WireGuard itself. OpenVPN needs the plug-in.
     packages+=(rsync networkmanager-openvpn)
 
-    # Building from the AUR, firmware updates, and opening any drive or archive.
+    # AUR builds, firmware updates, common file systems and archives.
     packages+=(base-devel fwupd bash-completion inetutils
         dosfstools ntfs-3g exfatprogs btrfs-progs nfs-utils
         7zip zip unzip unrar wget jq)
@@ -86,8 +80,7 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     packages+=(gamemode)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
 
-    # Every script the web has, emoji, two metric-compatible families and the
-    # terminal font.
+    # All scripts, emoji, metric-compatible families and the terminal font.
     packages+=(noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation ttf-dejavu
         ttf-firacode-nerd)
 
@@ -96,45 +89,44 @@ fi
 
 chroot_pacman_install "${packages[@]}"
 
-# Only gamemode: logind hands sound, video and input to whoever sits at the
-# seat, and the old groups now do harm.
+# Only gamemode: logind grants audio, video and input to the seat's session,
+# and the legacy groups break that.
 # https://wiki.archlinux.org/title/Users_and_groups#Pre-systemd_groups
 [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && arch-chroot "$MNT" gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
-# ─── Name resolution ───────────────────────────────────────────────────────
+# ─── Name Resolution ───────────────────────────────────────────────────────
 #
-# Printers, shares and other machines answer to <name>.local. An edit: glibc
-# reads only this file. https://wiki.archlinux.org/title/Avahi#Hostname_resolution
+# <name>.local for printers, shares and other machines. Edited in place, since
+# glibc reads no drop-in. https://wiki.archlinux.org/title/Avahi#Hostname_resolution
 nsswitch="${MNT}/etc/nsswitch.conf"
 if ! grep -q 'mdns_minimal' "$nsswitch"; then
     sed -i '/^hosts:/ s/\bresolve\b/mdns_minimal [NOTFOUND=return] resolve/' "$nsswitch"
     grep -q 'mdns_minimal' "$nsswitch" ||
-        echo "the hosts line in /etc/nsswitch.conf is not the one this Arch ships, .local names will not resolve" >&2
+        echo "unexpected hosts line in /etc/nsswitch.conf, .local names do not resolve" >&2
 fi
 
-# ─── Login screen ──────────────────────────────────────────────────────────
+# ─── Login Screen ──────────────────────────────────────────────────────────
 #
-# Automatic login behind an encrypted disk with one password only, where the
-# boot password stands in front. pam_gdm hands the LUKS passphrase on to the
-# keyring. Written only then: the file belongs to gdm.
+# Automatic login only where the LUKS passphrase is the account's password,
+# which pam_gdm passes on to the keyring. Otherwise the file stays gdm's.
 # https://wiki.archlinux.org/title/GNOME/Keyring#PAM_step
 if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && [ "$ARCH_OS_DISK_PASSWORD_ENABLED" != "true" ]; then
     mkdir -p "${MNT}/etc/gdm"
     render "${data}/custom.conf" USERNAME="$ARCH_OS_USERNAME" >"${MNT}/etc/gdm/custom.conf"
 fi
 
-# ─── Every account's environment ───────────────────────────────────────────
+# ─── Environment ───────────────────────────────────────────────────────────
 
 mkdir -p "${MNT}/etc/environment.d"
 render "${data}/10-arch-os.conf" >"${MNT}/etc/environment.d/10-arch-os.conf"
 
-# Git passwords in the keyring rather than in a file.
+# Git credentials in the keyring instead of a plain file.
 arch-chroot "$MNT" git config --system credential.helper /usr/lib/git-core/git-credential-libsecret
 
 # ─── Keyboard ──────────────────────────────────────────────────────────────
 #
-# The login screen reads this file through localed, the session its setting.
-# Both say the same. https://wiki.archlinux.org/title/Xorg/Keyboard_configuration
+# GDM reads this file through localed, the session the dconf default below,
+# both with the same layout. https://wiki.archlinux.org/title/Xorg/Keyboard_configuration
 layout="$(desktop_layout)"
 variant="$(not_none "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT")"
 mkdir -p "${MNT}/etc/X11/xorg.conf.d"
@@ -148,9 +140,9 @@ render "${data}/00-keyboard.conf" \
 
 arch-chroot "$MNT" systemctl enable gdm.service
 
-# A start counts as one that worked once the login screen or the session it
-# logs into is up: a desktop that never comes up sends the next starts to the
-# fallback, then the Recovery. docs/REFERENCE.md#when-the-system-does-not-start
+# A boot counts as good only once a graphical session is up. A desktop that
+# never starts falls through to the fallback entry, then the Recovery:
+# docs/REFERENCE.md#fallback
 mkdir -p "${MNT}/usr/local/lib/arch-os"
 render "${data}/session-up.sh" >"${MNT}/usr/local/lib/arch-os/session-up.sh"
 chmod 755 "${MNT}/usr/local/lib/arch-os/session-up.sh"
@@ -160,39 +152,39 @@ arch-chroot "$MNT" systemctl enable arch-os-session-up.service
 arch-chroot "$MNT" systemctl enable bluetooth.service
 arch-chroot "$MNT" systemctl enable avahi-daemon
 
-# avahi's answers arrive as multicast the firewall cannot match to the question,
-# so it is let in everywhere. It gives away nothing avahi does not announce.
+# mDNS replies arrive as multicast the firewall cannot match to a query, so
+# public lets them in. Nothing leaks that avahi does not announce anyway.
 if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
     arch-chroot "$MNT" firewall-offline-cmd --zone=public --add-service=mdns
 fi
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-    arch-chroot "$MNT" systemctl enable power-profiles-daemon.service # power profiles
-    arch-chroot "$MNT" systemctl enable cups.socket                   # printing
+    arch-chroot "$MNT" systemctl enable power-profiles-daemon.service
+    arch-chroot "$MNT" systemctl enable cups.socket
 fi
 
-# fwupd ships its timer off, and without it the firmware it offers is what it
-# knew at its last look. Wherever fwupd came, with Desktop extras or beside
-# GNOME Firmware. https://wiki.archlinux.org/title/Fwupd
+# fwupd ships its refresh timer off, which leaves its metadata stale. Wherever
+# fwupd is installed, by Desktop extras or GNOME Firmware.
+# https://wiki.archlinux.org/title/Fwupd
 if has_command fwupdmgr; then
     arch-chroot "$MNT" systemctl enable fwupd-refresh.timer
 fi
 
-# Out of memory, one app ends instead of the desktop freezing for minutes. GNOME
-# starts each app in a scope of its own, so no more than that app is hit. Where
-# systemd-oomd(8) recommends, at Fedora's limit for the session.
+# Out of memory, one app ends instead of the desktop freezing, since GNOME runs
+# each app in its own scope. Placed as systemd-oomd(8) recommends, with Fedora's
+# limit for the session.
 mkdir -p "${MNT}/etc/systemd/system/-.slice.d" "${MNT}/etc/systemd/system/user@.service.d"
 render "${data}/oomd-root.conf" >"${MNT}/etc/systemd/system/-.slice.d/10-arch-os.conf"
 render "${data}/oomd-user.conf" >"${MNT}/etc/systemd/system/user@.service.d/10-arch-os.conf"
 arch-chroot "$MNT" systemctl enable systemd-oomd.service
 
-# The keyring's ssh agent, which gcr ships off, for every account.
+# gcr ships its SSH agent off.
 # https://wiki.archlinux.org/title/GNOME/Keyring#SSH_keys
 arch-chroot "$MNT" systemctl --global enable gcr-ssh-agent.socket
 
-# ─── Application list ──────────────────────────────────────────────────────
+# ─── Application List ──────────────────────────────────────────────────────
 #
-# Hidden for every account, from a data directory read before the packages'.
+# /usr/local/share comes before /usr/share, so these entries mask the packages'.
 # https://specifications.freedesktop.org/desktop-entry-spec/latest/recognized-keys.html
 
 apps="${MNT}/usr/local/share/applications"
@@ -209,8 +201,8 @@ done <"${data}/hidden-apps"
 
 # ─── Settings ──────────────────────────────────────────────────────────────
 #
-# Defaults every account starts with and may change, as dconf keyfiles beside
-# a profile that reads them. https://help.gnome.org/admin/system-admin-guide/stable/dconf-custom-defaults.html
+# Defaults each account can override, as dconf keyfiles with a profile that
+# reads them. https://help.gnome.org/admin/system-admin-guide/stable/dconf-custom-defaults.html
 
 defaults="${MNT}/etc/dconf/db/local.d"
 mkdir -p "${MNT}/etc/dconf/profile" "$defaults"
@@ -232,7 +224,7 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     render "${data}/20-arch-os-extras" FAVORITES="${favorites%, }" >"${defaults}/20-arch-os-extras"
 fi
 
-# The font the shell enhancement's prompt draws with.
+# A font with the glyphs of the shell enhancement's prompt.
 if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
     render "${data}/30-arch-os-shell" >"${defaults}/30-arch-os-shell"
 fi

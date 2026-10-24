@@ -1,5 +1,4 @@
-//! The moment before the interface: the wordmark sweeps in and the version stands under it.
-//! Any key but a scroll ends it at once.
+//! Splash: the wordmark sweeps in above the version. Any key but a scroll ends it.
 
 use std::time::{Duration, Instant};
 
@@ -9,11 +8,11 @@ use ratatui::layout::Rect;
 use crate::ui::draw::{put, width};
 use crate::ui::{Ctx, Flow, Key, Page, Tone};
 
-/// How long the splash stays, and how long the wordmark takes to come in: long enough to read as
-/// a light passing through it, short enough that nobody waits.
+/// Splash and sweep duration: long enough to read as light passing through, short enough that
+/// nobody waits.
 const END: Duration = Duration::from_millis(1618);
 pub const SWEEP: Duration = Duration::from_millis(382);
-/// How many columns behind the sweep's front a letter still carries a trace of it.
+/// Columns behind the sweep front that still show a trace.
 const TRAIL: f64 = 8.0;
 
 pub struct SplashPage {
@@ -27,7 +26,7 @@ impl SplashPage {
         }
     }
 
-    /// As it looks `ms` after the start, for the tests.
+    /// State `ms` after the start.
     #[cfg(test)]
     pub fn after(ms: u64) -> SplashPage {
         SplashPage {
@@ -36,13 +35,13 @@ impl SplashPage {
     }
 }
 
-/// How far the wordmark has swept into view: 0 at the start, 1 once it stands.
+/// Sweep progress from 0 to 1.
 pub fn revealed(since: Duration) -> f64 {
     (since.as_secs_f64() / SWEEP.as_secs_f64()).min(1.0)
 }
 
-/// The wordmark, line by line from `y`, centered, as far as it has swept in. Everything above the
-/// first blank line is the eyebrow, in the muted tone. Returns the row after it.
+/// Centered wordmark from `y`, swept in by `revealed`, returning the next row. Lines above the
+/// first blank one are the muted eyebrow.
 pub fn wordmark(buf: &mut Buffer, area: Rect, y: u16, revealed: f64, ctx: &Ctx) -> u16 {
     let s = &ctx.style;
     let logo = &crate::spec::loaded().product.logo;

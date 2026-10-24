@@ -1,6 +1,5 @@
-//! A run with nobody at the keyboard: the answers from the file, the passwords from the
-//! environment under their own names, every confirmation a yes, and the log on stdout as it is
-//! written. For an installation that runs by itself, and for the tests that install one.
+//! Unattended run: answers from the answer file, passwords from environment variables of the
+//! same name, every confirmation a yes, the log on stdout.
 
 use std::sync::Arc;
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError};
@@ -12,10 +11,10 @@ use ratatui::backend::TestBackend;
 use crate::cli::Start;
 use crate::ui::{App, Msg};
 
-/// How long the driver waits for a message before it looks at the page in front again.
+/// Message timeout between checks of the current page.
 const BEAT: Duration = Duration::from_millis(50);
 
-/// Runs the module's work to its end and prints what it came to. Whether it finished.
+/// Runs the module to its outcome and prints it. `false` on failure.
 pub fn run(start: Start) -> std::io::Result<bool> {
     let (tx, rx) = mpsc::channel();
     let app = App::new(start, &std::env::current_dir()?, tx, Arc::new(|| {}), true)?;
@@ -33,8 +32,8 @@ pub fn run(start: Start) -> std::io::Result<bool> {
     })
 }
 
-/// Drives the pages into a frame nobody sees, since they do their work as they are drawn, each
-/// page moving on by itself, until the run has an outcome or a page needs a person.
+/// Draws into an offscreen frame, since pages act when drawn, until the run has an outcome or a
+/// page needs input.
 fn drive(
     mut app: App,
     mut terminal: Terminal<TestBackend>,
@@ -60,7 +59,7 @@ fn drive(
         }
         app.unattended()?;
         if app.done() {
-            return Err("the program ended before the work had an outcome".into());
+            return Err("run ended without an outcome".into());
         }
     }
 }
@@ -82,8 +81,7 @@ mod tests {
         app.ctx.first = false;
     }
 
-    /// The whole work, with the password from the environment and the question a task asks
-    /// skipped, since nothing answers it.
+    /// The question a task asks is skipped, nothing answers it.
     #[test]
     fn runs_the_work_to_its_end_with_nobody_at_the_keyboard() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());

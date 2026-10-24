@@ -1,6 +1,3 @@
-# The driver for every card in this machine, read off it: Mesa for all, per
-# vendor its Vulkan driver and video decoding, OpenCL for AMD and NVIDIA, and
-# what games reach for.
 # https://wiki.archlinux.org/title/Xorg#Driver_installation
 # https://wiki.archlinux.org/title/Hardware_video_acceleration
 
@@ -36,11 +33,11 @@ while IFS=$'\t' read -r vendor device; do
 done < <(graphics_cards)
 
 if [ "$nvidia" = "true" ]; then
-    # DKMS: a prebuilt module exists for the stock kernel alone.
+    # DKMS: prebuilt modules exist for the stock kernel only.
     packages+=(nvidia-open-dkms "${KERNEL}-headers" nvidia-utils nvidia-settings opencl-nvidia libva-nvidia-driver)
     lib32+=(lib32-nvidia-utils lib32-opencl-nvidia)
 
-    # Beside another card, prime-run hands a program to this one.
+    # Beside another GPU, prime-run offloads a program to this one.
     # https://wiki.archlinux.org/title/PRIME
     [ "$other" = "true" ] && packages+=(nvidia-prime)
 fi
@@ -51,17 +48,16 @@ chroot_pacman_install "${packages[@]}"
 
 [ "$nvidia" = "true" ] || return 0
 
-# The driver sets modeset and keeps video memory over a suspend by itself. What
-# is left is early loading, so GDM never starts on the firmware's framebuffer.
+# The driver sets modeset and keeps video memory over a suspend by itself. Early
+# loading keeps GDM off the firmware's framebuffer.
 # https://wiki.archlinux.org/title/NVIDIA#Early_loading
 mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
 render "$(where)/30-graphics.conf" MODULES="nvidia nvidia_modeset nvidia_uvm nvidia_drm" \
     >"${MNT}/etc/mkinitcpio.conf.d/30-graphics.conf"
 
-# Alone in the machine, the kms hook goes with it, as the Wiki has it: nouveau
-# would be in the image beside the driver. Beside another card the hook stays
-# for that card's driver, which draws the panel, and nouveau stays blacklisted
-# by nvidia-utils' modprobe.d file, which modconf carries into the image.
+# NVIDIA alone: the kms hook goes, as the Wiki says, or nouveau lands in the
+# image. Beside another GPU the hook stays for its driver, and nvidia-utils'
+# modprobe.d file, carried in by modconf, blacklists nouveau.
 if [ "$other" != "true" ]; then
     render "$(where)/31-nvidia-alone.conf" >"${MNT}/etc/mkinitcpio.conf.d/31-nvidia-alone.conf"
 fi

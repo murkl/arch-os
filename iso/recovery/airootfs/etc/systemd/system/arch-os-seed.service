@@ -1,6 +1,5 @@
-# What the Installer left on the EFI partition, handed to the Recovery once a
-# boot, see arch-os-seed. The kiosk's unit pulls it in and starts after it.
-# build.sh adds the drop-in that names the boot entries' tries.
+# Hands the Recovery the answers the Installer left on the EFI partition, once
+# per boot, see arch-os-seed. build.sh adds the drop-in with BOOT_TRIES.
 [Unit]
 Description=Arch OS Recovery answers
 

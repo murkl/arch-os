@@ -1,2 +1,2 @@
-# The clock the new system inherits is on network time.
+# The new system inherits the clock.
 timedatectl show -p NTP --value | grep -qx yes

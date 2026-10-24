@@ -1,4 +1,4 @@
-# Written by the Arch OS Installer: hidden from every account's applications.
+# Written by Arch OS. Masks the package's entry of the same name.
 [Desktop Entry]
 Type=Application
 Hidden=true

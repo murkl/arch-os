@@ -1,11 +1,10 @@
-# Each driver by what an application finds: the Vulkan manifest, for Intel both
-# video drivers libva tries, and for NVIDIA the module in the image the firmware
-# starts.
+# Each driver by what applications load: the Vulkan manifest, both libva
+# drivers for Intel, the NVIDIA module in every image.
 [ -n "$(arch-chroot "$MNT" pacman -Qq mesa)" ]
 has_command glxinfo
 has_command vulkaninfo
 
-# Whether NVIDIA has another card beside it, as the task reads it.
+# Another GPU beside NVIDIA, as the task detects it.
 other=false
 while IFS=$'\t' read -r vendor _; do
     [ "$vendor" = nvidia ] || other=true
@@ -25,13 +24,12 @@ while IFS=$'\t' read -r vendor device; do
             continue
         fi
         has_command nvidia-smi
-        # Read whole: lsinitcpio, still writing, dies of a grep that stops.
+        # Read whole: a grep -q that exits early kills lsinitcpio by SIGPIPE.
         while read -r image; do
             contents="$(arch-chroot "$MNT" lsinitcpio "$image")"
             grep -q '/nvidia-drm\.ko' <<<"$contents"
-            # Alone, nouveau is not in the image. Beside another card the
-            # hook that brings that card's driver may bring nouveau, and the
-            # file that keeps it from loading is in the image with it.
+            # Alone, nouveau stays out of the image. Beside another GPU its
+            # hook may bring nouveau, so the blacklist comes along.
             if [ "$other" = "true" ]; then
                 grep -q 'modprobe\.d/nvidia-utils\.conf' <<<"$contents"
             elif grep -q '/nouveau\.ko' <<<"$contents"; then

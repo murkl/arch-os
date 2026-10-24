@@ -1,21 +1,18 @@
-# The packages the system is made of, and the file system table. What is here
-# and what is not: docs/REFERENCE.md
+# Package choice: docs/REFERENCE.md
 # https://wiki.archlinux.org/title/Installation_guide#Install_essential_packages
 
-# sudo outright: base-devel brings it only where the AUR is wanted. mkinitcpio
-# outright: the kernel takes whichever initramfs provider pacman lists first,
-# and the boot loader task writes mkinitcpio's configuration. dosfstools, so
-# systemd checks the EFI partition at every boot, which the boot counting
-# writes to at every boot.
+# sudo: base-devel brings it only with the AUR. mkinitcpio: the kernel takes the
+# first initramfs provider pacman lists, and the bootloader task configures
+# mkinitcpio. dosfstools: systemd checks the EFI partition, which boot counting
+# writes at every boot.
 packages=("$KERNEL" base sudo mkinitcpio zram-generator networkmanager btrfs-progs snapper dosfstools)
 
-# Firmware is for hardware, and a guest has none but a card handed through to it.
-# Many laptops' sound loads its firmware from sof-firmware, which linux-firmware
-# leaves out.
+# A guest needs firmware only for a passed-through GPU. Many laptops load their
+# sound firmware from sof-firmware, which linux-firmware leaves out.
 if [ "$ARCH_OS_VIRTUAL_MACHINE" = "false" ] || [ -n "$(graphics_cards)" ]; then
     packages+=(linux-firmware sof-firmware wireless-regdb)
 else
-    echo "a virtual machine with no card of its own: leaving out linux-firmware"
+    echo "virtual machine without a GPU of its own, skipping linux-firmware"
 fi
 
 # base ships no editor, no manuals and no ssh client.
@@ -25,8 +22,8 @@ ucode="$(microcode)"
 [ -n "$ucode" ] && packages+=("$ucode")
 secure_boot_wanted && packages+=(sbctl)
 
-# Before the packages: installing the kernel builds a ram disk, and its
-# sd-vconsole hook reads this file.
+# Before pacstrap: the kernel install builds an initramfs whose sd-vconsole hook
+# reads this file.
 mkdir -p "${MNT}/etc"
 echo "KEYMAP=$(vconsole_keymap)" >"${MNT}/etc/vconsole.conf"
 font="$(resolved "$ARCH_OS_VCONSOLE_FONT" auto_font)"
@@ -34,7 +31,7 @@ if [ -n "$font" ]; then
     echo "FONT=${font}" >>"${MNT}/etc/vconsole.conf"
 fi
 
-# The longest download, and the one most likely to meet a mirror that stops.
+# The longest download, the most likely to hit a stalling mirror.
 installed=false
 for ((i = 1; i <= RETRIES; i++)); do
     [ "$i" -gt 1 ] && echo "retry ${i}/${RETRIES}: pacstrap"

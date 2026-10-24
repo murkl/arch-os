@@ -1,39 +1,35 @@
-# The only task runner. CI runs these targets, so what holds at a desk holds
-# there.
+# The only task runner. CI runs the same targets.
 #
-#   runtime/target/release/arch-os             build: the program, with every module inside it
+#   runtime/target/release/arch-os             build: the runtime with every module embedded
 #   dist/arch-os-$VERSION-recovery/            image: recovery.efi, recovery.img
-#   dist/arch-os-$VERSION-recovery-x86_64.tar  image: that folder as one file
-#   dist/arch-os-$VERSION-x86_64.iso           image: the bootable image
+#   dist/arch-os-$VERSION-recovery-x86_64.tar  image: the Recovery folder as one file
+#   dist/arch-os-$VERSION-x86_64.iso           image: the ISO
 
-# One bash per recipe, with -e, -u and pipefail. A failed file target is
-# removed rather than left half written.
 SHELL       := bash
 .SHELLFLAGS := -eu -o pipefail -c
 .DELETE_ON_ERROR:
 
 # ////////////////////////////////////////////////////////////////////////////
-# THE PROGRAM | The runtime with the product embedded
+# THE PROGRAM | Runtime with embedded product
 # ////////////////////////////////////////////////////////////////////////////
 
 RUNTIME := runtime
 BIN     := $(RUNTIME)/target/release/arch-os
 
-# What a release hands in as `VERSION=`. Without it, build.rs names a
-# pre-release of the patch after the last release.
+# Set by a release. Without it, build.rs names a pre-release of the next patch.
 VERSION ?=
 
-# What `make run` opens, and the rest of its command line.
+# Module and arguments for `make run`.
 MODULE ?= installer
 ARGS   ?=
 
 # ////////////////////////////////////////////////////////////////////////////
-# THE IMAGES | Stock Arch profiles, patched to boot into this
+# THE IMAGES | Patched stock archiso profiles
 # ////////////////////////////////////////////////////////////////////////////
 
 DIST_DIR := dist
 
-# Scripts rather than targets, each taking what it works on as an argument.
+# Scripts, not targets, each taking its input as an argument.
 ISO_DIR    := iso
 ISO_BUILD  := $(ISO_DIR)/build.sh
 ISO_SMOKE  := $(ISO_DIR)/smoke.sh
@@ -41,64 +37,59 @@ ISO_E2E    := $(ISO_DIR)/e2e.sh
 ISO_GLYPHS := $(ISO_DIR)/glyphs.sh
 ISO_FONT   := $(ISO_DIR)/font.sh
 
-# What `make e2e` installs: core or desktop.
+# `make e2e` installs core or desktop.
 START ?= core
 
-# The newest images, read when used, so `make iso && make smoke` needs no
+# The newest images, expanded on use, so `make iso && make smoke` needs no
 # argument.
 ISO      ?= $(shell ls -t $(DIST_DIR)/*.iso 2>/dev/null | head -1)
 RECOVERY ?= $(shell ls -td $(DIST_DIR)/*-recovery 2>/dev/null | head -1)
 
 # ////////////////////////////////////////////////////////////////////////////
-# THE SCRIPTS | Everything checked, by the dialect it is written in
+# THE SCRIPTS | Grouped by dialect
 # ////////////////////////////////////////////////////////////////////////////
 
-# POSIX sh: the scripts in .github/, the same file in every project released this way.
+# POSIX sh, identical in every project released this way.
 POSIX_SCRIPTS := $(wildcard .github/*.sh)
 
-# Bash: what builds and boots the images, and what they run.
+# Bash: image build, boot tests and the images' own scripts.
 ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_E2E) $(ISO_GLYPHS) $(ISO_FONT) $(wildcard $(ISO_DIR)/airootfs/usr/local/bin/* $(ISO_DIR)/recovery/airootfs/usr/local/bin/*)
 
-# The modules: every folder with a module.yaml, as the build embeds them.
+# Every folder with a module.yaml, as the build embeds them.
 MODULES := $(patsubst %/module.yaml,%,$(wildcard */module.yaml))
 
-# Every module script with the library they share, and every yaml.
 LIBRARY        := lib.sh
 MODULE_SCRIPTS = $(LIBRARY) $(shell find $(MODULES) -name '*.sh')
 MODULE_YAML    = product.yaml $(shell find $(MODULES) -name '*.yaml')
 
-# Shell a module ships into somebody's home, found by the name it lands under.
-# zsh is read by its own shell, since shellcheck cannot.
+# Shell files a module ships into a home, found by file name. zsh gets zsh -n,
+# since shellcheck has no zsh.
 MODULE_SHELL = $(wildcard $(addsuffix /tasks/*/data/bashrc,$(MODULES)) $(addsuffix /tasks/*/data/aliases,$(MODULES)))
 MODULE_ZSH   = $(wildcard $(addsuffix /tasks/*/data/zshrc,$(MODULES)))
 
-# A program a module ships, named outright: it has no extension to find it by.
+# Listed by name, since it has no extension.
 MODULE_PROGRAMS := installer/tasks/recovery-app/data/arch-os-recovery
 
-# Everything that can reach a screen: the product, the catalogs, the library
-# and every module file. The READMEs and fastfetch's config, drawn for a
-# graphical terminal, never reach a console.
+# Everything that can reach the console. READMEs and fastfetch's config target a
+# graphical terminal.
 MODULE_TEXT = product.yaml $(wildcard locales/*.po) $(LIBRARY) $(shell find $(MODULES) -type f ! -name '*.md' ! -name fastfetch.jsonc)
 
-# Each module's own check of what it ships in data/: the Installer's lookup
-# tables, the Recovery's boot entries. And a task's check of a program it
-# ships: the cache trim that keeps the snapshots' kernels.
+# Each module's check of its data/, and a task's check of a program it ships.
 DATA_CHECKS = $(wildcard $(addsuffix /data/check.sh,$(MODULES)) $(addsuffix /tasks/*/check.sh,$(MODULES)))
 
-# lib.sh's own check: its functions against answers written out beside them.
 LIBRARY_CHECK := lib.check.sh
 
-# A task's check of the zshrc it ships: keys typed and titles read in the shell reading it.
+# A task's check of its zshrc, run in zsh.
 ZSH_CHECKS = $(wildcard $(addsuffix /tasks/*/check.zsh,$(MODULES)))
 
 # ////////////////////////////////////////////////////////////////////////////
 # HOUSEKEEPING
 # ////////////////////////////////////////////////////////////////////////////
 
-# Everything a build leaves outside cargo's target folder.
+# Build output outside cargo's target folder.
 BUILD_OUTPUT := $(DIST_DIR) $(ISO_DIR)/archiso $(ISO_DIR)/download
 
-# Empty when there is nothing to elevate, which is the case in CI.
+# Empty as root, as in CI.
 SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 
 .PHONY: all build run image iso smoke e2e screenshots banner check fmt fmt-check lint test \
@@ -106,58 +97,52 @@ SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 
 all: build
 
-# The program: the runtime with the product, the library, the catalogs and
-# every module inside it.
 build:
 	cd $(RUNTIME) && $(if $(VERSION),ARCH_OS_VERSION=$(VERSION)) cargo build --release --locked
 
-# Arch OS out of the sources, in a folder of its own, where it keeps its
-# answers and its log. `make run MODULE=recovery ARGS=--dry-run`.
+# Runs from source in runtime/target/run, which holds answers and log:
+# `make run MODULE=recovery ARGS=--dry-run`
 run:
 	mkdir -p $(RUNTIME)/target/run
 	cd $(RUNTIME)/target/run && cargo run --manifest-path ../../Cargo.toml -- $(MODULE) $(ARGS)
 
-# The images, out of the program: the Recovery as a folder and as one file for
-# the release page, then the ISO that carries it.
 image:
 	$(ISO_BUILD) $(BIN) $(DIST_DIR)
 
-# The whole way there, in order: the images are made of the program.
+# .WAIT, since the images embed the program.
 iso: build .WAIT image
 
-# Boots both images and waits for the interface. The frames land in dist/.
+# Boots both images until the interface shows. Frames land in dist/.
 smoke:
 	$(ISO_SMOKE) $(ISO)
 	$(ISO_SMOKE) $(RECOVERY)
 
-# Installs the newest ISO and walks it as a person does: iso/README.md. The logs
-# land in dist/e2e/.
+# Installs the newest ISO through its interface: iso/README.md. Logs land in
+# dist/e2e/.
 e2e:
 	$(ISO_E2E) $(ISO) $(START)
 
-# The pictures in docs/, by hand after a visible change: docs/CONTRIBUTING.md.
-# The pages show VERSION, so `make screenshots VERSION=2.1.0` pictures a
-# release before it exists.
+# By hand after a visible change: docs/CONTRIBUTING.md. The pages show VERSION,
+# so `make screenshots VERSION=2.1.0` shows a release before it exists.
 screenshots: build
 	python3 docs/screenshots.py --product $(BIN)
 
-# Out of two screenshots and the README's tagline, the paragraph under its
-# banner without the bold, so the banner cannot come to say something else.
+# From two screenshots and the README's tagline, the paragraph under the banner
+# without bold, so banner and README stay in sync.
 banner:
 	@tagline="$$(awk '/src="banner\.png"/ { found = 1; next } found && NF { print; exit }' docs/README.md | \
 		sed -n 's:^<p>\(.*\)</p>$$:\1:p' | sed 's:</\{0,1\}b>::g')"; \
-	[ -n "$$tagline" ] || { echo "docs/README.md: no <p> line under the banner to take the tagline from" >&2; exit 1; }; \
+	[ -n "$$tagline" ] || { echo "docs/README.md: no <p> tagline under the banner" >&2; exit 1; }; \
 	python3 docs/banner.py --product product.yaml --logo docs/logo.svg --cell 9 --tagline "$$tagline" \
 		--card docs/screenshots/installer.png --card docs/screenshots/installing.png
 
 # ////////////////////////////////////////////////////////////////////////////
-# CHECKS | What has to pass before anything is committed
+# CHECKS | Required before commit
 # ////////////////////////////////////////////////////////////////////////////
 
-# The whole gate, cheapest and loudest first. CI runs exactly this.
+# Cheapest and loudest first. CI runs exactly this.
 check: secrets-check fmt-check lint test library-check data-check zsh-check glyphs-check
 
-# This is installed by piping a script into a shell.
 secrets-check:
 	gitleaks dir . --redact --no-banner
 
@@ -171,9 +156,7 @@ fmt-check:
 	shfmt -d -ln posix -i 4 $(POSIX_SCRIPTS)
 	shfmt -d -i 4 $(ISO_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL) $(LIBRARY_CHECK)
 
-# Module scripts are checked as the runtime runs them: bash, with lib.sh in
-# scope. A script that sources it is read with it, found from the script's own
-# folder. Each grep refuses a pattern its message explains.
+# Module scripts as the runtime runs them: bash, with lib.sh in scope.
 lint:
 	cd $(RUNTIME) && cargo clippy --all-targets --locked -- -D warnings
 	shellcheck -s sh -S style $(POSIX_SCRIPTS)
@@ -189,25 +172,22 @@ lint:
 		$(MODULE_SCRIPTS) $(MODULE_YAML) \
 		|| { echo "a shell builtin cannot run through arch-chroot, see has_command" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*\}[[:space:]]*>>?[[:space:]]*"\$$\{MNT\}' $(MODULE_SCRIPTS) \
-		|| { echo "a file written into the new system is a template beside its task, put in place with render, see lib.sh" >&2; exit 1; }
+		|| { echo "a file written into the new system is a template beside its task, placed with render" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*![[:space:]]' $(MODULE_SCRIPTS) \
-		|| { echo "a command inverted with ! fails nothing under the ERR trap a script runs in: write it as an if that exits" >&2; exit 1; }
+		|| { echo "a command inverted with ! never triggers the ERR trap, use an if that exits" >&2; exit 1; }
 
-# The runtime's tests load the product as a run does and hold every catalog to
-# every text.
+# Loads the product as a run does and checks every catalog against every text.
 test:
 	cd $(RUNTIME) && cargo test --locked
 
-# A console font holds one table of glyphs, and a character outside it is a box
-# on screen. Asked of the program, which knows what it draws itself. A debug
-# build answers the same, without the release's link-time optimization.
+# A character outside the console font shows as a box. A debug build of the
+# program lists the same glyphs, without the release's LTO.
 glyphs-check:
 	cd $(RUNTIME) && cargo build --locked
 	@$(ISO_GLYPHS) $(RUNTIME)/target/debug/arch-os $(MODULE_TEXT)
 
-# Every name a module hands to another program, against that program's own
-# list: a wrong keymap, font or time zone reads fine and is silently ignored,
-# and a package Arch dropped fails somebody's installation.
+# Each name a module passes to another program, against that program's list. A
+# wrong keymap, font or time zone is ignored silently, a dropped package fails.
 data-check:
 	@for check in $(DATA_CHECKS); do $$check || exit 1; done
 
@@ -217,13 +197,12 @@ library-check:
 zsh-check:
 	@for check in $(ZSH_CHECKS); do zsh "$$check" "$$(dirname "$$check")/data/zshrc" || exit 1; done
 
-# The repository's settings on GitHub, out of .github/settings/. Run by hand as
-# an admin: a workflow may not change the rules it is held to.
+# Applies .github/settings/. Run by hand as admin, since a workflow must not
+# change its own rules.
 github:
 	.github/settings.sh
 
-# mkarchiso writes as root. The plain removal comes first, so an ordinary clean
-# asks for no password.
+# mkarchiso writes as root. Plain rm first, so a normal clean needs no password.
 clean:
 	cd $(RUNTIME) && cargo clean
 	rm -rf $(BUILD_OUTPUT) || $(SUDO) rm -rf $(BUILD_OUTPUT)

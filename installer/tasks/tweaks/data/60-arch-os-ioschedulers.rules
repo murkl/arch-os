@@ -1,2 +1,2 @@
-# Written by the Arch OS Installer.
+# Written by Arch OS.
 ACTION=="add|change", KERNEL=="sd[a-z]*", ATTR{queue/rotational}=="1", ATTR{queue/scheduler}="bfq"

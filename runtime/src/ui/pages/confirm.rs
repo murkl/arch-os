@@ -1,5 +1,4 @@
-//! Yes or no, in a sentence that says what it does. It opens on No, since an enter meant for the
-//! page before must not land here.
+//! Yes or no page. Opens on No, so an enter meant for the page before does not confirm.
 
 use crate::spec::Action;
 use ratatui::buffer::Buffer;
@@ -12,19 +11,19 @@ use crate::ui::{Ctx, Flow, Key, Page, Tone};
 
 /// What a yes does.
 pub enum Outcome {
-    /// The run of the module: yes starts it, no forgets the passwords and goes home.
+    /// Module run: yes starts it, no forgets the passwords and returns to the dashboard.
     Start,
-    /// The page that asked reads the answer and goes on.
+    /// The asking page reads the answer.
     Answer,
-    /// An action's work, after its inputs: yes replaces this page with the run of its script.
+    /// Action after its inputs: yes replaces this page with its script run.
     Action {
         action: &'static Action,
         depth: usize,
         fetches: bool,
     },
-    /// Every answer goes.
+    /// Clears every answer.
     Reset,
-    /// The page a run stopped on is left for the dashboard.
+    /// Leaves a stopped run for the dashboard.
     Home,
 }
 
@@ -50,7 +49,7 @@ impl YesNoPage {
         page
     }
 
-    /// The module's own question before its work.
+    /// The module's question before its run.
     pub fn start(ctx: &Ctx, text: &str) -> YesNoPage {
         YesNoPage::new(
             t(&ctx.module.start),
@@ -60,7 +59,7 @@ impl YesNoPage {
         )
     }
 
-    /// A question a page puts, read back from `ctx.answered`.
+    /// Question of a page, answered through `ctx.answered`.
     pub fn ask(title: String, text: &str, yes: bool) -> YesNoPage {
         YesNoPage::new(title, text, yes, Outcome::Answer)
     }
@@ -71,14 +70,14 @@ impl YesNoPage {
             &format!(
                 "{}\n\n{}",
                 t("Reset all answers?"),
-                t("Deletes all answers and their file, then starts at the first question.")
+                t("Deletes all answers and their file.")
             ),
             false,
             Outcome::Reset,
         )
     }
 
-    /// Leaving a failed run for the dashboard, which offers nothing about the failure any more.
+    /// Leaves a failed run for the dashboard, which does not show the failure.
     pub fn home() -> YesNoPage {
         YesNoPage::new(
             t("Back to the dashboard"),
@@ -135,7 +134,7 @@ impl YesNoPage {
 }
 
 impl Page for YesNoPage {
-    /// Yes: whoever started the run unattended consented to all of it.
+    /// Yes, since an unattended start consents to everything.
     fn unattended(&mut self, ctx: &mut Ctx) -> Result<Flow, String> {
         Ok(self.chosen(true, ctx))
     }
@@ -145,7 +144,7 @@ impl Page for YesNoPage {
     }
 
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {
-        // The answers right under the question, not at the foot of the page.
+        // Answers right under the question, not at the page foot.
         let text = self
             .detail
             .height(area.width, ctx)

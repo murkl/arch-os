@@ -1,6 +1,5 @@
-//! The work: every task with a mark, filling in from the top, and on tab what they print, which
-//! goes to the log too. A task that asks first or has something to report interrupts the list.
-//! The page ends on what the run came to and what may follow.
+//! Run page: every task with a mark, filled from the top, and its output on tab, also logged. A
+//! task's question or report interrupts the list, and the page ends on the outcome and next rows.
 
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
@@ -27,8 +26,7 @@ enum Mark {
     Broken,
 }
 
-/// How far the task at the cursor has got through what it declared: a value to ask for, the
-/// offer, the work, the check that the work took, what it has to report.
+/// Progress of the current task: question, confirmation, run, test, report.
 #[derive(Clone, Copy, PartialEq)]
 enum Phase {
     Ask,
@@ -38,7 +36,7 @@ enum Phase {
     Report,
 }
 
-/// What this page pushed, and so what its being on top again means.
+/// Page this page pushed, which tells what resuming means.
 #[derive(Clone, Copy, PartialEq)]
 enum Pushed {
     None,
@@ -47,28 +45,27 @@ enum Pushed {
     Report,
 }
 
-/// A line of the text view: a task's title, or a line it printed.
 enum Out {
     Title(String),
     Line(String),
 }
 
-/// How a run ended: in the module's words, where it broke, or stopped on the way out.
+/// Failed run: the module's text, the failure, or stopped by the leave page.
 enum End {
     Known(String),
     Broke(Failure),
     Stopped,
 }
 
-/// The pause before a result takes keys: what was typed while waiting must not dismiss it.
+/// Pause before the outcome takes keys, so keys typed while waiting do not dismiss it.
 const SETTLE: Duration = Duration::from_millis(618);
-/// How long a simulated task is shown running: long enough for the row to be read as it passes.
+/// Display time of a simulated task, long enough to read its row.
 const SIMULATED: Duration = if cfg!(test) {
     Duration::ZERO
 } else {
     Duration::from_secs(1)
 };
-/// The lines the text view keeps: more than any console has rows, however they wrap.
+/// Lines the text view keeps: more than any console has rows, however they wrap.
 const KEPT: usize = 1000;
 
 pub struct RunPage {
@@ -78,30 +75,29 @@ pub struct RunPage {
     phase: Phase,
     pushed: Pushed,
     session: Option<Session>,
-    /// The line the running task drew last, where it declared its output its progress.
+    /// Last line of the running task, where it declares its output as progress.
     latest: Option<String>,
-    /// Shutdown and sleep held off while the tasks run.
+    /// Inhibits shutdown and sleep while the tasks run.
     hold: Option<script::Hold>,
-    /// What the run printed, under the title of each task, and the line being drawn in place.
+    /// Run output under each task title, and the line being redrawn in place.
     transcript: VecDeque<Out>,
     drawing: Option<String>,
-    /// The text view instead of the list.
+    /// Shows the text view instead of the list.
     text: bool,
-    /// Each task that declared a test and got as far as running it, with its failure.
+    /// Tasks whose declared test ran, with its failure.
     tests: Vec<(&'static Task, Option<Failure>)>,
-    /// Each task the result stands without, with its failure.
+    /// Tasks allowed to fail, with their failure.
     optional: Vec<(&'static Task, Option<Failure>)>,
     started: Instant,
-    /// How it ended, with the module's words for a finished run, when, and how long it took.
+    /// Outcome with the module's report text on success, end time and duration.
     end: Option<(Result<Option<String>, End>, Instant, Duration)>,
-    /// A simulated task ends when this passes.
+    /// End time of a simulated task.
     simulated: Option<Instant>,
     result: Detail,
-    /// The answers were written out and the first step is due.
+    /// Answers saved and the first step due.
     began: bool,
     kick: bool,
-    /// How many rows the module offers under a finished run and under a failed one, so the
-    /// cursor opens on the row that goes on.
+    /// Module rows after success and after failure, so the cursor opens on the row that goes on.
     rows_cache: (usize, usize),
 }
 
@@ -142,7 +138,7 @@ impl RunPage {
         self.steps[self.at]
     }
 
-    /// Takes on the task at the cursor, phase by phase, until something runs or asks.
+    /// Advances the current task phase by phase until something runs or asks.
     fn step(&mut self, ctx: &mut Ctx) -> Flow {
         loop {
             if self.at >= self.steps.len() {
@@ -161,7 +157,7 @@ impl RunPage {
                     self.phase = Phase::Run;
                     if let Some(confirm) = &task.confirm {
                         self.pushed = Pushed::Confirm;
-                        // No, like every confirm. Yes after a task this one follows from has run.
+                        // No like every confirm, yes once a `yes_after` task has run.
                         let yes = self.follows(task);
                         return Flow::Push(Box::new(YesNoPage::ask(
                             t(&task.title),
@@ -213,7 +209,7 @@ impl RunPage {
         }
     }
 
-    /// Whether a task this one names under yes-after ran earlier in this run.
+    /// A `yes_after` task ran earlier in this run.
     fn follows(&self, task: &Task) -> bool {
         self.steps[..self.at]
             .iter()
@@ -227,7 +223,7 @@ impl RunPage {
         self.latest = None;
     }
 
-    /// Runs the task at the cursor in the background, or only shows it for a moment on a dry run.
+    /// Runs the current task in the background, or only shows it briefly on a dry run.
     fn start(&mut self, ctx: &mut Ctx) -> Flow {
         let task = self.task();
         self.keep(Out::Title(t(&task.title)));
@@ -250,8 +246,7 @@ impl RunPage {
         }
     }
 
-    /// What becomes of a task whose work failed: one the result stands without is noted and
-    /// passed, without test or report. Any other ends the run.
+    /// A task allowed to fail is noted and passed without test or report. Any other ends the run.
     fn fell(&mut self, f: Failure, ctx: &mut Ctx) -> Flow {
         let task = self.task();
         if !task.allow_failure {
@@ -278,13 +273,13 @@ impl RunPage {
             Err(End::Broke(f)) => crate::error!("run: failed: {f}"),
             Err(End::Stopped) => crate::warn!("run: stopped"),
         }
-        // Filled in before the answers the words may name are forgotten.
+        // Expanded before the answers it may name are forgotten.
         let result = result.map(|()| ctx.module.report.as_ref().map(|r| ctx.expand(&t(r))));
         self.end = Some((result, Instant::now(), took));
         self.session = None;
         self.simulated = None;
         self.hold = None;
-        // Whatever a run was given is gone the moment it is over, whether it worked or not.
+        // Typed inputs are forgotten right after the run, success or not.
         ctx.store.forget();
         Flow::Stay
     }
@@ -296,7 +291,7 @@ impl RunPage {
         self.transcript.push_back(out);
     }
 
-    /// The text view: the newest rows that fit, the line being drawn last, long lines wrapped.
+    /// Newest lines that fit, the redrawn line last, long lines wrapped.
     fn draw_text(&self, area: Rect, buf: &mut Buffer, ctx: &Ctx) {
         let s = &ctx.style;
         let width = usize::from(area.width);
@@ -336,7 +331,6 @@ impl RunPage {
             .is_some_and(|(_, at, _)| at.elapsed() >= SETTLE)
     }
 
-    /// Where the way on leads once the run ended.
     fn way(&self) -> Option<Way> {
         match &self.end {
             Some((Ok(_), ..)) => Some(Way::Leave),
@@ -346,8 +340,7 @@ impl RunPage {
         }
     }
 
-    /// What the run has come to beyond its list: the optional tasks that failed and the tests
-    /// that ran, and whether it is worth a look.
+    /// Failed optional tasks and passed tests, in the warning tone when either falls short.
     fn tally(&self) -> Option<(String, Tone)> {
         let mut said = Vec::new();
         let mut alarm = false;
@@ -375,7 +368,7 @@ impl RunPage {
         })
     }
 
-    /// Everything the run went on past, in the order it is read.
+    /// Failures the run went past, optional tasks first, then tests.
     fn failures(&self) -> Vec<(String, Failure)> {
         self.optional
             .iter()
@@ -384,7 +377,6 @@ impl RunPage {
             .collect()
     }
 
-    /// The task the run ended at, which nothing after it followed.
     fn stopped_at(&self, ctx: &Ctx) -> String {
         let task = self
             .steps
@@ -403,7 +395,7 @@ impl RunPage {
         }
     }
 
-    /// The outcome and what may come next: each a choice, none a must.
+    /// Outcome and next rows, each optional.
     fn draw_end(&mut self, area: Rect, buf: &mut Buffer, ctx: &Ctx) {
         let Some((result, _, took)) = &self.end else {
             return;
@@ -490,8 +482,7 @@ impl RunPage {
         let fresh = self.result.body.is_empty();
         self.result.set(body, acts);
         if fresh {
-            // Opens on the row that goes on: an action is chosen on purpose, never by an enter
-            // meant for the page before.
+            // Opens on the last row, so no action is chosen by an enter meant for the page before.
             let last = self.result_len().saturating_sub(1);
             self.result.focus(last);
         }
@@ -515,8 +506,8 @@ impl RunPage {
         self.rows_cache.1
     }
 
-    /// The list of tasks with their marks, the window following the cursor. A progress line costs
-    /// a row under its task and is cut at its start: a bar says how far it got at its end.
+    /// Tasks with their marks, scrolled to the cursor. A progress line takes a row under its task
+    /// and is cut at the front, since a bar shows its progress at the end.
     fn draw_list(&self, area: Rect, buf: &mut Buffer, ctx: &Ctx) {
         let s = &ctx.style;
         let running = self.end.is_none() && self.at < self.steps.len();
@@ -579,14 +570,14 @@ impl RunPage {
     }
 }
 
-/// Where the way on leads once a run ended, which the last row of its page offers too.
+/// Where back leads after the run, as the last row does.
 #[derive(Clone, Copy)]
 enum Way {
-    /// A finished run: out of the module, or out of the program.
+    /// Success: the leave page, or quit.
     Leave,
-    /// A run stopped on purpose: the dashboard.
+    /// Stopped run: the dashboard.
     Back,
-    /// A broken run: the dashboard, asked first, since the failure is read on this page.
+    /// Failed run: the dashboard after a question, since the failure shows only on this page.
     Ask,
 }
 
@@ -634,8 +625,8 @@ impl Page for RunPage {
         })
     }
 
-    /// Nothing while it runs, or once stopped on the way out, whose page it then stands under.
-    /// Otherwise what it came to: the header names the outcome.
+    /// Empty while running or stopped by the leave page, which then titles it. Otherwise the
+    /// outcome, for the header.
     fn title(&self) -> String {
         match &self.end {
             None | Some((Err(End::Stopped), ..)) => String::new(),
@@ -655,10 +646,9 @@ impl Page for RunPage {
             && !self.began
         {
             self.began = true;
-            // The answers this run starts with are written out whole first: a task that copies
-            // the file hands on exactly those.
+            // Saves all answers first, so a task copying the file hands on exactly these.
             ctx.save();
-            // A test holds nothing of the machine it runs on.
+            // Tests inhibit nothing on the machine they run on.
             if !ctx.store.dry_run() && !cfg!(test) {
                 self.hold = script::hold(&ctx.product_title(), &t(&ctx.module.title));
             }
@@ -747,19 +737,18 @@ impl Page for RunPage {
         if self.end.is_some() && !self.settled() {
             return Flow::Stay;
         }
-        // Killing a half-finished package transaction is worse than waiting for it: nothing but
-        // the way out means anything while a task runs.
+        // Killing a half-finished package transaction is worse than waiting, so only leaving works
+        // while a task runs.
         if self.end.is_none() {
             return if way_out { Flow::Ignored } else { Flow::Stay };
         }
-        // Back from the outcome leads on as its last row does, never to the questions the run
-        // was started through, which still stand behind it.
+        // Back acts as the last row, never returning to the questions still behind the run.
         if matches!(key, Key::Esc | Key::Backspace)
             && let Some(way) = self.way()
         {
             return onward(way, ctx);
         }
-        // Over the result, the text hides the rows a key would choose.
+        // The text view hides the rows a key would choose.
         if self.text {
             return if way_out { Flow::Ignored } else { Flow::Stay };
         }
@@ -802,8 +791,8 @@ impl Page for RunPage {
                         Err(f) => self.fell(f, ctx),
                     },
                     Phase::Report => {
-                        // Not a failed run: the work said it worked, and something looking at the
-                        // machine afterwards disagreed.
+                        // A failed test does not fail the run. The task succeeded, a later check
+                        // disagreed.
                         if let Err(f) = &result {
                             crate::warn!("{}: test: {f}", task.title);
                         }
@@ -827,7 +816,6 @@ impl Page for RunPage {
         let Some(ask) = &task.asks else {
             return Flow::Stay;
         };
-        // Nothing to choose from skips the task.
         if answers.options.is_empty() {
             crate::info!("{}: nothing to choose from", task.title);
             self.marks[self.at] = Mark::Skipped;
@@ -851,15 +839,13 @@ impl Page for RunPage {
         {
             self.simulated = None;
             self.marks[self.at] = Mark::Ran;
-            // Straight to what it has to report: there is nothing on the machine for its test.
+            // Skips the test, since a simulated task changed nothing on the machine.
             self.phase = Phase::Report;
             return self.step(ctx);
         }
         Flow::Stay
     }
 
-    /// Back on top after what this page pushed: the answer to a question, a yes or no, a report
-    /// read.
     fn resumed(&mut self, ctx: &mut Ctx) -> Flow {
         let pushed = std::mem::replace(&mut self.pushed, Pushed::None);
         if self.end.is_some() {
@@ -874,7 +860,7 @@ impl Page for RunPage {
                     .as_ref()
                     .map(|a| a.name.as_str())
                     .unwrap_or_default();
-                // Left unanswered, as a run with nobody at the keyboard leaves one: skipped.
+                // Unanswered, as an unattended run leaves it, skips the task.
                 if ctx.store.get(name).is_empty() {
                     crate::info!("{}: skipped", task.title);
                     self.marks[self.at] = Mark::Skipped;
@@ -921,8 +907,7 @@ impl Page for RunPage {
         self.end.is_none()
     }
 
-    /// Ends the run where it stands. Nothing its task, an answer or a tick brings after this
-    /// moves it on.
+    /// Ends the run in place. Later task events, answers and ticks do not advance it.
     fn stop(&mut self, ctx: &mut Ctx) -> Option<Session> {
         if self.end.is_some() {
             return None;

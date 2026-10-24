@@ -1,2 +1,2 @@
-# Written by the Arch OS Installer: the Recovery's partition, out of the file manager.
+# Written by Arch OS. Hides the Recovery partition from the file manager.
 ENV{ID_PART_ENTRY_UUID}=="{{PARTUUID}}", ENV{UDISKS_IGNORE}="1"

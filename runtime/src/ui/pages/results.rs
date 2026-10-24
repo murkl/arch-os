@@ -1,5 +1,5 @@
-//! What a finished run went on past: the optional tasks that failed and the tests the machine
-//! disagreed with. Each row opens the failure the way a stopped run lays its own out.
+//! Failed optional tasks and failed tests of a finished run. Each row opens the failure like a
+//! stopped run's.
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -12,7 +12,7 @@ use crate::ui::list::{List, Picked, Row};
 use crate::ui::{Ctx, Flow, Key, Page, Tone};
 
 pub struct ResultsPage {
-    /// The count: three failures mean something else out of four than out of forty.
+    /// Failure count out of the total: three of four differs from three of forty.
     verdict: String,
     failed: Vec<(String, Failure)>,
     list: List<usize>,

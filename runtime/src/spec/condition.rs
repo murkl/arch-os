@@ -1,5 +1,5 @@
-//! One line of `when:`: a setting, `==` or `!=`, a value. Every line must hold, and there is no
-//! or: a row for two unrelated cases is two rows.
+//! One `when:` line: setting, `==` or `!=`, value. Every line must hold. There is no or, two
+//! unrelated cases are two rows.
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Condition {
@@ -12,9 +12,7 @@ impl Condition {
     pub fn parse(s: &str) -> Result<Condition, String> {
         let f: Vec<&str> = s.split_whitespace().collect();
         if f.len() != 3 || (f[1] != "==" && f[1] != "!=") {
-            return Err(format!(
-                "{s:?} is no condition: NAME == value or NAME != value"
-            ));
+            return Err(format!("{s:?} is not NAME == value or NAME != value"));
         }
         Ok(Condition {
             name: f[0].to_string(),
@@ -39,7 +37,7 @@ impl std::fmt::Display for Condition {
     }
 }
 
-/// Whether every condition holds. None always do.
+/// An empty list holds.
 pub fn hold_all(conds: &[Condition], get: impl Fn(&str) -> String) -> bool {
     conds.iter().all(|c| c.holds(&get))
 }

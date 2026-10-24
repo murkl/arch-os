@@ -1,10 +1,9 @@
-// Embeds the product beside this crate, so the binary is the whole program: its yaml, the
-// library, the catalogs and every module. Names the version as well.
+// Embeds the product beside this crate, so the binary is the whole program. Sets the version.
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
-/// Every regular file below `dir` but the checks run by hand, as paths relative to the
-/// product, in name order. Dotfiles too: a task that ships a home ships `.config/`.
+/// Files below `dir` relative to the product, in name order. Manual checks stay out, dotfiles
+/// stay in: a task may ship `.config/`.
 fn files(dir: &Path, prefix: &str, out: &mut Vec<String>) {
     let mut entries: Vec<_> = fs::read_dir(dir)
         .unwrap_or_else(|e| panic!("{}: {e}", dir.display()))
@@ -38,7 +37,6 @@ fn main() {
     if root.join("locales").is_dir() {
         files(&root.join("locales"), "locales/", &mut found);
     }
-    // A module is a folder beside this crate with a module.yaml.
     let mut dirs: Vec<_> = fs::read_dir(&root)
         .unwrap()
         .map(|e| e.unwrap())
@@ -60,8 +58,8 @@ fn main() {
     let out = PathBuf::from(env::var("OUT_DIR").unwrap());
     fs::write(out.join("embedded.rs"), code).unwrap();
 
-    // What a release hands in as <PACKAGE>_VERSION, else a pre-release of the patch after the
-    // last release, as release-please keeps it.
+    // A release sets <PACKAGE>_VERSION. Other builds are a pre-release of the patch after the
+    // release-please manifest.
     let key = format!(
         "{}_VERSION",
         env::var("CARGO_PKG_NAME")
@@ -75,7 +73,7 @@ fn main() {
         Ok(v) if !v.is_empty() => {
             assert!(
                 is_version(&v),
-                "{key}={v:?} is no version such as 2.1.0 or 2.1.0-rc1"
+                "{key}={v:?} is not a version like 2.1.0 or 2.1.0-rc1"
             );
             v
         }
@@ -86,7 +84,7 @@ fn main() {
     println!("cargo::rustc-env=VERSION={version}");
 }
 
-/// `2.1.0`, or `2.1.0-rc1`: three numbers, and a pre-release after a dash.
+/// `2.1.0` or `2.1.0-rc1`.
 fn is_version(v: &str) -> bool {
     let (release, pre) = v.split_once('-').unwrap_or((v, "dev"));
     let numbers: Vec<&str> = release.split('.').collect();
@@ -105,7 +103,7 @@ fn next_dev(manifest: &str) -> String {
     let released = manifest.split('"').nth(3).unwrap_or_default();
     let parts: Vec<u64> = released.split('.').filter_map(|p| p.parse().ok()).collect();
     let [major, minor, patch] = parts[..] else {
-        panic!(".release-please-manifest.json names no x.y.z: {released:?}");
+        panic!("no x.y.z in .release-please-manifest.json: {released:?}");
     };
     format!("{major}.{minor}.{}-dev", patch + 1)
 }

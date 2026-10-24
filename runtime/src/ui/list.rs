@@ -1,5 +1,4 @@
-//! The list every page selects from: headings, a cursor in the margin, a column for a mark, a
-//! value on the right and a filter.
+//! Selection list: headings, margin cursor, mark column, right-aligned detail, filter.
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -10,28 +9,28 @@ use super::input::Input;
 use super::{Ctx, Key, Nav, Tone};
 use crate::i18n::t;
 
-/// What stands in the column before a label: every row has it, so labels line up on every page.
+/// Column before the label. Every row has one, so labels line up on every page.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum Lead {
     #[default]
     None,
-    /// A mark in its tone: a step's state, a chosen row.
+    /// Mark such as a step's state or a chosen row.
     Glyph(&'static str, Tone),
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Row<I> {
-    /// What choosing the row means to its page. A heading means nothing.
+    /// Value the page gets on choosing the row. `None` for a heading.
     pub id: Option<I>,
     pub label: String,
-    /// Right-aligned: a value, a count, a state.
+    /// Right-aligned value, count or state.
     pub detail: String,
     pub tone: Tone,
     pub lead: Lead,
-    /// Shown, but its action is not available here.
+    /// Shown, but its action is unavailable here.
     pub dim: bool,
     pub heading: bool,
-    /// What the row is about, for the line under the list where a page shows one.
+    /// Line under the list, on pages that show one.
     pub description: String,
 }
 
@@ -75,8 +74,8 @@ impl<I> Row<I> {
     }
 }
 
-/// The columns of a row: the lead where the page has a column for it, the label and the detail,
-/// each in pieces of their own style. The detail gets what the label leaves, at least half.
+/// Lead, label and detail, each in styled pieces. The detail gets what the label leaves, at
+/// least half.
 pub fn draw_row(
     buf: &mut Buffer,
     area: Rect,
@@ -133,7 +132,6 @@ pub fn draw_row(
 }
 
 pub enum Picked<I> {
-    /// The list used the key.
     Used,
     Open(I),
     Ignored,
@@ -144,9 +142,9 @@ pub struct List<I> {
     cursor: usize,
     offset: usize,
     pub filter: Option<Input>,
-    /// The row under the cursor shows its description under the list.
+    /// Shows the cursor row's description under the list.
     pub described: bool,
-    /// The page names f in its keys. Elsewhere, as under a yes or no, f is no filter.
+    /// The footer offers f. Elsewhere, as on a yes or no, f does not filter.
     filterable: bool,
     height: usize,
 }
@@ -172,7 +170,6 @@ impl<I: Clone + PartialEq> List<I> {
         l
     }
 
-    /// A list of a page that offers its filter on f.
     pub fn filterable(rows: Vec<Row<I>>) -> List<I> {
         let mut l = List {
             filterable: true,
@@ -182,7 +179,7 @@ impl<I: Clone + PartialEq> List<I> {
         l
     }
 
-    /// Replaces the rows. The cursor stays on its row, or where its row was when it is gone.
+    /// The cursor keeps its row, or its position when the row is gone.
     pub fn set(&mut self, rows: Vec<Row<I>>) {
         let id = self.selected().and_then(|r| r.id.clone());
         let at = self
@@ -219,7 +216,7 @@ impl<I: Clone + PartialEq> List<I> {
         &self.rows
     }
 
-    /// Indices of the selectable rows the filter lets through, by label, detail and heading.
+    /// Selectable rows matching the filter on label, detail or heading.
     fn shown(&self) -> Vec<usize> {
         let query = self
             .filter
@@ -305,8 +302,7 @@ impl<I: Clone + PartialEq> List<I> {
         Picked::Used
     }
 
-    /// The rows this list would take with nothing in its way: for a page that puts something
-    /// right under it.
+    /// Unclipped height, for a page that draws something right under the list.
     pub fn height(&self) -> usize {
         let shown = self.shown();
         let headings = self
@@ -410,7 +406,7 @@ impl<I: Clone + PartialEq> List<I> {
                 (false, true) => s.tone(Tone::Muted),
                 (false, false) => s.tone(Tone::Normal),
             };
-            // Muted reads badly beside the cursor: the row under it is the one being read.
+            // Muted reads badly on the cursor row, which is the one being read.
             let detail_tone = match (current, row.tone) {
                 (true, Tone::Muted) => Tone::Normal,
                 (_, tone) => tone,
@@ -425,8 +421,7 @@ impl<I: Clone + PartialEq> List<I> {
                 ctx,
             );
             if current {
-                // The whole row on the surface, from the cursor in the margin to the right edge,
-                // so the eye finds its value.
+                // Surface from the margin cursor to the right edge, so the eye finds the value.
                 let from = area.x.saturating_sub(2);
                 buf.set_style(
                     Rect::new(from, ly, area.right() - from, 1),

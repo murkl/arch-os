@@ -1,6 +1,5 @@
-# The partition holds the image byte for byte, read off the disk rather than
-# out of the memory the write went through, and the loader lists an entry that
-# finds it by the UUID built into the image.
+# Compared on the disk, not in the page cache, and the loader entry finds the
+# partition by the image's UUID.
 part="$(recovery_partition "$ARCH_OS_DISK")"
 image="${RECOVERY_IMAGE}/recovery.img"
 blockdev --flushbufs "$part"
@@ -13,8 +12,8 @@ arch-chroot "$MNT" bootctl --esp-path=/boot list --json=short | grep -qF "archis
 
 grep -qxF "ARCH_OS_RECOVERY_KEYMAP='$(vconsole_keymap)'" "${MNT}/boot/EFI/arch-os-recovery/recovery.conf"
 
-# Its firmware entry starts the image on this disk's EFI partition, and is not
-# in the firmware's order.
+# The firmware entry points at this EFI partition and stays out of the boot
+# order.
 entries="$(efibootmgr)"
 esp="$(blkid -p -s PART_ENTRY_UUID -o value "$(boot_partition "$ARCH_OS_DISK")")"
 entry="$(awk -v esp="${esp,,}" -v efi="$(basename "$RECOVERY_EFI")" '
@@ -25,7 +24,7 @@ entry="$(awk -v esp="${esp,,}" -v efi="$(basename "$RECOVERY_EFI")" '
 order="$(sed -n 's/^BootOrder: //p' <<<"$entries")"
 [[ ",${order}," != *",${entry},"* ]]
 
-# udev passes over a rule it cannot read without a word.
+# udev skips an unreadable rule silently.
 partuuid="$(blkid -p -s PART_ENTRY_UUID -o value "$(recovery_partition "$ARCH_OS_DISK")")"
 [ -n "$partuuid" ]
 grep -qF "\"${partuuid}\"" "${MNT}/etc/udev/rules.d/90-arch-os-recovery.rules"

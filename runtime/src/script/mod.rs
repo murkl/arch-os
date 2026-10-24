@@ -1,8 +1,8 @@
-//! The only place this program starts a process. Everything the runtime does is shell, handed
-//! the answers as variables and read back as an exit status or stdout.
+//! The only place that starts processes. All work is shell, given the answers as variables and
+//! read back as exit status or stdout.
 //!
-//! The embedded product is written out once per process, readable by this user only, and every
-//! script runs from there with lib.sh in front of it.
+//! The embedded product is written out once per process, readable by this user only. Every
+//! script runs from there with lib.sh sourced first.
 
 mod handover;
 mod session;
@@ -51,8 +51,8 @@ fn create(base: &Path) -> Result<PathBuf, String> {
     Ok(dir)
 }
 
-/// Removes the folders of runs no longer running. A run ended by a signal leaves its own, and
-/// so does every test run, which never reaches `cleanup`.
+/// Removes the folders of dead runs. A run ended by a signal leaves its folder, so does every
+/// test run, which never reaches `cleanup`.
 fn sweep(base: &Path) {
     let prefix = concat!(env!("CARGO_PKG_NAME"), "-");
     let Ok(entries) = std::fs::read_dir(base) else {
@@ -81,12 +81,12 @@ pub fn cleanup() {
     }
 }
 
-/// A file of the product, where it lies now.
+/// Path of a product file on disk.
 fn path(rel: &str) -> Result<PathBuf, String> {
     Ok(dir()?.join(rel))
 }
 
-/// The library every script gets in front of it, or nothing where the product has none.
+/// Path of lib.sh, empty when the product has none.
 fn lib() -> Result<String, String> {
     #[cfg(test)]
     if let Some(lib) = tests::LIB.get() {
@@ -102,7 +102,7 @@ fn quote(s: &str) -> String {
     format!("'{}'", s.replace('\'', r"'\''"))
 }
 
-/// Shell a declaration names, as one piece of shell.
+/// A declared shell as one shell expression.
 fn piece(shell: &Shell) -> Result<String, String> {
     Ok(match shell {
         Shell::Call(name) => name.clone(),
@@ -110,25 +110,24 @@ fn piece(shell: &Shell) -> Result<String, String> {
     })
 }
 
-/// A snippet: an option list, a suggestion. The library is sourced before anything else, so a
-/// fault inside it is not blamed on the script about to run. No trap: a non-zero status is an
-/// answer.
+/// A snippet, such as an option list or a suggestion. lib.sh is sourced first, so a fault in it
+/// is not blamed on the script. No trap, a non-zero status is an answer.
 const SNIPPET: &str = "[ -z \"$2\" ] || source \"$2\" || exit $?\neval \"$1\"";
 
-/// A question with a yes or no for an answer, wrapped in a function so `return 0` says yes.
+/// A yes or no check, wrapped in a function so `return 0` means yes.
 const GUARD: &str =
     "[ -z \"$2\" ] || source \"$2\" || exit $?\neval \"rt_guard() {\n$1\n}\"\nrt_guard\nexit $?";
 
-/// A step, under the trap that reports on fd 3 where it broke: code, file, line, command and the
-/// function the line is in. `$3` is the file its own lines are in: the script, or the library for
-/// a function. Within a helper of the library, the file and line are the script's that called
-/// it. `-e` stays off, since `source` hands back the status of a benign last line. A script that
-/// stops itself with `exit` leaves no report, which is how a chosen status is told from a broken
-/// command. The DEBUG trap remembers the step's own last line for one that hands back a status
-/// without a failing command. Inside `$(…)` or `( … )` the trap ends the subshell alone, and
-/// what the enclosing command makes of its status decides: a report from there would be read as
-/// the step's own. The command goes on one line, a here-document and a tab in it alike, or the
-/// report would come apart.
+/// A step under the ERR trap, which reports code, file, line, command and function on fd 3. `$3`
+/// is the file of the step's own lines: the script, or lib.sh for a function. A failure in a
+/// lib.sh helper reports the calling script's file and line.
+/// - `-e` stays off, since `source` returns the status of a benign last line
+/// - `exit` leaves no report, which tells a chosen status from a failed command
+/// - The DEBUG trap records the step's last own line for a status without a failing command
+/// - Inside `$(…)` or `( … )` the trap ends only the subshell and the enclosing command decides,
+///   a report from there would count as the step's own
+/// - The command is flattened to one line, here-documents and tabs included, or the report
+///   splits
 const STEP: &str = concat!(
     "set -Eo pipefail -T\n",
     "[ -z \"$2\" ] || source \"$2\" || exit $?\n",
@@ -153,7 +152,7 @@ const STEP: &str = concat!(
     "exit $c"
 );
 
-/// bash with a wrapper, what it runs as `$1`, the library as `$2`, then `rest`, and the answers.
+/// `bash -c wrapper` with the payload as `$1`, lib.sh as `$2`, then `rest`, and the answers.
 fn bash(
     wrapper: &str,
     payload: &str,
@@ -171,15 +170,15 @@ fn bash(
     Ok(cmd)
 }
 
-/// A session of its own for a script that runs beside the interface: no terminal to stop at,
-/// read from or draw into, and one group that is stopped whole.
+/// Own session for a script beside the interface: no terminal to stop on, read or draw into,
+/// and one process group to stop as a whole.
 fn detached(cmd: &mut Command) -> &mut Command {
     // SAFETY: setsid is async-signal-safe.
     unsafe { cmd.pre_exec(|| rustix::process::setsid().map(drop).map_err(Into::into)) }
 }
 
-/// Shutdown and sleep held off through logind for as long as it lives, so a closed lid suspends
-/// no run halfway. The lock also ends with this process, should it end without dropping it.
+/// Blocks shutdown and sleep through logind while alive, so a closed lid never suspends a run
+/// halfway. The lock also ends with this process if it exits without dropping it.
 pub struct Hold(rustix::process::Pid);
 
 impl Drop for Hold {
@@ -188,7 +187,7 @@ impl Drop for Hold {
     }
 }
 
-/// A hold for `why`, or none where logind does not answer, as in a container.
+/// None where logind does not answer, as in a container.
 pub fn hold(who: &str, why: &str) -> Option<Hold> {
     let quiet = || {
         let mut cmd = Command::new("systemd-inhibit");
@@ -221,7 +220,7 @@ pub fn hold(who: &str, why: &str) -> Option<Hold> {
     }
 }
 
-/// What a snippet said on the way out: the last lines of stderr, or its status.
+/// The last stderr lines of a snippet, or its status.
 fn said(out: &std::process::Output) -> String {
     let err = String::from_utf8_lossy(&out.stderr);
     let lines: Vec<&str> = err.lines().filter(|l| !l.trim().is_empty()).collect();
@@ -234,7 +233,7 @@ fn said(out: &std::process::Output) -> String {
     lines[lines.len().saturating_sub(8)..].join("\n")
 }
 
-/// Runs a snippet and returns what it printed, trimmed at the end.
+/// Runs a snippet and returns its stdout, end trimmed.
 pub fn run(shell: &Shell, env: &[(String, String)]) -> Result<String, String> {
     let out = detached(&mut bash(SNIPPET, &piece(shell)?, &[], env)?)
         .output()
@@ -245,8 +244,8 @@ pub fn run(shell: &Shell, env: &[(String, String)]) -> Result<String, String> {
     Ok(String::from_utf8_lossy(&out.stdout).trim_end().to_string())
 }
 
-/// What a snippet printed, one entry per line, blank lines dropped. Only the end of a line is
-/// trimmed: a leading tab follows an empty value, which is an answer too.
+/// Snippet output per line, blank lines dropped. Only line ends are trimmed: a leading tab
+/// follows an empty value, which is an answer too.
 pub fn lines(shell: &Shell, env: &[(String, String)]) -> Result<Vec<String>, String> {
     Ok(run(shell, env)?
         .lines()
@@ -255,8 +254,7 @@ pub fn lines(shell: &Shell, env: &[(String, String)]) -> Result<Vec<String>, Str
         .collect())
 }
 
-/// Runs an action by itself, as a question with a yes or no for an answer. What it said on stderr
-/// with a no is what somebody reads.
+/// Runs an action as a yes or no check. On no, its stderr is the message shown.
 pub fn guard(shell: &Shell, env: &[(String, String)]) -> Result<(), String> {
     let out = detached(&mut bash(GUARD, &piece(shell)?, &[], env)?)
         .output()
@@ -267,8 +265,7 @@ pub fn guard(shell: &Shell, env: &[(String, String)]) -> Result<(), String> {
     Err(said(&out))
 }
 
-/// One piece of a module's work as this layer takes it: its shell, what a failure calls it,
-/// and whether it is an action's rather than a task's.
+/// A task or action as this layer runs it. `name` labels a failure.
 #[derive(Clone, Debug)]
 pub struct Step {
     pub module: String,
@@ -278,7 +275,7 @@ pub struct Step {
 }
 
 impl Step {
-    /// The file its own lines are in, relative to the product: the library for a function.
+    /// File of its own lines, relative to the product: lib.sh for a function.
     fn file(&self) -> String {
         match &self.run {
             Shell::Call(_) => spec::LIB.to_string(),
@@ -301,8 +298,8 @@ pub fn start(
     Session::spawn(step, cmd, sink)
 }
 
-/// Runs an action on the terminal itself, in place of the interface, and waits for it. Nothing
-/// is captured or logged: its output is the terminal's.
+/// Runs an action on the terminal in place of the interface and waits for it. Nothing is
+/// captured or logged.
 pub fn handover(step: &Step, env: &[(String, String)]) -> Result<(), Box<Failure>> {
     let payload = piece(&step.run).map_err(|e| Box::new(Failure::new(step, e)))?;
     let cmd = bash(SNIPPET, &payload, &[], env).map_err(|e| Box::new(Failure::new(step, e)))?;
@@ -317,8 +314,7 @@ pub fn handover(step: &Step, env: &[(String, String)]) -> Result<(), Box<Failure
     }
 }
 
-/// What a script reports back when it dies, in one shape: which module, which step, which file
-/// and line, what ran and what it said on the way out.
+/// A failed script: module, step, file and line, command and stderr.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Failure {
     pub module: String,
@@ -326,13 +322,12 @@ pub struct Failure {
     pub action: bool,
     pub script: String,
     pub line: u32,
-    /// The function of the library the line is in, where the script is the library.
+    /// The lib.sh function of `line`, when the script is lib.sh.
     pub function: String,
     pub code: i32,
     pub command: String,
     pub stderr: String,
-    /// The script stopped itself with `exit`: no command failed, so the status is one it chose
-    /// and may have words for.
+    /// Ended by `exit`, not a failed command, so the status is chosen and may have a text.
     pub deliberate: bool,
 }
 
@@ -348,7 +343,7 @@ impl Failure {
         }
     }
 
-    /// From the exit status, the first `fail` line the trap wrote, and what stderr said.
+    /// From the exit status, the first `fail` line of the trap, and stderr.
     pub fn classify(step: &Step, code: Option<i32>, fail: Option<&str>, stderr: String) -> Failure {
         let mut f = Failure::new(step, stderr);
         f.code = code.unwrap_or(1);
@@ -368,7 +363,7 @@ impl Failure {
         f
     }
 
-    /// The rows of a failure report, each a label and its value: short wins over exact.
+    /// Label and value rows of a failure report. Short wins over exact.
     pub fn fields(&self) -> Vec<(String, String)> {
         let mut out = Vec::new();
         let mut add = |label: String, value: &str| {
@@ -411,7 +406,7 @@ impl std::fmt::Display for Failure {
     }
 }
 
-/// A script's path as whoever wrote it knows it: relative to the product.
+/// A script path relative to the product, as its author knows it.
 fn short(p: &str) -> String {
     match dir() {
         Ok(dir) => Path::new(p)
@@ -427,11 +422,10 @@ pub mod tests {
     use super::*;
     use std::time::Duration;
 
-    /// The library the tests' scripts get: the fixture's, once a test asked for it.
+    /// The fixture's lib.sh, once a test asked for it.
     pub static LIB: OnceLock<String> = OnceLock::new();
 
-    /// Writes the fixture product where the real one lies, so its scripts run from there, and
-    /// puts its library in front of every script.
+    /// Writes the fixture beside the real product and sources its lib.sh before every script.
     pub fn use_fixture() {
         let dir = dir().unwrap();
         for (rel, bytes) in crate::spec::tests::fixture() {
@@ -446,8 +440,7 @@ pub mod tests {
         let _ = LIB.set(dir.join("fixture-lib.sh").display().to_string());
     }
 
-    /// A step of a fixture script, written where the real ones lie, with the fixture's library
-    /// in front of it whatever product is embedded.
+    /// A fixture script step with the fixture's lib.sh, whatever product is embedded.
     pub fn step(body: &str) -> Step {
         use_fixture();
         let name = format!("t{}", unique());
@@ -463,15 +456,14 @@ pub mod tests {
         }
     }
 
-    /// A name no other test gets: tests run side by side, and two may start in the same
-    /// nanosecond.
+    /// Unique per test: tests run in parallel, two may start in the same nanosecond.
     pub fn unique() -> String {
         static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let n = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         format!("{}-{n}", std::process::id())
     }
 
-    /// Runs a step to its end and returns the outcome and the lines it drew.
+    /// Runs a step to the end, returns the outcome and its lines.
     pub fn drive(body: &str, env: &[(String, String)]) -> (Result<(), Failure>, Vec<String>) {
         let (tx, rx) = std::sync::mpsc::channel();
         let session = start(step(body), env, move |e| drop(tx.send(e))).unwrap();
@@ -499,8 +491,7 @@ pub mod tests {
         );
     }
 
-    /// Held while the hold lives, released once it is dropped. Where logind does not answer, as
-    /// in a container, there is nothing to hold and nothing to check.
+    /// Skipped where logind does not answer, as in a container.
     #[test]
     fn a_hold_holds_until_it_is_dropped() {
         let who = format!("rt-test-{}", std::process::id());
@@ -547,8 +538,7 @@ pub mod tests {
         );
     }
 
-    /// A step that is a function of the library is told by the library's line and the function,
-    /// a failing command and a failing last line alike.
+    /// A failing command and a failing last line alike.
     #[test]
     fn a_failing_function_names_its_line_and_itself() {
         use_fixture();
@@ -580,8 +570,8 @@ pub mod tests {
         }
     }
 
-    /// A failure inside `$(…)` is the enclosing command's: an assignment fails the script at its
-    /// own line, an echo goes on, and neither leaves a report a later stop would be blamed on.
+    /// An assignment fails at its own line, an echo goes on, and neither leaves a report a later
+    /// stop would be blamed on.
     #[test]
     fn a_failure_inside_a_substitution_is_the_enclosing_commands_to_tell() {
         let (r, _) = drive("echo \"n: $(false)\"\nexit 7\n", &[]);
@@ -599,7 +589,6 @@ pub mod tests {
         assert_eq!((f.line, f.command.as_str()), (1, "x=$(false)"), "{f:?}");
     }
 
-    /// A command over several lines, as one with a here-document, is reported on one.
     #[test]
     fn a_command_over_several_lines_is_reported_on_one() {
         let (r, _) = drive("false <<EOF\nline\nEOF\n", &[]);
@@ -639,8 +628,8 @@ pub mod tests {
         assert!(guard(&yes.run, &[]).is_ok());
     }
 
-    /// A stop asks first, and a script that traps it cleans up and goes. One that stays is
-    /// killed after the grace. Either way the stop returns once nothing of the script runs.
+    /// A script that traps TERM cleans up and exits, one that ignores it is killed after the
+    /// grace period. Either way the stop returns once nothing of it runs.
     #[test]
     fn a_stop_asks_first_and_kills_what_stays() {
         let out = std::env::temp_dir().join(format!("script-stop-{}", unique()));
@@ -661,7 +650,7 @@ pub mod tests {
                 }
             };
             session.stop();
-            // A zombie is left out: PID 1 of a container may never collect one.
+            // Zombies are ignored, PID 1 of a container may never reap them.
             let ps = Command::new("ps")
                 .args(["-e", "-o", "pgid=,stat="])
                 .output()

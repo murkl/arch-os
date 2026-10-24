@@ -1,11 +1,11 @@
 arch-chroot "$MNT" systemctl is-enabled gdm.service >/dev/null
 
-# The start waits for the session in front before it counts as one that worked.
+# A boot counts as good only once a graphical session is up.
 arch-chroot "$MNT" systemctl is-enabled arch-os-session-up.service >/dev/null
 [ -z "$(unit_complaints arch-os-session-up.service)" ]
 
-# systemd-oomd only acts on what its drop-ins mark, and systemd skips a key it
-# cannot read with a warning: verify prints it.
+# systemd-oomd acts only on what the drop-ins mark, and systemd skips an
+# unreadable key with only a warning, which verify prints.
 arch-chroot "$MNT" systemctl is-enabled systemd-oomd.service >/dev/null
 [ -z "$(unit_complaints -.slice user@.service)" ]
 
@@ -14,27 +14,27 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     arch-chroot "$MNT" systemctl is-enabled cups.socket >/dev/null
 fi
 
-# The firmware offered is as current as the catalog its timer loads.
+# Without the timer the firmware metadata goes stale.
 if has_command fwupdmgr; then
     arch-chroot "$MNT" systemctl is-enabled fwupd-refresh.timer >/dev/null
 fi
 
 has_command gnome-extensions-app
 
-# The shell starts its calendar server at every login and with every look at the
-# calendar, and a library it lacks fails each start.
+# gnome-shell starts its calendar server at every login and calendar view, and
+# a missing library fails each start.
 libraries="$(arch-chroot "$MNT" ldd /usr/lib/gnome-shell-calendar-server)"
 if grep -F 'not found' <<<"$libraries"; then
     echo "gnome-shell-calendar-server lacks the libraries above" >&2
     exit 1
 fi
 
-# Bazaar takes GNOME Software's place, GNOME Firmware its firmware updates.
+# Bazaar replaces GNOME Software, and GNOME Firmware its firmware updates.
 if [ "$ARCH_OS_FLATPAK_ENABLED" = "true" ] && [ "$ARCH_OS_BAZAAR_ENABLED" = "true" ]; then
     has_command bazaar
     has_command gnome-firmware
     if has_command gnome-software; then
-        echo "Bazaar is on and GNOME Software was installed all the same" >&2
+        echo "Bazaar on, but GNOME Software installed" >&2
         exit 1
     fi
 else
@@ -43,16 +43,16 @@ fi
 
 arch-chroot "$MNT" systemctl --global is-enabled pipewire.socket pipewire-pulse.socket wireplumber.service >/dev/null
 
-# PipeWire reaches rtkit by D-Bus activation, it has no service to enable.
+# rtkit starts through D-Bus activation and has no service to enable.
 [ -f "${MNT}/usr/share/dbus-1/system-services/org.freedesktop.RealtimeKit1.service" ]
 
-# Without the module the daemon runs and nothing reaches a .local name.
+# Without nss-mdns avahi runs, but no .local name resolves.
 grep -q 'mdns_minimal' "${MNT}/etc/nsswitch.conf"
 [ "$ARCH_OS_FIREWALL_ENABLED" != "true" ] ||
     arch-chroot "$MNT" firewall-offline-cmd --zone=public --query-service=mdns >/dev/null
 
-# Automatic login exactly where the boot password stands in front and is the
-# account's too: docs/REFERENCE.md#accounts
+# Automatic login exactly where the LUKS passphrase is the account's password:
+# docs/REFERENCE.md#accounts
 autologin=false
 grep -qs '^AutomaticLoginEnable=True' "${MNT}/etc/gdm/custom.conf" && autologin=true
 if [ "$autologin" = "true" ] && [ "$ARCH_OS_ENCRYPTION_ENABLED" != "true" ]; then
@@ -68,15 +68,15 @@ if [ "$autologin" = "false" ] && [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && [
     exit 1
 fi
 
-# Flatpak off means none at all: a member of the group that depends on it would
-# bring it and Flathub along.
+# Flatpak off means none: a group member that depends on it pulls it in with
+# Flathub.
 if [ "$ARCH_OS_FLATPAK_ENABLED" != "true" ] && has_command flatpak; then
-    echo "Flatpak is off and flatpak was installed all the same" >&2
+    echo "Flatpak off, but flatpak installed" >&2
     exit 1
 fi
 
-# GNOME Boxes works once installed, as it runs its machines as the account:
-# KVM is open to every account, and its packages bring no second JACK.
+# GNOME Boxes runs its machines as the account, so /dev/kvm is open to every
+# account, and its packages must not pull jack2.
 grep -qsE '^KERNEL=="kvm".*MODE="0666"' "$MNT"/usr/lib/udev/rules.d/*.rules
 boxes="$(arch-chroot "$MNT" pacman -Sp --noconfirm gnome-boxes)"
 if grep -q '/jack2-' <<<"$boxes"; then
@@ -84,8 +84,8 @@ if grep -q '/jack2-' <<<"$boxes"; then
     exit 1
 fi
 
-# Every default read back as an account reads it, through the profile: a key no
-# schema knows and a value it refuses are dropped without a word.
+# Read back through the profile as the account: dconf silently drops an unknown
+# key and an invalid value.
 gsettings_as_user() { as_user "gsettings $1"; }
 schemas="$(gsettings_as_user "list-schemas --print-paths")"
 group=""
@@ -113,8 +113,7 @@ while IFS= read -r line; do
     fi
 done < <(cat "${MNT}"/etc/dconf/db/local.d/*)
 
-# Hidden from every account as GLib looks applications up: the package's own
-# entry is masked, not only written beside it.
+# Through GLib's lookup, which must find the package's own entry masked.
 for entry in "${MNT}"/usr/local/share/applications/*.desktop; do
     grep -qx 'Hidden=true' "$entry" || continue
     name="$(basename "$entry")"

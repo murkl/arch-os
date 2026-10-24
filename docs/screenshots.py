@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Render docs/screenshots: every page of the interface, out of the product.
+"""Render docs/screenshots: every page of the interface, from the real program.
 
-The real program on a real pty, started with --dry-run so it touches nothing. Which
-pages, and the way to each, is docs/screenshots.yaml.
+Runs the program on a pty with --dry-run, so it touches nothing. The pages and
+the way to each are in docs/screenshots.yaml.
 
 Needs: chromium, imagemagick, python-pyte, python-yaml.
 """
@@ -36,13 +36,13 @@ except ModuleNotFoundError:
 
 COLS, ROWS = 95, 25
 
-# The card, one shape for every screenshot everywhere this is used.
+# The card, one shape for every screenshot.
 FONT_PX, LINE_PX = 15, 22
 PAD, RADIUS, SCALE = 26, 10, 2
 LEAD = (LINE_PX - FONT_PX) / 2  # room a line box keeps above and below the text
 
-# The console's sixteen slots as the images paint them, so a picture shows what
-# the console shows: iso/README.md#the-console.
+# The console's sixteen slots as the images set them, so a picture matches the
+# console: iso/README.md#console.
 def console_slots():
     build = (pathlib.Path(__file__).resolve().parent.parent / "iso/build.sh").read_text()
     channels = []
@@ -55,37 +55,32 @@ def console_slots():
 
 
 SLOTS = console_slots()
-# The program writes a slot as 38;5;n, which pyte answers with xterm's color for n.
+# The program writes a slot as 38;5;n, which pyte maps to xterm's color for n.
 PALETTE = dict(zip(pyte.graphics.FG_BG_256[:16], SLOTS))
 CARD, TEXT = SLOTS[0], SLOTS[7]
 
-# The `monospace` fallback is load bearing. Without it the small triangle the
-# interface marks a selected row with comes out as a big filled one.
+# The `monospace` fallback matters: without it, the small triangle marking the
+# selected row renders big and filled.
 FONT = '"FiraCode Nerd Font Mono", monospace'
 
-# The cells a terminal fills rather than draws, and how each is painted: a whole
-# cell of ink, its two halves, and a cell of nothing but its background.
-#
-# Painted as boxes here for the same reason a terminal paints them. A glyph is
-# drawn inside the font's own box, which is shorter than the line it sits on, so
-# two of them stacked leave a seam of card between them, visible in a tick and
-# fatal in a QR code, which is not a picture of anything and reads as nothing
-# once it has stripes through it.
+# Cells a terminal fills rather than draws: a full block and its two halves.
+# Painted as boxes, as a terminal does. A glyph sits in the font's box, shorter
+# than its line, so two stacked leave a seam, which breaks a QR code.
 PAINT = {
     "\u2588": "{ink}",
     "\u2580": "linear-gradient(to bottom, {ink} 50%, {field} 50%)",
     "\u2584": "linear-gradient(to bottom, {field} 50%, {ink} 50%)",
 }
 
-# The program, with every module inside it. Copied, so an answer file or a log
-# an earlier run left beside it cannot decide what a page says.
+# Copied fresh, so an answer file or log from an earlier run cannot change a
+# page.
 PRODUCT = "arch-os"
 
-# Where the copy is driven. A failure page prints the log's path, so this ends up
-# inside a published picture: short and neutral for that reason alone.
+# Short and neutral, since a failure page prints the log path into a published
+# picture.
 WORK = pathlib.Path("/tmp/product")
 
-# What a step may press by name. Anything else is typed as it stands.
+# Keys a step may press by name. Anything else is typed as is.
 KEY = {
     "enter": b"\r",
     "esc": b"\x1b",
@@ -96,21 +91,21 @@ KEY = {
     "left": b"\x1bOD",
 }
 
-# The mark the interface puts in front of the row under the cursor.
+# The mark in front of the row under the cursor.
 CURSOR = "\u25b6"
 
 STEP_KEYS = {"page", "shot", "frame", "choose", "press"}
 FRAMES = ("settled", "running")
 
-# How long a page is given to arrive. Generous, as a run of simulated steps holds
-# the page after them for a minute. Still an upper bound, so a stray step says so.
+# Seconds a page may take. Generous, since simulated steps hold the next page
+# for a minute. Still a bound, so a stray step fails.
 WAIT = 180.0
 
 
 class Session:
     """A program on a pty: press keys, keep every frame it drew.
 
-    Every read is kept, because some pages only exist for a moment.
+    Every read is kept, since some pages exist only for a moment.
     """
 
     def __init__(self, argv, cwd, env=None):
@@ -148,9 +143,8 @@ class Session:
         return self
 
     def choose(self, row, tries=40):
-        """Put the cursor on a row by its name, not by how many rows stand
-        above it: a list is reordered the day a row is added to it. Up first,
-        as far as it goes, then down."""
+        """Put the cursor on a row by name, not by position, since rows get
+        added. Up first, as far as it goes, then down."""
         for key in ("up", "down"):
             last = None
             for _ in range(tries):
@@ -213,22 +207,21 @@ def text(stream):
 
 
 def filled(seen):
-    """How many lines carry text. A rule or a border carries none, so this
-    measures the page rather than the frame around it."""
+    """Lines with text. Rules and borders carry none, so this measures the
+    page, not its frame."""
     return sum(1 for line in seen.split("\n") if any(c.isalnum() for c in line))
 
 
-# The counter a run page carries. The lookahead keeps it off a report, where the
-# same two numbers say how many tests passed.
+# A run page's counter. The lookahead skips a report's "N of M tests passed".
 COUNTER = re.compile(r"(\d+) of (\d+)(?! (tests|optional))")
 
 
 def running(frames, wants):
-    """The frame from the middle of a run on its way to the page now on screen.
+    """The frame from the middle of the run that led to the page on screen.
 
-    Which frames a run lands on is a race, so this asks for the one nearest the
-    middle rather than a particular count. It stops where the wanted page
-    arrives: a run paused to ask or report is past the point worth a picture.
+    Which frames a run produces is a race, so this takes the one nearest the
+    middle, not a fixed count. It stops at the wanted page, since a run paused
+    to ask or report is past the moment worth a picture.
     """
     caught = []
     for frame in frames:
@@ -244,9 +237,8 @@ def running(frames, wants):
     if not caught:
         raise SystemExit(f"no frame caught the run on its way to {wants!r}")
 
-    # Between two redraws the list is briefly gone, leaving a frame nobody saw.
-    # A run page keeps one size throughout, so the size that comes up most is the
-    # whole one and a rarer size is such a gap.
+    # Between redraws the list is briefly gone. A run page keeps one size, so
+    # the most common size is the whole page and a rarer one is such a gap.
     whole = Counter(rows for rows, _, _ in caught).most_common(1)[0][0]
     return min((got for got in caught if got[0] == whole),
                key=lambda got: abs(got[1] - 0.5))[2]
@@ -263,11 +255,10 @@ def color(value, fallback):
 
 
 def painted(char, bg):
-    """How a cell is filled rather than lettered, or None where it is neither.
+    """How a cell is filled rather than lettered, or None.
 
-    A cell of background with nothing in it counts: it is the quiet field a
-    code is read against, and it has to reach the edges of its line like the
-    ink beside it does.
+    An empty cell with a background counts: it is the quiet zone a code is read
+    against and must reach the edges of its line like the ink beside it.
     """
     if char in PAINT:
         return PAINT[char]
@@ -277,7 +268,7 @@ def painted(char, bg):
 
 
 def markup(screen):
-    """One span a run of same-looking cells, not one a character."""
+    """One span per run of same-looking cells, not per character."""
     rows = []
     for y in range(screen.lines):
         line, run, style = [], "", None
@@ -298,11 +289,10 @@ def markup(screen):
 
 
 def cell(style, text):
-    """One run of cells, as writing or as a filled box.
+    """One run of cells, as text or as a filled box.
 
-    Every run is its own box, exactly one line tall, so what is painted meets
-    what is painted beside and above it: a row on its surface shows no seam
-    between its words, and a code none between its rows.
+    Every run is a box exactly one line tall, so painted areas meet without a
+    seam between the words of a highlighted row or the rows of a code.
     """
     fg, bg, bold, fill = style
     box = f"display:inline-block;vertical-align:top;height:{LINE_PX}px;"
@@ -315,10 +305,10 @@ def cell(style, text):
 
 
 def card(stream, out):
-    """The screen on a rounded card, with the same gap on all four sides.
+    """The screen on a rounded card with the same gap on all four sides.
 
-    The card is sized by what is in it and the picture trimmed back to the card,
-    so the gap is the padding and nothing here has to know how wide a glyph is.
+    The card sizes to its content and the picture is trimmed to the card, so
+    the gap is the padding and no glyph width is needed.
     """
     page = out.with_suffix(".html")
     page.write_text(f"""<!DOCTYPE html>
@@ -353,7 +343,7 @@ def card(stream, out):
 
 
 def lines(value, where, what):
-    """One line of text or several, read as several."""
+    """A line of text or a list of them, as a list."""
     if isinstance(value, str):
         value = [value]
     if not isinstance(value, list) or not value or not all(
@@ -363,11 +353,9 @@ def lines(value, where, what):
 
 
 def storyboard(path):
-    """The takes, checked before the first program is started and handed back
-    with every single value already read as a list.
+    """The takes, checked before the first start, with single values as lists.
 
-    A key nobody reads is a step that quietly does nothing, and the only sign of
-    it would be a picture that never changed.
+    An unknown key would be a step that silently does nothing.
     """
     takes = yaml.safe_load(path.read_text())
     if not isinstance(takes, list) or not takes:
@@ -407,11 +395,11 @@ def storyboard(path):
 
 
 def pristine(source):
-    """A copy of the program, in the folder every take is driven in."""
+    """A fresh copy of the program in WORK."""
     shutil.rmtree(WORK, ignore_errors=True)
     WORK.mkdir(parents=True)
     if not source.is_file():
-        raise SystemExit(f"{source}: no program - run make build")
+        raise SystemExit(f"{source}: no program. Run make build.")
     shutil.copy(source, WORK / PRODUCT)
     (WORK / PRODUCT).chmod(0o755)
 
@@ -420,17 +408,17 @@ def play(takes, source, out):
     for take in takes:
         pristine(source)
         argv = [f"./{PRODUCT}", take["module"], "--dry-run"]
-        # C.UTF-8 rather than whatever this desk is set to: the language on a
-        # published picture is a decision, not a leak.
+        # C.UTF-8, not the host's locale: the language of a published picture is
+        # chosen, not leaked.
         session = Session(argv, str(WORK), env={"LANG": "C.UTF-8", "LC_ALL": "C.UTF-8"})
-        # Where the frames on the way to the page being waited for begin. A
-        # question page carries a counter too, so the search for a run must not
-        # reach back past the page before it.
+        # Start of the frames leading to the awaited page. A question page
+        # carries a counter too, so the run search must not reach past the
+        # previous page.
         since = 0
         try:
             for step in take["steps"]:
-                # Settled before it is photographed or typed into: a page still
-                # fading in is a shade off, and it swallows a key outright.
+                # Settled before a shot or a key: a page still fading in is a
+                # shade off and swallows keys.
                 session.until(step["page"]).still()
                 if "shot" in step:
                     frame = (running(session.frames[since:], step["page"])

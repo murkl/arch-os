@@ -1,5 +1,5 @@
-//! The profiles, offered once on a machine that answered nothing. A preset only fills in
-//! answers that stay ordinary values, so one keypress undoes nothing hard.
+//! Profiles, offered once on a machine without answers. A profile only sets ordinary answers,
+//! so a keypress does nothing irreversible.
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -20,7 +20,7 @@ impl PresetsPage {
         }
     }
 
-    /// What follows a profile: its answers in force, and the next link of the opening.
+    /// Applies the profile's answers and moves on to the next opening step.
     fn taken(ctx: &mut Ctx) -> Flow {
         ctx.presets_seen = true;
         ctx.settle();
@@ -34,9 +34,9 @@ impl PresetsPage {
 }
 
 impl Page for PresetsPage {
-    /// Offered only on a machine without an answer file.
+    /// Only shown without an answer file.
     fn unattended(&mut self, _: &mut Ctx) -> Result<Flow, String> {
-        Err(crate::i18n::t("There is no answer file."))
+        Err(crate::i18n::t("No answer file."))
     }
 
     fn title(&self) -> String {
@@ -55,7 +55,7 @@ impl Page for PresetsPage {
             self.list = List::new(rows);
             self.list.described = true;
         }
-        let text = t("Fills in every answer, each changeable afterwards.");
+        let text = t("Prefills every answer.");
         let y = paragraph(buf, area, area.y, &text, ctx.style.tone(Tone::Muted)) + 1;
         self.list.draw(
             Rect::new(area.x, y, area.width, area.bottom().saturating_sub(y)),
@@ -96,8 +96,8 @@ impl Page for PresetsPage {
         true
     }
 
-    /// Back from the action that fetches a profile: what it wrote into the answer file is
-    /// read back over the answers held and put in force, like one written out here.
+    /// After the fetch action, reloads its answer file over the held answers and applies them, like
+    /// a local profile.
     fn resumed(&mut self, ctx: &mut Ctx) -> Flow {
         if !ctx.imported {
             return Flow::Stay;

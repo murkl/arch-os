@@ -1,6 +1,5 @@
-//! One question: a list where the setting has a set of answers, a text box where not, with its
-//! description above and what a wrong answer is told below. The same page from the opening, the
-//! dashboard, an action and a run.
+//! Question page: a list for a setting with options, else a text box, with the description above
+//! and the error below. Shared by the opening, the dashboard, actions and runs.
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -14,7 +13,7 @@ use crate::ui::input::Input;
 use crate::ui::list::{List, Picked, Row};
 use crate::ui::{Ctx, Data, Flow, Key, Page, Tone};
 
-/// What is asked: a setting, or a question a task puts mid-run.
+/// A setting, or a task's question mid-run.
 #[derive(Clone, Copy)]
 pub enum Which {
     Setting(&'static Setting),
@@ -71,14 +70,14 @@ impl Which {
     }
 }
 
-/// The answers a question offers, and a suggestion: read off the frame, since a list a command
-/// prints can take a moment.
+/// Options and a suggestion, read off the drawing thread, since a command's list can take a
+/// moment.
 pub struct Answers {
     pub options: Vec<(String, String)>,
     pub prefill: String,
 }
 
-/// Reads them, as the page does in the background and a run does before it asks.
+/// Reader for the page's background job and for a run before it asks.
 pub fn answers(which: Which, ctx: &Ctx) -> impl FnOnce() -> Answers + Send + 'static {
     let (options, from, prefill) = which.options();
     let env = ctx.env();
@@ -116,7 +115,7 @@ pub fn answers(which: Which, ctx: &Ctx) -> impl FnOnce() -> Answers + Send + 'st
     }
 }
 
-/// A row of the list of answers: one of them, or the one that opens the text box.
+/// An option, or the row that opens the text box.
 #[derive(Clone, Debug, PartialEq)]
 enum Choice {
     Value(String),
@@ -126,7 +125,6 @@ enum Choice {
 pub struct QuestionPage {
     which: Which,
     then: Then,
-    /// The answers, once read.
     loaded: Option<Answers>,
     list: Option<List<Choice>>,
     input: Option<Input>,
@@ -151,7 +149,7 @@ impl QuestionPage {
         }
     }
 
-    /// A question a run stopped for, its answers read already.
+    /// A run's question, with its answers already read.
     pub fn ask(a: &'static Ask, answers: Answers) -> QuestionPage {
         let mut page = QuestionPage::new(Which::Ask(a), Then::Pop);
         page.started = true;
@@ -159,8 +157,8 @@ impl QuestionPage {
         page
     }
 
-    /// Lays the page out once the answers are there: a list opening on the answer in force or
-    /// the suggestion, or a text box holding it.
+    /// Once answers are read: a list on the current answer or the suggestion, or a text box holding
+    /// it.
     fn arrange(&mut self, ctx: &mut Ctx) {
         let Some(answers) = &self.loaded else { return };
         let mut current = ctx.store.get(self.which.name()).to_string();
@@ -168,8 +166,8 @@ impl QuestionPage {
             if answers.options.iter().any(|(v, _)| *v == current) {
                 ctx.store.reoffer(&s.name);
             }
-            // An answer that will not do is why the question is asked again, so the page says so
-            // at once. A list then opens on its suggestion, a box keeps what it held.
+            // An invalid answer is why the question is asked again, so the error shows at once. A
+            // list then opens on its suggestion, a box keeps its text.
             let turned = (!current.is_empty())
                 .then(|| ctx.store.invalid(s, &current))
                 .flatten();
@@ -212,8 +210,7 @@ impl QuestionPage {
         ctx.store.set(self.which.name(), &value);
         crate::info!("{}: {value}", self.which.name());
         if let Which::Setting(s) = self.which {
-            // In force before the next page rather than beside it: the console keyboard has to
-            // hold for whatever is typed next.
+            // Applied before the next page, as the console keymap must hold for the next key.
             let _ = ctx.apply(s);
             ctx.save();
             ctx.resolve();
@@ -223,8 +220,8 @@ impl QuestionPage {
 }
 
 impl Page for QuestionPage {
-    /// A setting is asked only where the file holds no usable answer. A question a task asks
-    /// takes its answer from the environment, and is left unanswered where it holds none.
+    /// A setting is only asked without a valid answer in the file. A task's question takes its
+    /// answer from the environment, else stays unanswered.
     fn unattended(&mut self, ctx: &mut Ctx) -> Result<Flow, String> {
         let Some(answers) = &self.loaded else {
             return Ok(Flow::Stay);
@@ -324,7 +321,7 @@ impl Page for QuestionPage {
                     let value = input.text.trim().to_string();
                     return self.commit(value, ctx);
                 }
-                // A box opened from a list goes back to that list rather than out of the page.
+                // Esc in a box opened from a list returns to the list instead of leaving the page.
                 Key::Esc if self.list.is_some() => {
                     self.input = None;
                     self.problem = None;
@@ -345,7 +342,7 @@ impl Page for QuestionPage {
                 _ => Flow::Stay,
             };
         };
-        // A list whose box is open from the start has nothing to close: esc leaves the question.
+        // A filter box open from the start has nothing to close, so esc leaves the question.
         if key == Key::Esc && list.typing() && self.which.filter() == Filter::Open {
             return Flow::Ignored;
         }

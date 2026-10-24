@@ -1,6 +1,6 @@
-# One pull request a week, titled as title.yml demands. A release is taken
-# after a week: a compromised one is usually pulled by then. The crates are
-# pinned by runtime/Cargo.lock and raised by hand.
+# Titles pass title.yml. Releases wait 7 days, since a compromised one is
+# usually pulled by then. Crates stay pinned by runtime/Cargo.lock and are
+# raised by hand.
 
 version: 2
 

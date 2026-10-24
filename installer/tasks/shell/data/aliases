@@ -1,5 +1,5 @@
-# Color only on a terminal, so `ls | grep` reads plain names. Icons and the tree
-# view need eza, and icons a font the text console lacks.
+# Color only on a terminal, so `ls | grep` reads plain names. Icons need a font
+# the text console lacks.
 alias ls="ls -h --color=auto --group-directories-first"
 command -v eza &>/dev/null && alias ls="eza --color=auto --group-directories-first"
 command -v eza &>/dev/null && [ "$TERM" != linux ] && alias ls="eza --icons=auto --color=auto --group-directories-first"
@@ -15,7 +15,7 @@ alias logs="systemctl --failed; echo; journalctl -p 3 -b"
 alias q="exit"
 alias c="clear"
 command -v fastfetch &>/dev/null && alias fetch="fastfetch"
-# Run as you: pacdiff -s calls sudoedit itself, so the editor it opens is yours.
+# Not as root: pacdiff -s calls sudoedit, which opens the account's editor.
 alias pacnew="env DIFFPROG=\$EDITOR pacdiff -s"
 command -v meld &>/dev/null && alias pacnew="env DIFFPROG=meld pacdiff -s"
 command -v xdg-open &>/dev/null && alias open="xdg-open"
@@ -23,12 +23,12 @@ alias myip="curl https://ipv4.icanhazip.com"
 alias ..="cd .."
 alias ...="cd ../.."
 
-# sudoedit edits a copy of a root file with your editor and configuration, so
-# the editor never runs as root.
+# sudoedit edits a copy with the account's editor and configuration, so the
+# editor never runs as root.
 alias sv="sudoedit"
 
-# paru covers the AUR and asks for the password itself, without it the changing
-# ones go through sudo. Asked at each start, so the aliases follow paru.
+# paru asks for the password itself. Checked at each start, so the aliases
+# follow paru.
 if command -v paru &>/dev/null; then
     alias paci='paru -S'
     alias pacu='paru -Syu'
@@ -45,6 +45,6 @@ alias pacl='pacman -Qe'
 alias pacla='pacman -Qm'
 alias pacli='pacman -Qi'
 
-# Keeps three versions of what is installed and none of what is gone. The weekly
-# timer runs the first half.
+# Three versions of installed packages, none of removed ones. The weekly timer
+# runs only the first part.
 command -v paccache &>/dev/null && alias pacrc="sudo paccache -r && sudo paccache -ruk0"

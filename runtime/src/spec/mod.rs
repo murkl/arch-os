@@ -1,9 +1,9 @@
-//! What the product and its modules declare, read and checked once. It knows the shape of the
-//! yaml, so nothing below it knows anything about the system being installed.
+//! The declarations of the product and its modules, read and checked once. Nothing outside this
+//! module knows the yaml.
 //!
 //! A product is `product.yaml` and `lib.sh` beside the modules, each a folder with a
-//! `module.yaml` and a folder `tasks/<task>/` for each task it declares. A module that loads is a
-//! module that runs: an authoring mistake fails the tests, never a task that silently never fires.
+//! `module.yaml` and a `tasks/<task>/` folder per task. A module that loads runs: an authoring
+//! mistake fails the tests, never silently at run time.
 
 pub mod condition;
 pub mod order;
@@ -21,7 +21,7 @@ pub const PRODUCT: &str = "product.yaml";
 pub const LIB: &str = "lib.sh";
 pub const MODULE: &str = "module.yaml";
 
-/// The names the runtime puts into a script's environment, and so no setting may take.
+/// Prefix of the variables the runtime sets, which no setting may take.
 pub const RESERVED: &str = "MODULE_";
 pub const DRY_RUN: &str = "DRY_RUN";
 pub const CONF: &str = "MODULE_CONF";
@@ -29,22 +29,22 @@ pub const LOG: &str = "MODULE_LOG";
 pub const LANGUAGE: &str = "MODULE_LANGUAGE";
 pub const VERSION: &str = "MODULE_VERSION";
 
-/// The two answers of a bool, written into the answer file and tested by scripts as they stand.
+/// Bool answers, written to the answer file and compared by scripts verbatim.
 pub const TRUE: &str = "true";
 pub const FALSE: &str = "false";
 
 // ─── The model ───────────────────────────────────────────────────────────────
 
-/// The product: what no module answers for its neighbors.
+/// What belongs to no single module.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Product {
-    /// The name over every page. Not translated: it is a name.
+    /// Heading of every page. Not translated, it is a name.
     pub title: String,
     pub accent: Option<Rgb>,
-    /// The slot of the console's sixteen colors the accent takes there, by name: the console
-    /// shows slots, painted by whoever dressed it.
+    /// The accent as one of the 16 console slots, by name. The console palette decides the
+    /// actual color.
     pub console_accent: Option<String>,
-    /// Behind the row under the cursor, and its slot on the console.
+    /// Background of the selected row. `console_surface` is its console slot.
     pub surface: Option<Rgb>,
     pub console_surface: Option<String>,
     /// The wordmark, line by line. Everything above the first blank line is the eyebrow.
@@ -55,7 +55,7 @@ pub struct Product {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Rgb(pub u8, pub u8, pub u8);
 
-/// One thing about the machine the header watches: shell whose exit status is the answer.
+/// Header status from the exit status of `check`.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Status {
     pub check: Shell,
@@ -64,8 +64,7 @@ pub struct Status {
     pub fail: String,
 }
 
-/// Shell a step runs: a function of lib.sh, the only shell the yaml names, or a script of a
-/// task, held as its path in the product.
+/// A lib.sh function, the only shell the yaml names, or a task script by its product path.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Shell {
     Call(String),
@@ -74,33 +73,32 @@ pub enum Shell {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Module {
-    /// The folder, which opens it from the command line and names its answers and log.
+    /// The folder name: command line argument and name of the answer file and log.
     pub id: String,
     pub title: String,
-    /// The dashboard's first row, which starts the work.
+    /// Title of the dashboard row that starts the run.
     pub start: String,
-    /// Asked after every password and before the work: the question, then what happens.
+    /// Asked after the passwords, before the run: the question, then the consequence.
     pub confirm: Option<String>,
-    /// The words a finished run ends on, the headline first.
+    /// Shown after a finished run, the headline first.
     pub report: Option<String>,
-    /// Actions that have to say yes before the work. The first no stands a page in front.
+    /// Actions that must succeed before the run. The first failure blocks it with a page.
     pub requires: Vec<String>,
-    /// The dashboard's rows, in the order the module lists them.
     pub dashboard: Vec<Entry>,
-    /// The group whose heading the interface language stands under, first.
+    /// The group that lists the interface language first.
     pub language: Option<String>,
     pub on: On,
-    /// What any of its scripts means by stopping itself with a status, the headline first.
+    /// Text per exit status of any of its scripts, the headline first.
     pub errors: BTreeMap<i32, String>,
     pub stages: Vec<String>,
     pub presets: Vec<Preset>,
     pub settings: Vec<Setting>,
-    /// In the order they run: by stage, and inside a stage by `needs`.
+    /// In run order: by stage, within a stage by `needs`.
     pub tasks: Vec<Task>,
     pub actions: Vec<Action>,
 }
 
-/// A row of the dashboard: one of its own, or an action by its name.
+/// A dashboard row: built in, or an action by name.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Entry {
     Start,
@@ -109,14 +107,14 @@ pub enum Entry {
     Action(String),
 }
 
-/// The dashboard's own rows by the name a module lists them under. An action cannot take one.
+/// Built-in dashboard rows by name. No action may take one.
 const ENTRIES: [(&str, Entry); 3] = [
     ("start", Entry::Start),
     ("settings", Entry::Settings),
     ("reset", Entry::Reset),
 ];
 
-/// Where else a module offers its actions: each a list of their names, in order.
+/// Action names offered on leave, failure and success.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct On {
     pub leave: Vec<String>,
@@ -124,8 +122,7 @@ pub struct On {
     pub success: Vec<String>,
 }
 
-/// A profile, offered once on a machine that has answered nothing: a set of answers, or
-/// the action that fetches them.
+/// Offered on a first run: a set of answers, or the action that fetches them.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Preset {
     pub title: String,
@@ -158,7 +155,7 @@ impl Kind {
         Kind::ALL.iter().find(|(n, _)| *n == s).map(|(_, k)| *k)
     }
 
-    /// The keys only some kinds take. One on a kind that does not is refused: nothing reads it.
+    /// Keys only some kinds take. Any other is refused, nothing would read it.
     fn takes(self) -> &'static [&'static str] {
         match self {
             Kind::Text => &["default", "prefill", "value-from", "pattern"],
@@ -176,12 +173,11 @@ impl Kind {
         }
     }
 
-    /// Chosen from a list.
     pub fn listed(self) -> bool {
         matches!(self, Kind::List | Kind::OpenList)
     }
 
-    /// Never written down: asked right before the run that needs it, used and forgotten.
+    /// Never stored: asked right before the run that needs it, then forgotten.
     pub fn secret(self) -> bool {
         matches!(self, Kind::Password | Kind::NewPassword)
     }
@@ -194,34 +190,33 @@ pub enum Filter {
     Open,
 }
 
-/// One thing a module needs to know, and everything about what a valid answer looks like. The
-/// same rules hold when asking and when reading back an answer file somebody edited by hand.
+/// A setting and the rules for a valid answer. The rules hold for typed and hand-edited answers
+/// alike.
 #[derive(Clone, Debug)]
 pub struct Setting {
     pub name: String,
     pub kind: Kind,
     pub title: String,
     pub description: String,
-    /// The heading its row sits under on the dashboard.
+    /// Dashboard heading.
     pub group: String,
     pub required: bool,
     pub default: String,
     pub options: Vec<String>,
     pub options_from: Option<Shell>,
-    /// Printed instead of asked: read when the module opens and whenever an answer changes,
-    /// never shown and never stored.
+    /// Printed instead of asked: read on open and on every answer change, never shown or stored.
     pub value_from: Option<Shell>,
     /// Prints a suggestion. Still asked.
     pub prefill: Option<Shell>,
-    /// Puts the answer into effect on this machine, such as a keymap, as it is given.
+    /// Applies the answer to this machine as it is given, such as a keymap.
     pub apply: Option<Shell>,
-    /// Tries a password on what it opens before it is taken.
+    /// Verifies a password before it is accepted.
     pub check: Option<Shell>,
-    /// Asked before everything else, its list's box open, since nothing is known to type on yet.
+    /// Asked before anything else, with the filter open, since no keymap is set yet.
     pub first: bool,
     pub filter: Filter,
     pub pattern: Option<Regex>,
-    /// What a wrong answer is told.
+    /// Message for an invalid answer.
     pub error: Option<String>,
     pub when: Vec<Condition>,
 }
@@ -238,7 +233,7 @@ impl Setting {
         self.value_from.is_some()
     }
 
-    /// Whether the list opens with its box: asked first, nothing is known to type `/` on.
+    /// A setting asked first opens with the filter, no keymap is set to type `/` on.
     pub fn filter(&self) -> Filter {
         if self.first {
             Filter::Open
@@ -256,8 +251,8 @@ impl Setting {
     }
 }
 
-/// A question a task puts mid-run, for a value only known once some work is done. Always a
-/// list, never stored, and a list that comes back empty skips the task.
+/// A question a task asks mid-run, for a value known only after earlier work. Always a list,
+/// never stored. An empty list skips the task.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Ask {
     pub name: String,
@@ -270,7 +265,7 @@ pub struct Ask {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Task {
-    /// Its name under its stage, which `needs` and `yes-after` name it by.
+    /// Key under its stage, referenced by `needs` and `yes-after`.
     pub id: String,
     pub stage: String,
     /// Its folder in the product: `installer/tasks/partition`.
@@ -281,15 +276,14 @@ pub struct Task {
     pub asks: Option<Ask>,
     /// A yes or no before it runs, opening on No. No skips it.
     pub confirm: Option<String>,
-    /// Tasks before it: where one ran in this run, `confirm` opens on Yes.
+    /// Earlier tasks. If one ran in this run, `confirm` opens on Yes.
     pub yes_after: Vec<String>,
-    /// A page the run stops on afterwards, the first paragraph the headline.
+    /// Page the run stops on afterwards, the first paragraph is the headline.
     pub report: Option<String>,
-    /// The last line it printed is shown under it while it runs.
+    /// Shows its last output line under it while it runs.
     pub progress: bool,
     /// Runs on a dry run too, reading `DRY_RUN` itself.
     pub simulates: bool,
-    /// Its failure does not stop the run.
     pub allow_failure: bool,
     pub errors: BTreeMap<i32, String>,
     /// It has a `test.sh`.
@@ -313,26 +307,27 @@ impl Task {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Action {
     pub id: String,
-    /// Its work, a function of lib.sh: exit 0 is yes.
+    /// A lib.sh function, exit 0 is success.
     pub run: Shell,
     pub title: String,
-    /// The sentence under its row. Choosing the row is the consent, so it says what leaves.
+    /// Text under its row. Choosing the row is the consent, so it states what leaves the
+    /// machine.
     pub description: String,
-    /// The heading its row stands under on the dashboard.
+    /// Dashboard heading.
     pub group: Option<String>,
-    /// What a no from it means: the page in front of the work, the headline over a failure.
+    /// Shown on failure: as the page that blocks the run, or as the headline.
     pub error: Option<String>,
-    /// Actions that have to say yes for this one to be offered at all.
+    /// Actions that must succeed for this one to be offered.
     pub requires: Vec<String>,
-    /// Opened where this one says no: the first of them this machine offers.
+    /// Opened on failure: the first one this machine offers.
     pub on_failure: Vec<String>,
-    /// Its questions before it runs, a page each, kept for this session only.
+    /// Asked before it runs, a page each, kept for this session only.
     pub inputs: Vec<Setting>,
     pub confirm: Option<String>,
     pub report: Option<String>,
-    /// An answer its script wrote, drawn on the report as a code to scan.
+    /// Variable its script writes, shown on the report as a QR code.
     pub qr: Option<String>,
-    /// Its page is the terminal itself.
+    /// Runs in the terminal instead of a page.
     pub tty: bool,
     pub simulates: bool,
     pub errors: BTreeMap<i32, String>,
@@ -351,13 +346,11 @@ impl Module {
         self.tasks.iter().find(|t| t.id == id)
     }
 
-    /// The actions a list of names stands for, in its order.
     pub fn named(&self, names: &[String]) -> Vec<&Action> {
         names.iter().filter_map(|n| self.action(n)).collect()
     }
 
-    /// Every variable a script of this module may be handed: its settings, its actions' inputs
-    /// and answers, its tasks' questions.
+    /// Every variable a script may get: settings, action inputs and answers, task questions.
     pub fn declared(&self) -> Vec<&str> {
         let mut out: Vec<&str> = self.settings.iter().map(|s| s.name.as_str()).collect();
         for a in &self.actions {
@@ -373,21 +366,19 @@ impl Module {
         out
     }
 
-    /// What a script of this module means by stopping itself with `code`: the unit's own words,
-    /// else the module's. The headline, then the rest.
+    /// Text for exit status `code`: the unit's own, else the module's.
     pub fn told<'a>(&'a self, own: &'a BTreeMap<i32, String>, code: i32) -> Option<&'a str> {
         own.get(&code)
             .or_else(|| self.errors.get(&code))
             .map(String::as_str)
     }
 
-    /// Whether leaving asks about the machine: a module with ways out says it booted to run it.
+    /// Leaving asks what to do with the machine. Leave actions mean it booted for this module.
     pub fn leaves(&self) -> bool {
         !self.on.leave.is_empty()
     }
 
-    /// Every sentence this module says, once each, in the order it says them: what a catalog
-    /// translates.
+    /// Every text of this module once, in order: what a catalog translates.
     pub fn texts(&self) -> Vec<String> {
         let mut out: Vec<String> = Vec::new();
         let mut add = |s: &str| {
@@ -439,7 +430,6 @@ impl Module {
     }
 }
 
-/// Everything embedded, loaded.
 #[derive(Debug)]
 pub struct Loaded {
     pub product: Product,
@@ -453,7 +443,6 @@ impl Loaded {
         self.modules.iter().find(|m| m.id == id)
     }
 
-    /// Every sentence of the product and its modules.
     pub fn texts(&self) -> Vec<String> {
         let mut out: Vec<String> = Vec::new();
         if let Some(s) = &self.product.status {
@@ -474,8 +463,8 @@ impl Loaded {
     }
 }
 
-/// The embedded product, loaded once. A product that does not load fails the tests, so a
-/// shipped binary never gets here with one.
+/// The embedded product, loaded once. The tests fail on a product that does not load, so the
+/// panic never ships.
 pub fn loaded() -> &'static Loaded {
     static LOADED: OnceLock<Loaded> = OnceLock::new();
     LOADED.get_or_init(|| {
@@ -490,8 +479,8 @@ pub fn loaded() -> &'static Loaded {
 
 // ─── The yaml as written ─────────────────────────────────────────────────────
 
-/// A value read as text whatever shape it was written in: `default: true` is how a person
-/// writes one, and every answer ends up in an environment variable.
+/// Any scalar as text: `default: true` is natural yaml, and every answer ends up in an
+/// environment variable.
 #[derive(Deserialize)]
 #[serde(untagged)]
 enum Scalar {
@@ -512,7 +501,7 @@ impl Scalar {
     }
 }
 
-/// `when:` as it may be written: one line, or a list of them.
+/// `when:` as one line or a list.
 #[derive(Deserialize, Default)]
 #[serde(untagged)]
 enum When {
@@ -532,8 +521,7 @@ impl When {
     }
 }
 
-/// A map in the order it is written, since that order says something: the stages and the tasks
-/// in each.
+/// A map in written order, which orders the stages and their tasks.
 struct Ordered<T>(Vec<(String, T)>);
 
 impl<T> Default for Ordered<T> {
@@ -730,7 +718,6 @@ struct ActionOnFile {
 
 // ─── Loading ─────────────────────────────────────────────────────────────────
 
-/// The embedded files, by path.
 struct Files<'a>(&'a [(&'a str, &'a [u8])]);
 
 impl Files<'_> {
@@ -760,7 +747,7 @@ impl Files<'_> {
         out.into_iter().collect()
     }
 
-    /// Whether anything lies directly under `prefix` that is a file rather than a folder.
+    /// A file directly under `prefix`, if any.
     fn loose(&self, prefix: &str) -> Option<&str> {
         self.0
             .iter()
@@ -773,7 +760,6 @@ fn yaml<T: for<'de> Deserialize<'de>>(files: &Files, path: &str) -> Result<T, St
     serde_saphyr::from_str(files.text(path)?).map_err(|e| format!("{path}: {e}"))
 }
 
-/// Reads every file of a product and checks it over.
 pub fn load(files: &[(&str, &[u8])]) -> Result<Loaded, String> {
     let files = Files(files);
     let lib = files.has(LIB);
@@ -795,7 +781,7 @@ pub fn load(files: &[(&str, &[u8])]) -> Result<Loaded, String> {
         .find(|a| modules.iter().all(|m| m.action(&a.id).is_none()))
     {
         return Err(format!(
-            "{PRODUCT}: actions: {}: nothing names it, so it never runs: name it under requires or on: in a {MODULE} or another action",
+            "{PRODUCT}: actions: {}: not named in any {MODULE}",
             a.id
         ));
     }
@@ -806,7 +792,7 @@ pub fn load(files: &[(&str, &[u8])]) -> Result<Loaded, String> {
     })
 }
 
-/// Every function lib.sh defines, read rather than run.
+/// Functions lib.sh defines, parsed, not run.
 fn functions(lib: &str) -> BTreeSet<String> {
     let mut out = BTreeSet::new();
     for line in lib.lines() {
@@ -833,11 +819,11 @@ fn is_name(s: &str) -> bool {
         && chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
-/// The function of lib.sh a key names, written `name()`.
+/// A lib.sh function written `name()`.
 fn shell(expr: &str, functions: &BTreeSet<String>) -> Result<Shell, String> {
     let expr = expr.trim();
     let Some(name) = expr.strip_suffix("()").filter(|n| is_name(n)) else {
-        return Err(format!("{expr:?} is no function of {LIB}, written name()"));
+        return Err(format!("{expr:?} is not written name()"));
     };
     if !functions.contains(name) {
         return Err(format!("{name}() is not a function in {LIB}"));
@@ -858,7 +844,8 @@ fn opt_shell(
     }
 }
 
-/// The console's colors a product may name, black and white left out: the field and the text.
+/// Console slots a product may name: all but black and bright-black, the background and the
+/// muted text.
 pub const SLOTS: [&str; 14] = [
     "red",
     "green",
@@ -885,7 +872,7 @@ fn parse_rgb(s: &str) -> Option<Rgb> {
     Some(Rgb(byte(0)?, byte(2)?, byte(4)?))
 }
 
-/// The product, and the actions it declares for every module to name.
+/// The product and its shared actions.
 fn product(files: &Files, functions: &BTreeSet<String>) -> Result<(Product, Vec<Action>), String> {
     if !files.has(PRODUCT) {
         return Err(format!("{PRODUCT}: no product beside the runtime"));
@@ -908,7 +895,7 @@ fn product(files: &Files, functions: &BTreeSet<String>) -> Result<(Product, Vec<
         .map(|l| l.trim_end().to_string())
         .collect();
     if logo.iter().all(|l| l.trim().is_empty()) && f.logo.is_some() {
-        return Err(format!("{PRODUCT}: logo: draws nothing"));
+        return Err(format!("{PRODUCT}: logo: blank"));
     }
     let status = match f.status {
         Some(s) => Some(status(s, functions).map_err(|e| format!("{PRODUCT}: status: {e}"))?),
@@ -919,16 +906,16 @@ fn product(files: &Files, functions: &BTreeSet<String>) -> Result<(Product, Vec<
         && !SLOTS.contains(&slot.as_str())
     {
         return Err(format!(
-            "{PRODUCT}: console-accent: {slot:?} is one of {}",
+            "{PRODUCT}: console-accent: {slot:?} is not one of {}",
             SLOTS.join(", ")
         ));
     }
-    // Behind text a console takes only its first eight colors.
+    // A console takes only its first eight colors as background.
     if let Some(slot) = &f.console_surface
         && !SLOTS[..7].contains(&slot.as_str())
     {
         return Err(format!(
-            "{PRODUCT}: console-surface: {slot:?} is one of {}",
+            "{PRODUCT}: console-surface: {slot:?} is not one of {}",
             SLOTS[..7].join(", ")
         ));
     }
@@ -957,7 +944,7 @@ fn filter(s: &Option<String>) -> Result<Filter, String> {
     match s.as_deref() {
         None | Some("collapsed") => Ok(Filter::Collapsed),
         Some("open") => Ok(Filter::Open),
-        Some(other) => Err(format!("filter: {other:?} is open or collapsed")),
+        Some(other) => Err(format!("filter: {other:?} is not open or collapsed")),
     }
 }
 
@@ -965,19 +952,18 @@ fn reflow_opt(s: &Option<String>) -> Option<String> {
     s.as_deref().map(text::reflow).filter(|t| !t.is_empty())
 }
 
-/// A setting as written under its heading, checked over and its shell settled.
 fn setting(f: SettingFile, group: &str, functions: &BTreeSet<String>) -> Result<Setting, String> {
     let name = f.name.clone();
     let fail = |e: String| format!("{name}: {e}");
     if !is_name(&f.name) || f.name.contains(|c: char| c.is_ascii_lowercase()) {
         return Err(format!(
-            "{:?} is no variable name: capitals, digits and _",
+            "{:?} is not a variable name: capitals, digits and _",
             f.name
         ));
     }
     if f.name.starts_with(RESERVED) || f.name == DRY_RUN {
         return Err(fail(format!(
-            "{RESERVED}* and {DRY_RUN} belong to the runtime"
+            "{RESERVED}* and {DRY_RUN} are reserved for the runtime"
         )));
     }
     let kind = match &f.kind {
@@ -1019,36 +1005,26 @@ fn setting(f: SettingFile, group: &str, functions: &BTreeSet<String>) -> Result<
     for (key, _) in set.iter().filter(|(_, on)| *on) {
         if !kind.takes().contains(key) {
             return Err(fail(format!(
-                "a {} takes no {key}, of the keys a type decides only {}",
+                "a {} takes no {key}, only {}",
                 f.kind.as_deref().unwrap_or_default(),
                 kind.takes().join(", ")
             )));
         }
     }
     if kind.listed() && f.options.is_empty() && f.options_from.is_none() {
-        return Err(fail(
-            "a list takes its answers from options or options-from".into(),
-        ));
+        return Err(fail("a list needs options or options-from".into()));
     }
     if !f.options.is_empty() && f.options_from.is_some() {
-        return Err(fail(
-            "options and options-from are two answers to the same question".into(),
-        ));
+        return Err(fail("options and options-from exclude each other".into()));
     }
     if kind.secret() && f.first {
-        return Err(fail(
-            "a password is asked right before the run, so it cannot be asked first".into(),
-        ));
+        return Err(fail("a password takes no first".into()));
     }
     if f.filter.is_some() && f.first {
-        return Err(fail(
-            "a question asked first carries its box open by itself".into(),
-        ));
+        return Err(fail("a setting with first takes no filter".into()));
     }
     if f.value_from.is_some() && (f.prefill.is_some() || f.first) {
-        return Err(fail(
-            "value-from settles the value: it is neither suggested nor asked first".into(),
-        ));
+        return Err(fail("value-from takes no prefill or first".into()));
     }
     let pattern = match &f.pattern {
         Some(p) => Some(Regex::new(p).map_err(|e| fail(format!("pattern: {e}")))?),
@@ -1082,19 +1058,17 @@ fn setting(f: SettingFile, group: &str, functions: &BTreeSet<String>) -> Result<
     })
 }
 
-/// Statuses a script may stop itself with: above 0, below what bash spends on a command it
-/// cannot run or find and on signals.
+/// Exit statuses 1 to 125. Bash takes the rest for commands it cannot run or find and for
+/// signals.
 fn errors(e: &BTreeMap<i32, String>, names: &[String]) -> Result<BTreeMap<i32, String>, String> {
     let mut out = BTreeMap::new();
     for (code, text) in e {
         if !(1..=125).contains(code) {
-            return Err(format!(
-                "errors: {code}: a script chooses a status from 1 to 125, bash spends the rest"
-            ));
+            return Err(format!("errors: {code}: not a status from 1 to 125"));
         }
         let text = text::reflow(text);
         if text.is_empty() {
-            return Err(format!("errors: {code}: says nothing"));
+            return Err(format!("errors: {code}: empty"));
         }
         placeholders(&format!("errors: {code}"), &text, names)?;
         out.insert(*code, text);
@@ -1102,7 +1076,7 @@ fn errors(e: &BTreeMap<i32, String>, names: &[String]) -> Result<BTreeMap<i32, S
     Ok(out)
 }
 
-/// Refuses a `{{NAME}}` naming no variable of the module: a sentence with a hole in it.
+/// Refuses a `{{NAME}}` that names no variable of the module.
 fn placeholders(key: &str, text: &str, names: &[String]) -> Result<(), String> {
     for name in text::names(text) {
         if !names.contains(&name) {
@@ -1114,7 +1088,7 @@ fn placeholders(key: &str, text: &str, names: &[String]) -> Result<(), String> {
     Ok(())
 }
 
-/// Refuses a condition about a setting nobody declares.
+/// Refuses a condition on an undeclared setting.
 fn conditions(conds: &[Condition], names: &[String]) -> Result<(), String> {
     match conds.iter().find(|c| !names.contains(&c.name)) {
         Some(c) => Err(format!("when: no such setting: {}", c.name)),
@@ -1122,14 +1096,14 @@ fn conditions(conds: &[Condition], names: &[String]) -> Result<(), String> {
     }
 }
 
-/// How an action is run, which decides what it may say.
+/// How an action runs, which decides what it may declare.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum How {
-    /// Runs by itself to answer whether another is offered: no page.
+    /// Runs unasked to decide whether another is offered. No page.
     Unasked,
-    /// Runs by itself in front of the work, and its no is read: it says why.
+    /// Runs unasked before the tasks. Its `error` explains a failure.
     Gating,
-    /// Somebody opens it: a row, a preset, what another opens on failure.
+    /// Opened from a dashboard row, a preset or an `on:` list.
     Opened,
 }
 
@@ -1147,8 +1121,7 @@ fn module(
         return Err(m("title is required".into()));
     }
 
-    // The settings, then every condition once every name is known, so one may be guarded by a
-    // setting declared after it.
+    // Conditions are checked once every name is known, so a setting may depend on a later one.
     let mut settings = Vec::new();
     for (group, list) in f.settings.0 {
         if list.is_empty() {
@@ -1166,11 +1139,10 @@ fn module(
     let stages: Vec<String> = f.stages.0.iter().map(|(s, _)| s.clone()).collect();
     let mut tasks = tasks(files, dir, f.stages, functions)?;
 
-    // Its own actions beside the product's, in name order.
     let own = actions(f.actions, &file, functions)?;
     if let Some(a) = own.iter().find(|a| shared.iter().any(|s| s.id == a.id)) {
         return Err(m(format!(
-            "actions: {}: {PRODUCT} declares it already",
+            "actions: {}: declared in {PRODUCT} already",
             a.id
         )));
     }
@@ -1185,7 +1157,6 @@ fn module(
         }
     };
 
-    // Presets: named by their title and nothing else.
     let mut presets = Vec::new();
     for p in f.presets {
         let t = format!("presets: {}", p.title);
@@ -1198,9 +1169,7 @@ fn module(
             }
         }
         if p.action.is_some() && !p.values.is_empty() {
-            return Err(m(format!(
-                "{t}: written out in values or fetched by an action, not both"
-            )));
+            return Err(m(format!("{t}: values and action exclude each other")));
         }
         presets.push(Preset {
             title: text::reflow(&p.title),
@@ -1214,13 +1183,13 @@ fn module(
         });
     }
 
-    // Which actions run how, the strictest place first. One of its own that nothing names is
-    // refused, one of the product's is not this module's.
+    // How each action runs, the strictest place first. An unnamed own action is refused, an
+    // unnamed product action is dropped.
     let dashboard = dashboard(&f.dashboard).map_err(m)?;
     if let Some(group) = &f.language
         && !settings.iter().any(|s| s.group == *group)
     {
-        return Err(m(format!("language: no setting is in the group {group}")));
+        return Err(m(format!("language: no setting in group {group}")));
     }
     let on = On {
         leave: f.on.leave,
@@ -1238,9 +1207,7 @@ fn module(
      -> Result<(), String> {
         for name in list {
             if !actions.iter().any(|a| a.id == *name) {
-                return Err(format!(
-                    "{where_}: {key}: no such action: {name}, declared under actions: in {MODULE} or {PRODUCT}"
-                ));
+                return Err(format!("{where_}: {key}: no such action: {name}"));
             }
             let seen = how.contains_key(name);
             let was = how.get(name).copied().unwrap_or(How::Unasked);
@@ -1334,12 +1301,12 @@ fn module(
     actions.retain(|a| how.contains_key(&a.id) || !is_shared(&a.id));
     if let Some(a) = actions.iter().find(|a| !how.contains_key(&a.id)) {
         return Err(format!(
-            "{}: nothing names it, so it never runs: name it under requires or on: in {MODULE} or another action",
+            "{}: not named under requires or on: in {MODULE} or another action",
             at(&a.id)
         ));
     }
 
-    // Every name a script may be handed, so a sentence and a condition can be held to them.
+    // Every name a script may get, to check placeholders and conditions against.
     let mut names = setting_names.clone();
     for t in &tasks {
         if let Some(a) = &t.asks {
@@ -1362,7 +1329,7 @@ fn module(
         }
         if let Some(q) = &a.qr {
             if !is_name(q) || q.contains(|c: char| c.is_ascii_lowercase()) {
-                return Err(format!("{at}: qr: {q:?} is no variable name"));
+                return Err(format!("{at}: qr: {q:?} is not a variable name"));
             }
             if names.contains(q) {
                 return Err(format!("{at}: qr: {q} is declared already"));
@@ -1371,8 +1338,7 @@ fn module(
         }
     }
 
-    // Conditions and sentences, now that every name is known: a setting may be guarded by one
-    // declared after it.
+    // Conditions and placeholders, now that every name is known.
     for s in &settings {
         conditions(&s.when, &setting_names).map_err(|e| m(format!("{}: {e}", s.name)))?;
     }
@@ -1413,49 +1379,41 @@ fn module(
     }
     let module_errors = errors(&f.errors, &names).map_err(m)?;
 
-    // What each action may say, by how it runs.
+    // What each action may declare, by how it runs.
     for a in &actions {
         let at = at(&a.id);
         let h = how[&a.id];
         let pages = !a.inputs.is_empty() || a.report.is_some();
         if a.tty && (pages || a.confirm.is_some()) {
-            return Err(format!(
-                "{at}: an action with tty has the terminal for its page"
-            ));
+            return Err(format!("{at}: tty takes no inputs, report or confirm"));
         }
         if a.tty && !a.errors.is_empty() {
-            return Err(format!(
-                "{at}: errors: an action with tty runs without the trap that tells a status it chose"
-            ));
+            return Err(format!("{at}: tty takes no errors"));
         }
         if h != How::Opened && (pages || a.tty || a.confirm.is_some() || !a.errors.is_empty()) {
             return Err(format!(
-                "{at}: it runs by itself where it is named, so it has no page, confirm or errors"
+                "{at}: an action under requires has no page, tty, confirm or errors"
             ));
         }
         if h == How::Gating && a.error.is_none() {
             return Err(format!(
-                "{at}: error: it runs by itself in front of the work, and a no there is read as this sentence"
+                "{at}: error is required for an action under the module's requires"
             ));
         }
         if a.on_failure.contains(&a.id) {
-            return Err(format!(
-                "{at}: on: failure: an action cannot put itself right"
-            ));
+            return Err(format!("{at}: on: failure: names the action itself"));
         }
         if a.qr.is_some() && a.report.is_none() {
-            return Err(format!("{at}: qr: there is no report for it to appear on"));
+            return Err(format!("{at}: qr: needs a report"));
         }
         if a.group.is_some() && !listed.contains(&a.id) {
-            return Err(format!(
-                "{at}: group: only a row of the dashboard stands under a heading, and dashboard does not list it"
-            ));
+            return Err(format!("{at}: group: not a dashboard row"));
         }
     }
     for name in &on.leave {
         let a = actions.iter().find(|a| a.id == *name).unwrap();
         if !a.inputs.is_empty() || a.confirm.is_some() {
-            return Err(m("on: leave: a way out asks nothing, it only goes".into()));
+            return Err(m(format!("on: leave: {name} takes no inputs or confirm")));
         }
     }
     if let Some(ring) = ring(&actions) {
@@ -1482,8 +1440,7 @@ fn module(
     })
 }
 
-/// The dashboard's rows from their names: each once, the row that starts the work and the
-/// answers always among them.
+/// Each name once, `start` and `settings` required.
 fn dashboard(names: &[String]) -> Result<Vec<Entry>, String> {
     let mut out = Vec::new();
     for (i, name) in names.iter().enumerate() {
@@ -1498,19 +1455,15 @@ fn dashboard(names: &[String]) -> Result<Vec<Entry>, String> {
                 .unwrap_or_else(|| Entry::Action(name.clone())),
         );
     }
-    for (name, what) in [
-        ("start", "the row that starts the work"),
-        ("settings", "the answers"),
-    ] {
+    for name in ["start", "settings"] {
         if !names.iter().any(|n| n == name) {
-            return Err(format!("dashboard: {name} is missing, {what}"));
+            return Err(format!("dashboard: {name} is missing"));
         }
     }
     Ok(out)
 }
 
-/// The first ring of actions that wait on each other through their rules, written the way it
-/// goes round.
+/// The first cycle through `requires` and `on: failure`, in walk order.
 fn ring(actions: &[Action]) -> Option<String> {
     fn walk<'a>(
         actions: &'a [Action],
@@ -1543,8 +1496,7 @@ fn ring(actions: &[Action]) -> Option<String> {
         .find_map(|a| walk(actions, &a.id, &mut Vec::new(), &mut done))
 }
 
-/// The tasks under `stages:`, each with a folder `tasks/<task>/` that holds its task.sh, in the
-/// order they run: by stage, and inside a stage after its `needs`.
+/// Tasks under `stages:` in run order, each with a `tasks/<task>/task.sh`.
 fn tasks(
     files: &Files,
     dir: &str,
@@ -1570,21 +1522,17 @@ fn tasks(
                 .chain(&list)
                 .any(|t| t.id == id)
             {
-                return Err(format!(
-                    "{at}: another task has this name, and both would be tasks/{id}/"
-                ));
+                return Err(format!("{at}: declared twice"));
             }
             let tdir = format!("{base}{id}");
             if !files.has(&format!("{tdir}/task.sh")) {
-                return Err(format!("{tdir}: no task.sh, a task does its work in one"));
+                return Err(format!("{tdir}: no task.sh"));
             }
             if f.title.trim().is_empty() {
                 return Err(format!("{at}: title is required"));
             }
             if !f.yes_after.is_empty() && f.confirm.is_none() {
-                return Err(format!(
-                    "{at}: yes-after: a task without confirm is never asked"
-                ));
+                return Err(format!("{at}: yes-after without confirm"));
             }
             let asks = match f.asks {
                 Some(a) => {
@@ -1594,12 +1542,10 @@ fn tasks(
                         || name.starts_with(RESERVED)
                         || name == DRY_RUN
                     {
-                        return Err(format!("{at}: asks: {name:?} is no variable name"));
+                        return Err(format!("{at}: asks: {name:?} is not a variable name"));
                     }
                     if a.options.is_empty() && a.options_from.is_none() {
-                        return Err(format!(
-                            "{at}: asks: a question takes its answers from options or options-from"
-                        ));
+                        return Err(format!("{at}: asks: needs options or options-from"));
                     }
                     Some(Ask {
                         title: text::reflow(&a.title),
@@ -1613,7 +1559,7 @@ fn tasks(
                 }
                 None => None,
             };
-            // Conditions are only parsed here. Which settings they name is checked by the module.
+            // Only parsed here. The module checks the names.
             let mut when = Vec::new();
             for line in f.when.lines() {
                 if !line.trim().is_empty() {
@@ -1640,20 +1586,18 @@ fn tasks(
         }
         by_stage.push((stage, list));
     }
-    // A folder no task is named after never runs.
+    // A folder without a task never runs.
     if let Some(loose) = files.loose(&base) {
-        return Err(format!(
-            "{base}{loose}: a task lies in a folder of its own, tasks/<task>/"
-        ));
+        return Err(format!("{base}{loose}: not in tasks/<task>/"));
     }
     for found in files.dirs(&base) {
         if !by_stage.iter().flat_map(|(_, l)| l).any(|t| t.id == found) {
             return Err(format!(
-                "{base}{found}: no task under stages: in {MODULE} is named after it"
+                "{base}{found}: no such task under stages: in {MODULE}"
             ));
         }
     }
-    // needs stay within a stage: the stages order the rest.
+    // `needs` stays within a stage, the stages order the rest.
     let mut out = Vec::new();
     for (stage, group) in &by_stage {
         for t in group {
@@ -1666,10 +1610,10 @@ fn tasks(
                     let elsewhere = by_stage.iter().flat_map(|(_, l)| l).find(|o| o.id == *n);
                     return Err(match elsewhere {
                         Some(o) => format!(
-                            "{at}: needs {n}, which is in {}: needs orders tasks within one stage, the stages order the rest",
+                            "{at}: needs {n}, which is in {}: needs stays within a stage",
                             o.stage
                         ),
-                        None => format!("{at}: needs unknown task: {n}"),
+                        None => format!("{at}: needs: no such task: {n}"),
                     });
                 }
             }
@@ -1696,7 +1640,6 @@ fn tasks(
     Ok(out)
 }
 
-/// The actions under `actions:` of `file`, each run by the function it names.
 fn actions(
     map: BTreeMap<String, ActionFile>,
     file: &str,
@@ -1706,9 +1649,7 @@ fn actions(
     for (id, f) in map {
         let at = format!("{file}: actions: {id}");
         if ENTRIES.iter().any(|(n, _)| *n == id) {
-            return Err(format!(
-                "{at}: the dashboard keeps this name for a row of its own"
-            ));
+            return Err(format!("{at}: reserved for a dashboard row"));
         }
         if f.title.trim().is_empty() {
             return Err(format!("{at}: title is required"));
@@ -1719,7 +1660,7 @@ fn actions(
             let name = s.name.clone();
             if s.first || s.value_from.is_some() {
                 return Err(format!(
-                    "{at}: {name}: an input is asked when its action is opened, so it takes no first or value-from"
+                    "{at}: {name}: an input takes no first or value-from"
                 ));
             }
             let s = setting(s, "", functions).map_err(|e| format!("{at}: {e}"))?;
@@ -1756,7 +1697,7 @@ pub mod tests {
     /// The fixture's module: two stages, a question, a gate and a way out.
     const SETUP: &str = "title: Setup\nstart: Install now\nconfirm: |\n  Install on {{TUX_DISK}}?\n\n  Everything on it is erased.\nreport: |\n  Set up\n\n  {{TUX_HOST}} boots.\nrequires: [root]\ndashboard: [start, note, settings, reset, net]\nlanguage: Region\non:\n  leave: [restart]\n  failure: [share]\n  success: [shell]\nerrors:\n  3: |\n    No internet\n\n    Connect and start again.\nactions:\n  root:\n    title: Running as root\n    error: This has to run as root.\n    run: is_root()\n  note:\n    title: Leave a note\n    description: Writes a note.\n    group: Extras\n    run: note()\n    inputs:\n      - name: TUX_NOTE\n        type: text\n        title: Note\n        required: true\n    report: |\n      Noted\n\n      {{TUX_NOTE}} is written down.\n  net:\n    title: Join a network\n    description: Joins one.\n    group: Network\n    run: join()\n    requires: [root]\n  share:\n    title: Share the log\n    description: Puts the log online.\n    run: share()\n    report: |\n      Shared\n    qr: TUX_URL\n    simulates: true\nstages:\n  prepare:\n    disk:\n      title: Prepare the disk\n      errors:\n        10: |\n          The disk is gone\n\n          {{TUX_DISK}} is not there.\n  install:\n    base:\n      title: Install the base\n      needs: [snapshot]\n      report: |\n        Installed\n\n        {{TUX_HOST}} is ready.\n      errors:\n        10: |\n          The name is taken\n\n          {{TUX_HOST}} is on the network already.\n    desktop:\n      title: Install the desktop\n      needs: [base]\n      when: TUX_DESKTOP != none\n      allow-failure: true\n    snapshot:\n      title: Go back to a snapshot\n      asks:\n        name: TUX_SNAPSHOT\n        title: Snapshot\n        options-from: options_snapshots()\n      confirm: |\n        Put {{TUX_SNAPSHOT}} in place?\npresets:\n  - title: Desktop\n    description: A desktop.\n    values:\n      TUX_DESKTOP: gnome\n  - title: Core\n    values:\n      TUX_DESKTOP: none\nsettings:\n  Region:\n    - name: TUX_KEYMAP\n      type: list\n      title: Keyboard\n      required: true\n      first: true\n      options: [us, de]\n      apply: apply_keymap()\n  System:\n    - name: TUX_HOST\n      type: text\n      title: Hostname\n      description: What the machine calls itself.\n      required: true\n      prefill: prefill_host()\n      pattern: '^[a-z][a-z0-9-]*$'\n      error: Lower case letters, digits and - only.\n    - name: TUX_DESKTOP\n      type: list\n      title: Desktop\n      required: true\n      options: [gnome, none]\n    - name: TUX_DRIVER\n      type: list\n      title: Driver\n      required: true\n      options: [free, none]\n      when: TUX_DESKTOP != none\n    - name: TUX_PASSWORD\n      type: new-password\n      title: Password\n      required: true\n    - name: TUX_VM\n      type: bool\n      title: Virtual machine\n      value-from: value_vm()\n  Storage:\n    - name: TUX_DISK\n      type: list\n      title: Disk\n      required: true\n      options-from: options_disks()\n      pattern: '^sd'\n    - name: TUX_ENCRYPT\n      type: bool\n      title: Encryption\n      default: true\n";
 
-    /// A small product in memory: one module, and two actions of the product it names.
+    /// One module and two product actions it names.
     pub fn fixture() -> Vec<(&'static str, &'static [u8])> {
         vec![
             ("product.yaml", b"title: Tux\naccent: \"#8fbcbb\"\nconsole-accent: cyan\nlogo: |\n  Tux\n\n  ####\nstatus:\n  check: check_online()\n  pass: Online\n  fail: Offline\nactions:\n  restart:\n    title: Restart\n    description: Starts the machine again.\n    run: restart()\n  shell:\n    title: Open a shell\n    description: Until exit.\n    run: open_shell()\n    tty: true\n"),
@@ -1789,16 +1730,15 @@ pub mod tests {
         Box::leak(s.into_boxed_str())
     }
 
-    /// What a module of `tiny` declares after the head a test gives: three actions that name
-    /// nothing and one task.
+    /// The rest of a `tiny` module.yaml: three actions that name nothing and one task.
     const TINY: &str = "actions:\n  root:\n    title: Root\n    error: No\n    run: fn_a()\n  row:\n    title: Row\n    run: fn_a()\n  asks:\n    title: Asks\n    run: fn_a()\n    inputs:\n      - name: A_IN\n        type: text\n        title: In\nstages:\n  a:\n    one:\n      title: One\n";
 
-    /// A product of one module, with the head of its module.yaml given and `TINY` after it.
+    /// One module, `head` then `TINY` as its module.yaml.
     fn tiny(head: &str) -> Vec<(&'static str, &'static [u8])> {
         tiny_with(head, TINY)
     }
 
-    /// A product of one module, its module.yaml the head and the rest given.
+    /// One module, `head` then `rest` as its module.yaml.
     fn tiny_with(head: &str, rest: &str) -> Vec<(&'static str, &'static [u8])> {
         vec![
             ("product.yaml", b"title: Tux\n"),
@@ -1897,15 +1837,15 @@ pub mod tests {
             ("title: M\nrequires: [root]\n", "missing field `dashboard`"),
             (
                 "title: M\nrequires: [root]\ndashboard: [start, settings, asks]\nlanguage: Nope\non:\n  leave: [row]\n",
-                "language: no setting is in the group Nope",
+                "language: no setting in group Nope",
             ),
             (
                 "title: M\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  System:\n    - name: lower\n      type: text\n      title: T\n",
-                "no variable name",
+                "not a variable name",
             ),
             (
                 "title: M\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  System:\n    - name: MODULE_X\n      type: text\n      title: T\n",
-                "belong to the runtime",
+                "reserved for the runtime",
             ),
             (
                 "title: M\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  System:\n    - name: A\n      type: text\n      title: T\n      options: [x]\n",
@@ -1921,7 +1861,7 @@ pub mod tests {
             ),
             (
                 "title: M\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  System:\n    - name: A\n      type: text\n      title: T\n      prefill: ./prefill.sh\n",
-                "is no function of lib.sh, written name()",
+                "is not written name()",
             ),
             (
                 "title: M\nrequires: [root]\ndashboard: [start, settings, asks, row]\nsettings:\n  System:\n    - name: A\n      type: text\n      title: T\n      when: B == 1\n",
@@ -1953,7 +1893,7 @@ pub mod tests {
             ),
             (
                 "title: M\ndashboard: [start, settings]\n",
-                "m/module.yaml: actions: asks: nothing names it",
+                "m/module.yaml: actions: asks: not named",
             ),
             (
                 "title: M\nrequires: [root, asks]\non:\n  leave: [row]\ndashboard: [start, settings]\n",
@@ -1961,11 +1901,11 @@ pub mod tests {
             ),
             (
                 "title: M\nrequires: [root, row]\ndashboard: [start, settings, asks]\n",
-                "read as this sentence",
+                "error is required",
             ),
             (
                 "title: M\nrequires: [root]\ndashboard: [start, settings, row]\non:\n  leave: [asks]\n",
-                "a way out asks nothing",
+                "asks takes no inputs or confirm",
             ),
         ] {
             refused(&tiny(module), says);
@@ -1973,11 +1913,11 @@ pub mod tests {
         for (rest, says) in [
             (
                 TINY.replace("    title: Row\n", "    title: Row\n    group: Ways\n"),
-                "group: only a row of the dashboard",
+                "group: not a dashboard row",
             ),
             (
                 TINY.replace("  row:\n", "  reset:\n"),
-                "m/module.yaml: actions: reset: the dashboard keeps this name",
+                "m/module.yaml: actions: reset: reserved for a dashboard row",
             ),
             (
                 TINY.replace("    run: fn_a()\n  row:", "  row:"),
@@ -1997,17 +1937,17 @@ pub mod tests {
             ),
             (
                 format!("{TINY}  b:\n    one:\n      title: One again\n"),
-                "both would be tasks/one/",
+                "stages: b: one: declared twice",
             ),
         ] {
             refused(&tiny_with(OK, &rest), says);
         }
         let mut files = tiny(OK);
         files.push(("m/tasks/two/task.sh", b"true\n"));
-        refused(&files, "m/tasks/two: no task under stages:");
+        refused(&files, "m/tasks/two: no such task under stages:");
         let mut files = tiny(OK);
         files.push(("m/tasks/loose.sh", b"true\n"));
-        refused(&files, "a task lies in a folder of its own");
+        refused(&files, "loose.sh: not in tasks/<task>/");
         refused(
             &edited(
                 "    base:\n      title: Install the base\n      needs: [snapshot]\n",
@@ -2042,7 +1982,7 @@ pub mod tests {
         );
         refused(
             &edited("    report: |\n      Shared\n", ""),
-            "no report for it",
+            "qr: needs a report",
         );
         refused(
             &edited(
@@ -2056,7 +1996,7 @@ pub mod tests {
                 "  root:\n",
                 "  restart:\n    title: Again\n    run: join()\n  root:\n",
             ),
-            "actions: restart: product.yaml declares it already",
+            "actions: restart: declared in product.yaml already",
         );
         refused(
             &with("product.yaml", "title: X\naccent: red\n"),
@@ -2072,8 +2012,7 @@ pub mod tests {
         );
     }
 
-    /// A product's action belongs to each module that names it, and one no module names is
-    /// refused.
+    /// A product action no module names is refused.
     #[test]
     fn a_product_action_is_one_of_the_modules_that_name_it() {
         let product = std::str::from_utf8(fixture()[0].1).unwrap().to_string();
@@ -2082,7 +2021,7 @@ pub mod tests {
         ));
         refused(
             &with("product.yaml", spare),
-            "product.yaml: actions: spare: nothing names it",
+            "product.yaml: actions: spare: not named",
         );
         let mut files = with("product.yaml", spare);
         files.push((

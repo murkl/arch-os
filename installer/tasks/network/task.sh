@@ -1,4 +1,3 @@
-# The machine's name and the network it comes up on.
 # https://wiki.archlinux.org/title/Installation_guide#Network_configuration
 
 # /etc/hosts stays as shipped: nss-myhostname answers for this name.
@@ -7,7 +6,6 @@ echo "$ARCH_OS_HOSTNAME" >"${MNT}/etc/hostname"
 
 arch-chroot "$MNT" systemctl enable NetworkManager
 
-# A key of one [section] of an iwd profile.
 iwd_setting() {
     awk -v section="[$2]" -v key="$3" '
         /^\[/ { inside = ($0 == section); next }
@@ -34,8 +32,8 @@ for profile in /var/lib/iwd/*.psk /var/lib/iwd/*.open; do
     if [ "$(iwd_setting "$profile" Settings Hidden)" = "true" ]; then
         args+=(wifi.hidden yes)
     fi
-    # wpa-psk is WPA2 and WPA3 Personal alike. The processed key stands in
-    # where iwd kept no passphrase.
+    # wpa-psk covers WPA2 and WPA3 Personal. The derived key stands in where
+    # iwd kept no passphrase.
     if [[ $profile == *.psk ]]; then
         secret="$(iwd_setting "$profile" Security Passphrase)"
         [ -n "$secret" ] || secret="$(iwd_setting "$profile" Security PreSharedKey)"
@@ -43,5 +41,5 @@ for profile in /var/lib/iwd/*.psk /var/lib/iwd/*.open; do
     fi
     keyfile="${MNT}/etc/NetworkManager/system-connections/${name}.nmconnection"
     (umask 077 && arch-chroot "$MNT" nmcli --offline connection add "${args[@]}" >"$keyfile")
-    echo "carried over the wireless network ${ssid}"
+    echo "carried over Wi-Fi ${ssid}"
 done

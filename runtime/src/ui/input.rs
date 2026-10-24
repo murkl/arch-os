@@ -1,4 +1,4 @@
-//! A one-line text box.
+//! One-line text box.
 
 use ratatui::buffer::Buffer;
 
@@ -27,7 +27,7 @@ impl Input {
         }
     }
 
-    /// Takes a key that edits the text. Returns whether it did.
+    /// Returns whether the key edited the text.
     pub fn key(&mut self, key: Key) -> bool {
         match key {
             Key::Char(c) if !c.is_control() => self.text.push(c),
@@ -52,7 +52,7 @@ impl Input {
         let s = &ctx.style;
         let prompt = format!("{} ", s.glyphs.path);
         let after = put(buf, x, y, &prompt, w, s.bold(Tone::Accent));
-        // One cell stays free for the cursor, which stands where the next letter goes.
+        // One cell stays free for the cursor after the text.
         let room = w.saturating_sub(after - x + 1) as usize;
         if self.text.is_empty() {
             put(

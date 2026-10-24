@@ -1,3 +1,3 @@
-# The module scripts are sourced by the runtime with lib.sh in front, never
-# executed: no shebang to read. Everything else names its shell itself.
+# Module scripts are sourced after lib.sh, never executed, so they have no
+# shebang. Everything else has one.
 shell=bash

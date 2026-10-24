@@ -1,56 +1,48 @@
-# The Recovery, top to bottom the way a repair goes. A name() is a function of
-# lib.sh, a task's work its tasks/<task>/task.sh: runtime/README.md
+# The Recovery in run order. A name() is a lib.sh function: runtime/README.md
 
 title: Recovery
 start: Repair now
 
 # ─── The Way In ──────────────────────────────────────────────────────────────
 
-# Nothing waits for a network: a repair downloads nothing, and the network may
-# be what broke.
+# No network: a repair downloads nothing, and the network may be what broke.
 requires: [live-image, root]
 
-# On its own partition both questions are answered already, see iso/recovery/.
-# The snapshot to go back to is asked by the rollback, once the disk is open.
+# Answered beforehand on its own partition, see iso/recovery/. The rollback asks
+# for the snapshot once the disk is open.
 settings:
   Storage:
     - name: ARCH_OS_RECOVERY_DISK
       type: list
       title: Disk
-      description: |
-        The disk with the Arch OS to repair. Opening it changes nothing.
+      description: Holds the Arch OS to repair. Opening it changes nothing.
       required: true
       options-from: options_disks()
       pattern: '^/dev/[A-Za-z0-9_-]+$'
       error: Choose a disk that exists.
 
-    # Not asked: a LUKS header is readable without the password.
+    # A LUKS header is readable without the password.
     - name: ARCH_OS_RECOVERY_ENCRYPTED
       type: bool
       title: Disk encryption
-      description: Whether that disk is encrypted with LUKS.
       value-from: value_disk_encrypted()
 
-    # Typed once and tried on the disk where it is typed.
+    # Typed once, tested on the disk.
     - name: ARCH_OS_RECOVERY_PASSWORD
       type: password
       title: Encryption password
-      description: |
-        Unlocks the disk. Asked right before the repair and never saved.
+      description: Unlocks the disk. Never saved.
       when: ARCH_OS_RECOVERY_ENCRYPTED == true
       required: true
       error: Wrong password for this disk.
       check: check_disk_password()
 
-  # Asked first, because the disk's password is typed on it. Never written to
-  # the system being repaired.
+  # First, since the disk password is typed on it. Never written to the system.
   Region:
     - name: ARCH_OS_RECOVERY_KEYMAP
       type: list
       title: Console keyboard
-      description: |
-        Your keyboard layout, active right away. The live image's is
-        preselected.
+      description: Preselected from the live system.
       first: true
       required: true
       options-from: options_keymaps()
@@ -58,81 +50,76 @@ settings:
       pattern: '^[A-Za-z0-9_.-]+$'
       apply: apply_recovery_keymap()
 
-# No reset: each of its two answers is changed in its own row.
+# No reset: each of the two answers has its own row.
 dashboard: [start, settings, wifi, update]
 language: Region
 
 # ─── The Work ────────────────────────────────────────────────────────────────
 
-# Each stage a when, each task in it a what.
+# Stage is when, task is what.
 stages:
-  # The system unlocked and mounted.
+  # System unlocked and mounted.
   open:
     system:
       title: Unlock and mount the system
-      # A disk that is not what the Installer makes.
+      # A disk the Installer did not make.
       errors:
         10: |
           No Arch OS found
 
-          {{ARCH_OS_RECOVERY_DISK}} holds no installation this Recovery can
-          open. Choose another disk on the dashboard.
+          Choose another disk.
         11: |
           Unknown layout
 
-          {{ARCH_OS_RECOVERY_DISK}} lacks subvolumes this Recovery expects. Use
-          the Recovery of the release it was installed with.
+          Use the Recovery of the release {{ARCH_OS_RECOVERY_DISK}} was
+          installed with.
 
-  # A snapshot in place of the system.
+  # Snapshot in place of the system.
   rollback:
     snapshot:
       title: Roll back to a snapshot
-      # The snapshots are on the disk this run has just opened, so they are
-      # asked here. Without any, the list is empty and the step is skipped.
+      # Asked here, since the snapshots are on the disk just opened. An empty
+      # list skips the step.
       asks:
         name: ARCH_OS_RECOVERY_SNAPSHOT
         title: Snapshot
-        description: |
-          Replaces the system. Newest first, with date and description.
+        description: Replaces the system. Newest first.
         options-from: options_snapshots()
         filter: open
       confirm: |
         Roll back {{ARCH_OS_RECOVERY_DISK}} to {{ARCH_OS_RECOVERY_SNAPSHOT}}?
 
-        The current system is replaced by this snapshot and stays as a snapshot
-        of its own, so this can be undone. /home and the other snapshots stay.
+        The current system becomes a snapshot of its own, so this can be undone.
+        /home and the other snapshots stay.
 
-  # The boot files made again from what the system holds.
+  # Boot files rebuilt from the system.
   rebuild:
     boot:
       title: Rebuild the boot files
       confirm: |
         Rebuild kernel images, initramfs and boot entries?
 
-        Needed after a rollback past a kernel update, otherwise the system boots
-        without its modules. Everything comes from the system itself, offline.
-      # A snapshot may hold other kernel modules than /boot starts.
+        Needed after a rollback past a kernel update, or the system boots
+        without its modules. Works offline.
+      # A snapshot may hold other kernel modules than /boot.
       yes-after: [snapshot]
       # Modules without the image Arch installs beside them.
       errors:
         10: |
           Kernel image missing
 
-          The system holds modules of a kernel without the image beside them,
-          so no boot files can be built from it. Roll back to another snapshot.
+          Roll back to another snapshot.
 
 # The statuses lib.sh names.
 errors:
   3: |
     No internet connection
 
-    Choose Connect to Wi-Fi on the dashboard or plug in a cable, then try again.
-    A repair works without internet.
+    Connect to Wi-Fi on the dashboard or plug in a cable.
   4: |
     GitHub unreachable
 
-    The internet works, but GitHub, which hosts the Arch OS releases, is
-    unreachable. Try again in a few minutes.
+    Try again later.
 
 # ─── Around It ───────────────────────────────────────────────────────────────
 
@@ -142,20 +129,17 @@ on:
   success: [chroot]
 
 actions:
-  # Under requires: without a network, the update's own no says what to do.
+  # Without a network the update's own error says what to do.
   online:
     title: Internet
     run: check_online()
 
-  # Under requires: the Recovery updates itself, and from the ISO only one that
-  # no longer starts.
+  # Itself, or from the ISO one that no longer starts.
   recovery-to-update:
-    title: A Recovery to update
+    title: Recovery to update
     run: recovery_to_update()
 
-  # On the dashboard of the Recovery on its partition, and of one started
-  # elsewhere for a disk whose Recovery no longer starts. Choosing the row
-  # looks, what is found is installed only after update-install asks.
+  # Choosing the row only looks. update-install asks before installing.
   update:
     title: Update the Recovery
     description: |
@@ -165,18 +149,17 @@ actions:
     requires: [recovery-to-update]
     run: recovery_up_to_date()
     error: |
-      The update needs the internet. Choose Connect to Wi-Fi on the dashboard or
-      plug in a cable.
+      No internet connection. Connect to Wi-Fi on the dashboard or plug in a
+      cable.
     report: |
       Nothing to update
 
-      There is no newer Recovery for the release series of this system.
+      No newer Recovery in this release series.
     on:
       failure: [update-install]
 
-  # Opened where update found a Recovery to install. An encrypted system is
-  # opened for it, since the system's keys sign the new one where it signs its
-  # boot chain.
+  # Opened where update found one. An encrypted system is opened, since its
+  # keys sign the new Recovery.
   update-install:
     title: Install the newest Recovery
     requires: [online]
@@ -186,7 +169,7 @@ actions:
         title: Encryption password
         description: |
           Opens the system, whose keys sign the new Recovery under Secure Boot.
-          Asked right before the update and never saved.
+          Never saved.
         when: ARCH_OS_RECOVERY_ENCRYPTED == true
         required: true
         error: Wrong password for this disk.
@@ -194,35 +177,31 @@ actions:
     confirm: |
       Install the newest Recovery of this release series?
 
-      It is downloaded, verified against its checksum and written to its
-      partition. The new one runs from the next start.
+      Downloads, verifies and writes it to its partition. Active from the next
+      start.
     run: install_recovery_update()
     error: |
-      Installing the Recovery failed. Until it succeeds, the Recovery on the
-      disk may not start. Choose Update the Recovery again.
+      Recovery update failed. Until an update succeeds, the Recovery on the disk
+      may not start.
     # No internet and no GitHub are the module's.
     errors:
       10: |
         Download interrupted
 
-        Nothing was changed. Try again.
+        Nothing changed.
       11: |
         Download damaged
 
-        The checksum does not match, so the download was deleted. Nothing was
-        changed. Try again.
+        Nothing changed.
       12: |
         Recovery too large
 
-        It does not fit its partition and was not installed. The current
-        Recovery stays.
+        Nothing changed.
       13: |
         Writing the Recovery failed
 
-        The check after writing failed. The system boots as before, the Recovery
-        only after a successful update. Try again. If it keeps failing, the disk
-        may be defective.
+        The system boots as before, the Recovery only after a successful update.
     report: |
       Recovery updated
 
-      The new one runs from the next start.
+      Active from the next start.

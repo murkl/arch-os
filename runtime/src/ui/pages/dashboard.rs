@@ -1,6 +1,5 @@
-//! The dashboard: the row that starts the work, every answer under its heading with the language
-//! under one of them, what the module offers here and the reset, in the order the module lists
-//! them. Every row opens a page.
+//! Dashboard: start row, answers under their headings, actions and reset, in module order.
+//! Every row opens a page.
 
 use crate::spec::{Action, Entry, Setting};
 use ratatui::buffer::Buffer;
@@ -21,7 +20,7 @@ enum Item {
     Reset,
 }
 
-/// Two rows mean the same where they name the same declaration.
+/// Rows are equal when they name the same declaration.
 impl PartialEq for Item {
     fn eq(&self, other: &Item) -> bool {
         match (self, other) {
@@ -34,18 +33,17 @@ impl PartialEq for Item {
 
 pub struct DashboardPage {
     list: List<Item>,
-    /// The opening ran once this page was reached.
+    /// The opening ran, on the first return to this page.
     opened: bool,
-    /// The lists the answers were chosen from are read again, before the work starts.
+    /// Rereading the answers' option lists before the run.
     checking: bool,
 }
 
-/// The answers no list offers any more.
+/// Answers missing from their reread option list.
 pub struct Unoffered(Vec<String>);
 
-/// Every answer shown, under its group's heading, and the interface language first under the
-/// heading the module names, which stands even while every answer of its group is hidden. With
-/// the group they end with.
+/// Visible answers under their group headings, the language first under the heading the module
+/// names, shown even with its group hidden. Also returns the last group.
 fn answers(ctx: &Ctx) -> (Vec<Row<Item>>, Option<&'static str>) {
     let language = || {
         Row::new(Item::Language, t("Interface language"))
@@ -86,10 +84,9 @@ impl DashboardPage {
         }
     }
 
-    /// A blank row parts the blocks: under the start, unless the answers follow under their
-    /// headings, under the answers and under a group of actions. An action with a group stands
-    /// under its heading, once for the actions of one group in a row. Right under answers that end
-    /// with its group, the blank row stands in place of the heading.
+    /// Blank rows separate the start, the answers and each action group, except right before
+    /// headed answers. Consecutive actions of a group share one heading, a blank row right under
+    /// answers ending in that group.
     fn rows(&self, ctx: &Ctx) -> Vec<Row<Item>> {
         let mut rows = Vec::new();
         let mut gap = false;
@@ -139,9 +136,8 @@ impl DashboardPage {
         row
     }
 
-    /// Reads every list an answer was chosen from once more, right before the work: an answer
-    /// file from another machine names its disks, and the list is the rule. A list that also
-    /// takes a typed answer vouches neither way.
+    /// Rereads each chosen option list right before the run, since an answer file from another
+    /// machine names its disks. A list that also takes typed answers is skipped.
     fn begin(&mut self, ctx: &mut Ctx) {
         self.checking = true;
         let env = ctx.env();
@@ -178,7 +174,7 @@ impl DashboardPage {
 }
 
 impl Page for DashboardPage {
-    /// The work is started, as the first row does.
+    /// Starts the run, as the first row does.
     fn unattended(&mut self, ctx: &mut Ctx) -> Result<Flow, String> {
         if !self.checking {
             self.begin(ctx);
@@ -252,8 +248,8 @@ impl Page for DashboardPage {
         super::start(ctx)
     }
 
-    /// Back on top: a card is a thing that gets plugged in, so which actions this machine has is
-    /// asked again, and the first time here the opening runs.
+    /// Rechecks requirements, since a card may have been plugged in. The first return runs the
+    /// opening.
     fn resumed(&mut self, ctx: &mut Ctx) -> Flow {
         ctx.look();
         if !self.opened {

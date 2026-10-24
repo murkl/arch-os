@@ -1,13 +1,9 @@
-# What counts as sound yaml here, for `make lint`. Four of yamllint's defaults
-# are relaxed, each a convention of the linter rather than a rule of the
-# format:
+# Four defaults relaxed, each a linter convention, not a YAML rule:
 #
-#   line-length     the declarations and the catalogs are prose, and a
-#                   sentence broken at column 80 reads and diffs worse.
-#   document-start  every file is one document, which needs no `---`.
-#   truthy          check-keys, because a workflow's `on:` is a key, not a value.
-#   comments        a pinned action carries its version one space out, as
-#                   Dependabot writes it.
+#   line-length     declarations and catalogs are prose, broken lines diff worse
+#   document-start  one document per file, no `---` needed
+#   truthy          check-keys off, since a workflow's `on:` is a key
+#   comments        Dependabot writes a pinned action's version one space out
 
 extends: default
 
@@ -19,5 +15,5 @@ rules:
   comments:
     min-spaces-from-content: 1
 
-# What git leaves out is no source either.
+# Same exclusions as git.
 ignore-from-file: .gitignore

@@ -1,17 +1,16 @@
 #!/bin/bash
-# The console font of both images: Terminus Bold, the one font in Arch that is
-# bold and clean at every size and holds Latin with its accents, Greek and
-# Cyrillic. It lacks the two half blocks a QR code is drawn from, so they go into
-# the two slots of its table that nothing draws.
+# Builds the console font of both images: Terminus Bold, the one font in Arch
+# that is bold and clean at every size and covers accented Latin, Greek and
+# Cyrillic. It lacks the half blocks a QR code needs, so they replace two glyphs
+# nothing here draws.
 #
 #   font.sh <out-dir>
 #
-# One font per size, named arch-os-<size>.psf.gz. The sizes are read out of the
-# launcher that picks from them, so what is built and what is asked for cannot
-# differ.
+# One font per size, named arch-os-<size>.psf.gz. The sizes come from the
+# launcher that picks them, so built and requested sizes cannot differ.
 set -eu
 
-# Bytes are bytes here, whatever the locale does with a high one.
+# Bytes stay bytes, whatever the locale does with a high one.
 export LC_ALL=C
 
 [ "$#" -eq 1 ] || {
@@ -47,9 +46,9 @@ for size in $SIZES; do
     gzip -cd "$source" >"$WORK/font"
     psfgettable "$WORK/font" >"$WORK/table"
 
-    # Where the glyphs start, how many bytes each takes, and its cell. PSF2 says
-    # so in its header. PSF1, which the sizes 8 pixels wide come in, has a
-    # header of 4 bytes and a byte a row.
+    # Glyph offset, bytes per glyph and cell size. PSF2 states them in its
+    # header. PSF1, used for the sizes 8 pixels wide, has a 4 byte header and
+    # one byte per row.
     case "$(od -An -tx1 -N2 "$WORK/font" | tr -d ' ')" in
     72b5) read -r offset _ _ bytes height width < <(od -An -tu4 -w24 --endian=little -j8 -N24 "$WORK/font") ;;
     3604) offset=4 bytes="$(od -An -tu1 -j3 -N1 "$WORK/font" | tr -d ' ')" height="$bytes" width=8 ;;
@@ -58,21 +57,20 @@ for size in $SIZES; do
         exit 1
         ;;
     esac
-    # The launcher takes every size to be twice as tall as it is wide.
+    # The launcher assumes every size is twice as tall as wide.
     [ "$height" -eq "$size" ] && [ "$((width * 2))" -eq "$size" ] || {
-        echo "Error: ${source} is ${width} by ${height}, which the launcher reads as $((size / 2)) by ${size}" >&2
+        echo "Error: ${source} is ${width}x${height}, the launcher expects $((size / 2))x${size}" >&2
         exit 1
     }
     head -c "$((bytes / 2))" /dev/zero >"$WORK/empty"
     tr '\0' '\377' <"$WORK/empty" >"$WORK/solid"
 
-    # The glyph of ╬ becomes ▀ and that of ╪ becomes ▄: the half that is set,
-    # then the half that is not, or the other way round.
+    # ╬ becomes ▀ and ╪ becomes ▄: set half then empty half, or the reverse.
     for patch in 256c:2580:solid:empty 256a:2584:empty:solid; do
         IFS=: read -r old new first second <<<"$patch"
         slot="$(awk -v old="U+${old}" 'NF == 2 && $2 == old { print $1 }' "$WORK/table")"
         [ -n "$slot" ] || {
-            echo "Error: ${source} holds no slot for U+${old} alone, which this takes for U+${new}" >&2
+            echo "Error: ${source} has no slot for U+${old} alone to hold U+${new}" >&2
             exit 1
         }
         cat "$WORK/$first" "$WORK/$second" |
@@ -85,7 +83,7 @@ for size in $SIZES; do
     psfaddtable "$WORK/font" "$WORK/table" "$WORK/font.new"
     for point in 'U+2580' 'U+2584'; do
         psfgettable "$WORK/font.new" | grep -q "$point" || {
-            echo "Error: arch-os-${size} has no ${point} after all" >&2
+            echo "Error: arch-os-${size} lacks ${point} after patching" >&2
             exit 1
         }
     done

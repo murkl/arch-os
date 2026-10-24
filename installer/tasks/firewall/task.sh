@@ -1,10 +1,9 @@
-# firewalld, because NetworkManager hands it every connection's zone and libvirt,
-# docker and podman open their own ports in it. Which zone lets in what:
-# docs/REFERENCE.md#the-firewall
+# NetworkManager hands firewalld every connection's zone, and libvirt, docker
+# and podman open their ports in it. Zones: docs/REFERENCE.md#firewall
 # https://wiki.archlinux.org/title/Firewalld
 chroot_pacman_install firewalld
 arch-chroot "$MNT" systemctl enable firewalld.service
 
-# public, where every unmarked network lands, lets ssh in as shipped. The SSH
-# server task opens it again itself.
+# public, the zone of every unmarked network, ships with ssh open. The ssh task
+# opens it again.
 arch-chroot "$MNT" firewall-offline-cmd --zone=public --remove-service-from-zone=ssh

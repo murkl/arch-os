@@ -1,5 +1,5 @@
-# The theme, the daemon in the image the firmware starts, and a card driver to
-# draw on: each has gone missing quietly before. See docs/REFERENCE.md.
+# Theme, plymouthd and a DRM driver in every image. Each can go missing without
+# an error: docs/REFERENCE.md
 grep -qx 'Theme=arch-os' "${MNT}/etc/plymouth/plymouthd.conf"
 while read -r image; do
     contents="$(arch-chroot "$MNT" lsinitcpio "$image")"

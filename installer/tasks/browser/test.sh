@@ -1,4 +1,4 @@
-# Every link opens in the browser chosen, as GLib, which GNOME asks, says.
+# Through GLib, which GNOME asks.
 entry="$(browser_entry)"
 arch-chroot "$MNT" test -f "/usr/share/applications/${entry}"
 while read -r type; do

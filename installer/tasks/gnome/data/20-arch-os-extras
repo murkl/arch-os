@@ -1,5 +1,4 @@
-# Written by the Arch OS Installer: the dock, the look and the keys every
-# account starts with.
+# Written by Arch OS.
 [org/gnome/shell]
 favorite-apps=[{{FAVORITES}}]
 

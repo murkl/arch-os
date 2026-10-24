@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
-"""Render docs/banner.png: the picture a README opens on.
+"""Render docs/banner.png, the picture a README opens on.
 
-The wordmark is not drawn here. It is read out of the product's own product.yaml -
-the same block of characters the splash screen comes up on - so the banner and
-the program cannot come to disagree about what the product is called. The name,
-the accent and the eyebrow come from there too.
+Wordmark, name, accent and eyebrow come from product.yaml, the block the splash
+screen shows, so banner and program always agree on the name.
 
-This file is the same in every project that uses it. What belongs to one
-project - which screenshots it collages, what it says under the name, how large
-the wordmark is set - is passed in by that project's Makefile.
+Identical in every project that uses it. Screenshots, tagline and wordmark size
+come from the project's Makefile.
 
-Output is 1280x640 at two device pixels to the CSS pixel, which is also the
-size GitHub wants for a repository's social preview: one image, both jobs.
+1280x640 at device scale 2, also the size of GitHub's social preview.
 
 Needs: chromium, imagemagick.
 """
@@ -26,8 +22,8 @@ from collections import defaultdict
 W, H = 1280, 640
 SCALE = 2
 
-# The banner's own size, 16:9 like the screen it is shown on, and that screen's
-# width on the page. The monitor and its stand are measured around it.
+# The banner's 16:9 size and its screen's width on the page. Monitor and stand
+# are measured around it.
 SW, SH = 1120, 630
 SCREEN = 864
 BEZEL = 11
@@ -36,16 +32,15 @@ MONITOR_TOP = 30
 NECK, NECK_W = 58, 150
 FOOT = 236
 
-BACK ="#232830"  # a shade under Nord polar night, so the cards lift off it
+BACK ="#232830"  # below Nord polar night, so the cards stand out
 TEXT = "#d8dee9"
 MUTED = "rgba(216,222,233,.42)"
 
 
 # --- the wordmark, as one path -------------------------------------------
 #
-# A block of cells becomes a single outline rather than one rect per cell:
-# adjacent rects show hairline seams wherever the browser lands them on a
-# fractional pixel, and an outline cannot.
+# One outline instead of a rect per cell: adjacent rects show hairline seams on
+# fractional pixels.
 
 
 def rings(filled):
@@ -77,9 +72,8 @@ def rings(filled):
 def step(edges, point, heading):
     """Leave a vertex, turning as tightly clockwise as its edges allow.
 
-    Where two cells meet at a corner only, the vertex between them carries two
-    ways out. Taking the clockwise-most keeps them two rings that touch instead
-    of one ring that crosses itself.
+    Two cells meeting only at a corner give the vertex two exits. The
+    clockwise-most keeps two touching rings instead of one crossing itself.
     """
     out = edges[point]
     if len(out) > 1 and heading is not None:
@@ -143,7 +137,7 @@ def wordmark(block, color, cell):
     )
 
 
-# --- the product, as it describes itself ---------------------------------
+# --- the product ---------------------------------------------------------
 
 
 def logo_block(product):
@@ -173,10 +167,9 @@ def data_uri(path):
 
 # --- the page ------------------------------------------------------------
 #
-# The banner is the screen of a monitor cut out of its page, with shadows that
-# lift it off a light one and vanish on a dark one. It is laid out at a 16:9
-# size of its own and scaled onto the screen, so the wordmark keeps the cell
-# size the project passes in.
+# A monitor cut out of its page, with shadows that lift it off a light page and
+# vanish on a dark one. Laid out at its own 16:9 size and scaled onto the
+# screen, so the wordmark keeps the project's cell size.
 
 
 def page(args):
@@ -201,8 +194,8 @@ def page(args):
     position:relative;
   }}
 
-  /* The stand: an aluminium arm, narrower where it leans back and darker at
-     its edges, on a thin foot with a contact shadow under it. */
+  /* Stand: aluminium arm, narrower where it leans back, darker at the edges,
+     on a thin foot with a contact shadow. */
   .floor {{
     position:absolute; left:{(W - FOOT * 1.5) / 2}px; top:{foot_top + 2}px;
     width:{FOOT * 1.5}px; height:20px;
@@ -223,8 +216,8 @@ def page(args):
     box-shadow:0 0 0 1px rgba(0,0,0,.06), 0 4px 8px -4px rgba(0,0,0,.3);
   }}
 
-  /* The monitor: a hairline of aluminium around black glass. A faint edge and
-     a soft shadow below it set the rim off a light page. */
+  /* Monitor: aluminium hairline around black glass. A faint edge and a soft
+     shadow set the rim off a light page. */
   .monitor {{
     position:absolute; left:{mx}px; top:{my}px; width:{mw}px; height:{mh}px;
     padding:{RIM}px; border-radius:16px;
@@ -246,16 +239,15 @@ def page(args):
     overflow:hidden; border-radius:3px;
   }}
 
-  /* The banner on the screen. */
   .banner {{
     position:absolute; left:0; top:0; width:{SW}px; height:{SH}px;
     transform:scale({SCREEN / SW}); transform-origin:0 0;
     background:{BACK};
   }}
 
-  /* The field: a faint grid, a glow behind the cards, a vignette. No scan
-     lines - at one device pixel they moire the moment GitHub scales the
-     banner down, and they cost more in bytes than they carry. */
+  /* Field: faint grid, glow behind the cards, vignette. No scan lines: they
+     moire once GitHub scales the banner down, and cost more bytes than they
+     carry. */
   .grid, .glow, .vig {{ position:absolute; inset:0; }}
   .grid {{
     background-image:
@@ -280,8 +272,7 @@ def page(args):
     width:480px; z-index:5;
   }}
   .mark, .mark svg {{ width:64px; height:64px; display:block; }}
-  /* a selector, so a mark drawn in currentColor takes the product's accent
-     rather than the fallback its own file carries */
+  /* currentColor in the mark takes the product's accent, not its fallback */
   .mark svg {{ color:{accent}; }}
   .eyebrow {{
     margin-top:30px; font-size:13px; letter-spacing:.34em;
@@ -348,7 +339,7 @@ def main():
     args = p.parse_args()
 
     if len(args.card) != 2:
-        p.error("--card is given exactly twice: the card behind, then the one in front")
+        p.error("--card twice: the card behind, then the one in front")
 
     out = args.out.resolve()
     html = out.with_suffix(".html")
@@ -366,10 +357,9 @@ def main():
     finally:
         html.unlink(missing_ok=True)
 
-    # 256 colors and the whole alpha: the screen's gradients survive a palette,
-    # the fading shadows band in one. Measured at RMSE 0.0022 at most against the
-    # full render on a white and a dark page, for under 40% of the bytes with the
-    # sub filter.
+    # 256 colors, alpha kept whole: the gradients survive a palette, the fading
+    # shadows would band in one. At most RMSE 0.0022 against the full render on
+    # a white and a dark page, at under 40% of the bytes with the sub filter.
     subprocess.run([
         "magick", str(out),
         "(", "+clone", "-alpha", "off", "-dither", "None", "-colors", "256", ")",

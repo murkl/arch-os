@@ -1,5 +1,4 @@
-//! The language, asked before anything else is read, under the wordmark and in no language in
-//! particular: the one page never translated.
+//! Language page under the wordmark, before anything else. The only untranslated page.
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -10,8 +9,8 @@ use crate::ui::draw::{center, width};
 use crate::ui::list::{List, Picked, Row};
 use crate::ui::{Ctx, Flow, Key, Nav, Page, Tone};
 
-/// Short, plain English to make up for being in no catalog.
-pub const CHOOSE: &str = "Please choose your language:";
+/// Short, plain English, since no catalog translates it.
+pub const CHOOSE: &str = "Language";
 const KEYS: &str = "↑↓ move · ⏎ confirm · q quit";
 
 fn rows() -> Vec<Row<String>> {
@@ -21,7 +20,7 @@ fn rows() -> Vec<Row<String>> {
         .collect()
 }
 
-/// Puts the interface in a language and keeps it with the answers.
+/// Sets the UI language and saves it with the answers.
 fn speak(code: &str, ctx: &mut Ctx) {
     i18n::set(code);
     ctx.store.language = code.to_string();
@@ -34,7 +33,7 @@ pub struct LanguagePage {
 }
 
 impl LanguagePage {
-    /// Opens on the machine's language, where there is a catalog for it.
+    /// Opens on the machine's language where a catalog exists.
     pub fn new() -> LanguagePage {
         let mut list = List::new(rows());
         list.focus(&i18n::detect().to_string());
@@ -43,7 +42,7 @@ impl LanguagePage {
 }
 
 impl Page for LanguagePage {
-    /// Asked only where the answer file holds no language.
+    /// Only shown when the answer file has no language.
     fn unattended(&mut self, _: &mut Ctx) -> Result<Flow, String> {
         Err(crate::i18n::t("The answer file names no language."))
     }
@@ -71,15 +70,15 @@ impl Page for LanguagePage {
                 super::next(ctx)
             }
             Picked::Used => Flow::Stay,
-            // Nothing lies behind the first page to go back to.
+            // The first page has nothing to go back to.
             Picked::Ignored if matches!(key.nav(false), Some(Nav::Back)) => Flow::Stay,
             Picked::Ignored => Flow::Ignored,
         }
     }
 }
 
-/// A page before the frame exists: the wordmark, a line, the rows and the keys as one block,
-/// raised to the golden section.
+/// Page without frame: wordmark, a line, the rows and the keys as one block at the golden
+/// section.
 pub fn bare<I: Clone + PartialEq>(
     buf: &mut Buffer,
     area: Rect,
@@ -145,7 +144,7 @@ impl Page for LangPage {
     }
 
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {
-        let text = t("Changes the language on screen and nothing else.");
+        let text = t("Changes only the interface language.");
         let y =
             crate::ui::draw::paragraph(buf, area, area.y, &text, ctx.style.tone(Tone::Muted)) + 1;
         self.list.draw(

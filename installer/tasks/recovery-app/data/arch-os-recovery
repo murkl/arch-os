@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Written by the Arch OS Installer: one question, then a restart into the
-# Recovery. systemd-boot starts that entry once, the next boot is the system.
+# --boot-loader-entry holds for the next boot only.
 
 case "${LC_ALL:-${LC_MESSAGES:-$LANG}}" in
 de*)
@@ -15,8 +14,7 @@ de*)
     ;;
 esac
 
-# The buttons name what they do, and the dialog opens on Cancel: a restart
-# closes every open window.
+# Opens on Cancel: a restart closes every window.
 zenity --question --title=Recovery --text="$question" \
     --ok-label="$restart" --cancel-label="$cancel" --default-cancel || exit 0
 systemctl reboot --boot-loader-entry="{{ENTRY}}"

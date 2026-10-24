@@ -1,6 +1,6 @@
-# What the Recovery runs on, and nothing else: no editor, and no firmware but
-# the wireless cards', see the Recovery Partition in docs/REFERENCE.md. What its
-# scripts call is named rather than left to base, and build.sh checks it is there.
+# The Recovery's packages and nothing else: no editor, no firmware but the
+# wireless cards', see Recovery Partition in docs/REFERENCE.md. What its scripts
+# call is named rather than left to base, and build.sh checks the commands.
 arch-install-scripts
 base
 btrfs-progs
@@ -15,10 +15,9 @@ mkinitcpio-archiso
 plymouth
 psmisc
 
-# A wireless network, joined from the configuration when somebody asks for one. iwd
-# starts once there is a card to ask it about, see wifi_station in lib.sh. The
-# firmware is the wireless cards' of the default set, and pacman.conf leaves out
-# what in those packages belongs to anything else.
+# Wi-Fi on demand: iwd starts once a card is asked for, see wifi_station in
+# lib.sh. Firmware of the default set's wireless cards, pacman.conf drops the
+# rest of those packages.
 iwd
 wireless-regdb
 linux-firmware-atheros

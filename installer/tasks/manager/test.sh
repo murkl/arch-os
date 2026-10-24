@@ -1,4 +1,4 @@
 has_command system-manager
 
-# checkupdates stops without it, and with it the System Manager's update list.
+# Without fakeroot checkupdates fails, and with it the update list.
 has_command fakeroot

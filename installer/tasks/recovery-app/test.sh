@@ -1,11 +1,9 @@
-# The desktop reads the entry, and the script restarts into an entry the loader
-# lists: systemctl refuses an unknown one only after the question was answered.
+# systemctl refuses an unknown boot entry only after the dialog was confirmed.
 arch-chroot "$MNT" desktop-file-validate /usr/local/share/applications/arch-os-recovery.desktop
 bash -n "${MNT}/usr/local/bin/arch-os-recovery"
 [ -x "${MNT}/usr/local/bin/arch-os-recovery" ]
 
-# The icon the entry names is found on every theme: hicolor is where each one
-# falls back to.
+# hicolor is the fallback of every theme.
 icon="$(sed -n 's/^Icon=//p' "${MNT}/usr/local/share/applications/arch-os-recovery.desktop")"
 [ -s "${MNT}/usr/local/share/icons/hicolor/scalable/apps/${icon}.svg" ]
 

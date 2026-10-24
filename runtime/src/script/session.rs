@@ -1,5 +1,4 @@
-//! A script running in the background: its output to the log and to the page that runs it, and
-//! what it reported on fd 3 for the failure.
+//! A background script: output to the log and the page, the fd 3 report for a failure.
 
 use std::io::{BufRead, BufReader, Read};
 use std::os::fd::{AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
@@ -17,9 +16,9 @@ use super::{Failure, Step};
 
 #[derive(Debug)]
 pub enum Event {
-    /// A line the script finished.
+    /// A finished line.
     Line(String),
-    /// The line the script is drawing, redrawn in place, as it stands.
+    /// The current state of a line redrawn in place.
     Drawn(String),
     Exit(Result<(), Failure>),
 }
@@ -28,16 +27,16 @@ pub struct Session {
     pid: i32,
 }
 
-/// The last stderr lines a failure carries: the real message is the last thing a tool says.
+/// Stderr lines a failure keeps, since a tool's real message comes last.
 const KEEP: usize = 8;
-/// How long a stopped script has to end by itself: pacman finishes the package it unpacks, and
-/// arch-chroot takes its mounts down.
+/// Time a stopped script gets to end by itself, so pacman finishes its package and arch-chroot
+/// unmounts.
 const GRACE: Duration = if cfg!(test) {
     Duration::from_millis(300)
 } else {
     Duration::from_secs(10)
 };
-/// How long what was killed may take to go: a process waiting on its disk goes once it answers.
+/// Time a killed process may take to exit. One in disk wait exits once the disk answers.
 const GONE: Duration = Duration::from_secs(5);
 const POLL: Duration = Duration::from_millis(50);
 
@@ -53,8 +52,8 @@ impl Session {
         cmd.stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
-        // A session of its own: no terminal to stop at or draw into, and one group, so stopping
-        // a step also stops what it started.
+        // Own session: no terminal to stop on or draw into, and one group, so a stop reaches
+        // everything the step started.
         // SAFETY: setsid, dup2 and fcntl are async-signal-safe.
         unsafe {
             cmd.pre_exec(move || {
@@ -74,8 +73,8 @@ impl Session {
             follow(out, sink.clone(), None),
             follow(err, sink.clone(), Some(stderr_tail.clone())),
         ];
-        // Read to its end: a read end closed early would end the next report, and the script
-        // with it, by SIGPIPE.
+        // Read to the end: a read end closed early kills the script by SIGPIPE on its next
+        // report.
         let fail = std::thread::spawn(move || {
             let mut first = None;
             for line in BufReader::new(std::fs::File::from(events))
@@ -90,7 +89,7 @@ impl Session {
         });
         std::thread::spawn(move || {
             let status = child.wait();
-            // Every line is collected before the outcome is told.
+            // All lines arrive before the outcome.
             for r in readers {
                 let _ = r.join();
             }
@@ -111,9 +110,9 @@ impl Session {
         Ok(Session { pid })
     }
 
-    /// Stops the script and everything it started, and returns once none of it runs. It is
-    /// asked first: a package transaction ends between two packages rather than halfway through
-    /// one. What stays past the grace is killed, and what outlives that is logged.
+    /// Stops the script and everything it started, returns once none of it runs. TERM first, so
+    /// a package transaction ends between packages. KILL after the grace period, survivors are
+    /// logged.
     pub fn stop(&self) {
         let Some(group) = Pid::from_raw(self.pid) else {
             return;
@@ -139,8 +138,8 @@ impl Session {
     }
 }
 
-/// Each process of a group that still runs, as pid, name and state, a D waiting on its disk.
-/// A zombie runs nothing: it waits to be collected by a parent, or by a PID 1 that may never.
+/// Live processes of a group as pid, name and state (D is disk wait). Zombies are left out, a
+/// PID 1 may never reap them.
 fn running(group: i32) -> Vec<String> {
     let Ok(dir) = std::fs::read_dir("/proc") else {
         return Vec::new();
@@ -173,8 +172,8 @@ fn attach_fd3(fd: RawFd) -> std::io::Result<()> {
     Ok(())
 }
 
-/// Reads one channel to its end: every finished line to the log and the sink, a line redrawn
-/// in place to the sink as it stands, and where asked the tail kept for the failure.
+/// Reads a pipe to the end: finished lines to the log and the sink, a line redrawn in place to
+/// the sink, and optionally the tail for the failure.
 fn follow(
     mut r: impl Read + Send + 'static,
     sink: Arc<dyn Fn(Event) + Send + Sync>,
@@ -208,8 +207,8 @@ fn follow(
                 }
                 sink(Event::Line(line));
             }
-            // An unfinished line is a progress bar redrawing itself: shown as it stands, and
-            // only its end kept.
+            // An unfinished line is a progress bar redrawing itself. Shown as is, only its end
+            // kept.
             if buf.len() > 4096 {
                 buf.drain(..buf.len() - 4096);
             }
@@ -229,9 +228,8 @@ fn follow(
     })
 }
 
-/// What a line last drew: its last redraw, as a progress bar returns to the start of its line,
-/// without escapes and control characters, which would corrupt the frame it is shown in. A tab
-/// stands as spaces to the next stop of eight, as a terminal sets it.
+/// The last redraw after `\r`, without escapes and control characters, which would corrupt the
+/// frame. Tabs expand to stops of eight, as in a terminal.
 fn drawn(bytes: &[u8]) -> String {
     let text = String::from_utf8_lossy(bytes);
     let last = text

@@ -6,7 +6,7 @@ license = "GPL-3.0-or-later"
 repository = "https://github.com/murkl/arch-os"
 publish = false
 
-# One name for the library in every project, whatever the program is called.
+# Same library name in every project, whatever the binary is called.
 [lib]
 name = "runtime"
 

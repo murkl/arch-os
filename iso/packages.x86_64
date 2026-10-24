@@ -1,6 +1,5 @@
-# What the ISO adds to the Recovery's packages, which it carries as well since
-# it runs the Recovery too. What the Installer calls on the live system is
-# named, and build.sh checks it is there.
+# Added to the Recovery's packages, which the ISO runs too. What the Installer
+# calls on the live system is named, and build.sh checks the commands.
 dosfstools
 efibootmgr
 gptfdisk
@@ -8,12 +7,12 @@ parted
 reflector
 xkeyboard-config
 
-# The processor's microcode in the ram disk, as releng loads it.
+# CPU microcode in the initramfs, as releng loads it.
 amd-ucode
 intel-ucode
 
-# The Arch ISO's other ways online: rare Wi-Fi chips and server cards, a
-# Thunderbolt dock, an iPhone over USB and a mobile broadband modem.
+# The Arch ISO's other ways online: rare Wi-Fi chips, server cards, Thunderbolt
+# docks, iPhone tethering and mobile broadband.
 linux-firmware-other
 bolt
 usbmuxd
@@ -25,8 +24,7 @@ zsh
 grml-zsh-config
 nano
 
-# The boot entry with speech: the screen reader, its sound and the firmware
-# that sound needs.
+# The speech boot entry: screen reader, sound and sound firmware.
 alsa-utils
 brltty
 espeakup
@@ -35,6 +33,6 @@ sof-firmware
 linux-firmware-cirrus
 linux-firmware-ti
 
-# How e2e.sh reaches the live system and reads the interface.
+# For e2e.sh: ssh into the live system, tmux to read the interface.
 openssh
 tmux

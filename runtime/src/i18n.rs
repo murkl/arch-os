@@ -1,5 +1,5 @@
-//! English source strings, every other language from `locales/<code>.po`. The English sentence
-//! is the key, so a missing translation leaves readable English rather than a key.
+//! English source strings, other languages from `locales/<code>.po`. The English text is the
+//! msgid, so a missing translation shows English.
 
 use std::collections::HashMap;
 use std::fmt::Display;
@@ -8,8 +8,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub const SOURCE: &str = "en";
 
-/// One language on offer: its code, and the name it calls itself, which is its translation of
-/// "English".
+/// `name` is the endonym, the catalog's translation of "English".
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Lang {
     pub code: String,
@@ -21,7 +20,7 @@ struct Catalog {
     messages: HashMap<String, &'static str>,
 }
 
-/// The source language first, then every embedded catalog by the name it calls itself.
+/// The source language first, then the embedded catalogs by endonym.
 fn catalogs() -> &'static [Catalog] {
     static ALL: OnceLock<Vec<Catalog>> = OnceLock::new();
     ALL.get_or_init(|| {
@@ -66,11 +65,11 @@ pub fn langs() -> Vec<Lang> {
 
 static CURRENT: AtomicUsize = AtomicUsize::new(0);
 
-/// Held by tests that switch the language or read English text, which share one process.
+/// Held by tests that set the language or read English text, since they share one process.
 #[cfg(test)]
 pub static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
-/// Puts the interface in a language. A code no catalog has leaves the source language.
+/// An unknown code selects the source language.
 pub fn set(code: &str) {
     let at = catalogs()
         .iter()
@@ -83,8 +82,8 @@ pub fn current() -> &'static Lang {
     &catalogs()[CURRENT.load(Ordering::Relaxed)].lang
 }
 
-/// The best of the languages for a locale as the environment writes one, `de_DE.UTF-8` or
-/// `de`: the exact code, then the part before the underscore.
+/// The catalog for a locale such as `de_DE.UTF-8` or `de`: exact code first, then the part
+/// before the underscore.
 pub fn matched(locale: &str) -> Option<&'static str> {
     let locale = locale.trim().to_lowercase();
     let locale = locale
@@ -101,7 +100,7 @@ pub fn matched(locale: &str) -> Option<&'static str> {
     exact.or_else(|| codes.into_iter().find(|c| c.eq_ignore_ascii_case(base)))
 }
 
-/// The language of messages as the environment sets it, the way gettext reads it.
+/// The message language from the environment, in gettext's order.
 pub fn detect() -> &'static str {
     ["LC_ALL", "LC_MESSAGES", "LANG"]
         .iter()
@@ -132,7 +131,7 @@ pub fn tf(msgid: &str, args: &[(&str, &dyn Display)]) -> String {
     out
 }
 
-/// msgid → msgstr, without the header and without untranslated entries.
+/// msgid → msgstr, without the header and untranslated entries.
 pub fn parse_po(src: &str) -> HashMap<String, String> {
     let mut map = HashMap::new();
     let (mut id, mut text) = (String::new(), String::new());
@@ -166,7 +165,7 @@ pub fn parse_po(src: &str) -> HashMap<String, String> {
     map
 }
 
-/// One quote off each end: a quote before the closing one is text.
+/// One quote off each end, a quote before the closing one is text.
 fn unquote(s: &str) -> String {
     let s = s.trim();
     let inner = s.strip_prefix('"').unwrap_or(s);
@@ -188,7 +187,7 @@ fn unquote(s: &str) -> String {
     out
 }
 
-/// Every translation of every embedded catalog, for what the console has to be able to draw.
+/// Every translation, to check what the console has to draw.
 pub fn translations() -> Vec<&'static str> {
     catalogs()
         .iter()
@@ -259,7 +258,7 @@ msgstr ""
     }
 }
 
-/// A string literal's text, from just after its opening quote, and what follows it.
+/// A string literal's text starting after its opening quote, and the rest.
 #[cfg(test)]
 fn literal_at(src: &str) -> (String, &str) {
     let mut text = String::new();
@@ -278,8 +277,7 @@ fn literal_at(src: &str) -> (String, &str) {
     (text, "")
 }
 
-/// Every msgid the program uses: the literals given to t and tf, the language's own name, and
-/// the texts of the product.
+/// Every msgid in use: literals given to `t` and `tf`, "English", and the product texts.
 #[cfg(test)]
 pub fn used() -> std::collections::BTreeSet<String> {
     let mut ids = std::collections::BTreeSet::new();
@@ -293,7 +291,7 @@ pub fn used() -> std::collections::BTreeSet<String> {
             continue;
         }
         let src = std::fs::read_to_string(&path).unwrap();
-        // The program's part of the file: the tests under it translate texts of their own.
+        // Code above the tests only, they translate texts of their own.
         let src = ["#[cfg(test)]\nmod ", "#[cfg(test)]\npub mod "]
             .iter()
             .filter_map(|m| src.find(m))
@@ -305,7 +303,7 @@ pub fn used() -> std::collections::BTreeSet<String> {
                 if before.is_alphanumeric() || before == '_' {
                     continue;
                 }
-                // A literal, possibly on the next line where rustfmt put it.
+                // rustfmt may put the literal on the next line.
                 if let Some(literal) = src[i + call.len()..].trim_start().strip_prefix('"') {
                     ids.insert(literal_at(literal).0);
                 }
@@ -327,7 +325,6 @@ mod catalog {
         v
     }
 
-    /// Every catalog covers every text exactly, and keeps its placeholders.
     #[test]
     fn every_catalog_covers_every_text_exactly_and_keeps_its_placeholders() {
         let used = used();

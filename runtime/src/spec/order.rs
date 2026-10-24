@@ -1,7 +1,6 @@
-//! What runs when inside one stage: a task runs after what it names in `needs`. Tasks no `needs`
-//! separates keep the order module.yaml lists them in.
+//! Task order within a stage: a task runs after its `needs`, otherwise in module.yaml order.
 
-/// The indices of `tasks` in the order they run, or the ring that keeps them waiting.
+/// Indices of `tasks` in run order, or the cycle that blocks them.
 pub fn order(tasks: &[(String, Vec<String>)]) -> Result<Vec<usize>, String> {
     let mut out = Vec::with_capacity(tasks.len());
     let mut done = vec![false; tasks.len()];
@@ -26,7 +25,7 @@ pub fn order(tasks: &[(String, Vec<String>)]) -> Result<Vec<usize>, String> {
     Ok(out)
 }
 
-/// The ring the tasks left are waiting round, in the order they wait.
+/// The cycle among the tasks left, in wait order.
 fn ring(tasks: &[(String, Vec<String>)], done: &[bool]) -> String {
     let mut path: Vec<&str> = Vec::new();
     let mut at = tasks.iter().position(|_| true).map(|_| {

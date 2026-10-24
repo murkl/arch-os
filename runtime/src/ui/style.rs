@@ -1,8 +1,7 @@
-//! The colors as styles, and the glyphs the terminal can show.
+//! Colors as styles, and the glyphs per terminal.
 //!
-//! Every color but the accent is a slot of the terminal's own palette, so the interface reads on
-//! whatever the terminal is painted. The accent is the product's, and on sixteen colors the
-//! stock color nearest it.
+//! Every color but the accent is a palette slot, so the UI reads under any terminal theme. The
+//! accent is the product's, on the console its nearest stock color.
 
 use ratatui::style::{Color, Modifier, Style as Cell};
 
@@ -13,23 +12,23 @@ use crate::spec::Rgb;
 pub struct Style {
     pub muted: Color,
     pub accent: Color,
-    /// Behind the row under the cursor.
+    /// Background of the cursor row.
     pub selection: Color,
-    /// Text on the selection, Tone::Current.
+    /// Text on the selection, `Tone::Current`.
     on_selection: Color,
     pub success: Color,
     pub warning: Color,
     pub error: Color,
     pub glyphs: &'static Glyphs,
-    /// Muted text is also dim: the console shows dark gray by a brightness bit that only the
-    /// return to normal intensity clears, which a dropped dim sends.
+    /// Muted text is also dim. The console draws dark gray with a bright bit that only the normal
+    /// intensity reset clears, which ending dim sends.
     dim_muted: bool,
 }
 
 #[derive(Debug)]
 pub struct Glyphs {
     pub cursor: &'static str,
-    /// A state: filled, and hollow.
+    /// State marks: filled, then hollow.
     pub dot: &'static str,
     pub ring: &'static str,
     pub rule: &'static str,
@@ -40,23 +39,22 @@ pub struct Glyphs {
     pub track: &'static str,
     /// A scrollbar's track, then its thumb.
     pub scroll: [&'static str; 2],
-    /// A step that ran, one that failed, one that was skipped.
+    /// Step marks: ran, failed, skipped.
     pub ok: &'static str,
     pub fail: &'static str,
     pub skip: &'static str,
-    /// The keys as the footer names them: up and down, enter, page up and down.
+    /// Footer key names: up and down, enter, page up and down.
     pub up_down: &'static str,
     pub enter: &'static str,
     pub page_keys: &'static str,
-    /// What stands for a typed letter of a password.
     pub mask: &'static str,
-    /// The density a block pixel of the wordmark passes through as it comes into focus.
+    /// Density steps of a wordmark pixel coming into focus.
     pub focus: &'static [&'static str],
     pub spinner: &'static [&'static str],
 }
 
 impl Glyphs {
-    /// Every glyph, for the console's font to be held to.
+    /// Every glyph, to check against the console font.
     pub fn all(&self) -> Vec<&'static str> {
         let mut v = vec![
             self.cursor,
@@ -106,8 +104,8 @@ pub static UNICODE: Glyphs = Glyphs {
     spinner: &["◐", "◓", "◑", "◒"],
 };
 
-/// The Linux console: everything here is in the fonts iso/font.sh builds, which `make check`
-/// holds it to. Terminus has no ● ○ ✓ ✕ ⏎ ⇞⇟, and no quarters for the spinner.
+/// Linux console: every glyph is in the fonts iso/font.sh builds, checked by `make check`.
+/// Terminus lacks ● ○ ✓ ✕ ⏎ ⇞⇟ and the spinner's quarter blocks.
 pub static CONSOLE: Glyphs = Glyphs {
     cursor: "▶",
     dot: "■",
@@ -130,7 +128,7 @@ pub static CONSOLE: Glyphs = Glyphs {
     spinner: &["│", "/", "─", "\\"],
 };
 
-/// The sixteen stock colors of xterm, which a console in any theme shows in its own hues.
+/// xterm's sixteen stock colors. A themed console shows each slot in its own hue.
 const STOCK: [(Color, Rgb); 16] = [
     (Color::Black, Rgb(0, 0, 0)),
     (Color::Red, Rgb(205, 0, 0)),
@@ -150,11 +148,12 @@ const STOCK: [(Color, Rgb); 16] = [
     (Color::White, Rgb(255, 255, 255)),
 ];
 
-/// The slot nearest a color, in plain RGB distance, where the product names none. Never black
-/// or white, which a console paints its field and its text in.
+/// Nearest slot by RGB distance, where the product names none. Drawn from the slots a product
+/// may name, so never the background or the muted text.
 pub fn nearest(c: Rgb) -> Color {
-    STOCK[1..15]
+    crate::spec::SLOTS
         .iter()
+        .filter_map(|name| STOCK.iter().find(|(s, _)| Some(*s) == slot(name)))
         .min_by_key(|(_, s)| {
             let d = |a: u8, b: u8| (i32::from(a) - i32::from(b)).pow(2);
             d(c.0, s.0) + d(c.1, s.1) + d(c.2, s.2)
@@ -163,7 +162,7 @@ pub fn nearest(c: Rgb) -> Color {
         .unwrap_or(Color::Cyan)
 }
 
-/// White or black, whichever stands out more from a slot's stock color, as WCAG weighs it.
+/// White or black, whichever contrasts more with the slot's stock color by WCAG.
 fn contrast(slot: Color) -> Color {
     let Some((_, Rgb(r, g, b))) = STOCK.iter().find(|(c, _)| *c == slot) else {
         return Color::White;
@@ -184,7 +183,7 @@ fn contrast(slot: Color) -> Color {
     }
 }
 
-/// A slot by the name the product writes: the seven colors, then their bright halves.
+/// Slot by product name: the seven colors, then their bright variants.
 pub fn slot(name: &str) -> Option<Color> {
     let i = crate::spec::SLOTS.iter().position(|s| *s == name)?;
     Some(STOCK[if i < 7 { i + 1 } else { i + 2 }].0)
@@ -206,8 +205,8 @@ impl Style {
                 .unwrap_or(Color::Cyan),
             (None, false) => Color::Cyan,
         };
-        // Behind text a console takes only its first eight colors: a bright one blinks or
-        // vanishes. Blue, unless the product names a slot.
+        // A console background takes only the first eight colors, a bright one blinks or vanishes.
+        // Blue unless the product names a slot.
         let selection = match (product.surface, console) {
             (Some(rgb), false) => Color::Rgb(rgb.0, rgb.1, rgb.2),
             (None, false) => Color::DarkGray,
@@ -217,8 +216,8 @@ impl Style {
                 .and_then(slot)
                 .unwrap_or(Color::Blue),
         };
-        // On a console bold is a brighter slot, and the accent's is about as bright as the
-        // surface behind it: the row under the cursor reads in white or black there.
+        // On the console bold is the bright slot, and the accent's is about as bright as the
+        // surface. The cursor row uses white or black there.
         let on_selection = if console { contrast(selection) } else { accent };
         Style {
             muted: Color::DarkGray,
@@ -257,7 +256,7 @@ impl Style {
         }
     }
 
-    /// Bold, except on the console, which draws bold as the bright slot: another color.
+    /// Bold, except on the console, which draws bold as the bright slot, another color.
     pub fn bold(&self, tone: Tone) -> Cell {
         if self.dim_muted {
             return self.tone(tone);
@@ -338,5 +337,18 @@ mod tests {
             (slot("white"), slot("bright-red"), slot("bright-white")),
             (Some(Color::Gray), Some(Color::LightRed), Some(Color::White))
         );
+    }
+
+    #[test]
+    fn nearest_picks_only_slots_a_product_may_name() {
+        assert_eq!(nearest(Rgb(0x17, 0x93, 0xd1)), Color::Cyan);
+        assert_eq!(nearest(Rgb(255, 255, 255)), Color::White);
+        for c in [Rgb(0, 0, 0), Rgb(127, 127, 127), Rgb(110, 110, 110)] {
+            let picked = nearest(c);
+            assert!(
+                crate::spec::SLOTS.iter().any(|s| slot(s) == Some(picked)),
+                "{c:?} picked {picked:?}"
+            );
+        }
     }
 }
