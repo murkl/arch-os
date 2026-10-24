@@ -1,8 +1,8 @@
-# Each kernel's own image beside its modules, read off the image's header rather
-# than the name it was put back under, and something built from it to boot.
+# Each kernel's own image under its package's name, read off the image's header
+# rather than the name it was put back under, and something built from it to boot.
 for dir in "${MNT}/usr/lib/modules/"*/; do
     [ -e "${dir}kernel" ] || continue
-    file -b "${MNT}/boot/vmlinuz-${KERNEL}" | grep -qF "version $(basename "$dir") "
+    file -b "${MNT}/boot/vmlinuz-$(<"${dir}pkgbase")" | grep -qF "version $(basename "$dir") "
 done
 
 # Both images where the preset builds them, the entries that count their tries

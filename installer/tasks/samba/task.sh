@@ -9,8 +9,8 @@ render "${data}/smb.conf" USERNAME="$ARCH_OS_USERNAME" >"${MNT}/etc/samba/smb.co
 arch-chroot "$MNT" testparm -s /etc/samba/smb.conf
 
 arch-chroot "$MNT" mkdir -p /srv/samba/public
-arch-chroot "$MNT" chmod 777 /srv/samba/public
-arch-chroot "$MNT" chown -R nobody:users /srv/samba/public
+arch-chroot "$MNT" chmod 755 /srv/samba/public
+arch-chroot "$MNT" chown "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" /srv/samba/public
 
 # Samba keeps its own password database, set to the same password.
 printf '%s\n%s\n' "$ARCH_OS_PASSWORD" "$ARCH_OS_PASSWORD" |

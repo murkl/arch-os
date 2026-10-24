@@ -11,3 +11,10 @@ config="$(arch-chroot "$MNT" snapper --no-dbus --csvout --no-headers -c root get
 while IFS= read -r setting; do
     grep -qxF "${setting/=/,}" <<<"$config"
 done <"$(where)/settings"
+
+# The account reaches no snapshot, neither through the folder nor through snapper.
+if as_user "ls /.snapshots" >/dev/null 2>&1; then
+    echo "the account can read /.snapshots" >&2
+    exit 1
+fi
+grep -qxF 'ALLOW_GROUPS,' <<<"$config"

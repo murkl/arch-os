@@ -584,7 +584,7 @@ AUR_TIMEOUT=2700
 chroot_aur_install() {
     local repo="$1"
     local url="https://aur.archlinux.org/${repo}.git"
-    local dir jobs cores build status=1 i
+    local dir jobs cores build until status=1 i
 
     chroot_pacman_install git base-devel
 
@@ -604,15 +604,16 @@ chroot_aur_install() {
     build="${build} makepkg -si --noconfirm --needed"
 
     # makepkg -si reaches root through sudo for pacman alone: the dependencies
-    # and the install.
-    echo '%wheel ALL=(ALL:ALL) NOPASSWD: /usr/bin/pacman' | sudoers_rule 99-aur-build
+    # and the install. It expires once every attempt could have ended, so a run
+    # cut short leaves no passwordless sudo behind.
+    until="$(date -u -d "+$((AUR_RETRIES * (AUR_TIMEOUT + RETRY_WAIT))) seconds" '+%Y%m%d%H%M%SZ')"
+    echo "%wheel ALL=(ALL:ALL) NOTAFTER=${until} NOPASSWD: /usr/bin/pacman" | sudoers_rule 99-aur-build
 
     echo "building ${repo} from the AUR with ${jobs} job(s)"
     for ((i = 1; i <= AUR_RETRIES; i++)); do
         [ "$i" -gt 1 ] && echo "retry ${i}/${AUR_RETRIES}: building ${repo} from the AUR"
         status=0
-        arch-chroot "$MNT" timeout "$AUR_TIMEOUT" \
-            /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "$build" || status=$?
+        as_user "timeout ${AUR_TIMEOUT} bash -c $(printf '%q' "$build")" || status=$?
         [ "$status" -eq 0 ] && break
         if [ "$status" -eq 124 ]; then
             echo "building ${repo} from the AUR was still running after $((AUR_TIMEOUT / 60)) minutes and was stopped" >&2
@@ -632,10 +633,14 @@ chroot_aur_install() {
     return "$status"
 }
 
-# A command inside the new system as the account, which makepkg insists on.
-# Without root's runtime folder, where the account may create nothing.
+# A command inside the new system as the account, which makepkg insists on. In
+# an environment of its own, so nothing it runs or builds, a crate's build
+# script among them, sees a password. Without root's runtime folder either,
+# where the account may create nothing.
 as_user() {
-    arch-chroot "$MNT" /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- env -u XDG_RUNTIME_DIR bash -c "$1"
+    arch-chroot "$MNT" /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- env -i \
+        HOME="/home/${ARCH_OS_USERNAME}" USER="$ARCH_OS_USERNAME" LOGNAME="$ARCH_OS_USERNAME" \
+        PATH="$PATH" LANG=C.UTF-8 bash -c "$1"
 }
 
 # The chosen browser's desktop entry, not its package's name for two of them.

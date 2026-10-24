@@ -3,18 +3,21 @@
 # everything booted from it rebuilt.
 
 # A module folder without a kernel in it is what an interrupted removal leaves.
+# Each image goes under the name its package gives it in pkgbase, as mkinitcpio's
+# pacman hook copies it, so a second kernel never lands under linux-zen's.
 for dir in "${MNT}/usr/lib/modules/"*/; do
     [ -e "${dir}kernel" ] || continue
     version="$(basename "$dir")"
-    if [ ! -f "${dir}vmlinuz" ]; then
+    if [ ! -f "${dir}vmlinuz" ] || [ ! -s "${dir}pkgbase" ]; then
         echo "There is no kernel image beside the modules of ${version}." >&2
         exit 10
     fi
     # Moved over the old image only once it is whole.
-    image="${MNT}/boot/vmlinuz-${KERNEL}"
+    name="vmlinuz-$(<"${dir}pkgbase")"
+    image="${MNT}/boot/${name}"
     cp "${dir}vmlinuz" "${image}.new"
     mv -f "${image}.new" "$image"
-    echo "restored vmlinuz-${KERNEL} from the modules of ${version}"
+    echo "restored ${name} from the modules of ${version}"
 done
 
 # Unified images where the system's preset builds them, ram disks otherwise.

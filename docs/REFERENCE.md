@@ -88,6 +88,7 @@ flowchart LR
 - `loader.conf` sets no `default`, since a default entry starts however often it failed. The Installer and the Recovery clear one left in the firmware
 - An interrupted start counts as failed, such as powering off at the password prompt
 - `panic=10` restarts after a kernel panic, so a system that panics on every start reaches the Recovery automatically
+- Emergency mode restarts after 10 s, in the system and in its initramfs: root has no password, so the emergency shell would wait for a key and open for nobody
 - With GNOME, `arch-os-session-up.service` waits up to 5 minutes for the session. Without a session the start does not count
 
 ### Kernel Parameters
@@ -131,6 +132,7 @@ Offered only with disk encryption. Without it the disk is readable anyway, and o
 
 - sbctl's mkinitcpio hook signs each boot image as it is built. `sbctl list-files` does not show them: `sbctl sign -s` records no file that is signed already
 - `sbctl verify` lists `/boot/vmlinuz-*` as not signed on purpose: signed alone, the kernel would start with any initramfs written onto the EFI partition
+- fwupd's firmware updater is signed as `fwupdx64.efi.signed`, and `DisableShimForSecureBoot` lets fwupd start it without shim, which Arch does not ship. Installed later, fwupd needs both: `sudo sbctl sign -s -o /usr/lib/fwupd/efi/fwupdx64.efi.signed /usr/lib/fwupd/efi/fwupdx64.efi` and `sudo fwupdtool modify-config uefi_capsule DisableShimForSecureBoot true`. **[➜ fwupd](https://github.com/fwupd/fwupd/blob/main/plugins/uefi-capsule/README.md)**
 - Keys enroll only in **setup mode**, which differs from "Secure Boot disabled". `-m` keeps Microsoft's certificates. A failure is logged and the machine still boots
 
 #### Turning It On
@@ -203,7 +205,8 @@ Enough for a usable system, little enough to need no upkeep. Everything else fol
 | Timeout | 45 min | Past this it is stuck, not slow |
 | Compile jobs | 1 per GiB of memory, at most 1 per core | More would run a live system out of memory |
 
-- Passwordless `sudo` for `pacman` alone, and only for the duration of the build. cargo's downloads stay in the build directory
+- Passwordless `sudo` for `pacman` alone, and only for the duration of the build. The rule expires by itself (`NOTAFTER`), should the run stop halfway
+- The build runs in an environment of its own and sees no password. cargo's downloads stay in the build directory
 - `paru` is built from source: a `-bin` package breaks the day Arch bumps `libalpm`
 
 ### The Text Editor
@@ -323,7 +326,7 @@ Snapper takes a snapshot before and after every package transaction through `sna
 | --- | --- | --- |
 | Timeline | Off | Between transactions only data changes. A timeline would keep every version of disk images and databases, which openSUSE's root configuration also avoids |
 | `NUMBER_LIMIT` | 10, 5 important | Snapper's defaults filled a disk to 70 GiB for a 35 GiB system |
-| `ALLOW_GROUPS`, `SYNC_ACL` | `wheel`, `yes` | The group that owns `/.snapshots` can read it |
+| `ALLOW_GROUPS` | None | snapper's daemon runs as root, so an allowed group could delete every snapshot without a password. `sudo snapper list` lists them |
 | Cleanup | `snapper-cleanup.timer` | Enforces the limits |
 
 ### Rolling Back

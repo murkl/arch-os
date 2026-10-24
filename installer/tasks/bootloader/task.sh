@@ -48,6 +48,12 @@ encrypt_hook=""
 [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && encrypt_hook=" sd-encrypt"
 hooks="base systemd keyboard autodetect microcode modconf kms sd-vconsole block${encrypt_hook} filesystems"
 
+# An emergency shell opens for nobody behind the locked root, and waits for a
+# key forever. Restarting instead lets the tries run out. Written before the ram
+# disk is built, whose systemd hook carries a unit's drop-ins along with it.
+mkdir -p "${MNT}/etc/systemd/system/emergency.service.d"
+render "${data}/emergency.conf" >"${MNT}/etc/systemd/system/emergency.service.d/10-arch-os.conf"
+
 # A drop-in, so the boot splash (20-) and the graphics driver (30-) build on it.
 mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
 render "${data}/10-arch-os.conf" HOOKS="$hooks" >"${MNT}/etc/mkinitcpio.conf.d/10-arch-os.conf"

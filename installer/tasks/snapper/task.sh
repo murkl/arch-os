@@ -10,8 +10,10 @@ arch-chroot "$MNT" snapper --no-dbus -c root create-config /
 arch-chroot "$MNT" btrfs subvolume delete /.snapshots
 arch-chroot "$MNT" mkdir /.snapshots
 arch-chroot "$MNT" mount -a
+
+# Root's alone, as snapper makes it. snapper itself is run through sudo: a group
+# it allows could delete every snapshot through its daemon without a password.
 arch-chroot "$MNT" chmod 750 /.snapshots
-arch-chroot "$MNT" chown :wheel /.snapshots
 
 # One argument per setting: handed one string, set-config writes it all into
 # the first key and says nothing.

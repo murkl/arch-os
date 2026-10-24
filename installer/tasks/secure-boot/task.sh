@@ -12,6 +12,18 @@ if [ -f "${MNT}${RECOVERY_EFI}" ]; then
     arch-chroot "$MNT" sbctl sign -s "$RECOVERY_EFI" || echo "signing the Recovery failed" >&2
 fi
 
+# fwupd's firmware updater, which it starts from the EFI partition, signed under
+# the name fwupd prefers. It is loaded without shim, which Arch does not ship,
+# so fwupd is told that through its own tool, whose --json leaves out the
+# progress it draws and keeps the error.
+# https://github.com/fwupd/fwupd/blob/main/plugins/uefi-capsule/README.md
+updater=/usr/lib/fwupd/efi/fwupdx64.efi
+if [ -f "${MNT}${updater}" ]; then
+    arch-chroot "$MNT" sbctl sign -s -o "${updater}.signed" "$updater" || echo "signing fwupd's updater failed" >&2
+    arch-chroot "$MNT" fwupdtool --json modify-config uefi_capsule DisableShimForSecureBoot true ||
+        echo "fwupd still looks for shim, firmware updates need Secure Boot off" >&2
+fi
+
 # Keys are enrolled only in setup mode, read from the UEFI variable: the first
 # four bytes are attributes, the fifth the value.
 setup_mode=/sys/firmware/efi/efivars/SetupMode-8be4df61-93ca-11d2-aa0d-00e098032b8c

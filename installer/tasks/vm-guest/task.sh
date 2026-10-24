@@ -3,14 +3,14 @@ case "$(systemd-detect-virt || allow 1)" in
 
 kvm | qemu)
     # The same guest with or without hardware virtualization. Only the guest
-    # halves. Both units are static and started by udev.
+    # halves, each unit static and started by udev.
     echo "detected QEMU"
-    chroot_pacman_install spice-vdagent qemu-guest-agent
-    # The shared folders of GNOME Boxes, started by udev like the two above
-    # once the host offers them. It announces itself through avahi, which only
-    # a desktop runs.
+    chroot_pacman_install qemu-guest-agent
+    # The clipboard and the screen size, which only a desktop has, and the
+    # shared folders of GNOME Boxes, announced through avahi, which only a
+    # desktop runs.
     if [ "$ARCH_OS_DESKTOP" != "none" ]; then
-        chroot_pacman_install phodav
+        chroot_pacman_install spice-vdagent phodav
     fi
     ;;
 
@@ -22,8 +22,13 @@ vmware)
     ;;
 
 oracle)
+    # Without a desktop, the build that leaves out the X11 clipboard and screen.
     echo "detected VirtualBox"
-    chroot_pacman_install virtualbox-guest-utils
+    if [ "$ARCH_OS_DESKTOP" != "none" ]; then
+        chroot_pacman_install virtualbox-guest-utils
+    else
+        chroot_pacman_install virtualbox-guest-utils-nox
+    fi
     arch-chroot "$MNT" systemctl enable vboxservice
     ;;
 

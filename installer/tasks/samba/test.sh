@@ -4,8 +4,10 @@ arch-chroot "$MNT" systemctl is-enabled smb.service >/dev/null
 # Asked of samba, which shows a key it never read the same as one it did.
 [ "$(arch-chroot "$MNT" testparm -s --parameter-name='mdns name' 2>/dev/null)" = mdns ]
 
-# A guest who may write is a folder anybody on the network can fill.
+# A guest who may write is a folder anybody on the network can fill, and so is
+# one that every account here may write to.
 [ "$(arch-chroot "$MNT" testparm -s --section-name=public --parameter-name='read only' 2>/dev/null)" = Yes ]
+[ "$(arch-chroot "$MNT" stat -c '%U %a' /srv/samba/public)" = "${ARCH_OS_USERNAME} 755" ]
 
 if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
     arch-chroot "$MNT" firewall-offline-cmd --zone=home --query-service=samba >/dev/null
