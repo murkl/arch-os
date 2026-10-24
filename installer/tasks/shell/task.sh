@@ -16,6 +16,9 @@ mkdir -p "${MNT}/root/.config/fastfetch" "${home}/.config/fastfetch"
 for file in aliases bashrc; do
     render "${data}/${file}" | tee "${MNT}/root/.${file}" "${home}/.${file}" >/dev/null
 done
+# A login shell reads .bash_profile only, which sources .bashrc. Arch leaves
+# root without one.
+cp "${MNT}/etc/skel/.bash_profile" "${MNT}/root/.bash_profile"
 render "${data}/zshrc" >"${home}/.zshrc"
 render "${data}/fastfetch.jsonc" | tee "${MNT}/root/.config/fastfetch/config.jsonc" "${home}/.config/fastfetch/config.jsonc" >/dev/null
 arch-chroot "$MNT" chsh -s /usr/bin/zsh "$ARCH_OS_USERNAME"

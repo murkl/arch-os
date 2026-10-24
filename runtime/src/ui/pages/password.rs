@@ -110,6 +110,11 @@ impl Page for PasswordPage {
         t(&self.setting.title)
     }
 
+    fn id(&self, _: &Ctx) -> String {
+        let repeat = if self.first.is_some() { " repeat" } else { "" };
+        format!("password {}{repeat}", self.setting.name)
+    }
+
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {
         let s = ctx.style;
         let mut y = area.y;

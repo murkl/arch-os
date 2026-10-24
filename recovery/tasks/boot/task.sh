@@ -1,23 +1,5 @@
-# Restores each kernel image from its module folder, where Arch installs it
-# before copying it to /boot, then rebuilds everything booted from it.
-
-# An interrupted removal leaves module folders without a kernel. Each image is
-# named after pkgbase, as mkinitcpio's pacman hook names it, so a second kernel
-# never overwrites linux-zen's.
-for dir in "${MNT}/usr/lib/modules/"*/; do
-    [ -e "${dir}kernel" ] || continue
-    version="$(basename "$dir")"
-    if [ ! -f "${dir}vmlinuz" ] || [ ! -s "${dir}pkgbase" ]; then
-        echo "No kernel image beside the modules of ${version}." >&2
-        exit 10
-    fi
-    # Replaces the old image only once complete.
-    name="vmlinuz-$(<"${dir}pkgbase")"
-    image="${MNT}/boot/${name}"
-    cp "${dir}vmlinuz" "${image}.new"
-    mv -f "${image}.new" "$image"
-    echo "restored ${name} from the modules of ${version}"
-done
+# Restores each kernel image from its module folder, where Arch installs it,
+# then rebuilds everything booted from it.
 
 # UKIs where the system's preset builds them, initramfs images otherwise.
 kind=image
@@ -39,8 +21,9 @@ if [ "$kind" = image ]; then
 fi
 
 # The Installer's layout, with entries that fall back to the Recovery. The
-# preset first, since mkinitcpio builds where it says.
+# preset first, since the kernels and mkinitcpio follow where it says.
 boot_preset "$MNT" "$kind"
+restore_kernels "$MNT"
 [ "$kind" = image ] || mkdir -p "${MNT}${UKI_DIR}"
 arch-chroot "$MNT" mkinitcpio -P
 

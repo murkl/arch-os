@@ -6,9 +6,14 @@ has_command vulkaninfo
 
 # Another GPU beside NVIDIA, as the task detects it.
 other=false
+cards=0
 while IFS=$'\t' read -r vendor _; do
+    cards=$((cards + 1))
     [ "$vendor" = nvidia ] || other=true
 done < <(graphics_cards)
+if [ "$cards" -gt 1 ]; then
+    arch-chroot "$MNT" systemctl is-enabled switcheroo-control.service >/dev/null
+fi
 
 while IFS=$'\t' read -r vendor device; do
     case "$vendor" in

@@ -28,6 +28,8 @@ oracle)
         chroot_pacman_install virtualbox-guest-utils-nox
     fi
     arch-chroot "$MNT" systemctl enable vboxservice
+    # Shared folders mount for the vboxsf group only.
+    arch-chroot "$MNT" usermod -aG vboxsf "$ARCH_OS_USERNAME"
     ;;
 
 microsoft)

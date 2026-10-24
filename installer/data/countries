@@ -1,7 +1,6 @@
 # code	country	time zone
 #
-# code       ISO territory code, the end of a locale (de_DE -> DE) and the key
-#            of tzdata's zone.tab (Europe/Berlin -> DE)
+# code       ISO territory code, the end of a locale (de_DE -> DE)
 # country    reflector's spelling, - where Arch has no mirror
 # time zone  the row the time zone setting opens on, one per country
 #

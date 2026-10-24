@@ -3,7 +3,7 @@
 The program behind Installer and Recovery: draws the pages, asks the questions, stores the answers, runs the scripts. Pages and work are declared in YAML with bash scripts beside it, all compiled into one binary. Another Arch distribution swaps YAML and scripts and keeps the runtime.
 
 ```
-arch-os <module> [--dry-run] [--kiosk] [--unattended]
+arch-os <module> [--dry-run] [--kiosk] [--unattended] [--trace <file>]
 arch-os glyphs
 arch-os --version
 ```
@@ -14,6 +14,7 @@ arch-os --version
 | `--dry-run` | Shows the run without doing it. **[➜ Dry Run](#dry-run)** |
 | `--kiosk` | The machine's only program: leaving restarts it with every answer kept |
 | `--unattended` | Runs the work without interface. **[➜ Unattended](#unattended)** |
+| `--trace <file>` | Names each page and row on screen by id, for tests. **[➜ Trace](#trace)** |
 | `glyphs` | Every character the interface draws on a console, for **[iso/glyphs.sh](../iso/glyphs.sh)** |
 
 ```
@@ -277,6 +278,7 @@ stages:
 | `allow-failure` | `true`: its failure does not stop the run |
 | `report` | A page the run pauses on afterwards. First paragraph is the headline |
 | `errors` | Text for each status its `task.sh` stops with. **[➜ Stopping on Purpose](#stopping-on-purpose)** |
+| `texts` | `NAME: text` pairs its scripts get as variables, translated into the interface language. For text it writes into the system. A setting's name is refused |
 
 - A task runs after every task of earlier stages, within its stage after its `needs`, otherwise in file order
 - Refused: a `needs` into another stage, an unknown name, a cycle
@@ -391,6 +393,33 @@ errors:
 `--unattended` runs the work without interface: answers from `<module>.conf` beside the program, each password from the environment under its name, such as `ARCH_OS_PASSWORD`, every confirmation a yes. A task with `asks` takes its answer from the environment too and is skipped where it is unset. The log prints as written, then the report or the failure and the test tally.
 
 Exit status 0 where the work finished, 1 where it failed or could not start: a requirement said no, an answer is missing or invalid, a password is unset. Nothing restarts or shuts down afterwards.
+
+## Trace
+
+`--trace <file>` appends a line whenever the screen changes, for tests that must not read text: smoke and e2e on a virtio port, the screenshots in a file.
+
+| Line | When |
+| --- | --- |
+| `page <id>` | Another page is on screen |
+| `focus <id>` | The cursor is on another row |
+| `task <id>` | A task of the run starts |
+| `language <code>` | The interface language is set |
+
+| Page | Id |
+| --- | --- |
+| Splash, language, profiles, dashboard, leave, test results | `splash`, `language`, `presets`, `dashboard`, `leave`, `results` |
+| Requirement | `gate <action>` |
+| Question | `question <setting>` |
+| Password | `password <setting>`, then `password <setting> repeat` |
+| Confirmation | `confirm` before the run, `confirm <task or action>`, `confirm reset`, `confirm home` |
+| Action at work | `action <action>` |
+| Report | `report <task or action>`, `stopped <action>` after a stop on purpose |
+| Failure | `failure <action>`, `result <n>` for a failed test |
+| Run | `run`, then `run done`, `run failed` or `run stopped` |
+
+A row is named by what choosing it picks: on the dashboard `start`, `reset`, `language`, a setting's name or an action's id, in a list its value, on a confirmation `yes` or `no`, on the leave page an action's id or `exit`, a profile by its position.
+
+**Note:** _The images pass `--trace` only with the systemd credential `arch-os.trace` set, its value the file, such as `/dev/virtio-ports/arch-os.trace`. **[➜ Boot Tests](../iso/README.md#boot-tests)**_
 
 ## Files
 

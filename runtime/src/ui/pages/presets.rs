@@ -43,6 +43,14 @@ impl Page for PresetsPage {
         t("Profile")
     }
 
+    fn id(&self, _: &Ctx) -> String {
+        "presets".into()
+    }
+
+    fn focus(&self) -> Option<String> {
+        self.list.selected()?.id.map(|i| i.to_string())
+    }
+
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {
         if self.list.rows().is_empty() {
             let rows = ctx

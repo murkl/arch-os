@@ -1,5 +1,6 @@
-# NetworkManager hands firewalld every connection's zone, and libvirt, docker
-# and podman open their ports in it. Zones: docs/REFERENCE.md#firewall
+# NetworkManager hands firewalld every connection's zone, and libvirt and
+# podman open their ports in it. Docker passes it, see the containers task.
+# Zones: docs/REFERENCE.md#firewall
 # https://wiki.archlinux.org/title/Firewalld
 chroot_pacman_install firewalld
 arch-chroot "$MNT" systemctl enable firewalld.service

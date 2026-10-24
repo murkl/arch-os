@@ -95,7 +95,6 @@ flowchart LR
 | `rootflags=subvol=@ rootfstype=btrfs` | Root subvolume |
 | `zswap.enabled=0` | Conflicts with zram |
 | `panic=10` | A panic counts as a failed start |
-| `nowatchdog` | With Core tweaks: unused, delays shutdown |
 | `quiet splash loglevel=3 …` | **[Silent boot](https://wiki.archlinux.org/title/Silent_boot)**. `vt.global_cursor_default=0` hides the cursor, `/etc/issue.d/cursor.issue` restores it at each login |
 | `plymouth.ignore-serial-consoles` | Every VM has a serial console, which switches Plymouth to text mode, password prompt included |
 | `plymouth.use-simpledrm=0` | With encryption: the password prompt waits for the graphics driver instead of appearing twice. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Plymouth#Using_SimpleDRM)** |
@@ -123,13 +122,13 @@ Only with disk encryption. Without it the disk is readable anyway, and only a UK
 | When | What | Why |
 | --- | --- | --- |
 | First | Keys, systemd-boot and boot images, before any snapshot | `/var/lib/sbctl` lives in `@`. After a rollback to a snapshot without the keys nothing rebuilt could be signed. The Recovery keeps them across a rollback |
-| Last | Recovery signed, keys enrolled | Enrolled keys refuse anything unsigned |
+| Last | Recovery signed, `sbctl verify` clean, keys enrolled | Enrolled keys refuse anything unsigned |
 | After | sbctl's hooks | New images get signed, updates re-sign systemd-boot and the Recovery |
 
 - sbctl's mkinitcpio hook signs each boot image as it is built. `sbctl list-files` omits them, since `sbctl sign -s` records no file already signed
-- `sbctl verify` lists `/boot/vmlinuz-*` as unsigned on purpose: a kernel signed alone would start with any initramfs on the EFI partition
+- The kernel the UKIs are built from lies in `/var/lib/arch-os/`, on the encrypted root. On the EFI partition anyone could swap it before the next rebuild signs it. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Unified_kernel_image#.preset_file)**
 - fwupd's updater is signed as `fwupdx64.efi.signed`, and `DisableShimForSecureBoot` lets fwupd start it without shim, which Arch does not ship. For fwupd installed later: `sudo sbctl sign -s -o /usr/lib/fwupd/efi/fwupdx64.efi.signed /usr/lib/fwupd/efi/fwupdx64.efi` and `sudo fwupdtool modify-config uefi_capsule DisableShimForSecureBoot true`. **[➜ fwupd](https://github.com/fwupd/fwupd/blob/main/plugins/uefi-capsule/README.md)**
-- Keys enroll only in **setup mode**, which differs from "Secure Boot disabled". `-m` keeps Microsoft's certificates. A failure is logged, the machine still boots
+- Keys enroll only in **setup mode**, which differs from "Secure Boot disabled". `-m` keeps Microsoft's certificates, `-f` the firmware's own, which firmware signed by its maker needs. Where sbctl refuses `-f`, `-m` alone follows. A failure is logged, the machine still boots
 
 #### Turning It On
 
@@ -138,7 +137,7 @@ After the first reboot, with **Secure Boot** among the answers:
 | `sbctl status` shows | Action |
 | --- | --- |
 | `✓` | Restart, turn Secure Boot on in the firmware |
-| `✗` | Clear the keys in the firmware (setup mode), run `sudo sbctl enroll-keys -m`, restart, turn Secure Boot on |
+| `✗` | Clear the keys in the firmware (setup mode), run `sudo sbctl enroll-keys -m -f`, or `-m` alone where that fails, restart, turn Secure Boot on |
 
 ## System
 
@@ -148,6 +147,7 @@ Same base on every machine.
 | --- | --- | --- |
 | Kernel | `linux-zen` everywhere | One kernel, one set of known problems. Tuned for responsiveness under load |
 | Swap | zram | **[➜ Arch Wiki](https://wiki.archlinux.org/title/Zram)** |
+| Disk health | `smartd`, with Housekeeping | A disk at risk shows on every terminal and as a critical notification in every session, not only in the journal. **[➜ Arch Wiki](https://wiki.archlinux.org/title/S.M.A.R.T.#Notifying_potential_problems)** |
 | Crash records | `systemd-pstore` | Moves crash records from the small firmware memory to `/var/lib/systemd/pstore`. ISO and Recovery leave them in place. **[➜ systemd-pstore](https://www.freedesktop.org/software/systemd/man/latest/systemd-pstore.service.html)** |
 
 ### Tuning
@@ -278,12 +278,12 @@ Every account starts with the same defaults and can change them.
 | --- | --- |
 | Keyboard, dock, theme, keys, terminal font | dconf keyfiles in `/etc/dconf/db/local.d/`. **[➜ GNOME](https://help.gnome.org/admin/system-admin-guide/stable/dconf-custom-defaults.html)** |
 | Apps installed as a dependency | Hidden by `Hidden=true` entries in `/usr/local/share/applications/` |
-| `~/.local/bin` in `PATH` | `/etc/environment.d/10-arch-os.conf` |
+| `~/.local/bin` in `PATH` | `/etc/environment.d/60-arch-os.conf` |
 | Git passwords in the keyring | `credential.helper` in `/etc/gitconfig` |
 
 ## Firewall
 
-`firewalld`: NetworkManager assigns each connection its zone, libvirt, docker and podman open their own ports. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Firewalld)**
+`firewalld`: NetworkManager assigns each connection its zone, libvirt and podman open their own ports. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Firewalld)**
 
 | Zone | Where | Allows |
 | --- | --- | --- |
@@ -299,10 +299,12 @@ nmcli connection modify <name> connection.zone home
 | Service | Zone | Why |
 | --- | --- | --- |
 | `mdns` | `public` | mDNS replies arrive as multicast, which connection tracking cannot match. They reveal nothing beyond Avahi's announcements |
-| `ssh` | `public` | Reachable from any network |
+| `ssh` | `public` | Reachable from any network, so keys only |
 | `samba`, `ws-discovery-host` | `home` | On a café's Wi-Fi anyone could try the account password against a share |
 
-**Note:** _The SSH server keeps Arch's `sshd_config`: no password login for root, password login for the account, which has no key yet._
+**Note:** _Docker passes firewalld, so with the firewall its published ports bind to `127.0.0.1`. `-p 0.0.0.0:8080:80` publishes to the network. **[➜ Docker](https://docs.docker.com/engine/network/packet-filtering-firewalls/)**_
+
+**Note:** _The SSH server takes keys only, set in `/etc/ssh/sshd_config.d/10-arch-os.conf`. The Installer asks for the account's key, a public key or an address such as `https://github.com/<user>.keys`, and writes it to `~/.ssh/authorized_keys`._
 
 ## Offline
 
@@ -327,7 +329,7 @@ Snapper takes a snapshot before and after every package transaction through `sna
 
 ### Rollback
 
-Only with the Recovery. The kernel lies on the EFI partition, outside every snapshot, so an older snapshot would start a kernel without its modules. The Recovery puts the snapshot in place and rebuilds the boot files from the kernel image Arch keeps beside the modules in `/usr/lib/modules/`, which the snapshot holds.
+Only with the Recovery. The boot images lie on the EFI partition, outside every snapshot, so an older snapshot would start a kernel without its modules. The Recovery puts the snapshot in place and rebuilds the boot files from the kernel image Arch keeps beside the modules in `/usr/lib/modules/`, which the snapshot holds.
 
 ## Recovery
 
@@ -364,7 +366,7 @@ The Recovery of the release that installed the system, built from Arch's `baseli
 | 5 | Plymouth uses the firmware framebuffer (`nomodeset`). The Recovery runs on tty1 and sets its clock by network time, which HTTPS needs after a dead clock battery |
 | 6 | It reads `EFI/arch-os-recovery/` on the EFI partition it started from, restores the tries of the system's entries and opens in the Installer's language and keyboard |
 
-Runs as a kiosk: tty1 belongs to it, no console has a login, and **Start over** or a crash restarts it with every answer kept (`RestartMode=direct`).
+Runs as a kiosk: tty1 belongs to it, no console has a login, a serial one included, root is locked, and **Start over** or a crash restarts it with every answer kept (`RestartMode=direct`).
 
 **Note:** _The EFI partition is unsigned, so what the Recovery reads there is checked like any answer from a file._
 

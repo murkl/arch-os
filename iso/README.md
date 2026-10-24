@@ -25,6 +25,7 @@ A live image boots for the first time every time, so systemd runs `systemd-first
 | `systemd-firstboot` | Resets the console under the splash, and the image comes configured |
 | `systemd-nsresourced` | Holds up sysinit for seconds at the first user lookup, and nothing here uses a user namespace |
 | `systemd-pstore` | Would move the installed system's crash records from the firmware into volatile memory. The installed system collects them itself |
+| `serial-getty@` | Recovery only: a serial console, such as a server's over IPMI, would get a login |
 
 | Command | Description |
 | --- | --- |
@@ -89,9 +90,9 @@ make smoke                  # newest ISO and Recovery in dist/
 make smoke ISO=path/to.iso RECOVERY=path/to/recovery-dir
 ```
 
-Boots each under QEMU and OVMF, waits for the first page, chooses Deutsch with the keyboard, waits for the next page and shuts down. That covers boot entry, initramfs, Plymouth hook, systemd unit, loaded modules and a console that passes keys on. The Recovery boot image starts as the firmware starts it from the EFI partition, with its partition as the only disk: finding it, verifying its signature and copying it to memory all precede that page.
+Boots each under QEMU and OVMF, waits for the first page, chooses Deutsch with the keyboard, waits for the next page, checks that the screen shows more than one color and shuts down. Pages and rows are read from the interface's trace on a virtio port, never off the screen. **[➜ Trace](../runtime/README.md#trace)** That covers boot entry, initramfs, Plymouth hook, systemd unit, loaded modules and a console that passes keys on. The Recovery boot image starts as the firmware starts it from the EFI partition, with its partition as the only disk: finding it, verifying its signature and copying it to memory all precede that page.
 
-**Note:** _Needs `qemu-base`, `edk2-ovmf`, `tesseract` and `tesseract-data-eng`. Screenshots land in `dist/smoke/`, one folder per image: one frame on success, all on failure._
+**Note:** _Needs `qemu-base` and `edk2-ovmf`. Screenshots land in `dist/smoke/`, one folder per image: one frame on success, all frames and the trace on failure._
 
 ```
 make e2e                    # newest ISO in dist/
@@ -109,9 +110,10 @@ Walks the ISO unattended:
 6. Overwrites the start of the Recovery partition, as an interrupted update does, rewrites it with the Recovery on the ISO from the newest release of its series, and starts it with Secure Boot enforced
 
 - Each run gets the memory and disk its profile requires, no more. **[➜ README](../docs/README.md)**
-- The live system is reached over SSH by a key passed as systemd credential. Installer and Recovery run unattended there, answers in their file, passwords in the environment. The Recovery update, a dashboard row, runs in tmux, driven by keys and read from its pane
+- The live system is reached over SSH by a key passed as systemd credential. Installer and Recovery run unattended there, answers in their file, passwords in the environment. The Recovery update, a dashboard row, runs in tmux, driven by keys and read from its trace
+- The Recovery on its partition is read from its trace on a virtio port. OCR reads only getty's login prompt, which must not flash by on **Start over**, and the language names of a published Recovery without trace in step 6
 - Both runs must end with every test passed. The machine is then powered off hard instead of shut down, as after writing the Recovery: what a run reports as done must be on the disk
-- The installed system unlocks its disk from a systemd credential and is reached over SSH as its installed account
+- The installed system unlocks its disk from a systemd credential and is reached over SSH as its account, by the key given to the Installer
 - `START=desktop` installs the Desktop profile with the SSH server, boots it like step 2 and checks for GNOME's login screen and a systemd-oomd that watches swap and the session. The repair is the Core's
 - Step 6 is skipped with a notice while no release of the series publishes a Recovery
 - Step 6 writes the newest published Recovery, which may predate the Installer. Its language page then counts as started, since it reads no language the Installer left

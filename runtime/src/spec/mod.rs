@@ -286,6 +286,9 @@ pub struct Task {
     pub simulates: bool,
     pub allow_failure: bool,
     pub errors: BTreeMap<i32, String>,
+    /// Variables its scripts get in the interface language, for text the task
+    /// writes into the system.
+    pub texts: BTreeMap<String, String>,
     /// It has a `test.sh`.
     pub test: bool,
 }
@@ -413,6 +416,7 @@ impl Module {
             add(t.confirm.as_deref().unwrap_or_default());
             add(t.report.as_deref().unwrap_or_default());
             t.errors.values().for_each(|e| add(e));
+            t.texts.values().for_each(|e| add(e));
         }
         for a in &self.actions {
             add(&a.title);
@@ -670,6 +674,8 @@ struct TaskFile {
     allow_failure: bool,
     #[serde(default)]
     errors: BTreeMap<i32, String>,
+    #[serde(default)]
+    texts: BTreeMap<String, String>,
 }
 
 #[derive(Deserialize)]
@@ -1345,6 +1351,9 @@ fn module(
     for t in &mut tasks {
         let at = format!("{file}: stages: {}: {}", t.stage, t.id);
         conditions(&t.when, &setting_names).map_err(|e| format!("{at}: {e}"))?;
+        if let Some(name) = t.texts.keys().find(|n| names.contains(n)) {
+            return Err(format!("{at}: texts: {name} is a setting"));
+        }
         if let Some(c) = &t.confirm {
             placeholders("confirm", c, &names).map_err(|e| format!("{at}: {e}"))?;
         }
@@ -1559,6 +1568,17 @@ fn tasks(
                 }
                 None => None,
             };
+            let mut texts = BTreeMap::new();
+            for (name, text) in f.texts {
+                if !is_name(&name)
+                    || name.contains(|c: char| c.is_ascii_lowercase())
+                    || name.starts_with(RESERVED)
+                    || name == DRY_RUN
+                {
+                    return Err(format!("{at}: texts: {name:?} is not a variable name"));
+                }
+                texts.insert(name, text::reflow(&text));
+            }
             // Only parsed here. The module checks the names.
             let mut when = Vec::new();
             for line in f.when.lines() {
@@ -1582,6 +1602,7 @@ fn tasks(
                 simulates: f.simulates,
                 allow_failure: f.allow_failure,
                 errors: f.errors,
+                texts,
             });
         }
         by_stage.push((stage, list));
@@ -1695,7 +1716,7 @@ pub mod tests {
     use super::*;
 
     /// The fixture's module: two stages, a question, a gate and a way out.
-    const SETUP: &str = "title: Setup\nstart: Install now\nconfirm: |\n  Install on {{TUX_DISK}}?\n\n  Everything on it is erased.\nreport: |\n  Set up\n\n  {{TUX_HOST}} boots.\nrequires: [root]\ndashboard: [start, note, settings, reset, net]\nlanguage: Region\non:\n  leave: [restart]\n  failure: [share]\n  success: [shell]\nerrors:\n  3: |\n    No internet\n\n    Connect and start again.\nactions:\n  root:\n    title: Running as root\n    error: This has to run as root.\n    run: is_root()\n  note:\n    title: Leave a note\n    description: Writes a note.\n    group: Extras\n    run: note()\n    inputs:\n      - name: TUX_NOTE\n        type: text\n        title: Note\n        required: true\n    report: |\n      Noted\n\n      {{TUX_NOTE}} is written down.\n  net:\n    title: Join a network\n    description: Joins one.\n    group: Network\n    run: join()\n    requires: [root]\n  share:\n    title: Share the log\n    description: Puts the log online.\n    run: share()\n    report: |\n      Shared\n    qr: TUX_URL\n    simulates: true\nstages:\n  prepare:\n    disk:\n      title: Prepare the disk\n      errors:\n        10: |\n          The disk is gone\n\n          {{TUX_DISK}} is not there.\n  install:\n    base:\n      title: Install the base\n      needs: [snapshot]\n      report: |\n        Installed\n\n        {{TUX_HOST}} is ready.\n      errors:\n        10: |\n          The name is taken\n\n          {{TUX_HOST}} is on the network already.\n    desktop:\n      title: Install the desktop\n      needs: [base]\n      when: TUX_DESKTOP != none\n      allow-failure: true\n    snapshot:\n      title: Go back to a snapshot\n      asks:\n        name: TUX_SNAPSHOT\n        title: Snapshot\n        options-from: options_snapshots()\n      confirm: |\n        Put {{TUX_SNAPSHOT}} in place?\npresets:\n  - title: Desktop\n    description: A desktop.\n    values:\n      TUX_DESKTOP: gnome\n  - title: Core\n    values:\n      TUX_DESKTOP: none\nsettings:\n  Region:\n    - name: TUX_KEYMAP\n      type: list\n      title: Keyboard\n      required: true\n      first: true\n      options: [us, de]\n      apply: apply_keymap()\n  System:\n    - name: TUX_HOST\n      type: text\n      title: Hostname\n      description: What the machine calls itself.\n      required: true\n      prefill: prefill_host()\n      pattern: '^[a-z][a-z0-9-]*$'\n      error: Lower case letters, digits and - only.\n    - name: TUX_DESKTOP\n      type: list\n      title: Desktop\n      required: true\n      options: [gnome, none]\n    - name: TUX_DRIVER\n      type: list\n      title: Driver\n      required: true\n      options: [free, none]\n      when: TUX_DESKTOP != none\n    - name: TUX_PASSWORD\n      type: new-password\n      title: Password\n      required: true\n    - name: TUX_VM\n      type: bool\n      title: Virtual machine\n      value-from: value_vm()\n  Storage:\n    - name: TUX_DISK\n      type: list\n      title: Disk\n      required: true\n      options-from: options_disks()\n      pattern: '^sd'\n    - name: TUX_ENCRYPT\n      type: bool\n      title: Encryption\n      default: true\n";
+    const SETUP: &str = "title: Setup\nstart: Install now\nconfirm: |\n  Install on {{TUX_DISK}}?\n\n  Everything on it is erased.\nreport: |\n  Set up\n\n  {{TUX_HOST}} boots.\nrequires: [root]\ndashboard: [start, note, settings, reset, net]\nlanguage: Region\non:\n  leave: [restart]\n  failure: [share]\n  success: [shell]\nerrors:\n  3: |\n    No internet\n\n    Connect and start again.\nactions:\n  root:\n    title: Running as root\n    error: This has to run as root.\n    run: is_root()\n  note:\n    title: Leave a note\n    description: Writes a note.\n    group: Extras\n    run: note()\n    inputs:\n      - name: TUX_NOTE\n        type: text\n        title: Note\n        required: true\n    report: |\n      Noted\n\n      {{TUX_NOTE}} is written down.\n  net:\n    title: Join a network\n    description: Joins one.\n    group: Network\n    run: join()\n    requires: [root]\n  share:\n    title: Share the log\n    description: Puts the log online.\n    run: share()\n    report: |\n      Shared\n    qr: TUX_URL\n    simulates: true\nstages:\n  prepare:\n    disk:\n      title: Prepare the disk\n      errors:\n        10: |\n          The disk is gone\n\n          {{TUX_DISK}} is not there.\n  install:\n    base:\n      title: Install the base\n      needs: [snapshot]\n      texts:\n        TUX_MOTD: Welcome aboard\n      report: |\n        Installed\n\n        {{TUX_HOST}} is ready.\n      errors:\n        10: |\n          The name is taken\n\n          {{TUX_HOST}} is on the network already.\n    desktop:\n      title: Install the desktop\n      needs: [base]\n      when: TUX_DESKTOP != none\n      allow-failure: true\n    snapshot:\n      title: Go back to a snapshot\n      asks:\n        name: TUX_SNAPSHOT\n        title: Snapshot\n        options-from: options_snapshots()\n      confirm: |\n        Put {{TUX_SNAPSHOT}} in place?\npresets:\n  - title: Desktop\n    description: A desktop.\n    values:\n      TUX_DESKTOP: gnome\n  - title: Core\n    values:\n      TUX_DESKTOP: none\nsettings:\n  Region:\n    - name: TUX_KEYMAP\n      type: list\n      title: Keyboard\n      required: true\n      first: true\n      options: [us, de]\n      apply: apply_keymap()\n  System:\n    - name: TUX_HOST\n      type: text\n      title: Hostname\n      description: What the machine calls itself.\n      required: true\n      prefill: prefill_host()\n      pattern: '^[a-z][a-z0-9-]*$'\n      error: Lower case letters, digits and - only.\n    - name: TUX_DESKTOP\n      type: list\n      title: Desktop\n      required: true\n      options: [gnome, none]\n    - name: TUX_DRIVER\n      type: list\n      title: Driver\n      required: true\n      options: [free, none]\n      when: TUX_DESKTOP != none\n    - name: TUX_PASSWORD\n      type: new-password\n      title: Password\n      required: true\n    - name: TUX_VM\n      type: bool\n      title: Virtual machine\n      value-from: value_vm()\n  Storage:\n    - name: TUX_DISK\n      type: list\n      title: Disk\n      required: true\n      options-from: options_disks()\n      pattern: '^sd'\n    - name: TUX_ENCRYPT\n      type: bool\n      title: Encryption\n      default: true\n";
 
     /// One module and two product actions it names.
     pub fn fixture() -> Vec<(&'static str, &'static [u8])> {
@@ -1705,7 +1726,7 @@ pub mod tests {
             ("setup/module.yaml", SETUP.as_bytes()),
             ("setup/tasks/disk/task.sh", b"echo \"$TUX_DISK\" >\"${MODULE_CONF%/*}/disk\"\n[ \"$TUX_HOST\" != slow ] || { trap 'echo asked >\"${MODULE_CONF%/*}/stopped\"' TERM; sleep 30 & wait; }\n"),
             ("setup/tasks/disk/test.sh", b"[ -f \"${MODULE_CONF%/*}/disk\" ]\n"),
-            ("setup/tasks/base/task.sh", b"[ \"$TUX_HOST\" != taken ] || exit 10\n[ \"$TUX_HOST\" != broken ] || false\necho \"$TUX_HOST\" >\"${MODULE_CONF%/*}/host\"\n"),
+            ("setup/tasks/base/task.sh", b"[ \"$TUX_HOST\" != taken ] || exit 10\n[ \"$TUX_HOST\" != broken ] || false\necho \"$TUX_HOST\" >\"${MODULE_CONF%/*}/host\"\necho \"$TUX_MOTD\" >\"${MODULE_CONF%/*}/motd\"\n"),
             ("setup/tasks/desktop/task.sh", b"[ \"$TUX_DRIVER\" = free ]\n"),
             ("setup/tasks/snapshot/task.sh", b"echo \"$TUX_SNAPSHOT\"\n"),
             ("locales/de.po", b"msgid \"\"\nmsgstr \"\"\n\nmsgid \"English\"\nmsgstr \"Deutsch\"\n\nmsgid \"Hostname\"\nmsgstr \"Rechnername\"\n"),
@@ -1938,6 +1959,14 @@ pub mod tests {
             (
                 format!("{TINY}  b:\n    one:\n      title: One again\n"),
                 "stages: b: one: declared twice",
+            ),
+            (
+                format!("{TINY}      texts:\n        lower: x\n"),
+                "texts: \"lower\" is not a variable name",
+            ),
+            (
+                format!("{TINY}      texts:\n        A_IN: x\n"),
+                "texts: A_IN is a setting",
             ),
         ] {
             refused(&tiny_with(OK, &rest), says);

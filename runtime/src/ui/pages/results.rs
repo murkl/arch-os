@@ -40,6 +40,10 @@ impl Page for ResultsPage {
         t("Test results")
     }
 
+    fn id(&self, _: &Ctx) -> String {
+        "results".into()
+    }
+
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {
         let s = ctx.style;
         put(buf, area.x, area.y, s.glyphs.fail, 1, s.tone(Tone::Error));
@@ -73,6 +77,7 @@ impl Page for ResultsPage {
                 let (title, f) = &self.failed[i];
                 let acts = vec![Act::new(t("Back"), |_| Flow::Pop)];
                 Flow::Push(Box::new(super::failure::FailurePage::new(
+                    format!("result {i}"),
                     title.clone(),
                     None,
                     f.clone(),

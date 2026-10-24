@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Written by Arch OS. smartd runs it for a disk at risk: a line on every
+# terminal, a notification in every session. Its variables: smartd.conf(5).
+set -u
+
+title='{{TITLE}}'
+text="${SMARTD_DEVICESTRING:-${SMARTD_DEVICE:-}}: ${SMARTD_MESSAGE:-${SMARTD_FAILTYPE:-}}"
+wall "${title}: ${text}"
+
+command -v notify-send >/dev/null || exit 0
+for bus in /run/user/*/bus; do
+    [ -S "$bus" ] || continue
+    uid="${bus#/run/user/}"
+    runuser -u "$(id -nu "${uid%/bus}")" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=${bus}" \
+        notify-send --urgency=critical --icon=drive-harddisk --app-name=smartd "$title" "$text" || true
+done

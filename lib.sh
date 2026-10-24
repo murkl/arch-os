@@ -248,6 +248,38 @@ boot_preset() {
     place "$1/etc/mkinitcpio.d/${KERNEL}.preset" "$text"
 }
 
+# The kernel image mkinitcpio builds kernel $2 of the system at $1 from: its
+# preset's ALL_kver, else /boot, as mkinitcpio's own preset has it.
+kernel_image() {
+    local preset="$1/etc/mkinitcpio.d/$2.preset" kver=""
+    [ ! -f "$preset" ] || kver="$(sed -n 's|^ALL_kver="\(/[^"]*\)"$|\1|p' "$preset")"
+    printf '%s' "${kver:-/boot/vmlinuz-$2}"
+}
+
+# Each kernel image of the system at $1 from beside its modules, where Arch
+# installs it, to where its preset builds from. A copy in /boot it no longer
+# reads goes. Exit 10: modules without their image, as an interrupted removal
+# leaves.
+restore_kernels() {
+    local root="$1" dir version pkgbase image
+    for dir in "${root}/usr/lib/modules/"*/; do
+        [ -e "${dir}kernel" ] || continue
+        version="$(basename "$dir")"
+        if [ ! -f "${dir}vmlinuz" ] || [ ! -s "${dir}pkgbase" ]; then
+            echo "No kernel image beside the modules of ${version}." >&2
+            exit 10
+        fi
+        pkgbase="$(<"${dir}pkgbase")"
+        image="${root}$(kernel_image "$root" "$pkgbase")"
+        mkdir -p "$(dirname "$image")"
+        # Replaces the old image only once complete.
+        cp "${dir}vmlinuz" "${image}.new"
+        mv -f "${image}.new" "$image"
+        [ "$image" = "${root}/boot/vmlinuz-${pkgbase}" ] || rm -f "${root}/boot/vmlinuz-${pkgbase}"
+        echo "restored vmlinuz-${pkgbase} from the modules of ${version}"
+    done
+}
+
 # Boot entries, loader.conf and the boot-tries unit in the system at $1 for kind
 # $2, with command line $3 for kind image. Each new entry is in place before the
 # old one goes.
@@ -304,17 +336,13 @@ unmount_target() {
     umount -R "$MNT"
 }
 
-# sbctl tracks at least one file, all signed. `sbctl verify` exits 0 regardless,
-# so its JSON list is read, with any spacing.
+# Every file sbctl signs and every EFI binary on the EFI partition, as sbctl
+# verify lists them: 1 signed, 0 not, -1 missing. It exits 0 regardless.
 boot_chain_signed() {
     local files
-    files="$(arch-chroot "$1" sbctl list-files --json)" || return 1
-    if ! grep -qE '"is_signed": *true' <<<"$files"; then
-        echo "sbctl: no signed file" >&2
-        return 1
-    fi
-    if grep -qE '"is_signed": *false' <<<"$files"; then
-        echo "sbctl: unsigned files: ${files}" >&2
+    files="$(arch-chroot "$1" sbctl verify --json)" || return 1
+    if ! jq -e 'length > 0 and all(.[]; .is_signed == 1)' <<<"$files" >/dev/null; then
+        echo "sbctl: not every boot file is signed: ${files}" >&2
         return 1
     fi
 }
@@ -433,16 +461,6 @@ auto_font() {
     printf '%s' "${font:-none}"
 }
 
-# From the time zone, not the language: en_US is used on every continent.
-auto_country() {
-    local territory country
-    territory="$(awk -F'\t' -v zone="$ARCH_OS_TIMEZONE" \
-        '!/^#/ && zone != "" && $3 == zone { print $1 }' /usr/share/zoneinfo/zone.tab)"
-    country="$(country_field 2 "$territory")"
-    [ "$country" = "-" ] && country="" # no Arch mirror there
-    printf '%s' "${country:-none}"
-}
-
 # none is an answer and means unset.
 not_none() { [ "$1" = "none" ] || printf '%s' "$1"; }
 
@@ -457,7 +475,7 @@ resolved() {
 
 vconsole_keymap() { resolved "$ARCH_OS_VCONSOLE_KEYMAP" auto_keymap; }
 desktop_layout() { resolved "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" auto_layout; }
-mirror_country() { resolved "$ARCH_OS_REFLECTOR_COUNTRY" auto_country; }
+mirror_country() { not_none "$ARCH_OS_REFLECTOR_COUNTRY"; }
 
 # ////////////////////////////////////////////////////////////////////////////
 # INSTALLING | Hardware and boot chain
@@ -575,9 +593,12 @@ chroot_aur_install() {
     build="rm -rf ${dir} && git clone --depth 1 ${url} ${dir} && cd ${dir}"
     # Appended to the PKGBUILD's options, so a !lto there stays.
     build="${build} && printf '\noptions+=(\"!debug\")\n' >>PKGBUILD"
-    # make and cargo read separate variables. cargo's caches stay in the build
-    # directory, not 100 MB in the new home.
-    build="${build} && MAKEFLAGS=-j${jobs} CARGO_BUILD_JOBS=${jobs}"
+    # make takes its jobs from a makepkg.conf read last, since makepkg.conf
+    # overrides MAKEFLAGS from the environment. cargo reads its variable, and its
+    # caches stay in the build directory, not 100 MB in the new home.
+    build="${build} && mkdir -p ${dir}/.config/pacman"
+    build="${build} && echo 'MAKEFLAGS=\"-j${jobs}\"' >${dir}/.config/pacman/makepkg.conf"
+    build="${build} && XDG_CONFIG_HOME=${dir}/.config CARGO_BUILD_JOBS=${jobs}"
     build="${build} CARGO_HOME=${dir}/.cargo XDG_CACHE_HOME=${dir}/.cache"
     build="${build} makepkg -si --noconfirm --needed"
 
@@ -913,7 +934,6 @@ apply_timezone() {
 }
 
 options_countries() {
-    printf 'auto\tauto (%s)\n' "$(auto_country)"
     echo none
     # "-" marks a country without an Arch mirror.
     awk -F'\t' '!/^#/ && $2 != "-" { print $2 }' "$(installer_data)/countries"

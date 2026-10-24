@@ -2,7 +2,8 @@
 #
 # One block is one take: the program started from a fresh copy with --dry-run,
 # so nothing on this machine changes. One step is one page: wait for `page:`,
-# save it as `shot:`, put the cursor on the row `choose:`, then `press:`.
+# save it as `shot:`, put the cursor on the row `choose:`, then `press:`. Pages
+# and rows are named by their trace ids: runtime/README.md#trace
 #
 # Every answer is set here, since locale, keyboard and time zone default to the
 # rendering machine's. The disk cannot be set, so no page showing one is shot.
@@ -10,38 +11,39 @@
 # The Installer: every answer, then the run.
 - module: installer
   steps:
-      - page: Language
+      - page: language
+        choose: en
         press: enter
-      - page: Console keyboard  # auto, the live image's layout
+      - page: question ARCH_OS_VCONSOLE_KEYMAP  # auto, the live image's layout
         press: enter
-      - page: [Profile, Desktop, Core]
+      - page: presets
         press: enter
-      - page: Username
+      - page: question ARCH_OS_USERNAME
         press: [tux, enter]
       # Its narrowing box is open, so the answer is typed.
-      - page: Language and region
+      - page: question ARCH_OS_LOCALE_LANG
         press: [en_US, enter]
-      - page: Time zone
+      - page: question ARCH_OS_TIMEZONE
         press: [UTC, enter]
-      - page: Disk
+      - page: question ARCH_OS_DISK
         press: enter
 
       # The dashboard, also a banner card, see make banner. The cursor opens on
       # Install now.
-      - page: [Install now, Username]
+      - page: dashboard
         shot: installer
         press: enter
 
       # Asked after the dashboard and never written to a file.
-      - page: Password
+      - page: password ARCH_OS_PASSWORD
         press: [tuxpass, enter]
-      - page: Repeat
+      - page: password ARCH_OS_PASSWORD repeat
         press: [tuxpass, enter]
 
-      - page: Install Arch OS on
-        choose: "Yes"
+      - page: confirm
+        choose: "yes"
         press: enter
 
-      - page: Arch OS installed
+      - page: run done
         shot: installing
         frame: running

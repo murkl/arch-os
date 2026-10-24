@@ -1,4 +1,5 @@
 # Written by Arch OS. Masks the package's entry of the same name.
 [Desktop Entry]
 Type=Application
+Name={{NAME}}
 Hidden=true

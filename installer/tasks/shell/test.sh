@@ -7,4 +7,5 @@ arch-chroot "$MNT" getent passwd root | grep -q ':/usr/bin/bash$'
 for file in "${MNT}/root/.bashrc" "${MNT}/root/.aliases" "${home}/.bashrc" "${home}/.aliases"; do
     bash -n "$file"
 done
+grep -q '\.bashrc' "${MNT}/root/.bash_profile"
 arch-chroot "$MNT" zsh -n "/home/${ARCH_OS_USERNAME}/.zshrc"

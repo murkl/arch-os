@@ -253,6 +253,17 @@ impl Page for QuestionPage {
         t(self.which.title())
     }
 
+    fn id(&self, _: &Ctx) -> String {
+        format!("question {}", self.which.name())
+    }
+
+    fn focus(&self) -> Option<String> {
+        Some(match self.list.as_ref()?.selected()?.id.as_ref()? {
+            Choice::Value(v) => v.clone(),
+            Choice::Own => "own".into(),
+        })
+    }
+
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {
         if !self.started {
             self.started = true;

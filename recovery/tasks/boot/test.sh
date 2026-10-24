@@ -1,14 +1,18 @@
-# Each kernel's image under its pkgbase name, checked by the image header, not
-# by its file name.
+# Each kernel's image where its preset builds from, checked by the image header,
+# not by its file name.
 for dir in "${MNT}/usr/lib/modules/"*/; do
     [ -e "${dir}kernel" ] || continue
-    file -b "${MNT}/boot/vmlinuz-$(<"${dir}pkgbase")" | grep -qF "version $(basename "$dir") "
+    file -b "${MNT}$(kernel_image "$MNT" "$(<"${dir}pkgbase")")" | grep -qF "version $(basename "$dir") "
 done
 
 # Both images where the preset builds them, counted entries pointing at them,
 # and no image left where the loader lists it twice.
 kind=image
 grep -qs '^default_uki=' "${MNT}/etc/mkinitcpio.d/${KERNEL}.preset" && kind=uki
+if [ "$kind" = uki ] && [ -e "${MNT}/boot/vmlinuz-${KERNEL}" ]; then
+    echo "the kernel lies on the EFI partition, where every rebuilt UKI would sign a swapped one" >&2
+    exit 1
+fi
 while read -r image; do
     [ -f "${MNT}${image}" ]
 done < <(images_of "$kind")

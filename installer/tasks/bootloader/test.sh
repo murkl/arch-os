@@ -10,6 +10,13 @@ while read -r image; do
     fi
 done < <(boot_images)
 
+# With Secure Boot the kernel stays off the EFI partition, which nothing signs.
+if [ "$(boot_kind)" = uki ] && [ -e "${MNT}/boot/vmlinuz-${KERNEL}" ]; then
+    echo "the kernel lies on the EFI partition, where every rebuilt UKI would sign a swapped one" >&2
+    exit 1
+fi
+[ -f "${MNT}$(kernel_image "$MNT" "$KERNEL")" ]
+
 # systemd skips an unreadable line with only a warning and starts the shell
 # nobody can use.
 [ -z "$(unit_complaints emergency.service)" ]

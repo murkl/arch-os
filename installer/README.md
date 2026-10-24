@@ -56,7 +56,6 @@ The **Shared configuration** profile under `presets:` runs `import-config`. **[â
 | `ARCH_OS_VCONSOLE_KEYMAP` | Keyboard of the chosen language, then of the live system, then `us` |
 | `ARCH_OS_DESKTOP_KEYBOARD_LAYOUT` | The same, in xkb naming |
 | `ARCH_OS_VCONSOLE_FONT` | A font for the script of the chosen language |
-| `ARCH_OS_REFLECTOR_COUNTRY` | Country of the chosen time zone |
 
 ## Detected
 
@@ -69,12 +68,12 @@ The **Shared configuration** profile under `presets:` runs `import-config`. **[â
 
 ## Language
 
-`ARCH_OS_LOCALE_LANG` presets keyboard, console font and time zone, each changeable. None follows from the locale code (`de_CH` is not `de`), so `data/` maps them. The mirror country follows the time zone, the one answer that locates the machine: `en_US` is used on every continent.
+`ARCH_OS_LOCALE_LANG` presets keyboard, console font and time zone, each changeable. None follows from the locale code (`de_CH` is not `de`), so `data/` maps them. Mirrors stay worldwide unless a country is chosen.
 
 | Table | Key | Provides |
 | --- | --- | --- |
 | `data/languages` | Language, or locale where it differs | Keymap, xkb layout, console font |
-| `data/countries` | Territory of the locale, or of the time zone in `zone.tab` | Time zone, mirror country |
+| `data/countries` | Territory of the locale | Time zone, reflector's country name |
 
 The console keyboard is asked `first` and loaded at once: a password typed on the wrong layout is not the password.
 

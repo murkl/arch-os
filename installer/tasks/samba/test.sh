@@ -1,6 +1,10 @@
 arch-chroot "$MNT" testparm -s >/dev/null 2>&1
 arch-chroot "$MNT" systemctl is-enabled smb.service >/dev/null
 
+# The environment file wsdd.service reads, where the last assignment wins.
+params="$(grep '^WSDD_PARAMS=' "${MNT}/etc/conf.d/wsdd" | tail -n 1)"
+[ "$params" = 'WSDD_PARAMS="-4"' ]
+
 # testparm prints a default like a set value, so the value is compared.
 [ "$(arch-chroot "$MNT" testparm -s --parameter-name='mdns name' 2>/dev/null)" = mdns ]
 

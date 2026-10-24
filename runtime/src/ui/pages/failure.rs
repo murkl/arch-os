@@ -10,13 +10,20 @@ use crate::ui::list::Lead;
 use crate::ui::{Ctx, Flow, Key, Page, Tone};
 
 pub struct FailurePage {
+    id: String,
     title: String,
     detail: Detail,
 }
 
 impl FailurePage {
     /// `said` is the module's text for the failure, above the details.
-    pub fn new(title: String, said: Option<String>, f: Failure, acts: Vec<Act>) -> FailurePage {
+    pub fn new(
+        id: String,
+        title: String,
+        said: Option<String>,
+        f: Failure,
+        acts: Vec<Act>,
+    ) -> FailurePage {
         let mut blocks = Vec::new();
         if let Some(said) = said {
             blocks.push(Block::Note(
@@ -29,13 +36,17 @@ impl FailurePage {
         blocks.extend(failure(&f));
         let mut detail = Detail::default();
         detail.set(blocks, acts);
-        FailurePage { title, detail }
+        FailurePage { id, title, detail }
     }
 }
 
 impl Page for FailurePage {
     fn title(&self) -> String {
         self.title.clone()
+    }
+
+    fn id(&self, _: &Ctx) -> String {
+        self.id.clone()
     }
 
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {

@@ -90,6 +90,10 @@ impl Page for SplashPage {
         String::new()
     }
 
+    fn id(&self, _: &Ctx) -> String {
+        "splash".into()
+    }
+
     fn bare(&self) -> bool {
         true
     }

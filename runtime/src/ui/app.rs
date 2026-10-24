@@ -17,6 +17,8 @@ pub struct App {
     quit: bool,
     /// Wakes the status check to reread right after an action.
     poke: Option<Sender<()>>,
+    /// Page and focus ids last written to the trace.
+    traced: (String, Option<String>),
 }
 
 impl App {
@@ -44,8 +46,13 @@ impl App {
         } else {
             store.language = crate::i18n::SOURCE.to_string();
         }
+        let trace = match &start.trace {
+            Some(path) => crate::trace::Trace::open(path)
+                .map_err(|e| std::io::Error::new(e.kind(), format!("{}: {e}", path.display())))?,
+            None => Default::default(),
+        };
         let product = &crate::spec::loaded().product;
-        let ctx = Ctx {
+        let mut ctx = Ctx {
             module: start.module,
             store,
             style: Style::new(product, console),
@@ -67,7 +74,11 @@ impl App {
             tx,
             wake,
             page: 0,
+            trace,
         };
+        if settled {
+            ctx.trace.line("language", &ctx.store.language);
+        }
         let mut app = App {
             pages: Vec::new(),
             next: 0,
@@ -75,6 +86,7 @@ impl App {
             ctx,
             quit: false,
             poke: None,
+            traced: Default::default(),
         };
         app.push(Box::new(pages::dashboard::DashboardPage::new()));
         if !settled && crate::i18n::langs().len() > 1 {
@@ -324,6 +336,16 @@ impl App {
         let (id, page) = self.pages.last_mut().expect("the dashboard stays");
         self.ctx.page = *id;
         self.ctx.cursor.set(None);
+        let traced = (page.id(&self.ctx), page.focus());
+        if traced.0 != self.traced.0 {
+            self.ctx.trace.line("page", &traced.0);
+        }
+        if let Some(focus) = &traced.1
+            && traced != self.traced
+        {
+            self.ctx.trace.line("focus", focus);
+        }
+        self.traced = traced;
         if page.bare() {
             frame.buffer_mut().set_style(area, self.ctx.style.base());
             page.draw(area, frame.buffer_mut(), &mut self.ctx);
@@ -418,6 +440,7 @@ pub mod tests {
             tx,
             wake: Arc::new(|| {}),
             page: 0,
+            trace: Default::default(),
         };
         let mut app = App {
             pages: Vec::new(),
@@ -426,6 +449,7 @@ pub mod tests {
             ctx,
             quit: false,
             poke: None,
+            traced: Default::default(),
         };
         app.push(Box::new(pages::dashboard::DashboardPage::new()));
         (app, Terminal::new(TestBackend::new(80, 30)).unwrap(), rx)
@@ -479,6 +503,53 @@ pub mod tests {
                 Err(RecvTimeoutError::Timeout) => {}
                 Err(RecvTimeoutError::Disconnected) => return,
             }
+        }
+    }
+
+    /// Pages and rows by id, never by their text, in the order they were on screen.
+    #[test]
+    fn the_trace_names_pages_and_rows_by_id() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app(true);
+        let path = app.ctx.store.path().with_extension("trace");
+        app.ctx.trace = crate::trace::Trace::open(&path).unwrap();
+        open(&mut app, Box::new(pages::language::LanguagePage::new()));
+        press(&mut app, &[Key::Home]);
+        screen(&mut app, &mut term);
+        press(&mut app, &[Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        type_text(&mut app, "de");
+        screen(&mut app, &mut term);
+        press(&mut app, &[Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Down]);
+        screen(&mut app, &mut term);
+        press(&mut app, &[Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        for _ in 0..2 {
+            press(&mut app, &[Key::Enter]);
+            settle(&mut app, &mut term, &rx);
+        }
+        let trace = std::fs::read_to_string(&path).unwrap();
+        let mut lines = trace.lines();
+        for want in [
+            "page language",
+            "focus en",
+            "language en",
+            "page question TUX_KEYMAP",
+            "focus de",
+            "page presets",
+            "focus 1",
+            "page question TUX_HOST",
+            "page question TUX_DISK",
+            "page dashboard",
+            "focus start",
+        ] {
+            assert!(
+                lines.any(|l| l == want),
+                "{want} missing in order:\n{trace}"
+            );
         }
     }
 
@@ -1336,6 +1407,7 @@ pub mod tests {
                 dry_run: true,
                 kiosk: false,
                 unattended: false,
+                trace: None,
             };
             App::new(start, &dir, tx, Arc::new(|| {}), false)
                 .unwrap()
@@ -1411,6 +1483,7 @@ pub mod tests {
         open(
             &mut app,
             Box::new(pages::report::ReportPage::new(
+                "report share".into(),
                 "Shared".into(),
                 "Log shared\n\nScan the code.".into(),
                 Some("https://paste.rs/abc".into()),
@@ -1463,6 +1536,7 @@ pub mod tests {
             Box::new(pages::presets::PresetsPage::new()),
             Box::new(pages::confirm::YesNoPage::reset()),
             Box::new(pages::report::ReportPage::new(
+                "report r".into(),
                 "R".into(),
                 "Done\n\nAll of it.".into(),
                 Some("https://x".into()),
@@ -1470,6 +1544,7 @@ pub mod tests {
                 pages::report::Close::PopN(1),
             )),
             Box::new(pages::failure::FailurePage::new(
+                "failure f".into(),
                 "F".into(),
                 Some("It said no.".into()),
                 f.clone(),
@@ -1556,6 +1631,7 @@ pub mod tests {
                 dry_run: true,
                 kiosk: false,
                 unattended: false,
+                trace: None,
             },
             &dir,
             tx,
