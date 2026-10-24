@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# boot-tries.sh against the EFI partitions it meets: the entries as the
-# Installer writes them, as the loader and systemd-bless-boot leave them, and
-# beside a default in loader.conf.
+# Checks boot-tries.sh against the entries as the Installer writes them, as the
+# loader and systemd-bless-boot leave them, and beside a default in loader.conf.
 #
 #   check.sh
 set -euo pipefail
@@ -12,8 +11,8 @@ status=0
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
-# An EFI partition holding the entries named, the case's answer and the entries
-# it leaves, compared with what is wanted. A default goes into loader.conf.
+# Runs boot-tries.sh on an EFI partition with the entries named and compares
+# exit status and entries. The entry `default` goes into loader.conf.
 case_of() {
     local what="$1" entries="$2" want_status="$3" want="$4" esp got_status=0 got
     esp="${work}/${what// /-}"
@@ -43,5 +42,5 @@ case_of "a default named" "default main.conf" 0 "main.conf"
 case_of "no entries" "" 0 ""
 case_of "another entry" "main+3.conf windows.conf" 0 "main+3.conf windows.conf"
 
-[ "$status" -eq 0 ] && echo "the boot entries get their tries back as written down here"
+[ "$status" -eq 0 ] && echo "boot-tries.sh passes every case"
 exit "$status"

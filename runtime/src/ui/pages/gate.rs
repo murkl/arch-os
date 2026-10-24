@@ -1,5 +1,5 @@
-//! What the work requires, asked in order. The page stands on the first no, asking again every
-//! few seconds, with enter opening what that action falls back on.
+//! Requirements gate: checks in order and stops on the first failure, rechecking every few
+//! seconds. Enter opens that action's fallback.
 
 use std::time::{Duration, Instant};
 
@@ -11,20 +11,20 @@ use crate::spec::{Action, Shell};
 use crate::ui::draw::{paragraph, put, waiting};
 use crate::ui::{Ctx, Data, Flow, Key, Page, Tone};
 
-/// How often the page asks again by itself: often enough that a cable plugged in carries on
-/// before anybody reaches for r, rarely enough that a check going out to the network is no load.
+/// Recheck interval: short enough that a plugged-in cable passes before anyone presses r, long
+/// enough that a network check is no load.
 const EVERY: Duration = Duration::from_secs(5);
 
 pub struct GatePage {
     at: usize,
-    /// The action standing now said no, and what it falls back on where this machine has it.
+    /// The current check failed, with its fallback where this machine has one.
     refused: Option<Option<&'static Action>>,
     checking: bool,
-    /// Which check still counts: a clock set before the page moved on is ignored.
+    /// Current round. Results of an older one are ignored.
     round: u64,
     asked: Instant,
-    /// The fallback was opened by itself once. Every time the page comes back would be a page
-    /// nobody can get to.
+    /// The fallback opened by itself once. Reopening it on every return would make the gate
+    /// unreachable.
     opened: bool,
 }
 
@@ -50,8 +50,7 @@ impl GatePage {
         ctx.module.named(&ctx.module.requires)[self.at]
     }
 
-    /// Asks the action standing now, as a new round, and whether this machine has what it falls
-    /// back on.
+    /// Starts a new round for the current check and its fallback's availability.
     fn check(&mut self, ctx: &mut Ctx) {
         self.round += 1;
         self.checking = true;
@@ -97,7 +96,7 @@ impl GatePage {
 }
 
 impl Page for GatePage {
-    /// A no is final: nobody is there to plug in a cable.
+    /// A failure is final, since nobody is there to plug in a cable.
     fn unattended(&mut self, ctx: &mut Ctx) -> Result<Flow, String> {
         if self.refused.is_none() {
             return Ok(Flow::Stay);
@@ -187,8 +186,7 @@ impl Page for GatePage {
         }
         crate::info!("{} said no", self.action(ctx).id);
         self.refused = Some(said.fallback);
-        // A fallback that asks first opens at once. One that would run waits for enter, which is
-        // the consent.
+        // A fallback with questions opens at once. One that would run waits for enter as consent.
         if let Some(fb) = said.fallback
             && !self.opened
             && !fb.inputs.is_empty()

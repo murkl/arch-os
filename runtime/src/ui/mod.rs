@@ -1,4 +1,4 @@
-//! The interface: pages on a stack, drawn into a cell grid the terminal shows.
+//! Terminal UI: a page stack drawn into a cell buffer.
 
 pub(crate) mod app;
 mod detail;
@@ -38,12 +38,11 @@ pub enum Key {
     PageDown,
     Home,
     End,
-    /// A notch of the mouse wheel: a list moves as with the arrows.
     WheelUp,
     WheelDown,
 }
 
-/// What a key means outside a text box. In front of one, only the keys that cannot be typed.
+/// Navigation meaning of a key. In a text box, only keys that cannot be typed have one.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Nav {
     Up,
@@ -82,8 +81,7 @@ impl Key {
         Some(nav)
     }
 
-    /// Whether holding the key repeats it: moving and typing do, everything else happens once
-    /// per press, so a held enter answers no question that follows.
+    /// Only moving and typing repeat when held, so a held enter does not answer the next question.
     pub fn repeats(self, typing: bool) -> bool {
         matches!(
             self.nav(false),
@@ -92,26 +90,23 @@ impl Key {
     }
 }
 
-/// The step of what moves: a running bar moves a cell, the spinner turns every third. The driver
-/// wakes on the beat, so every frame stands exactly as long as the next.
+/// Animation step: a running bar moves one cell per beat, the spinner every third. Waking on the
+/// beat keeps frames evenly spaced.
 pub const BEAT: Duration = Duration::from_millis(40);
-/// A frame of what moves smoothly, and the shortest time between two draws.
+/// Frame of smooth motion, and the minimum time between two draws.
 pub const FRAME: Duration = Duration::from_millis(16);
-/// The beat of a page where nothing moves.
+/// Beat of a page without animation.
 const IDLE: Duration = Duration::from_millis(500);
 
-/// The start every animation counts from.
 fn epoch() -> Instant {
     static EPOCH: OnceLock<Instant> = OnceLock::new();
     *EPOCH.get_or_init(Instant::now)
 }
 
-/// Beats of `pace` passed by `now`.
 pub fn beats(now: Instant, pace: Duration) -> u64 {
     (now.saturating_duration_since(epoch()).as_nanos() / pace.as_nanos()) as u64
 }
 
-/// The first beat of `pace` after `now`, or the start where `now` lies before it.
 fn next_beat(now: Instant, pace: Duration) -> Instant {
     let start = epoch();
     if now < start {
@@ -122,17 +117,17 @@ fn next_beat(now: Instant, pace: Duration) -> Instant {
 
 pub type PageId = u64;
 
-/// A script given the terminal, which the driver runs between two frames.
+/// Script that takes over the terminal, run by the driver between two frames.
 pub type Handover = Box<dyn FnOnce() -> Result<(), Box<Failure>> + Send>;
 
-/// What a job a page started comes back with.
+/// Result of a page's background job.
 pub enum Data {
     Said(pages::gate::Said),
     Answers(pages::question::Answers),
     Unoffered(pages::dashboard::Unoffered),
     Tried(pages::password::Tried),
     Done(Result<(), Box<Failure>>),
-    /// What ran behind the page that left has stopped.
+    /// Everything running behind the leaving page has stopped.
     Halted,
 }
 
@@ -168,34 +163,32 @@ impl From<Result<(), Box<Failure>>> for Data {
 
 pub enum Msg {
     Key(Key),
-    /// A key held down, sent again by the keyboard's repeat.
+    /// Keyboard repeat of a held key.
     Held(Key),
     Tick,
     Resize,
-    /// The result of a job a page started.
     Data(PageId, Data),
-    /// An event of a script a page started.
     Run(PageId, script::Event),
-    /// What the header's status check answered.
+    /// Result of the header's status check.
     Status(bool),
-    /// Whether this machine has an action, as what it requires said.
+    /// Action id and whether its requirements hold on this machine.
     Offered(String, bool),
-    /// A value read off the machine.
+    /// Setting name and the value read off the machine.
     Resolved(String, String),
-    /// Text pasted into the terminal as one, typed where a text box has the keys.
+    /// Bracketed paste, typed into a focused text box.
     Paste(String),
 }
 
 pub enum Flow {
     Stay,
-    /// The key meant nothing here. The app applies back, quit and abort.
+    /// Key unused by the page. The app then handles back, quit and abort.
     Ignored,
     Push(Box<dyn Page>),
     Replace(Box<dyn Page>),
     Pop,
-    /// Several pages at once: an action's, once it has worked.
+    /// Several pages at once, such as an action's after it succeeds.
     PopN(usize),
-    /// Everything but the dashboard goes.
+    /// Pops all pages but the dashboard.
     Home,
     Quit,
 }
@@ -205,7 +198,7 @@ pub enum Tone {
     Normal,
     Muted,
     Accent,
-    /// The row under the cursor and its mark, on the surface.
+    /// Cursor row and its mark, on the surface background.
     Current,
     Ok,
     Warn,
@@ -213,7 +206,7 @@ pub enum Tone {
 }
 
 pub trait Page {
-    /// The page's name in the header path. Empty adds nothing.
+    /// Name in the header path. Empty adds no segment.
     fn title(&self) -> String;
     fn draw(
         &mut self,
@@ -221,7 +214,7 @@ pub trait Page {
         buf: &mut ratatui::buffer::Buffer,
         ctx: &mut Ctx,
     );
-    /// The keys the footer names, as key and what it does.
+    /// Footer keys as key and label.
     fn hints(&self, ctx: &Ctx) -> Vec<(&'static str, String)>;
     fn key(&mut self, key: Key, ctx: &mut Ctx) -> Flow;
     fn data(&mut self, _data: Data, _ctx: &mut Ctx) -> Flow {
@@ -233,61 +226,58 @@ pub trait Page {
     fn tick(&mut self, _ctx: &mut Ctx) -> Flow {
         Flow::Stay
     }
-    /// A text box has the keys, so letters are typed rather than read as commands.
+    /// A text box has focus, so letters are typed instead of read as commands.
     fn typing(&self) -> bool {
         false
     }
-    /// Moves by itself, so the driver wakes on every beat.
+    /// The driver wakes on every beat.
     fn animating(&self, _ctx: &Ctx) -> bool {
         false
     }
-    /// The beat it moves on while animating, the spinner's unless it moves smoothly.
+    /// Beat while animating. Smooth motion overrides the spinner beat.
     fn pace(&self) -> Duration {
         BEAT
     }
-    /// Drawn on the whole screen, without the header and the keys.
+    /// Full screen, without header and footer.
     fn bare(&self) -> bool {
         false
     }
-    /// Nothing is behind it: back means leaving, as on a run that is under way.
+    /// Back leaves instead of popping, as during a run.
     fn holds(&self) -> bool {
         false
     }
-    /// The way out itself, which leaving does not open twice.
+    /// The leave page itself, so leaving does not open it twice.
     fn leaving(&self) -> bool {
         false
     }
-    /// Something runs on it that must not outlive the program: the page gives it up, and its
-    /// script is handed over to be stopped.
+    /// Hands over a running script that must not outlive the program, to be stopped.
     fn stop(&mut self, _ctx: &mut Ctx) -> Option<Session> {
         None
     }
-    /// On top again after the page above it closed.
+    /// Back on top after the page above closed.
     fn resumed(&mut self, _ctx: &mut Ctx) -> Flow {
         Flow::Stay
     }
-    /// What the page does with nobody at the keyboard: the flow it goes on with by itself, or
-    /// what it needs a person for.
+    /// Flow without a person at the keyboard, or why the page needs one.
     fn unattended(&mut self, _ctx: &mut Ctx) -> Result<Flow, String> {
         Err(crate::i18n::tf(
             "{{page}} needs a person at the keyboard.",
             &[("page", &self.title())],
         ))
     }
-    /// What the work came to, once it has, in the words its page shows.
+    /// Outcome once done, in the text the page shows.
     fn finished(&self, _ctx: &Ctx) -> Option<Result<String, String>> {
         None
     }
-    /// A note for the header's right, in place of the status: where a question stands in a run.
+    /// Header right side in place of the status, such as the question counter of a run.
     fn note(&self, _ctx: &Ctx) -> Option<String> {
         None
     }
-    /// Whether it is the dashboard, where every trail starts and none is drawn.
+    /// The dashboard. The header path starts here and is not drawn.
     fn home(&self) -> bool {
         false
     }
-    /// The trail in the header starts over here: a run of pages one after another rather than
-    /// one inside the other.
+    /// The header path restarts here, for pages in sequence instead of nested.
     fn root(&self) -> bool {
         false
     }
@@ -297,37 +287,33 @@ pub struct Ctx {
     pub module: &'static Module,
     pub store: Store,
     pub style: Style,
-    /// The machine is only this program: leaving closes it for whatever starts it again.
+    /// The machine runs only this program. Leaving exits to whatever starts it again.
     pub kiosk: bool,
-    /// What the header's status check last said, none before it has answered.
+    /// Last status check result, `None` before the first.
     pub status: Option<bool>,
-    /// Which actions this machine has, as what they require last said. One that requires
-    /// nothing is there without asking.
+    /// Last requirement check per action id. Actions without requirements never appear.
     pub offered: BTreeMap<String, bool>,
-    /// The machine had answered nothing when the program started, read once before the first save.
+    /// No answer file existed at start. Read once before the first save.
     pub first: bool,
-    /// What the work requires has said yes this session.
+    /// The requirements gate passed this session.
     pub gated: bool,
-    /// The profiles were offered this session.
     pub presets_seen: bool,
-    /// How many questions the opening run of questions began with, for its counter.
+    /// Question count at the start of the opening wizard, for its counter.
     pub wizard: usize,
-    /// An action fetched answers into the file, which the page below reads back.
+    /// An action wrote answers into the file, for the page below to read back.
     pub imported: bool,
-    /// A yes or no just given on a page of its own, for the page that asked.
+    /// Yes or no from a confirm page, for the page that asked.
     pub answered: Option<bool>,
-    /// Leaving became a decision on this page: everything running behind it is stopped, and the
-    /// page is told once it has.
+    /// Page that decided to leave. Everything behind it is stopped, then it gets `Data::Halted`.
     pub halt: Option<PageId>,
-    /// Something runs behind the page in front that leaving stops.
+    /// Something runs behind the top page that leaving stops.
     pub behind: bool,
-    /// The status is read again as soon as this is set: an action may have changed it.
+    /// Rereads the status, since an action may have changed it.
     pub recheck: std::cell::Cell<bool>,
-    /// A script to hand the terminal to, which the driver does between two frames.
     pub handover: Option<Handover>,
-    /// Where a text box is typed into this frame, for the terminal's own cursor.
+    /// Text box cursor position this frame, for the terminal cursor.
     pub cursor: std::cell::Cell<Option<(u16, u16)>>,
-    /// Background reads under way, for the spinner.
+    /// Background jobs under way, for the spinner.
     pending: std::cell::Cell<usize>,
     tx: Sender<Msg>,
     wake: Arc<dyn Fn() + Send + Sync>,
@@ -335,7 +321,7 @@ pub struct Ctx {
 }
 
 impl Ctx {
-    /// Runs a job off the drawing thread. Its result arrives at the page that started it.
+    /// Runs a job off the drawing thread and sends its result to the calling page.
     pub fn spawn<T: Into<Data> + Send + 'static>(&self, job: impl FnOnce() -> T + Send + 'static) {
         let (tx, wake, page) = (self.tx.clone(), self.wake.clone(), self.page);
         self.pending.set(self.pending.get() + 1);
@@ -346,7 +332,7 @@ impl Ctx {
         });
     }
 
-    /// Where the events of a script go: to the page that started it.
+    /// Sends script events to the calling page.
     pub fn run_sink(&self) -> impl Fn(script::Event) + Send + Sync + 'static {
         let (tx, wake, page) = (self.tx.clone(), self.wake.clone(), self.page);
         move |e| {
@@ -371,18 +357,16 @@ impl Ctx {
         spec::loaded().product.status.as_ref()
     }
 
-    /// Something loads in the background, which the header shows.
     pub fn busy(&self) -> bool {
         self.pending.get() > 0
     }
 
-    /// Whether this machine has an action: every action it requires said yes. Until that has
-    /// said, the row is not shown.
+    /// Every required action passed. Hidden until their checks answer.
     pub fn has(&self, action: &spec::Action) -> bool {
         action.requires.is_empty() || self.offered.get(&action.id).copied().unwrap_or(false)
     }
 
-    /// The actions a list of names stands for that this machine has, in its order.
+    /// The named actions this machine has, in list order.
     pub fn rows(&self, names: &[String]) -> Vec<&'static spec::Action> {
         self.module
             .named(names)
@@ -391,13 +375,13 @@ impl Ctx {
             .collect()
     }
 
-    /// The first action an action names on failure that this machine has.
+    /// First `on_failure` action this machine has.
     pub fn fallback(&self, action: &spec::Action) -> Option<&'static spec::Action> {
         self.rows(&action.on_failure).into_iter().next()
     }
 
-    /// Asks, off the drawing thread, whether this machine has each action that requires others.
-    /// An answer stands until the next look replaces it, so a row does not blink out meanwhile.
+    /// Checks requirements off the drawing thread. Old results stay until replaced, so rows do not
+    /// blink out.
     pub fn look(&self) {
         let env = self.store.env();
         for action in &self.module.actions {
@@ -425,8 +409,8 @@ impl Ctx {
         }
     }
 
-    /// Reads every value the module reads off the machine, off the drawing thread. A script
-    /// that fails leaves the value empty, as an unanswered question is.
+    /// Reads every `value_from` off the drawing thread. A failed script leaves the value empty,
+    /// like an unanswered question.
     pub fn resolve(&self) {
         let env = self.store.env();
         for s in &self.module.settings {
@@ -452,9 +436,8 @@ impl Ctx {
         }
     }
 
-    /// Puts an answer into effect on this machine, such as the console keyboard, which has to be
-    /// loaded before the next thing is typed, so this waits for it. A failure is logged and the
-    /// answer stands: whoever chose it sees whether the keyboard changed.
+    /// Blocks, since a console keymap must load before the next keystroke. A failure is logged and
+    /// the answer stays, as the person sees the effect.
     pub fn apply(&self, s: &Setting) -> Result<(), String> {
         let Some(shell) = &s.apply else { return Ok(()) };
         script::run(shell, &self.store.env())
@@ -464,9 +447,8 @@ impl Ctx {
             })
     }
 
-    /// Puts every standing answer in force again, off the drawing thread: at the start, and after
-    /// a profile, whose values no prompt applied one by one. One that cannot be put in
-    /// force goes back to its default and is asked again, since nobody watched it fail.
+    /// Reapplies every answer off the drawing thread, at start and after a profile. A failed one
+    /// reverts to its default to be asked again, since nobody saw it fail.
     pub fn settle(&self) {
         let env = self.store.env();
         for s in &self.module.settings {
@@ -492,19 +474,18 @@ impl Ctx {
         }
     }
 
-    /// Writes the answer file. A failure is logged: an unsaved run asks again from the top.
+    /// A failure is only logged, since an unsaved run asks again from the start.
     pub fn save(&self) {
         if let Err(e) = self.store.save() {
             crate::error!("{}: {e}", self.store.path().display());
         }
     }
 
-    /// The answers as a sentence reads them: a bool in words, everything else as it stands.
+    /// Fills answers into text, a bool as a word.
     pub fn expand(&self, text: &str) -> String {
         spec::text::expand(text, |name| crate::store::label(self.store.get(name)))
     }
 
-    /// A step of this module, for the shell layer.
     pub fn step(&self, name: &str, action: bool, run: spec::Shell) -> script::Step {
         script::Step {
             module: crate::i18n::t(&self.module.title),
@@ -514,19 +495,18 @@ impl Ctx {
         }
     }
 
-    /// The answers a shell gets, with the environment of this process under them.
+    /// Answers over the process environment, for a shell.
     pub fn env(&self) -> Vec<(String, String)> {
         self.store.env()
     }
 
-    /// The way out: a question where the module says how the machine is put down, or in a kiosk.
+    /// Leaving asks how to shut down: in a kiosk or where the module declares it.
     pub fn leaves(&self) -> bool {
         self.kiosk || self.module.leaves()
     }
 }
 
-/// What a failure means in the module's own words, where its script stopped itself with a
-/// status they cover: own first, then the module's.
+/// Module text for a deliberate exit code: the caller's own first, then the module's.
 pub fn told(module: &Module, own: &BTreeMap<i32, String>, f: &Failure) -> Option<String> {
     if !f.deliberate {
         return None;
@@ -534,8 +514,7 @@ pub fn told(module: &Module, own: &BTreeMap<i32, String>, f: &Failure) -> Option
     module.told(own, f.code).map(crate::i18n::t)
 }
 
-/// Every character outside ASCII the interface can put on a console, in code point order: the
-/// console glyphs, the wordmark, every word of every catalog and every sentence of the product.
+/// Every non-ASCII character the UI can draw, in code point order.
 pub fn glyphs() -> String {
     let mut chars: std::collections::BTreeSet<char> = std::collections::BTreeSet::new();
     let mut add = |s: &str| chars.extend(s.chars().filter(|c| !c.is_ascii()));

@@ -1,5 +1,5 @@
-# An address for the wireless card once iwd has joined a network, the way the
-# Arch ISO gets one, see wifi_station in lib.sh. Weighed above a cable, as there.
+# DHCP for the wireless card once iwd joined a network, as on the Arch ISO, see
+# wifi_station in lib.sh. Metric above the cable's, as there.
 [Match]
 Type=wlan
 

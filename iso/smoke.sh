@@ -1,6 +1,6 @@
 #!/bin/bash
-# Boots a built image until its interface answers a key, which proves the boot
-# chain no linter sees. See README.md.
+# Boots a built image until its interface answers a key, proving the boot chain
+# no linter sees. See README.md.
 #
 #   smoke.sh <image.iso | recovery-dir>
 set -eu
@@ -15,41 +15,38 @@ else
     exit 1
 fi
 
-# A failure keeps every frame, since the screen is all there is to go on. A run
-# that worked keeps the one it was recognized in.
+# A failure keeps every frame, since the screen is the only evidence. A pass
+# keeps the matching one.
 FRAME_DIR="${FRAME_DIR:-$(dirname "$IMAGE")/smoke/$(basename "$IMAGE" .iso)}"
 
-# The slow case is a cold boot under emulation with no KVM, which five minutes
-# covers with room to spare.
+# Covers a cold boot under emulation without KVM, with room to spare.
 TIMEOUT="${TIMEOUT:-300}"
 INTERVAL="${INTERVAL:-15}"
 
 OVMF_CODE="${OVMF_CODE:-/usr/share/edk2/x64/OVMF_CODE.4m.fd}"
 OVMF_VARS="${OVMF_VARS:-/usr/share/edk2/x64/OVMF_VARS.4m.fd}"
 
-# The welcome page, by the languages on it: OCR reads them cleanly, where it
-# loses letters elsewhere and the wordmark is drawn in blocks.
+# The welcome page, by its languages: OCR reads them cleanly, unlike other text
+# and the block-drawn wordmark.
 EXPECT='English|Deutsch'
 
-# A page on the screen does not yet listen: a console the splash left locked
-# shows keys instead of passing them on. So Deutsch is chosen by key, and the
-# first question, the keyboard, comes up in German.
-ANSWER='Tastatur|Konsole'
+# Deutsch is chosen by key and the keyboard question must follow in German: a
+# console the splash left locked shows pages but only echoes keys. Short
+# German-only fragments, since tesseract misreads the console font.
+ANSWER='astatur|Textkonsole|Vorausge'
 
-# A machine that got this far and no further says so in plain words, and there is
-# no reason to sit out the timeout for it.
+# A failed boot prints one of these, so the run stops before the timeout.
 PANIC='Kernel panic|Failed to start'
 
 for tool in qemu-system-x86_64 tesseract; do
     command -v "$tool" >/dev/null || { echo "Error: ${tool} not found, see README.md" >&2 && exit 1; }
 done
-[ -f "$OVMF_CODE" ] || { echo "Error: no OVMF firmware at ${OVMF_CODE} - install edk2-ovmf" >&2 && exit 1; }
+[ -f "$OVMF_CODE" ] || { echo "Error: no OVMF firmware at ${OVMF_CODE}. Install edk2-ovmf." >&2 && exit 1; }
 
 rm -rf "$FRAME_DIR"
 mkdir -p "$FRAME_DIR"
 
-# OVMF writes its variables back to the file it was given, so this machine gets a
-# copy of its own.
+# OVMF writes its variables back to the file, so the machine gets its own copy.
 VARS="${FRAME_DIR}/vars.fd"
 cp "$OVMF_VARS" "$VARS"
 
@@ -64,8 +61,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# A free port for qemu's monitor. Over tcp rather than a unix socket because bash
-# can open a tcp connection on its own.
+# A free port for qemu's monitor. tcp rather than a unix socket, since bash
+# opens tcp connections by itself.
 port=0
 while [ "$port" -eq 0 ]; do
     candidate=$((RANDOM % 20000 + 30000))
@@ -86,7 +83,7 @@ qemu-system-x86_64 \
     -monitor "tcp:127.0.0.1:${port},server,nowait" &
 QEMU_PID=$!
 
-# The monitor is not listening the instant qemu is started.
+# The monitor does not listen right after qemu starts.
 connected=false
 for _ in $(seq 40); do
     if (exec 3<>"/dev/tcp/127.0.0.1/${port}") 2>/dev/null; then
@@ -98,8 +95,8 @@ for _ in $(seq 40); do
 done
 [ "$connected" = true ] || { echo "Error: qemu's monitor never came up on port ${port}" >&2 && exit 1; }
 
-# The monitor answers on the same connection, and nothing here reads those
-# answers: a screendump is judged by the file it leaves.
+# The monitor's answers go unread. A screendump is judged by the file it
+# leaves.
 screendump() {
     printf 'screendump %s -f png\n' "$1" >&3
     for _ in $(seq 25); do
@@ -109,28 +106,28 @@ screendump() {
     return 1
 }
 
-# --psm 6 because a console is one block of text in one font, which is exactly
-# what the default page segmentation gets wrong.
+# --psm 6, since a console is one block of text in one font, which the default
+# page segmentation gets wrong.
 console_text() {
     tesseract "$1" - --psm 6 2>/dev/null || true
 }
 
-# The console's text in the log too: a login prompt and a splash that never
-# ended are otherwise the same message.
+# Logs the console text too, since a login prompt and a stuck splash otherwise
+# fail alike.
 fail() {
     echo "Error: $1" >&2
     if [ -n "$last_shot" ]; then
         echo "the console read:" >&2
         console_text "$last_shot" | sed 's/^/  | /' >&2
     else
-        echo "the console could not be photographed at all, see the monitor above" >&2
+        echo "no screendump of the console, see the monitor output above" >&2
     fi
-    echo "the console is in ${FRAME_DIR}" >&2
+    echo "console screenshots: ${FRAME_DIR}" >&2
     exit 1
 }
 
-# Photographs the console every INTERVAL seconds until it reads the pattern,
-# for up to TIMEOUT, and keeps the frame it matched in as $found.
+# Screenshots the console every INTERVAL seconds, for up to TIMEOUT, until it
+# matches the pattern. The matching frame lands in $found.
 found=""
 frame=0
 await() {
@@ -155,7 +152,7 @@ await() {
     return 1
 }
 
-# A key as the keyboard sends it, with a moment for the interface to draw.
+# A key as the keyboard sends it, then a moment for the interface to draw.
 press() {
     printf 'sendkey %s\n' "$1" >&3
     sleep 1
@@ -169,7 +166,6 @@ press down
 press ret
 await "$ANSWER" || fail "the interface did not answer the keyboard within ${TIMEOUT}s"
 
-# The one frame worth keeping is the one the answer was recognized in.
 mv "$found" "${FRAME_DIR}/arch-os.png"
 rm -f "${FRAME_DIR}"/frame-*.png
 echo "### Arch OS is up and answers: ${FRAME_DIR}/arch-os.png"

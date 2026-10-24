@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# The functions of lib.sh that decide from what they are handed, against
-# answers written out here. What they read off a machine is for the tests
-# beside each task, run on that machine.
+# lib.sh's pure functions against expected answers. What reads the machine is
+# tested beside each task.
 #
 #   lib.check.sh
 set -euo pipefail
@@ -18,7 +17,7 @@ expect() {
     fi
 }
 
-# A command's answer as yes or no.
+# Exit status as yes or no.
 holds() { if "$@"; then echo yes; else echo no; fi; }
 
 # ─── Statuses ────────────────────────────────────────────────────────────────
@@ -53,9 +52,8 @@ EOF
 
 # ─── GitHub's releases ───────────────────────────────────────────────────────
 
-# A list as GitHub sends it, field for field in its order, newest first: one
-# for another series, a pre-release, one published before GitHub kept a
-# checksum, and a label and a body that hold what the patterns look for.
+# GitHub's field order, newest first: another series, a pre-release, a release
+# without digest, and a label and body that contain the searched patterns.
 asset() {
     printf '{"url":"https://api.github.com/repos/murkl/arch-os/releases/assets/%s","id":%s,"name":"%s","label":"%s","uploader":{"url":"https://api.github.com/users/murkl"},"size":1,"digest":%s,"browser_download_url":"https://github.com/murkl/arch-os/releases/download/%s/%s"}' \
         "$1" "$1" "$3" "${5:-}" "$4" "$2" "$3"
@@ -83,7 +81,7 @@ compact="[$(
     release 2.0.0 "$(asset 200 2.0.0 arch-os-2.0.0-recovery-x86_64.tar '"sha256:200"')"
 )]"
 
-# The same, laid out the way a person reads it, a space after every colon.
+# The same, pretty-printed with a space after each colon.
 pretty="$(sed -e 's/":/": /g' -e 's/,"/,\n  "/g' -e 's/{/{\n  /g' -e 's/}/\n}/g' <<<"$compact")"
 
 recovery() { printf 'https://github.com/murkl/arch-os/releases/download/%s/arch-os-%s-recovery-x86_64.tar' "$1" "$1"; }
@@ -109,8 +107,8 @@ for layout in compact pretty; do
 EOF
 done
 
-# On its own partition, only what is newer. From anywhere else, only for a
-# Recovery that does not start, and then whatever is newest.
+# On the Recovery partition only a newer one. Elsewhere the newest, only if the
+# disk's Recovery does not boot.
 while read -r own starts running want; do
     MODULE_VERSION="$running"
     on_recovery_partition() { [ "$own" = yes ]; }
@@ -141,13 +139,13 @@ printf '{{NAME}} and {{OTHER}}\n' >"${templates}/two"
 printf 'a {{ b\n' >"${templates}/open"
 printf '{{lower}}\n' >"${templates}/lower"
 
-expect "render fills and leaves every \$" "$(render "${templates}/plain" NAME=tux | od -c)" \
+expect "render fills and keeps every \$" "$(render "${templates}/plain" NAME=tux | od -c)" \
     "$(sed 's/{{NAME}}/tux/' "${templates}/plain" | od -c)"
-expect "render writes a value holding {{ as it is" "$(render "${templates}/two" NAME='{{OTHER}}' OTHER=x)" "{{OTHER}} and x"
-expect "render with a placeholder nobody fills" "$(holds render "${templates}/two" NAME=x 2>/dev/null)" no
-expect "render with a value nothing asks for" "$(holds render "${templates}/plain" NAME=x EXTRA=y 2>/dev/null)" no
-expect "render with a {{ that opens nothing" "$(holds render "${templates}/open" 2>/dev/null)" no
-expect "render with a name that is no NAME" "$(holds render "${templates}/lower" lower=x 2>/dev/null)" no
+expect "render keeps {{ in a value" "$(render "${templates}/two" NAME='{{OTHER}}' OTHER=x)" "{{OTHER}} and x"
+expect "render with an unfilled placeholder" "$(holds render "${templates}/two" NAME=x 2>/dev/null)" no
+expect "render with an unused value" "$(holds render "${templates}/plain" NAME=x EXTRA=y 2>/dev/null)" no
+expect "render with a bare {{" "$(holds render "${templates}/open" 2>/dev/null)" no
+expect "render with a lowercase name" "$(holds render "${templates}/lower" lower=x 2>/dev/null)" no
 expect "render with no template" "$(holds render "${templates}/none" 2>/dev/null)" no
 
 # ─── The disk ────────────────────────────────────────────────────────────────
@@ -161,5 +159,5 @@ done <<'EOF'
 /dev/mmcblk0 3 /dev/mmcblk0p3
 EOF
 
-[ "$status" -eq 0 ] && echo "lib.sh decides as written down here"
+[ "$status" -eq 0 ] && echo "lib.sh passes every case"
 exit "$status"

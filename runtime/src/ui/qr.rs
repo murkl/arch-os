@@ -1,11 +1,10 @@
-//! A value drawn as a code to scan, for a link wanted on the phone in somebody's hand. A code
-//! slightly wrong is no code, so colors, margin and whether it is drawn at all follow what a
-//! scanner needs.
+//! QR code of a value, to open a link on a phone. A slightly wrong code does not scan, so
+//! colors, margin and whether to draw at all follow scanner needs.
 
 use ratatui::style::{Color, Style as Cell};
 
-/// The four cells a picture is built from: two stacked modules to a cell, which is what makes a
-/// module square. All four are in codepage 437 and the fonts a product builds for the console.
+/// Two stacked modules per cell keep modules square. All four glyphs are in codepage 437 and the
+/// console fonts.
 pub const CELLS: [&str; 4] = ["█", "▀", "▄", " "];
 
 pub fn cell(upper: bool, lower: bool) -> &'static str {
@@ -17,17 +16,17 @@ pub fn cell(upper: bool, lower: bool) -> &'static str {
     }
 }
 
-/// Black on white, said outright: a camera looks for dark squares on light.
+/// Explicit black on white, since a scanner looks for dark squares on light.
 pub fn ink() -> Cell {
     Cell::new().fg(Color::Black).bg(Color::White)
 }
 
-/// The light margin around the code, in modules: four by the specification, two as readers
-/// manage. The widest that fits is used.
+/// Quiet zone in modules: four per specification, two as scanners manage. The widest that fits
+/// wins.
 const QUIET: [usize; 3] = [4, 3, 2];
 
-/// The code as rows of cells, or none where it will not fit or encode: the page shows the
-/// value as writing either way.
+/// Rows of cells, or `None` where the code does not fit or encode. The page shows the value as
+/// text either way.
 pub fn code(text: &str, width: usize, height: usize) -> Option<Vec<String>> {
     if text.is_empty() {
         return None;

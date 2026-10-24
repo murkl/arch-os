@@ -1,2 +1,2 @@
-# The repository answers, which is more than the section being there.
+# The repository answers, not only the section exists.
 arch-chroot "$MNT" pacman -Sl multilib >/dev/null

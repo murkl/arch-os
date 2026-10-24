@@ -1,9 +1,8 @@
-# Partition, encrypt, format and mount the target. The layout and the
-# subvolumes: docs/REFERENCE.md
+# Layout and subvolumes: docs/REFERENCE.md
 # https://wiki.archlinux.org/title/Installation_guide#Partition_the_disks
 
-# An answer file from another machine names whatever sat at that path there, so
-# the disk is held to the list it is chosen from right before it is written.
+# An answer file from another machine may name any device, so the disk is
+# checked against the selectable ones right before the write.
 disks="$(options_disks | cut -f1)"
 if ! grep -qxF "$ARCH_OS_DISK" <<<"$disks"; then
     echo "${ARCH_OS_DISK} is not one of the disks this machine can be installed on" >&2
@@ -12,7 +11,7 @@ fi
 boot_part="$(boot_partition "$ARCH_OS_DISK")"
 system_part="$(system_partition "$ARCH_OS_DISK")"
 
-# What an earlier attempt left mounted or open, closed for good.
+# Closes what an earlier attempt left mounted or open:
 # docs/CONTRIBUTING.md#closing-the-target
 swapoff -a || true
 sync
@@ -21,10 +20,9 @@ if [ -e /dev/mapper/cryptroot ]; then
     cryptsetup close cryptroot
 fi
 
-# Anything still holding a partition (opened by hand, swap on it) keeps the
-# kernel from reading the new table. The Arch OS ISO carries neither lvm2 nor
-# mdadm, so it assembles no old group or array off the disk by itself. Raw
-# output joins two mount points of one partition with an escaped newline.
+# A held partition keeps the kernel from reading the new table. The ISO ships
+# neither lvm2 nor mdadm, so no old volume group or array assembles by itself.
+# lsblk -r joins two mount points of one partition with an escaped newline.
 held="$(lsblk -nrpo NAME,TYPE,MOUNTPOINTS "$ARCH_OS_DISK" | awk -F'[ ]' '
     ($2 != "disk" && $2 != "part") || $3 != "" {
         gsub(/\\x0a/, ", ", $3)
@@ -35,8 +33,8 @@ if [ -n "$held" ]; then
     exit 11
 fi
 
-# Asked before the table is wiped: afterwards nothing says which firmware
-# entries pointed at this disk.
+# Read before the wipe: afterwards nothing tells which firmware entries pointed
+# at this disk.
 old_parts="$(lsblk -nro PARTUUID "$ARCH_OS_DISK" | awk 'NF { printf "%s ", tolower($1) }')"
 
 wipefs -af "$ARCH_OS_DISK"
@@ -44,8 +42,9 @@ sgdisk --zap-all "$ARCH_OS_DISK"
 sgdisk -o "$ARCH_OS_DISK"
 sgdisk -n 1:0:+1G -t 1:ef00 -c 1:boot --align-end "$ARCH_OS_DISK"
 
-# The root typed as x86-64 root, which systemd's tools find it by. The Recovery
-# at the very end, RECOVERY_MIB plus two: the last sectors hold the backup table.
+# 8304 is the x86-64 root type systemd finds the root by. The Recovery
+# partition gets RECOVERY_MIB plus 2 MiB, since the backup GPT takes the last
+# sectors.
 if [ "$ARCH_OS_RECOVERY_ENABLED" = "true" ]; then
     sgdisk -n "2:0:-$((RECOVERY_MIB + 2))M" -t 2:8304 -c 2:root --align-end "$ARCH_OS_DISK"
     sgdisk -n 3:0:0 -t 3:8300 -c 3:recovery "$ARCH_OS_DISK"
@@ -54,26 +53,25 @@ else
 fi
 partprobe "$ARCH_OS_DISK"
 
-# udev makes the new device nodes a moment after partprobe returns.
+# udev creates the device nodes shortly after partprobe returns.
 udevadm settle
 
-# The new partitions start where the old ones did, and so do their signatures:
-# a LUKS header left under a fresh btrfs is what mount then reads. The
-# Recovery's image fills its partition only in part, and a signature left past
-# its end makes its UUID ambiguous, which is how it is found.
+# Old signatures survive at the same offsets, and mount may read a stale LUKS
+# header under the new btrfs. The Recovery image fills its partition only in
+# part, and a leftover signature makes the UUID it is found by ambiguous.
 parts=("$boot_part" "$system_part")
 if [ "$ARCH_OS_RECOVERY_ENABLED" = "true" ]; then
     parts+=("$(recovery_partition "$ARCH_OS_DISK")")
 fi
 wipefs -af "${parts[@]}"
 
-# The firmware's entries for partitions that are now gone. One left behind
-# costs a line in a menu, so this is never fatal.
+# Firmware entries of the wiped partitions. A leftover costs only a menu line,
+# so this is never fatal.
 # https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface#efibootmgr
 if [ -n "$old_parts" ]; then
     if entries="$(efibootmgr)"; then
         while read -r entry; do
-            echo "removing boot entry ${entry}, which pointed at a partition that is gone"
+            echo "removing boot entry ${entry} of a wiped partition"
             efibootmgr -q -b "$entry" -B || echo "boot entry ${entry} could not be removed" >&2
         done < <(awk -v parts="$old_parts" '
             BEGIN { n = split(parts, part, " ") }
@@ -82,19 +80,17 @@ if [ -n "$old_parts" ]; then
                 for (i = 1; i <= n; i++) if (index(line, part[i])) { print substr($1, 5, 4); break }
             }' <<<"$entries")
     else
-        echo "the firmware's boot entries could not be read, so the old ones are still listed" >&2
+        echo "reading the firmware's boot entries failed, old ones stay listed" >&2
     fi
 fi
 
-# The passphrase on stdin, never in an argument list /proc shows. The options
-# are kept in the header, so every later open has them: discards let through,
-# or fstrim trims nothing, and on a solid state drive the requests handed on as
-# they come rather than through dm-crypt's queues.
+# The passphrase on stdin, never in an argument /proc shows. --persistent keeps
+# the options in the header for every later open: discards, or fstrim trims
+# nothing, and on an SSD no dm-crypt workqueues.
 # https://wiki.archlinux.org/title/Dm-crypt/Specialties#Discard/TRIM_support_for_solid_state_drives_(SSD)
 # https://wiki.archlinux.org/title/Dm-crypt/Specialties#Disable_workqueue_for_increased_solid_state_drive_(SSD)_performance
 root_device="$system_part"
 if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
-    # The disk's own password where it has one, otherwise the account's.
     passphrase="$ARCH_OS_PASSWORD"
     [ "$ARCH_OS_DISK_PASSWORD_ENABLED" = "true" ] && passphrase="$ARCH_OS_DISK_PASSWORD"
     open_options=(--allow-discards --persistent)
@@ -115,19 +111,20 @@ while read -r subvolume _; do
 done < <(btrfs_subvolumes)
 umount -R "$MNT"
 
-# @ first, since every other mount point is a directory inside it.
+# @ first: every other mount point lies inside it.
 while IFS=$'\t' read -r subvolume path; do
     mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=${subvolume}" \
         "$root_device" "${MNT}${path%/}"
 done < <(btrfs_subvolumes)
 
-# A fresh subvolume is root's alone, and the installation writes to /var/tmp
-# before systemd-tmpfiles could set it.
+# A new subvolume is writable by root only, and the installation writes to
+# /var/tmp before systemd-tmpfiles runs.
 chmod 1777 "${MNT}/var/tmp"
 
-# systemd would make subvolumes of these on first boot, noise in every listing.
+# Otherwise systemd creates them as subvolumes on first boot, clutter in every
+# listing.
 mkdir -p "${MNT}/var/lib/portables" "${MNT}/var/lib/machines"
 
-# Root's alone, the kernel and the signed images on it: genfstab writes the
-# options it finds mounted.
+# Root only, since it holds the kernel and the signed images. genfstab copies
+# these mount options.
 mount -v --mkdir -t vfat -o fmask=0077,dmask=0077 "$boot_part" "${MNT}/boot"

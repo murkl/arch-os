@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # data/bashrc and data/zshrc on a text console: every value of environment.d,
-# a quoted one too, arrives as it is written there.
+# quoted ones included, arrives as written.
 #
 #   check.sh
 set -euo pipefail
@@ -15,7 +15,7 @@ mkdir -p "${work}/environment.d" "${work}/home"
 want="sh -c 'col -bx | bat -l man -p'"
 printf 'CHECK_VALUE="%s"\n' "$want" >"${work}/environment.d/50-check.conf"
 
-# A login on the text console: no display, an empty environment, the first shell level.
+# A text console login: no display, an empty environment, the first shell level.
 console=(env -i "HOME=${work}/home" "PATH=${PATH}" "XDG_CONFIG_HOME=${work}" TERM=linux)
 declare -A got
 # shellcheck disable=SC2016 # the shell started here expands them

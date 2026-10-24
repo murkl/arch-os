@@ -1,6 +1,5 @@
-//! The way out where the module says how the machine is put down: its rows, and under them
-//! closing the program, which a kiosk starts again. Opened over what was happening, it stops
-//! nothing until a row is chosen, and carries the row out once what ran has stopped.
+//! Leave page: the module's shutdown rows, then closing the program, which a kiosk restarts.
+//! Nothing stops until a row is chosen, and the row runs once everything behind has stopped.
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -13,22 +12,21 @@ use crate::ui::draw::{paragraph, waiting};
 use crate::ui::list::{List, Picked, Row};
 use crate::ui::{Ctx, Data, Flow, Key, Page, Tone};
 
-/// What a row does: an action of the module, or closing the program.
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Way {
     Action(&'static Action),
     Exit,
 }
 
-/// The keys on the bare page, in no language in particular, like the first page's.
+/// Untranslated keys of the bare page, like the language page's.
 const KEYS: &str = "↑↓ move · ⏎ confirm · esc back";
 
 pub struct LeavePage {
     list: List<Way>,
-    /// Opened over the first page, before there is a frame: drawn like it.
+    /// Opened over the bare first page, so drawn bare too.
     bare: bool,
-    /// The row chosen, and its action's script once what ran behind has stopped: a restart takes
-    /// a moment to arrive, and the page says so.
+    /// Chosen row, and its script once everything behind has stopped. A restart takes a moment, so
+    /// the page shows it.
     doing: Option<(Way, Option<Session>)>,
     failed: Option<Detail>,
 }
@@ -43,7 +41,7 @@ impl LeavePage {
             })
             .collect();
         let help = if ctx.kiosk {
-            t("Restarts this program. All answers are kept.")
+            t("Restarts this program, answers kept.")
         } else {
             t("Closes this program. The machine keeps running.")
         };
@@ -58,8 +56,7 @@ impl LeavePage {
         }
     }
 
-    /// From here on a row is a decision rather than a question: whatever runs behind this page
-    /// is stopped first, and the row is carried out once it has.
+    /// Stops everything behind this page first, then carries out the row.
     fn decide(&mut self, way: Way, ctx: &mut Ctx) -> Flow {
         self.doing = Some((way, None));
         self.failed = None;
@@ -67,7 +64,7 @@ impl LeavePage {
         Flow::Stay
     }
 
-    /// Does what the row stands for, nothing running behind this page any more.
+    /// Runs the row, with nothing left running behind this page.
     fn carry_out(&mut self, way: Way, ctx: &mut Ctx) -> Flow {
         let Way::Action(action) = way else {
             crate::info!("exit");
@@ -145,7 +142,7 @@ impl Page for LeavePage {
     }
 
     fn key(&mut self, key: Key, ctx: &mut Ctx) -> Flow {
-        // Nothing means anything while the machine is going down.
+        // Keys do nothing while the machine goes down.
         if self.doing.is_some() {
             return Flow::Stay;
         }
@@ -175,8 +172,8 @@ impl Page for LeavePage {
         };
         self.doing = None;
         match result {
-            // A machine going down takes the program with it long before: this is a module tried
-            // out, and the program closes.
+            // A real shutdown ends the program before this. Here a module is being tried out, so
+            // the program quits.
             Ok(()) => Flow::Quit,
             Err(f) => {
                 crate::error!("{f}");
@@ -197,7 +194,7 @@ impl Page for LeavePage {
     }
 }
 
-/// A row's name, which the page also stands under while the row is carried out.
+/// Row name, also the page title while the row runs.
 fn label(way: Way, ctx: &Ctx) -> String {
     match way {
         Way::Action(action) => t(&action.title),

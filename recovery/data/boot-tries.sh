@@ -1,15 +1,13 @@
 #!/usr/bin/env bash
-# Written by Arch OS: the system's boot entries on the EFI partition $1 given
-# $2 tries again, after a start that worked and whenever the Recovery starts.
-# The loader takes one each time it starts an entry, and one with none left
-# goes behind the others: the fallback, then the Recovery.
+# Written by Arch OS. Gives the boot entries on the EFI partition $1 $2 tries
+# again, after a good start and at every Recovery start. An entry out of tries
+# sorts last, so the fallback starts, then the Recovery.
 # https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/
 set -eu
 
 entries="$1/loader/entries"
 
-# A default in loader.conf starts however often it failed: nothing here would
-# change that.
+# A default in loader.conf starts regardless of its tries.
 if grep -qs '^default' "$1/loader/loader.conf"; then
     exit 0
 fi
@@ -30,6 +28,6 @@ for name in main main-fallback; do
     want="${entries}/${name}+$2.conf"
     if [ "${found[0]}" != "$want" ]; then
         mv -f "${found[0]}" "$want"
-        echo "${found[0]##*/} is ${want##*/} again"
+        echo "renamed ${found[0]##*/} to ${want##*/}"
     fi
 done

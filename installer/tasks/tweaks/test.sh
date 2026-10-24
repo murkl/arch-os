@@ -1,5 +1,5 @@
-# Each file read back by the tool that acts on it: sysctl, systemd, udev and
-# tmpfiles all pass over what they cannot read without a word.
+# Each file read back by its own tool: sysctl, systemd, udev and tmpfiles
+# silently skip what they cannot parse.
 
 [ -f "${MNT}/etc/sudoers.d/20-pwfeedback" ]
 arch-chroot "$MNT" pacman-conf Color | grep -qx Color
@@ -20,10 +20,10 @@ for config in user journald; do
         grep -q "^# .*/${config}\.conf\.d/10-arch-os\.conf$"
 done
 
-# --no-style, so a style rule a later systemd adds fails nothing that works.
+# --no-style: a style rule of a newer systemd fails nothing that works.
 udevadm verify --resolve-names=never --no-style --no-summary \
     "${MNT}/etc/udev/rules.d/60-arch-os-ioschedulers.rules" \
     "${MNT}/etc/udev/rules.d/70-arch-os-usb-writeback.rules"
 
-# --dry-run: the line writes to /sys, which here is the live image's.
+# --dry-run: the line writes to /sys, which here is the live system's.
 systemd-tmpfiles --dry-run --create "${MNT}/etc/tmpfiles.d/arch-os-hugepages.conf"

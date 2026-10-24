@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Written by Arch OS: waits up to $1 seconds for the session in front on seat0,
-# the login screen's or the one logged in by itself, to be up. Until then this
-# start does not count as one that worked.
+# Waits up to $1 seconds for a graphical session on seat0, the greeter's or an
+# automatic login's. Until then the boot does not count as good.
 # https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/
 set -u
 

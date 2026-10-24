@@ -1,5 +1,5 @@
-//! One log per run of a module: the runtime's own lines, and everything every script printed,
-//! stamped in the machine's time zone as it stands at that line.
+//! One log per module run: runtime lines and script output, stamped in the time zone current at
+//! each line.
 
 use std::fs::{File, OpenOptions};
 use std::io::Write;
@@ -9,15 +9,15 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 static FILE: Mutex<Option<(File, PathBuf)>> = Mutex::new(None);
 
-/// Every line on stdout as well, for a run with nobody at the screen.
+/// Copies each line to stdout for an unattended run.
 static ECHO: AtomicBool = AtomicBool::new(false);
 
 pub fn echo(on: bool) {
     ECHO.store(on, Ordering::Relaxed);
 }
 
-/// Opens `path`, keeping the run before as `.old`. Without it every write is a no-op: losing
-/// the log is worse than not having one, but not that much worse.
+/// Opens `path` and keeps the previous run as `.log.old`. Until it succeeds every write is a
+/// no-op, a missing log never stops a run.
 pub fn init(path: &Path) -> std::io::Result<()> {
     if let Some(dir) = path.parent() {
         std::fs::create_dir_all(dir)?;
@@ -49,8 +49,7 @@ pub fn write(level: &str, msg: &str) {
     }
 }
 
-/// The time in the zone `/etc/localtime` names now: a run may set the zone, and the log reads
-/// in the zone of the machine being installed. `TZ` in the environment wins.
+/// Reads `/etc/localtime` per line, since a run may set the zone. `TZ` wins.
 fn now() -> String {
     static ZONE: Mutex<Option<(String, jiff::tz::TimeZone)>> = Mutex::new(None);
     let tz = match std::env::var_os("TZ") {

@@ -4,8 +4,8 @@ sysctl_keys_exist "${MNT}/etc/sysctl.d/99-vm-zram-parameters.conf"
 arch-chroot "$MNT" systemctl is-enabled btrfs-scrub@-.timer >/dev/null
 arch-chroot "$MNT" systemctl is-enabled systemd-pstore.service >/dev/null
 
-# Skipped offline and run online: the condition answers what ExecCondition
-# reads as skip without a network, and yes with one.
+# Without a network the condition exits 1 to 254, a skip for ExecCondition, and
+# 0 with one.
 [ -z "$(unit_complaints archlinux-keyring-wkd-sync.service)" ]
 read -ra condition <<<"$(sed -n 's/^ExecCondition=//p' "${MNT}/etc/systemd/system/archlinux-keyring-wkd-sync.service.d/online.conf")"
 status=0

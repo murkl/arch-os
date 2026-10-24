@@ -1,4 +1,4 @@
-//! The pages, and the two chains that lead through them: the opening, and the start of the work.
+//! Pages and their two chains: the opening and the start.
 
 pub mod action;
 pub mod confirm;
@@ -18,16 +18,16 @@ pub mod splash;
 use super::{Ctx, Flow};
 use crate::spec::Action;
 
-/// What follows a question once it is answered.
+/// What follows an answered question.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Then {
-    /// The opening goes on: the next question, the gate, the profiles, the dashboard.
+    /// Next step of the opening: question, gate, profiles, dashboard.
     Opening,
-    /// The start of the work goes on: the next open question, the passwords, the confirmation.
+    /// Next step of the start: open question, passwords, confirmation.
     Start,
     /// Back to the page that opened it, which reads the answer.
     Pop,
-    /// An action's next page: its inputs from `next` on, its confirmation, its work.
+    /// Next page of an action: inputs from `next` on, confirmation, run.
     Action {
         action: &'static Action,
         next: usize,
@@ -50,9 +50,8 @@ pub fn after(then: &Then, ctx: &mut Ctx) -> Flow {
     }
 }
 
-/// The opening, one link at a time: the questions asked first, what the work requires, a
-/// profile on a machine that answered nothing, then every open question, numbered. A link
-/// with nothing to ask hands straight on, and nothing left means the dashboard.
+/// Next opening step: upfront questions, gate, a profile on a machine without answers, then the
+/// open questions, numbered. Steps with nothing to ask are skipped.
 pub fn next(ctx: &mut Ctx) -> Flow {
     if let Some(s) = ctx.store.upfront().first() {
         return Flow::Push(Box::new(question::QuestionPage::setting(s, Then::Opening)));
@@ -74,7 +73,7 @@ pub fn next(ctx: &mut Ctx) -> Flow {
     Flow::Home
 }
 
-/// The start of the work: what is still open, the passwords, the confirmation, the run.
+/// Next start step: open questions, passwords, confirmation, run.
 pub fn start(ctx: &mut Ctx) -> Flow {
     if let Some(s) = ctx.store.missing().first() {
         return Flow::Push(Box::new(question::QuestionPage::setting(s, Then::Start)));
@@ -93,7 +92,7 @@ pub fn start(ctx: &mut Ctx) -> Flow {
     Flow::Push(Box::new(run::RunPage::new(ctx)))
 }
 
-/// Where a question stands in the opening run, for the header.
+/// Question counter of the opening, for the header.
 pub fn counter(ctx: &Ctx) -> Option<String> {
     if ctx.wizard == 0 {
         return None;

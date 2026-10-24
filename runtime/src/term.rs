@@ -1,4 +1,4 @@
-//! The interface in the terminal it was started from.
+//! Interactive run in the calling terminal.
 
 use std::sync::mpsc::{self, RecvTimeoutError};
 use std::sync::{Arc, Condvar, Mutex};
@@ -81,7 +81,7 @@ pub fn run(start: Start) -> std::io::Result<()> {
             match rx.recv_timeout(wake.saturating_duration_since(drawn)) {
                 Ok(msg) => {
                     app.handle(msg);
-                    // What follows within a frame is drawn with it, and a flood still gets drawn.
+                    // Messages within one frame are drawn together, a flood still gets drawn.
                     let (due, budget) = (drawn + FRAME, Instant::now() + FRAME);
                     while !app.done() && Instant::now() < budget {
                         match rx.recv_timeout(due.saturating_duration_since(Instant::now())) {
@@ -97,9 +97,9 @@ pub fn run(start: Start) -> std::io::Result<()> {
             if !app.done() && Instant::now() >= wake {
                 app.handle(Msg::Tick);
             }
-            // A script given the terminal: the interface stands down for as long as it runs,
-            // the key thread first. A read of the terminal from what is then a background
-            // process group would stop this process, or spin on the error it gets instead.
+            // While a script has the terminal, the interface stands down, the key thread first.
+            // A terminal read from the then background process group stops this process or
+            // spins on the error.
             if let Some(job) = app.ctx.take_handover() {
                 gate.pause();
                 mouse(false);
@@ -120,21 +120,20 @@ pub fn run(start: Start) -> std::io::Result<()> {
     result
 }
 
-/// How long the key thread waits for a key before it looks whether it is to stand still.
+/// Key poll timeout between checks for a pause.
 const POLL: Duration = Duration::from_millis(50);
 
-/// Holds the key thread still while a script has the terminal. Pausing waits until the thread
-/// stands, so no read of the terminal is under way once the script takes the foreground.
+/// Parks the key thread while a script has the terminal. `pause` waits until it is parked, so no
+/// terminal read is in flight when the script takes the foreground.
 #[derive(Default)]
 struct Gate {
-    /// Whether a pause is wanted, and whether the thread stands.
+    /// Pause requested, thread parked.
     state: Mutex<(bool, bool)>,
     changed: Condvar,
 }
 
 impl Gate {
-    /// Asks the key thread to stand still and waits until it does, or a moment for one that
-    /// is gone.
+    /// Waits until the key thread parks. The deadline covers a thread that has exited.
     fn pause(&self) {
         let mut s = self.state.lock().unwrap_or_else(|e| e.into_inner());
         s.0 = true;
@@ -158,8 +157,7 @@ impl Gate {
         self.changed.notify_all();
     }
 
-    /// The key thread, before each look at the terminal: stands still for as long as it is
-    /// asked to.
+    /// Called by the key thread before each terminal read. Parks while a pause is requested.
     fn pass(&self) {
         let mut s = self.state.lock().unwrap_or_else(|e| e.into_inner());
         if !s.0 {
@@ -174,7 +172,7 @@ impl Gate {
     }
 }
 
-/// The Linux console: TERM `linux`, or none or dumb, which promises nothing.
+/// TERM `linux`. An unset or `dumb` TERM counts too, it guarantees nothing.
 fn console() -> bool {
     match std::env::var("TERM").unwrap_or_default().as_str() {
         "" | "dumb" => true,
@@ -182,8 +180,8 @@ fn console() -> bool {
     }
 }
 
-/// The wheel as scrolling: without it, a terminal sends the arrow keys instead. Pasted text
-/// comes as one, not as keys.
+/// Mouse capture makes the wheel scroll, else terminals send arrow keys. Bracketed paste
+/// delivers pasted text as one event.
 fn mouse(capture: bool) {
     let mut out = std::io::stdout();
     let done = match capture {
@@ -195,11 +193,10 @@ fn mouse(capture: bool) {
     }
 }
 
-/// Faster than a hand presses a key twice, slower than a keyboard repeats it.
+/// Above the keyboard repeat interval, below a manual double press.
 const REPEAT: Duration = Duration::from_millis(150);
 
-/// Whether a key is held: a terminal sends its repeats as presses, so the same key again within
-/// `REPEAT` of its last one counts as held.
+/// Terminals send repeats as presses, so the same key within `REPEAT` counts as held.
 fn held(last: &mut Option<(Key, Instant)>, key: Key, now: Instant) -> bool {
     let held = last.is_some_and(|(k, at)| k == key && now.duration_since(at) < REPEAT);
     *last = Some((key, now));
@@ -233,7 +230,6 @@ mod tests {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
-    /// Paused, the thread stands before the pause returns, and goes on once resumed.
     #[test]
     fn a_paused_gate_holds_the_thread_until_it_is_resumed() {
         let gate = Arc::new(Gate::default());

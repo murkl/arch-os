@@ -1,27 +1,24 @@
 [Unit]
 Description=Arch OS
-# After the boot splash, as getty@.service starts: resetting tty1 under Plymouth
-# leaves its lock behind, and no key reaches the interface.
+# After the splash, like getty@.service: resetting tty1 under Plymouth leaves
+# its lock behind and blocks every key.
 After=systemd-user-sessions.service plymouth-quit-wait.service rc-local.service
-# It needs tty1 to itself. Conflicting with the getty is what takes it, rather
-# than fighting a login prompt for the same terminal.
+# Takes tty1 from the getty instead of sharing it with a login prompt.
 Conflicts=getty@tty1.service
 After=getty@tty1.service
 
-# Whatever becomes of it, tty1 goes back to a login instead of a blank screen:
-# a machine that answers nothing is the one outcome this image must not have.
+# tty1 falls back to a login on any exit, never to a blank screen.
 OnSuccess=getty@tty1.service
 OnFailure=getty@tty1.service
 
-# Not restarted: an interface that comes back by itself hides a crash over a
-# half-written disk. `journalctl -b -u arch-os` says what happened.
+# No restart: coming back by itself would hide a crash over a half-written disk.
+# Log: `journalctl -b -u arch-os`.
 
 [Service]
-# Not idle: idle holds the interface back until the rest of the boot is
-# dispatched, up to five seconds of an empty screen.
+# Not idle, which waits for the rest of the boot: up to five seconds of an
+# empty screen.
 Type=simple
-# The Installer is what this image is for. `arch-os recovery` on another console
-# starts the Recovery.
+# `arch-os recovery` on another console starts the Recovery.
 ExecStart=/usr/local/bin/arch-os installer
 
 StandardInput=tty-force
@@ -32,8 +29,7 @@ TTYReset=yes
 TTYVHangup=yes
 TTYVTDisallocate=yes
 
-# This is the reason the machine booted, and stopping it is a decision rather
-# than an accident.
+# The machine's one job, so it stops on purpose only.
 KillMode=process
 IgnoreSIGPIPE=no
 SendSIGHUP=yes

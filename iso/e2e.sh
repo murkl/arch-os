@@ -1,6 +1,6 @@
 #!/bin/bash
-# Walks a built ISO the whole way a person does, unattended: install, boot,
-# repair, boot again, start the Recovery and write it again. See README.md.
+# Runs a built ISO end to end, unattended: install, boot, repair, boot again,
+# start the Recovery and write it again. See README.md.
 #
 #   e2e.sh <image.iso> [core|desktop]
 set -eu
@@ -12,29 +12,28 @@ START="${2:-core}"
     exit 1
 }
 
-# Beside the image, like smoke.sh: the logs of both runs land here, and a failed
-# phase keeps a picture of the console it ended on.
+# Beside the image, like smoke.sh. Holds the logs of both runs and, on failure,
+# a screenshot of the console.
 WORK="${WORK:-$(dirname "$ISO")/e2e}"
 
-# The least docs/README.md asks of a machine for this profile, so every
-# run proves it.
+# The minimum docs/README.md names for this profile, so every run proves it.
 MEMORY="$([ "$START" = desktop ] && echo 4096 || echo 2048)"
 DISK_SIZE="$([ "$START" = desktop ] && echo 32G || echo 16G)"
 
-# A cold run on a busy runner, with every package downloaded, and for a Desktop
-# three builds from the AUR on top.
+# A cold run on a busy runner downloads every package. A Desktop also builds
+# three AUR packages.
 INSTALL_TIMEOUT="${INSTALL_TIMEOUT:-$([ "$START" = desktop ] && echo 5400 || echo 2700)}"
 BOOT_TIMEOUT="${BOOT_TIMEOUT:-300}"
 REPAIR_TIMEOUT="${REPAIR_TIMEOUT:-600}"
-# The Recovery's download, half a gigabyte through qemu's own network.
+# The Recovery download, half a gigabyte through qemu's user network.
 UPDATE_TIMEOUT="${UPDATE_TIMEOUT:-1800}"
 
 OVMF_CODE="${OVMF_CODE:-/usr/share/edk2/x64/OVMF_CODE.secboot.4m.fd}"
 OVMF_VARS="${OVMF_VARS:-/usr/share/edk2/x64/OVMF_VARS.4m.fd}"
 
-# What every installation here is given, with everything the Recovery works on:
-# an encrypted disk, the chain signed, and its partition. The firmware starts in
-# setup mode, so the Installer enrolls the keys and the next boot enforces them.
+# Every installation gets what the Recovery works on: encryption, a signed boot
+# chain and the Recovery partition. The firmware starts in setup mode, so the
+# Installer enrolls the keys and the next boot enforces them.
 USERNAME=tux
 PASSWORD=e2e-arch-os
 DISK=/dev/vda
@@ -42,7 +41,7 @@ DISK=/dev/vda
 for tool in qemu-system-x86_64 qemu-img ssh ssh-keygen setsid tesseract; do
     command -v "$tool" >/dev/null || { echo "Error: ${tool} not found, see README.md" >&2 && exit 1; }
 done
-[ -f "$OVMF_CODE" ] || { echo "Error: no OVMF firmware at ${OVMF_CODE} - install edk2-ovmf" >&2 && exit 1; }
+[ -f "$OVMF_CODE" ] || { echo "Error: no OVMF firmware at ${OVMF_CODE}. Install edk2-ovmf." >&2 && exit 1; }
 
 rm -rf "$WORK"
 mkdir -p "$WORK"
@@ -63,7 +62,7 @@ fail() {
     echo "Error: $1" >&2
     if [ -n "$QEMU_PID" ] && kill -0 "$QEMU_PID" 2>/dev/null; then
         printf 'screendump %s -f png\n' "${WORK}/console.png" >&3 && sleep 2 &&
-            echo "the console is in ${WORK}/console.png" >&2
+            echo "console screenshot: ${WORK}/console.png" >&2
     fi
     for log in "$WORK"/*.log; do
         [ -f "$log" ] || continue
@@ -77,7 +76,7 @@ fail() {
 # THE MACHINE
 # ////////////////////////////////////////////////////////////////////////////
 
-# Free ports for ssh and for qemu's monitor, found the way smoke.sh finds one.
+# Free ports for ssh and qemu's monitor, found as in smoke.sh.
 free_port() {
     local candidate
     while true; do
@@ -95,7 +94,7 @@ qemu-img create -q -f qcow2 "${WORK}/disk.qcow2" "$DISK_SIZE"
 qemu-img create -q -f qcow2 "${WORK}/usb.qcow2" 64M
 
 # The machine's own firmware variables, in setup mode until the Installer
-# enrolls its keys into them.
+# enrolls its keys.
 cp "$OVMF_VARS" "${WORK}/vars.fd"
 
 # The live image takes the key as a systemd credential, which systemd-tmpfiles
@@ -106,8 +105,8 @@ LIVE=(-drive "file=${ISO},if=none,id=cd,media=cdrom,readonly=on" -device "ide-cd
 # Starts the machine in the background, as one of:
 #
 #   install   from the ISO, with its own variables
-#   repair    from the ISO, with a fresh set: the enrolled keys refuse the ISO
-#   disk      from its disk, the disk password handed over as a credential
+#   repair    from the ISO, fresh variables: the enrolled keys refuse the ISO
+#   disk      from its disk, the disk password as a credential
 start() {
     local vars="${WORK}/vars.fd" boot=()
     case "$1" in
@@ -137,7 +136,7 @@ start() {
         -monitor "tcp:127.0.0.1:${MONITOR},server,nowait" &
     QEMU_PID=$!
 
-    # The monitor is not listening the instant qemu is started.
+    # The monitor does not listen right after qemu starts.
     local deadline=$((SECONDS + 20))
     until (exec 3<>"/dev/tcp/127.0.0.1/${MONITOR}") 2>/dev/null; do
         [ "$SECONDS" -lt "$deadline" ] || fail "qemu's monitor never came up"
@@ -146,7 +145,7 @@ start() {
     exec 3<>"/dev/tcp/127.0.0.1/${MONITOR}"
 }
 
-# Waits for the machine to switch itself off.
+# Waits for the machine to power off.
 stopped() {
     local deadline=$((SECONDS + 120))
     while kill -0 "$QEMU_PID" 2>/dev/null; do
@@ -156,8 +155,7 @@ stopped() {
     QEMU_PID=""
 }
 
-# Switches the machine off the way a power cut does, so what a run said is done
-# has to be on the disk already.
+# Like a power cut, so what a run reported done must already be on disk.
 cut_power() {
     printf 'quit\n' >&3
     stopped
@@ -169,11 +167,11 @@ cut_power() {
 
 SSH_OPTS=(-q -p "$PORT" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 -o BatchMode=no)
 
-# The live image, as root by the key.
+# The live image, as root by key.
 live() { ssh "${SSH_OPTS[@]}" -i "${WORK}/key" -o BatchMode=yes root@127.0.0.1 "$@"; }
 
-# The installed system, as the account by its password: ssh reads it from an
-# askpass program when it has no terminal, and setsid takes the terminal away.
+# The installed system, as the user by password: ssh reads it from askpass
+# without a terminal, and setsid drops the terminal.
 printf '#!/bin/sh\necho %s\n' "$PASSWORD" >"${WORK}/askpass"
 chmod +x "${WORK}/askpass"
 installed() {
@@ -181,7 +179,7 @@ installed() {
         ssh "${SSH_OPTS[@]}" -o PubkeyAuthentication=no "${USERNAME}@127.0.0.1" "$@" </dev/null
 }
 
-# Retries a command until it works, up to a number of seconds.
+# Retries a command until it succeeds, for up to $1 seconds.
 until_ok() {
     local seconds="$1" what="$2" deadline
     shift 2
@@ -198,7 +196,7 @@ keys() { live tmux send-keys -t e2e "$@"; }
 typed() { live tmux send-keys -t e2e -l "$1"; }
 pane() { live tmux capture-pane -p -t e2e; }
 
-# Waits for the interface to show a text, then gives it a moment to settle.
+# Waits for a text on the interface, then a moment to settle.
 shows() {
     local deadline=$((SECONDS + 60))
     until pane | grep -qF -- "$1"; do
@@ -211,8 +209,8 @@ shows() {
     sleep 1
 }
 
-# Runs a module's work on the live image with nobody at the keyboard, the
-# passwords handed over in its environment, and holds it to its own tests.
+# Runs a module unattended on the live image, passwords in its environment, and
+# requires all its tests to pass.
 unattended() {
     local module="$1" seconds="$2" status=0 tally passed total
     shift 2
@@ -224,7 +222,7 @@ unattended() {
     124) fail "the ${module} did not finish within ${seconds}s" ;;
     *) fail "the ${module} failed, see ${WORK}/${module}.out" ;;
     esac
-    # A task allowed to fail has no reason to here, online and on a clean disk.
+    # Online and on a clean disk, not even an optional task may fail.
     if grep -q ' WARN ' "${WORK}/${module}.log"; then
         fail "the ${module} finished with a warning, see ${WORK}/${module}.log"
     fi
@@ -257,8 +255,8 @@ healthy() {
 # A command as root on the installed system, through sudo and the password.
 as_root() { installed "printf '%s\n' '${PASSWORD}' | sudo -S -p '' $*"; }
 
-# systemd-oomd watches a cgroup under swap and the account's manager under
-# memory pressure, as its two drop-ins say. The sections as oomctl prints them,
+# systemd-oomd watches a cgroup for swap and the user manager for memory
+# pressure, per its two drop-ins. Section names as oomctl prints them,
 # src/oom/oomd-manager.c.
 oomd_watches() {
     as_root oomctl | awk '
@@ -269,9 +267,9 @@ oomd_watches() {
         END { exit !(swap && pressure) }'
 }
 
-# A SATA disk in a USB enclosure, plugged into the port start() gives the
-# machine. ata_id reports it as ID_BUS=ata, which qemu's usb-storage cannot
-# answer, so a rule between 60 and 70 says it in its place.
+# A SATA disk in a USB enclosure on the port start() adds. ata_id reports such a
+# disk as ID_BUS=ata, which qemu's usb-storage cannot, so a rule between 60 and
+# 70 sets it.
 usb_writeback() {
     local rule='SUBSYSTEM=="block", SUBSYSTEMS=="usb", ENV{ID_BUS}="ata"' disk limits
     # In base64, so no shell on the way reads the rule's quotes.
@@ -291,7 +289,7 @@ usb_writeback() {
     say "Installed system: a SATA disk in a USB enclosure writes at a tenth of the dirty limit"
 }
 
-# The disk on USB, by its name in the installed system.
+# The USB disk's name in the installed system.
 usb_disk() { installed lsblk -dno NAME,TRAN | awk '$2 == "usb" { print $1; found = 1 } END { exit !found }'; }
 
 shutdown_installed() {
@@ -299,8 +297,8 @@ shutdown_installed() {
     stopped
 }
 
-# The installed system came from the entry named, and both its entries have
-# their tries back: a start that worked hands them back, whichever it came from.
+# The boot came from entry $1, and both entries have their tries back, which any
+# good start restores.
 entries_ready() {
     local status listed name
     status="$(as_root bootctl status 2>/dev/null || true)"
@@ -313,7 +311,7 @@ entries_ready() {
     say "Installed system: started from ${1}, both entries counted again"
 }
 
-# The entries named with no tries left, as three starts that failed leave them.
+# Uses up the tries of the entries named, as three failed starts do.
 used_up() {
     local name
     for name in "$@"; do
@@ -321,8 +319,8 @@ used_up() {
     done
 }
 
-# An installation with its unified images in EFI/Linux, started as the loader's
-# default, and no entry counting its tries.
+# Lays the installation out with UKIs in EFI/Linux, started as the loader
+# default, and no counted entries.
 images_in_efi_linux() {
     live bash -s <<EOF
 set -euo pipefail
@@ -343,8 +341,8 @@ EOF
     say "Laid the installation out with its images in EFI/Linux"
 }
 
-# A subvolume made inside @ after its newest snapshot, as machinectl makes one:
-# no snapshot holds it, and a rollback has to keep it.
+# A subvolume inside @ after its newest snapshot, as machinectl makes one. No
+# snapshot holds it, so a rollback must keep it.
 nested_subvolume() {
     live bash -s <<EOF
 set -euo pipefail
@@ -358,8 +356,8 @@ EOF
     say "Made a subvolume inside the system"
 }
 
-# The loader gone from the EFI partition, as a full partition or a firmware that
-# cleans up leaves it: the rebuild has to put it back.
+# Removes the loader from the EFI partition, as a full partition or a cleaning
+# firmware does. The rebuild must restore it.
 loader_gone() {
     live bash -s <<EOF
 set -euo pipefail
@@ -370,10 +368,9 @@ EOF
     say "Took the boot loader off the EFI partition"
 }
 
-# Waits for the Recovery on its partition to open on its dashboard. It has to
-# pass Secure Boot with this machine's keys, find and check its partition and
-# open in the language the Installer was read in. A second argument names what
-# else counts as its first page.
+# Waits for the dashboard of the Recovery partition: past Secure Boot with this
+# machine's keys, its partition found and checked, in the Installer's language.
+# $2 names another first page.
 recovery_opens() {
     local how="$1" page="Repair now|Update the Recovery${2:+|$2}"
     local deadline=$((SECONDS + BOOT_TIMEOUT)) shot="${WORK}/recovery.png"
@@ -388,15 +385,15 @@ recovery_opens() {
     say "Recovery: started ${how}, on its first page"
 }
 
-# The Recovery on its partition, started the way its launcher on the desktop
-# starts it, and left with Start over.
+# The Recovery partition, started as its desktop launcher does, then left with
+# Start over.
 recovery_dashboard() {
     local deadline shot="${WORK}/recovery.png"
     as_root systemctl reboot --boot-loader-entry=arch-os-recovery.efi || true
     recovery_opens "by the boot loader"
 
-    # Start over is the last row of the page q opens. Photographed often enough
-    # to catch a login that flashes by, and back within seconds, unlike a reboot.
+    # Start over is the last row of the page q opens. Screenshots often enough
+    # to catch a login flashing by. Back within seconds, unlike a reboot.
     local frame=0 text dashboard=false
     printf 'sendkey q\n' >&3
     sleep 2
@@ -425,7 +422,7 @@ recovery_dashboard() {
     done
     [ "$dashboard" = true ] || fail "the Recovery did not come back on its dashboard within 15s of Start over"
     rm -f "${WORK}"/recovery-exit-*.png
-    say "Recovery: Start over starts it again, without a login on the way"
+    say "Recovery: Start over restarts it without a login"
 
     cut_power
 }
@@ -434,8 +431,8 @@ recovery_dashboard() {
 # THE RUN
 # ////////////////////////////////////////////////////////////////////////////
 
-# The answers, shared and then the profile's own: the Desktop is its
-# preset with the SSH server on, which is how this run reaches it.
+# Shared answers, then the profile's. The Desktop is its preset plus the SSH
+# server, which this run connects through.
 answers() {
     cat <<EOF
 MODULE_LANGUAGE='en'
@@ -497,12 +494,12 @@ answers | live "cat >/opt/arch-os/installer.conf"
 say "Install"
 unattended installer "$INSTALL_TIMEOUT" "ARCH_OS_PASSWORD='${PASSWORD}'"
 
-# The Recovery's own firmware entry as the next boot: the way in from the
-# firmware's boot menu, where the loader's never comes up.
+# The Recovery's firmware entry as next boot: the way in from the firmware's
+# boot menu when the loader's menu never shows.
 if [ "$START" = core ]; then
     entries="$(live efibootmgr)"
     entry="$(awk '!found && /^Boot[0-9A-Fa-f]/ && index($0, "Arch OS Recovery") { print substr($1, 5, 4); found = 1 }' <<<"$entries")"
-    [ -n "$entry" ] || fail "the installation left the firmware no entry for the Recovery"
+    [ -n "$entry" ] || fail "no firmware entry for the Recovery"
     live efibootmgr -q --bootnext "$entry"
 fi
 cut_power
@@ -517,9 +514,9 @@ start disk
 healthy
 usb_writeback
 
-# A Desktop is held to its login screen, and a start counts as one that worked
-# only once the session in front is up: the one it logs into, then without
-# automatic login the login screen's. The repair is the Core's to prove.
+# A Desktop must reach its login screen, and a start counts as good only once
+# the session in front is up: the autologin session, then without autologin the
+# login screen's. The Core run proves the repair.
 if [ "$START" = desktop ]; then
     [ "$(installed systemctl is-active gdm || true)" = active ] || fail "the login screen of the Desktop is not running"
     entries_ready main.conf
@@ -528,15 +525,14 @@ if [ "$START" = desktop ]; then
     until_ok "$BOOT_TIMEOUT" "systemd-oomd watching swap and the session" oomd_watches
     say "Desktop: systemd-oomd watches swap and the session"
 
-    # No session ever comes up: the shell masked for every account, and the
-    # wait for it shortened.
+    # No session comes up: the shell masked for every user, the wait shortened.
     as_root systemctl --global mask org.gnome.Shell@.service
     as_root "sh -c 'mkdir -p /etc/systemd/system/arch-os-session-up.service.d && printf \"[Service]\\nExecStart=\\nExecStart=/usr/local/lib/arch-os/session-up.sh 30\\n\" >/etc/systemd/system/arch-os-session-up.service.d/e2e.conf'"
     shutdown_installed
     start disk
     until_ok "$BOOT_TIMEOUT" "the wait for a session to give up" as_root systemctl is-failed --quiet arch-os-session-up.service
     left="$(as_root ls /boot/loader/entries)"
-    grep -qx 'main+2-1.conf' <<<"$left" || fail "a start without a session counted as one that worked: ${left//$'\n'/ }"
+    grep -qx 'main+2-1.conf' <<<"$left" || fail "a start without a session counted as good: ${left//$'\n'/ }"
     say "Desktop: a start without a session keeps its try taken"
 
     as_root systemctl --global unmask org.gnome.Shell@.service
@@ -564,7 +560,7 @@ start disk
 healthy
 entries_ready main-fallback.conf
 
-# Both used up, the Recovery comes up by itself and hands them back.
+# Both used up, the Recovery starts by itself and restores their tries.
 used_up main main-fallback
 shutdown_installed
 start disk
@@ -603,8 +599,8 @@ as_root snapper --no-headers list --columns description | grep -qx ' *rollback b
 say "Repair: kept the replaced system as a snapshot"
 recovery_dashboard
 
-# An update cut short leaves a partition whose UUID the boot image no longer
-# names. Secure Boot is off on the ISO, and the system's keys sign it all the same.
+# An interrupted update leaves a partition whose UUID the boot image no longer
+# names. Secure Boot is off on the ISO, and the system's keys sign the result.
 start repair
 until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
 live systemctl stop arch-os
@@ -621,13 +617,13 @@ deadline=$((SECONDS + 120))
 until grep -qE 'Encryption password|Nothing to update' <<<"$(pane)"; do
     [ "$SECONDS" -lt "$deadline" ] || {
         pane >"${WORK}/pane.log" || true
-        fail "the update looked for no Recovery within 120s"
+        fail "the update did not start within 120s"
     }
     sleep 2
 done
 if pane | grep -qF "Nothing to update"; then
-    # A series GitHub publishes nothing of yet, as for a new major version.
-    say "Update: skipped, no release of this series publishes a Recovery yet"
+    # No Recovery published for this series yet, as for a new major version.
+    say "Update: skipped, no Recovery published for this series"
     exit 0
 fi
 typed "$PASSWORD"
@@ -653,8 +649,8 @@ as_root bootctl list --json=short | grep -qF "archisodevice=UUID=${uuid} " ||
 as_root sbctl verify 2>/dev/null | grep -qF "/boot/EFI/Linux/arch-os-recovery.efi is signed" ||
     fail "the Recovery written from the ISO is not signed"
 as_root systemctl reboot --boot-loader-entry=arch-os-recovery.efi || true
-# The newest published release may predate this Installer and then not read the
-# language it left: its language page, listing Deutsch, is a started Recovery too.
+# The newest release may predate this Installer and not read its language. Its
+# language page, listing Deutsch, also counts as started.
 recovery_opens "after it was written again from the ISO" Deutsch
 cut_power
 

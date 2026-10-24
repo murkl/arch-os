@@ -1,7 +1,7 @@
-//! The sentences a declaration writes: paragraphs, and the `{{NAME}}` filled in from the answers.
+//! Declared texts: paragraphs, and `{{NAME}}` placeholders filled from the answers.
 
-/// Joins the lines of each paragraph and keeps the blank lines between them, so the text shown
-/// and the key a catalog looks it up by are one string however the yaml wrapped it.
+/// Joins the lines of each paragraph, so the text shown and its msgid match however the yaml
+/// wraps it.
 pub fn reflow(s: &str) -> String {
     s.split("\n\n")
         .map(|p| p.split_whitespace().collect::<Vec<_>>().join(" "))
@@ -18,8 +18,8 @@ pub fn split(s: &str) -> (&str, &str) {
     }
 }
 
-/// Fills `{{NAME}}` from `get`. A name nothing answers is left empty, which the loader rules
-/// out for a name no setting declares.
+/// Fills `{{NAME}}` from `get`, an unanswered name stays empty. The loader rejects undeclared
+/// names.
 pub fn expand(s: &str, get: impl Fn(&str) -> String) -> String {
     let mut out = String::new();
     let mut rest = s;
@@ -32,7 +32,7 @@ pub fn expand(s: &str, get: impl Fn(&str) -> String) -> String {
     out + rest
 }
 
-/// Every `{{NAME}}` a text asks for, in order, once each.
+/// Each `{{NAME}}` once, in order.
 pub fn names(s: &str) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     let mut rest = s;

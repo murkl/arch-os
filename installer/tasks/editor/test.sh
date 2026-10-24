@@ -1,12 +1,11 @@
-# An $EDITOR naming nothing installed looks exactly like a correct line.
+# An $EDITOR naming nothing installed looks like a valid line.
 editor="$(sed -n 's/^EDITOR=//p' "${MNT}/etc/environment")"
 [ -n "$editor" ]
 has_command "$editor"
 
-# Every file as written, in both homes. What is in them was loaded by the
-# editors themselves: vim 9.2, neovim 0.12, nano 9.2, micro 2.0.15,
-# helix 25.07, before it went in here. A folder that ships nothing compares
-# nothing, so it fails here.
+# Every file as written, in both homes. Contents checked by loading them in
+# vim 9.2, neovim 0.12, nano 9.2, micro 2.0.15 and helix 25.07. An empty folder
+# compares nothing, so it fails.
 src="$(where)/${editor}"
 files="$(find "$src" -type f -printf '%P\n')"
 [ -n "$files" ]

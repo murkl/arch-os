@@ -1,4 +1,4 @@
-//! The stack of pages, what they share, and the keys no page takes.
+//! Page stack, shared context and the keys no page handles.
 
 use ratatui::Frame;
 use std::sync::Arc;
@@ -11,11 +11,11 @@ use crate::store::Store;
 pub struct App {
     pages: Vec<(PageId, Box<dyn Page>)>,
     next: PageId,
-    /// Where a page behind another moved on, taken up once it is in front again.
+    /// Flow of a page that moved on while covered, applied once it is on top again.
     waiting: Vec<(PageId, Flow)>,
     pub ctx: Ctx,
     quit: bool,
-    /// Pokes the status check, so it reads again right after an action ran.
+    /// Wakes the status check to reread right after an action.
     poke: Option<Sender<()>>,
 }
 
@@ -36,8 +36,8 @@ impl App {
             crate::i18n::t(&start.module.title),
             crate::version::version()
         );
-        // A language the answer file keeps is settled. Otherwise nothing is translated until the
-        // first page has asked, and English stands where there is nothing to ask.
+        // A saved language applies at once. Otherwise English stays until the language page asks,
+        // or for good where there is only one.
         let settled = crate::i18n::matched(&store.language).is_some();
         if settled {
             crate::i18n::set(&store.language);
@@ -84,9 +84,8 @@ impl App {
         Ok(app)
     }
 
-    /// Starts what runs beside the pages, once the first frame is on the screen: the status
-    /// check, the look at which actions this machine has, the values read off it, and the
-    /// answers put in force again.
+    /// Starts background work once the first frame is on screen: requirement checks, values read
+    /// off the machine, reapplied answers and the status check.
     pub fn start(&mut self) {
         self.ctx.look();
         self.ctx.resolve();
@@ -127,8 +126,7 @@ impl App {
         self.quit
     }
 
-    /// Moves the page in front on by itself, for a run with nobody at the keyboard, or says
-    /// what it needs a person for.
+    /// Advances the top page without a person at the keyboard, or says why it needs one.
     pub fn unattended(&mut self) -> Result<(), String> {
         let (id, page) = self.pages.last_mut().expect("the dashboard stays");
         self.ctx.page = *id;
@@ -137,12 +135,11 @@ impl App {
         Ok(())
     }
 
-    /// What the work came to, once the page in front says it has.
     pub fn finished(&self) -> Option<Result<String, String>> {
         self.pages.last().and_then(|(_, p)| p.finished(&self.ctx))
     }
 
-    /// When the driver wakes for a tick: on the next beat of what moves, else on the next idle one.
+    /// Next tick: the top page's animation beat, the spinner beat while busy, else idle.
     pub fn wake(&self, now: std::time::Instant) -> std::time::Instant {
         let page = self.pages.last().map(|(_, p)| p);
         let pace = match page {
@@ -159,7 +156,7 @@ impl App {
         let msg = match msg {
             Msg::Held(key) if key.repeats(typing) => Msg::Key(key),
             Msg::Held(_) => return,
-            // Elsewhere its letters would be keys, a q among them.
+            // Outside a text box the letters would act as keys, `q` among them.
             Msg::Paste(text) => {
                 if typing {
                     for c in text.chars().filter(|c| !c.is_control()) {
@@ -187,7 +184,7 @@ impl App {
                 };
                 self.apply(flow);
             }
-            // Every page, so what works behind the one in front goes on.
+            // Every page, so work behind the top page goes on.
             Msg::Tick => {
                 let ids: Vec<PageId> = self.pages.iter().map(|(id, _)| *id).collect();
                 for id in ids {
@@ -230,8 +227,7 @@ impl App {
         }
     }
 
-    /// Hands a result to the page that asked. Where another page is in front of it, the page it
-    /// moves on to waits until it is in front again.
+    /// Hands a result to the page that asked. A covered page's flow waits until it is on top again.
     fn deliver(&mut self, id: PageId, f: impl FnOnce(&mut Box<dyn Page>, &mut Ctx) -> Flow) {
         let top = self.pages.last().map(|(i, _)| *i);
         let Some((_, page)) = self.pages.iter_mut().find(|(i, _)| *i == id) else {
@@ -245,15 +241,12 @@ impl App {
         }
     }
 
-    /// What closed pages were waiting to move on to goes with them.
     fn forget_closed(&mut self) {
         let pages = &self.pages;
         self.waiting
             .retain(|(w, _)| pages.iter().any(|(id, _)| id == w));
     }
 
-    /// The way out: where the module says how the machine is put down, or in a kiosk, a question.
-    /// Otherwise the program ends.
     fn exit(&mut self) -> Flow {
         if !(self.ctx.kiosk || self.ctx.module.leaves()) {
             return Flow::Quit;
@@ -301,7 +294,7 @@ impl App {
             && let Some((id, page)) = self.pages.last_mut()
         {
             self.ctx.page = *id;
-            // Where it moved on while behind, that comes first.
+            // A flow queued while covered wins over `resumed`.
             let flow = match self.waiting.iter().position(|(w, _)| w == id) {
                 Some(at) => self.waiting.remove(at).1,
                 None => page.resumed(&mut self.ctx),
@@ -312,8 +305,8 @@ impl App {
 
     pub fn draw(&mut self, frame: &mut Frame) {
         let area = frame.area();
-        // The module, then the pages from the last one the trail starts over at: a run of
-        // questions is one place to stay in while the question changes, not a path.
+        // Module, then the pages from the last root on. A run of questions is one place, not a
+        // path.
         let from = self.pages.iter().rposition(|(_, p)| p.root()).unwrap_or(0);
         let mut path = vec![crate::i18n::t(&self.ctx.module.title)];
         path.extend(
@@ -323,8 +316,7 @@ impl App {
                 .map(|(_, p)| p.title())
                 .filter(|t| !t.is_empty()),
         );
-        // The note of the page in front, or of the page under it: a run's counter stands while it
-        // asks.
+        // Note of the topmost page that has one, so a run's counter stays while it asks.
         let note = self.pages.iter().rev().find_map(|(_, p)| p.note(&self.ctx));
         self.ctx.behind = self.pages[..self.pages.len() - 1]
             .iter()
@@ -341,13 +333,13 @@ impl App {
             let hints = page.hints(&self.ctx);
             draw::footer(area, frame.buffer_mut(), &self.ctx, &hints);
         }
-        // The terminal's own cursor where a text box was drawn, hidden everywhere else.
+        // Terminal cursor at a drawn text box. Ratatui hides it otherwise.
         if let Some(at) = self.ctx.cursor.get() {
             frame.set_cursor_position(at);
         }
     }
 
-    /// The pages' titles from the bottom, for the tests.
+    /// Bottom page first.
     #[cfg(test)]
     pub fn titles(&self) -> Vec<String> {
         self.pages.iter().map(|(_, p)| p.title()).collect()
@@ -368,12 +360,12 @@ pub mod tests {
     use std::sync::mpsc::{Receiver, RecvTimeoutError};
     use std::time::{Duration, Instant};
 
-    /// An app on the fixture product, in a folder of its own, its scripts runnable.
+    /// App on the fixture product in its own temp dir, its scripts runnable.
     pub fn app(dry_run: bool) -> (App, Terminal<TestBackend>, Receiver<Msg>) {
         app_on(&crate::spec::tests::fixture(), dry_run)
     }
 
-    /// An app on the fixture with each text replaced wherever it stands.
+    /// App on the fixture with every occurrence of each text replaced.
     fn app_with(
         edits: &[(&str, &str)],
         dry_run: bool,
@@ -391,7 +383,7 @@ pub mod tests {
         app_on(&files, dry_run)
     }
 
-    /// An app on the product given, with the fixture's scripts.
+    /// App on the given product files, with the fixture's scripts.
     fn app_on(
         files: &[(&'static str, &'static [u8])],
         dry_run: bool,
@@ -470,7 +462,7 @@ pub mod tests {
         }
     }
 
-    /// Draws, ticks and takes what the background sends, until nothing has come for a while.
+    /// Draws, ticks and handles background messages until they stop.
     pub fn settle(app: &mut App, term: &mut Terminal<TestBackend>, rx: &Receiver<Msg>) {
         let mut quiet = Instant::now();
         loop {
@@ -490,8 +482,7 @@ pub mod tests {
         }
     }
 
-    /// Where the language page leads: through the questions asked first, the profiles
-    /// and the open questions to the dashboard.
+    /// Language page, first questions, profiles, open questions, dashboard.
     #[test]
     fn the_opening_asks_in_order_and_ends_on_the_dashboard() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -502,12 +493,12 @@ pub mod tests {
         let langs = crate::i18n::langs();
         let names: Vec<&str> = langs.iter().map(|l| l.name.as_str()).collect();
         assert!(
-            shown.contains("Please choose your language")
+            shown.contains("Language")
                 && shown.contains("English")
                 && names.iter().all(|n| shown.contains(n)),
             "{shown}"
         );
-        // English, the first row, whatever this machine speaks.
+        // English is the first row, whatever the machine's locale.
         press(&mut app, &[Key::Home, Key::Enter]);
         settle(&mut app, &mut term, &rx);
         let shown = screen(&mut app, &mut term);
@@ -629,8 +620,8 @@ pub mod tests {
         assert!(shown.contains("Disk"), "the filter is closed: {shown}");
     }
 
-    /// The start: the lists read again, the password twice, the module's question, then the run,
-    /// which asks mid-run, confirms, reports and ends on the module's words and what follows.
+    /// Lists reread, password twice, module question, then the run: a mid-run question, confirm,
+    /// report, closing text and the next rows.
     #[test]
     fn install_now_asks_the_password_confirms_and_runs_to_the_end() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -651,7 +642,7 @@ pub mod tests {
         assert!(screen(&mut app, &mut term).contains("Repeat"));
         type_text(&mut app, "px");
         press(&mut app, &[Key::Enter]);
-        assert!(screen(&mut app, &mut term).contains("The two entries do not match."));
+        assert!(screen(&mut app, &mut term).contains("Entries do not match."));
         type_text(&mut app, "pw");
         press(&mut app, &[Key::Enter]);
         type_text(&mut app, "pw");
@@ -712,9 +703,8 @@ pub mod tests {
         );
     }
 
-    /// The dashboard lists its rows as the module does, a blank row under the start and under
-    /// the answers, an action under its group's heading, the language first under the heading
-    /// the module names.
+    /// Blank rows under the start and the answers, each action under its group heading, the
+    /// language first under the heading the module names.
     #[test]
     fn the_dashboard_keeps_the_modules_order() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -756,8 +746,8 @@ pub mod tests {
         );
     }
 
-    /// A held key repeats where it moves or types: a held enter answers nothing that follows.
-    /// Pasted text is typed where a box has the keys, and is no keys anywhere else.
+    /// Held movement and typing repeat, a held enter does not. Paste types into a text box and does
+    /// nothing elsewhere.
     #[test]
     fn held_keys_and_pasted_text_go_only_where_they_belong() {
         assert!(!Key::Enter.repeats(true) && !Key::Esc.repeats(true) && !Key::Tab.repeats(true));
@@ -781,8 +771,7 @@ pub mod tests {
         );
     }
 
-    /// Actions of the group the answers end with stand right under them, a blank row in place of
-    /// the heading, and one under the other.
+    /// Actions of the last answers' group follow them, with a blank row instead of a heading.
     #[test]
     fn actions_under_answers_of_their_group_repeat_no_heading() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -824,7 +813,6 @@ pub mod tests {
         );
     }
 
-    /// A group whose actions this machine has none of leaves no heading behind.
     #[test]
     fn a_group_without_a_row_has_no_heading() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -844,8 +832,7 @@ pub mod tests {
         assert_eq!(at.map(|at| rows[at - 1]), Some("Network"), "{shown}");
     }
 
-    /// An empty box names what goes in it: a question its title, a password its title and then
-    /// the repeat.
+    /// Placeholder: a question's title, a password's title, then the repeat prompt.
     #[test]
     fn an_empty_box_names_what_goes_in_it() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -878,8 +865,7 @@ pub mod tests {
         assert!(boxed(&shown, "Repeat"), "{shown}");
     }
 
-    /// While the tasks run, tab shows what they print: a finished line once, the line being
-    /// redrawn as it stands, a long one wrapped. Tab again shows the list.
+    /// A finished line once, a redrawn line in its current state, a long line wrapped.
     #[test]
     fn tab_shows_what_the_running_tasks_print_and_turns_back() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -918,7 +904,7 @@ pub mod tests {
         assert!(!shown.contains("first"), "{shown}");
     }
 
-    /// A module without words of its own ends on the outcome in the header and how long it took.
+    /// Outcome and duration stand in the header.
     #[test]
     fn a_run_without_a_report_ends_on_its_outcome_and_its_time() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -948,7 +934,7 @@ pub mod tests {
         assert!(!shown.contains("boots."), "{shown}");
     }
 
-    /// A row on the way out is carried out to its end: stopping what runs leaves its own work be.
+    /// Stopping the run on leave does not stop the leave action itself.
     #[test]
     fn a_way_out_carries_out_its_action() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -968,8 +954,7 @@ pub mod tests {
         );
     }
 
-    /// Behind the way out the run goes on, from its first task. What it asks waits there until
-    /// the way out is closed, and is asked then.
+    /// The run starts behind the leave page. Its question waits until the leave page closes.
     #[test]
     fn the_run_goes_on_behind_the_way_out_and_what_it_asks_waits() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -991,7 +976,6 @@ pub mod tests {
         assert!(shown.contains("one") && shown.contains("two"), "{shown}");
     }
 
-    /// The way out says a run goes on behind it only while one does.
     #[test]
     fn the_way_out_warns_of_a_run_only_while_it_goes_on() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -1024,8 +1008,7 @@ pub mod tests {
         assert!(screen(&mut app, &mut term).contains("› Setup › Done"));
     }
 
-    /// A row on the way out stops the run first: its task is asked to end and may clean up, and
-    /// the row is carried out once it has.
+    /// The task gets a stop request and may clean up. The leave action runs once it has ended.
     #[test]
     fn a_way_out_stops_the_run_gently_before_its_action() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -1053,8 +1036,7 @@ pub mod tests {
         );
     }
 
-    /// After the run, tab shows what each task printed under its title. A key meant for the rows
-    /// it hides chooses nothing.
+    /// Row keys do nothing while the log hides the rows.
     #[test]
     fn tab_shows_what_a_finished_run_printed_under_each_task() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -1094,9 +1076,8 @@ pub mod tests {
         assert!(screen(&mut app, &mut term).contains("Continue"));
     }
 
-    /// Back from a run that ended leads on as its last row does: a finished one to the way out,
-    /// a broken one to the question before the dashboard. Never to the password the run was
-    /// started through, which still stands behind it.
+    /// Back acts as the last row: after success the leave page, after failure the question before
+    /// the dashboard. Never the password page, still behind the run.
     #[test]
     fn back_from_an_ended_run_leads_on_and_never_to_the_questions_behind_it() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -1138,8 +1119,7 @@ pub mod tests {
         }
     }
 
-    /// Backing out of a password forgets the ones typed before it: the next start asks for
-    /// them again, and nothing of them stays in memory meanwhile.
+    /// The next start asks for them again, and none stays in memory.
     #[test]
     fn backing_out_of_a_password_forgets_the_ones_typed_before_it() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -1288,8 +1268,7 @@ pub mod tests {
         assert_eq!(app.depth(), 1);
     }
 
-    /// What an action's script wrote into the answer file under a name no setting has reaches
-    /// its report: the address, as writing and as a code.
+    /// A value the script writes under an undeclared name shows in the report as text and QR code.
     #[test]
     fn an_actions_answer_reaches_its_report_as_a_code() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -1313,8 +1292,7 @@ pub mod tests {
         );
     }
 
-    /// Leaving from the first page, before there is a frame: the way out looks like that page,
-    /// and esc has nowhere to go back to.
+    /// The leave page on a bare first page is bare too, and esc has nothing to go back to.
     #[test]
     fn leaving_from_the_first_page_stays_bare() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -1341,7 +1319,6 @@ pub mod tests {
         assert_eq!(app.titles().last().unwrap(), "");
     }
 
-    /// A language the answer file keeps is the language, and the first page is not asked.
     #[test]
     fn a_kept_language_skips_the_first_page() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -1377,7 +1354,7 @@ pub mod tests {
         );
     }
 
-    /// The row under the cursor lies on the surface, from the margin to the right edge.
+    /// From the margin to the right edge.
     #[test]
     fn the_row_under_the_cursor_lies_on_the_surface() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -1409,7 +1386,6 @@ pub mod tests {
         assert_ne!(buffer[(x, under)].bg, selection, "one row only");
     }
 
-    /// Typing shows the terminal's own cursor, after the text.
     #[test]
     fn typing_puts_the_terminals_cursor_after_the_text() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -1457,7 +1433,7 @@ pub mod tests {
         );
     }
 
-    /// Every page, each as something opens it.
+    /// Every page, opened as in the app.
     fn every_page(app: &App) -> Vec<Box<dyn Page>> {
         let module = app.ctx.module;
         let f = crate::script::Failure {
@@ -1508,7 +1484,7 @@ pub mod tests {
         ]
     }
 
-    /// A terminal can be made as small as one cell. No page may panic in it.
+    /// A terminal can shrink to one cell. No page may panic there.
     #[test]
     fn every_page_draws_at_any_size() {
         let (mut app, _, _) = app(true);
@@ -1532,7 +1508,7 @@ pub mod tests {
         }
     }
 
-    /// The console's font has letters and codepage 437. Every page draws it those only.
+    /// The console font covers letters and codepage 437, nothing else.
     #[test]
     fn every_page_keeps_to_the_consoles_glyphs() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -1553,7 +1529,7 @@ pub mod tests {
         }
     }
 
-    /// Not a check: the real product on a dry run, for a look at the pages.
+    /// Not a check: the real product on a dry run, to look at the pages.
     /// `cargo test preview -- --ignored --nocapture`
     #[test]
     #[ignore]
@@ -1565,7 +1541,7 @@ pub mod tests {
         let module = crate::spec::loaded()
             .module(&std::env::var("PREVIEW_MODULE").unwrap_or("installer".into()))
             .unwrap();
-        // A language kept with the answers skips the first page.
+        // A saved language skips the language page.
         if let Ok(code) = std::env::var("PREVIEW_LANGUAGE") {
             std::fs::write(
                 dir.join(format!("{}.conf", module.id)),

@@ -1,4 +1,4 @@
-//! The frame every page is drawn in, and the few primitives the pages share.
+//! Page frame and shared drawing primitives.
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -12,7 +12,6 @@ pub fn width(s: &str) -> usize {
     s.width()
 }
 
-/// Cut to `max` columns at the end, marked.
 pub fn cut(s: &str, max: usize, mark: &str) -> String {
     if s.width() <= max {
         return s.to_string();
@@ -28,14 +27,14 @@ pub fn cut(s: &str, max: usize, mark: &str) -> String {
         used += w;
         out.push(c);
     }
-    // A sequence, as an emoji with its variation selector, is wider than its characters.
+    // A sequence, such as an emoji with its variation selector, is wider than its characters.
     while out.width() > room {
         out.pop();
     }
     out + if max >= mark.width() { mark } else { "" }
 }
 
-/// Cut at the front, where a path says least.
+/// Cuts at the front, where a path says least.
 pub fn cut_front(s: &str, max: usize, mark: &str) -> String {
     if s.width() <= max {
         return s.to_string();
@@ -58,7 +57,7 @@ pub fn cut_front(s: &str, max: usize, mark: &str) -> String {
     mark.to_string() + &kept
 }
 
-/// As many whole `pieces` as fit in `max` columns, joined by `sep`, those left out as `mark`.
+/// Whole `pieces` that fit in `max` columns, joined by `sep`, the rest as `mark`.
 pub fn fit(pieces: &[String], sep: &str, max: usize, mark: &str) -> String {
     let all = pieces.join(sep);
     if all.width() <= max {
@@ -81,7 +80,7 @@ pub fn fit(pieces: &[String], sep: &str, max: usize, mark: &str) -> String {
     }
 }
 
-/// Writes up to `max` columns and returns where it ended.
+/// Writes up to `max` columns and returns the end column.
 pub fn put(buf: &mut Buffer, x: u16, y: u16, s: &str, max: u16, style: Cell) -> u16 {
     if max == 0 || y >= buf.area.bottom() || x >= buf.area.right() {
         return x;
@@ -89,8 +88,8 @@ pub fn put(buf: &mut Buffer, x: u16, y: u16, s: &str, max: u16, style: Cell) -> 
     buf.set_stringn(x, y, s, max as usize, style).0
 }
 
-/// Word wrap, a paragraph's blank line kept. A word wider than the line is broken after its last
-/// `/` that fits, else its last `-`, as paths and links read.
+/// Word wrap that keeps blank lines. A word wider than the line breaks after its last fitting
+/// `/`, else `-`, as paths and links read.
 pub fn wrap(s: &str, width: usize) -> Vec<String> {
     let width = width.max(1);
     let mut lines = Vec::new();
@@ -127,7 +126,6 @@ pub fn wrap(s: &str, width: usize) -> Vec<String> {
     lines
 }
 
-/// Space around the content: more where there is room.
 fn padding(width: u16) -> u16 {
     match width {
         0..40 => 1,
@@ -138,7 +136,7 @@ fn padding(width: u16) -> u16 {
 
 const MAX_WIDTH: u16 = 100;
 
-/// The column the page lives in: left edge, width, header row, footer row.
+/// Content column: left edge, width, header row, footer row.
 pub(super) fn geometry(area: Rect) -> Option<(u16, u16, u16, u16)> {
     let pad = padding(area.width);
     let width = area.width.saturating_sub(2 * pad).min(MAX_WIDTH);
@@ -150,8 +148,8 @@ pub(super) fn geometry(area: Rect) -> Option<(u16, u16, u16, u16)> {
     Some((x, width, area.y + margin, area.bottom() - 1 - margin))
 }
 
-/// Paints the header and returns the area left for the page. The header: where we are on the
-/// left, and on the right what runs and what the status check says, or a page's own note.
+/// Draws the header and returns the page area. Header path on the left, activity and status or
+/// the page's note on the right.
 pub fn frame(
     area: Rect,
     buf: &mut Buffer,
@@ -194,7 +192,7 @@ pub fn frame(
             .sum::<usize>()
             + 2
     };
-    // Short of room the status goes first: it says less than where we are.
+    // Short of room the status goes first, since it says less than the path.
     if full + right_width(&right) > width as usize {
         right.clear();
     }
@@ -207,7 +205,7 @@ pub fn frame(
         let last = parts.len() - 1;
         parts[last].0 = cut(&parts[last].0, room - fixed, s.glyphs.ellipsis);
     } else if full > room {
-        // Narrower still, whole parts go from the front, where the path says least.
+        // Narrower still, whole segments go from the front, where the path says least.
         let mark = (format!("{}{sep}", s.glyphs.ellipsis), s.tone(Tone::Muted));
         let width_of = |p: &[(String, Cell)]| p.iter().map(|(t, _)| t.width()).sum::<usize>();
         let last = parts.len() - 1;
@@ -258,15 +256,15 @@ pub fn frame(
     )
 }
 
-/// The keys of the page, dimmed under it, with the version on the right. Drawn after the page,
-/// which knows its keys only once it has drawn.
+/// Dimmed page keys with the version on the right. Drawn after the page, which knows its keys
+/// only once drawn.
 pub fn footer(area: Rect, buf: &mut Buffer, ctx: &Ctx, hints: &[(&'static str, String)]) {
     let s = &ctx.style;
     let Some((x, width, _, bottom)) = geometry(area) else {
         return;
     };
     let version = crate::version::version();
-    // The pages name their keys in the glyphs of a terminal. The console gets them as words.
+    // Pages name keys as glyphs. The console shows them as words.
     let keys: Vec<String> = hints
         .iter()
         .map(|(k, label)| {
@@ -297,8 +295,8 @@ pub fn footer(area: Rect, buf: &mut Buffer, ctx: &Ctx, hints: &[(&'static str, S
     }
 }
 
-/// Where `area` stands in a column of `lines` from `offset`: a track in the right margin, and a
-/// thumb as long and as far down as what is shown. Nothing where everything shows.
+/// Track in the right margin with a thumb sized and placed like the visible part. Nothing when
+/// everything fits.
 pub fn scrollbar(buf: &mut Buffer, area: Rect, lines: usize, offset: usize, ctx: &Ctx) {
     let s = &ctx.style;
     let shown = usize::from(area.height);
@@ -327,15 +325,13 @@ pub fn scrollbar(buf: &mut Buffer, area: Rect, lines: usize, offset: usize, ctx:
     }
 }
 
-/// Writes centered text, cut to the width.
 pub fn center(buf: &mut Buffer, area: Rect, y: u16, text: &str, style: Cell, mark: &str) {
     let text = cut(text, area.width as usize, mark);
     let x = area.x + (area.width.saturating_sub(text.width() as u16)) / 2;
     put(buf, x, y, &text, area.width, style);
 }
 
-/// A paragraph of running text from `y`, wrapped to the area, in `style`. Returns the row after
-/// it.
+/// Returns the row after the wrapped text.
 pub fn paragraph(buf: &mut Buffer, area: Rect, y: u16, text: &str, style: Cell) -> u16 {
     let mut y = y;
     for line in wrap(text, area.width as usize) {
@@ -348,8 +344,7 @@ pub fn paragraph(buf: &mut Buffer, area: Rect, y: u16, text: &str, style: Cell) 
     y
 }
 
-/// Something that takes a while, in the middle of the page: a spinner and the title, a line
-/// under it where there is one.
+/// Centered spinner and title, with `under` below if given.
 pub fn waiting(buf: &mut Buffer, area: Rect, title: &str, under: Option<&str>, ctx: &Ctx) {
     let s = &ctx.style;
     let top = area.y + area.height.saturating_sub(4) / 2;
@@ -386,7 +381,7 @@ mod tests {
             "…r › firefox"
         );
         assert_eq!(cut("kurz", 8, "…"), "kurz");
-        // A sequence, as an emoji with its variation selector, is wider than its characters.
+        // A sequence, such as an emoji with its variation selector, is wider than its characters.
         for max in 1..12 {
             assert!(
                 cut("⚠️ ⚠️ ⚠️ ⚠️ ⚠️", max, "…").width() <= max,

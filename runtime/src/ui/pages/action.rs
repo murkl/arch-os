@@ -1,5 +1,5 @@
-//! An action somebody opened: its inputs, a page each, its confirmation, then its script, and
-//! what it has to report. Where it says no, what it falls back on opens over its pages.
+//! Opened action: a page per input, confirmation, script run and report. On failure its
+//! fallback opens over its pages.
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -14,14 +14,13 @@ use crate::ui::detail::Act;
 use crate::ui::draw::waiting;
 use crate::ui::{Ctx, Data, Flow, Key, Page};
 
-/// Opens an action: its first page.
 pub fn open(ctx: &mut Ctx, action: &'static Action, fetches: bool) -> Flow {
     crate::info!("action {}", action.id);
     Flow::Push(page(ctx, action, 0, 0, fetches))
 }
 
-/// The action's page from its `next` input on, each pushed onto the one before, and its work once
-/// none is left. `depth` counts the pages before it, so the work knows how many to take away.
+/// Page of input `next`, each pushed on the one before, then the run. `depth` counts the pages
+/// before, so the run knows how many to pop.
 pub fn page(
     ctx: &Ctx,
     action: &'static Action,
@@ -63,13 +62,13 @@ pub fn page(
 
 pub struct ActionPage {
     action: &'static Action,
-    /// The pages that go once it has worked, this one included.
+    /// Pages to pop on success, this one included.
     depth: usize,
-    /// It fetches a profile, which the page below reads back.
+    /// Fetches a profile for the page below to read back.
     fetches: bool,
     started: bool,
     session: Option<Session>,
-    /// Simulated, or run on the terminal: the outcome waits for the next tick.
+    /// Result of a simulated or terminal run, applied on the next tick.
     outcome: Option<Result<(), Failure>>,
 }
 
@@ -93,7 +92,7 @@ impl ActionPage {
             crate::info!("action {}: simulated", self.action.id);
             self.outcome = Some(Ok(()));
         } else if self.action.tty {
-            // The interface stands down for the length of this one.
+            // The UI yields the terminal while this step runs.
             ctx.handover = Some(Box::new(move || script::handover(&step, &env)));
         } else {
             match script::start(step, &env, ctx.run_sink()) {
@@ -108,10 +107,10 @@ impl ActionPage {
         }
     }
 
-    /// Once it worked it goes back with the pages before it, or to its report. Where it did not,
-    /// what it falls back on opens in its place, else the failure page.
+    /// Success pops its pages or opens the report. Failure opens the fallback in its place, else
+    /// the failure page.
     fn proceed(&mut self, result: Result<(), Failure>, ctx: &mut Ctx) -> Flow {
-        // Whatever the pages were given is gone the moment it is used, whether it worked or not.
+        // Typed inputs are forgotten right after use, success or not.
         ctx.store.forget();
         self.session = None;
         match result {
@@ -124,8 +123,8 @@ impl ActionPage {
                 let Some(report) = &self.action.report else {
                     return Flow::PopN(self.depth);
                 };
-                // A report shows what the script wrote down, so the answer file is read back
-                // first: the settings into the store, the code's value from the file alone.
+                // The report shows what the script wrote, so the answer file is reloaded first:
+                // settings into the store, the code's value from the file only.
                 if let Err(e) = ctx.store.load() {
                     crate::warn!("{}: {e}", ctx.store.path().display());
                 }

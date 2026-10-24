@@ -1,5 +1,5 @@
-//! One failure in full, under the name of what it happened to: where exactly, what the tool said,
-//! where the log is, and the rows a module offers for it.
+//! Failure page titled by what failed: location, tool output, log path and the module's rows
+//! for it.
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -15,7 +15,7 @@ pub struct FailurePage {
 }
 
 impl FailurePage {
-    /// `said` is what the failure means in the module's own words, over the report.
+    /// `said` is the module's text for the failure, above the details.
     pub fn new(title: String, said: Option<String>, f: Failure, acts: Vec<Act>) -> FailurePage {
         let mut blocks = Vec::new();
         if let Some(said) = said {
@@ -39,7 +39,7 @@ impl Page for FailurePage {
     }
 
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {
-        // The mark in front of the module's words is the style's, which only the frame knows.
+        // The mark before the module's text comes from the style, known only at draw time.
         for block in &mut self.detail.body {
             if let Block::Note(Lead::Glyph(glyph, tone), _, _) = block
                 && *glyph == "\0"

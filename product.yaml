@@ -1,10 +1,9 @@
-# Arch OS: what no module answers for its neighbors. The modules are the
-# folders beside this file with a module.yaml, the version is the build's. A
-# name() is a function of lib.sh: runtime/README.md
+# Shared by all modules, the folders beside this file with a module.yaml. A
+# name() is a lib.sh function: runtime/README.md
 
 title: Arch OS
 
-# Above the blank line the eyebrow, below it the wordmark.
+# Eyebrow above the blank line, wordmark below.
 logo: |
   Arch Linux
 
@@ -14,13 +13,13 @@ logo: |
   ██   ██ ██   ██ ██      ██   ██     ██    ██      ██
   ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
 
-# Arch blue, and on the console the slot the images paint it in: iso/README.md.
+# Arch blue, and its console slot: iso/README.md#console
 accent: "#1793d1"
 console-accent: bright-blue
 surface: "#3b4252"
 console-surface: blue
 
-# Each check is a request to archlinux.org, so one every half minute.
+# Each check is a request to archlinux.org.
 status:
   check: check_online()
   every: 30
@@ -28,23 +27,20 @@ status:
   fail: Offline
 
 actions:
-  # Under on: success: the system is still mounted when the run ends.
+  # The system stays mounted after the run.
   chroot:
     title: Open a shell
-    description: A shell inside the system on the disk. Leave it with exit.
+    description: Opens a shell in the system on the disk. Leave with exit.
     run: open_shell()
     tty: true
 
-  # Under requires: a system is installed and repaired from outside itself.
+  # A system is installed and repaired from outside itself.
   live-image:
-    title: An Arch Linux live image
+    title: Arch Linux live system
     run: on_arch_live_image()
-    error: |
-      Runs only from an Arch Linux live image. Boot this machine from the Arch
-      OS ISO.
+    error: No Arch Linux live system. Boot from the Arch OS ISO.
 
-  # A cable that works is preferred: the wireless network is offered only where
-  # none is online.
+  # A working cable wins: Wi-Fi only where none is online.
   no-cable:
     title: No wired internet
     run: no_cable()
@@ -52,40 +48,37 @@ actions:
   # systemd unmounts the target and locks the disk on the way down.
   restart:
     title: Restart
-    description: Restarts this machine.
     run: restart_machine()
 
   root:
     title: Running as root
     run: is_root()
-    error: Root is required. Log in as root and start again.
+    error: Root required. Log in as root and start again.
 
-  # Under on: failure. Choosing the row is the consent, so it says what leaves.
+  # Choosing the row is the consent, so it names what leaves.
   share-log:
     title: Share the log
     description: |
-      Uploads the log to paste.rs for whoever helps you. Anyone with the address
-      can read it. Passwords are not included.
+      Uploads the log to paste.rs, readable by anyone with the address. Passwords
+      are excluded.
     run: share_log()
     simulates: true
-    error: The upload to paste.rs failed. Try again in a moment.
+    error: Upload to paste.rs failed.
     report: |
       Log shared
 
-      Scan the QR code or pass the address below to whoever helps you.
+      Scan the QR code or pass on the address below.
     qr: ARCH_OS_LOG_URL
 
   shutdown:
     title: Shut down
-    description: Turns this machine off.
     run: shut_down_machine()
 
-  # On the dashboard, and opened without internet. An open or known network
-  # is joined as it is chosen. One that wants a passphrase says no, and that is
-  # asked next.
+  # An open or known network connects when chosen. One with a password says
+  # no, and wifi-passphrase asks for it.
   wifi:
     title: Connect to Wi-Fi
-    description: Connects to a wireless network.
+    description: Connects to a Wi-Fi network.
     group: Configuration
     requires: [wifi-card, no-cable]
     inputs:
@@ -98,19 +91,16 @@ actions:
     on:
       failure: [wifi-passphrase]
 
-  # A machine without a card is offered no wireless network.
   wifi-card:
-    title: A wireless card
+    title: Wi-Fi card
     run: has_wifi_card()
 
-  # Opened where the network wants a passphrase.
   wifi-passphrase:
-    title: Wireless network
+    title: Wi-Fi network
     inputs:
       - name: ARCH_OS_WIFI_PASSPHRASE
         type: password
         title: Password
         required: true
     run: join_wifi_with_passphrase()
-    error: |
-      Wrong password for {{ARCH_OS_WIFI_SSID}}, or the network is out of range.
+    error: Wrong password for {{ARCH_OS_WIFI_SSID}}, or network out of range.

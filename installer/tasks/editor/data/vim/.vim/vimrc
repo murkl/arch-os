@@ -1,17 +1,12 @@
-" Written by the Arch OS Installer. Vim's own defaults.vim first (a vimrc of
-" one's own switches them off otherwise), and then what makes it read like any
-" other editor. `:help option-list` names everything that can go here.
+" Written by Arch OS. A vimrc skips defaults.vim unless it sources it.
 unlet! skip_defaults_vim
 source $VIMRUNTIME/defaults.vim
 
 set number
 set laststatus=2
 
-" Four spaces for a tab, and a search that ignores case until it holds a
-" capital letter, lit up where it matched.
 set expandtab shiftwidth=4 softtabstop=4
 set ignorecase smartcase hlsearch
 
-" Vim's own dark scheme of muted grays and blues, close to the Nord the console
-" and the prompt are drawn in.
+" Close to the Nord of the console and the prompt.
 colorscheme habamax

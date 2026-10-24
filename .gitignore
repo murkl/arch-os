@@ -1,11 +1,11 @@
-# What a build leaves, BUILD_OUTPUT in the Makefile and cargo's target, where
-# `make run` keeps its answers and its log too.
+# BUILD_OUTPUT in the Makefile and cargo's target, which also holds the answers
+# and log of `make run`.
 /dist/
 /iso/archiso/
 /iso/download/
 /runtime/target/
 
-# A run started here: its answers and its log, see runtime/README.md.
+# Answers and log of a run started here: runtime/README.md
 /*.conf
 /*.conf.answer
 /*.log

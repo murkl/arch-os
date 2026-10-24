@@ -1,6 +1,4 @@
-# Written by the Arch OS Installer: Nord, the palette the console and the prompt
-# are drawn in, and the mode it is in written on the cursor and the status line.
-# `:help` names everything that can go here, and `hx --tutor` teaches the keys.
+# Written by Arch OS. Nord, as the console and the prompt.
 theme = "nord"
 
 [editor]

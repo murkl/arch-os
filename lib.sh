@@ -1,14 +1,11 @@
 # shellcheck shell=bash
-# The one library of Arch OS, loaded in front of every script of every module.
-# It defines and exports, and runs nothing while it loads: runtime/README.md
+# Sourced before every module script. Defines and exports, runs nothing on load: runtime/README.md
 
-# Under --dry-run only what reads still runs.
 dry_run() { [ "$DRY_RUN" = "true" ]; }
 
 is_root() { [ "$(id -u)" -eq 0 ]; }
 
-# The status of the command before, unless it is one of the codes named, by
-# which that command says nothing went wrong: `grep x file || allow 1`.
+# Treats the named exit codes of the previous command as success: `grep x file || allow 1`.
 allow() {
     local status=$?
     for code; do
@@ -17,13 +14,12 @@ allow() {
     return "$status"
 }
 
-# https even after a redirect, TLS 1.2 at the least, and a connect timeout
-# instead of a hang.
+# Every outbound request goes through here.
 fetch_url() {
     curl -Lf --proto '=https' --proto-redir '=https' --tlsv1.2 --connect-timeout 10 "$@"
 }
 
-# An answer written back into the answer file, in place of an earlier one.
+# Sets $1 to $2 in the answer file, replacing an earlier value.
 answer() {
     local tmp="${MODULE_CONF}.answer"
     grep -v "^${1}=" "$MODULE_CONF" >"$tmp" 2>/dev/null || : >>"$tmp"
@@ -31,18 +27,17 @@ answer() {
     mv -f "$tmp" "$MODULE_CONF"
 }
 
-# The data/ folder beside the task.sh or test.sh that called it.
+# data/ beside the calling task.sh or test.sh.
 where() { printf '%s/data' "$(dirname "${BASH_SOURCE[1]}")"; }
 
 # ////////////////////////////////////////////////////////////////////////////
 # THE ERRORS
 # ////////////////////////////////////////////////////////////////////////////
 
-# What a script stops itself with where it cannot go on, put into words under
-# errors: in each module.yaml. A task's or action's own statuses start at 10.
-export EXIT_OFFLINE=3     # the internet is out of reach
-export EXIT_UNREACHABLE=4 # the internet works, GitHub is unreachable
-export EXIT_AUR=5         # the internet works, the AUR is unreachable
+# Shared exit codes, described under errors: in each module.yaml. Task and action codes start at 10.
+export EXIT_OFFLINE=3
+export EXIT_UNREACHABLE=4 # online, GitHub unreachable
+export EXIT_AUR=5         # online, AUR unreachable
 
 # ////////////////////////////////////////////////////////////////////////////
 # THE RELEASE
@@ -50,23 +45,18 @@ export EXIT_AUR=5         # the internet works, the AUR is unreachable
 
 REPO="murkl/arch-os"
 
-# The folder lib.sh and the modules lie in.
 product_dir() { dirname "${BASH_SOURCE[0]}"; }
 
-# The newest hundred releases as GitHub describes them. Fails where it is out of
-# reach.
 releases_json() { fetch_url -sS --max-time 20 "https://api.github.com/repos/${REPO}/releases?per_page=100"; }
 
-# Every download in the releases' JSON on stdin whose name ends in $1, with its
-# sha256, a line each. A release published before GitHub kept a checksum leaves
-# the sha256 empty.
+# URL and sha256 of each asset ending in $1, from releases JSON on stdin. Assets
+# published before GitHub kept digests leave the sha256 empty.
 asset_in() {
     jq -r --arg suffix "$1" '.[] | .assets[]? | select(.browser_download_url | endswith($suffix))
         | "\(.browser_download_url) \(.digest // "" | ltrimstr("sha256:"))"'
 }
 
-# Whether version $1 comes after $2, as semantic versioning orders them: a
-# pre-release before its release, 2.1.0-dev before 2.1.0.
+# Semver order: 2.1.0-dev before 2.1.0.
 newer() {
     local release1="${1%%-*}" release2="${2%%-*}"
     if [ "$release1" != "$release2" ]; then
@@ -83,8 +73,8 @@ newer() {
 # THE NETWORK
 # ////////////////////////////////////////////////////////////////////////////
 
-# Real HTTPS rather than a ping, which a captive portal answers too. Simulated,
-# it is online, so screenshots come out the same on every desk.
+# HTTPS rather than ping, which a captive portal answers too. Online under
+# --dry-run, so screenshots stay reproducible.
 check_online() {
     dry_run && return 0
     fetch_url -sI --connect-timeout 5 --max-time 10 https://archlinux.org >/dev/null
@@ -92,9 +82,8 @@ check_online() {
 
 has_wifi_card() { compgen -G '/sys/class/ieee80211/*' >/dev/null; }
 
-# Online, and not over the air: the default route leaves by an interface with no
-# wireless card. The address is reserved for documentation, looking up its route
-# sends nothing.
+# Online through an interface without a wireless card. 192.0.2.1 is a
+# documentation address, the route lookup sends nothing.
 online_by_cable() {
     local route device
     check_online || return 1
@@ -103,8 +92,8 @@ online_by_cable() {
     [ -n "$device" ] && [ ! -e "/sys/class/net/${device}/phy80211" ]
 }
 
-# The Wi-Fi card's station, or nothing. iwd starts only on the live image. The
-# match is remembered rather than exited on, since a closed pipe fails pipefail.
+# The Wi-Fi station, or nothing. awk reads to the end, since a closed pipe fails
+# pipefail.
 wifi_station() {
     local station=""
     has_wifi_card || return 0
@@ -116,12 +105,12 @@ wifi_station() {
             sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r//' |
             awk '!found && $NF == "station" { print $1; found = 1 }')"
         [ -n "$station" ] && break
-        sleep 0.5 # a daemon started just now has not found the card yet
+        sleep 0.5 # a fresh iwd lists the card only after a moment
     done
     printf '%s' "$station"
 }
 
-# Joined is not yet online: the address comes a few seconds later.
+# DHCP completes a few seconds after joining.
 wifi_online() {
     for _ in $(seq 6); do
         check_online && return 0
@@ -130,14 +119,14 @@ wifi_online() {
     return 1
 }
 
-# Without --dont-ask, iwctl asks for a passphrase on the interface's terminal.
+# Without --dont-ask, iwctl prompts for a passphrase on the runtime's terminal.
 join_wifi() {
     iwctl --dont-ask station "$(wifi_station)" connect "$ARCH_OS_WIFI_SSID"
     wifi_online || true
 }
 
-# The one place a secret reaches a command line: iwctl takes it no other way
-# without an agent. No address is the tell for a wrong passphrase.
+# The only secret on a command line: without an agent, iwctl takes it no other
+# way. A wrong passphrase shows as no address.
 join_wifi_with_passphrase() {
     iwctl --passphrase "$ARCH_OS_WIFI_PASSPHRASE" station "$(wifi_station)" connect "$ARCH_OS_WIFI_SSID"
     wifi_online
@@ -147,16 +136,16 @@ join_wifi_with_passphrase() {
 # THE SHARING
 # ////////////////////////////////////////////////////////////////////////////
 
-# No account and no key: a POST in, the address it lives at out.
+# No account or key: POST the text, get its URL back.
 export PASTE="https://paste.rs"
 
-# Retried, since paste.rs answers a busy moment with an error, and -S puts the
-# status it answered with on the page that says it failed.
+# Retried, since paste.rs fails under load. -S puts the HTTP status on the error
+# page.
 paste_online() {
     fetch_url -sS --max-time 30 --retry 3 --retry-delay 2 --data-binary @- "${PASTE}/" | tr -d '[:space:]'
 }
 
-# Simulated, an address all the same. The log lies beside the answer file.
+# A demo URL under --dry-run, so the page shows one.
 share_log() {
     local url
     if dry_run; then
@@ -172,17 +161,17 @@ share_log() {
 # THE LIVE IMAGE
 # ////////////////////////////////////////////////////////////////////////////
 
-# Either marker is enough: what the image mounts, or what it was booted with.
+# The archiso mount or the kernel parameter, either suffices.
 on_live_image() {
     [ -d /run/archiso ] || grep -qs archisobasedir /proc/cmdline
 }
 
-# Arch on top: an image built the same way by somebody else is another system.
+# Another distribution's archiso image is not Arch.
 on_arch_live_image() {
     on_live_image && grep -qs '^ID=arch$' /etc/os-release
 }
 
-# The disk the live image runs from, also through Ventoy. No module writes to it.
+# The disk the live system runs from, also via Ventoy. No module writes to it.
 live_disk() {
     lsblk -no PKNAME,MOUNTPOINT |
         awk '!found && $1 != "" && $2 ~ /^\/run\/archiso/ { print "/dev/" $1; found = 1 }'
@@ -192,14 +181,13 @@ live_disk() {
 # THE SYSTEM ON THE DISK
 # ////////////////////////////////////////////////////////////////////////////
 
-# Where the Installer builds the system and the Recovery opens it.
+# Root of the system the Installer builds and the Recovery repairs.
 export MNT=/mnt
 
-# The one kernel Arch OS installs, and so the one the Recovery puts back.
+# The only kernel Arch OS installs, and the one the Recovery restores.
 export KERNEL=linux-zen
 
-# The partitions the Installer lays out and the Recovery finds again. nvme0n1
-# gets a p.
+# Partition $2 of disk $1. A disk name ending in a digit takes a p: nvme0n1p1.
 part_of() {
     local sep=""
     [[ "$1" =~ [0-9]$ ]] && sep="p"
@@ -209,7 +197,7 @@ boot_partition() { part_of "$1" 1; }
 system_partition() { part_of "$1" 2; }
 recovery_partition() { part_of "$1" 3; }
 
-# The btrfs layout, subvolume and mount point, see docs/REFERENCE.md.
+# The btrfs layout: docs/REFERENCE.md
 export BTRFS_OPTS="defaults,noatime,compress=zstd:1"
 
 btrfs_subvolumes() {
@@ -224,19 +212,19 @@ btrfs_subvolumes() {
 
 # ─── The boot entries ──────────────────────────────────────────────────────
 #
-# What the Installer writes and the Recovery lays down again, each entry of the
-# system tried BOOT_TRIES times before the next: docs/REFERENCE.md#when-the-system-does-not-start
+# Written by the Installer, restored by the Recovery. Each entry gets BOOT_TRIES
+# tries before the next: docs/REFERENCE.md#fallback
 
-# The templates, kept with the Recovery, which every image carries.
+# The templates live with the Recovery, which every image carries.
 boot_data() { printf '%s/recovery/data' "$(product_dir)"; }
 
 export BOOT_TRIES=3
 
-# The unified images, outside EFI/Linux: the loader would list them there on
-# their own, beside the entries that count their tries.
+# Outside EFI/Linux: systemd-boot lists UKIs there on its own, beside the entries
+# that count tries.
 export UKI_DIR=/boot/EFI/arch-os
 
-# The images the firmware starts for kind $1, uki or image, the system's first.
+# Boot images of kind $1, uki or image, main before fallback.
 images_of() {
     if [ "$1" = uki ]; then
         printf '%s/arch-%s.efi\n%s/arch-%s-fallback.efi\n' "$UKI_DIR" "$KERNEL" "$UKI_DIR" "$KERNEL"
@@ -245,14 +233,14 @@ images_of() {
     fi
 }
 
-# Text written beside a file and moved over it, so whatever reads it at the
-# next start finds the old file or the new one, never half of either.
+# Written beside and renamed over, so the next boot reads the old file or the
+# new one, never half.
 place() {
     printf '%s\n' "$2" >"${1}.new"
     mv -f "${1}.new" "$1"
 }
 
-# mkinitcpio's preset in the system at $1 for kind $2.
+# mkinitcpio preset in the system at $1 for kind $2.
 boot_preset() {
     local images text
     mapfile -t images < <(images_of "$2")
@@ -260,9 +248,9 @@ boot_preset() {
     place "$1/etc/mkinitcpio.d/${KERNEL}.preset" "$text"
 }
 
-# The system's two entries, the loader's configuration and the unit that gives
-# the entries their tries back, in the system at $1 for kind $2 and, for ram
-# disks, the command line $3. Each entry is in place before an old name goes.
+# Boot entries, loader.conf and the boot-tries unit in the system at $1 for kind
+# $2, with command line $3 for kind image. Each new entry is in place before the
+# old one goes.
 boot_entries() {
     local root="$1" kind="$2" cmdline="$3" data entries images text file old i
     local -a names=(main main-fallback) titles=("Arch OS" "Arch OS (fallback)") keys=(arch arch-fallback)
@@ -295,48 +283,48 @@ boot_entries() {
     arch-chroot "$root" systemctl enable arch-os-boot-tries.service
 }
 
-# A default an earlier system left in this machine's firmware is started
-# however often it fails, so the entries' tries count for nothing past it.
+# A LoaderEntryDefault left by an earlier system boots however often it fails
+# and defeats the tries.
 clear_loader_default() {
     [ -e /sys/firmware/efi/efivars/LoaderEntryDefault-4a67b082-0a4c-41cf-b6c7-440b29bb8c4f ] || return 0
-    bootctl set-default '' || echo "the firmware's default boot entry could not be cleared" >&2
+    bootctl set-default '' || echo "firmware default boot entry not cleared" >&2
 }
 
-# Everything under /mnt taken down, and whatever still holds it logged and
-# killed. Why -R and -M: docs/CONTRIBUTING.md#closing-the-target
+# Logs and kills what still holds the target. Why -R and -M:
+# docs/CONTRIBUTING.md#closing-the-target
 unmount_target() {
     mountpoint -q "$MNT" || return 0
     umount -R "$MNT" && return 0
 
-    echo "the target did not unmount, what is holding it:"
+    echo "target busy, held by:"
     fuser -Mvm "$MNT" || true
     fuser -Mkm "$MNT" || true
-    sleep 2 # the kernel needs a moment to actually let go of the files
+    sleep 2 # the kernel releases the files with a delay
 
     umount -R "$MNT"
 }
 
-# Every file sbctl keeps is signed, and there is one. `sbctl verify` answers 0
-# whatever it found, so its list is read, however it spaces its JSON.
+# sbctl tracks at least one file, all signed. `sbctl verify` exits 0 regardless,
+# so its JSON list is read, with any spacing.
 boot_chain_signed() {
     local files
     files="$(arch-chroot "$1" sbctl list-files --json)" || return 1
     if ! grep -qE '"is_signed": *true' <<<"$files"; then
-        echo "sbctl keeps no signed file" >&2
+        echo "sbctl: no signed file" >&2
         return 1
     fi
     if grep -qE '"is_signed": *false' <<<"$files"; then
-        echo "sbctl keeps files that are not signed: ${files}" >&2
+        echo "sbctl: unsigned files: ${files}" >&2
         return 1
     fi
 }
 
-# A shell inside the system, on the terminal the runtime hands over. HOME, because a
-# service has none. The shell's own exit is whoever typed in it.
+# On the terminal the runtime hands over, with HOME, which a service lacks. The
+# shell's exit status is the user's, not a failure.
 open_shell() {
     clear
-    echo "You are now inside the system at ${MNT}."
-    echo "Leave it again with 'exit'."
+    echo "Shell in ${MNT}."
+    echo "Leave with exit."
     echo
     HOME=/root arch-chroot "$MNT" || true
 }
@@ -345,42 +333,41 @@ open_shell() {
 # INSTALLING | Files a task ships
 # ////////////////////////////////////////////////////////////////////////////
 
-# A template from a task's data/ on stdout: {{NAME}} filled from NAME=value,
-# every $ left alone. A placeholder nobody filled and a value nothing asks for
-# both fail. Why not envsubst: docs/CONTRIBUTING.md#files-a-task-ships
+# {{NAME}} filled from NAME=value, every $ kept. Unfilled placeholders and unused
+# values fail. Why not envsubst: docs/CONTRIBUTING.md#templates
 render() {
     local template="$1" open='{{' close='}}' text rendered="" name pair
     local -A values=() used=()
     shift
 
     [ -f "$template" ] || {
-        echo "there is no template ${template}" >&2
+        echo "template ${template} not found" >&2
         return 1
     }
 
     for pair in "$@"; do
         name="${pair%%=*}"
         [[ $pair == *=* && $name =~ ^[A-Z][A-Z0-9_]*$ ]] || {
-            echo "${pair} is not a NAME=value for ${template}" >&2
+            echo "${template}: ${pair} is not NAME=value" >&2
             return 1
         }
         values["$name"]="${pair#*=}"
     done
 
-    # Whole, trailing newlines included, which $(<file) would strip.
+    # read keeps trailing newlines, which $(<file) strips.
     IFS= read -r -d '' text <"$template" || true
 
-    # Left to right and once: a value holding {{ is never read as a placeholder.
+    # One pass, left to right, so a value holding {{ is never parsed as a placeholder.
     while [[ $text == *"$open"* ]]; do
         rendered+="${text%%"$open"*}"
         text="${text#*"$open"}"
         name="${text%%"$close"*}"
         if [[ $text != *"$close"* || ! $name =~ ^[A-Z][A-Z0-9_]*$ ]]; then
-            echo "${template} has a ${open} that opens no placeholder" >&2
+            echo "${template}: ${open} opens no placeholder" >&2
             return 1
         fi
         if [[ ! -v values[$name] ]]; then
-            echo "${template} asks for ${open}${name}${close}, which nobody handed over" >&2
+            echo "${template}: no value for ${open}${name}${close}" >&2
             return 1
         fi
         rendered+="${values[$name]}"
@@ -390,7 +377,7 @@ render() {
 
     for name in "${!values[@]}"; do
         [[ -v used[$name] ]] || {
-            echo "${name} was handed to ${template}, which never asks for it" >&2
+            echo "${template}: ${name} unused" >&2
             return 1
         }
     done
@@ -399,14 +386,14 @@ render() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
-# INSTALLING | The region, looked up and worked out
+# INSTALLING | Region
 # ////////////////////////////////////////////////////////////////////////////
 
-# Keyboard, font and time zone do not follow from the shape of a locale (de_CH
-# is not de), so they are looked up in the Installer's data/.
+# Keyboard, font and time zone come from the Installer's data/, not from the
+# locale's shape: de_CH is not de.
 installer_data() { printf '%s/installer/data' "$(product_dir)"; }
 
-# A column of data/languages for a locale: its own row, else its language's.
+# Column $1 of data/languages for locale $2: its own row, else its language's.
 language_field() {
     awk -v col="$1" -v locale="${2%%.*}" '
         BEGIN { lang = locale; sub(/_.*/, "", lang) }
@@ -417,16 +404,15 @@ language_field() {
     ' "$(installer_data)/languages"
 }
 
-# A column of data/countries for a territory code, empty for none.
+# Column $1 of data/countries for territory code $2, empty for none.
 country_field() {
     awk -F'\t' -v col="$1" -v code="$2" 'code != "" && $1 == code { print $col }' "$(installer_data)/countries"
 }
 
-# What auto resolves to, also shown beside the auto row of each list.
+# What auto resolves to, also shown in each list's auto row.
 auto_keymap() {
     local keymap
     keymap="$(language_field 2 "$ARCH_OS_LOCALE_LANG")"
-    # Otherwise the keyboard the live image was started with.
     printf '%s' "${keymap:-$(prefill_live_keymap)}"
 }
 
@@ -440,29 +426,27 @@ auto_layout() {
     printf '%s' "$layout"
 }
 
-# none rather than empty: the console keeps its font, every mirror is ranked.
+# none, not empty: the console keeps its font, and reflector ranks every mirror.
 auto_font() {
     local font
     font="$(language_field 4 "$ARCH_OS_LOCALE_LANG")"
     printf '%s' "${font:-none}"
 }
 
-# The country of the time zone rather than of the language: en_US is typed on
-# every continent.
+# From the time zone, not the language: en_US is used on every continent.
 auto_country() {
     local territory country
     territory="$(awk -F'\t' -v zone="$ARCH_OS_TIMEZONE" \
         '!/^#/ && zone != "" && $3 == zone { print $1 }' /usr/share/zoneinfo/zone.tab)"
     country="$(country_field 2 "$territory")"
-    [ "$country" = "-" ] && country="" # a country Arch has no mirror in
+    [ "$country" = "-" ] && country="" # no Arch mirror there
     printf '%s' "${country:-none}"
 }
 
-# none is answered, and stands for nothing set.
+# none is an answer and means unset.
 not_none() { [ "$1" = "none" ] || printf '%s' "$1"; }
 
-# An answer as the new system is set to it, auto worked out by the function
-# named second.
+# Answer $1 as applied, auto resolved by function $2.
 resolved() {
     local value="$1"
     if [ -z "$value" ] || [ "$value" = "auto" ]; then
@@ -476,10 +460,9 @@ desktop_layout() { resolved "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" auto_layout; }
 mirror_country() { resolved "$ARCH_OS_REFLECTOR_COUNTRY" auto_country; }
 
 # ////////////////////////////////////////////////////////////////////////////
-# INSTALLING | The machine and its boot chain
+# INSTALLING | Hardware and boot chain
 # ////////////////////////////////////////////////////////////////////////////
 
-# The processor's microcode package, or nothing.
 microcode() {
     if grep -q GenuineIntel /proc/cpuinfo; then
         echo intel-ucode
@@ -488,8 +471,8 @@ microcode() {
     fi
 }
 
-# Each graphics card as vendor, a tab and the PCI device ID, off sysfs. A
-# virtual machine's own adapter is none of the three.
+# Each GPU as vendor, tab, PCI device ID. A virtual machine's adapter matches
+# none of the three.
 graphics_cards() {
     local dev vendor
     for dev in /sys/bus/pci/devices/*; do
@@ -504,34 +487,32 @@ graphics_cards() {
     done
 }
 
-# Secure Boot always means a unified kernel image.
-# https://wiki.archlinux.org/title/Unified_kernel_image
+# Secure Boot always means a UKI: https://wiki.archlinux.org/title/Unified_kernel_image
 secure_boot_wanted() {
     [ "$ARCH_OS_SECURE_BOOT_ENABLED" = "true" ] && [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]
 }
 
-# The kind of image the Installer builds.
 boot_kind() { if secure_boot_wanted; then echo uki; else echo image; fi; }
 
-# The images the firmware starts: a check against the other two checks nothing.
+# A check against the other kind's images checks nothing.
 boot_images() { images_of "$(boot_kind)"; }
 
-# The Recovery image, which the ISO carries beside the Installer. How it boots:
+# The Recovery image the ISO carries beside the Installer. Boot flow:
 # docs/REFERENCE.md
 export RECOVERY_IMAGE=/opt/arch-os-recovery
 
-# Where it lands on the EFI partition, listed by systemd-boot on its own.
+# On the EFI partition, where systemd-boot lists it on its own.
 export RECOVERY_EFI=/boot/EFI/Linux/arch-os-recovery.efi
 
-# Its partition: twice what its image takes, so an update has room to grow.
+# Recovery partition size: twice the image, so an update can grow.
 export RECOVERY_MIB=1024
 
 # ////////////////////////////////////////////////////////////////////////////
 # INSTALLING | Into the new system
 # ////////////////////////////////////////////////////////////////////////////
 
-# Retried, since the network is what goes wrong. pacman's own timeout turns a
-# mirror gone away into a retry against the next.
+# Retried, since the network fails. pacman's own timeout moves a dead mirror's
+# download to the next.
 export RETRIES=5
 export RETRY_WAIT=10
 
@@ -549,8 +530,8 @@ chroot_pacman_install() {
     return 1
 }
 
-# A sudo rule from stdin as a drop-in, taken back out where visudo refuses it:
-# one unreadable file there refuses every sudo. https://wiki.archlinux.org/title/Sudo
+# Drop-in $1 from stdin, removed if visudo rejects it: one invalid file there
+# breaks all of sudo. https://wiki.archlinux.org/title/Sudo
 sudoers_rule() {
     local file="${MNT}/etc/sudoers.d/${1}"
     mkdir -p "${MNT}/etc/sudoers.d"
@@ -558,13 +539,12 @@ sudoers_rule() {
     chmod 0440 "$file"
     arch-chroot "$MNT" visudo -cqf "/etc/sudoers.d/${1}" && return 0
     rm -f "$file"
-    echo "the sudo rule ${1} was rejected and was removed again" >&2
+    echo "sudo rule ${1} rejected and removed" >&2
     return 1
 }
 
-# pacman reads no drop-in directory but follows an Include, so each setting is a
-# file under /etc/pacman.d named outright: a glob matching nothing stops pacman.
-# https://man.archlinux.org/man/pacman.conf.5
+# pacman has no drop-in directory, so each file gets its own Include: a glob
+# matching nothing stops pacman. https://man.archlinux.org/man/pacman.conf.5
 pacman_include() {
     local file
     file="/etc/pacman.d/$(basename "$1")"
@@ -573,18 +553,16 @@ pacman_include() {
         echo "Include = ${file}" >>"${MNT}/etc/pacman.conf"
 }
 
-# How often a build is tried, and one attempt's limit: one that hits it was
-# stuck.
+# Attempts, and seconds per attempt: a build that hits the limit has hung.
 AUR_RETRIES=3
 AUR_TIMEOUT=2700
 
-# A package from the AUR, built as the account, with passwordless sudo for
-# pacman alone and for the build alone. One compile job per GiB of memory, see
-# docs/REFERENCE.md.
+# Built as the user, with passwordless sudo for pacman only and for the build
+# only. One compile job per GiB of RAM: docs/REFERENCE.md
 chroot_aur_install() {
     local repo="$1"
     local url="https://aur.archlinux.org/${repo}.git"
-    local dir jobs cores build status=1 i
+    local dir jobs cores build until status=1 i
 
     chroot_pacman_install git base-devel
 
@@ -595,50 +573,52 @@ chroot_aur_install() {
 
     dir="$(mktemp -u "/home/${ARCH_OS_USERNAME}/.aur-${repo}.XXXX")"
     build="rm -rf ${dir} && git clone --depth 1 ${url} ${dir} && cd ${dir}"
-    # Added to the PKGBUILD's options, so one that says !lto keeps it.
+    # Appended to the PKGBUILD's options, so a !lto there stays.
     build="${build} && printf '\noptions+=(\"!debug\")\n' >>PKGBUILD"
-    # make and cargo read their own variables. cargo's caches stay in the build
-    # directory and go with it, rather than a hundred megabytes in the new home.
+    # make and cargo read separate variables. cargo's caches stay in the build
+    # directory, not 100 MB in the new home.
     build="${build} && MAKEFLAGS=-j${jobs} CARGO_BUILD_JOBS=${jobs}"
     build="${build} CARGO_HOME=${dir}/.cargo XDG_CACHE_HOME=${dir}/.cache"
     build="${build} makepkg -si --noconfirm --needed"
 
-    # makepkg -si reaches root through sudo for pacman alone: the dependencies
-    # and the install.
-    echo '%wheel ALL=(ALL:ALL) NOPASSWD: /usr/bin/pacman' | sudoers_rule 99-aur-build
+    # makepkg -si needs root only for pacman. The rule expires after the longest
+    # possible run, so an aborted run leaves no passwordless sudo.
+    until="$(date -u -d "+$((AUR_RETRIES * (AUR_TIMEOUT + RETRY_WAIT))) seconds" '+%Y%m%d%H%M%SZ')"
+    echo "%wheel ALL=(ALL:ALL) NOTAFTER=${until} NOPASSWD: /usr/bin/pacman" | sudoers_rule 99-aur-build
 
     echo "building ${repo} from the AUR with ${jobs} job(s)"
     for ((i = 1; i <= AUR_RETRIES; i++)); do
         [ "$i" -gt 1 ] && echo "retry ${i}/${AUR_RETRIES}: building ${repo} from the AUR"
         status=0
-        arch-chroot "$MNT" timeout "$AUR_TIMEOUT" \
-            /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- bash -c "$build" || status=$?
+        as_user "timeout ${AUR_TIMEOUT} bash -c $(printf '%q' "$build")" || status=$?
         [ "$status" -eq 0 ] && break
         if [ "$status" -eq 124 ]; then
-            echo "building ${repo} from the AUR was still running after $((AUR_TIMEOUT / 60)) minutes and was stopped" >&2
+            echo "building ${repo} from the AUR stopped after $((AUR_TIMEOUT / 60)) minutes" >&2
             break
         fi
         sleep "$RETRY_WAIT"
     done
 
-    # Taken back before anything that can fail, or passwordless sudo stays.
+    # Revoked before anything can fail, or passwordless sudo stays.
     rm -f "${MNT}/etc/sudoers.d/99-aur-build"
-    rm -rf "${MNT}${dir}" || echo "the build directory ${dir} could not be removed" >&2
+    rm -rf "${MNT}${dir}" || echo "build directory ${dir} not removed" >&2
 
     [ "$status" -eq 0 ] && return 0
-    echo "building ${repo} from the AUR did not finish" >&2
+    echo "building ${repo} from the AUR failed" >&2
     check_online || exit "$EXIT_OFFLINE"
     fetch_url -sI --max-time 20 https://aur.archlinux.org >/dev/null || exit "$EXIT_AUR"
     return "$status"
 }
 
-# A command inside the new system as the account, which makepkg insists on.
-# Without root's runtime folder, where the account may create nothing.
+# As the user, since makepkg refuses root. env -i hides passwords from every
+# build script and drops root's runtime directory, which the user cannot write.
 as_user() {
-    arch-chroot "$MNT" /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- env -u XDG_RUNTIME_DIR bash -c "$1"
+    arch-chroot "$MNT" /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- env -i \
+        HOME="/home/${ARCH_OS_USERNAME}" USER="$ARCH_OS_USERNAME" LOGNAME="$ARCH_OS_USERNAME" \
+        PATH="$PATH" LANG=C.UTF-8 bash -c "$1"
 }
 
-# The chosen browser's desktop entry, not its package's name for two of them.
+# Desktop entry of the chosen browser. Two differ from their package name.
 browser_entry() {
     case "$ARCH_OS_BROWSER" in
     epiphany) echo org.gnome.Epiphany.desktop ;;
@@ -647,55 +627,54 @@ browser_entry() {
     esac
 }
 
-# The account's home in the new system, as seen from out here.
+# The user's home in the new system, seen from the live system.
 user_home() { printf '%s/home/%s' "$MNT" "$ARCH_OS_USERNAME"; }
 
-# The new home given back to its account: what root wrote is root's until then.
+# Hands the home back to the user: what root wrote is root's.
 own_home() {
     arch-chroot "$MNT" chown -R "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" "/home/${ARCH_OS_USERNAME}"
 }
 
-# Asked of the new system: an absolute link in its /usr/bin points into the
-# live system from out here.
+# Inside the new system: from outside, an absolute link in its /usr/bin
+# resolves into the live system.
 has_command() { arch-chroot "$MNT" test -x "/usr/bin/${1}"; }
 
-# What systemd finds wrong with units of the new system, empty for none: it
-# passes over a key it cannot read with a warning and still answers 0. Their
-# manuals are not asked for, the live image carries none.
+# Output, not status: verify skips an unreadable key with a warning and exits 0.
+# --man=no, since the live system ships no manuals.
 unit_complaints() { systemd-analyze verify --man=no --root="$MNT" -- "$@" 2>&1; }
 
-# sysctl says nothing about a key it does not have, so each is looked for.
+# sysctl ignores unknown keys silently, so each is checked under /proc/sys.
 sysctl_keys_exist() {
     local keys key
     keys="$(sed -n 's/^[[:space:]]*\([a-z][a-z0-9._-]*\)[[:space:]]*=.*/\1/p' "$1")"
 
-    # No keys at all would pass without having looked.
+    # An empty key list would pass unchecked.
     [ -n "$keys" ] || {
-        echo "${1} sets nothing at all" >&2
+        echo "${1}: no keys" >&2
         return 1
     }
 
     while read -r key; do
         [ -e "/proc/sys/${key//.//}" ] || {
-            echo "${1} sets ${key}, which this kernel does not have" >&2
+            echo "${1}: ${key} unknown to this kernel" >&2
             return 1
         }
     done <<<"$keys"
 }
 
 # ////////////////////////////////////////////////////////////////////////////
-# REPAIRING | The system the Recovery opens
+# REPAIRING | Target system
 # ////////////////////////////////////////////////////////////////////////////
 
-# The name of the unlocked disk under /dev/mapper.
+# Mapper name of the unlocked disk.
 export CRYPT=recovery
 
-# The btrfs top level, where a rollback happens. Outside MNT, so it is in no
-# chroot and outlives an unmount there.
+# btrfs top level for rollbacks. Outside MNT, so no chroot sees it and
+# unmounting MNT keeps it.
 export BTRFS_TOP=/run/arch-os-recovery
 
-# The system partition, while it is LUKS or a btrfs labeled BTRFS. Raw output
-# keeps an empty column a column.
+# The system partition if it is LUKS or btrfs labeled BTRFS. -r keeps an empty
+# column.
 target_partition() {
     local part
     part="$(system_partition "$ARCH_OS_RECOVERY_DISK")"
@@ -703,7 +682,6 @@ target_partition() {
         $1 == "crypto_LUKS" || ($1 == "btrfs" && $2 == "BTRFS") { print part }'
 }
 
-# The unlocked mapper where the disk is encrypted, the partition where it is not.
 target_device() {
     if [ "$ARCH_OS_RECOVERY_ENCRYPTED" = "true" ]; then
         printf '/dev/mapper/%s' "$CRYPT"
@@ -712,12 +690,11 @@ target_device() {
     fi
 }
 
-# The device's own file system: without -d an unlocked LUKS partition answers
-# btrfs, from the layer on top.
+# Without -d, an unlocked LUKS partition reports the btrfs inside.
 fstype() { lsblk -dno FSTYPE "$1" 2>/dev/null || true; }
 
-# The system mounted by the layout the Installer lays out: @ first, then /boot
-# from partition 1. Not by its fstab, which may be what broke.
+# Mounted by the Installer's layout, @ first, then /boot. Not by fstab, which
+# may be broken.
 mount_target() {
     local device subvolume path
     device="$(target_device)"
@@ -727,8 +704,8 @@ mount_target() {
     mount --mkdir -t vfat "$(boot_partition "$ARCH_OS_RECOVERY_DISK")" "${MNT}/boot"
 }
 
-# The system closed for good, whatever an earlier run left open: a system still
-# standing cannot be locked either.
+# Also closes what an earlier run left open. Unmounted first, since a mounted
+# system cannot be locked.
 close_target() {
     swapoff -a || true
     sync
@@ -742,11 +719,11 @@ close_target() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
-# REPAIRING | The Recovery, updated
+# REPAIRING | Recovery update
 # ////////////////////////////////////////////////////////////////////////////
 
-# Started from its partition on the disk it repairs: the UUID its command line
-# names is that disk's third partition.
+# Booted from the Recovery partition of the disk it repairs: archisodevice names
+# that partition's UUID.
 on_recovery_partition() {
     local uuid
     uuid="$(sed -n 's/.*archisodevice=UUID=\([^ ]*\).*/\1/p' /proc/cmdline)"
@@ -754,8 +731,8 @@ on_recovery_partition() {
         [ "$(blkid -p -s UUID -o value "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")" 2>/dev/null)" = "$uuid" ]
 }
 
-# Whether the disk's Recovery starts: the loader lists a boot image naming the
-# UUID its partition has, which an update cut short leaves apart.
+# The disk's Recovery boots if systemd-boot lists an image naming its partition's
+# UUID. An aborted update leaves them apart.
 recovery_starts() {
     local uuid esp mnt listed="" status=0
     uuid="$(blkid -p -s UUID -o value "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")")" || return 1
@@ -776,9 +753,8 @@ recovery_starts() {
     [ "$status" -eq 0 ] && [ -n "$uuid" ] && grep -qE "archisodevice=UUID=${uuid}( |\")" <<<"$listed"
 }
 
-# The newest Recovery of this release series in the releases' JSON on stdin, as
-# version, download and sha256, without pre-releases. A new major version may
-# lay a system out differently, which this series' Recovery would not repair.
+# Newest stable Recovery of this major series in releases JSON on stdin: version,
+# URL, sha256. Another series may expect another disk layout.
 newest_recovery() {
     local series url digest version newest=""
     series="$(printf "%s" "$MODULE_VERSION" | cut -d. -f1)"
@@ -793,9 +769,9 @@ newest_recovery() {
     [ -z "$newest" ] || printf '%s\n' "$newest"
 }
 
-# What an update installs, as newest_recovery puts it, or nothing: on its own
-# partition the newest where it is newer than this one, from anywhere else the
-# newest where the disk's own does not start.
+# What an update installs, as newest_recovery prints it, or nothing. On the
+# Recovery partition only a newer one, elsewhere the newest if the disk's
+# Recovery does not boot.
 recovery_update() {
     local found
     found="$(newest_recovery)"
@@ -809,13 +785,13 @@ recovery_update() {
 }
 
 # ////////////////////////////////////////////////////////////////////////////
-# THE YAML | Functions a declaration calls as name()
+# THE YAML | Functions called as name()
 # ////////////////////////////////////////////////////////////////////////////
 #
-# A setting's function is named after its key, an action's after what it does.
-# A list may print a value and the text it is chosen by, with a tab between.
+# A setting's function is named after its key, an action's after its effect. A
+# list line may hold value, tab, label.
 
-# Whole disks, by size and model.
+# Whole disks, labeled with size and model.
 options_disks() {
     lsblk -dn -o PATH,TYPE,SIZE,MODEL | awk -v live="$(live_disk)" '
         $2 != "disk" || $1 == live || $1 ~ /^\/dev\/zram/ { next }
@@ -824,8 +800,8 @@ options_disks() {
 
 options_keymaps() { localectl list-keymaps; }
 
-# The networks in range, strongest first, once the card says its scan is done.
-# Columns split on two spaces, since an SSID may hold one.
+# Networks in range, strongest first, after the scan ends. Columns split on two
+# spaces, since an SSID may hold one.
 options_wifi_networks() {
     local device state
     if dry_run; then
@@ -859,8 +835,8 @@ options_wifi_networks() {
         '
 }
 
-# The keyboard the live image was started with: the Arch image records it only as
-# a loadkeys line in root's history.
+# The live system's keymap: the Arch ISO records it only as a loadkeys line in
+# root's history.
 prefill_live_keymap() {
     local keymap
     keymap="$({ grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null || true; } |
@@ -868,7 +844,7 @@ prefill_live_keymap() {
     printf '%s' "${keymap:-us}"
 }
 
-# --test-passphrase opens nothing, it only asks the keyslots.
+# --test-passphrase only checks the keyslots.
 unlocks() { printf '%s' "$1" | cryptsetup open --test-passphrase "$(target_partition)"; }
 
 restart_machine() { systemctl reboot; }
@@ -883,15 +859,14 @@ no_cable() {
 
 # ─── The Installer ─────────────────────────────────────────────────────────
 
-# Every UTF-8 locale glibc supports, without @-variants. SUPPORTED rather than
-# locale.gen, which a hand edit rewrites.
+# UTF-8 locales glibc supports, without @ variants. SUPPORTED, not locale.gen,
+# which hand edits change.
 options_locales() {
     sed -n 's/^\([a-z]\{2,3\}\(_[A-Z]\{2\}\)\{0,1\}\)\(\.UTF-8\)\{0,1\} UTF-8$/\1/p' /usr/share/i18n/SUPPORTED | sort -u
 }
 
-# The language the interface is read in, as the locale of its own country: de
-# reads de_DE. Otherwise not Afar, the first row, but the one locale generated
-# either way.
+# The interface language's own country locale: de gives de_DE. Else en_US,
+# which is generated anyway, not Afar from the first row.
 prefill_locale() {
     local lang="$MODULE_LANGUAGE"
     if [[ $lang =~ ^[a-z]{2,3}$ ]] && grep -q "^${lang}_${lang^^}\(\.UTF-8\)\{0,1\} UTF-8$" /usr/share/i18n/SUPPORTED; then
@@ -906,14 +881,14 @@ options_vconsole_keymaps() {
     options_keymaps
 }
 
-# Loaded the moment it is answered, so what is typed next is typed on it.
+# Loaded on answer, so the next input uses it.
 apply_vconsole_keymap() {
     dry_run && return 0
     loadkeys "$(vconsole_keymap)"
 }
 
-# kbd's fonts, which every installation has, rather than this console's folder,
-# which holds the ISO's own fonts and whatever else is installed here as well.
+# kbd's fonts, which every installation has, not the console font folder, which
+# also holds the ISO's own fonts.
 options_fonts() {
     printf 'auto\tauto (%s)\n' "$(auto_font)"
     echo none
@@ -922,7 +897,7 @@ options_fonts() {
 
 options_timezones() { timedatectl list-timezones; }
 
-# The zone of the chosen country, and UTC rather than Africa/Abidjan for none.
+# The chosen country's zone, UTC rather than Africa/Abidjan for none.
 prefill_timezone() {
     local locale="${ARCH_OS_LOCALE_LANG%%.*}" territory="" zone
     [[ $locale == *_* ]] && territory="${locale#*_}"
@@ -930,9 +905,8 @@ prefill_timezone() {
     printf '%s' "${zone:-UTC}"
 }
 
-# The live system's clock follows at once, so the log reads in the zone of the
-# machine being installed. Only the live system's /etc/localtime changes, the
-# hardware clock is not written.
+# Applied to the live system at once, so the log uses the target's zone. Only
+# /etc/localtime changes, the hardware clock stays.
 apply_timezone() {
     dry_run && return 0
     timedatectl set-timezone "$ARCH_OS_TIMEZONE"
@@ -941,7 +915,7 @@ apply_timezone() {
 options_countries() {
     printf 'auto\tauto (%s)\n' "$(auto_country)"
     echo none
-    # A "-" marks a country Arch has no mirror in.
+    # "-" marks a country without an Arch mirror.
     awk -F'\t' '!/^#/ && $2 != "-" { print $2 }' "$(installer_data)/countries"
 }
 
@@ -958,39 +932,37 @@ options_variants() {
     [ -n "$layout" ] || return 0
 
     echo none
-    # A layout without variants is an error of status 1 to localectl. The
-    # layouts were listed from the same file, so it is there.
+    # localectl exits 1 for a layout without variants. The layout comes from the
+    # same file, so it exists.
     localectl list-x11-keymap-variants "$layout" 2>/dev/null || allow 1
 }
 
 booted_in_uefi() { [ -d /sys/firmware/efi ]; }
 
-# Read whole before it is searched: grep stops at the first match, and bootctl,
-# still writing, would die of that under pipefail.
+# Captured first: grep -q exits at the first match, and bootctl would fail under
+# pipefail.
 secure_boot_off() { grep -q "Secure Boot: disabled" <<<"$(bootctl status 2>/dev/null)"; }
 
 import_config() {
     local ref url body
-    # The code alone, from whatever was typed, the whole link or its last word,
-    # and always asked of paste.rs over https.
+    # The paste code from a full link or the code alone, always fetched from paste.rs.
     ref="$(printf '%s' "$ARCH_OS_CONFIG_SOURCE" | tr -d '[:space:]')"
     url="${PASTE}/${ref##*/}"
     body="$(fetch_url -sS --max-time 30 --retry 3 --retry-delay 2 "$url")"
 
-    # Everything but the sharing itself and what belongs to the machine the
-    # answers were given on: its disk, a path another disk may sit at here, and
-    # its kernel parameters, a line nobody should take on from a stranger's code.
+    # Without the sharing keys and the source machine's own: DISK, which may name
+    # another disk here, and KERNEL_ARGS, unsafe from a stranger.
     body="$(printf '%s\n' "$body" | grep '^ARCH_OS_[A-Z0-9_]*=' |
         grep -vE '^ARCH_OS_(CONFIG_[A-Z_]*|DISK|KERNEL_ARGS)=' || allow 1)"
     [ -n "$body" ]
 
-    # Appended to the answer file, which the runtime reads back once this has worked.
+    # The runtime rereads the answer file after success.
     printf '%s\n' "$body" >>"$MODULE_CONF"
 }
 
 share_config() {
     local url target
-    # Simulated, an address all the same, so the page can be looked at.
+    # A demo URL under --dry-run, so the page shows one.
     if dry_run; then
         answer ARCH_OS_CONFIG_URL "${PASTE}/demo"
         return 0
@@ -1000,7 +972,7 @@ share_config() {
     [ -n "$url" ]
     answer ARCH_OS_CONFIG_URL "$url"
 
-    # And into the copy the installed system keeps, so it knows where it was shared.
+    # Also into the installed system's copy, which records its share URL.
     target="$(user_home)/installer.conf"
     if [ -f "$target" ]; then
         printf "ARCH_OS_CONFIG_URL='%s'\n" "$url" >>"$target"
@@ -1017,31 +989,30 @@ check_disk_password() {
     unlocks "$ARCH_OS_RECOVERY_PASSWORD"
 }
 
-# Loaded the moment it is answered.
+# Loaded on answer.
 apply_recovery_keymap() {
     dry_run && return 0
     loadkeys "$ARCH_OS_RECOVERY_KEYMAP"
 }
 
-# The snapshots the rollback asks for, newest first: the path, a tab, and the
-# number, date and reason out of each one's info.xml. None is an answer: the
-# step is skipped.
+# Rollback choices, newest first: path, tab, then number, date and description
+# from info.xml. No snapshot is an answer and skips the step.
 options_snapshots() {
     local path
-    # Simulated, so the page is worth looking at.
+    # Samples under --dry-run, for the screenshots.
     if dry_run; then
         printf '@snapshots/2/snapshot\t2   2026-08-30 21:04:17 UTC   after a system update\n'
         printf '@snapshots/1/snapshot\t1   2026-08-29 09:12:40 UTC   first root filesystem\n'
         return 0
     fi
 
-    # By the number snapper counts up with, not by the order btrfs lists them in.
+    # Sorted by snapper's number, not btrfs order.
     while read -r path; do
         printf '%s\t%s\n' "$path" "$(snapshot_label "$(printf '%s' "$path" | cut -d/ -f2)")"
     done < <(btrfs subvolume list -o "${BTRFS_TOP}/@snapshots" | awk '{ print $NF }' | sort -t/ -k2 -rn)
 }
 
-# A field at a time, so a broken file costs a column rather than the list.
+# Field by field, so a broken info.xml loses a column, not the list.
 snapshot_label() {
     local info="${BTRFS_TOP}/@snapshots/${1}/info.xml"
     local date="" description=""
@@ -1055,9 +1026,8 @@ snapshot_label() {
     echo
 }
 
-# On its own partition, or from anywhere else for a disk whose Recovery does
-# not start, as an update cut short leaves it. A Recovery partition is the
-# third, under the name the Installer gives it.
+# On the Recovery partition, or elsewhere when the disk's Recovery does not boot
+# after an aborted update. The Recovery partition is the third, labeled recovery.
 recovery_to_update() {
     if on_recovery_partition; then
         return 0
@@ -1066,8 +1036,7 @@ recovery_to_update() {
     [ "$(lsblk -dno PARTLABEL "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")" 2>/dev/null)" = recovery ] && ! recovery_starts
 }
 
-# Yes where there is nothing to install. A Recovery to install is a no, and that
-# opens the install.
+# Yes if there is nothing to install. No opens the install.
 recovery_up_to_date() {
     local json found
     check_online || exit "$EXIT_OFFLINE"
@@ -1081,15 +1050,12 @@ check_update_password() {
     unlocks "$ARCH_OS_RECOVERY_UPDATE_PASSWORD"
 }
 
-# The Recovery recovery_update finds, over the one on the disk. Everything that
-# can fail comes before the partition is touched: the download held to its
-# checksum, its size to the partition, and where the system signs its boot
-# chain the boot image signed with the system's own keys. Then the partition,
-# read back off the disk, and the boot image moved over the old one, so the two
-# disagree only for the length of the write.
+# Checksum, size and signing come before the partition is written. The boot
+# image replaces the old one after read-back, so both disagree only during the
+# write.
 install_recovery_update() {
     local tar=/tmp/arch-os-recovery-update.tar
-    # Where the EFI partition is mounted while the system stays closed.
+    # EFI partition mount point while the system stays closed.
     local esp_mnt=/run/arch-os-esp
     local json found version url digest stem part size room esp want have
 
@@ -1097,7 +1063,7 @@ install_recovery_update() {
     json="$(releases_json)" || exit "$EXIT_UNREACHABLE"
     found="$(recovery_update <<<"$json")"
     if [ -z "$found" ]; then
-        echo "there is no Recovery to install" >&2
+        echo "no Recovery to install" >&2
         exit 1
     fi
     read -r version url digest <<<"$found"
@@ -1111,7 +1077,7 @@ install_recovery_update() {
     fi
     if ! echo "${digest}  ${tar}.part" | sha256sum -c - >/dev/null; then
         rm -f "${tar}.part"
-        echo "${url##*/} does not match the checksum its release publishes and was thrown away" >&2
+        echo "${url##*/}: checksum mismatch, deleted" >&2
         exit 11
     fi
     mv -f "${tar}.part" "$tar"
@@ -1121,13 +1087,12 @@ install_recovery_update() {
     size="$(tar -tvf "$tar" "${stem}/recovery.img" | awk '{ print $3 }')"
     room="$(blockdev --getsize64 "$part")"
     if [ -z "$size" ] || [ "$size" -gt "$room" ]; then
-        echo "the Recovery ${version} takes ${size:-?} bytes, and its partition ${part} holds ${room}" >&2
+        echo "Recovery ${version} needs ${size:-?} bytes, ${part} holds ${room}" >&2
         exit 12
     fi
 
-    # What an earlier attempt left open or mounted goes first. Arch OS signs its
-    # boot chain only behind encryption, so an encrypted system is opened, and its
-    # EFI partition is reached through it.
+    # Leftovers of an earlier attempt go first. Arch OS signs its boot chain only
+    # behind encryption, so an encrypted system is mounted for its keys.
     close_target
     if mountpoint -q "$esp_mnt"; then
         umount "$esp_mnt"
@@ -1141,31 +1106,30 @@ install_recovery_update() {
         esp="$esp_mnt"
     fi
 
-    # A copy an attempt cut short left takes room the kernel images need, so it
-    # goes first, and this one goes again if anything below fails. Global, since
-    # the trap reads it once the function is left.
+    # A leftover copy takes room the kernel images need. Global, since the EXIT
+    # trap reads it after return.
     efi="${esp}${RECOVERY_EFI#/boot}"
     rm -f "${efi}.new"
     trap 'rm -f "${efi}.new"' EXIT
     tar -xOf "$tar" "${stem}/recovery.efi" >"${efi}.new"
 
-    # Signed where the system has sbctl, as the boot files are rebuilt.
+    # Signed where the system has sbctl, like its other boot files.
     if [ "$esp" != "$esp_mnt" ] && [ -x "${MNT}/usr/bin/sbctl" ]; then
         arch-chroot "$MNT" sbctl sign "${RECOVERY_EFI}.new"
     fi
 
-    echo "writing the Recovery ${version} to ${part}"
+    echo "writing Recovery ${version} to ${part}"
     if ! tar -xOf "$tar" "${stem}/recovery.img" | dd of="$part" bs=4M conv=fsync status=none; then
         echo "writing ${part} failed" >&2
         exit 13
     fi
 
-    # Read off the disk rather than out of the memory the write went through.
+    # Flushed, so the hash reads the disk, not the page cache.
     blockdev --flushbufs "$part"
     want="$(tar -xOf "$tar" "${stem}/recovery.img" | sha256sum)"
     have="$(head -c "$size" "$part" | sha256sum)"
     if [ "$have" != "$want" ]; then
-        echo "${part} does not read back as the Recovery ${version}" >&2
+        echo "${part}: read-back differs from Recovery ${version}" >&2
         exit 13
     fi
     mv -f "${efi}.new" "$efi"
@@ -1175,5 +1139,5 @@ install_recovery_update() {
     fi
     close_target
     rm -f "$tar"
-    echo "the Recovery is now ${version}"
+    echo "Recovery ${version} installed"
 }

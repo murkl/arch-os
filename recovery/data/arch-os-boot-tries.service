@@ -1,5 +1,5 @@
-# Written by Arch OS: once this start counts as one that worked, every entry of
-# the system gets its tries back, the one it came from and the other alike.
+# Written by Arch OS. After a good start, every entry gets its tries back, not
+# only the one booted.
 [Unit]
 Description=Arch OS boot entries given their tries again
 Documentation=https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/

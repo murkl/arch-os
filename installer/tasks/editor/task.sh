@@ -1,24 +1,21 @@
-# The editor chosen, the one everything that asks for an editor opens, and a
-# small configuration of its own: a theme close to the system's palette and
-# nothing to update but the package.
+# No plugins, so the package is all there is to update.
 
-# The command, which is also the folder its configuration lies in.
+# The command, also the name of its folder in data/.
 command="$ARCH_OS_EDITOR"
 [ "$command" = "neovim" ] && command=nvim
 
-# sudoedit, git and systemctl edit read $EDITOR and fall back on vi, which base
-# does not ship. pam_env reads this one file, so it is an edit.
+# sudoedit, git and systemctl edit fall back on vi, which base lacks. Appended,
+# since pam_env reads no drop-in.
 # https://wiki.archlinux.org/title/Environment_variables
 render "$(where)/environment" EDITOR="$command" >>"${MNT}/etc/environment"
 
-# nano's own highlighting covers a handful of languages. Its nanorc reaches here.
+# nano's own highlighting covers few languages. data/nano includes this set.
 if [ "$ARCH_OS_EDITOR" = "nano" ]; then
     chroot_pacman_install nano-syntax-highlighting
 fi
 
-# data/<command>/ is a home: each file lands at the same place in root's and in
-# the account's, never in /etc, which belongs to the package. Listed before the
-# loop, so a folder that is missing fails here.
+# data/<command>/ mirrors a home and lands in root's and the account's, not in
+# /etc, which the package owns. Listed first, so a missing folder fails.
 src="$(where)/${command}"
 files="$(find "$src" -type f -printf '%P\n')"
 while IFS= read -r file; do

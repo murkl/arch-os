@@ -1,5 +1,5 @@
-# The entry the dock names, found as the account's session looks it up, and the
-# icon it names in hicolor, where every theme falls back to.
+# The dock's entry as the session finds it, and its icon in hicolor, the
+# fallback of every theme.
 data="/home/${ARCH_OS_USERNAME}/.local/share"
 arch-chroot "$MNT" desktop-file-validate "${data}/applications/system-manager.desktop"
 found="$(as_user "gjs -c \"print(imports.gi.GioUnix.DesktopAppInfo.new('system-manager.desktop') !== null)\"")"

@@ -1,5 +1,5 @@
-//! A value never written down: typed twice where it is chosen, once where it exists and is tried
-//! on what it opens. It reaches the environment of the scripts and nothing else.
+//! Password page: typed twice when new, once and checked when existing. The value reaches only
+//! the script environment, never a file.
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -15,15 +15,14 @@ pub struct PasswordPage {
     setting: &'static Setting,
     then: Then,
     input: Input,
-    /// The first entry, while the repeat is typed.
+    /// First entry while the repeat is typed.
     first: Option<String>,
     problem: Option<String>,
-    /// The check runs, and the box takes nothing until it has answered.
+    /// The check runs, and the box ignores input until it answers.
     checking: bool,
 }
 
-/// What the module's check made of the password.
-/// A password tried on the machine: the value, and whether it was taken.
+/// Checked password and whether the check accepted it.
 pub struct Tried(String, bool);
 
 impl PasswordPage {
@@ -48,7 +47,7 @@ impl PasswordPage {
         let value = self.input.take();
         match &self.first {
             None if value.is_empty() && self.setting.required => {
-                self.problem = Some(t("An answer is required."));
+                self.problem = Some(t("Answer required."));
                 Flow::Stay
             }
             None if self.setting.kind == Kind::NewPassword => {
@@ -56,13 +55,13 @@ impl PasswordPage {
                 self.problem = None;
                 Flow::Stay
             }
-            // Back to the beginning: one of the two was wrong, and there is no telling which.
+            // Start over, since there is no telling which entry was wrong.
             Some(first) if *first != value => {
                 self.first = None;
-                self.problem = Some(t("The two entries do not match."));
+                self.problem = Some(t("Entries do not match."));
                 Flow::Stay
             }
-            // Taken, and the page fresh again should the way back lead to it.
+            // Accepted entry. The page resets in case back leads here again.
             _ => match &self.setting.check {
                 Some(check) => {
                     self.first = None;
@@ -89,8 +88,7 @@ impl PasswordPage {
 }
 
 impl Page for PasswordPage {
-    /// From the environment, under the setting's own name, and tried on the machine as a
-    /// typed one is.
+    /// Read from the environment under the setting's name, and checked like a typed one.
     fn unattended(&mut self, ctx: &mut Ctx) -> Result<Flow, String> {
         let name = self.setting.name.clone();
         let value = std::env::var(&name).unwrap_or_default();
@@ -119,7 +117,6 @@ impl Page for PasswordPage {
         if !description.is_empty() {
             y = paragraph(buf, area, y, &description, s.tone(Tone::Muted)) + 1;
         }
-        // The box names what goes in it, the second time the repeat.
         self.input.placeholder = if self.first.is_some() {
             t("Repeat")
         } else {
@@ -156,15 +153,14 @@ impl Page for PasswordPage {
         }
         match key {
             Key::Enter => self.commit(ctx),
-            // Backing out of the repeat goes back to the first entry: the two are one question.
+            // Esc on the repeat returns to the first entry, since both are one question.
             Key::Esc if self.first.is_some() => {
                 self.first = None;
                 self.problem = None;
                 self.input = Input::masked();
                 Flow::Stay
             }
-            // Backing out forgets what the chain has taken so far: the next start asks for all
-            // of it again, and none of it stays in memory meanwhile.
+            // Backing out forgets every password taken so far, so none stays in memory.
             Key::Esc | Key::Ctrl('c') => {
                 ctx.store.forget();
                 Flow::Ignored
@@ -186,7 +182,7 @@ impl Page for PasswordPage {
         if !tried.1 {
             self.problem = Some(match &self.setting.error {
                 Some(e) => t(e),
-                None => t("This password was not accepted."),
+                None => t("Password not accepted."),
             });
             return Flow::Stay;
         }

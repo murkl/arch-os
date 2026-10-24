@@ -1,13 +1,13 @@
-# Each subvolume mounted where the layout says rather than only created: an
-# unmounted one leaves a plain directory inside @ that every snapshot carries.
+# Each subvolume mounted, not only created: an unmounted one leaves a plain
+# directory inside @ that every snapshot carries.
 mountpoint -q "$MNT"
 mountpoint -q "${MNT}/boot"
 
-# One signature on the system partition: one left from what the disk held
-# before is ambivalent to blkid, and mount may read that one instead.
+# One signature on the system partition: blkid -p fails on several, and mount
+# may read a stale one.
 blkid -p "$(system_partition "$ARCH_OS_DISK")" >/dev/null
 
-# Encrypted, the system goes onto the opened volume, not the partition under it.
+# Encrypted: btrfs on the mapped volume, the open options in the header.
 if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
     system_part="$(system_partition "$ARCH_OS_DISK")"
     root_source="$(findmnt -no SOURCE "$MNT")"

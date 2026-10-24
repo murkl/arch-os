@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
-# Starts Arch OS, for the unit on tty1 and by hand: arch-os installer, arch-os
+# Starts Arch OS from the tty1 unit or by hand: arch-os installer, arch-os
 # recovery. The font goes first, since it decides which glyphs exist: README.md.
 set -eu
 
 SIZES="32 16"
 
-# Only on a console: a terminal in a window has its font already. 8 by 16, and
-# 16 by 32 where 8 by 16 would leave 22,000 cells or more: the kernel's rule
-# between the two fonts Arch builds it with (lib/fonts/fonts.c).
+# Consoles only, a terminal window has its own font. 16x32 where 8x16 gives
+# 22,000 cells or more, the kernel's rule for its two fonts (lib/fonts/fonts.c).
 if [[ "$(tty)" == /dev/tty[0-9]* ]]; then
     read -r large size <<<"$SIZES"
     width=0 height=0
@@ -19,12 +18,12 @@ if [[ "$(tty)" == /dev/tty[0-9]* ]]; then
     setfont "arch-os-${size}" || true
 fi
 
-# A lock Plymouth left on the console keeps every key on the screen. stty reads
-# its change back, so a locked terminal ends here.
+# A Plymouth lock on the console keeps every key from the program. stty reads
+# its change back, so a locked terminal fails here.
 if [ -t 0 ]; then
     saved="$(stty -g)"
     stty raw -echo || {
-        echo "Error: this terminal's settings are locked, so no key would reach Arch OS" >&2
+        echo "Error: terminal settings locked, keys cannot reach Arch OS" >&2
         exit 1
     }
     stty "$saved"

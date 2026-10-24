@@ -1,4 +1,4 @@
-//! A page of facts with its actions underneath. The facts scroll, the actions stay.
+//! Detail page: a scrolling body above fixed action rows.
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -10,8 +10,7 @@ use super::{Ctx, Flow, Key, Nav, Style, Tone};
 use crate::i18n::{t, tf};
 use crate::script::Failure;
 
-/// The mark a finished run is headed by, drawn out of blocks: a font's own tick is one cell
-/// tall whatever it is set beside, and this one has a whole page under it.
+/// Success mark of a finished run, built from block glyphs. A font's tick is one cell tall.
 pub const TICK: [&str; 5] = [
     "           ▄█▀",
     "         ▄█▀",
@@ -20,7 +19,7 @@ pub const TICK: [&str; 5] = [
     "   ▀██▀",
 ];
 
-/// The mark over a run that could not go on, out of the same blocks at the same size.
+/// Failure mark, same blocks and size as `TICK`.
 pub const CROSS: [&str; 5] = [
     "▀█▄     ▄█▀",
     "  ▀█▄ ▄█▀",
@@ -34,11 +33,10 @@ pub enum Block {
     Field(String, String, Tone),
     Text(String, Tone),
     Heading(String),
-    /// Lines kept as they are, each in its tone.
+    /// Unwrapped lines, each in its tone.
     Code(Vec<(String, Tone)>),
-    /// A picture, line by line, in one tone.
     Picture(Vec<String>, Tone),
-    /// Text beside the lead column, wrapped under itself.
+    /// Text after the lead column, wrapped with a hanging indent.
     Note(Lead, String, Tone),
     Blank,
 }
@@ -46,7 +44,7 @@ pub enum Block {
 pub struct Act {
     pub label: String,
     pub lead: Lead,
-    /// What the action is about, on the right.
+    /// Shown on the right of the row.
     pub note: Option<(String, Tone)>,
     pub description: String,
     pub go: Box<dyn FnMut(&mut Ctx) -> Flow>,
@@ -76,7 +74,7 @@ pub struct Detail {
     list: List<usize>,
     scroll: usize,
     page: usize,
-    /// The facts are longer than their room, as last drawn.
+    /// The body overflowed in the last draw.
     overflow: bool,
 }
 
@@ -100,7 +98,6 @@ impl Detail {
         self.acts = acts;
     }
 
-    /// Puts the cursor on an action, by its position.
     pub fn focus(&mut self, index: usize) {
         self.list.focus(&index);
     }
@@ -127,7 +124,7 @@ impl Detail {
         Flow::Stay
     }
 
-    /// The lines the facts take at this width.
+    /// Body lines at `width`.
     pub fn height(&self, width: u16, ctx: &Ctx) -> u16 {
         render(&self.body, width as usize, ctx).len() as u16
     }
@@ -205,7 +202,7 @@ enum Line {
     Row(Lead, Vec<(String, Tone)>),
 }
 
-/// The column the fields' labels take: the widest, up to a third of the width.
+/// Widest label, capped at a third of the width.
 fn label_width(body: &[Block], w: usize) -> usize {
     body.iter()
         .filter_map(|b| match b {
@@ -217,7 +214,6 @@ fn label_width(body: &[Block], w: usize) -> usize {
         .min(w / 3)
 }
 
-/// The blocks as screen lines of the given width.
 fn render(body: &[Block], w: usize, ctx: &Ctx) -> Vec<Line> {
     let mark = ctx.style.glyphs.ellipsis;
     let label_width = label_width(body, w);
@@ -271,8 +267,7 @@ fn render(body: &[Block], w: usize, ctx: &Ctx) -> Vec<Line> {
     out
 }
 
-/// How a failure reads on any page: where exactly, in fixed rows, then what the tool said on its
-/// way out, then where the rest is.
+/// Failure body shared by every page: location fields, the last stderr lines, then the log path.
 pub fn failure(f: &Failure) -> Vec<Block> {
     let mut b: Vec<Block> = f
         .fields()
@@ -299,7 +294,7 @@ pub fn failure(f: &Failure) -> Vec<Block> {
     b
 }
 
-/// What a page says in the words of a declaration: the headline, then the rest.
+/// Declared text as headline and body.
 pub fn words(text: &str) -> Vec<Block> {
     let (head, body) = crate::spec::text::split(text);
     let mut b = vec![Block::Heading(head.to_string())];
@@ -310,7 +305,6 @@ pub fn words(text: &str) -> Vec<Block> {
     b
 }
 
-/// A finished run's mark, or a stopped one's.
 pub fn mark(stopped: bool) -> Block {
     let picture = if stopped { CROSS } else { TICK };
     Block::Picture(

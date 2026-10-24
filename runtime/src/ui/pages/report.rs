@@ -1,5 +1,5 @@
-//! The page a run or an action holds still on when it has something to say, or when it could not
-//! go on: one page in two colors. The words are the module's, the mark and the code the runtime's.
+//! Report page of a run or action, on success with text or on failure. The module gives the
+//! text, the runtime the mark and the QR code.
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -9,7 +9,7 @@ use crate::ui::detail::{Block, Detail, mark, words};
 use crate::ui::draw::put;
 use crate::ui::{Ctx, Flow, Key, Page, Tone, qr};
 
-/// Where the page leads once it has been read: the pages before it go.
+/// Where the page leads once read.
 pub enum Close {
     PopN(usize),
 }
@@ -17,16 +17,16 @@ pub enum Close {
 pub struct ReportPage {
     title: String,
     text: String,
-    /// A value drawn to be scanned, and printed under the words as itself.
+    /// Value shown as QR code and as text under the report.
     qr: Option<String>,
-    /// One line under the words: what a run has proved about itself.
+    /// One line under the text, such as a run's tally of optional tasks and tests.
     note: Option<(String, Tone)>,
     stopped: bool,
     close: Close,
     detail: Detail,
 }
 
-/// The narrowest the words may be squeezed to before the code is dropped instead.
+/// Minimum text width. Below it the QR code is dropped.
 const WORDS_MIN: u16 = 34;
 const GAP: u16 = 3;
 
@@ -70,7 +70,7 @@ impl ReportPage {
 }
 
 impl Page for ReportPage {
-    /// Read, as far as a log is.
+    /// Closes at once. Unattended, the log is the reader.
     fn unattended(&mut self, _: &mut Ctx) -> Result<Flow, String> {
         Ok(match &self.close {
             Close::PopN(n) => Flow::PopN(*n),
@@ -83,8 +83,8 @@ impl Page for ReportPage {
 
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {
         self.detail.set(self.blocks(), Vec::new());
-        // The words the major part and the code the minor, side by side: a code under a
-        // paragraph wants more rows than a frame has.
+        // Text and code side by side, text the larger part: a code under a paragraph needs more
+        // rows than a frame has.
         let code = self.qr.as_deref().and_then(|v| {
             qr::code(
                 v,

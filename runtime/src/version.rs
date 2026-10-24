@@ -1,6 +1,3 @@
-//! The version: what a release hands in, else a pre-release of the next patch, as build.rs
-//! decides.
-
 pub fn version() -> &'static str {
     env!("VERSION")
 }

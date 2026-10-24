@@ -1,6 +1,5 @@
-//! The answers: what every setting is set to right now, and the file they survive a restart in.
-//! The file is shell, `KEY='value' # title`, which reads in any editor on a bare live medium and
-//! is the shape a script gets its variables in.
+//! The answers and their file. Shell syntax (`KEY='value' # title`): editable on a bare live
+//! system, sourced as is by scripts.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -14,15 +13,13 @@ pub struct Store {
     path: PathBuf,
     log: PathBuf,
     dry_run: bool,
-    /// The language the interface is read in, kept with the answers.
     pub language: String,
-    /// An answer a list turned away when it was read again, and the value it turned away.
+    /// Answers a reread list no longer offers, with the value it rejected.
     unoffered: BTreeMap<String, String>,
 }
 
 impl Store {
-    /// Every declared value at its default. The answers and the log are named after the module,
-    /// in `dir`.
+    /// Answer file and log in `dir`, named after the module.
     pub fn new(module: &'static Module, dir: &Path, dry_run: bool) -> Store {
         let mut values = BTreeMap::new();
         for s in &module.settings {
@@ -60,7 +57,6 @@ impl Store {
         self.dry_run
     }
 
-    /// Whether this machine has answered anything yet.
     pub fn exists(&self) -> bool {
         self.path.exists()
     }
@@ -72,8 +68,8 @@ impl Store {
             .unwrap_or_default()
     }
 
-    /// What a script wrote into the answer file under a name no setting has: an action's
-    /// answer, read where it lies and held nowhere else.
+    /// An action's answer a script wrote into the answer file, read from the file and held
+    /// nowhere else.
     pub fn read(&self, name: &str) -> Option<String> {
         let raw = std::fs::read_to_string(&self.path).ok()?;
         raw.lines()
@@ -82,19 +78,17 @@ impl Store {
             .map(|(_, v)| v)
     }
 
-    /// The answers as a sentence or a condition reads them.
+    /// Answer lookup for placeholders and conditions.
     pub fn getter(&self) -> impl Fn(&str) -> String + '_ {
         |name| self.get(name).to_string()
     }
 
-    /// Records an answer. Saving is the caller's: a value tried out and a value settled differ.
+    /// Does not save, a value tried out is not a value settled.
     pub fn set(&mut self, name: &str, value: &str) {
         self.values.insert(name.to_string(), value.to_string());
     }
 
-    /// Reads the answer file over the values held. A missing file is a first run, a key nothing
-    /// declares is passed over, and a value that breaks its rules is kept for `missing` to ask
-    /// again.
+    /// A missing file is a first run. An invalid value stays for `missing` to ask again.
     pub fn load(&mut self) -> std::io::Result<()> {
         let raw = match std::fs::read_to_string(&self.path) {
             Ok(raw) => raw,
@@ -116,9 +110,8 @@ impl Store {
         Ok(())
     }
 
-    /// Writes every answer worth keeping, in declaration order under its group, each with its
-    /// title. Passwords and derived values are left out: neither is an answer the next run
-    /// should read back.
+    /// Writes in declaration order under each group, each answer with its title. Passwords and
+    /// derived values stay out, the next run must not read them back.
     pub fn save(&self) -> std::io::Result<()> {
         let mut out = format!("# {}\n", t("Answers, editable by hand."));
         entry(
@@ -143,8 +136,8 @@ impl Store {
         write(&self.path, &out)
     }
 
-    /// Drops every answer back to its default and deletes the file, so what follows is a first
-    /// run. The log stays: what was done to the machine is still true of it.
+    /// Back to defaults without a file, so the next run is a first run. The log stays, it records
+    /// what was done to the machine.
     pub fn reset(&mut self) -> std::io::Result<()> {
         for s in &self.module.settings {
             self.values.insert(s.name.clone(), s.default.clone());
@@ -155,8 +148,8 @@ impl Store {
         }
     }
 
-    /// What a script sees: the process environment, every declared variable over it, and the
-    /// runtime's own. Passwords are in it and go no further than the processes it is handed to.
+    /// Every declared variable and the runtime's own, set over the inherited environment.
+    /// Contains passwords, so it goes only to child processes.
     pub fn env(&self) -> Vec<(String, String)> {
         let mut env: Vec<(String, String)> = Vec::new();
         for name in self.module.declared() {
@@ -172,16 +165,15 @@ impl Store {
         env
     }
 
-    /// Takes the values of a profile. Nothing else about it survives: from here on every
-    /// one of them is an ordinary answer.
+    /// The preset's values become ordinary answers.
     pub fn apply(&mut self, preset: &Preset) {
         for (name, value) in &preset.values {
             self.values.insert(name.clone(), value.clone());
         }
     }
 
-    /// The questions still open, in declaration order: every required setting that applies and
-    /// has no acceptable answer. Passwords and derived values are no question anybody answers here.
+    /// Settings that apply and lack a valid answer, in declaration order. Passwords and derived
+    /// values are never asked here.
     pub fn missing(&self) -> Vec<&'static Setting> {
         self.module
             .settings
@@ -191,12 +183,12 @@ impl Store {
             .collect()
     }
 
-    /// The questions settled before anything else happens.
+    /// Missing settings asked before anything else.
     pub fn upfront(&self) -> Vec<&'static Setting> {
         self.missing().into_iter().filter(|s| s.first).collect()
     }
 
-    /// The passwords typed before a run, in declaration order.
+    /// Passwords entered before a run, in declaration order.
     pub fn secrets(&self) -> Vec<&'static Setting> {
         self.module
             .settings
@@ -205,7 +197,7 @@ impl Store {
             .collect()
     }
 
-    /// What the dashboard shows: every setting that applies, in declaration order.
+    /// Settings the dashboard shows, in declaration order.
     pub fn visible(&self) -> Vec<&'static Setting> {
         self.module
             .settings
@@ -214,7 +206,7 @@ impl Store {
             .collect()
     }
 
-    /// The setting's rule turned an answer away, read again against its list.
+    /// The reread list no longer offers the current answer.
     pub fn unoffer(&mut self, name: &str) {
         self.unoffered
             .insert(name.to_string(), self.get(name).to_string());
@@ -224,8 +216,7 @@ impl Store {
         self.unoffered.remove(name);
     }
 
-    /// Why a value will not do, or None. A value typed at a prompt and one edited into the file
-    /// are held to the same rules.
+    /// The error for an invalid value. Typed and hand-edited values follow the same rules.
     pub fn invalid(&self, s: &Setting, value: &str) -> Option<String> {
         if value.is_empty() {
             return s.required.then(|| why(s));
@@ -248,7 +239,7 @@ impl Store {
         (!allowed || !s.matches(value)).then(|| why(s))
     }
 
-    /// A value as a page shows it: a bool in words, and an unanswered question as a dash.
+    /// A bool in words, an empty answer as a dash.
     pub fn display(&self, s: &Setting) -> String {
         match self.get(&s.name) {
             "" => "—".into(),
@@ -256,7 +247,7 @@ impl Store {
         }
     }
 
-    /// Drops every password, so nothing is left in memory once the run that needed it is over.
+    /// Clears the passwords, so none stays in memory after the run that needed it.
     pub fn forget(&mut self) {
         for name in self.module.declared() {
             let secret = self
@@ -279,16 +270,16 @@ impl Store {
     }
 }
 
-/// What a wrong answer is told: the setting's own words, else the rule it broke.
+/// The setting's own error, else the broken rule.
 fn why(s: &Setting) -> String {
     match &s.error {
         Some(e) => t(e),
         None if s.pattern.is_some() => t("Invalid format."),
-        None => t("An answer is required."),
+        None => t("Answer required."),
     }
 }
 
-/// How a value reads: true and false in the interface's language, everything else as itself.
+/// `true` and `false` translated, anything else as is.
 pub fn label(value: &str) -> String {
     match value {
         spec::TRUE => t("Yes"),
@@ -305,14 +296,13 @@ fn entry(out: &mut String, name: &str, value: &str, title: String) {
     out.push('\n');
 }
 
-/// Single quotes, the one shell quoting with no escapes inside: a quote itself closes, escapes
-/// and opens again.
+/// Single quotes take no escapes, so a quote closes, escapes and reopens.
 pub fn quote(s: &str) -> String {
     format!("'{}'", s.replace('\'', r"'\''"))
 }
 
-/// Written whole beside the file and renamed over it, so an interrupted run never leaves half a
-/// file. 0600: a module may ask for what the rest of the machine has no business reading.
+/// Written beside the file and renamed over it, so an interrupted run never leaves half a file.
+/// 0600, since answers may be private.
 fn write(path: &Path, content: &str) -> std::io::Result<()> {
     use std::io::Write;
     use std::os::unix::fs::OpenOptionsExt;
@@ -331,8 +321,7 @@ fn write(path: &Path, content: &str) -> std::io::Result<()> {
     std::fs::rename(&tmp, path)
 }
 
-/// One `KEY=value` line read back, single-quoted, double-quoted or bare. A comment, a blank
-/// line or a line with no name is no answer.
+/// `KEY=value`, the value single-quoted, double-quoted or bare.
 pub fn parse_line(line: &str) -> Option<(String, String)> {
     let line = line.trim();
     if line.is_empty() || line.starts_with('#') {

@@ -1,5 +1,5 @@
-# Every subvolume mounted where it belongs: one left unmounted would have the
-# repair work on the empty directory inside @ instead.
+# Every subvolume mounted where it belongs. An unmounted one would leave the
+# repair working on the empty directory inside @.
 mountpoint -q "$MNT"
 [ -f "${MNT}/etc/os-release" ]
 [ "$(findmnt -no SOURCE "${MNT}/boot")" = "$(boot_partition "$ARCH_OS_RECOVERY_DISK")" ]

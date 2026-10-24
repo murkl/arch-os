@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """Render the README's pictures: docs/download.svg and docs/requirements/.
 
-Text is set as outlines of the banner's font, since GitHub lets an SVG shown as
-an image load no font, and the viewer's own would differ on every machine. The
-button is the accent in product.yaml. Under it, each profile is a quiet pill
-of its own, so the two wrap on a narrow screen, once for each GitHub theme and
-on a ground of its own, so it reads on the other theme too. The text
-alternatives are written into README.md from the same run.
+Text is set as outlines of the banner's font, since an SVG shown as an image on
+GitHub loads no font. The button takes the accent from product.yaml. Under it,
+each profile is a pill of its own, so the two wrap on a narrow screen, once per
+GitHub theme and on its own ground, so it reads on the other theme too. The
+same run writes the alt texts into README.md.
 
 Needs: python-fonttools, ttf-firacode-nerd.
 """
@@ -30,19 +29,18 @@ FAMILY = "FiraCode Nerd Font Mono"
 
 ARCH = ("x86_64", "UEFI")
 SPECS = ("memory", "disk")
-# Name, icon, what it is, and what it needs of each spec in GiB.
+# Name, icon, description, and GiB needed per spec.
 TIERS = (
     ("Core", "\uf489", "Text console", (2, 16)),  # nf-oct-terminal
     ("Desktop", "\U000f0379", "GNOME on Wayland", (4, 32)),  # nf-md-monitor
 )
-# The button and the pills share their measures, each on a grid of 4, so stacked
-# on a narrow screen they line up: their heights, a pill's chip as far from the
-# left as from the top and the bottom, the banner cards' corner, a pill's text
-# this far after its chip and from its right edge, and clear field around each,
-# as GitHub lets a README set no spacing of its own.
+# Shared measures on a grid of 4, so button and pills line up when stacked:
+# heights, a chip's inset from left, top and bottom, the banner cards' corner
+# radius, the text's gap after the chip and to the right edge, and the clear
+# field around each, since a README sets no spacing of its own.
 BUTTON, PILL = 64, 56
 INSET, RADIUS, GAP, END, MARGIN = 12, 12, 12, 16, 8
-# GitHub's own colors for a secondary button, so a pill sits on its theme as part of the page.
+# GitHub's secondary button colors, so a pill matches its theme.
 THEMES = {
     "light": {"fill": "#f6f8fa", "line": "#d1d9e0", "text": "#1f2328", "muted": "#59636e"},
     "dark": {"fill": "#151b23", "line": "#3d444d", "text": "#f0f6fc", "muted": "#9198a1"},
@@ -95,10 +93,10 @@ class Face:
         return pen.getCommands()
 
     def icon(self, char, cx, cy, size):
-        """One icon, its ink as large as a square size pixels across, centered on (cx, cy).
+        """One icon centered on (cx, cy), its ink the area of a size square.
 
-        Measured by its ink, since the font squeezes every icon into one cell,
-        and by area, so a wide one weighs as much as a square one.
+        Measured by ink, since the font squeezes every icon into one cell, and
+        by area, so a wide icon weighs as much as a square one.
         """
         glyph = self.glyph(char)
         bounds = BoundsPen(self.glyphs)
@@ -138,13 +136,12 @@ def path(d, fill, opacity=None):
 def download(regular, bold, fill, w):
     """The button the README opens with, as wide as a pill.
 
-    No clear field below it: the paragraph under it is gap enough to the
-    requirements' label.
+    No clear field below it, since the paragraph under it is gap enough.
     """
     h = BUTTON
     title, line = "Download ISO", " · ".join(ARCH)
-    # A chip of 48 with room around its icon, set off from the left edge and
-    # further from the text.
+    # A chip of 48 around the icon, inset from the left edge, with a wider gap
+    # to the text.
     icon, chip, left, gap = 20, 24, 20, 24
     cx, cy = left + chip, h / 2
     x = cx + chip + gap
@@ -153,7 +150,7 @@ def download(regular, bold, fill, w):
         f'<g transform="translate({MARGIN} {MARGIN})">',
         '<defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">'
         f'<stop offset="0" stop-color="{fill}"/>'
-        # Deep enough at its foot that its white text reads at 4.5:1, as WCAG AA asks.
+        # Dark enough at the bottom for white text at 4.5:1, as WCAG AA asks.
         f'<stop offset="1" stop-color="{mix(fill, "#000000", .4)}"/></linearGradient></defs>',
         f'<rect width="{w}" height="{h}" rx="{RADIUS}" fill="url(#fill)"/>',
         f'<rect x=".5" y=".5" width="{w - 1}" height="{h - 1}" rx="{RADIUS - .5}"'

@@ -1,2 +1,2 @@
-# Written by the Arch OS Installer.
+# Written by Arch OS.
 ACTION=="add|change", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", SUBSYSTEMS=="usb", ATTR{bdi/strict_limit}="1", ATTR{bdi/max_ratio}="10"

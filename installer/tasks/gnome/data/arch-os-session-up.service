@@ -1,5 +1,4 @@
-# Written by Arch OS: a start counts as one that worked only once the session
-# in front, the login screen's or the one logged in by itself, is up.
+# Written by Arch OS.
 [Unit]
 Description=Arch OS start counted once the session in front is up
 Documentation=https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/

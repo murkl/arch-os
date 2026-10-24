@@ -3,7 +3,7 @@ home="$(user_home)"
 arch-chroot "$MNT" getent passwd "$ARCH_OS_USERNAME" | grep -q ':/usr/bin/zsh$'
 arch-chroot "$MNT" getent passwd root | grep -q ':/usr/bin/bash$'
 
-# Each file parsed by its shell: one that does not is an error on every terminal.
+# A syntax error shows in every terminal.
 for file in "${MNT}/root/.bashrc" "${MNT}/root/.aliases" "${home}/.bashrc" "${home}/.aliases"; do
     bash -n "$file"
 done

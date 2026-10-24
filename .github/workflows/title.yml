@@ -1,6 +1,5 @@
-# The title becomes the squash commit on main, which release-please reads, and
-# main is the only branch a change comes back to. A workflow of its own, so
-# editing a title reruns only this.
+# The title becomes the squash commit on main, the only target branch, which
+# release-please reads. Separate, so editing a title reruns only this.
 
 name: Title
 
@@ -25,10 +24,10 @@ jobs:
           BASE: ${{ github.base_ref }}
         run: |
           [ "$BASE" = main ] || {
-            echo "::error::This pull request targets '${BASE}'. Every change comes back to main: edit the base branch."
+            echo "::error::Base branch is '${BASE}'. Set it to main."
             exit 1
           }
           grep -qE '^(feat|fix|perf|refactor|docs|test|build|ci|chore|revert)(\([^)]+\))?!?: .' <<<"$TITLE" || {
-            echo "::error::'${TITLE}' opens on no type: feat:, fix:, feat!: …"
+            echo "::error::'${TITLE}' has no type prefix: feat:, fix:, feat!: …"
             exit 1
           }

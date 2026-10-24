@@ -1,4 +1,4 @@
-//! The command line: a module to open, or one of two answers for the build.
+//! A module to open, or the version or glyphs for the build.
 
 use std::io::IsTerminal;
 use std::process::ExitCode;
@@ -19,16 +19,14 @@ fn help() -> String {
     )
 }
 
-/// What a run was started with.
 pub struct Start {
     pub module: &'static spec::Module,
     pub dry_run: bool,
     pub kiosk: bool,
-    /// Nobody at the keyboard: the answers from the file, the passwords from the environment.
+    /// Answers from the answer file, passwords from the environment.
     pub unattended: bool,
 }
 
-/// What the command line asks for.
 enum Ask {
     Help,
     Version,
@@ -36,7 +34,6 @@ enum Ask {
     Run(Start),
 }
 
-/// The arguments after the program's name, or why they ask for nothing it does.
 fn parse(args: impl IntoIterator<Item = String>) -> Result<Ask, String> {
     let (mut module, mut dry_run, mut kiosk, mut unattended, mut glyphs) =
         (None, false, false, false, false);
@@ -60,7 +57,7 @@ fn parse(args: impl IntoIterator<Item = String>) -> Result<Ask, String> {
         return Ok(Ask::Glyphs);
     }
     let module = module.ok_or("name a module")?;
-    // A kiosk starts over when its run ends, an unattended run ends.
+    // A kiosk restarts after its run, an unattended run exits.
     if kiosk && unattended {
         return Err("--kiosk and --unattended do not go together".into());
     }

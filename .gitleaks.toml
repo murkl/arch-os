@@ -1,5 +1,5 @@
-# What the repository holds, not what a build leaves in it: an image's binaries
-# read as keys. The folders are BUILD_OUTPUT in the Makefile and cargo's target.
+# Build output is skipped, since an image's binaries read as keys. The folders
+# are BUILD_OUTPUT in the Makefile and cargo's target.
 [extend]
 useDefault = true
 

@@ -1,11 +1,9 @@
 # language  console keymap  xkb layout  console font
 #
-# What a language implies: the keyboard it is typed on, in the console's
-# names and in xkb's, and the font the console can draw it in. language is a
-# locale or the language in front of it, longer match wins (de_CH is not de).
-# Unlisted falls back to the American layout. font is about the script rather
-# than the language: none is the honest answer for a text console with no
-# glyphs for it at all.
+# language  a locale or its language, the longer match wins (de_CH over de)
+# font      by script, none where the text console has no glyphs for it
+#
+# An unlisted language gets the us layout.
 #
 # Validate against: localectl list-keymaps, localectl list-x11-keymap-layouts, /usr/share/i18n/SUPPORTED
 af          us              za          eurlatgr

@@ -1,16 +1,14 @@
-# The images the firmware starts and the loader that starts them. Why these
-# hooks and arguments: docs/REFERENCE.md#the-boot-chain
+# Hooks and kernel arguments: docs/REFERENCE.md#boot-chain
 # https://wiki.archlinux.org/title/Mkinitcpio#Common_hooks
 # https://wiki.archlinux.org/title/Systemd-boot
 
 data="$(where)"
 
-# The boot without its log, with the splash or without it.
 # https://wiki.archlinux.org/title/Silent_boot
 silent_boot() { [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ]; }
 
-# The kernel command line, one answer for the image and the entries alike.
-# Why each parameter is here: docs/REFERENCE.md#the-boot-chain
+# One command line for the UKI and the initramfs entries:
+# docs/REFERENCE.md#boot-chain
 kernel_args() {
     local args=(rw) system_part
     system_part="$(system_partition "$ARCH_OS_DISK")"
@@ -22,8 +20,8 @@ kernel_args() {
     fi
 
     args+=(rootflags=subvol=@ rootfstype=btrfs)
-    args+=(zswap.enabled=0) # pointless next to zram, and the two interfere
-    args+=(panic=10)        # restarts, so the loader counts the start as failed
+    args+=(zswap.enabled=0) # interferes with zram
+    args+=(panic=10)        # reboots, so the loader counts a failed try
 
     [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && args+=(nowatchdog)
 
@@ -31,8 +29,8 @@ kernel_args() {
         args+=(quiet splash vt.global_cursor_default=0 loglevel=3 rd.udev.log_level=3 systemd.show_status=auto)
     fi
 
-    # Behind encryption the password comes first: the splash waits for the
-    # graphics driver, and up to 3 s, longer than a disk takes, for the question.
+    # With encryption the passphrase prompt comes first: the splash waits for
+    # the GPU driver, and 3 s, longer than the disk takes to appear.
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
         args+=(plymouth.ignore-serial-consoles)
         if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
@@ -48,7 +46,12 @@ encrypt_hook=""
 [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && encrypt_hook=" sd-encrypt"
 hooks="base systemd keyboard autodetect microcode modconf kms sd-vconsole block${encrypt_hook} filesystems"
 
-# A drop-in, so the boot splash (20-) and the graphics driver (30-) build on it.
+# With root locked, the emergency shell waits forever, so it restarts and uses
+# up the boot tries. Written before mkinitcpio, whose systemd hook copies it.
+mkdir -p "${MNT}/etc/systemd/system/emergency.service.d"
+render "${data}/emergency.conf" >"${MNT}/etc/systemd/system/emergency.service.d/10-arch-os.conf"
+
+# 10-, so the bootsplash (20-) and graphics (30-) drop-ins build on it.
 mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
 render "${data}/10-arch-os.conf" HOOKS="$hooks" >"${MNT}/etc/mkinitcpio.conf.d/10-arch-os.conf"
 
@@ -56,35 +59,34 @@ kind="$(boot_kind)"
 if [ "$kind" = uki ]; then
     mkdir -p "${MNT}${UKI_DIR}" "${MNT}/etc/kernel"
 
-    # Without it mkinitcpio takes /proc/cmdline, the live image's.
+    # Otherwise mkinitcpio embeds /proc/cmdline of the live system.
     kernel_args >"${MNT}/etc/kernel/cmdline"
 
-    # Made before any snapshot: one without the keys cannot sign what it
-    # rebuilds. From here sbctl's hook signs every image. Never fatal.
+    # Before the first snapshot: one without the keys cannot sign what it
+    # rebuilds. From here on sbctl's hook signs every image.
     arch-chroot "$MNT" sbctl create-keys || echo "Secure Boot: creating the keys failed, nothing will be signed" >&2
 
-    # systemd-boot signed at its source, which bootctl below and
-    # systemd-boot-update copy from. -s records it, so sbctl's hook signs every
-    # update of it again.
+    # Signed at the source bootctl and systemd-boot-update copy from. -s makes
+    # sbctl's hook sign every update again.
     stub=/usr/lib/systemd/boot/efi/systemd-bootx64.efi
     arch-chroot "$MNT" sbctl sign -s -o "${stub}.signed" "$stub" || echo "signing systemd-boot failed" >&2
 fi
 
-# Written whole on both paths: the template mkinitcpio writes on its own has no
-# fallback image, while a boot entry would still point at one.
+# Written in full: mkinitcpio's own preset has no fallback image, which a boot
+# entry points at.
 boot_preset "$MNT" "$kind"
 arch-chroot "$MNT" mkinitcpio -P
 
-# The plain ram disks the kernel package built, which nothing updates now.
+# The kernel package's plain initramfs images, which nothing updates with UKIs.
 if [ "$kind" = uki ]; then
     rm -f "${MNT}/boot/initramfs-${KERNEL}.img" "${MNT}/boot/initramfs-${KERNEL}-fallback.img"
 fi
 
-# The firmware's entry is written from out here: inside arch-chroot bootctl
-# cannot see which partition the ESP is and writes one that points nowhere.
+# Outside the chroot: inside it bootctl cannot tell the EFI partition and
+# writes a firmware entry that points nowhere.
 bootctl --root="$MNT" --esp-path=/boot --variables=yes install
 
-# A unified image carries its command line, a ram disk's entry names it.
+# A UKI embeds the command line, an initramfs entry carries it.
 cmdline=""
 [ "$kind" = uki ] || cmdline="$(kernel_args)"
 boot_entries "$MNT" "$kind" "$cmdline"
@@ -93,8 +95,8 @@ clear_loader_default
 
 arch-chroot "$MNT" systemctl enable systemd-boot-update.service
 
-# The quiet boot hides the cursor on every console, and agetty reads \e as an
-# escape: this shows it again before each login.
+# The quiet boot hides the cursor on every console. agetty expands \e, so the
+# issue file shows it again before each login.
 if silent_boot; then
     mkdir -p "${MNT}/etc/issue.d"
     render "${data}/cursor.issue" >"${MNT}/etc/issue.d/cursor.issue"

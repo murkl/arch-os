@@ -1,15 +1,14 @@
-# Desktop entries that arrive with a dependency and mean nothing to anyone using
-# the desktop. Hidden rather than removed: the package is still needed. One name
-# per line, with the condition it is hidden under.
+# Desktop entries pulled in as dependencies, hidden since the package stays
+# needed. One per line: condition, name.
 #
-# always              every desktop install
-# slim                only with the slim desktop
-# extras              only with the desktop extras
-# shell               only with the shell enhancement
+# always  every desktop
+# slim    slim desktop only
+# extras  desktop extras only
+# shell   shell enhancement only
 always qv4l2
 always qvidcap
 always lstopo
-# Left out of the group, and still a dependency of sushi's previews.
+# Left out of the group, but still a dependency of sushi's previews.
 slim org.gnome.Papers
 extras cups
 shell btop
