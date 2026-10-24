@@ -30,10 +30,10 @@ OVMF_VARS="${OVMF_VARS:-/usr/share/edk2/x64/OVMF_VARS.4m.fd}"
 # and the block-drawn wordmark.
 EXPECT='English|Deutsch'
 
-# A page on screen may not take keys yet: a console the splash left locked
-# echoes them. So Deutsch is chosen by key, and the first question, the
-# keyboard, must come up in German.
-ANSWER='Tastatur|Konsole'
+# Deutsch is chosen by key and the keyboard question must follow in German: a
+# console the splash left locked shows pages but only echoes keys. Short
+# German-only fragments, since tesseract misreads the console font.
+ANSWER='astatur|Textkonsole|Vorausge'
 
 # A failed boot prints one of these, so the run stops before the timeout.
 PANIC='Kernel panic|Failed to start'
