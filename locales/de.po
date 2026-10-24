@@ -296,8 +296,8 @@ msgstr "Vorausgewählt nach der Sprache."
 msgid "Mirror country"
 msgstr "Spiegelserver-Land"
 
-msgid "Package source. On auto it follows the time zone, on none worldwide."
-msgstr "Quelle der Pakete. Bei auto folgt sie der Zeitzone, bei none weltweit."
+msgid "Only this country's mirrors. On none all, fastest first."
+msgstr "Nur Spiegelserver dieses Landes. Bei none alle, schnellste zuerst."
 
 msgid "Disk"
 msgstr "Datenträger"
@@ -380,8 +380,8 @@ msgstr "Paru für das Arch User Repository. Bau dauert etwa 15 Minuten."
 msgid "Container engine"
 msgstr "Container-Engine"
 
-msgid "Docker uses a root daemon, as most guides expect. Podman needs none and accepts docker commands. Both include Compose."
-msgstr "Docker nutzt einen Root-Daemon, wie die meisten Anleitungen voraussetzen. Podman braucht keinen und versteht docker-Befehle. Beide enthalten Compose."
+msgid "Docker runs a root daemon, used through sudo. Podman needs none and accepts docker commands. Both include Compose."
+msgstr "Docker nutzt einen Root-Daemon, bedient über sudo. Podman braucht keinen und versteht docker-Befehle. Beide enthalten Compose."
 
 msgid "Firewall"
 msgstr "Firewall"
@@ -392,8 +392,17 @@ msgstr "Blockiert eingehende Verbindungen außer SSH und Druckersuche. Dateifrei
 msgid "SSH server"
 msgstr "SSH-Server"
 
-msgid "Remote login for the account, not for root."
-msgstr "Anmeldung aus der Ferne für das Konto, nicht für root."
+msgid "Remote login, by key only."
+msgstr "Anmeldung aus der Ferne, nur per Schlüssel."
+
+msgid "SSH key"
+msgstr "SSH-Schlüssel"
+
+msgid "A public key, or an address serving keys, such as https://github.com/<user>.keys"
+msgstr "Ein öffentlicher Schlüssel oder eine Adresse mit Schlüsseln, etwa https://github.com/<user>.keys"
+
+msgid "A public key such as ssh-ed25519 AAAA, or an https address."
+msgstr "Ein öffentlicher Schlüssel wie ssh-ed25519 AAAA oder eine https-Adresse."
 
 msgid "Housekeeping"
 msgstr "Systempflege"
@@ -572,6 +581,9 @@ msgstr "Firewall einrichten"
 msgid "Set up housekeeping"
 msgstr "Systempflege einrichten"
 
+msgid "Disk at risk"
+msgstr "Datenträger gefährdet"
+
 msgid "Enable 32-bit support"
 msgstr "32-Bit-Unterstützung aktivieren"
 
@@ -589,6 +601,15 @@ msgstr "Shell-Erweiterung einrichten"
 
 msgid "Enable the SSH server"
 msgstr "SSH-Server aktivieren"
+
+msgid ""
+"SSH key not added\n"
+"\n"
+"Add a public key to ~/.ssh/authorized_keys."
+msgstr ""
+"SSH-Schlüssel nicht hinzugefügt\n"
+"\n"
+"Öffentlichen Schlüssel in ~/.ssh/authorized_keys eintragen."
 
 msgid "Install the VM guest tools"
 msgstr "VM-Gasttools installieren"

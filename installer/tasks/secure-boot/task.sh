@@ -26,7 +26,15 @@ if [ ! -r "$setup_mode" ] || [ "$(od -An -t u1 -j 4 -N 1 "$setup_mode" 2>/dev/nu
     echo "Secure Boot: firmware not in setup mode, keys not enrolled. The boot chain is signed, enrolling later is enough"
     return 0
 fi
-if arch-chroot "$MNT" sbctl enroll-keys -m; then
+# Enrolled keys refuse whatever is unsigned, possibly at once.
+if ! boot_chain_signed "$MNT"; then
+    echo "Secure Boot: keys not enrolled, the boot chain is not fully signed" >&2
+    return 0
+fi
+# -m keeps Microsoft's certificates, -f the firmware's own, which firmware signed
+# by its maker needs. sbctl refuses -f where the firmware's defaults could be
+# tampered with, so -m alone follows.
+if arch-chroot "$MNT" sbctl enroll-keys -m -f || arch-chroot "$MNT" sbctl enroll-keys -m; then
     echo "Secure Boot: keys enrolled, switch Secure Boot on in the firmware settings"
 else
     echo "Secure Boot: enrolling the keys failed" >&2

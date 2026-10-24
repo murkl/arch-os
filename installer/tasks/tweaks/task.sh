@@ -8,10 +8,6 @@ render "${data}/20-pwfeedback" | sudoers_rule 20-pwfeedback
 # pacman ships Color off.
 pacman_include "${data}/arch-os-options.conf"
 
-# Unused watchdogs that delay every shutdown.
-mkdir -p "${MNT}/etc/modprobe.d"
-render "${data}/blacklist-watchdog.conf" >"${MNT}/etc/modprobe.d/blacklist-watchdog.conf"
-
 # No debug packages from AUR builds. The compiler flags stay Arch's.
 mkdir -p "${MNT}/etc/makepkg.conf.d"
 render "${data}/makepkg.conf" >"${MNT}/etc/makepkg.conf.d/arch-os.conf"

@@ -1,6 +1,7 @@
 #!/bin/bash
 # Boots a built image until its interface answers a key, proving the boot chain
-# no linter sees. See README.md.
+# no linter sees. Reads the interface's trace on a virtio port, not the screen.
+# See README.md.
 #
 #   smoke.sh <image.iso | recovery-dir>
 set -eu
@@ -15,8 +16,7 @@ else
     exit 1
 fi
 
-# A failure keeps every frame, since the screen is the only evidence. A pass
-# keeps the matching one.
+# A failure keeps every frame and the trace. A pass keeps the last frame.
 FRAME_DIR="${FRAME_DIR:-$(dirname "$IMAGE")/smoke/$(basename "$IMAGE" .iso)}"
 
 # Covers a cold boot under emulation without KVM, with room to spare.
@@ -26,19 +26,7 @@ INTERVAL="${INTERVAL:-15}"
 OVMF_CODE="${OVMF_CODE:-/usr/share/edk2/x64/OVMF_CODE.4m.fd}"
 OVMF_VARS="${OVMF_VARS:-/usr/share/edk2/x64/OVMF_VARS.4m.fd}"
 
-# The welcome page, by its languages: OCR reads them cleanly, unlike other text
-# and the block-drawn wordmark.
-EXPECT='English|Deutsch'
-
-# Deutsch is chosen by key and the keyboard question must follow in German: a
-# console the splash left locked shows pages but only echoes keys. Short
-# German-only fragments, since tesseract misreads the console font.
-ANSWER='astatur|Textkonsole|Vorausge'
-
-# A failed boot prints one of these, so the run stops before the timeout.
-PANIC='Kernel panic|Failed to start'
-
-for tool in qemu-system-x86_64 tesseract; do
+for tool in qemu-system-x86_64 od; do
     command -v "$tool" >/dev/null || { echo "Error: ${tool} not found, see README.md" >&2 && exit 1; }
 done
 [ -f "$OVMF_CODE" ] || { echo "Error: no OVMF firmware at ${OVMF_CODE}. Install edk2-ovmf." >&2 && exit 1; }
@@ -50,8 +38,11 @@ mkdir -p "$FRAME_DIR"
 VARS="${FRAME_DIR}/vars.fd"
 cp "$OVMF_VARS" "$VARS"
 
+# The launcher passes the credential on as --trace: runtime/README.md#trace
+TRACE="${FRAME_DIR}/trace"
+: >"$TRACE"
+
 QEMU_PID=""
-last_shot=""
 cleanup() {
     status=$?
     set +e
@@ -80,6 +71,10 @@ qemu-system-x86_64 \
     "${BOOT[@]}" \
     -nic user,model=virtio-net-pci \
     -display none \
+    -device virtio-serial-pci \
+    -chardev "file,id=trace,path=${TRACE}" \
+    -device "virtserialport,chardev=trace,name=arch-os.trace" \
+    -smbios "type=11,value=io.systemd.credential:arch-os.trace=/dev/virtio-ports/arch-os.trace" \
     -monitor "tcp:127.0.0.1:${port},server,nowait" &
 QEMU_PID=$!
 
@@ -98,7 +93,7 @@ done
 # The monitor's answers go unread. A screendump is judged by the file it
 # leaves.
 screendump() {
-    printf 'screendump %s -f png\n' "$1" >&3
+    printf 'screendump %s -f %s\n' "$1" "${1##*.}" >&3
     for _ in $(seq 25); do
         sleep 0.2
         [ -s "$1" ] && return 0
@@ -106,50 +101,29 @@ screendump() {
     return 1
 }
 
-# --psm 6, since a console is one block of text in one font, which the default
-# page segmentation gets wrong.
-console_text() {
-    tesseract "$1" - --psm 6 2>/dev/null || true
-}
-
-# Logs the console text too, since a login prompt and a stuck splash otherwise
-# fail alike.
 fail() {
     echo "Error: $1" >&2
-    if [ -n "$last_shot" ]; then
-        echo "the console read:" >&2
-        console_text "$last_shot" | sed 's/^/  | /' >&2
-    else
-        echo "no screendump of the console, see the monitor output above" >&2
-    fi
+    echo "trace:" >&2
+    sed 's/^/  | /' "$TRACE" >&2
     echo "console screenshots: ${FRAME_DIR}" >&2
     exit 1
 }
 
-# Screenshots the console every INTERVAL seconds, for up to TIMEOUT, until it
-# matches the pattern. The matching frame lands in $found.
-found=""
+# Waits for a trace line matching the pattern, a screenshot every INTERVAL
+# seconds as evidence.
 frame=0
 await() {
-    local pattern="$1" deadline=$((SECONDS + TIMEOUT)) shot text
-    found=""
-    while [ "$SECONDS" -lt "$deadline" ]; do
-        sleep "$INTERVAL"
-        kill -0 "$QEMU_PID" 2>/dev/null || fail "the machine stopped before the interface came up"
-
-        frame=$((frame + 1))
-        shot="$(printf '%s/frame-%02d.png' "$FRAME_DIR" "$frame")"
-        screendump "$shot" || continue
-        last_shot="$shot"
-
-        text="$(console_text "$shot")"
-        grep -qE "$PANIC" <<<"$text" && fail "the machine did not finish booting"
-        if grep -qE "$pattern" <<<"$text"; then
-            found="$shot"
-            return 0
+    local pattern="$1" deadline=$((SECONDS + TIMEOUT)) next=$SECONDS
+    while ! grep -qE "^(${pattern})\$" "$TRACE"; do
+        [ "$SECONDS" -lt "$deadline" ] || return 1
+        kill -0 "$QEMU_PID" 2>/dev/null || fail "the machine stopped before the interface answered"
+        if [ "$SECONDS" -ge "$next" ]; then
+            frame=$((frame + 1))
+            screendump "$(printf '%s/frame-%02d.png' "$FRAME_DIR" "$frame")" || true
+            next=$((SECONDS + INTERVAL))
         fi
+        sleep 1
     done
-    return 1
 }
 
 # A key as the keyboard sends it, then a moment for the interface to draw.
@@ -158,14 +132,28 @@ press() {
     sleep 1
 }
 
+# The trace proves the program runs, not that the screen shows it: a picture of
+# one color is a blank screen.
+shows_something() {
+    local colors
+    colors="$({ read -r _ && read -r _ && read -r _ && od -An -v -tx1 -w3; } <"$1" | sort -u | wc -l)"
+    [ "$colors" -gt 1 ]
+}
+
 echo "### Wait for the interface (up to ${TIMEOUT}s)"
-await "$EXPECT" || fail "the interface did not come up within ${TIMEOUT}s"
+await 'page language' || fail "the interface did not come up within ${TIMEOUT}s"
 
 echo "### Choose Deutsch with the keyboard"
-press down
+for _ in $(seq 10); do
+    [ "$(grep '^focus ' "$TRACE" | tail -n 1)" = "focus de" ] && break
+    press down
+done
 press ret
-await "$ANSWER" || fail "the interface did not answer the keyboard within ${TIMEOUT}s"
+await 'language de' || fail "the interface did not answer the keyboard within ${TIMEOUT}s"
+await 'page question [A-Z_]+' || fail "the interface did not move on to its first question within ${TIMEOUT}s"
 
-mv "$found" "${FRAME_DIR}/arch-os.png"
-rm -f "${FRAME_DIR}"/frame-*.png
+screendump "${FRAME_DIR}/arch-os.ppm" || fail "no screendump of the console"
+shows_something "${FRAME_DIR}/arch-os.ppm" || fail "the console shows nothing"
+screendump "${FRAME_DIR}/arch-os.png" || fail "no screendump of the console"
+rm -f "${FRAME_DIR}"/frame-*.png "${FRAME_DIR}/arch-os.ppm" "$TRACE"
 echo "### Arch OS is up and answers: ${FRAME_DIR}/arch-os.png"

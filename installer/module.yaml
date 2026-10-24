@@ -92,8 +92,8 @@ settings:
         Up to 63 lowercase letters, digits and hyphens, no hyphen at the start
         or end.
 
-  # On auto everything follows the language, the mirrors via the time zone. The
-  # keyboard comes first: a password typed on the wrong layout is wrong.
+  # On auto everything follows the language. The keyboard comes first: a
+  # password typed on the wrong layout is wrong.
   Region:
     - name: ARCH_OS_LOCALE_LANG
       type: list
@@ -145,12 +145,13 @@ settings:
     - name: ARCH_OS_REFLECTOR_COUNTRY
       type: open-list
       title: Mirror country
-      description: |
-        Package source. On auto it follows the time zone, on none worldwide.
+      # Worldwide by default: one country may have few mirrors, and reflector
+      # ranks by speed. https://wiki.archlinux.org/title/Reflector
+      description: Only this country's mirrors. On none all, fastest first.
       required: true
       options-from: options_countries()
       filter: open
-      default: auto
+      default: none
       pattern: '^[^"\\]*$'
 
   Storage:
@@ -241,7 +242,7 @@ settings:
       type: list
       title: Container engine
       description: |
-        Docker uses a root daemon, as most guides expect. Podman needs none and
+        Docker runs a root daemon, used through sudo. Podman needs none and
         accepts docker commands. Both include Compose.
       required: true
       options: [docker, podman, none]
@@ -259,8 +260,20 @@ settings:
     - name: ARCH_OS_SSH_SERVER_ENABLED
       type: bool
       title: SSH server
-      description: Remote login for the account, not for root.
+      description: Remote login, by key only.
       default: false
+
+    # sshd takes no password, so the account needs a key from the start.
+    - name: ARCH_OS_SSH_KEY
+      type: text
+      title: SSH key
+      description: |
+        A public key, or an address serving keys, such as
+        https://github.com/<user>.keys
+      when: ARCH_OS_SSH_SERVER_ENABLED == true
+      required: true
+      pattern: '^(https://[^ ]+|(ssh|ecdsa|sk)-[^ ]+ [A-Za-z0-9+/=]+( .*)?)$'
+      error: A public key such as ssh-ed25519 AAAA, or an https address.
 
     - name: ARCH_OS_HOUSEKEEPING_ENABLED
       type: bool
@@ -493,6 +506,9 @@ stages:
     housekeeping:
       title: Set up housekeeping
       when: ARCH_OS_HOUSEKEEPING_ENABLED == true
+      # The heading of a disk warning, in the language of the installation.
+      texts:
+        DISK_ALERT: Disk at risk
 
     multilib:
       title: Enable 32-bit support
@@ -529,6 +545,13 @@ stages:
       # The firewall keeps ssh closed in public until something listens.
       needs: [firewall]
       when: ARCH_OS_SSH_SERVER_ENABLED == true
+      # A key that cannot be fetched is added later.
+      allow-failure: true
+      errors:
+        10: |
+          SSH key not added
+
+          Add a public key to ~/.ssh/authorized_keys.
 
     vm-guest:
       title: Install the VM guest tools

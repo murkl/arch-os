@@ -9,6 +9,7 @@ pub mod script;
 pub mod spec;
 pub mod store;
 mod term;
+mod trace;
 mod ui;
 mod unattended;
 pub mod version;

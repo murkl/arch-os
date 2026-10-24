@@ -41,7 +41,7 @@
 - Ranked mirrors, trimmed package cache, disk health monitoring
 - Works offline until the next update
 - [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), [System Manager](https://github.com/murkl/arch-os-manager), [Shell Enhancement](https://github.com/murkl/starship-theme-arch-os)
-- Keyboard, time zone and mirrors follow the language
+- Keyboard and time zone follow the language
 - Resumable installation, shareable answers
 - English and German, [Adding a Language](CONTRIBUTING.md#adding-a-language)
 

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Render docs/screenshots: every page of the interface, from the real program.
 
-Runs the program on a pty with --dry-run, so it touches nothing. The pages and
-the way to each are in docs/screenshots.yaml.
+Runs the program on a pty with --dry-run, so it touches nothing, and follows
+its --trace to know the page and the row under the cursor. The pages and the way
+to each are in docs/screenshots.yaml.
 
 Needs: chromium, imagemagick, python-pyte, python-yaml.
 """
@@ -91,9 +92,6 @@ KEY = {
     "left": b"\x1bOD",
 }
 
-# The mark in front of the row under the cursor.
-CURSOR = "\u25b6"
-
 STEP_KEYS = {"page", "shot", "frame", "choose", "press"}
 FRAMES = ("settled", "running")
 
@@ -103,13 +101,17 @@ WAIT = 180.0
 
 
 class Session:
-    """A program on a pty: press keys, keep every frame it drew.
+    """A program on a pty: press keys, keep every frame it drew with the page,
+    the row and the count of tasks the trace named by then.
 
     Every read is kept, since some pages exist only for a moment.
     """
 
-    def __init__(self, argv, cwd, env=None):
+    def __init__(self, argv, cwd, trace, env=None):
         self.frames, self._buf = [], b""
+        self.trace, self._read = trace, 0
+        self.page = self.focus = None
+        self.tasks = 0
         self.pid, self.fd = pty.fork()
         if self.pid == 0:
             os.chdir(cwd)
@@ -133,8 +135,28 @@ class Session:
             if b"\x1b[6n" in chunk:
                 os.write(self.fd, b"\x1b[1;1R")  # answer as a real terminal does
             self._buf += chunk
-            self.frames.append(self._buf)
+            self.follow()
+            self.frames.append((self._buf, self.page, self.tasks))
         return True
+
+    def follow(self):
+        """Reads the trace lines written since the last call."""
+        try:
+            with open(self.trace, "rb") as f:
+                f.seek(self._read)
+                new = f.read()
+        except FileNotFoundError:
+            return
+        whole = new[:new.rfind(b"\n") + 1]
+        self._read += len(whole)
+        for line in whole.decode().splitlines():
+            kind, _, value = line.partition(" ")
+            if kind == "page":
+                self.page = value
+            elif kind == "focus":
+                self.focus = value
+            elif kind == "task":
+                self.tasks += 1
 
     def press(self, keys, settle=0.25):
         for key in keys:
@@ -143,31 +165,32 @@ class Session:
         return self
 
     def choose(self, row, tries=40):
-        """Put the cursor on a row by name, not by position, since rows get
+        """Put the cursor on a row by id, not by position, since rows get
         added. Up first, as far as it goes, then down."""
         for key in ("up", "down"):
             last = None
             for _ in range(tries):
-                marked = [line for line in grid(self._buf).display if CURSOR in line]
-                if any(row in line for line in marked):
+                self.follow()
+                if self.focus == row:
                     return self
-                if marked == last:
+                if self.focus == last:
                     break
-                last = marked
+                last = self.focus
                 self.press([key])
-        raise SystemExit(f"no row called {row!r} to put the cursor on")
+        raise SystemExit(f"no row {row!r} to put the cursor on")
 
-    def until(self, wants, timeout=WAIT):
+    def until(self, page, timeout=WAIT):
         """Wait for a page, not for a length of time."""
         end = time.time() + timeout
         while time.time() < end:
-            if all(want in text(self._buf) for want in wants):
+            self.follow()
+            if self.page == page:
                 return self
             if not self.pump(0.15):
                 break
         raise SystemExit(
-            f"waited {timeout:g}s for {wants!r}, and the page was:\n\n"
-            + text(self._buf))
+            f"waited {timeout:g}s for page {page!r}, and the trace was on "
+            f"{self.page!r}:\n\n" + text(self._buf))
 
     def still(self, checks=3, step=0.12, timeout=8.0):
         """Wait until the screen stops changing: the wordmark sweeps in."""
@@ -212,30 +235,21 @@ def filled(seen):
     return sum(1 for line in seen.split("\n") if any(c.isalnum() for c in line))
 
 
-# A run page's counter. The lookahead skips a report's "N of M tests passed".
-COUNTER = re.compile(r"(\d+) of (\d+)(?! (tests|optional))")
-
-
-def running(frames, wants):
+def running(frames, page, total):
     """The frame from the middle of the run that led to the page on screen.
 
     Which frames a run produces is a race, so this takes the one nearest the
-    middle, not a fixed count. It stops at the wanted page, since a run paused
-    to ask or report is past the moment worth a picture.
+    middle of its `total` tasks, not a fixed count. It stops at the wanted page,
+    since a run paused to ask or report is past the moment worth a picture.
     """
     caught = []
-    for frame in frames:
-        seen = text(frame)
-        if all(want in seen for want in wants):
+    for frame, at, tasks in frames:
+        if at == page:
             break
-        at = COUNTER.search(seen)
-        if not at:
-            continue
-        done, total = int(at.group(1)), int(at.group(2))
-        if done < total:
-            caught.append((filled(seen), done / total, frame))
+        if at == "run" and 0 < tasks < total:
+            caught.append((filled(text(frame)), tasks / total, frame))
     if not caught:
-        raise SystemExit(f"no frame caught the run on its way to {wants!r}")
+        raise SystemExit(f"no frame caught the run on its way to {page!r}")
 
     # Between redraws the list is briefly gone. A run page keeps one size, so
     # the most common size is the whole page and a rarer one is such a gap.
@@ -374,7 +388,8 @@ def storyboard(path):
                 raise SystemExit(f"{at}: a step is {', '.join(sorted(STEP_KEYS))}")
             if "page" not in step:
                 raise SystemExit(f"{at}: page: says which page this step is about")
-            step["page"] = lines(step["page"], at, "page:")
+            if not isinstance(step["page"], str) or not step["page"]:
+                raise SystemExit(f"{at}: page: is the id of one page")
             step["press"] = lines(step["press"], at, "press:") if "press" in step else []
             if "choose" in step and len(lines(step["choose"], at, "choose:")) != 1:
                 raise SystemExit(f"{at}: choose: is the one row to put the cursor on")
@@ -407,10 +422,11 @@ def pristine(source):
 def play(takes, source, out):
     for take in takes:
         pristine(source)
-        argv = [f"./{PRODUCT}", take["module"], "--dry-run"]
+        argv = [f"./{PRODUCT}", take["module"], "--dry-run", "--trace", "trace"]
         # C.UTF-8, not the host's locale: the language of a published picture is
         # chosen, not leaked.
-        session = Session(argv, str(WORK), env={"LANG": "C.UTF-8", "LC_ALL": "C.UTF-8"})
+        session = Session(argv, str(WORK), WORK / "trace",
+                          env={"LANG": "C.UTF-8", "LC_ALL": "C.UTF-8"})
         # Start of the frames leading to the awaited page. A question page
         # carries a counter too, so the run search must not reach past the
         # previous page.
@@ -421,7 +437,8 @@ def play(takes, source, out):
                 # shade off and swallows keys.
                 session.until(step["page"]).still()
                 if "shot" in step:
-                    frame = (running(session.frames[since:], step["page"])
+                    frame = (running(session.frames[since:], step["page"],
+                                     session.tasks)
                              if step.get("frame") == "running"
                              else session.screen())
                     card(frame, out / f"{step['shot']}.png")

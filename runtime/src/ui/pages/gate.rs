@@ -109,6 +109,10 @@ impl Page for GatePage {
         String::new()
     }
 
+    fn id(&self, ctx: &Ctx) -> String {
+        format!("gate {}", self.action(ctx).id)
+    }
+
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {
         if self.round == 0 {
             self.check(ctx);

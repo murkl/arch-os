@@ -29,5 +29,11 @@ if [ -t 0 ]; then
     stty "$saved"
 fi
 
+# A test harness passes the trace target as the credential arch-os.trace.
+trace=()
+if [ -s "${CREDENTIALS_DIRECTORY:-/nonexistent}/arch-os.trace" ]; then
+    trace=(--trace "$(cat "${CREDENTIALS_DIRECTORY}/arch-os.trace")")
+fi
+
 cd /opt/arch-os
-exec ./arch-os "$@"
+exec ./arch-os "$@" "${trace[@]}"

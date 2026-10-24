@@ -10,8 +10,8 @@ data="$(where)"
 packages=(git bluez bluez-utils avahi nss-mdns pipewire pipewire-pulse wireplumber)
 
 # A JACK provider, so a later install such as GNOME Boxes (via qemu-desktop)
-# pulls no jack2.
-packages+=(pipewire-jack)
+# pulls no jack2. ALSA programs through PipeWire too.
+packages+=(pipewire-jack pipewire-alsa)
 
 # Realtime priority for PipeWire, which otherwise warns at every login.
 packages+=(rtkit)
@@ -62,7 +62,6 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     # come with the group's xdg-desktop-portal-gnome.
     packages+=(xdg-utils)
 
-    packages+=(pipewire-alsa)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
 
     # NetworkManager handles WireGuard itself. OpenVPN needs the plug-in.
@@ -118,7 +117,7 @@ fi
 # ─── Environment ───────────────────────────────────────────────────────────
 
 mkdir -p "${MNT}/etc/environment.d"
-render "${data}/10-arch-os.conf" >"${MNT}/etc/environment.d/10-arch-os.conf"
+render "${data}/60-arch-os.conf" >"${MNT}/etc/environment.d/60-arch-os.conf"
 
 # Git credentials in the keyring instead of a plain file.
 arch-chroot "$MNT" git config --system credential.helper /usr/lib/git-core/git-credential-libsecret
@@ -196,7 +195,7 @@ while read -r scope name; do
     extras) [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] || continue ;;
     shell) [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ] || continue ;;
     esac
-    render "${data}/hidden.desktop" >"${apps}/${name}.desktop"
+    render "${data}/hidden.desktop" NAME="$name" >"${apps}/${name}.desktop"
 done <"${data}/hidden-apps"
 
 # ─── Settings ──────────────────────────────────────────────────────────────

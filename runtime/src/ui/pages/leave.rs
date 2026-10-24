@@ -93,6 +93,17 @@ impl Page for LeavePage {
         t("Leave")
     }
 
+    fn id(&self, _: &Ctx) -> String {
+        "leave".into()
+    }
+
+    fn focus(&self) -> Option<String> {
+        Some(match self.list.selected()?.id? {
+            Way::Action(action) => action.id.clone(),
+            Way::Exit => "exit".into(),
+        })
+    }
+
     fn leaving(&self) -> bool {
         true
     }

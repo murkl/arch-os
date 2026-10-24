@@ -15,6 +15,7 @@ pub enum Close {
 }
 
 pub struct ReportPage {
+    id: String,
     title: String,
     text: String,
     /// Value shown as QR code and as text under the report.
@@ -32,6 +33,7 @@ const GAP: u16 = 3;
 
 impl ReportPage {
     pub fn new(
+        id: String,
         title: String,
         text: String,
         qr: Option<String>,
@@ -39,6 +41,7 @@ impl ReportPage {
         close: Close,
     ) -> ReportPage {
         ReportPage {
+            id,
             title,
             text,
             qr,
@@ -79,6 +82,10 @@ impl Page for ReportPage {
 
     fn title(&self) -> String {
         self.title.clone()
+    }
+
+    fn id(&self, _: &Ctx) -> String {
+        self.id.clone()
     }
 
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {

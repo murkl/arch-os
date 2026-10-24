@@ -20,6 +20,8 @@ OnFailure=getty@tty1.service
 Type=simple
 # `arch-os recovery` on another console starts the Recovery.
 ExecStart=/usr/local/bin/arch-os installer
+# Set only by smoke.sh and e2e.sh, passed on as --trace by the launcher.
+ImportCredential=arch-os.trace
 
 StandardInput=tty-force
 StandardOutput=tty

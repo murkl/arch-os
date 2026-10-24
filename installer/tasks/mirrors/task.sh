@@ -41,7 +41,8 @@ timedatectl set-ntp true
 echo "ranking mirrors"
 rank_mirrors
 
-rm -f /var/lib/pacman/db.lck
+# A lock without a running pacman is left by an aborted earlier attempt.
+pgrep -x pacman >/dev/null || rm -f /var/lib/pacman/db.lck
 
 # The live system creates its keyring after the NTP sync, and pacman refuses
 # every package until then. start waits for a running unit and returns at once

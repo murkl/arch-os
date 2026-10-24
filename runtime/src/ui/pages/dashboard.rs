@@ -186,6 +186,20 @@ impl Page for DashboardPage {
         String::new()
     }
 
+    fn id(&self, _: &Ctx) -> String {
+        "dashboard".into()
+    }
+
+    fn focus(&self) -> Option<String> {
+        Some(match self.list.selected()?.id.as_ref()? {
+            Item::Start => "start".into(),
+            Item::Setting(s) => s.name.clone(),
+            Item::Language => "language".into(),
+            Item::Action(a) => a.id.clone(),
+            Item::Reset => "reset".into(),
+        })
+    }
+
     fn home(&self) -> bool {
         true
     }

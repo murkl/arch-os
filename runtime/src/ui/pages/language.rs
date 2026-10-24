@@ -23,6 +23,7 @@ fn rows() -> Vec<Row<String>> {
 /// Sets the UI language and saves it with the answers.
 fn speak(code: &str, ctx: &mut Ctx) {
     i18n::set(code);
+    ctx.trace.line("language", code);
     ctx.store.language = code.to_string();
     crate::info!("language {code}");
     ctx.save();
@@ -49,6 +50,14 @@ impl Page for LanguagePage {
 
     fn title(&self) -> String {
         String::new()
+    }
+
+    fn id(&self, _: &Ctx) -> String {
+        "language".into()
+    }
+
+    fn focus(&self) -> Option<String> {
+        self.list.selected()?.id.clone()
     }
 
     fn bare(&self) -> bool {
@@ -141,6 +150,14 @@ impl LangPage {
 impl Page for LangPage {
     fn title(&self) -> String {
         t("Interface language")
+    }
+
+    fn id(&self, _: &Ctx) -> String {
+        "language".into()
+    }
+
+    fn focus(&self) -> Option<String> {
+        self.list.selected()?.id.clone()
     }
 
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {

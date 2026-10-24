@@ -148,6 +148,18 @@ expect "render with a bare {{" "$(holds render "${templates}/open" 2>/dev/null)"
 expect "render with a lowercase name" "$(holds render "${templates}/lower" lower=x 2>/dev/null)" no
 expect "render with no template" "$(holds render "${templates}/none" 2>/dev/null)" no
 
+# ─── The kernel a preset builds from ────────────────────────────────────────
+
+for kind in uki image; do
+    mkdir -p "${templates}/${kind}/etc/mkinitcpio.d"
+    render "$(boot_data)/${kind}.preset" KERNEL=linux-zen DEFAULT=d FALLBACK=f \
+        >"${templates}/${kind}/etc/mkinitcpio.d/linux-zen.preset"
+done
+case "$(kernel_image "${templates}/uki" linux-zen)" in /boot/*) off=no ;; *) off=yes ;; esac
+expect "kernel_image of a uki preset is off the EFI partition" "$off" yes
+expect "kernel_image of an image preset" "$(kernel_image "${templates}/image" linux-zen)" /boot/vmlinuz-linux-zen
+expect "kernel_image without a preset" "$(kernel_image "${templates}/uki" linux-lts)" /boot/vmlinuz-linux-lts
+
 # ─── The disk ────────────────────────────────────────────────────────────────
 
 while read -r disk number want; do

@@ -15,7 +15,7 @@ fn help() -> String {
         .collect::<Vec<_>>()
         .join(", ");
     format!(
-        "{PROGRAM} <module> [--dry-run] [--kiosk] [--unattended]\n{PROGRAM} glyphs\n{PROGRAM} --version\n\n<module>      {modules}\n--dry-run     show the run, start nothing\n--kiosk       the machine's only program: leaving restarts it\n--unattended  the work with the answers in <module>.conf and the passwords in the environment, nobody at the keyboard\nglyphs        every character the interface draws on a console\n"
+        "{PROGRAM} <module> [--dry-run] [--kiosk] [--unattended] [--trace <file>]\n{PROGRAM} glyphs\n{PROGRAM} --version\n\n<module>        {modules}\n--dry-run       show the run, start nothing\n--kiosk         the machine's only program: leaving restarts it\n--unattended    the work with the answers in <module>.conf and the passwords in the environment, nobody at the keyboard\n--trace <file>  page, focus and task ids for tests, one line each\nglyphs          every character the interface draws on a console\n"
     )
 }
 
@@ -25,6 +25,7 @@ pub struct Start {
     pub kiosk: bool,
     /// Answers from the answer file, passwords from the environment.
     pub unattended: bool,
+    pub trace: Option<std::path::PathBuf>,
 }
 
 enum Ask {
@@ -35,15 +36,17 @@ enum Ask {
 }
 
 fn parse(args: impl IntoIterator<Item = String>) -> Result<Ask, String> {
-    let (mut module, mut dry_run, mut kiosk, mut unattended, mut glyphs) =
-        (None, false, false, false, false);
-    for arg in args {
+    let (mut module, mut dry_run, mut kiosk, mut unattended, mut glyphs, mut trace) =
+        (None, false, false, false, false, None);
+    let mut args = args.into_iter();
+    while let Some(arg) = args.next() {
         match arg.as_str() {
             "-h" | "--help" => return Ok(Ask::Help),
             "-V" | "--version" => return Ok(Ask::Version),
             "--dry-run" => dry_run = true,
             "--kiosk" => kiosk = true,
             "--unattended" => unattended = true,
+            "--trace" => trace = Some(args.next().ok_or("--trace needs a file")?.into()),
             "glyphs" => glyphs = true,
             a if a.starts_with('-') => return Err(format!("unknown argument {a}")),
             id => match spec::loaded().module(id) {
@@ -66,6 +69,7 @@ fn parse(args: impl IntoIterator<Item = String>) -> Result<Ask, String> {
         dry_run,
         kiosk,
         unattended,
+        trace,
     }))
 }
 
@@ -144,6 +148,10 @@ mod tests {
             panic!("{one} --unattended starts nothing");
         };
         assert!(start.unattended && !start.kiosk);
+        let Ok(Ask::Run(start)) = ask(&[one, "--trace", "/dev/ttyS0"]) else {
+            panic!("{one} --trace starts nothing");
+        };
+        assert_eq!(start.trace, Some("/dev/ttyS0".into()));
         assert!(matches!(ask(&["--help", "nope"]), Ok(Ask::Help)));
         assert!(matches!(ask(&["-V"]), Ok(Ask::Version)));
         assert!(matches!(ask(&[one, "glyphs"]), Ok(Ask::Glyphs)));
@@ -154,6 +162,7 @@ mod tests {
                 "unknown argument --language=de".into(),
             ),
             (&["nope"][..], "no module called nope".into()),
+            (&[one, "--trace"][..], "--trace needs a file".into()),
             (&[][..], "name a module".into()),
             (
                 &["--kiosk", "--unattended", one][..],

@@ -208,6 +208,12 @@ pub enum Tone {
 pub trait Page {
     /// Name in the header path. Empty adds no segment.
     fn title(&self) -> String;
+    /// Name in the trace, free of any text on screen.
+    fn id(&self, ctx: &Ctx) -> String;
+    /// Id of the row under the cursor, for the trace.
+    fn focus(&self) -> Option<String> {
+        None
+    }
     fn draw(
         &mut self,
         area: ratatui::layout::Rect,
@@ -318,6 +324,7 @@ pub struct Ctx {
     tx: Sender<Msg>,
     wake: Arc<dyn Fn() + Send + Sync>,
     page: PageId,
+    pub trace: crate::trace::Trace,
 }
 
 impl Ctx {

@@ -102,6 +102,11 @@ mod tests {
             std::fs::read_to_string(dir.join("host")).unwrap().trim(),
             "tuxbox"
         );
+        assert_eq!(
+            std::fs::read_to_string(dir.join("motd")).unwrap().trim(),
+            "Welcome aboard",
+            "a task's texts reach its script"
+        );
     }
 
     #[test]

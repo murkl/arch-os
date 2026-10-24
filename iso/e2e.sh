@@ -38,7 +38,7 @@ USERNAME=tux
 PASSWORD=e2e-arch-os
 DISK=/dev/vda
 
-for tool in qemu-system-x86_64 qemu-img ssh ssh-keygen setsid tesseract; do
+for tool in qemu-system-x86_64 qemu-img ssh ssh-keygen tesseract; do
     command -v "$tool" >/dev/null || { echo "Error: ${tool} not found, see README.md" >&2 && exit 1; }
 done
 [ -f "$OVMF_CODE" ] || { echo "Error: no OVMF firmware at ${OVMF_CODE}. Install edk2-ovmf." >&2 && exit 1; }
@@ -102,6 +102,13 @@ cp "$OVMF_VARS" "${WORK}/vars.fd"
 LIVE=(-drive "file=${ISO},if=none,id=cd,media=cdrom,readonly=on" -device "ide-cd,drive=cd,bus=ide.0,bootindex=1"
     -smbios "type=11,value=io.systemd.credential:ssh.authorized_keys.root=$(cat "${WORK}/key.pub")")
 
+# A virtio port of every start, where the ISO and the Recovery write their
+# trace: runtime/README.md#trace
+TRACE="${WORK}/trace"
+TRACED=(-device virtio-serial-pci -chardev "file,id=trace,path=${TRACE}"
+    -device "virtserialport,chardev=trace,name=arch-os.trace"
+    -smbios "type=11,value=io.systemd.credential:arch-os.trace=/dev/virtio-ports/arch-os.trace")
+
 # Starts the machine in the background, as one of:
 #
 #   install   from the ISO, with its own variables
@@ -119,6 +126,7 @@ start() {
     disk) boot=(-smbios "type=11,value=io.systemd.credential:cryptsetup.passphrase=${PASSWORD}") ;;
     esac
     say "Start: $1"
+    : >"$TRACE"
     qemu-system-x86_64 \
         -machine q35,smm=on,accel=kvm:tcg \
         -cpu max \
@@ -131,6 +139,7 @@ start() {
         -device "virtio-blk-pci,drive=disk,bootindex=2" \
         -device qemu-xhci \
         "${boot[@]}" \
+        "${TRACED[@]}" \
         -nic "user,model=virtio-net-pci,hostfwd=tcp:127.0.0.1:${PORT}-:22" \
         -display none \
         -monitor "tcp:127.0.0.1:${MONITOR},server,nowait" &
@@ -165,19 +174,13 @@ cut_power() {
 # TALKING TO IT
 # ////////////////////////////////////////////////////////////////////////////
 
-SSH_OPTS=(-q -p "$PORT" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 -o BatchMode=no)
+SSH_OPTS=(-q -p "$PORT" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 -o BatchMode=yes)
 
 # The live image, as root by key.
-live() { ssh "${SSH_OPTS[@]}" -i "${WORK}/key" -o BatchMode=yes root@127.0.0.1 "$@"; }
+live() { ssh "${SSH_OPTS[@]}" -i "${WORK}/key" root@127.0.0.1 "$@"; }
 
-# The installed system, as the user by password: ssh reads it from askpass
-# without a terminal, and setsid drops the terminal.
-printf '#!/bin/sh\necho %s\n' "$PASSWORD" >"${WORK}/askpass"
-chmod +x "${WORK}/askpass"
-installed() {
-    SSH_ASKPASS="${WORK}/askpass" SSH_ASKPASS_REQUIRE=force setsid -w \
-        ssh "${SSH_OPTS[@]}" -o PubkeyAuthentication=no "${USERNAME}@127.0.0.1" "$@" </dev/null
-}
+# The installed system, as the account by the key the Installer gave it.
+installed() { ssh "${SSH_OPTS[@]}" -i "${WORK}/key" "${USERNAME}@127.0.0.1" "$@" </dev/null; }
 
 # Retries a command until it succeeds, for up to $1 seconds.
 until_ok() {
@@ -191,22 +194,56 @@ until_ok() {
     done
 }
 
-# The interface, in tmux on the live image.
+# The trace of the machine's interface on tty1, and of the one in tmux on the
+# live image.
+LIVE_TRACE=/run/arch-os-e2e.trace
+on_tty1() { cat "$TRACE"; }
+in_tmux() { live cat "$LIVE_TRACE"; }
+
+# Whether a trace line from line $1 on matches the pattern, the whole line. $3
+# reads the trace, on_tty1 by default.
+traced() {
+    local from="$1" pattern="$2" read="${3:-on_tty1}"
+    "$read" | tail -n +"$from" | grep -qE "^(${pattern})\$"
+}
+
+# Waits up to $3 seconds for a trace line from line $1 on, see traced.
+await() {
+    local from="$1" pattern="$2" read="${4:-on_tty1}" deadline=$((SECONDS + $3))
+    until traced "$from" "$pattern" "$read"; do
+        kill -0 "$QEMU_PID" 2>/dev/null || fail "the machine stopped while waiting for ${pattern}"
+        [ "$SECONDS" -lt "$deadline" ] || return 1
+        sleep 2
+    done
+}
+
+# Lines of the tty1 trace so far, so a wait sees only what follows.
+lines() { wc -l <"$TRACE"; }
+
+# Row under the cursor, the last focus line of a trace.
+focused() { "${1:-on_tty1}" | grep '^focus ' | tail -n 1 | cut -d' ' -f2-; }
+
 keys() { live tmux send-keys -t e2e "$@"; }
 typed() { live tmux send-keys -t e2e -l "$1"; }
 pane() { live tmux capture-pane -p -t e2e; }
 
-# Waits for a text on the interface, then a moment to settle.
+# Waits up to $2 seconds for the interface in tmux to trace the pattern.
 shows() {
-    local deadline=$((SECONDS + 60))
-    until pane | grep -qF -- "$1"; do
-        [ "$SECONDS" -lt "$deadline" ] || {
-            pane >"${WORK}/pane.log" || true
-            fail "the interface never showed \"$1\""
-        }
-        sleep 1
+    await 1 "$1" "$2" in_tmux || {
+        pane >"${WORK}/pane.log" || true
+        live cat /opt/arch-os/recovery.log >"${WORK}/recovery.log" || true
+        fail "the interface never traced ${1} within ${2}s"
+    }
+}
+
+# Moves the cursor in tmux down until the trace says it is on row $1.
+focus() {
+    for _ in $(seq 40); do
+        [ "$(focused in_tmux)" = "$1" ] && return 0
+        keys Down
+        sleep 0.5
     done
-    sleep 1
+    fail "no row ${1} to put the cursor on"
 }
 
 # Runs a module unattended on the live image, passwords in its environment, and
@@ -214,7 +251,7 @@ shows() {
 unattended() {
     local module="$1" seconds="$2" status=0 tally passed total
     shift 2
-    timeout "$seconds" ssh "${SSH_OPTS[@]}" -i "${WORK}/key" -o BatchMode=yes root@127.0.0.1 \
+    timeout "$seconds" ssh "${SSH_OPTS[@]}" -i "${WORK}/key" root@127.0.0.1 \
         "env $* arch-os ${module} --unattended" >"${WORK}/${module}.out" 2>&1 || status=$?
     live cat "/opt/arch-os/${module}.log" >"${WORK}/${module}.log" || true
     case "$status" in
@@ -370,19 +407,30 @@ EOF
 
 # Waits for the dashboard of the Recovery partition: past Secure Boot with this
 # machine's keys, its partition found and checked, in the Installer's language.
-# $2 names another first page.
 recovery_opens() {
-    local how="$1" page="Repair now|Update the Recovery${2:+|$2}"
-    local deadline=$((SECONDS + BOOT_TIMEOUT)) shot="${WORK}/recovery.png"
-    rm -f "$shot"
-    until [ -s "$shot" ] && tesseract "$shot" - --psm 6 2>/dev/null | grep -qE "$page"; do
+    local from
+    from="$(lines)"
+    await "$from" "page dashboard" "$BOOT_TIMEOUT" ||
+        fail "the Recovery on its partition did not open on its dashboard within ${BOOT_TIMEOUT}s"
+    traced "$from" "language en" || fail "the Recovery did not open in the Installer's language"
+    say "Recovery: started ${1}, on its first page"
+}
+
+# Waits for the language page of a published Recovery, which reads no language
+# the Installer left. One without --trace shows the catalogs' names for
+# themselves, which OCR finds.
+published_recovery_opens() {
+    local from deadline=$((SECONDS + BOOT_TIMEOUT)) shot="${WORK}/recovery.png"
+    from="$(lines)"
+    until traced "$from" "page language"; do
         kill -0 "$QEMU_PID" 2>/dev/null || fail "the machine stopped before the Recovery came up"
-        [ "$SECONDS" -lt "$deadline" ] || fail "the Recovery on its partition did not open on its first page within ${BOOT_TIMEOUT}s"
+        [ "$SECONDS" -lt "$deadline" ] || fail "the published Recovery did not open on its language page within ${BOOT_TIMEOUT}s"
         rm -f "$shot"
         printf 'screendump %s -f png\n' "$shot" >&3
         sleep 10
+        [ -s "$shot" ] && tesseract "$shot" - --psm 6 2>/dev/null | grep -qE 'English|Deutsch' && break
     done
-    say "Recovery: started ${how}, on its first page"
+    say "Recovery: started ${1}, on its first page"
 }
 
 # The Recovery partition, started as its desktop launcher does, then left with
@@ -392,21 +440,23 @@ recovery_dashboard() {
     as_root systemctl reboot --boot-loader-entry=arch-os-recovery.efi || true
     recovery_opens "by the boot loader"
 
-    # Start over is the last row of the page q opens. Screenshots often enough
-    # to catch a login flashing by. Back within seconds, unlike a reboot.
-    local frame=0 text dashboard=false
+    # Start over is the exit row of the page q opens. Screenshots often enough
+    # to catch a login flashing by, getty's word rather than one of the
+    # interface. Back within seconds, unlike a reboot.
+    local frame=0 text from
+    from="$(lines)"
     printf 'sendkey q\n' >&3
-    sleep 2
-    rm -f "$shot"
-    printf 'screendump %s -f png\n' "$shot" >&3
-    sleep 1
-    tesseract "$shot" - --psm 6 2>/dev/null | grep -qE 'Start over|Leave|Restart' || fail "q did not open the page with Start over, see ${shot}"
-    for key in down down ret; do
-        printf 'sendkey %s\n' "$key" >&3
-        sleep 0.3
+    await "$from" "page leave" 10 || fail "q did not open the leave page"
+    for _ in $(seq 10); do
+        [ "$(focused)" = exit ] && break
+        printf 'sendkey down\n' >&3
+        sleep 0.5
     done
+    from="$(lines)"
+    printf 'sendkey ret\n' >&3
     deadline=$((SECONDS + 15))
-    while [ "$SECONDS" -lt "$deadline" ]; do
+    until traced "$from" "page dashboard"; do
+        [ "$SECONDS" -lt "$deadline" ] || fail "the Recovery did not come back on its dashboard within 15s of Start over"
         frame=$((frame + 1))
         shot="${WORK}/recovery-exit-${frame}.png"
         printf 'screendump %s -f png\n' "$shot" >&3
@@ -414,13 +464,8 @@ recovery_dashboard() {
         [ -s "$shot" ] || continue
         text="$(tesseract "$shot" - --psm 6 2>/dev/null || true)"
         grep -qi 'login' <<<"$text" && fail "leaving the Recovery showed a login, see ${shot}"
-        if grep -qE 'Repair now|Update the Recovery' <<<"$text"; then
-            dashboard=true
-            break
-        fi
         rm -f "$shot"
     done
-    [ "$dashboard" = true ] || fail "the Recovery did not come back on its dashboard within 15s of Start over"
     rm -f "${WORK}"/recovery-exit-*.png
     say "Recovery: Start over restarts it without a login"
 
@@ -442,7 +487,7 @@ ARCH_OS_LOCALE_LANG='en_US'
 ARCH_OS_VCONSOLE_KEYMAP='us'
 ARCH_OS_VCONSOLE_FONT='auto'
 ARCH_OS_TIMEZONE='UTC'
-ARCH_OS_REFLECTOR_COUNTRY='auto'
+ARCH_OS_REFLECTOR_COUNTRY='none'
 ARCH_OS_DISK='${DISK}'
 ARCH_OS_ENCRYPTION_ENABLED='true'
 ARCH_OS_SECURE_BOOT_ENABLED='true'
@@ -452,6 +497,7 @@ ARCH_OS_CORE_TWEAKS_ENABLED='true'
 ARCH_OS_CONTAINER_ENGINE='none'
 ARCH_OS_FIREWALL_ENABLED='true'
 ARCH_OS_SSH_SERVER_ENABLED='true'
+ARCH_OS_SSH_KEY='$(cat "${WORK}/key.pub")'
 ARCH_OS_HOUSEKEEPING_ENABLED='true'
 ARCH_OS_EDITOR='nano'
 EOF
@@ -606,39 +652,29 @@ until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
 live systemctl stop arch-os
 live dd if=/dev/urandom of="${DISK}3" bs=1M count=8 conv=fsync status=none
 live "printf \"MODULE_LANGUAGE='en'\nARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
-live "tmux new-session -d -s e2e -x 120 -y 40 'arch-os recovery'"
+live "tmux new-session -d -s e2e -x 120 -y 40 'arch-os recovery --trace ${LIVE_TRACE}'"
 
 say "Update: write the Recovery again from the ISO"
-shows "Update the Recovery"
-keys f
-typed "Update"
+shows "page dashboard" 60
+focus update
 keys Enter
-deadline=$((SECONDS + 120))
-until grep -qE 'Encryption password|Nothing to update' <<<"$(pane)"; do
-    [ "$SECONDS" -lt "$deadline" ] || {
-        pane >"${WORK}/pane.log" || true
-        fail "the update did not start within 120s"
-    }
-    sleep 2
-done
-if pane | grep -qF "Nothing to update"; then
+shows "page password ARCH_OS_RECOVERY_UPDATE_PASSWORD|page report update" 120
+if traced 1 "page report update" in_tmux; then
     # No Recovery published for this series yet, as for a new major version.
     say "Update: skipped, no Recovery published for this series"
     exit 0
 fi
 typed "$PASSWORD"
 keys Enter
-shows "Install the newest Recovery of this release series?"
-keys Down Enter
-deadline=$((SECONDS + UPDATE_TIMEOUT))
-until pane | grep -qF "Recovery updated"; do
-    [ "$SECONDS" -lt "$deadline" ] || {
-        live cat /opt/arch-os/recovery.log >"${WORK}/recovery.log" || true
-        pane >"${WORK}/pane.log" || true
-        fail "the Recovery was not written again within ${UPDATE_TIMEOUT}s"
-    }
-    sleep 10
-done
+shows "page confirm update-install" 60
+focus yes
+keys Enter
+shows "page report update-install|page (stopped|failure) update-install" "$UPDATE_TIMEOUT"
+traced 1 "page report update-install" in_tmux || {
+    live cat /opt/arch-os/recovery.log >"${WORK}/recovery.log" || true
+    pane >"${WORK}/pane.log" || true
+    fail "the Recovery was not written again, see ${WORK}/recovery.log"
+}
 cut_power
 
 start disk
@@ -651,7 +687,7 @@ as_root sbctl verify 2>/dev/null | grep -qF "/boot/EFI/Linux/arch-os-recovery.ef
 as_root systemctl reboot --boot-loader-entry=arch-os-recovery.efi || true
 # The newest release may predate this Installer and not read its language. Its
 # language page, listing Deutsch, also counts as started.
-recovery_opens "after it was written again from the ISO" Deutsch
+published_recovery_opens "after it was written again from the ISO"
 cut_power
 
 say "Arch OS installs, boots, repairs, boots again, starts its Recovery and writes it again"

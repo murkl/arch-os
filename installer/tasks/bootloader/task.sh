@@ -23,8 +23,6 @@ kernel_args() {
     args+=(zswap.enabled=0) # interferes with zram
     args+=(panic=10)        # reboots, so the loader counts a failed try
 
-    [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ] && args+=(nowatchdog)
-
     if silent_boot; then
         args+=(quiet splash vt.global_cursor_default=0 loglevel=3 rd.udev.log_level=3 systemd.show_status=auto)
     fi
@@ -75,6 +73,7 @@ fi
 # Written in full: mkinitcpio's own preset has no fallback image, which a boot
 # entry points at.
 boot_preset "$MNT" "$kind"
+restore_kernels "$MNT"
 arch-chroot "$MNT" mkinitcpio -P
 
 # The kernel package's plain initramfs images, which nothing updates with UKIs.

@@ -61,6 +61,8 @@ BOOT_ARGS="quiet splash loglevel=3 rd.udev.log_level=3 vt.global_cursor_default=
 #   systemd-pstore moves the installed system's crash records from the
 #     firmware into RAM, which loses them at the next start
 MASKED_UNITS="systemd-firstboot.service systemd-nsresourced.socket systemd-pstore.service"
+# The Recovery also masks the serial getty: no login on any of its consoles.
+RECOVERY_MASKED_UNITS="${MASKED_UNITS} serial-getty@.service"
 
 TEMP_DIR="$(mktemp -d)"
 
@@ -172,7 +174,7 @@ install_bootsplash() {
 mask_units() {
     local unit
     mkdir -p "$1/airootfs/etc/systemd/system"
-    for unit in $MASKED_UNITS; do
+    for unit in $2; do
         ln -sf /dev/null "$1/airootfs/etc/systemd/system/${unit}"
     done
 }
@@ -236,6 +238,10 @@ rm -rf "${RECOVERY_PROFILE}/airootfs/etc/systemd/system" \
 # Packages and kiosk: the Recovery on tty1, restarted whenever it ends, seeded
 # from the EFI partition, no login anywhere.
 cp -r recovery/. "$RECOVERY_PROFILE"
+
+# baseline's root has no password. Locked, so a login that turns up opens nothing.
+sed -i 's/^root::/root:!*:/' "${RECOVERY_PROFILE}/airootfs/etc/shadow"
+grep -q '^root:!\*:' "${RECOVERY_PROFILE}/airootfs/etc/shadow" || { echo "Error: no root line in baseline's /etc/shadow to lock" >&2 && exit 1; }
 cp pacman.conf "$RECOVERY_PROFILE/"
 
 install_arch_os "$RECOVERY_PROFILE"
@@ -248,7 +254,7 @@ mkdir -p "${RECOVERY_PROFILE}/airootfs/etc/systemd/system/arch-os-seed.service.d
 printf '[Service]\nEnvironment=BOOT_TRIES=%s\n' "$tries" >"${RECOVERY_PROFILE}/airootfs/etc/systemd/system/arch-os-seed.service.d/tries.conf"
 make_executable "$RECOVERY_PROFILE"
 install_bootsplash "$RECOVERY_PROFILE" "Booting Recovery..."
-mask_units "$RECOVERY_PROFILE"
+mask_units "$RECOVERY_PROFILE" "$RECOVERY_MASKED_UNITS"
 start_on_tty1 "$RECOVERY_PROFILE"
 name_image "$RECOVERY_PROFILE" arch-os-recovery
 
@@ -300,7 +306,8 @@ done
 for unit in arch-os.service systemd-networkd.service systemd-resolved.service systemd-timesyncd.service; do
     ${SUDO} systemctl --root="$recovery_root" is-enabled -q "$unit" || { echo "Error: the Recovery does not start ${unit}" >&2 && exit 1; }
 done
-for unit in $MASKED_UNITS; do
+${SUDO} grep -q '^root:!\*:' "${recovery_root}/etc/shadow" || { echo "Error: the Recovery's root is not locked" >&2 && exit 1; }
+for unit in $RECOVERY_MASKED_UNITS; do
     [ "$(${SUDO} systemctl --root="$recovery_root" is-enabled "$unit")" = masked ] || { echo "Error: the Recovery does not mask ${unit}" >&2 && exit 1; }
 done
 modules="$(find "${recovery_root}/usr/lib/modules" -name '*.ko*')"
@@ -419,7 +426,7 @@ recovery_image="$(. ../lib.sh && printf '%s' "$RECOVERY_IMAGE")"
 install -D -m 644 -t "${airootfs}${recovery_image}" "${RECOVERY_DIR}/recovery.img" "${RECOVERY_DIR}/recovery.efi"
 make_executable "$ISO_PROFILE"
 install_bootsplash "$ISO_PROFILE" "Booting Installer..."
-mask_units "$ISO_PROFILE"
+mask_units "$ISO_PROFILE" "$MASKED_UNITS"
 start_on_tty1 "$ISO_PROFILE"
 
 # BOOT_ARGS on the default entry, LIVE_ARGS on every other entry that starts

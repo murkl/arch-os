@@ -68,6 +68,17 @@ const SIMULATED: Duration = if cfg!(test) {
 /// Lines the text view keeps: more than any console has rows, however they wrap.
 const KEPT: usize = 1000;
 
+/// The answers and the task's texts, translated.
+fn task_env(task: &Task, ctx: &Ctx) -> Vec<(String, String)> {
+    let mut env = ctx.env();
+    env.extend(
+        task.texts
+            .iter()
+            .map(|(name, text)| (name.clone(), t(text))),
+    );
+    env
+}
+
 pub struct RunPage {
     steps: Vec<&'static Task>,
     marks: Vec<Mark>,
@@ -160,6 +171,7 @@ impl RunPage {
                         // No like every confirm, yes once a `yes_after` task has run.
                         let yes = self.follows(task);
                         return Flow::Push(Box::new(YesNoPage::ask(
+                            format!("confirm {}", task.id),
                             t(&task.title),
                             &ctx.expand(&t(confirm)),
                             yes,
@@ -172,7 +184,7 @@ impl RunPage {
                     if task.test && !ctx.store.dry_run() {
                         crate::info!("{}: test", task.title);
                         let step = ctx.step(&t(&task.title), false, task.test_script());
-                        match script::start(step, &ctx.env(), ctx.run_sink()) {
+                        match script::start(step, &task_env(task, ctx), ctx.run_sink()) {
                             Ok(session) => {
                                 self.session = Some(session);
                                 return Flow::Stay;
@@ -194,6 +206,7 @@ impl RunPage {
                         let note = self.tally();
                         return Flow::Push(Box::new(
                             ReportPage::new(
+                                format!("report {}", task.id),
                                 t(&task.title),
                                 ctx.expand(&t(report)),
                                 None,
@@ -226,6 +239,7 @@ impl RunPage {
     /// Runs the current task in the background, or only shows it briefly on a dry run.
     fn start(&mut self, ctx: &mut Ctx) -> Flow {
         let task = self.task();
+        ctx.trace.line("task", &task.id);
         self.keep(Out::Title(t(&task.title)));
         if ctx.store.dry_run() && !task.simulates {
             crate::info!("{}: simulated", task.title);
@@ -234,7 +248,7 @@ impl RunPage {
         }
         crate::info!("{}", task.title);
         let step = ctx.step(&t(&task.title), false, task.script());
-        match script::start(step, &ctx.env(), ctx.run_sink()) {
+        match script::start(step, &task_env(task, ctx), ctx.run_sink()) {
             Ok(session) => {
                 self.session = Some(session);
                 Flow::Stay
@@ -627,6 +641,16 @@ impl Page for RunPage {
 
     /// Empty while running or stopped by the leave page, which then titles it. Otherwise the
     /// outcome, for the header.
+    fn id(&self, _: &Ctx) -> String {
+        match &self.end {
+            None => "run",
+            Some((Ok(_), ..)) => "run done",
+            Some((Err(End::Stopped), ..)) => "run stopped",
+            Some((Err(_), ..)) => "run failed",
+        }
+        .into()
+    }
+
     fn title(&self) -> String {
         match &self.end {
             None | Some((Err(End::Stopped), ..)) => String::new(),

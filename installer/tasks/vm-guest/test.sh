@@ -10,7 +10,11 @@ kvm | qemu)
     fi
     ;;
 vmware) arch-chroot "$MNT" systemctl is-enabled vmtoolsd >/dev/null ;;
-oracle) arch-chroot "$MNT" systemctl is-enabled vboxservice >/dev/null ;;
+oracle)
+    arch-chroot "$MNT" systemctl is-enabled vboxservice >/dev/null
+    groups="$(arch-chroot "$MNT" id -nG "$ARCH_OS_USERNAME")"
+    [[ " ${groups} " == *" vboxsf "* ]]
+    ;;
 microsoft) arch-chroot "$MNT" systemctl is-enabled hv_kvp_daemon >/dev/null ;;
 *) ;;
 esac

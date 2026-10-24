@@ -51,6 +51,7 @@ pub fn page(
             fetches,
         };
         return Box::new(YesNoPage::new(
+            format!("confirm {}", action.id),
             t(&action.title),
             &ctx.expand(&t(confirm)),
             false,
@@ -135,6 +136,7 @@ impl ActionPage {
                     .and_then(|q| ctx.store.read(q))
                     .filter(|v| !v.is_empty());
                 Flow::Replace(Box::new(ReportPage::new(
+                    format!("report {}", self.action.id),
                     t(&self.action.title),
                     ctx.expand(&t(report)),
                     qr,
@@ -146,6 +148,7 @@ impl ActionPage {
                 crate::error!("{f}");
                 if let Some(words) = crate::ui::told(ctx.module, &self.action.errors, &f) {
                     return Flow::Replace(Box::new(ReportPage::new(
+                        format!("stopped {}", self.action.id),
                         t(&self.action.title),
                         ctx.expand(&words),
                         None,
@@ -161,6 +164,7 @@ impl ActionPage {
                 let depth = self.depth;
                 let acts = vec![Act::new(t("Back"), move |_| Flow::PopN(depth))];
                 Flow::Replace(Box::new(super::failure::FailurePage::new(
+                    format!("failure {}", self.action.id),
                     t(&self.action.title),
                     said,
                     f,
@@ -174,6 +178,10 @@ impl ActionPage {
 impl Page for ActionPage {
     fn title(&self) -> String {
         t(&self.action.title)
+    }
+
+    fn id(&self, _: &Ctx) -> String {
+        format!("action {}", self.action.id)
     }
 
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {

@@ -28,6 +28,7 @@ pub enum Outcome {
 }
 
 pub struct YesNoPage {
+    id: String,
     title: String,
     detail: Detail,
     list: List<bool>,
@@ -35,11 +36,12 @@ pub struct YesNoPage {
 }
 
 impl YesNoPage {
-    pub fn new(title: String, text: &str, yes: bool, outcome: Outcome) -> YesNoPage {
+    pub fn new(id: String, title: String, text: &str, yes: bool, outcome: Outcome) -> YesNoPage {
         let mut detail = Detail::default();
         detail.set(words(text), Vec::new());
         let list = List::new(vec![Row::new(false, t("No")), Row::new(true, t("Yes"))]);
         let mut page = YesNoPage {
+            id,
             title,
             detail,
             list,
@@ -52,6 +54,7 @@ impl YesNoPage {
     /// The module's question before its run.
     pub fn start(ctx: &Ctx, text: &str) -> YesNoPage {
         YesNoPage::new(
+            "confirm".into(),
             t(&ctx.module.start),
             &ctx.expand(&t(text)),
             false,
@@ -60,12 +63,13 @@ impl YesNoPage {
     }
 
     /// Question of a page, answered through `ctx.answered`.
-    pub fn ask(title: String, text: &str, yes: bool) -> YesNoPage {
-        YesNoPage::new(title, text, yes, Outcome::Answer)
+    pub fn ask(id: String, title: String, text: &str, yes: bool) -> YesNoPage {
+        YesNoPage::new(id, title, text, yes, Outcome::Answer)
     }
 
     pub fn reset() -> YesNoPage {
         YesNoPage::new(
+            "confirm reset".into(),
             t("Reset all answers"),
             &format!(
                 "{}\n\n{}",
@@ -80,6 +84,7 @@ impl YesNoPage {
     /// Leaves a failed run for the dashboard, which does not show the failure.
     pub fn home() -> YesNoPage {
         YesNoPage::new(
+            "confirm home".into(),
             t("Back to the dashboard"),
             &format!(
                 "{}\n\n{}",
@@ -141,6 +146,15 @@ impl Page for YesNoPage {
 
     fn title(&self) -> String {
         self.title.clone()
+    }
+
+    fn id(&self, _: &Ctx) -> String {
+        self.id.clone()
+    }
+
+    fn focus(&self) -> Option<String> {
+        let yes = self.list.selected()?.id?;
+        Some(if yes { "yes" } else { "no" }.into())
     }
 
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {

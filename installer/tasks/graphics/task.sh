@@ -5,8 +5,10 @@ packages=(mesa mesa-utils vulkan-tools vkd3d)
 lib32=(lib32-mesa lib32-mesa-utils lib32-vkd3d)
 nvidia=false
 other=false
+cards=0
 
 while IFS=$'\t' read -r vendor device; do
+    cards=$((cards + 1))
     case "$vendor" in
     intel)
         other=true
@@ -42,9 +44,16 @@ if [ "$nvidia" = "true" ]; then
     [ "$other" = "true" ] && packages+=(nvidia-prime)
 fi
 
+# Two GPUs: GNOME offers to start an app on the other one.
+# https://wiki.archlinux.org/title/PRIME#Desktop_environment_integration
+[ "$cards" -gt 1 ] && packages+=(switcheroo-control)
+
 [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=("${lib32[@]}")
 mapfile -t packages < <(printf '%s\n' "${packages[@]}" | sort -u)
 chroot_pacman_install "${packages[@]}"
+if [ "$cards" -gt 1 ]; then
+    arch-chroot "$MNT" systemctl enable switcheroo-control.service
+fi
 
 [ "$nvidia" = "true" ] || return 0
 

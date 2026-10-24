@@ -16,11 +16,11 @@ arch-chroot "$MNT" chown "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" /srv/samba/pu
 printf '%s\n%s\n' "$ARCH_OS_PASSWORD" "$ARCH_OS_PASSWORD" |
     arch-chroot "$MNT" smbpasswd -s -a "$ARCH_OS_USERNAME"
 
-# IPv4 only, which Windows finds faster. Replaces the unit's
-# `--workgroup WORKGROUP`, wsdd's default anyway.
+# IPv4 only, which Windows finds faster. Appended to the unit's environment
+# file, whose last assignment wins over the shipped `--workgroup WORKGROUP`,
+# wsdd's default anyway.
 # https://wiki.archlinux.org/title/Samba#Windows_1709_or_up_does_not_discover_the_samba_server_in_Network_view
-mkdir -p "${MNT}/etc/systemd/system/wsdd.service.d"
-render "${data}/ipv4.conf" >"${MNT}/etc/systemd/system/wsdd.service.d/ipv4.conf"
+render "${data}/wsdd" >>"${MNT}/etc/conf.d/wsdd"
 
 arch-chroot "$MNT" systemctl enable smb.service
 arch-chroot "$MNT" systemctl enable wsdd.service

@@ -1,0 +1,9 @@
+{
+    "log-driver": "local",
+    "ip": "{{BIND}}",
+    "default-network-opts": {
+        "bridge": {
+            "com.docker.network.bridge.host_binding_ipv4": "{{BIND}}"
+        }
+    }
+}
