@@ -426,17 +426,22 @@ pub mod tests {
     pub static LIB: OnceLock<String> = OnceLock::new();
 
     /// Writes the fixture beside the real product and sources its lib.sh before every script.
+    /// Written once: tests run in parallel, and a rewrite empties a file another test's
+    /// script is reading.
     pub fn use_fixture() {
+        static WRITTEN: OnceLock<()> = OnceLock::new();
         let dir = dir().unwrap();
-        for (rel, bytes) in crate::spec::tests::fixture() {
-            let path = if rel == "lib.sh" {
-                dir.join("fixture-lib.sh")
-            } else {
-                dir.join(rel)
-            };
-            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-            std::fs::write(&path, bytes).unwrap();
-        }
+        WRITTEN.get_or_init(|| {
+            for (rel, bytes) in crate::spec::tests::fixture() {
+                let path = if rel == "lib.sh" {
+                    dir.join("fixture-lib.sh")
+                } else {
+                    dir.join(rel)
+                };
+                std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+                std::fs::write(&path, bytes).unwrap();
+            }
+        });
         let _ = LIB.set(dir.join("fixture-lib.sh").display().to_string());
     }
 
