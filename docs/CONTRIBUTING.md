@@ -185,7 +185,7 @@ A version tag on an up-to-date `main` releases. The run builds and boots the ima
 
 ## Repository Settings
 
-The GitHub settings live in **[.github/settings/](../.github/settings)**, applied by an admin logged in with `gh`:
+The GitHub settings live in **[.github/settings/](../.github/settings)**, applied by an admin logged in with `gh` and **[murkl/workflows](https://github.com/murkl/workflows)** checked out next to this project:
 
 ```
 make github
@@ -200,5 +200,5 @@ make github
 | `topics.json` | Repository topics |
 
 - Run it again after changing a file. It also enables Dependabot alerts and private vulnerability reporting
-- Identical in every project released this way. `ruleset-main.json` names the project's checks, `topics.json` is optional
+- `ruleset-main.json` names the project's checks, `topics.json` is optional
 - No CodeQL: its only language here would be the workflows, which zizmor checks in `make check`
