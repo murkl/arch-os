@@ -15,7 +15,7 @@ arch-os --version
 | `--kiosk` | The machine's only program: leaving restarts it with every answer kept |
 | `--unattended` | Runs the work without interface. **[➜ Unattended](#unattended)** |
 | `--trace <file>` | Names each page and row on screen by id, for tests. **[➜ Trace](#trace)** |
-| `glyphs` | Every character the interface draws on a console, for **[iso/glyphs.sh](../iso/glyphs.sh)** |
+| `glyphs` | Every character the interface draws on a console, for **[iso/font/glyphs.sh](../iso/font/glyphs.sh)** |
 
 ```
 cargo build --release   # program with every module embedded

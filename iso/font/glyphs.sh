@@ -1,9 +1,9 @@
 #!/bin/bash
 # Checks every character that reaches the console, in the files given and in
-# what the program draws itself, against the fonts font.sh builds. See
-# README.md.
+# what the program draws itself, against the fonts build.sh beside it builds.
+# See README.md.
 #
-#   glyphs.sh <arch-os> <file>...
+#   font/glyphs.sh <arch-os> <file>...
 set -eu
 
 # Code points, not bytes: under the C locale bash yields the first byte of a
@@ -27,7 +27,7 @@ shift
 # The fonts as the images get them. No cd, so failures name the paths as given.
 FONTS="$(mktemp -d)"
 trap 'rm -rf "$FONTS"' EXIT
-"$(dirname "$0")/font.sh" "$FONTS"
+"$(dirname "$0")/build.sh" "$FONTS"
 
 command -v psfgettable >/dev/null || {
     echo "Error: psfgettable not found: install the kbd package" >&2

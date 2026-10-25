@@ -104,7 +104,7 @@ pub static UNICODE: Glyphs = Glyphs {
     spinner: &["◐", "◓", "◑", "◒"],
 };
 
-/// Linux console: every glyph is in the fonts iso/font.sh builds, checked by `make check`.
+/// Linux console: every glyph is in the fonts iso/font/build.sh builds, checked by `make check`.
 /// Terminus lacks ● ○ ✓ ✕ ⏎ ⇞⇟ and the spinner's quarter blocks.
 pub static CONSOLE: Glyphs = Glyphs {
     cursor: "▶",

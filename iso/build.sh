@@ -115,7 +115,7 @@ profiledef() {
 install_arch_os() {
     local profile="$1"
     cp -rf airootfs/* "${profile}/airootfs/"
-    ./font.sh "${profile}/airootfs/usr/share/kbd/consolefonts"
+    ./font/build.sh "${profile}/airootfs/usr/share/kbd/consolefonts"
     install -D -m 755 "$BIN" "${profile}/airootfs/opt/arch-os/arch-os"
 }
 
