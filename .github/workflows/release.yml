@@ -1,0 +1,120 @@
+# A version tag on main builds, boots and installs the images as that version,
+# then publishes them on its release.
+
+name: Release
+
+on:
+  push:
+    tags: ["*"]
+
+permissions: {}
+
+# Explicit bash adds pipefail, as in the Makefile.
+defaults:
+  run:
+    shell: bash
+
+# A tag's run is never cut short.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # The tag on main and its notes, or a failure before anything is built.
+  release:
+    name: Release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.notes.outputs.version }}
+      notes: ${{ steps.notes.outputs.notes }}
+    steps:
+      - id: notes
+        uses: murkl/workflows/notes@21fff230679db7d36e4b6a456297e7eabec34b73 # 1.0.0
+
+  # The Image job of CI for the version, without its cache, so nothing a pull
+  # request wrote reaches a release.
+  image:
+    name: Image
+    needs: release
+    runs-on: ubuntu-24.04
+    # Above the boot scripts' own limits, so they fail first with a diagnosis.
+    timeout-minutes: 180
+    container:
+      image: archlinux:base-devel-20261011.0.609700@sha256:061679925e5d5028f2df9395d441ce6c4b9accf0157ff3486c06b6962e014ef1
+      # pacstrap mounts inside the airootfs, and qemu without KVM is too slow.
+      options: --privileged --device /dev/kvm
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ needs.release.outputs.version }}
+    steps:
+      - run: |
+          pacman -Syu --needed --noconfirm git make rust archiso systemd-ukify diffutils \
+            kbd terminus-font qemu-base edk2-ovmf tesseract tesseract-data-eng openssh
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - run: make build image VERSION="$VERSION"
+
+      # Uploaded before the boots, so a failed boot leaves the image to inspect.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: arch-os
+          path: |
+            dist/*.iso
+            dist/*.tar
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+      - run: make smoke
+        env:
+          TIMEOUT: 600 # a slow boot is not a failed boot
+
+      - run: make e2e
+
+      # Screens and logs are the only diagnosis of a failed boot.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: boot-tests
+          path: |
+            dist/smoke/*/*.png
+            dist/e2e/*.png
+            dist/e2e/*.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # The release with its notes, a draft until the booted files are attached.
+  # After a failed run, re-running its failed jobs picks the draft up again.
+  publish:
+    name: Publish
+    needs: [release, image]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write # the release and its files
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: arch-os
+          path: dist
+
+      # Named by version, so a file of another version fails here.
+      - run: |
+          gh release view "$VERSION" >/dev/null 2>&1 ||
+            gh release create "$VERSION" --draft --verify-tag --title "$VERSION" --notes "$NOTES"
+          gh release upload "$VERSION" --clobber \
+            "dist/arch-os-${VERSION}-x86_64.iso" \
+            "dist/arch-os-${VERSION}-recovery-x86_64.tar"
+          gh release edit "$VERSION" --draft=false --latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.release.outputs.version }}
+          NOTES: ${{ needs.release.outputs.notes }}

@@ -1,6 +1,6 @@
 // Embeds the product beside this crate, so the binary is the whole program. Sets the version.
 use std::path::{Path, PathBuf};
-use std::{env, fs};
+use std::{env, fs, process::Command};
 
 /// Files below `dir` relative to the product, in name order. Manual checks stay out, dotfiles
 /// stay in: a task may ship `.config/`.
@@ -59,7 +59,7 @@ fn main() {
     fs::write(out.join("embedded.rs"), code).unwrap();
 
     // A release sets <PACKAGE>_VERSION. Other builds are a pre-release of the patch after the
-    // release-please manifest.
+    // last release tag.
     let key = format!(
         "{}_VERSION",
         env::var("CARGO_PKG_NAME")
@@ -68,7 +68,7 @@ fn main() {
             .replace('-', "_")
     );
     println!("cargo::rerun-if-env-changed={key}");
-    println!("cargo::rerun-if-changed=../.release-please-manifest.json");
+    println!("cargo::rerun-if-changed=../.git/refs/tags");
     let version = match env::var(&key) {
         Ok(v) if !v.is_empty() => {
             assert!(
@@ -77,9 +77,9 @@ fn main() {
             );
             v
         }
-        _ => fs::read_to_string(root.join(".release-please-manifest.json"))
-            .map(|m| next_dev(&m))
-            .unwrap_or_else(|_| "0.0.0-dev".into()),
+        _ => last_release()
+            .map(|v| next_dev(&v))
+            .unwrap_or_else(|| "0.0.0-dev".into()),
     };
     println!("cargo::rustc-env=VERSION={version}");
 }
@@ -98,12 +98,29 @@ fn is_version(v: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || b == b'.' || b == b'-')
 }
 
-/// `{ ".": "2.0.0" }` as `2.0.1-dev`.
-fn next_dev(manifest: &str) -> String {
-    let released = manifest.split('"').nth(3).unwrap_or_default();
+/// The newest release tag before HEAD, `v` dropped, by the patterns of murkl/workflows.
+fn last_release() -> Option<String> {
+    let out = Command::new("git")
+        .args(["describe", "--tags", "--abbrev=0"])
+        .args([
+            "--match",
+            "[0-9]*.[0-9]*.[0-9]*",
+            "--match",
+            "v[0-9]*.[0-9]*.[0-9]*",
+        ])
+        .output()
+        .ok()?;
+    let tag = String::from_utf8(out.stdout).ok()?;
+    out.status
+        .success()
+        .then(|| tag.trim().trim_start_matches('v').to_owned())
+}
+
+/// `2.0.0` as `2.0.1-dev`.
+fn next_dev(released: &str) -> String {
     let parts: Vec<u64> = released.split('.').filter_map(|p| p.parse().ok()).collect();
     let [major, minor, patch] = parts[..] else {
-        panic!("no x.y.z in .release-please-manifest.json: {released:?}");
+        panic!("the release tag {released:?} names no x.y.z");
     };
     format!("{major}.{minor}.{}-dev", patch + 1)
 }

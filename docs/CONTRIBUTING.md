@@ -125,17 +125,16 @@ docs/svg.py                      # download button and requirements, with their 
 ```mermaid
 flowchart LR
     M["main"] -->|branch off| B["feat/…"]
-    B -->|pull request| I["Title · Check · Image"]
+    B -->|pull request| I["Check · Image"]
     I -->|squash merge| M2["main"]
-    M2 --> P["Release pull request<br/>version · changelog"]
-    P -->|merge| R["Release<br/>tag · images · page"]
+    M2 -->|version tag| R["Release<br/>images · page"]
 
     style R fill:#1793d1,stroke:#1793d1,color:#fff
 ```
 
 1. **Branch off `main`**, named after the change: `feat/wireless-settings`, `fix/helix-test`
 2. **Open a draft pull request at once.** A branch is checked only through its pull request. Every push is built, booted and installed, about 30 minutes
-3. **Squash merge** or auto-merge. It lands once `Check`, `Image` and `Title` pass, as one commit under its title, and the branch is deleted
+3. **Squash merge** or auto-merge. It lands once `Check` and `Image` pass, as one commit under its title, and the branch is deleted
 
 - Only the title reaches `main`, not the commits inside the branch
 - A draft gets the same run and cannot be merged. Marking it ready starts nothing
@@ -143,7 +142,7 @@ flowchart LR
 
 ## Title
 
-The one line `main` keeps. Version and changelog are read from it, so it follows **[Conventional Commits](https://www.conventionalcommits.org)**: type, colon, change.
+The one line `main` keeps. The release notes are read from it, so it follows **[Conventional Commits](https://www.conventionalcommits.org)**: type, colon, change.
 
 | Title | Version | Release Page |
 | --- | --- | --- |
@@ -152,45 +151,37 @@ The one line `main` keeps. Version and changelog are read from it, so it follows
 | `feat!: one answer file per module` | 2.0.0 → 3.0.0 | ⚠ BREAKING CHANGES |
 | `docs:` `refactor:` `test:` `build:` `ci:` `chore:` | none | nothing |
 
-- Written for someone installing or repairing a machine. `Title` fails without a type and checks again on every edit
-- The merge dialog shows the title and an empty description. Both stay, except for two lines in the description:
-  - `BREAKING CHANGE: …` puts the required action on the release page
-  - `Release-As: 3.0.0` sets a chosen version
+- Written for someone installing or repairing a machine. A title without a type lands under Other Changes
+- The merge dialog shows the title and an empty description. Both stay
 
-**Note:** _A wrong title is corrected after the merge in the description of the merged pull request. The next release run reads this instead of the commit:_
-
-```
-BEGIN_COMMIT_OVERRIDE
-fix: the corrected line
-END_COMMIT_OVERRIDE
-```
+**Note:** _A wrong title is corrected on the release page once it is published._
 
 ## CI
 
 | Job | When | Does |
 | --- | --- | --- |
-| `Title` | Pull request opened, pushed or edited | Checks title and base branch |
 | `Check` | Every pull request | `make check` |
-| `Image` | Pull request touching the image, release, Monday morning, manual | Builds program, Recovery image and ISO, boots both, installs, repairs and boots a Core, then starts its Recovery and rewrites it from the ISO. Monday and manual runs also install a Desktop |
-| `Release` | Push to `main` | Release pull request, or after its merge the tag and the draft page |
-| `Publish` | Release | Attaches the files `Image` booted and publishes the page |
+| `Image` | Pull request touching the image, version tag, Monday morning, manual | Builds program, Recovery image and ISO, boots both, installs, repairs and boots a Core, then starts its Recovery and rewrites it from the ISO. Monday and manual runs also install a Desktop |
+| `Release` | Version tag | Checks the tag, writes the release notes |
+| `Publish` | Version tag | Attaches the files `Image` booted to a draft page and publishes it |
 
-- A merge into `main` runs only `Release`: its pull request passed `Check` and `Image` already
+- A merge into `main` runs nothing: its pull request passed `Check` and `Image` already
+- A version tag builds without the cache of pull requests
 - Desktop runs: Monday, **Run workflow** in the Actions tab, locally `make e2e START=desktop`
 
 ## Release
 
-Nothing is typed or tagged by hand.
+A version tag on an up-to-date `main` releases. The run builds and boots the images as that version, attaches them to the release page and publishes it. The notes and their checks come from **[murkl/workflows](https://github.com/murkl/workflows)**, checked out next to this project:
 
-1. **Every releasing merge** opens or updates `chore(main): release 2.1.0`. It raises the version in `.release-please-manifest.json` and in the badge of **[README.md](README.md)**, and writes the version's section of **[CHANGELOG.md](../CHANGELOG.md)**
-2. **Merging it releases.** The run on `main` tags `2.1.0`, builds and boots the images as that version, attaches them to the release page and publishes it
+```
+../workflows/notes/notes.sh 2.1.0 && git tag 2.1.0 && git push origin 2.1.0
+```
 
-- Merges collect in the release pull request until it is merged. Releasing is a decision, not a schedule
-- Release pull request, tag and page use the secret `RELEASE_TOKEN` of the environment `release`, limited to `main`: a fine-grained personal access token with Contents and Pull requests read and write, stored by `.github/release-token.sh`. The workflow token cannot do this, since GitHub holds the checks of a bot's pull request until someone approves its runs. An expired token fails `Release`
+- `fix:` raises the patch, `feat:` the minor, `feat!:` the major version. Releasing is a decision, not a schedule
 - The page carries `arch-os-2.1.0-x86_64.iso` and `arch-os-2.1.0-recovery-x86_64.tar`, each with its sha256 on GitHub. The ISO carries the Recovery, an installed Recovery updates itself from the `.tar`
-- Every other build carries a pre-release of the next patch: `arch-os-2.0.1-dev-x86_64.iso`. `make build VERSION=2.1.0` stamps any version into the program
+- Every other build carries a pre-release of the patch after the last tag: `arch-os-2.0.1-dev-x86_64.iso`. `make build VERSION=2.1.0` stamps any version into the program
 
-**Note:** _The page stays a draft until every file is attached. After a failed run, re-run its failed jobs._
+**Note:** _The page stays a draft until every file is attached. After a failed run, re-run its failed jobs. Tags never move, so a fix after a release is a new version._
 
 ## Repository Settings
 
@@ -203,10 +194,11 @@ make github
 | File | Content |
 | --- | --- |
 | `repository.json` | Description. Squash merges only, under the pull request title. Auto-merge, merged branches deleted. Secret scanning with push protection |
-| `ruleset.json` | Only a pull request that passed `Check`, `Image` and `Title` reaches `main`, squashed. No force push, no deletion |
+| `ruleset-main.json` | Only a pull request that passed `Check` and `Image` reaches `main`, squashed. No force push, no deletion |
+| `ruleset-tags.json` | No tag is moved or deleted |
 | `actions.json` | Workflow tokens read-only unless the workflow grants more |
 | `topics.json` | Repository topics |
 
 - Run it again after changing a file. It also enables Dependabot alerts and private vulnerability reporting
-- Identical in every project released this way. `ruleset.json` names the project's checks, `topics.json` is optional
+- Identical in every project released this way. `ruleset-main.json` names the project's checks, `topics.json` is optional
 - No CodeQL: its only language here would be the workflows, which zizmor checks in `make check`

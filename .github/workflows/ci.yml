@@ -1,13 +1,10 @@
-# Pull requests are checked, and the images built, booted and installed. On
-# main, release-please keeps a release pull request open. Merging it tags the
-# version and publishes the booted images.
+# Pull requests are checked, and the images built, booted and installed. Weekly
+# and by hand also with the Desktop.
 
 name: CI
 
 on:
   pull_request:
-  push:
-    branches: [main]
   # Arch moves daily, so a weekly run catches an upstream break before a release.
   schedule:
     - cron: "23 4 * * 1"
@@ -20,39 +17,12 @@ defaults:
   run:
     shell: bash
 
-# A push cancels the pull request's older run. On main runs queue, so no release
-# is cut short.
+# A push cancels the pull request's older run.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # The release pull request, or after its merge, the tag and a draft release.
-  # Runs with RELEASE_TOKEN, since GitHub holds a bot's pull request checks until
-  # approval.
-  release:
-    name: Release
-    if: github.event_name == 'push'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    environment: release
-    outputs:
-      version: ${{ steps.please.outputs.version }}
-      tag: ${{ steps.please.outputs.tag_name }}
-    steps:
-      - env:
-          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-        run: |
-          if [ -z "$RELEASE_TOKEN" ]; then
-            echo "::error::Secret RELEASE_TOKEN missing. Create it as in docs/CONTRIBUTING.md, then rerun the job."
-            exit 1
-          fi
-
-      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
-        id: please
-        with:
-          token: ${{ secrets.RELEASE_TOKEN }}
-
   # `make check` on Arch, as locally.
   check:
     name: Check
@@ -74,10 +44,11 @@ jobs:
             actionlint zizmor gettext diffutils gitleaks jq kbd terminus-font tzdata xkeyboard-config
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-      # Depth 2: the merge commit and its main parent.
+      # The whole history: the build reads the last release tag, the scope the
+      # merge commit's main parent.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 2
+          fetch-depth: 0
           persist-credentials: false
 
       # rustc is part of the key: a hit from another compiler rebuilds
@@ -108,12 +79,11 @@ jobs:
           echo "image=${image}" >>"$GITHUB_OUTPUT"
 
   # Build, boot and install in one job: handing gigabytes between jobs costs
-  # more than building. On main for a release, weekly and by hand also with the
-  # Desktop.
+  # more than building. Weekly and by hand also with the Desktop.
   image:
     name: Image
-    needs: [release, check]
-    if: ${{ !cancelled() && (needs.check.outputs.image == 'true' || needs.release.outputs.version != '' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+    needs: check
+    if: ${{ !cancelled() && (needs.check.outputs.image == 'true' || github.event_name != 'pull_request') }}
     runs-on: ubuntu-24.04
     # Above the boot scripts' own limits, so they fail first with a diagnosis.
     timeout-minutes: 180
@@ -123,15 +93,17 @@ jobs:
       options: --privileged --device /dev/kvm
     permissions:
       contents: read
-    env:
-      RELEASE: ${{ needs.release.outputs.version }}
     steps:
+      # git refuses root a checkout owned by the runner's user.
       - run: |
           pacman -Syu --needed --noconfirm git make rust archiso systemd-ukify diffutils \
             kbd terminus-font qemu-base edk2-ovmf tesseract tesseract-data-eng openssh
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
+      # The whole history, as the build reads the last release tag.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       # rustc is part of the key: a hit from another compiler rebuilds
@@ -146,20 +118,7 @@ jobs:
             runtime/target
           key: cargo-${{ steps.rust.outputs.version }}-${{ hashFiles('runtime/Cargo.lock') }}
 
-      - run: make build image ${RELEASE:+VERSION="$RELEASE"}
-
-      # The release files. Uploaded before the boots, so a failed boot leaves the
-      # image to inspect.
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: github.event_name == 'push'
-        with:
-          name: arch-os
-          path: |
-            dist/*.iso
-            dist/*.tar
-          if-no-files-found: error
-          compression-level: 0
-          retention-days: 7
+      - run: make build image
 
       - run: make smoke
         env:
@@ -182,30 +141,3 @@ jobs:
             dist/e2e/*.log
           if-no-files-found: ignore
           retention-days: 7
-
-  # The booted files go onto the draft, which is published last.
-  publish:
-    name: Publish
-    needs: [release, image]
-    if: needs.release.outputs.version != ''
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    permissions:
-      contents: write # release assets and page
-    steps:
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: arch-os
-          path: dist
-
-      # Named by version, so a file of another version fails here.
-      - run: |
-          gh release upload "$TAG" --clobber \
-            "dist/arch-os-${VERSION}-x86_64.iso" \
-            "dist/arch-os-${VERSION}-recovery-x86_64.tar"
-          gh release edit "$TAG" --draft=false --latest
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          TAG: ${{ needs.release.outputs.tag }}
-          VERSION: ${{ needs.release.outputs.version }}

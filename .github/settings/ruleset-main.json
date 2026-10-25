@@ -30,8 +30,7 @@
         "do_not_enforce_on_create": false,
         "required_status_checks": [
           { "context": "Check", "integration_id": 15368 },
-          { "context": "Image", "integration_id": 15368 },
-          { "context": "Title", "integration_id": 15368 }
+          { "context": "Image", "integration_id": 15368 }
         ]
       }
     }
