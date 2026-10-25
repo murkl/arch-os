@@ -32,10 +32,10 @@ DIST_DIR := dist
 # Scripts, not targets, each taking its input as an argument.
 ISO_DIR    := iso
 ISO_BUILD  := $(ISO_DIR)/build.sh
-ISO_SMOKE  := $(ISO_DIR)/smoke.sh
-ISO_E2E    := $(ISO_DIR)/e2e.sh
-ISO_GLYPHS := $(ISO_DIR)/glyphs.sh
-ISO_FONT   := $(ISO_DIR)/font.sh
+ISO_SMOKE  := $(ISO_DIR)/test/smoke.sh
+ISO_E2E    := $(ISO_DIR)/test/e2e.sh
+ISO_GLYPHS := $(ISO_DIR)/font/glyphs.sh
+ISO_FONT   := $(ISO_DIR)/font/build.sh
 
 # `make e2e` installs core or desktop.
 START ?= core

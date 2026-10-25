@@ -4,7 +4,7 @@
 # Cyrillic. It lacks the half blocks a QR code needs, so they replace two glyphs
 # nothing here draws.
 #
-#   font.sh <out-dir>
+#   font/build.sh <out-dir>
 #
 # One font per size, named arch-os-<size>.psf.gz. The sizes come from the
 # launcher that picks them, so built and requested sizes cannot differ.
@@ -19,7 +19,7 @@ export LC_ALL=C
 }
 OUT="$1"
 
-LAUNCHER="$(dirname "$0")/airootfs/usr/local/bin/arch-os"
+LAUNCHER="$(dirname "$0")/../airootfs/usr/local/bin/arch-os"
 SIZES="$(sed -n 's/^SIZES="\(.*\)"/\1/p' "$LAUNCHER")"
 [ -n "$SIZES" ] || {
     echo "Error: ${LAUNCHER} names no font sizes" >&2

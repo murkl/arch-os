@@ -39,10 +39,10 @@ A live image boots for the first time every time, so systemd runs `systemd-first
 
 ```
 build.sh <arch-os> <dist-dir>                 Recovery image, then the ISO, from the program
-smoke.sh <image.iso | recovery-dir>           boots an image and works its first page
-e2e.sh <image.iso> [core|desktop]             installs, boots, repairs and updates, see below
-font.sh <out-dir>                             console fonts: Terminus Bold in every size the launcher picks from
-glyphs.sh <arch-os> <file>...                 checks files and the program's own glyphs against those fonts
+test/smoke.sh <image.iso | recovery-dir>      boots an image and works its first page
+test/e2e.sh <image.iso> [core|desktop]        installs, boots, repairs and updates, see below
+font/build.sh <out-dir>                       console fonts: Terminus Bold in every size the launcher picks from
+font/glyphs.sh <arch-os> <file>...            checks files and the program's own glyphs against those fonts
 airootfs/etc/systemd/system/arch-os.service   starts the Installer on tty1
 airootfs/usr/local/bin/arch-os                launcher: sets the console font, starts /opt/arch-os
 packages.x86_64                               ISO packages beyond the Recovery's
@@ -147,7 +147,7 @@ The interface uses color slots, filled with Nord by the palette. **[➜ Nord](ht
 
 ## Console Glyphs
 
-Each font has one glyph table, and a character outside it shows as a box. `glyphs.sh` builds the fonts as `build.sh` does and checks two things against every table:
+Each font has one glyph table, and a character outside it shows as a box. `font/glyphs.sh` builds the fonts as `build.sh` does and checks two things against every table:
 
 - The files it gets: from `make check` the product, the catalogs, the library and every module file except fastfetch's config, which targets a graphical terminal
 - The characters the interface draws itself: rules, cursor, the three cells of a QR code and the finished-run mark, and the runtime's own words, all listed by `arch-os glyphs`
