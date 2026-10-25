@@ -1,6 +1,6 @@
-# Titles pass title.yml. Releases wait 7 days, since a compromised one is
-# usually pulled by then. Crates stay pinned by runtime/Cargo.lock and are
-# raised by hand.
+# Titled ci:. Releases wait 7 days, since a compromised one is usually pulled
+# by then, except for murkl/workflows. Crates stay pinned by runtime/Cargo.lock
+# and are raised by hand.
 
 version: 2
 
@@ -11,6 +11,7 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+      exclude: ["murkl/*"]
     commit-message:
       prefix: ci
     groups:
