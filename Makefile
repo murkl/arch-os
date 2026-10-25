@@ -125,12 +125,13 @@ screenshots: build
 	python3 docs/screenshots.py --product $(BIN)
 
 # From two screenshots and the README's tagline, the paragraph under the banner
-# without bold, so banner and README stay in sync.
+# without bold, so banner and README stay in sync. murkl/workflows, checked out
+# next to this project, renders it.
 banner:
 	@tagline="$$(awk '/src="banner\.png"/ { found = 1; next } found && NF { print; exit }' docs/README.md | \
 		sed -n 's:^<p>\(.*\)</p>$$:\1:p' | sed 's:</\{0,1\}b>::g')"; \
 	[ -n "$$tagline" ] || { echo "docs/README.md: no <p> tagline under the banner" >&2; exit 1; }; \
-	python3 docs/banner.py --product product.yaml --logo docs/logo.svg --cell 9 --tagline "$$tagline" \
+	python3 ../workflows/banner/banner.py --product product.yaml --logo docs/logo.svg --cell 9 --tagline "$$tagline" \
 		--card docs/screenshots/installer.png --card docs/screenshots/installing.png
 
 # ////////////////////////////////////////////////////////////////////////////
