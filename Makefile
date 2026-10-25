@@ -49,9 +49,6 @@ RECOVERY ?= $(shell ls -td $(DIST_DIR)/*-recovery 2>/dev/null | head -1)
 # THE SCRIPTS | Grouped by dialect
 # ////////////////////////////////////////////////////////////////////////////
 
-# POSIX sh, identical in every project released this way.
-POSIX_SCRIPTS := $(wildcard .github/*.sh)
-
 # Bash: image build, boot tests and the images' own scripts.
 ISO_SCRIPTS := $(ISO_BUILD) $(ISO_SMOKE) $(ISO_E2E) $(ISO_GLYPHS) $(ISO_FONT) $(wildcard $(ISO_DIR)/airootfs/usr/local/bin/* $(ISO_DIR)/recovery/airootfs/usr/local/bin/*)
 
@@ -148,18 +145,15 @@ secrets-check:
 
 fmt:
 	cd $(RUNTIME) && cargo fmt
-	shfmt -w -ln posix -i 4 $(POSIX_SCRIPTS)
 	shfmt -w -i 4 $(ISO_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL) $(LIBRARY_CHECK)
 
 fmt-check:
 	cd $(RUNTIME) && cargo fmt --check
-	shfmt -d -ln posix -i 4 $(POSIX_SCRIPTS)
 	shfmt -d -i 4 $(ISO_SCRIPTS) $(MODULE_PROGRAMS) $(MODULE_SCRIPTS) $(MODULE_SHELL) $(LIBRARY_CHECK)
 
 # Module scripts as the runtime runs them: bash, with lib.sh in scope.
 lint:
 	cd $(RUNTIME) && cargo clippy --all-targets --locked -- -D warnings
-	shellcheck -s sh -S style $(POSIX_SCRIPTS)
 	shellcheck -x -P SCRIPTDIR -S style $(ISO_SCRIPTS) $(MODULE_PROGRAMS)
 	shellcheck -x -S style $(MODULE_SCRIPTS) $(LIBRARY_CHECK)
 	shellcheck -s bash -S style -e SC1091 $(MODULE_SHELL)
@@ -197,10 +191,10 @@ library-check:
 zsh-check:
 	@for check in $(ZSH_CHECKS); do zsh "$$check" "$$(dirname "$$check")/data/zshrc" || exit 1; done
 
-# Applies .github/settings/. Run by hand as admin, since a workflow must not
-# change its own rules.
+# Applies .github/settings/ with murkl/workflows checked out next to this project.
+# Run by hand as admin, since a workflow must not change its own rules.
 github:
-	.github/settings.sh
+	../workflows/settings/settings.sh
 
 # mkarchiso writes as root. Plain rm first, so a normal clean needs no password.
 clean:
