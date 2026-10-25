@@ -151,7 +151,8 @@ The one line `main` keeps. The release notes are read from it, so it follows **[
 | `feat!: one answer file per module` | 2.0.0 → 3.0.0 | ⚠ BREAKING CHANGES |
 | `docs:` `refactor:` `test:` `build:` `ci:` `chore:` | none | nothing |
 
-- Written for someone installing or repairing a machine. A title without a type lands under Other Changes
+- Written for someone installing or repairing a machine, as a short phrase: the release notes show it from a capital, `* The Recovery finds a kernel on a separate /boot`
+- A title without a type lands under Other Changes
 - The merge dialog shows the title and an empty description. Both stay
 
 **Note:** _A wrong title is corrected on the release page once it is published._
@@ -160,13 +161,13 @@ The one line `main` keeps. The release notes are read from it, so it follows **[
 
 | Job | When | Does |
 | --- | --- | --- |
-| `Check` | Every pull request | `make check` |
+| `Check` | Every pull request, Monday morning | `make check` |
 | `Image` | Pull request touching the image, version tag, Monday morning, manual | Builds program, Recovery image and ISO, boots both, installs, repairs and boots a Core, then starts its Recovery and rewrites it from the ISO. Monday and manual runs also install a Desktop |
 | `Release` | Version tag | Checks the tag, writes the release notes |
 | `Publish` | Version tag | Attaches the files `Image` booted to a draft page and publishes it |
 
 - A merge into `main` runs nothing: its pull request passed `Check` and `Image` already
-- A version tag builds without the cache of pull requests
+- Pull requests read the build cache, Monday's run on `main` writes it. A version tag builds without it
 - Desktop runs: Monday, **Run workflow** in the Actions tab, locally `make e2e START=desktop`
 
 ## Release

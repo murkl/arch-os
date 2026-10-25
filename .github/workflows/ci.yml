@@ -23,10 +23,11 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # `make check` on Arch, as locally.
+  # `make check` on Arch, as locally. Monday's run catches an upstream break and
+  # fills the cache pull requests start from.
   check:
     name: Check
-    if: github.event_name == 'pull_request'
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     # The date names the image, the digest pins it. Same as the Image job.
@@ -52,18 +53,29 @@ jobs:
           persist-credentials: false
 
       # rustc is part of the key: a hit from another compiler rebuilds
-      # everything and is never saved.
+      # everything. Pull requests only read, Monday's run on main writes, so the
+      # cache of main is the one every pull request starts from.
       - id: rust
         run: echo "version=$(rustc -V | cut -d' ' -f2)" >>"$GITHUB_OUTPUT"
 
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - id: cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry
             runtime/target
-          key: cargo-${{ steps.rust.outputs.version }}-${{ hashFiles('runtime/Cargo.lock') }}
+          key: check-${{ steps.rust.outputs.version }}-${{ hashFiles('runtime/Cargo.lock') }}
+          restore-keys: check-${{ steps.rust.outputs.version }}-
 
       - run: make check
+
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: github.event_name == 'schedule' && steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: |
+            ~/.cargo/registry
+            runtime/target
+          key: ${{ steps.cache.outputs.cache-primary-key }}
 
       # docs/, Markdown and LICENSE never reach an image.
       - id: scope
@@ -107,18 +119,29 @@ jobs:
           persist-credentials: false
 
       # rustc is part of the key: a hit from another compiler rebuilds
-      # everything and is never saved.
+      # everything. Pull requests only read, Monday's run on main writes, so the
+      # cache of main is the one every pull request starts from.
       - id: rust
         run: echo "version=$(rustc -V | cut -d' ' -f2)" >>"$GITHUB_OUTPUT"
 
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - id: cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry
             runtime/target
-          key: cargo-${{ steps.rust.outputs.version }}-${{ hashFiles('runtime/Cargo.lock') }}
+          key: image-${{ steps.rust.outputs.version }}-${{ hashFiles('runtime/Cargo.lock') }}
+          restore-keys: image-${{ steps.rust.outputs.version }}-
 
       - run: make build image
+
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: github.event_name == 'schedule' && steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: |
+            ~/.cargo/registry
+            runtime/target
+          key: ${{ steps.cache.outputs.cache-primary-key }}
 
       - run: make smoke
         env:
