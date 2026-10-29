@@ -9,7 +9,7 @@ use crate::i18n::t;
 use crate::spec::{Kind, Setting};
 use crate::ui::draw::{paragraph, put};
 use crate::ui::input::Input;
-use crate::ui::{Ctx, Data, Flow, Key, Page, Tone};
+use crate::ui::{Ctx, Data, Does, Flow, Key, Page, Tone};
 
 pub struct PasswordPage {
     setting: &'static Setting,
@@ -47,7 +47,7 @@ impl PasswordPage {
         let value = self.input.take();
         match &self.first {
             None if value.is_empty() && self.setting.required => {
-                self.problem = Some(t("Answer required."));
+                self.problem = Some(t("An answer is required."));
                 Flow::Stay
             }
             None if self.setting.kind == Kind::NewPassword => {
@@ -58,7 +58,7 @@ impl PasswordPage {
             // Start over, since there is no telling which entry was wrong.
             Some(first) if *first != value => {
                 self.first = None;
-                self.problem = Some(t("Entries do not match."));
+                self.problem = Some(t("The two entries do not match."));
                 Flow::Stay
             }
             // Accepted entry. The page resets in case back leads here again.
@@ -145,8 +145,13 @@ impl Page for PasswordPage {
         }
     }
 
-    fn hints(&self, _: &Ctx) -> Vec<(&'static str, String)> {
-        vec![("⏎", t("confirm")), ("esc", t("back"))]
+    fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
+        let esc = if self.first.is_some() {
+            Does::Return
+        } else {
+            Does::Back
+        };
+        vec![("⏎", Does::Answer), ("esc", esc)]
     }
 
     fn key(&mut self, key: Key, ctx: &mut Ctx) -> Flow {
@@ -187,7 +192,7 @@ impl Page for PasswordPage {
         if !tried.1 {
             self.problem = Some(match &self.setting.error {
                 Some(e) => t(e),
-                None => t("Password not accepted."),
+                None => t("This password was not accepted."),
             });
             return Flow::Stay;
         }

@@ -36,11 +36,11 @@ Every task after the first is optional.
 
 A repair needs only `root` and no network, which may be the broken part. The kernel image comes from beside its modules, where Arch installs it.
 
-`wifi` adds **Connect to Wi-Fi** to the dashboard where there is a card and no wired internet, for an update or a download in the shell. On its partition a cable connects at boot and wins over Wi-Fi, and iwd starts once a card is present. `share-log` uploads the log of a broken script.
+`wifi` adds **Connect to Wi-Fi** to the main menu where there is a card and no wired internet, for an update or a download in the shell. On its partition a cable connects at boot and wins over Wi-Fi, and iwd starts once a card is present. `share-log` uploads the log of a broken script.
 
 ## Update
 
-`update` adds **Update the Recovery** to the dashboard where `recovery-to-update` passes: always on its partition, from the ISO only for a disk whose boot image names a UUID the partition no longer has, as after an interrupted update. It ends on **Nothing to update** or opens `update-install`: password on an encrypted disk, confirmation, update. `update-install` requires `online`. **[➜ Reference](../docs/REFERENCE.md#update)**
+`update` adds **Update the Recovery** to the main menu where `recovery-to-update` passes: always on its partition, from the ISO only for a disk whose boot image names a UUID the partition no longer has, as after an interrupted update. It ends on **Nothing to update** or opens `update-install`: password on an encrypted disk, confirmation, update. `update-install` requires `online`. **[➜ Reference](../docs/REFERENCE.md#update)**
 
 ## Answers
 
@@ -63,7 +63,7 @@ A repair needs only `root` and no network, which may be the broken part. The ker
 | `/boot` | Partition 1 as the Installer lays it out, not the `fstab`, which may be broken |
 
 - Opens only what the Installer of its release series creates
-- A derived answer is never asked, never on the dashboard and never in `recovery.conf`. **[➜ Runtime](../runtime/README.md#settings)**
+- A derived answer is never asked, never in the main menu and never in `recovery.conf`. **[➜ Runtime](../runtime/README.md#settings)**
 - On its partition the Installer leaves keyboard and language, and the disk is the one it started from. Both values pass their `pattern:` and list like any answer from a file. **[➜ Recovery Partition](../docs/REFERENCE.md#recovery-partition)**
 
 ## Mounts

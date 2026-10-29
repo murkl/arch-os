@@ -7,7 +7,7 @@ use ratatui::layout::Rect;
 use crate::script::Failure;
 use crate::ui::detail::{Act, Block, Detail, failure};
 use crate::ui::list::Lead;
-use crate::ui::{Ctx, Flow, Key, Page, Tone};
+use crate::ui::{Ctx, Does, Flow, Key, Page, Tone};
 
 pub struct FailurePage {
     id: String,
@@ -62,7 +62,7 @@ impl Page for FailurePage {
         self.detail.draw(area, buf, ctx);
     }
 
-    fn hints(&self, _: &Ctx) -> Vec<(&'static str, String)> {
+    fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
         self.detail.hints()
     }
 

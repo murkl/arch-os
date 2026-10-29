@@ -342,7 +342,7 @@ Repairs a system that no longer starts, from its own partition or from the ISO.
 
 Asks for keyboard and disk, on its partition for neither, and reads the rest from the disk. **[➜ Recovery](../recovery/README.md#answers)**
 
-- Repairs what the Installer of its release series creates, without network. **Connect to Wi-Fi** on the dashboard serves an update or a download in the shell
+- Repairs what the Installer of its release series creates, without network. **Connect to Wi-Fi** in the main menu serves an update or a download in the shell
 - A rollback builds the new `@` before touching the old one and keeps the old one as a snapshot, so it can be undone. The next run completes an interrupted one
 - `systemctl reboot --boot-loader-entry=arch-os-recovery.efi` starts it once. **Recovery** in the app grid does the same after a confirmation that opens on **Cancel**
 
@@ -372,7 +372,7 @@ Runs as a kiosk: tty1 belongs to it, no console has a login, a serial one includ
 
 #### Update
 
-**Update the Recovery** on the dashboard checks the GitHub releases and installs after a confirmation that opens on **No**.
+**Update the Recovery** in the main menu checks the GitHub releases and installs after a confirmation that opens on **No**.
 
 - Within its series only: 2.0.0 updates to 2.4.1, never to 3.0.0, whose Recovery may not repair this layout
 - From the ISO only for a disk whose Recovery no longer starts, the way back after an interrupted update

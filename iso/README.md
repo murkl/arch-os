@@ -110,7 +110,7 @@ Walks the ISO unattended:
 6. Overwrites the start of the Recovery partition, as an interrupted update does, rewrites it with the Recovery on the ISO from the newest release of its series, and starts it with Secure Boot enforced
 
 - Each run gets the memory and disk its profile requires, no more. **[➜ README](../docs/README.md)**
-- The live system is reached over SSH by a key passed as systemd credential. Installer and Recovery run unattended there, answers in their file, passwords in the environment. The Recovery update, a dashboard row, runs in tmux, driven by keys and read from its trace
+- The live system is reached over SSH by a key passed as systemd credential. Installer and Recovery run unattended there, answers in their file, passwords in the environment. The Recovery update, a row of the main menu, runs in tmux, driven by keys and read from its trace
 - The Recovery on its partition is read from its trace on a virtio port. OCR reads only getty's login prompt, which must not flash by on **Start over**, and the language names of a published Recovery without trace in step 6
 - Both runs must end with every test passed. The machine is then powered off hard instead of shut down, as after writing the Recovery: what a run reports as done must be on the disk
 - The installed system unlocks its disk from a systemd credential and is reached over SSH as its account, by the key given to the Installer

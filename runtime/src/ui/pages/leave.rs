@@ -10,7 +10,7 @@ use crate::spec::Action;
 use crate::ui::detail::{Detail, failure};
 use crate::ui::draw::{paragraph, waiting};
 use crate::ui::list::{List, Picked, Row};
-use crate::ui::{Ctx, Data, Flow, Key, Page, Tone};
+use crate::ui::{Ctx, Data, Does, Flow, Key, Page, Tone};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Way {
@@ -18,8 +18,8 @@ enum Way {
     Exit,
 }
 
-/// Untranslated keys of the bare page, like the language page's.
-const KEYS: &str = "↑↓ move · ⏎ confirm · esc back";
+/// Keys of the bare page, in English like the language page's, which is all it opens over.
+const KEYS: &[(&str, Does)] = &[("↑↓", Does::Choose), ("⏎", Does::Run), ("esc", Does::Back)];
 
 pub struct LeavePage {
     list: List<Way>,
@@ -41,7 +41,7 @@ impl LeavePage {
             })
             .collect();
         let help = if ctx.kiosk {
-            t("Restarts this program, answers kept.")
+            t("Restarts this program. All answers are kept.")
         } else {
             t("Closes this program. The machine keeps running.")
         };
@@ -145,11 +145,11 @@ impl Page for LeavePage {
         );
     }
 
-    fn hints(&self, _: &Ctx) -> Vec<(&'static str, String)> {
+    fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
         if self.doing.is_some() {
             return Vec::new();
         }
-        vec![("↑↓", t("choose")), ("⏎", t("confirm")), ("esc", t("back"))]
+        vec![("↑↓", Does::Choose), ("⏎", Does::Run), ("esc", Does::Back)]
     }
 
     fn key(&mut self, key: Key, ctx: &mut Ctx) -> Flow {

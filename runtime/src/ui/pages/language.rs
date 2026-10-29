@@ -7,11 +7,11 @@ use super::Then;
 use crate::i18n::{self, t};
 use crate::ui::draw::{center, width};
 use crate::ui::list::{List, Picked, Row};
-use crate::ui::{Ctx, Flow, Key, Nav, Page, Tone};
+use crate::ui::{Ctx, Does, Flow, Key, Nav, Page, Tone};
 
 /// Short, plain English, since no catalog translates it.
-pub const CHOOSE: &str = "Language";
-const KEYS: &str = "↑↓ move · ⏎ confirm · q quit";
+pub const CHOOSE: &str = "Please choose your language:";
+const KEYS: &[(&str, Does)] = &[("↑↓", Does::Choose), ("⏎", Does::Use), ("q", Does::Quit)];
 
 fn rows() -> Vec<Row<String>> {
     i18n::langs()
@@ -68,7 +68,7 @@ impl Page for LanguagePage {
         bare(buf, area, ctx, Some(CHOOSE), &mut self.list, KEYS);
     }
 
-    fn hints(&self, _: &Ctx) -> Vec<(&'static str, String)> {
+    fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
         Vec::new()
     }
 
@@ -94,7 +94,7 @@ pub fn bare<I: Clone + PartialEq>(
     ctx: &mut Ctx,
     caption: Option<&str>,
     list: &mut List<I>,
-    keys: &str,
+    hints: &[(&'static str, Does)],
 ) {
     let s = ctx.style;
     let logo_rows = crate::spec::loaded().product.logo.len() as u16;
@@ -124,10 +124,7 @@ pub fn bare<I: Clone + PartialEq>(
         ctx,
     );
     y += rows + 1;
-    let keys = keys
-        .replace("↑↓", s.glyphs.up_down)
-        .replace('⏎', s.glyphs.enter)
-        .replace('·', s.glyphs.separator);
+    let keys = crate::ui::draw::keys(ctx, hints).join(&format!(" {} ", s.glyphs.separator));
     if y < area.bottom() {
         center(buf, area, y, &keys, s.tone(Tone::Muted), "");
     }
@@ -161,7 +158,7 @@ impl Page for LangPage {
     }
 
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {
-        let text = t("Changes only the interface language.");
+        let text = t("Changes the language on screen and nothing else.");
         let y =
             crate::ui::draw::paragraph(buf, area, area.y, &text, ctx.style.tone(Tone::Muted)) + 1;
         self.list.draw(
@@ -171,8 +168,8 @@ impl Page for LangPage {
         );
     }
 
-    fn hints(&self, _: &Ctx) -> Vec<(&'static str, String)> {
-        vec![("↑↓", t("choose")), ("⏎", t("use")), ("esc", t("back"))]
+    fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
+        vec![("↑↓", Does::Choose), ("⏎", Does::Use), ("esc", Does::Back)]
     }
 
     fn key(&mut self, key: Key, ctx: &mut Ctx) -> Flow {

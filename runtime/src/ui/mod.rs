@@ -90,6 +90,56 @@ impl Key {
     }
 }
 
+/// What a key does, as the footer names it. Every page takes its words from here, and they are
+/// the System Manager's, so one deed reads the same in every Arch OS program.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Does {
+    Choose,
+    Scroll,
+    Open,
+    Run,
+    Answer,
+    Use,
+    Details,
+    Compact,
+    Filter,
+    CloseFilter,
+    Reload,
+    Continue,
+    /// Back, where that leads to the main menu.
+    Back,
+    Menu,
+    /// Back to the step before on the same page, so never the main menu.
+    Return,
+    Stop,
+    Quit,
+}
+
+impl Does {
+    pub fn label(self) -> String {
+        use crate::i18n::t;
+        match self {
+            Does::Choose => t("choose"),
+            Does::Scroll => t("scroll"),
+            Does::Open => t("open"),
+            Does::Run => t("run"),
+            Does::Answer => t("answer"),
+            Does::Use => t("use"),
+            Does::Details => t("details"),
+            Does::Compact => t("compact"),
+            Does::Filter => t("filter"),
+            Does::CloseFilter => t("close filter"),
+            Does::Reload => t("reload"),
+            Does::Continue => t("continue"),
+            Does::Back => t("back"),
+            Does::Menu => t("main menu"),
+            Does::Return => t("back"),
+            Does::Stop => t("stop"),
+            Does::Quit => t("quit"),
+        }
+    }
+}
+
 /// Animation step: a running bar moves one cell per beat, the spinner every third. Waking on the
 /// beat keeps frames evenly spaced.
 pub const BEAT: Duration = Duration::from_millis(40);
@@ -220,8 +270,8 @@ pub trait Page {
         buf: &mut ratatui::buffer::Buffer,
         ctx: &mut Ctx,
     );
-    /// Footer keys as key and label.
-    fn hints(&self, ctx: &Ctx) -> Vec<(&'static str, String)>;
+    /// Footer keys as key and deed.
+    fn hints(&self, ctx: &Ctx) -> Vec<(&'static str, Does)>;
     fn key(&mut self, key: Key, ctx: &mut Ctx) -> Flow;
     fn data(&mut self, _data: Data, _ctx: &mut Ctx) -> Flow {
         Flow::Stay

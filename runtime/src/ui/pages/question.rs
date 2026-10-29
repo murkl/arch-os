@@ -11,7 +11,7 @@ use crate::store::label;
 use crate::ui::draw::{paragraph, put};
 use crate::ui::input::Input;
 use crate::ui::list::{List, Picked, Row};
-use crate::ui::{Ctx, Data, Flow, Key, Page, Tone};
+use crate::ui::{Ctx, Data, Does, Flow, Key, Page, Tone};
 
 /// A setting, or a task's question mid-run.
 #[derive(Clone, Copy)]
@@ -303,24 +303,31 @@ impl Page for QuestionPage {
         }
     }
 
-    fn hints(&self, _: &Ctx) -> Vec<(&'static str, String)> {
+    fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
+        // Esc leaves the question, which during a run opens the way out that stops it.
+        let leave = if self.holds() { Does::Stop } else { Does::Back };
         if self.input.is_some() {
-            return vec![("⏎", t("confirm")), ("esc", t("back"))];
+            let esc = if self.list.is_some() {
+                Does::Return
+            } else {
+                leave
+            };
+            return vec![("⏎", Does::Use), ("esc", esc)];
         }
         let typing = self.list.as_ref().is_some_and(|l| l.typing());
-        let mut h = vec![("↑↓", t("choose")), ("⏎", t("confirm"))];
+        let mut h = vec![("↑↓", Does::Choose), ("⏎", Does::Use)];
         if typing {
             h.push((
                 "esc",
                 if self.which.filter() == Filter::Open {
-                    t("back")
+                    leave
                 } else {
-                    t("close filter")
+                    Does::CloseFilter
                 },
             ));
         } else {
-            h.push(("f", t("filter")));
-            h.push(("esc", t("back")));
+            h.push(("f", Does::Filter));
+            h.push(("esc", leave));
         }
         h
     }

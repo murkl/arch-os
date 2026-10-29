@@ -52,6 +52,6 @@
 3. Boot the USB stick, choose **Core** or **Desktop**, then **Install now**. Needs internet by cable or Wi-Fi
 4. After the first reboot, **[turn Secure Boot on](REFERENCE.md#turning-it-on)**
 
-<p align="center"><img src="screenshots/installer.png" width="100%" alt="Dashboard with every answer"><br><sub><b>Dashboard</b> · every answer prefilled</sub></p>
+<p align="center"><img src="screenshots/installer.png" width="100%" alt="Main menu with every answer"><br><sub><b>Main menu</b> · every answer prefilled</sub></p>
 
 <p align="center"><img src="screenshots/installing.png" width="100%" alt="Installation in progress"><br><sub><b>Installation</b> · step by step</sub></p>

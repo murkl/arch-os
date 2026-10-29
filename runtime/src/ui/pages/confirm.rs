@@ -7,7 +7,7 @@ use ratatui::layout::Rect;
 use crate::i18n::t;
 use crate::ui::detail::{Block, Detail, words};
 use crate::ui::list::{List, Picked, Row};
-use crate::ui::{Ctx, Flow, Key, Page, Tone};
+use crate::ui::{Ctx, Does, Flow, Key, Page, Tone};
 
 /// What a yes does.
 pub enum Outcome {
@@ -74,7 +74,7 @@ impl YesNoPage {
             &format!(
                 "{}\n\n{}",
                 t("Reset all answers?"),
-                t("Deletes all answers and their file.")
+                t("Deletes all answers and their file, then starts at the first question.")
             ),
             false,
             Outcome::Reset,
@@ -85,10 +85,10 @@ impl YesNoPage {
     pub fn home() -> YesNoPage {
         YesNoPage::new(
             "confirm home".into(),
-            t("Back to the dashboard"),
+            t("Back to the main menu"),
             &format!(
                 "{}\n\n{}",
-                t("Back to the dashboard?"),
+                t("Back to the main menu?"),
                 t("The error is dismissed. The log is kept.")
             ),
             false,
@@ -174,8 +174,12 @@ impl Page for YesNoPage {
         let _ = Tone::Normal;
     }
 
-    fn hints(&self, _: &Ctx) -> Vec<(&'static str, String)> {
-        vec![("↑↓", t("choose")), ("⏎", t("confirm")), ("esc", t("back"))]
+    fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
+        vec![
+            ("↑↓", Does::Choose),
+            ("⏎", Does::Answer),
+            ("esc", Does::Back),
+        ]
     }
 
     fn root(&self) -> bool {

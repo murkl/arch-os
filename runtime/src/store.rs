@@ -275,7 +275,7 @@ fn why(s: &Setting) -> String {
     match &s.error {
         Some(e) => t(e),
         None if s.pattern.is_some() => t("Invalid format."),
-        None => t("Answer required."),
+        None => t("An answer is required."),
     }
 }
 

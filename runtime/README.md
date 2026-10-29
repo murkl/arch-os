@@ -123,11 +123,11 @@ actions: …
 | Key | Description |
 | --- | --- |
 | `title` | **Required.** Module name in the breadcrumb |
-| `start` | First dashboard row, starts the work. Default `Start` |
+| `start` | First row of the main menu, starts the work. Default `Start` |
 | `requires` | Actions checked in order before anything is asked. The first no blocks everything with its page and is checked again every few seconds. Skipped on a dry run |
 | `presets` | Profiles. **[➜ Presets](#presets)** |
 | `settings` | Questions under their headings. **[➜ Settings](#settings)** |
-| `dashboard` | **Required.** Dashboard rows in order. **[➜ Dashboard](#dashboard)** |
+| `dashboard` | **Required.** Rows of the main menu in order. **[➜ Main Menu](#main-menu)** |
 | `language` | Heading of the interface language row. Refused where no setting is under it |
 | `confirm` | Question after every password and before the work, opening on No. First paragraph is the headline |
 | `stages` | **Required.** Phases of the work in order, each with its tasks. **[➜ Tasks](#tasks)** |
@@ -143,9 +143,9 @@ actions: …
 3. Actions under `requires`
 4. Profiles, while there are no answers yet
 5. Every required setting without answer, one page each, counted in the header
-6. Dashboard
+6. Main menu
 
-### Dashboard
+### Main Menu
 
 The module's home: rows in `dashboard` order, each name once. `f` filters.
 
@@ -158,13 +158,13 @@ The module's home: rows in `dashboard` order, each name once. `f` filters.
 
 A blank row follows `start`, the answers and each action group. After `start`, the answer headings take its place.
 
-`start` asks what is missing, then every password, then `confirm`, then runs the tasks: one row each, checked off when done, counted in the header. `tab` switches to their output, during and after the run. `systemd-inhibit` blocks shutdown and sleep while tasks run, so closing the lid never suspends a run. A task with `asks` or `confirm` pauses the run on its page. The header names the outcome, **Done** or **Failed**. A finished run shows `report`, its duration, the actions under `on: success` and **Continue**. A failed run shows what failed and where, the actions under `on: failure` and **Back to the dashboard** with a confirmation.
+`start` asks what is missing, then every password, then `confirm`, then runs the tasks: one row each, checked off when done, counted in the header. `tab` switches to their output, during and after the run. `systemd-inhibit` blocks shutdown and sleep while tasks run, so closing the lid never suspends a run. A task with `asks` or `confirm` pauses the run on its page. The header names the outcome, **Done** or **Failed**. A finished run shows `report`, its duration, the actions under `on: success` and **Continue**. A failed run shows what failed and where, the actions under `on: failure` and **Back to the main menu** with a confirmation.
 
-`q` or `esc` on the dashboard leaves. With `on: leave`, or in a kiosk, a page comes first: the actions under `on: leave`, then **Exit**, or **Start over** in a kiosk. During a run the same page warns that every choice stops it. The run continues behind it, and its questions wait until the page closes. A choice stops the run first: its script and everything it started get `SIGTERM`, after 10 seconds `SIGKILL`. The choice runs once none of it is left.
+`q` or `esc` in the main menu leaves. With `on: leave`, or in a kiosk, a page comes first: the actions under `on: leave`, then **Exit**, or **Start over** in a kiosk. During a run the same page warns that every choice stops it. The run continues behind it, and its questions wait until the page closes. A choice stops the run first: its script and everything it started get `SIGTERM`, after 10 seconds `SIGKILL`. The choice runs once none of it is left.
 
 ## Settings
 
-One entry under `settings:` is one question and one environment variable. The key above a list is the dashboard heading of its rows. Lists are asked in file order.
+One entry under `settings:` is one question and one environment variable. The key above a list is the main menu heading of its rows. Lists are asked in file order.
 
 ```yaml
 settings:
@@ -194,7 +194,7 @@ The type sets the widget and the allowed keys:
 | --- | --- |
 | `name` | **Required.** Variable a script reads. `MODULE_` and `DRY_RUN` are reserved |
 | `type` | **Required.** One of the types above |
-| `title` | **Required.** The question and its dashboard row |
+| `title` | **Required.** The question and its row in the main menu |
 | `description` | Purpose of the value |
 | `when` | When it is asked. **[➜ Conditions](#conditions)** |
 | `first` | Asked before everything else, `requires` included, with the filter open |
@@ -204,7 +204,7 @@ The type sets the widget and the allowed keys:
 | `filter` | Filter box: `collapsed` behind `f`, or `open` |
 | `default` | Initial answer, such as `true`, `auto` or `pc105` |
 | `prefill` | Prints a suggestion. Still asked |
-| `value-from` | Prints the value instead of asking. Never asked, never on the dashboard, never stored |
+| `value-from` | Prints the value instead of asking. Never asked, never in the main menu, never stored |
 | `pattern` | Regular expression the answer must match |
 | `error` | Message for a wrong answer |
 | `check` | Tests a `password` before accepting it |
@@ -317,7 +317,7 @@ actions:
 | --- | --- |
 | `title` | **Required.** Its row and page heading |
 | `description` | Sentence under its row. Choosing the row is the consent, so it names what leaves the machine |
-| `group` | Dashboard heading of its row. Refused where `dashboard` does not list the action |
+| `group` | Main menu heading of its row. Refused where `dashboard` does not list the action |
 | `requires` | Actions that must say yes before this one appears |
 | `inputs` | Questions before it runs, one page each: settings without `first` or `value-from`. For this run only, never stored |
 | `confirm` | Yes or no after the inputs, before the work, opening on No. For a second consent: the row agrees to a lookup, this to its result |
@@ -333,7 +333,7 @@ actions:
 | Under | Shown |
 | --- | --- |
 | `requires` | Nowhere: runs by itself before anything is asked, a check without page. Its `error` blocks everything until it says yes |
-| `dashboard` | A dashboard row, at its place in the list |
+| `dashboard` | A row of the main menu, at its place in the list |
 | `on: leave` | A row on the way out, above **Exit** |
 | `on: failure` | A row under a failed run. None under a run [stopped on purpose](#stopping-on-purpose) |
 | `on: success` | A row under a finished run |
@@ -407,7 +407,7 @@ Exit status 0 where the work finished, 1 where it failed or could not start: a r
 
 | Page | Id |
 | --- | --- |
-| Splash, language, profiles, dashboard, leave, test results | `splash`, `language`, `presets`, `dashboard`, `leave`, `results` |
+| Splash, language, profiles, main menu, leave, test results | `splash`, `language`, `presets`, `dashboard`, `leave`, `results` |
 | Requirement | `gate <action>` |
 | Question | `question <setting>` |
 | Password | `password <setting>`, then `password <setting> repeat` |
@@ -417,7 +417,7 @@ Exit status 0 where the work finished, 1 where it failed or could not start: a r
 | Failure | `failure <action>`, `result <n>` for a failed test |
 | Run | `run`, then `run done`, `run failed` or `run stopped` |
 
-A row is named by what choosing it picks: on the dashboard `start`, `reset`, `language`, a setting's name or an action's id, in a list its value, on a confirmation `yes` or `no`, on the leave page an action's id or `exit`, a profile by its position.
+A row is named by what choosing it picks: in the main menu `start`, `reset`, `language`, a setting's name or an action's id, in a list its value, on a confirmation `yes` or `no`, on the leave page an action's id or `exit`, a profile by its position.
 
 **Note:** _The images pass `--trace` only with the systemd credential `arch-os.trace` set, its value the file, such as `/dev/virtio-ports/arch-os.trace`. **[➜ Boot Tests](../iso/README.md#boot-tests)**_
 
@@ -434,13 +434,13 @@ In the start directory:
 
 | Key | Meaning |
 | --- | --- |
-| `⏎` `→` `l` | Open, confirm |
-| `esc` `←` `h` `backspace` | Back |
-| `↑` `↓` `k` `j` | Move |
+| `⏎` `→` `l` | What the footer names: open, use, answer, run or continue |
+| `esc` `←` `h` `backspace` | Back, during a run stop |
+| `↑` `↓` `k` `j` | Choose |
 | `⇞` `⇟` `g` `G` | Page up, page down, top, bottom |
 | `f` `/` | Filter a list, where the footer shows it |
-| `q` `ctrl+c` | Leave |
-| `tab` | Switch a run between list and output |
+| `q` `ctrl+c` | Quit |
+| `tab` | A run's details or compact view |
 
 **Note:** _An empty text box shows its question's title as placeholder, or **Repeat** for the second password. In a text box every letter types and backspace deletes one. Pasted text goes into a text box and is ignored elsewhere. A held key repeats only for moving and typing._
 

@@ -6,7 +6,7 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 
 use crate::ui::draw::{put, width};
-use crate::ui::{Ctx, Flow, Key, Page, Tone};
+use crate::ui::{Ctx, Does, Flow, Key, Page, Tone};
 
 /// Splash and sweep duration: long enough to read as light passing through, short enough that
 /// nobody waits.
@@ -116,7 +116,7 @@ impl Page for SplashPage {
         }
     }
 
-    fn hints(&self, _: &Ctx) -> Vec<(&'static str, String)> {
+    fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
         Vec::new()
     }
 

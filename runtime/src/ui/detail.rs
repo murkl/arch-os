@@ -6,8 +6,8 @@ use ratatui::style::Style as Cell;
 
 use super::draw::{cut, put, scrollbar, width, wrap};
 use super::list::{Lead, List, Picked, Row, draw_row};
-use super::{Ctx, Flow, Key, Nav, Style, Tone};
-use crate::i18n::{t, tf};
+use super::{Ctx, Does, Flow, Key, Nav, Style, Tone};
+use crate::i18n::tf;
 use crate::script::Failure;
 
 /// Success mark of a finished run, built from block glyphs. A font's tick is one cell tall.
@@ -43,6 +43,8 @@ pub enum Block {
 
 pub struct Act {
     pub label: String,
+    /// What it does, as the footer names it while the row has the cursor.
+    pub does: Does,
     pub lead: Lead,
     /// Shown on the right of the row.
     pub note: Option<(String, Tone)>,
@@ -54,6 +56,7 @@ impl Act {
     pub fn new(label: impl Into<String>, go: impl FnMut(&mut Ctx) -> Flow + 'static) -> Act {
         Act {
             label: label.into(),
+            does: Does::Run,
             lead: Lead::None,
             note: None,
             description: String::new(),
@@ -63,6 +66,11 @@ impl Act {
 
     pub fn describe(mut self, text: impl Into<String>) -> Act {
         self.description = text.into();
+        self
+    }
+
+    pub fn does(mut self, does: Does) -> Act {
+        self.does = does;
         self
     }
 }
@@ -129,18 +137,19 @@ impl Detail {
         render(&self.body, width as usize, ctx).len() as u16
     }
 
-    pub fn hints(&self) -> Vec<(&'static str, String)> {
+    pub fn hints(&self) -> Vec<(&'static str, Does)> {
         let mut h = Vec::new();
         if self.acts.is_empty() {
             if self.overflow {
-                h.push(("↑↓", t("scroll")));
+                h.push(("↑↓", Does::Scroll));
             }
-            h.push(("⏎", t("continue")));
+            h.push(("⏎", Does::Continue));
         } else {
-            h.push(("↑↓", t("choose")));
-            h.push(("⏎", t("open")));
+            h.push(("↑↓", Does::Choose));
+            let at = self.list.selected().and_then(|r| r.id).unwrap_or(0);
+            h.push(("⏎", self.acts[at].does));
             if self.overflow {
-                h.push(("⇞⇟", t("scroll")));
+                h.push(("⇞⇟", Does::Scroll));
             }
         }
         h
