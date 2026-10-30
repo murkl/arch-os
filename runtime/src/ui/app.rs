@@ -630,7 +630,7 @@ pub mod tests {
             "Hostname",
             "tuxbox",
             "Desktop",
-            "none",
+            "—",
             "Storage",
             "sda",
             "Encryption",

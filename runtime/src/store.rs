@@ -7,6 +7,9 @@ use std::path::{Path, PathBuf};
 use crate::i18n::t;
 use crate::spec::{self, Kind, Module, Preset, Setting};
 
+/// An answer that picks nothing.
+pub const DASH: &str = "—";
+
 pub struct Store {
     module: &'static Module,
     values: BTreeMap<String, String>,
@@ -239,10 +242,10 @@ impl Store {
         (!allowed || !s.matches(value)).then(|| why(s))
     }
 
-    /// A bool in words, an empty answer as a dash.
+    /// A bool in words, an empty answer or none as a dash.
     pub fn display(&self, s: &Setting) -> String {
         match self.get(&s.name) {
-            "" => "—".into(),
+            "" | spec::NONE => DASH.into(),
             value => label(value),
         }
     }
@@ -497,5 +500,19 @@ mod tests {
         assert_eq!(s.get("TUX_PASSWORD"), "");
         s.reset().unwrap();
         assert!(!s.exists() && s.get("TUX_HOST").is_empty() && s.get("TUX_ENCRYPT") == "true");
+    }
+
+    #[test]
+    fn displays_none_and_empty_as_a_dash() {
+        let mut s = store("display");
+        let desktop = module().setting("TUX_DESKTOP").unwrap();
+        let host = module().setting("TUX_HOST").unwrap();
+        let encrypt = module().setting("TUX_ENCRYPT").unwrap();
+        s.set("TUX_DESKTOP", "none");
+        assert_eq!(s.display(desktop), "—");
+        assert_eq!(s.display(host), "—");
+        assert_eq!(s.display(encrypt), "Yes");
+        s.set("TUX_DESKTOP", "gnome");
+        assert_eq!(s.display(desktop), "gnome");
     }
 }

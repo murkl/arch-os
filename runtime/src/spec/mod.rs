@@ -32,6 +32,8 @@ pub const VERSION: &str = "MODULE_VERSION";
 /// Bool answers, written to the answer file and compared by scripts verbatim.
 pub const TRUE: &str = "true";
 pub const FALSE: &str = "false";
+/// The answer that picks nothing, shown like an empty one.
+pub const NONE: &str = "none";
 
 // ─── The model ───────────────────────────────────────────────────────────────
 
