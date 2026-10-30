@@ -47,6 +47,10 @@ if grep -q '^default' "${MNT}/boot/loader/loader.conf"; then
     echo "loader.conf names a default, which is started however often it fails" >&2
     exit 1
 fi
+# The command line the Recovery rebuilds lost initramfs entries from is theirs.
+if [ "$(boot_kind)" = image ]; then
+    [ "$(sed -n 's/^options[[:space:]]*//p' "${entries}/main+${BOOT_TRIES}.conf")" = "$(<"${MNT}/etc/kernel/cmdline")" ]
+fi
 listed="$(arch-chroot "$MNT" bootctl --esp-path=/boot list --json=short)"
 grep -qF '"id":"main.conf"' <<<"$listed"
 grep -qF '"id":"main-fallback.conf"' <<<"$listed"

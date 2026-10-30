@@ -73,8 +73,12 @@ pub fn next(ctx: &mut Ctx) -> Flow {
     Flow::Home
 }
 
-/// Next start step: open questions, passwords, confirmation, run.
+/// Next start step: open questions, passwords, confirmation, run. A requirement left with esc
+/// still holds the work back.
 pub fn start(ctx: &mut Ctx) -> Flow {
+    if !ctx.gated && !ctx.module.requires.is_empty() && !ctx.store.dry_run() {
+        return Flow::Push(Box::new(gate::GatePage::new()));
+    }
     if let Some(s) = ctx.store.missing().first() {
         return Flow::Push(Box::new(question::QuestionPage::setting(s, Then::Start)));
     }

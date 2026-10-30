@@ -5,5 +5,6 @@ boot_chain_signed "$MNT"
 # sbctl keeps fwupd's updater signed.
 updater=/usr/lib/fwupd/efi/fwupdx64.efi
 if [ -f "${MNT}${updater}" ]; then
-    arch-chroot "$MNT" sbctl list-files --json | grep -qF "\"${updater}.signed\""
+    signed="$(arch-chroot "$MNT" sbctl list-files --json)"
+    grep -qF "\"${updater}.signed\"" <<<"$signed"
 fi

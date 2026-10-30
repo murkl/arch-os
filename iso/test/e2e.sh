@@ -17,8 +17,11 @@ START="${2:-core}"
 WORK="${WORK:-$(dirname "$ISO")/e2e}"
 
 # The minimum docs/README.md names for this profile, so every run proves it.
+# The disk's is the one the Installer enforces, the accounts the ones it refuses
+# as username besides the live system's: lib.sh.
 MEMORY="$([ "$START" = desktop ] && echo 4096 || echo 2048)"
-DISK_SIZE="$([ "$START" = desktop ] && echo 32G || echo 16G)"
+DISK_SIZE="$(. "$(dirname "$0")/../../lib.sh" && if [ "$START" = desktop ]; then echo "${DESKTOP_GIB}G"; else echo "${CORE_GIB}G"; fi)"
+PACKAGE_ACCOUNTS="$(. "$(dirname "$0")/../../lib.sh" && printf '%s' "$PACKAGE_ACCOUNTS")"
 
 # A cold run on a busy runner downloads every package. A Desktop also builds
 # three AUR packages.
@@ -174,7 +177,9 @@ cut_power() {
 # TALKING TO IT
 # ////////////////////////////////////////////////////////////////////////////
 
-SSH_OPTS=(-q -p "$PORT" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 -o BatchMode=yes)
+# A machine that stops answering ends the connection within half a minute.
+SSH_OPTS=(-q -p "$PORT" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 -o BatchMode=yes
+    -o ServerAliveInterval=5 -o ServerAliveCountMax=6)
 
 # The live image, as root by key.
 live() { ssh "${SSH_OPTS[@]}" -i "${WORK}/key" root@127.0.0.1 "$@"; }
@@ -275,10 +280,12 @@ unattended() {
 healthy() {
     until_ok "$BOOT_TIMEOUT" "login to the installed system" installed true
     local state
-    state="$(installed systemctl is-system-running --wait || true)"
+    # Bounded, since a job that never ends holds --wait forever.
+    state="$(installed timeout "$BOOT_TIMEOUT" systemctl is-system-running --wait || true)"
     [ "$state" = running ] || {
         installed systemctl --failed --no-legend >"${WORK}/failed.log" || true
-        fail "the installed system is ${state:-unreachable}, not running"
+        installed systemctl list-jobs --no-legend >>"${WORK}/failed.log" || true
+        fail "the installed system is ${state:-still starting after ${BOOT_TIMEOUT}s}, not running"
     }
     as_root bootctl status 2>/dev/null | grep -q 'Secure Boot: enabled' ||
         fail "the installed system did not start with Secure Boot on"
@@ -393,6 +400,13 @@ EOF
     say "Made a subvolume inside the system"
 }
 
+# Marks the EFI partition as not cleanly unmounted, at the FAT32 dirty flag, as a
+# start broken during a write leaves it. The repair checks it before writing.
+esp_dirty() {
+    live "printf '\\001' | dd of=${DISK}1 bs=1 seek=65 count=1 conv=notrunc,fsync status=none"
+    say "Marked the EFI partition as not cleanly unmounted"
+}
+
 # Removes the loader from the EFI partition, as a full partition or a cleaning
 # firmware does. The rebuild must restore it.
 loader_gone() {
@@ -403,6 +417,18 @@ rm /mnt/EFI/systemd/systemd-bootx64.efi /mnt/EFI/BOOT/BOOTX64.EFI
 umount /mnt
 EOF
     say "Took the boot loader off the EFI partition"
+}
+
+# Exit 0 where GitHub holds a Recovery of the image's series with its checksum,
+# which an update from the ISO installs, 1 where it holds none.
+published_in_series() {
+    live bash -s <<'EOF'
+set -euo pipefail
+series="$(arch-os --version | awk '$1 == "arch-os" { split($2, v, "."); print v[1] }')"
+json="$(curl -fsS --proto '=https' --tlsv1.2 --max-time 30 'https://api.github.com/repos/murkl/arch-os/releases?per_page=100')"
+jq -e --arg pattern "^arch-os-${series}\\.[0-9]+\\.[0-9]+-recovery-x86_64\\.tar$" \
+    '[.[].assets[]? | select((.name | test($pattern)) and .digest != null)] | length > 0' <<<"$json" >/dev/null
+EOF
 }
 
 # Waits for the dashboard of the Recovery partition: past Secure Boot with this
@@ -535,6 +561,7 @@ EOF
 start install
 until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
 live systemctl stop arch-os
+live "getent passwd; getent group" | cut -d: -f1 | sort -u >"${WORK}/live-accounts"
 answers | live "cat >/opt/arch-os/installer.conf"
 
 say "Install"
@@ -567,6 +594,13 @@ if [ "$START" = desktop ]; then
     [ "$(installed systemctl is-active gdm || true)" = active ] || fail "the login screen of the Desktop is not running"
     entries_ready main.conf
     say "Desktop: the session it logs into counted the start"
+
+    # Every account a package of the Desktop creates is one the Installer refuses
+    # as username.
+    taken="$(installed "cat /usr/lib/sysusers.d/*.conf" | awk '$1 ~ /^[ug]!?$/ { print $2 }' | sort -u |
+        grep -vxF -f "${WORK}/live-accounts" | grep -vxF -f <(tr ' ' '\n' <<<"$PACKAGE_ACCOUNTS") || true)"
+    [ -z "$taken" ] || fail "the Installer takes a username a package claims: ${taken//$'\n'/ }, see PACKAGE_ACCOUNTS in lib.sh"
+    say "Desktop: every account a package creates is refused as username"
 
     until_ok "$BOOT_TIMEOUT" "systemd-oomd watching swap and the session" oomd_watches
     say "Desktop: systemd-oomd watches swap and the session"
@@ -623,11 +657,14 @@ live systemctl stop arch-os
 images_in_efi_linux
 nested_subvolume
 loader_gone
+esp_dirty
 live "printf \"MODULE_LANGUAGE='en'\nARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
 
 say "Repair: go back to the newest snapshot and rebuild the boot files"
 unattended recovery "$REPAIR_TIMEOUT" \
     "ARCH_OS_RECOVERY_PASSWORD='${PASSWORD}' ARCH_OS_RECOVERY_SNAPSHOT='@snapshots/${newest}/snapshot'"
+grep -q 'removing dirty bit' "${WORK}/recovery.log" || fail "the repair wrote to the EFI partition unchecked"
+say "Repair: checked the EFI partition before writing to it"
 cut_power
 
 start disk
@@ -660,7 +697,15 @@ focus update
 keys Enter
 shows "page password ARCH_OS_RECOVERY_UPDATE_PASSWORD|page report update" 120
 if traced 1 "page report update" in_tmux; then
-    # No Recovery published for this series yet, as for a new major version.
+    # No Recovery published for this series yet, as for a new major version. The
+    # live image asks GitHub itself, so a broken lookup cannot pass as that.
+    status=0
+    published_in_series || status=$?
+    case "$status" in
+    0) fail "the update found no Recovery, though GitHub holds one of this series" ;;
+    1) ;;
+    *) fail "GitHub did not say whether a Recovery of this series is published" ;;
+    esac
     say "Update: skipped, no Recovery published for this series"
     exit 0
 fi

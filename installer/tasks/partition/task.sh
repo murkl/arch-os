@@ -8,6 +8,21 @@ if ! grep -qxF "$ARCH_OS_DISK" <<<"$disks"; then
     echo "${ARCH_OS_DISK} is not one of the disks this machine can be installed on" >&2
     exit 10
 fi
+# The smallest disk docs/README.md names for the profile. A smaller one fills up
+# halfway, with its data already gone.
+need="$CORE_GIB"
+[ "$ARCH_OS_DESKTOP" = none ] || need="$DESKTOP_GIB"
+if [ "$(lsblk -bdno SIZE "$ARCH_OS_DISK")" -lt $((need << 30)) ]; then
+    echo "${ARCH_OS_DISK} holds less than ${need} GiB" >&2
+    exit 12
+fi
+
+# Checked here, since the account is created only after the wipe.
+if reserved_name "$ARCH_OS_USERNAME"; then
+    echo "${ARCH_OS_USERNAME} is claimed by the live system or a package" >&2
+    exit 13
+fi
+
 boot_part="$(boot_partition "$ARCH_OS_DISK")"
 system_part="$(system_partition "$ARCH_OS_DISK")"
 

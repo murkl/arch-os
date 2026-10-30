@@ -197,7 +197,7 @@ name_image() { profiledef "$1" "iso_name=\"$2\"" "iso_version=\"${VERSION}\""; }
 echo "### Initialize Build"
 
 # A missing tool fails the build instead of being installed on the host.
-for tool in mkarchiso:archiso ukify:systemd-ukify mkfs.erofs:erofs-utils fsck.erofs:erofs-utils diff:diffutils modinfo:kmod; do
+for tool in mkarchiso:archiso ukify:systemd-ukify mkfs.erofs:erofs-utils fsck.erofs:erofs-utils unsquashfs:squashfs-tools diff:diffutils modinfo:kmod; do
     command -v "${tool%%:*}" >/dev/null || {
         echo "Error: ${tool%%:*} not found: install the ${tool#*:} package" >&2
         exit 1
@@ -298,7 +298,7 @@ ${SUDO} rm -rf "$readback"
 
 # Every command the scripts call is present, and pacman.conf removed no module
 # a repair may load. The ISO shares kernel and pacman.conf, so this covers it.
-for command in arch-chroot blkid blockdev btrfs cryptsetup curl fuser ip iwctl jq loadkeys localectl lsblk mount mountpoint setfont sha256sum swapoff tar umount; do
+for command in arch-chroot blkid blockdev btrfs cryptsetup curl fsck.fat fuser ip iwctl jq loadkeys localectl lsblk mount mountpoint setfont sha256sum swapoff tar umount; do
     [ -x "${recovery_root}/usr/bin/${command}" ] || { echo "Error: the Recovery has no ${command}" >&2 && exit 1; }
 done
 # Enabled units, as systemd reads the links: the Recovery, the wired network
@@ -485,11 +485,32 @@ profiledef "$ISO_PROFILE" "iso_label=\"${ISO_LABEL}\""
 echo "### Make Arch OS ISO"
 ${SUDO} mkarchiso -v -w "${WORK_DIR}/iso" -o "${PROFILES_DIR}/out/iso" "$ISO_PROFILE"
 
+iso_root="${WORK_DIR}/iso/x86_64/airootfs"
+
+# The squashfs must read back as its source, like the Recovery's erofs.
+sfs="${WORK_DIR}/iso/iso/arch/x86_64/airootfs.sfs"
+[ -f "$sfs" ] || { echo "Error: mkarchiso left no squashfs at ${sfs}" >&2 && exit 1; }
+readback="${WORK_DIR}/iso-readback"
+${SUDO} unsquashfs -no-progress -d "$readback" "$sfs" >/dev/null
+compared=0
+differs="$(${SUDO} diff -rq --no-dereference "$iso_root" "$readback")" || compared=$?
+case "$compared" in
+0) ;;
+1)
+    printf "Error: the ISO's squashfs differs from its source:\n%s\n" "$differs" >&2
+    exit 1
+    ;;
+*)
+    echo "Error: diff failed on the ISO's squashfs" >&2
+    exit 1
+    ;;
+esac
+${SUDO} rm -rf "$readback"
+
 # The commands the Installer calls beyond the Recovery's, root's shell and
 # editor, and the data its lists read: glibc's locales and xkb's layouts, which
 # pacman.conf must keep. Tested inside the image, where xkb's absolute link
 # resolves.
-iso_root="${WORK_DIR}/iso/x86_64/airootfs"
 for command in bootctl efibootmgr genfstab mkfs.btrfs mkfs.fat nano pacstrap partprobe reflector sgdisk sshd timedatectl tmux udevadm wipefs zsh; do
     [ -x "${iso_root}/usr/bin/${command}" ] || { echo "Error: the ISO has no ${command}" >&2 && exit 1; }
 done

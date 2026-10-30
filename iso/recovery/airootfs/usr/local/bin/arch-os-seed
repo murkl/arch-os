@@ -43,6 +43,9 @@ fi
 # the next start try the system again.
 if [ -n "$esp" ]; then
     mnt="$(mktemp -d)"
+    # Checked first, as mount_esp in lib.sh does, since the tries are written
+    # there next.
+    fsck.fat -a "$esp" || [ "$?" -eq 1 ] || echo "checking the EFI partition ${esp} failed" >&2
     if mount -t vfat "$esp" "$mnt"; then
         [ ! -f "${mnt}/${SEED}" ] || cp "${mnt}/${SEED}" "${OPT}/recovery.conf"
         if ! "$BOOT_TRIES_SCRIPT" "$mnt" "$BOOT_TRIES"; then

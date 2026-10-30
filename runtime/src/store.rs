@@ -74,8 +74,9 @@ impl Store {
     /// An action's answer a script wrote into the answer file, read from the file and held
     /// nowhere else.
     pub fn read(&self, name: &str) -> Option<String> {
-        let raw = std::fs::read_to_string(&self.path).ok()?;
-        raw.lines()
+        let raw = std::fs::read(&self.path).ok()?;
+        String::from_utf8_lossy(&raw)
+            .lines()
             .filter_map(parse_line)
             .rfind(|(k, _)| k == name)
             .map(|(_, v)| v)
@@ -91,14 +92,15 @@ impl Store {
         self.values.insert(name.to_string(), value.to_string());
     }
 
-    /// A missing file is a first run. An invalid value stays for `missing` to ask again.
+    /// A missing file is a first run. An invalid value stays for `missing` to ask again, as does a
+    /// byte that is no UTF-8, from a damaged file or another encoding.
     pub fn load(&mut self) -> std::io::Result<()> {
-        let raw = match std::fs::read_to_string(&self.path) {
+        let raw = match std::fs::read(&self.path) {
             Ok(raw) => raw,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
             Err(e) => return Err(e),
         };
-        for line in raw.lines() {
+        for line in String::from_utf8_lossy(&raw).lines() {
             let Some((name, value)) = parse_line(line) else {
                 continue;
             };
@@ -236,6 +238,8 @@ impl Store {
         }
         let allowed = match s.kind {
             Kind::Bool => value == spec::TRUE || value == spec::FALSE,
+            // A custom entry is what an open list is for.
+            Kind::OpenList => true,
             _ if !s.options.is_empty() => s.options.iter().any(|o| o == value),
             _ => true,
         };
@@ -382,6 +386,41 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         Store::new(module(), &dir, false)
+    }
+
+    /// A damaged file or another encoding costs its line, not the start.
+    #[test]
+    fn a_file_that_is_no_utf8_still_loads() {
+        let mut s = store("bytes");
+        std::fs::write(s.path(), b"TUX_HOST='b\xe4r'\nTUX_DISK='sda'\n").unwrap();
+        s.load().unwrap();
+        assert_eq!(s.get("TUX_DISK"), "sda");
+        assert!(
+            s.missing().iter().any(|m| m.name == "TUX_HOST"),
+            "asked again"
+        );
+    }
+
+    #[test]
+    fn an_open_list_takes_a_custom_entry() {
+        let files: Vec<(&'static str, &'static [u8])> = spec::tests::fixture()
+            .into_iter()
+            .map(|(path, body)| {
+                let text = String::from_utf8_lossy(body).replace(
+                    "      type: list\n      title: Driver",
+                    "      type: open-list\n      title: Driver",
+                );
+                (path, &*Box::leak(text.into_bytes().into_boxed_slice()))
+            })
+            .collect();
+        let loaded: &'static spec::Loaded = Box::leak(Box::new(spec::load(&files).unwrap()));
+        let module = loaded.module("setup").unwrap();
+        let dir = std::env::temp_dir().join(format!("store-open-{}", std::process::id()));
+        let s = Store::new(module, &dir, false);
+        let driver = module.setting("TUX_DRIVER").unwrap();
+        assert_eq!(driver.kind, Kind::OpenList);
+        assert_eq!(s.invalid(driver, "nouveau"), None);
+        assert_eq!(s.invalid(driver, "free"), None);
     }
 
     #[test]

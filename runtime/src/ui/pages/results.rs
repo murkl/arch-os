@@ -14,17 +14,18 @@ use crate::ui::{Ctx, Does, Flow, Key, Page, Tone};
 pub struct ResultsPage {
     /// Failure count out of the total: three of four differs from three of forty.
     verdict: String,
-    failed: Vec<(String, Failure)>,
+    /// Title, the module's text for a chosen status, and the failure.
+    failed: Vec<(String, Option<String>, Failure)>,
     list: List<usize>,
 }
 
 impl ResultsPage {
-    pub fn new(verdict: String, failed: Vec<(String, Failure)>) -> ResultsPage {
+    pub fn new(verdict: String, failed: Vec<(String, Option<String>, Failure)>) -> ResultsPage {
         let list = List::new(
             failed
                 .iter()
                 .enumerate()
-                .map(|(i, (title, _))| Row::new(i, title.clone()))
+                .map(|(i, (title, ..))| Row::new(i, title.clone()))
                 .collect(),
         );
         ResultsPage {
@@ -74,12 +75,12 @@ impl Page for ResultsPage {
     fn key(&mut self, key: Key, _: &mut Ctx) -> Flow {
         match self.list.key(key) {
             Picked::Open(i) => {
-                let (title, f) = &self.failed[i];
+                let (title, said, f) = &self.failed[i];
                 let acts = vec![Act::new(t("Back"), |_| Flow::Pop).does(Does::Back)];
                 Flow::Push(Box::new(super::failure::FailurePage::new(
                     format!("result {i}"),
                     title.clone(),
-                    None,
+                    said.clone(),
                     f.clone(),
                     acts,
                 )))

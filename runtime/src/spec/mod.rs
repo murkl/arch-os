@@ -1084,12 +1084,13 @@ fn errors(e: &BTreeMap<i32, String>, names: &[String]) -> Result<BTreeMap<i32, S
     Ok(out)
 }
 
-/// Refuses a `{{NAME}}` that names no variable of the module.
+/// Refuses a `{{NAME}}` that names no variable of the module or a password, which would show on
+/// screen and in the log.
 fn placeholders(key: &str, text: &str, names: &[String]) -> Result<(), String> {
     for name in text::names(text) {
         if !names.contains(&name) {
             return Err(format!(
-                "{key}: {{{{{name}}}}} is not a variable of this module"
+                "{key}: {{{{{name}}}}} is not a variable of this module, or a password"
             ));
         }
     }
@@ -1346,6 +1347,19 @@ fn module(
         }
     }
 
+    // What a placeholder may show: every name but the passwords.
+    let secrets: Vec<&String> = settings
+        .iter()
+        .chain(actions.iter().flat_map(|a| &a.inputs))
+        .filter(|s| s.kind.secret())
+        .map(|s| &s.name)
+        .collect();
+    let shown: Vec<String> = names
+        .iter()
+        .filter(|n| !secrets.contains(n))
+        .cloned()
+        .collect();
+
     // Conditions and placeholders, now that every name is known.
     for s in &settings {
         conditions(&s.when, &setting_names).map_err(|e| m(format!("{}: {e}", s.name)))?;
@@ -1357,12 +1371,12 @@ fn module(
             return Err(format!("{at}: texts: {name} is a setting"));
         }
         if let Some(c) = &t.confirm {
-            placeholders("confirm", c, &names).map_err(|e| format!("{at}: {e}"))?;
+            placeholders("confirm", c, &shown).map_err(|e| format!("{at}: {e}"))?;
         }
         if let Some(r) = &t.report {
-            placeholders("report", r, &names).map_err(|e| format!("{at}: {e}"))?;
+            placeholders("report", r, &shown).map_err(|e| format!("{at}: {e}"))?;
         }
-        t.errors = errors(&t.errors, &names).map_err(|e| format!("{at}: {e}"))?;
+        t.errors = errors(&t.errors, &shown).map_err(|e| format!("{at}: {e}"))?;
     }
     for a in &mut actions {
         let at = at(&a.id);
@@ -1375,20 +1389,20 @@ fn module(
             ("report", &a.report),
         ] {
             if let Some(t) = text {
-                placeholders(key, t, &names).map_err(|e| format!("{at}: {e}"))?;
+                placeholders(key, t, &shown).map_err(|e| format!("{at}: {e}"))?;
             }
         }
-        a.errors = errors(&a.errors, &names).map_err(|e| format!("{at}: {e}"))?;
+        a.errors = errors(&a.errors, &shown).map_err(|e| format!("{at}: {e}"))?;
     }
     let confirm = reflow_opt(&f.confirm);
     if let Some(c) = &confirm {
-        placeholders("confirm", c, &names).map_err(m)?;
+        placeholders("confirm", c, &shown).map_err(m)?;
     }
     let report = reflow_opt(&f.report);
     if let Some(r) = &report {
-        placeholders("report", r, &names).map_err(m)?;
+        placeholders("report", r, &shown).map_err(m)?;
     }
-    let module_errors = errors(&f.errors, &names).map_err(m)?;
+    let module_errors = errors(&f.errors, &shown).map_err(m)?;
 
     // What each action may declare, by how it runs.
     for a in &actions {
@@ -1776,6 +1790,15 @@ pub mod tests {
             .err()
             .unwrap_or_else(|| panic!("loaded, wanted {says:?}"));
         assert!(err.contains(says), "{err:?} does not say {says:?}");
+    }
+
+    /// A placeholder shows its value on screen and in the log.
+    #[test]
+    fn no_placeholder_names_a_password() {
+        refused(
+            &edited("Install on {{TUX_DISK}}?", "Install on {{TUX_PASSWORD}}?"),
+            "{{TUX_PASSWORD}} is not a variable of this module, or a password",
+        );
     }
 
     #[test]

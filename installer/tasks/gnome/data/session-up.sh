@@ -4,6 +4,14 @@
 # https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/
 set -u
 
+# A start to the console, such as one set as default for a repair, brings up no
+# session and counts once the disk is mounted.
+jobs="$(systemctl list-jobs --no-legend graphical.target)"
+if [ -z "$jobs" ] && ! systemctl is-active --quiet graphical.target; then
+    echo "graphical.target is not part of this start, no session to wait for"
+    exit 0
+fi
+
 deadline=$((SECONDS + $1))
 while [ "$SECONDS" -lt "$deadline" ]; do
     session="$(loginctl show-seat seat0 -p ActiveSession --value 2>/dev/null)"

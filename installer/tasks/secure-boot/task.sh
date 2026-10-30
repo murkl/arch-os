@@ -19,16 +19,17 @@ if [ -f "${MNT}${updater}" ]; then
         echo "fwupd still looks for shim, firmware updates need Secure Boot off" >&2
 fi
 
+# Checked first, so the log says signed only where it is. Enrolled keys refuse
+# whatever is unsigned, possibly at once.
+if ! boot_chain_signed "$MNT"; then
+    echo "Secure Boot: keys not enrolled, the boot chain is not fully signed" >&2
+    return 0
+fi
 # Enrolling needs setup mode. In the UEFI variable four attribute bytes precede
 # the value.
 setup_mode=/sys/firmware/efi/efivars/SetupMode-8be4df61-93ca-11d2-aa0d-00e098032b8c
 if [ ! -r "$setup_mode" ] || [ "$(od -An -t u1 -j 4 -N 1 "$setup_mode" 2>/dev/null | tr -d ' ')" != "1" ]; then
     echo "Secure Boot: firmware not in setup mode, keys not enrolled. The boot chain is signed, enrolling later is enough"
-    return 0
-fi
-# Enrolled keys refuse whatever is unsigned, possibly at once.
-if ! boot_chain_signed "$MNT"; then
-    echo "Secure Boot: keys not enrolled, the boot chain is not fully signed" >&2
     return 0
 fi
 # -m keeps Microsoft's certificates, -f the firmware's own, which firmware signed

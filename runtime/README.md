@@ -160,7 +160,7 @@ A blank row follows `start`, the answers and each action group. After `start`, t
 
 `start` asks what is missing, then every password, then `confirm`, then runs the tasks: one row each, checked off when done, counted in the header. `tab` switches to their output, during and after the run. `systemd-inhibit` blocks shutdown and sleep while tasks run, so closing the lid never suspends a run. A task with `asks` or `confirm` pauses the run on its page. The header names the outcome, **Done** or **Failed**. A finished run shows `report`, its duration, the actions under `on: success` and **Continue**. A failed run shows what failed and where, the actions under `on: failure` and **Back to the dashboard** with a confirmation.
 
-`q` or `esc` on the dashboard leaves. With `on: leave`, or in a kiosk, a page comes first: the actions under `on: leave`, then **Exit**, or **Start over** in a kiosk. During a run the same page warns that every choice stops it. The run continues behind it, and its questions wait until the page closes. A choice stops the run first: its script and everything it started get `SIGTERM`, after 10 seconds `SIGKILL`. The choice runs once none of it is left.
+`q` or `esc` on the dashboard leaves. With `on: leave`, or in a kiosk, a page comes first: the actions under `on: leave`, then **Exit**, or **Start over** in a kiosk. During a run the same page warns that every choice stops it and leads with **Back to the run**. The run continues behind it, and its questions wait until the page closes. A choice stops the run first: its script and everything it started get `SIGTERM`, after 10 seconds `SIGKILL`. The choice runs once none of it is left. `SIGTERM`, `SIGHUP` and `SIGINT` to the program stop a run the same way, then end it.
 
 ## Settings
 
@@ -214,6 +214,7 @@ The type sets the widget and the allowed keys:
 - `none` and an empty answer show as — on the dashboard
 - A password is asked right before the run, used and forgotten
 - `value-from` runs when the module opens and on every answer change
+- An `options-from` that fails shows its error on the question
 - A `list` answer is checked against its `options-from` again at the start of the work, before any password. One no longer listed is asked again
 - An answer from the file passes `pattern` and the list like a typed one. One that fails is asked again
 
@@ -231,7 +232,7 @@ when:
 
 ### Placeholders
 
-`{{VAR}}` is filled from the answers in every `confirm`, `report` and `errors` and in an action's `error`. An undeclared name is refused at startup, and a translation that drops or adds one fails the tests.
+`{{VAR}}` is filled from the answers in every `confirm`, `report` and `errors` and in an action's `error`. An undeclared name or a password is refused at startup, and a translation that drops or adds one fails the tests.
 
 ## Presets
 
@@ -271,7 +272,7 @@ stages:
 | `title` | **Required.** Its row in the run |
 | `needs` | Tasks of its stage it runs after |
 | `when` | Every condition must hold, or it is left out |
-| `asks` | A question the run pauses for: `name`, `title`, `description`, `options` or `options-from` and `filter`, read when the run reaches it. An empty list skips the task. Never stored |
+| `asks` | A question the run pauses for: `name`, `title`, `description`, `options` or `options-from` and `filter`, read when the run reaches it. An empty list skips the task, one that cannot be read fails it. Never stored |
 | `confirm` | Yes or no before it runs, opening on No. No skips it |
 | `yes-after` | Earlier tasks: if one of them ran, `confirm` opens on Yes |
 | `progress` | `true`: its last printed line shows under it while it runs |
@@ -383,6 +384,7 @@ errors:
 - Status 1 to 125: bash reserves 126 and up for commands it cannot run or find, and for signals
 - Only `exit` counts, in the script or a function it calls. A failed command, a `return` status, the last line's status and an `exit` inside `$(…)` or `( … )` count as a broken script, whatever the status
 - A status without text is a failure like any other
+- The text of an `allow-failure` task shows behind **Test results**
 - An action stopped this way opens nothing under `on: failure`
 
 ### Dry Run
@@ -418,7 +420,7 @@ Exit status 0 where the work finished, 1 where it failed or could not start: a r
 | Failure | `failure <action>`, `result <n>` for a failed test or optional task |
 | Run | `run`, then `run done`, `run failed` or `run stopped` |
 
-A row is named by what choosing it picks: on the dashboard `start`, `reset`, `language`, a setting's name or an action's id, in a list its value or `own` for the custom entry, on a confirmation `yes` or `no`, on the leave page an action's id or `exit`, a profile by its position.
+A row is named by what choosing it picks: on the dashboard `start`, `reset`, `language`, a setting's name or an action's id, in a list its value or `own` for the custom entry, on a confirmation `yes` or `no`, on the leave page `back`, an action's id or `exit`, a profile by its position.
 
 **Note:** _The images pass `--trace` only with the systemd credential `arch-os.trace` set, its value the file, such as `/dev/virtio-ports/arch-os.trace`. **[➜ Boot Tests](../iso/README.md#boot-tests)**_
 

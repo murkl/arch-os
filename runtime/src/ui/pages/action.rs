@@ -227,6 +227,10 @@ impl Page for ActionPage {
         true
     }
 
+    fn running(&self) -> bool {
+        self.session.is_some()
+    }
+
     fn stop(&mut self, _: &mut Ctx) -> Option<Session> {
         self.session.take()
     }

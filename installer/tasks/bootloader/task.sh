@@ -53,12 +53,15 @@ render "${data}/emergency.conf" >"${MNT}/etc/systemd/system/emergency.service.d/
 mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
 render "${data}/10-arch-os.conf" HOOKS="$hooks" >"${MNT}/etc/mkinitcpio.conf.d/10-arch-os.conf"
 
+# A UKI embeds it, otherwise mkinitcpio embeds /proc/cmdline of the live system.
+# Beside initramfs entries it is what the Recovery rebuilds them from once they
+# are lost.
+mkdir -p "${MNT}/etc/kernel"
+kernel_args >"${MNT}/etc/kernel/cmdline"
+
 kind="$(boot_kind)"
 if [ "$kind" = uki ]; then
-    mkdir -p "${MNT}${UKI_DIR}" "${MNT}/etc/kernel"
-
-    # Otherwise mkinitcpio embeds /proc/cmdline of the live system.
-    kernel_args >"${MNT}/etc/kernel/cmdline"
+    mkdir -p "${MNT}${UKI_DIR}"
 
     # Before the first snapshot: one without the keys cannot sign what it
     # rebuilds. From here on sbctl's hook signs every image.
@@ -87,7 +90,7 @@ bootctl --root="$MNT" --esp-path=/boot --variables=yes install
 
 # A UKI embeds the command line, an initramfs entry carries it.
 cmdline=""
-[ "$kind" = uki ] || cmdline="$(kernel_args)"
+[ "$kind" = uki ] || cmdline="$(<"${MNT}/etc/kernel/cmdline")"
 boot_entries "$MNT" "$kind" "$cmdline"
 
 clear_loader_default

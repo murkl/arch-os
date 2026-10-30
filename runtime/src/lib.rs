@@ -6,6 +6,7 @@ pub mod cli;
 pub mod i18n;
 pub mod log;
 pub mod script;
+mod signals;
 pub mod spec;
 pub mod store;
 mod term;

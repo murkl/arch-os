@@ -1,5 +1,6 @@
 //! Leave page: the module's shutdown rows, then closing the program, which a kiosk restarts.
-//! Nothing stops until a row is chosen, and the row runs once everything behind has stopped.
+//! Nothing stops until a row is chosen, and the row runs once everything behind has stopped. A
+//! running run leads with the way back to it, so enter alone stops nothing.
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -14,6 +15,7 @@ use crate::ui::{Ctx, Data, Does, Flow, Key, Page, Tone};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Way {
+    Back,
     Action(&'static Action),
     Exit,
 }
@@ -32,14 +34,14 @@ pub struct LeavePage {
 }
 
 impl LeavePage {
-    pub fn new(ctx: &Ctx, bare: bool) -> LeavePage {
-        let mut rows: Vec<Row<Way>> = ctx
-            .rows(&ctx.module.on.leave)
-            .into_iter()
-            .map(|a| {
-                Row::new(Way::Action(a), label(Way::Action(a), ctx)).describe(t(&a.description))
-            })
-            .collect();
+    pub fn new(ctx: &Ctx, bare: bool, running: bool) -> LeavePage {
+        let mut rows: Vec<Row<Way>> = Vec::new();
+        if running {
+            rows.push(Row::new(Way::Back, label(Way::Back, ctx)));
+        }
+        rows.extend(ctx.rows(&ctx.module.on.leave).into_iter().map(|a| {
+            Row::new(Way::Action(a), label(Way::Action(a), ctx)).describe(t(&a.description))
+        }));
         let help = if ctx.kiosk {
             t("Restarts this program. All answers are kept.")
         } else {
@@ -99,6 +101,7 @@ impl Page for LeavePage {
 
     fn focus(&self) -> Option<String> {
         Some(match self.list.selected()?.id? {
+            Way::Back => "back".into(),
             Way::Action(action) => action.id.clone(),
             Way::Exit => "exit".into(),
         })
@@ -149,7 +152,11 @@ impl Page for LeavePage {
         if self.doing.is_some() {
             return Vec::new();
         }
-        vec![("↑↓", Does::Choose), ("⏎", Does::Run), ("esc", Does::Back)]
+        let enter = match self.list.selected().and_then(|r| r.id) {
+            Some(Way::Back) => Does::Back,
+            _ => Does::Run,
+        };
+        vec![("↑↓", Does::Choose), ("⏎", enter), ("esc", Does::Back)]
     }
 
     fn key(&mut self, key: Key, ctx: &mut Ctx) -> Flow {
@@ -158,6 +165,7 @@ impl Page for LeavePage {
             return Flow::Stay;
         }
         match self.list.key(key) {
+            Picked::Open(Way::Back) => Flow::Pop,
             Picked::Open(way) => self.decide(way, ctx),
             Picked::Used => Flow::Stay,
             Picked::Ignored if matches!(key, Key::Esc | Key::Backspace | Key::Char('q')) => {
@@ -208,6 +216,7 @@ impl Page for LeavePage {
 /// Row name, also the page title while the row runs.
 fn label(way: Way, ctx: &Ctx) -> String {
     match way {
+        Way::Back => t("Back to the run"),
         Way::Action(action) => t(&action.title),
         Way::Exit if ctx.kiosk => t("Start over"),
         Way::Exit => t("Exit"),

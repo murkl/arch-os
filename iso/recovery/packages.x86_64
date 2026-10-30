@@ -6,6 +6,7 @@ base
 btrfs-progs
 cryptsetup
 curl
+dosfstools
 iproute2
 jq
 kbd

@@ -14,9 +14,11 @@ allow() {
     return "$status"
 }
 
-# Every outbound request goes through here.
+# Every outbound request goes through here. A transfer below 1 KiB/s for a
+# minute fails, since a stalled connection stays open without an end.
 fetch_url() {
-    curl -Lf --proto '=https' --proto-redir '=https' --tlsv1.2 --connect-timeout 10 "$@"
+    curl -Lf --proto '=https' --proto-redir '=https' --tlsv1.2 --connect-timeout 10 \
+        --speed-limit 1024 --speed-time 60 "$@"
 }
 
 # Sets $1 to $2 in the answer file, replacing an earlier value.
@@ -197,6 +199,11 @@ boot_partition() { part_of "$1" 1; }
 system_partition() { part_of "$1" 2; }
 recovery_partition() { part_of "$1" 3; }
 
+# The smallest disk in GiB per profile, as docs/README.md names it. The Installer
+# refuses a smaller one, and e2e.sh installs on exactly these.
+export CORE_GIB=16
+export DESKTOP_GIB=32
+
 # The btrfs layout: docs/REFERENCE.md
 export BTRFS_OPTS="defaults,noatime,compress=zstd:1"
 
@@ -233,10 +240,11 @@ images_of() {
     fi
 }
 
-# Written beside and renamed over, so the next boot reads the old file or the
-# new one, never half.
+# Written beside, flushed and renamed over, so the next boot reads the old file
+# or the new one, never half. FAT has no journal to order the two.
 place() {
     printf '%s\n' "$2" >"${1}.new"
+    sync "${1}.new"
     mv -f "${1}.new" "$1"
 }
 
@@ -274,6 +282,7 @@ restore_kernels() {
         mkdir -p "$(dirname "$image")"
         # Replaces the old image only once complete.
         cp "${dir}vmlinuz" "${image}.new"
+        sync "${image}.new"
         mv -f "${image}.new" "$image"
         [ "$image" = "${root}/boot/vmlinuz-${pkgbase}" ] || rm -f "${root}/boot/vmlinuz-${pkgbase}"
         echo "restored vmlinuz-${pkgbase} from the modules of ${version}"
@@ -671,6 +680,20 @@ as_user() {
         PATH="$PATH" LANG=C.UTF-8 bash -c "$1"
 }
 
+# Accounts a package of the Installer's choices creates through sysusers.d,
+# beyond the live system's own. The Desktop run of e2e.sh holds the list to an
+# installed system.
+PACKAGE_ACCOUNTS="_talkd avahi colord cups docker flatpak fwupd gamemode gdm geoclue git gnome-remote-desktop malcontent-timer-ext-agent malcontent-timerd malcontent-webd nm-openvpn openvpn passim pcscd polkitd rpc rpcuser rtkit saned usbmux vboxsf"
+
+# A name the live system or a package claims: useradd fails on it after the
+# wipe, or the account shares the package's rights, such as docker's socket.
+reserved_name() {
+    if getent passwd "$1" >/dev/null || getent group "$1" >/dev/null; then
+        return 0
+    fi
+    [[ " ${PACKAGE_ACCOUNTS} " == *" $1 "* ]]
+}
+
 # Desktop entry of the chosen browser. Two differ from their package name.
 browser_entry() {
     case "$ARCH_OS_BROWSER" in
@@ -754,7 +777,17 @@ mount_target() {
     while IFS=$'\t' read -r subvolume path; do
         mount --mkdir -t btrfs -o "${BTRFS_OPTS},subvol=${subvolume}" "$device" "${MNT}${path%/}"
     done < <(btrfs_subvolumes)
-    mount --mkdir -t vfat "$(boot_partition "$ARCH_OS_RECOVERY_DISK")" "${MNT}/boot"
+    mount_esp "${MNT}/boot"
+}
+
+# The EFI partition, checked first as the system checks it at boot: a start
+# broken during a write leaves FAT inconsistent, and a repair writes there.
+# fsck.fat exits 1 for errors it fixed.
+mount_esp() {
+    local esp
+    esp="$(boot_partition "$ARCH_OS_RECOVERY_DISK")"
+    fsck.fat -a "$esp" || allow 1
+    mount --mkdir -t vfat "$esp" "$1"
 }
 
 # Also closes what an earlier run left open. Unmounted first, since a mounted
@@ -844,11 +877,12 @@ recovery_update() {
 # A setting's function is named after its key, an action's after its effect. A
 # list line may hold value, tab, label.
 
-# Whole disks, labeled with size and model.
+# Whole writable disks, labeled with size and model. Read-only ones, such as an
+# eMMC's boot areas, take no installation.
 options_disks() {
-    lsblk -dn -o PATH,TYPE,SIZE,MODEL | awk -v live="$(live_disk)" '
-        $2 != "disk" || $1 == live || $1 ~ /^\/dev\/zram/ { next }
-        { path = $1; $1 = ""; $2 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
+    lsblk -dn -o PATH,TYPE,RO,SIZE,MODEL | awk -v live="$(live_disk)" '
+        $2 != "disk" || $3 != 0 || $1 == live || $1 ~ /^\/dev\/zram/ { next }
+        { path = $1; $1 = ""; $2 = ""; $3 = ""; sub(/^ +/, ""); sub(/ +$/, ""); printf "%s\t%s  %s\n", path, path, $0 }'
 }
 
 options_keymaps() { localectl list-keymaps; }
@@ -1005,9 +1039,9 @@ import_config() {
     body="$(fetch_url -sS --max-time 30 --retry 3 --retry-delay 2 "$url")"
 
     # Without the sharing keys and the source machine's own: DISK, which may name
-    # another disk here, and KERNEL_ARGS, unsafe from a stranger.
+    # another disk here, and KERNEL_ARGS and SSH_KEY, which let a stranger in.
     body="$(printf '%s\n' "$body" | grep '^ARCH_OS_[A-Z0-9_]*=' |
-        grep -vE '^ARCH_OS_(CONFIG_[A-Z_]*|DISK|KERNEL_ARGS)=' || allow 1)"
+        grep -vE '^ARCH_OS_(CONFIG_[A-Z_]*|DISK|KERNEL_ARGS|SSH_KEY)=' || allow 1)"
     [ -n "$body" ]
 
     # The runtime rereads the answer file after success.
@@ -1052,7 +1086,7 @@ apply_recovery_keymap() {
 # Rollback choices, newest first: path, tab, then number, date and description
 # from info.xml. No snapshot is an answer and skips the step.
 options_snapshots() {
-    local path
+    local path list
     # Samples under --dry-run, for the screenshots.
     if dry_run; then
         printf '@snapshots/2/snapshot\t2   2026-08-30 21:04:17 UTC   after a system update\n'
@@ -1060,10 +1094,13 @@ options_snapshots() {
         return 0
     fi
 
-    # Sorted by snapper's number, not btrfs order.
+    # Listed first, so a btrfs that cannot list fails the rollback instead of
+    # skipping it. Sorted by snapper's number, not btrfs order.
+    list="$(btrfs subvolume list -o "${BTRFS_TOP}/@snapshots")" || return 1
+    [ -n "$list" ] || return 0
     while read -r path; do
         printf '%s\t%s\n' "$path" "$(snapshot_label "$(printf '%s' "$path" | cut -d/ -f2)")"
-    done < <(btrfs subvolume list -o "${BTRFS_TOP}/@snapshots" | awk '{ print $NF }' | sort -t/ -k2 -rn)
+    done < <(awk '{ print $NF }' <<<"$list" | sort -t/ -k2 -rn)
 }
 
 # Field by field, so a broken info.xml loses a column, not the list.
@@ -1090,11 +1127,14 @@ recovery_to_update() {
     [ "$(lsblk -dno PARTLABEL "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")" 2>/dev/null)" = recovery ] && ! recovery_starts
 }
 
-# Yes if there is nothing to install. No opens the install.
+# Yes if there is nothing to install. No opens the install. GitHub is asked
+# first, since archlinux.org may be down while GitHub answers.
 recovery_up_to_date() {
     local json found
-    check_online || exit "$EXIT_OFFLINE"
-    json="$(releases_json)" || exit "$EXIT_UNREACHABLE"
+    if ! json="$(releases_json)"; then
+        check_online || exit "$EXIT_OFFLINE"
+        exit "$EXIT_UNREACHABLE"
+    fi
     found="$(recovery_update <<<"$json")"
     [ -z "$found" ]
 }
@@ -1106,21 +1146,39 @@ check_update_password() {
 
 # Checksum, size and signing come before the partition is written. The boot
 # image replaces the old one after read-back, so both disagree only during the
-# write.
+# write. The disk opens before the download, which lives in memory beside the
+# up to 1 GiB that unlocking takes.
 install_recovery_update() {
     local tar=/tmp/arch-os-recovery-update.tar
     # EFI partition mount point while the system stays closed.
     local esp_mnt=/run/arch-os-esp
     local json found version url digest stem part size room esp want have
 
-    check_online || exit "$EXIT_OFFLINE"
-    json="$(releases_json)" || exit "$EXIT_UNREACHABLE"
+    if ! json="$(releases_json)"; then
+        check_online || exit "$EXIT_OFFLINE"
+        exit "$EXIT_UNREACHABLE"
+    fi
     found="$(recovery_update <<<"$json")"
     if [ -z "$found" ]; then
         echo "no Recovery to install" >&2
         exit 1
     fi
     read -r version url digest <<<"$found"
+
+    # Leftovers of an earlier attempt go first. Arch OS signs its boot chain only
+    # behind encryption, so an encrypted system is mounted for its keys.
+    close_target
+    if mountpoint -q "$esp_mnt"; then
+        umount "$esp_mnt"
+    fi
+    if [ "$ARCH_OS_RECOVERY_ENCRYPTED" = "true" ]; then
+        printf '%s' "$ARCH_OS_RECOVERY_UPDATE_PASSWORD" | cryptsetup open "$(target_partition)" "$CRYPT"
+        mount_target
+        esp="${MNT}/boot"
+    else
+        mount_esp "$esp_mnt"
+        esp="$esp_mnt"
+    fi
 
     echo "fetching ${url##*/}"
     if ! fetch_url --progress-bar --retry 3 --retry-delay 2 "$url" -o "${tar}.part"; then
@@ -1145,21 +1203,6 @@ install_recovery_update() {
         exit 12
     fi
 
-    # Leftovers of an earlier attempt go first. Arch OS signs its boot chain only
-    # behind encryption, so an encrypted system is mounted for its keys.
-    close_target
-    if mountpoint -q "$esp_mnt"; then
-        umount "$esp_mnt"
-    fi
-    if [ "$ARCH_OS_RECOVERY_ENCRYPTED" = "true" ]; then
-        printf '%s' "$ARCH_OS_RECOVERY_UPDATE_PASSWORD" | cryptsetup open "$(target_partition)" "$CRYPT"
-        mount_target
-        esp="${MNT}/boot"
-    else
-        mount --mkdir -t vfat "$(boot_partition "$ARCH_OS_RECOVERY_DISK")" "$esp_mnt"
-        esp="$esp_mnt"
-    fi
-
     # A leftover copy takes room the kernel images need. Global, since the EXIT
     # trap reads it after return.
     efi="${esp}${RECOVERY_EFI#/boot}"
@@ -1172,6 +1215,12 @@ install_recovery_update() {
         arch-chroot "$MNT" sbctl sign "${RECOVERY_EFI}.new"
     fi
 
+    # Asked again right before the write, since a disk plugged in meanwhile may
+    # carry the name.
+    if ! recovery_to_update; then
+        echo "${part} is no longer the Recovery to update" >&2
+        exit 1
+    fi
     echo "writing Recovery ${version} to ${part}"
     if ! tar -xOf "$tar" "${stem}/recovery.img" | dd of="$part" bs=4M conv=fsync status=none; then
         echo "writing ${part} failed" >&2
@@ -1186,6 +1235,7 @@ install_recovery_update() {
         echo "${part}: read-back differs from Recovery ${version}" >&2
         exit 13
     fi
+    sync "${efi}.new"
     mv -f "${efi}.new" "$efi"
     sync
     if [ "$esp" = "$esp_mnt" ]; then

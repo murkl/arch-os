@@ -43,8 +43,9 @@ pub fn write(level: &str, msg: &str) {
     let echo = ECHO.load(Ordering::Relaxed);
     for line in msg.lines() {
         let _ = writeln!(file, "{now} {level:<5} {line}");
+        // A closed stdout must not end the run the log records.
         if echo {
-            println!("{now} {level:<5} {line}");
+            let _ = writeln!(std::io::stdout(), "{now} {level:<5} {line}");
         }
     }
 }

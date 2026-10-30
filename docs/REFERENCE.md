@@ -12,15 +12,15 @@ Every answer except the passwords lands in `installer.conf` at once, so an inter
 
 | Way | How |
 | --- | --- |
-| Share | **Share the configuration** on the last page uploads the answers to **[paste.rs](https://paste.rs)**. The **Shared configuration** profile loads them and asks only for disk and passwords |
+| Share | **Share the configuration** on the last page uploads the answers to **[paste.rs](https://paste.rs)**. The **Shared configuration** profile loads them and asks only for disk, passwords and, with the SSH server, the key |
 | Copy | `installer.conf` beside the Installer on another machine |
 | Unattended | `arch-os installer --unattended` with `installer.conf` beside it and `ARCH_OS_PASSWORD` in the environment. **[➜ Runtime](../runtime/README.md#unattended)** |
 
-**Note:** _A shared configuration holds hostname, username and language, readable by anyone with the link. The import skips disk and kernel parameters: both belong to one machine, and foreign kernel parameters can open a root shell at boot._
+**Note:** _A shared configuration holds hostname, username and language, readable by anyone with the link. The import skips disk, kernel parameters and SSH key: the disk belongs to one machine, foreign kernel parameters can open a root shell at boot, and a foreign key a remote login._
 
 ## Disk
 
-UEFI, GPT, whole disk: Arch OS is the only system on it.
+UEFI, GPT, whole disk: Arch OS is the only system on it. At least 16 GiB, 32 GiB with GNOME, checked before anything is written.
 
 ### Partitions
 
@@ -61,7 +61,7 @@ systemd-boot starts the system, its fallback and the Recovery. With **Secure Boo
 | UKIs | `/boot/EFI/arch-os/` | In `EFI/Linux` the loader lists each twice |
 | Menu | Hidden, shown while **Space** is held | Some firmware passes the key too late, so the Recovery is also in the firmware boot menu |
 | Order | `sort-key arch` and `arch-fallback` | System first, fallback second. The Recovery sorts by its `os-release` ID |
-| Command line | `kernel_args` in the `bootloader` task | One source for images and entries |
+| Command line | `kernel_args` in the `bootloader` task, kept in `/etc/kernel/cmdline` | One source for images and entries. The Recovery rebuilds lost entries from it |
 | Editor | Off | An editable command line is a root shell without password. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Systemd-boot#Loader_configuration)** |
 
 **Note:** _Firmware entries of previous systems on the disk go with its partitions. Entries of other disks stay._
@@ -81,6 +81,7 @@ flowchart LR
 
 - A start takes a try off the entry name: `main+3.conf` becomes `main+2-1.conf`, `main+0-3.conf` sorts last
 - A start counts as good once the disk is mounted and, with GNOME, the login screen or session is up (`boot-complete.target`). `systemd-bless-boot` marks the entry, `arch-os-boot-tries.service` restores the tries of both entries
+- A start to the console, such as with `multi-user.target` as default, waits for no session
 - No `default` in `loader.conf`: a default entry starts however often it failed. Installer and Recovery clear one left in the firmware
 - An interrupted start counts as failed, such as a power-off at the password prompt
 - `panic=10` restarts after a kernel panic, so a system that panics at every start reaches the Recovery
@@ -221,7 +222,7 @@ A small configuration in the account's home and root's, never in `/etc`. Built-i
 
 ## Accounts
 
-One account in `wheel`, with `sudo`. Root keeps Arch's locked password: `sudo` grants the same rights, and the **[Recovery](#recovery)** opens a system that no longer starts.
+One account in `wheel`, with `sudo`. Root keeps Arch's locked password: `sudo` grants the same rights, and the **[Recovery](#recovery)** opens a system that no longer starts. A name the system or a package claims, such as `docker` or `gdm`, is refused before anything is written.
 
 | Answers | Disk | Login |
 | --- | --- | --- |
@@ -342,6 +343,7 @@ Repairs a system that no longer starts, from its own partition or from the ISO.
 
 Asks for keyboard and disk, on its partition for neither, and reads the rest from the disk. **[➜ Recovery](../recovery/README.md#answers)**
 
+- Checks the EFI partition with `fsck.fat` before it writes there, as the system does at boot
 - Repairs what the Installer of its release series creates, without network. **Connect to Wi-Fi** on the dashboard serves an update or a download in the shell
 - A rollback builds the new `@` before touching the old one and keeps the old one as a snapshot, so it can be undone. The next run completes an interrupted one
 - `systemctl reboot --boot-loader-entry=arch-os-recovery.efi` starts it once. **Recovery** in the app grid does the same after a confirmation that opens on **Cancel**

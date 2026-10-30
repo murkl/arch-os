@@ -1,6 +1,5 @@
 # Added to the Recovery's packages, which the ISO runs too. What the Installer
 # calls on the live system is named, and build.sh checks the commands.
-dosfstools
 efibootmgr
 gptfdisk
 parted

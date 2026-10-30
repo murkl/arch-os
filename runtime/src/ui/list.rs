@@ -288,9 +288,8 @@ impl<I: Clone + PartialEq> List<I> {
                 let Some(filter) = self.filter.as_mut() else {
                     return Picked::Ignored;
                 };
-                if key == Key::Backspace && filter.text.is_empty() {
-                    self.filter = None;
-                } else if !filter.key(key) {
+                // Backspace only deletes, even in an empty filter. Esc closes it.
+                if !filter.key(key) {
                     return Picked::Ignored;
                 }
                 let shown = self.shown();
@@ -302,8 +301,8 @@ impl<I: Clone + PartialEq> List<I> {
         Picked::Used
     }
 
-    /// Unclipped height, for a page that draws something right under the list.
-    pub fn height(&self) -> usize {
+    /// Unclipped height at `width`, for a page that draws something right under the list.
+    pub fn height(&self, width: u16) -> usize {
         let shown = self.shown();
         let headings = self
             .rows
@@ -311,7 +310,22 @@ impl<I: Clone + PartialEq> List<I> {
             .enumerate()
             .filter(|(i, r)| r.heading && (!r.label.is_empty() || *i > 0))
             .count();
-        shown.len() + headings + if self.described { 3 } else { 0 }
+        shown.len() + headings + self.below(width)
+    }
+
+    /// Rows under the list for the description: a blank one, then the longest description
+    /// wrapped, at least two, so the list stands still as the cursor moves.
+    fn below(&self, width: u16) -> usize {
+        if !self.described {
+            return 0;
+        }
+        let longest = self
+            .rows
+            .iter()
+            .map(|r| super::draw::wrap(&r.description, usize::from(width)).len())
+            .max()
+            .unwrap_or(0);
+        1 + longest.max(2)
     }
 
     pub fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &Ctx) {
@@ -321,11 +335,12 @@ impl<I: Clone + PartialEq> List<I> {
             filter.draw(buf, area.x, y, area.width, ctx);
             y += 2;
         }
-        let described = self.described && area.bottom().saturating_sub(y) > 4;
+        let below = self.below(area.width) as u16;
+        let described = self.described && area.bottom().saturating_sub(y) > below + 1;
         let height = area
             .bottom()
             .saturating_sub(y)
-            .saturating_sub(if described { 3 } else { 0 }) as usize;
+            .saturating_sub(if described { below } else { 0 }) as usize;
         self.height = height;
         let shown = self.shown();
         let query_active = self.filter.as_ref().is_some_and(|f| !f.text.is_empty());
@@ -434,7 +449,7 @@ impl<I: Clone + PartialEq> List<I> {
                 .selected()
                 .map(|r| r.description.clone())
                 .unwrap_or_default();
-            let under = Rect::new(area.x, y + height as u16 + 1, area.width, 2);
+            let under = Rect::new(area.x, y + height as u16 + 1, area.width, below - 1);
             super::draw::paragraph(buf, under, under.y, &text, s.tone(Tone::Muted));
         }
     }
