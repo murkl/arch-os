@@ -4,10 +4,9 @@
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 
-use crate::i18n::t;
 use crate::ui::detail::{Block, Detail, mark, words};
 use crate::ui::draw::put;
-use crate::ui::{Ctx, Flow, Key, Page, Tone, qr};
+use crate::ui::{Ctx, Does, Flow, Key, Page, Tone, qr};
 
 /// Where the page leads once read.
 pub enum Close {
@@ -113,8 +112,8 @@ impl Page for ReportPage {
         }
     }
 
-    fn hints(&self, _: &Ctx) -> Vec<(&'static str, String)> {
-        vec![("⏎", t("continue"))]
+    fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
+        vec![("⏎", Does::Continue)]
     }
 
     fn key(&mut self, key: Key, ctx: &mut Ctx) -> Flow {

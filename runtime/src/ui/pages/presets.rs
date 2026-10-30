@@ -7,7 +7,7 @@ use ratatui::layout::Rect;
 use crate::i18n::t;
 use crate::ui::draw::paragraph;
 use crate::ui::list::{List, Picked, Row};
-use crate::ui::{Ctx, Flow, Key, Page, Tone};
+use crate::ui::{Ctx, Does, Flow, Key, Page, Tone};
 
 pub struct PresetsPage {
     list: List<usize>,
@@ -36,7 +36,7 @@ impl PresetsPage {
 impl Page for PresetsPage {
     /// Only shown without an answer file.
     fn unattended(&mut self, _: &mut Ctx) -> Result<Flow, String> {
-        Err(crate::i18n::t("No answer file."))
+        Err(crate::i18n::t("There is no answer file."))
     }
 
     fn title(&self) -> String {
@@ -63,7 +63,7 @@ impl Page for PresetsPage {
             self.list = List::new(rows);
             self.list.described = true;
         }
-        let text = t("Prefills every answer.");
+        let text = t("Prefills every answer. Each one can be changed on the dashboard.");
         let y = paragraph(buf, area, area.y, &text, ctx.style.tone(Tone::Muted)) + 1;
         self.list.draw(
             Rect::new(area.x, y, area.width, area.bottom().saturating_sub(y)),
@@ -72,8 +72,8 @@ impl Page for PresetsPage {
         );
     }
 
-    fn hints(&self, _: &Ctx) -> Vec<(&'static str, String)> {
-        vec![("↑↓", t("choose")), ("⏎", t("confirm")), ("esc", t("back"))]
+    fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
+        vec![("↑↓", Does::Choose), ("⏎", Does::Use), ("esc", Does::Back)]
     }
 
     fn key(&mut self, key: Key, ctx: &mut Ctx) -> Flow {

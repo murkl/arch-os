@@ -16,10 +16,11 @@ module.yaml           settings, actions and tasks in run order
 tasks/<id>/task.sh    a task's work, with everything only it needs
 tasks/<id>/test.sh    optional, checks the result on the machine
 tasks/<id>/data/      files the task writes into the new system, named after the target, filled by render
+tasks/<id>/check.*    optional, checks a file the task ships, run by make check
 data/                 language and country tables, checked by data/check.sh
 ```
 
-**Note:** _Functions named in `module.yaml` live in **[lib.sh](../lib.sh)**. Actions shared with the Recovery (Wi-Fi, ways out, log sharing, shell) live in **[product.yaml](../product.yaml)**. Translations live in **[locales/](../locales)**._
+**Note:** _Functions named in `module.yaml` live in **[lib.sh](../lib.sh)**. Actions shared with the Recovery (live system, root, Wi-Fi, ways out, log sharing, shell) live in **[product.yaml](../product.yaml)**. Translations live in **[locales/](../locales)**._
 
 ## Stages
 
@@ -83,7 +84,7 @@ The console keyboard is asked `first` and loaded at once: a password typed on th
 | --- | --- |
 | Option | A row under `settings:`, list or suggestion as a function in `lib.sh`. Dependent tasks get `when:` |
 | Task | An entry under its stage in `module.yaml` and `tasks/<id>/task.sh`, plus `test.sh` where a result can be read back |
-| Check, row or way out | An entry under `actions:` with its `lib.sh` function, named under `requires:` or `on:`. Shared with the Recovery: `product.yaml` |
+| Check, row or way out | An entry under `actions:` with its `lib.sh` function, named under `requires:`, `dashboard:` or `on:`. Shared with the Recovery: `product.yaml` |
 | Profile | An entry under `presets:`. A fetched one names its action with `action:` |
 | Language | **[➜ Contributing](../docs/CONTRIBUTING.md#adding-a-language)** |
 

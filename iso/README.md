@@ -5,7 +5,7 @@ Arch's stock `releng` profile with Arch OS's packages, patched to boot from Plym
 - Installer and Recovery on one image
 - Recovery image beside them, built first from Arch's minimal `baseline`, written to the disk by the Installer. **[➜ Recovery Partition](../docs/REFERENCE.md#recovery-partition)**
 - Only what Arch OS uses: the Recovery's packages, the Installer's tools, the Arch ISO's network tools and screen reader
-- Arch OS Bootsplash (Plymouth), fading into the interface
+- Arch OS boot splash (Plymouth), fading into the interface
 - Nord palette on every console from the first frame, Terminus Bold sized to the screen
 - Networking as on the Arch ISO, iwd started on the first Wi-Fi request
 - UEFI only, drawn on the firmware framebuffer, squashfs with zstd
@@ -33,7 +33,7 @@ A live image boots for the first time every time, so systemd runs `systemd-first
 | `arch-os recovery` | Opens the Recovery |
 | `iwctl` | Connects to Wi-Fi |
 
-**Note:** _Both keep their answers in `/opt/arch-os`, so a second run resumes. `/etc/motd` and `/etc/issue` say so._
+**Note:** _Both keep their answers in `/opt/arch-os`, so a second run resumes. `/etc/motd` says so._
 
 ## Layout
 
@@ -61,9 +61,9 @@ make image                   # images only, from the built program
 
 **Note:** _The build fails where the Recovery outgrows its partition, or a release file reaches GitHub's 2 GiB limit._
 
-**Note:** _Images carry the version the program reports: the ISO, and the Recovery as a folder and as a `.tar` for the release page. The ISO label is that version in uppercase. Needs `archiso`, `systemd-ukify`, `erofs-utils`, `diffutils`, `kbd` and `terminus-font`._
+**Note:** _Images carry the version the program reports: the ISO, and the Recovery as a folder and as a `.tar` for the release page. The ISO label is `ARCH_OS_` and that version in uppercase, such as `ARCH_OS_2_1_0`. Needs `archiso`, `systemd-ukify`, `erofs-utils`, `diffutils`, `kbd` and `terminus-font`._
 
-The Bootsplash theme is **[plymouth-theme-arch-os](https://github.com/murkl/plymouth-theme-arch-os)** at the commit `PLYMOUTH_THEME_REF` in `build.sh`, fetched once for both images into `download/` and updated by hand. `PLYMOUTH_THEME_SRC=/path/to/theme/src` builds with a local theme folder.
+The boot splash theme is **[plymouth-theme-arch-os](https://github.com/murkl/plymouth-theme-arch-os)** at the commit `PLYMOUTH_THEME_REF` in `build.sh`, fetched once for both images into `download/` and updated by hand. `PLYMOUTH_THEME_SRC=/path/to/theme/src` builds with a local theme folder.
 
 Stock profile settings are overridden by lines appended to their `profiledef.sh` and to releng's `archiso.conf`, never edited in place, so they survive profile changes. Every other patch fails the build where it finds nothing to patch, as do the ISO's hooks where releng's differ from the ones it leaves out.
 
@@ -73,7 +73,7 @@ Checks on the Recovery before the ISO:
 - Every command its scripts call is present
 - It starts and masks the right units
 - No kernel module a repair may load lost a dependency to `pacman.conf`
-- It carries `boot-tries.sh` from the Recovery's `data/`, so `arch-os-seed` restores the tries of the system's boot entries, as many as `lib.sh` names
+- Its root is locked
 
 Checks on the built ISO:
 
@@ -90,7 +90,7 @@ make smoke                  # newest ISO and Recovery in dist/
 make smoke ISO=path/to.iso RECOVERY=path/to/recovery-dir
 ```
 
-Boots each under QEMU and OVMF, waits for the first page, chooses Deutsch with the keyboard, waits for the next page, checks that the screen shows more than one color and shuts down. Pages and rows are read from the interface's trace on a virtio port, never off the screen. **[➜ Trace](../runtime/README.md#trace)** That covers boot entry, initramfs, Plymouth hook, systemd unit, loaded modules and a console that passes keys on. The Recovery boot image starts as the firmware starts it from the EFI partition, with its partition as the only disk: finding it, verifying its signature and copying it to memory all precede that page.
+Boots each under QEMU and OVMF, waits for the first page, chooses Deutsch with the keyboard, waits for the next page, checks that the screen shows more than one color and stops the machine. Pages and rows are read from the interface's trace on a virtio port, never off the screen. **[➜ Trace](../runtime/README.md#trace)** That covers boot entry, initramfs, Plymouth hook, systemd unit, loaded modules and a console that passes keys on. The Recovery boot image starts as the firmware starts it from the EFI partition, with its partition as the only disk: finding it, verifying its signature and copying it to memory all precede that page.
 
 **Note:** _Needs `qemu-base` and `edk2-ovmf`. Screenshots land in `dist/smoke/`, one folder per image: one frame on success, all frames and the trace on failure._
 
@@ -102,7 +102,7 @@ make e2e START=desktop      # Desktop profile, booted to GNOME's login screen
 
 Walks the ISO unattended:
 
-1. Installs a Core with disk encryption, Secure Boot and Recovery partition, firmware in setup mode
+1. Installs a Core with disk encryption, Secure Boot and Recovery partition, firmware in setup mode, and starts the Recovery by its firmware entry
 2. Boots it with Secure Boot enforced and checks `systemctl is-system-running`
 3. Uses up the entries' tries: the fallback starts, then the Recovery
 4. Starts the ISO again, creates a subvolume inside the system, rolls back to the newest snapshot with the Recovery, keeping that subvolume, and rebuilds the boot files of an installation with its images in EFI/Linux and no entry counting tries
@@ -122,7 +122,7 @@ Walks the ISO unattended:
 
 ## Console
 
-Both images boot with the same arguments, added by `build.sh` to every entry that starts Linux.
+Both images boot with the same arguments, added by `build.sh`. Every other entry that starts Linux, such as the screen reader's, gets those from `nomodeset` on.
 
 | Argument | Why |
 | --- | --- |
@@ -149,10 +149,10 @@ The interface uses color slots, filled with Nord by the palette. **[➜ Nord](ht
 
 Each font has one glyph table, and a character outside it shows as a box. `font/glyphs.sh` builds the fonts as `build.sh` does and checks two things against every table:
 
-- The files it gets: from `make check` the product, the catalogs, the library and every module file except fastfetch's config, which targets a graphical terminal
+- The files it gets: from `make check` the product, the catalogs, the library and every module file except READMEs and fastfetch's config, which target a graphical terminal
 - The characters the interface draws itself: rules, cursor, the three cells of a QR code and the finished-run mark, and the runtime's own words, all listed by `arch-os glyphs`
 
-The font is Terminus Bold in the size the kernel picks for its own font, as on a stock Arch ISO: 8×16, or 16×32 where 8×16 would give 22,000 cells or more. Full HD gets 16, four times that gets 32. Of the fonts in `kbd` and `terminus-font` it is the clean bold one with Latin, its accents, Greek and Cyrillic, at most 512 glyphs. It lacks ▀ and ▄ for QR codes, so `font.sh` adds them in two unused slots.
+The font is Terminus Bold in the size the kernel picks for its own font, as on a stock Arch ISO: 8×16, or 16×32 where 8×16 would give 22,000 cells or more. Full HD gets 16, four times that gets 32. Of the fonts in `kbd` and `terminus-font` it is the clean bold one with Latin, its accents, Greek and Cyrillic, at most 512 glyphs. It lacks ▀ and ▄ for QR codes, so `font/build.sh` adds them in two unused slots.
 
 ```
 make glyphs-check

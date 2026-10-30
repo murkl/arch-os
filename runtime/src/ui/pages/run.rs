@@ -16,7 +16,7 @@ use crate::spec::Task;
 use crate::ui::detail::{Act, Block, Detail, mark, words};
 use crate::ui::draw::{cut, cut_front, put, wrap};
 use crate::ui::list::Lead;
-use crate::ui::{Ctx, Data, Flow, Key, Page, Tone};
+use crate::ui::{Ctx, Data, Does, Flow, Key, Page, Tone};
 
 #[derive(Clone, Copy, PartialEq)]
 enum Mark {
@@ -432,12 +432,15 @@ impl RunPage {
                 let failures = self.failures();
                 if !failures.is_empty() {
                     let verdict = self.tally().map(|(n, _)| n).unwrap_or_default();
-                    acts.push(Act::new(t("Test results"), move |_| {
-                        Flow::Push(Box::new(super::results::ResultsPage::new(
-                            verdict.clone(),
-                            failures.clone(),
-                        )))
-                    }));
+                    acts.push(
+                        Act::new(t("Test results"), move |_| {
+                            Flow::Push(Box::new(super::results::ResultsPage::new(
+                                verdict.clone(),
+                                failures.clone(),
+                            )))
+                        })
+                        .does(Does::Open),
+                    );
                 }
                 for action in ctx.rows(&ctx.module.on.success) {
                     acts.push(
@@ -447,9 +450,10 @@ impl RunPage {
                         .describe(t(&action.description)),
                     );
                 }
-                acts.push(Act::new(t("Continue"), |ctx: &mut Ctx| {
-                    onward(Way::Leave, ctx)
-                }));
+                acts.push(
+                    Act::new(t("Continue"), |ctx: &mut Ctx| onward(Way::Leave, ctx))
+                        .does(Does::Continue),
+                );
                 (body, acts)
             }
             Err(End::Known(text)) => {
@@ -457,7 +461,7 @@ impl RunPage {
                 body.extend(words(text));
                 (
                     body,
-                    vec![Act::new(t("Back"), |ctx| onward(Way::Back, ctx))],
+                    vec![Act::new(t("Back"), |ctx| onward(Way::Back, ctx)).does(Does::Back)],
                 )
             }
             Err(End::Stopped) => (
@@ -467,7 +471,7 @@ impl RunPage {
                     Block::Heading(self.stopped_at(ctx)),
                     Block::Text(t("Nothing after it ran."), Tone::Normal),
                 ],
-                vec![Act::new(t("Back"), |ctx| onward(Way::Back, ctx))],
+                vec![Act::new(t("Back"), |ctx| onward(Way::Back, ctx)).does(Does::Back)],
             ),
             Err(End::Broke(f)) => {
                 let mut body = vec![
@@ -487,9 +491,10 @@ impl RunPage {
                         .describe(t(&action.description)),
                     );
                 }
-                acts.push(Act::new(t("Back to the dashboard"), |ctx| {
-                    onward(Way::Ask, ctx)
-                }));
+                acts.push(
+                    Act::new(t("Back to the dashboard"), |ctx| onward(Way::Ask, ctx))
+                        .does(Does::Back),
+                );
                 (body, acts)
             }
         };
@@ -725,17 +730,17 @@ impl Page for RunPage {
         }
     }
 
-    fn hints(&self, _: &Ctx) -> Vec<(&'static str, String)> {
+    fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
         let view = (
             "tab",
             if self.text {
-                t("overview")
+                Does::Compact
             } else {
-                t("details")
+                Does::Details
             },
         );
         if self.end.is_none() {
-            return vec![view, ("esc", t("leave"))];
+            return vec![view, ("esc", Does::Stop)];
         }
         if !self.settled() {
             return Vec::new();

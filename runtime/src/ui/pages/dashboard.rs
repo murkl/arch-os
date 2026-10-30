@@ -8,7 +8,7 @@ use ratatui::layout::Rect;
 use super::Then;
 use crate::i18n::t;
 use crate::ui::list::{List, Picked, Row};
-use crate::ui::{Ctx, Data, Flow, Key, Page, Tone};
+use crate::ui::{Ctx, Data, Does, Flow, Key, Page, Tone};
 
 /// What a row opens.
 #[derive(Clone, Copy, Debug)]
@@ -210,19 +210,19 @@ impl Page for DashboardPage {
         self.list.draw(area, buf, ctx);
     }
 
-    fn hints(&self, _: &Ctx) -> Vec<(&'static str, String)> {
+    fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
         if self.list.typing() {
             return vec![
-                ("↑↓", t("choose")),
-                ("⏎", t("open")),
-                ("esc", t("close filter")),
+                ("↑↓", Does::Choose),
+                ("⏎", Does::Open),
+                ("esc", Does::CloseFilter),
             ];
         }
         vec![
-            ("↑↓", t("choose")),
-            ("⏎", t("open")),
-            ("f", t("filter")),
-            ("q", t("quit")),
+            ("↑↓", Does::Choose),
+            ("⏎", Does::Open),
+            ("f", Does::Filter),
+            ("q", Does::Quit),
         ]
     }
 

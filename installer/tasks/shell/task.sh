@@ -4,7 +4,7 @@ data="$(where)"
 packages=(git starship eza bat zoxide fd fzf fastfetch mc btop bash-completion
     zsh zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search)
 
-# The prompt's glyphs for a terminal in a window. The text console has none,
+# The prompt's glyphs for a terminal in a window. The console has none,
 # see data/bashrc.
 [ "$ARCH_OS_DESKTOP" != "none" ] && packages+=(ttf-firacode-nerd)
 chroot_pacman_install "${packages[@]}"

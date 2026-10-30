@@ -12,7 +12,7 @@ use crate::script::{self, Event, Failure, Session};
 use crate::spec::Action;
 use crate::ui::detail::Act;
 use crate::ui::draw::waiting;
-use crate::ui::{Ctx, Data, Flow, Key, Page};
+use crate::ui::{Ctx, Data, Does, Flow, Key, Page};
 
 pub fn open(ctx: &mut Ctx, action: &'static Action, fetches: bool) -> Flow {
     crate::info!("action {}", action.id);
@@ -162,7 +162,7 @@ impl ActionPage {
                 }
                 let said = self.action.error.as_ref().map(|e| ctx.expand(&t(e)));
                 let depth = self.depth;
-                let acts = vec![Act::new(t("Back"), move |_| Flow::PopN(depth))];
+                let acts = vec![Act::new(t("Back"), move |_| Flow::PopN(depth)).does(Does::Back)];
                 Flow::Replace(Box::new(super::failure::FailurePage::new(
                     format!("failure {}", self.action.id),
                     t(&self.action.title),
@@ -191,7 +191,7 @@ impl Page for ActionPage {
         waiting(buf, area, &t(&self.action.title), None, ctx);
     }
 
-    fn hints(&self, _: &Ctx) -> Vec<(&'static str, String)> {
+    fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
         Vec::new()
     }
 

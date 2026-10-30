@@ -30,15 +30,15 @@ actions:
   # The system stays mounted after the run.
   chroot:
     title: Open a shell
-    description: Opens a shell in the system on the disk. Leave with exit.
+    description: Opens a shell in the system on the disk. Type exit to leave.
     run: open_shell()
     tty: true
 
   # A system is installed and repaired from outside itself.
   live-image:
-    title: Arch Linux live system
+    title: An Arch Linux live system
     run: on_arch_live_image()
-    error: No Arch Linux live system. Boot from the Arch OS ISO.
+    error: Arch Linux live system required. Boot from the Arch OS ISO.
 
   # A working cable wins: Wi-Fi only where none is online.
   no-cable:
@@ -48,30 +48,32 @@ actions:
   # systemd unmounts the target and locks the disk on the way down.
   restart:
     title: Restart
+    description: Restarts this machine.
     run: restart_machine()
 
   root:
     title: Running as root
     run: is_root()
-    error: Root required. Log in as root and start again.
+    error: Root privileges required. Log in as root and start again.
 
   # Choosing the row is the consent, so it names what leaves.
   share-log:
     title: Share the log
     description: |
-      Uploads the log to paste.rs, readable by anyone with the address. Passwords
+      Uploads the log to paste.rs. Anyone with the link can read it. Passwords
       are excluded.
     run: share_log()
     simulates: true
-    error: Upload to paste.rs failed.
+    error: Upload failed. Check the connection and try again.
     report: |
       Log shared
 
-      Scan the QR code or pass on the address below.
+      Scan the QR code or share the link.
     qr: ARCH_OS_LOG_URL
 
   shutdown:
     title: Shut down
+    description: Turns this machine off.
     run: shut_down_machine()
 
   # An open or known network connects when chosen. One with a password says
@@ -92,7 +94,7 @@ actions:
       failure: [wifi-passphrase]
 
   wifi-card:
-    title: Wi-Fi card
+    title: A Wi-Fi card
     run: has_wifi_card()
 
   wifi-passphrase:
@@ -103,4 +105,4 @@ actions:
         title: Password
         required: true
     run: join_wifi_with_passphrase()
-    error: Wrong password for {{ARCH_OS_WIFI_SSID}}, or network out of range.
+    error: Connection to {{ARCH_OS_WIFI_SSID}} failed. Check the password.

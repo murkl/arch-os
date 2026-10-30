@@ -32,7 +32,7 @@ locales/<code>.po   one catalog per language
 runtime/            this program
 ```
 
-The build embeds everything except `runtime/`, so the binary is the whole program. At start it writes the scripts to `$XDG_RUNTIME_DIR/arch-os-<pid>/` and runs them there. The folder is removed on exit, a stale one at the next start.
+The build embeds every file above except `runtime/`, so the binary is the whole program. At start it writes the scripts to `$XDG_RUNTIME_DIR/arch-os-<pid>/` and runs them there. The folder is removed on exit, a stale one at the next start.
 
 ### `product.yaml`
 
@@ -64,7 +64,7 @@ actions:
 | `console-accent` | Its slot on a 16-color console. **[➜ Console](#console)** |
 | `surface` | `#rrggbb` behind the row under the cursor. Default dark gray |
 | `console-surface` | Its slot on a console: `red`, `green`, `yellow`, `blue`, `magenta`, `cyan` or `white`, since a console has only eight background colors. Default blue. The row on it reads in white or black, whichever contrasts more |
-| `status` | One line about the machine in the header. `check` is a `lib.sh` function: exit 0 shows `pass`, anything else `fail`. Checked every `every` seconds, default 10, and right after an action |
+| `status` | One line about the machine in the header. `check` is a `lib.sh` function: exit 0 shows `pass`, anything else `fail`. Checked every `every` seconds, default 10, and right after an action succeeds |
 | `actions` | Actions any module may name. **[➜ Actions](#actions)** |
 
 ### `lib.sh`
@@ -75,7 +75,7 @@ The one place for script code outside the tasks. Loaded before every task, test 
 
 A key that runs shell code names a `lib.sh` function as `name()`. A missing function is refused at startup, and so is shell code inside the YAML: every line stays where a linter reads it and a failure can point to it.
 
-These keys are `check` of the status, `run` of an action, and `options-from`, `value-from`, `prefill`, `apply` and `check` of a setting. A setting's function is named after its key, such as `options_disks()` or `prefill_timezone()`, an action's after its work, such as `join_wifi()`.
+These keys are `check` of the status, `run` of an action, `options-from` of `asks`, and `options-from`, `value-from`, `prefill`, `apply` and `check` of a setting. A setting's function is named after its key, such as `options_disks()` or `prefill_timezone()`, an action's after its work, such as `join_wifi()`.
 
 ## Module
 
@@ -102,17 +102,17 @@ language: Region
 confirm: |
   Install Arch OS on {{ARCH_OS_DISK}}?
 
-  Everything on the disk is erased.
+  All data on the disk is erased. An internet connection is required throughout.
 stages: …
 report: |
   Arch OS installed
 
-  {{ARCH_OS_HOSTNAME}} on {{ARCH_OS_DISK}}.
+  {{ARCH_OS_HOSTNAME}} is ready to boot.
 errors:
   3: |
     Internet connection lost
 
-    Reconnect this machine.
+    Reconnect and choose Install now to start over.
 on:
   leave: [restart, shutdown]
   failure: [share-log]
@@ -123,8 +123,8 @@ actions: …
 | Key | Description |
 | --- | --- |
 | `title` | **Required.** Module name in the breadcrumb |
-| `start` | First dashboard row, starts the work. Default `Start` |
-| `requires` | Actions checked in order before anything is asked. The first no blocks everything with its page and is checked again every few seconds. Skipped on a dry run |
+| `start` | Title of the `start` row. Default `Start` |
+| `requires` | Actions checked in order after the `first` settings. The first no blocks everything with its page and is checked again every few seconds. Skipped on a dry run |
 | `presets` | Profiles. **[➜ Presets](#presets)** |
 | `settings` | Questions under their headings. **[➜ Settings](#settings)** |
 | `dashboard` | **Required.** Dashboard rows in order. **[➜ Dashboard](#dashboard)** |
@@ -153,7 +153,7 @@ The module's home: rows in `dashboard` order, each name once. `f` filters.
 | --- | --- |
 | `start` | **Required.** The `start` row, starts the work |
 | `settings` | **Required.** Every answer under its group heading, each row opens its question. The interface language heads the group `language` names |
-| `reset` | **Reset all answers**: deletes the answer file after a question that opens on No |
+| `reset` | **Reset all answers**: deletes every answer and the answer file after a question that opens on No, then starts at the first question |
 | An action | Its row where its `requires` say yes, under its `group` heading. Directly after answers ending with that group, a blank row replaces the heading. An action may not use a name above |
 
 A blank row follows `start`, the answers and each action group. After `start`, the answer headings take its place.
@@ -172,11 +172,11 @@ settings:
     - name: ARCH_OS_DISK
       type: list
       title: Disk
-      description: Everything on it is erased.
+      description: The target disk. All data on it is erased.
       required: true
       options-from: options_disks()
-      pattern: '^/dev/'
-      error: Choose a disk that exists.
+      pattern: '^/dev/[A-Za-z0-9_-]+$'
+      error: Disk not found.
 ```
 
 The type sets the widget and the allowed keys:
@@ -197,7 +197,7 @@ The type sets the widget and the allowed keys:
 | `title` | **Required.** The question and its dashboard row |
 | `description` | Purpose of the value |
 | `when` | When it is asked. **[➜ Conditions](#conditions)** |
-| `first` | Asked before everything else, `requires` included, with the filter open |
+| `first` | Asked right after the language, before `requires`, with the filter open |
 | `required` | Asked while unanswered |
 | `options` | Answers, inline |
 | `options-from` | Prints the answers, one per line. `value<TAB>label` stores the value and shows the label |
@@ -213,10 +213,10 @@ The type sets the widget and the allowed keys:
 - `true` and `false` show as Yes and No
 - A password is asked right before the run, used and forgotten
 - `value-from` runs when the module opens and on every answer change
-- An `options-from` answer is checked against its list again at the start of the work, before any password. One no longer listed is asked again
+- A `list` answer is checked against its `options-from` again at the start of the work, before any password. One no longer listed is asked again
 - An answer from the file passes `pattern` and the list like a typed one. One that fails is asked again
 
-**Note:** _Refused at startup: a key the type does not take, `value-from` with `prefill` or `first`, a password with `first`._
+**Note:** _Refused at startup: a key the type does not take, `value-from` with `prefill` or `first`, `filter` with `first`, a password with `first`._
 
 ### Conditions
 
@@ -230,7 +230,7 @@ when:
 
 ### Placeholders
 
-`{{VAR}}` is filled from the answers in every `confirm`, `report`, `error` and `errors`. An undeclared name is refused at startup, and a translation that drops or adds one fails the tests.
+`{{VAR}}` is filled from the answers in every `confirm`, `report` and `errors` and in an action's `error`. An undeclared name is refused at startup, and a translation that drops or adds one fails the tests.
 
 ## Presets
 
@@ -244,7 +244,7 @@ presets:
       ARCH_OS_DESKTOP: gnome
 
   - title: Shared configuration
-    description: Answers shared by another installation.
+    description: Answers from a shared configuration.
     action: import-config
 ```
 
@@ -316,7 +316,7 @@ actions:
 | Key | Description |
 | --- | --- |
 | `title` | **Required.** Its row and page heading |
-| `description` | Sentence under its row. Choosing the row is the consent, so it names what leaves the machine |
+| `description` | Sentence under the list while its row has the cursor. The dashboard shows none. Choosing the row is the consent, so it names what leaves the machine |
 | `group` | Dashboard heading of its row. Refused where `dashboard` does not list the action |
 | `requires` | Actions that must say yes before this one appears |
 | `inputs` | Questions before it runs, one page each: settings without `first` or `value-from`. For this run only, never stored |
@@ -332,7 +332,7 @@ actions:
 
 | Under | Shown |
 | --- | --- |
-| `requires` | Nowhere: runs by itself before anything is asked, a check without page. Its `error` blocks everything until it says yes |
+| `requires` | Nowhere: runs by itself, a check without page. Its `error` blocks everything until it says yes |
 | `dashboard` | A dashboard row, at its place in the list |
 | `on: leave` | A row on the way out, above **Exit** |
 | `on: failure` | A row under a failed run. None under a run [stopped on purpose](#stopping-on-purpose) |
@@ -340,7 +340,7 @@ actions:
 
 - A row opens the inputs, `confirm`, the work and `report` in turn. A longer flow is several actions chained by `on: failure`
 - `on: leave` declares that the machine booted for the module, so leaving becomes a choice
-- Refused at startup: an unknown name, an action nothing names, a `product.yaml` action no module names, an action declared again in `module.yaml`, a cycle, an action naming itself under `on: failure`, a page beside `tty`, a page or `confirm` on a check-only action, `errors` beside `tty`, a check without `error`, an input or `confirm` under `on: leave`
+- Refused at startup: an unknown name, an action nothing names, a `product.yaml` action no module names, an action declared again in `module.yaml`, a cycle, an action naming itself under `on: failure`, a page beside `tty`, a page or `confirm` on a check-only action, `errors` beside `tty`, a check without `error`, an input or `confirm` under `on: leave`, a `qr` without `report`
 
 ## Script Environment
 
@@ -354,7 +354,7 @@ Every declared variable under its own name, plus:
 | `MODULE_VERSION` | Program version |
 | `DRY_RUN` | `true` on a dry run, unset otherwise |
 
-Scripts and the functions the YAML names run with `lib.sh` loaded and an `ERR` trap: no shebang, no `set -e`, no error handling. Each runs in its own session without terminal, unless the action has `tty: true`.
+Tasks, tests and actions run with `lib.sh` loaded and an `ERR` trap: no shebang, no `set -e`, no error handling. Checks and setting functions run without it, their status is the answer. Each runs in its own session without terminal, unless the action has `tty: true`.
 
 - **Any non-zero status is a failure**, from a command or the script. `[ "$X" = y ] && do_it` as last line fails where the test is false. A harmless status is allowed by name: `grep x file || allow 1`
 - Inside `$(…)` or `( … )` a failure ends only the subshell, and the enclosing command decides: `x=$(cmd)` fails the script at that line, `echo "$(cmd)"` continues
@@ -373,7 +373,7 @@ errors:
   3: |
     Internet connection lost
 
-    Reconnect this machine.
+    Reconnect and choose Install now to start over.
 ```
 
 `exit 3` stops the run with this text, first paragraph as headline, without technical details or `on: failure` rows. Every other failure is reported where the script broke.
@@ -390,9 +390,9 @@ errors:
 
 ### Unattended
 
-`--unattended` runs the work without interface: answers from `<module>.conf` beside the program, each password from the environment under its name, such as `ARCH_OS_PASSWORD`, every confirmation a yes. A task with `asks` takes its answer from the environment too and is skipped where it is unset. The log prints as written, then the report or the failure and the test tally.
+`--unattended` runs the work without interface: language and answers from `<module>.conf` in the start directory, each password from the environment under its name, such as `ARCH_OS_PASSWORD`, every confirmation a yes. A task with `asks` takes its answer from the environment too and is skipped where it is unset. The log prints as written, then the report with duration and test tally, or the failure.
 
-Exit status 0 where the work finished, 1 where it failed or could not start: a requirement said no, an answer is missing or invalid, a password is unset. Nothing restarts or shuts down afterwards.
+Exit status 0 where the work finished, 1 where it failed or could not start: a requirement said no, the answer file, its language or an answer is missing or invalid, a password is unset. A wrong argument exits 64. Nothing restarts or shuts down afterwards.
 
 ## Trace
 
@@ -414,10 +414,10 @@ Exit status 0 where the work finished, 1 where it failed or could not start: a r
 | Confirmation | `confirm` before the run, `confirm <task or action>`, `confirm reset`, `confirm home` |
 | Action at work | `action <action>` |
 | Report | `report <task or action>`, `stopped <action>` after a stop on purpose |
-| Failure | `failure <action>`, `result <n>` for a failed test |
+| Failure | `failure <action>`, `result <n>` for a failed test or optional task |
 | Run | `run`, then `run done`, `run failed` or `run stopped` |
 
-A row is named by what choosing it picks: on the dashboard `start`, `reset`, `language`, a setting's name or an action's id, in a list its value, on a confirmation `yes` or `no`, on the leave page an action's id or `exit`, a profile by its position.
+A row is named by what choosing it picks: on the dashboard `start`, `reset`, `language`, a setting's name or an action's id, in a list its value or `own` for the custom entry, on a confirmation `yes` or `no`, on the leave page an action's id or `exit`, a profile by its position.
 
 **Note:** _The images pass `--trace` only with the systemd credential `arch-os.trace` set, its value the file, such as `/dev/virtio-ports/arch-os.trace`. **[➜ Boot Tests](../iso/README.md#boot-tests)**_
 
@@ -434,13 +434,14 @@ In the start directory:
 
 | Key | Meaning |
 | --- | --- |
-| `⏎` `→` `l` | Open, confirm |
-| `esc` `←` `h` `backspace` | Back |
-| `↑` `↓` `k` `j` | Move |
+| `⏎` `→` `l` | What the footer names, such as open, use or run |
+| `esc` `←` `h` `backspace` | What the footer names: back, dashboard, close filter or stop |
+| `↑` `↓` `k` `j` | Choose or scroll |
 | `⇞` `⇟` `g` `G` | Page up, page down, top, bottom |
 | `f` `/` | Filter a list, where the footer shows it |
-| `q` `ctrl+c` | Leave |
-| `tab` | Switch a run between list and output |
+| `q` `ctrl+c` | Quit |
+| `r` | Reload a failed requirement |
+| `tab` | A run's details or compact view |
 
 **Note:** _An empty text box shows its question's title as placeholder, or **Repeat** for the second password. In a text box every letter types and backspace deletes one. Pasted text goes into a text box and is ignored elsewhere. A held key repeats only for moving and typing._
 
@@ -449,9 +450,9 @@ In the start directory:
 The English text is the key, a missing translation shows English. **[➜ Translating](../docs/CONTRIBUTING.md#translating)**
 
 - `msgid "English"` becomes the language's own name on the language page: `Deutsch`
-- The language is chosen on the first page and stored on the first line of the answer file as `MODULE_LANGUAGE`. A file holding one skips the page
+- The language is chosen on the first page and stored first in the answer file as `MODULE_LANGUAGE`. A file holding one skips the page
 - The first page is never translated: it appears before a language is chosen
 
 ## Console
 
-A 16-color terminal, such as the Linux console (`TERM=linux`), shows every color in the slot of its hue, and the accent in the `console-accent` slot: `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, or any of them with `bright-`. Lines and marks switch to what a console font holds. `arch-os glyphs` prints every character the interface draws there, for the ISO's font check. **[➜ Console Glyphs](../iso/README.md#console-glyphs)**
+A 16-color terminal, such as the console (`TERM=linux`), shows every color in the slot of its hue, and the accent in the `console-accent` slot: `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, or any of them with `bright-`. Lines and marks switch to what a console font holds. `arch-os glyphs` prints every character the interface draws there, for the ISO's font check. **[➜ Console Glyphs](../iso/README.md#console-glyphs)**

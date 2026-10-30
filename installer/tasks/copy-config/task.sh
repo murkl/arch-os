@@ -2,6 +2,9 @@
 # to the copy.
 home="$(user_home)"
 cp -f "$MODULE_CONF" "${home}/installer.conf"
+# The copy ends with the outcome. Written directly, as printed output reaches
+# the log only after the copy.
+printf '%s INFO  Arch OS installed\n' "$(date '+%Y-%m-%d %H:%M:%S')" >>"$MODULE_LOG"
 cp -f "$MODULE_LOG" "${home}/installer.log"
 own_home
 

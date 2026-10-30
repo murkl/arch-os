@@ -9,7 +9,7 @@ use ratatui::layout::Rect;
 use crate::i18n::t;
 use crate::spec::{Action, Shell};
 use crate::ui::draw::{paragraph, put, waiting};
-use crate::ui::{Ctx, Data, Flow, Key, Page, Tone};
+use crate::ui::{Ctx, Data, Does, Flow, Key, Page, Tone};
 
 /// Recheck interval: short enough that a plugged-in cable passes before anyone presses r, long
 /// enough that a network check is no load.
@@ -137,11 +137,11 @@ impl Page for GatePage {
         }
     }
 
-    fn hints(&self, _: &Ctx) -> Vec<(&'static str, String)> {
+    fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
         match &self.refused {
             None => Vec::new(),
-            Some(Some(_)) => vec![("⏎", t("open")), ("r", t("try again")), ("esc", t("back"))],
-            Some(None) => vec![("r", t("try again")), ("esc", t("back"))],
+            Some(Some(_)) => vec![("⏎", Does::Open), ("r", Does::Reload), ("esc", Does::Back)],
+            Some(None) => vec![("r", Does::Reload), ("esc", Does::Back)],
         }
     }
 

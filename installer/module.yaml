@@ -29,13 +29,13 @@ presets:
       ARCH_OS_DESKTOP_EXTRAS_ENABLED: true
       ARCH_OS_DESKTOP_SLIM_ENABLED: true
       ARCH_OS_BROWSER: firefox
-      ARCH_OS_BACKUP: pika-backup
+      ARCH_OS_BACKUP: deja-dup
       ARCH_OS_FLATPAK_ENABLED: true
       ARCH_OS_BAZAAR_ENABLED: false
       ARCH_OS_SAMBA_SHARE_ENABLED: false
 
   - title: Core
-    description: Minimal Arch Linux on the text console.
+    description: Minimal Arch Linux on the console.
     values:
       ARCH_OS_ENCRYPTION_ENABLED: true
       ARCH_OS_RECOVERY_ENABLED: true
@@ -59,7 +59,7 @@ presets:
       ARCH_OS_SAMBA_SHARE_ENABLED: false
 
   - title: Shared configuration
-    description: Answers shared by another installation.
+    description: Answers from a shared configuration.
     action: import-config
 
 # A pattern on every answer that reaches the shell, since an answer file can
@@ -69,28 +69,27 @@ settings:
     - name: ARCH_OS_USERNAME
       type: text
       title: Username
+      description: The account to log in with.
       required: true
       pattern: '^[a-z_][a-z0-9_-]{0,31}$'
       error: |
-        Up to 32 lowercase letters, digits, hyphens and underscores, starting
-        with a letter or underscore.
+        Up to 32 lowercase letters, digits, - or _, starting with a letter or _.
 
     - name: ARCH_OS_PASSWORD
       type: new-password
       title: Password
-      description: For the account and, with encryption, the disk. Never saved.
+      description: For the account. Never saved.
       required: true
 
     - name: ARCH_OS_HOSTNAME
       type: text
       title: Hostname
-      description: Name of this machine on the network.
+      description: The name on the network.
       required: true
       default: arch-os
       pattern: '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$'
       error: |
-        Up to 63 lowercase letters, digits and hyphens, no hyphen at the start
-        or end.
+        Up to 63 lowercase letters, digits or -, not starting or ending with -.
 
   # On auto everything follows the language. The keyboard comes first: a
   # password typed on the wrong layout is wrong.
@@ -99,8 +98,8 @@ settings:
       type: list
       title: Language and region
       description: |
-        System language and formats, such as de_DE. Keyboard, console font and
-        time zone follow it. English stays as fallback.
+        The system language and regional formats, such as de_DE. Keyboard, font
+        and time zone default to it.
       required: true
       options-from: options_locales()
       filter: open
@@ -111,9 +110,7 @@ settings:
     - name: ARCH_OS_VCONSOLE_KEYMAP
       type: list
       title: Console keyboard
-      description: |
-        Active at once and on the text console. On auto it follows the system
-        language.
+      description: The console keyboard layout. Auto follows the language.
       first: true
       required: true
       options-from: options_vconsole_keymaps()
@@ -124,7 +121,8 @@ settings:
       type: list
       title: Console font
       description: |
-        On auto it suits the language. Larger sizes for high-resolution screens.
+        The console font. Auto follows the language. Larger sizes suit HiDPI
+        screens.
       required: true
       options-from: options_fonts()
       filter: open
@@ -134,7 +132,7 @@ settings:
     - name: ARCH_OS_TIMEZONE
       type: list
       title: Time zone
-      description: Preselected from the language.
+      description: Sets the system clock to local time.
       required: true
       options-from: options_timezones()
       filter: open
@@ -147,7 +145,8 @@ settings:
       title: Mirror country
       # Worldwide by default: one country may have few mirrors, and reflector
       # ranks by speed. https://wiki.archlinux.org/title/Reflector
-      description: Only this country's mirrors. On none all, fastest first.
+      description: |
+        The country of the package mirrors. None uses the fastest worldwide.
       required: true
       options-from: options_countries()
       filter: open
@@ -158,11 +157,11 @@ settings:
     - name: ARCH_OS_DISK
       type: list
       title: Disk
-      description: Everything on it is erased.
+      description: The target disk. All data on it is erased.
       required: true
       options-from: options_disks()
       pattern: '^/dev/[A-Za-z0-9_-]+$'
-      error: Choose a disk that exists.
+      error: Disk not found.
 
     - name: ARCH_OS_ENCRYPTION_ENABLED
       type: bool
@@ -175,14 +174,15 @@ settings:
     - name: ARCH_OS_DISK_PASSWORD_ENABLED
       type: bool
       title: Separate disk password
-      description: Own disk password, then the login screen. For shared machines.
+      description: |
+        Asks for a disk password at boot, before the login. For shared machines.
       when: ARCH_OS_ENCRYPTION_ENABLED == true
       default: false
 
     - name: ARCH_OS_DISK_PASSWORD
       type: new-password
       title: Disk password
-      description: Unlocks the disk at boot. Never saved.
+      description: Unlocks the disk at every boot. Never saved.
       when:
         - ARCH_OS_ENCRYPTION_ENABLED == true
         - ARCH_OS_DISK_PASSWORD_ENABLED == true
@@ -193,17 +193,15 @@ settings:
       type: bool
       title: Secure Boot
       description: |
-        Signs kernel and boot loader with this machine's own keys, enrolled in
-        setup mode. Turn Secure Boot on after the installation.
+        Signs kernel and boot loader with own keys. Turn Secure Boot on after
+        the installation.
       when: ARCH_OS_ENCRYPTION_ENABLED == true
       default: true
 
     - name: ARCH_OS_RECOVERY_ENABLED
       type: bool
       title: Recovery
-      description: |
-        Repairs a system that no longer boots, from its own partition in the boot
-        menu.
+      description: Repairs a system that no longer boots, from the boot menu.
       default: true
 
     - name: ARCH_OS_BOOTSPLASH_ENABLED
@@ -215,35 +213,35 @@ settings:
     - name: ARCH_OS_KERNEL_ARGS
       type: text
       title: Kernel parameters
-      description: Extra parameters, separated by spaces. Usually empty.
+      description: Additional kernel parameters, separated by spaces.
 
   System:
     - name: ARCH_OS_CORE_TWEAKS_ENABLED
       type: bool
       title: Core tweaks
       description: |
-        Colored pacman, quiet boot, password asterisks, tuned memory, disk and
-        log settings. Installs nothing.
+        Colored pacman, quiet boot, password asterisks and tuned system
+        settings.
       default: true
 
     - name: ARCH_OS_MULTILIB_ENABLED
       type: bool
       title: 32-bit support
-      description: For Steam, Wine and other 32-bit software.
+      description: 32-bit libraries for Steam and Wine.
       default: true
 
     - name: ARCH_OS_AUR_HELPER_ENABLED
       type: bool
       title: AUR helper
-      description: Paru for the Arch User Repository. Builds in about 15 minutes.
+      description: Paru as AUR helper. The build takes about 15 minutes.
       default: true
 
     - name: ARCH_OS_CONTAINER_ENGINE
       type: list
       title: Container engine
       description: |
-        Docker runs a root daemon, used through sudo. Podman needs none and
-        accepts docker commands. Both include Compose.
+        Docker uses a root daemon via sudo. Podman is daemonless and accepts
+        docker commands. Both include Compose.
       required: true
       options: [docker, podman, none]
       default: none
@@ -252,15 +250,15 @@ settings:
       type: bool
       title: Firewall
       description: |
-        Blocks incoming connections except SSH and printer discovery. File
-        sharing only on networks marked home: nmcli connection modify <name>
-        connection.zone home
+        Blocks incoming connections except the SSH server and, with GNOME,
+        printer discovery. File sharing works on networks marked home: nmcli
+        connection modify <name> connection.zone home
       default: true
 
     - name: ARCH_OS_SSH_SERVER_ENABLED
       type: bool
       title: SSH server
-      description: Remote login, by key only.
+      description: Remote login with the account, by key only.
       default: false
 
     # sshd takes no password, so the account needs a key from the start.
@@ -268,26 +266,24 @@ settings:
       type: text
       title: SSH key
       description: |
-        A public key, or an address serving keys, such as
+        The public key, or a URL serving keys, such as
         https://github.com/<user>.keys
       when: ARCH_OS_SSH_SERVER_ENABLED == true
       required: true
       pattern: '^(https://[^ ]+|(ssh|ecdsa|sk)-[^ ]+ [A-Za-z0-9+/=]+( .*)?)$'
-      error: A public key such as ssh-ed25519 AAAA, or an https address.
+      error: A public key such as ssh-ed25519 AAAA, or an https URL.
 
     - name: ARCH_OS_HOUSEKEEPING_ENABLED
       type: bool
       title: Housekeeping
       description: |
-        Ranks mirrors and trims the package cache weekly, monitors disk health.
+        Ranks mirrors and cleans the package cache weekly. Monitors disk health.
       default: true
 
     - name: ARCH_OS_EDITOR
       type: list
       title: Text editor
-      description: |
-        Default for sudoedit, git and systemctl edit. Nano and Micro are
-        beginner-friendly, Vim, Neovim and Helix modal.
+      description: The default editor for sudoedit, git and systemctl edit.
       required: true
       options: [nano, vim, neovim, micro, helix]
       default: nano
@@ -318,14 +314,14 @@ settings:
     - name: ARCH_OS_DESKTOP
       type: list
       title: Environment
-      description: GNOME on gnome, text console only on none.
+      description: GNOME, or none for the console only.
       required: true
       options: [gnome, none]
 
     - name: ARCH_OS_DESKTOP_KEYBOARD_LAYOUT
       type: list
       title: Desktop keyboard
-      description: On auto it matches the console keyboard.
+      description: The desktop keyboard layout. Auto follows the console.
       when: ARCH_OS_DESKTOP != none
       required: true
       options-from: options_layouts()
@@ -336,7 +332,7 @@ settings:
     - name: ARCH_OS_DESKTOP_KEYBOARD_VARIANT
       type: list
       title: Keyboard variant
-      description: Such as dead keys. On none the standard layout.
+      description: A layout variant, such as dead keys.
       when: ARCH_OS_DESKTOP != none
       required: true
       options-from: options_variants()
@@ -347,7 +343,7 @@ settings:
     - name: ARCH_OS_DESKTOP_KEYBOARD_MODEL
       type: text
       title: Keyboard model
-      description: Almost every keyboard is a pc105.
+      description: The keyboard model. Usually pc105.
       when: ARCH_OS_DESKTOP != none
       default: pc105
       pattern: '^[A-Za-z0-9_-]+$'
@@ -372,8 +368,8 @@ settings:
       type: list
       title: Web browser
       description: |
-        Default browser, in the system language. Epiphany is GNOME Web. Vivaldi
-        includes proprietary video codecs.
+        The default browser. Epiphany is GNOME Web. Vivaldi includes proprietary
+        codecs.
       when: ARCH_OS_DESKTOP != none
       required: true
       options: [epiphany, firefox, chromium, vivaldi, none]
@@ -382,18 +378,16 @@ settings:
     - name: ARCH_OS_BACKUP
       type: list
       title: Backup
-      description: Scheduled backups to a drive or a server.
+      description: Scheduled backups of the home folder to a drive or server.
       when: ARCH_OS_DESKTOP != none
       required: true
-      options: [pika-backup, deja-dup, none]
-      default: pika-backup
+      options: [deja-dup, pika-backup, none]
+      default: deja-dup
 
     - name: ARCH_OS_FLATPAK_ENABLED
       type: bool
       title: Flatpak
-      description: |
-        Apps from Flathub, through GNOME Software or Bazaar. Required for
-        Parental Controls.
+      description: Apps from Flathub. Required for Parental Controls.
       when: ARCH_OS_DESKTOP != none
       default: true
 
@@ -401,8 +395,7 @@ settings:
       type: bool
       title: Bazaar
       description: |
-        Flatpak-only store instead of GNOME Software, plus GNOME Firmware for
-        firmware updates.
+        Bazaar as Flatpak store instead of GNOME Software, plus GNOME Firmware.
       when:
         - ARCH_OS_DESKTOP != none
         - ARCH_OS_FLATPAK_ENABLED == true
@@ -412,9 +405,9 @@ settings:
       type: bool
       title: File sharing
       description: |
-        Shares the home folder and a public folder with Windows and macOS, on
-        home networks or, without firewall, on every network. Anyone there can
-        try the account password.
+        Shares the home folder and a public folder via SMB, on home networks or,
+        without the firewall, on all networks. Anyone there can try the account
+        password.
       when:
         - ARCH_OS_DESKTOP != none
         - ARCH_OS_DESKTOP_EXTRAS_ENABLED == true
@@ -429,7 +422,7 @@ language: Region
 confirm: |
   Install Arch OS on {{ARCH_OS_DISK}}?
 
-  Everything on the disk is erased.
+  All data on the disk is erased. An internet connection is required throughout.
 
 # Stage is when, task is what. Within a stage, needs first, then file order.
 stages:
@@ -441,7 +434,7 @@ stages:
         10: |
           Clock not set
 
-          Check the internet connection.
+          Check the connection and choose Install now again.
 
     partition:
       title: Partition and format the disk
@@ -450,13 +443,13 @@ stages:
       # Before anything is written.
       errors:
         10: |
-          Disk not available
+          {{ARCH_OS_DISK}} not available
 
-          Choose the disk again.
+          Choose another disk on the dashboard.
         11: |
-          Disk in use
+          {{ARCH_OS_DISK}} in use
 
-          Unmount {{ARCH_OS_DISK}} or close what uses it.
+          Unmount it, then choose Install now again.
 
   # Base system, configured and bootable.
   system:
@@ -551,7 +544,7 @@ stages:
         10: |
           SSH key not added
 
-          Add a public key to ~/.ssh/authorized_keys.
+          Add one to ~/.ssh/authorized_keys after the first boot.
 
     vm-guest:
       title: Install the VM guest tools
@@ -639,18 +632,18 @@ stages:
 report: |
   Arch OS installed
 
-  {{ARCH_OS_HOSTNAME}} on {{ARCH_OS_DISK}}.
+  {{ARCH_OS_HOSTNAME}} is ready to boot.
 
 # The statuses lib.sh names.
 errors:
   3: |
     Internet connection lost
 
-    Reconnect this machine.
+    Reconnect and choose Install now to start over.
   5: |
     AUR unreachable
 
-    Install the package later.
+    Step skipped. Install the package later.
 
 # ─── Around It ───────────────────────────────────────────────────────────────
 
@@ -665,7 +658,7 @@ actions:
   internet:
     title: Internet
     run: check_online()
-    error: No internet connection. Plug in a cable.
+    error: No internet connection. Connect a cable to continue.
     on:
       failure: [wifi]
 
@@ -677,38 +670,39 @@ actions:
       - name: ARCH_OS_CONFIG_SOURCE
         type: text
         title: Configuration code
-        description: End of the paste.rs address, or the whole address.
+        description: The code at the end of a paste.rs link, or the whole link.
         required: true
         pattern: '^[A-Za-z0-9][A-Za-z0-9:/._-]*$'
-        error: A code such as aBc12, or the whole address.
+        error: A code such as aBc12, or the whole link.
     run: import_config()
     error: |
-      No configuration at {{ARCH_OS_CONFIG_SOURCE}}. Check the code and the
-      connection.
+      No configuration found at {{ARCH_OS_CONFIG_SOURCE}}. Check the code and
+      the connection.
 
   # The secure-boot task signs the boot chain itself.
   secure-boot-off:
     title: Secure Boot off
     run: secure_boot_off()
-    error: Secure Boot on. Turn it off in the firmware and start again.
+    error: |
+      Secure Boot enabled. Disable it in the firmware settings and start again.
 
   # Choosing the row is the consent, so it names what leaves.
   share-config:
     title: Share the configuration
     description: |
-      Uploads these answers to paste.rs for another installation, readable by
-      anyone with the address. Passwords are excluded.
+      Uploads these answers to paste.rs. Anyone with the link can read them.
+      Passwords are excluded.
     run: share_config()
     simulates: true
-    error: Upload to paste.rs failed.
+    error: Upload failed. Check the connection and try again.
     report: |
       Configuration shared
 
-      Enter the end of the address under Shared configuration in another
+      Scan the QR code or enter the code under Shared configuration in another
       installation.
     qr: ARCH_OS_CONFIG_URL
 
   uefi:
     title: Booted in UEFI mode
     run: booted_in_uefi()
-    error: Booted in BIOS mode. Set UEFI in the firmware and start again.
+    error: UEFI required. Switch the firmware to UEFI mode and start again.

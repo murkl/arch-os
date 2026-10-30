@@ -9,7 +9,7 @@ use crate::script::Failure;
 use crate::ui::detail::Act;
 use crate::ui::draw::put;
 use crate::ui::list::{List, Picked, Row};
-use crate::ui::{Ctx, Flow, Key, Page, Tone};
+use crate::ui::{Ctx, Does, Flow, Key, Page, Tone};
 
 pub struct ResultsPage {
     /// Failure count out of the total: three of four differs from three of forty.
@@ -67,15 +67,15 @@ impl Page for ResultsPage {
         );
     }
 
-    fn hints(&self, _: &Ctx) -> Vec<(&'static str, String)> {
-        vec![("↑↓", t("choose")), ("⏎", t("open")), ("esc", t("back"))]
+    fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
+        vec![("↑↓", Does::Choose), ("⏎", Does::Open), ("esc", Does::Back)]
     }
 
     fn key(&mut self, key: Key, _: &mut Ctx) -> Flow {
         match self.list.key(key) {
             Picked::Open(i) => {
                 let (title, f) = &self.failed[i];
-                let acts = vec![Act::new(t("Back"), |_| Flow::Pop)];
+                let acts = vec![Act::new(t("Back"), |_| Flow::Pop).does(Does::Back)];
                 Flow::Push(Box::new(super::failure::FailurePage::new(
                     format!("result {i}"),
                     title.clone(),

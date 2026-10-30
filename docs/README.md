@@ -2,14 +2,14 @@
 
 <img src="banner.png" alt="Arch OS">
 
-<p>Install <b>Arch Linux</b> with <b>GNOME</b> or the <b>text&nbsp;console</b>, plus <b>Recovery</b> and <b>System&nbsp;Manager</b>.</p>
+<p>Install <b>Arch Linux</b> with <b>GNOME</b> or the <b>console</b>, plus <b>Recovery</b> and <b>System&nbsp;Manager</b>.</p>
 
 <p><a href="https://github.com/murkl/arch-os/releases/latest"><img src="download.svg" alt="Download the latest ISO, for x86_64 with UEFI"></a></p>
 
 <p>
   <sub><b>Requirements</b></sub>
   <br>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="requirements/core-dark.svg"><img src="requirements/core-light.svg" alt="Core: Text console, 2 GiB memory, 16 GiB disk"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="requirements/core-dark.svg"><img src="requirements/core-light.svg" alt="Core: Console, 2 GiB memory, 16 GiB disk"></picture>
   <picture><source media="(prefers-color-scheme: dark)" srcset="requirements/desktop-dark.svg"><img src="requirements/desktop-light.svg" alt="Desktop: GNOME on Wayland, 4 GiB memory, 32 GiB disk"></picture>
 </p>
 
@@ -25,24 +25,24 @@
 ## Features
 
 - Minimal base: linux-zen, btrfs, systemd-boot
+- GNOME on Wayland or console
 - Disk encryption, Secure Boot with own keys
 - One password for disk, login and keyring
 - Btrfs snapshot before every package change
 - Recovery partition with rollback and self-update
 - Recovery in boot menu, firmware menu and app grid
 - Automatic fallback: fallback image, then Recovery
-- GNOME on Wayland or text console
 - Drivers and VM guest tools detected
 - Flatpak with GNOME Software or Bazaar
 - Browser, backup app and text editor of choice
 - AUR helper, 32-bit support, containers, firewall, SSH
 - File sharing with Windows and macOS
+- [Boot splash](https://github.com/murkl/plymouth-theme-arch-os), [System Manager](https://github.com/murkl/arch-os-manager), [Shell enhancement](https://github.com/murkl/starship-theme-arch-os)
 - Zram, OOM protection, [tuned defaults](REFERENCE.md#tuning)
-- Ranked mirrors, trimmed package cache, disk health monitoring
+- Ranked mirrors, cleaned package cache, disk health monitoring
 - Works offline until the next update
-- [Bootsplash](https://github.com/murkl/plymouth-theme-arch-os), [System Manager](https://github.com/murkl/arch-os-manager), [Shell Enhancement](https://github.com/murkl/starship-theme-arch-os)
-- Keyboard and time zone follow the language
 - Resumable installation, shareable answers
+- Keyboard and time zone follow the language
 - English and German, [Adding a Language](CONTRIBUTING.md#adding-a-language)
 
 ## Installation

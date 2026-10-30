@@ -15,11 +15,11 @@ settings:
     - name: ARCH_OS_RECOVERY_DISK
       type: list
       title: Disk
-      description: Holds the Arch OS to repair. Opening it changes nothing.
+      description: The disk with the installation to repair.
       required: true
       options-from: options_disks()
       pattern: '^/dev/[A-Za-z0-9_-]+$'
-      error: Choose a disk that exists.
+      error: Disk not found.
 
     # A LUKS header is readable without the password.
     - name: ARCH_OS_RECOVERY_ENCRYPTED
@@ -34,7 +34,7 @@ settings:
       description: Unlocks the disk. Never saved.
       when: ARCH_OS_RECOVERY_ENCRYPTED == true
       required: true
-      error: Wrong password for this disk.
+      error: Wrong password.
       check: check_disk_password()
 
   # First, since the disk password is typed on it. Never written to the system.
@@ -42,7 +42,7 @@ settings:
     - name: ARCH_OS_RECOVERY_KEYMAP
       type: list
       title: Console keyboard
-      description: Preselected from the live system.
+      description: The keyboard layout for this session.
       first: true
       required: true
       options-from: options_keymaps()
@@ -65,14 +65,13 @@ stages:
       # A disk the Installer did not make.
       errors:
         10: |
-          No Arch OS found
+          No Arch OS on {{ARCH_OS_RECOVERY_DISK}}
 
-          Choose another disk.
+          Choose another disk on the dashboard.
         11: |
-          Unknown layout
+          Unsupported layout
 
-          Use the Recovery of the release {{ARCH_OS_RECOVERY_DISK}} was
-          installed with.
+          Use the Recovery of the release this system was installed with.
 
   # Snapshot in place of the system.
   rollback:
@@ -83,14 +82,13 @@ stages:
       asks:
         name: ARCH_OS_RECOVERY_SNAPSHOT
         title: Snapshot
-        description: Replaces the system. Newest first.
+        description: Replaces the current system.
         options-from: options_snapshots()
         filter: open
       confirm: |
-        Roll back {{ARCH_OS_RECOVERY_DISK}} to {{ARCH_OS_RECOVERY_SNAPSHOT}}?
+        Roll back to {{ARCH_OS_RECOVERY_SNAPSHOT}}?
 
-        The current system becomes a snapshot of its own, so this can be undone.
-        /home and the other snapshots stay.
+        The current system is kept as a snapshot. /home stays unchanged.
 
   # Boot files rebuilt from the system.
   rebuild:
@@ -99,8 +97,7 @@ stages:
       confirm: |
         Rebuild kernel images, initramfs and boot entries?
 
-        Needed after a rollback past a kernel update, or the system boots
-        without its modules. Works offline.
+        Required after a rollback past a kernel update.
       # A snapshot may hold other kernel modules than /boot.
       yes-after: [snapshot]
       # Modules without the image Arch installs beside them.
@@ -136,30 +133,25 @@ actions:
 
   # Itself, or from the ISO one that no longer starts.
   recovery-to-update:
-    title: Recovery to update
+    title: A Recovery to update
     run: recovery_to_update()
 
   # Choosing the row only looks. update-install asks before installing.
   update:
     title: Update the Recovery
-    description: |
-      Looks for the newest Recovery of this release series and installs it after
-      confirmation.
+    description: Checks for a Recovery update.
     group: Configuration
     requires: [recovery-to-update]
     run: recovery_up_to_date()
     error: |
       No internet connection. Connect to Wi-Fi on the dashboard or plug in a
       cable.
-    report: |
-      Nothing to update
-
-      No newer Recovery in this release series.
+    report: Recovery is up to date
     on:
       failure: [update-install]
 
   # Opened where update found one. An encrypted system is opened, since its
-  # keys sign the new Recovery.
+  # keys sign the new Recovery where it has sbctl.
   update-install:
     title: Install the newest Recovery
     requires: [online]
@@ -167,41 +159,35 @@ actions:
       - name: ARCH_OS_RECOVERY_UPDATE_PASSWORD
         type: password
         title: Encryption password
-        description: |
-          Opens the system, whose keys sign the new Recovery under Secure Boot.
-          Never saved.
+        description: Unlocks the disk. Never saved.
         when: ARCH_OS_RECOVERY_ENCRYPTED == true
         required: true
-        error: Wrong password for this disk.
+        error: Wrong password.
         check: check_update_password()
     confirm: |
-      Install the newest Recovery of this release series?
+      Install the newest Recovery?
 
-      Downloads, verifies and writes it to its partition. Active from the next
-      start.
+      It replaces the current one. Active after a restart.
     run: install_recovery_update()
     error: |
-      Recovery update failed. Until an update succeeds, the Recovery on the disk
-      may not start.
+      Installation failed. The Recovery may not start until an update
+      succeeds.
     # No internet and no GitHub are the module's.
     errors:
       10: |
         Download interrupted
 
-        Nothing changed.
+        Try again.
       11: |
-        Download damaged
+        Checksum mismatch
 
-        Nothing changed.
-      12: |
-        Recovery too large
-
-        Nothing changed.
+        Try again.
+      12: Recovery too large for its partition
       13: |
-        Writing the Recovery failed
+        Write verification failed
 
-        The system boots as before, the Recovery only after a successful update.
+        The Recovery does not start until an update succeeds. Try again.
     report: |
       Recovery updated
 
-      Active from the next start.
+      Active after a restart.

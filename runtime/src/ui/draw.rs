@@ -5,7 +5,7 @@ use ratatui::layout::Rect;
 use ratatui::style::Style as Cell;
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
-use super::{Ctx, Tone};
+use super::{Ctx, Does, Tone};
 use crate::i18n::t;
 
 pub fn width(s: &str) -> usize {
@@ -256,27 +256,32 @@ pub fn frame(
     )
 }
 
+/// Each key with its deed. Pages name keys as glyphs, the console shows them as words.
+pub fn keys(ctx: &Ctx, hints: &[(&'static str, Does)]) -> Vec<String> {
+    let g = &ctx.style.glyphs;
+    hints
+        .iter()
+        .map(|(k, does)| {
+            let key = match *k {
+                "↑↓" => g.up_down,
+                "⏎" => g.enter,
+                "⇞⇟" => g.page_keys,
+                other => other,
+            };
+            format!("{key} {}", does.label())
+        })
+        .collect()
+}
+
 /// Dimmed page keys with the version on the right. Drawn after the page, which knows its keys
 /// only once drawn.
-pub fn footer(area: Rect, buf: &mut Buffer, ctx: &Ctx, hints: &[(&'static str, String)]) {
+pub fn footer(area: Rect, buf: &mut Buffer, ctx: &Ctx, hints: &[(&'static str, Does)]) {
     let s = &ctx.style;
     let Some((x, width, _, bottom)) = geometry(area) else {
         return;
     };
     let version = crate::version::version();
-    // Pages name keys as glyphs. The console shows them as words.
-    let keys: Vec<String> = hints
-        .iter()
-        .map(|(k, label)| {
-            let key = match *k {
-                "↑↓" => s.glyphs.up_down,
-                "⏎" => s.glyphs.enter,
-                "⇞⇟" => s.glyphs.page_keys,
-                other => other,
-            };
-            format!("{key} {label}")
-        })
-        .collect();
+    let keys = keys(ctx, hints);
     let sep = format!(" {} ", s.glyphs.separator);
     let line = keys.join(&sep);
     let room = (width as usize).saturating_sub(version.width() + 3);

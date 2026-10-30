@@ -4,7 +4,7 @@ use ratatui::Frame;
 use std::sync::Arc;
 use std::sync::mpsc::Sender;
 
-use super::{Ctx, Data, Flow, Key, Msg, Nav, Page, PageId, Style, draw, pages};
+use super::{Ctx, Data, Does, Flow, Key, Msg, Nav, Page, PageId, Style, draw, pages};
 use crate::cli::Start;
 use crate::store::Store;
 
@@ -333,6 +333,8 @@ impl App {
         self.ctx.behind = self.pages[..self.pages.len() - 1]
             .iter()
             .any(|(_, p)| p.holds());
+        let over_menu =
+            self.pages.len() > 1 && self.pages[self.pages.len() - 2].1.id(&self.ctx) == "dashboard";
         let (id, page) = self.pages.last_mut().expect("the dashboard stays");
         self.ctx.page = *id;
         self.ctx.cursor.set(None);
@@ -352,7 +354,15 @@ impl App {
         } else {
             let content = draw::frame(area, frame.buffer_mut(), &self.ctx, &path, note);
             page.draw(content, frame.buffer_mut(), &mut self.ctx);
-            let hints = page.hints(&self.ctx);
+            let mut hints = page.hints(&self.ctx);
+            // Back to the dashboard says so, as in the System Manager.
+            if over_menu {
+                for (_, does) in &mut hints {
+                    if *does == Does::Back {
+                        *does = Does::Menu;
+                    }
+                }
+            }
             draw::footer(area, frame.buffer_mut(), &self.ctx, &hints);
         }
         // Terminal cursor at a drawn text box. Ratatui hides it otherwise.
@@ -564,7 +574,7 @@ pub mod tests {
         let langs = crate::i18n::langs();
         let names: Vec<&str> = langs.iter().map(|l| l.name.as_str()).collect();
         assert!(
-            shown.contains("Language")
+            shown.contains("Please choose your language")
                 && shown.contains("English")
                 && names.iter().all(|n| shown.contains(n)),
             "{shown}"
@@ -657,6 +667,34 @@ pub mod tests {
         app.ctx.first = false;
     }
 
+    /// Back to the dashboard says so. A step back inside the page does not.
+    #[test]
+    fn back_to_the_dashboard_is_named_so() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app(true);
+        answered(&mut app);
+        press(&mut app, &[Key::Char('f')]);
+        type_text(&mut app, "host");
+        screen(&mut app, &mut term);
+        press(&mut app, &[Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        let shown = screen(&mut app, &mut term);
+        assert!(shown.contains("esc dashboard"), "{shown}");
+        press(&mut app, &[Key::Esc]);
+        let password = app.ctx.module.setting("TUX_PASSWORD").unwrap();
+        let page = pages::password::PasswordPage::new(password, pages::Then::Pop);
+        open(&mut app, Box::new(page));
+        assert!(screen(&mut app, &mut term).contains("esc dashboard"));
+        type_text(&mut app, "pw");
+        press(&mut app, &[Key::Enter]);
+        let shown = screen(&mut app, &mut term);
+        assert!(
+            shown.contains("Repeat") && shown.contains("esc back"),
+            "{shown}"
+        );
+    }
+
     #[test]
     fn the_dashboard_filters_and_opens_a_question_that_holds_an_answer_to_its_rule() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -713,7 +751,7 @@ pub mod tests {
         assert!(screen(&mut app, &mut term).contains("Repeat"));
         type_text(&mut app, "px");
         press(&mut app, &[Key::Enter]);
-        assert!(screen(&mut app, &mut term).contains("Entries do not match."));
+        assert!(screen(&mut app, &mut term).contains("The two entries do not match."));
         type_text(&mut app, "pw");
         press(&mut app, &[Key::Enter]);
         type_text(&mut app, "pw");
@@ -955,7 +993,7 @@ pub mod tests {
             shown.contains("Running")
                 && shown.contains("first")
                 && shown.contains("50%")
-                && shown.contains("tab overview"),
+                && shown.contains("tab compact"),
             "{shown}"
         );
         assert!(!shown.contains("Prepare the disk"), "{shown}");
@@ -1107,6 +1145,30 @@ pub mod tests {
         );
     }
 
+    /// The footer names what enter does on the row under the cursor.
+    #[test]
+    fn enter_is_named_after_the_row_it_is_on() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app(false);
+        answered(&mut app);
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Down, Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        std::thread::sleep(Duration::from_millis(650));
+        let shown = screen(&mut app, &mut term);
+        assert!(shown.contains("⏎ continue"), "{shown}");
+        press(&mut app, &[Key::Up]);
+        let shown = screen(&mut app, &mut term);
+        assert!(shown.contains("⏎ run"), "{shown}");
+    }
+
     /// Row keys do nothing while the log hides the rows.
     #[test]
     fn tab_shows_what_a_finished_run_printed_under_each_task() {
@@ -1137,7 +1199,7 @@ pub mod tests {
         assert!(
             shown.contains("Took 00:0")
                 && shown.contains("Install the base")
-                && shown.contains("tab overview"),
+                && shown.contains("tab compact"),
             "{shown}"
         );
         assert!(!shown.contains("Continue"), "{shown}");
@@ -1382,7 +1444,7 @@ pub mod tests {
         assert!(
             shown.contains("Restart")
                 && shown.contains("Exit")
-                && shown.contains("move")
+                && shown.contains("choose")
                 && !shown.contains('\u{203a}'),
             "{shown}"
         );

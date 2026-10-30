@@ -1,6 +1,6 @@
 [[ $- != *i* ]] && return
 
-# On a text console nothing else imports environment.d. The generator quotes
+# On a console nothing else imports environment.d. The generator quotes
 # like a shell, so every value arrives as written.
 if [[ ${SHLVL} == 1 && -z ${DISPLAY} ]]; then
     set -a
@@ -43,7 +43,7 @@ export LS_COLORS="di=1;34:ln=36:so=35:pi=33:ex=32:bd=33;1:cd=33;1:su=31:sg=31:tw
 # GNOME Console opens a new tab in the current folder.
 [ -f /etc/profile.d/vte.sh ] && source /etc/profile.d/vte.sh
 
-# The text console (TERM=linux) lacks the prompt's glyphs. TERM, unlike the
+# The console (TERM=linux) lacks the prompt's glyphs. TERM, unlike the
 # terminal device, holds after su, in a chroot and over ssh.
 [[ $TERM != linux ]] && command -v starship &>/dev/null && eval "$(starship init bash)"
 command -v zoxide &>/dev/null && eval "$(zoxide init bash)"
