@@ -1,7 +1,7 @@
 # language  console keymap  xkb layout  console font
 #
 # language  a locale or its language, the longer match wins (de_CH over de)
-# font      by script, none where the text console has no glyphs for it
+# font      by script, none where the console has no glyphs for it
 #
 # An unlisted language gets the us layout.
 #

@@ -355,7 +355,7 @@ impl App {
             let content = draw::frame(area, frame.buffer_mut(), &self.ctx, &path, note);
             page.draw(content, frame.buffer_mut(), &mut self.ctx);
             let mut hints = page.hints(&self.ctx);
-            // Back to the main menu says so, as in the System Manager.
+            // Back to the dashboard says so, as in the System Manager.
             if over_menu {
                 for (_, does) in &mut hints {
                     if *does == Does::Back {
@@ -667,9 +667,9 @@ pub mod tests {
         app.ctx.first = false;
     }
 
-    /// Back to the main menu says so. A step back inside the page does not.
+    /// Back to the dashboard says so. A step back inside the page does not.
     #[test]
-    fn back_to_the_main_menu_is_named_so() {
+    fn back_to_the_dashboard_is_named_so() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
         crate::i18n::set("en");
         let (mut app, mut term, rx) = app(true);
@@ -680,12 +680,12 @@ pub mod tests {
         press(&mut app, &[Key::Enter]);
         settle(&mut app, &mut term, &rx);
         let shown = screen(&mut app, &mut term);
-        assert!(shown.contains("esc main menu"), "{shown}");
+        assert!(shown.contains("esc dashboard"), "{shown}");
         press(&mut app, &[Key::Esc]);
         let password = app.ctx.module.setting("TUX_PASSWORD").unwrap();
         let page = pages::password::PasswordPage::new(password, pages::Then::Pop);
         open(&mut app, Box::new(page));
-        assert!(screen(&mut app, &mut term).contains("esc main menu"));
+        assert!(screen(&mut app, &mut term).contains("esc dashboard"));
         type_text(&mut app, "pw");
         press(&mut app, &[Key::Enter]);
         let shown = screen(&mut app, &mut term);
@@ -1215,7 +1215,7 @@ pub mod tests {
     fn back_from_an_ended_run_leads_on_and_never_to_the_questions_behind_it() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
         crate::i18n::set("en");
-        for (host, expect) in [("tuxbox", "Restart"), ("broken", "Back to the main menu?")] {
+        for (host, expect) in [("tuxbox", "Restart"), ("broken", "Back to the dashboard?")] {
             let (mut app, mut term, rx) = app(false);
             answered(&mut app);
             app.ctx.store.set("TUX_HOST", host);
@@ -1335,7 +1335,7 @@ pub mod tests {
                         && shown.contains("Nothing after it ran.")
                         && shown.contains("Exit code")
                         && shown.contains("Share the log")
-                        && shown.contains("Back to the main menu"),
+                        && shown.contains("Back to the dashboard"),
                     "{shown}"
                 );
                 assert!(shown.contains("task.sh:2"), "{shown}");

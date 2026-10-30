@@ -16,7 +16,7 @@ Every answer except the passwords lands in `installer.conf` at once, so an inter
 | Copy | `installer.conf` beside the Installer on another machine |
 | Unattended | `arch-os installer --unattended` with `installer.conf` beside it and `ARCH_OS_PASSWORD` in the environment. **[➜ Runtime](../runtime/README.md#unattended)** |
 
-**Note:** _A shared configuration holds hostname, username and language, readable by anyone with the address. The import skips disk and kernel parameters: both belong to one machine, and foreign kernel parameters can open a root shell at boot._
+**Note:** _A shared configuration holds hostname, username and language, readable by anyone with the link. The import skips disk and kernel parameters: both belong to one machine, and foreign kernel parameters can open a root shell at boot._
 
 ## Disk
 
@@ -58,7 +58,7 @@ systemd-boot starts the system, its fallback and the Recovery. With **Secure Boo
 | Part | How | Why |
 | --- | --- | --- |
 | Loader | `bootctl install` from the live system, its firmware entry first in the boot order | In a chroot `bootctl` writes no working firmware entry |
-| Images | `/boot/EFI/arch-os/` | In `EFI/Linux` the loader lists each twice |
+| UKIs | `/boot/EFI/arch-os/` | In `EFI/Linux` the loader lists each twice |
 | Menu | Hidden, shown while **Space** is held | Some firmware passes the key too late, so the Recovery is also in the firmware boot menu |
 | Order | `sort-key arch` and `arch-fallback` | System first, fallback second. The Recovery sorts by its `os-release` ID |
 | Command line | `kernel_args` in the `bootloader` task | One source for images and entries |
@@ -176,10 +176,10 @@ Enough for a usable system, few enough to need no upkeep. The rest follows the a
 | `base`, `linux-zen`, `mkinitcpio`, `sudo`, `zram-generator`, `networkmanager`, `btrfs-progs`, `snapper` | The system itself |
 | `dosfstools` | systemd checks the EFI partition at every boot. Boot counting writes there, and FAT has no journal |
 | Chosen editor, `man-db`, `man-pages`, `openssh` | Not in `base` |
-| `linux-firmware`, `sof-firmware` | Omitted in a VM without a passed-through card, whose drivers are in the kernel. `sof-firmware` is the sound of many laptops |
+| `linux-firmware`, `sof-firmware`, `wireless-regdb` | Omitted in a VM without a passed-through card, whose drivers are in the kernel. `sof-firmware` is the sound of many laptops |
 
 - A Wi-Fi network joined in the Installer becomes a NetworkManager connection, so the first boot is online. An 802.1X network needs joining again
-- Graphics drivers detected per card in sysfs. Always Mesa, `vkd3d`, `mesa-utils` and `vulkan-tools`. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Hardware_video_acceleration)**
+- Graphics drivers with GNOME, detected per card in sysfs. Always Mesa, `vkd3d`, `mesa-utils` and `vulkan-tools`. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Hardware_video_acceleration)**
 
 | Card | Packages |
 | --- | --- |
@@ -225,7 +225,7 @@ One account in `wheel`, with `sudo`. Root keeps Arch's locked password: `sudo` g
 
 | Answers | Disk | Login |
 | --- | --- | --- |
-| One password | Unlocked with the account password | Automatic. `pam_gdm` passes the disk password to the keyring, which works only if it matches the account password |
+| One password | Unlocked with the account password | Automatic with GNOME. `pam_gdm` passes the disk password to the keyring, which works only if it matches the account password |
 | Separate disk password | Own password | Login screen listing every account. For shared machines |
 | No encryption | Open | Login screen |
 
@@ -254,10 +254,10 @@ Filtered before installing: what **Slim desktop** leaves out is never downloaded
 | --- | --- |
 | App store | GNOME Software installs Flatpaks and, with `fwupd` from **Desktop extras**, firmware. No PackageKit, so only pacman changes the system. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Pacman/Tips_and_tricks#Graphical)** |
 | Bazaar | Replaces it with Flatpak chosen, plus `gnome-firmware`, since Bazaar installs Flatpaks only. **[➜ Bazaar](https://apps.gnome.org/Bazaar/)** |
-| Browser | In the system language: `firefox-i18n-<lang>` for Firefox, `hunspell-<lang>` for Firefox and GNOME Web, codecs for GNOME Web and Vivaldi. Default for web links, pinned to the dock. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Firefox)** |
+| Browser | In the system language: `firefox-i18n-<lang>` for Firefox, `hunspell-<lang>` for Firefox and GNOME Web, codecs for GNOME Web and Vivaldi. Default for web links, pinned to the dock with **Desktop extras**. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Firefox)** |
 | `.local` names | `nss-mdns` before the resolver in `/etc/nsswitch.conf`, so printers, shares and machines resolve by name. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Avahi#Hostname_resolution)** |
 | GNOME Boxes | Works once installed: libvirt session, KVM open to every account, disks in the home folder. A QEMU guest gets `phodav` for shared folders. **[➜ GNOME Boxes](https://apps.gnome.org/Boxes/)** |
-| Extensions | From **[extensions.gnome.org](https://extensions.gnome.org)** through `gnome-browser-connector`, managed in the **Extensions** app |
+| Extensions | From **[extensions.gnome.org](https://extensions.gnome.org)** through `gnome-browser-connector` with **Desktop extras**, managed in the **Extensions** app |
 | File sharing | The home folder, and a public folder readable by guests and writable by the owner, announced under the hostname (`mdns name = mdns`) |
 | Firmware | `fwupd-refresh.timer` keeps the catalog current wherever `fwupd` is installed, with **Desktop extras** or GNOME Firmware. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Fwupd)** |
 
@@ -304,7 +304,7 @@ nmcli connection modify <name> connection.zone home
 
 **Note:** _Docker passes firewalld, so with the firewall its published ports bind to `127.0.0.1`. `-p 0.0.0.0:8080:80` publishes to the network. **[➜ Docker](https://docs.docker.com/engine/network/packet-filtering-firewalls/)**_
 
-**Note:** _The SSH server takes keys only, set in `/etc/ssh/sshd_config.d/10-arch-os.conf`. The Installer asks for the account's key, a public key or an address such as `https://github.com/<user>.keys`, and writes it to `~/.ssh/authorized_keys`._
+**Note:** _The SSH server takes keys only, set in `/etc/ssh/sshd_config.d/10-arch-os.conf`. The Installer asks for the account's key, a public key or a URL such as `https://github.com/<user>.keys`, and writes it to `~/.ssh/authorized_keys`._
 
 ## Offline
 
@@ -342,7 +342,7 @@ Repairs a system that no longer starts, from its own partition or from the ISO.
 
 Asks for keyboard and disk, on its partition for neither, and reads the rest from the disk. **[➜ Recovery](../recovery/README.md#answers)**
 
-- Repairs what the Installer of its release series creates, without network. **Connect to Wi-Fi** in the main menu serves an update or a download in the shell
+- Repairs what the Installer of its release series creates, without network. **Connect to Wi-Fi** on the dashboard serves an update or a download in the shell
 - A rollback builds the new `@` before touching the old one and keeps the old one as a snapshot, so it can be undone. The next run completes an interrupted one
 - `systemctl reboot --boot-loader-entry=arch-os-recovery.efi` starts it once. **Recovery** in the app grid does the same after a confirmation that opens on **Cancel**
 
@@ -372,10 +372,10 @@ Runs as a kiosk: tty1 belongs to it, no console has a login, a serial one includ
 
 #### Update
 
-**Update the Recovery** in the main menu checks the GitHub releases and installs after a confirmation that opens on **No**.
+**Update the Recovery** on the dashboard checks the GitHub releases and installs after a confirmation that opens on **No**.
 
 - Within its series only: 2.0.0 updates to 2.4.1, never to 3.0.0, whose Recovery may not repair this layout
 - From the ISO only for a disk whose Recovery no longer starts, the way back after an interrupted update
-- Download, checksum, size and signature are checked before the partition is touched. An encrypted system is opened, since its keys sign the new image
+- Download, checksum and size are checked before the partition is touched. An encrypted system is opened, and where it has `sbctl` its keys sign the new image
 - Writes the partition, reads it back, then replaces the boot image. After a power cut in between, the system starts as before
 - The partition keeps its UUID and stays hidden from the file manager

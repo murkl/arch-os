@@ -63,7 +63,7 @@ impl Page for PresetsPage {
             self.list = List::new(rows);
             self.list.described = true;
         }
-        let text = t("Fills in every answer, each changeable afterwards.");
+        let text = t("Prefills every answer. Each one can be changed on the dashboard.");
         let y = paragraph(buf, area, area.y, &text, ctx.style.tone(Tone::Muted)) + 1;
         self.list.draw(
             Rect::new(area.x, y, area.width, area.bottom().saturating_sub(y)),

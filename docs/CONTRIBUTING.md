@@ -1,6 +1,6 @@
 # Contributing
 
-`main` is the only long-lived branch. Every change returns to it as one squash commit, a release is one more pull request.
+`main` is the only long-lived branch. Every change returns to it as one squash commit, a release is a version tag.
 
 ## Development
 
@@ -35,8 +35,8 @@ sudo pacman -S --needed make rust shellcheck shfmt zsh yamllint actionlint zizmo
 | Functions for YAML and scripts | **[lib.sh](../lib.sh)**, checked by **[lib.check.sh](../lib.check.sh)** |
 | Product name and look | **[product.yaml](../product.yaml)** |
 | German translation | **[locales/de.po](../locales/de.po)** |
-| ISO and Recovery image | **[iso](../iso)** |
 | Interface | **[runtime](../runtime)**, in Rust, with everything above embedded |
+| ISO and Recovery image | **[iso](../iso)** |
 
 ## Tasks
 
@@ -45,7 +45,7 @@ sudo pacman -S --needed make rust shellcheck shfmt zsh yamllint actionlint zizmo
 Every file a task writes into the new system lies in `data/` beside `task.sh`, named after its target. `render` from `lib.sh` fills it, `where` names the folder.
 
 ```
-render "$(where)/main.conf" KERNEL="$KERNEL" CMDLINE="$cmdline" >"${MNT}/boot/loader/entries/main.conf"
+render "$(where)/locale.conf" LOCALE="$ARCH_OS_LOCALE_LANG" >"${MNT}/etc/locale.conf"
 ```
 
 - `{{NAME}}` is the only placeholder, filled from `NAME=value`, never from the environment. Every `$` stays for the reader of the file
@@ -80,7 +80,7 @@ Swap off, sync, unmount, lock: in the Installer before partitioning, in the Reco
 | Kind | Example | Page |
 | --- | --- | --- |
 | Expected | No internet, wrong disk, damaged download | Headline and next step, translated. Nothing to share |
-| Broken script | A package Arch renamed, a tool with changed output | Module, task, line, function, command, output, and **Share the log** |
+| Broken script | A package Arch renamed, a tool with changed output | Module, task, script and line, function, command, exit code, output, and **Share the log** |
 
 A script stops on an expected problem with `exit` and a status, worded under `errors:` in `module.yaml`: `3` no internet, `4` GitHub unreachable, `5` AUR unreachable. Statuses from `10` up belong to the task or action using them. **[➜ Stopping on Purpose](../runtime/README.md#stopping-on-purpose)**
 
@@ -202,4 +202,4 @@ make github
 
 - Run it again after changing a file. It also enables Dependabot alerts and private vulnerability reporting
 - `ruleset-main.json` names the project's checks, `topics.json` is optional
-- No CodeQL: its only language here would be the workflows, which zizmor checks in `make check`
+- No CodeQL. zizmor checks the workflows and clippy the runtime in `make check`

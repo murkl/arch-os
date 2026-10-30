@@ -31,7 +31,7 @@ ARCH = ("x86_64", "UEFI")
 SPECS = ("memory", "disk")
 # Name, icon, description, and GiB needed per spec.
 TIERS = (
-    ("Core", "\uf489", "Text console", (2, 16)),  # nf-oct-terminal
+    ("Core", "\uf489", "Console", (2, 16)),  # nf-oct-terminal
     ("Desktop", "\U000f0379", "GNOME on Wayland", (4, 32)),  # nf-md-monitor
 )
 # Shared measures on a grid of 4, so button and pills line up when stacked:

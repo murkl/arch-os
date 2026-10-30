@@ -1,5 +1,5 @@
 # Color only on a terminal, so `ls | grep` reads plain names. Icons need a font
-# the text console lacks.
+# the console lacks.
 alias ls="ls -h --color=auto --group-directories-first"
 command -v eza &>/dev/null && alias ls="eza --color=auto --group-directories-first"
 command -v eza &>/dev/null && [ "$TERM" != linux ] && alias ls="eza --icons=auto --color=auto --group-directories-first"

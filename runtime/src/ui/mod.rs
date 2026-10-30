@@ -106,10 +106,10 @@ pub enum Does {
     CloseFilter,
     Reload,
     Continue,
-    /// Back, where that leads to the main menu.
+    /// Back, where that leads to the dashboard.
     Back,
     Menu,
-    /// Back to the step before on the same page, so never the main menu.
+    /// Back to the step before on the same page, so never the dashboard.
     Return,
     Stop,
     Quit,
@@ -132,7 +132,7 @@ impl Does {
             Does::Reload => t("reload"),
             Does::Continue => t("continue"),
             Does::Back => t("back"),
-            Does::Menu => t("main menu"),
+            Does::Menu => t("dashboard"),
             Does::Return => t("back"),
             Does::Stop => t("stop"),
             Does::Quit => t("quit"),

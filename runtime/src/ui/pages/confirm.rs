@@ -85,10 +85,10 @@ impl YesNoPage {
     pub fn home() -> YesNoPage {
         YesNoPage::new(
             "confirm home".into(),
-            t("Back to the main menu"),
+            t("Back to the dashboard"),
             &format!(
                 "{}\n\n{}",
-                t("Back to the main menu?"),
+                t("Back to the dashboard?"),
                 t("The error is dismissed. The log is kept.")
             ),
             false,

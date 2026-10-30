@@ -492,7 +492,7 @@ impl RunPage {
                     );
                 }
                 acts.push(
-                    Act::new(t("Back to the main menu"), |ctx| onward(Way::Ask, ctx))
+                    Act::new(t("Back to the dashboard"), |ctx| onward(Way::Ask, ctx))
                         .does(Does::Back),
                 );
                 (body, acts)
