@@ -64,7 +64,17 @@ actions:
       are excluded.
     run: share_log()
     simulates: true
-    error: Upload failed. Check the connection and try again.
+    error: Upload failed.
+    # Its own 3, since the Installer's speaks of the install run.
+    errors:
+      3: |
+        No internet connection
+
+        Connect and try again.
+      10: |
+        paste.rs unreachable
+
+        Try again later.
     report: |
       Log shared
 
@@ -105,4 +115,8 @@ actions:
         title: Password
         required: true
     run: join_wifi_with_passphrase()
-    error: Connection to {{ARCH_OS_WIFI_SSID}} failed. Check the password.
+    errors:
+      10: |
+        Connection to {{ARCH_OS_WIFI_SSID}} failed
+
+        Check the password.

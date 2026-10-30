@@ -685,9 +685,21 @@ actions:
         pattern: '^[A-Za-z0-9][A-Za-z0-9:/._-]*$'
         error: A code such as aBc12, or the whole link.
     run: import_config()
-    error: |
-      No configuration found at {{ARCH_OS_CONFIG_SOURCE}}. Check the code and
-      the connection.
+    error: Import failed.
+    # Its own 3, since the Installer's speaks of the install run.
+    errors:
+      3: |
+        No internet connection
+
+        Connect and try again.
+      10: |
+        paste.rs unreachable
+
+        Try again later.
+      11: |
+        No configuration at {{ARCH_OS_CONFIG_SOURCE}}
+
+        Check the code.
 
   # The secure-boot task signs the boot chain itself.
   secure-boot-off:
@@ -704,7 +716,16 @@ actions:
       Passwords are excluded.
     run: share_config()
     simulates: true
-    error: Upload failed. Check the connection and try again.
+    error: Upload failed.
+    errors:
+      3: |
+        No internet connection
+
+        Connect and try again.
+      10: |
+        paste.rs unreachable
+
+        Try again later.
     report: |
       Configuration shared
 
