@@ -54,7 +54,8 @@ The **Shared configuration** profile under `presets:` runs `import-config`. **[â
 
 | On `auto` | Resolves to |
 | --- | --- |
-| `ARCH_OS_DESKTOP_KEYBOARD_LAYOUT` | The console keyboard as `localectl` converts it, the language's own layout where the language uses that keymap |
+| `ARCH_OS_DESKTOP_KEYBOARD_LAYOUT` | The console keyboard as `localectl` converts it, else as `data/languages` names it. The language's own layouts where the language uses that keymap |
+| `ARCH_OS_DESKTOP_KEYBOARD_VARIANT` | The variant of that conversion while the layouts stay, else `none` |
 | `ARCH_OS_VCONSOLE_FONT` | A font for the script of the chosen language |
 
 ## Detected
@@ -72,10 +73,10 @@ The **Shared configuration** profile under `presets:` runs `import-config`. **[â
 
 | Table | Key | Provides |
 | --- | --- | --- |
-| `data/languages` | Language, or locale where it differs | Keymap, xkb layout, console font |
+| `data/languages` | Language, or locale where it differs | Keymap, xkb layouts, console font |
 | `data/countries` | Territory of the locale | Time zone, reflector's country name |
 
-The console keyboard is asked `first` and loaded at once: a password typed on the wrong layout is not the password. The live system's keymap is suggested, else the interface language's.
+The console keyboard is asked `first` and loaded at once: a password typed on the wrong layout is not the password. The live system's keymap is suggested, else the interface language's. A desktop layout that cannot type Latin gets `us` second, for passwords at the login screen.
 
 ## Extending
 

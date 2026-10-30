@@ -332,12 +332,13 @@ settings:
     - name: ARCH_OS_DESKTOP_KEYBOARD_VARIANT
       type: list
       title: Keyboard variant
-      description: A layout variant, such as dead keys.
+      description: |
+        A layout variant, such as dead keys. Auto follows the console.
       when: ARCH_OS_DESKTOP != none
       required: true
       options-from: options_variants()
       filter: open
-      default: none
+      default: auto
       pattern: '^[A-Za-z0-9_-]+$'
 
     - name: ARCH_OS_DESKTOP_KEYBOARD_MODEL

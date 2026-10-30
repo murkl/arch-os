@@ -40,8 +40,11 @@ while read -r language keymap layout font extra; do
 
     grep -qxF "$keymap" <<<"$keymaps" ||
         complain "languages: ${language} names the keymap ${keymap}, which loadkeys does not have"
-    grep -qxF "$layout" <<<"$layouts" ||
-        complain "languages: ${language} names the layout ${layout}, which xkb does not have"
+    IFS=, read -ra parts <<<"$layout"
+    for part in "${parts[@]}"; do
+        grep -qxF "$part" <<<"$layouts" ||
+            complain "languages: ${language} names the layout ${part}, which xkb does not have"
+    done
     [ "$font" = none ] || grep -qxF "$font" <<<"$fonts" ||
         complain "languages: ${language} names the font ${font}, which setfont does not have"
 done <languages

@@ -192,11 +192,31 @@ done <<'EOF'
 de-latin1 de_DE de
 de-latin1 en_US de
 us de_DE us
-us ar_EG ara
+us ar_EG ara,us
 de_CH-latin1 de_CH ch
+de_CH-latin1 en_US ch
+pl en_US pl
 uk de_DE gb
-ru en_US ru
+ru en_US ru,us
+ru ru_RU ru,us
+il he_IL il,us
 amiga-de de_DE us
+EOF
+
+while read -r keymap locale layout want; do
+    expect "auto_variant ${keymap} ${locale} ${layout}" \
+        "$(ARCH_OS_VCONSOLE_KEYMAP="$keymap" ARCH_OS_LOCALE_LANG="$locale" ARCH_OS_DESKTOP_KEYBOARD_LAYOUT="$layout" auto_variant)" "$want"
+done <<'EOF'
+de-latin1 de_DE auto none
+de-latin1-nodeadkeys de_DE auto nodeadkeys
+de-latin1-nodeadkeys de_DE de nodeadkeys
+de-latin1-nodeadkeys de_DE fr none
+fr_CH-latin1 fr_CH auto fr
+dvorak en_US auto dvorak
+cz-qwerty en_US auto qwerty,
+ru ru_RU auto none
+il he_IL auto none
+amiga-de de_DE auto none
 EOF
 
 [ "$status" -eq 0 ] && echo "lib.sh passes every case"

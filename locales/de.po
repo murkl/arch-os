@@ -449,8 +449,8 @@ msgstr "Die Tastaturbelegung des Desktops. Auto folgt der Konsole."
 msgid "Keyboard variant"
 msgstr "Tastaturvariante"
 
-msgid "A layout variant, such as dead keys."
-msgstr "Eine Variante der Belegung, etwa mit Tottasten."
+msgid "A layout variant, such as dead keys. Auto follows the console."
+msgstr "Eine Variante der Belegung, etwa mit Tottasten. Auto folgt der Konsole."
 
 msgid "Keyboard model"
 msgstr "Tastaturmodell"

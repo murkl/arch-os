@@ -437,20 +437,53 @@ country_field() {
     awk -F'\t' -v col="$1" -v code="$2" 'code != "" && $1 == code { print $col }' "$(installer_data)/countries"
 }
 
+# Layouts and variants localectl converts console keymap $1 to, as "layouts
+# variants" with - for none: the first row of systemd's table that xkb has, as
+# localed verifies it. Empty for a keymap the table lacks.
+converted_keymap() {
+    awk -v keymap="$1" '
+        FNR == 1 { file++ }
+        file == 1 && /^! / { section = $2; next }
+        file == 1 && section == "layout" && NF { layouts[$1] }
+        file == 1 && section == "variant" && NF { variants[$2 $1] }
+        file == 2 && !/^#/ && $1 == keymap {
+            n = split($2, layout, ",")
+            split($4 == "-" ? "" : $4, variant, ",")
+            known = 1
+            for (i = 1; i <= n; i++)
+                known = known && (layout[i] in layouts) && (variant[i] == "" || (layout[i] ":" variant[i]) in variants)
+            if (known) { print $2, $4; exit }
+        }
+    ' /usr/share/X11/xkb/rules/base.lst /usr/share/systemd/kbd-model-map
+}
+
 # What auto resolves to, also shown in each list's auto row.
 
-# The console keyboard as localectl converts it, us where its table has no row.
-# A language on its own console keymap keeps its own layout: ar has us in the
-# console and ara on the desktop.
+# The console keyboard as localectl converts it, else as data/languages names
+# it, else xkb's us. A language on its own console keymap keeps its layouts,
+# since the console lacks some scripts: ar has us there and ara,us on the desktop.
 auto_layout() {
-    local layout
-    if [ "$ARCH_OS_VCONSOLE_KEYMAP" = "$(language_field 2 "$ARCH_OS_LOCALE_LANG")" ]; then
+    local layout keymap="$ARCH_OS_VCONSOLE_KEYMAP"
+    if [ "$keymap" = "$(language_field 2 "$ARCH_OS_LOCALE_LANG")" ]; then
         layout="$(language_field 3 "$ARCH_OS_LOCALE_LANG")"
     else
-        layout="$(awk -v keymap="$ARCH_OS_VCONSOLE_KEYMAP" '$1 == keymap { print $2; exit }' /usr/share/systemd/kbd-model-map)"
+        layout="$(converted_keymap "$keymap")"
+        layout="${layout%% *}"
+        [ -n "$layout" ] || layout="$(awk -v keymap="$keymap" '!/^#/ && $2 == keymap { print $3; exit }' "$(installer_data)/languages")"
     fi
-    layout="${layout%%,*}"
     printf '%s' "${layout:-us}"
+}
+
+# The variant converted with the console keyboard, while the desktop keeps the
+# layouts it came with.
+auto_variant() {
+    local converted
+    converted="$(converted_keymap "$ARCH_OS_VCONSOLE_KEYMAP")"
+    if [ -n "$converted" ] && [ "${converted%% *}" = "$(desktop_layout)" ] && [ "${converted#* }" != - ]; then
+        printf '%s' "${converted#* }"
+    else
+        printf none
+    fi
 }
 
 # none, not empty: the console keeps its font, and reflector ranks every mirror.
@@ -473,6 +506,7 @@ resolved() {
 }
 
 desktop_layout() { resolved "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" auto_layout; }
+desktop_variant() { resolved "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" auto_variant; }
 mirror_country() { not_none "$ARCH_OS_REFLECTOR_COUNTRY"; }
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -950,10 +984,11 @@ options_variants() {
     layout="$(desktop_layout)"
     [ -n "$layout" ] || return 0
 
+    printf 'auto\tauto (%s)\n' "$(auto_variant)"
     echo none
     # localectl exits 1 for a layout without variants. The layout comes from the
-    # same file, so it exists.
-    localectl list-x11-keymap-variants "$layout" 2>/dev/null || allow 1
+    # same file, so it exists. A variant applies to the first of several.
+    localectl list-x11-keymap-variants "${layout%%,*}" 2>/dev/null || allow 1
 }
 
 booted_in_uefi() { [ -d /sys/firmware/efi ]; }
