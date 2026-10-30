@@ -65,7 +65,7 @@ MODULE_SHELL = $(wildcard $(addsuffix /tasks/*/data/bashrc,$(MODULES)) $(addsuff
 MODULE_ZSH   = $(wildcard $(addsuffix /tasks/*/data/zshrc,$(MODULES)))
 
 # Listed by name, since it has no extension.
-MODULE_PROGRAMS := installer/tasks/recovery-app/data/arch-os-recovery installer/tasks/housekeeping/data/smartd-notify
+MODULE_PROGRAMS := installer/tasks/housekeeping/data/smartd-notify
 
 # Everything that can reach the console. READMEs and fastfetch's config target a
 # graphical terminal.
