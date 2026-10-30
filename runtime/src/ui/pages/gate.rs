@@ -32,6 +32,8 @@ pub struct Said {
     round: u64,
     yes: bool,
     fallback: Option<&'static Action>,
+    /// The check's own words on a no, for the log. The page shows the module's.
+    why: String,
 }
 
 impl GatePage {
@@ -75,13 +77,17 @@ impl GatePage {
             .collect();
         let run = action.run.clone();
         ctx.spawn(move || {
-            if crate::script::guard(&run, &env).is_ok() {
-                return Said {
-                    round,
-                    yes: true,
-                    fallback: None,
-                };
-            }
+            let why = match crate::script::guard(&run, &env) {
+                Ok(()) => {
+                    return Said {
+                        round,
+                        yes: true,
+                        fallback: None,
+                        why: String::new(),
+                    };
+                }
+                Err(why) => why,
+            };
             let fallback = fallbacks
                 .into_iter()
                 .find(|(_, checks)| checks.iter().all(|c| crate::script::guard(c, &env).is_ok()))
@@ -90,6 +96,7 @@ impl GatePage {
                 round,
                 yes: false,
                 fallback,
+                why,
             }
         });
     }
@@ -188,7 +195,7 @@ impl Page for GatePage {
                 flow => flow,
             };
         }
-        crate::info!("{} said no", self.action(ctx).id);
+        crate::info!("{} said no: {}", self.action(ctx).id, said.why);
         self.refused = Some(said.fallback);
         // A fallback with questions opens at once. One that would run waits for enter as consent.
         if let Some(fb) = said.fallback

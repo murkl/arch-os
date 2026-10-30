@@ -451,6 +451,15 @@ stages:
           {{ARCH_OS_DISK}} in use
 
           Unmount it, then choose Install now again.
+        12: |
+          {{ARCH_OS_DISK}} too small
+
+          Arch OS needs at least 16 GiB, or 32 GiB with GNOME. Choose another
+          disk on the dashboard.
+        13: |
+          {{ARCH_OS_USERNAME}} reserved
+
+          Choose another username on the dashboard.
 
   # Base system, configured and bootable.
   system:
@@ -663,8 +672,8 @@ actions:
     on:
       failure: [wifi]
 
-  # Every shared answer except disk and kernel parameters, which belong to one
-  # machine.
+  # Every shared answer except disk, kernel parameters and SSH key, which belong
+  # to one machine or person.
   import-config:
     title: Shared configuration
     inputs:

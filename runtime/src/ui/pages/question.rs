@@ -8,7 +8,7 @@ use super::Then;
 use crate::i18n::t;
 use crate::spec::{self, Ask, Filter, Kind, Setting, Shell};
 use crate::store::label;
-use crate::ui::draw::{paragraph, put};
+use crate::ui::draw::{paragraph, put, wrap};
 use crate::ui::input::Input;
 use crate::ui::list::{List, Picked, Row};
 use crate::ui::{Ctx, Data, Does, Flow, Key, Page, Tone};
@@ -75,6 +75,8 @@ impl Which {
 pub struct Answers {
     pub options: Vec<(String, String)>,
     pub prefill: String,
+    /// Why the options could not be read, which an empty list does not tell.
+    pub failed: Option<String>,
 }
 
 /// Reader for the page's background job and for a run before it asks.
@@ -84,6 +86,7 @@ pub fn answers(which: Which, ctx: &Ctx) -> impl FnOnce() -> Answers + Send + 'st
     let kind = which.kind();
     let name = which.name();
     move || {
+        let mut failed = None;
         let options = match (kind, from) {
             (Kind::Bool, _) => vec![
                 (spec::TRUE.into(), label(spec::TRUE)),
@@ -99,6 +102,7 @@ pub fn answers(which: Which, ctx: &Ctx) -> impl FnOnce() -> Answers + Send + 'st
                     .collect(),
                 Err(e) => {
                     crate::warn!("options for {name}: {e}");
+                    failed = Some(e);
                     Vec::new()
                 }
             },
@@ -111,7 +115,11 @@ pub fn answers(which: Which, ctx: &Ctx) -> impl FnOnce() -> Answers + Send + 'st
             }),
             None => String::new(),
         };
-        Answers { options, prefill }
+        Answers {
+            options,
+            prefill,
+            failed,
+        }
     }
 }
 
@@ -167,11 +175,12 @@ impl QuestionPage {
                 ctx.store.reoffer(&s.name);
             }
             // An invalid answer is why the question is asked again, so the error shows at once. A
-            // list then opens on its suggestion, a box keeps its text.
+            // list then opens on its suggestion, a box keeps its text. Options that could not be
+            // read say why, instead of leaving a box that looks intended.
             let turned = (!current.is_empty())
                 .then(|| ctx.store.invalid(s, &current))
                 .flatten();
-            if let Some(why) = &turned {
+            if let Some(why) = turned.as_ref().or(answers.failed.as_ref()) {
                 self.problem = Some(why.clone());
             }
             if current.is_empty() || (turned.is_some() && !answers.options.is_empty()) {
@@ -278,7 +287,10 @@ impl Page for QuestionPage {
         if !description.is_empty() {
             y = paragraph(buf, area, y, &description, s.tone(Tone::Muted)) + 1;
         }
-        let problem_rows = if self.problem.is_some() { 2 } else { 0 };
+        let problem_rows = self
+            .problem
+            .as_ref()
+            .map_or(0, |p| wrap(p, usize::from(area.width)).len().max(2) as u16);
         let room = Rect::new(
             area.x,
             y,

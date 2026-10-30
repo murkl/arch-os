@@ -382,13 +382,19 @@ impl RunPage {
         })
     }
 
-    /// Failures the run went past, optional tasks first, then tests.
-    fn failures(&self) -> Vec<(String, Failure)> {
-        self.optional
+    /// Failures the run went past, optional tasks first with the module's text for a chosen
+    /// status, then tests.
+    fn failures(&self, ctx: &Ctx) -> Vec<(String, Option<String>, Failure)> {
+        let optional = self.optional.iter().filter_map(|(task, f)| {
+            let f = f.clone()?;
+            let said = crate::ui::told(ctx.module, &task.errors, &f).map(|w| ctx.expand(&w));
+            Some((t(&task.title), said, f))
+        });
+        let tests = self
+            .tests
             .iter()
-            .chain(&self.tests)
-            .filter_map(|(task, f)| f.clone().map(|f| (t(&task.title), f)))
-            .collect()
+            .filter_map(|(task, f)| f.clone().map(|f| (t(&task.title), None, f)));
+        optional.chain(tests).collect()
     }
 
     fn stopped_at(&self, ctx: &Ctx) -> String {
@@ -429,7 +435,7 @@ impl RunPage {
                     body.push(Block::Text(note, tone));
                 }
                 let mut acts = Vec::new();
-                let failures = self.failures();
+                let failures = self.failures(ctx);
                 if !failures.is_empty() {
                     let verdict = self.tally().map(|(n, _)| n).unwrap_or_default();
                     acts.push(
@@ -510,7 +516,14 @@ impl RunPage {
 
     fn result_len(&self) -> usize {
         match &self.end {
-            Some((Ok(_), ..)) => 1 + usize::from(!self.failures().is_empty()) + self.success_rows(),
+            Some((Ok(_), ..)) => {
+                let failed = self
+                    .optional
+                    .iter()
+                    .chain(&self.tests)
+                    .any(|(_, f)| f.is_some());
+                1 + usize::from(failed) + self.success_rows()
+            }
             Some((Err(End::Known(_) | End::Stopped), ..)) => 1,
             Some((Err(End::Broke(_)), ..)) => 1 + self.failure_rows(),
             None => 0,
@@ -531,7 +544,8 @@ impl RunPage {
         let s = &ctx.style;
         let running = self.end.is_none() && self.at < self.steps.len();
         let progress = running && self.task().progress && self.phase == Phase::Run;
-        let rows = usize::from(area.height) - usize::from(progress && self.latest.is_some());
+        let rows =
+            usize::from(area.height).saturating_sub(usize::from(progress && self.latest.is_some()));
         if rows == 0 {
             return;
         }
@@ -603,7 +617,7 @@ enum Way {
 fn onward(way: Way, ctx: &mut Ctx) -> Flow {
     match way {
         Way::Leave if ctx.leaves() => {
-            Flow::Push(Box::new(super::leave::LeavePage::new(ctx, false)))
+            Flow::Push(Box::new(super::leave::LeavePage::new(ctx, false, false)))
         }
         Way::Leave => Flow::Quit,
         Way::Back => Flow::Home,
@@ -845,6 +859,15 @@ impl Page for RunPage {
         let Some(ask) = &task.asks else {
             return Flow::Stay;
         };
+        // A list that could not be read is no empty list: the task fails instead of skipping.
+        if let Some(why) = answers.failed {
+            let step = ctx.step(
+                &t(&task.title),
+                false,
+                ask.options_from.clone().unwrap_or_else(|| task.script()),
+            );
+            return self.fell(Failure::new(&step, why), ctx);
+        }
         if answers.options.is_empty() {
             crate::info!("{}: nothing to choose from", task.title);
             self.marks[self.at] = Mark::Skipped;
@@ -933,6 +956,10 @@ impl Page for RunPage {
     }
 
     fn holds(&self) -> bool {
+        self.end.is_none()
+    }
+
+    fn running(&self) -> bool {
         self.end.is_none()
     }
 

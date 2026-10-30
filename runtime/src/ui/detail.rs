@@ -160,7 +160,7 @@ impl Detail {
         let acts_height = if self.acts.is_empty() {
             0
         } else {
-            self.list.height() as u16 + 1
+            self.list.height(area.width) as u16 + 1
         };
         let body_height = area.height.saturating_sub(acts_height) as usize;
         let lines = render(&self.body, area.width as usize, ctx);

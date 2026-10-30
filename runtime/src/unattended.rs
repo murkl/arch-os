@@ -1,6 +1,7 @@
 //! Unattended run: answers from the answer file, passwords from environment variables of the
 //! same name, every confirmation a yes, the log on stdout.
 
+use std::io::Write;
 use std::sync::Arc;
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError};
 use std::time::Duration;
@@ -17,12 +18,13 @@ const BEAT: Duration = Duration::from_millis(50);
 /// Runs the module to its outcome and prints it. `false` on failure.
 pub fn run(start: Start) -> std::io::Result<bool> {
     let (tx, rx) = mpsc::channel();
+    crate::signals::forward(tx.clone())?;
     let app = App::new(start, &std::env::current_dir()?, tx, Arc::new(|| {}), true)?;
     crate::log::echo(true);
     let terminal = Terminal::new(TestBackend::new(100, 40)).map_err(std::io::Error::other)?;
     Ok(match drive(app, terminal, rx) {
         Ok(words) => {
-            println!("{words}");
+            let _ = writeln!(std::io::stdout(), "{words}");
             true
         }
         Err(why) => {

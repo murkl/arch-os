@@ -227,6 +227,8 @@ pub enum Msg {
     Resolved(String, String),
     /// Bracketed paste, typed into a focused text box.
     Paste(String),
+    /// SIGTERM, SIGHUP or SIGINT: the work stops and the program ends.
+    Stop,
 }
 
 pub enum Flow {
@@ -300,6 +302,10 @@ pub trait Page {
     }
     /// Back leaves instead of popping, as during a run.
     fn holds(&self) -> bool {
+        false
+    }
+    /// Work runs that leaving stops, so the leave page warns of it.
+    fn running(&self) -> bool {
         false
     }
     /// The leave page itself, so leaving does not open it twice.

@@ -19,6 +19,10 @@ BIN     := $(RUNTIME)/target/release/arch-os
 # Set by a release. Without it, build.rs names a pre-release of the next patch.
 VERSION ?=
 
+# The builder's cargo folder, named by the crates' panic locations. The program
+# names it cargo/, since a published image carries no path of its builder.
+CARGO_HOME ?= $(HOME)/.cargo
+
 # Module and arguments for `make run`.
 MODULE ?= installer
 ARGS   ?=
@@ -95,7 +99,8 @@ SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 all: build
 
 build:
-	cd $(RUNTIME) && $(if $(VERSION),ARCH_OS_VERSION=$(VERSION)) cargo build --release --locked
+	cd $(RUNTIME) && $(if $(VERSION),ARCH_OS_VERSION=$(VERSION)) \
+		RUSTFLAGS="$${RUSTFLAGS:-} --remap-path-prefix=$(CARGO_HOME)=cargo" cargo build --release --locked
 
 # Runs from source in runtime/target/run, which holds answers and log:
 # `make run MODULE=recovery ARGS=--dry-run`
@@ -119,8 +124,8 @@ smoke:
 e2e:
 	$(ISO_E2E) $(ISO) $(START)
 
-# By hand after a visible change: docs/CONTRIBUTING.md. The pages show VERSION,
-# so `make screenshots VERSION=2.1.0` shows a release before it exists.
+# By hand after a visible change: docs/CONTRIBUTING.md. The pictures leave the
+# version out, so they hold for every release.
 screenshots: build
 	python3 docs/screenshots.py --product $(BIN)
 

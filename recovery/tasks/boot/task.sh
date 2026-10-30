@@ -5,15 +5,20 @@
 kind=image
 grep -qs '^default_uki=' "${MNT}/etc/mkinitcpio.d/${KERNEL}.preset" && kind=uki
 
-# The command line from the existing entry, whatever its try count. A UKI
-# carries its own.
+# The command line from the existing entries, whatever their try count, the
+# fallback's where the main one is lost. A UKI carries its own.
 cmdline=""
 if [ "$kind" = image ]; then
-    for entry in "${MNT}/boot/loader/entries/main.conf" "${MNT}/boot/loader/entries/main+"*.conf; do
+    for entry in "${MNT}/boot/loader/entries/main.conf" "${MNT}/boot/loader/entries/main+"*.conf \
+        "${MNT}/boot/loader/entries/main-fallback.conf" "${MNT}/boot/loader/entries/main-fallback+"*.conf; do
         [ -e "$entry" ] || continue
         cmdline="$(awk '!found && sub(/^options[[:space:]]+/, "") { print; found = 1 }' "$entry")"
         [ -z "$cmdline" ] || break
     done
+    # The Installer's record in the system, where the entries are lost.
+    if [ -z "$cmdline" ] && [ -s "${MNT}/etc/kernel/cmdline" ]; then
+        cmdline="$(<"${MNT}/etc/kernel/cmdline")"
+    fi
     if [ -z "$cmdline" ]; then
         echo "no boot entry of the system has an options line" >&2
         exit 1

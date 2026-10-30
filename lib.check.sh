@@ -219,5 +219,38 @@ il he_IL auto none
 amiga-de de_DE auto none
 EOF
 
+# ─── The account and the disk ────────────────────────────────────────────────
+
+while read -r name want; do
+    expect "reserved_name ${name}" "$(holds reserved_name "$name")" "$want"
+done <<'EOF'
+root yes
+wheel yes
+docker yes
+gdm yes
+tux no
+EOF
+
+# The smallest disks the partition task enforces, as its message and the README
+# name them.
+for file in installer/module.yaml docs/README.md; do
+    for gib in "$CORE_GIB" "$DESKTOP_GIB"; do
+        expect "${file} names ${gib} GiB" "$(holds grep -qF "${gib} GiB" "$file")" yes
+    done
+done
+
+# ─── A shared configuration ──────────────────────────────────────────────────
+
+# A stranger's answers land, except what belongs to one machine or lets the
+# stranger in.
+fetch_url() {
+    printf '%s\n' "ARCH_OS_HOSTNAME='box'" "ARCH_OS_DISK='/dev/sda'" "ARCH_OS_KERNEL_ARGS='init=/bin/sh'" \
+        "ARCH_OS_SSH_SERVER_ENABLED='true'" "ARCH_OS_SSH_KEY='ssh-ed25519 AAAA stranger'" \
+        "ARCH_OS_CONFIG_URL='https://paste.rs/x'" "PATH='/tmp'"
+}
+MODULE_CONF="${templates}/installer.conf" ARCH_OS_CONFIG_SOURCE=https://paste.rs/abc import_config
+expect "import_config keeps what is safe to take from a stranger" \
+    "$(cut -d= -f1 "${templates}/installer.conf" | paste -sd' ')" "ARCH_OS_HOSTNAME ARCH_OS_SSH_SERVER_ENABLED"
+
 [ "$status" -eq 0 ] && echo "lib.sh passes every case"
 exit "$status"

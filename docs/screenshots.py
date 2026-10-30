@@ -3,7 +3,8 @@
 
 Runs the program on a pty with --dry-run, so it touches nothing, and follows
 its --trace to know the page and the row under the cursor. The pages and the way
-to each are in docs/screenshots.yaml.
+to each are in docs/screenshots.yaml. The footer's version is left out, so a
+picture holds for every release.
 
 Needs: chromium, imagemagick, python-pyte, python-yaml.
 """
@@ -225,6 +226,20 @@ def grid(stream):
     return screen
 
 
+def unversioned(screen, version):
+    """The screen with the version blanked in its lowest line that shows it,
+    the footer's, where it would date the picture."""
+    for y in reversed(range(screen.lines)):
+        row = screen.buffer[y]
+        cells = [row[x].data for x in range(screen.columns)]
+        for x in reversed(range(screen.columns - len(version) + 1)):
+            if "".join(cells[x:x + len(version)]) == version:
+                for i in range(len(version)):
+                    row[x + i] = row[x + i]._replace(data=" ")
+                return screen
+    return screen
+
+
 def text(stream):
     return "\n".join(grid(stream).display)
 
@@ -318,7 +333,7 @@ def cell(style, text):
         "font-weight:700;" if bold else "", html.escape(text))
 
 
-def card(stream, out):
+def card(stream, out, version):
     """The screen on a rounded card with the same gap on all four sides.
 
     The card sizes to its content and the picture is trimmed to the card, so
@@ -337,7 +352,7 @@ def card(stream, out):
     font-family:{FONT}; font-size:{FONT_PX}px; line-height:{LINE_PX}px;
     color:{TEXT}; white-space:pre; font-variant-ligatures:none;
   }}
-</style></head><body><div class="card"><pre>{markup(grid(stream))}</pre></div></body></html>""")
+</style></head><body><div class="card"><pre>{markup(unversioned(grid(stream), version))}</pre></div></body></html>""")
     # No monospace glyph is wider than its font size, so the card always fits.
     w = COLS * FONT_PX + 4 * PAD
     h = ROWS * LINE_PX + 4 * PAD
@@ -420,6 +435,8 @@ def pristine(source):
 
 
 def play(takes, source, out):
+    version = subprocess.run([source, "--version"], check=True, capture_output=True,
+                             text=True).stdout.split()[1]
     for take in takes:
         pristine(source)
         argv = [f"./{PRODUCT}", take["module"], "--dry-run", "--trace", "trace"]
@@ -441,7 +458,7 @@ def play(takes, source, out):
                                      session.tasks)
                              if step.get("frame") == "running"
                              else session.screen())
-                    card(frame, out / f"{step['shot']}.png")
+                    card(frame, out / f"{step['shot']}.png", version)
                     print(f"  {step['shot']}", flush=True)
                 since = len(session.frames)
                 if "choose" in step:

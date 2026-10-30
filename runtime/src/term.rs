@@ -14,6 +14,7 @@ use crate::ui::{App, FRAME, Key, Msg};
 
 pub fn run(start: Start) -> std::io::Result<()> {
     let (tx, rx) = mpsc::channel();
+    crate::signals::forward(tx.clone())?;
     let keys = tx.clone();
     let gate = Arc::new(Gate::default());
     let pass = gate.clone();
@@ -103,6 +104,8 @@ pub fn run(start: Start) -> std::io::Result<()> {
             if let Some(job) = app.ctx.take_handover() {
                 gate.pause();
                 mouse(false);
+                // The last frame hid the cursor, and restore leaves it hidden.
+                terminal.show_cursor()?;
                 ratatui::restore();
                 let result = job();
                 terminal = ratatui::init();

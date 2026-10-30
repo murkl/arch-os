@@ -216,6 +216,10 @@ impl App {
                 self.ctx.offered.insert(id, yes);
             }
             Msg::Resolved(name, value) => self.ctx.store.set(&name, &value),
+            Msg::Stop => {
+                crate::warn!("stopped by a signal");
+                self.apply(Flow::Quit);
+            }
         }
         if let Some(by) = self.ctx.halt.take() {
             let scripts: Vec<crate::script::Session> = self
@@ -267,7 +271,10 @@ impl App {
             return Flow::Stay;
         }
         let bare = self.pages.last().is_some_and(|(_, p)| p.bare());
-        Flow::Push(Box::new(pages::leave::LeavePage::new(&self.ctx, bare)))
+        let running = self.pages.iter().any(|(_, p)| p.running());
+        Flow::Push(Box::new(pages::leave::LeavePage::new(
+            &self.ctx, bare, running,
+        )))
     }
 
     fn apply(&mut self, flow: Flow) {
@@ -332,7 +339,7 @@ impl App {
         let note = self.pages.iter().rev().find_map(|(_, p)| p.note(&self.ctx));
         self.ctx.behind = self.pages[..self.pages.len() - 1]
             .iter()
-            .any(|(_, p)| p.holds());
+            .any(|(_, p)| p.running());
         let over_menu =
             self.pages.len() > 1 && self.pages[self.pages.len() - 2].1.id(&self.ctx) == "dashboard";
         let (id, page) = self.pages.last_mut().expect("the dashboard stays");
@@ -380,6 +387,15 @@ impl App {
     #[cfg(test)]
     pub fn depth(&self) -> usize {
         self.pages.len()
+    }
+}
+
+/// However the program ends, no script it started runs on without it.
+impl Drop for App {
+    fn drop(&mut self) {
+        if !self.quit {
+            self.apply(Flow::Quit);
+        }
     }
 }
 
@@ -1050,7 +1066,7 @@ pub mod tests {
         crate::i18n::set("en");
         let (mut app, mut term, rx) = app(false);
         answered(&mut app);
-        let leave = Box::new(pages::leave::LeavePage::new(&app.ctx, false));
+        let leave = Box::new(pages::leave::LeavePage::new(&app.ctx, false, false));
         open(&mut app, leave);
         screen(&mut app, &mut term);
         press(&mut app, &[Key::Enter]);
@@ -1129,7 +1145,9 @@ pub mod tests {
         open(&mut app, run);
         screen(&mut app, &mut term);
         settle(&mut app, &mut term, &rx);
-        press(&mut app, &[Key::Esc, Key::Enter]);
+        press(&mut app, &[Key::Esc]);
+        screen(&mut app, &mut term);
+        press(&mut app, &[Key::Down, Key::Enter]);
         let shown = screen(&mut app, &mut term);
         assert!(shown.contains("› Setup › Leave"), "{shown}");
         settle(&mut app, &mut term, &rx);
@@ -1299,6 +1317,7 @@ pub mod tests {
         );
         press(&mut app, &[Key::Esc]);
         assert_eq!(app.depth(), 1, "{:?}", app.titles());
+        screen(&mut app, &mut term);
         press(&mut app, &[Key::Enter]);
         settle(&mut app, &mut term, &rx);
         assert_eq!(app.titles().last().unwrap(), "Password", "asked again");
@@ -1374,6 +1393,299 @@ pub mod tests {
         assert!(
             shown.contains("Exit code") && shown.contains("task.sh:1"),
             "{shown}"
+        );
+    }
+
+    #[test]
+    fn an_optional_task_that_stops_itself_is_told_in_the_modules_words() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app_with(
+            &[(
+                "      needs: [snapshot]\n",
+                "      needs: [snapshot]\n      allow-failure: true\n",
+            )],
+            false,
+        );
+        answered(&mut app);
+        app.ctx.store.set("TUX_HOST", "taken");
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Down, Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        std::thread::sleep(Duration::from_millis(650));
+        screen(&mut app, &mut term);
+        press(
+            &mut app,
+            &[Key::Up, Key::Up, Key::Up, Key::Enter, Key::Enter],
+        );
+        let shown = screen(&mut app, &mut term);
+        assert!(shown.contains("The name is taken"), "{shown}");
+    }
+
+    /// The task fails with why, instead of being skipped as if there were nothing to choose.
+    #[test]
+    fn a_list_a_task_cannot_read_fails_it() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app_with(
+            &[(
+                "options-from: options_snapshots()",
+                "options-from: broken()",
+            )],
+            false,
+        );
+        answered(&mut app);
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        settle(&mut app, &mut term, &rx);
+        std::thread::sleep(Duration::from_millis(650));
+        let shown = screen(&mut app, &mut term);
+        assert!(
+            shown.contains("› Failed") && shown.contains("Go back to a snapshot"),
+            "{shown}"
+        );
+    }
+
+    /// Instead of a text box that looks intended.
+    #[test]
+    fn a_list_a_setting_cannot_read_says_why() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app_with(
+            &[("options-from: options_disks()", "options-from: broken()")],
+            false,
+        );
+        answered(&mut app);
+        let s = app.ctx.module.setting("TUX_DISK").unwrap();
+        open(
+            &mut app,
+            Box::new(pages::question::QuestionPage::setting(s, pages::Then::Pop)),
+        );
+        screen(&mut app, &mut term);
+        settle(&mut app, &mut term, &rx);
+        let shown = screen(&mut app, &mut term);
+        assert!(shown.contains("exit 1"), "{shown}");
+    }
+
+    /// Esc takes the requirement's page away, not the requirement.
+    #[test]
+    fn a_refused_requirement_holds_the_work_back() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app_with(&[("run: is_root()", "run: broken()")], false);
+        answered(&mut app);
+        app.ctx.gated = false;
+        open(&mut app, Box::new(pages::splash::SplashPage::new()));
+        press(&mut app, &[Key::Char('x')]);
+        settle(&mut app, &mut term, &rx);
+        let refused = "This has to run as root.";
+        assert!(screen(&mut app, &mut term).contains(refused));
+        press(&mut app, &[Key::Esc]);
+        assert_eq!(app.depth(), 1, "{:?}", app.titles());
+        screen(&mut app, &mut term);
+        press(&mut app, &[Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        let shown = screen(&mut app, &mut term);
+        assert!(shown.contains(refused) && !app.ctx.gated, "{shown}");
+    }
+
+    /// Nothing runs behind a report.
+    #[test]
+    fn leaving_over_a_report_warns_of_no_run() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, _rx) = app(false);
+        answered(&mut app);
+        open(
+            &mut app,
+            Box::new(pages::report::ReportPage::new(
+                "report update".into(),
+                "Update".into(),
+                "Up to date".into(),
+                None,
+                false,
+                pages::report::Close::PopN(1),
+            )),
+        );
+        screen(&mut app, &mut term);
+        press(&mut app, &[Key::Char('q')]);
+        let shown = screen(&mut app, &mut term);
+        assert!(
+            shown.contains("› Leave") && !shown.contains("The run continues in the background."),
+            "{shown}"
+        );
+    }
+
+    #[test]
+    fn a_progress_line_fits_any_height() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, _rx) = app_with(
+            &[(
+                "      title: Prepare the disk\n",
+                "      title: Prepare the disk\n      progress: true\n",
+            )],
+            false,
+        );
+        answered(&mut app);
+        app.ctx.store.set("TUX_HOST", "slow");
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        let id = app.next;
+        screen(&mut app, &mut term);
+        app.handle(Msg::Tick);
+        app.handle(Msg::Run(id, crate::script::Event::Line("50%".into())));
+        for (w, h) in [(80, 7), (80, 6), (120, 2), (120, 1)] {
+            screen(
+                &mut app,
+                &mut Terminal::new(TestBackend::new(w, h)).unwrap(),
+            );
+        }
+    }
+
+    /// A consent to upload included.
+    #[test]
+    fn a_description_reads_whole_on_a_narrow_screen() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, _, rx) = app_with(
+            &[(
+                "description: Puts the log online.",
+                "description: Uploads the log to paste.rs. Anyone with the link can read it. Passwords are excluded.",
+            )],
+            false,
+        );
+        answered(&mut app);
+        app.ctx.store.set("TUX_HOST", "broken");
+        let mut term = Terminal::new(TestBackend::new(40, 30)).unwrap();
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Down, Key::Enter]);
+        settle(&mut app, &mut term, &rx);
+        std::thread::sleep(Duration::from_millis(650));
+        screen(&mut app, &mut term);
+        press(&mut app, &[Key::Up]);
+        let shown = screen(&mut app, &mut term);
+        assert!(shown.contains("excluded."), "{shown}");
+    }
+
+    /// The rule an answer breaks reads whole on a narrow screen.
+    #[test]
+    fn an_error_reads_whole_on_a_narrow_screen() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, _, rx) = app_with(
+            &[(
+                "error: Lower case letters, digits and - only.",
+                "error: Up to 32 lower case letters, digits or -, starting with a letter, never ending with -.",
+            )],
+            true,
+        );
+        answered(&mut app);
+        let mut term = Terminal::new(TestBackend::new(40, 30)).unwrap();
+        let s = app.ctx.module.setting("TUX_HOST").unwrap();
+        open(
+            &mut app,
+            Box::new(pages::question::QuestionPage::setting(s, pages::Then::Pop)),
+        );
+        screen(&mut app, &mut term);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Ctrl('u')]);
+        type_text(&mut app, "Tux");
+        press(&mut app, &[Key::Enter]);
+        let shown = screen(&mut app, &mut term);
+        assert!(shown.contains("ending with -."), "{shown}");
+    }
+
+    /// A stop signal stops the task gently, then the program ends.
+    #[test]
+    fn a_stop_signal_ends_the_run_and_the_program() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app(false);
+        answered(&mut app);
+        app.ctx.store.set("TUX_HOST", "slow");
+        let dir = app.ctx.store.path().parent().unwrap().to_path_buf();
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        screen(&mut app, &mut term);
+        settle(&mut app, &mut term, &rx);
+        app.handle(Msg::Stop);
+        assert!(app.done(), "the program goes on");
+        assert!(
+            dir.join("stopped").exists(),
+            "the task was not asked to end"
+        );
+    }
+
+    /// Enter alone stops nothing.
+    #[test]
+    fn leaving_a_run_opens_on_the_way_back_to_it() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app(false);
+        answered(&mut app);
+        app.ctx.store.set("TUX_HOST", "slow");
+        let dir = app.ctx.store.path().parent().unwrap().to_path_buf();
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        screen(&mut app, &mut term);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Esc]);
+        let shown = screen(&mut app, &mut term);
+        assert!(
+            shown.contains("› Leave") && shown.contains("Back to the run"),
+            "{shown}"
+        );
+        press(&mut app, &[Key::Enter]);
+        let shown = screen(&mut app, &mut term);
+        assert!(
+            !shown.contains("› Leave") && !app.done() && !dir.join("stopped").exists(),
+            "{shown}"
+        );
+    }
+
+    /// Backspace deletes in a filter, esc closes it.
+    #[test]
+    fn backspace_in_an_empty_filter_only_deletes() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, _rx) = app(false);
+        answered(&mut app);
+        screen(&mut app, &mut term);
+        press(&mut app, &[Key::Char('f'), Key::Char('x')]);
+        press(&mut app, &[Key::Backspace, Key::Backspace, Key::Backspace]);
+        screen(&mut app, &mut term);
+        assert!(app.pages.last().unwrap().1.typing(), "the filter closed");
+        assert_eq!(app.depth(), 1, "{:?}", app.titles());
+        press(&mut app, &[Key::Esc]);
+        assert!(!app.pages.last().unwrap().1.typing(), "esc left it open");
+    }
+
+    /// However the program ends, no task it started runs on.
+    #[test]
+    fn a_task_ends_with_the_program() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app(false);
+        answered(&mut app);
+        app.ctx.store.set("TUX_HOST", "slow");
+        let dir = app.ctx.store.path().parent().unwrap().to_path_buf();
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        screen(&mut app, &mut term);
+        settle(&mut app, &mut term, &rx);
+        drop(app);
+        assert!(
+            dir.join("stopped").exists(),
+            "the task outlived the program"
         );
     }
 
@@ -1614,9 +1926,9 @@ pub mod tests {
             )),
             Box::new(pages::results::ResultsPage::new(
                 "1 of 2 tests passed".into(),
-                vec![("Install the base".into(), f)],
+                vec![("Install the base".into(), None, f)],
             )),
-            Box::new(pages::leave::LeavePage::new(&app.ctx, false)),
+            Box::new(pages::leave::LeavePage::new(&app.ctx, false, true)),
             Box::new(pages::run::RunPage::new(&app.ctx)),
         ]
     }

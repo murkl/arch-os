@@ -8,7 +8,10 @@ cmp "${RECOVERY_IMAGE}/recovery.efi" "${MNT}${RECOVERY_EFI}"
 
 uuid="$(blkid -p -s UUID -o value "$part")"
 [ -n "$uuid" ]
-arch-chroot "$MNT" bootctl --esp-path=/boot list --json=short | grep -qF "archisodevice=UUID=${uuid}"
+# Captured first: grep -q exits at the first match, and bootctl would fail under
+# pipefail.
+listed="$(arch-chroot "$MNT" bootctl --esp-path=/boot list --json=short)"
+grep -qF "archisodevice=UUID=${uuid}" <<<"$listed"
 
 grep -qxF "ARCH_OS_RECOVERY_KEYMAP='$ARCH_OS_VCONSOLE_KEYMAP'" "${MNT}/boot/EFI/arch-os-recovery/recovery.conf"
 

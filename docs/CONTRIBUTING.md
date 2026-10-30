@@ -110,12 +110,12 @@ Translate every `msgstr` and open a pull request. The language appears on the fi
 Generated, so none shows an outdated interface. CI never renders them: run them by hand and commit the result with the change.
 
 ```
-make screenshots VERSION=2.1.0   # every page in screenshots.yaml, showing that version
+make screenshots                 # every page in screenshots.yaml
 make banner                      # banner from two screenshots and the tagline in README.md
 docs/svg.py                      # download button and requirements, with their alt texts in README.md
 ```
 
-- Without `VERSION` the screenshots show the next patch's pre-release. Name the target release, so `main` shows it
+- The footer's version is left out, so a picture holds for every release
 - Needs `chromium`, `imagemagick`, `python-fonttools`, `python-pyte`, `python-yaml` and `ttf-firacode-nerd`, and systemd as PID 1 for `localectl` and `timedatectl`
 - Every run uses `--dry-run`. Pages and answers are listed in **[screenshots.yaml](screenshots.yaml)**
 - `installing.png` captures a run in progress, so it differs every time
