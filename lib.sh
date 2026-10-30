@@ -130,8 +130,8 @@ join_wifi() {
 # The only secret on a command line: without an agent, iwctl takes it no other
 # way. A wrong passphrase shows as no address.
 join_wifi_with_passphrase() {
-    iwctl --passphrase "$ARCH_OS_WIFI_PASSPHRASE" station "$(wifi_station)" connect "$ARCH_OS_WIFI_SSID"
-    wifi_online
+    iwctl --passphrase "$ARCH_OS_WIFI_PASSPHRASE" station "$(wifi_station)" connect "$ARCH_OS_WIFI_SSID" || exit 10
+    wifi_online || exit 10
 }
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -141,10 +141,15 @@ join_wifi_with_passphrase() {
 # No account or key: POST the text, get its URL back.
 export PASTE="https://paste.rs"
 
-# Retried, since paste.rs fails under load. -S puts the HTTP status on the error
-# page.
+# Retried, since paste.rs fails under load. -S puts the HTTP status in the log.
 paste_online() {
     fetch_url -sS --max-time 30 --retry 3 --retry-delay 2 --data-binary @- "${PASTE}/" | tr -d '[:space:]'
+}
+
+# Offline or paste.rs unavailable, each with its own text.
+paste_failed() {
+    check_online || exit "$EXIT_OFFLINE"
+    exit 10
 }
 
 # A demo URL under --dry-run, so the page shows one.
@@ -154,8 +159,8 @@ share_log() {
         answer ARCH_OS_LOG_URL "${PASTE}/demo"
         return 0
     fi
-    url="$(paste_online <"$MODULE_LOG")"
-    [ -n "$url" ] || return 1
+    url="$(paste_online <"$MODULE_LOG")" || url=""
+    [ -n "$url" ] || paste_failed
     answer ARCH_OS_LOG_URL "$url"
 }
 
@@ -1032,17 +1037,21 @@ booted_in_uefi() { [ -d /sys/firmware/efi ]; }
 secure_boot_off() { grep -q "Secure Boot: disabled" <<<"$(bootctl status 2>/dev/null)"; }
 
 import_config() {
-    local ref url body
+    local ref url out body
     # The paste code from a full link or the code alone, always fetched from paste.rs.
     ref="$(printf '%s' "$ARCH_OS_CONFIG_SOURCE" | tr -d '[:space:]')"
     url="${PASTE}/${ref##*/}"
-    body="$(fetch_url -sS --max-time 30 --retry 3 --retry-delay 2 "$url")"
+    # The HTTP status last, which curl writes on failure too.
+    if ! out="$(fetch_url -sS --max-time 30 --retry 3 --retry-delay 2 -w '\n%{http_code}' "$url")"; then
+        [ "${out##*$'\n'}" != 404 ] || exit 11
+        paste_failed
+    fi
 
     # Without the sharing keys and the source machine's own: DISK, which may name
     # another disk here, and KERNEL_ARGS and SSH_KEY, which let a stranger in.
-    body="$(printf '%s\n' "$body" | grep '^ARCH_OS_[A-Z0-9_]*=' |
+    body="$(printf '%s\n' "${out%$'\n'*}" | grep '^ARCH_OS_[A-Z0-9_]*=' |
         grep -vE '^ARCH_OS_(CONFIG_[A-Z_]*|DISK|KERNEL_ARGS|SSH_KEY)=' || allow 1)"
-    [ -n "$body" ]
+    [ -n "$body" ] || exit 11
 
     # The runtime rereads the answer file after success.
     printf '%s\n' "$body" >>"$MODULE_CONF"
@@ -1056,8 +1065,8 @@ share_config() {
         return 0
     fi
 
-    url="$(grep -v '^ARCH_OS_CONFIG_' "$MODULE_CONF" | paste_online)"
-    [ -n "$url" ]
+    url="$(grep -v '^ARCH_OS_CONFIG_' "$MODULE_CONF" | paste_online)" || url=""
+    [ -n "$url" ] || paste_failed
     answer ARCH_OS_CONFIG_URL "$url"
 
     # Also into the installed system's copy, which records its share URL.
