@@ -1,20 +1,66 @@
-#!/usr/bin/env bash
-# --boot-loader-entry holds for the next boot only.
+#!/usr/bin/env -S gjs -m
+// --boot-loader-entry holds for the next boot only.
+import Adw from 'gi://Adw?version=1';
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import Gtk from 'gi://Gtk?version=4.0';
+import Pango from 'gi://Pango';
 
-case "${LC_ALL:-${LC_MESSAGES:-$LANG}}" in
-de*)
-    question="In die Recovery neu starten?"
-    restart="Neu starten"
-    cancel="Abbrechen"
-    ;;
-*)
-    question="Restart into the Recovery?"
-    restart="Restart"
-    cancel="Cancel"
-    ;;
-esac
+// The app id names the menu entry, so the shell shows its name and icon.
+GLib.set_prgname('arch-os-recovery');
+Adw.init();
 
-# Opens on Cancel: a restart closes every window.
-zenity --question --title=Recovery --text="$question" \
-    --ok-label="$restart" --cancel-label="$cancel" --default-cancel || exit 0
-systemctl reboot --boot-loader-entry="{{ENTRY}}"
+const text = GLib.get_language_names()[0].startsWith('de')
+    ? {
+        heading: 'In die Recovery neu starten?',
+        body: 'Ungesicherte Änderungen gehen verloren.',
+        cancel: 'Abbrechen',
+        restart: 'Neu starten',
+    }
+    : {
+        heading: 'Restart into the Recovery?',
+        body: 'Unsaved work is lost.',
+        cancel: 'Cancel',
+        restart: 'Restart',
+    };
+
+// Heading and body as the alert dialog sets its own, which has no place for an
+// icon above them. The unwrapped heading sets the width, as there.
+const heading = new Gtk.Label({label: text.heading, css_classes: ['title-2']});
+const body = new Gtk.Label({
+    label: text.body,
+    css_classes: ['body'],
+    wrap: true,
+    wrap_mode: Pango.WrapMode.WORD_CHAR,
+    justify: Gtk.Justification.CENTER,
+    margin_top: 10,
+});
+const content = new Gtk.Box({orientation: Gtk.Orientation.VERTICAL});
+content.append(new Gtk.Image({icon_name: 'arch-os-recovery', pixel_size: 64, margin_bottom: 18}));
+content.append(heading);
+content.append(body);
+
+// Opens on Cancel: a restart closes every window.
+const dialog = new Adw.AlertDialog({
+    title: 'Recovery',
+    extra_child: content,
+    default_response: 'cancel',
+    close_response: 'cancel',
+});
+dialog.add_response('cancel', text.cancel);
+dialog.add_response('restart', text.restart);
+dialog.set_response_appearance('restart', Adw.ResponseAppearance.DESTRUCTIVE);
+dialog.reset_relation(Gtk.AccessibleRelation.DESCRIBED_BY);
+dialog.update_property([Gtk.AccessibleProperty.LABEL, Gtk.AccessibleProperty.DESCRIPTION], [text.heading, text.body]);
+
+let answer = 'cancel';
+const loop = new GLib.MainLoop(null, false);
+dialog.connect('response', (_dialog, response) => {
+    answer = response;
+});
+dialog.connect('closed', () => loop.quit());
+dialog.present(null);
+loop.run();
+
+if (answer === 'restart')
+    Gio.Subprocess.new(['systemctl', 'reboot', '--boot-loader-entry={{ENTRY}}'], Gio.SubprocessFlags.NONE).wait_check(null);

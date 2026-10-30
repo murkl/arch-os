@@ -8,3 +8,4 @@ Keywords[de]=Arch OS;Recovery;Reparieren;Rettung;Zurücksetzen;Snapshot;
 Icon=arch-os-recovery
 Categories=System;
 Exec=/usr/local/bin/arch-os-recovery
+StartupNotify=true

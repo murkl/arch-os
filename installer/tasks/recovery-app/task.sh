@@ -1,8 +1,8 @@
 # Besides holding Space at boot. logind lets the local session choose a boot
 # entry without a password.
 
-# zenity for the confirmation dialog.
-chroot_pacman_install zenity
+# gjs and libadwaita for the confirmation dialog.
+chroot_pacman_install gjs libadwaita
 
 icons="${MNT}/usr/local/share/icons/hicolor"
 mkdir -p "${MNT}/usr/local/bin" "${MNT}/usr/local/share/applications" "${icons}/scalable/apps" "${icons}/symbolic/apps"

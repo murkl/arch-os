@@ -42,7 +42,8 @@ jobs:
       - run: |
           printf '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n' >>/etc/pacman.conf
           pacman -Syu --needed --noconfirm git make rust shellcheck shfmt zsh yamllint \
-            actionlint zizmor gettext diffutils gitleaks jq kbd terminus-font tzdata xkeyboard-config
+            actionlint zizmor gettext diffutils gitleaks jq kbd terminus-font tzdata xkeyboard-config \
+            gjs libadwaita
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       # The whole history: the build reads the last release tag, the scope the
