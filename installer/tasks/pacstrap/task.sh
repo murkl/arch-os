@@ -25,7 +25,7 @@ secure_boot_wanted && packages+=(sbctl)
 # Before pacstrap: the kernel install builds an initramfs whose sd-vconsole hook
 # reads this file.
 mkdir -p "${MNT}/etc"
-echo "KEYMAP=$(vconsole_keymap)" >"${MNT}/etc/vconsole.conf"
+echo "KEYMAP=$ARCH_OS_VCONSOLE_KEYMAP" >"${MNT}/etc/vconsole.conf"
 font="$(resolved "$ARCH_OS_VCONSOLE_FONT" auto_font)"
 if [ -n "$font" ]; then
     echo "FONT=${font}" >>"${MNT}/etc/vconsole.conf"

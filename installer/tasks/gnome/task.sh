@@ -127,7 +127,7 @@ arch-chroot "$MNT" git config --system credential.helper /usr/lib/git-core/git-c
 # GDM reads this file through localed, the session the dconf default below,
 # both with the same layout. https://wiki.archlinux.org/title/Xorg/Keyboard_configuration
 layout="$(desktop_layout)"
-variant="$(not_none "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT")"
+variant="$(desktop_variant)"
 mkdir -p "${MNT}/etc/X11/xorg.conf.d"
 render "${data}/00-keyboard.conf" \
     LAYOUT="$layout" \
@@ -207,9 +207,19 @@ defaults="${MNT}/etc/dconf/db/local.d"
 mkdir -p "${MNT}/etc/dconf/profile" "$defaults"
 render "${data}/user" >"${MNT}/etc/dconf/profile/user"
 
-keyboard="$layout"
-[ -n "$variant" ] && keyboard="${keyboard}+${variant}"
-render "${data}/10-arch-os-keyboard" KEYBOARD="$keyboard" >"${defaults}/10-arch-os-keyboard"
+# One input source per layout, with the variant at the same place: ru,us and
+# phonetic give ru+phonetic and us.
+IFS=, read -ra layouts <<<"$layout"
+IFS=, read -ra variants <<<"$variant"
+sources=""
+for i in "${!layouts[@]}"; do
+    entry="${layouts[i]}"
+    if [ -n "${variants[i]:-}" ]; then
+        entry="${entry}+${variants[i]}"
+    fi
+    sources="${sources:+${sources}, }('xkb', '${entry}')"
+done
+render "${data}/10-arch-os-keyboard" SOURCES="$sources" >"${defaults}/10-arch-os-keyboard"
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     dock=()

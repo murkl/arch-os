@@ -275,8 +275,8 @@ msgstr "Bis zu 63 Kleinbuchstaben, Ziffern oder -, ohne - am Anfang oder Ende."
 msgid "Language and region"
 msgstr "Sprache und Region"
 
-msgid "The system language and regional formats, such as de_DE. Keyboard, font and time zone default to it."
-msgstr "Die Systemsprache und regionale Formate, etwa de_DE. Tastatur, Schrift und Zeitzone richten sich als Vorgabe nach ihr."
+msgid "The system language and regional formats, such as de_DE. Font and time zone default to it."
+msgstr "Die Systemsprache und regionale Formate, etwa de_DE. Schrift und Zeitzone richten sich als Vorgabe nach ihr."
 
 msgid "Region"
 msgstr "Region"
@@ -284,8 +284,8 @@ msgstr "Region"
 msgid "Console keyboard"
 msgstr "Konsolentastatur"
 
-msgid "The console keyboard layout. Auto follows the language."
-msgstr "Die Tastaturbelegung der Konsole. Auto folgt der Sprache."
+msgid "The keyboard layout for this session and the console."
+msgstr "Die Tastaturbelegung für diese Sitzung und die Konsole."
 
 msgid "Console font"
 msgstr "Konsolenschrift"
@@ -449,8 +449,8 @@ msgstr "Die Tastaturbelegung des Desktops. Auto folgt der Konsole."
 msgid "Keyboard variant"
 msgstr "Tastaturvariante"
 
-msgid "A layout variant, such as dead keys."
-msgstr "Eine Variante der Belegung, etwa mit Tottasten."
+msgid "A layout variant, such as dead keys. Auto follows the console."
+msgstr "Eine Variante der Belegung, etwa mit Tottasten. Auto folgt der Konsole."
 
 msgid "Keyboard model"
 msgstr "Tastaturmodell"

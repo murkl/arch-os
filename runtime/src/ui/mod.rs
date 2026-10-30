@@ -594,6 +594,7 @@ pub fn glyphs() -> String {
         add(&text);
     }
     add(pages::language::CHOOSE);
+    add(crate::store::DASH);
     chars.into_iter().collect()
 }
 

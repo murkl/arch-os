@@ -10,7 +10,7 @@ uuid="$(blkid -p -s UUID -o value "$part")"
 [ -n "$uuid" ]
 arch-chroot "$MNT" bootctl --esp-path=/boot list --json=short | grep -qF "archisodevice=UUID=${uuid}"
 
-grep -qxF "ARCH_OS_RECOVERY_KEYMAP='$(vconsole_keymap)'" "${MNT}/boot/EFI/arch-os-recovery/recovery.conf"
+grep -qxF "ARCH_OS_RECOVERY_KEYMAP='$ARCH_OS_VCONSOLE_KEYMAP'" "${MNT}/boot/EFI/arch-os-recovery/recovery.conf"
 
 # The firmware entry points at this EFI partition and stays out of the boot
 # order.

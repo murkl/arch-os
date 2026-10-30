@@ -48,7 +48,7 @@ A repair needs no network, which may be the broken part. The kernel image comes 
 
 | Variable | Source |
 | --- | --- |
-| `ARCH_OS_RECOVERY_KEYMAP` | Asked `first`, loaded before the first page. Asked again if it fails to load, since the password follows |
+| `ARCH_OS_RECOVERY_KEYMAP` | Asked `first`, suggested like the Installer's, loaded before the first page. Asked again if it fails to load, since the password follows |
 | `ARCH_OS_RECOVERY_DISK` | Asked |
 | `ARCH_OS_RECOVERY_ENCRYPTED` | LUKS header, no password needed, as `value-from:` |
 | `ARCH_OS_RECOVERY_PASSWORD` | Asked right before the run, checked on the disk, never saved |

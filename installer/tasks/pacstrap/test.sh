@@ -1,6 +1,6 @@
 [ -x "${MNT}/usr/bin/pacman" ]
 [ -f "${MNT}/boot/vmlinuz-${KERNEL}" ]
-grep -qx "KEYMAP=$(vconsole_keymap)" "${MNT}/etc/vconsole.conf"
+grep -qx "KEYMAP=$ARCH_OS_VCONSOLE_KEYMAP" "${MNT}/etc/vconsole.conf"
 
 # A missing font silently leaves the console on the kernel's.
 font="$(sed -n 's/^FONT=//p' "${MNT}/etc/vconsole.conf")"

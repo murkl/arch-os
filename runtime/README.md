@@ -211,6 +211,7 @@ The type sets the widget and the allowed keys:
 | `apply` | Applies the answer to this machine, such as a keymap |
 
 - `true` and `false` show as Yes and No
+- `none` and an empty answer show as — on the dashboard
 - A password is asked right before the run, used and forgotten
 - `value-from` runs when the module opens and on every answer change
 - A `list` answer is checked against its `options-from` again at the start of the work, before any password. One no longer listed is asked again

@@ -14,7 +14,7 @@
       - page: language
         choose: en
         press: enter
-      - page: question ARCH_OS_VCONSOLE_KEYMAP  # auto, the live image's layout
+      - page: question ARCH_OS_VCONSOLE_KEYMAP  # us, from the interface language
         press: enter
       - page: presets
         press: enter
