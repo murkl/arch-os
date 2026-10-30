@@ -46,7 +46,7 @@ settings:
       first: true
       required: true
       options-from: options_keymaps()
-      prefill: prefill_live_keymap()
+      prefill: prefill_keymap()
       pattern: '^[A-Za-z0-9_.-]+$'
       apply: apply_recovery_keymap()
 

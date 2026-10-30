@@ -171,5 +171,33 @@ done <<'EOF'
 /dev/mmcblk0 3 /dev/mmcblk0p3
 EOF
 
+# ─── The keyboard ────────────────────────────────────────────────────────────
+
+# The live system's keymap per case, - for none.
+live_keymap() { [ "$live" = - ] || printf '%s' "$live"; }
+
+while read -r live language want; do
+    expect "prefill_keymap live ${live} language ${language}" "$(MODULE_LANGUAGE="$language" prefill_keymap)" "$want"
+done <<'EOF'
+- de de-latin1
+- pt_BR br-abnt2
+- xx us
+fr-latin1 de fr-latin1
+EOF
+
+while read -r keymap locale want; do
+    expect "auto_layout ${keymap} ${locale}" \
+        "$(ARCH_OS_VCONSOLE_KEYMAP="$keymap" ARCH_OS_LOCALE_LANG="$locale" auto_layout)" "$want"
+done <<'EOF'
+de-latin1 de_DE de
+de-latin1 en_US de
+us de_DE us
+us ar_EG ara
+de_CH-latin1 de_CH ch
+uk de_DE gb
+ru en_US ru
+amiga-de de_DE us
+EOF
+
 [ "$status" -eq 0 ] && echo "lib.sh passes every case"
 exit "$status"

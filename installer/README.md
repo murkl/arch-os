@@ -50,12 +50,11 @@ The **Shared configuration** profile under `presets:` runs `import-config`. **[â
 
 ## auto and none
 
-`auto` resolves in `lib.sh` where a task reads the answer, see `vconsole_keymap`. `none` is an explicit empty answer.
+`auto` resolves in `lib.sh` where a task reads the answer, see `desktop_layout`. `none` is an explicit empty answer.
 
 | On `auto` | Resolves to |
 | --- | --- |
-| `ARCH_OS_VCONSOLE_KEYMAP` | Keyboard of the chosen language, then of the live system, then `us` |
-| `ARCH_OS_DESKTOP_KEYBOARD_LAYOUT` | The same, in xkb naming |
+| `ARCH_OS_DESKTOP_KEYBOARD_LAYOUT` | The console keyboard as `localectl` converts it, the language's own layout where the language uses that keymap |
 | `ARCH_OS_VCONSOLE_FONT` | A font for the script of the chosen language |
 
 ## Detected
@@ -69,14 +68,14 @@ The **Shared configuration** profile under `presets:` runs `import-config`. **[â
 
 ## Language
 
-`ARCH_OS_LOCALE_LANG` presets keyboard, console font and time zone, each changeable. None follows from the locale code (`de_CH` is not `de`), so `data/` maps them. Mirrors stay worldwide unless a country is chosen.
+`ARCH_OS_LOCALE_LANG` presets console font and time zone, each changeable. None follows from the locale code (`de_CH` is not `de`), so `data/` maps them. Mirrors stay worldwide unless a country is chosen.
 
 | Table | Key | Provides |
 | --- | --- | --- |
 | `data/languages` | Language, or locale where it differs | Keymap, xkb layout, console font |
 | `data/countries` | Territory of the locale | Time zone, reflector's country name |
 
-The console keyboard is asked `first` and loaded at once: a password typed on the wrong layout is not the password.
+The console keyboard is asked `first` and loaded at once: a password typed on the wrong layout is not the password. The live system's keymap is suggested, else the interface language's.
 
 ## Extending
 

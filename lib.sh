@@ -438,20 +438,19 @@ country_field() {
 }
 
 # What auto resolves to, also shown in each list's auto row.
-auto_keymap() {
-    local keymap
-    keymap="$(language_field 2 "$ARCH_OS_LOCALE_LANG")"
-    printf '%s' "${keymap:-$(prefill_live_keymap)}"
-}
 
+# The console keyboard as localectl converts it, us where its table has no row.
+# A language on its own console keymap keeps its own layout: ar has us in the
+# console and ara on the desktop.
 auto_layout() {
     local layout
-    layout="$(language_field 3 "$ARCH_OS_LOCALE_LANG")"
-    if [ -z "$layout" ]; then
-        layout="$(auto_keymap)"
-        layout="${layout%%-*}"
+    if [ "$ARCH_OS_VCONSOLE_KEYMAP" = "$(language_field 2 "$ARCH_OS_LOCALE_LANG")" ]; then
+        layout="$(language_field 3 "$ARCH_OS_LOCALE_LANG")"
+    else
+        layout="$(awk -v keymap="$ARCH_OS_VCONSOLE_KEYMAP" '$1 == keymap { print $2; exit }' /usr/share/systemd/kbd-model-map)"
     fi
-    printf '%s' "$layout"
+    layout="${layout%%,*}"
+    printf '%s' "${layout:-us}"
 }
 
 # none, not empty: the console keeps its font, and reflector ranks every mirror.
@@ -473,7 +472,6 @@ resolved() {
     not_none "$value"
 }
 
-vconsole_keymap() { resolved "$ARCH_OS_VCONSOLE_KEYMAP" auto_keymap; }
 desktop_layout() { resolved "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" auto_layout; }
 mirror_country() { not_none "$ARCH_OS_REFLECTOR_COUNTRY"; }
 
@@ -856,12 +854,18 @@ options_wifi_networks() {
         '
 }
 
-# The live system's keymap: the Arch ISO records it only as a loadkeys line in
+# The Arch ISO records the live system's keymap only as a loadkeys line in
 # root's history.
-prefill_live_keymap() {
+live_keymap() {
+    { grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null || true; } |
+        tail -n1 | sed 's/.*loadkeys *//' | tr -d ' '
+}
+
+# The live system's keymap, else the interface language's.
+prefill_keymap() {
     local keymap
-    keymap="$({ grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null || true; } |
-        tail -n1 | sed 's/.*loadkeys *//' | tr -d ' ')"
+    keymap="$(live_keymap)"
+    keymap="${keymap:-$(language_field 2 "$MODULE_LANGUAGE")}"
     printf '%s' "${keymap:-us}"
 }
 
@@ -897,15 +901,10 @@ prefill_locale() {
     printf 'en_US'
 }
 
-options_vconsole_keymaps() {
-    printf 'auto\tauto (%s)\n' "$(auto_keymap)"
-    options_keymaps
-}
-
 # Loaded on answer, so the next input uses it.
 apply_vconsole_keymap() {
     dry_run && return 0
-    loadkeys "$(vconsole_keymap)"
+    loadkeys "$ARCH_OS_VCONSOLE_KEYMAP"
 }
 
 # kbd's fonts, which every installation has, not the console font folder, which

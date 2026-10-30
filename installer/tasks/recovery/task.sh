@@ -15,7 +15,7 @@ efibootmgr --create-only --disk "$ARCH_OS_DISK" --part 1 --label "Arch OS Recove
 # /dev/sda is only this boot's name.
 seed="${MNT}/boot/EFI/arch-os-recovery"
 mkdir -p "$seed"
-render "$(where)/recovery.conf" LANGUAGE="$MODULE_LANGUAGE" KEYMAP="$(vconsole_keymap)" >"${seed}/recovery.conf"
+render "$(where)/recovery.conf" LANGUAGE="$MODULE_LANGUAGE" KEYMAP="$ARCH_OS_VCONSOLE_KEYMAP" >"${seed}/recovery.conf"
 
 # Hides the Recovery partition from the file manager. By PARTUUID, which a
 # Recovery update keeps.

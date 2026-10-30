@@ -91,29 +91,29 @@ settings:
       error: |
         Up to 63 lowercase letters, digits or -, not starting or ending with -.
 
-  # On auto everything follows the language. The keyboard comes first: a
-  # password typed on the wrong layout is wrong.
+  # The keyboard comes first: a password typed on the wrong layout is wrong. It
+  # is hardware, so the system language does not change it.
   Region:
     - name: ARCH_OS_LOCALE_LANG
       type: list
       title: Language and region
       description: |
-        The system language and regional formats, such as de_DE. Keyboard, font
-        and time zone default to it.
+        The system language and regional formats, such as de_DE. Font and time
+        zone default to it.
       required: true
       options-from: options_locales()
       filter: open
       prefill: prefill_locale()
       pattern: '^[a-z]{2,3}(_[A-Z]{2})?$'
-      apply: apply_vconsole_keymap()
 
     - name: ARCH_OS_VCONSOLE_KEYMAP
       type: list
       title: Console keyboard
-      description: The console keyboard layout. Auto follows the language.
+      description: The keyboard layout for this session and the console.
       first: true
       required: true
-      options-from: options_vconsole_keymaps()
+      options-from: options_keymaps()
+      prefill: prefill_keymap()
       pattern: '^[A-Za-z0-9_.-]+$'
       apply: apply_vconsole_keymap()
 
