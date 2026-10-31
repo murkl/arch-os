@@ -411,12 +411,12 @@ for unit in hv_fcopy_daemon hv_kvp_daemon hv_vss_daemon vboxservice vmtoolsd vmw
 done
 profiledef "$ISO_PROFILE" "unset 'file_permissions[/usr/local/bin/Installation_guide]'"
 
-# The initramfs without what a USB boot never uses: kms under nomodeset, network
-# boot and syslinux's memdisk. zstd -19 unpacks a second faster than xz and
-# stays small for the firmware reading it. Checked against releng's line, so a
-# new hook stops the build.
+# The initramfs without what a USB boot never uses: network boot and syslinux's
+# memdisk. zstd -19 unpacks a second faster than xz and stays small for the
+# firmware reading it. Checked against releng's line, so a new hook stops the
+# build.
 hooks="${airootfs}/etc/mkinitcpio.conf.d/archiso.conf"
-grep -qxF 'HOOKS=(base udev microcode modconf kms memdisk archiso archiso_loop_mnt archiso_pxe_common archiso_pxe_nbd archiso_pxe_http archiso_pxe_nfs block filesystems keyboard)' "$hooks" || {
+grep -qxF 'HOOKS=(base udev microcode modconf memdisk archiso archiso_loop_mnt archiso_pxe_common archiso_pxe_nbd archiso_pxe_http archiso_pxe_nfs block filesystems keyboard)' "$hooks" || {
     echo "Error: releng's HOOKS in ${hooks} changed" >&2
     exit 1
 }
