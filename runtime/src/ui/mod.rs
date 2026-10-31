@@ -28,6 +28,7 @@ pub enum Key {
     Enter,
     Esc,
     Backspace,
+    AltBackspace,
     Delete,
     Tab,
     Up,
@@ -86,7 +87,7 @@ impl Key {
         matches!(
             self.nav(false),
             Some(Nav::Up | Nav::Down | Nav::PageUp | Nav::PageDown)
-        ) || typing && matches!(self, Key::Char(_) | Key::Backspace)
+        ) || typing && matches!(self, Key::Char(_) | Key::Backspace | Key::AltBackspace)
     }
 }
 

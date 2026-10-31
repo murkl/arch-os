@@ -92,6 +92,9 @@ msgstr "Nein"
 msgid "No matches"
 msgstr "Keine Treffer"
 
+msgid "None"
+msgstr "Keine"
+
 msgid "Repeat"
 msgstr "Wiederholen"
 

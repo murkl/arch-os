@@ -102,4 +102,6 @@ arch-chroot "$MNT" systemctl enable systemd-boot-update.service
 if silent_boot; then
     mkdir -p "${MNT}/etc/issue.d"
     render "${data}/cursor.issue" >"${MNT}/etc/issue.d/cursor.issue"
+    mkdir -p "${MNT}/etc/systemd/system.conf.d"
+    render "${data}/watchdog.conf" >"${MNT}/etc/systemd/system.conf.d/10-arch-os.conf"
 fi

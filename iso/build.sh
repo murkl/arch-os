@@ -169,6 +169,9 @@ install_bootsplash() {
     [ -f "$hooks" ] || { echo "Error: archiso mkinitcpio config not found at '${hooks}'" && exit 1; }
     grep -q 'plymouth' "$hooks" || sed -i 's/^HOOKS=(\(base [a-z]*\)/HOOKS=(\1 plymouth/' "$hooks"
     grep -q 'plymouth' "$hooks" || { echo "Error: no HOOKS=(base ...) line in '${hooks}' to add plymouth to" && exit 1; }
+
+    # The installed system's drop-in, so a reboot prints nothing over the splash either.
+    install -D -m 644 ../installer/tasks/bootloader/data/watchdog.conf "${profile}/airootfs/etc/systemd/system.conf.d/10-arch-os.conf"
 }
 
 mask_units() {

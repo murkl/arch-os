@@ -141,6 +141,8 @@ pub struct List<I> {
     rows: Vec<Row<I>>,
     cursor: usize,
     offset: usize,
+    /// Set by `focus`, so the next draw opens on the row in the middle.
+    center: bool,
     pub filter: Option<Input>,
     /// Shows the cursor row's description under the list.
     pub described: bool,
@@ -155,6 +157,7 @@ impl<I> Default for List<I> {
             rows: Vec::new(),
             cursor: 0,
             offset: 0,
+            center: false,
             filter: None,
             described: false,
             filterable: false,
@@ -188,7 +191,7 @@ impl<I: Clone + PartialEq> List<I> {
             .position(|&i| i == self.cursor)
             .unwrap_or(0);
         self.rows = rows;
-        if id.as_ref().is_some_and(|id| self.focus(id)) {
+        if id.as_ref().is_some_and(|id| self.place(id)) {
             return;
         }
         let shown = self.shown();
@@ -198,7 +201,14 @@ impl<I: Clone + PartialEq> List<I> {
             .unwrap_or(0);
     }
 
+    /// Opens on the row, in the middle where enough rows follow.
     pub fn focus(&mut self, id: &I) -> bool {
+        let found = self.place(id);
+        self.center |= found;
+        found
+    }
+
+    fn place(&mut self, id: &I) -> bool {
         match self
             .shown()
             .into_iter()
@@ -375,7 +385,9 @@ impl<I: Clone + PartialEq> List<I> {
             .iter()
             .position(|l| *l == Some(self.cursor))
             .unwrap_or(0);
-        if at < self.offset {
+        if std::mem::take(&mut self.center) {
+            self.offset = at.saturating_sub(height / 2);
+        } else if at < self.offset {
             self.offset = at.saturating_sub(usize::from(
                 at > 0 && lines[at - 1].is_some_and(|i| self.rows[i].heading),
             ));
@@ -500,6 +512,43 @@ mod tests {
         assert!(
             matches!(l.key(Key::Esc), Picked::Ignored),
             "without a filter esc is the page's"
+        );
+    }
+
+    /// The line each row lands on, cursor row marked.
+    fn drawn(l: &mut List<usize>, ctx: &Ctx) -> Vec<String> {
+        let area = Rect::new(2, 0, 20, 10);
+        let mut buf = Buffer::empty(Rect::new(0, 0, 22, 10));
+        l.draw(area, &mut buf, ctx);
+        (0..10)
+            .map(|y| (0..22).map(|x| buf[(x, y)].symbol()).collect())
+            .collect()
+    }
+
+    #[test]
+    fn opens_with_the_preselected_row_in_the_middle_and_scrolls_as_before() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let (app, _, _) = crate::ui::app::tests::app(true);
+        let rows = || (0..50).map(|i| Row::new(i, format!("row {i}"))).collect();
+        let mut l = List::filterable(rows());
+        l.focus(&30);
+        let lines = drawn(&mut l, &app.ctx);
+        assert!(lines[5].contains("row 30"), "{lines:#?}");
+        for _ in 0..3 {
+            l.key(Key::Down);
+        }
+        assert!(drawn(&mut l, &app.ctx)[8].contains("row 33"));
+        l.set(rows());
+        let lines = drawn(&mut l, &app.ctx);
+        assert!(
+            lines[8].contains("row 33"),
+            "a reload keeps the view: {lines:#?}"
+        );
+        l.focus(&48);
+        let lines = drawn(&mut l, &app.ctx);
+        assert!(
+            lines[8].contains("row 48") && lines[9].contains("row 49"),
+            "the end stays at the bottom: {lines:#?}"
         );
     }
 
