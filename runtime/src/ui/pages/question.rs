@@ -97,7 +97,7 @@ pub fn answers(which: Which, ctx: &Ctx) -> impl FnOnce() -> Answers + Send + 'st
                     .into_iter()
                     .map(|l| match l.split_once('\t') {
                         Some((v, label)) => (v.trim().to_string(), label.trim().to_string()),
-                        None => (l.trim().to_string(), l.trim().to_string()),
+                        None => (l.trim().to_string(), label(l.trim())),
                     })
                     .collect(),
                 Err(e) => {

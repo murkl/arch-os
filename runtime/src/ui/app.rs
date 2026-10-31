@@ -1450,6 +1450,61 @@ pub mod tests {
         );
     }
 
+    /// From the module's options and from a command's lines without a label of their own.
+    #[test]
+    fn a_list_names_none_in_words() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app_with(
+            &[("options-from: options_disks()", "options-from: note()")],
+            false,
+        );
+        answered(&mut app);
+        app.ctx.store.set("TUX_NOTE", "none");
+        for name in ["TUX_DESKTOP", "TUX_DISK"] {
+            let s = app.ctx.module.setting(name).unwrap();
+            open(
+                &mut app,
+                Box::new(pages::question::QuestionPage::setting(s, pages::Then::Pop)),
+            );
+            screen(&mut app, &mut term);
+            settle(&mut app, &mut term, &rx);
+            let shown = screen(&mut app, &mut term);
+            let rows: Vec<&str> = shown
+                .lines()
+                .map(|l| l.trim_start_matches(['▶', ' ']))
+                .collect();
+            assert!(
+                rows.contains(&"None") && !rows.contains(&"none"),
+                "{name}: {shown}"
+            );
+            press(&mut app, &[Key::Esc]);
+        }
+    }
+
+    #[test]
+    fn alt_backspace_deletes_a_word_in_a_text_box() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app(false);
+        answered(&mut app);
+        let s = app.ctx.module.setting("TUX_HOST").unwrap();
+        open(
+            &mut app,
+            Box::new(pages::question::QuestionPage::setting(s, pages::Then::Pop)),
+        );
+        screen(&mut app, &mut term);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Ctrl('u')]);
+        type_text(&mut app, "tux-box");
+        press(&mut app, &[Key::AltBackspace]);
+        let shown = screen(&mut app, &mut term);
+        assert!(
+            shown.contains("tux-") && !shown.contains("tux-box"),
+            "{shown}"
+        );
+    }
+
     /// Instead of a text box that looks intended.
     #[test]
     fn a_list_a_setting_cannot_read_says_why() {

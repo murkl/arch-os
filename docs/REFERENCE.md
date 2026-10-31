@@ -96,7 +96,7 @@ flowchart LR
 | `rootflags=subvol=@ rootfstype=btrfs` | Root subvolume |
 | `zswap.enabled=0` | Conflicts with zram |
 | `panic=10` | A panic counts as a failed start |
-| `quiet splash loglevel=3 …` | **[Silent boot](https://wiki.archlinux.org/title/Silent_boot)**. `vt.global_cursor_default=0` hides the cursor, `/etc/issue.d/cursor.issue` restores it at each login |
+| `quiet splash loglevel=3 …` | **[Silent boot](https://wiki.archlinux.org/title/Silent_boot)**. `vt.global_cursor_default=0` hides the cursor, `/etc/issue.d/cursor.issue` restores it at each login. `RebootWatchdogSec=off` in `/etc/systemd/system.conf.d/10-arch-os.conf`: a watchdog armed for the reboot prints `watchdog did not stop!` over the splash |
 | `plymouth.ignore-serial-consoles` | Every VM has a serial console, which switches Plymouth to text mode, password prompt included |
 | `plymouth.use-simpledrm=0` | With encryption: the password prompt waits for the graphics driver instead of appearing twice. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Plymouth#Using_SimpleDRM)** |
 | `plymouth.splash-delay=3` | With encryption: splash and password prompt appear together. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Plymouth#Show_delay)** |
