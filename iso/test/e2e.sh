@@ -444,23 +444,6 @@ recovery_opens() {
     say "Recovery: started ${1}, on its first page"
 }
 
-# Waits for the language page of a published Recovery, which reads no language
-# the Installer left. One without --trace shows the catalogs' names for
-# themselves, which OCR finds.
-published_recovery_opens() {
-    local from deadline=$((SECONDS + BOOT_TIMEOUT)) shot="${WORK}/recovery.png"
-    from="$(lines)"
-    until traced "$from" "page language"; do
-        kill -0 "$QEMU_PID" 2>/dev/null || fail "the machine stopped before the Recovery came up"
-        [ "$SECONDS" -lt "$deadline" ] || fail "the published Recovery did not open on its language page within ${BOOT_TIMEOUT}s"
-        rm -f "$shot"
-        printf 'screendump %s -f png\n' "$shot" >&3
-        sleep 10
-        [ -s "$shot" ] && tesseract "$shot" - --psm 6 2>/dev/null | grep -qE 'English|Deutsch' && break
-    done
-    say "Recovery: started ${1}, on its first page"
-}
-
 # The Recovery partition, started as its desktop launcher does, then left with
 # Start over.
 recovery_dashboard() {
@@ -732,9 +715,7 @@ as_root bootctl list --json=short | grep -qF "archisodevice=UUID=${uuid} " ||
 as_root sbctl verify 2>/dev/null | grep -qF "/boot/EFI/Linux/arch-os-recovery.efi is signed" ||
     fail "the Recovery written from the ISO is not signed"
 as_root systemctl reboot --boot-loader-entry=arch-os-recovery.efi || true
-# The newest release may predate this Installer and not read its language. Its
-# language page, listing Deutsch, also counts as started.
-published_recovery_opens "after it was written again from the ISO"
+recovery_opens "after it was written again from the ISO"
 cut_power
 
 say "Arch OS installs, boots, repairs, boots again, starts its Recovery and writes it again"
