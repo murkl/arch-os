@@ -111,12 +111,11 @@ Walks the ISO unattended:
 
 - Each run gets the memory and disk its profile requires, no more. **[➜ README](../docs/README.md)**
 - The live system is reached over SSH by a key passed as systemd credential. Installer and Recovery run unattended there, answers in their file, passwords in the environment. The Recovery update, a dashboard row, runs in tmux, driven by keys and read from its trace
-- The Recovery on its partition is read from its trace on a virtio port. OCR reads only getty's login prompt, which must not flash by on **Start over**, and the language names of a published Recovery without trace in step 6
+- The Recovery on its partition is read from its trace on a virtio port. OCR reads only getty's login prompt, which must not flash by on **Start over**
 - Both runs must end with every test passed. The machine is then powered off hard instead of shut down, as after writing the Recovery: what a run reports as done must be on the disk
 - The installed system unlocks its disk from a systemd credential and is reached over SSH as its account, by the key given to the Installer
 - `START=desktop` installs the Desktop profile with the SSH server, boots it like step 2 and checks for GNOME's login screen and a systemd-oomd that watches swap and the session. The repair is the Core's
 - Step 6 is skipped with a notice while no release of the series publishes a Recovery
-- Step 6 writes the newest published Recovery, which may predate the Installer. Its language page then counts as started, since it reads no language the Installer left
 
 **Note:** _Needs `qemu-base`, `edk2-ovmf`, `openssh`, `tesseract`, `tesseract-data-eng` and a network: the installation downloads its packages, step 6 the Recovery. Logs land in `dist/e2e/`, with a screenshot of the console where it stopped._
 
