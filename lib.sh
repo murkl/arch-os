@@ -688,7 +688,7 @@ as_user() {
 # Accounts a package of the Installer's choices creates through sysusers.d,
 # beyond the live system's own. The Desktop run of e2e.sh holds the list to an
 # installed system.
-PACKAGE_ACCOUNTS="_talkd avahi colord cups docker flatpak fwupd gamemode gdm geoclue git gnome-remote-desktop malcontent-timer-ext-agent malcontent-timerd malcontent-webd nm-openvpn openvpn passim pcscd polkitd rpc rpcuser rtkit saned usbmux vboxsf"
+PACKAGE_ACCOUNTS="_talkd avahi colord cups docker flatpak fwupd gamemode gdm geoclue git gnome-remote-desktop malcontent-timer-ext-agent malcontent-timerd malcontent-webd nm-openvpn openvpn passim pcscd polkitd rpc rpcuser rtkit saned spice-webdavd usbmux vboxsf"
 
 # A name the live system or a package claims: useradd fails on it after the
 # wipe, or the account shares the package's rights, such as docker's socket.
