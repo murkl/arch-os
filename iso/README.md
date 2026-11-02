@@ -126,7 +126,7 @@ Both images boot with the same arguments, added by `build.sh`. Every other entry
 
 | Argument | Why |
 | --- | --- |
-| `quiet splash loglevel=3 …` | Plymouth instead of the boot log. **[➜ Silent boot](https://wiki.archlinux.org/title/Silent_boot)** |
+| `quiet splash loglevel=3 …` | Plymouth instead of the boot log. **[➜ Silent boot](https://wiki.archlinux.org/title/Silent_boot)**. The reboot stays as quiet as on the installed system. **[➜ Kernel Parameters](../docs/REFERENCE.md#kernel-parameters)** |
 | `plymouth.ignore-serial-consoles` | Plymouth falls back to text for good on a serial console, and every VM has one. Without it the Recovery boots in text mode under QEMU |
 | `nomodeset` | Splash and interface draw on the firmware framebuffer, which needs no graphics driver. The ram disk carries none, and no driver can fail to bring up a screen |
 | `systemd.condition_needs_update=0` | The build ran `ldconfig`, `sysusers` and `hwdb`, and a live image's `/usr` never changes. Without it they run again at every boot, before anything else. **[➜ systemd](https://www.freedesktop.org/software/systemd/man/latest/kernel-command-line.html)** |

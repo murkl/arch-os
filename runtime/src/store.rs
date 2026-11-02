@@ -286,11 +286,12 @@ fn why(s: &Setting) -> String {
     }
 }
 
-/// `true` and `false` translated, anything else as is.
+/// `true`, `false` and `none` translated, anything else as is.
 pub fn label(value: &str) -> String {
     match value {
         spec::TRUE => t("Yes"),
         spec::FALSE => t("No"),
+        spec::NONE => t("None"),
         other => other.to_string(),
     }
 }

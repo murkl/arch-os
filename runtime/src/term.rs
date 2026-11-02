@@ -208,11 +208,13 @@ fn held(last: &mut Option<(Key, Instant)>, key: Key, now: Instant) -> bool {
 
 fn key(k: KeyEvent) -> Option<Key> {
     let ctrl = k.modifiers.contains(KeyModifiers::CONTROL);
+    let alt = k.modifiers.contains(KeyModifiers::ALT);
     Some(match k.code {
         KeyCode::Char(c) if ctrl => Key::Ctrl(c.to_ascii_lowercase()),
         KeyCode::Char(c) => Key::Char(c),
         KeyCode::Enter => Key::Enter,
         KeyCode::Esc => Key::Esc,
+        KeyCode::Backspace if alt => Key::AltBackspace,
         KeyCode::Backspace => Key::Backspace,
         KeyCode::Delete => Key::Delete,
         KeyCode::Tab => Key::Tab,
@@ -254,6 +256,15 @@ mod tests {
         std::thread::sleep(Duration::from_millis(50));
         assert!(count.load(Ordering::SeqCst) > stood, "never resumed");
         thread.join().unwrap();
+    }
+
+    /// The console and terminals send Alt+Backspace as escape and delete, which crossterm reads
+    /// as Backspace with Alt.
+    #[test]
+    fn alt_backspace_is_its_own_key() {
+        let alt = KeyEvent::new(KeyCode::Backspace, KeyModifiers::ALT);
+        assert_eq!(key(alt), Some(Key::AltBackspace));
+        assert_eq!(key(KeyCode::Backspace.into()), Some(Key::Backspace));
     }
 
     #[test]

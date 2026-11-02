@@ -446,7 +446,7 @@ In the start directory:
 | `r` | Reload a failed requirement |
 | `tab` | A run's details or compact view |
 
-**Note:** _An empty text box shows its question's title as placeholder, or **Repeat** for the second password. In a text box every letter types and backspace deletes one. Pasted text goes into a text box and is ignored elsewhere. A held key repeats only for moving and typing._
+**Note:** _An empty text box shows its question's title as placeholder, or **Repeat** for the second password. In a text box every letter types, backspace deletes one and `alt+backspace` the word before, in a password box everything. Pasted text goes into a text box and is ignored elsewhere. A held key repeats only for moving and typing._
 
 ## Translations
 

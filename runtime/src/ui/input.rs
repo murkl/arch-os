@@ -39,6 +39,12 @@ impl Input {
                 let kept = self.text.trim_end().rfind(' ').map_or(0, |i| i + 1);
                 self.text.truncate(kept);
             }
+            Key::AltBackspace if self.masked => self.text.clear(),
+            Key::AltBackspace => {
+                let word = self.text.trim_end_matches(|c: char| !c.is_alphanumeric());
+                let kept = word.trim_end_matches(char::is_alphanumeric).len();
+                self.text.truncate(kept);
+            }
             _ => return false,
         }
         true
@@ -94,5 +100,27 @@ mod tests {
         assert!(i.key(Key::Backspace));
         assert!(!i.key(Key::Up) && !i.key(Key::Enter) && !i.key(Key::Esc));
         assert_eq!(i.take(), "pacman");
+    }
+
+    /// Words of letters and digits, as readline's backward-kill-word and the zsh of Arch OS.
+    #[test]
+    fn alt_backspace_deletes_the_word_before_and_empties_a_password() {
+        for (text, kept) in [
+            ("gnome-extensions-app", "gnome-extensions-"),
+            ("gnome-extensions-", "gnome-"),
+            ("/usr/share/applications", "/usr/share/"),
+            ("snake_case.txt", "snake_case."),
+            ("pacman -S  ", "pacman -"),
+            ("Grüße", ""),
+        ] {
+            let mut i = Input::new("");
+            i.text = text.into();
+            assert!(i.key(Key::AltBackspace));
+            assert_eq!(i.text, kept, "{text}");
+        }
+        let mut p = Input::masked();
+        p.text = "two words".into();
+        assert!(p.key(Key::AltBackspace));
+        assert_eq!(p.text, "", "no word boundary shows through the mask");
     }
 }
