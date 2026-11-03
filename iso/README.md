@@ -107,7 +107,7 @@ Walks the ISO unattended:
 3. Uses up the entries' tries: the fallback starts, then the Recovery
 4. Starts the ISO again, creates a subvolume inside the system, rolls back to the newest snapshot with the Recovery, keeping that subvolume, and rebuilds the boot files of an installation with its images in EFI/Linux and no entry counting tries
 5. Boots it again, signed and running, and starts the Recovery on its partition
-6. Overwrites the start of the Recovery partition, as an interrupted update does, rewrites it with the Recovery on the ISO from the newest release of its series, and starts it with Secure Boot enforced
+6. Finds the disk's Recovery up to date from the ISO, overwrites the start of its partition, as an interrupted update does, rewrites it with the Recovery on the ISO from the newest release of its series, and starts it with Secure Boot enforced
 
 - Each run gets the memory and disk its profile requires, no more. **[➜ README](../docs/README.md)**
 - The live system is reached over SSH by a key passed as systemd credential. Installer and Recovery run unattended there, answers in their file, passwords in the environment. The Recovery update, a dashboard row, runs in tmux, driven by keys and read from its trace

@@ -378,8 +378,10 @@ Runs as a kiosk: tty1 belongs to it, no console has a login, a serial one includ
 
 **Update the Recovery** on the dashboard checks the GitHub releases and installs after a confirmation that opens on **No**.
 
-- Within its series only: 2.0.0 updates to 2.4.1, never to 3.0.0, whose Recovery may not repair this layout
-- From the ISO only for a disk whose Recovery no longer starts, the way back after an interrupted update
+- Within its series only: 2.1.0 updates to 2.4.1, never to 3.0.0, whose Recovery may not repair this layout
+- From the ISO for the disk's Recovery where it is older or no longer starts, the way back after an interrupted update
 - Download, checksum and size are checked before the partition is touched. An encrypted system is opened, and where it has `sbctl` its keys sign the new image
 - Writes the partition, reads it back, then replaces the boot image. After a power cut in between, the system starts as before
 - The partition keeps its UUID and stays hidden from the file manager
+
+**Note:** _Releases before 2.1 are not supported. A 2.0 Recovery with Secure Boot and disk encryption needs 4 GiB of memory to update itself. With less, the ISO updates it._

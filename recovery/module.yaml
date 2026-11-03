@@ -131,7 +131,7 @@ actions:
     title: Internet
     run: check_online()
 
-  # Itself, or from the ISO one that no longer starts.
+  # Itself, or from the ISO the disk's.
   recovery-to-update:
     title: A Recovery to update
     run: recovery_to_update()

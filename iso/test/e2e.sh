@@ -672,8 +672,20 @@ recovery_dashboard
 start repair
 until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
 live systemctl stop arch-os
-live dd if=/dev/urandom of="${DISK}3" bs=1M count=8 conv=fsync status=none
 live "printf \"MODULE_LANGUAGE='en'\nARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
+
+# The disk's Recovery is this build, and no published one is newer.
+live "tmux new-session -d -s e2e -x 120 -y 40 'arch-os recovery --trace ${LIVE_TRACE}'"
+shows "page dashboard" 60
+focus update
+keys Enter
+shows "page report update|page password ARCH_OS_RECOVERY_UPDATE_PASSWORD" 120
+traced 1 "page report update" in_tmux || fail "the ISO offered to replace the disk's Recovery, though none is newer"
+live tmux kill-session -t e2e
+live ": >${LIVE_TRACE}"
+say "Update: the disk's Recovery is up to date"
+
+live dd if=/dev/urandom of="${DISK}3" bs=1M count=8 conv=fsync status=none
 live "tmux new-session -d -s e2e -x 120 -y 40 'arch-os recovery --trace ${LIVE_TRACE}'"
 
 say "Update: write the Recovery again from the ISO"
