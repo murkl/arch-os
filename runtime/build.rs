@@ -98,22 +98,20 @@ fn is_version(v: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || b == b'.' || b == b'-')
 }
 
-/// The newest release tag before HEAD, `v` dropped, by the patterns of murkl/workflows.
+/// The newest release tag before HEAD, by the pattern of murkl/workflows.
 fn last_release() -> Option<String> {
     let out = Command::new("git")
-        .args(["describe", "--tags", "--abbrev=0"])
         .args([
+            "describe",
+            "--tags",
+            "--abbrev=0",
             "--match",
             "[0-9]*.[0-9]*.[0-9]*",
-            "--match",
-            "v[0-9]*.[0-9]*.[0-9]*",
         ])
         .output()
         .ok()?;
     let tag = String::from_utf8(out.stdout).ok()?;
-    out.status
-        .success()
-        .then(|| tag.trim().trim_start_matches('v').to_owned())
+    out.status.success().then(|| tag.trim().to_owned())
 }
 
 /// `2.0.0` as `2.0.1-dev`.
