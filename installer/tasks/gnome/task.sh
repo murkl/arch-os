@@ -157,6 +157,15 @@ if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
     arch-chroot "$MNT" firewall-offline-cmd --zone=public --add-service=mdns
 fi
 
+# The sharing in GNOME's settings, on trusted networks only. File and media
+# sharing listen on a random port from ip_local_port_range, which no setting
+# fixes.
+if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
+    read -r low high </proc/sys/net/ipv4/ip_local_port_range
+    arch-chroot "$MNT" firewall-offline-cmd --zone=home --add-port="${low}-${high}/tcp"
+    arch-chroot "$MNT" firewall-offline-cmd --zone=home --add-service=rdp --add-service=ssdp
+fi
+
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     arch-chroot "$MNT" systemctl enable power-profiles-daemon.service
     arch-chroot "$MNT" systemctl enable cups.socket

@@ -289,7 +289,7 @@ Every account starts with the same defaults and can change them.
 | Zone | Where | Allows |
 | --- | --- | --- |
 | `public` | Every unmarked network | `dhcpv6-client`, `mdns` with GNOME, `ssh` with the SSH server |
-| `home` | Networks marked trusted | firewalld's default set, `samba` and `ws-discovery-host` with file sharing |
+| `home` | Networks marked trusted | firewalld's default set, `32768-60999/tcp`, `rdp` and `ssdp` with GNOME, `samba` and `ws-discovery-host` with file sharing |
 
 No machine can tell a café's Wi-Fi from a home network, so a network is trusted only once marked:
 
@@ -301,6 +301,8 @@ nmcli connection modify <name> connection.zone home
 | --- | --- | --- |
 | `mdns` | `public` | mDNS replies arrive as multicast, which connection tracking cannot match. They reveal nothing beyond Avahi's announcements |
 | `ssh` | `public` | Reachable from any network, so keys only |
+| `32768-60999/tcp` | `home` | GNOME's file and media sharing listen on a random port from `ip_local_port_range` and ask no password by default |
+| `rdp`, `ssdp` | `home` | GNOME's remote desktop, and players finding its media sharing. On a café's Wi-Fi anyone could try them |
 | `samba`, `ws-discovery-host` | `home` | On a café's Wi-Fi anyone could try the account password against a share |
 
 **Note:** _Docker passes firewalld, so with the firewall its published ports bind to `127.0.0.1`. `-p 0.0.0.0:8080:80` publishes to the network. **[➜ Docker](https://docs.docker.com/engine/network/packet-filtering-firewalls/)**_

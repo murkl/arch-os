@@ -51,6 +51,13 @@ grep -q 'mdns_minimal' "${MNT}/etc/nsswitch.conf"
 [ "$ARCH_OS_FIREWALL_ENABLED" != "true" ] ||
     arch-chroot "$MNT" firewall-offline-cmd --zone=public --query-service=mdns >/dev/null
 
+if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
+    read -r low high </proc/sys/net/ipv4/ip_local_port_range
+    arch-chroot "$MNT" firewall-offline-cmd --zone=home --query-port="${low}-${high}/tcp" >/dev/null
+    arch-chroot "$MNT" firewall-offline-cmd --zone=home --query-service=rdp >/dev/null
+    arch-chroot "$MNT" firewall-offline-cmd --zone=home --query-service=ssdp >/dev/null
+fi
+
 # Automatic login exactly where the LUKS passphrase is the account's password:
 # docs/REFERENCE.md#accounts
 autologin=false

@@ -1,5 +1,5 @@
 # See .bashrc.
-if [[ ${SHLVL} == 1 && -z ${DISPLAY} ]]; then
+if [[ ${SHLVL} == 1 && ${XDG_SESSION_TYPE} == tty ]]; then
     set -a
     source <(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator)
     set +a

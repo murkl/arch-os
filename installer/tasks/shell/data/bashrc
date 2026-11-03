@@ -1,8 +1,9 @@
 [[ $- != *i* ]] && return
 
-# On a console nothing else imports environment.d. The generator quotes
-# like a shell, so every value arrives as written.
-if [[ ${SHLVL} == 1 && -z ${DISPLAY} ]]; then
+# On a console nothing else imports environment.d. The session type says so
+# also without Xwayland, where DISPLAY stays empty. The generator quotes like a
+# shell, so every value arrives as written.
+if [[ ${SHLVL} == 1 && ${XDG_SESSION_TYPE} == tty ]]; then
     set -a
     # shellcheck source=/dev/null
     source <(/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator)

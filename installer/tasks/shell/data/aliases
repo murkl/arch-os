@@ -19,7 +19,7 @@ command -v fastfetch &>/dev/null && alias fetch="fastfetch"
 alias pacnew="env DIFFPROG=\$EDITOR pacdiff -s"
 command -v meld &>/dev/null && alias pacnew="env DIFFPROG=meld pacdiff -s"
 command -v xdg-open &>/dev/null && alias open="xdg-open"
-alias myip="curl https://ipv4.icanhazip.com"
+alias myip="curl --proto =https https://ipv4.icanhazip.com"
 alias ..="cd .."
 alias ...="cd ../.."
 
