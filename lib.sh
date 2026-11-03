@@ -787,12 +787,13 @@ mount_target() {
 
 # The EFI partition, checked first as the system checks it at boot: a start
 # broken during a write leaves FAT inconsistent, and a repair writes there.
-# fsck.fat exits 1 for errors it fixed.
+# fsck.fat exits 1 for errors it fixed. -w, since mount falls back to read-only
+# where the partition is mounted so elsewhere.
 mount_esp() {
     local esp
     esp="$(boot_partition "$ARCH_OS_RECOVERY_DISK")"
     fsck.fat -a "$esp" || allow 1
-    mount --mkdir -t vfat "$esp" "$1"
+    mount --mkdir -w -t vfat "$esp" "$1"
 }
 
 # Also closes what an earlier run left open. Unmounted first, since a mounted
