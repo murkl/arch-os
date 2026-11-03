@@ -107,23 +107,47 @@ for layout in compact pretty; do
 EOF
 done
 
-# On the Recovery partition only a newer one. Elsewhere the newest, only if the
-# disk's Recovery does not boot.
-while read -r own starts running want; do
+# ─── The Disk's Recovery ─────────────────────────────────────────────────────
+
+# bootctl's entries as an installed system lists them, the system's without
+# options and the Recovery's naming its partition.
+entries='[{"type":"type1","source":"esp","id":"main.conf","title":"Arch OS","sortKey":"arch","version":null},{"type":"type2","source":"esp","id":"arch-os-recovery.efi","title":"Arch OS Recovery","sortKey":"arch-os-recovery","version":"2.1.0","options":"archisobasedir=arch archisodevice=UUID=20df795e-7a67-4769-9f9a-54ad60c43f55 copytoram=y quiet"},{"type":"loader","source":"esp","id":"auto-reboot-to-firmware-setup","title":"Reboot Into Firmware Interface","version":null}]'
+blkid() { printf '%s\n' "$disk_uuid"; }
+findmnt() { echo /efi; }
+bootctl() { printf '%s\n' "$listing"; }
+export ARCH_OS_RECOVERY_DISK=/dev/vda
+for layout in compact pretty; do
+    listing="$entries"
+    [ "$layout" = compact ] || listing="$(jq . <<<"$entries")"
+    while read -r disk_uuid want; do
+        expect "recovery_version for ${disk_uuid}, ${layout}" "$(recovery_version)" "$want"
+    done <<'EOF'
+20df795e-7a67-4769-9f9a-54ad60c43f55 2.1.0
+20df795e-7a67-4769-9f9a-54ad60c43f5
+EOF
+done
+unset -f blkid findmnt bootctl
+
+# On the Recovery partition a newer one than itself. From the ISO a newer one
+# than the disk's, the newest where the disk's does not boot (-).
+while read -r own disk running want; do
     MODULE_VERSION="$running"
     on_recovery_partition() { [ "$own" = yes ]; }
-    recovery_starts() { [ "$starts" = yes ]; }
-    expect "recovery_update on its partition: ${own}, starts: ${starts}, running ${running}" \
+    recovery_version() { [ "$disk" = - ] || printf '%s' "$disk"; }
+    expect "recovery_update on its partition: ${own}, disk's: ${disk}, running ${running}" \
         "$(recovery_update <<<"$compact" | cut -d' ' -f1)" "$want"
 done <<'EOF'
-yes yes 2.0.0 2.1.0
-yes yes 2.1.0-dev 2.1.0
-yes yes 2.1.0
-yes yes 2.1.1-dev
-no yes 2.0.0
-no no 2.0.0 2.1.0
-no no 2.9.0-dev 2.1.0
-no no 4.0.0
+yes - 2.0.0 2.1.0
+yes - 2.1.0-dev 2.1.0
+yes - 2.1.0
+yes - 2.1.1-dev
+no 2.1.0 2.0.0
+no 2.0.0 2.1.1-dev 2.1.0
+no 2.1.1-dev 2.1.1-dev
+no 3.0.0 2.1.1-dev
+no - 2.0.0 2.1.0
+no - 2.9.0-dev 2.1.0
+no - 4.0.0
 EOF
 
 # ─── Files a task ships ──────────────────────────────────────────────────────

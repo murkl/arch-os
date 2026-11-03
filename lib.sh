@@ -823,11 +823,11 @@ on_recovery_partition() {
         [ "$(blkid -p -s UUID -o value "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")" 2>/dev/null)" = "$uuid" ]
 }
 
-# The disk's Recovery boots if systemd-boot lists an image naming its partition's
-# UUID. An aborted update leaves them apart.
-recovery_starts() {
+# Version of the disk's Recovery where it boots: systemd-boot lists an image
+# naming its partition's UUID. Nothing where an aborted update left them apart.
+recovery_version() {
     local uuid esp mnt listed="" status=0
-    uuid="$(blkid -p -s UUID -o value "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")")" || return 1
+    uuid="$(blkid -p -s UUID -o value "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")")" || return 0
     esp="$(boot_partition "$ARCH_OS_RECOVERY_DISK")"
     mnt="$({ findmnt -nro TARGET -S "$esp" || allow 1; } | awk '!found { print; found = 1 }')"
     if [ -n "$mnt" ]; then
@@ -842,7 +842,9 @@ recovery_starts() {
         fi
         rmdir "$mnt"
     fi
-    [ "$status" -eq 0 ] && [ -n "$uuid" ] && grep -qE "archisodevice=UUID=${uuid}( |\")" <<<"$listed"
+    [ "$status" -eq 0 ] && [ -n "$uuid" ] || return 0
+    jq -r --arg device "archisodevice=UUID=${uuid}( |\")" \
+        'first(.[] | select(tostring | test($device)) | .version // empty) // empty' <<<"$listed"
 }
 
 # Newest stable Recovery of this major series in releases JSON on stdin: version,
@@ -861,16 +863,18 @@ newest_recovery() {
     [ -z "$newest" ] || printf '%s\n' "$newest"
 }
 
-# What an update installs, as newest_recovery prints it, or nothing. On the
-# Recovery partition only a newer one, elsewhere the newest if the disk's
-# Recovery does not boot.
+# What an update installs, as newest_recovery prints it, or nothing: a newer one
+# than the Recovery on the partition, the newest where the disk's does not boot.
 recovery_update() {
-    local found
+    local found current
     found="$(newest_recovery)"
     [ -n "$found" ] || return 0
     if on_recovery_partition; then
-        newer "${found%% *}" "${MODULE_VERSION}" || return 0
-    elif recovery_starts; then
+        current="$MODULE_VERSION"
+    else
+        current="$(recovery_version)"
+    fi
+    if [ -n "$current" ] && ! newer "${found%% *}" "$current"; then
         return 0
     fi
     printf '%s\n' "$found"
@@ -1127,14 +1131,14 @@ snapshot_label() {
     echo
 }
 
-# On the Recovery partition, or elsewhere when the disk's Recovery does not boot
-# after an aborted update. The Recovery partition is the third, labeled recovery.
+# On the Recovery partition, or from the ISO for a disk with one: the third
+# partition, labeled recovery.
 recovery_to_update() {
     if on_recovery_partition; then
         return 0
     fi
     [ -n "$ARCH_OS_RECOVERY_DISK" ] || return 1
-    [ "$(lsblk -dno PARTLABEL "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")" 2>/dev/null)" = recovery ] && ! recovery_starts
+    [ "$(lsblk -dno PARTLABEL "$(recovery_partition "$ARCH_OS_RECOVERY_DISK")" 2>/dev/null)" = recovery ]
 }
 
 # Yes if there is nothing to install. No opens the install. GitHub is asked
