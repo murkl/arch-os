@@ -305,5 +305,20 @@ done <<'EOF'
 0 1 10
 EOF
 
+# ─── EFI Partition ───────────────────────────────────────────────────────────
+
+# mount falls back to read-only where the partition is mounted so elsewhere,
+# unless -w asks for read-write.
+fsck.fat() { :; }
+mount() {
+    [[ " $* " != *" -w "* ]] || {
+        echo "mount: /mnt/boot: /dev/vda1 already mounted on /tmp/probe." >&2
+        return 32
+    }
+}
+expect "mount_esp where the EFI partition is mounted read-only elsewhere" \
+    "$( (as_action && ARCH_OS_RECOVERY_DISK=/dev/vda mount_esp /mnt/boot) 2>&1 | paste -sd' ')" \
+    "mount: /mnt/boot: /dev/vda1 already mounted on /tmp/probe. 32"
+
 [ "$status" -eq 0 ] && echo "lib.sh passes every case"
 exit "$status"
