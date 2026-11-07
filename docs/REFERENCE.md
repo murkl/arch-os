@@ -180,12 +180,12 @@ Enough for a usable system, few enough to need no upkeep. The rest follows the a
 | `linux-firmware`, `sof-firmware`, `wireless-regdb` | Omitted in a VM without a passed-through card, whose drivers are in the kernel. `sof-firmware` is the sound of many laptops |
 
 - A Wi-Fi network joined in the Installer becomes a NetworkManager connection, so the first boot is online. An 802.1X network needs joining again
-- Graphics drivers with GNOME, detected per card in sysfs. Always Mesa, `vkd3d`, `mesa-utils` and `vulkan-tools`. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Hardware_video_acceleration)**
+- Graphics drivers with GNOME, detected per card in sysfs. Always Mesa, `mesa-utils` and `vulkan-tools`. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Hardware_video_acceleration)**
 
 | Card | Packages |
 | --- | --- |
 | Intel | `vulkan-intel`, `intel-media-driver` from Broadwell on, `libva-intel-driver` before |
-| AMD | `vulkan-radeon`, `vulkan-mesa-layers`, `opencl-mesa` |
+| AMD | `vulkan-radeon`, `opencl-mesa` |
 | NVIDIA from Turing on (`0x1e00`) | `nvidia-open-dkms` with headers, `nvidia-utils`, `nvidia-settings`, `opencl-nvidia`, `libva-nvidia-driver`, `nvidia-prime` beside another card. **[➜ Arch Wiki](https://wiki.archlinux.org/title/NVIDIA)** |
 | NVIDIA before Turing | `vulkan-nouveau`. Arch has no NVIDIA driver for these |
 | VM adapter | Mesa, plus the guest tools of the hypervisor |
@@ -255,7 +255,7 @@ Filtered before installing: what **Slim desktop** leaves out is never downloaded
 | --- | --- |
 | App store | GNOME Software installs Flatpaks and, with `fwupd` from **Desktop extras**, firmware. No PackageKit, so only pacman changes the system. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Pacman/Tips_and_tricks#Graphical)** |
 | Bazaar | Replaces it with Flatpak chosen, plus `gnome-firmware`, since Bazaar installs Flatpaks only. **[➜ Bazaar](https://apps.gnome.org/Bazaar/)** |
-| Browser | In the system language: `firefox-i18n-<lang>` for Firefox, `hunspell-<lang>` for Firefox and GNOME Web, codecs for GNOME Web and Vivaldi. Default for web links, pinned to the dock with **Desktop extras**. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Firefox)** |
+| Browser | In the system language: `firefox-i18n-<lang>` for Firefox, `hunspell-<lang>` for Firefox and GNOME Web, codecs for GNOME Web and Vivaldi, GPU decoding for GNOME Web. Default for web links, pinned to the dock with **Desktop extras**. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Firefox)** |
 | `.local` names | `nss-mdns` before the resolver in `/etc/nsswitch.conf`, so printers, shares and machines resolve by name. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Avahi#Hostname_resolution)** |
 | GNOME Boxes | Works once installed: libvirt session, KVM open to every account, disks in the home folder. A QEMU guest gets `phodav` for shared folders. **[➜ GNOME Boxes](https://apps.gnome.org/Boxes/)** |
 | Extensions | From **[extensions.gnome.org](https://extensions.gnome.org)** through `gnome-browser-connector` with **Desktop extras**, managed in the **Extensions** app |
