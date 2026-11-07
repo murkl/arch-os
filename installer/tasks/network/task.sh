@@ -2,9 +2,9 @@
 
 # /etc/hosts stays as shipped: nss-myhostname answers for this name.
 # https://wiki.archlinux.org/title/Network_configuration#Local_hostname_resolution
-echo "$ARCH_OS_HOSTNAME" >"${MNT}/etc/hostname"
+echo "$ARCH_OS_HOSTNAME" | write_file "${MNT}/etc/hostname"
 
-arch-chroot "$MNT" systemctl enable NetworkManager
+run arch-chroot "$MNT" systemctl enable NetworkManager
 
 iwd_setting() {
     awk -v section="[$2]" -v key="$3" '
@@ -14,7 +14,8 @@ iwd_setting() {
 }
 
 # Every Wi-Fi network the live system joined, so the first boot is online. iwd
-# names a profile after the SSID, or "=" and its hex. https://man.archlinux.org/man/iwd.network.5
+# names a profile after the SSID, or "=" and its hex. Not in the script, which
+# holds no passphrase. https://man.archlinux.org/man/iwd.network.5
 for profile in /var/lib/iwd/*.psk /var/lib/iwd/*.open; do
     [ -f "$profile" ] || continue
     name="$(basename "$profile")"

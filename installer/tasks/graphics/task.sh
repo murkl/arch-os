@@ -52,7 +52,7 @@ fi
 mapfile -t packages < <(printf '%s\n' "${packages[@]}" | sort -u)
 chroot_pacman_install "${packages[@]}"
 if [ "$cards" -gt 1 ]; then
-    arch-chroot "$MNT" systemctl enable switcheroo-control.service
+    run arch-chroot "$MNT" systemctl enable switcheroo-control.service
 fi
 
 [ "$nvidia" = "true" ] || return 0
@@ -60,15 +60,15 @@ fi
 # The driver sets modeset and keeps video memory over a suspend by itself. Early
 # loading keeps GDM off the firmware's framebuffer.
 # https://wiki.archlinux.org/title/NVIDIA#Early_loading
-mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
-render "$(where)/30-graphics.conf" MODULES="nvidia nvidia_modeset nvidia_uvm nvidia_drm" \
-    >"${MNT}/etc/mkinitcpio.conf.d/30-graphics.conf"
+run mkdir -p "${MNT}/etc/mkinitcpio.conf.d"
+render "$(where)/30-graphics.conf" MODULES="nvidia nvidia_modeset nvidia_uvm nvidia_drm" |
+    write_file "${MNT}/etc/mkinitcpio.conf.d/30-graphics.conf"
 
 # NVIDIA alone: the kms hook goes, as the Wiki says, or nouveau lands in the
 # image. Beside another GPU the hook stays for its driver, and nvidia-utils'
 # modprobe.d file, carried in by modconf, blacklists nouveau.
 if [ "$other" != "true" ]; then
-    render "$(where)/31-nvidia-alone.conf" >"${MNT}/etc/mkinitcpio.conf.d/31-nvidia-alone.conf"
+    render "$(where)/31-nvidia-alone.conf" | write_file "${MNT}/etc/mkinitcpio.conf.d/31-nvidia-alone.conf"
 fi
 
-arch-chroot "$MNT" mkinitcpio -P
+run arch-chroot "$MNT" mkinitcpio -P

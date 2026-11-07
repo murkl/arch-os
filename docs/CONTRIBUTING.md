@@ -40,12 +40,28 @@ sudo pacman -S --needed make rust shellcheck shfmt zsh yamllint actionlint zizmo
 
 ## Tasks
 
+### Commands
+
+Every command that changes a system goes through `lib.sh`, which shows it and records it for `installer.sh`. **[➜ Script](../runtime/README.md#script)**
+
+| Helper | For |
+| --- | --- |
+| `run` | A command: `run arch-chroot "$MNT" systemctl enable sshd.service` |
+| `run_sh` | Shell text with a pipe or redirection, a password by its variable: `"$ARCH_OS_PASSWORD"` |
+| `write_file` | A file from stdin, `-a` appends: `render … \| write_file "${MNT}/etc/hostname"` |
+
+- Checks, queries, messages, retries, waits and the clean-up of an earlier attempt stay plain, outside the script
+- A retried command is recorded once with `record` and confirmed with `confirmed`, see `chroot_pacman_install`
+- What the run draws and a file names, such as a UUID, the task gives, so the script draws the same. What has to be fresh when the script runs, such as a sudo rule's expiry, stays shell text for `run_sh`
+- Nothing that names a version the next run may lack, such as a kernel's module folder
+- `make lint` fails on a rendered file redirected into place and on a redirection into `${MNT}` or the home
+
 ### Templates
 
 Every file a task writes into the new system lies in `data/` beside `task.sh`, named after its target. `render` from `lib.sh` fills it, `where` names the folder.
 
 ```
-render "$(where)/locale.conf" LOCALE="$ARCH_OS_LOCALE_LANG" >"${MNT}/etc/locale.conf"
+render "$(where)/locale.conf" LOCALE="$ARCH_OS_LOCALE_LANG" | write_file "${MNT}/etc/locale.conf"
 ```
 
 - `{{NAME}}` is the only placeholder, filled from `NAME=value`, never from the environment. Every `$` stays for the reader of the file

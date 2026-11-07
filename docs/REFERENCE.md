@@ -18,6 +18,23 @@ Every answer except the passwords lands in `installer.conf` at once, so an inter
 
 **Note:** _A shared configuration holds hostname, username and language, readable by anyone with the link. The import skips disk, kernel parameters and SSH key: the disk belongs to one machine, foreign kernel parameters can open a root shell at boot, and a foreign key a remote login._
 
+### Commands
+
+Every command that changes the system shows under its step, on **tab** before its output and in `installer.log`. `installer.sh` holds them as a script, beside the Installer and in the new system's home. On the same machine it installs the same system again: partitions, packages, files, accounts and services.
+
+1. Copy `~/installer.sh` to another drive, since it erases the disk it lies on
+2. Boot the ISO, connect to the internet, open a shell with **Ctrl+Alt+F2**
+3. `bash installer.sh`
+
+| Part | Does |
+| --- | --- |
+| Head | Stops outside a live system and where the disk's name points at another disk, by model, serial and size. Loads the console keyboard |
+| Passwords | Asked as in the Installer, or taken from `ARCH_OS_PASSWORD` and `ARCH_OS_DISK_PASSWORD` |
+| Confirmation | Names the disk, opens on No |
+| Commands | Each task's commands that succeeded, under its title |
+
+**Note:** _New each time: package versions, keys such as Secure Boot's, SSH's and the machine ID, and the ranked mirrors. Left out: Wi-Fi networks, which carry their passphrase, checks, retries and the clean-up of an earlier attempt. A failed command stops the script._
+
 ## Disk
 
 UEFI, GPT, whole disk: Arch OS is the only system on it. At least 16 GiB, 32 GiB with GNOME, checked before anything is written.

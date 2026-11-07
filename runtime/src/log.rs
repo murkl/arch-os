@@ -50,8 +50,8 @@ pub fn write(level: &str, msg: &str) {
     }
 }
 
-/// Reads `/etc/localtime` per line, since a run may set the zone. `TZ` wins.
-fn now() -> String {
+/// Reads `/etc/localtime` per call, since a run may set the zone. `TZ` wins.
+pub fn now() -> String {
     static ZONE: Mutex<Option<(String, jiff::tz::TimeZone)>> = Mutex::new(None);
     let tz = match std::env::var_os("TZ") {
         Some(_) => jiff::tz::TimeZone::system(),

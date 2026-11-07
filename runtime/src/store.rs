@@ -15,6 +15,7 @@ pub struct Store {
     values: BTreeMap<String, String>,
     path: PathBuf,
     log: PathBuf,
+    script: PathBuf,
     dry_run: bool,
     pub language: String,
     /// Answers a reread list no longer offers, with the value it rejected.
@@ -22,7 +23,7 @@ pub struct Store {
 }
 
 impl Store {
-    /// Answer file and log in `dir`, named after the module.
+    /// Answer file, log and script in `dir`, named after the module.
     pub fn new(module: &'static Module, dir: &Path, dry_run: bool) -> Store {
         let mut values = BTreeMap::new();
         for s in &module.settings {
@@ -38,6 +39,7 @@ impl Store {
             values,
             path: dir.join(format!("{}.conf", module.id)),
             log: dir.join(format!("{}.log", module.id)),
+            script: dir.join(format!("{}.sh", module.id)),
             dry_run,
             language: String::new(),
             unoffered: BTreeMap::new(),
@@ -54,6 +56,10 @@ impl Store {
 
     pub fn log(&self) -> &Path {
         &self.log
+    }
+
+    pub fn script(&self) -> &Path {
+        &self.script
     }
 
     pub fn dry_run(&self) -> bool {

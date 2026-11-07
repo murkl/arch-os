@@ -33,6 +33,97 @@ answer() {
 where() { printf '%s/data' "$(dirname "${BASH_SOURCE[1]}")"; }
 
 # ////////////////////////////////////////////////////////////////////////////
+# THE SCRIPT
+# ////////////////////////////////////////////////////////////////////////////
+#
+# A task changes the system through run, run_sh and write_file. The run shows
+# each command, and the script repeats them: runtime/README.md#script
+
+# The words as one command line, each bare where the shell reads it unchanged.
+shell_line() {
+    local IFS=' ' word line=()
+    for word; do
+        if [[ $word =~ ^[A-Za-z0-9_./:=@%+,-]+$ ]]; then
+            line+=("$word")
+        else
+            line+=("${word@Q}")
+        fi
+    done
+    printf '%s' "${line[*]}"
+}
+
+# Hands shell text to the runtime before it runs, on the descriptor the runtime
+# reads reports from, backslash and newline escaped.
+record() {
+    [ -n "${MODULE_SCRIPT:-}" ] || return 0
+    local text="${1//\\/\\\\}"
+    printf 'cmd\t%s\n' "${text//$'\n'/\\n}" >&3
+}
+
+# The command recorded last succeeded. The script holds confirmed commands only.
+confirmed() {
+    [ -z "${MODULE_SCRIPT:-}" ] || printf 'cmd-ok\n' >&3
+}
+
+# Records shell text $1, runs the rest and confirms the text once it succeeded.
+# Not caught, so where a failure ends the task the trap names the failing
+# command.
+recorded() {
+    local status
+    record "$1"
+    shift
+    "$@"
+    status=$?
+    [ "$status" -ne 0 ] || confirmed
+    return "$status"
+}
+
+run() {
+    local line
+    line="$(shell_line "$@")"
+    recorded "$line" eval "$line"
+}
+
+# Shell text, for a pipe, a redirection, or a password by its variable, which
+# the script asks for at its start.
+run_sh() { recorded "$1" eval "$1"; }
+
+# The shell text writing $2 with $1, > or >>, into each file after them: a
+# here-document, or printf where the text lacks the newline one adds.
+file_shell() {
+    local op="$1" text="$2" delimiter=EOF writer
+    shift 2
+    if [ $# -eq 1 ]; then
+        writer="cat ${op}$(shell_line "$1")"
+    elif [ "$op" = ">>" ]; then
+        writer="tee -a $(shell_line "$@") >/dev/null"
+    else
+        writer="tee $(shell_line "$@") >/dev/null"
+    fi
+    if [[ $text == *$'\n' ]]; then
+        while [[ $'\n'$text == *$'\n'"$delimiter"$'\n'* ]]; do
+            delimiter+=_
+        done
+        printf "%s <<'%s'\n%s%s" "$writer" "$delimiter" "$text" "$delimiter"
+    elif [ $# -eq 1 ]; then
+        printf "printf '%%s' %s %s%s" "$(shell_line "$text")" "$op" "$(shell_line "$1")"
+    else
+        printf "printf '%%s' %s | %s" "$(shell_line "$text")" "$writer"
+    fi
+}
+
+# Stdin into each file named, -a appending.
+write_file() {
+    local op=">" text
+    if [ "$1" = -a ]; then
+        op=">>"
+        shift
+    fi
+    IFS= read -r -d '' text || true
+    run_sh "$(file_shell "$op" "$text" "$@")"
+}
+
+# ////////////////////////////////////////////////////////////////////////////
 # THE ERRORS
 # ////////////////////////////////////////////////////////////////////////////
 
@@ -246,8 +337,11 @@ images_of() {
 }
 
 # Written beside, flushed and renamed over, so the next boot reads the old file
-# or the new one, never half. FAT has no journal to order the two.
-place() {
+# or the new one, never half. FAT has no journal to order the two. The script
+# writes it directly, onto a fresh disk.
+place() { recorded "$(file_shell ">" "$2"$'\n' "$1")" replace "$1" "$2"; }
+
+replace() {
     printf '%s\n' "$2" >"${1}.new"
     sync "${1}.new"
     mv -f "${1}.new" "$1"
@@ -303,7 +397,7 @@ boot_entries() {
     data="$(boot_data)"
     entries="${root}/boot/loader/entries"
     mapfile -t images < <(images_of "$kind")
-    mkdir -p "$entries" "${root}/usr/local/lib/arch-os" "${root}/etc/systemd/system"
+    run mkdir -p "$entries" "${root}/usr/local/lib/arch-os" "${root}/etc/systemd/system"
 
     for i in 0 1; do
         if [ "$kind" = uki ]; then
@@ -323,10 +417,10 @@ boot_entries() {
     place "${root}/boot/loader/loader.conf" "$text"
     text="$(render "${data}/boot-tries.sh")"
     place "${root}/usr/local/lib/arch-os/boot-tries.sh" "$text"
-    chmod 755 "${root}/usr/local/lib/arch-os/boot-tries.sh"
+    run chmod 755 "${root}/usr/local/lib/arch-os/boot-tries.sh"
     text="$(render "${data}/arch-os-boot-tries.service" TRIES="$BOOT_TRIES")"
     place "${root}/etc/systemd/system/arch-os-boot-tries.service" "$text"
-    arch-chroot "$root" systemctl enable arch-os-boot-tries.service
+    run arch-chroot "$root" systemctl enable arch-os-boot-tries.service
 }
 
 # A LoaderEntryDefault left by an earlier system boots however often it fails
@@ -575,16 +669,18 @@ export RECOVERY_MIB=1024
 # INSTALLING | Into the new system
 # ////////////////////////////////////////////////////////////////////////////
 
-# Retried, since the network fails. pacman's own timeout moves a dead mirror's
-# download to the next.
+# Retried, since the network fails, and recorded once. pacman's own timeout
+# moves a dead mirror's download to the next.
 export RETRIES=5
 export RETRY_WAIT=10
 
 chroot_pacman_install() {
-    local i
+    local i command=(arch-chroot "$MNT" pacman -S --noconfirm --needed "$@")
+    record "$(shell_line "${command[@]}")"
     for ((i = 1; i <= RETRIES; i++)); do
         [ "$i" -gt 1 ] && echo "retry ${i}/${RETRIES}: pacman -S $*"
-        if arch-chroot "$MNT" pacman -S --noconfirm --needed "$@"; then
+        if "${command[@]}"; then
+            confirmed
             return 0
         fi
         sleep "$RETRY_WAIT"
@@ -597,12 +693,18 @@ chroot_pacman_install() {
 # Drop-in $1 from stdin, removed if visudo rejects it: one invalid file there
 # breaks all of sudo. https://wiki.archlinux.org/title/Sudo
 sudoers_rule() {
+    run mkdir -p "${MNT}/etc/sudoers.d"
+    write_file "${MNT}/etc/sudoers.d/${1}"
+    sudoers_valid "$1"
+}
+
+# Drop-in $1 readable by root only, as sudo demands, and removed where visudo
+# rejects it.
+sudoers_valid() {
     local file="${MNT}/etc/sudoers.d/${1}"
-    mkdir -p "${MNT}/etc/sudoers.d"
-    cat >"$file"
-    chmod 0440 "$file"
+    run chmod 0440 "$file"
     arch-chroot "$MNT" visudo -cqf "/etc/sudoers.d/${1}" && return 0
-    rm -f "$file"
+    run rm -f "$file"
     echo "sudo rule ${1} rejected and removed" >&2
     return 1
 }
@@ -612,9 +714,9 @@ sudoers_rule() {
 pacman_include() {
     local file
     file="/etc/pacman.d/$(basename "$1")"
-    render "$1" >"${MNT}${file}"
+    render "$1" | write_file "${MNT}${file}"
     grep -qxF "Include = ${file}" "${MNT}/etc/pacman.conf" ||
-        echo "Include = ${file}" >>"${MNT}/etc/pacman.conf"
+        echo "Include = ${file}" | write_file -a "${MNT}/etc/pacman.conf"
 }
 
 # Attempts, and seconds per attempt: a build that hits the limit has hung.
@@ -626,7 +728,7 @@ AUR_TIMEOUT=2700
 chroot_aur_install() {
     local repo="$1"
     local url="https://aur.archlinux.org/${repo}.git"
-    local dir jobs cores build until status=1 i
+    local dir jobs cores build command status=1 i
 
     chroot_pacman_install git base-devel
 
@@ -649,15 +751,19 @@ chroot_aur_install() {
     build="${build} makepkg -si --noconfirm --needed"
 
     # makepkg -si needs root only for pacman. The rule expires after the longest
-    # possible run, so an aborted run leaves no passwordless sudo.
-    until="$(date -u -d "+$((AUR_RETRIES * (AUR_TIMEOUT + RETRY_WAIT))) seconds" '+%Y%m%d%H%M%SZ')"
-    echo "%wheel ALL=(ALL:ALL) NOTAFTER=${until} NOPASSWD: /usr/bin/pacman" | sudoers_rule 99-aur-build
+    # possible run, so an aborted run leaves no passwordless sudo. The script
+    # takes the time when it runs too.
+    run mkdir -p "${MNT}/etc/sudoers.d"
+    run_sh "echo \"%wheel ALL=(ALL:ALL) NOTAFTER=\$(date -u -d '+$((AUR_RETRIES * (AUR_TIMEOUT + RETRY_WAIT))) seconds' +%Y%m%d%H%M%SZ) NOPASSWD: /usr/bin/pacman\" >$(shell_line "${MNT}/etc/sudoers.d/99-aur-build")"
+    sudoers_valid 99-aur-build
 
     echo "building ${repo} from the AUR with ${jobs} job(s)"
+    mapfile -d '' -t command < <(user_command timeout "$AUR_TIMEOUT" bash -c "$build")
+    record "$(shell_line "${command[@]}")"
     for ((i = 1; i <= AUR_RETRIES; i++)); do
         [ "$i" -gt 1 ] && echo "retry ${i}/${AUR_RETRIES}: building ${repo} from the AUR"
         status=0
-        as_user "timeout ${AUR_TIMEOUT} bash -c $(printf '%q' "$build")" || status=$?
+        "${command[@]}" || status=$?
         [ "$status" -eq 0 ] && break
         if [ "$status" -eq 124 ]; then
             echo "building ${repo} from the AUR stopped after $((AUR_TIMEOUT / 60)) minutes" >&2
@@ -665,10 +771,11 @@ chroot_aur_install() {
         fi
         sleep "$RETRY_WAIT"
     done
+    [ "$status" -ne 0 ] || confirmed
 
     # Revoked before anything can fail, or passwordless sudo stays.
-    rm -f "${MNT}/etc/sudoers.d/99-aur-build"
-    rm -rf "${MNT}${dir}" || echo "build directory ${dir} not removed" >&2
+    run rm -f "${MNT}/etc/sudoers.d/99-aur-build"
+    run rm -rf "${MNT}${dir}" || echo "build directory ${dir} not removed" >&2
 
     [ "$status" -eq 0 ] && return 0
     echo "building ${repo} from the AUR failed" >&2
@@ -677,12 +784,20 @@ chroot_aur_install() {
     return "$status"
 }
 
-# As the user, since makepkg refuses root. env -i hides passwords from every
-# build script and drops root's runtime directory, which the user cannot write.
-as_user() {
-    arch-chroot "$MNT" /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- env -i \
+# The words running the rest as the user, each ended by NUL, since makepkg
+# refuses root. env -i hides passwords from every build script and drops root's
+# runtime directory, which the user cannot write.
+user_command() {
+    printf '%s\0' arch-chroot "$MNT" /usr/bin/runuser -u "$ARCH_OS_USERNAME" -- env -i \
         HOME="/home/${ARCH_OS_USERNAME}" USER="$ARCH_OS_USERNAME" LOGNAME="$ARCH_OS_USERNAME" \
-        PATH="$PATH" LANG=C.UTF-8 bash -c "$1"
+        PATH="$PATH" LANG=C.UTF-8 "$@"
+}
+
+# Shell text $1 as the user.
+as_user() {
+    local command
+    mapfile -d '' -t command < <(user_command bash -c "$1")
+    run "${command[@]}"
 }
 
 # Accounts a package of the Installer's choices creates through sysusers.d,
@@ -713,7 +828,7 @@ user_home() { printf '%s/home/%s' "$MNT" "$ARCH_OS_USERNAME"; }
 
 # Hands the home back to the user: what root wrote is root's.
 own_home() {
-    arch-chroot "$MNT" chown -R "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" "/home/${ARCH_OS_USERNAME}"
+    run arch-chroot "$MNT" chown -R "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" "/home/${ARCH_OS_USERNAME}"
 }
 
 # Inside the new system: from outside, an absolute link in its /usr/bin
@@ -1079,6 +1194,22 @@ share_config() {
     if [ -f "$target" ]; then
         printf "ARCH_OS_CONFIG_URL='%s'\n" "$url" >>"$target"
     fi
+}
+
+# The script's first lines, before it asks for the passwords: the live system
+# as the Installer requires it, the disk by model, serial and size, since a
+# name such as /dev/sda can change between boots, and the keyboard the
+# passwords are typed on.
+script_head() {
+    local probe=(-dnbro "MODEL,SERIAL,SIZE" "$ARCH_OS_DISK") disk error
+    disk="$(lsblk "${probe[@]}")"
+    declare -f on_live_image on_arch_live_image
+    error="$(shell_line "Arch Linux live system required. Boot from the Arch OS ISO.")"
+    printf 'on_arch_live_image || { echo %s >&2; exit 1; }\n' "$error"
+    error="$(shell_line "Disk mismatch at ${ARCH_OS_DISK}")"
+    printf "[ \"\$(%s)\" = %s ] || { echo %s >&2; exit 1; }\n" \
+        "$(shell_line lsblk "${probe[@]}")" "$(shell_line "$disk")" "$error"
+    shell_line loadkeys "$ARCH_OS_VCONSOLE_KEYMAP"
 }
 
 # ─── The Recovery ──────────────────────────────────────────────────────────

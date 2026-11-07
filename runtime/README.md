@@ -75,7 +75,7 @@ The one place for script code outside the tasks. Loaded before every task, test 
 
 A key that runs shell code names a `lib.sh` function as `name()`. A missing function is refused at startup, and so is shell code inside the YAML: every line stays where a linter reads it and a failure can point to it.
 
-These keys are `check` of the status, `run` of an action, `options-from` of `asks`, and `options-from`, `value-from`, `prefill`, `apply` and `check` of a setting. A setting's function is named after its key, such as `options_disks()` or `prefill_timezone()`, an action's after its work, such as `join_wifi()`.
+These keys are `check` of the status, `script` of a module, `run` of an action, `options-from` of `asks`, and `options-from`, `value-from`, `prefill`, `apply` and `check` of a setting. A setting's function is named after its key, such as `options_disks()` or `prefill_timezone()`, an action's after its work, such as `join_wifi()`.
 
 ## Module
 
@@ -103,6 +103,7 @@ confirm: |
   Install Arch OS on {{ARCH_OS_DISK}}?
 
   All data on the disk is erased. An internet connection is required throughout.
+script: script_head()
 stages: …
 report: |
   Arch OS installed
@@ -130,6 +131,7 @@ actions: …
 | `dashboard` | **Required.** Dashboard rows in order. **[➜ Dashboard](#dashboard)** |
 | `language` | Heading of the interface language row. Refused where no setting is under it |
 | `confirm` | Question after every password and before the work, opening on No. First paragraph is the headline |
+| `script` | Prints the first lines of the run's script, which then holds every command the tasks record. **[➜ Script](#script)** |
 | `stages` | **Required.** Phases of the work in order, each with its tasks. **[➜ Tasks](#tasks)** |
 | `report` | Text of a finished run. First paragraph is the headline |
 | `errors` | Text for each status its scripts stop with. **[➜ Stopping on Purpose](#stopping-on-purpose)** |
@@ -158,7 +160,7 @@ The module's home: rows in `dashboard` order, each name once. `f` filters.
 
 A blank row follows `start`, the answers and each action group. After `start`, the answer headings take its place.
 
-`start` asks what is missing, then every password, then `confirm`, then runs the tasks: one row each, checked off when done, counted in the header. `tab` switches to their output, during and after the run. `systemd-inhibit` blocks shutdown and sleep while tasks run, so closing the lid never suspends a run. A task with `asks` or `confirm` pauses the run on its page. The header names the outcome, **Done** or **Failed**. A finished run shows `report`, its duration, the actions under `on: success` and **Continue**. A failed run shows what failed and where, the actions under `on: failure` and **Back to the dashboard** with a confirmation.
+`start` asks what is missing, then every password, then `confirm`, then runs the tasks: one row each, checked off when done, counted in the header. With `script`, the command a task runs stands under it. `tab` switches to their commands and output, during and after the run. `systemd-inhibit` blocks shutdown and sleep while tasks run, so closing the lid never suspends a run. A task with `asks` or `confirm` pauses the run on its page. The header names the outcome, **Done** or **Failed**. A finished run shows `report`, its duration, the actions under `on: success` and **Continue**. A failed run shows what failed and where, the actions under `on: failure` and **Back to the dashboard** with a confirmation.
 
 `q` or `esc` on the dashboard leaves. With `on: leave`, or in a kiosk, a page comes first: the actions under `on: leave`, then **Exit**, or **Start over** in a kiosk. During a run the same page warns that every choice stops it and leads with **Back to the run**. The run continues behind it, and its questions wait until the page closes. A choice stops the run first: its script and everything it started get `SIGTERM`, after 10 seconds `SIGKILL`. The choice runs once none of it is left. `SIGTERM`, `SIGHUP` and `SIGINT` to the program stop a run the same way, then end it.
 
@@ -294,6 +296,25 @@ A `test.sh` beside `task.sh` runs right after the task, on the target machine. I
 - The last page counts them: `38 of 40 tests passed`
 - After a failed test or `allow-failure` task, that page offers **Test results**: each row opens file, line, command and output
 
+## Script
+
+A module with `script` keeps its run as `<module>.sh` beside the answers: every command its tasks record, to repeat the run by hand. Written whole after each command, executable by its owner only.
+
+| Part | Content |
+| --- | --- |
+| Head | `#!/usr/bin/env bash`, `set -euo pipefail`, then what `script` prints, read once before the first task |
+| Passwords | Each password the run asked, from the environment under its name, else typed, a new one twice |
+| Confirmation | `confirm` with the answers filled in, opening on No |
+| Commands | In run order, under a ruler with their task's title |
+
+A task records a command on fd 3 before it runs: `cmd`, a tab and the shell text, a newline as `\n` and a backslash as `\\`. `cmd-ok` confirms it once it succeeded. The script holds confirmed commands only, so one that failed stays out, also where a fallback caught it. `lib.sh` records through `run`, `run_sh` and `write_file`.
+
+- Only tasks get `MODULE_SCRIPT`, never tests or actions, and only they record
+- A command names a password by its variable, such as `"$ARCH_OS_PASSWORD"`, never by its value
+- Each command shows under its running task, on `tab` before its output, and in the log as a `RUN` line
+- A `script` function that fails stops the run before its first task
+- A dry run writes no script
+
 ## Actions
 
 Work outside the run: an entry under `actions:` in `module.yaml`, or in `product.yaml` for all modules. The entry declares the behavior, the `run` function only works: exit 0 is yes, any other status no.
@@ -352,6 +373,7 @@ Every declared variable under its own name, plus:
 | --- | --- |
 | `MODULE_CONF` | Answer file. A script stores an answer by appending `KEY='value'` |
 | `MODULE_LOG` | Log |
+| `MODULE_SCRIPT` | The run's script, for tasks of a module with `script`. **[➜ Script](#script)** |
 | `MODULE_LANGUAGE` | Interface language, such as `de` |
 | `MODULE_VERSION` | Program version |
 | `DRY_RUN` | `true` on a dry run, unset otherwise |
@@ -432,6 +454,7 @@ In the start directory:
 | --- | --- |
 | `<module>.conf` | Every answer as `KEY='value'`, under its group with its title as comment, interface language first. Editable by hand. No password, no derived answer, no task or action answer |
 | `<module>.log` | Run progress and all script output, timestamped in the machine's time zone. The previous log stays as `<module>.log.old` |
+| `<module>.sh` | The run as a script, in a module with `script`. **[➜ Script](#script)** |
 
 ## Keys
 

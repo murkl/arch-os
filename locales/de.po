@@ -674,8 +674,8 @@ msgstr "Snapshots einrichten"
 msgid "Set up Secure Boot"
 msgstr "Secure Boot einrichten"
 
-msgid "Copy the answers and the log into the system"
-msgstr "Antworten und Protokoll ins System kopieren"
+msgid "Copy the answers, the log and the script into the system"
+msgstr "Antworten, Protokoll und Skript ins System kopieren"
 
 msgid ""
 "Arch OS installed\n"

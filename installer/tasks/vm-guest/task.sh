@@ -15,8 +15,8 @@ kvm | qemu)
 vmware)
     echo "detected VMware"
     chroot_pacman_install open-vm-tools
-    arch-chroot "$MNT" systemctl enable vmtoolsd
-    arch-chroot "$MNT" systemctl enable vmware-vmblock-fuse
+    run arch-chroot "$MNT" systemctl enable vmtoolsd
+    run arch-chroot "$MNT" systemctl enable vmware-vmblock-fuse
     ;;
 
 oracle)
@@ -27,17 +27,17 @@ oracle)
     else
         chroot_pacman_install virtualbox-guest-utils-nox
     fi
-    arch-chroot "$MNT" systemctl enable vboxservice
+    run arch-chroot "$MNT" systemctl enable vboxservice
     # Shared folders mount for the vboxsf group only.
-    arch-chroot "$MNT" usermod -aG vboxsf "$ARCH_OS_USERNAME"
+    run arch-chroot "$MNT" usermod -aG vboxsf "$ARCH_OS_USERNAME"
     ;;
 
 microsoft)
     # No file copy: hv_fcopy_uio_daemon ships no unit.
     echo "detected Hyper-V"
     chroot_pacman_install hyperv
-    arch-chroot "$MNT" systemctl enable hv_kvp_daemon
-    arch-chroot "$MNT" systemctl enable hv_vss_daemon
+    run arch-chroot "$MNT" systemctl enable hv_kvp_daemon
+    run arch-chroot "$MNT" systemctl enable hv_vss_daemon
     ;;
 
 *)

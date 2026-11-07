@@ -1,5 +1,6 @@
-//! Run page: every task with a mark, filled from the top, and its output on tab, also logged. A
-//! task's question or report interrupts the list, and the page ends on the outcome and next rows.
+//! Run page: every task with a mark, filled from the top, the command it runs under it, and its
+//! commands and output on tab, also logged. A task's question or report interrupts the list, and
+//! the page ends on the outcome and next rows.
 
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
@@ -11,8 +12,9 @@ use super::confirm::YesNoPage;
 use super::question::{self, QuestionPage};
 use super::report::{Close, ReportPage};
 use crate::i18n::{t, tf};
+use crate::record::{self, Record};
 use crate::script::{self, Event, Failure, Session};
-use crate::spec::Task;
+use crate::spec::{self, Task};
 use crate::ui::detail::{Act, Block, Detail, mark, words};
 use crate::ui::draw::{cut, cut_front, put, wrap};
 use crate::ui::list::Lead;
@@ -48,6 +50,7 @@ enum Pushed {
 enum Out {
     Title(String),
     Line(String),
+    Command(String),
 }
 
 /// Failed run: the module's text, the failure, or stopped by the leave page.
@@ -88,6 +91,10 @@ pub struct RunPage {
     session: Option<Session>,
     /// Last line of the running task, where it declares its output as progress.
     latest: Option<String>,
+    /// First line of the command the running task recorded last, as a prompt shows it.
+    command: Option<String>,
+    /// The run as a script, where the module keeps one.
+    record: Option<Record>,
     /// Inhibits shutdown and sleep while the tasks run.
     hold: Option<script::Hold>,
     /// Run output under each task title, and the line being redrawn in place.
@@ -129,6 +136,8 @@ impl RunPage {
             pushed: Pushed::None,
             session: None,
             latest: None,
+            command: None,
+            record: None,
             hold: None,
             transcript: VecDeque::new(),
             drawing: None,
@@ -234,6 +243,41 @@ impl RunPage {
         self.at += 1;
         self.phase = Phase::Ask;
         self.latest = None;
+        self.command = None;
+    }
+
+    /// The script's head, before any task. A failing `script` function ends the run there, since
+    /// the commands would follow without its checks. A dry run records nothing.
+    fn begin_script(&mut self, ctx: &mut Ctx) {
+        let Some(shell) = &ctx.module.script else {
+            return;
+        };
+        if ctx.store.dry_run() {
+            return;
+        }
+        let lines = match script::run(shell, &ctx.env()) {
+            Ok(lines) => lines,
+            Err(e) => {
+                let f = Failure::new(&ctx.step("script", false, shell.clone()), e);
+                self.finish(Err(End::Broke(f)), ctx);
+                return;
+            }
+        };
+        let path = ctx.store.script();
+        let file = path.file_name().unwrap_or_default().to_string_lossy();
+        let confirm = ctx
+            .module
+            .confirm
+            .as_deref()
+            .map(|c| spec::text::expand(c, |name| ctx.store.get(name).to_string()));
+        let head = record::head(
+            &format!("{} {}", ctx.product_title(), ctx.module.title),
+            &file,
+            &lines,
+            &ctx.store.secrets(),
+            confirm.as_deref(),
+        );
+        self.record = Some(Record::new(path, head));
     }
 
     /// Runs the current task in the background, or only shows it briefly on a dry run.
@@ -248,7 +292,12 @@ impl RunPage {
         }
         crate::info!("{}", task.title);
         let step = ctx.step(&t(&task.title), false, task.script());
-        match script::start(step, &task_env(task, ctx), ctx.run_sink()) {
+        let mut env = task_env(task, ctx);
+        if self.record.is_some() {
+            let path = ctx.store.script().display().to_string();
+            env.push((spec::SCRIPT.into(), path));
+        }
+        match script::start(step, &env, ctx.run_sink()) {
             Ok(session) => {
                 self.session = Some(session);
                 Flow::Stay
@@ -321,6 +370,7 @@ impl RunPage {
             .map(|(i, out)| match out {
                 Out::Title(title) => (title, s.bold(Tone::Accent), i > 0),
                 Out::Line(line) => (line, s.tone(Tone::Normal), false),
+                Out::Command(command) => (command, s.bold(Tone::Normal), false),
             })
             .chain(drawing);
         let mut rows = Vec::new();
@@ -538,14 +588,21 @@ impl RunPage {
         self.rows_cache.1
     }
 
-    /// Tasks with their marks, scrolled to the cursor. A progress line takes a row under its task
-    /// and is cut at the front, since a bar shows its progress at the end.
+    /// Tasks with their marks, scrolled to the cursor. The running task's progress line takes a
+    /// row under it, cut at the front, since a bar shows its progress at the end. Without one its
+    /// command does, cut at the end, since the program and its first words say most.
     fn draw_list(&self, area: Rect, buf: &mut Buffer, ctx: &Ctx) {
         let s = &ctx.style;
         let running = self.end.is_none() && self.at < self.steps.len();
-        let progress = running && self.task().progress && self.phase == Phase::Run;
-        let rows =
-            usize::from(area.height).saturating_sub(usize::from(progress && self.latest.is_some()));
+        let busy = running && self.phase == Phase::Run;
+        let under = if !busy {
+            None
+        } else if let Some(latest) = self.latest.as_deref().filter(|_| self.task().progress) {
+            Some((latest, true))
+        } else {
+            self.command.as_deref().map(|command| (command, false))
+        };
+        let rows = usize::from(area.height).saturating_sub(usize::from(under.is_some()));
         if rows == 0 {
             return;
         }
@@ -582,21 +639,15 @@ impl RunPage {
             );
             y += 1;
             if i == self.at
-                && progress
-                && let Some(latest) = &self.latest
+                && let Some((line, front)) = under
             {
-                put(
-                    buf,
-                    area.x + 2,
-                    y,
-                    &cut_front(
-                        latest,
-                        area.width.saturating_sub(2) as usize,
-                        s.glyphs.ellipsis,
-                    ),
-                    area.width.saturating_sub(2),
-                    s.tone(Tone::Muted),
-                );
+                let width = area.width.saturating_sub(2);
+                let shown = if front {
+                    cut_front(line, width as usize, s.glyphs.ellipsis)
+                } else {
+                    cut(line, width as usize, s.glyphs.ellipsis)
+                };
+                put(buf, area.x + 2, y, &shown, width, s.tone(Tone::Muted));
                 y += 1;
             }
         }
@@ -700,6 +751,7 @@ impl Page for RunPage {
                 ctx.rows(&ctx.module.on.failure).len(),
             );
             self.kick = true;
+            self.begin_script(ctx);
         }
         if self.end.is_some() && !self.text {
             self.draw_end(area, buf, ctx);
@@ -818,6 +870,25 @@ impl Page for RunPage {
                 self.drawing = Some(line);
                 Flow::Stay
             }
+            // A test records nothing, so only the task's own commands count.
+            Event::Command(text) if self.phase == Phase::Run => {
+                let task = self.task();
+                let shown = format!("$ {}", text.lines().next().unwrap_or_default());
+                self.drawing = None;
+                self.keep(Out::Command(shown.clone()));
+                self.command = Some(shown);
+                if let Some(record) = &mut self.record {
+                    record.command(&task.title, text);
+                }
+                Flow::Stay
+            }
+            Event::Confirmed if self.phase == Phase::Run => {
+                if let Some(record) = &mut self.record {
+                    record.confirmed();
+                }
+                Flow::Stay
+            }
+            Event::Command(_) | Event::Confirmed => Flow::Stay,
             Event::Exit(result) => {
                 self.session = None;
                 let task = self.task();

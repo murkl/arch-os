@@ -7,7 +7,7 @@ command="$ARCH_OS_EDITOR"
 # sudoedit, git and systemctl edit fall back on vi, which base lacks. Appended,
 # since pam_env reads no drop-in.
 # https://wiki.archlinux.org/title/Environment_variables
-render "$(where)/environment" EDITOR="$command" >>"${MNT}/etc/environment"
+render "$(where)/environment" EDITOR="$command" | write_file -a "${MNT}/etc/environment"
 
 # nano's own highlighting covers few languages. data/nano includes this set.
 if [ "$ARCH_OS_EDITOR" = "nano" ]; then
@@ -20,8 +20,8 @@ src="$(where)/${command}"
 files="$(find "$src" -type f -printf '%P\n')"
 while IFS= read -r file; do
     for home in "${MNT}/root" "$(user_home)"; do
-        mkdir -p "$(dirname "${home}/${file}")"
-        render "${src}/${file}" >"${home}/${file}"
+        run mkdir -p "$(dirname "${home}/${file}")"
+        render "${src}/${file}" | write_file "${home}/${file}"
     done
 done <<<"$files"
 

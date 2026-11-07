@@ -6,4 +6,4 @@ if [ -z "$list" ]; then
     return 0
 fi
 mapfile -t orphans <<<"$list"
-arch-chroot "$MNT" pacman -Rns --noconfirm "${orphans[@]}"
+run arch-chroot "$MNT" pacman -Rns --noconfirm "${orphans[@]}"

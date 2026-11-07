@@ -1029,6 +1029,59 @@ pub mod tests {
         assert!(!shown.contains("first"), "{shown}");
     }
 
+    /// The command a task runs stands under it and on tab. The script keeps the confirmed ones
+    /// after a head that asks what the run asked, never a password itself.
+    #[test]
+    fn the_run_shows_its_commands_and_keeps_the_confirmed_ones_as_a_script() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app_with(
+            &[(
+                "requires: [root]\ndashboard",
+                "script: script_head()\nrequires: [root]\ndashboard",
+            )],
+            false,
+        );
+        answered(&mut app);
+        app.ctx.store.set("TUX_HOST", "slow");
+        app.ctx.store.set("TUX_PASSWORD", "secret-word");
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        screen(&mut app, &mut term);
+        settle(&mut app, &mut term, &rx);
+        let shown = screen(&mut app, &mut term);
+        let lines: Vec<&str> = shown.lines().map(str::trim).collect();
+        assert!(
+            lines
+                .windows(2)
+                .any(|w| w[0].ends_with("Prepare the disk") && w[1] == "$ sleep 30"),
+            "{shown}"
+        );
+        press(&mut app, &[Key::Tab]);
+        let shown = screen(&mut app, &mut term);
+        assert!(
+            shown.contains("$ echo sda") && shown.contains("$ sleep 30"),
+            "{shown}"
+        );
+        let script = std::fs::read_to_string(app.ctx.store.script()).unwrap();
+        for part in [
+            "#!/usr/bin/env bash\n",
+            "\nloadkeys us\n",
+            "\npassword TUX_PASSWORD 'Password'\n",
+            "\necho 'Install on sda?'\n",
+            "─ Prepare the disk ─",
+            "\necho sda\n",
+        ] {
+            assert!(script.contains(part), "{part:?} missing:\n{script}");
+        }
+        assert!(
+            !script.contains("sleep 30") && !script.contains("secret-word"),
+            "{script}"
+        );
+        app.handle(Msg::Stop);
+        settle(&mut app, &mut term, &rx);
+    }
+
     /// Outcome and duration stand in the header.
     #[test]
     fn a_run_without_a_report_ends_on_its_outcome_and_its_time() {

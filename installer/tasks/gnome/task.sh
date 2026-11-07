@@ -92,7 +92,7 @@ chroot_pacman_install "${packages[@]}"
 # Only gamemode: logind grants audio, video and input to the seat's session,
 # and the legacy groups break that.
 # https://wiki.archlinux.org/title/Users_and_groups#Pre-systemd_groups
-[ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && arch-chroot "$MNT" gpasswd -a "$ARCH_OS_USERNAME" gamemode
+[ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && run arch-chroot "$MNT" gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
 # ─── Name Resolution ───────────────────────────────────────────────────────
 #
@@ -100,7 +100,7 @@ chroot_pacman_install "${packages[@]}"
 # glibc reads no drop-in. https://wiki.archlinux.org/title/Avahi#Hostname_resolution
 nsswitch="${MNT}/etc/nsswitch.conf"
 if ! grep -q 'mdns_minimal' "$nsswitch"; then
-    sed -i '/^hosts:/ s/\bresolve\b/mdns_minimal [NOTFOUND=return] resolve/' "$nsswitch"
+    run sed -i '/^hosts:/ s/\bresolve\b/mdns_minimal [NOTFOUND=return] resolve/' "$nsswitch"
     grep -q 'mdns_minimal' "$nsswitch" ||
         echo "unexpected hosts line in /etc/nsswitch.conf, .local names do not resolve" >&2
 fi
@@ -111,17 +111,17 @@ fi
 # which pam_gdm passes on to the keyring. Otherwise the file stays gdm's.
 # https://wiki.archlinux.org/title/GNOME/Keyring#PAM_step
 if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ] && [ "$ARCH_OS_DISK_PASSWORD_ENABLED" != "true" ]; then
-    mkdir -p "${MNT}/etc/gdm"
-    render "${data}/custom.conf" USERNAME="$ARCH_OS_USERNAME" >"${MNT}/etc/gdm/custom.conf"
+    run mkdir -p "${MNT}/etc/gdm"
+    render "${data}/custom.conf" USERNAME="$ARCH_OS_USERNAME" | write_file "${MNT}/etc/gdm/custom.conf"
 fi
 
 # ─── Environment ───────────────────────────────────────────────────────────
 
-mkdir -p "${MNT}/etc/environment.d"
-render "${data}/60-arch-os.conf" >"${MNT}/etc/environment.d/60-arch-os.conf"
+run mkdir -p "${MNT}/etc/environment.d"
+render "${data}/60-arch-os.conf" | write_file "${MNT}/etc/environment.d/60-arch-os.conf"
 
 # Git credentials in the keyring instead of a plain file.
-arch-chroot "$MNT" git config --system credential.helper /usr/lib/git-core/git-credential-libsecret
+run arch-chroot "$MNT" git config --system credential.helper /usr/lib/git-core/git-credential-libsecret
 
 # ─── Keyboard ──────────────────────────────────────────────────────────────
 #
@@ -129,33 +129,33 @@ arch-chroot "$MNT" git config --system credential.helper /usr/lib/git-core/git-c
 # both with the same layout. https://wiki.archlinux.org/title/Xorg/Keyboard_configuration
 layout="$(desktop_layout)"
 variant="$(desktop_variant)"
-mkdir -p "${MNT}/etc/X11/xorg.conf.d"
+run mkdir -p "${MNT}/etc/X11/xorg.conf.d"
 render "${data}/00-keyboard.conf" \
     LAYOUT="$layout" \
     MODEL="$ARCH_OS_DESKTOP_KEYBOARD_MODEL" \
-    VARIANT="$variant" \
-    >"${MNT}/etc/X11/xorg.conf.d/00-keyboard.conf"
+    VARIANT="$variant" |
+    write_file "${MNT}/etc/X11/xorg.conf.d/00-keyboard.conf"
 
 # ─── Services ──────────────────────────────────────────────────────────────
 
-arch-chroot "$MNT" systemctl enable gdm.service
+run arch-chroot "$MNT" systemctl enable gdm.service
 
 # A boot counts as good only once a graphical session is up. A desktop that
 # never starts falls through to the fallback entry, then the Recovery:
 # docs/REFERENCE.md#fallback
-mkdir -p "${MNT}/usr/local/lib/arch-os"
-render "${data}/session-up.sh" >"${MNT}/usr/local/lib/arch-os/session-up.sh"
-chmod 755 "${MNT}/usr/local/lib/arch-os/session-up.sh"
-render "${data}/arch-os-session-up.service" >"${MNT}/etc/systemd/system/arch-os-session-up.service"
-arch-chroot "$MNT" systemctl enable arch-os-session-up.service
+run mkdir -p "${MNT}/usr/local/lib/arch-os"
+render "${data}/session-up.sh" | write_file "${MNT}/usr/local/lib/arch-os/session-up.sh"
+run chmod 755 "${MNT}/usr/local/lib/arch-os/session-up.sh"
+render "${data}/arch-os-session-up.service" | write_file "${MNT}/etc/systemd/system/arch-os-session-up.service"
+run arch-chroot "$MNT" systemctl enable arch-os-session-up.service
 
-arch-chroot "$MNT" systemctl enable bluetooth.service
-arch-chroot "$MNT" systemctl enable avahi-daemon
+run arch-chroot "$MNT" systemctl enable bluetooth.service
+run arch-chroot "$MNT" systemctl enable avahi-daemon
 
 # mDNS replies arrive as multicast the firewall cannot match to a query, so
 # public lets them in. Nothing leaks that avahi does not announce anyway.
 if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
-    arch-chroot "$MNT" firewall-offline-cmd --zone=public --add-service=mdns
+    run arch-chroot "$MNT" firewall-offline-cmd --zone=public --add-service=mdns
 fi
 
 # The sharing in GNOME's settings, on trusted networks only. File and media
@@ -163,33 +163,33 @@ fi
 # fixes.
 if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
     read -r low high </proc/sys/net/ipv4/ip_local_port_range
-    arch-chroot "$MNT" firewall-offline-cmd --zone=home --add-port="${low}-${high}/tcp"
-    arch-chroot "$MNT" firewall-offline-cmd --zone=home --add-service=rdp --add-service=ssdp
+    run arch-chroot "$MNT" firewall-offline-cmd --zone=home --add-port="${low}-${high}/tcp"
+    run arch-chroot "$MNT" firewall-offline-cmd --zone=home --add-service=rdp --add-service=ssdp
 fi
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-    arch-chroot "$MNT" systemctl enable power-profiles-daemon.service
-    arch-chroot "$MNT" systemctl enable cups.socket
+    run arch-chroot "$MNT" systemctl enable power-profiles-daemon.service
+    run arch-chroot "$MNT" systemctl enable cups.socket
 fi
 
 # fwupd ships its refresh timer off, which leaves its metadata stale. Wherever
 # fwupd is installed, by Desktop extras or GNOME Firmware.
 # https://wiki.archlinux.org/title/Fwupd
 if has_command fwupdmgr; then
-    arch-chroot "$MNT" systemctl enable fwupd-refresh.timer
+    run arch-chroot "$MNT" systemctl enable fwupd-refresh.timer
 fi
 
 # Out of memory, one app ends instead of the desktop freezing, since GNOME runs
 # each app in its own scope. Placed as systemd-oomd(8) recommends, with Fedora's
 # limit for the session.
-mkdir -p "${MNT}/etc/systemd/system/-.slice.d" "${MNT}/etc/systemd/system/user@.service.d"
-render "${data}/oomd-root.conf" >"${MNT}/etc/systemd/system/-.slice.d/10-arch-os.conf"
-render "${data}/oomd-user.conf" >"${MNT}/etc/systemd/system/user@.service.d/10-arch-os.conf"
-arch-chroot "$MNT" systemctl enable systemd-oomd.service
+run mkdir -p "${MNT}/etc/systemd/system/-.slice.d" "${MNT}/etc/systemd/system/user@.service.d"
+render "${data}/oomd-root.conf" | write_file "${MNT}/etc/systemd/system/-.slice.d/10-arch-os.conf"
+render "${data}/oomd-user.conf" | write_file "${MNT}/etc/systemd/system/user@.service.d/10-arch-os.conf"
+run arch-chroot "$MNT" systemctl enable systemd-oomd.service
 
 # gcr ships its SSH agent off.
 # https://wiki.archlinux.org/title/GNOME/Keyring#SSH_keys
-arch-chroot "$MNT" systemctl --global enable gcr-ssh-agent.socket
+run arch-chroot "$MNT" systemctl --global enable gcr-ssh-agent.socket
 
 # ─── Application List ──────────────────────────────────────────────────────
 #
@@ -197,7 +197,7 @@ arch-chroot "$MNT" systemctl --global enable gcr-ssh-agent.socket
 # https://specifications.freedesktop.org/desktop-entry-spec/latest/recognized-keys.html
 
 apps="${MNT}/usr/local/share/applications"
-mkdir -p "$apps"
+run mkdir -p "$apps"
 while read -r scope name; do
     case "$scope" in '' | \#*) continue ;; esac
     case "$scope" in
@@ -205,7 +205,7 @@ while read -r scope name; do
     extras) [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] || continue ;;
     shell) [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ] || continue ;;
     esac
-    render "${data}/hidden.desktop" NAME="$name" >"${apps}/${name}.desktop"
+    render "${data}/hidden.desktop" NAME="$name" | write_file "${apps}/${name}.desktop"
 done <"${data}/hidden-apps"
 
 # ─── Settings ──────────────────────────────────────────────────────────────
@@ -214,8 +214,8 @@ done <"${data}/hidden-apps"
 # reads them. https://help.gnome.org/admin/system-admin-guide/stable/dconf-custom-defaults.html
 
 defaults="${MNT}/etc/dconf/db/local.d"
-mkdir -p "${MNT}/etc/dconf/profile" "$defaults"
-render "${data}/user" >"${MNT}/etc/dconf/profile/user"
+run mkdir -p "${MNT}/etc/dconf/profile" "$defaults"
+render "${data}/user" | write_file "${MNT}/etc/dconf/profile/user"
 
 # One input source per layout, with the variant at the same place: ru,us and
 # phonetic give ru+phonetic and us.
@@ -229,7 +229,7 @@ for i in "${!layouts[@]}"; do
     fi
     sources="${sources:+${sources}, }('xkb', '${entry}')"
 done
-render "${data}/10-arch-os-keyboard" SOURCES="$sources" >"${defaults}/10-arch-os-keyboard"
+render "${data}/10-arch-os-keyboard" SOURCES="$sources" | write_file "${defaults}/10-arch-os-keyboard"
 
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     dock=()
@@ -240,12 +240,12 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     [ "$bazaar" = "true" ] && store=io.github.kolunmi.Bazaar.desktop
     dock+=(org.gnome.Nautilus.desktop "$store" org.gnome.Settings.desktop)
     favorites="$(printf "'%s', " "${dock[@]}")"
-    render "${data}/20-arch-os-extras" FAVORITES="${favorites%, }" >"${defaults}/20-arch-os-extras"
+    render "${data}/20-arch-os-extras" FAVORITES="${favorites%, }" | write_file "${defaults}/20-arch-os-extras"
 fi
 
 # A font with the glyphs of the shell enhancement's prompt.
 if [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ]; then
-    render "${data}/30-arch-os-shell" >"${defaults}/30-arch-os-shell"
+    render "${data}/30-arch-os-shell" | write_file "${defaults}/30-arch-os-shell"
 fi
 
-arch-chroot "$MNT" dconf update
+run arch-chroot "$MNT" dconf update

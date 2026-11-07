@@ -32,7 +32,7 @@ Stages run in order, `needs:` orders the tasks within one.
 | `system` | `pacstrap`, then `config`, `network`, `tweaks`, `bootloader`, `recovery` and `user`: a configured, bootable system |
 | `features` | One task per setting: `multilib`, `aur`, `bootsplash`, `containers`, `editor`, `firewall`, `housekeeping`, `manager`, `shell`, `ssh`, `vm-guest` |
 | `desktop` | `gnome` first, then `backup`, `browser`, `flatpak`, `graphics`, `manager-app`, `recovery-app`, `samba` |
-| `finish` | `orphans`, `snapper`, `secure-boot`, and `copy-config` last, so the log is complete |
+| `finish` | `orphans`, `snapper`, `secure-boot`, and `copy-config` last, so the log and the script are complete |
 
 ## Actions
 
@@ -83,7 +83,7 @@ The console keyboard is asked `first` and loaded at once: a password typed on th
 | Addition | How |
 | --- | --- |
 | Option | A row under `settings:`, list or suggestion as a function in `lib.sh`. Dependent tasks get `when:` |
-| Task | An entry under its stage in `module.yaml` and `tasks/<id>/task.sh`, plus `test.sh` where a result can be read back |
+| Task | An entry under its stage in `module.yaml` and `tasks/<id>/task.sh`, plus `test.sh` where a result can be read back. Each change through `run`, `run_sh` or `write_file`. **[➜ Commands](../docs/CONTRIBUTING.md#commands)** |
 | Check, row or way out | An entry under `actions:` with its `lib.sh` function, named under `requires:`, `dashboard:` or `on:`. Shared with the Recovery: `product.yaml` |
 | Profile | An entry under `presets:`. A fetched one names its action with `action:` |
 | Language | **[➜ Contributing](../docs/CONTRIBUTING.md#adding-a-language)** |
@@ -91,5 +91,7 @@ The console keyboard is asked `first` and loaded at once: a password typed on th
 ## Answers
 
 `installer.conf` beside the started Installer, copied into the new system at the end. Never holds a password.
+
+`installer.sh` beside it holds every command the tasks record, after the lines of `script_head()`, and lands in the new system too. **[➜ Commands](../docs/REFERENCE.md#commands)**
 
 The Recovery on its partition gets two answers from the start: the interface language and the console keyboard. See `tasks/recovery`.

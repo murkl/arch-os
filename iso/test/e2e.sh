@@ -41,7 +41,7 @@ USERNAME=tux
 PASSWORD=e2e-arch-os
 DISK=/dev/vda
 
-for tool in qemu-system-x86_64 qemu-img ssh ssh-keygen tesseract; do
+for tool in qemu-system-x86_64 qemu-img ssh ssh-keygen tesseract shellcheck; do
     command -v "$tool" >/dev/null || { echo "Error: ${tool} not found, see README.md" >&2 && exit 1; }
 done
 [ -f "$OVMF_CODE" ] || { echo "Error: no OVMF firmware at ${OVMF_CODE}. Install edk2-ovmf." >&2 && exit 1; }
@@ -534,7 +534,7 @@ ARCH_OS_DESKTOP='gnome'
 ARCH_OS_DESKTOP_EXTRAS_ENABLED='true'
 ARCH_OS_DESKTOP_SLIM_ENABLED='true'
 ARCH_OS_BROWSER='firefox'
-ARCH_OS_BACKUP='deja-dup'
+ARCH_OS_BACKUP='pika-backup'
 ARCH_OS_FLATPAK_ENABLED='true'
 ARCH_OS_BAZAAR_ENABLED='false'
 ARCH_OS_SAMBA_SHARE_ENABLED='false'
@@ -551,6 +551,19 @@ answers | live "cat >/opt/arch-os/installer.conf"
 
 say "Install"
 unattended installer "$INSTALL_TIMEOUT" "ARCH_OS_PASSWORD='${PASSWORD}'"
+
+# The run as a script: bash and shellcheck read it, and the password stands
+# neither in it nor in the log or what the run printed.
+live cat /opt/arch-os/installer.sh >"${WORK}/installer.sh" || fail "the Installer wrote no installer.sh"
+bash -n "${WORK}/installer.sh" || fail "installer.sh is not valid bash, see ${WORK}/installer.sh"
+shellcheck -S style "${WORK}/installer.sh" >"${WORK}/installer.sh.log" ||
+    fail "shellcheck finds fault with installer.sh, see ${WORK}/installer.sh.log"
+for file in installer.sh installer.log installer.out; do
+    if grep -qF -- "$PASSWORD" "${WORK}/${file}"; then
+        fail "the password stands in ${file}"
+    fi
+done
+say "installer.sh: bash, shellcheck, no password"
 
 # The Recovery's firmware entry as next boot: the way in from the firmware's
 # boot menu when the loader's menu never shows.

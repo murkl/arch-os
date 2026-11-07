@@ -1,4 +1,5 @@
-//! A background script: output to the log and the page, the fd 3 report for a failure.
+//! A background script: output to the log and the page, from fd 3 the commands it records and
+//! the report for a failure.
 
 use std::io::{BufRead, BufReader, Read};
 use std::os::fd::{AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
@@ -20,6 +21,10 @@ pub enum Event {
     Line(String),
     /// The current state of a line redrawn in place.
     Drawn(String),
+    /// Shell text the script records before running it.
+    Command(String),
+    /// The command recorded last succeeded.
+    Confirmed,
     Exit(Result<(), Failure>),
 }
 
@@ -74,15 +79,23 @@ impl Session {
             follow(err, sink.clone(), Some(stderr_tail.clone())),
         ];
         // Read to the end: a read end closed early kills the script by SIGPIPE on its next
-        // report.
+        // report. Bytes, since a recorded file need not be UTF-8.
+        let reports = sink.clone();
         let fail = std::thread::spawn(move || {
             let mut first = None;
             for line in BufReader::new(std::fs::File::from(events))
-                .lines()
+                .split(b'\n')
                 .map_while(Result::ok)
             {
-                if first.is_none() && line.starts_with("fail\t") {
-                    first = Some(line);
+                let line = String::from_utf8_lossy(&line);
+                if let Some(text) = line.strip_prefix("cmd\t") {
+                    let text = unescape(text);
+                    crate::log::write("RUN", text.lines().next().unwrap_or_default());
+                    reports(Event::Command(text));
+                } else if line == "cmd-ok" {
+                    reports(Event::Confirmed);
+                } else if first.is_none() && line.starts_with("fail\t") {
+                    first = Some(line.into_owned());
                 }
             }
             first
@@ -228,6 +241,24 @@ fn follow(
     })
 }
 
+/// Recorded shell text as lib.sh escapes it for one line: `\n` a newline, `\\` a backslash.
+fn unescape(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut chars = text.chars();
+    while let Some(c) = chars.next() {
+        if c != '\\' {
+            out.push(c);
+            continue;
+        }
+        match chars.next() {
+            Some('n') => out.push('\n'),
+            Some(other) => out.push(other),
+            None => out.push(c),
+        }
+    }
+    out
+}
+
 /// The last redraw after `\r`, without escapes and control characters, which would corrupt the
 /// frame. Tabs expand to stops of eight, as in a terminal.
 fn drawn(bytes: &[u8]) -> String {
@@ -269,6 +300,15 @@ fn drawn(bytes: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_recorded_command_keeps_its_lines_and_backslashes() {
+        assert_eq!(
+            unescape(r"cat >/etc/x <<'EOF'\na\\nb\nEOF"),
+            "cat >/etc/x <<'EOF'\na\\nb\nEOF"
+        );
+        assert_eq!(unescape(r"printf '\\n'"), r"printf '\n'");
+    }
 
     #[test]
     fn strips_color_and_keeps_the_last_redraw() {
