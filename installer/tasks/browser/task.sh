@@ -56,5 +56,5 @@ chroot_pacman_install "${packages[@]}"
 
 # GLib's own tool, so GNOME reads the association.
 while read -r type; do
-    as_user gio mime "$type" "$(browser_entry)"
+    as_user "gio mime ${type} $(browser_entry)"
 done <"$(where)/types"

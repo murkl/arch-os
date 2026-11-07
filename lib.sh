@@ -793,9 +793,10 @@ user_command() {
         PATH="$PATH" LANG=C.UTF-8 "$@"
 }
 
+# Shell text $1 as the user.
 as_user() {
     local command
-    mapfile -d '' -t command < <(user_command "$@")
+    mapfile -d '' -t command < <(user_command bash -c "$1")
     run "${command[@]}"
 }
 

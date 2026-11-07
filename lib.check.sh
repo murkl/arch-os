@@ -216,6 +216,11 @@ expect "run_sh hands over a password by its name" "$(recorded_by run_sh "$refere
 unset SECRET
 expect "run without a script records nothing" "$(holds run true)" yes
 
+# as_user takes shell text, quotes included, as tasks and tests hand it over.
+expect "as_user runs shell text" \
+    "$(run() { printf '%s|' "${@: -3}"; } && ARCH_OS_USERNAME=tux as_user 'gjs -c "print(1)"')" \
+    'bash|-c|gjs -c "print(1)"|'
+
 # The head as the Installer's script starts: outside a live system it stops
 # before anything, and on another disk too.
 lsblk() { printf 'QEMU\\x20DISK  17179869184\n'; }
