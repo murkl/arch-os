@@ -12,6 +12,8 @@ arch-chroot "$MNT" systemctl is-enabled systemd-oomd.service >/dev/null
 if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
     arch-chroot "$MNT" systemctl is-enabled power-profiles-daemon.service >/dev/null
     arch-chroot "$MNT" systemctl is-enabled cups.socket >/dev/null
+    # The plugin GStreamer decodes on the GPU with.
+    [ -f "${MNT}/usr/lib/gstreamer-1.0/libgstva.so" ]
 fi
 
 # Without the timer the firmware metadata goes stale.

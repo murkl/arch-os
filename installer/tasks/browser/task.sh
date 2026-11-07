@@ -1,5 +1,6 @@
-# Each browser already runs on Wayland, decodes video on the GPU and keeps its
-# passwords in the GNOME keyring. Only what it lacks is added.
+# Each browser runs on Wayland, decodes video on the GPU and keeps its
+# passwords in the GNOME keyring. Only what it lacks for this or for the system
+# language is added.
 # https://wiki.archlinux.org/title/Firefox
 # https://wiki.archlinux.org/title/Chromium
 # https://wiki.archlinux.org/title/Vivaldi
@@ -35,9 +36,9 @@ add_dictionary() {
 
 case "$ARCH_OS_BROWSER" in
 epiphany)
-    # WebKit plays media through GStreamer and checks spelling through enchant
-    # with hunspell.
-    packages+=(gst-plugins-good gst-plugins-bad gst-libav hunspell)
+    # WebKit plays media through GStreamer, on the GPU with gst-plugin-va, and
+    # checks spelling through enchant with hunspell.
+    packages+=(gst-plugins-good gst-plugins-bad gst-libav gst-plugin-va hunspell)
     add_dictionary
     ;;
 firefox)

@@ -1,8 +1,8 @@
 # https://wiki.archlinux.org/title/Xorg#Driver_installation
 # https://wiki.archlinux.org/title/Hardware_video_acceleration
 
-packages=(mesa mesa-utils vulkan-tools vkd3d)
-lib32=(lib32-mesa lib32-mesa-utils lib32-vkd3d)
+packages=(mesa mesa-utils vulkan-tools)
+lib32=(lib32-mesa)
 nvidia=false
 other=false
 cards=0
@@ -18,8 +18,8 @@ while IFS=$'\t' read -r vendor device; do
         ;;
     amd)
         other=true
-        packages+=(vulkan-radeon vulkan-mesa-layers opencl-mesa)
-        lib32+=(lib32-vulkan-radeon lib32-vulkan-mesa-layers lib32-opencl-mesa)
+        packages+=(vulkan-radeon opencl-mesa)
+        lib32+=(lib32-vulkan-radeon lib32-opencl-mesa)
         ;;
     nvidia)
         # The open module drives Turing on, device IDs from 0x1e00. Older cards

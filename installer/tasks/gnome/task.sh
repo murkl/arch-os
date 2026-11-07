@@ -72,9 +72,10 @@ if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
         dosfstools ntfs-3g exfatprogs btrfs-progs nfs-utils
         7zip zip unzip unrar wget jq)
 
+    # GStreamer decodes on the GPU through gst-plugin-va.
     # https://wiki.archlinux.org/title/Codecs_and_containers
-    packages+=(ffmpeg ffmpegthumbnailer gstreamer gst-libav gst-plugin-pipewire
-        gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss webp-pixbuf-loader)
+    packages+=(ffmpeg gstreamer gst-libav gst-plugin-pipewire gst-plugin-va
+        gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss)
 
     packages+=(gamemode)
     [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
