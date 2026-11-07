@@ -63,6 +63,9 @@ LIBRARY        := lib.sh
 MODULE_SCRIPTS = $(LIBRARY) $(shell find $(MODULES) -name '*.sh')
 MODULE_YAML    = product.yaml $(shell find $(MODULES) -name '*.yaml')
 
+# Tasks of the modules whose run becomes a script, by its key.
+SCRIPT_TASKS = $(wildcard $(addsuffix /tasks/*/task.sh,$(patsubst %/module.yaml,%,$(shell grep -l '^script:' $(addsuffix /module.yaml,$(MODULES))))))
+
 # Shell files a module ships into a home, found by file name. zsh gets zsh -n,
 # since shellcheck has no zsh.
 MODULE_SHELL = $(wildcard $(addsuffix /tasks/*/data/bashrc,$(MODULES)) $(addsuffix /tasks/*/data/aliases,$(MODULES)))
@@ -175,6 +178,8 @@ lint:
 		|| { echo "a file written into the new system is a template beside its task, placed with render" >&2; exit 1; }
 	@! grep -nE '^[[:space:]]*![[:space:]]' $(MODULE_SCRIPTS) \
 		|| { echo "a command inverted with ! never triggers the ERR trap, use an if that exits" >&2; exit 1; }
+	@! grep -nE 'render [^|]*>|>>?[[:space:]]*"\$$(\{?MNT|\{home\}|\(user_home\))' $(SCRIPT_TASKS) \
+		|| { echo "a file written into the new system goes through write_file, which its script records" >&2; exit 1; }
 
 # Loads the product as a run does and checks every catalog against every text.
 test:

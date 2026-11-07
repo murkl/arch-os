@@ -468,7 +468,7 @@ pub mod tests {
         format!("{}-{n}", std::process::id())
     }
 
-    /// Runs a step to the end, returns the outcome and its lines.
+    /// Runs a step to the end, returns the outcome and its lines, recorded commands among them.
     pub fn drive(body: &str, env: &[(String, String)]) -> (Result<(), Failure>, Vec<String>) {
         let (tx, rx) = std::sync::mpsc::channel();
         let session = start(step(body), env, move |e| drop(tx.send(e))).unwrap();
@@ -477,12 +477,26 @@ pub mod tests {
         while std::time::Instant::now() < deadline {
             match rx.recv_timeout(Duration::from_millis(50)) {
                 Ok(Event::Line(l) | Event::Drawn(l)) => lines.push(l),
+                Ok(Event::Command(c)) => lines.push(format!("$ {c}")),
+                Ok(Event::Confirmed) => lines.push("ok".into()),
                 Ok(Event::Exit(r)) => return (r, lines),
                 Err(_) => {}
             }
         }
         let _ = session;
         panic!("the script did not end");
+    }
+
+    /// Lines and backslashes survive the one line per report, and a confirmation follows its
+    /// command.
+    #[test]
+    fn a_recorded_command_arrives_whole_and_then_its_confirmation() {
+        let body = r#"printf 'cmd\t%s\n' "cat >x <<'EOF'\\na\\\\nb\\nEOF" >&3
+printf 'cmd-ok\n' >&3
+"#;
+        let (r, lines) = drive(body, &[]);
+        r.unwrap();
+        assert_eq!(lines, ["$ cat >x <<'EOF'\na\\nb\nEOF", "ok"]);
     }
 
     #[test]
@@ -683,6 +697,7 @@ pub mod tests {
             match rx.recv_timeout(Duration::from_secs(10)).unwrap() {
                 Event::Drawn(l) => seen.push(format!("drawn {l}")),
                 Event::Line(l) => seen.push(format!("line {l}")),
+                Event::Command(_) | Event::Confirmed => {}
                 Event::Exit(r) => break r.unwrap(),
             }
         }

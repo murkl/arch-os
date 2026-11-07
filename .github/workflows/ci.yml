@@ -110,7 +110,7 @@ jobs:
       # git refuses root a checkout owned by the runner's user.
       - run: |
           pacman -Syu --needed --noconfirm git make rust archiso systemd-ukify diffutils \
-            kbd terminus-font qemu-base edk2-ovmf tesseract tesseract-data-eng openssh
+            kbd terminus-font qemu-base edk2-ovmf tesseract tesseract-data-eng openssh shellcheck
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       # The whole history, as the build reads the last release tag.

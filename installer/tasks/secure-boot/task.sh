@@ -6,7 +6,7 @@
 # file signed already (sbctl 0.18, Sign in sbctl.go), so the boot images rely on
 # sbctl's mkinitcpio hook.
 if [ -f "${MNT}${RECOVERY_EFI}" ]; then
-    arch-chroot "$MNT" sbctl sign -s "$RECOVERY_EFI" || echo "signing the Recovery failed" >&2
+    run arch-chroot "$MNT" sbctl sign -s "$RECOVERY_EFI" || echo "signing the Recovery failed" >&2
 fi
 
 # Signed under the .signed name fwupd prefers. Arch ships no shim, so fwupd is
@@ -14,8 +14,8 @@ fi
 # https://github.com/fwupd/fwupd/blob/main/plugins/uefi-capsule/README.md
 updater=/usr/lib/fwupd/efi/fwupdx64.efi
 if [ -f "${MNT}${updater}" ]; then
-    arch-chroot "$MNT" sbctl sign -s -o "${updater}.signed" "$updater" || echo "signing fwupd's updater failed" >&2
-    arch-chroot "$MNT" fwupdtool --json modify-config uefi_capsule DisableShimForSecureBoot true ||
+    run arch-chroot "$MNT" sbctl sign -s -o "${updater}.signed" "$updater" || echo "signing fwupd's updater failed" >&2
+    run arch-chroot "$MNT" fwupdtool --json modify-config uefi_capsule DisableShimForSecureBoot true ||
         echo "fwupd still looks for shim, firmware updates need Secure Boot off" >&2
 fi
 
@@ -35,7 +35,7 @@ fi
 # -m keeps Microsoft's certificates, -f the firmware's own, which firmware signed
 # by its maker needs. sbctl refuses -f where the firmware's defaults could be
 # tampered with, so -m alone follows.
-if arch-chroot "$MNT" sbctl enroll-keys -m -f || arch-chroot "$MNT" sbctl enroll-keys -m; then
+if run arch-chroot "$MNT" sbctl enroll-keys -m -f || run arch-chroot "$MNT" sbctl enroll-keys -m; then
     echo "Secure Boot: keys enrolled, switch Secure Boot on in the firmware settings"
 else
     echo "Secure Boot: enrolling the keys failed" >&2

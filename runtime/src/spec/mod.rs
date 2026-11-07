@@ -26,6 +26,7 @@ pub const RESERVED: &str = "MODULE_";
 pub const DRY_RUN: &str = "DRY_RUN";
 pub const CONF: &str = "MODULE_CONF";
 pub const LOG: &str = "MODULE_LOG";
+pub const SCRIPT: &str = "MODULE_SCRIPT";
 pub const LANGUAGE: &str = "MODULE_LANGUAGE";
 pub const VERSION: &str = "MODULE_VERSION";
 
@@ -84,6 +85,8 @@ pub struct Module {
     pub confirm: Option<String>,
     /// Shown after a finished run, the headline first.
     pub report: Option<String>,
+    /// Prints the first lines of the run's script, which then records every command.
+    pub script: Option<Shell>,
     /// Actions that must succeed before the run. The first failure blocks it with a page.
     pub requires: Vec<String>,
     pub dashboard: Vec<Entry>,
@@ -589,6 +592,7 @@ struct ModuleFile {
     start: Option<String>,
     confirm: Option<String>,
     report: Option<String>,
+    script: Option<String>,
     #[serde(default)]
     requires: Vec<String>,
     dashboard: Vec<String>,
@@ -1403,6 +1407,7 @@ fn module(
         placeholders("report", r, &shown).map_err(m)?;
     }
     let module_errors = errors(&f.errors, &shown).map_err(m)?;
+    let script = opt_shell(&f.script, "script", functions).map_err(m)?;
 
     // What each action may declare, by how it runs.
     for a in &actions {
@@ -1452,6 +1457,7 @@ fn module(
         title,
         confirm,
         report,
+        script,
         requires: f.requires,
         dashboard,
         language: f.language,
@@ -1738,9 +1744,9 @@ pub mod tests {
     pub fn fixture() -> Vec<(&'static str, &'static [u8])> {
         vec![
             ("product.yaml", b"title: Tux\naccent: \"#8fbcbb\"\nconsole-accent: cyan\nlogo: |\n  Tux\n\n  ####\nstatus:\n  check: check_online()\n  pass: Online\n  fail: Offline\nactions:\n  restart:\n    title: Restart\n    description: Starts the machine again.\n    run: restart()\n  shell:\n    title: Open a shell\n    description: Until exit.\n    run: open_shell()\n    tty: true\n"),
-            ("lib.sh", b"check_online() { true; }\nbroken() {\n    false\n}\nundecided() {\n    [ a = b ] && echo never\n}\noptions_disks() { printf 'sda\\tsda 20G\\nsdb\\tsdb 40G\\n'; }\nprefill_host() { echo tuxbox; }\nvalue_vm() { echo false; }\napply_keymap() { true; }\noptions_snapshots() { echo one; echo two; }\nis_root() { [ \"$(id -u)\" -eq 0 ]; }\nnote() { echo \"$TUX_NOTE\"; }\njoin() { true; }\nrestart() { : >\"${MODULE_CONF%/*}/restarted\"; }\nshare() { printf \"TUX_URL='https://x/1'\\n\" >>\"$MODULE_CONF\"; }\nopen_shell() { true; }\n"),
+            ("lib.sh", b"check_online() { true; }\nbroken() {\n    false\n}\nundecided() {\n    [ a = b ] && echo never\n}\noptions_disks() { printf 'sda\\tsda 20G\\nsdb\\tsdb 40G\\n'; }\nprefill_host() { echo tuxbox; }\nvalue_vm() { echo false; }\napply_keymap() { true; }\noptions_snapshots() { echo one; echo two; }\nis_root() { [ \"$(id -u)\" -eq 0 ]; }\nnote() { echo \"$TUX_NOTE\"; }\njoin() { true; }\nrestart() { : >\"${MODULE_CONF%/*}/restarted\"; }\nshare() { printf \"TUX_URL='https://x/1'\\n\" >>\"$MODULE_CONF\"; }\nopen_shell() { true; }\nscript_head() { echo 'loadkeys us'; }\nrecord() { [ -z \"$MODULE_SCRIPT\" ] || printf 'cmd\\t%s\\n' \"$1\" >&3; }\nrun() {\n    record \"$*\"\n    \"$@\" || return\n    [ -z \"$MODULE_SCRIPT\" ] || printf 'cmd-ok\\n' >&3\n}\n"),
             ("setup/module.yaml", SETUP.as_bytes()),
-            ("setup/tasks/disk/task.sh", b"echo \"$TUX_DISK\" >\"${MODULE_CONF%/*}/disk\"\n[ \"$TUX_HOST\" != slow ] || { trap 'echo asked >\"${MODULE_CONF%/*}/stopped\"' TERM; sleep 30 & wait; }\n"),
+            ("setup/tasks/disk/task.sh", b"run echo \"$TUX_DISK\" >\"${MODULE_CONF%/*}/disk\"\n[ \"$TUX_HOST\" != slow ] || { trap 'echo asked >\"${MODULE_CONF%/*}/stopped\"' TERM; record 'sleep 30'; sleep 30 & wait; }\n"),
             ("setup/tasks/disk/test.sh", b"[ -f \"${MODULE_CONF%/*}/disk\" ]\n"),
             ("setup/tasks/base/task.sh", b"[ \"$TUX_HOST\" != taken ] || exit 10\n[ \"$TUX_HOST\" != broken ] || false\necho \"$TUX_HOST\" >\"${MODULE_CONF%/*}/host\"\necho \"$TUX_MOTD\" >\"${MODULE_CONF%/*}/motd\"\n"),
             ("setup/tasks/desktop/task.sh", b"[ \"$TUX_DRIVER\" = free ]\n"),

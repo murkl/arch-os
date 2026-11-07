@@ -42,6 +42,7 @@
 - Ranked mirrors, cleaned package cache, disk health monitoring
 - Works offline until the next update
 - Resumable installation, shareable answers
+- Every command shown, saved as a script
 - Keyboard and time zone follow the language
 - English and German, [Adding a Language](CONTRIBUTING.md#adding-a-language)
 

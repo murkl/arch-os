@@ -172,6 +172,67 @@ expect "render with a bare {{" "$(holds render "${templates}/open" 2>/dev/null)"
 expect "render with a lowercase name" "$(holds render "${templates}/lower" lower=x 2>/dev/null)" no
 expect "render with no template" "$(holds render "${templates}/none" 2>/dev/null)" no
 
+# ─── The script ──────────────────────────────────────────────────────────────
+
+words=(sgdisk -n 2:0:-1026M "Arch OS Recovery" "it's" "" $'two\nlines' '%wheel ALL=(ALL:ALL)' '~' 'a*' "\$HOME" 'a;b')
+# A broken line fails the comparison, not this script.
+eval "back=($(shell_line "${words[@]}"))" 2>/dev/null || back=(unparsable)
+expect "shell_line reads back as its words" "$(printf '%q ' "${back[@]}")" "$(printf '%q ' "${words[@]}")"
+expect "shell_line leaves plain words bare" "$(shell_line sgdisk -t 1:ef00 -c 1:boot /dev/vda)" \
+    "sgdisk -t 1:ef00 -c 1:boot /dev/vda"
+
+# Each text through file_shell and back, byte for byte: a here-document, one
+# holding its own delimiter, one without the final newline, two files at once.
+for text in $'KEYMAP=de\n' $'EOF\nEOF_\n$(date) \\n\n' 'rw quiet' ''; do
+    rm -f "${templates}/one" "${templates}/two"
+    eval "$(file_shell ">" "$text" "${templates}/one")" >/dev/null 2>&1 || true
+    eval "$(file_shell ">>" "$text" "${templates}/two" "${templates}/one")" >/dev/null 2>&1 || true
+    expect "file_shell writes $(shell_line "$text")" "$(od -c "${templates}/one")" \
+        "$(printf '%s%s' "$text" "$text" | od -c)"
+    expect "file_shell appends $(shell_line "$text") to a second file" "$(od -c "${templates}/two")" \
+        "$(printf '%s' "$text" | od -c)"
+done
+
+# What the runtime reads on fd 3: each command before it runs, on one line, and
+# its confirmation once it succeeded.
+recorded_by() {
+    (
+        export MODULE_SCRIPT="${templates}/script.sh"
+        exec 3>"${templates}/fd3"
+        "$@"
+    ) >/dev/null 2>&1 || true
+    cat "${templates}/fd3"
+}
+expect "run hands over its command, then confirms it" "$(recorded_by run touch "${templates}/a b")" \
+    "$(printf 'cmd\ttouch %s\ncmd-ok' "$(shell_line "${templates}/a b")")"
+expect "run leaves a failed command unconfirmed" "$(recorded_by run false)" "$(printf 'cmd\tfalse')"
+expect "write_file hands over its here-document on one line" \
+    "$(printf 'a\\b\n' | recorded_by write_file "${templates}/w")" \
+    "$(printf "cmd\tcat >%s <<'EOF'\\\\na\\\\\\\\b\\\\nEOF\ncmd-ok" "${templates}/w")"
+export SECRET=hunter2
+reference="printf %s \"\$SECRET\" >/dev/null"
+expect "run_sh hands over a password by its name" "$(recorded_by run_sh "$reference")" \
+    "$(printf 'cmd\t%s\ncmd-ok' "$reference")"
+unset SECRET
+expect "run without a script records nothing" "$(holds run true)" yes
+
+# The head as the Installer's script starts: outside a live system it stops
+# before anything, and on another disk too.
+lsblk() { printf 'QEMU\\x20DISK  17179869184\n'; }
+first="$(ARCH_OS_DISK=/dev/vda ARCH_OS_VCONSOLE_KEYMAP=de-latin1 script_head)"
+unset -f lsblk
+expect "script_head is bash" "$(holds bash -n -c "$first")" yes
+expect "script_head loads the keyboard" "$(tail -n1 <<<"$first")" "loadkeys de-latin1"
+on_live_image || expect "script_head outside a live system" "$(bash -c "$first" 2>&1 || echo "exit $?")" \
+    $'Arch Linux live system required. Boot from the Arch OS ISO.\nexit 1'
+disk_check="$(grep MODEL,SERIAL,SIZE <<<"$first")"
+for identity in 'QEMU\x20DISK  17179869184' 'QEMU\x20DISK  34359738368'; do
+    expect "script_head's disk check where lsblk names ${identity}" \
+        "$(bash -c "lsblk() { printf '%s\n' '${identity}'; }; ${disk_check}" 2>&1 || echo "exit $?")" \
+        "$([ "$identity" = 'QEMU\x20DISK  17179869184' ] || printf '%s\nexit 1' \
+            'Disk mismatch at /dev/vda')"
+done
+
 # ─── The kernel a preset builds from ────────────────────────────────────────
 
 for kind in uki image; do

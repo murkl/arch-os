@@ -7,7 +7,7 @@ docker)
     # Nested subvolumes: images and volumes stay out of snapshots, and a
     # rollback keeps them. https://wiki.archlinux.org/title/Snapper
     for dir in docker containerd; do
-        btrfs subvolume create "${MNT}/var/lib/${dir}" >/dev/null
+        run btrfs subvolume create "${MNT}/var/lib/${dir}" >/dev/null
     done
     chroot_pacman_install docker docker-buildx docker-compose
 
@@ -18,12 +18,12 @@ docker)
     if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
         bind=127.0.0.1
     fi
-    mkdir -p "${MNT}/etc/docker"
-    render "$(where)/daemon.json" BIND="$bind" >"${MNT}/etc/docker/daemon.json"
+    run mkdir -p "${MNT}/etc/docker"
+    render "$(where)/daemon.json" BIND="$bind" | write_file "${MNT}/etc/docker/daemon.json"
 
     # Started at boot, so restart policies bring containers back. No docker
     # group, which is root without a password: docker runs through sudo.
-    arch-chroot "$MNT" systemctl enable docker.service
+    run arch-chroot "$MNT" systemctl enable docker.service
     ;;
 
 podman)
@@ -32,18 +32,18 @@ podman)
     chroot_pacman_install podman podman-docker docker-compose
 
     # --global: no session exists yet, and the socket is per account.
-    arch-chroot "$MNT" systemctl --global enable podman.socket
+    run arch-chroot "$MNT" systemctl --global enable podman.socket
 
     # Arch sets no search registry, so a short name such as `nginx` prompts.
-    mkdir -p "${MNT}/etc/containers/registries.conf.d"
-    render "$(where)/10-unqualified-search-registries.conf" \
-        >"${MNT}/etc/containers/registries.conf.d/10-unqualified-search-registries.conf"
+    run mkdir -p "${MNT}/etc/containers/registries.conf.d"
+    render "$(where)/10-unqualified-search-registries.conf" |
+        write_file "${MNT}/etc/containers/registries.conf.d/10-unqualified-search-registries.conf"
 
     # Silences the notices of the docker and compose wrappers.
-    touch "${MNT}/etc/containers/nodocker"
-    mkdir -p "${MNT}/etc/containers/containers.conf.d"
-    render "$(where)/10-compose-warning-logs.conf" \
-        >"${MNT}/etc/containers/containers.conf.d/10-compose-warning-logs.conf"
+    run touch "${MNT}/etc/containers/nodocker"
+    run mkdir -p "${MNT}/etc/containers/containers.conf.d"
+    render "$(where)/10-compose-warning-logs.conf" |
+        write_file "${MNT}/etc/containers/containers.conf.d/10-compose-warning-logs.conf"
     ;;
 
 esac

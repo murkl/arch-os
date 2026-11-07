@@ -29,7 +29,7 @@ presets:
       ARCH_OS_DESKTOP_EXTRAS_ENABLED: true
       ARCH_OS_DESKTOP_SLIM_ENABLED: true
       ARCH_OS_BROWSER: firefox
-      ARCH_OS_BACKUP: deja-dup
+      ARCH_OS_BACKUP: pika-backup
       ARCH_OS_FLATPAK_ENABLED: true
       ARCH_OS_BAZAAR_ENABLED: false
       ARCH_OS_SAMBA_SHARE_ENABLED: false
@@ -382,8 +382,8 @@ settings:
       description: Scheduled backups of the home folder to a drive or server.
       when: ARCH_OS_DESKTOP != none
       required: true
-      options: [deja-dup, pika-backup, none]
-      default: deja-dup
+      options: [pika-backup, deja-dup, none]
+      default: pika-backup
 
     - name: ARCH_OS_FLATPAK_ENABLED
       type: bool
@@ -424,6 +424,10 @@ confirm: |
   Install Arch OS on {{ARCH_OS_DISK}}?
 
   All data on the disk is erased. An internet connection is required throughout.
+
+# installer.sh repeats the run from a live system, so its head checks that and
+# the disk before the passwords.
+script: script_head()
 
 # Stage is when, task is what. Within a stage, needs first, then file order.
 stages:
@@ -635,8 +639,8 @@ stages:
         - ARCH_OS_ENCRYPTION_ENABLED == true
 
     copy-config:
-      title: Copy the answers and the log into the system
-      # Last, so the log is complete.
+      title: Copy the answers, the log and the script into the system
+      # Last, so the log and the script are complete.
       needs: [orphans, snapper, secure-boot]
 
 report: |

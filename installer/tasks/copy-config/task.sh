@@ -1,12 +1,14 @@
 # The answer file holds no password. The share-config action appends its URL
-# to the copy.
+# to the copy. The script holds every command before this task.
 home="$(user_home)"
 cp -f "$MODULE_CONF" "${home}/installer.conf"
+cp -f "$MODULE_SCRIPT" "${home}/installer.sh"
 # The copy ends with the outcome. Written directly, as printed output reaches
 # the log only after the copy.
 printf '%s INFO  Arch OS installed\n' "$(date '+%Y-%m-%d %H:%M:%S')" >>"$MODULE_LOG"
 cp -f "$MODULE_LOG" "${home}/installer.log"
-own_home
+# Not own_home, whose run would put these copies' owner into the script.
+arch-chroot "$MNT" chown -R "${ARCH_OS_USERNAME}:${ARCH_OS_USERNAME}" "/home/${ARCH_OS_USERNAME}"
 
 # Flushed before the run reports success: a power cut otherwise leaves empty
 # boot files on the EFI partition.

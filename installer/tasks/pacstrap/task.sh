@@ -24,19 +24,23 @@ secure_boot_wanted && packages+=(sbctl)
 
 # Before pacstrap: the kernel install builds an initramfs whose sd-vconsole hook
 # reads this file.
-mkdir -p "${MNT}/etc"
-echo "KEYMAP=$ARCH_OS_VCONSOLE_KEYMAP" >"${MNT}/etc/vconsole.conf"
+run mkdir -p "${MNT}/etc"
+echo "KEYMAP=$ARCH_OS_VCONSOLE_KEYMAP" | write_file "${MNT}/etc/vconsole.conf"
 font="$(resolved "$ARCH_OS_VCONSOLE_FONT" auto_font)"
 if [ -n "$font" ]; then
-    echo "FONT=${font}" >>"${MNT}/etc/vconsole.conf"
+    echo "FONT=${font}" | write_file -a "${MNT}/etc/vconsole.conf"
 fi
 
-# The longest download, the most likely to hit a stalling mirror.
+# The longest download, the most likely to hit a stalling mirror. The script
+# runs it once.
+command=(pacstrap -K "$MNT" "${packages[@]}")
+record "$(shell_line "${command[@]}")"
 installed=false
 for ((i = 1; i <= RETRIES; i++)); do
     [ "$i" -gt 1 ] && echo "retry ${i}/${RETRIES}: pacstrap"
-    if pacstrap -K "$MNT" "${packages[@]}"; then
+    if "${command[@]}"; then
         installed=true
+        confirmed
         break
     fi
     sleep "$RETRY_WAIT"
@@ -47,4 +51,4 @@ if [ "$installed" != "true" ]; then
     exit 1
 fi
 
-genfstab -U "$MNT" >>"${MNT}/etc/fstab"
+run_sh "genfstab -U $(shell_line "$MNT") >>$(shell_line "${MNT}/etc/fstab")"
