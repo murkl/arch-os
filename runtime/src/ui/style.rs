@@ -39,6 +39,10 @@ pub struct Glyphs {
     pub track: &'static str,
     /// A scrollbar's track, then its thumb.
     pub scroll: [&'static str; 2],
+    /// A box's corners: top left, top right, bottom left, bottom right. Its top and bottom are
+    /// `rule`.
+    pub corners: [&'static str; 4],
+    pub side: &'static str,
     /// Step marks: ran, failed, skipped.
     pub ok: &'static str,
     pub fail: &'static str,
@@ -68,6 +72,7 @@ impl Glyphs {
             self.track,
             self.scroll[0],
             self.scroll[1],
+            self.side,
             self.ok,
             self.fail,
             self.skip,
@@ -76,6 +81,7 @@ impl Glyphs {
             self.page_keys,
             self.mask,
         ];
+        v.extend(self.corners);
         v.extend(self.focus);
         v.extend(self.spinner);
         v
@@ -93,6 +99,8 @@ pub static UNICODE: Glyphs = Glyphs {
     bar: "━",
     track: "─",
     scroll: ["│", "┃"],
+    corners: ["╭", "╮", "╰", "╯"],
+    side: "│",
     ok: "✓",
     fail: "✕",
     skip: "·",
@@ -105,7 +113,7 @@ pub static UNICODE: Glyphs = Glyphs {
 };
 
 /// Console: every glyph is in the fonts iso/font/build.sh builds, checked by `make check`.
-/// Terminus lacks ● ○ ✓ ✕ ⏎ ⇞⇟ and the spinner's quarter blocks.
+/// Terminus lacks ● ○ ✓ ✕ ⏎ ⇞⇟, round corners and the spinner's quarter blocks.
 pub static CONSOLE: Glyphs = Glyphs {
     cursor: "▶",
     dot: "■",
@@ -117,6 +125,8 @@ pub static CONSOLE: Glyphs = Glyphs {
     bar: "█",
     track: "─",
     scroll: ["│", "█"],
+    corners: ["┌", "┐", "└", "┘"],
+    side: "│",
     ok: "√",
     fail: "×",
     skip: "·",

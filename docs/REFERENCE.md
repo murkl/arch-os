@@ -20,7 +20,7 @@ Every answer except the passwords lands in `installer.conf` at once, so an inter
 
 ### Commands
 
-Every command that changes the system shows under its step, on **tab** before its output and in `installer.log`. `installer.sh` holds them as a script, beside the Installer and in the new system's home. On the same machine it installs the same system again: partitions, packages, files, accounts and services.
+Every command that changes the system shows on **tab** in a box named after its step, above its output, and in `installer.log`. `installer.sh` holds them as a script, beside the Installer and in the new system's home. On the same machine it installs the same system again: partitions, packages, files, accounts and services.
 
 1. Copy `~/installer.sh` to another drive, since it erases the disk it lies on
 2. Boot the ISO, connect to the internet, open a shell with **Ctrl+Alt+F2**

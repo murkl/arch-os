@@ -1,6 +1,6 @@
-//! Run page: every task with a mark, filled from the top, the command it runs under it, and its
-//! commands and output on tab, also logged. A task's question or report interrupts the list, and
-//! the page ends on the outcome and next rows.
+//! Run page: every task with a mark, filled from the top, and on tab the running task, the
+//! command it runs and the output since, also logged. A task's question or report interrupts the
+//! list, and the page ends on the outcome and next rows.
 
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
@@ -16,7 +16,7 @@ use crate::record::{self, Record};
 use crate::script::{self, Event, Failure, Session};
 use crate::spec::{self, Task};
 use crate::ui::detail::{Act, Block, Detail, mark, words};
-use crate::ui::draw::{cut, cut_front, put, wrap};
+use crate::ui::draw::{cut, cut_front, put, width, wrap};
 use crate::ui::list::Lead;
 use crate::ui::{Ctx, Data, Does, Flow, Key, Page, Tone};
 
@@ -45,12 +45,6 @@ enum Pushed {
     Ask,
     Confirm,
     Report,
-}
-
-enum Out {
-    Title(String),
-    Line(String),
-    Command(String),
 }
 
 /// Failed run: the module's text, the failure, or stopped by the leave page.
@@ -82,6 +76,120 @@ fn task_env(task: &Task, ctx: &Ctx) -> Vec<(String, String)> {
     env
 }
 
+/// What tab shows: the running task, the command it recorded last, and the output since.
+#[derive(Default)]
+struct Section {
+    title: String,
+    command: Option<String>,
+    lines: VecDeque<String>,
+    /// The line being redrawn in place.
+    drawing: Option<String>,
+}
+
+impl Section {
+    /// The output starts over, under `command` or the title alone.
+    fn begin(&mut self, command: Option<String>) {
+        self.command = command;
+        self.lines.clear();
+        self.drawing = None;
+    }
+
+    fn keep(&mut self, line: String) {
+        if self.lines.len() == KEPT {
+            self.lines.pop_front();
+        }
+        self.lines.push_back(line);
+        self.drawing = None;
+    }
+
+    /// The command boxed with the title in its top border, or the title alone, then after a blank
+    /// row the newest output lines that fit with the redrawn line last. Long lines wrap. The box
+    /// takes at most half the area, so the output keeps the other half.
+    fn draw(&self, area: Rect, buf: &mut Buffer, ctx: &Ctx) {
+        let s = &ctx.style;
+        let g = s.glyphs;
+        if area.height == 0 {
+            return;
+        }
+        let w = usize::from(area.width);
+        let mut y = area.y;
+        // A box needs its borders and one cell inside.
+        if let Some(command) = &self.command
+            && area.height >= 3
+            && area.width >= 5
+        {
+            let room = w.saturating_sub(4);
+            let most = usize::from(area.height / 2).saturating_sub(2).max(1);
+            let mut rows = wrap(command.trim_end(), room);
+            if rows.len() > most {
+                rows.truncate(most);
+                let last = rows.pop().unwrap_or_default() + g.ellipsis;
+                rows.push(cut(&last, room, g.ellipsis));
+            }
+            let title = cut(&self.title, w.saturating_sub(6), g.ellipsis);
+            let rest = format!(
+                " {}{}",
+                g.rule.repeat(w.saturating_sub(5 + width(&title))),
+                g.corners[1]
+            );
+            let head = format!("{}{} ", g.corners[0], g.rule);
+            let x = put(buf, area.x, y, &head, area.width, s.tone(Tone::Muted));
+            let x = put(
+                buf,
+                x,
+                y,
+                &title,
+                area.right().saturating_sub(x),
+                s.bold(Tone::Normal),
+            );
+            put(
+                buf,
+                x,
+                y,
+                &rest,
+                area.right().saturating_sub(x),
+                s.tone(Tone::Muted),
+            );
+            for row in &rows {
+                y += 1;
+                put(buf, area.x, y, g.side, 1, s.tone(Tone::Muted));
+                put(buf, area.x + 2, y, row, room as u16, s.tone(Tone::Normal));
+                put(buf, area.right() - 1, y, g.side, 1, s.tone(Tone::Muted));
+            }
+            y += 1;
+            let bottom = format!(
+                "{}{}{}",
+                g.corners[2],
+                g.rule.repeat(w.saturating_sub(2)),
+                g.corners[3]
+            );
+            put(buf, area.x, y, &bottom, area.width, s.tone(Tone::Muted));
+        } else {
+            put(
+                buf,
+                area.x,
+                y,
+                &cut(&self.title, w, g.ellipsis),
+                area.width,
+                s.bold(Tone::Normal),
+            );
+        }
+        let top = y + 2;
+        let height = usize::from(area.bottom().saturating_sub(top));
+        let mut rows = Vec::new();
+        for line in self.lines.iter().chain(&self.drawing).rev() {
+            rows.extend(wrap(line, w).into_iter().rev());
+            if rows.len() >= height {
+                break;
+            }
+        }
+        rows.truncate(height);
+        for (y, row) in (top..).zip(rows.iter().rev()) {
+            put(buf, area.x, y, row, area.width, s.tone(Tone::Normal));
+        }
+    }
+}
+
 pub struct RunPage {
     steps: Vec<&'static Task>,
     marks: Vec<Mark>,
@@ -91,15 +199,11 @@ pub struct RunPage {
     session: Option<Session>,
     /// Last line of the running task, where it declares its output as progress.
     latest: Option<String>,
-    /// First line of the command the running task recorded last, as a prompt shows it.
-    command: Option<String>,
     /// The run as a script, where the module keeps one.
     record: Option<Record>,
     /// Inhibits shutdown and sleep while the tasks run.
     hold: Option<script::Hold>,
-    /// Run output under each task title, and the line being redrawn in place.
-    transcript: VecDeque<Out>,
-    drawing: Option<String>,
+    section: Section,
     /// Shows the text view instead of the list.
     text: bool,
     /// Tasks whose declared test ran, with its failure.
@@ -136,11 +240,9 @@ impl RunPage {
             pushed: Pushed::None,
             session: None,
             latest: None,
-            command: None,
             record: None,
             hold: None,
-            transcript: VecDeque::new(),
-            drawing: None,
+            section: Section::default(),
             text: false,
             tests: Vec::new(),
             optional: Vec::new(),
@@ -192,6 +294,8 @@ impl RunPage {
                     self.phase = Phase::Report;
                     if task.test && !ctx.store.dry_run() {
                         crate::info!("{}: test", task.title);
+                        // A test records nothing, so its output belongs to no command.
+                        self.section.begin(None);
                         let step = ctx.step(&t(&task.title), false, task.test_script());
                         match script::start(step, &task_env(task, ctx), ctx.run_sink()) {
                             Ok(session) => {
@@ -243,7 +347,6 @@ impl RunPage {
         self.at += 1;
         self.phase = Phase::Ask;
         self.latest = None;
-        self.command = None;
     }
 
     /// The script's head, before any task. A failing `script` function ends the run there, since
@@ -284,7 +387,10 @@ impl RunPage {
     fn start(&mut self, ctx: &mut Ctx) -> Flow {
         let task = self.task();
         ctx.trace.line("task", &task.id);
-        self.keep(Out::Title(t(&task.title)));
+        self.section = Section {
+            title: t(&task.title),
+            ..Section::default()
+        };
         if ctx.store.dry_run() && !task.simulates {
             crate::info!("{}: simulated", task.title);
             self.simulated = Some(Instant::now() + SIMULATED);
@@ -345,48 +451,6 @@ impl RunPage {
         // Typed inputs are forgotten right after the run, success or not.
         ctx.store.forget();
         Flow::Stay
-    }
-
-    fn keep(&mut self, out: Out) {
-        if self.transcript.len() == KEPT {
-            self.transcript.pop_front();
-        }
-        self.transcript.push_back(out);
-    }
-
-    /// Newest lines that fit, the redrawn line last, long lines wrapped.
-    fn draw_text(&self, area: Rect, buf: &mut Buffer, ctx: &Ctx) {
-        let s = &ctx.style;
-        let width = usize::from(area.width);
-        let height = usize::from(area.height);
-        let drawing = self
-            .drawing
-            .iter()
-            .map(|l| (l, s.tone(Tone::Normal), false));
-        let lines = self
-            .transcript
-            .iter()
-            .enumerate()
-            .map(|(i, out)| match out {
-                Out::Title(title) => (title, s.bold(Tone::Accent), i > 0),
-                Out::Line(line) => (line, s.tone(Tone::Normal), false),
-                Out::Command(command) => (command, s.bold(Tone::Normal), false),
-            })
-            .chain(drawing);
-        let mut rows = Vec::new();
-        for (text, style, gap) in lines.rev() {
-            rows.extend(wrap(text, width).into_iter().rev().map(|r| (r, style)));
-            if gap {
-                rows.push((String::new(), style));
-            }
-            if rows.len() >= height {
-                break;
-            }
-        }
-        rows.truncate(height);
-        for (y, (row, style)) in (area.y..).zip(rows.iter().rev()) {
-            put(buf, area.x, y, row, area.width, *style);
-        }
     }
 
     fn settled(&self) -> bool {
@@ -588,21 +652,14 @@ impl RunPage {
         self.rows_cache.1
     }
 
-    /// Tasks with their marks, scrolled to the cursor. The running task's progress line takes a
-    /// row under it, cut at the front, since a bar shows its progress at the end. Without one its
-    /// command does, cut at the end, since the program and its first words say most.
+    /// Tasks with their marks, scrolled to the cursor. A progress line takes a row under its task
+    /// and is cut at the front, since a bar shows its progress at the end.
     fn draw_list(&self, area: Rect, buf: &mut Buffer, ctx: &Ctx) {
         let s = &ctx.style;
         let running = self.end.is_none() && self.at < self.steps.len();
-        let busy = running && self.phase == Phase::Run;
-        let under = if !busy {
-            None
-        } else if let Some(latest) = self.latest.as_deref().filter(|_| self.task().progress) {
-            Some((latest, true))
-        } else {
-            self.command.as_deref().map(|command| (command, false))
-        };
-        let rows = usize::from(area.height).saturating_sub(usize::from(under.is_some()));
+        let progress = running && self.task().progress && self.phase == Phase::Run;
+        let rows =
+            usize::from(area.height).saturating_sub(usize::from(progress && self.latest.is_some()));
         if rows == 0 {
             return;
         }
@@ -639,15 +696,21 @@ impl RunPage {
             );
             y += 1;
             if i == self.at
-                && let Some((line, front)) = under
+                && progress
+                && let Some(latest) = &self.latest
             {
-                let width = area.width.saturating_sub(2);
-                let shown = if front {
-                    cut_front(line, width as usize, s.glyphs.ellipsis)
-                } else {
-                    cut(line, width as usize, s.glyphs.ellipsis)
-                };
-                put(buf, area.x + 2, y, &shown, width, s.tone(Tone::Muted));
+                put(
+                    buf,
+                    area.x + 2,
+                    y,
+                    &cut_front(
+                        latest,
+                        area.width.saturating_sub(2) as usize,
+                        s.glyphs.ellipsis,
+                    ),
+                    area.width.saturating_sub(2),
+                    s.tone(Tone::Muted),
+                );
                 y += 1;
             }
         }
@@ -790,7 +853,7 @@ impl Page for RunPage {
             area.height.saturating_sub(2),
         );
         if self.text {
-            self.draw_text(below, buf, ctx);
+            self.section.draw(below, buf, ctx);
         } else {
             self.draw_list(below, buf, ctx);
         }
@@ -861,22 +924,18 @@ impl Page for RunPage {
         match event {
             Event::Line(line) => {
                 self.latest = Some(line.clone());
-                self.drawing = None;
-                self.keep(Out::Line(line));
+                self.section.keep(line);
                 Flow::Stay
             }
             Event::Drawn(line) => {
                 self.latest = Some(line.clone());
-                self.drawing = Some(line);
+                self.section.drawing = Some(line);
                 Flow::Stay
             }
             // A test records nothing, so only the task's own commands count.
             Event::Command(text) if self.phase == Phase::Run => {
                 let task = self.task();
-                let shown = format!("$ {}", text.lines().next().unwrap_or_default());
-                self.drawing = None;
-                self.keep(Out::Command(shown.clone()));
-                self.command = Some(shown);
+                self.section.begin(Some(text.clone()));
                 if let Some(record) = &mut self.record {
                     record.command(&task.title, text);
                 }

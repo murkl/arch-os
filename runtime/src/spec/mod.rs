@@ -1747,7 +1747,7 @@ pub mod tests {
             ("lib.sh", b"check_online() { true; }\nbroken() {\n    false\n}\nundecided() {\n    [ a = b ] && echo never\n}\noptions_disks() { printf 'sda\\tsda 20G\\nsdb\\tsdb 40G\\n'; }\nprefill_host() { echo tuxbox; }\nvalue_vm() { echo false; }\napply_keymap() { true; }\noptions_snapshots() { echo one; echo two; }\nis_root() { [ \"$(id -u)\" -eq 0 ]; }\nnote() { echo \"$TUX_NOTE\"; }\njoin() { true; }\nrestart() { : >\"${MODULE_CONF%/*}/restarted\"; }\nshare() { printf \"TUX_URL='https://x/1'\\n\" >>\"$MODULE_CONF\"; }\nopen_shell() { true; }\nscript_head() { echo 'loadkeys us'; }\nrecord() { [ -z \"$MODULE_SCRIPT\" ] || printf 'cmd\\t%s\\n' \"$1\" >&3; }\nrun() {\n    record \"$*\"\n    \"$@\" || return\n    [ -z \"$MODULE_SCRIPT\" ] || printf 'cmd-ok\\n' >&3\n}\n"),
             ("setup/module.yaml", SETUP.as_bytes()),
             ("setup/tasks/disk/task.sh", b"run echo \"$TUX_DISK\" >\"${MODULE_CONF%/*}/disk\"\n[ \"$TUX_HOST\" != slow ] || { trap 'echo asked >\"${MODULE_CONF%/*}/stopped\"' TERM; record 'sleep 30'; sleep 30 & wait; }\n"),
-            ("setup/tasks/disk/test.sh", b"[ -f \"${MODULE_CONF%/*}/disk\" ]\n"),
+            ("setup/tasks/disk/test.sh", b"[ \"$TUX_HOST\" != checked ] || { echo checking; sleep 30 & wait; }\n[ -f \"${MODULE_CONF%/*}/disk\" ]\n"),
             ("setup/tasks/base/task.sh", b"[ \"$TUX_HOST\" != taken ] || exit 10\n[ \"$TUX_HOST\" != broken ] || false\necho \"$TUX_HOST\" >\"${MODULE_CONF%/*}/host\"\necho \"$TUX_MOTD\" >\"${MODULE_CONF%/*}/motd\"\n"),
             ("setup/tasks/desktop/task.sh", b"[ \"$TUX_DRIVER\" = free ]\n"),
             ("setup/tasks/snapshot/task.sh", b"echo \"$TUX_SNAPSHOT\"\n"),

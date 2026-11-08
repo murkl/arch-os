@@ -160,7 +160,7 @@ The module's home: rows in `dashboard` order, each name once. `f` filters.
 
 A blank row follows `start`, the answers and each action group. After `start`, the answer headings take its place.
 
-`start` asks what is missing, then every password, then `confirm`, then runs the tasks: one row each, checked off when done, counted in the header. With `script`, the command a task runs stands under it. `tab` switches to their commands and output, during and after the run. `systemd-inhibit` blocks shutdown and sleep while tasks run, so closing the lid never suspends a run. A task with `asks` or `confirm` pauses the run on its page. The header names the outcome, **Done** or **Failed**. A finished run shows `report`, its duration, the actions under `on: success` and **Continue**. A failed run shows what failed and where, the actions under `on: failure` and **Back to the dashboard** with a confirmation.
+`start` asks what is missing, then every password, then `confirm`, then runs the tasks: one row each, checked off when done, counted in the header. `tab` switches to the running task's title and output, during and after the run. With `script`, the title heads a box with the command it runs, and each new command starts the output over. `systemd-inhibit` blocks shutdown and sleep while tasks run, so closing the lid never suspends a run. A task with `asks` or `confirm` pauses the run on its page. The header names the outcome, **Done** or **Failed**. A finished run shows `report`, its duration, the actions under `on: success` and **Continue**. A failed run shows what failed and where, the actions under `on: failure` and **Back to the dashboard** with a confirmation.
 
 `q` or `esc` on the dashboard leaves. With `on: leave`, or in a kiosk, a page comes first: the actions under `on: leave`, then **Exit**, or **Start over** in a kiosk. During a run the same page warns that every choice stops it and leads with **Back to the run**. The run continues behind it, and its questions wait until the page closes. A choice stops the run first: its script and everything it started get `SIGTERM`, after 10 seconds `SIGKILL`. The choice runs once none of it is left. `SIGTERM`, `SIGHUP` and `SIGINT` to the program stop a run the same way, then end it.
 
@@ -311,7 +311,7 @@ A task records a command on fd 3 before it runs: `cmd`, a tab and the shell text
 
 - Only tasks get `MODULE_SCRIPT`, never tests or actions, and only they record
 - A command names a password by its variable, such as `"$ARCH_OS_PASSWORD"`, never by its value
-- Each command shows under its running task, on `tab` before its output, and in the log as a `RUN` line
+- Each command shows on `tab` in a box, wrapped and cut at half the view, and in the log as a `RUN` line
 - A `script` function that fails stops the run before its first task
 - A dry run writes no script
 
