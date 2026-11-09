@@ -263,16 +263,12 @@ EOF
 
 # ─── The keyboard ────────────────────────────────────────────────────────────
 
-# The live system's keymap per case, - for none.
-live_keymap() { [ "$live" = - ] || printf '%s' "$live"; }
-
-while read -r live language want; do
-    expect "prefill_keymap live ${live} language ${language}" "$(MODULE_LANGUAGE="$language" prefill_keymap)" "$want"
+while read -r language want; do
+    expect "prefill_keymap language ${language}" "$(MODULE_LANGUAGE="$language" prefill_keymap)" "$want"
 done <<'EOF'
-- de de-latin1
-- pt_BR br-abnt2
-- xx us
-fr-latin1 de fr-latin1
+de de-latin1
+pt_BR br-abnt2
+xx us
 EOF
 
 while read -r keymap locale want; do
@@ -329,19 +325,31 @@ for file in installer/module.yaml docs/README.md; do
     done
 done
 
-# ─── A shared configuration ──────────────────────────────────────────────────
+# ─── The mirrors ─────────────────────────────────────────────────────────────
 
-# A stranger's answers land, except what belongs to one machine or lets the
-# stranger in.
-fetch_url() {
-    printf '%s\n' "ARCH_OS_HOSTNAME='box'" "ARCH_OS_DISK='/dev/sda'" "ARCH_OS_KERNEL_ARGS='init=/bin/sh'" \
-        "ARCH_OS_SSH_SERVER_ENABLED='true'" "ARCH_OS_SSH_KEY='ssh-ed25519 AAAA stranger'" \
-        "ARCH_OS_CONFIG_URL='https://paste.c-net.org/x'" "PATH='/tmp'"
-    printf '\n200'
-}
-MODULE_CONF="${templates}/installer.conf" ARCH_OS_CONFIG_SOURCE=https://paste.c-net.org/abc import_config
-expect "import_config keeps what is safe to take from a stranger" \
-    "$(cut -d= -f1 "${templates}/installer.conf" | paste -sd' ')" "ARCH_OS_HOSTNAME ARCH_OS_SSH_SERVER_ENABLED"
+# A listed name goes as its code, a typed one as typed.
+while read -r answer want; do
+    expect "mirror_country for ${answer}" "$(ARCH_OS_REFLECTOR_COUNTRY="$answer" mirror_country)" "$want"
+done <<'EOF'
+Germany DE
+Atlantis Atlantis
+none
+EOF
+
+# ─── The firmware ────────────────────────────────────────────────────────────
+
+# Four attribute bytes, then the value. - for a firmware without the variable.
+EFIVARS="${templates}/efivars"
+mkdir -p "$EFIVARS"
+while read -r value want; do
+    rm -f "${EFIVARS}/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+    [ "$value" = - ] || printf '\x06\x00\x00\x00%b' "\\x0${value}" >"${EFIVARS}/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+    expect "secure_boot_off with SecureBoot ${value}" "$(holds secure_boot_off)" "$want"
+done <<'EOF'
+0 yes
+1 no
+- yes
+EOF
 
 # ─── Expected Failures ───────────────────────────────────────────────────────
 
@@ -352,35 +360,6 @@ as_action() {
     trap 'exit $?' ERR
     trap 'echo $?' EXIT
 }
-
-# curl's output with -w '\n%{http_code}' and its exit status.
-fetch_url() {
-    printf '%b' "$reply"
-    return "$code"
-}
-check_online() { return "$offline"; }
-
-export DRY_RUN=false MNT="$templates" ARCH_OS_USERNAME=nobody MODULE_LOG="${templates}/plain" \
-    MODULE_CONF="${templates}/installer.conf" ARCH_OS_CONFIG_SOURCE=abc
-while read -r offline reply code want; do
-    echo "ARCH_OS_HOSTNAME='box'" >"$MODULE_CONF"
-    expect "share_config with check_online ${offline} and curl ${reply} ${code}" "$(as_action && share_config)" "$want"
-    expect "share_log with check_online ${offline} and curl ${reply} ${code}" "$(as_action && share_log)" "$want"
-done <<'EOF'
-0 https://paste.c-net.org/abc 0 0
-0 \n400 22 10
-1 \n000 6 3
-EOF
-
-while read -r offline reply code want; do
-    expect "import_config with check_online ${offline} and curl ${reply} ${code}" "$(as_action && import_config)" "$want"
-done <<'EOF'
-0 ARCH_OS_HOSTNAME='box'\n\n200 0 0
-0 hello\n\n200 0 11
-0 \n404 22 11
-0 \n503 22 10
-1 \n000 6 3
-EOF
 
 wifi_station() { echo wlan0; }
 iwctl() { return "$joins"; }

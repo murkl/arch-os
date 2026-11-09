@@ -1,12 +1,11 @@
 //! Report page of a run or action, on success with text or on failure. The module gives the
-//! text, the runtime the mark and the QR code.
+//! text, the runtime the mark.
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 
 use crate::ui::detail::{Block, Detail, mark, words};
-use crate::ui::draw::put;
-use crate::ui::{Ctx, Does, Flow, Key, Page, Tone, qr};
+use crate::ui::{Ctx, Does, Flow, Key, Page, Tone};
 
 /// Where the page leads once read.
 pub enum Close {
@@ -17,8 +16,6 @@ pub struct ReportPage {
     id: String,
     title: String,
     text: String,
-    /// Value shown as QR code and as text under the report.
-    qr: Option<String>,
     /// One line under the text, such as a run's tally of optional tasks and tests.
     note: Option<(String, Tone)>,
     stopped: bool,
@@ -26,25 +23,12 @@ pub struct ReportPage {
     detail: Detail,
 }
 
-/// Minimum text width, widened to the value so a link stays on one line. Below it the QR code is
-/// dropped.
-const WORDS_MIN: u16 = 34;
-const GAP: u16 = 3;
-
 impl ReportPage {
-    pub fn new(
-        id: String,
-        title: String,
-        text: String,
-        qr: Option<String>,
-        stopped: bool,
-        close: Close,
-    ) -> ReportPage {
+    pub fn new(id: String, title: String, text: String, stopped: bool, close: Close) -> ReportPage {
         ReportPage {
             id,
             title,
             text,
-            qr,
             note: None,
             stopped,
             close,
@@ -63,10 +47,6 @@ impl ReportPage {
         if let Some((note, tone)) = &self.note {
             b.push(Block::Blank);
             b.push(Block::Text(note.clone(), *tone));
-        }
-        if let Some(value) = &self.qr {
-            b.push(Block::Blank);
-            b.push(Block::Text(value.clone(), Tone::Accent));
         }
         b
     }
@@ -90,28 +70,7 @@ impl Page for ReportPage {
 
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {
         self.detail.set(self.blocks(), Vec::new());
-        // Text and code side by side, text the larger part: a code under a paragraph needs more
-        // rows than a frame has.
-        let code = self.qr.as_deref().and_then(|v| {
-            let words_min = WORDS_MIN.max(v.chars().count().try_into().unwrap_or(u16::MAX));
-            qr::code(
-                v,
-                area.width.saturating_sub(words_min.saturating_add(GAP)) as usize,
-                area.height as usize,
-            )
-        });
-        let Some(code) = code else {
-            self.detail.draw(area, buf, ctx);
-            return;
-        };
-        let code_w = code[0].chars().count() as u16;
-        let words = Rect::new(area.x, area.y, area.width - code_w - GAP, area.height);
-        self.detail.draw(words, buf, ctx);
-        let x = area.right() - code_w;
-        let top = area.y + area.height.saturating_sub(code.len() as u16) / 2;
-        for (i, row) in code.iter().enumerate() {
-            put(buf, x, top + i as u16, row, code_w, qr::ink());
-        }
+        self.detail.draw(area, buf, ctx);
     }
 
     fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {

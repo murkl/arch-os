@@ -127,13 +127,12 @@ pub struct On {
     pub success: Vec<String>,
 }
 
-/// Offered on a first run: a set of answers, or the action that fetches them.
+/// Offered on a first run: a set of answers.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Preset {
     pub title: String,
     pub description: String,
     pub values: BTreeMap<String, String>,
-    pub action: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -333,8 +332,6 @@ pub struct Action {
     pub inputs: Vec<Setting>,
     pub confirm: Option<String>,
     pub report: Option<String>,
-    /// Variable its script writes, shown on the report as a QR code.
-    pub qr: Option<String>,
     /// Runs in the terminal instead of a page.
     pub tty: bool,
     pub simulates: bool,
@@ -358,12 +355,11 @@ impl Module {
         names.iter().filter_map(|n| self.action(n)).collect()
     }
 
-    /// Every variable a script may get: settings, action inputs and answers, task questions.
+    /// Every variable a script may get: settings, action inputs, task questions.
     pub fn declared(&self) -> Vec<&str> {
         let mut out: Vec<&str> = self.settings.iter().map(|s| s.name.as_str()).collect();
         for a in &self.actions {
             out.extend(a.inputs.iter().map(|s| s.name.as_str()));
-            out.extend(a.qr.as_deref());
         }
         out.extend(
             self.tasks
@@ -629,7 +625,6 @@ struct PresetFile {
     description: Option<String>,
     #[serde(default)]
     values: BTreeMap<String, Scalar>,
-    action: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -712,7 +707,6 @@ struct ActionFile {
     inputs: Vec<SettingFile>,
     confirm: Option<String>,
     report: Option<String>,
-    qr: Option<String>,
     #[serde(default)]
     tty: bool,
     #[serde(default)]
@@ -1116,7 +1110,7 @@ enum How {
     Unasked,
     /// Runs unasked before the tasks. Its `error` explains a failure.
     Gating,
-    /// Opened from a dashboard row, a preset or an `on:` list.
+    /// Opened from a dashboard row or an `on:` list.
     Opened,
 }
 
@@ -1181,9 +1175,6 @@ fn module(
                 return Err(m(format!("{t}: no such setting: {name}")));
             }
         }
-        if p.action.is_some() && !p.values.is_empty() {
-            return Err(m(format!("{t}: values and action exclude each other")));
-        }
         presets.push(Preset {
             title: text::reflow(&p.title),
             description: text::reflow(p.description.as_deref().unwrap_or_default()),
@@ -1192,7 +1183,6 @@ fn module(
                 .iter()
                 .map(|(k, v)| (k.clone(), v.text()))
                 .collect(),
-            action: p.action,
         });
     }
 
@@ -1278,18 +1268,6 @@ fn module(
         &mut how,
         &mut queue,
     )?;
-    for p in &presets {
-        if let Some(a) = &p.action {
-            place(
-                &file,
-                &format!("presets: {}", p.title),
-                std::slice::from_ref(a),
-                How::Opened,
-                &mut how,
-                &mut queue,
-            )?;
-        }
-    }
     while let Some(name) = queue.pop() {
         let a = actions.iter().find(|a| a.id == name).unwrap();
         let (requires, on_failure) = (a.requires.clone(), a.on_failure.clone());
@@ -1339,15 +1317,6 @@ fn module(
                 return Err(format!("{at}: inputs: {} is declared already", s.name));
             }
             names.push(s.name.clone());
-        }
-        if let Some(q) = &a.qr {
-            if !is_name(q) || q.contains(|c: char| c.is_ascii_lowercase()) {
-                return Err(format!("{at}: qr: {q:?} is not a variable name"));
-            }
-            if names.contains(q) {
-                return Err(format!("{at}: qr: {q} is declared already"));
-            }
-            names.push(q.clone());
         }
     }
 
@@ -1432,9 +1401,6 @@ fn module(
         }
         if a.on_failure.contains(&a.id) {
             return Err(format!("{at}: on: failure: names the action itself"));
-        }
-        if a.qr.is_some() && a.report.is_none() {
-            return Err(format!("{at}: qr: needs a report"));
         }
         if a.group.is_some() && !listed.contains(&a.id) {
             return Err(format!("{at}: group: not a dashboard row"));
@@ -1724,7 +1690,6 @@ fn actions(
             inputs,
             confirm: reflow_opt(&f.confirm),
             report: reflow_opt(&f.report),
-            qr: f.qr,
             tty: f.tty,
             simulates: f.simulates,
             errors: f.errors,
@@ -1738,13 +1703,13 @@ pub mod tests {
     use super::*;
 
     /// The fixture's module: two stages, a question, a gate and a way out.
-    const SETUP: &str = "title: Setup\nstart: Install now\nconfirm: |\n  Install on {{TUX_DISK}}?\n\n  Everything on it is erased.\nreport: |\n  Set up\n\n  {{TUX_HOST}} boots.\nrequires: [root]\ndashboard: [start, note, settings, reset, net]\nlanguage: Region\non:\n  leave: [restart]\n  failure: [share]\n  success: [shell]\nerrors:\n  3: |\n    No internet\n\n    Connect and start again.\nactions:\n  root:\n    title: Running as root\n    error: This has to run as root.\n    run: is_root()\n  note:\n    title: Leave a note\n    description: Writes a note.\n    group: Extras\n    run: note()\n    inputs:\n      - name: TUX_NOTE\n        type: text\n        title: Note\n        required: true\n    report: |\n      Noted\n\n      {{TUX_NOTE}} is written down.\n  net:\n    title: Join a network\n    description: Joins one.\n    group: Network\n    run: join()\n    requires: [root]\n  share:\n    title: Share the log\n    description: Puts the log online.\n    run: share()\n    report: |\n      Shared\n    qr: TUX_URL\n    simulates: true\nstages:\n  prepare:\n    disk:\n      title: Prepare the disk\n      errors:\n        10: |\n          The disk is gone\n\n          {{TUX_DISK}} is not there.\n  install:\n    base:\n      title: Install the base\n      needs: [snapshot]\n      texts:\n        TUX_MOTD: Welcome aboard\n      report: |\n        Installed\n\n        {{TUX_HOST}} is ready.\n      errors:\n        10: |\n          The name is taken\n\n          {{TUX_HOST}} is on the network already.\n    desktop:\n      title: Install the desktop\n      needs: [base]\n      when: TUX_DESKTOP != none\n      allow-failure: true\n    snapshot:\n      title: Go back to a snapshot\n      asks:\n        name: TUX_SNAPSHOT\n        title: Snapshot\n        options-from: options_snapshots()\n      confirm: |\n        Put {{TUX_SNAPSHOT}} in place?\npresets:\n  - title: Desktop\n    description: A desktop.\n    values:\n      TUX_DESKTOP: gnome\n  - title: Core\n    values:\n      TUX_DESKTOP: none\nsettings:\n  Region:\n    - name: TUX_KEYMAP\n      type: list\n      title: Keyboard\n      required: true\n      first: true\n      options: [us, de]\n      apply: apply_keymap()\n  System:\n    - name: TUX_HOST\n      type: text\n      title: Hostname\n      description: What the machine calls itself.\n      required: true\n      prefill: prefill_host()\n      pattern: '^[a-z][a-z0-9-]*$'\n      error: Lower case letters, digits and - only.\n    - name: TUX_DESKTOP\n      type: list\n      title: Desktop\n      required: true\n      options: [gnome, none]\n    - name: TUX_DRIVER\n      type: list\n      title: Driver\n      required: true\n      options: [free, none]\n      when: TUX_DESKTOP != none\n    - name: TUX_PASSWORD\n      type: new-password\n      title: Password\n      required: true\n    - name: TUX_VM\n      type: bool\n      title: Virtual machine\n      value-from: value_vm()\n  Storage:\n    - name: TUX_DISK\n      type: list\n      title: Disk\n      required: true\n      options-from: options_disks()\n      pattern: '^sd'\n    - name: TUX_ENCRYPT\n      type: bool\n      title: Encryption\n      default: true\n";
+    const SETUP: &str = "title: Setup\nstart: Install now\nconfirm: |\n  Install on {{TUX_DISK}}?\n\n  Everything on it is erased.\nreport: |\n  Set up\n\n  {{TUX_HOST}} boots.\nrequires: [root]\ndashboard: [start, note, settings, reset, net]\nlanguage: Region\non:\n  leave: [restart]\n  failure: [share]\n  success: [shell]\nerrors:\n  3: |\n    No internet\n\n    Connect and start again.\nactions:\n  root:\n    title: Running as root\n    error: This has to run as root.\n    run: is_root()\n  note:\n    title: Leave a note\n    description: Writes a note.\n    group: Extras\n    run: note()\n    inputs:\n      - name: TUX_NOTE\n        type: text\n        title: Note\n        required: true\n    report: |\n      Noted\n\n      {{TUX_NOTE}} is written down.\n  net:\n    title: Join a network\n    description: Joins one.\n    group: Network\n    run: join()\n    requires: [root]\n  share:\n    title: Share the log\n    description: Puts the log online.\n    run: share()\n    report: |\n      Shared\n    simulates: true\nstages:\n  prepare:\n    disk:\n      title: Prepare the disk\n      errors:\n        10: |\n          The disk is gone\n\n          {{TUX_DISK}} is not there.\n  install:\n    base:\n      title: Install the base\n      needs: [snapshot]\n      texts:\n        TUX_MOTD: Welcome aboard\n      report: |\n        Installed\n\n        {{TUX_HOST}} is ready.\n      errors:\n        10: |\n          The name is taken\n\n          {{TUX_HOST}} is on the network already.\n    desktop:\n      title: Install the desktop\n      needs: [base]\n      when: TUX_DESKTOP != none\n      allow-failure: true\n    snapshot:\n      title: Go back to a snapshot\n      asks:\n        name: TUX_SNAPSHOT\n        title: Snapshot\n        options-from: options_snapshots()\n      confirm: |\n        Put {{TUX_SNAPSHOT}} in place?\npresets:\n  - title: Desktop\n    description: A desktop.\n    values:\n      TUX_DESKTOP: gnome\n  - title: Core\n    values:\n      TUX_DESKTOP: none\nsettings:\n  Region:\n    - name: TUX_KEYMAP\n      type: list\n      title: Keyboard\n      required: true\n      first: true\n      options: [us, de]\n      apply: apply_keymap()\n  System:\n    - name: TUX_HOST\n      type: text\n      title: Hostname\n      description: What the machine calls itself.\n      required: true\n      prefill: prefill_host()\n      pattern: '^[a-z][a-z0-9-]*$'\n      error: Lower case letters, digits and - only.\n    - name: TUX_DESKTOP\n      type: list\n      title: Desktop\n      required: true\n      options: [gnome, none]\n    - name: TUX_DRIVER\n      type: list\n      title: Driver\n      required: true\n      options: [free, none]\n      when: TUX_DESKTOP != none\n    - name: TUX_PASSWORD\n      type: new-password\n      title: Password\n      required: true\n    - name: TUX_VM\n      type: bool\n      title: Virtual machine\n      value-from: value_vm()\n  Storage:\n    - name: TUX_DISK\n      type: list\n      title: Disk\n      required: true\n      options-from: options_disks()\n      pattern: '^sd'\n    - name: TUX_ENCRYPT\n      type: bool\n      title: Encryption\n      default: true\n";
 
     /// One module and two product actions it names.
     pub fn fixture() -> Vec<(&'static str, &'static [u8])> {
         vec![
             ("product.yaml", b"title: Tux\naccent: \"#8fbcbb\"\nconsole-accent: cyan\nlogo: |\n  Tux\n\n  ####\nstatus:\n  check: check_online()\n  pass: Online\n  fail: Offline\nactions:\n  restart:\n    title: Restart\n    description: Starts the machine again.\n    run: restart()\n  shell:\n    title: Open a shell\n    description: Until exit.\n    run: open_shell()\n    tty: true\n"),
-            ("lib.sh", b"check_online() { true; }\nbroken() {\n    false\n}\nundecided() {\n    [ a = b ] && echo never\n}\noptions_disks() { printf 'sda\\tsda 20G\\nsdb\\tsdb 40G\\n'; }\nprefill_host() { echo tuxbox; }\nvalue_vm() { echo false; }\napply_keymap() { true; }\noptions_snapshots() { echo one; echo two; }\nis_root() { [ \"$(id -u)\" -eq 0 ]; }\nnote() { echo \"$TUX_NOTE\"; }\njoin() { true; }\nrestart() { : >\"${MODULE_CONF%/*}/restarted\"; }\nshare() { printf \"TUX_URL='https://x/1'\\n\" >>\"$MODULE_CONF\"; }\nopen_shell() { true; }\nscript_head() { echo 'loadkeys us'; }\nrecord() { [ -z \"$MODULE_SCRIPT\" ] || printf 'cmd\\t%s\\n' \"$1\" >&3; }\nrun() {\n    record \"$*\"\n    \"$@\" || return\n    [ -z \"$MODULE_SCRIPT\" ] || printf 'cmd-ok\\n' >&3\n}\n"),
+            ("lib.sh", b"check_online() { true; }\nbroken() {\n    false\n}\nundecided() {\n    [ a = b ] && echo never\n}\noptions_disks() { printf 'sda\\tsda 20G\\nsdb\\tsdb 40G\\n'; }\nprefill_host() { echo tuxbox; }\nvalue_vm() { echo false; }\napply_keymap() { true; }\noptions_snapshots() { echo one; echo two; }\nis_root() { [ \"$(id -u)\" -eq 0 ]; }\nnote() { echo \"$TUX_NOTE\"; }\njoin() { true; }\nrestart() { : >\"${MODULE_CONF%/*}/restarted\"; }\nshare() { true; }\nopen_shell() { true; }\nscript_head() { echo 'loadkeys us'; }\nrecord() { [ -z \"$MODULE_SCRIPT\" ] || printf 'cmd\\t%s\\n' \"$1\" >&3; }\nrun() {\n    record \"$*\"\n    \"$@\" || return\n    [ -z \"$MODULE_SCRIPT\" ] || printf 'cmd-ok\\n' >&3\n}\n"),
             ("setup/module.yaml", SETUP.as_bytes()),
             ("setup/tasks/disk/task.sh", b"run echo \"$TUX_DISK\" >\"${MODULE_CONF%/*}/disk\"\n[ \"$TUX_HOST\" != slow ] || { trap 'echo asked >\"${MODULE_CONF%/*}/stopped\"' TERM; record 'sleep 30'; sleep 30 & wait; }\n"),
             ("setup/tasks/disk/test.sh", b"[ \"$TUX_HOST\" != checked ] || { echo checking; sleep 30 & wait; }\n[ -f \"${MODULE_CONF%/*}/disk\" ]\n"),
@@ -1843,7 +1808,7 @@ pub mod tests {
             m.action("restart").unwrap().run,
             Shell::Call("restart".into())
         );
-        assert!(m.declared().contains(&"TUX_URL") && m.declared().contains(&"TUX_NOTE"));
+        assert!(m.declared().contains(&"TUX_NOTE"));
         assert!(m.texts().contains(&"Install now".to_string()));
         assert!(m.texts().contains(&"Open a shell".to_string()));
         assert!(
@@ -2039,10 +2004,6 @@ pub mod tests {
                 "      title: Prepare the disk\n      asks:\n        name: TUX_HOST\n        title: H\n        options: [a]\n",
             ),
             "is a setting already",
-        );
-        refused(
-            &edited("    report: |\n      Shared\n", ""),
-            "qr: needs a report",
         );
         refused(
             &edited(

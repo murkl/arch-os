@@ -161,7 +161,7 @@ impl Page for GatePage {
         };
         match key {
             Key::Enter => match fallback {
-                Some(fallback) => super::action::open(ctx, fallback, false),
+                Some(fallback) => super::action::open(ctx, fallback),
                 None => Flow::Stay,
             },
             Key::Char('r') => {
@@ -203,7 +203,7 @@ impl Page for GatePage {
             && !fb.inputs.is_empty()
         {
             self.opened = true;
-            return super::action::open(ctx, fb, false);
+            return super::action::open(ctx, fb);
         }
         Flow::Stay
     }

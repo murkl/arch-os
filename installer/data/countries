@@ -1,7 +1,8 @@
 # code	country	time zone
 #
-# code       ISO territory code, the end of a locale (de_DE -> DE)
-# country    reflector's spelling, - where Arch has no mirror
+# code       ISO territory code, the end of a locale (de_DE -> DE), what
+#            reflector gets
+# country    the name in the list, - where Arch has no mirror
 # time zone  the row the time zone setting opens on, one per country
 #
 # Validate against: reflector --list-countries, /usr/share/zoneinfo

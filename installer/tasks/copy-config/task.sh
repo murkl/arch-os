@@ -1,5 +1,5 @@
-# The answer file holds no password. The share-config action appends its URL
-# to the copy. The script holds every command before this task.
+# The answer file holds no password. The script holds every command before this
+# task.
 home="$(user_home)"
 cp -f "$MODULE_CONF" "${home}/installer.conf"
 cp -f "$MODULE_SCRIPT" "${home}/installer.sh"

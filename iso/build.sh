@@ -398,30 +398,39 @@ cp -r /usr/share/archiso/configs/releng/. "$ISO_PROFILE"
 cat recovery/packages.x86_64 packages.x86_64 >"${ISO_PROFILE}/packages.x86_64"
 cp pacman.conf "$ISO_PROFILE/"
 
-# releng's units and files for the dropped packages, and its Memtest86+ entry.
-# iwd starts on demand as on the Recovery: wifi_station in lib.sh, iwctl through
-# D-Bus.
+# releng's units and files for the dropped packages, and its Memtest86+ entry,
+# each one gone already where releng no longer ships it. A link releng adds for
+# a dropped package fails the dangling link check below. iwd starts on demand as
+# on the Recovery: wifi_station in lib.sh, iwctl through D-Bus.
 airootfs="${ISO_PROFILE}/airootfs"
-rm -r "${airootfs}/etc/systemd/system/cloud-init.target.wants" \
+rm -rf "${airootfs}/etc/systemd/system/cloud-init.target.wants" \
     "${airootfs}/etc/systemd/system/sockets.target.wants/pcscd.socket" \
     "${airootfs}/usr/local/bin/Installation_guide" \
-    "${ISO_PROFILE}/efiboot/loader/entries/03-archiso-memtest86+x64.conf"
+    "${ISO_PROFILE}/efiboot/loader/entries/"*memtest*.conf
 for unit in hv_fcopy_daemon hv_kvp_daemon hv_vss_daemon vboxservice vmtoolsd vmware-vmblock-fuse iwd; do
-    rm "${airootfs}/etc/systemd/system/multi-user.target.wants/${unit}.service"
+    rm -f "${airootfs}/etc/systemd/system/multi-user.target.wants/${unit}.service"
 done
 profiledef "$ISO_PROFILE" "unset 'file_permissions[/usr/local/bin/Installation_guide]'"
 
 # The initramfs without what a USB boot never uses: network boot and syslinux's
-# memdisk. zstd -19 unpacks a second faster than xz and stays small for the
-# firmware reading it. Checked against releng's line, so a new hook stops the
-# build.
+# memdisk, whose packages the ISO leaves out. Filtered out of whatever releng
+# lists, so its other hooks stay as they come. zstd -19 unpacks a second faster
+# than xz and stays small for the firmware reading it.
 hooks="${airootfs}/etc/mkinitcpio.conf.d/archiso.conf"
-grep -qxF 'HOOKS=(base udev microcode modconf memdisk archiso archiso_loop_mnt archiso_pxe_common archiso_pxe_nbd archiso_pxe_http archiso_pxe_nfs block filesystems keyboard)' "$hooks" || {
-    echo "Error: releng's HOOKS in ${hooks} changed" >&2
+cat >>"$hooks" <<'EOF'
+for i in "${!HOOKS[@]}"; do
+    case "${HOOKS[i]}" in memdisk | archiso_pxe_*) unset 'HOOKS[i]' ;; esac
+done
+COMPRESSION="zstd"
+COMPRESSION_OPTIONS=(-19)
+EOF
+# Read back as mkinitcpio sources it.
+# shellcheck disable=SC2016  # expanded by the inner bash
+effective=" $(bash -c 'source "$1" && printf "%s " "${HOOKS[@]}"' _ "$hooks")"
+if [[ $effective == *" memdisk "* || $effective == *" archiso_pxe_"* || $effective != *" archiso "* ]]; then
+    echo "Error: the filtered HOOKS in ${hooks} read${effective}" >&2
     exit 1
-}
-printf '%s\n' 'HOOKS=(base udev microcode modconf archiso archiso_loop_mnt block filesystems keyboard)' \
-    'COMPRESSION="zstd"' 'COMPRESSION_OPTIONS=(-19)' >>"$hooks"
+fi
 
 # The Installer writes the Recovery to disk from RECOVERY_IMAGE in lib.sh.
 install_arch_os "$ISO_PROFILE"

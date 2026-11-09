@@ -53,46 +53,7 @@ packages+=("${desktop[@]}")
 # Outside the gnome group since GNOME 51.
 packages+=(gnome-extensions-app)
 
-if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-    # Browser extensions, the power modes in Settings, printing.
-    # https://wiki.archlinux.org/title/GNOME#Extensions
-    packages+=(gnome-browser-connector power-profiles-daemon cups)
-
-    # xdg-open for the open alias and programs from outside GNOME. The portals
-    # come with the group's xdg-desktop-portal-gnome.
-    packages+=(xdg-utils)
-
-    [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-pipewire lib32-pipewire-jack)
-
-    # NetworkManager handles WireGuard itself. OpenVPN needs the plug-in.
-    packages+=(rsync networkmanager-openvpn)
-
-    # AUR builds, firmware updates, common file systems and archives.
-    packages+=(base-devel fwupd bash-completion inetutils
-        dosfstools ntfs-3g exfatprogs btrfs-progs nfs-utils
-        7zip zip unzip unrar wget jq)
-
-    # GStreamer decodes on the GPU through gst-plugin-va.
-    # https://wiki.archlinux.org/title/Codecs_and_containers
-    packages+=(ffmpeg gstreamer gst-libav gst-plugin-pipewire gst-plugin-va
-        gst-plugins-good gst-plugins-bad gst-plugins-ugly libdvdcss)
-
-    packages+=(gamemode)
-    [ "$ARCH_OS_MULTILIB_ENABLED" = "true" ] && packages+=(lib32-gamemode)
-
-    # All scripts, emoji, metric-compatible families and the terminal font.
-    packages+=(noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation ttf-dejavu
-        ttf-firacode-nerd)
-
-    packages+=(adw-gtk-theme)
-fi
-
 chroot_pacman_install "${packages[@]}"
-
-# Only gamemode: logind grants audio, video and input to the seat's session,
-# and the legacy groups break that.
-# https://wiki.archlinux.org/title/Users_and_groups#Pre-systemd_groups
-[ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] && run arch-chroot "$MNT" gpasswd -a "$ARCH_OS_USERNAME" gamemode
 
 # ─── Name Resolution ───────────────────────────────────────────────────────
 #
@@ -167,13 +128,8 @@ if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
     run arch-chroot "$MNT" firewall-offline-cmd --zone=home --add-service=rdp --add-service=ssdp
 fi
 
-if [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ]; then
-    run arch-chroot "$MNT" systemctl enable power-profiles-daemon.service
-    run arch-chroot "$MNT" systemctl enable cups.socket
-fi
-
-# fwupd ships its refresh timer off, which leaves its metadata stale. Wherever
-# fwupd is installed, by Desktop extras or GNOME Firmware.
+# fwupd ships its refresh timer off, which leaves its metadata stale. Here where
+# GNOME Firmware brings it, the extras task enables it for its own.
 # https://wiki.archlinux.org/title/Fwupd
 if has_command fwupdmgr; then
     run arch-chroot "$MNT" systemctl enable fwupd-refresh.timer

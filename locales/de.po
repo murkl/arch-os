@@ -248,12 +248,6 @@ msgstr "Core"
 msgid "Minimal Arch Linux on the console."
 msgstr "Minimales Arch Linux auf der Konsole."
 
-msgid "Shared configuration"
-msgstr "Geteilte Konfiguration"
-
-msgid "Answers from a shared configuration."
-msgstr "Antworten aus einer geteilten Konfiguration."
-
 msgid "Username"
 msgstr "Benutzername"
 
@@ -650,6 +644,9 @@ msgstr "Datensicherung installieren"
 msgid "Install the web browser"
 msgstr "Webbrowser installieren"
 
+msgid "Install the desktop extras"
+msgstr "Desktop-Extras installieren"
+
 msgid "Set up Flatpak"
 msgstr "Flatpak einrichten"
 
@@ -692,47 +689,8 @@ msgstr "Shell öffnen"
 msgid "Opens a shell in the system on the disk. Type exit to leave."
 msgstr "Öffnet eine Shell im System auf dem Datenträger. Mit exit verlassen."
 
-msgid "Import failed."
-msgstr "Import fehlgeschlagen."
-
-msgid ""
-"No internet connection\n"
-"\n"
-"Connect and try again."
-msgstr ""
-"Keine Internetverbindung\n"
-"\n"
-"Verbinden und erneut versuchen."
-
-msgid ""
-"paste.c-net.org unreachable\n"
-"\n"
-"Try again later."
-msgstr ""
-"paste.c-net.org nicht erreichbar\n"
-"\n"
-"Später erneut versuchen."
-
-msgid ""
-"No configuration at {{ARCH_OS_CONFIG_SOURCE}}\n"
-"\n"
-"Check the code."
-msgstr ""
-"Keine Konfiguration unter {{ARCH_OS_CONFIG_SOURCE}}\n"
-"\n"
-"Code prüfen."
-
 msgid "Configuration"
 msgstr "Konfiguration"
-
-msgid "Configuration code"
-msgstr "Konfigurationscode"
-
-msgid "The code at the end of a paste.c-net.org link, or the whole link."
-msgstr "Der Code am Ende eines paste.c-net.org-Links oder der ganze Link."
-
-msgid "A code such as k4w7qz2m9x1d, or the whole link."
-msgstr "Ein Code wie k4w7qz2m9x1d oder der ganze Link."
 
 msgid "Internet"
 msgstr "Internet"
@@ -763,39 +721,6 @@ msgstr "Secure Boot aus"
 
 msgid "Secure Boot enabled. Disable it in the firmware settings and start again."
 msgstr "Secure Boot aktiviert. In den Firmware-Einstellungen deaktivieren und erneut starten."
-
-msgid "Share the configuration"
-msgstr "Konfiguration teilen"
-
-msgid "Uploads these answers to paste.c-net.org. Anyone with the link can read them. Passwords are excluded."
-msgstr "Lädt diese Antworten auf paste.c-net.org hoch. Jeder mit dem Link kann sie lesen. Passwörter sind ausgenommen."
-
-msgid "Upload failed."
-msgstr "Hochladen fehlgeschlagen."
-
-msgid ""
-"Configuration shared\n"
-"\n"
-"Scan the QR code or enter the code under Shared configuration in another installation."
-msgstr ""
-"Konfiguration geteilt\n"
-"\n"
-"QR-Code scannen oder den Code in einer anderen Installation unter Geteilte Konfiguration eingeben."
-
-msgid "Share the log"
-msgstr "Protokoll teilen"
-
-msgid "Uploads the log to paste.c-net.org. Anyone with the link can read it. Passwords are excluded."
-msgstr "Lädt das Protokoll auf paste.c-net.org hoch. Jeder mit dem Link kann es lesen. Passwörter sind ausgenommen."
-
-msgid ""
-"Log shared\n"
-"\n"
-"Scan the QR code or share the link."
-msgstr ""
-"Protokoll geteilt\n"
-"\n"
-"QR-Code scannen oder den Link teilen."
 
 msgid "Shut down"
 msgstr "Herunterfahren"

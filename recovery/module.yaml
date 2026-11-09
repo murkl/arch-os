@@ -122,7 +122,6 @@ errors:
 
 on:
   leave: [restart, shutdown]
-  failure: [share-log]
   success: [chroot]
 
 actions:

@@ -6,7 +6,6 @@ mod draw;
 mod input;
 mod list;
 mod pages;
-mod qr;
 mod style;
 
 pub use app::App;
@@ -363,8 +362,6 @@ pub struct Ctx {
     pub presets_seen: bool,
     /// Question count at the start of the opening wizard, for its counter.
     pub wizard: usize,
-    /// An action wrote answers into the file, for the page below to read back.
-    pub imported: bool,
     /// Yes or no from a confirm page, for the page that asked.
     pub answered: Option<bool>,
     /// Page that decided to leave. Everything behind it is stopped, then it gets `Data::Halted`.
@@ -586,9 +583,6 @@ pub fn glyphs() -> String {
         add(g);
     }
     for row in detail::TICK.iter().chain(detail::CROSS.iter()) {
-        add(row);
-    }
-    for row in qr::CELLS {
         add(row);
     }
     for line in &spec::loaded().product.logo {

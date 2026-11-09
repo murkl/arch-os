@@ -150,9 +150,9 @@ The interface uses color slots, filled with Nord by the palette. **[➜ Nord](ht
 Each font has one glyph table, and a character outside it shows as a box. `font/glyphs.sh` builds the fonts as `build.sh` does and checks two things against every table:
 
 - The files it gets: from `make check` the product, the catalogs, the library and every module file except READMEs and fastfetch's config, which target a graphical terminal
-- The characters the interface draws itself: rules, cursor, the three cells of a QR code and the finished-run mark, and the runtime's own words, all listed by `arch-os glyphs`
+- The characters the interface draws itself: rules, cursor, the finished-run mark and the runtime's own words, all listed by `arch-os glyphs`
 
-The font is Terminus Bold in the size the kernel picks for its own font, as on a stock Arch ISO: 8×16, or 16×32 where 8×16 would give 22,000 cells or more. Full HD gets 16, four times that gets 32. Of the fonts in `kbd` and `terminus-font` it is the clean bold one with Latin, its accents, Greek and Cyrillic, at most 512 glyphs. It lacks ▀ and ▄ for QR codes, so `font/build.sh` adds them in two unused slots.
+The font is Terminus Bold in the size the kernel picks for its own font, as on a stock Arch ISO: 8×16, or 16×32 where 8×16 would give 22,000 cells or more. Full HD gets 16, four times that gets 32. Of the fonts in `kbd` and `terminus-font` it is the clean bold one with Latin, its accents, Greek and Cyrillic, at most 512 glyphs. It lacks ▀ and ▄ for the finished-run mark, so `font/build.sh` adds them in two unused slots.
 
 ```
 make glyphs-check

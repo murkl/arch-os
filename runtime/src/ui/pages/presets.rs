@@ -81,19 +81,8 @@ impl Page for PresetsPage {
             Picked::Open(i) => {
                 let preset = &ctx.module.presets[i];
                 crate::info!("profile: {}", preset.title);
-                match &preset.action {
-                    Some(id) => {
-                        let action = ctx
-                            .module
-                            .action(id)
-                            .expect("a preset names an action that exists");
-                        super::action::open(ctx, action, true)
-                    }
-                    None => {
-                        ctx.store.apply(preset);
-                        PresetsPage::taken(ctx)
-                    }
-                }
+                ctx.store.apply(preset);
+                PresetsPage::taken(ctx)
             }
             Picked::Used => Flow::Stay,
             Picked::Ignored => Flow::Ignored,
@@ -102,18 +91,5 @@ impl Page for PresetsPage {
 
     fn root(&self) -> bool {
         true
-    }
-
-    /// After the fetch action, reloads its answer file over the held answers and applies them, like
-    /// a local profile.
-    fn resumed(&mut self, ctx: &mut Ctx) -> Flow {
-        if !ctx.imported {
-            return Flow::Stay;
-        }
-        ctx.imported = false;
-        if let Err(e) = ctx.store.load() {
-            crate::error!("{}: {e}", ctx.store.path().display());
-        }
-        PresetsPage::taken(ctx)
     }
 }

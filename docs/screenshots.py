@@ -67,7 +67,7 @@ FONT = '"FiraCode Nerd Font Mono", monospace'
 
 # Cells a terminal fills rather than draws: a full block and its two halves.
 # Painted as boxes, as a terminal does. A glyph sits in the font's box, shorter
-# than its line, so two stacked leave a seam, which breaks a QR code.
+# than its line, so two stacked leave a seam through the finished-run mark.
 PAINT = {
     "\u2588": "{ink}",
     "\u2580": "linear-gradient(to bottom, {ink} 50%, {field} 50%)",
