@@ -62,13 +62,13 @@ mod tests {
 
     #[test]
     fn a_code_is_square_in_modules_and_drops_its_margin_before_itself() {
-        let rows = code("https://paste.rs/abcd", 80, 40).unwrap();
+        let rows = code("https://paste.c-net.org/k4w7qz2m9x1d", 80, 40).unwrap();
         let wide = rows[0].chars().count();
         assert_eq!(rows.len(), wide.div_ceil(2));
         assert!(rows[0].chars().all(|c| c == ' '), "a quiet row on top");
-        let tight = code("https://paste.rs/abcd", wide - 2, 40).unwrap();
+        let tight = code("https://paste.c-net.org/k4w7qz2m9x1d", wide - 2, 40).unwrap();
         assert_eq!(tight[0].chars().count(), wide - 2);
-        assert!(code("https://paste.rs/abcd", 10, 40).is_none());
+        assert!(code("https://paste.c-net.org/k4w7qz2m9x1d", 10, 40).is_none());
         assert!(code("", 80, 40).is_none());
     }
 }

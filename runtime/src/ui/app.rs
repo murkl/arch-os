@@ -1841,7 +1841,7 @@ pub mod tests {
         let (mut app, _, rx) = app_with(
             &[(
                 "description: Puts the log online.",
-                "description: Uploads the log to paste.rs. Anyone with the link can read it. Passwords are excluded.",
+                "description: Uploads the log to paste.c-net.org. Anyone with the link can read it. Passwords are excluded.",
             )],
             false,
         );
@@ -2146,7 +2146,7 @@ pub mod tests {
                 "report share".into(),
                 "Shared".into(),
                 "Log shared\n\nScan the code.".into(),
-                Some("https://paste.rs/abc".into()),
+                Some("https://paste.c-net.org/k4w7qz2m9x1d".into()),
                 false,
                 pages::report::Close::PopN(1),
             )),
@@ -2154,7 +2154,7 @@ pub mod tests {
         let shown = screen(&mut app, &mut term);
         assert!(
             shown.contains("Log shared")
-                && shown.contains("https://paste.rs/abc")
+                && shown.contains("https://paste.c-net.org/k4w7qz2m9x1d")
                 && shown.contains("█▀▀▀▀▀█"),
             "{shown}"
         );

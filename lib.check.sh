@@ -336,10 +336,10 @@ done
 fetch_url() {
     printf '%s\n' "ARCH_OS_HOSTNAME='box'" "ARCH_OS_DISK='/dev/sda'" "ARCH_OS_KERNEL_ARGS='init=/bin/sh'" \
         "ARCH_OS_SSH_SERVER_ENABLED='true'" "ARCH_OS_SSH_KEY='ssh-ed25519 AAAA stranger'" \
-        "ARCH_OS_CONFIG_URL='https://paste.rs/x'" "PATH='/tmp'"
+        "ARCH_OS_CONFIG_URL='https://paste.c-net.org/x'" "PATH='/tmp'"
     printf '\n200'
 }
-MODULE_CONF="${templates}/installer.conf" ARCH_OS_CONFIG_SOURCE=https://paste.rs/abc import_config
+MODULE_CONF="${templates}/installer.conf" ARCH_OS_CONFIG_SOURCE=https://paste.c-net.org/abc import_config
 expect "import_config keeps what is safe to take from a stranger" \
     "$(cut -d= -f1 "${templates}/installer.conf" | paste -sd' ')" "ARCH_OS_HOSTNAME ARCH_OS_SSH_SERVER_ENABLED"
 
@@ -367,7 +367,7 @@ while read -r offline reply code want; do
     expect "share_config with check_online ${offline} and curl ${reply} ${code}" "$(as_action && share_config)" "$want"
     expect "share_log with check_online ${offline} and curl ${reply} ${code}" "$(as_action && share_log)" "$want"
 done <<'EOF'
-0 https://paste.rs/abc 0 0
+0 https://paste.c-net.org/abc 0 0
 0 \n400 22 10
 1 \n000 6 3
 EOF

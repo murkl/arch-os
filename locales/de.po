@@ -705,11 +705,11 @@ msgstr ""
 "Verbinden und erneut versuchen."
 
 msgid ""
-"paste.rs unreachable\n"
+"paste.c-net.org unreachable\n"
 "\n"
 "Try again later."
 msgstr ""
-"paste.rs nicht erreichbar\n"
+"paste.c-net.org nicht erreichbar\n"
 "\n"
 "Später erneut versuchen."
 
@@ -728,11 +728,11 @@ msgstr "Konfiguration"
 msgid "Configuration code"
 msgstr "Konfigurationscode"
 
-msgid "The code at the end of a paste.rs link, or the whole link."
-msgstr "Der Code am Ende eines paste.rs-Links oder der ganze Link."
+msgid "The code at the end of a paste.c-net.org link, or the whole link."
+msgstr "Der Code am Ende eines paste.c-net.org-Links oder der ganze Link."
 
-msgid "A code such as aBc12, or the whole link."
-msgstr "Ein Code wie aBc12 oder der ganze Link."
+msgid "A code such as k4w7qz2m9x1d, or the whole link."
+msgstr "Ein Code wie k4w7qz2m9x1d oder der ganze Link."
 
 msgid "Internet"
 msgstr "Internet"
@@ -767,8 +767,8 @@ msgstr "Secure Boot aktiviert. In den Firmware-Einstellungen deaktivieren und er
 msgid "Share the configuration"
 msgstr "Konfiguration teilen"
 
-msgid "Uploads these answers to paste.rs. Anyone with the link can read them. Passwords are excluded."
-msgstr "Lädt diese Antworten auf paste.rs hoch. Jeder mit dem Link kann sie lesen. Passwörter sind ausgenommen."
+msgid "Uploads these answers to paste.c-net.org. Anyone with the link can read them. Passwords are excluded."
+msgstr "Lädt diese Antworten auf paste.c-net.org hoch. Jeder mit dem Link kann sie lesen. Passwörter sind ausgenommen."
 
 msgid "Upload failed."
 msgstr "Hochladen fehlgeschlagen."
@@ -785,8 +785,8 @@ msgstr ""
 msgid "Share the log"
 msgstr "Protokoll teilen"
 
-msgid "Uploads the log to paste.rs. Anyone with the link can read it. Passwords are excluded."
-msgstr "Lädt das Protokoll auf paste.rs hoch. Jeder mit dem Link kann es lesen. Passwörter sind ausgenommen."
+msgid "Uploads the log to paste.c-net.org. Anyone with the link can read it. Passwords are excluded."
+msgstr "Lädt das Protokoll auf paste.c-net.org hoch. Jeder mit dem Link kann es lesen. Passwörter sind ausgenommen."
 
 msgid ""
 "Log shared\n"

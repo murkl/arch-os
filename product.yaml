@@ -60,8 +60,8 @@ actions:
   share-log:
     title: Share the log
     description: |
-      Uploads the log to paste.rs. Anyone with the link can read it. Passwords
-      are excluded.
+      Uploads the log to paste.c-net.org. Anyone with the link can read it.
+      Passwords are excluded.
     run: share_log()
     simulates: true
     error: Upload failed.
@@ -72,7 +72,7 @@ actions:
 
         Connect and try again.
       10: |
-        paste.rs unreachable
+        paste.c-net.org unreachable
 
         Try again later.
     report: |

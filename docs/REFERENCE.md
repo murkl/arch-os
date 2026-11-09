@@ -12,7 +12,7 @@ Every answer except the passwords lands in `installer.conf` at once, so an inter
 
 | Way | How |
 | --- | --- |
-| Share | **Share the configuration** on the last page uploads the answers to **[paste.rs](https://paste.rs)**. The **Shared configuration** profile loads them and asks only for disk, passwords and, with the SSH server, the key |
+| Share | **Share the configuration** on the last page uploads the answers to **[paste.c-net.org](https://paste.c-net.org)**. The **Shared configuration** profile loads them and asks only for disk, passwords and, with the SSH server, the key |
 | Copy | `installer.conf` beside the Installer on another machine |
 | Unattended | `arch-os installer --unattended` with `installer.conf` beside it and `ARCH_OS_PASSWORD` in the environment. **[➜ Runtime](../runtime/README.md#unattended)** |
 

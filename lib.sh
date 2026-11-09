@@ -230,14 +230,15 @@ join_wifi_with_passphrase() {
 # ////////////////////////////////////////////////////////////////////////////
 
 # No account or key: POST the text, get its URL back.
-export PASTE="https://paste.rs"
+export PASTE="https://paste.c-net.org"
 
-# Retried, since paste.rs fails under load. -S puts the HTTP status in the log.
+# -S puts the HTTP status in the log. x-random asks for a random code, since the
+# default two words are guessable.
 paste_online() {
-    fetch_url -sS --max-time 30 --retry 3 --retry-delay 2 --data-binary @- "${PASTE}/" | tr -d '[:space:]'
+    fetch_url -sS --max-time 30 --retry 3 --retry-delay 2 -H 'x-random;' --data-binary @- "${PASTE}/" | tr -d '[:space:]'
 }
 
-# Offline or paste.rs unavailable, each with its own text.
+# Offline or the pastebin unavailable, each with its own text.
 paste_failed() {
     check_online || exit "$EXIT_OFFLINE"
     exit 10
@@ -1158,7 +1159,7 @@ secure_boot_off() { grep -q "Secure Boot: disabled" <<<"$(bootctl status 2>/dev/
 
 import_config() {
     local ref url out body
-    # The paste code from a full link or the code alone, always fetched from paste.rs.
+    # The paste code from a full link or the code alone, always fetched from PASTE.
     ref="$(printf '%s' "$ARCH_OS_CONFIG_SOURCE" | tr -d '[:space:]')"
     url="${PASTE}/${ref##*/}"
     # The HTTP status last, which curl writes on failure too.

@@ -26,7 +26,8 @@ pub struct ReportPage {
     detail: Detail,
 }
 
-/// Minimum text width. Below it the QR code is dropped.
+/// Minimum text width, widened to the value so a link stays on one line. Below it the QR code is
+/// dropped.
 const WORDS_MIN: u16 = 34;
 const GAP: u16 = 3;
 
@@ -92,9 +93,10 @@ impl Page for ReportPage {
         // Text and code side by side, text the larger part: a code under a paragraph needs more
         // rows than a frame has.
         let code = self.qr.as_deref().and_then(|v| {
+            let words_min = WORDS_MIN.max(v.chars().count().try_into().unwrap_or(u16::MAX));
             qr::code(
                 v,
-                area.width.saturating_sub(WORDS_MIN + GAP) as usize,
+                area.width.saturating_sub(words_min.saturating_add(GAP)) as usize,
                 area.height as usize,
             )
         });
