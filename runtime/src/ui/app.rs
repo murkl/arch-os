@@ -1029,10 +1029,25 @@ pub mod tests {
         assert!(!shown.contains("first"), "{shown}");
     }
 
-    /// The command a task runs stands under it and on tab. The script keeps the confirmed ones
-    /// after a head that asks what the run asked, never a password itself.
+    /// The row above the command box, then the box from its top to its bottom, each trimmed.
+    fn command_box(shown: &str) -> (&str, Vec<&str>) {
+        let rows: Vec<&str> = shown.lines().map(str::trim).collect();
+        let top = rows.iter().position(|r| r.starts_with('╭'));
+        let top = top.unwrap_or_else(|| panic!("no box:\n{shown}"));
+        let height = rows[top..].iter().position(|r| r.starts_with('╰'));
+        let height = height.unwrap_or_else(|| panic!("no bottom:\n{shown}"));
+        let title = rows[top]
+            .strip_prefix("╭─ ")
+            .and_then(|r| r.split(" ─").next())
+            .unwrap_or_else(|| panic!("no title:\n{shown}"));
+        (title, rows[top..=top + height].to_vec())
+    }
+
+    /// The list names no command. Tab boxes the running one with its task's title in the border.
+    /// The script keeps the confirmed ones after a head that asks what the run asked, never a
+    /// password itself.
     #[test]
-    fn the_run_shows_its_commands_and_keeps_the_confirmed_ones_as_a_script() {
+    fn tab_boxes_the_running_command_and_the_script_keeps_the_confirmed_ones() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
         crate::i18n::set("en");
         let (mut app, mut term, rx) = app_with(
@@ -1050,17 +1065,23 @@ pub mod tests {
         screen(&mut app, &mut term);
         settle(&mut app, &mut term, &rx);
         let shown = screen(&mut app, &mut term);
-        let lines: Vec<&str> = shown.lines().map(str::trim).collect();
         assert!(
-            lines
-                .windows(2)
-                .any(|w| w[0].ends_with("Prepare the disk") && w[1] == "$ sleep 30"),
+            shown.contains("Prepare the disk") && !shown.contains("sleep"),
             "{shown}"
         );
         press(&mut app, &[Key::Tab]);
         let shown = screen(&mut app, &mut term);
+        let (title, rows) = command_box(&shown);
+        assert_eq!(title, "Prepare the disk", "{shown}");
         assert!(
-            shown.contains("$ echo sda") && shown.contains("$ sleep 30"),
+            rows.len() == 3
+                && rows[0].ends_with('╮')
+                && rows[1].starts_with("│ sleep 30 ")
+                && rows[1].ends_with('│'),
+            "{shown}"
+        );
+        assert!(
+            !shown.contains("echo sda") && shown.matches("Prepare the disk").count() == 1,
             "{shown}"
         );
         let script = std::fs::read_to_string(app.ctx.store.script()).unwrap();
@@ -1080,6 +1101,163 @@ pub mod tests {
         );
         app.handle(Msg::Stop);
         settle(&mut app, &mut term, &rx);
+    }
+
+    /// A new command replaces the box and the output under it. A long one wraps whole within the
+    /// box, also at 40 columns with a cut title. A longer one ends in an ellipsis and leaves the
+    /// output its rows.
+    #[test]
+    fn a_new_command_replaces_the_box_and_its_output() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let title = "Rank the mirrors and refresh the keyring";
+        let (mut app, mut term, rx) = app_with(
+            &[
+                (
+                    "requires: [root]\ndashboard",
+                    "script: script_head()\nrequires: [root]\ndashboard",
+                ),
+                ("title: Prepare the disk", &format!("title: {title}")),
+            ],
+            false,
+        );
+        answered(&mut app);
+        app.ctx.store.set("TUX_HOST", "slow");
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        let id = app.next;
+        screen(&mut app, &mut term);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Tab]);
+        let print = |app: &mut App, e| app.handle(Msg::Run(id, e));
+        print(&mut app, crate::script::Event::Line("table written".into()));
+        assert!(screen(&mut app, &mut term).contains("table written"));
+        print(
+            &mut app,
+            crate::script::Event::Command("mkfs.btrfs -f /dev/sda2".into()),
+        );
+        let shown = screen(&mut app, &mut term);
+        assert!(
+            command_box(&shown).1[1].starts_with("│ mkfs.btrfs -f /dev/sda2 "),
+            "{shown}"
+        );
+        assert!(
+            !shown.contains("sleep 30") && !shown.contains("table written"),
+            "{shown}"
+        );
+
+        let packages: Vec<String> = (1..=12).map(|n| format!("package-{n:02}")).collect();
+        let long = format!("pacstrap -K /mnt {}", packages.join(" "));
+        print(&mut app, crate::script::Event::Command(long.clone()));
+        let mut narrow = Terminal::new(TestBackend::new(40, 30)).unwrap();
+        for (term, cut) in [(&mut term, false), (&mut narrow, true)] {
+            let shown = screen(&mut app, term);
+            let (above, rows) = command_box(&shown);
+            if cut {
+                let kept = above.strip_suffix('…').unwrap_or_else(|| panic!("{shown}"));
+                assert!(title.starts_with(kept), "{shown}");
+            } else {
+                assert_eq!(above, title, "{shown}");
+            }
+            let w = crate::ui::draw::width(rows[0]);
+            assert!(
+                rows.iter().all(|r| crate::ui::draw::width(r) == w),
+                "{shown}"
+            );
+            let inner = &rows[1..rows.len() - 1];
+            assert!(
+                inner.len() > 1
+                    && inner
+                        .iter()
+                        .all(|r| r.starts_with("│ ") && r.ends_with('│')),
+                "{shown}"
+            );
+            let text: Vec<&str> = inner.iter().map(|r| r.trim_matches('│').trim()).collect();
+            assert_eq!(text.join(" "), long, "{shown}");
+        }
+
+        let lines: Vec<String> = (1..=100).map(|n| format!("line {n}")).collect();
+        let heredoc = format!("cat >/etc/big <<'EOF'\n{}\nEOF", lines.join("\n"));
+        print(&mut app, crate::script::Event::Command(heredoc));
+        print(&mut app, crate::script::Event::Line("written".into()));
+        let shown = screen(&mut app, &mut term);
+        let (_, rows) = command_box(&shown);
+        let last = rows[rows.len() - 2].trim_matches('│').trim();
+        assert!(
+            last.ends_with('…') && !shown.contains("line 100"),
+            "{shown}"
+        );
+        let all: Vec<&str> = shown.lines().map(str::trim).collect();
+        let bottom = all.iter().position(|r| r.starts_with('╰')).unwrap();
+        assert_eq!(all[bottom + 1..bottom + 3], ["", "written"], "{shown}");
+        app.handle(Msg::Stop);
+        settle(&mut app, &mut term, &rx);
+    }
+
+    /// A test records nothing, so while it runs its output stands under the title alone.
+    #[test]
+    fn a_running_test_shows_no_command() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app_with(
+            &[(
+                "requires: [root]\ndashboard",
+                "script: script_head()\nrequires: [root]\ndashboard",
+            )],
+            false,
+        );
+        answered(&mut app);
+        app.ctx.store.set("TUX_HOST", "checked");
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        screen(&mut app, &mut term);
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Tab]);
+        let shown = screen(&mut app, &mut term);
+        let rows: Vec<&str> = shown.lines().map(str::trim).collect();
+        assert!(
+            rows.windows(3)
+                .any(|w| w == ["Prepare the disk", "", "checking"]),
+            "{shown}"
+        );
+        assert!(
+            !shown.contains('╭') && !shown.contains("echo sda"),
+            "{shown}"
+        );
+        app.handle(Msg::Stop);
+        settle(&mut app, &mut term, &rx);
+    }
+
+    #[test]
+    fn the_command_box_fits_any_size() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, _rx) = app(false);
+        answered(&mut app);
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        let id = app.next;
+        screen(&mut app, &mut term);
+        app.handle(Msg::Tick);
+        press(&mut app, &[Key::Tab]);
+        let command = format!("pacstrap -K /mnt {}", "package ".repeat(40));
+        app.handle(Msg::Run(id, crate::script::Event::Command(command)));
+        app.handle(Msg::Run(id, crate::script::Event::Line("50%".into())));
+        for (w, h) in [
+            (80, 12),
+            (80, 7),
+            (80, 6),
+            (120, 2),
+            (120, 1),
+            (12, 30),
+            (5, 30),
+            (4, 30),
+        ] {
+            screen(
+                &mut app,
+                &mut Terminal::new(TestBackend::new(w, h)).unwrap(),
+            );
+        }
     }
 
     /// Outcome and duration stand in the header.
@@ -1240,9 +1418,9 @@ pub mod tests {
         assert!(shown.contains("⏎ run"), "{shown}");
     }
 
-    /// Row keys do nothing while the log hides the rows.
+    /// Tab keeps the last task after the run. Row keys do nothing while it hides the rows.
     #[test]
-    fn tab_shows_what_a_finished_run_printed_under_each_task() {
+    fn tab_keeps_the_last_task_after_the_run() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
         crate::i18n::set("en");
         let (mut app, mut term, rx) = app(false);
@@ -1264,16 +1442,16 @@ pub mod tests {
         );
         press(&mut app, &[Key::Tab]);
         let shown = screen(&mut app, &mut term);
-        let rows: Vec<&str> = shown.lines().map(str::trim).collect();
-        let at = rows.iter().position(|r| *r == "Go back to a snapshot");
-        assert_eq!(at.map(|at| rows[at + 1]), Some("one"), "{shown}");
         assert!(
             shown.contains("Took 00:0")
                 && shown.contains("Install the base")
                 && shown.contains("tab compact"),
             "{shown}"
         );
-        assert!(!shown.contains("Continue"), "{shown}");
+        assert!(
+            !shown.contains("Continue") && !shown.contains("Go back to a snapshot"),
+            "{shown}"
+        );
         press(&mut app, &[Key::Enter]);
         assert!(!app.done(), "an enter over the text chose a row");
         press(&mut app, &[Key::Tab]);
@@ -1663,7 +1841,7 @@ pub mod tests {
         let (mut app, _, rx) = app_with(
             &[(
                 "description: Puts the log online.",
-                "description: Uploads the log to paste.rs. Anyone with the link can read it. Passwords are excluded.",
+                "description: Uploads the log to paste.c-net.org. Anyone with the link can read it. Passwords are excluded.",
             )],
             false,
         );
@@ -1968,7 +2146,7 @@ pub mod tests {
                 "report share".into(),
                 "Shared".into(),
                 "Log shared\n\nScan the code.".into(),
-                Some("https://paste.rs/abc".into()),
+                Some("https://paste.c-net.org/k4w7qz2m9x1d".into()),
                 false,
                 pages::report::Close::PopN(1),
             )),
@@ -1976,7 +2154,7 @@ pub mod tests {
         let shown = screen(&mut app, &mut term);
         assert!(
             shown.contains("Log shared")
-                && shown.contains("https://paste.rs/abc")
+                && shown.contains("https://paste.c-net.org/k4w7qz2m9x1d")
                 && shown.contains("█▀▀▀▀▀█"),
             "{shown}"
         );

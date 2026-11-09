@@ -684,10 +684,11 @@ actions:
       - name: ARCH_OS_CONFIG_SOURCE
         type: text
         title: Configuration code
-        description: The code at the end of a paste.rs link, or the whole link.
+        description: |
+          The code at the end of a paste.c-net.org link, or the whole link.
         required: true
         pattern: '^[A-Za-z0-9][A-Za-z0-9:/._-]*$'
-        error: A code such as aBc12, or the whole link.
+        error: A code such as k4w7qz2m9x1d, or the whole link.
     run: import_config()
     error: Import failed.
     # Its own 3, since the Installer's speaks of the install run.
@@ -697,7 +698,7 @@ actions:
 
         Connect and try again.
       10: |
-        paste.rs unreachable
+        paste.c-net.org unreachable
 
         Try again later.
       11: |
@@ -716,8 +717,8 @@ actions:
   share-config:
     title: Share the configuration
     description: |
-      Uploads these answers to paste.rs. Anyone with the link can read them.
-      Passwords are excluded.
+      Uploads these answers to paste.c-net.org. Anyone with the link can read
+      them. Passwords are excluded.
     run: share_config()
     simulates: true
     error: Upload failed.
@@ -727,7 +728,7 @@ actions:
 
         Connect and try again.
       10: |
-        paste.rs unreachable
+        paste.c-net.org unreachable
 
         Try again later.
     report: |
