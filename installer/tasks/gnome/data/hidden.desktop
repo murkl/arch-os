@@ -1,5 +1,7 @@
 # Written by Arch OS. Masks the package's entry of the same name.
+# GLib skips an entry whose Exec program is missing and lists the package's.
 [Desktop Entry]
 Type=Application
 Name={{NAME}}
+Exec=false
 Hidden=true
