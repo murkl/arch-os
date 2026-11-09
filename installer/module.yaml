@@ -58,10 +58,6 @@ presets:
       ARCH_OS_BAZAAR_ENABLED: false
       ARCH_OS_SAMBA_SHARE_ENABLED: false
 
-  - title: Shared configuration
-    description: Answers from a shared configuration.
-    action: import-config
-
 # A pattern on every answer that reaches the shell, since an answer file can
 # hold anything.
 settings:
@@ -429,7 +425,9 @@ confirm: |
 # the disk before the passwords.
 script: script_head()
 
-# Stage is when, task is what. Within a stage, needs first, then file order.
+# Stage is when, task is what. Within a stage, needs first, then file order. A
+# task the system works without allows failure, so a package Arch drops costs
+# that task, not the installation.
 stages:
   # Live system ready, disk partitioned and mounted.
   prepare:
@@ -502,9 +500,11 @@ stages:
     containers:
       title: Install the container engine
       when: ARCH_OS_CONTAINER_ENGINE != none
+      allow-failure: true
 
     editor:
       title: Set up the text editor
+      allow-failure: true
 
     firewall:
       title: Set up the firewall
@@ -513,6 +513,7 @@ stages:
     housekeeping:
       title: Set up housekeeping
       when: ARCH_OS_HOUSEKEEPING_ENABLED == true
+      allow-failure: true
       # The heading of a disk warning, in the language of the installation.
       texts:
         DISK_ALERT: Disk at risk
@@ -546,6 +547,7 @@ stages:
     shell:
       title: Set up the shell enhancement
       when: ARCH_OS_SHELL_ENHANCEMENT_ENABLED == true
+      allow-failure: true
 
     ssh:
       title: Enable the SSH server
@@ -563,6 +565,7 @@ stages:
     vm-guest:
       title: Install the VM guest tools
       when: ARCH_OS_VIRTUAL_MACHINE == true
+      allow-failure: true
 
   # Desktop and its apps.
   desktop:
@@ -576,6 +579,7 @@ stages:
       when:
         - ARCH_OS_DESKTOP != none
         - ARCH_OS_BACKUP != none
+      allow-failure: true
 
     browser:
       title: Install the web browser
@@ -583,6 +587,15 @@ stages:
       when:
         - ARCH_OS_DESKTOP != none
         - ARCH_OS_BROWSER != none
+      allow-failure: true
+
+    extras:
+      title: Install the desktop extras
+      needs: [gnome]
+      when:
+        - ARCH_OS_DESKTOP != none
+        - ARCH_OS_DESKTOP_EXTRAS_ENABLED == true
+      allow-failure: true
 
     flatpak:
       title: Set up Flatpak
@@ -590,6 +603,7 @@ stages:
       when:
         - ARCH_OS_DESKTOP != none
         - ARCH_OS_FLATPAK_ENABLED == true
+      allow-failure: true
 
     graphics:
       title: Install the graphics drivers
@@ -611,6 +625,7 @@ stages:
       when:
         - ARCH_OS_DESKTOP != none
         - ARCH_OS_RECOVERY_ENABLED == true
+      allow-failure: true
 
     samba:
       title: Set up file sharing
@@ -620,11 +635,13 @@ stages:
         - ARCH_OS_DESKTOP != none
         - ARCH_OS_DESKTOP_EXTRAS_ENABLED == true
         - ARCH_OS_SAMBA_SHARE_ENABLED == true
+      allow-failure: true
 
   # Final touches.
   finish:
     orphans:
       title: Remove orphaned packages
+      allow-failure: true
 
     snapper:
       title: Set up snapshots
@@ -663,8 +680,7 @@ errors:
 
 on:
   leave: [restart, shutdown]
-  failure: [share-log]
-  success: [chroot, share-config]
+  success: [chroot]
 
 actions:
   # Everything is downloaded. A cable continues by itself, with a card Wi-Fi
@@ -676,67 +692,12 @@ actions:
     on:
       failure: [wifi]
 
-  # Every shared answer except disk, kernel parameters and SSH key, which belong
-  # to one machine or person.
-  import-config:
-    title: Shared configuration
-    inputs:
-      - name: ARCH_OS_CONFIG_SOURCE
-        type: text
-        title: Configuration code
-        description: |
-          The code at the end of a paste.c-net.org link, or the whole link.
-        required: true
-        pattern: '^[A-Za-z0-9][A-Za-z0-9:/._-]*$'
-        error: A code such as k4w7qz2m9x1d, or the whole link.
-    run: import_config()
-    error: Import failed.
-    # Its own 3, since the Installer's speaks of the install run.
-    errors:
-      3: |
-        No internet connection
-
-        Connect and try again.
-      10: |
-        paste.c-net.org unreachable
-
-        Try again later.
-      11: |
-        No configuration at {{ARCH_OS_CONFIG_SOURCE}}
-
-        Check the code.
-
   # The secure-boot task signs the boot chain itself.
   secure-boot-off:
     title: Secure Boot off
     run: secure_boot_off()
     error: |
       Secure Boot enabled. Disable it in the firmware settings and start again.
-
-  # Choosing the row is the consent, so it names what leaves.
-  share-config:
-    title: Share the configuration
-    description: |
-      Uploads these answers to paste.c-net.org. Anyone with the link can read
-      them. Passwords are excluded.
-    run: share_config()
-    simulates: true
-    error: Upload failed.
-    errors:
-      3: |
-        No internet connection
-
-        Connect and try again.
-      10: |
-        paste.c-net.org unreachable
-
-        Try again later.
-    report: |
-      Configuration shared
-
-      Scan the QR code or enter the code under Shared configuration in another
-      installation.
-    qr: ARCH_OS_CONFIG_URL
 
   uefi:
     title: Booted in UEFI mode

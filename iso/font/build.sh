@@ -1,8 +1,8 @@
 #!/bin/bash
 # Builds the console font of both images: Terminus Bold, the one font in Arch
 # that is bold and clean at every size and covers accented Latin, Greek and
-# Cyrillic. It lacks the half blocks a QR code needs, so they replace two glyphs
-# nothing here draws.
+# Cyrillic. It lacks the half blocks the finished-run mark needs, so they replace
+# two glyphs nothing here draws.
 #
 #   font/build.sh <out-dir>
 #

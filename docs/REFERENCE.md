@@ -12,11 +12,8 @@ Every answer except the passwords lands in `installer.conf` at once, so an inter
 
 | Way | How |
 | --- | --- |
-| Share | **Share the configuration** on the last page uploads the answers to **[paste.c-net.org](https://paste.c-net.org)**. The **Shared configuration** profile loads them and asks only for disk, passwords and, with the SSH server, the key |
 | Copy | `installer.conf` beside the Installer on another machine |
 | Unattended | `arch-os installer --unattended` with `installer.conf` beside it and `ARCH_OS_PASSWORD` in the environment. **[➜ Runtime](../runtime/README.md#unattended)** |
-
-**Note:** _A shared configuration holds hostname, username and language, readable by anyone with the link. The import skips disk, kernel parameters and SSH key: the disk belongs to one machine, foreign kernel parameters can open a root shell at boot, and a foreign key a remote login._
 
 ### Commands
 
@@ -208,6 +205,8 @@ Enough for a usable system, few enough to need no upkeep. The rest follows the a
 | VM adapter | Mesa, plus the guest tools of the hypervisor |
 
 **Note:** _With 32-bit support each driver gets its `lib32-` counterpart._
+
+**Note:** _A step the system works without, such as the browser, the desktop extras or the VM guest tools, may fail without stopping the run. The last page lists it._
 
 ### AUR Builds
 

@@ -116,7 +116,6 @@ errors:
     Reconnect and choose Install now to start over.
 on:
   leave: [restart, shutdown]
-  failure: [share-log]
   success: [chroot]
 actions: …
 ```
@@ -246,13 +245,7 @@ presets:
     description: Core with GNOME, drivers, codecs and everyday apps.
     values:
       ARCH_OS_DESKTOP: gnome
-
-  - title: Shared configuration
-    description: Answers from a shared configuration.
-    action: import-config
 ```
-
-A preset lists its answers under `values` or names the action that fetches them, never both. The action's script appends them to `MODULE_CONF`.
 
 ## Tasks
 
@@ -350,7 +343,6 @@ actions:
 | `error` | Meaning of a no. **Required** under a module's `requires` |
 | `errors` | Text for each status its function stops with. **[➜ Stopping on Purpose](#stopping-on-purpose)** |
 | `report` | Its page after running. First paragraph is the headline |
-| `qr` | A variable shown on that page as QR code, such as an address. No setting declares it, the function appends it to `MODULE_CONF` |
 | `on: failure` | On a no, the first of these available on this machine opens |
 
 | Under | Shown |
@@ -363,7 +355,7 @@ actions:
 
 - A row opens the inputs, `confirm`, the work and `report` in turn. A longer flow is several actions chained by `on: failure`
 - `on: leave` declares that the machine booted for the module, so leaving becomes a choice
-- Refused at startup: an unknown name, an action nothing names, a `product.yaml` action no module names, an action declared again in `module.yaml`, a cycle, an action naming itself under `on: failure`, a page beside `tty`, a page or `confirm` on a check-only action, `errors` beside `tty`, a check without `error`, an input or `confirm` under `on: leave`, a `qr` without `report`
+- Refused at startup: an unknown name, an action nothing names, a `product.yaml` action no module names, an action declared again in `module.yaml`, a cycle, an action naming itself under `on: failure`, a page beside `tty`, a page or `confirm` on a check-only action, `errors` beside `tty`, a check without `error`, an input or `confirm` under `on: leave`
 
 ## Script Environment
 

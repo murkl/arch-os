@@ -244,7 +244,7 @@ impl Page for DashboardPage {
             Picked::Open(Item::Language) => {
                 Flow::Push(Box::new(super::language::LangPage::new(Then::Pop)))
             }
-            Picked::Open(Item::Action(action)) => super::action::open(ctx, action, false),
+            Picked::Open(Item::Action(action)) => super::action::open(ctx, action),
             Picked::Open(Item::Reset) => Flow::Push(Box::new(super::confirm::YesNoPage::reset())),
             Picked::Used => Flow::Stay,
             Picked::Ignored => Flow::Ignored,

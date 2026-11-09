@@ -19,7 +19,6 @@ pub enum Outcome {
     Action {
         action: &'static Action,
         depth: usize,
-        fetches: bool,
     },
     /// Clears every answer.
     Reset,
@@ -107,13 +106,9 @@ impl YesNoPage {
                 ctx.answered = Some(yes);
                 Flow::Pop
             }
-            Outcome::Action {
-                action,
-                depth,
-                fetches,
-            } if yes => Flow::Replace(Box::new(super::action::ActionPage::new(
-                action, *depth, *fetches,
-            ))),
+            Outcome::Action { action, depth } if yes => {
+                Flow::Replace(Box::new(super::action::ActionPage::new(action, *depth)))
+            }
             Outcome::Action { depth, .. } => {
                 ctx.store.forget();
                 Flow::PopN(*depth)

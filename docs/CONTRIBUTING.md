@@ -95,8 +95,8 @@ Swap off, sync, unmount, lock: in the Installer before partitioning, in the Reco
 
 | Kind | Example | Page |
 | --- | --- | --- |
-| Expected | No internet, wrong disk, damaged download | Headline and next step, translated. Nothing to share |
-| Broken script | A package Arch renamed, a tool with changed output | Module, task, script and line, function, command, exit code, output, and **Share the log** |
+| Expected | No internet, wrong disk, damaged download | Headline and next step, translated |
+| Broken script | A package Arch renamed, a tool with changed output | Module, task, script and line, function, command, exit code and output |
 
 A script stops on an expected problem with `exit` and a status, worded under `errors:` in `module.yaml`: `3` no internet, `4` GitHub unreachable, `5` AUR unreachable. Statuses from `10` up belong to the task or action using them. **[➜ Stopping on Purpose](../runtime/README.md#stopping-on-purpose)**
 

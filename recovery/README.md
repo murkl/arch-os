@@ -18,7 +18,7 @@ tasks/<id>/test.sh   optional, checks the result on the machine
 data/                boot entries, written by the Installer and again by the Recovery, and data/check.sh for boot-tries.sh
 ```
 
-**Note:** _Functions named in `module.yaml` live in **[lib.sh](../lib.sh)**. Actions shared with the Installer (live system, root, Wi-Fi, ways out, log sharing, shell) live in **[product.yaml](../product.yaml)**. Translations live in **[locales/](../locales)**._
+**Note:** _Functions named in `module.yaml` live in **[lib.sh](../lib.sh)**. Actions shared with the Installer (live system, root, Wi-Fi, ways out, shell) live in **[product.yaml](../product.yaml)**. Translations live in **[locales/](../locales)**._
 
 ## Stages
 
@@ -36,7 +36,7 @@ Every task after the first is optional.
 
 A repair needs no network, which may be the broken part. The kernel image comes from beside its modules, where Arch installs it.
 
-`wifi` adds **Connect to Wi-Fi** to the dashboard where there is a card and no wired internet, for an update or a download in the shell. On its partition a cable connects at boot and wins over Wi-Fi, and iwd starts on the first Wi-Fi request. `share-log` uploads the log of a broken script.
+`wifi` adds **Connect to Wi-Fi** to the dashboard where there is a card and no wired internet, for an update or a download in the shell. On its partition a cable connects at boot and wins over Wi-Fi, and iwd starts on the first Wi-Fi request.
 
 ## Update
 

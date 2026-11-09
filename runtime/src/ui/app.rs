@@ -63,7 +63,6 @@ impl App {
             gated: false,
             presets_seen: false,
             wizard: 0,
-            imported: false,
             answered: None,
             halt: None,
             behind: false,
@@ -455,7 +454,6 @@ pub mod tests {
             gated: true,
             presets_seen: false,
             wizard: 0,
-            imported: false,
             answered: None,
             halt: None,
             behind: false,
@@ -1792,7 +1790,6 @@ pub mod tests {
                 "report update".into(),
                 "Update".into(),
                 "Up to date".into(),
-                None,
                 false,
                 pages::report::Close::PopN(1),
             )),
@@ -1841,7 +1838,7 @@ pub mod tests {
         let (mut app, _, rx) = app_with(
             &[(
                 "description: Puts the log online.",
-                "description: Uploads the log to paste.c-net.org. Anyone with the link can read it. Passwords are excluded.",
+                "description: Uploads the log to paste.example.org. Anyone with the link can read it. Passwords are excluded.",
             )],
             false,
         );
@@ -1999,30 +1996,6 @@ pub mod tests {
         assert_eq!(app.depth(), 1);
     }
 
-    /// A value the script writes under an undeclared name shows in the report as text and QR code.
-    #[test]
-    fn an_actions_answer_reaches_its_report_as_a_code() {
-        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        crate::i18n::set("en");
-        let (mut app, mut term, rx) = app(true);
-        answered(&mut app);
-        let share = app
-            .ctx
-            .module
-            .actions
-            .iter()
-            .find(|a| a.id == "share")
-            .unwrap();
-        let flow = pages::action::open(&mut app.ctx, share, false);
-        app.apply(flow);
-        settle(&mut app, &mut term, &rx);
-        let shown = screen(&mut app, &mut term);
-        assert!(
-            shown.contains("Shared") && shown.contains("https://x/1") && shown.contains("█▀▀▀▀▀█"),
-            "{shown}"
-        );
-    }
-
     /// The leave page on a bare first page is bare too, and esc has nothing to go back to.
     #[test]
     fn leaving_from_the_first_page_stays_bare() {
@@ -2137,35 +2110,6 @@ pub mod tests {
         );
     }
 
-    #[test]
-    fn a_report_draws_a_code_beside_its_words() {
-        let (mut app, mut term, _) = app(true);
-        open(
-            &mut app,
-            Box::new(pages::report::ReportPage::new(
-                "report share".into(),
-                "Shared".into(),
-                "Log shared\n\nScan the code.".into(),
-                Some("https://paste.c-net.org/k4w7qz2m9x1d".into()),
-                false,
-                pages::report::Close::PopN(1),
-            )),
-        );
-        let shown = screen(&mut app, &mut term);
-        assert!(
-            shown.contains("Log shared")
-                && shown.contains("https://paste.c-net.org/k4w7qz2m9x1d")
-                && shown.contains("█▀▀▀▀▀█"),
-            "{shown}"
-        );
-        let mut narrow = Terminal::new(TestBackend::new(40, 20)).unwrap();
-        let shown = screen(&mut app, &mut narrow);
-        assert!(
-            shown.contains("Log shared") && !shown.contains("█▀▀▀▀▀█"),
-            "no room for a code: {shown}"
-        );
-    }
-
     /// Every page, opened as in the app.
     fn every_page(app: &App) -> Vec<Box<dyn Page>> {
         let module = app.ctx.module;
@@ -2199,7 +2143,6 @@ pub mod tests {
                 "report r".into(),
                 "R".into(),
                 "Done\n\nAll of it.".into(),
-                Some("https://x".into()),
                 true,
                 pages::report::Close::PopN(1),
             )),

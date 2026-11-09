@@ -14,20 +14,14 @@ use crate::ui::detail::Act;
 use crate::ui::draw::waiting;
 use crate::ui::{Ctx, Data, Does, Flow, Key, Page};
 
-pub fn open(ctx: &mut Ctx, action: &'static Action, fetches: bool) -> Flow {
+pub fn open(ctx: &mut Ctx, action: &'static Action) -> Flow {
     crate::info!("action {}", action.id);
-    Flow::Push(page(ctx, action, 0, 0, fetches))
+    Flow::Push(page(ctx, action, 0, 0))
 }
 
 /// Page of input `next`, each pushed on the one before, then the run. `depth` counts the pages
 /// before, so the run knows how many to pop.
-pub fn page(
-    ctx: &Ctx,
-    action: &'static Action,
-    next: usize,
-    depth: usize,
-    fetches: bool,
-) -> Box<dyn Page> {
+pub fn page(ctx: &Ctx, action: &'static Action, next: usize, depth: usize) -> Box<dyn Page> {
     let mut i = next;
     while i < action.inputs.len() && !action.inputs[i].applies(ctx.store.getter()) {
         i += 1;
@@ -37,7 +31,6 @@ pub fn page(
             action,
             next: i + 1,
             depth: depth + 1,
-            fetches,
         };
         if input.kind.secret() {
             return Box::new(super::password::PasswordPage::new(input, then));
@@ -48,7 +41,6 @@ pub fn page(
         let outcome = Outcome::Action {
             action,
             depth: depth + 1,
-            fetches,
         };
         return Box::new(YesNoPage::new(
             format!("confirm {}", action.id),
@@ -58,15 +50,13 @@ pub fn page(
             outcome,
         ));
     }
-    Box::new(ActionPage::new(action, depth + 1, fetches))
+    Box::new(ActionPage::new(action, depth + 1))
 }
 
 pub struct ActionPage {
     action: &'static Action,
     /// Pages to pop on success, this one included.
     depth: usize,
-    /// Fetches a profile for the page below to read back.
-    fetches: bool,
     started: bool,
     session: Option<Session>,
     /// Result of a simulated or terminal run, applied on the next tick.
@@ -74,11 +64,10 @@ pub struct ActionPage {
 }
 
 impl ActionPage {
-    pub fn new(action: &'static Action, depth: usize, fetches: bool) -> ActionPage {
+    pub fn new(action: &'static Action, depth: usize) -> ActionPage {
         ActionPage {
             action,
             depth,
-            fetches,
             started: false,
             session: None,
             outcome: None,
@@ -118,28 +107,17 @@ impl ActionPage {
             Ok(()) => {
                 crate::info!("action {}: done", self.action.id);
                 ctx.recheck.set(true);
-                if self.fetches {
-                    ctx.imported = true;
-                }
                 let Some(report) = &self.action.report else {
                     return Flow::PopN(self.depth);
                 };
-                // The report shows what the script wrote, so the answer file is reloaded first:
-                // settings into the store, the code's value from the file only.
+                // The report shows what the script wrote, so the answer file is reloaded first.
                 if let Err(e) = ctx.store.load() {
                     crate::warn!("{}: {e}", ctx.store.path().display());
                 }
-                let qr = self
-                    .action
-                    .qr
-                    .as_ref()
-                    .and_then(|q| ctx.store.read(q))
-                    .filter(|v| !v.is_empty());
                 Flow::Replace(Box::new(ReportPage::new(
                     format!("report {}", self.action.id),
                     t(&self.action.title),
                     ctx.expand(&t(report)),
-                    qr,
                     false,
                     Close::PopN(self.depth),
                 )))
@@ -151,14 +129,13 @@ impl ActionPage {
                         format!("stopped {}", self.action.id),
                         t(&self.action.title),
                         ctx.expand(&words),
-                        None,
                         true,
                         Close::PopN(self.depth),
                     )));
                 }
                 if let Some(fallback) = ctx.fallback(self.action) {
                     crate::info!("action {}: opens {}", self.action.id, fallback.id);
-                    return Flow::Replace(page(ctx, fallback, 0, self.depth - 1, self.fetches));
+                    return Flow::Replace(page(ctx, fallback, 0, self.depth - 1));
                 }
                 let said = self.action.error.as_ref().map(|e| ctx.expand(&t(e)));
                 let depth = self.depth;

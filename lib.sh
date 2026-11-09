@@ -21,14 +21,6 @@ fetch_url() {
         --speed-limit 1024 --speed-time 60 "$@"
 }
 
-# Sets $1 to $2 in the answer file, replacing an earlier value.
-answer() {
-    local tmp="${MODULE_CONF}.answer"
-    grep -v "^${1}=" "$MODULE_CONF" >"$tmp" 2>/dev/null || : >>"$tmp"
-    printf "%s='%s'\n" "$1" "$(printf '%s' "$2" | sed "s/'/'\\\\''/g")" >>"$tmp"
-    mv -f "$tmp" "$MODULE_CONF"
-}
-
 # data/ beside the calling task.sh or test.sh.
 where() { printf '%s/data' "$(dirname "${BASH_SOURCE[1]}")"; }
 
@@ -166,11 +158,12 @@ newer() {
 # THE NETWORK
 # ////////////////////////////////////////////////////////////////////////////
 
-# HTTPS rather than ping, which a captive portal answers too. Online under
-# --dry-run, so screenshots stay reproducible.
+# HTTPS rather than ping, which a captive portal answers too. A mirror run by
+# Arch, since installing needs a mirror and archlinux.org can be down while the
+# mirrors serve. Online under --dry-run, so screenshots stay reproducible.
 check_online() {
     dry_run && return 0
-    fetch_url -sI --connect-timeout 5 --max-time 10 https://archlinux.org >/dev/null
+    fetch_url -sI --connect-timeout 5 --max-time 10 https://geo.mirror.pkgbuild.com >/dev/null
 }
 
 has_wifi_card() { compgen -G '/sys/class/ieee80211/*' >/dev/null; }
@@ -223,37 +216,6 @@ join_wifi() {
 join_wifi_with_passphrase() {
     iwctl --passphrase "$ARCH_OS_WIFI_PASSPHRASE" station "$(wifi_station)" connect "$ARCH_OS_WIFI_SSID" || exit 10
     wifi_online || exit 10
-}
-
-# ////////////////////////////////////////////////////////////////////////////
-# THE SHARING
-# ////////////////////////////////////////////////////////////////////////////
-
-# No account or key: POST the text, get its URL back.
-export PASTE="https://paste.c-net.org"
-
-# -S puts the HTTP status in the log. x-random asks for a random code, since the
-# default two words are guessable.
-paste_online() {
-    fetch_url -sS --max-time 30 --retry 3 --retry-delay 2 -H 'x-random;' --data-binary @- "${PASTE}/" | tr -d '[:space:]'
-}
-
-# Offline or the pastebin unavailable, each with its own text.
-paste_failed() {
-    check_online || exit "$EXIT_OFFLINE"
-    exit 10
-}
-
-# A demo URL under --dry-run, so the page shows one.
-share_log() {
-    local url
-    if dry_run; then
-        answer ARCH_OS_LOG_URL "${PASTE}/demo"
-        return 0
-    fi
-    url="$(paste_online <"$MODULE_LOG")" || url=""
-    [ -n "$url" ] || paste_failed
-    answer ARCH_OS_LOG_URL "$url"
 }
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -424,10 +386,20 @@ boot_entries() {
     run arch-chroot "$root" systemctl enable arch-os-boot-tries.service
 }
 
+# The firmware's variables, each value after four attribute bytes.
+export EFIVARS=/sys/firmware/efi/efivars
+
+# The value byte of UEFI global variable $1, such as SecureBoot. Nothing where
+# the firmware lacks it.
+efi_global() {
+    local var="${EFIVARS}/${1}-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+    [ ! -r "$var" ] || od -An -t u1 -j 4 -N 1 "$var" | tr -d ' '
+}
+
 # A LoaderEntryDefault left by an earlier system boots however often it fails
 # and defeats the tries.
 clear_loader_default() {
-    [ -e /sys/firmware/efi/efivars/LoaderEntryDefault-4a67b082-0a4c-41cf-b6c7-440b29bb8c4f ] || return 0
+    [ -e "${EFIVARS}/LoaderEntryDefault-4a67b082-0a4c-41cf-b6c7-440b29bb8c4f" ] || return 0
     bootctl set-default '' || echo "firmware default boot entry not cleared" >&2
 }
 
@@ -616,7 +588,17 @@ resolved() {
 
 desktop_layout() { resolved "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" auto_layout; }
 desktop_variant() { resolved "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" auto_variant; }
-mirror_country() { not_none "$ARCH_OS_REFLECTOR_COUNTRY"; }
+
+# The territory code of a country data/countries names, which reflector matches
+# like a name and which survives a renaming, as Turkey to Türkiye. A name the
+# table lacks goes as typed.
+mirror_country() {
+    local country code
+    country="$(not_none "$ARCH_OS_REFLECTOR_COUNTRY")"
+    [ -n "$country" ] || return 0
+    code="$(awk -F'\t' -v name="$country" '!/^#/ && $2 == name { print $1 }' "$(installer_data)/countries")"
+    printf '%s' "${code:-$country}"
+}
 
 # ////////////////////////////////////////////////////////////////////////////
 # INSTALLING | Hardware and boot chain
@@ -800,6 +782,9 @@ as_user() {
     mapfile -d '' -t command < <(user_command bash -c "$1")
     run "${command[@]}"
 }
+
+# true where GLib lists desktop entry $1 among the account's apps, else false.
+app_listed() { as_user "gjs -c \"print(imports.gi.GioUnix.DesktopAppInfo.new('${1}') !== null)\""; }
 
 # Accounts a package of the Installer's choices creates through sysusers.d,
 # beyond the live system's own. The Desktop run of e2e.sh holds the list to an
@@ -1048,18 +1033,10 @@ options_wifi_networks() {
         '
 }
 
-# The Arch ISO records the live system's keymap only as a loadkeys line in
-# root's history.
-live_keymap() {
-    { grep -h 'loadkeys' /root/.bash_history /root/.zsh_history 2>/dev/null || true; } |
-        tail -n1 | sed 's/.*loadkeys *//' | tr -d ' '
-}
-
-# The live system's keymap, else the interface language's.
+# The interface language's keymap.
 prefill_keymap() {
     local keymap
-    keymap="$(live_keymap)"
-    keymap="${keymap:-$(language_field 2 "$MODULE_LANGUAGE")}"
+    keymap="$(language_field 2 "$MODULE_LANGUAGE")"
     printf '%s' "${keymap:-us}"
 }
 
@@ -1153,49 +1130,8 @@ options_variants() {
 
 booted_in_uefi() { [ -d /sys/firmware/efi ]; }
 
-# Captured first: grep -q exits at the first match, and bootctl would fail under
-# pipefail.
-secure_boot_off() { grep -q "Secure Boot: disabled" <<<"$(bootctl status 2>/dev/null)"; }
-
-import_config() {
-    local ref url out body
-    # The paste code from a full link or the code alone, always fetched from PASTE.
-    ref="$(printf '%s' "$ARCH_OS_CONFIG_SOURCE" | tr -d '[:space:]')"
-    url="${PASTE}/${ref##*/}"
-    # The HTTP status last, which curl writes on failure too.
-    if ! out="$(fetch_url -sS --max-time 30 --retry 3 --retry-delay 2 -w '\n%{http_code}' "$url")"; then
-        [ "${out##*$'\n'}" != 404 ] || exit 11
-        paste_failed
-    fi
-
-    # Without the sharing keys and the source machine's own: DISK, which may name
-    # another disk here, and KERNEL_ARGS and SSH_KEY, which let a stranger in.
-    body="$(printf '%s\n' "${out%$'\n'*}" | grep '^ARCH_OS_[A-Z0-9_]*=' |
-        grep -vE '^ARCH_OS_(CONFIG_[A-Z_]*|DISK|KERNEL_ARGS|SSH_KEY)=' || allow 1)"
-    [ -n "$body" ] || exit 11
-
-    # The runtime rereads the answer file after success.
-    printf '%s\n' "$body" >>"$MODULE_CONF"
-}
-
-share_config() {
-    local url target
-    # A demo URL under --dry-run, so the page shows one.
-    if dry_run; then
-        answer ARCH_OS_CONFIG_URL "${PASTE}/demo"
-        return 0
-    fi
-
-    url="$(grep -v '^ARCH_OS_CONFIG_' "$MODULE_CONF" | paste_online)" || url=""
-    [ -n "$url" ] || paste_failed
-    answer ARCH_OS_CONFIG_URL "$url"
-
-    # Also into the installed system's copy, which records its share URL.
-    target="$(user_home)/installer.conf"
-    if [ -f "$target" ]; then
-        printf "ARCH_OS_CONFIG_URL='%s'\n" "$url" >>"$target"
-    fi
-}
+# The firmware's own flag, which no tool can reword.
+secure_boot_off() { [ "$(efi_global SecureBoot)" != 1 ]; }
 
 # The script's first lines, before it asks for the passwords: the live system
 # as the Installer requires it, the disk by model, serial and size, since a
@@ -1274,7 +1210,7 @@ recovery_to_update() {
 }
 
 # Yes if there is nothing to install. No opens the install. GitHub is asked
-# first, since archlinux.org may be down while GitHub answers.
+# first, since it may answer while the mirror check_online asks is down.
 recovery_up_to_date() {
     local json found
     if ! json="$(releases_json)"; then

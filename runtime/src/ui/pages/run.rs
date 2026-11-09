@@ -322,7 +322,6 @@ impl RunPage {
                                 format!("report {}", task.id),
                                 t(&task.title),
                                 ctx.expand(&t(report)),
-                                None,
                                 false,
                                 Close::PopN(1),
                             )
@@ -565,7 +564,7 @@ impl RunPage {
                 for action in ctx.rows(&ctx.module.on.success) {
                     acts.push(
                         Act::new(t(&action.title), move |ctx: &mut Ctx| {
-                            super::action::open(ctx, action, false)
+                            super::action::open(ctx, action)
                         })
                         .describe(t(&action.description)),
                     );
@@ -606,7 +605,7 @@ impl RunPage {
                 for action in ctx.rows(&ctx.module.on.failure) {
                     acts.push(
                         Act::new(t(&action.title), move |ctx: &mut Ctx| {
-                            super::action::open(ctx, action, false)
+                            super::action::open(ctx, action)
                         })
                         .describe(t(&action.description)),
                     );

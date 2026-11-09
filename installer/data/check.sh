@@ -64,7 +64,7 @@ while IFS=$'\t' read -r code country zone extra; do
     [[ "$code" =~ ^[A-Z][A-Z]$ ]] ||
         complain "countries: ${code} is not a two-letter territory code"
     [[ "$country" = "-" || "$country" =~ ^[A-Z] ]] ||
-        complain "countries: ${code} spells its country \"${country}\", expected reflector's spelling or -"
+        complain "countries: ${code} spells its country \"${country}\", expected a name or -"
     [ -f "/usr/share/zoneinfo/${zone}" ] ||
         complain "countries: ${code} names the time zone ${zone}, which tzdata does not have"
 done <countries

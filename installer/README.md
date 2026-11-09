@@ -20,7 +20,7 @@ tasks/<id>/check.*    optional, checks a file the task ships, run by make check
 data/                 language and country tables, checked by data/check.sh
 ```
 
-**Note:** _Functions named in `module.yaml` live in **[lib.sh](../lib.sh)**. Actions shared with the Recovery (live system, root, Wi-Fi, ways out, log sharing, shell) live in **[product.yaml](../product.yaml)**. Translations live in **[locales/](../locales)**._
+**Note:** _Functions named in `module.yaml` live in **[lib.sh](../lib.sh)**. Actions shared with the Recovery (live system, root, Wi-Fi, ways out, shell) live in **[product.yaml](../product.yaml)**. Translations live in **[locales/](../locales)**._
 
 ## Stages
 
@@ -31,7 +31,7 @@ Stages run in order, `needs:` orders the tasks within one.
 | `prepare` | `mirrors`, then `partition`, the one task that destroys data, after everything that can fail |
 | `system` | `pacstrap`, then `config`, `network`, `tweaks`, `bootloader`, `recovery` and `user`: a configured, bootable system |
 | `features` | One task per setting: `multilib`, `aur`, `bootsplash`, `containers`, `editor`, `firewall`, `housekeeping`, `manager`, `shell`, `ssh`, `vm-guest` |
-| `desktop` | `gnome` first, then `backup`, `browser`, `flatpak`, `graphics`, `manager-app`, `recovery-app`, `samba` |
+| `desktop` | `gnome` first, then `backup`, `browser`, `extras`, `flatpak`, `graphics`, `manager-app`, `recovery-app`, `samba` |
 | `finish` | `orphans`, `snapper`, `secure-boot`, and `copy-config` last, so the log and the script are complete |
 
 ## Actions
@@ -41,10 +41,7 @@ Stages run in order, `needs:` orders the tasks within one.
 | `requires` | `live-image`, `root`, `uefi`, `secure-boot-off`, then `internet`, which opens `wifi` at once where there is a card and waits for a cable otherwise. `--dry-run` skips them |
 | `dashboard` | `wifi`: **Connect to Wi-Fi**, where `wifi-card` finds a card and `no-cable` no wired internet. An open or known network connects at once, one with a password opens `wifi-passphrase` |
 | `on: leave` | `restart`, `shutdown` |
-| `on: failure` | `share-log`: uploads the log of a broken script as a QR code. **[➜ Errors](../docs/CONTRIBUTING.md#errors)** |
-| `on: success` | `chroot`, `share-config`: a shell in the new system, and the answers uploaded |
-
-The **Shared configuration** profile under `presets:` runs `import-config`. **[➜ Answers](../docs/REFERENCE.md#answers)**
+| `on: success` | `chroot`: a shell in the new system |
 
 **Note:** _A cable connects automatically and wins over Wi-Fi. **Exit** closes the Installer and leaves the machine running. **[➜ ISO](../iso)**_
 

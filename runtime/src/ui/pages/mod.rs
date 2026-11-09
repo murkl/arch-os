@@ -32,7 +32,6 @@ pub enum Then {
         action: &'static Action,
         next: usize,
         depth: usize,
-        fetches: bool,
     },
 }
 
@@ -45,8 +44,7 @@ pub fn after(then: &Then, ctx: &mut Ctx) -> Flow {
             action: it,
             next,
             depth,
-            fetches,
-        } => Flow::Push(action::page(ctx, it, *next, *depth, *fetches)),
+        } => Flow::Push(action::page(ctx, it, *next, *depth)),
     }
 }
 
