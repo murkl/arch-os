@@ -16,7 +16,6 @@ presets:
       ARCH_OS_ENCRYPTION_ENABLED: true
       ARCH_OS_RECOVERY_ENABLED: true
       ARCH_OS_BOOTSPLASH_ENABLED: true
-      ARCH_OS_CORE_TWEAKS_ENABLED: true
       ARCH_OS_MULTILIB_ENABLED: true
       ARCH_OS_AUR_HELPER_ENABLED: true
       ARCH_OS_CONTAINER_ENGINE: none
@@ -40,7 +39,6 @@ presets:
       ARCH_OS_ENCRYPTION_ENABLED: true
       ARCH_OS_RECOVERY_ENABLED: true
       ARCH_OS_BOOTSPLASH_ENABLED: false
-      ARCH_OS_CORE_TWEAKS_ENABLED: true
       ARCH_OS_MULTILIB_ENABLED: false
       ARCH_OS_AUR_HELPER_ENABLED: false
       ARCH_OS_CONTAINER_ENGINE: none
@@ -212,14 +210,6 @@ settings:
       description: Additional kernel parameters, separated by spaces.
 
   System:
-    - name: ARCH_OS_CORE_TWEAKS_ENABLED
-      type: bool
-      title: Core tweaks
-      description: |
-        Colored pacman, quiet boot, password asterisks and tuned system
-        settings.
-      default: true
-
     - name: ARCH_OS_MULTILIB_ENABLED
       type: bool
       title: 32-bit support
@@ -272,8 +262,7 @@ settings:
     - name: ARCH_OS_HOUSEKEEPING_ENABLED
       type: bool
       title: Housekeeping
-      description: |
-        Ranks mirrors and cleans the package cache weekly. Monitors disk health.
+      description: Ranks mirrors weekly and monitors disk health.
       default: true
 
     - name: ARCH_OS_EDITOR
@@ -335,14 +324,6 @@ settings:
       options-from: options_variants()
       filter: open
       default: auto
-      pattern: '^[A-Za-z0-9_-]+$'
-
-    - name: ARCH_OS_DESKTOP_KEYBOARD_MODEL
-      type: text
-      title: Keyboard model
-      description: The keyboard model. Usually pc105.
-      when: ARCH_OS_DESKTOP != none
-      default: pc105
       pattern: '^[A-Za-z0-9_-]+$'
 
     - name: ARCH_OS_DESKTOP_EXTRAS_ENABLED
@@ -477,9 +458,8 @@ stages:
       needs: [pacstrap]
 
     tweaks:
-      title: Apply the core tweaks
+      title: Tune the system
       needs: [pacstrap]
-      when: ARCH_OS_CORE_TWEAKS_ENABLED == true
 
     bootloader:
       title: Install the boot loader

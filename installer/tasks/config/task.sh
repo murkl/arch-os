@@ -40,6 +40,10 @@ run arch-chroot "$MNT" systemctl enable systemd-timesyncd.service
 # https://wiki.archlinux.org/title/Btrfs#Scrub
 run arch-chroot "$MNT" systemctl enable btrfs-scrub@-.timer
 
+# The weekly cleanup keeps three versions of each installed package.
+# https://wiki.archlinux.org/title/Pacman#Cleaning_the_package_cache
+run arch-chroot "$MNT" systemctl enable paccache.timer
+
 # Moves crash logs from the firmware's small pstore to /var/lib/systemd/pstore,
 # as systemd's preset does. The ISO and the Recovery leave them for this system.
 run arch-chroot "$MNT" systemctl enable systemd-pstore.service

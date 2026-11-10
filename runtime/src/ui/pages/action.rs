@@ -78,7 +78,7 @@ impl ActionPage {
         self.started = true;
         let step = ctx.step(&t(&self.action.title), true, self.action.run.clone());
         let env = ctx.env();
-        if ctx.store.dry_run() && !self.action.simulates {
+        if ctx.store.dry_run() {
             crate::info!("action {}: simulated", self.action.id);
             self.outcome = Some(Ok(()));
         } else if self.action.tty {

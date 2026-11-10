@@ -305,6 +305,17 @@ il he_IL auto none
 amiga-de de_DE auto none
 EOF
 
+while read -r keymap want; do
+    expect "desktop_model ${keymap}" "$(ARCH_OS_VCONSOLE_KEYMAP="$keymap" desktop_model)" "$want"
+done <<'EOF'
+jp106 jp106
+br-abnt2 abnt2
+es-dvorak microsoftpro
+us pc105
+de-latin1 pc105
+amiga-de pc105
+EOF
+
 # ─── The account and the disk ────────────────────────────────────────────────
 
 while read -r name want; do

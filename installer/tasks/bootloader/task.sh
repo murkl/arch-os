@@ -4,9 +4,6 @@
 
 data="$(where)"
 
-# https://wiki.archlinux.org/title/Silent_boot
-silent_boot() { [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ] || [ "$ARCH_OS_CORE_TWEAKS_ENABLED" = "true" ]; }
-
 # One command line for the UKI and the initramfs entries:
 # docs/REFERENCE.md#boot-chain
 kernel_args() {
@@ -23,9 +20,8 @@ kernel_args() {
     args+=(zswap.enabled=0) # interferes with zram
     args+=(panic=10)        # reboots, so the loader counts a failed try
 
-    if silent_boot; then
-        args+=(quiet splash vt.global_cursor_default=0 loglevel=3 rd.udev.log_level=3 systemd.show_status=auto)
-    fi
+    # https://wiki.archlinux.org/title/Silent_boot
+    args+=(quiet splash vt.global_cursor_default=0 loglevel=3 rd.udev.log_level=3 systemd.show_status=auto)
 
     # With encryption the passphrase prompt comes first: the splash waits for
     # the GPU driver, and 3 s, longer than the disk takes to appear.
@@ -106,9 +102,7 @@ run arch-chroot "$MNT" systemctl enable systemd-boot-update.service
 
 # The quiet boot hides the cursor on every console. agetty expands \e, so the
 # issue file shows it again before each login.
-if silent_boot; then
-    run mkdir -p "${MNT}/etc/issue.d"
-    render "${data}/cursor.issue" | write_file "${MNT}/etc/issue.d/cursor.issue"
-    run mkdir -p "${MNT}/etc/systemd/system.conf.d"
-    render "${data}/watchdog.conf" | write_file "${MNT}/etc/systemd/system.conf.d/10-arch-os.conf"
-fi
+run mkdir -p "${MNT}/etc/issue.d"
+render "${data}/cursor.issue" | write_file "${MNT}/etc/issue.d/cursor.issue"
+run mkdir -p "${MNT}/etc/systemd/system.conf.d"
+render "${data}/watchdog.conf" | write_file "${MNT}/etc/systemd/system.conf.d/10-arch-os.conf"

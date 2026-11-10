@@ -1,11 +1,11 @@
-//! Report page of a run or action, on success with text or on failure. The module gives the
-//! text, the runtime the mark.
+//! Report page of an action, on success with text or on failure. The module gives the text,
+//! the runtime the mark.
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 
 use crate::ui::detail::{Block, Detail, mark, words};
-use crate::ui::{Ctx, Does, Flow, Key, Page, Tone};
+use crate::ui::{Ctx, Does, Flow, Key, Page};
 
 /// Where the page leads once read.
 pub enum Close {
@@ -16,8 +16,6 @@ pub struct ReportPage {
     id: String,
     title: String,
     text: String,
-    /// One line under the text, such as a run's tally of optional tasks and tests.
-    note: Option<(String, Tone)>,
     stopped: bool,
     close: Close,
     detail: Detail,
@@ -29,25 +27,15 @@ impl ReportPage {
             id,
             title,
             text,
-            note: None,
             stopped,
             close,
             detail: Detail::default(),
         }
     }
 
-    pub fn noted(mut self, note: Option<(String, Tone)>) -> ReportPage {
-        self.note = note;
-        self
-    }
-
     fn blocks(&self) -> Vec<Block> {
         let mut b = vec![mark(self.stopped), Block::Blank];
         b.extend(words(&self.text));
-        if let Some((note, tone)) = &self.note {
-            b.push(Block::Blank);
-            b.push(Block::Text(note.clone(), *tone));
-        }
         b
     }
 }

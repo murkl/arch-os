@@ -744,7 +744,7 @@ pub mod tests {
     }
 
     /// Lists reread, password twice, module question, then the run: a mid-run question, confirm,
-    /// report, closing text and the next rows.
+    /// closing text and the next rows.
     #[test]
     fn install_now_asks_the_password_confirms_and_runs_to_the_end() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
@@ -789,13 +789,6 @@ pub mod tests {
         let shown = screen(&mut app, &mut term);
         assert!(shown.contains("Put one in place?"), "{shown}");
         press(&mut app, &[Key::Down, Key::Enter]);
-        settle(&mut app, &mut term, &rx);
-        let shown = screen(&mut app, &mut term);
-        assert!(
-            shown.contains("Installed") && shown.contains("tuxbox is ready."),
-            "{shown}"
-        );
-        press(&mut app, &[Key::Enter]);
         settle(&mut app, &mut term, &rx);
         std::thread::sleep(Duration::from_millis(650));
         let shown = screen(&mut app, &mut term);
@@ -1335,16 +1328,10 @@ pub mod tests {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
         crate::i18n::set("en");
         let (mut app, mut term, rx) = app_with(
-            &[
-                (
-                    "      asks:\n        name: TUX_SNAPSHOT\n        title: Snapshot\n        options-from: options_snapshots()\n      confirm: |\n        Put {{TUX_SNAPSHOT}} in place?\n",
-                    "",
-                ),
-                (
-                    "      report: |\n        Installed\n\n        {{TUX_HOST}} is ready.\n",
-                    "",
-                ),
-            ],
+            &[(
+                "      asks:\n        name: TUX_SNAPSHOT\n        title: Snapshot\n        options-from: options_snapshots()\n      confirm: |\n        Put {{TUX_SNAPSHOT}} in place?\n",
+                "",
+            )],
             false,
         );
         answered(&mut app);
@@ -1582,7 +1569,6 @@ pub mod tests {
                     shown.contains("Stopped at Install the base")
                         && shown.contains("Nothing after it ran.")
                         && shown.contains("Exit code")
-                        && shown.contains("Share the log")
                         && shown.contains("Back to the dashboard"),
                     "{shown}"
                 );
@@ -1803,47 +1789,19 @@ pub mod tests {
         );
     }
 
-    #[test]
-    fn a_progress_line_fits_any_height() {
-        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        crate::i18n::set("en");
-        let (mut app, mut term, _rx) = app_with(
-            &[(
-                "      title: Prepare the disk\n",
-                "      title: Prepare the disk\n      progress: true\n",
-            )],
-            false,
-        );
-        answered(&mut app);
-        app.ctx.store.set("TUX_HOST", "slow");
-        let run = Box::new(pages::run::RunPage::new(&app.ctx));
-        open(&mut app, run);
-        let id = app.next;
-        screen(&mut app, &mut term);
-        app.handle(Msg::Tick);
-        app.handle(Msg::Run(id, crate::script::Event::Line("50%".into())));
-        for (w, h) in [(80, 7), (80, 6), (120, 2), (120, 1)] {
-            screen(
-                &mut app,
-                &mut Terminal::new(TestBackend::new(w, h)).unwrap(),
-            );
-        }
-    }
-
-    /// A consent to upload included.
+    /// A row after the run, its description longer than the screen is wide.
     #[test]
     fn a_description_reads_whole_on_a_narrow_screen() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
         crate::i18n::set("en");
         let (mut app, _, rx) = app_with(
             &[(
-                "description: Puts the log online.",
-                "description: Uploads the log to paste.example.org. Anyone with the link can read it. Passwords are excluded.",
+                "description: Until exit.",
+                "description: Opens a shell in the system on the disk. Type exit to leave, the system stays mounted.",
             )],
             false,
         );
         answered(&mut app);
-        app.ctx.store.set("TUX_HOST", "broken");
         let mut term = Terminal::new(TestBackend::new(40, 30)).unwrap();
         let run = Box::new(pages::run::RunPage::new(&app.ctx));
         open(&mut app, run);
@@ -1856,7 +1814,7 @@ pub mod tests {
         screen(&mut app, &mut term);
         press(&mut app, &[Key::Up]);
         let shown = screen(&mut app, &mut term);
-        assert!(shown.contains("excluded."), "{shown}");
+        assert!(shown.contains("stays mounted."), "{shown}");
     }
 
     /// The rule an answer breaks reads whole on a narrow screen.

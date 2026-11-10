@@ -93,7 +93,7 @@ variant="$(desktop_variant)"
 run mkdir -p "${MNT}/etc/X11/xorg.conf.d"
 render "${data}/00-keyboard.conf" \
     LAYOUT="$layout" \
-    MODEL="$ARCH_OS_DESKTOP_KEYBOARD_MODEL" \
+    MODEL="$(desktop_model)" \
     VARIANT="$variant" |
     write_file "${MNT}/etc/X11/xorg.conf.d/00-keyboard.conf"
 

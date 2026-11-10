@@ -12,14 +12,14 @@ Every answer except the passwords lands in `installer.conf` at once, so an inter
 
 | Way | How |
 | --- | --- |
-| Copy | `installer.conf` beside the Installer on another machine |
+| Copy | `installer.conf` from `/var/log/arch-os/` beside the Installer on another machine |
 | Unattended | `arch-os installer --unattended` with `installer.conf` beside it and `ARCH_OS_PASSWORD` in the environment. **[➜ Runtime](../runtime/README.md#unattended)** |
 
 ### Commands
 
-Every command that changes the system shows on **tab** in a box named after its step, above its output, and in `installer.log`. `installer.sh` holds them as a script, beside the Installer and in the new system's home. On the same machine it installs the same system again: partitions, packages, files, accounts and services.
+Every command that changes the system shows on **tab** in a box named after its step, above its output, and in `installer.log`. `installer.sh` holds them as a script, beside the Installer and in the new system's `/var/log/arch-os/`, readable by root alone like answers and log. On the same machine it installs the same system again: partitions, packages, files, accounts and services.
 
-1. Copy `~/installer.sh` to another drive, since it erases the disk it lies on
+1. Copy `/var/log/arch-os/installer.sh` to another drive with `sudo`, since it erases the disk it lies on
 2. Boot the ISO, connect to the internet, open a shell with **Ctrl+Alt+F2**
 3. `bash installer.sh`
 
@@ -167,7 +167,7 @@ Same base on every machine.
 
 ### Tuning
 
-Part of **Core tweaks**. Changes behavior, installs nothing. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Sysctl)**
+Changes behavior, installs nothing. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Sysctl)**
 
 | Setting | Why |
 | --- | --- |
@@ -190,6 +190,7 @@ Enough for a usable system, few enough to need no upkeep. The rest follows the a
 | --- | --- |
 | `base`, `linux-zen`, `mkinitcpio`, `sudo`, `zram-generator`, `networkmanager`, `btrfs-progs`, `snapper` | The system itself |
 | `dosfstools` | systemd checks the EFI partition at every boot. Boot counting writes there, and FAT has no journal |
+| `pacman-contrib` | `paccache.timer` keeps three versions of each installed package. pacman keeps every version it downloads |
 | Chosen editor, `man-db`, `man-pages`, `openssh` | Not in `base` |
 | `linux-firmware`, `sof-firmware`, `wireless-regdb` | Omitted in a VM without a passed-through card, whose drivers are in the kernel. `sof-firmware` is the sound of many laptops |
 

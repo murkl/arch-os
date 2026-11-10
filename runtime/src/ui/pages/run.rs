@@ -10,13 +10,12 @@ use ratatui::layout::Rect;
 
 use super::confirm::YesNoPage;
 use super::question::{self, QuestionPage};
-use super::report::{Close, ReportPage};
 use crate::i18n::{t, tf};
 use crate::record::{self, Record};
 use crate::script::{self, Event, Failure, Session};
 use crate::spec::{self, Task};
 use crate::ui::detail::{Act, Block, Detail, mark, words};
-use crate::ui::draw::{cut, cut_front, put, width, wrap};
+use crate::ui::draw::{cut, put, width, wrap};
 use crate::ui::list::Lead;
 use crate::ui::{Ctx, Data, Does, Flow, Key, Page, Tone};
 
@@ -28,14 +27,14 @@ enum Mark {
     Broken,
 }
 
-/// Progress of the current task: question, confirmation, run, test, report.
+/// Progress of the current task: question, confirmation, run, test, done.
 #[derive(Clone, Copy, PartialEq)]
 enum Phase {
     Ask,
     Confirm,
     Run,
     Check,
-    Report,
+    Done,
 }
 
 /// Page this page pushed, which tells what resuming means.
@@ -44,7 +43,6 @@ enum Pushed {
     None,
     Ask,
     Confirm,
-    Report,
 }
 
 /// Failed run: the module's text, the failure, or stopped by the leave page.
@@ -197,8 +195,6 @@ pub struct RunPage {
     phase: Phase,
     pushed: Pushed,
     session: Option<Session>,
-    /// Last line of the running task, where it declares its output as progress.
-    latest: Option<String>,
     /// The run as a script, where the module keeps one.
     record: Option<Record>,
     /// Inhibits shutdown and sleep while the tasks run.
@@ -219,8 +215,8 @@ pub struct RunPage {
     /// Answers saved and the first step due.
     began: bool,
     kick: bool,
-    /// Module rows after success and after failure, so the cursor opens on the row that goes on.
-    rows_cache: (usize, usize),
+    /// Module rows after success, so the cursor opens on the row that goes on.
+    success_rows: usize,
 }
 
 impl RunPage {
@@ -239,7 +235,6 @@ impl RunPage {
             phase: Phase::Ask,
             pushed: Pushed::None,
             session: None,
-            latest: None,
             record: None,
             hold: None,
             section: Section::default(),
@@ -252,7 +247,7 @@ impl RunPage {
             result: Detail::default(),
             began: false,
             kick: false,
-            rows_cache: (0, 0),
+            success_rows: 0,
         }
     }
 
@@ -291,7 +286,7 @@ impl RunPage {
                 }
                 Phase::Run => return self.start(ctx),
                 Phase::Check => {
-                    self.phase = Phase::Report;
+                    self.phase = Phase::Done;
                     if task.test && !ctx.store.dry_run() {
                         crate::info!("{}: test", task.title);
                         // A test records nothing, so its output belongs to no command.
@@ -312,24 +307,7 @@ impl RunPage {
                         }
                     }
                 }
-                Phase::Report => {
-                    if let Some(report) = &task.report {
-                        self.pushed = Pushed::Report;
-                        ctx.save();
-                        let note = self.tally();
-                        return Flow::Push(Box::new(
-                            ReportPage::new(
-                                format!("report {}", task.id),
-                                t(&task.title),
-                                ctx.expand(&t(report)),
-                                false,
-                                Close::PopN(1),
-                            )
-                            .noted(note),
-                        ));
-                    }
-                    self.advance();
-                }
+                Phase::Done => self.advance(),
             }
         }
     }
@@ -345,7 +323,6 @@ impl RunPage {
     fn advance(&mut self) {
         self.at += 1;
         self.phase = Phase::Ask;
-        self.latest = None;
     }
 
     /// The script's head, before any task. A failing `script` function ends the run there, since
@@ -390,7 +367,7 @@ impl RunPage {
             title: t(&task.title),
             ..Section::default()
         };
-        if ctx.store.dry_run() && !task.simulates {
+        if ctx.store.dry_run() {
             crate::info!("{}: simulated", task.title);
             self.simulated = Some(Instant::now() + SIMULATED);
             return Flow::Stay;
@@ -414,7 +391,7 @@ impl RunPage {
         }
     }
 
-    /// A task allowed to fail is noted and passed without test or report. Any other ends the run.
+    /// A task allowed to fail is noted and passed without test. Any other ends the run.
     fn fell(&mut self, f: Failure, ctx: &mut Ctx) -> Flow {
         let task = self.task();
         if !task.allow_failure {
@@ -601,19 +578,10 @@ impl RunPage {
                     Block::Blank,
                 ];
                 body.extend(crate::ui::detail::failure(f));
-                let mut acts = Vec::new();
-                for action in ctx.rows(&ctx.module.on.failure) {
-                    acts.push(
-                        Act::new(t(&action.title), move |ctx: &mut Ctx| {
-                            super::action::open(ctx, action)
-                        })
-                        .describe(t(&action.description)),
-                    );
-                }
-                acts.push(
+                let acts = vec![
                     Act::new(t("Back to the dashboard"), |ctx| onward(Way::Ask, ctx))
                         .does(Does::Back),
-                );
+                ];
                 (body, acts)
             }
         };
@@ -635,30 +603,18 @@ impl RunPage {
                     .iter()
                     .chain(&self.tests)
                     .any(|(_, f)| f.is_some());
-                1 + usize::from(failed) + self.success_rows()
+                1 + usize::from(failed) + self.success_rows
             }
-            Some((Err(End::Known(_) | End::Stopped), ..)) => 1,
-            Some((Err(End::Broke(_)), ..)) => 1 + self.failure_rows(),
+            Some((Err(_), ..)) => 1,
             None => 0,
         }
     }
 
-    fn success_rows(&self) -> usize {
-        self.rows_cache.0
-    }
-
-    fn failure_rows(&self) -> usize {
-        self.rows_cache.1
-    }
-
-    /// Tasks with their marks, scrolled to the cursor. A progress line takes a row under its task
-    /// and is cut at the front, since a bar shows its progress at the end.
+    /// Tasks with their marks, scrolled to the cursor.
     fn draw_list(&self, area: Rect, buf: &mut Buffer, ctx: &Ctx) {
         let s = &ctx.style;
         let running = self.end.is_none() && self.at < self.steps.len();
-        let progress = running && self.task().progress && self.phase == Phase::Run;
-        let rows =
-            usize::from(area.height).saturating_sub(usize::from(progress && self.latest.is_some()));
+        let rows = usize::from(area.height);
         if rows == 0 {
             return;
         }
@@ -667,8 +623,7 @@ impl RunPage {
         } else {
             0
         };
-        let mut y = area.y;
-        for (i, task) in self.steps.iter().enumerate().skip(top).take(rows) {
+        for (y, (i, task)) in (area.y..).zip(self.steps.iter().enumerate().skip(top).take(rows)) {
             let (lead, style) = match self.marks[i] {
                 Mark::Ran => (Lead::Glyph(s.glyphs.ok, Tone::Accent), s.tone(Tone::Muted)),
                 Mark::Skipped => (Lead::Glyph(s.glyphs.skip, Tone::Muted), s.tone(Tone::Muted)),
@@ -693,25 +648,6 @@ impl RunPage {
                 area.width.saturating_sub(2),
                 style,
             );
-            y += 1;
-            if i == self.at
-                && progress
-                && let Some(latest) = &self.latest
-            {
-                put(
-                    buf,
-                    area.x + 2,
-                    y,
-                    &cut_front(
-                        latest,
-                        area.width.saturating_sub(2) as usize,
-                        s.glyphs.ellipsis,
-                    ),
-                    area.width.saturating_sub(2),
-                    s.tone(Tone::Muted),
-                );
-                y += 1;
-            }
         }
     }
 }
@@ -808,10 +744,7 @@ impl Page for RunPage {
             if !ctx.store.dry_run() && !cfg!(test) {
                 self.hold = script::hold(&ctx.product_title(), &t(&ctx.module.title));
             }
-            self.rows_cache = (
-                ctx.rows(&ctx.module.on.success).len(),
-                ctx.rows(&ctx.module.on.failure).len(),
-            );
+            self.success_rows = ctx.rows(&ctx.module.on.success).len();
             self.kick = true;
             self.begin_script(ctx);
         }
@@ -922,12 +855,10 @@ impl Page for RunPage {
         }
         match event {
             Event::Line(line) => {
-                self.latest = Some(line.clone());
                 self.section.keep(line);
                 Flow::Stay
             }
             Event::Drawn(line) => {
-                self.latest = Some(line.clone());
                 self.section.drawing = Some(line);
                 Flow::Stay
             }
@@ -962,7 +893,7 @@ impl Page for RunPage {
                         }
                         Err(f) => self.fell(f, ctx),
                     },
-                    Phase::Report => {
+                    Phase::Done => {
                         // A failed test does not fail the run. The task succeeded, a later check
                         // disagreed.
                         if let Err(f) = &result {
@@ -1021,7 +952,7 @@ impl Page for RunPage {
             self.simulated = None;
             self.marks[self.at] = Mark::Ran;
             // Skips the test, since a simulated task changed nothing on the machine.
-            self.phase = Phase::Report;
+            self.phase = Phase::Done;
             return self.step(ctx);
         }
         Flow::Stay
@@ -1057,10 +988,6 @@ impl Page for RunPage {
                 }
                 crate::info!("{}: declined", self.task().title);
                 self.marks[self.at] = Mark::Skipped;
-                self.advance();
-                self.step(ctx)
-            }
-            Pushed::Report => {
                 self.advance();
                 self.step(ctx)
             }
