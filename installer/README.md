@@ -60,6 +60,7 @@ Stages run in order, `needs:` orders the tasks within one.
 | What | Source |
 | --- | --- |
 | `ARCH_OS_VIRTUAL_MACHINE` | `systemd-detect-virt`, for the guest tools |
+| Desktop keyboard model | The console keyboard as `localectl` converts it, where xkb lists the model, else `pc105` |
 | Microcode | `/proc/cpuinfo` |
 | Graphics driver | Every graphics card in sysfs. **[➜ Packages](../docs/REFERENCE.md#packages)** |
 | Automatic login | On with disk encryption and one password |
@@ -87,7 +88,7 @@ The console keyboard is asked `first` and loaded at once: a password typed on th
 
 ## Answers
 
-`installer.conf` beside the started Installer, copied into the new system at the end. Never holds a password.
+`installer.conf` beside the started Installer, copied to `/var/log/arch-os/` of the new system at the end, readable by root alone like log and script. Never holds a password.
 
 `installer.sh` beside it holds every command the tasks record, after the lines of `script_head()`, and lands in the new system too. **[➜ Commands](../docs/REFERENCE.md#commands)**
 

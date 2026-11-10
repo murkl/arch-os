@@ -4,8 +4,9 @@
 # sudo: base-devel brings it only with the AUR. mkinitcpio: the kernel takes the
 # first initramfs provider pacman lists, and the bootloader task configures
 # mkinitcpio. dosfstools: systemd checks the EFI partition, which boot counting
-# writes at every boot.
-packages=("$KERNEL" base sudo mkinitcpio zram-generator networkmanager btrfs-progs snapper dosfstools)
+# writes at every boot. pacman-contrib: paccache, since pacman keeps every
+# version it downloads.
+packages=("$KERNEL" base sudo mkinitcpio zram-generator networkmanager btrfs-progs snapper dosfstools pacman-contrib)
 
 # A guest needs firmware only for a passed-through GPU. Many laptops load their
 # sound firmware from sof-firmware, which linux-firmware leaves out.

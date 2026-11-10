@@ -518,13 +518,15 @@ country_field() {
     awk -F'\t' -v col="$1" -v code="$2" 'code != "" && $1 == code { print $col }' "$(installer_data)/countries"
 }
 
-# Layouts and variants localectl converts console keymap $1 to, as "layouts
-# variants" with - for none: the first row of systemd's table that xkb has, as
-# localed verifies it. Empty for a keymap the table lacks.
+# Layouts, variants and model localectl converts console keymap $1 to, as
+# "layouts variants model" with - for none: the first row of systemd's table
+# that xkb has, as localed verifies it, its model where xkb lists it. Empty for
+# a keymap the table lacks.
 converted_keymap() {
     awk -v keymap="$1" '
         FNR == 1 { file++ }
         file == 1 && /^! / { section = $2; next }
+        file == 1 && section == "model" && NF { models[$1] }
         file == 1 && section == "layout" && NF { layouts[$1] }
         file == 1 && section == "variant" && NF { variants[$2 $1] }
         file == 2 && !/^#/ && $1 == keymap {
@@ -533,7 +535,7 @@ converted_keymap() {
             known = 1
             for (i = 1; i <= n; i++)
                 known = known && (layout[i] in layouts) && (variant[i] == "" || (layout[i] ":" variant[i]) in variants)
-            if (known) { print $2, $4; exit }
+            if (known) { print $2, $4, ($3 in models ? $3 : "-"); exit }
         }
     ' /usr/share/X11/xkb/rules/base.lst /usr/share/systemd/kbd-model-map
 }
@@ -558,10 +560,10 @@ auto_layout() {
 # The variant converted with the console keyboard, while the desktop keeps the
 # layouts it came with.
 auto_variant() {
-    local converted
-    converted="$(converted_keymap "$ARCH_OS_VCONSOLE_KEYMAP")"
-    if [ -n "$converted" ] && [ "${converted%% *}" = "$(desktop_layout)" ] && [ "${converted#* }" != - ]; then
-        printf '%s' "${converted#* }"
+    local layout variant
+    read -r layout variant _ <<<"$(converted_keymap "$ARCH_OS_VCONSOLE_KEYMAP")"
+    if [ -n "$layout" ] && [ "$layout" = "$(desktop_layout)" ] && [ "$variant" != - ]; then
+        printf '%s' "$variant"
     else
         printf none
     fi
@@ -588,6 +590,17 @@ resolved() {
 
 desktop_layout() { resolved "$ARCH_OS_DESKTOP_KEYBOARD_LAYOUT" auto_layout; }
 desktop_variant() { resolved "$ARCH_OS_DESKTOP_KEYBOARD_VARIANT" auto_variant; }
+
+# The console keyboard's model as localectl converts it, since jp106 and abnt2
+# have keys xkb's default pc105 lacks.
+desktop_model() {
+    local model
+    read -r _ _ model <<<"$(converted_keymap "$ARCH_OS_VCONSOLE_KEYMAP")"
+    if [ -z "$model" ] || [ "$model" = - ]; then
+        model=pc105
+    fi
+    printf '%s' "$model"
+}
 
 # The territory code of a country data/countries names, which reflector matches
 # like a name and which survives a renaming, as Turkey to Türkiye. A name the

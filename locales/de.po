@@ -359,12 +359,6 @@ msgstr "Kernel-Parameter"
 msgid "Additional kernel parameters, separated by spaces."
 msgstr "Zusätzliche Kernel-Parameter, durch Leerzeichen getrennt."
 
-msgid "Core tweaks"
-msgstr "Core-Optimierungen"
-
-msgid "Colored pacman, quiet boot, password asterisks and tuned system settings."
-msgstr "Farbiges pacman, ruhiger Start, Sternchen bei Passwörtern und abgestimmte Systemeinstellungen."
-
 msgid "System"
 msgstr "System"
 
@@ -410,8 +404,8 @@ msgstr "Ein öffentlicher Schlüssel wie ssh-ed25519 AAAA oder eine https-URL."
 msgid "Housekeeping"
 msgstr "Systempflege"
 
-msgid "Ranks mirrors and cleans the package cache weekly. Monitors disk health."
-msgstr "Sortiert wöchentlich die Spiegelserver und bereinigt den Paket-Cache. Überwacht die Datenträger."
+msgid "Ranks mirrors weekly and monitors disk health."
+msgstr "Sortiert wöchentlich die Spiegelserver und überwacht die Datenträger."
 
 msgid "Text editor"
 msgstr "Texteditor"
@@ -451,12 +445,6 @@ msgstr "Tastaturvariante"
 
 msgid "A layout variant, such as dead keys. Auto follows the console."
 msgstr "Eine Variante der Belegung, etwa mit Tottasten. Auto folgt der Konsole."
-
-msgid "Keyboard model"
-msgstr "Tastaturmodell"
-
-msgid "The keyboard model. Usually pc105."
-msgstr "Das Tastaturmodell. Meist pc105."
 
 msgid "Desktop extras"
 msgstr "Desktop-Extras"
@@ -578,8 +566,8 @@ msgstr "Sprache und Zeitzone festlegen"
 msgid "Set up the hostname and network"
 msgstr "Rechnernamen und Netzwerk einrichten"
 
-msgid "Apply the core tweaks"
-msgstr "Core-Optimierungen anwenden"
+msgid "Tune the system"
+msgstr "System optimieren"
 
 msgid "Install the boot loader"
 msgstr "Bootloader installieren"

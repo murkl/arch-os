@@ -1,6 +1,4 @@
-for timer in reflector.timer paccache.timer; do
-    arch-chroot "$MNT" systemctl is-enabled "$timer" >/dev/null
-done
+arch-chroot "$MNT" systemctl is-enabled reflector.timer >/dev/null
 
 # smartd's own parser. 17 means no disk with SMART, as in a virtual machine.
 arch-chroot "$MNT" smartd -c /etc/smartd.conf -q showtests >/dev/null 2>&1 || allow 17

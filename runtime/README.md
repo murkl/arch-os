@@ -159,7 +159,7 @@ The module's home: rows in `dashboard` order, each name once. `f` filters.
 
 A blank row follows `start`, the answers and each action group. After `start`, the answer headings take its place.
 
-`start` asks what is missing, then every password, then `confirm`, then runs the tasks: one row each, checked off when done, counted in the header. `tab` switches to the running task's title and output, during and after the run. With `script`, the title heads a box with the command it runs, and each new command starts the output over. `systemd-inhibit` blocks shutdown and sleep while tasks run, so closing the lid never suspends a run. A task with `asks` or `confirm` pauses the run on its page. The header names the outcome, **Done** or **Failed**. A finished run shows `report`, its duration, the actions under `on: success` and **Continue**. A failed run shows what failed and where, the actions under `on: failure` and **Back to the dashboard** with a confirmation.
+`start` asks what is missing, then every password, then `confirm`, then runs the tasks: one row each, checked off when done, counted in the header. `tab` switches to the running task's title and output, during and after the run. With `script`, the title heads a box with the command it runs, and each new command starts the output over. `systemd-inhibit` blocks shutdown and sleep while tasks run, so closing the lid never suspends a run. A task with `asks` or `confirm` pauses the run on its page. The header names the outcome, **Done** or **Failed**. A finished run shows `report`, its duration, the actions under `on: success` and **Continue**. A failed run shows what failed and where, and **Back to the dashboard** with a confirmation.
 
 `q` or `esc` on the dashboard leaves. With `on: leave`, or in a kiosk, a page comes first: the actions under `on: leave`, then **Exit**, or **Start over** in a kiosk. During a run the same page warns that every choice stops it and leads with **Back to the run**. The run continues behind it, and its questions wait until the page closes. A choice stops the run first: its script and everything it started get `SIGTERM`, after 10 seconds `SIGKILL`. The choice runs once none of it is left. `SIGTERM`, `SIGHUP` and `SIGINT` to the program stop a run the same way, then end it.
 
@@ -270,10 +270,7 @@ stages:
 | `asks` | A question the run pauses for: `name`, `title`, `description`, `options` or `options-from` and `filter`, read when the run reaches it. An empty list skips the task, one that cannot be read fails it. Never stored |
 | `confirm` | Yes or no before it runs, opening on No. No skips it |
 | `yes-after` | Earlier tasks: if one of them ran, `confirm` opens on Yes |
-| `progress` | `true`: its last printed line shows under it while it runs |
-| `simulates` | `true`: runs on a dry run too, reading `DRY_RUN` itself |
 | `allow-failure` | `true`: its failure does not stop the run |
-| `report` | A page the run pauses on afterwards. First paragraph is the headline |
 | `errors` | Text for each status its `task.sh` stops with. **[➜ Stopping on Purpose](#stopping-on-purpose)** |
 | `texts` | `NAME: text` pairs its scripts get as variables, translated into the interface language. For text it writes into the system. A setting's name is refused |
 
@@ -339,7 +336,6 @@ actions:
 | `confirm` | Yes or no after the inputs, before the work, opening on No. For a second consent: the row agrees to a lookup, this to its result |
 | `run` | **Required.** The `lib.sh` function doing the work |
 | `tty` | The terminal itself is its only page |
-| `simulates` | `true`: runs on a dry run too |
 | `error` | Meaning of a no. **Required** under a module's `requires` |
 | `errors` | Text for each status its function stops with. **[➜ Stopping on Purpose](#stopping-on-purpose)** |
 | `report` | Its page after running. First paragraph is the headline |
@@ -350,7 +346,6 @@ actions:
 | `requires` | Nowhere: runs by itself, a check without page. Its `error` blocks everything until it says yes |
 | `dashboard` | A dashboard row, at its place in the list |
 | `on: leave` | A row on the way out, above **Exit** |
-| `on: failure` | A row under a failed run. None under a run [stopped on purpose](#stopping-on-purpose) |
 | `on: success` | A row under a finished run |
 
 - A row opens the inputs, `confirm`, the work and `report` in turn. A longer flow is several actions chained by `on: failure`
@@ -392,7 +387,7 @@ errors:
     Reconnect and choose Install now to start over.
 ```
 
-`exit 3` stops the run with this text, first paragraph as headline, without technical details or `on: failure` rows. Every other failure is reported where the script broke.
+`exit 3` stops the run with this text, first paragraph as headline, without technical details. Every other failure is reported where the script broke.
 
 - Tasks and actions declare them for their own work, the module for all its scripts. The unit's own text wins
 - Status 1 to 125: bash reserves 126 and up for commands it cannot run or find, and for signals
@@ -403,7 +398,7 @@ errors:
 
 ### Dry Run
 
-`--dry-run` shows a run without doing it. No task, test or action starts unless it declares `simulates: true`, and `requires` are skipped. Setting functions still run, with `DRY_RUN=true`.
+`--dry-run` shows a run without doing it. No task, test or action starts, and `requires` are skipped. Setting functions still run, with `DRY_RUN=true`.
 
 ### Unattended
 
@@ -430,7 +425,7 @@ Exit status 0 where the work finished, 1 where it failed or could not start: a r
 | Password | `password <setting>`, then `password <setting> repeat` |
 | Confirmation | `confirm` before the run, `confirm <task or action>`, `confirm reset`, `confirm home` |
 | Action at work | `action <action>` |
-| Report | `report <task or action>`, `stopped <action>` after a stop on purpose |
+| Report | `report <action>`, `stopped <action>` after a stop on purpose |
 | Failure | `failure <action>`, `result <n>` for a failed test or optional task |
 | Run | `run`, then `run done`, `run failed` or `run stopped` |
 

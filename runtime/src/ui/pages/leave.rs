@@ -73,7 +73,7 @@ impl LeavePage {
             return Flow::Quit;
         };
         crate::info!("action {}", action.id);
-        if ctx.store.dry_run() && !action.simulates {
+        if ctx.store.dry_run() {
             return Flow::Quit;
         }
         let step = ctx.step(&t(&action.title), true, action.run.clone());

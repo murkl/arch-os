@@ -1,4 +1,4 @@
-packages=(pacman-contrib reflector smartmontools)
+packages=(reflector smartmontools)
 # notify-send, for a disk warning on the desktop.
 [ "$ARCH_OS_DESKTOP" != "none" ] && packages+=(libnotify)
 chroot_pacman_install "${packages[@]}"
@@ -12,7 +12,6 @@ if [ -n "$country" ]; then
 fi
 
 run arch-chroot "$MNT" systemctl enable reflector.timer
-run arch-chroot "$MNT" systemctl enable paccache.timer
 run arch-chroot "$MNT" systemctl enable smartd # skips itself in a guest
 
 # A failing disk reaches every terminal and session, not just the journal. A

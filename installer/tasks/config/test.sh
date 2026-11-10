@@ -2,6 +2,7 @@ grep -qx "LANG=${ARCH_OS_LOCALE_LANG}.UTF-8" "${MNT}/etc/locale.conf"
 [ -f "${MNT}/etc/localtime" ]
 sysctl_keys_exist "${MNT}/etc/sysctl.d/99-vm-zram-parameters.conf"
 arch-chroot "$MNT" systemctl is-enabled btrfs-scrub@-.timer >/dev/null
+arch-chroot "$MNT" systemctl is-enabled paccache.timer >/dev/null
 arch-chroot "$MNT" systemctl is-enabled systemd-pstore.service >/dev/null
 
 # Without a network the condition exits 1 to 254, a skip for ExecCondition, and
