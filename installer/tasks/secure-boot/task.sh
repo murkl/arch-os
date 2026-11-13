@@ -1,4 +1,5 @@
-# Never fatal: a machine without Secure Boot still boots.
+# Never fatal: a machine without Secure Boot still boots. Keys that did not
+# enroll end the task with a warning that names the next step.
 # docs/REFERENCE.md#secure-boot
 # https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot
 
@@ -23,12 +24,12 @@ fi
 # whatever is unsigned, possibly at once.
 if ! boot_chain_signed "$MNT"; then
     echo "Secure Boot: keys not enrolled, the boot chain is not fully signed" >&2
-    return 0
+    exit 1
 fi
 # Enrolling needs setup mode.
 if [ "$(efi_global SetupMode)" != 1 ]; then
-    echo "Secure Boot: firmware not in setup mode, keys not enrolled. The boot chain is signed, enrolling later is enough"
-    return 0
+    echo "Secure Boot: firmware not in setup mode, keys not enrolled. The boot chain is signed, enrolling later is enough" >&2
+    exit 10
 fi
 # -m keeps Microsoft's certificates, -f the firmware's own, which firmware signed
 # by its maker needs. sbctl refuses -f where the firmware's defaults could be
@@ -37,4 +38,5 @@ if run arch-chroot "$MNT" sbctl enroll-keys -m -f || run arch-chroot "$MNT" sbct
     echo "Secure Boot: keys enrolled, switch Secure Boot on in the firmware settings"
 else
     echo "Secure Boot: enrolling the keys failed" >&2
+    exit 10
 fi

@@ -1219,6 +1219,52 @@ pub mod tests {
         settle(&mut app, &mut term, &rx);
     }
 
+    /// A `script` function that fails ends the run before its first task: no command of a task
+    /// shows, and no script is written.
+    #[test]
+    fn a_failing_script_function_ends_the_run_before_its_first_task() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app_with(
+            &[(
+                "requires: [root]\ndashboard",
+                "script: broken()\nrequires: [root]\ndashboard",
+            )],
+            false,
+        );
+        answered(&mut app);
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        screen(&mut app, &mut term);
+        settle(&mut app, &mut term, &rx);
+        let shown = screen(&mut app, &mut term);
+        assert!(
+            shown.contains("Nothing after it ran.") && !shown.contains("echo sda"),
+            "{shown}"
+        );
+        assert!(!app.ctx.store.script().exists());
+    }
+
+    /// A dry run changes nothing, so it writes no script either.
+    #[test]
+    fn a_dry_run_writes_no_script() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app_with(
+            &[(
+                "requires: [root]\ndashboard",
+                "script: script_head()\nrequires: [root]\ndashboard",
+            )],
+            true,
+        );
+        answered(&mut app);
+        let run = Box::new(pages::run::RunPage::new(&app.ctx));
+        open(&mut app, run);
+        screen(&mut app, &mut term);
+        settle(&mut app, &mut term, &rx);
+        assert!(!app.ctx.store.script().exists());
+    }
+
     #[test]
     fn the_command_box_fits_any_size() {
         let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());

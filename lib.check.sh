@@ -230,6 +230,8 @@ expect "script_head is bash" "$(holds bash -n -c "$first")" yes
 expect "script_head loads the keyboard" "$(tail -n1 <<<"$first")" "loadkeys de-latin1"
 on_live_image || expect "script_head outside a live system" "$(bash -c "$first" 2>&1 || echo "exit $?")" \
     $'Arch Linux live system required. Boot from the Arch OS ISO.\nexit 1'
+expect "script_head where lsblk cannot read the disk" \
+    "$(lsblk() { return 1; } && ARCH_OS_DISK=/dev/vda ARCH_OS_VCONSOLE_KEYMAP=us script_head >/dev/null && echo yes || echo no)" no
 disk_check="$(grep MODEL,SERIAL,SIZE <<<"$first")"
 for identity in 'QEMU\x20DISK  17179869184' 'QEMU\x20DISK  34359738368'; do
     expect "script_head's disk check where lsblk names ${identity}" \
@@ -347,6 +349,18 @@ Atlantis Atlantis
 none
 EOF
 
+# ─── The network ─────────────────────────────────────────────────────────────
+
+# Wi-Fi is offered offline, not where a route leaves through a card without a
+# radio.
+while read -r offline want; do
+    expect "no_cable with check_online ${offline}" \
+        "$(check_online() { return "$offline"; } && ip() { echo "192.0.2.1 dev lib-check0 src 10.0.2.15"; } && no_cable && echo yes || echo no)" "$want"
+done <<'EOF'
+1 yes
+0 no
+EOF
+
 # ─── The firmware ────────────────────────────────────────────────────────────
 
 # Four attribute bytes, then the value. - for a firmware without the variable.
@@ -384,6 +398,68 @@ done <<'EOF'
 1 0 10
 0 1 10
 EOF
+
+# What a retried install prints, as the number of pauses and its status: a pause
+# between attempts, none after the last.
+tally() { awk '$0 == "pause" { pauses++ } END { print pauses + 0, $0 }'; }
+
+sleep() { echo pause; }
+check_online() { return "$offline"; }
+fetch_url() { return "$aur_down"; }
+# arch-chroot as a program on the path, since an install runs it from an array.
+mkdir "${templates}/bin"
+cat >"${templates}/bin/arch-chroot" <<'EOF'
+#!/bin/sh
+exit "$installs"
+EOF
+chmod +x "${templates}/bin/arch-chroot"
+export installs
+while read -r installs offline want; do
+    expect "chroot_pacman_install with pacman ${installs}, offline ${offline}" \
+        "$( (as_action && PATH="${templates}/bin:${PATH}" chroot_pacman_install x) 2>/dev/null | tally)" "$want"
+done <<EOF
+0 0 0 0
+1 0 $((RETRIES - 1)) 1
+1 1 $((RETRIES - 1)) ${EXIT_OFFLINE}
+EOF
+
+# An AUR build takes the passwordless sudo rule back however it ends. Offline
+# and an unreachable AUR end the task with the module's status.
+chroot_pacman_install() { :; }
+run_sh() { :; }
+sudoers_valid() { :; }
+run() { printf '%s\n' "$*" >>"${templates}/ran"; }
+export ARCH_OS_USERNAME=tux
+while read -r installs offline aur_down want; do
+    : >"${templates}/ran"
+    expect "chroot_aur_install with the build ${installs}, offline ${offline}, the AUR down ${aur_down}" \
+        "$( (as_action && PATH="${templates}/bin:${PATH}" chroot_aur_install paru) 2>/dev/null | tally) $(grep -c '^rm -f /mnt/etc/sudoers.d/99-aur-build$' "${templates}/ran")" "$want"
+done <<EOF
+0 0 0 0 0 1
+1 0 0 $((AUR_RETRIES - 1)) 1 1
+1 1 0 $((AUR_RETRIES - 1)) ${EXIT_OFFLINE} 1
+1 0 1 $((AUR_RETRIES - 1)) ${EXIT_AUR} 1
+124 0 0 0 124 1
+EOF
+
+# The boot splash rebuilds the images however its theme's build ends, a task
+# ended by an unreachable AUR included, and keeps that status.
+render() { :; }
+write_file() { cat >/dev/null; }
+chroot_aur_install() {
+    [ "$ends" = return ] || exit "$theme"
+    return "$theme"
+}
+while read -r ends theme want; do
+    : >"${templates}/ran"
+    expect "the bootsplash task where the theme's build ${ends}s ${theme}" \
+        "$( (as_action && source installer/tasks/bootsplash/task.sh) 2>/dev/null) $(grep -c 'mkinitcpio -P$' "${templates}/ran")" "$want"
+done <<EOF
+return 0 0 1
+return 1 1 1
+exit ${EXIT_AUR} ${EXIT_AUR} 1
+EOF
+unset -f sleep check_online fetch_url chroot_pacman_install run_sh sudoers_valid run render write_file chroot_aur_install
 
 # ─── EFI Partition ───────────────────────────────────────────────────────────
 

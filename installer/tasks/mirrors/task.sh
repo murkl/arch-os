@@ -38,19 +38,19 @@ rank_mirrors() {
 # https://wiki.archlinux.org/title/Installation_guide#Update_the_system_clock
 run timedatectl set-ntp true
 
+# The live system creates its keyring after the NTP sync, so this waits for the
+# clock, and pacman refuses every package until then. start waits for a running
+# unit and returns at once for a finished one.
+run timeout 300 systemctl start pacman-init.service || {
+    echo "no pacman keyring on the live system after 5 minutes" >&2
+    exit 10
+}
+
 echo "ranking mirrors"
 rank_mirrors
 
 # A lock without a running pacman is left by an aborted earlier attempt.
 pgrep -x pacman >/dev/null || rm -f /var/lib/pacman/db.lck
-
-# The live system creates its keyring after the NTP sync, and pacman refuses
-# every package until then. start waits for a running unit and returns at once
-# for a finished one.
-run timeout 300 systemctl start pacman-init.service || {
-    echo "no pacman keyring on the live system after 5 minutes" >&2
-    exit 10
-}
 
 # A stale keyring is the most common reason pacman refuses a package.
 if ! run pacman -Sy --noconfirm archlinux-keyring; then

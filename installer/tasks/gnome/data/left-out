@@ -18,6 +18,8 @@ slim gnome-characters
 slim gnome-clocks
 slim gnome-connections
 slim gnome-music
+slim grilo-plugins
+slim gnome-menus
 slim gnome-weather
 slim gnome-calculator
 slim gnome-logs

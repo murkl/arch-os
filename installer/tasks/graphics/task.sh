@@ -19,7 +19,7 @@ while IFS=$'\t' read -r vendor device; do
     amd)
         other=true
         packages+=(vulkan-radeon opencl-mesa)
-        lib32+=(lib32-vulkan-radeon lib32-opencl-mesa)
+        lib32+=(lib32-vulkan-radeon)
         ;;
     nvidia)
         # The open module drives Turing on, device IDs from 0x1e00. Older cards
@@ -37,7 +37,7 @@ done < <(graphics_cards)
 if [ "$nvidia" = "true" ]; then
     # DKMS: prebuilt modules exist for the stock kernel only.
     packages+=(nvidia-open-dkms "${KERNEL}-headers" nvidia-utils nvidia-settings opencl-nvidia libva-nvidia-driver)
-    lib32+=(lib32-nvidia-utils lib32-opencl-nvidia)
+    lib32+=(lib32-nvidia-utils)
 
     # Beside another GPU, prime-run offloads a program to this one.
     # https://wiki.archlinux.org/title/PRIME

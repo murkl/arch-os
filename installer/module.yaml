@@ -187,8 +187,8 @@ settings:
       type: bool
       title: Secure Boot
       description: |
-        Signs kernel and boot loader with own keys. Turn Secure Boot on after
-        the installation.
+        Signs kernel and boot loader with own keys. Enable Secure Boot after the
+        installation.
       when: ARCH_OS_ENCRYPTION_ENABLED == true
       default: true
 
@@ -299,7 +299,7 @@ settings:
     - name: ARCH_OS_DESKTOP
       type: list
       title: Environment
-      description: GNOME, or none for the console only.
+      description: GNOME, or None for the console only.
       required: true
       options: [gnome, none]
 
@@ -634,6 +634,14 @@ stages:
       when:
         - ARCH_OS_SECURE_BOOT_ENABLED == true
         - ARCH_OS_ENCRYPTION_ENABLED == true
+      # Without enrolled keys the system boots with Secure Boot off.
+      allow-failure: true
+      errors:
+        10: |
+          Secure Boot keys not enrolled
+
+          Clear the keys in the firmware settings, then run sudo sbctl
+          enroll-keys -m -f.
 
     copy-config:
       title: Copy the answers, the log and the script into the system
@@ -668,7 +676,7 @@ actions:
   internet:
     title: Internet
     run: check_online()
-    error: No internet connection. Connect a cable to continue.
+    error: No internet connection. Plug in a cable to continue.
     on:
       failure: [wifi]
 

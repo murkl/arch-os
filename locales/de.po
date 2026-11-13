@@ -303,7 +303,7 @@ msgid "Mirror country"
 msgstr "Spiegelserver-Land"
 
 msgid "The country of the package mirrors. None uses the fastest worldwide."
-msgstr "Das Land der Spiegelserver. None nutzt die schnellsten weltweit."
+msgstr "Das Land der Spiegelserver. Keine nutzt die schnellsten weltweit."
 
 msgid "Disk"
 msgstr "Datenträger"
@@ -335,8 +335,8 @@ msgstr "Entsperrt den Datenträger bei jedem Start. Wird nie gespeichert."
 msgid "Secure Boot"
 msgstr "Secure Boot"
 
-msgid "Signs kernel and boot loader with own keys. Turn Secure Boot on after the installation."
-msgstr "Signiert Kernel und Bootloader mit eigenen Schlüsseln. Secure Boot nach der Installation einschalten."
+msgid "Signs kernel and boot loader with own keys. Enable Secure Boot after the installation."
+msgstr "Signiert Kernel und Bootloader mit eigenen Schlüsseln. Secure Boot nach der Installation aktivieren."
 
 msgid "Boot"
 msgstr "Boot"
@@ -369,7 +369,7 @@ msgid "32-bit libraries for Steam and Wine."
 msgstr "32-Bit-Bibliotheken für Steam und Wine."
 
 msgid "AUR helper"
-msgstr "AUR-Helfer"
+msgstr "AUR-Helper"
 
 msgid "Paru as AUR helper. The build takes about 15 minutes."
 msgstr "Paru als AUR-Helper. Der Bau dauert etwa 15 Minuten."
@@ -431,8 +431,8 @@ msgstr "Virtuelle Maschine"
 msgid "Environment"
 msgstr "Umgebung"
 
-msgid "GNOME, or none for the console only."
-msgstr "GNOME, oder none nur für die Konsole."
+msgid "GNOME, or None for the console only."
+msgstr "GNOME, oder Keine nur für die Konsole."
 
 msgid "Desktop keyboard"
 msgstr "Desktop-Tastatur"
@@ -468,7 +468,7 @@ msgid "Backup"
 msgstr "Datensicherung"
 
 msgid "Scheduled backups of the home folder to a drive or server."
-msgstr "Geplante Backups des persönlichen Ordners auf ein Laufwerk oder einen Server."
+msgstr "Geplante Datensicherungen des persönlichen Ordners auf ein Laufwerk oder einen Server."
 
 msgid "Flatpak"
 msgstr "Flatpak"
@@ -597,7 +597,7 @@ msgid "Enable 32-bit support"
 msgstr "32-Bit-Unterstützung aktivieren"
 
 msgid "Install the AUR helper"
-msgstr "AUR-Helfer installieren"
+msgstr "AUR-Helper installieren"
 
 msgid "Install the boot splash"
 msgstr "Bootsplash installieren"
@@ -659,6 +659,15 @@ msgstr "Snapshots einrichten"
 msgid "Set up Secure Boot"
 msgstr "Secure Boot einrichten"
 
+msgid ""
+"Secure Boot keys not enrolled\n"
+"\n"
+"Clear the keys in the firmware settings, then run sudo sbctl enroll-keys -m -f."
+msgstr ""
+"Secure-Boot-Schlüssel nicht eingetragen\n"
+"\n"
+"Die Schlüssel in den Firmware-Einstellungen löschen, dann sudo sbctl enroll-keys -m -f ausführen."
+
 msgid "Copy the answers, the log and the script into the system"
 msgstr "Antworten, Protokoll und Skript ins System kopieren"
 
@@ -683,7 +692,7 @@ msgstr "Konfiguration"
 msgid "Internet"
 msgstr "Internet"
 
-msgid "No internet connection. Connect a cable to continue."
+msgid "No internet connection. Plug in a cable to continue."
 msgstr "Keine Internetverbindung. Ein Kabel einstecken, um fortzufahren."
 
 msgid "An Arch Linux live system"
@@ -822,7 +831,7 @@ msgstr ""
 "Das aktuelle System bleibt als Snapshot erhalten. /home bleibt unverändert."
 
 msgid "Rebuild the boot files"
-msgstr "Boot-Dateien neu erstellen"
+msgstr "Bootdateien neu erstellen"
 
 msgid ""
 "Rebuild kernel images, initramfs and boot entries?\n"
@@ -924,7 +933,7 @@ msgid "{{name}} is not set in the environment."
 msgstr "{{name}} ist in der Umgebung nicht gesetzt."
 
 msgid "{{name}} is not one of the options."
-msgstr "{{name}} ist keine der Optionen."
+msgstr "{{name}} steht nicht zur Auswahl."
 
 msgid "{{page}} needs a person at the keyboard."
 msgstr "{{page}} braucht jemanden an der Tastatur."

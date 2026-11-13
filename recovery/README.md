@@ -40,7 +40,7 @@ A repair needs no network, which may be the broken part. The kernel image comes 
 
 ## Update
 
-`update` adds **Update the Recovery** to the dashboard where `recovery-to-update` passes: always on its partition, from the ISO only for a disk whose boot image names a UUID the partition no longer has, as after an interrupted update. It ends on **Recovery is up to date** or opens `update-install`: password on an encrypted disk, confirmation, update. `update-install` requires `online`. **[➜ Reference](../docs/REFERENCE.md#update)**
+`update` adds **Update the Recovery** to the dashboard where `recovery-to-update` passes: always on its partition, from the ISO for a disk with a Recovery partition. It ends on **Recovery is up to date** or opens `update-install`: password on an encrypted disk, confirmation, update. `update-install` requires `online`. **[➜ Reference](../docs/REFERENCE.md#update)**
 
 ## Answers
 

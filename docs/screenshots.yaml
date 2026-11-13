@@ -5,8 +5,8 @@
 # save it as `shot:`, put the cursor on the row `choose:`, then `press:`. Pages
 # and rows are named by their trace ids: runtime/README.md#trace
 #
-# Every answer is set here, since locale, keyboard and time zone default to the
-# rendering machine's. The disk cannot be set, so no page showing one is shot.
+# Every answer is set here, so no picture depends on a default. The disk cannot
+# be set, so no page showing one is shot.
 
 # The Installer: every answer, then the run.
 - module: installer

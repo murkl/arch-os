@@ -21,12 +21,12 @@ kernel_args() {
     args+=(panic=10)        # reboots, so the loader counts a failed try
 
     # https://wiki.archlinux.org/title/Silent_boot
-    args+=(quiet splash vt.global_cursor_default=0 loglevel=3 rd.udev.log_level=3 systemd.show_status=auto)
+    args+=(quiet vt.global_cursor_default=0 loglevel=3 rd.udev.log_level=3 systemd.show_status=auto)
 
     # With encryption the passphrase prompt comes first: the splash waits for
     # the GPU driver, and 3 s, longer than the disk takes to appear.
     if [ "$ARCH_OS_BOOTSPLASH_ENABLED" = "true" ]; then
-        args+=(plymouth.ignore-serial-consoles)
+        args+=(splash plymouth.ignore-serial-consoles)
         if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
             args+=(plymouth.use-simpledrm=0 plymouth.splash-delay=3)
         fi

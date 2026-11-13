@@ -16,6 +16,13 @@ packages+=(pipewire-jack pipewire-alsa)
 # Realtime priority for PipeWire, which otherwise warns at every login.
 packages+=(rtkit)
 
+# The shell's own screen recording and the power modes in Settings.
+# https://wiki.archlinux.org/title/GNOME
+packages+=(gst-plugin-pipewire power-profiles-daemon)
+
+# WebKit asks for any ttf-font, and pacman would pick gnu-free-fonts by itself.
+packages+=(ttf-liberation)
+
 # gnome-shell's calendar server links against it, but Arch pulls it in only
 # through apps the slim desktop leaves out.
 packages+=(evolution-data-server)
@@ -37,6 +44,11 @@ while read -r scope name; do
     slim) [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "true" ] || continue ;;
     no-flatpak) [ "$ARCH_OS_FLATPAK_ENABLED" != "true" ] || continue ;;
     bazaar) [ "$bazaar" = "true" ] || continue ;;
+    always) ;;
+    *)
+        echo "left-out: unknown condition ${scope}" >&2
+        exit 1
+        ;;
     esac
     left_out+=("$name")
 done <"${data}/left-out"
@@ -112,6 +124,7 @@ run arch-chroot "$MNT" systemctl enable arch-os-session-up.service
 
 run arch-chroot "$MNT" systemctl enable bluetooth.service
 run arch-chroot "$MNT" systemctl enable avahi-daemon
+run arch-chroot "$MNT" systemctl enable power-profiles-daemon.service
 
 # mDNS replies arrive as multicast the firewall cannot match to a query, so
 # public lets them in. Nothing leaks that avahi does not announce anyway.
@@ -160,6 +173,11 @@ while read -r scope name; do
     slim) [ "$ARCH_OS_DESKTOP_SLIM_ENABLED" = "true" ] || continue ;;
     extras) [ "$ARCH_OS_DESKTOP_EXTRAS_ENABLED" = "true" ] || continue ;;
     shell) [ "$ARCH_OS_SHELL_ENHANCEMENT_ENABLED" = "true" ] || continue ;;
+    always) ;;
+    *)
+        echo "hidden-apps: unknown condition ${scope}" >&2
+        exit 1
+        ;;
     esac
     render "${data}/hidden.desktop" NAME="$name" | write_file "${apps}/${name}.desktop"
 done <"${data}/hidden-apps"
